@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/LibMacro.h>
-#include <quix-core/Error.h>
+#include <nitrate-core/Error.h>
 #include <quix-lexer/Lexer.h>
 #include <quix-lexer/Lib.h>
 #include <quix-lexer/Token.h>

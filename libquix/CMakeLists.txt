@@ -29,20 +29,20 @@ file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
 add_library(quix ${CXX_SOURCES})
 target_include_directories(quix PUBLIC src "include"
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-prep/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-parser/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-ir/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-codegen/include)
 target_compile_options(quix PRIVATE ${PROJECT_DEBUG_FLAGS})
-target_link_libraries(quix PUBLIC quix-core
+target_link_libraries(quix PUBLIC nitrate-core
   quix-lexer
   quix-prep
   quix-parser
   quix-ir
   quix-codegen)
-add_dependencies(quix quix-core quix-lexer quix-prep quix-parser quix-ir quix-codegen)
+add_dependencies(quix nitrate-core quix-lexer quix-prep quix-parser quix-ir quix-codegen)
 set_target_properties(quix PROPERTIES OUTPUT_NAME quix)
 
 if(BUILD_TESTING)

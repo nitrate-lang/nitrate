@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/LibMacro.h>
-#include <quix-core/Error.h>
+#include <nitrate-core/Error.h>
 
 #include <cstddef>
 #include <quix-ir/Format.hh>

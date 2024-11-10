@@ -31,7 +31,7 @@
 
 #define LIBQUIX_INTERNAL
 
-#include <quix-core/Lib.h>
+#include <nitrate-core/Lib.h>
 #include <quix/code.h>
 
 #include <SerialUtil.hh>

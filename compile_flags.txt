@@ -1,7 +1,7 @@
 -Wall
 -Wextra
 -I
-./libquix-core/include
+./libnitrate-core/include
 -I
 ./libquix-lexer/include
 -I

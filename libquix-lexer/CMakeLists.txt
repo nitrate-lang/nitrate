@@ -28,9 +28,9 @@ endif()
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
 add_library(quix-lexer ${CXX_SOURCES})
-target_include_directories(quix-lexer PUBLIC src "include" ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include)
-target_link_libraries(quix-lexer PUBLIC quix-core)
-add_dependencies(quix-lexer quix-core)
+target_include_directories(quix-lexer PUBLIC src "include" ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include)
+target_link_libraries(quix-lexer PUBLIC nitrate-core)
+add_dependencies(quix-lexer nitrate-core)
 
 install(TARGETS quix-lexer DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

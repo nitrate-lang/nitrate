@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Lib.h>
+#include <nitrate-core/Lib.h>
 #include <quix-ir/Lib.h>
 #include <quix-parser/Lib.h>
 #include <sys/resource.h>
@@ -38,7 +38,6 @@
 #include <core/PassManager.hh>
 
 #include "core/LibMacro.h"
-
 
 static std::atomic<size_t> qxir_lib_ref_count = 0;
 

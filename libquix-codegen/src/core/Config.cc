@@ -32,8 +32,8 @@
 #include "Config.hh"
 
 #include <core/LibMacro.h>
+#include <nitrate-core/Error.h>
 #include <quix-codegen/Config.h>
-#include <quix-core/Error.h>
 
 #include <boost/bimap.hpp>
 

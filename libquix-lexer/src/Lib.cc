@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Lib.h>
+#include <nitrate-core/Lib.h>
 #include <quix-lexer/Lib.h>
 
 #include <atomic>

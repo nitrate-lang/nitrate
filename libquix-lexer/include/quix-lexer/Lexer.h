@@ -32,7 +32,7 @@
 #ifndef __QUIX_LEXER_LEX_H__
 #define __QUIX_LEXER_LEX_H__
 
-#include <quix-core/Env.h>
+#include <nitrate-core/Env.h>
 #include <quix-lexer/Token.h>
 #include <stdbool.h>
 #include <stddef.h>

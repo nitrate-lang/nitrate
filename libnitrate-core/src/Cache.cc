@@ -29,71 +29,72 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Error.h>
-#include <stdint.h>
-#include <stdlib.h>
+#include <nitrate-core/Cache.h>
+#include <nitrate-core/Error.h>
 
-#include <alloc/Collection.hh>
-#include <cstring>
-#include <vector>
+#include <mutex>
 
-#define REGION_SIZE (1024 * 16)
+#include "LibMacro.h"
 
-static inline uintptr_t ALIGNED(uintptr_t ptr, size_t align) {
-  return (ptr % align) ? (ptr + (align - (ptr % align))) : ptr;
+#define PROJECT_REPO_URL "https://github.com/Kracken256/quix"
+
+static struct {
+  std::mutex m_lock;
+  qcore_cache_has_t m_has;
+  qcore_cache_read_t m_read;
+  qcore_cache_write_t m_write;
+} g_cache_provider{};
+
+LIB_EXPORT bool qcore_cache_bind(qcore_cache_has_t has, qcore_cache_read_t read,
+                                 qcore_cache_write_t write) {
+  if (!has || !read || !write) {
+    return false;
+  }
+
+  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
+
+  if (g_cache_provider.m_has || g_cache_provider.m_read || g_cache_provider.m_write) {
+    return false;
+  }
+
+  g_cache_provider.m_has = has;
+  g_cache_provider.m_read = read;
+  g_cache_provider.m_write = write;
+
+  return true;
 }
 
-void mem::gba_v0_t::open(bool thread_safe) {
-  m_thread_safe = thread_safe;
-  alloc_region(REGION_SIZE);
+LIB_EXPORT void qcore_cache_unbind() {
+  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
+
+  g_cache_provider.m_has = nullptr;
+  g_cache_provider.m_read = nullptr;
+  g_cache_provider.m_write = nullptr;
 }
 
-size_t mem::gba_v0_t::close() {
-  size_t total = 0;
-  
-  for (size_t i = 0; i < m_bases.size(); i++) {
-    total += m_bases[i].size;
-    delete[] reinterpret_cast<uint8_t *>(m_bases[i].base);
-  }
+LIB_EXPORT int64_t qcore_cache_has(const qcore_cache_key_t *key) {
+  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
 
-  return total;
+  qcore_assert(key, "qcore_cache_has: key is null");
+  qcore_assert(g_cache_provider.m_has, "qcore_cache_has: cache provider not bound");
+
+  return g_cache_provider.m_has(key);
 }
 
-void *mem::gba_v0_t::alloc(size_t size, size_t alignment) {
-  if (size == 0 || alignment == 0) {
-    return nullptr;
-  }
+LIB_EXPORT bool qcore_cache_read(const qcore_cache_key_t *key, void *data, size_t datalen) {
+  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
 
-  if (m_thread_safe) {
-    m_mutex.lock();
-  }
+  qcore_assert(key && data, "qcore_cache_read: key or data is null");
+  qcore_assert(g_cache_provider.m_read, "qcore_cache_read: cache provider not bound");
 
-  uintptr_t start;
+  return g_cache_provider.m_read(key, data, datalen);
+}
 
-  if (size > REGION_SIZE) [[unlikely]] {
-    alloc_region(size);
-  }
+LIB_EXPORT bool qcore_cache_write(const qcore_cache_key_t *key, const void *data, size_t datalen) {
+  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
 
-  auto &R = m_bases.back();
+  qcore_assert(key && data, "qcore_cache_write: key or data is null");
+  qcore_assert(g_cache_provider.m_write, "qcore_cache_write: cache provider not bound");
 
-  start = ALIGNED(R.offset, alignment);
-
-  if ((start + size) <= R.base + R.size) [[likely]] {
-    R.offset = start + size;
-  } else {
-    alloc_region(REGION_SIZE);
-
-    start = ALIGNED(m_bases.back().offset, alignment);
-    if ((start + size) > m_bases.back().base + m_bases.back().size) [[unlikely]] {
-      qcore_panicf("Out of memory: failed to allocate %zu bytes @ alignment %zu", size, alignment);
-    }
-
-    m_bases.back().offset = start + size;
-  }
-
-  if (m_thread_safe) {
-    m_mutex.unlock();
-  }
-
-  return reinterpret_cast<void *>(start);
+  return g_cache_provider.m_write(key, data, datalen);
 }

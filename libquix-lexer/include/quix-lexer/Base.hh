@@ -32,7 +32,7 @@
 #ifndef __QUIX_LEXER_BASE_H__
 #define __QUIX_LEXER_BASE_H__
 
-#include <quix-core/Error.h>
+#include <nitrate-core/Error.h>
 #include <quix-lexer/Lexer.h>
 #include <quix-lexer/Token.h>
 
@@ -46,7 +46,7 @@
 #include <string>
 #include <string_view>
 
-#include "quix-core/Env.h"
+#include "nitrate-core/Env.h"
 
 #if MEMORY_OVER_SPEED == 1
 #include <unordered_map>

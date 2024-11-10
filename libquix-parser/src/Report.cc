@@ -33,7 +33,7 @@
 
 #include <Impl.h>
 #include <ParseReport.h>
-#include <quix-core/Error.h>
+#include <nitrate-core/Error.h>
 #include <quix-parser/Parser.h>
 
 #include <ParserStruct.hh>

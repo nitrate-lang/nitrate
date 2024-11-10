@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <execinfo.h>
-#include <quix-core/Error.h>
+#include <nitrate-core/Error.h>
 
 #include <cstdlib>
 #include <iostream>

@@ -36,7 +36,7 @@
 #error "This header is for C++ only."
 #endif
 
-#include <quix-core/Error.h>
+#include <nitrate-core/Error.h>
 #include <quix-lexer/Lexer.h>
 
 #include <istream>

@@ -31,7 +31,7 @@
 
 #define __QUIX_LEXER_IMPL__
 
-#include <quix-core/Error.h>
+#include <nitrate-core/Error.h>
 #include <quix-lexer/Lexer.h>
 #include <string.h>
 

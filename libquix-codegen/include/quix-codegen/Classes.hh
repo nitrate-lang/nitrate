@@ -36,8 +36,8 @@
 #error "This header is for C++ only."
 #endif
 
+#include <nitrate-core/Error.h>
 #include <quix-codegen/Config.h>
-#include <quix-core/Error.h>
 
 #include <stdexcept>
 

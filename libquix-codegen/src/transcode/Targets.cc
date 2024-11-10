@@ -30,8 +30,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/LibMacro.h>
+#include <nitrate-core/Error.h>
 #include <quix-codegen/Code.h>
-#include <quix-core/Error.h>
 
 #include <core/Config.hh>
 #include <functional>

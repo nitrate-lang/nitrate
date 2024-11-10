@@ -7,7 +7,7 @@
 #include <core/server.hh>
 #include <cstdint>
 #include <memory>
-#include <quix-core/Classes.hh>
+#include <nitrate-core/Classes.hh>
 #include <quix-lexer/Classes.hh>
 #include <quix-parser/Classes.hh>
 #include <route/RoutesList.hh>

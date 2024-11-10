@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Error.h>
+#include <nitrate-core/Error.h>
 
 #include <core/PassManager.hh>
 #include <passes/PassList.hh>

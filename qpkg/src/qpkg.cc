@@ -31,9 +31,9 @@
 
 #include <argparse.h>
 #include <glog/logging.h>
+#include <nitrate-core/Lib.h>
 #include <quix-codegen/Code.h>
 #include <quix-codegen/Lib.h>
-#include <quix-core/Lib.h>
 #include <quix-ir/Lib.h>
 #include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>
@@ -47,8 +47,8 @@
 #include <init/Package.hh>
 #include <ios>
 #include <mutex>
+#include <nitrate-core/Classes.hh>
 #include <quix-codegen/Classes.hh>
-#include <quix-core/Classes.hh>
 #include <quix-ir/Classes.hh>
 #include <quix-ir/Format.hh>
 #include <quix-parser/Classes.hh>

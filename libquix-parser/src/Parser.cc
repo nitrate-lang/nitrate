@@ -33,15 +33,15 @@
 #define __QUIX_LEXER_IMPL__
 
 #include <Impl.h>
+#include <nitrate-core/Error.h>
 #include <parser/Parse.h>
-#include <quix-core/Error.h>
 #include <quix-parser/Node.h>
 #include <quix-parser/Parser.h>
 
 #include <ParserStruct.hh>
 #include <atomic>
 #include <cstring>
-#include <quix-core/Classes.hh>
+#include <nitrate-core/Classes.hh>
 
 #include "LibMacro.h"
 

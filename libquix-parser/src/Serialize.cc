@@ -32,13 +32,13 @@
 #define __QPARSE_IMPL__
 
 #include <libdeflate.h>
-#include <quix-core/Error.h>
+#include <nitrate-core/Error.h>
 #include <quix-lexer/Lexer.h>
 #include <quix-parser/Node.h>
 
 #include <ParserStruct.hh>
 #include <cstring>
-#include <quix-core/Classes.hh>
+#include <nitrate-core/Classes.hh>
 #include <sstream>
 
 #include "LibMacro.h"

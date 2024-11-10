@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/LibMacro.h>
-#include <quix-core/Error.h>
+#include <nitrate-core/Error.h>
 #include <quix-parser/Node.h>
 
 #include <boost/bimap.hpp>

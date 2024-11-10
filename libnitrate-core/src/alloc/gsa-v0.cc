@@ -29,51 +29,71 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_LIB_H__
-#define __QUIX_CORE_LIB_H__
+#include <nitrate-core/Error.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <alloc/Collection.hh>
+#include <cstring>
+#include <vector>
 
-#include <quix-core/Memory.h>
-#include <quix-core/Cache.h>
-#include <quix-core/Env.h>
-#include <quix-core/Error.h>
+#define REGION_SIZE (1024 * 16)
 
-/**
- * @brief Initialize the library.
- *
- * @return true if the library was initialized successfully.
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not reinitialize the library, but will
- * increment the reference count.
- */
-bool qcore_lib_init();
-
-/**
- * @brief Deinitialize the library.
- *
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not deinitialize the library, but when
- * the reference count reaches zero, the library will be deinitialized.
- */
-void qcore_lib_deinit();
-
-/**
- * @brief Get the version of the library.
- *
- * @return The version string of the library.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is also safe to call before initialization and after deinitialization.
- */
-const char *qcore_lib_version();
-
-#ifdef __cplusplus
+static inline uintptr_t ALIGNED(uintptr_t ptr, size_t align) {
+  return (ptr % align) ? (ptr + (align - (ptr % align))) : ptr;
 }
-#endif
 
-#endif  // __QUIX_CORE_LIB_H__
+void mem::gba_v0_t::open(bool thread_safe) {
+  m_thread_safe = thread_safe;
+  alloc_region(REGION_SIZE);
+}
+
+size_t mem::gba_v0_t::close() {
+  size_t total = 0;
+
+  for (size_t i = 0; i < m_bases.size(); i++) {
+    total += m_bases[i].size;
+    delete[] reinterpret_cast<uint8_t *>(m_bases[i].base);
+  }
+
+  return total;
+}
+
+void *mem::gba_v0_t::alloc(size_t size, size_t alignment) {
+  if (size == 0 || alignment == 0) {
+    return nullptr;
+  }
+
+  if (m_thread_safe) {
+    m_mutex.lock();
+  }
+
+  uintptr_t start;
+
+  if (size > REGION_SIZE) [[unlikely]] {
+    alloc_region(size);
+  }
+
+  auto &R = m_bases.back();
+
+  start = ALIGNED(R.offset, alignment);
+
+  if ((start + size) <= R.base + R.size) [[likely]] {
+    R.offset = start + size;
+  } else {
+    alloc_region(REGION_SIZE);
+
+    start = ALIGNED(m_bases.back().offset, alignment);
+    if ((start + size) > m_bases.back().base + m_bases.back().size) [[unlikely]] {
+      qcore_panicf("Out of memory: failed to allocate %zu bytes @ alignment %zu", size, alignment);
+    }
+
+    m_bases.back().offset = start + size;
+  }
+
+  if (m_thread_safe) {
+    m_mutex.unlock();
+  }
+
+  return reinterpret_cast<void *>(start);
+}

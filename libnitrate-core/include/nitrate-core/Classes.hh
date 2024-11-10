@@ -36,8 +36,8 @@
 #error "This header is for C++ only."
 #endif
 
-#include <quix-core/Env.h>
-#include <quix-core/Memory.h>
+#include <nitrate-core/Env.h>
+#include <nitrate-core/Memory.h>
 
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>

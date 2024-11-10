@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(libquix-core CXX)
+project(libnitrate-core CXX)
 
 #================== CONFIGURE BUILD ==================
 set(CMAKE_CXX_STANDARD 20)
@@ -13,7 +13,7 @@ string(REGEX REPLACE " .*" "" SHA256SUMS ${SHA256SUMS})
 string(TOUPPER ${SHA256SUMS} SHA256SUMS)
 string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
 set(__TARGET_VERSION "\"QCORE_${SHA256SUMS}\"")
-message(STATUS "libquix-core VersionId: ${__TARGET_VERSION}")
+message(STATUS "libnitrate-core VersionId: ${__TARGET_VERSION}")
 
 #================== SET BUILD FLAGS ==================
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -27,8 +27,8 @@ endif()
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
-add_library(quix-core ${CXX_SOURCES})
-target_include_directories(quix-core PUBLIC src "include")
+add_library(nitrate-core ${CXX_SOURCES})
+target_include_directories(nitrate-core PUBLIC src "include")
 
-install(TARGETS quix-core DESTINATION lib)
+install(TARGETS nitrate-core DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

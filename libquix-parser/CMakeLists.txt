@@ -29,10 +29,10 @@ file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
 add_library(quix-parser ${CXX_SOURCES})
 target_include_directories(quix-parser PUBLIC src "include"
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include)
-target_link_libraries(quix-parser PUBLIC quix-core quix-lexer deflate)
-add_dependencies(quix-parser quix-core quix-lexer)
+target_link_libraries(quix-parser PUBLIC nitrate-core quix-lexer deflate)
+add_dependencies(quix-parser nitrate-core quix-lexer)
 
 install(TARGETS quix-parser DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

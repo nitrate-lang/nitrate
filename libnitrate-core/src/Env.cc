@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Env.h>
-#include <quix-core/Error.h>
+#include <nitrate-core/Env.h>
+#include <nitrate-core/Error.h>
 #include <threads.h>
 
 #include <cstdio>

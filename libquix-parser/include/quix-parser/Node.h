@@ -150,15 +150,15 @@ qlex_loc_t qparse_endpos(qparse_node_t *node);
 
 #if (defined(__cplusplus)) || defined(__QPARSE_IMPL__)
 
-#include <quix-core/Error.h>
-#include <quix-core/Memory.h>
+#include <nitrate-core/Error.h>
+#include <nitrate-core/Memory.h>
 #include <quix-lexer/Token.h>
 
 #include <cassert>
 #include <iostream>
 #include <map>
+#include <nitrate-core/Classes.hh>
 #include <ostream>
-#include <quix-core/Classes.hh>
 #include <set>
 #include <stdexcept>
 #include <string>

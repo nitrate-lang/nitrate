@@ -29,74 +29,71 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Lib.h>
+#define QCORE_NDEBUG
 
-#include <atomic>
+#include <nitrate-core/Error.h>
+#include <nitrate-core/Memory.h>
 
-#include "LibMacro.h"
+#include <alloc/Collection.hh>
 
-static std::atomic<size_t> qcore_lib_ref_count = 0;
+#include "../LibMacro.h"
 
-LIB_EXPORT bool qcore_lib_init() {
-  qcore_lib_ref_count++;
-  return true;
-}
+LIB_EXPORT qcore_arena_t *qcore_arena_open_ex(qcore_arena_t *A, qcore_alloc_mode_t mode,
+                                              bool is_thread_safe) {
+  qcore_assert(A != nullptr, "qcore_arena_open_ex: invalid arena");
 
-LIB_EXPORT void qcore_lib_deinit() {
-  qcore_lib_ref_count--;
+  mem::qcore_arena_t *X;
 
-  if (qcore_lib_ref_count > 0) {
-    return;
+  switch (mode) {
+    case QCORE_GBA_V0:
+      X = new mem::gba_v0_t();
+      break;
+    case QCORE_RIBA_V0:
+      X = new mem::riba_v0_t();
+      break;
+    case QCORE_AUTO: {
+#if MEMORY_OVER_SPEED == 1
+      X = new mem::riba_v0_t();
+#else
+      X = new mem::gba_v0_t();
+#endif
+      break;
+    }
+
+    default: {
+      qcore_panicf("qcore_arena_open_ex: invalid mode %d", mode);
+    }
   }
 
-  // Deinitialize the library here.
-  // Nothing to do for now.
+  X->open(is_thread_safe);
+
+  *A = reinterpret_cast<qcore_arena_t>(X);
+
+  qcore_debugf("TRACE: qcore_arena_open_ex(%p, %d, %d)\t-> %p\n", A, mode, is_thread_safe, X);
+
+  return A;
 }
 
-LIB_EXPORT const char* qcore_lib_version() {
-  static const char* version_string =
+LIB_EXPORT void *qcore_arena_alloc_ex(qcore_arena_t *A, size_t size, size_t align) {
+  void *ptr;
 
-      "[" __TARGET_VERSION
-      "] ["
+  qcore_assert(A != nullptr, "qcore_arena_alloc_ex: invalid arena");
 
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \
-    defined(_M_AMD64)
-      "x86_64-"
-#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
-      "x86-"
-#elif defined(__aarch64__)
-      "aarch64-"
-#elif defined(__arm__)
-      "arm-"
-#else
-      "unknown-"
-#endif
+  ptr = reinterpret_cast<mem::qcore_arena_t *>(*A)->alloc(size, align);
 
-#if defined(__linux__)
-      "linux-"
-#elif defined(__APPLE__)
-      "macos-"
-#elif defined(_WIN32)
-      "win32-"
-#else
-      "unknown-"
-#endif
+  qcore_debugf("TRACE: qcore_arena_alloc_ex(%p, %zu, %zu)\t-> %p\n", A, size, align, ptr);
 
-#if defined(__clang__)
-      "clang] "
-#elif defined(__GNUC__)
-      "gnu] "
-#else
-      "unknown] "
-#endif
+  return ptr;
+}
 
-#if NDEBUG
-      "[release]"
-#else
-      "[debug]"
-#endif
+LIB_EXPORT void qcore_arena_close(qcore_arena_t *A) {
+  qcore_assert(A != nullptr, "qcore_arena_close: invalid arena");
 
-      ;
+  mem::qcore_arena_t *X = reinterpret_cast<mem::qcore_arena_t *>(*A);
+  size_t total_used = X->close();
+  (void)total_used;
 
-  return version_string;
+  qcore_debugf("TRACE: qcore_arena_close(%p)\t-> %zu\n", A, total_used);
+
+  delete X;
 }
