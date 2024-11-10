@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_PARSER_CLASSES_H__
-#define __QUIX_PARSER_CLASSES_H__
+#ifndef __NITRATE_PARSER_CLASSES_H__
+#define __NITRATE_PARSER_CLASSES_H__
 
 #ifndef __cplusplus
 #error "This header is for C++ only."
@@ -67,4 +67,4 @@ public:
   qparse_t *get() const { return m_parser; }
 };
 
-#endif  // __QUIX_PARSER_CLASSES_H__
+#endif  // __NITRATE_PARSER_CLASSES_H__

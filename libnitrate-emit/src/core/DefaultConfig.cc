@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_CODEGEN_IMPL__
+#define __NITRATE_CODEGEN_IMPL__
 
 #include <nitrate-emit/Config.h>
 

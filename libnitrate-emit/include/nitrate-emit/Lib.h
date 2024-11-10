@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CODEGEN_LIB_H__
-#define __QUIX_CODEGEN_LIB_H__
+#ifndef __NITRATE_CODEGEN_LIB_H__
+#define __NITRATE_CODEGEN_LIB_H__
 
 #include <nitrate-emit/Config.h>
 #include <stdbool.h>
@@ -84,4 +84,4 @@ const char* qcode_strerror();
 }
 #endif
 
-#endif  // __QUIX_CODEGEN_LIB_H__
+#endif  // __NITRATE_CODEGEN_LIB_H__

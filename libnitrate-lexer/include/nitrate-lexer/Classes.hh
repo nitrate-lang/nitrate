@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_LEXER_CLASSES_H__
-#define __QUIX_LEXER_CLASSES_H__
+#ifndef __NITRATE_LEXER_CLASSES_H__
+#define __NITRATE_LEXER_CLASSES_H__
 
 #ifndef __cplusplus
 #error "This header is for C++ only."
@@ -58,4 +58,4 @@ public:
   }
 };
 
-#endif  // __QUIX_LEXER_CLASSES_H__
+#endif  // __NITRATE_LEXER_CLASSES_H__

@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_CLASSES_H__
-#define __QUIX_CORE_CLASSES_H__
+#ifndef __NITRATE_CORE_CLASSES_H__
+#define __NITRATE_CORE_CLASSES_H__
 
 #ifndef __cplusplus
 #error "This header is for C++ only."
@@ -85,4 +85,4 @@ public:
   qcore_env_t &get() { return m_env; }
 };
 
-#endif  // __QUIX_CORE_CLASSES_H__
+#endif  // __NITRATE_CORE_CLASSES_H__

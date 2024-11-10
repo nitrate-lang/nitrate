@@ -30,10 +30,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /// TODO: Source location
-#define __QUIX_LEXER_IMPL__
+#define __NITRATE_LEXER_IMPL__
 
-#include <parser/Parse.h>
 #include <nitrate-parser/Node.h>
+#include <parser/Parse.h>
 
 #include <cstddef>
 #include <stack>

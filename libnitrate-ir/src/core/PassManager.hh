@@ -30,8 +30,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
-#define __QUIX_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
+#ifndef __NITRATE_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
+#define __NITRATE_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
 
 #include <atomic>
 #include <functional>
@@ -140,4 +140,4 @@ namespace qxir::pass {
   };
 }  // namespace qxir::pass
 
-#endif  // __QUIX_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
+#endif  // __NITRATE_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__

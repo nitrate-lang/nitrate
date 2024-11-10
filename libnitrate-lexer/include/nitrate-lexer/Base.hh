@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_LEXER_BASE_H__
-#define __QUIX_LEXER_BASE_H__
+#ifndef __NITRATE_LEXER_BASE_H__
+#define __NITRATE_LEXER_BASE_H__
 
 #include <nitrate-core/Error.h>
 #include <nitrate-lexer/Lexer.h>
@@ -162,4 +162,4 @@ public:
   virtual ~qlex_t() {}
 };
 
-#endif  // __QUIX_LEXER_BASE_H__
+#endif  // __NITRATE_LEXER_BASE_H__

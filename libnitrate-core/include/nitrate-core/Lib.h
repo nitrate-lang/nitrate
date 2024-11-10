@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_LIB_H__
-#define __QUIX_CORE_LIB_H__
+#ifndef __NITRATE_CORE_LIB_H__
+#define __NITRATE_CORE_LIB_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,4 +76,4 @@ const char *qcore_lib_version();
 }
 #endif
 
-#endif  // __QUIX_CORE_LIB_H__
+#endif  // __NITRATE_CORE_LIB_H__

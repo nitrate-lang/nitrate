@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_ENV_H__
-#define __QUIX_CORE_ENV_H__
+#ifndef __NITRATE_CORE_ENV_H__
+#define __NITRATE_CORE_ENV_H__
 
 #include <stdarg.h>
 #include <stdint.h>
@@ -119,4 +119,4 @@ static inline int qcore_write(const char *msg) { return qcore_writef("%s", msg);
 }
 #endif
 
-#endif  // __QUIX_CORE_ENV_H__
+#endif  // __NITRATE_CORE_ENV_H__

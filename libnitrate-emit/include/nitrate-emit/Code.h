@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CODEGEN_CODE_H__
-#define __QUIX_CODEGEN_CODE_H__
+#ifndef __NITRATE_CODEGEN_CODE_H__
+#define __NITRATE_CODEGEN_CODE_H__
 
 #include <nitrate-emit/Config.h>
 #include <nitrate-ir/TypeDecl.h>
@@ -82,4 +82,4 @@ bool qcode_obj(qmodule_t* module, qcode_conf_t* conf, FILE* err, FILE* out);
 }
 #endif
 
-#endif  // __QUIX_CODEGEN_CODE_H__
+#endif  // __NITRATE_CODEGEN_CODE_H__

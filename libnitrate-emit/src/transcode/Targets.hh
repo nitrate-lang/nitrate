@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_TARGETS_HH__
-#define __QUIX_TARGETS_HH__
+#ifndef __NITRATE_TARGETS_HH__
+#define __NITRATE_TARGETS_HH__
 
 #include <ostream>
 
@@ -45,4 +45,4 @@ namespace codegen {
   bool for_csharp(qmodule_t* module, std::ostream& err, std::ostream& out);
 }  // namespace codegen
 
-#endif  // __QUIX_TARGET_HH__
+#endif  // __NITRATE_TARGET_HH__

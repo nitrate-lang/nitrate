@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_PARSER_IMPL__
+#define __NITRATE_PARSER_IMPL__
 #include <nitrate-parser/Config.h>
 
 #include <array>

@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_PARSER_PARSER_H__
-#define __QUIX_PARSER_PARSER_H__
+#ifndef __NITRATE_PARSER_PARSER_H__
+#define __NITRATE_PARSER_PARSER_H__
 
 #include <nitrate-core/Env.h>
 #include <nitrate-lexer/Lexer.h>
@@ -180,4 +180,4 @@ void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb, uintptr_t d
 }
 #endif
 
-#endif  // __QUIX_PARSER_PARSER_H__
+#endif  // __NITRATE_PARSER_PARSER_H__

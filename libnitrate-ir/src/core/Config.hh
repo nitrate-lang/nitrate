@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_CORE_CONFIG_H__
-#define __QUIX_QXIR_CORE_CONFIG_H__
+#ifndef __NITRATE_QXIR_CORE_CONFIG_H__
+#define __NITRATE_QXIR_CORE_CONFIG_H__
 
 #include <nitrate-ir/Config.h>
 
@@ -94,4 +94,4 @@ public:
   bool has(qxir_key_t option, qxir_val_t value) const noexcept;
 };
 
-#endif  // __QUIX_QXIR_CORE_CONFIG_H__
+#endif  // __NITRATE_QXIR_CORE_CONFIG_H__

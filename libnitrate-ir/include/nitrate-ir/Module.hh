@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_MODULE_H__
-#define __QUIX_QXIR_MODULE_H__
+#ifndef __NITRATE_QXIR_MODULE_H__
+#define __NITRATE_QXIR_MODULE_H__
 
 #include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>

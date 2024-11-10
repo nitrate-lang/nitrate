@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_LEXER_LEX_H__
-#define __QUIX_LEXER_LEX_H__
+#ifndef __NITRATE_LEXER_LEX_H__
+#define __NITRATE_LEXER_LEX_H__
 
 #include <nitrate-core/Env.h>
 #include <nitrate-lexer/Token.h>
@@ -310,4 +310,4 @@ void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, qlex_tok_t *
 }
 #endif
 
-#endif  // __QUIX_LEXER_LEX_H__
+#endif  // __NITRATE_LEXER_LEX_H__

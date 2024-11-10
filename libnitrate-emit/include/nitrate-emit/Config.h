@@ -29,14 +29,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CODEGEN_CONFIG_H__
-#define __QUIX_CODEGEN_CONFIG_H__
+#ifndef __NITRATE_CODEGEN_CONFIG_H__
+#define __NITRATE_CODEGEN_CONFIG_H__
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 
-#if defined(__cplusplus) && defined(__QUIX_CODEGEN_IMPL__)
+#if defined(__cplusplus) && defined(__NITRATE_CODEGEN_IMPL__)
 #include <initializer_list>
 #endif
 
@@ -62,13 +62,13 @@ typedef enum qcode_val_t {
 
 ///==========================================================================///
 
-#if defined(__cplusplus) && defined(__QUIX_CODEGEN_IMPL__)
+#if defined(__cplusplus) && defined(__NITRATE_CODEGEN_IMPL__)
 }
 typedef struct qcode_setting_t {
   qcode_key_t key;
   qcode_val_t value;
 
-#if defined(__cplusplus) && defined(__QUIX_CODEGEN_IMPL__)
+#if defined(__cplusplus) && defined(__NITRATE_CODEGEN_IMPL__)
   constexpr qcode_setting_t(const std::initializer_list<int> &list)
       : key(static_cast<qcode_key_t>(list.begin()[0])),
         value(static_cast<qcode_val_t>(list.begin()[1])) {}
@@ -203,4 +203,4 @@ size_t qcode_conf_dump(qcode_conf_t *conf, FILE *stream, const char *field_delim
 }
 #endif
 
-#endif  // __QUIX_CODEGEN_CONFIG_H__
+#endif  // __NITRATE_CODEGEN_CONFIG_H__
