@@ -1,7 +1,7 @@
 # Nitrate Project
 
 [![Build and Test](https://github.com/Kracken256/nitrate/actions/workflows/cmake-check.yml/badge.svg)](https://github.com/Kracken256/nitrate/actions/workflows/cmake-check.yml)
-[![Verify Snapcraft](https://github.com/Kracken256/nitrate/actions/workflows/snapcraft-check.yml/badge.svg)](https://github.com/Kracken256/nitrate/actions/workflows/snapcraft-check.yml)
+[![Publish SNAP](https://github.com/Kracken256/nitrate/actions/workflows/publish-snap.yml/badge.svg)](https://github.com/Kracken256/nitrate/actions/workflows/snapcraft-check.yml)
 
 *This project is in rapid development. It will not compile to anything useful yet.*
 
