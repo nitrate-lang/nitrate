@@ -29,79 +29,115 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_PARSER_IMPL_H__
-#define __QUIX_PARSER_IMPL_H__
+#include <nitrate-core/Lib.h>
+#include <nitrate-lexer/Lib.h>
+#include <nitrate-parser/Lib.h>
+#include <sys/resource.h>
 
-#define __QPARSE_IMPL__
+#include <atomic>
 
-#include <ParseReport.h>
-#include <quix-parser/Config.h>
-#include <quix-parser/Node.h>
+#include "LibMacro.h"
 
-#include <optional>
-#include <vector>
+static std::atomic<size_t> qparse_lib_ref_count = 0;
 
-struct qparse_impl_t {
-  qparse_impl_t() {}
-  ~qparse_impl_t() = default;
+static void increase_stack_size() {
+  const rlim_t kStackSize = 64 * 1024 * 1024;  // min stack size = 64 MB
+  struct rlimit rl;
+  int result;
 
-  qparse::diag::DiagnosticManager diag;
-};
+  result = getrlimit(RLIMIT_STACK, &rl);
+  if (result == 0) {
+    if (rl.rlim_cur < kStackSize) {
+      rl.rlim_cur = kStackSize;
+      result = setrlimit(RLIMIT_STACK, &rl);
+      if (result != 0) {
+        qcore_panicf("setrlimit returned result = %d\n", result);
+      }
+    }
+  }
+}
 
-struct qparse_conf_t {
-private:
-  std::vector<qparse_setting_t> m_data;
+static bool do_init() {
+  increase_stack_size();
 
-  bool verify_prechange(qparse_key_t key, qparse_val_t value) const {
-    (void)key;
-    (void)value;
+  return true;
+}
 
+static void do_deinit() {}
+
+LIB_EXPORT bool qparse_lib_init() {
+  if (qparse_lib_ref_count++ > 1) {
     return true;
   }
 
-public:
-  qparse_conf_t() = default;
-  ~qparse_conf_t() = default;
-
-  bool SetAndVerify(qparse_key_t key, qparse_val_t value) {
-    auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const qparse_setting_t &setting) { return setting.key == key; });
-
-    if (!verify_prechange(key, value)) {
-      return false;
-    }
-
-    if (it != m_data.end()) {
-      m_data.erase(it);
-    }
-
-    m_data.push_back({key, value});
-
-    return true;
+  if (!qcore_lib_init()) {
+    return false;
   }
 
-  std::optional<qparse_val_t> Get(qparse_key_t key) const {
-    auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const qparse_setting_t &setting) { return setting.key == key; });
-
-    if (it == m_data.end()) {
-      return std::nullopt;
-    }
-
-    return it->value;
+  if (!qlex_lib_init()) {
+    return false;
   }
 
-  const qparse_setting_t *GetAll(size_t &count) const {
-    count = m_data.size();
-    return m_data.data();
+  return do_init();
+}
+
+LIB_EXPORT void qparse_lib_deinit() {
+  if (--qparse_lib_ref_count > 0) {
+    return;
   }
 
-  void ClearNoVerify() {
-    m_data.clear();
-    m_data.shrink_to_fit();
-  }
+  qlex_lib_deinit();
+  qcore_lib_deinit();
 
-  bool has(qparse_key_t option, qparse_val_t value) const;
-};
+  return do_deinit();
+}
 
-#endif  // __QUIX_PARSER_IMPL_H__
+LIB_EXPORT const char* qparse_lib_version() {
+  static const char* version_string =
+
+      "[" __TARGET_VERSION
+      "] ["
+
+#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \
+    defined(_M_AMD64)
+      "x86_64-"
+#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
+      "x86-"
+#elif defined(__aarch64__)
+      "aarch64-"
+#elif defined(__arm__)
+      "arm-"
+#else
+      "unknown-"
+#endif
+
+#if defined(__linux__)
+      "linux-"
+#elif defined(__APPLE__)
+      "macos-"
+#elif defined(_WIN32)
+      "win32-"
+#else
+      "unknown-"
+#endif
+
+#if defined(__clang__)
+      "clang] "
+#elif defined(__GNUC__)
+      "gnu] "
+#else
+      "unknown] "
+#endif
+
+#if NDEBUG
+      "[release]"
+#else
+      "[debug]"
+#endif
+
+      ;
+
+  return version_string;
+}
+
+LIB_EXPORT const char* qparse_strerror() { return ""; }

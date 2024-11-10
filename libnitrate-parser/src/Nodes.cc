@@ -32,8 +32,8 @@
 #define __QPARSE_IMPL__
 
 #include <nitrate-core/Error.h>
-#include <quix-parser/Node.h>
-#include <quix-parser/Parser.h>
+#include <nitrate-parser/Node.h>
+#include <nitrate-parser/Parser.h>
 
 #include <cstring>
 #include <unordered_map>

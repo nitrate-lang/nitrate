@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(libquix-parser CXX)
+project(libnitrate-parser CXX)
 
 #================== CONFIGURE BUILD ==================
 set(CMAKE_CXX_STANDARD 20)
@@ -13,7 +13,7 @@ string(REGEX REPLACE " .*" "" SHA256SUMS ${SHA256SUMS})
 string(TOUPPER ${SHA256SUMS} SHA256SUMS)
 string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
 set(__TARGET_VERSION "\"QPARSE_${SHA256SUMS}\"")
-message(STATUS "libquix-parser VersionId: ${__TARGET_VERSION}")
+message(STATUS "libnitrate-parser VersionId: ${__TARGET_VERSION}")
 
 #================== SET BUILD FLAGS ==================
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -27,12 +27,12 @@ endif()
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
-add_library(quix-parser ${CXX_SOURCES})
-target_include_directories(quix-parser PUBLIC src "include"
+add_library(nitrate-parser ${CXX_SOURCES})
+target_include_directories(nitrate-parser PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-lexer/include)
-target_link_libraries(quix-parser PUBLIC nitrate-core nitrate-lexer deflate)
-add_dependencies(quix-parser nitrate-core nitrate-lexer)
+target_link_libraries(nitrate-parser PUBLIC nitrate-core nitrate-lexer deflate)
+add_dependencies(nitrate-parser nitrate-core nitrate-lexer)
 
-install(TARGETS quix-parser DESTINATION lib)
+install(TARGETS nitrate-parser DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

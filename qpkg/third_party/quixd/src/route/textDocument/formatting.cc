@@ -1,5 +1,5 @@
 
-#include <quix-parser/Node.h>
+#include <nitrate-parser/Node.h>
 #include <rapidjson/document.h>
 
 #include <cctype>
@@ -9,7 +9,7 @@
 #include <memory>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-lexer/Classes.hh>
-#include <quix-parser/Classes.hh>
+#include <nitrate-parser/Classes.hh>
 #include <route/RoutesList.hh>
 #include <sstream>
 #include <string>

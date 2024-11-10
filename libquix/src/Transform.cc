@@ -36,7 +36,7 @@
 #include <nitrate-seq/Lib.h>
 #include <quix-codegen/Lib.h>
 #include <quix-ir/Lib.h>
-#include <quix-parser/Lib.h>
+#include <nitrate-parser/Lib.h>
 #include <quix/code.h>
 
 #include <Stream.hh>

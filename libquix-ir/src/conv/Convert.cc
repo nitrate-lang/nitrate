@@ -31,7 +31,7 @@
 
 #include <nitrate-core/Error.h>
 #include <quix-ir/IR.h>
-#include <quix-parser/Parser.h>
+#include <nitrate-parser/Parser.h>
 
 #include <core/Config.hh>
 #include <cstring>

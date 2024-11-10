@@ -31,7 +31,7 @@
 
 #include <Impl.h>
 #include <nitrate-core/Error.h>
-#include <quix-parser/Config.h>
+#include <nitrate-parser/Config.h>
 
 #include <boost/bimap.hpp>
 

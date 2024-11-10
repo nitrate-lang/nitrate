@@ -3,8 +3,8 @@
 #include <nitrate-core/Env.h>
 #include <nitrate-core/Memory.h>
 #include <nitrate-lexer/Lexer.h>
-#include <quix-parser/Config.h>
-#include <quix-parser/Node.h>
+#include <nitrate-parser/Config.h>
+#include <nitrate-parser/Node.h>
 #include <stdbool.h>
 
 struct qparse_impl_t;

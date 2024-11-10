@@ -9,9 +9,9 @@
 -I
 ./libnitrate-seq/src
 -I
-./libquix-parser/include
+./libnitrate-parser/include
 -I
-./libquix-parser/src
+./libnitrate-parser/src
 -I
 ./libquix-ir/include
 -I
