@@ -34,8 +34,8 @@
 
 #include <nitrate-core/Env.h>
 #include <nitrate-lexer/Lexer.h>
-#include <quix-parser/Config.h>
-#include <quix-parser/Node.h>
+#include <nitrate-parser/Config.h>
+#include <nitrate-parser/Node.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus

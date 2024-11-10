@@ -29,71 +29,42 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_PARSER_REPORT_H__
-#define __QUIX_PARSER_REPORT_H__
+#ifndef __QUIX_PARSER_CLASSES_H__
+#define __QUIX_PARSER_CLASSES_H__
 
-#include <nitrate-lexer/Token.h>
-#include <quix-parser/Parser.h>
+#ifndef __cplusplus
+#error "This header is for C++ only."
+#endif
 
-#include <cstdarg>
-#include <functional>
-#include <memory>
-#include <queue>
-#include <string_view>
+#include <nitrate-core/Error.h>
+#include <nitrate-parser/Parser.h>
 
-namespace qparse::diag {
-  class SyntaxError : public std::runtime_error {
-  public:
-    SyntaxError() : std::runtime_error("") {}
-  };
+class qparse_conf final {
+  qparse_conf_t *m_conf;
 
-  enum class MessageType {
-    Syntax,
-    FatalError,
-  };
+public:
+  qparse_conf(bool use_default = true) {
+    if ((m_conf = qparse_conf_new(use_default)) == nullptr) {
+      qcore_panic("qparse_conf_new failed");
+    }
+  }
+  ~qparse_conf() { qparse_conf_free(m_conf); }
 
-  enum ControlFlow {
-    cont, /* Continue parsing */
-    stop, /* Stop parsing (throw an error) */
-  };
+  qparse_conf_t *get() const { return m_conf; }
+};
 
-  enum class FormatStyle {
-    Clang16Color,   /* Clang-like 16 color diagnostic format */
-    ClangPlain,     /* Clang-like plain text diagnostic format */
-    ClangTrueColor, /* Clang-like RGB TrueColor diagnostic format */
-    Default = Clang16Color,
-  };
+class qparser final {
+  qparse_t *m_parser;
 
-  typedef std::function<void(const char *)> DiagnosticMessageHandler;
+public:
+  qparser(qlex_t *scanner, qparse_conf_t *conf, qcore_env_t env) {
+    if ((m_parser = qparse_new(scanner, conf, env)) == nullptr) {
+      qcore_panic("qparse_new failed");
+    }
+  }
+  ~qparser() { qparse_free(m_parser); }
 
-  struct DiagMessage {
-    std::string msg;
-    qlex_tok_t tok;
-    MessageType type;
-  };
+  qparse_t *get() const { return m_parser; }
+};
 
-  class DiagnosticManager {
-    qparse_t *m_parser;
-    std::vector<DiagMessage> m_msgs;
-
-    std::string mint_clang16_message(const DiagMessage &msg) const;
-    std::string mint_plain_message(const DiagMessage &msg) const;
-    std::string mint_clang_truecolor_message(const DiagMessage &msg) const;
-
-  public:
-    void push(DiagMessage &&msg);
-    size_t render(DiagnosticMessageHandler handler, FormatStyle style) const;
-
-    void set_ctx(qparse_t *parser) { m_parser = parser; }
-  };
-
-  /* Set reference to the current parser */
-  void install_reference(qparse_t *parser);
-
-  /**
-   * @brief Report a syntax error
-   */
-  void syntax(const qlex_tok_t &tok, std::string_view fmt, ...);
-};  // namespace qparse::diag
-
-#endif  // __QUIX_PARSER_REPORT_H__
+#endif  // __QUIX_PARSER_CLASSES_H__

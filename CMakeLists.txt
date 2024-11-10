@@ -69,7 +69,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_subdirectory(libnitrate-core)
   add_subdirectory(libnitrate-lexer)
   add_subdirectory(libnitrate-seq)
-  add_subdirectory(libquix-parser)
+  add_subdirectory(libnitrate-parser)
   add_subdirectory(libquix-ir)
   add_subdirectory(libquix-codegen)
   add_subdirectory(libquix)
@@ -79,7 +79,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   add_subdirectory(libnitrate-core)
   add_subdirectory(libnitrate-lexer)
   add_subdirectory(libnitrate-seq)
-  add_subdirectory(libquix-parser)
+  add_subdirectory(libnitrate-parser)
   add_subdirectory(libquix-ir)
   add_subdirectory(libquix-codegen)
   add_subdirectory(libquix)
@@ -90,7 +90,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   foreach(lib nitrate-core
     nitrate-lexer
     nitrate-seq
-    quix-parser
+    nitrate-parser
     quix-ir
     quix-codegen
     quix)

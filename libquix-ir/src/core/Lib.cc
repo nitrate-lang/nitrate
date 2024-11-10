@@ -31,7 +31,7 @@
 
 #include <nitrate-core/Lib.h>
 #include <quix-ir/Lib.h>
-#include <quix-parser/Lib.h>
+#include <nitrate-parser/Lib.h>
 #include <sys/resource.h>
 
 #include <atomic>

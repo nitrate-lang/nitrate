@@ -4,7 +4,7 @@
 #include <memory>
 #include <nitrate-lexer/Classes.hh>
 #include <optional>
-#include <quix-parser/Classes.hh>
+#include <nitrate-parser/Classes.hh>
 #include <unordered_map>
 
 namespace lang {

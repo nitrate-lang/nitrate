@@ -34,7 +34,7 @@
 #include <Impl.h>
 #include <ParseReport.h>
 #include <nitrate-core/Error.h>
-#include <quix-parser/Parser.h>
+#include <nitrate-parser/Parser.h>
 
 #include <ParserStruct.hh>
 #include <sstream>

@@ -29,42 +29,85 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_PARSER_CLASSES_H__
-#define __QUIX_PARSER_CLASSES_H__
+#ifndef __QUIXCC_PARSE_H__
+#define __QUIXCC_PARSE_H__
+
+#define __QUIX_LEXER_IMPL__
+#define __QPARSE_IMPL__
 
 #ifndef __cplusplus
-#error "This header is for C++ only."
+#error "This header requires C++"
 #endif
 
-#include <nitrate-core/Error.h>
-#include <quix-parser/Parser.h>
+#include <Impl.h>
+#include <ParseReport.h>
+#include <nitrate-lexer/Token.h>
+#include <nitrate-parser/Node.h>
+#include <nitrate-parser/Parser.h>
 
-class qparse_conf final {
-  qparse_conf_t *m_conf;
+#include <ParserStruct.hh>
+#include <set>
 
-public:
-  qparse_conf(bool use_default = true) {
-    if ((m_conf = qparse_conf_new(use_default)) == nullptr) {
-      qcore_panic("qparse_conf_new failed");
-    }
-  }
-  ~qparse_conf() { qparse_conf_free(m_conf); }
+namespace qparse::parser {
+  bool parse(qparse_t &job, qlex_t *rd, Block **node, bool expect_braces = true,
+             bool single_stmt = false);
 
-  qparse_conf_t *get() const { return m_conf; }
-};
+  bool parse_pub(qparse_t &job, qlex_t *rd, Stmt **node);
+  bool parse_sec(qparse_t &job, qlex_t *rd, Stmt **node);
+  bool parse_pro(qparse_t &job, qlex_t *rd, Stmt **node);
 
-class qparser final {
-  qparse_t *m_parser;
+  bool parse_let(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
 
-public:
-  qparser(qlex_t *scanner, qparse_conf_t *conf, qcore_env_t env) {
-    if ((m_parser = qparse_new(scanner, conf, env)) == nullptr) {
-      qcore_panic("qparse_new failed");
-    }
-  }
-  ~qparser() { qparse_free(m_parser); }
+  bool parse_const(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
 
-  qparse_t *get() const { return m_parser; }
-};
+  bool parse_var(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
 
-#endif  // __QUIX_PARSER_CLASSES_H__
+  bool parse_enum(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_struct(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_region(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_group(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_union(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_function(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> terminators, Expr **node,
+                  size_t depth = 0);
+
+  bool parse_type(qparse_t &job, qlex_t *rd, Type **node);
+
+  bool parse_typedef(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_return(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_retif(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_retz(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_retv(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_if(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_while(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_for(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_form(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_case(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_switch(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_attributes(qparse_t &job, qlex_t *rd, std::set<ConstExpr *> &attributes);
+};  // namespace qparse::parser
+
+#endif  // __QUIXCC_PARSE_H__

@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define __QUIX_PARSER_IMPL__
-#include <quix-parser/Config.h>
+#include <nitrate-parser/Config.h>
 
 #include <array>
 #include <vector>

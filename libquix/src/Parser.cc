@@ -41,7 +41,7 @@
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Classes.hh>
 #include <nlohmann/json.hpp>
-#include <quix-parser/Classes.hh>
+#include <nitrate-parser/Classes.hh>
 #include <string_view>
 #include <unordered_set>
 

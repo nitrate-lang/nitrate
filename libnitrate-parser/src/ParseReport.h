@@ -29,85 +29,71 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PARSE_H__
-#define __QUIXCC_PARSE_H__
+#ifndef __QUIX_PARSER_REPORT_H__
+#define __QUIX_PARSER_REPORT_H__
 
-#define __QUIX_LEXER_IMPL__
-#define __QPARSE_IMPL__
-
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
-#include <Impl.h>
-#include <ParseReport.h>
 #include <nitrate-lexer/Token.h>
-#include <quix-parser/Node.h>
-#include <quix-parser/Parser.h>
+#include <nitrate-parser/Parser.h>
 
-#include <ParserStruct.hh>
-#include <set>
+#include <cstdarg>
+#include <functional>
+#include <memory>
+#include <queue>
+#include <string_view>
 
-namespace qparse::parser {
-  bool parse(qparse_t &job, qlex_t *rd, Block **node, bool expect_braces = true,
-             bool single_stmt = false);
+namespace qparse::diag {
+  class SyntaxError : public std::runtime_error {
+  public:
+    SyntaxError() : std::runtime_error("") {}
+  };
 
-  bool parse_pub(qparse_t &job, qlex_t *rd, Stmt **node);
-  bool parse_sec(qparse_t &job, qlex_t *rd, Stmt **node);
-  bool parse_pro(qparse_t &job, qlex_t *rd, Stmt **node);
+  enum class MessageType {
+    Syntax,
+    FatalError,
+  };
 
-  bool parse_let(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
+  enum ControlFlow {
+    cont, /* Continue parsing */
+    stop, /* Stop parsing (throw an error) */
+  };
 
-  bool parse_const(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
+  enum class FormatStyle {
+    Clang16Color,   /* Clang-like 16 color diagnostic format */
+    ClangPlain,     /* Clang-like plain text diagnostic format */
+    ClangTrueColor, /* Clang-like RGB TrueColor diagnostic format */
+    Default = Clang16Color,
+  };
 
-  bool parse_var(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
+  typedef std::function<void(const char *)> DiagnosticMessageHandler;
 
-  bool parse_enum(qparse_t &job, qlex_t *rd, Stmt **node);
+  struct DiagMessage {
+    std::string msg;
+    qlex_tok_t tok;
+    MessageType type;
+  };
 
-  bool parse_struct(qparse_t &job, qlex_t *rd, Stmt **node);
+  class DiagnosticManager {
+    qparse_t *m_parser;
+    std::vector<DiagMessage> m_msgs;
 
-  bool parse_region(qparse_t &job, qlex_t *rd, Stmt **node);
+    std::string mint_clang16_message(const DiagMessage &msg) const;
+    std::string mint_plain_message(const DiagMessage &msg) const;
+    std::string mint_clang_truecolor_message(const DiagMessage &msg) const;
 
-  bool parse_group(qparse_t &job, qlex_t *rd, Stmt **node);
+  public:
+    void push(DiagMessage &&msg);
+    size_t render(DiagnosticMessageHandler handler, FormatStyle style) const;
 
-  bool parse_union(qparse_t &job, qlex_t *rd, Stmt **node);
+    void set_ctx(qparse_t *parser) { m_parser = parser; }
+  };
 
-  bool parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node);
+  /* Set reference to the current parser */
+  void install_reference(qparse_t *parser);
 
-  bool parse_function(qparse_t &job, qlex_t *rd, Stmt **node);
+  /**
+   * @brief Report a syntax error
+   */
+  void syntax(const qlex_tok_t &tok, std::string_view fmt, ...);
+};  // namespace qparse::diag
 
-  bool parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> terminators, Expr **node,
-                  size_t depth = 0);
-
-  bool parse_type(qparse_t &job, qlex_t *rd, Type **node);
-
-  bool parse_typedef(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_return(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_retif(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_retz(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_retv(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_if(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_while(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_for(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_form(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_case(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_switch(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_attributes(qparse_t &job, qlex_t *rd, std::set<ConstExpr *> &attributes);
-};  // namespace qparse::parser
-
-#endif  // __QUIXCC_PARSE_H__
+#endif  // __QUIX_PARSER_REPORT_H__
