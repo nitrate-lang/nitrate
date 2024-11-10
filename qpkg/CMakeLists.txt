@@ -15,7 +15,7 @@ set(__TARGET_VERSION "\"QPKG_${SHA256SUMS}\"")
 message(STATUS "qpkg VersionId: ${__TARGET_VERSION}")
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quixd)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/nitrated)
 
 find_library(libglog libglog.a REQUIRED)
 find_library(libgflags libgflags.a REQUIRED)
@@ -24,34 +24,34 @@ file(GLOB_RECURSE QPKG_CXX_SOURCES "src/*.cc")
 
 #================== CREATE APPLICATION RELEASE BUILD ================
 add_executable(qpkg ${QPKG_CXX_SOURCES})
-target_include_directories(qpkg PUBLIC src ${CMAKE_SOURCE_DIR}/libquix-core/include
-  ${CMAKE_SOURCE_DIR}/libquix-lexer/include
-  ${CMAKE_SOURCE_DIR}/libquix-prep/include
-  ${CMAKE_SOURCE_DIR}/libquix-parser/include
-  ${CMAKE_SOURCE_DIR}/libquix-ir/include
-  ${CMAKE_SOURCE_DIR}/libquix-codegen/include
+target_include_directories(qpkg PUBLIC src ${CMAKE_SOURCE_DIR}/libnitrate-core/include
+  ${CMAKE_SOURCE_DIR}/libnitrate-lexer/include
+  ${CMAKE_SOURCE_DIR}/libnitrate-seq/include
+  ${CMAKE_SOURCE_DIR}/libnitrate-parser/include
+  ${CMAKE_SOURCE_DIR}/libnitrate-ir/include
+  ${CMAKE_SOURCE_DIR}/libnitrate-emit/include
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quixd/include)
+  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/nitrated/include)
 target_compile_options(qpkg PRIVATE
   -Wno-error=overlength-strings
   -D__TARGET_VERSION=${__TARGET_VERSION}
 )
 target_link_libraries(qpkg PUBLIC libboost_filesystem.a
-  quix-codegen
-  quix-ir
-  quix-parser
-  quix-lexer
-  quix-prep
-  quix-core
+  nitrate-emit
+  nitrate-ir
+  nitrate-parser
+  nitrate-lexer
+  nitrate-seq
+  nitrate-core
   yaml-cpp
-  quixd_main)
-add_dependencies(qpkg quix-codegen
-  quix-ir
-  quix-parser
-  quix-lexer
-  quix-prep
-  quix-core
+  nitrated_main)
+add_dependencies(qpkg nitrate-emit
+  nitrate-ir
+  nitrate-parser
+  nitrate-lexer
+  nitrate-seq
+  nitrate-core
   yaml-cpp
-  quixd_main)
+  nitrated_main)
 
 install(TARGETS qpkg DESTINATION bin)

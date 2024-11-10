@@ -10,35 +10,35 @@
 ///             ░▒▓█▓▒░                                                      ///
 ///              ░▒▓██▓▒░                                                    ///
 ///                                                                          ///
-///   * QUIX PACKAGE MANAGER - The official tool for the Quix language.      ///
+///   * NITRATE PACKAGE MANAGER - The official app for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
 ///                                                                          ///
-///   The QUIX Compiler Suite is free software; you can redistribute it or   ///
+///   The Nitrate Toolchain is free software; you can redistribute it or     ///
 ///   modify it under the terms of the GNU Lesser General Public             ///
 ///   License as published by the Free Software Foundation; either           ///
 ///   version 2.1 of the License, or (at your option) any later version.     ///
 ///                                                                          ///
-///   The QUIX Compiler Suite is distributed in the hope that it will be     ///
+///   The Nitrate Toolcain is distributed in the hope that it will be        ///
 ///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
 ///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
 ///   Lesser General Public License for more details.                        ///
 ///                                                                          ///
 ///   You should have received a copy of the GNU Lesser General Public       ///
-///   License along with the QUIX Compiler Suite; if not, see                ///
+///   License along with the Nitrate Toolchain; if not, see                  ///
 ///   <https://www.gnu.org/licenses/>.                                       ///
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <argparse.h>
 #include <glog/logging.h>
-#include <quix-codegen/Code.h>
-#include <quix-codegen/Lib.h>
-#include <quix-core/Lib.h>
-#include <quix-ir/Lib.h>
-#include <quix-lexer/Lib.h>
-#include <quix-parser/Lib.h>
-#include <quix-prep/Lib.h>
-#include <quixd/quixd.h>
+#include <nitrate-core/Lib.h>
+#include <nitrate-emit/Code.h>
+#include <nitrate-emit/Lib.h>
+#include <nitrate-ir/Lib.h>
+#include <nitrate-lexer/Lib.h>
+#include <nitrate-parser/Lib.h>
+#include <nitrate-seq/Lib.h>
+#include <nitrated/nitrated.h>
 
 #include <clean/Cleanup.hh>
 #include <core/Config.hh>
@@ -47,12 +47,12 @@
 #include <init/Package.hh>
 #include <ios>
 #include <mutex>
-#include <quix-codegen/Classes.hh>
-#include <quix-core/Classes.hh>
-#include <quix-ir/Classes.hh>
-#include <quix-ir/Format.hh>
-#include <quix-parser/Classes.hh>
-#include <quix-prep/Classes.hh>
+#include <nitrate-core/Classes.hh>
+#include <nitrate-emit/Classes.hh>
+#include <nitrate-ir/Classes.hh>
+#include <nitrate-ir/Format.hh>
+#include <nitrate-parser/Classes.hh>
+#include <nitrate-seq/Classes.hh>
 #include <string_view>
 #include <unordered_map>
 
@@ -75,7 +75,7 @@ thread_local std::ostream &qerr = std::cerr;
 
 static qpkg::core::MyLogSink g_custom_log_sink;
 
-static std::optional<std::string> quixcc_cc_demangle(std::string_view mangled_name) {
+static std::optional<std::string> nitrate_cc_demangle(std::string_view mangled_name) {
   if (mangled_name.starts_with("@")) {
     mangled_name.remove_prefix(1);
   }
@@ -105,10 +105,10 @@ static std::string qpkg_deps_version_string() {
 }
 
 constexpr const char *FULL_LICENSE =
-    R"(This file is part of QUIX Compiler Suite.
+    R"(This file is part of Nitrate Compiler Suite.
 Copyright (C) 2024 Wesley C. Jones
 
-The QUIX Compiler Suite is free software: you can redistribute it and/or modify
+The Nitrate Compiler Suite is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 2.1 of the License, or
 (at your option) any later version.
@@ -581,7 +581,7 @@ namespace argparse_setup {
         .implicit_value(true);
 
     parser.add_argument("-o", "--log")
-        .default_value(std::string("quixd-lsp.log"))
+        .default_value(std::string("nitrated-lsp.log"))
         .help("Specify the log file");
 
     parser.add_argument("--config")
@@ -606,14 +606,14 @@ namespace argparse_setup {
         .implicit_value(true);
 
     /*================== OTHER STUFF =================*/
-    parser.add_argument("--demangle").help("demangle QUIX symbol names").nargs(1);
+    parser.add_argument("--demangle").help("demangle Nitrate symbol names").nargs(1);
 
     /*================= BENCH SUBPARSER =================*/
     auto bench = std::make_unique<ArgumentParser>("bench", "1.0", default_arguments::help);
 
     bench->add_argument("-n", "--name")
-        .choices("lexer", "parser", "quix-ir", "delta-ir", "llvm-ir", "llvm-codegen", "c11-codegen",
-                 "pipeline")
+        .choices("lexer", "parser", "nitrate-ir", "delta-ir", "llvm-ir", "llvm-codegen",
+                 "c11-codegen", "pipeline")
         .help("name of benchmark to run");
 
     bench->add_argument("--list")
@@ -1014,7 +1014,7 @@ namespace qpkg::router {
     core::SetDebugMode(parser["--verbose"] == true);
 
     std::vector<std::string> args;
-    args.push_back("quixd");
+    args.push_back("nitrated");
 
     if (parser["--license"] == true) {
       args.push_back("--license");
@@ -1055,7 +1055,7 @@ namespace qpkg::router {
     LOG(INFO) << "Invoking LSP: \"" << inner_command << "\"";
 
     google::RemoveLogSink(&g_custom_log_sink);
-    int ret = quixd_main(args.size(), c_args.data());
+    int ret = nitrated_main(args.size(), c_args.data());
     google::AddLogSink(&g_custom_log_sink);
     return ret;
   }
@@ -1073,9 +1073,9 @@ namespace qpkg::router {
       return 1;
     }
 
-    int run_benchmark_quix_ir() {
+    int run_benchmark_nit_ir() {
       /// TODO: implement
-      qerr << "benchmark quix-ir not implemented yet" << std::endl;
+      qerr << "benchmark nitrate-ir not implemented yet" << std::endl;
       return 1;
     }
 
@@ -1143,7 +1143,7 @@ namespace qpkg::router {
         qout << "Available benchmarks:" << std::endl;
         qout << "  lexer" << std::endl;
         qout << "  parser" << std::endl;
-        qout << "  quix-ir" << std::endl;
+        qout << "  nitrate-ir" << std::endl;
         qout << "  delta-ir" << std::endl;
         qout << "  llvm-ir" << std::endl;
         qout << "  llvm-codegen" << std::endl;
@@ -1166,7 +1166,7 @@ namespace qpkg::router {
         bench_type = Benchmark::LEXER;
       else if (bench_name == "parser")
         bench_type = Benchmark::PARSER;
-      else if (bench_name == "quix-ir")
+      else if (bench_name == "nitrate-ir")
         bench_type = Benchmark::Q_IR;
       else if (bench_name == "delta-ir")
         bench_type = Benchmark::DELTA_IR;
@@ -1190,7 +1190,7 @@ namespace qpkg::router {
         case Benchmark::PARSER:
           return dev::bench::run_benchmark_parser();
         case Benchmark::Q_IR:
-          return dev::bench::run_benchmark_quix_ir();
+          return dev::bench::run_benchmark_nit_ir();
         case Benchmark::DELTA_IR:
           return dev::bench::run_benchmark_delta_ir();
         case Benchmark::LLVM_IR:
@@ -1456,7 +1456,7 @@ namespace qpkg::router {
       return 0;
     } else if (parser.is_used("--demangle")) {
       std::string input = parser.get<std::string>("--demangle");
-      auto demangled_name = quixcc_cc_demangle(input.c_str());
+      auto demangled_name = nitrate_cc_demangle(input.c_str());
       if (!demangled_name) {
         qerr << "Failed to demangle symbol" << std::endl;
         return 1;
@@ -1475,32 +1475,32 @@ namespace qpkg::router {
 
 static bool do_libs_init() {
   if (!qcore_lib_init()) {
-    qerr << "Failed to initialize QUIX-CORE library" << std::endl;
+    qerr << "Failed to initialize NITRATE-CORE library" << std::endl;
     return false;
   }
 
   if (!qlex_lib_init()) {
-    qerr << "Failed to initialize QUIX-LEX library" << std::endl;
+    qerr << "Failed to initialize NITRATE-LEX library" << std::endl;
     return false;
   }
 
   if (!qprep_lib_init()) {
-    qerr << "Failed to initialize QUIX-PREP library" << std::endl;
+    qerr << "Failed to initialize NITRATE-PREP library" << std::endl;
     return false;
   }
 
   if (!qparse_lib_init()) {
-    qerr << "Failed to initialize QUIX-PARSE library" << std::endl;
+    qerr << "Failed to initialize NITRATE-PARSE library" << std::endl;
     return false;
   }
 
   if (!qxir_lib_init()) {
-    qerr << "Failed to initialize QUIX-IR library" << std::endl;
+    qerr << "Failed to initialize NITRATE-IR library" << std::endl;
     return false;
   }
 
   if (!qcode_lib_init()) {
-    qerr << "Failed to initialize QUIX-CODE library" << std::endl;
+    qerr << "Failed to initialize NITRATE-CODE library" << std::endl;
     return false;
   }
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(quix-compiler-suite CXX)
+project(nitrate-compiler-suite CXX)
 
 option(MEMORY_OVER_SPEED "Optimize for memory over speed" OFF)
 option(COVERAGE "Enable coverage" OFF)
@@ -30,7 +30,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -pedantic -Werror \
                     -Wno-error=unused-parameter \
                     -Wno-error=missing-field-initializers   \
                     -Wno-missing-field-initializers \
-                    -D__QUIX_IMPL__")
+                    -D__NITRATE_IMPL__")
 
 # Enable full optimization in general
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
@@ -66,34 +66,34 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   #================== CREATE DEBUG BUILD ==================
-  add_subdirectory(libquix-core)
-  add_subdirectory(libquix-lexer)
-  add_subdirectory(libquix-prep)
-  add_subdirectory(libquix-parser)
-  add_subdirectory(libquix-ir)
-  add_subdirectory(libquix-codegen)
-  add_subdirectory(libquix)
+  add_subdirectory(libnitrate-core)
+  add_subdirectory(libnitrate-lexer)
+  add_subdirectory(libnitrate-seq)
+  add_subdirectory(libnitrate-parser)
+  add_subdirectory(libnitrate-ir)
+  add_subdirectory(libnitrate-emit)
+  add_subdirectory(libnitrate)
   add_subdirectory(qpkg)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   #================= CREATE RELEASE BUILD =================
-  add_subdirectory(libquix-core)
-  add_subdirectory(libquix-lexer)
-  add_subdirectory(libquix-prep)
-  add_subdirectory(libquix-parser)
-  add_subdirectory(libquix-ir)
-  add_subdirectory(libquix-codegen)
-  add_subdirectory(libquix)
+  add_subdirectory(libnitrate-core)
+  add_subdirectory(libnitrate-lexer)
+  add_subdirectory(libnitrate-seq)
+  add_subdirectory(libnitrate-parser)
+  add_subdirectory(libnitrate-ir)
+  add_subdirectory(libnitrate-emit)
+  add_subdirectory(libnitrate)
   add_subdirectory(qpkg)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  foreach(lib quix-core
-    quix-lexer
-    quix-prep
-    quix-parser
-    quix-ir
-    quix-codegen
-    quix)
+  foreach(lib nitrate-core
+    nitrate-lexer
+    nitrate-seq
+    nitrate-parser
+    nitrate-ir
+    nitrate-emit
+    nitrate)
     target_compile_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
     if(TARGET ${lib} AND TARGET ${lib}::shared)
       target_link_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
@@ -102,7 +102,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 if(BUILD_TESTING)
-  foreach(lib libquix-basic-lexer-fuzz)
+  foreach(lib libnitrate-basic-lexer-fuzz)
     target_compile_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
     target_link_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   endforeach()

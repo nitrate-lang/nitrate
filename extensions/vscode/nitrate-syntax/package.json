@@ -1,0 +1,42 @@
+{
+  "name": "nitrate",
+  "displayName": "Nitrate",
+  "publisher": "qpkg",
+  "description": "Nitrate syntax highlighting support",
+  "icon": "./icons/icon-light.png",
+  "version": "0.0.8",
+  "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/nitrate-syntax",
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "nitrate",
+        "aliases": [
+          "Nitrate",
+          "NITRATE",
+          "nitrate"
+        ],
+        "extensions": [
+          ".n"
+        ],
+        "icon": {
+          "light": "./icons/icon-light.png",
+          "dark": "./icons/icon-dark.png"
+        },
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "nitrate",
+        "scopeName": "source.n",
+        "path": "./syntaxes/nitrate.tmLanguage.json"
+      }
+    ]
+  }
+}

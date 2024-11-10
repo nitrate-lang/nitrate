@@ -1,1 +1,0 @@
-# QUIX CodeGen Library

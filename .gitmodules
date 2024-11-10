@@ -1,22 +1,4 @@
-[submodule "orbit-core/alloc"]
-	path = orbit-core/alloc
-	url = https://github.com/quixlang/alloc
-[submodule "orbit-core/bare"]
-	path = orbit-core/bare
-	url = https://github.com/quixlang/bare
-[submodule "orbit-core/macro"]
-	path = orbit-core/macro
-	url = https://github.com/quixlang/macro
-[submodule "orbit-platform/process"]
-	path = orbit-platform/process
-	url = https://github.com/quixlang/process
-[submodule "orbit-platform/socket"]
-	path = orbit-platform/socket
-	url = https://github.com/quixlang/socket
-[submodule "orbit-platform/file"]
-	path = orbit-platform/file
-	url = https://github.com/quixlang/file
-[submodule "libquix-prep/third_party/lua"]
-	path = libquix-prep/third_party/lua
+[submodule "libnitrate-seq/third_party/lua"]
+	path = libnitrate-seq/third_party/lua
 	url = https://github.com/lua/lua
 	branch = v5.4

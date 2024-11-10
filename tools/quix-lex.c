@@ -1,18 +1,18 @@
-#include <quix/code.h>
+#include <nitrate/code.h>
 #include <stdio.h>
 
 int main() {
   const char *options[] = {"lex", "-fuse-msgpack", NULL};
 
-  quix_stream_t *fp = quix_from(stdin, false);
-  if (!quix_cc(fp, stdout, quix_diag_stderr, 0, options)) {
-    quix_fclose(fp);
+  nit_stream_t *fp = nit_from(stdin, false);
+  if (!nit_cc(fp, stdout, nit_diag_stderr, 0, options)) {
+    nit_fclose(fp);
     return 1;
   }
 
-  quix_fclose(fp);
+  nit_fclose(fp);
 
-  quix_deinit();
+  nit_deinit();
 
   return 0;
 }

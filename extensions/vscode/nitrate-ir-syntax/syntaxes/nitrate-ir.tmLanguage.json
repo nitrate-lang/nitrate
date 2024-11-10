@@ -1,0 +1,83 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "NITRATE-IR",
+  "patterns": [
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#commonTypes"
+    },
+    {
+      "include": "#commonIdentifier"
+    },
+    {
+      "include": "#float"
+    },
+    {
+      "include": "#integer"
+    },
+    {
+      "include": "#unresolvedIntrinsic"
+    }
+  ],
+  "repository": {
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.qir",
+          "match": "\\b(const|volatile|alloc|seq|async|extern|local|ret|brk|cont|if|then|else|while|for|form|foreach|case|switch|default|fn|opaque|struct|union|alignof|typeof|offsetof|bitcast_as|cast_as|bitsizeof)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.qir",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.qir",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "comment": {
+      "name": "comment.line.qir",
+      "match": "^\\s*;.*"
+    },
+    "commonIdentifier": {
+      "name": "variable.other.common.qir",
+      "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b"
+    },
+    "commonTypes": {
+      "patterns": [
+        {
+          "name": "storage.type.qir",
+          "match": "\\b(u1|u8|u16|u32|u64|u128|i8|i16|i32|i64|i128|f16|f32|f64|f128|void|string)\\b"
+        }
+      ]
+    },
+    "integer": {
+      "name": "constant.numeric.integer.qir",
+      "match": "\\b([\\d_]+)\\b"
+    },
+    "float": {
+      "name": "constant.numeric.float.qir",
+      "match": "\\b([\\d_]+\\.[\\d_]+)\\b"
+    },
+    "unresolvedIntrinsic": {
+      "name": "support.function.unresolved.qir",
+      "match": "`.+`"
+    }
+  },
+  "scopeName": "source.qir"
+}
