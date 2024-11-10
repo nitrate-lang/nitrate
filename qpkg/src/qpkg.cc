@@ -1073,7 +1073,7 @@ namespace qpkg::router {
       return 1;
     }
 
-    int run_benchmark_quix_ir() {
+    int run_benchmark_nit_ir() {
       /// TODO: implement
       qerr << "benchmark nitrate-ir not implemented yet" << std::endl;
       return 1;
@@ -1190,7 +1190,7 @@ namespace qpkg::router {
         case Benchmark::PARSER:
           return dev::bench::run_benchmark_parser();
         case Benchmark::Q_IR:
-          return dev::bench::run_benchmark_quix_ir();
+          return dev::bench::run_benchmark_nit_ir();
         case Benchmark::DELTA_IR:
           return dev::bench::run_benchmark_delta_ir();
         case Benchmark::LLVM_IR:

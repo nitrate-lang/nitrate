@@ -98,15 +98,15 @@ static const uint8_t expected_msgpack[] = {
     0x00, 0x00, 0x00, 0x00};
 
 TEST(LexerRoute, flag_use_json) {
-  quix_stream_t* source =
-      quix_from(fmemopen((void*)source_code.data(), source_code.size(), "rb"), true);
+  nit_stream_t* source =
+      nit_from(fmemopen((void*)source_code.data(), source_code.size(), "rb"), true);
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;
   size_t output_size = 0;
   FILE* output = open_memstream(&output_buf, &output_size);
   if (output == nullptr) {
-    quix_fclose(source);
+    nit_fclose(source);
     FAIL() << "Failed to open memory stream.";
   }
 
@@ -116,16 +116,16 @@ TEST(LexerRoute, flag_use_json) {
       NULL,         /* End of options */
   };
 
-  if (!quix_cc(source, output, nullptr, 0, options)) {
-    quix_fclose(source);
+  if (!nit_cc(source, output, nullptr, 0, options)) {
+    nit_fclose(source);
     fclose(output);
     free(output_buf);
-    quix_deinit();
+    nit_deinit();
 
-    FAIL() << "Failed to run quix_cc.";
+    FAIL() << "Failed to run nit_cc.";
   }
 
-  quix_fclose(source);
+  nit_fclose(source);
   fclose(output);
 
   std::string_view output_code(output_buf, output_size);
@@ -133,19 +133,19 @@ TEST(LexerRoute, flag_use_json) {
   EXPECT_EQ(output_code, expected_json);
 
   free(output_buf);
-  quix_deinit();
+  nit_deinit();
 }
 
 TEST(LexerRoute, flag_use_msgpack) {
-  quix_stream_t* source =
-      quix_from(fmemopen((void*)source_code.data(), source_code.size(), "rb"), true);
+  nit_stream_t* source =
+      nit_from(fmemopen((void*)source_code.data(), source_code.size(), "rb"), true);
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;
   size_t output_size = 0;
   FILE* output = open_memstream(&output_buf, &output_size);
   if (output == nullptr) {
-    quix_fclose(source);
+    nit_fclose(source);
     FAIL() << "Failed to open memory stream.";
   }
 
@@ -155,16 +155,16 @@ TEST(LexerRoute, flag_use_msgpack) {
       NULL,            /* End of options */
   };
 
-  if (!quix_cc(source, output, nullptr, 0, options)) {
-    quix_fclose(source);
+  if (!nit_cc(source, output, nullptr, 0, options)) {
+    nit_fclose(source);
     fclose(output);
     free(output_buf);
-    quix_deinit();
+    nit_deinit();
 
-    FAIL() << "Failed to run quix_cc.";
+    FAIL() << "Failed to run nit_cc.";
   }
 
-  quix_fclose(source);
+  nit_fclose(source);
   fclose(output);
 
   std::string_view output_code(output_buf, output_size);
@@ -172,5 +172,5 @@ TEST(LexerRoute, flag_use_msgpack) {
   EXPECT_EQ(output_code, std::string_view((const char*)expected_msgpack, sizeof(expected_msgpack)));
 
   free(output_buf);
-  quix_deinit();
+  nit_deinit();
 }

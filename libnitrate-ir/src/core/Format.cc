@@ -536,7 +536,7 @@ static std::string mangle_c_abi(std::string_view name, Type *) {
   return s;
 }
 
-static std::string mangle_quix_abi(std::string_view name, Type *type) {
+static std::string mangle_nit_abi(std::string_view name, Type *type) {
   std::stringstream ss;
 
   ss << "_Q";  // Nitrate ABI prefix
@@ -600,7 +600,7 @@ static void escape_string(std::ostream &ss, std::string_view input) {
   ss << '"';
 }
 
-static std::optional<std::string> demangle_quix_abi(std::string_view name) {
+static std::optional<std::string> demangle_nit_abi(std::string_view name) {
   if (name.size() < 2) {
     printf("Failed to decode Nitrate ABI prefix\n");
     return std::nullopt;
@@ -670,11 +670,11 @@ CPP_EXPORT std::optional<std::string> qxir::SymbolEncoding::mangle_name(const qx
     }
 
     case AbiTag::Nitrate: {
-      return mangle_quix_abi(name, type);
+      return mangle_nit_abi(name, type);
     }
 
     case AbiTag::Internal: {
-      return mangle_quix_abi(name, type);
+      return mangle_nit_abi(name, type);
     }
   }
 }
@@ -686,7 +686,7 @@ CPP_EXPORT std::optional<std::string> qxir::SymbolEncoding::demangle_name(
   }
 
   if (symbol.starts_with("_Q")) {
-    return demangle_quix_abi(symbol);
+    return demangle_nit_abi(symbol);
   } else {
     return demangle_c_abi(symbol);
   }

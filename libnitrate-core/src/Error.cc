@@ -246,7 +246,7 @@ static void panic_render_report(const std::vector<std::string> &lines) {
 
   std::cerr << "The application has encountered a fatal internal "
                "error.\n\n";
-  std::cerr << "\x1b[32;40;1;4mPlease report this error\x1b[0m to the QuixCC "
+  std::cerr << "\x1b[32;40;1;4mPlease report this error\x1b[0m to the Nitrate "
                "developers "
                "at\n\x1b[36;1;4m" PROJECT_REPO_URL "\x1b[0m.\n\n";
   std::cerr << "\x1b[33;49;1;4mPlease include the following report "

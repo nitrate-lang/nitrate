@@ -40,18 +40,18 @@
 extern "C" {
 #endif
 
-typedef struct quix_stream_t quix_stream_t;
+typedef struct nit_stream_t nit_stream_t;
 
-void quix_fclose(quix_stream_t *);
-quix_stream_t *quix_from(FILE *, bool auto_close);
-quix_stream_t *quix_join(size_t num, /* ... FILE* */...);
-quix_stream_t *quix_joinv(size_t num, /* ... FILE* */ va_list va);
-quix_stream_t *quix_njoin(size_t num, FILE **streams);
+void nit_fclose(nit_stream_t *);
+nit_stream_t *nit_from(FILE *, bool auto_close);
+nit_stream_t *nit_join(size_t num, /* ... FILE* */...);
+nit_stream_t *nit_joinv(size_t num, /* ... FILE* */ va_list va);
+nit_stream_t *nit_njoin(size_t num, FILE **streams);
 
-typedef void (*quix_diag_cb)(const char *message, const char *by, uint64_t userdata);
+typedef void (*nit_diag_cb)(const char *message, const char *by, uint64_t userdata);
 
 /**
- * @brief Generic interface to transformation utilities provided by the Quix Toolchain.
+ * @brief Generic interface to transformation utilities provided by the Nitrate Toolchain.
  *
  * @param source Input pipe to read data from.
  * @param output The output pipe to write data to.
@@ -80,7 +80,7 @@ typedef void (*quix_diag_cb)(const char *message, const char *by, uint64_t userd
  *
  * @note The library will be initialized automatically if it is not already initialized. This is
  * done to make the library easier to use. However, this may not be the desired behavior in some
- * cases. To prevent this behavior, call `quix_lib_init` before calling this function. If the
+ * cases. To prevent this behavior, call `nit_lib_init` before calling this function. If the
  * library is already initialized, this will not increment the library's reference count otherwise
  * it will.
  *
@@ -89,38 +89,38 @@ typedef void (*quix_diag_cb)(const char *message, const char *by, uint64_t userd
  * for an otherwise valid call. This is not a bug, but a feature to maximize the efficiency of the
  * system.
  */
-bool quix_cc(quix_stream_t *source, FILE *output, quix_diag_cb diag_cb, uint64_t userdata,
-             const char *const options[]);
+bool nit_cc(nit_stream_t *source, FILE *output, nit_diag_cb diag_cb, uint64_t userdata,
+            const char *const options[]);
 
 /**
- * @brief Deinitialize the Quix library.
+ * @brief Deinitialize the Nitrate library.
  *
- * @note This function should be called when the Quix library is no longer needed.
+ * @note This function should be called when the Nitrate library is no longer needed.
  * @note This library is reference counted internally, so it is safe to call this function multiple
  * times. When the reference count actually reaches zero, the library will be deinitialized along
  * with any *external* components that were initialized by the library. If the library is not
  * initialized, this function will do nothing.
  *
- * @note To check if the library is initialized, use the `quix_lib_ready` variable. Beware
+ * @note To check if the library is initialized, use the `nit_lib_ready` variable. Beware
  * that this variable is not atomic, therefore may not be safe in a multithreaded environment.
  *
  * @note This function is thread-safe.
  */
-void quix_deinit(void);
+void nit_deinit(void);
 
 /**
  * @brief Predefined diagnostic callback that writes to `stdout`.
  */
-void quix_diag_stdout(const char *, const char *, uint64_t);
+void nit_diag_stdout(const char *, const char *, uint64_t);
 
 /**
  * @brief Predefined diagnostic callback that writes to `stderr`.
  */
-void quix_diag_stderr(const char *, const char *, uint64_t);
+void nit_diag_stderr(const char *, const char *, uint64_t);
 
 #ifdef LIBNITRATE_INTERNAL
-extern bool quix_lib_ready;
-bool quix_lib_init();
+extern bool nit_lib_ready;
+bool nit_lib_init();
 #endif
 
 #ifdef __cplusplus

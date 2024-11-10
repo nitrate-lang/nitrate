@@ -31,7 +31,7 @@
 
 #include <string_view>
 
-std::string_view quix_code_prefix = R"(
+std::string_view nit_code_prefix = R"(
 @( -- Disable dangerous lua functions
 
   -- From lbaselib.c
