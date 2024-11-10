@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(libquix CXX)
+project(libnitrate CXX)
 
 #================== CONFIGURE BUILD ==================
 set(CMAKE_CXX_STANDARD 20)
@@ -13,7 +13,7 @@ string(REGEX REPLACE " .*" "" SHA256SUMS ${SHA256SUMS})
 string(TOUPPER ${SHA256SUMS} SHA256SUMS)
 string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
 set(__TARGET_VERSION "\"QQUIX_${SHA256SUMS}\"")
-message(STATUS "libquix VersionId: ${__TARGET_VERSION}")
+message(STATUS "libnitrate VersionId: ${__TARGET_VERSION}")
 
 #================== SET BUILD FLAGS ==================
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -27,28 +27,28 @@ endif()
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
-add_library(quix ${CXX_SOURCES})
-target_include_directories(quix PUBLIC src "include"
+add_library(nitrate ${CXX_SOURCES})
+target_include_directories(nitrate PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-lexer/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-seq/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-parser/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-ir/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-emit/include)
-target_compile_options(quix PRIVATE ${PROJECT_DEBUG_FLAGS})
-target_link_libraries(quix PUBLIC nitrate-core
+target_compile_options(nitrate PRIVATE ${PROJECT_DEBUG_FLAGS})
+target_link_libraries(nitrate PUBLIC nitrate-core
   nitrate-lexer
   nitrate-seq
   nitrate-parser
   nitrate-ir
   nitrate-emit)
-add_dependencies(quix nitrate-core nitrate-lexer nitrate-seq nitrate-parser nitrate-ir nitrate-emit)
-set_target_properties(quix PROPERTIES OUTPUT_NAME quix)
+add_dependencies(nitrate nitrate-core nitrate-lexer nitrate-seq nitrate-parser nitrate-ir nitrate-emit)
+set_target_properties(nitrate PROPERTIES OUTPUT_NAME nitrate)
 
 if(BUILD_TESTING)
   add_subdirectory(test)
   add_subdirectory(fuzzer)
 endif()
 
-install(TARGETS quix DESTINATION lib)
+install(TARGETS nitrate DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

@@ -21,9 +21,9 @@
 -I
 ./libnitrate-emit/src
 -I
-./libquix/include
+./libnitrate/include
 -I
-./libquix/src
+./libnitrate/src
 -I
 ./qpkg/src
 -I

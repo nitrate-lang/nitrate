@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(libquix-test CXX)
+project(libnitrate-test CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -18,12 +18,12 @@ FetchContent_MakeAvailable(googletest)
 
 file(GLOB_RECURSE TEST_SOURCES "src/*.cc")
 
-add_executable(libquix-test ${TEST_SOURCES})
-target_link_libraries(libquix-test quix GTest::gtest_main)
-target_include_directories(libquix-test PRIVATE src ${CMAKE_CURRENT_SOURCE_DIR}/../include)
-add_dependencies(libquix-test quix)
+add_executable(libnitrate-test ${TEST_SOURCES})
+target_link_libraries(libnitrate-test nitrate GTest::gtest_main)
+target_include_directories(libnitrate-test PRIVATE src ${CMAKE_CURRENT_SOURCE_DIR}/../include)
+add_dependencies(libnitrate-test nitrate)
 
-install(TARGETS libquix-test DESTINATION bin)
+install(TARGETS libnitrate-test DESTINATION bin)
 
 include(GoogleTest)
-gtest_discover_tests(libquix-test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+gtest_discover_tests(libnitrate-test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})

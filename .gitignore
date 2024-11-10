@@ -42,7 +42,7 @@ libnitrate-lexer/fuzzer/corpus/*
 libnitrate-seq/fuzzer/corpus/*
 libnitrate-parser/fuzzer/corpus/*
 libnitrate-ir/fuzzer/corpus/*
-libquix/fuzzer/the-corpus/
+libnitrate/fuzzer/the-corpus/
 fuzz-*.log
 *.snap
 bugs/

@@ -35,7 +35,7 @@ parts:
       - libdeflate0
     override-stage: |
         snapcraftctl stage
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate.a
         rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-core.a
         rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-lexer.a
         rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-seq.a
