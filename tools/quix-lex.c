@@ -1,4 +1,4 @@
-#include <quix/code.h>
+#include <nitrate/code.h>
 #include <stdio.h>
 
 int main() {
