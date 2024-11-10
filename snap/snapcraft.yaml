@@ -1,12 +1,12 @@
 name: qpkg
 base: core22
 version: '0.0.0'
-summary: QUIX Package and Build System
+summary: Nitrate Package and Build System
 description: |
   QPKG is a comprehensive tool to install, create, compile, analyze, recompose, and
-  distribute software packages using the QUIX Programming language. It integrates
-  the entire QUIX Toolchain and provides a consistent and reliable way to deal with
-  QUIX projects.
+  distribute software packages using the Nitrate Programming language. It integrates
+  the entire Nitrate Toolchain and provides a consistent and reliable way to deal with
+  Nitrate projects.
 
 confinement: classic
 
@@ -35,13 +35,13 @@ parts:
       - libdeflate0
     override-stage: |
         snapcraftctl stage
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix.a
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-core.a
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-lexer.a
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-prep.a
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-parser.a
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-ir.a
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-codegen.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-core.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-lexer.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-seq.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-parser.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-ir.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-emit.a
         rm -rf $SNAPCRAFT_PART_INSTALL/usr/include
 
 apps:
