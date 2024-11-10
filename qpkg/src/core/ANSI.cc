@@ -10,7 +10,7 @@
 ///             ░▒▓█▓▒░                                                      ///
 ///              ░▒▓██▓▒░                                                    ///
 ///                                                                          ///
-///   * QUIX PACKAGE MANAGER - The official tool for the Quix language.      ///
+///   * NITRATE PACKAGE MANAGER - The official app for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
 ///                                                                          ///
 ///   The Nitrate Toolchain is free software; you can redistribute it or     ///
