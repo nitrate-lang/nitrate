@@ -2,7 +2,7 @@
 
 #include "Stream.hh"
 
-#define LIBQUIX_INTERNAL
+#define LIBNITRATE_INTERNAL
 #include <nitrate/code.h>
 
 TEST(LibInit, Manual) {

@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __LIBQUIX_CODE_H__
-#define __LIBQUIX_CODE_H__
+#ifndef __LIBNITRATE_CODE_H__
+#define __LIBNITRATE_CODE_H__
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -118,7 +118,7 @@ void quix_diag_stdout(const char *, const char *, uint64_t);
  */
 void quix_diag_stderr(const char *, const char *, uint64_t);
 
-#ifdef LIBQUIX_INTERNAL
+#ifdef LIBNITRATE_INTERNAL
 extern bool quix_lib_ready;
 bool quix_lib_init();
 #endif
@@ -127,4 +127,4 @@ bool quix_lib_init();
 }
 #endif
 
-#endif  // __LIBQUIX_CODE_H__
+#endif  // __LIBNITRATE_CODE_H__

@@ -16,7 +16,7 @@ compiler {
 
   let response = @auto(http::post("https://meduda.io/api/v1/metamorify", json: {
     "source": @compilation_unit_source(),
-    "language": @getenv("QUIX_VERSION"),
+    "language": @getenv("NITRATE_VERSION"),
     "api_key": @secrets("meduda_api_key")
   }, verbose: "pretty"));
 
