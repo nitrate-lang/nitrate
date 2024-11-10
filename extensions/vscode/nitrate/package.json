@@ -1,0 +1,20 @@
+{
+  "name": "nitrate",
+  "displayName": "Nitrate",
+  "description": "Nitrate IntelliSense, debugging, and code browsing.",
+  "version": "0.0.2",
+  "icon": "./icons/icon-light.png",
+  "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/nitrate-ir-syntax",
+  "publisher": "qpkg",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Extension Packs"
+  ],
+  "extensionPack": [
+    "qpkg.nitrate-syntax",
+    "qpkg.nitrate-lsp",
+    "qpkg.nitrate-ir-syntax"
+  ]
+}
