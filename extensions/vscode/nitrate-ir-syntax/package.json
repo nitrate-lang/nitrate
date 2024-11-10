@@ -1,10 +1,11 @@
 {
-  "name": "nitrate-ir",
-  "displayName": "NITRATE-IR",
+  "name": "nitrate-ir-syntax",
+  "displayName": "Nitrate IR: Syntax Highlighting",
   "publisher": "qpkg",
-  "description": "NITRATE-IR syntax highlighting support ",
+  "description": "Syntax highlighting support for the Nitrate Language intermediate representation (IR) files.",
   "version": "0.0.3",
-  "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/qxir-syntax",
+  "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/nitrate-ir-syntax",
+  "icon": "./icons/icon-light.png",
   "engines": {
     "vscode": "^1.92.0"
   },
@@ -19,7 +20,7 @@
           "Nitrate IR"
         ],
         "extensions": [
-          ".qir"
+          ".nr"
         ],
         "configuration": "./language-configuration.json"
       }
@@ -27,7 +28,7 @@
     "grammars": [
       {
         "language": "nitrate-ir",
-        "scopeName": "source.qir",
+        "scopeName": "source.nr",
         "path": "./syntaxes/nitrate-ir.tmLanguage.json"
       }
     ]

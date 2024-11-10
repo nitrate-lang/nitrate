@@ -1,10 +1,10 @@
 {
-  "name": "nitrate",
-  "displayName": "Nitrate",
+  "name": "nitrate-syntax",
+  "displayName": "Nitrate: Syntax Highlighting",
   "publisher": "qpkg",
   "description": "Nitrate syntax highlighting support",
   "icon": "./icons/icon-light.png",
-  "version": "0.0.8",
+  "version": "0.0.11",
   "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/nitrate-syntax",
   "engines": {
     "vscode": "^1.92.0"

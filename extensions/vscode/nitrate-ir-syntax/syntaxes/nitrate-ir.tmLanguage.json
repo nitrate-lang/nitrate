@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-  "name": "NITRATE-IR",
+  "name": "nitrate-ir",
   "patterns": [
     {
       "include": "#keywords"
@@ -34,50 +34,50 @@
     "keywords": {
       "patterns": [
         {
-          "name": "keyword.control.qir",
+          "name": "keyword.control.nr",
           "match": "\\b(const|volatile|alloc|seq|async|extern|local|ret|brk|cont|if|then|else|while|for|form|foreach|case|switch|default|fn|opaque|struct|union|alignof|typeof|offsetof|bitcast_as|cast_as|bitsizeof)\\b"
         }
       ]
     },
     "strings": {
-      "name": "string.quoted.double.qir",
+      "name": "string.quoted.double.nr",
       "begin": "\"",
       "end": "\"",
       "patterns": [
         {
-          "name": "constant.character.escape.qir",
+          "name": "constant.character.escape.nr",
           "match": "\\\\."
         }
       ]
     },
     "comment": {
-      "name": "comment.line.qir",
+      "name": "comment.line.nr",
       "match": "^\\s*;.*"
     },
     "commonIdentifier": {
-      "name": "variable.other.common.qir",
+      "name": "variable.other.common.nr",
       "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b"
     },
     "commonTypes": {
       "patterns": [
         {
-          "name": "storage.type.qir",
+          "name": "storage.type.nr",
           "match": "\\b(u1|u8|u16|u32|u64|u128|i8|i16|i32|i64|i128|f16|f32|f64|f128|void|string)\\b"
         }
       ]
     },
     "integer": {
-      "name": "constant.numeric.integer.qir",
+      "name": "constant.numeric.integer.nr",
       "match": "\\b([\\d_]+)\\b"
     },
     "float": {
-      "name": "constant.numeric.float.qir",
+      "name": "constant.numeric.float.nr",
       "match": "\\b([\\d_]+\\.[\\d_]+)\\b"
     },
     "unresolvedIntrinsic": {
-      "name": "support.function.unresolved.qir",
+      "name": "support.function.unresolved.nr",
       "match": "`.+`"
     }
   },
-  "scopeName": "source.qir"
+  "scopeName": "source.nr"
 }
