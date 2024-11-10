@@ -40,5 +40,5 @@ jobs:
 
     - name: Build Snap
       run: |
-        snapcraft
+        sudo snapcraft
       shell: bash
