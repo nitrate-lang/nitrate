@@ -53,7 +53,7 @@ struct qprep_impl_t;
 
 typedef std::function<DeferOp(qprep_impl_t *obj, qlex_tok_t last)> DeferCallback;
 
-extern std::string_view quix_code_prefix;
+extern std::string_view nit_code_prefix;
 
 struct __attribute__((visibility("default"))) qprep_impl_t final : public qlex_t {
   struct Core {

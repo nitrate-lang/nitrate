@@ -35,12 +35,12 @@
 #include <nitrate-lexer/Token.h>
 
 /**
- * @brief Quixcc abstract syntax tree node.
+ * @brief Nitrate abstract syntax tree node.
  */
 typedef struct qparse_node_t qparse_node_t;
 
 /**
- * @brief Quixcc abstract syntax tree node type.
+ * @brief Nitrate abstract syntax tree node type.
  */
 typedef enum qparse_ty_t {
   QAST_NODE_STMT,

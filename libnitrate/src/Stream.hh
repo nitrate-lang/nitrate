@@ -35,24 +35,24 @@
 #include <streambuf>
 #include <vector>
 
-struct quix_stream_t : public std::streambuf {
+struct nit_stream_t : public std::streambuf {
 private:
   std::queue<FILE*> m_files;
   char ch;
   bool m_close_me;
 
 public:
-  quix_stream_t(FILE* f, bool auto_close) {
+  nit_stream_t(FILE* f, bool auto_close) {
     m_files.push(f);
     m_close_me = auto_close;
   }
-  quix_stream_t(std::vector<FILE*> stream_join) {
+  nit_stream_t(std::vector<FILE*> stream_join) {
     for (auto f : stream_join) {
       m_files.push(f);
     }
     m_close_me = false;
   }
-  virtual ~quix_stream_t() {
+  virtual ~nit_stream_t() {
     if (m_close_me) {
       while (!m_files.empty()) {
         auto f = m_files.front();

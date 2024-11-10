@@ -44,20 +44,20 @@
 #include "LibMacro.h"
 
 extern "C" {
-__attribute__((visibility("default"))) bool quix_lib_ready;
+__attribute__((visibility("default"))) bool nit_lib_ready;
 }
 
-static std::atomic<size_t> quix_lib_ref_count = 0;
+static std::atomic<size_t> nit_lib_ref_count = 0;
 
 static bool do_init() {
-  quix_lib_ready = true;
+  nit_lib_ready = true;
   return true;
 }
 
-static void do_deinit() { quix_lib_ready = false; }
+static void do_deinit() { nit_lib_ready = false; }
 
-LIB_EXPORT bool quix_lib_init() {
-  if (quix_lib_ref_count++ > 1) {
+LIB_EXPORT bool nit_lib_init() {
+  if (nit_lib_ref_count++ > 1) {
     return true;
   }
 
@@ -88,8 +88,8 @@ LIB_EXPORT bool quix_lib_init() {
   return do_init();
 }
 
-LIB_EXPORT void quix_deinit() {
-  if (--quix_lib_ref_count > 0) {
+LIB_EXPORT void nit_deinit() {
+  if (--nit_lib_ref_count > 0) {
     return;
   }
 
@@ -103,7 +103,7 @@ LIB_EXPORT void quix_deinit() {
   qcore_lib_deinit();
 }
 
-LIB_EXPORT const char* quix_lib_version() {
+LIB_EXPORT const char* nit_lib_version() {
   static const char* version_string =
 
       "[" __TARGET_VERSION

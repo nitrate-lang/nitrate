@@ -105,15 +105,15 @@ static const uint8_t expected_msgpack[] = {
     0xa6, 0x61, 0x73, 0x5f, 0x73, 0x74, 0x72, 0x80, 0x92, 0x49, 0x92, 0x08, 0xa1, 0x30, 0x01, 0x90};
 
 TEST(ParseRoute, msgpack_to_json) {
-  quix_stream_t* source =
-      quix_from(fmemopen((void*)msgpack_tokens, sizeof(msgpack_tokens), "rb"), true);
+  nit_stream_t* source =
+      nit_from(fmemopen((void*)msgpack_tokens, sizeof(msgpack_tokens), "rb"), true);
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;
   size_t output_size = 0;
   FILE* output = open_memstream(&output_buf, &output_size);
   if (output == nullptr) {
-    quix_fclose(source);
+    nit_fclose(source);
     FAIL() << "Failed to open memory stream.";
   }
 
@@ -123,16 +123,16 @@ TEST(ParseRoute, msgpack_to_json) {
       NULL,         /* End of options */
   };
 
-  if (!quix_cc(source, output, quix_diag_stderr, 0, options)) {
-    quix_fclose(source);
+  if (!nit_cc(source, output, nit_diag_stderr, 0, options)) {
+    nit_fclose(source);
     fclose(output);
     free(output_buf);
-    quix_deinit();
+    nit_deinit();
 
-    FAIL() << "Failed to run quix_cc.";
+    FAIL() << "Failed to run nit_cc.";
   }
 
-  quix_fclose(source);
+  nit_fclose(source);
   fclose(output);
 
   std::string_view output_code(output_buf, output_size);
@@ -140,19 +140,19 @@ TEST(ParseRoute, msgpack_to_json) {
   EXPECT_EQ(output_code, expected_json);
 
   free(output_buf);
-  quix_deinit();
+  nit_deinit();
 }
 
 TEST(ParseRoute, msgpack_to_msgpack) {
-  quix_stream_t* source =
-      quix_from(fmemopen((void*)msgpack_tokens, sizeof(msgpack_tokens), "rb"), true);
+  nit_stream_t* source =
+      nit_from(fmemopen((void*)msgpack_tokens, sizeof(msgpack_tokens), "rb"), true);
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;
   size_t output_size = 0;
   FILE* output = open_memstream(&output_buf, &output_size);
   if (output == nullptr) {
-    quix_fclose(source);
+    nit_fclose(source);
     FAIL() << "Failed to open memory stream.";
   }
 
@@ -162,16 +162,16 @@ TEST(ParseRoute, msgpack_to_msgpack) {
       NULL,            /* End of options */
   };
 
-  if (!quix_cc(source, output, nullptr, 0, options)) {
-    quix_fclose(source);
+  if (!nit_cc(source, output, nullptr, 0, options)) {
+    nit_fclose(source);
     fclose(output);
     free(output_buf);
-    quix_deinit();
+    nit_deinit();
 
-    FAIL() << "Failed to run quix_cc.";
+    FAIL() << "Failed to run nit_cc.";
   }
 
-  quix_fclose(source);
+  nit_fclose(source);
   fclose(output);
 
   std::string_view output_code(output_buf, output_size);
@@ -179,19 +179,19 @@ TEST(ParseRoute, msgpack_to_msgpack) {
   EXPECT_EQ(output_code, std::string_view((const char*)expected_msgpack, sizeof(expected_msgpack)));
 
   free(output_buf);
-  quix_deinit();
+  nit_deinit();
 }
 
 TEST(ParseRoute, json_to_json) {
-  quix_stream_t* source =
-      quix_from(fmemopen((void*)json_tokens.data(), json_tokens.size(), "rb"), true);
+  nit_stream_t* source =
+      nit_from(fmemopen((void*)json_tokens.data(), json_tokens.size(), "rb"), true);
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;
   size_t output_size = 0;
   FILE* output = open_memstream(&output_buf, &output_size);
   if (output == nullptr) {
-    quix_fclose(source);
+    nit_fclose(source);
     FAIL() << "Failed to open memory stream.";
   }
 
@@ -201,16 +201,16 @@ TEST(ParseRoute, json_to_json) {
       NULL,         /* End of options */
   };
 
-  if (!quix_cc(source, output, quix_diag_stderr, 0, options)) {
-    quix_fclose(source);
+  if (!nit_cc(source, output, nit_diag_stderr, 0, options)) {
+    nit_fclose(source);
     fclose(output);
     free(output_buf);
-    quix_deinit();
+    nit_deinit();
 
-    FAIL() << "Failed to run quix_cc.";
+    FAIL() << "Failed to run nit_cc.";
   }
 
-  quix_fclose(source);
+  nit_fclose(source);
   fclose(output);
 
   std::string_view output_code(output_buf, output_size);
@@ -218,19 +218,19 @@ TEST(ParseRoute, json_to_json) {
   EXPECT_EQ(output_code, expected_json);
 
   free(output_buf);
-  quix_deinit();
+  nit_deinit();
 }
 
 TEST(ParseRoute, json_to_msgpack) {
-  quix_stream_t* source =
-      quix_from(fmemopen((void*)json_tokens.data(), json_tokens.size(), "rb"), true);
+  nit_stream_t* source =
+      nit_from(fmemopen((void*)json_tokens.data(), json_tokens.size(), "rb"), true);
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;
   size_t output_size = 0;
   FILE* output = open_memstream(&output_buf, &output_size);
   if (output == nullptr) {
-    quix_fclose(source);
+    nit_fclose(source);
     FAIL() << "Failed to open memory stream.";
   }
 
@@ -240,16 +240,16 @@ TEST(ParseRoute, json_to_msgpack) {
       NULL,            /* End of options */
   };
 
-  if (!quix_cc(source, output, nullptr, 0, options)) {
-    quix_fclose(source);
+  if (!nit_cc(source, output, nullptr, 0, options)) {
+    nit_fclose(source);
     fclose(output);
     free(output_buf);
-    quix_deinit();
+    nit_deinit();
 
-    FAIL() << "Failed to run quix_cc.";
+    FAIL() << "Failed to run nit_cc.";
   }
 
-  quix_fclose(source);
+  nit_fclose(source);
   fclose(output);
 
   std::string_view output_code(output_buf, output_size);
@@ -257,5 +257,5 @@ TEST(ParseRoute, json_to_msgpack) {
   EXPECT_EQ(output_code, std::string_view((const char*)expected_msgpack, sizeof(expected_msgpack)));
 
   free(output_buf);
-  quix_deinit();
+  nit_deinit();
 }

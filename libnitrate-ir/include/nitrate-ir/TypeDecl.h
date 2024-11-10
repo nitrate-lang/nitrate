@@ -37,17 +37,17 @@ extern "C" {
 #endif
 
 /**
- * @brief Quixcc abstract syntax tree node.
+ * @brief Nitrate abstract syntax tree node.
  */
 typedef struct qxir_node_t qxir_node_t;
 
 /**
- * @brief Quixcc QXIR module.
+ * @brief Nitrate QXIR module.
  */
 typedef struct qmodule_t qmodule_t;
 
 /**
- * @brief Quixcc abstract syntax tree node type.
+ * @brief Nitrate abstract syntax tree node type.
  */
 typedef enum qxir_ty_t {
   QIR_NODE_BINEXPR,     /* Binary expression */

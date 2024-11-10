@@ -75,17 +75,17 @@ static bool parse_options(const char *const options[], std::vector<std::string_v
 
 static void diag_nop(const char *, const char *, uint64_t) {}
 
-LIB_EXPORT void quix_diag_stdout(const char *message, const char *, uint64_t) {
+LIB_EXPORT void nit_diag_stdout(const char *message, const char *, uint64_t) {
   fprintf(stdout, "%s", message);
 }
 
-LIB_EXPORT void quix_diag_stderr(const char *message, const char *, uint64_t) {
+LIB_EXPORT void nit_diag_stderr(const char *message, const char *, uint64_t) {
   fprintf(stderr, "%s", message);
 }
 
-typedef bool (*quix_subsystem_impl)(std::shared_ptr<std::istream> source, FILE *output,
-                                    std::function<void(const char *)> diag_cb,
-                                    const std::unordered_set<std::string_view> &opts);
+typedef bool (*nit_subsystem_impl)(std::shared_ptr<std::istream> source, FILE *output,
+                                   std::function<void(const char *)> diag_cb,
+                                   const std::unordered_set<std::string_view> &opts);
 
 bool impl_subsys_basic_lexer(std::shared_ptr<std::istream> source, FILE *output,
                              std::function<void(const char *)> diag_cb,
@@ -107,7 +107,7 @@ static bool impl_subsys_codegen(std::shared_ptr<std::istream> source, FILE *outp
                                 std::function<void(const char *)> diag_cb,
                                 const std::unordered_set<std::string_view> &opts);
 
-static const std::unordered_map<std::string_view, quix_subsystem_impl> dispatch_funcs = {
+static const std::unordered_map<std::string_view, nit_subsystem_impl> dispatch_funcs = {
     {"lex", impl_subsys_basic_lexer}, {"meta", impl_subsys_meta},
     {"parse", impl_subsys_parser},    {"ir", impl_subsys_qxir},
     {"codegen", impl_subsys_codegen},
@@ -116,27 +116,27 @@ static const std::unordered_map<std::string_view, quix_subsystem_impl> dispatch_
 static bool check_out_stream_usable(FILE *stream, const char *name) {
   long pos = ftell(stream);
   if (pos == -1) {
-    qcore_print(QCORE_DEBUG, "quix_cc: %s pipe is not seekable", name);
+    qcore_print(QCORE_DEBUG, "nit_cc: %s pipe is not seekable", name);
     return false;
   }
 
   if (fseek(stream, 0, SEEK_SET) == -1) {
-    qcore_print(QCORE_DEBUG, "quix_cc: Failed to rewind %s pipe", name);
+    qcore_print(QCORE_DEBUG, "nit_cc: Failed to rewind %s pipe", name);
     return false;
   }
 
   if (fseek(stream, pos, SEEK_SET) == -1) {
-    qcore_print(QCORE_DEBUG, "quix_cc: Failed to restore %s pipe position", name);
+    qcore_print(QCORE_DEBUG, "nit_cc: Failed to restore %s pipe position", name);
     return false;
   }
 
   return true;
 }
 
-LIB_EXPORT bool quix_cc(quix_stream_t *S, FILE *O, quix_diag_cb diag_cb, uint64_t userdata,
-                        const char *const options[]) {
+LIB_EXPORT bool nit_cc(nit_stream_t *S, FILE *O, nit_diag_cb diag_cb, uint64_t userdata,
+                       const char *const options[]) {
   /* This API will be used by mortals, protect them from themselves */
-  if (!quix_lib_ready && !quix_lib_init()) {
+  if (!nit_lib_ready && !nit_lib_init()) {
     return false;
   }
 
@@ -225,26 +225,26 @@ static bool impl_subsys_codegen(std::shared_ptr<std::istream> source, FILE *outp
   return false;
 }
 
-LIB_EXPORT void quix_fclose(quix_stream_t *f) { delete f; }
+LIB_EXPORT void nit_fclose(nit_stream_t *f) { delete f; }
 
-LIB_EXPORT quix_stream_t *quix_from(FILE *f, bool auto_close) {
+LIB_EXPORT nit_stream_t *nit_from(FILE *f, bool auto_close) {
   if (!f) {
     return nullptr;
   }
 
-  return new quix_stream_t(f, auto_close);
+  return new nit_stream_t(f, auto_close);
 }
 
-LIB_EXPORT quix_stream_t *quix_join(size_t num, ...) {
+LIB_EXPORT nit_stream_t *nit_join(size_t num, ...) {
   va_list va;
   va_start(va, num);
-  quix_stream_t *obj = quix_joinv(num, va);
+  nit_stream_t *obj = nit_joinv(num, va);
   va_end(va);
 
   return obj;
 }
 
-LIB_EXPORT quix_stream_t *quix_joinv(size_t num, va_list va) {
+LIB_EXPORT nit_stream_t *nit_joinv(size_t num, va_list va) {
   std::vector<FILE *> streams;
   streams.resize(num);
 
@@ -252,9 +252,9 @@ LIB_EXPORT quix_stream_t *quix_joinv(size_t num, va_list va) {
     streams[i] = va_arg(va, FILE *);
   }
 
-  return new quix_stream_t(streams);
+  return new nit_stream_t(streams);
 }
 
-LIB_EXPORT quix_stream_t *quix_njoin(size_t num, FILE **files) {
-  return new quix_stream_t(std::vector<FILE *>(files, files + num));
+LIB_EXPORT nit_stream_t *nit_njoin(size_t num, FILE **files) {
+  return new nit_stream_t(std::vector<FILE *>(files, files + num));
 }

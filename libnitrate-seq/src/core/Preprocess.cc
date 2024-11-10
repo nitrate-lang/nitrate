@@ -361,7 +361,7 @@ qprep_impl_t::qprep_impl_t(std::shared_ptr<std::istream> file, qcore_env_t env,
   }
 
   // Run the standard language prefix
-  expand_raw(quix_code_prefix);
+  expand_raw(nit_code_prefix);
 }
 
 CPP_EXPORT qprep_impl_t::~qprep_impl_t() {}
