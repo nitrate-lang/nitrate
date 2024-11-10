@@ -12,7 +12,7 @@ void do_initialize(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {
   resp->AddMember("serverInfo", Value(kObjectType), alloc);
 
   auto& server_info = (*resp)["serverInfo"];
-  server_info.AddMember("name", "quixLanguageServer", alloc);
+  server_info.AddMember("name", "nitrateLanguageServer", alloc);
   server_info.AddMember("version", "0.0.1", alloc);
 
   auto& capabilities = (*resp)["capabilities"];

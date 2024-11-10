@@ -26,7 +26,7 @@ of the Nitrate project build system.
 
 ## Bugs and Issues
 
-Please report bugs or issues on the [GitHub issue tracker](https://github.com/Kracken256/quix/issues).
+Please report bugs or issues on the [GitHub issue tracker](https://github.com/Kracken256/nitrate/issues).
 
 ## License
 

@@ -46,7 +46,7 @@ libnitrate/fuzzer/the-corpus/
 fuzz-*.log
 *.snap
 bugs/
-quix-meta
-quix-parse
+nitrate-meta
+nitrate-parse
 examples/test.q
 

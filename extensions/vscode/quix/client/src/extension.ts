@@ -27,7 +27,7 @@ export function activate(context: ExtensionContext) {
   };
 
   const clientOptions: LanguageClientOptions = {
-    documentSelector: [{ scheme: 'file', language: 'quix' }],
+    documentSelector: [{ scheme: 'file', language: 'nitrate' }],
     synchronize: {
       fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
     }
@@ -35,7 +35,7 @@ export function activate(context: ExtensionContext) {
 
   // Create the language client and start the client.
   client = new LanguageClient(
-    'quixLanguageServer',
+    'nitrateLanguageServer',
     'Nitrate Language Server',
     serverOptions,
     clientOptions
