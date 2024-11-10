@@ -29,86 +29,33 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Lib.h>
-#include <quix-lexer/Lib.h>
+#ifndef __QUIX_LEXER_CLASSES_H__
+#define __QUIX_LEXER_CLASSES_H__
 
-#include <atomic>
+#ifndef __cplusplus
+#error "This header is for C++ only."
+#endif
 
-#include "LibMacro.h"
+#include <nitrate-core/Error.h>
+#include <nitrate-lexer/Lexer.h>
 
-static std::atomic<size_t> qlex_lib_ref_count = 0;
+#include <istream>
 
-LIB_EXPORT bool qlex_lib_init() {
-  if (qlex_lib_ref_count++ > 1) {
-    return true;
+class qlex final {
+  qlex_t *m_lex;
+
+public:
+  qlex(std::shared_ptr<std::istream> fp, const char *filename, qcore_env_t env) {
+    if ((m_lex = qlex_new(fp, filename, env)) == nullptr) {
+      qcore_panic("qlex_new failed");
+    }
   }
+  ~qlex() { qlex_free(m_lex); }
 
-  // Initialize the library here.
-
-  if (!qcore_lib_init()) {
-    return false;
+  qlex_t *get() {
+    qcore_assert(m_lex != nullptr);
+    return m_lex;
   }
+};
 
-  return true;
-}
-
-LIB_EXPORT void qlex_lib_deinit() {
-  if (--qlex_lib_ref_count > 0) {
-    return;
-  }
-
-  // Deinitialize the library here.
-
-  qcore_lib_deinit();
-  return;
-}
-
-LIB_EXPORT const char* qlex_lib_version() {
-  static const char* version_string =
-
-      "[" __TARGET_VERSION
-      "] ["
-
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \
-    defined(_M_AMD64)
-      "x86_64-"
-#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
-      "x86-"
-#elif defined(__aarch64__)
-      "aarch64-"
-#elif defined(__arm__)
-      "arm-"
-#else
-      "unknown-"
-#endif
-
-#if defined(__linux__)
-      "linux-"
-#elif defined(__APPLE__)
-      "macos-"
-#elif defined(_WIN32)
-      "win32-"
-#else
-      "unknown-"
-#endif
-
-#if defined(__clang__)
-      "clang] "
-#elif defined(__GNUC__)
-      "gnu] "
-#else
-      "unknown] "
-#endif
-
-#if NDEBUG
-      "[release]"
-#else
-      "[debug]"
-#endif
-
-      ;
-
-  return version_string;
-}
-
-LIB_EXPORT const char* qlex_strerror() { return ""; }
+#endif  // __QUIX_LEXER_CLASSES_H__

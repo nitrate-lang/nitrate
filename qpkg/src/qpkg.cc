@@ -32,10 +32,10 @@
 #include <argparse.h>
 #include <glog/logging.h>
 #include <nitrate-core/Lib.h>
+#include <nitrate-lexer/Lib.h>
 #include <quix-codegen/Code.h>
 #include <quix-codegen/Lib.h>
 #include <quix-ir/Lib.h>
-#include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>
 #include <quix-prep/Lib.h>
 #include <quixd/quixd.h>

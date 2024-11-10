@@ -2,8 +2,8 @@
 
 #include <core/SyncFS.hh>
 #include <memory>
+#include <nitrate-lexer/Classes.hh>
 #include <optional>
-#include <quix-lexer/Classes.hh>
 #include <quix-parser/Classes.hh>
 #include <unordered_map>
 

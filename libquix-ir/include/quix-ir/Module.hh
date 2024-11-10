@@ -33,8 +33,8 @@
 #define __QUIX_QXIR_MODULE_H__
 
 #include <nitrate-core/Memory.h>
+#include <nitrate-lexer/Lexer.h>
 #include <quix-ir/TypeDecl.h>
-#include <quix-lexer/Lexer.h>
 
 #include <boost/bimap.hpp>
 #include <cstdint>

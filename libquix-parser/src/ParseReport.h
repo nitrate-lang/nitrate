@@ -32,7 +32,7 @@
 #ifndef __QUIX_PARSER_REPORT_H__
 #define __QUIX_PARSER_REPORT_H__
 
-#include <quix-lexer/Token.h>
+#include <nitrate-lexer/Token.h>
 #include <quix-parser/Parser.h>
 
 #include <cstdarg>

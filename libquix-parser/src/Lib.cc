@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Lib.h>
-#include <quix-lexer/Lib.h>
+#include <nitrate-lexer/Lib.h>
 #include <quix-parser/Lib.h>
 #include <sys/resource.h>
 

@@ -32,7 +32,7 @@
 #ifndef __QUIX_PREP_PROCESS_H__
 #define __QUIX_PREP_PROCESS_H__
 
-#include <quix-lexer/Lexer.h>
+#include <nitrate-lexer/Lexer.h>
 #include <stdio.h>
 
 #ifdef __cplusplus

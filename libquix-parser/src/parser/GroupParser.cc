@@ -33,7 +33,7 @@
 
 #include <parser/Parse.h>
 
-#include "quix-lexer/Token.h"
+#include "nitrate-lexer/Token.h"
 
 using namespace qparse;
 using namespace qparse::parser;

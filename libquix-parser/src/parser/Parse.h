@@ -41,7 +41,7 @@
 
 #include <Impl.h>
 #include <ParseReport.h>
-#include <quix-lexer/Token.h>
+#include <nitrate-lexer/Token.h>
 #include <quix-parser/Node.h>
 #include <quix-parser/Parser.h>
 

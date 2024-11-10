@@ -33,8 +33,8 @@
 
 #include <unordered_map>
 
-#include "quix-lexer/Lexer.h"
-#include "quix-lexer/Token.h"
+#include "nitrate-lexer/Lexer.h"
+#include "nitrate-lexer/Token.h"
 #include "quix-parser/Node.h"
 
 using namespace qparse;

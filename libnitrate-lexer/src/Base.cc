@@ -32,7 +32,7 @@
 #define __QUIX_LEXER_IMPL__
 
 #include <nitrate-core/Error.h>
-#include <quix-lexer/Lexer.h>
+#include <nitrate-lexer/Lexer.h>
 #include <string.h>
 
 #include <boost/bimap.hpp>
@@ -44,13 +44,13 @@
 #include <cstdint>
 #include <cstdio>
 #include <ios>
-#include <quix-lexer/Base.hh>
+#include <nitrate-lexer/Base.hh>
 #include <sstream>
 #include <utility>
 
 #include "LibMacro.h"
 #include "nitrate-core/Env.h"
-#include "quix-lexer/Token.h"
+#include "nitrate-lexer/Token.h"
 
 ///============================================================================///
 
