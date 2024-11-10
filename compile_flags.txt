@@ -36,3 +36,4 @@
 -DLLVM_SUUPORT_ALL_TARGETS
 -Wno-error=missing-field-initializers
 -Wno-missing-field-initializers
+-D__TARGET_VERSION="?"

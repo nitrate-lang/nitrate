@@ -43,11 +43,6 @@
 
 #include "LibMacro.h"
 
-#ifndef __TARGET_VERSION
-#warning "__TARGET_VERSION must be defined"
-#define __TARGET_VERSION "?"
-#endif
-
 extern "C" {
 __attribute__((visibility("default"))) bool quix_lib_ready;
 }

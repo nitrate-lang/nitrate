@@ -32,13 +32,9 @@
 #ifndef __QPKG_CORE_ANSI_HH__
 #define __QPKG_CORE_ANSI_HH__
 
-#include <chrono>
 #include <cstdint>
-#include <queue>
-#include <set>
 #include <sstream>
 #include <string>
-#include <string_view>
 
 namespace qpkg {
   namespace ansi {
@@ -90,43 +86,43 @@ namespace qpkg {
 
     static inline bool operator==(Style a, uint32_t b) { return static_cast<uint32_t>(a) == b; }
 
-    class AnsiCout final {
+    class AnsiCerr final {
       Style style;
 
     public:
-      AnsiCout();
+      AnsiCerr();
 
-      AnsiCout &operator<<(const std::string &str);
+      AnsiCerr &operator<<(const std::string &str);
 
       template <class T>
-      AnsiCout &write(const T &msg) {
+      AnsiCerr &write(const T &msg) {
         std::stringstream ss;
         ss << msg;
         return operator<<(ss.str());
       }
 
-      AnsiCout newline();
+      AnsiCerr newline();
 
-      AnsiCout &set_style(Style style) {
+      AnsiCerr &set_style(Style style) {
         this->style = style;
         return *this;
       }
     };
 
     template <class T>
-    AnsiCout &operator<<(AnsiCout &out, const T &msg) {
+    AnsiCerr &operator<<(AnsiCerr &out, const T &msg) {
       return out.write(msg);
     }
 
-    static inline void operator<<(AnsiCout &out, std::ostream &(*var)(std::ostream &)) {
+    static inline void operator<<(AnsiCerr &out, std::ostream &(*var)(std::ostream &)) {
       if (var == static_cast<std::ostream &(*)(std::ostream &)>(std::endl)) {
         out.newline();
       }
     }
 
-    static inline void operator|=(AnsiCout &out, Style style) { out.set_style(style); }
+    static inline void operator|=(AnsiCerr &out, Style style) { out.set_style(style); }
 
-    extern thread_local AnsiCout acout;
+    extern thread_local AnsiCerr acout;
   }  // namespace ansi
 
 }  // namespace qpkg

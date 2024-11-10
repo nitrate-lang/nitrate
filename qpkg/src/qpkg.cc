@@ -30,6 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <argparse.h>
+#include <glog/logging.h>
 #include <quix-codegen/Code.h>
 #include <quix-codegen/Lib.h>
 #include <quix-core/Lib.h>
@@ -42,7 +43,9 @@
 #include <core/Config.hh>
 #include <core/Logger.hh>
 #include <fstream>
+#include <init/Package.hh>
 #include <ios>
+#include <mutex>
 #include <quix-codegen/Classes.hh>
 #include <quix-core/Classes.hh>
 #include <quix-ir/Classes.hh>
@@ -55,21 +58,15 @@
 // #include <dev/test/test.hh>
 // #include <run/RunScript.hh>
 
-// #include <filesystem>
-// #include <functional>
-#include <init/Package.hh>
-// #include <install/Install.hh>
-// #include <iostream>
-// #include <map>
-// #include <optional>
-// #include <string>
-// #include <thread>
-// #include <vector>
+#include <install/Install.hh>
+#include <iostream>
+#include <optional>
+#include <string>
+#include <vector>
 
-#ifndef QPKG_ID
-#error "QPKG_ID not defined"
-#define QPKG_ID "?"
-#endif
+struct QPKGMode {
+  bool use_color;
+};
 
 thread_local std::ostream &qout = std::cout;
 thread_local std::ostream &qerr = std::cerr;
@@ -92,7 +89,7 @@ static std::string qpkg_deps_version_string() {
                                                qprep_lib_version(), qparse_lib_version(),
                                                qxir_lib_version(),  qcode_lib_version()};
 
-  ss << "{\"ver\":\"" << QPKG_ID << "\",\"stable\":" << (QPKG_STABLE ? "true" : "false")
+  ss << "{\"ver\":\"" << __TARGET_VERSION << "\",\"stable\":" << (QPKG_STABLE ? "true" : "false")
      << ",\"using\":[";
   for (size_t i = 0; i < QPKG_DEPS.size(); i++) {
     ss << "\"" << QPKG_DEPS[i] << "\"";
@@ -121,8 +118,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.)";
 
 using namespace argparse;
-
-static thread_local bool g_use_colors = true;
 
 namespace argparse_setup {
   void setup_argparse_init(ArgumentParser &parser) {
@@ -714,10 +709,10 @@ namespace argparse_setup {
 }  // namespace argparse_setup
 
 namespace qpkg::router {
-  int run_init_mode(const ArgumentParser &parser) {
+  int run_init_mode(const ArgumentParser &parser, const QPKGMode &) {
     using namespace init;
 
-    core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
+    core::SetDebugMode(parser["--verbose"] == true);
 
     PackageBuilder builder = PackageBuilder()
                                  .output(parser.get<std::string>("--output"))
@@ -741,13 +736,13 @@ namespace qpkg::router {
     return builder.build().create() ? 0 : -1;
   }
 
-  int run_build_mode(const ArgumentParser &parser) {
+  int run_build_mode(const ArgumentParser &parser, const QPKGMode &) {
     (void)parser;
 
     qerr << "build not implemented yet" << std::endl;
     return 1;
 
-    // qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
+    // qpkg::core::SetDebugMode(parser["--verbose"] == true);
 
     // qpkg::build::EngineBuilder builder;
 
@@ -787,8 +782,8 @@ namespace qpkg::router {
     // return engine->run() ? 0 : -1;
   }
 
-  int run_clean_mode(const ArgumentParser &parser) {
-    core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
+  int run_clean_mode(const ArgumentParser &parser, const QPKGMode &) {
+    core::SetDebugMode(parser["--verbose"] == true);
 
     if (clean::CleanPackageSource(parser.get<std::string>("package-src"),
                                   parser["--verbose"] == true)) {
@@ -798,21 +793,21 @@ namespace qpkg::router {
     }
   }
 
-  int run_update_mode(const ArgumentParser &parser) {
-    core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
+  int run_update_mode(const ArgumentParser &parser, const QPKGMode &) {
+    core::SetDebugMode(parser["--verbose"] == true);
 
     (void)parser;
     qerr << "update not implemented yet" << std::endl;
     return 1;
   }
 
-  int run_install_mode(const ArgumentParser &parser) {
+  int run_install_mode(const ArgumentParser &parser, const QPKGMode &) {
     (void)parser;
 
     qerr << "install not implemented yet" << std::endl;
     return 1;
 
-    // core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
+    // core::SetDebugMode(parser["--verbose"] == true);
 
     // std::string url = parser.get<std::string>("src");
     // std::string dest, package_name;
@@ -877,10 +872,10 @@ namespace qpkg::router {
     // return 0;
   }
 
-  int run_doc_mode(const ArgumentParser &parser) {
+  int run_doc_mode(const ArgumentParser &parser, const QPKGMode &) {
     enum class OFormat { Html, Plain, Pdf, Json, Xml, ReactJS } oformat;
 
-    core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
+    core::SetDebugMode(parser["--verbose"] == true);
 
     bool html = parser["--html"] == true;
     bool plain = parser["--plain"] == true;
@@ -939,29 +934,29 @@ namespace qpkg::router {
     }
   }
 
-  int run_format_mode(const ArgumentParser &parser) {
-    core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
+  int run_format_mode(const ArgumentParser &parser, const QPKGMode &) {
+    core::SetDebugMode(parser["--verbose"] == true);
 
     (void)parser;
     qerr << "format not implemented yet" << std::endl;
     return 1;
   }
 
-  int run_list_mode(const ArgumentParser &parser) {
-    core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
+  int run_list_mode(const ArgumentParser &parser, const QPKGMode &) {
+    core::SetDebugMode(parser["--verbose"] == true);
 
     (void)parser;
     qerr << "list not implemented yet" << std::endl;
     return 1;
   }
 
-  int run_run_mode(const std::vector<std::string> &args) {
+  int run_run_mode(const std::vector<std::string> &args, const QPKGMode &) {
     (void)args;
 
     qerr << "run not implemented yet" << std::endl;
     return 1;
 
-    // core::FormatAdapter::PluginAndInit(false, g_use_colors);
+    // core::FormatAdapter::PluginAndInit(false, mode.use_color);
 
     // if (args.size() < 1) {
     //   qerr << "No script specified" << std::endl;
@@ -974,8 +969,8 @@ namespace qpkg::router {
     // return script.run(args);
   }
 
-  int run_test_mode(const ArgumentParser &parser) {
-    core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
+  int run_test_mode(const ArgumentParser &parser, const QPKGMode &) {
+    core::SetDebugMode(parser["--verbose"] == true);
 
     (void)parser;
     qerr << "test not implemented yet" << std::endl;
@@ -1042,7 +1037,8 @@ namespace qpkg::router {
 
   int run_dev_mode(
       const ArgumentParser &parser,
-      const std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &subparsers) {
+      const std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &subparsers,
+      const QPKGMode &mode) {
     if (parser.is_subcommand_used("bench")) {
       enum class Benchmark {
         LEXER,
@@ -1056,7 +1052,9 @@ namespace qpkg::router {
       };
 
       auto &bench_parser = *subparsers.at("bench");
-      core::FormatAdapter::PluginAndInit(bench_parser["--verbose"] == true, g_use_colors);
+
+      core::SetColorMode(mode.use_color);
+      core::SetDebugMode(bench_parser["--verbose"] == true);
 
       if (bench_parser["--list"] == true) {
         qout << "Available benchmarks:" << std::endl;
@@ -1128,12 +1126,14 @@ namespace qpkg::router {
       return 0;
     } else if (parser.is_subcommand_used("test")) {
       auto &test_parser = *subparsers.at("test");
-      core::FormatAdapter::PluginAndInit(test_parser["--verbose"] == true, g_use_colors);
+      core::SetColorMode(mode.use_color);
+      core::SetDebugMode(test_parser["--verbose"] == true);
 
       return dev::test::run_tests();
     } else if (parser.is_subcommand_used("parse")) {
       auto &parse_parser = *subparsers.at("parse");
-      core::FormatAdapter::PluginAndInit(parse_parser["--verbose"] == true, g_use_colors);
+      core::SetColorMode(mode.use_color);
+      core::SetDebugMode(parse_parser["--verbose"] == true);
 
       std::string source = parse_parser.get<std::string>("source");
       std::string output = parse_parser.get<std::string>("--output");
@@ -1190,7 +1190,9 @@ namespace qpkg::router {
       return 0;
     } else if (parser.is_subcommand_used("qxir")) {
       auto &qxir_parser = *subparsers.at("qxir");
-      core::FormatAdapter::PluginAndInit(qxir_parser["--verbose"] == true, g_use_colors);
+
+      core::SetColorMode(mode.use_color);
+      core::SetDebugMode(qxir_parser["--verbose"] == true);
 
       std::string source = qxir_parser.get<std::string>("source");
       std::string output = qxir_parser.get<std::string>("--output");
@@ -1234,12 +1236,12 @@ namespace qpkg::router {
 
       if (!qxir_lower(qmod.get(), root, true)) {
         qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL,
-                       g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
+                       mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
         return 1;
       }
 
-      qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL, g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR,
-                     cb, verbose);
+      qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL,
+                     mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
 
       FILE *out_fp = nullptr;
       if (!output.empty()) {
@@ -1263,7 +1265,9 @@ namespace qpkg::router {
       return 0;
     } else if (parser.is_subcommand_used("codegen")) {
       auto &qxir_parser = *subparsers.at("codegen");
-      core::FormatAdapter::PluginAndInit(qxir_parser["--verbose"] == true, g_use_colors);
+
+      core::SetColorMode(mode.use_color);
+      core::SetDebugMode(qxir_parser["--verbose"] == true);
 
       std::string source = qxir_parser.get<std::string>("source");
       std::string output = qxir_parser.get<std::string>("--output");
@@ -1309,12 +1313,12 @@ namespace qpkg::router {
 
       if (!qxir_lower(qmod.get(), root, true)) {
         qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL,
-                       g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
+                       mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
         return 1;
       }
 
-      qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL, g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR,
-                     cb, verbose);
+      qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL,
+                     mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
 
       FILE *out_fp = nullptr;
       if (!output.empty()) {
@@ -1431,10 +1435,27 @@ static void do_libs_deinit() {
 
 extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc, char *argv[],
                                                                    bool use_color) {
-  g_use_colors = use_color;
-  qpkg::core::FormatAdapter::PluginAndInit(false, g_use_colors);
+  QPKGMode mode;
+  mode.use_color = use_color;
+  qpkg::core::SetColorMode(mode.use_color);
+  qpkg::core::SetDebugMode(false);
 
+  ///===========================================================================
+  /// BEGIN: Setup argument parsing and logging
   std::vector<std::string> args(argv, argv + argc);
+
+  { /* Configure Google logger */
+    static std::once_flag parsers_inited;
+    std::call_once(parsers_inited, [&]() {
+      FLAGS_stderrthreshold = google::FATAL;
+
+      google::InitGoogleLogging("qpkg");
+      google::InstallFailureSignalHandler();
+
+      static qpkg::core::MyLogSink sink;
+      google::AddLogSink(&sink);
+    });
+  }
 
   static ArgumentParser init_parser("init", "1.0", default_arguments::help);
   static ArgumentParser build_parser("build", "1.0", default_arguments::help);
@@ -1457,24 +1478,30 @@ extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc,
                                      list_parser, test_parser, dev_parser, dev_subparsers);
     });
   }
+  /// END: Setup argument parsing and logging
+  ///===========================================================================
 
-  class LibInit {
+  ///===========================================================================
+  /// BEGIN: Initialize dependencies
+  class AutomaticLibInit {
   public:
-    LibInit() = default;
-    bool operator()() { return do_libs_init(); }
-    ~LibInit() { do_libs_deinit(); }
+    AutomaticLibInit() = default;
+    bool do_init() { return do_libs_init(); }
+    ~AutomaticLibInit() { do_libs_deinit(); }
   };
 
-  LibInit lib_init;
-  if (!lib_init()) {
+  AutomaticLibInit lib_init;
+  if (!lib_init.do_init()) {
     qerr << "Failed to initialize libraries" << std::endl;
     return -1;
   }
+  /// END: Initialize dependencies
+  ///===========================================================================
 
   { /* Handle edge case for run scripts */
     if (args.size() >= 2 && args[1] == "run") {
       std::vector<std::string> run_args(args.begin() + 2, args.end());
-      return qpkg::router::run_run_mode(run_args);
+      return qpkg::router::run_run_mode(run_args, mode);
     }
   }
 
@@ -1488,33 +1515,35 @@ extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc,
     }
   }
 
-  if (program["--license"] == true) {
-    qout << FULL_LICENSE << std::endl;
-    return 0;
-  } else if (program.is_subcommand_used("init")) {
-    return qpkg::router::run_init_mode(init_parser);
-  } else if (program.is_subcommand_used("build")) {
-    return qpkg::router::run_build_mode(build_parser);
-  } else if (program.is_subcommand_used("clean")) {
-    return qpkg::router::run_clean_mode(clean_parser);
-  } else if (program.is_subcommand_used("update")) {
-    return qpkg::router::run_update_mode(update_parser);
-  } else if (program.is_subcommand_used("install")) {
-    return qpkg::router::run_install_mode(install_parser);
-  } else if (program.is_subcommand_used("doc")) {
-    return qpkg::router::run_doc_mode(doc_parser);
-  } else if (program.is_subcommand_used("format")) {
-    return qpkg::router::run_format_mode(format_parser);
-  } else if (program.is_subcommand_used("list")) {
-    return qpkg::router::run_list_mode(list_parser);
-  } else if (program.is_subcommand_used("test")) {
-    return qpkg::router::run_test_mode(test_parser);
-  } else if (program.is_subcommand_used("dev")) {
-    return qpkg::router::run_dev_mode(dev_parser, dev_subparsers);
-  } else {
-    qerr << "No command specified" << std::endl;
-    qerr << program;
-    return 1;
+  { /* Conduct the routing */
+    if (program["--license"] == true) {
+      qout << FULL_LICENSE << std::endl;
+      return 0;
+    } else if (program.is_subcommand_used("init")) {
+      return qpkg::router::run_init_mode(init_parser, mode);
+    } else if (program.is_subcommand_used("build")) {
+      return qpkg::router::run_build_mode(build_parser, mode);
+    } else if (program.is_subcommand_used("clean")) {
+      return qpkg::router::run_clean_mode(clean_parser, mode);
+    } else if (program.is_subcommand_used("update")) {
+      return qpkg::router::run_update_mode(update_parser, mode);
+    } else if (program.is_subcommand_used("install")) {
+      return qpkg::router::run_install_mode(install_parser, mode);
+    } else if (program.is_subcommand_used("doc")) {
+      return qpkg::router::run_doc_mode(doc_parser, mode);
+    } else if (program.is_subcommand_used("format")) {
+      return qpkg::router::run_format_mode(format_parser, mode);
+    } else if (program.is_subcommand_used("list")) {
+      return qpkg::router::run_list_mode(list_parser, mode);
+    } else if (program.is_subcommand_used("test")) {
+      return qpkg::router::run_test_mode(test_parser, mode);
+    } else if (program.is_subcommand_used("dev")) {
+      return qpkg::router::run_dev_mode(dev_parser, dev_subparsers, mode);
+    } else {
+      qerr << "No command specified" << std::endl;
+      qerr << program;
+      return 1;
+    }
   }
 }
 

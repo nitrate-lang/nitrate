@@ -11,146 +11,46 @@ execute_process(COMMAND find ${CMAKE_CURRENT_SOURCE_DIR} -type f -name "*.*" -ex
 string(REGEX REPLACE " .*" "" SHA256SUMS ${SHA256SUMS})
 string(TOUPPER ${SHA256SUMS} SHA256SUMS)
 string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
-set(QPKG_ID "\"QPKG_${SHA256SUMS}\"")
-message(STATUS "qpkg VersionId: ${QPKG_ID}")
+set(__TARGET_VERSION "\"QPKG_${SHA256SUMS}\"")
+message(STATUS "qpkg VersionId: ${__TARGET_VERSION}")
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quixd)
 
+find_library(libglog libglog.a REQUIRED)
+find_library(libgflags libgflags.a REQUIRED)
+
 file(GLOB_RECURSE QPKG_CXX_SOURCES "src/*.cc")
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-  #================== CREATE APPLICATION RELEASE BUILD ================
-  add_executable(qpkg ${QPKG_CXX_SOURCES})
-  target_include_directories(qpkg PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
-    ${CMAKE_SOURCE_DIR}/libquix-lexer/include
-    ${CMAKE_SOURCE_DIR}/libquix-prep/include
-    ${CMAKE_SOURCE_DIR}/libquix-parser/include
-    ${CMAKE_SOURCE_DIR}/libquix-ir/include
-    ${CMAKE_SOURCE_DIR}/libquix-codegen/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
-  target_compile_options(qpkg PRIVATE
-    -Wpedantic
-    -Wno-error=overlength-strings
-    -DQPKG_ID=${QPKG_ID}
-  )
-  target_link_libraries(qpkg PUBLIC libboost_filesystem.a
-    quix-codegen
-    quix-ir
-    quix-parser
-    quix-lexer
-    quix-prep
-    quix-core
-    yaml-cpp)
-  target_link_options(qpkg PRIVATE -static-libgcc -static-libstdc++)
-  add_dependencies(qpkg quix-codegen
-    quix-ir
-    quix-parser
-    quix-lexer
-    quix-prep
-    quix-core
-    yaml-cpp)
+#================== CREATE APPLICATION RELEASE BUILD ================
+add_executable(qpkg ${QPKG_CXX_SOURCES})
+target_include_directories(qpkg PUBLIC src ${CMAKE_SOURCE_DIR}/libquix-core/include
+  ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+  ${CMAKE_SOURCE_DIR}/libquix-prep/include
+  ${CMAKE_SOURCE_DIR}/libquix-parser/include
+  ${CMAKE_SOURCE_DIR}/libquix-ir/include
+  ${CMAKE_SOURCE_DIR}/libquix-codegen/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
+target_compile_options(qpkg PRIVATE
+  -Wno-error=overlength-strings
+  -D__TARGET_VERSION=${__TARGET_VERSION}
+)
+target_link_libraries(qpkg PUBLIC libboost_filesystem.a
+  quix-codegen
+  quix-ir
+  quix-parser
+  quix-lexer
+  quix-prep
+  quix-core
+  yaml-cpp
+  quixd_main)
+add_dependencies(qpkg quix-codegen
+  quix-ir
+  quix-parser
+  quix-lexer
+  quix-prep
+  quix-core
+  yaml-cpp
+  quixd_main)
 
-  #================== CREATE LIBRARY RELEASE BUILD ================
-  add_library(qpkg-cmd ${QPKG_CXX_SOURCES})
-  target_include_directories(qpkg-cmd PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
-    ${CMAKE_SOURCE_DIR}/libquix-lexer/include
-    ${CMAKE_SOURCE_DIR}/libquix-prep/include
-    ${CMAKE_SOURCE_DIR}/libquix-parser/include
-    ${CMAKE_SOURCE_DIR}/libquix-ir/include
-    ${CMAKE_SOURCE_DIR}/libquix-codegen/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
-  target_compile_options(qpkg-cmd PRIVATE
-    -Wpedantic
-    -Wno-error=overlength-strings
-    -DQPKG_ID=${QPKG_ID}
-    -fvisibility=hidden
-    -fvisibility-inlines-hidden
-    -DQPKG_LIBRARY)
-  target_link_libraries(qpkg-cmd PUBLIC libboost_filesystem.a
-    quix-codegen
-    quix-ir
-    quix-parser
-    quix-lexer
-    quix-prep
-    quix-core
-    yaml-cpp)
-  target_link_options(qpkg-cmd PRIVATE
-    -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
-  add_dependencies(qpkg-cmd quix-codegen
-    quix-ir
-    quix-parser
-    quix-lexer
-    quix-prep
-    quix-core
-    yaml-cpp)
-  set_target_properties(qpkg-cmd PROPERTIES OUTPUT_NAME qpkg)
-else()
-  #================== CREATE APPLICATION DEBUG BUILD ================
-  add_executable(qpkg ${QPKG_CXX_SOURCES})
-  target_include_directories(qpkg PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
-    ${CMAKE_SOURCE_DIR}/libquix-lexer/include
-    ${CMAKE_SOURCE_DIR}/libquix-prep/include
-    ${CMAKE_SOURCE_DIR}/libquix-parser/include
-    ${CMAKE_SOURCE_DIR}/libquix-ir/include
-    ${CMAKE_SOURCE_DIR}/libquix-codegen/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
-  target_compile_options(qpkg PRIVATE
-    -Wpedantic
-    -Wno-error=overlength-strings
-    "-DQPKG_ID=\"undefined\"")
-  target_link_libraries(qpkg PUBLIC libboost_filesystem.a
-    quix-codegen
-    quix-ir
-    quix-parser
-    quix-lexer
-    quix-prep
-    quix-core
-    yaml-cpp)
-  target_link_options(qpkg PRIVATE -static-libgcc
-    -static-libstdc++)
-  add_dependencies(qpkg quix-codegen
-    quix-ir
-    quix-parser
-    quix-lexer
-    quix-prep
-    quix-core
-    yaml-cpp)
-
-  #================== CREATE LIBRARY DEBUG BUILD ================
-  add_library(qpkg-cmd ${QPKG_CXX_SOURCES})
-  target_include_directories(qpkg-cmd PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
-    ${CMAKE_SOURCE_DIR}/libquix-lexer/include
-    ${CMAKE_SOURCE_DIR}/libquix-prep/include
-    ${CMAKE_SOURCE_DIR}/libquix-parser/include
-    ${CMAKE_SOURCE_DIR}/libquix-ir/include
-    ${CMAKE_SOURCE_DIR}/libquix-codegen/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
-  target_compile_options(qpkg-cmd PRIVATE -Wpedantic
-    -Wno-error=overlength-strings
-    "-DQPKG_ID=\"undefined\""
-    -fvisibility=hidden
-    -fvisibility-inlines-hidden
-    -DQPKG_LIBRARY)
-  target_link_libraries(qpkg-cmd PUBLIC libboost_filesystem.a
-    quix-codegen
-    quix-ir
-    quix-parser
-    quix-lexer
-    quix-prep
-    quix-core
-    yaml-cpp
-    yaml-cpp)
-  target_link_options(qpkg-cmd PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
-  add_dependencies(qpkg-cmd quix-codegen
-    quix-ir
-    quix-parser
-    quix-lexer
-    quix-prep
-    quix-core
-    yaml-cpp)
-  set_target_properties(qpkg-cmd PROPERTIES OUTPUT_NAME qpkg)
-endif()
-
-install(TARGETS qpkg-cmd DESTINATION lib)
 install(TARGETS qpkg DESTINATION bin)
