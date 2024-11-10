@@ -22,8 +22,8 @@ add_custom_target(
   COMMAND make -C ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lua CFLAGS='-fPIC -DLUA_COMPAT_5_3'
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lua
 )
-set(LIB_QUIXLUA ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lua/liblua.a)
-message(STATUS "libnitrate-seq: Building with Lua: ${LIB_QUIXLUA}")
+set(LIB_NITRATELUA ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lua/liblua.a)
+message(STATUS "libnitrate-seq: Building with Lua: ${LIB_NITRATELUA}")
 
 #================== SET BUILD FLAGS ==================
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -41,7 +41,7 @@ target_include_directories(nitrate-seq PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-lexer/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-seq/third_party)
-target_link_libraries(nitrate-seq PUBLIC nitrate-core nitrate-lexer ${LIB_QUIXLUA} crypto)
+target_link_libraries(nitrate-seq PUBLIC nitrate-core nitrate-lexer ${LIB_NITRATELUA} crypto)
 add_dependencies(nitrate-seq nitrate-core nitrate-lexer quixlua)
 
 install(TARGETS nitrate-seq DESTINATION lib)
