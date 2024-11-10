@@ -31,10 +31,10 @@
 
 #include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
-#include <quix-ir/IR.h>
+#include <nitrate-ir/IR.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
-#include <quix-ir/IRGraph.hh>
+#include <nitrate-ir/IRGraph.hh>
 // #include <chrono>
 #include <core/Config.hh>
 // #include <cstdint>

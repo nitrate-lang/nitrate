@@ -1,5 +1,5 @@
 {
-  "name": "quix-ir",
+  "name": "nitrate-ir",
   "displayName": "QUIX-IR",
   "publisher": "qpkg",
   "description": "QUIX-IR syntax highlighting support ",
@@ -12,16 +12,24 @@
     "Programming Languages"
   ],
   "contributes": {
-    "languages": [{
-      "id": "quix-ir",
-      "aliases": ["QUIX IR"],
-      "extensions": [".qir"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "quix-ir",
-      "scopeName": "source.qir",
-      "path": "./syntaxes/quix-ir.tmLanguage.json"
-    }]
+    "languages": [
+      {
+        "id": "nitrate-ir",
+        "aliases": [
+          "QUIX IR"
+        ],
+        "extensions": [
+          ".qir"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "nitrate-ir",
+        "scopeName": "source.qir",
+        "path": "./syntaxes/nitrate-ir.tmLanguage.json"
+      }
+    ]
   }
 }

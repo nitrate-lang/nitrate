@@ -29,76 +29,47 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBQUIX_INTERNAL
+#include <nitrate-core/Error.h>
 
-#include <nitrate-core/Lib.h>
-#include <quix/code.h>
+#include <core/PassManager.hh>
+#include <nitrate-ir/Module.hh>
+#include <passes/PassList.hh>
 
-#include <SerialUtil.hh>
-#include <functional>
-#include <nitrate-core/Classes.hh>
-#include <nitrate-ir/Classes.hh>
-#include <string_view>
-#include <unordered_set>
+void qxir::pass::PassRegistry::link_builtin() {
+  addPass("ds-acyclic", ds_acyclic);
+  addPass("ds-nullchk", ds_nullchk);
+  addPass("ds-resolv", ds_resolv);
+  addPass("ds-verify", ds_verify);
+  addPass("ds-flatten", ds_flatten);
+  addPass("ds-tyinfer", ds_tyinfer);
+  addPass("ds-mangle", ds_mangle);
+  addPass("ds-clean", ds_clean);
+  addPass("ds-raii", ds_raii);
 
-static bool impl_use_json(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct JSON serialization
-
-  (void)R;
-  (void)O;
-
-  return true;
+  addPass("chk-missing-return", chk_missing_return);
+  addPass("chk-bad-cast", chk_bad_cast);
 }
 
-static bool impl_use_msgpack(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct MsgPack serialization
+void qxir::pass::PassGroupRegistry::RegisterBuiltinGroups() {
+  PassGroupBuilder()
+      .addPass("ds-clean") /* Cleanup IR */
+      /* Add more cleanup passes: [dead-code removal, ?] */
+      .build("reduce");
 
-  return impl_use_json(R, O);
-}
+  PassGroupBuilder()
+      .addPass("ds-acyclic") /* Verify that the module is acyclic */
+      .addPass("ds-nullchk") /* Verify that the module is null-safe */
+      .addPass("ds-resolv")  /* Resolve all symbols */
+      .addPass("ds-verify")  /* Verify the module */
+      .addPass("ds-flatten") /* Flatten all nested functions */
+      .addPass("ds-tyinfer") /* Do type inference */
+      .addPass("ds-mangle")  /* Mangle all names */
+      .addPass("ds-raii")    /* Insert destructors */
+      .addGroup("reduce")
+      .build("ds");
 
-bool impl_subsys_qxir(std::shared_ptr<std::istream> source, FILE *output,
-                      std::function<void(const char *)> diag_cb,
-                      const std::unordered_set<std::string_view> &opts) {
-  enum class OutMode {
-    JSON,
-    MsgPack,
-  } out_mode = OutMode::JSON;
-
-  if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
-    return false;
-  } else if (opts.contains("-fuse-msgpack")) {
-    out_mode = OutMode::MsgPack;
-  }
-
-  qxir_conf conf;
-
-  { /* Should the ir use the crashguard signal handler? */
-    if (opts.contains("-fir-crashguard=off")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_OFF);
-    } else if (opts.contains("-fparse-crashguard=on")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_ON);
-    }
-  }
-
-  (void)source;
-
-  qmodule ir_module(nullptr, conf.get(), nullptr);
-
-  bool ok = qxir_lower(ir_module.get(), nullptr, true);
-  if (!ok) {
-    diag_cb("Failed to lower IR module.\n");
-    return false;
-  }
-
-  switch (out_mode) {
-    case OutMode::JSON:
-      ok = impl_use_json(ir_module.get(), output);
-      break;
-    case OutMode::MsgPack:
-      ok = impl_use_msgpack(ir_module.get(), output);
-      break;
-  }
-
-  return ok;
+  PassGroupBuilder()
+      .addPass("chk-missing-return") /* Check for missing return statements */
+      .addPass("chk-bad-cast")       /* Check for bad casts */
+      .build("chk");
 }

@@ -32,8 +32,8 @@
 #ifndef __QUIX_CODEGEN_CODE_H__
 #define __QUIX_CODEGEN_CODE_H__
 
+#include <nitrate-ir/TypeDecl.h>
 #include <quix-codegen/Config.h>
-#include <quix-ir/TypeDecl.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus

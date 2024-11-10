@@ -32,12 +32,12 @@
 #include <argparse.h>
 #include <glog/logging.h>
 #include <nitrate-core/Lib.h>
+#include <nitrate-ir/Lib.h>
 #include <nitrate-lexer/Lib.h>
+#include <nitrate-parser/Lib.h>
 #include <nitrate-seq/Lib.h>
 #include <quix-codegen/Code.h>
 #include <quix-codegen/Lib.h>
-#include <quix-ir/Lib.h>
-#include <nitrate-parser/Lib.h>
 #include <quixd/quixd.h>
 
 #include <clean/Cleanup.hh>
@@ -48,11 +48,11 @@
 #include <ios>
 #include <mutex>
 #include <nitrate-core/Classes.hh>
+#include <nitrate-ir/Classes.hh>
+#include <nitrate-ir/Format.hh>
+#include <nitrate-parser/Classes.hh>
 #include <nitrate-seq/Classes.hh>
 #include <quix-codegen/Classes.hh>
-#include <quix-ir/Classes.hh>
-#include <quix-ir/Format.hh>
-#include <nitrate-parser/Classes.hh>
 #include <string_view>
 #include <unordered_map>
 
@@ -612,8 +612,8 @@ namespace argparse_setup {
     auto bench = std::make_unique<ArgumentParser>("bench", "1.0", default_arguments::help);
 
     bench->add_argument("-n", "--name")
-        .choices("lexer", "parser", "quix-ir", "delta-ir", "llvm-ir", "llvm-codegen", "c11-codegen",
-                 "pipeline")
+        .choices("lexer", "parser", "nitrate-ir", "delta-ir", "llvm-ir", "llvm-codegen",
+                 "c11-codegen", "pipeline")
         .help("name of benchmark to run");
 
     bench->add_argument("--list")
@@ -1075,7 +1075,7 @@ namespace qpkg::router {
 
     int run_benchmark_quix_ir() {
       /// TODO: implement
-      qerr << "benchmark quix-ir not implemented yet" << std::endl;
+      qerr << "benchmark nitrate-ir not implemented yet" << std::endl;
       return 1;
     }
 
@@ -1143,7 +1143,7 @@ namespace qpkg::router {
         qout << "Available benchmarks:" << std::endl;
         qout << "  lexer" << std::endl;
         qout << "  parser" << std::endl;
-        qout << "  quix-ir" << std::endl;
+        qout << "  nitrate-ir" << std::endl;
         qout << "  delta-ir" << std::endl;
         qout << "  llvm-ir" << std::endl;
         qout << "  llvm-codegen" << std::endl;
@@ -1166,7 +1166,7 @@ namespace qpkg::router {
         bench_type = Benchmark::LEXER;
       else if (bench_name == "parser")
         bench_type = Benchmark::PARSER;
-      else if (bench_name == "quix-ir")
+      else if (bench_name == "nitrate-ir")
         bench_type = Benchmark::Q_IR;
       else if (bench_name == "delta-ir")
         bench_type = Benchmark::DELTA_IR;
