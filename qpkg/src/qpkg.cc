@@ -1475,7 +1475,7 @@ namespace qpkg::router {
 
 static bool do_libs_init() {
   if (!qcore_lib_init()) {
-    qerr << "Failed to initialize QUIX-CORE library" << std::endl;
+    qerr << "Failed to initialize NITRATE-CORE library" << std::endl;
     return false;
   }
 
