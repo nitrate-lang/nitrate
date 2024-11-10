@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBQUIX_INTERNAL
+#define LIBNITRATE_INTERNAL
 
 #include <nitrate-core/Lib.h>
 #include <nitrate-emit/Lib.h>

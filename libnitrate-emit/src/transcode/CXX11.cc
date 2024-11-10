@@ -137,7 +137,7 @@
 //   /// be bundled as static data in the produced binary and referenced
 //   /// internally. To avoid external dependencies, this is the best approach.
 
-//   out << "#define QUIX_TRANSCODE 1\n";
+//   out << "#define NITRATE_TRANSCODE 1\n";
 
 //   if (param.use_rotl || param.use_rotr) {
 //     out << "#define __qinline inline __attribute__((always_inline))\n";
