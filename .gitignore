@@ -39,7 +39,7 @@ qpkg/example-project
 .qpkg/
 main.c
 libnitrate-lexer/fuzzer/corpus/*
-libquix-prep/fuzzer/corpus/*
+libnitrate-seq/fuzzer/corpus/*
 libquix-parser/fuzzer/corpus/*
 libquix-ir/fuzzer/corpus/*
 libquix/fuzzer/the-corpus/

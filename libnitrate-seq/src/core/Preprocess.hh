@@ -29,59 +29,61 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_PREP_LIB_H__
-#define __QUIX_PREP_LIB_H__
+#include <nitrate-core/Env.h>
+#include <nitrate-lexer/Token.h>
+#include <nitrate-seq/Preprocess.h>
 
-#include <quix-prep/Preprocess.h>
-#include <stdbool.h>
+#include <memory>
+#include <mutex>
+#include <nitrate-lexer/Base.hh>
+#include <optional>
+#include <string_view>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define get_engine() ((qprep_impl_t *)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1)))
 
-/**
- * @brief Initialize the library.
- *
- * @return true if the library was initialized successfully.
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not reinitialize the library, but will
- * increment the reference count.
- */
-bool qprep_lib_init();
+struct lua_State;
 
-/**
- * @brief Deinitialize the library.
- *
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not deinitialize the library, but when
- * the reference count reaches zero, the library will be deinitialized.
- */
-void qprep_lib_deinit();
+enum class DeferOp {
+  EmitToken,
+  SkipToken,
+  UninstallHandler,
+};
 
-/**
- * @brief Get the version of the library.
- *
- * @return The version string of the library.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after deinitialization.
- */
-const char* qprep_lib_version();
+struct qprep_impl_t;
 
-/**
- * @brief Get the last error message from the current thread.
- *
- * @return The last error message from the current thread.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after deinitialization.
- */
-const char* qprep_strerror();
+typedef std::function<DeferOp(qprep_impl_t *obj, qlex_tok_t last)> DeferCallback;
 
-#ifdef __cplusplus
-}
-#endif
+extern std::string_view quix_code_prefix;
 
-#endif  // __QUIX_PREP_LIB_H__
+struct __attribute__((visibility("default"))) qprep_impl_t final : public qlex_t {
+  struct Core {
+    lua_State *L = nullptr;
+    std::vector<DeferCallback> defer_callbacks;
+    std::deque<qlex_tok_t> buffer;
+
+    ~Core();
+  };
+
+  std::shared_ptr<Core> m_core;
+  std::pair<qprep_fetch_module_t, uintptr_t> m_fetch_module;
+  std::mutex m_mutex;
+  bool m_do_expanse = true;
+  size_t m_depth = 0;
+
+  virtual qlex_tok_t next_impl() override;
+
+  bool run_defer_callbacks(qlex_tok_t last);
+
+  std::optional<std::string> run_lua_code(const std::string &s);
+  bool run_and_expand(const std::string &code);
+  void expand_raw(std::string_view code);
+  void install_lua_api();
+  qlex_t *weak_clone(std::shared_ptr<std::istream> file, const char *filename);
+
+public:
+  qprep_impl_t(std::shared_ptr<std::istream> file, const char *filename, qcore_env_t env);
+  qprep_impl_t(std::shared_ptr<std::istream> file, qcore_env_t env, const char *filename);
+  virtual ~qprep_impl_t() override;
+};
+
+class StopException {};

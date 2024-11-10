@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(libquix-prep CXX)
+project(libnitrate-seq CXX)
 
 #================== CONFIGURE BUILD ==================
 set(CMAKE_CXX_STANDARD 20)
@@ -13,7 +13,7 @@ string(REGEX REPLACE " .*" "" SHA256SUMS ${SHA256SUMS})
 string(TOUPPER ${SHA256SUMS} SHA256SUMS)
 string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
 set(__TARGET_VERSION "\"QPREP_${SHA256SUMS}\"")
-message(STATUS "libquix-prep VersionId: ${__TARGET_VERSION}")
+message(STATUS "libnitrate-seq VersionId: ${__TARGET_VERSION}")
 
 #===================== BUILD LUA ======================
 add_custom_target(
@@ -23,7 +23,7 @@ add_custom_target(
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lua
 )
 set(LIB_QUIXLUA ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lua/liblua.a)
-message(STATUS "libquix-prep: Building with Lua: ${LIB_QUIXLUA}")
+message(STATUS "libnitrate-seq: Building with Lua: ${LIB_QUIXLUA}")
 
 #================== SET BUILD FLAGS ==================
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -36,13 +36,13 @@ endif()
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
-add_library(quix-prep ${CXX_SOURCES})
-target_include_directories(quix-prep PUBLIC src "include"
+add_library(nitrate-seq ${CXX_SOURCES})
+target_include_directories(nitrate-seq PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-lexer/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-prep/third_party)
-target_link_libraries(quix-prep PUBLIC nitrate-core nitrate-lexer ${LIB_QUIXLUA} crypto)
-add_dependencies(quix-prep nitrate-core nitrate-lexer quixlua)
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-seq/third_party)
+target_link_libraries(nitrate-seq PUBLIC nitrate-core nitrate-lexer ${LIB_QUIXLUA} crypto)
+add_dependencies(nitrate-seq nitrate-core nitrate-lexer quixlua)
 
-install(TARGETS quix-prep DESTINATION lib)
+install(TARGETS nitrate-seq DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

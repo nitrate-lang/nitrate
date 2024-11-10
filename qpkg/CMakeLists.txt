@@ -26,7 +26,7 @@ file(GLOB_RECURSE QPKG_CXX_SOURCES "src/*.cc")
 add_executable(qpkg ${QPKG_CXX_SOURCES})
 target_include_directories(qpkg PUBLIC src ${CMAKE_SOURCE_DIR}/libnitrate-core/include
   ${CMAKE_SOURCE_DIR}/libnitrate-lexer/include
-  ${CMAKE_SOURCE_DIR}/libquix-prep/include
+  ${CMAKE_SOURCE_DIR}/libnitrate-seq/include
   ${CMAKE_SOURCE_DIR}/libquix-parser/include
   ${CMAKE_SOURCE_DIR}/libquix-ir/include
   ${CMAKE_SOURCE_DIR}/libquix-codegen/include
@@ -41,7 +41,7 @@ target_link_libraries(qpkg PUBLIC libboost_filesystem.a
   quix-ir
   quix-parser
   nitrate-lexer
-  quix-prep
+  nitrate-seq
   nitrate-core
   yaml-cpp
   quixd_main)
@@ -49,7 +49,7 @@ add_dependencies(qpkg quix-codegen
   quix-ir
   quix-parser
   nitrate-lexer
-  quix-prep
+  nitrate-seq
   nitrate-core
   yaml-cpp
   quixd_main)
