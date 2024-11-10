@@ -29,76 +29,69 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBQUIX_INTERNAL
+#ifndef __QUIX_QXIR_CORE_CONFIG_H__
+#define __QUIX_QXIR_CORE_CONFIG_H__
 
-#include <nitrate-core/Lib.h>
-#include <quix/code.h>
+#include <nitrate-ir/Config.h>
 
-#include <SerialUtil.hh>
-#include <functional>
-#include <nitrate-core/Classes.hh>
-#include <nitrate-ir/Classes.hh>
-#include <string_view>
-#include <unordered_set>
+#include <algorithm>
+#include <optional>
+#include <vector>
 
-static bool impl_use_json(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct JSON serialization
+struct qxir_conf_t {
+private:
+  std::vector<qxir_setting_t> m_data;
 
-  (void)R;
-  (void)O;
+  bool verify_prechange(qxir_key_t key, qxir_val_t value) const {
+    (void)key;
+    (void)value;
 
-  return true;
-}
-
-static bool impl_use_msgpack(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct MsgPack serialization
-
-  return impl_use_json(R, O);
-}
-
-bool impl_subsys_qxir(std::shared_ptr<std::istream> source, FILE *output,
-                      std::function<void(const char *)> diag_cb,
-                      const std::unordered_set<std::string_view> &opts) {
-  enum class OutMode {
-    JSON,
-    MsgPack,
-  } out_mode = OutMode::JSON;
-
-  if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
-    return false;
-  } else if (opts.contains("-fuse-msgpack")) {
-    out_mode = OutMode::MsgPack;
+    return true;
   }
 
-  qxir_conf conf;
+public:
+  qxir_conf_t() = default;
+  ~qxir_conf_t() = default;
 
-  { /* Should the ir use the crashguard signal handler? */
-    if (opts.contains("-fir-crashguard=off")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_OFF);
-    } else if (opts.contains("-fparse-crashguard=on")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_ON);
+  bool SetAndVerify(qxir_key_t key, qxir_val_t value) {
+    auto it = std::find_if(m_data.begin(), m_data.end(),
+                           [key](const qxir_setting_t &setting) { return setting.key == key; });
+
+    if (!verify_prechange(key, value)) {
+      return false;
     }
+
+    if (it != m_data.end()) {
+      m_data.erase(it);
+    }
+
+    m_data.push_back({key, value});
+
+    return true;
   }
 
-  (void)source;
+  std::optional<qxir_val_t> Get(qxir_key_t key) const {
+    auto it = std::find_if(m_data.begin(), m_data.end(),
+                           [key](const qxir_setting_t &setting) { return setting.key == key; });
 
-  qmodule ir_module(nullptr, conf.get(), nullptr);
+    if (it == m_data.end()) {
+      return std::nullopt;
+    }
 
-  bool ok = qxir_lower(ir_module.get(), nullptr, true);
-  if (!ok) {
-    diag_cb("Failed to lower IR module.\n");
-    return false;
+    return it->value;
   }
 
-  switch (out_mode) {
-    case OutMode::JSON:
-      ok = impl_use_json(ir_module.get(), output);
-      break;
-    case OutMode::MsgPack:
-      ok = impl_use_msgpack(ir_module.get(), output);
-      break;
+  const qxir_setting_t *GetAll(size_t &count) const {
+    count = m_data.size();
+    return m_data.data();
   }
 
-  return ok;
-}
+  void ClearNoVerify() {
+    m_data.clear();
+    m_data.shrink_to_fit();
+  }
+
+  bool has(qxir_key_t option, qxir_val_t value) const noexcept;
+};
+
+#endif  // __QUIX_QXIR_CORE_CONFIG_H__

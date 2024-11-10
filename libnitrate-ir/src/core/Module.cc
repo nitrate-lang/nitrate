@@ -29,76 +29,132 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBQUIX_INTERNAL
+#include <core/LibMacro.h>
+#include <nitrate-core/Error.h>
 
-#include <nitrate-core/Lib.h>
-#include <quix/code.h>
+#include <mutex>
+#include <nitrate-ir/Module.hh>
 
-#include <SerialUtil.hh>
-#include <functional>
-#include <nitrate-core/Classes.hh>
-#include <nitrate-ir/Classes.hh>
-#include <string_view>
-#include <unordered_set>
+using namespace qxir;
 
-static bool impl_use_json(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct JSON serialization
+static std::vector<std::optional<qmodule_t *>> qxir_modules;
+static std::mutex qxir_modules_mutex;
 
-  (void)R;
-  (void)O;
+qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
+  m_passes_applied.clear();
+  m_strings.clear();
+  m_diag = std::make_unique<diag::DiagnosticManager>();
+  m_diag->set_ctx(this);
+  m_type_mgr = std::make_unique<TypeManager>();
+  m_module_name = name;
 
-  return true;
+  m_conf = nullptr;
+  m_lexer = nullptr;
+  m_root = nullptr;
+  m_diagnostics_enabled = true;
+  m_failbit = false;
+
+  m_id = id;
 }
 
-static bool impl_use_msgpack(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct MsgPack serialization
-
-  return impl_use_json(R, O);
+qmodule_t::~qmodule_t() {
+  m_conf = nullptr;
+  m_lexer = nullptr;
+  m_root = nullptr;
 }
 
-bool impl_subsys_qxir(std::shared_ptr<std::istream> source, FILE *output,
-                      std::function<void(const char *)> diag_cb,
-                      const std::unordered_set<std::string_view> &opts) {
-  enum class OutMode {
-    JSON,
-    MsgPack,
-  } out_mode = OutMode::JSON;
+Type *qmodule_t::lookupType(TypeID tid) { return m_type_mgr->get(tid); }
 
-  if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
-    return false;
-  } else if (opts.contains("-fuse-msgpack")) {
-    out_mode = OutMode::MsgPack;
-  }
+void qmodule_t::enableDiagnostics(bool is_enabled) noexcept { m_diagnostics_enabled = is_enabled; }
 
-  qxir_conf conf;
-
-  { /* Should the ir use the crashguard signal handler? */
-    if (opts.contains("-fir-crashguard=off")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_OFF);
-    } else if (opts.contains("-fparse-crashguard=on")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_ON);
+std::string_view qmodule_t::internString(std::string_view sv) {
+  for (const auto &str : m_strings) {
+    if (str == sv) {
+      return str;
     }
   }
 
-  (void)source;
-
-  qmodule ir_module(nullptr, conf.get(), nullptr);
-
-  bool ok = qxir_lower(ir_module.get(), nullptr, true);
-  if (!ok) {
-    diag_cb("Failed to lower IR module.\n");
-    return false;
-  }
-
-  switch (out_mode) {
-    case OutMode::JSON:
-      ok = impl_use_json(ir_module.get(), output);
-      break;
-    case OutMode::MsgPack:
-      ok = impl_use_msgpack(ir_module.get(), output);
-      break;
-  }
-
-  return ok;
+  return m_strings.insert(std::string(sv)).first->c_str();
 }
+
+///=============================================================================
+
+qmodule_t *qxir::createModule(std::string name) {
+  std::lock_guard<std::mutex> lock(qxir_modules_mutex);
+
+  ModuleId mid;
+
+  for (mid = 0; mid < qxir_modules.size(); mid++) {
+    if (!qxir_modules[mid].has_value()) {
+      break;
+    }
+  }
+
+  if (mid >= MAX_MODULE_INSTANCES) {
+    return nullptr;
+  }
+
+  qxir_modules.insert(qxir_modules.begin() + mid, new qmodule_t(mid, name));
+
+  return qxir_modules[mid].value();
+}
+
+CPP_EXPORT qmodule_t *qxir::getModule(ModuleId mid) {
+  std::lock_guard<std::mutex> lock(qxir_modules_mutex);
+
+  if (mid >= qxir_modules.size() || !qxir_modules.at(mid).has_value()) {
+    return nullptr;
+  }
+
+  return qxir_modules.at(mid).value();
+}
+
+LIB_EXPORT qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf, const char *name) {
+  try {
+    if (!conf) {
+      return nullptr;
+    }
+
+    if (!name) {
+      name = "module";
+    }
+
+    qmodule_t *obj = createModule(name);
+    if (!obj) {
+      return nullptr;
+    }
+
+    obj->setConf(conf);
+    obj->setLexer(lexer);
+
+    return obj;
+  } catch (...) {
+    return nullptr;
+  }
+}
+
+LIB_EXPORT void qxir_free(qmodule_t *mod) {
+  try {
+    if (!mod) {
+      return;
+    }
+
+    std::lock_guard<std::mutex> lock(qxir_modules_mutex);
+
+    auto mid = mod->getModuleId();
+    delete mod;
+    qxir_modules.at(mid).reset();
+  } catch (...) {
+    qcore_panic("qxir_free failed");
+  }
+}
+
+LIB_EXPORT size_t qxir_max_modules(void) { return MAX_MODULE_INSTANCES; }
+
+LIB_EXPORT qlex_t *qxir_get_lexer(qmodule_t *mod) { return mod->getLexer(); }
+
+LIB_EXPORT qxir_node_t *qxir_base(qmodule_t *mod) {
+  return reinterpret_cast<qxir_node_t *>(mod->getRoot());
+}
+
+LIB_EXPORT qxir_conf_t *qxir_get_conf(qmodule_t *mod) { return mod->getConf(); }

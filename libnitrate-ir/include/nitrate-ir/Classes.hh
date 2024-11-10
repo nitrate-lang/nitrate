@@ -29,76 +29,45 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBQUIX_INTERNAL
+#ifndef __QUIX_IR_CLASSES_H__
+#define __QUIX_IR_CLASSES_H__
 
-#include <nitrate-core/Lib.h>
-#include <quix/code.h>
+#ifndef __cplusplus
+#error "This header is for C++ only."
+#endif
 
-#include <SerialUtil.hh>
-#include <functional>
-#include <nitrate-core/Classes.hh>
-#include <nitrate-ir/Classes.hh>
-#include <string_view>
-#include <unordered_set>
+#include <nitrate-core/Error.h>
+#include <nitrate-ir/Config.h>
+#include <nitrate-ir/IR.h>
 
-static bool impl_use_json(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct JSON serialization
+#include <stdexcept>
 
-  (void)R;
-  (void)O;
+class qxir_conf final {
+  qxir_conf_t *m_conf;
 
-  return true;
-}
-
-static bool impl_use_msgpack(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct MsgPack serialization
-
-  return impl_use_json(R, O);
-}
-
-bool impl_subsys_qxir(std::shared_ptr<std::istream> source, FILE *output,
-                      std::function<void(const char *)> diag_cb,
-                      const std::unordered_set<std::string_view> &opts) {
-  enum class OutMode {
-    JSON,
-    MsgPack,
-  } out_mode = OutMode::JSON;
-
-  if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
-    return false;
-  } else if (opts.contains("-fuse-msgpack")) {
-    out_mode = OutMode::MsgPack;
-  }
-
-  qxir_conf conf;
-
-  { /* Should the ir use the crashguard signal handler? */
-    if (opts.contains("-fir-crashguard=off")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_OFF);
-    } else if (opts.contains("-fparse-crashguard=on")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_ON);
+public:
+  qxir_conf(bool use_default = true) {
+    if ((m_conf = qxir_conf_new(use_default)) == nullptr) {
+      throw std::runtime_error("qxir_conf_new failed");
     }
   }
+  ~qxir_conf() { qxir_conf_free(m_conf); }
 
-  (void)source;
+  qxir_conf_t *get() const { return m_conf; }
+};
 
-  qmodule ir_module(nullptr, conf.get(), nullptr);
+class qmodule final {
+  qmodule_t *m_module;
 
-  bool ok = qxir_lower(ir_module.get(), nullptr, true);
-  if (!ok) {
-    diag_cb("Failed to lower IR module.\n");
-    return false;
+public:
+  qmodule(qlex_t *lexer, qxir_conf_t *conf, const char *name) {
+    if ((m_module = qxir_new(lexer, conf, name)) == nullptr) {
+      throw std::runtime_error("qxir_new failed");
+    }
   }
+  ~qmodule() { qxir_free(m_module); }
 
-  switch (out_mode) {
-    case OutMode::JSON:
-      ok = impl_use_json(ir_module.get(), output);
-      break;
-    case OutMode::MsgPack:
-      ok = impl_use_msgpack(ir_module.get(), output);
-      break;
-  }
+  qmodule_t *get() const { return m_module; }
+};
 
-  return ok;
-}
+#endif  // __QUIX_IR_CLASSES_H__

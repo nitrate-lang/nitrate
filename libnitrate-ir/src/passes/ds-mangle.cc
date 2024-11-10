@@ -29,76 +29,71 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBQUIX_INTERNAL
+#include <nitrate-ir/IR.h>
 
-#include <nitrate-core/Lib.h>
-#include <quix/code.h>
+#include <boost/bimap.hpp>
+#include <nitrate-ir/Format.hh>
+#include <nitrate-ir/IRGraph.hh>
+#include <nitrate-ir/Report.hh>
+#include <passes/PassList.hh>
 
-#include <SerialUtil.hh>
-#include <functional>
-#include <nitrate-core/Classes.hh>
-#include <nitrate-ir/Classes.hh>
-#include <string_view>
-#include <unordered_set>
+/**
+ * @brief Canonicalize the names of things in the module.
+ *
+ * @timecomplexity O(n)
+ * @spacecomplexity O(1)
+ */
 
-static bool impl_use_json(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct JSON serialization
+using namespace qxir;
+using namespace qxir::diag;
 
-  (void)R;
-  (void)O;
+bool qxir::pass::ds_mangle(qmodule_t *mod) {
+  SymbolEncoding se;
+  bool failed = false;
 
-  return true;
-}
-
-static bool impl_use_msgpack(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct MsgPack serialization
-
-  return impl_use_json(R, O);
-}
-
-bool impl_subsys_qxir(std::shared_ptr<std::istream> source, FILE *output,
-                      std::function<void(const char *)> diag_cb,
-                      const std::unordered_set<std::string_view> &opts) {
-  enum class OutMode {
-    JSON,
-    MsgPack,
-  } out_mode = OutMode::JSON;
-
-  if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
-    return false;
-  } else if (opts.contains("-fuse-msgpack")) {
-    out_mode = OutMode::MsgPack;
-  }
-
-  qxir_conf conf;
-
-  { /* Should the ir use the crashguard signal handler? */
-    if (opts.contains("-fir-crashguard=off")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_OFF);
-    } else if (opts.contains("-fparse-crashguard=on")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_ON);
+  iterate<dfs_pre, IterMP::none>(mod->getRoot(), [&](Expr *, Expr **cur) -> IterOp {
+    if ((*cur)->getKind() == QIR_NODE_FN) {
+      Fn *fn = (*cur)->as<Fn>();
+      auto name = se.mangle_name(fn, fn->getAbiTag());
+      if (name) [[likely]] {
+        fn->setName(mod->internString(*name));
+      } else {
+        failed = true;
+        report(IssueCode::NameManglingTypeInfer, IssueClass::Error, fn->getName(), fn->locBeg(),
+               fn->locEnd());
+      }
+    } else if ((*cur)->getKind() == QIR_NODE_LOCAL) {
+      Local *local = (*cur)->as<Local>();
+      auto name = se.mangle_name(local, local->getAbiTag());
+      if (name) [[likely]] {
+        qcore_assert(!name->empty());
+        local->setName(mod->internString(*name));
+      } else {
+        failed = true;
+        report(IssueCode::NameManglingTypeInfer, IssueClass::Error, local->getName(),
+               local->locBeg(), local->locEnd());
+      }
     }
-  }
 
-  (void)source;
+    return IterOp::Proceed;
+  });
 
-  qmodule ir_module(nullptr, conf.get(), nullptr);
+  /* Update identifiers to use the new names */
+  iterate<dfs_pre, IterMP::none>(mod->getRoot(), [](Expr *, Expr **cur) -> IterOp {
+    if ((*cur)->getKind() != QIR_NODE_IDENT) {
+      return IterOp::Proceed;
+    }
 
-  bool ok = qxir_lower(ir_module.get(), nullptr, true);
-  if (!ok) {
-    diag_cb("Failed to lower IR module.\n");
-    return false;
-  }
+    Ident *ident = (*cur)->as<Ident>();
+    if (!ident->getWhat()) {
+      return IterOp::Proceed;
+    }
 
-  switch (out_mode) {
-    case OutMode::JSON:
-      ok = impl_use_json(ir_module.get(), output);
-      break;
-    case OutMode::MsgPack:
-      ok = impl_use_msgpack(ir_module.get(), output);
-      break;
-  }
+    qcore_assert(!ident->getWhat()->getName().empty());
+    ident->setName(ident->getWhat()->getName());
 
-  return ok;
+    return IterOp::Proceed;
+  });
+
+  return !failed;
 }

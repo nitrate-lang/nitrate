@@ -64,18 +64,18 @@
 #include <llvm-14/llvm/Transforms/IPO/PassManagerBuilder.h>
 #include <llvm-14/llvm/Transforms/InstCombine/InstCombine.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-ir/TypeDecl.h>
 #include <quix-codegen/Code.h>
 #include <quix-codegen/Config.h>
-#include <quix-ir/TypeDecl.h>
 #include <sys/types.h>
 
 #include <charconv>
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <nitrate-ir/IRGraph.hh>
+#include <nitrate-ir/Module.hh>
 #include <optional>
-#include <quix-ir/IRGraph.hh>
-#include <quix-ir/Module.hh>
 #include <stack>
 #include <streambuf>
 #include <unordered_map>

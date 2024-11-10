@@ -59,15 +59,15 @@ add_library(quix-codegen ${CXX_SOURCES})
 target_include_directories(quix-codegen PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-lexer/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-ir/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-ir/include
   /usr/lib/llvm-14/include)
-target_link_libraries(quix-codegen PUBLIC nitrate-core quix-ir)
+target_link_libraries(quix-codegen PUBLIC nitrate-core nitrate-ir)
 foreach(lib ${LLVM_LIBS})
   target_link_libraries(quix-codegen PUBLIC ${lib})
   message(STATUS "Linking ${lib}")
 endforeach()
 target_link_libraries(quix-codegen PUBLIC z tinfo)
-add_dependencies(quix-codegen nitrate-core quix-ir)
+add_dependencies(quix-codegen nitrate-core nitrate-ir)
 set_target_properties(quix-codegen PROPERTIES OUTPUT_NAME quix-codegen)
 
 install(TARGETS quix-codegen DESTINATION lib)

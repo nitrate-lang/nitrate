@@ -13,9 +13,9 @@
 -I
 ./libnitrate-parser/src
 -I
-./libquix-ir/include
+./libnitrate-ir/include
 -I
-./libquix-ir/src
+./libnitrate-ir/src
 -I
 ./libquix-codegen/include
 -I

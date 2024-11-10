@@ -29,76 +29,118 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBQUIX_INTERNAL
-
 #include <nitrate-core/Lib.h>
-#include <quix/code.h>
+#include <nitrate-ir/Lib.h>
+#include <nitrate-parser/Lib.h>
+#include <sys/resource.h>
 
-#include <SerialUtil.hh>
-#include <functional>
-#include <nitrate-core/Classes.hh>
-#include <nitrate-ir/Classes.hh>
-#include <string_view>
-#include <unordered_set>
+#include <atomic>
+#include <core/PassManager.hh>
 
-static bool impl_use_json(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct JSON serialization
+#include "core/LibMacro.h"
 
-  (void)R;
-  (void)O;
+static std::atomic<size_t> qxir_lib_ref_count = 0;
+
+static void increase_stack_size() {
+  const rlim_t kStackSize = 64 * 1024 * 1024;  // min stack size = 64 MB
+  struct rlimit rl;
+  int result;
+
+  result = getrlimit(RLIMIT_STACK, &rl);
+  if (result == 0) {
+    if (rl.rlim_cur < kStackSize) {
+      rl.rlim_cur = kStackSize;
+      result = setrlimit(RLIMIT_STACK, &rl);
+      if (result != 0) {
+        qcore_panicf("setrlimit returned result = %d\n", result);
+      }
+    }
+  }
+}
+
+static bool do_init() {
+  increase_stack_size();
+
+  qxir::pass::PassGroupRegistry::RegisterBuiltinGroups();
 
   return true;
 }
 
-static bool impl_use_msgpack(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct MsgPack serialization
+static void do_deinit() {}
 
-  return impl_use_json(R, O);
-}
-
-bool impl_subsys_qxir(std::shared_ptr<std::istream> source, FILE *output,
-                      std::function<void(const char *)> diag_cb,
-                      const std::unordered_set<std::string_view> &opts) {
-  enum class OutMode {
-    JSON,
-    MsgPack,
-  } out_mode = OutMode::JSON;
-
-  if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
-    return false;
-  } else if (opts.contains("-fuse-msgpack")) {
-    out_mode = OutMode::MsgPack;
+LIB_EXPORT bool qxir_lib_init() {
+  if (qxir_lib_ref_count++ > 1) {
+    return true;
   }
 
-  qxir_conf conf;
-
-  { /* Should the ir use the crashguard signal handler? */
-    if (opts.contains("-fir-crashguard=off")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_OFF);
-    } else if (opts.contains("-fparse-crashguard=on")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_ON);
-    }
-  }
-
-  (void)source;
-
-  qmodule ir_module(nullptr, conf.get(), nullptr);
-
-  bool ok = qxir_lower(ir_module.get(), nullptr, true);
-  if (!ok) {
-    diag_cb("Failed to lower IR module.\n");
+  if (!qcore_lib_init()) {
     return false;
   }
 
-  switch (out_mode) {
-    case OutMode::JSON:
-      ok = impl_use_json(ir_module.get(), output);
-      break;
-    case OutMode::MsgPack:
-      ok = impl_use_msgpack(ir_module.get(), output);
-      break;
+  if (!qparse_lib_init()) {
+    return false;
   }
 
-  return ok;
+  return do_init();
 }
+
+LIB_EXPORT void qxir_lib_deinit() {
+  if (--qxir_lib_ref_count > 0) {
+    return;
+  }
+
+  qparse_lib_deinit();
+  qcore_lib_deinit();
+
+  return do_deinit();
+}
+
+LIB_EXPORT const char* qxir_lib_version() {
+  static const char* version_string =
+
+      "[" __TARGET_VERSION
+      "] ["
+
+#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \
+    defined(_M_AMD64)
+      "x86_64-"
+#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
+      "x86-"
+#elif defined(__aarch64__)
+      "aarch64-"
+#elif defined(__arm__)
+      "arm-"
+#else
+      "unknown-"
+#endif
+
+#if defined(__linux__)
+      "linux-"
+#elif defined(__APPLE__)
+      "macos-"
+#elif defined(_WIN32)
+      "win32-"
+#else
+      "unknown-"
+#endif
+
+#if defined(__clang__)
+      "clang] "
+#elif defined(__GNUC__)
+      "gnu] "
+#else
+      "unknown] "
+#endif
+
+#if NDEBUG
+      "[release]"
+#else
+      "[debug]"
+#endif
+
+      ;
+
+  return version_string;
+}
+
+LIB_EXPORT const char* qxir_strerror() { return ""; }

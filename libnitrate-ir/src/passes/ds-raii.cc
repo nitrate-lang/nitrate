@@ -29,76 +29,65 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBQUIX_INTERNAL
+#include <nitrate-ir/IRGraph.hh>
+#include <passes/PassList.hh>
 
-#include <nitrate-core/Lib.h>
-#include <quix/code.h>
+/**
+ * @brief Insert destructors to stack-allocated local variables
+ *
+ * @timecomplexity O(n)
+ * @spacecomplexity O(1)
+ */
 
-#include <SerialUtil.hh>
-#include <functional>
-#include <nitrate-core/Classes.hh>
-#include <nitrate-ir/Classes.hh>
-#include <string_view>
-#include <unordered_set>
+using namespace qxir::diag;
+using namespace qxir;
 
-static bool impl_use_json(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct JSON serialization
+bool qxir::pass::ds_raii(qmodule_t *M) {
+  for (auto &[k, v] : M->getFunctions()) {
+    Expr *F = v.second->getBody();
 
-  (void)R;
-  (void)O;
+    iterate<dfs_pre>(F, [](Expr *, Expr **C) -> IterOp {
+      if ((*C)->getKind() != QIR_NODE_SEQ) {
+        return IterOp::Proceed;
+      }
+
+      ///==========================================================
+      /// Foreach scope in function:
+
+      SeqItems &SI = (*C)->as<Seq>()->getItems();
+
+      /// For each unconditional branch instruction call
+      /// destructors in reverse order
+      auto first_ubr = std::find_if(SI.begin(), SI.end(), [](Expr *E) {
+        qxir_ty_t ty = E->getKind();
+        return ty == QIR_NODE_RET || ty == QIR_NODE_CONT || ty == QIR_NODE_BRK;
+      });
+
+      for (size_t i = 0; i < SI.size(); ++i) {
+        Expr *E = SI[i];
+
+        if (E->getKind() == QIR_NODE_LOCAL) {
+          (void)first_ubr;
+          // Local *L = E->as<Local>();
+          // Fn *D = createIgn()->as<Fn>();
+
+          /// TODO: Get the destructor function
+
+          // UnExpr *addr_of = create<UnExpr>(L, Op::BitAnd);
+          // CallArgs args = CallArgs({addr_of});
+          // Call *C = create<Call>(D, std::move(args));
+
+          // SI.insert(first_ubr, C);
+        }
+      }
+
+      ///==========================================================
+
+      return IterOp::Proceed;
+    });
+  }
+
+  /// TODO: Implement support for RAII
 
   return true;
-}
-
-static bool impl_use_msgpack(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct MsgPack serialization
-
-  return impl_use_json(R, O);
-}
-
-bool impl_subsys_qxir(std::shared_ptr<std::istream> source, FILE *output,
-                      std::function<void(const char *)> diag_cb,
-                      const std::unordered_set<std::string_view> &opts) {
-  enum class OutMode {
-    JSON,
-    MsgPack,
-  } out_mode = OutMode::JSON;
-
-  if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
-    return false;
-  } else if (opts.contains("-fuse-msgpack")) {
-    out_mode = OutMode::MsgPack;
-  }
-
-  qxir_conf conf;
-
-  { /* Should the ir use the crashguard signal handler? */
-    if (opts.contains("-fir-crashguard=off")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_OFF);
-    } else if (opts.contains("-fparse-crashguard=on")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_ON);
-    }
-  }
-
-  (void)source;
-
-  qmodule ir_module(nullptr, conf.get(), nullptr);
-
-  bool ok = qxir_lower(ir_module.get(), nullptr, true);
-  if (!ok) {
-    diag_cb("Failed to lower IR module.\n");
-    return false;
-  }
-
-  switch (out_mode) {
-    case OutMode::JSON:
-      ok = impl_use_json(ir_module.get(), output);
-      break;
-    case OutMode::MsgPack:
-      ok = impl_use_msgpack(ir_module.get(), output);
-      break;
-  }
-
-  return ok;
 }

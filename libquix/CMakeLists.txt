@@ -33,16 +33,16 @@ target_include_directories(quix PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-lexer/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-seq/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-parser/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-ir/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-ir/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-codegen/include)
 target_compile_options(quix PRIVATE ${PROJECT_DEBUG_FLAGS})
 target_link_libraries(quix PUBLIC nitrate-core
   nitrate-lexer
   nitrate-seq
   nitrate-parser
-  quix-ir
+  nitrate-ir
   quix-codegen)
-add_dependencies(quix nitrate-core nitrate-lexer nitrate-seq nitrate-parser quix-ir quix-codegen)
+add_dependencies(quix nitrate-core nitrate-lexer nitrate-seq nitrate-parser nitrate-ir quix-codegen)
 set_target_properties(quix PROPERTIES OUTPUT_NAME quix)
 
 if(BUILD_TESTING)

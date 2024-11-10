@@ -40,7 +40,7 @@ parts:
         rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-lexer.a
         rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-seq.a
         rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-parser.a
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-ir.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-ir.a
         rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-codegen.a
         rm -rf $SNAPCRAFT_PART_INSTALL/usr/include
 

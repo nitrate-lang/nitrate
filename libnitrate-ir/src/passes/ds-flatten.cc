@@ -29,76 +29,120 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBQUIX_INTERNAL
+#include <nitrate-ir/IR.h>
 
-#include <nitrate-core/Lib.h>
-#include <quix/code.h>
-
-#include <SerialUtil.hh>
-#include <functional>
-#include <nitrate-core/Classes.hh>
-#include <nitrate-ir/Classes.hh>
-#include <string_view>
+#include <atomic>
+#include <boost/bimap.hpp>
+#include <nitrate-ir/IRGraph.hh>
+#include <passes/PassList.hh>
 #include <unordered_set>
 
-static bool impl_use_json(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct JSON serialization
+/**
+ * @brief Move nested linkable symbols to the top level.
+ *
+ * @timecomplexity O(n)
+ * @spacecomplexity O(n)
+ */
 
-  (void)R;
-  (void)O;
+using namespace qxir;
 
-  return true;
-}
+static void flatten_externs(qmodule_t *mod) {
+  /**
+   * This one is simple. We don't manipulate any names, just move the extern
+   * nodes.
+   */
+  std::unordered_set<Expr **> externs;
 
-static bool impl_use_msgpack(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct MsgPack serialization
+  IterCallback cb = [&externs](Expr *, Expr **cur) -> IterOp {
+    if ((*cur)->getKind() == QIR_NODE_EXTERN) {
+      externs.insert(cur);
+    }
 
-  return impl_use_json(R, O);
-}
+    return IterOp::Proceed;
+  };
 
-bool impl_subsys_qxir(std::shared_ptr<std::istream> source, FILE *output,
-                      std::function<void(const char *)> diag_cb,
-                      const std::unordered_set<std::string_view> &opts) {
-  enum class OutMode {
-    JSON,
-    MsgPack,
-  } out_mode = OutMode::JSON;
+  iterate<dfs_pre, IterMP::none>(mod->getRoot(), cb);
 
-  if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
-    return false;
-  } else if (opts.contains("-fuse-msgpack")) {
-    out_mode = OutMode::MsgPack;
+  Seq *root = mod->getRoot()->as<Seq>();
+  std::unordered_set<Expr *> global_scope;
+  for (auto ele : root->getItems()) {
+    global_scope.insert(ele);
   }
 
-  qxir_conf conf;
+  for (auto ele : externs) {
+    Expr *obj = *ele;
 
-  { /* Should the ir use the crashguard signal handler? */
-    if (opts.contains("-fir-crashguard=off")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_OFF);
-    } else if (opts.contains("-fparse-crashguard=on")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_ON);
+    if (!global_scope.contains(obj)) {
+      *reinterpret_cast<Expr **>(ele) = createIgn();
+      root->addItem(obj);
     }
   }
+}
 
-  (void)source;
+static void flatten_functions_recurse(qmodule_t *mod, Expr *&base, std::string cur_scope,
+                                      std::unordered_set<Expr **> &functions) {
+  IterCallback cb = [mod, cur_scope, &functions](Expr *par, Expr **cur) -> IterOp {
+    if ((*cur)->getKind() != QIR_NODE_FN) {
+      return IterOp::Proceed;
+    }
 
-  qmodule ir_module(nullptr, conf.get(), nullptr);
+    bool is_extern = par ? par->getKind() == QIR_NODE_EXTERN : false;
 
-  bool ok = qxir_lower(ir_module.get(), nullptr, true);
-  if (!ok) {
-    diag_cb("Failed to lower IR module.\n");
-    return false;
+    static thread_local std::atomic<uint64_t> counter = 0;
+    std::string orig_name = std::string((*cur)->as<Fn>()->getName());
+    if (orig_name.empty()) {
+      orig_name = "$_" + std::to_string(counter++);
+    }
+
+    std::string new_scope = cur_scope.empty() ? orig_name : cur_scope + "::" + orig_name;
+
+    (*cur)->as<Fn>()->setName(mod->internString(new_scope));
+
+    if (!is_extern) { /* Handle name change */
+      functions.insert(cur);
+    }
+
+    Expr *body = (*cur)->as<Fn>()->getBody();
+    flatten_functions_recurse(mod, body, new_scope, functions);
+
+    return IterOp::SkipChildren;
+  };
+
+  iterate<dfs_pre, IterMP::none>(base, cb);
+}
+
+static void flatten_functions(qmodule_t *mod) {
+  std::unordered_set<Expr **> functions;
+
+  flatten_functions_recurse(mod, mod->getRoot(), "", functions);
+
+  /**
+   * Replace nested functions with identifier aliases
+   * only if they are not at the global scope.
+   */
+  Seq *root = mod->getRoot()->as<Seq>();
+  std::unordered_set<Expr *> global_scope;
+  for (auto ele : root->getItems()) {
+    global_scope.insert(ele);
   }
 
-  switch (out_mode) {
-    case OutMode::JSON:
-      ok = impl_use_json(ir_module.get(), output);
-      break;
-    case OutMode::MsgPack:
-      ok = impl_use_msgpack(ir_module.get(), output);
-      break;
-  }
+  for (auto ele : functions) {
+    Expr *obj = *ele;
 
-  return ok;
+    if (!global_scope.contains(obj)) {
+      *reinterpret_cast<Expr **>(ele) = create<Ident>(obj->getName(), obj);
+      root->addItem(obj);
+    }
+  }
+}
+
+bool qxir::pass::ds_flatten(qmodule_t *mod) {
+  /**
+   * This pass in infallible.
+   */
+
+  flatten_externs(mod);
+  flatten_functions(mod);
+
+  return true;
 }

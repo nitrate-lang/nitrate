@@ -41,7 +41,7 @@ main.c
 libnitrate-lexer/fuzzer/corpus/*
 libnitrate-seq/fuzzer/corpus/*
 libnitrate-parser/fuzzer/corpus/*
-libquix-ir/fuzzer/corpus/*
+libnitrate-ir/fuzzer/corpus/*
 libquix/fuzzer/the-corpus/
 fuzz-*.log
 *.snap
