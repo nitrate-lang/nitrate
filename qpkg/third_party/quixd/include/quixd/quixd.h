@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXD_H__
-#define __QUIXD_H__
+#ifndef __NITRATED_H__
+#define __NITRATED_H__
 
 #ifdef __cplusplus
 extern "C" {

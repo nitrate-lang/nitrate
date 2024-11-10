@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PARSE_H__
-#define __QUIXCC_PARSE_H__
+#ifndef __NITRATECC_PARSE_H__
+#define __NITRATECC_PARSE_H__
 
 #define __NITRATE_LEXER_IMPL__
 #define __QPARSE_IMPL__
@@ -110,4 +110,4 @@ namespace qparse::parser {
   bool parse_attributes(qparse_t &job, qlex_t *rd, std::set<ConstExpr *> &attributes);
 };  // namespace qparse::parser
 
-#endif  // __QUIXCC_PARSE_H__
+#endif  // __NITRATECC_PARSE_H__
