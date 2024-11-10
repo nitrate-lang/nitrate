@@ -29,10 +29,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_MACRO_H__
-#define __QUIX_CORE_MACRO_H__
+#ifndef __NITRATE_CORE_MACRO_H__
+#define __NITRATE_CORE_MACRO_H__
 
 #define LIB_EXPORT extern "C" __attribute__((visibility("default")))
 #define CPP_EXPORT __attribute__((visibility("default")))
 
-#endif  // __QUIX_CORE_MACRO_H__
+#endif  // __NITRATE_CORE_MACRO_H__

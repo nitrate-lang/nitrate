@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_TYPE_DECL_H__
-#define __QUIX_QXIR_TYPE_DECL_H__
+#ifndef __NITRATE_QXIR_TYPE_DECL_H__
+#define __NITRATE_QXIR_TYPE_DECL_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -125,4 +125,4 @@ typedef enum qxir_val_t {
 }
 #endif
 
-#endif  // __QUIX_QXIR_TYPE_DECL_H__
+#endif  // __NITRATE_QXIR_TYPE_DECL_H__

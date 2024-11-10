@@ -29,10 +29,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_PARSER_CONFIG_H__
-#define __QUIX_PARSER_CONFIG_H__
+#ifndef __NITRATE_PARSER_CONFIG_H__
+#define __NITRATE_PARSER_CONFIG_H__
 
-#if defined(__cplusplus) && defined(__QUIX_PARSER_IMPL__)
+#if defined(__cplusplus) && defined(__NITRATE_PARSER_IMPL__)
 #include <initializer_list>
 #endif
 
@@ -63,13 +63,13 @@ typedef enum qparse_val_t {
 struct qparse_conf_t;
 typedef struct qparse_conf_t qparse_conf_t;
 
-#if defined(__cplusplus) && defined(__QUIX_PARSER_IMPL__)
+#if defined(__cplusplus) && defined(__NITRATE_PARSER_IMPL__)
 }
 typedef struct qparse_setting_t {
   qparse_key_t key;
   qparse_val_t value;
 
-#if defined(__cplusplus) && defined(__QUIX_PARSER_IMPL__)
+#if defined(__cplusplus) && defined(__NITRATE_PARSER_IMPL__)
   constexpr qparse_setting_t(const std::initializer_list<int> &list)
       : key(static_cast<qparse_key_t>(list.begin()[0])),
         value(static_cast<qparse_val_t>(list.begin()[1])) {}
@@ -217,4 +217,4 @@ void qparse_conf_dump(qparse_conf_t *conf, FILE *stream, const char *field_delim
 }
 #endif
 
-#endif  // __QUIX_PARSER_CONFIG_H__
+#endif  // __NITRATE_PARSER_CONFIG_H__

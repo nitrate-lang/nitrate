@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_PARSER_NODE_H__
-#define __QUIX_PARSER_NODE_H__
+#ifndef __NITRATE_PARSER_NODE_H__
+#define __NITRATE_PARSER_NODE_H__
 
 #include <nitrate-lexer/Token.h>
 
@@ -1995,4 +1995,4 @@ namespace std {
 
 #endif
 
-#endif  // __QUIX_PARSER_NODE_H__
+#endif  // __NITRATE_PARSER_NODE_H__

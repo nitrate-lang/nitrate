@@ -29,15 +29,15 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_CONFIG_H__
-#define __QUIX_QXIR_CONFIG_H__
+#ifndef __NITRATE_QXIR_CONFIG_H__
+#define __NITRATE_QXIR_CONFIG_H__
 
 #include <nitrate-ir/TypeDecl.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 
-#if defined(__cplusplus) && defined(__QUIX_QXIR_IMPL__)
+#if defined(__cplusplus) && defined(__NITRATE_QXIR_IMPL__)
 #include <initializer_list>
 #endif
 
@@ -47,13 +47,13 @@ extern "C" {
 
 ///==========================================================================///
 
-#if defined(__cplusplus) && defined(__QUIX_QXIR_IMPL__)
+#if defined(__cplusplus) && defined(__NITRATE_QXIR_IMPL__)
 }
 typedef struct qxir_setting_t {
   qxir_key_t key;
   qxir_val_t value;
 
-#if defined(__cplusplus) && defined(__QUIX_QXIR_IMPL__)
+#if defined(__cplusplus) && defined(__NITRATE_QXIR_IMPL__)
   constexpr qxir_setting_t(const std::initializer_list<int> &list)
       : key(static_cast<qxir_key_t>(list.begin()[0])),
         value(static_cast<qxir_val_t>(list.begin()[1])) {}
@@ -189,4 +189,4 @@ size_t qxir_conf_dump(qxir_conf_t *conf, FILE *stream, const char *field_delim,
 }
 #endif
 
-#endif  // __QUIX_QXIR_CONFIG_H__
+#endif  // __NITRATE_QXIR_CONFIG_H__

@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_LIB_H__
-#define __QUIX_QXIR_LIB_H__
+#ifndef __NITRATE_QXIR_LIB_H__
+#define __NITRATE_QXIR_LIB_H__
 
 #include <nitrate-ir/Config.h>
 #include <nitrate-ir/IR.h>
@@ -91,4 +91,4 @@ const char* qxir_strerror();
 }
 #endif
 
-#endif  // __QUIX_QXIR_LIB_H__
+#endif  // __NITRATE_QXIR_LIB_H__

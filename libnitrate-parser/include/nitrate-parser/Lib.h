@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_PARSER_LIB_H__
-#define __QUIX_PARSER_LIB_H__
+#ifndef __NITRATE_PARSER_LIB_H__
+#define __NITRATE_PARSER_LIB_H__
 
 #include <nitrate-parser/Config.h>
 #include <nitrate-parser/Node.h>
@@ -86,4 +86,4 @@ const char* qparse_strerror();
 }
 #endif
 
-#endif  // __QUIX_PARSER_LIB_H__
+#endif  // __NITRATE_PARSER_LIB_H__

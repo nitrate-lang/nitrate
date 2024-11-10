@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_PREP_PROCESS_H__
-#define __QUIX_PREP_PROCESS_H__
+#ifndef __NITRATE_PREP_PROCESS_H__
+#define __NITRATE_PREP_PROCESS_H__
 
 #include <nitrate-lexer/Lexer.h>
 #include <stdio.h>
@@ -89,4 +89,4 @@ void qprep_set_fetch_module(qlex_t *ctx, qprep_fetch_module_t fetch_fn, uintptr_
 }
 #endif
 
-#endif  // __QUIX_PREP_PROCESS_H__
+#endif  // __NITRATE_PREP_PROCESS_H__

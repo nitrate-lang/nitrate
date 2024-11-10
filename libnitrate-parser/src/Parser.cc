@@ -30,13 +30,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define __QPARSE_IMPL__
-#define __QUIX_LEXER_IMPL__
+#define __NITRATE_LEXER_IMPL__
 
 #include <Impl.h>
 #include <nitrate-core/Error.h>
-#include <parser/Parse.h>
 #include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
+#include <parser/Parse.h>
 
 #include <ParserStruct.hh>
 #include <atomic>

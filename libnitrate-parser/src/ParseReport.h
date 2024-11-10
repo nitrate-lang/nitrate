@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_PARSER_REPORT_H__
-#define __QUIX_PARSER_REPORT_H__
+#ifndef __NITRATE_PARSER_REPORT_H__
+#define __NITRATE_PARSER_REPORT_H__
 
 #include <nitrate-lexer/Token.h>
 #include <nitrate-parser/Parser.h>
@@ -96,4 +96,4 @@ namespace qparse::diag {
   void syntax(const qlex_tok_t &tok, std::string_view fmt, ...);
 };  // namespace qparse::diag
 
-#endif  // __QUIX_PARSER_REPORT_H__
+#endif  // __NITRATE_PARSER_REPORT_H__

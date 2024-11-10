@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_FORMAT_HH__
-#define __QUIX_QXIR_FORMAT_HH__
+#ifndef __NITRATE_QXIR_FORMAT_HH__
+#define __NITRATE_QXIR_FORMAT_HH__
 
 #ifndef __cplusplus
 #error "This header is C++ only."
@@ -51,4 +51,4 @@ namespace qxir {
   };
 };  // namespace qxir
 
-#endif  // __QUIX_QXIR_FORMAT_HH__
+#endif  // __NITRATE_QXIR_FORMAT_HH__

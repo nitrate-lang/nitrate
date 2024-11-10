@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CODEGEN_CORE_CONFIG_H__
-#define __QUIX_CODEGEN_CORE_CONFIG_H__
+#ifndef __NITRATE_CODEGEN_CORE_CONFIG_H__
+#define __NITRATE_CODEGEN_CORE_CONFIG_H__
 
 #include <nitrate-emit/Config.h>
 
@@ -94,4 +94,4 @@ public:
   bool has(qcode_key_t option, qcode_val_t value) const noexcept;
 };
 
-#endif  // __QUIX_CODEGEN_CORE_CONFIG_H__
+#endif  // __NITRATE_CODEGEN_CORE_CONFIG_H__

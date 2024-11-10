@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_LEXER_TOKEN_H__
-#define __QUIX_LEXER_TOKEN_H__
+#ifndef __NITRATE_LEXER_TOKEN_H__
+#define __NITRATE_LEXER_TOKEN_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -186,7 +186,7 @@ typedef enum qlex_key_t {
 
 typedef uint32_t qlex_size;
 
-#if defined(__cplusplus) && defined(__QUIX_LEXER_IMPL__)
+#if defined(__cplusplus) && defined(__NITRATE_LEXER_IMPL__)
 }
 
 #include <stdexcept>
@@ -335,4 +335,4 @@ typedef struct qlex_tok_t {
 }
 #endif
 
-#endif  // __QUIX_LEXER_TOKEN_H__
+#endif  // __NITRATE_LEXER_TOKEN_H__

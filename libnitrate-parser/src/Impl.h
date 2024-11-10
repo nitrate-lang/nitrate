@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_PARSER_IMPL_H__
-#define __QUIX_PARSER_IMPL_H__
+#ifndef __NITRATE_PARSER_IMPL_H__
+#define __NITRATE_PARSER_IMPL_H__
 
 #define __QPARSE_IMPL__
 
@@ -104,4 +104,4 @@ public:
   bool has(qparse_key_t option, qparse_val_t value) const;
 };
 
-#endif  // __QUIX_PARSER_IMPL_H__
+#endif  // __NITRATE_PARSER_IMPL_H__

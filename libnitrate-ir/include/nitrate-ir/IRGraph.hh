@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_NODE_H__
-#define __QUIX_QXIR_NODE_H__
+#ifndef __NITRATE_QXIR_NODE_H__
+#define __NITRATE_QXIR_NODE_H__
 
 #ifndef __cplusplus
 #error "This header is C++ only."

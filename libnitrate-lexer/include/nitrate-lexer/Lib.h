@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_LEXER_LIB_H__
-#define __QUIX_LEXER_LIB_H__
+#ifndef __NITRATE_LEXER_LIB_H__
+#define __NITRATE_LEXER_LIB_H__
 
 #include <nitrate-lexer/Lexer.h>
 #include <nitrate-lexer/Token.h>
@@ -85,4 +85,4 @@ const char* qlex_strerror();
 }
 #endif
 
-#endif  // __QUIX_LEXER_LIB_H__
+#endif  // __NITRATE_LEXER_LIB_H__

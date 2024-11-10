@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_ERROR_H__
-#define __QUIX_CORE_ERROR_H__
+#ifndef __NITRATE_CORE_ERROR_H__
+#define __NITRATE_CORE_ERROR_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -92,4 +92,4 @@ void qcore_vdebugf_(const char *fmt, va_list args);
 }
 #endif
 
-#endif  // __QUIX_CORE_ERROR_H__
+#endif  // __NITRATE_CORE_ERROR_H__

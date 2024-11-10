@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_QXIR_H__
-#define __QUIX_QXIR_QXIR_H__
+#ifndef __NITRATE_QXIR_QXIR_H__
+#define __NITRATE_QXIR_QXIR_H__
 
 #include <nitrate-ir/TypeDecl.h>
 #include <nitrate-lexer/Lexer.h>
@@ -375,4 +375,4 @@ qxir_conf_t *qxir_get_conf(qmodule_t *mod);
 }
 #endif
 
-#endif  // __QUIX_QXIR_QXIR_H__
+#endif  // __NITRATE_QXIR_QXIR_H__

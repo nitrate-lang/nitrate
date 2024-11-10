@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_MEMORY_H__
-#define __QUIX_CORE_MEMORY_H__
+#ifndef __NITRATE_CORE_MEMORY_H__
+#define __NITRATE_CORE_MEMORY_H__
 
 #ifdef __cplusplus
 extern "C" {

@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_PREP_LIB_H__
-#define __QUIX_PREP_LIB_H__
+#ifndef __NITRATE_PREP_LIB_H__
+#define __NITRATE_PREP_LIB_H__
 
 #include <nitrate-seq/Preprocess.h>
 #include <stdbool.h>
@@ -84,4 +84,4 @@ const char* qprep_strerror();
 }
 #endif
 
-#endif  // __QUIX_PREP_LIB_H__
+#endif  // __NITRATE_PREP_LIB_H__

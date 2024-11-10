@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_REPORT_H__
-#define __QUIX_QXIR_REPORT_H__
+#ifndef __NITRATE_QXIR_REPORT_H__
+#define __NITRATE_QXIR_REPORT_H__
 
 #include <nitrate-ir/IR.h>
 #include <nitrate-lexer/Token.h>
@@ -223,4 +223,4 @@ namespace qxir::diag {
 
 };  // namespace qxir::diag
 
-#endif  // __QUIX_QXIR_REPORT_H__
+#endif  // __NITRATE_QXIR_REPORT_H__

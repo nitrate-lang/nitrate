@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_CACHE_H__
-#define __QUIX_CORE_CACHE_H__
+#ifndef __NITRATE_CORE_CACHE_H__
+#define __NITRATE_CORE_CACHE_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -157,4 +157,4 @@ bool qcore_cache_write(const qcore_cache_key_t *key, const void *payload, size_t
 }
 #endif
 
-#endif  // __QUIX_CORE_CACHE_H__
+#endif  // __NITRATE_CORE_CACHE_H__

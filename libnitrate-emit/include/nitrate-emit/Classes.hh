@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CODEGEN_CLASSES_H__
-#define __QUIX_CODEGEN_CLASSES_H__
+#ifndef __NITRATE_CODEGEN_CLASSES_H__
+#define __NITRATE_CODEGEN_CLASSES_H__
 
 #ifndef __cplusplus
 #error "This header is for C++ only."
@@ -55,4 +55,4 @@ public:
   qcode_conf_t *get() const { return m_conf; }
 };
 
-#endif  // __QUIX_CODEGEN_CLASSES_H__
+#endif  // __NITRATE_CODEGEN_CLASSES_H__
