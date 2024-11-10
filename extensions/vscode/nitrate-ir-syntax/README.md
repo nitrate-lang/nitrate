@@ -1,5 +1,3 @@
 # NITRATE-IR README
 
-## Features
-
-Syntax highlighting for the NITRATE-IR language.
+TODO: Update the syntax highlighting to support the new IR language.
