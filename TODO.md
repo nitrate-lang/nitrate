@@ -2,7 +2,7 @@
 
 ---
 
-- QUIX IR dev:
+- Nitrate IR dev:
   - A lot of work to do on IR dev. 
     - Formalize the IR expression nodes and semantics.
     - Add a way to register IR passes at runtime.

@@ -74,7 +74,7 @@ static bool InitializeLLVM() {
     return false;
   }
 #else
-#warning "Building LIBQUIXCC without support for ANY LLVM targets!!"
+#warning "Building LIBNITRATE without support for ANY LLVM targets!!"
 #endif
 
   return true;

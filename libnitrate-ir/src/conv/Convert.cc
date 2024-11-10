@@ -511,7 +511,7 @@ qxir::Expr *qconv_lower_unexpr(ConvState &s, qxir::Expr *rhs, qlex_op_t op) {
 
       qcore_assert(inferred, "qOpTypeof: inferred == nullptr");
       qxir::SymbolEncoding se;
-      auto res = se.mangle_name(inferred.value(), qxir::AbiTag::QUIX);
+      auto res = se.mangle_name(inferred.value(), qxir::AbiTag::Nitrate);
       if (!res) {
         badtree(nullptr, "Failed to mangle type");
         throw QError();
@@ -1964,7 +1964,7 @@ namespace qxir {
     if (n->get_abi_name().empty()) {
       s.abi_mode = AbiTag::Default;
     } else if (n->get_abi_name() == "q") {
-      s.abi_mode = AbiTag::QUIX;
+      s.abi_mode = AbiTag::Nitrate;
     } else if (n->get_abi_name() == "c") {
       s.abi_mode = AbiTag::C;
     } else {

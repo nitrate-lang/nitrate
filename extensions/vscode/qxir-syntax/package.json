@@ -16,7 +16,7 @@
       {
         "id": "nitrate-ir",
         "aliases": [
-          "QUIX IR"
+          "Nitrate IR"
         ],
         "extensions": [
           ".qir"

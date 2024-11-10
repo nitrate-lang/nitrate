@@ -1,1 +1,1 @@
-# QUIX IR Library
+# Nitrate IR Library

@@ -356,7 +356,7 @@ qprep_impl_t::qprep_impl_t(std::shared_ptr<std::istream> file, qcore_env_t env,
     /* Load the special selection of standard libraries */
     luaL_openlibs(m_core->L);
 
-    /* Install the QUIX API */
+    /* Install the Nitrate API */
     install_lua_api();
   }
 

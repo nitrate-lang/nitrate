@@ -160,7 +160,7 @@ static std::string panic_create_report() {
 
   report += "]}";
 
-  return "LIBQUIXCC_CRASHINFO_" + base64_encode(report);
+  return "LIBNITRATE_CRASHINFO_" + base64_encode(report);
 }
 
 static std::vector<std::string> panic_split_message(std::string_view message) {

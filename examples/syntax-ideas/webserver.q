@@ -1,6 +1,6 @@
 @author "Wesley";
 @license "Unlicense";
-@description "A simple web server using QUIX";
+@description "A simple web server using Nitrate";
 
 @import orbit::http;
 @import orbit::markdown;

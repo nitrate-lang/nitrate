@@ -36,7 +36,7 @@ export function activate(context: ExtensionContext) {
   // Create the language client and start the client.
   client = new LanguageClient(
     'quixLanguageServer',
-    'QUIX Language Server',
+    'Nitrate Language Server',
     serverOptions,
     clientOptions
   );

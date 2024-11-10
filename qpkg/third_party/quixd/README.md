@@ -1,6 +1,6 @@
-# QUIX Language Server Implementation
+# Nitrate Language Server Implementation
 
-This is the implementation of a language server for the QUIX programming language. The language server is implemented in C++20 and uses the [LSP](https://microsoft.github.io/language-server-protocol/) protocol.
+This is the implementation of a language server for the Nitrate programming language. The language server is implemented in C++20 and uses the [LSP](https://microsoft.github.io/language-server-protocol/) protocol.
 
 ## Progress on LSP Features
 
@@ -61,6 +61,6 @@ This is the implementation of a language server for the QUIX programming languag
 
 ## Building
 
-- The language server is built automatically when building the QUIX toolchain. 
+- The language server is built automatically when building the Nitrate toolchain. 
   Use the build tool provided in the root of the repository. 
 - Instructions for standalone building are not documented.

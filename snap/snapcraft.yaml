@@ -1,12 +1,12 @@
 name: qpkg
 base: core22
 version: '0.0.0'
-summary: QUIX Package and Build System
+summary: Nitrate Package and Build System
 description: |
   QPKG is a comprehensive tool to install, create, compile, analyze, recompose, and
-  distribute software packages using the QUIX Programming language. It integrates
-  the entire QUIX Toolchain and provides a consistent and reliable way to deal with
-  QUIX projects.
+  distribute software packages using the Nitrate Programming language. It integrates
+  the entire Nitrate Toolchain and provides a consistent and reliable way to deal with
+  Nitrate projects.
 
 confinement: classic
 

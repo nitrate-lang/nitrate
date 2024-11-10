@@ -1,8 +1,8 @@
-# QUIX README
+# Nitrate README
 
 ## Features
 
-Syntax highlighting for the QUIX programming language.
+Syntax highlighting for the Nitrate programming language.
 
 ## Requirements
 
