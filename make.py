@@ -29,7 +29,7 @@ if '--snap' in sys.argv:
     if os.system('snapcraft --version') != 0:
         print("Snapcraft is not installed.")
         sys.exit(1)
-    
+
     print("Building Snap package...")
     if os.system('snapcraft') != 0:
         print("Snap build failed.")
@@ -40,17 +40,19 @@ if '--snap' in sys.argv:
 print("Building Docker containers...")
 
 # Build the debug env container
-if os.system('docker build -t quixcc-debug:latest -f env/Debug.Dockerfile .') != 0:
+if os.system('docker build -t quixcc-debug:latest -f tools/Debug.Dockerfile .') != 0:
     print("Debug build failed.")
     sys.exit(1)
 
+
 def regenerate_runner():
-    if os.system('docker build -t qpkg-run:latest -f env/Runner.Dockerfile .') != 0:
+    if os.system('docker build -t qpkg-run:latest -f tools/Runner.Dockerfile .') != 0:
         print("Runner build failed.")
         sys.exit(1)
 
+
 # Build the release env container
-if os.system('docker build -t quixcc-release:latest -f env/Release.Dockerfile .') != 0:
+if os.system('docker build -t quixcc-release:latest -f tools/Release.Dockerfile .') != 0:
     print("Release build failed.")
     sys.exit(1)
 
@@ -83,9 +85,9 @@ if '--debug' in sys.argv:
         print("Debug build failed.")
         sys.exit(1)
     if '--strip' in sys.argv:
-      os.system('find build/bin -type f -exec strip {} \\;')
-      os.system('find build/lib -type f -iname "*.so" -exec strip {} \\;')
-      print("Stripped debug binaries.")
+        os.system('find build/bin -type f -exec strip {} \\;')
+        os.system('find build/lib -type f -iname "*.so" -exec strip {} \\;')
+        print("Stripped debug binaries.")
     print("Debug build complete.")
 
     regenerate_runner()
