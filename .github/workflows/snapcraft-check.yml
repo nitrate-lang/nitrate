@@ -1,45 +1,19 @@
-name: Verify Snapcraft
+name: Publish Snap Package
 
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - uses: snapcore/action-build@v1
+      id: build
+    - uses: snapcore/action-publish@v1
+      env:
+        SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
       with:
-        submodules: true
-
-    - name: Dump OS information
-      run: |
-        echo "OS: ${{ runner.os }}"
-        echo "OS Version: ${{ runner.os_version }}"
-        echo "Architecture: ${{ runner.arch }}"
-        cat /etc/os-release
-      shell: bash
-
-    - name: Install dependencies
-      run: |
-        sudo apt install -y snapd
-      shell: bash
-
-    - name: Install Snapcraft
-      run: |
-        sudo snap install snapcraft --classic
-      shell: bash
-
-    - name: Verify Snapcraft
-      run: |
-        snapcraft --version
-      shell: bash
-
-    - name: Build Snap
-      run: |
-        sudo lxd init --auto
-        sudo snapcraft -v
-      shell: bash
+        snap: ${{ steps.build.outputs.snap }}
+        release: edge
