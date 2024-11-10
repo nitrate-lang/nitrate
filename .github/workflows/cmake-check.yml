@@ -27,17 +27,6 @@ jobs:
       with:
         submodules: true
 
-    - name: Cache CMake build
-      id: cmake-cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          ${{ github.workspace }}/build
-          ~/.ccache  # Optional: cache for compiler cache if you use ccache
-        key: ${{ runner.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
-        restore-keys: |
-          ${{ runner.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}-
-
     - name: Dump OS information
       run: |
         echo "OS: ${{ runner.os }}"
@@ -48,9 +37,6 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo apt purge -y firefox
-        sudo apt clean
-        sudo apt update --fix-missing && sudo apt upgrade -y
         sudo apt install -y cmake make clang llvm-14 upx gnupg2 dpkg-dev
         sudo apt install -y libssl-dev libboost-all-dev libzstd-dev libclang-common-14-dev \
                             rapidjson-dev libdeflate-dev libreadline-dev libclang-dev      \
@@ -81,10 +67,3 @@ jobs:
         sudo sysctl -w vm.mmap_rnd_bits=28 # Disable ASLR for sanitizers
         ctest --build-config ${{ matrix.build_type }} --rerun-failed --output-on-failure
       shell: bash
-
-    - name: Save CMake Cache
-      if: steps.cmake-cache.outputs.cache-hit != 'true'
-      uses: actions/cache@v3
-      with:
-        path: ${{ steps.strings.outputs.build-output-dir }}
-        key: ${{ runner.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
