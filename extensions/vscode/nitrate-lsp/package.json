@@ -1,0 +1,44 @@
+{
+  "name": "nitrate-lsp",
+  "displayName": "Nitrate: Language Server",
+  "description": "The official Nitrate Language Server",
+  "author": "Wesley Jones",
+  "license": "LGPL-2.1-or-later",
+  "version": "1.0.3",
+  "icon": "./icons/icon-light.png",
+  "repository": {
+    "type": "git",
+    "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/nitrate"
+  },
+  "publisher": "qpkg",
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "multi-root ready"
+  ],
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "activationEvents": [
+    "onLanguage:nitrate"
+  ],
+  "main": "./client/out/extension",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -b",
+    "watch": "tsc -b -w",
+    "lint": "eslint ./client/src --ext .ts,.tsx",
+    "postinstall": "cd client && npm install && cd ..",
+    "test": "sh ./scripts/e2e.sh"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.1.0",
+    "eslint": "^8.57.0",
+    "mocha": "^10.3.0",
+    "typescript": "^5.6.2"
+  }
+}
