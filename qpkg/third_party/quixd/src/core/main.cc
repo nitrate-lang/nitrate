@@ -1,3 +1,5 @@
+#include <glog/logging.h>
+
 #include <boost/assert/source_location.hpp>
 #include <boost/throw_exception.hpp>
 #include <core/argparse.hh>
@@ -8,6 +10,8 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+
+#include "LibMacro.h"
 
 void boost::throw_exception(std::exception const& e, boost::source_location const&) {
   LOG(ERROR) << e.what();
@@ -26,7 +30,7 @@ static constexpr void create_parser(argparse::ArgumentParser& parser) {
       .default_value(std::string(""))
       .help("Specify the configuration file");
 
-  parser.add_argument("--log").required().help("Specify the log file");
+  parser.add_argument("--log").default_value("quixd-lsp.log").help("Specify the log file");
 
   ///=================== CONNECTION CONFIGURATION ======================
 
@@ -100,8 +104,21 @@ void signal_handler(int signal) {
   }
 }
 
-int quixd_main(int argc, char** argv) {
+LIB_EXPORT int quixd_main(int argc, char** argv) {
   std::vector<std::string> args(argv, argv + argc);
+
+  {
+    std::string str;
+    for (auto it = args.begin(); it != args.end(); ++it) {
+      str += *it;
+      if (it + 1 != args.end()) {
+        str += " ";
+      }
+    }
+
+    LOG(INFO) << "Starting quixd: \"" << str << "\"";
+  }
+
   argparse::ArgumentParser parser("quixd", "1.0");
   create_parser(parser);
 
@@ -115,16 +132,11 @@ int quixd_main(int argc, char** argv) {
   { /* Setup log file */
     std::string log_file = parser.get<std::string>("--log");
 
-    FLAGS_stderrthreshold = google::FATAL;
-    google::InitGoogleLogging(argv[0]);
-
     static MyLogSink sink(log_file);
     google::AddLogSink(&sink);
   }
 
   install_signal_handlers();
-
-  LOG(INFO) << "Starting quixd";
 
   std::unique_ptr<Configuration> config;
   { /* Setup config */

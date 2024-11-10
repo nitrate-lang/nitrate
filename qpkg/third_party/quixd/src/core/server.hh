@@ -322,6 +322,7 @@ class ServerContext {
   ServerContext(const ServerContext&) = delete;
   ServerContext(ServerContext&&) = delete;
 
+  void register_handlers();
   void request_queue_loop(std::stop_token st);
 
   void handle_request(const lsp::RequestMessage& request, std::ostream& out);
@@ -348,19 +349,3 @@ public:
     m_notification_handlers[method] = std::move(handler);
   }
 };
-
-#define ADD_REQUEST_HANDLER(method, handler)                                                   \
-  namespace {                                                                                  \
-    struct Register_##handler {                                                                \
-      Register_##handler() { ServerContext::the().register_request_handler(method, handler); } \
-    } register_##handler;                                                                      \
-  }
-
-#define ADD_NOTIFICATION_HANDLER(method, handler)                            \
-  namespace {                                                                \
-    struct Register_##handler {                                              \
-      Register_##handler() {                                                 \
-        ServerContext::the().register_notification_handler(method, handler); \
-      }                                                                      \
-    } register_##handler;                                                    \
-  }

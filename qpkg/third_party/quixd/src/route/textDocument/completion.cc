@@ -1,6 +1,7 @@
 #include <rapidjson/document.h>
 
 #include <core/server.hh>
+#include <route/RoutesList.hh>
 
 using namespace rapidjson;
 
@@ -13,7 +14,7 @@ public:
   std::optional<std::shared_ptr<ParseTree>> get(std::string_view uri) const;
 };
 
-static void do_completion(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {
+void do_completion(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {
   resp.error(lsp::ErrorCodes::RequestFailed, "Not implemented");
   return;
 
@@ -43,5 +44,3 @@ static void do_completion(const lsp::RequestMessage&, lsp::ResponseMessage& resp
 
   resp->AddMember("items", items, alloc);
 }
-
-ADD_REQUEST_HANDLER("textDocument/completion", do_completion);

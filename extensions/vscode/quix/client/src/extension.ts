@@ -7,45 +7,47 @@ import * as path from 'path';
 import { workspace, ExtensionContext } from 'vscode';
 
 import {
-	LanguageClient,
-	LanguageClientOptions,
-	ServerOptions,
-	TransportKind
+  LanguageClient,
+  LanguageClientOptions,
+  ServerOptions,
+  TransportKind
 } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
-	const serverExecutable = "/usr/bin/quixd"
+  const homeDir = require('os').homedir();
 
-	const serverOptions: ServerOptions = {
-		command: serverExecutable,
-		args: ["--log", "/tmp/quixd.log"],
-		transport: TransportKind.stdio
-	};
+  const lspLogPath = path.join(homeDir, 'quixd-lsp.log');
 
-	const clientOptions: LanguageClientOptions = {
-		documentSelector: [{ scheme: 'file', language: 'quix' }],
-		synchronize: {
-			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
-		}
-	};
+  const serverOptions: ServerOptions = {
+    command: "qpkg",
+    args: ['lsp', "--log", lspLogPath, "--no-color"],
+    transport: TransportKind.stdio
+  };
 
-	// Create the language client and start the client.
-	client = new LanguageClient(
-		'quixLanguageServer',
-		'QUIX Language Server',
-		serverOptions,
-		clientOptions
-	);
+  const clientOptions: LanguageClientOptions = {
+    documentSelector: [{ scheme: 'file', language: 'quix' }],
+    synchronize: {
+      fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
+    }
+  };
 
-	// Start the client. This will also launch the server
-	client.start();
+  // Create the language client and start the client.
+  client = new LanguageClient(
+    'quixLanguageServer',
+    'QUIX Language Server',
+    serverOptions,
+    clientOptions
+  );
+
+  // Start the client. This will also launch the server
+  client.start();
 }
 
 export function deactivate(): Thenable<void> | undefined {
-	if (!client) {
-		return undefined;
-	}
-	return client.stop();
+  if (!client) {
+    return undefined;
+  }
+  return client.stop();
 }

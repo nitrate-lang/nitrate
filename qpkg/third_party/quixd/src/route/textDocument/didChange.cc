@@ -3,6 +3,7 @@
 
 #include <core/SyncFS.hh>
 #include <core/server.hh>
+#include <route/RoutesList.hh>
 #include <string>
 
 using namespace rapidjson;
@@ -13,7 +14,7 @@ struct Change {
   std::string text;
 };
 
-static void do_didChange(const lsp::NotificationMessage& notif) {
+void do_didChange(const lsp::NotificationMessage& notif) {
   if (!notif.params().HasMember("textDocument")) {
     LOG(ERROR) << "Missing textDocument field in didChange notification";
     return;
@@ -95,5 +96,3 @@ static void do_didChange(const lsp::NotificationMessage& notif) {
 
   latest[uri] = version;
 }
-
-ADD_NOTIFICATION_HANDLER("textDocument/didChange", do_didChange);

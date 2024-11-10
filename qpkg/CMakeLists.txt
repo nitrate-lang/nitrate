@@ -30,7 +30,8 @@ target_include_directories(qpkg PUBLIC src ${CMAKE_SOURCE_DIR}/libquix-core/incl
   ${CMAKE_SOURCE_DIR}/libquix-parser/include
   ${CMAKE_SOURCE_DIR}/libquix-ir/include
   ${CMAKE_SOURCE_DIR}/libquix-codegen/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
+  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quixd/include)
 target_compile_options(qpkg PRIVATE
   -Wno-error=overlength-strings
   -D__TARGET_VERSION=${__TARGET_VERSION}

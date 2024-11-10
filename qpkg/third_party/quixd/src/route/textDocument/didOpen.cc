@@ -2,11 +2,12 @@
 
 #include <core/SyncFS.hh>
 #include <core/server.hh>
+#include <route/RoutesList.hh>
 #include <string>
 
 using namespace rapidjson;
 
-static void do_didOpen(const lsp::NotificationMessage& notif) {
+void do_didOpen(const lsp::NotificationMessage& notif) {
   if (!notif.params().HasMember("textDocument")) {
     LOG(ERROR) << "Missing textDocument member";
     return;
@@ -101,5 +102,3 @@ static void do_didOpen(const lsp::NotificationMessage& notif) {
 
   LOG(INFO) << "Opened file: " << uri;
 }
-
-ADD_NOTIFICATION_HANDLER("textDocument/didOpen", do_didOpen);

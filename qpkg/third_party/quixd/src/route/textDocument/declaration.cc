@@ -2,12 +2,11 @@
 
 #include <core/server.hh>
 #include <lang/Parse.hh>
-
-#include "quix-parser/Node.h"
+#include <route/RoutesList.hh>
 
 using namespace rapidjson;
 
-static void do_declaration(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
+void do_declaration(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   resp.error(lsp::ErrorCodes::RequestFailed, "Not implemented");
   return;
 
@@ -104,5 +103,3 @@ static void do_declaration(const lsp::RequestMessage& req, lsp::ResponseMessage&
   //   return false;
   // });
 }
-
-ADD_REQUEST_HANDLER("textDocument/declaration", do_declaration);
