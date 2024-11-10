@@ -17,7 +17,7 @@ static std::string_view source_code = R"(fn main(args: [str]): i32 {
   let content = file.read_all();
   file.close();
 
-  let x = @(quix.emit("1e43")) - 0b1001010010;
+  let x = @(nit.emit("1e43")) - 0b1001010010;
   print(x, content.as_bytes().transmute("enHEX").join(":").as_str());
 
   ret 0;

@@ -61,22 +61,22 @@ std::string_view nit_code_prefix = R"(
 
 @(fn define() {
   -- Read in expected lexical sequence
-  local name = quix.next(); local sepr = quix.next();
-  local valu = quix.next(); local semi = quix.next();
+  local name = nit.next(); local sepr = nit.next();
+  local valu = nit.next(); local semi = nit.next();
 
   -- Verify that the sequence is correct
   if name.ty ~= 'name' then
-    quix.abort('Expected name in @define macro');
+    nit.abort('Expected name in @define macro');
   end
   if sepr.ty ~= 'op' or sepr.v ~= '=' then
-    quix.abort('Expected = in @define macro');
+    nit.abort('Expected = in @define macro');
   end
   if semi.ty ~= 'sym' or semi.v ~= ';' then
-    quix.abort('Expected ; in @define macro');
+    nit.abort('Expected ; in @define macro');
   end
 
   -- Set the define in the magic 'def.' namespace
-  quix.set('def.'.. name.v, valu.v);
+  nit.set('def.'.. name.v, valu.v);
 })
 
 @(fn comp_if(cond, terminator) {
@@ -93,9 +93,9 @@ std::string_view nit_code_prefix = R"(
   -- Handle nested @comp_if blocks
   local rank = 1
   while true do
-    local token = quix.next()
+    local token = nit.next()
     if token.ty == 'eof' then
-      quix.error('Unexpected EOF in conditional compilation block')
+      nit.error('Unexpected EOF in conditional compilation block')
       break
     end
 
@@ -116,79 +116,79 @@ std::string_view nit_code_prefix = R"(
 
 @(fn use() {
   -- Read in expected lexical sequence
-  local ver = quix.next(); local semi = quix.next();
+  local ver = nit.next(); local semi = nit.next();
 
   -- Verify that the sequence is correct
   if ver.ty ~= 'str' then
-    quix.abort('Expected version string after @use');
+    nit.abort('Expected version string after @use');
   end
   if semi.ty ~= 'sym' or semi.v ~= ';' then
-    quix.abort('Expected semicolon after version string');
+    nit.abort('Expected semicolon after version string');
   end
 
   -- For now only support v1.0
   if ver.v ~= 'v1.0' then
-    quix.abort('Unsupported Nitrate environment version: ', ver.v);
+    nit.abort('Unsupported Nitrate environment version: ', ver.v);
   end
 
-  quix.debug('Using Nitrate environment version: ', ver.v);
+  nit.debug('Using Nitrate environment version: ', ver.v);
 })
 
 @(fn import() {
   -- Read in expected lexical sequence
-  local name = quix.next(); local semi = quix.next();
+  local name = nit.next(); local semi = nit.next();
 
   -- Verify that the sequence is correct
   if semi.ty ~= 'sym' or semi.v ~= ';' then
-    quix.abort('Expected semicolon after module name');
+    nit.abort('Expected semicolon after module name');
   end
   
   if name.ty ~= 'str' and name.ty ~= 'name' then
-    quix.abort('Expected string literal or identifier after @import.');
+    nit.abort('Expected string literal or identifier after @import.');
   end
 
   name = name.v;
 
-  quix.debug('Attempting to import module: ', name);
-  local content = quix.fetch(name);
+  nit.debug('Attempting to import module: ', name);
+  local content = nit.fetch(name);
   if content == nil then
-    quix.abort('Failed to import module: ', quix.errno);
+    nit.abort('Failed to import module: ', nit.errno);
   end
 
-  quix.debug(string.format('Fetched module: %s (%d bytes)', name, #content));
+  nit.debug(string.format('Fetched module: %s (%d bytes)', name, #content));
 
   return content;
 })
 
 @(
-  quix.isset = function(name, value)
+  nit.isset = function(name, value)
     if name == nil then
-      quix.abort('Expected name in @isset function');
+      nit.abort('Expected name in @isset function');
     end
 
-    local flag = quix.get('flag.'.. name);
+    local flag = nit.get('flag.'.. name);
     if value == nil then
       return flag ~= nil;
     end
     return flag == value;
   end
 
-  quix.get_target = function()
-    return quix.get('this.target-triple');
+  nit.get_target = function()
+    return nit.get('this.target-triple');
   end
 
-  quix.get_host = function()
-    return quix.get('this.host-triple');
+  nit.get_host = function()
+    return nit.get('this.host-triple');
   end
 
-  quix.try_set = function(name, value)
+  nit.try_set = function(name, value)
     if name == nil then
-      quix.abort('Expected name in @req_flag_set function');
+      nit.abort('Expected name in @req_flag_set function');
     end
 
-    local mut_flags = quix.get('flag.mutable');
+    local mut_flags = nit.get('flag.mutable');
     if mut_flags == nil then
-      quix.debug('The expected mutable flags table is not set');
+      nit.debug('The expected mutable flags table is not set');
       return false;
     end
 
@@ -202,19 +202,19 @@ std::string_view nit_code_prefix = R"(
       return false;
     end
 
-    quix.set(name, value);
+    nit.set(name, value);
     return true;
   end
 
-  quix.set_flag = function(name, value)
+  nit.set_flag = function(name, value)
     if try_set(name, value) then
       return;
     end
 
-    quix.abort('Immutable flag could not be modified: ', name);
+    nit.abort('Immutable flag could not be modified: ', name);
   end
 
-  quix.enstr = function(item)
+  nit.enstr = function(item)
     if item == nil then
       item = '';
     end
@@ -235,7 +235,7 @@ std::string_view nit_code_prefix = R"(
     return res .. '"';
   end
 
-  quix.destr = function(item)
+  nit.destr = function(item)
     if item == nil then
       return '';
     end

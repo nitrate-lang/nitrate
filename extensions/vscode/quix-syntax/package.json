@@ -1,5 +1,5 @@
 {
-  "name": "quix",
+  "name": "nitrate",
   "displayName": "Nitrate",
   "publisher": "qpkg",
   "description": "Nitrate syntax highlighting support",
@@ -15,10 +15,10 @@
   "contributes": {
     "languages": [
       {
-        "id": "quix",
+        "id": "nitrate",
         "aliases": [
           "Nitrate",
-          "quix"
+          "nitrate"
         ],
         "extensions": [
           ".q",
@@ -33,9 +33,9 @@
     ],
     "grammars": [
       {
-        "language": "quix",
+        "language": "nitrate",
         "scopeName": "source.q",
-        "path": "./syntaxes/quix.tmLanguage.json"
+        "path": "./syntaxes/nitrate.tmLanguage.json"
       }
     ]
   }

@@ -6,7 +6,7 @@
 /**
  * @brief Interface to QSys API
  */
-@(fn qsys(qnum: u32, ...) => quix.api.qsys(@forward(args)); )
+@(fn qsys(qnum: u32, ...) => nit.api.qsys(@forward(args)); )
 
 /**
  * @brief Print Function
