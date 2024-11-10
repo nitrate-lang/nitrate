@@ -32,11 +32,11 @@
 #define LIBQUIX_INTERNAL
 #include <nitrate-core/Env.h>
 #include <nitrate-core/Lib.h>
+#include <nitrate-emit/Lib.h>
 #include <nitrate-ir/Lib.h>
 #include <nitrate-lexer/Lib.h>
 #include <nitrate-parser/Lib.h>
 #include <nitrate-seq/Lib.h>
-#include <quix-codegen/Lib.h>
 #include <quix/code.h>
 
 #include <Stream.hh>

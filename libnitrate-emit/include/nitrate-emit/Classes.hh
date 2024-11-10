@@ -29,15 +29,30 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_CODEGEN_IMPL__
+#ifndef __QUIX_CODEGEN_CLASSES_H__
+#define __QUIX_CODEGEN_CLASSES_H__
 
-#include <quix-codegen/Config.h>
+#ifndef __cplusplus
+#error "This header is for C++ only."
+#endif
 
-#include <vector>
+#include <nitrate-core/Error.h>
+#include <nitrate-emit/Config.h>
 
-namespace codegen::conf {
-  std::vector<qcode_setting_t> default_settings = {
-      {QCK_CRASHGUARD, QCV_ON},
-      {QCV_FASTERROR, QCV_OFF},
-  };
-}
+#include <stdexcept>
+
+class qcode_conf final {
+  qcode_conf_t *m_conf;
+
+public:
+  qcode_conf(bool use_default = true) {
+    if ((m_conf = qcode_conf_new(use_default)) == nullptr) {
+      throw std::runtime_error("qcode_conf_new failed");
+    }
+  }
+  ~qcode_conf() { qcode_conf_free(m_conf); }
+
+  qcode_conf_t *get() const { return m_conf; }
+};
+
+#endif  // __QUIX_CODEGEN_CLASSES_H__

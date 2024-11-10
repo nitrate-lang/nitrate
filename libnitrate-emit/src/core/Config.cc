@@ -33,7 +33,7 @@
 
 #include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
-#include <quix-codegen/Config.h>
+#include <nitrate-emit/Config.h>
 
 #include <boost/bimap.hpp>
 

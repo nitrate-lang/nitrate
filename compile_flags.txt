@@ -17,9 +17,9 @@
 -I
 ./libnitrate-ir/src
 -I
-./libquix-codegen/include
+./libnitrate-emit/include
 -I
-./libquix-codegen/src
+./libnitrate-emit/src
 -I
 ./libquix/include
 -I

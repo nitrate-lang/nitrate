@@ -29,57 +29,108 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CODEGEN_CODE_H__
-#define __QUIX_CODEGEN_CODE_H__
+#include <core/LibMacro.h>
+#include <nitrate-core/Error.h>
+#include <nitrate-emit/Code.h>
 
-#include <nitrate-ir/TypeDecl.h>
-#include <quix-codegen/Config.h>
-#include <stdbool.h>
+#include <core/Config.hh>
+#include <functional>
+#include <memory>
+#include <streambuf>
+#include <transcode/Targets.hh>
+#include <unordered_map>
 
-#ifdef __cplusplus
-extern "C" {
+#ifdef TRANSCODE_TARGET_ALL
+#define TRANSCODE_TARGET_C11
+#define TRANSCODE_TARGET_CXX11
+#define TRANSCODE_TARGET_TYPESCRIPT
+#define TRANSCODE_TARGET_RUST
+#define TRANSCODE_TARGET_PYTHON
+#define TRANSCODE_TARGET_CSHARP
 #endif
 
-typedef enum {
-  QCODE_C11,     /* Generate C 11 Source Code */
-  QCODE_CXX11,   /* Generate C++ 11 Source Code */
-  QCODE_TS,      /* Generate TypeScript Source Code */
-  QCODE_RUST,    /* Generate Rust Source Code */
-  QCODE_PYTHON3, /* Generate Python3 Source Code */
-  QCODE_CSHARP,  /* Generate C# Source Code */
-} qcode_lang_t;
+static const std::unordered_map<qcode_lang_t,
+                                std::function<bool(qmodule_t*, std::ostream&, std::ostream&)>>
+    transcoders = {
+#ifdef TRANSCODE_TARGET_C11
+        {QCODE_C11, codegen::for_c11},
+#endif
+#ifdef TRANSCODE_TARGET_CXX11
+        {QCODE_CXX11, codegen::for_cxx11},
+#endif
+#ifdef TRANSCODE_TARGET_TYPESCRIPT
+        {QCODE_TS, codegen::for_ts},
+#endif
+#ifdef TRANSCODE_TARGET_RUST
+        {QCODE_RUST, codegen::for_rust},
+#endif
+#ifdef TRANSCODE_TARGET_PYTHON
+        {QCODE_PYTHON3, codegen::for_python},
+#endif
+#ifdef TRANSCODE_TARGET_CSHARP
+        {QCODE_CSHARP, codegen::for_csharp},
+#endif
+};
 
-typedef enum {
-  QCODE_MINIFY,
-  QCODE_GOOGLE,
-} qcode_style_t;
+static const std::unordered_map<qcode_lang_t, std::string_view> target_names = {
+    {QCODE_C11, "C11"},   {QCODE_CXX11, "C++11"},    {QCODE_TS, "TypeScript"},
+    {QCODE_RUST, "Rust"}, {QCODE_PYTHON3, "Python"}, {QCODE_CSHARP, "C#"},
+};
 
-/**
- * @brief Transcompile the QXIR module to the target source language.
- *
- * @param module QXIR module to transcompile.
- * @param conf Configuration for the transcompiler.
- * @param lang Target source language.
- * @param style Code style to use.
- * @param err Write human readable error messages to this file or NULL for suppression.
- * @param out Write the transcompiled source code to this file or NULL for suppression.
- * @return true if the transcompilation was successful, false otherwise.
- *
- * Both `err` and `out` will be flushed before returning, irrespective of the return value.
- */
-bool qcode_transcode(qmodule_t* module, qcode_conf_t* conf, qcode_lang_t lang, qcode_style_t style,
-                     FILE* err, FILE* out);
+class OStreamWriter : public std::streambuf {
+  FILE* m_file;
 
-///==============================================================================
+public:
+  OStreamWriter(FILE* file) : m_file(file) {}
 
-bool qcode_ir(qmodule_t* module, qcode_conf_t* conf, FILE* err, FILE* out);
-bool qcode_asm(qmodule_t* module, qcode_conf_t* conf, FILE* err, FILE* out);
-bool qcode_obj(qmodule_t* module, qcode_conf_t* conf, FILE* err, FILE* out);
+  virtual std::streamsize xsputn(const char* s, std::streamsize n) override {
+    return fwrite(s, 1, n, m_file);
+  }
 
-///==============================================================================
+  virtual int overflow(int c) override { return fputc(c, m_file); }
+};
 
-#ifdef __cplusplus
+class OStreamDiscard : public std::streambuf {
+public:
+  virtual std::streamsize xsputn(const char* s, std::streamsize n) override { return n; }
+  virtual int overflow(int c) override { return c; }
+};
+
+LIB_EXPORT bool qcode_transcode(qmodule_t* module, qcode_conf_t* conf, qcode_lang_t lang,
+                                qcode_style_t style, FILE* err, FILE* out) {
+  std::unique_ptr<std::streambuf> err_stream_buf, out_stream_buf;
+
+  /* If the error stream is provided, use it. Otherwise, discard the output. */
+  if (err) {
+    err_stream_buf = std::make_unique<OStreamWriter>(err);
+  } else {
+    err_stream_buf = std::make_unique<OStreamDiscard>();
+  }
+
+  /* If the output stream is provided, use it. Otherwise, discard the output. */
+  if (out) {
+    out_stream_buf = std::make_unique<OStreamWriter>(out);
+  } else {
+    out_stream_buf = std::make_unique<OStreamDiscard>();
+  }
+
+  if (transcoders.contains(lang)) {
+    std::ostream err_stream(err_stream_buf.get());
+    std::ostream out_stream(out_stream_buf.get());
+
+    /* Do the transcoding. */
+    bool status = transcoders.at(lang)(module, err_stream, out_stream);
+
+    /* Flush the outer and inner streams. */
+    err_stream.flush();
+    out_stream.flush();
+    err&& fflush(err);
+    out&& fflush(out);
+
+    return status;
+  } else {
+    /* Panic if the transcoder is not available. */
+    qcore_panicf("The code generator was not built with transcoder support for target %s.",
+                 target_names.at(lang).data());
+  }
 }
-#endif
-
-#endif  // __QUIX_CODEGEN_CODE_H__
