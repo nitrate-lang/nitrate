@@ -4,7 +4,7 @@
   "publisher": "qpkg",
   "description": "Nitrate syntax highlighting support",
   "icon": "./icons/icon-light.png",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/nitrate-syntax",
   "engines": {
     "vscode": "^1.92.0"
@@ -18,11 +18,11 @@
         "id": "nitrate",
         "aliases": [
           "Nitrate",
+          "NITRATE",
           "nitrate"
         ],
         "extensions": [
-          ".q",
-          ".qh"
+          ".n"
         ],
         "icon": {
           "light": "./icons/icon-light.png",
@@ -34,7 +34,7 @@
     "grammars": [
       {
         "language": "nitrate",
-        "scopeName": "source.q",
+        "scopeName": "source.n",
         "path": "./syntaxes/nitrate.tmLanguage.json"
       }
     ]

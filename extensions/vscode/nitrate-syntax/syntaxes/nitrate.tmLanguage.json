@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-  "name": "Nitrate",
+  "name": "nitrate",
   "patterns": [
     {
       "include": "#keywords"
@@ -127,5 +127,5 @@
       ]
     }
   },
-  "scopeName": "source.q"
+  "scopeName": "source.n"
 }
