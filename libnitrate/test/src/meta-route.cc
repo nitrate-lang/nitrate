@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <quix/code.h>
+#include <nitrate/code.h>
 
 #include <cstdint>
 #include <string_view>

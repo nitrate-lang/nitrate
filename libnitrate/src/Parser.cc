@@ -32,7 +32,7 @@
 #define LIBQUIX_INTERNAL
 
 #include <nitrate-core/Lib.h>
-#include <quix/code.h>
+#include <nitrate/code.h>
 
 #include <SerialUtil.hh>
 #include <cstdint>
@@ -40,8 +40,8 @@
 #include <nitrate-core/Classes.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Classes.hh>
-#include <nlohmann/json.hpp>
 #include <nitrate-parser/Classes.hh>
+#include <nlohmann/json.hpp>
 #include <string_view>
 #include <unordered_set>
 

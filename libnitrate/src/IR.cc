@@ -32,7 +32,7 @@
 #define LIBQUIX_INTERNAL
 
 #include <nitrate-core/Lib.h>
-#include <quix/code.h>
+#include <nitrate/code.h>
 
 #include <SerialUtil.hh>
 #include <functional>

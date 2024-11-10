@@ -37,7 +37,7 @@
 #include <nitrate-lexer/Lib.h>
 #include <nitrate-parser/Lib.h>
 #include <nitrate-seq/Lib.h>
-#include <quix/code.h>
+#include <nitrate/code.h>
 
 #include <atomic>
 

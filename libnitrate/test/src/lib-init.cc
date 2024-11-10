@@ -3,7 +3,7 @@
 #include "Stream.hh"
 
 #define LIBQUIX_INTERNAL
-#include <quix/code.h>
+#include <nitrate/code.h>
 
 TEST(LibInit, Manual) {
   ASSERT_EQ(quix_lib_ready, false);
