@@ -38,11 +38,11 @@ file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
 add_library(quix-prep ${CXX_SOURCES})
 target_include_directories(quix-prep PUBLIC src "include"
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-prep/third_party)
-target_link_libraries(quix-prep PUBLIC quix-core quix-lexer ${LIB_QUIXLUA} crypto)
-add_dependencies(quix-prep quix-core quix-lexer quixlua)
+target_link_libraries(quix-prep PUBLIC nitrate-core quix-lexer ${LIB_QUIXLUA} crypto)
+add_dependencies(quix-prep nitrate-core quix-lexer quixlua)
 
 install(TARGETS quix-prep DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

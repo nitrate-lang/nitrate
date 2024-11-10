@@ -32,7 +32,7 @@
 #ifndef __QUIX_QXIR_MODULE_H__
 #define __QUIX_QXIR_MODULE_H__
 
-#include <quix-core/Memory.h>
+#include <nitrate-core/Memory.h>
 #include <quix-ir/TypeDecl.h>
 #include <quix-lexer/Lexer.h>
 
@@ -40,7 +40,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
-#include <quix-core/Classes.hh>
+#include <nitrate-core/Classes.hh>
 #include <quix-ir/Report.hh>
 #include <string>
 #include <unordered_set>

@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <Impl.h>
-#include <quix-core/Error.h>
+#include <nitrate-core/Error.h>
 #include <quix-parser/Config.h>
 
 #include <boost/bimap.hpp>

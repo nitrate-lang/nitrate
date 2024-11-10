@@ -29,72 +29,51 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Cache.h>
-#include <quix-core/Error.h>
+#ifndef __QUIX_CORE_LIB_H__
+#define __QUIX_CORE_LIB_H__
 
-#include <mutex>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "LibMacro.h"
+#include <nitrate-core/Cache.h>
+#include <nitrate-core/Env.h>
+#include <nitrate-core/Error.h>
+#include <nitrate-core/Memory.h>
 
-#define PROJECT_REPO_URL "https://github.com/Kracken256/quix"
+/**
+ * @brief Initialize the library.
+ *
+ * @return true if the library was initialized successfully.
+ * @note This function is thread-safe.
+ * @note The library is reference counted, so it is safe to call this function
+ * multiple times. Each time will not reinitialize the library, but will
+ * increment the reference count.
+ */
+bool qcore_lib_init();
 
-static struct {
-  std::mutex m_lock;
-  qcore_cache_has_t m_has;
-  qcore_cache_read_t m_read;
-  qcore_cache_write_t m_write;
-} g_cache_provider{};
+/**
+ * @brief Deinitialize the library.
+ *
+ * @note This function is thread-safe.
+ * @note The library is reference counted, so it is safe to call this function
+ * multiple times. Each time will not deinitialize the library, but when
+ * the reference count reaches zero, the library will be deinitialized.
+ */
+void qcore_lib_deinit();
 
-LIB_EXPORT bool qcore_cache_bind(qcore_cache_has_t has, qcore_cache_read_t read,
-                                 qcore_cache_write_t write) {
-  if (!has || !read || !write) {
-    return false;
-  }
+/**
+ * @brief Get the version of the library.
+ *
+ * @return The version string of the library.
+ * @warning Don't free the returned string.
+ * @note This function is thread-safe.
+ * @note This function is also safe to call before initialization and after deinitialization.
+ */
+const char *qcore_lib_version();
 
-  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
-
-  if (g_cache_provider.m_has || g_cache_provider.m_read || g_cache_provider.m_write) {
-    return false;
-  }
-
-  g_cache_provider.m_has = has;
-  g_cache_provider.m_read = read;
-  g_cache_provider.m_write = write;
-
-  return true;
+#ifdef __cplusplus
 }
+#endif
 
-LIB_EXPORT void qcore_cache_unbind() {
-  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
-
-  g_cache_provider.m_has = nullptr;
-  g_cache_provider.m_read = nullptr;
-  g_cache_provider.m_write = nullptr;
-}
-
-LIB_EXPORT int64_t qcore_cache_has(const qcore_cache_key_t *key) {
-  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
-
-  qcore_assert(key, "qcore_cache_has: key is null");
-  qcore_assert(g_cache_provider.m_has, "qcore_cache_has: cache provider not bound");
-
-  return g_cache_provider.m_has(key);
-}
-
-LIB_EXPORT bool qcore_cache_read(const qcore_cache_key_t *key, void *data, size_t datalen) {
-  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
-
-  qcore_assert(key && data, "qcore_cache_read: key or data is null");
-  qcore_assert(g_cache_provider.m_read, "qcore_cache_read: cache provider not bound");
-
-  return g_cache_provider.m_read(key, data, datalen);
-}
-
-LIB_EXPORT bool qcore_cache_write(const qcore_cache_key_t *key, const void *data, size_t datalen) {
-  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
-
-  qcore_assert(key && data, "qcore_cache_write: key or data is null");
-  qcore_assert(g_cache_provider.m_write, "qcore_cache_write: cache provider not bound");
-
-  return g_cache_provider.m_write(key, data, datalen);
-}
+#endif  // __QUIX_CORE_LIB_H__

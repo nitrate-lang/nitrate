@@ -32,8 +32,8 @@
 #include <llvm-14/llvm/MC/TargetRegistry.h>
 #include <llvm-14/llvm/Support/ManagedStatic.h>
 #include <llvm-14/llvm/Support/TargetSelect.h>
+#include <nitrate-core/Lib.h>
 #include <quix-codegen/Lib.h>
-#include <quix-core/Lib.h>
 #include <sys/resource.h>
 
 #include <atomic>

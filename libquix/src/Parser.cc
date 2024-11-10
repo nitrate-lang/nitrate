@@ -31,14 +31,14 @@
 
 #define LIBQUIX_INTERNAL
 
-#include <quix-core/Lib.h>
+#include <nitrate-core/Lib.h>
 #include <quix/code.h>
 
 #include <SerialUtil.hh>
 #include <cstdint>
 #include <functional>
+#include <nitrate-core/Classes.hh>
 #include <nlohmann/json.hpp>
-#include <quix-core/Classes.hh>
 #include <quix-lexer/Base.hh>
 #include <quix-lexer/Classes.hh>
 #include <quix-parser/Classes.hh>

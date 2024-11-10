@@ -63,9 +63,9 @@
 #include <llvm-14/llvm/Transforms/IPO.h>
 #include <llvm-14/llvm/Transforms/IPO/PassManagerBuilder.h>
 #include <llvm-14/llvm/Transforms/InstCombine/InstCombine.h>
+#include <nitrate-core/Error.h>
 #include <quix-codegen/Code.h>
 #include <quix-codegen/Config.h>
-#include <quix-core/Error.h>
 #include <quix-ir/TypeDecl.h>
 #include <sys/types.h>
 

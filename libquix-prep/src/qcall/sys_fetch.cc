@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Env.h>
+#include <nitrate-core/Env.h>
 
 #include <core/Preprocess.hh>
 #include <cstddef>

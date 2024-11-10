@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Error.h>
+#include <nitrate-core/Error.h>
 #include <quix-ir/IR.h>
 #include <quix-parser/Parser.h>
 

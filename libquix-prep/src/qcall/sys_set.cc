@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Env.h>
+#include <nitrate-core/Env.h>
 
 #include <qcall/List.hh>
 

@@ -31,7 +31,7 @@
 
 #define __QPARSE_IMPL__
 
-#include <quix-core/Error.h>
+#include <nitrate-core/Error.h>
 #include <quix-parser/Node.h>
 #include <quix-parser/Parser.h>
 

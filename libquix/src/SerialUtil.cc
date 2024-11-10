@@ -31,7 +31,7 @@
 
 #define LIBQUIX_INTERNAL
 
-#include <quix-core/Error.h>
+#include <nitrate-core/Error.h>
 
 #include <SerialUtil.hh>
 

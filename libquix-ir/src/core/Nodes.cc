@@ -32,8 +32,8 @@
 #define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
 #include <core/LibMacro.h>
+#include <nitrate-core/Error.h>
 #include <openssl/evp.h>
-#include <quix-core/Error.h>
 #include <quix-ir/IR.h>
 
 #include <boost/uuid/name_generator.hpp>

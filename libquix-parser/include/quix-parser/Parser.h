@@ -32,7 +32,7 @@
 #ifndef __QUIX_PARSER_PARSER_H__
 #define __QUIX_PARSER_PARSER_H__
 
-#include <quix-core/Env.h>
+#include <nitrate-core/Env.h>
 #include <quix-lexer/Lexer.h>
 #include <quix-parser/Config.h>
 #include <quix-parser/Node.h>

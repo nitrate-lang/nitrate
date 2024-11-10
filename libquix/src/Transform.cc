@@ -30,9 +30,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LIBQUIX_INTERNAL
+#include <nitrate-core/Env.h>
+#include <nitrate-core/Lib.h>
 #include <quix-codegen/Lib.h>
-#include <quix-core/Env.h>
-#include <quix-core/Lib.h>
 #include <quix-ir/Lib.h>
 #include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>

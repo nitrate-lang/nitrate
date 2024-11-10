@@ -36,8 +36,8 @@
 #error "This header is C++ only."
 #endif
 
-#include <quix-core/Error.h>
-#include <quix-core/Memory.h>
+#include <nitrate-core/Error.h>
+#include <nitrate-core/Memory.h>
 #include <quix-ir/TypeDecl.h>
 #include <quix-lexer/Token.h>
 
@@ -48,9 +48,9 @@
 #include <functional>
 #include <iostream>
 #include <limits>
+#include <nitrate-core/Classes.hh>
 #include <optional>
 #include <ostream>
-#include <quix-core/Classes.hh>
 #include <quix-ir/Module.hh>
 #include <string>
 #include <variant>
