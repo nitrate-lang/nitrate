@@ -35,11 +35,6 @@
 
 #include "LibMacro.h"
 
-#ifndef __TARGET_VERSION
-#warning "__TARGET_VERSION must be defined"
-#define __TARGET_VERSION "?"
-#endif
-
 static std::atomic<size_t> qcore_lib_ref_count = 0;
 
 LIB_EXPORT bool qcore_lib_init() {

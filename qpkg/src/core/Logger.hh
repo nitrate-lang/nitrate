@@ -32,8 +32,17 @@
 #ifndef __QPKG_CORE_LOGGER_HH__
 #define __QPKG_CORE_LOGGER_HH__
 
-#include <core/Adapter.hh>
-#include <core/Collector.hh>
-#include <core/Writer.hh>
+#include <glog/logging.h>
 
-#endif  // __QPKG_CORE_LOGGER_HH__
+namespace qpkg::core {
+  void SetColorMode(bool use_color);
+  void SetDebugMode(bool debug);
+
+  struct MyLogSink : google::LogSink {
+  public:
+    void send(google::LogSeverity severity, const char*, const char* base_filename, int line,
+              const struct tm* tm, const char* message, std::size_t message_len) override;
+  };
+}  // namespace qpkg::core
+
+#endif
