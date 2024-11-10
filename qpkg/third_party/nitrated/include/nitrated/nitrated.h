@@ -36,7 +36,7 @@
 extern "C" {
 #endif
 
-int quixd_main(int argc, char** argv);
+int nitrated_main(int argc, char** argv);
 
 #ifdef __cplusplus
 }

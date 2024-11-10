@@ -27,9 +27,9 @@
 -I
 ./qpkg/src
 -I
-./qpkg/third_party/quixd/src
+./qpkg/third_party/nitrated/src
 -I
-./qpkg/third_party/quixd/include
+./qpkg/third_party/nitrated/include
 -I
 /usr/lib/llvm-14/include
 -I

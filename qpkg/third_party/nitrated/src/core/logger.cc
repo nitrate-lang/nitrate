@@ -66,7 +66,7 @@ void MyLogSink::send(google::LogSeverity severity, const char*, const char* base
   }
 
   m_log_file << " " << get_hostname();
-  m_log_file << " quixd[" << get_pid() << "]: ";
+  m_log_file << " nitrated[" << get_pid() << "]: ";
   m_log_file << "{" << base_filename << ":" << line << "}: ";
   m_log_file << "(" << lvl_names.at(severity) << "): ";
   m_log_file << "\"" << escape_message(std::string_view(message, message_len)) << "\"";

@@ -38,7 +38,7 @@
 #include <nitrate-lexer/Lib.h>
 #include <nitrate-parser/Lib.h>
 #include <nitrate-seq/Lib.h>
-#include <quixd/quixd.h>
+#include <nitrated/nitrated.h>
 
 #include <clean/Cleanup.hh>
 #include <core/Config.hh>
@@ -581,7 +581,7 @@ namespace argparse_setup {
         .implicit_value(true);
 
     parser.add_argument("-o", "--log")
-        .default_value(std::string("quixd-lsp.log"))
+        .default_value(std::string("nitrated-lsp.log"))
         .help("Specify the log file");
 
     parser.add_argument("--config")
@@ -1014,7 +1014,7 @@ namespace qpkg::router {
     core::SetDebugMode(parser["--verbose"] == true);
 
     std::vector<std::string> args;
-    args.push_back("quixd");
+    args.push_back("nitrated");
 
     if (parser["--license"] == true) {
       args.push_back("--license");
@@ -1055,7 +1055,7 @@ namespace qpkg::router {
     LOG(INFO) << "Invoking LSP: \"" << inner_command << "\"";
 
     google::RemoveLogSink(&g_custom_log_sink);
-    int ret = quixd_main(args.size(), c_args.data());
+    int ret = nitrated_main(args.size(), c_args.data());
     google::AddLogSink(&g_custom_log_sink);
     return ret;
   }

@@ -15,7 +15,7 @@ set(__TARGET_VERSION "\"QPKG_${SHA256SUMS}\"")
 message(STATUS "qpkg VersionId: ${__TARGET_VERSION}")
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quixd)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/nitrated)
 
 find_library(libglog libglog.a REQUIRED)
 find_library(libgflags libgflags.a REQUIRED)
@@ -31,7 +31,7 @@ target_include_directories(qpkg PUBLIC src ${CMAKE_SOURCE_DIR}/libnitrate-core/i
   ${CMAKE_SOURCE_DIR}/libnitrate-ir/include
   ${CMAKE_SOURCE_DIR}/libnitrate-emit/include
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quixd/include)
+  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/nitrated/include)
 target_compile_options(qpkg PRIVATE
   -Wno-error=overlength-strings
   -D__TARGET_VERSION=${__TARGET_VERSION}
@@ -44,7 +44,7 @@ target_link_libraries(qpkg PUBLIC libboost_filesystem.a
   nitrate-seq
   nitrate-core
   yaml-cpp
-  quixd_main)
+  nitrated_main)
 add_dependencies(qpkg nitrate-emit
   nitrate-ir
   nitrate-parser
@@ -52,6 +52,6 @@ add_dependencies(qpkg nitrate-emit
   nitrate-seq
   nitrate-core
   yaml-cpp
-  quixd_main)
+  nitrated_main)
 
 install(TARGETS qpkg DESTINATION bin)
