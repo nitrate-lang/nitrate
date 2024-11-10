@@ -1314,32 +1314,38 @@ LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len) {
   size_t _len;
   if (!len) len = &_len;
 
-  try {
-    switch (tok->ty) {
-      case qEofF:
-      case qErro:
-      case qKeyW:
-      case qOper:
-      case qPunc:
-        *len = 0;
-        return "";
-      case qName:
-      case qIntL:
-      case qNumL:
-      case qText:
-      case qChar:
-      case qMacB:
-      case qMacr:
-      case qNote:
-        auto x = lexer->get_string(tok->v.str_idx);
-        *len = x.size();
-        return x.data();
+  switch (tok->ty) {
+    case qEofF:
+    case qErro: {
+      *len = 0;
+      return "";
     }
-  } catch (std::out_of_range &) {
-    *len = 0;
-    return "";
-  } catch (...) {
-    qcore_panic("qlex_str: invalid token");
+    case qKeyW: {
+      std::string_view kw = qlex::keywords.right.at(tok->v.key);
+      *len = kw.size();
+      return kw.data();
+    }
+    case qOper: {
+      std::string_view op = qlex::operators.right.at(tok->v.op);
+      *len = op.size();
+      return op.data();
+    }
+    case qPunc: {
+      std::string_view punc = qlex::punctuation.right.at(tok->v.punc);
+      *len = punc.size();
+      return punc.data();
+    }
+    case qName:
+    case qIntL:
+    case qNumL:
+    case qText:
+    case qChar:
+    case qMacB:
+    case qMacr:
+    case qNote:
+      auto x = lexer->get_string(tok->v.str_idx);
+      *len = x.size();
+      return x.data();
   }
 
   __builtin_unreachable();

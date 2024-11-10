@@ -110,7 +110,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
   StructDefFields fields;
   StructDefMethods methods;
   StructDefStaticMethods static_methods;
-  std::set<std::string> implements;
+  std::set<ConstExpr *> attributes;
   Stmt *method = nullptr;
   FnDecl *fdecl = nullptr;
   FuncTy *ft = nullptr;
@@ -185,7 +185,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
       static_cast<FnDecl *>(method)->set_visibility(vis);
 
       { /* Add the 'this' parameter to the method */
-        FuncParam fn_this{"this", PtrTy::get(UnresolvedType::get(name)), nullptr};
+        FuncParam fn_this{"this", RefTy::get(UnresolvedType::get(name)), nullptr};
 
         if (method->is<FnDecl>()) {
           fdecl = static_cast<FnDecl *>(method);
@@ -247,56 +247,19 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
     }
   }
 
-  { /* The compiler may automatically generate traits for the definition */
-    tok = qlex_peek(rd);
-    if (!job.conf->has(QPK_NO_AUTO_IMPL, QPV_STRUCT)) {
-      implements.insert("auto");
-    }
-  }
-
+  tok = qlex_peek(rd);
   { /* Check for an implementation/trait list */
     if (tok.is<qKWith>()) {
       qlex_next(rd);
-      tok = qlex_next(rd);
 
-      { /* The implementation list should be enclosed in square brackets ex: [abc, hello] */
-        if (!tok.is<qPuncLBrk>()) {
-          syntax(tok, "Expected '[' after 'impl' in struct definition");
-        }
-      }
-
-      /* Parse an arbitrary number of trait names */
-      while (true) {
-        /* Check for termination */
-        tok = qlex_next(rd);
-        if (tok.is(qEofF)) {
-          syntax(tok, "Unexpected end of file in struct definition");
-          return false;
-        }
-
-        if (tok.is<qPuncRBrk>()) {
-          break;
-        }
-
-        /* Ensure it is an identifier */
-        if (!tok.is(qName)) {
-          syntax(tok, "Expected trait name in struct definition");
-        }
-
-        /* Add the trait to the list; Duplicate traits are ignored */
-        implements.insert(tok.as_string(rd));
-
-        /* Check for a comma */
-        tok = qlex_peek(rd);
-        if (tok.is<qPuncComa>()) {
-          qlex_next(rd);
-        }
+      if (!parse_attributes(job, rd, attributes)) {
+        return false;
       }
     }
   }
 
   StructDef *sdef = StructDef::get(name, nullptr, fields, methods, static_methods);
-  sdef->add_tags(std::move(implements));
+  sdef->add_tags(std::move(attributes));
   *node = sdef;
   return true;
 }

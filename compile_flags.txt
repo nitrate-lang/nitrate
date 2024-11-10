@@ -27,6 +27,10 @@
 -I
 ./qpkg/src
 -I
+./qpkg/third_party/quixd/src
+-I
+./qpkg/third_party/quixd/include
+-I
 /usr/lib/llvm-14/include
 -I
 .build/debug/_deps/googletest-src/googletest/include
@@ -34,3 +38,4 @@
 -DLLVM_SUUPORT_ALL_TARGETS
 -Wno-error=missing-field-initializers
 -Wno-missing-field-initializers
+-D__TARGET_VERSION="?"

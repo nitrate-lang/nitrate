@@ -33,9 +33,55 @@
 
 #include <parser/Parse.h>
 
+#include "quix-lexer/Token.h"
+
 using namespace qparse;
 using namespace qparse::parser;
 using namespace qparse::diag;
+
+bool qparse::parser::parse_attributes(qparse_t &job, qlex_t *rd,
+                                      std::set<ConstExpr *> &attributes) {
+  qlex_tok_t tok = qlex_next(rd);
+
+  { /* The implementation list should be enclosed in square brackets ex: [abc, hello] */
+    if (!tok.is<qPuncLBrk>()) {
+      syntax(tok, "Expected '[' after 'impl' in definition");
+    }
+  }
+
+  /* Parse an arbitrary number of attributes */
+  while (true) {
+    /* Check for termination */
+    tok = qlex_peek(rd);
+    if (tok.is(qEofF)) {
+      syntax(tok, "Unexpected end of file in definition");
+      return false;
+    }
+
+    if (tok.is<qPuncRBrk>()) {
+      qlex_next(rd);
+      break;
+    }
+
+    Expr *impl = nullptr;
+
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncComa)}, &impl,
+                    0)) {
+      syntax(tok, "Failed to parse declaration attribute expression");
+      return false;
+    }
+
+    attributes.insert(ConstExpr::get(impl));
+
+    /* Check for a comma */
+    tok = qlex_peek(rd);
+    if (tok.is<qPuncComa>()) {
+      qlex_next(rd);
+    }
+  }
+
+  return true;
+}
 
 static bool parse_group_field(qparse_t &job, qlex_t *rd, CompositeField **node) {
   /**
@@ -110,7 +156,7 @@ bool parser::parse_group(qparse_t &job, qlex_t *rd, Stmt **node) {
   GroupDefFields fields;
   GroupDefMethods methods;
   GroupDefStaticMethods static_methods;
-  std::set<std::string> implements;
+  std::set<ConstExpr *> attributes;
   Stmt *method = nullptr;
   FnDecl *fdecl = nullptr;
   FuncTy *ft = nullptr;
@@ -185,7 +231,7 @@ bool parser::parse_group(qparse_t &job, qlex_t *rd, Stmt **node) {
       static_cast<FnDecl *>(method)->set_visibility(vis);
 
       { /* Add the 'this' parameter to the method */
-        FuncParam fn_this{"this", PtrTy::get(UnresolvedType::get(name)), nullptr};
+        FuncParam fn_this{"this", RefTy::get(UnresolvedType::get(name)), nullptr};
 
         if (method->is<FnDecl>()) {
           fdecl = static_cast<FnDecl *>(method);
@@ -247,56 +293,18 @@ bool parser::parse_group(qparse_t &job, qlex_t *rd, Stmt **node) {
     }
   }
 
-  { /* The compiler may automatically generate traits for the definition */
-    tok = qlex_peek(rd);
-    if (!job.conf->has(QPK_NO_AUTO_IMPL, QPV_STRUCT)) {
-      implements.insert("auto");
-    }
-  }
-
+  tok = qlex_peek(rd);
   { /* Check for an implementation/trait list */
     if (tok.is<qKWith>()) {
       qlex_next(rd);
-      tok = qlex_next(rd);
-
-      { /* The implementation list should be enclosed in square brackets ex: [abc, hello] */
-        if (!tok.is<qPuncLBrk>()) {
-          syntax(tok, "Expected '[' after 'impl' in group definition");
-        }
-      }
-
-      /* Parse an arbitrary number of trait names */
-      while (true) {
-        /* Check for termination */
-        tok = qlex_next(rd);
-        if (tok.is(qEofF)) {
-          syntax(tok, "Unexpected end of file in group definition");
-          return false;
-        }
-
-        if (tok.is<qPuncRBrk>()) {
-          break;
-        }
-
-        /* Ensure it is an identifier */
-        if (!tok.is(qName)) {
-          syntax(tok, "Expected trait name in group definition");
-        }
-
-        /* Add the trait to the list; Duplicate traits are ignored */
-        implements.insert(tok.as_string(rd));
-
-        /* Check for a comma */
-        tok = qlex_peek(rd);
-        if (tok.is<qPuncComa>()) {
-          qlex_next(rd);
-        }
+      if (!parse_attributes(job, rd, attributes)) {
+        return false;
       }
     }
   }
 
   GroupDef *sdef = GroupDef::get(name, nullptr, fields, methods, static_methods);
-  sdef->add_tags(std::move(implements));
+  sdef->add_tags(std::move(attributes));
   *node = sdef;
   return true;
 }

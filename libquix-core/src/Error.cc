@@ -38,11 +38,6 @@
 
 #include "LibMacro.h"
 
-#ifndef __TARGET_VERSION
-#warning "__TARGET_VERSION must be defined"
-#define __TARGET_VERSION "?"
-#endif
-
 #define PROJECT_REPO_URL "https://github.com/Kracken256/quix"
 #define PANIC_LINE_LENGTH 80
 

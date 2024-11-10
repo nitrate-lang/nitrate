@@ -37,8 +37,6 @@
 #include <quix-core/Error.h>
 #include <quix-parser/Node.h>
 #include <quix-parser/Parser.h>
-#include <setjmp.h>
-#include <signal.h>
 
 #include <ParserStruct.hh>
 #include <atomic>
@@ -346,7 +344,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
             }
           }
 
-          block->set_unsafe(true);
+          block->set_safety(SafetyMode::Unsafe);
           node = block;
           break;
         }
@@ -363,7 +361,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
               return false;
             }
           }
-          block->set_unsafe(false);
+          block->set_safety(SafetyMode::Safe);
           node = block;
           break;
         }
@@ -442,77 +440,7 @@ LIB_EXPORT void qparse_free(qparse_t *parser) {
   delete parser;
 }
 
-static std::atomic<size_t> sigguard_refcount;
-static std::mutex sigguard_lock;
-static std::unordered_map<int, sighandler_t> sigguard_old;
-static const std::set<int> sigguard_signals = {SIGABRT, SIGBUS, SIGFPE, SIGILL, SIGSEGV, SIGSYS};
-static thread_local jmp_buf sigguard_env;
 static thread_local qparse_t *parser_ctx;
-
-static void _signal_hander(int sig) {
-  sigguard_lock.lock();
-
-  DiagMessage diag;
-  diag.msg =
-      "FATAL Internal Error: Deadly Signal "
-      "received: " +
-      std::to_string(sig);
-  diag.tok = qlex_tok_t(qEofF, 0);
-  diag.type = MessageType::FatalError;
-
-  parser_ctx->impl->diag.push(std::move(diag));
-
-  sigguard_lock.unlock();
-
-  longjmp(sigguard_env, sig);
-}
-
-static void install_sigguard(qparse_t *parser) {
-  if (parser->conf->has(QPK_CRASHGUARD, QPV_OFF) || qcore_fuzzing) {
-    return;
-  }
-
-  std::lock_guard<std::mutex> lock(sigguard_lock);
-
-  if (++sigguard_refcount > 1) {
-    return;
-  }
-
-  for (int sig : sigguard_signals) {
-    sighandler_t old = signal(sig, _signal_hander);
-    if (old == SIG_ERR) {
-      qcore_panicf(
-          "Failed to install signal handler for "
-          "signal %d",
-          sig);
-    }
-    sigguard_old[sig] = old;
-  }
-}
-
-static void uninstall_sigguard(qparse_t *parser) {
-  if (parser->conf->has(QPK_CRASHGUARD, QPV_OFF) || qcore_fuzzing) {
-    return;
-  }
-
-  std::lock_guard<std::mutex> lock(sigguard_lock);
-
-  if (--sigguard_refcount > 0) {
-    return;
-  }
-
-  for (int sig : sigguard_signals) {
-    sighandler_t old = signal(sig, sigguard_old[sig]);
-    if (old == SIG_ERR) {
-      qcore_panicf(
-          "Failed to uninstall signal handler "
-          "for signal %d",
-          sig);
-    }
-  }
-
-  sigguard_old.clear();
-}
 
 LIB_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
   if (!L || !out) {
@@ -527,20 +455,9 @@ LIB_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
     /*== Install thread-local references to the parser ==*/
     qparse::diag::install_reference(L);
 
-    /*==== Facilitate signal handling for the parser ====*/
-    install_sigguard(L);
     parser_ctx = L;
-
-    bool status = false;
-    if (setjmp(sigguard_env) == 0) {
-      status = qparse::parser::parse(*L, L->lexer, (qparse::Block **)out, false, false);
-    } else {
-      L->failed = true;
-    }
-
-    /*==== Clean up signal handling for the parser ====*/
+    bool status = qparse::parser::parse(*L, L->lexer, (qparse::Block **)out, false, false);
     parser_ctx = nullptr;
-    uninstall_sigguard(L);
 
     /*== Uninstall thread-local references to the parser ==*/
     qparse::diag::install_reference(nullptr);
@@ -599,7 +516,7 @@ LIB_EXPORT bool qparse_check(qparse_t *parser, const qparse_node_t *base) {
   }
 
   /* Safety is overrated */
-  return static_cast<const qparse::Node *>(base)->verify();
+  return const_cast<qparse::Node *>(static_cast<const qparse::Node *>(base))->verify();
 }
 
 LIB_EXPORT void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb, uintptr_t data) {

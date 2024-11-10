@@ -138,184 +138,179 @@ bool qpkg::conf::ValidateConfig(const qpkg::conf::Config &config,
 
   for (const auto &key : keys) {
     if (!key_map.contains(key)) {
-      LOG(core::ERROR) << "Invalid key in configuration: " << key << std::endl;
+      LOG(ERROR) << "Invalid key in configuration: " << key << std::endl;
       return false;
     }
 
     switch (key_map[key]) {
       case KeyName::NAME:
         if (!config[key].is<std::string>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'name' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'name' in configuration" << std::endl;
           return false;
         }
         if (!is_utf8(config[key].as<std::string>().c_str())) {
-          LOG(core::ERROR) << "Invalid value for key 'name' in configuration: must be UTF-8"
-                           << std::endl;
+          LOG(ERROR) << "Invalid value for key 'name' in configuration: must be UTF-8" << std::endl;
           return false;
         }
         break;
       case KeyName::VERSION:
         if (!config[key].is<int64_t>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'version' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'version' in configuration" << std::endl;
           return false;
         }
         if (config[key].as<int64_t>() != 1) {
-          LOG(core::ERROR) << "This version of the QPKG system only supports version 1"
-                           << std::endl;
+          LOG(ERROR) << "This version of the QPKG system only supports version 1" << std::endl;
           return false;
         }
         break;
       case KeyName::DESCRIPTION:
         if (!config[key].is<std::string>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'description' in configuration"
-                           << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'description' in configuration" << std::endl;
           return false;
         }
         if (!is_utf8(config[key].as<std::string>().c_str())) {
-          LOG(core::ERROR) << "Invalid value for key 'description' in "
-                              "configuration: must be UTF-8"
-                           << std::endl;
+          LOG(ERROR) << "Invalid value for key 'description' in "
+                        "configuration: must be UTF-8"
+                     << std::endl;
           return false;
         }
         break;
       case KeyName::AUTHORS:
         if (!config[key].is<std::vector<std::string>>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'authors' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'authors' in configuration" << std::endl;
           return false;
         }
         for (const auto &author : config[key].as<std::vector<std::string>>()) {
           if (!is_utf8(author.c_str())) {
-            LOG(core::ERROR) << "Invalid value for key 'authors' in "
-                                "configuration: must be UTF-8"
-                             << std::endl;
+            LOG(ERROR) << "Invalid value for key 'authors' in "
+                          "configuration: must be UTF-8"
+                       << std::endl;
             return false;
           }
         }
         break;
       case KeyName::EMAILS:
         if (!config[key].is<std::vector<std::string>>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'emails' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'emails' in configuration" << std::endl;
           return false;
         }
         for (const auto &email : config[key].as<std::vector<std::string>>()) {
           if (!is_utf8(email.c_str())) {
-            LOG(core::ERROR) << "Invalid value for key 'emails' in "
-                                "configuration: must be UTF-8"
-                             << std::endl;
+            LOG(ERROR) << "Invalid value for key 'emails' in "
+                          "configuration: must be UTF-8"
+                       << std::endl;
             return false;
           }
         }
         break;
       case KeyName::URL:
         if (!config[key].is<std::string>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'url' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'url' in configuration" << std::endl;
           return false;
         }
         if (!is_utf8(config[key].as<std::string>().c_str())) {
-          LOG(core::ERROR) << "Invalid value for key 'url' in configuration: must be UTF-8"
-                           << std::endl;
+          LOG(ERROR) << "Invalid value for key 'url' in configuration: must be UTF-8" << std::endl;
           return false;
         }
         break;
       case KeyName::LICENSES:
         if (!config[key].is<std::vector<std::string>>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'licenses' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'licenses' in configuration" << std::endl;
           return false;
         }
         for (const auto &license : config[key].as<std::vector<std::string>>()) {
           if (!qpkg::conf::valid_licenses.contains(license)) {
-            LOG(core::ERROR) << "Invalid license in configuration: " << license << std::endl;
+            LOG(ERROR) << "Invalid license in configuration: " << license << std::endl;
             return false;
           }
         }
         break;
       case KeyName::SOURCES:
         if (!config[key].is<std::vector<std::string>>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'sources' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'sources' in configuration" << std::endl;
           return false;
         }
         for (const auto &source : config[key].as<std::vector<std::string>>()) {
           if (!std::filesystem::exists(base / source)) {
-            LOG(core::ERROR) << "Source does not exist: " << source << std::endl;
+            LOG(ERROR) << "Source does not exist: " << source << std::endl;
             return false;
           }
         }
         break;
       case KeyName::TARGET:
         if (!config[key].is<std::string>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'target' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'target' in configuration" << std::endl;
           return false;
         }
         if (!target_valid_values.contains(config[key].as<std::string>())) {
-          LOG(core::ERROR) << "Invalid value for key 'target' in configuration: must be one "
-                              "of 'sharedlib', 'staticlib', or 'executable'"
-                           << std::endl;
+          LOG(ERROR) << "Invalid value for key 'target' in configuration: must be one "
+                        "of 'sharedlib', 'staticlib', or 'executable'"
+                     << std::endl;
           return false;
         }
         break;
       case KeyName::TRIPLE:
         if (!config[key].is<std::string>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'triple' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'triple' in configuration" << std::endl;
           return false;
         }
         if (!is_utf8(config[key].as<std::string>().c_str())) {
-          LOG(core::ERROR) << "Invalid value for key 'triple' in "
-                              "configuration: must be UTF-8"
-                           << std::endl;
+          LOG(ERROR) << "Invalid value for key 'triple' in "
+                        "configuration: must be UTF-8"
+                     << std::endl;
           return false;
         }
         break;
       case KeyName::CPU:
         if (!config[key].is<std::string>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'cpu' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'cpu' in configuration" << std::endl;
           return false;
         }
         if (!is_utf8(config[key].as<std::string>().c_str())) {
-          LOG(core::ERROR) << "Invalid value for key 'cpu' in configuration: must be UTF-8"
-                           << std::endl;
+          LOG(ERROR) << "Invalid value for key 'cpu' in configuration: must be UTF-8" << std::endl;
           return false;
         }
         break;
       case KeyName::CFLAGS:
         if (!config[key].is<std::vector<std::string>>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'cflags' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'cflags' in configuration" << std::endl;
           return false;
         }
         break;
       case KeyName::LFLAGS:
         if (!config[key].is<std::vector<std::string>>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'lflags' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'lflags' in configuration" << std::endl;
           return false;
         }
         break;
       case KeyName::NOLINK:
         if (!config[key].is<bool>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'nolink' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'nolink' in configuration" << std::endl;
           return false;
         }
         break;
       case KeyName::PACKAGES:
         if (!config[key].is<std::vector<std::string>>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'packages' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'packages' in configuration" << std::endl;
           return false;
         }
         for (const auto &source : config[key].as<std::vector<std::string>>()) {
           if (!std::filesystem::exists(base / source) ||
               !std::filesystem::is_directory(base / source)) {
-            LOG(core::ERROR) << "Dependency does not exist: " << source << std::endl;
+            LOG(ERROR) << "Dependency does not exist: " << source << std::endl;
             return false;
           }
         }
         break;
       default:
-        LOG(core::ERROR) << "Invalid key in configuration: " << key << std::endl;
+        LOG(ERROR) << "Invalid key in configuration: " << key << std::endl;
         return false;
     }
   }
 
   for (const auto &key : required_keys) {
     if (!keys.contains(key)) {
-      LOG(core::ERROR) << "Missing required key in configuration: " << key << std::endl;
+      LOG(ERROR) << "Missing required key in configuration: " << key << std::endl;
       return false;
     }
   }

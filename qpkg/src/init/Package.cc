@@ -41,13 +41,13 @@ static bool touch(const std::filesystem::path &path) {
   try {
     std::ofstream file(path.string());
     if (!file.is_open()) {
-      LOG(core::ERROR) << "Failed to create file: " << path << std::endl;
+      LOG(ERROR) << "Failed to create file: " << path << std::endl;
       return false;
     }
 
     return true;
   } catch (const std::exception &e) {
-    LOG(core::ERROR) << "Failed to create file: " << path << " (" << e.what() << ")" << std::endl;
+    LOG(ERROR) << "Failed to create file: " << path << " (" << e.what() << ")" << std::endl;
     return false;
   }
 }
@@ -80,7 +80,7 @@ bool qpkg::init::Package::validateLicense(const std::string &license) {
 void qpkg::init::Package::writeGitIgnore() {
   std::ofstream gitignore((m_output / m_name / ".gitignore").string());
   if (!gitignore.is_open()) {
-    LOG(core::ERROR) << "Failed to create .gitignore file" << std::endl;
+    LOG(ERROR) << "Failed to create .gitignore file" << std::endl;
     return;
   }
 
@@ -95,17 +95,17 @@ void qpkg::init::Package::writeLicense() {
   std::ofstream license((m_output / m_name / "LICENSE").string());
 
   if (!license.is_open()) {
-    LOG(core::ERROR) << "Failed to create LICENSE file" << std::endl;
+    LOG(ERROR) << "Failed to create LICENSE file" << std::endl;
     return;
   }
 
   if (m_license.empty()) {
-    LOG(core::WARN) << "No license specified" << std::endl;
+    LOG(WARNING) << "No license specified" << std::endl;
     return;
   }
 
   if (!conf::valid_licenses.contains(m_license)) {
-    LOG(core::WARN) << "License is not a recognized SPDX license: " << m_license << std::endl;
+    LOG(WARNING) << "License is not a recognized SPDX license: " << m_license << std::endl;
     return;
   }
 
@@ -115,7 +115,7 @@ void qpkg::init::Package::writeLicense() {
 void qpkg::init::Package::writeMain() {
   std::ofstream main((m_output / m_name / "src/main.q").string());
   if (!main.is_open()) {
-    LOG(core::ERROR) << "Failed to create main.q file" << std::endl;
+    LOG(ERROR) << "Failed to create main.q file" << std::endl;
     return;
   }
 
@@ -132,13 +132,13 @@ pub fn main(args: [str]) {
 bool qpkg::init::Package::createPackage() {
   switch (m_type) {
     case PackageType::PROGRAM:
-      LOG(core::DEBUG) << "Creating program package" << std::endl;
+      LOG(INFO) << "Creating program package" << std::endl;
       break;
     case PackageType::STATICLIB:
-      LOG(core::DEBUG) << "Creating static library package" << std::endl;
+      LOG(INFO) << "Creating static library package" << std::endl;
       break;
     case PackageType::SHAREDLIB:
-      LOG(core::DEBUG) << "Creating shared library package" << std::endl;
+      LOG(INFO) << "Creating shared library package" << std::endl;
       break;
   }
 
@@ -146,24 +146,24 @@ bool qpkg::init::Package::createPackage() {
     if (!std::filesystem::create_directories(m_output / m_name / "src") ||
         !std::filesystem::create_directories(m_output / m_name / "test") ||
         !std::filesystem::create_directories(m_output / m_name / "doc")) {
-      LOG(core::ERROR) << "Failed to create package directories" << std::endl;
+      LOG(ERROR) << "Failed to create package directories" << std::endl;
       return false;
     }
 
     if (!touch(m_output / m_name / "test/.gitkeep") || !touch(m_output / m_name / "doc/.gitkeep")) {
-      LOG(core::ERROR) << "Failed to create package directories" << std::endl;
+      LOG(ERROR) << "Failed to create package directories" << std::endl;
       return false;
     }
 
     if (!touch(m_output / m_name / "README.md")) {
-      LOG(core::ERROR) << "Failed to create package files" << std::endl;
+      LOG(ERROR) << "Failed to create package files" << std::endl;
       return false;
     }
 
     {
       std::ofstream readme((m_output / m_name / "README.md").string());
       if (!readme.is_open()) {
-        LOG(core::ERROR) << "Failed to create README file" << std::endl;
+        LOG(ERROR) << "Failed to create README file" << std::endl;
         return false;
       }
 
@@ -205,7 +205,7 @@ bool qpkg::init::Package::createPackage() {
 
     std::ofstream config_file((m_output / m_name / "qpkg.yaml").string());
     if (!config_file.is_open()) {
-      LOG(core::ERROR) << "Failed to create package configuration file" << std::endl;
+      LOG(ERROR) << "Failed to create package configuration file" << std::endl;
       return false;
     }
 
@@ -217,52 +217,52 @@ bool qpkg::init::Package::createPackage() {
 
     setenv("QPKG_GIT_INJECT_DEST", (m_output / m_name).string().c_str(), 1);
     if (system("git init -b main $QPKG_GIT_INJECT_DEST") != 0) {
-      LOG(core::ERROR) << "Failed to initialize git repository" << std::endl;
+      LOG(ERROR) << "Failed to initialize git repository" << std::endl;
       return false;
     }
 
     switch (m_type) {
       case PackageType::PROGRAM:
-        LOG(core::DEBUG) << "Program package created" << std::endl;
+        LOG(INFO) << "Program package created" << std::endl;
         break;
       case PackageType::STATICLIB:
-        LOG(core::DEBUG) << "Static library package created" << std::endl;
+        LOG(INFO) << "Static library package created" << std::endl;
         break;
       case PackageType::SHAREDLIB:
-        LOG(core::DEBUG) << "Shared library package created" << std::endl;
+        LOG(INFO) << "Shared library package created" << std::endl;
         break;
     }
 
     return true;
   } catch (const std::exception &e) {
-    LOG(core::ERROR) << "Failed to create program package: " << e.what() << std::endl;
+    LOG(ERROR) << "Failed to create program package: " << e.what() << std::endl;
     return false;
   }
 }
 
 bool qpkg::init::Package::create() {
   if (!validateName(m_name)) {
-    LOG(core::ERROR) << "Invalid package name: " << m_name << std::endl;
+    LOG(ERROR) << "Invalid package name: " << m_name << std::endl;
     return false;
   }
 
   if (!validateVersion(m_version)) {
-    LOG(core::ERROR) << "Invalid package version: " << m_version << std::endl;
+    LOG(ERROR) << "Invalid package version: " << m_version << std::endl;
     return false;
   }
 
   if (!m_email.empty() && !validateEmail(m_email)) {
-    LOG(core::ERROR) << "Invalid package email: " << m_email << std::endl;
+    LOG(ERROR) << "Invalid package email: " << m_email << std::endl;
     return false;
   }
 
   if (!m_url.empty() && !validateUrl(m_url)) {
-    LOG(core::ERROR) << "Invalid package url: " << m_url << std::endl;
+    LOG(ERROR) << "Invalid package url: " << m_url << std::endl;
     return false;
   }
 
   if (!m_license.empty() && !validateLicense(m_license)) {
-    LOG(core::ERROR) << "Invalid package license: " << m_license << std::endl;
+    LOG(ERROR) << "Invalid package license: " << m_license << std::endl;
     return false;
   }
 
@@ -271,17 +271,17 @@ bool qpkg::init::Package::create() {
       if (m_force) {
         std::filesystem::remove_all(m_output / m_name);
       } else {
-        LOG(core::ERROR) << "Package already exists: " << m_output / m_name << std::endl;
+        LOG(ERROR) << "Package already exists: " << m_output / m_name << std::endl;
         return false;
       }
     }
 
     if (!std::filesystem::create_directories(m_output / m_name)) {
-      LOG(core::ERROR) << "Failed to create package directory: " << m_output / m_name << std::endl;
+      LOG(ERROR) << "Failed to create package directory: " << m_output / m_name << std::endl;
       return false;
     }
   } catch (const std::exception &e) {
-    LOG(core::ERROR) << "Failed to check package existence: " << e.what() << std::endl;
+    LOG(ERROR) << "Failed to check package existence: " << e.what() << std::endl;
     return false;
   }
 

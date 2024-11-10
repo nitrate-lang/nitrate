@@ -8,13 +8,13 @@ description: |
   the entire QUIX Toolchain and provides a consistent and reliable way to deal with
   QUIX projects.
 
-confinement: devmode
+confinement: classic
 
 parts:
   qpkg:
     plugin: cmake
     cmake-parameters:
-      - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DSTRIP_OUTPUT=ON -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+      - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DSTRIP_OUTPUT=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang
     source: .
     build-packages:
       - libssl-dev
@@ -24,25 +24,25 @@ parts:
       - rapidjson-dev
       - libdeflate-dev
       - libreadline-dev
-      - libclang-dev
-      - libclang-cpp-dev
       - nlohmann-json3-dev
       - libgoogle-glog-dev
-      - cmake
-      - make
       - clang
       - llvm-14-dev
-      - upx
-      - gnupg2
-      - dpkg-dev
+    build-attributes:
+     - enable-patchelf
     stage-packages:
       - git
       - libdeflate0
-      - libllvm14
-      - libclang-cpp14
     override-stage: |
-      snapcraftctl stage
-      rm /usr/lib/x86_64-linux-gnu/libicuio.so.70.1 /usr/lib/x86_64-linux-gnu/libicutest.so.70.1
+        snapcraftctl stage
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-core.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-lexer.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-prep.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-parser.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-ir.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-codegen.a
+        rm -rf $SNAPCRAFT_PART_INSTALL/usr/include
 
 apps:
   qpkg:

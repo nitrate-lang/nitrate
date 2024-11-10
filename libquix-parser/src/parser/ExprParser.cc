@@ -96,8 +96,8 @@ static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd, size_t
          * @brief
          */
 
-        qlex_insert(rd, ident);
         qlex_insert(rd, tok);
+        qlex_insert(rd, ident);
         goto parse_pos_arg;
       }
 
@@ -450,7 +450,12 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
               }
             }
 
-            stack.push(List::get(elements));
+            if (elements.size() == 1) {
+              stack.push(elements[0]);
+            } else {
+              stack.push(List::get(elements));
+            }
+
             continue;
           }
           case qPuncLBrk: {

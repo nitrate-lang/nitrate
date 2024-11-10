@@ -32,16 +32,16 @@
 #include <core/ANSI.hh>
 #include <iostream>
 
-thread_local qpkg::ansi::AnsiCout qpkg::ansi::acout;
+thread_local qpkg::ansi::AnsiCerr qpkg::ansi::acout;
 
-qpkg::ansi::AnsiCout::AnsiCout() { style = Style::FG_DEFAULT | Style::BG_DEFAULT; }
+qpkg::ansi::AnsiCerr::AnsiCerr() { style = Style::FG_DEFAULT | Style::BG_DEFAULT; }
 
-qpkg::ansi::AnsiCout qpkg::ansi::AnsiCout::newline() {
-  std::cout << std::endl;
+qpkg::ansi::AnsiCerr qpkg::ansi::AnsiCerr::newline() {
+  std::cerr << std::endl;
   return *this;
 }
 
-qpkg::ansi::AnsiCout &qpkg::ansi::AnsiCout::operator<<(const std::string &str) {
+qpkg::ansi::AnsiCerr &qpkg::ansi::AnsiCerr::operator<<(const std::string &str) {
   std::stringstream ansi_str;
 
   ansi_str << "\x1b[";
@@ -118,8 +118,8 @@ qpkg::ansi::AnsiCout &qpkg::ansi::AnsiCout::operator<<(const std::string &str) {
 
   ansi_str << "m";
 
-  std::cout << ansi_str.str() << str << reset;
-  std::cout.flush();
+  std::cerr << ansi_str.str() << str << reset;
+  std::cerr.flush();
 
   return *this;
 }

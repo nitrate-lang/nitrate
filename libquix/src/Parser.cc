@@ -297,26 +297,6 @@ bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
     }
   }
 
-  { /* Should we implement the default construct attributes? */
-    if (opts.contains("-fparse-autoimpl-func=off")) {
-      qparse_conf_setopt(conf.get(), QPK_NO_AUTO_IMPL, QPV_FUNCTION);
-    } else if (opts.contains("-fparse-autoimpl-func=on")) {
-      // ignore; its the default
-    }
-
-    if (opts.contains("-fparse-autoimpl-struct=off")) {
-      qparse_conf_setopt(conf.get(), QPK_NO_AUTO_IMPL, QPV_STRUCT);
-    } else if (opts.contains("-fparse-autoimpl-struct=on")) {
-      // ignore; its the default
-    }
-
-    if (opts.contains("-fparse-autoimpl-union=off")) {
-      qparse_conf_setopt(conf.get(), QPK_NO_AUTO_IMPL, QPV_UNION);
-    } else if (opts.contains("-fparse-autoimpl-union=on")) {
-      // ignore; its the default
-    }
-  }
-
   DeserializerAdapterLexer lex(source, nullptr, qcore_env_current());
   qparser par(&lex, conf.get(), qcore_env_current());
 
@@ -966,23 +946,6 @@ bool to_json_recurse(Node *N, json &x) {
       break;
     }
 
-    case QAST_NODE_ENUM_TY: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      EnumTy *W = N->as<EnumTy>();
-
-      x[1] = W->get_name().c_str();
-
-      if (!to_json_recurse(W->get_memtype(), x[2])) {
-        return false;
-      }
-
-      break;
-    }
-
     case QAST_NODE_STRUCT_TY: {
       /**
        * @brief [Brief Description]
@@ -1543,7 +1506,7 @@ bool to_json_recurse(Node *N, json &x) {
 
       Block *W = N->as<Block>();
 
-      x[1] = W->is_unsafe();
+      x[1] = (int)W->get_safety();
 
       json &y = x[2] = json::array();
 
@@ -1912,7 +1875,12 @@ bool to_json_recurse(Node *N, json &x) {
     auto &y = x[x.size()] = json::array();
 
     for (auto &Z : N->as<Decl>()->get_tags()) {
-      y.push_back(Z.c_str());
+      json z;
+      if (!to_json_recurse(Z, z)) {
+        return false;
+      }
+
+      y.push_back(std::move(z));
     }
   }
 
