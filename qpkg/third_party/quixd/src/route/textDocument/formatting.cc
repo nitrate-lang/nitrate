@@ -10,6 +10,7 @@
 #include <quix-core/Classes.hh>
 #include <quix-lexer/Classes.hh>
 #include <quix-parser/Classes.hh>
+#include <route/RoutesList.hh>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -1714,7 +1715,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
   }
 }
 
-static void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
+void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   if (!req.params().HasMember("textDocument")) {
     resp.error(lsp::ErrorCodes::InvalidParams, "Missing textDocument");
     return;
@@ -1829,5 +1830,3 @@ static void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& 
 
   return;
 }
-
-ADD_REQUEST_HANDLER("textDocument/formatting", do_formatting);

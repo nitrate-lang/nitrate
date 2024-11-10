@@ -1,8 +1,9 @@
 #include <core/server.hh>
+#include <route/RoutesList.hh>
 
 using namespace rapidjson;
 
-static void do_initialize(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {
+void do_initialize(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {
   LOG(INFO) << "Initializing language server";
 
   auto& alloc = resp->GetAllocator();
@@ -24,5 +25,3 @@ static void do_initialize(const lsp::RequestMessage&, lsp::ResponseMessage& resp
   capabilities.AddMember("colorProvider", true, alloc);
   capabilities.AddMember("documentFormattingProvider", true, alloc);
 }
-
-ADD_REQUEST_HANDLER("initialize", do_initialize);

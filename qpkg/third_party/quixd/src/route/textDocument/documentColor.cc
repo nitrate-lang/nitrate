@@ -5,6 +5,7 @@
 #include <quix-core/Classes.hh>
 #include <quix-lexer/Classes.hh>
 #include <regex>
+#include <route/RoutesList.hh>
 #include <sstream>
 #include <string>
 
@@ -77,7 +78,7 @@ static RGBA hslaToRgba(float h, float s, float l, float a) {
   return RGBA{(r + m) * 255, (g + m) * 255, (b + m) * 255, a * 255};
 }
 
-static void do_documentColor(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
+void do_documentColor(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   if (!req.params().HasMember("textDocument")) {
     resp.error(lsp::ErrorCodes::InvalidParams, "Missing textDocument");
     return;
@@ -287,5 +288,3 @@ static void do_documentColor(const lsp::RequestMessage& req, lsp::ResponseMessag
 
   return;
 }
-
-ADD_REQUEST_HANDLER("textDocument/documentColor", do_documentColor);

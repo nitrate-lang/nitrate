@@ -38,6 +38,7 @@
 #include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>
 #include <quix-prep/Lib.h>
+#include <quixd/quixd.h>
 
 #include <clean/Cleanup.hh>
 #include <core/Config.hh>
@@ -52,6 +53,7 @@
 #include <quix-ir/Format.hh>
 #include <quix-parser/Classes.hh>
 #include <quix-prep/Classes.hh>
+#include <string_view>
 #include <unordered_map>
 
 // #include <dev/bench/bench.hh>
@@ -70,6 +72,8 @@ struct QPKGMode {
 
 thread_local std::ostream &qout = std::cout;
 thread_local std::ostream &qerr = std::cerr;
+
+static qpkg::core::MyLogSink g_custom_log_sink;
 
 static std::optional<std::string> quixcc_cc_demangle(std::string_view mangled_name) {
   if (mangled_name.starts_with("@")) {
@@ -565,6 +569,33 @@ namespace argparse_setup {
         .nargs(1);
   }
 
+  void setup_argparse_lsp(ArgumentParser &parser) {
+    parser.add_argument("--license")
+        .default_value(false)
+        .implicit_value(true)
+        .help("Print the LSP software license");
+
+    parser.add_argument("-v", "--verbose")
+        .help("print verbose output")
+        .default_value(false)
+        .implicit_value(true);
+
+    parser.add_argument("-o", "--log")
+        .default_value(std::string("quixd-lsp.log"))
+        .help("Specify the log file");
+
+    parser.add_argument("--config")
+        .default_value(std::string(""))
+        .help("Specify the configuration file");
+
+    auto &group = parser.add_mutually_exclusive_group();
+
+    group.add_argument("--pipe").help("Specify the pipe file to connect to");
+    group.add_argument("--port").help("Specify the port to connect to");
+    group.add_argument("--stdio").default_value(false).implicit_value(true).help(
+        "Use standard I/O");
+  }
+
   void setup_argparse_dev(
       ArgumentParser &parser,
       std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &subparsers) {
@@ -674,7 +705,7 @@ namespace argparse_setup {
       ArgumentParser &parser, ArgumentParser &init_parser, ArgumentParser &build_parser,
       ArgumentParser &clean_parser, ArgumentParser &update_parser, ArgumentParser &install_parser,
       ArgumentParser &doc_parser, ArgumentParser &format_parser, ArgumentParser &list_parser,
-      ArgumentParser &test_parser, ArgumentParser &dev_parser,
+      ArgumentParser &test_parser, ArgumentParser &lsp_parser, ArgumentParser &dev_parser,
       std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &dev_subparsers) {
     using namespace argparse;
 
@@ -687,6 +718,7 @@ namespace argparse_setup {
     setup_argparse_format(format_parser);
     setup_argparse_list(list_parser);
     setup_argparse_test(test_parser);
+    setup_argparse_lsp(lsp_parser);
     setup_argparse_dev(dev_parser, dev_subparsers);
 
     parser.add_subparser(init_parser);
@@ -698,6 +730,7 @@ namespace argparse_setup {
     parser.add_subparser(format_parser);
     parser.add_subparser(list_parser);
     parser.add_subparser(test_parser);
+    parser.add_subparser(lsp_parser);
     parser.add_subparser(dev_parser);
 
     parser.add_argument("--license")
@@ -975,6 +1008,56 @@ namespace qpkg::router {
     (void)parser;
     qerr << "test not implemented yet" << std::endl;
     return 1;
+  }
+
+  int run_lsp_mode(const ArgumentParser &parser, const QPKGMode &) {
+    core::SetDebugMode(parser["--verbose"] == true);
+
+    std::vector<std::string> args;
+    args.push_back("quixd");
+
+    if (parser["--license"] == true) {
+      args.push_back("--license");
+    }
+
+    if (parser.is_used("--config")) {
+      args.push_back("--config");
+      args.push_back(parser.get<std::string>("--config"));
+    }
+
+    if (parser.is_used("--log")) {
+      args.push_back("--log");
+      args.push_back(parser.get<std::string>("--log"));
+    }
+
+    if (parser.is_used("--pipe")) {
+      args.push_back("--pipe");
+      args.push_back(parser.get<std::string>("--pipe"));
+    } else if (parser.is_used("--port")) {
+      args.push_back("--port");
+      args.push_back(parser.get<std::string>("--port"));
+    } else if (parser["--stdio"] == true) {
+      args.push_back("--stdio");
+    }
+
+    std::vector<char *> c_args;
+    c_args.reserve(args.size());
+
+    std::string inner_command;
+    for (size_t i = 0; i < args.size(); i++) {
+      c_args.push_back(args[i].data());
+      inner_command += args[i];
+
+      if (i != args.size() - 1) {
+        inner_command += " ";
+      }
+    }
+    LOG(INFO) << "Invoking LSP: \"" << inner_command << "\"";
+
+    google::RemoveLogSink(&g_custom_log_sink);
+    int ret = quixd_main(args.size(), c_args.data());
+    google::AddLogSink(&g_custom_log_sink);
+    return ret;
   }
 
   namespace dev::bench {
@@ -1444,18 +1527,8 @@ extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc,
   /// BEGIN: Setup argument parsing and logging
   std::vector<std::string> args(argv, argv + argc);
 
-  { /* Configure Google logger */
-    static std::once_flag parsers_inited;
-    std::call_once(parsers_inited, [&]() {
-      FLAGS_stderrthreshold = google::FATAL;
-
-      google::InitGoogleLogging("qpkg");
-      google::InstallFailureSignalHandler();
-
-      static qpkg::core::MyLogSink sink;
-      google::AddLogSink(&sink);
-    });
-  }
+  /* Configure Google logger */
+  google::AddLogSink(&g_custom_log_sink);
 
   static ArgumentParser init_parser("init", "1.0", default_arguments::help);
   static ArgumentParser build_parser("build", "1.0", default_arguments::help);
@@ -1466,6 +1539,7 @@ extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc,
   static ArgumentParser format_parser("format", "1.0", default_arguments::help);
   static ArgumentParser list_parser("list", "1.0", default_arguments::help);
   static ArgumentParser test_parser("test", "1.0", default_arguments::help);
+  static ArgumentParser lsp_parser("lsp", "1.0", default_arguments::help);
   static ArgumentParser dev_parser("dev", "1.0", default_arguments::help);
   static std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> dev_subparsers;
   static ArgumentParser program("qpkg", qpkg_deps_version_string());
@@ -1475,7 +1549,8 @@ extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc,
     std::call_once(parsers_inited, [&]() {
       argparse_setup::setup_argparse(program, init_parser, build_parser, clean_parser,
                                      update_parser, install_parser, doc_parser, format_parser,
-                                     list_parser, test_parser, dev_parser, dev_subparsers);
+                                     list_parser, test_parser, lsp_parser, dev_parser,
+                                     dev_subparsers);
     });
   }
   /// END: Setup argument parsing and logging
@@ -1537,6 +1612,8 @@ extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc,
       return qpkg::router::run_list_mode(list_parser, mode);
     } else if (program.is_subcommand_used("test")) {
       return qpkg::router::run_test_mode(test_parser, mode);
+    } else if (program.is_subcommand_used("lsp")) {
+      return qpkg::router::run_lsp_mode(lsp_parser, mode);
     } else if (program.is_subcommand_used("dev")) {
       return qpkg::router::run_dev_mode(dev_parser, dev_subparsers, mode);
     } else {
@@ -1550,15 +1627,24 @@ extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc,
 #ifndef QPKG_LIBRARY
 
 int main(int argc, char *argv[]) {
-  bool use_colors = true;
+  const char *NO_COLOR = getenv("NO_COLOR");
+  bool use_colors = NO_COLOR != NULL && NO_COLOR[0] != '\0' ? false : true;
 
-  if (getenv("QUIXCC_COLOR") != nullptr) {
-    if (std::string(getenv("QUIXCC_COLOR")) == "0") {
+  std::vector<char *> args(argv, argv + argc);
+  for (auto it = args.begin(); it != args.end(); ++it) {
+    if (strcmp(*it, "--no-color") == 0) {
       use_colors = false;
+      args.erase(it);
+      break;
     }
   }
 
-  return qpkg_command(argc, argv, use_colors);
+  FLAGS_stderrthreshold = google::FATAL;
+
+  google::InitGoogleLogging("qpkg");
+  google::InstallFailureSignalHandler();
+
+  return qpkg_command(args.size(), args.data(), use_colors);
 }
 
 #endif

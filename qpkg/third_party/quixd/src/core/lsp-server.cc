@@ -9,6 +9,8 @@
 #include <memory>
 #include <stop_token>
 
+#include "route/RoutesList.hh"
+
 ServerContext& ServerContext::the() {
   static ServerContext instance;
   return instance;
@@ -162,7 +164,28 @@ std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(std::is
   }
 }
 
+void ServerContext::register_handlers() {
+  auto& ctx = ServerContext::the();
+
+  ctx.register_request_handler("initialize", do_initialize);
+  ctx.register_notification_handler("initialized", do_initialized);
+  ctx.register_request_handler("shutdown", do_shutdown);
+  ctx.register_notification_handler("exit", do_exit);
+
+  ctx.register_request_handler("textDocument/completion", do_completion);
+  ctx.register_request_handler("textDocument/declaration", do_declaration);
+  ctx.register_request_handler("textDocument/definition", do_definition);
+  ctx.register_notification_handler("textDocument/didChange", do_didChange);
+  ctx.register_notification_handler("textDocument/didClose", do_didClose);
+  ctx.register_notification_handler("textDocument/didOpen", do_didOpen);
+  ctx.register_notification_handler("textDocument/didSave", do_didSave);
+  ctx.register_request_handler("textDocument/documentColor", do_documentColor);
+  ctx.register_request_handler("textDocument/formatting", do_formatting);
+}
+
 [[noreturn]] void ServerContext::start_server(Connection& io) {
+  register_handlers();
+
   m_thread_pool.Start();
   m_thread_pool.QueueJob([this](std::stop_token st) { request_queue_loop(st); });
 

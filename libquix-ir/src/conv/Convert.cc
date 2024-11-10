@@ -32,10 +32,7 @@
 #include <quix-core/Error.h>
 #include <quix-ir/IR.h>
 #include <quix-parser/Parser.h>
-#include <setjmp.h>
-#include <signal.h>
 
-#include <atomic>
 #include <core/Config.hh>
 #include <cstring>
 #include <quix-ir/Classes.hh>
@@ -77,68 +74,7 @@ std::string ns_join(std::string_view a, std::string_view b) {
   return std::string(a) + "::" + std::string(b);
 }
 
-static std::atomic<size_t> sigguard_refcount;
-static std::mutex sigguard_lock;
-static std::unordered_map<int, sighandler_t> sigguard_old;
-static const std::set<int> sigguard_signals = {SIGABRT, SIGBUS, SIGFPE, SIGILL, SIGSEGV, SIGSYS};
-static thread_local jmp_buf sigguard_env;
-
 thread_local qmodule_t *qxir::current;
-
-static void _signal_handler(int sig) {
-  sigguard_lock.lock();
-
-  DiagMessage diag;
-  diag.m_msg = "FATAL Internal Error: Deadly Signal received: " + std::to_string(sig);
-  diag.m_start = diag.m_end = qlex_loc_t{};
-  diag.m_type = IssueClass::FatalError;
-  diag.m_code = IssueCode::SignalReceived;
-
-  qxir::current->getDiag().push(QXIR_AUDIT_CONV, std::move(diag));
-
-  sigguard_lock.unlock();
-
-  longjmp(sigguard_env, sig);
-}
-
-static void install_sigguard(qmodule_t *qxir) noexcept {
-  if (qxir->getConf()->has(QQK_CRASHGUARD, QQV_OFF)) {
-    return;
-  }
-
-  std::lock_guard<std::mutex> lock(sigguard_lock);
-  (void)lock;
-
-  if (++sigguard_refcount > 1) {
-    return;
-  }
-
-  for (int sig : sigguard_signals) {
-    sighandler_t old = signal(sig, _signal_handler);
-    if (old == SIG_ERR) {
-      qcore_panicf("Failed to install signal handler for signal %d", sig);
-    }
-    sigguard_old[sig] = old;
-  }
-}
-
-static void uninstall_sigguard() noexcept {
-  std::lock_guard<std::mutex> lock(sigguard_lock);
-  (void)lock;
-
-  if (--sigguard_refcount > 0) {
-    return;
-  }
-
-  for (int sig : sigguard_signals) {
-    sighandler_t old = signal(sig, sigguard_old[sig]);
-    if (old == SIG_ERR) {
-      qcore_panicf("Failed to uninstall signal handler for signal %d", sig);
-    }
-  }
-
-  sigguard_old.clear();
-}
 
 class QError : public std::exception {
 public:
@@ -156,57 +92,44 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
   }
 
   std::swap(qxir::qxir_arena.get(), mod->getNodeArena());
-  install_sigguard(mod);
   qxir::current = mod;
   mod->setRoot(nullptr);
   mod->enableDiagnostics(diagnostics);
 
-  volatile bool success = false;
+  bool success = false;
 
-  if (setjmp(sigguard_env) == 0) {
-    try {
-      ConvState s;
-      mod->setRoot(qconv_one(s, static_cast<qparse::Node *>(base)));
+  try {
+    ConvState s;
+    mod->setRoot(qconv_one(s, static_cast<qparse::Node *>(base)));
 
-      success = !mod->getFailbit();
+    success = !mod->getFailbit();
 
-      /* Perform the required transformations and checks
-         if the first translation was successful */
+    /* Perform the required transformations and checks
+       if the first translation was successful */
+    if (success) {
+      /* Perform the required transformations */
+      success = qxir::pass::PassGroupRegistry::get("ds").run(mod, [&](std::string_view name) {
+        /* Track the pass name */
+        mod->applyPassLabel(std::string(name));
+      });
       if (success) {
-        /* Perform the required transformations */
-        success = qxir::pass::PassGroupRegistry::get("ds").run(mod, [&](std::string_view name) {
-          /* Track the pass name */
-          mod->applyPassLabel(std::string(name));
+        success = qxir::pass::PassGroupRegistry::get("chk").run(mod, [&](std::string_view name) {
+          /* Track the analysis pass name */
+          mod->applyCheckLabel(std::string(name));
         });
-        if (success) {
-          success = qxir::pass::PassGroupRegistry::get("chk").run(mod, [&](std::string_view name) {
-            /* Track the analysis pass name */
-            mod->applyCheckLabel(std::string(name));
-          });
-        } else {
-          report(IssueCode::CompilerError, IssueClass::Debug, "");
-        }
-
-        success = success && !mod->getFailbit();
+      } else {
+        report(IssueCode::CompilerError, IssueClass::Debug, "");
       }
-    } catch (QError &) {
-      success = false;
-    }
-  } else {
-    success = false;
 
-    /**
-     * A signal (what is usually a fatal error) was caught,
-     * the program is pretty much in an undefined state. However,
-     * I don't care about the state of the program, I just want to
-     * clean up the resources and return to the trusting user code.
-     */
+      success = success && !mod->getFailbit();
+    }
+  } catch (QError &) {
+    success = false;
   }
 
   success || report(IssueCode::CompilerError, IssueClass::Error, "failed");
 
   qxir::current = nullptr;
-  uninstall_sigguard();
   std::swap(qxir::qxir_arena.get(), mod->getNodeArena());
 
   return success;
