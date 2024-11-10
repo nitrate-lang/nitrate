@@ -460,6 +460,11 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
     case QAST_NODE_LIST: {
       List* N = C->as<List>();
+      if (N->get_items().empty()) {
+        S.line << "[]";
+        break;
+      }
+
       auto ty = N->get_items().front()->this_typeid();
       if (N->get_items().size() > 0 && (ty == QAST_NODE_ASSOC || ty == QAST_NODE_LIST)) {
         S.line << "[\n";
