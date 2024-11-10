@@ -1,5 +1,5 @@
-# QUIX-IR README
+# NITRATE-IR README
 
 ## Features
 
-Syntax highlighting for the QUIX-IR language.
+Syntax highlighting for the NITRATE-IR language.

@@ -1480,27 +1480,27 @@ static bool do_libs_init() {
   }
 
   if (!qlex_lib_init()) {
-    qerr << "Failed to initialize QUIX-LEX library" << std::endl;
+    qerr << "Failed to initialize NITRATE-LEX library" << std::endl;
     return false;
   }
 
   if (!qprep_lib_init()) {
-    qerr << "Failed to initialize QUIX-PREP library" << std::endl;
+    qerr << "Failed to initialize NITRATE-PREP library" << std::endl;
     return false;
   }
 
   if (!qparse_lib_init()) {
-    qerr << "Failed to initialize QUIX-PARSE library" << std::endl;
+    qerr << "Failed to initialize NITRATE-PARSE library" << std::endl;
     return false;
   }
 
   if (!qxir_lib_init()) {
-    qerr << "Failed to initialize QUIX-IR library" << std::endl;
+    qerr << "Failed to initialize NITRATE-IR library" << std::endl;
     return false;
   }
 
   if (!qcode_lib_init()) {
-    qerr << "Failed to initialize QUIX-CODE library" << std::endl;
+    qerr << "Failed to initialize NITRATE-CODE library" << std::endl;
     return false;
   }
 
