@@ -41,5 +41,5 @@ jobs:
     - name: Build Snap
       run: |
         sudo lxd init --auto
-        sudo snapcraft
+        sudo snapcraft -v
       shell: bash
