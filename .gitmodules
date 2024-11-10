@@ -16,3 +16,7 @@
 [submodule "orbit-platform/file"]
 	path = orbit-platform/file
 	url = https://github.com/quixlang/file
+[submodule "libnitrate-seq/third_party/lua"]
+	path = libnitrate-seq/third_party/lua
+	url = https://github.com/lua/lua
+	branch = v5.4
