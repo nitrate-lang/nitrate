@@ -4,7 +4,7 @@
   "publisher": "qpkg",
   "description": "NITRATE-IR syntax highlighting support ",
   "version": "0.0.3",
-  "repository": "https://github.com/Kracken256/quix/extensions/vscode/qxir-syntax",
+  "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/qxir-syntax",
   "engines": {
     "vscode": "^1.92.0"
   },

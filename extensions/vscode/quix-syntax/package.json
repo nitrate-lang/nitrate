@@ -5,7 +5,7 @@
   "description": "Nitrate syntax highlighting support",
   "icon": "./icons/icon-light.png",
   "version": "0.0.7",
-  "repository": "https://github.com/Kracken256/quix/extensions/vscode/quix-syntax",
+  "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/nitrate-syntax",
   "engines": {
     "vscode": "^1.92.0"
   },

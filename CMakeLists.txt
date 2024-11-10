@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(quix-compiler-suite CXX)
+project(nitrate-compiler-suite CXX)
 
 option(MEMORY_OVER_SPEED "Optimize for memory over speed" OFF)
 option(COVERAGE "Enable coverage" OFF)

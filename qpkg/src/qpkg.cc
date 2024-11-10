@@ -75,7 +75,7 @@ thread_local std::ostream &qerr = std::cerr;
 
 static qpkg::core::MyLogSink g_custom_log_sink;
 
-static std::optional<std::string> quixcc_cc_demangle(std::string_view mangled_name) {
+static std::optional<std::string> nitrate_cc_demangle(std::string_view mangled_name) {
   if (mangled_name.starts_with("@")) {
     mangled_name.remove_prefix(1);
   }
@@ -1456,7 +1456,7 @@ namespace qpkg::router {
       return 0;
     } else if (parser.is_used("--demangle")) {
       std::string input = parser.get<std::string>("--demangle");
-      auto demangled_name = quixcc_cc_demangle(input.c_str());
+      auto demangled_name = nitrate_cc_demangle(input.c_str());
       if (!demangled_name) {
         qerr << "Failed to demangle symbol" << std::endl;
         return 1;

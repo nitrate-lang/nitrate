@@ -40,7 +40,7 @@ if '--snap' in sys.argv:
 print("Building Docker containers...")
 
 # Build the debug env container
-if os.system('docker build -t quixcc-debug:latest -f tools/Debug.Dockerfile .') != 0:
+if os.system('docker build -t nitrate-debug:latest -f tools/Debug.Dockerfile .') != 0:
     print("Debug build failed.")
     sys.exit(1)
 
@@ -52,13 +52,13 @@ def regenerate_runner():
 
 
 # Build the release env container
-if os.system('docker build -t quixcc-release:latest -f tools/Release.Dockerfile .') != 0:
+if os.system('docker build -t nitrate-release:latest -f tools/Release.Dockerfile .') != 0:
     print("Release build failed.")
     sys.exit(1)
 
 if '--release' in sys.argv:
     print("Building release...")
-    if os.system('docker run -v {0}:/app --rm -it quixcc-release:latest'.format(cwd)) != 0:
+    if os.system('docker run -v {0}:/app --rm -it nitrate-release:latest'.format(cwd)) != 0:
         print("Release build failed.")
         sys.exit(1)
     if '--strip' in sys.argv:
@@ -81,7 +81,7 @@ if '--release' in sys.argv:
 
 if '--debug' in sys.argv:
     print("Building debug...")
-    if os.system('docker run -v {0}:/app --rm -it quixcc-debug:latest'.format(cwd)) != 0:
+    if os.system('docker run -v {0}:/app --rm -it nitrate-debug:latest'.format(cwd)) != 0:
         print("Debug build failed.")
         sys.exit(1)
     if '--strip' in sys.argv:

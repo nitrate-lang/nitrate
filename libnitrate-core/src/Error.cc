@@ -38,7 +38,7 @@
 
 #include "LibMacro.h"
 
-#define PROJECT_REPO_URL "https://github.com/Kracken256/quix"
+#define PROJECT_REPO_URL "https://github.com/Kracken256/nitrate"
 #define PANIC_LINE_LENGTH 80
 
 #if defined(__GLIBC__)
