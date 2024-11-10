@@ -29,95 +29,33 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Lib.h>
-#include <nitrate-lexer/Lib.h>
-#include <quix-prep/Lib.h>
+#ifndef __QUIX_PREP_CLASSES_H__
+#define __QUIX_PREP_CLASSES_H__
 
-#include <atomic>
-
-#include "core/LibMacro.h"
-
-static std::atomic<size_t> qprep_lib_ref_count = 0;
-
-bool do_init() { return true; }
-
-void do_deinit() { return; }
-
-LIB_EXPORT bool qprep_lib_init() {
-  if (qprep_lib_ref_count++ > 1) {
-    return true;
-  }
-
-  if (!qcore_lib_init()) {
-    return false;
-  }
-
-  if (!qlex_lib_init()) {
-    return false;
-  }
-
-  return do_init();
-}
-
-LIB_EXPORT void qprep_lib_deinit() {
-  if (--qprep_lib_ref_count > 0) {
-    return;
-  }
-
-  do_deinit();
-
-  qlex_lib_deinit();
-  qcore_lib_deinit();
-
-  return;
-}
-
-LIB_EXPORT const char* qprep_lib_version() {
-  static const char* version_string =
-
-      "[" __TARGET_VERSION
-      "] ["
-
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \
-    defined(_M_AMD64)
-      "x86_64-"
-#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
-      "x86-"
-#elif defined(__aarch64__)
-      "aarch64-"
-#elif defined(__arm__)
-      "arm-"
-#else
-      "unknown-"
+#ifndef __cplusplus
+#error "This header is for C++ only."
 #endif
 
-#if defined(__linux__)
-      "linux-"
-#elif defined(__APPLE__)
-      "macos-"
-#elif defined(_WIN32)
-      "win32-"
-#else
-      "unknown-"
-#endif
+#include <nitrate-core/Error.h>
+#include <nitrate-seq/Preprocess.h>
 
-#if defined(__clang__)
-      "clang] "
-#elif defined(__GNUC__)
-      "gnu] "
-#else
-      "unknown] "
-#endif
+#include <stdexcept>
 
-#if NDEBUG
-      "[release]"
-#else
-      "[debug]"
-#endif
+class qprep final {
+  qlex_t *m_lex;
 
-      ;
+public:
+  qprep(std::shared_ptr<std::istream> fp, const char *filename, qcore_env_t env) {
+    if ((m_lex = qprep_new(fp, filename, env)) == nullptr) {
+      throw std::runtime_error("qlex_new failed");
+    }
+  }
+  ~qprep() { qlex_free(m_lex); }
 
-  return version_string;
-}
+  qlex_t *get() {
+    qcore_assert(m_lex != nullptr);
+    return m_lex;
+  }
+};
 
-LIB_EXPORT const char* qprep_strerror() { return ""; }
+#endif  // __QUIX_PREP_CLASSES_H__

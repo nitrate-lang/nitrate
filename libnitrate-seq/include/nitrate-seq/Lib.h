@@ -29,33 +29,59 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_PREP_CLASSES_H__
-#define __QUIX_PREP_CLASSES_H__
+#ifndef __QUIX_PREP_LIB_H__
+#define __QUIX_PREP_LIB_H__
 
-#ifndef __cplusplus
-#error "This header is for C++ only."
+#include <nitrate-seq/Preprocess.h>
+#include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#include <nitrate-core/Error.h>
-#include <quix-prep/Preprocess.h>
+/**
+ * @brief Initialize the library.
+ *
+ * @return true if the library was initialized successfully.
+ * @note This function is thread-safe.
+ * @note The library is reference counted, so it is safe to call this function
+ * multiple times. Each time will not reinitialize the library, but will
+ * increment the reference count.
+ */
+bool qprep_lib_init();
 
-#include <stdexcept>
+/**
+ * @brief Deinitialize the library.
+ *
+ * @note This function is thread-safe.
+ * @note The library is reference counted, so it is safe to call this function
+ * multiple times. Each time will not deinitialize the library, but when
+ * the reference count reaches zero, the library will be deinitialized.
+ */
+void qprep_lib_deinit();
 
-class qprep final {
-  qlex_t *m_lex;
+/**
+ * @brief Get the version of the library.
+ *
+ * @return The version string of the library.
+ * @warning Don't free the returned string.
+ * @note This function is thread-safe.
+ * @note This function is safe to call before initialization and after deinitialization.
+ */
+const char* qprep_lib_version();
 
-public:
-  qprep(std::shared_ptr<std::istream> fp, const char *filename, qcore_env_t env) {
-    if ((m_lex = qprep_new(fp, filename, env)) == nullptr) {
-      throw std::runtime_error("qlex_new failed");
-    }
-  }
-  ~qprep() { qlex_free(m_lex); }
+/**
+ * @brief Get the last error message from the current thread.
+ *
+ * @return The last error message from the current thread.
+ * @warning Don't free the returned string.
+ * @note This function is thread-safe.
+ * @note This function is safe to call before initialization and after deinitialization.
+ */
+const char* qprep_strerror();
 
-  qlex_t *get() {
-    qcore_assert(m_lex != nullptr);
-    return m_lex;
-  }
-};
+#ifdef __cplusplus
+}
+#endif
 
-#endif  // __QUIX_PREP_CLASSES_H__
+#endif  // __QUIX_PREP_LIB_H__

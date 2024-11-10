@@ -33,10 +33,10 @@
 #include <nitrate-core/Env.h>
 #include <nitrate-core/Lib.h>
 #include <nitrate-lexer/Lib.h>
+#include <nitrate-seq/Lib.h>
 #include <quix-codegen/Lib.h>
 #include <quix-ir/Lib.h>
 #include <quix-parser/Lib.h>
-#include <quix-prep/Lib.h>
 #include <quix/code.h>
 
 #include <Stream.hh>

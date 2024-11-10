@@ -29,61 +29,95 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Env.h>
-#include <nitrate-lexer/Token.h>
-#include <quix-prep/Preprocess.h>
+#include <nitrate-core/Lib.h>
+#include <nitrate-lexer/Lib.h>
+#include <nitrate-seq/Lib.h>
 
-#include <memory>
-#include <mutex>
-#include <nitrate-lexer/Base.hh>
-#include <optional>
-#include <string_view>
+#include <atomic>
 
-#define get_engine() ((qprep_impl_t *)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1)))
+#include "core/LibMacro.h"
 
-struct lua_State;
+static std::atomic<size_t> qprep_lib_ref_count = 0;
 
-enum class DeferOp {
-  EmitToken,
-  SkipToken,
-  UninstallHandler,
-};
+bool do_init() { return true; }
 
-struct qprep_impl_t;
+void do_deinit() { return; }
 
-typedef std::function<DeferOp(qprep_impl_t *obj, qlex_tok_t last)> DeferCallback;
+LIB_EXPORT bool qprep_lib_init() {
+  if (qprep_lib_ref_count++ > 1) {
+    return true;
+  }
 
-extern std::string_view quix_code_prefix;
+  if (!qcore_lib_init()) {
+    return false;
+  }
 
-struct __attribute__((visibility("default"))) qprep_impl_t final : public qlex_t {
-  struct Core {
-    lua_State *L = nullptr;
-    std::vector<DeferCallback> defer_callbacks;
-    std::deque<qlex_tok_t> buffer;
+  if (!qlex_lib_init()) {
+    return false;
+  }
 
-    ~Core();
-  };
+  return do_init();
+}
 
-  std::shared_ptr<Core> m_core;
-  std::pair<qprep_fetch_module_t, uintptr_t> m_fetch_module;
-  std::mutex m_mutex;
-  bool m_do_expanse = true;
-  size_t m_depth = 0;
+LIB_EXPORT void qprep_lib_deinit() {
+  if (--qprep_lib_ref_count > 0) {
+    return;
+  }
 
-  virtual qlex_tok_t next_impl() override;
+  do_deinit();
 
-  bool run_defer_callbacks(qlex_tok_t last);
+  qlex_lib_deinit();
+  qcore_lib_deinit();
 
-  std::optional<std::string> run_lua_code(const std::string &s);
-  bool run_and_expand(const std::string &code);
-  void expand_raw(std::string_view code);
-  void install_lua_api();
-  qlex_t *weak_clone(std::shared_ptr<std::istream> file, const char *filename);
+  return;
+}
 
-public:
-  qprep_impl_t(std::shared_ptr<std::istream> file, const char *filename, qcore_env_t env);
-  qprep_impl_t(std::shared_ptr<std::istream> file, qcore_env_t env, const char *filename);
-  virtual ~qprep_impl_t() override;
-};
+LIB_EXPORT const char* qprep_lib_version() {
+  static const char* version_string =
 
-class StopException {};
+      "[" __TARGET_VERSION
+      "] ["
+
+#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \
+    defined(_M_AMD64)
+      "x86_64-"
+#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
+      "x86-"
+#elif defined(__aarch64__)
+      "aarch64-"
+#elif defined(__arm__)
+      "arm-"
+#else
+      "unknown-"
+#endif
+
+#if defined(__linux__)
+      "linux-"
+#elif defined(__APPLE__)
+      "macos-"
+#elif defined(_WIN32)
+      "win32-"
+#else
+      "unknown-"
+#endif
+
+#if defined(__clang__)
+      "clang] "
+#elif defined(__GNUC__)
+      "gnu] "
+#else
+      "unknown] "
+#endif
+
+#if NDEBUG
+      "[release]"
+#else
+      "[debug]"
+#endif
+
+      ;
+
+  return version_string;
+}
+
+LIB_EXPORT const char* qprep_strerror() { return ""; }

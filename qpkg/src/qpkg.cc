@@ -33,11 +33,11 @@
 #include <glog/logging.h>
 #include <nitrate-core/Lib.h>
 #include <nitrate-lexer/Lib.h>
+#include <nitrate-seq/Lib.h>
 #include <quix-codegen/Code.h>
 #include <quix-codegen/Lib.h>
 #include <quix-ir/Lib.h>
 #include <quix-parser/Lib.h>
-#include <quix-prep/Lib.h>
 #include <quixd/quixd.h>
 
 #include <clean/Cleanup.hh>
@@ -48,11 +48,11 @@
 #include <ios>
 #include <mutex>
 #include <nitrate-core/Classes.hh>
+#include <nitrate-seq/Classes.hh>
 #include <quix-codegen/Classes.hh>
 #include <quix-ir/Classes.hh>
 #include <quix-ir/Format.hh>
 #include <quix-parser/Classes.hh>
-#include <quix-prep/Classes.hh>
 #include <string_view>
 #include <unordered_map>
 

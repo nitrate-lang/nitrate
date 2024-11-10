@@ -34,7 +34,7 @@
 #include <nitrate-lexer/Lexer.h>
 #include <nitrate-lexer/Lib.h>
 #include <nitrate-lexer/Token.h>
-#include <quix-prep/Lib.h>
+#include <nitrate-seq/Lib.h>
 
 #include <core/Preprocess.hh>
 #include <cstddef>
