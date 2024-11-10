@@ -10,9 +10,9 @@ file(GLOB_RECURSE SOURCES "src/*.cc")
 find_library(libglog libglog.a REQUIRED)
 find_library(libgflags libgflags.a REQUIRED)
 
-message(STATUS "src include path: ${CMAKE_CURRENT_SOURCE_DIR}/src")
+
 add_library(quixd_main STATIC ${SOURCES})
 target_include_directories(quixd_main PUBLIC src)
 target_compile_options(quixd_main PRIVATE -O3 -fno-exceptions -Wno-return-type-c-linkage)
-target_link_libraries(quixd_main PUBLIC quix ${libglog} ${libgflags} crypto)
-add_dependencies(quixd_main quix)
+target_link_libraries(quixd_main PUBLIC nitrate ${libglog} ${libgflags} crypto)
+add_dependencies(quixd_main nitrate)
