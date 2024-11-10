@@ -29,69 +29,59 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CODEGEN_CORE_CONFIG_H__
-#define __QUIX_CODEGEN_CORE_CONFIG_H__
+#ifndef __QUIX_CODEGEN_LIB_H__
+#define __QUIX_CODEGEN_LIB_H__
 
-#include <quix-codegen/Config.h>
+#include <nitrate-emit/Config.h>
+#include <stdbool.h>
 
-#include <algorithm>
-#include <optional>
-#include <vector>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-struct qcode_conf_t {
-private:
-  std::vector<qcode_setting_t> m_data;
+/**
+ * @brief Initialize the library.
+ *
+ * @return true if the library was initialized successfully.
+ * @note This function is thread-safe.
+ * @note The library is reference counted, so it is safe to call this function
+ * multiple times. Each time will not reinitialize the library, but will
+ * increment the reference count.
+ */
+bool qcode_lib_init();
 
-  bool verify_prechange(qcode_key_t key, qcode_val_t value) const {
-    (void)key;
-    (void)value;
+/**
+ * @brief Deinitialize the library.
+ *
+ * @note This function is thread-safe.
+ * @note The library is reference counted, so it is safe to call this function
+ * multiple times. Each time will not deinitialize the library, but when
+ * the reference count reaches zero, the library will be deinitialized.
+ */
+void qcode_lib_deinit();
 
-    return true;
-  }
+/**
+ * @brief Get the version of the library.
+ *
+ * @return The version string of the library.
+ * @warning Don't free the returned string.
+ * @note This function is thread-safe.
+ * @note This function is safe to call before initialization and after deinitialization.
+ */
+const char* qcode_lib_version();
 
-public:
-  qcode_conf_t() = default;
-  ~qcode_conf_t() = default;
+/**
+ * @brief Get the last error message from the current thread.
+ *
+ * @return The last error message from the current thread.
+ * @warning Don't free the returned string.
+ * @note This function is thread-safe.
+ * @note This function is safe to call before initialization and after deinitialization.
+ */
+const char* qcode_strerror();
 
-  bool SetAndVerify(qcode_key_t key, qcode_val_t value) {
-    auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const qcode_setting_t &setting) { return setting.key == key; });
+#ifdef __cplusplus
+}
+#endif
 
-    if (!verify_prechange(key, value)) {
-      return false;
-    }
-
-    if (it != m_data.end()) {
-      m_data.erase(it);
-    }
-
-    m_data.push_back({key, value});
-
-    return true;
-  }
-
-  std::optional<qcode_val_t> Get(qcode_key_t key) const {
-    auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const qcode_setting_t &setting) { return setting.key == key; });
-
-    if (it == m_data.end()) {
-      return std::nullopt;
-    }
-
-    return it->value;
-  }
-
-  const qcode_setting_t *GetAll(size_t &count) const {
-    count = m_data.size();
-    return m_data.data();
-  }
-
-  void ClearNoVerify() {
-    m_data.clear();
-    m_data.shrink_to_fit();
-  }
-
-  bool has(qcode_key_t option, qcode_val_t value) const noexcept;
-};
-
-#endif  // __QUIX_CODEGEN_CORE_CONFIG_H__
+#endif  // __QUIX_CODEGEN_LIB_H__

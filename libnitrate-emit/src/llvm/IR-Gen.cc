@@ -64,9 +64,9 @@
 #include <llvm-14/llvm/Transforms/IPO/PassManagerBuilder.h>
 #include <llvm-14/llvm/Transforms/InstCombine/InstCombine.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-emit/Code.h>
+#include <nitrate-emit/Config.h>
 #include <nitrate-ir/TypeDecl.h>
-#include <quix-codegen/Code.h>
-#include <quix-codegen/Config.h>
 #include <sys/types.h>
 
 #include <charconv>

@@ -29,30 +29,69 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CODEGEN_CLASSES_H__
-#define __QUIX_CODEGEN_CLASSES_H__
+#ifndef __QUIX_CODEGEN_CORE_CONFIG_H__
+#define __QUIX_CODEGEN_CORE_CONFIG_H__
 
-#ifndef __cplusplus
-#error "This header is for C++ only."
-#endif
+#include <nitrate-emit/Config.h>
 
-#include <nitrate-core/Error.h>
-#include <quix-codegen/Config.h>
+#include <algorithm>
+#include <optional>
+#include <vector>
 
-#include <stdexcept>
+struct qcode_conf_t {
+private:
+  std::vector<qcode_setting_t> m_data;
 
-class qcode_conf final {
-  qcode_conf_t *m_conf;
+  bool verify_prechange(qcode_key_t key, qcode_val_t value) const {
+    (void)key;
+    (void)value;
+
+    return true;
+  }
 
 public:
-  qcode_conf(bool use_default = true) {
-    if ((m_conf = qcode_conf_new(use_default)) == nullptr) {
-      throw std::runtime_error("qcode_conf_new failed");
-    }
-  }
-  ~qcode_conf() { qcode_conf_free(m_conf); }
+  qcode_conf_t() = default;
+  ~qcode_conf_t() = default;
 
-  qcode_conf_t *get() const { return m_conf; }
+  bool SetAndVerify(qcode_key_t key, qcode_val_t value) {
+    auto it = std::find_if(m_data.begin(), m_data.end(),
+                           [key](const qcode_setting_t &setting) { return setting.key == key; });
+
+    if (!verify_prechange(key, value)) {
+      return false;
+    }
+
+    if (it != m_data.end()) {
+      m_data.erase(it);
+    }
+
+    m_data.push_back({key, value});
+
+    return true;
+  }
+
+  std::optional<qcode_val_t> Get(qcode_key_t key) const {
+    auto it = std::find_if(m_data.begin(), m_data.end(),
+                           [key](const qcode_setting_t &setting) { return setting.key == key; });
+
+    if (it == m_data.end()) {
+      return std::nullopt;
+    }
+
+    return it->value;
+  }
+
+  const qcode_setting_t *GetAll(size_t &count) const {
+    count = m_data.size();
+    return m_data.data();
+  }
+
+  void ClearNoVerify() {
+    m_data.clear();
+    m_data.shrink_to_fit();
+  }
+
+  bool has(qcode_key_t option, qcode_val_t value) const noexcept;
 };
 
-#endif  // __QUIX_CODEGEN_CLASSES_H__
+#endif  // __QUIX_CODEGEN_CORE_CONFIG_H__

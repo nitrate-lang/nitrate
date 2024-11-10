@@ -32,12 +32,12 @@
 #include <argparse.h>
 #include <glog/logging.h>
 #include <nitrate-core/Lib.h>
+#include <nitrate-emit/Code.h>
+#include <nitrate-emit/Lib.h>
 #include <nitrate-ir/Lib.h>
 #include <nitrate-lexer/Lib.h>
 #include <nitrate-parser/Lib.h>
 #include <nitrate-seq/Lib.h>
-#include <quix-codegen/Code.h>
-#include <quix-codegen/Lib.h>
 #include <quixd/quixd.h>
 
 #include <clean/Cleanup.hh>
@@ -48,11 +48,11 @@
 #include <ios>
 #include <mutex>
 #include <nitrate-core/Classes.hh>
+#include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/Format.hh>
 #include <nitrate-parser/Classes.hh>
 #include <nitrate-seq/Classes.hh>
-#include <quix-codegen/Classes.hh>
 #include <string_view>
 #include <unordered_map>
 

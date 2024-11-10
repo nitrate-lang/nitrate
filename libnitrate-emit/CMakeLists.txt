@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(libquix-codegen CXX)
+project(libnitrate-emit CXX)
 
 #================== CONFIGURE BUILD ==================
 set(CMAKE_CXX_STANDARD 20)
@@ -13,7 +13,7 @@ string(REGEX REPLACE " .*" "" SHA256SUMS ${SHA256SUMS})
 string(TOUPPER ${SHA256SUMS} SHA256SUMS)
 string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
 set(__TARGET_VERSION "\"CODEGEN_${SHA256SUMS}\"")
-message(STATUS "libquix-codegen VersionId: ${__TARGET_VERSION}")
+message(STATUS "libnitrate-emit VersionId: ${__TARGET_VERSION}")
 
 #================== GET LLVM LIBRARIES =====================
 execute_process(COMMAND llvm-config-14 --ldflags
@@ -55,20 +55,20 @@ endif()
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
-add_library(quix-codegen ${CXX_SOURCES})
-target_include_directories(quix-codegen PUBLIC src "include"
+add_library(nitrate-emit ${CXX_SOURCES})
+target_include_directories(nitrate-emit PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-lexer/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-ir/include
   /usr/lib/llvm-14/include)
-target_link_libraries(quix-codegen PUBLIC nitrate-core nitrate-ir)
+target_link_libraries(nitrate-emit PUBLIC nitrate-core nitrate-ir)
 foreach(lib ${LLVM_LIBS})
-  target_link_libraries(quix-codegen PUBLIC ${lib})
+  target_link_libraries(nitrate-emit PUBLIC ${lib})
   message(STATUS "Linking ${lib}")
 endforeach()
-target_link_libraries(quix-codegen PUBLIC z tinfo)
-add_dependencies(quix-codegen nitrate-core nitrate-ir)
-set_target_properties(quix-codegen PROPERTIES OUTPUT_NAME quix-codegen)
+target_link_libraries(nitrate-emit PUBLIC z tinfo)
+add_dependencies(nitrate-emit nitrate-core nitrate-ir)
+set_target_properties(nitrate-emit PROPERTIES OUTPUT_NAME nitrate-emit)
 
-install(TARGETS quix-codegen DESTINATION lib)
+install(TARGETS nitrate-emit DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")
