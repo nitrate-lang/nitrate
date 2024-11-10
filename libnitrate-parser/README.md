@@ -1,7 +1,7 @@
 # Nitrate Parser Library
 
-This library is a part of the [Nitrate](https://qpkg.io) project. It provides a
-flexible and efficient parser for the [Nitrate](https://qpkg.io/language) programming
+This library is a part of the [Nitrate](https://nitrate.dev) project. It provides a
+flexible and efficient parser for the [Nitrate](https://nitrate.dev) programming
 language.
 
 ## Features
@@ -32,7 +32,3 @@ Please report bugs or issues on the [GitHub issue tracker](https://github.com/Kr
 
 This library is licensed under the LGPLv2.1+ license. See the `LICENSE` file for
 more information.
-
-## Author
-
-This library is written by [Wesley C. Jones](https://qpkg.io/creator/).
