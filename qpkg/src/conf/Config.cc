@@ -13,7 +13,7 @@
 ///   * QUIX PACKAGE MANAGER - The official tool for the Quix language.      ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
 ///                                                                          ///
-///   The QUIX Compiler Suite is free software; you can redistribute it or   ///
+///   The Nitrate Toolchain is free software; you can redistribute it or     ///
 ///   modify it under the terms of the GNU Lesser General Public             ///
 ///   License as published by the Free Software Foundation; either           ///
 ///   version 2.1 of the License, or (at your option) any later version.     ///
