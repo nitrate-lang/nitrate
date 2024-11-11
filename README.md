@@ -3,6 +3,10 @@
 [![Build and Test](https://github.com/Kracken256/nitrate/actions/workflows/cmake-check.yml/badge.svg)](https://github.com/Kracken256/nitrate/actions/workflows/cmake-check.yml)
 [![Publish SNAP](https://github.com/Kracken256/nitrate/actions/workflows/publish-snap.yml/badge.svg)](https://github.com/Kracken256/nitrate/actions/workflows/snapcraft-check.yml)
 
+<div align="center">
+    <img src="https://github.com/Kracken256/nitrate/blob/main/static-data/logo-dark-1024x1024.png?raw=true" width="400" height="400" alt="css-in-readme">
+</div>
+
 *This project is in rapid development. It will not compile to anything useful yet.*
 
 Nitrate is a high-level, statically typed, memory-safe, garbage-collected\*, high-performance, object-oriented, general-purpose programming language designed to be safe, expressive, and performant. Nitrate supports runtime reflection, low-level memory access, namespaces, generics, type inference, packed data types, classes, operator overloading, coroutines, default initializers, arbitrary precision math, RAII, automatic memory management, inline assembly, and compile time evaluation metaprogramming.
