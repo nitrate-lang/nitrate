@@ -218,7 +218,7 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config, const std::files
           return false;
         }
         for (const auto &license : config[key].as<std::vector<std::string>>()) {
-          if (!no3::conf::valid_licenses.contains(license)) {
+          if (!no3::conf::spdx_identifiers.contains(license)) {
             LOG(ERROR) << "Invalid license in configuration: " << license << std::endl;
             return false;
           }

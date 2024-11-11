@@ -63,9 +63,10 @@ namespace no3 {
       static bool validateUrl(const std::string &url);
       static bool validateLicense(const std::string &license);
 
-      void writeGitIgnore();
-      void writeLicense();
-      void writeMain();
+      bool writeGitIgnore();
+      bool writeMain();
+      bool writeReadme();
+      bool writeConfig();
 
     public:
       Package(std::filesystem::path output, std::string name, std::string license,

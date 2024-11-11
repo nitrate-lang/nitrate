@@ -32,12 +32,12 @@
 #ifndef __NO3_CONF_SPDX_HH__
 #define __NO3_CONF_SPDX_HH__
 
-#include <map>
-#include <string>
+#include <string_view>
+#include <unordered_set>
 
 namespace no3 {
   namespace conf {
-    extern const std::map<std::string, const char *> valid_licenses;
+    extern const std::unordered_set<std::string_view> spdx_identifiers;
   }
 }  // namespace no3
 

@@ -35,23 +35,6 @@
 #include <init/Package.hh>
 #include <regex>
 
-static bool touch(const std::filesystem::path &path) {
-  using namespace no3;
-
-  try {
-    std::ofstream file(path.string());
-    if (!file.is_open()) {
-      LOG(ERROR) << "Failed to create file: " << path << std::endl;
-      return false;
-    }
-
-    return true;
-  } catch (const std::exception &e) {
-    LOG(ERROR) << "Failed to create file: " << path << " (" << e.what() << ")" << std::endl;
-    return false;
-  }
-}
-
 bool no3::init::Package::validateName(const std::string &name) {
   static std::regex regex("^[a-zA-Z0-9_-]+$");
   return std::regex_match(name, regex);
@@ -73,15 +56,14 @@ bool no3::init::Package::validateUrl(const std::string &url) {
 }
 
 bool no3::init::Package::validateLicense(const std::string &license) {
-  static std::regex regex("^[a-zA-Z0-9_]+$");
-  return std::regex_match(license, regex);
+  return conf::spdx_identifiers.contains(license);
 }
 
-void no3::init::Package::writeGitIgnore() {
+bool no3::init::Package::writeGitIgnore() {
   std::ofstream gitignore((m_output / m_name / ".gitignore").string());
   if (!gitignore.is_open()) {
     LOG(ERROR) << "Failed to create .gitignore file" << std::endl;
-    return;
+    return false;
   }
 
   gitignore << ".no3/\n";
@@ -89,44 +71,122 @@ void no3::init::Package::writeGitIgnore() {
   gitignore << m_name << ".exe\n";
   gitignore << "lib" << m_name << ".a\n";
   gitignore << "lib" << m_name << ".so\n";
+
+  return true;
 }
 
-void no3::init::Package::writeLicense() {
-  std::ofstream license((m_output / m_name / "LICENSE").string());
-
-  if (!license.is_open()) {
-    LOG(ERROR) << "Failed to create LICENSE file" << std::endl;
-    return;
+bool no3::init::Package::writeMain() {
+  if (!std::filesystem::create_directories(m_output / m_name / "src")) {
+    LOG(ERROR) << "Failed to create package directories" << std::endl;
+    return false;
   }
 
-  if (m_license.empty()) {
-    LOG(WARNING) << "No license specified" << std::endl;
-    return;
-  }
-
-  if (!conf::valid_licenses.contains(m_license)) {
-    LOG(WARNING) << "License is not a recognized SPDX license: " << m_license << std::endl;
-    return;
-  }
-
-  license << conf::valid_licenses.at(m_license) << std::endl;
-}
-
-void no3::init::Package::writeMain() {
-  std::ofstream main((m_output / m_name / "src/main.q").string());
+  std::ofstream main((m_output / m_name / "src/main.n").string());
   if (!main.is_open()) {
     LOG(ERROR) << "Failed to create main.q file" << std::endl;
-    return;
+    return false;
   }
 
-  main << R"(@use "v1.0";  ~> Use v1.0 of Nitrate
+  main << R"(@use "v1.0";
 
-@import std;  ~> Import the standard library
+pub "std" fn main(args: [str]): i32 {
+  printn("Whatcha doing, Stepbro?");
 
-pub fn main(args: [str]) {
-  printn("Sup, stepbro?");
+  ret 0;
 }
 )";
+
+  return true;
+}
+
+bool no3::init::Package::writeReadme() {
+  std::ofstream readme((m_output / m_name / "README.md").string());
+  if (!readme.is_open()) {
+    LOG(ERROR) << "Failed to create README file" << std::endl;
+    return false;
+  }
+
+  std::string capitalized_name = m_name;
+  if (!capitalized_name.empty()) capitalized_name[0] = std::toupper(capitalized_name[0]);
+
+  readme << "# " << capitalized_name << " Project\n\n";
+
+  if (!m_description.empty()) {
+    readme << "## Overview\n\n";
+    readme << m_description << "\n\n";
+  }
+
+  if (!m_url.empty()) {
+    readme << "## Project URL\n\n";
+    readme << m_url << "\n\n";
+  }
+
+  if (!m_license.empty()) {
+    readme << "## License\n\n";
+    readme << m_license << "\n\n";
+  }
+
+  if (!m_version.empty()) {
+    readme << "## Version\n\n";
+    readme << m_version << "\n\n";
+  }
+
+  if (!m_email.empty()) {
+    readme << "## Contact\n\n";
+    readme << m_email << "\n\n";
+  }
+
+  if (!m_author.empty()) {
+    readme << "## Authors\n\n";
+    readme << m_author << "\n\n";
+  }
+
+  return true;
+}
+
+bool no3::init::Package::writeConfig() {
+  conf::ConfigGroup grp;
+
+  grp.set("version", 1);
+  grp.set("name", m_name);
+  grp.set("description", m_description);
+
+  if (!m_author.empty()) grp.set("authors", std::vector<std::string>({m_author}));
+
+  if (!m_email.empty()) grp.set("emails", std::vector<std::string>({m_email}));
+
+  if (!m_url.empty()) grp.set("url", m_url);
+
+  if (!m_license.empty())
+    grp.set("licenses", std::vector<std::string>({m_license}));
+  else
+    grp.set("licenses", std::vector<std::string>());
+
+  grp.set("sources", std::vector<std::string>({"src"}));
+
+  switch (m_type) {
+    case PackageType::PROGRAM:
+      grp.set("target", "executable");
+      break;
+    case PackageType::STATICLIB:
+      grp.set("target", "staticlib");
+      break;
+    case PackageType::SHAREDLIB:
+      grp.set("target", "sharedlib");
+      break;
+  }
+
+  conf::Config config(grp, 0);
+
+  std::ofstream config_file((m_output / m_name / "no3.yaml").string());
+  if (!config_file.is_open()) {
+    LOG(ERROR) << "Failed to create package configuration file" << std::endl;
+    return false;
+  }
+
+  config_file << config.dump(conf::ConfigItemSerializationTarget::YAML);
+
+  return true;
 }
 
 bool no3::init::Package::createPackage() {
@@ -143,77 +203,9 @@ bool no3::init::Package::createPackage() {
   }
 
   try {
-    if (!std::filesystem::create_directories(m_output / m_name / "src") ||
-        !std::filesystem::create_directories(m_output / m_name / "test") ||
-        !std::filesystem::create_directories(m_output / m_name / "doc")) {
-      LOG(ERROR) << "Failed to create package directories" << std::endl;
+    if (!writeGitIgnore() || !writeMain() || !writeReadme() || !writeConfig()) {
       return false;
     }
-
-    if (!touch(m_output / m_name / "test/.gitkeep") || !touch(m_output / m_name / "doc/.gitkeep")) {
-      LOG(ERROR) << "Failed to create package directories" << std::endl;
-      return false;
-    }
-
-    if (!touch(m_output / m_name / "README.md")) {
-      LOG(ERROR) << "Failed to create package files" << std::endl;
-      return false;
-    }
-
-    {
-      std::ofstream readme((m_output / m_name / "README.md").string());
-      if (!readme.is_open()) {
-        LOG(ERROR) << "Failed to create README file" << std::endl;
-        return false;
-      }
-
-      readme << "# " << m_name << "\n\n";
-    }
-
-    conf::ConfigGroup grp;
-
-    grp.set("version", 1);
-    grp.set("name", m_name);
-    grp.set("description", m_description);
-
-    if (!m_author.empty()) grp.set("authors", std::vector<std::string>({m_author}));
-
-    if (!m_email.empty()) grp.set("emails", std::vector<std::string>({m_email}));
-
-    if (!m_url.empty()) grp.set("url", m_url);
-
-    if (!m_license.empty())
-      grp.set("licenses", std::vector<std::string>({m_license}));
-    else
-      grp.set("licenses", std::vector<std::string>());
-
-    grp.set("sources", std::vector<std::string>({"src"}));
-
-    switch (m_type) {
-      case PackageType::PROGRAM:
-        grp.set("target", "executable");
-        break;
-      case PackageType::STATICLIB:
-        grp.set("target", "staticlib");
-        break;
-      case PackageType::SHAREDLIB:
-        grp.set("target", "sharedlib");
-        break;
-    }
-
-    conf::Config config(grp, 0);
-
-    std::ofstream config_file((m_output / m_name / "no3.yaml").string());
-    if (!config_file.is_open()) {
-      LOG(ERROR) << "Failed to create package configuration file" << std::endl;
-      return false;
-    }
-
-    config_file << config.dump(conf::ConfigItemSerializationTarget::YAML);
-
-    writeGitIgnore();
-    writeLicense();
-    writeMain();
 
     setenv("NO3_GIT_INJECT_DEST", (m_output / m_name).string().c_str(), 1);
     if (system("git init -b main $NO3_GIT_INJECT_DEST") != 0) {
@@ -262,7 +254,7 @@ bool no3::init::Package::create() {
   }
 
   if (!m_license.empty() && !validateLicense(m_license)) {
-    LOG(ERROR) << "Invalid package license: " << m_license << std::endl;
+    LOG(ERROR) << "Invalid package SPDX license identifier: " << m_license << std::endl;
     return false;
   }
 
