@@ -146,29 +146,6 @@ bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics);
 
 typedef void (*qxir_node_cb)(qxir_node_t *cur, uintptr_t userdata);
 
-/**
- * @brief Just lower the damn thing and print it.
- *
- * @param base Base node of the parse tree to start from.
- * @param out FILE stream to print to.
- * @param mode The serialization mode to use when printing the IR.
- * @param cb Callback to call for each node in the polymorphic graph while printing or NULL.
- * @param argcnt Number of additional variadic arguments. 0 is valid always.
- * @param ... Additional arguments to pass to the printing function. See the
- * documentation for more information.
- *
- * @return True if the IR was printed successfully, false otherwise.
- *
- * @warning In the event of a non-fatal lowering error, the function will still print the
- * (potentially invalid) qxir to the stream. This is to allow the user to see the IR even if it is
- * invalid. However, this function will only return false if nothing was printed to the stream
- * (which needs not indicate that the input was actually semantically acceptable).
- *
- * @note This function is thread safe.
- */
-bool qxir_justprint(qparse_node_t *base, FILE *out, qxir_serial_t mode, qxir_node_cb cb,
-                    uint32_t argcnt, ...);
-
 typedef enum qxir_audit_t {
   QXIR_AUDIT_NONE = 0,     /* No audit */
   QXIR_AUDIT_WILLCOMP = 1, /* Minimum to determine if the module will compile; g++ disables some */
