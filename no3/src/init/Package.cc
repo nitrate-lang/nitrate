@@ -36,7 +36,7 @@
 #include <regex>
 
 static bool touch(const std::filesystem::path &path) {
-  using namespace qpkg;
+  using namespace no3;
 
   try {
     std::ofstream file(path.string());
@@ -52,46 +52,46 @@ static bool touch(const std::filesystem::path &path) {
   }
 }
 
-bool qpkg::init::Package::validateName(const std::string &name) {
+bool no3::init::Package::validateName(const std::string &name) {
   static std::regex regex("^[a-zA-Z0-9_-]+$");
   return std::regex_match(name, regex);
 }
 
-bool qpkg::init::Package::validateVersion(const std::string &version) {
+bool no3::init::Package::validateVersion(const std::string &version) {
   static std::regex regex("^[0-9]+\\.[0-9]+\\.[0-9]+$");
   return std::regex_match(version, regex);
 }
 
-bool qpkg::init::Package::validateEmail(const std::string &email) {
+bool no3::init::Package::validateEmail(const std::string &email) {
   static std::regex regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
   return std::regex_match(email, regex);
 }
 
-bool qpkg::init::Package::validateUrl(const std::string &url) {
+bool no3::init::Package::validateUrl(const std::string &url) {
   static std::regex regex("^(http|https)://.*$");
   return std::regex_match(url, regex);
 }
 
-bool qpkg::init::Package::validateLicense(const std::string &license) {
+bool no3::init::Package::validateLicense(const std::string &license) {
   static std::regex regex("^[a-zA-Z0-9_]+$");
   return std::regex_match(license, regex);
 }
 
-void qpkg::init::Package::writeGitIgnore() {
+void no3::init::Package::writeGitIgnore() {
   std::ofstream gitignore((m_output / m_name / ".gitignore").string());
   if (!gitignore.is_open()) {
     LOG(ERROR) << "Failed to create .gitignore file" << std::endl;
     return;
   }
 
-  gitignore << ".qpkg/\n";
+  gitignore << ".no3/\n";
   gitignore << m_name << "\n";
   gitignore << m_name << ".exe\n";
   gitignore << "lib" << m_name << ".a\n";
   gitignore << "lib" << m_name << ".so\n";
 }
 
-void qpkg::init::Package::writeLicense() {
+void no3::init::Package::writeLicense() {
   std::ofstream license((m_output / m_name / "LICENSE").string());
 
   if (!license.is_open()) {
@@ -112,7 +112,7 @@ void qpkg::init::Package::writeLicense() {
   license << conf::valid_licenses.at(m_license) << std::endl;
 }
 
-void qpkg::init::Package::writeMain() {
+void no3::init::Package::writeMain() {
   std::ofstream main((m_output / m_name / "src/main.q").string());
   if (!main.is_open()) {
     LOG(ERROR) << "Failed to create main.q file" << std::endl;
@@ -129,7 +129,7 @@ pub fn main(args: [str]) {
 )";
 }
 
-bool qpkg::init::Package::createPackage() {
+bool no3::init::Package::createPackage() {
   switch (m_type) {
     case PackageType::PROGRAM:
       LOG(INFO) << "Creating program package" << std::endl;
@@ -203,7 +203,7 @@ bool qpkg::init::Package::createPackage() {
 
     conf::Config config(grp, 0);
 
-    std::ofstream config_file((m_output / m_name / "qpkg.yaml").string());
+    std::ofstream config_file((m_output / m_name / "no3.yaml").string());
     if (!config_file.is_open()) {
       LOG(ERROR) << "Failed to create package configuration file" << std::endl;
       return false;
@@ -215,8 +215,8 @@ bool qpkg::init::Package::createPackage() {
     writeLicense();
     writeMain();
 
-    setenv("QPKG_GIT_INJECT_DEST", (m_output / m_name).string().c_str(), 1);
-    if (system("git init -b main $QPKG_GIT_INJECT_DEST") != 0) {
+    setenv("NO3_GIT_INJECT_DEST", (m_output / m_name).string().c_str(), 1);
+    if (system("git init -b main $NO3_GIT_INJECT_DEST") != 0) {
       LOG(ERROR) << "Failed to initialize git repository" << std::endl;
       return false;
     }
@@ -240,7 +240,7 @@ bool qpkg::init::Package::createPackage() {
   }
 }
 
-bool qpkg::init::Package::create() {
+bool no3::init::Package::create() {
   if (!validateName(m_name)) {
     LOG(ERROR) << "Invalid package name: " << m_name << std::endl;
     return false;
@@ -288,63 +288,62 @@ bool qpkg::init::Package::create() {
   return createPackage();
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::output(const std::string &output) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::output(const std::string &output) {
   m_output = output;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::name(const std::string &name) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::name(const std::string &name) {
   m_name = name;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::license(const std::string &license) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::license(const std::string &license) {
   m_license = license;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::author(const std::string &author) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::author(const std::string &author) {
   m_author = author;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::email(const std::string &email) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::email(const std::string &email) {
   m_email = email;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::url(const std::string &url) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::url(const std::string &url) {
   m_url = url;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::version(const std::string &version) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::version(const std::string &version) {
   m_version = version;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::description(
-    const std::string &description) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::description(const std::string &description) {
   m_description = description;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::type(qpkg::init::PackageType type) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::type(no3::init::PackageType type) {
   m_type = type;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::verbose(bool verbose) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::verbose(bool verbose) {
   m_verbose = verbose;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::force(bool force) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::force(bool force) {
   m_force = force;
   return *this;
 }
 
-qpkg::init::Package qpkg::init::PackageBuilder::build() {
-  return qpkg::init::Package(m_output, m_name, m_license, m_author, m_email, m_url, m_version,
-                             m_description, m_type, m_verbose, m_force);
+no3::init::Package no3::init::PackageBuilder::build() {
+  return no3::init::Package(m_output, m_name, m_license, m_author, m_email, m_url, m_version,
+                            m_description, m_type, m_verbose, m_force);
 }

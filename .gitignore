@@ -34,9 +34,9 @@
 # Cmake
 .build/
 build/
-qpkg/example-project
+no3/example-project
 
-.qpkg/
+.no3/
 main.c
 libnitrate-lexer/fuzzer/corpus/*
 libnitrate-seq/fuzzer/corpus/*

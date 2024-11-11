@@ -29,102 +29,87 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QPKG_CORE_ANSI_HH__
-#define __QPKG_CORE_ANSI_HH__
+#include <filesystem>
+#include <install/Install.hh>
+#include <iostream>
+#include <regex>
 
-#include <cstdint>
-#include <sstream>
-#include <string>
+static bool validate_package_name(const std::string &package_name) {
+  static std::regex package_name_regex("^[a-zA-Z0-9_-]+$");
+  return std::regex_match(package_name, package_name_regex);
+}
 
-namespace qpkg {
-  namespace ansi {
-    enum class Style {
-      /*==== Text Color ====*/
-      FG_BLACK = 1 << 0,
-      FG_RED = 1 << 1,
-      FG_GREEN = 1 << 2,
-      FG_YELLOW = 1 << 3,
-      FG_BLUE = 1 << 4,
-      FG_PURPLE = 1 << 5,
-      FG_CYAN = 1 << 6,
-      FG_WHITE = 1 << 7,
-      FG_DEFAULT = 1 << 8,
+bool download_git_repo(const std::string &url, const std::string &dest) {
+  std::cout << "Downloading package from: " << url << std::endl;
 
-      /*==== Background Color ====*/
-      BG_BLACK = 1 << 9,
-      BG_RED = 1 << 10,
-      BG_GREEN = 1 << 11,
-      BG_YELLOW = 1 << 12,
-      BG_BLUE = 1 << 13,
-      BG_PURPLE = 1 << 14,
-      BG_CYAN = 1 << 15,
-      BG_WHITE = 1 << 16,
-      BG_DEFAULT = 1 << 17,
+  setenv("NO3_GIT_INJECT_URL", url.c_str(), 1);
+  setenv("NO3_GIT_INJECT_DEST", dest.c_str(), 1);
 
-      /*==== Text Attribute ====*/
-      BOLD = 1 << 18,
-      UNDERLINE = 1 << 19,
-      ILTALIC = 1 << 20,
-      STRIKE = 1 << 21,
+  bool e = system(
+               "git clone --recurse-submodules --quiet $NO3_GIT_INJECT_URL "
+               "$NO3_GIT_INJECT_DEST") == 0;
+  if (e) {
+    std::cerr << "Successfully downloaded package" << std::endl;
+  } else {
+    std::cerr << "Failed to download package" << std::endl;
+  }
+  return e;
+}
 
-      RESET = FG_DEFAULT | BG_DEFAULT,
+bool no3::install::install_from_url(std::string url, const std::string &dest,
+                                    std::string &package_name, bool overwrite) {
+  enum class FetchType {
+    GIT,
+    UNKNOWN,
+  } fetch_type = FetchType::GIT;  // Assume git for now
 
-      COLOR_MASK = FG_BLACK | FG_RED | FG_GREEN | FG_YELLOW | FG_BLUE | FG_PURPLE | FG_CYAN |
-                   FG_WHITE | FG_DEFAULT,
-      ATTRIBUTE_MASK = BOLD | UNDERLINE | ILTALIC | STRIKE,
-      BG_COLOR_MASK = BG_BLACK | BG_RED | BG_GREEN | BG_YELLOW | BG_BLUE | BG_PURPLE | BG_CYAN |
-                      BG_WHITE | BG_DEFAULT
-    };
+  /*=========== PROCESS URL ===========*/
+  if (url.ends_with("/")) {
+    url = url.substr(0, url.size() - 1);
+  }
+  if (url.ends_with(".git")) {
+    url = url.substr(0, url.size() - 4);
+  }
+  if (url.find("/") == std::string::npos) {
+    std::cerr << "Excpected URL pattern like: 'https://example.com/package'" << std::endl;
+    return false;
+  }
 
-    static inline Style operator|(Style a, Style b) {
-      return static_cast<Style>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+  package_name = url.substr(url.find_last_of('/') + 1);
+  if (!validate_package_name(package_name)) {
+    std::cerr << "Invalid package name: " << package_name << std::endl;
+    return false;
+  }
+
+  std::filesystem::path package_path = dest + "/" + package_name;
+
+  try {
+    bool exists = std::filesystem::exists(package_path);
+    if (!overwrite && exists) {
+      std::cerr << "Package already exists: " << package_name << std::endl;
+      return false;
+    } else if (exists) {
+      std::filesystem::remove_all(package_path);
     }
+  } catch (std::filesystem::filesystem_error &e) {
+    std::cerr << e.what() << std::endl;
+    std::cerr << "Failed to install package: " << package_name << std::endl;
+    return false;
+  }
 
-    static inline Style operator&(Style a, Style b) {
-      return static_cast<Style>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
-    }
+  /*=========== FETCH PACKAGE ===========*/
 
-    static inline bool operator==(Style a, uint32_t b) { return static_cast<uint32_t>(a) == b; }
-
-    class AnsiCerr final {
-      Style style;
-
-    public:
-      AnsiCerr();
-
-      AnsiCerr &operator<<(const std::string &str);
-
-      template <class T>
-      AnsiCerr &write(const T &msg) {
-        std::stringstream ss;
-        ss << msg;
-        return operator<<(ss.str());
+  switch (fetch_type) {
+    case FetchType::GIT:
+      if (!download_git_repo(url, package_path.string())) {
+        std::cerr << "Failed to fetch package: " << package_name << std::endl;
+        return false;
       }
+      return true;
 
-      AnsiCerr newline();
-
-      AnsiCerr &set_style(Style style) {
-        this->style = style;
-        return *this;
-      }
-    };
-
-    template <class T>
-    AnsiCerr &operator<<(AnsiCerr &out, const T &msg) {
-      return out.write(msg);
-    }
-
-    static inline void operator<<(AnsiCerr &out, std::ostream &(*var)(std::ostream &)) {
-      if (var == static_cast<std::ostream &(*)(std::ostream &)>(std::endl)) {
-        out.newline();
-      }
-    }
-
-    static inline void operator|=(AnsiCerr &out, Style style) { out.set_style(style); }
-
-    extern thread_local AnsiCerr acout;
-  }  // namespace ansi
-
-}  // namespace qpkg
-
-#endif  // __QPKG_CORE_ANSI_HH__
+    default:
+      std::cerr << "Unable to fetch package: " << package_name << std::endl;
+      std::cerr << "Unknown repository type" << std::endl;
+      return false;
+  }
+}

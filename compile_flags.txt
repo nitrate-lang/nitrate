@@ -25,11 +25,11 @@
 -I
 ./libnitrate/src
 -I
-./qpkg/src
+./no3/src
 -I
-./qpkg/third_party/nitrated/src
+./no3/third_party/nitrated/src
 -I
-./qpkg/third_party/nitrated/include
+./no3/third_party/nitrated/include
 -I
 /usr/lib/llvm-14/include
 -I

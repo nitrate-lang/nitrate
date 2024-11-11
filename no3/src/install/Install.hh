@@ -29,17 +29,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QPKG_CONF_VALIDATE_HH__
-#define __QPKG_CONF_VALIDATE_HH__
+#ifndef __NO3_INSTALL_HH__
+#define __NO3_INSTALL_HH__
 
-#include <conf/Parser.hh>
-#include <filesystem>
+#include <string>
 
-namespace qpkg {
-  namespace conf {
-    bool ValidateConfig(const Config &config, const std::filesystem::path &base);
-    void PopulateConfig(Config &config);
-  }  // namespace conf
-}  // namespace qpkg
+namespace no3::install {
+  bool install_from_url(std::string url, const std::string &dest, std::string &package_name,
+                        bool overwrite = false);
+}  // namespace no3::install
 
-#endif  // __QPKG_CONF_VALIDATE_HH__
+#endif /* __NO3_INSTALL_HH__ */

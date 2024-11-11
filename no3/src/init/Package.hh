@@ -29,64 +29,96 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <yaml-cpp/yaml.h>
+#ifndef __NO3_INIT_PACKAGE_HH__
+#define __NO3_INIT_PACKAGE_HH__
 
-#include <conf/Parser.hh>
-#include <core/Logger.hh>
+#include <conf/Config.hh>
+#include <filesystem>
+#include <optional>
+#include <set>
+#include <string>
 
-std::optional<qpkg::conf::Config> qpkg::conf::YamlConfigParser::parse(const std::string &content) {
-  YAML::Node config;
+namespace no3 {
+  namespace init {
+    enum class PackageType { PROGRAM, STATICLIB, SHAREDLIB };
 
-  try {
-    config = YAML::Load(content);
-  } catch (YAML::ParserException &e) {
-    LOG(ERROR) << "Failed to parse YAML configuration: " << e.what() << std::endl;
-    return std::nullopt;
-  }
+    class Package {
+      std::filesystem::path m_output;
+      std::string m_name;
+      std::string m_license;
+      std::string m_author;
+      std::string m_email;
+      std::string m_url;
+      std::string m_version;
+      std::string m_description;
+      PackageType m_type;
+      bool m_verbose;
+      bool m_force;
 
-  if (!config.IsMap()) {
-    LOG(ERROR) << "Invalid YAML configuration: root element must be a map" << std::endl;
-    return std::nullopt;
-  }
+      bool createPackage();
 
-  ConfigGroup grp;
+      static bool validateName(const std::string &name);
+      static bool validateVersion(const std::string &version);
+      static bool validateEmail(const std::string &email);
+      static bool validateUrl(const std::string &url);
+      static bool validateLicense(const std::string &license);
 
-  for (auto it = config.begin(); it != config.end(); ++it) {
-    if (it->second.IsScalar()) {
-      try {
-        int64_t i = it->second.as<int64_t>();
-        grp.set(it->first.as<std::string>(), i);
-      } catch (YAML::TypedBadConversion<int64_t> &e) {
-        try {
-          bool b = it->second.as<bool>();
-          grp.set(it->first.as<std::string>(), b);
-        } catch (YAML::TypedBadConversion<bool> &e) {
-          grp.set(it->first.as<std::string>(), it->second.as<std::string>());
-        }
+      void writeGitIgnore();
+      void writeLicense();
+      void writeMain();
+
+    public:
+      Package(std::filesystem::path output, std::string name, std::string license,
+              std::string author, std::string email, std::string url, std::string version,
+              std::string description, PackageType type, bool verbose, bool force)
+          : m_output(output),
+            m_name(name),
+            m_license(license),
+            m_author(author),
+            m_email(email),
+            m_url(url),
+            m_version(version),
+            m_description(description),
+            m_type(type),
+            m_verbose(verbose),
+            m_force(force) {
+        (void)m_verbose;
       }
-    } else if (it->second.IsSequence()) {
-      std::vector<std::string> v;
 
-      for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
-        if (it2->IsScalar())
-          v.push_back(it2->as<std::string>());
-        else {
-          LOG(ERROR) << "Invalid YAML configuration: unsupported value type" << std::endl;
-          return std::nullopt;
-        }
-      }
+      bool create();
+    };
 
-      grp.set(it->first.as<std::string>(), v);
-    } else {
-      LOG(ERROR) << "Invalid YAML configuration: unsupported value type" << std::endl;
-      return std::nullopt;
-    }
-  }
+    class PackageBuilder {
+      std::string m_output;
+      std::string m_name;
+      std::string m_license;
+      std::string m_author;
+      std::string m_email;
+      std::string m_url;
+      std::string m_version;
+      std::string m_description;
+      PackageType m_type;
+      bool m_verbose;
+      bool m_force;
 
-  if (!grp.has<int64_t>("version")) {
-    LOG(ERROR) << "Invalid YAML configuration: missing 'version' key" << std::endl;
-    return std::nullopt;
-  }
+    public:
+      PackageBuilder() : m_verbose(false), m_force(false) {}
 
-  return Config(grp, grp["version"].as<int64_t>());
-}
+      PackageBuilder &output(const std::string &output);
+      PackageBuilder &name(const std::string &name);
+      PackageBuilder &license(const std::string &license);
+      PackageBuilder &author(const std::string &author);
+      PackageBuilder &email(const std::string &email);
+      PackageBuilder &url(const std::string &url);
+      PackageBuilder &version(const std::string &version);
+      PackageBuilder &description(const std::string &description);
+      PackageBuilder &type(PackageType type);
+      PackageBuilder &verbose(bool verbose);
+      PackageBuilder &force(bool force);
+
+      Package build();
+    };
+  }  // namespace init
+}  // namespace no3
+
+#endif  // __NO3_INIT_PACKAGE_HH__

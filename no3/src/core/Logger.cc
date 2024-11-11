@@ -29,126 +29,106 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <conf/Parser.hh>
+#include <core/ANSI.hh>
 #include <core/Logger.hh>
-#include <fstream>
+#include <iostream>
+#include <mutex>
+#include <string_view>
+#include <unordered_map>
 
-static std::string JsonEscapeString(const std::string &str) {
-  std::stringstream ss;
+struct LogConfig {
+  bool use_color = true;
+  bool show_debug = false;
+};
 
-  for (char c : str) {
-    switch (c) {
-      case '"':
-        ss << "\\\"";
-        break;
-      case '\\':
-        ss << "\\\\";
-        break;
-      case '/':
-        ss << "\\/";
-        break;
-      case '\b':
-        ss << "\\b";
-        break;
-      case '\f':
-        ss << "\\f";
-        break;
-      case '\n':
-        ss << "\\n";
-        break;
-      case '\r':
-        ss << "\\r";
-        break;
-      case '\t':
-        ss << "\\t";
-        break;
-      default:
-        ss << c;
-        break;
-    }
+static LogConfig g_log_config;
+static std::mutex g_log_mutex;
+
+void no3::core::SetColorMode(bool use_color) {
+  std::lock_guard<std::mutex> lock(g_log_mutex);
+  g_log_config.use_color = use_color;
+}
+
+void no3::core::SetDebugMode(bool debug) {
+  std::lock_guard<std::mutex> lock(g_log_mutex);
+  g_log_config.show_debug = debug;
+}
+
+void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
+                                const char* base_filename, int line, const struct tm* tm,
+                                const char* message_ptr, std::size_t message_len) {
+  static const std::unordered_map<google::LogSeverity, ansi::Style> sev_colors = {
+      {google::GLOG_INFO, ansi::Style::FG_GREEN},
+      {google::GLOG_WARNING, ansi::Style::FG_YELLOW},
+      {google::GLOG_ERROR, ansi::Style::FG_RED},
+      {google::GLOG_FATAL, ansi::Style::FG_RED | ansi::Style::BOLD},
+  };
+
+  static const std::unordered_map<google::LogSeverity, std::string_view> sev_prefix = {
+      {google::GLOG_INFO, "I: "},
+      {google::GLOG_WARNING, "W: "},
+      {google::GLOG_ERROR, "E: "},
+      {google::GLOG_FATAL, "F: "},
+  };
+
+  std::string_view message(message_ptr, message_len);
+  bool color, debug;
+
+  {
+    std::lock_guard<std::mutex> lock(g_log_mutex);
+    color = g_log_config.use_color;
+    debug = g_log_config.show_debug;
   }
 
-  return ss.str();
-}
+  {
+    static std::mutex lock;
+    std::lock_guard<std::mutex> guard(lock);
 
-std::string qpkg::conf::ConfigGroup::dump(qpkg::conf::ConfigItemSerializationTarget target) const {
-  std::stringstream ss;
+    if (color) {
+      using namespace ansi;
+      AnsiCerr out;
 
-  if (target == ConfigItemSerializationTarget::JSON) {
-    ss << "{";
+      out.set_style(sev_colors.at(severity));
+      out << sev_prefix.at(severity);
+      out.set_style(Style::RESET);
 
-    for (auto it = m_items.begin(); it != m_items.end(); ++it) {
-      ss << "\"" << it->first << "\":";
-      if (it->second.is<std::vector<std::string>>()) {
-        ss << "[";
+      if (debug) {
+        out.set_style(Style::FG_DEFAULT);
 
-        auto v = it->second.as<std::vector<std::string>>();
+        out << "[" << base_filename << ":" << line << " ";
 
-        for (auto it2 = v.begin(); it2 != v.end(); ++it2) {
-          ss << "\"" << JsonEscapeString(*it2) << "\"";
-          if (std::next(it2) != v.end()) ss << ",";
+        { /* Get timestamp */
+          char timestamp[64];
+          strftime(timestamp, sizeof(timestamp), "%b %d %H:%M:%S", tm);
+          out << timestamp;
         }
+        out << "] ";
 
-        ss << "]";
-      } else if (it->second.is<std::string>()) {
-        ss << "\"" << JsonEscapeString(it->second.as<std::string>()) << "\"";
-      } else if (it->second.is<int64_t>()) {
-        ss << it->second.as<int64_t>();
-      } else if (it->second.is<bool>()) {
-        ss << (it->second.as<bool>() ? "true" : "false");
+        out.set_style(Style::RESET);
       }
 
-      if (std::next(it) != m_items.end()) ss << ",";
-    }
+      out.set_style(sev_colors.at(severity));
+      out << message;
+      out.set_style(Style::RESET);
+      out << std::endl;
+    } else {
+#define out std::cerr
 
-    ss << "}";
-  } else if (target == ConfigItemSerializationTarget::YAML) {
-    for (auto it = m_items.begin(); it != m_items.end(); ++it) {
-      ss << it->first << ": ";
-      if (it->second.is<std::vector<std::string>>()) {
-        ss << "[";
+      out << sev_prefix.at(severity);
 
-        auto v = it->second.as<std::vector<std::string>>();
+      if (debug) {
+        out << "[" << base_filename << ":" << line << " ";
 
-        for (auto it2 = v.begin(); it2 != v.end(); ++it2) {
-          ss << "\"" << JsonEscapeString(*it2) << "\"";
-          if (std::next(it2) != v.end()) ss << ",";
+        { /* Get timestamp */
+          char timestamp[64];
+          strftime(timestamp, sizeof(timestamp), "%b %d %H:%M:%S", tm);
+          out << timestamp;
         }
 
-        ss << "]";
-      } else if (it->second.is<std::string>()) {
-        ss << "\"" << JsonEscapeString(it->second.as<std::string>()) << "\"";
-      } else if (it->second.is<int64_t>()) {
-        ss << it->second.as<int64_t>();
-      } else if (it->second.is<bool>()) {
-        ss << (it->second.as<bool>() ? "true" : "false");
+        out << "] ";
       }
 
-      if (std::next(it) != m_items.end()) ss << std::endl;
+      out << message << std::endl;
     }
-  } else {
-    LOG(FATAL) << "Unsupported serialization target" << std::endl;
-  }
-
-  return ss.str();
-}
-
-std::string qpkg::conf::Config::dump(qpkg::conf::ConfigItemSerializationTarget target) const {
-  std::stringstream ss;
-
-  ss << m_root.dump(target);
-
-  return ss.str();
-}
-
-std::optional<qpkg::conf::Config> qpkg::conf::IParser::parsef(const std::string &path) {
-  try {
-    std::ifstream file(path);
-    if (!file.is_open()) return std::nullopt;
-
-    std::string data((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    return parse(data);
-  } catch (...) {
-    return std::nullopt;
   }
 }

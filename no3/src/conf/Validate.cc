@@ -130,9 +130,8 @@ bool is_utf8(const char *string) {
   return 1;
 }
 
-bool qpkg::conf::ValidateConfig(const qpkg::conf::Config &config,
-                                const std::filesystem::path &base) {
-  using namespace qpkg::core;
+bool no3::conf::ValidateConfig(const no3::conf::Config &config, const std::filesystem::path &base) {
+  using namespace no3::core;
 
   auto keys = config.keys();
 
@@ -159,7 +158,7 @@ bool qpkg::conf::ValidateConfig(const qpkg::conf::Config &config,
           return false;
         }
         if (config[key].as<int64_t>() != 1) {
-          LOG(ERROR) << "This version of the QPKG system only supports version 1" << std::endl;
+          LOG(ERROR) << "This version of the NO3 system only supports version 1" << std::endl;
           return false;
         }
         break;
@@ -219,7 +218,7 @@ bool qpkg::conf::ValidateConfig(const qpkg::conf::Config &config,
           return false;
         }
         for (const auto &license : config[key].as<std::vector<std::string>>()) {
-          if (!qpkg::conf::valid_licenses.contains(license)) {
+          if (!no3::conf::valid_licenses.contains(license)) {
             LOG(ERROR) << "Invalid license in configuration: " << license << std::endl;
             return false;
           }
@@ -318,7 +317,7 @@ bool qpkg::conf::ValidateConfig(const qpkg::conf::Config &config,
   return true;
 }
 
-void qpkg::conf::PopulateConfig(qpkg::conf::Config &config) {
+void no3::conf::PopulateConfig(no3::conf::Config &config) {
   if (!config.m_root.has<std::vector<std::string>>("authors"))
     config.m_root.set("authors", std::vector<std::string>());
 

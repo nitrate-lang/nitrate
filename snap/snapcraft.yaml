@@ -46,4 +46,4 @@ parts:
 
 apps:
   qpkg:
-    command: usr/bin/qpkg
+    command: usr/bin/no3

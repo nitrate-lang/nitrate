@@ -29,87 +29,64 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <filesystem>
-#include <install/Install.hh>
-#include <iostream>
-#include <regex>
+#include <yaml-cpp/yaml.h>
 
-static bool validate_package_name(const std::string &package_name) {
-  static std::regex package_name_regex("^[a-zA-Z0-9_-]+$");
-  return std::regex_match(package_name, package_name_regex);
-}
+#include <conf/Parser.hh>
+#include <core/Logger.hh>
 
-bool download_git_repo(const std::string &url, const std::string &dest) {
-  std::cout << "Downloading package from: " << url << std::endl;
-
-  setenv("QPKG_GIT_INJECT_URL", url.c_str(), 1);
-  setenv("QPKG_GIT_INJECT_DEST", dest.c_str(), 1);
-
-  bool e = system(
-               "git clone --recurse-submodules --quiet $QPKG_GIT_INJECT_URL "
-               "$QPKG_GIT_INJECT_DEST") == 0;
-  if (e) {
-    std::cerr << "Successfully downloaded package" << std::endl;
-  } else {
-    std::cerr << "Failed to download package" << std::endl;
-  }
-  return e;
-}
-
-bool qpkg::install::install_from_url(std::string url, const std::string &dest,
-                                     std::string &package_name, bool overwrite) {
-  enum class FetchType {
-    GIT,
-    UNKNOWN,
-  } fetch_type = FetchType::GIT;  // Assume git for now
-
-  /*=========== PROCESS URL ===========*/
-  if (url.ends_with("/")) {
-    url = url.substr(0, url.size() - 1);
-  }
-  if (url.ends_with(".git")) {
-    url = url.substr(0, url.size() - 4);
-  }
-  if (url.find("/") == std::string::npos) {
-    std::cerr << "Excpected URL pattern like: 'https://example.com/package'" << std::endl;
-    return false;
-  }
-
-  package_name = url.substr(url.find_last_of('/') + 1);
-  if (!validate_package_name(package_name)) {
-    std::cerr << "Invalid package name: " << package_name << std::endl;
-    return false;
-  }
-
-  std::filesystem::path package_path = dest + "/" + package_name;
+std::optional<no3::conf::Config> no3::conf::YamlConfigParser::parse(const std::string &content) {
+  YAML::Node config;
 
   try {
-    bool exists = std::filesystem::exists(package_path);
-    if (!overwrite && exists) {
-      std::cerr << "Package already exists: " << package_name << std::endl;
-      return false;
-    } else if (exists) {
-      std::filesystem::remove_all(package_path);
-    }
-  } catch (std::filesystem::filesystem_error &e) {
-    std::cerr << e.what() << std::endl;
-    std::cerr << "Failed to install package: " << package_name << std::endl;
-    return false;
+    config = YAML::Load(content);
+  } catch (YAML::ParserException &e) {
+    LOG(ERROR) << "Failed to parse YAML configuration: " << e.what() << std::endl;
+    return std::nullopt;
   }
 
-  /*=========== FETCH PACKAGE ===========*/
+  if (!config.IsMap()) {
+    LOG(ERROR) << "Invalid YAML configuration: root element must be a map" << std::endl;
+    return std::nullopt;
+  }
 
-  switch (fetch_type) {
-    case FetchType::GIT:
-      if (!download_git_repo(url, package_path.string())) {
-        std::cerr << "Failed to fetch package: " << package_name << std::endl;
-        return false;
+  ConfigGroup grp;
+
+  for (auto it = config.begin(); it != config.end(); ++it) {
+    if (it->second.IsScalar()) {
+      try {
+        int64_t i = it->second.as<int64_t>();
+        grp.set(it->first.as<std::string>(), i);
+      } catch (YAML::TypedBadConversion<int64_t> &e) {
+        try {
+          bool b = it->second.as<bool>();
+          grp.set(it->first.as<std::string>(), b);
+        } catch (YAML::TypedBadConversion<bool> &e) {
+          grp.set(it->first.as<std::string>(), it->second.as<std::string>());
+        }
       }
-      return true;
+    } else if (it->second.IsSequence()) {
+      std::vector<std::string> v;
 
-    default:
-      std::cerr << "Unable to fetch package: " << package_name << std::endl;
-      std::cerr << "Unknown repository type" << std::endl;
-      return false;
+      for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
+        if (it2->IsScalar())
+          v.push_back(it2->as<std::string>());
+        else {
+          LOG(ERROR) << "Invalid YAML configuration: unsupported value type" << std::endl;
+          return std::nullopt;
+        }
+      }
+
+      grp.set(it->first.as<std::string>(), v);
+    } else {
+      LOG(ERROR) << "Invalid YAML configuration: unsupported value type" << std::endl;
+      return std::nullopt;
+    }
   }
+
+  if (!grp.has<int64_t>("version")) {
+    LOG(ERROR) << "Invalid YAML configuration: missing 'version' key" << std::endl;
+    return std::nullopt;
+  }
+
+  return Config(grp, grp["version"].as<int64_t>());
 }

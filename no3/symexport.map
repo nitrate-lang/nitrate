@@ -1,6 +1,6 @@
 {
     global:
-        qpkg_*;
+        no3_*;
     local:
         *;
 };

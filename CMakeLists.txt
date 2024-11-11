@@ -65,7 +65,7 @@ if(COVERAGE STREQUAL "ON")
 endif()
 
 add_subdirectory(pipeline)
-add_subdirectory(qpkg)
+add_subdirectory(no3)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   foreach(lib nitrate-core

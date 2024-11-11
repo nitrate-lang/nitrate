@@ -5,7 +5,7 @@ import sys
 
 cwd = os.getcwd()
 
-if not os.path.exists(os.path.join(cwd, 'qpkg')):
+if not os.path.exists(os.path.join(cwd, 'no3')):
     print("Please run this script from the root of the repository.")
     sys.exit(1)
 
@@ -46,7 +46,7 @@ if os.system('docker build -t nitrate-debug:latest -f tools/Debug.Dockerfile .')
 
 
 def regenerate_runner():
-    if os.system('docker build -t qpkg-run:latest -f tools/Runner.Dockerfile .') != 0:
+    if os.system('docker build -t no3-run:latest -f tools/Runner.Dockerfile .') != 0:
         print("Runner build failed.")
         sys.exit(1)
 
@@ -68,7 +68,7 @@ if '--release' in sys.argv:
 
     if '--upx-best' in sys.argv:
         raise Exception("Auto UPX packing is not implemented")
-        files = ['qpkg', 'qld', 'qcc']
+        files = ['no3', 'qld', 'qcc']
         for file in files:
             if os.system('upx --best {0}'.format(os.path.join(cwd, 'build/bin/', file))) != 0:
                 print("Failed to UPX {0}".format(file))

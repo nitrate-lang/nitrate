@@ -29,18 +29,20 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QPKG_CLEAN_CLEANUP_HH__
-#define __QPKG_CLEAN_CLEANUP_HH__
+#ifndef __NO3_CORE_LOGGER_HH__
+#define __NO3_CORE_LOGGER_HH__
 
-#include <filesystem>
-#include <optional>
-#include <set>
-#include <string>
+#include <glog/logging.h>
 
-namespace qpkg {
-  namespace clean {
-    bool CleanPackageSource(const std::string &package_src, bool verbose = false);
-  }
-}  // namespace qpkg
+namespace no3::core {
+  void SetColorMode(bool use_color);
+  void SetDebugMode(bool debug);
 
-#endif  // __QPKG_CLEAN_CLEANUP_HH__
+  struct MyLogSink : google::LogSink {
+  public:
+    void send(google::LogSeverity severity, const char*, const char* base_filename, int line,
+              const struct tm* tm, const char* message, std::size_t message_len) override;
+  };
+}  // namespace no3::core
+
+#endif

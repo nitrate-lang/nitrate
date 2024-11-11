@@ -34,21 +34,21 @@
 #include <conf/Validate.hh>
 #include <core/Logger.hh>
 
-static std::optional<qpkg::conf::Config> get_config(const std::filesystem::path &base) {
-  if (std::filesystem::exists(base / "qpkg.yaml")) {
-    auto c = qpkg::conf::YamlConfigParser().parsef(base / "qpkg.yaml");
+static std::optional<no3::conf::Config> get_config(const std::filesystem::path &base) {
+  if (std::filesystem::exists(base / "no3.yaml")) {
+    auto c = no3::conf::YamlConfigParser().parsef(base / "no3.yaml");
 
     if (!c) {
-      LOG(ERROR) << "Failed to parse configuration file: " << base / "qpkg.yaml" << std::endl;
+      LOG(ERROR) << "Failed to parse configuration file: " << base / "no3.yaml" << std::endl;
       return std::nullopt;
     }
 
-    if (!qpkg::conf::ValidateConfig(*c, base)) {
+    if (!no3::conf::ValidateConfig(*c, base)) {
       LOG(ERROR) << "Failed to validate configuration" << std::endl;
       return std::nullopt;
     }
 
-    qpkg::conf::PopulateConfig(*c);
+    no3::conf::PopulateConfig(*c);
 
     return c;
   } else {
@@ -64,12 +64,12 @@ static bool recursve_subpackages(const std::filesystem::path &base, bool verbose
 
   auto packages = (*c)["packages"].as<std::vector<std::string>>();
 
-  for (const auto &p : packages) qpkg::clean::CleanPackageSource(base / p, verbose);
+  for (const auto &p : packages) no3::clean::CleanPackageSource(base / p, verbose);
 
   return true;
 }
 
-bool qpkg::clean::CleanPackageSource(const std::string &package_src, bool verbose) {
+bool no3::clean::CleanPackageSource(const std::string &package_src, bool verbose) {
   std::filesystem::path package_src_path(package_src);
 
   if (!std::filesystem::exists(package_src_path)) {
@@ -86,8 +86,8 @@ bool qpkg::clean::CleanPackageSource(const std::string &package_src, bool verbos
     LOG(INFO) << "Cleaning package source recursively" << std::endl;
   }
 
-  // std::filesystem::path cache_dir = package_src_path / ".qpkg" / "cache";
-  // std::filesystem::path build_dir = package_src_path / ".qpkg" / "build";
+  // std::filesystem::path cache_dir = package_src_path / ".no3" / "cache";
+  // std::filesystem::path build_dir = package_src_path / ".no3" / "build";
 
   // if (std::filesystem::exists(cache_dir)) {
   //   if (verbose)
@@ -104,12 +104,12 @@ bool qpkg::clean::CleanPackageSource(const std::string &package_src, bool verbos
   //   std::filesystem::remove_all(build_dir);
   // }
 
-  std::filesystem::path qpkg_dir = package_src_path / ".qpkg";
+  std::filesystem::path no3_dir = package_src_path / ".no3";
 
-  if (std::filesystem::exists(qpkg_dir)) {
-    if (verbose) LOG(INFO) << "Removing .qpkg directory: " << qpkg_dir << std::endl;
+  if (std::filesystem::exists(no3_dir)) {
+    if (verbose) LOG(INFO) << "Removing .no3 directory: " << no3_dir << std::endl;
 
-    std::filesystem::remove_all(qpkg_dir);
+    std::filesystem::remove_all(no3_dir);
   }
 
   auto conf = get_config(package_src_path);
