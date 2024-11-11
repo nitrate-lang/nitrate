@@ -35,7 +35,7 @@ struct FormattingOptions {
 
 struct AutomatonState {
 public:
-  size_t brk_depth = 0 /* Parentheses */, bra_depth = 0 /* Curly bracket */;
+  size_t indent = 0;
   bool did_root = false;
   size_t tabSize = 0;
   std::stack<size_t> field_indent_stack;
@@ -213,11 +213,8 @@ static void write_float_literal(AutomatonState& S, std::string_view float_str) {
 }
 
 static void put_indent(AutomatonState& S) {
-  if (S.bra_depth) {
-    S.line << std::string(S.bra_depth * S.tabSize, ' ');
-  }
-  if (S.brk_depth) {
-    S.line << std::string(S.brk_depth * S.tabSize, ' ');
+  if (S.indent) {
+    S.line << std::string(S.indent * S.tabSize, ' ');
   }
 }
 
@@ -264,7 +261,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 
   S.line << "{\n";
   S.flush_line();
-  S.bra_depth++;
+  S.indent++;
 
   for (auto it = N->get_fields().begin(); it != N->get_fields().end(); it++) {
     put_indent(S);
@@ -307,7 +304,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
     }
   }
 
-  S.bra_depth--;
+  S.indent--;
   put_indent(S);
   S.line << "}";
 }
@@ -439,17 +436,20 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       }
 
       for (auto it = N->get_args().begin(); it != N->get_args().end(); it++) {
-        bool is_lambda = it->second->this_typeid() == QAST_NODE_STMT_EXPR &&
-                         (it->second->as<StmtExpr>()->get_stmt()->this_typeid() == QAST_NODE_FN);
         bool is_call = it->second->this_typeid() == QAST_NODE_CALL;
+        bool is_other = it->second->this_typeid() == QAST_NODE_LIST ||
+                        (it->second->this_typeid() == QAST_NODE_STMT_EXPR &&
+                         (it->second->as<StmtExpr>()->get_stmt()->this_typeid() == QAST_NODE_FN));
 
         S.line.seekg(0, std::ios::end);
-        size_t line_width = S.line.tellg(), old_bra_depth = S.bra_depth;
-        if (!is_lambda && !is_call) {
+        size_t line_width = S.line.tellg();
+
+        if (!is_call && !is_other) {
           S.field_indent_stack.push(line_width);
-        }
-        if (is_lambda) {
-          S.bra_depth = std::ceil(S.field_indent_stack.top() / (double)S.tabSize);
+        } else if (is_call) {
+          S.field_indent_stack.push(line_width - S.tabSize);
+        } else if (is_other) {
+          S.indent++;
         }
 
         if (!std::isdigit(it->first.at(0))) {
@@ -470,12 +470,10 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
             S.line << " ";
           }
         }
-
-        if (!is_lambda && !is_call) {
+        if (!is_other) {
           S.field_indent_stack.pop();
-        }
-        if (is_lambda) {
-          S.bra_depth = old_bra_depth;
+        } else {
+          S.indent--;
         }
       }
       S.line << ")";
@@ -491,17 +489,21 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       }
 
       auto ty = N->get_items().front()->this_typeid();
-      if (N->get_items().size() > 0 && (ty == QAST_NODE_ASSOC || ty == QAST_NODE_LIST)) {
+      if (N->get_items().size() > 0 &&
+          (ty == QAST_NODE_ASSOC || ty == QAST_NODE_LIST || ty == QAST_NODE_CALL ||
+           ty == QAST_NODE_TEMPL_CALL ||
+           (ty == QAST_NODE_STMT_EXPR &&
+            N->get_items().front()->as<StmtExpr>()->get_stmt()->this_typeid() == QAST_NODE_FN))) {
         S.line << "[\n";
         S.flush_line();
-        S.brk_depth++;
+        S.indent++;
         for (auto it = N->get_items().begin(); it != N->get_items().end(); it++) {
           put_indent(S);
           recurse(*it, S);
           S.line << ",\n";
           S.flush_line();
         }
-        S.brk_depth--;
+        S.indent--;
         put_indent(S);
         S.line << "]";
       } else {
@@ -558,7 +560,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
         S.line << "\n";
         S.flush_line();
         qcore_assert(S.field_indent_stack.top() > 0);
-        S.line << std::string(S.field_indent_stack.top(), ' ');
+        S.line << std::string((S.indent * S.tabSize) + S.field_indent_stack.top(), ' ');
       } else {
         S.line.seekg(0, std::ios::end);
         size_t line_width = S.line.tellg();
@@ -1112,7 +1114,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
       S.line << "{\n";
       S.flush_line();
-      S.bra_depth++;
+      S.indent++;
 
       for (auto it = N->get_items().begin(); it != N->get_items().end(); it++) {
         put_indent(S);
@@ -1127,7 +1129,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
         S.flush_line();
       }
 
-      S.bra_depth--;
+      S.indent--;
       put_indent(S);
       S.line << "}";
 
@@ -1220,7 +1222,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
         if (promises) {
           S.line << " promise {\n";
           S.flush_line();
-          S.bra_depth++;
+          S.indent++;
           if (N->get_precond()) {
             put_indent(S);
             S.line << "in ";
@@ -1236,7 +1238,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
             S.line << ";\n";
             S.flush_line();
           }
-          S.bra_depth--;
+          S.indent--;
           S.line << "}";
         }
       }
@@ -1309,7 +1311,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
         }
         S.line << " {\n";
         S.flush_line();
-        S.bra_depth++;
+        S.indent++;
 
         for (auto& stmt : imports) {
           put_indent(S);
@@ -1318,7 +1320,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
           S.flush_line();
         }
 
-        S.bra_depth--;
+        S.indent--;
         put_indent(S);
 
         S.line << "}";
@@ -1346,7 +1348,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
         }
         S.line << " {\n";
         S.flush_line();
-        S.bra_depth++;
+        S.indent++;
 
         for (auto& stmt : exports) {
           put_indent(S);
@@ -1355,7 +1357,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
           S.flush_line();
         }
 
-        S.bra_depth--;
+        S.indent--;
         put_indent(S);
 
         S.line << "}";
@@ -1441,7 +1443,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       if (did_root) {
         S.line << "{\n";
         S.flush_line();
-        S.bra_depth++;
+        S.indent++;
       }
 
       for (auto it = N->get_items().begin(); it != N->get_items().end(); ++it) {
@@ -1467,7 +1469,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       }
 
       if (did_root) {
-        S.bra_depth--;
+        S.indent--;
         put_indent(S);
         S.line << "}";
       } else {
@@ -1699,7 +1701,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       } else {
         S.line << " {\n";
         S.flush_line();
-        S.bra_depth++;
+        S.indent++;
         for (auto& stmt : N->get_cases()) {
           put_indent(S);
           recurse(stmt, S);
@@ -1713,7 +1715,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
           S.line << "\n";
           S.flush_line();
         }
-        S.bra_depth--;
+        S.indent--;
         put_indent(S);
         S.line << "}";
       }
