@@ -1,4 +1,3 @@
-
 #include <nitrate-parser/Node.h>
 #include <rapidjson/document.h>
 
@@ -12,6 +11,7 @@
 #include <nitrate-lexer/Classes.hh>
 #include <nitrate-parser/Classes.hh>
 #include <sstream>
+#include <stack>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -38,6 +38,7 @@ public:
   size_t brk_depth = 0 /* Parentheses */, bra_depth = 0 /* Curly bracket */;
   bool did_root = false;
   size_t tabSize = 0;
+  std::stack<size_t> field_indent_stack;
 
   std::stringstream S;
   std::stringstream line;
@@ -47,7 +48,10 @@ public:
     line.str("");
   }
 
-  AutomatonState(size_t theTabSize) { tabSize = theTabSize; }
+  AutomatonState(size_t theTabSize) {
+    tabSize = theTabSize;
+    field_indent_stack.push(1);
+  }
 };
 
 static std::string escape_char_literal(char ch) {
@@ -435,6 +439,19 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       }
 
       for (auto it = N->get_args().begin(); it != N->get_args().end(); it++) {
+        bool is_lambda = it->second->this_typeid() == QAST_NODE_STMT_EXPR &&
+                         (it->second->as<StmtExpr>()->get_stmt()->this_typeid() == QAST_NODE_FN);
+        bool is_call = it->second->this_typeid() == QAST_NODE_CALL;
+
+        S.line.seekg(0, std::ios::end);
+        size_t line_width = S.line.tellg(), old_bra_depth = S.bra_depth;
+        if (!is_lambda && !is_call) {
+          S.field_indent_stack.push(line_width);
+        }
+        if (is_lambda) {
+          S.bra_depth = std::ceil(S.field_indent_stack.top() / (double)S.tabSize);
+        }
+
         if (!std::isdigit(it->first.at(0))) {
           S.line << it->first;
           S.line << ": ";
@@ -453,8 +470,16 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
             S.line << " ";
           }
         }
+
+        if (!is_lambda && !is_call) {
+          S.field_indent_stack.pop();
+        }
+        if (is_lambda) {
+          S.bra_depth = old_bra_depth;
+        }
       }
       S.line << ")";
+
       break;
     }
 
@@ -521,8 +546,28 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
     case QAST_NODE_FIELD: {
       Field* N = C->as<Field>();
+      bool break_chain_call = false;
+
+      if (N->get_base()->this_typeid() == QAST_NODE_CALL) {
+        break_chain_call = true;
+      }
+
       recurse(N->get_base(), S);
+
+      if (break_chain_call) {
+        S.line << "\n";
+        S.flush_line();
+        qcore_assert(S.field_indent_stack.top() > 0);
+        S.line << std::string(S.field_indent_stack.top(), ' ');
+      } else {
+        S.line.seekg(0, std::ios::end);
+        size_t line_width = S.line.tellg();
+
+        S.field_indent_stack.top() = line_width;
+      }
+
       S.line << "." << N->get_field();
+
       break;
     }
 
