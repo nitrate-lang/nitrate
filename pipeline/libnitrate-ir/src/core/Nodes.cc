@@ -1282,3 +1282,23 @@ Expr *qxir::createIgn() {
 
   return ptr;
 }
+
+Type *qxir::createUPtrIntTy() {
+  size_t ptr_size = current->getTargetInfo().PointerSizeBytes;
+
+  switch (ptr_size) {
+    case 1:
+      return create<U8Ty>();
+    case 2:
+      return create<U16Ty>();
+    case 4:
+      return create<U32Ty>();
+    case 8:
+      return create<U64Ty>();
+    case 16:
+      return create<U128Ty>();
+    default:
+      qcore_panicf("Unsupported construction for unsigned integer pointer type of size: %zu",
+                   ptr_size);
+  }
+}

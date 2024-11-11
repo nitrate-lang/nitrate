@@ -1332,8 +1332,6 @@ namespace qxir {
   ///=============================================================================
 
   enum class TmpType {
-    NULL_LITERAL,
-    UNDEF_LITERAL,
     CALL,
     ENUM,
     NAMED_TYPE,
@@ -1382,6 +1380,8 @@ namespace qxir {
   };
 
   Expr *createIgn();
+
+  Type *createUPtrIntTy();
 
   template <typename T, typename... Args>
   constexpr static T *create(Args &&...args) {

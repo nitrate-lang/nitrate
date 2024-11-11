@@ -33,7 +33,6 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-parser/Node.h>
 
-#include <boost/bimap.hpp>
 #include <core/Config.hh>
 #include <cstddef>
 #include <cstdint>
@@ -43,38 +42,6 @@
 #include <sstream>
 
 using namespace qxir::diag;
-
-template <typename L, typename R>
-boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
-  return boost::bimap<L, R>(list.begin(), list.end());
-}
-
-static const boost::bimap<IssueCode, std::string_view> issue_code_bimap =
-    make_bimap<IssueCode, std::string_view>({
-        {IssueCode::Info, ""},
-        {IssueCode::PTreeInvalid, "-Werror=ptree-invalid"},
-        {IssueCode::SignalReceived, "-Werror=signal-recv"},
-        {IssueCode::DSPolyCyclicRef, "-Werror=ds-cyclic-ref"},
-        {IssueCode::DSNullPtr, "-Werror=ds-nullptr"},
-        {IssueCode::DSBadType, "-Werror=ds-bad-type"},
-        {IssueCode::DSMissingMod, "-Werror=ds-missing-mod"},
-        {IssueCode::DSBadTmpNode, "-Werror=ds-bad-tmp-node"},
-
-        {IssueCode::FunctionRedefinition, "-Werror=redefinition"},
-        {IssueCode::VariableRedefinition, "-Werror=variable-redefinition"},
-        {IssueCode::UnknownFunction, "-Werror=unknown-function"},
-        {IssueCode::TooManyArguments, "-Werror=too-many-arguments"},
-        {IssueCode::UnknownArgument, "-Werror=unknown-argument"},
-        {IssueCode::TypeInference, "-Werror=type-inference"},
-        {IssueCode::NameManglingTypeInfer, "-Werror=nm-type-infer"},
-
-        {IssueCode::UnknownType, "-Werror=unknown-type"},
-        {IssueCode::UnresolvedIdentifier, "-Werror=unresolved-identifier"},
-        {IssueCode::TypeRedefinition, "-Werror=type-redefinition"},
-        {IssueCode::BadCast, "-Werror=bad-cast"},
-
-        {IssueCode::MissingReturn, "-Wmissing-return"},
-    });
 
 ///============================================================================///
 
@@ -133,7 +100,7 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
   ss << ": " << msg.m_msg;
 
   if (msg.m_code != IssueCode::Info) {
-    ss << " [" << issue_code_bimap.left.at(msg.m_code) << "]";
+    ss << " [-Werror=" << issue_info.left.at(msg.m_code).flagname << "]";
   }
 
   qlex_size res = qlex_spanx(
@@ -187,35 +154,35 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
     case IssueClass::Debug:
       ss << "\x1b[1mdebug:\x1b[0m " << msg.m_msg;
       if (msg.m_code != IssueCode::Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[1m" << issue_code_bimap.left.at(msg.m_code)
+        ss << " \x1b[39;1m[\x1b[0m\x1b[1m-Werror=" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::Info:
       ss << "\x1b[37;1minfo:\x1b[0m " << msg.m_msg;
       if (msg.m_code != IssueCode::Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[37;1m" << issue_code_bimap.left.at(msg.m_code)
+        ss << " \x1b[39;1m[\x1b[0m\x1b[37;1m-Werror=" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::Warn:
       ss << "\x1b[35;1mwarning:\x1b[0m " << msg.m_msg;
       if (msg.m_code != IssueCode::Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[35;1m" << issue_code_bimap.left.at(msg.m_code)
+        ss << " \x1b[39;1m[\x1b[0m\x1b[35;1m-Werror=" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::Error:
       ss << "\x1b[31;1merror:\x1b[0m " << msg.m_msg;
       if (msg.m_code != IssueCode::Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1m" << issue_code_bimap.left.at(msg.m_code)
+        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1m-Werror=" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::FatalError:
       ss << "\x1b[31;1;4mfatal error:\x1b[0m " << msg.m_msg;
       if (msg.m_code != IssueCode::Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1;4m" << issue_code_bimap.left.at(msg.m_code)
+        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1;4m-Werror=" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;

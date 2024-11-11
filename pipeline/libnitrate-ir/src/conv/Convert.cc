@@ -694,21 +694,14 @@ namespace qxir {
   }
 
   static Expr *qconv_null(ConvState &, qparse::ConstNull *) {
-    /**
-     * @brief Convert a null literal to a qxir null literal tmp.
-     * @details This is a 1-to-1 conversion of the null literal.
-     */
-
-    return create<Tmp>(TmpType::NULL_LITERAL);
+    return create<BinExpr>(create<BinExpr>(create<Int>(0), createUPtrIntTy(), Op::CastAs),
+                           create<PtrTy>(create<VoidTy>()), Op::BitcastAs);
   }
 
-  static Expr *qconv_undef(ConvState &, qparse::ConstUndef *) {
-    /**
-     * @brief Convert an undefined literal to a qxir undefined literal tmp.
-     * @details This is a 1-to-1 conversion of the undefined literal.
-     */
-
-    return create<Tmp>(TmpType::UNDEF_LITERAL);
+  static Expr *qconv_undef(ConvState &, qparse::ConstUndef *n) {
+    report(IssueCode::UnexpectedUndefLiteral, IssueClass::Error, n->get_start_pos(),
+           n->get_end_pos());
+    throw QError();
   }
 
   static Expr *qconv_call(ConvState &s, qparse::Call *n) {

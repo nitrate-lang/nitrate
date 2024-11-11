@@ -166,16 +166,6 @@ static bool resolve_node(qxir::Expr **_cur) {
   bool error = false;
 
   switch (tt) {
-    case TmpType::NULL_LITERAL: {
-      /// TODO:
-      break;
-    }
-
-    case TmpType::UNDEF_LITERAL: {
-      /// TODO:
-      break;
-    }
-
     case TmpType::CALL: {
       const auto &info = std::get<CallArgsTmpNodeCradle>(cur->getData());
       const Expr *base = std::get<0>(info);

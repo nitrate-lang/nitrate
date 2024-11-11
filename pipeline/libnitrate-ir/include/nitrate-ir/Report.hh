@@ -35,6 +35,7 @@
 #include <nitrate-ir/IR.h>
 #include <nitrate-lexer/Token.h>
 
+#include <boost/bimap.hpp>
 #include <cstdarg>
 #include <functional>
 #include <stdexcept>
@@ -76,6 +77,7 @@ namespace qxir::diag {
     UnknownArgument,
     TypeInference,
     NameManglingTypeInfer,
+    UnexpectedUndefLiteral,
 
     UnknownType,
     UnresolvedIdentifier,
@@ -86,6 +88,16 @@ namespace qxir::diag {
 
     Info,
   };
+
+  struct IssueInfo {
+    std::string_view flagname;
+    std::string overview;
+    std::vector<std::string_view> hints;
+
+    bool operator<(const IssueInfo &rhs) const { return flagname < rhs.flagname; }
+  };
+
+  extern const boost::bimap<IssueCode, IssueInfo> issue_info;
 
   typedef std::function<void(std::string_view, IssueClass)> DiagnosticMessageHandler;
 
