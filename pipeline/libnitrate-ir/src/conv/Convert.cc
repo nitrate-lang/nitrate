@@ -976,8 +976,10 @@ namespace qxir {
     return type;
   }
 
-  static Expr *qconv_templ_call(ConvState &, qparse::TemplCall *) {
+  static Expr *qconv_templ_call(ConvState &, qparse::TemplCall *n) {
     /// TODO: templ_call
+
+    badtree(n, "Template call not implemented");
 
     throw QError();
   }
@@ -1346,8 +1348,9 @@ namespace qxir {
     throw QError();
   }
 
-  static Expr *qconv_templ_ty(ConvState &, qparse::TemplType *) {
+  static Expr *qconv_templ_ty(ConvState &, qparse::TemplType *n) {
     /// TODO: templ_ty
+    badtree(n, "template types are not supported yet");
     throw QError();
   }
 

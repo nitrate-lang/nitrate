@@ -420,14 +420,7 @@ namespace qxir::diag {
       free(c_msg);
     }
 
-    DiagMessage diag;
-    diag.m_msg = std::move(msg);
-    diag.m_start = start;
-    diag.m_end = end;
-    diag.m_type = IssueClass::Error;
-    diag.m_code = IssueCode::PTreeInvalid;
-
-    current->getDiag().push(QXIR_AUDIT_CONV, std::move(diag));
+    report(IssueCode::PTreeInvalid, IssueClass::Error, fmt, start, end);
 
     if (current->getConf()->has(QQV_FASTERROR, QQV_ON)) {
       throw SyntaxError();

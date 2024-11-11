@@ -65,7 +65,7 @@ static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, 
     {IssueCode::CompilerError, {"Compiler Error", "An error occurred during compilation: %s", {}}},
     {IssueCode::PTreeInvalid,
      {"ptree-invalid", /* FIXME: Summarize */
-      "Parse tree is not okay.",
+      "%s",
       {}}},
     {IssueCode::SignalReceived,
      {"signal-recv", "The compiler received an unrecoverable process signal.", {}}},

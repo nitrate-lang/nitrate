@@ -349,11 +349,6 @@ static bool resolve_node(qxir::Expr **_cur) {
       }
       break;
     }
-
-    case TmpType::BAD: {
-      qcore_panic("Bad temporary node found in the IR data structure.");
-      break;
-    }
   }
 
   return !error;

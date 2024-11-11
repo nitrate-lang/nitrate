@@ -1337,8 +1337,6 @@ namespace qxir {
     CALL,
     ENUM,
     NAMED_TYPE,
-
-    BAD,
   };
 
   typedef std::tuple<std::string_view, Expr *> LetTmpNodeCradle;
@@ -1360,7 +1358,7 @@ namespace qxir {
     TmpNodeCradle m_data;
 
   public:
-    Tmp(TmpType type = TmpType::BAD, const TmpNodeCradle &data = {})
+    Tmp(TmpType type, const TmpNodeCradle &data = {})
         : Expr(QIR_NODE_TMP), m_type(type), m_data(data) {}
 
     TmpType getTmpType() noexcept { return m_type; }
