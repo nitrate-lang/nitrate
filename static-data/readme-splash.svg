@@ -8,7 +8,9 @@
         }
       </style>
 
-      <img src="static-data/logo-dark-1024x1024.png" alt="slpash-banner" width="400"
+      <img
+        src="https://github.com/Kracken256/nitrate/blob/main/static-data/logo-dark-1024x1024.png?raw=true"
+        alt="slpash-banner" width="400"
         style="display: block; margin: auto;" />
       <br />
     </div>
