@@ -5,7 +5,7 @@ import sys
 
 cwd = os.getcwd()
 
-if not os.path.exists(os.path.join(cwd, 'libnitrate-parser')):
+if not os.path.exists(os.path.join(cwd, 'qpkg')):
     print("Please run this script from the root of the repository.")
     sys.exit(1)
 
