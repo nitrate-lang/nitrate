@@ -34,7 +34,7 @@
 
 #include <core/PassManager.hh>
 
-using namespace qxir::pass;
+using namespace nr::pass;
 
 CPP_EXPORT PassRegistry& PassRegistry::the() {
   static PassRegistry instance;

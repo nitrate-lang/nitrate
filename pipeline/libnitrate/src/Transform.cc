@@ -99,9 +99,9 @@ bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
                         std::function<void(const char *)> diag_cb,
                         const std::unordered_set<std::string_view> &opts);
 
-bool impl_subsys_qxir(std::shared_ptr<std::istream> source, FILE *output,
-                      std::function<void(const char *)> diag_cb,
-                      const std::unordered_set<std::string_view> &opts);
+bool impl_subsys_nr(std::shared_ptr<std::istream> source, FILE *output,
+                    std::function<void(const char *)> diag_cb,
+                    const std::unordered_set<std::string_view> &opts);
 
 static bool impl_subsys_codegen(std::shared_ptr<std::istream> source, FILE *output,
                                 std::function<void(const char *)> diag_cb,
@@ -109,7 +109,7 @@ static bool impl_subsys_codegen(std::shared_ptr<std::istream> source, FILE *outp
 
 static const std::unordered_map<std::string_view, nit_subsystem_impl> dispatch_funcs = {
     {"lex", impl_subsys_basic_lexer}, {"meta", impl_subsys_meta},
-    {"parse", impl_subsys_parser},    {"ir", impl_subsys_qxir},
+    {"parse", impl_subsys_parser},    {"ir", impl_subsys_nr},
     {"codegen", impl_subsys_codegen},
 };
 

@@ -41,9 +41,9 @@
  * @spacecomplexity O(n)
  */
 
-using namespace qxir::diag;
+using namespace nr::diag;
 
-bool qxir::pass::ds_acyclic(qmodule_t *mod) {
+bool nr::pass::ds_acyclic(qmodule_t *mod) {
   if (!mod->getRoot()->is_acyclic()) {
     diag::report(IssueCode::DSPolyCyclicRef, IssueClass::FatalError, "");
     return false;

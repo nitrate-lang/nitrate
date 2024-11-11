@@ -56,7 +56,7 @@
 #include <variant>
 #include <vector>
 
-namespace qxir {
+namespace nr {
   class ArenaAllocatorImpl {
     qcore_arena m_arena;
 
@@ -69,7 +69,7 @@ namespace qxir {
     qcore_arena_t &get() { return *m_arena.get(); }
   };
 
-  extern "C" thread_local ArenaAllocatorImpl qxir_arena;
+  extern "C" thread_local ArenaAllocatorImpl nr_arena;
 
   template <class T>
   struct Arena {
@@ -81,7 +81,7 @@ namespace qxir {
     constexpr Arena(const Arena<U> &) noexcept {}
 
     [[nodiscard]] T *allocate(std::size_t n) {
-      return static_cast<T *>(qxir_arena.allocate(sizeof(T) * n));
+      return static_cast<T *>(nr_arena.allocate(sizeof(T) * n));
     }
 
     void deallocate(T *p, std::size_t n) noexcept {
@@ -98,14 +98,14 @@ namespace qxir {
   bool operator!=(const Arena<T> &, const Arena<U> &) {
     return false;
   }
-};  // namespace qxir
+};  // namespace nr
 
-struct qxir_node_t {
+struct nr_node_t {
 public:
-  qxir_node_t() = default;
+  nr_node_t() = default;
 };
 
-namespace qxir {
+namespace nr {
 
 #ifdef __QXIR_NODE_REFLECT_IMPL__
 #define QCLASS_REFLECT() public:
@@ -113,13 +113,13 @@ namespace qxir {
 #define QCLASS_REFLECT() private:
 #endif
 
-  class Expr : public qxir_node_t {
+  class Expr : public nr_node_t {
     QCLASS_REFLECT()
 
-    qxir_ty_t m_node_type : 6;        /* Typecode of this node. */
-    qxir::ModuleId m_module_idx : 16; /* The module context index. */
-    uint64_t m_res : 1;               /* reserved */
-    uint64_t m_mutable : 1;           /* Is this expression mutable? */
+    nr_ty_t m_node_type : 6;        /* Typecode of this node. */
+    nr::ModuleId m_module_idx : 16; /* The module context index. */
+    uint64_t m_res : 1;             /* reserved */
+    uint64_t m_mutable : 1;         /* Is this expression mutable? */
 
     qlex_loc_t m_start_loc;
     uint16_t m_loc_size;  // Diagnostics can not span more than 64K bytes.
@@ -128,7 +128,7 @@ namespace qxir {
     Expr &operator=(const Expr &) = delete;
 
   public:
-    Expr(qxir_ty_t ty)
+    Expr(nr_ty_t ty)
         : m_node_type(ty),
           m_module_idx(std::numeric_limits<ModuleId>::max()),
           m_res(0),
@@ -136,13 +136,13 @@ namespace qxir {
           m_start_loc{0},
           m_loc_size(0) {}
 
-    static uint32_t getKindSize(qxir_ty_t kind) noexcept;
-    qxir_ty_t getKind() const noexcept { return m_node_type; }
+    static uint32_t getKindSize(nr_ty_t kind) noexcept;
+    nr_ty_t getKind() const noexcept { return m_node_type; }
     const char *getKindName() const noexcept { return getKindName(m_node_type); }
-    static const char *getKindName(qxir_ty_t kind) noexcept;
+    static const char *getKindName(nr_ty_t kind) noexcept;
 
     template <typename T>
-    constexpr static qxir_ty_t getTypeCode() noexcept {
+    constexpr static nr_ty_t getTypeCode() noexcept {
       if constexpr (std::is_same_v<T, BinExpr>) {
         return QIR_NODE_BINEXPR;
       } else if constexpr (std::is_same_v<T, UnExpr>) {
@@ -504,7 +504,7 @@ namespace qxir {
      * @return true If the type matches.
      * @return false If the type does not match.
      */
-    bool is(qxir_ty_t type) const noexcept;
+    bool is(nr_ty_t type) const noexcept;
 
     /**
      * @brief Compare two nodes for equality.
@@ -561,7 +561,7 @@ namespace qxir {
     uint64_t getAlignBits();
 
   public:
-    Type(qxir_ty_t ty) : Expr(ty) {}
+    Type(nr_ty_t ty) : Expr(ty) {}
 
     bool hasKnownSize() noexcept;
     bool hasKnownAlign() noexcept;
@@ -1366,7 +1366,7 @@ namespace qxir {
 
   extern thread_local qmodule_t *current;
 
-  static auto already_alloc = [](qxir_ty_t ty) -> void * {
+  static auto already_alloc = [](nr_ty_t ty) -> void * {
     auto it = current->getKeyMap().find((uint64_t)ty);
     if (it != current->getKeyMap().end()) [[likely]] {
       return reinterpret_cast<void *>(it->second);
@@ -1375,7 +1375,7 @@ namespace qxir {
     return nullptr;
   };
 
-  static auto alloc_memorize = [](qxir_ty_t ty, void *ptr) -> void {
+  static auto alloc_memorize = [](nr_ty_t ty, void *ptr) -> void {
     current->getKeyMap().emplace((uint64_t)ty, reinterpret_cast<uintptr_t>(ptr));
   };
 
@@ -1394,7 +1394,7 @@ namespace qxir {
      * these have no semantic significance in the contexts where deduplicated nodes are used.
      */
 
-    constexpr qxir_ty_t ty = Expr::getTypeCode<T>();
+    constexpr nr_ty_t ty = Expr::getTypeCode<T>();
     T *ptr = nullptr;
 
 #define REUSE_ALLOCATION()                                             \
@@ -1525,17 +1525,17 @@ namespace qxir {
   std::optional<T> uint_as(const Expr *x) noexcept {
 #define IS_T(x) std::is_same_v<T, x>
 
-    qcore_assert(x != nullptr, "qxir::evaluate_as(): x is nullptr.");
+    qcore_assert(x != nullptr, "nr::evaluate_as(): x is nullptr.");
 
     static_assert(IS_T(std::string) || IS_T(uint64_t),
-                  "qxir::evaluate_as(): T must be either std::string or uint64_t.");
+                  "nr::evaluate_as(): T must be either std::string or uint64_t.");
 
     Expr *r = evaluate_to_literal(const_cast<Expr *>(x));
     if (r == nullptr) {
       return std::nullopt;
     }
 
-    qxir_ty_t ty = r->getKind();
+    nr_ty_t ty = r->getKind();
 
     if (ty != QIR_NODE_INT) {
       return std::nullopt;
@@ -1557,6 +1557,6 @@ namespace qxir {
 
 #undef IS_T
   }
-}  // namespace qxir
+}  // namespace nr
 
 #endif

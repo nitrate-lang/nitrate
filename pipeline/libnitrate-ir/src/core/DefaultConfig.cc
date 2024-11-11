@@ -35,8 +35,8 @@
 
 #include <vector>
 
-namespace qxir::conf {
-  std::vector<qxir_setting_t> default_settings = {
+namespace nr::conf {
+  std::vector<nr_setting_t> default_settings = {
       {QQK_CRASHGUARD, QQV_ON},
       {QQV_FASTERROR, QQV_OFF},
   };

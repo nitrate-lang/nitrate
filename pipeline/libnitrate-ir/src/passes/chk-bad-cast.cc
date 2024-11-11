@@ -32,8 +32,8 @@
 #include <nitrate-ir/IRGraph.hh>
 #include <passes/PassList.hh>
 
-using namespace qxir;
-using namespace qxir::diag;
+using namespace nr;
+using namespace nr::diag;
 
 /**
  * -- Overview of the IR type nodes:
@@ -194,7 +194,7 @@ static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
   return false;
 }
 
-bool qxir::pass::chk_bad_cast(qmodule_t* M) {
+bool nr::pass::chk_bad_cast(qmodule_t* M) {
   /**
    * Perform validation checks on `cast_as` expressions to ensure that the cast is indeed
    * accecptable.

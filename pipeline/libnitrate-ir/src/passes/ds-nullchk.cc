@@ -39,9 +39,9 @@
  * @spacecomplexity O(1)
  */
 
-using namespace qxir::diag;
+using namespace nr::diag;
 
-bool qxir::pass::ds_nullchk(qmodule_t *mod) {
+bool nr::pass::ds_nullchk(qmodule_t *mod) {
   bool has_bad_null = false;
   bool missing_mod = false;
 

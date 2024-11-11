@@ -40,15 +40,15 @@
 #include <optional>
 #include <string>
 
-namespace qxir {
+namespace nr {
   class SymbolEncoding final {
   public:
     SymbolEncoding() = default;
 
-    std::optional<std::string> mangle_name(const qxir::Expr* symbol, AbiTag abi) const noexcept;
+    std::optional<std::string> mangle_name(const nr::Expr* symbol, AbiTag abi) const noexcept;
 
     std::optional<std::string> demangle_name(std::string_view symbol) const noexcept;
   };
-};  // namespace qxir
+};  // namespace nr
 
 #endif  // __NITRATE_QXIR_FORMAT_HH__

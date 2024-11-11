@@ -40,7 +40,7 @@
 // #include <cstdint>
 #include <transcode/Targets.hh>
 
-// using namespace qxir;
+// using namespace nr;
 
 // static void write_header(std::ostream &out) {
 //   auto now = std::chrono::system_clock::now();
@@ -287,7 +287,7 @@
 //         out << ",";
 //         recurse(n->as<BinExpr>()->getRHS());
 //         out << ',';
-//         out << static_cast<Type *>(qxir_infer(n->as<BinExpr>()->getLHS()))->getSizeBits();
+//         out << static_cast<Type *>(nr_infer(n->as<BinExpr>()->getLHS()))->getSizeBits();
 //         out << ")";
 //       } else if (n->as<BinExpr>()->getOp() == Op::ROTR) {
 //         out << "__rotru64(";
@@ -295,7 +295,7 @@
 //         out << ",";
 //         recurse(n->as<BinExpr>()->getRHS());
 //         out << ',';
-//         out << static_cast<Type *>(qxir_infer(n->as<BinExpr>()->getLHS()))->getSizeBits();
+//         out << static_cast<Type *>(nr_infer(n->as<BinExpr>()->getLHS()))->getSizeBits();
 //         out << ")";
 //       } else if (n->as<BinExpr>()->getOp() == Op::BitcastAs) {
 //         out << "std::bit_cast<";
@@ -525,7 +525,7 @@
 
 //       bool old_stmt_mode = state.stmt_mode;
 //       state.stmt_mode = false;
-//       auto T = static_cast<Type *>(qxir_infer(n->as<Local>()->getValue()));
+//       auto T = static_cast<Type *>(nr_infer(n->as<Local>()->getValue()));
 //       state.stmt_mode = old_stmt_mode;
 
 //       recurse(T);

@@ -45,9 +45,9 @@
  * @spacecomplexity O(n)
  */
 
-using namespace qxir::diag;
+using namespace nr::diag;
 
-static std::string_view memorize(std::string_view sv) { return qxir::current->internString(sv); }
+static std::string_view memorize(std::string_view sv) { return nr::current->internString(sv); }
 
 static std::pair<std::vector<std::string>, std::string> split_ns(std::string_view the) {
   std::vector<std::string> ns;
@@ -153,12 +153,12 @@ static std::optional<std::pair<std::string, IdentWhat>> resolve_name(qmodule_t *
   return std::nullopt;
 }
 
-static bool resolve_node(qxir::Expr **_cur) {
+static bool resolve_node(nr::Expr **_cur) {
   if ((*_cur)->getKind() != QIR_NODE_TMP) {
     return true;
   }
 
-  using namespace qxir;
+  using namespace nr;
 
   Tmp *cur = (*_cur)->as<Tmp>();
   TmpType tt = cur->getTmpType();
@@ -313,7 +313,7 @@ static bool resolve_node(qxir::Expr **_cur) {
           continue;
         }
 
-        qxir_node_t *inferred = qxir_infer(val);
+        nr_node_t *inferred = nr_infer(val);
         if (!inferred) {
           error = true;
           break;
@@ -344,8 +344,8 @@ static bool resolve_node(qxir::Expr **_cur) {
   return !error;
 }
 
-static bool recursive_resolve(qxir::Expr **base) {
-  using namespace qxir;
+static bool recursive_resolve(nr::Expr **base) {
+  using namespace nr;
 
   bool error = false;
 
@@ -376,7 +376,7 @@ static bool recursive_resolve(qxir::Expr **base) {
 }
 
 static bool alpha_pass(qmodule_t *mod) {
-  using namespace qxir;
+  using namespace nr;
 
   bool error = false;
 
@@ -472,7 +472,7 @@ static bool alpha_pass(qmodule_t *mod) {
 }
 
 static bool beta_pass(qmodule_t *mod) {
-  using namespace qxir;
+  using namespace nr;
 
   bool error = false;
 
@@ -588,7 +588,7 @@ static bool beta_pass(qmodule_t *mod) {
   return !error;
 }
 
-bool qxir::pass::ds_resolv(qmodule_t *mod) {
+bool nr::pass::ds_resolv(qmodule_t *mod) {
   bool error = false;
 
   error |= !alpha_pass(mod);

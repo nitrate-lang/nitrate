@@ -56,9 +56,9 @@ static bool impl_use_msgpack(qmodule_t *R, FILE *O) {
   return impl_use_json(R, O);
 }
 
-bool impl_subsys_qxir(std::shared_ptr<std::istream> source, FILE *output,
-                      std::function<void(const char *)> diag_cb,
-                      const std::unordered_set<std::string_view> &opts) {
+bool impl_subsys_nr(std::shared_ptr<std::istream> source, FILE *output,
+                    std::function<void(const char *)> diag_cb,
+                    const std::unordered_set<std::string_view> &opts) {
   enum class OutMode {
     JSON,
     MsgPack,
@@ -71,13 +71,13 @@ bool impl_subsys_qxir(std::shared_ptr<std::istream> source, FILE *output,
     out_mode = OutMode::MsgPack;
   }
 
-  qxir_conf conf;
+  nr_conf conf;
 
   { /* Should the ir use the crashguard signal handler? */
     if (opts.contains("-fir-crashguard=off")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_OFF);
+      nr_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_OFF);
     } else if (opts.contains("-fparse-crashguard=on")) {
-      qxir_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_ON);
+      nr_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_ON);
     }
   }
 
@@ -85,7 +85,7 @@ bool impl_subsys_qxir(std::shared_ptr<std::istream> source, FILE *output,
 
   qmodule ir_module(nullptr, conf.get(), nullptr);
 
-  bool ok = qxir_lower(ir_module.get(), nullptr, true);
+  bool ok = nr_lower(ir_module.get(), nullptr, true);
   if (!ok) {
     diag_cb("Failed to lower IR module.\n");
     return false;

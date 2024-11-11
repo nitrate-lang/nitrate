@@ -39,7 +39,7 @@ extern "C" {
 /**
  * @brief Nitrate abstract syntax tree node.
  */
-typedef struct qxir_node_t qxir_node_t;
+typedef struct nr_node_t nr_node_t;
 
 /**
  * @brief Nitrate QXIR module.
@@ -49,7 +49,7 @@ typedef struct qmodule_t qmodule_t;
 /**
  * @brief Nitrate abstract syntax tree node type.
  */
-typedef enum qxir_ty_t {
+typedef enum nr_ty_t {
   QIR_NODE_BINEXPR,     /* Binary expression */
   QIR_NODE_UNEXPR,      /* Unary expression */
   QIR_NODE_POST_UNEXPR, /* Postfix unary expression */
@@ -101,25 +101,25 @@ typedef enum qxir_ty_t {
   QIR_NODE_FN_TY,     /* Function type */
 
   QIR_NODE_TMP, /* Temp node; must be resolved with more information */
-} qxir_ty_t;
+} nr_ty_t;
 
 #define QIR_NODE_COUNT 47
 
-typedef struct qxir_conf_t qxir_conf_t;
+typedef struct nr_conf_t nr_conf_t;
 
-typedef enum qxir_key_t {
+typedef enum nr_key_t {
   QQK_UNKNOWN = 0,
   QQK_CRASHGUARD,
   QQV_FASTERROR,
-} qxir_key_t;
+} nr_key_t;
 
-typedef enum qxir_val_t {
+typedef enum nr_val_t {
   QQV_UNKNOWN = 0,
   QQV_TRUE,
   QQV_FALSE,
   QQV_ON = QQV_TRUE,
   QQV_OFF = QQV_FALSE,
-} qxir_val_t;
+} nr_val_t;
 
 #ifdef __cplusplus
 }

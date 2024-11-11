@@ -44,7 +44,7 @@
  * @spacecomplexity O(n)
  */
 
-using namespace qxir;
+using namespace nr;
 
 static void flatten_externs(qmodule_t *mod) {
   /**
@@ -136,7 +136,7 @@ static void flatten_functions(qmodule_t *mod) {
   }
 }
 
-bool qxir::pass::ds_flatten(qmodule_t *mod) {
+bool nr::pass::ds_flatten(qmodule_t *mod) {
   /**
    * This pass in infallible.
    */

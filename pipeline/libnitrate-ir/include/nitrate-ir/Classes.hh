@@ -42,30 +42,30 @@
 
 #include <stdexcept>
 
-class qxir_conf final {
-  qxir_conf_t *m_conf;
+class nr_conf final {
+  nr_conf_t *m_conf;
 
 public:
-  qxir_conf(bool use_default = true) {
-    if ((m_conf = qxir_conf_new(use_default)) == nullptr) {
-      throw std::runtime_error("qxir_conf_new failed");
+  nr_conf(bool use_default = true) {
+    if ((m_conf = nr_conf_new(use_default)) == nullptr) {
+      throw std::runtime_error("nr_conf_new failed");
     }
   }
-  ~qxir_conf() { qxir_conf_free(m_conf); }
+  ~nr_conf() { nr_conf_free(m_conf); }
 
-  qxir_conf_t *get() const { return m_conf; }
+  nr_conf_t *get() const { return m_conf; }
 };
 
 class qmodule final {
   qmodule_t *m_module;
 
 public:
-  qmodule(qlex_t *lexer, qxir_conf_t *conf, const char *name) {
-    if ((m_module = qxir_new(lexer, conf, name)) == nullptr) {
-      throw std::runtime_error("qxir_new failed");
+  qmodule(qlex_t *lexer, nr_conf_t *conf, const char *name) {
+    if ((m_module = nr_new(lexer, conf, name)) == nullptr) {
+      throw std::runtime_error("nr_new failed");
     }
   }
-  ~qmodule() { qxir_free(m_module); }
+  ~qmodule() { nr_free(m_module); }
 
   qmodule_t *get() const { return m_module; }
 };

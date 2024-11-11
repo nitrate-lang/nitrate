@@ -51,7 +51,7 @@ typedef struct qparse_node_t qparse_node_t;
  *
  * @return On success, a new QModule instance is returned. On failure, NULL is returned.
  *
- * @warning The QModule instance must be freed using `qxir_free`.
+ * @warning The QModule instance must be freed using `nr_free`.
  *
  * @note If `lexer` is NULL, the diagnostics subsystem will be unable to assign
  * source locations to its reports. However, the diagnostics subsystem will still
@@ -66,13 +66,13 @@ typedef struct qparse_node_t qparse_node_t;
  * @note Obviously, the `lexer` and `conf` lifetimes must exceed the lifetime of the
  * returned QModule instance.
  *
- * @warning This library supports a maximum of `qxir_max_modules()` QModule instances
+ * @warning This library supports a maximum of `nr_max_modules()` QModule instances
  * at once. Attempting to create more than this number will result in the function
  * returning NULL.
  *
  * @note This function is thread safe.
  */
-qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf, const char *name);
+qmodule_t *nr_new(qlex_t *lexer, nr_conf_t *conf, const char *name);
 
 /**
  * @brief Free a QModule instance and ALL of its associated resources.
@@ -81,16 +81,16 @@ qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf, const char *name);
  *
  * @note If `!module`, this function is a no-op.
  *
- * @note This function will not free the lexer instance passed to `qxir_new`.
- * @note This function will not free the configuration instance passed to `qxir_new`.
+ * @note This function will not free the lexer instance passed to `nr_new`.
+ * @note This function will not free the configuration instance passed to `nr_new`.
  *
  * @note This function is thread safe.
  */
-void qxir_free(qmodule_t *qxir);
+void nr_free(qmodule_t *nr);
 
-typedef enum qxir_serial_t {
+typedef enum nr_serial_t {
   QXIR_SERIAL_CODE = 0, /* Human readable ASCII text */
-} qxir_serial_t;
+} nr_serial_t;
 
 /**
  * @brief Serialize a QModule instance to a FILE stream.
@@ -107,8 +107,8 @@ typedef enum qxir_serial_t {
  *
  * @note This function is thread safe.
  */
-bool qxir_write(const qxir_node_t *node, qxir_serial_t mode, FILE *out, size_t *outlen,
-                uint32_t argcnt, ...);
+bool nr_write(const nr_node_t *node, nr_serial_t mode, FILE *out, size_t *outlen, uint32_t argcnt,
+              ...);
 
 /**
  * @brief Deserialize a QModule instance from a FILE stream.
@@ -124,7 +124,7 @@ bool qxir_write(const qxir_node_t *node, qxir_serial_t mode, FILE *out, size_t *
  *
  * @note This function is thread safe.
  */
-bool qxir_read(qmodule_t *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
+bool nr_read(qmodule_t *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
 
 /**
  * @brief Lower a parse tree into a QModule.
@@ -142,11 +142,11 @@ bool qxir_read(qmodule_t *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
  *
  * @note This function is thread safe.
  */
-bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics);
+bool nr_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics);
 
-typedef void (*qxir_node_cb)(qxir_node_t *cur, uintptr_t userdata);
+typedef void (*nr_node_cb)(nr_node_t *cur, uintptr_t userdata);
 
-typedef enum qxir_audit_t {
+typedef enum nr_audit_t {
   QXIR_AUDIT_NONE = 0,     /* No audit */
   QXIR_AUDIT_WILLCOMP = 1, /* Minimum to determine if the module will compile; g++ disables some */
   QXIR_AUDIT_STD = 2,      /* Standard audit checks; What happens here will vary; g++ default */
@@ -154,30 +154,30 @@ typedef enum qxir_audit_t {
   QXIR_AUDIT_GIGACHAD = 4, /* A bunch of checks that are probably unnecessary; g++ -Wall */
   QXIR_AUDIT_MAX = 5,      /* Maximum audit; Includes user-defined checks */
   QXIR_AUDIT_DEFAULT = QXIR_AUDIT_STD,
-} qxir_audit_t;
+} nr_audit_t;
 
-typedef uint32_t qxir_audit_ticket_t;
+typedef uint32_t nr_audit_ticket_t;
 
-#define QXIR_AUDIT_ALL ((qxir_audit_ticket_t)0x00000000)
-#define QXIR_AUDIT_CONV ((qxir_audit_ticket_t)0x00000001)
-#define QXIR_AUDIT_LAST ((qxir_audit_ticket_t)0xFFFFFFFF)
+#define QXIR_AUDIT_ALL ((nr_audit_ticket_t)0x00000000)
+#define QXIR_AUDIT_CONV ((nr_audit_ticket_t)0x00000001)
+#define QXIR_AUDIT_LAST ((nr_audit_ticket_t)0xFFFFFFFF)
 
 /**
  * @brief Perform semantic analysis a QModule instance.
  *
- * @param qxir The QModule instance to analyze.
+ * @param nr The QModule instance to analyze.
  * @param level The level of audit to perform.
  * @param ticket Pointer to save the audit ticket to.
  *
  * @return True if the analysis was successful, false otherwise.
  *
- * @note If `!qxir`, false is returned.
+ * @note If `!nr`, false is returned.
  * @note The results will be accessible via the QModule diagnostics API using the audit ticket
  * number.
  *
  * @note This function is thread safe.
  */
-bool qxir_audit(qmodule_t *qxir, qxir_audit_t level, qxir_audit_ticket_t *ticket);
+bool nr_audit(qmodule_t *nr, nr_audit_t level, nr_audit_ticket_t *ticket);
 
 typedef enum {
   QXIR_LEVEL_DEBUG = 0,
@@ -187,7 +187,7 @@ typedef enum {
   QXIR_LEVEL_FATAL = 4,
   QXIR_LEVEL_MAX = 5,
   QXIR_LEVEL_DEFAULT = QXIR_LEVEL_WARN,
-} qxir_level_t;
+} nr_level_t;
 
 /**
  * @brief A callback function to facilitate the communication of a report generated by the QModule
@@ -202,10 +202,10 @@ typedef enum {
  *
  * @note This function shall be thread safe.
  */
-typedef void (*qxir_report_cb)(const uint8_t *utf8text, size_t size, qxir_level_t level,
-                               uintptr_t data);
+typedef void (*nr_report_cb)(const uint8_t *utf8text, size_t size, nr_level_t level,
+                             uintptr_t data);
 
-typedef enum qxir_diag_format_t {
+typedef enum nr_diag_format_t {
   /**
    * @brief Code decimal serialization of the error code.
    * @example `801802`
@@ -268,12 +268,12 @@ typedef enum qxir_diag_format_t {
    * @note Includes everything the user would expect from a mainstream compiler.
    */
   QXIR_DIAG_NOCOLOR = QXIR_DIAG_NOSTD_TTY_UTF8,
-} qxir_diag_format_t;
+} nr_diag_format_t;
 
 /**
  * @brief Read diagnostic reports generated by the QModule diagnostics subsystem.
  *
- * @param qxir QModule instance to read diagnostics from.
+ * @param nr QModule instance to read diagnostics from.
  * @param ticket Audit ticket number.
  * @param format Format for the diagnostics reporting.
  * @param cb Callback function to call for each report.
@@ -294,12 +294,12 @@ typedef enum qxir_diag_format_t {
  *
  * @note This function is thread safe.
  */
-size_t qxir_diag_read(qmodule_t *qxir, qxir_audit_ticket_t ticket, qxir_diag_format_t format,
-                      qxir_report_cb cb, uintptr_t data);
+size_t nr_diag_read(qmodule_t *nr, nr_audit_ticket_t ticket, nr_diag_format_t format,
+                    nr_report_cb cb, uintptr_t data);
 
 /**
  * @brief Clear diagnostic reports generated by the QModule diagnostics subsystem.
- * @param qxir QModule instance to clear diagnostics from.
+ * @param nr QModule instance to clear diagnostics from.
  * @param ticket Audit ticket number.
  *
  * @return Number of reports cleared. 0 may be returned if the ticket does not exist OR if the
@@ -307,7 +307,7 @@ size_t qxir_diag_read(qmodule_t *qxir, qxir_audit_ticket_t ticket, qxir_diag_for
  *
  * @note If `ticket` is `QXIR_AUDIT_ALL`, all reports are cleared.
  */
-size_t qxir_diag_clear(qmodule_t *qxir, qxir_audit_ticket_t ticket);
+size_t nr_diag_clear(qmodule_t *nr, nr_audit_ticket_t ticket);
 
 /**
  * @brief Return the maximum number of modules that can exist at once.
@@ -316,7 +316,7 @@ size_t qxir_diag_clear(qmodule_t *qxir, qxir_audit_ticket_t ticket);
  *
  * @note This function is thread safe.
  */
-size_t qxir_max_modules(void);
+size_t nr_max_modules(void);
 
 /**
  * @brief Performs type inference on a QXIR node.
@@ -326,7 +326,7 @@ size_t qxir_max_modules(void);
  *
  * @note This function is thread-safe.
  */
-qxir_node_t *qxir_infer(qxir_node_t *node);
+nr_node_t *nr_infer(nr_node_t *node);
 
 /**
  * @brief Clone a QXIR node. Optionally into a different module.
@@ -334,7 +334,7 @@ qxir_node_t *qxir_infer(qxir_node_t *node);
  * @param dst The destination module context or NULL to clone into the same context.
  * @param node The node to clone.
  *
- * @return qxir_node_t* The cloned node.
+ * @return nr_node_t* The cloned node.
  *
  * @note If `dst` NULL, the function will clone into the same module.
  * @note If `node` NULL, the function will return NULL.
@@ -342,11 +342,11 @@ qxir_node_t *qxir_infer(qxir_node_t *node);
  *
  * @note Be nice to this function, it does more than you think.
  */
-qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node);
+nr_node_t *nr_clone(qmodule_t *dst, const nr_node_t *node);
 
-qlex_t *qxir_get_lexer(qmodule_t *mod);
-qxir_node_t *qxir_base(qmodule_t *mod);
-qxir_conf_t *qxir_get_conf(qmodule_t *mod);
+qlex_t *nr_get_lexer(qmodule_t *mod);
+nr_node_t *nr_base(qmodule_t *mod);
+nr_conf_t *nr_get_conf(qmodule_t *mod);
 
 #ifdef __cplusplus
 }

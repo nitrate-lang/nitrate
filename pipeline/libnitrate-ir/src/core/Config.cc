@@ -36,8 +36,8 @@
 #include <boost/bimap.hpp>
 #include <core/Config.hh>
 
-namespace qxir::conf {
-  extern std::vector<qxir_setting_t> default_settings;
+namespace nr::conf {
+  extern std::vector<nr_setting_t> default_settings;
 }
 
 template <typename L, typename R>
@@ -45,48 +45,48 @@ boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>:
   return boost::bimap<L, R>(list.begin(), list.end());
 }
 
-static const boost::bimap<qxir_key_t, std::string_view> options_bimap =
-    make_bimap<qxir_key_t, std::string_view>({
+static const boost::bimap<nr_key_t, std::string_view> options_bimap =
+    make_bimap<nr_key_t, std::string_view>({
         {QQK_UNKNOWN, "QQK_UNKNOWN"},
         {QQK_CRASHGUARD, "-fcrashguard"},
         {QQV_FASTERROR, "-ffasterror"},
     });
 
-static const boost::bimap<qxir_val_t, std::string_view> values_bimap =
-    make_bimap<qxir_val_t, std::string_view>({
+static const boost::bimap<nr_val_t, std::string_view> values_bimap =
+    make_bimap<nr_val_t, std::string_view>({
         {QQV_UNKNOWN, "QQV_UNKNOWN"},
         {QQV_TRUE, "true"},
         {QQV_FALSE, "false"},
     });
 
-std::ostream &operator<<(std::ostream &os, const qxir_key_t &key) {
+std::ostream &operator<<(std::ostream &os, const nr_key_t &key) {
   if (options_bimap.left.find(key) != options_bimap.left.end()) {
     os << options_bimap.left.at(key);
   } else {
-    qcore_panic("operator<<: Unhandled qxir_key_t value.");
+    qcore_panic("operator<<: Unhandled nr_key_t value.");
   }
   return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const qxir_val_t &val) {
+std::ostream &operator<<(std::ostream &os, const nr_val_t &val) {
   if (values_bimap.left.find(val) != values_bimap.left.end()) {
     os << values_bimap.left.at(val);
   } else {
-    qcore_panic("operator<<: Unhandled qxir_val_t value.");
+    qcore_panic("operator<<: Unhandled nr_val_t value.");
   }
 
   return os;
 }
 
-static void assign_default_options(qxir_conf_t &conf) {
-  for (const auto &setting : qxir::conf::default_settings) {
-    qxir_conf_setopt(&conf, setting.key, setting.value);
+static void assign_default_options(nr_conf_t &conf) {
+  for (const auto &setting : nr::conf::default_settings) {
+    nr_conf_setopt(&conf, setting.key, setting.value);
   }
 }
 
-LIB_EXPORT qxir_conf_t *qxir_conf_new(bool use_defaults) {
+LIB_EXPORT nr_conf_t *nr_conf_new(bool use_defaults) {
   try {
-    qxir_conf_t *obj = new qxir_conf_t();
+    nr_conf_t *obj = new nr_conf_t();
 
     if (use_defaults) {
       assign_default_options(*obj);
@@ -98,15 +98,15 @@ LIB_EXPORT qxir_conf_t *qxir_conf_new(bool use_defaults) {
   }
 }
 
-LIB_EXPORT void qxir_conf_free(qxir_conf_t *conf) {
+LIB_EXPORT void nr_conf_free(nr_conf_t *conf) {
   try {
     delete conf;
   } catch (...) {
-    qcore_panic("qxir_conf_free: Internal error: failed to free qxir_conf_t object.");
+    qcore_panic("nr_conf_free: Internal error: failed to free nr_conf_t object.");
   }
 }
 
-LIB_EXPORT bool qxir_conf_setopt(qxir_conf_t *conf, qxir_key_t key, qxir_val_t value) {
+LIB_EXPORT bool nr_conf_setopt(nr_conf_t *conf, nr_key_t key, nr_val_t value) {
   try {
     return conf->SetAndVerify(key, value);
   } catch (...) {
@@ -114,7 +114,7 @@ LIB_EXPORT bool qxir_conf_setopt(qxir_conf_t *conf, qxir_key_t key, qxir_val_t v
   }
 }
 
-LIB_EXPORT bool qxir_conf_getopt(qxir_conf_t *conf, qxir_key_t key, qxir_val_t *value) {
+LIB_EXPORT bool nr_conf_getopt(nr_conf_t *conf, nr_key_t key, nr_val_t *value) {
   try {
     auto val = conf->Get(key);
 
@@ -128,25 +128,25 @@ LIB_EXPORT bool qxir_conf_getopt(qxir_conf_t *conf, qxir_key_t key, qxir_val_t *
 
     return true;
   } catch (...) {
-    qcore_panic("qxir_conf_getopt: Internal error: unable to retrieve qxir_val_t value.");
+    qcore_panic("nr_conf_getopt: Internal error: unable to retrieve nr_val_t value.");
   }
 }
 
-LIB_EXPORT qxir_setting_t *qxir_conf_getopts(qxir_conf_t *conf, size_t *count) {
+LIB_EXPORT nr_setting_t *nr_conf_getopts(nr_conf_t *conf, size_t *count) {
   try {
     if (!count) {
-      qcore_panic("qxir_conf_getopts: Contract violation: 'count' parameter cannot be NULL.");
+      qcore_panic("nr_conf_getopts: Contract violation: 'count' parameter cannot be NULL.");
     }
 
-    const qxir_setting_t *ptr = conf->GetAll(*count);
+    const nr_setting_t *ptr = conf->GetAll(*count);
 
     if (!ptr) {
       return nullptr;
     }
 
-    size_t size = *count * sizeof(qxir_setting_t);
+    size_t size = *count * sizeof(nr_setting_t);
 
-    qxir_setting_t *copy = static_cast<qxir_setting_t *>(malloc(size));
+    nr_setting_t *copy = static_cast<nr_setting_t *>(malloc(size));
     if (!copy) {
       return nullptr;
     }
@@ -159,19 +159,19 @@ LIB_EXPORT qxir_setting_t *qxir_conf_getopts(qxir_conf_t *conf, size_t *count) {
   }
 }
 
-LIB_EXPORT void qxir_conf_clear(qxir_conf_t *conf) {
+LIB_EXPORT void nr_conf_clear(nr_conf_t *conf) {
   try {
     conf->ClearNoVerify();
   } catch (...) {
-    qcore_panic("qxir_conf_clear: Internal error: failed to clear qxir_conf_t object.");
+    qcore_panic("nr_conf_clear: Internal error: failed to clear nr_conf_t object.");
   }
 }
 
-LIB_EXPORT size_t qxir_conf_dump(qxir_conf_t *conf, FILE *stream, const char *field_delim,
-                                 const char *line_delim) {
+LIB_EXPORT size_t nr_conf_dump(nr_conf_t *conf, FILE *stream, const char *field_delim,
+                               const char *line_delim) {
   try {
     if (!stream) {
-      qcore_panic("qxir_conf_dump: Contract violation: 'stream' parameter cannot be NULL.");
+      qcore_panic("nr_conf_dump: Contract violation: 'stream' parameter cannot be NULL.");
     }
 
     if (!field_delim) {
@@ -182,18 +182,18 @@ LIB_EXPORT size_t qxir_conf_dump(qxir_conf_t *conf, FILE *stream, const char *fi
       line_delim = "\n";
     }
 
-    const qxir_setting_t *settings = nullptr;
+    const nr_setting_t *settings = nullptr;
     size_t count = 0, bytes = 0;
 
-    settings = qxir_conf_getopts(conf, &count);
+    settings = nr_conf_getopts(conf, &count);
 
     for (size_t i = 0; i < count; ++i) {
       if (options_bimap.left.find(settings[i].key) == options_bimap.left.end()) {
-        qcore_panic("qxir_conf_dump: Unhandled qxir_key_t value.");
+        qcore_panic("nr_conf_dump: Unhandled nr_key_t value.");
       }
 
       if (values_bimap.left.find(settings[i].value) == values_bimap.left.end()) {
-        qcore_panic("qxir_conf_dump: Unhandled qxir_val_t value.");
+        qcore_panic("nr_conf_dump: Unhandled nr_val_t value.");
       }
 
       bytes += fprintf(stream, "%s%s%s%s", options_bimap.left.at(settings[i].key).data(),
@@ -206,7 +206,7 @@ LIB_EXPORT size_t qxir_conf_dump(qxir_conf_t *conf, FILE *stream, const char *fi
   }
 }
 
-bool qxir_conf_t::has(qxir_key_t option, qxir_val_t value) const noexcept {
+bool nr_conf_t::has(nr_key_t option, nr_val_t value) const noexcept {
   try {
     for (const auto &dat : m_data) {
       if (dat.key == option && dat.value == value) {

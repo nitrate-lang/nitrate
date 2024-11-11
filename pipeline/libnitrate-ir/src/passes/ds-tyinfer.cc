@@ -36,9 +36,9 @@
  * @brief Do type inference on the module.
  */
 
-using namespace qxir::diag;
+using namespace nr::diag;
 
-bool qxir::pass::ds_tyinfer(qmodule_t* M) {
+bool nr::pass::ds_tyinfer(qmodule_t* M) {
   iterate<dfs_pre>(M->getRoot(), [&](Expr*, Expr** C) -> IterOp {
     if (!(*C)->getType().has_value()) {
       report(IssueCode::TypeInference, IssueClass::Error, (*C)->locBeg(), (*C)->locEnd());

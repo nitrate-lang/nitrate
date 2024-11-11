@@ -43,16 +43,16 @@
 #include <unordered_map>
 #include <unordered_set>
 
-using namespace qxir::diag;
+using namespace nr::diag;
 
-static std::string_view intern(std::string_view sv) { return qxir::current->internString(sv); }
+static std::string_view intern(std::string_view sv) { return nr::current->internString(sv); }
 
-static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node,
-                                    std::unordered_map<const qxir_node_t *, qxir_node_t *> &map,
-                                    std::unordered_set<qxir_node_t *> &in_visited) {
-#define clone(X) static_cast<Expr *>(qxir_clone_impl(X, map, in_visited))
+static nr_node_t *nr_clone_impl(const nr_node_t *_node,
+                                std::unordered_map<const nr_node_t *, nr_node_t *> &map,
+                                std::unordered_set<nr_node_t *> &in_visited) {
+#define clone(X) static_cast<Expr *>(nr_clone_impl(X, map, in_visited))
 
-  using namespace qxir;
+  using namespace nr;
 
   Expr *in;
   Expr *out;
@@ -61,7 +61,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node,
     return nullptr;
   }
 
-  in = static_cast<Expr *>(const_cast<qxir_node_t *>(_node));
+  in = static_cast<Expr *>(const_cast<nr_node_t *>(_node));
   out = nullptr;
 
   switch (in->getKind()) {
@@ -131,7 +131,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node,
       break;
     }
     case QIR_NODE_IDENT: {
-      qxir::Expr *bad_tmp_ref = static_cast<Ident *>(in)->getWhat();
+      nr::Expr *bad_tmp_ref = static_cast<Ident *>(in)->getWhat();
       out = create<Ident>(intern(static_cast<Ident *>(in)->getName()), bad_tmp_ref);
       break;
     }
@@ -328,7 +328,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node,
     }
   }
 
-  qcore_assert(out != nullptr, "qxir_clone: failed to clone node");
+  qcore_assert(out != nullptr, "nr_clone: failed to clone node");
 
   out->setLocDangerous(in->getLoc());
   out->setMutable(in->isMutable());
@@ -336,32 +336,32 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node,
   map[in] = out;
   in_visited.insert(in);
 
-  return static_cast<qxir_node_t *>(out);
+  return static_cast<nr_node_t *>(out);
 }
 
-LIB_EXPORT qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node) {
-  qxir_node_t *out;
+LIB_EXPORT nr_node_t *nr_clone(qmodule_t *dst, const nr_node_t *node) {
+  nr_node_t *out;
 
   if (!node) {
     return nullptr;
   }
 
   if (!dst) {
-    dst = static_cast<const qxir::Expr *>(node)->getModule();
+    dst = static_cast<const nr::Expr *>(node)->getModule();
   }
 
-  std::swap(qxir::qxir_arena.get(), dst->getNodeArena());
-  std::swap(qxir::current, dst);
+  std::swap(nr::nr_arena.get(), dst->getNodeArena());
+  std::swap(nr::current, dst);
 
   out = nullptr;
 
   try {
-    std::unordered_map<const qxir_node_t *, qxir_node_t *> map;
-    std::unordered_set<qxir_node_t *> in_visited;
-    out = qxir_clone_impl(node, map, in_visited);
+    std::unordered_map<const nr_node_t *, nr_node_t *> map;
+    std::unordered_set<nr_node_t *> in_visited;
+    out = nr_clone_impl(node, map, in_visited);
 
     { /* Resolve Directed Acyclic* Graph Internal References */
-      using namespace qxir;
+      using namespace nr;
 
       Expr *out_expr = static_cast<Expr *>(out);
       iterate<dfs_pre>(out_expr, [&](Expr *, Expr **_cur) -> IterOp {
@@ -379,8 +379,8 @@ LIB_EXPORT qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node) {
     return nullptr;
   }
 
-  std::swap(qxir::current, dst);
-  std::swap(qxir::qxir_arena.get(), dst->getNodeArena());
+  std::swap(nr::current, dst);
+  std::swap(nr::nr_arena.get(), dst->getNodeArena());
 
-  return static_cast<qxir_node_t *>(out);
+  return static_cast<nr_node_t *>(out);
 }

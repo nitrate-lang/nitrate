@@ -35,10 +35,10 @@
 #include <mutex>
 #include <nitrate-ir/Module.hh>
 
-using namespace qxir;
+using namespace nr;
 
-static std::vector<std::optional<qmodule_t *>> qxir_modules;
-static std::mutex qxir_modules_mutex;
+static std::vector<std::optional<qmodule_t *>> nr_modules;
+static std::mutex nr_modules_mutex;
 
 qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
   m_passes_applied.clear();
@@ -79,13 +79,13 @@ std::string_view qmodule_t::internString(std::string_view sv) {
 
 ///=============================================================================
 
-qmodule_t *qxir::createModule(std::string name) {
-  std::lock_guard<std::mutex> lock(qxir_modules_mutex);
+qmodule_t *nr::createModule(std::string name) {
+  std::lock_guard<std::mutex> lock(nr_modules_mutex);
 
   ModuleId mid;
 
-  for (mid = 0; mid < qxir_modules.size(); mid++) {
-    if (!qxir_modules[mid].has_value()) {
+  for (mid = 0; mid < nr_modules.size(); mid++) {
+    if (!nr_modules[mid].has_value()) {
       break;
     }
   }
@@ -94,22 +94,22 @@ qmodule_t *qxir::createModule(std::string name) {
     return nullptr;
   }
 
-  qxir_modules.insert(qxir_modules.begin() + mid, new qmodule_t(mid, name));
+  nr_modules.insert(nr_modules.begin() + mid, new qmodule_t(mid, name));
 
-  return qxir_modules[mid].value();
+  return nr_modules[mid].value();
 }
 
-CPP_EXPORT qmodule_t *qxir::getModule(ModuleId mid) {
-  std::lock_guard<std::mutex> lock(qxir_modules_mutex);
+CPP_EXPORT qmodule_t *nr::getModule(ModuleId mid) {
+  std::lock_guard<std::mutex> lock(nr_modules_mutex);
 
-  if (mid >= qxir_modules.size() || !qxir_modules.at(mid).has_value()) {
+  if (mid >= nr_modules.size() || !nr_modules.at(mid).has_value()) {
     return nullptr;
   }
 
-  return qxir_modules.at(mid).value();
+  return nr_modules.at(mid).value();
 }
 
-LIB_EXPORT qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf, const char *name) {
+LIB_EXPORT qmodule_t *nr_new(qlex_t *lexer, nr_conf_t *conf, const char *name) {
   try {
     if (!conf) {
       return nullptr;
@@ -133,28 +133,28 @@ LIB_EXPORT qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf, const char *nam
   }
 }
 
-LIB_EXPORT void qxir_free(qmodule_t *mod) {
+LIB_EXPORT void nr_free(qmodule_t *mod) {
   try {
     if (!mod) {
       return;
     }
 
-    std::lock_guard<std::mutex> lock(qxir_modules_mutex);
+    std::lock_guard<std::mutex> lock(nr_modules_mutex);
 
     auto mid = mod->getModuleId();
     delete mod;
-    qxir_modules.at(mid).reset();
+    nr_modules.at(mid).reset();
   } catch (...) {
-    qcore_panic("qxir_free failed");
+    qcore_panic("nr_free failed");
   }
 }
 
-LIB_EXPORT size_t qxir_max_modules(void) { return MAX_MODULE_INSTANCES; }
+LIB_EXPORT size_t nr_max_modules(void) { return MAX_MODULE_INSTANCES; }
 
-LIB_EXPORT qlex_t *qxir_get_lexer(qmodule_t *mod) { return mod->getLexer(); }
+LIB_EXPORT qlex_t *nr_get_lexer(qmodule_t *mod) { return mod->getLexer(); }
 
-LIB_EXPORT qxir_node_t *qxir_base(qmodule_t *mod) {
-  return reinterpret_cast<qxir_node_t *>(mod->getRoot());
+LIB_EXPORT nr_node_t *nr_base(qmodule_t *mod) {
+  return reinterpret_cast<nr_node_t *>(mod->getRoot());
 }
 
-LIB_EXPORT qxir_conf_t *qxir_get_conf(qmodule_t *mod) { return mod->getConf(); }
+LIB_EXPORT nr_conf_t *nr_get_conf(qmodule_t *mod) { return mod->getConf(); }

@@ -48,7 +48,7 @@
 #include <queue>
 #include <stack>
 
-namespace qxir::detail {
+namespace nr::detail {
   void get_children_sorted(Expr *base, ChildSelect cs, std::vector<Expr **> &children) {
     children.clear();
 
@@ -521,4 +521,4 @@ namespace qxir::detail {
     }
   }
 
-}  // namespace qxir::detail
+}  // namespace nr::detail

@@ -38,7 +38,7 @@
 #include <sstream>
 #include <unordered_set>
 
-using namespace qxir;
+using namespace nr;
 
 ///=============================================================================
 
@@ -646,14 +646,14 @@ static std::optional<std::string> demangle_nit_abi(std::string_view name) {
   return ss.str();
 }
 
-CPP_EXPORT std::optional<std::string> qxir::SymbolEncoding::mangle_name(const qxir::Expr *symbol,
-                                                                        AbiTag abi) const noexcept {
-  static std::unordered_set<qxir_ty_t> valid = {
+CPP_EXPORT std::optional<std::string> nr::SymbolEncoding::mangle_name(const nr::Expr *symbol,
+                                                                      AbiTag abi) const noexcept {
+  static std::unordered_set<nr_ty_t> valid = {
       QIR_NODE_FN,
       QIR_NODE_LOCAL,
   };
 
-  qxir_ty_t kind = symbol->getKind();
+  nr_ty_t kind = symbol->getKind();
   if (!valid.contains(kind)) {
     return std::nullopt;
   }
@@ -679,7 +679,7 @@ CPP_EXPORT std::optional<std::string> qxir::SymbolEncoding::mangle_name(const qx
   }
 }
 
-CPP_EXPORT std::optional<std::string> qxir::SymbolEncoding::demangle_name(
+CPP_EXPORT std::optional<std::string> nr::SymbolEncoding::demangle_name(
     std::string_view symbol) const noexcept {
   if (symbol.empty()) {
     return std::nullopt;

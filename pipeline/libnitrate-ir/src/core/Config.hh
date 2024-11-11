@@ -38,11 +38,11 @@
 #include <optional>
 #include <vector>
 
-struct qxir_conf_t {
+struct nr_conf_t {
 private:
-  std::vector<qxir_setting_t> m_data;
+  std::vector<nr_setting_t> m_data;
 
-  bool verify_prechange(qxir_key_t key, qxir_val_t value) const {
+  bool verify_prechange(nr_key_t key, nr_val_t value) const {
     (void)key;
     (void)value;
 
@@ -50,12 +50,12 @@ private:
   }
 
 public:
-  qxir_conf_t() = default;
-  ~qxir_conf_t() = default;
+  nr_conf_t() = default;
+  ~nr_conf_t() = default;
 
-  bool SetAndVerify(qxir_key_t key, qxir_val_t value) {
+  bool SetAndVerify(nr_key_t key, nr_val_t value) {
     auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const qxir_setting_t &setting) { return setting.key == key; });
+                           [key](const nr_setting_t &setting) { return setting.key == key; });
 
     if (!verify_prechange(key, value)) {
       return false;
@@ -70,9 +70,9 @@ public:
     return true;
   }
 
-  std::optional<qxir_val_t> Get(qxir_key_t key) const {
+  std::optional<nr_val_t> Get(nr_key_t key) const {
     auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const qxir_setting_t &setting) { return setting.key == key; });
+                           [key](const nr_setting_t &setting) { return setting.key == key; });
 
     if (it == m_data.end()) {
       return std::nullopt;
@@ -81,7 +81,7 @@ public:
     return it->value;
   }
 
-  const qxir_setting_t *GetAll(size_t &count) const {
+  const nr_setting_t *GetAll(size_t &count) const {
     count = m_data.size();
     return m_data.data();
   }
@@ -91,7 +91,7 @@ public:
     m_data.shrink_to_fit();
   }
 
-  bool has(qxir_key_t option, qxir_val_t value) const noexcept;
+  bool has(nr_key_t option, nr_val_t value) const noexcept;
 };
 
 #endif  // __NITRATE_QXIR_CORE_CONFIG_H__
