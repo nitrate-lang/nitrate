@@ -138,7 +138,7 @@ static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, 
      {"bad-cast",
       "%s",
       {
-          /* TODO: Add fixes */
+          "Ensure that the cast is valid.",
       }}},
 
     {IssueCode::MissingReturn,
@@ -160,8 +160,6 @@ static void print_qsizeloc(std::stringstream &ss, qlex_size num) {
 }
 
 static std::vector<std::string_view> word_break(std::string_view text, size_t max_width) {
-  /** TODO: Unit testing */
-
   std::vector<std::string_view> lines;
   size_t word_beg = 0, cur_beg = 0, cur_len = 0;
 
@@ -418,8 +416,6 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
   if (sl != UINT32_MAX && sc != UINT32_MAX && el != UINT32_MAX &&
       ec != UINT32_MAX) { /* Source window */
     constexpr size_t WINDOW_WIDTH = 60;
-
-    /// TODO: Use lexer to add color coating
 
     int64_t x_0 = sc, y_0 = sl, x_1 = ec, y_1 = el;
     confine_rect_bounds(x_0, y_0, x_1, y_1, WINDOW_WIDTH);

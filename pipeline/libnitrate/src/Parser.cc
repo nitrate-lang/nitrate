@@ -334,10 +334,6 @@ bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
 using namespace qparse;
 
 bool to_json_recurse(Node *N, json &x) {
-  /**
-   * WARNING: TODO: Test this code thoughroughly.
-   */
-
   if (!N) {
     x = nullptr;
     return true;

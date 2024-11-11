@@ -83,10 +83,8 @@ bool qparse::parser::parse_attributes(qparse_t &job, qlex_t *rd,
   return true;
 }
 
-static bool parse_group_field(qparse_t &job, qlex_t *rd, CompositeField **node) {
-  /**
-   * @brief Parse a group struct field
-   *
+bool parser::parse_composite_field(qparse_t &job, qlex_t *rd, CompositeField **node) {
+  /*
    * Format: "name: type [= expr],"
    */
 
@@ -98,7 +96,7 @@ static bool parse_group_field(qparse_t &job, qlex_t *rd, CompositeField **node) 
   { /*First token is the field name */
     tok = qlex_next(rd);
     if (!tok.is(qName)) {
-      syntax(tok, "Expected field name in group definition");
+      syntax(tok, "Expected field name in composite definition");
     }
     name = tok.as_string(rd);
   }
@@ -106,13 +104,13 @@ static bool parse_group_field(qparse_t &job, qlex_t *rd, CompositeField **node) 
   { /* Next token should be a colon */
     tok = qlex_next(rd);
     if (!tok.is<qPuncColn>()) {
-      syntax(tok, "Expected colon after field name in group definition");
+      syntax(tok, "Expected colon after field name in composite definition");
     }
   }
 
   { /* Next section should be the field type */
     if (!parse_type(job, rd, &type)) {
-      syntax(tok, "Expected field type in group definition");
+      syntax(tok, "Expected field type in composite definition");
     }
   }
 
@@ -123,12 +121,13 @@ static bool parse_group_field(qparse_t &job, qlex_t *rd, CompositeField **node) 
       qlex_next(rd);
     }
     *node = CompositeField::get(name, type);
+    (*node)->set_end_pos(tok.start);
     return true;
   }
 
   { /* Optional default value */
     if (!tok.is<qOpSet>()) {
-      syntax(tok, "Expected '=' or ',' after field type in group definition");
+      syntax(tok, "Expected '=' or ',' after field type in composite definition");
     }
     qlex_next(rd);
 
@@ -138,8 +137,10 @@ static bool parse_group_field(qparse_t &job, qlex_t *rd, CompositeField **node) 
                      qlex_tok_t(qPunc, qPuncRCur)},
                     &value) ||
         !value) {
-      syntax(tok, "Expected default value after '=' in group definition");
+      syntax(tok, "Expected default value after '=' in composite definition");
     }
+
+    (*node)->set_end_pos(value->get_end_pos());
   }
 
   *node = CompositeField::get(name, type, value);
@@ -270,7 +271,7 @@ bool parser::parse_group(qparse_t &job, qlex_t *rd, Stmt **node) {
       static_methods.push_back(static_cast<FnDecl *>(method));
     } else {
       /* Parse a normal field */
-      if (!parse_group_field(job, rd, &field)) {
+      if (!parse_composite_field(job, rd, &field)) {
         syntax(tok, "Expected field definition in group definition");
       }
 

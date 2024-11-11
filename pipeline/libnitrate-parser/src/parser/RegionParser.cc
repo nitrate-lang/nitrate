@@ -37,69 +37,6 @@ using namespace qparse;
 using namespace qparse::parser;
 using namespace qparse::diag;
 
-static bool parse_region_field(qparse_t &job, qlex_t *rd, CompositeField **node) {
-  /**
-   * @brief Parse a region struct field
-   *
-   * Format: "name: type [= expr],"
-   */
-
-  std::string name;
-  qlex_tok_t tok;
-  Type *type = nullptr;
-  Expr *value = nullptr;
-
-  { /*First token is the field name */
-    tok = qlex_next(rd);
-    if (!tok.is(qName)) {
-      syntax(tok, "Expected field name in region definition");
-    }
-    name = tok.as_string(rd);
-  }
-
-  { /* Next token should be a colon */
-    tok = qlex_next(rd);
-    if (!tok.is<qPuncColn>()) {
-      syntax(tok, "Expected colon after field name in region definition");
-    }
-  }
-
-  { /* Next section should be the field type */
-    if (!parse_type(job, rd, &type)) {
-      syntax(tok, "Expected field type in region definition");
-    }
-  }
-
-  /* Check for a default value */
-  tok = qlex_peek(rd);
-  if (tok.is<qPuncComa>() || tok.is<qPuncSemi>() || tok.is<qPuncRCur>()) {
-    if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
-      qlex_next(rd);
-    }
-    *node = CompositeField::get(name, type);
-    return true;
-  }
-
-  { /* Optional default value */
-    if (!tok.is<qOpSet>()) {
-      syntax(tok, "Expected '=' or ',' after field type in region definition");
-    }
-    qlex_next(rd);
-
-    /* Parse the default value */
-    if (!parse_expr(job, rd,
-                    {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
-                     qlex_tok_t(qPunc, qPuncRCur)},
-                    &value) ||
-        !value) {
-      syntax(tok, "Expected default value after '=' in region definition");
-    }
-  }
-
-  *node = CompositeField::get(name, type, value);
-  return true;
-}
-
 bool parser::parse_region(qparse_t &job, qlex_t *rd, Stmt **node) {
   /**
    * @brief Parse a region composite type definition
@@ -224,7 +161,7 @@ bool parser::parse_region(qparse_t &job, qlex_t *rd, Stmt **node) {
       static_methods.push_back(static_cast<FnDecl *>(method));
     } else {
       /* Parse a normal field */
-      if (!parse_region_field(job, rd, &field)) {
+      if (!parse_composite_field(job, rd, &field)) {
         syntax(tok, "Expected field definition in region definition");
       }
 

@@ -274,7 +274,6 @@ void DiagnosticManager::push(qxir_audit_ticket_t ticket, DiagMessage &&msg) {
     case IssueClass::Info:
       break;
     case IssueClass::Warn:
-      /// TODO: Warnings as errors
       break;
     case IssueClass::Error:
       current->setFailbit(true);
