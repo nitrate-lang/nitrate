@@ -27,10 +27,6 @@
 -I
 ./no3/src
 -I
-./no3/third_party/nitrated/src
--I
-./no3/third_party/nitrated/include
--I
 /usr/lib/llvm-14/include
 -I
 .build/debug/_deps/googletest-src/googletest/include

@@ -3,14 +3,14 @@
 #include <rapidjson/document.h>
 
 #include <cctype>
-#include <core/SyncFS.hh>
-#include <core/server.hh>
 #include <cstdint>
+#include <lsp/core/SyncFS.hh>
+#include <lsp/core/server.hh>
+#include <lsp/route/RoutesList.hh>
 #include <memory>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-lexer/Classes.hh>
 #include <nitrate-parser/Classes.hh>
-#include <route/RoutesList.hh>
 #include <sstream>
 #include <string>
 #include <unordered_map>

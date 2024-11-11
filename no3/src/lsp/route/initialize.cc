@@ -1,5 +1,5 @@
-#include <core/server.hh>
-#include <route/RoutesList.hh>
+#include <lsp/core/server.hh>
+#include <lsp/route/RoutesList.hh>
 
 using namespace rapidjson;
 

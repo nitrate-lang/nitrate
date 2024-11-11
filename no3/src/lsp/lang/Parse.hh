@@ -1,10 +1,10 @@
 #pragma once
 
-#include <core/SyncFS.hh>
+#include <lsp/core/SyncFS.hh>
 #include <memory>
 #include <nitrate-lexer/Classes.hh>
-#include <optional>
 #include <nitrate-parser/Classes.hh>
+#include <optional>
 #include <unordered_map>
 
 namespace lang {

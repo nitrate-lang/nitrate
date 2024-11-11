@@ -31,6 +31,7 @@
 
 #include <argparse.h>
 #include <glog/logging.h>
+#include <lsp/nitrated.h>
 #include <nitrate-core/Lib.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
@@ -38,7 +39,6 @@
 #include <nitrate-lexer/Lib.h>
 #include <nitrate-parser/Lib.h>
 #include <nitrate-seq/Lib.h>
-#include <nitrated/nitrated.h>
 
 #include <clean/Cleanup.hh>
 #include <core/Config.hh>
@@ -581,7 +581,7 @@ namespace argparse_setup {
         .implicit_value(true);
 
     parser.add_argument("-o", "--log")
-        .default_value(std::string("nitrated-lsp.log"))
+        .default_value(std::string("no3-lsp.log"))
         .help("Specify the log file");
 
     parser.add_argument("--config")

@@ -1,8 +1,8 @@
 #include <rapidjson/document.h>
 
-#include <core/server.hh>
-#include <lang/Parse.hh>
-#include <route/RoutesList.hh>
+#include <lsp/core/server.hh>
+#include <lsp/lang/Parse.hh>
+#include <lsp/route/RoutesList.hh>
 
 using namespace rapidjson;
 

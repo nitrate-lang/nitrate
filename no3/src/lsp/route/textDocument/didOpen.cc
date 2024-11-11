@@ -1,8 +1,8 @@
 #include <rapidjson/document.h>
 
-#include <core/SyncFS.hh>
-#include <core/server.hh>
-#include <route/RoutesList.hh>
+#include <lsp/core/SyncFS.hh>
+#include <lsp/core/server.hh>
+#include <lsp/route/RoutesList.hh>
 #include <string>
 
 using namespace rapidjson;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <core/server.hh>
+#include <lsp/core/server.hh>
 
 void do_initialize(const lsp::RequestMessage&, lsp::ResponseMessage&);
 void do_initialized(const lsp::NotificationMessage&);

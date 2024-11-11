@@ -1,6 +1,6 @@
 #include <chrono>
-#include <core/server.hh>
-#include <core/thread-pool.hh>
+#include <lsp/core/server.hh>
+#include <lsp/core/thread-pool.hh>
 #include <mutex>
 #include <stop_token>
 

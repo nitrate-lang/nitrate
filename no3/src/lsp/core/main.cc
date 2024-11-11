@@ -1,22 +1,17 @@
+#include <argparse.h>
 #include <glog/logging.h>
 
 #include <boost/assert/source_location.hpp>
 #include <boost/throw_exception.hpp>
-#include <core/argparse.hh>
-#include <core/license-data.hh>
-#include <core/server.hh>
 #include <csignal>
 #include <filesystem>
 #include <iostream>
+#include <lsp/core/license-data.hh>
+#include <lsp/core/server.hh>
 #include <memory>
 #include <optional>
 
 #include "LibMacro.h"
-
-void boost::throw_exception(std::exception const& e, boost::source_location const&) {
-  LOG(ERROR) << e.what();
-  abort();
-}
 
 static constexpr void create_parser(argparse::ArgumentParser& parser) {
   ///=================== BASIC CONFIGURATION ======================
@@ -30,7 +25,7 @@ static constexpr void create_parser(argparse::ArgumentParser& parser) {
       .default_value(std::string(""))
       .help("Specify the configuration file");
 
-  parser.add_argument("--log").default_value("nitrated-lsp.log").help("Specify the log file");
+  parser.add_argument("--log").default_value("no3-lsp.log").help("Specify the log file");
 
   ///=================== CONNECTION CONFIGURATION ======================
 
@@ -39,69 +34,6 @@ static constexpr void create_parser(argparse::ArgumentParser& parser) {
   group.add_argument("--pipe").help("Specify the pipe file to connect to");
   group.add_argument("--port").help("Specify the port to connect to");
   group.add_argument("--stdio").default_value(false).implicit_value(true).help("Use standard I/O");
-}
-
-void signal_handler(int signal);
-
-static void install_signal_handlers() {
-  std::signal(SIGINT, signal_handler);
-  std::signal(SIGTERM, signal_handler);
-  std::signal(SIGSEGV, signal_handler);
-  std::signal(SIGABRT, signal_handler);
-  std::signal(SIGFPE, signal_handler);
-  std::signal(SIGILL, signal_handler);
-  std::signal(SIGBUS, signal_handler);
-}
-
-static void erase_signals() {
-  std::signal(SIGINT, SIG_DFL);
-  std::signal(SIGTERM, SIG_DFL);
-  std::signal(SIGSEGV, SIG_DFL);
-  std::signal(SIGABRT, SIG_DFL);
-  std::signal(SIGFPE, SIG_DFL);
-  std::signal(SIGILL, SIG_DFL);
-  std::signal(SIGBUS, SIG_DFL);
-}
-
-void signal_handler(int signal) {
-  LOG(INFO) << "Received signal: " << signal;
-
-  switch (signal) {
-    case SIGINT:
-    case SIGTERM:
-      LOG(INFO) << "Shutting down nitrated";
-      erase_signals();
-      exit(0);
-      break;
-    case SIGSEGV:
-      LOG(ERROR) << "Segmentation fault";
-      erase_signals();
-      exit(1);
-      break;
-    case SIGABRT:
-      LOG(ERROR) << "Aborted";
-      erase_signals();
-      abort();
-      break;
-    case SIGFPE:
-      LOG(ERROR) << "Floating point exception";
-      erase_signals();
-      abort();
-      break;
-    case SIGILL:
-      LOG(ERROR) << "Illegal instruction";
-      erase_signals();
-      abort();
-      break;
-    case SIGBUS:
-      LOG(ERROR) << "Bus error";
-      erase_signals();
-      abort();
-      break;
-    default:
-      LOG(WARNING) << "Unhandled signal: " << signal;
-      break;
-  }
 }
 
 LIB_EXPORT int nitrated_main(int argc, char** argv) {
@@ -135,8 +67,6 @@ LIB_EXPORT int nitrated_main(int argc, char** argv) {
     static MyLogSink sink(log_file);
     google::AddLogSink(&sink);
   }
-
-  install_signal_handlers();
 
   std::unique_ptr<Configuration> config;
   { /* Setup config */

@@ -5,10 +5,10 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
-#include <core/thread-pool.hh>
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <lsp/core/thread-pool.hh>
 #include <memory>
 #include <optional>
 #include <variant>

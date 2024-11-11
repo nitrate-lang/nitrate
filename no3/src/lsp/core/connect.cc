@@ -5,9 +5,9 @@
 #include <unistd.h>
 
 #include <charconv>
-#include <core/server.hh>
 #include <cstdint>
 #include <cstring>
+#include <lsp/core/server.hh>
 
 using ManagedHandle = std::optional<Connection>;
 

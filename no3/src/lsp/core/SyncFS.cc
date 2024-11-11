@@ -1,11 +1,11 @@
 #include <openssl/sha.h>
 
 #include <cmath>
-#include <core/SyncFS.hh>
-#include <core/server.hh>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <lsp/core/SyncFS.hh>
+#include <lsp/core/server.hh>
 #include <sstream>
 
 struct SyncFS::Impl {

@@ -4,12 +4,11 @@
 #include <rapidjson/writer.h>
 
 #include <chrono>
-#include <core/server.hh>
 #include <functional>
+#include <lsp/core/server.hh>
+#include <lsp/route/RoutesList.hh>
 #include <memory>
 #include <stop_token>
-
-#include "route/RoutesList.hh"
 
 ServerContext& ServerContext::the() {
   static ServerContext instance;
