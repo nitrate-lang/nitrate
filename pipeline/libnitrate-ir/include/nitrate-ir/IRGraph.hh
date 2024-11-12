@@ -955,6 +955,14 @@ namespace nr {
       }
     }
 
+    std::string_view getValueString() const noexcept {
+      if (m_value.is_native) [[likely]] {
+        return u128_2_cstr_interned(m_value.value);
+      } else {
+        return reinterpret_cast<const char *>(m_value.value);
+      }
+    }
+
     void setValue(uint128_t x) noexcept {
       if (x <= 9223372036854775807) [[likely]] {
         m_value.is_native = true;

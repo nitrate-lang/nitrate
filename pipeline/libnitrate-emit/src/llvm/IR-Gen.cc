@@ -1600,13 +1600,17 @@ static val_t QIR_NODE_INT_C(ctx_t &m, craft_t &, const Mode &, State &, nr::Int 
    * @note [Write assumptions here]
    */
 
+  unsigned __int128 lit = N->getValue().convert_to<unsigned __int128>();
+
   llvm::ConstantInt *R = nullptr;
-  unsigned __int128 lit = static_cast<unsigned __int128>(N->getValue());
 
   if (lit == 0) {
-    return llvm::ConstantInt::get(m.getContext(), llvm::APInt(32, 0));
+    R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(32, 0));
   } else if (lit > UINT64_MAX) {
-    R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(128, lit));
+    std::array<uint64_t, 2> parts;
+    parts[1] = (lit >> 64) & 0xffffffffffffffff;
+    parts[0] = lit & 0xffffffffffffffff;
+    R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(128, parts));
   } else {
     uint8_t l2 = std::log2(lit);
 
