@@ -112,7 +112,7 @@ static Type *binexpr_promote(Type *L, Type *R) {
 
   ///===========================================================================
   /// NOTE: If L && R are the same type, the type is their identity.
-  if (L->cmp_eq(R)) {
+  if (L->isSame(R)) {
     return L;
   }
   ///===========================================================================
@@ -642,7 +642,7 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node) {
           }
 
           bool homogeneous = std::all_of(types.begin(), types.end(),
-                                         [&](Type *X) { return X->cmp_eq(types.front()); });
+                                         [&](Type *X) { return X->isSame(types.front()); });
 
           if (homogeneous) {
             T = create<ArrayTy>(types.front(), types.size());

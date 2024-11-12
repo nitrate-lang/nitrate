@@ -211,7 +211,7 @@ CPP_EXPORT std::optional<nr::Type *> nr::Expr::getType() noexcept {
   return static_cast<Type *>(nr_infer(this));
 }
 
-CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
+CPP_EXPORT bool nr::Expr::isSame(const nr::Expr *other) const {
   nr_ty_t kind = getKind();
 
   if (kind != other->getKind()) {
@@ -225,7 +225,7 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
       if (a->m_op != b->m_op) {
         return false;
       }
-      return a->m_lhs->cmp_eq(b->m_lhs) && a->m_rhs->cmp_eq(b->m_rhs);
+      return a->m_lhs->isSame(b->m_lhs) && a->m_rhs->isSame(b->m_rhs);
     }
     case QIR_NODE_UNEXPR: {
       auto a = as<UnExpr>();
@@ -233,7 +233,7 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
       if (a->m_op != b->m_op) {
         return false;
       }
-      return a->m_expr->cmp_eq(b->m_expr);
+      return a->m_expr->isSame(b->m_expr);
     }
     case QIR_NODE_POST_UNEXPR: {
       auto a = as<PostUnExpr>();
@@ -241,7 +241,7 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
       if (a->m_op != b->m_op) {
         return false;
       }
-      return a->m_expr->cmp_eq(b->m_expr);
+      return a->m_expr->isSame(b->m_expr);
     }
     case QIR_NODE_INT: {
       return as<Int>()->getValue() == other->as<Int>()->getValue();
@@ -256,7 +256,7 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
         return false;
       }
       for (size_t i = 0; i < a->m_items.size(); i++) {
-        if (!a->m_items[i]->cmp_eq(b->m_items[i])) {
+        if (!a->m_items[i]->isSame(b->m_items[i])) {
           return false;
         }
       }
@@ -265,14 +265,14 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
     case QIR_NODE_CALL: {
       auto a = as<Call>();
       auto b = other->as<Call>();
-      if (!a->m_iref->cmp_eq(b->m_iref)) {
+      if (!a->m_iref->isSame(b->m_iref)) {
         return false;
       }
       if (a->m_args.size() != b->m_args.size()) {
         return false;
       }
       for (size_t i = 0; i < a->m_args.size(); i++) {
-        if (!a->m_args[i]->cmp_eq(b->m_args[i])) {
+        if (!a->m_args[i]->isSame(b->m_args[i])) {
           return false;
         }
       }
@@ -285,7 +285,7 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
         return false;
       }
       for (size_t i = 0; i < a->m_items.size(); i++) {
-        if (!a->m_items[i]->cmp_eq(b->m_items[i])) {
+        if (!a->m_items[i]->isSame(b->m_items[i])) {
           return false;
         }
       }
@@ -294,10 +294,10 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
     case QIR_NODE_INDEX: {
       auto a = as<Index>();
       auto b = other->as<Index>();
-      if (!a->m_expr->cmp_eq(b->m_expr)) {
+      if (!a->m_expr->isSame(b->m_expr)) {
         return false;
       }
-      if (!a->m_index->cmp_eq(b->m_index)) {
+      if (!a->m_index->isSame(b->m_index)) {
         return false;
       }
       return true;
@@ -311,7 +311,7 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
       if (a->m_abi_name != b->m_abi_name) {
         return false;
       }
-      return a->m_value->cmp_eq(b->m_value);
+      return a->m_value->isSame(b->m_value);
     }
     case QIR_NODE_LOCAL: {
       auto a = as<Local>();
@@ -319,10 +319,10 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
       if (a->m_name != b->m_name) {
         return false;
       }
-      return a->m_value->cmp_eq(b->m_value);
+      return a->m_value->isSame(b->m_value);
     }
     case QIR_NODE_RET: {
-      return as<Ret>()->m_expr->cmp_eq(other->as<Ret>()->m_expr);
+      return as<Ret>()->m_expr->isSame(other->as<Ret>()->m_expr);
     }
     case QIR_NODE_BRK: {
       return true;
@@ -333,13 +333,13 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
     case QIR_NODE_IF: {
       auto a = as<If>();
       auto b = other->as<If>();
-      if (!a->m_cond->cmp_eq(b->m_cond)) {
+      if (!a->m_cond->isSame(b->m_cond)) {
         return false;
       }
-      if (!a->m_then->cmp_eq(b->m_then)) {
+      if (!a->m_then->isSame(b->m_then)) {
         return false;
       }
-      if (!a->m_else->cmp_eq(b->m_else)) {
+      if (!a->m_else->isSame(b->m_else)) {
         return false;
       }
       return true;
@@ -347,10 +347,10 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
     case QIR_NODE_WHILE: {
       auto a = as<While>();
       auto b = other->as<While>();
-      if (!a->m_cond->cmp_eq(b->m_cond)) {
+      if (!a->m_cond->isSame(b->m_cond)) {
         return false;
       }
-      if (!a->m_body->cmp_eq(b->m_body)) {
+      if (!a->m_body->isSame(b->m_body)) {
         return false;
       }
       return true;
@@ -358,16 +358,16 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
     case QIR_NODE_FOR: {
       auto a = as<For>();
       auto b = other->as<For>();
-      if (!a->m_init->cmp_eq(b->m_init)) {
+      if (!a->m_init->isSame(b->m_init)) {
         return false;
       }
-      if (!a->m_cond->cmp_eq(b->m_cond)) {
+      if (!a->m_cond->isSame(b->m_cond)) {
         return false;
       }
-      if (!a->m_step->cmp_eq(b->m_step)) {
+      if (!a->m_step->isSame(b->m_step)) {
         return false;
       }
-      if (!a->m_body->cmp_eq(b->m_body)) {
+      if (!a->m_body->isSame(b->m_body)) {
         return false;
       }
       return true;
@@ -375,7 +375,7 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
     case QIR_NODE_FORM: {
       auto a = as<Form>();
       auto b = other->as<Form>();
-      if (!a->m_maxjobs->cmp_eq(b->m_maxjobs)) {
+      if (!a->m_maxjobs->isSame(b->m_maxjobs)) {
         return false;
       }
       if (a->m_idx_ident != b->m_idx_ident) {
@@ -384,10 +384,10 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
       if (a->m_val_ident != b->m_val_ident) {
         return false;
       }
-      if (!a->m_expr->cmp_eq(b->m_expr)) {
+      if (!a->m_expr->isSame(b->m_expr)) {
         return false;
       }
-      if (!a->m_body->cmp_eq(b->m_body)) {
+      if (!a->m_body->isSame(b->m_body)) {
         return false;
       }
       return true;
@@ -395,10 +395,10 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
     case QIR_NODE_CASE: {
       auto a = as<Case>();
       auto b = other->as<Case>();
-      if (!a->m_cond->cmp_eq(b->m_cond)) {
+      if (!a->m_cond->isSame(b->m_cond)) {
         return false;
       }
-      if (!a->m_body->cmp_eq(b->m_body)) {
+      if (!a->m_body->isSame(b->m_body)) {
         return false;
       }
       return true;
@@ -406,17 +406,17 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
     case QIR_NODE_SWITCH: {
       auto a = as<Switch>();
       auto b = other->as<Switch>();
-      if (!a->m_cond->cmp_eq(b->m_cond)) {
+      if (!a->m_cond->isSame(b->m_cond)) {
         return false;
       }
-      if (!a->m_default->cmp_eq(b->m_default)) {
+      if (!a->m_default->isSame(b->m_default)) {
         return false;
       }
       if (a->m_cases.size() != b->m_cases.size()) {
         return false;
       }
       for (size_t i = 0; i < a->m_cases.size(); i++) {
-        if (!a->m_cases[i]->cmp_eq(b->m_cases[i])) {
+        if (!a->m_cases[i]->isSame(b->m_cases[i])) {
           return false;
         }
       }
@@ -428,7 +428,7 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
       if (a->m_name != b->m_name) {
         return false;
       }
-      if (!a->m_return->cmp_eq(b->m_return)) {
+      if (!a->m_return->isSame(b->m_return)) {
         return false;
       }
       if (a->m_params.size() != b->m_params.size()) {
@@ -438,17 +438,17 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
         if (a->m_params[i].second != b->m_params[i].second) {
           return false;
         }
-        if (!a->m_params[i].first->cmp_eq(b->m_params[i].first)) {
+        if (!a->m_params[i].first->isSame(b->m_params[i].first)) {
           return false;
         }
       }
-      if (!a->m_body->cmp_eq(b->m_body)) {
+      if (!a->m_body->isSame(b->m_body)) {
         return false;
       }
       return true;
     }
     case QIR_NODE_ASM: {
-      qcore_implement("Expr::cmp_eq for QIR_NODE_ASM");
+      qcore_implement("Expr::isSame for QIR_NODE_ASM");
       break;
     }
     case QIR_NODE_IGN: {
@@ -472,7 +472,7 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
     case QIR_NODE_VOID_TY:
       return true;
     case QIR_NODE_PTR_TY: {
-      return as<PtrTy>()->m_pointee->cmp_eq(other->as<PtrTy>()->m_pointee);
+      return as<PtrTy>()->m_pointee->isSame(other->as<PtrTy>()->m_pointee);
     }
     case QIR_NODE_OPAQUE_TY: {
       return as<OpaqueTy>()->m_name == other->as<OpaqueTy>()->m_name;
@@ -484,7 +484,7 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
         return false;
       }
       for (size_t i = 0; i < a->m_fields.size(); i++) {
-        if (!a->m_fields[i]->cmp_eq(b->m_fields[i])) {
+        if (!a->m_fields[i]->isSame(b->m_fields[i])) {
           return false;
         }
       }
@@ -497,7 +497,7 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
         return false;
       }
       for (size_t i = 0; i < a->m_fields.size(); i++) {
-        if (!a->m_fields[i]->cmp_eq(b->m_fields[i])) {
+        if (!a->m_fields[i]->isSame(b->m_fields[i])) {
           return false;
         }
       }
@@ -506,7 +506,7 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
     case QIR_NODE_ARRAY_TY: {
       auto a = as<ArrayTy>();
       auto b = other->as<ArrayTy>();
-      if (!a->m_element->cmp_eq(b->m_element)) {
+      if (!a->m_element->isSame(b->m_element)) {
         return false;
       }
       if (a->m_size != b->m_size) {
@@ -521,11 +521,11 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
         return false;
       }
       for (size_t i = 0; i < a->m_params.size(); i++) {
-        if (!a->m_params[i]->cmp_eq(b->m_params[i])) {
+        if (!a->m_params[i]->isSame(b->m_params[i])) {
           return false;
         }
       }
-      if (!a->m_return->cmp_eq(b->m_return)) {
+      if (!a->m_return->isSame(b->m_return)) {
         return false;
       }
       if (a->m_attrs != b->m_attrs) {
@@ -543,7 +543,7 @@ CPP_EXPORT bool nr::Expr::cmp_eq(const nr::Expr *other) const {
         return false;
       }
 
-      throw std::runtime_error("Expr::cmp_eq: attempt to compare fine structure of QIR_NODE_TMP");
+      throw std::runtime_error("Expr::isSame: attempt to compare fine structure of QIR_NODE_TMP");
       break;
     }
   }
@@ -581,7 +581,7 @@ static bool isCyclicUtil(nr::Expr *base, std::unordered_set<nr::Expr *> &visited
   return has_cycle;
 }
 
-CPP_EXPORT bool nr::Expr::is_acyclic() const noexcept {
+CPP_EXPORT bool nr::Expr::isAcyclic() const noexcept {
   std::unordered_set<Expr *> visited, recStack;
   bool has_cycle = false;
 
@@ -1121,7 +1121,7 @@ CPP_EXPORT uint64_t Expr::getUniqId() const {
   }
 
   for (auto &[key, value] : id_map) {
-    if (key->cmp_eq(this)) {
+    if (key->isSame(this)) {
       return value;
     }
   }
@@ -1265,7 +1265,7 @@ CPP_EXPORT bool Type::is_bool() const { return getKind() == QIR_NODE_U1_TY; }
 
 CPP_EXPORT bool Type::is_ptr_to(const Type *type) const {
   if (is_pointer()) {
-    return as<PtrTy>()->m_pointee->cmp_eq(type);
+    return as<PtrTy>()->m_pointee->isSame(type);
   }
 
   return false;

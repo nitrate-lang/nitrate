@@ -39,6 +39,7 @@
 #include <cstring>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/Format.hh>
+#include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/Report.hh>

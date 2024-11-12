@@ -357,7 +357,7 @@ static bool recursive_resolve(nr::Expr **base) {
     /// TODO: BUG: IMPORTANT: Fix the resolution pass to guarantee that cyclic references are not
     /// created
 
-    // if (!(*_cur)->is_acyclic()) {
+    // if (!(*_cur)->isAcyclic()) {
     //   (*_cur)->getModule()->getDiag().push(
     //       QXIR_AUDIT_CONV,
     //       diag::DiagMessage(

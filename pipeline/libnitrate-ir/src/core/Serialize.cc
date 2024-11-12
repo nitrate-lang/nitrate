@@ -688,7 +688,7 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
 
 #if !defined(NDEBUG)
   std::unordered_set<Expr *> v;
-  bool is_cylic = !node->is_acyclic();
+  bool is_cylic = !node->isAcyclic();
 #endif
 
   char *body_content = NULL, *typedef_content = NULL;

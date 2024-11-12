@@ -64,7 +64,7 @@ using namespace nr::diag;
  */
 
 static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
-  if (L->cmp_eq(R)) {
+  if (L->isSame(R)) {
     return true;
   }
 

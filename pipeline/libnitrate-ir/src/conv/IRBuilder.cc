@@ -35,10 +35,10 @@
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 
-using namespace nr::builder;
+using namespace nr;
 
 NRBuilder::NRBuilder(qlex_t &lexer_instance,
-                     std::shared_ptr<TargetInfo> target_info SOURCE_LOCATION_PARAM) noexcept {
+                     TargetInfo target_info SOURCE_LOCATION_PARAM) noexcept {
   ignore_caller_info();
 
   m_lex = &lexer_instance;
@@ -113,16 +113,17 @@ void NRBuilder::contract_enforce_(bool cond, std::string_view cond_str SOURCE_LO
 #ifdef CALLEE_KNOWN
 
   qcore_panicf_(
-      "IRBuilder contract violation;\n"
+      "IRBuilder contract violation:\n"
+      "-----------------------------\n"
       "Condition: (%s);\n\n"
 
       "User File: %s\n"
       "User Line: %d\n"
-      "User Fn: %s\n"
+      "User Fn: %s\n\n"
 
       "Lib File: %s\n"
       "Lib Line: %d\n"
-      "Lib Fn: %s\n"
+      "Lib Fn: %s\n\n"
 
       "Errno: %s\n",
 
@@ -142,12 +143,13 @@ void NRBuilder::contract_enforce_(bool cond, std::string_view cond_str SOURCE_LO
 #else
 
   qcore_panicf_(
-      "IRBuilder contract violation;\n"
+      "IRBuilder contract violation:\n"
+      "-----------------------------\n"
       "Condition: (%s);\n\n"
 
       "Lib File: %s\n"
       "Lib Line: %d\n"
-      "Lib Fn: %s\n"
+      "Lib Fn: %s\n\n"
 
       "Errno: %s\n",
 

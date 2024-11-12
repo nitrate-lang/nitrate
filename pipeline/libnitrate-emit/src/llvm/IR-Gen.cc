@@ -847,7 +847,7 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s, llv
 
   val_t E;
 
-  if (LT->cmp_eq(RT)) {
+  if (LT->isSame(RT)) {
     return L;
   }
 
@@ -2298,7 +2298,7 @@ static bool check_switch_trivial(nr::Switch *N) {
       debug("Failed to get case condition type");
       return false;
     }
-    if (!x.value()->cmp_eq(C_T.value())) {
+    if (!x.value()->isSame(C_T.value())) {
       return false;
     }
   }

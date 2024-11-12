@@ -312,7 +312,7 @@ static void remove_unneeded_cast(Expr*, Expr** C) {
     if (E->getOp() == Op::CastAs || E->getOp() == Op::BitcastAs) {
       Type* LHT = E->getLHS()->getType().value_or(nullptr);
 
-      if (LHT && LHT->cmp_eq(E->getRHS())) {
+      if (LHT && LHT->isSame(E->getRHS())) {
         *C = E->getLHS();
       }
     }

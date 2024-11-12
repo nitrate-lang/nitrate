@@ -260,7 +260,7 @@ namespace nr {
     std::optional<Type *> getType() noexcept;
 
     template <typename T>
-    static T *safe_cast_as(Expr *ptr) noexcept {
+    static T *safeCastAs(Expr *ptr) noexcept {
       if constexpr (getTypeCode<T>()) {
       }  // Validate the type via a static_assert in getTypeCode.
 
@@ -479,7 +479,7 @@ namespace nr {
      */
     template <typename T>
     T *as() noexcept {
-      return safe_cast_as<T>(this);
+      return safeCastAs<T>(this);
     }
 
     /**
@@ -491,7 +491,7 @@ namespace nr {
      */
     template <typename T>
     const T *as() const noexcept {
-      return safe_cast_as<T>(const_cast<Expr *>(this));
+      return safeCastAs<T>(const_cast<Expr *>(this));
     }
 
     Expr *asExpr() noexcept { return this; }
@@ -512,9 +512,9 @@ namespace nr {
      * @return true If the nodes are equivalent (deep comparison).
      * @note This compare will be insensitive to metadata like module, source location, etc.
      */
-    bool cmp_eq(const Expr *other) const;
+    bool isSame(const Expr *other) const;
 
-    bool is_acyclic() const noexcept;
+    bool isAcyclic() const noexcept;
 
     /**
      * @brief Print the node to the output stream.
