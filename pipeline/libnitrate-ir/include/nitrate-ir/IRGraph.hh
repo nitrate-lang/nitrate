@@ -552,9 +552,9 @@ namespace nr {
     /// END:   Internal library use only
     ///=====================================================================
 
-  } __attribute__((packed)) __attribute__((aligned(8)));
+  } __attribute__((packed)) __attribute__((aligned(1)));
 
-  constexpr size_t EXPR_SIZE = sizeof(Expr);
+  static_assert(sizeof(Expr) == 8);
 
   class Type : public Expr {
     uint64_t getAlignBits();
@@ -904,7 +904,7 @@ namespace nr {
   class Int final : public Expr {
     QCLASS_REFLECT()
 
-    enum class TySize {
+    enum class TySize : uint8_t {
       U1,
       U8,
       U16,
@@ -917,10 +917,10 @@ namespace nr {
 #error "This code is only supported on x86_64"
 #endif
 
-    struct {
-      uint64_t is_native : 1;
-      uint64_t value : 63;
-    } __attribute__((packed)) m_value;
+    uint64_t m_value : 63;
+    uint8_t m_is_native : 1;
+    TySize m_size : 3;
+    uint8_t m_pad : 5;
 
     static constexpr uint64_t FLAG_BIT = 1ULL << 63;
 
@@ -931,73 +931,79 @@ namespace nr {
     Int(uint128_t val) : Expr(QIR_NODE_INT) { setValue(val); }
 
     Int(std::string_view str) : Expr(QIR_NODE_INT) {
-      m_value.is_native = false;
-      m_value.value = reinterpret_cast<uint64_t>(current->internString(str).data());
+      m_is_native = false;
+      m_value = reinterpret_cast<uint64_t>(current->internString(str).data());
 
       // optimize layout; demote string reprs to native if in range
       setValue(getValue());
     }
 
     uint128_t getValue() const noexcept {
-      if (m_value.is_native) [[likely]] {
-        return m_value.value;
+      if (m_is_native) [[likely]] {
+        return m_value;
       } else {
-        return str2u128(reinterpret_cast<const char *>(m_value.value));
+        return str2u128(reinterpret_cast<const char *>(m_value));
       }
     }
 
     std::string_view getValueString() const noexcept {
-      if (m_value.is_native) [[likely]] {
-        return u128_2_cstr_interned(m_value.value);
+      if (m_is_native) [[likely]] {
+        return u128_2_cstr_interned(m_value);
       } else {
-        return reinterpret_cast<const char *>(m_value.value);
+        return reinterpret_cast<const char *>(m_value);
       }
     }
 
     void setValue(uint128_t x) noexcept {
       if (x <= 9223372036854775807) [[likely]] {
-        m_value.is_native = true;
-        m_value.value = static_cast<uint64_t>(x);
+        m_is_native = true;
+        m_value = static_cast<uint64_t>(x);
       } else {
-        m_value.is_native = false;
-        m_value.value = reinterpret_cast<uint64_t>(u128_2_cstr_interned(x).data());
+        m_is_native = false;
+        m_value = reinterpret_cast<uint64_t>(u128_2_cstr_interned(x).data());
       }
     }
-  };
+  } __attribute__((packed));
 
-  constexpr size_t NR_INT_SIZE = sizeof(Int);
+  static_assert(sizeof(Int) == 17);
+
+  enum class FloatSize : uint8_t {
+    F16,
+    F32,
+    F64,
+    F128,
+  };
 
   class Float final : public Expr {
     QCLASS_REFLECT()
 
-    std::variant<double, const char *> m_data;
+    double m_data;
+    FloatSize m_size;
 
     static_assert(sizeof(double) == 8);
 
   public:
-    Float(double f64) : Expr(QIR_NODE_FLOAT), m_data{f64} {}
-    Float(std::string_view str) : Expr(QIR_NODE_FLOAT), m_data{str.data()} {}
-
-    bool isNativeRepresentation() const noexcept { return std::holds_alternative<double>(m_data); }
-
-    double getNativeRepresentation() const noexcept {
-      qcore_assert(isNativeRepresentation());
-      return std::get<double>(m_data);
+    Float(double dec, FloatSize size) : Expr(QIR_NODE_FLOAT), m_data{dec}, m_size(size) {}
+    Float(std::string_view str) : Expr(QIR_NODE_FLOAT) {
+      m_data = std::stod(std::string(str));
+      if (str.ends_with("f128")) {
+        m_size = FloatSize::F128;
+      } else if (str.ends_with("f32")) {
+        m_size = FloatSize::F32;
+      } else if (str.ends_with("f16")) {
+        m_size = FloatSize::F16;
+      } else {
+        m_size = FloatSize::F64;
+      }
     }
 
-    std::string_view getStringRepresentation() const noexcept {
-      qcore_assert(!isNativeRepresentation());
-      return std::get<const char *>(m_data);
-    }
+    FloatSize getSize() const noexcept { return m_size; }
+    void setSize(FloatSize size) noexcept { m_size = size; }
+    double getValue() const noexcept { return m_data; }
+    void setValue(double dec) noexcept { m_data = dec; }
+  } __attribute__((packed));
 
-    std::string getValue() const noexcept {
-      return isNativeRepresentation() ? std::to_string(getNativeRepresentation())
-                                      : std::string(getStringRepresentation());
-    }
-
-    void setValue(double f64) noexcept { m_data = f64; }
-    void setValue(std::string_view str) noexcept { m_data = str.data(); }
-  };
+  static_assert(sizeof(Float) == 17);
 
   typedef std::vector<Expr *, Arena<Expr *>> ListItems;
 

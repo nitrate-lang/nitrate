@@ -605,18 +605,21 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node) {
       case QIR_NODE_FLOAT: {
         Float *F = E->as<Float>();
 
-        if (F->isNativeRepresentation()) {
-          T = create<F64Ty>();
-        } else {
-          std::string_view val = F->getStringRepresentation();
-          if (val.ends_with("f128")) {
-            T = create<F128Ty>();
-          } else if (val.ends_with("f32")) {
+        switch (F->getSize()) {
+          case nr::FloatSize::F16:
+            T = create<F16Ty>();
+            break;
+          case nr::FloatSize::F32:
             T = create<F32Ty>();
-          } else {
-            T = create<F64Ty>();  // Default to f64
-          }
+            break;
+          case nr::FloatSize::F64:
+            T = create<F64Ty>();
+            break;
+          case nr::FloatSize::F128:
+            T = create<F128Ty>();
+            break;
         }
+
         break;
       }
       case QIR_NODE_LIST: {

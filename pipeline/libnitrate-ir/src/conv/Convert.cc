@@ -413,7 +413,8 @@ nr::Expr *nrgen_lower_unexpr(ConvState &s, nr::Expr *rhs, qlex_op_t op) {
     }
     case qOpSizeof: {
       auto bits = nr::create<nr::UnExpr>(rhs, nr::Op::Bitsizeof);
-      auto arg = nr::create<nr::BinExpr>(bits, nr::create<nr::Float>(8), nr::Op::Slash);
+      auto arg = nr::create<nr::BinExpr>(bits, nr::create<nr::Float>(8, nr::FloatSize::F64),
+                                         nr::Op::Slash);
       return create_simple_call(s, "std::ceil", {{"0", arg}});
     }
     case qOpAlignof: {

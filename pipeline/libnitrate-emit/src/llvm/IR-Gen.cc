@@ -69,7 +69,6 @@
 #include <nitrate-ir/TypeDecl.h>
 #include <sys/types.h>
 
-#include <charconv>
 #include <cstdint>
 #include <iostream>
 #include <memory>
@@ -87,10 +86,12 @@
 #endif
 
 /// HACK: Fix linker error with c++ boost.
-void boost::throw_exception(std::exception const &m) {
-  std::cerr << "boost::throw_exception: " << m.what();
-  std::terminate();
-}
+namespace boost {
+  void throw_exception(std::exception const &m) {
+    std::cerr << "boost::throw_exception: " << m.what();
+    std::terminate();
+  }
+}  // namespace boost
 
 class OStreamWriter : public std::streambuf {
   FILE *m_file;
@@ -1633,20 +1634,7 @@ static val_t QIR_NODE_FLOAT_C(ctx_t &m, craft_t &, const Mode &, State &, nr::Fl
    * @note [Write assumptions here]
    */
 
-  llvm::ConstantFP *R;
-
-  if (N->isNativeRepresentation()) {
-    double lit = N->getNativeRepresentation();
-    R = llvm::ConstantFP::get(m.getContext(), llvm::APFloat(lit));
-  } else {
-    std::string_view lit_fstr = N->getStringRepresentation();
-    double lit;
-
-    std::from_chars(lit_fstr.data(), lit_fstr.data() + lit_fstr.size(), lit);
-    R = llvm::ConstantFP::get(m.getContext(), llvm::APFloat(lit));
-  }
-
-  return R;
+  return llvm::ConstantFP::get(m.getContext(), llvm::APFloat(N->getValue()));
 }
 
 static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::List *N) {

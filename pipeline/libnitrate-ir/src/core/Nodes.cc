@@ -937,7 +937,10 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
         break;
       }
       case QIR_NODE_FLOAT: {
-        MIXIN_STRING(cur->as<Float>()->getValue());
+        double v = cur->as<Float>()->getValue();
+        FloatSize s = cur->as<Float>()->getSize();
+        MIXIN_PRIMITIVE(v);
+        MIXIN_PRIMITIVE(s);
         break;
       }
       case QIR_NODE_LIST: {
