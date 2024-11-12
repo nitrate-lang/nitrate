@@ -327,7 +327,6 @@ nr_node_t *nr_clone_impl(const nr_node_t *_node,
   qcore_assert(out != nullptr, "nr_clone: failed to clone node");
 
   out->setLocDangerous(in->getLoc());
-  out->setMutable(in->isMutable());
 
   map[in] = out;
   in_visited.insert(in);

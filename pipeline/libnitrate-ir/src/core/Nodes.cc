@@ -41,6 +41,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <set>
@@ -63,6 +64,21 @@ void *ArenaAllocatorImpl::allocate(std::size_t size) {
 void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }
 
 ///=============================================================================
+
+CPP_EXPORT ExtensionData *Expr::getExtensionData() noexcept {
+  qmodule_t *mod = getModule();
+  qcore_assert(mod != nullptr, "Module is not set");
+
+  auto it = mod->getExtensionData().find(m_extension_ptr);
+
+  if (it == mod->getExtensionData().end()) [[unlikely]] {
+    return mod->getExtensionData()
+        .emplace(mod->getExtensionDataCtr()++, std::make_unique<ExtensionData>())
+        .first->second.get();
+  }
+
+  return it->second.get();
+}
 
 CPP_EXPORT uint32_t Expr::getKindSize(nr_ty_t type) noexcept {
   static const std::unordered_map<nr_ty_t, uint32_t> sizes = {
@@ -799,45 +815,53 @@ CPP_EXPORT std::string_view nr::Expr::getName() const noexcept {
   return R;
 }
 
-CPP_EXPORT std::pair<qlex_loc_t, qlex_loc_t> nr::Expr::getLoc() const noexcept {
+CPP_EXPORT std::pair<qlex_loc_t, qlex_loc_t> nr::Expr::getLoc() noexcept {
+  ExtensionData *ext = getExtensionData();
+
   qmodule_t *mod = getModule();
   qcore_assert(mod != nullptr, "Module is not set");
 
   qlex_t *lexer = mod->getLexer();
   qcore_assert(lexer != nullptr, "Lexer is not set");
 
-  return {m_start_loc, qlex_offset(lexer, m_start_loc, m_loc_size)};
+  return {ext->loc_begin, qlex_offset(lexer, ext->loc_begin, ext->loc_size)};
 }
 
-CPP_EXPORT qlex_loc_t nr::Expr::locBeg() const noexcept {
+CPP_EXPORT qlex_loc_t nr::Expr::locBeg() noexcept {
+  ExtensionData *ext = getExtensionData();
+
   qmodule_t *mod = getModule();
   qcore_assert(mod != nullptr, "Module is not set");
 
   qlex_t *lexer = mod->getLexer();
   qcore_assert(lexer != nullptr, "Lexer is not set");
 
-  return m_start_loc;
+  return ext->loc_begin;
 }
 
-CPP_EXPORT qlex_loc_t nr::Expr::locEnd() const noexcept {
+CPP_EXPORT qlex_loc_t nr::Expr::locEnd() noexcept {
+  ExtensionData *ext = getExtensionData();
+
   qmodule_t *mod = getModule();
   qcore_assert(mod != nullptr, "Module is not set");
 
   qlex_t *lexer = mod->getLexer();
   qcore_assert(lexer != nullptr, "Lexer is not set");
 
-  return qlex_offset(lexer, m_start_loc, m_loc_size);
+  return qlex_offset(lexer, ext->loc_begin, ext->loc_size);
 }
 
 CPP_EXPORT void nr::Expr::setLocDangerous(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept {
+  ExtensionData *ext = getExtensionData();
+
   qmodule_t *mod = getModule();
   qcore_assert(mod != nullptr, "Module is not set");
 
   qlex_t *lexer = mod->getLexer();
   qcore_assert(lexer != nullptr, "Lexer is not set");
 
-  m_start_loc = loc.first;
-  m_loc_size = qlex_span(lexer, loc.first, loc.second);
+  ext->loc_begin = loc.first;
+  ext->loc_size = qlex_span(lexer, loc.first, loc.second);
 }
 
 CPP_EXPORT Type *Expr::asType() noexcept {

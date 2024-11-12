@@ -123,23 +123,17 @@ namespace nr {
 
     nr_ty_t m_node_type : 6;        /* Typecode of this node. */
     nr::ModuleId m_module_idx : 16; /* The module context index. */
-    uint64_t m_res : 1;             /* reserved */
-    uint64_t m_mutable : 1;         /* Is this expression mutable? */
-
-    qlex_loc_t m_start_loc;
-    uint16_t m_loc_size;  // Diagnostics can not span more than 64K bytes.
+    uint64_t m_extension_ptr : 42;  /* Index into QModule map to get more properties */
 
     Expr(const Expr &) = delete;
     Expr &operator=(const Expr &) = delete;
 
+    // Created lazily
+    ExtensionData *getExtensionData() noexcept;
+
   public:
     Expr(nr_ty_t ty)
-        : m_node_type(ty),
-          m_module_idx(std::numeric_limits<ModuleId>::max()),
-          m_res(0),
-          m_mutable(1),
-          m_start_loc{0},
-          m_loc_size(0) {}
+        : m_node_type(ty), m_module_idx(std::numeric_limits<ModuleId>::max()), m_extension_ptr(0) {}
 
     static uint32_t getKindSize(nr_ty_t kind) noexcept;
     nr_ty_t getKind() const noexcept { return m_node_type; }
@@ -249,7 +243,6 @@ namespace nr {
     }
 
     bool isType() const noexcept;
-    inline bool isMutable() const noexcept { return m_mutable; }
     inline bool isLiteral() const noexcept {
       return m_node_type == QIR_NODE_INT || m_node_type == QIR_NODE_FLOAT;
     }
@@ -257,9 +250,9 @@ namespace nr {
     // Returns "" if the construct is not named.
     std::string_view getName() const noexcept;
 
-    std::pair<qlex_loc_t, qlex_loc_t> getLoc() const noexcept;
-    qlex_loc_t locBeg() const noexcept;
-    qlex_loc_t locEnd() const noexcept;
+    std::pair<qlex_loc_t, qlex_loc_t> getLoc() noexcept;
+    qlex_loc_t locBeg() noexcept;
+    qlex_loc_t locEnd() noexcept;
 
     qmodule_t *getModule() const noexcept;
     std::optional<Type *> getType() noexcept;
@@ -556,8 +549,6 @@ namespace nr {
     /// BEGIN: Internal library use only
     void setModuleDangerous(qmodule_t *module) noexcept;
     void setLocDangerous(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept;
-    inline void setMutable(bool is_mut) noexcept { m_mutable = is_mut; }
-
     /// END:   Internal library use only
     ///=====================================================================
 

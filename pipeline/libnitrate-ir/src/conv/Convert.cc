@@ -1993,7 +1993,6 @@ namespace nr {
     if (s.inside_function) {
       std::string_view name = memorize(n->get_name());
       Local *local = create<Local>(name, init, s.abi_mode);
-      local->setMutable(false);
 
       qcore_assert(!s.local_scope.empty());
       if (s.local_scope.top().contains(name)) {
@@ -2005,7 +2004,6 @@ namespace nr {
     } else {
       std::string_view name = memorize(std::string_view(s.cur_named(n->get_name())));
       auto g = create<Local>(name, init, s.abi_mode);
-      g->setMutable(false);
       current->getGlobalVariables().insert({name, g});
       return g;
     }

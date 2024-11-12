@@ -37,6 +37,7 @@
 #include <nitrate-lexer/Lexer.h>
 
 #include <boost/bimap.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -131,6 +132,11 @@ namespace nr {
   class Fn;
   class Asm;
   class Tmp;
+
+  struct ExtensionData {
+    qlex_loc_t loc_begin = {};
+    uint16_t loc_size = 0;
+  };
 }  // namespace nr
 
 struct qmodule_t final {
@@ -147,19 +153,22 @@ private:
   using NamedConstMap = std::unordered_map<std::string_view, nr::Expr *>;
 
   ///=============================================================================
-  nr::Expr *m_root;                                 /* Root node of the module */
-  std::unordered_map<uint64_t, uint64_t> m_key_map; /* Place for IRGraph key-value pairs */
+  nr::Expr *m_root{};                                 /* Root node of the module */
+  std::unordered_map<uint64_t, uint64_t> m_key_map{}; /* Place for IRGraph key-value pairs */
+  std::unordered_map<uint64_t, std::unique_ptr<nr::ExtensionData>> m_extension_data_map{};
+  uint64_t m_extension_data_ctr = 1;
+
   ///=============================================================================
 
   ///=============================================================================
   /// BEGIN: Data structures requisite for efficient lowering
-  FunctionNameBimap functions;          /* Lookup for function names to their nodes */
-  GlobalVariableNameBimap variables;    /* Lookup for global variables names to their nodes */
-  FunctionParamMap m_parameters;        /* Lookup for function parameters */
-  TypenameMap m_typedef_map;            /* Lookup type names to their type nodes */
-  CompositeFieldMap m_composite_fields; /* */
-  NamedConstMap m_named_constants;      /* Lookup for named constants */
-  bool m_failbit;                       /* Set if module lowering fails */
+  FunctionNameBimap functions{};          /* Lookup for function names to their nodes */
+  GlobalVariableNameBimap variables{};    /* Lookup for global variables names to their nodes */
+  FunctionParamMap m_parameters{};        /* Lookup for function parameters */
+  TypenameMap m_typedef_map{};            /* Lookup type names to their type nodes */
+  CompositeFieldMap m_composite_fields{}; /* */
+  NamedConstMap m_named_constants{};      /* Lookup for named constants */
+  bool m_failbit{};                       /* Set if module lowering fails */
 
   void reset_module_temporaries(void) {
     functions.clear(), variables.clear(), m_parameters.clear();
@@ -169,20 +178,20 @@ private:
   /// END: Data structures requisite for efficient lowering
   ///=============================================================================
 
-  std::unique_ptr<nr::diag::DiagnosticManager> m_diag; /* Diagnostic manager instance */
-  std::unique_ptr<nr::TypeManager> m_type_mgr;         /* Type manager instance */
-  std::unordered_set<std::string> m_strings;           /* Interned strings */
-  std::vector<std::string> m_passes_applied;           /* Module mutation tracking */
-  std::vector<std::string> m_checks_applied;           /* Module analysis pass tracking */
-  nr::TargetInfo m_target_info;                        /* Build target information */
-  std::string m_module_name;                           /* Not nessesarily unique module name */
-  nr::ModuleId m_id;                                   /* Module ID unique to the
-                                                            process during its lifetime */
-  bool m_diagnostics_enabled;
+  std::unique_ptr<nr::diag::DiagnosticManager> m_diag{}; /* Diagnostic manager instance */
+  std::unique_ptr<nr::TypeManager> m_type_mgr{};         /* Type manager instance */
+  std::unordered_set<std::string> m_strings{};           /* Interned strings */
+  std::vector<std::string> m_passes_applied{};           /* Module mutation tracking */
+  std::vector<std::string> m_checks_applied{};           /* Module analysis pass tracking */
+  nr::TargetInfo m_target_info{};                        /* Build target information */
+  std::string m_module_name{};                           /* Not nessesarily unique module name */
+  nr::ModuleId m_id{};                                   /* Module ID unique to the
+                                                             process during its lifetime */
+  bool m_diagnostics_enabled{};
 
-  qcore_arena m_node_arena;
-  nr_conf_t *m_conf;
-  qlex_t *m_lexer;
+  qcore_arena m_node_arena{};
+  nr_conf_t *m_conf{};
+  qlex_t *m_lexer{};
 
 public:
   qmodule_t(nr::ModuleId id, const std::string &name = "?");
@@ -202,6 +211,8 @@ public:
   nr_conf_t *getConf() noexcept { return m_conf; }
 
   std::unordered_map<uint64_t, uint64_t> &getKeyMap() noexcept { return m_key_map; }
+  auto &getExtensionData() noexcept { return m_extension_data_map; }
+  uint64_t &getExtensionDataCtr() noexcept { return m_extension_data_ctr; }
 
   void enableDiagnostics(bool is_enabled) noexcept;
   bool isDiagnosticsEnabled() const noexcept { return m_diagnostics_enabled; }
