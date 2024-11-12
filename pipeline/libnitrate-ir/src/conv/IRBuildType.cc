@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <cctype>
 #define IRBUILDER_IMPL
 
 #include <nitrate-core/Error.h>
@@ -163,7 +164,7 @@ PtrTy *NRBuilder::getPtrTy(Type *pointee SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_root != nullptr);
   contract_enforce(pointee != nullptr && static_cast<Expr *>(pointee)->isType());
 
-  PtrTy *ptr_ty = create<PtrTy>(pointee);
+  PtrTy *ptr_ty = create<PtrTy>(compiler_trace(pointee));
 
   return compiler_trace(debug_info(ptr_ty, DEBUG_INFO));
 }
@@ -171,7 +172,8 @@ PtrTy *NRBuilder::getPtrTy(Type *pointee SOURCE_LOCATION_PARAM) noexcept {
 OpaqueTy *NRBuilder::getOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
   contract_enforce(m_root != nullptr);
-  contract_enforce(!name.empty() && name[0] != '?');
+  contract_enforce(!name.empty() && std::isalnum(name[0]) &&
+                   "Non alphanumeric starter characters are reserved internally");
 
   OpaqueTy *opaque_ty = create<OpaqueTy>(intern(name));
 
@@ -224,19 +226,30 @@ UnionTy *NRBuilder::getUnionTy(std::span<Type *> fields SOURCE_LOCATION_PARAM) n
 
 ArrayTy *NRBuilder::getArrayTy(Type *element_ty,
                                Expr *constant_size SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
+  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(element_ty != nullptr && static_cast<Expr *>(element_ty)->isType());
+  contract_enforce(constant_size != nullptr);
+
+  /// TODO: Interpret the expression and get the resulting integer.
+  /// TODO: Check the integer is valid and >= 0.
   qcore_implement(__func__);
-  (void)element_ty;
-  (void)constant_size;
-  ignore_caller_info();
+
+  size_t the_size = 0;
+
+  ArrayTy *array_ty = create<ArrayTy>(compiler_trace(element_ty), the_size);
+
+  return compiler_trace(debug_info(array_ty, DEBUG_INFO));
 }
 
 ArrayTy *NRBuilder::getArrayTy(Type *element_ty, size_t count SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement(__func__);
-  (void)element_ty;
-  (void)count;
-  ignore_caller_info();
+  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(element_ty != nullptr && static_cast<Expr *>(element_ty)->isType());
+
+  ArrayTy *array_ty = create<ArrayTy>(compiler_trace(element_ty), count);
+
+  return compiler_trace(debug_info(array_ty, DEBUG_INFO));
 }
 
 FnTy *getFnTy(std::span<Type *> params, Type *ret_ty, bool is_variadic, Purity purity,
