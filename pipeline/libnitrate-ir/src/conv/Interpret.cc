@@ -35,507 +35,480 @@
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <nitrate-ir/IRGraph.hh>
+#include <stack>
 
 using namespace nr;
 
-#define intern(__str) x->getModule()->internString(__str)
-
-nr::Expr *nr::evaluate_to_literal(nr::Expr *x) noexcept {
-  Expr *ANS = nullptr;
-
-  nr::current = x->getModule();
-
-  // switch (x->getKind()) {
-  //   case QIR_NODE_BINEXPR: {
-  //     Op op = x->as<BinExpr>()->getOp();
-  //     Expr *L = evaluate_to_literal(x->as<BinExpr>()->getLHS());
-  //     if (!L) {
-  //       break;
-  //     }
-  //     Expr *R = evaluate_to_literal(x->as<BinExpr>()->getRHS());
-  //     if (!R) {
-  //       break;
-  //     }
-
-  //     switch (op) {
-  //       case Op::Plus: {
-  //         /// TODO:
-  //         break;
-  //       }
-
-  //       case Op::Minus: {
-  //         /// TODO:
-  //         break;
-  //       }
-
-  //       case Op::Times: {
-  //         /// TODO:
-  //         break;
-  //       }
-
-  //       case Op::Slash: {
-  //         /// TODO:
-  //         break;
-  //       }
-
-  //       case Op::Percent: {
-  //         /// TODO:
-  //         break;
-  //       }
-
-  //       case Op::BitAnd: {
-  //         /// TODO:
-  //         break;
-  //       }
-
-  //       case Op::BitOr: {
-  //         /// TODO:
-  //         break;
-  //       }
-
-  //       case Op::BitXor: {
-  //         /// TODO:
-  //         break;
-  //       }
-
-  //       case Op::LogicAnd: {
-  //         /// TODO:
-  //         break;
-  //       }
-
-  //       case Op::LogicOr: {
-  //         /// TODO:
-  //         break;
-  //       }
-
-  //       case Op::LShift: {
-  //         if (L->getKind() != QIR_NODE_INT || R->getKind() != QIR_NODE_INT) {
-  //           break;
-  //         }
-
-  //         uint64_t rhs = 0;
-
-  //         {  // Only works if rhs is native
-  //           boost::multiprecision::cpp_int tmp(R->as<Int>()->getValue());
-
-  //           if (tmp < UINT64_MAX) {
-  //             rhs = tmp.convert_to<uint64_t>();
-  //           } else {
-  //             break;
-  //           }
-  //         }
-
-  //         boost::multiprecision::cpp_int lhs(L->as<Int>()->getValue());
-  //         boost::multiprecision::cpp_int RES = lhs << rhs;
-  //         /// TODO: Mask the result
-  //         ANS = create<Int>(intern(RES.str()));
-  //         break;
-  //       }
-
-  //       case Op::RShift: {
-  //         if (L->getKind() != QIR_NODE_INT || R->getKind() != QIR_NODE_INT) {
-  //           break;
-  //         }
-
-  //         uint64_t rhs = 0;
-
-  //         {  // Only works if rhs is native
-  //           boost::multiprecision::cpp_int tmp(R->as<Int>()->getValue());
-
-  //           if (tmp < UINT64_MAX) {
-  //             rhs = tmp.convert_to<uint64_t>();
-  //           } else {
-  //             break;
-  //           }
-  //         }
-
-  //         boost::multiprecision::cpp_int lhs(L->as<Int>()->getValue());
-  //         boost::multiprecision::cpp_int RES = lhs >> rhs;
-  //         /// TODO: Mask the result
-  //         ANS = create<Int>(intern(RES.str()));
-  //         break;
-  //       }
-
-  //       case Op::ROTR: {
-  //         if (L->getKind() != QIR_NODE_INT || R->getKind() != QIR_NODE_INT) {
-  //           break;
-  //         }
-
-  //         uint64_t rhs = 0;
-
-  //         {  // Only works if rhs is native
-  //           boost::multiprecision::cpp_int tmp(R->as<Int>()->getValue());
-
-  //           if (tmp < UINT64_MAX) {
-  //             rhs = tmp.convert_to<uint64_t>();
-  //           } else {
-  //             break;
-  //           }
-  //         }
-
-  //         Type *T = L->getType().value_or(nullptr);
-  //         if (!T) {
-  //           break;
-  //         }
-  //         size_t w = T->getSizeBits();
-  //         boost::multiprecision::cpp_int lhs(L->as<Int>()->getValue());
-  //         boost::multiprecision::cpp_int RES = (lhs >> rhs) | (lhs << (w - rhs));
-  //         /// TODO: Mask the result?
-  //         ANS = create<Int>(intern(RES.str()));
-  //         break;
-  //       }
-
-  //       case Op::ROTL: {
-  //         if (L->getKind() != QIR_NODE_INT || R->getKind() != QIR_NODE_INT) {
-  //           break;
-  //         }
-
-  //         uint64_t rhs = 0;
-
-  //         {  // Only works if rhs is native
-  //           boost::multiprecision::cpp_int tmp(R->as<Int>()->getValue());
-
-  //           if (tmp < UINT64_MAX) {
-  //             rhs = tmp.convert_to<uint64_t>();
-  //           } else {
-  //             break;
-  //           }
-  //         }
-
-  //         Type *T = L->getType().value_or(nullptr);
-  //         if (!T) {
-  //           break;
-  //         }
-  //         size_t w = T->getSizeBits();
-  //         boost::multiprecision::cpp_int lhs(L->as<Int>()->getValue());
-  //         boost::multiprecision::cpp_int RES = (lhs << rhs) | (lhs >> (w - rhs));
-  //         /// TODO: Mask the result?
-  //         ANS = create<Int>(intern(RES.str()));
-  //         break;
-  //       }
-
-  //       case Op::LT: {
-  //         boost::multiprecision::cpp_dec_float<128> lhs, rhs;
-
-  //         if (L->getKind() == QIR_NODE_INT) {
-  //           lhs = static_cast<unsigned __int128>(L->as<Int>()->getValue());
-  //         } else if (L->getKind() == QIR_NODE_FLOAT) {
-  //           lhs = L->as<Float>()->getValue();
-  //         } else {
-  //           break;
-  //         }
-
-  //         if (R->getKind() == QIR_NODE_INT) {
-  //           rhs = static_cast<unsigned __int128>(L->as<Int>()->getValue());
-  //         } else if (R->getKind() == QIR_NODE_FLOAT) {
-  //           rhs = R->as<Float>()->getValue().c_str();
-  //         } else {
-  //           break;
-  //         }
-
-  //         ANS = create<Int>(lhs.compare(rhs) < 0);
-  //         break;
-  //       }
-
-  //       case Op::GT: {
-  //         boost::multiprecision::cpp_dec_float<128> lhs, rhs;
-
-  //         if (L->getKind() == QIR_NODE_INT) {
-  //           lhs = static_cast<unsigned __int128>(L->as<Int>()->getValue());
-  //         } else if (L->getKind() == QIR_NODE_FLOAT) {
-  //           lhs = L->as<Float>()->getValue().c_str();
-  //         } else {
-  //           break;
-  //         }
-
-  //         if (R->getKind() == QIR_NODE_INT) {
-  //           rhs = R->as<Int>()->getValue().c_str();
-  //         } else if (R->getKind() == QIR_NODE_FLOAT) {
-  //           rhs = R->as<Float>()->getValue().c_str();
-  //         } else {
-  //           break;
-  //         }
-
-  //         ANS = create<Int>(lhs.compare(rhs) > 0);
-  //         break;
-  //       }
-
-  //       case Op::LE: {
-  //         boost::multiprecision::cpp_dec_float<128> lhs, rhs;
-
-  //         if (L->getKind() == QIR_NODE_INT) {
-  //           lhs = static_cast<unsigned __int128>(L->as<Int>()->getValue());
-  //         } else if (L->getKind() == QIR_NODE_FLOAT) {
-  //           lhs = L->as<Float>()->getValue().c_str();
-  //         } else {
-  //           break;
-  //         }
-
-  //         if (R->getKind() == QIR_NODE_INT) {
-  //           rhs = R->as<Int>()->getValue().c_str();
-  //         } else if (R->getKind() == QIR_NODE_FLOAT) {
-  //           rhs = R->as<Float>()->getValue().c_str();
-  //         } else {
-  //           break;
-  //         }
-
-  //         ANS = create<Int>(lhs.compare(rhs) <= 0);
-  //         break;
-  //       }
-
-  //       case Op::GE: {
-  //         boost::multiprecision::cpp_dec_float<128> lhs, rhs;
-
-  //         if (L->getKind() == QIR_NODE_INT) {
-  //           lhs = static_cast<unsigned __int128>(L->as<Int>()->getValue());
-  //         } else if (L->getKind() == QIR_NODE_FLOAT) {
-  //           lhs = L->as<Float>()->getValue().c_str();
-  //         } else {
-  //           break;
-  //         }
-
-  //         if (R->getKind() == QIR_NODE_INT) {
-  //           rhs = R->as<Int>()->getValue().c_str();
-  //         } else if (R->getKind() == QIR_NODE_FLOAT) {
-  //           rhs = R->as<Float>()->getValue().c_str();
-  //         } else {
-  //           break;
-  //         }
-
-  //         ANS = create<Int>(lhs.compare(rhs) >= 0);
-  //         break;
-  //       }
-
-  //       case Op::Eq: {
-  //         boost::multiprecision::cpp_dec_float<128> lhs, rhs;
-
-  //         if (L->getKind() == QIR_NODE_INT) {
-  //           lhs = static_cast<unsigned __int128>(L->as<Int>()->getValue());
-  //         } else if (L->getKind() == QIR_NODE_FLOAT) {
-  //           lhs = L->as<Float>()->getValue().c_str();
-  //         } else {
-  //           break;
-  //         }
-
-  //         if (R->getKind() == QIR_NODE_INT) {
-  //           rhs = R->as<Int>()->getValue().c_str();
-  //         } else if (R->getKind() == QIR_NODE_FLOAT) {
-  //           rhs = R->as<Float>()->getValue().c_str();
-  //         } else {
-  //           break;
-  //         }
-
-  //         ANS = create<Int>(lhs.compare(rhs) == 0);
-  //         break;
-  //       }
-
-  //       case Op::NE: {
-  //         boost::multiprecision::cpp_dec_float<128> lhs, rhs;
-
-  //         if (L->getKind() == QIR_NODE_INT) {
-  //           lhs = static_cast<unsigned __int128>(L->as<Int>()->getValue());
-  //         } else if (L->getKind() == QIR_NODE_FLOAT) {
-  //           lhs = L->as<Float>()->getValue().c_str();
-  //         } else {
-  //           break;
-  //         }
-
-  //         if (R->getKind() == QIR_NODE_INT) {
-  //           rhs = R->as<Int>()->getValue().c_str();
-  //         } else if (R->getKind() == QIR_NODE_FLOAT) {
-  //           rhs = R->as<Float>()->getValue().c_str();
-  //         } else {
-  //           break;
-  //         }
-
-  //         ANS = create<Int>(lhs.compare(rhs) != 0);
-  //         break;
-  //       }
-
-  //       case Op::BitcastAs: {
-  //         /// TODO:
-  //         break;
-  //       }
-
-  //       case Op::CastAs: {
-  //         /// TODO:
-  //         break;
-  //       }
-
-  //       default: {
-  //         qcore_panic("Unknown binary operator in expression evaluation");
-  //         break;
-  //       }
-  //     }
-  //     break;
-  //   }
-
-  //   case QIR_NODE_UNEXPR: {
-  //     Op op = x->as<UnExpr>()->getOp();
-  //     Expr *E = evaluate_to_literal(x->as<UnExpr>()->getExpr());
-  //     if (!E) {
-  //       break;
-  //     }
-
-  //     switch (op) {
-  //       case Op::Plus: {
-  //         if (E->getKind() != QIR_NODE_INT && E->getKind() != QIR_NODE_FLOAT) {
-  //           break;
-  //         }
-
-  //         ANS = E;
-  //         break;
-  //       }
-
-  //       case Op::Minus: {
-  //         if (E->getKind() != QIR_NODE_INT && E->getKind() != QIR_NODE_FLOAT) {
-  //           break;
-  //         }
-  //         // Unsupported.
-
-  //         break;
-  //       }
-
-  //       case Op::BitNot: {
-  //         boost::multiprecision::cpp_int val;
-
-  //         if (E->getKind() == QIR_NODE_INT) {
-  //           val = ~boost::multiprecision::cpp_int(E->as<Int>()->getValue());
-
-  //           /// TODO: Mask the result to the correct size.
-  //         } else {
-  //           break;
-  //         }
-
-  //         ANS = create<Int>(intern(val.str()));
-  //         break;
-  //       }
-
-  //       case Op::LogicNot: {
-  //         if (E->getKind() == QIR_NODE_FLOAT) {
-  //           ANS = create<Int>(E->as<Float>()->getValue() == "0");
-  //           break;
-  //         }
-
-  //         boost::multiprecision::cpp_int val;
-
-  //         if (E->getKind() == QIR_NODE_INT) {
-  //           val = !boost::multiprecision::cpp_int(E->as<Int>()->getValue());
-  //         } else {
-  //           break;
-  //         }
-
-  //         ANS = create<Int>(intern(val.str()));
-  //         break;
-  //       }
-
-  //       case Op::Alignof: {
-  //         Type *T = E->getType().value_or(nullptr);
-  //         if (!T) {
-  //           break;
-  //         }
-  //         ANS = create<Int>(T->getAlignBytes());
-  //         break;
-  //       }
-
-  //       case Op::Bitsizeof: {
-  //         Type *T = E->getType().value_or(nullptr);
-  //         if (!T) {
-  //           break;
-  //         }
-  //         ANS = create<Int>(T->getSizeBits());
-  //         break;
-  //       }
-  //       default: {
-  //         qcore_panic("Unknown unary operator in expression evaluation");
-  //         break;
-  //       }
-  //     }
-  //     break;
-  //   }
-
-  //   case QIR_NODE_INT: {
-  //     ANS = x;
-  //     break;
-  //   }
-
-  //   case QIR_NODE_FLOAT: {
-  //     ANS = x;
-  //     break;
-  //   }
-
-  //   case QIR_NODE_LIST: {
-  //     ANS = x;
-  //     break;
-  //   }
-
-  //   case QIR_NODE_CALL: {
-  //     // Unsupported.
-  //     break;
-  //   }
-
-  //   case QIR_NODE_SEQ: {
-  //     Seq *seq = x->as<Seq>();
-  //     if (seq->getItems().empty()) {
-  //       return nullptr;
-  //     }
-
-  //     ANS = evaluate_to_literal(seq->getItems().back());
-  //     break;
-  //   }
-
-  //   case QIR_NODE_INDEX: {
-  //     Index *index = x->as<Index>();
-
-  //     Expr *base = evaluate_to_literal(index->getExpr());
-  //     if (!base) {
-  //       break;
-  //     }
-
-  //     Expr *idx = evaluate_to_literal(index->getIndex());
-  //     if (!idx) {
-  //       break;
-  //     }
-
-  //     auto base_kind = base->getKind();
-  //     if (base_kind != QIR_NODE_LIST) {
-  //       break;
-  //     }
-
-  //     auto idx_kind = idx->getKind();
-  //     if (idx_kind != QIR_NODE_INT) {
-  //       break;
-  //     }
-
-  //     auto idx_val_str = idx->as<Int>()->getValue();
-  //     uint64_t idx_val = 0;
-  //     try {
-  //       idx_val = std::stoull(idx_val_str);
-  //     } catch (...) {
-  //       break;
-  //     }
-
-  //     if (base_kind == QIR_NODE_LIST) {
-  //       List *list = base->as<List>();
-  //       if (idx_val >= list->getItems().size()) {
-  //         break;
-  //       }
-
-  //       ANS = evaluate_to_literal(list->getItems()[idx_val]);
-  //     }
-
-  //     break;
-  //   }
-
-  //   case QIR_NODE_TMP: {
-  //     qcore_panicf("Unexpected temporary node in expression evaluation: %s", x->getKindName());
-  //   }
-
-  //   default: {
-  //     qcore_panicf("Unknown node kind in expression evaluation: %s", x->getKindName());
-  //     break;
-  //   }
-  // }
+using VirtAddress = uint64_t;
+
+struct ScopeBlock {
+  std::unordered_map<std::string_view, Local *> locals;
+  std::unordered_map<std::string_view, Fn *> functions;
+};
+
+struct CallFrame {
+  std::string_view name;
+  VirtAddress address;
+};
+
+using VirtObject = std::variant<Local *, Fn *>;
+
+class Program {
+  std::vector<ScopeBlock> scope_stack;
+  std::stack<CallFrame> call_stack;
+  std::stack<std::string> errors;
+
+public:
+  std::optional<Local *> find_variable(std::string_view name) const {
+    auto local_it = scope_stack.back().locals.find(name);
+    if (local_it != scope_stack.back().locals.end()) {
+      return local_it->second;
+    } else [[unlikely]] {
+      return std::nullopt;
+    }
+  }
+
+  std::optional<Fn *> find_function(std::string_view name) const {
+    auto fn_it = scope_stack.back().functions.find(name);
+    if (fn_it != scope_stack.back().functions.end()) {
+      return fn_it->second;
+    } else [[unlikely]] {
+      return std::nullopt;
+    }
+  }
+
+  void eprintn(std::string_view message) { errors.push(std::string(message)); }
+
+  Program() {
+    scope_stack.push_back({});
+    call_stack.push({});
+  }
+};
+
+static std::optional<Expr *> compute_binexpr(Program &P, Expr *L, Op O, Expr *R) noexcept {
+  std::optional<Expr *> ANS;
+
+  Type *LT = L->getType().value_or(nullptr);
+  if (!LT) [[unlikely]] {
+    P.eprintn("Failed to get type of left-hand side of binary expression");
+    return std::nullopt;
+  }
+
+  Type *RT = R->getType().value_or(nullptr);
+  if (!RT) [[unlikely]] {
+    P.eprintn("Failed to get type of right-hand side of binary expression");
+    return std::nullopt;
+  }
+
+  switch (O) {
+    case Op::Plus: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::Minus: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::Times: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::Slash: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::Percent: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::BitAnd: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::BitOr: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::BitXor: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::LogicAnd: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::LogicOr: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::LShift: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::RShift: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::ROTR: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::ROTL: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::Set: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::LT: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::GT: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::LE: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::GE: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::Eq: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::NE: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::BitcastAs: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::CastAs: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    default: {
+      break;
+    }
+  }
 
   return ANS;
+}
+
+static std::optional<Expr *> compute_unexpr(Program &P, Expr *E, Op O) {
+  std::optional<Expr *> ANS;
+
+  Type *ET = E->getType().value_or(nullptr);
+  if (!ET) [[unlikely]] {
+    P.eprintn("Failed to get type of unary expression");
+    return std::nullopt;
+  }
+
+  switch (O) {
+    case Op::Plus: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::Minus: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::Times: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::BitAnd: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::BitNot: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::LogicNot: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::Inc: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::Dec: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::Alignof: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    case Op::Bitsizeof: {
+      /// TODO: Implement operator
+      break;
+    }
+
+    default: {
+      break;
+    }
+  }
+
+  return ANS;
+}
+
+std::optional<nr::Expr *> evaluate(Program &P, nr::Expr *x) noexcept {
+  nr::current = x->getModule();
+
+  auto x_kind = x->getKind();
+
+  switch (x_kind) {
+      ///**********************************************************************///
+      ///                          SIMPLE EXPRESSION NODES                     ///
+      ///**********************************************************************///
+
+    case QIR_NODE_BINEXPR: {
+      BinExpr *B = x->as<BinExpr>();
+
+      auto L = evaluate(P, B->getLHS());
+      if (!L.has_value()) {
+        P.eprintn("Failed to evaluate left-hand side of binary expression");
+        return std::nullopt;
+      }
+
+      auto R = evaluate(P, B->getRHS());
+      if (!R.has_value()) {
+        P.eprintn("Failed to evaluate right-hand side of binary expression");
+        return std::nullopt;
+      }
+
+      /// TODO: Type promotion
+
+      return compute_binexpr(P, L.value(), B->getOp(), R.value());
+    }
+
+    case QIR_NODE_UNEXPR: {
+      UnExpr *U = x->as<UnExpr>();
+
+      auto E = evaluate(P, U->getExpr());
+      if (!E.has_value()) {
+        P.eprintn("Failed to evaluate unary expression");
+        return std::nullopt;
+      }
+
+      E = compute_unexpr(P, E.value(), U->getOp());
+      if (!E.has_value()) {
+        P.eprintn("Failed to compute unary expression");
+        return std::nullopt;
+      }
+
+      return E;
+    }
+
+    case QIR_NODE_POST_UNEXPR: {
+      PostUnExpr *U = x->as<PostUnExpr>();
+
+      auto E = evaluate(P, U->getExpr());
+      if (!E.has_value()) {
+        P.eprintn("Failed to evaluate post-unary expression");
+        return std::nullopt;
+      }
+
+      if (!compute_unexpr(P, E.value(), U->getOp()).has_value()) {
+        P.eprintn("Failed to compute post-unary expression");
+        return std::nullopt;
+      }
+
+      return E;
+    }
+
+      ///**********************************************************************///
+      ///                     COMPLEX EXPRESSION NODES                         ///
+      ///**********************************************************************///
+
+    case QIR_NODE_CALL: {
+      /// TODO: Implement expression
+      P.eprintn("Call expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_SEQ: {
+      /// TODO: Implement expression
+      P.eprintn("Sequence expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_INDEX: {
+      /// TODO: Implement expression
+      P.eprintn("Index expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_IDENT: {
+      /// TODO: Implement expression
+      P.eprintn("Identifier expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_EXTERN: {
+      /// TODO: Implement expression
+      P.eprintn("Extern expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_LOCAL: {
+      /// TODO: Implement expression
+      P.eprintn("Local expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_RET: {
+      /// TODO: Implement expression
+      P.eprintn("Return expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_BRK: {
+      /// TODO: Implement expression
+      P.eprintn("Break expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_CONT: {
+      /// TODO: Implement expression
+      P.eprintn("Continue expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_IF: {
+      /// TODO: Implement expression
+      P.eprintn("If expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_WHILE: {
+      /// TODO: Implement expression
+      P.eprintn("While expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_FOR: {
+      /// TODO: Implement expression
+      P.eprintn("For expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_FORM: {
+      /// TODO: Implement expression
+      P.eprintn("Form expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_CASE: {
+      /// TODO: Implement expression
+      P.eprintn("Case expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_SWITCH: {
+      /// TODO: Implement expression
+      P.eprintn("Switch expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_FN: {
+      /// TODO: Implement expression
+      P.eprintn("Function expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_ASM: {
+      /// TODO: Implement expression
+      P.eprintn("Asm expressions are not yet implemented");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_IGN: {
+      P.eprintn("Unexpected 'QIR_NODE_IGN' node in program DAG");
+      return std::nullopt;
+    }
+
+    case QIR_NODE_TMP: {
+      P.eprintn("Unexpected 'QIR_NODE_TMP' node in program DAG");
+      return std::nullopt;
+    }
+
+      ///**********************************************************************///
+      ///                          PASS THROUGH NODES                          ///
+      ///**********************************************************************///
+
+    case QIR_NODE_INT:
+    case QIR_NODE_FLOAT:
+    case QIR_NODE_LIST:
+    case QIR_NODE_U1_TY:
+    case QIR_NODE_U8_TY:
+    case QIR_NODE_U16_TY:
+    case QIR_NODE_U32_TY:
+    case QIR_NODE_U64_TY:
+    case QIR_NODE_U128_TY:
+    case QIR_NODE_I8_TY:
+    case QIR_NODE_I16_TY:
+    case QIR_NODE_I32_TY:
+    case QIR_NODE_I64_TY:
+    case QIR_NODE_I128_TY:
+    case QIR_NODE_F16_TY:
+    case QIR_NODE_F32_TY:
+    case QIR_NODE_F64_TY:
+    case QIR_NODE_F128_TY:
+    case QIR_NODE_VOID_TY:
+    case QIR_NODE_PTR_TY:
+    case QIR_NODE_OPAQUE_TY:
+    case QIR_NODE_STRUCT_TY:
+    case QIR_NODE_UNION_TY:
+    case QIR_NODE_ARRAY_TY:
+    case QIR_NODE_FN_TY: {
+      return x;
+    }
+  }
+}
+
+std::optional<nr::Expr *> nr::evaluate_impl(nr::Expr *x) noexcept {
+  Program P;
+
+  return evaluate(P, x);
 }

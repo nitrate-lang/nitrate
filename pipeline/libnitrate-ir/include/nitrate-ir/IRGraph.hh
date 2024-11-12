@@ -1549,7 +1549,7 @@ namespace nr {
     }
   }
 
-  Expr *evaluate_to_literal(Expr *x) noexcept;
+  std::optional<Expr *> evaluate_impl(Expr *x) noexcept;
 
   template <typename T>
   std::optional<T> uint_as(const Expr *x) noexcept {
@@ -1560,7 +1560,7 @@ namespace nr {
     static_assert(IS_T(std::string) || IS_T(uint64_t),
                   "nr::evaluate_as(): T must be either std::string or uint64_t.");
 
-    Expr *r = evaluate_to_literal(const_cast<Expr *>(x));
+    Expr *r = evaluate_impl(const_cast<Expr *>(x)).value_or(nullptr);
     if (r == nullptr) {
       return std::nullopt;
     }
