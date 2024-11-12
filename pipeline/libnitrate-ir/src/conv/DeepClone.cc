@@ -82,7 +82,7 @@ nr_node_t *nr_clone_impl(const nr_node_t *_node,
     }
     case QIR_NODE_INT: {
       Int *n = static_cast<Int *>(in);
-      out = create<Int>(n->getValue());
+      out = create<Int>(n->getValue(), n->getSize());
       break;
     }
     case QIR_NODE_FLOAT: {

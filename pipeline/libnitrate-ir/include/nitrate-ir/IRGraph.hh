@@ -901,17 +901,17 @@ namespace nr {
   /// BEGIN: LITERALS
   ///=============================================================================
 
+  enum class IntSize : uint8_t {
+    U1,
+    U8,
+    U16,
+    U32,
+    U64,
+    U128,
+  };
+
   class Int final : public Expr {
     QCLASS_REFLECT()
-
-    enum class TySize : uint8_t {
-      U1,
-      U8,
-      U16,
-      U32,
-      U64,
-      U128,
-    };
 
 #if !defined(__x86_64__)
 #error "This code is only supported on x86_64"
@@ -919,24 +919,37 @@ namespace nr {
 
     uint64_t m_value : 63;
     uint8_t m_is_native : 1;
-    TySize m_size : 3;
-    uint8_t m_pad : 5;
+    IntSize m_size;
 
     static constexpr uint64_t FLAG_BIT = 1ULL << 63;
 
     static uint128_t str2u128(std::string_view x) noexcept;
     static std::string_view u128_2_cstr_interned(uint128_t x) noexcept;
 
-  public:
-    Int(uint128_t val) : Expr(QIR_NODE_INT) { setValue(val); }
+    void setValue(uint128_t x) noexcept {
+      if (x <= 9223372036854775807) [[likely]] {
+        m_is_native = true;
+        m_value = static_cast<uint64_t>(x);
+      } else {
+        m_is_native = false;
+        m_value = reinterpret_cast<uint64_t>(u128_2_cstr_interned(x).data());
+      }
+    }
 
-    Int(std::string_view str) : Expr(QIR_NODE_INT) {
+  public:
+    Int(uint128_t val, IntSize size) : Expr(QIR_NODE_INT), m_size(size) { setValue(val); }
+
+    Int(std::string_view str, IntSize size) : Expr(QIR_NODE_INT) {
+      m_size = size;
+
       m_is_native = false;
       m_value = reinterpret_cast<uint64_t>(current->internString(str).data());
 
       // optimize layout; demote string reprs to native if in range
       setValue(getValue());
     }
+
+    IntSize getSize() const noexcept { return m_size; }
 
     uint128_t getValue() const noexcept {
       if (m_is_native) [[likely]] {
@@ -954,15 +967,6 @@ namespace nr {
       }
     }
 
-    void setValue(uint128_t x) noexcept {
-      if (x <= 9223372036854775807) [[likely]] {
-        m_is_native = true;
-        m_value = static_cast<uint64_t>(x);
-      } else {
-        m_is_native = false;
-        m_value = reinterpret_cast<uint64_t>(u128_2_cstr_interned(x).data());
-      }
-    }
   } __attribute__((packed));
 
   static_assert(sizeof(Int) == 17);
@@ -998,9 +1002,7 @@ namespace nr {
     }
 
     FloatSize getSize() const noexcept { return m_size; }
-    void setSize(FloatSize size) noexcept { m_size = size; }
     double getValue() const noexcept { return m_data; }
-    void setValue(double dec) noexcept { m_data = dec; }
   } __attribute__((packed));
 
   static_assert(sizeof(Float) == 17);

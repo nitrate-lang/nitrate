@@ -159,12 +159,12 @@ static nr::List *create_string_literal(std::string_view value) {
   nr::ListItems items;
 
   for (char c : value) {
-    items.push_back(
-        nr::create<nr::BinExpr>(nr::create<nr::Int>(c), nr::create<nr::I8Ty>(), nr::Op::CastAs));
+    items.push_back(nr::create<nr::BinExpr>(nr::create<nr::Int>(c, nr::IntSize::U8),
+                                            nr::create<nr::I8Ty>(), nr::Op::CastAs));
   }
 
-  items.push_back(
-      nr::create<nr::BinExpr>(nr::create<nr::Int>(0), nr::create<nr::I8Ty>(), nr::Op::CastAs));
+  items.push_back(nr::create<nr::BinExpr>(nr::create<nr::Int>(0, nr::IntSize::U8),
+                                          nr::create<nr::I8Ty>(), nr::Op::CastAs));
 
   return nr::create<nr::List>(items);
 }
@@ -567,7 +567,15 @@ namespace nr {
      * @details This is a 1-to-1 conversion of the integer constant.
      */
 
-    return create<Int>(n->get_value());
+    boost::multiprecision::cpp_int num(n->get_value());
+
+    if (num > UINT64_MAX) {
+      return create<Int>(n->get_value(), IntSize::U128);
+    } else if (num > UINT32_MAX) {
+      return create<Int>(n->get_value(), IntSize::U64);
+    } else {
+      return create<Int>(n->get_value(), IntSize::U32);
+    }
   }
 
   static Expr *nrgen_float(ConvState &, qparse::ConstFloat *n) {
@@ -594,7 +602,7 @@ namespace nr {
      * @details Convert the char32 codepoint to a nr number literal.
      */
 
-    return create<Int>(n->get_value());
+    return create<Int>(n->get_value(), IntSize::U8);
   }
 
   static Expr *nrgen_bool(ConvState &, qparse::ConstBool *n) {
@@ -605,15 +613,16 @@ namespace nr {
      */
 
     if (n->get_value()) {
-      return create<Int>(1);
+      return create<Int>(1, IntSize::U1);
     } else {
-      return create<Int>(0);
+      return create<Int>(0, IntSize::U1);
     }
   }
 
   static Expr *nrgen_null(ConvState &, qparse::ConstNull *) {
-    return create<BinExpr>(create<BinExpr>(create<Int>(0), createUPtrIntTy(), Op::CastAs),
-                           create<PtrTy>(create<VoidTy>()), Op::BitcastAs);
+    return create<BinExpr>(
+        create<BinExpr>(create<Int>(0, IntSize::U32), createUPtrIntTy(), Op::CastAs),
+        create<PtrTy>(create<VoidTy>()), Op::BitcastAs);
   }
 
   static Expr *nrgen_undef(ConvState &, qparse::ConstUndef *n) {
@@ -1709,9 +1718,9 @@ namespace nr {
         last = cur;
       } else {
         if (!last) {
-          last = cur = create<Int>(0);
+          last = cur = create<Int>(0, IntSize::U32);
         } else {
-          last = cur = create<BinExpr>(last, create<Int>(1), Op::Plus);
+          last = cur = create<BinExpr>(last, create<Int>(1, IntSize::U32), Op::Plus);
         }
       }
 
@@ -2197,7 +2206,7 @@ namespace nr {
     auto body = nrgen_one(s, n->get_body());
 
     if (!cond) {
-      cond = create<Int>(1);
+      cond = create<Int>(1, IntSize::U1);
     }
 
     cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
@@ -2224,20 +2233,20 @@ namespace nr {
     auto body = nrgen_one(s, n->get_body());
 
     if (!init) {
-      init = create<Int>(1);
+      init = create<Int>(1, IntSize::U32);
     }
 
     if (!cond) {
-      cond = create<Int>(1);  // infinite loop like 'for (;;) {}'
+      cond = create<Int>(1, IntSize::U32);  // infinite loop like 'for (;;) {}'
       cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
     }
 
     if (!step) {
-      step = create<Int>(1);
+      step = create<Int>(1, IntSize::U32);
     }
 
     if (!body) {
-      body = create<Int>(1);
+      body = create<Int>(1, IntSize::U32);
     }
 
     return create<For>(init, cond, step, body);

@@ -286,8 +286,8 @@ namespace nr {
     // Create literals
 
     Int *createBool(bool value SOURCE_LOCATION_PARAM) noexcept;
-    Int *createFixedInteger(uint128_t value SOURCE_LOCATION_PARAM) noexcept;
-    Float *createFixedFloat(bigfloat_t value SOURCE_LOCATION_PARAM) noexcept;
+    Int *createFixedInteger(uint128_t value, IntSize width SOURCE_LOCATION_PARAM) noexcept;
+    Float *createFixedFloat(bigfloat_t value, FloatSize width SOURCE_LOCATION_PARAM) noexcept;
     ArrayTy *createStringDataArray(
         std::string_view value,
         ABIStringStyle style = ABIStringStyle::CStr SOURCE_LOCATION_PARAM) noexcept;
