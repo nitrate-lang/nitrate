@@ -1013,14 +1013,17 @@ namespace nr {
     QCLASS_REFLECT()
 
     ListItems m_items;
+    bool m_is_homogenous;
 
   public:
-    List(const ListItems &items) : Expr(QIR_NODE_LIST), m_items(items) {}
+    List(const ListItems &items, bool is_homogenous)
+        : Expr(QIR_NODE_LIST), m_items(items), m_is_homogenous(is_homogenous) {}
 
     const ListItems &getItems() const noexcept { return m_items; }
     ListItems &getItems() noexcept { return m_items; }
     void setItems(const ListItems &items) noexcept { m_items = items; }
-    void addItem(Expr *item) noexcept { m_items.push_back(item); }
+
+    bool isHomogenous() const noexcept { return m_is_homogenous; }
   };
 
   ///=============================================================================
@@ -1065,7 +1068,6 @@ namespace nr {
     const SeqItems &getItems() const noexcept { return m_items; }
     SeqItems &getItems() noexcept { return m_items; }
     void setItems(const SeqItems &items) noexcept { m_items = items; }
-    void addItem(Expr *item) noexcept { m_items.push_back(item); }
   };
 
   class Index final : public Expr {

@@ -115,27 +115,46 @@ Float *NRBuilder::createFixedFloat(bigfloat_t value,
   return compiler_trace(debug_info(create<Float>(value, width), DEBUG_INFO));
 }
 
-ArrayTy *NRBuilder::createStringDataArray(std::string_view value,
-                                          ABIStringStyle style SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement(__func__);
-  (void)value;
-  (void)style;
+List *NRBuilder::createStringDataArray(std::string_view value,
+                                       ABIStringStyle style SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_root != nullptr);
 
-  ignore_caller_info();
+  // Only C-strings are currently supported
+  contract_enforce(style == ABIStringStyle::CStr);
+
+  std::vector<Expr *> items;
+  items.resize(value.size() + 1);
+
+  for (size_t i = 0; i < value.size(); i++) {
+    items[i] = compiler_trace(createFixedInteger(value[i], IntSize::U8));
+  }
+
+  /* Add null byte at end */
+  items[value.size()] = compiler_trace(createFixedInteger(0, IntSize::U8));
+
+  List *R = createList(items, true);
+
+  return compiler_trace(debug_info(R, DEBUG_INFO));
 }
 
-List *NRBuilder::createList(std::span<Expr *> items, StorageClass storage,
-
+List *NRBuilder::createList(std::span<Expr *> items,
                             /* Require assert(typeof(result)==typeof(array<result.element,
                              * result.size>)) ? Reason: It has to do with type inference and
                              * implicit conversions of the elements in the list.
                              */
                             bool cast_homogenous SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement(__func__);
-  (void)items;
-  (void)storage;
-  (void)cast_homogenous;
-  ignore_caller_info();
+  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_root != nullptr);
+
+  ListItems items_copy;
+  items_copy.resize(items.size());
+
+  for (size_t i = 0; i < items.size(); i++) {
+    items_copy[i] = compiler_trace(items[i]);
+  }
+
+  List *R = create<List>(std::move(items_copy), cast_homogenous);
+
+  return compiler_trace(debug_info(R, DEBUG_INFO));
 }

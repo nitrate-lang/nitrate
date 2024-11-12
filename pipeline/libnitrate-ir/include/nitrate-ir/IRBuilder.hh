@@ -286,13 +286,16 @@ namespace nr {
     // Create literals
 
     Int *createBool(bool value SOURCE_LOCATION_PARAM) noexcept;
+
     Int *createFixedInteger(uint128_t value, IntSize width SOURCE_LOCATION_PARAM) noexcept;
+
     Float *createFixedFloat(bigfloat_t value, FloatSize width SOURCE_LOCATION_PARAM) noexcept;
-    ArrayTy *createStringDataArray(
+
+    List *createStringDataArray(
         std::string_view value,
         ABIStringStyle style = ABIStringStyle::CStr SOURCE_LOCATION_PARAM) noexcept;
 
-    List *createList(std::span<Expr *> items, StorageClass storage,
+    List *createList(std::span<Expr *> items,
 
                      /* Require assert(typeof(result)==typeof(array<result.element, result.size>))
                       * ? Reason: It has to do with type inference and implicit conversions of the

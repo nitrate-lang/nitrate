@@ -91,12 +91,13 @@ nr_node_t *nr_clone_impl(const nr_node_t *_node,
       break;
     }
     case QIR_NODE_LIST: {
+      List *n = static_cast<List *>(in);
       ListItems items;
-      items.reserve(static_cast<List *>(in)->getItems().size());
-      for (auto item : static_cast<List *>(in)->getItems()) {
+      items.reserve(n->getItems().size());
+      for (auto item : n->getItems()) {
         items.push_back(clone(item));
       }
-      out = create<List>(std::move(items));
+      out = create<List>(std::move(items), n->isHomogenous());
       break;
     }
     case QIR_NODE_CALL: {

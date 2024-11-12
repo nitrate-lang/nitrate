@@ -166,7 +166,7 @@ static nr::List *create_string_literal(std::string_view value) {
   items.push_back(nr::create<nr::BinExpr>(nr::create<nr::Int>(0, nr::IntSize::U8),
                                           nr::create<nr::I8Ty>(), nr::Op::CastAs));
 
-  return nr::create<nr::List>(items);
+  return nr::create<nr::List>(items, true);
 }
 
 nr::Expr *nrgen_lower_binexpr(ConvState &, nr::Expr *lhs, nr::Expr *rhs, qlex_op_t op) {
@@ -682,7 +682,7 @@ namespace nr {
       items.push_back(item);
     }
 
-    return create<List>(std::move(items));
+    return create<List>(std::move(items), false);
   }
 
   static Expr *nrgen_assoc(ConvState &s, qparse::Assoc *n) {
@@ -703,7 +703,7 @@ namespace nr {
       throw QError();
     }
 
-    return create<List>(ListItems({key, value}));
+    return create<List>(ListItems({key, value}), false);
   }
 
   static Expr *nrgen_field(ConvState &s, qparse::Field *n) {
