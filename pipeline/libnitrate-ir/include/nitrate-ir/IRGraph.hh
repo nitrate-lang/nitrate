@@ -552,6 +552,7 @@ namespace nr {
     void setModuleDangerous(qmodule_t *module) noexcept;
     void setLocDangerous(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept;
     inline void setMutable(bool is_mut) noexcept { m_mutable = is_mut; }
+
     /// END:   Internal library use only
     ///=====================================================================
 
@@ -1558,6 +1559,16 @@ namespace nr {
     return std::nullopt;
 
 #undef IS_T
+  }
+
+  /** Add source debugging information to an IR node */
+  template <typename T>
+  static inline T *debug_info(T *N, uint32_t line, uint32_t col) noexcept {
+    /// TODO: Store source location information
+    (void)line;
+    (void)col;
+
+    return N;
   }
 }  // namespace nr
 

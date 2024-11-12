@@ -168,6 +168,16 @@ void NRBuilder::contract_enforce_(bool cond, std::string_view cond_str SOURCE_LO
 #endif
 }
 
+std::string_view NRBuilder::intern(std::string_view in) noexcept {
+  auto it = m_interned_strings.find(in);
+
+  if (it == m_interned_strings.end()) {
+    return m_interned_strings.emplace(in, in).first->second;
+  } else {
+    return it->second;
+  }
+}
+
 nr_node_t *nr_clone_impl(const nr_node_t *_node,
                          std::unordered_map<const nr_node_t *, nr_node_t *> &map,
                          std::unordered_set<nr_node_t *> &in_visited);

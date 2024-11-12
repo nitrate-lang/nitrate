@@ -32,6 +32,7 @@
 #ifndef __NITRATE_QXIR_IRBUILDER_H__
 #define __NITRATE_QXIR_IRBUILDER_H__
 
+#include <unordered_map>
 #ifndef __cplusplus
 #error "This header is C++ only."
 #endif
@@ -122,9 +123,13 @@ namespace nr {
     std::optional<Fn *> m_current_function;
     std::optional<Expr *> m_current_expr;
 
+    std::unordered_map<std::string_view, std::string> m_interned_strings;
+
     ///**************************************************************************///
     // Builder helper methods
     ///**************************************************************************///
+
+    std::string_view intern(std::string_view in) noexcept;
 
     std::optional<Local *> lookup_global(std::string_view global) noexcept;
     std::optional<Local *> lookup_local(std::string_view local) noexcept;
@@ -161,6 +166,8 @@ namespace nr {
 #define contract_enforce(cond) contract_enforce_(cond, #cond, caller_info)
 
 #endif
+
+#define DEBUG_INFO 1, 1
 
   public:
     NRBuilder(qlex_t &lexer_instance, TargetInfo target_info SOURCE_LOCATION_PARAM) noexcept;
@@ -370,9 +377,11 @@ namespace nr {
 #define CALLER_INFO caller_info
 #define CALLEE_KNOWN
 #define ignore_caller_info() (void)caller_info;
-
+#define compiler_trace(x) x
 #endif
 
+#else
+#undef DEBUG_INFO
 #endif
   };
 }  // namespace nr
