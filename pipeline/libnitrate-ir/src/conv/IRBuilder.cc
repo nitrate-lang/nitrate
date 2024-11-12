@@ -29,6 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <span>
+
 #include "nitrate-core/Error.h"
 #define IRBUILDER_IMPL
 
@@ -105,7 +107,7 @@ NRBuilder::NRBuilder(NRBuilder &&rhs) noexcept {
 }
 
 void NRBuilder::contract_enforce_(bool cond, std::string_view cond_str SOURCE_LOCATION_PARAM,
-                                  std::experimental::source_location caller) noexcept {
+                                  std::experimental::source_location caller) const noexcept {
   if (cond) [[likely]] {
     return;
   }
@@ -166,25 +168,62 @@ void NRBuilder::contract_enforce_(bool cond, std::string_view cond_str SOURCE_LO
 }
 
 NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
-  /// TODO: Implement deep clone
-  ignore_caller_info();
+  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::Finished ||
+                   m_state == SelfState::Verified || m_state == SelfState::Emitted ||
+                   m_state == SelfState::FailEarly || m_state == SelfState::Destroyed);
 
-  qcore_implement(__func__);
+  NRBuilder r(*m_lex, m_target_info);
+
+  r.m_state = SelfState::Destroyed;
+
+  if (m_state == SelfState::Destroyed) {
+    contract_enforce(m_result == std::nullopt);
+    contract_enforce(m_root == nullptr);
+    contract_enforce(m_current_scope == nullptr);
+    contract_enforce(m_current_function == std::nullopt);
+    contract_enforce(m_current_expr == std::nullopt);
+  } else {
+    /// TODO: Implement deep clone and resolve state variables to cloned counterparts
+    qcore_implement(__func__);
+  }
+
+  return r;
 }
 
 size_t NRBuilder::approx_memory_usage(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  /// TODO: Approximate memory usage
-  ignore_caller_info();
+  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::Finished ||
+                   m_state == SelfState::Verified || m_state == SelfState::Emitted ||
+                   m_state == SelfState::FailEarly);
+  contract_enforce(m_root != nullptr);
 
-  qcore_implement(__func__);
+  size_t lower_bound = 0;
+
+  { /* Only nodes reachable from root are counted */
+    Expr *expr_ptr = m_root;
+    iterate<dfs_pre>(expr_ptr, [&lower_bound](Expr *, Expr **C) -> IterOp {
+      lower_bound += Expr::getKindSize((*C)->getKind());
+      /// TODO: Take into account dynamic data!
+
+      return IterOp::Proceed;
+    });
+  }
+
+  return lower_bound;
 }
 
 size_t NRBuilder::node_count(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state != SelfState::Destroyed);
+  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::Finished ||
+                   m_state == SelfState::Verified || m_state == SelfState::Emitted ||
+                   m_state == SelfState::FailEarly);
+  contract_enforce(m_root != nullptr);
+
+  if (m_state == SelfState::FailEarly) {
+    return 1;
+  }
 
   size_t count = 0;
 
-  { /* The sum of nodes in the root is the node count */
+  { /* Only nodes reachable from root are counted */
     Expr *expr_ptr = m_root;
     iterate<dfs_pre>(expr_ptr, [&count](Expr *, Expr **) -> IterOp {
       count++;
@@ -196,23 +235,57 @@ size_t NRBuilder::node_count(SOURCE_LOCATION_PARAM_ONCE) noexcept {
 }
 
 void NRBuilder::finish(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  /// TODO: Implement
-  ignore_caller_info();
+  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::Finished ||
+                   m_state == SelfState::FailEarly);
+  contract_enforce(m_result == std::nullopt);
+  contract_enforce(m_root != nullptr);
 
-  qcore_implement(__func__);
+  if (m_state == SelfState::FailEarly) {
+    return;
+  }
+
+  m_state = SelfState::Finished;
+
+  m_current_scope = nullptr;
+  m_current_function = std::nullopt;
+  m_current_expr = std::nullopt;
 }
 
-bool NRBuilder::verify(diag::IDiagnosticEngine *sink SOURCE_LOCATION_PARAM) const noexcept {
-  /// TODO: Implment
-  ignore_caller_info();
+bool NRBuilder::verify(diag::IDiagnosticEngine *sink SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Finished || m_state == SelfState::Verified ||
+                   m_state == SelfState::FailEarly);
+  contract_enforce(m_result == std::nullopt);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(m_current_scope == nullptr);
+  contract_enforce(m_current_function == std::nullopt);
+  contract_enforce(m_current_expr == std::nullopt);
+
+  if (m_state == SelfState::FailEarly) {
+    return false;
+  } else if (m_state == SelfState::Verified) {
+    return true;
+  }
+
+  bool is_valid = true;
+
+  /// TODO: Implement verification logic
   (void)sink;
-
   qcore_implement(__func__);
+
+  m_state = SelfState::Verified;
+
+  return is_valid;
 }
 
-qmodule_t *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
-  /// TODO: Implment
-  ignore_caller_info();
+qmodule_t *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) noexcept {
+  contract_enforce(m_state == SelfState::Verified || m_state == SelfState::Emitted);
+  contract_enforce(m_result != std::nullopt);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(m_current_scope == nullptr);
+  contract_enforce(m_current_function == std::nullopt);
+  contract_enforce(m_current_expr == std::nullopt);
 
-  qcore_implement(__func__);
+  m_state = SelfState::Emitted;
+
+  return m_result.value();
 }

@@ -136,7 +136,7 @@ namespace nr {
 
     void contract_enforce_(bool cond, std::string_view cond_str,
                            std::experimental::source_location caller =
-                               std::experimental::source_location::current()) noexcept;
+                               std::experimental::source_location::current()) const noexcept;
 #define contract_enforce(cond) contract_enforce_(cond, #cond)
 #else
 #define SOURCE_LOCATION_PARAM \
@@ -146,7 +146,7 @@ namespace nr {
 
     void contract_enforce_(bool cond, std::string_view cond_str SOURCE_LOCATION_PARAM,
                            std::experimental::source_location caller =
-                               std::experimental::source_location::current()) noexcept;
+                               std::experimental::source_location::current()) const noexcept;
 #define contract_enforce(cond) contract_enforce_(cond, #cond, caller_info)
 
 #endif
@@ -164,7 +164,7 @@ namespace nr {
     NRBuilder deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept;
 
     /** @brief Get an approximate figure of how much memory the
-     * builder is currently using. */
+     * builder is currently using. The returned value is a lower bound. */
     size_t approx_memory_usage(SOURCE_LOCATION_PARAM_ONCE) noexcept;
 
     /** @brief Count *ALL* nodes currently in the builder. This includes
@@ -209,13 +209,13 @@ namespace nr {
      *
      * @note This function calls `finish()`.
      */
-    bool verify(diag::IDiagnosticEngine *sink SOURCE_LOCATION_PARAM) const noexcept;
+    bool verify(diag::IDiagnosticEngine *sink SOURCE_LOCATION_PARAM) noexcept;
 
     /**
      * @brief Return the build module.
      * @note `verify()` must be called first.
      */
-    qmodule_t *get_module(SOURCE_LOCATION_PARAM_ONCE) const noexcept;
+    qmodule_t *get_module(SOURCE_LOCATION_PARAM_ONCE) noexcept;
 
     ///**************************************************************************///
     // Builder navigation
