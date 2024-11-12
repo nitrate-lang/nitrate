@@ -38,106 +38,98 @@
 
 using namespace nr;
 
-NRBuilder &NRBuilder::insertAfter(Expr *last SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(last != nullptr);
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+Fn *NRBuilder::createFunctionDefintion(std::string_view name, std::span<Type *> params,
+                                       Type *ret_ty, bool is_variadic, Vis visibility,
+                                       Purity purity, bool thread_safe, bool is_noexcept,
+                                       bool foreign SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement(__func__);
-
-  return *this;
+  (void)name;
+  (void)params;
+  (void)ret_ty;
+  (void)is_variadic;
+  (void)visibility;
+  (void)purity;
+  (void)thread_safe;
+  (void)is_noexcept;
+  (void)foreign;
+  ignore_caller_info();
 }
 
-NRBuilder &NRBuilder::insertAfterVariable(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+Fn *NRBuilder::createFunctionDeclaration(std::string_view name, std::span<Type *> params,
+                                         Type *ret_ty, bool is_variadic, Vis visibility,
+                                         Purity purity, bool thread_safe, bool is_noexcept,
+                                         bool foreign SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement(__func__);
-
-  return *this;
+  (void)name;
+  (void)params;
+  (void)ret_ty;
+  (void)is_variadic;
+  (void)visibility;
+  (void)purity;
+  (void)thread_safe;
+  (void)is_noexcept;
+  (void)foreign;
+  ignore_caller_info();
 }
 
-NRBuilder &NRBuilder::insertAfterFunction(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+Fn *NRBuilder::createAnonymousFunction(std::span<Type *> params, Type *ret_ty, bool is_variadic,
+                                       Purity purity, bool thread_safe,
+                                       bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement(__func__);
-
-  return *this;
+  (void)params;
+  (void)ret_ty;
+  (void)is_variadic;
+  (void)purity;
+  (void)thread_safe;
+  (void)is_noexcept;
+  ignore_caller_info();
 }
 
-NRBuilder &NRBuilder::insertBefore(Expr *last SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(last != nullptr);
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+Fn *NRBuilder::createOperatorOverload(Op op, std::span<Type *> params, Type *ret_ty, Purity purity,
+                                      bool thread_safe,
+                                      bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement(__func__);
-
-  return *this;
+  (void)op;
+  (void)params;
+  (void)ret_ty;
+  (void)purity;
+  (void)thread_safe;
+  (void)is_noexcept;
+  ignore_caller_info();
 }
 
-NRBuilder &NRBuilder::insertBeforeVariable(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+Fn *NRBuilder::createTemplateFunction(std::string_view name,
+                                      std::span<std::string_view> template_params,
+                                      std::span<Type *> params, Type *ret_ty, bool is_variadic,
+                                      Vis visibility, Purity purity, bool thread_safe,
+                                      bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement(__func__);
-
-  return *this;
+  (void)name;
+  (void)template_params;
+  (void)params;
+  (void)ret_ty;
+  (void)is_variadic;
+  (void)visibility;
+  (void)purity;
+  (void)thread_safe;
+  (void)is_noexcept;
+  ignore_caller_info();
 }
 
-NRBuilder &NRBuilder::insertBeforeFunction(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+Local *NRBuilder::createVariable(std::string_view name, Type *ty, Vis visibility,
+                                 StorageClass storage,
+                                 bool is_readonly SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement(__func__);
-
-  return *this;
-}
-
-///=============================================================================
-
-std::optional<Local *> NRBuilder::lookup_global(std::string_view global) noexcept {
-  /// TODO: Implement
-  qcore_implement(__func__);
-  (void)global;
-}
-
-std::optional<Local *> NRBuilder::lookup_local(std::string_view local) noexcept {
-  /// TODO: Implement
-  qcore_implement(__func__);
-  (void)local;
-}
-
-std::optional<Fn *> NRBuilder::lookup_function(std::string_view function) noexcept {
-  /// TODO: Implement
-  qcore_implement(__func__);
-  (void)function;
+  (void)name;
+  (void)ty;
+  (void)visibility;
+  (void)storage;
+  (void)is_readonly;
+  ignore_caller_info();
 }

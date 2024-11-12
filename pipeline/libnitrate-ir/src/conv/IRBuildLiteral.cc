@@ -38,106 +38,48 @@
 
 using namespace nr;
 
-NRBuilder &NRBuilder::insertAfter(Expr *last SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(last != nullptr);
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+Int *NRBuilder::createBool(bool value SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement(__func__);
-
-  return *this;
+  (void)value;
+  ignore_caller_info();
 }
 
-NRBuilder &NRBuilder::insertAfterVariable(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+Int *NRBuilder::createFixedInteger(uint128_t value SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement(__func__);
-
-  return *this;
+  (void)value;
+  ignore_caller_info();
 }
 
-NRBuilder &NRBuilder::insertAfterFunction(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+Float *NRBuilder::createFixedFloat(bigfloat_t value SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement(__func__);
-
-  return *this;
+  (void)value;
+  ignore_caller_info();
 }
 
-NRBuilder &NRBuilder::insertBefore(Expr *last SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(last != nullptr);
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+ArrayTy *NRBuilder::createStringDataArray(std::string_view value,
+                                          ABIStringStyle style SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement(__func__);
+  (void)value;
+  (void)style;
 
-  return *this;
+  ignore_caller_info();
 }
 
-NRBuilder &NRBuilder::insertBeforeVariable(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
+List *NRBuilder::createList(std::span<Expr *> items, StorageClass storage,
 
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+                            /* Require assert(typeof(result)==typeof(array<result.element,
+                             * result.size>)) ? Reason: It has to do with type inference and
+                             * implicit conversions of the elements in the list.
+                             */
+                            bool cast_homogenous SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement(__func__);
-
-  return *this;
-}
-
-NRBuilder &NRBuilder::insertBeforeFunction(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
-  /// TODO: Implement
-  qcore_implement(__func__);
-
-  return *this;
-}
-
-///=============================================================================
-
-std::optional<Local *> NRBuilder::lookup_global(std::string_view global) noexcept {
-  /// TODO: Implement
-  qcore_implement(__func__);
-  (void)global;
-}
-
-std::optional<Local *> NRBuilder::lookup_local(std::string_view local) noexcept {
-  /// TODO: Implement
-  qcore_implement(__func__);
-  (void)local;
-}
-
-std::optional<Fn *> NRBuilder::lookup_function(std::string_view function) noexcept {
-  /// TODO: Implement
-  qcore_implement(__func__);
-  (void)function;
+  (void)items;
+  (void)storage;
+  (void)cast_homogenous;
+  ignore_caller_info();
 }
