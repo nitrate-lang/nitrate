@@ -38,14 +38,14 @@
 #include <cstdint>
 #include <nitrate-ir/IRGraph.hh>
 
-using namespace qxir;
+using namespace nr;
 
 #define intern(__str) x->getModule()->internString(__str)
 
-qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
+nr::Expr *nr::evaluate_to_literal(nr::Expr *x) noexcept {
   Expr *ANS = nullptr;
 
-  qxir::current = x->getModule();
+  nr::current = x->getModule();
 
   switch (x->getKind()) {
     case QIR_NODE_BINEXPR: {

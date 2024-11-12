@@ -21,7 +21,7 @@
 ///   The Nitrate Toolcain is distributed in the hope that it will be        ///
 ///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
 ///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
-///   Lesser General Public License for more details.                        ///
+///   Lesser General Public License for more issue_info.                        ///
 ///                                                                          ///
 ///   You should have received a copy of the GNU Lesser General Public       ///
 ///   License along with the Nitrate Toolchain; if not, see                  ///
@@ -43,24 +43,16 @@
 #include <nitrate-ir/Report.hh>
 #include <sstream>
 
-using namespace qxir::diag;
+using namespace nr::diag;
 
 template <typename L, typename R>
 boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
   return boost::bimap<L, R>(list.begin(), list.end());
 }
 
-struct IssueInfo {
-  std::string_view flagname;
-  std::string overview;
-  std::vector<std::string_view> hints;
-
-  bool operator<(const IssueInfo &rhs) const { return flagname < rhs.flagname; }
-};
-
 /// FIXME: Write correct stuff here
 
-static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, IssueInfo>({
+const boost::bimap<IssueCode, IssueInfo> nr::diag::issue_info = make_bimap<IssueCode, IssueInfo>({
     {IssueCode::Info, {"info", "%s", {}}},
     {IssueCode::CompilerError, {"Compiler Error", "An error occurred during compilation: %s", {}}},
     {IssueCode::PTreeInvalid,
@@ -119,6 +111,11 @@ static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, 
       {
           "Ensure that the symbol node is correctly typed.",
       }}},
+    {IssueCode::UnexpectedUndefLiteral,
+     {"bad-undef-keyword",
+      "Unexpected 'undef' keyword",
+      {"The 'undef' keyword is only permitted as default values for variable declarations and as "
+       "function arguments."}}},
 
     {IssueCode::UnknownType,
      {"unknown-type", /* FIXME: Summarize */
@@ -312,7 +309,7 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
   constexpr size_t WIDTH = 70;
 
   std::stringstream ss;
-  qlex_t *lx = m_qxir->getLexer();
+  qlex_t *lx = m_nr->getLexer();
   qlex_size sl, sc, el, ec;
 
   { /* Print filename and source row:column start and end */
@@ -342,23 +339,24 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
   { /* Print message flagname */
     switch (msg.m_type) {
       case IssueClass::Debug:
-        ss << "\x1b[1mdebug:\x1b[0m \x1b[1m" << details.left.at(msg.m_code).flagname << "\x1b[0m\n";
+        ss << "\x1b[1mdebug:\x1b[0m \x1b[1m" << issue_info.left.at(msg.m_code).flagname
+           << "\x1b[0m\n";
         break;
       case IssueClass::Info:
-        ss << "\x1b[37;1minfo:\x1b[0m \x1b[37;1m" << details.left.at(msg.m_code).flagname
+        ss << "\x1b[37;1minfo:\x1b[0m \x1b[37;1m" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\n";
         break;
       case IssueClass::Warn:
-        ss << "\x1b[35;1mwarning:\x1b[0m \x1b[35;1m" << details.left.at(msg.m_code).flagname
+        ss << "\x1b[35;1mwarning:\x1b[0m \x1b[35;1m" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\n";
         break;
       case IssueClass::Error:
-        ss << "\x1b[31;1merror:\x1b[0m \x1b[31;1m" << details.left.at(msg.m_code).flagname
+        ss << "\x1b[31;1merror:\x1b[0m \x1b[31;1m" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\n";
         break;
       case IssueClass::FatalError:
-        ss << "\x1b[31;1;4mfatal error:\x1b[0m \x1b[31;1;4m" << details.left.at(msg.m_code).flagname
-           << "\x1b[0m\n";
+        ss << "\x1b[31;1;4mfatal error:\x1b[0m \x1b[31;1;4m"
+           << issue_info.left.at(msg.m_code).flagname << "\x1b[0m\n";
         break;
     }
   }
@@ -374,7 +372,7 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
   }
 
   { /* Print message overview */
-    auto data = format_overview(details.left.at(msg.m_code).overview, msg.m_msg);
+    auto data = format_overview(issue_info.left.at(msg.m_code).overview, msg.m_msg);
     auto lines = word_break(data, WIDTH);
 
     if (lines.size() == 0) {
@@ -390,7 +388,7 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
   }
 
   { /* Print code intelligence */
-    auto hints = details.left.at(msg.m_code).hints;
+    auto hints = issue_info.left.at(msg.m_code).hints;
 
     if (!hints.empty()) {
       ss << ind << "\x1b[33m╔═\x1b[0m \x1b[32;1mCode Intelligence:\x1b[0m\n";

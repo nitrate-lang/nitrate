@@ -55,7 +55,7 @@ extern "C" {
  * multiple times. Each time will not reinitialize the library, but will
  * increment the reference count.
  */
-bool qxir_lib_init();
+bool nr_lib_init();
 
 /**
  * @brief Deinitialize the library.
@@ -65,7 +65,7 @@ bool qxir_lib_init();
  * multiple times. Each time will not deinitialize the library, but when
  * the reference count reaches zero, the library will be deinitialized.
  */
-void qxir_lib_deinit();
+void nr_lib_deinit();
 
 /**
  * @brief Get the version of the library.
@@ -75,7 +75,7 @@ void qxir_lib_deinit();
  * @note This function is thread-safe.
  * @note This function is safe to call before initialization and after deinitialization.
  */
-const char* qxir_lib_version();
+const char* nr_lib_version();
 
 /**
  * @brief Get the last error message from the current thread.
@@ -85,7 +85,7 @@ const char* qxir_lib_version();
  * @note This function is thread-safe.
  * @note This function is safe to call before initialization and after deinitialization.
  */
-const char* qxir_strerror();
+const char* nr_strerror();
 
 #ifdef __cplusplus
 }

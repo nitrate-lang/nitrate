@@ -39,10 +39,10 @@
  * @spacecomplexity O(1)
  */
 
-using namespace qxir::diag;
-using namespace qxir;
+using namespace nr::diag;
+using namespace nr;
 
-bool qxir::pass::ds_raii(qmodule_t *M) {
+bool nr::pass::ds_raii(qmodule_t *M) {
   for (auto &[k, v] : M->getFunctions()) {
     Expr *F = v.second->getBody();
 
@@ -59,7 +59,7 @@ bool qxir::pass::ds_raii(qmodule_t *M) {
       /// For each unconditional branch instruction call
       /// destructors in reverse order
       auto first_ubr = std::find_if(SI.begin(), SI.end(), [](Expr *E) {
-        qxir_ty_t ty = E->getKind();
+        nr_ty_t ty = E->getKind();
         return ty == QIR_NODE_RET || ty == QIR_NODE_CONT || ty == QIR_NODE_BRK;
       });
 

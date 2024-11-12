@@ -35,7 +35,7 @@
 #include <nitrate-ir/Module.hh>
 #include <passes/PassList.hh>
 
-void qxir::pass::PassRegistry::link_builtin() {
+void nr::pass::PassRegistry::link_builtin() {
   addPass("ds-acyclic", ds_acyclic);
   addPass("ds-nullchk", ds_nullchk);
   addPass("ds-resolv", ds_resolv);
@@ -50,7 +50,7 @@ void qxir::pass::PassRegistry::link_builtin() {
   addPass("chk-bad-cast", chk_bad_cast);
 }
 
-void qxir::pass::PassGroupRegistry::RegisterBuiltinGroups() {
+void nr::pass::PassGroupRegistry::RegisterBuiltinGroups() {
   PassGroupBuilder()
       .addPass("ds-clean") /* Cleanup IR */
       /* Add more cleanup passes: [dead-code removal, ?] */

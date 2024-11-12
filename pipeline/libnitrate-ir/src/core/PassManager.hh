@@ -42,7 +42,7 @@
 
 struct qmodule_t;
 
-namespace qxir::pass {
+namespace nr::pass {
   typedef std::function<bool(qmodule_t*)> pass_func_t;
 
   class ModulePass {
@@ -138,6 +138,6 @@ namespace qxir::pass {
 
     PassGroup build(const std::string& name, bool optimize_order = true);
   };
-}  // namespace qxir::pass
+}  // namespace nr::pass
 
 #endif  // __NITRATE_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__

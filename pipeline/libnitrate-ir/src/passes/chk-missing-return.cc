@@ -33,9 +33,9 @@
 #include <nitrate-ir/Module.hh>
 #include <passes/PassList.hh>
 
-using namespace qxir::diag;
+using namespace nr::diag;
 
-bool qxir::pass::chk_missing_return(qmodule_t* M) {
+bool nr::pass::chk_missing_return(qmodule_t* M) {
   /**
    * Check that functions that require a return statement actually have one.
    * Declarations and non-applicable functions are ignored.

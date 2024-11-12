@@ -36,9 +36,9 @@
 #include <cstdint>
 #include <nitrate-ir/IRGraph.hh>
 
-using namespace qxir;
+using namespace nr;
 
-static bool is_unsigned_integer(qxir_ty_t ty) {
+static bool is_unsigned_integer(nr_ty_t ty) {
   switch (ty) {
     case QIR_NODE_U1_TY:
     case QIR_NODE_U8_TY:
@@ -52,7 +52,7 @@ static bool is_unsigned_integer(qxir_ty_t ty) {
   }
 }
 
-static bool is_signed_integer(qxir_ty_t ty) {
+static bool is_signed_integer(nr_ty_t ty) {
   switch (ty) {
     case QIR_NODE_I8_TY:
     case QIR_NODE_I16_TY:
@@ -65,7 +65,7 @@ static bool is_signed_integer(qxir_ty_t ty) {
   }
 }
 
-static bool is_primitive_numeric(qxir_ty_t ty) {
+static bool is_primitive_numeric(nr_ty_t ty) {
   switch (ty) {
     case QIR_NODE_U1_TY:
     case QIR_NODE_U8_TY:
@@ -88,7 +88,7 @@ static bool is_primitive_numeric(qxir_ty_t ty) {
   }
 }
 
-static Type *signed_complement(qxir_ty_t ty) {
+static Type *signed_complement(nr_ty_t ty) {
   switch (ty) {
     case QIR_NODE_I8_TY:
       return create<U8Ty>();
@@ -112,12 +112,12 @@ static Type *binexpr_promote(Type *L, Type *R) {
 
   ///===========================================================================
   /// NOTE: If L && R are the same type, the type is their identity.
-  if (L->cmp_eq(R)) {
+  if (L->isSame(R)) {
     return L;
   }
   ///===========================================================================
 
-  qxir_ty_t LT = L->getKind(), RT = R->getKind();
+  nr_ty_t LT = L->getKind(), RT = R->getKind();
 
   ///===========================================================================
   /// NOTE: Primitive numeric types are promoted according to the following rules:
@@ -189,13 +189,13 @@ static Type *binexpr_promote(Type *L, Type *R) {
   }
 }
 
-LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
+LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node) {
   qcore_assert(_node != nullptr);
 
   Expr *E = static_cast<Expr *>(_node);
   Type *T = nullptr;
 
-  qxir::current = E->getModule();
+  nr::current = E->getModule();
 
   if (E->isType()) {
     T = E->asType();
@@ -642,7 +642,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
           }
 
           bool homogeneous = std::all_of(types.begin(), types.end(),
-                                         [&](Type *X) { return X->cmp_eq(types.front()); });
+                                         [&](Type *X) { return X->isSame(types.front()); });
 
           if (homogeneous) {
             T = create<ArrayTy>(types.front(), types.size());
@@ -819,7 +819,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
   return T;
 }
 
-bool qxir::Type::hasKnownSize() noexcept {
+bool nr::Type::hasKnownSize() noexcept {
   switch (this->getKind()) {
     case QIR_NODE_U1_TY:
     case QIR_NODE_U8_TY:
@@ -861,7 +861,7 @@ bool qxir::Type::hasKnownSize() noexcept {
   }
 }
 
-bool qxir::Type::hasKnownAlign() noexcept {
+bool nr::Type::hasKnownAlign() noexcept {
   switch (this->getKind()) {
     case QIR_NODE_U1_TY:
     case QIR_NODE_U8_TY:
@@ -903,7 +903,7 @@ bool qxir::Type::hasKnownAlign() noexcept {
   }
 }
 
-CPP_EXPORT uint64_t qxir::Type::getSizeBits() {
+CPP_EXPORT uint64_t nr::Type::getSizeBits() {
   qcore_assert(this->hasKnownSize(), "Attempted to get the size of a type with an unknown size");
 
   uint64_t size;
@@ -1007,7 +1007,7 @@ CPP_EXPORT uint64_t qxir::Type::getSizeBits() {
   return size;
 }
 
-CPP_EXPORT uint64_t qxir::Type::getAlignBits() {
+CPP_EXPORT uint64_t nr::Type::getAlignBits() {
   qcore_assert(this->hasKnownSize(), "Attempted to get the size of a type with an unknown size");
 
   uint64_t align;

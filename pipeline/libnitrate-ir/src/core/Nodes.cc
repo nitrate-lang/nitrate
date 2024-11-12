@@ -48,11 +48,11 @@
 #include <unordered_set>
 #include <variant>
 
-using namespace qxir;
+using namespace nr;
 
 ///=============================================================================
-namespace qxir {
-  thread_local ArenaAllocatorImpl qxir_arena;
+namespace nr {
+  thread_local ArenaAllocatorImpl nr_arena;
 }
 
 void *ArenaAllocatorImpl::allocate(std::size_t size) {
@@ -64,8 +64,8 @@ void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }
 
 ///=============================================================================
 
-CPP_EXPORT uint32_t Expr::getKindSize(qxir_ty_t type) noexcept {
-  static const std::unordered_map<qxir_ty_t, uint32_t> sizes = {
+CPP_EXPORT uint32_t Expr::getKindSize(nr_ty_t type) noexcept {
+  static const std::unordered_map<nr_ty_t, uint32_t> sizes = {
       {QIR_NODE_BINEXPR, sizeof(BinExpr)},
       {QIR_NODE_UNEXPR, sizeof(UnExpr)},
       {QIR_NODE_POST_UNEXPR, sizeof(PostUnExpr)},
@@ -120,8 +120,8 @@ CPP_EXPORT uint32_t Expr::getKindSize(qxir_ty_t type) noexcept {
   return sizes.at(type);
 }
 
-CPP_EXPORT const char *Expr::getKindName(qxir_ty_t type) noexcept {
-  static const std::unordered_map<qxir_ty_t, const char *> names = {
+CPP_EXPORT const char *Expr::getKindName(nr_ty_t type) noexcept {
+  static const std::unordered_map<nr_ty_t, const char *> names = {
       {QIR_NODE_BINEXPR, "bin_expr"},
       {QIR_NODE_UNEXPR, "unary_expr"},
       {QIR_NODE_POST_UNEXPR, "post_unary_expr"},
@@ -207,12 +207,12 @@ CPP_EXPORT bool Expr::isType() const noexcept {
   }
 }
 
-CPP_EXPORT std::optional<qxir::Type *> qxir::Expr::getType() noexcept {
-  return static_cast<Type *>(qxir_infer(this));
+CPP_EXPORT std::optional<nr::Type *> nr::Expr::getType() noexcept {
+  return static_cast<Type *>(nr_infer(this));
 }
 
-CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
-  qxir_ty_t kind = getKind();
+CPP_EXPORT bool nr::Expr::isSame(const nr::Expr *other) const {
+  nr_ty_t kind = getKind();
 
   if (kind != other->getKind()) {
     return false;
@@ -225,7 +225,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
       if (a->m_op != b->m_op) {
         return false;
       }
-      return a->m_lhs->cmp_eq(b->m_lhs) && a->m_rhs->cmp_eq(b->m_rhs);
+      return a->m_lhs->isSame(b->m_lhs) && a->m_rhs->isSame(b->m_rhs);
     }
     case QIR_NODE_UNEXPR: {
       auto a = as<UnExpr>();
@@ -233,7 +233,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
       if (a->m_op != b->m_op) {
         return false;
       }
-      return a->m_expr->cmp_eq(b->m_expr);
+      return a->m_expr->isSame(b->m_expr);
     }
     case QIR_NODE_POST_UNEXPR: {
       auto a = as<PostUnExpr>();
@@ -241,7 +241,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
       if (a->m_op != b->m_op) {
         return false;
       }
-      return a->m_expr->cmp_eq(b->m_expr);
+      return a->m_expr->isSame(b->m_expr);
     }
     case QIR_NODE_INT: {
       return as<Int>()->getValue() == other->as<Int>()->getValue();
@@ -256,7 +256,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
         return false;
       }
       for (size_t i = 0; i < a->m_items.size(); i++) {
-        if (!a->m_items[i]->cmp_eq(b->m_items[i])) {
+        if (!a->m_items[i]->isSame(b->m_items[i])) {
           return false;
         }
       }
@@ -265,14 +265,14 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
     case QIR_NODE_CALL: {
       auto a = as<Call>();
       auto b = other->as<Call>();
-      if (!a->m_iref->cmp_eq(b->m_iref)) {
+      if (!a->m_iref->isSame(b->m_iref)) {
         return false;
       }
       if (a->m_args.size() != b->m_args.size()) {
         return false;
       }
       for (size_t i = 0; i < a->m_args.size(); i++) {
-        if (!a->m_args[i]->cmp_eq(b->m_args[i])) {
+        if (!a->m_args[i]->isSame(b->m_args[i])) {
           return false;
         }
       }
@@ -285,7 +285,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
         return false;
       }
       for (size_t i = 0; i < a->m_items.size(); i++) {
-        if (!a->m_items[i]->cmp_eq(b->m_items[i])) {
+        if (!a->m_items[i]->isSame(b->m_items[i])) {
           return false;
         }
       }
@@ -294,10 +294,10 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
     case QIR_NODE_INDEX: {
       auto a = as<Index>();
       auto b = other->as<Index>();
-      if (!a->m_expr->cmp_eq(b->m_expr)) {
+      if (!a->m_expr->isSame(b->m_expr)) {
         return false;
       }
-      if (!a->m_index->cmp_eq(b->m_index)) {
+      if (!a->m_index->isSame(b->m_index)) {
         return false;
       }
       return true;
@@ -311,7 +311,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
       if (a->m_abi_name != b->m_abi_name) {
         return false;
       }
-      return a->m_value->cmp_eq(b->m_value);
+      return a->m_value->isSame(b->m_value);
     }
     case QIR_NODE_LOCAL: {
       auto a = as<Local>();
@@ -319,10 +319,10 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
       if (a->m_name != b->m_name) {
         return false;
       }
-      return a->m_value->cmp_eq(b->m_value);
+      return a->m_value->isSame(b->m_value);
     }
     case QIR_NODE_RET: {
-      return as<Ret>()->m_expr->cmp_eq(other->as<Ret>()->m_expr);
+      return as<Ret>()->m_expr->isSame(other->as<Ret>()->m_expr);
     }
     case QIR_NODE_BRK: {
       return true;
@@ -333,13 +333,13 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
     case QIR_NODE_IF: {
       auto a = as<If>();
       auto b = other->as<If>();
-      if (!a->m_cond->cmp_eq(b->m_cond)) {
+      if (!a->m_cond->isSame(b->m_cond)) {
         return false;
       }
-      if (!a->m_then->cmp_eq(b->m_then)) {
+      if (!a->m_then->isSame(b->m_then)) {
         return false;
       }
-      if (!a->m_else->cmp_eq(b->m_else)) {
+      if (!a->m_else->isSame(b->m_else)) {
         return false;
       }
       return true;
@@ -347,10 +347,10 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
     case QIR_NODE_WHILE: {
       auto a = as<While>();
       auto b = other->as<While>();
-      if (!a->m_cond->cmp_eq(b->m_cond)) {
+      if (!a->m_cond->isSame(b->m_cond)) {
         return false;
       }
-      if (!a->m_body->cmp_eq(b->m_body)) {
+      if (!a->m_body->isSame(b->m_body)) {
         return false;
       }
       return true;
@@ -358,16 +358,16 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
     case QIR_NODE_FOR: {
       auto a = as<For>();
       auto b = other->as<For>();
-      if (!a->m_init->cmp_eq(b->m_init)) {
+      if (!a->m_init->isSame(b->m_init)) {
         return false;
       }
-      if (!a->m_cond->cmp_eq(b->m_cond)) {
+      if (!a->m_cond->isSame(b->m_cond)) {
         return false;
       }
-      if (!a->m_step->cmp_eq(b->m_step)) {
+      if (!a->m_step->isSame(b->m_step)) {
         return false;
       }
-      if (!a->m_body->cmp_eq(b->m_body)) {
+      if (!a->m_body->isSame(b->m_body)) {
         return false;
       }
       return true;
@@ -375,7 +375,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
     case QIR_NODE_FORM: {
       auto a = as<Form>();
       auto b = other->as<Form>();
-      if (!a->m_maxjobs->cmp_eq(b->m_maxjobs)) {
+      if (!a->m_maxjobs->isSame(b->m_maxjobs)) {
         return false;
       }
       if (a->m_idx_ident != b->m_idx_ident) {
@@ -384,10 +384,10 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
       if (a->m_val_ident != b->m_val_ident) {
         return false;
       }
-      if (!a->m_expr->cmp_eq(b->m_expr)) {
+      if (!a->m_expr->isSame(b->m_expr)) {
         return false;
       }
-      if (!a->m_body->cmp_eq(b->m_body)) {
+      if (!a->m_body->isSame(b->m_body)) {
         return false;
       }
       return true;
@@ -395,10 +395,10 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
     case QIR_NODE_CASE: {
       auto a = as<Case>();
       auto b = other->as<Case>();
-      if (!a->m_cond->cmp_eq(b->m_cond)) {
+      if (!a->m_cond->isSame(b->m_cond)) {
         return false;
       }
-      if (!a->m_body->cmp_eq(b->m_body)) {
+      if (!a->m_body->isSame(b->m_body)) {
         return false;
       }
       return true;
@@ -406,17 +406,17 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
     case QIR_NODE_SWITCH: {
       auto a = as<Switch>();
       auto b = other->as<Switch>();
-      if (!a->m_cond->cmp_eq(b->m_cond)) {
+      if (!a->m_cond->isSame(b->m_cond)) {
         return false;
       }
-      if (!a->m_default->cmp_eq(b->m_default)) {
+      if (!a->m_default->isSame(b->m_default)) {
         return false;
       }
       if (a->m_cases.size() != b->m_cases.size()) {
         return false;
       }
       for (size_t i = 0; i < a->m_cases.size(); i++) {
-        if (!a->m_cases[i]->cmp_eq(b->m_cases[i])) {
+        if (!a->m_cases[i]->isSame(b->m_cases[i])) {
           return false;
         }
       }
@@ -428,7 +428,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
       if (a->m_name != b->m_name) {
         return false;
       }
-      if (!a->m_return->cmp_eq(b->m_return)) {
+      if (!a->m_return->isSame(b->m_return)) {
         return false;
       }
       if (a->m_params.size() != b->m_params.size()) {
@@ -438,17 +438,17 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
         if (a->m_params[i].second != b->m_params[i].second) {
           return false;
         }
-        if (!a->m_params[i].first->cmp_eq(b->m_params[i].first)) {
+        if (!a->m_params[i].first->isSame(b->m_params[i].first)) {
           return false;
         }
       }
-      if (!a->m_body->cmp_eq(b->m_body)) {
+      if (!a->m_body->isSame(b->m_body)) {
         return false;
       }
       return true;
     }
     case QIR_NODE_ASM: {
-      qcore_implement("Expr::cmp_eq for QIR_NODE_ASM");
+      qcore_implement("Expr::isSame for QIR_NODE_ASM");
       break;
     }
     case QIR_NODE_IGN: {
@@ -472,7 +472,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
     case QIR_NODE_VOID_TY:
       return true;
     case QIR_NODE_PTR_TY: {
-      return as<PtrTy>()->m_pointee->cmp_eq(other->as<PtrTy>()->m_pointee);
+      return as<PtrTy>()->m_pointee->isSame(other->as<PtrTy>()->m_pointee);
     }
     case QIR_NODE_OPAQUE_TY: {
       return as<OpaqueTy>()->m_name == other->as<OpaqueTy>()->m_name;
@@ -484,7 +484,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
         return false;
       }
       for (size_t i = 0; i < a->m_fields.size(); i++) {
-        if (!a->m_fields[i]->cmp_eq(b->m_fields[i])) {
+        if (!a->m_fields[i]->isSame(b->m_fields[i])) {
           return false;
         }
       }
@@ -497,7 +497,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
         return false;
       }
       for (size_t i = 0; i < a->m_fields.size(); i++) {
-        if (!a->m_fields[i]->cmp_eq(b->m_fields[i])) {
+        if (!a->m_fields[i]->isSame(b->m_fields[i])) {
           return false;
         }
       }
@@ -506,7 +506,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
     case QIR_NODE_ARRAY_TY: {
       auto a = as<ArrayTy>();
       auto b = other->as<ArrayTy>();
-      if (!a->m_element->cmp_eq(b->m_element)) {
+      if (!a->m_element->isSame(b->m_element)) {
         return false;
       }
       if (a->m_size != b->m_size) {
@@ -521,11 +521,11 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
         return false;
       }
       for (size_t i = 0; i < a->m_params.size(); i++) {
-        if (!a->m_params[i]->cmp_eq(b->m_params[i])) {
+        if (!a->m_params[i]->isSame(b->m_params[i])) {
           return false;
         }
       }
-      if (!a->m_return->cmp_eq(b->m_return)) {
+      if (!a->m_return->isSame(b->m_return)) {
         return false;
       }
       if (a->m_attrs != b->m_attrs) {
@@ -543,7 +543,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
         return false;
       }
 
-      throw std::runtime_error("Expr::cmp_eq: attempt to compare fine structure of QIR_NODE_TMP");
+      throw std::runtime_error("Expr::isSame: attempt to compare fine structure of QIR_NODE_TMP");
       break;
     }
   }
@@ -551,8 +551,8 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
   __builtin_unreachable();
 }
 
-static bool isCyclicUtil(qxir::Expr *base, std::unordered_set<qxir::Expr *> &visited,
-                         std::unordered_set<qxir::Expr *> &recStack) {
+static bool isCyclicUtil(nr::Expr *base, std::unordered_set<nr::Expr *> &visited,
+                         std::unordered_set<nr::Expr *> &recStack) {
   bool has_cycle = false;
 
   if (!visited.contains(base)) {
@@ -563,7 +563,7 @@ static bool isCyclicUtil(qxir::Expr *base, std::unordered_set<qxir::Expr *> &vis
 
     // Recur for all the vertices adjacent
     // to this vertex
-    iterate<IterMode::children>(base, [&](qxir::Expr *, qxir::Expr **cur) -> IterOp {
+    iterate<IterMode::children>(base, [&](nr::Expr *, nr::Expr **cur) -> IterOp {
       if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack)) [[unlikely]] {
         has_cycle = true;
         return IterOp::Abort;
@@ -581,7 +581,7 @@ static bool isCyclicUtil(qxir::Expr *base, std::unordered_set<qxir::Expr *> &vis
   return has_cycle;
 }
 
-CPP_EXPORT bool qxir::Expr::is_acyclic() const noexcept {
+CPP_EXPORT bool nr::Expr::isAcyclic() const noexcept {
   std::unordered_set<Expr *> visited, recStack;
   bool has_cycle = false;
 
@@ -598,7 +598,7 @@ CPP_EXPORT bool qxir::Expr::is_acyclic() const noexcept {
   return !has_cycle;
 }
 
-CPP_EXPORT std::string_view qxir::Expr::getName() const noexcept {
+CPP_EXPORT std::string_view nr::Expr::getName() const noexcept {
   std::string_view R = "";
 
   switch (this->getKind()) {
@@ -799,7 +799,7 @@ CPP_EXPORT std::string_view qxir::Expr::getName() const noexcept {
   return R;
 }
 
-CPP_EXPORT std::pair<qlex_loc_t, qlex_loc_t> qxir::Expr::getLoc() const noexcept {
+CPP_EXPORT std::pair<qlex_loc_t, qlex_loc_t> nr::Expr::getLoc() const noexcept {
   qmodule_t *mod = getModule();
   qcore_assert(mod != nullptr, "Module is not set");
 
@@ -809,7 +809,7 @@ CPP_EXPORT std::pair<qlex_loc_t, qlex_loc_t> qxir::Expr::getLoc() const noexcept
   return {m_start_loc, qlex_offset(lexer, m_start_loc, m_loc_size)};
 }
 
-CPP_EXPORT qlex_loc_t qxir::Expr::locBeg() const noexcept {
+CPP_EXPORT qlex_loc_t nr::Expr::locBeg() const noexcept {
   qmodule_t *mod = getModule();
   qcore_assert(mod != nullptr, "Module is not set");
 
@@ -819,7 +819,7 @@ CPP_EXPORT qlex_loc_t qxir::Expr::locBeg() const noexcept {
   return m_start_loc;
 }
 
-CPP_EXPORT qlex_loc_t qxir::Expr::locEnd() const noexcept {
+CPP_EXPORT qlex_loc_t nr::Expr::locEnd() const noexcept {
   qmodule_t *mod = getModule();
   qcore_assert(mod != nullptr, "Module is not set");
 
@@ -829,7 +829,7 @@ CPP_EXPORT qlex_loc_t qxir::Expr::locEnd() const noexcept {
   return qlex_offset(lexer, m_start_loc, m_loc_size);
 }
 
-CPP_EXPORT void qxir::Expr::setLocDangerous(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept {
+CPP_EXPORT void nr::Expr::setLocDangerous(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept {
   qmodule_t *mod = getModule();
   qcore_assert(mod != nullptr, "Module is not set");
 
@@ -849,16 +849,16 @@ CPP_EXPORT Type *Expr::asType() noexcept {
   return static_cast<Type *>(this);
 }
 
-CPP_EXPORT bool Expr::is(qxir_ty_t type) const noexcept { return type == getKind(); }
+CPP_EXPORT bool Expr::is(nr_ty_t type) const noexcept { return type == getKind(); }
 
-CPP_EXPORT void qxir::Expr::dump(std::ostream &os, bool isForDebug) const {
+CPP_EXPORT void nr::Expr::dump(std::ostream &os, bool isForDebug) const {
   (void)isForDebug;
 
   char *cstr = nullptr;
   size_t len = 0;
 
   FILE *fmembuf = open_memstream(&cstr, &len);
-  if (!qxir_write(this, QXIR_SERIAL_CODE, fmembuf, nullptr, 0)) {
+  if (!nr_write(this, QXIR_SERIAL_CODE, fmembuf, nullptr, 0)) {
     qcore_panic("Failed to dump expression");
   }
   fflush(fmembuf);
@@ -869,7 +869,7 @@ CPP_EXPORT void qxir::Expr::dump(std::ostream &os, bool isForDebug) const {
   free(cstr);
 }
 
-CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
+CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
   const EVP_MD *md = EVP_sha256();
   std::array<uint8_t, EVP_MAX_MD_SIZE> hash;
 
@@ -1103,12 +1103,12 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
   boost::uuids::uuid uuid;
   std::memcpy(uuid.data, hash.data(), uuid.size());
   boost::uuids::name_generator gen(uuid);
-  return gen("qxir");
+  return gen("nr");
 }
 
-CPP_EXPORT qmodule_t *qxir::Expr::getModule() const noexcept { return ::getModule(m_module_idx); }
+CPP_EXPORT qmodule_t *nr::Expr::getModule() const noexcept { return ::getModule(m_module_idx); }
 
-CPP_EXPORT void qxir::Expr::setModuleDangerous(qmodule_t *module) noexcept {
+CPP_EXPORT void nr::Expr::setModuleDangerous(qmodule_t *module) noexcept {
   m_module_idx = module->getModuleId();
 }
 
@@ -1121,7 +1121,7 @@ CPP_EXPORT uint64_t Expr::getUniqId() const {
   }
 
   for (auto &[key, value] : id_map) {
-    if (key->cmp_eq(this)) {
+    if (key->isSame(this)) {
       return value;
     }
   }
@@ -1265,13 +1265,13 @@ CPP_EXPORT bool Type::is_bool() const { return getKind() == QIR_NODE_U1_TY; }
 
 CPP_EXPORT bool Type::is_ptr_to(const Type *type) const {
   if (is_pointer()) {
-    return as<PtrTy>()->m_pointee->cmp_eq(type);
+    return as<PtrTy>()->m_pointee->isSame(type);
   }
 
   return false;
 }
 
-Expr *qxir::createIgn() {
+Expr *nr::createIgn() {
   Expr *ptr = nullptr;
 
   if ((ptr = (Expr *)already_alloc(QIR_NODE_IGN)) == nullptr) [[unlikely]] {
@@ -1281,4 +1281,24 @@ Expr *qxir::createIgn() {
   }
 
   return ptr;
+}
+
+Type *nr::createUPtrIntTy() {
+  size_t ptr_size = current->getTargetInfo().PointerSizeBytes;
+
+  switch (ptr_size) {
+    case 1:
+      return create<U8Ty>();
+    case 2:
+      return create<U16Ty>();
+    case 4:
+      return create<U32Ty>();
+    case 8:
+      return create<U64Ty>();
+    case 16:
+      return create<U128Ty>();
+    default:
+      qcore_panicf("Unsupported construction for unsigned integer pointer type of size: %zu",
+                   ptr_size);
+  }
 }

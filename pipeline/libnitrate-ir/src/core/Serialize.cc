@@ -43,7 +43,7 @@
 #include <sstream>
 #include <unordered_set>
 
-using namespace qxir;
+using namespace nr;
 
 struct ConvState {
   int32_t indent;
@@ -681,14 +681,14 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
       std::string datestamp = tmp_ss.str();
 
       ss << "; Timestamp: " << datestamp << "\n";
-      ss << "; Compiler: " << qxir_lib_version() << "\n";
+      ss << "; Compiler: " << nr_lib_version() << "\n";
       ss << "; Compiler invented by Wesley Jones\n\n";
     }
   }
 
 #if !defined(NDEBUG)
   std::unordered_set<Expr *> v;
-  bool is_cylic = !node->is_acyclic();
+  bool is_cylic = !node->isAcyclic();
 #endif
 
   char *body_content = NULL, *typedef_content = NULL;
@@ -738,15 +738,15 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
   }
 }
 
-LIB_EXPORT bool qxir_write(const qxir_node_t *_node, qxir_serial_t mode, FILE *out, size_t *outlen,
-                           uint32_t argcnt, ...) {
+LIB_EXPORT bool nr_write(const nr_node_t *_node, nr_serial_t mode, FILE *out, size_t *outlen,
+                         uint32_t argcnt, ...) {
   (void)argcnt;
 
   bool status;
   Expr *node;
   long start, end;
 
-  node = static_cast<Expr *>(const_cast<qxir_node_t *>(_node));
+  node = static_cast<Expr *>(const_cast<nr_node_t *>(_node));
 
   if (outlen) {
     if ((start = ftell(out)) == -1) {

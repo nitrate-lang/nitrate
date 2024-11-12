@@ -41,9 +41,9 @@
  * @spacecomplexity O(1)
  */
 
-using namespace qxir::diag;
+using namespace nr::diag;
 
-bool qxir::pass::ds_verify(qmodule_t *mod) {
+bool nr::pass::ds_verify(qmodule_t *mod) {
   size_t tmp_total = 0;
 
   const auto cb = [&tmp_total](Expr *, Expr **_cur) -> IterOp {

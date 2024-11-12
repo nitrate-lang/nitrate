@@ -46,7 +46,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace qxir {
+namespace nr {
   typedef uint16_t ModuleId;
 
   struct TypeID {
@@ -80,9 +80,9 @@ namespace qxir {
 
   class Expr;
 
-}  // namespace qxir
+}  // namespace nr
 
-namespace qxir {
+namespace nr {
   class Expr;
   class Type;
   class BinExpr;
@@ -131,23 +131,23 @@ namespace qxir {
   class Fn;
   class Asm;
   class Tmp;
-}  // namespace qxir
+}  // namespace nr
 
 struct qmodule_t final {
 private:
-  using FunctionNameBimap = boost::bimap<std::string_view, std::pair<qxir::FnTy *, qxir::Fn *>>;
-  using GlobalVariableNameBimap = boost::bimap<std::string_view, qxir::Local *>;
+  using FunctionNameBimap = boost::bimap<std::string_view, std::pair<nr::FnTy *, nr::Fn *>>;
+  using GlobalVariableNameBimap = boost::bimap<std::string_view, nr::Local *>;
   using FunctionParamMap =
       std::unordered_map<std::string_view,
-                         std::vector<std::tuple<std::string, qxir::Type *, qxir::Expr *>>>;
-  using TypenameMap = std::unordered_map<std::string_view, qxir::Type *>;
+                         std::vector<std::tuple<std::string, nr::Type *, nr::Expr *>>>;
+  using TypenameMap = std::unordered_map<std::string_view, nr::Type *>;
   using CompositeFieldMap =
       std::unordered_map<std::string_view,
-                         std::vector<std::tuple<std::string, qxir::Type *, qxir::Expr *>>>;
-  using NamedConstMap = std::unordered_map<std::string_view, qxir::Expr *>;
+                         std::vector<std::tuple<std::string, nr::Type *, nr::Expr *>>>;
+  using NamedConstMap = std::unordered_map<std::string_view, nr::Expr *>;
 
   ///=============================================================================
-  qxir::Expr *m_root;                               /* Root node of the module */
+  nr::Expr *m_root;                                 /* Root node of the module */
   std::unordered_map<uint64_t, uint64_t> m_key_map; /* Place for IRGraph key-value pairs */
   ///=============================================================================
 
@@ -169,37 +169,37 @@ private:
   /// END: Data structures requisite for efficient lowering
   ///=============================================================================
 
-  std::unique_ptr<qxir::diag::DiagnosticManager> m_diag; /* Diagnostic manager instance */
-  std::unique_ptr<qxir::TypeManager> m_type_mgr;         /* Type manager instance */
-  std::unordered_set<std::string> m_strings;             /* Interned strings */
-  std::vector<std::string> m_passes_applied;             /* Module mutation tracking */
-  std::vector<std::string> m_checks_applied;             /* Module analysis pass tracking */
-  qxir::TargetInfo m_target_info;                        /* Build target information */
-  std::string m_module_name;                             /* Not nessesarily unique module name */
-  qxir::ModuleId m_id;                                   /* Module ID unique to the
+  std::unique_ptr<nr::diag::DiagnosticManager> m_diag; /* Diagnostic manager instance */
+  std::unique_ptr<nr::TypeManager> m_type_mgr;         /* Type manager instance */
+  std::unordered_set<std::string> m_strings;           /* Interned strings */
+  std::vector<std::string> m_passes_applied;           /* Module mutation tracking */
+  std::vector<std::string> m_checks_applied;           /* Module analysis pass tracking */
+  nr::TargetInfo m_target_info;                        /* Build target information */
+  std::string m_module_name;                           /* Not nessesarily unique module name */
+  nr::ModuleId m_id;                                   /* Module ID unique to the
                                                             process during its lifetime */
   bool m_diagnostics_enabled;
 
   qcore_arena m_node_arena;
-  qxir_conf_t *m_conf;
+  nr_conf_t *m_conf;
   qlex_t *m_lexer;
 
 public:
-  qmodule_t(qxir::ModuleId id, const std::string &name = "?");
+  qmodule_t(nr::ModuleId id, const std::string &name = "?");
   ~qmodule_t();
 
-  qxir::ModuleId getModuleId() noexcept { return m_id; }
+  nr::ModuleId getModuleId() noexcept { return m_id; }
 
-  qxir::Type *lookupType(qxir::TypeID tid);
+  nr::Type *lookupType(nr::TypeID tid);
 
-  void setRoot(qxir::Expr *root) noexcept { m_root = root; }
-  qxir::Expr *&getRoot() noexcept { return m_root; }
+  void setRoot(nr::Expr *root) noexcept { m_root = root; }
+  nr::Expr *&getRoot() noexcept { return m_root; }
 
   void setLexer(qlex_t *lexer) noexcept { m_lexer = lexer; }
   qlex_t *getLexer() noexcept { return m_lexer; }
 
-  void setConf(qxir_conf_t *conf) noexcept { m_conf = conf; }
-  qxir_conf_t *getConf() noexcept { return m_conf; }
+  void setConf(nr_conf_t *conf) noexcept { m_conf = conf; }
+  nr_conf_t *getConf() noexcept { return m_conf; }
 
   std::unordered_map<uint64_t, uint64_t> &getKeyMap() noexcept { return m_key_map; }
 
@@ -230,9 +230,9 @@ public:
 
   qcore_arena_t &getNodeArena() { return *m_node_arena.get(); }
 
-  qxir::diag::DiagnosticManager &getDiag() { return *m_diag; }
+  nr::diag::DiagnosticManager &getDiag() { return *m_diag; }
 
-  const qxir::TargetInfo &getTargetInfo() const { return m_target_info; }
+  const nr::TargetInfo &getTargetInfo() const { return m_target_info; }
 
   void setFailbit(bool fail) { m_failbit = fail; }
   bool getFailbit() const { return m_failbit; }
@@ -240,9 +240,9 @@ public:
 
 constexpr size_t QMODULE_SIZE = sizeof(qmodule_t);
 
-namespace qxir {
+namespace nr {
   qmodule_t *getModule(ModuleId mid);
   qmodule_t *createModule(std::string name = "?");
-}  // namespace qxir
+}  // namespace nr
 
 #endif

@@ -49,24 +49,24 @@ extern "C" {
 
 #if defined(__cplusplus) && defined(__NITRATE_QXIR_IMPL__)
 }
-typedef struct qxir_setting_t {
-  qxir_key_t key;
-  qxir_val_t value;
+typedef struct nr_setting_t {
+  nr_key_t key;
+  nr_val_t value;
 
 #if defined(__cplusplus) && defined(__NITRATE_QXIR_IMPL__)
-  constexpr qxir_setting_t(const std::initializer_list<int> &list)
-      : key(static_cast<qxir_key_t>(list.begin()[0])),
-        value(static_cast<qxir_val_t>(list.begin()[1])) {}
+  constexpr nr_setting_t(const std::initializer_list<int> &list)
+      : key(static_cast<nr_key_t>(list.begin()[0])),
+        value(static_cast<nr_val_t>(list.begin()[1])) {}
 #endif
-} qxir_setting_t;
+} nr_setting_t;
 
 extern "C" {
 #else
 
-typedef struct qxir_setting_t {
-  qxir_key_t key;
-  qxir_val_t value;
-} qxir_setting_t;
+typedef struct nr_setting_t {
+  nr_key_t key;
+  nr_val_t value;
+} nr_setting_t;
 
 #endif
 
@@ -81,11 +81,11 @@ typedef struct qxir_setting_t {
  * NULL on failure.
  *
  * @warning The caller is responsible for freeing the configuration object using
- * the `qxir_conf_free` function. Do NOT use the `free()` function to free
+ * the `nr_conf_free` function. Do NOT use the `free()` function to free
  * the configuration object directly.
  *
  * @note The default configuration values are specified in the documentation
- * and in the source code. See the `qxir_conf_getopts` function implementation
+ * and in the source code. See the `nr_conf_getopts` function implementation
  * for more information.
  *
  * @note The exact values of the default configuration options are subject to
@@ -95,7 +95,7 @@ typedef struct qxir_setting_t {
  *
  * @note This function is thread-safe.
  */
-qxir_conf_t *qxir_conf_new(bool use_defaults);
+nr_conf_t *nr_conf_new(bool use_defaults);
 
 /**
  * @brief Free a configuration object.
@@ -111,7 +111,7 @@ qxir_conf_t *qxir_conf_new(bool use_defaults);
  *
  * @note This function is thread-safe.
  */
-void qxir_conf_free(qxir_conf_t *conf);
+void nr_conf_free(nr_conf_t *conf);
 
 /**
  * @brief Set a configuration option.
@@ -128,7 +128,7 @@ void qxir_conf_free(qxir_conf_t *conf);
  *
  * @note This function is thread-safe.
  */
-bool qxir_conf_setopt(qxir_conf_t *conf, qxir_key_t key, qxir_val_t value);
+bool nr_conf_setopt(nr_conf_t *conf, nr_key_t key, nr_val_t value);
 
 /**
  * @brief Get the value of a configuration option.
@@ -141,7 +141,7 @@ bool qxir_conf_setopt(qxir_conf_t *conf, qxir_key_t key, qxir_val_t value);
  *
  * @note This function is thread-safe.
  */
-bool qxir_conf_getopt(qxir_conf_t *conf, qxir_key_t key, qxir_val_t *value);
+bool nr_conf_getopt(nr_conf_t *conf, nr_key_t key, nr_val_t *value);
 
 /**
  * @brief Get readonly access to the configuration options.
@@ -154,7 +154,7 @@ bool qxir_conf_getopt(qxir_conf_t *conf, qxir_key_t key, qxir_val_t *value);
  *
  * @note This function is thread-safe.
  */
-qxir_setting_t *qxir_conf_getopts(qxir_conf_t *conf, size_t *count);
+nr_setting_t *nr_conf_getopts(nr_conf_t *conf, size_t *count);
 
 /**
  * @brief Clear the configuration options.
@@ -166,7 +166,7 @@ qxir_setting_t *qxir_conf_getopts(qxir_conf_t *conf, size_t *count);
  *
  * @note This function is thread-safe.
  */
-void qxir_conf_clear(qxir_conf_t *conf);
+void nr_conf_clear(nr_conf_t *conf);
 
 /**
  * @brief Dump the configuration options to a stream.
@@ -182,8 +182,7 @@ void qxir_conf_clear(qxir_conf_t *conf);
  *
  * @note This function is thread-safe.
  */
-size_t qxir_conf_dump(qxir_conf_t *conf, FILE *stream, const char *field_delim,
-                      const char *line_delim);
+size_t nr_conf_dump(nr_conf_t *conf, FILE *stream, const char *field_delim, const char *line_delim);
 
 #ifdef __cplusplus
 }

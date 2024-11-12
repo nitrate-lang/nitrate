@@ -80,7 +80,7 @@ static std::optional<std::string> nitrate_cc_demangle(std::string_view mangled_n
     mangled_name.remove_prefix(1);
   }
 
-  qxir::SymbolEncoding codec;
+  nr::SymbolEncoding codec;
   return codec.demangle_name(mangled_name);
 }
 
@@ -91,7 +91,7 @@ static std::string no3_deps_version_string() {
 
   std::array<std::string_view, 6> NO3_DEPS = {qcore_lib_version(), qlex_lib_version(),
                                               qprep_lib_version(), qparse_lib_version(),
-                                              qxir_lib_version(),  qcode_lib_version()};
+                                              nr_lib_version(),    qcode_lib_version()};
 
   ss << "{\"ver\":\"" << __TARGET_VERSION << "\",\"stable\":" << (NO3_STABLE ? "true" : "false")
      << ",\"using\":[";
@@ -643,23 +643,23 @@ namespace argparse_setup {
     subparsers["parse"] = std::move(parse);
 
     /*================= QXIR SUBPARSER =================*/
-    auto qxir = std::make_unique<ArgumentParser>("qxir", "1.0", default_arguments::help);
+    auto nr = std::make_unique<ArgumentParser>("nr", "1.0", default_arguments::help);
 
-    qxir->add_argument("source").help("source file to lower into QXIR").nargs(1);
-    qxir->add_argument("-o", "--output")
-        .help("output file for qxir tree")
+    nr->add_argument("source").help("source file to lower into QXIR").nargs(1);
+    nr->add_argument("-o", "--output")
+        .help("output file for nr tree")
         .default_value(std::string(""))
         .nargs(1);
-    qxir->add_argument("-O", "--opts")
+    nr->add_argument("-O", "--opts")
         .help("optimizations to apply to QXIR")
         .default_value(std::string(""))
         .nargs(1);
-    qxir->add_argument("-v", "--verbose")
+    nr->add_argument("-v", "--verbose")
         .help("print verbose output")
         .default_value(false)
         .implicit_value(true);
 
-    subparsers["qxir"] = std::move(qxir);
+    subparsers["nr"] = std::move(nr);
 
     /*================= CODEGEN SUBPARSER =================*/
     auto codegen = std::make_unique<ArgumentParser>("codegen", "1.0", default_arguments::help);
@@ -697,7 +697,7 @@ namespace argparse_setup {
     parser.add_subparser(*subparsers["bench"]);
     parser.add_subparser(*subparsers["test"]);
     parser.add_subparser(*subparsers["parse"]);
-    parser.add_subparser(*subparsers["qxir"]);
+    parser.add_subparser(*subparsers["nr"]);
     parser.add_subparser(*subparsers["codegen"]);
   }
 
@@ -1271,16 +1271,16 @@ namespace no3::router {
       if (!output.empty()) fclose(out_fp);
 
       return 0;
-    } else if (parser.is_subcommand_used("qxir")) {
-      auto &qxir_parser = *subparsers.at("qxir");
+    } else if (parser.is_subcommand_used("nr")) {
+      auto &nr_parser = *subparsers.at("nr");
 
       core::SetColorMode(mode.use_color);
-      core::SetDebugMode(qxir_parser["--verbose"] == true);
+      core::SetDebugMode(nr_parser["--verbose"] == true);
 
-      std::string source = qxir_parser.get<std::string>("source");
-      std::string output = qxir_parser.get<std::string>("--output");
-      std::string opts = qxir_parser.get<std::string>("--opts");
-      bool verbose = qxir_parser["--verbose"] == true;
+      std::string source = nr_parser.get<std::string>("source");
+      std::string output = nr_parser.get<std::string>("--output");
+      std::string opts = nr_parser.get<std::string>("--opts");
+      bool verbose = nr_parser["--verbose"] == true;
 
       auto fp = std::make_shared<std::ifstream>(source, std::ios_base::in | std::ios_base::binary);
       if (!fp->is_open()) {
@@ -1307,24 +1307,24 @@ namespace no3::router {
         return 1;
       }
 
-      qxir_conf conf;
+      nr_conf conf;
       qmodule qmod(lexer.get(), conf.get(), source.c_str());
 
-      auto cb = [](const uint8_t *msg, size_t size, qxir_level_t lvl, uintptr_t data) {
+      auto cb = [](const uint8_t *msg, size_t size, nr_level_t lvl, uintptr_t data) {
         if (!data && lvl < QXIR_LEVEL_INFO) {
           return;
         }
         qerr << std::string_view((const char *)msg, size) << std::endl;
       };
 
-      if (!qxir_lower(qmod.get(), root, true)) {
-        qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL,
-                       mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
+      if (!nr_lower(qmod.get(), root, true)) {
+        nr_diag_read(qmod.get(), QXIR_AUDIT_ALL,
+                     mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
         return 1;
       }
 
-      qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL,
-                     mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
+      nr_diag_read(qmod.get(), QXIR_AUDIT_ALL, mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR,
+                   cb, verbose);
 
       FILE *out_fp = nullptr;
       if (!output.empty()) {
@@ -1337,7 +1337,7 @@ namespace no3::router {
         out_fp = stdout;
       }
 
-      if (!qxir_write(qxir_base(qmod.get()), QXIR_SERIAL_CODE, out_fp, nullptr, 0)) {
+      if (!nr_write(nr_base(qmod.get()), QXIR_SERIAL_CODE, out_fp, nullptr, 0)) {
         if (!output.empty()) fclose(out_fp);
         qerr << "Failed to generate QXIR tree" << std::endl;
         return 1;
@@ -1347,16 +1347,16 @@ namespace no3::router {
 
       return 0;
     } else if (parser.is_subcommand_used("codegen")) {
-      auto &qxir_parser = *subparsers.at("codegen");
+      auto &nr_parser = *subparsers.at("codegen");
 
       core::SetColorMode(mode.use_color);
-      core::SetDebugMode(qxir_parser["--verbose"] == true);
+      core::SetDebugMode(nr_parser["--verbose"] == true);
 
-      std::string source = qxir_parser.get<std::string>("source");
-      std::string output = qxir_parser.get<std::string>("--output");
-      std::string opts = qxir_parser.get<std::string>("--opts");
-      bool verbose = qxir_parser["--verbose"] == true;
-      std::string target = qxir_parser.get<std::string>("--target");
+      std::string source = nr_parser.get<std::string>("source");
+      std::string output = nr_parser.get<std::string>("--output");
+      std::string opts = nr_parser.get<std::string>("--opts");
+      bool verbose = nr_parser["--verbose"] == true;
+      std::string target = nr_parser.get<std::string>("--target");
 
       auto fp = std::make_shared<std::ifstream>(source, std::ios_base::in | std::ios_base::binary);
       if (!fp->is_open()) {
@@ -1384,24 +1384,24 @@ namespace no3::router {
         return 1;
       }
 
-      qxir_conf conf;
+      nr_conf conf;
       qmodule qmod(lexer.get(), conf.get(), source.c_str());
 
-      auto cb = [](const uint8_t *msg, size_t size, qxir_level_t lvl, uintptr_t data) {
+      auto cb = [](const uint8_t *msg, size_t size, nr_level_t lvl, uintptr_t data) {
         if (!data && lvl < QXIR_LEVEL_INFO) {
           return;
         }
         qerr << std::string_view((const char *)msg, size) << std::endl;
       };
 
-      if (!qxir_lower(qmod.get(), root, true)) {
-        qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL,
-                       mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
+      if (!nr_lower(qmod.get(), root, true)) {
+        nr_diag_read(qmod.get(), QXIR_AUDIT_ALL,
+                     mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
         return 1;
       }
 
-      qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL,
-                     mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
+      nr_diag_read(qmod.get(), QXIR_AUDIT_ALL, mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR,
+                   cb, verbose);
 
       FILE *out_fp = nullptr;
       if (!output.empty()) {
@@ -1494,7 +1494,7 @@ static bool do_libs_init() {
     return false;
   }
 
-  if (!qxir_lib_init()) {
+  if (!nr_lib_init()) {
     qerr << "Failed to initialize NITRATE-IR library" << std::endl;
     return false;
   }
@@ -1509,7 +1509,7 @@ static bool do_libs_init() {
 
 static void do_libs_deinit() {
   qcode_lib_deinit();
-  qxir_lib_deinit();
+  nr_lib_deinit();
   qparse_lib_deinit();
   qprep_lib_deinit();
   qlex_lib_deinit();

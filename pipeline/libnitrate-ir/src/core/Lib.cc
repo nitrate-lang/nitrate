@@ -39,7 +39,7 @@
 
 #include "core/LibMacro.h"
 
-static std::atomic<size_t> qxir_lib_ref_count = 0;
+static std::atomic<size_t> nr_lib_ref_count = 0;
 
 static void increase_stack_size() {
   const rlim_t kStackSize = 64 * 1024 * 1024;  // min stack size = 64 MB
@@ -61,15 +61,15 @@ static void increase_stack_size() {
 static bool do_init() {
   increase_stack_size();
 
-  qxir::pass::PassGroupRegistry::RegisterBuiltinGroups();
+  nr::pass::PassGroupRegistry::RegisterBuiltinGroups();
 
   return true;
 }
 
 static void do_deinit() {}
 
-LIB_EXPORT bool qxir_lib_init() {
-  if (qxir_lib_ref_count++ > 1) {
+LIB_EXPORT bool nr_lib_init() {
+  if (nr_lib_ref_count++ > 1) {
     return true;
   }
 
@@ -84,8 +84,8 @@ LIB_EXPORT bool qxir_lib_init() {
   return do_init();
 }
 
-LIB_EXPORT void qxir_lib_deinit() {
-  if (--qxir_lib_ref_count > 0) {
+LIB_EXPORT void nr_lib_deinit() {
+  if (--nr_lib_ref_count > 0) {
     return;
   }
 
@@ -95,7 +95,7 @@ LIB_EXPORT void qxir_lib_deinit() {
   return do_deinit();
 }
 
-LIB_EXPORT const char* qxir_lib_version() {
+LIB_EXPORT const char* nr_lib_version() {
   static const char* version_string =
 
       "[" __TARGET_VERSION
@@ -143,4 +143,4 @@ LIB_EXPORT const char* qxir_lib_version() {
   return version_string;
 }
 
-LIB_EXPORT const char* qxir_strerror() { return ""; }
+LIB_EXPORT const char* nr_strerror() { return ""; }

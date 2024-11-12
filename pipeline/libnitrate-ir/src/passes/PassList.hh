@@ -34,7 +34,7 @@
 
 struct qmodule_t;
 
-namespace qxir::pass {
+namespace nr::pass {
 #define SEMANTIC_PASS(name) bool name(qmodule_t *mod)
 #define TRANSFORM_PASS(name) bool name(qmodule_t *mod)
 #define OPTIMIZE_PASS(name) bool name(qmodule_t *mod)
@@ -56,6 +56,6 @@ namespace qxir::pass {
 #undef TRANSFORM_PASS
 #undef SEMANTIC_PASS
 
-}  // namespace qxir::pass
+}  // namespace nr::pass
 
 #endif  // __NITRATE_QXIR_PASSES_LIST_H__

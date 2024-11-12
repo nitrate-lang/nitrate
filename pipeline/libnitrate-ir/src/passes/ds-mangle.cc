@@ -44,10 +44,10 @@
  * @spacecomplexity O(1)
  */
 
-using namespace qxir;
-using namespace qxir::diag;
+using namespace nr;
+using namespace nr::diag;
 
-bool qxir::pass::ds_mangle(qmodule_t *mod) {
+bool nr::pass::ds_mangle(qmodule_t *mod) {
   SymbolEncoding se;
   bool failed = false;
 

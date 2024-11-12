@@ -77,7 +77,7 @@ LIB_EXPORT bool nit_lib_init() {
     return false;
   }
 
-  if (!qxir_lib_init()) {
+  if (!nr_lib_init()) {
     return false;
   }
 
@@ -96,7 +96,7 @@ LIB_EXPORT void nit_deinit() {
   do_deinit();
 
   qcode_lib_deinit();
-  qxir_lib_deinit();
+  nr_lib_deinit();
   qparse_lib_deinit();
   qprep_lib_deinit();
   qlex_lib_deinit();

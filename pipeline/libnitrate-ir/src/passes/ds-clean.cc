@@ -41,8 +41,8 @@
  * @spacecomplexity O(1)
  */
 
-using namespace qxir::diag;
-using namespace qxir;
+using namespace nr::diag;
+using namespace nr;
 
 static void seq_mark_non_functional(Expr* P, Expr** C) {
   if (!P || P->getKind() != QIR_NODE_SEQ) {
@@ -312,7 +312,7 @@ static void remove_unneeded_cast(Expr*, Expr** C) {
     if (E->getOp() == Op::CastAs || E->getOp() == Op::BitcastAs) {
       Type* LHT = E->getLHS()->getType().value_or(nullptr);
 
-      if (LHT && LHT->cmp_eq(E->getRHS())) {
+      if (LHT && LHT->isSame(E->getRHS())) {
         *C = E->getLHS();
       }
     }
@@ -355,7 +355,7 @@ static size_t garbage_collect_round(qmodule_t* M, size_t& iteration) {
   return node_count;
 }
 
-bool qxir::pass::ds_clean(qmodule_t* M) {
+bool nr::pass::ds_clean(qmodule_t* M) {
   /* Run garbage collection until there is no more removable garbage */
   NodeCount last_count = -1, cur_count = 0;
   size_t gc_iter = 0;
