@@ -41,17 +41,16 @@
 #include <nitrate-ir/TypeDecl.h>
 #include <nitrate-lexer/Token.h>
 
-#include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <cassert>
 #include <cmath>
+#include <experimental/source_location>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/Report.hh>
 #include <optional>
-#include <source_location>
 #include <string_view>
 
 namespace nr {
@@ -83,11 +82,11 @@ namespace nr {
     CStr, /* Only supported variant */
   };
 
-  using boost::multiprecision::float128;
+  using bigfloat_t = long double;
   using boost::multiprecision::uint128_t;
 
   namespace builder {
-    class NRBuilder {
+    class __attribute__((visibility("default"))) NRBuilder {
       /** Implicit copying is not allowed */
       NRBuilder(const NRBuilder &) = delete;
       NRBuilder &operator=(const NRBuilder &) = delete;
@@ -132,25 +131,25 @@ namespace nr {
       std::optional<Local *> lookup_local(std::string_view local) noexcept;
       std::optional<Fn *> lookup_function(std::string_view function) noexcept;
 
-      bool expect(bool cond) noexcept;
-
-      struct CompilerSourceInformation {
-        unsigned line;
-        const char *filename;
-      };
-
-      constexpr static CompilerSourceInformation to_ccdbg(std::source_location loc) {
-        return CompilerSourceInformation{.line = loc.line(), .filename = loc.file_name()};
-      }
-
 #if defined(NDEBUG)
 #define SOURCE_LOCATION_PARAM
 #define SOURCE_LOCATION_PARAM_ONCE
+
+      void contract_enforce_(bool cond, std::string_view cond_str,
+                             std::experimental::source_location caller =
+                                 std::experimental::source_location()) noexcept;
+#define contract_enforce(cond) contract_enforce_(cond, #cond)
 #else
 #define SOURCE_LOCATION_PARAM \
-  , CompilerSourceInformation caller_info = to_ccdbg(std::source_location())
+  , std::experimental::source_location caller_info = std::experimental::source_location()
 #define SOURCE_LOCATION_PARAM_ONCE \
-  CompilerSourceInformation caller_info = to_ccdbg(std::source_location())
+  std::experimental::source_location caller_info = std::experimental::source_location()
+
+      void contract_enforce_(bool cond, std::string_view cond_str SOURCE_LOCATION_PARAM,
+                             std::experimental::source_location caller =
+                                 std::experimental::source_location()) noexcept;
+#define contract_enforce(cond) contract_enforce_(cond, #cond, caller_info)
+
 #endif
 
     public:
@@ -273,7 +272,7 @@ namespace nr {
 
       Int *createBool(bool value SOURCE_LOCATION_PARAM) noexcept;
       Int *createFixedInteger(uint128_t value SOURCE_LOCATION_PARAM) noexcept;
-      Float *createFixedFloat(float128 value SOURCE_LOCATION_PARAM) noexcept;
+      Float *createFixedFloat(bigfloat_t value SOURCE_LOCATION_PARAM) noexcept;
       ArrayTy *createStringDataArray(
           std::string_view value,
           ABIStringStyle style = ABIStringStyle::CStr SOURCE_LOCATION_PARAM) noexcept;
@@ -348,6 +347,25 @@ namespace nr {
       ///**************************************************************************///
 
 #undef SOURCE_LOCATION_PARAM
+#undef SOURCE_LOCATION_PARAM_ONCE
+
+#if defined(IRBUILDER_IMPL)
+
+#if defined(NDEBUG)
+#define SOURCE_LOCATION_PARAM
+#define SOURCE_LOCATION_PARAM_ONCE
+#define CALLER_INFO 0
+#define ignore_caller_info()
+#else
+#define SOURCE_LOCATION_PARAM , std::experimental::source_location caller_info
+#define SOURCE_LOCATION_PARAM_ONCE std::experimental::source_location caller_info
+#define CALLER_INFO caller_info
+#define CALLEE_KNOWN
+#define ignore_caller_info() (void)caller_info;
+
+#endif
+
+#endif
     };
   }  // namespace builder
 }  // namespace nr
