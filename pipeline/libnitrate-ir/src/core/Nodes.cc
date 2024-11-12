@@ -908,7 +908,8 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
         break;
       }
       case QIR_NODE_INT: {
-        MIXIN_STRING(cur->as<Int>()->getValue());
+        uint128_t x = cur->as<Int>()->getValue();
+        MIXIN_PRIMITIVE(x);
         break;
       }
       case QIR_NODE_FLOAT: {
@@ -1269,6 +1270,43 @@ CPP_EXPORT bool Type::is_ptr_to(const Type *type) const {
   }
 
   return false;
+}
+
+nr::uint128_t Int::str2u128(std::string_view s) noexcept {
+  /// FIXME: I don't understand this function
+
+  uint128_t x = 0;
+
+  printf("s=%s\n", std::string(s).c_str());
+
+  for (char c : s) {
+    if (!std::isdigit(c)) {
+      qcore_panicf("Failed to convert string `%s` to uint128_t", s.data());
+    }
+
+    // Check for overflow
+    if (x > (std::numeric_limits<uint128_t>::max() - (c - '0')) / 10) {
+      qcore_panicf("Overflow when converting string `%s` to uint128_t", s.data());
+    }
+
+    x = x * 10 + (c - '0');
+  }
+
+  return x;
+}
+
+std::string_view Int::u128_2_cstr_interned(uint128_t x) noexcept {
+  /// FIXME: I don't understand this function
+
+  char buf[40] = {0};
+
+  char *ptr = buf + sizeof(buf) - 1;
+  do {
+    *--ptr = '0' + (x % 10).convert_to<uint64_t>();
+    x /= 10;
+  } while (x != 0);
+
+  return current->internString(buf);
 }
 
 Expr *nr::createIgn() {

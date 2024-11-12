@@ -36,6 +36,7 @@
 
 #include <core/Config.hh>
 #include <core/PassManager.hh>
+#include <cstdint>
 #include <cstring>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/Format.hh>
@@ -565,7 +566,7 @@ namespace nr {
      * @details This is a 1-to-1 conversion of the integer constant.
      */
 
-    return create<Int>(memorize(n->get_value()));
+    return create<Int>(n->get_value());
   }
 
   static Expr *nrgen_float(ConvState &, qparse::ConstFloat *n) {
@@ -1179,9 +1180,14 @@ namespace nr {
       throw QError();
     }
 
-    uint64_t size = std::atoi(static_cast<nr::Int *>(count)->getValue().c_str());
+    uint128_t size = count->as<Int>()->getValue();
 
-    return create<ArrayTy>(item->asType(), size);
+    if (size > UINT64_MAX) {
+      badtree(n, "Array size > UINT64_MAX");
+      throw QError();
+    }
+
+    return create<ArrayTy>(item->asType(), static_cast<uint64_t>(size));
   }
 
   static Expr *nrgen_tuple_ty(ConvState &s, qparse::TupleTy *n) {

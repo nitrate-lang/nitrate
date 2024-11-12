@@ -32,6 +32,7 @@
 #ifndef __NITRATE_QXIR_NODE_H__
 #define __NITRATE_QXIR_NODE_H__
 
+#include <cstdint>
 #ifndef __cplusplus
 #error "This header is C++ only."
 #endif
@@ -41,9 +42,9 @@
 #include <nitrate-ir/TypeDecl.h>
 #include <nitrate-lexer/Token.h>
 
+#include <boost/multiprecision/cpp_int.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <cassert>
-#include <charconv>
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -57,6 +58,8 @@
 #include <vector>
 
 namespace nr {
+  using boost::multiprecision::uint128_t;
+
   class ArenaAllocatorImpl {
     qcore_arena m_arena;
 
@@ -106,6 +109,8 @@ public:
 };
 
 namespace nr {
+
+  extern thread_local qmodule_t *current;
 
 #ifdef __QXIR_NODE_REFLECT_IMPL__
 #define QCLASS_REFLECT() public:
@@ -908,45 +913,60 @@ namespace nr {
   class Int final : public Expr {
     QCLASS_REFLECT()
 
-    union {
-      uint64_t m_u64;    /* bit 63 is 1 always; interpret as if it is 0. */
-      const char *m_str; /* bit 63 is always 0, due to addressing on x86_64. */
-    } m_data;
+    enum class TySize {
+      U1,
+      U8,
+      U16,
+      U32,
+      U64,
+      U128,
+    };
+
+#if !defined(__x86_64__)
+#error "This code is only supported on x86_64"
+#endif
+
+    struct {
+      uint64_t is_native : 1;
+      uint64_t value : 63;
+    } __attribute__((packed)) m_value;
 
     static constexpr uint64_t FLAG_BIT = 1ULL << 63;
 
+    static uint128_t str2u128(std::string_view x) noexcept;
+    static std::string_view u128_2_cstr_interned(uint128_t x) noexcept;
+
   public:
-    Int(uint64_t u64) : Expr(QIR_NODE_INT), m_data{.m_u64 = u64 | FLAG_BIT} {}
+    Int(uint128_t val) : Expr(QIR_NODE_INT) { setValue(val); }
 
-    Int(std::string_view str) : Expr(QIR_NODE_INT), m_data{.m_str = str.data()} {
-      qcore_assert((m_data.m_u64 & FLAG_BIT) == 0,
-                   "Optimized code assumed an invariant that does not hold on this architecture.");
+    Int(std::string_view str) : Expr(QIR_NODE_INT) {
+      m_value.is_native = false;
+      m_value.value = reinterpret_cast<uint64_t>(current->internString(str).data());
+
+      // optimize layout; demote string reprs to native if in range
+      setValue(getValue());
     }
 
-    bool isNativeRepresentation() const noexcept { return m_data.m_u64 & FLAG_BIT; }
-
-    uint64_t getNativeRepresentation() const noexcept {
-      qcore_assert(isNativeRepresentation());
-      return m_data.m_u64 & ~FLAG_BIT;
+    uint128_t getValue() const noexcept {
+      if (m_value.is_native) [[likely]] {
+        return m_value.value;
+      } else {
+        return str2u128(reinterpret_cast<const char *>(m_value.value));
+      }
     }
 
-    std::string_view getStringRepresentation() const noexcept {
-      qcore_assert(!isNativeRepresentation());
-      return m_data.m_str;
-    }
-
-    std::string getValue() const noexcept {
-      return isNativeRepresentation() ? std::to_string(getNativeRepresentation())
-                                      : std::string(getStringRepresentation());
-    }
-
-    void setValue(uint64_t u64) noexcept { m_data.m_u64 = u64 | FLAG_BIT; }
-    void setValue(std::string_view str) noexcept {
-      m_data.m_str = str.data();
-      qcore_assert((m_data.m_u64 & FLAG_BIT) == 0,
-                   "Optimized code assumed an invariant that does not hold on this architecture.");
+    void setValue(uint128_t x) noexcept {
+      if (x <= 9223372036854775807) [[likely]] {
+        m_value.is_native = true;
+        m_value.value = static_cast<uint64_t>(x);
+      } else {
+        m_value.is_native = false;
+        m_value.value = reinterpret_cast<uint64_t>(u128_2_cstr_interned(x).data());
+      }
     }
   };
+
+  constexpr size_t NR_INT_SIZE = sizeof(Int);
 
   class Float final : public Expr {
     QCLASS_REFLECT()
@@ -1367,8 +1387,6 @@ namespace nr {
     const TmpNodeCradle &getData() const noexcept { return m_data; }
   };
 
-  extern thread_local qmodule_t *current;
-
   static auto already_alloc = [](nr_ty_t ty) -> void * {
     auto it = current->getKeyMap().find((uint64_t)ty);
     if (it != current->getKeyMap().end()) [[likely]] {
@@ -1547,13 +1565,7 @@ namespace nr {
     if constexpr (IS_T(std::string)) {
       return r->as<Int>()->getValue();
     } else if constexpr (IS_T(uint64_t)) {
-      uint64_t val;
-      auto data = r->as<Int>()->getValue();
-      if (std::from_chars(data.data(), data.data() + data.size(), val).ec == std::errc()) {
-        return val;
-      }
-
-      return std::nullopt;
+      return r->as<Int>()->getValue();
     }
 
     return std::nullopt;

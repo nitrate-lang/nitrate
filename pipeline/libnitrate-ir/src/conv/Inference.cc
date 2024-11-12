@@ -591,22 +591,14 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node) {
       case QIR_NODE_INT: {
         Int *I = E->as<Int>();
 
-        if (I->isNativeRepresentation()) {
-          if (I->getNativeRepresentation() > UINT32_MAX) {
-            T = create<I64Ty>();
-          } else {
-            T = create<I32Ty>();
-          }
+        nr::uint128_t num = I->getValue();
+
+        if (num > UINT64_MAX) {
+          T = create<I128Ty>();
+        } else if (num > UINT32_MAX) {
+          T = create<I64Ty>();
         } else {
-          std::string_view val = I->getStringRepresentation();
-          boost::multiprecision::cpp_int num(val.data());
-          if (num > UINT64_MAX) {
-            T = create<I128Ty>();
-          } else if (num > UINT32_MAX) {
-            T = create<I64Ty>();
-          } else {
-            T = create<I32Ty>();
-          }
+          T = create<I32Ty>();
         }
         break;
       }
@@ -686,44 +678,23 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node) {
           if (!V->is(QIR_NODE_INT)) {
             T = nullptr;  // Invalid must be of type int to index into a struct
           } else {
-            if (V->as<Int>()->isNativeRepresentation()) {
-              auto idx = V->as<Int>()->getNativeRepresentation();
-              if (idx < B->as<StructTy>()->getFields().size()) {
-                T = B->as<StructTy>()->getFields()[idx];
-              } else {
-                T = nullptr;  // Invalid out of bounds
-              }
-
+            nr::uint128_t num = V->as<Int>()->getValue();
+            if (num < B->as<StructTy>()->getFields().size()) {
+              T = B->as<StructTy>()->getFields()[num.convert_to<std::size_t>()];
             } else {
-              std::string_view val = V->as<Int>()->getStringRepresentation();
-              boost::multiprecision::cpp_int num(val.data());
-              if (num < B->as<StructTy>()->getFields().size()) {
-                T = B->as<StructTy>()->getFields()[num.convert_to<std::size_t>()];
-              } else {
-                T = nullptr;  // Invalid out of bounds
-              }
+              T = nullptr;  // Invalid out of bounds
             }
           }
         } else if (B->is(QIR_NODE_UNION_TY)) {
           if (!V->is(QIR_NODE_INT)) {
             T = nullptr;  // Invalid must be of type int to index into a union
           } else {
-            if (V->as<Int>()->isNativeRepresentation()) {
-              auto idx = V->as<Int>()->getNativeRepresentation();
-              if (idx < B->as<UnionTy>()->getFields().size()) {
-                T = B->as<UnionTy>()->getFields()[idx];
-              } else {
-                T = nullptr;  // Invalid out of bounds
-              }
+            nr::uint128_t num = V->as<Int>()->getValue();
 
+            if (num < B->as<UnionTy>()->getFields().size()) {
+              T = B->as<UnionTy>()->getFields()[num.convert_to<std::size_t>()];
             } else {
-              std::string_view val = V->as<Int>()->getStringRepresentation();
-              boost::multiprecision::cpp_int num(val.data());
-              if (num < B->as<UnionTy>()->getFields().size()) {
-                T = B->as<UnionTy>()->getFields()[num.convert_to<std::size_t>()];
-              } else {
-                T = nullptr;  // Invalid out of bounds
-              }
+              T = nullptr;  // Invalid out of bounds
             }
           }
         } else {

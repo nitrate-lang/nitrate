@@ -82,11 +82,7 @@ nr_node_t *nr_clone_impl(const nr_node_t *_node,
     }
     case QIR_NODE_INT: {
       Int *n = static_cast<Int *>(in);
-      if (n->isNativeRepresentation()) {
-        out = create<Int>(n->getNativeRepresentation());
-      } else {
-        out = create<Int>(intern(n->getStringRepresentation()));
-      }
+      out = create<Int>(n->getValue());
       break;
     }
     case QIR_NODE_FLOAT: {

@@ -222,7 +222,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
     }
     case QIR_NODE_INT: {
       recurse(n->as<Int>()->getType().value_or(nullptr));
-      ss << " " << n->as<Int>()->getValue();
+      ss << " " << (unsigned __int128)n->as<Int>()->getValue();
       break;
     }
     case QIR_NODE_FLOAT: {
@@ -258,10 +258,10 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
           break;
         }
 
-        c_string.push_back((char)BE->getLHS()->as<Int>()->getNativeRepresentation());
+        c_string.push_back((char)BE->getLHS()->as<Int>()->getValue());
 
         if (i + 1 == L->getItems().size()) {  // Last item
-          if (BE->getLHS()->as<Int>()->getNativeRepresentation() != 0) {
+          if (BE->getLHS()->as<Int>()->getValue() != 0) {
             break;
           }
 

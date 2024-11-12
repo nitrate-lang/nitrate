@@ -1600,50 +1600,21 @@ static val_t QIR_NODE_INT_C(ctx_t &m, craft_t &, const Mode &, State &, nr::Int 
    * @note [Write assumptions here]
    */
 
-  llvm::ConstantInt *R;
-  uint64_t lit;
+  llvm::ConstantInt *R = nullptr;
+  unsigned __int128 lit = static_cast<unsigned __int128>(N->getValue());
 
-  if (N->isNativeRepresentation()) {
-    static_assert(sizeof(void *) == sizeof(uint64_t), "This code expects 64-bit architecture");
-
-    lit = N->getNativeRepresentation();
-    goto fold_lit;
-  } else {
-    std::string_view lit_istr = N->getStringRepresentation();
-
-    if (lit_istr.size() < 20) { /* Fits in 64-bit */
-      lit = 0;
-      std::from_chars(lit_istr.data(), lit_istr.data() + lit_istr.size(), lit);
-      goto fold_lit;
-    } else {
-      unsigned __int128 lit128 = 0;
-
-      while (!lit_istr.empty()) {
-        lit128 = lit128 * 10 + (lit_istr[0] - '0');
-        lit_istr.remove_prefix(1);
-      }
-
-      if (lit128 > UINT64_MAX) {
-        R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(128, lit128));
-      } else {
-        R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(64, lit128));
-      }
-    }
-  }
-
-  return R;
-
-fold_lit:
   if (lit == 0) {
     return llvm::ConstantInt::get(m.getContext(), llvm::APInt(32, 0));
-  }
-
-  uint8_t l2 = std::log2(lit);
-
-  if (l2 <= 32) {
-    R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(32, lit));
+  } else if (lit > UINT64_MAX) {
+    R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(128, lit));
   } else {
-    R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(64, lit));
+    uint8_t l2 = std::log2(lit);
+
+    if (l2 <= 32) {
+      R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(32, lit));
+    } else {
+      R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(64, lit));
+    }
   }
 
   return R;
