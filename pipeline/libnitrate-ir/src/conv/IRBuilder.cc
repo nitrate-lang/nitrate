@@ -33,8 +33,10 @@
 
 #include <nitrate-core/Error.h>
 
+#include <cstddef>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
+#include <unordered_set>
 
 using namespace nr;
 
@@ -166,6 +168,10 @@ void NRBuilder::contract_enforce_(bool cond, std::string_view cond_str SOURCE_LO
 #endif
 }
 
+nr_node_t *nr_clone_impl(const nr_node_t *_node,
+                         std::unordered_map<const nr_node_t *, nr_node_t *> &map,
+                         std::unordered_set<nr_node_t *> &in_visited);
+
 NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
   contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::Finished ||
                    m_state == SelfState::Verified || m_state == SelfState::Emitted ||
@@ -182,8 +188,46 @@ NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
     contract_enforce(m_current_function == std::nullopt);
     contract_enforce(m_current_expr == std::nullopt);
   } else {
-    /// TODO: Implement deep clone and resolve state variables to cloned counterparts
-    qcore_implement(__func__);
+    contract_enforce(m_root != nullptr);
+
+    std::unordered_map<const nr_node_t *, nr_node_t *> node_map;
+
+    { /* Deep clone the root node */
+      std::unordered_set<nr_node_t *> in_visited;
+
+      Expr *out_expr = static_cast<Expr *>(nr_clone_impl(m_root, node_map, in_visited));
+
+      { /* Resolve Directed Acyclic* Graph Internal References */
+        iterate<dfs_pre>(out_expr, [&](Expr *, Expr **_cur) -> IterOp {
+          Expr *cur = *_cur;
+
+          // If the new data-structure contains a pointer to the old
+          // data-structure resolve it here.
+          if (in_visited.contains(cur)) {
+            *_cur = static_cast<Expr *>(node_map.at(cur));
+          }
+
+          return IterOp::Proceed;
+        });
+      }
+
+      contract_enforce(out_expr->getKind() == QIR_NODE_SEQ);
+      r.m_root = out_expr->as<Seq>();
+    }
+
+    { /* Update state references to pointer to their respective nodes in the clone */
+      r.m_current_scope = static_cast<Seq *>(node_map.at(m_current_scope));
+
+      if (m_current_function) {
+        r.m_current_function = static_cast<Fn *>(node_map.at(m_current_function.value()));
+        contract_enforce(r.m_current_function != std::nullopt);
+      }
+
+      if (m_current_expr) {
+        r.m_current_expr = static_cast<Expr *>(node_map.at(m_current_expr.value()));
+        contract_enforce(m_current_expr != std::nullopt);
+      }
+    }
   }
 
   return r;
@@ -265,15 +309,56 @@ bool NRBuilder::verify(diag::IDiagnosticEngine *sink SOURCE_LOCATION_PARAM) noex
     return true;
   }
 
-  bool is_valid = true;
+  if (!check_acyclic(m_root, sink)) {
+    return false;
+  }
 
-  /// TODO: Implement verification logic
-  (void)sink;
-  qcore_implement(__func__);
+  if (!check_duplicates(m_root, sink)) {
+    return false;
+  }
+
+  if (!check_symbols_exist(m_root, sink)) {
+    return false;
+  }
+
+  if (!check_function_calls(m_root, sink)) {
+    return false;
+  }
+
+  if (!check_returns(m_root, sink)) {
+    return false;
+  }
+
+  if (!check_scopes(m_root, sink)) {
+    return false;
+  }
+
+  if (!check_mutability(m_root, sink)) {
+    return false;
+  }
+
+  if (!check_control_flow(m_root, sink)) {
+    return false;
+  }
+
+  if (!check_types(m_root, sink)) {
+    return false;
+  }
+
+  if (!check_safety_claims(m_root, sink)) {
+    return false;
+  }
 
   m_state = SelfState::Verified;
 
-  return is_valid;
+  contract_enforce(m_state == SelfState::Verified);
+  contract_enforce(m_result == std::nullopt);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(m_current_scope == nullptr);
+  contract_enforce(m_current_function == std::nullopt);
+  contract_enforce(m_current_expr == std::nullopt);
+
+  return true;
 }
 
 qmodule_t *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) noexcept {

@@ -524,7 +524,8 @@ namespace nr {
     void dump(std::ostream &os = std::cout, bool isForDebug = false) const;
 
     /**
-     * @brief Compute the hash of the node.
+     * @brief Get a hashcode for the node. The code is unique its the nodes and its
+     * childrens recursive state.
      * @return boost::uuids::uuid The hash.
      * @note This code will be the same on different compiler runs as long as the compiler version
      * is the same.
@@ -532,11 +533,12 @@ namespace nr {
     boost::uuids::uuid hash() noexcept;
 
     /**
-     * @brief Get a unique identifier for the node.
+     * @brief Get a hashcode for the node. The code is unique its the nodes and its
+     * childrens recursive state.
      * @return std::string The unique identifier.
      * @note Wrapper around hash()
      */
-    std::string getUniqueUUID() noexcept { return boost::uuids::to_string(hash()); }
+    std::string getStateUUID() noexcept { return boost::uuids::to_string(hash()); }
 
     /**
      * @brief Get a short code to uniquely identify the node.

@@ -47,9 +47,9 @@ using namespace nr::diag;
 
 static std::string_view intern(std::string_view sv) { return nr::current->internString(sv); }
 
-static nr_node_t *nr_clone_impl(const nr_node_t *_node,
-                                std::unordered_map<const nr_node_t *, nr_node_t *> &map,
-                                std::unordered_set<nr_node_t *> &in_visited) {
+nr_node_t *nr_clone_impl(const nr_node_t *_node,
+                         std::unordered_map<const nr_node_t *, nr_node_t *> &map,
+                         std::unordered_set<nr_node_t *> &in_visited) {
 #define clone(X) static_cast<Expr *>(nr_clone_impl(X, map, in_visited))
 
   using namespace nr;

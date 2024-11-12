@@ -130,6 +130,17 @@ namespace nr {
     std::optional<Local *> lookup_local(std::string_view local) noexcept;
     std::optional<Fn *> lookup_function(std::string_view function) noexcept;
 
+    static bool check_acyclic(Seq *root, diag::IDiagnosticEngine *L) noexcept;
+    static bool check_duplicates(Seq *root, diag::IDiagnosticEngine *L) noexcept;
+    static bool check_symbols_exist(Seq *root, diag::IDiagnosticEngine *L) noexcept;
+    static bool check_function_calls(Seq *root, diag::IDiagnosticEngine *L) noexcept;
+    static bool check_returns(Seq *root, diag::IDiagnosticEngine *L) noexcept;
+    static bool check_scopes(Seq *root, diag::IDiagnosticEngine *L) noexcept;
+    static bool check_mutability(Seq *root, diag::IDiagnosticEngine *L) noexcept;
+    static bool check_control_flow(Seq *root, diag::IDiagnosticEngine *L) noexcept;
+    static bool check_types(Seq *root, diag::IDiagnosticEngine *L) noexcept;
+    static bool check_safety_claims(Seq *root, diag::IDiagnosticEngine *L) noexcept;
+
 #if defined(NDEBUG)
 #define SOURCE_LOCATION_PARAM
 #define SOURCE_LOCATION_PARAM_ONCE
@@ -204,7 +215,6 @@ namespace nr {
      *      Functions exist by the time they are called;
      *  - Verify mutability rules are obeyed;
      *  - Verify usage and presence of control flow nodes;
-     *  - Do array bounds checking if the index is a constant;
      *  - Do complex safety checks to verify proper usage of `safe` and `unsafe`.
      *
      * @note This function calls `finish()`.
