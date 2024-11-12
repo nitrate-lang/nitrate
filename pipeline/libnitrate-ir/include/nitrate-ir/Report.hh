@@ -38,6 +38,7 @@
 #include <boost/bimap.hpp>
 #include <cstdarg>
 #include <functional>
+#include <span>
 #include <stdexcept>
 #include <string_view>
 #include <unordered_set>
@@ -100,6 +101,13 @@ namespace nr::diag {
   extern const boost::bimap<IssueCode, IssueInfo> issue_info;
 
   typedef std::function<void(std::string_view, IssueClass)> DiagnosticMessageHandler;
+
+  class IDiagnosticEngine {
+  public:
+    virtual void report(IssueCode code, std::span<std::string_view> params = {},
+                        std::string_view filename = "", size_t start_line = 1, size_t start_col = 1,
+                        size_t end_line = 1, size_t end_col = 1) = 0;
+  };
 
   struct DiagMessage {
     std::string m_msg;
