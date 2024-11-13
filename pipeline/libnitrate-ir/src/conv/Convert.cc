@@ -171,20 +171,6 @@ nr::List *nr::createStringLiteral(std::string_view value) noexcept {
   return create<List>(items, true);
 }
 
-static nr::List *create_string_literal(std::string_view value) {
-  nr::ListItems items;
-
-  for (char c : value) {
-    items.push_back(nr::create<nr::BinExpr>(nr::create<nr::Int>(c, nr::IntSize::U8),
-                                            nr::create<nr::I8Ty>(), nr::Op::CastAs));
-  }
-
-  items.push_back(nr::create<nr::BinExpr>(nr::create<nr::Int>(0, nr::IntSize::U8),
-                                          nr::create<nr::I8Ty>(), nr::Op::CastAs));
-
-  return nr::create<nr::List>(items, true);
-}
-
 nr::Expr *nrgen_lower_binexpr(NRBuilder &, ConvState &, nr::Expr *lhs, nr::Expr *rhs,
                               qlex_op_t op) {
 #define STD_BINOP(op) nr::create<nr::BinExpr>(lhs, rhs, nr::Op::op)
@@ -375,7 +361,7 @@ nr::Expr *nrgen_lower_binexpr(NRBuilder &, ConvState &, nr::Expr *lhs, nr::Expr 
       break;
     }
     case qOpIn: {
-      auto methname = create_string_literal("has");
+      auto methname = createStringLiteral("has");
       auto method = nr::create<nr::Index>(rhs, methname);
       R = nr::create<nr::Call>(method, nr::CallArgs({lhs}));
       break;
@@ -452,7 +438,7 @@ nr::Expr *nrgen_lower_unexpr(NRBuilder &b, ConvState &s, nr::Expr *rhs, qlex_op_
         throw QError();
       }
 
-      return create_string_literal(res.value());
+      return createStringLiteral(res.value());
     }
     case qOpBitsizeof: {
       return STD_UNOP(Bitsizeof);
@@ -480,1932 +466,1798 @@ nr::Expr *nrgen_lower_post_unexpr(NRBuilder &, ConvState &, nr::Expr *lhs, qlex_
   }
 }
 
-namespace nr {
-
-  static Expr *nrgen_cexpr(NRBuilder &b, ConvState &s, qparse::ConstExpr *n) {
-    auto c = nrgen_one(b, s, n->get_value());
-    if (!c) {
-      badtree(n, "qparse::ConstExpr::get_value() == nullptr");
-      throw QError();
-    }
-
-    return c;
-  }
-
-  static Expr *nrgen_binexpr(NRBuilder &b, ConvState &s, qparse::BinExpr *n) {
-    /**
-     * @brief Convert a binary expression to a nr expression.
-     * @details Recursively convert the left and right hand sides of the
-     *         binary expression, then convert the operator to a nr
-     *         compatible operator.
-     */
-
-    auto lhs = nrgen_one(b, s, n->get_lhs());
-    if (!lhs) {
-      badtree(n, "qparse::BinExpr::get_lhs() == nullptr");
-      throw QError();
-    }
-
-    auto rhs = nrgen_one(b, s, n->get_rhs());
-
-    if (!rhs) {
-      badtree(n, "qparse::BinExpr::get_rhs() == nullptr");
-      throw QError();
-    }
-
-    return nrgen_lower_binexpr(b, s, lhs, rhs, n->get_op());
-  }
-
-  static Expr *nrgen_unexpr(NRBuilder &b, ConvState &s, qparse::UnaryExpr *n) {
-    /**
-     * @brief Convert a unary expression to a nr expression.
-     * @details Recursively convert the left hand side of the unary
-     *         expression, then convert the operator to a nr compatible
-     *         operator.
-     */
-
-    auto rhs = nrgen_one(b, s, n->get_rhs());
-    if (!rhs) {
-      badtree(n, "qparse::UnaryExpr::get_rhs() == nullptr");
-      throw QError();
-    }
-
-    return nrgen_lower_unexpr(b, s, rhs, n->get_op());
-  }
-
-  static Expr *nrgen_post_unexpr(NRBuilder &b, ConvState &s, qparse::PostUnaryExpr *n) {
-    /**
-     * @brief Convert a post-unary expression to a nr expression.
-     * @details Recursively convert the left hand side of the post-unary
-     *         expression, then convert the operator to a nr compatible
-     *         operator.
-     */
-
-    auto lhs = nrgen_one(b, s, n->get_lhs());
-    if (!lhs) {
-      badtree(n, "qparse::PostUnaryExpr::get_lhs() == nullptr");
-      throw QError();
-    }
-
-    return nrgen_lower_post_unexpr(b, s, lhs, n->get_op());
-  }
-
-  static Expr *nrgen_terexpr(NRBuilder &b, ConvState &s, qparse::TernaryExpr *n) {
-    /**
-     * @brief Convert a ternary expression to a if-else expression.
-     * @details Recursively convert the condition, then the true and false
-     *        branches of the ternary expression.
-     */
-
-    auto cond = nrgen_one(b, s, n->get_cond());
-    if (!cond) {
-      badtree(n, "qparse::TernaryExpr::get_cond() == nullptr");
-      throw QError();
-    }
-
-    auto t = nrgen_one(b, s, n->get_lhs());
-    if (!t) {
-      badtree(n, "qparse::TernaryExpr::get_lhs() == nullptr");
-      throw QError();
-    }
-
-    auto f = nrgen_one(b, s, n->get_rhs());
-    if (!f) {
-      badtree(n, "qparse::TernaryExpr::get_rhs() == nullptr");
-      throw QError();
-    }
-
-    return create<If>(cond, t, f);
-  }
-
-  static Expr *nrgen_int(NRBuilder &, ConvState &, qparse::ConstInt *n) {
-    /**
-     * @brief Convert an integer constant to a nr number.
-     * @details This is a 1-to-1 conversion of the integer constant.
-     */
-
-    boost::multiprecision::cpp_int num(n->get_value());
-
-    if (num > UINT64_MAX) {
-      return create<Int>(n->get_value(), IntSize::U128);
-    } else if (num > UINT32_MAX) {
-      return create<Int>(n->get_value(), IntSize::U64);
-    } else {
-      return create<Int>(n->get_value(), IntSize::U32);
-    }
-  }
-
-  static Expr *nrgen_float(NRBuilder &, ConvState &, qparse::ConstFloat *n) {
-    /**
-     * @brief Convert a floating point constant to a nr number.
-     * @details This is a 1-to-1 conversion of the floating point constant.
-     */
-
-    return create<Float>(memorize(n->get_value()));
-  }
-
-  static Expr *nrgen_string(NRBuilder &, ConvState &, qparse::ConstString *n) {
-    /**
-     * @brief Convert a string constant to a nr string.
-     * @details This is a 1-to-1 conversion of the string constant.
-     */
-
-    return create_string_literal(n->get_value());
-  }
-
-  static Expr *nrgen_char(NRBuilder &, ConvState &, qparse::ConstChar *n) {
-    /**
-     * @brief Convert a character constant to a nr number.
-     * @details Convert the char32 codepoint to a nr number literal.
-     */
-
-    return create<Int>(n->get_value(), IntSize::U8);
-  }
-
-  static Expr *nrgen_bool(NRBuilder &, ConvState &, qparse::ConstBool *n) {
-    /**
-     * @brief Convert a boolean constant to a nr number.
-     * @details QXIIR does not have boolean types, so we convert
-     *          them to integers.
-     */
-
-    if (n->get_value()) {
-      return create<Int>(1, IntSize::U1);
-    } else {
-      return create<Int>(0, IntSize::U1);
-    }
-  }
-
-  static Expr *nrgen_null(NRBuilder &, ConvState &, qparse::ConstNull *) {
-    return create<BinExpr>(
-        create<BinExpr>(create<Int>(0, IntSize::U32), createUPtrIntTy(), Op::CastAs),
-        create<PtrTy>(create<VoidTy>()), Op::BitcastAs);
-  }
-
-  static Expr *nrgen_undef(NRBuilder &, ConvState &, qparse::ConstUndef *n) {
-    report(IssueCode::UnexpectedUndefLiteral, IssueClass::Error, n->get_start_pos(),
-           n->get_end_pos());
+static Expr *nrgen_cexpr(NRBuilder &b, ConvState &s, qparse::ConstExpr *n) {
+  auto c = nrgen_one(b, s, n->get_value());
+  if (!c) {
+    badtree(n, "qparse::ConstExpr::get_value() == nullptr");
     throw QError();
   }
 
-  static Expr *nrgen_call(NRBuilder &b, ConvState &s, qparse::Call *n) {
-    /**
-     * @brief Convert a function call to a nr call.
-     * @details Recursively convert the function base and the arguments
-     *         of the function call. We currently do not have enough information
-     *         to handle the expansion of named / optional arguments. Therefore,
-     *         we wrap the data present and we will attempt to lower the construct
-     *         later.
-     */
+  return c;
+}
 
-    auto target = nrgen_one(b, s, n->get_func());
-    if (!target) {
-      badtree(n, "qparse::Call::get_func() == nullptr");
-      throw QError();
-    }
+static Expr *nrgen_binexpr(NRBuilder &b, ConvState &s, qparse::BinExpr *n) {
+  /**
+   * @brief Convert a binary expression to a nr expression.
+   * @details Recursively convert the left and right hand sides of the
+   *         binary expression, then convert the operator to a nr
+   *         compatible operator.
+   */
 
-    CallArgsTmpNodeCradle datapack;
-    for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
-      auto arg = nrgen_one(b, s, it->second);
-      if (!arg) {
-        badtree(n, "qparse::Call::get_args() vector contains nullptr");
-        throw QError();
-      }
-
-      // Implicit conversion are done later
-
-      std::get<1>(datapack).push_back({memorize(it->first), arg});
-    }
-    std::get<0>(datapack) = target;
-
-    return create<Tmp>(TmpType::CALL, std::move(datapack));
-  }
-
-  static Expr *nrgen_list(NRBuilder &b, ConvState &s, qparse::List *n) {
-    /**
-     * @brief Convert a list of expressions to a nr list.
-     * @details This is a 1-to-1 conversion of the list of expressions.
-     */
-
-    ListItems items;
-
-    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = nrgen_one(b, s, *it);
-      if (!item) {
-        badtree(n, "qparse::List::get_items() vector contains nullptr");
-        throw QError();
-      }
-
-      items.push_back(item);
-    }
-
-    return create<List>(std::move(items), false);
-  }
-
-  static Expr *nrgen_assoc(NRBuilder &b, ConvState &s, qparse::Assoc *n) {
-    /**
-     * @brief Convert an associative list to a nr list.
-     * @details This is a 1-to-1 conversion of the associative list.
-     */
-
-    auto key = nrgen_one(b, s, n->get_key());
-    if (!key) {
-      badtree(n, "qparse::Assoc::get_key() == nullptr");
-      throw QError();
-    }
-
-    auto value = nrgen_one(b, s, n->get_value());
-    if (!value) {
-      badtree(n, "qparse::Assoc::get_value() == nullptr");
-      throw QError();
-    }
-
-    return create<List>(ListItems({key, value}), false);
-  }
-
-  static Expr *nrgen_field(NRBuilder &b, ConvState &s, qparse::Field *n) {
-    /**
-     * @brief Convert a field access to a nr expression.
-     * @details Store the base and field name in a temporary node cradle
-     *          for later lowering.
-     */
-
-    auto base = nrgen_one(b, s, n->get_base());
-    if (!base) {
-      badtree(n, "qparse::Field::get_base() == nullptr");
-      throw QError();
-    }
-
-    return create<Index>(base, create_string_literal(n->get_field()));
-  }
-
-  static Expr *nrgen_index(NRBuilder &b, ConvState &s, qparse::Index *n) {
-    /**
-     * @brief Convert an index expression to a nr expression.
-     * @details Recursively convert the base and index of the index
-     *         expression.
-     */
-
-    auto base = nrgen_one(b, s, n->get_base());
-    if (!base) {
-      badtree(n, "qparse::Index::get_base() == nullptr");
-      throw QError();
-    }
-
-    auto index = nrgen_one(b, s, n->get_index());
-    if (!index) {
-      badtree(n, "qparse::Index::get_index() == nullptr");
-      throw QError();
-    }
-
-    return create<Index>(base, index);
-  }
-
-  static Expr *nrgen_slice(NRBuilder &b, ConvState &s, qparse::Slice *n) {
-    /**
-     * @brief Convert a slice expression to a nr expression.
-     * @details Recursively convert the base, start, and end of the slice
-     *         expression and pass them so the .slice() method which is
-     *         assumed to be present in the base object.
-     */
-
-    auto base = nrgen_one(b, s, n->get_base());
-    if (!base) {
-      badtree(n, "qparse::Slice::get_base() == nullptr");
-      throw QError();
-    }
-
-    auto start = nrgen_one(b, s, n->get_start());
-    if (!start) {
-      badtree(n, "qparse::Slice::get_start() == nullptr");
-      throw QError();
-    }
-
-    auto end = nrgen_one(b, s, n->get_end());
-    if (!end) {
-      badtree(n, "qparse::Slice::get_end() == nullptr");
-      throw QError();
-    }
-
-    return create<Call>(create<Index>(base, create_string_literal("slice")),
-                        CallArgs({start, end}));
-  }
-
-  static Expr *nrgen_fstring(NRBuilder &b, ConvState &s, qparse::FString *n) {
-    /**
-     * @brief Convert a formatted string to a nr string concatenation.
-     */
-
-    if (n->get_items().empty()) {
-      return create_string_literal("");
-    }
-
-    if (n->get_items().size() == 1) {
-      auto val = n->get_items().front();
-      if (std::holds_alternative<qparse::String>(val)) {
-        return create_string_literal(std::get<qparse::String>(val));
-      } else if (std::holds_alternative<qparse::Expr *>(val)) {
-        auto expr = nrgen_one(b, s, std::get<qparse::Expr *>(val));
-        if (!expr) {
-          badtree(n, "qparse::FString::get_items() vector contains nullptr");
-          throw QError();
-        }
-
-        return expr;
-      } else {
-        qcore_panic("Invalid fstring item type");
-      }
-    }
-
-    Expr *concated = create_string_literal("");
-
-    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      if (std::holds_alternative<qparse::String>(*it)) {
-        auto val = std::get<qparse::String>(*it);
-
-        concated = create<BinExpr>(concated, create_string_literal(val), Op::Plus);
-      } else if (std::holds_alternative<qparse::Expr *>(*it)) {
-        auto val = std::get<qparse::Expr *>(*it);
-        auto expr = nrgen_one(b, s, val);
-        if (!expr) {
-          badtree(n, "qparse::FString::get_items() vector contains nullptr");
-          throw QError();
-        }
-
-        concated = create<BinExpr>(concated, expr, Op::Plus);
-      } else {
-        qcore_panic("Invalid fstring item type");
-      }
-    }
-
-    return concated;
-  }
-
-  static Expr *nrgen_ident(NRBuilder &, ConvState &s, qparse::Ident *n) {
-    /**
-     * @brief Convert an identifier to a nr expression.
-     * @details This is a 1-to-1 conversion of the identifier.
-     */
-
-    if (s.inside_function) {
-      qcore_assert(!s.local_scope.empty());
-
-      auto find = s.local_scope.top().find(n->get_name());
-      if (find != s.local_scope.top().end()) {
-        return create<Ident>(memorize(n->get_name()), find->second);
-      }
-    }
-
-    auto str = s.cur_named(n->get_name());
-
-    return create<Ident>(memorize(std::string_view(str)), nullptr);
-  }
-
-  static Expr *nrgen_seq_point(NRBuilder &b, ConvState &s, qparse::SeqPoint *n) {
-    /**
-     * @brief Convert a sequence point to a nr expression.
-     * @details This is a 1-to-1 conversion of the sequence point.
-     */
-
-    SeqItems items;
-    items.reserve(n->get_items().size());
-
-    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = nrgen_one(b, s, *it);
-      if (!item) {
-        badtree(n, "qparse::SeqPoint::get_items() vector contains nullptr");
-        throw QError();
-      }
-
-      items.push_back(item);
-    }
-
-    return create<Seq>(std::move(items));
-  }
-
-  static Expr *nrgen_stmt_expr(NRBuilder &b, ConvState &s, qparse::StmtExpr *n) {
-    /**
-     * @brief Unwrap a statement inside an expression into a nr expression.
-     * @details This is a 1-to-1 conversion of the statement expression.
-     */
-
-    auto stmt = nrgen_one(b, s, n->get_stmt());
-    if (!stmt) {
-      badtree(n, "qparse::StmtExpr::get_stmt() == nullptr");
-      throw QError();
-    }
-
-    return stmt;
-  }
-
-  static Expr *nrgen_type_expr(NRBuilder &b, ConvState &s, qparse::TypeExpr *n) {
-    /*
-     * @brief Convert a type expression to a nr expression.
-     * @details This is a 1-to-1 conversion of the type expression.
-     */
-
-    auto type = nrgen_one(b, s, n->get_type());
-    if (!type) {
-      badtree(n, "qparse::TypeExpr::get_type() == nullptr");
-      throw QError();
-    }
-
-    return type;
-  }
-
-  static Expr *nrgen_templ_call(NRBuilder &, ConvState &, qparse::TemplCall *n) {
-    /// TODO: templ_call
-
-    badtree(n, "Template call not implemented");
-
+  auto lhs = nrgen_one(b, s, n->get_lhs());
+  if (!lhs) {
+    badtree(n, "qparse::BinExpr::get_lhs() == nullptr");
     throw QError();
   }
 
-  static Expr *nrgen_ref_ty(NRBuilder &b, ConvState &s, qparse::RefTy *n) {
-    auto pointee = nrgen_one(b, s, n->get_item());
-    if (!pointee) {
-      badtree(n, "qparse::RefTy::get_item() == nullptr");
+  auto rhs = nrgen_one(b, s, n->get_rhs());
+
+  if (!rhs) {
+    badtree(n, "qparse::BinExpr::get_rhs() == nullptr");
+    throw QError();
+  }
+
+  return nrgen_lower_binexpr(b, s, lhs, rhs, n->get_op());
+}
+
+static Expr *nrgen_unexpr(NRBuilder &b, ConvState &s, qparse::UnaryExpr *n) {
+  /**
+   * @brief Convert a unary expression to a nr expression.
+   * @details Recursively convert the left hand side of the unary
+   *         expression, then convert the operator to a nr compatible
+   *         operator.
+   */
+
+  auto rhs = nrgen_one(b, s, n->get_rhs());
+  if (!rhs) {
+    badtree(n, "qparse::UnaryExpr::get_rhs() == nullptr");
+    throw QError();
+  }
+
+  return nrgen_lower_unexpr(b, s, rhs, n->get_op());
+}
+
+static Expr *nrgen_post_unexpr(NRBuilder &b, ConvState &s, qparse::PostUnaryExpr *n) {
+  /**
+   * @brief Convert a post-unary expression to a nr expression.
+   * @details Recursively convert the left hand side of the post-unary
+   *         expression, then convert the operator to a nr compatible
+   *         operator.
+   */
+
+  auto lhs = nrgen_one(b, s, n->get_lhs());
+  if (!lhs) {
+    badtree(n, "qparse::PostUnaryExpr::get_lhs() == nullptr");
+    throw QError();
+  }
+
+  return nrgen_lower_post_unexpr(b, s, lhs, n->get_op());
+}
+
+static Expr *nrgen_terexpr(NRBuilder &b, ConvState &s, qparse::TernaryExpr *n) {
+  /**
+   * @brief Convert a ternary expression to a if-else expression.
+   * @details Recursively convert the condition, then the true and false
+   *        branches of the ternary expression.
+   */
+
+  auto cond = nrgen_one(b, s, n->get_cond());
+  if (!cond) {
+    badtree(n, "qparse::TernaryExpr::get_cond() == nullptr");
+    throw QError();
+  }
+
+  auto t = nrgen_one(b, s, n->get_lhs());
+  if (!t) {
+    badtree(n, "qparse::TernaryExpr::get_lhs() == nullptr");
+    throw QError();
+  }
+
+  auto f = nrgen_one(b, s, n->get_rhs());
+  if (!f) {
+    badtree(n, "qparse::TernaryExpr::get_rhs() == nullptr");
+    throw QError();
+  }
+
+  return create<If>(cond, t, f);
+}
+
+static Expr *nrgen_int(NRBuilder &, ConvState &, qparse::ConstInt *n) {
+  /**
+   * @brief Convert an integer constant to a nr number.
+   * @details This is a 1-to-1 conversion of the integer constant.
+   */
+
+  boost::multiprecision::cpp_int num(n->get_value());
+
+  if (num > UINT64_MAX) {
+    return create<Int>(n->get_value(), IntSize::U128);
+  } else if (num > UINT32_MAX) {
+    return create<Int>(n->get_value(), IntSize::U64);
+  } else {
+    return create<Int>(n->get_value(), IntSize::U32);
+  }
+}
+
+static Expr *nrgen_float(NRBuilder &, ConvState &, qparse::ConstFloat *n) {
+  /**
+   * @brief Convert a floating point constant to a nr number.
+   * @details This is a 1-to-1 conversion of the floating point constant.
+   */
+
+  return create<Float>(memorize(n->get_value()));
+}
+
+static Expr *nrgen_string(NRBuilder &, ConvState &, qparse::ConstString *n) {
+  /**
+   * @brief Convert a string constant to a nr string.
+   * @details This is a 1-to-1 conversion of the string constant.
+   */
+
+  return createStringLiteral(n->get_value());
+}
+
+static Expr *nrgen_char(NRBuilder &, ConvState &, qparse::ConstChar *n) {
+  /**
+   * @brief Convert a character constant to a nr number.
+   * @details Convert the char32 codepoint to a nr number literal.
+   */
+
+  return create<Int>(n->get_value(), IntSize::U8);
+}
+
+static Expr *nrgen_bool(NRBuilder &, ConvState &, qparse::ConstBool *n) {
+  /**
+   * @brief Convert a boolean constant to a nr number.
+   * @details QXIIR does not have boolean types, so we convert
+   *          them to integers.
+   */
+
+  if (n->get_value()) {
+    return create<Int>(1, IntSize::U1);
+  } else {
+    return create<Int>(0, IntSize::U1);
+  }
+}
+
+static Expr *nrgen_null(NRBuilder &, ConvState &, qparse::ConstNull *) {
+  return create<BinExpr>(
+      create<BinExpr>(create<Int>(0, IntSize::U32), createUPtrIntTy(), Op::CastAs),
+      create<PtrTy>(create<VoidTy>()), Op::BitcastAs);
+}
+
+static Expr *nrgen_undef(NRBuilder &, ConvState &, qparse::ConstUndef *n) {
+  report(IssueCode::UnexpectedUndefLiteral, IssueClass::Error, n->get_start_pos(),
+         n->get_end_pos());
+  throw QError();
+}
+
+static Expr *nrgen_call(NRBuilder &b, ConvState &s, qparse::Call *n) {
+  /**
+   * @brief Convert a function call to a nr call.
+   * @details Recursively convert the function base and the arguments
+   *         of the function call. We currently do not have enough information
+   *         to handle the expansion of named / optional arguments. Therefore,
+   *         we wrap the data present and we will attempt to lower the construct
+   *         later.
+   */
+
+  auto target = nrgen_one(b, s, n->get_func());
+  if (!target) {
+    badtree(n, "qparse::Call::get_func() == nullptr");
+    throw QError();
+  }
+
+  CallArgsTmpNodeCradle datapack;
+  for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
+    auto arg = nrgen_one(b, s, it->second);
+    if (!arg) {
+      badtree(n, "qparse::Call::get_args() vector contains nullptr");
       throw QError();
     }
 
-    return create<PtrTy>(pointee->asType());
+    // Implicit conversion are done later
+
+    std::get<1>(datapack).push_back({memorize(it->first), arg});
   }
+  std::get<0>(datapack) = target;
 
-  static Expr *nrgen_u1_ty(NRBuilder &, ConvState &, qparse::U1 *) {
-    /**
-     * @brief Convert a U1 type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the U1 type.
-     */
+  return create<Tmp>(TmpType::CALL, std::move(datapack));
+}
 
-    return create<U1Ty>();
-  }
+static Expr *nrgen_list(NRBuilder &b, ConvState &s, qparse::List *n) {
+  /**
+   * @brief Convert a list of expressions to a nr list.
+   * @details This is a 1-to-1 conversion of the list of expressions.
+   */
 
-  static Expr *nrgen_u8_ty(NRBuilder &, ConvState &, qparse::U8 *) {
-    /**
-     * @brief Convert a U8 type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the U8 type.
-     */
+  ListItems items;
 
-    return create<U8Ty>();
-  }
-
-  static Expr *nrgen_u16_ty(NRBuilder &, ConvState &, qparse::U16 *) {
-    /**
-     * @brief Convert a U16 type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the U16 type.
-     */
-
-    return create<U16Ty>();
-  }
-
-  static Expr *nrgen_u32_ty(NRBuilder &, ConvState &, qparse::U32 *) {
-    /**
-     * @brief Convert a U32 type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the U32 type.
-     */
-
-    return create<U32Ty>();
-  }
-
-  static Expr *nrgen_u64_ty(NRBuilder &, ConvState &, qparse::U64 *) {
-    /**
-     * @brief Convert a U64 type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the U64 type.
-     */
-
-    return create<U64Ty>();
-  }
-
-  static Expr *nrgen_u128_ty(NRBuilder &, ConvState &, qparse::U128 *) {
-    /**
-     * @brief Convert a U128 type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the U128 type.
-     */
-
-    return create<U128Ty>();
-  }
-
-  static Expr *nrgen_i8_ty(NRBuilder &, ConvState &, qparse::I8 *) {
-    /**
-     * @brief Convert a I8 type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the I8 type.
-     */
-
-    return create<I8Ty>();
-  }
-
-  static Expr *nrgen_i16_ty(NRBuilder &, ConvState &, qparse::I16 *) {
-    /**
-     * @brief Convert a I16 type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the I16 type.
-     */
-
-    return create<I16Ty>();
-  }
-
-  static Expr *nrgen_i32_ty(NRBuilder &, ConvState &, qparse::I32 *) {
-    /**
-     * @brief Convert a I32 type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the I32 type.
-     */
-
-    return create<I32Ty>();
-  }
-
-  static Expr *nrgen_i64_ty(NRBuilder &, ConvState &, qparse::I64 *) {
-    /**
-     * @brief Convert a I64 type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the I64 type.
-     */
-
-    return create<I64Ty>();
-  }
-
-  static Expr *nrgen_i128_ty(NRBuilder &, ConvState &, qparse::I128 *) {
-    /**
-     * @brief Convert a I128 type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the I128 type.
-     */
-
-    return create<I128Ty>();
-  }
-
-  static Expr *nrgen_f16_ty(NRBuilder &, ConvState &, qparse::F16 *) {
-    /**
-     * @brief Convert a F16 type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the F16 type.
-     */
-
-    return create<F16Ty>();
-  }
-
-  static Expr *nrgen_f32_ty(NRBuilder &, ConvState &, qparse::F32 *) {
-    /**
-     * @brief Convert a F32 type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the F32 type.
-     */
-
-    return create<F32Ty>();
-  }
-
-  static Expr *nrgen_f64_ty(NRBuilder &, ConvState &, qparse::F64 *) {
-    /**
-     * @brief Convert a F64 type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the F64 type.
-     */
-
-    return create<F64Ty>();
-  }
-
-  static Expr *nrgen_f128_ty(NRBuilder &, ConvState &, qparse::F128 *) {
-    /**
-     * @brief Convert a F128 type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the F128 type.
-     */
-
-    return create<F128Ty>();
-  }
-
-  static Expr *nrgen_void_ty(NRBuilder &, ConvState &, qparse::VoidTy *) {
-    /**
-     * @brief Convert a Void type to a nr expression type.
-     * @details This is a 1-to-1 conversion of the Void type.
-     */
-
-    return create<VoidTy>();
-  }
-
-  static Expr *nrgen_ptr_ty(NRBuilder &b, ConvState &s, qparse::PtrTy *n) {
-    /**
-     * @brief Convert a pointer type to a nr pointer type.
-     * @details This is a 1-to-1 conversion of the pointer type.
-     */
-
-    auto pointee = nrgen_one(b, s, n->get_item());
-    if (!pointee) {
-      badtree(n, "qparse::PtrTy::get_item() == nullptr");
-      throw QError();
-    }
-
-    return create<PtrTy>(pointee->asType());
-  }
-
-  static Expr *nrgen_opaque_ty(NRBuilder &, ConvState &, qparse::OpaqueTy *n) {
-    /**
-     * @brief Convert an opaque type to a nr opaque type.
-     * @details This is a 1-to-1 conversion of the opaque type.
-     */
-
-    return create<OpaqueTy>(memorize(n->get_name()));
-  }
-
-  static Expr *nrgen_struct_ty(NRBuilder &b, ConvState &s, qparse::StructTy *n) {
-    /**
-     * @brief Convert a struct type to a nr struct type.
-     * @details This is a 1-to-1 conversion of the struct type.
-     */
-
-    StructFields fields;
-
-    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = nrgen_one(b, s, it->second)->asType();
-      if (!item) {
-        badtree(n, "qparse::StructTy::get_items() vector contains nullptr");
-        throw QError();
-      }
-
-      fields.push_back(item);
-    }
-
-    return create<StructTy>(std::move(fields));
-  }
-
-  static Expr *nrgen_group_ty(NRBuilder &b, ConvState &s, qparse::GroupTy *n) {
-    /**
-     * @brief Convert a group type to a nr struct type.
-     * @details This is a 1-to-1 conversion of the group type.
-     */
-
-    StructFields fields;
-
-    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = nrgen_one(b, s, *it)->asType();
-      if (!item) {
-        badtree(n, "qparse::GroupTy::get_items() vector contains nullptr");
-        throw QError();
-      }
-
-      fields.push_back(item);
-    }
-
-    return create<StructTy>(std::move(fields));
-  }
-
-  static Expr *nrgen_region_ty(NRBuilder &b, ConvState &s, qparse::RegionTy *n) {
-    /**
-     * @brief Convert a region type to a nr struct type.
-     * @details This is a 1-to-1 conversion of the region type.
-     */
-
-    StructFields fields;
-
-    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = nrgen_one(b, s, *it)->asType();
-      if (!item) {
-        badtree(n, "qparse::RegionTy::get_items() vector contains nullptr");
-        throw QError();
-      }
-
-      fields.push_back(item);
-    }
-
-    return create<StructTy>(std::move(fields));
-  }
-
-  static Expr *nrgen_union_ty(NRBuilder &b, ConvState &s, qparse::UnionTy *n) {
-    /**
-     * @brief Convert a union type to a nr struct type.
-     * @details This is a 1-to-1 conversion of the union type.
-     */
-
-    UnionFields fields;
-
-    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = nrgen_one(b, s, *it)->asType();
-      if (!item) {
-        badtree(n, "qparse::UnionTy::get_items() vector contains nullptr");
-        throw QError();
-      }
-
-      fields.push_back(item);
-    }
-
-    return create<UnionTy>(std::move(fields));
-  }
-
-  static Expr *nrgen_array_ty(NRBuilder &b, ConvState &s, qparse::ArrayTy *n) {
-    /**
-     * @brief Convert an array type to a nr array type.
-     * @details This is a 1-to-1 conversion of the array type.
-     */
-
-    auto item = nrgen_one(b, s, n->get_item());
+  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+    auto item = nrgen_one(b, s, *it);
     if (!item) {
-      badtree(n, "qparse::ArrayTy::get_item() == nullptr");
+      badtree(n, "qparse::List::get_items() vector contains nullptr");
       throw QError();
     }
 
-    auto count = nrgen_one(b, s, n->get_size());
-    if (!count) {
-      badtree(n, "qparse::ArrayTy::get_size() == nullptr");
-      throw QError();
-    }
-
-    /// TODO: Invoke an interpreter to calculate size expression
-    if (count->getKind() != QIR_NODE_INT) {
-      badtree(n, "Non integer literal array size is not supported");
-      throw QError();
-    }
-
-    uint128_t size = count->as<Int>()->getValue();
-
-    if (size > UINT64_MAX) {
-      badtree(n, "Array size > UINT64_MAX");
-      throw QError();
-    }
-
-    return create<ArrayTy>(item->asType(), static_cast<uint64_t>(size));
+    items.push_back(item);
   }
 
-  static Expr *nrgen_tuple_ty(NRBuilder &b, ConvState &s, qparse::TupleTy *n) {
-    /**
-     * @brief Convert a tuple type to a nr struct type.
-     * @details This is a 1-to-1 conversion of the tuple type.
-     */
+  return create<List>(std::move(items), false);
+}
 
-    StructFields fields;
-    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = nrgen_one(b, s, *it)->asType();
-      if (!item) {
-        badtree(n, "qparse::TupleTy::get_items() vector contains nullptr");
+static Expr *nrgen_assoc(NRBuilder &b, ConvState &s, qparse::Assoc *n) {
+  /**
+   * @brief Convert an associative list to a nr list.
+   * @details This is a 1-to-1 conversion of the associative list.
+   */
+
+  auto key = nrgen_one(b, s, n->get_key());
+  if (!key) {
+    badtree(n, "qparse::Assoc::get_key() == nullptr");
+    throw QError();
+  }
+
+  auto value = nrgen_one(b, s, n->get_value());
+  if (!value) {
+    badtree(n, "qparse::Assoc::get_value() == nullptr");
+    throw QError();
+  }
+
+  return create<List>(ListItems({key, value}), false);
+}
+
+static Expr *nrgen_field(NRBuilder &b, ConvState &s, qparse::Field *n) {
+  /**
+   * @brief Convert a field access to a nr expression.
+   * @details Store the base and field name in a temporary node cradle
+   *          for later lowering.
+   */
+
+  auto base = nrgen_one(b, s, n->get_base());
+  if (!base) {
+    badtree(n, "qparse::Field::get_base() == nullptr");
+    throw QError();
+  }
+
+  return create<Index>(base, createStringLiteral(n->get_field()));
+}
+
+static Expr *nrgen_index(NRBuilder &b, ConvState &s, qparse::Index *n) {
+  /**
+   * @brief Convert an index expression to a nr expression.
+   * @details Recursively convert the base and index of the index
+   *         expression.
+   */
+
+  auto base = nrgen_one(b, s, n->get_base());
+  if (!base) {
+    badtree(n, "qparse::Index::get_base() == nullptr");
+    throw QError();
+  }
+
+  auto index = nrgen_one(b, s, n->get_index());
+  if (!index) {
+    badtree(n, "qparse::Index::get_index() == nullptr");
+    throw QError();
+  }
+
+  return create<Index>(base, index);
+}
+
+static Expr *nrgen_slice(NRBuilder &b, ConvState &s, qparse::Slice *n) {
+  /**
+   * @brief Convert a slice expression to a nr expression.
+   * @details Recursively convert the base, start, and end of the slice
+   *         expression and pass them so the .slice() method which is
+   *         assumed to be present in the base object.
+   */
+
+  auto base = nrgen_one(b, s, n->get_base());
+  if (!base) {
+    badtree(n, "qparse::Slice::get_base() == nullptr");
+    throw QError();
+  }
+
+  auto start = nrgen_one(b, s, n->get_start());
+  if (!start) {
+    badtree(n, "qparse::Slice::get_start() == nullptr");
+    throw QError();
+  }
+
+  auto end = nrgen_one(b, s, n->get_end());
+  if (!end) {
+    badtree(n, "qparse::Slice::get_end() == nullptr");
+    throw QError();
+  }
+
+  return create<Call>(create<Index>(base, createStringLiteral("slice")), CallArgs({start, end}));
+}
+
+static Expr *nrgen_fstring(NRBuilder &b, ConvState &s, qparse::FString *n) {
+  /**
+   * @brief Convert a formatted string to a nr string concatenation.
+   */
+
+  if (n->get_items().empty()) {
+    return createStringLiteral("");
+  }
+
+  if (n->get_items().size() == 1) {
+    auto val = n->get_items().front();
+    if (std::holds_alternative<qparse::String>(val)) {
+      return createStringLiteral(std::get<qparse::String>(val));
+    } else if (std::holds_alternative<qparse::Expr *>(val)) {
+      auto expr = nrgen_one(b, s, std::get<qparse::Expr *>(val));
+      if (!expr) {
+        badtree(n, "qparse::FString::get_items() vector contains nullptr");
         throw QError();
       }
 
-      fields.push_back(item);
+      return expr;
+    } else {
+      qcore_panic("Invalid fstring item type");
     }
-
-    return create<StructTy>(std::move(fields));
   }
 
-  static Expr *nrgen_fn_ty(NRBuilder &b, ConvState &s, qparse::FuncTy *n) {
-    /**
-     * @brief Convert a function type to a nr function type.
-     * @details Order of function parameters is consistent with their order
-     * of declaration. Support for `optional` arguments is up to the frontend,
-     * for inter-language compatibility, the ABI is not concerned with optional
-     * arguments as they have no significance at the binary interface level.
-     */
+  Expr *concated = createStringLiteral("");
 
-    FnParams params;
+  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+    if (std::holds_alternative<qparse::String>(*it)) {
+      auto val = std::get<qparse::String>(*it);
 
-    for (auto it = n->get_params().begin(); it != n->get_params().end(); ++it) {
+      concated = create<BinExpr>(concated, createStringLiteral(val), Op::Plus);
+    } else if (std::holds_alternative<qparse::Expr *>(*it)) {
+      auto val = std::get<qparse::Expr *>(*it);
+      auto expr = nrgen_one(b, s, val);
+      if (!expr) {
+        badtree(n, "qparse::FString::get_items() vector contains nullptr");
+        throw QError();
+      }
+
+      concated = create<BinExpr>(concated, expr, Op::Plus);
+    } else {
+      qcore_panic("Invalid fstring item type");
+    }
+  }
+
+  return concated;
+}
+
+static Expr *nrgen_ident(NRBuilder &, ConvState &s, qparse::Ident *n) {
+  /**
+   * @brief Convert an identifier to a nr expression.
+   * @details This is a 1-to-1 conversion of the identifier.
+   */
+
+  if (s.inside_function) {
+    qcore_assert(!s.local_scope.empty());
+
+    auto find = s.local_scope.top().find(n->get_name());
+    if (find != s.local_scope.top().end()) {
+      return create<Ident>(memorize(n->get_name()), find->second);
+    }
+  }
+
+  auto str = s.cur_named(n->get_name());
+
+  return create<Ident>(memorize(std::string_view(str)), nullptr);
+}
+
+static Expr *nrgen_seq_point(NRBuilder &b, ConvState &s, qparse::SeqPoint *n) {
+  /**
+   * @brief Convert a sequence point to a nr expression.
+   * @details This is a 1-to-1 conversion of the sequence point.
+   */
+
+  SeqItems items;
+  items.reserve(n->get_items().size());
+
+  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+    auto item = nrgen_one(b, s, *it);
+    if (!item) {
+      badtree(n, "qparse::SeqPoint::get_items() vector contains nullptr");
+      throw QError();
+    }
+
+    items.push_back(item);
+  }
+
+  return create<Seq>(std::move(items));
+}
+
+static Expr *nrgen_stmt_expr(NRBuilder &b, ConvState &s, qparse::StmtExpr *n) {
+  /**
+   * @brief Unwrap a statement inside an expression into a nr expression.
+   * @details This is a 1-to-1 conversion of the statement expression.
+   */
+
+  auto stmt = nrgen_one(b, s, n->get_stmt());
+  if (!stmt) {
+    badtree(n, "qparse::StmtExpr::get_stmt() == nullptr");
+    throw QError();
+  }
+
+  return stmt;
+}
+
+static Expr *nrgen_type_expr(NRBuilder &b, ConvState &s, qparse::TypeExpr *n) {
+  /*
+   * @brief Convert a type expression to a nr expression.
+   * @details This is a 1-to-1 conversion of the type expression.
+   */
+
+  auto type = nrgen_one(b, s, n->get_type());
+  if (!type) {
+    badtree(n, "qparse::TypeExpr::get_type() == nullptr");
+    throw QError();
+  }
+
+  return type;
+}
+
+static Expr *nrgen_templ_call(NRBuilder &, ConvState &, qparse::TemplCall *n) {
+  /// TODO: templ_call
+
+  badtree(n, "Template call not implemented");
+
+  throw QError();
+}
+
+static Expr *nrgen_ref_ty(NRBuilder &b, ConvState &s, qparse::RefTy *n) {
+  auto pointee = nrgen_one(b, s, n->get_item());
+  if (!pointee) {
+    badtree(n, "qparse::RefTy::get_item() == nullptr");
+    throw QError();
+  }
+
+  return create<PtrTy>(pointee->asType());
+}
+
+static Expr *nrgen_u1_ty(NRBuilder &b, ConvState &, qparse::U1 *) { return b.getU1Ty(); }
+static Expr *nrgen_u8_ty(NRBuilder &b, ConvState &, qparse::U8 *) { return b.getU8Ty(); }
+static Expr *nrgen_u16_ty(NRBuilder &b, ConvState &, qparse::U16 *) { return b.getU16Ty(); }
+static Expr *nrgen_u32_ty(NRBuilder &b, ConvState &, qparse::U32 *) { return b.getU32Ty(); }
+static Expr *nrgen_u64_ty(NRBuilder &b, ConvState &, qparse::U64 *) { return b.getU64Ty(); }
+static Expr *nrgen_u128_ty(NRBuilder &b, ConvState &, qparse::U128 *) { return b.getU128Ty(); }
+static Expr *nrgen_i8_ty(NRBuilder &b, ConvState &, qparse::I8 *) { return b.getI8Ty(); }
+static Expr *nrgen_i16_ty(NRBuilder &b, ConvState &, qparse::I16 *) { return b.getI16Ty(); }
+static Expr *nrgen_i32_ty(NRBuilder &b, ConvState &, qparse::I32 *) { return b.getI32Ty(); }
+static Expr *nrgen_i64_ty(NRBuilder &b, ConvState &, qparse::I64 *) { return b.getI64Ty(); }
+static Expr *nrgen_i128_ty(NRBuilder &b, ConvState &, qparse::I128 *) { return b.getI128Ty(); }
+static Expr *nrgen_f16_ty(NRBuilder &b, ConvState &, qparse::F16 *) { return b.getF16Ty(); }
+static Expr *nrgen_f32_ty(NRBuilder &b, ConvState &, qparse::F32 *) { return b.getF32Ty(); }
+static Expr *nrgen_f64_ty(NRBuilder &b, ConvState &, qparse::F64 *) { return b.getF64Ty(); }
+static Expr *nrgen_f128_ty(NRBuilder &b, ConvState &, qparse::F128 *) { return b.getF128Ty(); }
+static Expr *nrgen_void_ty(NRBuilder &b, ConvState &, qparse::VoidTy *) { return b.getVoidTy(); }
+
+static Expr *nrgen_ptr_ty(NRBuilder &b, ConvState &s, qparse::PtrTy *n) {
+  /**
+   * @brief Convert a pointer type to a nr pointer type.
+   * @details This is a 1-to-1 conversion of the pointer type.
+   */
+
+  auto pointee = nrgen_one(b, s, n->get_item());
+  if (!pointee) {
+    badtree(n, "qparse::PtrTy::get_item() == nullptr");
+    throw QError();
+  }
+
+  return create<PtrTy>(pointee->asType());
+}
+
+static Expr *nrgen_opaque_ty(NRBuilder &, ConvState &, qparse::OpaqueTy *n) {
+  /**
+   * @brief Convert an opaque type to a nr opaque type.
+   * @details This is a 1-to-1 conversion of the opaque type.
+   */
+
+  return create<OpaqueTy>(memorize(n->get_name()));
+}
+
+static Expr *nrgen_struct_ty(NRBuilder &b, ConvState &s, qparse::StructTy *n) {
+  /**
+   * @brief Convert a struct type to a nr struct type.
+   * @details This is a 1-to-1 conversion of the struct type.
+   */
+
+  StructFields fields;
+
+  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+    auto item = nrgen_one(b, s, it->second)->asType();
+    if (!item) {
+      badtree(n, "qparse::StructTy::get_items() vector contains nullptr");
+      throw QError();
+    }
+
+    fields.push_back(item);
+  }
+
+  return create<StructTy>(std::move(fields));
+}
+
+static Expr *nrgen_group_ty(NRBuilder &b, ConvState &s, qparse::GroupTy *n) {
+  /**
+   * @brief Convert a group type to a nr struct type.
+   * @details This is a 1-to-1 conversion of the group type.
+   */
+
+  StructFields fields;
+
+  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+    auto item = nrgen_one(b, s, *it)->asType();
+    if (!item) {
+      badtree(n, "qparse::GroupTy::get_items() vector contains nullptr");
+      throw QError();
+    }
+
+    fields.push_back(item);
+  }
+
+  return create<StructTy>(std::move(fields));
+}
+
+static Expr *nrgen_region_ty(NRBuilder &b, ConvState &s, qparse::RegionTy *n) {
+  /**
+   * @brief Convert a region type to a nr struct type.
+   * @details This is a 1-to-1 conversion of the region type.
+   */
+
+  StructFields fields;
+
+  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+    auto item = nrgen_one(b, s, *it)->asType();
+    if (!item) {
+      badtree(n, "qparse::RegionTy::get_items() vector contains nullptr");
+      throw QError();
+    }
+
+    fields.push_back(item);
+  }
+
+  return create<StructTy>(std::move(fields));
+}
+
+static Expr *nrgen_union_ty(NRBuilder &b, ConvState &s, qparse::UnionTy *n) {
+  /**
+   * @brief Convert a union type to a nr struct type.
+   * @details This is a 1-to-1 conversion of the union type.
+   */
+
+  UnionFields fields;
+
+  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+    auto item = nrgen_one(b, s, *it)->asType();
+    if (!item) {
+      badtree(n, "qparse::UnionTy::get_items() vector contains nullptr");
+      throw QError();
+    }
+
+    fields.push_back(item);
+  }
+
+  return create<UnionTy>(std::move(fields));
+}
+
+static Expr *nrgen_array_ty(NRBuilder &b, ConvState &s, qparse::ArrayTy *n) {
+  /**
+   * @brief Convert an array type to a nr array type.
+   * @details This is a 1-to-1 conversion of the array type.
+   */
+
+  auto item = nrgen_one(b, s, n->get_item());
+  if (!item) {
+    badtree(n, "qparse::ArrayTy::get_item() == nullptr");
+    throw QError();
+  }
+
+  auto count = nrgen_one(b, s, n->get_size());
+  if (!count) {
+    badtree(n, "qparse::ArrayTy::get_size() == nullptr");
+    throw QError();
+  }
+
+  /// TODO: Invoke an interpreter to calculate size expression
+  if (count->getKind() != QIR_NODE_INT) {
+    badtree(n, "Non integer literal array size is not supported");
+    throw QError();
+  }
+
+  uint128_t size = count->as<Int>()->getValue();
+
+  if (size > UINT64_MAX) {
+    badtree(n, "Array size > UINT64_MAX");
+    throw QError();
+  }
+
+  return create<ArrayTy>(item->asType(), static_cast<uint64_t>(size));
+}
+
+static Expr *nrgen_tuple_ty(NRBuilder &b, ConvState &s, qparse::TupleTy *n) {
+  /**
+   * @brief Convert a tuple type to a nr struct type.
+   * @details This is a 1-to-1 conversion of the tuple type.
+   */
+
+  StructFields fields;
+  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+    auto item = nrgen_one(b, s, *it)->asType();
+    if (!item) {
+      badtree(n, "qparse::TupleTy::get_items() vector contains nullptr");
+      throw QError();
+    }
+
+    fields.push_back(item);
+  }
+
+  return create<StructTy>(std::move(fields));
+}
+
+static Expr *nrgen_fn_ty(NRBuilder &b, ConvState &s, qparse::FuncTy *n) {
+  /**
+   * @brief Convert a function type to a nr function type.
+   * @details Order of function parameters is consistent with their order
+   * of declaration. Support for `optional` arguments is up to the frontend,
+   * for inter-language compatibility, the ABI is not concerned with optional
+   * arguments as they have no significance at the binary interface level.
+   */
+
+  FnParams params;
+
+  for (auto it = n->get_params().begin(); it != n->get_params().end(); ++it) {
+    Type *type = nrgen_one(b, s, std::get<1>(*it))->asType();
+    if (!type) {
+      badtree(n, "qparse::FnDef::get_type() == nullptr");
+      throw QError();
+    }
+
+    params.push_back(type);
+  }
+
+  Type *ret = nrgen_one(b, s, n->get_return_ty())->asType();
+  if (!ret) {
+    badtree(n, "qparse::FnDef::get_ret() == nullptr");
+    throw QError();
+  }
+
+  FnAttrs attrs;
+
+  if (n->is_variadic()) {
+    attrs.insert(FnAttr::Variadic);
+  }
+
+  return create<FnTy>(std::move(params), ret, std::move(attrs));
+}
+
+static Expr *nrgen_unres_ty(NRBuilder &, ConvState &s, qparse::UnresolvedType *n) {
+  /**
+   * @brief Convert an unresolved type to a nr type.
+   * @details This is a 1-to-1 conversion of the unresolved type.
+   */
+
+  auto str = s.cur_named(n->get_name());
+  auto name = memorize(std::string_view(str));
+
+  return create<Tmp>(TmpType::NAMED_TYPE, name);
+}
+
+static Expr *nrgen_infer_ty(NRBuilder &, ConvState &, qparse::InferType *) {
+  /// TODO: infer_ty
+  throw QError();
+}
+
+static Expr *nrgen_templ_ty(NRBuilder &, ConvState &, qparse::TemplType *n) {
+  /// TODO: templ_ty
+  badtree(n, "template types are not supported yet");
+  throw QError();
+}
+
+static std::vector<Expr *> nrgen_typedef(NRBuilder &b, ConvState &s, qparse::TypedefDecl *n) {
+  /**
+   * @brief Memorize a typedef declaration which will be used later for type resolution.
+   * @details This node will resolve to type void.
+   */
+
+  auto str = s.cur_named(n->get_name());
+  auto name = memorize(std::string_view(str));
+
+  if (current->getTypeMap().contains(name)) {
+    report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
+           n->get_end_pos());
+  }
+
+  auto type = nrgen_one(b, s, n->get_type());
+  if (!type) {
+    badtree(n, "qparse::TypedefDecl::get_type() == nullptr");
+    throw QError();
+  }
+
+  current->getTypeMap()[name] = type->asType();
+
+  return {};
+}
+
+static Expr *nrgen_fndecl(NRBuilder &b, ConvState &s, qparse::FnDecl *n) {
+  Params params;
+  qparse::FuncTy *fty = n->get_type();
+
+  std::string name;
+  if (s.abi_mode == AbiTag::C) {
+    name = n->get_name();
+  } else {
+    name = s.cur_named(n->get_name());
+  }
+  auto str = memorize(std::string_view(name));
+
+  current->getParameterMap()[str] = {};
+
+  { /* Produce the function parameters */
+    for (auto it = fty->get_params().begin(); it != fty->get_params().end(); ++it) {
+      /**
+       * Parameter properties:
+       * 1. Name - All parameters have a name.
+       * 2. Type - All parameters have a type.
+       * 3. Default - Optional, if the parameter has a default value.
+       * 4. Position - All parameters have a position.
+       */
+
+      Type *type = nrgen_one(b, s, std::get<1>(*it))->asType();
+      if (!type) {
+        badtree(n, "qparse::FnDecl::get_type() == nullptr");
+        throw QError();
+      }
+
+      Expr *def = nullptr;
+      if (std::get<2>(*it)) {
+        def = nrgen_one(b, s, std::get<2>(*it));
+        if (!def) {
+          badtree(n, "qparse::FnDecl::get_type() == nullptr");
+          throw QError();
+        }
+      }
+
+      std::string_view sv = memorize(std::string_view(std::get<0>(*it)));
+
+      params.push_back({type, sv});
+      current->getParameterMap()[str].push_back({std::string(std::get<0>(*it)), type, def});
+    }
+  }
+
+  Expr *fnty = nrgen_one(b, s, fty);
+  if (!fnty) {
+    badtree(n, "qparse::FnDecl::get_type() == nullptr");
+    throw QError();
+  }
+
+  Fn *fn = create<Fn>(str, std::move(params), fnty->as<FnTy>()->getReturn(), createIgn(),
+                      fty->is_variadic(), s.abi_mode);
+
+  current->getFunctions().insert({str, {fnty->as<FnTy>(), fn}});
+
+  return fn;
+}
+
+#define align(x, a) (((x) + (a) - 1) & ~((a) - 1))
+
+static std::vector<Expr *> nrgen_struct(NRBuilder &b, ConvState &s, qparse::StructDef *n) {
+  /**
+   * @brief Convert a struct definition to a nr sequence.
+   * @details This is a 1-to-1 conversion of the struct definition.
+   */
+
+  std::string name = s.cur_named(n->get_name());
+  auto sv = memorize(std::string_view(name));
+
+  if (current->getTypeMap().contains(sv)) {
+    report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
+           n->get_end_pos());
+  }
+
+  StructFields fields;
+  std::vector<Expr *> items;
+  size_t offset = 0;
+
+  for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
+    if (!*it) {
+      badtree(n, "qparse::StructDef::get_fields() vector contains nullptr");
+      throw QError();
+    }
+
+    s.composite_expanse.push((*it)->get_name());
+    auto field = nrgen_one(b, s, *it);
+    s.composite_expanse.pop();
+
+    size_t field_align = field->asType()->getAlignBytes();
+    size_t padding = align(offset, field_align) - offset;
+    if (padding > 0) {
+      fields.push_back(create<ArrayTy>(create<U8Ty>(), padding));
+    }
+
+    fields.push_back(field->asType());
+    offset += field->asType()->getSizeBytes();
+  }
+
+  StructTy *st = create<StructTy>(std::move(fields));
+
+  current->getTypeMap()[sv] = st;
+
+  for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
+    qparse::FnDecl *cur_meth = *it;
+    auto old_name = cur_meth->get_name();
+    cur_meth->set_name(ns_join(n->get_name(), old_name));
+
+    auto method = nrgen_one(b, s, *it);
+
+    cur_meth->set_name(old_name);
+
+    if (!method) {
+      badtree(n, "qparse::StructDef::get_methods() vector contains nullptr");
+      throw QError();
+    }
+
+    items.push_back(method);
+  }
+
+  for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
+    qparse::FnDecl *cur_meth = *it;
+    auto old_name = cur_meth->get_name();
+    cur_meth->set_name(ns_join(n->get_name(), old_name));
+
+    auto method = nrgen_one(b, s, *it);
+
+    cur_meth->set_name(old_name);
+
+    if (!method) {
+      badtree(n, "qparse::StructDef::get_static_methods() vector contains nullptr");
+      throw QError();
+    }
+
+    items.push_back(method);
+  }
+
+  return items;
+}
+
+static std::vector<Expr *> nrgen_region(NRBuilder &b, ConvState &s, qparse::RegionDef *n) {
+  /**
+   * @brief Convert a region definition to a nr sequence.
+   * @details This is a 1-to-1 conversion of the region definition.
+   */
+
+  std::string name = s.cur_named(n->get_name());
+  auto sv = memorize(std::string_view(name));
+
+  if (current->getTypeMap().contains(sv)) {
+    report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
+           n->get_end_pos());
+  }
+
+  StructFields fields;
+  std::vector<Expr *> items;
+
+  for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
+    if (!*it) {
+      badtree(n, "qparse::RegionDef::get_fields() vector contains nullptr");
+      throw QError();
+    }
+
+    s.composite_expanse.push((*it)->get_name());
+    auto field = nrgen_one(b, s, *it);
+    s.composite_expanse.pop();
+
+    fields.push_back(field->asType());
+  }
+
+  StructTy *st = create<StructTy>(std::move(fields));
+
+  current->getTypeMap()[sv] = st;
+
+  for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
+    qparse::FnDecl *cur_meth = *it;
+    auto old_name = cur_meth->get_name();
+    cur_meth->set_name(ns_join(n->get_name(), old_name));
+
+    auto method = nrgen_one(b, s, *it);
+
+    cur_meth->set_name(old_name);
+
+    if (!method) {
+      badtree(n, "qparse::RegionDef::get_methods() vector contains nullptr");
+      throw QError();
+    }
+
+    items.push_back(method);
+  }
+
+  for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
+    qparse::FnDecl *cur_meth = *it;
+    auto old_name = cur_meth->get_name();
+    cur_meth->set_name(ns_join(n->get_name(), old_name));
+
+    auto method = nrgen_one(b, s, *it);
+
+    cur_meth->set_name(old_name);
+
+    if (!method) {
+      badtree(n, "qparse::RegionDef::get_static_methods() vector contains nullptr");
+      throw QError();
+    }
+
+    items.push_back(method);
+  }
+
+  return items;
+}
+
+static std::vector<Expr *> nrgen_group(NRBuilder &b, ConvState &s, qparse::GroupDef *n) {
+  /**
+   * @brief Convert a group definition to a nr sequence.
+   * @details This is a 1-to-1 conversion of the group definition.
+   */
+
+  std::string name = s.cur_named(n->get_name());
+  auto sv = memorize(std::string_view(name));
+
+  if (current->getTypeMap().contains(sv)) {
+    report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
+           n->get_end_pos());
+  }
+
+  StructFields fields;
+  std::vector<Expr *> items;
+
+  { /* Optimize layout with field sorting */
+    std::vector<Type *> tmp_fields;
+    for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
+      if (!*it) {
+        badtree(n, "qparse::GroupDef::get_fields() vector contains nullptr");
+        throw QError();
+      }
+
+      s.composite_expanse.push((*it)->get_name());
+      auto field = nrgen_one(b, s, *it);
+      s.composite_expanse.pop();
+
+      tmp_fields.push_back(field->asType());
+    }
+
+    std::sort(tmp_fields.begin(), tmp_fields.end(),
+              [](Type *a, Type *b) { return a->getSizeBits() > b->getSizeBits(); });
+
+    size_t offset = 0;
+    for (auto it = tmp_fields.begin(); it != tmp_fields.end(); ++it) {
+      size_t field_align = (*it)->getAlignBytes();
+      size_t padding = align(offset, field_align) - offset;
+      if (padding > 0) {
+        fields.push_back(create<ArrayTy>(create<U8Ty>(), padding));
+      }
+
+      fields.push_back(*it);
+      offset += (*it)->getSizeBytes();
+    }
+  }
+
+  StructTy *st = create<StructTy>(std::move(fields));
+
+  current->getTypeMap()[sv] = st;
+
+  for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
+    qparse::FnDecl *cur_meth = *it;
+    auto old_name = cur_meth->get_name();
+    cur_meth->set_name(ns_join(n->get_name(), old_name));
+
+    auto method = nrgen_one(b, s, *it);
+
+    cur_meth->set_name(old_name);
+
+    if (!method) {
+      badtree(n, "qparse::GroupDef::get_methods() vector contains nullptr");
+      throw QError();
+    }
+
+    items.push_back(method);
+  }
+
+  for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
+    qparse::FnDecl *cur_meth = *it;
+    auto old_name = cur_meth->get_name();
+    cur_meth->set_name(ns_join(n->get_name(), old_name));
+
+    auto method = nrgen_one(b, s, *it);
+
+    cur_meth->set_name(old_name);
+
+    if (!method) {
+      badtree(n, "qparse::GroupDef::get_static_methods() vector contains nullptr");
+      throw QError();
+    }
+
+    items.push_back(method);
+  }
+
+  return items;
+}
+
+static std::vector<Expr *> nrgen_union(NRBuilder &b, ConvState &s, qparse::UnionDef *n) {
+  /**
+   * @brief Convert a union definition to a nr sequence.
+   * @details This is a 1-to-1 conversion of the union definition.
+   */
+
+  std::string name = s.cur_named(n->get_name());
+  auto sv = memorize(std::string_view(name));
+
+  if (current->getTypeMap().contains(sv)) {
+    report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
+           n->get_end_pos());
+  }
+
+  UnionFields fields;
+  std::vector<Expr *> items;
+
+  for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
+    if (!*it) {
+      badtree(n, "qparse::UnionDef::get_fields() vector contains nullptr");
+      throw QError();
+    }
+
+    s.composite_expanse.push((*it)->get_name());
+    auto field = nrgen_one(b, s, *it);
+    s.composite_expanse.pop();
+
+    fields.push_back(field->asType());
+  }
+
+  UnionTy *st = create<UnionTy>(std::move(fields));
+
+  current->getTypeMap()[sv] = st;
+
+  for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
+    qparse::FnDecl *cur_meth = *it;
+    auto old_name = cur_meth->get_name();
+    cur_meth->set_name(ns_join(n->get_name(), old_name));
+
+    auto method = nrgen_one(b, s, *it);
+
+    cur_meth->set_name(old_name);
+
+    if (!method) {
+      badtree(n, "qparse::UnionDef::get_methods() vector contains nullptr");
+      throw QError();
+    }
+
+    items.push_back(method);
+  }
+
+  for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
+    qparse::FnDecl *cur_meth = *it;
+    auto old_name = cur_meth->get_name();
+    cur_meth->set_name(ns_join(n->get_name(), old_name));
+
+    auto method = nrgen_one(b, s, *it);
+
+    cur_meth->set_name(old_name);
+
+    if (!method) {
+      badtree(n, "qparse::UnionDef::get_static_methods() vector contains nullptr");
+      throw QError();
+    }
+
+    items.push_back(method);
+  }
+
+  return items;
+}
+
+static std::vector<Expr *> nrgen_enum(NRBuilder &b, ConvState &s, qparse::EnumDef *n) {
+  /**
+   * @brief Convert an enum definition to a nr sequence.
+   * @details Extrapolate the fields by adding 1 to the previous field value.
+   */
+
+  std::string name = s.cur_named(n->get_name());
+  auto sv = memorize(std::string_view(name));
+
+  if (current->getTypeMap().contains(sv)) {
+    report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
+           n->get_end_pos());
+  }
+
+  Type *type = nullptr;
+  if (n->get_type()) {
+    type = nrgen_one(b, s, n->get_type())->asType();
+    if (!type) {
+      badtree(n, "qparse::EnumDef::get_type() == nullptr");
+      throw QError();
+    }
+  } else {
+    type = create<Tmp>(TmpType::ENUM, sv)->asType();
+  }
+
+  current->getTypeMap()[sv] = type->asType();
+
+  Expr *last = nullptr;
+
+  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+    Expr *cur = nullptr;
+
+    if (it->second) {
+      cur = nrgen_one(b, s, it->second);
+      if (!cur) {
+        badtree(n, "qparse::EnumDef::get_items() vector contains nullptr");
+        throw QError();
+      }
+
+      last = cur;
+    } else {
+      if (!last) {
+        last = cur = create<Int>(0, IntSize::U32);
+      } else {
+        last = cur = create<BinExpr>(last, create<Int>(1, IntSize::U32), Op::Plus);
+      }
+    }
+
+    std::string_view field_name = memorize(std::string_view(name + "::" + std::string(it->first)));
+
+    current->getNamedConstants().insert({field_name, cur});
+  }
+
+  return {};
+}
+
+static Expr *nrgen_fn(NRBuilder &b, ConvState &s, qparse::FnDef *n) {
+  bool old_inside_function = s.inside_function;
+  s.inside_function = true;
+
+  Expr *precond = nullptr, *postcond = nullptr;
+  Seq *body = nullptr;
+  Params params;
+  qparse::FnDecl *decl = n;
+  qparse::FuncTy *fty = decl->get_type();
+
+  FnTy *fnty = static_cast<FnTy *>(nrgen_one(b, s, fty));
+  if (!fnty) {
+    badtree(n, "qparse::FnDef::get_type() == nullptr");
+    throw QError();
+  }
+
+  /* Produce the function preconditions */
+  if ((precond = nrgen_one(b, s, n->get_precond()))) {
+    precond = create<If>(create<UnExpr>(precond, Op::LogicNot),
+                         create_simple_call(b, s, "__detail::precond_fail"), createIgn());
+  }
+
+  /* Produce the function postconditions */
+  if ((postcond = nrgen_one(b, s, n->get_postcond()))) {
+    postcond = create<If>(create<UnExpr>(postcond, Op::LogicNot),
+                          create_simple_call(b, s, "__detail::postcond_fail"), createIgn());
+  }
+
+  { /* Produce the function body */
+    Type *old_return_ty = s.return_type;
+    s.return_type = fnty->getReturn();
+    s.local_scope.push({});
+
+    Expr *tmp = nrgen_one(b, s, n->get_body());
+    if (!tmp) {
+      badtree(n, "qparse::FnDef::get_body() == nullptr");
+      throw QError();
+    }
+
+    if (tmp->getKind() != QIR_NODE_SEQ) {
+      tmp = create<Seq>(SeqItems({tmp}));
+    }
+
+    Seq *seq = tmp->as<Seq>();
+
+    { /* Implicit return */
+      if (fty->get_return_ty()->is_void()) {
+        if (!seq->getItems().empty()) {
+          if (seq->getItems().back()->getKind() != QIR_NODE_RET) {
+            seq->getItems().push_back(create<Ret>(create<VoidTy>()));
+          }
+        }
+      }
+    }
+
+    body = seq;
+
+    if (precond) {
+      body->getItems().insert(body->getItems().begin(), precond);
+    }
+    if (postcond) {
+      /// TODO: add postcond at each exit point
+    }
+
+    s.local_scope.pop();
+    s.return_type = old_return_ty;
+  }
+
+  auto name = s.cur_named(n->get_name());
+  auto str = memorize(std::string_view(name));
+
+  current->getParameterMap()[str] = {};
+
+  { /* Produce the function parameters */
+    for (auto it = fty->get_params().begin(); it != fty->get_params().end(); ++it) {
+      /**
+       * Parameter properties:
+       * 1. Name - All parameters have a name.
+       * 2. Type - All parameters have a type.
+       * 3. Default - Optional, if the parameter has a default value.
+       * 4. Position - All parameters have a position.
+       */
+
       Type *type = nrgen_one(b, s, std::get<1>(*it))->asType();
       if (!type) {
         badtree(n, "qparse::FnDef::get_type() == nullptr");
         throw QError();
       }
 
-      params.push_back(type);
-    }
-
-    Type *ret = nrgen_one(b, s, n->get_return_ty())->asType();
-    if (!ret) {
-      badtree(n, "qparse::FnDef::get_ret() == nullptr");
-      throw QError();
-    }
-
-    FnAttrs attrs;
-
-    if (n->is_variadic()) {
-      attrs.insert(FnAttr::Variadic);
-    }
-
-    return create<FnTy>(std::move(params), ret, std::move(attrs));
-  }
-
-  static Expr *nrgen_unres_ty(NRBuilder &, ConvState &s, qparse::UnresolvedType *n) {
-    /**
-     * @brief Convert an unresolved type to a nr type.
-     * @details This is a 1-to-1 conversion of the unresolved type.
-     */
-
-    auto str = s.cur_named(n->get_name());
-    auto name = memorize(std::string_view(str));
-
-    return create<Tmp>(TmpType::NAMED_TYPE, name);
-  }
-
-  static Expr *nrgen_infer_ty(NRBuilder &, ConvState &, qparse::InferType *) {
-    /// TODO: infer_ty
-    throw QError();
-  }
-
-  static Expr *nrgen_templ_ty(NRBuilder &, ConvState &, qparse::TemplType *n) {
-    /// TODO: templ_ty
-    badtree(n, "template types are not supported yet");
-    throw QError();
-  }
-
-  static std::vector<Expr *> nrgen_typedef(NRBuilder &b, ConvState &s, qparse::TypedefDecl *n) {
-    /**
-     * @brief Memorize a typedef declaration which will be used later for type resolution.
-     * @details This node will resolve to type void.
-     */
-
-    auto str = s.cur_named(n->get_name());
-    auto name = memorize(std::string_view(str));
-
-    if (current->getTypeMap().contains(name)) {
-      report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
-             n->get_end_pos());
-    }
-
-    auto type = nrgen_one(b, s, n->get_type());
-    if (!type) {
-      badtree(n, "qparse::TypedefDecl::get_type() == nullptr");
-      throw QError();
-    }
-
-    current->getTypeMap()[name] = type->asType();
-
-    return {};
-  }
-
-  static Expr *nrgen_fndecl(NRBuilder &b, ConvState &s, qparse::FnDecl *n) {
-    Params params;
-    qparse::FuncTy *fty = n->get_type();
-
-    std::string name;
-    if (s.abi_mode == AbiTag::C) {
-      name = n->get_name();
-    } else {
-      name = s.cur_named(n->get_name());
-    }
-    auto str = memorize(std::string_view(name));
-
-    current->getParameterMap()[str] = {};
-
-    { /* Produce the function parameters */
-      for (auto it = fty->get_params().begin(); it != fty->get_params().end(); ++it) {
-        /**
-         * Parameter properties:
-         * 1. Name - All parameters have a name.
-         * 2. Type - All parameters have a type.
-         * 3. Default - Optional, if the parameter has a default value.
-         * 4. Position - All parameters have a position.
-         */
-
-        Type *type = nrgen_one(b, s, std::get<1>(*it))->asType();
-        if (!type) {
-          badtree(n, "qparse::FnDecl::get_type() == nullptr");
-          throw QError();
-        }
-
-        Expr *def = nullptr;
-        if (std::get<2>(*it)) {
-          def = nrgen_one(b, s, std::get<2>(*it));
-          if (!def) {
-            badtree(n, "qparse::FnDecl::get_type() == nullptr");
-            throw QError();
-          }
-        }
-
-        std::string_view sv = memorize(std::string_view(std::get<0>(*it)));
-
-        params.push_back({type, sv});
-        current->getParameterMap()[str].push_back({std::string(std::get<0>(*it)), type, def});
-      }
-    }
-
-    Expr *fnty = nrgen_one(b, s, fty);
-    if (!fnty) {
-      badtree(n, "qparse::FnDecl::get_type() == nullptr");
-      throw QError();
-    }
-
-    Fn *fn = create<Fn>(str, std::move(params), fnty->as<FnTy>()->getReturn(), createIgn(),
-                        fty->is_variadic(), s.abi_mode);
-
-    current->getFunctions().insert({str, {fnty->as<FnTy>(), fn}});
-
-    return fn;
-  }
-
-#define align(x, a) (((x) + (a) - 1) & ~((a) - 1))
-
-  static std::vector<Expr *> nrgen_struct(NRBuilder &b, ConvState &s, qparse::StructDef *n) {
-    /**
-     * @brief Convert a struct definition to a nr sequence.
-     * @details This is a 1-to-1 conversion of the struct definition.
-     */
-
-    std::string name = s.cur_named(n->get_name());
-    auto sv = memorize(std::string_view(name));
-
-    if (current->getTypeMap().contains(sv)) {
-      report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
-             n->get_end_pos());
-    }
-
-    StructFields fields;
-    std::vector<Expr *> items;
-    size_t offset = 0;
-
-    for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
-      if (!*it) {
-        badtree(n, "qparse::StructDef::get_fields() vector contains nullptr");
-        throw QError();
-      }
-
-      s.composite_expanse.push((*it)->get_name());
-      auto field = nrgen_one(b, s, *it);
-      s.composite_expanse.pop();
-
-      size_t field_align = field->asType()->getAlignBytes();
-      size_t padding = align(offset, field_align) - offset;
-      if (padding > 0) {
-        fields.push_back(create<ArrayTy>(create<U8Ty>(), padding));
-      }
-
-      fields.push_back(field->asType());
-      offset += field->asType()->getSizeBytes();
-    }
-
-    StructTy *st = create<StructTy>(std::move(fields));
-
-    current->getTypeMap()[sv] = st;
-
-    for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
-      qparse::FnDecl *cur_meth = *it;
-      auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-      auto method = nrgen_one(b, s, *it);
-
-      cur_meth->set_name(old_name);
-
-      if (!method) {
-        badtree(n, "qparse::StructDef::get_methods() vector contains nullptr");
-        throw QError();
-      }
-
-      items.push_back(method);
-    }
-
-    for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
-      qparse::FnDecl *cur_meth = *it;
-      auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-      auto method = nrgen_one(b, s, *it);
-
-      cur_meth->set_name(old_name);
-
-      if (!method) {
-        badtree(n, "qparse::StructDef::get_static_methods() vector contains nullptr");
-        throw QError();
-      }
-
-      items.push_back(method);
-    }
-
-    return items;
-  }
-
-  static std::vector<Expr *> nrgen_region(NRBuilder &b, ConvState &s, qparse::RegionDef *n) {
-    /**
-     * @brief Convert a region definition to a nr sequence.
-     * @details This is a 1-to-1 conversion of the region definition.
-     */
-
-    std::string name = s.cur_named(n->get_name());
-    auto sv = memorize(std::string_view(name));
-
-    if (current->getTypeMap().contains(sv)) {
-      report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
-             n->get_end_pos());
-    }
-
-    StructFields fields;
-    std::vector<Expr *> items;
-
-    for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
-      if (!*it) {
-        badtree(n, "qparse::RegionDef::get_fields() vector contains nullptr");
-        throw QError();
-      }
-
-      s.composite_expanse.push((*it)->get_name());
-      auto field = nrgen_one(b, s, *it);
-      s.composite_expanse.pop();
-
-      fields.push_back(field->asType());
-    }
-
-    StructTy *st = create<StructTy>(std::move(fields));
-
-    current->getTypeMap()[sv] = st;
-
-    for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
-      qparse::FnDecl *cur_meth = *it;
-      auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-      auto method = nrgen_one(b, s, *it);
-
-      cur_meth->set_name(old_name);
-
-      if (!method) {
-        badtree(n, "qparse::RegionDef::get_methods() vector contains nullptr");
-        throw QError();
-      }
-
-      items.push_back(method);
-    }
-
-    for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
-      qparse::FnDecl *cur_meth = *it;
-      auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-      auto method = nrgen_one(b, s, *it);
-
-      cur_meth->set_name(old_name);
-
-      if (!method) {
-        badtree(n, "qparse::RegionDef::get_static_methods() vector contains nullptr");
-        throw QError();
-      }
-
-      items.push_back(method);
-    }
-
-    return items;
-  }
-
-  static std::vector<Expr *> nrgen_group(NRBuilder &b, ConvState &s, qparse::GroupDef *n) {
-    /**
-     * @brief Convert a group definition to a nr sequence.
-     * @details This is a 1-to-1 conversion of the group definition.
-     */
-
-    std::string name = s.cur_named(n->get_name());
-    auto sv = memorize(std::string_view(name));
-
-    if (current->getTypeMap().contains(sv)) {
-      report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
-             n->get_end_pos());
-    }
-
-    StructFields fields;
-    std::vector<Expr *> items;
-
-    { /* Optimize layout with field sorting */
-      std::vector<Type *> tmp_fields;
-      for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
-        if (!*it) {
-          badtree(n, "qparse::GroupDef::get_fields() vector contains nullptr");
-          throw QError();
-        }
-
-        s.composite_expanse.push((*it)->get_name());
-        auto field = nrgen_one(b, s, *it);
-        s.composite_expanse.pop();
-
-        tmp_fields.push_back(field->asType());
-      }
-
-      std::sort(tmp_fields.begin(), tmp_fields.end(),
-                [](Type *a, Type *b) { return a->getSizeBits() > b->getSizeBits(); });
-
-      size_t offset = 0;
-      for (auto it = tmp_fields.begin(); it != tmp_fields.end(); ++it) {
-        size_t field_align = (*it)->getAlignBytes();
-        size_t padding = align(offset, field_align) - offset;
-        if (padding > 0) {
-          fields.push_back(create<ArrayTy>(create<U8Ty>(), padding));
-        }
-
-        fields.push_back(*it);
-        offset += (*it)->getSizeBytes();
-      }
-    }
-
-    StructTy *st = create<StructTy>(std::move(fields));
-
-    current->getTypeMap()[sv] = st;
-
-    for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
-      qparse::FnDecl *cur_meth = *it;
-      auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-      auto method = nrgen_one(b, s, *it);
-
-      cur_meth->set_name(old_name);
-
-      if (!method) {
-        badtree(n, "qparse::GroupDef::get_methods() vector contains nullptr");
-        throw QError();
-      }
-
-      items.push_back(method);
-    }
-
-    for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
-      qparse::FnDecl *cur_meth = *it;
-      auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-      auto method = nrgen_one(b, s, *it);
-
-      cur_meth->set_name(old_name);
-
-      if (!method) {
-        badtree(n, "qparse::GroupDef::get_static_methods() vector contains nullptr");
-        throw QError();
-      }
-
-      items.push_back(method);
-    }
-
-    return items;
-  }
-
-  static std::vector<Expr *> nrgen_union(NRBuilder &b, ConvState &s, qparse::UnionDef *n) {
-    /**
-     * @brief Convert a union definition to a nr sequence.
-     * @details This is a 1-to-1 conversion of the union definition.
-     */
-
-    std::string name = s.cur_named(n->get_name());
-    auto sv = memorize(std::string_view(name));
-
-    if (current->getTypeMap().contains(sv)) {
-      report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
-             n->get_end_pos());
-    }
-
-    UnionFields fields;
-    std::vector<Expr *> items;
-
-    for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
-      if (!*it) {
-        badtree(n, "qparse::UnionDef::get_fields() vector contains nullptr");
-        throw QError();
-      }
-
-      s.composite_expanse.push((*it)->get_name());
-      auto field = nrgen_one(b, s, *it);
-      s.composite_expanse.pop();
-
-      fields.push_back(field->asType());
-    }
-
-    UnionTy *st = create<UnionTy>(std::move(fields));
-
-    current->getTypeMap()[sv] = st;
-
-    for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
-      qparse::FnDecl *cur_meth = *it;
-      auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-      auto method = nrgen_one(b, s, *it);
-
-      cur_meth->set_name(old_name);
-
-      if (!method) {
-        badtree(n, "qparse::UnionDef::get_methods() vector contains nullptr");
-        throw QError();
-      }
-
-      items.push_back(method);
-    }
-
-    for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
-      qparse::FnDecl *cur_meth = *it;
-      auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-      auto method = nrgen_one(b, s, *it);
-
-      cur_meth->set_name(old_name);
-
-      if (!method) {
-        badtree(n, "qparse::UnionDef::get_static_methods() vector contains nullptr");
-        throw QError();
-      }
-
-      items.push_back(method);
-    }
-
-    return items;
-  }
-
-  static std::vector<Expr *> nrgen_enum(NRBuilder &b, ConvState &s, qparse::EnumDef *n) {
-    /**
-     * @brief Convert an enum definition to a nr sequence.
-     * @details Extrapolate the fields by adding 1 to the previous field value.
-     */
-
-    std::string name = s.cur_named(n->get_name());
-    auto sv = memorize(std::string_view(name));
-
-    if (current->getTypeMap().contains(sv)) {
-      report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
-             n->get_end_pos());
-    }
-
-    Type *type = nullptr;
-    if (n->get_type()) {
-      type = nrgen_one(b, s, n->get_type())->asType();
-      if (!type) {
-        badtree(n, "qparse::EnumDef::get_type() == nullptr");
-        throw QError();
-      }
-    } else {
-      type = create<Tmp>(TmpType::ENUM, sv)->asType();
-    }
-
-    current->getTypeMap()[sv] = type->asType();
-
-    Expr *last = nullptr;
-
-    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      Expr *cur = nullptr;
-
-      if (it->second) {
-        cur = nrgen_one(b, s, it->second);
-        if (!cur) {
-          badtree(n, "qparse::EnumDef::get_items() vector contains nullptr");
-          throw QError();
-        }
-
-        last = cur;
-      } else {
-        if (!last) {
-          last = cur = create<Int>(0, IntSize::U32);
-        } else {
-          last = cur = create<BinExpr>(last, create<Int>(1, IntSize::U32), Op::Plus);
-        }
-      }
-
-      std::string_view field_name =
-          memorize(std::string_view(name + "::" + std::string(it->first)));
-
-      current->getNamedConstants().insert({field_name, cur});
-    }
-
-    return {};
-  }
-
-  static Expr *nrgen_fn(NRBuilder &b, ConvState &s, qparse::FnDef *n) {
-    bool old_inside_function = s.inside_function;
-    s.inside_function = true;
-
-    Expr *precond = nullptr, *postcond = nullptr;
-    Seq *body = nullptr;
-    Params params;
-    qparse::FnDecl *decl = n;
-    qparse::FuncTy *fty = decl->get_type();
-
-    FnTy *fnty = static_cast<FnTy *>(nrgen_one(b, s, fty));
-    if (!fnty) {
-      badtree(n, "qparse::FnDef::get_type() == nullptr");
-      throw QError();
-    }
-
-    /* Produce the function preconditions */
-    if ((precond = nrgen_one(b, s, n->get_precond()))) {
-      precond = create<If>(create<UnExpr>(precond, Op::LogicNot),
-                           create_simple_call(b, s, "__detail::precond_fail"), createIgn());
-    }
-
-    /* Produce the function postconditions */
-    if ((postcond = nrgen_one(b, s, n->get_postcond()))) {
-      postcond = create<If>(create<UnExpr>(postcond, Op::LogicNot),
-                            create_simple_call(b, s, "__detail::postcond_fail"), createIgn());
-    }
-
-    { /* Produce the function body */
-      Type *old_return_ty = s.return_type;
-      s.return_type = fnty->getReturn();
-      s.local_scope.push({});
-
-      Expr *tmp = nrgen_one(b, s, n->get_body());
-      if (!tmp) {
-        badtree(n, "qparse::FnDef::get_body() == nullptr");
-        throw QError();
-      }
-
-      if (tmp->getKind() != QIR_NODE_SEQ) {
-        tmp = create<Seq>(SeqItems({tmp}));
-      }
-
-      Seq *seq = tmp->as<Seq>();
-
-      { /* Implicit return */
-        if (fty->get_return_ty()->is_void()) {
-          if (!seq->getItems().empty()) {
-            if (seq->getItems().back()->getKind() != QIR_NODE_RET) {
-              seq->getItems().push_back(create<Ret>(create<VoidTy>()));
-            }
-          }
-        }
-      }
-
-      body = seq;
-
-      if (precond) {
-        body->getItems().insert(body->getItems().begin(), precond);
-      }
-      if (postcond) {
-        /// TODO: add postcond at each exit point
-      }
-
-      s.local_scope.pop();
-      s.return_type = old_return_ty;
-    }
-
-    auto name = s.cur_named(n->get_name());
-    auto str = memorize(std::string_view(name));
-
-    current->getParameterMap()[str] = {};
-
-    { /* Produce the function parameters */
-      for (auto it = fty->get_params().begin(); it != fty->get_params().end(); ++it) {
-        /**
-         * Parameter properties:
-         * 1. Name - All parameters have a name.
-         * 2. Type - All parameters have a type.
-         * 3. Default - Optional, if the parameter has a default value.
-         * 4. Position - All parameters have a position.
-         */
-
-        Type *type = nrgen_one(b, s, std::get<1>(*it))->asType();
-        if (!type) {
+      Expr *def = nullptr;
+      if (std::get<2>(*it)) {
+        def = nrgen_one(b, s, std::get<2>(*it));
+        if (!def) {
           badtree(n, "qparse::FnDef::get_type() == nullptr");
           throw QError();
         }
-
-        Expr *def = nullptr;
-        if (std::get<2>(*it)) {
-          def = nrgen_one(b, s, std::get<2>(*it));
-          if (!def) {
-            badtree(n, "qparse::FnDef::get_type() == nullptr");
-            throw QError();
-          }
-        }
-
-        std::string_view sv = memorize(std::string_view(std::get<0>(*it)));
-
-        params.push_back({type, sv});
-        current->getParameterMap()[str].push_back({std::string(std::get<0>(*it)), type, def});
       }
-    }
 
-    auto obj =
-        create<Fn>(str, std::move(params), fnty->getReturn(), body, fty->is_variadic(), s.abi_mode);
+      std::string_view sv = memorize(std::string_view(std::get<0>(*it)));
 
-    current->getFunctions().insert({str, {fnty, obj}});
-
-    s.inside_function = old_inside_function;
-    return obj;
-  }
-
-  static std::vector<Expr *> nrgen_subsystem(NRBuilder &b, ConvState &s, qparse::SubsystemDecl *n) {
-    /**
-     * @brief Convert a subsystem declaration to a nr sequence with
-     * namespace prefixes.
-     */
-
-    std::vector<Expr *> items;
-
-    if (!n->get_body()) {
-      badtree(n, "qparse::SubsystemDecl::get_body() == nullptr");
-      throw QError();
-    }
-
-    std::string old_ns = s.ns_prefix;
-
-    if (s.ns_prefix.empty()) {
-      s.ns_prefix = std::string(n->get_name());
-    } else {
-      s.ns_prefix += "::" + std::string(n->get_name());
-    }
-
-    for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end();
-         ++it) {
-      auto item = nrgen_any(b, s, *it);
-
-      items.insert(items.end(), item.begin(), item.end());
-    }
-
-    s.ns_prefix = old_ns;
-
-    return items;
-  }
-
-  static std::vector<Expr *> nrgen_export(NRBuilder &b, ConvState &s, qparse::ExportDecl *n) {
-    /**
-     * @brief Convert an export declaration to a nr export node.
-     * @details Convert a list of statements under a common ABI into a
-     * sequence under a common ABI.
-     */
-
-    AbiTag old = s.abi_mode;
-
-    if (n->get_abi_name().empty()) {
-      s.abi_mode = AbiTag::Default;
-    } else if (n->get_abi_name() == "q") {
-      s.abi_mode = AbiTag::Nitrate;
-    } else if (n->get_abi_name() == "c") {
-      s.abi_mode = AbiTag::C;
-    } else {
-      badtree(n, "qparse::ExportDecl abi name is not supported: '" + n->get_abi_name() + "'");
-      throw QError();
-    }
-
-    if (!n->get_body()) {
-      badtree(n, "qparse::ExportDecl::get_body() == nullptr");
-      throw QError();
-    }
-
-    std::string_view abi_name;
-
-    if (n->get_abi_name().empty()) {
-      abi_name = "std";
-    } else {
-      abi_name = memorize(n->get_abi_name());
-    }
-
-    std::vector<nr::Expr *> items;
-
-    for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end();
-         ++it) {
-      auto result = nrgen_any(b, s, *it);
-      for (auto &item : result) {
-        items.push_back(create<Extern>(item, abi_name));
-      }
-    }
-
-    s.abi_mode = old;
-
-    return items;
-  }
-
-  static Expr *nrgen_composite_field(NRBuilder &b, ConvState &s, qparse::CompositeField *n) {
-    auto type = nrgen_one(b, s, n->get_type());
-    if (!type) {
-      badtree(n, "qparse::CompositeField::get_type() == nullptr");
-      throw QError();
-    }
-
-    Expr *_def = nullptr;
-    if (n->get_value()) {
-      _def = nrgen_one(b, s, n->get_value());
-      if (!_def) {
-        badtree(n, "qparse::CompositeField::get_value() == nullptr");
-        throw QError();
-      }
-    }
-
-    if (s.composite_expanse.empty()) {
-      badtree(n, "state.composite_expanse.empty()");
-      throw QError();
-    }
-
-    std::string_view dt_name = memorize(s.composite_expanse.top());
-
-    current->getCompositeFields()[dt_name].push_back(
-        {std::string(n->get_name()), type->asType(), _def});
-
-    return type;
-  }
-
-  static Expr *nrgen_block(NRBuilder &b, ConvState &s, qparse::Block *n) {
-    /**
-     * @brief Convert a scope block into an expression sequence.
-     * @details A QXIR sequence is a list of expressions (a sequence point).
-     *          This is equivalent to a scope block.
-     */
-
-    SeqItems items;
-    items.reserve(n->get_items().size());
-
-    s.local_scope.push({});
-
-    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = nrgen_any(b, s, *it);
-
-      items.insert(items.end(), item.begin(), item.end());
-    }
-
-    s.local_scope.pop();
-
-    return create<Seq>(std::move(items));
-  }
-
-  static Expr *nrgen_const(NRBuilder &b, ConvState &s, qparse::ConstDecl *n) {
-    Expr *init = nrgen_one(b, s, n->get_value());
-    Type *type = nullptr;
-    if (n->get_type()) {
-      Expr *tmp = nrgen_one(b, s, n->get_type());
-      if (tmp) {
-        type = tmp->asType();
-      }
-    }
-
-    if (init && type) {
-      init = create<BinExpr>(init, type, Op::CastAs);
-    } else if (!init && type) {
-      init = type;
-    } else if (!init && !type) {
-      badtree(
-          n, "parse::ConstDecl::get_value() == nullptr && parse::ConstDecl::get_type() == nullptr");
-      throw QError();
-    }
-
-    if (s.inside_function) {
-      std::string_view name = memorize(n->get_name());
-      Local *local = create<Local>(name, init, s.abi_mode);
-
-      qcore_assert(!s.local_scope.empty());
-      if (s.local_scope.top().contains(name)) {
-        report(IssueCode::VariableRedefinition, IssueClass::Error, n->get_name(),
-               n->get_start_pos(), n->get_end_pos());
-      }
-      s.local_scope.top()[name] = local;
-      return local;
-    } else {
-      std::string_view name = memorize(std::string_view(s.cur_named(n->get_name())));
-      auto g = create<Local>(name, init, s.abi_mode);
-      current->getGlobalVariables().insert({name, g});
-      return g;
+      params.push_back({type, sv});
+      current->getParameterMap()[str].push_back({std::string(std::get<0>(*it)), type, def});
     }
   }
 
-  static Expr *nrgen_var(NRBuilder &, ConvState &, qparse::VarDecl *) {
-    /// TODO: var
+  auto obj =
+      create<Fn>(str, std::move(params), fnty->getReturn(), body, fty->is_variadic(), s.abi_mode);
 
+  current->getFunctions().insert({str, {fnty, obj}});
+
+  s.inside_function = old_inside_function;
+  return obj;
+}
+
+static std::vector<Expr *> nrgen_subsystem(NRBuilder &b, ConvState &s, qparse::SubsystemDecl *n) {
+  /**
+   * @brief Convert a subsystem declaration to a nr sequence with
+   * namespace prefixes.
+   */
+
+  std::vector<Expr *> items;
+
+  if (!n->get_body()) {
+    badtree(n, "qparse::SubsystemDecl::get_body() == nullptr");
     throw QError();
   }
 
-  static Expr *nrgen_let(NRBuilder &b, ConvState &s, qparse::LetDecl *n) {
-    Expr *init = nrgen_one(b, s, n->get_value());
-    Type *type = nullptr;
-    if (n->get_type()) {
-      Expr *tmp = nrgen_one(b, s, n->get_type());
-      if (tmp) {
-        type = tmp->asType();
-      }
-    }
+  std::string old_ns = s.ns_prefix;
 
-    if (init && type) {
-      init = create<BinExpr>(init, type, Op::CastAs);
-    } else if (!init && type) {
-      init = type;
-    } else if (!init && !type) {
-      badtree(
-          n, "parse::ConstDecl::get_value() == nullptr && parse::ConstDecl::get_type() == nullptr");
+  if (s.ns_prefix.empty()) {
+    s.ns_prefix = std::string(n->get_name());
+  } else {
+    s.ns_prefix += "::" + std::string(n->get_name());
+  }
+
+  for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end(); ++it) {
+    auto item = nrgen_any(b, s, *it);
+
+    items.insert(items.end(), item.begin(), item.end());
+  }
+
+  s.ns_prefix = old_ns;
+
+  return items;
+}
+
+static std::vector<Expr *> nrgen_export(NRBuilder &b, ConvState &s, qparse::ExportDecl *n) {
+  /**
+   * @brief Convert an export declaration to a nr export node.
+   * @details Convert a list of statements under a common ABI into a
+   * sequence under a common ABI.
+   */
+
+  AbiTag old = s.abi_mode;
+
+  if (n->get_abi_name().empty()) {
+    s.abi_mode = AbiTag::Default;
+  } else if (n->get_abi_name() == "q") {
+    s.abi_mode = AbiTag::Nitrate;
+  } else if (n->get_abi_name() == "c") {
+    s.abi_mode = AbiTag::C;
+  } else {
+    badtree(n, "qparse::ExportDecl abi name is not supported: '" + n->get_abi_name() + "'");
+    throw QError();
+  }
+
+  if (!n->get_body()) {
+    badtree(n, "qparse::ExportDecl::get_body() == nullptr");
+    throw QError();
+  }
+
+  std::string_view abi_name;
+
+  if (n->get_abi_name().empty()) {
+    abi_name = "std";
+  } else {
+    abi_name = memorize(n->get_abi_name());
+  }
+
+  std::vector<nr::Expr *> items;
+
+  for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end(); ++it) {
+    auto result = nrgen_any(b, s, *it);
+    for (auto &item : result) {
+      items.push_back(create<Extern>(item, abi_name));
+    }
+  }
+
+  s.abi_mode = old;
+
+  return items;
+}
+
+static Expr *nrgen_composite_field(NRBuilder &b, ConvState &s, qparse::CompositeField *n) {
+  auto type = nrgen_one(b, s, n->get_type());
+  if (!type) {
+    badtree(n, "qparse::CompositeField::get_type() == nullptr");
+    throw QError();
+  }
+
+  Expr *_def = nullptr;
+  if (n->get_value()) {
+    _def = nrgen_one(b, s, n->get_value());
+    if (!_def) {
+      badtree(n, "qparse::CompositeField::get_value() == nullptr");
       throw QError();
     }
+  }
 
-    if (s.inside_function) {
-      std::string_view name = memorize(n->get_name());
-      Local *local = create<Local>(name, init, s.abi_mode);
+  if (s.composite_expanse.empty()) {
+    badtree(n, "state.composite_expanse.empty()");
+    throw QError();
+  }
 
-      qcore_assert(!s.local_scope.empty());
-      if (s.local_scope.top().contains(name)) {
-        report(IssueCode::VariableRedefinition, IssueClass::Error, n->get_name(),
-               n->get_start_pos(), n->get_end_pos());
-      }
-      s.local_scope.top()[name] = local;
-      return local;
-    } else {
-      std::string_view name = memorize(std::string_view(s.cur_named(n->get_name())));
-      auto g = create<Local>(name, init, s.abi_mode);
-      current->getGlobalVariables().insert({name, g});
-      return g;
+  std::string_view dt_name = memorize(s.composite_expanse.top());
+
+  current->getCompositeFields()[dt_name].push_back(
+      {std::string(n->get_name()), type->asType(), _def});
+
+  return type;
+}
+
+static Expr *nrgen_block(NRBuilder &b, ConvState &s, qparse::Block *n) {
+  /**
+   * @brief Convert a scope block into an expression sequence.
+   * @details A QXIR sequence is a list of expressions (a sequence point).
+   *          This is equivalent to a scope block.
+   */
+
+  SeqItems items;
+  items.reserve(n->get_items().size());
+
+  s.local_scope.push({});
+
+  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+    auto item = nrgen_any(b, s, *it);
+
+    items.insert(items.end(), item.begin(), item.end());
+  }
+
+  s.local_scope.pop();
+
+  return create<Seq>(std::move(items));
+}
+
+static Expr *nrgen_const(NRBuilder &b, ConvState &s, qparse::ConstDecl *n) {
+  Expr *init = nrgen_one(b, s, n->get_value());
+  Type *type = nullptr;
+  if (n->get_type()) {
+    Expr *tmp = nrgen_one(b, s, n->get_type());
+    if (tmp) {
+      type = tmp->asType();
     }
   }
 
-  static Expr *nrgen_inline_asm(NRBuilder &, ConvState &, qparse::InlineAsm *) {
-    qcore_implement("nrgen_inline_asm");
+  if (init && type) {
+    init = create<BinExpr>(init, type, Op::CastAs);
+  } else if (!init && type) {
+    init = type;
+  } else if (!init && !type) {
+    badtree(n,
+            "parse::ConstDecl::get_value() == nullptr && parse::ConstDecl::get_type() == nullptr");
+    throw QError();
   }
 
-  static Expr *nrgen_return(NRBuilder &b, ConvState &s, qparse::ReturnStmt *n) {
-    /**
-     * @brief Convert a return statement to a nr expression.
-     * @details This is a 1-to-1 conversion of the return statement.
-     */
+  if (s.inside_function) {
+    std::string_view name = memorize(n->get_name());
+    Local *local = create<Local>(name, init, s.abi_mode);
 
-    auto val = nrgen_one(b, s, n->get_value());
-    if (!val) {
-      val = create<VoidTy>();
+    qcore_assert(!s.local_scope.empty());
+    if (s.local_scope.top().contains(name)) {
+      report(IssueCode::VariableRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
+             n->get_end_pos());
     }
-    val = create<BinExpr>(val, s.return_type, Op::CastAs);
+    s.local_scope.top()[name] = local;
+    return local;
+  } else {
+    std::string_view name = memorize(std::string_view(s.cur_named(n->get_name())));
+    auto g = create<Local>(name, init, s.abi_mode);
+    current->getGlobalVariables().insert({name, g});
+    return g;
+  }
+}
 
-    return create<Ret>(val);
+static Expr *nrgen_var(NRBuilder &, ConvState &, qparse::VarDecl *) {
+  /// TODO: var
+
+  throw QError();
+}
+
+static Expr *nrgen_let(NRBuilder &b, ConvState &s, qparse::LetDecl *n) {
+  Expr *init = nrgen_one(b, s, n->get_value());
+  Type *type = nullptr;
+  if (n->get_type()) {
+    Expr *tmp = nrgen_one(b, s, n->get_type());
+    if (tmp) {
+      type = tmp->asType();
+    }
   }
 
-  static Expr *nrgen_retif(NRBuilder &b, ConvState &s, qparse::ReturnIfStmt *n) {
-    /**
-     * @brief Convert a return statement to a nr expression.
-     * @details Lower into an 'if (cond) {return val}' expression.
-     */
+  if (init && type) {
+    init = create<BinExpr>(init, type, Op::CastAs);
+  } else if (!init && type) {
+    init = type;
+  } else if (!init && !type) {
+    badtree(n,
+            "parse::ConstDecl::get_value() == nullptr && parse::ConstDecl::get_type() == nullptr");
+    throw QError();
+  }
 
-    auto cond = nrgen_one(b, s, n->get_cond());
-    if (!cond) {
-      badtree(n, "qparse::ReturnIfStmt::get_cond() == nullptr");
-      throw QError();
+  if (s.inside_function) {
+    std::string_view name = memorize(n->get_name());
+    Local *local = create<Local>(name, init, s.abi_mode);
+
+    qcore_assert(!s.local_scope.empty());
+    if (s.local_scope.top().contains(name)) {
+      report(IssueCode::VariableRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
+             n->get_end_pos());
     }
+    s.local_scope.top()[name] = local;
+    return local;
+  } else {
+    std::string_view name = memorize(std::string_view(s.cur_named(n->get_name())));
+    auto g = create<Local>(name, init, s.abi_mode);
+    current->getGlobalVariables().insert({name, g});
+    return g;
+  }
+}
 
+static Expr *nrgen_inline_asm(NRBuilder &, ConvState &, qparse::InlineAsm *) {
+  qcore_implement("nrgen_inline_asm");
+}
+
+static Expr *nrgen_return(NRBuilder &b, ConvState &s, qparse::ReturnStmt *n) {
+  /**
+   * @brief Convert a return statement to a nr expression.
+   * @details This is a 1-to-1 conversion of the return statement.
+   */
+
+  auto val = nrgen_one(b, s, n->get_value());
+  if (!val) {
+    val = create<VoidTy>();
+  }
+  val = create<BinExpr>(val, s.return_type, Op::CastAs);
+
+  return create<Ret>(val);
+}
+
+static Expr *nrgen_retif(NRBuilder &b, ConvState &s, qparse::ReturnIfStmt *n) {
+  /**
+   * @brief Convert a return statement to a nr expression.
+   * @details Lower into an 'if (cond) {return val}' expression.
+   */
+
+  auto cond = nrgen_one(b, s, n->get_cond());
+  if (!cond) {
+    badtree(n, "qparse::ReturnIfStmt::get_cond() == nullptr");
+    throw QError();
+  }
+
+  cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
+
+  auto val = nrgen_one(b, s, n->get_value());
+  if (!val) {
+    badtree(n, "qparse::ReturnIfStmt::get_value() == nullptr");
+    throw QError();
+  }
+  val = create<BinExpr>(val, s.return_type, Op::CastAs);
+
+  return create<If>(cond, create<Ret>(val), createIgn());
+}
+
+static Expr *nrgen_retz(NRBuilder &b, ConvState &s, qparse::RetZStmt *n) {
+  /**
+   * @brief Convert a return statement to a nr expression.
+   * @details Lower into an 'if (!cond) {return val}' expression.
+   */
+
+  auto cond = nrgen_one(b, s, n->get_cond());
+  if (!cond) {
+    badtree(n, "qparse::RetZStmt::get_cond() == nullptr");
+    throw QError();
+  }
+  cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
+
+  auto inv_cond = create<UnExpr>(cond, Op::LogicNot);
+
+  auto val = nrgen_one(b, s, n->get_value());
+  if (!val) {
+    badtree(n, "qparse::RetZStmt::get_value() == nullptr");
+    throw QError();
+  }
+  val = create<BinExpr>(val, s.return_type, Op::CastAs);
+
+  return create<If>(inv_cond, create<Ret>(val), createIgn());
+}
+
+static Expr *nrgen_retv(NRBuilder &b, ConvState &s, qparse::RetVStmt *n) {
+  /**
+   * @brief Convert a return statement to a nr expression.
+   * @details Lower into an 'if (cond) {return void}' expression.
+   */
+
+  auto cond = nrgen_one(b, s, n->get_cond());
+  if (!cond) {
+    badtree(n, "qparse::RetVStmt::get_cond() == nullptr");
+    throw QError();
+  }
+  cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
+
+  return create<If>(cond, create<Ret>(createIgn()), createIgn());
+}
+
+static Expr *nrgen_break(NRBuilder &, ConvState &, qparse::BreakStmt *) {
+  /**
+   * @brief Convert a break statement to a nr expression.
+   * @details This is a 1-to-1 conversion of the break statement.
+   */
+
+  return create<Brk>();
+}
+
+static Expr *nrgen_continue(NRBuilder &, ConvState &, qparse::ContinueStmt *) {
+  /**
+   * @brief Convert a continue statement to a nr expression.
+   * @details This is a 1-to-1 conversion of the continue statement.
+   */
+
+  return create<Cont>();
+}
+
+static Expr *nrgen_if(NRBuilder &b, ConvState &s, qparse::IfStmt *n) {
+  /**
+   * @brief Convert an if statement to a nr expression.
+   * @details The else branch is optional, and if it is missing, it is
+   *        replaced with a void expression.
+   */
+
+  auto cond = nrgen_one(b, s, n->get_cond());
+  auto then = nrgen_one(b, s, n->get_then());
+  auto els = nrgen_one(b, s, n->get_else());
+
+  if (!cond) {
+    badtree(n, "qparse::IfStmt::get_cond() == nullptr");
+    throw QError();
+  }
+  cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
+
+  if (!then) {
+    badtree(n, "qparse::IfStmt::get_then() == nullptr");
+    throw QError();
+  }
+
+  if (!els) {
+    els = createIgn();
+  }
+
+  return create<If>(cond, then, els);
+}
+
+static Expr *nrgen_while(NRBuilder &b, ConvState &s, qparse::WhileStmt *n) {
+  /**
+   * @brief Convert a while loop to a nr expression.
+   * @details If any of the sub-expressions are missing, they are replaced
+   *         with a default value of 1.
+   */
+
+  auto cond = nrgen_one(b, s, n->get_cond());
+  auto body = nrgen_one(b, s, n->get_body());
+
+  if (!cond) {
+    cond = create<Int>(1, IntSize::U1);
+  }
+
+  cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
+
+  if (!body) {
+    body = create<Seq>(SeqItems({}));
+  } else if (body->getKind() != QIR_NODE_SEQ) {
+    body = create<Seq>(SeqItems({body}));
+  }
+
+  return create<While>(cond, body->as<Seq>());
+}
+
+static Expr *nrgen_for(NRBuilder &b, ConvState &s, qparse::ForStmt *n) {
+  /**
+   * @brief Convert a for loop to a nr expression.
+   * @details If any of the sub-expressions are missing, they are replaced
+   *         with a default value of 1.
+   */
+
+  auto init = nrgen_one(b, s, n->get_init());
+  auto cond = nrgen_one(b, s, n->get_cond());
+  auto step = nrgen_one(b, s, n->get_step());
+  auto body = nrgen_one(b, s, n->get_body());
+
+  if (!init) {
+    init = create<Int>(1, IntSize::U32);
+  }
+
+  if (!cond) {
+    cond = create<Int>(1, IntSize::U32);  // infinite loop like 'for (;;) {}'
     cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
-
-    auto val = nrgen_one(b, s, n->get_value());
-    if (!val) {
-      badtree(n, "qparse::ReturnIfStmt::get_value() == nullptr");
-      throw QError();
-    }
-    val = create<BinExpr>(val, s.return_type, Op::CastAs);
-
-    return create<If>(cond, create<Ret>(val), createIgn());
   }
 
-  static Expr *nrgen_retz(NRBuilder &b, ConvState &s, qparse::RetZStmt *n) {
-    /**
-     * @brief Convert a return statement to a nr expression.
-     * @details Lower into an 'if (!cond) {return val}' expression.
-     */
-
-    auto cond = nrgen_one(b, s, n->get_cond());
-    if (!cond) {
-      badtree(n, "qparse::RetZStmt::get_cond() == nullptr");
-      throw QError();
-    }
-    cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
-
-    auto inv_cond = create<UnExpr>(cond, Op::LogicNot);
-
-    auto val = nrgen_one(b, s, n->get_value());
-    if (!val) {
-      badtree(n, "qparse::RetZStmt::get_value() == nullptr");
-      throw QError();
-    }
-    val = create<BinExpr>(val, s.return_type, Op::CastAs);
-
-    return create<If>(inv_cond, create<Ret>(val), createIgn());
+  if (!step) {
+    step = create<Int>(1, IntSize::U32);
   }
 
-  static Expr *nrgen_retv(NRBuilder &b, ConvState &s, qparse::RetVStmt *n) {
-    /**
-     * @brief Convert a return statement to a nr expression.
-     * @details Lower into an 'if (cond) {return void}' expression.
-     */
-
-    auto cond = nrgen_one(b, s, n->get_cond());
-    if (!cond) {
-      badtree(n, "qparse::RetVStmt::get_cond() == nullptr");
-      throw QError();
-    }
-    cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
-
-    return create<If>(cond, create<Ret>(createIgn()), createIgn());
+  if (!body) {
+    body = create<Int>(1, IntSize::U32);
   }
 
-  static Expr *nrgen_break(NRBuilder &, ConvState &, qparse::BreakStmt *) {
-    /**
-     * @brief Convert a break statement to a nr expression.
-     * @details This is a 1-to-1 conversion of the break statement.
-     */
+  return create<For>(init, cond, step, body);
+}
 
-    return create<Brk>();
+static Expr *nrgen_form(NRBuilder &b, ConvState &s, qparse::FormStmt *n) {
+  /**
+   * @brief Convert a form loop to a nr expression.
+   * @details This is a 1-to-1 conversion of the form loop.
+   */
+
+  auto maxjobs = nrgen_one(b, s, n->get_maxjobs());
+  if (!maxjobs) {
+    badtree(n, "qparse::FormStmt::get_maxjobs() == nullptr");
+    throw QError();
   }
 
-  static Expr *nrgen_continue(NRBuilder &, ConvState &, qparse::ContinueStmt *) {
-    /**
-     * @brief Convert a continue statement to a nr expression.
-     * @details This is a 1-to-1 conversion of the continue statement.
-     */
+  auto idx_name = memorize(n->get_idx_ident());
+  auto val_name = memorize(n->get_val_ident());
 
-    return create<Cont>();
+  auto iter = nrgen_one(b, s, n->get_expr());
+  if (!iter) {
+    badtree(n, "qparse::FormStmt::get_expr() == nullptr");
+    throw QError();
   }
 
-  static Expr *nrgen_if(NRBuilder &b, ConvState &s, qparse::IfStmt *n) {
-    /**
-     * @brief Convert an if statement to a nr expression.
-     * @details The else branch is optional, and if it is missing, it is
-     *        replaced with a void expression.
-     */
-
-    auto cond = nrgen_one(b, s, n->get_cond());
-    auto then = nrgen_one(b, s, n->get_then());
-    auto els = nrgen_one(b, s, n->get_else());
-
-    if (!cond) {
-      badtree(n, "qparse::IfStmt::get_cond() == nullptr");
-      throw QError();
-    }
-    cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
-
-    if (!then) {
-      badtree(n, "qparse::IfStmt::get_then() == nullptr");
-      throw QError();
-    }
-
-    if (!els) {
-      els = createIgn();
-    }
-
-    return create<If>(cond, then, els);
+  auto body = nrgen_one(b, s, n->get_body());
+  if (!body) {
+    badtree(n, "qparse::FormStmt::get_body() == nullptr");
+    throw QError();
   }
 
-  static Expr *nrgen_while(NRBuilder &b, ConvState &s, qparse::WhileStmt *n) {
-    /**
-     * @brief Convert a while loop to a nr expression.
-     * @details If any of the sub-expressions are missing, they are replaced
-     *         with a default value of 1.
-     */
+  return create<Form>(idx_name, val_name, maxjobs, iter, create<Seq>(SeqItems({body})));
+}
 
-    auto cond = nrgen_one(b, s, n->get_cond());
-    auto body = nrgen_one(b, s, n->get_body());
+static Expr *nrgen_foreach(NRBuilder &, ConvState &, qparse::ForeachStmt *) {
+  /**
+   * @brief Convert a foreach loop to a nr expression.
+   * @details This is a 1-to-1 conversion of the foreach loop.
+   */
 
-    if (!cond) {
-      cond = create<Int>(1, IntSize::U1);
-    }
+  // auto idx_name = memorize(n->get_idx_ident());
+  // auto val_name = memorize(n->get_val_ident());
 
-    cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
+  // auto iter = nrgen_one(b, s, n->get_expr());
+  // if (!iter) {
+  //   badtree(n, "qparse::ForeachStmt::get_expr() == nullptr");
+  //   throw QError();
+  // }
 
-    if (!body) {
-      body = create<Seq>(SeqItems({}));
-    } else if (body->getKind() != QIR_NODE_SEQ) {
-      body = create<Seq>(SeqItems({body}));
-    }
+  // auto body = nrgen_one(b, s, n->get_body());
+  // if (!body) {
+  //   badtree(n, "qparse::ForeachStmt::get_body() == nullptr");
+  //   throw QError();
+  // }
 
-    return create<While>(cond, body->as<Seq>());
+  // return create<Foreach>(idx_name, val_name, iter, create<Seq>(SeqItems({body})));
+  qcore_implement(__func__);
+}
+
+static Expr *nrgen_case(NRBuilder &b, ConvState &s, qparse::CaseStmt *n) {
+  /**
+   * @brief Convert a case statement to a nr expression.
+   * @details This is a 1-to-1 conversion of the case statement.
+   */
+
+  auto cond = nrgen_one(b, s, n->get_cond());
+  if (!cond) {
+    badtree(n, "qparse::CaseStmt::get_cond() == nullptr");
+    throw QError();
   }
 
-  static Expr *nrgen_for(NRBuilder &b, ConvState &s, qparse::ForStmt *n) {
-    /**
-     * @brief Convert a for loop to a nr expression.
-     * @details If any of the sub-expressions are missing, they are replaced
-     *         with a default value of 1.
-     */
-
-    auto init = nrgen_one(b, s, n->get_init());
-    auto cond = nrgen_one(b, s, n->get_cond());
-    auto step = nrgen_one(b, s, n->get_step());
-    auto body = nrgen_one(b, s, n->get_body());
-
-    if (!init) {
-      init = create<Int>(1, IntSize::U32);
-    }
-
-    if (!cond) {
-      cond = create<Int>(1, IntSize::U32);  // infinite loop like 'for (;;) {}'
-      cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
-    }
-
-    if (!step) {
-      step = create<Int>(1, IntSize::U32);
-    }
-
-    if (!body) {
-      body = create<Int>(1, IntSize::U32);
-    }
-
-    return create<For>(init, cond, step, body);
+  auto body = nrgen_one(b, s, n->get_body());
+  if (!body) {
+    badtree(n, "qparse::CaseStmt::get_body() == nullptr");
+    throw QError();
   }
 
-  static Expr *nrgen_form(NRBuilder &b, ConvState &s, qparse::FormStmt *n) {
-    /**
-     * @brief Convert a form loop to a nr expression.
-     * @details This is a 1-to-1 conversion of the form loop.
-     */
+  return create<Case>(cond, body);
+}
 
-    auto maxjobs = nrgen_one(b, s, n->get_maxjobs());
-    if (!maxjobs) {
-      badtree(n, "qparse::FormStmt::get_maxjobs() == nullptr");
+static Expr *nrgen_switch(NRBuilder &b, ConvState &s, qparse::SwitchStmt *n) {
+  /**
+   * @brief Convert a switch statement to a nr expression.
+   * @details If the default case is missing, it is replaced with a void
+   *        expression.
+   */
+
+  auto cond = nrgen_one(b, s, n->get_cond());
+  if (!cond) {
+    badtree(n, "qparse::SwitchStmt::get_cond() == nullptr");
+    throw QError();
+  }
+
+  SwitchCases cases;
+  for (auto it = n->get_cases().begin(); it != n->get_cases().end(); ++it) {
+    auto item = nrgen_one(b, s, *it);
+    if (!item) {
+      badtree(n, "qparse::SwitchStmt::get_cases() vector contains nullptr");
       throw QError();
     }
 
-    auto idx_name = memorize(n->get_idx_ident());
-    auto val_name = memorize(n->get_val_ident());
+    cases.push_back(item->as<Case>());
+  }
 
-    auto iter = nrgen_one(b, s, n->get_expr());
-    if (!iter) {
-      badtree(n, "qparse::FormStmt::get_expr() == nullptr");
+  Expr *def = nullptr;
+  if (n->get_default()) {
+    def = nrgen_one(b, s, n->get_default());
+    if (!def) {
+      badtree(n, "qparse::SwitchStmt::get_default() == nullptr");
       throw QError();
     }
-
-    auto body = nrgen_one(b, s, n->get_body());
-    if (!body) {
-      badtree(n, "qparse::FormStmt::get_body() == nullptr");
-      throw QError();
-    }
-
-    return create<Form>(idx_name, val_name, maxjobs, iter, create<Seq>(SeqItems({body})));
+  } else {
+    def = createIgn();
   }
 
-  static Expr *nrgen_foreach(NRBuilder &, ConvState &, qparse::ForeachStmt *) {
-    /**
-     * @brief Convert a foreach loop to a nr expression.
-     * @details This is a 1-to-1 conversion of the foreach loop.
-     */
+  return create<Switch>(cond, std::move(cases), def);
+}
 
-    // auto idx_name = memorize(n->get_idx_ident());
-    // auto val_name = memorize(n->get_val_ident());
+static Expr *nrgen_expr_stmt(NRBuilder &b, ConvState &s, qparse::ExprStmt *n) {
+  /**
+   * @brief Convert an expression inside a statement to a nr expression.
+   * @details This is a 1-to-1 conversion of the expression statement.
+   */
 
-    // auto iter = nrgen_one(b, s, n->get_expr());
-    // if (!iter) {
-    //   badtree(n, "qparse::ForeachStmt::get_expr() == nullptr");
-    //   throw QError();
-    // }
+  return nrgen_one(b, s, n->get_expr());
+}
 
-    // auto body = nrgen_one(b, s, n->get_body());
-    // if (!body) {
-    //   badtree(n, "qparse::ForeachStmt::get_body() == nullptr");
-    //   throw QError();
-    // }
+static Expr *nrgen_volstmt(NRBuilder &, ConvState &, qparse::VolStmt *) {
+  /**
+   * @brief Convert a volatile statement to a nr volatile expression.
+   * @details This is a 1-to-1 conversion of the volatile statement.
+   */
 
-    // return create<Foreach>(idx_name, val_name, iter, create<Seq>(SeqItems({body})));
-    qcore_implement(__func__);
-  }
+  // auto expr = nrgen_one(b, s, n->get_stmt());
+  // expr->setVolatile(true);
 
-  static Expr *nrgen_case(NRBuilder &b, ConvState &s, qparse::CaseStmt *n) {
-    /**
-     * @brief Convert a case statement to a nr expression.
-     * @details This is a 1-to-1 conversion of the case statement.
-     */
+  // return expr;
 
-    auto cond = nrgen_one(b, s, n->get_cond());
-    if (!cond) {
-      badtree(n, "qparse::CaseStmt::get_cond() == nullptr");
-      throw QError();
-    }
-
-    auto body = nrgen_one(b, s, n->get_body());
-    if (!body) {
-      badtree(n, "qparse::CaseStmt::get_body() == nullptr");
-      throw QError();
-    }
-
-    return create<Case>(cond, body);
-  }
-
-  static Expr *nrgen_switch(NRBuilder &b, ConvState &s, qparse::SwitchStmt *n) {
-    /**
-     * @brief Convert a switch statement to a nr expression.
-     * @details If the default case is missing, it is replaced with a void
-     *        expression.
-     */
-
-    auto cond = nrgen_one(b, s, n->get_cond());
-    if (!cond) {
-      badtree(n, "qparse::SwitchStmt::get_cond() == nullptr");
-      throw QError();
-    }
-
-    SwitchCases cases;
-    for (auto it = n->get_cases().begin(); it != n->get_cases().end(); ++it) {
-      auto item = nrgen_one(b, s, *it);
-      if (!item) {
-        badtree(n, "qparse::SwitchStmt::get_cases() vector contains nullptr");
-        throw QError();
-      }
-
-      cases.push_back(item->as<Case>());
-    }
-
-    Expr *def = nullptr;
-    if (n->get_default()) {
-      def = nrgen_one(b, s, n->get_default());
-      if (!def) {
-        badtree(n, "qparse::SwitchStmt::get_default() == nullptr");
-        throw QError();
-      }
-    } else {
-      def = createIgn();
-    }
-
-    return create<Switch>(cond, std::move(cases), def);
-  }
-
-  static Expr *nrgen_expr_stmt(NRBuilder &b, ConvState &s, qparse::ExprStmt *n) {
-    /**
-     * @brief Convert an expression inside a statement to a nr expression.
-     * @details This is a 1-to-1 conversion of the expression statement.
-     */
-
-    return nrgen_one(b, s, n->get_expr());
-  }
-
-  static Expr *nrgen_volstmt(NRBuilder &, ConvState &, qparse::VolStmt *) {
-    /**
-     * @brief Convert a volatile statement to a nr volatile expression.
-     * @details This is a 1-to-1 conversion of the volatile statement.
-     */
-
-    // auto expr = nrgen_one(b, s, n->get_stmt());
-    // expr->setVolatile(true);
-
-    // return expr;
-
-    qcore_implement(__func__);
-  }
-}  // namespace nr
+  qcore_implement(__func__);
+}
 
 static nr::Expr *nrgen_one(NRBuilder &b, ConvState &s, qparse::Node *n) {
   using namespace nr;
