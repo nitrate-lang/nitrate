@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "nitrate-ir/Report.hh"
 #define IRBUILDER_IMPL
 
 #include <nitrate-core/Error.h>
@@ -304,7 +305,8 @@ void NRBuilder::finish(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   m_current_expr = std::nullopt;
 }
 
-bool NRBuilder::verify(diag::IDiagnosticEngine *sink SOURCE_LOCATION_PARAM) noexcept {
+bool NRBuilder::verify(
+    std::optional<diag::IDiagnosticEngine *> the_sink SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Finished || m_state == SelfState::Verified ||
                    m_state == SelfState::FailEarly);
   contract_enforce(m_result == std::nullopt);
@@ -318,6 +320,13 @@ bool NRBuilder::verify(diag::IDiagnosticEngine *sink SOURCE_LOCATION_PARAM) noex
   } else if (m_state == SelfState::Verified) {
     return true;
   }
+
+  if (!the_sink.has_value()) {
+    /// TODO: Create mock instance
+    qcore_implement(__func__);
+  }
+
+  diag::IDiagnosticEngine *sink = the_sink.value();
 
   if (!check_acyclic(m_root, sink)) {
     return false;

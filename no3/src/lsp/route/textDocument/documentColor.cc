@@ -124,10 +124,10 @@ void do_documentColor(const lsp::RequestMessage& req, lsp::ResponseMessage& resp
       continue;
     }
 
-    qlex_size start_line = qlex_line(lexer.get(), tok.start);
-    qlex_size start_col = qlex_col(lexer.get(), tok.start);
-    qlex_size end_line = qlex_line(lexer.get(), tok.end);
-    qlex_size end_col = qlex_col(lexer.get(), tok.end);
+    uint32_t start_line = qlex_line(lexer.get(), tok.start);
+    uint32_t start_col = qlex_col(lexer.get(), tok.start);
+    uint32_t end_line = qlex_line(lexer.get(), tok.end);
+    uint32_t end_col = qlex_col(lexer.get(), tok.end);
 
     if (start_line == UINT32_MAX || start_col == UINT32_MAX || end_line == UINT32_MAX ||
         end_col == UINT32_MAX) {

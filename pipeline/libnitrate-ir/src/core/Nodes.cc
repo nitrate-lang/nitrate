@@ -41,7 +41,6 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <cstdint>
 #include <cstring>
-#include <memory>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <set>
@@ -64,21 +63,6 @@ void *ArenaAllocatorImpl::allocate(std::size_t size) {
 void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }
 
 ///=============================================================================
-
-CPP_EXPORT ExtensionData *Expr::getExtensionData() noexcept {
-  qmodule_t *mod = getModule();
-  qcore_assert(mod != nullptr, "Module is not set");
-
-  auto it = mod->getExtensionData().find(m_extension_ptr);
-
-  if (it == mod->getExtensionData().end()) [[unlikely]] {
-    return mod->getExtensionData()
-        .emplace(mod->getExtensionDataCtr()++, std::make_unique<ExtensionData>())
-        .first->second.get();
-  }
-
-  return it->second.get();
-}
 
 CPP_EXPORT uint32_t Expr::getKindSize(nr_ty_t type) noexcept {
   static const std::unordered_map<nr_ty_t, uint32_t> sizes = {
@@ -815,54 +799,13 @@ CPP_EXPORT std::string_view nr::Expr::getName() const noexcept {
   return R;
 }
 
-CPP_EXPORT std::pair<qlex_loc_t, qlex_loc_t> nr::Expr::getLoc() noexcept {
-  ExtensionData *ext = getExtensionData();
-
-  qmodule_t *mod = getModule();
-  qcore_assert(mod != nullptr, "Module is not set");
-
-  qlex_t *lexer = mod->getLexer();
-  qcore_assert(lexer != nullptr, "Lexer is not set");
-
-  return {ext->loc_begin, qlex_offset(lexer, ext->loc_begin, ext->loc_size)};
+CPP_EXPORT std::pair<uint32_t, uint32_t> nr::Expr::getLoc() noexcept {
+  return {m_src_offset, m_src_offset + m_span};
 }
 
-CPP_EXPORT qlex_loc_t nr::Expr::locBeg() noexcept {
-  ExtensionData *ext = getExtensionData();
+CPP_EXPORT uint32_t nr::Expr::locBeg() noexcept { return m_src_offset; }
 
-  qmodule_t *mod = getModule();
-  qcore_assert(mod != nullptr, "Module is not set");
-
-  qlex_t *lexer = mod->getLexer();
-  qcore_assert(lexer != nullptr, "Lexer is not set");
-
-  return ext->loc_begin;
-}
-
-CPP_EXPORT qlex_loc_t nr::Expr::locEnd() noexcept {
-  ExtensionData *ext = getExtensionData();
-
-  qmodule_t *mod = getModule();
-  qcore_assert(mod != nullptr, "Module is not set");
-
-  qlex_t *lexer = mod->getLexer();
-  qcore_assert(lexer != nullptr, "Lexer is not set");
-
-  return qlex_offset(lexer, ext->loc_begin, ext->loc_size);
-}
-
-CPP_EXPORT void nr::Expr::setLocDangerous(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept {
-  ExtensionData *ext = getExtensionData();
-
-  qmodule_t *mod = getModule();
-  qcore_assert(mod != nullptr, "Module is not set");
-
-  qlex_t *lexer = mod->getLexer();
-  qcore_assert(lexer != nullptr, "Lexer is not set");
-
-  ext->loc_begin = loc.first;
-  ext->loc_size = qlex_span(lexer, loc.first, loc.second);
-}
+CPP_EXPORT uint32_t nr::Expr::locEnd() noexcept { return m_src_offset + m_span; }
 
 CPP_EXPORT Type *Expr::asType() noexcept {
 #ifndef NDEBUG
@@ -1134,12 +1077,6 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
   return gen("nr");
 }
 
-CPP_EXPORT qmodule_t *nr::Expr::getModule() const noexcept { return ::getModule(m_module_idx); }
-
-CPP_EXPORT void nr::Expr::setModuleDangerous(qmodule_t *module) noexcept {
-  m_module_idx = module->getModuleId();
-}
-
 CPP_EXPORT uint64_t Expr::getUniqId() const {
   static thread_local std::unordered_map<const Expr *, uint64_t> id_map;
   static thread_local uint64_t last = 0;
@@ -1299,10 +1236,10 @@ CPP_EXPORT bool Type::is_ptr_to(const Type *type) const {
   return false;
 }
 
-CPP_EXPORT nr::uint128_t Int::str2u128(std::string_view s) noexcept {
+CPP_EXPORT unsigned __int128 Int::str2u128(std::string_view s) noexcept {
   /// FIXME: I don't understand this function
 
-  uint128_t x = 0;
+  unsigned __int128 x = 0;
 
   for (char c : s) {
     if (!std::isdigit(c)) {
@@ -1320,7 +1257,7 @@ CPP_EXPORT nr::uint128_t Int::str2u128(std::string_view s) noexcept {
   return x;
 }
 
-CPP_EXPORT std::string_view Int::u128_2_cstr_interned(uint128_t x) noexcept {
+CPP_EXPORT std::string Int::getValueString() const noexcept {
   static constexpr std::array<std::string_view, 256> static_table = {
       "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",   "8",   "9",   "10",  "11",  "12",
       "13",  "14",  "15",  "16",  "17",  "18",  "19",  "20",  "21",  "22",  "23",  "24",  "25",
@@ -1343,22 +1280,22 @@ CPP_EXPORT std::string_view Int::u128_2_cstr_interned(uint128_t x) noexcept {
       "234", "235", "236", "237", "238", "239", "240", "241", "242", "243", "244", "245", "246",
       "247", "248", "249", "250", "251", "252", "253", "254", "255"};
 
-  if (x <= 255) [[likely]] {
-    return static_table[(uint8_t)x];
+  if (m_value <= 255) [[likely]] {
+    return std::string(static_table[(uint8_t)m_value]);
   }
 
-  if (x == UINT16_MAX) {
+  if (m_value == UINT16_MAX) {
     return "65535";
-  } else if (x == UINT32_MAX) {
+  } else if (m_value == UINT32_MAX) {
     return "4294967295";
-  } else if (x == UINT64_MAX) {
+  } else if (m_value == UINT64_MAX) {
     return "18446744073709551615";
   }
 
   /// FIXME: I don't understand this function
 
+  uint128_t x = m_value;
   char buf[40] = {0};
-
   char *ptr = buf + sizeof(buf) - 1;
 
   do {
@@ -1366,37 +1303,7 @@ CPP_EXPORT std::string_view Int::u128_2_cstr_interned(uint128_t x) noexcept {
     x /= 10;
   } while (x != 0);
 
-  return current->internString(std::string_view(ptr, buf + sizeof(buf) - ptr));
+  return std::string(ptr, buf + sizeof(buf) - ptr);
 }
 
-Expr *nr::createIgn() {
-  Expr *ptr = nullptr;
-
-  if ((ptr = (Expr *)already_alloc(QIR_NODE_IGN)) == nullptr) [[unlikely]] {
-    ptr = new (Arena<Expr>().allocate(1)) Expr(QIR_NODE_IGN);
-    ptr->setModuleDangerous(current);
-    alloc_memorize(QIR_NODE_IGN, (void *)ptr);
-  }
-
-  return ptr;
-}
-
-Type *nr::createUPtrIntTy() {
-  size_t ptr_size = current->getTargetInfo().PointerSizeBytes;
-
-  switch (ptr_size) {
-    case 1:
-      return create<U8Ty>();
-    case 2:
-      return create<U16Ty>();
-    case 4:
-      return create<U32Ty>();
-    case 8:
-      return create<U64Ty>();
-    case 16:
-      return create<U128Ty>();
-    default:
-      qcore_panicf("Unsupported construction for unsigned integer pointer type of size: %zu",
-                   ptr_size);
-  }
-}
+Expr *nr::createIgn() { return new (Arena<Expr>().allocate(1)) Expr(QIR_NODE_IGN); }

@@ -80,7 +80,6 @@ static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
       report(IssueCode::BadCast, IssueClass::Error,
              prepare("`as` expected both struct types to have the same number of fields", L, R),
              N->locBeg(), N->locEnd());
-      M->setFailbit(true);
 
       return false;
     }
@@ -92,7 +91,7 @@ static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
         report(IssueCode::BadCast, IssueClass::Error,
                prepare("Field cast failed in recursive struct cast", L, R), N->locBeg(),
                N->locEnd());
-        M->setFailbit(true);
+
         return false;
       }
     }
@@ -107,7 +106,6 @@ static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
       report(IssueCode::BadCast, IssueClass::Error,
              prepare("`as` expected both types to have the same number of entries", L, R),
              N->locBeg(), N->locEnd());
-      M->setFailbit(true);
 
       return false;
     }
@@ -119,7 +117,7 @@ static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
         report(IssueCode::BadCast, IssueClass::Error,
                prepare("Field cast failed in recursive array to struct cast", L, R), N->locBeg(),
                N->locEnd());
-        M->setFailbit(true);
+
         return false;
       }
     }
@@ -128,7 +126,7 @@ static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
   } else if (L->getKind() == QIR_NODE_STRUCT_TY || R->getKind() == QIR_NODE_STRUCT_TY) {
     report(IssueCode::BadCast, IssueClass::Error, prepare("Bad cast to/from struct type", L, R),
            N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+
     return false;
   }
 
@@ -136,14 +134,14 @@ static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
   if (L->getKind() == QIR_NODE_OPAQUE_TY || R->getKind() == QIR_NODE_OPAQUE_TY) {
     report(IssueCode::BadCast, IssueClass::Error,
            prepare("Illegal direct cast of opaque in `as`", L, R), N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+
     return false;
   }
 
   if (!L->is_void() && R->is_void()) {
     report(IssueCode::BadCast, IssueClass::Error,
            prepare("Bad cast from non-void type into void type", L, R), N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+
     return false;
   }
 
@@ -151,28 +149,28 @@ static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
   if (L->is_pointer() || R->is_pointer()) {
     report(IssueCode::BadCast, IssueClass::Error,
            prepare("`as` prohibits pointer type casts", L, R), N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+
     return false;
   }
 
   if (L->getKind() == QIR_NODE_UNION_TY || R->getKind() == QIR_NODE_UNION_TY) {
     report(IssueCode::BadCast, IssueClass::Error, prepare("`as` prohibits union type casts", L, R),
            N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+
     return false;
   }
 
   if (L->getKind() == QIR_NODE_ARRAY_TY || R->getKind() == QIR_NODE_ARRAY_TY) {
     report(IssueCode::BadCast, IssueClass::Error, prepare("`as` prohibits array type casts", L, R),
            N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+
     return false;
   }
 
   if (L->getKind() == QIR_NODE_FN_TY || R->getKind() == QIR_NODE_FN_TY) {
     report(IssueCode::BadCast, IssueClass::Error,
            prepare("`as` prohibits function type casts", L, R), N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+
     return false;
   }
 
@@ -183,13 +181,12 @@ static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
     report(IssueCode::BadCast, IssueClass::Error,
            prepare("Casting between numeric and non-numeric types is not allowed in `as`", L, R),
            N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+
     return false;
   }
 
   report(IssueCode::BadCast, IssueClass::Error, prepare("Invalid cast in `as` expression", L, R),
          N->locBeg(), N->locEnd());
-  M->setFailbit(true);
 
   return false;
 }

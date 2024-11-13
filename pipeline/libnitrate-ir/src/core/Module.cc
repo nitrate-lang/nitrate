@@ -41,29 +41,23 @@ static std::vector<std::optional<qmodule_t *>> nr_modules;
 static std::mutex nr_modules_mutex;
 
 qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
-  m_passes_applied.clear();
+  m_applied.clear();
   m_strings.clear();
   m_diag = std::make_unique<diag::DiagnosticManager>();
   m_diag->set_ctx(this);
-  m_type_mgr = std::make_unique<TypeManager>();
   m_module_name = name;
 
-  m_conf = nullptr;
   m_lexer = nullptr;
   m_root = nullptr;
   m_diagnostics_enabled = true;
-  m_failbit = false;
 
   m_id = id;
 }
 
 qmodule_t::~qmodule_t() {
-  m_conf = nullptr;
   m_lexer = nullptr;
   m_root = nullptr;
 }
-
-Type *qmodule_t::lookupType(TypeID tid) { return m_type_mgr->get(tid); }
 
 void qmodule_t::enableDiagnostics(bool is_enabled) noexcept { m_diagnostics_enabled = is_enabled; }
 
@@ -124,7 +118,6 @@ LIB_EXPORT qmodule_t *nr_new(qlex_t *lexer, nr_conf_t *conf, const char *name) {
       return nullptr;
     }
 
-    obj->setConf(conf);
     obj->setLexer(lexer);
 
     return obj;
@@ -156,5 +149,3 @@ LIB_EXPORT qlex_t *nr_get_lexer(qmodule_t *mod) { return mod->getLexer(); }
 LIB_EXPORT nr_node_t *nr_base(qmodule_t *mod) {
   return reinterpret_cast<nr_node_t *>(mod->getRoot());
 }
-
-LIB_EXPORT nr_conf_t *nr_get_conf(qmodule_t *mod) { return mod->getConf(); }

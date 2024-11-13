@@ -111,12 +111,12 @@ namespace nr::diag {
 
   struct DiagMessage {
     std::string m_msg;
-    qlex_loc_t m_start, m_end;
+    uint32_t m_start, m_end;
     IssueClass m_type;
     IssueCode m_code;
 
     DiagMessage(std::string_view msg = "", IssueClass type = IssueClass::Debug,
-                IssueCode code = IssueCode::Info, qlex_loc_t start = {0}, qlex_loc_t end = {0})
+                IssueCode code = IssueCode::Info, uint32_t start = 0, uint32_t end = 0)
         : m_msg(msg), m_start(start), m_end(end), m_type(type), m_code(code) {}
 
     uint64_t hash() const;
@@ -196,11 +196,6 @@ namespace nr::diag {
     }
   };
 
-  /**
-   * @brief Report a syntax error
-   */
-  void badtree(qparse::Node *node, std::string_view fmt, ...);
-
 #define CONV_DEBUG(_msg)               \
   mod->getDiag().push(QXIR_AUDIT_CONV, \
                       diag::DiagMessage(_msg, diag::IssueClass::Debug, diag::IssueCode::Info));
@@ -230,18 +225,18 @@ namespace nr::diag {
    * @brief Report a diagnostic message
    * @return true always
    */
-  bool report(diag::IssueCode code, diag::IssueClass type, qlex_loc_t loc_start = {0},
-              qlex_loc_t loc_end = {0}, int channel = QXIR_AUDIT_CONV);
+  bool report(diag::IssueCode code, diag::IssueClass type, uint32_t loc_start = 0,
+              uint32_t loc_end = 0, int channel = QXIR_AUDIT_CONV);
 
   /**
    * @brief Report a diagnostic message
    * @return true always
    */
   bool report(diag::IssueCode code, diag::IssueClass type, std::string_view subject = "",
-              qlex_loc_t loc_start = {0}, qlex_loc_t loc_end = {0}, int channel = QXIR_AUDIT_CONV);
+              uint32_t loc_start = 0, uint32_t loc_end = 0, int channel = QXIR_AUDIT_CONV);
 
   static inline bool report(diag::IssueCode code, diag::IssueClass type,
-                            std::pair<qlex_loc_t, qlex_loc_t> loc, std::string_view subject = "",
+                            std::pair<uint32_t, uint32_t> loc, std::string_view subject = "",
                             int channel = QXIR_AUDIT_CONV) {
     return report(code, type, subject, loc.first, loc.second, channel);
   }

@@ -148,7 +148,7 @@ const boost::bimap<IssueCode, IssueInfo> nr::diag::issue_info = make_bimap<Issue
 
 ///============================================================================///
 
-static void print_qsizeloc(std::stringstream &ss, qlex_size num) {
+static void print_qsizeloc(std::stringstream &ss, uint32_t num) {
   if (num == UINT32_MAX) {
     ss << "?";
   } else {
@@ -310,7 +310,7 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
 
   std::stringstream ss;
   qlex_t *lx = m_nr->getLexer();
-  qlex_size sl, sc, el, ec;
+  uint32_t sl, sc, el, ec;
 
   { /* Print filename and source row:column start and end */
     ss << "\x1b[37;1m" << qlex_filename(lx) << ":";

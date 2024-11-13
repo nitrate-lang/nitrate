@@ -46,10 +46,10 @@ static bool impl_use_json(qlex_t *L, FILE *O) {
 
   qlex_tok_t tok;
   while ((tok = qlex_next(L)).ty != qEofF) {
-    qlex_size sl = qlex_line(L, tok.start);
-    qlex_size sc = qlex_col(L, tok.start);
-    qlex_size el = qlex_line(L, tok.end);
-    qlex_size ec = qlex_col(L, tok.end);
+    uint32_t sl = qlex_line(L, tok.start);
+    uint32_t sc = qlex_col(L, tok.start);
+    uint32_t el = qlex_line(L, tok.end);
+    uint32_t ec = qlex_col(L, tok.end);
 
     switch (tok.ty) {
       case qEofF: { /* End of file */
@@ -191,10 +191,10 @@ static bool impl_use_msgpack(qlex_t *L, FILE *O) {
 
   qlex_tok_t tok;
   while ((tok = qlex_next(L)).ty != qEofF) {
-    qlex_size sl = qlex_line(L, tok.start);
-    qlex_size sc = qlex_col(L, tok.start);
-    qlex_size el = qlex_line(L, tok.end);
-    qlex_size ec = qlex_col(L, tok.end);
+    uint32_t sl = qlex_line(L, tok.start);
+    uint32_t sc = qlex_col(L, tok.start);
+    uint32_t el = qlex_line(L, tok.end);
+    uint32_t ec = qlex_col(L, tok.end);
 
     switch (tok.ty) {
       case qEofF: { /* End of file */

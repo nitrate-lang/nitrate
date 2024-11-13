@@ -42,7 +42,6 @@ bool nr::pass::ds_tyinfer(qmodule_t* M) {
   iterate<dfs_pre>(M->getRoot(), [&](Expr*, Expr** C) -> IterOp {
     if (!(*C)->getType().has_value()) {
       report(IssueCode::TypeInference, IssueClass::Error, (*C)->locBeg(), (*C)->locEnd());
-      M->setFailbit(true);
     }
 
     return IterOp::Proceed;

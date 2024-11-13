@@ -129,8 +129,6 @@ namespace nr {
     // Builder helper methods
     ///**************************************************************************///
 
-    std::string_view intern(std::string_view in) noexcept;
-
     std::optional<Local *> lookup_global(std::string_view global) noexcept;
     std::optional<Local *> lookup_local(std::string_view local) noexcept;
     std::optional<Fn *> lookup_function(std::string_view function) noexcept;
@@ -198,7 +196,7 @@ namespace nr {
 
     /**
      * @brief Run basic checks on the module:
-     * @param sink The diagnostic engine to use, never nullptr.
+     * @param sink The diagnostic engine to use.
      * @return True if the module is usable, false otherwise.
      *
      * Usability means that the module is in a state where all data-structure invariants are
@@ -226,7 +224,7 @@ namespace nr {
      *
      * @note This function calls `finish()`.
      */
-    bool verify(diag::IDiagnosticEngine *sink SOURCE_LOCATION_PARAM) noexcept;
+    bool verify(std::optional<diag::IDiagnosticEngine *> sink SOURCE_LOCATION_PARAM) noexcept;
 
     /**
      * @brief Return the build module.
@@ -360,6 +358,10 @@ namespace nr {
                                           std::span<std::string_view> template_params,
                                           UnionTy *ty SOURCE_LOCATION_PARAM) noexcept;
 
+    ///**************************************************************************///
+    // Other stuff
+
+    std::string_view intern(std::string_view str) noexcept;
     ///**************************************************************************///
 
 #undef SOURCE_LOCATION_PARAM

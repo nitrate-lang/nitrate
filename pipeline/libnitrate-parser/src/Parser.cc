@@ -114,7 +114,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
 
       Stmt *node = nullptr;
 
-      qlex_loc_t loc_start = tok.start;
+      uint32_t loc_start = tok.start;
       switch (tok.as<qlex_key_t>()) {
         case qKVar: {
           std::vector<Stmt *> items;

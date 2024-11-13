@@ -138,8 +138,8 @@ typedef enum qparse_ty_t {
 
 typedef struct qparse_node_t qparse_node_t;
 
-qlex_loc_t qparse_startpos(qparse_node_t *node);
-qlex_loc_t qparse_endpos(qparse_node_t *node);
+uint32_t qparse_startpos(qparse_node_t *node);
+uint32_t qparse_endpos(qparse_node_t *node);
 
 ///=============================================================================
 /// END: ABSTRACT SYNTAX TREE DATA TYPES
@@ -292,7 +292,7 @@ namespace qparse {
     virtual void print_impl(std::ostream &os, bool debug) = 0;
     virtual Node *clone_impl() = 0;
 
-    qlex_loc_t m_pos_start{0}, m_pos_end{0};
+    uint32_t m_pos_start{}, m_pos_end{};
 
   public:
     Node() = default;
@@ -363,10 +363,10 @@ namespace qparse {
     void dump(bool isForDebug = false) { print_impl(std::cerr, isForDebug); }
     void print(std::ostream &os, bool isForDebug = false) { print_impl(os, isForDebug); }
 
-    void set_start_pos(qlex_loc_t pos) { m_pos_start = pos; }
-    void set_end_pos(qlex_loc_t pos) { m_pos_end = pos; }
-    qlex_loc_t get_start_pos() { return m_pos_start; }
-    qlex_loc_t get_end_pos() { return m_pos_end; }
+    void set_start_pos(uint32_t pos) { m_pos_start = pos; }
+    void set_end_pos(uint32_t pos) { m_pos_end = pos; }
+    uint32_t get_start_pos() { return m_pos_start; }
+    uint32_t get_end_pos() { return m_pos_end; }
   };
 
   constexpr size_t PNODE_BASE_SIZE = sizeof(Node);

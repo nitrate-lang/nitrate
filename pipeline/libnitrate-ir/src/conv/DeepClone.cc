@@ -39,13 +39,10 @@
 #include <core/Config.hh>
 #include <cstring>
 #include <nitrate-ir/IRGraph.hh>
-#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 
 using namespace nr::diag;
-
-static std::string_view intern(std::string_view sv) { return nr::current->internString(sv); }
 
 nr_node_t *nr_clone_impl(const nr_node_t *_node,
                          std::unordered_map<const nr_node_t *, nr_node_t *> &map,
@@ -125,17 +122,17 @@ nr_node_t *nr_clone_impl(const nr_node_t *_node,
     }
     case QIR_NODE_IDENT: {
       nr::Expr *bad_tmp_ref = static_cast<Ident *>(in)->getWhat();
-      out = create<Ident>(intern(static_cast<Ident *>(in)->getName()), bad_tmp_ref);
+      out = create<Ident>(static_cast<Ident *>(in)->getName(), bad_tmp_ref);
       break;
     }
     case QIR_NODE_EXTERN: {
       Extern *n = static_cast<Extern *>(in);
-      out = create<Extern>(clone(n->getValue()), intern(n->getAbiName()));
+      out = create<Extern>(clone(n->getValue()), n->getAbiName());
       break;
     }
     case QIR_NODE_LOCAL: {
       Local *n = static_cast<Local *>(in);
-      out = create<Local>(intern(n->getName()), clone(n->getValue()), n->getAbiTag());
+      out = create<Local>(n->getName(), clone(n->getValue()), n->getAbiTag());
       break;
     }
     case QIR_NODE_RET: {
@@ -168,7 +165,7 @@ nr_node_t *nr_clone_impl(const nr_node_t *_node,
     }
     case QIR_NODE_FORM: {
       Form *n = static_cast<Form *>(in);
-      out = create<Form>(intern(n->getIdxIdent()), intern(n->getValIdent()), clone(n->getMaxJobs()),
+      out = create<Form>(n->getIdxIdent(), n->getValIdent(), clone(n->getMaxJobs()),
                          clone(n->getExpr()), clone(n->getBody())->as<Seq>());
       break;
     }
@@ -192,10 +189,10 @@ nr_node_t *nr_clone_impl(const nr_node_t *_node,
       Params params;
       params.reserve(n->getParams().size());
       for (auto param : n->getParams()) {
-        params.push_back({clone(param.first)->asType(), intern(param.second)});
+        params.push_back({clone(param.first)->asType(), param.second});
       }
 
-      out = create<Fn>(intern(n->getName()), std::move(params), clone(n->getReturn())->asType(),
+      out = create<Fn>(n->getName(), std::move(params), clone(n->getReturn())->asType(),
                        clone(n->getBody())->as<Seq>(), n->isVariadic(), n->getAbiTag());
       break;
     }
@@ -278,7 +275,7 @@ nr_node_t *nr_clone_impl(const nr_node_t *_node,
     }
     case QIR_NODE_OPAQUE_TY: {
       OpaqueTy *n = static_cast<OpaqueTy *>(in);
-      out = create<OpaqueTy>(intern(n->getName()));
+      out = create<OpaqueTy>(n->getName());
       break;
     }
     case QIR_NODE_STRUCT_TY: {
@@ -323,27 +320,18 @@ nr_node_t *nr_clone_impl(const nr_node_t *_node,
 
   qcore_assert(out != nullptr, "nr_clone: failed to clone node");
 
-  out->setLocDangerous(in->getLoc());
-
   map[in] = out;
   in_visited.insert(in);
 
   return static_cast<nr_node_t *>(out);
 }
 
-LIB_EXPORT nr_node_t *nr_clone(qmodule_t *dst, const nr_node_t *node) {
+LIB_EXPORT nr_node_t *nr_clone(const nr_node_t *node) {
   nr_node_t *out;
 
   if (!node) {
     return nullptr;
   }
-
-  if (!dst) {
-    dst = static_cast<const nr::Expr *>(node)->getModule();
-  }
-
-  std::swap(nr::nr_arena.get(), dst->getNodeArena());
-  std::swap(nr::current, dst);
 
   out = nullptr;
 
@@ -370,9 +358,6 @@ LIB_EXPORT nr_node_t *nr_clone(qmodule_t *dst, const nr_node_t *node) {
   } catch (...) {
     return nullptr;
   }
-
-  std::swap(nr::current, dst);
-  std::swap(nr::nr_arena.get(), dst->getNodeArena());
 
   return static_cast<nr_node_t *>(out);
 }

@@ -129,20 +129,16 @@ bool nr_read(qmodule_t *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
 /**
  * @brief Lower a parse tree into a QModule.
  *
- * @param mod Pointer to the QModule instance to lower into.
+ * @param[out] mod Pointer to a QModule struct that will store the module.
  * @param base The base node of the parse tree to lower.
- * @param diagnostics Whether to enable diagnostics. Setting this to false may
- * potentially increase performance. Correctness will remain the same.
+ * @param diagnostics Whether to enable diagnostics.
  *
  * @return True if the lowering was successful, false otherwise.
- * @note If `!base`, false is returned.
- *
- * @details Keep in mind that this function is 'kinda no super fast' and client-side
- * caching/avoidance of repeated calls is recommended.
+ * @note If `!base` or `!mod`, false is returned.
  *
  * @note This function is thread safe.
  */
-bool nr_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics);
+bool nr_lower(qmodule_t **mod, qparse_node_t *base, bool diagnostics);
 
 typedef void (*nr_node_cb)(nr_node_t *cur, uintptr_t userdata);
 
@@ -331,18 +327,14 @@ nr_node_t *nr_infer(nr_node_t *node);
 /**
  * @brief Clone a QXIR node. Optionally into a different module.
  *
- * @param dst The destination module context or NULL to clone into the same context.
  * @param node The node to clone.
  *
  * @return nr_node_t* The cloned node.
  *
- * @note If `dst` NULL, the function will clone into the same module.
  * @note If `node` NULL, the function will return NULL.
  * @note This clone is a deep copy.
- *
- * @note Be nice to this function, it does more than you think.
  */
-nr_node_t *nr_clone(qmodule_t *dst, const nr_node_t *node);
+nr_node_t *nr_clone(const nr_node_t *node);
 
 qlex_t *nr_get_lexer(qmodule_t *mod);
 nr_node_t *nr_base(qmodule_t *mod);

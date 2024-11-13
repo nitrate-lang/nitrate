@@ -48,7 +48,6 @@
 #include <cmath>
 #include <functional>
 #include <iostream>
-#include <limits>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-ir/Module.hh>
 #include <optional>
@@ -110,8 +109,6 @@ public:
 
 namespace nr {
 
-  extern thread_local qmodule_t *current;
-
 #ifdef __QXIR_NODE_REFLECT_IMPL__
 #define QCLASS_REFLECT() public:
 #else
@@ -121,19 +118,15 @@ namespace nr {
   class Expr : public nr_node_t {
     QCLASS_REFLECT()
 
-    nr_ty_t m_node_type : 6;        /* Typecode of this node. */
-    nr::ModuleId m_module_idx : 16; /* The module context index. */
-    uint64_t m_extension_ptr : 42;  /* Index into QModule map to get more properties */
+    nr_ty_t m_node_type : 6; /* Typecode of this node. */
+    uint64_t m_span : 26;    /* Size of the node in source code.*/
+    uint32_t m_src_offset;   /* Offset into source code where node starts. */
 
     Expr(const Expr &) = delete;
     Expr &operator=(const Expr &) = delete;
 
-    // Created lazily
-    ExtensionData *getExtensionData() noexcept;
-
   public:
-    Expr(nr_ty_t ty)
-        : m_node_type(ty), m_module_idx(std::numeric_limits<ModuleId>::max()), m_extension_ptr(0) {}
+    Expr(nr_ty_t ty) : m_node_type(ty), m_span(0), m_src_offset(0) {}
 
     static uint32_t getKindSize(nr_ty_t kind) noexcept;
     nr_ty_t getKind() const noexcept { return m_node_type; }
@@ -250,11 +243,10 @@ namespace nr {
     // Returns "" if the construct is not named.
     std::string_view getName() const noexcept;
 
-    std::pair<qlex_loc_t, qlex_loc_t> getLoc() noexcept;
-    qlex_loc_t locBeg() noexcept;
-    qlex_loc_t locEnd() noexcept;
+    std::pair<uint32_t, uint32_t> getLoc() noexcept;
+    uint32_t locBeg() noexcept;
+    uint32_t locEnd() noexcept;
 
-    qmodule_t *getModule() const noexcept;
     std::optional<Type *> getType() noexcept;
 
     template <typename T>
@@ -547,8 +539,6 @@ namespace nr {
 
     ///=====================================================================
     /// BEGIN: Internal library use only
-    void setModuleDangerous(qmodule_t *module) noexcept;
-    void setLocDangerous(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept;
     /// END:   Internal library use only
     ///=====================================================================
 
@@ -913,63 +903,28 @@ namespace nr {
   class Int final : public Expr {
     QCLASS_REFLECT()
 
-#if !defined(__x86_64__)
-#error "This code is only supported on x86_64"
-#endif
-
-    uint64_t m_value : 63;
-    uint8_t m_is_native : 1;
+    unsigned __int128 m_value;
     IntSize m_size;
 
-    static constexpr uint64_t FLAG_BIT = 1ULL << 63;
-
-    static uint128_t str2u128(std::string_view x) noexcept;
-    static std::string_view u128_2_cstr_interned(uint128_t x) noexcept;
-
-    void setValue(uint128_t x) noexcept {
-      if (x <= 9223372036854775807) [[likely]] {
-        m_is_native = true;
-        m_value = static_cast<uint64_t>(x);
-      } else {
-        m_is_native = false;
-        m_value = reinterpret_cast<uint64_t>(u128_2_cstr_interned(x).data());
-      }
-    }
+    static unsigned __int128 str2u128(std::string_view x) noexcept;
 
   public:
-    Int(uint128_t val, IntSize size) : Expr(QIR_NODE_INT), m_size(size) { setValue(val); }
+    Int(uint128_t val, IntSize size) : Expr(QIR_NODE_INT), m_value(val), m_size(size) {}
 
     Int(std::string_view str, IntSize size) : Expr(QIR_NODE_INT) {
       m_size = size;
-
-      m_is_native = false;
-      m_value = reinterpret_cast<uint64_t>(current->internString(str).data());
-
-      // optimize layout; demote string reprs to native if in range
-      setValue(getValue());
+      m_value = str2u128(str);
     }
 
     IntSize getSize() const noexcept { return m_size; }
 
-    uint128_t getValue() const noexcept {
-      if (m_is_native) [[likely]] {
-        return m_value;
-      } else {
-        return str2u128(reinterpret_cast<const char *>(m_value));
-      }
-    }
+    uint128_t getValue() const noexcept { return m_value; }
 
-    std::string_view getValueString() const noexcept {
-      if (m_is_native) [[likely]] {
-        return u128_2_cstr_interned(m_value);
-      } else {
-        return reinterpret_cast<const char *>(m_value);
-      }
-    }
+    std::string getValueString() const noexcept;
 
   } __attribute__((packed));
 
-  static_assert(sizeof(Int) == 17);
+  static_assert(sizeof(Int) == 25);
 
   enum class FloatSize : uint8_t {
     F16,
@@ -1398,110 +1353,111 @@ namespace nr {
     const TmpNodeCradle &getData() const noexcept { return m_data; }
   };
 
-  static auto already_alloc = [](nr_ty_t ty) -> void * {
-    auto it = current->getKeyMap().find((uint64_t)ty);
-    if (it != current->getKeyMap().end()) [[likely]] {
-      return reinterpret_cast<void *>(it->second);
-    }
+  // static auto already_alloc = [](nr_ty_t ty) -> void * {
+  //   auto it = current->getKeyMap().find((uint64_t)ty);
+  //   if (it != current->getKeyMap().end()) [[likely]] {
+  //     return reinterpret_cast<void *>(it->second);
+  //   }
 
-    return nullptr;
-  };
+  //   return nullptr;
+  // };
 
-  static auto alloc_memorize = [](nr_ty_t ty, void *ptr) -> void {
-    current->getKeyMap().emplace((uint64_t)ty, reinterpret_cast<uintptr_t>(ptr));
-  };
+  // static auto alloc_memorize = [](nr_ty_t ty, void *ptr) -> void {
+  //   current->getKeyMap().emplace((uint64_t)ty, reinterpret_cast<uintptr_t>(ptr));
+  // };
 
   Expr *createIgn();
 
-  Type *createUPtrIntTy();
-
   template <typename T, typename... Args>
   constexpr static T *create(Args &&...args) {
-    /**
-     * Create nodes and minimize the number of allocations by reusing stateless
-     * nodes.
-     *
-     * @note The base class contains source location information, this information will be lost in
-     * deduplicated nodes. In addition, the constExpr bit and the mutable bit will be lost, but
-     * these have no semantic significance in the contexts where deduplicated nodes are used.
-     */
+    return new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+    //     /**
+    //      * Create nodes and minimize the number of allocations by reusing stateless
+    //      * nodes.
+    //      *
+    //      * @note The base class contains source location information, this information will be
+    //      lost in
+    //      * deduplicated nodes. In addition, the constExpr bit and the mutable bit will be lost,
+    //      but
+    //      * these have no semantic significance in the contexts where deduplicated nodes are used.
+    //      */
 
-    constexpr nr_ty_t ty = Expr::getTypeCode<T>();
-    T *ptr = nullptr;
+    //     constexpr nr_ty_t ty = Expr::getTypeCode<T>();
+    //     T *ptr = nullptr;
 
-#define REUSE_ALLOCATION()                                             \
-  if ((ptr = (T *)already_alloc(ty)) == nullptr) [[unlikely]] {        \
-    ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...); \
-    ptr->setModuleDangerous(current);                                  \
-    alloc_memorize(ty, (void *)ptr);                                   \
-  }
+    // #define REUSE_ALLOCATION()                                             \
+//   if ((ptr = (T *)already_alloc(ty)) == nullptr) [[unlikely]] {        \
+//     ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...); \
+//     ptr->setModuleDangerous(current);                                  \
+//     alloc_memorize(ty, (void *)ptr);                                   \
+//   }
 
-    switch (ty) {
-      case QIR_NODE_BINEXPR:
-      case QIR_NODE_UNEXPR:
-      case QIR_NODE_POST_UNEXPR:
-      case QIR_NODE_INT:
-      case QIR_NODE_FLOAT:
-      case QIR_NODE_LIST:
-      case QIR_NODE_CALL:
-      case QIR_NODE_SEQ:
-      case QIR_NODE_INDEX:
-      case QIR_NODE_IDENT:
-      case QIR_NODE_EXTERN:
-      case QIR_NODE_LOCAL:
-      case QIR_NODE_RET:
-        ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
-        ptr->setModuleDangerous(current);
-        break;
-      case QIR_NODE_BRK:
-      case QIR_NODE_CONT:
-        REUSE_ALLOCATION();
-        break;
-      case QIR_NODE_IF:
-      case QIR_NODE_WHILE:
-      case QIR_NODE_FOR:
-      case QIR_NODE_FORM:
-      case QIR_NODE_CASE:
-      case QIR_NODE_SWITCH:
-      case QIR_NODE_FN:
-      case QIR_NODE_ASM:
-        ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
-        ptr->setModuleDangerous(current);
-        break;
-      case QIR_NODE_IGN:
-      case QIR_NODE_U1_TY:
-      case QIR_NODE_U8_TY:
-      case QIR_NODE_U16_TY:
-      case QIR_NODE_U32_TY:
-      case QIR_NODE_U64_TY:
-      case QIR_NODE_U128_TY:
-      case QIR_NODE_I8_TY:
-      case QIR_NODE_I16_TY:
-      case QIR_NODE_I32_TY:
-      case QIR_NODE_I64_TY:
-      case QIR_NODE_I128_TY:
-      case QIR_NODE_F16_TY:
-      case QIR_NODE_F32_TY:
-      case QIR_NODE_F64_TY:
-      case QIR_NODE_F128_TY:
-      case QIR_NODE_VOID_TY:
-        REUSE_ALLOCATION();
-        break;
-      case QIR_NODE_PTR_TY:
-      case QIR_NODE_OPAQUE_TY:
-      case QIR_NODE_STRUCT_TY:
-      case QIR_NODE_UNION_TY:
-      case QIR_NODE_ARRAY_TY:
-      case QIR_NODE_FN_TY:
-      case QIR_NODE_TMP:
-        ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
-        ptr->setModuleDangerous(current);
-        break;
-    }
+    //     switch (ty) {
+    //       case QIR_NODE_BINEXPR:
+    //       case QIR_NODE_UNEXPR:
+    //       case QIR_NODE_POST_UNEXPR:
+    //       case QIR_NODE_INT:
+    //       case QIR_NODE_FLOAT:
+    //       case QIR_NODE_LIST:
+    //       case QIR_NODE_CALL:
+    //       case QIR_NODE_SEQ:
+    //       case QIR_NODE_INDEX:
+    //       case QIR_NODE_IDENT:
+    //       case QIR_NODE_EXTERN:
+    //       case QIR_NODE_LOCAL:
+    //       case QIR_NODE_RET:
+    //         ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+    //         ptr->setModuleDangerous(current);
+    //         break;
+    //       case QIR_NODE_BRK:
+    //       case QIR_NODE_CONT:
+    //         REUSE_ALLOCATION();
+    //         break;
+    //       case QIR_NODE_IF:
+    //       case QIR_NODE_WHILE:
+    //       case QIR_NODE_FOR:
+    //       case QIR_NODE_FORM:
+    //       case QIR_NODE_CASE:
+    //       case QIR_NODE_SWITCH:
+    //       case QIR_NODE_FN:
+    //       case QIR_NODE_ASM:
+    //         ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+    //         ptr->setModuleDangerous(current);
+    //         break;
+    //       case QIR_NODE_IGN:
+    //       case QIR_NODE_U1_TY:
+    //       case QIR_NODE_U8_TY:
+    //       case QIR_NODE_U16_TY:
+    //       case QIR_NODE_U32_TY:
+    //       case QIR_NODE_U64_TY:
+    //       case QIR_NODE_U128_TY:
+    //       case QIR_NODE_I8_TY:
+    //       case QIR_NODE_I16_TY:
+    //       case QIR_NODE_I32_TY:
+    //       case QIR_NODE_I64_TY:
+    //       case QIR_NODE_I128_TY:
+    //       case QIR_NODE_F16_TY:
+    //       case QIR_NODE_F32_TY:
+    //       case QIR_NODE_F64_TY:
+    //       case QIR_NODE_F128_TY:
+    //       case QIR_NODE_VOID_TY:
+    //         REUSE_ALLOCATION();
+    //         break;
+    //       case QIR_NODE_PTR_TY:
+    //       case QIR_NODE_OPAQUE_TY:
+    //       case QIR_NODE_STRUCT_TY:
+    //       case QIR_NODE_UNION_TY:
+    //       case QIR_NODE_ARRAY_TY:
+    //       case QIR_NODE_FN_TY:
+    //       case QIR_NODE_TMP:
+    //         ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+    //         ptr->setModuleDangerous(current);
+    //         break;
+    //     }
 
-#undef REUSE_ALLOCATION
-
-    return ptr;
+    // #undef REUSE_ALLOCATION
+    //
+    // return ptr;
   }
 
   enum IterMode {

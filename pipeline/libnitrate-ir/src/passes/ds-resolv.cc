@@ -47,8 +47,6 @@
 
 using namespace nr::diag;
 
-static std::string_view memorize(std::string_view sv) { return nr::current->internString(sv); }
-
 static std::pair<std::vector<std::string>, std::string> split_ns(std::string_view the) {
   std::vector<std::string> ns;
 
@@ -500,7 +498,7 @@ static bool beta_pass(qmodule_t *mod) {
       }
 
       qcore_assert(!resolved->first.empty());
-      cur->setName(memorize(resolved->first));
+      cur->setName(cur->getModule()->internString(resolved->first));
 
       return IterOp::Proceed;
     }

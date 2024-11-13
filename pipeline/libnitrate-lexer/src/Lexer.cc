@@ -560,10 +560,10 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
   std::string buf;
 
   LexState state = LexState::Start;
-  qlex_size state_parens = 0;
+  uint32_t state_parens = 0;
   char c;
   bool eof_is_error = true;
-  qlex_loc_t start_pos{};
+  uint32_t start_pos{};
 
   try {
     while (true) {
@@ -1115,7 +1115,7 @@ error_0: { /* Reset the lexer and return error token */
 
 ///============================================================================///
 
-LIB_EXPORT qlex_size qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok) {
+LIB_EXPORT uint32_t qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok) {
   try {
     switch (tok->ty) {
       case qEofF:
@@ -1135,7 +1135,7 @@ LIB_EXPORT qlex_size qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok) {
       case qMacB:
       case qMacr:
       case qNote: {
-        qlex_size r = qlex_span(lexer, qlex_begin(tok), qlex_end(tok));
+        uint32_t r = qlex_span(lexer, qlex_begin(tok), qlex_end(tok));
         return r == UINT32_MAX ? 0 : r;
       }
     }
@@ -1148,8 +1148,7 @@ LIB_EXPORT qlex_size qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok) {
   __builtin_unreachable();
 }
 
-LIB_EXPORT qlex_size qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *buf,
-                                    qlex_size size) {
+LIB_EXPORT uint32_t qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *buf, uint32_t size) {
   try {
     size_t ret;
 
@@ -1378,7 +1377,7 @@ LIB_EXPORT const char *qlex_punctstr(qlex_punc_t punct) {
 LIB_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, qlex_tok_t *out) {
   try {
     out->ty = ty;
-    out->start.tag = out->end.tag = 0;
+    out->start = out->end = 0;
 
     switch (ty) {
       case qEofF: {

@@ -45,7 +45,7 @@ using namespace nr::diag;
 
 ///============================================================================///
 
-static void print_qsizeloc(std::stringstream &ss, qlex_size num) {
+static void print_qsizeloc(std::stringstream &ss, uint32_t num) {
   if (num == UINT32_MAX) {
     ss << "?";
   } else {
@@ -56,7 +56,7 @@ static void print_qsizeloc(std::stringstream &ss, qlex_size num) {
 std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const {
   std::stringstream ss;
   qlex_t *lx = m_nr->getLexer();
-  qlex_size sl, sc, el, ec;
+  uint32_t sl, sc, el, ec;
 
   {  // Print the filename and location information
     ss << qlex_filename(lx) << ":";
@@ -103,9 +103,9 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
     ss << " [-Werror=" << issue_info.left.at(msg.m_code).flagname << "]";
   }
 
-  qlex_size res = qlex_spanx(
+  uint32_t res = qlex_spanx(
       lx, msg.m_start, msg.m_end,
-      [](const char *str, qlex_size len, uintptr_t x) {
+      [](const char *str, uint32_t len, uintptr_t x) {
         if (len > 100) {
           len = 100;
         }
@@ -124,7 +124,7 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
 std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) const {
   std::stringstream ss;
   qlex_t *lx = m_nr->getLexer();
-  qlex_size sl, sc, el, ec;
+  uint32_t sl, sc, el, ec;
 
   {  // Print the filename and location information
     ss << "\x1b[39;1m" << qlex_filename(lx) << ":";
@@ -188,9 +188,9 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
       break;
   }
 
-  qlex_size res = qlex_spanx(
+  uint32_t res = qlex_spanx(
       lx, msg.m_start, msg.m_end,
-      [](const char *str, qlex_size len, uintptr_t x) {
+      [](const char *str, uint32_t len, uintptr_t x) {
         if (len > 100) {
           len = 100;
         }
@@ -234,21 +234,6 @@ uint64_t DiagMessage::hash() const {
 
 void DiagnosticManager::push(nr_audit_ticket_t ticket, DiagMessage &&msg) {
   auto &chan = m_msgs[ticket];
-
-  switch (msg.m_type) {
-    case IssueClass::Debug:
-      break;
-    case IssueClass::Info:
-      break;
-    case IssueClass::Warn:
-      break;
-    case IssueClass::Error:
-      current->setFailbit(true);
-      break;
-    case IssueClass::FatalError:
-      current->setFailbit(true);
-      break;
-  }
 
   { /* Prevent duplicates and maintain order of messages */
     auto hash = msg.hash();
@@ -373,45 +358,6 @@ size_t DiagnosticManager::render(nr_audit_ticket_t ticket, DiagnosticMessageHand
   }
 }
 
-namespace nr::diag {
-  void badtree_impl(qlex_loc_t start, qlex_loc_t end, std::string_view fmt, va_list args) {
-    std::string msg;
-
-    {  // Format the message
-      char *c_msg = nullptr;
-      int r = vasprintf(&c_msg, fmt.data(), args);
-      if (r < 0) {
-        qcore_panic("Failed to format diagnostic message");
-      }
-      msg = c_msg;
-      free(c_msg);
-    }
-
-    report(IssueCode::PTreeInvalid, IssueClass::Error, fmt, start, end);
-
-    if (current->getConf()->has(QQV_FASTERROR, QQV_ON)) {
-      throw SyntaxError();
-    }
-  }
-
-  void badtree(qparse::Node *node, std::string_view fmt, ...) {
-    if (!node) {
-      qcore_panic("badtree: node is NULL");
-    }
-
-    current->setFailbit(true);
-
-    if (!current->isDiagnosticsEnabled()) {
-      return;
-    }
-
-    va_list args;
-    va_start(args, fmt);
-    badtree_impl(node->get_start_pos(), node->get_end_pos(), fmt, args);
-    va_end(args);
-  }
-}  // namespace nr::diag
-
 static const std::unordered_map<IssueClass, nr_level_t> issue_class_map = {
     {IssueClass::Debug, QXIR_LEVEL_DEBUG},      {IssueClass::Info, QXIR_LEVEL_INFO},
     {IssueClass::Warn, QXIR_LEVEL_WARN},        {IssueClass::Error, QXIR_LEVEL_ERROR},
@@ -438,15 +384,15 @@ LIB_EXPORT size_t nr_diag_clear(qmodule_t *nr, nr_audit_ticket_t ticket) {
   return nr->getDiag().clear(ticket);
 }
 
-bool nr::diag::report(diag::IssueCode code, diag::IssueClass type, qlex_loc_t loc_start,
-                      qlex_loc_t loc_end, int channel) {
+bool nr::diag::report(diag::IssueCode code, diag::IssueClass type, uint32_t loc_start,
+                      uint32_t loc_end, int channel) {
   current->getDiag().push(channel, diag::DiagMessage("", type, code, loc_start, loc_end));
 
   return true;
 }
 
 bool nr::diag::report(diag::IssueCode code, diag::IssueClass type, std::string_view subject,
-                      qlex_loc_t loc_start, qlex_loc_t loc_end, int channel) {
+                      uint32_t loc_start, uint32_t loc_end, int channel) {
   current->getDiag().push(channel, diag::DiagMessage(subject, type, code, loc_start, loc_end));
 
   return true;

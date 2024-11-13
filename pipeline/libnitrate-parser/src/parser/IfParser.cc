@@ -71,12 +71,12 @@ bool qparse::parser::parse_if(qparse_t &job, qlex_t *rd, Stmt **node) {
       }
     }
 
-    qlex_loc_t loc_end = else_block->get_end_pos();
+    uint32_t loc_end = else_block->get_end_pos();
     *node = IfStmt::get(cond, then_block, else_block);
     (*node)->set_end_pos(loc_end);
 
   } else {
-    qlex_loc_t loc_end = then_block->get_end_pos();
+    uint32_t loc_end = then_block->get_end_pos();
     *node = IfStmt::get(cond, then_block, nullptr);
     (*node)->set_end_pos(loc_end);
   }
