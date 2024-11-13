@@ -334,8 +334,6 @@ namespace nr {
 
     UnionTy *getUnionTy(std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept;
 
-    ArrayTy *getArrayTy(Type *element_ty, Expr *constant_size SOURCE_LOCATION_PARAM) noexcept;
-
     ArrayTy *getArrayTy(Type *element_ty, size_t count SOURCE_LOCATION_PARAM) noexcept;
 
     FnTy *getFnTy(std::span<Type *> params, Type *ret_ty, bool is_variadic = false,

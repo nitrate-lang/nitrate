@@ -224,24 +224,6 @@ UnionTy *NRBuilder::getUnionTy(std::span<Type *> fields SOURCE_LOCATION_PARAM) n
   return compiler_trace(debug_info(struct_ty, DEBUG_INFO));
 }
 
-ArrayTy *NRBuilder::getArrayTy(Type *element_ty,
-                               Expr *constant_size SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(m_root != nullptr);
-  contract_enforce(element_ty != nullptr && static_cast<Expr *>(element_ty)->isType());
-  contract_enforce(constant_size != nullptr);
-
-  /// TODO: Interpret the expression and get the resulting integer.
-  /// TODO: Check the integer is valid and >= 0.
-  qcore_implement(__func__);
-
-  size_t the_size = 0;
-
-  ArrayTy *array_ty = create<ArrayTy>(compiler_trace(element_ty), the_size);
-
-  return compiler_trace(debug_info(array_ty, DEBUG_INFO));
-}
-
 ArrayTy *NRBuilder::getArrayTy(Type *element_ty, size_t count SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
   contract_enforce(m_root != nullptr);
