@@ -230,16 +230,18 @@ namespace nr::diag {
    * @brief Report a diagnostic message
    * @return true always
    */
-  bool report(diag::IssueCode code, diag::IssueClass type = diag::IssueClass::Error,
-              qlex_loc_t loc_start = {0}, qlex_loc_t loc_end = {0}, int channel = QXIR_AUDIT_CONV);
+  bool report(diag::IssueCode code, diag::IssueClass type, qlex_loc_t loc_start = {0},
+              qlex_loc_t loc_end = {0}, int channel = QXIR_AUDIT_CONV);
 
   /**
    * @brief Report a diagnostic message
    * @return true always
    */
-  bool report(diag::IssueCode code, diag::IssueClass type = diag::IssueClass::Error,
-              std::string_view subject = "", qlex_loc_t loc_start = {0}, qlex_loc_t loc_end = {0},
-              int channel = QXIR_AUDIT_CONV);
+  bool report(diag::IssueCode code, diag::IssueClass type, std::string_view subject = "",
+              qlex_loc_t loc_start = {0}, qlex_loc_t loc_end = {0}, int channel = QXIR_AUDIT_CONV);
+
+  bool report(diag::IssueCode code, diag::IssueClass type, std::pair<qlex_loc_t, qlex_loc_t> loc,
+              std::string_view subject = "", int channel = QXIR_AUDIT_CONV);
 
 };  // namespace nr::diag
 
