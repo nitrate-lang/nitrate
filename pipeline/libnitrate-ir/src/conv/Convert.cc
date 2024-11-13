@@ -32,12 +32,14 @@
 #include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-ir/IR.h>
+#include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
 
 #include <core/Config.hh>
 #include <core/PassManager.hh>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/Format.hh>
 #include <nitrate-ir/IRBuilder.hh>
@@ -48,8 +50,6 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
-
-#include "nitrate-parser/Node.h"
 
 using namespace nr::diag;
 using namespace nr;
@@ -573,7 +573,7 @@ static std::optional<Expr *> nrgen_terexpr(NRBuilder &b, ConvState &s, qparse::T
 static std::optional<Expr *> nrgen_int(NRBuilder &b, ConvState &, qparse::ConstInt *n) {
   boost::multiprecision::cpp_int num(n->get_value());
 
-  if (num > UINT128_MAX) {
+  if (num > std::numeric_limits<uint128_t>::max()) {
     return std::nullopt;
   } else if (num > UINT64_MAX) {
     return b.createFixedInteger(num.convert_to<uint128_t>(), IntSize::U128);
@@ -619,15 +619,6 @@ static std::optional<Expr *> nrgen_undef(NRBuilder &, ConvState &, qparse::Const
 }
 
 static std::optional<Expr *> nrgen_call(NRBuilder &b, ConvState &s, qparse::Call *n) {
-  /**
-   * @brief Convert a function call to a nr call.
-   * @details Recursively convert the function base and the arguments
-   *         of the function call. We currently do not have enough information
-   *         to handle the expansion of named / optional arguments. Therefore,
-   *         we wrap the data present and we will attempt to lower the construct
-   *         later.
-   */
-
   auto target = nrgen_one(b, s, n->get_func());
   if (!target) {
     badtree(n, "qparse::Call::get_func() == nullptr");
@@ -936,22 +927,6 @@ static std::optional<Expr *> nrgen_struct_ty(NRBuilder &b, ConvState &s, qparse:
   return b.getStructTy(the_fields);
 }
 
-static std::optional<Expr *> nrgen_union_ty(NRBuilder &b, ConvState &s, qparse::UnionTy *n) {
-  UnionFields fields;
-
-  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    auto item = nrgen_one(b, s, *it);
-    if (!item.has_value()) {
-      badtree(n, "qparse::UnionTy::get_items() vector contains nullptr");
-      return std::nullopt;
-    }
-
-    fields.push_back(item.value()->asType());
-  }
-
-  return create<UnionTy>(std::move(fields));
-}
-
 static std::optional<Expr *> nrgen_array_ty(NRBuilder &b, ConvState &s, qparse::ArrayTy *n) {
   auto item = nrgen_one(b, s, n->get_item());
   if (!item.has_value()) {
@@ -1005,14 +980,6 @@ static std::optional<Expr *> nrgen_tuple_ty(NRBuilder &b, ConvState &s, qparse::
 }
 
 static std::optional<Expr *> nrgen_fn_ty(NRBuilder &b, ConvState &s, qparse::FuncTy *n) {
-  /**
-   * @brief Convert a function type to a nr function type.
-   * @details Order of function parameters is consistent with their order
-   * of declaration. Support for `optional` arguments is up to the frontend,
-   * for inter-language compatibility, the ABI is not concerned with optional
-   * arguments as they have no significance at the binary interface level.
-   */
-
   FnParams params;
 
   for (auto it = n->get_params().begin(); it != n->get_params().end(); ++it) {
@@ -1041,11 +1008,6 @@ static std::optional<Expr *> nrgen_fn_ty(NRBuilder &b, ConvState &s, qparse::Fun
 }
 
 static std::optional<Expr *> nrgen_unres_ty(NRBuilder &, ConvState &s, qparse::UnresolvedType *n) {
-  /**
-   * @brief Convert an unresolved type to a nr type.
-   * @details This is a 1-to-1 conversion of the unresolved type.
-   */
-
   auto str = s.cur_named(n->get_name());
   auto name = memorize(std::string_view(str));
 
@@ -1065,11 +1027,6 @@ static std::optional<Expr *> nrgen_templ_ty(NRBuilder &, ConvState &, qparse::Te
 
 static std::optional<std::vector<Expr *>> nrgen_typedef(NRBuilder &b, ConvState &s,
                                                         qparse::TypedefDecl *n) {
-  /**
-   * @brief Memorize a typedef declaration which will be used later for type resolution.
-   * @details This node will resolve to type void.
-   */
-
   auto str = s.cur_named(n->get_name());
   auto name = memorize(std::string_view(str));
 
@@ -1234,11 +1191,6 @@ static std::optional<std::vector<Expr *>> nrgen_struct(NRBuilder &b, ConvState &
 
 static std::optional<std::vector<Expr *>> nrgen_region(NRBuilder &b, ConvState &s,
                                                        qparse::RegionDef *n) {
-  /**
-   * @brief Convert a region definition to a nr sequence.
-   * @details This is a 1-to-1 conversion of the region definition.
-   */
-
   std::string name = s.cur_named(n->get_name());
   auto sv = memorize(std::string_view(name));
 
@@ -1307,11 +1259,6 @@ static std::optional<std::vector<Expr *>> nrgen_region(NRBuilder &b, ConvState &
 
 static std::optional<std::vector<Expr *>> nrgen_group(NRBuilder &b, ConvState &s,
                                                       qparse::GroupDef *n) {
-  /**
-   * @brief Convert a group definition to a nr sequence.
-   * @details This is a 1-to-1 conversion of the group definition.
-   */
-
   std::string name = s.cur_named(n->get_name());
   auto sv = memorize(std::string_view(name));
 
@@ -1398,11 +1345,6 @@ static std::optional<std::vector<Expr *>> nrgen_group(NRBuilder &b, ConvState &s
 
 static std::optional<std::vector<Expr *>> nrgen_union(NRBuilder &b, ConvState &s,
                                                       qparse::UnionDef *n) {
-  /**
-   * @brief Convert a union definition to a nr sequence.
-   * @details This is a 1-to-1 conversion of the union definition.
-   */
-
   std::string name = s.cur_named(n->get_name());
   auto sv = memorize(std::string_view(name));
 
@@ -1662,8 +1604,11 @@ static std::optional<std::vector<Expr *>> nrgen_subsystem(NRBuilder &b, ConvStat
 
   for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end(); ++it) {
     auto item = nrgen_any(b, s, *it);
+    if (!item.has_value()) {
+      return std::nullopt;
+    }
 
-    items.insert(items.end(), item.begin(), item.end());
+    items->insert(items->end(), item.value().begin(), item.value().end());
   }
 
   s.ns_prefix = old_ns;
@@ -1673,12 +1618,6 @@ static std::optional<std::vector<Expr *>> nrgen_subsystem(NRBuilder &b, ConvStat
 
 static std::optional<std::vector<Expr *>> nrgen_export(NRBuilder &b, ConvState &s,
                                                        qparse::ExportDecl *n) {
-  /**
-   * @brief Convert an export declaration to a nr export node.
-   * @details Convert a list of statements under a common ABI into a
-   * sequence under a common ABI.
-   */
-
   AbiTag old = s.abi_mode;
 
   if (n->get_abi_name().empty()) {
@@ -1709,7 +1648,11 @@ static std::optional<std::vector<Expr *>> nrgen_export(NRBuilder &b, ConvState &
 
   for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end(); ++it) {
     auto result = nrgen_any(b, s, *it);
-    for (auto &item : result) {
+    if (!result.has_value()) {
+      return std::nullopt;
+    }
+
+    for (auto &item : result.value()) {
       items.push_back(create<Extern>(item, abi_name));
     }
   }
@@ -1727,10 +1670,10 @@ static std::optional<Expr *> nrgen_composite_field(NRBuilder &b, ConvState &s,
     return std::nullopt;
   }
 
-  Expr *_def = nullptr;
+  std::optional<Expr *> _def = nullptr;
   if (n->get_value()) {
     _def = nrgen_one(b, s, n->get_value());
-    if (!_def) {
+    if (!_def.has_value()) {
       badtree(n, "qparse::CompositeField::get_value() == nullptr");
       return std::nullopt;
     }
@@ -1744,18 +1687,12 @@ static std::optional<Expr *> nrgen_composite_field(NRBuilder &b, ConvState &s,
   std::string_view dt_name = memorize(s.composite_expanse.top());
 
   current->getCompositeFields()[dt_name].push_back(
-      {std::string(n->get_name()), type->asType(), _def});
+      {std::string(n->get_name()), type.value()->asType(), _def.value()});
 
   return type;
 }
 
 static std::optional<Expr *> nrgen_block(NRBuilder &b, ConvState &s, qparse::Block *n) {
-  /**
-   * @brief Convert a scope block into an expression sequence.
-   * @details A QXIR sequence is a list of expressions (a sequence point).
-   *          This is equivalent to a scope block.
-   */
-
   SeqItems items;
   items.reserve(n->get_items().size());
 
@@ -1763,8 +1700,11 @@ static std::optional<Expr *> nrgen_block(NRBuilder &b, ConvState &s, qparse::Blo
 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
     auto item = nrgen_any(b, s, *it);
+    if (!item.has_value()) {
+      return std::nullopt;
+    }
 
-    items.insert(items.end(), item.begin(), item.end());
+    items.insert(items.end(), item.value().begin(), item.value().end());
   }
 
   s.local_scope.pop();
@@ -1773,17 +1713,21 @@ static std::optional<Expr *> nrgen_block(NRBuilder &b, ConvState &s, qparse::Blo
 }
 
 static std::optional<Expr *> nrgen_const(NRBuilder &b, ConvState &s, qparse::ConstDecl *n) {
-  Expr *init = nrgen_one(b, s, n->get_value());
-  Type *type = nullptr;
+  auto init = nrgen_one(b, s, n->get_value());
+  if (!init.has_value()) {
+    return std::nullopt;
+  }
+
+  std::optional<Type *> type = nullptr;
   if (n->get_type()) {
-    Expr *tmp = nrgen_one(b, s, n->get_type());
-    if (tmp) {
-      type = tmp->asType();
+    auto tmp = nrgen_one(b, s, n->get_type());
+    if (tmp.has_value()) {
+      type = tmp.value()->asType();
     }
   }
 
   if (init && type) {
-    init = create<BinExpr>(init, type, Op::CastAs);
+    init = create<BinExpr>(init.value(), type.value(), Op::CastAs);
   } else if (!init && type) {
     init = type;
   } else if (!init && !type) {
@@ -1794,7 +1738,7 @@ static std::optional<Expr *> nrgen_const(NRBuilder &b, ConvState &s, qparse::Con
 
   if (s.inside_function) {
     std::string_view name = memorize(n->get_name());
-    Local *local = create<Local>(name, init, s.abi_mode);
+    Local *local = create<Local>(name, init.value(), s.abi_mode);
 
     qcore_assert(!s.local_scope.empty());
     if (s.local_scope.top().contains(name)) {
@@ -1805,7 +1749,7 @@ static std::optional<Expr *> nrgen_const(NRBuilder &b, ConvState &s, qparse::Con
     return local;
   } else {
     std::string_view name = memorize(std::string_view(s.cur_named(n->get_name())));
-    auto g = create<Local>(name, init, s.abi_mode);
+    auto g = create<Local>(name, init.value(), s.abi_mode);
     current->getGlobalVariables().insert({name, g});
     return g;
   }
@@ -1818,17 +1762,17 @@ static std::optional<Expr *> nrgen_var(NRBuilder &, ConvState &, qparse::VarDecl
 }
 
 static std::optional<Expr *> nrgen_let(NRBuilder &b, ConvState &s, qparse::LetDecl *n) {
-  Expr *init = nrgen_one(b, s, n->get_value());
-  Type *type = nullptr;
+  auto init = nrgen_one(b, s, n->get_value());
+  std::optional<Type *> type;
   if (n->get_type()) {
-    Expr *tmp = nrgen_one(b, s, n->get_type());
+    auto tmp = nrgen_one(b, s, n->get_type());
     if (tmp) {
-      type = tmp->asType();
+      type = tmp.value()->asType();
     }
   }
 
   if (init && type) {
-    init = create<BinExpr>(init, type, Op::CastAs);
+    init = create<BinExpr>(init.value(), type.value(), Op::CastAs);
   } else if (!init && type) {
     init = type;
   } else if (!init && !type) {
@@ -1839,7 +1783,7 @@ static std::optional<Expr *> nrgen_let(NRBuilder &b, ConvState &s, qparse::LetDe
 
   if (s.inside_function) {
     std::string_view name = memorize(n->get_name());
-    Local *local = create<Local>(name, init, s.abi_mode);
+    Local *local = create<Local>(name, init.value(), s.abi_mode);
 
     qcore_assert(!s.local_scope.empty());
     if (s.local_scope.top().contains(name)) {
@@ -1850,7 +1794,7 @@ static std::optional<Expr *> nrgen_let(NRBuilder &b, ConvState &s, qparse::LetDe
     return local;
   } else {
     std::string_view name = memorize(std::string_view(s.cur_named(n->get_name())));
-    auto g = create<Local>(name, init, s.abi_mode);
+    auto g = create<Local>(name, init.value(), s.abi_mode);
     current->getGlobalVariables().insert({name, g});
     return g;
   }
@@ -1861,197 +1805,150 @@ static std::optional<Expr *> nrgen_inline_asm(NRBuilder &, ConvState &, qparse::
 }
 
 static std::optional<Expr *> nrgen_return(NRBuilder &b, ConvState &s, qparse::ReturnStmt *n) {
-  /**
-   * @brief Convert a return statement to a nr expression.
-   * @details This is a 1-to-1 conversion of the return statement.
-   */
-
   auto val = nrgen_one(b, s, n->get_value());
-  if (!val) {
+  if (!val.has_value()) {
     val = create<VoidTy>();
   }
-  val = create<BinExpr>(val, s.return_type, Op::CastAs);
 
-  return create<Ret>(val);
+  val = create<BinExpr>(val.value(), s.return_type, Op::CastAs);
+
+  return create<Ret>(val.value());
 }
 
 static std::optional<Expr *> nrgen_retif(NRBuilder &b, ConvState &s, qparse::ReturnIfStmt *n) {
-  /**
-   * @brief Convert a return statement to a nr expression.
-   * @details Lower into an 'if (cond) {return val}' expression.
-   */
-
   auto cond = nrgen_one(b, s, n->get_cond());
-  if (!cond) {
+  if (!cond.has_value()) {
     badtree(n, "qparse::ReturnIfStmt::get_cond() == nullptr");
     return std::nullopt;
   }
 
-  cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
+  cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
 
   auto val = nrgen_one(b, s, n->get_value());
-  if (!val) {
+  if (!val.has_value()) {
     badtree(n, "qparse::ReturnIfStmt::get_value() == nullptr");
     return std::nullopt;
   }
-  val = create<BinExpr>(val, s.return_type, Op::CastAs);
 
-  return create<If>(cond, create<Ret>(val), createIgn());
+  val = create<BinExpr>(val.value(), s.return_type, Op::CastAs);
+
+  return create<If>(cond.value(), create<Ret>(val.value()), createIgn());
 }
 
 static std::optional<Expr *> nrgen_retz(NRBuilder &b, ConvState &s, qparse::RetZStmt *n) {
-  /**
-   * @brief Convert a return statement to a nr expression.
-   * @details Lower into an 'if (!cond) {return val}' expression.
-   */
-
   auto cond = nrgen_one(b, s, n->get_cond());
-  if (!cond) {
+  if (!cond.has_value()) {
     badtree(n, "qparse::RetZStmt::get_cond() == nullptr");
     return std::nullopt;
   }
-  cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
 
-  auto inv_cond = create<UnExpr>(cond, Op::LogicNot);
+  cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
+
+  auto inv_cond = create<UnExpr>(cond.value(), Op::LogicNot);
 
   auto val = nrgen_one(b, s, n->get_value());
-  if (!val) {
+  if (!val.has_value()) {
     badtree(n, "qparse::RetZStmt::get_value() == nullptr");
     return std::nullopt;
   }
-  val = create<BinExpr>(val, s.return_type, Op::CastAs);
 
-  return create<If>(inv_cond, create<Ret>(val), createIgn());
+  val = create<BinExpr>(val.value(), s.return_type, Op::CastAs);
+
+  return create<If>(inv_cond, create<Ret>(val.value()), createIgn());
 }
 
 static std::optional<Expr *> nrgen_retv(NRBuilder &b, ConvState &s, qparse::RetVStmt *n) {
-  /**
-   * @brief Convert a return statement to a nr expression.
-   * @details Lower into an 'if (cond) {return void}' expression.
-   */
-
   auto cond = nrgen_one(b, s, n->get_cond());
-  if (!cond) {
+  if (!cond.has_value()) {
     badtree(n, "qparse::RetVStmt::get_cond() == nullptr");
     return std::nullopt;
   }
-  cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
 
-  return create<If>(cond, create<Ret>(createIgn()), createIgn());
+  cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
+
+  return create<If>(cond.value(), create<Ret>(createIgn()), createIgn());
 }
 
 static std::optional<Expr *> nrgen_break(NRBuilder &, ConvState &, qparse::BreakStmt *) {
-  /**
-   * @brief Convert a break statement to a nr expression.
-   * @details This is a 1-to-1 conversion of the break statement.
-   */
-
   return create<Brk>();
 }
 
 static std::optional<Expr *> nrgen_continue(NRBuilder &, ConvState &, qparse::ContinueStmt *) {
-  /**
-   * @brief Convert a continue statement to a nr expression.
-   * @details This is a 1-to-1 conversion of the continue statement.
-   */
-
   return create<Cont>();
 }
 
 static std::optional<Expr *> nrgen_if(NRBuilder &b, ConvState &s, qparse::IfStmt *n) {
-  /**
-   * @brief Convert an if statement to a nr expression.
-   * @details The else branch is optional, and if it is missing, it is
-   *        replaced with a void expression.
-   */
-
   auto cond = nrgen_one(b, s, n->get_cond());
   auto then = nrgen_one(b, s, n->get_then());
   auto els = nrgen_one(b, s, n->get_else());
 
-  if (!cond) {
+  if (!cond.has_value()) {
     badtree(n, "qparse::IfStmt::get_cond() == nullptr");
     return std::nullopt;
   }
-  cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
 
-  if (!then) {
+  cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
+
+  if (!then.has_value()) {
     badtree(n, "qparse::IfStmt::get_then() == nullptr");
     return std::nullopt;
   }
 
-  if (!els) {
+  if (!els.has_value()) {
     els = createIgn();
   }
 
-  return create<If>(cond, then, els);
+  return create<If>(cond.value(), then.value(), els.value());
 }
 
 static std::optional<Expr *> nrgen_while(NRBuilder &b, ConvState &s, qparse::WhileStmt *n) {
-  /**
-   * @brief Convert a while loop to a nr expression.
-   * @details If any of the sub-expressions are missing, they are replaced
-   *         with a default value of 1.
-   */
-
   auto cond = nrgen_one(b, s, n->get_cond());
   auto body = nrgen_one(b, s, n->get_body());
 
-  if (!cond) {
+  if (!cond.has_value()) {
     cond = create<Int>(1, IntSize::U1);
   }
 
-  cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
+  cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
 
-  if (!body) {
+  if (!body.has_value()) {
     body = create<Seq>(SeqItems({}));
-  } else if (body->getKind() != QIR_NODE_SEQ) {
-    body = create<Seq>(SeqItems({body}));
+  } else if (body.value()->getKind() != QIR_NODE_SEQ) {
+    body = create<Seq>(SeqItems({body.value()}));
   }
 
-  return create<While>(cond, body->as<Seq>());
+  return create<While>(cond.value(), body.value()->as<Seq>());
 }
 
 static std::optional<Expr *> nrgen_for(NRBuilder &b, ConvState &s, qparse::ForStmt *n) {
-  /**
-   * @brief Convert a for loop to a nr expression.
-   * @details If any of the sub-expressions are missing, they are replaced
-   *         with a default value of 1.
-   */
-
   auto init = nrgen_one(b, s, n->get_init());
   auto cond = nrgen_one(b, s, n->get_cond());
   auto step = nrgen_one(b, s, n->get_step());
   auto body = nrgen_one(b, s, n->get_body());
 
-  if (!init) {
+  if (!init.has_value()) {
     init = create<Int>(1, IntSize::U32);
   }
 
-  if (!cond) {
+  if (!cond.has_value()) {
     cond = create<Int>(1, IntSize::U32);  // infinite loop like 'for (;;) {}'
-    cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
+    cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
   }
 
-  if (!step) {
+  if (!step.has_value()) {
     step = create<Int>(1, IntSize::U32);
   }
 
-  if (!body) {
+  if (!body.has_value()) {
     body = create<Int>(1, IntSize::U32);
   }
 
-  return create<For>(init, cond, step, body);
+  return create<For>(init.value(), cond.value(), step.value(), body.value());
 }
 
 static std::optional<Expr *> nrgen_form(NRBuilder &b, ConvState &s, qparse::FormStmt *n) {
-  /**
-   * @brief Convert a form loop to a nr expression.
-   * @details This is a 1-to-1 conversion of the form loop.
-   */
-
   auto maxjobs = nrgen_one(b, s, n->get_maxjobs());
-  if (!maxjobs) {
+  if (!maxjobs.has_value()) {
     badtree(n, "qparse::FormStmt::get_maxjobs() == nullptr");
     return std::nullopt;
   }
@@ -2060,18 +1957,19 @@ static std::optional<Expr *> nrgen_form(NRBuilder &b, ConvState &s, qparse::Form
   auto val_name = memorize(n->get_val_ident());
 
   auto iter = nrgen_one(b, s, n->get_expr());
-  if (!iter) {
+  if (!iter.has_value()) {
     badtree(n, "qparse::FormStmt::get_expr() == nullptr");
     return std::nullopt;
   }
 
   auto body = nrgen_one(b, s, n->get_body());
-  if (!body) {
+  if (!body.has_value()) {
     badtree(n, "qparse::FormStmt::get_body() == nullptr");
     return std::nullopt;
   }
 
-  return create<Form>(idx_name, val_name, maxjobs, iter, create<Seq>(SeqItems({body})));
+  return create<Form>(idx_name, val_name, maxjobs.value(), iter.value(),
+                      create<Seq>(SeqItems({body.value()})));
 }
 
 static std::optional<Expr *> nrgen_foreach(NRBuilder &, ConvState &, qparse::ForeachStmt *) {
@@ -2100,35 +1998,24 @@ static std::optional<Expr *> nrgen_foreach(NRBuilder &, ConvState &, qparse::For
 }
 
 static std::optional<Expr *> nrgen_case(NRBuilder &b, ConvState &s, qparse::CaseStmt *n) {
-  /**
-   * @brief Convert a case statement to a nr expression.
-   * @details This is a 1-to-1 conversion of the case statement.
-   */
-
   auto cond = nrgen_one(b, s, n->get_cond());
-  if (!cond) {
+  if (!cond.has_value()) {
     badtree(n, "qparse::CaseStmt::get_cond() == nullptr");
     return std::nullopt;
   }
 
   auto body = nrgen_one(b, s, n->get_body());
-  if (!body) {
+  if (!body.has_value()) {
     badtree(n, "qparse::CaseStmt::get_body() == nullptr");
     return std::nullopt;
   }
 
-  return create<Case>(cond, body);
+  return create<Case>(cond.value(), body.value());
 }
 
 static std::optional<Expr *> nrgen_switch(NRBuilder &b, ConvState &s, qparse::SwitchStmt *n) {
-  /**
-   * @brief Convert a switch statement to a nr expression.
-   * @details If the default case is missing, it is replaced with a void
-   *        expression.
-   */
-
   auto cond = nrgen_one(b, s, n->get_cond());
-  if (!cond) {
+  if (!cond.has_value()) {
     badtree(n, "qparse::SwitchStmt::get_cond() == nullptr");
     return std::nullopt;
   }
@@ -2136,18 +2023,18 @@ static std::optional<Expr *> nrgen_switch(NRBuilder &b, ConvState &s, qparse::Sw
   SwitchCases cases;
   for (auto it = n->get_cases().begin(); it != n->get_cases().end(); ++it) {
     auto item = nrgen_one(b, s, *it);
-    if (!item) {
+    if (!item.has_value()) {
       badtree(n, "qparse::SwitchStmt::get_cases() vector contains nullptr");
       return std::nullopt;
     }
 
-    cases.push_back(item->as<Case>());
+    cases.push_back(item.value()->as<Case>());
   }
 
-  Expr *def = nullptr;
+  std::optional<Expr *> def;
   if (n->get_default()) {
     def = nrgen_one(b, s, n->get_default());
-    if (!def) {
+    if (!def.has_value()) {
       badtree(n, "qparse::SwitchStmt::get_default() == nullptr");
       return std::nullopt;
     }
@@ -2155,29 +2042,14 @@ static std::optional<Expr *> nrgen_switch(NRBuilder &b, ConvState &s, qparse::Sw
     def = createIgn();
   }
 
-  return create<Switch>(cond, std::move(cases), def);
+  return create<Switch>(cond.value(), std::move(cases), def.value());
 }
 
 static std::optional<Expr *> nrgen_expr_stmt(NRBuilder &b, ConvState &s, qparse::ExprStmt *n) {
-  /**
-   * @brief Convert an expression inside a statement to a nr expression.
-   * @details This is a 1-to-1 conversion of the expression statement.
-   */
-
   return nrgen_one(b, s, n->get_expr());
 }
 
 static std::optional<Expr *> nrgen_volstmt(NRBuilder &, ConvState &, qparse::VolStmt *) {
-  /**
-   * @brief Convert a volatile statement to a nr volatile expression.
-   * @details This is a 1-to-1 conversion of the volatile statement.
-   */
-
-  // auto expr = nrgen_one(b, s, n->get_stmt());
-  // expr->setVolatile(true);
-
-  // return expr;
-
   qcore_implement(__func__);
 }
 
@@ -2188,7 +2060,7 @@ static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, ConvState &s, qparse::N
     return nullptr;
   }
 
-  nr::Expr *out = nullptr;
+  std::optional<nr::Expr *> out;
 
   switch (n->this_typeid()) {
     case QAST_NODE_CEXPR:
@@ -2367,10 +2239,6 @@ static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, ConvState &s, qparse::N
       out = nrgen_struct_ty(b, s, n->as<qparse::StructTy>());
       break;
 
-    case QAST_NODE_UNION_TY:
-      out = nrgen_union_ty(b, s, n->as<qparse::UnionTy>());
-      break;
-
     case QAST_NODE_ARRAY_TY:
       out = nrgen_array_ty(b, s, n->as<qparse::ArrayTy>());
       break;
@@ -2496,7 +2364,7 @@ static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, ConvState &s, qparse::N
     qcore_panicf("nr: conversion failed for node type: %d", static_cast<int>(n->this_typeid()));
   }
 
-  out->setLocDangerous({n->get_start_pos(), n->get_end_pos()});
+  out.value()->setLocDangerous({n->get_start_pos(), n->get_end_pos()});
 
   return out;
 }
@@ -2509,7 +2377,7 @@ static std::optional<std::vector<nr::Expr *>> nrgen_any(NRBuilder &b, ConvState 
     return {};
   }
 
-  std::vector<nr::Expr *> out;
+  std::optional<std::vector<nr::Expr *>> out;
 
   switch (n->this_typeid()) {
     case QAST_NODE_TYPEDEF:
@@ -2546,8 +2414,8 @@ static std::optional<std::vector<nr::Expr *>> nrgen_any(NRBuilder &b, ConvState 
 
     default: {
       auto expr = nrgen_one(b, s, n);
-      if (expr) {
-        out.push_back(expr);
+      if (expr.has_value()) {
+        out.value().push_back(expr.value());
       } else {
         badtree(n, "nr::nrgen_any() failed to convert node");
         return std::nullopt;
