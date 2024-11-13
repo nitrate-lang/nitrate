@@ -340,14 +340,17 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
     case QAST_NODE_BINEXPR: {
       BinExpr* N = C->as<BinExpr>();
+      S.line << "(";
       recurse(N->get_lhs(), S);
       S.line << " " << N->get_op() << " ";
       recurse(N->get_rhs(), S);
+      S.line << ")";
       break;
     }
 
     case QAST_NODE_UNEXPR: {
       UnaryExpr* N = C->as<UnaryExpr>();
+      S.line << "(";
       S.line << N->get_op();
       switch (N->get_op()) {
         case qOpSizeof:
@@ -362,16 +365,19 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
           recurse(N->get_rhs(), S);
           break;
       }
+      S.line << ")";
       break;
     }
 
     case QAST_NODE_TEREXPR: {
       TernaryExpr* N = C->as<TernaryExpr>();
+      S.line << "(";
       recurse(N->get_cond(), S);
       S.line << " ? ";
       recurse(N->get_lhs(), S);
       S.line << " : ";
       recurse(N->get_rhs(), S);
+      S.line << ")";
       break;
     }
 
@@ -642,8 +648,9 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
     case QAST_NODE_POST_UNEXPR: {
       PostUnaryExpr* N = C->as<PostUnaryExpr>();
+      S.line << "(";
       recurse(N->get_lhs(), S);
-      S.line << N->get_op();
+      S.line << N->get_op() << ")";
       break;
     }
 
@@ -1208,8 +1215,10 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       }
       S.line << " ";
 
-      bool arrow_syntax =
-          (N->get_body()->get_items().size() == 1) && !N->get_precond() && !N->get_postcond();
+      bool arrow_syntax = (N->get_body()->get_items().size() == 1) && !N->get_precond() &&
+                          !N->get_postcond() &&
+                          (N->get_body()->get_items()[0]->this_typeid() == QAST_NODE_RETURN ||
+                           N->get_body()->get_items()[0]->this_typeid() == QAST_NODE_CALL);
 
       if (arrow_syntax) {
         S.line << "=> ";
@@ -1302,6 +1311,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
         S.line << " ";
 
         recurse(imports.front(), S);
+        S.line << ";";
       } else if (!imports.empty()) {
         S.line << "import ";
         if (N->get_abi_name().empty()) {
@@ -1585,7 +1595,9 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       S.line << "if ";
       recurse(N->get_cond(), S);
 
-      if (N->get_then()->get_items().size() == 1) {
+      bool no_compress = N->get_else() != nullptr;
+
+      if (N->get_then()->get_items().size() == 1 && !no_compress) {
         S.line << " => ";
         recurse(N->get_then()->get_items().front(), S);
         if (N->get_else()) {
@@ -1597,7 +1609,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       }
 
       if (N->get_else()) {
-        if (N->get_else()->get_items().size() == 1) {
+        if (N->get_else()->get_items().size() == 1 && !no_compress) {
           S.line << " else => ";
           recurse(N->get_else()->get_items().front(), S);
         } else {
