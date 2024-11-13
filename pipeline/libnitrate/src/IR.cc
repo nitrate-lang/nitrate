@@ -85,7 +85,7 @@ bool impl_subsys_nr(std::shared_ptr<std::istream> source, FILE *output,
 
   qmodule ir_module;
 
-  bool ok = nr_lower(&ir_module.get(), nullptr, true);
+  bool ok = nr_lower(&ir_module.get(), nullptr, "FILE", true);
   if (!ok) {
     diag_cb("Failed to lower IR module.\n");
     return false;

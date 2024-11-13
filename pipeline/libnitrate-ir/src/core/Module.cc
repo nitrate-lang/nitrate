@@ -75,13 +75,12 @@ qmodule_t::~qmodule_t() {
 void qmodule_t::enableDiagnostics(bool is_enabled) noexcept { m_diagnostics_enabled = is_enabled; }
 
 std::string_view qmodule_t::internString(std::string_view sv) {
-  for (const auto &str : m_strings) {
-    if (str == sv) {
-      return str;
-    }
+  auto it = m_strings.find(sv);
+  if (it == m_strings.end()) {
+    return m_strings.emplace(sv, std::string(sv)).first->second;
+  } else {
+    return it->second;
   }
-
-  return m_strings.insert(std::string(sv)).first->c_str();
 }
 
 ///=============================================================================
@@ -114,25 +113,6 @@ CPP_EXPORT qmodule_t *nr::getModule(ModuleId mid) {
   }
 
   return nr_modules.at(mid).value();
-}
-
-LIB_EXPORT qmodule_t *nr_new(qlex_t *lexer, nr_conf_t *conf, const char *name) {
-  if (!conf) {
-    return nullptr;
-  }
-
-  if (!name) {
-    name = "module";
-  }
-
-  qmodule_t *obj = createModule(name);
-  if (!obj) {
-    return nullptr;
-  }
-
-  obj->setLexer(lexer);
-
-  return obj;
 }
 
 LIB_EXPORT void nr_free(qmodule_t *mod) {

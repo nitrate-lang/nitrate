@@ -137,11 +137,14 @@ namespace nr {
     Transform,
     Check,
   };
+
+  class NRBuilder;
 }  // namespace nr
 
 struct qmodule_t final {
 private:
   friend class nr::Expr;
+  friend class nr::NRBuilder;
 
   using FunctionNameBimap = boost::bimap<std::string_view, std::pair<nr::FnTy *, nr::Fn *>>;
   using GlobalVariableNameBimap = boost::bimap<std::string_view, nr::Local *>;
@@ -178,13 +181,13 @@ private:
   /// END: Data structures requisite for efficient lowering
   ///=============================================================================
 
-  std::unique_ptr<nr::diag::DiagnosticManager> m_diag; /* Diagnostic manager instance */
-  std::unordered_set<std::string> m_strings{};         /* Interned strings */
-  ModulePasses m_applied{};                            /* Module pass tracking */
-  nr::TargetInfo m_target_info{};                      /* Build target information */
-  std::string m_module_name{};                         /* Not nessesarily unique module name */
-  nr::ModuleId m_id{};                                 /* Module ID unique to the
-                                                          process during its lifetime */
+  std::unique_ptr<nr::diag::DiagnosticManager> m_diag;           /* Diagnostic manager instance */
+  std::unordered_map<std::string_view, std::string> m_strings{}; /* Interned strings */
+  ModulePasses m_applied{};                                      /* Module pass tracking */
+  nr::TargetInfo m_target_info{};                                /* Build target information */
+  std::string m_module_name{}; /* Not nessesarily unique module name */
+  nr::ModuleId m_id{};         /* Module ID unique to the
+                                  process during its lifetime */
   bool m_diagnostics_enabled{};
 
   qcore_arena m_node_arena{};

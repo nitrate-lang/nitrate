@@ -92,14 +92,10 @@ namespace nr {
     NRBuilder &operator=(const NRBuilder &) = delete;
 
     ///**************************************************************************///
-    // Builder external complexes
+    // Builder properties
     ///**************************************************************************///
 
-    /**
-     * @brief The lexer doubles as the source location manager,
-     * therefore we need it.
-     */
-    qlex_t *m_lex;
+    std::string m_module_name;
     TargetInfo m_target_info;
 
     ///**************************************************************************///
@@ -168,7 +164,7 @@ namespace nr {
 #define DEBUG_INFO 1, 1
 
   public:
-    NRBuilder(qlex_t &lexer_instance, TargetInfo target_info SOURCE_LOCATION_PARAM) noexcept;
+    NRBuilder(std::string module_name, TargetInfo target_info SOURCE_LOCATION_PARAM) noexcept;
     ~NRBuilder() noexcept;
 
     /* Moving the module is permitted */

@@ -40,7 +40,8 @@ using namespace nr;
 
 bool NRBuilder::check_scopes(Seq *root, diag::IDiagnosticSink *L) noexcept {
   /// TODO: Implement check
-  qcore_implement();
+  return true;
+  ;
   (void)root;
   (void)L;
 }

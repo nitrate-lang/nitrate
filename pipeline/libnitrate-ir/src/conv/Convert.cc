@@ -83,21 +83,22 @@ using BResult = std::optional<std::vector<nr::Expr *>>;
 static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, qparse::Node *node);
 static BResult nrgen_any(NRBuilder &b, PState &s, qparse::Node *node);
 
-LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, bool diagnostics) {
+LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name, bool diagnostics) {
   if (!mod || !base) {
     return false;
+  }
+  if (!name) {
+    name = "module";
   }
 
   qcore_arena scratch_arena;
   std::swap(nr::nr_arena.get(), *scratch_arena.get());
 
-  /// TODO: Get lexer instance
-  qlex_t *lexer = nullptr;
   /// TODO: Get target info
   TargetInfo target_info;
 
   PState s;
-  NRBuilder builder(*lexer, target_info);
+  NRBuilder builder(name, target_info);
 
   bool success = false;
 
@@ -2050,7 +2051,12 @@ static EResult nrgen_expr_stmt(NRBuilder &b, PState &s, qparse::ExprStmt *n) {
   return nrgen_one(b, s, n->get_expr());
 }
 
-static EResult nrgen_volstmt(NRBuilder &, PState &, qparse::VolStmt *) { qcore_implement(); }
+static EResult nrgen_volstmt(NRBuilder &, PState &, qparse::VolStmt *n) {
+  report(IssueCode::CompilerError, IssueClass::Error, "Volatile statements are not supported",
+         n->get_start_pos(), n->get_end_pos());
+
+  return std::nullopt;
+}
 
 static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, qparse::Node *n) {
   using namespace nr;

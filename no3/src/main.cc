@@ -1316,7 +1316,7 @@ namespace no3::router {
         qerr << std::string_view((const char *)msg, size) << std::endl;
       };
 
-      if (!nr_lower(&qmod.get(), root, true)) {
+      if (!nr_lower(&qmod.get(), root, source.c_str(), true)) {
         nr_diag_read(qmod.get(), mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
         return 1;
       }
@@ -1390,7 +1390,7 @@ namespace no3::router {
         qerr << std::string_view((const char *)msg, size) << std::endl;
       };
 
-      if (!nr_lower(&qmod.get(), root, true)) {
+      if (!nr_lower(&qmod.get(), root, source.c_str(), true)) {
         nr_diag_read(qmod.get(), mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
         return 1;
       }

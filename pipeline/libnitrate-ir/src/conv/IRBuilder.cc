@@ -41,11 +41,11 @@
 
 using namespace nr;
 
-NRBuilder::NRBuilder(qlex_t &lexer_instance,
+NRBuilder::NRBuilder(std::string module_name,
                      TargetInfo target_info SOURCE_LOCATION_PARAM) noexcept {
   ignore_caller_info();
 
-  m_lex = &lexer_instance;
+  m_module_name = module_name;
   m_target_info = target_info;
 
   m_state = SelfState::Constructed;
@@ -71,6 +71,9 @@ NRBuilder::~NRBuilder() noexcept {
 }
 
 NRBuilder &NRBuilder::operator=(NRBuilder &&rhs) noexcept {
+  this->m_module_name = std::move(rhs.m_module_name);
+  this->m_target_info = std::move(rhs.m_target_info);
+
   this->m_state = std::move(rhs.m_state);
   this->m_result = std::move(rhs.m_result);
   this->m_root = std::move(rhs.m_root);
@@ -91,6 +94,9 @@ NRBuilder &NRBuilder::operator=(NRBuilder &&rhs) noexcept {
 }
 
 NRBuilder::NRBuilder(NRBuilder &&rhs) noexcept {
+  this->m_module_name = std::move(rhs.m_module_name);
+  this->m_target_info = std::move(rhs.m_target_info);
+
   this->m_state = std::move(rhs.m_state);
   this->m_result = std::move(rhs.m_result);
   this->m_root = std::move(rhs.m_root);
@@ -188,7 +194,7 @@ NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
                    m_state == SelfState::Verified || m_state == SelfState::Emitted ||
                    m_state == SelfState::FailEarly || m_state == SelfState::Destroyed);
 
-  NRBuilder r(*m_lex, m_target_info);
+  NRBuilder r(m_module_name, m_target_info);
 
   r.m_state = SelfState::Destroyed;
 
@@ -382,13 +388,30 @@ bool NRBuilder::verify(
 
 qmodule_t *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   contract_enforce(m_state == SelfState::Verified || m_state == SelfState::Emitted);
-  contract_enforce(m_result != std::nullopt);
   contract_enforce(m_root != nullptr);
   contract_enforce(m_current_scope == nullptr);
   contract_enforce(m_current_function == std::nullopt);
   contract_enforce(m_current_expr == std::nullopt);
 
-  m_state = SelfState::Emitted;
+  if (m_state == SelfState::Emitted) {
+    contract_enforce(m_result != std::nullopt);
+    return m_result.value();
+  } else {
+    contract_enforce(m_result == std::nullopt);
 
-  return m_result.value();
+    qmodule_t *new_mod = createModule("module");
+    new_mod->m_strings = std::move(m_interned_strings);
+
+    { /* Clone the IRGraph into the module */
+      std::swap(nr::nr_arena.get(), new_mod->getNodeArena());
+      new_mod->setRoot(static_cast<Seq *>(nr_clone(m_root)));
+      std::swap(nr::nr_arena.get(), new_mod->getNodeArena());
+    }
+
+    m_result = new_mod;
+
+    m_state = SelfState::Emitted;
+
+    return m_result.value();
+  }
 }

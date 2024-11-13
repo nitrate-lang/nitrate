@@ -43,46 +43,14 @@ extern "C" {
 typedef struct qparse_node_t qparse_node_t;
 
 /**
- * @brief Create QModule instance.
- *
- * @param lexer Source code lexer instance or NULL.
- * @param conf Module configuration.
- * @param name Module name or NULL.
- *
- * @return On success, a new QModule instance is returned. On failure, NULL is returned.
- *
- * @warning The QModule instance must be freed using `nr_free`.
- *
- * @note If `lexer` is NULL, the diagnostics subsystem will be unable to assign
- * source locations to its reports. However, the diagnostics subsystem will still
- * detect issues normally. In addition, all nodes created by the QModule will have
- * no source location information, rendering all later phase of compilation unable
- * to assign source locations to their reports.
- *
- * @note External mutation of the configuration object after passing it to this
- * function is not recommended, but technically supported. However, the semantic
- * consequences of doing so are undefined.
- *
- * @note Obviously, the `lexer` and `conf` lifetimes must exceed the lifetime of the
- * returned QModule instance.
- *
- * @warning This library supports a maximum of `nr_max_modules()` QModule instances
- * at once. Attempting to create more than this number will result in the function
- * returning NULL.
- *
- * @note This function is thread safe.
- */
-qmodule_t *nr_new(qlex_t *lexer, nr_conf_t *conf, const char *name);
-
-/**
  * @brief Free a QModule instance and ALL of its associated resources.
  *
  * @param module Pointer to the QModule instance to free.
  *
  * @note If `!module`, this function is a no-op.
  *
- * @note This function will not free the lexer instance passed to `nr_new`.
- * @note This function will not free the configuration instance passed to `nr_new`.
+ * @note This function will not free the lexer instance.
+ * @note This function will not free the configuration instance.
  *
  * @note This function is thread safe.
  */
@@ -132,6 +100,7 @@ bool nr_read(qmodule_t *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
  *
  * @param[out] mod Pointer to a QModule struct that will store the module.
  * @param base The base node of the parse tree to lower.
+ * @param name Module name or nullptr to use the default
  * @param diagnostics Whether to enable diagnostics.
  *
  * @return True if the lowering was successful, false otherwise.
@@ -139,7 +108,7 @@ bool nr_read(qmodule_t *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
  *
  * @note This function is thread safe.
  */
-bool nr_lower(qmodule_t **mod, qparse_node_t *base, bool diagnostics);
+bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name, bool diagnostics);
 
 typedef void (*nr_node_cb)(nr_node_t *cur, uintptr_t userdata);
 
