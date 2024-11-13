@@ -1026,6 +1026,8 @@ namespace nr {
     bool isHomogenous() const noexcept { return m_is_homogenous; }
   };
 
+  List *createStringLiteral(std::string_view str) noexcept;
+
   ///=============================================================================
   /// END: LITERALS
   ///=============================================================================

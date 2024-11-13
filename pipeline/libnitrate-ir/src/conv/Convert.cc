@@ -155,6 +155,20 @@ static nr::Tmp *create_simple_call(ConvState &, std::string_view name,
   qcore_implement(__func__);
 }
 
+nr::List *nr::createStringLiteral(std::string_view value) noexcept {
+  ListItems items;
+  items.resize(value.size() + 1);
+
+  for (size_t i = 0; i < value.size(); i++) {
+    items[i] = create<Int>(value[i], IntSize::U8);
+  }
+
+  /* Add null byte at end */
+  items[value.size()] = create<Int>(0, IntSize::U8);
+
+  return create<List>(items, true);
+}
+
 static nr::List *create_string_literal(std::string_view value) {
   nr::ListItems items;
 
