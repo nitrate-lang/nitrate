@@ -197,7 +197,7 @@ nr_node_t *nr_clone_impl(const nr_node_t *_node,
       break;
     }
     case QIR_NODE_ASM: {
-      qcore_implement("QIR_NODE_ASM cloning");
+      qcore_implement();
       break;
     }
     case QIR_NODE_IGN: {

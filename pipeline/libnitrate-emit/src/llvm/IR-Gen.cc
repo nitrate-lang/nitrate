@@ -1877,7 +1877,7 @@ static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr
       qcore_panic("unexpected type for index");
     }
   } else if (N->getExpr()->getKind() == QIR_NODE_LIST) {
-    qcore_implement(__func__);
+    qcore_implement();
   } else {
     qcore_panic("unexpected base expression for index");
   }
@@ -2239,7 +2239,7 @@ static val_t QIR_NODE_FORM_C(ctx_t &, craft_t &, const Mode &, State &, nr::Form
    */
 
   /// TODO: Implement conversion for node
-  qcore_implement(__func__);
+  qcore_implement();
 }
 
 static val_t QIR_NODE_CASE_C(ctx_t &, craft_t &, const Mode &, State &, nr::Case *) {
@@ -2326,7 +2326,7 @@ static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
 
     return SI;
   } else {
-    qcore_implement(__func__);
+    qcore_implement();
     //   /// TODO: Implement conversion for node
 
     //   llvm::BasicBlock *end = llvm::BasicBlock::Create(m.getContext(), "", s.locals.top().first);
@@ -2517,7 +2517,7 @@ static val_t QIR_NODE_ASM_C(ctx_t &, craft_t &, const Mode &, State &, nr::Asm *
    * @note [Write assumptions here]
    */
 
-  qcore_implement(__func__);
+  qcore_implement();
 }
 
 static ty_t QIR_NODE_U1_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::U1Ty *) {
@@ -2779,7 +2779,7 @@ static ty_t QIR_NODE_UNION_TY_C(ctx_t &, craft_t &, const Mode &, State &, nr::U
    */
 
   /// TODO: Implement conversion for node
-  qcore_implement(__func__);
+  qcore_implement();
 }
 
 static ty_t QIR_NODE_ARRAY_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::ArrayTy *N) {

@@ -1524,7 +1524,7 @@ bool to_json_recurse(Node *N, json &x) {
        * @note [Developer Notes]
        */
 
-      qcore_implement("ASM node serialization is not supported yet.");
+      qcore_implement();
       break;
     }
 

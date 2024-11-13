@@ -453,7 +453,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
       break;
     }
     case QIR_NODE_ASM: {
-      qcore_implement("ASM serialization");
+      qcore_implement();
     }
     case QIR_NODE_IGN: {
       break;

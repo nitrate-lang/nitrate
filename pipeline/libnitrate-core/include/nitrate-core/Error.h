@@ -86,7 +86,7 @@ void qcore_vdebugf_(const char *fmt, va_list args);
 #define qcore_debug(msg) qcore_debug_(msg)
 #endif
 
-#define qcore_implement(name) qcore_panicf("%s is not implemented.", name)
+#define qcore_implement() qcore_panicf("%s is not implemented.", __func__)
 
 #ifdef __cplusplus
 }

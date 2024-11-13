@@ -382,7 +382,7 @@ LIB_EXPORT size_t nr_diag_clear(qmodule_t *nr) {
 
 bool nr::diag::report(diag::IssueCode code, diag::IssueClass type, uint32_t loc_start,
                       uint32_t loc_end) {
-  qcore_implement(__func__);
+  qcore_implement();
   // current->getDiag().push(channel, diag::DiagMessage("", type, code, loc_start, loc_end));
 
   return true;
@@ -390,7 +390,7 @@ bool nr::diag::report(diag::IssueCode code, diag::IssueClass type, uint32_t loc_
 
 bool nr::diag::report(diag::IssueCode code, diag::IssueClass type, std::string_view subject,
                       uint32_t loc_start, uint32_t loc_end) {
-  qcore_implement(__func__);
+  qcore_implement();
   // current->getDiag().push(channel, diag::DiagMessage(subject, type, code, loc_start, loc_end));
 
   return true;

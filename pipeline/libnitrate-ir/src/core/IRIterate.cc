@@ -169,7 +169,7 @@ namespace nr::detail {
         break;
       }
       case QIR_NODE_ASM: {
-        qcore_implement("QIR_NODE_ASM get_children_sorted");
+        qcore_implement();
         break;
       }
       case QIR_NODE_IGN: {

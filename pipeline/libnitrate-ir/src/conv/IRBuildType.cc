@@ -237,7 +237,7 @@ ArrayTy *NRBuilder::getArrayTy(Type *element_ty, size_t count SOURCE_LOCATION_PA
 FnTy *getFnTy(std::span<Type *> params, Type *ret_ty, bool is_variadic, Purity purity,
               bool thread_safe, bool is_noexcept, bool foreign SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
   (void)params;
   (void)ret_ty;
   (void)is_variadic;
@@ -252,7 +252,7 @@ StructTy *createStructTemplateDefintion(std::string_view name,
                                         std::span<std::string_view> template_params,
                                         StructTy *ty SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
   (void)name;
   (void)template_params;
   (void)ty;
@@ -263,7 +263,7 @@ UnionTy *createUnionTemplateDefintion(std::string_view name,
                                       std::span<std::string_view> template_params,
                                       UnionTy *ty SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
   (void)name;
   (void)template_params;
   (void)ty;

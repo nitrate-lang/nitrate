@@ -143,7 +143,7 @@ static nr::Tmp *create_simple_call(NRBuilder &b, PState &, std::string_view name
   std::get<1>(datapack) = std::move(args);
 
   return create<nr::Tmp>(nr::TmpType::CALL, std::move(datapack));
-  qcore_implement(__func__);
+  qcore_implement();
 }
 
 nr::List *nr::createStringLiteral(std::string_view value) noexcept {
@@ -1817,9 +1817,7 @@ static EResult nrgen_let(NRBuilder &b, PState &s, qparse::LetDecl *n) {
   return std::nullopt;
 }
 
-static EResult nrgen_inline_asm(NRBuilder &, PState &, qparse::InlineAsm *) {
-  qcore_implement("nrgen_inline_asm");
-}
+static EResult nrgen_inline_asm(NRBuilder &, PState &, qparse::InlineAsm *) { qcore_implement(); }
 
 static EResult nrgen_return(NRBuilder &b, PState &s, qparse::ReturnStmt *n) {
   auto val = nrgen_one(b, s, n->get_value());
@@ -1999,7 +1997,7 @@ static EResult nrgen_foreach(NRBuilder &, PState &, qparse::ForeachStmt *) {
   // }
 
   // return create<Foreach>(idx_name, val_name, iter, create<Seq>(SeqItems({body})));
-  qcore_implement(__func__);
+  qcore_implement();
 }
 
 static EResult nrgen_case(NRBuilder &b, PState &s, qparse::CaseStmt *n) {
@@ -2052,9 +2050,7 @@ static EResult nrgen_expr_stmt(NRBuilder &b, PState &s, qparse::ExprStmt *n) {
   return nrgen_one(b, s, n->get_expr());
 }
 
-static EResult nrgen_volstmt(NRBuilder &, PState &, qparse::VolStmt *) {
-  qcore_implement(__func__);
-}
+static EResult nrgen_volstmt(NRBuilder &, PState &, qparse::VolStmt *) { qcore_implement(); }
 
 static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, qparse::Node *n) {
   using namespace nr;

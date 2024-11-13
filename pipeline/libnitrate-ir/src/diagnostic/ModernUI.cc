@@ -424,7 +424,7 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
 
     /// FIXME: Get reference to lexer
 
-    qcore_implement(__func__);
+    qcore_implement();
 
     // qlex_rect(lx, x_0, y_0, x_1, y_1, out.get(), buf_size, ' ');
 

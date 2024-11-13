@@ -43,7 +43,7 @@ Fn *NRBuilder::createFunctionDefintion(std::string_view name, std::span<Type *> 
                                        Purity purity, bool thread_safe, bool is_noexcept,
                                        bool foreign SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
   (void)name;
   (void)params;
   (void)ret_ty;
@@ -61,7 +61,7 @@ Fn *NRBuilder::createFunctionDeclaration(std::string_view name, std::span<Type *
                                          Purity purity, bool thread_safe, bool is_noexcept,
                                          bool foreign SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
   (void)name;
   (void)params;
   (void)ret_ty;
@@ -78,7 +78,7 @@ Fn *NRBuilder::createAnonymousFunction(std::span<Type *> params, Type *ret_ty, b
                                        Purity purity, bool thread_safe,
                                        bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
   (void)params;
   (void)ret_ty;
   (void)is_variadic;
@@ -92,7 +92,7 @@ Fn *NRBuilder::createOperatorOverload(Op op, std::span<Type *> params, Type *ret
                                       bool thread_safe,
                                       bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
   (void)op;
   (void)params;
   (void)ret_ty;
@@ -108,7 +108,7 @@ Fn *NRBuilder::createTemplateFunction(std::string_view name,
                                       Vis visibility, Purity purity, bool thread_safe,
                                       bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
   (void)name;
   (void)template_params;
   (void)params;
@@ -125,7 +125,7 @@ Local *NRBuilder::createVariable(std::string_view name, Type *ty, Vis visibility
                                  StorageClass storage,
                                  bool is_readonly SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
   (void)name;
   (void)ty;
   (void)visibility;

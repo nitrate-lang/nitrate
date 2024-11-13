@@ -1948,7 +1948,7 @@ void TemplCall::print_impl(std::ostream &os, bool debug) {
   (void)os;
   (void)debug;
 
-  qcore_implement(__func__);
+  qcore_implement();
 }
 
 TemplCall *TemplCall::clone_impl() {

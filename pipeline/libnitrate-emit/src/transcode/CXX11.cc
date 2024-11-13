@@ -35,7 +35,7 @@
 #include <core/Config.hh>
 #include <transcode/Targets.hh>
 
-bool codegen::for_cxx11(qmodule_t *, std::ostream &, std::ostream &) {
-  qcore_implement(__func__);
+bool codegen::for_cxx11(qmodule_t *, std::ostream &err, std::ostream &) {
+  err << "Not implemented";
   return false;
 }

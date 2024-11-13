@@ -51,12 +51,12 @@ namespace comptime {
 
     bool is_floating() const {
       /// TODO:
-      qcore_implement(__func__);
+      qcore_implement();
     }
 
     bool is_integer() const {
       /// TODO:
-      qcore_implement(__func__);
+      qcore_implement();
     }
   };
 
@@ -126,19 +126,19 @@ namespace comptime {
         return tab[(int)std::get<FloatingValue>(m_data).second];
       } else if (std::holds_alternative<std::vector<Value>>(m_data)) {
         /// TODO:
-        qcore_implement(__func__);
+        qcore_implement();
 
       } else if (std::holds_alternative<std::map<std::string_view, Value>>(m_data)) {
         /// TODO:
-        qcore_implement(__func__);
+        qcore_implement();
 
       } else if (std::holds_alternative<Fn *>(m_data)) {
         /// TODO:
-        qcore_implement(__func__);
+        qcore_implement();
 
       } else if (std::holds_alternative<ValueTy>(m_data)) {
         /// TODO:
-        qcore_implement(__func__);
+        qcore_implement();
 
       } else {
         __builtin_unreachable();
@@ -905,7 +905,7 @@ namespace comptime {
       case QIR_NODE_FN_TY: {
         // return x;
         /// TODO: Do conversion
-        qcore_implement(__func__);
+        qcore_implement();
       }
     }
   }
@@ -978,37 +978,37 @@ namespace comptime {
 
       case QIR_NODE_PTR_TY: {
         /// TODO:
-        qcore_implement(__func__);
+        qcore_implement();
         // return create<Ty>();
       }
 
       case QIR_NODE_OPAQUE_TY: {
         /// TODO:
-        qcore_implement(__func__);
+        qcore_implement();
         // return create<Ty>();
       }
 
       case QIR_NODE_STRUCT_TY: {
         /// TODO:
-        qcore_implement(__func__);
+        qcore_implement();
         // return create<Ty>();
       }
 
       case QIR_NODE_UNION_TY: {
         /// TODO:
-        qcore_implement(__func__);
+        qcore_implement();
         // return create<Ty>();
       }
 
       case QIR_NODE_ARRAY_TY: {
         /// TODO:
-        qcore_implement(__func__);
+        qcore_implement();
         // return create<Ty>();
       }
 
       case QIR_NODE_FN_TY: {
         /// TODO:
-        qcore_implement(__func__);
+        qcore_implement();
         // return create<Ty>();
       }
 

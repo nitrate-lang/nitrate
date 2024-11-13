@@ -47,7 +47,7 @@ NRBuilder &NRBuilder::insertAfter(Expr *last SOURCE_LOCATION_PARAM) noexcept {
   }
 
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
 
   return *this;
 }
@@ -61,7 +61,7 @@ NRBuilder &NRBuilder::insertAfterVariable(std::string_view name SOURCE_LOCATION_
   }
 
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
 
   return *this;
 }
@@ -75,7 +75,7 @@ NRBuilder &NRBuilder::insertAfterFunction(std::string_view name SOURCE_LOCATION_
   }
 
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
 
   return *this;
 }
@@ -89,7 +89,7 @@ NRBuilder &NRBuilder::insertBefore(Expr *last SOURCE_LOCATION_PARAM) noexcept {
   }
 
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
 
   return *this;
 }
@@ -103,7 +103,7 @@ NRBuilder &NRBuilder::insertBeforeVariable(std::string_view name SOURCE_LOCATION
   }
 
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
 
   return *this;
 }
@@ -117,7 +117,7 @@ NRBuilder &NRBuilder::insertBeforeFunction(std::string_view name SOURCE_LOCATION
   }
 
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
 
   return *this;
 }
@@ -126,18 +126,18 @@ NRBuilder &NRBuilder::insertBeforeFunction(std::string_view name SOURCE_LOCATION
 
 std::optional<Local *> NRBuilder::lookup_global(std::string_view global) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
   (void)global;
 }
 
 std::optional<Local *> NRBuilder::lookup_local(std::string_view local) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
   (void)local;
 }
 
 std::optional<Fn *> NRBuilder::lookup_function(std::string_view function) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
   (void)function;
 }

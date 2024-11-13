@@ -46,7 +46,7 @@ static std::mutex nr_modules_mutex;
 class LexerSourceResolver : public diag::IOffsetResolver {
 public:
   virtual std::optional<std::pair<uint32_t, uint32_t>> resolve(uint32_t) noexcept override {
-    qcore_implement(__func__);
+    qcore_implement();
   }
   virtual ~LexerSourceResolver() = default;
 };

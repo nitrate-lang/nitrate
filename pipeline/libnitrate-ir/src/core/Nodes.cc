@@ -208,7 +208,7 @@ CPP_EXPORT bool Expr::isType() const noexcept {
 }
 
 CPP_EXPORT std::optional<nr::Type *> nr::Expr::getType() noexcept {
-  qcore_implement(__func__);
+  qcore_implement();
   // return static_cast<Type *>(nr_infer(this));
 }
 
@@ -449,7 +449,7 @@ CPP_EXPORT bool nr::Expr::isSame(const nr::Expr *other) const {
       return true;
     }
     case QIR_NODE_ASM: {
-      qcore_implement("Expr::isSame for QIR_NODE_ASM");
+      qcore_implement();
       break;
     }
     case QIR_NODE_IGN: {
@@ -698,7 +698,7 @@ CPP_EXPORT std::string_view nr::Expr::getName() const noexcept {
     }
 
     case QIR_NODE_ASM: {
-      qcore_implement("Expr::getName for QIR_NODE_ASM");
+      qcore_implement();
       break;
     }
 
@@ -947,7 +947,7 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
         break;
       }
       case QIR_NODE_ASM: {
-        qcore_implement("QIR_NODE_ASM node hashing");
+        qcore_implement();
         break;
       }
       case QIR_NODE_U1_TY: {

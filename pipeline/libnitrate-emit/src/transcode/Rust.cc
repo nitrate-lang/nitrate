@@ -36,6 +36,6 @@
 #include <transcode/Targets.hh>
 
 bool codegen::for_rust(qmodule_t *module, std::ostream &err, std::ostream &out) {
-  qcore_implement(__func__);
+  err << "Not implemented";
   return false;
 }

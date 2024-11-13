@@ -323,7 +323,7 @@ bool NRBuilder::verify(
 
   if (!the_sink.has_value()) {
     /// TODO: Create mock instance
-    qcore_implement(__func__);
+    qcore_implement();
   }
 
   diag::IDiagnosticSink *sink = the_sink.value();
