@@ -60,22 +60,11 @@ static const boost::bimap<nr_val_t, std::string_view> values_bimap =
     });
 
 std::ostream &operator<<(std::ostream &os, const nr_key_t &key) {
-  if (options_bimap.left.find(key) != options_bimap.left.end()) {
-    os << options_bimap.left.at(key);
-  } else {
-    qcore_panic("operator<<: Unhandled nr_key_t value.");
-  }
-  return os;
+  return os << options_bimap.left.at(key);
 }
 
 std::ostream &operator<<(std::ostream &os, const nr_val_t &val) {
-  if (values_bimap.left.find(val) != values_bimap.left.end()) {
-    os << values_bimap.left.at(val);
-  } else {
-    qcore_panic("operator<<: Unhandled nr_val_t value.");
-  }
-
-  return os;
+  return os << values_bimap.left.at(val);
 }
 
 static void assign_default_options(nr_conf_t &conf) {

@@ -323,7 +323,6 @@ bool msgpack_read_str(std::istream &I, char **str, size_t &len) {
   }
 
   if (!I.read(*str, len)) {
-    qcore_panic("msgpack_read_str: fread failed");
     free(*str);
     return false;
   }

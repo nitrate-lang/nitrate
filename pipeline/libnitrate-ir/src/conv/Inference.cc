@@ -778,7 +778,7 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
         break;
       }
       case QIR_NODE_TMP: {
-        qcore_panic("Temporary nodes must be resolved with more information prior to inference");
+        T = nullptr;
         break;
       }
       default: {
@@ -825,10 +825,11 @@ bool nr::Type::hasKnownSize() noexcept {
     case QIR_NODE_ARRAY_TY: {
       return this->as<ArrayTy>()->getElement()->hasKnownSize();
     }
-    case QIR_NODE_OPAQUE_TY:
+    case QIR_NODE_OPAQUE_TY: {
       return false;
+    }
     default: {
-      qcore_panicf("Invalid type kind: %d", this->getKind());
+      return false;
     }
   }
 }
@@ -867,10 +868,11 @@ bool nr::Type::hasKnownAlign() noexcept {
     case QIR_NODE_ARRAY_TY: {
       return this->as<ArrayTy>()->getElement()->hasKnownAlign();
     }
-    case QIR_NODE_OPAQUE_TY:
+    case QIR_NODE_OPAQUE_TY: {
       return false;
+    }
     default: {
-      qcore_panicf("Invalid type kind: %d", this->getKind());
+      return false;
     }
   }
 }

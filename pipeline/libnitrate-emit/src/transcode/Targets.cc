@@ -92,12 +92,12 @@ public:
 
 class OStreamDiscard : public std::streambuf {
 public:
-  virtual std::streamsize xsputn(const char* s, std::streamsize n) override { return n; }
+  virtual std::streamsize xsputn(const char*, std::streamsize n) override { return n; }
   virtual int overflow(int c) override { return c; }
 };
 
-LIB_EXPORT bool qcode_transcode(qmodule_t* module, qcode_conf_t* conf, qcode_lang_t lang,
-                                qcode_style_t style, FILE* err, FILE* out) {
+LIB_EXPORT bool qcode_transcode(qmodule_t* module, qcode_conf_t*, qcode_lang_t lang, qcode_style_t,
+                                FILE* err, FILE* out) {
   std::unique_ptr<std::streambuf> err_stream_buf, out_stream_buf;
 
   /* If the error stream is provided, use it. Otherwise, discard the output. */
