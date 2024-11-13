@@ -530,15 +530,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_UNION_TY: {
-      OBJECT_BEGIN("Union");
-      OBJECT_ARRAY(n->as<UnionTy>()->get_items());
-      OBJECT_SUB(n->as<UnionTy>()->get_width());
-      OBJECT_SUB(n->as<UnionTy>()->get_range().first);
-      OBJECT_SUB(n->as<UnionTy>()->get_range().second);
-      OBJECT_END();
-      break;
-    }
+
     case QAST_NODE_ARRAY_TY: {
       OBJECT_BEGIN("Array");
       OBJECT_SUB(n->as<ArrayTy>()->get_item());

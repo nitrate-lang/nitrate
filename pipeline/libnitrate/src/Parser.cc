@@ -965,27 +965,6 @@ bool to_json_recurse(Node *N, json &x) {
       break;
     }
 
-    case QAST_NODE_UNION_TY: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      auto &y = x[1] = json::array();
-
-      for (auto &Z : N->as<UnionTy>()->get_items()) {
-        json z;
-
-        if (!to_json_recurse(Z, z)) {
-          return false;
-        }
-
-        y.push_back(std::move(z));
-      }
-
-      break;
-    }
-
     case QAST_NODE_ARRAY_TY: {
       /**
        * @brief [Brief Description]

@@ -93,7 +93,6 @@ typedef enum qparse_ty_t {
   QAST_NODE_PTR_TY,
   QAST_NODE_OPAQUE_TY,
   QAST_NODE_STRUCT_TY,
-  QAST_NODE_UNION_TY,
   QAST_NODE_ARRAY_TY,
   QAST_NODE_TUPLE_TY,
   QAST_NODE_FN_TY,
@@ -135,7 +134,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_VOLSTMT,
 } qparse_ty_t;
 
-#define QAST_NODE_COUNT 86
+#define QAST_NODE_COUNT 85
 
 typedef struct qparse_node_t qparse_node_t;
 
@@ -396,7 +395,6 @@ namespace qparse {
     bool is_pointer();
     bool is_function();
     bool is_composite();
-    bool is_union();
     bool is_numeric();
     bool is_integral();
     bool is_floating_point();
@@ -804,24 +802,6 @@ namespace qparse {
     void remove_item(String name);
 
     PNODE_IMPL_CORE(StructTy)
-  };
-
-  typedef std::vector<Type *, Arena<Type *>> UnionTyItems;
-
-  class UnionTy : public TypeComposite {
-    UnionTyItems m_items;
-
-  public:
-    UnionTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
-    UnionTy(const UnionTyItems &items) : m_items(items) {}
-
-    UnionTyItems &get_items() { return m_items; }
-    void add_item(Type *item);
-    void add_items(std::initializer_list<Type *> items);
-    void clear_items();
-    void remove_item(Type *item);
-
-    PNODE_IMPL_CORE(UnionTy)
   };
 
   enum class FuncPurity {
@@ -1842,7 +1822,7 @@ namespace qparse {
     UnionDefFields m_fields;
 
   public:
-    UnionDef(String name = "", UnionTy *type = nullptr,
+    UnionDef(String name = "", StructTy *type = nullptr,
              std::initializer_list<CompositeField *> fields = {},
              std::initializer_list<FnDecl *> methods = {},
              std::initializer_list<FnDecl *> static_methods = {})
@@ -1850,14 +1830,14 @@ namespace qparse {
           m_methods(methods),
           m_static_methods(static_methods),
           m_fields(fields) {}
-    UnionDef(String name, UnionTy *type, const UnionDefFields &fields,
+    UnionDef(String name, StructTy *type, const UnionDefFields &fields,
              const UnionDefMethods &methods, const UnionDefStaticMethods &static_methods)
         : Decl(name, type),
           m_methods(methods),
           m_static_methods(static_methods),
           m_fields(fields) {}
 
-    virtual UnionTy *get_type() override { return static_cast<UnionTy *>(m_type); }
+    virtual StructTy *get_type() override { return static_cast<StructTy *>(m_type); }
 
     UnionDefMethods &get_methods() { return m_methods; }
     void add_method(FnDecl *method);

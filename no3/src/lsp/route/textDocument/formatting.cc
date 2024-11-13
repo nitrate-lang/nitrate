@@ -820,11 +820,6 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       break;
     }
 
-    case QAST_NODE_UNION_TY: {
-      qcore_panic("Unreachable");
-      break;
-    }
-
     case QAST_NODE_ARRAY_TY: {
       ArrayTy* N = C->as<ArrayTy>();
       S.line << "[";

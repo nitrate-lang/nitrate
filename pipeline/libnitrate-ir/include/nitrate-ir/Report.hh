@@ -240,8 +240,11 @@ namespace nr::diag {
   bool report(diag::IssueCode code, diag::IssueClass type, std::string_view subject = "",
               qlex_loc_t loc_start = {0}, qlex_loc_t loc_end = {0}, int channel = QXIR_AUDIT_CONV);
 
-  bool report(diag::IssueCode code, diag::IssueClass type, std::pair<qlex_loc_t, qlex_loc_t> loc,
-              std::string_view subject = "", int channel = QXIR_AUDIT_CONV);
+  static inline bool report(diag::IssueCode code, diag::IssueClass type,
+                            std::pair<qlex_loc_t, qlex_loc_t> loc, std::string_view subject = "",
+                            int channel = QXIR_AUDIT_CONV) {
+    return report(code, type, subject, loc.first, loc.second, channel);
+  }
 
 };  // namespace nr::diag
 
