@@ -38,10 +38,7 @@
 
 using namespace nr;
 
-bool NRBuilder::check_returns(Seq *root, diag::IDiagnosticSink *L) noexcept {
+bool NRBuilder::check_returns(Seq *, diag::IDiagnosticSink *) noexcept {
   /// TODO: Implement check
   return true;
-  ;
-  (void)root;
-  (void)L;
 }

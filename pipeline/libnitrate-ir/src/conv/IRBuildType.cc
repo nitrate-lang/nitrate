@@ -29,11 +29,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cctype>
 #define IRBUILDER_IMPL
 
 #include <nitrate-core/Error.h>
 
+#include <cctype>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 
@@ -234,8 +234,9 @@ ArrayTy *NRBuilder::getArrayTy(Type *element_ty, size_t count SOURCE_LOCATION_PA
   return compiler_trace(debug_info(array_ty, DEBUG_INFO));
 }
 
-FnTy *getFnTy(std::span<Type *> params, Type *ret_ty, bool is_variadic, Purity purity,
-              bool thread_safe, bool is_noexcept, bool foreign SOURCE_LOCATION_PARAM) noexcept {
+FnTy *NRBuilder::getFnTy(std::span<Type *> params, Type *ret_ty, bool is_variadic, Purity purity,
+                         bool thread_safe, bool is_noexcept,
+                         bool foreign SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement();
   (void)params;
@@ -248,9 +249,9 @@ FnTy *getFnTy(std::span<Type *> params, Type *ret_ty, bool is_variadic, Purity p
   ignore_caller_info();
 }
 
-StructTy *createStructTemplateDefintion(std::string_view name,
-                                        std::span<std::string_view> template_params,
-                                        StructTy *ty SOURCE_LOCATION_PARAM) noexcept {
+StructTy *NRBuilder::createStructTemplateDefintion(std::string_view name,
+                                                   std::span<std::string_view> template_params,
+                                                   StructTy *ty SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement();
   (void)name;
@@ -259,13 +260,26 @@ StructTy *createStructTemplateDefintion(std::string_view name,
   ignore_caller_info();
 }
 
-UnionTy *createUnionTemplateDefintion(std::string_view name,
-                                      std::span<std::string_view> template_params,
-                                      UnionTy *ty SOURCE_LOCATION_PARAM) noexcept {
+UnionTy *NRBuilder::createUnionTemplateDefintion(std::string_view name,
+                                                 std::span<std::string_view> template_params,
+                                                 UnionTy *ty SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement();
   (void)name;
   (void)template_params;
   (void)ty;
   ignore_caller_info();
+}
+
+Type *NRBuilder::getTemplateInstance(
+    Type *base, std::span<Type *> template_params SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(base != nullptr && static_cast<Expr *>(base)->isType());
+  contract_enforce(std::all_of(template_params.begin(), template_params.end(), [](Type *ty) {
+    return ty != nullptr && static_cast<Type *>(ty)->isType();
+  }));
+
+  /// TODO: Implement
+  qcore_implement();
 }

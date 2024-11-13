@@ -399,7 +399,7 @@ qmodule_t *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   } else {
     contract_enforce(m_result == std::nullopt);
 
-    qmodule_t *new_mod = createModule("module");
+    qmodule_t *new_mod = createModule(m_module_name);
     new_mod->m_strings = std::move(m_interned_strings);
 
     { /* Clone the IRGraph into the module */

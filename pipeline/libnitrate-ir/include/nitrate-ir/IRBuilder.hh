@@ -354,6 +354,9 @@ namespace nr {
                                           std::span<std::string_view> template_params,
                                           UnionTy *ty SOURCE_LOCATION_PARAM) noexcept;
 
+    Type *getTemplateInstance(Type *base,
+                              std::span<Type *> template_params SOURCE_LOCATION_PARAM) noexcept;
+
     ///**************************************************************************///
     // Other stuff
 

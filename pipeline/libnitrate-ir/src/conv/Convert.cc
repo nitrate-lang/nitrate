@@ -567,7 +567,7 @@ static EResult nrgen_int(NRBuilder &b, PState &, qparse::ConstInt *n) {
 }
 
 static EResult nrgen_float(NRBuilder &b, PState &, qparse::ConstFloat *n) {
-  /// FIXME: Do checking
+  /// FIXME: Do floating-point literal range checking
   return create<Float>(b.intern(n->get_value()));
 }
 
@@ -804,7 +804,7 @@ static EResult nrgen_type_expr(NRBuilder &b, PState &s, qparse::TypeExpr *n) {
 }
 
 static EResult nrgen_templ_call(NRBuilder &, PState &, qparse::TemplCall *n) {
-  /// TODO: templ_call
+  /// TODO: Implement template function calls
 
   report(IssueCode::CompilerError, IssueClass::Error, "Template call not implemented",
          n->get_start_pos(), n->get_end_pos());
@@ -959,16 +959,38 @@ static EResult nrgen_unres_ty(NRBuilder &b, PState &s, qparse::UnresolvedType *n
   return create<Tmp>(TmpType::NAMED_TYPE, name);
 }
 
-static EResult nrgen_infer_ty(NRBuilder &, PState &, qparse::InferType *) {
-  /// TODO: infer_ty
-  return std::nullopt;
+static EResult nrgen_infer_ty(NRBuilder &b, PState &, qparse::InferType *) {
+  return b.getUnknownTy();
 }
 
-static EResult nrgen_templ_ty(NRBuilder &, PState &, qparse::TemplType *n) {
-  /// TODO: templ_ty
-  report(IssueCode::CompilerError, IssueClass::Error, "template types are not supported yet",
-         n->get_start_pos(), n->get_end_pos());
-  return std::nullopt;
+static EResult nrgen_templ_ty(NRBuilder &b, PState &s, qparse::TemplType *n) {
+  auto base_template = nrgen_one(b, s, n->get_template());
+  if (!base_template.has_value()) {
+    return std::nullopt;
+  }
+
+  const qparse::TemplTypeArgs &templ_args = n->get_args();
+  std::vector<Type *> template_args;
+  template_args.resize(templ_args.size());
+
+  for (size_t i = 0; i < template_args.size(); i++) {
+    auto tmp = nrgen_one(b, s, templ_args[i]);
+    if (!tmp.has_value()) {
+      report(IssueCode::CompilerError, IssueClass::Error,
+             "Failed to generate template instance argument", n->get_start_pos(), n->get_end_pos());
+      return std::nullopt;
+    }
+
+    if (!tmp.value()->isType()) {
+      report(IssueCode::CompilerError, IssueClass::Error,
+             "The template instance argument is not a type", n->get_start_pos(), n->get_end_pos());
+      return std::nullopt;
+    }
+
+    template_args[i] = tmp.value()->asType();
+  }
+
+  return b.getTemplateInstance(base_template.value()->asType(), template_args);
 }
 
 static std::optional<std::vector<Expr *>> nrgen_typedef(NRBuilder &b, PState &s,
