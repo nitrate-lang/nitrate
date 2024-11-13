@@ -55,16 +55,20 @@ static void print_qsizeloc(std::stringstream &ss, uint32_t num) {
 
 std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const {
   std::stringstream ss;
-  qlex_t *lx = m_nr->getLexer();
   uint32_t sl, sc, el, ec;
 
   {  // Print the filename and location information
-    ss << qlex_filename(lx) << ":";
+    /// FIXME: Render filename
+    ss << "??" << ":";
 
-    sl = qlex_line(lx, msg.m_start);
-    sc = qlex_col(lx, msg.m_start);
-    el = qlex_line(lx, msg.m_end);
-    ec = qlex_col(lx, msg.m_end);
+    auto default_if = std::pair<uint32_t, uint32_t>({UINT32_MAX, UINT32_MAX});
+    auto beg = m_resolver->resolve(msg.m_start).value_or(default_if);
+    auto end = m_resolver->resolve(msg.m_end).value_or(default_if);
+
+    sl = beg.first;
+    sc = beg.second;
+    el = end.first;
+    ec = end.second;
 
     if (sl != UINT32_MAX || sc != UINT32_MAX) {
       print_qsizeloc(ss, sl);
@@ -103,17 +107,17 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
     ss << " [-Werror=" << issue_info.left.at(msg.m_code).flagname << "]";
   }
 
-  uint32_t res = qlex_spanx(
-      lx, msg.m_start, msg.m_end,
-      [](const char *str, uint32_t len, uintptr_t x) {
-        if (len > 100) {
-          len = 100;
-        }
+  uint32_t res = UINT32_MAX; /*qlex_spanx(
+       lx, msg.m_start, msg.m_end,
+       [](const char *str, uint32_t len, uintptr_t x) {
+         if (len > 100) {
+           len = 100;
+         }
 
-        std::stringstream &ss = *reinterpret_cast<std::stringstream *>(x);
-        ss << '\n' << std::string_view(str, len);
-      },
-      reinterpret_cast<uintptr_t>(&ss));
+         std::stringstream &ss = *reinterpret_cast<std::stringstream *>(x);
+         ss << '\n' << std::string_view(str, len);
+       },
+       reinterpret_cast<uintptr_t>(&ss));*/
   if (res == UINT32_MAX) {
     ss << "\n# [failed to extract source code snippet]\n";
   }
@@ -123,16 +127,19 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
 
 std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) const {
   std::stringstream ss;
-  qlex_t *lx = m_nr->getLexer();
   uint32_t sl, sc, el, ec;
 
   {  // Print the filename and location information
-    ss << "\x1b[39;1m" << qlex_filename(lx) << ":";
+    ss << "\x1b[39;1m" << "??" << ":";
 
-    sl = qlex_line(lx, msg.m_start);
-    sc = qlex_col(lx, msg.m_start);
-    el = qlex_line(lx, msg.m_end);
-    ec = qlex_col(lx, msg.m_end);
+    auto default_if = std::pair<uint32_t, uint32_t>({UINT32_MAX, UINT32_MAX});
+    auto beg = m_resolver->resolve(msg.m_start).value_or(default_if);
+    auto end = m_resolver->resolve(msg.m_end).value_or(default_if);
+
+    sl = beg.first;
+    sc = beg.second;
+    el = end.first;
+    ec = end.second;
 
     if (sl != UINT32_MAX || sc != UINT32_MAX || el != UINT32_MAX || ec != UINT32_MAX) {
       print_qsizeloc(ss, sl);
@@ -188,17 +195,17 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
       break;
   }
 
-  uint32_t res = qlex_spanx(
-      lx, msg.m_start, msg.m_end,
-      [](const char *str, uint32_t len, uintptr_t x) {
-        if (len > 100) {
-          len = 100;
-        }
+  uint32_t res = UINT32_MAX; /* qlex_spanx(
+       lx, msg.m_start, msg.m_end,
+       [](const char *str, uint32_t len, uintptr_t x) {
+         if (len > 100) {
+           len = 100;
+         }
 
-        std::stringstream &ss = *reinterpret_cast<std::stringstream *>(x);
-        ss << '\n' << std::string_view(str, len) << '\n';
-      },
-      reinterpret_cast<uintptr_t>(&ss));
+         std::stringstream &ss = *reinterpret_cast<std::stringstream *>(x);
+         ss << '\n' << std::string_view(str, len) << '\n';
+       },
+       reinterpret_cast<uintptr_t>(&ss)); */
   if (res == UINT32_MAX) {
     ss << "\n# [\x1b[35;1mfailed to extract source code snippet\x1b[0m]\n";
   }
@@ -226,30 +233,35 @@ uint64_t DiagMessage::hash() const {
   bp.m_type = m_type;
   bp.m_code = m_code;
   bp.m_msg_trunc = std::hash<std::string_view>{}(m_msg);
-  bp.m_start = m_start.tag;
-  bp.m_end_trunc = m_end.tag;
+  bp.m_start = m_start;
+  bp.m_end_trunc = m_end;
 
   return std::bit_cast<uint64_t>(bp);
 }
 
-void DiagnosticManager::push(nr_audit_ticket_t ticket, DiagMessage &&msg) {
-  auto &chan = m_msgs[ticket];
+void DiagnosticManager::report(IssueCode code, IssueClass level, std::span<std::string_view> params,
+                               std::string_view filename, uint32_t start_offset,
+                               uint32_t end_offset) {
+  std::string message;
+  for (auto p : params) {
+    message += std::string(p) + "; ";
+  }
+
+  DiagMessage msg(message, level, code, start_offset, end_offset);
 
   { /* Prevent duplicates and maintain order of messages */
     auto hash = msg.hash();
-    if (chan.visited.contains(hash)) {
+    if (m_visited.contains(hash)) {
       return;
     }
-    chan.visited.insert(hash);
+    m_visited.insert(hash);
   }
 
-  chan.vec.push_back(std::move(msg));
+  m_vec.push_back(std::move(msg));
 }
 
-size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
-                                                 DiagnosticMessageHandler handler,
-                                                 nr_diag_format_t style) {
-  for (auto &msg : vec) {
+size_t DiagnosticManager::render(DiagnosticMessageHandler handler, nr_diag_format_t style) {
+  for (auto &msg : m_vec) {
     switch (style) {
       /**
        * @brief Code decimal serialization of the error code.
@@ -271,9 +283,11 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
       case QXIR_DIAG_UTF8_ECODE_LOC: {
         std::stringstream ss;
         ss << std::to_string(static_cast<uint64_t>(msg.m_code)) << ":";
-        ss << qlex_line(m_nr->getLexer(), msg.m_start) << ":";
-        ss << qlex_col(m_nr->getLexer(), msg.m_start) << ":";
-        ss << qlex_filename(m_nr->getLexer());
+        auto beg = m_resolver->resolve(msg.m_start);
+
+        ss << beg->first << ":";
+        ss << beg->second << ":";
+        ss << "??";
 
         handler(ss.str(), msg.m_type);
         break;
@@ -336,26 +350,7 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
     }
   }
 
-  return vec.size();
-}
-
-size_t DiagnosticManager::render(nr_audit_ticket_t ticket, DiagnosticMessageHandler handler,
-                                 nr_diag_format_t style) {
-  if (ticket == QXIR_AUDIT_ALL) {
-    size_t n = 0;
-    for (auto &[_, msgs] : m_msgs) {
-      n += dump_diagnostic_vector(msgs.vec, handler, style);
-    }
-    return n;
-  } else if (ticket == QXIR_AUDIT_LAST) {
-    return dump_diagnostic_vector(m_msgs[m_last_ticket].vec, handler, style);
-  } else {
-    if (!m_msgs.contains(ticket)) {
-      return 0;
-    }
-
-    return dump_diagnostic_vector(m_msgs[ticket].vec, handler, style);
-  }
+  return m_vec.size();
 }
 
 static const std::unordered_map<IssueClass, nr_level_t> issue_class_map = {
@@ -364,14 +359,13 @@ static const std::unordered_map<IssueClass, nr_level_t> issue_class_map = {
     {IssueClass::FatalError, QXIR_LEVEL_FATAL},
 };
 
-LIB_EXPORT size_t nr_diag_read(qmodule_t *nr, nr_audit_ticket_t ticket, nr_diag_format_t format,
-                               nr_report_cb cb, uintptr_t data) {
+LIB_EXPORT size_t nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_cb cb,
+                               uintptr_t data) {
   if (!cb) {
-    nr->getDiag().count(ticket);
+    return nr->getDiag().size();
   }
 
   auto res = nr->getDiag().render(
-      ticket,
       [cb, data](std::string_view v, IssueClass lvl) {
         cb(reinterpret_cast<const uint8_t *>(v.data()), v.size(), issue_class_map.at(lvl), data);
       },
@@ -380,20 +374,24 @@ LIB_EXPORT size_t nr_diag_read(qmodule_t *nr, nr_audit_ticket_t ticket, nr_diag_
   return res;
 }
 
-LIB_EXPORT size_t nr_diag_clear(qmodule_t *nr, nr_audit_ticket_t ticket) {
-  return nr->getDiag().clear(ticket);
+LIB_EXPORT size_t nr_diag_clear(qmodule_t *nr) {
+  size_t n = nr->getDiag().size();
+  nr->getDiag().clear();
+  return n;
 }
 
 bool nr::diag::report(diag::IssueCode code, diag::IssueClass type, uint32_t loc_start,
-                      uint32_t loc_end, int channel) {
-  current->getDiag().push(channel, diag::DiagMessage("", type, code, loc_start, loc_end));
+                      uint32_t loc_end) {
+  qcore_implement(__func__);
+  // current->getDiag().push(channel, diag::DiagMessage("", type, code, loc_start, loc_end));
 
   return true;
 }
 
 bool nr::diag::report(diag::IssueCode code, diag::IssueClass type, std::string_view subject,
-                      uint32_t loc_start, uint32_t loc_end, int channel) {
-  current->getDiag().push(channel, diag::DiagMessage(subject, type, code, loc_start, loc_end));
+                      uint32_t loc_start, uint32_t loc_end) {
+  qcore_implement(__func__);
+  // current->getDiag().push(channel, diag::DiagMessage(subject, type, code, loc_start, loc_end));
 
   return true;
 }

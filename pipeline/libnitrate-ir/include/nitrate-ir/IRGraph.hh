@@ -547,16 +547,20 @@ namespace nr {
   static_assert(sizeof(Expr) == 8);
 
   class Type : public Expr {
-    uint64_t getAlignBits();
+    uint64_t getAlignBits(uint32_t PtrSizeBytes);
 
   public:
     Type(nr_ty_t ty) : Expr(ty) {}
 
     bool hasKnownSize() noexcept;
     bool hasKnownAlign() noexcept;
-    uint64_t getSizeBits();
-    inline uint64_t getSizeBytes() { return std::ceil(getSizeBits() / 8.0); }
-    inline uint64_t getAlignBytes() { return std::ceil(getAlignBits() / 8.0); }
+    uint64_t getSizeBits(uint32_t PtrSizeBytes);
+    inline uint64_t getSizeBytes(uint32_t PtrSizeBytes) {
+      return std::ceil(getSizeBits(PtrSizeBytes) / 8.0);
+    }
+    inline uint64_t getAlignBytes(uint32_t PtrSizeBytes) {
+      return std::ceil(getAlignBits(PtrSizeBytes) / 8.0);
+    }
 
     bool is_primitive() const;
     bool is_array() const;

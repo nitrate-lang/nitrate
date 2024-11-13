@@ -60,14 +60,14 @@ class qmodule final {
   qmodule_t *m_module;
 
 public:
-  qmodule(qlex_t *lexer, nr_conf_t *conf, const char *name) {
-    if ((m_module = nr_new(lexer, conf, name)) == nullptr) {
-      throw std::runtime_error("nr_new failed");
+  qmodule() { m_module = nullptr; }
+  ~qmodule() {
+    if (m_module) {
+      nr_free(m_module);
     }
   }
-  ~qmodule() { nr_free(m_module); }
 
-  qmodule_t *get() const { return m_module; }
+  qmodule_t *&get() { return m_module; }
 };
 
 #endif  // __NITRATE_IR_CLASSES_H__

@@ -142,8 +142,6 @@ public:
         m_col(0),
         m_offset(std::numeric_limits<uint32_t>::max()),
         m_last_ch(0),
-        m_tag_to_loc(),
-        m_tag_to_off({}),
         m_locctr(1),
         m_strings(std::make_shared<decltype(m_strings)::element_type>()),
         m_env(env),

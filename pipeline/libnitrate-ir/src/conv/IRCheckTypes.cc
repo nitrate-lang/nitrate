@@ -38,7 +38,7 @@
 
 using namespace nr;
 
-bool NRBuilder::check_types(Seq *root, diag::IDiagnosticEngine *L) noexcept {
+bool NRBuilder::check_types(Seq *root, diag::IDiagnosticSink *L) noexcept {
   /// TODO: Implement check
   qcore_implement(__func__);
   (void)root;

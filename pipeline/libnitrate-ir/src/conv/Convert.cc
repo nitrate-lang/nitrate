@@ -107,7 +107,7 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, bool diagnostics)
 
     if (diagnostics) {
       /// TODO: Get diagnostic provider
-      std::unique_ptr<IDiagnosticEngine> provider;
+      std::unique_ptr<IDiagnosticSink> provider;
 
       if (builder.verify(provider.get())) {
         success = true;

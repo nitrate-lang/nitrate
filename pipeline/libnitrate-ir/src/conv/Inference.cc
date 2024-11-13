@@ -105,7 +105,7 @@ static Type *signed_complement(nr_ty_t ty) {
   }
 }
 
-static Type *binexpr_promote(Type *L, Type *R) {
+static Type *binexpr_promote(Type *L, Type *R, uint32_t PtrSizeBytes) {
   if (L == nullptr || R == nullptr) {
     return nullptr;
   }
@@ -148,7 +148,7 @@ static Type *binexpr_promote(Type *L, Type *R) {
     ///===========================================================================
     /// NOTE: If L && R are both unsigned integers, the larger type is used.
     if (is_unsigned_integer(LT) && is_unsigned_integer(RT)) {
-      size_t LS = L->getSizeBits(), RS = R->getSizeBits();
+      size_t LS = L->getSizeBits(PtrSizeBytes), RS = R->getSizeBits(PtrSizeBytes);
       return LS > RS ? L : R;
     }
     ///===========================================================================
@@ -156,7 +156,7 @@ static Type *binexpr_promote(Type *L, Type *R) {
     ///===========================================================================
     /// NOTE: If L && R are both signed integers, the larger type is used.
     if (is_signed_integer(LT) && is_signed_integer(RT)) {
-      size_t LS = L->getSizeBits(), RS = R->getSizeBits();
+      size_t LS = L->getSizeBits(PtrSizeBytes), RS = R->getSizeBits(PtrSizeBytes);
       return LS > RS ? L : R;
     }
     ///===========================================================================
@@ -164,14 +164,14 @@ static Type *binexpr_promote(Type *L, Type *R) {
     ///===========================================================================
     /// NOTE: If either L or R is a signed integer, the signed integer is promoted.
     if (is_signed_integer(LT)) {
-      size_t LS = L->getSizeBits(), RS = R->getSizeBits();
+      size_t LS = L->getSizeBits(PtrSizeBytes), RS = R->getSizeBits(PtrSizeBytes);
       if (LS > RS) {
         return signed_complement(LT);
       } else {
         return R;
       }
     } else if (is_signed_integer(RT)) {
-      size_t LS = L->getSizeBits(), RS = R->getSizeBits();
+      size_t LS = L->getSizeBits(PtrSizeBytes), RS = R->getSizeBits(PtrSizeBytes);
       if (RS > LS) {
         return signed_complement(RT);
       } else {
@@ -189,13 +189,11 @@ static Type *binexpr_promote(Type *L, Type *R) {
   }
 }
 
-LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node) {
+LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
   qcore_assert(_node != nullptr);
 
   Expr *E = static_cast<Expr *>(_node);
   Type *T = nullptr;
-
-  nr::current = E->getModule();
 
   if (E->isType()) {
     T = E->asType();
@@ -206,47 +204,47 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node) {
         switch (B->getOp()) {
           case Op::Plus: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr));
+                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
             break;
           }
           case Op::Minus: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr));
+                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
             break;
           }
           case Op::Times: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr));
+                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
             break;
           }
           case Op::Slash: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr));
+                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
             break;
           }
           case Op::Percent: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr));
+                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
             break;
           }
           case Op::BitAnd: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr));
+                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
             break;
           }
           case Op::BitOr: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr));
+                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
             break;
           }
           case Op::BitXor: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr));
+                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
             break;
           }
           case Op::BitNot: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr));
+                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
             break;
           }
           case Op::LogicAnd: {
@@ -877,7 +875,7 @@ bool nr::Type::hasKnownAlign() noexcept {
   }
 }
 
-CPP_EXPORT uint64_t nr::Type::getSizeBits() {
+CPP_EXPORT uint64_t nr::Type::getSizeBits(uint32_t PtrSizeBytes) {
   qcore_assert(this->hasKnownSize(), "Attempted to get the size of a type with an unknown size");
 
   uint64_t size;
@@ -948,29 +946,30 @@ CPP_EXPORT uint64_t nr::Type::getSizeBits() {
       break;
     }
     case QIR_NODE_PTR_TY: {
-      size = getModule()->getTargetInfo().PointerSizeBytes * 8;
+      size = PtrSizeBytes * 8;
       break;
     }
     case QIR_NODE_STRUCT_TY: {
       size = 0;
       for (auto &field : this->as<StructTy>()->getFields()) {
-        size += field->getSizeBits();
+        size += field->getSizeBits(PtrSizeBytes);
       }
       break;
     }
     case QIR_NODE_UNION_TY: {
       size = 0;
       for (auto &field : this->as<UnionTy>()->getFields()) {
-        size = std::max(size, field->getSizeBits());
+        size = std::max(size, field->getSizeBits(PtrSizeBytes));
       }
       break;
     }
     case QIR_NODE_ARRAY_TY: {
-      size = this->as<ArrayTy>()->getElement()->getSizeBits() * this->as<ArrayTy>()->getCount();
+      size = this->as<ArrayTy>()->getElement()->getSizeBits(PtrSizeBytes) *
+             this->as<ArrayTy>()->getCount();
       break;
     }
     case QIR_NODE_FN_TY: {
-      size = getModule()->getTargetInfo().PointerSizeBytes * 8;
+      size = PtrSizeBytes * 8;
       break;
     }
     default: {
@@ -981,7 +980,7 @@ CPP_EXPORT uint64_t nr::Type::getSizeBits() {
   return size;
 }
 
-CPP_EXPORT uint64_t nr::Type::getAlignBits() {
+CPP_EXPORT uint64_t nr::Type::getAlignBits(uint32_t PtrSizeBytes) {
   qcore_assert(this->hasKnownSize(), "Attempted to get the size of a type with an unknown size");
 
   uint64_t align;
@@ -1052,29 +1051,29 @@ CPP_EXPORT uint64_t nr::Type::getAlignBits() {
       break;
     }
     case QIR_NODE_PTR_TY: {
-      align = getModule()->getTargetInfo().PointerSizeBytes * 8;
+      align = PtrSizeBytes * 8;
       break;
     }
     case QIR_NODE_STRUCT_TY: {
       align = 0;
       for (const auto &field : this->as<StructTy>()->getFields()) {
-        align = std::max(align, field->getSizeBits());
+        align = std::max(align, field->getSizeBits(PtrSizeBytes));
       }
       break;
     }
     case QIR_NODE_UNION_TY: {
       align = 0;
       for (const auto &field : this->as<UnionTy>()->getFields()) {
-        align = std::max(align, field->getSizeBits());
+        align = std::max(align, field->getSizeBits(PtrSizeBytes));
       }
       break;
     }
     case QIR_NODE_ARRAY_TY: {
-      align = this->as<ArrayTy>()->getElement()->getAlignBits();
+      align = this->as<ArrayTy>()->getElement()->getAlignBits(PtrSizeBytes);
       break;
     }
     case QIR_NODE_FN_TY: {
-      align = getModule()->getTargetInfo().PointerSizeBytes * 8;
+      align = PtrSizeBytes * 8;
       break;
     }
     default: {

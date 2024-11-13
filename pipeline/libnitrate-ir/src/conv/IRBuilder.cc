@@ -306,7 +306,7 @@ void NRBuilder::finish(SOURCE_LOCATION_PARAM_ONCE) noexcept {
 }
 
 bool NRBuilder::verify(
-    std::optional<diag::IDiagnosticEngine *> the_sink SOURCE_LOCATION_PARAM) noexcept {
+    std::optional<diag::IDiagnosticSink *> the_sink SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Finished || m_state == SelfState::Verified ||
                    m_state == SelfState::FailEarly);
   contract_enforce(m_result == std::nullopt);
@@ -326,7 +326,7 @@ bool NRBuilder::verify(
     qcore_implement(__func__);
   }
 
-  diag::IDiagnosticEngine *sink = the_sink.value();
+  diag::IDiagnosticSink *sink = the_sink.value();
 
   if (!check_acyclic(m_root, sink)) {
     return false;

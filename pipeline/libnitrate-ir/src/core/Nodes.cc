@@ -208,7 +208,8 @@ CPP_EXPORT bool Expr::isType() const noexcept {
 }
 
 CPP_EXPORT std::optional<nr::Type *> nr::Expr::getType() noexcept {
-  return static_cast<Type *>(nr_infer(this));
+  qcore_implement(__func__);
+  // return static_cast<Type *>(nr_infer(this));
 }
 
 CPP_EXPORT bool nr::Expr::isSame(const nr::Expr *other) const {
@@ -825,7 +826,7 @@ CPP_EXPORT void nr::Expr::dump(std::ostream &os, bool isForDebug) const {
   size_t len = 0;
 
   FILE *fmembuf = open_memstream(&cstr, &len);
-  if (!nr_write(this, QXIR_SERIAL_CODE, fmembuf, nullptr, 0)) {
+  if (!nr_write(nullptr, this, QXIR_SERIAL_CODE, fmembuf, nullptr, 0)) {
     qcore_panic("Failed to dump expression");
   }
   fflush(fmembuf);

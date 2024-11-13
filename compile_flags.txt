@@ -19,4 +19,6 @@
 -Wextra
 -Wno-error=missing-field-initializers
 -Wno-missing-field-initializers
+-Wno-unused-parameter
+-Wno-error=unused-parameter
 -D__TARGET_VERSION="?"

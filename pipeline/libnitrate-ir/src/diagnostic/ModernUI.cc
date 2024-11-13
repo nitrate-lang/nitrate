@@ -73,10 +73,6 @@ const boost::bimap<IssueCode, IssueInfo> nr::diag::issue_info = make_bimap<Issue
      {"ds-bad-type",
       "Internal module IR data structure contains a bad type.",
       {"This is an (INTERNAL) compiler error. Please report this issue."}}},
-    {IssueCode::DSMissingMod,
-     {"ds-missing-mod",
-      "Internal module IR data structure contains a node with a missing module pointer.",
-      {"This is an (INTERNAL) compiler error. Please report this issue."}}},
     {IssueCode::DSBadTmpNode,
      {"ds-bad-tmp-node",
       "Internal module IR data structure contains an unexpected temporary node.",
@@ -309,16 +305,19 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
   constexpr size_t WIDTH = 70;
 
   std::stringstream ss;
-  qlex_t *lx = m_nr->getLexer();
   uint32_t sl, sc, el, ec;
 
   { /* Print filename and source row:column start and end */
-    ss << "\x1b[37;1m" << qlex_filename(lx) << ":";
+    ss << "\x1b[37;1m" << "??" << ":";
 
-    sl = qlex_line(lx, msg.m_start);
-    sc = qlex_col(lx, msg.m_start);
-    el = qlex_line(lx, msg.m_end);
-    ec = qlex_col(lx, msg.m_end);
+    auto default_if = std::pair<uint32_t, uint32_t>(0, 0);
+    auto beg = m_resolver->resolve(msg.m_start).value_or(default_if);
+    auto end = m_resolver->resolve(msg.m_end).value_or(default_if);
+
+    sl = beg.first;
+    sc = beg.second;
+    el = end.first;
+    ec = end.second;
 
     if (sl != UINT32_MAX || sc != UINT32_MAX || el != UINT32_MAX || ec != UINT32_MAX) {
       print_qsizeloc(ss, sl);
@@ -423,7 +422,11 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
     size_t buf_size = width * height + 1;
     std::unique_ptr<char[]> out(new char[buf_size]);
 
-    qlex_rect(lx, x_0, y_0, x_1, y_1, out.get(), buf_size, ' ');
+    /// FIXME: Get reference to lexer
+
+    qcore_implement(__func__);
+
+    // qlex_rect(lx, x_0, y_0, x_1, y_1, out.get(), buf_size, ' ');
 
     std::vector<std::string_view> source_lines;
 

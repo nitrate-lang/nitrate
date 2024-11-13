@@ -68,7 +68,6 @@ namespace nr::diag {
     DSPolyCyclicRef,
     DSNullPtr,
     DSBadType,
-    DSMissingMod,
     DSBadTmpNode,
 
     FunctionRedefinition,
@@ -102,11 +101,18 @@ namespace nr::diag {
 
   typedef std::function<void(std::string_view, IssueClass)> DiagnosticMessageHandler;
 
-  class IDiagnosticEngine {
+  class IDiagnosticSink {
   public:
-    virtual void report(IssueCode code, std::span<std::string_view> params = {},
-                        std::string_view filename = "", size_t start_line = 1, size_t start_col = 1,
-                        size_t end_line = 1, size_t end_col = 1) = 0;
+    virtual void report(IssueCode code, IssueClass level, std::span<std::string_view> params = {},
+                        std::string_view filename = "", uint32_t start_offset = 1,
+                        uint32_t end_offset = 0) = 0;
+    virtual ~IDiagnosticSink() = default;
+  };
+
+  class IOffsetResolver {
+  public:
+    virtual std::optional<std::pair<uint32_t, uint32_t>> resolve(uint32_t offset) noexcept;
+    virtual ~IOffsetResolver() = default;
   };
 
   struct DiagMessage {
@@ -122,123 +128,50 @@ namespace nr::diag {
     uint64_t hash() const;
   };
 
-  class DiagnosticManager {
-    struct Channel {
-      std::vector<DiagMessage> vec;
-      std::unordered_set<uint64_t> visited;
-    };
-
-    qmodule_t *m_nr;
-    std::unordered_map<nr_audit_ticket_t, Channel> m_msgs;
-    nr_audit_ticket_t m_last_ticket;
+  class DiagnosticManager : public IDiagnosticSink {
+    std::vector<DiagMessage> m_vec;
+    std::unordered_set<uint64_t> m_visited;
+    std::shared_ptr<IOffsetResolver> m_resolver;
 
     std::string mint_clang16_message(const DiagMessage &msg) const;
     std::string mint_plain_message(const DiagMessage &msg) const;
     std::string mint_modern_message(const DiagMessage &msg) const;
-    size_t dump_diagnostic_vector(std::vector<DiagMessage> &vec, DiagnosticMessageHandler handler,
-                                  nr_diag_format_t style);
 
   public:
-    DiagnosticManager() {
-      m_nr = nullptr;
-      m_msgs[QXIR_AUDIT_CONV] = {};
-      m_last_ticket = QXIR_AUDIT_CONV;
+    DiagnosticManager(std::shared_ptr<IOffsetResolver> resolver = nullptr)
+        : m_resolver(std::move(resolver)) {}
+
+    virtual void report(IssueCode code, IssueClass level, std::span<std::string_view> params = {},
+                        std::string_view filename = "", uint32_t start_offset = 1,
+                        uint32_t end_offset = 0) override;
+
+    size_t render(DiagnosticMessageHandler handler, nr_diag_format_t style);
+
+    void clear() {
+      m_vec.clear();
+      m_visited.clear();
     }
 
-    void push(nr_audit_ticket_t ticket, DiagMessage &&msg);
-    size_t render(nr_audit_ticket_t ticket, DiagnosticMessageHandler handler,
-                  nr_diag_format_t style);
-
-    void set_ctx(qmodule_t *nr) { m_nr = nr; }
-
-    size_t clear(nr_audit_ticket_t t) {
-      if (t == QXIR_AUDIT_ALL) {
-        size_t n = 0;
-        for (auto &[_, msgs] : m_msgs) {
-          n += msgs.vec.size();
-          msgs.vec.clear();
-          msgs.visited.clear();
-        }
-        return n;
-      } else if (t == QXIR_AUDIT_LAST) {
-        size_t n = m_msgs[m_last_ticket].vec.size();
-        m_msgs[m_last_ticket].vec.clear();
-        m_msgs[m_last_ticket].visited.clear();
-        return n;
-      } else {
-        if (!m_msgs.contains(t)) {
-          return 0;
-        }
-
-        size_t n = m_msgs[t].vec.size();
-        m_msgs[t].vec.clear();
-        m_msgs[t].visited.clear();
-        return n;
-      }
-    }
-
-    size_t count(nr_audit_ticket_t t) {
-      if (t == QXIR_AUDIT_ALL) {
-        size_t n = 0;
-        for (const auto &[_, msgs] : m_msgs) {
-          n += msgs.vec.size();
-        }
-        return n;
-      } else if (t == QXIR_AUDIT_LAST) {
-        return m_msgs[m_last_ticket].vec.size();
-      } else {
-        if (!m_msgs.contains(t)) {
-          return 0;
-        }
-
-        return m_msgs[t].vec.size();
-      }
-    }
+    size_t size() { return m_vec.size(); }
   };
-
-#define CONV_DEBUG(_msg)               \
-  mod->getDiag().push(QXIR_AUDIT_CONV, \
-                      diag::DiagMessage(_msg, diag::IssueClass::Debug, diag::IssueCode::Info));
-
-#define NO_MATCHING_FUNCTION(_funcname)                                                            \
-  mod->getDiag().push(QXIR_AUDIT_CONV,                                                             \
-                      diag::DiagMessage("No matching function named " + std::string(_funcname),    \
-                                        diag::IssueClass::Error, diag::IssueCode::UnknownFunction, \
-                                        cur->getLoc().first, cur->getLoc().second));
-
-#define NO_MATCHING_PARAMETER(_funcname, _paramname)                                               \
-  mod->getDiag().push(                                                                             \
-      QXIR_AUDIT_CONV,                                                                             \
-      diag::DiagMessage("Call to function " + std::string(_funcname) +                             \
-                            " has no matching default parameter named " + std::string(_paramname), \
-                        diag::IssueClass::Error, diag::IssueCode::UnknownArgument,                 \
-                        cur->getLoc().first, cur->getLoc().second));
-
-#define TOO_MANY_ARGUMENTS(_funcname)                                                        \
-  mod->getDiag().push(                                                                       \
-      QXIR_AUDIT_CONV,                                                                       \
-      diag::DiagMessage("Too many arguments provided to function " + std::string(_funcname), \
-                        diag::IssueClass::Error, diag::IssueCode::TooManyArguments,          \
-                        cur->getLoc().first, cur->getLoc().second));
 
   /**
    * @brief Report a diagnostic message
    * @return true always
    */
   bool report(diag::IssueCode code, diag::IssueClass type, uint32_t loc_start = 0,
-              uint32_t loc_end = 0, int channel = QXIR_AUDIT_CONV);
+              uint32_t loc_end = 0);
 
   /**
    * @brief Report a diagnostic message
    * @return true always
    */
   bool report(diag::IssueCode code, diag::IssueClass type, std::string_view subject = "",
-              uint32_t loc_start = 0, uint32_t loc_end = 0, int channel = QXIR_AUDIT_CONV);
+              uint32_t loc_start = 0, uint32_t loc_end = 0);
 
   static inline bool report(diag::IssueCode code, diag::IssueClass type,
-                            std::pair<uint32_t, uint32_t> loc, std::string_view subject = "",
-                            int channel = QXIR_AUDIT_CONV) {
-    return report(code, type, subject, loc.first, loc.second, channel);
+                            std::pair<uint32_t, uint32_t> loc, std::string_view subject = "") {
+    return report(code, type, subject, loc.first, loc.second);
   }
 
 };  // namespace nr::diag

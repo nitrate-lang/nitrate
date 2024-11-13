@@ -32,19 +32,32 @@
 #include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
 
+#include <memory>
 #include <mutex>
 #include <nitrate-ir/Module.hh>
+
+#include "nitrate-ir/Report.hh"
 
 using namespace nr;
 
 static std::vector<std::optional<qmodule_t *>> nr_modules;
 static std::mutex nr_modules_mutex;
 
+class LexerSourceResolver : public diag::IOffsetResolver {
+public:
+  virtual std::optional<std::pair<uint32_t, uint32_t>> resolve(uint32_t) noexcept override {
+    qcore_implement(__func__);
+  }
+  virtual ~LexerSourceResolver() = default;
+};
+
 qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
   m_applied.clear();
   m_strings.clear();
-  m_diag = std::make_unique<diag::DiagnosticManager>();
-  m_diag->set_ctx(this);
+
+  auto resolver = std::make_shared<LexerSourceResolver>();
+  m_diag = std::make_unique<diag::DiagnosticManager>(resolver);
+
   m_module_name = name;
 
   m_lexer = nullptr;

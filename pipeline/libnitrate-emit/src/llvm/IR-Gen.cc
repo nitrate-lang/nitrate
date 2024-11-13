@@ -399,7 +399,7 @@ typedef std::optional<llvm::Value *> val_t;
 typedef std::optional<llvm::Type *> ty_t;
 
 struct Mode {
-  bool unused;
+  size_t PtrSizeBytes = 8;
 };
 
 enum class PtrClass {
@@ -1123,7 +1123,8 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
         debug("Failed to get type");
         return std::nullopt;
       }
-      size_t num_bits = x.value()->getSizeBits();
+
+      size_t num_bits = x.value()->getSizeBits(cf.PtrSizeBytes);
       llvm::ConstantInt *num_bits_c =
           llvm::ConstantInt::get(m.getContext(), llvm::APInt(num_bits, num_bits));
 
@@ -1145,7 +1146,7 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
         debug("Failed to get type");
         return std::nullopt;
       }
-      size_t num_bits = x.value()->getSizeBits();
+      size_t num_bits = x.value()->getSizeBits(cf.PtrSizeBytes);
       llvm::ConstantInt *num_bits_c =
           llvm::ConstantInt::get(m.getContext(), llvm::APInt(num_bits, num_bits));
 
@@ -1396,8 +1397,8 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
           return std::nullopt;
         }
         new_val = b.CreateAdd(
-            current,
-            llvm::ConstantInt::get(m.getContext(), llvm::APInt(x.value()->getSizeBits(), 1)));
+            current, llvm::ConstantInt::get(
+                         m.getContext(), llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
       } else if (current->getType()->isFloatingPointTy()) {
         new_val = b.CreateFAdd(current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
       } else {
@@ -1440,8 +1441,8 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
           return std::nullopt;
         }
         new_val = b.CreateSub(
-            current,
-            llvm::ConstantInt::get(m.getContext(), llvm::APInt(x.value()->getSizeBits(), 1)));
+            current, llvm::ConstantInt::get(
+                         m.getContext(), llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
       } else if (current->getType()->isFloatingPointTy()) {
         new_val = b.CreateFSub(current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
       } else {
@@ -1459,7 +1460,8 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
         debug("Failed to get type");
         return std::nullopt;
       }
-      R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(64, x.value()->getAlignBytes()));
+      R = llvm::ConstantInt::get(m.getContext(),
+                                 llvm::APInt(64, x.value()->getAlignBytes(cf.PtrSizeBytes)));
       break;
     }
     case nr::Op::Bitsizeof: {
@@ -1468,7 +1470,8 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
         debug("Failed to get type");
         return std::nullopt;
       }
-      R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(64, x.value()->getSizeBits()));
+      R = llvm::ConstantInt::get(m.getContext(),
+                                 llvm::APInt(64, x.value()->getSizeBits(cf.PtrSizeBytes)));
       break;
     }
 
@@ -1482,7 +1485,7 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
   return R;
 }
 
-static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &, State &s,
+static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
                                     nr::PostUnExpr *N) {
   /**
    * @brief [Write explanation here]
@@ -1526,8 +1529,8 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &, State &s
           return std::nullopt;
         }
         new_val = b.CreateAdd(
-            current,
-            llvm::ConstantInt::get(m.getContext(), llvm::APInt(x.value()->getSizeBits(), 1)));
+            current, llvm::ConstantInt::get(
+                         m.getContext(), llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
       } else if (current->getType()->isFloatingPointTy()) {
         new_val = b.CreateFAdd(current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
       } else {
@@ -1570,8 +1573,8 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &, State &s
           return std::nullopt;
         }
         new_val = b.CreateSub(
-            current,
-            llvm::ConstantInt::get(m.getContext(), llvm::APInt(x.value()->getSizeBits(), 1)));
+            current, llvm::ConstantInt::get(
+                         m.getContext(), llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
       } else if (current->getType()->isFloatingPointTy()) {
         new_val = b.CreateFSub(current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
       } else {

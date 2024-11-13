@@ -1115,38 +1115,7 @@ error_0: { /* Reset the lexer and return error token */
 
 ///============================================================================///
 
-LIB_EXPORT uint32_t qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok) {
-  try {
-    switch (tok->ty) {
-      case qEofF:
-      case qErro:
-        return 0;
-      case qKeyW:
-        return qlex::keywords.right.at(tok->v.key).size();
-      case qOper:
-        return qlex::operators.right.at(tok->v.op).size();
-      case qPunc:
-        return qlex::punctuation.right.at(tok->v.punc).size();
-      case qName:
-      case qIntL:
-      case qNumL:
-      case qText:
-      case qChar:
-      case qMacB:
-      case qMacr:
-      case qNote: {
-        uint32_t r = qlex_span(lexer, qlex_begin(tok), qlex_end(tok));
-        return r == UINT32_MAX ? 0 : r;
-      }
-    }
-  } catch (std::out_of_range &) {
-    return 0;
-  } catch (...) {
-    qcore_panic("qlex_tok_size: invalid token");
-  }
-
-  __builtin_unreachable();
-}
+LIB_EXPORT uint32_t qlex_tok_size(qlex_t *, const qlex_tok_t *tok) { return tok->end - tok->start; }
 
 LIB_EXPORT uint32_t qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *buf, uint32_t size) {
   try {

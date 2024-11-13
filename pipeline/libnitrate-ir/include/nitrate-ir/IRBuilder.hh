@@ -133,16 +133,16 @@ namespace nr {
     std::optional<Local *> lookup_local(std::string_view local) noexcept;
     std::optional<Fn *> lookup_function(std::string_view function) noexcept;
 
-    static bool check_acyclic(Seq *root, diag::IDiagnosticEngine *L) noexcept;
-    static bool check_duplicates(Seq *root, diag::IDiagnosticEngine *L) noexcept;
-    static bool check_symbols_exist(Seq *root, diag::IDiagnosticEngine *L) noexcept;
-    static bool check_function_calls(Seq *root, diag::IDiagnosticEngine *L) noexcept;
-    static bool check_returns(Seq *root, diag::IDiagnosticEngine *L) noexcept;
-    static bool check_scopes(Seq *root, diag::IDiagnosticEngine *L) noexcept;
-    static bool check_mutability(Seq *root, diag::IDiagnosticEngine *L) noexcept;
-    static bool check_control_flow(Seq *root, diag::IDiagnosticEngine *L) noexcept;
-    static bool check_types(Seq *root, diag::IDiagnosticEngine *L) noexcept;
-    static bool check_safety_claims(Seq *root, diag::IDiagnosticEngine *L) noexcept;
+    static bool check_acyclic(Seq *root, diag::IDiagnosticSink *L) noexcept;
+    static bool check_duplicates(Seq *root, diag::IDiagnosticSink *L) noexcept;
+    static bool check_symbols_exist(Seq *root, diag::IDiagnosticSink *L) noexcept;
+    static bool check_function_calls(Seq *root, diag::IDiagnosticSink *L) noexcept;
+    static bool check_returns(Seq *root, diag::IDiagnosticSink *L) noexcept;
+    static bool check_scopes(Seq *root, diag::IDiagnosticSink *L) noexcept;
+    static bool check_mutability(Seq *root, diag::IDiagnosticSink *L) noexcept;
+    static bool check_control_flow(Seq *root, diag::IDiagnosticSink *L) noexcept;
+    static bool check_types(Seq *root, diag::IDiagnosticSink *L) noexcept;
+    static bool check_safety_claims(Seq *root, diag::IDiagnosticSink *L) noexcept;
 
 #if defined(NDEBUG)
 #define SOURCE_LOCATION_PARAM
@@ -224,7 +224,7 @@ namespace nr {
      *
      * @note This function calls `finish()`.
      */
-    bool verify(std::optional<diag::IDiagnosticEngine *> sink SOURCE_LOCATION_PARAM) noexcept;
+    bool verify(std::optional<diag::IDiagnosticSink *> sink SOURCE_LOCATION_PARAM) noexcept;
 
     /**
      * @brief Return the build module.

@@ -1307,8 +1307,7 @@ namespace no3::router {
         return 1;
       }
 
-      nr_conf conf;
-      qmodule qmod(lexer.get(), conf.get(), source.c_str());
+      qmodule qmod;
 
       auto cb = [](const uint8_t *msg, size_t size, nr_level_t lvl, uintptr_t data) {
         if (!data && lvl < QXIR_LEVEL_INFO) {
@@ -1317,14 +1316,12 @@ namespace no3::router {
         qerr << std::string_view((const char *)msg, size) << std::endl;
       };
 
-      if (!nr_lower(qmod.get(), root, true)) {
-        nr_diag_read(qmod.get(), QXIR_AUDIT_ALL,
-                     mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
+      if (!nr_lower(&qmod.get(), root, true)) {
+        nr_diag_read(qmod.get(), mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
         return 1;
       }
 
-      nr_diag_read(qmod.get(), QXIR_AUDIT_ALL, mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR,
-                   cb, verbose);
+      nr_diag_read(qmod.get(), mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
 
       FILE *out_fp = nullptr;
       if (!output.empty()) {
@@ -1337,7 +1334,7 @@ namespace no3::router {
         out_fp = stdout;
       }
 
-      if (!nr_write(nr_base(qmod.get()), QXIR_SERIAL_CODE, out_fp, nullptr, 0)) {
+      if (!nr_write(qmod.get(), nr_base(qmod.get()), QXIR_SERIAL_CODE, out_fp, nullptr, 0)) {
         if (!output.empty()) fclose(out_fp);
         qerr << "Failed to generate QXIR tree" << std::endl;
         return 1;
@@ -1384,8 +1381,7 @@ namespace no3::router {
         return 1;
       }
 
-      nr_conf conf;
-      qmodule qmod(lexer.get(), conf.get(), source.c_str());
+      qmodule qmod;
 
       auto cb = [](const uint8_t *msg, size_t size, nr_level_t lvl, uintptr_t data) {
         if (!data && lvl < QXIR_LEVEL_INFO) {
@@ -1394,14 +1390,12 @@ namespace no3::router {
         qerr << std::string_view((const char *)msg, size) << std::endl;
       };
 
-      if (!nr_lower(qmod.get(), root, true)) {
-        nr_diag_read(qmod.get(), QXIR_AUDIT_ALL,
-                     mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
+      if (!nr_lower(&qmod.get(), root, true)) {
+        nr_diag_read(qmod.get(), mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
         return 1;
       }
 
-      nr_diag_read(qmod.get(), QXIR_AUDIT_ALL, mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR,
-                   cb, verbose);
+      nr_diag_read(qmod.get(), mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
 
       FILE *out_fp = nullptr;
       if (!output.empty()) {

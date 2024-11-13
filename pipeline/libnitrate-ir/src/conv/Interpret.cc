@@ -669,8 +669,6 @@ namespace comptime {
   }
 
   std::optional<Value> evaluate(Program &P, nr::Expr *x) noexcept {
-    nr::current = x->getModule();
-
     auto x_kind = x->getKind();
 
     switch (x_kind) {

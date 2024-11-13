@@ -182,28 +182,6 @@ LIB_EXPORT uint32_t qlex_offset(qlex_t *obj, uint32_t base, uint32_t offset) {
   }
 }
 
-LIB_EXPORT uint32_t qlex_span(qlex_t *obj, uint32_t start, uint32_t end) {
-  try {
-    std::optional<uint32_t> begoff, endoff;
-
-    if (!(begoff = start)) {
-      return UINT32_MAX;
-    }
-
-    if (!(endoff = end)) {
-      return UINT32_MAX;
-    }
-
-    if (*endoff < *begoff) {
-      return 0;
-    }
-
-    return *endoff - *begoff;
-  } catch (...) {
-    qcore_panic("qlex_span: failed to calculate span");
-  }
-}
-
 LIB_EXPORT uint32_t qlex_spanx(qlex_t *obj, uint32_t start, uint32_t end,
                                void (*callback)(const char *, uint32_t, uintptr_t),
                                uintptr_t userdata) {
@@ -405,43 +383,16 @@ LIB_EXPORT qlex_tok_t qlex_peek(qlex_t *self) {
 ///============================================================================///
 
 CPP_EXPORT std::optional<std::pair<uint32_t, uint32_t>> qlex_t::loc2rowcol(uint32_t loc) {
-  if (m_tag_to_loc.left.find(loc) == m_tag_to_loc.left.end()) [[unlikely]] {
+  if (m_off2rc.left.find(loc) == m_off2rc.left.end()) [[unlikely]] {
     return std::nullopt;
   }
 
-  clever_me_t it = m_tag_to_loc.left.at(loc);
-
-  if (!it.rc_fmt) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  uint32_t row = it.row;
-  uint32_t col = it.col;
-
-  return std::make_pair(row, col);
+  return m_off2rc.left.at(loc);
 }
 
 CPP_EXPORT uint32_t qlex_t::save_loc(uint32_t row, uint32_t col, uint32_t offset) {
-  if (row <= 2097152 && col <= 1024) [[likely]] {
-    clever_me_t bits;
-    static_assert(sizeof(bits) == sizeof(uint32_t));
-
-    bits.rc_fmt = 1;
-    bits.col = col;
-    bits.row = row;
-
-    if (m_tag_to_loc.right.find(bits) != m_tag_to_loc.right.end()) {
-      return {m_tag_to_loc.right.at(bits)};
-    }
-
-    uint32_t tag = m_locctr++;
-    m_tag_to_loc.insert({tag, bits});
-    m_tag_to_off[tag] = offset;
-
-    return offset;
-  } else {
-    return offset;
-  }
+  m_off2rc.insert({offset, {row, col}});
+  return offset;
 }
 
 CPP_EXPORT uint32_t qlex_t::cur_loc() { return save_loc(m_row, m_col, m_offset); }

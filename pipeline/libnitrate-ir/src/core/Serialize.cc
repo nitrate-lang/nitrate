@@ -43,6 +43,8 @@
 #include <sstream>
 #include <unordered_set>
 
+#include "nitrate-ir/Module.hh"
+
 using namespace nr;
 
 struct ConvState {
@@ -620,22 +622,27 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
   return true;
 }
 
-static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
+static bool to_codeform(std::optional<qmodule_t *> mod, Expr *node, bool minify, size_t indent_size,
+                        FILE &ss) {
   ConvState state(indent_size, minify);
-  qmodule_t *mod = node->getModule();
 
-  if (!minify) {
+  if (mod.has_value() && !minify) {
     { /* Print the module name */
-      ss << "; Module: " << mod->getName() << "\n";
+      ss << "; Module: " << (mod.value())->getName() << "\n";
     }
 
     { /* Print the mutation passes applied */
       ss << "; Passes: [";
       size_t i = 0;
-      for (auto it = mod->getPassesApplied().begin(); it != mod->getPassesApplied().end(); ++it) {
-        ss << *it;
+      for (auto it = mod.value()->getPassesApplied().begin();
+           it != mod.value()->getPassesApplied().end(); ++it) {
+        if (it->second != ModulePassType::Transform) {
+          continue;
+        }
 
-        if (std::next(it) != mod->getPassesApplied().end()) {
+        ss << it->first;
+
+        if (std::next(it) != mod.value()->getPassesApplied().end()) {
           ss << ",";
 
           if (!minify) {
@@ -654,10 +661,15 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
     { /* Print the analysis passes applied */
       ss << "; Checks: [";
       size_t i = 0;
-      for (auto it = mod->getChecksApplied().begin(); it != mod->getChecksApplied().end(); ++it) {
-        ss << *it;
+      for (auto it = mod.value()->getPassesApplied().begin();
+           it != mod.value()->getPassesApplied().end(); ++it) {
+        if (it->second != ModulePassType::Check) {
+          continue;
+        }
 
-        if (std::next(it) != mod->getChecksApplied().end()) {
+        ss << it->first;
+
+        if (std::next(it) != mod.value()->getPassesApplied().end()) {
           ss << ",";
 
           if (!minify) {
@@ -738,8 +750,8 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
   }
 }
 
-LIB_EXPORT bool nr_write(const nr_node_t *_node, nr_serial_t mode, FILE *out, size_t *outlen,
-                         uint32_t argcnt, ...) {
+LIB_EXPORT bool nr_write(qmodule_t *mod, const nr_node_t *_node, nr_serial_t mode, FILE *out,
+                         size_t *outlen, uint32_t argcnt, ...) {
   (void)argcnt;
 
   bool status;
@@ -757,7 +769,12 @@ LIB_EXPORT bool nr_write(const nr_node_t *_node, nr_serial_t mode, FILE *out, si
   try {
     switch (mode) {
       case QXIR_SERIAL_CODE: {
-        status = to_codeform(node, false, 2, *out);
+        if (mod) {
+          status = to_codeform(mod, node, false, 2, *out);
+
+        } else {
+          status = to_codeform(std::nullopt, node, false, 2, *out);
+        }
         break;
       }
     }
