@@ -163,6 +163,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
       /* Parse a normal field */
       if (!parse_composite_field(job, rd, &field)) {
         syntax(tok, "Expected field definition in struct definition");
+        return false;
       }
 
       tok = qlex_peek(rd);

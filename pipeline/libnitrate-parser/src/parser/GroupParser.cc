@@ -138,12 +138,13 @@ bool parser::parse_composite_field(qparse_t &job, qlex_t *rd, CompositeField **n
                     &value) ||
         !value) {
       syntax(tok, "Expected default value after '=' in composite definition");
+      return false;
     }
-
-    (*node)->set_end_pos(value->get_end_pos());
   }
 
   *node = CompositeField::get(name, type, value);
+  (*node)->set_end_pos(value->get_end_pos());
+
   return true;
 }
 
@@ -273,6 +274,7 @@ bool parser::parse_group(qparse_t &job, qlex_t *rd, Stmt **node) {
       /* Parse a normal field */
       if (!parse_composite_field(job, rd, &field)) {
         syntax(tok, "Expected field definition in group definition");
+        return false;
       }
 
       tok = qlex_peek(rd);
