@@ -812,7 +812,7 @@ static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(qmodule_t *
   State s = State::defaults();
 
   // Forward declare all functions
-  nr::iterate<nr::dfs_pre, nr::IterMP::none>(root, [&](nr::Expr *, nr::Expr **N) -> nr::IterOp {
+  nr::iterate<nr::dfs_pre>(root, [&](nr::Expr *, nr::Expr **N) -> nr::IterOp {
     if ((*N)->getKind() == QIR_NODE_SEQ || (*N)->getKind() == QIR_NODE_EXTERN) {
       return nr::IterOp::Proceed;
     } else if ((*N)->getKind() != QIR_NODE_FN) {

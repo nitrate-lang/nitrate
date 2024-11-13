@@ -2359,12 +2359,8 @@ static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, qparse::Node
       break;
 
     default: {
-      qcore_panicf("nr: unknown node type: %d", static_cast<int>(n->this_typeid()));
+      break;
     }
-  }
-
-  if (!out) {
-    qcore_panicf("nr: conversion failed for node type: %d", static_cast<int>(n->this_typeid()));
   }
 
   return out;

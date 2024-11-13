@@ -35,9 +35,18 @@
 #include <sys/resource.h>
 
 #include <atomic>
+#include <boost/assert/source_location.hpp>
 #include <core/PassManager.hh>
 
 #include "core/LibMacro.h"
+
+/// HACK: Fix linker error with c++ boost.
+namespace boost {
+  void throw_exception(std::exception const& m, boost::source_location const&) {
+    std::cerr << "boost::throw_exception: " << m.what();
+    std::terminate();
+  }
+}  // namespace boost
 
 static std::atomic<size_t> nr_lib_ref_count = 0;
 

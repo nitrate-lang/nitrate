@@ -61,7 +61,7 @@ static void flatten_externs(qmodule_t *mod) {
     return IterOp::Proceed;
   };
 
-  iterate<dfs_pre, IterMP::none>(mod->getRoot(), cb);
+  iterate<dfs_pre>(mod->getRoot(), cb);
 
   Seq *root = mod->getRoot()->as<Seq>();
   std::unordered_set<Expr *> global_scope;
@@ -108,7 +108,7 @@ static void flatten_functions_recurse(qmodule_t *mod, Expr *&base, std::string c
     return IterOp::SkipChildren;
   };
 
-  iterate<dfs_pre, IterMP::none>(base, cb);
+  iterate<dfs_pre>(base, cb);
 }
 
 static void flatten_functions(qmodule_t *mod) {

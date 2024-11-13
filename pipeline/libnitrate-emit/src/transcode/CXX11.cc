@@ -125,7 +125,7 @@
 //     return IterOp::Proceed;
 //   };
 
-//   iterate<dfs_pre, IterMP::none>(root, cb);
+//   iterate<dfs_pre>(root, cb);
 
 //   return param;
 // }

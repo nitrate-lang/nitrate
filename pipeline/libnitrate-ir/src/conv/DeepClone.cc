@@ -335,28 +335,24 @@ LIB_EXPORT nr_node_t *nr_clone(const nr_node_t *node) {
 
   out = nullptr;
 
-  try {
-    std::unordered_map<const nr_node_t *, nr_node_t *> map;
-    std::unordered_set<nr_node_t *> in_visited;
-    out = nr_clone_impl(node, map, in_visited);
+  std::unordered_map<const nr_node_t *, nr_node_t *> map;
+  std::unordered_set<nr_node_t *> in_visited;
+  out = nr_clone_impl(node, map, in_visited);
 
-    { /* Resolve Directed Acyclic* Graph Internal References */
-      using namespace nr;
+  { /* Resolve Directed Acyclic* Graph Internal References */
+    using namespace nr;
 
-      Expr *out_expr = static_cast<Expr *>(out);
-      iterate<dfs_pre>(out_expr, [&](Expr *, Expr **_cur) -> IterOp {
-        Expr *cur = *_cur;
+    Expr *out_expr = static_cast<Expr *>(out);
+    iterate<dfs_pre>(out_expr, [&](Expr *, Expr **_cur) -> IterOp {
+      Expr *cur = *_cur;
 
-        if (in_visited.contains(cur)) {
-          *_cur = static_cast<Expr *>(map[cur]);
-        }
+      if (in_visited.contains(cur)) {
+        *_cur = static_cast<Expr *>(map[cur]);
+      }
 
-        return IterOp::Proceed;
-      });
-      out = out_expr;
-    }
-  } catch (...) {
-    return nullptr;
+      return IterOp::Proceed;
+    });
+    out = out_expr;
   }
 
   return static_cast<nr_node_t *>(out);

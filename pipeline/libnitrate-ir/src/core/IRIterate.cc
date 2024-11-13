@@ -42,8 +42,6 @@
 #include <core/LibMacro.h>
 
 #include <algorithm>
-#include <future>
-#include <list>
 #include <nitrate-ir/IRGraph.hh>
 #include <queue>
 #include <stack>
@@ -273,14 +271,14 @@ namespace nr::detail {
     IterAbort() = default;
   };
 
-  CPP_EXPORT void dfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel) {
+  CPP_EXPORT void dfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept {
     qcore_assert(base != nullptr && cb != nullptr, "dfs_pre_impl: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */
       cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
     }
 
-    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) noexcept {
       std::stack<std::pair<Expr *, Expr **>> s;
       std::vector<Expr **> children;
 
@@ -296,7 +294,7 @@ namespace nr::detail {
           case IterOp::Proceed:
             break;
           case IterOp::Abort:
-            throw IterAbort();
+            return;
           case IterOp::SkipChildren:
             skip = true;
             break;
@@ -311,25 +309,17 @@ namespace nr::detail {
       }
     };
 
-    try {
-      if (parallel) {
-        qcore_panic("dfs_pre_impl: parallel not supported");
-      } else {
-        syncfn(base, cb, cs);
-      }
-    } catch (IterAbort &) {
-      return;
-    }
+    syncfn(base, cb, cs);
   }
 
-  CPP_EXPORT void dfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel) {
+  CPP_EXPORT void dfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept {
     qcore_assert(base != nullptr && cb != nullptr, "dfs_post_impl: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */
       cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
     }
 
-    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) noexcept {
       std::stack<std::pair<Expr *, Expr **>> s;
       std::vector<Expr **> children;
 
@@ -348,35 +338,26 @@ namespace nr::detail {
           case IterOp::Proceed:
             break;
           case IterOp::Abort:
-            throw IterAbort();
+            return;
           case IterOp::SkipChildren:
-            qcore_assert(false, "dfs_post_impl: IterOp::SkipChildren not supported");
+            qcore_panic("dfs_post_impl: IterOp::SkipChildren not supported");
             break;
         }
       }
     };
 
-    try {
-      if (parallel) {
-        qcore_panic("dfs_post_impl: parallel not supported");
-      } else {
-        syncfn(base, cb, cs);
-        cb(nullptr, base);
-      }
-
-    } catch (IterAbort &) {
-      return;
-    }
+    syncfn(base, cb, cs);
+    cb(nullptr, base);
   }
 
-  CPP_EXPORT void bfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel) {
+  CPP_EXPORT void bfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept {
     qcore_assert(base != nullptr && cb != nullptr, "bfs_pre_impl: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */
       cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
     }
 
-    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) noexcept {
       std::queue<std::pair<Expr *, Expr **>> s;
       std::vector<Expr **> children;
 
@@ -392,7 +373,7 @@ namespace nr::detail {
           case IterOp::Proceed:
             break;
           case IterOp::Abort:
-            throw IterAbort();
+            return;
           case IterOp::SkipChildren:
             skip = true;
             break;
@@ -407,25 +388,17 @@ namespace nr::detail {
       }
     };
 
-    try {
-      if (parallel) {
-        qcore_panic("bfs_pre_impl: parallel not supported");
-      } else {
-        syncfn(base, cb, cs);
-      }
-    } catch (IterAbort &) {
-      return;
-    }
+    syncfn(base, cb, cs);
   }
 
-  CPP_EXPORT void bfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel) {
+  CPP_EXPORT void bfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept {
     qcore_assert(base != nullptr && cb != nullptr, "bfs_post_impl: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */
       cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
     }
 
-    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) noexcept {
       std::queue<std::pair<Expr *, Expr **>> s;
       std::vector<Expr **> children;
 
@@ -444,7 +417,7 @@ namespace nr::detail {
           case IterOp::Proceed:
             break;
           case IterOp::Abort:
-            throw IterAbort();
+            return;
           case IterOp::SkipChildren:
             qcore_assert(false, "bfs_post_impl: IterOp::SkipChildren not supported");
             break;
@@ -452,25 +425,17 @@ namespace nr::detail {
       }
     };
 
-    try {
-      if (parallel) {
-        qcore_panic("bfs_post_impl: parallel not supported");
-      } else {
-        syncfn(base, cb, cs);
-      }
-    } catch (IterAbort &) {
-      return;
-    }
+    syncfn(base, cb, cs);
   }
 
-  CPP_EXPORT void iter_children(Expr **base, IterCallback cb, ChildSelect cs, bool parallel) {
+  CPP_EXPORT void iter_children(Expr **base, IterCallback cb, ChildSelect cs) noexcept {
     qcore_assert(base != nullptr && cb != nullptr, "iter_children: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */
       cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
     }
 
-    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) noexcept {
       std::vector<Expr **> children;
       get_children_sorted(*n, cs, children);
 
@@ -479,46 +444,14 @@ namespace nr::detail {
           case IterOp::Proceed:
             break;
           case IterOp::Abort:
-            throw IterAbort();
+            return;
           case IterOp::SkipChildren:
             return;
         }
       }
     };
 
-    const auto asyncfn = [](Expr **n, IterCallback cb, ChildSelect cs) {
-      std::vector<Expr **> children;
-      get_children_sorted(*n, cs, children);
-
-      std::list<std::future<void>> futures;
-      for (Expr **child : children) {
-        futures.push_back(std::async(std::launch::async, [cb, child, cs]() {
-          switch (cb(*child, child)) {
-            case IterOp::Proceed:
-              break;
-            case IterOp::Abort:
-              /// WARNING: This will be non-deterministic
-              throw IterAbort();
-            case IterOp::SkipChildren:
-              return;
-          }
-        }));
-      }
-
-      for (std::future<void> &f : futures) {
-        f.get();
-      }
-    };
-
-    try {
-      if (parallel) {
-        asyncfn(base, cb, cs);
-      } else {
-        syncfn(base, cb, cs);
-      }
-    } catch (IterAbort &) {
-      return;
-    }
+    syncfn(base, cb, cs);
   }
 
 }  // namespace nr::detail

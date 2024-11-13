@@ -111,7 +111,7 @@ namespace nr::diag {
 
   class IOffsetResolver {
   public:
-    virtual std::optional<std::pair<uint32_t, uint32_t>> resolve(uint32_t offset) noexcept;
+    virtual std::optional<std::pair<uint32_t, uint32_t>> resolve(uint32_t offset) noexcept = 0;
     virtual ~IOffsetResolver() = default;
   };
 

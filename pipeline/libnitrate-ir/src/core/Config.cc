@@ -85,137 +85,101 @@ static void assign_default_options(nr_conf_t &conf) {
 }
 
 LIB_EXPORT nr_conf_t *nr_conf_new(bool use_defaults) {
-  try {
-    nr_conf_t *obj = new nr_conf_t();
+  nr_conf_t *obj = new nr_conf_t();
 
-    if (use_defaults) {
-      assign_default_options(*obj);
-    }
-
-    return obj;
-  } catch (...) {
-    return nullptr;
+  if (use_defaults) {
+    assign_default_options(*obj);
   }
+
+  return obj;
 }
 
-LIB_EXPORT void nr_conf_free(nr_conf_t *conf) {
-  try {
-    delete conf;
-  } catch (...) {
-    qcore_panic("nr_conf_free: Internal error: failed to free nr_conf_t object.");
-  }
-}
+LIB_EXPORT void nr_conf_free(nr_conf_t *conf) { delete conf; }
 
 LIB_EXPORT bool nr_conf_setopt(nr_conf_t *conf, nr_key_t key, nr_val_t value) {
-  try {
-    return conf->SetAndVerify(key, value);
-  } catch (...) {
-    return false;
-  }
+  return conf->SetAndVerify(key, value);
 }
 
 LIB_EXPORT bool nr_conf_getopt(nr_conf_t *conf, nr_key_t key, nr_val_t *value) {
-  try {
-    auto val = conf->Get(key);
+  auto val = conf->Get(key);
 
-    if (!val.has_value()) {
-      return false;
-    }
-
-    if (value != nullptr) {
-      *value = val.value();
-    }
-
-    return true;
-  } catch (...) {
-    qcore_panic("nr_conf_getopt: Internal error: unable to retrieve nr_val_t value.");
+  if (!val.has_value()) {
+    return false;
   }
+
+  if (value != nullptr) {
+    *value = val.value();
+  }
+
+  return true;
 }
 
 LIB_EXPORT nr_setting_t *nr_conf_getopts(nr_conf_t *conf, size_t *count) {
-  try {
-    if (!count) {
-      qcore_panic("nr_conf_getopts: Contract violation: 'count' parameter cannot be NULL.");
-    }
+  if (!count) {
+    qcore_panic("nr_conf_getopts: Contract violation: 'count' parameter cannot be NULL.");
+  }
 
-    const nr_setting_t *ptr = conf->GetAll(*count);
+  const nr_setting_t *ptr = conf->GetAll(*count);
 
-    if (!ptr) {
-      return nullptr;
-    }
-
-    size_t size = *count * sizeof(nr_setting_t);
-
-    nr_setting_t *copy = static_cast<nr_setting_t *>(malloc(size));
-    if (!copy) {
-      return nullptr;
-    }
-
-    memcpy(copy, ptr, size);
-
-    return copy;
-  } catch (...) {
+  if (!ptr) {
     return nullptr;
   }
+
+  size_t size = *count * sizeof(nr_setting_t);
+
+  nr_setting_t *copy = static_cast<nr_setting_t *>(malloc(size));
+  if (!copy) {
+    return nullptr;
+  }
+
+  memcpy(copy, ptr, size);
+
+  return copy;
 }
 
-LIB_EXPORT void nr_conf_clear(nr_conf_t *conf) {
-  try {
-    conf->ClearNoVerify();
-  } catch (...) {
-    qcore_panic("nr_conf_clear: Internal error: failed to clear nr_conf_t object.");
-  }
-}
+LIB_EXPORT void nr_conf_clear(nr_conf_t *conf) { conf->ClearNoVerify(); }
 
 LIB_EXPORT size_t nr_conf_dump(nr_conf_t *conf, FILE *stream, const char *field_delim,
                                const char *line_delim) {
-  try {
-    if (!stream) {
-      qcore_panic("nr_conf_dump: Contract violation: 'stream' parameter cannot be NULL.");
-    }
-
-    if (!field_delim) {
-      field_delim = "=";
-    }
-
-    if (!line_delim) {
-      line_delim = "\n";
-    }
-
-    const nr_setting_t *settings = nullptr;
-    size_t count = 0, bytes = 0;
-
-    settings = nr_conf_getopts(conf, &count);
-
-    for (size_t i = 0; i < count; ++i) {
-      if (options_bimap.left.find(settings[i].key) == options_bimap.left.end()) {
-        qcore_panic("nr_conf_dump: Unhandled nr_key_t value.");
-      }
-
-      if (values_bimap.left.find(settings[i].value) == values_bimap.left.end()) {
-        qcore_panic("nr_conf_dump: Unhandled nr_val_t value.");
-      }
-
-      bytes += fprintf(stream, "%s%s%s%s", options_bimap.left.at(settings[i].key).data(),
-                       field_delim, values_bimap.left.at(settings[i].value).data(), line_delim);
-    }
-
-    return bytes;
-  } catch (...) {
-    return 0;
+  if (!stream) {
+    qcore_panic("nr_conf_dump: Contract violation: 'stream' parameter cannot be NULL.");
   }
+
+  if (!field_delim) {
+    field_delim = "=";
+  }
+
+  if (!line_delim) {
+    line_delim = "\n";
+  }
+
+  const nr_setting_t *settings = nullptr;
+  size_t count = 0, bytes = 0;
+
+  settings = nr_conf_getopts(conf, &count);
+
+  for (size_t i = 0; i < count; ++i) {
+    if (options_bimap.left.find(settings[i].key) == options_bimap.left.end()) {
+      qcore_panic("nr_conf_dump: Unhandled nr_key_t value.");
+    }
+
+    if (values_bimap.left.find(settings[i].value) == values_bimap.left.end()) {
+      qcore_panic("nr_conf_dump: Unhandled nr_val_t value.");
+    }
+
+    bytes += fprintf(stream, "%s%s%s%s", options_bimap.left.at(settings[i].key).data(), field_delim,
+                     values_bimap.left.at(settings[i].value).data(), line_delim);
+  }
+
+  return bytes;
 }
 
 bool nr_conf_t::has(nr_key_t option, nr_val_t value) const noexcept {
-  try {
-    for (const auto &dat : m_data) {
-      if (dat.key == option && dat.value == value) {
-        return true;
-      }
+  for (const auto &dat : m_data) {
+    if (dat.key == option && dat.value == value) {
+      return true;
     }
-
-    return false;
-  } catch (...) {
-    return false;
   }
+
+  return false;
 }

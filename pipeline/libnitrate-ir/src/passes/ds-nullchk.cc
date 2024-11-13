@@ -55,7 +55,7 @@ bool nr::pass::ds_nullchk(qmodule_t *mod) {
     return IterOp::Proceed;
   };
 
-  iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb);
+  iterate<IterMode::dfs_pre>(mod->getRoot(), cb);
 
   return !has_bad_null;
 }

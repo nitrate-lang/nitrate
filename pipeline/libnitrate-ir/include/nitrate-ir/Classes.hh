@@ -40,15 +40,13 @@
 #include <nitrate-ir/Config.h>
 #include <nitrate-ir/IR.h>
 
-#include <stdexcept>
-
 class nr_conf final {
   nr_conf_t *m_conf;
 
 public:
   nr_conf(bool use_default = true) {
     if ((m_conf = nr_conf_new(use_default)) == nullptr) {
-      throw std::runtime_error("nr_conf_new failed");
+      qcore_panic("nr_conf_new failed");
     }
   }
   ~nr_conf() { nr_conf_free(m_conf); }

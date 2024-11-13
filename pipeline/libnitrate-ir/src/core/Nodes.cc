@@ -544,8 +544,7 @@ CPP_EXPORT bool nr::Expr::isSame(const nr::Expr *other) const {
         return false;
       }
 
-      throw std::runtime_error("Expr::isSame: attempt to compare fine structure of QIR_NODE_TMP");
-      break;
+      qcore_panic("Expr::isSame: attempt to compare fine structure of QIR_NODE_TMP");
     }
   }
 

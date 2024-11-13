@@ -51,7 +51,7 @@ bool nr::pass::ds_mangle(qmodule_t *mod) {
   SymbolEncoding se;
   bool failed = false;
 
-  iterate<dfs_pre, IterMP::none>(mod->getRoot(), [&](Expr *, Expr **cur) -> IterOp {
+  iterate<dfs_pre>(mod->getRoot(), [&](Expr *, Expr **cur) -> IterOp {
     if ((*cur)->getKind() == QIR_NODE_FN) {
       Fn *fn = (*cur)->as<Fn>();
       auto name = se.mangle_name(fn, fn->getAbiTag());
@@ -79,7 +79,7 @@ bool nr::pass::ds_mangle(qmodule_t *mod) {
   });
 
   /* Update identifiers to use the new names */
-  iterate<dfs_pre, IterMP::none>(mod->getRoot(), [](Expr *, Expr **cur) -> IterOp {
+  iterate<dfs_pre>(mod->getRoot(), [](Expr *, Expr **cur) -> IterOp {
     if ((*cur)->getKind() != QIR_NODE_IDENT) {
       return IterOp::Proceed;
     }

@@ -714,40 +714,32 @@ static bool to_codeform(std::optional<qmodule_t *> mod, Expr *node, bool minify,
     return false;
   }
 
-  try {
-    /* Serialize the AST recursively */
-    bool result = serialize_recurse(node, *body, *typedefs, state
+  /* Serialize the AST recursively */
+  bool result = serialize_recurse(node, *body, *typedefs, state
 #if !defined(NDEBUG)
-                                    ,
-                                    v, is_cylic
+                                  ,
+                                  v, is_cylic
 #endif
-    );
+  );
 
-    if (!result) {
-      fclose(typedefs);
-      fclose(body);
-      free(body_content);
-      free(typedef_content);
-      return false;
-    }
-
-    fclose(typedefs);
-    fclose(body);
-
-    fwrite(typedef_content, 1, typedef_content_size, &ss);
-    fwrite(body_content, 1, body_content_size, &ss);
-
-    free(body_content);
-    free(typedef_content);
-
-    return true;
-  } catch (...) {
+  if (!result) {
     fclose(typedefs);
     fclose(body);
     free(body_content);
     free(typedef_content);
     return false;
   }
+
+  fclose(typedefs);
+  fclose(body);
+
+  fwrite(typedef_content, 1, typedef_content_size, &ss);
+  fwrite(body_content, 1, body_content_size, &ss);
+
+  free(body_content);
+  free(typedef_content);
+
+  return true;
 }
 
 LIB_EXPORT bool nr_write(qmodule_t *mod, const nr_node_t *_node, nr_serial_t mode, FILE *out,
@@ -766,20 +758,16 @@ LIB_EXPORT bool nr_write(qmodule_t *mod, const nr_node_t *_node, nr_serial_t mod
     }
   }
 
-  try {
-    switch (mode) {
-      case QXIR_SERIAL_CODE: {
-        if (mod) {
-          status = to_codeform(mod, node, false, 2, *out);
+  switch (mode) {
+    case QXIR_SERIAL_CODE: {
+      if (mod) {
+        status = to_codeform(mod, node, false, 2, *out);
 
-        } else {
-          status = to_codeform(std::nullopt, node, false, 2, *out);
-        }
-        break;
+      } else {
+        status = to_codeform(std::nullopt, node, false, 2, *out);
       }
+      break;
     }
-  } catch (...) {
-    return false;
   }
 
   if (outlen) {

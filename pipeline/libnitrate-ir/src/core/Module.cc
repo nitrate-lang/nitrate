@@ -117,42 +117,34 @@ CPP_EXPORT qmodule_t *nr::getModule(ModuleId mid) {
 }
 
 LIB_EXPORT qmodule_t *nr_new(qlex_t *lexer, nr_conf_t *conf, const char *name) {
-  try {
-    if (!conf) {
-      return nullptr;
-    }
-
-    if (!name) {
-      name = "module";
-    }
-
-    qmodule_t *obj = createModule(name);
-    if (!obj) {
-      return nullptr;
-    }
-
-    obj->setLexer(lexer);
-
-    return obj;
-  } catch (...) {
+  if (!conf) {
     return nullptr;
   }
+
+  if (!name) {
+    name = "module";
+  }
+
+  qmodule_t *obj = createModule(name);
+  if (!obj) {
+    return nullptr;
+  }
+
+  obj->setLexer(lexer);
+
+  return obj;
 }
 
 LIB_EXPORT void nr_free(qmodule_t *mod) {
-  try {
-    if (!mod) {
-      return;
-    }
-
-    std::lock_guard<std::mutex> lock(nr_modules_mutex);
-
-    auto mid = mod->getModuleId();
-    delete mod;
-    nr_modules.at(mid).reset();
-  } catch (...) {
-    qcore_panic("nr_free failed");
+  if (!mod) {
+    return;
   }
+
+  std::lock_guard<std::mutex> lock(nr_modules_mutex);
+
+  auto mid = mod->getModuleId();
+  delete mod;
+  nr_modules.at(mid).reset();
 }
 
 LIB_EXPORT size_t nr_max_modules(void) { return MAX_MODULE_INSTANCES; }

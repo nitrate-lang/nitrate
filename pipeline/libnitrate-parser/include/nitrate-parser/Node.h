@@ -310,7 +310,7 @@ namespace qparse {
     std::string to_string(bool minify = false, bool binary_repr = false);
 
     template <typename T>
-    const T *as() const {
+    constexpr const T *as() const {
 #if !defined(NDEBUG)
       auto p = dynamic_cast<const T *>(this);
 
