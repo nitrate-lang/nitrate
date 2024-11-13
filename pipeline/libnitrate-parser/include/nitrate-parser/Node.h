@@ -93,8 +93,6 @@ typedef enum qparse_ty_t {
   QAST_NODE_PTR_TY,
   QAST_NODE_OPAQUE_TY,
   QAST_NODE_STRUCT_TY,
-  QAST_NODE_GROUP_TY,
-  QAST_NODE_REGION_TY,
   QAST_NODE_UNION_TY,
   QAST_NODE_ARRAY_TY,
   QAST_NODE_TUPLE_TY,
@@ -137,7 +135,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_VOLSTMT,
 } qparse_ty_t;
 
-#define QAST_NODE_COUNT 88
+#define QAST_NODE_COUNT 86
 
 typedef struct qparse_node_t qparse_node_t;
 
@@ -806,42 +804,6 @@ namespace qparse {
     void remove_item(String name);
 
     PNODE_IMPL_CORE(StructTy)
-  };
-
-  typedef std::vector<Type *, Arena<Type *>> GroupTyItems;
-
-  class GroupTy : public TypeComposite {
-    GroupTyItems m_items;
-
-  public:
-    GroupTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
-    GroupTy(const GroupTyItems &items) : m_items(items) {}
-
-    GroupTyItems &get_items() { return m_items; }
-    void add_item(Type *item);
-    void add_items(std::initializer_list<Type *> items);
-    void clear_items();
-    void remove_item(Type *item);
-
-    PNODE_IMPL_CORE(GroupTy)
-  };
-
-  typedef std::vector<Type *, Arena<Type *>> RegionTyItems;
-
-  class RegionTy : public TypeComposite {
-    RegionTyItems m_items;
-
-  public:
-    RegionTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
-    RegionTy(const RegionTyItems &items) : m_items(items) {}
-
-    RegionTyItems &get_items() { return m_items; }
-    void add_item(Type *item);
-    void add_items(std::initializer_list<Type *> items);
-    void clear_items();
-    void remove_item(Type *item);
-
-    PNODE_IMPL_CORE(RegionTy)
   };
 
   typedef std::vector<Type *, Arena<Type *>> UnionTyItems;
@@ -1782,7 +1744,7 @@ namespace qparse {
     GroupDefFields m_fields;
 
   public:
-    GroupDef(String name = "", GroupTy *type = nullptr,
+    GroupDef(String name = "", StructTy *type = nullptr,
              std::initializer_list<CompositeField *> fields = {},
              std::initializer_list<FnDecl *> methods = {},
              std::initializer_list<FnDecl *> static_methods = {})
@@ -1790,14 +1752,14 @@ namespace qparse {
           m_methods(methods),
           m_static_methods(static_methods),
           m_fields(fields) {}
-    GroupDef(String name, GroupTy *type, const GroupDefFields &fields,
+    GroupDef(String name, StructTy *type, const GroupDefFields &fields,
              const GroupDefMethods &methods, const GroupDefStaticMethods &static_methods)
         : Decl(name, type),
           m_methods(methods),
           m_static_methods(static_methods),
           m_fields(fields) {}
 
-    virtual GroupTy *get_type() override { return static_cast<GroupTy *>(m_type); }
+    virtual StructTy *get_type() override { return static_cast<StructTy *>(m_type); }
 
     GroupDefMethods &get_methods() { return m_methods; }
     void add_method(FnDecl *method);
@@ -1831,7 +1793,7 @@ namespace qparse {
     RegionDefFields m_fields;
 
   public:
-    RegionDef(String name = "", RegionTy *type = nullptr,
+    RegionDef(String name = "", StructTy *type = nullptr,
               std::initializer_list<CompositeField *> fields = {},
               std::initializer_list<FnDecl *> methods = {},
               std::initializer_list<FnDecl *> static_methods = {})
@@ -1839,14 +1801,14 @@ namespace qparse {
           m_methods(methods),
           m_static_methods(static_methods),
           m_fields(fields) {}
-    RegionDef(String name, RegionTy *type, const RegionDefFields &fields,
+    RegionDef(String name, StructTy *type, const RegionDefFields &fields,
               const RegionDefMethods &methods, const RegionDefStaticMethods &static_methods)
         : Decl(name, type),
           m_methods(methods),
           m_static_methods(static_methods),
           m_fields(fields) {}
 
-    virtual RegionTy *get_type() override { return static_cast<RegionTy *>(m_type); }
+    virtual StructTy *get_type() override { return static_cast<StructTy *>(m_type); }
 
     RegionDefMethods &get_methods() { return m_methods; }
     void add_method(FnDecl *method);

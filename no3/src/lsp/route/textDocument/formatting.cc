@@ -820,16 +820,6 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       break;
     }
 
-    case QAST_NODE_GROUP_TY: {
-      qcore_panic("Unreachable");
-      break;
-    }
-
-    case QAST_NODE_REGION_TY: {
-      qcore_panic("Unreachable");
-      break;
-    }
-
     case QAST_NODE_UNION_TY: {
       qcore_panic("Unreachable");
       break;

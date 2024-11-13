@@ -34,7 +34,6 @@
 #include <nitrate-ir/IR.h>
 #include <nitrate-parser/Parser.h>
 
-#include <boost/multiprecision/detail/standalone_config.hpp>
 #include <core/Config.hh>
 #include <core/PassManager.hh>
 #include <cstdint>
@@ -935,38 +934,6 @@ static std::optional<Expr *> nrgen_struct_ty(NRBuilder &b, ConvState &s, qparse:
   }
 
   return b.getStructTy(the_fields);
-}
-
-static std::optional<Expr *> nrgen_group_ty(NRBuilder &b, ConvState &s, qparse::GroupTy *n) {
-  StructFields fields;
-
-  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    auto item = nrgen_one(b, s, *it);
-    if (!item.has_value()) {
-      badtree(n, "qparse::GroupTy::get_items() vector contains nullptr");
-      return std::nullopt;
-    }
-
-    fields.push_back(item.value()->asType());
-  }
-
-  return create<StructTy>(std::move(fields));
-}
-
-static std::optional<Expr *> nrgen_region_ty(NRBuilder &b, ConvState &s, qparse::RegionTy *n) {
-  StructFields fields;
-
-  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    auto item = nrgen_one(b, s, *it);
-    if (!item.has_value()) {
-      badtree(n, "qparse::RegionTy::get_items() vector contains nullptr");
-      return std::nullopt;
-    }
-
-    fields.push_back(item.value()->asType());
-  }
-
-  return create<StructTy>(std::move(fields));
 }
 
 static std::optional<Expr *> nrgen_union_ty(NRBuilder &b, ConvState &s, qparse::UnionTy *n) {
@@ -2398,14 +2365,6 @@ static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, ConvState &s, qparse::N
 
     case QAST_NODE_STRUCT_TY:
       out = nrgen_struct_ty(b, s, n->as<qparse::StructTy>());
-      break;
-
-    case QAST_NODE_GROUP_TY:
-      out = nrgen_group_ty(b, s, n->as<qparse::GroupTy>());
-      break;
-
-    case QAST_NODE_REGION_TY:
-      out = nrgen_region_ty(b, s, n->as<qparse::RegionTy>());
       break;
 
     case QAST_NODE_UNION_TY:
