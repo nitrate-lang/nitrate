@@ -28,6 +28,7 @@ parts:
       - libgoogle-glog-dev
       - clang
       - llvm-14-dev
+      - libyaml-cpp-dev
     build-attributes:
      - enable-patchelf
     stage-packages:
