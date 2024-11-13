@@ -374,6 +374,7 @@ namespace nr {
 #define SOURCE_LOCATION_PARAM_ONCE
 #define CALLER_INFO 0
 #define ignore_caller_info()
+#define compiler_trace(x) x
 #else
 #define SOURCE_LOCATION_PARAM , std::experimental::source_location caller_info
 #define SOURCE_LOCATION_PARAM_ONCE std::experimental::source_location caller_info
