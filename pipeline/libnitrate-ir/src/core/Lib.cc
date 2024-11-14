@@ -45,6 +45,11 @@ namespace boost {
     std::cerr << "boost::throw_exception: " << m.what();
     std::terminate();
   }
+
+  void throw_exception(std::exception const& m) {
+    std::cerr << "boost::throw_exception: " << m.what();
+    std::terminate();
+  }
 }  // namespace boost
 
 static std::atomic<size_t> nr_lib_ref_count = 0;

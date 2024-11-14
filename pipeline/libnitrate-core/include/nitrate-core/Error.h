@@ -67,6 +67,18 @@ void qcore_debug_(const char *msg);
 void qcore_debugf_(const char *fmt, ...);
 void qcore_vdebugf_(const char *fmt, va_list args);
 
+#if defined(NDEBUG)
+#define qcore_panicf(fmt, ...)                                                            \
+  qcore_panicf_(fmt "\nSource File: %s\nSource Line: %d\nFunction: unknown\nErrno: %s\n", \
+                ##__VA_ARGS__, __FILE__, __LINE__, strerror(errno))
+
+#define qcore_panic(msg) qcore_panicf("%s", msg)
+
+#define qcore_assert(expr, ...) \
+  (static_cast<bool>(expr)      \
+       ? void(0)                \
+       : qcore_panicf("Assertion failed: %s;\nCondition: (%s);\n", "" #__VA_ARGS__, #expr))
+#else
 #define qcore_panicf(fmt, ...)                                                       \
   qcore_panicf_(fmt "\nSource File: %s\nSource Line: %d\nFunction: %s\nErrno: %s\n", \
                 ##__VA_ARGS__, __FILE__, __LINE__, __PRETTY_FUNCTION__, strerror(errno))
@@ -77,6 +89,7 @@ void qcore_vdebugf_(const char *fmt, va_list args);
   (static_cast<bool>(expr)      \
        ? void(0)                \
        : qcore_panicf("Assertion failed: %s;\nCondition: (%s);\n", "" #__VA_ARGS__, #expr))
+#endif
 
 #if defined(NDEBUG) || defined(QCORE_NDEBUG)
 #define qcore_debugf(fmt, ...)
