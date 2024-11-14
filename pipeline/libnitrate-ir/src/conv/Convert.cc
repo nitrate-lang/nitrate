@@ -873,46 +873,46 @@ static EResult nrgen_ref_ty(NRBuilder &b, PState &s, IReport *G, qparse::RefTy *
   return b.getPtrTy(pointee.value()->asType());
 }
 
-static EResult nrgen_u1_ty(NRBuilder &b, PState &, IReport *G, qparse::U1 *) { return b.getU1Ty(); }
-static EResult nrgen_u8_ty(NRBuilder &b, PState &, IReport *G, qparse::U8 *) { return b.getU8Ty(); }
-static EResult nrgen_u16_ty(NRBuilder &b, PState &, IReport *G, qparse::U16 *) {
+static EResult nrgen_u1_ty(NRBuilder &b, PState &, IReport *, qparse::U1 *) { return b.getU1Ty(); }
+static EResult nrgen_u8_ty(NRBuilder &b, PState &, IReport *, qparse::U8 *) { return b.getU8Ty(); }
+static EResult nrgen_u16_ty(NRBuilder &b, PState &, IReport *, qparse::U16 *) {
   return b.getU16Ty();
 }
-static EResult nrgen_u32_ty(NRBuilder &b, PState &, IReport *G, qparse::U32 *) {
+static EResult nrgen_u32_ty(NRBuilder &b, PState &, IReport *, qparse::U32 *) {
   return b.getU32Ty();
 }
-static EResult nrgen_u64_ty(NRBuilder &b, PState &, IReport *G, qparse::U64 *) {
+static EResult nrgen_u64_ty(NRBuilder &b, PState &, IReport *, qparse::U64 *) {
   return b.getU64Ty();
 }
-static EResult nrgen_u128_ty(NRBuilder &b, PState &, IReport *G, qparse::U128 *) {
+static EResult nrgen_u128_ty(NRBuilder &b, PState &, IReport *, qparse::U128 *) {
   return b.getU128Ty();
 }
-static EResult nrgen_i8_ty(NRBuilder &b, PState &, IReport *G, qparse::I8 *) { return b.getI8Ty(); }
-static EResult nrgen_i16_ty(NRBuilder &b, PState &, IReport *G, qparse::I16 *) {
+static EResult nrgen_i8_ty(NRBuilder &b, PState &, IReport *, qparse::I8 *) { return b.getI8Ty(); }
+static EResult nrgen_i16_ty(NRBuilder &b, PState &, IReport *, qparse::I16 *) {
   return b.getI16Ty();
 }
-static EResult nrgen_i32_ty(NRBuilder &b, PState &, IReport *G, qparse::I32 *) {
+static EResult nrgen_i32_ty(NRBuilder &b, PState &, IReport *, qparse::I32 *) {
   return b.getI32Ty();
 }
-static EResult nrgen_i64_ty(NRBuilder &b, PState &, IReport *G, qparse::I64 *) {
+static EResult nrgen_i64_ty(NRBuilder &b, PState &, IReport *, qparse::I64 *) {
   return b.getI64Ty();
 }
-static EResult nrgen_i128_ty(NRBuilder &b, PState &, IReport *G, qparse::I128 *) {
+static EResult nrgen_i128_ty(NRBuilder &b, PState &, IReport *, qparse::I128 *) {
   return b.getI128Ty();
 }
-static EResult nrgen_f16_ty(NRBuilder &b, PState &, IReport *G, qparse::F16 *) {
+static EResult nrgen_f16_ty(NRBuilder &b, PState &, IReport *, qparse::F16 *) {
   return b.getF16Ty();
 }
-static EResult nrgen_f32_ty(NRBuilder &b, PState &, IReport *G, qparse::F32 *) {
+static EResult nrgen_f32_ty(NRBuilder &b, PState &, IReport *, qparse::F32 *) {
   return b.getF32Ty();
 }
-static EResult nrgen_f64_ty(NRBuilder &b, PState &, IReport *G, qparse::F64 *) {
+static EResult nrgen_f64_ty(NRBuilder &b, PState &, IReport *, qparse::F64 *) {
   return b.getF64Ty();
 }
-static EResult nrgen_f128_ty(NRBuilder &b, PState &, IReport *G, qparse::F128 *) {
+static EResult nrgen_f128_ty(NRBuilder &b, PState &, IReport *, qparse::F128 *) {
   return b.getF128Ty();
 }
-static EResult nrgen_void_ty(NRBuilder &b, PState &, IReport *G, qparse::VoidTy *) {
+static EResult nrgen_void_ty(NRBuilder &b, PState &, IReport *, qparse::VoidTy *) {
   return b.getVoidTy();
 }
 
@@ -1448,37 +1448,6 @@ static EResult nrgen_retif(NRBuilder &b, PState &s, IReport *G, qparse::ReturnIf
   return create<If>(cond.value(), create<Ret>(val.value()), createIgn());
 }
 
-static EResult nrgen_retz(NRBuilder &b, PState &s, IReport *G, qparse::RetZStmt *n) {
-  auto cond = next_one(n->get_cond());
-  if (!cond.has_value()) {
-    return std::nullopt;
-  }
-
-  cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
-
-  auto inv_cond = create<UnExpr>(cond.value(), Op::LogicNot);
-
-  auto val = next_one(n->get_value());
-  if (!val.has_value()) {
-    return std::nullopt;
-  }
-
-  val = create<BinExpr>(val.value(), s.return_type, Op::CastAs);
-
-  return create<If>(inv_cond, create<Ret>(val.value()), createIgn());
-}
-
-static EResult nrgen_retv(NRBuilder &b, PState &s, IReport *G, qparse::RetVStmt *n) {
-  auto cond = next_one(n->get_cond());
-  if (!cond.has_value()) {
-    return std::nullopt;
-  }
-
-  cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
-
-  return create<If>(cond.value(), create<Ret>(createIgn()), createIgn());
-}
-
 static EResult nrgen_break(NRBuilder &, PState &, IReport *G, qparse::BreakStmt *) {
   return create<Brk>();
 }
@@ -1552,11 +1521,6 @@ static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G, qparse::ForStmt *n
   }
 
   return create<For>(init.value(), cond.value(), step.value(), body.value());
-}
-
-static EResult nrgen_form(NRBuilder &, PState &, IReport *G, qparse::FormStmt *) {
-  G->report(CompilerError, IC::Error, "Concurrent for loops not implemented yet");
-  return std::nullopt;
 }
 
 static EResult nrgen_foreach(NRBuilder &, PState &, IReport *G, qparse::ForeachStmt *) {
@@ -1889,14 +1853,6 @@ static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, IReport *G, 
       out = nrgen_retif(b, s, G, n->as<qparse::ReturnIfStmt>());
       break;
 
-    case QAST_NODE_RETZ:
-      out = nrgen_retz(b, s, G, n->as<qparse::RetZStmt>());
-      break;
-
-    case QAST_NODE_RETV:
-      out = nrgen_retv(b, s, G, n->as<qparse::RetVStmt>());
-      break;
-
     case QAST_NODE_BREAK:
       out = nrgen_break(b, s, G, n->as<qparse::BreakStmt>());
       break;
@@ -1915,10 +1871,6 @@ static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, IReport *G, 
 
     case QAST_NODE_FOR:
       out = nrgen_for(b, s, G, n->as<qparse::ForStmt>());
-      break;
-
-    case QAST_NODE_FORM:
-      out = nrgen_form(b, s, G, n->as<qparse::FormStmt>());
       break;
 
     case QAST_NODE_FOREACH:

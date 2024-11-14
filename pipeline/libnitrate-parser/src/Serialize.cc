@@ -782,19 +782,6 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_RETZ: {
-      OBJECT_BEGIN("RetZ");
-      OBJECT_SUB(n->as<RetZStmt>()->get_cond());
-      OBJECT_SUB(n->as<RetZStmt>()->get_value());
-      OBJECT_END();
-      break;
-    }
-    case QAST_NODE_RETV: {
-      OBJECT_BEGIN("RetV");
-      OBJECT_SUB(n->as<RetVStmt>()->get_cond());
-      OBJECT_END();
-      break;
-    }
     case QAST_NODE_BREAK: {
       OBJECT_EMPTY("Break");
       break;
@@ -824,16 +811,6 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_SUB(n->as<ForStmt>()->get_cond());
       OBJECT_SUB(n->as<ForStmt>()->get_step());
       OBJECT_SUB(n->as<ForStmt>()->get_body());
-      OBJECT_END();
-      break;
-    }
-    case QAST_NODE_FORM: {
-      OBJECT_BEGIN("Form");
-      OBJECT_SUB(n->as<FormStmt>()->get_maxjobs());
-      OBJECT_STR(n->as<FormStmt>()->get_idx_ident());
-      OBJECT_STR(n->as<FormStmt>()->get_val_ident());
-      OBJECT_SUB(n->as<FormStmt>()->get_expr());
-      OBJECT_SUB(n->as<FormStmt>()->get_body());
       OBJECT_END();
       break;
     }

@@ -1543,26 +1543,6 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       break;
     }
 
-    case QAST_NODE_RETZ: {
-      RetZStmt* N = C->as<RetZStmt>();
-
-      S.line << "retz ";
-      recurse(N->get_cond(), S);
-      S.line << ", ";
-      recurse(N->get_value(), S);
-
-      break;
-    }
-
-    case QAST_NODE_RETV: {
-      RetVStmt* N = C->as<RetVStmt>();
-
-      S.line << "retv ";
-      recurse(N->get_cond(), S);
-
-      break;
-    }
-
     case QAST_NODE_BREAK: {
       S.line << "break";
       break;
@@ -1633,24 +1613,6 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       if (N->get_cond()) S.line << " ";
 
       recurse(N->get_step(), S);
-
-      S.line << ") ";
-
-      if (N->get_body()->get_items().size() == 1) {
-        S.line << "=> ";
-        recurse(N->get_body()->get_items().front(), S);
-      } else {
-        recurse(N->get_body(), S);
-      }
-      break;
-    }
-
-    case QAST_NODE_FORM: {
-      FormStmt* N = C->as<FormStmt>();
-      S.line << "form (";
-      recurse(N->get_maxjobs(), S);
-      S.line << ") (" << N->get_idx_ident() << ", " << N->get_val_ident() << " in ";
-      recurse(N->get_expr(), S);
 
       S.line << ") ";
 

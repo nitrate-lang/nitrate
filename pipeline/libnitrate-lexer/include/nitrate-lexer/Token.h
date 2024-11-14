@@ -169,9 +169,6 @@ typedef enum qlex_key_t {
   qKContinue,   /* 'continue' */
   qKReturn,     /* 'ret' */
   qKRetif,      /* 'retif' */
-  qKRetz,       /* 'retz' */
-  qKRetv,       /* 'retv' */
-  qKForm,       /* 'form' */
   qKForeach,    /* 'foreach' */
   qKTry,        /* 'try' */
   qKCatch,      /* 'catch' */

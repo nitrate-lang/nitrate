@@ -50,7 +50,7 @@
       "patterns": [
         {
           "name": "keyword.control.n",
-          "match": "\\b(using|subsystem|import|pub|sec|pro|type|let|var|const|static|template|hyperparam|struct|region|group|class|union|opaque|enum|fstring|with|fn|noexcept|foreign|impure|tsafe|pure|quasipure|retropure|crashpoint|inline|unsafe|safe|volatile|promise|if|else|for|while|do|switch|case|default|break|continue|ret|retif|retz|retv|form|foreach|try|catch|try|__asm__|undef|null|true|false|as|is|in|sizeof|alignof|typeof|offsetof|bitcast_as|bitsizeof|out)\\b"
+          "match": "\\b(using|subsystem|import|pub|sec|pro|type|let|var|const|static|template|hyperparam|struct|region|group|class|union|opaque|enum|fstring|with|fn|noexcept|foreign|impure|tsafe|pure|quasipure|retropure|crashpoint|inline|unsafe|safe|volatile|promise|if|else|for|while|do|switch|case|default|break|continue|ret|retif|foreach|try|catch|try|__asm__|undef|null|true|false|as|is|in|sizeof|alignof|typeof|offsetof|bitcast_as|bitsizeof|out)\\b"
         }
       ]
     },

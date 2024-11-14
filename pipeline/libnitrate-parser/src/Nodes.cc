@@ -84,9 +84,8 @@ LIB_EXPORT const char *Node::type_name(qparse_ty_t type) {
       NAMEOF_ROW(TYPE_EXPR),  NAMEOF_ROW(BLOCK),       NAMEOF_ROW(VOLSTMT),
       NAMEOF_ROW(CONST),      NAMEOF_ROW(VAR),         NAMEOF_ROW(LET),
       NAMEOF_ROW(INLINE_ASM), NAMEOF_ROW(IF),          NAMEOF_ROW(WHILE),
-      NAMEOF_ROW(FOR),        NAMEOF_ROW(FORM),        NAMEOF_ROW(FOREACH),
-      NAMEOF_ROW(BREAK),      NAMEOF_ROW(CONTINUE),    NAMEOF_ROW(RETURN),
-      NAMEOF_ROW(RETIF),      NAMEOF_ROW(RETZ),        NAMEOF_ROW(RETV),
+      NAMEOF_ROW(FOR),        NAMEOF_ROW(FOREACH),     NAMEOF_ROW(BREAK),
+      NAMEOF_ROW(CONTINUE),   NAMEOF_ROW(RETURN),      NAMEOF_ROW(RETIF),
       NAMEOF_ROW(CASE),       NAMEOF_ROW(SWITCH),      NAMEOF_ROW(TYPEDEF),
       NAMEOF_ROW(FNDECL),     NAMEOF_ROW(FN),          NAMEOF_ROW(COMPOSITE_FIELD),
       NAMEOF_ROW(STRUCT),     NAMEOF_ROW(GROUP),       NAMEOF_ROW(REGION),
@@ -105,91 +104,47 @@ LIB_EXPORT uint32_t Node::this_sizeof() {
   { typeid(__type).hash_code(), sizeof(__type) }
 
   static const std::unordered_map<size_t, uint32_t> sizes = {
-      SIZEOF_ROW(Stmt),
-      SIZEOF_ROW(Type),
-      SIZEOF_ROW(Decl),
-      SIZEOF_ROW(Expr),
-      SIZEOF_ROW(ConstExpr),
-      SIZEOF_ROW(UnresolvedType),
-      SIZEOF_ROW(InferType),
-      SIZEOF_ROW(TemplType),
-      SIZEOF_ROW(U1),
-      SIZEOF_ROW(U8),
-      SIZEOF_ROW(U16),
-      SIZEOF_ROW(U32),
-      SIZEOF_ROW(U64),
-      SIZEOF_ROW(U128),
-      SIZEOF_ROW(I8),
-      SIZEOF_ROW(I16),
-      SIZEOF_ROW(I32),
-      SIZEOF_ROW(I64),
-      SIZEOF_ROW(I128),
-      SIZEOF_ROW(F16),
-      SIZEOF_ROW(F32),
-      SIZEOF_ROW(F64),
-      SIZEOF_ROW(F128),
-      SIZEOF_ROW(VoidTy),
-      SIZEOF_ROW(PtrTy),
-      SIZEOF_ROW(OpaqueTy),
-      SIZEOF_ROW(TupleTy),
-      SIZEOF_ROW(ArrayTy),
-      SIZEOF_ROW(RefTy),
-      SIZEOF_ROW(StructTy),
-      SIZEOF_ROW(FuncTy),
-      SIZEOF_ROW(UnaryExpr),
-      SIZEOF_ROW(BinExpr),
-      SIZEOF_ROW(PostUnaryExpr),
-      SIZEOF_ROW(TernaryExpr),
-      SIZEOF_ROW(ConstInt),
-      SIZEOF_ROW(ConstFloat),
-      SIZEOF_ROW(ConstBool),
-      SIZEOF_ROW(ConstString),
-      SIZEOF_ROW(ConstChar),
-      SIZEOF_ROW(ConstNull),
-      SIZEOF_ROW(ConstUndef),
-      SIZEOF_ROW(Call),
-      SIZEOF_ROW(TemplCall),
-      SIZEOF_ROW(List),
-      SIZEOF_ROW(Assoc),
-      SIZEOF_ROW(Field),
-      SIZEOF_ROW(Index),
-      SIZEOF_ROW(Slice),
-      SIZEOF_ROW(FString),
-      SIZEOF_ROW(Ident),
-      SIZEOF_ROW(SeqPoint),
-      SIZEOF_ROW(StmtExpr),
-      SIZEOF_ROW(TypeExpr),
-      SIZEOF_ROW(Block),
-      SIZEOF_ROW(VolStmt),
-      SIZEOF_ROW(ConstDecl),
-      SIZEOF_ROW(VarDecl),
-      SIZEOF_ROW(LetDecl),
-      SIZEOF_ROW(InlineAsm),
-      SIZEOF_ROW(IfStmt),
-      SIZEOF_ROW(WhileStmt),
-      SIZEOF_ROW(ForStmt),
-      SIZEOF_ROW(FormStmt),
-      SIZEOF_ROW(ForeachStmt),
-      SIZEOF_ROW(BreakStmt),
-      SIZEOF_ROW(ContinueStmt),
-      SIZEOF_ROW(ReturnStmt),
-      SIZEOF_ROW(ReturnIfStmt),
-      SIZEOF_ROW(RetZStmt),
-      SIZEOF_ROW(RetVStmt),
-      SIZEOF_ROW(CaseStmt),
-      SIZEOF_ROW(SwitchStmt),
-      SIZEOF_ROW(TypedefDecl),
-      SIZEOF_ROW(FnDecl),
-      SIZEOF_ROW(FnDef),
-      SIZEOF_ROW(CompositeField),
-      SIZEOF_ROW(StructDef),
-      SIZEOF_ROW(GroupDef),
-      SIZEOF_ROW(RegionDef),
-      SIZEOF_ROW(UnionDef),
-      SIZEOF_ROW(EnumDef),
-      SIZEOF_ROW(SubsystemDecl),
-      SIZEOF_ROW(ExportDecl),
-      SIZEOF_ROW(ExprStmt),
+      SIZEOF_ROW(Stmt),        SIZEOF_ROW(Type),
+      SIZEOF_ROW(Decl),        SIZEOF_ROW(Expr),
+      SIZEOF_ROW(ConstExpr),   SIZEOF_ROW(UnresolvedType),
+      SIZEOF_ROW(InferType),   SIZEOF_ROW(TemplType),
+      SIZEOF_ROW(U1),          SIZEOF_ROW(U8),
+      SIZEOF_ROW(U16),         SIZEOF_ROW(U32),
+      SIZEOF_ROW(U64),         SIZEOF_ROW(U128),
+      SIZEOF_ROW(I8),          SIZEOF_ROW(I16),
+      SIZEOF_ROW(I32),         SIZEOF_ROW(I64),
+      SIZEOF_ROW(I128),        SIZEOF_ROW(F16),
+      SIZEOF_ROW(F32),         SIZEOF_ROW(F64),
+      SIZEOF_ROW(F128),        SIZEOF_ROW(VoidTy),
+      SIZEOF_ROW(PtrTy),       SIZEOF_ROW(OpaqueTy),
+      SIZEOF_ROW(TupleTy),     SIZEOF_ROW(ArrayTy),
+      SIZEOF_ROW(RefTy),       SIZEOF_ROW(StructTy),
+      SIZEOF_ROW(FuncTy),      SIZEOF_ROW(UnaryExpr),
+      SIZEOF_ROW(BinExpr),     SIZEOF_ROW(PostUnaryExpr),
+      SIZEOF_ROW(TernaryExpr), SIZEOF_ROW(ConstInt),
+      SIZEOF_ROW(ConstFloat),  SIZEOF_ROW(ConstBool),
+      SIZEOF_ROW(ConstString), SIZEOF_ROW(ConstChar),
+      SIZEOF_ROW(ConstNull),   SIZEOF_ROW(ConstUndef),
+      SIZEOF_ROW(Call),        SIZEOF_ROW(TemplCall),
+      SIZEOF_ROW(List),        SIZEOF_ROW(Assoc),
+      SIZEOF_ROW(Field),       SIZEOF_ROW(Index),
+      SIZEOF_ROW(Slice),       SIZEOF_ROW(FString),
+      SIZEOF_ROW(Ident),       SIZEOF_ROW(SeqPoint),
+      SIZEOF_ROW(StmtExpr),    SIZEOF_ROW(TypeExpr),
+      SIZEOF_ROW(Block),       SIZEOF_ROW(VolStmt),
+      SIZEOF_ROW(ConstDecl),   SIZEOF_ROW(VarDecl),
+      SIZEOF_ROW(LetDecl),     SIZEOF_ROW(InlineAsm),
+      SIZEOF_ROW(IfStmt),      SIZEOF_ROW(WhileStmt),
+      SIZEOF_ROW(ForStmt),     SIZEOF_ROW(ForeachStmt),
+      SIZEOF_ROW(BreakStmt),   SIZEOF_ROW(ContinueStmt),
+      SIZEOF_ROW(ReturnStmt),  SIZEOF_ROW(ReturnIfStmt),
+      SIZEOF_ROW(CaseStmt),    SIZEOF_ROW(SwitchStmt),
+      SIZEOF_ROW(TypedefDecl), SIZEOF_ROW(FnDecl),
+      SIZEOF_ROW(FnDef),       SIZEOF_ROW(CompositeField),
+      SIZEOF_ROW(StructDef),   SIZEOF_ROW(GroupDef),
+      SIZEOF_ROW(RegionDef),   SIZEOF_ROW(UnionDef),
+      SIZEOF_ROW(EnumDef),     SIZEOF_ROW(SubsystemDecl),
+      SIZEOF_ROW(ExportDecl),  SIZEOF_ROW(ExprStmt),
   };
 
   qcore_assert(sizes.size() == QAST_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
@@ -268,14 +223,11 @@ LIB_EXPORT qparse_ty_t Node::this_typeid() {
       TYPEID_ROW(IfStmt, IF),
       TYPEID_ROW(WhileStmt, WHILE),
       TYPEID_ROW(ForStmt, FOR),
-      TYPEID_ROW(FormStmt, FORM),
       TYPEID_ROW(ForeachStmt, FOREACH),
       TYPEID_ROW(BreakStmt, BREAK),
       TYPEID_ROW(ContinueStmt, CONTINUE),
       TYPEID_ROW(ReturnStmt, RETURN),
       TYPEID_ROW(ReturnIfStmt, RETIF),
-      TYPEID_ROW(RetZStmt, RETZ),
-      TYPEID_ROW(RetVStmt, RETV),
       TYPEID_ROW(CaseStmt, CASE),
       TYPEID_ROW(SwitchStmt, SWITCH),
       TYPEID_ROW(TypedefDecl, TYPEDEF),
@@ -356,14 +308,11 @@ LIB_EXPORT bool Node::is_stmt() {
     case QAST_NODE_INLINE_ASM:
     case QAST_NODE_RETURN:
     case QAST_NODE_RETIF:
-    case QAST_NODE_RETZ:
-    case QAST_NODE_RETV:
     case QAST_NODE_BREAK:
     case QAST_NODE_CONTINUE:
     case QAST_NODE_IF:
     case QAST_NODE_WHILE:
     case QAST_NODE_FOR:
-    case QAST_NODE_FORM:
     case QAST_NODE_FOREACH:
     case QAST_NODE_CASE:
     case QAST_NODE_SWITCH:
@@ -2969,86 +2918,6 @@ ForStmt *ForStmt::clone_impl() {
   return ForStmt::get(init, cond, step, body);
 }
 
-bool FormStmt::verify_impl(std::ostream &os) {
-  if (!m_expr) {
-    os << "FormStmt: expr is NULL\n";
-    return false;
-  }
-
-  if (!m_maxjobs) {
-    os << "FormStmt: maxjobs is NULL\n";
-    return false;
-  }
-
-  if (!m_body) {
-    os << "FormStmt: body is NULL\n";
-    return false;
-  }
-
-  if (!m_expr->verify(os)) {
-    os << "FormStmt: expr is invalid\n";
-    return false;
-  }
-
-  if (!m_maxjobs->verify(os)) {
-    os << "FormStmt: maxjobs is invalid\n";
-    return false;
-  }
-
-  if (!m_body->verify(os)) {
-    os << "FormStmt: body is invalid\n";
-    return false;
-  }
-
-  return true;
-}
-
-void FormStmt::canonicalize_impl() {
-  if (m_expr) {
-    m_expr->canonicalize();
-  }
-
-  if (m_maxjobs) {
-    m_maxjobs->canonicalize();
-  }
-
-  if (m_body) {
-    m_body->canonicalize();
-  }
-}
-
-void FormStmt::print_impl(std::ostream &os, bool debug) {
-  os << "form (";
-  if (m_maxjobs) {
-    m_maxjobs->print(os, debug);
-  } else {
-    os << "?";
-  }
-  os << ") (" << m_idx_ident << ", " << m_val_ident << " in ";
-
-  if (m_expr) {
-    m_expr->print(os, debug);
-  } else {
-    os << "?";
-  }
-
-  os << ")";
-
-  if (m_body) {
-    m_body->print(os, debug);
-  } else {
-    os << "?";
-  }
-}
-
-FormStmt *FormStmt::clone_impl() {
-  Expr *expr = m_expr ? m_expr->clone() : nullptr;
-  Expr *maxjobs = m_maxjobs ? m_maxjobs->clone() : nullptr;
-  Block *body = m_body ? m_body->clone() : nullptr;
-
-  return FormStmt::get(m_idx_ident, m_val_ident, expr, maxjobs, body);
-}
-
 bool ForeachStmt::verify_impl(std::ostream &os) {
   if (!m_expr) {
     os << "ForeachStmt: expr is NULL\n";
@@ -3226,100 +3095,6 @@ ReturnIfStmt *ReturnIfStmt::clone_impl() {
   Expr *value = m_value ? m_value->clone() : nullptr;
 
   return ReturnIfStmt::get(cond, value);
-}
-
-bool RetZStmt::verify_impl(std::ostream &os) {
-  if (!m_cond) {
-    os << "RetZStmt: cond is NULL\n";
-    return false;
-  }
-
-  if (!m_value) {
-    os << "RetZStmt: value is NULL\n";
-    return false;
-  }
-
-  if (!m_cond->verify(os)) {
-    os << "RetZStmt: cond is invalid\n";
-    return false;
-  }
-
-  if (!m_value->verify(os)) {
-    os << "RetZStmt: value is invalid\n";
-    return false;
-  }
-
-  return true;
-}
-
-void RetZStmt::canonicalize_impl() {
-  if (m_cond) {
-    m_cond->canonicalize();
-  }
-
-  if (m_value) {
-    m_value->canonicalize();
-  }
-}
-
-void RetZStmt::print_impl(std::ostream &os, bool debug) {
-  os << "retz (";
-
-  if (m_cond) {
-    m_cond->print(os, debug);
-  } else {
-    os << "?";
-  }
-
-  os << ") ";
-
-  if (m_value) {
-    m_value->print(os, debug);
-  } else {
-    os << "?";
-  }
-
-  os << ";";
-}
-
-RetZStmt *RetZStmt::clone_impl() {
-  Expr *cond = m_cond ? m_cond->clone() : nullptr;
-  Expr *value = m_value ? m_value->clone() : nullptr;
-
-  return RetZStmt::get(cond, value);
-}
-
-bool RetVStmt::verify_impl(std::ostream &os) {
-  if (!m_cond) {
-    os << "RetVStmt: cond is NULL\n";
-    return false;
-  }
-
-  return true;
-}
-
-void RetVStmt::canonicalize_impl() {
-  if (m_cond) {
-    m_cond->canonicalize();
-  }
-}
-
-void RetVStmt::print_impl(std::ostream &os, bool debug) {
-  os << "retv (";
-
-  if (m_cond) {
-    m_cond->print(os, debug);
-  } else {
-    os << "?";
-  }
-
-  os << ")";
-}
-
-RetVStmt *RetVStmt::clone_impl() {
-  Expr *cond = m_cond ? m_cond->clone() : nullptr;
-
-  return RetVStmt::get(cond);
 }
 
 bool CaseStmt::verify_impl(std::ostream &os) {
@@ -4674,9 +4449,6 @@ LIB_EXPORT qparse_node_t *qparse_alloc(qparse_ty_t type, qcore_arena_t *arena) {
     case QAST_NODE_FOR:
       node = ForStmt::get();
       break;
-    case QAST_NODE_FORM:
-      node = FormStmt::get();
-      break;
     case QAST_NODE_FOREACH:
       node = ForeachStmt::get();
       break;
@@ -4691,12 +4463,6 @@ LIB_EXPORT qparse_node_t *qparse_alloc(qparse_ty_t type, qcore_arena_t *arena) {
       break;
     case QAST_NODE_RETIF:
       node = ReturnIfStmt::get();
-      break;
-    case QAST_NODE_RETZ:
-      node = RetZStmt::get();
-      break;
-    case QAST_NODE_RETV:
-      node = RetVStmt::get();
       break;
     case QAST_NODE_CASE:
       node = CaseStmt::get();

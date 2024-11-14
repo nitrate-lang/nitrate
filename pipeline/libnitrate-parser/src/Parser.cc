@@ -248,20 +248,6 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
           break;
         }
 
-        case qKRetz: {
-          if (!parse_retz(job, rd, &node)) {
-            return false;
-          }
-          break;
-        }
-
-        case qKRetv: {
-          if (!parse_retv(job, rd, &node)) {
-            return false;
-          }
-          break;
-        }
-
         case qKBreak: {
           node = BreakStmt::get();
           break;
@@ -288,13 +274,6 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
 
         case qKFor: {
           if (!parse_for(job, rd, &node)) {
-            return false;
-          }
-          break;
-        }
-
-        case qKForm: {
-          if (!parse_form(job, rd, &node)) {
             return false;
           }
           break;

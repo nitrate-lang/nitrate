@@ -119,14 +119,11 @@ typedef enum qparse_ty_t {
   QAST_NODE_INLINE_ASM,
   QAST_NODE_RETURN,
   QAST_NODE_RETIF,
-  QAST_NODE_RETZ,
-  QAST_NODE_RETV,
   QAST_NODE_BREAK,
   QAST_NODE_CONTINUE,
   QAST_NODE_IF,
   QAST_NODE_WHILE,
   QAST_NODE_FOR,
-  QAST_NODE_FORM,
   QAST_NODE_FOREACH,
   QAST_NODE_CASE,
   QAST_NODE_SWITCH,
@@ -134,7 +131,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_VOLSTMT,
 } qparse_ty_t;
 
-#define QAST_NODE_COUNT 85
+#define QAST_NODE_COUNT 82
 
 typedef struct qparse_node_t qparse_node_t;
 
@@ -1416,41 +1413,6 @@ namespace qparse {
     PNODE_IMPL_CORE(ForStmt)
   };
 
-  class FormStmt : public FlowStmt {
-  protected:
-    String m_idx_ident;
-    String m_val_ident;
-    Expr *m_expr;
-    Expr *m_maxjobs;
-    Block *m_body;
-
-  public:
-    FormStmt(String idx_ident = "", String val_ident = "", Expr *expr = nullptr,
-             Expr *maxjobs = nullptr, Block *body = nullptr)
-        : m_idx_ident(idx_ident),
-          m_val_ident(val_ident),
-          m_expr(expr),
-          m_maxjobs(maxjobs),
-          m_body(body) {}
-
-    String get_idx_ident() { return m_idx_ident; }
-    void set_idx_ident(String idx_ident) { m_idx_ident = idx_ident; }
-
-    String get_val_ident() { return m_val_ident; }
-    void set_val_ident(String val_ident) { m_val_ident = val_ident; }
-
-    Expr *get_expr() { return m_expr; }
-    void set_expr(Expr *expr) { m_expr = expr; }
-
-    Expr *get_maxjobs() { return m_maxjobs; }
-    void set_maxjobs(Expr *maxjobs) { m_maxjobs = maxjobs; }
-
-    Block *get_body() { return m_body; }
-    void set_body(Block *body) { m_body = body; }
-
-    PNODE_IMPL_CORE(FormStmt)
-  };
-
   class ForeachStmt : public FlowStmt {
   protected:
     String m_idx_ident;
@@ -1520,36 +1482,6 @@ namespace qparse {
     void set_value(Expr *value) { m_value = value; }
 
     PNODE_IMPL_CORE(ReturnIfStmt)
-  };
-
-  class RetZStmt : public FlowStmt {
-  protected:
-    Expr *m_cond;
-    Expr *m_value;
-
-  public:
-    RetZStmt(Expr *cond = nullptr, Expr *value = nullptr) : m_cond(cond), m_value(value) {}
-
-    Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
-
-    Expr *get_value() { return m_value; }
-    void set_value(Expr *value) { m_value = value; }
-
-    PNODE_IMPL_CORE(RetZStmt)
-  };
-
-  class RetVStmt : public FlowStmt {
-  protected:
-    Expr *m_cond;
-
-  public:
-    RetVStmt(Expr *cond = nullptr) : m_cond(cond) {}
-
-    Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
-
-    PNODE_IMPL_CORE(RetVStmt)
   };
 
   class CaseStmt : public FlowStmt {

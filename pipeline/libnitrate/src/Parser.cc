@@ -1558,36 +1558,6 @@ bool to_json_recurse(Node *N, json &x) {
       break;
     }
 
-    case QAST_NODE_RETZ: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      if (!to_json_recurse(N->as<RetZStmt>()->get_cond(), x[1])) {
-        return false;
-      }
-
-      if (!to_json_recurse(N->as<RetZStmt>()->get_value(), x[2])) {
-        return false;
-      }
-
-      break;
-    }
-
-    case QAST_NODE_RETV: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      if (!to_json_recurse(N->as<RetVStmt>()->get_cond(), x[1])) {
-        return false;
-      }
-
-      break;
-    }
-
     case QAST_NODE_BREAK: {
       /**
        * @brief [Brief Description]
@@ -1665,32 +1635,6 @@ bool to_json_recurse(Node *N, json &x) {
       }
 
       if (!to_json_recurse(W->get_step(), x[3])) {
-        return false;
-      }
-
-      if (!to_json_recurse(W->get_body(), x[4])) {
-        return false;
-      }
-
-      break;
-    }
-
-    case QAST_NODE_FORM: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      FormStmt *W = N->as<FormStmt>();
-
-      x[1] = W->get_idx_ident().c_str();
-      x[2] = W->get_val_ident().c_str();
-
-      if (!to_json_recurse(W->get_maxjobs(), x[3])) {
-        return false;
-      }
-
-      if (!to_json_recurse(W->get_expr(), x[4])) {
         return false;
       }
 

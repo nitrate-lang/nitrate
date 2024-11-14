@@ -87,17 +87,11 @@ namespace qparse::parser {
 
   bool parse_retif(qparse_t &job, qlex_t *rd, Stmt **node);
 
-  bool parse_retz(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_retv(qparse_t &job, qlex_t *rd, Stmt **node);
-
   bool parse_if(qparse_t &job, qlex_t *rd, Stmt **node);
 
   bool parse_while(qparse_t &job, qlex_t *rd, Stmt **node);
 
   bool parse_for(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_form(qparse_t &job, qlex_t *rd, Stmt **node);
 
   bool parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node);
 
