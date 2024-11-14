@@ -207,7 +207,13 @@ CPP_EXPORT bool Expr::isType() const noexcept {
 
 CPP_EXPORT std::optional<nr::Type *> nr::Expr::getType() noexcept {
   /// TODO: Communicate the ptrSizeBytes properly here
-  return static_cast<Type *>(nr_infer(this, 8));
+  Type *R = static_cast<Type *>(nr_infer(this, 8));
+
+  if (R) {
+    return R;
+  } else {
+    return std::nullopt;
+  }
 }
 
 CPP_EXPORT bool nr::Expr::isSame(const nr::Expr *other) const {

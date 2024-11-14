@@ -682,6 +682,7 @@ static EResult nrgen_list(NRBuilder &b, PState &s, IReport *G, qparse::List *n) 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
     auto item = next_one(*it);
     if (!item.has_value()) {
+      G->report(nr::CompilerError, IC::Error, "Failed to lower list element", n->get_pos());
       return std::nullopt;
     }
 
@@ -694,11 +695,13 @@ static EResult nrgen_list(NRBuilder &b, PState &s, IReport *G, qparse::List *n) 
 static EResult nrgen_assoc(NRBuilder &b, PState &s, IReport *G, qparse::Assoc *n) {
   auto key = next_one(n->get_key());
   if (!key.has_value()) {
+    G->report(nr::CompilerError, IC::Error, "Failed to lower associative key", n->get_pos());
     return std::nullopt;
   }
 
   auto value = next_one(n->get_value());
   if (!value.has_value()) {
+    G->report(nr::CompilerError, IC::Error, "Failed to lower associative value", n->get_pos());
     return std::nullopt;
   }
 
@@ -1107,397 +1110,40 @@ static std::optional<std::vector<Expr *>> nrgen_typedef(NRBuilder &b, PState &s,
 
 static std::optional<std::vector<Expr *>> nrgen_struct(NRBuilder &b, PState &s, IReport *G,
                                                        qparse::StructDef *n) {
-  // std::string name = s.cur_named(n->get_name());
-  // auto sv = b.intern(std::string_view(name));
-
-  // if (current->getTypeMap().contains(sv)) {
-  //   G->report(TypeRedefinition, IC::Error, n->get_name(),n->get_pos(),
-  //         n->get_pos());
-  // }
-
-  // StructFields fields;
-  // std::optional<std::vector<Expr *>> items;
-  // size_t offset = 0;
-
-  // for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
-  //   if (!*it) {
-  //     G->report(CompilerError, IC::Error,
-  //            "qparse::StructDef::get_fields() vector contains std::nullopt",n->get_pos(),
-  //           n->get_pos());
-  //     return std::nullopt;
-  //   }
-
-  //   s.composite_expanse.push((*it)->get_name());
-  //   auto field = nrgen_one(b, s,X, *it);
-  //   s.composite_expanse.pop();
-  //   if (!field.has_value()) {
-  //     G->report(CompilerError, IC::Error,
-  //            "qparse::StructDef::get_fields() vector contains issue",n->get_pos(),
-  //           n->get_pos());
-  //     return std::nullopt;
-  //   }
-
-  //   size_t field_align = field.value()->asType()->getAlignBytes();
-  //   size_t padding = align(offset, field_align) - offset;
-  //   if (padding > 0) {
-  //     fields.push_back(create<ArrayTy>(create<U8Ty>(), padding));
-  //   }
-
-  //   fields.push_back(field.value()->asType());
-  //   offset += field.value()->asType()->getSizeBytes();
-  // }
-
-  // StructTy *st = create<StructTy>(std::move(fields));
-
-  // current->getTypeMap()[sv] = st;
-
-  // items = std::vector<Expr *>();
-  // for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
-  //   qparse::FnDecl *cur_meth = *it;
-  //   auto old_name = cur_meth->get_name();
-  //   cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-  //   auto method = nrgen_one(b, s,X, *it);
-
-  //   cur_meth->set_name(old_name);
-
-  //   if (!method) {
-  //     G->report(CompilerError, IC::Error,
-  //            "qparse::StructDef::get_methods() vector contains std::nullopt",n->get_pos(),
-  //           n->get_pos());
-  //     return std::nullopt;
-  //   }
-
-  //   items->push_back(method.value());
-  // }
-
-  // for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
-  //   qparse::FnDecl *cur_meth = *it;
-  //   auto old_name = cur_meth->get_name();
-  //   cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-  //   auto method = nrgen_one(b, s,X, *it);
-
-  //   cur_meth->set_name(old_name);
-
-  //   if (!method) {
-  //     G->report(CompilerError, IC::Error,
-  //            "qparse::StructDef::get_static_methods() vector contains std::nullopt",
-  //           n->get_pos(),n->get_pos());
-  //     return std::nullopt;
-  //   }
-
-  //   items->push_back(method.value());
-  // }
-
-  // return items;
+  /// TODO: Struct def
+  qcore_implement();
 
   return std::nullopt;
 }
 
 static std::optional<std::vector<Expr *>> nrgen_region(NRBuilder &b, PState &s, IReport *G,
                                                        qparse::RegionDef *n) {
-  // std::string name = s.cur_named(n->get_name());
-  // auto sv = b.intern(std::string_view(name));
-
-  // if (current->getTypeMap().contains(sv)) {
-  //   G->report(TypeRedefinition, IC::Error, n->get_name(),n->get_pos(),
-  //         n->get_pos());
-  // }
-
-  // StructFields fields;
-  // std::optional<std::vector<Expr *>> items;
-
-  // for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
-  //   if (!*it) {
-  //     G->report(CompilerError, IC::Error,
-  //            "qparse::RegionDef::get_fields() vector contains std::nullopt",n->get_pos(),
-  //           n->get_pos());
-  //     return std::nullopt;
-  //   }
-
-  //   s.composite_expanse.push((*it)->get_name());
-  //   auto field = nrgen_one(b, s,X, *it);
-  //   s.composite_expanse.pop();
-
-  //   fields.push_back(field.value()->asType());
-  // }
-
-  // StructTy *st = create<StructTy>(std::move(fields));
-
-  // current->getTypeMap()[sv] = st;
-
-  // items = std::vector<Expr *>();
-  // for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
-  //   qparse::FnDecl *cur_meth = *it;
-  //   auto old_name = cur_meth->get_name();
-  //   cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-  //   auto method = nrgen_one(b, s,X, *it);
-
-  //   cur_meth->set_name(old_name);
-
-  //   if (!method) {
-  //     G->report(CompilerError, IC::Error,
-  //            "qparse::RegionDef::get_methods() vector contains std::nullopt",n->get_pos(),
-  //           n->get_pos());
-  //     return std::nullopt;
-  //   }
-
-  //   items->push_back(method.value());
-  // }
-
-  // for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
-  //   qparse::FnDecl *cur_meth = *it;
-  //   auto old_name = cur_meth->get_name();
-  //   cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-  //   auto method = nrgen_one(b, s,X, *it);
-
-  //   cur_meth->set_name(old_name);
-
-  //   if (!method) {
-  //     G->report(CompilerError, IC::Error,
-  //            "qparse::RegionDef::get_static_methods() vector contains std::nullopt",
-  //           n->get_pos(),n->get_pos());
-  //     return std::nullopt;
-  //   }
-
-  //   items->push_back(method.value());
-  // }
-
-  // return items;
+  /// TODO: Region def
+  qcore_implement();
 
   return std::nullopt;
 }
 
 static std::optional<std::vector<Expr *>> nrgen_group(NRBuilder &b, PState &s, IReport *G,
                                                       qparse::GroupDef *n) {
-  // std::string name = s.cur_named(n->get_name());
-  // auto sv = b.intern(std::string_view(name));
-
-  // if (current->getTypeMap().contains(sv)) {
-  //   G->report(TypeRedefinition, IC::Error, n->get_name(),n->get_pos(),
-  //         n->get_pos());
-  // }
-
-  // StructFields fields;
-  // std::optional<std::vector<Expr *>> items;
-
-  // { /* Optimize layout with field sorting */
-  //   std::vector<Type *> tmp_fields;
-  //   for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
-  //     if (!*it) {
-  //       G->report(CompilerError, IC::Error,
-  //              "qparse::GroupDef::get_fields() vector contains std::nullopt",n->get_pos(),
-  //             n->get_pos());
-  //       return std::nullopt;
-  //     }
-
-  //     s.composite_expanse.push((*it)->get_name());
-  //     auto field = nrgen_one(b, s,X, *it);
-  //     s.composite_expanse.pop();
-
-  //     tmp_fields.push_back(field.value()->asType());
-  //   }
-
-  //   std::sort(tmp_fields.begin(), tmp_fields.end(),
-  //             [](Type *a, Type *b) { return a->getSizeBits() > b->getSizeBits(); });
-
-  //   size_t offset = 0;
-  //   for (auto it = tmp_fields.begin(); it != tmp_fields.end(); ++it) {
-  //     size_t field_align = (*it)->getAlignBytes();
-  //     size_t padding = align(offset, field_align) - offset;
-  //     if (padding > 0) {
-  //       fields.push_back(create<ArrayTy>(create<U8Ty>(), padding));
-  //     }
-
-  //     fields.push_back(*it);
-  //     offset += (*it)->getSizeBytes();
-  //   }
-  // }
-
-  // StructTy *st = create<StructTy>(std::move(fields));
-
-  // current->getTypeMap()[sv] = st;
-
-  // items = std::vector<Expr *>();
-  // for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
-  //   qparse::FnDecl *cur_meth = *it;
-  //   auto old_name = cur_meth->get_name();
-  //   cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-  //   auto method = nrgen_one(b, s,X, *it);
-
-  //   cur_meth->set_name(old_name);
-
-  //   if (!method) {
-  //     G->report(CompilerError, IC::Error,
-  //            "qparse::GroupDef::get_methods() vector contains std::nullopt",n->get_pos(),
-  //           n->get_pos());
-  //     return std::nullopt;
-  //   }
-
-  //   items->push_back(method.value());
-  // }
-
-  // for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
-  //   qparse::FnDecl *cur_meth = *it;
-  //   auto old_name = cur_meth->get_name();
-  //   cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-  //   auto method = nrgen_one(b, s,X, *it);
-
-  //   cur_meth->set_name(old_name);
-
-  //   if (!method) {
-  //     G->report(CompilerError, IC::Error,
-  //            "qparse::GroupDef::get_static_methods() vector contains std::nullopt",
-  //           n->get_pos(),n->get_pos());
-  //     return std::nullopt;
-  //   }
-
-  //   items->push_back(method.value());
-  // }
-
-  // return items;
+  /// TODO: Group def
+  qcore_implement();
 
   return std::nullopt;
 }
 
 static std::optional<std::vector<Expr *>> nrgen_union(NRBuilder &b, PState &s, IReport *G,
                                                       qparse::UnionDef *n) {
-  // std::string name = s.cur_named(n->get_name());
-  // auto sv = b.intern(std::string_view(name));
-
-  // if (current->getTypeMap().contains(sv)) {
-  //   G->report(TypeRedefinition, IC::Error, n->get_name(),n->get_pos(),
-  //         n->get_pos());
-  // }
-
-  // UnionFields fields;
-  // std::optional<std::vector<Expr *>> items;
-
-  // for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
-  //   if (!*it) {
-  //     G->report(CompilerError, IC::Error,
-  //            "qparse::UnionDef::get_fields() vector contains std::nullopt",n->get_pos(),
-  //           n->get_pos());
-  //     return std::nullopt;
-  //   }
-
-  //   s.composite_expanse.push((*it)->get_name());
-  //   auto field = nrgen_one(b, s,X, *it);
-  //   s.composite_expanse.pop();
-
-  //   fields.push_back(field.value()->asType());
-  // }
-
-  // UnionTy *st = create<UnionTy>(std::move(fields));
-
-  // current->getTypeMap()[sv] = st;
-
-  // items = std::vector<Expr *>();
-  // for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
-  //   qparse::FnDecl *cur_meth = *it;
-  //   auto old_name = cur_meth->get_name();
-  //   cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-  //   auto method = nrgen_one(b, s,X, *it);
-
-  //   cur_meth->set_name(old_name);
-
-  //   if (!method) {
-  //     G->report(CompilerError, IC::Error,
-  //            "qparse::UnionDef::get_methods() vector contains std::nullopt",n->get_pos(),
-  //           n->get_pos());
-  //     return std::nullopt;
-  //   }
-
-  //   items->push_back(method.value());
-  // }
-
-  // for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
-  //   qparse::FnDecl *cur_meth = *it;
-  //   auto old_name = cur_meth->get_name();
-  //   cur_meth->set_name(ns_join(n->get_name(), old_name));
-
-  //   auto method = nrgen_one(b, s,X, *it);
-
-  //   cur_meth->set_name(old_name);
-
-  //   if (!method) {
-  //     G->report(CompilerError, IC::Error,
-  //            "qparse::UnionDef::get_static_methods() vector contains std::nullopt",
-  //           n->get_pos(),n->get_pos());
-  //     return std::nullopt;
-  //   }
-
-  //   items->push_back(method.value());
-  // }
-
-  // return items;
+  /// TODO: Union def
+  qcore_implement();
 
   return std::nullopt;
 }
 
 static std::optional<std::vector<Expr *>> nrgen_enum(NRBuilder &b, PState &s, IReport *G,
                                                      qparse::EnumDef *n) {
-  // std::string name = s.cur_named(n->get_name());
-  // auto sv = b.intern(std::string_view(name));
-
-  // if (current->getTypeMap().contains(sv)) {
-  //   G->report(TypeRedefinition, IC::Error, n->get_name(),n->get_pos(),
-  //         n->get_pos());
-  // }
-
-  // EResult type = nullptr;
-  // if (n->get_type()) {
-  //   type = nrgen_one(b, s,X, n->get_type());
-  //   if (!type.has_value()) {
-  //     G->report(CompilerError, IC::Error,
-  //            "qparse::EnumDef::get_type() == std::nullopt",n->get_pos(),
-  //           n->get_pos());
-  //     return std::nullopt;
-  //   }
-  // } else {
-  //   type = create<Tmp>(TmpType::ENUM, sv)->asType();
-  // }
-
-  // current->getTypeMap()[sv] = type.value()->asType();
-
-  // Expr *last = nullptr;
-
-  // for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-  //   EResult cur = nullptr;
-
-  //   if (it->second) {
-  //     cur = nrgen_one(b, s,X, it->second);
-  //     if (!cur.has_value()) {
-  //       G->report(CompilerError, IC::Error,
-  //              "qparse::EnumDef::get_items() vector contains std::nullopt",n->get_pos(),
-  //             n->get_pos());
-  //       return std::nullopt;
-  //     }
-
-  //     last = cur.value();
-  //   } else {
-  //     if (!last) {
-  //       cur = create<Int>(0, IntSize::U32);
-  //       last = cur.value();
-  //     } else {
-  //       cur = create<BinExpr>(last, create<Int>(1, IntSize::U32), Op::Plus);
-  //       last = cur.value();
-  //     }
-  //   }
-
-  //   std::string_view field_name = b.intern(std::string_view(name + "::" +
-  //   std::string(it->first)));
-
-  //   current->getNamedConstants().insert({field_name, cur.value()});
-  // }
-
-  // return {};
+  /// TODO: Enum def
+  qcore_implement();
 
   return std::nullopt;
 }
@@ -1562,125 +1208,8 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G, qparse::FnDecl 
 }
 
 static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
-  // bool old_inside_function = s.inside_function;
-  // s.inside_function = true;
-
-  // EResult precond, postcond;
-  // Seq *body = nullptr;
-  // Params params;
-  // qparse::FnDecl *decl = n;
-  // qparse::FuncTy *fty = decl->get_type();
-
-  // auto fnty = nrgen_one(b, s,X, fty);
-  // if (!fnty.has_value()) {
-  //   G->report(CompilerError, IC::Error, "qparse::FnDef::get_type() ==
-  //   std::nullopt",
-  //         n->get_pos(),n->get_pos());
-  //   return std::nullopt;
-  // }
-
-  // /* Produce the function preconditions */
-  // if ((precond = nrgen_one(b, s,X, n->get_precond()))) {
-  //   precond = create<If>(create<UnExpr>(precond.value(), Op::LogicNot),
-  //                        create_simple_call(b, s, "__detail::precond_fail"), createIgn());
-  // }
-
-  // /* Produce the function postconditions */
-  // if ((postcond = nrgen_one(b, s,X, n->get_postcond()))) {
-  //   postcond = create<If>(create<UnExpr>(postcond.value(), Op::LogicNot),
-  //                         create_simple_call(b, s, "__detail::postcond_fail"), createIgn());
-  // }
-
-  // { /* Produce the function body */
-  //   Type *old_return_ty = s.return_type;
-  //   s.return_type = fnty.value()->as<FnTy>()->getReturn();
-  //   s.local_scope.push({});
-
-  //   auto tmp = nrgen_one(b, s,X, n->get_body());
-  //   if (!tmp.has_value()) {
-  //     G->report(CompilerError, IC::Error,
-  //            "qparse::FnDef::get_body() == std::nullopt",n->get_pos(),n->get_pos());
-  //     return std::nullopt;
-  //   }
-
-  //   if (tmp.value()->getKind() != QIR_NODE_SEQ) {
-  //     tmp = create<Seq>(SeqItems({tmp.value()}));
-  //   }
-
-  //   Seq *seq = tmp.value()->as<Seq>();
-
-  //   { /* Implicit return */
-  //     if (fty->get_return_ty()->is_void()) {
-  //       if (!seq->getItems().empty()) {
-  //         if (seq->getItems().back()->getKind() != QIR_NODE_RET) {
-  //           seq->getItems().push_back(create<Ret>(create<VoidTy>()));
-  //         }
-  //       }
-  //     }
-  //   }
-
-  //   body = seq;
-
-  //   if (precond) {
-  //     body->getItems().insert(body->getItems().begin(), precond.value());
-  //   }
-  //   if (postcond) {
-  //     /// TODO: add postcond at each exit point
-  //   }
-
-  //   s.local_scope.pop();
-  //   s.return_type = old_return_ty;
-  // }
-
-  // auto name = s.cur_named(n->get_name());
-  // auto str = b.intern(std::string_view(name));
-
-  // current->getParameterMap()[str] = {};
-
-  // { /* Produce the function parameters */
-  //   for (auto it = fty->get_params().begin(); it != fty->get_params().end(); ++it) {
-  //     /**
-  //      * Parameter properties:
-  //      * 1. Name - All parameters have a name.
-  //      * 2. Type - All parameters have a type.
-  //      * 3. Default - Optional, if the parameter has a default value.
-  //      * 4. Position - All parameters have a position.
-  //      */
-
-  //     auto type = nrgen_one(b, s,X, std::get<1>(*it));
-  //     if (!type.has_value()) {
-  //       G->report(CompilerError, IC::Error,
-  //              "qparse::FnDef::get_type() == std::nullopt",n->get_pos(),
-  //             n->get_pos());
-  //       return std::nullopt;
-  //     }
-
-  //     EResult def = nullptr;
-  //     if (std::get<2>(*it)) {
-  //       def = nrgen_one(b, s,X, std::get<2>(*it));
-  //       if (!def.has_value()) {
-  //         G->report(CompilerError, IC::Error,
-  //                "qparse::FnDef::get_type() == std::nullopt",n->get_pos(),
-  //               n->get_pos());
-  //         return std::nullopt;
-  //       }
-  //     }
-
-  //     std::string_view sv = b.intern(std::string_view(std::get<0>(*it)));
-
-  //     params.push_back({type.value()->asType(), sv});
-  //     current->getParameterMap()[str].push_back(
-  //         {std::string(std::get<0>(*it)), type.value()->asType(), def.value()});
-  //   }
-  // }
-
-  // auto obj = create<Fn>(str, std::move(params), fnty.value()->as<FnTy>()->getReturn(), body,
-  //                       fty->is_variadic(), s.abi_mode);
-
-  // current->getFunctions().insert({str, {fnty.value()->as<FnTy>(), obj}});
-
-  // s.inside_function = old_inside_function;
-  // return obj;
+  /// TODO: Function def
+  qcore_implement();
 
   return std::nullopt;
 }
@@ -1769,37 +1298,8 @@ static std::optional<std::vector<Expr *>> nrgen_export(NRBuilder &b, PState &s, 
 
 static EResult nrgen_composite_field(NRBuilder &b, PState &s, IReport *G,
                                      qparse::CompositeField *n) {
-  // auto type = nrgen_one(b, s,X, n->get_type());
-  // if (!type) {
-  //   G->report(CompilerError, IC::Error,
-  //          "qparse::CompositeField::get_type() == std::nullopt",n->get_pos(),
-  //         n->get_pos());
-  //   return std::nullopt;
-  // }
-
-  // EResult _def = nullptr;
-  // if (n->get_value()) {
-  //   _def = nrgen_one(b, s,X, n->get_value());
-  //   if (!_def.has_value()) {
-  //     G->report(CompilerError, IC::Error,
-  //            "qparse::CompositeField::get_value() == std::nullopt",n->get_pos(),
-  //           n->get_pos());
-  //     return std::nullopt;
-  //   }
-  // }
-
-  // if (s.composite_expanse.empty()) {
-  //   G->report(CompilerError, IC::Error, "state.composite_expanse.empty()",
-  //         n->get_pos(),n->get_pos());
-  //   return std::nullopt;
-  // }
-
-  // std::string_view dt_name = b.intern(s.composite_expanse.top());
-
-  // current->getCompositeFields()[dt_name].push_back(
-  //     {std::string(n->get_name()), type.value()->asType(), _def.value()});
-
-  // return type;
+  /// TODO: field def
+  qcore_implement();
 
   return std::nullopt;
 }

@@ -625,22 +625,25 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
           T = create<StructTy>(StructFields());
         } else {
           std::vector<Type *> types;
+          bool failed = false;
           for (auto &item : E->as<List>()->getItems()) {
             Type *x = item->getType().value_or(nullptr);
             if (!x) {
               T = nullptr;
+              failed = true;
               break;
             }
             types.push_back(x);
           }
+          if (!failed) {
+            bool homogeneous = std::all_of(types.begin(), types.end(),
+                                           [&](Type *X) { return X->isSame(types.front()); });
 
-          bool homogeneous = std::all_of(types.begin(), types.end(),
-                                         [&](Type *X) { return X->isSame(types.front()); });
-
-          if (homogeneous) {
-            T = create<ArrayTy>(types.front(), types.size());
-          } else {
-            T = create<StructTy>(StructFields(types.begin(), types.end()));
+            if (homogeneous) {
+              T = create<ArrayTy>(types.front(), types.size());
+            } else {
+              T = create<StructTy>(StructFields(types.begin(), types.end()));
+            }
           }
         }
         break;
