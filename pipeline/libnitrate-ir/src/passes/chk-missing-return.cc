@@ -58,7 +58,7 @@ bool nr::pass::chk_missing_return(qmodule_t* M, IReport* log) {
                                [](auto item) { return item->getKind() == QIR_NODE_RET; });
 
     if (!any_ret) { /* If no return statement is found, this is an error. */
-      log->report(IssueCode::MissingReturn, IssueClass::Error, key, fn->getLoc());
+      log->report(MissingReturn, IssueClass::Error, key, fn->getLoc());
     }
   }
 

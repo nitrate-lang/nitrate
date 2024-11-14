@@ -45,7 +45,7 @@ using namespace nr;
 
 bool nr::pass::ds_acyclic(qmodule_t *mod, IReport *log) {
   if (!mod->getRoot()->isAcyclic()) {
-    log->report(IssueCode::DSPolyCyclicRef, IssueClass::FatalError, "");
+    log->report(DSPolyCyclicRef, IssueClass::FatalError, "");
     return false;
   }
 

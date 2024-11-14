@@ -41,7 +41,7 @@ using namespace nr;
 bool NRBuilder::check_acyclic(Seq *root, IReport *log) noexcept {
   bool is_acyclic = root->isAcyclic();
   if (!is_acyclic) {
-    log->report(IssueCode::DSPolyCyclicRef, IssueClass::FatalError);
+    log->report(DSPolyCyclicRef, IssueClass::FatalError);
   }
 
   return is_acyclic;

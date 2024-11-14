@@ -61,7 +61,7 @@ namespace nr {
     FatalError,
   };
 
-  enum class IssueCode {
+  enum IssueCode {
     CompilerError,
     SignalReceived,
     PTreeInvalid,
@@ -128,7 +128,7 @@ namespace nr {
     IssueCode m_code;
 
     DiagMessage(std::string_view msg = "", IssueClass type = IssueClass::Debug,
-                IssueCode code = IssueCode::Info, uint32_t start = 0, uint32_t end = 0)
+                IssueCode code = Info, uint32_t start = 0, uint32_t end = 0)
         : m_msg(msg), m_start(start), m_end(end), m_type(type), m_code(code) {}
 
     uint64_t hash() const;

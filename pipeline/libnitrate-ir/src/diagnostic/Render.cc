@@ -103,7 +103,7 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
 
   ss << ": " << msg.m_msg;
 
-  if (msg.m_code != IssueCode::Info) {
+  if (msg.m_code != Info) {
     ss << " [-Werror=" << issue_info.left.at(msg.m_code).flagname << "]";
   }
 
@@ -160,35 +160,35 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
   switch (msg.m_type) {
     case IssueClass::Debug:
       ss << "\x1b[1mdebug:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != IssueCode::Info) {
+      if (msg.m_code != Info) {
         ss << " \x1b[39;1m[\x1b[0m\x1b[1m-Werror=" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::Info:
       ss << "\x1b[37;1minfo:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != IssueCode::Info) {
+      if (msg.m_code != Info) {
         ss << " \x1b[39;1m[\x1b[0m\x1b[37;1m-Werror=" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::Warn:
       ss << "\x1b[35;1mwarning:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != IssueCode::Info) {
+      if (msg.m_code != Info) {
         ss << " \x1b[39;1m[\x1b[0m\x1b[35;1m-Werror=" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::Error:
       ss << "\x1b[31;1merror:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != IssueCode::Info) {
+      if (msg.m_code != Info) {
         ss << " \x1b[39;1m[\x1b[0m\x1b[31;1m-Werror=" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::FatalError:
       ss << "\x1b[31;1;4mfatal error:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != IssueCode::Info) {
+      if (msg.m_code != Info) {
         ss << " \x1b[39;1m[\x1b[0m\x1b[31;1;4m-Werror=" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }

@@ -92,7 +92,7 @@ static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L, Type* R
     StructTy *LS = L->as<StructTy>(), *RS = R->as<StructTy>();
 
     if (LS->getFields().size() != RS->getFields().size()) {
-      log->report(IssueCode::BadCast, IssueClass::Error, prepare(texts[0], L, R), N->getLoc());
+      log->report(BadCast, IssueClass::Error, prepare(texts[0], L, R), N->getLoc());
 
       return false;
     }
@@ -101,7 +101,7 @@ static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L, Type* R
       Type *LT = LS->getFields()[i], *RT = RS->getFields()[i];
 
       if (!verify_cast_as(M, log, N, LT, RT)) {
-        log->report(IssueCode::BadCast, IssueClass::Error, prepare(texts[1], L, R), N->getLoc());
+        log->report(BadCast, IssueClass::Error, prepare(texts[1], L, R), N->getLoc());
 
         return false;
       }
@@ -114,7 +114,7 @@ static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L, Type* R
     StructTy* RS = R->as<StructTy>();
 
     if (LS->getCount() != RS->getFields().size()) {
-      log->report(IssueCode::BadCast, IssueClass::Error, prepare(texts[2], L, R), N->getLoc());
+      log->report(BadCast, IssueClass::Error, prepare(texts[2], L, R), N->getLoc());
 
       return false;
     }
@@ -123,7 +123,7 @@ static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L, Type* R
       Type* RT = RS->getFields()[i];
 
       if (!verify_cast_as(M, log, N, LS->getElement(), RT)) {
-        log->report(IssueCode::BadCast, IssueClass::Error, prepare(texts[3], L, R), N->getLoc());
+        log->report(BadCast, IssueClass::Error, prepare(texts[3], L, R), N->getLoc());
 
         return false;
       }
@@ -131,45 +131,45 @@ static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L, Type* R
 
     return true;
   } else if (L->getKind() == QIR_NODE_STRUCT_TY || R->getKind() == QIR_NODE_STRUCT_TY) {
-    log->report(IssueCode::BadCast, IssueClass::Error, prepare(texts[4], L, R), N->getLoc());
+    log->report(BadCast, IssueClass::Error, prepare(texts[4], L, R), N->getLoc());
 
     return false;
   }
 
   /* Opaque types cannot be casted to anything */
   if (L->getKind() == QIR_NODE_OPAQUE_TY || R->getKind() == QIR_NODE_OPAQUE_TY) {
-    log->report(IssueCode::BadCast, IssueClass::Error, prepare(texts[5], L, R), N->getLoc());
+    log->report(BadCast, IssueClass::Error, prepare(texts[5], L, R), N->getLoc());
 
     return false;
   }
 
   if (!L->is_void() && R->is_void()) {
-    log->report(IssueCode::BadCast, IssueClass::Error, prepare(texts[6], L, R), N->getLoc());
+    log->report(BadCast, IssueClass::Error, prepare(texts[6], L, R), N->getLoc());
 
     return false;
   }
 
   /* `cast_as` does not support pointer casts */
   if (L->is_pointer() || R->is_pointer()) {
-    log->report(IssueCode::BadCast, IssueClass::Error, prepare(texts[7], L, R), N->getLoc());
+    log->report(BadCast, IssueClass::Error, prepare(texts[7], L, R), N->getLoc());
 
     return false;
   }
 
   if (L->getKind() == QIR_NODE_UNION_TY || R->getKind() == QIR_NODE_UNION_TY) {
-    log->report(IssueCode::BadCast, IssueClass::Error, prepare(texts[8], L, R), N->getLoc());
+    log->report(BadCast, IssueClass::Error, prepare(texts[8], L, R), N->getLoc());
 
     return false;
   }
 
   if (L->getKind() == QIR_NODE_ARRAY_TY || R->getKind() == QIR_NODE_ARRAY_TY) {
-    log->report(IssueCode::BadCast, IssueClass::Error, prepare(texts[9], L, R), N->getLoc());
+    log->report(BadCast, IssueClass::Error, prepare(texts[9], L, R), N->getLoc());
 
     return false;
   }
 
   if (L->getKind() == QIR_NODE_FN_TY || R->getKind() == QIR_NODE_FN_TY) {
-    log->report(IssueCode::BadCast, IssueClass::Error, prepare(texts[10], L, R), N->getLoc());
+    log->report(BadCast, IssueClass::Error, prepare(texts[10], L, R), N->getLoc());
 
     return false;
   }
@@ -178,12 +178,12 @@ static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L, Type* R
   if (L->is_numeric() && R->is_numeric()) {
     return true;
   } else if (L->is_numeric() || R->is_numeric()) {
-    log->report(IssueCode::BadCast, IssueClass::Error, prepare(texts[11], L, R), N->getLoc());
+    log->report(BadCast, IssueClass::Error, prepare(texts[11], L, R), N->getLoc());
 
     return false;
   }
 
-  log->report(IssueCode::BadCast, IssueClass::Error, prepare(texts[12], L, R), N->getLoc());
+  log->report(BadCast, IssueClass::Error, prepare(texts[12], L, R), N->getLoc());
 
   return false;
 }

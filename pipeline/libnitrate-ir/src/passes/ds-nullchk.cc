@@ -48,7 +48,7 @@ bool nr::pass::ds_nullchk(qmodule_t *mod, IReport *log) {
     if (*_cur == nullptr) [[unlikely]] {
       has_bad_null = true;
 
-      log->report(IssueCode::DSNullPtr, IssueClass::FatalError, "");
+      log->report(DSNullPtr, IssueClass::FatalError, "");
       return IterOp::Abort;
     }
 

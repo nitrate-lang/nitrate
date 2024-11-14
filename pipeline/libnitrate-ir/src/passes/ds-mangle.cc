@@ -58,8 +58,7 @@ bool nr::pass::ds_mangle(qmodule_t *mod, IReport *log) {
         fn->setName(mod->internString(*name));
       } else {
         failed = true;
-        log->report(IssueCode::NameManglingTypeInfer, IssueClass::Error, fn->getName(),
-                    fn->getLoc());
+        log->report(NameManglingTypeInfer, IssueClass::Error, fn->getName(), fn->getLoc());
       }
     } else if ((*cur)->getKind() == QIR_NODE_LOCAL) {
       Local *local = (*cur)->as<Local>();
@@ -69,8 +68,7 @@ bool nr::pass::ds_mangle(qmodule_t *mod, IReport *log) {
         local->setName(mod->internString(*name));
       } else {
         failed = true;
-        log->report(IssueCode::NameManglingTypeInfer, IssueClass::Error, local->getName(),
-                    local->getLoc());
+        log->report(NameManglingTypeInfer, IssueClass::Error, local->getName(), local->getLoc());
       }
     }
 

@@ -320,8 +320,7 @@ static void remove_unneeded_cast(Expr*, Expr** C) {
 
 using NodeCount = size_t;
 static size_t garbage_collect_round(qmodule_t* M, size_t& iteration, IReport* log) {
-  log->report(IssueCode::Info, IssueClass::Debug,
-              "Running IR GC pass " + std::to_string(iteration));
+  log->report(Info, IssueClass::Debug, "Running IR GC pass " + std::to_string(iteration));
 
   { /* Erase garbage in IR sequence nodes */
     /* Mark non-functional sequence nodes as ignored */
