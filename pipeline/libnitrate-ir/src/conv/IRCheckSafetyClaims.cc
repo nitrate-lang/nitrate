@@ -38,7 +38,7 @@
 
 using namespace nr;
 
-bool NRBuilder::check_safety_claims(Seq *, IDiagnosticSink *) noexcept {
+bool NRBuilder::check_safety_claims(Seq *, IReport *) noexcept {
   /// TODO: Implement check
   return true;
 }

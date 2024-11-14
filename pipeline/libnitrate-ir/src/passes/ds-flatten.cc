@@ -136,7 +136,7 @@ static void flatten_functions(qmodule_t *mod) {
   }
 }
 
-bool nr::pass::ds_flatten(qmodule_t *mod) {
+bool nr::pass::ds_flatten(qmodule_t *mod, IReport *) {
   /**
    * This pass in infallible.
    */

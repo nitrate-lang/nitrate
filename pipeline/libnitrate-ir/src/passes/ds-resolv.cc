@@ -587,7 +587,7 @@
 //   return !error;
 // }
 
-bool nr::pass::ds_resolv(qmodule_t *) {
+bool nr::pass::ds_resolv(qmodule_t *, IReport *) {
   bool error = false;
 
   // error |= !alpha_pass(mod);

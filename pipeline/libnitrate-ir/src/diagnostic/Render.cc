@@ -240,8 +240,8 @@ uint64_t DiagMessage::hash() const {
 }
 
 void DiagnosticManager::report(IssueCode code, IssueClass level, std::span<std::string_view> params,
-                               std::string_view filename, uint32_t start_offset,
-                               uint32_t end_offset) {
+                               uint32_t start_offset, uint32_t end_offset,
+                               std::string_view filename) {
   std::string message;
   for (auto p : params) {
     message += std::string(p) + "; ";

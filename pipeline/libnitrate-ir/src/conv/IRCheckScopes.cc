@@ -38,7 +38,7 @@
 
 using namespace nr;
 
-bool NRBuilder::check_scopes(Seq *, IDiagnosticSink *) noexcept {
+bool NRBuilder::check_scopes(Seq *, IReport *) noexcept {
   /// TODO: Implement check
   return true;
 }

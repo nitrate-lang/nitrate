@@ -1,4 +1,6 @@
 #include <unordered_map>
+
+#include "nitrate-ir/Report.hh"
 #////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
 ///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
@@ -33,8 +35,8 @@
 #ifndef __NITRATE_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
 #define __NITRATE_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
 
-#include <atomic>
 #include <functional>
+#include <nitrate-ir/Report.hh>
 #include <span>
 #include <string>
 #include <unordered_map>
@@ -43,7 +45,7 @@
 struct qmodule_t;
 
 namespace nr::pass {
-  typedef std::function<bool(qmodule_t*)> pass_func_t;
+  typedef std::function<bool(qmodule_t*, IReport*)> pass_func_t;
 
   class ModulePass {
     std::string_view name;
@@ -52,7 +54,7 @@ namespace nr::pass {
   public:
     ModulePass(std::string_view name, pass_func_t func) : name(name), func(func) {}
 
-    bool run(qmodule_t* module) const { return func(module); }
+    bool run(qmodule_t* module, IReport* log) const { return func(module, log); }
 
     std::string_view getName() const { return name; }
     pass_func_t getFunc() const { return func; }

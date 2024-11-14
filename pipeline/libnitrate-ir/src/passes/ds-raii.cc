@@ -41,7 +41,7 @@
 
 using namespace nr;
 
-bool nr::pass::ds_raii(qmodule_t *M) {
+bool nr::pass::ds_raii(qmodule_t *M, IReport *) {
   for (auto &[k, v] : M->getFunctions()) {
     Expr *F = v.second->getBody();
 

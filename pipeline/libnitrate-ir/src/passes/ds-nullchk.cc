@@ -41,7 +41,7 @@
 
 using namespace nr;
 
-bool nr::pass::ds_nullchk(qmodule_t *mod) {
+bool nr::pass::ds_nullchk(qmodule_t *mod, IReport *) {
   bool has_bad_null = false;
 
   const auto cb = [&has_bad_null](Expr *, Expr **_cur) -> IterOp {

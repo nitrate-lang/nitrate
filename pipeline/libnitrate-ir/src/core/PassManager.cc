@@ -33,6 +33,7 @@
 #include <nitrate-core/Error.h>
 
 #include <core/PassManager.hh>
+#include <nitrate-ir/Module.hh>
 
 using namespace nr::pass;
 
@@ -71,7 +72,7 @@ CPP_EXPORT ModulePass PassRegistry::get(const std::string& name) {
 CPP_EXPORT bool PassGroup::run(qmodule_t* module,
                                std::function<void(std::string_view)> on_success) {
   for (const auto& pass : m_sequence) {
-    if (!pass.run(module)) {
+    if (!pass.run(module, &module->getDiag())) {
       return false;
     }
 

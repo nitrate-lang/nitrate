@@ -101,12 +101,18 @@ namespace nr {
 
   typedef std::function<void(std::string_view, IssueClass)> DiagnosticMessageHandler;
 
-  class IDiagnosticSink {
+  class IReport {
   public:
     virtual void report(IssueCode code, IssueClass level, std::span<std::string_view> params = {},
-                        std::string_view filename = "", uint32_t start_offset = 1,
-                        uint32_t end_offset = 0) = 0;
-    virtual ~IDiagnosticSink() = default;
+                        uint32_t start_offset = 1, uint32_t end_offset = 0,
+                        std::string_view filename = "") = 0;
+
+    void report(IssueCode code, IssueClass level, std::string_view message,
+                std::pair<uint32_t, uint32_t> loc = {0, 0}, std::string_view filename = "") {
+      std::array<std::string_view, 1> x = {message};
+      report(code, level, x, loc.first, loc.second, filename);
+    };
+    virtual ~IReport() = default;
   };
 
   class IOffsetResolver {
@@ -128,7 +134,7 @@ namespace nr {
     uint64_t hash() const;
   };
 
-  class DiagnosticManager : public IDiagnosticSink {
+  class DiagnosticManager : public IReport {
     std::vector<DiagMessage> m_vec;
     std::unordered_set<uint64_t> m_visited;
     std::shared_ptr<IOffsetResolver> m_resolver;
@@ -142,8 +148,8 @@ namespace nr {
         : m_resolver(std::move(resolver)) {}
 
     virtual void report(IssueCode code, IssueClass level, std::span<std::string_view> params = {},
-                        std::string_view filename = "", uint32_t start_offset = 1,
-                        uint32_t end_offset = 0) override;
+                        uint32_t start_offset = 1, uint32_t end_offset = 0,
+                        std::string_view filename = "") override;
 
     size_t render(DiagnosticMessageHandler handler, nr_diag_format_t style);
 

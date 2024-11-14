@@ -46,7 +46,7 @@
 
 using namespace nr;
 
-bool nr::pass::ds_mangle(qmodule_t *mod) {
+bool nr::pass::ds_mangle(qmodule_t *mod, IReport *) {
   SymbolEncoding se;
   bool failed = false;
 

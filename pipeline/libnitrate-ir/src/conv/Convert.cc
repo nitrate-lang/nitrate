@@ -108,7 +108,7 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
 
     if (diagnostics) {
       /// TODO: Get diagnostic provider
-      std::unique_ptr<IDiagnosticSink> provider;
+      std::unique_ptr<IReport> provider;
 
       if (builder.verify(provider.get())) {
         success = true;
@@ -128,11 +128,6 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
 }
 
 ///=============================================================================
-
-// static std::string_view b.intern(std::string_view sv) { return nr::current->internString(sv); }
-// static std::string_view b.intern(qparse::String sv) {
-//   return b.intern(std::string_view(sv.data(), sv.size()));
-// }
 
 static nr::Tmp *create_simple_call(NRBuilder &b, PState &, std::string_view name,
                                    std::vector<std::pair<std::string_view, nr::Expr *>,

@@ -354,7 +354,7 @@ static size_t garbage_collect_round(qmodule_t* M, size_t& iteration) {
   return node_count;
 }
 
-bool nr::pass::ds_clean(qmodule_t* M) {
+bool nr::pass::ds_clean(qmodule_t* M, IReport*) {
   /* Run garbage collection until there is no more removable garbage */
   NodeCount last_count = -1, cur_count = 0;
   size_t gc_iter = 0;

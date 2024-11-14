@@ -34,10 +34,12 @@
 
 struct qmodule_t;
 
+#include <nitrate-ir/Report.hh>
+
 namespace nr::pass {
-#define SEMANTIC_PASS(name) bool name(qmodule_t *mod)
-#define TRANSFORM_PASS(name) bool name(qmodule_t *mod)
-#define OPTIMIZE_PASS(name) bool name(qmodule_t *mod)
+#define SEMANTIC_PASS(name) bool name(qmodule_t *mod, IReport *log);
+#define TRANSFORM_PASS(name) bool name(qmodule_t *mod, IReport *log)
+#define OPTIMIZE_PASS(name) bool name(qmodule_t *mod, IReport *log)
 
   TRANSFORM_PASS(ds_acyclic);
   TRANSFORM_PASS(ds_nullchk);

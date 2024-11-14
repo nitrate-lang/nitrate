@@ -311,7 +311,7 @@ void NRBuilder::finish(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   m_current_expr = std::nullopt;
 }
 
-bool NRBuilder::verify(std::optional<IDiagnosticSink *> the_sink SOURCE_LOCATION_PARAM) noexcept {
+bool NRBuilder::verify(std::optional<IReport *> the_log SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Finished || m_state == SelfState::Verified ||
                    m_state == SelfState::FailEarly);
   contract_enforce(m_result == std::nullopt);
@@ -326,50 +326,50 @@ bool NRBuilder::verify(std::optional<IDiagnosticSink *> the_sink SOURCE_LOCATION
     return true;
   }
 
-  if (!the_sink.has_value()) {
+  if (!the_log.has_value()) {
     /// TODO: Create mock instance
     qcore_implement();
   }
 
-  IDiagnosticSink *sink = the_sink.value();
+  IReport *log = the_log.value();
 
-  if (!check_acyclic(m_root, sink)) {
+  if (!check_acyclic(m_root, log)) {
     return false;
   }
 
-  if (!check_duplicates(m_root, sink)) {
+  if (!check_duplicates(m_root, log)) {
     return false;
   }
 
-  if (!check_symbols_exist(m_root, sink)) {
+  if (!check_symbols_exist(m_root, log)) {
     return false;
   }
 
-  if (!check_function_calls(m_root, sink)) {
+  if (!check_function_calls(m_root, log)) {
     return false;
   }
 
-  if (!check_returns(m_root, sink)) {
+  if (!check_returns(m_root, log)) {
     return false;
   }
 
-  if (!check_scopes(m_root, sink)) {
+  if (!check_scopes(m_root, log)) {
     return false;
   }
 
-  if (!check_mutability(m_root, sink)) {
+  if (!check_mutability(m_root, log)) {
     return false;
   }
 
-  if (!check_control_flow(m_root, sink)) {
+  if (!check_control_flow(m_root, log)) {
     return false;
   }
 
-  if (!check_types(m_root, sink)) {
+  if (!check_types(m_root, log)) {
     return false;
   }
 
-  if (!check_safety_claims(m_root, sink)) {
+  if (!check_safety_claims(m_root, log)) {
     return false;
   }
 
