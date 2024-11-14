@@ -34,7 +34,6 @@
 
 #include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>
-#include <nitrate-lexer/Lexer.h>
 
 #include <boost/bimap.hpp>
 #include <cstddef>
@@ -45,8 +44,6 @@
 #include <nitrate-ir/Report.hh>
 #include <string>
 #include <vector>
-
-#include "core/Diagnostic.hh"
 
 namespace nr {
   typedef uint16_t ModuleId;
@@ -183,7 +180,7 @@ private:
   ///=============================================================================
 
   std::unique_ptr<nr::IReport> m_diagnostics;
-  std::unique_ptr<nr::IOffsetResolver> m_offset_resolver;
+  std::unique_ptr<nr::ISourceView> m_offset_resolver;
   std::unordered_map<std::string_view, std::string> m_strings{}; /* Interned strings */
   ModulePasses m_applied{};                                      /* Module pass tracking */
   nr::TargetInfo m_target_info{};                                /* Build target information */
@@ -193,7 +190,6 @@ private:
   bool m_diagnostics_enabled{};
 
   qcore_arena m_node_arena{};
-  qlex_t *m_lexer{};
 
 public:
   qmodule_t(nr::ModuleId id, const std::string &name = "?");
@@ -203,9 +199,6 @@ public:
 
   void setRoot(nr::Expr *root) noexcept { m_root = root; }
   nr::Expr *&getRoot() noexcept { return m_root; }
-
-  void setLexer(qlex_t *lexer) noexcept { m_lexer = lexer; }
-  qlex_t *getLexer() noexcept { return m_lexer; }
 
   std::unordered_map<uint64_t, uint64_t> &getKeyMap() noexcept { return m_key_map; }
 
@@ -232,7 +225,7 @@ public:
   qcore_arena_t &getNodeArena() { return *m_node_arena.get(); }
 
   std::unique_ptr<nr::IReport> &getDiag() { return m_diagnostics; }
-  std::unique_ptr<nr::IOffsetResolver> &getOffsetResolver() { return m_offset_resolver; }
+  std::unique_ptr<nr::ISourceView> &getOffsetResolver() { return m_offset_resolver; }
 
   const nr::TargetInfo &getTargetInfo() const { return m_target_info; }
 };

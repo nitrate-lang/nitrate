@@ -58,7 +58,6 @@ file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 add_library(nitrate-emit ${CXX_SOURCES})
 target_include_directories(nitrate-emit PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-lexer/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-ir/include
   /usr/lib/llvm-14/include)
 target_link_libraries(nitrate-emit PUBLIC nitrate-core nitrate-ir)

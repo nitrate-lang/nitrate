@@ -36,6 +36,7 @@
 
 #include <SerialUtil.hh>
 #include <functional>
+#include <memory>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-ir/Classes.hh>
 #include <string_view>

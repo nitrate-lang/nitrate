@@ -33,7 +33,6 @@
 #define __NITRATE_QXIR_REPORT_H__
 
 #include <nitrate-ir/IR.h>
-#include <nitrate-lexer/Token.h>
 
 #include <boost/bimap.hpp>
 #include <cstdarg>
@@ -110,6 +109,12 @@ namespace nr {
     virtual void stream_reports(std::function<void(const ReportData&)> cb) = 0;
   };
 
+  class ISourceView {
+  public:
+    virtual ~ISourceView() = default;
+
+    virtual std::optional<std::pair<uint32_t, uint32_t>> off2rc(uint32_t offset) noexcept = 0;
+  };
 };  // namespace nr
 
 #endif  // __NITRATE_QXIR_REPORT_H__

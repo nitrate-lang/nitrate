@@ -33,8 +33,10 @@
 #define __NITRATE_QXIR_QXIR_H__
 
 #include <nitrate-ir/TypeDecl.h>
-#include <nitrate-lexer/Lexer.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -288,7 +290,6 @@ nr_node_t *nr_infer(nr_node_t *node, uint32_t PtrSizeBytes);
  */
 nr_node_t *nr_clone(const nr_node_t *node);
 
-qlex_t *nr_get_lexer(qmodule_t *mod);
 nr_node_t *nr_base(qmodule_t *mod);
 nr_conf_t *nr_get_conf(qmodule_t *mod);
 

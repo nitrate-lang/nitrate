@@ -31,7 +31,6 @@
 
 #include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
-#include <nitrate-lexer/Lexer.h>
 #include <nitrate-parser/Node.h>
 
 #include <boost/bimap.hpp>
@@ -300,7 +299,7 @@ static void confine_rect_bounds(int64_t &x_0, int64_t &y_0, int64_t &x_1, int64_
   if (y_1 < 0) y_1 = 0;
 }
 
-std::string nr::mint_modern_message(const IReport::ReportData &R, IOffsetResolver *B) {
+std::string nr::mint_modern_message(const IReport::ReportData &R, ISourceView *B) {
   constexpr size_t WIDTH = 70;
 
   std::stringstream ss;
@@ -310,8 +309,8 @@ std::string nr::mint_modern_message(const IReport::ReportData &R, IOffsetResolve
     ss << "\x1b[37;1m" << "??" << ":";
 
     auto default_if = std::pair<uint32_t, uint32_t>(UINT32_MAX, UINT32_MAX);
-    auto beg = B->resolve(R.start_offset).value_or(default_if);
-    auto end = B->resolve(R.end_offset).value_or(default_if);
+    auto beg = B->off2rc(R.start_offset).value_or(default_if);
+    auto end = B->off2rc(R.end_offset).value_or(default_if);
 
     sl = beg.first;
     sc = beg.second;

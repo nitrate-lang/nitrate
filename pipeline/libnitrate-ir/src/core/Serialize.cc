@@ -33,17 +33,15 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-ir/Lib.h>
 #include <nitrate-ir/TypeDecl.h>
-#include <nitrate-lexer/Lexer.h>
 
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <iomanip>
+#include <nitrate-ir/Module.hh>
 #include <sstream>
 #include <unordered_set>
-
-#include "nitrate-ir/Module.hh"
 
 using namespace nr;
 

@@ -32,7 +32,6 @@
 #ifndef __NITRATE_QXIR_IRBUILDER_H__
 #define __NITRATE_QXIR_IRBUILDER_H__
 
-#include <unordered_map>
 #ifndef __cplusplus
 #error "This header is C++ only."
 #endif
@@ -40,7 +39,6 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>
-#include <nitrate-lexer/Token.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -53,6 +51,7 @@
 #include <nitrate-ir/Report.hh>
 #include <optional>
 #include <string_view>
+#include <unordered_map>
 
 namespace nr {
   enum class Purity {

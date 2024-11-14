@@ -42,9 +42,9 @@ using namespace nr;
 static std::vector<std::optional<qmodule_t *>> nr_modules;
 static std::mutex nr_modules_mutex;
 
-class LexerSourceResolver : public IOffsetResolver {
+class LexerSourceResolver : public ISourceView {
 public:
-  virtual std::optional<std::pair<uint32_t, uint32_t>> resolve(uint32_t) noexcept override {
+  virtual std::optional<std::pair<uint32_t, uint32_t>> off2rc(uint32_t) noexcept override {
     return std::nullopt;
     /// TODO: Implement source offset resolver
     qcore_implement();
@@ -61,17 +61,13 @@ qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
 
   m_module_name = name;
 
-  m_lexer = nullptr;
   m_root = nullptr;
   m_diagnostics_enabled = true;
 
   m_id = id;
 }
 
-qmodule_t::~qmodule_t() {
-  m_lexer = nullptr;
-  m_root = nullptr;
-}
+qmodule_t::~qmodule_t() { m_root = nullptr; }
 
 void qmodule_t::enableDiagnostics(bool is_enabled) noexcept { m_diagnostics_enabled = is_enabled; }
 
@@ -129,8 +125,6 @@ LIB_EXPORT void nr_free(qmodule_t *mod) {
 }
 
 LIB_EXPORT size_t nr_max_modules(void) { return MAX_MODULE_INSTANCES; }
-
-LIB_EXPORT qlex_t *nr_get_lexer(qmodule_t *mod) { return mod->getLexer(); }
 
 LIB_EXPORT nr_node_t *nr_base(qmodule_t *mod) {
   return reinterpret_cast<nr_node_t *>(mod->getRoot());

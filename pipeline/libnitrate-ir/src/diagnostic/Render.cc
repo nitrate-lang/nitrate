@@ -54,7 +54,7 @@ static void print_qsizeloc(std::stringstream &ss, uint32_t num) {
   }
 }
 
-std::string nr::mint_plain_message(const IReport::ReportData &R, IOffsetResolver *B) {
+std::string nr::mint_plain_message(const IReport::ReportData &R, ISourceView *B) {
   std::stringstream ss;
   uint32_t sl, sc, el, ec;
 
@@ -63,8 +63,8 @@ std::string nr::mint_plain_message(const IReport::ReportData &R, IOffsetResolver
     ss << "??" << ":";
 
     auto default_if = std::pair<uint32_t, uint32_t>({UINT32_MAX, UINT32_MAX});
-    auto beg = B->resolve(R.start_offset).value_or(default_if);
-    auto end = B->resolve(R.end_offset).value_or(default_if);
+    auto beg = B->off2rc(R.start_offset).value_or(default_if);
+    auto end = B->off2rc(R.end_offset).value_or(default_if);
 
     sl = beg.first;
     sc = beg.second;
@@ -126,7 +126,7 @@ std::string nr::mint_plain_message(const IReport::ReportData &R, IOffsetResolver
   return ss.str();
 }
 
-std::string nr::mint_clang16_message(const IReport::ReportData &R, IOffsetResolver *B) {
+std::string nr::mint_clang16_message(const IReport::ReportData &R, ISourceView *B) {
   std::stringstream ss;
   uint32_t sl, sc, el, ec;
 
@@ -134,8 +134,8 @@ std::string nr::mint_clang16_message(const IReport::ReportData &R, IOffsetResolv
     ss << "\x1b[39;1m" << "??" << ":";
 
     auto default_if = std::pair<uint32_t, uint32_t>({UINT32_MAX, UINT32_MAX});
-    auto beg = B->resolve(R.start_offset).value_or(default_if);
-    auto end = B->resolve(R.end_offset).value_or(default_if);
+    auto beg = B->off2rc(R.start_offset).value_or(default_if);
+    auto end = B->off2rc(R.end_offset).value_or(default_if);
 
     sl = beg.first;
     sc = beg.second;
@@ -286,7 +286,7 @@ LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_c
     return;
   }
 
-  IOffsetResolver *B = nr->getOffsetResolver().get();
+  ISourceView *B = nr->getOffsetResolver().get();
 
   nr->getDiag()->stream_reports([&](IReport::ReportData R) {
     std::stringstream ss;
@@ -311,7 +311,7 @@ LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_c
        */
       case QXIR_DIAG_UTF8_ECODE_LOC: {
         ss << std::to_string(static_cast<uint64_t>(R.code)) << ":";
-        auto beg = B->resolve(R.start_offset);
+        auto beg = B->off2rc(R.start_offset);
 
         ss << beg->first << ":";
         ss << beg->second << ":";

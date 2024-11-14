@@ -32,7 +32,6 @@
 #ifndef __NITRATE_QXIR_NODE_H__
 #define __NITRATE_QXIR_NODE_H__
 
-#include <cstdint>
 #ifndef __cplusplus
 #error "This header is C++ only."
 #endif
@@ -40,12 +39,12 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>
-#include <nitrate-lexer/Token.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <functional>
 #include <iostream>
 #include <nitrate-core/Classes.hh>
@@ -53,6 +52,7 @@
 #include <optional>
 #include <ostream>
 #include <string>
+#include <unordered_set>
 #include <variant>
 #include <vector>
 

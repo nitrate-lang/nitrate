@@ -33,7 +33,6 @@
 #define __NITRATE_QXIR_DIAGNOSTIC_H__
 
 #include <nitrate-ir/IR.h>
-#include <nitrate-lexer/Token.h>
 
 #include <boost/bimap.hpp>
 #include <cstdarg>
@@ -60,12 +59,6 @@ namespace nr {
 
   typedef std::function<void(std::string_view, IC)> DiagnosticMessageHandler;
 
-  class IOffsetResolver {
-  public:
-    virtual std::optional<std::pair<uint32_t, uint32_t>> resolve(uint32_t offset) noexcept = 0;
-    virtual ~IOffsetResolver() = default;
-  };
-
   struct DiagDatum {
     IssueCode code;
     IC level;
@@ -86,9 +79,9 @@ namespace nr {
     uint64_t hash() const;
   };
 
-  std::string mint_clang16_message(const IReport::ReportData &R, IOffsetResolver *B);
-  std::string mint_plain_message(const IReport::ReportData &R, IOffsetResolver *B);
-  std::string mint_modern_message(const IReport::ReportData &R, IOffsetResolver *B);
+  std::string mint_clang16_message(const IReport::ReportData &R, ISourceView *B);
+  std::string mint_plain_message(const IReport::ReportData &R, ISourceView *B);
+  std::string mint_modern_message(const IReport::ReportData &R, ISourceView *B);
 
   class DiagnosticManager final : public IReport {
     std::vector<DiagDatum> m_vec;
