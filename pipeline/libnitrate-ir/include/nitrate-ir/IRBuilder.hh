@@ -102,11 +102,10 @@ namespace nr {
     ///**************************************************************************///
 
     enum class SelfState {
-      Constructed,  // start => [Finished, FailEarly, Destroyed]
-      Finished,     // => [Verified, FailEarly, Destroyed]
-      Verified,     // => [Emitted, FailEarly, Destroyed]
-      Emitted,      // => [FailEarly, Destroyed]
-      FailEarly,    // exit => [Destroyed]
+      Constructed,  // start => [Finished, Destroyed]
+      Finished,     // => [Verified, Destroyed]
+      Verified,     // => [Emitted, Destroyed]
+      Emitted,      // => [Destroyed]
       Destroyed,    // exit => []
     };
 
@@ -116,7 +115,6 @@ namespace nr {
 
     Seq *m_current_scope;
     std::optional<Fn *> m_current_function;
-    std::optional<Expr *> m_current_expr;
 
     std::unordered_map<std::string_view, std::string> m_interned_strings;
 

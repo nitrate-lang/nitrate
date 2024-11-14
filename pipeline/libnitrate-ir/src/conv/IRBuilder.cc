@@ -54,7 +54,6 @@ NRBuilder::NRBuilder(std::string module_name,
 
   m_current_scope = nullptr;
   m_current_function = std::nullopt;
-  m_current_expr = std::nullopt;
 
   m_root = create<Seq>(SeqItems());
   m_current_scope = m_root;
@@ -67,7 +66,6 @@ NRBuilder::~NRBuilder() noexcept {
 
   m_current_scope = nullptr;
   m_current_function = std::nullopt;
-  m_current_expr = std::nullopt;
 }
 
 NRBuilder &NRBuilder::operator=(NRBuilder &&rhs) noexcept {
@@ -80,7 +78,6 @@ NRBuilder &NRBuilder::operator=(NRBuilder &&rhs) noexcept {
 
   this->m_current_scope = rhs.m_current_scope;
   this->m_current_function = rhs.m_current_function;
-  this->m_current_expr = rhs.m_current_expr;
 
   rhs.m_state = SelfState::Destroyed;
   rhs.m_result = std::nullopt;
@@ -88,7 +85,6 @@ NRBuilder &NRBuilder::operator=(NRBuilder &&rhs) noexcept {
 
   rhs.m_current_scope = nullptr;
   rhs.m_current_function = std::nullopt;
-  rhs.m_current_expr = std::nullopt;
 
   return *this;
 }
@@ -103,7 +99,6 @@ NRBuilder::NRBuilder(NRBuilder &&rhs) noexcept {
 
   this->m_current_scope = rhs.m_current_scope;
   this->m_current_function = rhs.m_current_function;
-  this->m_current_expr = rhs.m_current_expr;
 
   rhs.m_state = SelfState::Destroyed;
   rhs.m_result = std::nullopt;
@@ -111,7 +106,6 @@ NRBuilder::NRBuilder(NRBuilder &&rhs) noexcept {
 
   rhs.m_current_scope = nullptr;
   rhs.m_current_function = std::nullopt;
-  rhs.m_current_expr = std::nullopt;
 }
 
 void NRBuilder::contract_enforce_(bool cond, std::string_view cond_str SOURCE_LOCATION_PARAM,
@@ -194,7 +188,7 @@ nr_node_t *nr_clone_impl(const nr_node_t *_node,
 NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
   contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::Finished ||
                    m_state == SelfState::Verified || m_state == SelfState::Emitted ||
-                   m_state == SelfState::FailEarly || m_state == SelfState::Destroyed);
+                   m_state == SelfState::Destroyed);
 
   NRBuilder r(m_module_name, m_target_info);
 
@@ -205,7 +199,6 @@ NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
     contract_enforce(m_root == nullptr);
     contract_enforce(m_current_scope == nullptr);
     contract_enforce(m_current_function == std::nullopt);
-    contract_enforce(m_current_expr == std::nullopt);
   } else {
     contract_enforce(m_root != nullptr);
 
@@ -241,11 +234,6 @@ NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
         r.m_current_function = static_cast<Fn *>(node_map.at(m_current_function.value()));
         contract_enforce(r.m_current_function != std::nullopt);
       }
-
-      if (m_current_expr) {
-        r.m_current_expr = static_cast<Expr *>(node_map.at(m_current_expr.value()));
-        contract_enforce(m_current_expr != std::nullopt);
-      }
     }
   }
 
@@ -254,8 +242,7 @@ NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
 
 size_t NRBuilder::approx_memory_usage(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::Finished ||
-                   m_state == SelfState::Verified || m_state == SelfState::Emitted ||
-                   m_state == SelfState::FailEarly);
+                   m_state == SelfState::Verified || m_state == SelfState::Emitted);
   contract_enforce(m_root != nullptr);
 
   size_t lower_bound = 0;
@@ -275,13 +262,8 @@ size_t NRBuilder::approx_memory_usage(SOURCE_LOCATION_PARAM_ONCE) noexcept {
 
 size_t NRBuilder::node_count(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::Finished ||
-                   m_state == SelfState::Verified || m_state == SelfState::Emitted ||
-                   m_state == SelfState::FailEarly);
+                   m_state == SelfState::Verified || m_state == SelfState::Emitted);
   contract_enforce(m_root != nullptr);
-
-  if (m_state == SelfState::FailEarly) {
-    return 1;
-  }
 
   size_t count = 0;
 
@@ -297,34 +279,24 @@ size_t NRBuilder::node_count(SOURCE_LOCATION_PARAM_ONCE) noexcept {
 }
 
 void NRBuilder::finish(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::Finished ||
-                   m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::Finished);
   contract_enforce(m_result == std::nullopt);
   contract_enforce(m_root != nullptr);
-
-  if (m_state == SelfState::FailEarly) {
-    return;
-  }
 
   m_state = SelfState::Finished;
 
   m_current_scope = nullptr;
   m_current_function = std::nullopt;
-  m_current_expr = std::nullopt;
 }
 
 bool NRBuilder::verify(std::optional<IReport *> the_log SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Finished || m_state == SelfState::Verified ||
-                   m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Finished || m_state == SelfState::Verified);
   contract_enforce(m_result == std::nullopt);
   contract_enforce(m_root != nullptr);
   contract_enforce(m_current_scope == nullptr);
   contract_enforce(m_current_function == std::nullopt);
-  contract_enforce(m_current_expr == std::nullopt);
 
-  if (m_state == SelfState::FailEarly) {
-    return false;
-  } else if (m_state == SelfState::Verified) {
+  if (m_state == SelfState::Verified) {
     return true;
   }
 
@@ -382,7 +354,6 @@ bool NRBuilder::verify(std::optional<IReport *> the_log SOURCE_LOCATION_PARAM) n
   contract_enforce(m_root != nullptr);
   contract_enforce(m_current_scope == nullptr);
   contract_enforce(m_current_function == std::nullopt);
-  contract_enforce(m_current_expr == std::nullopt);
 
   return true;
 }
@@ -392,7 +363,6 @@ qmodule_t *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   contract_enforce(m_root != nullptr);
   contract_enforce(m_current_scope == nullptr);
   contract_enforce(m_current_function == std::nullopt);
-  contract_enforce(m_current_expr == std::nullopt);
 
   if (m_state == SelfState::Emitted) {
     contract_enforce(m_result != std::nullopt);

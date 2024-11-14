@@ -942,6 +942,23 @@ static EResult nrgen_tuple_ty(NRBuilder &b, PState &s, IReport *G, qparse::Tuple
   return create<StructTy>(std::move(fields));
 }
 
+using IsThreadSafe = bool;
+
+static std::pair<Purity, IsThreadSafe> convert_purity(qparse::FuncPurity x) {
+  switch (x) {
+    case qparse::FuncPurity::IMPURE_THREAD_UNSAFE:
+      return {Purity::Impure, false};
+    case qparse::FuncPurity::IMPURE_THREAD_SAFE:
+      return {Purity::Impure, true};
+    case qparse::FuncPurity::PURE:
+      return {Purity::Pure, true};
+    case qparse::FuncPurity::QUASIPURE:
+      return {Purity::Quasipure, true};
+    case qparse::FuncPurity::RETROPURE:
+      return {Purity::Retropure, true};
+  }
+}
+
 static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G, qparse::FuncTy *n) {
   FnParams params;
 
@@ -959,13 +976,10 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G, qparse::FuncTy *
     return std::nullopt;
   }
 
-  FnAttrs attrs;
+  auto props = convert_purity(n->get_purity());
 
-  if (n->is_variadic()) {
-    attrs.insert(FnAttr::Variadic);
-  }
-
-  return create<FnTy>(std::move(params), ret.value()->asType(), std::move(attrs));
+  return b.getFnTy(params, ret.value()->asType(), n->is_variadic(), props.first, props.second,
+                   n->is_noexcept(), n->is_foreign());
 }
 
 static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *G, qparse::UnresolvedType *n) {
@@ -1031,23 +1045,6 @@ static std::optional<std::vector<Expr *>> nrgen_typedef(NRBuilder &b, PState &s,
   // return std::vector<Expr *>();
 
   return std::nullopt;
-}
-
-using IsThreadSafe = bool;
-
-static std::pair<Purity, IsThreadSafe> convert_purity(qparse::FuncPurity x) {
-  switch (x) {
-    case qparse::FuncPurity::IMPURE_THREAD_UNSAFE:
-      return {Purity::Impure, false};
-    case qparse::FuncPurity::IMPURE_THREAD_SAFE:
-      return {Purity::Impure, true};
-    case qparse::FuncPurity::PURE:
-      return {Purity::Pure, true};
-    case qparse::FuncPurity::QUASIPURE:
-      return {Purity::Quasipure, true};
-    case qparse::FuncPurity::RETROPURE:
-      return {Purity::Retropure, true};
-  }
 }
 
 #define align(x, a) (((x) + (a) - 1) & ~((a) - 1))

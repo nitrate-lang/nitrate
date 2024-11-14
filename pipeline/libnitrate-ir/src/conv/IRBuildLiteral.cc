@@ -40,14 +40,14 @@
 using namespace nr;
 
 Int *NRBuilder::createBool(bool value SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<Int>(value, IntSize::U1), DEBUG_INFO));
 }
 
 Int *NRBuilder::createFixedInteger(uint128_t value, IntSize width SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   switch (width) {
@@ -88,7 +88,7 @@ Int *NRBuilder::createFixedInteger(uint128_t value, IntSize width SOURCE_LOCATIO
 
 Float *NRBuilder::createFixedFloat(bigfloat_t value,
                                    FloatSize width SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   switch (width) {
@@ -117,7 +117,7 @@ Float *NRBuilder::createFixedFloat(bigfloat_t value,
 
 List *NRBuilder::createStringDataArray(std::string_view value,
                                        ABIStringStyle style SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   // Only C-strings are currently supported
@@ -144,7 +144,7 @@ List *NRBuilder::createList(std::span<Expr *> items,
                              * implicit conversions of the elements in the list.
                              */
                             bool cast_homogenous SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   ListItems items_copy;

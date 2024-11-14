@@ -60,6 +60,10 @@ Fn *NRBuilder::createFunctionDeclaration(std::string_view name, std::span<FnPara
                                          Type *ret_ty, bool is_variadic, Vis visibility,
                                          Purity purity, bool thread_safe, bool is_noexcept,
                                          bool foreign SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(m_current_scope != nullptr);
+
   /// TODO: Implement
   qcore_implement();
   (void)name;

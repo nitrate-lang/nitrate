@@ -40,119 +40,119 @@
 using namespace nr;
 
 U1Ty *NRBuilder::getU1Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<U1Ty>(), DEBUG_INFO));
 }
 
 U8Ty *NRBuilder::getU8Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<U8Ty>(), DEBUG_INFO));
 }
 
 U16Ty *NRBuilder::getU16Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<U16Ty>(), DEBUG_INFO));
 }
 
 U32Ty *NRBuilder::getU32Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<U32Ty>(), DEBUG_INFO));
 }
 
 U64Ty *NRBuilder::getU64Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<U64Ty>(), DEBUG_INFO));
 }
 
 U128Ty *NRBuilder::getU128Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<U128Ty>(), DEBUG_INFO));
 }
 
 I8Ty *NRBuilder::getI8Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<I8Ty>(), DEBUG_INFO));
 }
 
 I16Ty *NRBuilder::getI16Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<I16Ty>(), DEBUG_INFO));
 }
 
 I32Ty *NRBuilder::getI32Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<I32Ty>(), DEBUG_INFO));
 }
 
 I64Ty *NRBuilder::getI64Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<I64Ty>(), DEBUG_INFO));
 }
 
 I128Ty *NRBuilder::getI128Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<I128Ty>(), DEBUG_INFO));
 }
 
 F16Ty *NRBuilder::getF16Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<F16Ty>(), DEBUG_INFO));
 }
 
 F32Ty *NRBuilder::getF32Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<F32Ty>(), DEBUG_INFO));
 }
 
 F64Ty *NRBuilder::getF64Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<F64Ty>(), DEBUG_INFO));
 }
 
 F128Ty *NRBuilder::getF128Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<F128Ty>(), DEBUG_INFO));
 }
 
 VoidTy *NRBuilder::getVoidTy(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   return compiler_trace(debug_info(create<VoidTy>(), DEBUG_INFO));
 }
 
 OpaqueTy *NRBuilder::getUnknownTy(SOURCE_LOCATION_PARAM_ONCE) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   // Use the '?' name to indiciate an unknown subject to later resolution by type inference.
@@ -160,7 +160,7 @@ OpaqueTy *NRBuilder::getUnknownTy(SOURCE_LOCATION_PARAM_ONCE) noexcept {
 }
 
 PtrTy *NRBuilder::getPtrTy(Type *pointee SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(pointee != nullptr && static_cast<Expr *>(pointee)->isType());
 
@@ -170,7 +170,7 @@ PtrTy *NRBuilder::getPtrTy(Type *pointee SOURCE_LOCATION_PARAM) noexcept {
 }
 
 OpaqueTy *NRBuilder::getOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(!name.empty() && std::isalnum(name[0]) &&
                    "Non alphanumeric starter characters are reserved internally");
@@ -181,7 +181,7 @@ OpaqueTy *NRBuilder::getOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM) no
 }
 
 StructTy *NRBuilder::getStructTy(std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(std::all_of(fields.begin(), fields.end(), [](Type *ty) {
     return ty != nullptr && static_cast<Expr *>(ty)->isType();
@@ -203,7 +203,7 @@ StructTy *NRBuilder::getStructTy(std::span<Type *> fields SOURCE_LOCATION_PARAM)
 }
 
 UnionTy *NRBuilder::getUnionTy(std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(std::all_of(fields.begin(), fields.end(), [](Type *ty) {
     return ty != nullptr && static_cast<Expr *>(ty)->isType();
@@ -225,7 +225,7 @@ UnionTy *NRBuilder::getUnionTy(std::span<Type *> fields SOURCE_LOCATION_PARAM) n
 }
 
 ArrayTy *NRBuilder::getArrayTy(Type *element_ty, size_t count SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(element_ty != nullptr && static_cast<Expr *>(element_ty)->isType());
 
@@ -273,7 +273,7 @@ UnionTy *NRBuilder::createUnionTemplateDefintion(std::string_view name,
 
 Type *NRBuilder::getTemplateInstance(
     Type *base, std::span<Type *> template_params SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(base != nullptr && static_cast<Expr *>(base)->isType());
   contract_enforce(std::all_of(template_params.begin(), template_params.end(), [](Type *ty) {
