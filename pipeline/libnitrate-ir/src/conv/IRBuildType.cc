@@ -159,6 +159,15 @@ OpaqueTy *NRBuilder::getUnknownTy(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   return compiler_trace(debug_info(create<OpaqueTy>("?"), DEBUG_INFO));
 }
 
+Type *NRBuilder::getUnknownNamedTy(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed);
+  contract_enforce(m_root != nullptr);
+
+  Tmp *R = create<Tmp>(TmpType::NAMED_TYPE, name);
+
+  return compiler_trace(debug_info(R, DEBUG_INFO));
+}
+
 PtrTy *NRBuilder::getPtrTy(Type *pointee SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);

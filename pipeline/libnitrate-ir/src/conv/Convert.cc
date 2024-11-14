@@ -642,10 +642,8 @@ static EResult nrgen_bool(NRBuilder &b, PState &, IReport *G, qparse::ConstBool 
   return b.createBool(n->get_value());
 }
 
-static EResult nrgen_null(NRBuilder &, PState &, IReport *G, qparse::ConstNull *) {
-  return std::nullopt;
-
-  /// TODO: This will be a special global variable for the __builtin_optional class
+static EResult nrgen_null(NRBuilder &b, PState &, IReport *, qparse::ConstNull *) {
+  return b.getUnknownNamedTy("__builtin_null");
 }
 
 static EResult nrgen_undef(NRBuilder &, PState &, IReport *G, qparse::ConstUndef *n) {
@@ -655,24 +653,27 @@ static EResult nrgen_undef(NRBuilder &, PState &, IReport *G, qparse::ConstUndef
 
 static EResult nrgen_call(NRBuilder &b, PState &s, IReport *G, qparse::Call *n) {
   auto target = next_one(n->get_func());
-  if (!target) {
+  if (!target.has_value()) {
+    G->report(nr::CompilerError, IC::Error, "Failed to lower function target", n->get_pos());
     return std::nullopt;
   }
 
-  CallArgsTmpNodeCradle datapack;
-  for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
-    auto arg = next_one(it->second);
-    if (!arg) {
+  const auto &args = n->get_args();
+
+  std::vector<std::pair<std::string_view, Expr *>> arguments;
+  arguments.resize(args.size());
+
+  for (size_t i = 0; i < args.size(); i++) {
+    auto arg = next_one(args[i].second);
+    if (!arg.has_value()) {
+      G->report(nr::CompilerError, IC::Error, "Failed to lower function argument", n->get_pos());
       return std::nullopt;
     }
 
-    // Implicit conversion are done later
-
-    std::get<1>(datapack).push_back({b.intern(it->first), arg.value()});
+    arguments[i] = {b.intern(args[i].first), arg.value()};
   }
-  std::get<0>(datapack) = target.value();
 
-  return create<Tmp>(TmpType::CALL, std::move(datapack));
+  return b.createCall(target.value(), arguments);
 }
 
 static EResult nrgen_list(NRBuilder &b, PState &s, IReport *G, qparse::List *n) {

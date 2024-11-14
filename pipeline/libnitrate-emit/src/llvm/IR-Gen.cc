@@ -1965,11 +1965,10 @@ static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr
     s.locals.top().second.emplace(N->getName(), local);
     return local;
   } else {
-    llvm::GlobalVariable *global =
-        new llvm::GlobalVariable(m, R_T.value(), false, s.linkage.top(), nullptr, N->getName(),
-                                 nullptr, llvm::GlobalValue::NotThreadLocal, llvm::None, false);
+    auto init = llvm::Constant::getNullValue(R_T.value());
 
-    global->setInitializer(llvm::Constant::getNullValue(R_T.value()));
+    llvm::GlobalVariable *global =
+        new llvm::GlobalVariable(m, R_T.value(), false, s.linkage.top(), init, N->getName());
 
     /// TODO: Set the initializer value during program load???
     return global;
@@ -2363,9 +2362,6 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::F
    * @note [Write assumptions here]
    */
 
-  bool in_fn_old = s.in_fn;
-  s.in_fn = true;
-
   std::vector<llvm::Type *> params;
 
   { /* Lower parameter types */
@@ -2374,7 +2370,6 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::F
     for (auto &param : N->getParams()) {
       ty_t R = T(m, b, cf, s, param.first);
       if (!R) {
-        s.in_fn = in_fn_old;
         debug("Failed to get parameter type");
         return std::nullopt;
       }
@@ -2389,13 +2384,11 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::F
     // Use type inference to get return type
     auto x = N->getType();
     if (!x.has_value()) {
-      s.in_fn = in_fn_old;
       debug("Failed to get return type");
       return std::nullopt;
     }
     ty_t R = T(m, b, cf, s, x.value()->as<nr::FnTy>()->getReturn());
     if (!R) {
-      s.in_fn = in_fn_old;
       debug("Failed to get return type");
       return std::nullopt;
     }
@@ -2409,6 +2402,9 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::F
   if (!N->getBody().has_value()) {  // It is a declaration
     return callee;
   }
+
+  bool in_fn_old = s.in_fn;
+  s.in_fn = true;
 
   llvm::Function *fn = llvm::dyn_cast<llvm::Function>(callee);
 

@@ -108,8 +108,7 @@ const boost::bimap<IssueCode, IssueInfo> nr::issue_info = make_bimap<IssueCode, 
     {UnexpectedUndefLiteral,
      {"bad-undef-keyword",
       "Unexpected 'undef' keyword",
-      {"The 'undef' keyword is only permitted as default values for variable declarations and as "
-       "function arguments."}}},
+      {"The 'undef' keyword is only permitted as default values for variable declarations."}}},
 
     {UnknownType,
      {"unknown-type", /* FIXME: Summarize */

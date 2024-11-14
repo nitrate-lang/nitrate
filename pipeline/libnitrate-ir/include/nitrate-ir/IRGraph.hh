@@ -1297,7 +1297,7 @@ namespace nr {
                        std::string_view>
       TmpNodeCradle;
 
-  class Tmp final : public Expr {
+  class Tmp final : public Type {
     QCLASS_REFLECT()
 
     TmpType m_type;
@@ -1305,7 +1305,7 @@ namespace nr {
 
   public:
     Tmp(TmpType type, const TmpNodeCradle &data = {})
-        : Expr(QIR_NODE_TMP), m_type(type), m_data(data) {}
+        : Type(QIR_NODE_TMP), m_type(type), m_data(data) {}
 
     TmpType getTmpType() noexcept { return m_type; }
     TmpNodeCradle &getData() noexcept { return m_data; }

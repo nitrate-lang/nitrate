@@ -274,6 +274,12 @@ namespace nr {
                           StorageClass storage = StorageClass::LLVM_StackAlloa,
                           bool is_readonly = false SOURCE_LOCATION_PARAM) noexcept;
 
+    ///**************************************************************************///
+    // Create expressions
+
+    Expr *createCall(Expr *target,
+                     std::span<std::pair<std::string_view, Expr *>> arguments) noexcept;
+
     /// TODO:
 
     ///**************************************************************************///
@@ -324,6 +330,8 @@ namespace nr {
 
     /* Type inference unknowns; Converted to proper type upon resolution */
     OpaqueTy *getUnknownTy(SOURCE_LOCATION_PARAM_ONCE) noexcept;
+
+    Type *getUnknownNamedTy(std::string_view name SOURCE_LOCATION_PARAM) noexcept;
 
     PtrTy *getPtrTy(Type *pointee SOURCE_LOCATION_PARAM) noexcept;
 
