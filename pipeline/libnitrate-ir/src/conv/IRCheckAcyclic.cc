@@ -38,7 +38,11 @@
 
 using namespace nr;
 
-bool NRBuilder::check_acyclic(Seq *, diag::IDiagnosticSink *) noexcept {
-  /// TODO: Implement check
-  return true;
+bool NRBuilder::check_acyclic(Seq *root, IDiagnosticSink *sink) noexcept {
+  bool is_acyclic = root->isAcyclic();
+  if (!is_acyclic) {
+    sink->report(IssueCode::DSPolyCyclicRef, IssueClass::FatalError);
+  }
+
+  return is_acyclic;
 }

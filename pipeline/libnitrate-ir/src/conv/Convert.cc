@@ -51,7 +51,6 @@
 #include <string_view>
 #include <unordered_map>
 
-using namespace nr::diag;
 using namespace nr;
 
 struct PState {
@@ -103,6 +102,7 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
   bool success = false;
 
   auto result = nrgen_one(builder, s, static_cast<qparse::Node *>(base));
+
   if (result.has_value()) {
     builder.finish();
 
@@ -2084,7 +2084,7 @@ static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, qparse::Node
   using namespace nr;
 
   if (!n) {
-    return nullptr;
+    return std::nullopt;
   }
 
   std::optional<nr::Expr *> out;
@@ -2394,7 +2394,7 @@ static BResult nrgen_any(NRBuilder &b, PState &s, qparse::Node *n) {
   using namespace nr;
 
   if (!n) {
-    return {};
+    return std::nullopt;
   }
 
   BResult out;
@@ -2435,7 +2435,7 @@ static BResult nrgen_any(NRBuilder &b, PState &s, qparse::Node *n) {
     default: {
       auto expr = nrgen_one(b, s, n);
       if (expr.has_value()) {
-        out.value().push_back(expr.value());
+        out = {expr.value()};
       } else {
         report(IssueCode::CompilerError, IssueClass::Error,
                "nr::nrgen_any() failed to convert node", n->get_start_pos(), n->get_end_pos());

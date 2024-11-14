@@ -38,84 +38,42 @@
 
 using namespace nr;
 
-NRBuilder &NRBuilder::insertAfter(Expr *last SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(last != nullptr);
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+NRBuilder &NRBuilder::insertAfter(Expr *last) noexcept {
   /// TODO: Implement
   qcore_implement();
 
   return *this;
 }
 
-NRBuilder &NRBuilder::insertAfterVariable(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+NRBuilder &NRBuilder::insertAfterVariable(std::string_view name) noexcept {
   /// TODO: Implement
   qcore_implement();
 
   return *this;
 }
 
-NRBuilder &NRBuilder::insertAfterFunction(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+NRBuilder &NRBuilder::insertAfterFunction(std::string_view name) noexcept {
   /// TODO: Implement
   qcore_implement();
 
   return *this;
 }
 
-NRBuilder &NRBuilder::insertBefore(Expr *last SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(last != nullptr);
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+NRBuilder &NRBuilder::insertBefore(Expr *last) noexcept {
   /// TODO: Implement
   qcore_implement();
 
   return *this;
 }
 
-NRBuilder &NRBuilder::insertBeforeVariable(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+NRBuilder &NRBuilder::insertBeforeVariable(std::string_view name) noexcept {
   /// TODO: Implement
   qcore_implement();
 
   return *this;
 }
 
-NRBuilder &NRBuilder::insertBeforeFunction(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+NRBuilder &NRBuilder::insertBeforeFunction(std::string_view name) noexcept {
   /// TODO: Implement
   qcore_implement();
 

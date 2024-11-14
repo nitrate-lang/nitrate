@@ -41,7 +41,7 @@
 #include <nitrate-ir/Report.hh>
 #include <sstream>
 
-using namespace nr::diag;
+using namespace nr;
 
 ///============================================================================///
 
@@ -215,7 +215,7 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
 
 ///============================================================================///
 
-using namespace nr::diag;
+using namespace nr;
 
 uint64_t DiagMessage::hash() const {
   /* Not quite a PHF, but it's pretty close as long as there are not two many subject strings */
@@ -380,18 +380,17 @@ LIB_EXPORT size_t nr_diag_clear(qmodule_t *nr) {
   return n;
 }
 
-bool nr::diag::report(diag::IssueCode code, diag::IssueClass type, uint32_t loc_start,
-                      uint32_t loc_end) {
+bool nr::report(IssueCode code, IssueClass type, uint32_t loc_start, uint32_t loc_end) {
   qcore_implement();
-  // current->getDiag().push(channel, diag::DiagMessage("", type, code, loc_start, loc_end));
+  // current->getDiag().push(channel, DiagMessage("", type, code, loc_start, loc_end));
 
   return true;
 }
 
-bool nr::diag::report(diag::IssueCode code, diag::IssueClass type, std::string_view subject,
-                      uint32_t loc_start, uint32_t loc_end) {
+bool nr::report(IssueCode code, IssueClass type, std::string_view subject, uint32_t loc_start,
+                uint32_t loc_end) {
   qcore_implement();
-  // current->getDiag().push(channel, diag::DiagMessage(subject, type, code, loc_start, loc_end));
+  // current->getDiag().push(channel, DiagMessage(subject, type, code, loc_start, loc_end));
 
   return true;
 }

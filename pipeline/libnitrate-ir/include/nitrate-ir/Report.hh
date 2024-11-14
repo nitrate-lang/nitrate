@@ -47,7 +47,7 @@ namespace qparse {
   class Node;
 }
 
-namespace nr::diag {
+namespace nr {
   class SyntaxError : public std::runtime_error {
   public:
     SyntaxError() : std::runtime_error("") {}
@@ -159,21 +159,20 @@ namespace nr::diag {
    * @brief Report a diagnostic message
    * @return true always
    */
-  bool report(diag::IssueCode code, diag::IssueClass type, uint32_t loc_start = 0,
-              uint32_t loc_end = 0);
+  bool report(IssueCode code, IssueClass type, uint32_t loc_start = 0, uint32_t loc_end = 0);
 
   /**
    * @brief Report a diagnostic message
    * @return true always
    */
-  bool report(diag::IssueCode code, diag::IssueClass type, std::string_view subject = "",
+  bool report(IssueCode code, IssueClass type, std::string_view subject = "",
               uint32_t loc_start = 0, uint32_t loc_end = 0);
 
-  static inline bool report(diag::IssueCode code, diag::IssueClass type,
-                            std::pair<uint32_t, uint32_t> loc, std::string_view subject = "") {
+  static inline bool report(IssueCode code, IssueClass type, std::pair<uint32_t, uint32_t> loc,
+                            std::string_view subject = "") {
     return report(code, type, subject, loc.first, loc.second);
   }
 
-};  // namespace nr::diag
+};  // namespace nr
 
 #endif  // __NITRATE_QXIR_REPORT_H__

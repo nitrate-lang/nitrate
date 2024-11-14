@@ -42,7 +42,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-using namespace nr::diag;
+using namespace nr;
 
 nr_node_t *nr_clone_impl(const nr_node_t *_node,
                          std::unordered_map<const nr_node_t *, nr_node_t *> &map,

@@ -129,16 +129,24 @@ namespace nr {
     std::optional<Local *> lookup_local(std::string_view local) noexcept;
     std::optional<Fn *> lookup_function(std::string_view function) noexcept;
 
-    static bool check_acyclic(Seq *root, diag::IDiagnosticSink *L) noexcept;
-    static bool check_duplicates(Seq *root, diag::IDiagnosticSink *L) noexcept;
-    static bool check_symbols_exist(Seq *root, diag::IDiagnosticSink *L) noexcept;
-    static bool check_function_calls(Seq *root, diag::IDiagnosticSink *L) noexcept;
-    static bool check_returns(Seq *root, diag::IDiagnosticSink *L) noexcept;
-    static bool check_scopes(Seq *root, diag::IDiagnosticSink *L) noexcept;
-    static bool check_mutability(Seq *root, diag::IDiagnosticSink *L) noexcept;
-    static bool check_control_flow(Seq *root, diag::IDiagnosticSink *L) noexcept;
-    static bool check_types(Seq *root, diag::IDiagnosticSink *L) noexcept;
-    static bool check_safety_claims(Seq *root, diag::IDiagnosticSink *L) noexcept;
+    NRBuilder &insertAfter(Expr *last) noexcept;
+    NRBuilder &insertAfterVariable(std::string_view name) noexcept;
+    NRBuilder &insertAfterFunction(std::string_view name) noexcept;
+
+    NRBuilder &insertBefore(Expr *last) noexcept;
+    NRBuilder &insertBeforeVariable(std::string_view name) noexcept;
+    NRBuilder &insertBeforeFunction(std::string_view name) noexcept;
+
+    static bool check_acyclic(Seq *root, IDiagnosticSink *L) noexcept;
+    static bool check_duplicates(Seq *root, IDiagnosticSink *L) noexcept;
+    static bool check_symbols_exist(Seq *root, IDiagnosticSink *L) noexcept;
+    static bool check_function_calls(Seq *root, IDiagnosticSink *L) noexcept;
+    static bool check_returns(Seq *root, IDiagnosticSink *L) noexcept;
+    static bool check_scopes(Seq *root, IDiagnosticSink *L) noexcept;
+    static bool check_mutability(Seq *root, IDiagnosticSink *L) noexcept;
+    static bool check_control_flow(Seq *root, IDiagnosticSink *L) noexcept;
+    static bool check_types(Seq *root, IDiagnosticSink *L) noexcept;
+    static bool check_safety_claims(Seq *root, IDiagnosticSink *L) noexcept;
 
 #if defined(NDEBUG)
 #define SOURCE_LOCATION_PARAM
@@ -220,24 +228,13 @@ namespace nr {
      *
      * @note This function calls `finish()`.
      */
-    bool verify(std::optional<diag::IDiagnosticSink *> sink SOURCE_LOCATION_PARAM) noexcept;
+    bool verify(std::optional<IDiagnosticSink *> sink SOURCE_LOCATION_PARAM) noexcept;
 
     /**
      * @brief Return the build module.
      * @note `verify()` must be called first.
      */
     qmodule_t *get_module(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-
-    ///**************************************************************************///
-    // Builder navigation
-
-    NRBuilder &insertAfter(Expr *last SOURCE_LOCATION_PARAM) noexcept;
-    NRBuilder &insertAfterVariable(std::string_view name SOURCE_LOCATION_PARAM) noexcept;
-    NRBuilder &insertAfterFunction(std::string_view name SOURCE_LOCATION_PARAM) noexcept;
-
-    NRBuilder &insertBefore(Expr *last SOURCE_LOCATION_PARAM) noexcept;
-    NRBuilder &insertBeforeVariable(std::string_view name SOURCE_LOCATION_PARAM) noexcept;
-    NRBuilder &insertBeforeFunction(std::string_view name SOURCE_LOCATION_PARAM) noexcept;
 
     ///**************************************************************************///
     // Create linkable symbols

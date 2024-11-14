@@ -41,7 +41,6 @@
  * @spacecomplexity O(1)
  */
 
-using namespace nr::diag;
 using namespace nr;
 
 static void seq_mark_non_functional(Expr* P, Expr** C) {

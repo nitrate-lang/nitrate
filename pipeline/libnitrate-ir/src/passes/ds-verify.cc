@@ -41,7 +41,7 @@
  * @spacecomplexity O(1)
  */
 
-using namespace nr::diag;
+using namespace nr;
 
 bool nr::pass::ds_verify(qmodule_t *mod) {
   size_t tmp_total = 0;

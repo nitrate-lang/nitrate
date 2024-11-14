@@ -43,7 +43,7 @@
 #include <nitrate-ir/Report.hh>
 #include <sstream>
 
-using namespace nr::diag;
+using namespace nr;
 
 template <typename L, typename R>
 boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
@@ -52,7 +52,7 @@ boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>:
 
 /// FIXME: Write correct stuff here
 
-const boost::bimap<IssueCode, IssueInfo> nr::diag::issue_info = make_bimap<IssueCode, IssueInfo>({
+const boost::bimap<IssueCode, IssueInfo> nr::issue_info = make_bimap<IssueCode, IssueInfo>({
     {IssueCode::Info, {"info", "%s", {}}},
     {IssueCode::CompilerError, {"Compiler Error", "An error occurred during compilation: %s", {}}},
     {IssueCode::PTreeInvalid,

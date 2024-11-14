@@ -36,7 +36,7 @@
  * @brief Do type inference on the module.
  */
 
-using namespace nr::diag;
+using namespace nr;
 
 bool nr::pass::ds_tyinfer(qmodule_t* M) {
   iterate<dfs_pre>(M->getRoot(), [&](Expr*, Expr** C) -> IterOp {

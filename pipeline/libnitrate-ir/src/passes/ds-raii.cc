@@ -39,7 +39,6 @@
  * @spacecomplexity O(1)
  */
 
-using namespace nr::diag;
 using namespace nr;
 
 bool nr::pass::ds_raii(qmodule_t *M) {

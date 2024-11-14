@@ -39,7 +39,7 @@
  * @spacecomplexity O(1)
  */
 
-using namespace nr::diag;
+using namespace nr;
 
 bool nr::pass::ds_nullchk(qmodule_t *mod) {
   bool has_bad_null = false;
@@ -48,7 +48,7 @@ bool nr::pass::ds_nullchk(qmodule_t *mod) {
     if (*_cur == nullptr) [[unlikely]] {
       has_bad_null = true;
 
-      diag::report(IssueCode::DSNullPtr, IssueClass::FatalError, "");
+      report(IssueCode::DSNullPtr, IssueClass::FatalError, "");
       return IterOp::Abort;
     }
 

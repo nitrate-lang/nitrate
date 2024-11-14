@@ -33,7 +33,7 @@
 #include <nitrate-ir/Module.hh>
 #include <passes/PassList.hh>
 
-using namespace nr::diag;
+using namespace nr;
 
 bool nr::pass::chk_missing_return(qmodule_t* M) {
   /**

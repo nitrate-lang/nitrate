@@ -45,7 +45,7 @@
 //  * @spacecomplexity O(n)
 //  */
 
-// using namespace nr::diag;
+// using namespace nr;
 
 // static std::pair<std::vector<std::string>, std::string> split_ns(std::string_view the) {
 //   std::vector<std::string> ns;
@@ -358,9 +358,9 @@
 //     // if (!(*_cur)->isAcyclic()) {
 //     //   (*_cur)->getModule()->getDiag().push(
 //     //       QXIR_AUDIT_CONV,
-//     //       diag::DiagMessage(
+//     //       DiagMessage(
 //     //           "Cyclic polymorphic node reference detected in module IR data structure.",
-//     //           diag::IssueClass::FatalError, diag::IssueCode::DSPolyCyclicRef));
+//     //           IssueClass::FatalError, IssueCode::DSPolyCyclicRef));
 //     //   error = true;
 //     //   return IterOp::Abort;
 //     // }

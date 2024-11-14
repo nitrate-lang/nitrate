@@ -41,11 +41,11 @@
  * @spacecomplexity O(n)
  */
 
-using namespace nr::diag;
+using namespace nr;
 
 bool nr::pass::ds_acyclic(qmodule_t *mod) {
   if (!mod->getRoot()->isAcyclic()) {
-    diag::report(IssueCode::DSPolyCyclicRef, IssueClass::FatalError, "");
+    report(IssueCode::DSPolyCyclicRef, IssueClass::FatalError, "");
     return false;
   }
 

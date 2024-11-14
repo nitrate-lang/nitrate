@@ -43,7 +43,7 @@ using namespace nr;
 static std::vector<std::optional<qmodule_t *>> nr_modules;
 static std::mutex nr_modules_mutex;
 
-class LexerSourceResolver : public diag::IOffsetResolver {
+class LexerSourceResolver : public IOffsetResolver {
 public:
   virtual std::optional<std::pair<uint32_t, uint32_t>> resolve(uint32_t) noexcept override {
     qcore_implement();
@@ -56,7 +56,7 @@ qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
   m_strings.clear();
 
   auto resolver = std::make_shared<LexerSourceResolver>();
-  m_diag = std::make_unique<diag::DiagnosticManager>(resolver);
+  m_diag = std::make_unique<DiagnosticManager>(resolver);
 
   m_module_name = name;
 

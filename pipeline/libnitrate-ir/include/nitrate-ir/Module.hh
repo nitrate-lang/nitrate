@@ -181,7 +181,7 @@ private:
   /// END: Data structures requisite for efficient lowering
   ///=============================================================================
 
-  std::unique_ptr<nr::diag::DiagnosticManager> m_diag;           /* Diagnostic manager instance */
+  std::unique_ptr<nr::DiagnosticManager> m_diag;                 /* Diagnostic manager instance */
   std::unordered_map<std::string_view, std::string> m_strings{}; /* Interned strings */
   ModulePasses m_applied{};                                      /* Module pass tracking */
   nr::TargetInfo m_target_info{};                                /* Build target information */
@@ -229,7 +229,7 @@ public:
 
   qcore_arena_t &getNodeArena() { return *m_node_arena.get(); }
 
-  nr::diag::DiagnosticManager &getDiag() { return *m_diag; }
+  nr::DiagnosticManager &getDiag() { return *m_diag; }
 
   const nr::TargetInfo &getTargetInfo() const { return m_target_info; }
 };

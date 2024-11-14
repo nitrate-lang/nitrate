@@ -38,7 +38,7 @@
 
 using namespace nr;
 
-bool NRBuilder::check_symbols_exist(Seq *, diag::IDiagnosticSink *) noexcept {
+bool NRBuilder::check_symbols_exist(Seq *, IDiagnosticSink *) noexcept {
   /// TODO: Implement check
   return true;
 }

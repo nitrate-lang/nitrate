@@ -38,7 +38,7 @@
 
 using namespace nr;
 
-bool NRBuilder::check_types(Seq *, diag::IDiagnosticSink *) noexcept {
+bool NRBuilder::check_types(Seq *, IDiagnosticSink *) noexcept {
   /// TODO: Implement check
   return true;
 }

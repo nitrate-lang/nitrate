@@ -33,7 +33,6 @@
 #include <passes/PassList.hh>
 
 using namespace nr;
-using namespace nr::diag;
 
 /**
  * -- Overview of the IR type nodes:
