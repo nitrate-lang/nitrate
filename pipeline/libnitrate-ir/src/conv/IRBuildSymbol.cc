@@ -42,18 +42,34 @@ Fn *NRBuilder::createFunctionDefintion(std::string_view name, std::span<FnParam>
                                        Type *ret_ty, bool is_variadic, Vis visibility,
                                        Purity purity, bool thread_safe, bool is_noexcept,
                                        bool foreign SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-  (void)name;
-  (void)params;
-  (void)ret_ty;
-  (void)is_variadic;
+  contract_enforce(m_state == SelfState::Constructed);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(m_current_scope != nullptr);
+  contract_enforce(ret_ty != nullptr && static_cast<Expr *>(ret_ty)->isType());
+
+  Params parameters;
+  parameters.resize(params.size());
+  for (size_t i = 0; i < params.size(); i++) {
+    contract_enforce(static_cast<Expr *>(std::get<1>(params[i]))->isType());
+    parameters[i] = {std::get<1>(params[i]), std::get<0>(params[i])};
+
+    /// TODO: Save information regarding the default values
+  }
+
+  /// TODO: Do something useful with the metadata:
+  /// [visibility,purity,thread_safety,noexcept,foriegn]
   (void)visibility;
   (void)purity;
   (void)thread_safe;
   (void)is_noexcept;
   (void)foreign;
-  ignore_caller_info();
+
+  Fn *fn =
+      create<Fn>(name, std::move(parameters), ret_ty, std::nullopt, is_variadic, AbiTag::Default);
+
+  m_current_scope->getItems().push_back(fn);
+
+  return compiler_trace(debug_info(fn, DEBUG_INFO));
 }
 
 Fn *NRBuilder::createFunctionDeclaration(std::string_view name, std::span<FnParam> params,

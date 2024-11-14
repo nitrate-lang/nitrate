@@ -60,7 +60,6 @@ struct PState {
   std::string ns_prefix;
   std::stack<qparse::String> composite_expanse;
   nr::AbiTag abi_mode = nr::AbiTag::Internal;
-  nr::Type *return_type = nullptr;
   std::stack<std::unordered_map<std::string_view, nr::Local *>> local_scope;
 
   std::string cur_named(std::string_view suffix) const {
@@ -135,7 +134,7 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
 
 ///=============================================================================
 
-static nr::Tmp *create_simple_call(NRBuilder &b, PState &, IReport *G, std::string_view name,
+static nr::Tmp *create_simple_call(NRBuilder &b, PState &, IReport *, std::string_view name,
                                    std::vector<std::pair<std::string_view, nr::Expr *>,
                                                nr::Arena<std::pair<std::string_view, nr::Expr *>>>
                                        args = {}) {
@@ -161,7 +160,7 @@ nr::List *nr::createStringLiteral(std::string_view value) noexcept {
   return create<List>(items, true);
 }
 
-static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &, PState &, IReport *G,
+static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &, PState &, IReport *,
                                                      nr::Expr *lhs, nr::Expr *rhs, qlex_op_t op) {
 #define STD_BINOP(op) nr::create<nr::BinExpr>(lhs, rhs, nr::Op::op)
 #define ASSIGN_BINOP(op)                                                                     \
@@ -466,7 +465,7 @@ static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &s, IRe
   return R;
 }
 
-static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &, IReport *G,
+static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &, IReport *,
                                                          nr::Expr *lhs, qlex_op_t op) {
 #define STD_POST_OP(op) nr::create<nr::PostUnExpr>(lhs, nr::Op::op)
 
@@ -630,15 +629,15 @@ static EResult nrgen_float(NRBuilder &b, PState &, IReport *G, qparse::ConstFloa
   }
 }
 
-static EResult nrgen_string(NRBuilder &b, PState &, IReport *G, qparse::ConstString *n) {
+static EResult nrgen_string(NRBuilder &b, PState &, IReport *, qparse::ConstString *n) {
   return b.createStringDataArray(n->get_value());
 }
 
-static EResult nrgen_char(NRBuilder &b, PState &, IReport *G, qparse::ConstChar *n) {
+static EResult nrgen_char(NRBuilder &b, PState &, IReport *, qparse::ConstChar *n) {
   return b.createFixedInteger(n->get_value(), IntSize::U8);
 }
 
-static EResult nrgen_bool(NRBuilder &b, PState &, IReport *G, qparse::ConstBool *n) {
+static EResult nrgen_bool(NRBuilder &b, PState &, IReport *, qparse::ConstBool *n) {
   return b.createBool(n->get_value());
 }
 
@@ -712,8 +711,12 @@ static EResult nrgen_assoc(NRBuilder &b, PState &s, IReport *G, qparse::Assoc *n
 static EResult nrgen_field(NRBuilder &b, PState &s, IReport *G, qparse::Field *n) {
   auto base = next_one(n->get_base());
   if (!base.has_value()) {
+    G->report(nr::CompilerError, IC::Error, "Failed to lower field-access base expression",
+              n->get_pos());
     return std::nullopt;
   }
+
+  /// TODO: Handle this
 
   Expr *field = createStringLiteral(n->get_field());
   return create<Index>(base.value(), field);
@@ -722,11 +725,13 @@ static EResult nrgen_field(NRBuilder &b, PState &s, IReport *G, qparse::Field *n
 static EResult nrgen_index(NRBuilder &b, PState &s, IReport *G, qparse::Index *n) {
   auto base = next_one(n->get_base());
   if (!base.has_value()) {
+    G->report(nr::CompilerError, IC::Error, "Failed to lower index expression base", n->get_pos());
     return std::nullopt;
   }
 
   auto index = next_one(n->get_index());
   if (!index.has_value()) {
+    G->report(nr::CompilerError, IC::Error, "Failed to lower index expression index", n->get_pos());
     return std::nullopt;
   }
 
@@ -736,24 +741,32 @@ static EResult nrgen_index(NRBuilder &b, PState &s, IReport *G, qparse::Index *n
 static EResult nrgen_slice(NRBuilder &b, PState &s, IReport *G, qparse::Slice *n) {
   auto base = next_one(n->get_base());
   if (!base.has_value()) {
+    G->report(nr::CompilerError, IC::Error, "Failed to lower slice expression base", n->get_pos());
     return std::nullopt;
   }
 
   auto start = next_one(n->get_start());
   if (!start.has_value()) {
+    G->report(nr::CompilerError, IC::Error, "Failed to lower slice expression start", n->get_pos());
     return std::nullopt;
   }
 
   auto end = next_one(n->get_end());
   if (!end.has_value()) {
+    G->report(nr::CompilerError, IC::Error, "Failed to lower slice expression end", n->get_pos());
     return std::nullopt;
   }
 
-  return create<Call>(create<Index>(base.value(), createStringLiteral("slice")),
-                      CallArgs({start.value(), end.value()}));
+  std::array<std::pair<std::string_view, Expr *>, 2> args;
+  args[0] = {"0", start.value()};
+  args[1] = {"1", end.value()};
+
+  return b.createMethodCall(base.value(), "slice", args);
 }
 
 static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G, qparse::FString *n) {
+  /// TODO: Cleanup
+
   if (n->get_items().empty()) {
     return b.createStringDataArray("");
   }
@@ -925,7 +938,7 @@ static EResult nrgen_ptr_ty(NRBuilder &b, PState &s, IReport *G, qparse::PtrTy *
   return b.getPtrTy(pointee.value()->asType());
 }
 
-static EResult nrgen_opaque_ty(NRBuilder &b, PState &, IReport *G, qparse::OpaqueTy *n) {
+static EResult nrgen_opaque_ty(NRBuilder &b, PState &, IReport *, qparse::OpaqueTy *n) {
   return b.getOpaqueTy(n->get_name());
 }
 
@@ -1081,8 +1094,7 @@ static EResult nrgen_templ_ty(NRBuilder &b, PState &s, IReport *G, qparse::Templ
   return b.getTemplateInstance(base_template.value()->asType(), template_args);
 }
 
-static std::optional<std::vector<Expr *>> nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
-                                                        qparse::TypedefDecl *n) {
+static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G, qparse::TypedefDecl *n) {
   // auto str = s.cur_named(n->get_name());
   // auto name = b.intern(std::string_view(str));
 
@@ -1108,40 +1120,35 @@ static std::optional<std::vector<Expr *>> nrgen_typedef(NRBuilder &b, PState &s,
 
 #define align(x, a) (((x) + (a) - 1) & ~((a) - 1))
 
-static std::optional<std::vector<Expr *>> nrgen_struct(NRBuilder &b, PState &s, IReport *G,
-                                                       qparse::StructDef *n) {
+static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G, qparse::StructDef *n) {
   /// TODO: Struct def
   qcore_implement();
 
   return std::nullopt;
 }
 
-static std::optional<std::vector<Expr *>> nrgen_region(NRBuilder &b, PState &s, IReport *G,
-                                                       qparse::RegionDef *n) {
+static BResult nrgen_region(NRBuilder &b, PState &s, IReport *G, qparse::RegionDef *n) {
   /// TODO: Region def
   qcore_implement();
 
   return std::nullopt;
 }
 
-static std::optional<std::vector<Expr *>> nrgen_group(NRBuilder &b, PState &s, IReport *G,
-                                                      qparse::GroupDef *n) {
+static BResult nrgen_group(NRBuilder &b, PState &s, IReport *G, qparse::GroupDef *n) {
   /// TODO: Group def
   qcore_implement();
 
   return std::nullopt;
 }
 
-static std::optional<std::vector<Expr *>> nrgen_union(NRBuilder &b, PState &s, IReport *G,
-                                                      qparse::UnionDef *n) {
+static BResult nrgen_union(NRBuilder &b, PState &s, IReport *G, qparse::UnionDef *n) {
   /// TODO: Union def
   qcore_implement();
 
   return std::nullopt;
 }
 
-static std::optional<std::vector<Expr *>> nrgen_enum(NRBuilder &b, PState &s, IReport *G,
-                                                     qparse::EnumDef *n) {
+static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G, qparse::EnumDef *n) {
   /// TODO: Enum def
   qcore_implement();
 
@@ -1208,20 +1215,108 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G, qparse::FnDecl 
 }
 
 static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
-  /// TODO: Function def
-  qcore_implement();
+  bool failed = false;
 
-  return std::nullopt;
+  {
+    if (!n->get_captures().empty()) {
+      G->report(nr::CompilerError, IC::Error,
+                "Function capture groups are not currently supported");
+      failed = true;
+    }
+
+    if (n->get_precond() != nullptr) {
+      G->report(nr::CompilerError, IC::Error,
+                "Function pre-conditions are not currently supported");
+      failed = true;
+    }
+
+    if (n->get_postcond() != nullptr) {
+      G->report(nr::CompilerError, IC::Error,
+                "Function post-conditions are not currently supported");
+      failed = true;
+    }
+
+    if (failed) {
+      return std::nullopt;
+    }
+  }
+
+  {
+    qparse::FuncTy *func_ty = n->get_type();
+    const qparse::FuncParams &params = func_ty->get_params();
+
+    std::vector<NRBuilder::FnParam> parameters;
+    parameters.resize(params.size());
+
+    for (size_t i = 0; i < params.size(); i++) {
+      const auto &param = params[i];
+      NRBuilder::FnParam p;
+
+      { /* Set function parameter name */
+        std::get<0>(p) = b.intern(std::get<0>(param));
+      }
+
+      { /* Set function parameter type */
+        auto tmp = next_one(std::get<1>(param));
+        if (!tmp.has_value()) {
+          G->report(CompilerError, nr::IC::Error,
+                    "Failed to convert function declaration parameter type", n->get_pos());
+          return std::nullopt;
+        }
+
+        std::get<1>(p) = tmp.value()->asType();
+      }
+
+      { /* Set function parameter default value if it exists */
+        if (std::get<2>(param) != nullptr) {
+          auto val = next_one(std::get<2>(param));
+          if (!val.has_value()) {
+            G->report(CompilerError, nr::IC::Error,
+                      "Failed to convert function declaration parameter default value",
+                      n->get_pos());
+            return std::nullopt;
+          }
+
+          std::get<2>(p) = val.value();
+        }
+      }
+
+      parameters[i] = std::move(p);
+    }
+
+    auto ret_type = next_one(func_ty->get_return_ty());
+    if (!ret_type.has_value()) {
+      G->report(CompilerError, nr::IC::Error, "Failed to convert function declaration return type",
+                n->get_pos());
+      return std::nullopt;
+    }
+
+    auto props = convert_purity(func_ty->get_purity());
+
+    auto body = next_one(n->get_body());
+    if (!body.has_value()) {
+      G->report(CompilerError, nr::IC::Error, "Failed to convert function body", n->get_pos());
+      return std::nullopt;
+    }
+
+    Fn *fndef = b.createFunctionDefintion(
+        b.intern(n->get_name()), parameters, ret_type.value()->asType(), func_ty->is_variadic(),
+        Vis::Pub, props.first, props.second, func_ty->is_noexcept(), func_ty->is_foreign());
+
+    fndef->setAbiTag(s.abi_mode);
+    fndef->setBody(body.value()->as<Seq>());
+
+    return fndef;
+  }
 }
 
-static std::optional<std::vector<Expr *>> nrgen_subsystem(NRBuilder &b, PState &s, IReport *G,
-                                                          qparse::SubsystemDecl *n) {
+static BResult nrgen_subsystem(NRBuilder &b, PState &s, IReport *G, qparse::SubsystemDecl *n) {
   /**
    * @brief Convert a subsystem declaration to a nr sequence with
    * namespace prefixes.
    */
 
-  std::optional<std::vector<Expr *>> items;
+  BResult items;
 
   if (!n->get_body()) {
     return std::nullopt;
@@ -1249,8 +1344,7 @@ static std::optional<std::vector<Expr *>> nrgen_subsystem(NRBuilder &b, PState &
   return items;
 }
 
-static std::optional<std::vector<Expr *>> nrgen_export(NRBuilder &b, PState &s, IReport *G,
-                                                       qparse::ExportDecl *n) {
+static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G, qparse::ExportDecl *n) {
   AbiTag old = s.abi_mode;
 
   if (n->get_abi_name().empty()) {
@@ -1425,8 +1519,6 @@ static EResult nrgen_return(NRBuilder &b, PState &s, IReport *G, qparse::ReturnS
     val = create<VoidTy>();
   }
 
-  val = create<BinExpr>(val.value(), s.return_type, Op::CastAs);
-
   return create<Ret>(val.value());
 }
 
@@ -1442,8 +1534,6 @@ static EResult nrgen_retif(NRBuilder &b, PState &s, IReport *G, qparse::ReturnIf
   if (!val.has_value()) {
     return std::nullopt;
   }
-
-  val = create<BinExpr>(val.value(), s.return_type, Op::CastAs);
 
   return create<If>(cond.value(), create<Ret>(val.value()), createIgn());
 }
@@ -1603,7 +1693,7 @@ static EResult nrgen_volstmt(NRBuilder &, PState &, IReport *G, qparse::VolStmt 
   return std::nullopt;
 }
 
-static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, IReport *G, qparse::Node *n) {
+static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, qparse::Node *n) {
   using namespace nr;
 
   if (!n) {

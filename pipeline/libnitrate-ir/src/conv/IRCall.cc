@@ -39,8 +39,14 @@
 
 using namespace nr;
 
-Expr *NRBuilder::createCall(Expr *target,
-                            std::span<std::pair<std::string_view, Expr *>> arguments) noexcept {
+Expr *NRBuilder::createCall(Expr *target, std::span<std::pair<std::string_view, Expr *>> arguments
+                                              SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(target != nullptr);
+  contract_enforce(
+      std::all_of(arguments.begin(), arguments.end(), [](auto x) { return x.second != nullptr; }));
+
   CallArgsTmpNodeCradle call;
 
   std::vector<std::pair<std::string_view, Expr *>, Arena<std::pair<std::string_view, Expr *>>> copy;
@@ -51,6 +57,32 @@ Expr *NRBuilder::createCall(Expr *target,
   }
 
   std::get<0>(call) = target;
+  std::get<1>(call) = std::move(copy);
+
+  Tmp *R = create<Tmp>(TmpType::CALL, std::move(call));
+
+  return compiler_trace(debug_info(R, DEBUG_INFO));
+}
+
+Expr *NRBuilder::createMethodCall(Expr *object, std::string_view name,
+                                  std::span<std::pair<std::string_view, Expr *>> arguments
+                                      SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(object != nullptr);
+  contract_enforce(
+      std::all_of(arguments.begin(), arguments.end(), [](auto x) { return x.second != nullptr; }));
+
+  CallArgsTmpNodeCradle call;
+
+  std::vector<std::pair<std::string_view, Expr *>, Arena<std::pair<std::string_view, Expr *>>> copy;
+  copy.resize(arguments.size());
+
+  for (size_t i = 0; i < copy.size(); i++) {
+    copy[i] = arguments[i];
+  }
+
+  std::get<0>(call) = create<Index>(object, create<Ident>(name, nullptr));
   std::get<1>(call) = std::move(copy);
 
   Tmp *R = create<Tmp>(TmpType::CALL, std::move(call));

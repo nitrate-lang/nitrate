@@ -277,8 +277,12 @@ namespace nr {
     ///**************************************************************************///
     // Create expressions
 
-    Expr *createCall(Expr *target,
-                     std::span<std::pair<std::string_view, Expr *>> arguments) noexcept;
+    Expr *createCall(Expr *target, std::span<std::pair<std::string_view, Expr *>> arguments
+                                       SOURCE_LOCATION_PARAM) noexcept;
+
+    Expr *createMethodCall(Expr *object, std::string_view name,
+                           std::span<std::pair<std::string_view, Expr *>> arguments
+                               SOURCE_LOCATION_PARAM) noexcept;
 
     /// TODO:
 
