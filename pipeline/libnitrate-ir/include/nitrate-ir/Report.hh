@@ -162,17 +162,9 @@ namespace nr {
   };
 
 #ifdef REFACTOR_KEEP_PRESENT
-  /**
-   * @brief Report a diagnostic message
-   * @return true always
-   */
-  bool report(IssueCode code, IssueClass type, std::string_view subject = "",
-              uint32_t loc_start = 0, uint32_t loc_end = 0);
 
-  static inline bool report(IssueCode code, IssueClass type, std::pair<uint32_t, uint32_t> loc,
-                            std::string_view subject = "") {
-    return report(code, type, subject, loc.first, loc.second);
-  }
+  bool report(IssueCode code, IssueClass type, std::string_view subject,
+              std::pair<uint32_t, uint32_t> loc);
 #endif
 
 };  // namespace nr

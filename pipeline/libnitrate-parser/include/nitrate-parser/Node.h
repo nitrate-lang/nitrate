@@ -367,6 +367,7 @@ namespace qparse {
     void set_end_pos(uint32_t pos) { m_pos_end = pos; }
     uint32_t get_start_pos() { return m_pos_start; }
     uint32_t get_end_pos() { return m_pos_end; }
+    std::pair<uint32_t, uint32_t> get_pos() { return {m_pos_start, m_pos_end}; }
   };
 
   constexpr size_t PNODE_BASE_SIZE = sizeof(Node);
