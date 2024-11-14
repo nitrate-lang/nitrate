@@ -34,12 +34,13 @@
 #include <nitrate-parser/Node.h>
 
 #include <core/Config.hh>
-#include <cstddef>
+#include <core/Diagnostic.hh>
 #include <cstdint>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
-#include <nitrate-ir/Report.hh>
 #include <sstream>
+
+#include "nitrate-ir/Report.hh"
 
 using namespace nr;
 
@@ -53,7 +54,7 @@ static void print_qsizeloc(std::stringstream &ss, uint32_t num) {
   }
 }
 
-std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const {
+std::string nr::mint_plain_message(const IReport::ReportData &R, IOffsetResolver *B) {
   std::stringstream ss;
   uint32_t sl, sc, el, ec;
 
@@ -62,8 +63,8 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
     ss << "??" << ":";
 
     auto default_if = std::pair<uint32_t, uint32_t>({UINT32_MAX, UINT32_MAX});
-    auto beg = m_resolver->resolve(msg.m_start).value_or(default_if);
-    auto end = m_resolver->resolve(msg.m_end).value_or(default_if);
+    auto beg = B->resolve(R.start_offset).value_or(default_if);
+    auto end = B->resolve(R.end_offset).value_or(default_if);
 
     sl = beg.first;
     sc = beg.second;
@@ -83,7 +84,7 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
   (void)ec;
   (void)el;
 
-  switch (msg.m_type) {
+  switch (R.level) {
     case IC::Debug:
       ss << "debug";
       break;
@@ -101,14 +102,14 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
       break;
   }
 
-  ss << ": " << msg.m_msg;
+  ss << ": " << R.param;
 
-  if (msg.m_code != Info) {
-    ss << " [-Werror=" << issue_info.left.at(msg.m_code).flagname << "]";
+  if (R.code != Info) {
+    ss << " [-Werror=" << issue_info.left.at(R.code).flagname << "]";
   }
 
   uint32_t res = UINT32_MAX; /*qlex_spanx(
-       lx, msg.m_start, msg.m_end,
+       lx, R.start_offset, R.end_offset,
        [](const char *str, uint32_t len, uintptr_t x) {
          if (len > 100) {
            len = 100;
@@ -125,7 +126,7 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
   return ss.str();
 }
 
-std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) const {
+std::string nr::mint_clang16_message(const IReport::ReportData &R, IOffsetResolver *B) {
   std::stringstream ss;
   uint32_t sl, sc, el, ec;
 
@@ -133,8 +134,8 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
     ss << "\x1b[39;1m" << "??" << ":";
 
     auto default_if = std::pair<uint32_t, uint32_t>({UINT32_MAX, UINT32_MAX});
-    auto beg = m_resolver->resolve(msg.m_start).value_or(default_if);
-    auto end = m_resolver->resolve(msg.m_end).value_or(default_if);
+    auto beg = B->resolve(R.start_offset).value_or(default_if);
+    auto end = B->resolve(R.end_offset).value_or(default_if);
 
     sl = beg.first;
     sc = beg.second;
@@ -157,46 +158,46 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
     ss << " ";
   }
 
-  switch (msg.m_type) {
+  switch (R.level) {
     case IC::Debug:
-      ss << "\x1b[1mdebug:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[1m-Werror=" << issue_info.left.at(msg.m_code).flagname
+      ss << "\x1b[1mdebug:\x1b[0m " << R.param;
+      if (R.code != Info) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[1m-Werror=" << issue_info.left.at(R.code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IC::Info:
-      ss << "\x1b[37;1minfo:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[37;1m-Werror=" << issue_info.left.at(msg.m_code).flagname
+      ss << "\x1b[37;1minfo:\x1b[0m " << R.param;
+      if (R.code != Info) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[37;1m-Werror=" << issue_info.left.at(R.code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IC::Warn:
-      ss << "\x1b[35;1mwarning:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[35;1m-Werror=" << issue_info.left.at(msg.m_code).flagname
+      ss << "\x1b[35;1mwarning:\x1b[0m " << R.param;
+      if (R.code != Info) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[35;1m-Werror=" << issue_info.left.at(R.code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IC::Error:
-      ss << "\x1b[31;1merror:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1m-Werror=" << issue_info.left.at(msg.m_code).flagname
+      ss << "\x1b[31;1merror:\x1b[0m " << R.param;
+      if (R.code != Info) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1m-Werror=" << issue_info.left.at(R.code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IC::FatalError:
-      ss << "\x1b[31;1;4mfatal error:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1;4m-Werror=" << issue_info.left.at(msg.m_code).flagname
+      ss << "\x1b[31;1;4mfatal error:\x1b[0m " << R.param;
+      if (R.code != Info) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1;4m-Werror=" << issue_info.left.at(R.code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
   }
 
   uint32_t res = UINT32_MAX; /* qlex_spanx(
-       lx, msg.m_start, msg.m_end,
+       lx, R.start_offset, R.end_offset,
        [](const char *str, uint32_t len, uintptr_t x) {
          if (len > 100) {
            len = 100;
@@ -217,24 +218,24 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
 
 using namespace nr;
 
-uint64_t DiagMessage::hash() const {
+uint64_t DiagDatum::hash() const {
   /* Not quite a PHF, but it's pretty close as long as there are not two many subject strings */
   /* In the worst case messages will be discarded, but that can be fixed by passing a parameter
      to disable deduplication */
 
   struct BitPack {
-    IC m_type : 3;
-    IssueCode m_code : 10;
-    uint64_t m_msg_trunc : 7;
+    IC level : 3;
+    IssueCode code : 10;
+    uint64_t param_trunc : 7;
     uint64_t m_end_trunc : 20;
     uint64_t m_start : 24;
   } __attribute__((packed)) bp;
 
-  bp.m_type = m_type;
-  bp.m_code = m_code;
-  bp.m_msg_trunc = std::hash<std::string_view>{}(m_msg);
-  bp.m_start = m_start;
-  bp.m_end_trunc = m_end;
+  bp.level = level;
+  bp.code = code;
+  bp.param_trunc = std::hash<std::string_view>{}(param);
+  bp.m_start = start_offset;
+  bp.m_end_trunc = end_offset;
 
   return std::bit_cast<uint64_t>(bp);
 }
@@ -247,29 +248,61 @@ void DiagnosticManager::report(IssueCode code, IC level, std::span<std::string_v
     message += std::string(p) + "; ";
   }
 
-  DiagMessage msg(message, level, code, start_offset, end_offset);
+  DiagDatum R(code, level, message, start_offset, end_offset, filename);
 
   { /* Prevent duplicates and maintain order of messages */
-    auto hash = msg.hash();
+    auto hash = R.hash();
     if (m_visited.contains(hash)) {
       return;
     }
     m_visited.insert(hash);
   }
 
-  m_vec.push_back(std::move(msg));
+  m_vec.emplace_back(std::move(R));
 }
 
-size_t DiagnosticManager::render(DiagnosticMessageHandler handler, nr_diag_format_t style) {
-  for (auto &msg : m_vec) {
-    switch (style) {
+void DiagnosticManager::stream_reports(std::function<void(const ReportData &)> cb) {
+  for (auto &item : m_vec) {
+    ReportData datum;
+    datum.code = item.code;
+    datum.level = item.level;
+    datum.param = item.param;
+    datum.start_offset = item.start_offset;
+    datum.end_offset = item.end_offset;
+    datum.filename = item.filename;
+
+    cb(datum);
+  }
+}
+
+static const std::unordered_map<IC, nr_level_t> issue_class_map = {
+    {IC::Debug, QXIR_LEVEL_DEBUG}, {IC::Info, QXIR_LEVEL_INFO},        {IC::Warn, QXIR_LEVEL_WARN},
+    {IC::Error, QXIR_LEVEL_ERROR}, {IC::FatalError, QXIR_LEVEL_FATAL},
+};
+
+LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_cb cb,
+                             uintptr_t data) {
+  if (!cb) {
+    return;
+  }
+
+  /// TODO: Get symbol resolver
+  IOffsetResolver *B = nullptr;
+
+  qcore_assert(B != nullptr && "No resolver");
+
+  nr->getDiag()->stream_reports([&](IReport::ReportData R) {
+    /// TODO: Render the report here
+    std::stringstream ss;
+
+    switch (format) {
       /**
        * @brief Code decimal serialization of the error code.
        * @example `801802`
        * @format <code>
        */
       case QXIR_DIAG_ASCII_ECODE: {
-        handler(std::to_string(static_cast<uint64_t>(msg.m_code)), msg.m_type);
+        ss << std::to_string(static_cast<uint64_t>(R.code));
         break;
       }
 
@@ -281,15 +314,13 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler, nr_diag_forma
        * @note UTF-8 characters in the path are preserved.
        */
       case QXIR_DIAG_UTF8_ECODE_LOC: {
-        std::stringstream ss;
-        ss << std::to_string(static_cast<uint64_t>(msg.m_code)) << ":";
-        auto beg = m_resolver->resolve(msg.m_start);
+        ss << std::to_string(static_cast<uint64_t>(R.code)) << ":";
+        auto beg = B->resolve(R.start_offset);
 
         ss << beg->first << ":";
         ss << beg->second << ":";
         ss << "??";
 
-        handler(ss.str(), msg.m_type);
         break;
       }
 
@@ -299,11 +330,9 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler, nr_diag_forma
        * @format <code>:<utf8_message>
        */
       case QXIR_DIAG_UTF8_ECODE_ETEXT: {
-        std::stringstream ss;
-        ss << std::to_string(static_cast<uint64_t>(msg.m_code)) << ":";
-        ss << msg.m_msg;
+        ss << std::to_string(static_cast<uint64_t>(R.code)) << ":";
+        ss << R.param;
 
-        handler(ss.str(), msg.m_type);
         break;
       }
 
@@ -317,7 +346,7 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler, nr_diag_forma
        * color).
        */
       case QXIR_DIAG_NOSTD_TTY_UTF8: {
-        handler(mint_plain_message(msg), msg.m_type);
+        ss << nr::mint_plain_message(R, B);
         break;
       }
 
@@ -326,7 +355,7 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler, nr_diag_forma
        * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
        */
       case QXIR_DIAG_NONSTD_ANSI16_UTF8_FULL: {
-        handler(mint_clang16_message(msg), msg.m_type);
+        ss << nr::mint_clang16_message(R, B);
         break;
       }
 
@@ -335,7 +364,7 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler, nr_diag_forma
        * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
        */
       case QXIR_DIAG_NONSTD_ANSI256_UTF8_FULL: {
-        handler(mint_clang16_message(msg), msg.m_type);
+        ss << nr::mint_clang16_message(R, B);
         break;
       }
 
@@ -344,37 +373,17 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler, nr_diag_forma
        * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
        */
       case QXIR_DIAG_NONSTD_ANSIRGB_UTF8_FULL: {
-        handler(mint_modern_message(msg), msg.m_type);
+        ss << nr::mint_modern_message(R, B);
         break;
       }
     }
-  }
 
-  return m_vec.size();
+    std::string message = ss.str();
+    const uint8_t *ptr = (const uint8_t *)message.c_str();
+    auto lvl = issue_class_map.at(R.level);
+
+    cb(ptr, message.size(), lvl, data);
+  });
 }
 
-static const std::unordered_map<IC, nr_level_t> issue_class_map = {
-    {IC::Debug, QXIR_LEVEL_DEBUG}, {IC::Info, QXIR_LEVEL_INFO},        {IC::Warn, QXIR_LEVEL_WARN},
-    {IC::Error, QXIR_LEVEL_ERROR}, {IC::FatalError, QXIR_LEVEL_FATAL},
-};
-
-LIB_EXPORT size_t nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_cb cb,
-                               uintptr_t data) {
-  if (!cb) {
-    return nr->getDiag()->size();
-  }
-
-  auto res = nr->getDiag()->render(
-      [cb, data](std::string_view v, IC lvl) {
-        cb(reinterpret_cast<const uint8_t *>(v.data()), v.size(), issue_class_map.at(lvl), data);
-      },
-      format);
-
-  return res;
-}
-
-LIB_EXPORT size_t nr_diag_clear(qmodule_t *nr) {
-  size_t n = nr->getDiag()->size();
-  nr->getDiag()->clear();
-  return n;
-}
+LIB_EXPORT void nr_diag_clear(qmodule_t *nr) { nr->getDiag()->erase_reports(); }

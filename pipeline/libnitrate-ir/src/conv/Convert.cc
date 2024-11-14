@@ -36,6 +36,7 @@
 #include <nitrate-parser/Parser.h>
 
 #include <core/Config.hh>
+#include <core/Diagnostic.hh>
 #include <core/PassManager.hh>
 #include <cstdint>
 #include <cstring>
@@ -45,7 +46,6 @@
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
-#include <nitrate-ir/Report.hh>
 #include <stack>
 #include <string>
 #include <string_view>
@@ -99,25 +99,32 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
   /// TODO: Get target info
   TargetInfo target_info;
 
-  std::unique_ptr<DiagnosticManager> provider = std::make_unique<DiagnosticManager>();
+  // auto offset_resolver = std::make_shared<IOffsetResolver>();
+  /// TODO: Write offset resolver
+  std::unique_ptr<DiagnosticManager> provider = std::make_unique<DiagnosticManager>(nullptr);
 
   PState s;
   NRBuilder builder(name, target_info);
 
-  nrgen_one(builder, s, provider.get(), static_cast<qparse::Node *>(base));
-
-  builder.finish();
-
+  qmodule_t *R = nullptr;
   bool success = false;
-  if (builder.verify(diagnostics ? std::make_optional(provider.get()) : std::nullopt)) {
-    success = true;
-    *mod = builder.get_module();
-  } else {
-    *mod = createModule(name);
-    (*mod)->getDiag().swap(provider);
+
+  if (nrgen_one(builder, s, provider.get(), static_cast<qparse::Node *>(base))) {
+    builder.finish();
+
+    if (builder.verify(diagnostics ? std::make_optional(provider.get()) : std::nullopt)) {
+      R = builder.get_module();
+      success = true;
+    }
+  }
+
+  if (!R) {
+    R = createModule(name);
+    R->getDiag() = std::move(provider);
   }
 
   std::swap(nr::nr_arena.get(), *scratch_arena.get());
+  *mod = R;
 
   return success;
 }

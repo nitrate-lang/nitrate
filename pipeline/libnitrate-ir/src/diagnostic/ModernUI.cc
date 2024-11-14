@@ -36,11 +36,11 @@
 
 #include <boost/bimap.hpp>
 #include <core/Config.hh>
+#include <core/Diagnostic.hh>
 #include <cstdint>
 #include <iomanip>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
-#include <nitrate-ir/Report.hh>
 #include <sstream>
 
 using namespace nr;
@@ -300,7 +300,7 @@ static void confine_rect_bounds(int64_t &x_0, int64_t &y_0, int64_t &x_1, int64_
   if (y_1 < 0) y_1 = 0;
 }
 
-std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const {
+std::string nr::mint_modern_message(const IReport::ReportData &R, IOffsetResolver *B) {
   constexpr size_t WIDTH = 70;
 
   std::stringstream ss;
@@ -310,8 +310,8 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
     ss << "\x1b[37;1m" << "??" << ":";
 
     auto default_if = std::pair<uint32_t, uint32_t>(0, 0);
-    auto beg = m_resolver->resolve(msg.m_start).value_or(default_if);
-    auto end = m_resolver->resolve(msg.m_end).value_or(default_if);
+    auto beg = B->resolve(R.start_offset).value_or(default_if);
+    auto end = B->resolve(R.end_offset).value_or(default_if);
 
     sl = beg.first;
     sc = beg.second;
@@ -335,26 +335,25 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
   }
 
   { /* Print message flagname */
-    switch (msg.m_type) {
+    switch (R.level) {
       case IC::Debug:
-        ss << "\x1b[1mdebug:\x1b[0m \x1b[1m" << issue_info.left.at(msg.m_code).flagname
-           << "\x1b[0m\n";
+        ss << "\x1b[1mdebug:\x1b[0m \x1b[1m" << issue_info.left.at(R.code).flagname << "\x1b[0m\n";
         break;
       case IC::Info:
-        ss << "\x1b[37;1minfo:\x1b[0m \x1b[37;1m" << issue_info.left.at(msg.m_code).flagname
+        ss << "\x1b[37;1minfo:\x1b[0m \x1b[37;1m" << issue_info.left.at(R.code).flagname
            << "\x1b[0m\n";
         break;
       case IC::Warn:
-        ss << "\x1b[35;1mwarning:\x1b[0m \x1b[35;1m" << issue_info.left.at(msg.m_code).flagname
+        ss << "\x1b[35;1mwarning:\x1b[0m \x1b[35;1m" << issue_info.left.at(R.code).flagname
            << "\x1b[0m\n";
         break;
       case IC::Error:
-        ss << "\x1b[31;1merror:\x1b[0m \x1b[31;1m" << issue_info.left.at(msg.m_code).flagname
+        ss << "\x1b[31;1merror:\x1b[0m \x1b[31;1m" << issue_info.left.at(R.code).flagname
            << "\x1b[0m\n";
         break;
       case IC::FatalError:
-        ss << "\x1b[31;1;4mfatal error:\x1b[0m \x1b[31;1;4m"
-           << issue_info.left.at(msg.m_code).flagname << "\x1b[0m\n";
+        ss << "\x1b[31;1;4mfatal error:\x1b[0m \x1b[31;1;4m" << issue_info.left.at(R.code).flagname
+           << "\x1b[0m\n";
         break;
     }
   }
@@ -370,7 +369,7 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
   }
 
   { /* Print message overview */
-    auto data = format_overview(issue_info.left.at(msg.m_code).overview, msg.m_msg);
+    auto data = format_overview(issue_info.left.at(R.code).overview, R.param);
     auto lines = word_break(data, WIDTH);
 
     if (lines.size() == 0) {
@@ -386,7 +385,7 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
   }
 
   { /* Print code intelligence */
-    auto hints = issue_info.left.at(msg.m_code).hints;
+    auto hints = issue_info.left.at(R.code).hints;
 
     if (!hints.empty()) {
       ss << ind << "\x1b[33m╔═\x1b[0m \x1b[32;1mCode Intelligence:\x1b[0m\n";

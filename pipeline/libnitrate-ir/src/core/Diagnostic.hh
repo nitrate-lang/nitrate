@@ -29,107 +29,90 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
-#include <nitrate-core/Error.h>
+#ifndef __NITRATE_QXIR_DIAGNOSTIC_H__
+#define __NITRATE_QXIR_DIAGNOSTIC_H__
 
-#include <core/Diagnostic.hh>
-#include <memory>
-#include <mutex>
-#include <nitrate-ir/Module.hh>
+#include <nitrate-ir/IR.h>
+#include <nitrate-lexer/Token.h>
 
-using namespace nr;
+#include <boost/bimap.hpp>
+#include <cstdarg>
+#include <functional>
+#include <nitrate-ir/Report.hh>
+#include <span>
+#include <string_view>
+#include <unordered_set>
 
-static std::vector<std::optional<qmodule_t *>> nr_modules;
-static std::mutex nr_modules_mutex;
-
-class LexerSourceResolver : public IOffsetResolver {
-public:
-  virtual std::optional<std::pair<uint32_t, uint32_t>> resolve(uint32_t) noexcept override {
-    qcore_implement();
-  }
-  virtual ~LexerSourceResolver() = default;
-};
-
-qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
-  m_applied.clear();
-  m_strings.clear();
-
-  auto resolver = std::make_shared<LexerSourceResolver>();
-  m_diag = std::make_unique<DiagnosticManager>(resolver);
-
-  m_module_name = name;
-
-  m_lexer = nullptr;
-  m_root = nullptr;
-  m_diagnostics_enabled = true;
-
-  m_id = id;
+namespace qparse {
+  class Node;
 }
 
-qmodule_t::~qmodule_t() {
-  m_lexer = nullptr;
-  m_root = nullptr;
-}
+namespace nr {
+  struct IssueInfo {
+    std::string_view flagname;
+    std::string overview;
+    std::vector<std::string_view> hints;
 
-void qmodule_t::enableDiagnostics(bool is_enabled) noexcept { m_diagnostics_enabled = is_enabled; }
+    bool operator<(const IssueInfo &rhs) const { return flagname < rhs.flagname; }
+  };
 
-std::string_view qmodule_t::internString(std::string_view sv) {
-  auto it = m_strings.find(sv);
-  if (it == m_strings.end()) {
-    return m_strings.emplace(sv, std::string(sv)).first->second;
-  } else {
-    return it->second;
-  }
-}
+  extern const boost::bimap<IssueCode, IssueInfo> issue_info;
 
-///=============================================================================
+  typedef std::function<void(std::string_view, IC)> DiagnosticMessageHandler;
 
-qmodule_t *nr::createModule(std::string name) {
-  std::lock_guard<std::mutex> lock(nr_modules_mutex);
+  class IOffsetResolver {
+  public:
+    virtual std::optional<std::pair<uint32_t, uint32_t>> resolve(uint32_t offset) noexcept = 0;
+    virtual ~IOffsetResolver() = default;
+  };
 
-  ModuleId mid;
+  struct DiagDatum {
+    IssueCode code;
+    IC level;
+    std::string param;
+    uint32_t start_offset;
+    uint32_t end_offset;
+    std::string_view filename;
 
-  for (mid = 0; mid < nr_modules.size(); mid++) {
-    if (!nr_modules[mid].has_value()) {
-      break;
+    DiagDatum(IssueCode _code, IC _level, std::string _param, uint32_t _start_offset,
+              uint32_t _end_offset, std::string_view _filename)
+        : code(_code),
+          level(_level),
+          param(std::move(_param)),
+          start_offset(_start_offset),
+          end_offset(_end_offset),
+          filename(_filename) {}
+
+    uint64_t hash() const;
+  };
+
+  std::string mint_clang16_message(const IReport::ReportData &R, IOffsetResolver *B);
+  std::string mint_plain_message(const IReport::ReportData &R, IOffsetResolver *B);
+  std::string mint_modern_message(const IReport::ReportData &R, IOffsetResolver *B);
+
+  class DiagnosticManager final : public IReport {
+    std::vector<DiagDatum> m_vec;
+    std::unordered_set<uint64_t> m_visited;
+    std::shared_ptr<IOffsetResolver> m_resolver;
+
+  public:
+    DiagnosticManager(std::shared_ptr<IOffsetResolver> resolver)
+        : m_resolver(std::move(resolver)) {}
+
+    virtual void report(IssueCode code, IC level, std::span<std::string_view> params = {},
+                        uint32_t start_offset = 1, uint32_t end_offset = 0,
+                        std::string_view filename = "") override;
+
+    virtual void stream_reports(std::function<void(const ReportData &)> cb) override;
+
+    virtual void erase_reports() override {
+      m_vec.clear();
+      m_visited.clear();
     }
-  }
 
-  if (mid >= MAX_MODULE_INSTANCES) {
-    return nullptr;
-  }
+    size_t size() { return m_vec.size(); }
+  };
 
-  nr_modules.insert(nr_modules.begin() + mid, new qmodule_t(mid, name));
+};  // namespace nr
 
-  return nr_modules[mid].value();
-}
-
-CPP_EXPORT qmodule_t *nr::getModule(ModuleId mid) {
-  std::lock_guard<std::mutex> lock(nr_modules_mutex);
-
-  if (mid >= nr_modules.size() || !nr_modules.at(mid).has_value()) {
-    return nullptr;
-  }
-
-  return nr_modules.at(mid).value();
-}
-
-LIB_EXPORT void nr_free(qmodule_t *mod) {
-  if (!mod) {
-    return;
-  }
-
-  std::lock_guard<std::mutex> lock(nr_modules_mutex);
-
-  auto mid = mod->getModuleId();
-  delete mod;
-  nr_modules.at(mid).reset();
-}
-
-LIB_EXPORT size_t nr_max_modules(void) { return MAX_MODULE_INSTANCES; }
-
-LIB_EXPORT qlex_t *nr_get_lexer(qmodule_t *mod) { return mod->getLexer(); }
-
-LIB_EXPORT nr_node_t *nr_base(qmodule_t *mod) {
-  return reinterpret_cast<nr_node_t *>(mod->getRoot());
-}
+#endif  // __NITRATE_QXIR_REPORT_H__

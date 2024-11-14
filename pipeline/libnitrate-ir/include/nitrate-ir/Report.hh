@@ -37,22 +37,14 @@
 
 #include <boost/bimap.hpp>
 #include <cstdarg>
-#include <functional>
 #include <span>
-#include <stdexcept>
 #include <string_view>
-#include <unordered_set>
 
 namespace qparse {
   class Node;
 }
 
 namespace nr {
-  class SyntaxError : public std::runtime_error {
-  public:
-    SyntaxError() : std::runtime_error("") {}
-  };
-
   enum class IC {
     Debug = 0,
     Info,
@@ -89,20 +81,19 @@ namespace nr {
     Info,
   };
 
-  struct IssueInfo {
-    std::string_view flagname;
-    std::string overview;
-    std::vector<std::string_view> hints;
-
-    bool operator<(const IssueInfo &rhs) const { return flagname < rhs.flagname; }
-  };
-
-  extern const boost::bimap<IssueCode, IssueInfo> issue_info;
-
-  typedef std::function<void(std::string_view, IC)> DiagnosticMessageHandler;
-
   class IReport {
   public:
+    struct ReportData {
+      IssueCode code;
+      IC level;
+      std::string_view param;
+      uint32_t start_offset;
+      uint32_t end_offset;
+      std::string_view filename;
+    };
+
+    virtual ~IReport() = default;
+
     virtual void report(IssueCode code, IC level, std::span<std::string_view> params = {},
                         uint32_t start_offset = 1, uint32_t end_offset = 0,
                         std::string_view filename = "") = 0;
@@ -112,53 +103,10 @@ namespace nr {
       std::array<std::string_view, 1> x = {message};
       report(code, level, x, loc.first, loc.second, filename);
     };
-    virtual ~IReport() = default;
-  };
 
-  class IOffsetResolver {
-  public:
-    virtual std::optional<std::pair<uint32_t, uint32_t>> resolve(uint32_t offset) noexcept = 0;
-    virtual ~IOffsetResolver() = default;
-  };
+    virtual void erase_reports() = 0;
 
-  struct DiagMessage {
-    std::string m_msg;
-    uint32_t m_start, m_end;
-    IC m_type;
-    IssueCode m_code;
-
-    DiagMessage(std::string_view msg = "", IC type = IC::Debug, IssueCode code = Info,
-                uint32_t start = 0, uint32_t end = 0)
-        : m_msg(msg), m_start(start), m_end(end), m_type(type), m_code(code) {}
-
-    uint64_t hash() const;
-  };
-
-  class DiagnosticManager : public IReport {
-    std::vector<DiagMessage> m_vec;
-    std::unordered_set<uint64_t> m_visited;
-    std::shared_ptr<IOffsetResolver> m_resolver;
-
-    std::string mint_clang16_message(const DiagMessage &msg) const;
-    std::string mint_plain_message(const DiagMessage &msg) const;
-    std::string mint_modern_message(const DiagMessage &msg) const;
-
-  public:
-    DiagnosticManager(std::shared_ptr<IOffsetResolver> resolver = nullptr)
-        : m_resolver(std::move(resolver)) {}
-
-    virtual void report(IssueCode code, IC level, std::span<std::string_view> params = {},
-                        uint32_t start_offset = 1, uint32_t end_offset = 0,
-                        std::string_view filename = "") override;
-
-    size_t render(DiagnosticMessageHandler handler, nr_diag_format_t style);
-
-    void clear() {
-      m_vec.clear();
-      m_visited.clear();
-    }
-
-    size_t size() { return m_vec.size(); }
+    virtual void stream_reports(std::function<void(const ReportData&)> cb) = 0;
   };
 
 };  // namespace nr
