@@ -29,8 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define REFACTOR_KEEP_PRESENT
-
 #include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-ir/IR.h>
@@ -81,8 +79,11 @@ std::string ns_join(std::string_view a, std::string_view b) {
 using EResult = std::optional<Expr *>;
 using BResult = std::optional<std::vector<nr::Expr *>>;
 
-static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, qparse::Node *node);
-static BResult nrgen_any(NRBuilder &b, PState &s, qparse::Node *node);
+static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, IReport *G, qparse::Node *node);
+static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, qparse::Node *node);
+
+#define next_one(n) nrgen_one(b, s, G, n)
+#define next_any(n) nrgen_any(b, s, G, n)
 
 LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name, bool diagnostics) {
   if (!mod || !base) {
@@ -98,30 +99,22 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
   /// TODO: Get target info
   TargetInfo target_info;
 
+  std::unique_ptr<DiagnosticManager> provider = std::make_unique<DiagnosticManager>();
+
   PState s;
   NRBuilder builder(name, target_info);
 
+  nrgen_one(builder, s, provider.get(), static_cast<qparse::Node *>(base));
+
+  builder.finish();
+
   bool success = false;
-
-  auto result = nrgen_one(builder, s, static_cast<qparse::Node *>(base));
-
-  if (result.has_value()) {
-    builder.finish();
-
-    if (diagnostics) {
-      /// TODO: Get diagnostic provider
-      std::unique_ptr<IReport> provider;
-
-      if (builder.verify(provider.get())) {
-        success = true;
-        *mod = builder.get_module();
-      }
-    } else {
-      if (builder.verify(std::nullopt)) {
-        success = true;
-        *mod = builder.get_module();
-      }
-    }
+  if (builder.verify(diagnostics ? std::make_optional(provider.get()) : std::nullopt)) {
+    success = true;
+    *mod = builder.get_module();
+  } else {
+    *mod = createModule(name);
+    (*mod)->getDiag().swap(provider);
   }
 
   std::swap(nr::nr_arena.get(), *scratch_arena.get());
@@ -131,7 +124,7 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
 
 ///=============================================================================
 
-static nr::Tmp *create_simple_call(NRBuilder &b, PState &, std::string_view name,
+static nr::Tmp *create_simple_call(NRBuilder &b, PState &, IReport *G, std::string_view name,
                                    std::vector<std::pair<std::string_view, nr::Expr *>,
                                                nr::Arena<std::pair<std::string_view, nr::Expr *>>>
                                        args = {}) {
@@ -158,8 +151,8 @@ nr::List *nr::createStringLiteral(std::string_view value) noexcept {
   return create<List>(items, true);
 }
 
-std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &, PState &, nr::Expr *lhs, nr::Expr *rhs,
-                                              qlex_op_t op) {
+std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &, PState &, IReport *G, nr::Expr *lhs,
+                                              nr::Expr *rhs, qlex_op_t op) {
 #define STD_BINOP(op) nr::create<nr::BinExpr>(lhs, rhs, nr::Op::op)
 #define ASSIGN_BINOP(op)                                                                     \
   nr::create<nr::BinExpr>(                                                                   \
@@ -368,7 +361,8 @@ std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &, PState &, nr::Expr *l
   return R;
 }
 
-std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &s, nr::Expr *rhs, qlex_op_t op) {
+std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &s, IReport *G, nr::Expr *rhs,
+                                             qlex_op_t op) {
 #define STD_UNOP(op) nr::create<nr::UnExpr>(rhs, nr::Op::op)
 
   EResult R;
@@ -423,7 +417,7 @@ std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &s, nr::Expr *
       auto bits = nr::create<nr::UnExpr>(rhs, nr::Op::Bitsizeof);
       auto arg = nr::create<nr::BinExpr>(bits, nr::create<nr::Float>(8, nr::FloatSize::F64),
                                          nr::Op::Slash);
-      R = create_simple_call(b, s, "std::ceil", {{"0", arg}});
+      R = create_simple_call(b, s, G, "std::ceil", {{"0", arg}});
       break;
     }
 
@@ -441,8 +435,8 @@ std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &s, nr::Expr *
       nr::SymbolEncoding se;
       auto res = se.mangle_name(inferred.value(), nr::AbiTag::Nitrate);
       if (!res.has_value()) {
-        report(IssueCode::CompilerError, IssueClass::Error, "Failed to mangle type name",
-               rhs->getLoc());
+        G->report(IssueCode::CompilerError, IssueClass::Error, "Failed to mangle type name",
+                  rhs->getLoc());
         break;
       }
 
@@ -463,7 +457,7 @@ std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &s, nr::Expr *
   return R;
 }
 
-std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &, nr::Expr *lhs,
+std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &, IReport *G, nr::Expr *lhs,
                                                   qlex_op_t op) {
 #define STD_POST_OP(op) nr::create<nr::PostUnExpr>(lhs, nr::Op::op)
 
@@ -487,61 +481,61 @@ std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &, nr::Exp
   return R;
 }
 
-static EResult nrgen_cexpr(NRBuilder &b, PState &s, qparse::ConstExpr *n) {
-  auto c = nrgen_one(b, s, n->get_value());
+static EResult nrgen_cexpr(NRBuilder &b, PState &s, IReport *G, qparse::ConstExpr *n) {
+  auto c = next_one(n->get_value());
   if (!c.has_value()) {
-    report(IssueCode::CompilerError, IssueClass::Error, "Failed to lower constant expression",
-           n->get_pos());
+    G->report(IssueCode::CompilerError, IssueClass::Error, "Failed to lower constant expression",
+              n->get_pos());
     return std::nullopt;
   }
 
   return c;
 }
 
-static EResult nrgen_binexpr(NRBuilder &b, PState &s, qparse::BinExpr *n) {
-  auto lhs = nrgen_one(b, s, n->get_lhs());
+static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G, qparse::BinExpr *n) {
+  auto lhs = next_one(n->get_lhs());
   if (!lhs.has_value()) {
     return std::nullopt;
   }
 
-  auto rhs = nrgen_one(b, s, n->get_rhs());
+  auto rhs = next_one(n->get_rhs());
   if (!rhs.has_value()) {
     return std::nullopt;
   }
 
-  return nrgen_lower_binexpr(b, s, lhs.value(), rhs.value(), n->get_op());
+  return nrgen_lower_binexpr(b, s, G, lhs.value(), rhs.value(), n->get_op());
 }
 
-static EResult nrgen_unexpr(NRBuilder &b, PState &s, qparse::UnaryExpr *n) {
-  auto rhs = nrgen_one(b, s, n->get_rhs());
+static EResult nrgen_unexpr(NRBuilder &b, PState &s, IReport *G, qparse::UnaryExpr *n) {
+  auto rhs = next_one(n->get_rhs());
   if (!rhs.has_value()) {
     return std::nullopt;
   }
 
-  return nrgen_lower_unexpr(b, s, rhs.value(), n->get_op());
+  return nrgen_lower_unexpr(b, s, G, rhs.value(), n->get_op());
 }
 
-static EResult nrgen_post_unexpr(NRBuilder &b, PState &s, qparse::PostUnaryExpr *n) {
-  auto lhs = nrgen_one(b, s, n->get_lhs());
+static EResult nrgen_post_unexpr(NRBuilder &b, PState &s, IReport *G, qparse::PostUnaryExpr *n) {
+  auto lhs = next_one(n->get_lhs());
   if (!lhs.has_value()) {
     return std::nullopt;
   }
 
-  return nrgen_lower_post_unexpr(b, s, lhs.value(), n->get_op());
+  return nrgen_lower_post_unexpr(b, s, G, lhs.value(), n->get_op());
 }
 
-static EResult nrgen_terexpr(NRBuilder &b, PState &s, qparse::TernaryExpr *n) {
-  auto cond = nrgen_one(b, s, n->get_cond());
+static EResult nrgen_terexpr(NRBuilder &b, PState &s, IReport *G, qparse::TernaryExpr *n) {
+  auto cond = next_one(n->get_cond());
   if (!cond.has_value()) {
     return std::nullopt;
   }
 
-  auto lhs = nrgen_one(b, s, n->get_lhs());
+  auto lhs = next_one(n->get_lhs());
   if (!lhs.has_value()) {
     return std::nullopt;
   }
 
-  auto rhs = nrgen_one(b, s, n->get_rhs());
+  auto rhs = next_one(n->get_rhs());
   if (!rhs.has_value()) {
     return std::nullopt;
   }
@@ -549,7 +543,7 @@ static EResult nrgen_terexpr(NRBuilder &b, PState &s, qparse::TernaryExpr *n) {
   return create<If>(cond.value(), lhs.value(), rhs.value());
 }
 
-static EResult nrgen_int(NRBuilder &b, PState &, qparse::ConstInt *n) {
+static EResult nrgen_int(NRBuilder &b, PState &, IReport *G, qparse::ConstInt *n) {
   boost::multiprecision::cpp_int num(n->get_value());
 
   if (num > std::numeric_limits<uint128_t>::max()) {
@@ -563,49 +557,49 @@ static EResult nrgen_int(NRBuilder &b, PState &, qparse::ConstInt *n) {
   }
 }
 
-static EResult nrgen_float(NRBuilder &b, PState &, qparse::ConstFloat *n) {
+static EResult nrgen_float(NRBuilder &b, PState &, IReport *G, qparse::ConstFloat *n) {
   /// FIXME: Do floating-point literal range checking
   return create<Float>(b.intern(n->get_value()));
 }
 
-static EResult nrgen_string(NRBuilder &b, PState &, qparse::ConstString *n) {
+static EResult nrgen_string(NRBuilder &b, PState &, IReport *G, qparse::ConstString *n) {
   return b.createStringDataArray(n->get_value());
 }
 
-static EResult nrgen_char(NRBuilder &b, PState &, qparse::ConstChar *n) {
+static EResult nrgen_char(NRBuilder &b, PState &, IReport *G, qparse::ConstChar *n) {
   if (n->get_value() > UINT8_MAX) {
-    report(IssueCode::CompilerError, IssueClass::Error,
-           "Character literal value is outside the expected range of UINT8_MAX", n->get_pos());
+    G->report(IssueCode::CompilerError, IssueClass::Error,
+              "Character literal value is outside the expected range of UINT8_MAX", n->get_pos());
     return std::nullopt;
   }
 
   return b.createFixedInteger(n->get_value(), IntSize::U8);
 }
 
-static EResult nrgen_bool(NRBuilder &b, PState &, qparse::ConstBool *n) {
+static EResult nrgen_bool(NRBuilder &b, PState &, IReport *G, qparse::ConstBool *n) {
   return b.createBool(n->get_value());
 }
 
-static EResult nrgen_null(NRBuilder &, PState &, qparse::ConstNull *) {
+static EResult nrgen_null(NRBuilder &, PState &, IReport *G, qparse::ConstNull *) {
   return std::nullopt;
 
   /// TODO: This will be a special global variable for the __builtin_optional class
 }
 
-static EResult nrgen_undef(NRBuilder &, PState &, qparse::ConstUndef *n) {
-  report(IssueCode::UnexpectedUndefLiteral, IssueClass::Error, "", n->get_pos());
+static EResult nrgen_undef(NRBuilder &, PState &, IReport *G, qparse::ConstUndef *n) {
+  G->report(IssueCode::UnexpectedUndefLiteral, IssueClass::Error, "", n->get_pos());
   return std::nullopt;
 }
 
-static EResult nrgen_call(NRBuilder &b, PState &s, qparse::Call *n) {
-  auto target = nrgen_one(b, s, n->get_func());
+static EResult nrgen_call(NRBuilder &b, PState &s, IReport *G, qparse::Call *n) {
+  auto target = next_one(n->get_func());
   if (!target) {
     return std::nullopt;
   }
 
   CallArgsTmpNodeCradle datapack;
   for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
-    auto arg = nrgen_one(b, s, it->second);
+    auto arg = next_one(it->second);
     if (!arg) {
       return std::nullopt;
     }
@@ -619,11 +613,11 @@ static EResult nrgen_call(NRBuilder &b, PState &s, qparse::Call *n) {
   return create<Tmp>(TmpType::CALL, std::move(datapack));
 }
 
-static EResult nrgen_list(NRBuilder &b, PState &s, qparse::List *n) {
+static EResult nrgen_list(NRBuilder &b, PState &s, IReport *G, qparse::List *n) {
   ListItems items;
 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    auto item = nrgen_one(b, s, *it);
+    auto item = next_one(*it);
     if (!item.has_value()) {
       return std::nullopt;
     }
@@ -634,13 +628,13 @@ static EResult nrgen_list(NRBuilder &b, PState &s, qparse::List *n) {
   return b.createList(items, false);
 }
 
-static EResult nrgen_assoc(NRBuilder &b, PState &s, qparse::Assoc *n) {
-  auto key = nrgen_one(b, s, n->get_key());
+static EResult nrgen_assoc(NRBuilder &b, PState &s, IReport *G, qparse::Assoc *n) {
+  auto key = next_one(n->get_key());
   if (!key.has_value()) {
     return std::nullopt;
   }
 
-  auto value = nrgen_one(b, s, n->get_value());
+  auto value = next_one(n->get_value());
   if (!value.has_value()) {
     return std::nullopt;
   }
@@ -649,8 +643,8 @@ static EResult nrgen_assoc(NRBuilder &b, PState &s, qparse::Assoc *n) {
   return b.createList(kv, false);
 }
 
-static EResult nrgen_field(NRBuilder &b, PState &s, qparse::Field *n) {
-  auto base = nrgen_one(b, s, n->get_base());
+static EResult nrgen_field(NRBuilder &b, PState &s, IReport *G, qparse::Field *n) {
+  auto base = next_one(n->get_base());
   if (!base.has_value()) {
     return std::nullopt;
   }
@@ -659,13 +653,13 @@ static EResult nrgen_field(NRBuilder &b, PState &s, qparse::Field *n) {
   return create<Index>(base.value(), field);
 }
 
-static EResult nrgen_index(NRBuilder &b, PState &s, qparse::Index *n) {
-  auto base = nrgen_one(b, s, n->get_base());
+static EResult nrgen_index(NRBuilder &b, PState &s, IReport *G, qparse::Index *n) {
+  auto base = next_one(n->get_base());
   if (!base.has_value()) {
     return std::nullopt;
   }
 
-  auto index = nrgen_one(b, s, n->get_index());
+  auto index = next_one(n->get_index());
   if (!index.has_value()) {
     return std::nullopt;
   }
@@ -673,18 +667,18 @@ static EResult nrgen_index(NRBuilder &b, PState &s, qparse::Index *n) {
   return create<Index>(base.value(), index.value());
 }
 
-static EResult nrgen_slice(NRBuilder &b, PState &s, qparse::Slice *n) {
-  auto base = nrgen_one(b, s, n->get_base());
+static EResult nrgen_slice(NRBuilder &b, PState &s, IReport *G, qparse::Slice *n) {
+  auto base = next_one(n->get_base());
   if (!base.has_value()) {
     return std::nullopt;
   }
 
-  auto start = nrgen_one(b, s, n->get_start());
+  auto start = next_one(n->get_start());
   if (!start.has_value()) {
     return std::nullopt;
   }
 
-  auto end = nrgen_one(b, s, n->get_end());
+  auto end = next_one(n->get_end());
   if (!end.has_value()) {
     return std::nullopt;
   }
@@ -693,7 +687,7 @@ static EResult nrgen_slice(NRBuilder &b, PState &s, qparse::Slice *n) {
                       CallArgs({start.value(), end.value()}));
 }
 
-static EResult nrgen_fstring(NRBuilder &b, PState &s, qparse::FString *n) {
+static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G, qparse::FString *n) {
   if (n->get_items().empty()) {
     return b.createStringDataArray("");
   }
@@ -704,11 +698,11 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, qparse::FString *n) {
     if (std::holds_alternative<qparse::String>(val)) {
       return createStringLiteral(std::get<qparse::String>(val));
     } else if (std::holds_alternative<qparse::Expr *>(val)) {
-      auto expr = nrgen_one(b, s, std::get<qparse::Expr *>(val));
+      auto expr = next_one(std::get<qparse::Expr *>(val));
 
       if (!expr.has_value()) {
-        report(IssueCode::CompilerError, IssueClass::Error,
-               "qparse::FString::get_items() vector contains std::nullopt", n->get_pos());
+        G->report(IssueCode::CompilerError, IssueClass::Error,
+                  "qparse::FString::get_items() vector contains std::nullopt", n->get_pos());
         return std::nullopt;
       }
 
@@ -727,11 +721,11 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, qparse::FString *n) {
       concated = create<BinExpr>(concated, createStringLiteral(val), Op::Plus);
     } else if (std::holds_alternative<qparse::Expr *>(*it)) {
       auto val = std::get<qparse::Expr *>(*it);
-      auto expr = nrgen_one(b, s, val);
+      auto expr = next_one(val);
 
       if (!expr.has_value()) {
-        report(IssueCode::CompilerError, IssueClass::Error,
-               "qparse::FString::get_items() vector contains std::nullopt", n->get_pos());
+        G->report(IssueCode::CompilerError, IssueClass::Error,
+                  "qparse::FString::get_items() vector contains std::nullopt", n->get_pos());
         return std::nullopt;
       }
 
@@ -744,7 +738,7 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, qparse::FString *n) {
   return concated;
 }
 
-static EResult nrgen_ident(NRBuilder &b, PState &s, qparse::Ident *n) {
+static EResult nrgen_ident(NRBuilder &b, PState &s, IReport *G, qparse::Ident *n) {
   if (s.inside_function) {
     qcore_assert(!s.local_scope.empty());
 
@@ -760,15 +754,15 @@ static EResult nrgen_ident(NRBuilder &b, PState &s, qparse::Ident *n) {
   return create<Ident>(b.intern(std::string_view(str)), nullptr);
 }
 
-static EResult nrgen_seq_point(NRBuilder &b, PState &s, qparse::SeqPoint *n) {
+static EResult nrgen_seq_point(NRBuilder &b, PState &s, IReport *G, qparse::SeqPoint *n) {
   SeqItems items;
   items.reserve(n->get_items().size());
 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    auto item = nrgen_one(b, s, *it);
+    auto item = next_one(*it);
     if (!item.has_value()) {
-      report(IssueCode::CompilerError, IssueClass::Error,
-             "qparse::SeqPoint::get_items() vector contains std::nullopt", n->get_pos());
+      G->report(IssueCode::CompilerError, IssueClass::Error,
+                "qparse::SeqPoint::get_items() vector contains std::nullopt", n->get_pos());
       return std::nullopt;
     }
 
@@ -778,8 +772,8 @@ static EResult nrgen_seq_point(NRBuilder &b, PState &s, qparse::SeqPoint *n) {
   return create<Seq>(std::move(items));
 }
 
-static EResult nrgen_stmt_expr(NRBuilder &b, PState &s, qparse::StmtExpr *n) {
-  auto stmt = nrgen_one(b, s, n->get_stmt());
+static EResult nrgen_stmt_expr(NRBuilder &b, PState &s, IReport *G, qparse::StmtExpr *n) {
+  auto stmt = next_one(n->get_stmt());
   if (!stmt.has_value()) {
     return std::nullopt;
   }
@@ -787,8 +781,8 @@ static EResult nrgen_stmt_expr(NRBuilder &b, PState &s, qparse::StmtExpr *n) {
   return stmt;
 }
 
-static EResult nrgen_type_expr(NRBuilder &b, PState &s, qparse::TypeExpr *n) {
-  auto type = nrgen_one(b, s, n->get_type());
+static EResult nrgen_type_expr(NRBuilder &b, PState &s, IReport *G, qparse::TypeExpr *n) {
+  auto type = next_one(n->get_type());
   if (!type.has_value()) {
     return std::nullopt;
   }
@@ -796,17 +790,17 @@ static EResult nrgen_type_expr(NRBuilder &b, PState &s, qparse::TypeExpr *n) {
   return type;
 }
 
-static EResult nrgen_templ_call(NRBuilder &, PState &, qparse::TemplCall *n) {
+static EResult nrgen_templ_call(NRBuilder &, PState &, IReport *G, qparse::TemplCall *n) {
   /// TODO: Implement template function calls
 
-  report(IssueCode::CompilerError, IssueClass::Error, "Template call not implemented",
-         n->get_pos());
+  G->report(IssueCode::CompilerError, IssueClass::Error, "Template call not implemented",
+            n->get_pos());
 
   return std::nullopt;
 }
 
-static EResult nrgen_ref_ty(NRBuilder &b, PState &s, qparse::RefTy *n) {
-  auto pointee = nrgen_one(b, s, n->get_item());
+static EResult nrgen_ref_ty(NRBuilder &b, PState &s, IReport *G, qparse::RefTy *n) {
+  auto pointee = next_one(n->get_item());
   if (!pointee.has_value()) {
     return std::nullopt;
   }
@@ -814,25 +808,51 @@ static EResult nrgen_ref_ty(NRBuilder &b, PState &s, qparse::RefTy *n) {
   return b.getPtrTy(pointee.value()->asType());
 }
 
-static EResult nrgen_u1_ty(NRBuilder &b, PState &, qparse::U1 *) { return b.getU1Ty(); }
-static EResult nrgen_u8_ty(NRBuilder &b, PState &, qparse::U8 *) { return b.getU8Ty(); }
-static EResult nrgen_u16_ty(NRBuilder &b, PState &, qparse::U16 *) { return b.getU16Ty(); }
-static EResult nrgen_u32_ty(NRBuilder &b, PState &, qparse::U32 *) { return b.getU32Ty(); }
-static EResult nrgen_u64_ty(NRBuilder &b, PState &, qparse::U64 *) { return b.getU64Ty(); }
-static EResult nrgen_u128_ty(NRBuilder &b, PState &, qparse::U128 *) { return b.getU128Ty(); }
-static EResult nrgen_i8_ty(NRBuilder &b, PState &, qparse::I8 *) { return b.getI8Ty(); }
-static EResult nrgen_i16_ty(NRBuilder &b, PState &, qparse::I16 *) { return b.getI16Ty(); }
-static EResult nrgen_i32_ty(NRBuilder &b, PState &, qparse::I32 *) { return b.getI32Ty(); }
-static EResult nrgen_i64_ty(NRBuilder &b, PState &, qparse::I64 *) { return b.getI64Ty(); }
-static EResult nrgen_i128_ty(NRBuilder &b, PState &, qparse::I128 *) { return b.getI128Ty(); }
-static EResult nrgen_f16_ty(NRBuilder &b, PState &, qparse::F16 *) { return b.getF16Ty(); }
-static EResult nrgen_f32_ty(NRBuilder &b, PState &, qparse::F32 *) { return b.getF32Ty(); }
-static EResult nrgen_f64_ty(NRBuilder &b, PState &, qparse::F64 *) { return b.getF64Ty(); }
-static EResult nrgen_f128_ty(NRBuilder &b, PState &, qparse::F128 *) { return b.getF128Ty(); }
-static EResult nrgen_void_ty(NRBuilder &b, PState &, qparse::VoidTy *) { return b.getVoidTy(); }
+static EResult nrgen_u1_ty(NRBuilder &b, PState &, IReport *G, qparse::U1 *) { return b.getU1Ty(); }
+static EResult nrgen_u8_ty(NRBuilder &b, PState &, IReport *G, qparse::U8 *) { return b.getU8Ty(); }
+static EResult nrgen_u16_ty(NRBuilder &b, PState &, IReport *G, qparse::U16 *) {
+  return b.getU16Ty();
+}
+static EResult nrgen_u32_ty(NRBuilder &b, PState &, IReport *G, qparse::U32 *) {
+  return b.getU32Ty();
+}
+static EResult nrgen_u64_ty(NRBuilder &b, PState &, IReport *G, qparse::U64 *) {
+  return b.getU64Ty();
+}
+static EResult nrgen_u128_ty(NRBuilder &b, PState &, IReport *G, qparse::U128 *) {
+  return b.getU128Ty();
+}
+static EResult nrgen_i8_ty(NRBuilder &b, PState &, IReport *G, qparse::I8 *) { return b.getI8Ty(); }
+static EResult nrgen_i16_ty(NRBuilder &b, PState &, IReport *G, qparse::I16 *) {
+  return b.getI16Ty();
+}
+static EResult nrgen_i32_ty(NRBuilder &b, PState &, IReport *G, qparse::I32 *) {
+  return b.getI32Ty();
+}
+static EResult nrgen_i64_ty(NRBuilder &b, PState &, IReport *G, qparse::I64 *) {
+  return b.getI64Ty();
+}
+static EResult nrgen_i128_ty(NRBuilder &b, PState &, IReport *G, qparse::I128 *) {
+  return b.getI128Ty();
+}
+static EResult nrgen_f16_ty(NRBuilder &b, PState &, IReport *G, qparse::F16 *) {
+  return b.getF16Ty();
+}
+static EResult nrgen_f32_ty(NRBuilder &b, PState &, IReport *G, qparse::F32 *) {
+  return b.getF32Ty();
+}
+static EResult nrgen_f64_ty(NRBuilder &b, PState &, IReport *G, qparse::F64 *) {
+  return b.getF64Ty();
+}
+static EResult nrgen_f128_ty(NRBuilder &b, PState &, IReport *G, qparse::F128 *) {
+  return b.getF128Ty();
+}
+static EResult nrgen_void_ty(NRBuilder &b, PState &, IReport *G, qparse::VoidTy *) {
+  return b.getVoidTy();
+}
 
-static EResult nrgen_ptr_ty(NRBuilder &b, PState &s, qparse::PtrTy *n) {
-  auto pointee = nrgen_one(b, s, n->get_item());
+static EResult nrgen_ptr_ty(NRBuilder &b, PState &s, IReport *G, qparse::PtrTy *n) {
+  auto pointee = next_one(n->get_item());
   if (!pointee.has_value()) {
     return std::nullopt;
   }
@@ -840,21 +860,21 @@ static EResult nrgen_ptr_ty(NRBuilder &b, PState &s, qparse::PtrTy *n) {
   return b.getPtrTy(pointee.value()->asType());
 }
 
-static EResult nrgen_opaque_ty(NRBuilder &b, PState &, qparse::OpaqueTy *n) {
+static EResult nrgen_opaque_ty(NRBuilder &b, PState &, IReport *G, qparse::OpaqueTy *n) {
   return b.getOpaqueTy(n->get_name());
 }
 
-static EResult nrgen_struct_ty(NRBuilder &b, PState &s, qparse::StructTy *n) {
+static EResult nrgen_struct_ty(NRBuilder &b, PState &s, IReport *G, qparse::StructTy *n) {
   const qparse::StructItems &fields = n->get_items();
 
   std::vector<Type *> the_fields;
   the_fields.resize(fields.size());
 
   for (size_t i = 0; i < the_fields.size(); i++) {
-    auto item = nrgen_one(b, s, fields[i].second);
+    auto item = next_one(fields[i].second);
     if (!item.has_value()) {
-      report(IssueCode::CompilerError, IssueClass::Error,
-             "qparse::StructTy::get_items() vector contains std::nullopt", n->get_pos());
+      G->report(IssueCode::CompilerError, IssueClass::Error,
+                "qparse::StructTy::get_items() vector contains std::nullopt", n->get_pos());
       return std::nullopt;
     }
 
@@ -864,19 +884,19 @@ static EResult nrgen_struct_ty(NRBuilder &b, PState &s, qparse::StructTy *n) {
   return b.getStructTy(the_fields);
 }
 
-static EResult nrgen_array_ty(NRBuilder &b, PState &s, qparse::ArrayTy *n) {
-  auto item = nrgen_one(b, s, n->get_item());
+static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G, qparse::ArrayTy *n) {
+  auto item = next_one(n->get_item());
   if (!item.has_value()) {
     return std::nullopt;
   }
 
-  auto count_expr = nrgen_one(b, s, n->get_size());
+  auto count_expr = next_one(n->get_size());
   if (!count_expr.has_value()) {
     return std::nullopt;
   }
 
   auto eprintn_cb = [&](std::string_view msg) {
-    report(IssueCode::CompilerError, IssueClass::Error, msg, count_expr.value()->getLoc());
+    G->report(IssueCode::CompilerError, IssueClass::Error, msg, count_expr.value()->getLoc());
   };
 
   auto result = nr::comptime_impl(count_expr.value(), eprintn_cb);
@@ -885,28 +905,28 @@ static EResult nrgen_array_ty(NRBuilder &b, PState &s, qparse::ArrayTy *n) {
   }
 
   if (result.value()->getKind() != QIR_NODE_INT) {
-    report(IssueCode::CompilerError, IssueClass::Error,
-           "Non integer literal array size is not supported", n->get_pos());
+    G->report(IssueCode::CompilerError, IssueClass::Error,
+              "Non integer literal array size is not supported", n->get_pos());
     return std::nullopt;
   }
 
   uint128_t size = result.value()->as<Int>()->getValue();
 
   if (size > UINT64_MAX) {
-    report(IssueCode::CompilerError, IssueClass::Error, "Array size > UINT64_MAX", n->get_pos());
+    G->report(IssueCode::CompilerError, IssueClass::Error, "Array size > UINT64_MAX", n->get_pos());
     return std::nullopt;
   }
 
   return b.getArrayTy(item.value()->asType(), static_cast<uint64_t>(size));
 }
 
-static EResult nrgen_tuple_ty(NRBuilder &b, PState &s, qparse::TupleTy *n) {
+static EResult nrgen_tuple_ty(NRBuilder &b, PState &s, IReport *G, qparse::TupleTy *n) {
   StructFields fields;
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    auto item = nrgen_one(b, s, *it);
+    auto item = next_one(*it);
     if (!item.has_value()) {
-      report(IssueCode::CompilerError, IssueClass::Error,
-             "qparse::TupleTy::get_items() vector contains std::nullopt", n->get_pos());
+      G->report(IssueCode::CompilerError, IssueClass::Error,
+                "qparse::TupleTy::get_items() vector contains std::nullopt", n->get_pos());
       return std::nullopt;
     }
 
@@ -916,11 +936,11 @@ static EResult nrgen_tuple_ty(NRBuilder &b, PState &s, qparse::TupleTy *n) {
   return create<StructTy>(std::move(fields));
 }
 
-static EResult nrgen_fn_ty(NRBuilder &b, PState &s, qparse::FuncTy *n) {
+static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G, qparse::FuncTy *n) {
   FnParams params;
 
   for (auto it = n->get_params().begin(); it != n->get_params().end(); ++it) {
-    auto type = nrgen_one(b, s, std::get<1>(*it));
+    auto type = next_one(std::get<1>(*it));
     if (!type.has_value()) {
       return std::nullopt;
     }
@@ -928,7 +948,7 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, qparse::FuncTy *n) {
     params.push_back(type.value()->asType());
   }
 
-  auto ret = nrgen_one(b, s, n->get_return_ty());
+  auto ret = next_one(n->get_return_ty());
   if (!ret.has_value()) {
     return std::nullopt;
   }
@@ -942,19 +962,19 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, qparse::FuncTy *n) {
   return create<FnTy>(std::move(params), ret.value()->asType(), std::move(attrs));
 }
 
-static EResult nrgen_unres_ty(NRBuilder &b, PState &s, qparse::UnresolvedType *n) {
+static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *G, qparse::UnresolvedType *n) {
   auto str = s.cur_named(n->get_name());
   auto name = b.intern(std::string_view(str));
 
   return create<Tmp>(TmpType::NAMED_TYPE, name);
 }
 
-static EResult nrgen_infer_ty(NRBuilder &b, PState &, qparse::InferType *) {
+static EResult nrgen_infer_ty(NRBuilder &b, PState &, IReport *G, qparse::InferType *) {
   return b.getUnknownTy();
 }
 
-static EResult nrgen_templ_ty(NRBuilder &b, PState &s, qparse::TemplType *n) {
-  auto base_template = nrgen_one(b, s, n->get_template());
+static EResult nrgen_templ_ty(NRBuilder &b, PState &s, IReport *G, qparse::TemplType *n) {
+  auto base_template = next_one(n->get_template());
   if (!base_template.has_value()) {
     return std::nullopt;
   }
@@ -964,16 +984,16 @@ static EResult nrgen_templ_ty(NRBuilder &b, PState &s, qparse::TemplType *n) {
   template_args.resize(templ_args.size());
 
   for (size_t i = 0; i < template_args.size(); i++) {
-    auto tmp = nrgen_one(b, s, templ_args[i]);
+    auto tmp = next_one(templ_args[i]);
     if (!tmp.has_value()) {
-      report(IssueCode::CompilerError, IssueClass::Error,
-             "Failed to generate template instance argument", n->get_pos());
+      G->report(IssueCode::CompilerError, IssueClass::Error,
+                "Failed to generate template instance argument", n->get_pos());
       return std::nullopt;
     }
 
     if (!tmp.value()->isType()) {
-      report(IssueCode::CompilerError, IssueClass::Error,
-             "The template instance argument is not a type", n->get_pos());
+      G->report(IssueCode::CompilerError, IssueClass::Error,
+                "The template instance argument is not a type", n->get_pos());
       return std::nullopt;
     }
 
@@ -983,19 +1003,19 @@ static EResult nrgen_templ_ty(NRBuilder &b, PState &s, qparse::TemplType *n) {
   return b.getTemplateInstance(base_template.value()->asType(), template_args);
 }
 
-static std::optional<std::vector<Expr *>> nrgen_typedef(NRBuilder &b, PState &s,
+static std::optional<std::vector<Expr *>> nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
                                                         qparse::TypedefDecl *n) {
   // auto str = s.cur_named(n->get_name());
   // auto name = b.intern(std::string_view(str));
 
   // if (current->getTypeMap().contains(name)) {
-  //   report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(),n->get_pos(),
+  //   G->report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(),n->get_pos(),
   //         n->get_pos());
   // }
 
-  // auto type = nrgen_one(b, s, n->get_type());
+  // auto type = nrgen_one(b, s,X, n->get_type());
   // if (!type) {
-  //   report(IssueCode::CompilerError, IssueClass::Error,
+  //   G->report(IssueCode::CompilerError, IssueClass::Error,
   //          "qparse::TypedefDecl::get_type() == std::nullopt",n->get_pos(),
   //         n->get_pos());
   //   return std::nullopt;
@@ -1008,7 +1028,7 @@ static std::optional<std::vector<Expr *>> nrgen_typedef(NRBuilder &b, PState &s,
   return std::nullopt;
 }
 
-static EResult nrgen_fndecl(NRBuilder &b, PState &s, qparse::FnDecl *n) {
+static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G, qparse::FnDecl *n) {
   // Params params;
   // qparse::FuncTy *fty = n->get_type();
 
@@ -1032,9 +1052,9 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, qparse::FnDecl *n) {
   //      * 4. Position - All parameters have a position.
   //      */
 
-  //     auto type = nrgen_one(b, s, std::get<1>(*it));
+  //     auto type = nrgen_one(b, s,X, std::get<1>(*it));
   //     if (!type.has_value()) {
-  //       report(IssueCode::CompilerError, IssueClass::Error,
+  //       G->report(IssueCode::CompilerError, IssueClass::Error,
   //              "qparse::FnDecl::get_type() == std::nullopt",n->get_pos(),
   //             n->get_pos());
   //       return std::nullopt;
@@ -1042,9 +1062,9 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, qparse::FnDecl *n) {
 
   //     EResult def;
   //     if (std::get<2>(*it)) {
-  //       def = nrgen_one(b, s, std::get<2>(*it));
+  //       def = nrgen_one(b, s,X, std::get<2>(*it));
   //       if (!def.has_value()) {
-  //         report(IssueCode::CompilerError, IssueClass::Error,
+  //         G->report(IssueCode::CompilerError, IssueClass::Error,
   //                "qparse::FnDecl::get_type() == std::nullopt",n->get_pos(),
   //               n->get_pos());
   //         return std::nullopt;
@@ -1059,9 +1079,9 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, qparse::FnDecl *n) {
   //   }
   // }
 
-  // auto fnty = nrgen_one(b, s, fty);
+  // auto fnty = nrgen_one(b, s,X, fty);
   // if (!fnty.value()) {
-  //   report(IssueCode::CompilerError, IssueClass::Error,
+  //   G->report(IssueCode::CompilerError, IssueClass::Error,
   //          "qparse::FnDecl::get_type() == std::nullopt",n->get_pos(),n->get_pos());
   //   return std::nullopt;
   // }
@@ -1078,13 +1098,13 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, qparse::FnDecl *n) {
 
 #define align(x, a) (((x) + (a) - 1) & ~((a) - 1))
 
-static std::optional<std::vector<Expr *>> nrgen_struct(NRBuilder &b, PState &s,
+static std::optional<std::vector<Expr *>> nrgen_struct(NRBuilder &b, PState &s, IReport *G,
                                                        qparse::StructDef *n) {
   // std::string name = s.cur_named(n->get_name());
   // auto sv = b.intern(std::string_view(name));
 
   // if (current->getTypeMap().contains(sv)) {
-  //   report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(),n->get_pos(),
+  //   G->report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(),n->get_pos(),
   //         n->get_pos());
   // }
 
@@ -1094,17 +1114,17 @@ static std::optional<std::vector<Expr *>> nrgen_struct(NRBuilder &b, PState &s,
 
   // for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
   //   if (!*it) {
-  //     report(IssueCode::CompilerError, IssueClass::Error,
+  //     G->report(IssueCode::CompilerError, IssueClass::Error,
   //            "qparse::StructDef::get_fields() vector contains std::nullopt",n->get_pos(),
   //           n->get_pos());
   //     return std::nullopt;
   //   }
 
   //   s.composite_expanse.push((*it)->get_name());
-  //   auto field = nrgen_one(b, s, *it);
+  //   auto field = nrgen_one(b, s,X, *it);
   //   s.composite_expanse.pop();
   //   if (!field.has_value()) {
-  //     report(IssueCode::CompilerError, IssueClass::Error,
+  //     G->report(IssueCode::CompilerError, IssueClass::Error,
   //            "qparse::StructDef::get_fields() vector contains issue",n->get_pos(),
   //           n->get_pos());
   //     return std::nullopt;
@@ -1130,12 +1150,12 @@ static std::optional<std::vector<Expr *>> nrgen_struct(NRBuilder &b, PState &s,
   //   auto old_name = cur_meth->get_name();
   //   cur_meth->set_name(ns_join(n->get_name(), old_name));
 
-  //   auto method = nrgen_one(b, s, *it);
+  //   auto method = nrgen_one(b, s,X, *it);
 
   //   cur_meth->set_name(old_name);
 
   //   if (!method) {
-  //     report(IssueCode::CompilerError, IssueClass::Error,
+  //     G->report(IssueCode::CompilerError, IssueClass::Error,
   //            "qparse::StructDef::get_methods() vector contains std::nullopt",n->get_pos(),
   //           n->get_pos());
   //     return std::nullopt;
@@ -1149,12 +1169,12 @@ static std::optional<std::vector<Expr *>> nrgen_struct(NRBuilder &b, PState &s,
   //   auto old_name = cur_meth->get_name();
   //   cur_meth->set_name(ns_join(n->get_name(), old_name));
 
-  //   auto method = nrgen_one(b, s, *it);
+  //   auto method = nrgen_one(b, s,X, *it);
 
   //   cur_meth->set_name(old_name);
 
   //   if (!method) {
-  //     report(IssueCode::CompilerError, IssueClass::Error,
+  //     G->report(IssueCode::CompilerError, IssueClass::Error,
   //            "qparse::StructDef::get_static_methods() vector contains std::nullopt",
   //           n->get_pos(),n->get_pos());
   //     return std::nullopt;
@@ -1168,13 +1188,13 @@ static std::optional<std::vector<Expr *>> nrgen_struct(NRBuilder &b, PState &s,
   return std::nullopt;
 }
 
-static std::optional<std::vector<Expr *>> nrgen_region(NRBuilder &b, PState &s,
+static std::optional<std::vector<Expr *>> nrgen_region(NRBuilder &b, PState &s, IReport *G,
                                                        qparse::RegionDef *n) {
   // std::string name = s.cur_named(n->get_name());
   // auto sv = b.intern(std::string_view(name));
 
   // if (current->getTypeMap().contains(sv)) {
-  //   report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(),n->get_pos(),
+  //   G->report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(),n->get_pos(),
   //         n->get_pos());
   // }
 
@@ -1183,14 +1203,14 @@ static std::optional<std::vector<Expr *>> nrgen_region(NRBuilder &b, PState &s,
 
   // for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
   //   if (!*it) {
-  //     report(IssueCode::CompilerError, IssueClass::Error,
+  //     G->report(IssueCode::CompilerError, IssueClass::Error,
   //            "qparse::RegionDef::get_fields() vector contains std::nullopt",n->get_pos(),
   //           n->get_pos());
   //     return std::nullopt;
   //   }
 
   //   s.composite_expanse.push((*it)->get_name());
-  //   auto field = nrgen_one(b, s, *it);
+  //   auto field = nrgen_one(b, s,X, *it);
   //   s.composite_expanse.pop();
 
   //   fields.push_back(field.value()->asType());
@@ -1206,12 +1226,12 @@ static std::optional<std::vector<Expr *>> nrgen_region(NRBuilder &b, PState &s,
   //   auto old_name = cur_meth->get_name();
   //   cur_meth->set_name(ns_join(n->get_name(), old_name));
 
-  //   auto method = nrgen_one(b, s, *it);
+  //   auto method = nrgen_one(b, s,X, *it);
 
   //   cur_meth->set_name(old_name);
 
   //   if (!method) {
-  //     report(IssueCode::CompilerError, IssueClass::Error,
+  //     G->report(IssueCode::CompilerError, IssueClass::Error,
   //            "qparse::RegionDef::get_methods() vector contains std::nullopt",n->get_pos(),
   //           n->get_pos());
   //     return std::nullopt;
@@ -1225,12 +1245,12 @@ static std::optional<std::vector<Expr *>> nrgen_region(NRBuilder &b, PState &s,
   //   auto old_name = cur_meth->get_name();
   //   cur_meth->set_name(ns_join(n->get_name(), old_name));
 
-  //   auto method = nrgen_one(b, s, *it);
+  //   auto method = nrgen_one(b, s,X, *it);
 
   //   cur_meth->set_name(old_name);
 
   //   if (!method) {
-  //     report(IssueCode::CompilerError, IssueClass::Error,
+  //     G->report(IssueCode::CompilerError, IssueClass::Error,
   //            "qparse::RegionDef::get_static_methods() vector contains std::nullopt",
   //           n->get_pos(),n->get_pos());
   //     return std::nullopt;
@@ -1244,13 +1264,13 @@ static std::optional<std::vector<Expr *>> nrgen_region(NRBuilder &b, PState &s,
   return std::nullopt;
 }
 
-static std::optional<std::vector<Expr *>> nrgen_group(NRBuilder &b, PState &s,
+static std::optional<std::vector<Expr *>> nrgen_group(NRBuilder &b, PState &s, IReport *G,
                                                       qparse::GroupDef *n) {
   // std::string name = s.cur_named(n->get_name());
   // auto sv = b.intern(std::string_view(name));
 
   // if (current->getTypeMap().contains(sv)) {
-  //   report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(),n->get_pos(),
+  //   G->report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(),n->get_pos(),
   //         n->get_pos());
   // }
 
@@ -1261,14 +1281,14 @@ static std::optional<std::vector<Expr *>> nrgen_group(NRBuilder &b, PState &s,
   //   std::vector<Type *> tmp_fields;
   //   for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
   //     if (!*it) {
-  //       report(IssueCode::CompilerError, IssueClass::Error,
+  //       G->report(IssueCode::CompilerError, IssueClass::Error,
   //              "qparse::GroupDef::get_fields() vector contains std::nullopt",n->get_pos(),
   //             n->get_pos());
   //       return std::nullopt;
   //     }
 
   //     s.composite_expanse.push((*it)->get_name());
-  //     auto field = nrgen_one(b, s, *it);
+  //     auto field = nrgen_one(b, s,X, *it);
   //     s.composite_expanse.pop();
 
   //     tmp_fields.push_back(field.value()->asType());
@@ -1300,12 +1320,12 @@ static std::optional<std::vector<Expr *>> nrgen_group(NRBuilder &b, PState &s,
   //   auto old_name = cur_meth->get_name();
   //   cur_meth->set_name(ns_join(n->get_name(), old_name));
 
-  //   auto method = nrgen_one(b, s, *it);
+  //   auto method = nrgen_one(b, s,X, *it);
 
   //   cur_meth->set_name(old_name);
 
   //   if (!method) {
-  //     report(IssueCode::CompilerError, IssueClass::Error,
+  //     G->report(IssueCode::CompilerError, IssueClass::Error,
   //            "qparse::GroupDef::get_methods() vector contains std::nullopt",n->get_pos(),
   //           n->get_pos());
   //     return std::nullopt;
@@ -1319,12 +1339,12 @@ static std::optional<std::vector<Expr *>> nrgen_group(NRBuilder &b, PState &s,
   //   auto old_name = cur_meth->get_name();
   //   cur_meth->set_name(ns_join(n->get_name(), old_name));
 
-  //   auto method = nrgen_one(b, s, *it);
+  //   auto method = nrgen_one(b, s,X, *it);
 
   //   cur_meth->set_name(old_name);
 
   //   if (!method) {
-  //     report(IssueCode::CompilerError, IssueClass::Error,
+  //     G->report(IssueCode::CompilerError, IssueClass::Error,
   //            "qparse::GroupDef::get_static_methods() vector contains std::nullopt",
   //           n->get_pos(),n->get_pos());
   //     return std::nullopt;
@@ -1338,13 +1358,13 @@ static std::optional<std::vector<Expr *>> nrgen_group(NRBuilder &b, PState &s,
   return std::nullopt;
 }
 
-static std::optional<std::vector<Expr *>> nrgen_union(NRBuilder &b, PState &s,
+static std::optional<std::vector<Expr *>> nrgen_union(NRBuilder &b, PState &s, IReport *G,
                                                       qparse::UnionDef *n) {
   // std::string name = s.cur_named(n->get_name());
   // auto sv = b.intern(std::string_view(name));
 
   // if (current->getTypeMap().contains(sv)) {
-  //   report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(),n->get_pos(),
+  //   G->report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(),n->get_pos(),
   //         n->get_pos());
   // }
 
@@ -1353,14 +1373,14 @@ static std::optional<std::vector<Expr *>> nrgen_union(NRBuilder &b, PState &s,
 
   // for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
   //   if (!*it) {
-  //     report(IssueCode::CompilerError, IssueClass::Error,
+  //     G->report(IssueCode::CompilerError, IssueClass::Error,
   //            "qparse::UnionDef::get_fields() vector contains std::nullopt",n->get_pos(),
   //           n->get_pos());
   //     return std::nullopt;
   //   }
 
   //   s.composite_expanse.push((*it)->get_name());
-  //   auto field = nrgen_one(b, s, *it);
+  //   auto field = nrgen_one(b, s,X, *it);
   //   s.composite_expanse.pop();
 
   //   fields.push_back(field.value()->asType());
@@ -1376,12 +1396,12 @@ static std::optional<std::vector<Expr *>> nrgen_union(NRBuilder &b, PState &s,
   //   auto old_name = cur_meth->get_name();
   //   cur_meth->set_name(ns_join(n->get_name(), old_name));
 
-  //   auto method = nrgen_one(b, s, *it);
+  //   auto method = nrgen_one(b, s,X, *it);
 
   //   cur_meth->set_name(old_name);
 
   //   if (!method) {
-  //     report(IssueCode::CompilerError, IssueClass::Error,
+  //     G->report(IssueCode::CompilerError, IssueClass::Error,
   //            "qparse::UnionDef::get_methods() vector contains std::nullopt",n->get_pos(),
   //           n->get_pos());
   //     return std::nullopt;
@@ -1395,12 +1415,12 @@ static std::optional<std::vector<Expr *>> nrgen_union(NRBuilder &b, PState &s,
   //   auto old_name = cur_meth->get_name();
   //   cur_meth->set_name(ns_join(n->get_name(), old_name));
 
-  //   auto method = nrgen_one(b, s, *it);
+  //   auto method = nrgen_one(b, s,X, *it);
 
   //   cur_meth->set_name(old_name);
 
   //   if (!method) {
-  //     report(IssueCode::CompilerError, IssueClass::Error,
+  //     G->report(IssueCode::CompilerError, IssueClass::Error,
   //            "qparse::UnionDef::get_static_methods() vector contains std::nullopt",
   //           n->get_pos(),n->get_pos());
   //     return std::nullopt;
@@ -1414,20 +1434,21 @@ static std::optional<std::vector<Expr *>> nrgen_union(NRBuilder &b, PState &s,
   return std::nullopt;
 }
 
-static std::optional<std::vector<Expr *>> nrgen_enum(NRBuilder &b, PState &s, qparse::EnumDef *n) {
+static std::optional<std::vector<Expr *>> nrgen_enum(NRBuilder &b, PState &s, IReport *G,
+                                                     qparse::EnumDef *n) {
   // std::string name = s.cur_named(n->get_name());
   // auto sv = b.intern(std::string_view(name));
 
   // if (current->getTypeMap().contains(sv)) {
-  //   report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(),n->get_pos(),
+  //   G->report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(),n->get_pos(),
   //         n->get_pos());
   // }
 
   // EResult type = nullptr;
   // if (n->get_type()) {
-  //   type = nrgen_one(b, s, n->get_type());
+  //   type = nrgen_one(b, s,X, n->get_type());
   //   if (!type.has_value()) {
-  //     report(IssueCode::CompilerError, IssueClass::Error,
+  //     G->report(IssueCode::CompilerError, IssueClass::Error,
   //            "qparse::EnumDef::get_type() == std::nullopt",n->get_pos(),
   //           n->get_pos());
   //     return std::nullopt;
@@ -1444,9 +1465,9 @@ static std::optional<std::vector<Expr *>> nrgen_enum(NRBuilder &b, PState &s, qp
   //   EResult cur = nullptr;
 
   //   if (it->second) {
-  //     cur = nrgen_one(b, s, it->second);
+  //     cur = nrgen_one(b, s,X, it->second);
   //     if (!cur.has_value()) {
-  //       report(IssueCode::CompilerError, IssueClass::Error,
+  //       G->report(IssueCode::CompilerError, IssueClass::Error,
   //              "qparse::EnumDef::get_items() vector contains std::nullopt",n->get_pos(),
   //             n->get_pos());
   //       return std::nullopt;
@@ -1474,7 +1495,7 @@ static std::optional<std::vector<Expr *>> nrgen_enum(NRBuilder &b, PState &s, qp
   return std::nullopt;
 }
 
-static EResult nrgen_fn(NRBuilder &b, PState &s, qparse::FnDef *n) {
+static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
   // bool old_inside_function = s.inside_function;
   // s.inside_function = true;
 
@@ -1484,22 +1505,22 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, qparse::FnDef *n) {
   // qparse::FnDecl *decl = n;
   // qparse::FuncTy *fty = decl->get_type();
 
-  // auto fnty = nrgen_one(b, s, fty);
+  // auto fnty = nrgen_one(b, s,X, fty);
   // if (!fnty.has_value()) {
-  //   report(IssueCode::CompilerError, IssueClass::Error, "qparse::FnDef::get_type() ==
+  //   G->report(IssueCode::CompilerError, IssueClass::Error, "qparse::FnDef::get_type() ==
   //   std::nullopt",
   //         n->get_pos(),n->get_pos());
   //   return std::nullopt;
   // }
 
   // /* Produce the function preconditions */
-  // if ((precond = nrgen_one(b, s, n->get_precond()))) {
+  // if ((precond = nrgen_one(b, s,X, n->get_precond()))) {
   //   precond = create<If>(create<UnExpr>(precond.value(), Op::LogicNot),
   //                        create_simple_call(b, s, "__detail::precond_fail"), createIgn());
   // }
 
   // /* Produce the function postconditions */
-  // if ((postcond = nrgen_one(b, s, n->get_postcond()))) {
+  // if ((postcond = nrgen_one(b, s,X, n->get_postcond()))) {
   //   postcond = create<If>(create<UnExpr>(postcond.value(), Op::LogicNot),
   //                         create_simple_call(b, s, "__detail::postcond_fail"), createIgn());
   // }
@@ -1509,9 +1530,9 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, qparse::FnDef *n) {
   //   s.return_type = fnty.value()->as<FnTy>()->getReturn();
   //   s.local_scope.push({});
 
-  //   auto tmp = nrgen_one(b, s, n->get_body());
+  //   auto tmp = nrgen_one(b, s,X, n->get_body());
   //   if (!tmp.has_value()) {
-  //     report(IssueCode::CompilerError, IssueClass::Error,
+  //     G->report(IssueCode::CompilerError, IssueClass::Error,
   //            "qparse::FnDef::get_body() == std::nullopt",n->get_pos(),n->get_pos());
   //     return std::nullopt;
   //   }
@@ -1560,9 +1581,9 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, qparse::FnDef *n) {
   //      * 4. Position - All parameters have a position.
   //      */
 
-  //     auto type = nrgen_one(b, s, std::get<1>(*it));
+  //     auto type = nrgen_one(b, s,X, std::get<1>(*it));
   //     if (!type.has_value()) {
-  //       report(IssueCode::CompilerError, IssueClass::Error,
+  //       G->report(IssueCode::CompilerError, IssueClass::Error,
   //              "qparse::FnDef::get_type() == std::nullopt",n->get_pos(),
   //             n->get_pos());
   //       return std::nullopt;
@@ -1570,9 +1591,9 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, qparse::FnDef *n) {
 
   //     EResult def = nullptr;
   //     if (std::get<2>(*it)) {
-  //       def = nrgen_one(b, s, std::get<2>(*it));
+  //       def = nrgen_one(b, s,X, std::get<2>(*it));
   //       if (!def.has_value()) {
-  //         report(IssueCode::CompilerError, IssueClass::Error,
+  //         G->report(IssueCode::CompilerError, IssueClass::Error,
   //                "qparse::FnDef::get_type() == std::nullopt",n->get_pos(),
   //               n->get_pos());
   //         return std::nullopt;
@@ -1598,7 +1619,7 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, qparse::FnDef *n) {
   return std::nullopt;
 }
 
-static std::optional<std::vector<Expr *>> nrgen_subsystem(NRBuilder &b, PState &s,
+static std::optional<std::vector<Expr *>> nrgen_subsystem(NRBuilder &b, PState &s, IReport *G,
                                                           qparse::SubsystemDecl *n) {
   /**
    * @brief Convert a subsystem declaration to a nr sequence with
@@ -1620,7 +1641,7 @@ static std::optional<std::vector<Expr *>> nrgen_subsystem(NRBuilder &b, PState &
   }
 
   for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end(); ++it) {
-    auto item = nrgen_any(b, s, *it);
+    auto item = next_any(*it);
     if (!item.has_value()) {
       return std::nullopt;
     }
@@ -1633,7 +1654,7 @@ static std::optional<std::vector<Expr *>> nrgen_subsystem(NRBuilder &b, PState &
   return items;
 }
 
-static std::optional<std::vector<Expr *>> nrgen_export(NRBuilder &b, PState &s,
+static std::optional<std::vector<Expr *>> nrgen_export(NRBuilder &b, PState &s, IReport *G,
                                                        qparse::ExportDecl *n) {
   AbiTag old = s.abi_mode;
 
@@ -1644,9 +1665,9 @@ static std::optional<std::vector<Expr *>> nrgen_export(NRBuilder &b, PState &s,
   } else if (n->get_abi_name() == "c") {
     s.abi_mode = AbiTag::C;
   } else {
-    report(IssueCode::CompilerError, IssueClass::Error,
-           "qparse::ExportDecl abi name is not supported: '" + n->get_abi_name() + "'",
-           n->get_pos());
+    G->report(IssueCode::CompilerError, IssueClass::Error,
+              "qparse::ExportDecl abi name is not supported: '" + n->get_abi_name() + "'",
+              n->get_pos());
     return std::nullopt;
   }
 
@@ -1665,7 +1686,7 @@ static std::optional<std::vector<Expr *>> nrgen_export(NRBuilder &b, PState &s,
   std::vector<nr::Expr *> items;
 
   for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end(); ++it) {
-    auto result = nrgen_any(b, s, *it);
+    auto result = next_any(*it);
     if (!result.has_value()) {
       return std::nullopt;
     }
@@ -1680,10 +1701,11 @@ static std::optional<std::vector<Expr *>> nrgen_export(NRBuilder &b, PState &s,
   return items;
 }
 
-static EResult nrgen_composite_field(NRBuilder &b, PState &s, qparse::CompositeField *n) {
-  // auto type = nrgen_one(b, s, n->get_type());
+static EResult nrgen_composite_field(NRBuilder &b, PState &s, IReport *G,
+                                     qparse::CompositeField *n) {
+  // auto type = nrgen_one(b, s,X, n->get_type());
   // if (!type) {
-  //   report(IssueCode::CompilerError, IssueClass::Error,
+  //   G->report(IssueCode::CompilerError, IssueClass::Error,
   //          "qparse::CompositeField::get_type() == std::nullopt",n->get_pos(),
   //         n->get_pos());
   //   return std::nullopt;
@@ -1691,9 +1713,9 @@ static EResult nrgen_composite_field(NRBuilder &b, PState &s, qparse::CompositeF
 
   // EResult _def = nullptr;
   // if (n->get_value()) {
-  //   _def = nrgen_one(b, s, n->get_value());
+  //   _def = nrgen_one(b, s,X, n->get_value());
   //   if (!_def.has_value()) {
-  //     report(IssueCode::CompilerError, IssueClass::Error,
+  //     G->report(IssueCode::CompilerError, IssueClass::Error,
   //            "qparse::CompositeField::get_value() == std::nullopt",n->get_pos(),
   //           n->get_pos());
   //     return std::nullopt;
@@ -1701,7 +1723,7 @@ static EResult nrgen_composite_field(NRBuilder &b, PState &s, qparse::CompositeF
   // }
 
   // if (s.composite_expanse.empty()) {
-  //   report(IssueCode::CompilerError, IssueClass::Error, "state.composite_expanse.empty()",
+  //   G->report(IssueCode::CompilerError, IssueClass::Error, "state.composite_expanse.empty()",
   //         n->get_pos(),n->get_pos());
   //   return std::nullopt;
   // }
@@ -1716,14 +1738,14 @@ static EResult nrgen_composite_field(NRBuilder &b, PState &s, qparse::CompositeF
   return std::nullopt;
 }
 
-static EResult nrgen_block(NRBuilder &b, PState &s, qparse::Block *n) {
+static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G, qparse::Block *n) {
   SeqItems items;
   items.reserve(n->get_items().size());
 
   s.local_scope.push({});
 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    auto item = nrgen_any(b, s, *it);
+    auto item = next_any(*it);
     if (!item.has_value()) {
       return std::nullopt;
     }
@@ -1736,15 +1758,15 @@ static EResult nrgen_block(NRBuilder &b, PState &s, qparse::Block *n) {
   return create<Seq>(std::move(items));
 }
 
-static EResult nrgen_const(NRBuilder &b, PState &s, qparse::ConstDecl *n) {
-  // auto init = nrgen_one(b, s, n->get_value());
+static EResult nrgen_const(NRBuilder &b, PState &s, IReport *G, qparse::ConstDecl *n) {
+  // auto init = nrgen_one(b, s,X, n->get_value());
   // if (!init.has_value()) {
   //   return std::nullopt;
   // }
 
   // std::optional<Type *> type = nullptr;
   // if (n->get_type()) {
-  //   auto tmp = nrgen_one(b, s, n->get_type());
+  //   auto tmp = nrgen_one(b, s,X, n->get_type());
   //   if (tmp.has_value()) {
   //     type = tmp.value()->asType();
   //   }
@@ -1755,7 +1777,7 @@ static EResult nrgen_const(NRBuilder &b, PState &s, qparse::ConstDecl *n) {
   // } else if (!init && type) {
   //   init = type;
   // } else if (!init && !type) {
-  //   report(IssueCode::CompilerError, IssueClass::Error, "Expected value or type",
+  //   G->report(IssueCode::CompilerError, IssueClass::Error, "Expected value or type",
   //         n->get_pos(),n->get_pos());
   //   return std::nullopt;
   // }
@@ -1766,7 +1788,7 @@ static EResult nrgen_const(NRBuilder &b, PState &s, qparse::ConstDecl *n) {
 
   //   qcore_assert(!s.local_scope.empty());
   //   if (s.local_scope.top().contains(name)) {
-  //     report(IssueCode::VariableRedefinition, IssueClass::Error, n->get_name(),
+  //     G->report(IssueCode::VariableRedefinition, IssueClass::Error, n->get_name(),
   //    n->get_pos(),
   //           n->get_pos());
   //   }
@@ -1782,17 +1804,17 @@ static EResult nrgen_const(NRBuilder &b, PState &s, qparse::ConstDecl *n) {
   return std::nullopt;
 }
 
-static EResult nrgen_var(NRBuilder &, PState &, qparse::VarDecl *) {
+static EResult nrgen_var(NRBuilder &, PState &, IReport *G, qparse::VarDecl *) {
   /// TODO: var
 
   return std::nullopt;
 }
 
-static EResult nrgen_let(NRBuilder &b, PState &s, qparse::LetDecl *n) {
-  // auto init = nrgen_one(b, s, n->get_value());
+static EResult nrgen_let(NRBuilder &b, PState &s, IReport *G, qparse::LetDecl *n) {
+  // auto init = nrgen_one(b, s,X, n->get_value());
   // std::optional<Type *> type;
   // if (n->get_type()) {
-  //   auto tmp = nrgen_one(b, s, n->get_type());
+  //   auto tmp = nrgen_one(b, s,X, n->get_type());
   //   if (tmp) {
   //     type = tmp.value()->asType();
   //   }
@@ -1803,7 +1825,7 @@ static EResult nrgen_let(NRBuilder &b, PState &s, qparse::LetDecl *n) {
   // } else if (!init && type) {
   //   init = type;
   // } else if (!init && !type) {
-  //   report(IssueCode::CompilerError, IssueClass::Error, "expected value or type",
+  //   G->report(IssueCode::CompilerError, IssueClass::Error, "expected value or type",
   //         n->get_pos(),n->get_pos());
   //   return std::nullopt;
   // }
@@ -1814,7 +1836,7 @@ static EResult nrgen_let(NRBuilder &b, PState &s, qparse::LetDecl *n) {
 
   //   qcore_assert(!s.local_scope.empty());
   //   if (s.local_scope.top().contains(name)) {
-  //     report(IssueCode::VariableRedefinition, IssueClass::Error, n->get_name(),
+  //     G->report(IssueCode::VariableRedefinition, IssueClass::Error, n->get_name(),
   //    n->get_pos(),
   //           n->get_pos());
   //   }
@@ -1830,10 +1852,12 @@ static EResult nrgen_let(NRBuilder &b, PState &s, qparse::LetDecl *n) {
   return std::nullopt;
 }
 
-static EResult nrgen_inline_asm(NRBuilder &, PState &, qparse::InlineAsm *) { qcore_implement(); }
+static EResult nrgen_inline_asm(NRBuilder &, PState &, IReport *G, qparse::InlineAsm *) {
+  qcore_implement();
+}
 
-static EResult nrgen_return(NRBuilder &b, PState &s, qparse::ReturnStmt *n) {
-  auto val = nrgen_one(b, s, n->get_value());
+static EResult nrgen_return(NRBuilder &b, PState &s, IReport *G, qparse::ReturnStmt *n) {
+  auto val = next_one(n->get_value());
   if (!val.has_value()) {
     val = create<VoidTy>();
   }
@@ -1843,15 +1867,15 @@ static EResult nrgen_return(NRBuilder &b, PState &s, qparse::ReturnStmt *n) {
   return create<Ret>(val.value());
 }
 
-static EResult nrgen_retif(NRBuilder &b, PState &s, qparse::ReturnIfStmt *n) {
-  auto cond = nrgen_one(b, s, n->get_cond());
+static EResult nrgen_retif(NRBuilder &b, PState &s, IReport *G, qparse::ReturnIfStmt *n) {
+  auto cond = next_one(n->get_cond());
   if (!cond.has_value()) {
     return std::nullopt;
   }
 
   cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
 
-  auto val = nrgen_one(b, s, n->get_value());
+  auto val = next_one(n->get_value());
   if (!val.has_value()) {
     return std::nullopt;
   }
@@ -1861,8 +1885,8 @@ static EResult nrgen_retif(NRBuilder &b, PState &s, qparse::ReturnIfStmt *n) {
   return create<If>(cond.value(), create<Ret>(val.value()), createIgn());
 }
 
-static EResult nrgen_retz(NRBuilder &b, PState &s, qparse::RetZStmt *n) {
-  auto cond = nrgen_one(b, s, n->get_cond());
+static EResult nrgen_retz(NRBuilder &b, PState &s, IReport *G, qparse::RetZStmt *n) {
+  auto cond = next_one(n->get_cond());
   if (!cond.has_value()) {
     return std::nullopt;
   }
@@ -1871,7 +1895,7 @@ static EResult nrgen_retz(NRBuilder &b, PState &s, qparse::RetZStmt *n) {
 
   auto inv_cond = create<UnExpr>(cond.value(), Op::LogicNot);
 
-  auto val = nrgen_one(b, s, n->get_value());
+  auto val = next_one(n->get_value());
   if (!val.has_value()) {
     return std::nullopt;
   }
@@ -1881,8 +1905,8 @@ static EResult nrgen_retz(NRBuilder &b, PState &s, qparse::RetZStmt *n) {
   return create<If>(inv_cond, create<Ret>(val.value()), createIgn());
 }
 
-static EResult nrgen_retv(NRBuilder &b, PState &s, qparse::RetVStmt *n) {
-  auto cond = nrgen_one(b, s, n->get_cond());
+static EResult nrgen_retv(NRBuilder &b, PState &s, IReport *G, qparse::RetVStmt *n) {
+  auto cond = next_one(n->get_cond());
   if (!cond.has_value()) {
     return std::nullopt;
   }
@@ -1892,16 +1916,18 @@ static EResult nrgen_retv(NRBuilder &b, PState &s, qparse::RetVStmt *n) {
   return create<If>(cond.value(), create<Ret>(createIgn()), createIgn());
 }
 
-static EResult nrgen_break(NRBuilder &, PState &, qparse::BreakStmt *) { return create<Brk>(); }
+static EResult nrgen_break(NRBuilder &, PState &, IReport *G, qparse::BreakStmt *) {
+  return create<Brk>();
+}
 
-static EResult nrgen_continue(NRBuilder &, PState &, qparse::ContinueStmt *) {
+static EResult nrgen_continue(NRBuilder &, PState &, IReport *G, qparse::ContinueStmt *) {
   return create<Cont>();
 }
 
-static EResult nrgen_if(NRBuilder &b, PState &s, qparse::IfStmt *n) {
-  auto cond = nrgen_one(b, s, n->get_cond());
-  auto then = nrgen_one(b, s, n->get_then());
-  auto els = nrgen_one(b, s, n->get_else());
+static EResult nrgen_if(NRBuilder &b, PState &s, IReport *G, qparse::IfStmt *n) {
+  auto cond = next_one(n->get_cond());
+  auto then = next_one(n->get_then());
+  auto els = next_one(n->get_else());
 
   if (!cond.has_value()) {
     return std::nullopt;
@@ -1920,9 +1946,9 @@ static EResult nrgen_if(NRBuilder &b, PState &s, qparse::IfStmt *n) {
   return create<If>(cond.value(), then.value(), els.value());
 }
 
-static EResult nrgen_while(NRBuilder &b, PState &s, qparse::WhileStmt *n) {
-  auto cond = nrgen_one(b, s, n->get_cond());
-  auto body = nrgen_one(b, s, n->get_body());
+static EResult nrgen_while(NRBuilder &b, PState &s, IReport *G, qparse::WhileStmt *n) {
+  auto cond = next_one(n->get_cond());
+  auto body = next_one(n->get_body());
 
   if (!cond.has_value()) {
     cond = create<Int>(1, IntSize::U1);
@@ -1939,11 +1965,11 @@ static EResult nrgen_while(NRBuilder &b, PState &s, qparse::WhileStmt *n) {
   return create<While>(cond.value(), body.value()->as<Seq>());
 }
 
-static EResult nrgen_for(NRBuilder &b, PState &s, qparse::ForStmt *n) {
-  auto init = nrgen_one(b, s, n->get_init());
-  auto cond = nrgen_one(b, s, n->get_cond());
-  auto step = nrgen_one(b, s, n->get_step());
-  auto body = nrgen_one(b, s, n->get_body());
+static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G, qparse::ForStmt *n) {
+  auto init = next_one(n->get_init());
+  auto cond = next_one(n->get_cond());
+  auto step = next_one(n->get_step());
+  auto body = next_one(n->get_body());
 
   if (!init.has_value()) {
     init = create<Int>(1, IntSize::U32);
@@ -1965,8 +1991,8 @@ static EResult nrgen_for(NRBuilder &b, PState &s, qparse::ForStmt *n) {
   return create<For>(init.value(), cond.value(), step.value(), body.value());
 }
 
-static EResult nrgen_form(NRBuilder &b, PState &s, qparse::FormStmt *n) {
-  auto maxjobs = nrgen_one(b, s, n->get_maxjobs());
+static EResult nrgen_form(NRBuilder &b, PState &s, IReport *G, qparse::FormStmt *n) {
+  auto maxjobs = next_one(n->get_maxjobs());
   if (!maxjobs.has_value()) {
     return std::nullopt;
   }
@@ -1974,12 +2000,12 @@ static EResult nrgen_form(NRBuilder &b, PState &s, qparse::FormStmt *n) {
   auto idx_name = b.intern(n->get_idx_ident());
   auto val_name = b.intern(n->get_val_ident());
 
-  auto iter = nrgen_one(b, s, n->get_expr());
+  auto iter = next_one(n->get_expr());
   if (!iter.has_value()) {
     return std::nullopt;
   }
 
-  auto body = nrgen_one(b, s, n->get_body());
+  auto body = next_one(n->get_body());
   if (!body.has_value()) {
     return std::nullopt;
   }
@@ -1988,7 +2014,7 @@ static EResult nrgen_form(NRBuilder &b, PState &s, qparse::FormStmt *n) {
                       create<Seq>(SeqItems({body.value()})));
 }
 
-static EResult nrgen_foreach(NRBuilder &, PState &, qparse::ForeachStmt *) {
+static EResult nrgen_foreach(NRBuilder &, PState &, IReport *G, qparse::ForeachStmt *) {
   /**
    * @brief Convert a foreach loop to a nr expression.
    * @details This is a 1-to-1 conversion of the foreach loop.
@@ -1997,15 +2023,15 @@ static EResult nrgen_foreach(NRBuilder &, PState &, qparse::ForeachStmt *) {
   // auto idx_name = b.intern(n->get_idx_ident());
   // auto val_name = b.intern(n->get_val_ident());
 
-  // auto iter = nrgen_one(b, s, n->get_expr());
+  // auto iter = nrgen_one(b, s,X, n->get_expr());
   // if (!iter) {
-  //   report(IssueCode::CompilerError, IssueClass::Error, "qparse::ForeachStmt::get_expr() ==
+  //   G->report(IssueCode::CompilerError, IssueClass::Error, "qparse::ForeachStmt::get_expr() ==
   //   std::nullopt",n->get_start_pos(),n->get_pos()); return std::nullopt;
   // }
 
-  // auto body = nrgen_one(b, s, n->get_body());
+  // auto body = nrgen_one(b, s,X, n->get_body());
   // if (!body) {
-  //   report(IssueCode::CompilerError, IssueClass::Error, "qparse::ForeachStmt::get_body() ==
+  //   G->report(IssueCode::CompilerError, IssueClass::Error, "qparse::ForeachStmt::get_body() ==
   //   std::nullopt",n->get_start_pos(),n->get_pos()); return std::nullopt;
   // }
 
@@ -2013,13 +2039,13 @@ static EResult nrgen_foreach(NRBuilder &, PState &, qparse::ForeachStmt *) {
   qcore_implement();
 }
 
-static EResult nrgen_case(NRBuilder &b, PState &s, qparse::CaseStmt *n) {
-  auto cond = nrgen_one(b, s, n->get_cond());
+static EResult nrgen_case(NRBuilder &b, PState &s, IReport *G, qparse::CaseStmt *n) {
+  auto cond = next_one(n->get_cond());
   if (!cond.has_value()) {
     return std::nullopt;
   }
 
-  auto body = nrgen_one(b, s, n->get_body());
+  auto body = next_one(n->get_body());
   if (!body.has_value()) {
     return std::nullopt;
   }
@@ -2027,18 +2053,18 @@ static EResult nrgen_case(NRBuilder &b, PState &s, qparse::CaseStmt *n) {
   return create<Case>(cond.value(), body.value());
 }
 
-static EResult nrgen_switch(NRBuilder &b, PState &s, qparse::SwitchStmt *n) {
-  auto cond = nrgen_one(b, s, n->get_cond());
+static EResult nrgen_switch(NRBuilder &b, PState &s, IReport *G, qparse::SwitchStmt *n) {
+  auto cond = next_one(n->get_cond());
   if (!cond.has_value()) {
     return std::nullopt;
   }
 
   SwitchCases cases;
   for (auto it = n->get_cases().begin(); it != n->get_cases().end(); ++it) {
-    auto item = nrgen_one(b, s, *it);
+    auto item = next_one(*it);
     if (!item.has_value()) {
-      report(IssueCode::CompilerError, IssueClass::Error,
-             "qparse::SwitchStmt::get_cases() vector contains std::nullopt", n->get_pos());
+      G->report(IssueCode::CompilerError, IssueClass::Error,
+                "qparse::SwitchStmt::get_cases() vector contains std::nullopt", n->get_pos());
       return std::nullopt;
     }
 
@@ -2047,7 +2073,7 @@ static EResult nrgen_switch(NRBuilder &b, PState &s, qparse::SwitchStmt *n) {
 
   EResult def;
   if (n->get_default()) {
-    def = nrgen_one(b, s, n->get_default());
+    def = next_one(n->get_default());
     if (!def.has_value()) {
       return std::nullopt;
     }
@@ -2058,18 +2084,18 @@ static EResult nrgen_switch(NRBuilder &b, PState &s, qparse::SwitchStmt *n) {
   return create<Switch>(cond.value(), std::move(cases), def.value());
 }
 
-static EResult nrgen_expr_stmt(NRBuilder &b, PState &s, qparse::ExprStmt *n) {
-  return nrgen_one(b, s, n->get_expr());
+static EResult nrgen_expr_stmt(NRBuilder &b, PState &s, IReport *G, qparse::ExprStmt *n) {
+  return next_one(n->get_expr());
 }
 
-static EResult nrgen_volstmt(NRBuilder &, PState &, qparse::VolStmt *n) {
-  report(IssueCode::CompilerError, IssueClass::Error, "Volatile statements are not supported",
-         n->get_pos());
+static EResult nrgen_volstmt(NRBuilder &, PState &, IReport *G, qparse::VolStmt *n) {
+  G->report(IssueCode::CompilerError, IssueClass::Error, "Volatile statements are not supported",
+            n->get_pos());
 
   return std::nullopt;
 }
 
-static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, qparse::Node *n) {
+static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, IReport *G, qparse::Node *n) {
   using namespace nr;
 
   if (!n) {
@@ -2080,295 +2106,295 @@ static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, qparse::Node
 
   switch (n->this_typeid()) {
     case QAST_NODE_CEXPR:
-      out = nrgen_cexpr(b, s, n->as<qparse::ConstExpr>());
+      out = nrgen_cexpr(b, s, G, n->as<qparse::ConstExpr>());
       break;
 
     case QAST_NODE_BINEXPR:
-      out = nrgen_binexpr(b, s, n->as<qparse::BinExpr>());
+      out = nrgen_binexpr(b, s, G, n->as<qparse::BinExpr>());
       break;
 
     case QAST_NODE_UNEXPR:
-      out = nrgen_unexpr(b, s, n->as<qparse::UnaryExpr>());
+      out = nrgen_unexpr(b, s, G, n->as<qparse::UnaryExpr>());
       break;
 
     case QAST_NODE_TEREXPR:
-      out = nrgen_terexpr(b, s, n->as<qparse::TernaryExpr>());
+      out = nrgen_terexpr(b, s, G, n->as<qparse::TernaryExpr>());
       break;
 
     case QAST_NODE_INT:
-      out = nrgen_int(b, s, n->as<qparse::ConstInt>());
+      out = nrgen_int(b, s, G, n->as<qparse::ConstInt>());
       break;
 
     case QAST_NODE_FLOAT:
-      out = nrgen_float(b, s, n->as<qparse::ConstFloat>());
+      out = nrgen_float(b, s, G, n->as<qparse::ConstFloat>());
       break;
 
     case QAST_NODE_STRING:
-      out = nrgen_string(b, s, n->as<qparse::ConstString>());
+      out = nrgen_string(b, s, G, n->as<qparse::ConstString>());
       break;
 
     case QAST_NODE_CHAR:
-      out = nrgen_char(b, s, n->as<qparse::ConstChar>());
+      out = nrgen_char(b, s, G, n->as<qparse::ConstChar>());
       break;
 
     case QAST_NODE_BOOL:
-      out = nrgen_bool(b, s, n->as<qparse::ConstBool>());
+      out = nrgen_bool(b, s, G, n->as<qparse::ConstBool>());
       break;
 
     case QAST_NODE_NULL:
-      out = nrgen_null(b, s, n->as<qparse::ConstNull>());
+      out = nrgen_null(b, s, G, n->as<qparse::ConstNull>());
       break;
 
     case QAST_NODE_UNDEF:
-      out = nrgen_undef(b, s, n->as<qparse::ConstUndef>());
+      out = nrgen_undef(b, s, G, n->as<qparse::ConstUndef>());
       break;
 
     case QAST_NODE_CALL:
-      out = nrgen_call(b, s, n->as<qparse::Call>());
+      out = nrgen_call(b, s, G, n->as<qparse::Call>());
       break;
 
     case QAST_NODE_LIST:
-      out = nrgen_list(b, s, n->as<qparse::List>());
+      out = nrgen_list(b, s, G, n->as<qparse::List>());
       break;
 
     case QAST_NODE_ASSOC:
-      out = nrgen_assoc(b, s, n->as<qparse::Assoc>());
+      out = nrgen_assoc(b, s, G, n->as<qparse::Assoc>());
       break;
 
     case QAST_NODE_FIELD:
-      out = nrgen_field(b, s, n->as<qparse::Field>());
+      out = nrgen_field(b, s, G, n->as<qparse::Field>());
       break;
 
     case QAST_NODE_INDEX:
-      out = nrgen_index(b, s, n->as<qparse::Index>());
+      out = nrgen_index(b, s, G, n->as<qparse::Index>());
       break;
 
     case QAST_NODE_SLICE:
-      out = nrgen_slice(b, s, n->as<qparse::Slice>());
+      out = nrgen_slice(b, s, G, n->as<qparse::Slice>());
       break;
 
     case QAST_NODE_FSTRING:
-      out = nrgen_fstring(b, s, n->as<qparse::FString>());
+      out = nrgen_fstring(b, s, G, n->as<qparse::FString>());
       break;
 
     case QAST_NODE_IDENT:
-      out = nrgen_ident(b, s, n->as<qparse::Ident>());
+      out = nrgen_ident(b, s, G, n->as<qparse::Ident>());
       break;
 
     case QAST_NODE_SEQ_POINT:
-      out = nrgen_seq_point(b, s, n->as<qparse::SeqPoint>());
+      out = nrgen_seq_point(b, s, G, n->as<qparse::SeqPoint>());
       break;
 
     case QAST_NODE_POST_UNEXPR:
-      out = nrgen_post_unexpr(b, s, n->as<qparse::PostUnaryExpr>());
+      out = nrgen_post_unexpr(b, s, G, n->as<qparse::PostUnaryExpr>());
       break;
 
     case QAST_NODE_STMT_EXPR:
-      out = nrgen_stmt_expr(b, s, n->as<qparse::StmtExpr>());
+      out = nrgen_stmt_expr(b, s, G, n->as<qparse::StmtExpr>());
       break;
 
     case QAST_NODE_TYPE_EXPR:
-      out = nrgen_type_expr(b, s, n->as<qparse::TypeExpr>());
+      out = nrgen_type_expr(b, s, G, n->as<qparse::TypeExpr>());
       break;
 
     case QAST_NODE_TEMPL_CALL:
-      out = nrgen_templ_call(b, s, n->as<qparse::TemplCall>());
+      out = nrgen_templ_call(b, s, G, n->as<qparse::TemplCall>());
       break;
 
     case QAST_NODE_REF_TY:
-      out = nrgen_ref_ty(b, s, n->as<qparse::RefTy>());
+      out = nrgen_ref_ty(b, s, G, n->as<qparse::RefTy>());
       break;
 
     case QAST_NODE_U1_TY:
-      out = nrgen_u1_ty(b, s, n->as<qparse::U1>());
+      out = nrgen_u1_ty(b, s, G, n->as<qparse::U1>());
       break;
 
     case QAST_NODE_U8_TY:
-      out = nrgen_u8_ty(b, s, n->as<qparse::U8>());
+      out = nrgen_u8_ty(b, s, G, n->as<qparse::U8>());
       break;
 
     case QAST_NODE_U16_TY:
-      out = nrgen_u16_ty(b, s, n->as<qparse::U16>());
+      out = nrgen_u16_ty(b, s, G, n->as<qparse::U16>());
       break;
 
     case QAST_NODE_U32_TY:
-      out = nrgen_u32_ty(b, s, n->as<qparse::U32>());
+      out = nrgen_u32_ty(b, s, G, n->as<qparse::U32>());
       break;
 
     case QAST_NODE_U64_TY:
-      out = nrgen_u64_ty(b, s, n->as<qparse::U64>());
+      out = nrgen_u64_ty(b, s, G, n->as<qparse::U64>());
       break;
 
     case QAST_NODE_U128_TY:
-      out = nrgen_u128_ty(b, s, n->as<qparse::U128>());
+      out = nrgen_u128_ty(b, s, G, n->as<qparse::U128>());
       break;
 
     case QAST_NODE_I8_TY:
-      out = nrgen_i8_ty(b, s, n->as<qparse::I8>());
+      out = nrgen_i8_ty(b, s, G, n->as<qparse::I8>());
       break;
 
     case QAST_NODE_I16_TY:
-      out = nrgen_i16_ty(b, s, n->as<qparse::I16>());
+      out = nrgen_i16_ty(b, s, G, n->as<qparse::I16>());
       break;
 
     case QAST_NODE_I32_TY:
-      out = nrgen_i32_ty(b, s, n->as<qparse::I32>());
+      out = nrgen_i32_ty(b, s, G, n->as<qparse::I32>());
       break;
 
     case QAST_NODE_I64_TY:
-      out = nrgen_i64_ty(b, s, n->as<qparse::I64>());
+      out = nrgen_i64_ty(b, s, G, n->as<qparse::I64>());
       break;
 
     case QAST_NODE_I128_TY:
-      out = nrgen_i128_ty(b, s, n->as<qparse::I128>());
+      out = nrgen_i128_ty(b, s, G, n->as<qparse::I128>());
       break;
 
     case QAST_NODE_F16_TY:
-      out = nrgen_f16_ty(b, s, n->as<qparse::F16>());
+      out = nrgen_f16_ty(b, s, G, n->as<qparse::F16>());
       break;
 
     case QAST_NODE_F32_TY:
-      out = nrgen_f32_ty(b, s, n->as<qparse::F32>());
+      out = nrgen_f32_ty(b, s, G, n->as<qparse::F32>());
       break;
 
     case QAST_NODE_F64_TY:
-      out = nrgen_f64_ty(b, s, n->as<qparse::F64>());
+      out = nrgen_f64_ty(b, s, G, n->as<qparse::F64>());
       break;
 
     case QAST_NODE_F128_TY:
-      out = nrgen_f128_ty(b, s, n->as<qparse::F128>());
+      out = nrgen_f128_ty(b, s, G, n->as<qparse::F128>());
       break;
 
     case QAST_NODE_VOID_TY:
-      out = nrgen_void_ty(b, s, n->as<qparse::VoidTy>());
+      out = nrgen_void_ty(b, s, G, n->as<qparse::VoidTy>());
       break;
 
     case QAST_NODE_PTR_TY:
-      out = nrgen_ptr_ty(b, s, n->as<qparse::PtrTy>());
+      out = nrgen_ptr_ty(b, s, G, n->as<qparse::PtrTy>());
       break;
 
     case QAST_NODE_OPAQUE_TY:
-      out = nrgen_opaque_ty(b, s, n->as<qparse::OpaqueTy>());
+      out = nrgen_opaque_ty(b, s, G, n->as<qparse::OpaqueTy>());
       break;
 
     case QAST_NODE_STRUCT_TY:
-      out = nrgen_struct_ty(b, s, n->as<qparse::StructTy>());
+      out = nrgen_struct_ty(b, s, G, n->as<qparse::StructTy>());
       break;
 
     case QAST_NODE_ARRAY_TY:
-      out = nrgen_array_ty(b, s, n->as<qparse::ArrayTy>());
+      out = nrgen_array_ty(b, s, G, n->as<qparse::ArrayTy>());
       break;
 
     case QAST_NODE_TUPLE_TY:
-      out = nrgen_tuple_ty(b, s, n->as<qparse::TupleTy>());
+      out = nrgen_tuple_ty(b, s, G, n->as<qparse::TupleTy>());
       break;
 
     case QAST_NODE_FN_TY:
-      out = nrgen_fn_ty(b, s, n->as<qparse::FuncTy>());
+      out = nrgen_fn_ty(b, s, G, n->as<qparse::FuncTy>());
       break;
 
     case QAST_NODE_UNRES_TY:
-      out = nrgen_unres_ty(b, s, n->as<qparse::UnresolvedType>());
+      out = nrgen_unres_ty(b, s, G, n->as<qparse::UnresolvedType>());
       break;
 
     case QAST_NODE_INFER_TY:
-      out = nrgen_infer_ty(b, s, n->as<qparse::InferType>());
+      out = nrgen_infer_ty(b, s, G, n->as<qparse::InferType>());
       break;
 
     case QAST_NODE_TEMPL_TY:
-      out = nrgen_templ_ty(b, s, n->as<qparse::TemplType>());
+      out = nrgen_templ_ty(b, s, G, n->as<qparse::TemplType>());
       break;
 
     case QAST_NODE_FNDECL:
-      out = nrgen_fndecl(b, s, n->as<qparse::FnDecl>());
+      out = nrgen_fndecl(b, s, G, n->as<qparse::FnDecl>());
       break;
 
     case QAST_NODE_FN:
-      out = nrgen_fn(b, s, n->as<qparse::FnDef>());
+      out = nrgen_fn(b, s, G, n->as<qparse::FnDef>());
       break;
 
     case QAST_NODE_COMPOSITE_FIELD:
-      out = nrgen_composite_field(b, s, n->as<qparse::CompositeField>());
+      out = nrgen_composite_field(b, s, G, n->as<qparse::CompositeField>());
       break;
 
     case QAST_NODE_BLOCK:
-      out = nrgen_block(b, s, n->as<qparse::Block>());
+      out = nrgen_block(b, s, G, n->as<qparse::Block>());
       break;
 
     case QAST_NODE_CONST:
-      out = nrgen_const(b, s, n->as<qparse::ConstDecl>());
+      out = nrgen_const(b, s, G, n->as<qparse::ConstDecl>());
       break;
 
     case QAST_NODE_VAR:
-      out = nrgen_var(b, s, n->as<qparse::VarDecl>());
+      out = nrgen_var(b, s, G, n->as<qparse::VarDecl>());
       break;
 
     case QAST_NODE_LET:
-      out = nrgen_let(b, s, n->as<qparse::LetDecl>());
+      out = nrgen_let(b, s, G, n->as<qparse::LetDecl>());
       break;
 
     case QAST_NODE_INLINE_ASM:
-      out = nrgen_inline_asm(b, s, n->as<qparse::InlineAsm>());
+      out = nrgen_inline_asm(b, s, G, n->as<qparse::InlineAsm>());
       break;
 
     case QAST_NODE_RETURN:
-      out = nrgen_return(b, s, n->as<qparse::ReturnStmt>());
+      out = nrgen_return(b, s, G, n->as<qparse::ReturnStmt>());
       break;
 
     case QAST_NODE_RETIF:
-      out = nrgen_retif(b, s, n->as<qparse::ReturnIfStmt>());
+      out = nrgen_retif(b, s, G, n->as<qparse::ReturnIfStmt>());
       break;
 
     case QAST_NODE_RETZ:
-      out = nrgen_retz(b, s, n->as<qparse::RetZStmt>());
+      out = nrgen_retz(b, s, G, n->as<qparse::RetZStmt>());
       break;
 
     case QAST_NODE_RETV:
-      out = nrgen_retv(b, s, n->as<qparse::RetVStmt>());
+      out = nrgen_retv(b, s, G, n->as<qparse::RetVStmt>());
       break;
 
     case QAST_NODE_BREAK:
-      out = nrgen_break(b, s, n->as<qparse::BreakStmt>());
+      out = nrgen_break(b, s, G, n->as<qparse::BreakStmt>());
       break;
 
     case QAST_NODE_CONTINUE:
-      out = nrgen_continue(b, s, n->as<qparse::ContinueStmt>());
+      out = nrgen_continue(b, s, G, n->as<qparse::ContinueStmt>());
       break;
 
     case QAST_NODE_IF:
-      out = nrgen_if(b, s, n->as<qparse::IfStmt>());
+      out = nrgen_if(b, s, G, n->as<qparse::IfStmt>());
       break;
 
     case QAST_NODE_WHILE:
-      out = nrgen_while(b, s, n->as<qparse::WhileStmt>());
+      out = nrgen_while(b, s, G, n->as<qparse::WhileStmt>());
       break;
 
     case QAST_NODE_FOR:
-      out = nrgen_for(b, s, n->as<qparse::ForStmt>());
+      out = nrgen_for(b, s, G, n->as<qparse::ForStmt>());
       break;
 
     case QAST_NODE_FORM:
-      out = nrgen_form(b, s, n->as<qparse::FormStmt>());
+      out = nrgen_form(b, s, G, n->as<qparse::FormStmt>());
       break;
 
     case QAST_NODE_FOREACH:
-      out = nrgen_foreach(b, s, n->as<qparse::ForeachStmt>());
+      out = nrgen_foreach(b, s, G, n->as<qparse::ForeachStmt>());
       break;
 
     case QAST_NODE_CASE:
-      out = nrgen_case(b, s, n->as<qparse::CaseStmt>());
+      out = nrgen_case(b, s, G, n->as<qparse::CaseStmt>());
       break;
 
     case QAST_NODE_SWITCH:
-      out = nrgen_switch(b, s, n->as<qparse::SwitchStmt>());
+      out = nrgen_switch(b, s, G, n->as<qparse::SwitchStmt>());
       break;
 
     case QAST_NODE_EXPR_STMT:
-      out = nrgen_expr_stmt(b, s, n->as<qparse::ExprStmt>());
+      out = nrgen_expr_stmt(b, s, G, n->as<qparse::ExprStmt>());
       break;
 
     case QAST_NODE_VOLSTMT:
-      out = nrgen_volstmt(b, s, n->as<qparse::VolStmt>());
+      out = nrgen_volstmt(b, s, G, n->as<qparse::VolStmt>());
       break;
 
     default: {
@@ -2379,7 +2405,7 @@ static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, qparse::Node
   return out;
 }
 
-static BResult nrgen_any(NRBuilder &b, PState &s, qparse::Node *n) {
+static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, qparse::Node *n) {
   using namespace nr;
 
   if (!n) {
@@ -2390,44 +2416,44 @@ static BResult nrgen_any(NRBuilder &b, PState &s, qparse::Node *n) {
 
   switch (n->this_typeid()) {
     case QAST_NODE_TYPEDEF:
-      out = nrgen_typedef(b, s, n->as<qparse::TypedefDecl>());
+      out = nrgen_typedef(b, s, G, n->as<qparse::TypedefDecl>());
       break;
 
     case QAST_NODE_ENUM:
-      out = nrgen_enum(b, s, n->as<qparse::EnumDef>());
+      out = nrgen_enum(b, s, G, n->as<qparse::EnumDef>());
       break;
 
     case QAST_NODE_STRUCT:
-      out = nrgen_struct(b, s, n->as<qparse::StructDef>());
+      out = nrgen_struct(b, s, G, n->as<qparse::StructDef>());
       break;
 
     case QAST_NODE_REGION:
-      out = nrgen_region(b, s, n->as<qparse::RegionDef>());
+      out = nrgen_region(b, s, G, n->as<qparse::RegionDef>());
       break;
 
     case QAST_NODE_GROUP:
-      out = nrgen_group(b, s, n->as<qparse::GroupDef>());
+      out = nrgen_group(b, s, G, n->as<qparse::GroupDef>());
       break;
 
     case QAST_NODE_UNION:
-      out = nrgen_union(b, s, n->as<qparse::UnionDef>());
+      out = nrgen_union(b, s, G, n->as<qparse::UnionDef>());
       break;
 
     case QAST_NODE_SUBSYSTEM:
-      out = nrgen_subsystem(b, s, n->as<qparse::SubsystemDecl>());
+      out = nrgen_subsystem(b, s, G, n->as<qparse::SubsystemDecl>());
       break;
 
     case QAST_NODE_EXPORT:
-      out = nrgen_export(b, s, n->as<qparse::ExportDecl>());
+      out = nrgen_export(b, s, G, n->as<qparse::ExportDecl>());
       break;
 
     default: {
-      auto expr = nrgen_one(b, s, n);
+      auto expr = next_one(n);
       if (expr.has_value()) {
         out = {expr.value()};
       } else {
-        report(IssueCode::CompilerError, IssueClass::Error,
-               "nr::nrgen_any() failed to convert node", n->get_pos());
+        G->report(IssueCode::CompilerError, IssueClass::Error,
+                  "nr::nrgen_any() failed to convert node", n->get_pos());
         return std::nullopt;
       }
     }

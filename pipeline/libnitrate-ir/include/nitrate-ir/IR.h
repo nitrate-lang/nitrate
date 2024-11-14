@@ -105,6 +105,8 @@ bool nr_read(qmodule_t *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
  *
  * @return True if the lowering was successful, false otherwise.
  * @note If `!base` or `!mod`, false is returned.
+ * @note A module is always stored in `*mod`, unless it is null. Ensure that nr_free is called to
+ * dispose of it when done.
  *
  * @note This function is thread safe.
  */

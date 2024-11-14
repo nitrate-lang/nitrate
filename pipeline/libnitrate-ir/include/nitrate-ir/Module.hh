@@ -229,7 +229,7 @@ public:
 
   qcore_arena_t &getNodeArena() { return *m_node_arena.get(); }
 
-  nr::DiagnosticManager &getDiag() { return *m_diag; }
+  std::unique_ptr<nr::DiagnosticManager> &getDiag() { return m_diag; }
 
   const nr::TargetInfo &getTargetInfo() const { return m_target_info; }
 };

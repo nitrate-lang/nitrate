@@ -29,8 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define REFACTOR_KEEP_PRESENT
-
 #include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-parser/Node.h>
@@ -364,10 +362,10 @@ static const std::unordered_map<IssueClass, nr_level_t> issue_class_map = {
 LIB_EXPORT size_t nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_cb cb,
                                uintptr_t data) {
   if (!cb) {
-    return nr->getDiag().size();
+    return nr->getDiag()->size();
   }
 
-  auto res = nr->getDiag().render(
+  auto res = nr->getDiag()->render(
       [cb, data](std::string_view v, IssueClass lvl) {
         cb(reinterpret_cast<const uint8_t *>(v.data()), v.size(), issue_class_map.at(lvl), data);
       },
@@ -377,14 +375,7 @@ LIB_EXPORT size_t nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report
 }
 
 LIB_EXPORT size_t nr_diag_clear(qmodule_t *nr) {
-  size_t n = nr->getDiag().size();
-  nr->getDiag().clear();
+  size_t n = nr->getDiag()->size();
+  nr->getDiag()->clear();
   return n;
-}
-
-bool nr::report(IssueCode, IssueClass, std::string_view, std::pair<uint32_t, uint32_t>) {
-  qcore_implement();
-  // current->getDiag().push(channel, DiagMessage(subject, type, code, loc_start, loc_end));
-
-  return true;
 }

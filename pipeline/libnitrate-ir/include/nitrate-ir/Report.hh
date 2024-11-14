@@ -161,12 +161,6 @@ namespace nr {
     size_t size() { return m_vec.size(); }
   };
 
-#ifdef REFACTOR_KEEP_PRESENT
-
-  bool report(IssueCode code, IssueClass type, std::string_view subject,
-              std::pair<uint32_t, uint32_t> loc);
-#endif
-
 };  // namespace nr
 
 #endif  // __NITRATE_QXIR_REPORT_H__
