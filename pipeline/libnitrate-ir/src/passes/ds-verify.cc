@@ -43,13 +43,13 @@
 
 using namespace nr;
 
-bool nr::pass::ds_verify(qmodule_t *mod, IReport *) {
+bool nr::pass::ds_verify(qmodule_t *mod, IReport *log) {
   size_t tmp_total = 0;
 
-  const auto cb = [&tmp_total](Expr *, Expr **_cur) -> IterOp {
+  const auto cb = [&](Expr *, Expr **_cur) -> IterOp {
     if ((*_cur)->getKind() == QIR_NODE_TMP) [[unlikely]] {
       Tmp *tmp = (*_cur)->as<Tmp>();
-      report(IssueCode::DSBadTmpNode, IssueClass::FatalError, "", tmp->locBeg(), tmp->locEnd());
+      log->report(IssueCode::DSBadTmpNode, IssueClass::FatalError, "", tmp->getLoc());
       tmp_total++;
     }
 

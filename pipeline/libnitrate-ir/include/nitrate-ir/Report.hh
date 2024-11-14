@@ -161,6 +161,7 @@ namespace nr {
     size_t size() { return m_vec.size(); }
   };
 
+#ifdef REFACTOR_KEEP_PRESENT
   /**
    * @brief Report a diagnostic message
    * @return true always
@@ -172,6 +173,7 @@ namespace nr {
                             std::string_view subject = "") {
     return report(code, type, subject, loc.first, loc.second);
   }
+#endif
 
 };  // namespace nr
 

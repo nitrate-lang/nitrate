@@ -41,14 +41,14 @@
 
 using namespace nr;
 
-bool nr::pass::ds_nullchk(qmodule_t *mod, IReport *) {
+bool nr::pass::ds_nullchk(qmodule_t *mod, IReport *log) {
   bool has_bad_null = false;
 
-  const auto cb = [&has_bad_null](Expr *, Expr **_cur) -> IterOp {
+  const auto cb = [&](Expr *, Expr **_cur) -> IterOp {
     if (*_cur == nullptr) [[unlikely]] {
       has_bad_null = true;
 
-      report(IssueCode::DSNullPtr, IssueClass::FatalError, "");
+      log->report(IssueCode::DSNullPtr, IssueClass::FatalError, "");
       return IterOp::Abort;
     }
 

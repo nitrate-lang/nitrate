@@ -35,7 +35,7 @@
 
 using namespace nr;
 
-bool nr::pass::chk_missing_return(qmodule_t* M, IReport*) {
+bool nr::pass::chk_missing_return(qmodule_t* M, IReport* log) {
   /**
    * Check that functions that require a return statement actually have one.
    * Declarations and non-applicable functions are ignored.
@@ -58,7 +58,7 @@ bool nr::pass::chk_missing_return(qmodule_t* M, IReport*) {
                                [](auto item) { return item->getKind() == QIR_NODE_RET; });
 
     if (!any_ret) { /* If no return statement is found, this is an error. */
-      report(IssueCode::MissingReturn, IssueClass::Error, key, fn->locBeg(), fn->locEnd());
+      log->report(IssueCode::MissingReturn, IssueClass::Error, key, fn->getLoc());
     }
   }
 

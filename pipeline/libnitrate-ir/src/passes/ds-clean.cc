@@ -319,8 +319,9 @@ static void remove_unneeded_cast(Expr*, Expr** C) {
 }
 
 using NodeCount = size_t;
-static size_t garbage_collect_round(qmodule_t* M, size_t& iteration) {
-  report(IssueCode::Info, IssueClass::Debug, "Running IR GC pass " + std::to_string(iteration));
+static size_t garbage_collect_round(qmodule_t* M, size_t& iteration, IReport* log) {
+  log->report(IssueCode::Info, IssueClass::Debug,
+              "Running IR GC pass " + std::to_string(iteration));
 
   { /* Erase garbage in IR sequence nodes */
     /* Mark non-functional sequence nodes as ignored */
@@ -354,13 +355,13 @@ static size_t garbage_collect_round(qmodule_t* M, size_t& iteration) {
   return node_count;
 }
 
-bool nr::pass::ds_clean(qmodule_t* M, IReport*) {
+bool nr::pass::ds_clean(qmodule_t* M, IReport* log) {
   /* Run garbage collection until there is no more removable garbage */
   NodeCount last_count = -1, cur_count = 0;
   size_t gc_iter = 0;
   while (last_count != cur_count) {
     last_count = cur_count;
-    cur_count = garbage_collect_round(M, gc_iter);
+    cur_count = garbage_collect_round(M, gc_iter, log);
     gc_iter++;
   }
 

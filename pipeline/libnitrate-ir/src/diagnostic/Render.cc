@@ -29,6 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define REFACTOR_KEEP_PRESENT
+
 #include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-parser/Node.h>

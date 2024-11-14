@@ -38,10 +38,10 @@
 
 using namespace nr;
 
-bool nr::pass::ds_tyinfer(qmodule_t* M, IReport*) {
+bool nr::pass::ds_tyinfer(qmodule_t* M, IReport* log) {
   iterate<dfs_pre>(M->getRoot(), [&](Expr*, Expr** C) -> IterOp {
     if (!(*C)->getType().has_value()) {
-      report(IssueCode::TypeInference, IssueClass::Error, "", (*C)->locBeg(), (*C)->locEnd());
+      log->report(IssueCode::TypeInference, IssueClass::Error, "", (*C)->getLoc());
     }
 
     return IterOp::Proceed;

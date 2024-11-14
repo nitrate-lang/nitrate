@@ -46,7 +46,7 @@
 
 using namespace nr;
 
-bool nr::pass::ds_mangle(qmodule_t *mod, IReport *) {
+bool nr::pass::ds_mangle(qmodule_t *mod, IReport *log) {
   SymbolEncoding se;
   bool failed = false;
 
@@ -58,8 +58,8 @@ bool nr::pass::ds_mangle(qmodule_t *mod, IReport *) {
         fn->setName(mod->internString(*name));
       } else {
         failed = true;
-        report(IssueCode::NameManglingTypeInfer, IssueClass::Error, fn->getName(), fn->locBeg(),
-               fn->locEnd());
+        log->report(IssueCode::NameManglingTypeInfer, IssueClass::Error, fn->getName(),
+                    fn->getLoc());
       }
     } else if ((*cur)->getKind() == QIR_NODE_LOCAL) {
       Local *local = (*cur)->as<Local>();
@@ -69,8 +69,8 @@ bool nr::pass::ds_mangle(qmodule_t *mod, IReport *) {
         local->setName(mod->internString(*name));
       } else {
         failed = true;
-        report(IssueCode::NameManglingTypeInfer, IssueClass::Error, local->getName(),
-               local->locBeg(), local->locEnd());
+        log->report(IssueCode::NameManglingTypeInfer, IssueClass::Error, local->getName(),
+                    local->getLoc());
       }
     }
 
