@@ -112,8 +112,6 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
   if (auto root = nrgen_one(builder, s, provider.get(), static_cast<qparse::Node *>(base))) {
     builder.finish();
 
-    root.value()->dump();
-
     if (builder.verify(diagnostics ? std::make_optional(provider.get()) : std::nullopt)) {
       R = builder.get_module();
       success = true;
@@ -1458,7 +1456,7 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G, qparse::FnDecl 
     NRBuilder::FnParam p;
 
     { /* Set function parameter name */
-      std::get<0>(p) = std::get<0>(param);
+      std::get<0>(p) = b.intern(std::get<0>(param));
     }
 
     { /* Set function parameter type */
@@ -1498,8 +1496,8 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G, qparse::FnDecl 
   auto props = convert_purity(func_ty->get_purity());
 
   Fn *fndecl = b.createFunctionDeclaration(
-      n->get_name(), parameters, ret_type.value()->asType(), func_ty->is_variadic(), Vis::Pub,
-      props.first, props.second, func_ty->is_noexcept(), func_ty->is_foreign());
+      b.intern(n->get_name()), parameters, ret_type.value()->asType(), func_ty->is_variadic(),
+      Vis::Pub, props.first, props.second, func_ty->is_noexcept(), func_ty->is_foreign());
 
   fndecl->setAbiTag(s.abi_mode);
 

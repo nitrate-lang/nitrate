@@ -29,6 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <string_view>
+
 #include "nitrate-ir/Report.hh"
 #define IRBUILDER_IMPL
 
@@ -173,9 +175,11 @@ std::string_view NRBuilder::intern(std::string_view in) noexcept {
   auto it = m_interned_strings.find(in);
 
   if (it == m_interned_strings.end()) {
-    std::string alloc(in);
+    it = m_interned_strings.emplace(in, std::string(in)).first;
 
-    return m_interned_strings.emplace(alloc, std::move(alloc)).first->first;
+    const std::string_view *dirty_hack = reinterpret_cast<const std::string_view *>(&it->first);
+    std::string_view *mut = const_cast<std::string_view *>(dirty_hack);
+    return *mut = std::string_view(it->second);
   } else {
     return it->first;
   }

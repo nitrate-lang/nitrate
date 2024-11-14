@@ -159,7 +159,9 @@ namespace nr::detail {
           children.push_back(reinterpret_cast<Expr **>(&child.first));
         }
         children.push_back(reinterpret_cast<Expr **>(&base->as<Fn>()->m_return));
-        children.push_back(reinterpret_cast<Expr **>(&base->as<Fn>()->m_body));
+        if (base->as<Fn>()->m_body.has_value()) {
+          children.push_back(reinterpret_cast<Expr **>(&base->as<Fn>()->m_body.value()));
+        }
         break;
       }
       case QIR_NODE_ASM: {

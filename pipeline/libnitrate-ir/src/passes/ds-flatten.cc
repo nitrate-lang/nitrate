@@ -85,6 +85,9 @@ static void flatten_functions_recurse(qmodule_t *mod, Expr *&base, std::string c
     if ((*cur)->getKind() != QIR_NODE_FN) {
       return IterOp::Proceed;
     }
+    if (!(*cur)->as<Fn>()->getBody().has_value()) {
+      return IterOp::Proceed;
+    }
 
     bool is_extern = par ? par->getKind() == QIR_NODE_EXTERN : false;
 
@@ -102,7 +105,7 @@ static void flatten_functions_recurse(qmodule_t *mod, Expr *&base, std::string c
       functions.insert(cur);
     }
 
-    Expr *body = (*cur)->as<Fn>()->getBody();
+    Expr *body = (*cur)->as<Fn>()->getBody().value();
     flatten_functions_recurse(mod, body, new_scope, functions);
 
     return IterOp::SkipChildren;

@@ -43,7 +43,10 @@ using namespace nr;
 
 bool nr::pass::ds_raii(qmodule_t *M, IReport *) {
   for (auto &[k, v] : M->getFunctions()) {
-    Expr *F = v.second->getBody();
+    Expr *F = v.second->getBody().value_or(nullptr);
+    if (!F) {
+      continue;
+    }
 
     iterate<dfs_pre>(F, [](Expr *, Expr **C) -> IterOp {
       if ((*C)->getKind() != QIR_NODE_SEQ) {

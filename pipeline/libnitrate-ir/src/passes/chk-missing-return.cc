@@ -42,18 +42,23 @@ bool nr::pass::chk_missing_return(qmodule_t* M, IReport* log) {
    */
 
   for (auto& [key, val] : M->getFunctions()) {
-    FnTy* fnty = val.first;
     Fn* fn = val.second;
 
+    if (!fn->getBody().has_value()) {
+      continue;
+    }
+
+    FnTy* fnty = val.first;
+
     /* Skip the function declarations and all functions that have a void return type. */
-    if (fn->getBody()->getKind() == QIR_NODE_IGN ||
+    if (fn->getBody().value()->getKind() == QIR_NODE_IGN ||
         fnty->getReturn()->getKind() == QIR_NODE_VOID_TY) {
       continue;
     }
 
     /* If the function has a non-void return type, then we need to check if there is a return
      * statement. */
-    Seq* body = fn->getBody()->as<Seq>();
+    Seq* body = fn->getBody().value()->as<Seq>();
     bool any_ret = std::any_of(body->getItems().begin(), body->getItems().end(),
                                [](auto item) { return item->getKind() == QIR_NODE_RET; });
 

@@ -186,8 +186,13 @@ nr_node_t *nr_clone_impl(const nr_node_t *_node,
         params.push_back({clone(param.first)->asType(), param.second});
       }
 
-      out = create<Fn>(n->getName(), std::move(params), clone(n->getReturn())->asType(),
-                       clone(n->getBody())->as<Seq>(), n->isVariadic(), n->getAbiTag());
+      std::optional<Seq *> body;
+      if (n->getBody().has_value()) {
+        body = clone(n->getBody().value())->as<Seq>();
+      }
+
+      out = create<Fn>(n->getName(), std::move(params), clone(n->getReturn())->asType(), body,
+                       n->isVariadic(), n->getAbiTag());
       break;
     }
     case QIR_NODE_ASM: {

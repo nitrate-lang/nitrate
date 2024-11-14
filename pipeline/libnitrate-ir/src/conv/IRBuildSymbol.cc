@@ -63,19 +63,31 @@ Fn *NRBuilder::createFunctionDeclaration(std::string_view name, std::span<FnPara
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(m_current_scope != nullptr);
+  contract_enforce(static_cast<Expr *>(ret_ty)->isType());
 
-  /// TODO: Implement
-  qcore_implement();
-  (void)name;
-  (void)params;
-  (void)ret_ty;
-  (void)is_variadic;
+  Params parameters;
+  parameters.resize(params.size());
+  for (size_t i = 0; i < params.size(); i++) {
+    contract_enforce(static_cast<Expr *>(std::get<1>(params[i]))->isType());
+    parameters[i] = {std::get<1>(params[i]), std::get<0>(params[i])};
+
+    /// TODO: Save information regarding the default values
+  }
+
+  /// TODO: Do something useful with the metadata:
+  /// [visibility,purity,thread_safety,noexcept,foriegn]
   (void)visibility;
   (void)purity;
   (void)thread_safe;
   (void)is_noexcept;
   (void)foreign;
-  ignore_caller_info();
+
+  Fn *fn =
+      create<Fn>(name, std::move(parameters), ret_ty, std::nullopt, is_variadic, AbiTag::Default);
+
+  m_current_scope->getItems().push_back(fn);
+
+  return fn;
 }
 
 Fn *NRBuilder::createAnonymousFunction(std::span<FnParam> params, Type *ret_ty, bool is_variadic,

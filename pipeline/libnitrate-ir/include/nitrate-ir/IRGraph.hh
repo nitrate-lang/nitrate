@@ -1234,13 +1234,13 @@ namespace nr {
     std::string_view m_name;
     Params m_params;
     Type *m_return;
-    Expr *m_body;
+    std::optional<Seq *> m_body;
     bool m_variadic;
     AbiTag m_abi_tag;
 
   public:
-    Fn(std::string_view name, const Params &params, Type *ret_ty, Expr *body, bool variadic,
-       AbiTag abi_tag)
+    Fn(std::string_view name, const Params &params, Type *ret_ty, std::optional<Seq *> body,
+       bool variadic, AbiTag abi_tag)
         : Expr(QIR_NODE_FN),
           m_name(name),
           m_params(params),
@@ -1258,8 +1258,8 @@ namespace nr {
     Type *getReturn() noexcept { return m_return; }
     Type *setReturn(Type *ret_ty) noexcept { return m_return = ret_ty; }
 
-    Expr *getBody() noexcept { return m_body; }
-    Expr *setBody(Seq *body) noexcept { return m_body = body; }
+    std::optional<Seq *> getBody() noexcept { return m_body; }
+    std::optional<Seq *> setBody(std::optional<Seq *> body) noexcept { return m_body = body; }
 
     bool isVariadic() noexcept { return m_variadic; }
     void setVariadic(bool variadic) noexcept { m_variadic = variadic; }

@@ -428,7 +428,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
         ss << it->second << ": ";
         recurse(it->first);
         if (std::next(it) != n->as<Fn>()->getParams().end() || n->as<Fn>()->isVariadic()) {
-          ss << ",";
+          ss << ", ";
         }
       }
       if (n->as<Fn>()->isVariadic()) {
@@ -436,8 +436,11 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
       }
       ss << ") -> ";
       recurse(n->as<Fn>()->getReturn());
-      ss << " ";
-      recurse(n->as<Fn>()->getBody());
+
+      if (n->as<Fn>()->getBody().has_value()) {
+        ss << " ";
+        recurse(n->as<Fn>()->getBody().value());
+      }
       break;
     }
     case QIR_NODE_ASM: {

@@ -421,7 +421,11 @@ CPP_EXPORT bool nr::Expr::isSame(const nr::Expr *other) const {
           return false;
         }
       }
-      if (!a->m_body->isSame(b->m_body)) {
+      if (a->m_body.has_value() && b->m_body.has_value()) {
+        if (!a->m_body.value()->isSame(b->m_body.value())) {
+          return false;
+        }
+      } else if (!a->m_body.has_value() ^ b->m_body.has_value()) {
         return false;
       }
       return true;

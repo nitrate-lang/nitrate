@@ -1965,21 +1965,14 @@ static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr
     s.locals.top().second.emplace(N->getName(), local);
     return local;
   } else {
-    if (N->getValue()->getKind() == QIR_NODE_FN_TY) {
-      nr::FnTy *FT = N->getValue()->as<nr::FnTy>();
-      llvm::FunctionType *F_T = llvm::cast<llvm::FunctionType>(T(m, b, cf, s, FT).value());
+    llvm::GlobalVariable *global =
+        new llvm::GlobalVariable(m, R_T.value(), false, s.linkage.top(), nullptr, N->getName(),
+                                 nullptr, llvm::GlobalValue::NotThreadLocal, llvm::None, false);
 
-      return m.getOrInsertFunction(N->getName(), F_T).getCallee();
-    } else {
-      llvm::GlobalVariable *global =
-          new llvm::GlobalVariable(m, R_T.value(), false, s.linkage.top(), nullptr, N->getName(),
-                                   nullptr, llvm::GlobalValue::NotThreadLocal, llvm::None, false);
+    global->setInitializer(llvm::Constant::getNullValue(R_T.value()));
 
-      global->setInitializer(llvm::Constant::getNullValue(R_T.value()));
-
-      /// TODO: Set the initializer value during program load???
-      return global;
-    }
+    /// TODO: Set the initializer value during program load???
+    return global;
   }
 }
 
@@ -2413,13 +2406,8 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::F
   llvm::FunctionType *fn_ty = llvm::FunctionType::get(ret_ty, params, false);
   llvm::Value *callee = m.getOrInsertFunction(N->getName(), fn_ty).getCallee();
 
-  if (N->getBody()->getKind() == QIR_NODE_IGN) {
-    // It is a declaration
+  if (!N->getBody().has_value()) {  // It is a declaration
     return callee;
-  } else if (N->getBody()->getKind() != QIR_NODE_SEQ) {
-    s.in_fn = in_fn_old;
-    debug("Unexpected body for function");
-    return std::nullopt;
   }
 
   llvm::Function *fn = llvm::dyn_cast<llvm::Function>(callee);
@@ -2464,7 +2452,7 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::F
 
     bool old_did_ret = s.did_ret;
 
-    for (auto &node : N->getBody()->as<nr::Seq>()->getItems()) {
+    for (auto &node : N->getBody().value()->getItems()) {
       val_t R = V(m, b, cf, s, node);
       if (!R) {
         s.return_val.pop();
