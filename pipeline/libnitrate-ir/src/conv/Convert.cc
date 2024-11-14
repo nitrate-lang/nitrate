@@ -1768,97 +1768,92 @@ static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G, qparse::Block *n
 }
 
 static EResult nrgen_const(NRBuilder &b, PState &s, IReport *G, qparse::ConstDecl *n) {
-  // auto init = nrgen_one(b, s,X, n->get_value());
-  // if (!init.has_value()) {
-  //   return std::nullopt;
-  // }
+  auto init = next_one(n->get_value());
+  auto type = next_one(n->get_type());
 
-  // std::optional<Type *> type = nullptr;
-  // if (n->get_type()) {
-  //   auto tmp = nrgen_one(b, s,X, n->get_type());
-  //   if (tmp.has_value()) {
-  //     type = tmp.value()->asType();
-  //   }
-  // }
+  if (!init.has_value()) {
+    G->report(TypeInference, IC::Error, "Expected initial value in const declaration");
+    return std::nullopt;
+  }
 
-  // if (init && type) {
-  //   init = create<BinExpr>(init.value(), type.value(), Op::CastAs);
-  // } else if (!init && type) {
-  //   init = type;
-  // } else if (!init && !type) {
-  //   G->report(CompilerError, IC::Error, "Expected value or type",
-  //         n->get_pos(),n->get_pos());
-  //   return std::nullopt;
-  // }
+  if (type.has_value()) { /* Do implicit cast */
+    init = create<BinExpr>(init.value(), type.value(), Op::CastAs);
+  } else if (!type.has_value()) {
+    type = b.getUnknownTy();
+  }
 
-  // if (s.inside_function) {
-  //   std::string_view name = b.intern(n->get_name());
-  //   Local *local = create<Local>(name, init.value(), s.abi_mode);
+  qcore_assert(init.has_value() && type.has_value());
 
-  //   qcore_assert(!s.local_scope.empty());
-  //   if (s.local_scope.top().contains(name)) {
-  //     G->report(VariableRedefinition, IC::Error, n->get_name(),
-  //    n->get_pos(),
-  //           n->get_pos());
-  //   }
-  //   s.local_scope.top()[name] = local;
-  //   return local;
-  // } else {
-  //   std::string_view name = b.intern(std::string_view(s.cur_named(n->get_name())));
-  //   auto g = create<Local>(name, init.value(), s.abi_mode);
-  //   current->getGlobalVariables().insert({name, g});
-  //   return g;
-  // }
+  StorageClass storage =
+      s.inside_function ? StorageClass::LLVM_StackAlloa : StorageClass::LLVM_Static;
+  Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
-  return std::nullopt;
+  Local *local =
+      b.createVariable(b.intern(n->get_name()), type.value()->asType(), visibility, storage, true);
+
+  local->setValue(init.value());
+  local->setAbiTag(s.abi_mode);
+
+  return local;
 }
 
-static EResult nrgen_var(NRBuilder &, PState &, IReport *G, qparse::VarDecl *) {
-  /// TODO: var
+static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G, qparse::VarDecl *n) {
+  auto init = next_one(n->get_value());
+  auto type = next_one(n->get_type());
 
-  return std::nullopt;
+  if (init.has_value() && type.has_value()) { /* Do implicit cast */
+    init = create<BinExpr>(init.value(), type.value(), Op::CastAs);
+  } else if (init.has_value() && !type.has_value()) {
+    type = b.getUnknownTy();
+  } else if (type.has_value() && !init.has_value()) {
+    init = b.getDefaultValue(type.value()->asType());
+  } else {
+    G->report(TypeInference, IC::Error, "Expected type or initial value in var declaration");
+    return std::nullopt;
+  }
+
+  qcore_assert(init.has_value() && type.has_value());
+
+  StorageClass storage = s.inside_function ? StorageClass::Managed : StorageClass::LLVM_Static;
+  Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
+
+  Local *local =
+      b.createVariable(b.intern(n->get_name()), type.value()->asType(), visibility, storage, false);
+
+  local->setValue(init.value());
+  local->setAbiTag(s.abi_mode);
+
+  return local;
 }
 
 static EResult nrgen_let(NRBuilder &b, PState &s, IReport *G, qparse::LetDecl *n) {
-  // auto init = nrgen_one(b, s,X, n->get_value());
-  // std::optional<Type *> type;
-  // if (n->get_type()) {
-  //   auto tmp = nrgen_one(b, s,X, n->get_type());
-  //   if (tmp) {
-  //     type = tmp.value()->asType();
-  //   }
-  // }
+  auto init = next_one(n->get_value());
+  auto type = next_one(n->get_type());
 
-  // if (init && type) {
-  //   init = create<BinExpr>(init.value(), type.value(), Op::CastAs);
-  // } else if (!init && type) {
-  //   init = type;
-  // } else if (!init && !type) {
-  //   G->report(CompilerError, IC::Error, "expected value or type",
-  //         n->get_pos(),n->get_pos());
-  //   return std::nullopt;
-  // }
+  if (init.has_value() && type.has_value()) { /* Do implicit cast */
+    init = create<BinExpr>(init.value(), type.value(), Op::CastAs);
+  } else if (init.has_value() && !type.has_value()) {
+    type = b.getUnknownTy();
+  } else if (type.has_value() && !init.has_value()) {
+    init = b.getDefaultValue(type.value()->asType());
+  } else {
+    G->report(TypeInference, IC::Error, "Expected type or initial value in let declaration");
+    return std::nullopt;
+  }
 
-  // if (s.inside_function) {
-  //   std::string_view name = b.intern(n->get_name());
-  //   Local *local = create<Local>(name, init.value(), s.abi_mode);
+  qcore_assert(init.has_value() && type.has_value());
 
-  //   qcore_assert(!s.local_scope.empty());
-  //   if (s.local_scope.top().contains(name)) {
-  //     G->report(VariableRedefinition, IC::Error, n->get_name(),
-  //    n->get_pos(),
-  //           n->get_pos());
-  //   }
-  //   s.local_scope.top()[name] = local;
-  //   return local;
-  // } else {
-  //   std::string_view name = b.intern(std::string_view(s.cur_named(n->get_name())));
-  //   auto g = create<Local>(name, init.value(), s.abi_mode);
-  //   current->getGlobalVariables().insert({name, g});
-  //   return g;
-  // }
+  StorageClass storage =
+      s.inside_function ? StorageClass::LLVM_StackAlloa : StorageClass::LLVM_Static;
+  Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
-  return std::nullopt;
+  Local *local =
+      b.createVariable(b.intern(n->get_name()), type.value()->asType(), visibility, storage, false);
+
+  local->setValue(init.value());
+  local->setAbiTag(s.abi_mode);
+
+  return local;
 }
 
 static EResult nrgen_inline_asm(NRBuilder &, PState &, IReport *G, qparse::InlineAsm *) {

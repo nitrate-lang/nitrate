@@ -97,7 +97,7 @@ const boost::bimap<IssueCode, IssueInfo> nr::issue_info = make_bimap<IssueCode, 
       {}}},
     {TypeInference,
      {"type-inference", /* FIXME: Summarize */
-      "Preliminary type checking failed.",
+      "Type inference failed: %s",
       {}}},
     {NameManglingTypeInfer,
      {"nm-type-infer", /* FIXME: Summarize */

@@ -63,7 +63,7 @@ Fn *NRBuilder::createFunctionDeclaration(std::string_view name, std::span<FnPara
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(m_current_scope != nullptr);
-  contract_enforce(static_cast<Expr *>(ret_ty)->isType());
+  contract_enforce(ret_ty != nullptr && static_cast<Expr *>(ret_ty)->isType());
 
   Params parameters;
   parameters.resize(params.size());

@@ -76,6 +76,9 @@ namespace nr {
 
     /* Thread-local storage duration */
     LLVM_ThreadLocal,
+
+    /* Dynamic allocation */
+    Managed,
   };
 
   enum class ABIStringStyle {
@@ -292,6 +295,11 @@ namespace nr {
                       * elements in the list.
                       */
                      bool cast_homogenous SOURCE_LOCATION_PARAM) noexcept;
+
+    ///**************************************************************************///
+    // Create values
+
+    Expr *getDefaultValue(Type *_for SOURCE_LOCATION_PARAM) noexcept;
 
     ///**************************************************************************///
     // Create types

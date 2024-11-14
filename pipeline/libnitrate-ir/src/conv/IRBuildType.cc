@@ -283,3 +283,13 @@ Type *NRBuilder::getTemplateInstance(
   /// TODO: Implement
   qcore_implement();
 }
+
+Expr *NRBuilder::getDefaultValue(Type *_for SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(_for != nullptr && static_cast<Expr *>(_for)->isType());
+
+  /// TODO: Get a default value for the type
+
+  qcore_implement();
+}
