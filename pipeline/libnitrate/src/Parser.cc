@@ -468,7 +468,7 @@ bool to_json_recurse(Node *N, json &x) {
        * @note [Developer Notes]
        */
 
-      x[1] = (uint32_t)N->as<ConstChar>()->get_value();
+      x[1] = N->as<ConstChar>()->get_value();
 
       break;
     }

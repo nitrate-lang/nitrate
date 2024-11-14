@@ -36,6 +36,7 @@
 #include <nitrate-parser/Parser.h>
 
 #include <cstring>
+#include <iomanip>
 #include <unordered_map>
 
 #include "LibMacro.h"
@@ -1751,16 +1752,32 @@ void ConstBool::print_impl(std::ostream &os, bool debug) {
 
 ConstBool *ConstBool::clone_impl() { return ConstBool::get(m_value); }
 
-bool ConstChar::verify_impl(std::ostream &os) {
-  (void)os;
-  return true;
-}
+bool ConstChar::verify_impl(std::ostream &) { return true; }
 
 void ConstChar::canonicalize_impl() {}
 
-void ConstChar::print_impl(std::ostream &os, bool debug) {
-  (void)debug;
-  os << "'\\u{" << std::hex << (int32_t)m_value << "}'" << std::dec;
+void ConstChar::print_impl(std::ostream &os, bool) {
+  switch (m_value) {
+    case '\n':
+      os << "'\\n'";
+      break;
+    case '\t':
+      os << "'\\t'";
+      break;
+    case '\r':
+      os << "'\\r'";
+      break;
+    case '\0':
+      os << "'\\0'";
+      break;
+    default:
+      if (std::isprint(m_value)) {
+        os << "'" << m_value << "'";
+      } else {
+        os << "'\\x" << std::hex << std::setw(2) << std::setfill('0') << (int)m_value << "'";
+      }
+      break;
+  }
 }
 
 ConstChar *ConstChar::clone_impl() { return ConstChar::get(m_value); }

@@ -228,7 +228,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     }
     case QAST_NODE_CHAR: {
       OBJECT_BEGIN("Char");
-      OBJECT_NUM((uint32_t)n->as<ConstChar>()->get_value());
+      OBJECT_NUM(n->as<ConstChar>()->get_value());
       OBJECT_END();
       break;
     }

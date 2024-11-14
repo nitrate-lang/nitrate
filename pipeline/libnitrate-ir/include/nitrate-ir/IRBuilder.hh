@@ -120,6 +120,7 @@ namespace nr {
     std::optional<Fn *> m_current_function;
 
     std::unordered_map<std::string_view, std::string> m_interned_strings;
+    std::unordered_map<std::string_view, std::string> m_ephermel_strings;
 
     ///**************************************************************************///
     // Builder helper methods
@@ -365,6 +366,7 @@ namespace nr {
     // Other stuff
 
     std::string_view intern(std::string_view str) noexcept;
+    std::string_view internEphemeral(std::string_view str) noexcept;
     ///**************************************************************************///
 
 #undef SOURCE_LOCATION_PARAM

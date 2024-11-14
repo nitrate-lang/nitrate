@@ -133,9 +133,7 @@ List *NRBuilder::createStringDataArray(std::string_view value,
   /* Add null byte at end */
   items[value.size()] = compiler_trace(createFixedInteger(0, IntSize::U8));
 
-  List *R = createList(items, true);
-
-  return compiler_trace(debug_info(R, DEBUG_INFO));
+  return compiler_trace(debug_info(createList(items, true), DEBUG_INFO));
 }
 
 List *NRBuilder::createList(std::span<Expr *> items,

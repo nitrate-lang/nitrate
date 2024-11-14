@@ -185,6 +185,20 @@ std::string_view NRBuilder::intern(std::string_view in) noexcept {
   }
 }
 
+std::string_view NRBuilder::internEphemeral(std::string_view in) noexcept {
+  auto it = m_ephermel_strings.find(in);
+
+  if (it == m_ephermel_strings.end()) {
+    it = m_ephermel_strings.emplace(in, std::string(in)).first;
+
+    const std::string_view *dirty_hack = reinterpret_cast<const std::string_view *>(&it->first);
+    std::string_view *mut = const_cast<std::string_view *>(dirty_hack);
+    return *mut = std::string_view(it->second);
+  } else {
+    return it->first;
+  }
+}
+
 nr_node_t *nr_clone_impl(const nr_node_t *_node,
                          std::unordered_map<const nr_node_t *, nr_node_t *> &map,
                          std::unordered_set<nr_node_t *> &in_visited);

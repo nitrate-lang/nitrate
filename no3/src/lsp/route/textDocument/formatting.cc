@@ -398,7 +398,6 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
     case QAST_NODE_CHAR: {
       ConstChar* N = C->as<ConstChar>();
-      qcore_assert(N->get_value() >= 0 && N->get_value() <= 255);
       S.line << escape_char_literal(N->get_value());
       break;
     }

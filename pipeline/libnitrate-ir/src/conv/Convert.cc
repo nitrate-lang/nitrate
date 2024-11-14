@@ -635,12 +635,6 @@ static EResult nrgen_string(NRBuilder &b, PState &, IReport *G, qparse::ConstStr
 }
 
 static EResult nrgen_char(NRBuilder &b, PState &, IReport *G, qparse::ConstChar *n) {
-  if (n->get_value() > UINT8_MAX) {
-    G->report(CompilerError, IC::Error,
-              "Character literal value is outside the expected range of UINT8_MAX", n->get_pos());
-    return std::nullopt;
-  }
-
   return b.createFixedInteger(n->get_value(), IntSize::U8);
 }
 
@@ -1870,7 +1864,8 @@ static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G, qparse::VarDecl *n
   } else if (type.has_value() && !init.has_value()) {
     init = b.getDefaultValue(type.value()->asType());
   } else {
-    G->report(TypeInference, IC::Error, "Expected type or initial value in var declaration");
+    G->report(TypeInference, IC::Error,
+              "Expected a type specifier or initial value in var declaration");
     return std::nullopt;
   }
 
@@ -1899,7 +1894,8 @@ static EResult nrgen_let(NRBuilder &b, PState &s, IReport *G, qparse::LetDecl *n
   } else if (type.has_value() && !init.has_value()) {
     init = b.getDefaultValue(type.value()->asType());
   } else {
-    G->report(TypeInference, IC::Error, "Expected type or initial value in let declaration");
+    G->report(TypeInference, IC::Error,
+              "Expected a type specifier or initial value in let declaration");
     return std::nullopt;
   }
 
@@ -2499,7 +2495,6 @@ static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, qparse::Node *n) {
       if (expr.has_value()) {
         out = {expr.value()};
       } else {
-        G->report(CompilerError, IC::Error, "nr::nrgen_any() failed to convert node", n->get_pos());
         return std::nullopt;
       }
     }

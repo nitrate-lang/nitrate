@@ -87,7 +87,7 @@ Fn *NRBuilder::createFunctionDeclaration(std::string_view name, std::span<FnPara
 
   m_current_scope->getItems().push_back(fn);
 
-  return fn;
+  return compiler_trace(debug_info(fn, DEBUG_INFO));
 }
 
 Fn *NRBuilder::createAnonymousFunction(std::span<FnParam> params, Type *ret_ty, bool is_variadic,
@@ -140,12 +140,21 @@ Fn *NRBuilder::createTemplateFunction(std::string_view name,
 Local *NRBuilder::createVariable(std::string_view name, Type *ty, Vis visibility,
                                  StorageClass storage,
                                  bool is_readonly SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-  (void)name;
-  (void)ty;
+  contract_enforce(m_state == SelfState::Constructed);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(m_current_scope != nullptr);
+  contract_enforce(ty != nullptr && static_cast<Expr *>(ty)->isType());
+
+  Local *local = create<Local>(name, createIgn(), AbiTag::Default);
+
+  /// TODO: Do something with these
   (void)visibility;
   (void)storage;
   (void)is_readonly;
-  ignore_caller_info();
+
+  local = compiler_trace(debug_info(local, DEBUG_INFO));
+
+  m_current_scope->getItems().push_back(local);
+
+  return local;
 }

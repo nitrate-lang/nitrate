@@ -1026,12 +1026,12 @@ namespace qparse {
   };
 
   class ConstChar : public LitExpr {
-    char32_t m_value;
+    uint8_t m_value;
 
   public:
-    ConstChar(char32_t value = 0) : m_value(value) {}
+    ConstChar(uint8_t value = 0) : m_value(value) {}
 
-    char32_t get_value() { return m_value; }
+    uint8_t get_value() { return m_value; }
 
     PNODE_IMPL_CORE(ConstChar)
   };
