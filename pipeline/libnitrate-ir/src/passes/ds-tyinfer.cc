@@ -41,7 +41,7 @@ using namespace nr;
 bool nr::pass::ds_tyinfer(qmodule_t* M, IReport*) {
   iterate<dfs_pre>(M->getRoot(), [&](Expr*, Expr** C) -> IterOp {
     if (!(*C)->getType().has_value()) {
-      report(IssueCode::TypeInference, IssueClass::Error, (*C)->locBeg(), (*C)->locEnd());
+      report(IssueCode::TypeInference, IssueClass::Error, "", (*C)->locBeg(), (*C)->locEnd());
     }
 
     return IterOp::Proceed;

@@ -49,7 +49,7 @@ bool nr::pass::ds_verify(qmodule_t *mod, IReport *) {
   const auto cb = [&tmp_total](Expr *, Expr **_cur) -> IterOp {
     if ((*_cur)->getKind() == QIR_NODE_TMP) [[unlikely]] {
       Tmp *tmp = (*_cur)->as<Tmp>();
-      report(IssueCode::DSBadTmpNode, IssueClass::FatalError, tmp->locBeg(), tmp->locEnd());
+      report(IssueCode::DSBadTmpNode, IssueClass::FatalError, "", tmp->locBeg(), tmp->locEnd());
       tmp_total++;
     }
 

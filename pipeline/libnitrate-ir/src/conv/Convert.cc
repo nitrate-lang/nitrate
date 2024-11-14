@@ -591,7 +591,7 @@ static EResult nrgen_null(NRBuilder &, PState &, qparse::ConstNull *) {
 }
 
 static EResult nrgen_undef(NRBuilder &, PState &, qparse::ConstUndef *n) {
-  report(IssueCode::UnexpectedUndefLiteral, IssueClass::Error, n->get_start_pos(),
+  report(IssueCode::UnexpectedUndefLiteral, IssueClass::Error, "", n->get_start_pos(),
          n->get_end_pos());
   return std::nullopt;
 }

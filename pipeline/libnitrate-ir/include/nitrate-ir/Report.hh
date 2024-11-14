@@ -165,12 +165,6 @@ namespace nr {
    * @brief Report a diagnostic message
    * @return true always
    */
-  bool report(IssueCode code, IssueClass type, uint32_t loc_start = 0, uint32_t loc_end = 0);
-
-  /**
-   * @brief Report a diagnostic message
-   * @return true always
-   */
   bool report(IssueCode code, IssueClass type, std::string_view subject = "",
               uint32_t loc_start = 0, uint32_t loc_end = 0);
 
