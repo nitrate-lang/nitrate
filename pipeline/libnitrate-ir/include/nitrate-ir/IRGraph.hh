@@ -901,13 +901,13 @@ namespace nr {
   class Int final : public Expr {
     QCLASS_REFLECT()
 
-    unsigned __int128 m_value;
     IntSize m_size;
+    uint128_t m_value;
 
-    static unsigned __int128 str2u128(std::string_view x) noexcept;
+    static uint128_t str2u128(std::string_view x) noexcept;
 
   public:
-    Int(uint128_t val, IntSize size) : Expr(QIR_NODE_INT), m_value(val), m_size(size) {}
+    Int(uint128_t val, IntSize size) : Expr(QIR_NODE_INT), m_size(size), m_value(val) {}
 
     Int(std::string_view str, IntSize size) : Expr(QIR_NODE_INT) {
       m_size = size;
@@ -918,11 +918,11 @@ namespace nr {
 
     uint128_t getValue() const noexcept { return m_value; }
 
-    std::string getValueString() const noexcept;
+    std::string getValueString() const noexcept { return m_value.str(); }
 
-  } __attribute__((packed));
+  } __attribute__((aligned(16)));
 
-  static_assert(sizeof(Int) == 25);
+  static_assert(sizeof(Int) == 32);
 
   enum class FloatSize : uint8_t {
     F16,

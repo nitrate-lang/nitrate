@@ -109,8 +109,10 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
   qmodule_t *R = nullptr;
   bool success = false;
 
-  if (nrgen_one(builder, s, provider.get(), static_cast<qparse::Node *>(base))) {
+  if (auto root = nrgen_one(builder, s, provider.get(), static_cast<qparse::Node *>(base))) {
     builder.finish();
+
+    root.value()->dump();
 
     if (builder.verify(diagnostics ? std::make_optional(provider.get()) : std::nullopt)) {
       R = builder.get_module();
@@ -548,9 +550,10 @@ static EResult nrgen_terexpr(NRBuilder &b, PState &s, IReport *G, qparse::Ternar
 }
 
 static EResult nrgen_int(NRBuilder &b, PState &, IReport *G, qparse::ConstInt *n) {
-  boost::multiprecision::cpp_int num(n->get_value());
+  boost::multiprecision::cpp_int num(std::string_view(n->get_value()));
 
   if (num > std::numeric_limits<uint128_t>::max()) {
+    G->report(nr::CompilerError, IC::Error, "Integer literal is not representable in uint128 type");
     return std::nullopt;
   } else if (num > UINT64_MAX) {
     return b.createFixedInteger(num.convert_to<uint128_t>(), IntSize::U128);
