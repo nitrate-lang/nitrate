@@ -238,19 +238,21 @@ namespace nr {
     ///**************************************************************************///
     // Create linkable symbols
 
-    Fn *createFunctionDefintion(std::string_view name, std::span<Type *> params, Type *ret_ty,
+    using FnParam = std::tuple<std::string_view, Type *, std::optional<Expr *>>;
+
+    Fn *createFunctionDefintion(std::string_view name, std::span<FnParam> params, Type *ret_ty,
                                 bool is_variadic = false, Vis visibility = Vis::Sec,
                                 Purity purity = Purity::Impure, bool thread_safe = false,
                                 bool is_noexcept = false,
                                 bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
 
-    Fn *createFunctionDeclaration(std::string_view name, std::span<Type *> params, Type *ret_ty,
+    Fn *createFunctionDeclaration(std::string_view name, std::span<FnParam> params, Type *ret_ty,
                                   bool is_variadic = false, Vis visibility = Vis::Sec,
                                   Purity purity = Purity::Impure, bool thread_safe = false,
                                   bool is_noexcept = false,
                                   bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
 
-    Fn *createAnonymousFunction(std::span<Type *> params, Type *ret_ty, bool is_variadic = false,
+    Fn *createAnonymousFunction(std::span<FnParam> params, Type *ret_ty, bool is_variadic = false,
                                 Purity purity = Purity::Impure, bool thread_safe = false,
                                 bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;
 
@@ -260,7 +262,7 @@ namespace nr {
                                bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;
 
     Fn *createTemplateFunction(std::string_view name, std::span<std::string_view> template_params,
-                               std::span<Type *> params, Type *ret_ty, bool is_variadic = false,
+                               std::span<FnParam> params, Type *ret_ty, bool is_variadic = false,
                                Vis visibility = Vis::Sec, Purity purity = Purity::Impure,
                                bool thread_safe = false,
                                bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;

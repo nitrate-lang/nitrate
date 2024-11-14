@@ -38,7 +38,7 @@
 
 using namespace nr;
 
-Fn *NRBuilder::createFunctionDefintion(std::string_view name, std::span<Type *> params,
+Fn *NRBuilder::createFunctionDefintion(std::string_view name, std::span<FnParam> params,
                                        Type *ret_ty, bool is_variadic, Vis visibility,
                                        Purity purity, bool thread_safe, bool is_noexcept,
                                        bool foreign SOURCE_LOCATION_PARAM) noexcept {
@@ -56,7 +56,7 @@ Fn *NRBuilder::createFunctionDefintion(std::string_view name, std::span<Type *> 
   ignore_caller_info();
 }
 
-Fn *NRBuilder::createFunctionDeclaration(std::string_view name, std::span<Type *> params,
+Fn *NRBuilder::createFunctionDeclaration(std::string_view name, std::span<FnParam> params,
                                          Type *ret_ty, bool is_variadic, Vis visibility,
                                          Purity purity, bool thread_safe, bool is_noexcept,
                                          bool foreign SOURCE_LOCATION_PARAM) noexcept {
@@ -74,7 +74,7 @@ Fn *NRBuilder::createFunctionDeclaration(std::string_view name, std::span<Type *
   ignore_caller_info();
 }
 
-Fn *NRBuilder::createAnonymousFunction(std::span<Type *> params, Type *ret_ty, bool is_variadic,
+Fn *NRBuilder::createAnonymousFunction(std::span<FnParam> params, Type *ret_ty, bool is_variadic,
                                        Purity purity, bool thread_safe,
                                        bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
@@ -104,7 +104,7 @@ Fn *NRBuilder::createOperatorOverload(Op op, std::span<Type *> params, Type *ret
 
 Fn *NRBuilder::createTemplateFunction(std::string_view name,
                                       std::span<std::string_view> template_params,
-                                      std::span<Type *> params, Type *ret_ty, bool is_variadic,
+                                      std::span<FnParam> params, Type *ret_ty, bool is_variadic,
                                       Vis visibility, Purity purity, bool thread_safe,
                                       bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement

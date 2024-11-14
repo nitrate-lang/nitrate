@@ -1034,72 +1034,21 @@ static std::optional<std::vector<Expr *>> nrgen_typedef(NRBuilder &b, PState &s,
   return std::nullopt;
 }
 
-static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G, qparse::FnDecl *n) {
-  // Params params;
-  // qparse::FuncTy *fty = n->get_type();
+using IsThreadSafe = bool;
 
-  // std::string name;
-  // if (s.abi_mode == AbiTag::C) {
-  //   name = n->get_name();
-  // } else {
-  //   name = s.cur_named(n->get_name());
-  // }
-  // auto str = b.intern(std::string_view(name));
-
-  // current->getParameterMap()[str] = {};
-
-  // { /* Produce the function parameters */
-  //   for (auto it = fty->get_params().begin(); it != fty->get_params().end(); ++it) {
-  //     /**
-  //      * Parameter properties:
-  //      * 1. Name - All parameters have a name.
-  //      * 2. Type - All parameters have a type.
-  //      * 3. Default - Optional, if the parameter has a default value.
-  //      * 4. Position - All parameters have a position.
-  //      */
-
-  //     auto type = nrgen_one(b, s,X, std::get<1>(*it));
-  //     if (!type.has_value()) {
-  //       G->report(CompilerError, IC::Error,
-  //              "qparse::FnDecl::get_type() == std::nullopt",n->get_pos(),
-  //             n->get_pos());
-  //       return std::nullopt;
-  //     }
-
-  //     EResult def;
-  //     if (std::get<2>(*it)) {
-  //       def = nrgen_one(b, s,X, std::get<2>(*it));
-  //       if (!def.has_value()) {
-  //         G->report(CompilerError, IC::Error,
-  //                "qparse::FnDecl::get_type() == std::nullopt",n->get_pos(),
-  //               n->get_pos());
-  //         return std::nullopt;
-  //       }
-  //     }
-
-  //     std::string_view sv = b.intern(std::string_view(std::get<0>(*it)));
-
-  //     params.push_back({type.value()->asType(), sv});
-  //     current->getParameterMap()[str].push_back(
-  //         {std::string(std::get<0>(*it)), type.value()->asType(), def.value()});
-  //   }
-  // }
-
-  // auto fnty = nrgen_one(b, s,X, fty);
-  // if (!fnty.value()) {
-  //   G->report(CompilerError, IC::Error,
-  //          "qparse::FnDecl::get_type() == std::nullopt",n->get_pos(),n->get_pos());
-  //   return std::nullopt;
-  // }
-
-  // Fn *fn = create<Fn>(str, std::move(params), fnty.value()->as<FnTy>()->getReturn(), createIgn(),
-  //                     fty->is_variadic(), s.abi_mode);
-
-  // current->getFunctions().insert({str, {fnty.value()->as<FnTy>(), fn}});
-
-  // return fn;
-
-  return std::nullopt;
+static std::pair<Purity, IsThreadSafe> convert_purity(qparse::FuncPurity x) {
+  switch (x) {
+    case qparse::FuncPurity::IMPURE_THREAD_UNSAFE:
+      return {Purity::Impure, false};
+    case qparse::FuncPurity::IMPURE_THREAD_SAFE:
+      return {Purity::Impure, true};
+    case qparse::FuncPurity::PURE:
+      return {Purity::Pure, true};
+    case qparse::FuncPurity::QUASIPURE:
+      return {Purity::Quasipure, true};
+    case qparse::FuncPurity::RETROPURE:
+      return {Purity::Retropure, true};
+  }
 }
 
 #define align(x, a) (((x) + (a) - 1) & ~((a) - 1))
@@ -1499,6 +1448,66 @@ static std::optional<std::vector<Expr *>> nrgen_enum(NRBuilder &b, PState &s, IR
   // return {};
 
   return std::nullopt;
+}
+
+static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G, qparse::FnDecl *n) {
+  qparse::FuncTy *func_ty = n->get_type();
+  const qparse::FuncParams &params = func_ty->get_params();
+
+  std::vector<NRBuilder::FnParam> parameters;
+  parameters.resize(params.size());
+
+  for (size_t i = 0; i < params.size(); i++) {
+    const auto &param = params[i];
+    NRBuilder::FnParam p;
+
+    { /* Set function parameter name */
+      std::get<0>(p) = std::get<0>(param);
+    }
+
+    { /* Set function parameter type */
+      auto tmp = next_one(std::get<1>(param));
+      if (!tmp.has_value()) {
+        G->report(nr::CompilerError, nr::IC::Error,
+                  "Failed to convert function declaration parameter type");
+        return std::nullopt;
+      }
+
+      std::get<1>(p) = tmp.value()->asType();
+    }
+
+    { /* Set function parameter default value if it exists */
+      if (std::get<2>(param) != nullptr) {
+        auto val = next_one(std::get<2>(param));
+        if (!val.has_value()) {
+          G->report(nr::CompilerError, nr::IC::Error,
+                    "Failed to convert function declaration parameter default value");
+          return std::nullopt;
+        }
+
+        std::get<2>(p) = val.value();
+      }
+    }
+
+    parameters[i] = std::move(p);
+  }
+
+  auto ret_type = next_one(func_ty->get_return_ty());
+  if (!ret_type.has_value()) {
+    G->report(nr::CompilerError, nr::IC::Error,
+              "Failed to convert function declaration return type");
+    return std::nullopt;
+  }
+
+  auto props = convert_purity(func_ty->get_purity());
+
+  Fn *fndecl = b.createFunctionDeclaration(
+      n->get_name(), parameters, ret_type.value()->asType(), func_ty->is_variadic(), Vis::Pub,
+      props.first, props.second, func_ty->is_noexcept(), func_ty->is_foreign());
+
+  fndecl->setAbiTag(s.abi_mode);
+
+  return fndecl;
 }
 
 static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
