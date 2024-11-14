@@ -44,8 +44,9 @@
 #include <nitrate-core/Classes.hh>
 #include <nitrate-ir/Report.hh>
 #include <string>
-#include <unordered_set>
 #include <vector>
+
+#include "core/Diagnostic.hh"
 
 namespace nr {
   typedef uint16_t ModuleId;
@@ -181,7 +182,8 @@ private:
   /// END: Data structures requisite for efficient lowering
   ///=============================================================================
 
-  std::unique_ptr<nr::IReport> m_diag;                           /* Diagnostic manager instance */
+  std::unique_ptr<nr::IReport> m_diagnostics;
+  std::unique_ptr<nr::IOffsetResolver> m_offset_resolver;
   std::unordered_map<std::string_view, std::string> m_strings{}; /* Interned strings */
   ModulePasses m_applied{};                                      /* Module pass tracking */
   nr::TargetInfo m_target_info{};                                /* Build target information */
@@ -229,7 +231,8 @@ public:
 
   qcore_arena_t &getNodeArena() { return *m_node_arena.get(); }
 
-  std::unique_ptr<nr::IReport> &getDiag() { return m_diag; }
+  std::unique_ptr<nr::IReport> &getDiag() { return m_diagnostics; }
+  std::unique_ptr<nr::IOffsetResolver> &getOffsetResolver() { return m_offset_resolver; }
 
   const nr::TargetInfo &getTargetInfo() const { return m_target_info; }
 };

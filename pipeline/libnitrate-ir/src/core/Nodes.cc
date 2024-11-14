@@ -1237,8 +1237,6 @@ CPP_EXPORT bool Type::is_ptr_to(const Type *type) const {
 }
 
 CPP_EXPORT unsigned __int128 Int::str2u128(std::string_view s) noexcept {
-  /// FIXME: I don't understand this function
-
   unsigned __int128 x = 0;
 
   for (char c : s) {
@@ -1291,8 +1289,6 @@ CPP_EXPORT std::string Int::getValueString() const noexcept {
   } else if (m_value == UINT64_MAX) {
     return "18446744073709551615";
   }
-
-  /// FIXME: I don't understand this function
 
   uint128_t x = m_value;
   char buf[40] = {0};

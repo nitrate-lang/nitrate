@@ -93,11 +93,9 @@ namespace nr {
   class DiagnosticManager final : public IReport {
     std::vector<DiagDatum> m_vec;
     std::unordered_set<uint64_t> m_visited;
-    std::shared_ptr<IOffsetResolver> m_resolver;
 
   public:
-    DiagnosticManager(std::shared_ptr<IOffsetResolver> resolver)
-        : m_resolver(std::move(resolver)) {}
+    DiagnosticManager() = default;
 
     virtual void report(IssueCode code, IC level, std::span<std::string_view> params = {},
                         uint32_t start_offset = 1, uint32_t end_offset = 0,

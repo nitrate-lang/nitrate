@@ -309,7 +309,7 @@ std::string nr::mint_modern_message(const IReport::ReportData &R, IOffsetResolve
   { /* Print filename and source row:column start and end */
     ss << "\x1b[37;1m" << "??" << ":";
 
-    auto default_if = std::pair<uint32_t, uint32_t>(0, 0);
+    auto default_if = std::pair<uint32_t, uint32_t>(UINT32_MAX, UINT32_MAX);
     auto beg = B->resolve(R.start_offset).value_or(default_if);
     auto end = B->resolve(R.end_offset).value_or(default_if);
 

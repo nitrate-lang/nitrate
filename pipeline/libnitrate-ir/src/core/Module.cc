@@ -45,6 +45,8 @@ static std::mutex nr_modules_mutex;
 class LexerSourceResolver : public IOffsetResolver {
 public:
   virtual std::optional<std::pair<uint32_t, uint32_t>> resolve(uint32_t) noexcept override {
+    return std::nullopt;
+    /// TODO: Implement source offset resolver
     qcore_implement();
   }
   virtual ~LexerSourceResolver() = default;
@@ -54,8 +56,8 @@ qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
   m_applied.clear();
   m_strings.clear();
 
-  auto resolver = std::make_shared<LexerSourceResolver>();
-  m_diag = std::make_unique<DiagnosticManager>(resolver);
+  m_offset_resolver = std::make_unique<LexerSourceResolver>();
+  m_diagnostics = std::make_unique<DiagnosticManager>();
 
   m_module_name = name;
 

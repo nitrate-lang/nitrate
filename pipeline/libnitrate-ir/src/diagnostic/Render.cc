@@ -286,13 +286,9 @@ LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_c
     return;
   }
 
-  /// TODO: Get symbol resolver
-  IOffsetResolver *B = nullptr;
-
-  qcore_assert(B != nullptr && "No resolver");
+  IOffsetResolver *B = nr->getOffsetResolver().get();
 
   nr->getDiag()->stream_reports([&](IReport::ReportData R) {
-    /// TODO: Render the report here
     std::stringstream ss;
 
     switch (format) {

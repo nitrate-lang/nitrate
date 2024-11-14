@@ -99,7 +99,8 @@ namespace nr {
                         std::string_view filename = "") = 0;
 
     void report(IssueCode code, IC level, std::string_view message,
-                std::pair<uint32_t, uint32_t> loc = {0, 0}, std::string_view filename = "") {
+                std::pair<uint32_t, uint32_t> loc = {UINT32_MAX, UINT32_MAX},
+                std::string_view filename = "") {
       std::array<std::string_view, 1> x = {message};
       report(code, level, x, loc.first, loc.second, filename);
     };

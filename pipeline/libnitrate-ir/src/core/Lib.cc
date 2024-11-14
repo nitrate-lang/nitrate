@@ -40,7 +40,6 @@
 
 #include "core/LibMacro.h"
 
-/// HACK: Fix linker error with c++ boost.
 namespace boost {
   void throw_exception(std::exception const& m, boost::source_location const&) {
     std::cerr << "boost::throw_exception: " << m.what();

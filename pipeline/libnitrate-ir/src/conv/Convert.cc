@@ -99,9 +99,7 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
   /// TODO: Get target info
   TargetInfo target_info;
 
-  // auto offset_resolver = std::make_shared<IOffsetResolver>();
-  /// TODO: Write offset resolver
-  std::unique_ptr<DiagnosticManager> provider = std::make_unique<DiagnosticManager>(nullptr);
+  std::unique_ptr<DiagnosticManager> provider = std::make_unique<DiagnosticManager>();
 
   PState s;
   NRBuilder builder(name, target_info);
@@ -141,7 +139,6 @@ static nr::Tmp *create_simple_call(NRBuilder &b, PState &, IReport *G, std::stri
   std::get<1>(datapack) = std::move(args);
 
   return create<nr::Tmp>(nr::TmpType::CALL, std::move(datapack));
-  qcore_implement();
 }
 
 nr::List *nr::createStringLiteral(std::string_view value) noexcept {
