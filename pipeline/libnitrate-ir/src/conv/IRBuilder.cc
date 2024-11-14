@@ -179,9 +179,11 @@ std::string_view NRBuilder::intern(std::string_view in) noexcept {
   auto it = m_interned_strings.find(in);
 
   if (it == m_interned_strings.end()) {
-    return m_interned_strings.emplace(in, in).first->second;
+    std::string alloc(in);
+
+    return m_interned_strings.emplace(alloc, std::move(alloc)).first->first;
   } else {
-    return it->second;
+    return it->first;
   }
 }
 

@@ -970,9 +970,8 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G, qparse::FuncTy *
 
 static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *G, qparse::UnresolvedType *n) {
   auto str = s.cur_named(n->get_name());
-  auto name = b.intern(std::string_view(str));
 
-  return create<Tmp>(TmpType::NAMED_TYPE, name);
+  return create<Tmp>(TmpType::NAMED_TYPE, b.intern(str));
 }
 
 static EResult nrgen_infer_ty(NRBuilder &b, PState &, IReport *G, qparse::InferType *) {
