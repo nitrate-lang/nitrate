@@ -35,6 +35,7 @@
 #include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
 
+#include <boost/multiprecision/cpp_dec_float.hpp>
 #include <core/Config.hh>
 #include <core/Diagnostic.hh>
 #include <core/PassManager.hh>
@@ -46,12 +47,11 @@
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
+#include <nitrate-ir/Report.hh>
 #include <stack>
 #include <string>
 #include <string_view>
 #include <unordered_map>
-
-#include "nitrate-ir/Report.hh"
 
 using namespace nr;
 
@@ -101,7 +101,7 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
   /// TODO: Get target info
   TargetInfo target_info;
 
-  std::unique_ptr<DiagnosticManager> provider = std::make_unique<DiagnosticManager>();
+  std::unique_ptr<IReport> G = std::make_unique<DiagnosticManager>();
 
   PState s;
   NRBuilder builder(name, target_info);
@@ -109,18 +109,22 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
   qmodule_t *R = nullptr;
   bool success = false;
 
-  if (auto root = nrgen_one(builder, s, provider.get(), static_cast<qparse::Node *>(base))) {
+  if (auto root = nrgen_one(builder, s, G.get(), static_cast<qparse::Node *>(base))) {
     builder.finish();
 
-    if (builder.verify(diagnostics ? std::make_optional(provider.get()) : std::nullopt)) {
+    if (builder.verify(diagnostics ? std::make_optional(G.get()) : std::nullopt)) {
       R = builder.get_module();
       success = true;
+    } else {
+      G->report(nr::CompilerError, IC::Error, "Failed to lower source");
     }
+  } else {
+    G->report(nr::CompilerError, IC::Error, "Failed to lower source");
   }
 
   if (!R) {
     R = createModule(name);
-    R->getDiag() = std::move(provider);
+    R->getDiag() = std::move(G);
   }
 
   std::swap(nr::nr_arena.get(), *scratch_arena.get());
@@ -157,8 +161,8 @@ nr::List *nr::createStringLiteral(std::string_view value) noexcept {
   return create<List>(items, true);
 }
 
-std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &, PState &, IReport *G, nr::Expr *lhs,
-                                              nr::Expr *rhs, qlex_op_t op) {
+static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &, PState &, IReport *G,
+                                                     nr::Expr *lhs, nr::Expr *rhs, qlex_op_t op) {
 #define STD_BINOP(op) nr::create<nr::BinExpr>(lhs, rhs, nr::Op::op)
 #define ASSIGN_BINOP(op)                                                                     \
   nr::create<nr::BinExpr>(                                                                   \
@@ -367,8 +371,8 @@ std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &, PState &, IReport *G,
   return R;
 }
 
-std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &s, IReport *G, nr::Expr *rhs,
-                                             qlex_op_t op) {
+static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &s, IReport *G,
+                                                    nr::Expr *rhs, qlex_op_t op) {
 #define STD_UNOP(op) nr::create<nr::UnExpr>(rhs, nr::Op::op)
 
   EResult R;
@@ -462,8 +466,8 @@ std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &s, IReport *G
   return R;
 }
 
-std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &, IReport *G, nr::Expr *lhs,
-                                                  qlex_op_t op) {
+static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &, IReport *G,
+                                                         nr::Expr *lhs, qlex_op_t op) {
 #define STD_POST_OP(op) nr::create<nr::PostUnExpr>(lhs, nr::Op::op)
 
   EResult R;
@@ -499,48 +503,76 @@ static EResult nrgen_cexpr(NRBuilder &b, PState &s, IReport *G, qparse::ConstExp
 static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G, qparse::BinExpr *n) {
   auto lhs = next_one(n->get_lhs());
   if (!lhs.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to lower LHS of binary expression", n->get_pos());
     return std::nullopt;
   }
 
   auto rhs = next_one(n->get_rhs());
   if (!rhs.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to lower RHS of binary expression", n->get_pos());
     return std::nullopt;
   }
 
-  return nrgen_lower_binexpr(b, s, G, lhs.value(), rhs.value(), n->get_op());
+  auto E = nrgen_lower_binexpr(b, s, G, lhs.value(), rhs.value(), n->get_op());
+  if (!E.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to lower the binary expression", n->get_pos());
+    return std::nullopt;
+  }
+
+  return E;
 }
 
 static EResult nrgen_unexpr(NRBuilder &b, PState &s, IReport *G, qparse::UnaryExpr *n) {
   auto rhs = next_one(n->get_rhs());
   if (!rhs.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to lower RHS of unary expression", n->get_pos());
     return std::nullopt;
   }
 
-  return nrgen_lower_unexpr(b, s, G, rhs.value(), n->get_op());
+  auto E = nrgen_lower_unexpr(b, s, G, rhs.value(), n->get_op());
+  if (!E.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to lower unary expression", n->get_pos());
+    return std::nullopt;
+  }
+
+  return E;
 }
 
 static EResult nrgen_post_unexpr(NRBuilder &b, PState &s, IReport *G, qparse::PostUnaryExpr *n) {
   auto lhs = next_one(n->get_lhs());
   if (!lhs.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to lower LHS of post-unary expression",
+              n->get_pos());
+
     return std::nullopt;
   }
 
-  return nrgen_lower_post_unexpr(b, s, G, lhs.value(), n->get_op());
+  auto E = nrgen_lower_post_unexpr(b, s, G, lhs.value(), n->get_op());
+  if (!E.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to lower post-unary expression", n->get_pos());
+    return std::nullopt;
+  }
+
+  return E;
 }
 
 static EResult nrgen_terexpr(NRBuilder &b, PState &s, IReport *G, qparse::TernaryExpr *n) {
   auto cond = next_one(n->get_cond());
   if (!cond.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to lower condition of ternery expression",
+              n->get_pos());
     return std::nullopt;
   }
 
   auto lhs = next_one(n->get_lhs());
   if (!lhs.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to lower LHS of ternery expression", n->get_pos());
     return std::nullopt;
   }
 
   auto rhs = next_one(n->get_rhs());
   if (!rhs.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to lower RHS of ternery expression", n->get_pos());
     return std::nullopt;
   }
 
@@ -551,7 +583,7 @@ static EResult nrgen_int(NRBuilder &b, PState &, IReport *G, qparse::ConstInt *n
   boost::multiprecision::cpp_int num(std::string_view(n->get_value()));
 
   if (num > std::numeric_limits<uint128_t>::max()) {
-    G->report(nr::CompilerError, IC::Error, "Integer literal is not representable in uint128 type");
+    G->report(CompilerError, IC::Error, "Integer literal is not representable in u128 type");
     return std::nullopt;
   } else if (num > UINT64_MAX) {
     return b.createFixedInteger(num.convert_to<uint128_t>(), IntSize::U128);
@@ -563,8 +595,39 @@ static EResult nrgen_int(NRBuilder &b, PState &, IReport *G, qparse::ConstInt *n
 }
 
 static EResult nrgen_float(NRBuilder &b, PState &, IReport *G, qparse::ConstFloat *n) {
-  /// FIXME: Do floating-point literal range checking
-  return create<Float>(b.intern(n->get_value()));
+  auto val = n->get_value();
+  std::string_view sv = val;
+
+  if (sv.ends_with("f128")) {
+    sv.remove_suffix(4);
+    boost::multiprecision::cpp_dec_float_100 num(sv);
+
+    return b.createFixedFloat(num.convert_to<long double>(), FloatSize::F128);
+  } else if (sv.ends_with("f64")) {
+    sv.remove_suffix(3);
+    boost::multiprecision::cpp_dec_float_100 num(sv);
+
+    return b.createFixedFloat(num.convert_to<long double>(), FloatSize::F64);
+  } else if (sv.ends_with("f32")) {
+    sv.remove_suffix(3);
+    boost::multiprecision::cpp_dec_float_100 num(sv);
+
+    return b.createFixedFloat(num.convert_to<long double>(), FloatSize::F32);
+  } else if (sv.ends_with("f16")) {
+    sv.remove_suffix(3);
+    boost::multiprecision::cpp_dec_float_100 num(sv);
+
+    return b.createFixedFloat(num.convert_to<long double>(), FloatSize::F16);
+  } else {
+    if (sv.find("f")) {
+      G->report(nr::CompilerError, IC::Error, "Unexpected floating point type suffix");
+      return std::nullopt;
+    }
+
+    boost::multiprecision::cpp_dec_float_100 num(sv);
+
+    return b.createFixedFloat(num.convert_to<long double>(), FloatSize::F32);
+  }
 }
 
 static EResult nrgen_string(NRBuilder &b, PState &, IReport *G, qparse::ConstString *n) {
@@ -1462,7 +1525,7 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G, qparse::FnDecl 
     { /* Set function parameter type */
       auto tmp = next_one(std::get<1>(param));
       if (!tmp.has_value()) {
-        G->report(nr::CompilerError, nr::IC::Error,
+        G->report(CompilerError, nr::IC::Error,
                   "Failed to convert function declaration parameter type");
         return std::nullopt;
       }
@@ -1474,7 +1537,7 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G, qparse::FnDecl 
       if (std::get<2>(param) != nullptr) {
         auto val = next_one(std::get<2>(param));
         if (!val.has_value()) {
-          G->report(nr::CompilerError, nr::IC::Error,
+          G->report(CompilerError, nr::IC::Error,
                     "Failed to convert function declaration parameter default value");
           return std::nullopt;
         }
@@ -1488,8 +1551,7 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G, qparse::FnDecl 
 
   auto ret_type = next_one(func_ty->get_return_ty());
   if (!ret_type.has_value()) {
-    G->report(nr::CompilerError, nr::IC::Error,
-              "Failed to convert function declaration return type");
+    G->report(CompilerError, nr::IC::Error, "Failed to convert function declaration return type");
     return std::nullopt;
   }
 
@@ -1996,7 +2058,7 @@ static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G, qparse::ForStmt *n
 }
 
 static EResult nrgen_form(NRBuilder &, PState &, IReport *G, qparse::FormStmt *) {
-  G->report(nr::CompilerError, IC::Error, "Concurrent for loops not implemented yet");
+  G->report(CompilerError, IC::Error, "Concurrent for loops not implemented yet");
   return std::nullopt;
 }
 
