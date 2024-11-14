@@ -53,7 +53,7 @@ namespace nr {
     SyntaxError() : std::runtime_error("") {}
   };
 
-  enum class IssueClass {
+  enum class IC {
     Debug = 0,
     Info,
     Warn,
@@ -99,15 +99,15 @@ namespace nr {
 
   extern const boost::bimap<IssueCode, IssueInfo> issue_info;
 
-  typedef std::function<void(std::string_view, IssueClass)> DiagnosticMessageHandler;
+  typedef std::function<void(std::string_view, IC)> DiagnosticMessageHandler;
 
   class IReport {
   public:
-    virtual void report(IssueCode code, IssueClass level, std::span<std::string_view> params = {},
+    virtual void report(IssueCode code, IC level, std::span<std::string_view> params = {},
                         uint32_t start_offset = 1, uint32_t end_offset = 0,
                         std::string_view filename = "") = 0;
 
-    void report(IssueCode code, IssueClass level, std::string_view message,
+    void report(IssueCode code, IC level, std::string_view message,
                 std::pair<uint32_t, uint32_t> loc = {0, 0}, std::string_view filename = "") {
       std::array<std::string_view, 1> x = {message};
       report(code, level, x, loc.first, loc.second, filename);
@@ -124,11 +124,11 @@ namespace nr {
   struct DiagMessage {
     std::string m_msg;
     uint32_t m_start, m_end;
-    IssueClass m_type;
+    IC m_type;
     IssueCode m_code;
 
-    DiagMessage(std::string_view msg = "", IssueClass type = IssueClass::Debug,
-                IssueCode code = Info, uint32_t start = 0, uint32_t end = 0)
+    DiagMessage(std::string_view msg = "", IC type = IC::Debug, IssueCode code = Info,
+                uint32_t start = 0, uint32_t end = 0)
         : m_msg(msg), m_start(start), m_end(end), m_type(type), m_code(code) {}
 
     uint64_t hash() const;
@@ -147,7 +147,7 @@ namespace nr {
     DiagnosticManager(std::shared_ptr<IOffsetResolver> resolver = nullptr)
         : m_resolver(std::move(resolver)) {}
 
-    virtual void report(IssueCode code, IssueClass level, std::span<std::string_view> params = {},
+    virtual void report(IssueCode code, IC level, std::span<std::string_view> params = {},
                         uint32_t start_offset = 1, uint32_t end_offset = 0,
                         std::string_view filename = "") override;
 

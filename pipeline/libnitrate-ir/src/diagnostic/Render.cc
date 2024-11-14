@@ -84,19 +84,19 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
   (void)el;
 
   switch (msg.m_type) {
-    case IssueClass::Debug:
+    case IC::Debug:
       ss << "debug";
       break;
-    case IssueClass::Info:
+    case IC::Info:
       ss << "info";
       break;
-    case IssueClass::Warn:
+    case IC::Warn:
       ss << "warning";
       break;
-    case IssueClass::Error:
+    case IC::Error:
       ss << "error";
       break;
-    case IssueClass::FatalError:
+    case IC::FatalError:
       ss << "fatal error";
       break;
   }
@@ -158,35 +158,35 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
   }
 
   switch (msg.m_type) {
-    case IssueClass::Debug:
+    case IC::Debug:
       ss << "\x1b[1mdebug:\x1b[0m " << msg.m_msg;
       if (msg.m_code != Info) {
         ss << " \x1b[39;1m[\x1b[0m\x1b[1m-Werror=" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
-    case IssueClass::Info:
+    case IC::Info:
       ss << "\x1b[37;1minfo:\x1b[0m " << msg.m_msg;
       if (msg.m_code != Info) {
         ss << " \x1b[39;1m[\x1b[0m\x1b[37;1m-Werror=" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
-    case IssueClass::Warn:
+    case IC::Warn:
       ss << "\x1b[35;1mwarning:\x1b[0m " << msg.m_msg;
       if (msg.m_code != Info) {
         ss << " \x1b[39;1m[\x1b[0m\x1b[35;1m-Werror=" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
-    case IssueClass::Error:
+    case IC::Error:
       ss << "\x1b[31;1merror:\x1b[0m " << msg.m_msg;
       if (msg.m_code != Info) {
         ss << " \x1b[39;1m[\x1b[0m\x1b[31;1m-Werror=" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
-    case IssueClass::FatalError:
+    case IC::FatalError:
       ss << "\x1b[31;1;4mfatal error:\x1b[0m " << msg.m_msg;
       if (msg.m_code != Info) {
         ss << " \x1b[39;1m[\x1b[0m\x1b[31;1;4m-Werror=" << issue_info.left.at(msg.m_code).flagname
@@ -223,7 +223,7 @@ uint64_t DiagMessage::hash() const {
      to disable deduplication */
 
   struct BitPack {
-    IssueClass m_type : 3;
+    IC m_type : 3;
     IssueCode m_code : 10;
     uint64_t m_msg_trunc : 7;
     uint64_t m_end_trunc : 20;
@@ -239,7 +239,7 @@ uint64_t DiagMessage::hash() const {
   return std::bit_cast<uint64_t>(bp);
 }
 
-void DiagnosticManager::report(IssueCode code, IssueClass level, std::span<std::string_view> params,
+void DiagnosticManager::report(IssueCode code, IC level, std::span<std::string_view> params,
                                uint32_t start_offset, uint32_t end_offset,
                                std::string_view filename) {
   std::string message;
@@ -353,10 +353,9 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler, nr_diag_forma
   return m_vec.size();
 }
 
-static const std::unordered_map<IssueClass, nr_level_t> issue_class_map = {
-    {IssueClass::Debug, QXIR_LEVEL_DEBUG},      {IssueClass::Info, QXIR_LEVEL_INFO},
-    {IssueClass::Warn, QXIR_LEVEL_WARN},        {IssueClass::Error, QXIR_LEVEL_ERROR},
-    {IssueClass::FatalError, QXIR_LEVEL_FATAL},
+static const std::unordered_map<IC, nr_level_t> issue_class_map = {
+    {IC::Debug, QXIR_LEVEL_DEBUG}, {IC::Info, QXIR_LEVEL_INFO},        {IC::Warn, QXIR_LEVEL_WARN},
+    {IC::Error, QXIR_LEVEL_ERROR}, {IC::FatalError, QXIR_LEVEL_FATAL},
 };
 
 LIB_EXPORT size_t nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_cb cb,
@@ -366,7 +365,7 @@ LIB_EXPORT size_t nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report
   }
 
   auto res = nr->getDiag()->render(
-      [cb, data](std::string_view v, IssueClass lvl) {
+      [cb, data](std::string_view v, IC lvl) {
         cb(reinterpret_cast<const uint8_t *>(v.data()), v.size(), issue_class_map.at(lvl), data);
       },
       format);

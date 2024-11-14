@@ -336,23 +336,23 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
 
   { /* Print message flagname */
     switch (msg.m_type) {
-      case IssueClass::Debug:
+      case IC::Debug:
         ss << "\x1b[1mdebug:\x1b[0m \x1b[1m" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\n";
         break;
-      case IssueClass::Info:
+      case IC::Info:
         ss << "\x1b[37;1minfo:\x1b[0m \x1b[37;1m" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\n";
         break;
-      case IssueClass::Warn:
+      case IC::Warn:
         ss << "\x1b[35;1mwarning:\x1b[0m \x1b[35;1m" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\n";
         break;
-      case IssueClass::Error:
+      case IC::Error:
         ss << "\x1b[31;1merror:\x1b[0m \x1b[31;1m" << issue_info.left.at(msg.m_code).flagname
            << "\x1b[0m\n";
         break;
-      case IssueClass::FatalError:
+      case IC::FatalError:
         ss << "\x1b[31;1;4mfatal error:\x1b[0m \x1b[31;1;4m"
            << issue_info.left.at(msg.m_code).flagname << "\x1b[0m\n";
         break;

@@ -209,7 +209,7 @@
 //         const auto &params = mod->getParameterMap().at(funcname);
 //         if (params.size() != ft->getParams().size()) {
 //           error = true;
-//           report(UnknownArgument, IssueClass::Error, funcname);
+//           report(UnknownArgument, IC::Error, funcname);
 //           break;
 //         }
 
@@ -293,7 +293,7 @@
 //       std::string_view name = std::get<std::string_view>(cur->as<Tmp>()->getData());
 
 //       if (!mod->getTypeMap().contains(name)) {
-//         report(UnknownType, IssueClass::Error, name);
+//         report(UnknownType, IC::Error, name);
 //         error = true;
 //         break;
 //       }
@@ -332,7 +332,7 @@
 //       if (resolved && resolved->second == IdentWhat::Typename) {
 //         *_cur = mod->getTypeMap().at(resolved->first);
 //       } else {
-//         report(UnknownType, IssueClass::Error, name);
+//         report(UnknownType, IC::Error, name);
 //         error = true;
 //       }
 //       break;
@@ -360,7 +360,7 @@
 //     //       QXIR_AUDIT_CONV,
 //     //       DiagMessage(
 //     //           "Cyclic polymorphic node reference detected in module IR data structure.",
-//     //           IssueClass::FatalError, DSPolyCyclicRef));
+//     //           IC::FatalError, DSPolyCyclicRef));
 //     //   error = true;
 //     //   return IterOp::Abort;
 //     // }
@@ -549,7 +549,7 @@
 
 //       auto cur = (*_cur)->as<Ident>();
 
-//       report(UnresolvedIdentifier, IssueClass::Error, ident_name, cur->locBeg(),
+//       report(UnresolvedIdentifier, IC::Error, ident_name, cur->locBeg(),
 //              cur->locEnd());
 
 //       return IterOp::Proceed;
@@ -573,7 +573,7 @@
 //     Ident *cur = (*_cur)->as<Ident>();
 
 //     if (!cur->getWhat()) {
-//       report(UnresolvedIdentifier, IssueClass::Error, cur->getName(), cur->locBeg(),
+//       report(UnresolvedIdentifier, IC::Error, cur->getName(), cur->locBeg(),
 //              cur->locEnd());
 //     }
 
