@@ -807,12 +807,6 @@ namespace comptime {
         return std::nullopt;
       }
 
-      case QIR_NODE_FORM: {
-        /// TODO: Implement expression
-        P.eprintn("Form expressions are not yet implemented");
-        return std::nullopt;
-      }
-
       case QIR_NODE_CASE: {
         /// TODO: Implement expression
         P.eprintn("Case expressions are not yet implemented");

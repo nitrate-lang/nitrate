@@ -51,6 +51,8 @@
 #include <string_view>
 #include <unordered_map>
 
+#include "nitrate-ir/Report.hh"
+
 using namespace nr;
 
 struct PState {
@@ -1992,27 +1994,9 @@ static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G, qparse::ForStmt *n
   return create<For>(init.value(), cond.value(), step.value(), body.value());
 }
 
-static EResult nrgen_form(NRBuilder &b, PState &s, IReport *G, qparse::FormStmt *n) {
-  auto maxjobs = next_one(n->get_maxjobs());
-  if (!maxjobs.has_value()) {
-    return std::nullopt;
-  }
-
-  auto idx_name = b.intern(n->get_idx_ident());
-  auto val_name = b.intern(n->get_val_ident());
-
-  auto iter = next_one(n->get_expr());
-  if (!iter.has_value()) {
-    return std::nullopt;
-  }
-
-  auto body = next_one(n->get_body());
-  if (!body.has_value()) {
-    return std::nullopt;
-  }
-
-  return create<Form>(idx_name, val_name, maxjobs.value(), iter.value(),
-                      create<Seq>(SeqItems({body.value()})));
+static EResult nrgen_form(NRBuilder &, PState &, IReport *G, qparse::FormStmt *) {
+  G->report(nr::CompilerError, IC::Error, "Concurrent for loops not implemented yet");
+  return std::nullopt;
 }
 
 static EResult nrgen_foreach(NRBuilder &, PState &, IReport *G, qparse::ForeachStmt *) {

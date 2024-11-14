@@ -139,12 +139,6 @@ namespace nr::detail {
         children.push_back(&base->as<For>()->m_body);
         break;
       }
-      case QIR_NODE_FORM: {
-        children.push_back(&base->as<Form>()->m_maxjobs);
-        children.push_back(&base->as<Form>()->m_expr);
-        children.push_back(reinterpret_cast<Expr **>(&base->as<Form>()->m_body));
-        break;
-      }
       case QIR_NODE_CASE: {
         children.push_back(&base->as<Case>()->m_cond);
         children.push_back(&base->as<Case>()->m_body);

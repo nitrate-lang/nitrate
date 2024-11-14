@@ -85,7 +85,6 @@
 #define debug(...)
 #endif
 
-/// HACK: Fix linker error with c++ boost.
 namespace boost {
   void throw_exception(std::exception const &m) {
     std::cerr << "boost::throw_exception: " << m.what();
@@ -472,7 +471,6 @@ static val_t QIR_NODE_CONT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr:
 static val_t QIR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::If *N);
 static val_t QIR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::While *N);
 static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::For *N);
-static val_t QIR_NODE_FORM_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Form *N);
 static val_t QIR_NODE_CASE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Case *N);
 static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Switch *N);
 static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Fn *N);
@@ -591,11 +589,6 @@ auto V(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Expr *N) -> val_t {
 
     case QIR_NODE_FOR: {
       R = QIR_NODE_FOR_C(m, b, cf, s, N->as<nr::For>());
-      break;
-    }
-
-    case QIR_NODE_FORM: {
-      R = QIR_NODE_FORM_C(m, b, cf, s, N->as<nr::Form>());
       break;
     }
 
@@ -2227,19 +2220,6 @@ static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::
   b.SetInsertPoint(end);
 
   return end;
-}
-
-static val_t QIR_NODE_FORM_C(ctx_t &, craft_t &, const Mode &, State &, nr::Form *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
-  /// TODO: Implement conversion for node
-  qcore_implement();
 }
 
 static val_t QIR_NODE_CASE_C(ctx_t &, craft_t &, const Mode &, State &, nr::Case *) {

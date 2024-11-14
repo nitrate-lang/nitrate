@@ -741,10 +741,6 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
         T = create<VoidTy>();
         break;
       }
-      case QIR_NODE_FORM: {
-        T = create<VoidTy>();
-        break;
-      }
       case QIR_NODE_CASE: {
         T = create<VoidTy>();
         break;

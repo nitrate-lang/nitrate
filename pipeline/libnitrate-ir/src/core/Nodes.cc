@@ -84,7 +84,6 @@ CPP_EXPORT uint32_t Expr::getKindSize(nr_ty_t type) noexcept {
       {QIR_NODE_IF, sizeof(If)},
       {QIR_NODE_WHILE, sizeof(While)},
       {QIR_NODE_FOR, sizeof(For)},
-      {QIR_NODE_FORM, sizeof(Form)},
       {QIR_NODE_CASE, sizeof(Case)},
       {QIR_NODE_SWITCH, sizeof(Switch)},
       {QIR_NODE_FN, sizeof(Fn)},
@@ -140,7 +139,6 @@ CPP_EXPORT const char *Expr::getKindName(nr_ty_t type) noexcept {
       {QIR_NODE_IF, "if"},
       {QIR_NODE_WHILE, "while"},
       {QIR_NODE_FOR, "for"},
-      {QIR_NODE_FORM, "form"},
       {QIR_NODE_CASE, "case"},
       {QIR_NODE_SWITCH, "switch"},
       {QIR_NODE_FN, "fn"},
@@ -366,26 +364,6 @@ CPP_EXPORT bool nr::Expr::isSame(const nr::Expr *other) const {
         return false;
       }
       if (!a->m_step->isSame(b->m_step)) {
-        return false;
-      }
-      if (!a->m_body->isSame(b->m_body)) {
-        return false;
-      }
-      return true;
-    }
-    case QIR_NODE_FORM: {
-      auto a = as<Form>();
-      auto b = other->as<Form>();
-      if (!a->m_maxjobs->isSame(b->m_maxjobs)) {
-        return false;
-      }
-      if (a->m_idx_ident != b->m_idx_ident) {
-        return false;
-      }
-      if (a->m_val_ident != b->m_val_ident) {
-        return false;
-      }
-      if (!a->m_expr->isSame(b->m_expr)) {
         return false;
       }
       if (!a->m_body->isSame(b->m_body)) {
@@ -676,10 +654,6 @@ CPP_EXPORT std::string_view nr::Expr::getName() const noexcept {
       break;
     }
 
-    case QIR_NODE_FORM: {
-      break;
-    }
-
     case QIR_NODE_CASE: {
       break;
     }
@@ -926,11 +900,6 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
         break;
       }
       case QIR_NODE_FOR: {
-        break;
-      }
-      case QIR_NODE_FORM: {
-        MIXIN_STRING(cur->as<Form>()->m_idx_ident);
-        MIXIN_STRING(cur->as<Form>()->m_val_ident);
         break;
       }
       case QIR_NODE_CASE: {

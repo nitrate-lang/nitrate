@@ -171,8 +171,6 @@ namespace nr {
         return QIR_NODE_WHILE;
       } else if constexpr (std::is_same_v<T, For>) {
         return QIR_NODE_FOR;
-      } else if constexpr (std::is_same_v<T, Form>) {
-        return QIR_NODE_FORM;
       } else if constexpr (std::is_same_v<T, Case>) {
         return QIR_NODE_CASE;
       } else if constexpr (std::is_same_v<T, Switch>) {
@@ -330,10 +328,6 @@ namespace nr {
         }
         case QIR_NODE_FOR: {
           if constexpr (!std::is_same_v<T, For>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_FORM: {
-          if constexpr (!std::is_same_v<T, Form>) goto cast_panic;
           break;
         }
         case QIR_NODE_CASE: {
@@ -1189,45 +1183,6 @@ namespace nr {
     Expr *setBody(Expr *body) noexcept { return m_body = body; }
   };
 
-  class Form final : public Expr {
-    QCLASS_REFLECT()
-
-    std::string_view m_idx_ident;
-    std::string_view m_val_ident;
-    Expr *m_maxjobs;
-    Expr *m_expr;
-    Seq *m_body;
-
-  public:
-    Form(std::string_view idx_ident, std::string_view val_ident, Expr *maxjobs, Expr *expr,
-         Seq *body)
-        : Expr(QIR_NODE_FORM),
-          m_idx_ident(idx_ident),
-          m_val_ident(val_ident),
-          m_maxjobs(maxjobs),
-          m_expr(expr),
-          m_body(body) {}
-
-    std::string_view getIdxIdent() noexcept { return m_idx_ident; }
-    std::string_view setIdxIdent(std::string_view idx_ident) noexcept {
-      return m_idx_ident = idx_ident;
-    }
-
-    std::string_view getValIdent() noexcept { return m_val_ident; }
-    std::string_view setValIdent(std::string_view val_ident) noexcept {
-      return m_val_ident = val_ident;
-    }
-
-    Expr *getMaxJobs() noexcept { return m_maxjobs; }
-    Expr *setMaxJobs(Expr *maxjobs) noexcept { return m_maxjobs = maxjobs; }
-
-    Expr *getExpr() noexcept { return m_expr; }
-    Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
-
-    Seq *getBody() noexcept { return m_body; }
-    Seq *setBody(Seq *body) noexcept { return m_body = body; }
-  };
-
   class Case final : public Expr {
     QCLASS_REFLECT()
 
@@ -1420,7 +1375,6 @@ namespace nr {
     //       case QIR_NODE_IF:
     //       case QIR_NODE_WHILE:
     //       case QIR_NODE_FOR:
-    //       case QIR_NODE_FORM:
     //       case QIR_NODE_CASE:
     //       case QIR_NODE_SWITCH:
     //       case QIR_NODE_FN:

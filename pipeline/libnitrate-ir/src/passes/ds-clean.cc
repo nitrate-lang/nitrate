@@ -129,10 +129,6 @@ static void seq_mark_non_functional(Expr* P, Expr** C) {
       break;
     }
 
-    case QIR_NODE_FORM: {
-      break;
-    }
-
     case QIR_NODE_CASE: {
       break;
     }

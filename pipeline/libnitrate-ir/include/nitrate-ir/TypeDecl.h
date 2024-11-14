@@ -70,7 +70,6 @@ typedef enum nr_ty_t {
   QIR_NODE_IF,     /* If statement */
   QIR_NODE_WHILE,  /* While loop */
   QIR_NODE_FOR,    /* For loop */
-  QIR_NODE_FORM,   /* Parallel for loop */
   QIR_NODE_CASE,   /* Case statement */
   QIR_NODE_SWITCH, /* Switch statement */
   QIR_NODE_FN,     /* Function definition */
@@ -103,7 +102,7 @@ typedef enum nr_ty_t {
   QIR_NODE_TMP, /* Temp node; must be resolved with more information */
 } nr_ty_t;
 
-#define QIR_NODE_COUNT 47
+#define QIR_NODE_COUNT 46
 
 typedef struct nr_conf_t nr_conf_t;
 

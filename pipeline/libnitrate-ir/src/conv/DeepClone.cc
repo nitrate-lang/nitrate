@@ -163,12 +163,6 @@ nr_node_t *nr_clone_impl(const nr_node_t *_node,
                         clone(n->getBody()));
       break;
     }
-    case QIR_NODE_FORM: {
-      Form *n = static_cast<Form *>(in);
-      out = create<Form>(n->getIdxIdent(), n->getValIdent(), clone(n->getMaxJobs()),
-                         clone(n->getExpr()), clone(n->getBody())->as<Seq>());
-      break;
-    }
     case QIR_NODE_CASE: {
       Case *n = static_cast<Case *>(in);
       out = create<Case>(clone(n->getCond()), clone(n->getBody()));

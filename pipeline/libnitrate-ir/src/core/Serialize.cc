@@ -394,16 +394,6 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
       recurse(n->as<For>()->getBody());
       break;
     }
-    case QIR_NODE_FORM: {
-      ss << "form (";
-      recurse(n->as<Form>()->getMaxJobs());
-      ss << ") (" << n->as<Form>()->getIdxIdent() << "; ";
-      ss << n->as<Form>()->getValIdent() << "; ";
-      recurse(n->as<Form>()->getExpr());
-      ss << ") ";
-      recurse(n->as<Form>()->getBody());
-      break;
-    }
     case QIR_NODE_CASE: {
       ss << "case ";
       recurse(n->as<Case>()->getCond());
