@@ -61,22 +61,22 @@ std::string_view nit_code_prefix = R"(
 
 @(fn define() {
   -- Read in expected lexical sequence
-  local name = nit.next(); local sepr = nit.next();
-  local valu = nit.next(); local semi = nit.next();
+  local name = n.next(); local sepr = n.next();
+  local valu = n.next(); local semi = n.next();
 
   -- Verify that the sequence is correct
   if name.ty ~= 'name' then
-    nit.abort('Expected name in @define macro');
+    n.abort('Expected name in @define macro');
   end
   if sepr.ty ~= 'op' or sepr.v ~= '=' then
-    nit.abort('Expected = in @define macro');
+    n.abort('Expected = in @define macro');
   end
   if semi.ty ~= 'sym' or semi.v ~= ';' then
-    nit.abort('Expected ; in @define macro');
+    n.abort('Expected ; in @define macro');
   end
 
   -- Set the define in the magic 'def.' namespace
-  nit.set('def.'.. name.v, valu.v);
+  n.set('def.'.. name.v, valu.v);
 })
 
 @(fn comp_if(cond, terminator) {
@@ -93,9 +93,9 @@ std::string_view nit_code_prefix = R"(
   -- Handle nested @comp_if blocks
   local rank = 1
   while true do
-    local token = nit.next()
+    local token = n.next()
     if token.ty == 'eof' then
-      nit.error('Unexpected EOF in conditional compilation block')
+      n.error('Unexpected EOF in conditional compilation block')
       break
     end
 
@@ -116,79 +116,79 @@ std::string_view nit_code_prefix = R"(
 
 @(fn use() {
   -- Read in expected lexical sequence
-  local ver = nit.next(); local semi = nit.next();
+  local ver = n.next(); local semi = n.next();
 
   -- Verify that the sequence is correct
   if ver.ty ~= 'str' then
-    nit.abort('Expected version string after @use');
+    n.abort('Expected version string after @use');
   end
   if semi.ty ~= 'sym' or semi.v ~= ';' then
-    nit.abort('Expected semicolon after version string');
+    n.abort('Expected semicolon after version string');
   end
 
   -- For now only support v1.0
   if ver.v ~= 'v1.0' then
-    nit.abort('Unsupported Nitrate environment version: ', ver.v);
+    n.abort('Unsupported Nitrate environment version: ', ver.v);
   end
 
-  nit.debug('Using Nitrate environment version: ', ver.v);
+  n.debug('Using Nitrate environment version: ', ver.v);
 })
 
 @(fn import() {
   -- Read in expected lexical sequence
-  local name = nit.next(); local semi = nit.next();
+  local name = n.next(); local semi = n.next();
 
   -- Verify that the sequence is correct
   if semi.ty ~= 'sym' or semi.v ~= ';' then
-    nit.abort('Expected semicolon after module name');
+    n.abort('Expected semicolon after module name');
   end
   
   if name.ty ~= 'str' and name.ty ~= 'name' then
-    nit.abort('Expected string literal or identifier after @import.');
+    n.abort('Expected string literal or identifier after @import.');
   end
 
   name = name.v;
 
-  nit.debug('Attempting to import module: ', name);
-  local content = nit.fetch(name);
+  n.debug('Attempting to import module: ', name);
+  local content = n.fetch(name);
   if content == nil then
-    nit.abort('Failed to import module: ', nit.errno);
+    n.abort('Failed to import module: ', n.errno);
   end
 
-  nit.debug(string.format('Fetched module: %s (%d bytes)', name, #content));
+  n.debug(string.format('Fetched module: %s (%d bytes)', name, #content));
 
   return content;
 })
 
 @(
-  nit.isset = function(name, value)
+  n.isset = function(name, value)
     if name == nil then
-      nit.abort('Expected name in @isset function');
+      n.abort('Expected name in @isset function');
     end
 
-    local flag = nit.get('flag.'.. name);
+    local flag = n.get('flag.'.. name);
     if value == nil then
       return flag ~= nil;
     end
     return flag == value;
   end
 
-  nit.get_target = function()
-    return nit.get('this.target-triple');
+  n.get_target = function()
+    return n.get('this.target-triple');
   end
 
-  nit.get_host = function()
-    return nit.get('this.host-triple');
+  n.get_host = function()
+    return n.get('this.host-triple');
   end
 
-  nit.try_set = function(name, value)
+  n.try_set = function(name, value)
     if name == nil then
-      nit.abort('Expected name in @req_flag_set function');
+      n.abort('Expected name in @req_flag_set function');
     end
 
-    local mut_flags = nit.get('flag.mutable');
+    local mut_flags = n.get('flag.mutable');
     if mut_flags == nil then
-      nit.debug('The expected mutable flags table is not set');
+      n.debug('The expected mutable flags table is not set');
       return false;
     end
 
@@ -202,19 +202,19 @@ std::string_view nit_code_prefix = R"(
       return false;
     end
 
-    nit.set(name, value);
+    n.set(name, value);
     return true;
   end
 
-  nit.set_flag = function(name, value)
+  n.set_flag = function(name, value)
     if try_set(name, value) then
       return;
     end
 
-    nit.abort('Immutable flag could not be modified: ', name);
+    n.abort('Immutable flag could not be modified: ', name);
   end
 
-  nit.enstr = function(item)
+  n.enstr = function(item)
     if item == nil then
       item = '';
     end
@@ -235,7 +235,7 @@ std::string_view nit_code_prefix = R"(
     return res .. '"';
   end
 
-  nit.destr = function(item)
+  n.destr = function(item)
     if item == nil then
       return '';
     end

@@ -29,6 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <nitrate-lexer/Lexer.h>
+
 #include <core/Preprocess.hh>
 #include <qcall/List.hh>
 
@@ -43,10 +45,23 @@ int qcall::sys_peek(lua_State* L) {
 
   qprep_impl_t* obj = get_engine();
 
-  bool old = obj->m_do_expanse;
-  obj->m_do_expanse = false;
-  qlex_tok_t tok = qlex_peek(obj);
-  obj->m_do_expanse = old;
+  qlex_tok_t tok;
+
+  { /* Get token */
+    qlex_flags_t flags;
+    bool old;
+
+    old = obj->m_do_expanse;
+    flags = qlex_get_flags(obj);
+
+    obj->m_do_expanse = false;
+    qlex_set_flags(obj, flags & ~(QLEX_NO_COMMENTS));
+
+    tok = qlex_peek(obj);
+
+    qlex_set_flags(obj, flags);
+    obj->m_do_expanse = old;
+  }
 
   lua_newtable(L);
 

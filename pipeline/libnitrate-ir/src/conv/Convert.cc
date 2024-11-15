@@ -835,18 +835,17 @@ static EResult nrgen_ident(NRBuilder &b, PState &s, IReport *, qparse::Ident *n)
 }
 
 static EResult nrgen_seq_point(NRBuilder &b, PState &s, IReport *G, qparse::SeqPoint *n) {
-  SeqItems items;
-  items.reserve(n->get_items().size());
+  SeqItems items(n->get_items().size());
 
-  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    auto item = next_one(*it);
-    if (!item.has_value()) {
+  for (size_t i = 0; i < n->get_items().size(); i++) {
+    auto item = next_one(n->get_items()[i]);
+    if (!item.has_value()) [[unlikely]] {
       G->report(CompilerError, IC::Error,
                 "qparse::SeqPoint::get_items() vector contains std::nullopt", n->get_pos());
       return std::nullopt;
     }
 
-    items.push_back(item.value());
+    items[i] = item.value();
   }
 
   return create<Seq>(std::move(items));

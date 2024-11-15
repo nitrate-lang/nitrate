@@ -321,7 +321,7 @@ void qprep_impl_t::install_lua_api() {
     lua_setfield(m_core->L, -2, qcall.getName().data());
   }
 
-  lua_setglobal(m_core->L, "nit");
+  lua_setglobal(m_core->L, "n");
 }
 
 qlex_t *qprep_impl_t::weak_clone(std::shared_ptr<std::istream> file, const char *filename) {

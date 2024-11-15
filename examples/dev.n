@@ -1,40 +1,88 @@
-subsystem support {
-  /* UNSAFE: */ unsafe fn quasipure noexcept alloc_impl(size: u64): *void {
-    "implement me";
+@(
+  n.get_args = function() -- (
+    local t = n.peek()
+    local args = {}
 
-    ret null;
-  } with [freestanding]
+    if t.ty ~= 'sym' or t.v ~= '(' then
+      return args
+    end
 
-  /* UNSAFE: */ unsafe fn quasipure noexcept dealloc_impl(ptr: *void) {
-    "implement me";
-    '0';
-  } with [freestanding]
+    n.next()
 
-  /* UNSAFE: */ unsafe fn tsafe noexcept perror_impl(buf: *u8, size: u64) {
-    "implement me";
-    '0';
-  } with [freestanding]
+    local state = 1
 
-  fn tsafe noexcept panic_impl(reason: bare::PanicCode) {
-    "implement me";
-    '0';
-  } with [noreturn, freestanding]
+    while state ~= 0 do
+      t = n.peek()
+      
+      if t.ty == 'sym' and t.v == ')' then
+        n.next()
+        break
+      else
+        -- This is the start of an argument
 
-  fn tsafe noexcept nmem_impl(pending_size: u64): bool {
-    "implement me";
+        local paren_state = 0
+        local cur_state = 0
+        local brak_state = 0
+        local data = ''
 
-    ret false;
-  } with [freestanding]
-};
+        while true do
+          t = n.peek()
 
-pub "c" fn efi_main(): u32 {
-  NO3::PrepareRuntime(alloc: support::alloc_impl,
-                      dealloc: support::dealloc_impl,
-                      perror: support::perror_impl,
-                      panic: support::panic_impl,
-                      nmem: support::nmem_impl);
+          if t.ty == 'sym' and t.v == ')' and paren_state == 0 and cur_state == 0 and brak_state == 0 then
+            break
+          end
 
-  retif !NO3::InitializeRuntime(), 100;
+          n.next()
 
-  LoadKernel();
-} with [align(4096)]
+          if t.ty == 'sym' and t.v == '(' then
+            paren_state = paren_state + 1
+          elseif t.ty == 'sym' and t.v == ')' then
+            paren_state = paren_state - 1
+          elseif t.ty == 'sym' and t.v == '[' then
+            brak_state = brak_state + 1
+          elseif t.ty == 'sym' and t.v == ']' then
+            brak_state = brak_state - 1
+          elseif t.ty == 'sym' and t.v == ',' and paren_state == 0 and cur_state == 0 and brak_state == 0 then
+            break
+          end
+
+          if t.ty == 'key' or t.ty == 'op' or t.ty == 'sym' 
+              or t.ty == 'name' or t.ty == 'num' 
+              or t.ty == 'int' then
+            data = data .. ' ' .. t.v
+          elseif t.ty == 'str' or t.ty == 'char' then
+            data = data .. ' ' .. n.enstr(t.v)
+          elseif t.ty == 'macb' then
+            data = data .. ' @(' .. t.v .. ')'
+          elseif t.ty == 'macr' then
+            data = data .. ' @' .. t.v
+          elseif t.ty == 'note' then
+            data = data .. ' /*' .. t.v .. '*/'
+          end
+        end
+
+        table.insert(args, data)
+      end
+    end
+
+    return args
+  end
+)
+
+@(fn metamorphic() {
+  local args = n.get_args()
+
+  if #args ~= 1 then
+    n.abort('metamorphic expects 2 argument')
+  end
+
+  local main = args[1]
+
+  -- Do processing
+
+  print(main)
+
+  return main
+})
+
+@metamorphic(fn(){})
