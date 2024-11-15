@@ -114,6 +114,8 @@ namespace nr {
     virtual ~ISourceView() = default;
 
     virtual std::optional<std::pair<uint32_t, uint32_t>> off2rc(uint32_t offset) noexcept = 0;
+    virtual std::optional<std::vector<std::string_view>> rect(uint32_t x0, uint32_t y0, uint32_t x1,
+                                                              uint32_t y1) noexcept = 0;
   };
 };  // namespace nr
 

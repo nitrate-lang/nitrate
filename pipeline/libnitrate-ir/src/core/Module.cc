@@ -49,6 +49,20 @@ public:
     /// TODO: Implement source offset resolver
     qcore_implement();
   }
+
+  virtual std::optional<std::vector<std::string_view>> rect(uint32_t x0, uint32_t y0, uint32_t x1,
+                                                            uint32_t y1) noexcept override {
+    /// TODO: Implement source offset resolver
+    qcore_implement();
+
+    (void)x0;
+    (void)y0;
+    (void)x1;
+    (void)y1;
+
+    return std::nullopt;
+  }
+
   virtual ~LexerSourceResolver() = default;
 };
 

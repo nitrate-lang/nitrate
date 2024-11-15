@@ -97,7 +97,7 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
   qcore_arena scratch_arena;
   std::swap(nr::nr_arena.get(), *scratch_arena.get());
 
-  /// TODO: Get target info
+  /// TODO: Get the target platform infoformation
   TargetInfo target_info;
 
   std::unique_ptr<IReport> G = std::make_unique<DiagnosticManager>();
@@ -465,7 +465,7 @@ static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &s, IRe
   return R;
 }
 
-static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &, IReport *,
+static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &, IReport *G,
                                                          nr::Expr *lhs, qlex_op_t op) {
 #define STD_POST_OP(op) nr::create<nr::PostUnExpr>(lhs, nr::Op::op)
 
@@ -481,7 +481,8 @@ static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &, 
       break;
     }
     default: {
-      /// FIXME: Message
+      G->report(nr::CompilerError, IC::Error, "Operator is not supported in post-unary expression",
+                lhs->getLoc());
       break;
     }
   }
@@ -716,7 +717,7 @@ static EResult nrgen_field(NRBuilder &b, PState &s, IReport *G, qparse::Field *n
     return std::nullopt;
   }
 
-  /// TODO: Handle this
+  /// TODO: Support for named composite field indexing
 
   Expr *field = createStringLiteral(n->get_field());
   return create<Index>(base.value(), field);
@@ -765,7 +766,7 @@ static EResult nrgen_slice(NRBuilder &b, PState &s, IReport *G, qparse::Slice *n
 }
 
 static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G, qparse::FString *n) {
-  /// TODO: Cleanup
+  /// TODO: Cleanup the fstring implementation
 
   if (n->get_items().empty()) {
     return b.createStringDataArray("");

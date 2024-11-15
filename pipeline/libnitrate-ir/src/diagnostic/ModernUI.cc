@@ -54,10 +54,7 @@ boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>:
 const boost::bimap<IssueCode, IssueInfo> nr::issue_info = make_bimap<IssueCode, IssueInfo>({
     {Info, {"info", "%s", {}}},
     {CompilerError, {"Compiler Error", "An error occurred during compilation: %s", {}}},
-    {PTreeInvalid,
-     {"ptree-invalid", /* FIXME: Summarize */
-      "%s",
-      {}}},
+    {PTreeInvalid, {"ptree-invalid", "%s", {}}},
     {SignalReceived, {"signal-recv", "The compiler received an unrecoverable process signal.", {}}},
     {DSPolyCyclicRef,
      {"ds-cyclic-ref",
@@ -75,32 +72,17 @@ const boost::bimap<IssueCode, IssueInfo> nr::issue_info = make_bimap<IssueCode, 
      {"ds-bad-tmp-node",
       "Internal module IR data structure contains an unexpected temporary node.",
       {"This is an (INTERNAL) compiler error. Please report this issue."}}},
-    {FunctionRedefinition,
-     {"function-redefinition", /* FIXME: Summarize */
-      "write me",
-      {}}},
+    {FunctionRedefinition, {"function-redefinition", "write me", {}}},
     {VariableRedefinition,
-     {"variable-redefinition", /* FIXME: Summarize */
+     {"variable-redefinition",
       "Variable '%s' is redefined.",
       {"Ensure that all variables in scope are only defined once."}}},
-    {UnknownFunction,
-     {"unknown-function", /* FIXME: Summarize */
-      "write me",
-      {}}},
-    {TooManyArguments,
-     {"too-many-arguments", /* FIXME: Summarize */
-      "write me",
-      {}}},
-    {UnknownArgument,
-     {"unknown-argument", /* FIXME: Summarize */
-      "write me",
-      {}}},
-    {TypeInference,
-     {"type-inference", /* FIXME: Summarize */
-      "Type inference failed: %s",
-      {}}},
+    {UnknownFunction, {"unknown-function", "write me", {}}},
+    {TooManyArguments, {"too-many-arguments", "write me", {}}},
+    {UnknownArgument, {"unknown-argument", "write me", {}}},
+    {TypeInference, {"type-inference", "Type inference failed: %s", {}}},
     {NameManglingTypeInfer,
-     {"nm-type-infer", /* FIXME: Summarize */
+     {"nm-type-infer",
       "Failed to mangle the name of symbol named: '%s'.",
       {
           "Ensure that the symbol node is correctly typed.",
@@ -110,12 +92,9 @@ const boost::bimap<IssueCode, IssueInfo> nr::issue_info = make_bimap<IssueCode, 
       "Unexpected 'undef' keyword",
       {"The 'undef' keyword is only permitted as default values for variable declarations."}}},
 
-    {UnknownType,
-     {"unknown-type", /* FIXME: Summarize */
-      "write me",
-      {}}},
+    {UnknownType, {"unknown-type", "write me", {}}},
     {UnresolvedIdentifier,
-     {"unresolved-identifier", /* FIXME: Summarize */
+     {"unresolved-identifier",
       "404 - Identifier '%s' not found.",
       {"Make sure the identifier is defined in the current scope.", "Check for typos.",
        "Check for visibility."}}},
@@ -305,6 +284,7 @@ std::string nr::mint_modern_message(const IReport::ReportData &R, ISourceView *B
   uint32_t sl, sc, el, ec;
 
   { /* Print filename and source row:column start and end */
+    /// FIXME: Render filename
     ss << "\x1b[37;1m" << "??" << ":";
 
     auto default_if = std::pair<uint32_t, uint32_t>(UINT32_MAX, UINT32_MAX);
@@ -413,42 +393,21 @@ std::string nr::mint_modern_message(const IReport::ReportData &R, ISourceView *B
     int64_t x_0 = sc, y_0 = sl, x_1 = ec, y_1 = el;
     confine_rect_bounds(x_0, y_0, x_1, y_1, WINDOW_WIDTH);
 
-    size_t width = x_1 - x_0;
-    size_t height = y_1 - y_0;
-    size_t buf_size = width * height + 1;
-    std::unique_ptr<char[]> out(new char[buf_size]);
+    auto source_lines = B->rect(x_0, y_0, x_1, y_1);
 
-    /// FIXME: Get reference to lexer
-
-    qcore_implement();
-
-    // qlex_rect(lx, x_0, y_0, x_1, y_1, out.get(), buf_size, ' ');
-
-    std::vector<std::string_view> source_lines;
-
-    for (size_t i = 0; i < height; i++) {
-      source_lines.push_back(std::string_view(&out[i * width], width));
-    }
-
-    /*= {
-        R"(pub "c" fn main(args: [string]): i32 {                      )",
-        R"(  print(20); // Hello world                                 )",
-        R"(}                                                           )"};
-        */
-
-    { /* Render code view */
+    if (source_lines.has_value()) {
       std::string sep;
       for (size_t i = 0; i < WINDOW_WIDTH + 2; i++) {
         sep += "━";
       }
 
       ss << ind << "  \x1b[32m┏" << sep << "┓\x1b[0m\n";
-      for (size_t i = 0; i < source_lines.size(); i++) {
-        auto lines = word_break(source_lines[i], WINDOW_WIDTH);
+      for (size_t i = 0; i < source_lines.value().size(); i++) {
+        auto lines = word_break(source_lines.value()[i], WINDOW_WIDTH);
 
         for (const auto &line : lines) {
           if (sl != UINT32_MAX) {
-            ss << std::setw(ind_sz + 1) << (sl - (source_lines.size() / 2)) + i + 1;
+            ss << std::setw(ind_sz + 1) << (sl - (source_lines.value().size() / 2)) + i + 1;
           } else {
             ss << std::setw(ind_sz + 1) << "?";
           }
