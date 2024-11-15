@@ -589,15 +589,24 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
       case QIR_NODE_INT: {
         Int *I = E->as<Int>();
 
-        nr::uint128_t num = I->getValue();
-
-        if (num > UINT64_MAX) {
-          T = create<I128Ty>();
-        } else if (num > UINT32_MAX) {
-          T = create<I64Ty>();
-        } else {
-          T = create<I32Ty>();
+        switch (I->getSize()) {
+          case nr::IntSize::U1:
+            T = create<U1Ty>();
+            break;
+          case nr::IntSize::U8:
+            T = create<U8Ty>();
+            break;
+          case nr::IntSize::I32:
+            T = create<I32Ty>();
+            break;
+          case nr::IntSize::I64:
+            T = create<I64Ty>();
+            break;
+          case nr::IntSize::U128:
+            T = create<U128Ty>();
+            break;
         }
+
         break;
       }
       case QIR_NODE_FLOAT: {

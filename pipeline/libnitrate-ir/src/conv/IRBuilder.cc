@@ -54,20 +54,13 @@ NRBuilder::NRBuilder(std::string module_name,
   m_result = std::nullopt;
   m_root = nullptr;
 
-  m_current_scope = nullptr;
-  m_current_function = std::nullopt;
-
   m_root = create<Seq>(SeqItems());
-  m_current_scope = m_root;
 }
 
 NRBuilder::~NRBuilder() noexcept {
   m_state = SelfState::Destroyed;
   m_result = std::nullopt;
   m_root = nullptr;
-
-  m_current_scope = nullptr;
-  m_current_function = std::nullopt;
 }
 
 NRBuilder &NRBuilder::operator=(NRBuilder &&rhs) noexcept {
@@ -78,15 +71,9 @@ NRBuilder &NRBuilder::operator=(NRBuilder &&rhs) noexcept {
   this->m_result = std::move(rhs.m_result);
   this->m_root = std::move(rhs.m_root);
 
-  this->m_current_scope = rhs.m_current_scope;
-  this->m_current_function = rhs.m_current_function;
-
   rhs.m_state = SelfState::Destroyed;
   rhs.m_result = std::nullopt;
   rhs.m_root = nullptr;
-
-  rhs.m_current_scope = nullptr;
-  rhs.m_current_function = std::nullopt;
 
   return *this;
 }
@@ -99,15 +86,9 @@ NRBuilder::NRBuilder(NRBuilder &&rhs) noexcept {
   this->m_result = std::move(rhs.m_result);
   this->m_root = std::move(rhs.m_root);
 
-  this->m_current_scope = rhs.m_current_scope;
-  this->m_current_function = rhs.m_current_function;
-
   rhs.m_state = SelfState::Destroyed;
   rhs.m_result = std::nullopt;
   rhs.m_root = nullptr;
-
-  rhs.m_current_scope = nullptr;
-  rhs.m_current_function = std::nullopt;
 }
 
 void NRBuilder::contract_enforce_(bool cond, std::string_view cond_str SOURCE_LOCATION_PARAM,
@@ -215,8 +196,6 @@ NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
   if (m_state == SelfState::Destroyed) {
     contract_enforce(m_result == std::nullopt);
     contract_enforce(m_root == nullptr);
-    contract_enforce(m_current_scope == nullptr);
-    contract_enforce(m_current_function == std::nullopt);
   } else {
     contract_enforce(m_root != nullptr);
 
@@ -243,15 +222,6 @@ NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
 
       contract_enforce(out_expr->getKind() == QIR_NODE_SEQ);
       r.m_root = out_expr->as<Seq>();
-    }
-
-    { /* Update state references to pointer to their respective nodes in the clone */
-      r.m_current_scope = static_cast<Seq *>(node_map.at(m_current_scope));
-
-      if (m_current_function) {
-        r.m_current_function = static_cast<Fn *>(node_map.at(m_current_function.value()));
-        contract_enforce(r.m_current_function != std::nullopt);
-      }
     }
   }
 
@@ -302,17 +272,12 @@ void NRBuilder::finish(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   contract_enforce(m_root != nullptr);
 
   m_state = SelfState::Finished;
-
-  m_current_scope = nullptr;
-  m_current_function = std::nullopt;
 }
 
 bool NRBuilder::verify(std::optional<IReport *> the_log SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Finished || m_state == SelfState::Verified);
   contract_enforce(m_result == std::nullopt);
   contract_enforce(m_root != nullptr);
-  contract_enforce(m_current_scope == nullptr);
-  contract_enforce(m_current_function == std::nullopt);
 
   if (m_state == SelfState::Verified) {
     return true;
@@ -370,8 +335,6 @@ bool NRBuilder::verify(std::optional<IReport *> the_log SOURCE_LOCATION_PARAM) n
   contract_enforce(m_state == SelfState::Verified);
   contract_enforce(m_result == std::nullopt);
   contract_enforce(m_root != nullptr);
-  contract_enforce(m_current_scope == nullptr);
-  contract_enforce(m_current_function == std::nullopt);
 
   return true;
 }
@@ -379,8 +342,6 @@ bool NRBuilder::verify(std::optional<IReport *> the_log SOURCE_LOCATION_PARAM) n
 qmodule_t *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   contract_enforce(m_state == SelfState::Verified || m_state == SelfState::Emitted);
   contract_enforce(m_root != nullptr);
-  contract_enforce(m_current_scope == nullptr);
-  contract_enforce(m_current_function == std::nullopt);
 
   if (m_state == SelfState::Emitted) {
     contract_enforce(m_result != std::nullopt);
@@ -403,4 +364,11 @@ qmodule_t *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) noexcept {
 
     return m_result.value();
   }
+}
+
+void NRBuilder::appendToRoot(Expr *root SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed);
+  contract_enforce(m_root != nullptr);
+
+  m_root->getItems().push_back(root);
 }

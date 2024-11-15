@@ -116,9 +116,6 @@ namespace nr {
     std::optional<qmodule_t *> m_result;
     Seq *m_root;
 
-    Seq *m_current_scope;
-    std::optional<Fn *> m_current_function;
-
     std::unordered_map<std::string_view, std::string> m_interned_strings;
     std::unordered_map<std::string_view, std::string> m_ephermel_strings;
 
@@ -237,6 +234,8 @@ namespace nr {
      */
     qmodule_t *get_module(SOURCE_LOCATION_PARAM_ONCE) noexcept;
 
+    void appendToRoot(Expr *node SOURCE_LOCATION_PARAM) noexcept;
+
     ///**************************************************************************///
     // Create linkable symbols
 
@@ -291,7 +290,8 @@ namespace nr {
 
     Int *createBool(bool value SOURCE_LOCATION_PARAM) noexcept;
 
-    Int *createFixedInteger(uint128_t value, IntSize width SOURCE_LOCATION_PARAM) noexcept;
+    Int *createFixedInteger(boost::multiprecision::cpp_int value,
+                            IntSize width SOURCE_LOCATION_PARAM) noexcept;
 
     Float *createFixedFloat(bigfloat_t value, FloatSize width SOURCE_LOCATION_PARAM) noexcept;
 

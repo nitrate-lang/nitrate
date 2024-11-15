@@ -44,7 +44,6 @@ Fn *NRBuilder::createFunctionDefintion(std::string_view name, std::span<FnParam>
                                        bool foreign SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
-  contract_enforce(m_current_scope != nullptr);
   contract_enforce(ret_ty != nullptr && static_cast<Expr *>(ret_ty)->isType());
 
   Params parameters;
@@ -66,8 +65,6 @@ Fn *NRBuilder::createFunctionDefintion(std::string_view name, std::span<FnParam>
 
   Fn *fn =
       create<Fn>(name, std::move(parameters), ret_ty, std::nullopt, is_variadic, AbiTag::Default);
-
-  m_current_scope->getItems().push_back(fn);
 
   return compiler_trace(debug_info(fn, DEBUG_INFO));
 }
@@ -78,7 +75,6 @@ Fn *NRBuilder::createFunctionDeclaration(std::string_view name, std::span<FnPara
                                          bool foreign SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
-  contract_enforce(m_current_scope != nullptr);
   contract_enforce(ret_ty != nullptr && static_cast<Expr *>(ret_ty)->isType());
 
   Params parameters;
@@ -100,8 +96,6 @@ Fn *NRBuilder::createFunctionDeclaration(std::string_view name, std::span<FnPara
 
   Fn *fn =
       create<Fn>(name, std::move(parameters), ret_ty, std::nullopt, is_variadic, AbiTag::Default);
-
-  m_current_scope->getItems().push_back(fn);
 
   return compiler_trace(debug_info(fn, DEBUG_INFO));
 }
@@ -158,7 +152,6 @@ Local *NRBuilder::createVariable(std::string_view name, Type *ty, Vis visibility
                                  bool is_readonly SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
-  contract_enforce(m_current_scope != nullptr);
   contract_enforce(ty != nullptr && static_cast<Expr *>(ty)->isType());
 
   Local *local = create<Local>(name, createIgn(), AbiTag::Default);
@@ -169,8 +162,6 @@ Local *NRBuilder::createVariable(std::string_view name, Type *ty, Vis visibility
   (void)is_readonly;
 
   local = compiler_trace(debug_info(local, DEBUG_INFO));
-
-  m_current_scope->getItems().push_back(local);
 
   return local;
 }

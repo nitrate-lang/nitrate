@@ -892,9 +892,8 @@ namespace nr {
   enum class IntSize : uint8_t {
     U1,
     U8,
-    U16,
-    U32,
-    U64,
+    I32,
+    I64,
     U128,
   };
 

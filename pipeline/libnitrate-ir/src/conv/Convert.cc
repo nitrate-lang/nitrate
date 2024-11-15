@@ -41,7 +41,6 @@
 #include <core/PassManager.hh>
 #include <cstdint>
 #include <cstring>
-#include <limits>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/Format.hh>
 #include <nitrate-ir/IRBuilder.hh>
@@ -109,6 +108,7 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
   bool success = false;
 
   if (auto root = nrgen_one(builder, s, G.get(), static_cast<qparse::Node *>(base))) {
+    builder.appendToRoot(root.value());
     builder.finish();
 
     if (builder.verify(diagnostics ? std::make_optional(G.get()) : std::nullopt)) {
@@ -580,17 +580,29 @@ static EResult nrgen_terexpr(NRBuilder &b, PState &s, IReport *G, qparse::Ternar
 }
 
 static EResult nrgen_int(NRBuilder &b, PState &, IReport *G, qparse::ConstInt *n) {
+  /**
+   * Integer types:
+   *  i32:  [0 - 2147483647]
+   *  i64:  [2147483648 - 9223372036854775807]
+   *  u128: [9223372036854775808 - 340282366920938463463374607431768211455]
+   *  error: [340282366920938463463374607431768211456 - ...]
+   */
   boost::multiprecision::cpp_int num(std::string_view(n->get_value()));
 
-  if (num > std::numeric_limits<uint128_t>::max()) {
+  if (num < 0) {
+    G->report(CompilerError, IC::Error, "Integer literal should never be negative");
+    return std::nullopt;
+  }
+
+  if (num <= 2147483647) {
+    return b.createFixedInteger(num, IntSize::I32);
+  } else if (num <= 9223372036854775807) {
+    return b.createFixedInteger(num, IntSize::I64);
+  } else if (num <= boost::multiprecision::cpp_int("340282366920938463463374607431768211455")) {
+    return b.createFixedInteger(num, IntSize::U128);
+  } else {
     G->report(CompilerError, IC::Error, "Integer literal is not representable in u128 type");
     return std::nullopt;
-  } else if (num > UINT64_MAX) {
-    return b.createFixedInteger(num.convert_to<uint128_t>(), IntSize::U128);
-  } else if (num > UINT32_MAX) {
-    return b.createFixedInteger(num.convert_to<uint128_t>(), IntSize::U64);
-  } else {
-    return b.createFixedInteger(num.convert_to<uint128_t>(), IntSize::U32);
   }
 }
 
@@ -818,20 +830,8 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G, qparse::FStrin
   return concated;
 }
 
-static EResult nrgen_ident(NRBuilder &b, PState &s, IReport *G, qparse::Ident *n) {
-  if (s.inside_function) {
-    qcore_assert(!s.local_scope.empty());
-
-    auto find = s.local_scope.top().find(n->get_name());
-
-    if (find != s.local_scope.top().end()) {
-      return create<Ident>(b.intern(n->get_name()), find->second);
-    }
-  }
-
-  auto str = s.cur_named(n->get_name());
-
-  return create<Ident>(b.intern(std::string_view(str)), nullptr);
+static EResult nrgen_ident(NRBuilder &b, PState &s, IReport *, qparse::Ident *n) {
+  return create<Ident>(b.intern(s.cur_named(n->get_name())), nullptr);
 }
 
 static EResult nrgen_seq_point(NRBuilder &b, PState &s, IReport *G, qparse::SeqPoint *n) {
@@ -1294,15 +1294,15 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
 
     auto props = convert_purity(func_ty->get_purity());
 
+    Fn *fndef = b.createFunctionDefintion(
+        b.intern(n->get_name()), parameters, ret_type.value()->asType(), func_ty->is_variadic(),
+        Vis::Pub, props.first, props.second, func_ty->is_noexcept(), func_ty->is_foreign());
+
     auto body = next_one(n->get_body());
     if (!body.has_value()) {
       G->report(CompilerError, nr::IC::Error, "Failed to convert function body", n->get_pos());
       return std::nullopt;
     }
-
-    Fn *fndef = b.createFunctionDefintion(
-        b.intern(n->get_name()), parameters, ret_type.value()->asType(), func_ty->is_variadic(),
-        Vis::Pub, props.first, props.second, func_ty->is_noexcept(), func_ty->is_foreign());
 
     fndef->setAbiTag(s.abi_mode);
     fndef->setBody(body.value()->as<Seq>());
@@ -1312,13 +1312,6 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
 }
 
 static BResult nrgen_subsystem(NRBuilder &b, PState &s, IReport *G, qparse::SubsystemDecl *n) {
-  /**
-   * @brief Convert a subsystem declaration to a nr sequence with
-   * namespace prefixes.
-   */
-
-  BResult items;
-
   if (!n->get_body()) {
     return std::nullopt;
   }
@@ -1331,6 +1324,7 @@ static BResult nrgen_subsystem(NRBuilder &b, PState &s, IReport *G, qparse::Subs
     s.ns_prefix += "::" + std::string(n->get_name());
   }
 
+  BResult items = std::vector<Expr *>();
   for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end(); ++it) {
     auto item = next_any(*it);
     if (!item.has_value()) {
@@ -1595,20 +1589,20 @@ static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G, qparse::ForStmt *n
   auto body = next_one(n->get_body());
 
   if (!init.has_value()) {
-    init = create<Int>(1, IntSize::U32);
+    init = create<Int>(1, IntSize::I32);
   }
 
   if (!cond.has_value()) {
-    cond = create<Int>(1, IntSize::U32);  // infinite loop like 'for (;;) {}'
+    cond = create<Int>(1, IntSize::I32);  // infinite loop like 'for (;;) {}'
     cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
   }
 
   if (!step.has_value()) {
-    step = create<Int>(1, IntSize::U32);
+    step = create<Int>(1, IntSize::I32);
   }
 
   if (!body.has_value()) {
-    body = create<Int>(1, IntSize::U32);
+    body = create<Int>(1, IntSize::I32);
   }
 
   return create<For>(init.value(), cond.value(), step.value(), body.value());

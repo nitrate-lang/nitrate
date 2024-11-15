@@ -46,7 +46,8 @@ Int *NRBuilder::createBool(bool value SOURCE_LOCATION_PARAM) noexcept {
   return compiler_trace(debug_info(create<Int>(value, IntSize::U1), DEBUG_INFO));
 }
 
-Int *NRBuilder::createFixedInteger(uint128_t value, IntSize width SOURCE_LOCATION_PARAM) noexcept {
+Int *NRBuilder::createFixedInteger(boost::multiprecision::cpp_int value,
+                                   IntSize width SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
@@ -61,19 +62,14 @@ Int *NRBuilder::createFixedInteger(uint128_t value, IntSize width SOURCE_LOCATIO
                        value <= std::numeric_limits<uint8_t>::max());
       break;
     }
-    case nr::IntSize::U16: {
-      contract_enforce(value >= std::numeric_limits<uint16_t>::min() &&
-                       value <= std::numeric_limits<uint16_t>::max());
+    case nr::IntSize::I32: {
+      contract_enforce(value >= std::numeric_limits<int32_t>::min() &&
+                       value <= std::numeric_limits<int32_t>::max());
       break;
     }
-    case nr::IntSize::U32: {
-      contract_enforce(value >= std::numeric_limits<uint32_t>::min() &&
-                       value <= std::numeric_limits<uint32_t>::max());
-      break;
-    }
-    case nr::IntSize::U64: {
-      contract_enforce(value >= std::numeric_limits<uint64_t>::min() &&
-                       value <= std::numeric_limits<uint64_t>::max());
+    case nr::IntSize::I64: {
+      contract_enforce(value >= std::numeric_limits<int64_t>::min() &&
+                       value <= std::numeric_limits<int64_t>::max());
       break;
     }
     case nr::IntSize::U128: {
@@ -83,7 +79,8 @@ Int *NRBuilder::createFixedInteger(uint128_t value, IntSize width SOURCE_LOCATIO
     }
   }
 
-  return compiler_trace(debug_info(create<Int>(value, width), DEBUG_INFO));
+  return compiler_trace(
+      debug_info(create<Int>(value.convert_to<unsigned __int128>(), width), DEBUG_INFO));
 }
 
 Float *NRBuilder::createFixedFloat(bigfloat_t value,

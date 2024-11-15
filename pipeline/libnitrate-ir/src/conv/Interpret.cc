@@ -65,7 +65,7 @@ namespace comptime {
     IntSize w;
     bool is_signed;
 
-    IntegerValue(uint128_t val = 0, IntSize width = IntSize::U32) noexcept {
+    IntegerValue(uint128_t val = 0, IntSize width = IntSize::I32) noexcept {
       v = val;
       w = width;
       is_signed = false;
