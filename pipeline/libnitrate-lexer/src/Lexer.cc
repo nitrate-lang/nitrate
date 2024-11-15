@@ -1001,28 +1001,14 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
               ... @macro_name  ...
           */
 
-          while (std::isalnum(c) || c == '_') {
+          while (std::isalnum(c) || c == '_' || c == ':') {
             buf += c;
             c = getc();
           }
 
-          while (true) {
-            if (c == '(') {
-              state_parens++;
-            } else if (c == ')') {
-              state_parens--;
-            }
+          m_pushback.push_back(c);
 
-            buf += c;
-
-            if (state_parens == 0) {
-              return qlex_tok_t(qMacr, put_string(std::move(buf)), start_pos, cur_loc());
-            }
-
-            c = getc();
-          }
-
-          continue;
+          return qlex_tok_t(qMacr, put_string(std::move(buf)), start_pos, cur_loc());
         }
         case LexState::BlockMacro: {
           while (true) {
