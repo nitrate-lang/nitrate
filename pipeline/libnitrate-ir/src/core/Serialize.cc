@@ -112,6 +112,11 @@ static inline FILE &operator<<(FILE &ss, const size_t s) {
   return ss;
 }
 
+static inline FILE &operator<<(FILE &ss, const double s) {
+  fprintf(&ss, "%f", s);
+  return ss;
+}
+
 static void escape_string(FILE &ss, std::string_view input) {
   fputc('"', &ss);
 
