@@ -51,13 +51,14 @@ static int get_pid() {
   return pid;
 }
 
-void MyLogSink::send(google::LogSeverity severity, const char*, const char* base_filename, int line,
-                     const struct tm* tm, const char* message, std::size_t message_len) {
-  static const std::unordered_map<google::LogSeverity, std::string_view> lvl_names = {
-      {google::GLOG_INFO, "info"},
-      {google::GLOG_WARNING, "warn"},
-      {google::GLOG_ERROR, "fail"},
-      {google::GLOG_FATAL, "crit"}};
+void MyLogSink::send(google::LogSeverity severity, const char*,
+                     const char* base_filename, int line, const struct tm* tm,
+                     const char* message, std::size_t message_len) {
+  static const std::unordered_map<google::LogSeverity, std::string_view>
+      lvl_names = {{google::GLOG_INFO, "info"},
+                   {google::GLOG_WARNING, "warn"},
+                   {google::GLOG_ERROR, "fail"},
+                   {google::GLOG_FATAL, "crit"}};
 
   { /* Get timestamp in Syslog format */
     char timestamp[64];
@@ -69,6 +70,7 @@ void MyLogSink::send(google::LogSeverity severity, const char*, const char* base
   m_log_file << " nitrated[" << get_pid() << "]: ";
   m_log_file << "{" << base_filename << ":" << line << "}: ";
   m_log_file << "(" << lvl_names.at(severity) << "): ";
-  m_log_file << "\"" << escape_message(std::string_view(message, message_len)) << "\"";
+  m_log_file << "\"" << escape_message(std::string_view(message, message_len))
+             << "\"";
   m_log_file << std::endl;
 }

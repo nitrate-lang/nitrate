@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -43,11 +45,13 @@ Int *NRBuilder::createBool(bool value SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
-  return compiler_trace(debug_info(create<Int>(value, IntSize::U1), DEBUG_INFO));
+  return compiler_trace(
+      debug_info(create<Int>(value, IntSize::U1), DEBUG_INFO));
 }
 
 Int *NRBuilder::createFixedInteger(boost::multiprecision::cpp_int value,
-                                   IntSize width SOURCE_LOCATION_PARAM) noexcept {
+                                   IntSize width
+                                       SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
@@ -79,18 +83,19 @@ Int *NRBuilder::createFixedInteger(boost::multiprecision::cpp_int value,
     }
   }
 
-  return compiler_trace(
-      debug_info(create<Int>(value.convert_to<unsigned __int128>(), width), DEBUG_INFO));
+  return compiler_trace(debug_info(
+      create<Int>(value.convert_to<unsigned __int128>(), width), DEBUG_INFO));
 }
 
-Float *NRBuilder::createFixedFloat(bigfloat_t value,
-                                   FloatSize width SOURCE_LOCATION_PARAM) noexcept {
+Float *NRBuilder::createFixedFloat(
+    bigfloat_t value, FloatSize width SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   switch (width) {
     case nr::FloatSize::F16: {
-      contract_enforce(value >= -65504 && value <= 65504 && "This might be a bug?");
+      contract_enforce(value >= -65504 && value <= 65504 &&
+                       "This might be a bug?");
       break;
     }
     case nr::FloatSize::F32: {
@@ -113,7 +118,8 @@ Float *NRBuilder::createFixedFloat(bigfloat_t value,
 }
 
 List *NRBuilder::createStringDataArray(std::string_view value,
-                                       ABIStringStyle style SOURCE_LOCATION_PARAM) noexcept {
+                                       ABIStringStyle style
+                                           SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
@@ -133,12 +139,13 @@ List *NRBuilder::createStringDataArray(std::string_view value,
   return compiler_trace(debug_info(createList(items, true), DEBUG_INFO));
 }
 
-List *NRBuilder::createList(std::span<Expr *> items,
-                            /* Require assert(typeof(result)==typeof(array<result.element,
-                             * result.size>)) ? Reason: It has to do with type inference and
-                             * implicit conversions of the elements in the list.
-                             */
-                            bool cast_homogenous SOURCE_LOCATION_PARAM) noexcept {
+List *NRBuilder::createList(
+    std::span<Expr *> items,
+    /* Require assert(typeof(result)==typeof(array<result.element,
+     * result.size>)) ? Reason: It has to do with type inference and
+     * implicit conversions of the elements in the list.
+     */
+    bool cast_homogenous SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 

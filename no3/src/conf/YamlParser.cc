@@ -1,16 +1,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///           ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                  ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓█▓▒▒▓███▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///           ░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///             ░▒▓█▓▒░                                                      ///
-///              ░▒▓██▓▒░                                                    ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
-///   * NITRATE PACKAGE MANAGER - The official app for the Nitrate language. ///
+///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
 ///                                                                          ///
 ///   The Nitrate Toolchain is free software; you can redistribute it or     ///
@@ -34,18 +36,21 @@
 #include <conf/Parser.hh>
 #include <core/Logger.hh>
 
-std::optional<no3::conf::Config> no3::conf::YamlConfigParser::parse(const std::string &content) {
+std::optional<no3::conf::Config> no3::conf::YamlConfigParser::parse(
+    const std::string &content) {
   YAML::Node config;
 
   try {
     config = YAML::Load(content);
   } catch (YAML::ParserException &e) {
-    LOG(ERROR) << "Failed to parse YAML configuration: " << e.what() << std::endl;
+    LOG(ERROR) << "Failed to parse YAML configuration: " << e.what()
+               << std::endl;
     return std::nullopt;
   }
 
   if (!config.IsMap()) {
-    LOG(ERROR) << "Invalid YAML configuration: root element must be a map" << std::endl;
+    LOG(ERROR) << "Invalid YAML configuration: root element must be a map"
+               << std::endl;
     return std::nullopt;
   }
 
@@ -71,20 +76,23 @@ std::optional<no3::conf::Config> no3::conf::YamlConfigParser::parse(const std::s
         if (it2->IsScalar())
           v.push_back(it2->as<std::string>());
         else {
-          LOG(ERROR) << "Invalid YAML configuration: unsupported value type" << std::endl;
+          LOG(ERROR) << "Invalid YAML configuration: unsupported value type"
+                     << std::endl;
           return std::nullopt;
         }
       }
 
       grp.set(it->first.as<std::string>(), v);
     } else {
-      LOG(ERROR) << "Invalid YAML configuration: unsupported value type" << std::endl;
+      LOG(ERROR) << "Invalid YAML configuration: unsupported value type"
+                 << std::endl;
       return std::nullopt;
     }
   }
 
   if (!grp.has<int64_t>("version")) {
-    LOG(ERROR) << "Invalid YAML configuration: missing 'version' key" << std::endl;
+    LOG(ERROR) << "Invalid YAML configuration: missing 'version' key"
+               << std::endl;
     return std::nullopt;
   }
 

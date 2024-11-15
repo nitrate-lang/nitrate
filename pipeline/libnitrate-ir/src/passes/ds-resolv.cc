@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -47,7 +49,8 @@
 
 // using namespace nr;
 
-// static std::pair<std::vector<std::string>, std::string> split_ns(std::string_view the) {
+// static std::pair<std::vector<std::string>, std::string>
+// split_ns(std::string_view the) {
 //   std::vector<std::string> ns;
 
 //   size_t start = 0;
@@ -67,7 +70,8 @@
 //   return {ns, name};
 // }
 
-// static std::string join_ns(const std::vector<std::string> &ns, const std::string &name) {
+// static std::string join_ns(const std::vector<std::string> &ns, const
+// std::string &name) {
 //   std::string result;
 
 //   for (size_t i = 0; i < ns.size(); i++) {
@@ -85,8 +89,10 @@
 //   Typename,
 // };
 
-// static std::optional<std::pair<std::string, IdentWhat>> resolve_name(qmodule_t *mod,
-//                                                                      std::string_view name) {
+// static std::optional<std::pair<std::string, IdentWhat>>
+// resolve_name(qmodule_t *mod,
+//                                                                      std::string_view
+//                                                                      name) {
 //   // This algorithm is SLOOOW; FIXME: Make it faster
 //   auto ns = split_ns(name);
 
@@ -219,7 +225,8 @@
 //         }
 
 //         { /* Check for too many arguments */
-//           if (user_args.size() > params.size() && !ft->getAttrs().contains(FnAttr::Variadic)) {
+//           if (user_args.size() > params.size() &&
+//           !ft->getAttrs().contains(FnAttr::Variadic)) {
 //             TOO_MANY_ARGUMENTS(funcname);
 //             error = true;
 //             break;
@@ -231,8 +238,9 @@
 //             /* Handle positional argument */
 //             if (std::isdigit(name.at(0))) {
 //               if (pos_i < params.size()) {
-//                 BinExpr *casted = create<BinExpr>(arg, std::get<1>(params.at(pos_i)),
-//                 Op::CastAs); arguments.at(pos_i) = casted;
+//                 BinExpr *casted = create<BinExpr>(arg,
+//                 std::get<1>(params.at(pos_i)), Op::CastAs);
+//                 arguments.at(pos_i) = casted;
 //               } else {
 //                 // This must be a variadic argument. Casting is not possible.
 //                 arguments.at(pos_i) = arg;
@@ -245,8 +253,8 @@
 //                 break;
 //               }
 
-//               BinExpr *casted = create<BinExpr>(arg, param_map[name].type, Op::CastAs);
-//               arguments[param_map[name].pos] = casted;
+//               BinExpr *casted = create<BinExpr>(arg, param_map[name].type,
+//               Op::CastAs); arguments[param_map[name].pos] = casted;
 
 //               /* Handle mixed named and positional arguments */
 //               if (param_map[name].pos <= pos_i) {
@@ -266,7 +274,8 @@
 
 //             Expr *_default = std::get<2>(params.at(i));
 //             if (_default) {
-//               arguments[i] = create<BinExpr>(_default, std::get<1>(params.at(i)), Op::CastAs);
+//               arguments[i] = create<BinExpr>(_default,
+//               std::get<1>(params.at(i)), Op::CastAs);
 //             } else {
 //               NO_MATCHING_PARAMETER(funcname, std::get<0>(params.at(i)));
 //               error = true;
@@ -282,7 +291,8 @@
 //         /* Create the call */
 //         *_cur = create<Call>(target, std::move(arguments));
 //       } else {
-//         std::cout << "Indirect call not supported yet for type: " << base->getKindName()
+//         std::cout << "Indirect call not supported yet for type: " <<
+//         base->getKindName()
 //                   << std::endl;
 //         error = true;
 //       }
@@ -290,7 +300,8 @@
 //     }
 
 //     case TmpType::ENUM: {
-//       std::string_view name = std::get<std::string_view>(cur->as<Tmp>()->getData());
+//       std::string_view name =
+//       std::get<std::string_view>(cur->as<Tmp>()->getData());
 
 //       if (!mod->getTypeMap().contains(name)) {
 //         report(UnknownType, IC::Error, name);
@@ -325,7 +336,8 @@
 //     }
 
 //     case TmpType::NAMED_TYPE: {
-//       std::string_view name = std::get<std::string_view>(cur->as<Tmp>()->getData());
+//       std::string_view name =
+//       std::get<std::string_view>(cur->as<Tmp>()->getData());
 
 //       auto resolved = resolve_name(mod, name);
 
@@ -352,14 +364,16 @@
 //       error = true;
 //     }
 
-//     /// TODO: BUG: IMPORTANT: Fix the resolution pass to guarantee that cyclic references are not
+//     /// TODO: BUG: IMPORTANT: Fix the resolution pass to guarantee that
+//     cyclic references are not
 //     /// created
 
 //     // if (!(*_cur)->isAcyclic()) {
 //     //   (*_cur)->getModule()->getDiag().push(
 //     //       QXIR_AUDIT_CONV,
 //     //       DiagMessage(
-//     //           "Cyclic polymorphic node reference detected in module IR data structure.",
+//     //           "Cyclic polymorphic node reference detected in module IR
+//     data structure.",
 //     //           IC::FatalError, DSPolyCyclicRef));
 //     //   error = true;
 //     //   return IterOp::Abort;
@@ -379,7 +393,8 @@
 //   bool error = false;
 
 //   { /* Phase 1 */
-//     for (auto it = mod->getParameterMap().begin(); it != mod->getParameterMap().end(); it++) {
+//     for (auto it = mod->getParameterMap().begin(); it !=
+//     mod->getParameterMap().end(); it++) {
 //       for (auto &[name, type, expr] : it->second) {
 //         Expr *tmp = type;
 //         if (!recursive_resolve(&tmp)) {
@@ -402,8 +417,10 @@
 //   { /* Phase 2 */
 //     std::vector<std::pair<std::string_view, std::pair<FnTy *, Fn *>>> simped;
 
-//     for (auto it = mod->getFunctions().begin(); it != mod->getFunctions().end(); it++) {
-//       simped.push_back({(*it).left, {(*it).right.first, (*it).right.second}});
+//     for (auto it = mod->getFunctions().begin(); it !=
+//     mod->getFunctions().end(); it++) {
+//       simped.push_back({(*it).left, {(*it).right.first,
+//       (*it).right.second}});
 //     }
 
 //     for (auto &[name, func] : simped) {
@@ -420,8 +437,8 @@
 //   }
 
 //   { /* Phase 3 */
-//     for (auto it = mod->getCompositeFields().begin(); it != mod->getCompositeFields().end();
-//     it++) {
+//     for (auto it = mod->getCompositeFields().begin(); it !=
+//     mod->getCompositeFields().end(); it++) {
 //       for (auto &[name, type, expr] : it->second) {
 //         Expr *tmp = type;
 //         if (!recursive_resolve(&tmp)) {
@@ -539,7 +556,8 @@
 //         ident_name = ident_name.substr(l + 1);
 //       }
 
-//       for (auto &[param_name, param_type, param_default] : mod->getParameterMap().at(name)) {
+//       for (auto &[param_name, param_type, param_default] :
+//       mod->getParameterMap().at(name)) {
 //         if (param_name == ident_name) {
 //           /// FIXME: Should point to a symbol
 //           // (*_cur)->as<Ident>()->setWhat(param_type);

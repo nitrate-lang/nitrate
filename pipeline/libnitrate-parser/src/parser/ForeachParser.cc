@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -77,7 +79,9 @@ bool qparse::parser::parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node) {
       syntax(tok, "Expected ')' after expression in foreach statement");
     }
   } else {
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)}, &expr) ||
+    if (!parse_expr(job, rd,
+                    {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
+                    &expr) ||
         !expr) {
       syntax(tok, "Expected expression after 'in' in foreach statement");
     }
@@ -89,11 +93,15 @@ bool qparse::parser::parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node) {
   if (tok.is<qOpArrow>()) {
     qlex_next(rd);
     if (!parse(job, rd, &block, false, true)) {
-      syntax(tok, "Expected block or statement list after '=>' in foreach statement");
+      syntax(
+          tok,
+          "Expected block or statement list after '=>' in foreach statement");
     }
   } else {
     if (!parse(job, rd, &block)) {
-      syntax(tok, "Expected block or statement list after '=>' in foreach statement");
+      syntax(
+          tok,
+          "Expected block or statement list after '=>' in foreach statement");
     }
   }
 

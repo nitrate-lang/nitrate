@@ -24,7 +24,8 @@ ManagedHandle open_connection(ConnectionType type, const std::string& param) {
     case ConnectionType::Port: {
       uint16_t port = 0;
 
-      std::from_chars_result res = std::from_chars(param.data(), param.data() + param.size(), port);
+      std::from_chars_result res =
+          std::from_chars(param.data(), param.data() + param.size(), port);
       if (res.ec != std::errc()) {
         LOG(ERROR) << "Invalid port number: " << param;
         return std::nullopt;
@@ -69,7 +70,8 @@ public:
     return ch;
   }
 
-  virtual std::streamsize xsputn(const char* s, std::streamsize count) override {
+  virtual std::streamsize xsputn(const char* s,
+                                 std::streamsize count) override {
     std::streamsize written = 0;
     while (written < count) {
       ssize_t n = write(m_fd, s + written, count - written);
@@ -150,15 +152,16 @@ static ManagedHandle connect_to_pipe(const std::string& path) {
 
   auto in_buf = std::make_shared<FdStreamBuf>(conn.value());
   auto out_buf = std::make_shared<FdStreamBuf>(conn.value());
-  auto stream =
-      std::make_pair(std::make_unique<BufIStream>(in_buf), std::make_unique<BufOStream>(out_buf));
+  auto stream = std::make_pair(std::make_unique<BufIStream>(in_buf),
+                               std::make_unique<BufOStream>(out_buf));
 
   LOG(INFO) << "Connected to UNIX socket " << path;
 
   return stream;
 }
 
-static std::optional<int> get_tcp_client(const std::string& host, uint16_t port) {
+static std::optional<int> get_tcp_client(const std::string& host,
+                                         uint16_t port) {
   int fd = socket(AF_INET, SOCK_STREAM, 0);
   if (fd == -1) {
     LOG(ERROR) << "Failed to create socket: " << strerror(errno);
@@ -207,8 +210,8 @@ static ManagedHandle connect_to_tcp_port(uint16_t tcp_port) {
 
   auto in_buf = std::make_shared<FdStreamBuf>(conn.value());
   auto out_buf = std::make_shared<FdStreamBuf>(conn.value());
-  auto stream =
-      std::make_pair(std::make_unique<BufIStream>(in_buf), std::make_unique<BufOStream>(out_buf));
+  auto stream = std::make_pair(std::make_unique<BufIStream>(in_buf),
+                               std::make_unique<BufOStream>(out_buf));
 
   LOG(INFO) << "Connected to TCP port " << tcp_port;
 
@@ -220,8 +223,8 @@ static ManagedHandle connect_to_stdio() {
 
   auto in_buf = std::make_shared<FdStreamBuf>(STDIN_FILENO);
   auto out_buf = std::make_shared<FdStreamBuf>(STDOUT_FILENO);
-  auto stream =
-      std::make_pair(std::make_unique<BufIStream>(in_buf), std::make_unique<BufOStream>(out_buf));
+  auto stream = std::make_pair(std::make_unique<BufIStream>(in_buf),
+                               std::make_unique<BufOStream>(out_buf));
 
   LOG(INFO) << "Connected to stdio";
 

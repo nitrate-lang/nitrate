@@ -1,16 +1,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///           ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                  ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓█▓▒▒▓███▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///           ░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///             ░▒▓█▓▒░                                                      ///
-///              ░▒▓██▓▒░                                                    ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
-///   * NITRATE PACKAGE MANAGER - The official app for the Nitrate language. ///
+///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
 ///                                                                          ///
 ///   The Nitrate Toolchain is free software; you can redistribute it or     ///
@@ -53,21 +55,22 @@ enum class KeyName {
 
 enum class ValueType { STRING, INTEGER, BOOLEAN, STRING_ARRAY };
 
-static std::unordered_map<std::string, KeyName> key_map = {{"name", KeyName::NAME},
-                                                           {"version", KeyName::VERSION},
-                                                           {"description", KeyName::DESCRIPTION},
-                                                           {"authors", KeyName::AUTHORS},
-                                                           {"emails", KeyName::EMAILS},
-                                                           {"url", KeyName::URL},
-                                                           {"licenses", KeyName::LICENSES},
-                                                           {"sources", KeyName::SOURCES},
-                                                           {"target", KeyName::TARGET},
-                                                           {"triple", KeyName::TRIPLE},
-                                                           {"cpu", KeyName::CPU},
-                                                           {"cflags", KeyName::CFLAGS},
-                                                           {"lflags", KeyName::LFLAGS},
-                                                           {"nolink", KeyName::NOLINK},
-                                                           {"packages", KeyName::PACKAGES}};
+static std::unordered_map<std::string, KeyName> key_map = {
+    {"name", KeyName::NAME},
+    {"version", KeyName::VERSION},
+    {"description", KeyName::DESCRIPTION},
+    {"authors", KeyName::AUTHORS},
+    {"emails", KeyName::EMAILS},
+    {"url", KeyName::URL},
+    {"licenses", KeyName::LICENSES},
+    {"sources", KeyName::SOURCES},
+    {"target", KeyName::TARGET},
+    {"triple", KeyName::TRIPLE},
+    {"cpu", KeyName::CPU},
+    {"cflags", KeyName::CFLAGS},
+    {"lflags", KeyName::LFLAGS},
+    {"nolink", KeyName::NOLINK},
+    {"packages", KeyName::PACKAGES}};
 
 static std::set<std::string> required_keys = {
     "name",
@@ -76,7 +79,8 @@ static std::set<std::string> required_keys = {
     "target",
 };
 
-static std::set<std::string> target_valid_values = {"sharedlib", "staticlib", "executable"};
+static std::set<std::string> target_valid_values = {"sharedlib", "staticlib",
+                                                    "executable"};
 
 /// https://stackoverflow.com/questions/1031645/how-to-detect-utf-8-in-plain-c
 bool is_utf8(const char *string) {
@@ -93,7 +97,8 @@ bool is_utf8(const char *string) {
     }
 
     if ((  // non-overlong 2-byte
-            (0xC2 <= bytes[0] && bytes[0] <= 0xDF) && (0x80 <= bytes[1] && bytes[1] <= 0xBF))) {
+            (0xC2 <= bytes[0] && bytes[0] <= 0xDF) &&
+            (0x80 <= bytes[1] && bytes[1] <= 0xBF))) {
       bytes += 2;
       continue;
     }
@@ -102,8 +107,10 @@ bool is_utf8(const char *string) {
             bytes[0] == 0xE0 && (0xA0 <= bytes[1] && bytes[1] <= 0xBF) &&
             (0x80 <= bytes[2] && bytes[2] <= 0xBF)) ||
         (  // straight 3-byte
-            ((0xE1 <= bytes[0] && bytes[0] <= 0xEC) || bytes[0] == 0xEE || bytes[0] == 0xEF) &&
-            (0x80 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF)) ||
+            ((0xE1 <= bytes[0] && bytes[0] <= 0xEC) || bytes[0] == 0xEE ||
+             bytes[0] == 0xEF) &&
+            (0x80 <= bytes[1] && bytes[1] <= 0xBF) &&
+            (0x80 <= bytes[2] && bytes[2] <= 0xBF)) ||
         (  // excluding surrogates
             bytes[0] == 0xED && (0x80 <= bytes[1] && bytes[1] <= 0x9F) &&
             (0x80 <= bytes[2] && bytes[2] <= 0xBF))) {
@@ -113,13 +120,17 @@ bool is_utf8(const char *string) {
 
     if ((  // planes 1-3
             bytes[0] == 0xF0 && (0x90 <= bytes[1] && bytes[1] <= 0xBF) &&
-            (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF)) ||
+            (0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
+            (0x80 <= bytes[3] && bytes[3] <= 0xBF)) ||
         (  // planes 4-15
-            (0xF1 <= bytes[0] && bytes[0] <= 0xF3) && (0x80 <= bytes[1] && bytes[1] <= 0xBF) &&
-            (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF)) ||
+            (0xF1 <= bytes[0] && bytes[0] <= 0xF3) &&
+            (0x80 <= bytes[1] && bytes[1] <= 0xBF) &&
+            (0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
+            (0x80 <= bytes[3] && bytes[3] <= 0xBF)) ||
         (  // plane 16
             bytes[0] == 0xF4 && (0x80 <= bytes[1] && bytes[1] <= 0x8F) &&
-            (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF))) {
+            (0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
+            (0x80 <= bytes[3] && bytes[3] <= 0xBF))) {
       bytes += 4;
       continue;
     }
@@ -130,7 +141,8 @@ bool is_utf8(const char *string) {
   return 1;
 }
 
-bool no3::conf::ValidateConfig(const no3::conf::Config &config, const std::filesystem::path &base) {
+bool no3::conf::ValidateConfig(const no3::conf::Config &config,
+                               const std::filesystem::path &base) {
   using namespace no3::core;
 
   auto keys = config.keys();
@@ -144,27 +156,34 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config, const std::files
     switch (key_map[key]) {
       case KeyName::NAME:
         if (!config[key].is<std::string>()) {
-          LOG(ERROR) << "Invalid value type for key 'name' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'name' in configuration"
+                     << std::endl;
           return false;
         }
         if (!is_utf8(config[key].as<std::string>().c_str())) {
-          LOG(ERROR) << "Invalid value for key 'name' in configuration: must be UTF-8" << std::endl;
+          LOG(ERROR)
+              << "Invalid value for key 'name' in configuration: must be UTF-8"
+              << std::endl;
           return false;
         }
         break;
       case KeyName::VERSION:
         if (!config[key].is<int64_t>()) {
-          LOG(ERROR) << "Invalid value type for key 'version' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'version' in configuration"
+                     << std::endl;
           return false;
         }
         if (config[key].as<int64_t>() != 1) {
-          LOG(ERROR) << "This version of the NO3 system only supports version 1" << std::endl;
+          LOG(ERROR) << "This version of the NO3 system only supports version 1"
+                     << std::endl;
           return false;
         }
         break;
       case KeyName::DESCRIPTION:
         if (!config[key].is<std::string>()) {
-          LOG(ERROR) << "Invalid value type for key 'description' in configuration" << std::endl;
+          LOG(ERROR)
+              << "Invalid value type for key 'description' in configuration"
+              << std::endl;
           return false;
         }
         if (!is_utf8(config[key].as<std::string>().c_str())) {
@@ -176,7 +195,8 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config, const std::files
         break;
       case KeyName::AUTHORS:
         if (!config[key].is<std::vector<std::string>>()) {
-          LOG(ERROR) << "Invalid value type for key 'authors' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'authors' in configuration"
+                     << std::endl;
           return false;
         }
         for (const auto &author : config[key].as<std::vector<std::string>>()) {
@@ -190,7 +210,8 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config, const std::files
         break;
       case KeyName::EMAILS:
         if (!config[key].is<std::vector<std::string>>()) {
-          LOG(ERROR) << "Invalid value type for key 'emails' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'emails' in configuration"
+                     << std::endl;
           return false;
         }
         for (const auto &email : config[key].as<std::vector<std::string>>()) {
@@ -204,29 +225,35 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config, const std::files
         break;
       case KeyName::URL:
         if (!config[key].is<std::string>()) {
-          LOG(ERROR) << "Invalid value type for key 'url' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'url' in configuration"
+                     << std::endl;
           return false;
         }
         if (!is_utf8(config[key].as<std::string>().c_str())) {
-          LOG(ERROR) << "Invalid value for key 'url' in configuration: must be UTF-8" << std::endl;
+          LOG(ERROR)
+              << "Invalid value for key 'url' in configuration: must be UTF-8"
+              << std::endl;
           return false;
         }
         break;
       case KeyName::LICENSES:
         if (!config[key].is<std::vector<std::string>>()) {
-          LOG(ERROR) << "Invalid value type for key 'licenses' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'licenses' in configuration"
+                     << std::endl;
           return false;
         }
         for (const auto &license : config[key].as<std::vector<std::string>>()) {
           if (!no3::conf::spdx_identifiers.contains(license)) {
-            LOG(ERROR) << "Invalid license in configuration: " << license << std::endl;
+            LOG(ERROR) << "Invalid license in configuration: " << license
+                       << std::endl;
             return false;
           }
         }
         break;
       case KeyName::SOURCES:
         if (!config[key].is<std::vector<std::string>>()) {
-          LOG(ERROR) << "Invalid value type for key 'sources' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'sources' in configuration"
+                     << std::endl;
           return false;
         }
         for (const auto &source : config[key].as<std::vector<std::string>>()) {
@@ -238,19 +265,22 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config, const std::files
         break;
       case KeyName::TARGET:
         if (!config[key].is<std::string>()) {
-          LOG(ERROR) << "Invalid value type for key 'target' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'target' in configuration"
+                     << std::endl;
           return false;
         }
         if (!target_valid_values.contains(config[key].as<std::string>())) {
-          LOG(ERROR) << "Invalid value for key 'target' in configuration: must be one "
-                        "of 'sharedlib', 'staticlib', or 'executable'"
-                     << std::endl;
+          LOG(ERROR)
+              << "Invalid value for key 'target' in configuration: must be one "
+                 "of 'sharedlib', 'staticlib', or 'executable'"
+              << std::endl;
           return false;
         }
         break;
       case KeyName::TRIPLE:
         if (!config[key].is<std::string>()) {
-          LOG(ERROR) << "Invalid value type for key 'triple' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'triple' in configuration"
+                     << std::endl;
           return false;
         }
         if (!is_utf8(config[key].as<std::string>().c_str())) {
@@ -262,35 +292,42 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config, const std::files
         break;
       case KeyName::CPU:
         if (!config[key].is<std::string>()) {
-          LOG(ERROR) << "Invalid value type for key 'cpu' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'cpu' in configuration"
+                     << std::endl;
           return false;
         }
         if (!is_utf8(config[key].as<std::string>().c_str())) {
-          LOG(ERROR) << "Invalid value for key 'cpu' in configuration: must be UTF-8" << std::endl;
+          LOG(ERROR)
+              << "Invalid value for key 'cpu' in configuration: must be UTF-8"
+              << std::endl;
           return false;
         }
         break;
       case KeyName::CFLAGS:
         if (!config[key].is<std::vector<std::string>>()) {
-          LOG(ERROR) << "Invalid value type for key 'cflags' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'cflags' in configuration"
+                     << std::endl;
           return false;
         }
         break;
       case KeyName::LFLAGS:
         if (!config[key].is<std::vector<std::string>>()) {
-          LOG(ERROR) << "Invalid value type for key 'lflags' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'lflags' in configuration"
+                     << std::endl;
           return false;
         }
         break;
       case KeyName::NOLINK:
         if (!config[key].is<bool>()) {
-          LOG(ERROR) << "Invalid value type for key 'nolink' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'nolink' in configuration"
+                     << std::endl;
           return false;
         }
         break;
       case KeyName::PACKAGES:
         if (!config[key].is<std::vector<std::string>>()) {
-          LOG(ERROR) << "Invalid value type for key 'packages' in configuration" << std::endl;
+          LOG(ERROR) << "Invalid value type for key 'packages' in configuration"
+                     << std::endl;
           return false;
         }
         for (const auto &source : config[key].as<std::vector<std::string>>()) {
@@ -309,7 +346,8 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config, const std::files
 
   for (const auto &key : required_keys) {
     if (!keys.contains(key)) {
-      LOG(ERROR) << "Missing required key in configuration: " << key << std::endl;
+      LOG(ERROR) << "Missing required key in configuration: " << key
+                 << std::endl;
       return false;
     }
   }
@@ -333,7 +371,8 @@ void no3::conf::PopulateConfig(no3::conf::Config &config) {
   if (!config.m_root.has<std::vector<std::string>>("packages"))
     config.m_root.set("packages", std::vector<std::string>());
 
-  if (!config.m_root.has<std::string>("triple")) config.m_root.set("triple", "");
+  if (!config.m_root.has<std::string>("triple"))
+    config.m_root.set("triple", "");
 
   if (!config.m_root.has<std::string>("cpu")) config.m_root.set("cpu", "");
 

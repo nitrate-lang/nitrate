@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -71,15 +73,15 @@ typedef enum nr_serial_t {
  * @param out The FILE stream to serialize to.
  * @param outlen Number of bytes written to the stream (if not NULL).
  * @param argcnt Number of additional variadic arguments. 0 is valid always.
- * @param ... Additional arguments to pass to the serialization function. See the
- * documentation for the specific serialization mode for more information.
+ * @param ... Additional arguments to pass to the serialization function. See
+ * the documentation for the specific serialization mode for more information.
  *
  * @return True if the serialization was successful, false otherwise.
  *
  * @note This function is thread safe.
  */
-bool nr_write(qmodule_t *mod, const nr_node_t *node, nr_serial_t mode, FILE *out, size_t *outlen,
-              uint32_t argcnt, ...);
+bool nr_write(qmodule_t *mod, const nr_node_t *node, nr_serial_t mode,
+              FILE *out, size_t *outlen, uint32_t argcnt, ...);
 
 /**
  * @brief Deserialize a QModule instance from a FILE stream.
@@ -88,8 +90,8 @@ bool nr_write(qmodule_t *mod, const nr_node_t *node, nr_serial_t mode, FILE *out
  * @param in The FILE stream to deserialize from.
  * @param inlen Number of bytes read from the stream (if not NULL).
  * @param argcnt Number of additional variadic arguments. 0 is valid always.
- * @param ... Additional arguments to pass to the deserialization function. See the
- * documentation for the specific serialization mode for more information.
+ * @param ... Additional arguments to pass to the deserialization function. See
+ * the documentation for the specific serialization mode for more information.
  *
  * @return True if the deserialization was successful, false otherwise.
  *
@@ -107,22 +109,27 @@ bool nr_read(qmodule_t *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
  *
  * @return True if the lowering was successful, false otherwise.
  * @note If `!base` or `!mod`, false is returned.
- * @note A module is always stored in `*mod`, unless it is null. Ensure that nr_free is called to
- * dispose of it when done.
+ * @note A module is always stored in `*mod`, unless it is null. Ensure that
+ * nr_free is called to dispose of it when done.
  *
  * @note This function is thread safe.
  */
-bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name, bool diagnostics);
+bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
+              bool diagnostics);
 
 typedef void (*nr_node_cb)(nr_node_t *cur, uintptr_t userdata);
 
 typedef enum nr_audit_t {
   QXIR_AUDIT_NONE = 0,     /* No audit */
-  QXIR_AUDIT_WILLCOMP = 1, /* Minimum to determine if the module will compile; g++ disables some */
-  QXIR_AUDIT_STD = 2,      /* Standard audit checks; What happens here will vary; g++ default */
-  QXIR_AUDIT_STRONG = 3,   /* Strong audit checks; What happens here will vary; g++ -Wextra */
-  QXIR_AUDIT_GIGACHAD = 4, /* A bunch of checks that are probably unnecessary; g++ -Wall */
-  QXIR_AUDIT_MAX = 5,      /* Maximum audit */
+  QXIR_AUDIT_WILLCOMP = 1, /* Minimum to determine if the module will compile;
+                              g++ disables some */
+  QXIR_AUDIT_STD =
+      2, /* Standard audit checks; What happens here will vary; g++ default */
+  QXIR_AUDIT_STRONG =
+      3, /* Strong audit checks; What happens here will vary; g++ -Wextra */
+  QXIR_AUDIT_GIGACHAD =
+      4, /* A bunch of checks that are probably unnecessary; g++ -Wall */
+  QXIR_AUDIT_MAX = 5, /* Maximum audit */
   QXIR_AUDIT_DEFAULT = QXIR_AUDIT_STD,
 } nr_audit_t;
 
@@ -151,8 +158,8 @@ typedef enum {
 } nr_level_t;
 
 /**
- * @brief A callback function to facilitate the communication of a report generated by the QModule
- * diagnostics subsystem.
+ * @brief A callback function to facilitate the communication of a report
+ * generated by the QModule diagnostics subsystem.
  *
  * @param utf8text UTF-8 encoded text of the report (null terminated).
  * @param size Size of the report in bytes.
@@ -163,8 +170,8 @@ typedef enum {
  *
  * @note This function shall be thread safe.
  */
-typedef void (*nr_report_cb)(const uint8_t *utf8text, size_t size, nr_level_t level,
-                             uintptr_t data);
+typedef void (*nr_report_cb)(const uint8_t *utf8text, size_t size,
+                             nr_level_t level, uintptr_t data);
 
 typedef enum nr_diag_format_t {
   /**
@@ -184,7 +191,8 @@ typedef enum nr_diag_format_t {
   QXIR_DIAG_UTF8_ECODE_LOC,
 
   /**
-   * @brief Code decimal serialization of the error code and UTF-8 error message.
+   * @brief Code decimal serialization of the error code and UTF-8 error
+   * message.
    * @example `801802:This is an UTF-8 error message.`
    * @format <code>:<utf8_message>
    */
@@ -193,33 +201,38 @@ typedef enum nr_diag_format_t {
   /**
    * @brief Unspecified format.
    * @note No-ANSI colors are included.
-   * @note Includes source location information as well as source code snippets (if available).
+   * @note Includes source location information as well as source code snippets
+   * (if available).
    * @note Includes error messages and suggestions.
-   * @note Basically, everything you expect from a mainstream compiler (except without color).
+   * @note Basically, everything you expect from a mainstream compiler (except
+   * without color).
    */
   QXIR_DIAG_NOSTD_TTY_UTF8,
 
   /**
    * @brief Unspecified format.
-   * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
+   * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+   * differences.
    */
   QXIR_DIAG_NONSTD_ANSI16_UTF8_FULL,
 
   /**
    * @brief Unspecified format.
-   * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
+   * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+   * differences.
    */
   QXIR_DIAG_NONSTD_ANSI256_UTF8_FULL,
 
   /**
    * @brief Unspecified format.
-   * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
+   * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+   * differences.
    */
   QXIR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
 
   /**
-   * @brief Display in a modern terminal emulator with UTF-8, RGB colors, ANSI-box drawing, and
-   * full diagnostics with source highlighting.
+   * @brief Display in a modern terminal emulator with UTF-8, RGB colors,
+   * ANSI-box drawing, and full diagnostics with source highlighting.
    * @note Includes everything the user would expect from a mainstream compiler.
    */
   QXIR_DIAG_COLOR = QXIR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
@@ -232,7 +245,8 @@ typedef enum nr_diag_format_t {
 } nr_diag_format_t;
 
 /**
- * @brief Read diagnostic reports generated by the QModule diagnostics subsystem.
+ * @brief Read diagnostic reports generated by the QModule diagnostics
+ * subsystem.
  *
  * @param nr QModule instance to read diagnostics from.
  * @param format Format for the diagnostics reporting.
@@ -240,20 +254,24 @@ typedef enum nr_diag_format_t {
  * @param data User supplied data to pass to the callback function.
  *
  * @note `data` is arbitrary it will be passed to the callback function.
- * @note If `!cb`, the number of reports that would have been processed is returned.
+ * @note If `!cb`, the number of reports that would have been processed is
+ * returned.
  *
- * @note This function will not dispose of any reports. Calling this function multiple times
- * with the same arguments will result in the same reports being emitted.
+ * @note This function will not dispose of any reports. Calling this function
+ * multiple times with the same arguments will result in the same reports being
+ * emitted.
  *
- * @warning The order that the reports are emitted is unspecified. It may be inconsistent
- * between calls to this function.
+ * @warning The order that the reports are emitted is unspecified. It may be
+ * inconsistent between calls to this function.
  *
  * @note This function is thread safe.
  */
-void nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_cb cb, uintptr_t data);
+void nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_cb cb,
+                  uintptr_t data);
 
 /**
- * @brief Clear diagnostic reports generated by the QModule diagnostics subsystem.
+ * @brief Clear diagnostic reports generated by the QModule diagnostics
+ * subsystem.
  * @param nr QModule instance to clear diagnostics from.
  */
 void nr_diag_clear(qmodule_t *nr);

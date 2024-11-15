@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -54,7 +56,8 @@ static void print_qsizeloc(std::stringstream &ss, uint32_t num) {
   }
 }
 
-std::string nr::mint_plain_message(const IReport::ReportData &R, ISourceView *B) {
+std::string nr::mint_plain_message(const IReport::ReportData &R,
+                                   ISourceView *B) {
   std::stringstream ss;
   uint32_t sl, sc, el, ec;
 
@@ -126,7 +129,8 @@ std::string nr::mint_plain_message(const IReport::ReportData &R, ISourceView *B)
   return ss.str();
 }
 
-std::string nr::mint_clang16_message(const IReport::ReportData &R, ISourceView *B) {
+std::string nr::mint_clang16_message(const IReport::ReportData &R,
+                                     ISourceView *B) {
   std::stringstream ss;
   uint32_t sl, sc, el, ec;
 
@@ -142,7 +146,8 @@ std::string nr::mint_clang16_message(const IReport::ReportData &R, ISourceView *
     el = end.first;
     ec = end.second;
 
-    if (sl != UINT32_MAX || sc != UINT32_MAX || el != UINT32_MAX || ec != UINT32_MAX) {
+    if (sl != UINT32_MAX || sc != UINT32_MAX || el != UINT32_MAX ||
+        ec != UINT32_MAX) {
       print_qsizeloc(ss, sl);
       ss << ":";
       print_qsizeloc(ss, sc);
@@ -162,35 +167,40 @@ std::string nr::mint_clang16_message(const IReport::ReportData &R, ISourceView *
     case IC::Debug:
       ss << "\x1b[1mdebug:\x1b[0m " << R.param;
       if (R.code != Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[1m-Werror=" << issue_info.left.at(R.code).flagname
+        ss << " \x1b[39;1m[\x1b[0m\x1b[1m-Werror="
+           << issue_info.left.at(R.code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IC::Info:
       ss << "\x1b[37;1minfo:\x1b[0m " << R.param;
       if (R.code != Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[37;1m-Werror=" << issue_info.left.at(R.code).flagname
+        ss << " \x1b[39;1m[\x1b[0m\x1b[37;1m-Werror="
+           << issue_info.left.at(R.code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IC::Warn:
       ss << "\x1b[35;1mwarning:\x1b[0m " << R.param;
       if (R.code != Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[35;1m-Werror=" << issue_info.left.at(R.code).flagname
+        ss << " \x1b[39;1m[\x1b[0m\x1b[35;1m-Werror="
+           << issue_info.left.at(R.code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IC::Error:
       ss << "\x1b[31;1merror:\x1b[0m " << R.param;
       if (R.code != Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1m-Werror=" << issue_info.left.at(R.code).flagname
+        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1m-Werror="
+           << issue_info.left.at(R.code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IC::FatalError:
       ss << "\x1b[31;1;4mfatal error:\x1b[0m " << R.param;
       if (R.code != Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1;4m-Werror=" << issue_info.left.at(R.code).flagname
+        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1;4m-Werror="
+           << issue_info.left.at(R.code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
@@ -219,9 +229,10 @@ std::string nr::mint_clang16_message(const IReport::ReportData &R, ISourceView *
 using namespace nr;
 
 uint64_t DiagDatum::hash() const {
-  /* Not quite a PHF, but it's pretty close as long as there are not two many subject strings */
-  /* In the worst case messages will be discarded, but that can be fixed by passing a parameter
-     to disable deduplication */
+  /* Not quite a PHF, but it's pretty close as long as there are not two many
+   * subject strings */
+  /* In the worst case messages will be discarded, but that can be fixed by
+     passing a parameter to disable deduplication */
 
   struct BitPack {
     IC level : 3;
@@ -240,7 +251,8 @@ uint64_t DiagDatum::hash() const {
   return std::bit_cast<uint64_t>(bp);
 }
 
-void DiagnosticManager::report(IssueCode code, IC level, std::span<std::string_view> params,
+void DiagnosticManager::report(IssueCode code, IC level,
+                               std::span<std::string_view> params,
                                uint32_t start_offset, uint32_t end_offset,
                                std::string_view filename) {
   std::string message;
@@ -261,7 +273,8 @@ void DiagnosticManager::report(IssueCode code, IC level, std::span<std::string_v
   m_vec.emplace_back(std::move(R));
 }
 
-void DiagnosticManager::stream_reports(std::function<void(const ReportData &)> cb) {
+void DiagnosticManager::stream_reports(
+    std::function<void(const ReportData &)> cb) {
   for (auto &item : m_vec) {
     ReportData datum;
     datum.code = item.code;
@@ -276,12 +289,13 @@ void DiagnosticManager::stream_reports(std::function<void(const ReportData &)> c
 }
 
 static const std::unordered_map<IC, nr_level_t> issue_class_map = {
-    {IC::Debug, QXIR_LEVEL_DEBUG}, {IC::Info, QXIR_LEVEL_INFO},        {IC::Warn, QXIR_LEVEL_WARN},
-    {IC::Error, QXIR_LEVEL_ERROR}, {IC::FatalError, QXIR_LEVEL_FATAL},
+    {IC::Debug, QXIR_LEVEL_DEBUG},      {IC::Info, QXIR_LEVEL_INFO},
+    {IC::Warn, QXIR_LEVEL_WARN},        {IC::Error, QXIR_LEVEL_ERROR},
+    {IC::FatalError, QXIR_LEVEL_FATAL},
 };
 
-LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_cb cb,
-                             uintptr_t data) {
+LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
+                             nr_report_cb cb, uintptr_t data) {
   if (!cb) {
     return;
   }
@@ -303,7 +317,8 @@ LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_c
       }
 
       /**
-       * @brief Code decimal serialization of the error code and source location.
+       * @brief Code decimal serialization of the error code and source
+       * location.
        * @example `801802:1:1:/path/to/filename.q`
        * @format <code>:<line>:<col>:<path>
        *
@@ -321,7 +336,8 @@ LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_c
       }
 
       /**
-       * @brief Code decimal serialization of the error code and UTF-8 error message.
+       * @brief Code decimal serialization of the error code and UTF-8 error
+       * message.
        * @example `801802:This is an UTF-8 error message.`
        * @format <code>:<utf8_message>
        */
@@ -335,11 +351,11 @@ LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_c
       /**
        * @brief Unspecified format.
        * @note No-ANSI colors are included
-       * @note Includes source location information as well as source code snippets (if
-       * available).
+       * @note Includes source location information as well as source code
+       * snippets (if available).
        * @note Includes error messages and suggestions.
-       * @note Basically, everything you expect from a mainstream compiler (except without
-       * color).
+       * @note Basically, everything you expect from a mainstream compiler
+       * (except without color).
        */
       case QXIR_DIAG_NOSTD_TTY_UTF8: {
         ss << nr::mint_plain_message(R, B);
@@ -348,7 +364,8 @@ LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_c
 
       /**
        * @brief Unspecified format.
-       * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
+       * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+       * differences.
        */
       case QXIR_DIAG_NONSTD_ANSI16_UTF8_FULL: {
         ss << nr::mint_clang16_message(R, B);
@@ -357,7 +374,8 @@ LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_c
 
       /**
        * @brief Unspecified format.
-       * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
+       * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+       * differences.
        */
       case QXIR_DIAG_NONSTD_ANSI256_UTF8_FULL: {
         ss << nr::mint_clang16_message(R, B);
@@ -366,7 +384,8 @@ LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_c
 
       /**
        * @brief Unspecified format.
-       * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
+       * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+       * differences.
        */
       case QXIR_DIAG_NONSTD_ANSIRGB_UTF8_FULL: {
         ss << nr::mint_modern_message(R, B);

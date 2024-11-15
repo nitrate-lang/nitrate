@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -44,14 +46,15 @@ static std::mutex nr_modules_mutex;
 
 class LexerSourceResolver : public ISourceView {
 public:
-  virtual std::optional<std::pair<uint32_t, uint32_t>> off2rc(uint32_t) noexcept override {
+  virtual std::optional<std::pair<uint32_t, uint32_t>> off2rc(
+      uint32_t) noexcept override {
     return std::nullopt;
     /// TODO: Implement source offset resolver
     qcore_implement();
   }
 
-  virtual std::optional<std::vector<std::string_view>> rect(uint32_t x0, uint32_t y0, uint32_t x1,
-                                                            uint32_t y1) noexcept override {
+  virtual std::optional<std::vector<std::string_view>> rect(
+      uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) noexcept override {
     /// TODO: Implement source offset resolver
     qcore_implement();
 
@@ -83,7 +86,9 @@ qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
 
 qmodule_t::~qmodule_t() { m_root = nullptr; }
 
-void qmodule_t::enableDiagnostics(bool is_enabled) noexcept { m_diagnostics_enabled = is_enabled; }
+void qmodule_t::enableDiagnostics(bool is_enabled) noexcept {
+  m_diagnostics_enabled = is_enabled;
+}
 
 std::string_view qmodule_t::internString(std::string_view sv) {
   auto it = m_strings.find(sv);

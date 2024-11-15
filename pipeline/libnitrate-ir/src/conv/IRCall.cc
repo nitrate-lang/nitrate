@@ -1,15 +1,17 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -39,17 +41,20 @@
 
 using namespace nr;
 
-Expr *NRBuilder::createCall(Expr *target, std::span<std::pair<std::string_view, Expr *>> arguments
-                                              SOURCE_LOCATION_PARAM) noexcept {
+Expr *NRBuilder::createCall(Expr *target,
+                            std::span<std::pair<std::string_view, Expr *>>
+                                arguments SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(target != nullptr);
-  contract_enforce(
-      std::all_of(arguments.begin(), arguments.end(), [](auto x) { return x.second != nullptr; }));
+  contract_enforce(std::all_of(arguments.begin(), arguments.end(),
+                               [](auto x) { return x.second != nullptr; }));
 
   CallArgsTmpNodeCradle call;
 
-  std::vector<std::pair<std::string_view, Expr *>, Arena<std::pair<std::string_view, Expr *>>> copy;
+  std::vector<std::pair<std::string_view, Expr *>,
+              Arena<std::pair<std::string_view, Expr *>>>
+      copy;
   copy.resize(arguments.size());
 
   for (size_t i = 0; i < copy.size(); i++) {
@@ -64,18 +69,21 @@ Expr *NRBuilder::createCall(Expr *target, std::span<std::pair<std::string_view, 
   return compiler_trace(debug_info(R, DEBUG_INFO));
 }
 
-Expr *NRBuilder::createMethodCall(Expr *object, std::string_view name,
-                                  std::span<std::pair<std::string_view, Expr *>> arguments
-                                      SOURCE_LOCATION_PARAM) noexcept {
+Expr *NRBuilder::createMethodCall(
+    Expr *object, std::string_view name,
+    std::span<std::pair<std::string_view, Expr *>> arguments
+        SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(object != nullptr);
-  contract_enforce(
-      std::all_of(arguments.begin(), arguments.end(), [](auto x) { return x.second != nullptr; }));
+  contract_enforce(std::all_of(arguments.begin(), arguments.end(),
+                               [](auto x) { return x.second != nullptr; }));
 
   CallArgsTmpNodeCradle call;
 
-  std::vector<std::pair<std::string_view, Expr *>, Arena<std::pair<std::string_view, Expr *>>> copy;
+  std::vector<std::pair<std::string_view, Expr *>,
+              Arena<std::pair<std::string_view, Expr *>>>
+      copy;
   copy.resize(arguments.size());
 
   for (size_t i = 0; i < copy.size(); i++) {

@@ -1,16 +1,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///           ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                  ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓█▓▒▒▓███▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///           ░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///             ░▒▓█▓▒░                                                      ///
-///              ░▒▓██▓▒░                                                    ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
-///   * NITRATE PACKAGE MANAGER - The official app for the Nitrate language. ///
+///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
 ///                                                                          ///
 ///   The Nitrate Toolchain is free software; you can redistribute it or     ///
@@ -75,7 +77,8 @@ thread_local std::ostream &qerr = std::cerr;
 
 static no3::core::MyLogSink g_custom_log_sink;
 
-static std::optional<std::string> nitrate_cc_demangle(std::string_view mangled_name) {
+static std::optional<std::string> nitrate_cc_demangle(
+    std::string_view mangled_name) {
   if (mangled_name.starts_with("@")) {
     mangled_name.remove_prefix(1);
   }
@@ -85,16 +88,18 @@ static std::optional<std::string> nitrate_cc_demangle(std::string_view mangled_n
 }
 
 static std::string no3_deps_version_string() {
-#define NO3_STABLE false /* FIXME: Automate setting of 'is stable build' flag */
+#define NO3_STABLE                                           \
+  false /* FIXME: Automate setting of 'is stable build' flag \
+         */
 
   std::stringstream ss;
 
-  std::array<std::string_view, 6> NO3_DEPS = {qcore_lib_version(), qlex_lib_version(),
-                                              qprep_lib_version(), qparse_lib_version(),
-                                              nr_lib_version(),    qcode_lib_version()};
+  std::array<std::string_view, 6> NO3_DEPS = {
+      qcore_lib_version(),  qlex_lib_version(), qprep_lib_version(),
+      qparse_lib_version(), nr_lib_version(),   qcode_lib_version()};
 
-  ss << "{\"ver\":\"" << __TARGET_VERSION << "\",\"stable\":" << (NO3_STABLE ? "true" : "false")
-     << ",\"using\":[";
+  ss << "{\"ver\":\"" << __TARGET_VERSION
+     << "\",\"stable\":" << (NO3_STABLE ? "true" : "false") << ",\"using\":[";
   for (size_t i = 0; i < NO3_DEPS.size(); i++) {
     ss << "\"" << NO3_DEPS[i] << "\"";
     if (i < NO3_DEPS.size() - 1) ss << ",";
@@ -125,7 +130,9 @@ using namespace argparse;
 
 namespace argparse_setup {
   void setup_argparse_init(ArgumentParser &parser) {
-    parser.add_argument("package-name").help("name of package to initialize").nargs(1);
+    parser.add_argument("package-name")
+        .help("name of package to initialize")
+        .nargs(1);
 
     parser.add_argument("-o", "--output")
         .help("output directory")
@@ -228,13 +235,15 @@ namespace argparse_setup {
 
     parser.add_argument("-g", "--debug")
         .help(
-            "request that the pipeline generate and preserve debug information. "
+            "request that the pipeline generate and preserve debug "
+            "information. "
             "not all pipelines will support this, and it may be ignored")
         .default_value(false)
         .implicit_value(true);
 
     parser.add_argument("-C", "--certify")
-        .help("digitally sign the output with the specified PKCS#12 certificate")
+        .help(
+            "digitally sign the output with the specified PKCS#12 certificate")
         .default_value(std::string(""))
         .nargs(1);
 
@@ -301,7 +310,10 @@ namespace argparse_setup {
         .default_value(std::string(""))
         .nargs(1);
 
-    parser.add_argument("package-name").help("name of package to update").required().remaining();
+    parser.add_argument("package-name")
+        .help("name of package to update")
+        .required()
+        .remaining();
   }
 
   void setup_argparse_install(ArgumentParser &parser) {
@@ -350,7 +362,9 @@ namespace argparse_setup {
   }
 
   void setup_argparse_doc(ArgumentParser &parser) {
-    parser.add_argument("package-src").help("name of package to document").nargs(1);
+    parser.add_argument("package-src")
+        .help("name of package to document")
+        .nargs(1);
 
     parser.add_argument("--html")
         .help("generate HTML report")
@@ -473,7 +487,9 @@ namespace argparse_setup {
   }
 
   void setup_argparse_test(ArgumentParser &parser) {
-    parser.add_argument("package-name").help("name of package to test").nargs(1);
+    parser.add_argument("package-name")
+        .help("name of package to test")
+        .nargs(1);
 
     parser.add_argument("-v", "--verbose")
         .help("print verbose output")
@@ -592,13 +608,16 @@ namespace argparse_setup {
 
     group.add_argument("--pipe").help("Specify the pipe file to connect to");
     group.add_argument("--port").help("Specify the port to connect to");
-    group.add_argument("--stdio").default_value(false).implicit_value(true).help(
-        "Use standard I/O");
+    group.add_argument("--stdio")
+        .default_value(false)
+        .implicit_value(true)
+        .help("Use standard I/O");
   }
 
   void setup_argparse_dev(
       ArgumentParser &parser,
-      std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &subparsers) {
+      std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
+          &subparsers) {
     /*================= CONFIG BASIC =================*/
     parser.add_argument("-v", "--verbose")
         .help("print verbose output")
@@ -606,14 +625,17 @@ namespace argparse_setup {
         .implicit_value(true);
 
     /*================== OTHER STUFF =================*/
-    parser.add_argument("--demangle").help("demangle Nitrate symbol names").nargs(1);
+    parser.add_argument("--demangle")
+        .help("demangle Nitrate symbol names")
+        .nargs(1);
 
     /*================= BENCH SUBPARSER =================*/
-    auto bench = std::make_unique<ArgumentParser>("bench", "1.0", default_arguments::help);
+    auto bench = std::make_unique<ArgumentParser>("bench", "1.0",
+                                                  default_arguments::help);
 
     bench->add_argument("-n", "--name")
-        .choices("lexer", "parser", "nitrate-ir", "delta-ir", "llvm-ir", "llvm-codegen",
-                 "c11-codegen", "pipeline")
+        .choices("lexer", "parser", "nitrate-ir", "delta-ir", "llvm-ir",
+                 "llvm-codegen", "c11-codegen", "pipeline")
         .help("name of benchmark to run");
 
     bench->add_argument("--list")
@@ -628,7 +650,8 @@ namespace argparse_setup {
     subparsers["bench"] = std::move(bench);
 
     /*================= QPARSE SUBPARSER =================*/
-    auto parse = std::make_unique<ArgumentParser>("parse", "1.0", default_arguments::help);
+    auto parse = std::make_unique<ArgumentParser>("parse", "1.0",
+                                                  default_arguments::help);
 
     parse->add_argument("source").help("source file to parse").nargs(1);
     parse->add_argument("-o", "--output")
@@ -643,7 +666,8 @@ namespace argparse_setup {
     subparsers["parse"] = std::move(parse);
 
     /*================= QXIR SUBPARSER =================*/
-    auto nr = std::make_unique<ArgumentParser>("nr", "1.0", default_arguments::help);
+    auto nr =
+        std::make_unique<ArgumentParser>("nr", "1.0", default_arguments::help);
 
     nr->add_argument("source").help("source file to lower into QXIR").nargs(1);
     nr->add_argument("-o", "--output")
@@ -662,9 +686,12 @@ namespace argparse_setup {
     subparsers["nr"] = std::move(nr);
 
     /*================= CODEGEN SUBPARSER =================*/
-    auto codegen = std::make_unique<ArgumentParser>("codegen", "1.0", default_arguments::help);
+    auto codegen = std::make_unique<ArgumentParser>("codegen", "1.0",
+                                                    default_arguments::help);
 
-    codegen->add_argument("source").help("source file to generate code for").nargs(1);
+    codegen->add_argument("source")
+        .help("source file to generate code for")
+        .nargs(1);
     codegen->add_argument("-o", "--output")
         .help("output file for generated code")
         .default_value(std::string(""))
@@ -685,7 +712,8 @@ namespace argparse_setup {
     subparsers["codegen"] = std::move(codegen);
 
     /*================= TEST SUBPARSER =================*/
-    auto test = std::make_unique<ArgumentParser>("test", "1.0", default_arguments::help);
+    auto test = std::make_unique<ArgumentParser>("test", "1.0",
+                                                 default_arguments::help);
 
     test->add_argument("-v", "--verbose")
         .help("print verbose output")
@@ -702,11 +730,14 @@ namespace argparse_setup {
   }
 
   void setup_argparse(
-      ArgumentParser &parser, ArgumentParser &init_parser, ArgumentParser &build_parser,
-      ArgumentParser &clean_parser, ArgumentParser &update_parser, ArgumentParser &install_parser,
-      ArgumentParser &doc_parser, ArgumentParser &format_parser, ArgumentParser &list_parser,
-      ArgumentParser &test_parser, ArgumentParser &lsp_parser, ArgumentParser &dev_parser,
-      std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &dev_subparsers) {
+      ArgumentParser &parser, ArgumentParser &init_parser,
+      ArgumentParser &build_parser, ArgumentParser &clean_parser,
+      ArgumentParser &update_parser, ArgumentParser &install_parser,
+      ArgumentParser &doc_parser, ArgumentParser &format_parser,
+      ArgumentParser &list_parser, ArgumentParser &test_parser,
+      ArgumentParser &lsp_parser, ArgumentParser &dev_parser,
+      std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
+          &dev_subparsers) {
     using namespace argparse;
 
     setup_argparse_init(init_parser);
@@ -747,17 +778,18 @@ namespace no3::router {
 
     core::SetDebugMode(parser["--verbose"] == true);
 
-    PackageBuilder builder = PackageBuilder()
-                                 .output(parser.get<std::string>("--output"))
-                                 .name(parser.get<std::string>("package-name"))
-                                 .license(parser.get<std::string>("--license"))
-                                 .author(parser.get<std::string>("--author"))
-                                 .email(parser.get<std::string>("--email"))
-                                 .url(parser.get<std::string>("--url"))
-                                 .version(parser.get<std::string>("--version"))
-                                 .description(parser.get<std::string>("--description"))
-                                 .verbose(parser["--verbose"] == true)
-                                 .force(parser["--force"] == true);
+    PackageBuilder builder =
+        PackageBuilder()
+            .output(parser.get<std::string>("--output"))
+            .name(parser.get<std::string>("package-name"))
+            .license(parser.get<std::string>("--license"))
+            .author(parser.get<std::string>("--author"))
+            .email(parser.get<std::string>("--email"))
+            .url(parser.get<std::string>("--url"))
+            .version(parser.get<std::string>("--version"))
+            .description(parser.get<std::string>("--description"))
+            .verbose(parser["--verbose"] == true)
+            .force(parser["--force"] == true);
 
     if (parser.get<std::string>("--type") == "program")
       builder.type(PackageType::PROGRAM);
@@ -781,11 +813,13 @@ namespace no3::router {
 
     // builder.set_package_src(parser.get<std::string>("package-src"));
 
-    // if (parser.is_used("--output")) builder.set_output(parser.get<std::string>("--output"));
+    // if (parser.is_used("--output"))
+    // builder.set_output(parser.get<std::string>("--output"));
 
     // if (parser["--no-cache"] == true) builder.disable_cache();
 
-    // if (parser.is_used("--jobs")) builder.jobs(parser.get<uint32_t>("--jobs"));
+    // if (parser.is_used("--jobs"))
+    // builder.jobs(parser.get<uint32_t>("--jobs"));
 
     // if (parser["--verbose"] == true) builder.verbose();
 
@@ -795,16 +829,20 @@ namespace no3::router {
 
     // if (parser["--debug"] == true) builder.debug();
 
-    // if (parser.is_used("--certify")) builder.certify(parser.get<std::string>("--certify"));
+    // if (parser.is_used("--certify"))
+    // builder.certify(parser.get<std::string>("--certify"));
 
     // if (parser.is_used("--certify-password"))
     //   builder.certify_password(parser.get<std::string>("--certify-password"));
 
-    // if (parser["--supply-chain-insecure"] == true) builder.disable_sigcheck();
+    // if (parser["--supply-chain-insecure"] == true)
+    // builder.disable_sigcheck();
 
-    // if (parser.is_used("--trustkey")) builder.trustkey(parser.get<std::string>("--trustkey"));
+    // if (parser.is_used("--trustkey"))
+    // builder.trustkey(parser.get<std::string>("--trustkey"));
 
-    // if (parser.is_used("--trustkeys")) builder.trustkeys(parser.get<std::string>("--trustkeys"));
+    // if (parser.is_used("--trustkeys"))
+    // builder.trustkeys(parser.get<std::string>("--trustkeys"));
 
     // auto engine = builder.build();
     // if (!engine) {
@@ -1120,7 +1158,8 @@ namespace no3::router {
 
   int run_dev_mode(
       const ArgumentParser &parser,
-      const std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &subparsers,
+      const std::unordered_map<std::string_view,
+                               std::unique_ptr<ArgumentParser>> &subparsers,
       const NO3Mode &mode) {
     if (parser.is_subcommand_used("bench")) {
       enum class Benchmark {
@@ -1221,7 +1260,8 @@ namespace no3::router {
       std::string source = parse_parser.get<std::string>("source");
       std::string output = parse_parser.get<std::string>("--output");
 
-      auto fp = std::make_shared<std::ifstream>(source, std::ios_base::in | std::ios_base::binary);
+      auto fp = std::make_shared<std::ifstream>(
+          source, std::ios_base::in | std::ios_base::binary);
       if (!fp->is_open()) {
         qerr << "Failed to open source file" << std::endl;
         return 1;
@@ -1282,7 +1322,8 @@ namespace no3::router {
       std::string opts = nr_parser.get<std::string>("--opts");
       bool verbose = nr_parser["--verbose"] == true;
 
-      auto fp = std::make_shared<std::ifstream>(source, std::ios_base::in | std::ios_base::binary);
+      auto fp = std::make_shared<std::ifstream>(
+          source, std::ios_base::in | std::ios_base::binary);
       if (!fp->is_open()) {
         qerr << "Failed to open source file" << std::endl;
         return 1;
@@ -1309,7 +1350,8 @@ namespace no3::router {
 
       qmodule qmod;
 
-      auto cb = [](const uint8_t *msg, size_t size, nr_level_t lvl, uintptr_t data) {
+      auto cb = [](const uint8_t *msg, size_t size, nr_level_t lvl,
+                   uintptr_t data) {
         if (!data && lvl < QXIR_LEVEL_INFO) {
           return;
         }
@@ -1317,11 +1359,15 @@ namespace no3::router {
       };
 
       if (!nr_lower(&qmod.get(), root, source.c_str(), true)) {
-        nr_diag_read(qmod.get(), mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
+        nr_diag_read(qmod.get(),
+                     mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb,
+                     verbose);
         return 1;
       }
 
-      nr_diag_read(qmod.get(), mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
+      nr_diag_read(qmod.get(),
+                   mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb,
+                   verbose);
 
       FILE *out_fp = nullptr;
       if (!output.empty()) {
@@ -1334,7 +1380,8 @@ namespace no3::router {
         out_fp = stdout;
       }
 
-      if (!nr_write(qmod.get(), nr_base(qmod.get()), QXIR_SERIAL_CODE, out_fp, nullptr, 0)) {
+      if (!nr_write(qmod.get(), nr_base(qmod.get()), QXIR_SERIAL_CODE, out_fp,
+                    nullptr, 0)) {
         if (!output.empty()) fclose(out_fp);
         qerr << "Failed to generate QXIR tree" << std::endl;
         return 1;
@@ -1355,7 +1402,8 @@ namespace no3::router {
       bool verbose = nr_parser["--verbose"] == true;
       std::string target = nr_parser.get<std::string>("--target");
 
-      auto fp = std::make_shared<std::ifstream>(source, std::ios_base::in | std::ios_base::binary);
+      auto fp = std::make_shared<std::ifstream>(
+          source, std::ios_base::in | std::ios_base::binary);
       if (!fp->is_open()) {
         qerr << "Failed to open source file" << std::endl;
         return 1;
@@ -1383,7 +1431,8 @@ namespace no3::router {
 
       qmodule qmod;
 
-      auto cb = [](const uint8_t *msg, size_t size, nr_level_t lvl, uintptr_t data) {
+      auto cb = [](const uint8_t *msg, size_t size, nr_level_t lvl,
+                   uintptr_t data) {
         if (!data && lvl < QXIR_LEVEL_INFO) {
           return;
         }
@@ -1391,11 +1440,15 @@ namespace no3::router {
       };
 
       if (!nr_lower(&qmod.get(), root, source.c_str(), true)) {
-        nr_diag_read(qmod.get(), mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
+        nr_diag_read(qmod.get(),
+                     mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb,
+                     verbose);
         return 1;
       }
 
-      nr_diag_read(qmod.get(), mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
+      nr_diag_read(qmod.get(),
+                   mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb,
+                   verbose);
 
       FILE *out_fp = nullptr;
       if (!output.empty()) {
@@ -1409,14 +1462,16 @@ namespace no3::router {
       }
 
       static const std::unordered_map<std::string, qcode_lang_t> target_map = {
-          {"c11", QCODE_C11},   {"c++", QCODE_CXX11},       {"ts", QCODE_TS},
-          {"rust", QCODE_RUST}, {"python3", QCODE_PYTHON3}, {"csharp", QCODE_CSHARP}};
+          {"c11", QCODE_C11},         {"c++", QCODE_CXX11},
+          {"ts", QCODE_TS},           {"rust", QCODE_RUST},
+          {"python3", QCODE_PYTHON3}, {"csharp", QCODE_CSHARP}};
 
       qcode_conf qcode_conf;
 
       if (target_map.contains(target)) {
-        if (!qcode_transcode(qmod.get(), qcode_conf.get(), target_map.at(target), QCODE_GOOGLE,
-                             nullptr, out_fp)) {
+        if (!qcode_transcode(qmod.get(), qcode_conf.get(),
+                             target_map.at(target), QCODE_GOOGLE, nullptr,
+                             out_fp)) {
           if (!output.empty()) fclose(out_fp);
           qerr << "Failed to generate code" << std::endl;
           return 1;
@@ -1510,8 +1565,8 @@ static void do_libs_deinit() {
   qcore_lib_deinit();
 }
 
-extern "C" __attribute__((visibility("default"))) int no3_command(int32_t argc, char *argv[],
-                                                                  bool use_color) {
+extern "C" __attribute__((visibility("default"))) int no3_command(
+    int32_t argc, char *argv[], bool use_color) {
   NO3Mode mode;
   mode.use_color = use_color;
   no3::core::SetColorMode(mode.use_color);
@@ -1528,23 +1583,25 @@ extern "C" __attribute__((visibility("default"))) int no3_command(int32_t argc, 
   static ArgumentParser build_parser("build", "1.0", default_arguments::help);
   static ArgumentParser clean_parser("clean", "1.0", default_arguments::help);
   static ArgumentParser update_parser("update", "1.0", default_arguments::help);
-  static ArgumentParser install_parser("install", "1.0", default_arguments::help);
+  static ArgumentParser install_parser("install", "1.0",
+                                       default_arguments::help);
   static ArgumentParser doc_parser("doc", "1.0", default_arguments::help);
   static ArgumentParser format_parser("format", "1.0", default_arguments::help);
   static ArgumentParser list_parser("list", "1.0", default_arguments::help);
   static ArgumentParser test_parser("test", "1.0", default_arguments::help);
   static ArgumentParser lsp_parser("lsp", "1.0", default_arguments::help);
   static ArgumentParser dev_parser("dev", "1.0", default_arguments::help);
-  static std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> dev_subparsers;
+  static std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
+      dev_subparsers;
   static ArgumentParser program("no3", no3_deps_version_string());
 
   { /* Configure argument parser instances once */
     static std::once_flag parsers_inited;
     std::call_once(parsers_inited, [&]() {
-      argparse_setup::setup_argparse(program, init_parser, build_parser, clean_parser,
-                                     update_parser, install_parser, doc_parser, format_parser,
-                                     list_parser, test_parser, lsp_parser, dev_parser,
-                                     dev_subparsers);
+      argparse_setup::setup_argparse(
+          program, init_parser, build_parser, clean_parser, update_parser,
+          install_parser, doc_parser, format_parser, list_parser, test_parser,
+          lsp_parser, dev_parser, dev_subparsers);
     });
   }
   /// END: Setup argument parsing and logging

@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -155,11 +157,13 @@ OpaqueTy *NRBuilder::getUnknownTy(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
-  // Use the '?' name to indiciate an unknown subject to later resolution by type inference.
+  // Use the '?' name to indiciate an unknown subject to later resolution by
+  // type inference.
   return compiler_trace(debug_info(create<OpaqueTy>("?"), DEBUG_INFO));
 }
 
-Type *NRBuilder::getUnknownNamedTy(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
+Type *NRBuilder::getUnknownNamedTy(
+    std::string_view name SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
@@ -171,25 +175,29 @@ Type *NRBuilder::getUnknownNamedTy(std::string_view name SOURCE_LOCATION_PARAM) 
 PtrTy *NRBuilder::getPtrTy(Type *pointee SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
-  contract_enforce(pointee != nullptr && static_cast<Expr *>(pointee)->isType());
+  contract_enforce(pointee != nullptr &&
+                   static_cast<Expr *>(pointee)->isType());
 
   PtrTy *ptr_ty = create<PtrTy>(compiler_trace(pointee));
 
   return compiler_trace(debug_info(ptr_ty, DEBUG_INFO));
 }
 
-OpaqueTy *NRBuilder::getOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
+OpaqueTy *NRBuilder::getOpaqueTy(
+    std::string_view name SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
-  contract_enforce(!name.empty() && std::isalnum(name[0]) &&
-                   "Non alphanumeric starter characters are reserved internally");
+  contract_enforce(
+      !name.empty() && std::isalnum(name[0]) &&
+      "Non alphanumeric starter characters are reserved internally");
 
   OpaqueTy *opaque_ty = create<OpaqueTy>(intern(name));
 
   return compiler_trace(debug_info(opaque_ty, DEBUG_INFO));
 }
 
-StructTy *NRBuilder::getStructTy(std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept {
+StructTy *NRBuilder::getStructTy(
+    std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(std::all_of(fields.begin(), fields.end(), [](Type *ty) {
@@ -197,7 +205,8 @@ StructTy *NRBuilder::getStructTy(std::span<Type *> fields SOURCE_LOCATION_PARAM)
   }));
 
   if (fields.empty()) {
-    return compiler_trace(debug_info(create<StructTy>(StructFields()), DEBUG_INFO));
+    return compiler_trace(
+        debug_info(create<StructTy>(StructFields()), DEBUG_INFO));
   }
 
   StructFields fields_copy;
@@ -211,7 +220,8 @@ StructTy *NRBuilder::getStructTy(std::span<Type *> fields SOURCE_LOCATION_PARAM)
   return compiler_trace(debug_info(struct_ty, DEBUG_INFO));
 }
 
-UnionTy *NRBuilder::getUnionTy(std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept {
+UnionTy *NRBuilder::getUnionTy(
+    std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(std::all_of(fields.begin(), fields.end(), [](Type *ty) {
@@ -219,7 +229,8 @@ UnionTy *NRBuilder::getUnionTy(std::span<Type *> fields SOURCE_LOCATION_PARAM) n
   }));
 
   if (fields.empty()) {
-    return compiler_trace(debug_info(create<UnionTy>(UnionFields()), DEBUG_INFO));
+    return compiler_trace(
+        debug_info(create<UnionTy>(UnionFields()), DEBUG_INFO));
   }
 
   UnionFields fields_copy;
@@ -233,18 +244,21 @@ UnionTy *NRBuilder::getUnionTy(std::span<Type *> fields SOURCE_LOCATION_PARAM) n
   return compiler_trace(debug_info(struct_ty, DEBUG_INFO));
 }
 
-ArrayTy *NRBuilder::getArrayTy(Type *element_ty, size_t count SOURCE_LOCATION_PARAM) noexcept {
+ArrayTy *NRBuilder::getArrayTy(Type *element_ty,
+                               size_t count SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
-  contract_enforce(element_ty != nullptr && static_cast<Expr *>(element_ty)->isType());
+  contract_enforce(element_ty != nullptr &&
+                   static_cast<Expr *>(element_ty)->isType());
 
   ArrayTy *array_ty = create<ArrayTy>(compiler_trace(element_ty), count);
 
   return compiler_trace(debug_info(array_ty, DEBUG_INFO));
 }
 
-FnTy *NRBuilder::getFnTy(std::span<Type *> params, Type *ret_ty, bool is_variadic, Purity purity,
-                         bool thread_safe, bool is_noexcept,
+FnTy *NRBuilder::getFnTy(std::span<Type *> params, Type *ret_ty,
+                         bool is_variadic, Purity purity, bool thread_safe,
+                         bool is_noexcept,
                          bool foreign SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement();
@@ -258,9 +272,9 @@ FnTy *NRBuilder::getFnTy(std::span<Type *> params, Type *ret_ty, bool is_variadi
   ignore_caller_info();
 }
 
-StructTy *NRBuilder::createStructTemplateDefintion(std::string_view name,
-                                                   std::span<std::string_view> template_params,
-                                                   StructTy *ty SOURCE_LOCATION_PARAM) noexcept {
+StructTy *NRBuilder::createStructTemplateDefintion(
+    std::string_view name, std::span<std::string_view> template_params,
+    StructTy *ty SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement();
   (void)name;
@@ -269,9 +283,9 @@ StructTy *NRBuilder::createStructTemplateDefintion(std::string_view name,
   ignore_caller_info();
 }
 
-UnionTy *NRBuilder::createUnionTemplateDefintion(std::string_view name,
-                                                 std::span<std::string_view> template_params,
-                                                 UnionTy *ty SOURCE_LOCATION_PARAM) noexcept {
+UnionTy *NRBuilder::createUnionTemplateDefintion(
+    std::string_view name, std::span<std::string_view> template_params,
+    UnionTy *ty SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement();
   (void)name;
@@ -280,14 +294,16 @@ UnionTy *NRBuilder::createUnionTemplateDefintion(std::string_view name,
   ignore_caller_info();
 }
 
-Type *NRBuilder::getTemplateInstance(
-    Type *base, std::span<Type *> template_params SOURCE_LOCATION_PARAM) noexcept {
+Type *NRBuilder::getTemplateInstance(Type *base,
+                                     std::span<Type *> template_params
+                                         SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(base != nullptr && static_cast<Expr *>(base)->isType());
-  contract_enforce(std::all_of(template_params.begin(), template_params.end(), [](Type *ty) {
-    return ty != nullptr && static_cast<Type *>(ty)->isType();
-  }));
+  contract_enforce(
+      std::all_of(template_params.begin(), template_params.end(), [](Type *ty) {
+        return ty != nullptr && static_cast<Type *>(ty)->isType();
+      }));
 
   /// TODO: Implement
   qcore_implement();

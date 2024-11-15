@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -42,7 +44,8 @@ CPP_EXPORT PassRegistry& PassRegistry::the() {
   return instance;
 }
 
-CPP_EXPORT void PassRegistry::addPass(const std::string& name, pass_func_t func) {
+CPP_EXPORT void PassRegistry::addPass(const std::string& name,
+                                      pass_func_t func) {
   std::lock_guard<std::mutex> lock(m_lock);
 
   m_passes[name] = func;
@@ -69,8 +72,8 @@ CPP_EXPORT ModulePass PassRegistry::get(const std::string& name) {
 
 ///==============================================================================
 
-CPP_EXPORT bool PassGroup::run(qmodule_t* module,
-                               std::function<void(std::string_view)> on_success) {
+CPP_EXPORT bool PassGroup::run(
+    qmodule_t* module, std::function<void(std::string_view)> on_success) {
   for (const auto& pass : m_sequence) {
     if (!pass.run(module, module->getDiag().get())) {
       return false;
@@ -91,8 +94,8 @@ CPP_EXPORT PassGroupRegistry& PassGroupRegistry::the() {
   return instance;
 }
 
-CPP_EXPORT void PassGroupRegistry::addGroup(const std::string& name,
-                                            std::initializer_list<std::string_view> passes) {
+CPP_EXPORT void PassGroupRegistry::addGroup(
+    const std::string& name, std::initializer_list<std::string_view> passes) {
   std::lock_guard<std::mutex> lock(m_lock);
 
   m_groups[name] = std::vector<ModulePass>();
@@ -101,8 +104,8 @@ CPP_EXPORT void PassGroupRegistry::addGroup(const std::string& name,
   }
 }
 
-CPP_EXPORT void PassGroupRegistry::addGroup(const std::string& name,
-                                            const std::vector<std::string>& passes) {
+CPP_EXPORT void PassGroupRegistry::addGroup(
+    const std::string& name, const std::vector<std::string>& passes) {
   std::lock_guard<std::mutex> lock(m_lock);
 
   m_groups[name] = std::vector<ModulePass>();
@@ -142,12 +145,14 @@ CPP_EXPORT bool PassGroupBuilder::verify_state() const {
   return true;
 }
 
-CPP_EXPORT PassGroupBuilder& PassGroupBuilder::addPass(const std::string& name) {
+CPP_EXPORT PassGroupBuilder& PassGroupBuilder::addPass(
+    const std::string& name) {
   m_passes.push_back(name);
   return *this;
 }
 
-CPP_EXPORT PassGroupBuilder& PassGroupBuilder::addPassFrom(const std::vector<std::string>& list) {
+CPP_EXPORT PassGroupBuilder& PassGroupBuilder::addPassFrom(
+    const std::vector<std::string>& list) {
   for (const auto& pass : list) {
     addPass(pass);
   }
@@ -155,7 +160,8 @@ CPP_EXPORT PassGroupBuilder& PassGroupBuilder::addPassFrom(const std::vector<std
   return *this;
 }
 
-CPP_EXPORT PassGroupBuilder& PassGroupBuilder::addGroup(const std::string& name) {
+CPP_EXPORT PassGroupBuilder& PassGroupBuilder::addGroup(
+    const std::string& name) {
   for (const auto& pass : PassGroupRegistry::get(name)) {
     addPass(std::string(pass.getName()));
   }
@@ -163,7 +169,8 @@ CPP_EXPORT PassGroupBuilder& PassGroupBuilder::addGroup(const std::string& name)
   return *this;
 }
 
-CPP_EXPORT PassGroupBuilder& PassGroupBuilder::addGroupFrom(const std::vector<std::string>& list) {
+CPP_EXPORT PassGroupBuilder& PassGroupBuilder::addGroupFrom(
+    const std::vector<std::string>& list) {
   for (auto group_name : list) {
     for (const auto& pass : PassGroupRegistry::get(group_name)) {
       addPass(std::string(pass.getName()));
@@ -185,7 +192,8 @@ CPP_EXPORT bool PassGroupBuilder::verify() {
   return ok;
 }
 
-CPP_EXPORT PassGroup PassGroupBuilder::build(const std::string& name, bool optimize_order) {
+CPP_EXPORT PassGroup PassGroupBuilder::build(const std::string& name,
+                                             bool optimize_order) {
   if (optimize_order) {
     phase_order();
   }

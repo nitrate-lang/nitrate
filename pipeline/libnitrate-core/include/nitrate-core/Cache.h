@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -83,8 +85,8 @@ typedef bool (*qcore_cache_read_t)(const qcore_cache_key_t *key, void *payload,
  *
  * @return true if the object was written successfully, false otherwise.
  */
-typedef bool (*qcore_cache_write_t)(const qcore_cache_key_t *key, const void *payload,
-                                    size_t payload_size);
+typedef bool (*qcore_cache_write_t)(const qcore_cache_key_t *key,
+                                    const void *payload, size_t payload_size);
 
 /**
  * @brief Bind a cache provider.
@@ -98,7 +100,8 @@ typedef bool (*qcore_cache_write_t)(const qcore_cache_key_t *key, const void *pa
  * @note This function is thread-safe.
  * @note This function will return false if a provider is already bound.
  */
-bool qcore_cache_bind(qcore_cache_has_t has, qcore_cache_read_t read, qcore_cache_write_t write);
+bool qcore_cache_bind(qcore_cache_has_t has, qcore_cache_read_t read,
+                      qcore_cache_write_t write);
 
 /**
  * @brief Unbind the current cache provider.
@@ -136,7 +139,8 @@ int64_t qcore_cache_has(const qcore_cache_key_t *key);
  *       (if sufficient space is provided) in a single call.
  * @note Data integrity is the responsibility of the cache provider.
  */
-bool qcore_cache_read(const qcore_cache_key_t *key, void *payload, size_t payload_size);
+bool qcore_cache_read(const qcore_cache_key_t *key, void *payload,
+                      size_t payload_size);
 
 /**
  * @brief Write an object to the cache.
@@ -151,7 +155,8 @@ bool qcore_cache_read(const qcore_cache_key_t *key, void *payload, size_t payloa
  * @note The writer must write the entire object in a single call.
  * @note Data integrity is the responsibility of the cache provider.
  */
-bool qcore_cache_write(const qcore_cache_key_t *key, const void *payload, size_t payload_size);
+bool qcore_cache_write(const qcore_cache_key_t *key, const void *payload,
+                       size_t payload_size);
 
 #ifdef __cplusplus
 }

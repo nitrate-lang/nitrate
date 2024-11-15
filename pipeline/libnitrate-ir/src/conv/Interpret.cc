@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -72,11 +74,12 @@ namespace comptime {
     }
   };
 
-  using FloatingValue = std::pair<boost::multiprecision::cpp_dec_float_100, FloatSize>;
+  using FloatingValue =
+      std::pair<boost::multiprecision::cpp_dec_float_100, FloatSize>;
 
   class Value {
-    std::variant<IntegerValue, FloatingValue, std::vector<Value>, std::map<std::string_view, Value>,
-                 Fn *, ValueTy>
+    std::variant<IntegerValue, FloatingValue, std::vector<Value>,
+                 std::map<std::string_view, Value>, Fn *, ValueTy>
         m_data;
 
   public:
@@ -128,7 +131,8 @@ namespace comptime {
         /// TODO:
         qcore_implement();
 
-      } else if (std::holds_alternative<std::map<std::string_view, Value>>(m_data)) {
+      } else if (std::holds_alternative<std::map<std::string_view, Value>>(
+                     m_data)) {
         /// TODO:
         qcore_implement();
 
@@ -316,7 +320,9 @@ namespace comptime {
       }
     }
 
-    void setEPrintN(std::function<void(std::string_view)> cb) { eprintn_cb = cb; }
+    void setEPrintN(std::function<void(std::string_view)> cb) {
+      eprintn_cb = cb;
+    }
 
     void eprintn(std::string_view message) { eprintn_cb(message); }
 
@@ -673,7 +679,7 @@ namespace comptime {
 
     switch (x_kind) {
         ///**********************************************************************///
-        ///                          SIMPLE EXPRESSION NODES                     ///
+        ///                          SIMPLE EXPRESSION NODES ///
         ///**********************************************************************///
 
       case QIR_NODE_BINEXPR: {
@@ -732,7 +738,7 @@ namespace comptime {
       }
 
         ///**********************************************************************///
-        ///                     COMPLEX EXPRESSION NODES                         ///
+        ///                     COMPLEX EXPRESSION NODES ///
         ///**********************************************************************///
 
       case QIR_NODE_CALL: {
@@ -842,7 +848,7 @@ namespace comptime {
       }
 
         ///**********************************************************************///
-        ///                          PASS THROUGH NODES                          ///
+        ///                          PASS THROUGH NODES ///
         ///**********************************************************************///
 
       case QIR_NODE_INT: {
@@ -1032,7 +1038,8 @@ namespace comptime {
       for (size_t i = 0; i < items.size(); i++) {
         auto tmp = value_to_expression(P, items[i]);
         if (!tmp.has_value()) [[unlikely]] {
-          P.eprintn("Internal Error: Failed to convert list item into IRGraph node");
+          P.eprintn(
+              "Internal Error: Failed to convert list item into IRGraph node");
           return std::nullopt;
         }
 
@@ -1040,7 +1047,8 @@ namespace comptime {
       }
 
       return create<List>(std::move(list_items), false);
-    } else if (std::holds_alternative<std::map<std::string_view, Value>>(data)) {
+    } else if (std::holds_alternative<std::map<std::string_view, Value>>(
+                   data)) {
       const auto &items = std::get<std::map<std::string_view, Value>>(data);
 
       ListItems pairs;
@@ -1050,7 +1058,8 @@ namespace comptime {
       for (const auto &[key, value] : items) {
         auto v = value_to_expression(P, value);
         if (!v.has_value()) {
-          P.eprintn("Internal Error: Failed to convert value in map to IRGraph");
+          P.eprintn(
+              "Internal Error: Failed to convert value in map to IRGraph");
           return std::nullopt;
         }
 
@@ -1075,7 +1084,8 @@ namespace comptime {
 }  // namespace comptime
 
 std::optional<nr::Expr *> nr::comptime_impl(
-    nr::Expr *x, std::optional<std::function<void(std::string_view)>> eprintn) noexcept {
+    nr::Expr *x,
+    std::optional<std::function<void(std::string_view)>> eprintn) noexcept {
   comptime::Program P;
 
   P.setEPrintN(eprintn.value_or([](std::string_view) {}));
@@ -1088,7 +1098,9 @@ std::optional<nr::Expr *> nr::comptime_impl(
 
   auto converted = value_to_expression(P, result.value());
   if (!result.has_value()) {
-    P.eprintn("Internal Error: Failed to convert abstract value representation into IRGraph node");
+    P.eprintn(
+        "Internal Error: Failed to convert abstract value representation into "
+        "IRGraph node");
   }
 
   return converted.value();

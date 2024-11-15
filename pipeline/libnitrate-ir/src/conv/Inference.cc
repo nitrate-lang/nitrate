@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -120,7 +122,8 @@ static Type *binexpr_promote(Type *L, Type *R, uint32_t PtrSizeBytes) {
   nr_ty_t LT = L->getKind(), RT = R->getKind();
 
   ///===========================================================================
-  /// NOTE: Primitive numeric types are promoted according to the following rules:
+  /// NOTE: Primitive numeric types are promoted according to the following
+  /// rules:
   if (is_primitive_numeric(LT) && is_primitive_numeric(RT)) {
     ///===========================================================================
     /// NOTE: Floating point always takes precedence over integers.
@@ -148,7 +151,8 @@ static Type *binexpr_promote(Type *L, Type *R, uint32_t PtrSizeBytes) {
     ///===========================================================================
     /// NOTE: If L && R are both unsigned integers, the larger type is used.
     if (is_unsigned_integer(LT) && is_unsigned_integer(RT)) {
-      size_t LS = L->getSizeBits(PtrSizeBytes), RS = R->getSizeBits(PtrSizeBytes);
+      size_t LS = L->getSizeBits(PtrSizeBytes),
+             RS = R->getSizeBits(PtrSizeBytes);
       return LS > RS ? L : R;
     }
     ///===========================================================================
@@ -156,22 +160,26 @@ static Type *binexpr_promote(Type *L, Type *R, uint32_t PtrSizeBytes) {
     ///===========================================================================
     /// NOTE: If L && R are both signed integers, the larger type is used.
     if (is_signed_integer(LT) && is_signed_integer(RT)) {
-      size_t LS = L->getSizeBits(PtrSizeBytes), RS = R->getSizeBits(PtrSizeBytes);
+      size_t LS = L->getSizeBits(PtrSizeBytes),
+             RS = R->getSizeBits(PtrSizeBytes);
       return LS > RS ? L : R;
     }
     ///===========================================================================
 
     ///===========================================================================
-    /// NOTE: If either L or R is a signed integer, the signed integer is promoted.
+    /// NOTE: If either L or R is a signed integer, the signed integer is
+    /// promoted.
     if (is_signed_integer(LT)) {
-      size_t LS = L->getSizeBits(PtrSizeBytes), RS = R->getSizeBits(PtrSizeBytes);
+      size_t LS = L->getSizeBits(PtrSizeBytes),
+             RS = R->getSizeBits(PtrSizeBytes);
       if (LS > RS) {
         return signed_complement(LT);
       } else {
         return R;
       }
     } else if (is_signed_integer(RT)) {
-      size_t LS = L->getSizeBits(PtrSizeBytes), RS = R->getSizeBits(PtrSizeBytes);
+      size_t LS = L->getSizeBits(PtrSizeBytes),
+             RS = R->getSizeBits(PtrSizeBytes);
       if (RS > LS) {
         return signed_complement(RT);
       } else {
@@ -204,47 +212,56 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
         switch (B->getOp()) {
           case Op::Plus: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
+                                B->getRHS()->getType().value_or(nullptr),
+                                PtrSizeBytes);
             break;
           }
           case Op::Minus: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
+                                B->getRHS()->getType().value_or(nullptr),
+                                PtrSizeBytes);
             break;
           }
           case Op::Times: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
+                                B->getRHS()->getType().value_or(nullptr),
+                                PtrSizeBytes);
             break;
           }
           case Op::Slash: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
+                                B->getRHS()->getType().value_or(nullptr),
+                                PtrSizeBytes);
             break;
           }
           case Op::Percent: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
+                                B->getRHS()->getType().value_or(nullptr),
+                                PtrSizeBytes);
             break;
           }
           case Op::BitAnd: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
+                                B->getRHS()->getType().value_or(nullptr),
+                                PtrSizeBytes);
             break;
           }
           case Op::BitOr: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
+                                B->getRHS()->getType().value_or(nullptr),
+                                PtrSizeBytes);
             break;
           }
           case Op::BitXor: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
+                                B->getRHS()->getType().value_or(nullptr),
+                                PtrSizeBytes);
             break;
           }
           case Op::BitNot: {
             T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr), PtrSizeBytes);
+                                B->getRHS()->getType().value_or(nullptr),
+                                PtrSizeBytes);
             break;
           }
           case Op::LogicAnd: {
@@ -645,8 +662,9 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
             types.push_back(x);
           }
           if (!failed) {
-            bool homogeneous = std::all_of(types.begin(), types.end(),
-                                           [&](Type *X) { return X->isSame(types.front()); });
+            bool homogeneous =
+                std::all_of(types.begin(), types.end(),
+                            [&](Type *X) { return X->isSame(types.front()); });
 
             if (homogeneous) {
               T = create<ArrayTy>(types.front(), types.size());
@@ -662,7 +680,8 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
         if (!x) {
           T = nullptr;
         } else {
-          qcore_assert(x->getKind() == QIR_NODE_FN_TY, "Call target must be a function");
+          qcore_assert(x->getKind() == QIR_NODE_FN_TY,
+                       "Call target must be a function");
           T = x->as<FnTy>()->getReturn();
         }
         break;
@@ -687,7 +706,8 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
           T = B->as<PtrTy>()->getPointee();
         } else if (B->is(QIR_NODE_ARRAY_TY)) {  // [X; N] -> X
           T = B->as<ArrayTy>()->getElement();
-        } else if (B->is(QIR_NODE_STRUCT_TY)) {  // struct { a, b, c } -> a | b | c
+        } else if (B->is(QIR_NODE_STRUCT_TY)) {  // struct { a, b, c } -> a | b
+                                                 // | c
           if (!V->is(QIR_NODE_INT)) {
             T = nullptr;  // Invalid must be of type int to index into a struct
           } else {
@@ -774,7 +794,8 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
         }
 
         FnAttrs attrs;
-        T = create<FnTy>(std::move(params), E->as<Fn>()->getReturn(), std::move(attrs));
+        T = create<FnTy>(std::move(params), E->as<Fn>()->getReturn(),
+                         std::move(attrs));
         break;
       }
       case QIR_NODE_ASM: {
@@ -886,7 +907,8 @@ bool nr::Type::hasKnownAlign() noexcept {
 }
 
 CPP_EXPORT uint64_t nr::Type::getSizeBits(uint32_t PtrSizeBytes) {
-  qcore_assert(this->hasKnownSize(), "Attempted to get the size of a type with an unknown size");
+  qcore_assert(this->hasKnownSize(),
+               "Attempted to get the size of a type with an unknown size");
 
   uint64_t size;
 
@@ -991,7 +1013,8 @@ CPP_EXPORT uint64_t nr::Type::getSizeBits(uint32_t PtrSizeBytes) {
 }
 
 CPP_EXPORT uint64_t nr::Type::getAlignBits(uint32_t PtrSizeBytes) {
-  qcore_assert(this->hasKnownSize(), "Attempted to get the size of a type with an unknown size");
+  qcore_assert(this->hasKnownSize(),
+               "Attempted to get the size of a type with an unknown size");
 
   uint64_t align;
 

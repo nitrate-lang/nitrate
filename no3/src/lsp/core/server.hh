@@ -22,8 +22,9 @@ private:
 public:
   MyLogSink(const std::string& log_file);
 
-  void send(google::LogSeverity severity, const char*, const char* base_filename, int line,
-            const struct tm* tm, const char* message, std::size_t message_len) override;
+  void send(google::LogSeverity severity, const char*,
+            const char* base_filename, int line, const struct tm* tm,
+            const char* message, std::size_t message_len) override;
 };
 
 struct Configuration {
@@ -45,20 +46,24 @@ class BufIStream : public std::istream {
   std::shared_ptr<std::streambuf> m_buf;
 
 public:
-  BufIStream(std::shared_ptr<std::streambuf> buf) : std::istream(buf.get()), m_buf(buf) {}
+  BufIStream(std::shared_ptr<std::streambuf> buf)
+      : std::istream(buf.get()), m_buf(buf) {}
 };
 
 class BufOStream : public std::ostream {
   std::shared_ptr<std::streambuf> m_buf;
 
 public:
-  BufOStream(std::shared_ptr<std::streambuf> buf) : std::ostream(buf.get()), m_buf(buf) {}
+  BufOStream(std::shared_ptr<std::streambuf> buf)
+      : std::ostream(buf.get()), m_buf(buf) {}
   ~BufOStream();
 };
 
-using Connection = std::pair<std::unique_ptr<BufIStream>, std::unique_ptr<BufOStream>>;
+using Connection =
+    std::pair<std::unique_ptr<BufIStream>, std::unique_ptr<BufOStream>>;
 
-std::optional<Connection> open_connection(ConnectionType type, const std::string& param);
+std::optional<Connection> open_connection(ConnectionType type,
+                                          const std::string& param);
 
 namespace lsp {
   enum class MessageType { Request, Notification };
@@ -81,8 +86,12 @@ namespace lsp {
     rapidjson::Document m_params;
 
   public:
-    RequestMessage(const MessageId& id, const std::string& method, rapidjson::Document params)
-        : Message(MessageType::Request), m_id(id), m_method(method), m_params(std::move(params)) {}
+    RequestMessage(const MessageId& id, const std::string& method,
+                   rapidjson::Document params)
+        : Message(MessageType::Request),
+          m_id(id),
+          m_method(method),
+          m_params(std::move(params)) {}
     virtual ~RequestMessage() = default;
 
     const MessageId& id() const { return m_id; }
@@ -106,13 +115,17 @@ namespace lsp {
 
   public:
     NotificationMessage(const std::string& method, rapidjson::Document params)
-        : Message(MessageType::Notification), m_method(method), m_params(std::move(params)) {}
+        : Message(MessageType::Notification),
+          m_method(method),
+          m_params(std::move(params)) {}
     virtual ~NotificationMessage() = default;
 
     const std::string& method() const { return m_method; }
     const rapidjson::Document& params() const { return m_params; }
 
-    void print(std::ostream& os) const { os << "{\"method\": \"" << m_method << "\"}"; }
+    void print(std::ostream& os) const {
+      os << "{\"method\": \"" << m_method << "\"}";
+    }
   };
 
   enum class ErrorCodes {
@@ -255,8 +268,8 @@ namespace lsp {
       doc.AddMember("jsonrpc", "2.0", doc.GetAllocator());
       if (std::holds_alternative<std::string>(m_id)) {
         rapidjson::Value id;
-        id.SetString(std::get<std::string>(m_id).c_str(), std::get<std::string>(m_id).size(),
-                     doc.GetAllocator());
+        id.SetString(std::get<std::string>(m_id).c_str(),
+                     std::get<std::string>(m_id).size(), doc.GetAllocator());
         doc.AddMember("id", id, doc.GetAllocator());
       } else {
         doc.AddMember("id", std::get<int64_t>(m_id), doc.GetAllocator());
@@ -267,10 +280,11 @@ namespace lsp {
         doc.AddMember("result", result, doc.GetAllocator());
       } else if (m_error.has_value()) {
         rapidjson::Value error(rapidjson::kObjectType);
-        error.AddMember("code", (int)m_error.value().m_code, doc.GetAllocator());
+        error.AddMember("code", (int)m_error.value().m_code,
+                        doc.GetAllocator());
         rapidjson::Value message;
-        message.SetString(m_error.value().m_message.c_str(), m_error.value().m_message.size(),
-                          doc.GetAllocator());
+        message.SetString(m_error.value().m_message.c_str(),
+                          m_error.value().m_message.size(), doc.GetAllocator());
         error.AddMember("message", message, doc.GetAllocator());
         if (m_error.value().m_data.has_value()) {
           rapidjson::Value data(rapidjson::kObjectType);
@@ -305,8 +319,10 @@ namespace lsp {
 
 }  // namespace lsp
 
-typedef std::function<void(const lsp::RequestMessage&, lsp::ResponseMessage&)> RequestHandler;
-typedef std::function<void(const lsp::NotificationMessage&)> NotificationHandler;
+typedef std::function<void(const lsp::RequestMessage&, lsp::ResponseMessage&)>
+    RequestHandler;
+typedef std::function<void(const lsp::NotificationMessage&)>
+    NotificationHandler;
 
 class ServerContext {
   ThreadPool m_thread_pool;
@@ -345,7 +361,8 @@ public:
     m_request_handlers[method] = std::move(handler);
   }
 
-  void register_notification_handler(std::string method, NotificationHandler handler) {
+  void register_notification_handler(std::string method,
+                                     NotificationHandler handler) {
     m_notification_handlers[method] = std::move(handler);
   }
 };

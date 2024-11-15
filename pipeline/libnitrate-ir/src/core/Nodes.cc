@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -114,7 +116,8 @@ CPP_EXPORT uint32_t Expr::getKindSize(nr_ty_t type) noexcept {
       {QIR_NODE_TMP, sizeof(Tmp)},
   };
 
-  qcore_assert(sizes.size() == QIR_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
+  qcore_assert(sizes.size() == QIR_NODE_COUNT,
+               "Polymorphic type size lookup table is incomplete");
 
   return sizes.at(type);
 }
@@ -169,7 +172,8 @@ CPP_EXPORT const char *Expr::getKindName(nr_ty_t type) noexcept {
       {QIR_NODE_TMP, "tmp"},
   };
 
-  qcore_assert(names.size() == QIR_NODE_COUNT, "Polymorphic type name lookup table is incomplete");
+  qcore_assert(names.size() == QIR_NODE_COUNT,
+               "Polymorphic type name lookup table is incomplete");
 
   return names.at(type);
 }
@@ -532,14 +536,16 @@ CPP_EXPORT bool nr::Expr::isSame(const nr::Expr *other) const {
         return false;
       }
 
-      qcore_panic("Expr::isSame: attempt to compare fine structure of QIR_NODE_TMP");
+      qcore_panic(
+          "Expr::isSame: attempt to compare fine structure of QIR_NODE_TMP");
     }
   }
 
   __builtin_unreachable();
 }
 
-static bool isCyclicUtil(nr::Expr *base, std::unordered_set<nr::Expr *> &visited,
+static bool isCyclicUtil(nr::Expr *base,
+                         std::unordered_set<nr::Expr *> &visited,
                          std::unordered_set<nr::Expr *> &recStack) {
   bool has_cycle = false;
 
@@ -551,17 +557,19 @@ static bool isCyclicUtil(nr::Expr *base, std::unordered_set<nr::Expr *> &visited
 
     // Recur for all the vertices adjacent
     // to this vertex
-    iterate<IterMode::children>(base, [&](nr::Expr *, nr::Expr **cur) -> IterOp {
-      if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack)) [[unlikely]] {
-        has_cycle = true;
-        return IterOp::Abort;
-      } else if (recStack.contains(*cur)) [[unlikely]] {
-        has_cycle = true;
-        return IterOp::Abort;
-      }
+    iterate<IterMode::children>(
+        base, [&](nr::Expr *, nr::Expr **cur) -> IterOp {
+          if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack))
+              [[unlikely]] {
+            has_cycle = true;
+            return IterOp::Abort;
+          } else if (recStack.contains(*cur)) [[unlikely]] {
+            has_cycle = true;
+            return IterOp::Abort;
+          }
 
-      return IterOp::Proceed;
-    });
+          return IterOp::Proceed;
+        });
   }
 
   // Remove the vertex from recursion stack
@@ -575,7 +583,8 @@ CPP_EXPORT bool nr::Expr::isAcyclic() const noexcept {
 
   Expr *ptr = const_cast<Expr *>(this);
   iterate<IterMode::children>(ptr, [&](Expr *, Expr **cur) -> IterOp {
-    if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack)) [[unlikely]] {
+    if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack))
+        [[unlikely]] {
       has_cycle = true;
       return IterOp::Abort;
     }
@@ -789,18 +798,23 @@ CPP_EXPORT std::pair<uint32_t, uint32_t> nr::Expr::getLoc() noexcept {
 
 CPP_EXPORT uint32_t nr::Expr::locBeg() noexcept { return m_src_offset; }
 
-CPP_EXPORT uint32_t nr::Expr::locEnd() noexcept { return m_src_offset + m_span; }
+CPP_EXPORT uint32_t nr::Expr::locEnd() noexcept {
+  return m_src_offset + m_span;
+}
 
 CPP_EXPORT Type *Expr::asType() noexcept {
 #ifndef NDEBUG
   if (!isType()) {
-    qcore_panicf("Failed to cast a non-type node `%s` to a type node", getKindName());
+    qcore_panicf("Failed to cast a non-type node `%s` to a type node",
+                 getKindName());
   }
 #endif
   return static_cast<Type *>(this);
 }
 
-CPP_EXPORT bool Expr::is(nr_ty_t type) const noexcept { return type == getKind(); }
+CPP_EXPORT bool Expr::is(nr_ty_t type) const noexcept {
+  return type == getKind();
+}
 
 CPP_EXPORT void nr::Expr::dump(std::ostream &os, bool isForDebug) const {
   (void)isForDebug;
@@ -1009,14 +1023,17 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
         if (std::holds_alternative<LetTmpNodeCradle>(cur->as<Tmp>()->m_data)) {
           static_assert(std::tuple_size_v<LetTmpNodeCradle> == 2);
 
-          LetTmpNodeCradle &data = std::get<LetTmpNodeCradle>(cur->as<Tmp>()->m_data);
+          LetTmpNodeCradle &data =
+              std::get<LetTmpNodeCradle>(cur->as<Tmp>()->m_data);
           MIXIN_STRING(std::get<0>(data));
           if (std::get<1>(data) != nullptr) {
             MIXIN_STRING(std::get<1>(data)->getStateUUID());
           }
-        } else if (std::holds_alternative<CallArgsTmpNodeCradle>(cur->as<Tmp>()->m_data)) {
+        } else if (std::holds_alternative<CallArgsTmpNodeCradle>(
+                       cur->as<Tmp>()->m_data)) {
           static_assert(std::tuple_size_v<CallArgsTmpNodeCradle> == 2);
-          CallArgsTmpNodeCradle &data = std::get<CallArgsTmpNodeCradle>(cur->as<Tmp>()->m_data);
+          CallArgsTmpNodeCradle &data =
+              std::get<CallArgsTmpNodeCradle>(cur->as<Tmp>()->m_data);
           if (std::get<0>(data) != nullptr) {
             MIXIN_STRING(std::get<0>(data)->getStateUUID());
           }
@@ -1024,15 +1041,19 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
             MIXIN_STRING(arg.first);
             MIXIN_STRING(arg.second->getStateUUID());
           }
-        } else if (std::holds_alternative<FieldTmpNodeCradle>(cur->as<Tmp>()->m_data)) {
+        } else if (std::holds_alternative<FieldTmpNodeCradle>(
+                       cur->as<Tmp>()->m_data)) {
           static_assert(std::tuple_size_v<FieldTmpNodeCradle> == 2);
-          FieldTmpNodeCradle &data = std::get<FieldTmpNodeCradle>(cur->as<Tmp>()->m_data);
+          FieldTmpNodeCradle &data =
+              std::get<FieldTmpNodeCradle>(cur->as<Tmp>()->m_data);
           if (std::get<0>(data) != nullptr) {
             MIXIN_STRING(std::get<0>(data)->getStateUUID());
           }
           MIXIN_STRING(std::get<1>(data));
-        } else if (std::holds_alternative<std::string_view>(cur->as<Tmp>()->m_data)) {
-          std::string_view &data = std::get<std::string_view>(cur->as<Tmp>()->m_data);
+        } else if (std::holds_alternative<std::string_view>(
+                       cur->as<Tmp>()->m_data)) {
+          std::string_view &data =
+              std::get<std::string_view>(cur->as<Tmp>()->m_data);
           MIXIN_STRING(data);
         } else {
           qcore_panic("Unknown TmpNodeCradle inner type");
@@ -1099,11 +1120,17 @@ CPP_EXPORT bool Type::is_primitive() const {
   }
 }
 
-CPP_EXPORT bool Type::is_array() const { return getKind() == QIR_NODE_ARRAY_TY; }
+CPP_EXPORT bool Type::is_array() const {
+  return getKind() == QIR_NODE_ARRAY_TY;
+}
 
-CPP_EXPORT bool Type::is_pointer() const { return getKind() == QIR_NODE_PTR_TY; }
+CPP_EXPORT bool Type::is_pointer() const {
+  return getKind() == QIR_NODE_PTR_TY;
+}
 
-CPP_EXPORT bool Type::is_function() const { return getKind() == QIR_NODE_FN_TY; }
+CPP_EXPORT bool Type::is_function() const {
+  return getKind() == QIR_NODE_FN_TY;
+}
 
 CPP_EXPORT bool Type::is_composite() const {
   switch (getKind()) {
@@ -1116,7 +1143,9 @@ CPP_EXPORT bool Type::is_composite() const {
   }
 }
 
-CPP_EXPORT bool Type::is_union() const { return getKind() == QIR_NODE_UNION_TY; }
+CPP_EXPORT bool Type::is_union() const {
+  return getKind() == QIR_NODE_UNION_TY;
+}
 
 CPP_EXPORT bool Type::is_numeric() const {
   switch (getKind()) {
@@ -1225,7 +1254,8 @@ CPP_EXPORT uint128_t Int::str2u128(std::string_view s) noexcept {
 
     // Check for overflow
     if (x > (std::numeric_limits<uint128_t>::max() - (c - '0')) / 10) {
-      qcore_panicf("Overflow when converting string `%s` to uint128_t", s.data());
+      qcore_panicf("Overflow when converting string `%s` to uint128_t",
+                   s.data());
     }
 
     x = x * 10 + (c - '0');
@@ -1234,4 +1264,6 @@ CPP_EXPORT uint128_t Int::str2u128(std::string_view s) noexcept {
   return x;
 }
 
-Expr *nr::createIgn() { return new (Arena<Expr>().allocate(1)) Expr(QIR_NODE_IGN); }
+Expr *nr::createIgn() {
+  return new (Arena<Expr>().allocate(1)) Expr(QIR_NODE_IGN);
+}

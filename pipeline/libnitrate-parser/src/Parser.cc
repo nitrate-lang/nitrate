@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -48,8 +50,8 @@
 using namespace qparse::parser;
 using namespace qparse::diag;
 
-bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect_braces,
-                           bool single_stmt) {
+bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
+                           bool expect_braces, bool single_stmt) {
   try {
     qlex_tok_t tok;
 
@@ -384,7 +386,8 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
   }
 }
 
-LIB_EXPORT qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf, qcore_env_t env) {
+LIB_EXPORT qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf,
+                                qcore_env_t env) {
   if (!lexer || !conf) {
     return nullptr;
   }
@@ -435,7 +438,8 @@ LIB_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
     qparse::diag::install_reference(L);
 
     parser_ctx = L;
-    bool status = qparse::parser::parse(*L, L->lexer, (qparse::Block **)out, false, false);
+    bool status = qparse::parser::parse(*L, L->lexer, (qparse::Block **)out,
+                                        false, false);
     parser_ctx = nullptr;
 
     /*== Uninstall thread-local references to the parser ==*/
@@ -495,10 +499,12 @@ LIB_EXPORT bool qparse_check(qparse_t *parser, const qparse_node_t *base) {
   }
 
   /* Safety is overrated */
-  return const_cast<qparse::Node *>(static_cast<const qparse::Node *>(base))->verify();
+  return const_cast<qparse::Node *>(static_cast<const qparse::Node *>(base))
+      ->verify();
 }
 
-LIB_EXPORT void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb, uintptr_t data) {
+LIB_EXPORT void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb,
+                             uintptr_t data) {
   if (!parser || !cb) {
     return;
   }

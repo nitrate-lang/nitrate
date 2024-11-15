@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -56,7 +58,8 @@ typedef struct qparse_t qparse_t;
  *
  * @note If `!lexer` or `!conf`, NULL is returned.
  * @note The returned object must be freed with `qparse_free`.
- * @note The lexer object and configuration object are not owned by the returned parser object.
+ * @note The lexer object and configuration object are not owned by the returned
+ * parser object.
  * @note The returned instance does not contain internal locks.
  *
  * @note This function is thread safe.
@@ -89,7 +92,8 @@ void qparse_free(qparse_t *parser);
  *
  * @note This function is thread safe.
  */
-char *qparse_repr(const qparse_node_t *_node, bool minify, size_t indent, size_t *outlen);
+char *qparse_repr(const qparse_node_t *_node, bool minify, size_t indent,
+                  size_t *outlen);
 
 /**
  * @brief Serialize a parse tree to a binary representation.
@@ -101,7 +105,8 @@ char *qparse_repr(const qparse_node_t *_node, bool minify, size_t indent, size_t
  *
  * @note This function is thread safe.
  */
-void qparse_brepr(const qparse_node_t *node, bool compress, uint8_t **out, size_t *outlen);
+void qparse_brepr(const qparse_node_t *node, bool compress, uint8_t **out,
+                  size_t *outlen);
 
 /**
  * @brief Parse Nitrate code into a parse tree.
@@ -109,8 +114,9 @@ void qparse_brepr(const qparse_node_t *node, bool compress, uint8_t **out, size_
  * @param parser The parser instance to use for parsing.
  * @param out The output parse tree.
  *
- * @return Returns true if no non-fatal parsing errors occurred, false otherwise. A value of true,
- * however, does not guarantee that the parse tree is valid.
+ * @return Returns true if no non-fatal parsing errors occurred, false
+ * otherwise. A value of true, however, does not guarantee that the parse tree
+ * is valid.
  *
  * @note If `!parser` or `!out`, false is returned.
  *
@@ -126,8 +132,9 @@ bool qparse_do(qparse_t *parser, qparse_node_t **out);
  * @param x0 Unused.
  * @param x1 Unused.
  *
- * @return Returns true if no non-fatal parsing errors occurred, false otherwise. A value of true,
- * however, does not guarantee that the parse tree is valid.
+ * @return Returns true if no non-fatal parsing errors occurred, false
+ * otherwise. A value of true, however, does not guarantee that the parse tree
+ * is valid.
  *
  * @note If `!parser` or `!out`, false is returned.
  *
@@ -141,9 +148,10 @@ bool qparse_and_dump(qparse_t *parser, FILE *out, void *x0, void *x1);
  * @param parser The parser instance to use for parsing.
  * @param base The base node of the parse tree to check.
  *
- * @return Returns true if the parse tree is valid, false otherwise. A value of true, however, does
- * not indicate that the parse tree is free of semantic errors. This just ensures it doesn't contain
- * NULL nodes and other illegal constructs (basic checks).
+ * @return Returns true if the parse tree is valid, false otherwise. A value of
+ * true, however, does not indicate that the parse tree is free of semantic
+ * errors. This just ensures it doesn't contain NULL nodes and other illegal
+ * constructs (basic checks).
  *
  * @note If `!parser`, `!base` false is returned.
  *
@@ -174,7 +182,8 @@ typedef void (*qparse_dump_cb)(const char *msg, size_t len, uintptr_t data);
  *
  * @note This function is thread safe.
  */
-void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb, uintptr_t data);
+void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb,
+                  uintptr_t data);
 
 #ifdef __cplusplus
 }

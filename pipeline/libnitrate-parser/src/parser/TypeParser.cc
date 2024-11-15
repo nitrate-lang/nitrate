@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -43,23 +45,23 @@ using namespace qparse::diag;
 
 /// TODO: Source location
 
-static const std::unordered_map<std::string_view, Type *(*)()> primitive_types = {
-    {"u1", []() -> Type * { return U1::get(); }},
-    {"u8", []() -> Type * { return U8::get(); }},
-    {"u16", []() -> Type * { return U16::get(); }},
-    {"u32", []() -> Type * { return U32::get(); }},
-    {"u64", []() -> Type * { return U64::get(); }},
-    {"u128", []() -> Type * { return U128::get(); }},
-    {"i8", []() -> Type * { return I8::get(); }},
-    {"i16", []() -> Type * { return I16::get(); }},
-    {"i32", []() -> Type * { return I32::get(); }},
-    {"i64", []() -> Type * { return I64::get(); }},
-    {"i128", []() -> Type * { return I128::get(); }},
-    {"f16", []() -> Type * { return F16::get(); }},
-    {"f32", []() -> Type * { return F32::get(); }},
-    {"f64", []() -> Type * { return F64::get(); }},
-    {"f128", []() -> Type * { return F128::get(); }},
-    {"void", []() -> Type * { return VoidTy::get(); }}};
+static const std::unordered_map<std::string_view, Type *(*)()> primitive_types =
+    {{"u1", []() -> Type * { return U1::get(); }},
+     {"u8", []() -> Type * { return U8::get(); }},
+     {"u16", []() -> Type * { return U16::get(); }},
+     {"u32", []() -> Type * { return U32::get(); }},
+     {"u64", []() -> Type * { return U64::get(); }},
+     {"u128", []() -> Type * { return U128::get(); }},
+     {"i8", []() -> Type * { return I8::get(); }},
+     {"i16", []() -> Type * { return I16::get(); }},
+     {"i32", []() -> Type * { return I32::get(); }},
+     {"i64", []() -> Type * { return I64::get(); }},
+     {"i128", []() -> Type * { return I128::get(); }},
+     {"f16", []() -> Type * { return F16::get(); }},
+     {"f32", []() -> Type * { return F32::get(); }},
+     {"f64", []() -> Type * { return F64::get(); }},
+     {"f128", []() -> Type * { return F128::get(); }},
+     {"void", []() -> Type * { return VoidTy::get(); }}};
 
 bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
   /** Nitrate TYPE PARSER
@@ -204,8 +206,8 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
        * @brief Parse a vector type.
        */
 
-      inner =
-          TemplType::get(UnresolvedType::get("__builtin_vec"), TemplTypeArgs{TypeExpr::get(type)});
+      inner = TemplType::get(UnresolvedType::get("__builtin_vec"),
+                             TemplTypeArgs{TypeExpr::get(type)});
       goto type_suffix;
     }
 
@@ -230,8 +232,9 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
         goto error_end;
       }
 
-      inner = TemplType::get(UnresolvedType::get("__builtin_umap"),
-                             TemplTypeArgs{TypeExpr::get(type), TypeExpr::get(value_type)});
+      inner = TemplType::get(
+          UnresolvedType::get("__builtin_umap"),
+          TemplTypeArgs{TypeExpr::get(type), TypeExpr::get(value_type)});
       goto type_suffix;
     }
 
@@ -277,8 +280,8 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
       goto error_end;
     }
 
-    inner =
-        TemplType::get(UnresolvedType::get("__builtin_uset"), TemplTypeArgs{TypeExpr::get(type)});
+    inner = TemplType::get(UnresolvedType::get("__builtin_uset"),
+                           TemplTypeArgs{TypeExpr::get(type)});
     goto type_suffix;
   } else if (tok.is<qPuncLPar>()) {
     /** Nitrate TUPLE TYPE
@@ -359,7 +362,8 @@ type_suffix: {
 
     while (true) {
       tok = qlex_peek(rd);
-      if (tok.is<qOpGT>() || tok.is<qOpRShift>() || tok.is<qOpROTR>() || tok.ty == qEofF) {
+      if (tok.is<qOpGT>() || tok.is<qOpRShift>() || tok.is<qOpROTR>() ||
+          tok.ty == qEofF) {
         break;
       }
 

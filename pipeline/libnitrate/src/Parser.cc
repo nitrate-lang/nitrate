@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -165,7 +167,8 @@ class DeserializerAdapterLexer final : public qlex_t {
       }
 
       if (!msgpack_read_uint(*m_file, a) || !msgpack_read_uint(*m_file, b) ||
-          !msgpack_read_uint(*m_file, c) || !msgpack_read_uint(*m_file, d)) [[unlikely]] {
+          !msgpack_read_uint(*m_file, c) || !msgpack_read_uint(*m_file, d))
+          [[unlikely]] {
         free(str);
         return {.ty = qErro};
       }
@@ -205,8 +208,8 @@ class DeserializerAdapterLexer final : public qlex_t {
   }
 
 public:
-  DeserializerAdapterLexer(std::shared_ptr<std::istream> file, const char *filename,
-                           qcore_env_t env)
+  DeserializerAdapterLexer(std::shared_ptr<std::istream> file,
+                           const char *filename, qcore_env_t env)
       : qlex_t(file, filename, env) {
     int ch = file->get();
 
@@ -247,17 +250,18 @@ public:
   virtual ~DeserializerAdapterLexer() override = default;
 };
 
-static std::optional<qparse_node_t *> parse_tokens(qparse_t *L,
-                                                   std::function<void(const char *)> diag_cb) {
+static std::optional<qparse_node_t *> parse_tokens(
+    qparse_t *L, std::function<void(const char *)> diag_cb) {
   qparse_node_t *root = nullptr;
   bool ok = qparse_do(L, &root);
 
   ///============================================================================///
-  /// Some dangerous code here, be careful!                                      ///
+  /// Some dangerous code here, be careful! ///
   qparse_dumps(
       L, false,
       [](const char *msg, size_t, uintptr_t dat) {
-        std::function<void(const char *)> &stack_tmp = *(std::function<void(const char *)> *)dat;
+        std::function<void(const char *)> &stack_tmp =
+            *(std::function<void(const char *)> *)dat;
         stack_tmp(msg);
       },
       (uintptr_t)&diag_cb);

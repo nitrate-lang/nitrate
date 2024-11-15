@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -43,7 +45,8 @@ using namespace nr;
 ///=============================================================================
 
 constexpr bool is_alnum(char ch) {
-  return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+  return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') ||
+         (ch >= 'A' && ch <= 'Z');
 }
 constexpr std::array<char, 256> ns_valid_chars = []() {
   std::array<char, 256> valid_chars = {};
@@ -122,7 +125,8 @@ static bool decode_ns_size_value(std::string_view &input, std::ostream &ss) {
 
         std::string_view part = input.substr(i, size);
 
-        if (!std::all_of(part.begin(), part.end(), [](char ch) { return ns_valid_chars[ch]; })) {
+        if (!std::all_of(part.begin(), part.end(),
+                         [](char ch) { return ns_valid_chars[ch]; })) {
           return false;
         }
 
@@ -173,14 +177,17 @@ static void mangle_type(Type *n, std::ostream &ss) {
    *                 ::= De # IEEE 754r decimal floating point (128 bits)
    *                 ::= Df # IEEE 754r decimal floating point (32 bits)
    *                 ::= Dh # IEEE 754r half-precision floating point (16 bits)
-   *                 ::= DF <number> _ # ISO/IEC TS 18661 binary floating point type _FloatN (N
-   * bits), C++23 std::floatN_t
-   *                 ::= DF <number> x # IEEE extended precision formats, C23 _FloatNx (N bits)
+   *                 ::= DF <number> _ # ISO/IEC TS 18661 binary floating point
+   * type _FloatN (N bits), C++23 std::floatN_t
+   *                 ::= DF <number> x # IEEE extended precision formats, C23
+   * _FloatNx (N bits)
    *                 ::= DF16b # C++23 std::bfloat16_t
    *                 ::= DB <number> _        # C23 signed _BitInt(N)
-   *                 ::= DB <instantiation-dependent expression> _ # C23 signed _BitInt(N)
+   *                 ::= DB <instantiation-dependent expression> _ # C23 signed
+   * _BitInt(N)
    *                 ::= DU <number> _        # C23 unsigned _BitInt(N)
-   *                 ::= DU <instantiation-dependent expression> _ # C23 unsigned _BitInt(N)
+   *                 ::= DU <instantiation-dependent expression> _ # C23
+   * unsigned _BitInt(N)
    *                 ::= Di # char32_t
    *                 ::= Ds # char16_t
    *                 ::= Du # char8_t
@@ -189,7 +196,8 @@ static void mangle_type(Type *n, std::ostream &ss) {
    *                 ::= Dn # std::nullptr_t (i.e., decltype(nullptr))
    *                 ::= [DS] DA  # N1169 fixed-point [_Sat] T _Accum
    *                 ::= [DS] DR  # N1169 fixed-point [_Sat] T _Fract
-   *                 ::= u <source-name> [<template-args>] # vendor extended type
+   *                 ::= u <source-name> [<template-args>] # vendor extended
+   * type
    *
    *  <fixed-point-size>
    *                 ::= s # short
@@ -361,8 +369,9 @@ static void mangle_type(Type *n, std::ostream &ss) {
 
 static bool demangle_type(std::string_view &name, std::ostream &ss) {
   static std::unordered_map<char, std::string_view> basic_types = {
-      {'b', "u1"}, {'h', "u8"},  {'t', "u16"}, {'j', "u32"}, {'m', "u64"},  {'o', "u128"},
-      {'a', "i8"}, {'s', "i16"}, {'i', "i32"}, {'l', "i64"}, {'n', "i128"}, {'v', "void"},
+      {'b', "u1"},  {'h', "u8"},   {'t', "u16"},  {'j', "u32"},
+      {'m', "u64"}, {'o', "u128"}, {'a', "i8"},   {'s', "i16"},
+      {'i', "i32"}, {'l', "i64"},  {'n', "i128"}, {'v', "void"},
   };
 
   if (name.empty()) {
@@ -646,8 +655,8 @@ static std::optional<std::string> demangle_nit_abi(std::string_view name) {
   return ss.str();
 }
 
-CPP_EXPORT std::optional<std::string> nr::SymbolEncoding::mangle_name(const nr::Expr *symbol,
-                                                                      AbiTag abi) const noexcept {
+CPP_EXPORT std::optional<std::string> nr::SymbolEncoding::mangle_name(
+    const nr::Expr *symbol, AbiTag abi) const noexcept {
   static std::unordered_set<nr_ty_t> valid = {
       QIR_NODE_FN,
       QIR_NODE_LOCAL,

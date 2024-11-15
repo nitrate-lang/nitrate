@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -38,10 +40,10 @@
 
 using namespace nr;
 
-Fn *NRBuilder::createFunctionDefintion(std::string_view name, std::span<FnParam> params,
-                                       Type *ret_ty, bool is_variadic, Vis visibility,
-                                       Purity purity, bool thread_safe, bool is_noexcept,
-                                       bool foreign SOURCE_LOCATION_PARAM) noexcept {
+Fn *NRBuilder::createFunctionDefintion(
+    std::string_view name, std::span<FnParam> params, Type *ret_ty,
+    bool is_variadic, Vis visibility, Purity purity, bool thread_safe,
+    bool is_noexcept, bool foreign SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(ret_ty != nullptr && static_cast<Expr *>(ret_ty)->isType());
@@ -63,16 +65,16 @@ Fn *NRBuilder::createFunctionDefintion(std::string_view name, std::span<FnParam>
   (void)is_noexcept;
   (void)foreign;
 
-  Fn *fn =
-      create<Fn>(name, std::move(parameters), ret_ty, std::nullopt, is_variadic, AbiTag::Default);
+  Fn *fn = create<Fn>(name, std::move(parameters), ret_ty, std::nullopt,
+                      is_variadic, AbiTag::Default);
 
   return compiler_trace(debug_info(fn, DEBUG_INFO));
 }
 
-Fn *NRBuilder::createFunctionDeclaration(std::string_view name, std::span<FnParam> params,
-                                         Type *ret_ty, bool is_variadic, Vis visibility,
-                                         Purity purity, bool thread_safe, bool is_noexcept,
-                                         bool foreign SOURCE_LOCATION_PARAM) noexcept {
+Fn *NRBuilder::createFunctionDeclaration(
+    std::string_view name, std::span<FnParam> params, Type *ret_ty,
+    bool is_variadic, Vis visibility, Purity purity, bool thread_safe,
+    bool is_noexcept, bool foreign SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(ret_ty != nullptr && static_cast<Expr *>(ret_ty)->isType());
@@ -94,15 +96,15 @@ Fn *NRBuilder::createFunctionDeclaration(std::string_view name, std::span<FnPara
   (void)is_noexcept;
   (void)foreign;
 
-  Fn *fn =
-      create<Fn>(name, std::move(parameters), ret_ty, std::nullopt, is_variadic, AbiTag::Default);
+  Fn *fn = create<Fn>(name, std::move(parameters), ret_ty, std::nullopt,
+                      is_variadic, AbiTag::Default);
 
   return compiler_trace(debug_info(fn, DEBUG_INFO));
 }
 
-Fn *NRBuilder::createAnonymousFunction(std::span<FnParam> params, Type *ret_ty, bool is_variadic,
-                                       Purity purity, bool thread_safe,
-                                       bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
+Fn *NRBuilder::createAnonymousFunction(
+    std::span<FnParam> params, Type *ret_ty, bool is_variadic, Purity purity,
+    bool thread_safe, bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement();
   (void)params;
@@ -114,9 +116,9 @@ Fn *NRBuilder::createAnonymousFunction(std::span<FnParam> params, Type *ret_ty, 
   ignore_caller_info();
 }
 
-Fn *NRBuilder::createOperatorOverload(Op op, std::span<Type *> params, Type *ret_ty, Purity purity,
-                                      bool thread_safe,
-                                      bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
+Fn *NRBuilder::createOperatorOverload(
+    Op op, std::span<Type *> params, Type *ret_ty, Purity purity,
+    bool thread_safe, bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement();
   (void)op;
@@ -128,11 +130,11 @@ Fn *NRBuilder::createOperatorOverload(Op op, std::span<Type *> params, Type *ret
   ignore_caller_info();
 }
 
-Fn *NRBuilder::createTemplateFunction(std::string_view name,
-                                      std::span<std::string_view> template_params,
-                                      std::span<FnParam> params, Type *ret_ty, bool is_variadic,
-                                      Vis visibility, Purity purity, bool thread_safe,
-                                      bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
+Fn *NRBuilder::createTemplateFunction(
+    std::string_view name, std::span<std::string_view> template_params,
+    std::span<FnParam> params, Type *ret_ty, bool is_variadic, Vis visibility,
+    Purity purity, bool thread_safe,
+    bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
   qcore_implement();
   (void)name;
@@ -147,9 +149,9 @@ Fn *NRBuilder::createTemplateFunction(std::string_view name,
   ignore_caller_info();
 }
 
-Local *NRBuilder::createVariable(std::string_view name, Type *ty, Vis visibility,
-                                 StorageClass storage,
-                                 bool is_readonly SOURCE_LOCATION_PARAM) noexcept {
+Local *NRBuilder::createVariable(
+    std::string_view name, Type *ty, Vis visibility, StorageClass storage,
+    bool is_readonly SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(ty != nullptr && static_cast<Expr *>(ty)->isType());

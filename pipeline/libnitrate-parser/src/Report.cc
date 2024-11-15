@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -45,7 +47,8 @@ thread_local qparse_t *g_parser_inst;
 
 ///============================================================================///
 
-std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const {
+std::string DiagnosticManager::mint_plain_message(
+    const DiagMessage &msg) const {
   std::stringstream ss;
   ss << qlex_filename(m_parser->lexer) << ":";
   uint32_t line = qlex_line(m_parser->lexer, qlex_begin(&msg.tok));
@@ -91,7 +94,8 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
   return ss.str();
 }
 
-std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) const {
+std::string DiagnosticManager::mint_clang16_message(
+    const DiagMessage &msg) const {
   std::stringstream ss;
   ss << "\x1b[37;1m" << qlex_filename(m_parser->lexer) << ":";
   uint32_t line = qlex_line(m_parser->lexer, qlex_begin(&msg.tok));
@@ -138,7 +142,8 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
   return ss.str();
 }
 
-std::string DiagnosticManager::mint_clang_truecolor_message(const DiagMessage &msg) const {
+std::string DiagnosticManager::mint_clang_truecolor_message(
+    const DiagMessage &msg) const {
   return mint_clang16_message(msg); /* For now this will do okay */
 }
 
@@ -146,9 +151,12 @@ std::string DiagnosticManager::mint_clang_truecolor_message(const DiagMessage &m
 
 using namespace qparse::diag;
 
-void DiagnosticManager::push(DiagMessage &&msg) { m_msgs.push_back(std::move(msg)); }
+void DiagnosticManager::push(DiagMessage &&msg) {
+  m_msgs.push_back(std::move(msg));
+}
 
-size_t DiagnosticManager::render(DiagnosticMessageHandler handler, FormatStyle style) const {
+size_t DiagnosticManager::render(DiagnosticMessageHandler handler,
+                                 FormatStyle style) const {
   switch (style) {
     case FormatStyle::ClangPlain:
       for (const auto &msg : m_msgs) {
@@ -166,7 +174,8 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler, FormatStyle s
       }
       break;
     default:
-      qcore_panicf("Unsupported diagnostic format style: %d", static_cast<int>(style));
+      qcore_panicf("Unsupported diagnostic format style: %d",
+                   static_cast<int>(style));
   }
 
   return m_msgs.size();

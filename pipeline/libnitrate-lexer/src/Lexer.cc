@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -263,7 +265,9 @@ namespace qlex {
 
 }  // namespace qlex
 
-static bool lex_is_space(char c) { return qlex::ws_chars[static_cast<uint8_t>(c)]; }
+static bool lex_is_space(char c) {
+  return qlex::ws_chars[static_cast<uint8_t>(c)];
+}
 
 enum class NumType {
   Invalid,
@@ -276,12 +280,13 @@ enum class NumType {
 };
 
 static thread_local boost::unordered_map<qlex::num_buf_t, NumType> num_cache;
-static thread_local boost::unordered_map<qlex::num_buf_t, qlex::num_buf_t> can_cache;
+static thread_local boost::unordered_map<qlex::num_buf_t, qlex::num_buf_t>
+    can_cache;
 
 ///============================================================================///
 
-CPP_EXPORT qlex_t *qlex_new(std::shared_ptr<std::istream> file, const char *filename,
-                            qcore_env_t env) {
+CPP_EXPORT qlex_t *qlex_new(std::shared_ptr<std::istream> file,
+                            const char *filename, qcore_env_t env) {
   try {
     return new qlex_t(file, filename, env);
   } catch (std::bad_alloc &) {
@@ -350,23 +355,27 @@ static NumType check_number_literal_type(qlex::num_buf_t &input) {
 
   if (prefix == "0x") {
     for (i = 2; i < input.size(); i++)
-      if (!((input[i] >= '0' && input[i] <= '9') || (input[i] >= 'a' && input[i] <= 'f')))
+      if (!((input[i] >= '0' && input[i] <= '9') ||
+            (input[i] >= 'a' && input[i] <= 'f')))
         return num_cache[input] = NumType::Invalid;
 
     return num_cache[input] = NumType::Hexadecimal;
   } else if (prefix == "0b") {
     for (i = 2; i < input.size(); i++)
-      if (!(input[i] == '0' || input[i] == '1')) return num_cache[input] = NumType::Invalid;
+      if (!(input[i] == '0' || input[i] == '1'))
+        return num_cache[input] = NumType::Invalid;
 
     return num_cache[input] = NumType::Binary;
   } else if (prefix == "0o") {
     for (i = 2; i < input.size(); i++)
-      if (!(input[i] >= '0' && input[i] <= '7')) return num_cache[input] = NumType::Invalid;
+      if (!(input[i] >= '0' && input[i] <= '7'))
+        return num_cache[input] = NumType::Invalid;
 
     return num_cache[input] = NumType::Octal;
   } else if (prefix == "0d") {
     for (i = 2; i < input.size(); i++)
-      if (!(input[i] >= '0' && input[i] <= '9')) return num_cache[input] = NumType::Invalid;
+      if (!(input[i] >= '0' && input[i] <= '9'))
+        return num_cache[input] = NumType::Invalid;
 
     return num_cache[input] = NumType::DecimalExplicit;
   } else {
@@ -374,9 +383,11 @@ static NumType check_number_literal_type(qlex::num_buf_t &input) {
       if (!(input[i] >= '0' && input[i] <= '9')) {
         try {
           double x;
-          auto r = std::from_chars(input.data(), input.data() + input.size(), x);
+          auto r =
+              std::from_chars(input.data(), input.data() + input.size(), x);
 
-          if (r.ec == std::errc::invalid_argument || r.ec == std::errc::result_out_of_range) {
+          if (r.ec == std::errc::invalid_argument ||
+              r.ec == std::errc::result_out_of_range) {
             return num_cache[input] = NumType::Invalid;
           }
 
@@ -415,7 +426,8 @@ static bool canonicalize_float(std::string_view input, std::string &norm) {
   return true;
 }
 
-static bool canonicalize_number(qlex::num_buf_t &number, std::string &norm, NumType type) {
+static bool canonicalize_number(qlex::num_buf_t &number, std::string &norm,
+                                NumType type) {
   if (can_cache.size() > 4096) {
     can_cache = {};
   } else if (can_cache.find(number) != can_cache.end()) {
@@ -536,8 +548,8 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
    * (most of the pipeline).
    *
    * This function provides various undocumented invariant guarantees that
-   * if broken will likely result in internal runtime corruption and other undefined
-   * behavior.
+   * if broken will likely result in internal runtime corruption and other
+   * undefined behavior.
    * */
 
   enum class LexState {
@@ -680,8 +692,9 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
           nbuf += buf[0];
           { /* Read in what is hopefully an integer */
             while (true) {
-              if (!(std::isxdigit(c) || c == '_' || c == '-' || c == '.' || c == 'x' || c == 'b' ||
-                    c == 'd' || c == 'o' || c == 'e' || c == '.')) {
+              if (!(std::isxdigit(c) || c == '_' || c == '-' || c == '.' ||
+                    c == 'x' || c == 'b' || c == 'd' || c == 'o' || c == 'e' ||
+                    c == '.')) {
                 break;
               }
 
@@ -732,7 +745,8 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
           std::string norm;
           if ((type = check_number_literal_type(nbuf)) == NumType::Floating) {
             if (canonicalize_float(nbuf, norm)) {
-              return qlex_tok_t(qNumL, put_string(std::move(norm)), start_pos, cur_loc());
+              return qlex_tok_t(qNumL, put_string(std::move(norm)), start_pos,
+                                cur_loc());
             } else {
               goto error_0;
             }
@@ -745,7 +759,8 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
 
           /* Canonicalize the number */
           if (canonicalize_number(nbuf, norm, type)) {
-            return qlex_tok_t(qIntL, put_string(std::move(norm)), start_pos, cur_loc());
+            return qlex_tok_t(qIntL, put_string(std::move(norm)), start_pos,
+                              cur_loc());
           }
 
           /* Invalid number */
@@ -769,7 +784,8 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
             c = getc();
           }
 
-          return qlex_tok_t(qNote, put_string(std::move(buf)), start_pos, cur_loc());
+          return qlex_tok_t(qNote, put_string(std::move(buf)), start_pos,
+                            cur_loc());
         }
         case LexState::CommentMultiLine: {
           size_t level = 1;
@@ -791,7 +807,8 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
               if (tmp == '/') {
                 level--;
                 if (level == 0) {
-                  return qlex_tok_t(qNote, put_string(std::move(buf)), start_pos, cur_loc());
+                  return qlex_tok_t(qNote, put_string(std::move(buf)),
+                                    start_pos, cur_loc());
                 } else {
                   buf += "*";
                   buf += tmp;
@@ -846,7 +863,8 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
                 if (!std::isxdigit(hex[0]) || !std::isxdigit(hex[1])) {
                   goto error_0;
                 }
-                buf += (qlex::hextable[(uint8_t)hex[0]] << 4) | qlex::hextable[(uint8_t)hex[1]];
+                buf += (qlex::hextable[(uint8_t)hex[0]] << 4) |
+                       qlex::hextable[(uint8_t)hex[1]];
                 break;
               }
               case 'u': {
@@ -971,10 +989,12 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
               m_pushback.push_back(c);
               /* Character or string */
               if (buf.front() == '\'' && buf.size() == 2) {
-                return qlex_tok_t(qChar, put_string(std::string(1, buf[1])), start_pos, cur_loc());
+                return qlex_tok_t(qChar, put_string(std::string(1, buf[1])),
+                                  start_pos, cur_loc());
               } else {
-                return qlex_tok_t(qText, put_string(buf.substr(1, buf.size() - 1)), start_pos,
-                                  cur_loc());
+                return qlex_tok_t(qText,
+                                  put_string(buf.substr(1, buf.size() - 1)),
+                                  start_pos, cur_loc());
               }
             }
           }
@@ -1008,7 +1028,8 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
 
           m_pushback.push_back(c);
 
-          return qlex_tok_t(qMacr, put_string(std::move(buf)), start_pos, cur_loc());
+          return qlex_tok_t(qMacr, put_string(std::move(buf)), start_pos,
+                            cur_loc());
         }
         case LexState::BlockMacro: {
           while (true) {
@@ -1019,7 +1040,8 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
             }
 
             if (state_parens == 0) {
-              return qlex_tok_t(qMacB, put_string(std::move(buf)), start_pos, cur_loc());
+              return qlex_tok_t(qMacB, put_string(std::move(buf)), start_pos,
+                                cur_loc());
             }
 
             buf += c;
@@ -1056,8 +1078,9 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
           bool found = false;
           while (true) {
             bool contains = false;
-            if (std::any_of(qlex::operators.begin(), qlex::operators.end(),
-                            [&](const auto &pair) { return pair.left == buf; })) {
+            if (std::any_of(
+                    qlex::operators.begin(), qlex::operators.end(),
+                    [&](const auto &pair) { return pair.left == buf; })) {
               contains = true;
               found = true;
             }
@@ -1079,8 +1102,9 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
 
           m_pushback.push_back(buf.back());
           m_pushback.push_back(c);
-          return qlex_tok_t(qOper, qlex::operators.left.at(buf.substr(0, buf.size() - 1)),
-                            start_pos, cur_loc());
+          return qlex_tok_t(
+              qOper, qlex::operators.left.at(buf.substr(0, buf.size() - 1)),
+              start_pos, cur_loc());
         }
       }
     }
@@ -1098,9 +1122,12 @@ error_0: { /* Reset the lexer and return error token */
 
 ///============================================================================///
 
-LIB_EXPORT uint32_t qlex_tok_size(qlex_t *, const qlex_tok_t *tok) { return tok->end - tok->start; }
+LIB_EXPORT uint32_t qlex_tok_size(qlex_t *, const qlex_tok_t *tok) {
+  return tok->end - tok->start;
+}
 
-LIB_EXPORT uint32_t qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *buf, uint32_t size) {
+LIB_EXPORT uint32_t qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok,
+                                   char *buf, uint32_t size) {
   try {
     size_t ret;
 
@@ -1194,7 +1221,8 @@ LIB_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
   __builtin_unreachable();
 }
 
-LIB_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
+LIB_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a,
+                        const qlex_tok_t *b) {
   try {
     if (a->ty != b->ty) return false;
 
@@ -1216,7 +1244,8 @@ LIB_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b)
       case qMacB:
       case qMacr:
       case qNote: {
-        return lexer->get_string(a->v.str_idx) == lexer->get_string(b->v.str_idx);
+        return lexer->get_string(a->v.str_idx) ==
+               lexer->get_string(b->v.str_idx);
       }
     }
   } catch (std::out_of_range &) {
@@ -1228,7 +1257,8 @@ LIB_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b)
   __builtin_unreachable();
 }
 
-LIB_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
+LIB_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a,
+                        const qlex_tok_t *b) {
   try {
     if (a->ty != b->ty) return a->ty < b->ty;
 
@@ -1250,7 +1280,8 @@ LIB_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b)
       case qMacB:
       case qMacr:
       case qNote:
-        return lexer->get_string(a->v.str_idx) < lexer->get_string(b->v.str_idx);
+        return lexer->get_string(a->v.str_idx) <
+               lexer->get_string(b->v.str_idx);
     }
   } catch (std::out_of_range &) {
     return false;
@@ -1326,7 +1357,8 @@ LIB_EXPORT const char *qlex_punctstr(qlex_punc_t punct) {
   }
 }
 
-LIB_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, qlex_tok_t *out) {
+LIB_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str,
+                                 qlex_tok_t *out) {
   try {
     out->ty = ty;
     out->start = out->end = 0;

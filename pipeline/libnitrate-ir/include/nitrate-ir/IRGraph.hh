@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -130,7 +132,9 @@ namespace nr {
 
     static uint32_t getKindSize(nr_ty_t kind) noexcept;
     nr_ty_t getKind() const noexcept { return m_node_type; }
-    const char *getKindName() const noexcept { return getKindName(m_node_type); }
+    const char *getKindName() const noexcept {
+      return getKindName(m_node_type);
+    }
     static const char *getKindName(nr_ty_t kind) noexcept;
 
     template <typename T>
@@ -228,8 +232,9 @@ namespace nr {
       } else if constexpr (std::is_same_v<T, Tmp>) {
         return QIR_NODE_TMP;
       } else {
-        static_assert(!std::is_same_v<T, T>,
-                      "The requested type target is not supported by this function.");
+        static_assert(
+            !std::is_same_v<T, T>,
+            "The requested type target is not supported by this function.");
       }
     }
 
@@ -450,7 +455,8 @@ namespace nr {
 
 #ifndef NDEBUG
     cast_panic:
-      qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(), getKindName(getTypeCode<T>()));
+      qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(),
+                   getKindName(getTypeCode<T>()));
 #endif
     }
 
@@ -458,7 +464,8 @@ namespace nr {
      * @brief Type-safe cast (type check only in debug mode).
      *
      * @tparam T The type to cast to.
-     * @return T* The casted pointer. It may be nullptr if the source pointer is nullptr.
+     * @return T* The casted pointer. It may be nullptr if the source pointer is
+     * nullptr.
      * @warning This function will panic if the cast is invalid.
      */
     template <typename T>
@@ -470,7 +477,8 @@ namespace nr {
      * @brief Type-safe cast (type check only in debug mode).
      *
      * @tparam T The type to cast to.
-     * @return const T* The casted pointer. It may be nullptr if the source pointer is nullptr.
+     * @return const T* The casted pointer. It may be nullptr if the source
+     * pointer is nullptr.
      * @warning This function will panic if the cast is invalid.
      */
     template <typename T>
@@ -494,7 +502,8 @@ namespace nr {
      * @brief Compare two nodes for equality.
      * @param other The other node.
      * @return true If the nodes are equivalent (deep comparison).
-     * @note This compare will be insensitive to metadata like module, source location, etc.
+     * @note This compare will be insensitive to metadata like module, source
+     * location, etc.
      */
     bool isSame(const Expr *other) const;
 
@@ -508,21 +517,23 @@ namespace nr {
     void dump(std::ostream &os = std::cout, bool isForDebug = false) const;
 
     /**
-     * @brief Get a hashcode for the node. The code is unique its the nodes and its
-     * childrens recursive state.
+     * @brief Get a hashcode for the node. The code is unique its the nodes and
+     * its childrens recursive state.
      * @return boost::uuids::uuid The hash.
-     * @note This code will be the same on different compiler runs as long as the compiler version
-     * is the same.
+     * @note This code will be the same on different compiler runs as long as
+     * the compiler version is the same.
      */
     boost::uuids::uuid hash() noexcept;
 
     /**
-     * @brief Get a hashcode for the node. The code is unique its the nodes and its
-     * childrens recursive state.
+     * @brief Get a hashcode for the node. The code is unique its the nodes and
+     * its childrens recursive state.
      * @return std::string The unique identifier.
      * @note Wrapper around hash()
      */
-    std::string getStateUUID() noexcept { return boost::uuids::to_string(hash()); }
+    std::string getStateUUID() noexcept {
+      return boost::uuids::to_string(hash());
+    }
 
     /**
      * @brief Get a short code to uniquely identify the node.
@@ -660,7 +671,8 @@ namespace nr {
     Op m_op;
 
   public:
-    PostUnExpr(Expr *expr, Op op) : Expr(QIR_NODE_POST_UNEXPR), m_expr(expr), m_op(op) {}
+    PostUnExpr(Expr *expr, Op op)
+        : Expr(QIR_NODE_POST_UNEXPR), m_expr(expr), m_op(op) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Op getOp() noexcept { return m_op; }
@@ -825,7 +837,8 @@ namespace nr {
     StructFields m_fields;
 
   public:
-    StructTy(const StructFields &fields) : Type(QIR_NODE_STRUCT_TY), m_fields(fields) {}
+    StructTy(const StructFields &fields)
+        : Type(QIR_NODE_STRUCT_TY), m_fields(fields) {}
 
     const StructFields &getFields() noexcept { return m_fields; }
   };
@@ -838,7 +851,8 @@ namespace nr {
     UnionFields m_fields;
 
   public:
-    UnionTy(const UnionFields &fields) : Type(QIR_NODE_UNION_TY), m_fields(fields) {}
+    UnionTy(const UnionFields &fields)
+        : Type(QIR_NODE_UNION_TY), m_fields(fields) {}
 
     const UnionFields &getFields() noexcept { return m_fields; }
   };
@@ -862,7 +876,8 @@ namespace nr {
   };
 
   typedef std::vector<Type *, Arena<Type *>> FnParams;
-  typedef std::unordered_set<FnAttr, std::hash<FnAttr>, std::equal_to<FnAttr>, Arena<FnAttr>>
+  typedef std::unordered_set<FnAttr, std::hash<FnAttr>, std::equal_to<FnAttr>,
+                             Arena<FnAttr>>
       FnAttrs;
 
   class FnTy final : public Type {
@@ -874,7 +889,10 @@ namespace nr {
 
   public:
     FnTy(const FnParams &params, Type *ret, const FnAttrs &attrs)
-        : Type(QIR_NODE_FN_TY), m_params(params), m_attrs(attrs), m_return(ret) {}
+        : Type(QIR_NODE_FN_TY),
+          m_params(params),
+          m_attrs(attrs),
+          m_return(ret) {}
 
     const FnParams &getParams() noexcept { return m_params; }
     Type *getReturn() noexcept { return m_return; }
@@ -906,7 +924,8 @@ namespace nr {
     static uint128_t str2u128(std::string_view x) noexcept;
 
   public:
-    Int(uint128_t val, IntSize size) : Expr(QIR_NODE_INT), m_size(size), m_value(val) {}
+    Int(uint128_t val, IntSize size)
+        : Expr(QIR_NODE_INT), m_size(size), m_value(val) {}
 
     Int(std::string_view str, IntSize size) : Expr(QIR_NODE_INT) {
       m_size = size;
@@ -939,7 +958,8 @@ namespace nr {
     static_assert(sizeof(double) == 8);
 
   public:
-    Float(double dec, FloatSize size) : Expr(QIR_NODE_FLOAT), m_data{dec}, m_size(size) {}
+    Float(double dec, FloatSize size)
+        : Expr(QIR_NODE_FLOAT), m_data{dec}, m_size(size) {}
     Float(std::string_view str) : Expr(QIR_NODE_FLOAT) {
       m_data = std::stod(std::string(str));
       if (str.ends_with("f128")) {
@@ -997,7 +1017,8 @@ namespace nr {
     CallArgs m_args;
 
   public:
-    Call(Expr *ref, const CallArgs &args) : Expr(QIR_NODE_CALL), m_iref(ref), m_args(args) {}
+    Call(Expr *ref, const CallArgs &args)
+        : Expr(QIR_NODE_CALL), m_iref(ref), m_args(args) {}
 
     Expr *getTarget() noexcept { return m_iref; }
     Expr *setTarget(Expr *ref) noexcept { return m_iref = ref; }
@@ -1031,7 +1052,8 @@ namespace nr {
     Expr *m_index;
 
   public:
-    Index(Expr *expr, Expr *index) : Expr(QIR_NODE_INDEX), m_expr(expr), m_index(index) {}
+    Index(Expr *expr, Expr *index)
+        : Expr(QIR_NODE_INDEX), m_expr(expr), m_index(index) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
@@ -1047,12 +1069,15 @@ namespace nr {
     Expr *m_what;
 
   public:
-    Ident(std::string_view name, Expr *what) : Expr(QIR_NODE_IDENT), m_name(name), m_what(what) {}
+    Ident(std::string_view name, Expr *what)
+        : Expr(QIR_NODE_IDENT), m_name(name), m_what(what) {}
 
     Expr *getWhat() noexcept { return m_what; }
     Expr *setWhat(Expr *what) noexcept { return m_what = what; }
 
-    std::string_view setName(std::string_view name) noexcept { return m_name = name; }
+    std::string_view setName(std::string_view name) noexcept {
+      return m_name = name;
+    }
   };
 
   class Extern final : public Expr {
@@ -1083,9 +1108,14 @@ namespace nr {
 
   public:
     Local(std::string_view name, Expr *value, AbiTag abi_tag)
-        : Expr(QIR_NODE_LOCAL), m_name(name), m_value(value), m_abi_tag(abi_tag) {}
+        : Expr(QIR_NODE_LOCAL),
+          m_name(name),
+          m_value(value),
+          m_abi_tag(abi_tag) {}
 
-    std::string_view setName(std::string_view name) noexcept { return m_name = name; }
+    std::string_view setName(std::string_view name) noexcept {
+      return m_name = name;
+    }
 
     Expr *getValue() noexcept { return m_value; }
     Expr *setValue(Expr *value) noexcept { return m_value = value; }
@@ -1148,7 +1178,8 @@ namespace nr {
     Seq *m_body;
 
   public:
-    While(Expr *cond, Seq *body) : Expr(QIR_NODE_WHILE), m_cond(cond), m_body(body) {}
+    While(Expr *cond, Seq *body)
+        : Expr(QIR_NODE_WHILE), m_cond(cond), m_body(body) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1167,7 +1198,11 @@ namespace nr {
 
   public:
     For(Expr *init, Expr *cond, Expr *step, Expr *body)
-        : Expr(QIR_NODE_FOR), m_init(init), m_cond(cond), m_step(step), m_body(body) {}
+        : Expr(QIR_NODE_FOR),
+          m_init(init),
+          m_cond(cond),
+          m_step(step),
+          m_body(body) {}
 
     Expr *getInit() noexcept { return m_init; }
     Expr *setInit(Expr *init) noexcept { return m_init = init; }
@@ -1189,7 +1224,8 @@ namespace nr {
     Expr *m_body;
 
   public:
-    Case(Expr *cond, Expr *body) : Expr(QIR_NODE_CASE), m_cond(cond), m_body(body) {}
+    Case(Expr *cond, Expr *body)
+        : Expr(QIR_NODE_CASE), m_cond(cond), m_body(body) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1209,7 +1245,10 @@ namespace nr {
 
   public:
     Switch(Expr *cond, const SwitchCases &cases, Expr *default_)
-        : Expr(QIR_NODE_SWITCH), m_cond(cond), m_default(default_), m_cases(cases) {}
+        : Expr(QIR_NODE_SWITCH),
+          m_cond(cond),
+          m_default(default_),
+          m_cases(cases) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1238,8 +1277,8 @@ namespace nr {
     AbiTag m_abi_tag;
 
   public:
-    Fn(std::string_view name, const Params &params, Type *ret_ty, std::optional<Seq *> body,
-       bool variadic, AbiTag abi_tag)
+    Fn(std::string_view name, const Params &params, Type *ret_ty,
+       std::optional<Seq *> body, bool variadic, AbiTag abi_tag)
         : Expr(QIR_NODE_FN),
           m_name(name),
           m_params(params),
@@ -1248,7 +1287,9 @@ namespace nr {
           m_variadic(variadic),
           m_abi_tag(abi_tag) {}
 
-    std::string_view setName(std::string_view name) noexcept { return m_name = name; }
+    std::string_view setName(std::string_view name) noexcept {
+      return m_name = name;
+    }
 
     const Params &getParams() const noexcept { return m_params; }
     Params &getParams() noexcept { return m_params; }
@@ -1258,7 +1299,9 @@ namespace nr {
     Type *setReturn(Type *ret_ty) noexcept { return m_return = ret_ty; }
 
     std::optional<Seq *> getBody() noexcept { return m_body; }
-    std::optional<Seq *> setBody(std::optional<Seq *> body) noexcept { return m_body = body; }
+    std::optional<Seq *> setBody(std::optional<Seq *> body) noexcept {
+      return m_body = body;
+    }
 
     bool isVariadic() noexcept { return m_variadic; }
     void setVariadic(bool variadic) noexcept { m_variadic = variadic; }
@@ -1286,14 +1329,15 @@ namespace nr {
 
   typedef std::tuple<std::string_view, Expr *> LetTmpNodeCradle;
 
-  typedef std::tuple<Expr *, std::vector<std::pair<std::string_view, Expr *>,
-                                         Arena<std::pair<std::string_view, Expr *>>>>
+  typedef std::tuple<Expr *,
+                     std::vector<std::pair<std::string_view, Expr *>,
+                                 Arena<std::pair<std::string_view, Expr *>>>>
       CallArgsTmpNodeCradle;
 
   typedef std::tuple<Expr *, std::string_view> FieldTmpNodeCradle;
 
-  typedef std::variant<LetTmpNodeCradle, CallArgsTmpNodeCradle, FieldTmpNodeCradle,
-                       std::string_view>
+  typedef std::variant<LetTmpNodeCradle, CallArgsTmpNodeCradle,
+                       FieldTmpNodeCradle, std::string_view>
       TmpNodeCradle;
 
   class Tmp final : public Type {
@@ -1321,7 +1365,8 @@ namespace nr {
   // };
 
   // static auto alloc_memorize = [](nr_ty_t ty, void *ptr) -> void {
-  //   current->getKeyMap().emplace((uint64_t)ty, reinterpret_cast<uintptr_t>(ptr));
+  //   current->getKeyMap().emplace((uint64_t)ty,
+  //   reinterpret_cast<uintptr_t>(ptr));
   // };
 
   Expr *createIgn();
@@ -1330,14 +1375,16 @@ namespace nr {
   constexpr static T *create(Args &&...args) {
     return new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
     //     /**
-    //      * Create nodes and minimize the number of allocations by reusing stateless
+    //      * Create nodes and minimize the number of allocations by reusing
+    //      stateless
     //      * nodes.
     //      *
-    //      * @note The base class contains source location information, this information will be
-    //      lost in
-    //      * deduplicated nodes. In addition, the constExpr bit and the mutable bit will be lost,
-    //      but
-    //      * these have no semantic significance in the contexts where deduplicated nodes are used.
+    //      * @note The base class contains source location information, this
+    //      information will be lost in
+    //      * deduplicated nodes. In addition, the constExpr bit and the mutable
+    //      bit will be lost, but
+    //      * these have no semantic significance in the contexts where
+    //      deduplicated nodes are used.
     //      */
 
     //     constexpr nr_ty_t ty = Expr::getTypeCode<T>();
@@ -1364,8 +1411,8 @@ namespace nr {
     //       case QIR_NODE_EXTERN:
     //       case QIR_NODE_LOCAL:
     //       case QIR_NODE_RET:
-    //         ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
-    //         ptr->setModuleDangerous(current);
+    //         ptr = new (Arena<T>().allocate(1))
+    //         T(std::forward<Args>(args)...); ptr->setModuleDangerous(current);
     //         break;
     //       case QIR_NODE_BRK:
     //       case QIR_NODE_CONT:
@@ -1378,8 +1425,8 @@ namespace nr {
     //       case QIR_NODE_SWITCH:
     //       case QIR_NODE_FN:
     //       case QIR_NODE_ASM:
-    //         ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
-    //         ptr->setModuleDangerous(current);
+    //         ptr = new (Arena<T>().allocate(1))
+    //         T(std::forward<Args>(args)...); ptr->setModuleDangerous(current);
     //         break;
     //       case QIR_NODE_IGN:
     //       case QIR_NODE_U1_TY:
@@ -1407,8 +1454,8 @@ namespace nr {
     //       case QIR_NODE_ARRAY_TY:
     //       case QIR_NODE_FN_TY:
     //       case QIR_NODE_TMP:
-    //         ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
-    //         ptr->setModuleDangerous(current);
+    //         ptr = new (Arena<T>().allocate(1))
+    //         T(std::forward<Args>(args)...); ptr->setModuleDangerous(current);
     //         break;
     //     }
 
@@ -1460,8 +1507,8 @@ namespace nr {
   }
 
   std::optional<Expr *> comptime_impl(
-      Expr *x,
-      std::optional<std::function<void(std::string_view)>> eprintn = std::nullopt) noexcept;
+      Expr *x, std::optional<std::function<void(std::string_view)>> eprintn =
+                   std::nullopt) noexcept;
 
   template <typename T>
   std::optional<T> uint_as(const Expr *x) noexcept {
@@ -1469,8 +1516,9 @@ namespace nr {
 
     qcore_assert(x != nullptr, "nr::evaluate_as(): x is nullptr.");
 
-    static_assert(IS_T(std::string) || IS_T(uint64_t),
-                  "nr::evaluate_as(): T must be either std::string or uint64_t.");
+    static_assert(
+        IS_T(std::string) || IS_T(uint64_t),
+        "nr::evaluate_as(): T must be either std::string or uint64_t.");
 
     Expr *r = comptime_impl(const_cast<Expr *>(x)).value_or(nullptr);
     if (r == nullptr) {

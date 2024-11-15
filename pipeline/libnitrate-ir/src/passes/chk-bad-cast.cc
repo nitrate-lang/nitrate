@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -62,7 +64,8 @@ using namespace nr;
  * +========================================================+
  */
 
-static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L, Type* R) {
+static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L,
+                           Type* R) {
   static constexpr std::array<std::string_view, 13> texts = {
       "`as` expected both struct types to have the same number of fields",
       "Field cast failed in recursive struct cast",
@@ -83,12 +86,15 @@ static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L, Type* R
     return true;
   }
 
-  const auto prepare = [](std::string_view msg, Type* L, Type* R) -> std::string {
-    return std::string(msg) + ": " + L->getKindName() + " -> " + R->getKindName() + ".";
+  const auto prepare = [](std::string_view msg, Type* L,
+                          Type* R) -> std::string {
+    return std::string(msg) + ": " + L->getKindName() + " -> " +
+           R->getKindName() + ".";
   };
 
   /* Recursively check struct field casting */
-  if (L->getKind() == QIR_NODE_STRUCT_TY && R->getKind() == QIR_NODE_STRUCT_TY) {
+  if (L->getKind() == QIR_NODE_STRUCT_TY &&
+      R->getKind() == QIR_NODE_STRUCT_TY) {
     StructTy *LS = L->as<StructTy>(), *RS = R->as<StructTy>();
 
     if (LS->getFields().size() != RS->getFields().size()) {
@@ -130,14 +136,16 @@ static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L, Type* R
     }
 
     return true;
-  } else if (L->getKind() == QIR_NODE_STRUCT_TY || R->getKind() == QIR_NODE_STRUCT_TY) {
+  } else if (L->getKind() == QIR_NODE_STRUCT_TY ||
+             R->getKind() == QIR_NODE_STRUCT_TY) {
     log->report(BadCast, IC::Error, prepare(texts[4], L, R), N->getLoc());
 
     return false;
   }
 
   /* Opaque types cannot be casted to anything */
-  if (L->getKind() == QIR_NODE_OPAQUE_TY || R->getKind() == QIR_NODE_OPAQUE_TY) {
+  if (L->getKind() == QIR_NODE_OPAQUE_TY ||
+      R->getKind() == QIR_NODE_OPAQUE_TY) {
     log->report(BadCast, IC::Error, prepare(texts[5], L, R), N->getLoc());
 
     return false;
@@ -190,34 +198,39 @@ static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L, Type* R
 
 bool nr::pass::chk_bad_cast(qmodule_t* M, IReport* log) {
   /**
-   * Perform validation checks on `cast_as` expressions to ensure that the cast is indeed
-   * accecptable.
+   * Perform validation checks on `cast_as` expressions to ensure that the cast
+   * is indeed accecptable.
    */
 
-  iterate<dfs_pre>(M->getRoot(), [&](Expr* /* parent */, Expr** C /* current */) -> IterOp {
-    Expr* N = *C;
+  iterate<dfs_pre>(M->getRoot(),
+                   [&](Expr* /* parent */, Expr** C /* current */) -> IterOp {
+                     Expr* N = *C;
 
-    /**
-     * If the node is not a binary expression OR the binary expression operator is not a cast_as,
-     * the node is not subject to scrutiny by this analysis pass.
-     */
-    if (N->getKind() != QIR_NODE_BINEXPR || N->as<BinExpr>()->getOp() != Op::CastAs) {
-      return IterOp::Proceed;
-    }
+                     /**
+                      * If the node is not a binary expression OR the binary
+                      * expression operator is not a cast_as, the node is not
+                      * subject to scrutiny by this analysis pass.
+                      */
+                     if (N->getKind() != QIR_NODE_BINEXPR ||
+                         N->as<BinExpr>()->getOp() != Op::CastAs) {
+                       return IterOp::Proceed;
+                     }
 
-    BinExpr* BE = N->as<BinExpr>();
-    Type *L = BE->getLHS()->getType().value_or(nullptr), *R = BE->getRHS()->asType();
+                     BinExpr* BE = N->as<BinExpr>();
+                     Type *L = BE->getLHS()->getType().value_or(nullptr),
+                          *R = BE->getRHS()->asType();
 
-    /* No inference was possible on the left-hand side of the cast, therefore no cast is possible */
-    if (L == nullptr) {
-      return IterOp::Proceed;
-    }
+                     /* No inference was possible on the left-hand side of the
+                      * cast, therefore no cast is possible */
+                     if (L == nullptr) {
+                       return IterOp::Proceed;
+                     }
 
-    /* Casting to the same type is always legal */
-    (void)verify_cast_as(M, log, N, L, R);
+                     /* Casting to the same type is always legal */
+                     (void)verify_cast_as(M, log, N, L, R);
 
-    return IterOp::Proceed;
-  });
+                     return IterOp::Proceed;
+                   });
 
   return true;
 }

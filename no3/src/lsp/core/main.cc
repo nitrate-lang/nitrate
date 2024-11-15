@@ -25,7 +25,9 @@ static constexpr void create_parser(argparse::ArgumentParser& parser) {
       .default_value(std::string(""))
       .help("Specify the configuration file");
 
-  parser.add_argument("--log").default_value("no3-lsp.log").help("Specify the log file");
+  parser.add_argument("--log")
+      .default_value("no3-lsp.log")
+      .help("Specify the log file");
 
   ///=================== CONNECTION CONFIGURATION ======================
 
@@ -33,7 +35,8 @@ static constexpr void create_parser(argparse::ArgumentParser& parser) {
 
   group.add_argument("--pipe").help("Specify the pipe file to connect to");
   group.add_argument("--port").help("Specify the port to connect to");
-  group.add_argument("--stdio").default_value(false).implicit_value(true).help("Use standard I/O");
+  group.add_argument("--stdio").default_value(false).implicit_value(true).help(
+      "Use standard I/O");
 }
 
 LIB_EXPORT int nitrated_main(int argc, char** argv) {

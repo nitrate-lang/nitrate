@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -87,7 +89,8 @@ LIB_EXPORT void qcore_env_set_current(qcore_env_t env) {
 LIB_EXPORT void qcore_env_set(const char *key, const char *value) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
-  qcore_assert(g_envs.count(g_current_env), "Current environment does not exist.");
+  qcore_assert(g_envs.count(g_current_env),
+               "Current environment does not exist.");
 
   if (value == NULL) {
     g_envs[g_current_env].env.erase(key);
@@ -99,7 +102,8 @@ LIB_EXPORT void qcore_env_set(const char *key, const char *value) {
 LIB_EXPORT const char *qcore_env_get(const char *key) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
-  qcore_assert(g_envs.count(g_current_env), "Current environment does not exist.");
+  qcore_assert(g_envs.count(g_current_env),
+               "Current environment does not exist.");
 
   if (g_envs[g_current_env].env.count(key)) {
     return g_envs[g_current_env].env[key].c_str();
@@ -111,7 +115,8 @@ LIB_EXPORT const char *qcore_env_get(const char *key) {
 LIB_EXPORT void qcore_begin(qcore_log_t level) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
-  qcore_assert(g_envs.count(g_current_env), "Current environment does not exist.");
+  qcore_assert(g_envs.count(g_current_env),
+               "Current environment does not exist.");
 
   g_envs[g_current_env].log_buffer.str("");
   g_envs[g_current_env].log_level = level;
@@ -122,7 +127,8 @@ LIB_EXPORT void qcore_begin(qcore_log_t level) {
 LIB_EXPORT void qcore_end() {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
-  qcore_assert(g_envs.count(g_current_env), "Current environment does not exist.");
+  qcore_assert(g_envs.count(g_current_env),
+               "Current environment does not exist.");
 
   if (!qcore_fuzzing) {
     return;
@@ -169,7 +175,8 @@ LIB_EXPORT int qcore_vwritef(const char *fmt, va_list args) {
 
   {
     std::lock_guard<std::mutex> lock(g_envs_mutex);
-    qcore_assert(g_envs.count(g_current_env), "Current environment does not exist.");
+    qcore_assert(g_envs.count(g_current_env),
+                 "Current environment does not exist.");
 
     g_envs[g_current_env].log_buffer << std::string_view(buffer, size);
   }

@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -48,61 +50,71 @@ nit_stream_t *nit_join(size_t num, /* ... FILE* */...);
 nit_stream_t *nit_joinv(size_t num, /* ... FILE* */ va_list va);
 nit_stream_t *nit_njoin(size_t num, FILE **streams);
 
-typedef void (*nit_diag_cb)(const char *message, const char *by, uint64_t userdata);
+typedef void (*nit_diag_cb)(const char *message, const char *by,
+                            uint64_t userdata);
 
 /**
- * @brief Generic interface to transformation utilities provided by the Nitrate Toolchain.
+ * @brief Generic interface to transformation utilities provided by the Nitrate
+ * Toolchain.
  *
  * @param source Input pipe to read data from.
  * @param output The output pipe to write data to.
  * @param diag_cb [Nullable] Callback function to report diagnostics.
  * @param userdata User data to pass to the diagnostic callback.
- * @param options [Nullable] NULL terminated array of options to pass to the transformer.
+ * @param options [Nullable] NULL terminated array of options to pass to the
+ * transformer.
  *
  * @return `true` if the transformation was successful, `false` otherwise.
  *
  * @note The `source` can not be the same pipe as the `output`.
- * @note The `diag_cb` function is optional. If provided, it will be called to report diagnostics.
- * The `userdata` parameter will be passed to the callback function on each invocation. `userdata`
- * can be used to create closures. `userdata` can be any value, it is not checked internally.
+ * @note The `diag_cb` function is optional. If provided, it will be called to
+ * report diagnostics. The `userdata` parameter will be passed to the callback
+ * function on each invocation. `userdata` can be used to create closures.
+ * `userdata` can be any value, it is not checked internally.
  *
- * @note The `options` parameter is optional. If provided, it will be passed to the transformer
- * otherwise an empty array will be passed.
- * @warning Don't forget the that the last element of the `options` array must be `NULL`. This is
- * how the function knows when to stop reading the array.
+ * @note The `options` parameter is optional. If provided, it will be passed to
+ * the transformer otherwise an empty array will be passed.
+ * @warning Don't forget the that the last element of the `options` array must
+ * be `NULL`. This is how the function knows when to stop reading the array.
  *
- * @note The `options` array is validated internally to the fullest extent possible by the
- * appropriate subsystem. However, it is not guaranteed that all possible options will trigger well
- * defined transformations. The transformer may ignore some options or may not be able to handle
- * them. See the documentation for each component for more information on what options are
- * available. This function is mostly just a wrapper around various internal subsystems and
- * therefore has limited knowledge of the actual semantics of the options.
+ * @note The `options` array is validated internally to the fullest extent
+ * possible by the appropriate subsystem. However, it is not guaranteed that all
+ * possible options will trigger well defined transformations. The transformer
+ * may ignore some options or may not be able to handle them. See the
+ * documentation for each component for more information on what options are
+ * available. This function is mostly just a wrapper around various internal
+ * subsystems and therefore has limited knowledge of the actual semantics of the
+ * options.
  *
- * @note The library will be initialized automatically if it is not already initialized. This is
- * done to make the library easier to use. However, this may not be the desired behavior in some
- * cases. To prevent this behavior, call `nit_lib_init` before calling this function. If the
- * library is already initialized, this will not increment the library's reference count otherwise
+ * @note The library will be initialized automatically if it is not already
+ * initialized. This is done to make the library easier to use. However, this
+ * may not be the desired behavior in some cases. To prevent this behavior, call
+ * `nit_lib_init` before calling this function. If the library is already
+ * initialized, this will not increment the library's reference count otherwise
  * it will.
  *
- * @warning This function is thread-safe. However, it it may block other threads in some cases. Some
- * components can the number of concurrent runs on them which will result in an error being returned
- * for an otherwise valid call. This is not a bug, but a feature to maximize the efficiency of the
- * system.
+ * @warning This function is thread-safe. However, it it may block other threads
+ * in some cases. Some components can the number of concurrent runs on them
+ * which will result in an error being returned for an otherwise valid call.
+ * This is not a bug, but a feature to maximize the efficiency of the system.
  */
-bool nit_cc(nit_stream_t *source, FILE *output, nit_diag_cb diag_cb, uint64_t userdata,
-            const char *const options[]);
+bool nit_cc(nit_stream_t *source, FILE *output, nit_diag_cb diag_cb,
+            uint64_t userdata, const char *const options[]);
 
 /**
  * @brief Deinitialize the Nitrate library.
  *
- * @note This function should be called when the Nitrate library is no longer needed.
- * @note This library is reference counted internally, so it is safe to call this function multiple
- * times. When the reference count actually reaches zero, the library will be deinitialized along
- * with any *external* components that were initialized by the library. If the library is not
- * initialized, this function will do nothing.
+ * @note This function should be called when the Nitrate library is no longer
+ * needed.
+ * @note This library is reference counted internally, so it is safe to call
+ * this function multiple times. When the reference count actually reaches zero,
+ * the library will be deinitialized along with any *external* components that
+ * were initialized by the library. If the library is not initialized, this
+ * function will do nothing.
  *
- * @note To check if the library is initialized, use the `nit_lib_ready` variable. Beware
- * that this variable is not atomic, therefore may not be safe in a multithreaded environment.
+ * @note To check if the library is initialized, use the `nit_lib_ready`
+ * variable. Beware that this variable is not atomic, therefore may not be safe
+ * in a multithreaded environment.
  *
  * @note This function is thread-safe.
  */

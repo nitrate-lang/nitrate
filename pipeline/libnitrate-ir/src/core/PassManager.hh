@@ -3,15 +3,17 @@
 #include "nitrate-ir/Report.hh"
 #////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -52,9 +54,12 @@ namespace nr::pass {
     pass_func_t func;
 
   public:
-    ModulePass(std::string_view name, pass_func_t func) : name(name), func(func) {}
+    ModulePass(std::string_view name, pass_func_t func)
+        : name(name), func(func) {}
 
-    bool run(qmodule_t* module, IReport* log) const { return func(module, log); }
+    bool run(qmodule_t* module, IReport* log) const {
+      return func(module, log);
+    }
 
     std::string_view getName() const { return name; }
     pass_func_t getFunc() const { return func; }
@@ -89,7 +94,8 @@ namespace nr::pass {
     PassGroup(std::string_view name, std::span<ModulePass> passes)
         : m_name(name), m_sequence(passes) {}
 
-    bool run(qmodule_t* module, std::function<void(std::string_view name)> on_success = nullptr);
+    bool run(qmodule_t* module,
+             std::function<void(std::string_view name)> on_success = nullptr);
 
     std::string_view getName() const { return m_name; }
 
@@ -108,8 +114,10 @@ namespace nr::pass {
   public:
     static PassGroupRegistry& the();
 
-    void addGroup(const std::string& name, std::initializer_list<std::string_view> passes);
-    void addGroup(const std::string& name, const std::vector<std::string>& passes);
+    void addGroup(const std::string& name,
+                  std::initializer_list<std::string_view> passes);
+    void addGroup(const std::string& name,
+                  const std::vector<std::string>& passes);
     bool hasGroup(const std::string& name);
     static PassGroup get(const std::string& name);
 

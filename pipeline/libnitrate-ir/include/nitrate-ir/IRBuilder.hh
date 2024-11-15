@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -150,19 +152,23 @@ namespace nr {
 #define SOURCE_LOCATION_PARAM
 #define SOURCE_LOCATION_PARAM_ONCE
 
-    void contract_enforce_(bool cond, std::string_view cond_str,
-                           std::experimental::source_location caller =
-                               std::experimental::source_location::current()) const noexcept;
+    void contract_enforce_(
+        bool cond, std::string_view cond_str,
+        std::experimental::source_location caller =
+            std::experimental::source_location::current()) const noexcept;
 #define contract_enforce(cond) contract_enforce_(cond, #cond)
 #else
-#define SOURCE_LOCATION_PARAM \
-  , std::experimental::source_location caller_info = std::experimental::source_location::current()
-#define SOURCE_LOCATION_PARAM_ONCE \
-  std::experimental::source_location caller_info = std::experimental::source_location::current()
+#define SOURCE_LOCATION_PARAM                        \
+  , std::experimental::source_location caller_info = \
+        std::experimental::source_location::current()
+#define SOURCE_LOCATION_PARAM_ONCE                 \
+  std::experimental::source_location caller_info = \
+      std::experimental::source_location::current()
 
-    void contract_enforce_(bool cond, std::string_view cond_str SOURCE_LOCATION_PARAM,
-                           std::experimental::source_location caller =
-                               std::experimental::source_location::current()) const noexcept;
+    void contract_enforce_(
+        bool cond, std::string_view cond_str SOURCE_LOCATION_PARAM,
+        std::experimental::source_location caller =
+            std::experimental::source_location::current()) const noexcept;
 #define contract_enforce(cond) contract_enforce_(cond, #cond, caller_info)
 
 #endif
@@ -170,7 +176,8 @@ namespace nr {
 #define DEBUG_INFO 1, 1
 
   public:
-    NRBuilder(std::string module_name, TargetInfo target_info SOURCE_LOCATION_PARAM) noexcept;
+    NRBuilder(std::string module_name,
+              TargetInfo target_info SOURCE_LOCATION_PARAM) noexcept;
     ~NRBuilder() noexcept;
 
     /* Moving the module is permitted */
@@ -192,7 +199,8 @@ namespace nr {
     /**
      * @brief Finialize the module build
      * @note After the builder is finalized, it can't be updated anymore.
-     * @note This function is idempotent, without any overhead from additional calls.
+     * @note This function is idempotent, without any overhead from additional
+     * calls.
      */
     void finish(SOURCE_LOCATION_PARAM_ONCE) noexcept;
 
@@ -201,13 +209,15 @@ namespace nr {
      * @param sink The diagnostic engine to use.
      * @return True if the module is usable, false otherwise.
      *
-     * Usability means that the module is in a state where all data-structure invariants are
-     * intact, such that it can be used for further processing as-if it were fully correct.
+     * Usability means that the module is in a state where all data-structure
+     * invariants are intact, such that it can be used for further processing
+     * as-if it were fully correct.
      *
-     * An example of something is is semantically erroronous, but still "usable" is an
-     * out-of-bounds array access. `verify()` may report an error to the diagnostic sink
-     * regarding the out-of-bounds access, but it may return true because the module's
-     * data-structure invariants are verified as correct.
+     * An example of something is is semantically erroronous, but still "usable"
+     * is an out-of-bounds array access. `verify()` may report an error to the
+     * diagnostic sink regarding the out-of-bounds access, but it may return
+     * true because the module's data-structure invariants are verified as
+     * correct.
      *
      *  - Check for cyclic references in the internal data-structure;
      *  - Ensure that all symbols are resolved;
@@ -222,7 +232,8 @@ namespace nr {
      *      Functions exist by the time they are called;
      *  - Verify mutability rules are obeyed;
      *  - Verify usage and presence of control flow nodes;
-     *  - Do complex safety checks to verify proper usage of `safe` and `unsafe`.
+     *  - Do complex safety checks to verify proper usage of `safe` and
+     * `unsafe`.
      *
      * @note This function calls `finish()`.
      */
@@ -241,47 +252,54 @@ namespace nr {
 
     using FnParam = std::tuple<std::string_view, Type *, std::optional<Expr *>>;
 
-    Fn *createFunctionDefintion(std::string_view name, std::span<FnParam> params, Type *ret_ty,
-                                bool is_variadic = false, Vis visibility = Vis::Sec,
-                                Purity purity = Purity::Impure, bool thread_safe = false,
-                                bool is_noexcept = false,
-                                bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
+    Fn *createFunctionDefintion(
+        std::string_view name, std::span<FnParam> params, Type *ret_ty,
+        bool is_variadic = false, Vis visibility = Vis::Sec,
+        Purity purity = Purity::Impure, bool thread_safe = false,
+        bool is_noexcept = false,
+        bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
 
-    Fn *createFunctionDeclaration(std::string_view name, std::span<FnParam> params, Type *ret_ty,
-                                  bool is_variadic = false, Vis visibility = Vis::Sec,
-                                  Purity purity = Purity::Impure, bool thread_safe = false,
-                                  bool is_noexcept = false,
-                                  bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
+    Fn *createFunctionDeclaration(
+        std::string_view name, std::span<FnParam> params, Type *ret_ty,
+        bool is_variadic = false, Vis visibility = Vis::Sec,
+        Purity purity = Purity::Impure, bool thread_safe = false,
+        bool is_noexcept = false,
+        bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
 
-    Fn *createAnonymousFunction(std::span<FnParam> params, Type *ret_ty, bool is_variadic = false,
-                                Purity purity = Purity::Impure, bool thread_safe = false,
-                                bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;
+    Fn *createAnonymousFunction(
+        std::span<FnParam> params, Type *ret_ty, bool is_variadic = false,
+        Purity purity = Purity::Impure, bool thread_safe = false,
+        bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;
 
     /* This is the only intended way to overload operaters */
-    Fn *createOperatorOverload(Op op, std::span<Type *> params, Type *ret_ty,
-                               Purity purity = Purity::Impure, bool thread_safe = false,
-                               bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;
+    Fn *createOperatorOverload(
+        Op op, std::span<Type *> params, Type *ret_ty,
+        Purity purity = Purity::Impure, bool thread_safe = false,
+        bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;
 
-    Fn *createTemplateFunction(std::string_view name, std::span<std::string_view> template_params,
-                               std::span<FnParam> params, Type *ret_ty, bool is_variadic = false,
-                               Vis visibility = Vis::Sec, Purity purity = Purity::Impure,
-                               bool thread_safe = false,
-                               bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;
+    Fn *createTemplateFunction(
+        std::string_view name, std::span<std::string_view> template_params,
+        std::span<FnParam> params, Type *ret_ty, bool is_variadic = false,
+        Vis visibility = Vis::Sec, Purity purity = Purity::Impure,
+        bool thread_safe = false,
+        bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;
 
     /* Works for both local and global variables */
-    Local *createVariable(std::string_view name, Type *ty, Vis visibility = Vis::Sec,
-                          StorageClass storage = StorageClass::LLVM_StackAlloa,
-                          bool is_readonly = false SOURCE_LOCATION_PARAM) noexcept;
+    Local *createVariable(
+        std::string_view name, Type *ty, Vis visibility = Vis::Sec,
+        StorageClass storage = StorageClass::LLVM_StackAlloa,
+        bool is_readonly = false SOURCE_LOCATION_PARAM) noexcept;
 
     ///**************************************************************************///
     // Create expressions
 
-    Expr *createCall(Expr *target, std::span<std::pair<std::string_view, Expr *>> arguments
-                                       SOURCE_LOCATION_PARAM) noexcept;
+    Expr *createCall(Expr *target,
+                     std::span<std::pair<std::string_view, Expr *>> arguments
+                         SOURCE_LOCATION_PARAM) noexcept;
 
     Expr *createMethodCall(Expr *object, std::string_view name,
-                           std::span<std::pair<std::string_view, Expr *>> arguments
-                               SOURCE_LOCATION_PARAM) noexcept;
+                           std::span<std::pair<std::string_view, Expr *>>
+                               arguments SOURCE_LOCATION_PARAM) noexcept;
 
     /// TODO:
 
@@ -293,19 +311,21 @@ namespace nr {
     Int *createFixedInteger(boost::multiprecision::cpp_int value,
                             IntSize width SOURCE_LOCATION_PARAM) noexcept;
 
-    Float *createFixedFloat(bigfloat_t value, FloatSize width SOURCE_LOCATION_PARAM) noexcept;
+    Float *createFixedFloat(bigfloat_t value,
+                            FloatSize width SOURCE_LOCATION_PARAM) noexcept;
 
-    List *createStringDataArray(
-        std::string_view value,
-        ABIStringStyle style = ABIStringStyle::CStr SOURCE_LOCATION_PARAM) noexcept;
+    List *createStringDataArray(std::string_view value,
+                                ABIStringStyle style = ABIStringStyle::CStr
+                                    SOURCE_LOCATION_PARAM) noexcept;
 
-    List *createList(std::span<Expr *> items,
+    List *createList(
+        std::span<Expr *> items,
 
-                     /* Require assert(typeof(result)==typeof(array<result.element, result.size>))
-                      * ? Reason: It has to do with type inference and implicit conversions of the
-                      * elements in the list.
-                      */
-                     bool cast_homogenous SOURCE_LOCATION_PARAM) noexcept;
+        /* Require assert(typeof(result)==typeof(array<result.element,
+         * result.size>)) ? Reason: It has to do with type inference and
+         * implicit conversions of the elements in the list.
+         */
+        bool cast_homogenous SOURCE_LOCATION_PARAM) noexcept;
 
     ///**************************************************************************///
     // Create values
@@ -335,44 +355,51 @@ namespace nr {
     /* Type inference unknowns; Converted to proper type upon resolution */
     OpaqueTy *getUnknownTy(SOURCE_LOCATION_PARAM_ONCE) noexcept;
 
-    Type *getUnknownNamedTy(std::string_view name SOURCE_LOCATION_PARAM) noexcept;
+    Type *getUnknownNamedTy(
+        std::string_view name SOURCE_LOCATION_PARAM) noexcept;
 
     PtrTy *getPtrTy(Type *pointee SOURCE_LOCATION_PARAM) noexcept;
 
     OpaqueTy *getOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM) noexcept;
 
-    StructTy *getStructTy(std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept;
+    StructTy *getStructTy(
+        std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept;
 
-    UnionTy *getUnionTy(std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept;
+    UnionTy *getUnionTy(
+        std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept;
 
-    ArrayTy *getArrayTy(Type *element_ty, size_t count SOURCE_LOCATION_PARAM) noexcept;
+    ArrayTy *getArrayTy(Type *element_ty,
+                        size_t count SOURCE_LOCATION_PARAM) noexcept;
 
-    FnTy *getFnTy(std::span<Type *> params, Type *ret_ty, bool is_variadic = false,
-                  Purity purity = Purity::Impure, bool thread_safe = false,
-                  bool is_noexcept = false, bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
-
-    /**
-     * Each entry in `params` shall correspond to the name of an opaque type in the supplied
-     * struct. The fields of the struct type are searched recursively to resolve all such fields
-     * upon instaniation. The opaque type mentioned above must begin with some reserved prefix to
-     * ensure the space of names doesn't conflict with other normal opaque types.
-     */
-    StructTy *createStructTemplateDefintion(std::string_view name,
-                                            std::span<std::string_view> template_params,
-                                            StructTy *ty SOURCE_LOCATION_PARAM) noexcept;
+    FnTy *getFnTy(std::span<Type *> params, Type *ret_ty,
+                  bool is_variadic = false, Purity purity = Purity::Impure,
+                  bool thread_safe = false, bool is_noexcept = false,
+                  bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
 
     /**
-     * Each entry in `params` shall correspond to the name of an opaque type in the supplied
-     * union. The fields of the union type are searched recursively to resolve all such fields
-     * upon instaniation. The opaque type mentioned above must begin with some reserved prefix to
-     * ensure the space of names doesn't conflict with other normal opaque types.
+     * Each entry in `params` shall correspond to the name of an opaque type in
+     * the supplied struct. The fields of the struct type are searched
+     * recursively to resolve all such fields upon instaniation. The opaque type
+     * mentioned above must begin with some reserved prefix to ensure the space
+     * of names doesn't conflict with other normal opaque types.
      */
-    UnionTy *createUnionTemplateDefintion(std::string_view name,
-                                          std::span<std::string_view> template_params,
-                                          UnionTy *ty SOURCE_LOCATION_PARAM) noexcept;
+    StructTy *createStructTemplateDefintion(
+        std::string_view name, std::span<std::string_view> template_params,
+        StructTy *ty SOURCE_LOCATION_PARAM) noexcept;
 
-    Type *getTemplateInstance(Type *base,
-                              std::span<Type *> template_params SOURCE_LOCATION_PARAM) noexcept;
+    /**
+     * Each entry in `params` shall correspond to the name of an opaque type in
+     * the supplied union. The fields of the union type are searched recursively
+     * to resolve all such fields upon instaniation. The opaque type mentioned
+     * above must begin with some reserved prefix to ensure the space of names
+     * doesn't conflict with other normal opaque types.
+     */
+    UnionTy *createUnionTemplateDefintion(
+        std::string_view name, std::span<std::string_view> template_params,
+        UnionTy *ty SOURCE_LOCATION_PARAM) noexcept;
+
+    Type *getTemplateInstance(Type *base, std::span<Type *> template_params
+                                              SOURCE_LOCATION_PARAM) noexcept;
 
     ///**************************************************************************///
     // Other stuff
@@ -394,7 +421,8 @@ namespace nr {
 #define compiler_trace(x) x
 #else
 #define SOURCE_LOCATION_PARAM , std::experimental::source_location caller_info
-#define SOURCE_LOCATION_PARAM_ONCE std::experimental::source_location caller_info
+#define SOURCE_LOCATION_PARAM_ONCE \
+  std::experimental::source_location caller_info
 #define CALLER_INFO caller_info
 #define CALLEE_KNOWN
 #define ignore_caller_info() (void)caller_info;

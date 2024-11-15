@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -80,7 +82,8 @@
 #include <unordered_map>
 
 #if defined(QCORE_DEBUG)
-#define debug(...) std::cerr << "[debug]: ln " << __LINE__ << ": " << __VA_ARGS__ << std::endl
+#define debug(...) \
+  std::cerr << "[debug]: ln " << __LINE__ << ": " << __VA_ARGS__ << std::endl
 #else
 #define debug(...)
 #endif
@@ -124,7 +127,8 @@ public:
     return ftell(m_file);
   }
 
-  virtual std::streampos seekpos(std::streampos sp, std::ios_base::openmode) override {
+  virtual std::streampos seekpos(std::streampos sp,
+                                 std::ios_base::openmode) override {
     if (fseek(m_file, sp, SEEK_SET) == -1) {
       return -1;
     }
@@ -135,7 +139,9 @@ public:
 
 class OStreamDiscard : public std::streambuf {
 public:
-  virtual std::streamsize xsputn(const char *, std::streamsize n) override { return n; }
+  virtual std::streamsize xsputn(const char *, std::streamsize n) override {
+    return n;
+  }
   virtual int overflow(int c) override { return c; }
 };
 
@@ -143,9 +149,12 @@ class my_pwrite_ostream : public llvm::raw_pwrite_stream {
   std::ostream &m_os;
 
 public:
-  my_pwrite_ostream(std::ostream &os) : llvm::raw_pwrite_stream(true), m_os(os) {}
+  my_pwrite_ostream(std::ostream &os)
+      : llvm::raw_pwrite_stream(true), m_os(os) {}
 
-  void write_impl(const char *ptr, size_t size) override { m_os.write(ptr, size); }
+  void write_impl(const char *ptr, size_t size) override {
+    m_os.write(ptr, size);
+  }
 
   void pwrite_impl(const char *ptr, size_t size, uint64_t offset) override {
     auto curpos = current_pos();
@@ -167,19 +176,21 @@ typedef std::function<bool(qmodule_t *, qcode_conf_t *, std::ostream &err,
                            llvm::raw_pwrite_stream &out)>
     qcode_adapter_fn;
 
-static bool qcode_adapter(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE *out,
-                          qcode_adapter_fn impl) {
+static bool qcode_adapter(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+                          FILE *out, qcode_adapter_fn impl) {
   std::unique_ptr<std::streambuf> err_stream_buf, out_stream_buf;
 
   {
-    /* If the error stream is provided, use it. Otherwise, discard the output. */
+    /* If the error stream is provided, use it. Otherwise, discard the output.
+     */
     if (err) {
       err_stream_buf = std::make_unique<OStreamWriter>(err);
     } else {
       err_stream_buf = std::make_unique<OStreamDiscard>();
     }
 
-    /* If the output stream is provided, use it. Otherwise, discard the output. */
+    /* If the output stream is provided, use it. Otherwise, discard the output.
+     */
     if (out) {
       out_stream_buf = std::make_unique<OStreamWriter>(out);
     } else {
@@ -209,55 +220,61 @@ static bool qcode_adapter(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE
   return true;
 }
 
-static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(qmodule_t *module,
-                                                                     qcode_conf_t *conf,
-                                                                     std::ostream &err,
-                                                                     llvm::raw_ostream &out);
+static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(
+    qmodule_t *module, qcode_conf_t *conf, std::ostream &err,
+    llvm::raw_ostream &out);
 
-LIB_EXPORT bool qcode_ir(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE *out) {
-  return qcode_adapter(
-      module, conf, err, out,
-      [](qmodule_t *m, qcode_conf_t *c, std::ostream &e, llvm::raw_pwrite_stream &o) -> bool {
-        auto module = fabricate_llvmir(m, c, e, o);
-        if (!module) {
-          e << "error: failed to fabricate LLVM IR" << std::endl;
-          return false;
-        }
+LIB_EXPORT bool qcode_ir(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+                         FILE *out) {
+  return qcode_adapter(module, conf, err, out,
+                       [](qmodule_t *m, qcode_conf_t *c, std::ostream &e,
+                          llvm::raw_pwrite_stream &o) -> bool {
+                         auto module = fabricate_llvmir(m, c, e, o);
+                         if (!module) {
+                           e << "error: failed to fabricate LLVM IR"
+                             << std::endl;
+                           return false;
+                         }
 
-        bool failed = llvm::verifyModule(*module->get(), &o);
+                         bool failed = llvm::verifyModule(*module->get(), &o);
 
-        module.value()->print(o, nullptr);
+                         module.value()->print(o, nullptr);
 
-        return !failed;
-      });
+                         return !failed;
+                       });
 }
 
-LIB_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE *out) {
+LIB_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+                          FILE *out) {
   return qcode_adapter(
       module, conf, err, out,
-      [](qmodule_t *m, qcode_conf_t *c, std::ostream &e, llvm::raw_pwrite_stream &o) -> bool {
+      [](qmodule_t *m, qcode_conf_t *c, std::ostream &e,
+         llvm::raw_pwrite_stream &o) -> bool {
         auto module_opt = fabricate_llvmir(m, c, e, o);
         if (!module_opt) {
           e << "error: failed to fabricate LLVM IR" << std::endl;
           return false;
         }
 
-        std::string targetTriple =
-            m->getTargetInfo().TargetTriple.value_or(llvm::sys::getDefaultTargetTriple());
+        std::string targetTriple = m->getTargetInfo().TargetTriple.value_or(
+            llvm::sys::getDefaultTargetTriple());
         std::string CPU = m->getTargetInfo().CPU.value_or("generic");
         std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
         bool relocPIC = true;
 
         llvm::TargetOptions opt;
         std::string lookupTarget_err;
-        auto Target = llvm::TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
+        auto Target =
+            llvm::TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
         if (!Target) {
-          e << "error: failed to lookup target: " << lookupTarget_err << std::endl;
+          e << "error: failed to lookup target: " << lookupTarget_err
+            << std::endl;
           return false;
         }
 
         auto TargetMachine = Target->createTargetMachine(
-            targetTriple, CPU, Features, opt, relocPIC ? llvm::Reloc::PIC_ : llvm::Reloc::Static);
+            targetTriple, CPU, Features, opt,
+            relocPIC ? llvm::Reloc::PIC_ : llvm::Reloc::Static);
 
         auto &module = *module_opt.value();
 
@@ -272,8 +289,8 @@ LIB_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE
         ///==========================================================================
 
         // Create the analysis managers.
-        // These must be declared in this order so that they are destroyed in the
-        // correct order due to inter-analysis-manager references.
+        // These must be declared in this order so that they are destroyed in
+        // the correct order due to inter-analysis-manager references.
         llvm::LoopAnalysisManager LAM;
         llvm::FunctionAnalysisManager FAM;
         llvm::CGSCCAnalysisManager CGAM;
@@ -292,7 +309,8 @@ LIB_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE
         PB.registerLoopAnalyses(LAM);
         PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
-        llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
+        llvm::ModulePassManager MPM =
+            PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
 
         // Optimize the IR!
         MPM.run(module, MAM);
@@ -302,7 +320,8 @@ LIB_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE
         std::error_code ec;
 
         llvm::legacy::PassManager pass;
-        TargetMachine->addPassesToEmitFile(pass, o, nullptr, llvm::CGFT_AssemblyFile);
+        TargetMachine->addPassesToEmitFile(pass, o, nullptr,
+                                           llvm::CGFT_AssemblyFile);
         if (!pass.run(module)) {
           e << "error: failed to emit object code" << std::endl;
           return false;
@@ -312,32 +331,37 @@ LIB_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE
       });
 }
 
-LIB_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE *out) {
+LIB_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+                          FILE *out) {
   return qcode_adapter(
       module, conf, err, out,
-      [](qmodule_t *m, qcode_conf_t *c, std::ostream &e, llvm::raw_pwrite_stream &o) -> bool {
+      [](qmodule_t *m, qcode_conf_t *c, std::ostream &e,
+         llvm::raw_pwrite_stream &o) -> bool {
         auto module_opt = fabricate_llvmir(m, c, e, o);
         if (!module_opt) {
           e << "error: failed to fabricate LLVM IR" << std::endl;
           return false;
         }
 
-        std::string targetTriple =
-            m->getTargetInfo().TargetTriple.value_or(llvm::sys::getDefaultTargetTriple());
+        std::string targetTriple = m->getTargetInfo().TargetTriple.value_or(
+            llvm::sys::getDefaultTargetTriple());
         std::string CPU = m->getTargetInfo().CPU.value_or("generic");
         std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
         bool relocPIC = true;
 
         llvm::TargetOptions opt;
         std::string lookupTarget_err;
-        auto Target = llvm::TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
+        auto Target =
+            llvm::TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
         if (!Target) {
-          e << "error: failed to lookup target: " << lookupTarget_err << std::endl;
+          e << "error: failed to lookup target: " << lookupTarget_err
+            << std::endl;
           return false;
         }
 
         auto TargetMachine = Target->createTargetMachine(
-            targetTriple, CPU, Features, opt, relocPIC ? llvm::Reloc::PIC_ : llvm::Reloc::Static);
+            targetTriple, CPU, Features, opt,
+            relocPIC ? llvm::Reloc::PIC_ : llvm::Reloc::Static);
 
         auto &module = *module_opt.value();
 
@@ -352,8 +376,8 @@ LIB_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE
         ///==========================================================================
 
         // Create the analysis managers.
-        // These must be declared in this order so that they are destroyed in the
-        // correct order due to inter-analysis-manager references.
+        // These must be declared in this order so that they are destroyed in
+        // the correct order due to inter-analysis-manager references.
         llvm::LoopAnalysisManager LAM;
         llvm::FunctionAnalysisManager FAM;
         llvm::CGSCCAnalysisManager CGAM;
@@ -372,7 +396,8 @@ LIB_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE
         PB.registerLoopAnalyses(LAM);
         PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
-        llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
+        llvm::ModulePassManager MPM =
+            PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
 
         // Optimize the IR!
         MPM.run(module, MAM);
@@ -382,7 +407,8 @@ LIB_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE
         std::error_code ec;
 
         llvm::legacy::PassManager pass;
-        TargetMachine->addPassesToEmitFile(pass, o, nullptr, llvm::CGFT_ObjectFile);
+        TargetMachine->addPassesToEmitFile(pass, o, nullptr,
+                                           llvm::CGFT_ObjectFile);
         if (!pass.run(module)) {
           e << "error: failed to emit object code" << std::endl;
           return false;
@@ -409,7 +435,9 @@ enum class PtrClass {
 struct State {
   std::stack<std::pair<llvm::AllocaInst *, llvm::BasicBlock *>> return_val;
   std::stack<llvm::GlobalValue::LinkageTypes> linkage;
-  std::stack<std::pair<llvm::Function *, std::unordered_map<std::string_view, llvm::AllocaInst *>>>
+  std::stack<
+      std::pair<llvm::Function *,
+                std::unordered_map<std::string_view, llvm::AllocaInst *>>>
       locals;
   std::stack<llvm::BasicBlock *> breaks;
   std::stack<llvm::BasicBlock *> continues;
@@ -429,8 +457,8 @@ struct State {
     return s;
   }
 
-  std::optional<std::pair<llvm::Value *, PtrClass>> find_named_value(ctx_t &m,
-                                                                     std::string_view name) {
+  std::optional<std::pair<llvm::Value *, PtrClass>> find_named_value(
+      ctx_t &m, std::string_view name) {
     if (in_fn) {
       for (const auto &[cur_name, inst] : locals.top().second) {
         if (cur_name == name) {
@@ -452,51 +480,94 @@ struct State {
   }
 };
 
-static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::BinExpr *N);
-static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::UnExpr *N);
-static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                                    nr::PostUnExpr *N);
-static val_t QIR_NODE_INT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Int *N);
-static val_t QIR_NODE_FLOAT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Float *N);
-static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::List *N);
-static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Call *N);
-static val_t QIR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Seq *N);
-static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Index *N);
-static val_t QIR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Ident *N);
-static val_t QIR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Extern *N);
-static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Local *N);
-static val_t QIR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Ret *N);
-static val_t QIR_NODE_BRK_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Brk *N);
-static val_t QIR_NODE_CONT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Cont *N);
-static val_t QIR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::If *N);
-static val_t QIR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::While *N);
-static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::For *N);
-static val_t QIR_NODE_CASE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Case *N);
-static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Switch *N);
-static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Fn *N);
-static val_t QIR_NODE_ASM_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Asm *N);
-static ty_t QIR_NODE_U1_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::U1Ty *N);
-static ty_t QIR_NODE_U8_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::U8Ty *N);
-static ty_t QIR_NODE_U16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::U16Ty *N);
-static ty_t QIR_NODE_U32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::U32Ty *N);
-static ty_t QIR_NODE_U64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::U64Ty *N);
-static ty_t QIR_NODE_U128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::U128Ty *N);
-static ty_t QIR_NODE_I8_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::I8Ty *N);
-static ty_t QIR_NODE_I16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::I16Ty *N);
-static ty_t QIR_NODE_I32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::I32Ty *N);
-static ty_t QIR_NODE_I64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::I64Ty *N);
-static ty_t QIR_NODE_I128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::I128Ty *N);
-static ty_t QIR_NODE_F16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::F16Ty *N);
-static ty_t QIR_NODE_F32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::F32Ty *N);
-static ty_t QIR_NODE_F64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::F64Ty *N);
-static ty_t QIR_NODE_F128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::F128Ty *N);
-static ty_t QIR_NODE_VOID_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::VoidTy *N);
-static ty_t QIR_NODE_PTR_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::PtrTy *N);
-static ty_t QIR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::OpaqueTy *N);
-static ty_t QIR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::StructTy *N);
-static ty_t QIR_NODE_UNION_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::UnionTy *N);
-static ty_t QIR_NODE_ARRAY_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::ArrayTy *N);
-static ty_t QIR_NODE_FN_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::FnTy *N);
+static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                                nr::BinExpr *N);
+static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                               nr::UnExpr *N);
+static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
+                                    State &s, nr::PostUnExpr *N);
+static val_t QIR_NODE_INT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::Int *N);
+static val_t QIR_NODE_FLOAT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::Float *N);
+static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::List *N);
+static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::Call *N);
+static val_t QIR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::Seq *N);
+static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::Index *N);
+static val_t QIR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::Ident *N);
+static val_t QIR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                               nr::Extern *N);
+static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::Local *N);
+static val_t QIR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::Ret *N);
+static val_t QIR_NODE_BRK_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::Brk *N);
+static val_t QIR_NODE_CONT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::Cont *N);
+static val_t QIR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                           nr::If *N);
+static val_t QIR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::While *N);
+static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::For *N);
+static val_t QIR_NODE_CASE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::Case *N);
+static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                               nr::Switch *N);
+static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                           nr::Fn *N);
+static val_t QIR_NODE_ASM_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::Asm *N);
+static ty_t QIR_NODE_U1_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::U1Ty *N);
+static ty_t QIR_NODE_U8_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::U8Ty *N);
+static ty_t QIR_NODE_U16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::U16Ty *N);
+static ty_t QIR_NODE_U32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::U32Ty *N);
+static ty_t QIR_NODE_U64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::U64Ty *N);
+static ty_t QIR_NODE_U128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                               nr::U128Ty *N);
+static ty_t QIR_NODE_I8_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::I8Ty *N);
+static ty_t QIR_NODE_I16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::I16Ty *N);
+static ty_t QIR_NODE_I32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::I32Ty *N);
+static ty_t QIR_NODE_I64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::I64Ty *N);
+static ty_t QIR_NODE_I128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                               nr::I128Ty *N);
+static ty_t QIR_NODE_F16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::F16Ty *N);
+static ty_t QIR_NODE_F32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::F32Ty *N);
+static ty_t QIR_NODE_F64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::F64Ty *N);
+static ty_t QIR_NODE_F128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                               nr::F128Ty *N);
+static ty_t QIR_NODE_VOID_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                               nr::VoidTy *N);
+static ty_t QIR_NODE_PTR_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::PtrTy *N);
+static ty_t QIR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                                 nr::OpaqueTy *N);
+static ty_t QIR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                                 nr::StructTy *N);
+static ty_t QIR_NODE_UNION_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                                nr::UnionTy *N);
+static ty_t QIR_NODE_ARRAY_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                                nr::ArrayTy *N);
+static ty_t QIR_NODE_FN_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::FnTy *N);
 
 auto V(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Expr *N) -> val_t {
   val_t R;
@@ -757,7 +828,8 @@ auto T(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Expr *N) -> ty_t {
   return R;
 }
 
-static void make_forward_declaration(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Fn *N) {
+static void make_forward_declaration(ctx_t &m, craft_t &b, const Mode &cf,
+                                     State &s, nr::Fn *N) {
   std::vector<llvm::Type *> args;
   for (auto &arg : N->getParams()) {
     auto ty = T(m, b, cf, s, arg.first);
@@ -781,9 +853,8 @@ static void make_forward_declaration(ctx_t &m, craft_t &b, const Mode &cf, State
   debug("Forward declared function: " << N->getName());
 }
 
-static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(qmodule_t *src, qcode_conf_t *,
-                                                                     std::ostream &e,
-                                                                     llvm::raw_ostream &) {
+static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(
+    qmodule_t *src, qcode_conf_t *, std::ostream &e, llvm::raw_ostream &) {
   static thread_local std::unique_ptr<llvm::LLVMContext> context;
 
   nr::Expr *root = src->getRoot();
@@ -798,8 +869,10 @@ static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(qmodule_t *
   }
 
   context = std::make_unique<llvm::LLVMContext>();
-  std::unique_ptr<llvm::IRBuilder<>> b = std::make_unique<llvm::IRBuilder<>>(*context);
-  std::unique_ptr<llvm::Module> m = std::make_unique<llvm::Module>(src->getName(), *context);
+  std::unique_ptr<llvm::IRBuilder<>> b =
+      std::make_unique<llvm::IRBuilder<>>(*context);
+  std::unique_ptr<llvm::Module> m =
+      std::make_unique<llvm::Module>(src->getName(), *context);
 
   Mode cf; /* For readonly config settings */
   State s = State::defaults();
@@ -829,8 +902,9 @@ static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(qmodule_t *
   return m;
 }
 
-static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s, llvm::Value *L,
-                             nr::Op O, llvm::Type *R, nr::Type *LT, nr::Type *RT) {
+static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             llvm::Value *L, nr::Op O, llvm::Type *R,
+                             nr::Type *LT, nr::Type *RT) {
   /**
    * @brief [Write explanation here]
    *
@@ -898,8 +972,9 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s, llv
               return std::nullopt;
             }
 
-            val_t F = binexpr_do_cast(m, b, cf, s, b.CreateExtractValue(L, i), nr::Op::CastAs,
-                                      new_st_ty->getElementType(i), x.value(), ST->getFields()[i]);
+            val_t F = binexpr_do_cast(
+                m, b, cf, s, b.CreateExtractValue(L, i), nr::Op::CastAs,
+                new_st_ty->getElementType(i), x.value(), ST->getFields()[i]);
             if (!F) {
               debug("Failed to cast element " << i);
               return std::nullopt;
@@ -929,8 +1004,9 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s, llv
               debug("Failed to get element type");
               return std::nullopt;
             }
-            val_t F = binexpr_do_cast(m, b, cf, s, b.CreateExtractValue(L, i), nr::Op::CastAs,
-                                      new_arr_ty->getElementType(), x.value(), y.value());
+            val_t F = binexpr_do_cast(
+                m, b, cf, s, b.CreateExtractValue(L, i), nr::Op::CastAs,
+                new_arr_ty->getElementType(), x.value(), y.value());
             if (!F) {
               debug("Failed to cast element " << i);
               return std::nullopt;
@@ -939,11 +1015,12 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s, llv
             b.CreateStore(F.value(), b.CreateStructGEP(new_arr_ty, new_arr, i));
           }
 
-          E = b.CreateLoad(new_arr->getType()->getPointerElementType(), new_arr);
+          E = b.CreateLoad(new_arr->getType()->getPointerElementType(),
+                           new_arr);
         }
       } else {
-        std::cout << "Failed to cast from " << LT->getKindName() << " to " << RT->getKindName()
-                  << std::endl;
+        std::cout << "Failed to cast from " << LT->getKindName() << " to "
+                  << RT->getKindName() << std::endl;
       }
       break;
     }
@@ -956,7 +1033,8 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s, llv
   return E;
 }
 
-static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::BinExpr *N) {
+static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                                nr::BinExpr *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1118,13 +1196,14 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
       }
 
       size_t num_bits = x.value()->getSizeBits(cf.PtrSizeBytes);
-      llvm::ConstantInt *num_bits_c =
-          llvm::ConstantInt::get(m.getContext(), llvm::APInt(num_bits, num_bits));
+      llvm::ConstantInt *num_bits_c = llvm::ConstantInt::get(
+          m.getContext(), llvm::APInt(num_bits, num_bits));
 
       llvm::Value *n = b.CreateURem(R.value(), num_bits_c);
       llvm::Value *lshift = b.CreateLShr(L.value(), n);
       llvm::Value *sub = b.CreateSub(num_bits_c, R.value());
-      llvm::Value *rshift = b.CreateShl(L.value(), b.CreateURem(sub, num_bits_c));
+      llvm::Value *rshift =
+          b.CreateShl(L.value(), b.CreateURem(sub, num_bits_c));
 
       E = b.CreateOr(lshift, rshift);
       break;
@@ -1140,13 +1219,14 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
         return std::nullopt;
       }
       size_t num_bits = x.value()->getSizeBits(cf.PtrSizeBytes);
-      llvm::ConstantInt *num_bits_c =
-          llvm::ConstantInt::get(m.getContext(), llvm::APInt(num_bits, num_bits));
+      llvm::ConstantInt *num_bits_c = llvm::ConstantInt::get(
+          m.getContext(), llvm::APInt(num_bits, num_bits));
 
       llvm::Value *n = b.CreateURem(R.value(), num_bits_c);
       llvm::Value *lshift = b.CreateShl(L.value(), n);
       llvm::Value *sub = b.CreateSub(num_bits_c, R.value());
-      llvm::Value *rshift = b.CreateLShr(L.value(), b.CreateURem(sub, num_bits_c));
+      llvm::Value *rshift =
+          b.CreateLShr(L.value(), b.CreateURem(sub, num_bits_c));
 
       E = b.CreateOr(lshift, rshift);
       break;
@@ -1284,8 +1364,8 @@ case qOpPlus: {
     }
     case qOpSizeof: {
       auto bits = nr::create<nr::UnExpr>(rhs, nr::Op::Bitsizeof);
-      auto arg = nr::create<nr::BinExpr>(bits, nr::create<nr::Float>(8), nr::Op::Slash);
-      return create_simple_call(s, "std::ceil", {{"0", arg}});
+      auto arg = nr::create<nr::BinExpr>(bits, nr::create<nr::Float>(8),
+nr::Op::Slash); return create_simple_call(s, "std::ceil", {{"0", arg}});
     }
     case qOpAlignof: {
       return STD_UNOP(Alignof);
@@ -1297,7 +1377,8 @@ case qOpPlus: {
       return STD_UNOP(Bitsizeof);
     }
 */
-static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::UnExpr *N) {
+static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                               nr::UnExpr *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1356,7 +1437,8 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
     }
     case nr::Op::LogicNot: {
       PROD_SUB();
-      R = b.CreateICmpEQ(E.value(), llvm::ConstantInt::get(m.getContext(), llvm::APInt(1, 0)));
+      R = b.CreateICmpEQ(
+          E.value(), llvm::ConstantInt::get(m.getContext(), llvm::APInt(1, 0)));
       break;
     }
     case nr::Op::Inc: {
@@ -1380,7 +1462,8 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
         qcore_panic("expected pointer type for increment");
       }
 
-      llvm::Value *current = b.CreateLoad(V->getType()->getPointerElementType(), V);
+      llvm::Value *current =
+          b.CreateLoad(V->getType()->getPointerElementType(), V);
       llvm::Value *new_val;
 
       if (current->getType()->isIntegerTy()) {
@@ -1390,10 +1473,13 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
           return std::nullopt;
         }
         new_val = b.CreateAdd(
-            current, llvm::ConstantInt::get(
-                         m.getContext(), llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
+            current,
+            llvm::ConstantInt::get(
+                m.getContext(),
+                llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
       } else if (current->getType()->isFloatingPointTy()) {
-        new_val = b.CreateFAdd(current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
+        new_val = b.CreateFAdd(
+            current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
       } else {
         qcore_panic("unexpected type for increment");
       }
@@ -1424,7 +1510,8 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
         qcore_panic("expected pointer type for decrement");
       }
 
-      llvm::Value *current = b.CreateLoad(V->getType()->getPointerElementType(), V);
+      llvm::Value *current =
+          b.CreateLoad(V->getType()->getPointerElementType(), V);
       llvm::Value *new_val;
 
       if (current->getType()->isIntegerTy()) {
@@ -1434,10 +1521,13 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
           return std::nullopt;
         }
         new_val = b.CreateSub(
-            current, llvm::ConstantInt::get(
-                         m.getContext(), llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
+            current,
+            llvm::ConstantInt::get(
+                m.getContext(),
+                llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
       } else if (current->getType()->isFloatingPointTy()) {
-        new_val = b.CreateFSub(current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
+        new_val = b.CreateFSub(
+            current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
       } else {
         qcore_panic("unexpected type for decrement");
       }
@@ -1453,8 +1543,9 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
         debug("Failed to get type");
         return std::nullopt;
       }
-      R = llvm::ConstantInt::get(m.getContext(),
-                                 llvm::APInt(64, x.value()->getAlignBytes(cf.PtrSizeBytes)));
+      R = llvm::ConstantInt::get(
+          m.getContext(),
+          llvm::APInt(64, x.value()->getAlignBytes(cf.PtrSizeBytes)));
       break;
     }
     case nr::Op::Bitsizeof: {
@@ -1463,8 +1554,9 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
         debug("Failed to get type");
         return std::nullopt;
       }
-      R = llvm::ConstantInt::get(m.getContext(),
-                                 llvm::APInt(64, x.value()->getSizeBits(cf.PtrSizeBytes)));
+      R = llvm::ConstantInt::get(
+          m.getContext(),
+          llvm::APInt(64, x.value()->getSizeBits(cf.PtrSizeBytes)));
       break;
     }
 
@@ -1478,8 +1570,8 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
   return R;
 }
 
-static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                                    nr::PostUnExpr *N) {
+static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
+                                    State &s, nr::PostUnExpr *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1512,7 +1604,8 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State 
         qcore_panic("expected pointer type for increment");
       }
 
-      llvm::Value *current = b.CreateLoad(V->getType()->getPointerElementType(), V);
+      llvm::Value *current =
+          b.CreateLoad(V->getType()->getPointerElementType(), V);
       llvm::Value *new_val;
 
       if (current->getType()->isIntegerTy()) {
@@ -1522,10 +1615,13 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State 
           return std::nullopt;
         }
         new_val = b.CreateAdd(
-            current, llvm::ConstantInt::get(
-                         m.getContext(), llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
+            current,
+            llvm::ConstantInt::get(
+                m.getContext(),
+                llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
       } else if (current->getType()->isFloatingPointTy()) {
-        new_val = b.CreateFAdd(current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
+        new_val = b.CreateFAdd(
+            current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
       } else {
         qcore_panic("unexpected type for increment");
       }
@@ -1556,7 +1652,8 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State 
         qcore_panic("expected pointer type for decrement");
       }
 
-      llvm::Value *current = b.CreateLoad(V->getType()->getPointerElementType(), V);
+      llvm::Value *current =
+          b.CreateLoad(V->getType()->getPointerElementType(), V);
       llvm::Value *new_val;
 
       if (current->getType()->isIntegerTy()) {
@@ -1566,10 +1663,13 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State 
           return std::nullopt;
         }
         new_val = b.CreateSub(
-            current, llvm::ConstantInt::get(
-                         m.getContext(), llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
+            current,
+            llvm::ConstantInt::get(
+                m.getContext(),
+                llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
       } else if (current->getType()->isFloatingPointTy()) {
-        new_val = b.CreateFSub(current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
+        new_val = b.CreateFSub(
+            current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
       } else {
         qcore_panic("unexpected type for decrement");
       }
@@ -1588,7 +1688,8 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State 
   return R;
 }
 
-static val_t QIR_NODE_INT_C(ctx_t &m, craft_t &, const Mode &, State &, nr::Int *N) {
+static val_t QIR_NODE_INT_C(ctx_t &m, craft_t &, const Mode &, State &,
+                            nr::Int *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1621,7 +1722,8 @@ static val_t QIR_NODE_INT_C(ctx_t &m, craft_t &, const Mode &, State &, nr::Int 
   return R;
 }
 
-static val_t QIR_NODE_FLOAT_C(ctx_t &m, craft_t &, const Mode &, State &, nr::Float *N) {
+static val_t QIR_NODE_FLOAT_C(ctx_t &m, craft_t &, const Mode &, State &,
+                              nr::Float *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1633,7 +1735,8 @@ static val_t QIR_NODE_FLOAT_C(ctx_t &m, craft_t &, const Mode &, State &, nr::Fl
   return llvm::ConstantFP::get(m.getContext(), llvm::APFloat(N->getValue()));
 }
 
-static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::List *N) {
+static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::List *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1661,12 +1764,13 @@ static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr:
     items.push_back(R.value());
   }
 
-  bool is_homogeneous = std::all_of(items.begin(), items.end(), [&](llvm::Value *V) {
-    return V->getType() == items[0]->getType();
-  });
+  bool is_homogeneous = std::all_of(
+      items.begin(), items.end(),
+      [&](llvm::Value *V) { return V->getType() == items[0]->getType(); });
 
   if (is_homogeneous) {  // It's a Basic Array
-    llvm::ArrayType *AT = llvm::ArrayType::get(items[0]->getType(), items.size());
+    llvm::ArrayType *AT =
+        llvm::ArrayType::get(items[0]->getType(), items.size());
     llvm::AllocaInst *AI = b.CreateAlloca(AT);
 
     for (size_t i = 0; i < items.size(); i++) {
@@ -1692,7 +1796,8 @@ static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr:
   }
 }
 
-static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Call *N) {
+static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::Call *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1737,7 +1842,8 @@ static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr:
     { /* Verify call */
       if (!(FT->getNumParams() == args.size() ||
             (FT->isVarArg() && FT->getNumParams() <= args.size()))) {
-        debug("Expected " << FT->getNumParams() << " arguments, but got " << args.size());
+        debug("Expected " << FT->getNumParams() << " arguments, but got "
+                          << args.size());
         return std::nullopt;
       }
     }
@@ -1757,7 +1863,8 @@ static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr:
       return std::nullopt;
     }
 
-    llvm::Value *target = b.CreateLoad(T.value()->getType()->getPointerElementType(), T.value());
+    llvm::Value *target =
+        b.CreateLoad(T.value()->getType()->getPointerElementType(), T.value());
 
     if (!target->getType()->isFunctionTy()) {
       debug("Expected function type for target");
@@ -1785,7 +1892,8 @@ static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr:
     { /* Verify call */
       if (!(FT->getNumParams() == args.size() ||
             (FT->isVarArg() && FT->getNumParams() <= args.size()))) {
-        debug("Expected " << FT->getNumParams() << " arguments, but got " << args.size());
+        debug("Expected " << FT->getNumParams() << " arguments, but got "
+                          << args.size());
         return std::nullopt;
       }
     }
@@ -1796,7 +1904,8 @@ static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr:
   }
 }
 
-static val_t QIR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Seq *N) {
+static val_t QIR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::Seq *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1822,7 +1931,8 @@ static val_t QIR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::
   return R;
 }
 
-static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Index *N) {
+static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::Index *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1856,14 +1966,16 @@ static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr
     llvm::Type *base_ty = find->first->getType()->getPointerElementType();
 
     if (base_ty->isArrayTy()) {
-      llvm::Value *zero = llvm::ConstantInt::get(m.getContext(), llvm::APInt(32, 0));
+      llvm::Value *zero =
+          llvm::ConstantInt::get(m.getContext(), llvm::APInt(32, 0));
       llvm::Value *indices[] = {zero, I.value()};
 
       llvm::Value *elem = b.CreateGEP(base_ty, find->first, indices);
 
       return b.CreateLoad(base_ty->getArrayElementType(), elem);
     } else if (base_ty->isPointerTy()) {
-      llvm::Value *elem = b.CreateGEP(base_ty->getPointerElementType(), find->first, I.value());
+      llvm::Value *elem =
+          b.CreateGEP(base_ty->getPointerElementType(), find->first, I.value());
 
       return b.CreateLoad(base_ty->getPointerElementType(), elem);
     } else {
@@ -1876,7 +1988,8 @@ static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr
   }
 }
 
-static val_t QIR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &, State &s, nr::Ident *N) {
+static val_t QIR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &, State &s,
+                              nr::Ident *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1897,14 +2010,16 @@ static val_t QIR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &, State &s, nr::
     return find->first;
   } else {
     if (find->first->getType()->isPointerTy()) {
-      return b.CreateLoad(find->first->getType()->getPointerElementType(), find->first);
+      return b.CreateLoad(find->first->getType()->getPointerElementType(),
+                          find->first);
     }
   }
 
   qcore_panic("unexpected type for identifier");
 }
 
-static val_t QIR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Extern *N) {
+static val_t QIR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                               nr::Extern *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1927,7 +2042,8 @@ static val_t QIR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
   return R;
 }
 
-static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Local *N) {
+static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::Local *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1949,7 +2065,8 @@ static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr
   }
 
   if (s.in_fn) {
-    llvm::AllocaInst *local = b.CreateAlloca(R_T.value(), nullptr, N->getName());
+    llvm::AllocaInst *local =
+        b.CreateAlloca(R_T.value(), nullptr, N->getName());
 
     if (N->getValue()) {
       val_t R = V(m, b, cf, s, N->getValue());
@@ -1967,15 +2084,16 @@ static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr
   } else {
     auto init = llvm::Constant::getNullValue(R_T.value());
 
-    llvm::GlobalVariable *global =
-        new llvm::GlobalVariable(m, R_T.value(), false, s.linkage.top(), init, N->getName());
+    llvm::GlobalVariable *global = new llvm::GlobalVariable(
+        m, R_T.value(), false, s.linkage.top(), init, N->getName());
 
     /// TODO: Set the initializer value during program load???
     return global;
   }
 }
 
-static val_t QIR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Ret *N) {
+static val_t QIR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::Ret *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2004,7 +2122,8 @@ static val_t QIR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::
   return R;
 }
 
-static val_t QIR_NODE_BRK_C(ctx_t &, craft_t &b, const Mode &, State &s, nr::Brk *) {
+static val_t QIR_NODE_BRK_C(ctx_t &, craft_t &b, const Mode &, State &s,
+                            nr::Brk *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2020,7 +2139,8 @@ static val_t QIR_NODE_BRK_C(ctx_t &, craft_t &b, const Mode &, State &s, nr::Brk
   return b.CreateBr(s.breaks.top());
 }
 
-static val_t QIR_NODE_CONT_C(ctx_t &, craft_t &b, const Mode &, State &s, nr::Cont *) {
+static val_t QIR_NODE_CONT_C(ctx_t &, craft_t &b, const Mode &, State &s,
+                             nr::Cont *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2036,7 +2156,8 @@ static val_t QIR_NODE_CONT_C(ctx_t &, craft_t &b, const Mode &, State &s, nr::Co
   return b.CreateBr(s.continues.top());
 }
 
-static val_t QIR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::If *N) {
+static val_t QIR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                           nr::If *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2089,7 +2210,8 @@ static val_t QIR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::I
   return end;
 }
 
-static val_t QIR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::While *N) {
+static val_t QIR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::While *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2100,7 +2222,8 @@ static val_t QIR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr
 
   llvm::BasicBlock *begin, *body, *end;
 
-  begin = llvm::BasicBlock::Create(m.getContext(), "begin", s.locals.top().first);
+  begin =
+      llvm::BasicBlock::Create(m.getContext(), "begin", s.locals.top().first);
   body = llvm::BasicBlock::Create(m.getContext(), "body", s.locals.top().first);
   end = llvm::BasicBlock::Create(m.getContext(), "end", s.locals.top().first);
 
@@ -2143,7 +2266,8 @@ static val_t QIR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr
   return end;
 }
 
-static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::For *N) {
+static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::For *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2154,7 +2278,8 @@ static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::
 
   llvm::BasicBlock *begin, *body, *step, *end;
 
-  begin = llvm::BasicBlock::Create(m.getContext(), "begin", s.locals.top().first);
+  begin =
+      llvm::BasicBlock::Create(m.getContext(), "begin", s.locals.top().first);
   body = llvm::BasicBlock::Create(m.getContext(), "body", s.locals.top().first);
   step = llvm::BasicBlock::Create(m.getContext(), "step", s.locals.top().first);
   end = llvm::BasicBlock::Create(m.getContext(), "end", s.locals.top().first);
@@ -2214,7 +2339,8 @@ static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::
   return end;
 }
 
-static val_t QIR_NODE_CASE_C(ctx_t &, craft_t &, const Mode &, State &, nr::Case *) {
+static val_t QIR_NODE_CASE_C(ctx_t &, craft_t &, const Mode &, State &,
+                             nr::Case *) {
   qcore_panic("code path unreachable");
 }
 
@@ -2244,7 +2370,8 @@ static bool check_switch_trivial(nr::Switch *N) {
   return true;
 }
 
-static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Switch *N) {
+static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                               nr::Switch *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2262,7 +2389,8 @@ static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
   bool is_trivial = check_switch_trivial(N);
 
   if (is_trivial) {
-    llvm::BasicBlock *end = llvm::BasicBlock::Create(m.getContext(), "", s.locals.top().first);
+    llvm::BasicBlock *end =
+        llvm::BasicBlock::Create(m.getContext(), "", s.locals.top().first);
     s.breaks.push(end);
 
     llvm::SwitchInst *SI = b.CreateSwitch(R.value(), end, N->getCases().size());
@@ -2301,8 +2429,8 @@ static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
     qcore_implement();
     //   /// TODO: Implement conversion for node
 
-    //   llvm::BasicBlock *end = llvm::BasicBlock::Create(m.getContext(), "", s.locals.top().first);
-    //   s.blocks.push({nullptr, end});
+    //   llvm::BasicBlock *end = llvm::BasicBlock::Create(m.getContext(), "",
+    //   s.locals.top().first); s.blocks.push({nullptr, end});
 
     //   for (auto &node : N->getCases()) {
     //     nr::Case *C = node->as<nr::Case>();
@@ -2315,9 +2443,11 @@ static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
 
     //     llvm::BasicBlock *then, *els, *end;
 
-    //     then = llvm::BasicBlock::Create(m.getContext(), "then", s.locals.top().first);
-    //     els = llvm::BasicBlock::Create(m.getContext(), "else", s.locals.top().first);
-    //     end = llvm::BasicBlock::Create(m.getContext(), "end", s.locals.top().first);
+    //     then = llvm::BasicBlock::Create(m.getContext(), "then",
+    //     s.locals.top().first); els = llvm::BasicBlock::Create(m.getContext(),
+    //     "else", s.locals.top().first); end =
+    //     llvm::BasicBlock::Create(m.getContext(), "end",
+    //     s.locals.top().first);
 
     //     b.CreateCondBr(R.value(), then, els);
     //     b.SetInsertPoint(then);
@@ -2353,7 +2483,8 @@ static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, n
   }
 }
 
-static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Fn *N) {
+static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                           nr::Fn *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2427,7 +2558,8 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::F
     {
       b.SetInsertPoint(exit);
       if (!ret_ty->isVoidTy()) {
-        llvm::LoadInst *ret_val = b.CreateLoad(ret_ty, s.return_val.top().first);
+        llvm::LoadInst *ret_val =
+            b.CreateLoad(ret_ty, s.return_val.top().first);
         b.CreateRet(ret_val);
       } else {
         b.CreateRetVoid();
@@ -2439,8 +2571,8 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::F
     for (size_t i = 0; i < N->getParams().size(); i++) {
       fn->getArg(i)->setName(N->getParams()[i].second);
 
-      llvm::AllocaInst *param_alloc =
-          b.CreateAlloca(fn->getArg(i)->getType(), nullptr, N->getParams()[i].second);
+      llvm::AllocaInst *param_alloc = b.CreateAlloca(
+          fn->getArg(i)->getType(), nullptr, N->getParams()[i].second);
 
       b.CreateStore(fn->getArg(i), param_alloc);
       s.locals.top().second.emplace(N->getParams()[i].second, param_alloc);
@@ -2472,7 +2604,8 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::F
   return fn;
 }
 
-static val_t QIR_NODE_ASM_C(ctx_t &, craft_t &, const Mode &, State &, nr::Asm *) {
+static val_t QIR_NODE_ASM_C(ctx_t &, craft_t &, const Mode &, State &,
+                            nr::Asm *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2484,7 +2617,8 @@ static val_t QIR_NODE_ASM_C(ctx_t &, craft_t &, const Mode &, State &, nr::Asm *
   qcore_implement();
 }
 
-static ty_t QIR_NODE_U1_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::U1Ty *) {
+static ty_t QIR_NODE_U1_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                             nr::U1Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2496,7 +2630,8 @@ static ty_t QIR_NODE_U1_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::U1T
   return llvm::Type::getInt1Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_U8_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::U8Ty *) {
+static ty_t QIR_NODE_U8_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                             nr::U8Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2508,7 +2643,8 @@ static ty_t QIR_NODE_U8_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::U8T
   return llvm::Type::getInt8Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_U16_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::U16Ty *) {
+static ty_t QIR_NODE_U16_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                              nr::U16Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2520,7 +2656,8 @@ static ty_t QIR_NODE_U16_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::U1
   return llvm::Type::getInt16Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_U32_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::U32Ty *) {
+static ty_t QIR_NODE_U32_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                              nr::U32Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2532,7 +2669,8 @@ static ty_t QIR_NODE_U32_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::U3
   return llvm::Type::getInt32Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_U64_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::U64Ty *) {
+static ty_t QIR_NODE_U64_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                              nr::U64Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2544,7 +2682,8 @@ static ty_t QIR_NODE_U64_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::U6
   return llvm::Type::getInt64Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_U128_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::U128Ty *) {
+static ty_t QIR_NODE_U128_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                               nr::U128Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2556,7 +2695,8 @@ static ty_t QIR_NODE_U128_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::U
   return llvm::Type::getInt128Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_I8_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::I8Ty *) {
+static ty_t QIR_NODE_I8_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                             nr::I8Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2568,7 +2708,8 @@ static ty_t QIR_NODE_I8_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::I8T
   return llvm::Type::getInt8Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_I16_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::I16Ty *) {
+static ty_t QIR_NODE_I16_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                              nr::I16Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2580,7 +2721,8 @@ static ty_t QIR_NODE_I16_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::I1
   return llvm::Type::getInt16Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_I32_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::I32Ty *) {
+static ty_t QIR_NODE_I32_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                              nr::I32Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2592,7 +2734,8 @@ static ty_t QIR_NODE_I32_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::I3
   return llvm::Type::getInt32Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_I64_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::I64Ty *) {
+static ty_t QIR_NODE_I64_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                              nr::I64Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2604,7 +2747,8 @@ static ty_t QIR_NODE_I64_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::I6
   return llvm::Type::getInt64Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_I128_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::I128Ty *) {
+static ty_t QIR_NODE_I128_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                               nr::I128Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2616,7 +2760,8 @@ static ty_t QIR_NODE_I128_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::I
   return llvm::Type::getInt128Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_F16_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::F16Ty *) {
+static ty_t QIR_NODE_F16_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                              nr::F16Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2628,7 +2773,8 @@ static ty_t QIR_NODE_F16_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::F1
   return llvm::Type::getHalfTy(m.getContext());
 }
 
-static ty_t QIR_NODE_F32_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::F32Ty *) {
+static ty_t QIR_NODE_F32_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                              nr::F32Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2640,7 +2786,8 @@ static ty_t QIR_NODE_F32_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::F3
   return llvm::Type::getFloatTy(m.getContext());
 }
 
-static ty_t QIR_NODE_F64_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::F64Ty *) {
+static ty_t QIR_NODE_F64_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                              nr::F64Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2652,7 +2799,8 @@ static ty_t QIR_NODE_F64_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::F6
   return llvm::Type::getDoubleTy(m.getContext());
 }
 
-static ty_t QIR_NODE_F128_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::F128Ty *) {
+static ty_t QIR_NODE_F128_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                               nr::F128Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2664,7 +2812,8 @@ static ty_t QIR_NODE_F128_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::F
   return llvm::Type::getFP128Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_VOID_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::VoidTy *) {
+static ty_t QIR_NODE_VOID_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                               nr::VoidTy *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2676,7 +2825,8 @@ static ty_t QIR_NODE_VOID_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::V
   return llvm::Type::getVoidTy(m.getContext());
 }
 
-static ty_t QIR_NODE_PTR_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::PtrTy *N) {
+static ty_t QIR_NODE_PTR_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::PtrTy *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2694,7 +2844,8 @@ static ty_t QIR_NODE_PTR_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr
   return llvm::PointerType::get(R.value(), 0);
 }
 
-static ty_t QIR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr::OpaqueTy *N) {
+static ty_t QIR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                                 nr::OpaqueTy *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2708,7 +2859,8 @@ static ty_t QIR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &, const Mode &, State &, nr:
   return llvm::StructType::create(m.getContext(), N->getName());
 }
 
-static ty_t QIR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::StructTy *N) {
+static ty_t QIR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                                 nr::StructTy *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2733,7 +2885,8 @@ static ty_t QIR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return llvm::StructType::get(m.getContext(), elements, true);
 }
 
-static ty_t QIR_NODE_UNION_TY_C(ctx_t &, craft_t &, const Mode &, State &, nr::UnionTy *) {
+static ty_t QIR_NODE_UNION_TY_C(ctx_t &, craft_t &, const Mode &, State &,
+                                nr::UnionTy *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2746,7 +2899,8 @@ static ty_t QIR_NODE_UNION_TY_C(ctx_t &, craft_t &, const Mode &, State &, nr::U
   qcore_implement();
 }
 
-static ty_t QIR_NODE_ARRAY_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::ArrayTy *N) {
+static ty_t QIR_NODE_ARRAY_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                                nr::ArrayTy *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2764,7 +2918,8 @@ static ty_t QIR_NODE_ARRAY_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
   return llvm::ArrayType::get(R.value(), N->getCount());
 }
 
-static ty_t QIR_NODE_FN_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::FnTy *N) {
+static ty_t QIR_NODE_FN_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::FnTy *N) {
   /**
    * @brief [Write explanation here]
    *

@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -54,7 +56,8 @@
 
 static const char *empty_options[] = {NULL};
 
-static bool parse_options(const char *const options[], std::vector<std::string_view> &opts) {
+static bool parse_options(const char *const options[],
+                          std::vector<std::string_view> &opts) {
   constexpr size_t max_options = 100000;
 
   if (!options) {
@@ -63,7 +66,8 @@ static bool parse_options(const char *const options[], std::vector<std::string_v
 
   for (size_t i = 0; options[i]; i++) {
     if (i >= max_options) {
-      qcore_print(QCORE_ERROR, "Too many options provided, max is %zu", max_options);
+      qcore_print(QCORE_ERROR, "Too many options provided, max is %zu",
+                  max_options);
       return false;
     }
 
@@ -83,9 +87,10 @@ LIB_EXPORT void nit_diag_stderr(const char *message, const char *, uint64_t) {
   fprintf(stderr, "%s", message);
 }
 
-typedef bool (*nit_subsystem_impl)(std::shared_ptr<std::istream> source, FILE *output,
-                                   std::function<void(const char *)> diag_cb,
-                                   const std::unordered_set<std::string_view> &opts);
+typedef bool (*nit_subsystem_impl)(
+    std::shared_ptr<std::istream> source, FILE *output,
+    std::function<void(const char *)> diag_cb,
+    const std::unordered_set<std::string_view> &opts);
 
 bool impl_subsys_basic_lexer(std::shared_ptr<std::istream> source, FILE *output,
                              std::function<void(const char *)> diag_cb,
@@ -103,14 +108,16 @@ bool impl_subsys_nr(std::shared_ptr<std::istream> source, FILE *output,
                     std::function<void(const char *)> diag_cb,
                     const std::unordered_set<std::string_view> &opts);
 
-static bool impl_subsys_codegen(std::shared_ptr<std::istream> source, FILE *output,
-                                std::function<void(const char *)> diag_cb,
-                                const std::unordered_set<std::string_view> &opts);
+static bool impl_subsys_codegen(
+    std::shared_ptr<std::istream> source, FILE *output,
+    std::function<void(const char *)> diag_cb,
+    const std::unordered_set<std::string_view> &opts);
 
-static const std::unordered_map<std::string_view, nit_subsystem_impl> dispatch_funcs = {
-    {"lex", impl_subsys_basic_lexer}, {"meta", impl_subsys_meta},
-    {"parse", impl_subsys_parser},    {"ir", impl_subsys_nr},
-    {"codegen", impl_subsys_codegen},
+static const std::unordered_map<std::string_view, nit_subsystem_impl>
+    dispatch_funcs = {
+        {"lex", impl_subsys_basic_lexer}, {"meta", impl_subsys_meta},
+        {"parse", impl_subsys_parser},    {"ir", impl_subsys_nr},
+        {"codegen", impl_subsys_codegen},
 };
 
 static bool check_out_stream_usable(FILE *stream, const char *name) {
@@ -126,15 +133,16 @@ static bool check_out_stream_usable(FILE *stream, const char *name) {
   }
 
   if (fseek(stream, pos, SEEK_SET) == -1) {
-    qcore_print(QCORE_DEBUG, "nit_cc: Failed to restore %s pipe position", name);
+    qcore_print(QCORE_DEBUG, "nit_cc: Failed to restore %s pipe position",
+                name);
     return false;
   }
 
   return true;
 }
 
-LIB_EXPORT bool nit_cc(nit_stream_t *S, FILE *O, nit_diag_cb diag_cb, uint64_t userdata,
-                       const char *const options[]) {
+LIB_EXPORT bool nit_cc(nit_stream_t *S, FILE *O, nit_diag_cb diag_cb,
+                       uint64_t userdata, const char *const options[]) {
   /* This API will be used by mortals, protect them from themselves */
   if (!nit_lib_ready && !nit_lib_init()) {
     return false;
@@ -167,7 +175,8 @@ LIB_EXPORT bool nit_cc(nit_stream_t *S, FILE *O, nit_diag_cb diag_cb, uint64_t u
 
   const auto subsystem = dispatch_funcs.find(opts[0]);
   if (subsystem == dispatch_funcs.end()) {
-    qcore_print(QCORE_ERROR, "Unknown subsystem name in options: %s", opts[0].data());
+    qcore_print(QCORE_ERROR, "Unknown subsystem name in options: %s",
+                opts[0].data());
     return false;
   }
 
@@ -213,9 +222,10 @@ LIB_EXPORT bool nit_cc(nit_stream_t *S, FILE *O, nit_diag_cb diag_cb, uint64_t u
 
 ///============================================================================///
 
-static bool impl_subsys_codegen(std::shared_ptr<std::istream> source, FILE *output,
-                                std::function<void(const char *)> diag_cb,
-                                const std::unordered_set<std::string_view> &opts) {
+static bool impl_subsys_codegen(
+    std::shared_ptr<std::istream> source, FILE *output,
+    std::function<void(const char *)> diag_cb,
+    const std::unordered_set<std::string_view> &opts) {
   (void)source;
   (void)output;
   (void)diag_cb;

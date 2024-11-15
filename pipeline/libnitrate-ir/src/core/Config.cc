@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -41,7 +43,8 @@ namespace nr::conf {
 }
 
 template <typename L, typename R>
-boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
+boost::bimap<L, R> make_bimap(
+    std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
   return boost::bimap<L, R>(list.begin(), list.end());
 }
 
@@ -105,7 +108,9 @@ LIB_EXPORT bool nr_conf_getopt(nr_conf_t *conf, nr_key_t key, nr_val_t *value) {
 
 LIB_EXPORT nr_setting_t *nr_conf_getopts(nr_conf_t *conf, size_t *count) {
   if (!count) {
-    qcore_panic("nr_conf_getopts: Contract violation: 'count' parameter cannot be NULL.");
+    qcore_panic(
+        "nr_conf_getopts: Contract violation: 'count' parameter cannot be "
+        "NULL.");
   }
 
   const nr_setting_t *ptr = conf->GetAll(*count);
@@ -128,10 +133,12 @@ LIB_EXPORT nr_setting_t *nr_conf_getopts(nr_conf_t *conf, size_t *count) {
 
 LIB_EXPORT void nr_conf_clear(nr_conf_t *conf) { conf->ClearNoVerify(); }
 
-LIB_EXPORT size_t nr_conf_dump(nr_conf_t *conf, FILE *stream, const char *field_delim,
+LIB_EXPORT size_t nr_conf_dump(nr_conf_t *conf, FILE *stream,
+                               const char *field_delim,
                                const char *line_delim) {
   if (!stream) {
-    qcore_panic("nr_conf_dump: Contract violation: 'stream' parameter cannot be NULL.");
+    qcore_panic(
+        "nr_conf_dump: Contract violation: 'stream' parameter cannot be NULL.");
   }
 
   if (!field_delim) {
@@ -156,8 +163,10 @@ LIB_EXPORT size_t nr_conf_dump(nr_conf_t *conf, FILE *stream, const char *field_
       qcore_panic("nr_conf_dump: Unhandled nr_val_t value.");
     }
 
-    bytes += fprintf(stream, "%s%s%s%s", options_bimap.left.at(settings[i].key).data(), field_delim,
-                     values_bimap.left.at(settings[i].value).data(), line_delim);
+    bytes +=
+        fprintf(stream, "%s%s%s%s",
+                options_bimap.left.at(settings[i].key).data(), field_delim,
+                values_bimap.left.at(settings[i].value).data(), line_delim);
   }
 
   return bytes;

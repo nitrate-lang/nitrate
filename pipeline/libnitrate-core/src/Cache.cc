@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -53,7 +55,8 @@ LIB_EXPORT bool qcore_cache_bind(qcore_cache_has_t has, qcore_cache_read_t read,
 
   std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
 
-  if (g_cache_provider.m_has || g_cache_provider.m_read || g_cache_provider.m_write) {
+  if (g_cache_provider.m_has || g_cache_provider.m_read ||
+      g_cache_provider.m_write) {
     return false;
   }
 
@@ -76,25 +79,30 @@ LIB_EXPORT int64_t qcore_cache_has(const qcore_cache_key_t *key) {
   std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
 
   qcore_assert(key, "qcore_cache_has: key is null");
-  qcore_assert(g_cache_provider.m_has, "qcore_cache_has: cache provider not bound");
+  qcore_assert(g_cache_provider.m_has,
+               "qcore_cache_has: cache provider not bound");
 
   return g_cache_provider.m_has(key);
 }
 
-LIB_EXPORT bool qcore_cache_read(const qcore_cache_key_t *key, void *data, size_t datalen) {
+LIB_EXPORT bool qcore_cache_read(const qcore_cache_key_t *key, void *data,
+                                 size_t datalen) {
   std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
 
   qcore_assert(key && data, "qcore_cache_read: key or data is null");
-  qcore_assert(g_cache_provider.m_read, "qcore_cache_read: cache provider not bound");
+  qcore_assert(g_cache_provider.m_read,
+               "qcore_cache_read: cache provider not bound");
 
   return g_cache_provider.m_read(key, data, datalen);
 }
 
-LIB_EXPORT bool qcore_cache_write(const qcore_cache_key_t *key, const void *data, size_t datalen) {
+LIB_EXPORT bool qcore_cache_write(const qcore_cache_key_t *key,
+                                  const void *data, size_t datalen) {
   std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
 
   qcore_assert(key && data, "qcore_cache_write: key or data is null");
-  qcore_assert(g_cache_provider.m_write, "qcore_cache_write: cache provider not bound");
+  qcore_assert(g_cache_provider.m_write,
+               "qcore_cache_write: cache provider not bound");
 
   return g_cache_provider.m_write(key, data, datalen);
 }

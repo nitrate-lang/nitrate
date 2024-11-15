@@ -37,11 +37,12 @@ void ServerContext::request_queue_loop(std::stop_token st) {
   }
 }
 
-std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(std::istream& io) {
+std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(
+    std::istream& io) {
   /**
-   * We don't need to lock the std::istream because this is the only place where we read from it in
-   * a single threaded context. The ostream is seperately locked because it is written to from
-   * any number of threads.
+   * We don't need to lock the std::istream because this is the only place where
+   * we read from it in a single threaded context. The ostream is seperately
+   * locked because it is written to from any number of threads.
    */
 
   size_t remaining_bytes = 0;
@@ -105,7 +106,8 @@ std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(std::is
     }
 
     if (doc["jsonrpc"].GetString() != std::string_view("2.0")) {
-      LOG(ERROR) << "Unsupported jsonrpc version: " << doc["jsonrpc"].GetString();
+      LOG(ERROR) << "Unsupported jsonrpc version: "
+                 << doc["jsonrpc"].GetString();
       return std::nullopt;
     }
 
@@ -122,7 +124,8 @@ std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(std::is
     if (!doc.HasMember("id")) { /* Notification */
       if (!doc.HasMember("params")) {
         return std::make_unique<lsp::NotificationMessage>(
-            doc["method"].GetString(), rapidjson::Document(rapidjson::kObjectType));
+            doc["method"].GetString(),
+            rapidjson::Document(rapidjson::kObjectType));
       }
 
       if (!doc["params"].IsObject() && !doc["params"].IsArray()) {
@@ -132,8 +135,8 @@ std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(std::is
 
       rapidjson::Document params;
       params.CopyFrom(doc["params"], params.GetAllocator());
-      return std::make_unique<lsp::NotificationMessage>(doc["method"].GetString(),
-                                                        std::move(params));
+      return std::make_unique<lsp::NotificationMessage>(
+          doc["method"].GetString(), std::move(params));
     } else { /* Request or error */
       if (!doc["id"].IsString() && !doc["id"].IsInt()) {
         LOG(ERROR) << "id is not a string or integer";
@@ -154,10 +157,11 @@ std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(std::is
 
       if (doc["id"].IsString()) {
         return std::make_unique<lsp::RequestMessage>(doc["id"].GetString(),
-                                                     doc["method"].GetString(), std::move(params));
-      } else {
-        return std::make_unique<lsp::RequestMessage>(doc["id"].GetInt(), doc["method"].GetString(),
+                                                     doc["method"].GetString(),
                                                      std::move(params));
+      } else {
+        return std::make_unique<lsp::RequestMessage>(
+            doc["id"].GetInt(), doc["method"].GetString(), std::move(params));
       }
     }
   }
@@ -186,7 +190,8 @@ void ServerContext::register_handlers() {
   register_handlers();
 
   m_thread_pool.Start();
-  m_thread_pool.QueueJob([this](std::stop_token st) { request_queue_loop(st); });
+  m_thread_pool.QueueJob(
+      [this](std::stop_token st) { request_queue_loop(st); });
 
   while (true) {
     auto message = next_message(*io.first);
@@ -200,7 +205,8 @@ void ServerContext::register_handlers() {
   }
 }
 
-void ServerContext::handle_request(const lsp::RequestMessage& req, std::ostream& io) {
+void ServerContext::handle_request(const lsp::RequestMessage& req,
+                                   std::ostream& io) {
   if (m_callback) {
     m_callback(&req);
   }
@@ -259,9 +265,10 @@ void ServerContext::handle_request(const lsp::RequestMessage& req, std::ostream&
 
   {
     /**
-     * We must guard the ostream because it is written to from any number of threads.
-     * The language server protocol dicates the use of message id to distinguish between
-     * different transactions (RequestMessage/ResponseMessage pairs).
+     * We must guard the ostream because it is written to from any number of
+     * threads. The language server protocol dicates the use of message id to
+     * distinguish between different transactions
+     * (RequestMessage/ResponseMessage pairs).
      */
 
     std::lock_guard<std::mutex> lock(m_io_mutex);
@@ -289,15 +296,18 @@ void ServerContext::handle_notification(const lsp::NotificationMessage& notif) {
   it->second(notif);
 }
 
-void ServerContext::dispatch(const std::shared_ptr<lsp::Message> message, std::ostream& io) {
+void ServerContext::dispatch(const std::shared_ptr<lsp::Message> message,
+                             std::ostream& io) {
   if (message->type() == lsp::MessageType::Request) {
     std::lock_guard<std::mutex> lock(m_request_queue_mutex);
     m_request_queue.push([this, message, &io]() {
-      handle_request(*std::static_pointer_cast<lsp::RequestMessage>(message), io);
+      handle_request(*std::static_pointer_cast<lsp::RequestMessage>(message),
+                     io);
     });
   } else if (message->type() == lsp::MessageType::Notification) {
     m_thread_pool.QueueJob([this, message](std::stop_token) {
-      handle_notification(*std::static_pointer_cast<lsp::NotificationMessage>(message));
+      handle_notification(
+          *std::static_pointer_cast<lsp::NotificationMessage>(message));
     });
   } else {
     LOG(ERROR) << "Unsupported message type";

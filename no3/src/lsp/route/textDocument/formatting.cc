@@ -88,7 +88,8 @@ static std::string escape_char_literal(char ch) {
   }
 }
 
-static void escape_string_literal_chunk(AutomatonState& S, std::string_view str) {
+static void escape_string_literal_chunk(AutomatonState& S,
+                                        std::string_view str) {
   for (char ch : str) {
     switch (ch) {
       case '\n':
@@ -140,7 +141,8 @@ static void escape_string_literal(AutomatonState& S, std::string_view str) {
 
   for (size_t i = 0; i < num_chunks; i++) {
     S.line << "\"";
-    escape_string_literal_chunk(S, str.substr(i * max_chunk_size, max_chunk_size));
+    escape_string_literal_chunk(S,
+                                str.substr(i * max_chunk_size, max_chunk_size));
     S.line << "\"";
 
     if (rem > 0 || i < num_chunks - 1) {
@@ -154,12 +156,14 @@ static void escape_string_literal(AutomatonState& S, std::string_view str) {
 
   if (rem > 0) {
     S.line << "\"";
-    escape_string_literal_chunk(S, str.substr(num_chunks * max_chunk_size, rem));
+    escape_string_literal_chunk(S,
+                                str.substr(num_chunks * max_chunk_size, rem));
     S.line << "\"";
   }
 }
 
-static void write_float_literal_chunk(AutomatonState& S, std::string_view float_str) {
+static void write_float_literal_chunk(AutomatonState& S,
+                                      std::string_view float_str) {
   constexpr size_t insert_sep_every = 10;
 
   bool already_write_type_suffix = false;
@@ -169,7 +173,8 @@ static void write_float_literal_chunk(AutomatonState& S, std::string_view float_
 
     if (!already_write_type_suffix && i != 0 && (i % (insert_sep_every)) == 0) {
       underscore = true;
-    } else if (!already_write_type_suffix && !std::isdigit(float_str[i]) && float_str[i] != '.') {
+    } else if (!already_write_type_suffix && !std::isdigit(float_str[i]) &&
+               float_str[i] != '.') {
       already_write_type_suffix = true;
       underscore = true;
     }
@@ -196,7 +201,8 @@ static void write_float_literal(AutomatonState& S, std::string_view float_str) {
   size_t line_size = S.line.tellg();
 
   for (size_t i = 0; i < num_chunks; i++) {
-    write_float_literal_chunk(S, float_str.substr(i * max_chunk_size, max_chunk_size));
+    write_float_literal_chunk(
+        S, float_str.substr(i * max_chunk_size, max_chunk_size));
 
     if (rem > 0 || i < num_chunks - 1) {
       S.line << "_ \\\n";
@@ -208,7 +214,8 @@ static void write_float_literal(AutomatonState& S, std::string_view float_str) {
   }
 
   if (rem > 0) {
-    write_float_literal_chunk(S, float_str.substr(num_chunks * max_chunk_size, rem));
+    write_float_literal_chunk(
+        S, float_str.substr(num_chunks * max_chunk_size, rem));
   }
 }
 
@@ -253,7 +260,8 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
   bool has_methods = !N->get_methods().empty();
   bool has_static_methods = !N->get_static_methods().empty();
 
-  bool empty = !has_fields && !has_methods && !has_static_methods && N->get_tags().empty();
+  bool empty = !has_fields && !has_methods && !has_static_methods &&
+               N->get_tags().empty();
   if (empty) {
     S.line << "{}";
     return;
@@ -278,7 +286,8 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
       S.flush_line();
     }
 
-    for (auto it = N->get_methods().begin(); it != N->get_methods().end(); it++) {
+    for (auto it = N->get_methods().begin(); it != N->get_methods().end();
+         it++) {
       put_indent(S);
 
       S.line << vis_str.at((*it)->get_visibility()) << " ";
@@ -294,7 +303,8 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
       S.flush_line();
     }
 
-    for (auto it = N->get_static_methods().begin(); it != N->get_static_methods().end(); it++) {
+    for (auto it = N->get_static_methods().begin();
+         it != N->get_static_methods().end(); it++) {
       put_indent(S);
 
       S.line << vis_str.at((*it)->get_visibility()) << " static ";
@@ -312,7 +322,8 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 static void recurse(qparse::Node* C, AutomatonState& S) {
   /**
    * TODO: Resolve the following issues:
-   * - Parentheses are currently lost and the order of sub-expressions is not preserved;
+   * - Parentheses are currently lost and the order of sub-expressions is not
+   * preserved;
    * - Integer literals loose their original base.
    * - Code comments are lost
    * - Code with macros is not supported
@@ -442,9 +453,11 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
       for (auto it = N->get_args().begin(); it != N->get_args().end(); it++) {
         bool is_call = it->second->this_typeid() == QAST_NODE_CALL;
-        bool is_other = it->second->this_typeid() == QAST_NODE_LIST ||
-                        (it->second->this_typeid() == QAST_NODE_STMT_EXPR &&
-                         (it->second->as<StmtExpr>()->get_stmt()->this_typeid() == QAST_NODE_FN));
+        bool is_other =
+            it->second->this_typeid() == QAST_NODE_LIST ||
+            (it->second->this_typeid() == QAST_NODE_STMT_EXPR &&
+             (it->second->as<StmtExpr>()->get_stmt()->this_typeid() ==
+              QAST_NODE_FN));
 
         S.line.seekg(0, std::ios::end);
         size_t line_width = S.line.tellg();
@@ -495,14 +508,16 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
       auto ty = N->get_items().front()->this_typeid();
       if (N->get_items().size() > 0 &&
-          (ty == QAST_NODE_ASSOC || ty == QAST_NODE_LIST || ty == QAST_NODE_CALL ||
-           ty == QAST_NODE_TEMPL_CALL ||
+          (ty == QAST_NODE_ASSOC || ty == QAST_NODE_LIST ||
+           ty == QAST_NODE_CALL || ty == QAST_NODE_TEMPL_CALL ||
            (ty == QAST_NODE_STMT_EXPR &&
-            N->get_items().front()->as<StmtExpr>()->get_stmt()->this_typeid() == QAST_NODE_FN))) {
+            N->get_items().front()->as<StmtExpr>()->get_stmt()->this_typeid() ==
+                QAST_NODE_FN))) {
         S.line << "[\n";
         S.flush_line();
         S.indent++;
-        for (auto it = N->get_items().begin(); it != N->get_items().end(); it++) {
+        for (auto it = N->get_items().begin(); it != N->get_items().end();
+             it++) {
           put_indent(S);
           recurse(*it, S);
           S.line << ",\n";
@@ -512,8 +527,9 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
         put_indent(S);
         S.line << "]";
       } else {
-        size_t split_on =
-            N->get_items().size() <= 8 ? 8 : std::ceil(std::sqrt(N->get_items().size()));
+        size_t split_on = N->get_items().size() <= 8
+                              ? 8
+                              : std::ceil(std::sqrt(N->get_items().size()));
 
         S.line << "[";
 
@@ -521,7 +537,8 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
         size_t line_size = S.line.tellg();
 
         size_t i = 0;
-        for (auto it = N->get_items().begin(); it != N->get_items().end(); it++) {
+        for (auto it = N->get_items().begin(); it != N->get_items().end();
+             it++) {
           recurse(*it, S);
 
           i++;
@@ -565,7 +582,8 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
         S.line << "\n";
         S.flush_line();
         qcore_assert(S.field_indent_stack.top() > 0);
-        S.line << std::string((S.indent * S.tabSize) + S.field_indent_stack.top(), ' ');
+        S.line << std::string(
+            (S.indent * S.tabSize) + S.field_indent_stack.top(), ' ');
       } else {
         S.line.seekg(0, std::ios::end);
         size_t line_width = S.line.tellg();
@@ -669,7 +687,8 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       recurse(N->get_func(), S);
 
       S.line << "<";
-      for (auto it = N->get_template_args().begin(); it != N->get_template_args().end(); it++) {
+      for (auto it = N->get_template_args().begin();
+           it != N->get_template_args().end(); it++) {
         if (!std::isdigit(it->first.at(0))) {
           S.line << it->first;
           S.line << ": ";
@@ -878,10 +897,12 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       }
 
       S.line << "(";
-      for (auto it = N->get_params().begin(); it != N->get_params().end(); it++) {
+      for (auto it = N->get_params().begin(); it != N->get_params().end();
+           it++) {
         S.line << std::get<0>(*it);
         auto param_ty = std::get<1>(*it);
-        if ((param_ty && param_ty->this_typeid() != QAST_NODE_INFER_TY) || std::get<2>(*it)) {
+        if ((param_ty && param_ty->this_typeid() != QAST_NODE_INFER_TY) ||
+            std::get<2>(*it)) {
           S.line << ": ";
           recurse(std::get<1>(*it), S);
           if (std::get<2>(*it)) {
@@ -901,7 +922,8 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
       S.line << ")";
 
-      if (N->get_return_ty() && N->get_return_ty()->this_typeid() != QAST_NODE_VOID_TY) {
+      if (N->get_return_ty() &&
+          N->get_return_ty()->this_typeid() != QAST_NODE_VOID_TY) {
         S.line << ": ";
         recurse(N->get_return_ty(), S);
       }
@@ -1027,14 +1049,16 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       }
 
       S.line << "(";
-      for (auto it = F->get_params().begin(); it != F->get_params().end(); it++) {
+      for (auto it = F->get_params().begin(); it != F->get_params().end();
+           it++) {
         if (std::get<0>(*it) == "this") {
           continue;
         }
 
         S.line << std::get<0>(*it);
         auto param_ty = std::get<1>(*it);
-        if ((param_ty && param_ty->this_typeid() != QAST_NODE_INFER_TY) || std::get<2>(*it)) {
+        if ((param_ty && param_ty->this_typeid() != QAST_NODE_INFER_TY) ||
+            std::get<2>(*it)) {
           S.line << ": ";
           recurse(std::get<1>(*it), S);
           if (std::get<2>(*it)) {
@@ -1054,7 +1078,8 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
       S.line << ")";
 
-      if (F->get_return_ty() && F->get_return_ty()->this_typeid() != QAST_NODE_VOID_TY) {
+      if (F->get_return_ty() &&
+          F->get_return_ty()->this_typeid() != QAST_NODE_VOID_TY) {
         S.line << ": ";
         recurse(F->get_return_ty(), S);
       }
@@ -1166,14 +1191,16 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       }
 
       S.line << "(";
-      for (auto it = F->get_params().begin(); it != F->get_params().end(); it++) {
+      for (auto it = F->get_params().begin(); it != F->get_params().end();
+           it++) {
         if (std::get<0>(*it) == "this") {
           continue;
         }
 
         S.line << std::get<0>(*it);
         auto param_ty = std::get<1>(*it);
-        if ((param_ty && param_ty->this_typeid() != QAST_NODE_INFER_TY) || std::get<2>(*it)) {
+        if ((param_ty && param_ty->this_typeid() != QAST_NODE_INFER_TY) ||
+            std::get<2>(*it)) {
           S.line << ": ";
           recurse(std::get<1>(*it), S);
           if (std::get<2>(*it)) {
@@ -1193,16 +1220,18 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
       S.line << ")";
 
-      if (F->get_return_ty() && F->get_return_ty()->this_typeid() != QAST_NODE_VOID_TY) {
+      if (F->get_return_ty() &&
+          F->get_return_ty()->this_typeid() != QAST_NODE_VOID_TY) {
         S.line << ": ";
         recurse(F->get_return_ty(), S);
       }
       S.line << " ";
 
-      bool arrow_syntax = (N->get_body()->get_items().size() == 1) && !N->get_precond() &&
-                          !N->get_postcond() &&
-                          (N->get_body()->get_items()[0]->this_typeid() == QAST_NODE_RETURN ||
-                           N->get_body()->get_items()[0]->this_typeid() == QAST_NODE_CALL);
+      bool arrow_syntax =
+          (N->get_body()->get_items().size() == 1) && !N->get_precond() &&
+          !N->get_postcond() &&
+          (N->get_body()->get_items()[0]->this_typeid() == QAST_NODE_RETURN ||
+           N->get_body()->get_items()[0]->this_typeid() == QAST_NODE_CALL);
 
       if (arrow_syntax) {
         S.line << "=> ";
@@ -1265,8 +1294,8 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       ExportDecl* N = C->as<ExportDecl>();
       std::vector<Stmt*> imports, exports;
 
-      for (auto it = N->get_body()->get_items().begin(); it != N->get_body()->get_items().end();
-           it++) {
+      for (auto it = N->get_body()->get_items().begin();
+           it != N->get_body()->get_items().end(); it++) {
         qparse_ty_t ty = (*it)->this_typeid();
 
         if (ty == QAST_NODE_FNDECL) {
@@ -1384,9 +1413,10 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       };
 
       static const std::unordered_set<qparse_ty_t> double_sep = {
-          QAST_NODE_FNDECL, QAST_NODE_STRUCT, QAST_NODE_REGION, QAST_NODE_GROUP,
-          QAST_NODE_UNION,  QAST_NODE_ENUM,   QAST_NODE_FN,     QAST_NODE_SUBSYSTEM,
-          QAST_NODE_EXPORT, QAST_NODE_BLOCK,
+          QAST_NODE_FNDECL, QAST_NODE_STRUCT,    QAST_NODE_REGION,
+          QAST_NODE_GROUP,  QAST_NODE_UNION,     QAST_NODE_ENUM,
+          QAST_NODE_FN,     QAST_NODE_SUBSYSTEM, QAST_NODE_EXPORT,
+          QAST_NODE_BLOCK,
       };
 
       Block* N = C->as<Block>();
@@ -1394,7 +1424,8 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       bool did_root = S.did_root;
       S.did_root = true;
 
-      if (did_root && N->get_items().empty() && N->get_safety() == SafetyMode::Unknown) {
+      if (did_root && N->get_items().empty() &&
+          N->get_safety() == SafetyMode::Unknown) {
         S.line << "{}";
         break;
       }
@@ -1449,9 +1480,9 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
           S.line << ";";
         }
 
-        bool do_double_line =
-            double_sep.contains((*it)->this_typeid()) ||
-            (std::next(it) != N->get_items().end() && (*std::next(it))->this_typeid() != ty);
+        bool do_double_line = double_sep.contains((*it)->this_typeid()) ||
+                              (std::next(it) != N->get_items().end() &&
+                               (*std::next(it))->this_typeid() != ty);
 
         if (std::next(it) != N->get_items().end() && do_double_line) {
           S.line << "\n\n";
@@ -1627,7 +1658,8 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
     case QAST_NODE_FOREACH: {
       ForeachStmt* N = C->as<ForeachStmt>();
-      S.line << "foreach (" << N->get_idx_ident() << ", " << N->get_val_ident() << " in ";
+      S.line << "foreach (" << N->get_idx_ident() << ", " << N->get_val_ident()
+             << " in ";
       recurse(N->get_expr(), S);
 
       S.line << ") ";
@@ -1697,7 +1729,9 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
     Decl* N = C->as<Decl>();
 
     if (!N->get_tags().empty()) {
-      size_t split_on = N->get_tags().size() <= 6 ? 6 : std::ceil(std::sqrt(N->get_tags().size()));
+      size_t split_on = N->get_tags().size() <= 6
+                            ? 6
+                            : std::ceil(std::sqrt(N->get_tags().size()));
 
       S.line << " with [";
 
@@ -1742,7 +1776,8 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   }
 
   if (!req.params()["textDocument"]["uri"].IsString()) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "textDocument.uri is not a string");
+    resp.error(lsp::ErrorCodes::InvalidParams,
+               "textDocument.uri is not a string");
     return;
   }
 
@@ -1762,7 +1797,8 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   }
 
   if (!req.params()["options"]["tabSize"].IsInt()) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "options.tabSize is not an integer");
+    resp.error(lsp::ErrorCodes::InvalidParams,
+               "options.tabSize is not an integer");
     return;
   }
 
@@ -1777,7 +1813,8 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   }
 
   if (!req.params()["options"]["insertSpaces"].IsBool()) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "options.insertSpaces is not a boolean");
+    resp.error(lsp::ErrorCodes::InvalidParams,
+               "options.insertSpaces is not a boolean");
     return;
   }
 
@@ -1831,8 +1868,10 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   edit["range"]["end"].AddMember("line", SIZE_MAX, resp->GetAllocator());
   edit["range"]["end"].AddMember("character", SIZE_MAX, resp->GetAllocator());
   std::string new_text = S.S.str();
-  edit.AddMember("newText", Value(new_text.c_str(), new_text.size(), resp->GetAllocator()).Move(),
-                 resp->GetAllocator());
+  edit.AddMember(
+      "newText",
+      Value(new_text.c_str(), new_text.size(), resp->GetAllocator()).Move(),
+      resp->GetAllocator());
 
   resp->PushBack(edit, resp->GetAllocator());
 

@@ -1,16 +1,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///           ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                  ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓█▓▒▒▓███▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///           ░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///             ░▒▓█▓▒░                                                      ///
-///              ░▒▓██▓▒░                                                    ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
-///   * NITRATE PACKAGE MANAGER - The official app for the Nitrate language. ///
+///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
 ///                                                                          ///
 ///   The Nitrate Toolchain is free software; you can redistribute it or     ///
@@ -55,21 +57,24 @@ void no3::core::SetDebugMode(bool debug) {
 }
 
 void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
-                                const char* base_filename, int line, const struct tm* tm,
-                                const char* message_ptr, std::size_t message_len) {
-  static const std::unordered_map<google::LogSeverity, ansi::Style> sev_colors = {
-      {google::GLOG_INFO, ansi::Style::FG_GREEN},
-      {google::GLOG_WARNING, ansi::Style::FG_YELLOW},
-      {google::GLOG_ERROR, ansi::Style::FG_RED},
-      {google::GLOG_FATAL, ansi::Style::FG_RED | ansi::Style::BOLD},
-  };
+                                const char* base_filename, int line,
+                                const struct tm* tm, const char* message_ptr,
+                                std::size_t message_len) {
+  static const std::unordered_map<google::LogSeverity, ansi::Style> sev_colors =
+      {
+          {google::GLOG_INFO, ansi::Style::FG_GREEN},
+          {google::GLOG_WARNING, ansi::Style::FG_YELLOW},
+          {google::GLOG_ERROR, ansi::Style::FG_RED},
+          {google::GLOG_FATAL, ansi::Style::FG_RED | ansi::Style::BOLD},
+      };
 
-  static const std::unordered_map<google::LogSeverity, std::string_view> sev_prefix = {
-      {google::GLOG_INFO, "I: "},
-      {google::GLOG_WARNING, "W: "},
-      {google::GLOG_ERROR, "E: "},
-      {google::GLOG_FATAL, "F: "},
-  };
+  static const std::unordered_map<google::LogSeverity, std::string_view>
+      sev_prefix = {
+          {google::GLOG_INFO, "I: "},
+          {google::GLOG_WARNING, "W: "},
+          {google::GLOG_ERROR, "E: "},
+          {google::GLOG_FATAL, "F: "},
+      };
 
   std::string_view message(message_ptr, message_len);
   bool color, debug;

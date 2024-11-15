@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -30,11 +32,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * WARNING: This code technically uses unspecified behavior in C++. It assumes that
- * adding the __QXIR_NODE_REFLECT_IMPL__ define, which will change the visibility of
- * private fields will not change the overall memory layout of any of the used polymorphic
- * class types. On the bright side, if this assumption is wrong, the code will certainly
- * crash on test cases, so it should be easy to detect faults.
+ * WARNING: This code technically uses unspecified behavior in C++. It assumes
+ * that adding the __QXIR_NODE_REFLECT_IMPL__ define, which will change the
+ * visibility of private fields will not change the overall memory layout of any
+ * of the used polymorphic class types. On the bright side, if this assumption
+ * is wrong, the code will certainly crash on test cases, so it should be easy
+ * to detect faults.
  */
 
 #define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
@@ -47,7 +50,8 @@
 #include <stack>
 
 namespace nr::detail {
-  void get_children_sorted(Expr *base, ChildSelect cs, std::vector<Expr **> &children) {
+  void get_children_sorted(Expr *base, ChildSelect cs,
+                           std::vector<Expr **> &children) {
     children.clear();
 
     if (!base) {
@@ -129,7 +133,8 @@ namespace nr::detail {
       }
       case QIR_NODE_WHILE: {
         children.push_back(&base->as<While>()->m_cond);
-        children.push_back(reinterpret_cast<Expr **>(&base->as<While>()->m_body));
+        children.push_back(
+            reinterpret_cast<Expr **>(&base->as<While>()->m_body));
         break;
       }
       case QIR_NODE_FOR: {
@@ -150,7 +155,8 @@ namespace nr::detail {
         for (Case *&child : base->as<Switch>()->m_cases) {
           children.push_back(reinterpret_cast<Expr **>(&child));
         }
-        children.push_back(reinterpret_cast<Expr **>(&base->as<Switch>()->m_default));
+        children.push_back(
+            reinterpret_cast<Expr **>(&base->as<Switch>()->m_default));
         break;
       }
       case QIR_NODE_FN: {
@@ -158,9 +164,11 @@ namespace nr::detail {
         for (auto &child : base->as<Fn>()->m_params) {
           children.push_back(reinterpret_cast<Expr **>(&child.first));
         }
-        children.push_back(reinterpret_cast<Expr **>(&base->as<Fn>()->m_return));
+        children.push_back(
+            reinterpret_cast<Expr **>(&base->as<Fn>()->m_return));
         if (base->as<Fn>()->m_body.has_value()) {
-          children.push_back(reinterpret_cast<Expr **>(&base->as<Fn>()->m_body.value()));
+          children.push_back(
+              reinterpret_cast<Expr **>(&base->as<Fn>()->m_body.value()));
         }
         break;
       }
@@ -220,7 +228,8 @@ namespace nr::detail {
         break;
       }
       case QIR_NODE_PTR_TY: {
-        children.push_back(reinterpret_cast<Expr **>(&base->as<PtrTy>()->m_pointee));
+        children.push_back(
+            reinterpret_cast<Expr **>(&base->as<PtrTy>()->m_pointee));
         break;
       }
       case QIR_NODE_OPAQUE_TY: {
@@ -241,7 +250,8 @@ namespace nr::detail {
         break;
       }
       case QIR_NODE_ARRAY_TY: {
-        children.push_back(reinterpret_cast<Expr **>(&base->as<ArrayTy>()->m_element));
+        children.push_back(
+            reinterpret_cast<Expr **>(&base->as<ArrayTy>()->m_element));
         break;
       }
       case QIR_NODE_FN_TY: {
@@ -249,7 +259,8 @@ namespace nr::detail {
         for (Type *&child : base->as<FnTy>()->m_params) {
           children.push_back(reinterpret_cast<Expr **>(&child));
         }
-        children.push_back(reinterpret_cast<Expr **>(&base->as<FnTy>()->m_return));
+        children.push_back(
+            reinterpret_cast<Expr **>(&base->as<FnTy>()->m_return));
         break;
       }
       case QIR_NODE_TMP: {
@@ -267,14 +278,19 @@ namespace nr::detail {
     IterAbort() = default;
   };
 
-  CPP_EXPORT void dfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept {
-    qcore_assert(base != nullptr && cb != nullptr, "dfs_pre_impl: base and cb must not be null");
+  CPP_EXPORT void dfs_pre_impl(Expr **base, IterCallback cb,
+                               ChildSelect cs) noexcept {
+    qcore_assert(base != nullptr && cb != nullptr,
+                 "dfs_pre_impl: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */
-      cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
+      cs = [](Expr **a, Expr **b) -> bool {
+        return (uintptr_t)a < (uintptr_t)b;
+      };
     }
 
-    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) noexcept {
+    const auto syncfn = [](Expr **n, const IterCallback &cb,
+                           const ChildSelect &cs) noexcept {
       std::stack<std::pair<Expr *, Expr **>> s;
       std::vector<Expr **> children;
 
@@ -308,14 +324,19 @@ namespace nr::detail {
     syncfn(base, cb, cs);
   }
 
-  CPP_EXPORT void dfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept {
-    qcore_assert(base != nullptr && cb != nullptr, "dfs_post_impl: base and cb must not be null");
+  CPP_EXPORT void dfs_post_impl(Expr **base, IterCallback cb,
+                                ChildSelect cs) noexcept {
+    qcore_assert(base != nullptr && cb != nullptr,
+                 "dfs_post_impl: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */
-      cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
+      cs = [](Expr **a, Expr **b) -> bool {
+        return (uintptr_t)a < (uintptr_t)b;
+      };
     }
 
-    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) noexcept {
+    const auto syncfn = [](Expr **n, const IterCallback &cb,
+                           const ChildSelect &cs) noexcept {
       std::stack<std::pair<Expr *, Expr **>> s;
       std::vector<Expr **> children;
 
@@ -346,14 +367,19 @@ namespace nr::detail {
     cb(nullptr, base);
   }
 
-  CPP_EXPORT void bfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept {
-    qcore_assert(base != nullptr && cb != nullptr, "bfs_pre_impl: base and cb must not be null");
+  CPP_EXPORT void bfs_pre_impl(Expr **base, IterCallback cb,
+                               ChildSelect cs) noexcept {
+    qcore_assert(base != nullptr && cb != nullptr,
+                 "bfs_pre_impl: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */
-      cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
+      cs = [](Expr **a, Expr **b) -> bool {
+        return (uintptr_t)a < (uintptr_t)b;
+      };
     }
 
-    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) noexcept {
+    const auto syncfn = [](Expr **n, const IterCallback &cb,
+                           const ChildSelect &cs) noexcept {
       std::queue<std::pair<Expr *, Expr **>> s;
       std::vector<Expr **> children;
 
@@ -387,14 +413,19 @@ namespace nr::detail {
     syncfn(base, cb, cs);
   }
 
-  CPP_EXPORT void bfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept {
-    qcore_assert(base != nullptr && cb != nullptr, "bfs_post_impl: base and cb must not be null");
+  CPP_EXPORT void bfs_post_impl(Expr **base, IterCallback cb,
+                                ChildSelect cs) noexcept {
+    qcore_assert(base != nullptr && cb != nullptr,
+                 "bfs_post_impl: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */
-      cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
+      cs = [](Expr **a, Expr **b) -> bool {
+        return (uintptr_t)a < (uintptr_t)b;
+      };
     }
 
-    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) noexcept {
+    const auto syncfn = [](Expr **n, const IterCallback &cb,
+                           const ChildSelect &cs) noexcept {
       std::queue<std::pair<Expr *, Expr **>> s;
       std::vector<Expr **> children;
 
@@ -415,7 +446,8 @@ namespace nr::detail {
           case IterOp::Abort:
             return;
           case IterOp::SkipChildren:
-            qcore_assert(false, "bfs_post_impl: IterOp::SkipChildren not supported");
+            qcore_assert(false,
+                         "bfs_post_impl: IterOp::SkipChildren not supported");
             break;
         }
       }
@@ -424,14 +456,19 @@ namespace nr::detail {
     syncfn(base, cb, cs);
   }
 
-  CPP_EXPORT void iter_children(Expr **base, IterCallback cb, ChildSelect cs) noexcept {
-    qcore_assert(base != nullptr && cb != nullptr, "iter_children: base and cb must not be null");
+  CPP_EXPORT void iter_children(Expr **base, IterCallback cb,
+                                ChildSelect cs) noexcept {
+    qcore_assert(base != nullptr && cb != nullptr,
+                 "iter_children: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */
-      cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
+      cs = [](Expr **a, Expr **b) -> bool {
+        return (uintptr_t)a < (uintptr_t)b;
+      };
     }
 
-    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) noexcept {
+    const auto syncfn = [](Expr **n, const IterCallback &cb,
+                           const ChildSelect &cs) noexcept {
       std::vector<Expr **> children;
       get_children_sorted(*n, cs, children);
 
