@@ -631,7 +631,7 @@ static EResult nrgen_float(NRBuilder &b, PState &, IReport *G, qparse::ConstFloa
 
     return b.createFixedFloat(num.convert_to<long double>(), FloatSize::F16);
   } else {
-    if (sv.find("f")) {
+    if (!std::all_of(sv.begin(), sv.end(), [](char c) { return std::isdigit(c) || c == '.'; })) {
       G->report(nr::CompilerError, IC::Error, "Unexpected floating point type suffix");
       return std::nullopt;
     }
@@ -1206,9 +1206,10 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G, qparse::FnDecl 
 
   auto props = convert_purity(func_ty->get_purity());
 
-  Fn *fndecl = b.createFunctionDeclaration(
-      b.intern(n->get_name()), parameters, ret_type.value()->asType(), func_ty->is_variadic(),
-      Vis::Pub, props.first, props.second, func_ty->is_noexcept(), func_ty->is_foreign());
+  Fn *fndecl = b.createFunctionDeclaration(b.intern(s.cur_named(n->get_name())), parameters,
+                                           ret_type.value()->asType(), func_ty->is_variadic(),
+                                           Vis::Pub, props.first, props.second,
+                                           func_ty->is_noexcept(), func_ty->is_foreign());
 
   fndecl->setAbiTag(s.abi_mode);
 
@@ -1294,18 +1295,32 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
 
     auto props = convert_purity(func_ty->get_purity());
 
-    Fn *fndef = b.createFunctionDefintion(
-        b.intern(n->get_name()), parameters, ret_type.value()->asType(), func_ty->is_variadic(),
-        Vis::Pub, props.first, props.second, func_ty->is_noexcept(), func_ty->is_foreign());
-
-    auto body = next_one(n->get_body());
-    if (!body.has_value()) {
-      G->report(CompilerError, nr::IC::Error, "Failed to convert function body", n->get_pos());
-      return std::nullopt;
-    }
+    Fn *fndef = b.createFunctionDefintion(b.intern(s.cur_named(n->get_name())), parameters,
+                                          ret_type.value()->asType(), func_ty->is_variadic(),
+                                          Vis::Pub, props.first, props.second,
+                                          func_ty->is_noexcept(), func_ty->is_foreign());
 
     fndef->setAbiTag(s.abi_mode);
-    fndef->setBody(body.value()->as<Seq>());
+
+    { /* Function body */
+      std::string old_ns = s.ns_prefix;
+
+      if (s.ns_prefix.empty()) {
+        s.ns_prefix = std::string(n->get_name());
+      } else {
+        s.ns_prefix += "::" + std::string(n->get_name());
+      }
+
+      auto body = next_one(n->get_body());
+      if (!body.has_value()) {
+        G->report(CompilerError, nr::IC::Error, "Failed to convert function body", n->get_pos());
+        return std::nullopt;
+      }
+
+      s.ns_prefix = old_ns;
+
+      fndef->setBody(body.value()->as<Seq>());
+    }
 
     return fndef;
   }
@@ -1434,8 +1449,8 @@ static EResult nrgen_const(NRBuilder &b, PState &s, IReport *G, qparse::ConstDec
       s.inside_function ? StorageClass::LLVM_StackAlloa : StorageClass::LLVM_Static;
   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
-  Local *local =
-      b.createVariable(b.intern(n->get_name()), type.value()->asType(), visibility, storage, true);
+  Local *local = b.createVariable(b.intern(s.cur_named(n->get_name())), type.value()->asType(),
+                                  visibility, storage, true);
 
   local->setValue(init.value());
   local->setAbiTag(s.abi_mode);
@@ -1464,8 +1479,8 @@ static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G, qparse::VarDecl *n
   StorageClass storage = s.inside_function ? StorageClass::Managed : StorageClass::LLVM_Static;
   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
-  Local *local =
-      b.createVariable(b.intern(n->get_name()), type.value()->asType(), visibility, storage, false);
+  Local *local = b.createVariable(b.intern(s.cur_named(n->get_name())), type.value()->asType(),
+                                  visibility, storage, false);
 
   local->setValue(init.value());
   local->setAbiTag(s.abi_mode);
@@ -1495,8 +1510,8 @@ static EResult nrgen_let(NRBuilder &b, PState &s, IReport *G, qparse::LetDecl *n
       s.inside_function ? StorageClass::LLVM_StackAlloa : StorageClass::LLVM_Static;
   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
-  Local *local =
-      b.createVariable(b.intern(n->get_name()), type.value()->asType(), visibility, storage, false);
+  Local *local = b.createVariable(b.intern(s.cur_named(n->get_name())), type.value()->asType(),
+                                  visibility, storage, false);
 
   local->setValue(init.value());
   local->setAbiTag(s.abi_mode);
