@@ -61,7 +61,6 @@ struct PState {
   std::string ns_prefix;
   std::stack<qparse::String> composite_expanse;
   nr::AbiTag abi_mode = nr::AbiTag::Internal;
-  std::stack<std::unordered_map<std::string_view, nr::Local *>> local_scope;
 
   std::string cur_named(std::string_view suffix) const {
     if (ns_prefix.empty()) {
@@ -1020,6 +1019,8 @@ static EResult nrgen_ptr_ty(NRBuilder &b, PState &s, IReport *G,
                             qparse::PtrTy *n) {
   auto pointee = next_one(n->get_item());
   if (!pointee.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to lower pointer type",
+              n->get_pos());
     return std::nullopt;
   }
 
@@ -1028,6 +1029,7 @@ static EResult nrgen_ptr_ty(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_opaque_ty(NRBuilder &b, PState &, IReport *,
                                qparse::OpaqueTy *n) {
+  /// TODO: Validate the name
   return b.getOpaqueTy(n->get_name());
 }
 
@@ -1035,19 +1037,17 @@ static EResult nrgen_struct_ty(NRBuilder &b, PState &s, IReport *G,
                                qparse::StructTy *n) {
   const qparse::StructItems &fields = n->get_items();
 
-  std::vector<Type *> the_fields;
-  the_fields.resize(fields.size());
+  std::vector<Type *> the_fields(fields.size());
 
   for (size_t i = 0; i < the_fields.size(); i++) {
     auto item = next_one(fields[i].second);
     if (!item.has_value()) {
-      G->report(CompilerError, IC::Error,
-                "qparse::StructTy::get_items() vector contains std::nullopt",
+      G->report(CompilerError, IC::Error, "Failed to lower struct field",
                 n->get_pos());
       return std::nullopt;
     }
 
-    the_fields.push_back(item.value()->asType());
+    the_fields[i] = item.value()->asType();
   }
 
   return b.getStructTy(the_fields);
@@ -1057,11 +1057,15 @@ static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G,
                               qparse::ArrayTy *n) {
   auto item = next_one(n->get_item());
   if (!item.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to lower array item type",
+              n->get_pos());
     return std::nullopt;
   }
 
   auto count_expr = next_one(n->get_size());
   if (!count_expr.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to lower array size",
+              n->get_pos());
     return std::nullopt;
   }
 
@@ -1071,6 +1075,8 @@ static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G,
 
   auto result = nr::comptime_impl(count_expr.value(), eprintn_cb);
   if (!result.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to evaluate array size",
+              count_expr.value()->getLoc());
     return std::nullopt;
   }
 
@@ -1093,20 +1099,21 @@ static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_tuple_ty(NRBuilder &b, PState &s, IReport *G,
                               qparse::TupleTy *n) {
-  StructFields fields;
-  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    auto item = next_one(*it);
+  const auto &items = n->get_items();
+  StructFields fields(items.size());
+
+  for (size_t i = 0; i < items.size(); i++) {
+    auto item = next_one(items[i]);
     if (!item.has_value()) {
-      G->report(CompilerError, IC::Error,
-                "qparse::TupleTy::get_items() vector contains std::nullopt",
+      G->report(CompilerError, IC::Error, "Failed to lower tuple field type",
                 n->get_pos());
       return std::nullopt;
     }
 
-    fields.push_back(item.value()->asType());
+    fields[i] = item.value()->asType();
   }
 
-  return create<StructTy>(std::move(fields));
+  return b.getStructTy(fields);
 }
 
 using IsThreadSafe = bool;
@@ -1128,19 +1135,24 @@ static std::pair<Purity, IsThreadSafe> convert_purity(qparse::FuncPurity x) {
 
 static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
                            qparse::FuncTy *n) {
-  FnParams params;
+  const auto &items = n->get_params();
+  FnParams params(items.size());
 
-  for (auto it = n->get_params().begin(); it != n->get_params().end(); ++it) {
-    auto type = next_one(std::get<1>(*it));
+  for (size_t i = 0; i < items.size(); i++) {
+    auto type = next_one(std::get<1>(items[i]));
     if (!type.has_value()) {
+      G->report(CompilerError, IC::Error, "Failed to lower function parameter",
+                n->get_pos());
       return std::nullopt;
     }
 
-    params.push_back(type.value()->asType());
+    params[i] = type.value()->asType();
   }
 
   auto ret = next_one(n->get_return_ty());
   if (!ret.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to lower function return type",
+              n->get_pos());
     return std::nullopt;
   }
 
@@ -1150,14 +1162,16 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
                    props.second, n->is_noexcept(), n->is_foreign());
 }
 
-static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *G,
+static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *,
                               qparse::UnresolvedType *n) {
   auto str = s.cur_named(n->get_name());
+
+  /// TODO: Validate type name does not conflict with a reserved namespace
 
   return create<Tmp>(TmpType::NAMED_TYPE, b.intern(str));
 }
 
-static EResult nrgen_infer_ty(NRBuilder &b, PState &, IReport *G,
+static EResult nrgen_infer_ty(NRBuilder &b, PState &, IReport *,
                               qparse::InferType *) {
   return b.getUnknownTy();
 }
@@ -1166,12 +1180,13 @@ static EResult nrgen_templ_ty(NRBuilder &b, PState &s, IReport *G,
                               qparse::TemplType *n) {
   auto base_template = next_one(n->get_template());
   if (!base_template.has_value()) {
+    G->report(CompilerError, IC::Error, "Failed to lower template type base",
+              n->get_pos());
     return std::nullopt;
   }
 
   const qparse::TemplTypeArgs &templ_args = n->get_args();
-  std::vector<Type *> template_args;
-  template_args.resize(templ_args.size());
+  std::vector<Type *> template_args(templ_args.size());
 
   for (size_t i = 0; i < template_args.size(); i++) {
     auto tmp = next_one(templ_args[i]);
@@ -1195,26 +1210,8 @@ static EResult nrgen_templ_ty(NRBuilder &b, PState &s, IReport *G,
 
 static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
                              qparse::TypedefDecl *n) {
-  // auto str = s.cur_named(n->get_name());
-  // auto name = b.intern(std::string_view(str));
-
-  // if (current->getTypeMap().contains(name)) {
-  //   G->report(TypeRedefinition, IC::Error, n->get_name(),n->get_pos(),
-  //         n->get_pos());
-  // }
-
-  // auto type = nrgen_one(b, s,X, n->get_type());
-  // if (!type) {
-  //   G->report(CompilerError, IC::Error,
-  //          "qparse::TypedefDecl::get_type() == std::nullopt",n->get_pos(),
-  //         n->get_pos());
-  //   return std::nullopt;
-  // }
-
-  // current->getTypeMap()[name] = type.value()->asType();
-
-  // return std::vector<Expr *>();
-
+  /// TODO: Implement checked type aliasing
+  qcore_implement();
   return std::nullopt;
 }
 
@@ -1265,8 +1262,7 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G,
   qparse::FuncTy *func_ty = n->get_type();
   const qparse::FuncParams &params = func_ty->get_params();
 
-  std::vector<NRBuilder::FnParam> parameters;
-  parameters.resize(params.size());
+  std::vector<NRBuilder::FnParam> parameters(params.size());
 
   for (size_t i = 0; i < params.size(); i++) {
     const auto &param = params[i];
@@ -1440,10 +1436,6 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
 
 static BResult nrgen_subsystem(NRBuilder &b, PState &s, IReport *G,
                                qparse::SubsystemDecl *n) {
-  if (!n->get_body()) {
-    return std::nullopt;
-  }
-
   std::string old_ns = s.ns_prefix;
 
   if (s.ns_prefix.empty()) {
@@ -1452,63 +1444,67 @@ static BResult nrgen_subsystem(NRBuilder &b, PState &s, IReport *G,
     s.ns_prefix += "::" + std::string(n->get_name());
   }
 
-  BResult items = std::vector<Expr *>();
-  for (auto it = n->get_body()->get_items().begin();
-       it != n->get_body()->get_items().end(); ++it) {
-    auto item = next_any(*it);
-    if (!item.has_value()) {
-      return std::nullopt;
-    }
-
-    items->insert(items->end(), item.value().begin(), item.value().end());
-  }
-
-  s.ns_prefix = old_ns;
-
-  return items;
-}
-
-static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
-                            qparse::ExportDecl *n) {
-  AbiTag old = s.abi_mode;
-
-  if (n->get_abi_name().empty()) {
-    s.abi_mode = AbiTag::Default;
-  } else if (n->get_abi_name() == "q") {
-    s.abi_mode = AbiTag::Nitrate;
-  } else if (n->get_abi_name() == "c") {
-    s.abi_mode = AbiTag::C;
-  } else {
-    G->report(CompilerError, IC::Error,
-              "qparse::ExportDecl abi name is not supported: '" +
-                  n->get_abi_name() + "'",
+  auto body = next_any(n->get_body());
+  if (!body.has_value()) {
+    G->report(nr::CompilerError, IC::Error, "Failed to lower subsystem body",
               n->get_pos());
     return std::nullopt;
   }
 
+  s.ns_prefix = old_ns;
+
+  return body;
+}
+
+static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
+                            qparse::ExportDecl *n) {
+  static const std::unordered_map<std::string_view,
+                                  std::pair<std::string_view, AbiTag>>
+      abi_name_map = {
+          /* Default ABI */
+          {"", {"n", AbiTag::Default}},
+          {"std", {"n", AbiTag::Default}},
+
+          /* Nitrate standard ABI */
+          {"n", {"n", AbiTag::Nitrate}},
+
+          /* C ABI variant is dictated by the LLVM target */
+          {"c", {"c", AbiTag::C}},
+      };
+
   if (!n->get_body()) {
+    G->report(CompilerError, IC::Error,
+              "Failed to lower extern node; body is null", n->get_pos());
     return std::nullopt;
   }
 
-  std::string_view abi_name;
-
-  if (n->get_abi_name().empty()) {
-    abi_name = "std";
-  } else {
-    abi_name = b.intern(n->get_abi_name());
+  auto it = abi_name_map.find(n->get_abi_name());
+  if (it == abi_name_map.end()) {
+    G->report(
+        CompilerError, IC::Error,
+        "The requested ABI name '" + n->get_abi_name() + "' is not supported",
+        n->get_pos());
+    return std::nullopt;
   }
 
+  AbiTag old = s.abi_mode;
+  s.abi_mode = it->second.second;
+
+  const auto &body = n->get_body()->get_items();
   std::vector<nr::Expr *> items;
 
-  for (auto it = n->get_body()->get_items().begin();
-       it != n->get_body()->get_items().end(); ++it) {
-    auto result = next_any(*it);
+  for (size_t i = 0; i < body.size(); i++) {
+    auto result = next_any(body[i]);
     if (!result.has_value()) {
+      G->report(CompilerError, IC::Error,
+                "Failed to lower element in external declaration",
+                n->get_pos());
+      s.abi_mode = old;
       return std::nullopt;
     }
 
     for (auto &item : result.value()) {
-      items.push_back(create<Extern>(item, abi_name));
+      items.push_back(create<Extern>(item, it->second.first));
     }
   }
 
@@ -1530,18 +1526,16 @@ static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G,
   SeqItems items;
   items.reserve(n->get_items().size());
 
-  s.local_scope.push({});
-
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
     auto item = next_any(*it);
     if (!item.has_value()) {
+      G->report(nr::CompilerError, IC::Error,
+                "Failed to lower element in statement block", n->get_pos());
       return std::nullopt;
     }
 
     items.insert(items.end(), item.value().begin(), item.value().end());
   }
-
-  s.local_scope.pop();
 
   return create<Seq>(std::move(items));
 }
@@ -1564,6 +1558,8 @@ static EResult nrgen_const(NRBuilder &b, PState &s, IReport *G,
   }
 
   qcore_assert(init.has_value() && type.has_value());
+
+  /// TODO: Handle specification of thread-local memory
 
   StorageClass storage = s.inside_function ? StorageClass::LLVM_StackAlloa
                                            : StorageClass::LLVM_Static;
@@ -1598,6 +1594,8 @@ static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G,
 
   qcore_assert(init.has_value() && type.has_value());
 
+  /// TODO: Handle specification of thread-local memory
+
   StorageClass storage =
       s.inside_function ? StorageClass::Managed : StorageClass::LLVM_Static;
   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
@@ -1631,6 +1629,8 @@ static EResult nrgen_let(NRBuilder &b, PState &s, IReport *G,
 
   qcore_assert(init.has_value() && type.has_value());
 
+  /// TODO: Handle specification of thread-local memory
+
   StorageClass storage = s.inside_function ? StorageClass::LLVM_StackAlloa
                                            : StorageClass::LLVM_Static;
   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
@@ -1647,17 +1647,26 @@ static EResult nrgen_let(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_inline_asm(NRBuilder &, PState &, IReport *G,
                                 qparse::InlineAsm *) {
-  qcore_implement();
+  /// TODO: Decide whether or not to support inline assembly
+  G->report(nr::CompilerError, IC::Error,
+            "Inline assembly is not currently supported");
+  return std::nullopt;
 }
 
 static EResult nrgen_return(NRBuilder &b, PState &s, IReport *G,
                             qparse::ReturnStmt *n) {
-  auto val = next_one(n->get_value());
-  if (!val.has_value()) {
-    val = create<VoidTy>();
-  }
+  if (n->get_value()) {
+    auto val = next_one(n->get_value());
+    if (!val.has_value()) {
+      /// TODO: msg
+      return std::nullopt;
+    }
 
-  return create<Ret>(val.value());
+    return create<Ret>(val.value());
+
+  } else {
+    return create<Ret>(create<VoidTy>());
+  }
 }
 
 static EResult nrgen_retif(NRBuilder &b, PState &s, IReport *G,

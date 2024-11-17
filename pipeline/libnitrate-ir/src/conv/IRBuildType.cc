@@ -260,16 +260,32 @@ FnTy *NRBuilder::getFnTy(std::span<Type *> params, Type *ret_ty,
                          bool is_variadic, Purity purity, bool thread_safe,
                          bool is_noexcept,
                          bool foreign SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-  (void)params;
-  (void)ret_ty;
-  (void)is_variadic;
+  contract_enforce(m_state == SelfState::Constructed);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(ret_ty != nullptr && static_cast<Expr *>(ret_ty)->isType());
+
+  FnParams parameters(params.size());
+  for (size_t i = 0; i < params.size(); i++) {
+    contract_enforce(static_cast<Expr *>(params[i])->isType());
+    parameters[i] = params[i];
+  }
+
+  FnAttrs attributes;
+
+  if (is_variadic) {
+    attributes.insert(FnAttr::Variadic);
+  }
+
+  /// FIXME: Do something useful with this information
   (void)purity;
   (void)thread_safe;
   (void)is_noexcept;
   (void)foreign;
-  ignore_caller_info();
+
+  FnTy *fn_ty =
+      create<FnTy>(std::move(parameters), compiler_trace(ret_ty), attributes);
+
+  return compiler_trace(debug_info(fn_ty, DEBUG_INFO));
 }
 
 StructTy *NRBuilder::createStructTemplateDefintion(
