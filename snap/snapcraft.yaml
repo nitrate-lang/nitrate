@@ -1,9 +1,9 @@
-name: qpkg
+name: nitrate
 base: core22
 version: '0.0.0'
 summary: Nitrate Package and Build System
 description: |
-  QPKG is a comprehensive tool to install, create, compile, analyze, recompose, and
+  Nitrate is a comprehensive tool to install, create, compile, analyze, recompose, and
   distribute software packages using the Nitrate Programming language. It integrates
   the entire Nitrate Toolchain and provides a consistent and reliable way to deal with
   Nitrate projects.
@@ -11,10 +11,10 @@ description: |
 confinement: classic
 
 parts:
-  qpkg:
+  nitrate:
     plugin: cmake
     cmake-parameters:
-      - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DSTRIP_OUTPUT=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang
+      - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DSTRIP_OUTPUT=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang
     source: .
     build-packages:
       - libssl-dev
@@ -36,15 +36,8 @@ parts:
       - libdeflate0
     override-stage: |
         snapcraftctl stage
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate.a
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-core.a
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-lexer.a
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-seq.a
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-parser.a
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-ir.a
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-emit.a
         rm -rf $SNAPCRAFT_PART_INSTALL/usr/include
 
 apps:
-  qpkg:
+  nitrate:
     command: usr/bin/no3

@@ -16,7 +16,7 @@ export function activate(context: ExtensionContext) {
   const lspLogPath = path.join(homeDir, 'nitrated-lsp.log');
 
   const serverOptions: ServerOptions = {
-    command: "qpkg",
+    command: "nitrate",
     args: ['lsp', "--log", lspLogPath, "--no-color"],
     transport: TransportKind.stdio
   };
