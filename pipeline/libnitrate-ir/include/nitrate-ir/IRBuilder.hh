@@ -137,6 +137,12 @@ namespace nr {
     NRBuilder &insertBeforeVariable(std::string_view name) noexcept;
     NRBuilder &insertBeforeFunction(std::string_view name) noexcept;
 
+    void try_resolve_types(Expr *root) noexcept;
+    void try_resolve_constants(Expr *root) noexcept;
+    void try_resolve_names(Expr *root) noexcept;
+    void try_resolve_calls(Expr *root) noexcept;
+    void connect_nodes(Seq *root) noexcept;
+
     static bool check_acyclic(Seq *root, IReport *L) noexcept;
     static bool check_duplicates(Seq *root, IReport *L) noexcept;
     static bool check_symbols_exist(Seq *root, IReport *L) noexcept;
@@ -400,6 +406,9 @@ namespace nr {
 
     Type *getTemplateInstance(Type *base, std::span<Type *> template_params
                                               SOURCE_LOCATION_PARAM) noexcept;
+
+    void createNamedTypeAlias(
+        Type *type, std::string_view name SOURCE_LOCATION_PARAM) noexcept;
 
     ///**************************************************************************///
     // Other stuff

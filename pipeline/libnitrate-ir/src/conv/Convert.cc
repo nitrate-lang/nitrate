@@ -44,7 +44,6 @@
 #include <cstdint>
 #include <cstring>
 #include <nitrate-ir/Classes.hh>
-#include <nitrate-ir/Format.hh>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
@@ -1210,9 +1209,17 @@ static EResult nrgen_templ_ty(NRBuilder &b, PState &s, IReport *G,
 
 static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
                              qparse::TypedefDecl *n) {
-  /// TODO: Implement checked type aliasing
-  qcore_implement();
-  return std::nullopt;
+  auto type = next_one(n->get_type());
+  if (!type.has_value()) {
+    G->report(nr::CompilerError, IC::Error,
+              "Failed to lower type in typedef statement", n->get_pos());
+    return std::nullopt;
+  }
+
+  b.createNamedTypeAlias(type.value()->asType(),
+                         b.intern(s.cur_named(n->get_name())));
+
+  return std::vector<Expr *>();
 }
 
 #define align(x, a) (((x) + (a) - 1) & ~((a) - 1))

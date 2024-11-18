@@ -496,7 +496,7 @@ namespace nr {
      * @return true If the type matches.
      * @return false If the type does not match.
      */
-    bool is(nr_ty_t type) const noexcept;
+    bool is(nr_ty_t type) const noexcept { return type == getKind(); }
 
     /**
      * @brief Compare two nodes for equality.

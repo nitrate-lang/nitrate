@@ -290,6 +290,8 @@ void NRBuilder::finish(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   contract_enforce(m_result == std::nullopt);
   contract_enforce(m_root != nullptr);
 
+  connect_nodes(m_root);
+
   m_state = SelfState::Finished;
 }
 

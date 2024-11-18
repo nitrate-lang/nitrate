@@ -42,6 +42,10 @@
 #include <nitrate-ir/Config.h>
 #include <nitrate-ir/IR.h>
 
+#include <nitrate-ir/IRGraph.hh>
+#include <optional>
+#include <string>
+
 class nr_conf final {
   nr_conf_t *m_conf;
 
@@ -69,5 +73,18 @@ public:
 
   qmodule_t *&get() { return m_module; }
 };
+
+namespace nr {
+  class SymbolEncoding final {
+  public:
+    SymbolEncoding() = default;
+
+    std::optional<std::string> mangle_name(const nr::Expr *symbol,
+                                           AbiTag abi) const noexcept;
+
+    std::optional<std::string> demangle_name(
+        std::string_view symbol) const noexcept;
+  };
+}  // namespace nr
 
 #endif  // __NITRATE_IR_CLASSES_H__

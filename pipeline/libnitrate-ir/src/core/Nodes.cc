@@ -812,10 +812,6 @@ CPP_EXPORT Type *Expr::asType() noexcept {
   return static_cast<Type *>(this);
 }
 
-CPP_EXPORT bool Expr::is(nr_ty_t type) const noexcept {
-  return type == getKind();
-}
-
 CPP_EXPORT void nr::Expr::dump(std::ostream &os, bool isForDebug) const {
   (void)isForDebug;
 

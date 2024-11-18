@@ -31,70 +31,114 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-ir/IR.h>
+#define IRBUILDER_IMPL
 
-#include <boost/bimap.hpp>
-#include <nitrate-ir/Classes.hh>
+#include <nitrate-core/Error.h>
+#include <nitrate-ir/TypeDecl.h>
+
+#include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
-#include <nitrate-ir/Report.hh>
-#include <passes/PassList.hh>
-
-/**
- * @brief Canonicalize the names of things in the module.
- *
- * @timecomplexity O(n)
- * @spacecomplexity O(1)
- */
 
 using namespace nr;
 
-bool nr::pass::ds_mangle(qmodule_t *mod, IReport *log) {
-  SymbolEncoding se;
-  bool failed = false;
+void NRBuilder::try_resolve_types(Expr *root) noexcept {
+  /**
+   * @brief Resolve the `TmpType::NAMED_TYPE` nodes by replacing them with the
+   * actual types they represent.
+   * @note Any nodes that fail to resolve are left alone.
+   */
 
-  iterate<dfs_pre>(mod->getRoot(), [&](Expr *, Expr **cur) -> IterOp {
-    if ((*cur)->getKind() == QIR_NODE_FN) {
-      Fn *fn = (*cur)->as<Fn>();
-      auto name = se.mangle_name(fn, fn->getAbiTag());
-      if (name) [[likely]] {
-        fn->setName(mod->internString(*name));
-      } else {
-        failed = true;
-        log->report(NameManglingTypeInfer, IC::Error, fn->getName(),
-                    fn->getLoc());
-      }
-    } else if ((*cur)->getKind() == QIR_NODE_LOCAL) {
-      Local *local = (*cur)->as<Local>();
-      auto name = se.mangle_name(local, local->getAbiTag());
-      if (name) [[likely]] {
-        qcore_assert(!name->empty());
-        local->setName(mod->internString(*name));
-      } else {
-        failed = true;
-        log->report(NameManglingTypeInfer, IC::Error, local->getName(),
-                    local->getLoc());
-      }
+  iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
+    Expr *N = *C;
+
+    if (N->is(QIR_NODE_TMP) &&
+        N->as<Tmp>()->getTmpType() == TmpType::NAMED_TYPE) {
+      Tmp *T = N->as<Tmp>();
+
+      (void)T;
+      /// TODO: Resolve type name
+    }
+
+    return IterOp::Proceed;
+  });
+}
+
+void NRBuilder::try_resolve_constants(Expr *root) noexcept {
+  /**
+   * @brief Resolve the `TmpType::ENUM` nodes by replacing them with the values
+   * that define them.
+   * @note Any nodes that fail to resolve are left alone.
+   */
+
+  iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
+    Expr *N = *C;
+
+    if (N->is(QIR_NODE_TMP) && N->as<Tmp>()->getTmpType() == TmpType::ENUM) {
+      Tmp *T = N->as<Tmp>();
+
+      (void)T;
+      /// TODO: Resolve enum constant
+    }
+
+    return IterOp::Proceed;
+  });
+}
+
+void NRBuilder::try_resolve_names(Expr *root) noexcept {
+  /**
+   * @brief Resolve identifiers by hooking them to the node they represent. This
+   * may create cyclic references, which is okay because these hooks are not
+   * enumerated during normal iteration.
+   * @note Any nodes that fail to resolve are left alone.
+   */
+
+  iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
+    Expr *N = *C;
+
+    if (N->is(QIR_NODE_IDENT) && N->as<Ident>()->getWhat() == nullptr) {
+      Ident *I = N->as<Ident>();
+
+      (void)I;
+      /// TODO: Resolve identifier reference
     }
 
     return IterOp::Proceed;
   });
 
-  /* Update identifiers to use the new names */
-  iterate<dfs_pre>(mod->getRoot(), [](Expr *, Expr **cur) -> IterOp {
-    if ((*cur)->getKind() != QIR_NODE_IDENT) {
-      return IterOp::Proceed;
-    }
-
-    Ident *ident = (*cur)->as<Ident>();
-    if (!ident->getWhat()) {
-      return IterOp::Proceed;
-    }
-
-    qcore_assert(!ident->getWhat()->getName().empty());
-    ident->setName(ident->getWhat()->getName());
-
+  iterate<dfs_pre>(root, [&](Expr *, Expr **) -> IterOp {
+    /// TODO: Implement
     return IterOp::Proceed;
   });
 
-  return !failed;
+  // Replace identifiers with references to symbol nodes.
+}
+
+void NRBuilder::try_resolve_calls(Expr *root) noexcept {
+  /**
+   * @brief Resolve the `TmpType::CALL` nodes by replacing them with function
+   * call expression nodes with any default arguments filled in.
+   * @note Any nodes that fail to resolve are left alone.
+   */
+
+  iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
+    Expr *N = *C;
+
+    if (N->is(QIR_NODE_TMP) && N->as<Tmp>()->getTmpType() == TmpType::CALL) {
+      Tmp *T = N->as<Tmp>();
+
+      (void)T;
+      /// TODO: Resolve call expression
+    }
+
+    return IterOp::Proceed;
+  });
+}
+
+void NRBuilder::connect_nodes(Seq *root) noexcept {
+  /* The order of the following matters */
+
+  try_resolve_types(root);
+  try_resolve_constants(root);
+  try_resolve_names(root);
+  try_resolve_calls(root);
 }

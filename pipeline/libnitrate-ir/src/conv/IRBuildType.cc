@@ -310,6 +310,15 @@ UnionTy *NRBuilder::createUnionTemplateDefintion(
   ignore_caller_info();
 }
 
+void NRBuilder::createNamedTypeAlias(
+    Type *type, std::string_view name SOURCE_LOCATION_PARAM) noexcept {
+  /// TODO: Implement
+  qcore_implement();
+  (void)type;
+  (void)name;
+  ignore_caller_info();
+}
+
 Type *NRBuilder::getTemplateInstance(Type *base,
                                      std::span<Type *> template_params
                                          SOURCE_LOCATION_PARAM) noexcept {

@@ -35,7 +35,7 @@
 #include <nitrate-core/Error.h>
 
 #include <cstddef>
-#include <nitrate-ir/Format.hh>
+#include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <sstream>
 #include <unordered_set>
