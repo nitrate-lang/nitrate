@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_DIAGNOSTIC_H__
-#define __NITRATE_QXIR_DIAGNOSTIC_H__
+#ifndef __NITRATE_NR_DIAGNOSTIC_H__
+#define __NITRATE_NR_DIAGNOSTIC_H__
 
 #include <nitrate-ir/IR.h>
 
@@ -114,4 +114,4 @@ namespace nr {
 
 };  // namespace nr
 
-#endif  // __NITRATE_QXIR_REPORT_H__
+#endif  // __NITRATE_NR_REPORT_H__

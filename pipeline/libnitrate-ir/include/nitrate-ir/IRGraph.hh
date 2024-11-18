@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_NODE_H__
-#define __NITRATE_QXIR_NODE_H__
+#ifndef __NITRATE_NR_NODE_H__
+#define __NITRATE_NR_NODE_H__
 
 #ifndef __cplusplus
 #error "This header is C++ only."
@@ -111,7 +111,7 @@ public:
 
 namespace nr {
 
-#ifdef __QXIR_NODE_REFLECT_IMPL__
+#ifdef __NR_NODE_REFLECT_IMPL__
 #define QCLASS_REFLECT() public:
 #else
 #define QCLASS_REFLECT() private:

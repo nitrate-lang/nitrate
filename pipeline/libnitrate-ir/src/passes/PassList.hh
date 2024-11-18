@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_PASSES_LIST_H__
-#define __NITRATE_QXIR_PASSES_LIST_H__
+#ifndef __NITRATE_NR_PASSES_LIST_H__
+#define __NITRATE_NR_PASSES_LIST_H__
 
 struct qmodule_t;
 
@@ -62,4 +62,4 @@ namespace nr::pass {
 
 }  // namespace nr::pass
 
-#endif  // __NITRATE_QXIR_PASSES_LIST_H__
+#endif  // __NITRATE_NR_PASSES_LIST_H__

@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_QXIR_H__
-#define __NITRATE_QXIR_QXIR_H__
+#ifndef __NITRATE_NR_NR_H__
+#define __NITRATE_NR_NR_H__
 
 #include <nitrate-ir/TypeDecl.h>
 #include <stdbool.h>
@@ -61,7 +61,7 @@ typedef struct qparse_node_t qparse_node_t;
 void nr_free(qmodule_t *nr);
 
 typedef enum nr_serial_t {
-  QXIR_SERIAL_CODE = 0, /* Human readable ASCII text */
+  NR_SERIAL_CODE = 0, /* Human readable ASCII text */
 } nr_serial_t;
 
 /**
@@ -120,17 +120,17 @@ bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
 typedef void (*nr_node_cb)(nr_node_t *cur, uintptr_t userdata);
 
 typedef enum nr_audit_t {
-  QXIR_AUDIT_NONE = 0,     /* No audit */
-  QXIR_AUDIT_WILLCOMP = 1, /* Minimum to determine if the module will compile;
+  NR_AUDIT_NONE = 0,     /* No audit */
+  NR_AUDIT_WILLCOMP = 1, /* Minimum to determine if the module will compile;
                               g++ disables some */
-  QXIR_AUDIT_STD =
+  NR_AUDIT_STD =
       2, /* Standard audit checks; What happens here will vary; g++ default */
-  QXIR_AUDIT_STRONG =
+  NR_AUDIT_STRONG =
       3, /* Strong audit checks; What happens here will vary; g++ -Wextra */
-  QXIR_AUDIT_GIGACHAD =
+  NR_AUDIT_GIGACHAD =
       4, /* A bunch of checks that are probably unnecessary; g++ -Wall */
-  QXIR_AUDIT_MAX = 5, /* Maximum audit */
-  QXIR_AUDIT_DEFAULT = QXIR_AUDIT_STD,
+  NR_AUDIT_MAX = 5, /* Maximum audit */
+  NR_AUDIT_DEFAULT = NR_AUDIT_STD,
 } nr_audit_t;
 
 /**
@@ -148,13 +148,13 @@ typedef enum nr_audit_t {
 bool nr_audit(qmodule_t *nr, nr_audit_t level);
 
 typedef enum {
-  QXIR_LEVEL_DEBUG = 0,
-  QXIR_LEVEL_INFO = 1,
-  QXIR_LEVEL_WARN = 2,
-  QXIR_LEVEL_ERROR = 3,
-  QXIR_LEVEL_FATAL = 4,
-  QXIR_LEVEL_MAX = 5,
-  QXIR_LEVEL_DEFAULT = QXIR_LEVEL_WARN,
+  NR_LEVEL_DEBUG = 0,
+  NR_LEVEL_INFO = 1,
+  NR_LEVEL_WARN = 2,
+  NR_LEVEL_ERROR = 3,
+  NR_LEVEL_FATAL = 4,
+  NR_LEVEL_MAX = 5,
+  NR_LEVEL_DEFAULT = NR_LEVEL_WARN,
 } nr_level_t;
 
 /**
@@ -179,7 +179,7 @@ typedef enum nr_diag_format_t {
    * @example `801802`
    * @format <code>
    */
-  QXIR_DIAG_ASCII_ECODE,
+  NR_DIAG_ASCII_ECODE,
 
   /**
    * @brief Code decimal serialization of the error code and source location.
@@ -188,7 +188,7 @@ typedef enum nr_diag_format_t {
    *
    * @note UTF-8 characters in the path are preserved.
    */
-  QXIR_DIAG_UTF8_ECODE_LOC,
+  NR_DIAG_UTF8_ECODE_LOC,
 
   /**
    * @brief Code decimal serialization of the error code and UTF-8 error
@@ -196,7 +196,7 @@ typedef enum nr_diag_format_t {
    * @example `801802:This is an UTF-8 error message.`
    * @format <code>:<utf8_message>
    */
-  QXIR_DIAG_UTF8_ECODE_ETEXT,
+  NR_DIAG_UTF8_ECODE_ETEXT,
 
   /**
    * @brief Unspecified format.
@@ -207,41 +207,41 @@ typedef enum nr_diag_format_t {
    * @note Basically, everything you expect from a mainstream compiler (except
    * without color).
    */
-  QXIR_DIAG_NOSTD_TTY_UTF8,
+  NR_DIAG_NOSTD_TTY_UTF8,
 
   /**
    * @brief Unspecified format.
-   * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+   * @note Similar to `NR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
    * differences.
    */
-  QXIR_DIAG_NONSTD_ANSI16_UTF8_FULL,
+  NR_DIAG_NONSTD_ANSI16_UTF8_FULL,
 
   /**
    * @brief Unspecified format.
-   * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+   * @note Similar to `NR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
    * differences.
    */
-  QXIR_DIAG_NONSTD_ANSI256_UTF8_FULL,
+  NR_DIAG_NONSTD_ANSI256_UTF8_FULL,
 
   /**
    * @brief Unspecified format.
-   * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+   * @note Similar to `NR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
    * differences.
    */
-  QXIR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
+  NR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
 
   /**
    * @brief Display in a modern terminal emulator with UTF-8, RGB colors,
    * ANSI-box drawing, and full diagnostics with source highlighting.
    * @note Includes everything the user would expect from a mainstream compiler.
    */
-  QXIR_DIAG_COLOR = QXIR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
+  NR_DIAG_COLOR = NR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
 
   /**
    * @brief Display in a modern terminal emulator with UTF-8 and no colors.
    * @note Includes everything the user would expect from a mainstream compiler.
    */
-  QXIR_DIAG_NOCOLOR = QXIR_DIAG_NOSTD_TTY_UTF8,
+  NR_DIAG_NOCOLOR = NR_DIAG_NOSTD_TTY_UTF8,
 } nr_diag_format_t;
 
 /**
@@ -286,7 +286,7 @@ void nr_diag_clear(qmodule_t *nr);
 size_t nr_max_modules(void);
 
 /**
- * @brief Performs type inference on a QXIR node.
+ * @brief Performs type inference on a NR node.
  *
  * @param node Node to perform type inference on.
  * @param PtrSizeBytes Size of a pointer on the target platform
@@ -297,7 +297,7 @@ size_t nr_max_modules(void);
 nr_node_t *nr_infer(nr_node_t *node, uint32_t PtrSizeBytes);
 
 /**
- * @brief Clone a QXIR node. Optionally into a different module.
+ * @brief Clone a NR node. Optionally into a different module.
  *
  * @param node The node to clone.
  *
@@ -315,4 +315,4 @@ nr_conf_t *nr_get_conf(qmodule_t *mod);
 }
 #endif
 
-#endif  // __NITRATE_QXIR_QXIR_H__
+#endif  // __NITRATE_NR_NR_H__

@@ -34,8 +34,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
-#define __NITRATE_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
+#ifndef __NITRATE_NR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
+#define __NITRATE_NR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
 
 #include <functional>
 #include <nitrate-ir/Report.hh>
@@ -150,4 +150,4 @@ namespace nr::pass {
   };
 }  // namespace nr::pass
 
-#endif  // __NITRATE_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
+#endif  // __NITRATE_NR_DIAGNOSE_PASSES_AUTO_REGISTER_H__

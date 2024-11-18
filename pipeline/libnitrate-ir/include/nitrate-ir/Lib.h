@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_LIB_H__
-#define __NITRATE_QXIR_LIB_H__
+#ifndef __NITRATE_NR_LIB_H__
+#define __NITRATE_NR_LIB_H__
 
 #include <nitrate-ir/Config.h>
 #include <nitrate-ir/IR.h>
@@ -95,4 +95,4 @@ const char* nr_strerror();
 }
 #endif
 
-#endif  // __NITRATE_QXIR_LIB_H__
+#endif  // __NITRATE_NR_LIB_H__

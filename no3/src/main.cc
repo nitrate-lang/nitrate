@@ -664,17 +664,17 @@ namespace argparse_setup {
 
     subparsers["parse"] = std::move(parse);
 
-    /*================= QXIR SUBPARSER =================*/
+    /*================= NR SUBPARSER =================*/
     auto nr =
         std::make_unique<ArgumentParser>("nr", "1.0", default_arguments::help);
 
-    nr->add_argument("source").help("source file to lower into QXIR").nargs(1);
+    nr->add_argument("source").help("source file to lower into NR").nargs(1);
     nr->add_argument("-o", "--output")
         .help("output file for nr tree")
         .default_value(std::string(""))
         .nargs(1);
     nr->add_argument("-O", "--opts")
-        .help("optimizations to apply to QXIR")
+        .help("optimizations to apply to NR")
         .default_value(std::string(""))
         .nargs(1);
     nr->add_argument("-v", "--verbose")
@@ -1351,7 +1351,7 @@ namespace no3::router {
 
       auto cb = [](const uint8_t *msg, size_t size, nr_level_t lvl,
                    uintptr_t data) {
-        if (!data && lvl < QXIR_LEVEL_INFO) {
+        if (!data && lvl < NR_LEVEL_INFO) {
           return;
         }
         qerr << std::string_view((const char *)msg, size) << std::endl;
@@ -1359,14 +1359,13 @@ namespace no3::router {
 
       if (!nr_lower(&qmod.get(), root, source.c_str(), true)) {
         nr_diag_read(qmod.get(),
-                     mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb,
+                     mode.use_color ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR, cb,
                      verbose);
         return 1;
       }
 
-      nr_diag_read(qmod.get(),
-                   mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb,
-                   verbose);
+      nr_diag_read(qmod.get(), mode.use_color ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
+                   cb, verbose);
 
       FILE *out_fp = nullptr;
       if (!output.empty()) {
@@ -1379,10 +1378,10 @@ namespace no3::router {
         out_fp = stdout;
       }
 
-      if (!nr_write(qmod.get(), nr_base(qmod.get()), QXIR_SERIAL_CODE, out_fp,
+      if (!nr_write(qmod.get(), nr_base(qmod.get()), NR_SERIAL_CODE, out_fp,
                     nullptr, 0)) {
         if (!output.empty()) fclose(out_fp);
-        qerr << "Failed to generate QXIR tree" << std::endl;
+        qerr << "Failed to generate NR tree" << std::endl;
         return 1;
       }
 
@@ -1432,7 +1431,7 @@ namespace no3::router {
 
       auto cb = [](const uint8_t *msg, size_t size, nr_level_t lvl,
                    uintptr_t data) {
-        if (!data && lvl < QXIR_LEVEL_INFO) {
+        if (!data && lvl < NR_LEVEL_INFO) {
           return;
         }
         qerr << std::string_view((const char *)msg, size) << std::endl;
@@ -1440,14 +1439,13 @@ namespace no3::router {
 
       if (!nr_lower(&qmod.get(), root, source.c_str(), true)) {
         nr_diag_read(qmod.get(),
-                     mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb,
+                     mode.use_color ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR, cb,
                      verbose);
         return 1;
       }
 
-      nr_diag_read(qmod.get(),
-                   mode.use_color ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb,
-                   verbose);
+      nr_diag_read(qmod.get(), mode.use_color ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
+                   cb, verbose);
 
       FILE *out_fp = nullptr;
       if (!output.empty()) {

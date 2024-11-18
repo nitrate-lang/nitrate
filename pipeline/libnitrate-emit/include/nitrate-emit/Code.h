@@ -57,9 +57,9 @@ typedef enum {
 } qcode_style_t;
 
 /**
- * @brief Transcompile the QXIR module to the target source language.
+ * @brief Transcompile the NR module to the target source language.
  *
- * @param module QXIR module to transcompile.
+ * @param module NR module to transcompile.
  * @param conf Configuration for the transcompiler.
  * @param lang Target source language.
  * @param style Code style to use.

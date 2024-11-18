@@ -768,7 +768,7 @@ LIB_EXPORT bool nr_write(qmodule_t *mod, const nr_node_t *_node,
   }
 
   switch (mode) {
-    case QXIR_SERIAL_CODE: {
+    case NR_SERIAL_CODE: {
       if (mod) {
         status = to_codeform(mod, node, false, 2, *out);
 

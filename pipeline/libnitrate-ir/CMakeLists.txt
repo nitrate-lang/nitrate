@@ -12,7 +12,7 @@ execute_process(COMMAND find ${CMAKE_CURRENT_SOURCE_DIR} -type f -name "*.*" -ex
 string(REGEX REPLACE " .*" "" SHA256SUMS ${SHA256SUMS})
 string(TOUPPER ${SHA256SUMS} SHA256SUMS)
 string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
-set(__TARGET_VERSION "\"QXIR_${SHA256SUMS}\"")
+set(__TARGET_VERSION "\"NR_${SHA256SUMS}\"")
 message(STATUS "libnitrate-ir VersionId: ${__TARGET_VERSION}")
 
 #================== SET BUILD FLAGS ==================

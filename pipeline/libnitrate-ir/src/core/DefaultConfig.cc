@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __NITRATE_QXIR_IMPL__
+#define __NITRATE_NR_IMPL__
 
 #include <nitrate-ir/Config.h>
 

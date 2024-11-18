@@ -370,7 +370,7 @@
 
 //     // if (!(*_cur)->isAcyclic()) {
 //     //   (*_cur)->getModule()->getDiag().push(
-//     //       QXIR_AUDIT_CONV,
+//     //       NR_AUDIT_CONV,
 //     //       DiagMessage(
 //     //           "Cyclic polymorphic node reference detected in module IR
 //     data structure.",

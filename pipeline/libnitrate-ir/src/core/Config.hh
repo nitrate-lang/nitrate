@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_CORE_CONFIG_H__
-#define __NITRATE_QXIR_CORE_CONFIG_H__
+#ifndef __NITRATE_NR_CORE_CONFIG_H__
+#define __NITRATE_NR_CORE_CONFIG_H__
 
 #include <nitrate-ir/Config.h>
 
@@ -98,4 +98,4 @@ public:
   bool has(nr_key_t option, nr_val_t value) const noexcept;
 };
 
-#endif  // __NITRATE_QXIR_CORE_CONFIG_H__
+#endif  // __NITRATE_NR_CORE_CONFIG_H__

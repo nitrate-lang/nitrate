@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_IRBUILDER_H__
-#define __NITRATE_QXIR_IRBUILDER_H__
+#ifndef __NITRATE_NR_IRBUILDER_H__
+#define __NITRATE_NR_IRBUILDER_H__
 
 #ifndef __cplusplus
 #error "This header is C++ only."

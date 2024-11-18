@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_TYPE_DECL_H__
-#define __NITRATE_QXIR_TYPE_DECL_H__
+#ifndef __NITRATE_NR_TYPE_DECL_H__
+#define __NITRATE_NR_TYPE_DECL_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,7 +44,7 @@ extern "C" {
 typedef struct nr_node_t nr_node_t;
 
 /**
- * @brief Nitrate QXIR module.
+ * @brief Nitrate NR module.
  */
 typedef struct qmodule_t qmodule_t;
 
@@ -126,4 +126,4 @@ typedef enum nr_val_t {
 }
 #endif
 
-#endif  // __NITRATE_QXIR_TYPE_DECL_H__
+#endif  // __NITRATE_NR_TYPE_DECL_H__

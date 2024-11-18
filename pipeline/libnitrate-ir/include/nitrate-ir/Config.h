@@ -31,15 +31,15 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_CONFIG_H__
-#define __NITRATE_QXIR_CONFIG_H__
+#ifndef __NITRATE_NR_CONFIG_H__
+#define __NITRATE_NR_CONFIG_H__
 
 #include <nitrate-ir/TypeDecl.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 
-#if defined(__cplusplus) && defined(__NITRATE_QXIR_IMPL__)
+#if defined(__cplusplus) && defined(__NITRATE_NR_IMPL__)
 #include <initializer_list>
 #endif
 
@@ -49,13 +49,13 @@ extern "C" {
 
 ///==========================================================================///
 
-#if defined(__cplusplus) && defined(__NITRATE_QXIR_IMPL__)
+#if defined(__cplusplus) && defined(__NITRATE_NR_IMPL__)
 }
 typedef struct nr_setting_t {
   nr_key_t key;
   nr_val_t value;
 
-#if defined(__cplusplus) && defined(__NITRATE_QXIR_IMPL__)
+#if defined(__cplusplus) && defined(__NITRATE_NR_IMPL__)
   constexpr nr_setting_t(const std::initializer_list<int> &list)
       : key(static_cast<nr_key_t>(list.begin()[0])),
         value(static_cast<nr_val_t>(list.begin()[1])) {}
@@ -193,4 +193,4 @@ size_t nr_conf_dump(nr_conf_t *conf, FILE *stream, const char *field_delim,
 }
 #endif
 
-#endif  // __NITRATE_QXIR_CONFIG_H__
+#endif  // __NITRATE_NR_CONFIG_H__
