@@ -299,42 +299,6 @@
 //       break;
 //     }
 
-//     case TmpType::ENUM: {
-//       std::string_view name =
-//       std::get<std::string_view>(cur->as<Tmp>()->getData());
-
-//       if (!mod->getTypeMap().contains(name)) {
-//         report(UnknownType, IC::Error, name);
-//         error = true;
-//         break;
-//       }
-
-//       Type *type = mod->getTypeMap().at(name);
-
-//       if (type->getKind() != QIR_NODE_TMP) {
-//         *_cur = type;
-//         break;
-//       }
-
-//       for (auto &[const_name, val] : mod->getNamedConstants()) {
-//         if (!const_name.starts_with(name)) {
-//           CONV_DEBUG("Skipping constant: " + std::string(const_name));
-//           continue;
-//         }
-
-//         nr_node_t *inferred = nr_infer(val);
-//         if (!inferred) {
-//           error = true;
-//           break;
-//         }
-
-//         *_cur = static_cast<Expr *>(inferred);
-//         break;
-//       }
-
-//       break;
-//     }
-
 //     case TmpType::NAMED_TYPE: {
 //       std::string_view name =
 //       std::get<std::string_view>(cur->as<Tmp>()->getData());

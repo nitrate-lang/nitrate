@@ -131,6 +131,7 @@ namespace nr {
 
     enum class Kind {
       TypeDef,
+      ScopedEnum,
     };
 
     std::optional<Expr *> resolve_name(std::string_view name,
@@ -145,7 +146,6 @@ namespace nr {
     NRBuilder &insertBeforeFunction(std::string_view name) noexcept;
 
     void try_resolve_types(Expr *root) const noexcept;
-    void try_resolve_constants(Expr *root) const noexcept;
     void try_resolve_names(Expr *root) const noexcept;
     void try_resolve_calls(Expr *root) const noexcept;
     void connect_nodes(Seq *root) const noexcept;

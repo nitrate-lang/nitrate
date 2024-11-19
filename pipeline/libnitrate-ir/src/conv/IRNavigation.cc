@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <string_view>
 #include <unordered_map>
 #define IRBUILDER_IMPL
 
@@ -145,6 +146,23 @@ std::optional<Expr *> NRBuilder::resolve_name(std::string_view name,
   switch (kind) {
     case Kind::TypeDef: {
       R = find_in_scope_map(m_named_types, name);
+      break;
+    }
+
+    case Kind::ScopedEnum: {
+      auto idx = name.find_last_of("::");
+      if (idx != std::string_view::npos) {
+        std::string_view basename = name.substr(0, idx - 1);
+        std::string_view field_name = name.substr(idx + 1);
+
+        if (const auto &submap =
+                find_in_scope_map(m_named_constant_group, basename)) {
+          auto it = submap.value().find(field_name);
+          if (it != submap.value().end()) {
+            R = it->second;
+          }
+        }
+      }
       break;
     }
   }

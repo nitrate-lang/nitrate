@@ -70,27 +70,6 @@ void NRBuilder::try_resolve_types(Expr *root) const noexcept {
   });
 }
 
-void NRBuilder::try_resolve_constants(Expr *root) const noexcept {
-  /**
-   * @brief Resolve the `TmpType::ENUM` nodes by replacing them with the values
-   * that define them.
-   * @note Any nodes that fail to resolve are left alone.
-   */
-
-  iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
-    Expr *N = *C;
-
-    if (N->is(QIR_NODE_TMP) && N->as<Tmp>()->getTmpType() == TmpType::ENUM) {
-      Tmp *T = N->as<Tmp>();
-
-      (void)T;
-      /// TODO: Resolve enum constant
-    }
-
-    return IterOp::Proceed;
-  });
-}
-
 void NRBuilder::try_resolve_names(Expr *root) const noexcept {
   /**
    * @brief Resolve identifiers by hooking them to the node they represent. This
@@ -105,8 +84,12 @@ void NRBuilder::try_resolve_names(Expr *root) const noexcept {
     if (N->is(QIR_NODE_IDENT) && N->as<Ident>()->getWhat() == nullptr) {
       Ident *I = N->as<Ident>();
 
-      (void)I;
-      /// TODO: Resolve identifier reference
+      auto enum_opt = resolve_name(I->getName(), Kind::ScopedEnum);
+      if (enum_opt.has_value()) {
+        *C = enum_opt.value();
+      } else {
+        /// TODO: Resolve identifier reference
+      }
     }
 
     return IterOp::Proceed;
@@ -145,7 +128,6 @@ void NRBuilder::connect_nodes(Seq *root) const noexcept {
   /* The order of the following matters */
 
   try_resolve_types(root);
-  try_resolve_constants(root);
   try_resolve_names(root);
   try_resolve_calls(root);
 }

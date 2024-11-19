@@ -1323,7 +1323,6 @@ namespace nr {
 
   enum class TmpType {
     CALL,
-    ENUM,
     NAMED_TYPE,
   };
 
