@@ -34,6 +34,7 @@
 #ifndef __NITRATE_NR_IRBUILDER_H__
 #define __NITRATE_NR_IRBUILDER_H__
 
+#include <string>
 #ifndef __cplusplus
 #error "This header is C++ only."
 #endif
@@ -120,6 +121,9 @@ namespace nr {
 
     std::unordered_map<std::string_view, std::string> m_interned_strings;
     std::unordered_map<std::string_view, Type *> m_named_types;
+    std::unordered_map<std::string_view,
+                       std::unordered_map<std::string_view, Expr *>>
+        m_named_constant_group;
 
     ///**************************************************************************///
     // Builder helper methods
@@ -310,8 +314,6 @@ namespace nr {
                            std::span<std::pair<std::string_view, Expr *>>
                                arguments SOURCE_LOCATION_PARAM) noexcept;
 
-    /// TODO:
-
     ///**************************************************************************///
     // Create literals
 
@@ -406,6 +408,11 @@ namespace nr {
     UnionTy *createUnionTemplateDefintion(
         std::string_view name, std::span<std::string_view> template_params,
         UnionTy *ty SOURCE_LOCATION_PARAM) noexcept;
+
+    void createNamedConstantDefinition(
+        std::string_view name,
+        const std::unordered_map<std::string_view, Expr *> &values
+            SOURCE_LOCATION_PARAM);
 
     Type *getTemplateInstance(Type *base, std::span<Type *> template_params
                                               SOURCE_LOCATION_PARAM) noexcept;

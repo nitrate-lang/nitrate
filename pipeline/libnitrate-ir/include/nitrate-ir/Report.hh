@@ -96,15 +96,14 @@ namespace nr {
     virtual ~IReport() = default;
 
     virtual void report(IssueCode code, IC level,
-                        std::span<std::string_view> params = {},
+                        std::vector<std::string_view> params = {},
                         uint32_t start_offset = 1, uint32_t end_offset = 0,
                         std::string_view filename = "") = 0;
 
     void report(IssueCode code, IC level, std::string_view message,
                 std::pair<uint32_t, uint32_t> loc = {UINT32_MAX, UINT32_MAX},
                 std::string_view filename = "") {
-      std::array<std::string_view, 1> x = {message};
-      report(code, level, x, loc.first, loc.second, filename);
+      report(code, level, {message}, loc.first, loc.second, filename);
     };
 
     virtual void erase_reports() = 0;

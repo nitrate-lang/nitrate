@@ -97,7 +97,7 @@ namespace nr {
     DiagnosticManager() = default;
 
     virtual void report(IssueCode code, IC level,
-                        std::span<std::string_view> params = {},
+                        std::vector<std::string_view> params = {},
                         uint32_t start_offset = 1, uint32_t end_offset = 0,
                         std::string_view filename = "") override;
 

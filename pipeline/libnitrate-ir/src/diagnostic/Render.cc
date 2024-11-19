@@ -252,7 +252,7 @@ uint64_t DiagDatum::hash() const {
 }
 
 void DiagnosticManager::report(IssueCode code, IC level,
-                               std::span<std::string_view> params,
+                               std::vector<std::string_view> params,
                                uint32_t start_offset, uint32_t end_offset,
                                std::string_view filename) {
   std::string message;

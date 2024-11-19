@@ -327,6 +327,26 @@ void NRBuilder::createNamedTypeAlias(
   m_named_types[name] = type;
 }
 
+void NRBuilder::createNamedConstantDefinition(
+    std::string_view name,
+    const std::unordered_map<std::string_view, Expr *> &values
+        SOURCE_LOCATION_PARAM) {
+  contract_enforce(m_root != nullptr);
+  contract_enforce(
+      !name.empty() && std::isalnum(name[0]) &&
+      "Non alphanumeric starter characters are reserved internally");
+  contract_enforce(std::all_of(values.begin(), values.end(), [](auto e) {
+    return !e.first.empty() && e.second != nullptr;
+  }));
+
+  if (m_named_constant_group.contains(name)) [[unlikely]] {
+    /// TODO: Handle error when the name is already set
+    qcore_implement();
+  }
+
+  m_named_constant_group[name] = values;
+}
+
 Type *NRBuilder::getTemplateInstance(Type *base,
                                      std::span<Type *> template_params
                                          SOURCE_LOCATION_PARAM) noexcept {

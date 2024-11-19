@@ -107,7 +107,7 @@ template <typename T>
 static std::optional<T> find_in_scope_map(
     const std::unordered_map<std::string_view, T> &map,
     std::string_view qualified_name) {
-  auto sep_it = qualified_name.find_last_of("::");
+  auto sep_it = qualified_name.find_last_of("$$");
   if (sep_it == std::string_view::npos) {
     auto it = map.find(qualified_name);
     return it == map.end() ? std::nullopt : std::optional<T>(it->second);
@@ -127,11 +127,6 @@ static std::optional<T> find_in_scope_map(
       R = it->second;
       break;
     }
-
-    /// TODO: This is not fully correct. We should respect the explicit name
-    /// prefixes on identifiers and not just skip them. Currently it is not
-    /// possible to reference a construct in a parent scope if another one
-    /// exists closer to the usage site.
 
     if (scope.empty()) {
       break;

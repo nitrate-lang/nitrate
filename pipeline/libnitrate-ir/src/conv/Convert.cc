@@ -61,20 +61,20 @@ struct PState {
   std::stack<qparse::String> composite_expanse;
   nr::AbiTag abi_mode = nr::AbiTag::Internal;
 
-  std::string cur_named(std::string_view suffix) const {
+  std::string scope_name(std::string_view suffix) const {
+    if (ns_prefix.empty()) {
+      return std::string(suffix);
+    }
+    return ns_prefix + "$$" + std::string(suffix);
+  }
+
+  std::string join_scope(std::string_view suffix) const {
     if (ns_prefix.empty()) {
       return std::string(suffix);
     }
     return ns_prefix + "::" + std::string(suffix);
   }
 };
-
-std::string ns_join(std::string_view a, std::string_view b) {
-  if (a.empty()) {
-    return std::string(b);
-  }
-  return std::string(a) + "::" + std::string(b);
-}
 
 using EResult = std::optional<Expr *>;
 using BResult = std::optional<std::vector<nr::Expr *>>;
@@ -893,7 +893,7 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_ident(NRBuilder &b, PState &s, IReport *,
                            qparse::Ident *n) {
-  return create<Ident>(b.intern(s.cur_named(n->get_name())), nullptr);
+  return create<Ident>(b.intern(s.scope_name(n->get_name())), nullptr);
 }
 
 static EResult nrgen_seq_point(NRBuilder &b, PState &s, IReport *G,
@@ -1028,7 +1028,6 @@ static EResult nrgen_ptr_ty(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_opaque_ty(NRBuilder &b, PState &, IReport *,
                                qparse::OpaqueTy *n) {
-  /// TODO: Validate the name
   return b.getOpaqueTy(n->get_name());
 }
 
@@ -1163,9 +1162,7 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *,
                               qparse::UnresolvedType *n) {
-  auto str = s.cur_named(n->get_name());
-
-  /// TODO: Validate type name does not conflict with a reserved namespace
+  auto str = s.scope_name(n->get_name());
 
   return create<Tmp>(TmpType::NAMED_TYPE, b.intern(str));
 }
@@ -1217,7 +1214,7 @@ static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
   }
 
   b.createNamedTypeAlias(type.value()->asType(),
-                         b.intern(s.cur_named(n->get_name())));
+                         b.intern(s.join_scope(n->get_name())));
 
   return std::vector<Expr *>();
 }
@@ -1258,10 +1255,44 @@ static BResult nrgen_union(NRBuilder &b, PState &s, IReport *G,
 
 static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
                           qparse::EnumDef *n) {
-  /// TODO: Enum def
-  qcore_implement();
+  std::unordered_map<std::string_view, Expr *> values;
 
-  return std::nullopt;
+  std::optional<Expr *> last;
+
+  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+    Expr *field_value = nullptr;
+
+    if (it->second != nullptr) {
+      auto val = next_one(it->second);
+      if (!val.has_value()) {
+        G->report(nr::CompilerError, IC::Error, "Failed to lower enum field",
+                  n->get_pos());
+        return std::nullopt;
+      }
+      last = field_value = val.value();
+    } else {
+      if (last.has_value()) {
+        last = field_value = create<BinExpr>(
+            last.value(), b.createFixedInteger(1, IntSize::I32), Op::Plus);
+      } else {
+        last = field_value = b.createFixedInteger(0, IntSize::I32);
+      }
+    }
+
+    auto field_name = b.intern(it->first);
+
+    if (values.contains(field_name)) [[unlikely]] {
+      G->report(CompilerError, IC::Error,
+                {"Enum field named '", field_name, "' is redefined"});
+    } else {
+      values[field_name] = field_value;
+    }
+  }
+
+  b.createNamedConstantDefinition(b.intern(s.join_scope(n->get_name())),
+                                  values);
+
+  return std::vector<Expr *>();
 }
 
 static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G,
@@ -1317,7 +1348,7 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G,
   auto props = convert_purity(func_ty->get_purity());
 
   Fn *fndecl = b.createFunctionDeclaration(
-      b.intern(s.cur_named(n->get_name())), parameters,
+      b.intern(s.join_scope(n->get_name())), parameters,
       ret_type.value()->asType(), func_ty->is_variadic(), Vis::Pub, props.first,
       props.second, func_ty->is_noexcept(), func_ty->is_foreign());
 
@@ -1409,7 +1440,7 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
     auto props = convert_purity(func_ty->get_purity());
 
     Fn *fndef = b.createFunctionDefintion(
-        b.intern(s.cur_named(n->get_name())), parameters,
+        b.intern(s.join_scope(n->get_name())), parameters,
         ret_type.value()->asType(), func_ty->is_variadic(), Vis::Pub,
         props.first, props.second, func_ty->is_noexcept(),
         func_ty->is_foreign());
@@ -1418,12 +1449,7 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
 
     { /* Function body */
       std::string old_ns = s.ns_prefix;
-
-      if (s.ns_prefix.empty()) {
-        s.ns_prefix = std::string(n->get_name());
-      } else {
-        s.ns_prefix += "::" + std::string(n->get_name());
-      }
+      s.ns_prefix = s.join_scope(n->get_name());
 
       auto body = next_one(n->get_body());
       if (!body.has_value()) {
@@ -1444,12 +1470,7 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
 static BResult nrgen_subsystem(NRBuilder &b, PState &s, IReport *G,
                                qparse::SubsystemDecl *n) {
   std::string old_ns = s.ns_prefix;
-
-  if (s.ns_prefix.empty()) {
-    s.ns_prefix = std::string(n->get_name());
-  } else {
-    s.ns_prefix += "::" + std::string(n->get_name());
-  }
+  s.ns_prefix = s.join_scope(n->get_name());
 
   auto body = next_any(n->get_body());
   if (!body.has_value()) {
@@ -1566,14 +1587,12 @@ static EResult nrgen_const(NRBuilder &b, PState &s, IReport *G,
 
   qcore_assert(init.has_value() && type.has_value());
 
-  /// TODO: Handle specification of thread-local memory
-
   StorageClass storage = s.inside_function ? StorageClass::LLVM_StackAlloa
                                            : StorageClass::LLVM_Static;
   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
   Local *local =
-      b.createVariable(b.intern(s.cur_named(n->get_name())),
+      b.createVariable(b.intern(s.join_scope(n->get_name())),
                        type.value()->asType(), visibility, storage, true);
 
   local->setValue(init.value());
@@ -1601,14 +1620,12 @@ static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G,
 
   qcore_assert(init.has_value() && type.has_value());
 
-  /// TODO: Handle specification of thread-local memory
-
   StorageClass storage =
       s.inside_function ? StorageClass::Managed : StorageClass::LLVM_Static;
   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
   Local *local =
-      b.createVariable(b.intern(s.cur_named(n->get_name())),
+      b.createVariable(b.intern(s.join_scope(n->get_name())),
                        type.value()->asType(), visibility, storage, false);
 
   local->setValue(init.value());
@@ -1636,14 +1653,12 @@ static EResult nrgen_let(NRBuilder &b, PState &s, IReport *G,
 
   qcore_assert(init.has_value() && type.has_value());
 
-  /// TODO: Handle specification of thread-local memory
-
   StorageClass storage = s.inside_function ? StorageClass::LLVM_StackAlloa
                                            : StorageClass::LLVM_Static;
   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
   Local *local =
-      b.createVariable(b.intern(s.cur_named(n->get_name())),
+      b.createVariable(b.intern(s.join_scope(n->get_name())),
                        type.value()->asType(), visibility, storage, false);
 
   local->setValue(init.value());
@@ -1665,7 +1680,8 @@ static EResult nrgen_return(NRBuilder &b, PState &s, IReport *G,
   if (n->get_value()) {
     auto val = next_one(n->get_value());
     if (!val.has_value()) {
-      /// TODO: msg
+      G->report(nr::CompilerError, IC::Error,
+                "Failed to lower return statement value", n->get_pos());
       return std::nullopt;
     }
 
@@ -1693,12 +1709,12 @@ static EResult nrgen_retif(NRBuilder &b, PState &s, IReport *G,
   return create<If>(cond.value(), create<Ret>(val.value()), createIgn());
 }
 
-static EResult nrgen_break(NRBuilder &, PState &, IReport *G,
+static EResult nrgen_break(NRBuilder &, PState &, IReport *,
                            qparse::BreakStmt *) {
   return create<Brk>();
 }
 
-static EResult nrgen_continue(NRBuilder &, PState &, IReport *G,
+static EResult nrgen_continue(NRBuilder &, PState &, IReport *,
                               qparse::ContinueStmt *) {
   return create<Cont>();
 }
