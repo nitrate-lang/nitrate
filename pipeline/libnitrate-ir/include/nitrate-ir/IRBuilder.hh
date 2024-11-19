@@ -119,15 +119,18 @@ namespace nr {
     Seq *m_root;
 
     std::unordered_map<std::string_view, std::string> m_interned_strings;
-    std::unordered_map<std::string_view, std::string> m_ephermel_strings;
+    std::unordered_map<std::string_view, Type *> m_named_types;
 
     ///**************************************************************************///
     // Builder helper methods
     ///**************************************************************************///
 
-    std::optional<Local *> lookup_global(std::string_view global) noexcept;
-    std::optional<Local *> lookup_local(std::string_view local) noexcept;
-    std::optional<Fn *> lookup_function(std::string_view function) noexcept;
+    enum class Kind {
+      TypeDef,
+    };
+
+    std::optional<Expr *> resolve_name(std::string_view name,
+                                       Kind kind) const noexcept;
 
     NRBuilder &insertAfter(Expr *last) noexcept;
     NRBuilder &insertAfterVariable(std::string_view name) noexcept;
@@ -137,11 +140,11 @@ namespace nr {
     NRBuilder &insertBeforeVariable(std::string_view name) noexcept;
     NRBuilder &insertBeforeFunction(std::string_view name) noexcept;
 
-    void try_resolve_types(Expr *root) noexcept;
-    void try_resolve_constants(Expr *root) noexcept;
-    void try_resolve_names(Expr *root) noexcept;
-    void try_resolve_calls(Expr *root) noexcept;
-    void connect_nodes(Seq *root) noexcept;
+    void try_resolve_types(Expr *root) const noexcept;
+    void try_resolve_constants(Expr *root) const noexcept;
+    void try_resolve_names(Expr *root) const noexcept;
+    void try_resolve_calls(Expr *root) const noexcept;
+    void connect_nodes(Seq *root) const noexcept;
 
     static bool check_acyclic(Seq *root, IReport *L) noexcept;
     static bool check_duplicates(Seq *root, IReport *L) noexcept;
@@ -414,7 +417,6 @@ namespace nr {
     // Other stuff
 
     std::string_view intern(std::string_view str) noexcept;
-    std::string_view internEphemeral(std::string_view str) noexcept;
     ///**************************************************************************///
 
 #undef SOURCE_LOCATION_PARAM

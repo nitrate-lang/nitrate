@@ -41,7 +41,7 @@
 
 using namespace nr;
 
-void NRBuilder::try_resolve_types(Expr *root) noexcept {
+void NRBuilder::try_resolve_types(Expr *root) const noexcept {
   /**
    * @brief Resolve the `TmpType::NAMED_TYPE` nodes by replacing them with the
    * actual types they represent.
@@ -53,17 +53,24 @@ void NRBuilder::try_resolve_types(Expr *root) noexcept {
 
     if (N->is(QIR_NODE_TMP) &&
         N->as<Tmp>()->getTmpType() == TmpType::NAMED_TYPE) {
-      Tmp *T = N->as<Tmp>();
+      /* Get the fully-qualified name */
+      std::string_view type_name =
+          std::get<std::string_view>(N->as<Tmp>()->getData());
 
-      (void)T;
-      /// TODO: Resolve type name
+      auto result = resolve_name(type_name, Kind::TypeDef);
+      if (result.has_value()) [[likely]] {
+        /* Replace the current node */
+        *C = result.value();
+      } else {
+        /* Fallthrough */
+      }
     }
 
     return IterOp::Proceed;
   });
 }
 
-void NRBuilder::try_resolve_constants(Expr *root) noexcept {
+void NRBuilder::try_resolve_constants(Expr *root) const noexcept {
   /**
    * @brief Resolve the `TmpType::ENUM` nodes by replacing them with the values
    * that define them.
@@ -84,7 +91,7 @@ void NRBuilder::try_resolve_constants(Expr *root) noexcept {
   });
 }
 
-void NRBuilder::try_resolve_names(Expr *root) noexcept {
+void NRBuilder::try_resolve_names(Expr *root) const noexcept {
   /**
    * @brief Resolve identifiers by hooking them to the node they represent. This
    * may create cyclic references, which is okay because these hooks are not
@@ -113,7 +120,7 @@ void NRBuilder::try_resolve_names(Expr *root) noexcept {
   // Replace identifiers with references to symbol nodes.
 }
 
-void NRBuilder::try_resolve_calls(Expr *root) noexcept {
+void NRBuilder::try_resolve_calls(Expr *root) const noexcept {
   /**
    * @brief Resolve the `TmpType::CALL` nodes by replacing them with function
    * call expression nodes with any default arguments filled in.
@@ -134,7 +141,7 @@ void NRBuilder::try_resolve_calls(Expr *root) noexcept {
   });
 }
 
-void NRBuilder::connect_nodes(Seq *root) noexcept {
+void NRBuilder::connect_nodes(Seq *root) const noexcept {
   /* The order of the following matters */
 
   try_resolve_types(root);

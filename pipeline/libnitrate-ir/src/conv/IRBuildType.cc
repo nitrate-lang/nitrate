@@ -312,11 +312,19 @@ UnionTy *NRBuilder::createUnionTemplateDefintion(
 
 void NRBuilder::createNamedTypeAlias(
     Type *type, std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-  (void)type;
-  (void)name;
-  ignore_caller_info();
+  contract_enforce(m_state == SelfState::Constructed);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(type != nullptr && static_cast<Expr *>(type)->isType());
+  contract_enforce(
+      !name.empty() && std::isalnum(name[0]) &&
+      "Non alphanumeric starter characters are reserved internally");
+
+  if (m_named_types.contains(name)) [[unlikely]] {
+    /// TODO: Handle error when the name is already set
+    qcore_implement();
+  }
+
+  m_named_types[name] = type;
 }
 
 Type *NRBuilder::getTemplateInstance(Type *base,

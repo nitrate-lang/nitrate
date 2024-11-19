@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <unordered_map>
 #define IRBUILDER_IMPL
 
 #include <nitrate-core/Error.h>
@@ -84,23 +85,74 @@ NRBuilder &NRBuilder::insertBeforeFunction(std::string_view name) noexcept {
 
 ///=============================================================================
 
-std::optional<Local *> NRBuilder::lookup_global(
-    std::string_view global) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-  (void)global;
+static std::string join_name_segment(const std::string &a,
+                                     const std::string &b) {
+  if (!a.empty() && !b.empty()) {
+    return a + "::" + b;
+  } else {
+    return a + b;
+  }
 }
 
-std::optional<Local *> NRBuilder::lookup_local(
-    std::string_view local) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-  (void)local;
+static void drop_tail_scope(std::string &scope) {
+  auto sep_it = scope.find_last_of("::");
+  if (sep_it == std::string_view::npos) {
+    scope = "";
+  } else {
+    scope = scope.substr(0, sep_it);
+  }
 }
 
-std::optional<Fn *> NRBuilder::lookup_function(
-    std::string_view function) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-  (void)function;
+template <typename T>
+static std::optional<T> find_in_scope_map(
+    const std::unordered_map<std::string_view, T> &map,
+    std::string_view qualified_name) {
+  auto sep_it = qualified_name.find_last_of("::");
+  if (sep_it == std::string_view::npos) {
+    auto it = map.find(qualified_name);
+    return it == map.end() ? std::nullopt : std::optional<T>(it->second);
+  }
+
+  std::string scope = std::string(qualified_name.substr(0, sep_it - 1));
+  std::string name = std::string(qualified_name.substr(sep_it + 1));
+  std::string the_case;
+
+  std::optional<T> R;
+
+  while (true) {
+    the_case = join_name_segment(scope, name);
+
+    auto it = map.find(the_case);
+    if (it != map.end()) {
+      R = it->second;
+      break;
+    }
+
+    /// TODO: This is not fully correct. We should respect the explicit name
+    /// prefixes on identifiers and not just skip them. Currently it is not
+    /// possible to reference a construct in a parent scope if another one
+    /// exists closer to the usage site.
+
+    if (scope.empty()) {
+      break;
+    } else {
+      drop_tail_scope(scope);
+    }
+  };
+
+  return R;
+}
+
+std::optional<Expr *> NRBuilder::resolve_name(std::string_view name,
+                                              Kind kind) const noexcept {
+  std::optional<Expr *> R;
+
+  switch (kind) {
+    case Kind::TypeDef: {
+      R = find_in_scope_map(m_named_types, name);
+      break;
+    }
+  }
+
+  return R;
 }
