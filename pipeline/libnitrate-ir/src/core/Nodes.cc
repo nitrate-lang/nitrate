@@ -1016,36 +1016,17 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
       case QIR_NODE_TMP: {
         MIXIN_PRIMITIVE(cur->as<Tmp>()->m_type);
 
-        if (std::holds_alternative<LetTmpNodeCradle>(cur->as<Tmp>()->m_data)) {
-          static_assert(std::tuple_size_v<LetTmpNodeCradle> == 2);
-
-          LetTmpNodeCradle &data =
-              std::get<LetTmpNodeCradle>(cur->as<Tmp>()->m_data);
-          MIXIN_STRING(std::get<0>(data));
-          if (std::get<1>(data) != nullptr) {
-            MIXIN_STRING(std::get<1>(data)->getStateUUID());
-          }
-        } else if (std::holds_alternative<CallArgsTmpNodeCradle>(
-                       cur->as<Tmp>()->m_data)) {
-          static_assert(std::tuple_size_v<CallArgsTmpNodeCradle> == 2);
-          CallArgsTmpNodeCradle &data =
+        if (std::holds_alternative<CallArgsTmpNodeCradle>(
+                cur->as<Tmp>()->m_data)) {
+          const CallArgsTmpNodeCradle &data =
               std::get<CallArgsTmpNodeCradle>(cur->as<Tmp>()->m_data);
-          if (std::get<0>(data) != nullptr) {
-            MIXIN_STRING(std::get<0>(data)->getStateUUID());
+          if (data.base != nullptr) {
+            MIXIN_STRING(data.base->getStateUUID());
           }
-          for (auto &arg : std::get<1>(data)) {
+          for (const auto &arg : data.args) {
             MIXIN_STRING(arg.first);
             MIXIN_STRING(arg.second->getStateUUID());
           }
-        } else if (std::holds_alternative<FieldTmpNodeCradle>(
-                       cur->as<Tmp>()->m_data)) {
-          static_assert(std::tuple_size_v<FieldTmpNodeCradle> == 2);
-          FieldTmpNodeCradle &data =
-              std::get<FieldTmpNodeCradle>(cur->as<Tmp>()->m_data);
-          if (std::get<0>(data) != nullptr) {
-            MIXIN_STRING(std::get<0>(data)->getStateUUID());
-          }
-          MIXIN_STRING(std::get<1>(data));
         } else if (std::holds_alternative<std::string_view>(
                        cur->as<Tmp>()->m_data)) {
           std::string_view &data =

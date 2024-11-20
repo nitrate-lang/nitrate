@@ -124,6 +124,7 @@ namespace nr {
     std::unordered_map<std::string_view,
                        std::unordered_map<std::string_view, Expr *>>
         m_named_constant_group;
+    std::unordered_map<std::string_view, Fn *> m_named_functions;
 
     ///**************************************************************************///
     // Builder helper methods
@@ -132,6 +133,7 @@ namespace nr {
     enum class Kind {
       TypeDef,
       ScopedEnum,
+      Function,
     };
 
     std::optional<Expr *> resolve_name(std::string_view name,

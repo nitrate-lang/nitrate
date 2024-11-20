@@ -61,8 +61,8 @@ Expr *NRBuilder::createCall(Expr *target,
     copy[i] = arguments[i];
   }
 
-  std::get<0>(call) = target;
-  std::get<1>(call) = std::move(copy);
+  call.base = target;
+  call.args = std::move(copy);
 
   Tmp *R = create<Tmp>(TmpType::CALL, std::move(call));
 
@@ -90,8 +90,8 @@ Expr *NRBuilder::createMethodCall(
     copy[i] = arguments[i];
   }
 
-  std::get<0>(call) = create<Index>(object, create<Ident>(name, nullptr));
-  std::get<1>(call) = std::move(copy);
+  call.base = create<Index>(object, create<Ident>(name, nullptr));
+  call.args = std::move(copy);
 
   Tmp *R = create<Tmp>(TmpType::CALL, std::move(call));
 

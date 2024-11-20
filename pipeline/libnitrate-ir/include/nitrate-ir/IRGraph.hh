@@ -1326,18 +1326,18 @@ namespace nr {
     NAMED_TYPE,
   };
 
-  typedef std::tuple<std::string_view, Expr *> LetTmpNodeCradle;
+  struct CallArgsTmpNodeCradle {
+    Expr *base;
+    std::vector<std::pair<std::string_view, Expr *>,
+                Arena<std::pair<std::string_view, Expr *>>>
+        args;
 
-  typedef std::tuple<Expr *,
-                     std::vector<std::pair<std::string_view, Expr *>,
-                                 Arena<std::pair<std::string_view, Expr *>>>>
-      CallArgsTmpNodeCradle;
+    bool operator==(const CallArgsTmpNodeCradle &rhs) const {
+      return base == rhs.base && args == rhs.args;
+    }
+  };
 
-  typedef std::tuple<Expr *, std::string_view> FieldTmpNodeCradle;
-
-  typedef std::variant<LetTmpNodeCradle, CallArgsTmpNodeCradle,
-                       FieldTmpNodeCradle, std::string_view>
-      TmpNodeCradle;
+  typedef std::variant<CallArgsTmpNodeCradle, std::string_view> TmpNodeCradle;
 
   class Tmp final : public Type {
     QCLASS_REFLECT()

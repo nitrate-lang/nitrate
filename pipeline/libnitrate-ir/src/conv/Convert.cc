@@ -146,8 +146,8 @@ static nr::Tmp *create_simple_call(
         args = {}) {
   nr::CallArgsTmpNodeCradle datapack;
 
-  std::get<0>(datapack) = nr::create<nr::Ident>(b.intern(name), nullptr);
-  std::get<1>(datapack) = std::move(args);
+  datapack.base = nr::create<nr::Ident>(b.intern(name), nullptr);
+  datapack.args = std::move(args);
 
   return create<nr::Tmp>(nr::TmpType::CALL, std::move(datapack));
 }

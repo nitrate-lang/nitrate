@@ -94,13 +94,6 @@ void NRBuilder::try_resolve_names(Expr *root) const noexcept {
 
     return IterOp::Proceed;
   });
-
-  iterate<dfs_pre>(root, [&](Expr *, Expr **) -> IterOp {
-    /// TODO: Implement
-    return IterOp::Proceed;
-  });
-
-  // Replace identifiers with references to symbol nodes.
 }
 
 void NRBuilder::try_resolve_calls(Expr *root) const noexcept {
@@ -116,10 +109,28 @@ void NRBuilder::try_resolve_calls(Expr *root) const noexcept {
     if (N->is(QIR_NODE_TMP) && N->as<Tmp>()->getTmpType() == TmpType::CALL) {
       Tmp *T = N->as<Tmp>();
 
-      (void)T;
-      /// TODO: Resolve call expression
+      const auto &data = std::get<CallArgsTmpNodeCradle>(T->getData());
+      qcore_assert(data.base != nullptr);
+
+      // Skip over indirect function calls
+      if (!data.base->is(QIR_NODE_IDENT)) {
+        goto end;
+      }
+
+      std::string_view target_name = data.base->as<Ident>()->getName();
+
+      // Find the target function by name
+      auto result = resolve_name(target_name, Kind::Function);
+      if (!result.has_value()) [[unlikely]] {
+        goto end;
+      }
+
+      qcore_assert(result.value()->is(QIR_NODE_FN));
+
+      /// TODO: Generate Call() expression node with default arguments
     }
 
+  end:
     return IterOp::Proceed;
   });
 }
