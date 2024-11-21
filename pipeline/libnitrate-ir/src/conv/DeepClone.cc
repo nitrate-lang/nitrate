@@ -106,7 +106,7 @@ nr_node_t *nr_clone_impl(
       for (auto arg : n->getArgs()) {
         args.push_back(clone(arg));
       }
-      out = create<Call>(clone(n->getTarget()), std::move(args));
+      out = create<Call>(n->getTarget(), std::move(args));
       break;
     }
     case QIR_NODE_SEQ: {
@@ -354,6 +354,13 @@ LIB_EXPORT nr_node_t *nr_clone(const nr_node_t *node) {
 
       if (in_visited.contains(cur)) {
         *_cur = static_cast<Expr *>(map[cur]);
+      }
+
+      if (cur->is(QIR_NODE_CALL)) [[unlikely]] {
+        Call *n = cur->as<Call>();
+        if (in_visited.contains(n->getTarget())) {
+          n->setTarget(static_cast<Expr *>(map[n->getTarget()]));
+        }
       }
 
       return IterOp::Proceed;
