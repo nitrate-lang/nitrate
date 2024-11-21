@@ -309,7 +309,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
            it != n->as<Call>()->getArgs().end(); ++it) {
         recurse(*it);
         if (std::next(it) != n->as<Call>()->getArgs().end()) {
-          ss << ",";
+          ss << ", ";
         }
       }
       ss << ")";

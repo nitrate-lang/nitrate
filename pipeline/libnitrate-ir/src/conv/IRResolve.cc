@@ -36,8 +36,11 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-ir/TypeDecl.h>
 
+#include <cctype>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
+#include <unordered_map>
+#include <unordered_set>
 
 using namespace nr;
 
@@ -96,6 +99,87 @@ void NRBuilder::try_resolve_names(Expr *root) const noexcept {
   });
 }
 
+static void resolve_direct_call(
+    Expr **C, Fn *target_fn,
+    const std::unordered_map<std::string_view, size_t> &name_to_index_map,
+    const std::unordered_map<size_t, Expr *> &default_args,
+    const CallArgsTmpNodeCradle &data) {
+  std::unordered_map<size_t, Expr *> arguments;
+  arguments.reserve(data.args.size());
+
+  { /* Allocate the arguments */
+    for (const auto &[argument_name, argument_value] : data.args) {
+      bool is_positional = std::isdigit(argument_name.at(0));
+
+      if (is_positional) {
+        size_t position = std::stoul(std::string(argument_name));
+
+        // Ensure we don't add the same argument twice
+        if (!arguments.contains(position)) [[likely]] {
+          arguments[position] = argument_value;
+          continue;
+        }
+      } else {
+        auto it = name_to_index_map.find(argument_name);
+        if (it != name_to_index_map.end()) [[likely]] {
+          // Ensure we don't add the same argument twice
+          if (!arguments.contains(it->second)) [[likely]] {
+            arguments[it->second] = argument_value;
+            continue;
+          }
+        }
+      }
+
+      goto end;
+    }
+
+    for (size_t i = 0; i < target_fn->getParams().size(); ++i) {
+      if (!arguments.contains(i)) {
+        auto it = default_args.find(i);
+        if (it != default_args.end()) {
+          arguments[i] = it->second;
+        }
+      }
+    }
+  }
+
+  { /* Validate the arguments vector */
+    if (target_fn->isVariadic()) {
+      if (arguments.size() < target_fn->getParams().size()) [[unlikely]] {
+        goto end;
+      }
+    } else {
+      if (arguments.size() != target_fn->getParams().size()) [[unlikely]] {
+        goto end;
+      }
+    }
+
+    std::unordered_set<size_t> set;
+    for (const auto &[k, _] : arguments) {
+      set.insert(k);
+    }
+
+    // Check if elements are contiguous and start at zero
+    for (size_t i = 0; i < arguments.size(); i++) {
+      if (set.find(i) == set.end()) [[unlikely]] {
+        goto end;
+      }
+    }
+  }
+
+  { /* Emit the Call IR expression */
+    CallArgs flattened(arguments.size());
+    for (const auto &[index, value] : arguments) {
+      flattened[index] = value;
+    }
+
+    *C = create<Call>(target_fn, std::move(flattened));
+  }
+
+end:
+  return;
+}
+
 void NRBuilder::try_resolve_calls(Expr *root) const noexcept {
   /**
    * @brief Resolve the `TmpType::CALL` nodes by replacing them with function
@@ -107,27 +191,39 @@ void NRBuilder::try_resolve_calls(Expr *root) const noexcept {
     Expr *N = *C;
 
     if (N->is(QIR_NODE_TMP) && N->as<Tmp>()->getTmpType() == TmpType::CALL) {
-      Tmp *T = N->as<Tmp>();
+      const auto &data =
+          std::get<CallArgsTmpNodeCradle>(N->as<Tmp>()->getData());
+      Fn *target_fn = nullptr;
+      const std::unordered_map<size_t, Expr *> *default_args = nullptr;
 
-      const auto &data = std::get<CallArgsTmpNodeCradle>(T->getData());
-      qcore_assert(data.base != nullptr);
+      { /* Get the target function node */
+        qcore_assert(data.base != nullptr);
 
-      // Skip over indirect function calls
-      if (!data.base->is(QIR_NODE_IDENT)) {
-        goto end;
+        // Skip over indirect function calls
+        if (!data.base->is(QIR_NODE_IDENT)) {
+          goto end;
+        }
+
+        // Get name of target function
+        std::string_view target_name = data.base->as<Ident>()->getName();
+
+        // Find the target function by name
+        auto result = resolve_name(target_name, Kind::Function);
+        if (!result.has_value()) [[unlikely]] {
+          goto end;
+        }
+
+        qcore_assert(result.value()->is(QIR_NODE_FN));
+        target_fn = result.value()->as<Fn>();
+        default_args = &m_function_defaults.at(target_fn);
       }
 
-      std::string_view target_name = data.base->as<Ident>()->getName();
-
-      // Find the target function by name
-      auto result = resolve_name(target_name, Kind::Function);
-      if (!result.has_value()) [[unlikely]] {
-        goto end;
+      std::unordered_map<std::string_view, size_t> name_to_index_map;
+      for (size_t i = 0; i < target_fn->getParams().size(); ++i) {
+        name_to_index_map[target_fn->getParams()[i].second] = i;
       }
 
-      qcore_assert(result.value()->is(QIR_NODE_FN));
-
-      /// TODO: Generate Call() expression node with default arguments
+      resolve_direct_call(C, target_fn, name_to_index_map, *default_args, data);
     }
 
   end:

@@ -125,6 +125,8 @@ namespace nr {
                        std::unordered_map<std::string_view, Expr *>>
         m_named_constant_group;
     std::unordered_map<std::string_view, Fn *> m_named_functions;
+    std::unordered_map<Fn *, std::unordered_map<size_t, Expr *>>
+        m_function_defaults;
 
     ///**************************************************************************///
     // Builder helper methods

@@ -37,6 +37,7 @@
 
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
+#include <unordered_map>
 
 using namespace nr;
 
@@ -48,13 +49,16 @@ Fn *NRBuilder::createFunctionDefintion(
   contract_enforce(m_root != nullptr);
   contract_enforce(ret_ty != nullptr && static_cast<Expr *>(ret_ty)->isType());
 
-  Params parameters;
-  parameters.resize(params.size());
+  Params parameters(params.size());
+  std::unordered_map<size_t, Expr *> default_arguments;
+
   for (size_t i = 0; i < params.size(); i++) {
     contract_enforce(static_cast<Expr *>(std::get<1>(params[i]))->isType());
     parameters[i] = {std::get<1>(params[i]), std::get<0>(params[i])};
 
-    /// TODO: Save information regarding the default values
+    if (std::get<2>(params[i]).has_value()) {
+      default_arguments[i] = std::get<2>(params[i]).value();
+    }
   }
 
   /// TODO: Do something useful with the metadata:
@@ -67,6 +71,14 @@ Fn *NRBuilder::createFunctionDefintion(
 
   Fn *fn = create<Fn>(name, std::move(parameters), ret_ty, std::nullopt,
                       is_variadic, AbiTag::Default);
+
+  if (m_named_functions.contains(name)) [[unlikely]] {
+    /// TODO: Handle duplicate symbol
+    qcore_implement();
+  }
+
+  m_named_functions[name] = fn;
+  m_function_defaults[fn] = std::move(default_arguments);
 
   return compiler_trace(debug_info(fn, DEBUG_INFO));
 }
@@ -79,13 +91,16 @@ Fn *NRBuilder::createFunctionDeclaration(
   contract_enforce(m_root != nullptr);
   contract_enforce(ret_ty != nullptr && static_cast<Expr *>(ret_ty)->isType());
 
-  Params parameters;
-  parameters.resize(params.size());
+  Params parameters(params.size());
+  std::unordered_map<size_t, Expr *> default_arguments;
+
   for (size_t i = 0; i < params.size(); i++) {
     contract_enforce(static_cast<Expr *>(std::get<1>(params[i]))->isType());
     parameters[i] = {std::get<1>(params[i]), std::get<0>(params[i])};
 
-    /// TODO: Save information regarding the default values
+    if (std::get<2>(params[i]).has_value()) {
+      default_arguments[i] = std::get<2>(params[i]).value();
+    }
   }
 
   /// TODO: Do something useful with the metadata:
@@ -98,6 +113,14 @@ Fn *NRBuilder::createFunctionDeclaration(
 
   Fn *fn = create<Fn>(name, std::move(parameters), ret_ty, std::nullopt,
                       is_variadic, AbiTag::Default);
+
+  if (m_named_functions.contains(name)) [[unlikely]] {
+    /// TODO: Handle duplicate symbol
+    qcore_implement();
+  }
+
+  m_named_functions[name] = fn;
+  m_function_defaults[fn] = std::move(default_arguments);
 
   return compiler_trace(debug_info(fn, DEBUG_INFO));
 }
