@@ -5,27 +5,12 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
-#include <fstream>
 #include <functional>
 #include <iostream>
 #include <lsp/core/thread-pool.hh>
 #include <memory>
 #include <optional>
 #include <variant>
-
-struct MyLogSink : google::LogSink {
-private:
-  std::ofstream m_log_file;
-
-  static std::string escape_message(std::string_view str);
-
-public:
-  MyLogSink(const std::string& log_file);
-
-  void send(google::LogSeverity severity, const char*,
-            const char* base_filename, int line, const struct tm* tm,
-            const char* message, std::size_t message_len) override;
-};
 
 struct Configuration {
 private:

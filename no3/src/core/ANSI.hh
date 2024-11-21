@@ -132,6 +132,8 @@ namespace no3 {
     }
 
     extern thread_local AnsiCerr acout;
+
+    bool IsUsingColors();
   }  // namespace ansi
 
 }  // namespace no3

@@ -127,3 +127,8 @@ no3::ansi::AnsiCerr &no3::ansi::AnsiCerr::operator<<(const std::string &str) {
 
   return *this;
 }
+
+bool no3::ansi::IsUsingColors() {
+  const char *NO_COLOR = getenv("NO_COLOR");
+  return NO_COLOR != NULL && NO_COLOR[0] != '\0' ? false : true;
+}
