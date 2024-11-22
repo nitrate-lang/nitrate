@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -43,8 +45,10 @@ const std::vector<QSysCall> qcall::qsyscalls = {
     {"info", 0x0052, sys_info},   /* Print an informational message */
     {"warn", 0x0053, sys_warn},   /* Print a warning message */
     {"error", 0x0054, sys_error}, /* Print an error message */
-    {"abort", 0x0055, sys_abort}, /* Print an error message and stop the compiler */
-    {"fatal", 0x0056, sys_fatal}, /* Print a fatal error message and stop the compiler */
+    {"abort", 0x0055,
+     sys_abort}, /* Print an error message and stop the compiler */
+    {"fatal", 0x0056,
+     sys_fatal}, /* Print a fatal error message and stop the compiler */
 
     {"get", 0x0080, sys_get}, /* Get a value from the environment */
     {"set", 0x0081, sys_set}, /* Set a value in the environment */
@@ -53,6 +57,8 @@ const std::vector<QSysCall> qcall::qsyscalls = {
 
     {"random", 0x00A0, sys_random}, /* Get a cryptographic random number */
 
-    {"starttime", 0x00A1, sys_starttime}, /* Get the start time of the compiler in milliseconds */
-    {"time", 0x00A2, sys_time},           /* Get the current UNIX timestamp in milliseconds */
+    {"starttime", 0x00A1,
+     sys_starttime}, /* Get the start time of the compiler in milliseconds */
+    {"time", 0x00A2,
+     sys_time}, /* Get the current UNIX timestamp in milliseconds */
 };

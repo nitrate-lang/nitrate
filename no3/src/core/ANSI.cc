@@ -1,16 +1,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///           ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                  ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓█▓▒▒▓███▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///           ░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///             ░▒▓█▓▒░                                                      ///
-///              ░▒▓██▓▒░                                                    ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
-///   * NITRATE PACKAGE MANAGER - The official app for the Nitrate language. ///
+///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
 ///                                                                          ///
 ///   The Nitrate Toolchain is free software; you can redistribute it or     ///
@@ -34,7 +36,9 @@
 
 thread_local no3::ansi::AnsiCerr no3::ansi::acout;
 
-no3::ansi::AnsiCerr::AnsiCerr() { style = Style::FG_DEFAULT | Style::BG_DEFAULT; }
+no3::ansi::AnsiCerr::AnsiCerr() {
+  style = Style::FG_DEFAULT | Style::BG_DEFAULT;
+}
 
 no3::ansi::AnsiCerr no3::ansi::AnsiCerr::newline() {
   std::cerr << std::endl;
@@ -122,4 +126,9 @@ no3::ansi::AnsiCerr &no3::ansi::AnsiCerr::operator<<(const std::string &str) {
   std::cerr.flush();
 
   return *this;
+}
+
+bool no3::ansi::IsUsingColors() {
+  const char *NO_COLOR = getenv("NO_COLOR");
+  return NO_COLOR != NULL && NO_COLOR[0] != '\0' ? false : true;
 }

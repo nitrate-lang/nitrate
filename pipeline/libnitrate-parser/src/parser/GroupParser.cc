@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -43,7 +45,8 @@ bool qparse::parser::parse_attributes(qparse_t &job, qlex_t *rd,
                                       std::set<ConstExpr *> &attributes) {
   qlex_tok_t tok = qlex_next(rd);
 
-  { /* The implementation list should be enclosed in square brackets ex: [abc, hello] */
+  { /* The implementation list should be enclosed in square brackets ex: [abc,
+       hello] */
     if (!tok.is<qPuncLBrk>()) {
       syntax(tok, "Expected '[' after 'impl' in definition");
     }
@@ -65,8 +68,10 @@ bool qparse::parser::parse_attributes(qparse_t &job, qlex_t *rd,
 
     Expr *impl = nullptr;
 
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncComa)}, &impl,
-                    0)) {
+    if (!parse_expr(
+            job, rd,
+            {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncComa)}, &impl,
+            0)) {
       syntax(tok, "Failed to parse declaration attribute expression");
       return false;
     }
@@ -83,7 +88,8 @@ bool qparse::parser::parse_attributes(qparse_t &job, qlex_t *rd,
   return true;
 }
 
-bool parser::parse_composite_field(qparse_t &job, qlex_t *rd, CompositeField **node) {
+bool parser::parse_composite_field(qparse_t &job, qlex_t *rd,
+                                   CompositeField **node) {
   /*
    * Format: "name: type [= expr],"
    */
@@ -127,7 +133,8 @@ bool parser::parse_composite_field(qparse_t &job, qlex_t *rd, CompositeField **n
 
   { /* Optional default value */
     if (!tok.is<qOpSet>()) {
-      syntax(tok, "Expected '=' or ',' after field type in composite definition");
+      syntax(tok,
+             "Expected '=' or ',' after field type in composite definition");
     }
     qlex_next(rd);
 
@@ -233,7 +240,8 @@ bool parser::parse_group(qparse_t &job, qlex_t *rd, Stmt **node) {
       static_cast<FnDecl *>(method)->set_visibility(vis);
 
       { /* Add the 'this' parameter to the method */
-        FuncParam fn_this{"this", RefTy::get(UnresolvedType::get(name)), nullptr};
+        FuncParam fn_this{"this", RefTy::get(UnresolvedType::get(name)),
+                          nullptr};
 
         if (method->is<FnDecl>()) {
           fdecl = static_cast<FnDecl *>(method);
@@ -256,7 +264,9 @@ bool parser::parse_group(qparse_t &job, qlex_t *rd, Stmt **node) {
 
       /* Static fields are not currently supported */
       if (!tok.is<qKFn>()) {
-        syntax(tok, "Expected function definition after 'static' in group definition");
+        syntax(
+            tok,
+            "Expected function definition after 'static' in group definition");
       }
 
       /* Parse the function definition */
@@ -306,7 +316,8 @@ bool parser::parse_group(qparse_t &job, qlex_t *rd, Stmt **node) {
     }
   }
 
-  GroupDef *sdef = GroupDef::get(name, nullptr, fields, methods, static_methods);
+  GroupDef *sdef =
+      GroupDef::get(name, nullptr, fields, methods, static_methods);
   sdef->add_tags(std::move(attributes));
   *node = sdef;
   return true;

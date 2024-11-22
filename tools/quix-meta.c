@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 int main() {
-  const char *options[] = {"meta", "-fuse-msgpack", NULL};
+  const char *options[] = {"meta", "-fuse-json", NULL};
 
   nit_stream_t *fp = nit_from(stdin, false);
   if (!nit_cc(fp, stdout, nit_diag_stderr, 0, options)) {

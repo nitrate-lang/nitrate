@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -29,12 +31,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_QXIR_H__
-#define __NITRATE_QXIR_QXIR_H__
+#ifndef __NITRATE_NR_NR_H__
+#define __NITRATE_NR_NR_H__
 
 #include <nitrate-ir/TypeDecl.h>
-#include <nitrate-lexer/Lexer.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,72 +47,41 @@ extern "C" {
 typedef struct qparse_node_t qparse_node_t;
 
 /**
- * @brief Create QModule instance.
- *
- * @param lexer Source code lexer instance or NULL.
- * @param conf Module configuration.
- * @param name Module name or NULL.
- *
- * @return On success, a new QModule instance is returned. On failure, NULL is returned.
- *
- * @warning The QModule instance must be freed using `nr_free`.
- *
- * @note If `lexer` is NULL, the diagnostics subsystem will be unable to assign
- * source locations to its reports. However, the diagnostics subsystem will still
- * detect issues normally. In addition, all nodes created by the QModule will have
- * no source location information, rendering all later phase of compilation unable
- * to assign source locations to their reports.
- *
- * @note External mutation of the configuration object after passing it to this
- * function is not recommended, but technically supported. However, the semantic
- * consequences of doing so are undefined.
- *
- * @note Obviously, the `lexer` and `conf` lifetimes must exceed the lifetime of the
- * returned QModule instance.
- *
- * @warning This library supports a maximum of `nr_max_modules()` QModule instances
- * at once. Attempting to create more than this number will result in the function
- * returning NULL.
- *
- * @note This function is thread safe.
- */
-qmodule_t *nr_new(qlex_t *lexer, nr_conf_t *conf, const char *name);
-
-/**
  * @brief Free a QModule instance and ALL of its associated resources.
  *
  * @param module Pointer to the QModule instance to free.
  *
  * @note If `!module`, this function is a no-op.
  *
- * @note This function will not free the lexer instance passed to `nr_new`.
- * @note This function will not free the configuration instance passed to `nr_new`.
+ * @note This function will not free the lexer instance.
+ * @note This function will not free the configuration instance.
  *
  * @note This function is thread safe.
  */
 void nr_free(qmodule_t *nr);
 
 typedef enum nr_serial_t {
-  QXIR_SERIAL_CODE = 0, /* Human readable ASCII text */
+  NR_SERIAL_CODE = 0, /* Human readable ASCII text */
 } nr_serial_t;
 
 /**
  * @brief Serialize a QModule instance to a FILE stream.
  *
+ * @param mod The QModule or NULL.
  * @param node Pointer to the node to serialize.
  * @param mode The serialization mode.
  * @param out The FILE stream to serialize to.
  * @param outlen Number of bytes written to the stream (if not NULL).
  * @param argcnt Number of additional variadic arguments. 0 is valid always.
- * @param ... Additional arguments to pass to the serialization function. See the
- * documentation for the specific serialization mode for more information.
+ * @param ... Additional arguments to pass to the serialization function. See
+ * the documentation for the specific serialization mode for more information.
  *
  * @return True if the serialization was successful, false otherwise.
  *
  * @note This function is thread safe.
  */
-bool nr_write(const nr_node_t *node, nr_serial_t mode, FILE *out, size_t *outlen, uint32_t argcnt,
-              ...);
+bool nr_write(qmodule_t *mod, const nr_node_t *node, nr_serial_t mode,
+              FILE *out, size_t *outlen, uint32_t argcnt, ...);
 
 /**
  * @brief Deserialize a QModule instance from a FILE stream.
@@ -117,8 +90,8 @@ bool nr_write(const nr_node_t *node, nr_serial_t mode, FILE *out, size_t *outlen
  * @param in The FILE stream to deserialize from.
  * @param inlen Number of bytes read from the stream (if not NULL).
  * @param argcnt Number of additional variadic arguments. 0 is valid always.
- * @param ... Additional arguments to pass to the deserialization function. See the
- * documentation for the specific serialization mode for more information.
+ * @param ... Additional arguments to pass to the deserialization function. See
+ * the documentation for the specific serialization mode for more information.
  *
  * @return True if the deserialization was successful, false otherwise.
  *
@@ -129,69 +102,64 @@ bool nr_read(qmodule_t *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
 /**
  * @brief Lower a parse tree into a QModule.
  *
- * @param mod Pointer to the QModule instance to lower into.
+ * @param[out] mod Pointer to a QModule struct that will store the module.
  * @param base The base node of the parse tree to lower.
- * @param diagnostics Whether to enable diagnostics. Setting this to false may
- * potentially increase performance. Correctness will remain the same.
+ * @param name Module name or nullptr to use the default
+ * @param diagnostics Whether to enable diagnostics.
  *
  * @return True if the lowering was successful, false otherwise.
- * @note If `!base`, false is returned.
- *
- * @details Keep in mind that this function is 'kinda no super fast' and client-side
- * caching/avoidance of repeated calls is recommended.
+ * @note If `!base` or `!mod`, false is returned.
+ * @note A module is always stored in `*mod`, unless it is null. Ensure that
+ * nr_free is called to dispose of it when done.
  *
  * @note This function is thread safe.
  */
-bool nr_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics);
+bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
+              bool diagnostics);
 
 typedef void (*nr_node_cb)(nr_node_t *cur, uintptr_t userdata);
 
 typedef enum nr_audit_t {
-  QXIR_AUDIT_NONE = 0,     /* No audit */
-  QXIR_AUDIT_WILLCOMP = 1, /* Minimum to determine if the module will compile; g++ disables some */
-  QXIR_AUDIT_STD = 2,      /* Standard audit checks; What happens here will vary; g++ default */
-  QXIR_AUDIT_STRONG = 3,   /* Strong audit checks; What happens here will vary; g++ -Wextra */
-  QXIR_AUDIT_GIGACHAD = 4, /* A bunch of checks that are probably unnecessary; g++ -Wall */
-  QXIR_AUDIT_MAX = 5,      /* Maximum audit; Includes user-defined checks */
-  QXIR_AUDIT_DEFAULT = QXIR_AUDIT_STD,
+  NR_AUDIT_NONE = 0,     /* No audit */
+  NR_AUDIT_WILLCOMP = 1, /* Minimum to determine if the module will compile;
+                              g++ disables some */
+  NR_AUDIT_STD =
+      2, /* Standard audit checks; What happens here will vary; g++ default */
+  NR_AUDIT_STRONG =
+      3, /* Strong audit checks; What happens here will vary; g++ -Wextra */
+  NR_AUDIT_GIGACHAD =
+      4, /* A bunch of checks that are probably unnecessary; g++ -Wall */
+  NR_AUDIT_MAX = 5, /* Maximum audit */
+  NR_AUDIT_DEFAULT = NR_AUDIT_STD,
 } nr_audit_t;
-
-typedef uint32_t nr_audit_ticket_t;
-
-#define QXIR_AUDIT_ALL ((nr_audit_ticket_t)0x00000000)
-#define QXIR_AUDIT_CONV ((nr_audit_ticket_t)0x00000001)
-#define QXIR_AUDIT_LAST ((nr_audit_ticket_t)0xFFFFFFFF)
 
 /**
  * @brief Perform semantic analysis a QModule instance.
  *
  * @param nr The QModule instance to analyze.
  * @param level The level of audit to perform.
- * @param ticket Pointer to save the audit ticket to.
  *
  * @return True if the analysis was successful, false otherwise.
  *
  * @note If `!nr`, false is returned.
- * @note The results will be accessible via the QModule diagnostics API using the audit ticket
- * number.
  *
  * @note This function is thread safe.
  */
-bool nr_audit(qmodule_t *nr, nr_audit_t level, nr_audit_ticket_t *ticket);
+bool nr_audit(qmodule_t *nr, nr_audit_t level);
 
 typedef enum {
-  QXIR_LEVEL_DEBUG = 0,
-  QXIR_LEVEL_INFO = 1,
-  QXIR_LEVEL_WARN = 2,
-  QXIR_LEVEL_ERROR = 3,
-  QXIR_LEVEL_FATAL = 4,
-  QXIR_LEVEL_MAX = 5,
-  QXIR_LEVEL_DEFAULT = QXIR_LEVEL_WARN,
+  NR_LEVEL_DEBUG = 0,
+  NR_LEVEL_INFO = 1,
+  NR_LEVEL_WARN = 2,
+  NR_LEVEL_ERROR = 3,
+  NR_LEVEL_FATAL = 4,
+  NR_LEVEL_MAX = 5,
+  NR_LEVEL_DEFAULT = NR_LEVEL_WARN,
 } nr_level_t;
 
 /**
- * @brief A callback function to facilitate the communication of a report generated by the QModule
- * diagnostics subsystem.
+ * @brief A callback function to facilitate the communication of a report
+ * generated by the QModule diagnostics subsystem.
  *
  * @param utf8text UTF-8 encoded text of the report (null terminated).
  * @param size Size of the report in bytes.
@@ -202,8 +170,8 @@ typedef enum {
  *
  * @note This function shall be thread safe.
  */
-typedef void (*nr_report_cb)(const uint8_t *utf8text, size_t size, nr_level_t level,
-                             uintptr_t data);
+typedef void (*nr_report_cb)(const uint8_t *utf8text, size_t size,
+                             nr_level_t level, uintptr_t data);
 
 typedef enum nr_diag_format_t {
   /**
@@ -211,7 +179,7 @@ typedef enum nr_diag_format_t {
    * @example `801802`
    * @format <code>
    */
-  QXIR_DIAG_ASCII_ECODE,
+  NR_DIAG_ASCII_ECODE,
 
   /**
    * @brief Code decimal serialization of the error code and source location.
@@ -220,94 +188,93 @@ typedef enum nr_diag_format_t {
    *
    * @note UTF-8 characters in the path are preserved.
    */
-  QXIR_DIAG_UTF8_ECODE_LOC,
+  NR_DIAG_UTF8_ECODE_LOC,
 
   /**
-   * @brief Code decimal serialization of the error code and UTF-8 error message.
+   * @brief Code decimal serialization of the error code and UTF-8 error
+   * message.
    * @example `801802:This is an UTF-8 error message.`
    * @format <code>:<utf8_message>
    */
-  QXIR_DIAG_UTF8_ECODE_ETEXT,
+  NR_DIAG_UTF8_ECODE_ETEXT,
 
   /**
    * @brief Unspecified format.
    * @note No-ANSI colors are included.
-   * @note Includes source location information as well as source code snippets (if available).
+   * @note Includes source location information as well as source code snippets
+   * (if available).
    * @note Includes error messages and suggestions.
-   * @note Basically, everything you expect from a mainstream compiler (except without color).
+   * @note Basically, everything you expect from a mainstream compiler (except
+   * without color).
    */
-  QXIR_DIAG_NOSTD_TTY_UTF8,
+  NR_DIAG_NOSTD_TTY_UTF8,
 
   /**
    * @brief Unspecified format.
-   * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
+   * @note Similar to `NR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+   * differences.
    */
-  QXIR_DIAG_NONSTD_ANSI16_UTF8_FULL,
+  NR_DIAG_NONSTD_ANSI16_UTF8_FULL,
 
   /**
    * @brief Unspecified format.
-   * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
+   * @note Similar to `NR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+   * differences.
    */
-  QXIR_DIAG_NONSTD_ANSI256_UTF8_FULL,
+  NR_DIAG_NONSTD_ANSI256_UTF8_FULL,
 
   /**
    * @brief Unspecified format.
-   * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
+   * @note Similar to `NR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+   * differences.
    */
-  QXIR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
+  NR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
 
   /**
-   * @brief Display in a modern terminal emulator with UTF-8, RGB colors, ANSI-box drawing, and
-   * full diagnostics with source highlighting.
+   * @brief Display in a modern terminal emulator with UTF-8, RGB colors,
+   * ANSI-box drawing, and full diagnostics with source highlighting.
    * @note Includes everything the user would expect from a mainstream compiler.
    */
-  QXIR_DIAG_COLOR = QXIR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
+  NR_DIAG_COLOR = NR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
 
   /**
    * @brief Display in a modern terminal emulator with UTF-8 and no colors.
    * @note Includes everything the user would expect from a mainstream compiler.
    */
-  QXIR_DIAG_NOCOLOR = QXIR_DIAG_NOSTD_TTY_UTF8,
+  NR_DIAG_NOCOLOR = NR_DIAG_NOSTD_TTY_UTF8,
 } nr_diag_format_t;
 
 /**
- * @brief Read diagnostic reports generated by the QModule diagnostics subsystem.
+ * @brief Read diagnostic reports generated by the QModule diagnostics
+ * subsystem.
  *
  * @param nr QModule instance to read diagnostics from.
- * @param ticket Audit ticket number.
  * @param format Format for the diagnostics reporting.
  * @param cb Callback function to call for each report.
  * @param data User supplied data to pass to the callback function.
  *
- * @return Number of reports processed.
- * @note If `ticket` is invalid, 0 is returned.
  * @note `data` is arbitrary it will be passed to the callback function.
- * @note If `!cb`, the number of reports that would have been processed is returned.
+ * @note If `!cb`, the number of reports that would have been processed is
+ * returned.
  *
- * @note This function will not diapose of any reports. Calling this function multiple times
- * with the same arguments will result in the same reports being emitted (unless other reports
- * are generated in the meantime). The ticket number remains valid until the QModule instance is
- * freed.
+ * @note This function will not dispose of any reports. Calling this function
+ * multiple times with the same arguments will result in the same reports being
+ * emitted.
  *
- * @warning The order that the reports are emitted in currently unspecified. It may be inconsistent
- * between calls to this function.
+ * @warning The order that the reports are emitted is unspecified. It may be
+ * inconsistent between calls to this function.
  *
  * @note This function is thread safe.
  */
-size_t nr_diag_read(qmodule_t *nr, nr_audit_ticket_t ticket, nr_diag_format_t format,
-                    nr_report_cb cb, uintptr_t data);
+void nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_cb cb,
+                  uintptr_t data);
 
 /**
- * @brief Clear diagnostic reports generated by the QModule diagnostics subsystem.
+ * @brief Clear diagnostic reports generated by the QModule diagnostics
+ * subsystem.
  * @param nr QModule instance to clear diagnostics from.
- * @param ticket Audit ticket number.
- *
- * @return Number of reports cleared. 0 may be returned if the ticket does not exist OR if the
- * ticket does not contain any reports.
- *
- * @note If `ticket` is `QXIR_AUDIT_ALL`, all reports are cleared.
  */
-size_t nr_diag_clear(qmodule_t *nr, nr_audit_ticket_t ticket);
+void nr_diag_clear(qmodule_t *nr);
 
 /**
  * @brief Return the maximum number of modules that can exist at once.
@@ -319,32 +286,28 @@ size_t nr_diag_clear(qmodule_t *nr, nr_audit_ticket_t ticket);
 size_t nr_max_modules(void);
 
 /**
- * @brief Performs type inference on a QXIR node.
+ * @brief Performs type inference on a NR node.
  *
  * @param node Node to perform type inference on.
+ * @param PtrSizeBytes Size of a pointer on the target platform
  * @return Type of the node or NULL if inference failed.
  *
  * @note This function is thread-safe.
  */
-nr_node_t *nr_infer(nr_node_t *node);
+nr_node_t *nr_infer(nr_node_t *node, uint32_t PtrSizeBytes);
 
 /**
- * @brief Clone a QXIR node. Optionally into a different module.
+ * @brief Clone a NR node. Optionally into a different module.
  *
- * @param dst The destination module context or NULL to clone into the same context.
  * @param node The node to clone.
  *
  * @return nr_node_t* The cloned node.
  *
- * @note If `dst` NULL, the function will clone into the same module.
  * @note If `node` NULL, the function will return NULL.
  * @note This clone is a deep copy.
- *
- * @note Be nice to this function, it does more than you think.
  */
-nr_node_t *nr_clone(qmodule_t *dst, const nr_node_t *node);
+nr_node_t *nr_clone(const nr_node_t *node);
 
-qlex_t *nr_get_lexer(qmodule_t *mod);
 nr_node_t *nr_base(qmodule_t *mod);
 nr_conf_t *nr_get_conf(qmodule_t *mod);
 
@@ -352,4 +315,4 @@ nr_conf_t *nr_get_conf(qmodule_t *mod);
 }
 #endif
 
-#endif  // __NITRATE_QXIR_QXIR_H__
+#endif  // __NITRATE_NR_NR_H__

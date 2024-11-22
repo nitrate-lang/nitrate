@@ -15,7 +15,8 @@ struct SyncFS::Impl {
     std::vector<std::pair<size_t, size_t>> m_line_to_offset;
 
     /* Result includes the EOL */
-    bool lsp_read_line(std::stringstream& ss, size_t& line_size, size_t& line_size_w_eol) {
+    bool lsp_read_line(std::stringstream& ss, size_t& line_size,
+                       size_t& line_size_w_eol) {
       line_size = 0;
       line_size_w_eol = 0;
 
@@ -86,7 +87,9 @@ SyncFS::SyncFS() {
   LOG(INFO) << "Creating mirrored file system abstraction";
 }
 
-SyncFS::~SyncFS() { LOG(INFO) << "Destroying mirrored file system abstraction"; }
+SyncFS::~SyncFS() {
+  LOG(INFO) << "Destroying mirrored file system abstraction";
+}
 
 SyncFS& SyncFS::the() {
   static SyncFS instance;
@@ -154,7 +157,8 @@ SyncFS::OpenCode SyncFS::open(std::string_view mime_type) {
     return OpenCode::OPEN_FAILED;
   }
 
-  std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+  std::string content((std::istreambuf_iterator<char>(file)),
+                      std::istreambuf_iterator<char>());
 
   Impl::File f(mime_type);
   f.set_content(std::move(content));
@@ -178,7 +182,8 @@ SyncFS::CloseCode SyncFS::close() {
   return CloseCode::NOT_OPEN;
 }
 
-SyncFS::ReplaceCode SyncFS::replace(size_t offset, size_t length, std::string_view text) {
+SyncFS::ReplaceCode SyncFS::replace(size_t offset, size_t length,
+                                    std::string_view text) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = m_impl->m_files.find(m_current);

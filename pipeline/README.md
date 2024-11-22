@@ -29,9 +29,9 @@ The compilation pipeline consists of the following stages:
 | Library Name        | Pipeline Dependency List                                                                                           |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `libnitrate-core`   | []                                                                                                                 |
-| `libnitrate-lexer`  | [`libnitrate-core`]                                                                                                |
+| `libnitrate-lexer`  | [ `libnitrate-core` ]                                                                                              |
 | `libnitrate-seq`    | [`libnitrate-lexer`, `libnitrate-core`]                                                                            |
 | `libnitrate-parser` | [`libnitrate-lexer`, `libnitrate-core`]                                                                            |
-| `libnitrate-ir`     | [`libnitrate-parser`, `libnitrate-lexer`, `libnitrate-core`]                                                       |
-| `libnitrate-emit`   | [`libnitrate-ir`, `libnitrate-lexer`, `libnitrate-core`]                                                           |
+| `libnitrate-ir`     | [`libnitrate-parser`,  `libnitrate-core`]                                                                          |
+| `libnitrate-emit`   | [`libnitrate-ir`,  `libnitrate-core`]                                                                              |
 | `libnitrate`        | [`libnitrate-emit`, `libnitrate-ir`, `libnitrate-parser`, `libnitrate-seq`, `libnitrate-lexer`, `libnitrate-core`] |

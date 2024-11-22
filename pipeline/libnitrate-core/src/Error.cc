@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -43,7 +45,8 @@
 
 #if defined(__GLIBC__)
 #include <gnu/libc-version.h>
-static std::string libc_version = std::string("GLIBC ") + gnu_get_libc_version();
+static std::string libc_version =
+    std::string("GLIBC ") + gnu_get_libc_version();
 #else
 #error "This libc version is not supported here"
 #endif
@@ -57,14 +60,15 @@ static std::string base64_encode(const std::string &in) {
     valb += 8;
     while (valb >= 0) {
       out.push_back(
-          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"[(val >> valb) & 0x3F]);
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+              [(val >> valb) & 0x3F]);
       valb -= 6;
     }
   }
   if (valb > -6)
-    out.push_back("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"[((val << 8) >>
-                                                                                      (valb + 8)) &
-                                                                                     0x3F]);
+    out.push_back(
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+            [((val << 8) >> (valb + 8)) & 0x3F]);
   return out;
 }
 
@@ -129,8 +133,8 @@ static std::string panic_create_report() {
   report += "\"compiler\":\"unknown\",";
 #endif
 
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \
-    defined(_M_AMD64)
+#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
+    defined(_M_X64) || defined(_M_AMD64)
   report += "\"arch\":\"x86_64\",";
 #elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
   report += "\"arch\":\"x86\",";
@@ -210,10 +214,12 @@ static std::vector<std::string> panic_split_message(std::string_view message) {
 static void panic_render_report(const std::vector<std::string> &lines) {
   { /* Print shockwave */
     std::cout << "\n\n";
-    std::cerr << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
-                 "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n";
-    std::cerr << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
-                 "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n\n\n";
+    std::cerr
+        << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
+           "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n";
+    std::cerr
+        << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
+           "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n\n\n";
   }
 
   {
@@ -221,7 +227,8 @@ static void panic_render_report(const std::vector<std::string> &lines) {
     for (size_t i = 0; i < PANIC_LINE_LENGTH - 2; i++) sep += "━";
 
     std::cerr << "\x1b[31;1m┏" << sep << "┓\x1b[0m\n";
-    for (auto &str : lines) std::cerr << "\x1b[31;1m┃\x1b[0m " << str << " \x1b[31;1m┃\x1b[0m\n";
+    for (auto &str : lines)
+      std::cerr << "\x1b[31;1m┃\x1b[0m " << str << " \x1b[31;1m┃\x1b[0m\n";
     std::cerr << "\x1b[31;1m┗" << sep << "\x1b[31;1m┛\x1b[0m\n\n";
   }
 
@@ -253,8 +260,9 @@ static void panic_render_report(const std::vector<std::string> &lines) {
                "code:\x1b[0m \n\n  "
             << panic_create_report() << "\n";
 
-  std::cerr << "\n\n▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
-               "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n";
+  std::cerr
+      << "\n\n▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
+         "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n";
   std::cerr << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
                "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n\n";
 
@@ -285,7 +293,9 @@ LIB_EXPORT void qcore_vpanicf_(const char *fmt, va_list args) {
   abort();
 }
 
-LIB_EXPORT void qcore_debug_(const char *msg) { return qcore_debugf_("%s", msg); }
+LIB_EXPORT void qcore_debug_(const char *msg) {
+  return qcore_debugf_("%s", msg);
+}
 
 LIB_EXPORT void qcore_debugf_(const char *fmt, ...) {
   va_list args;
@@ -294,4 +304,6 @@ LIB_EXPORT void qcore_debugf_(const char *fmt, ...) {
   va_end(args);
 }
 
-LIB_EXPORT void qcore_vdebugf_(const char *fmt, va_list args) { vfprintf(stderr, fmt, args); }
+LIB_EXPORT void qcore_vdebugf_(const char *fmt, va_list args) {
+  vfprintf(stderr, fmt, args);
+}

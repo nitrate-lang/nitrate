@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -39,34 +41,23 @@
  * @spacecomplexity O(1)
  */
 
-using namespace nr::diag;
+using namespace nr;
 
-bool nr::pass::ds_nullchk(qmodule_t *mod) {
+bool nr::pass::ds_nullchk(qmodule_t *mod, IReport *log) {
   bool has_bad_null = false;
-  bool missing_mod = false;
 
-  const auto cb = [&has_bad_null, &missing_mod](Expr *, Expr **_cur) -> IterOp {
+  const auto cb = [&](Expr *, Expr **_cur) -> IterOp {
     if (*_cur == nullptr) [[unlikely]] {
       has_bad_null = true;
 
-      diag::report(IssueCode::DSNullPtr, IssueClass::FatalError, "");
-      return IterOp::Abort;
-    }
-
-    Expr *cur = *_cur;
-
-    if (cur->getModule() == nullptr) [[unlikely]] {
-      missing_mod = true;
-
-      diag::report(IssueCode::DSMissingMod, IssueClass::FatalError, cur->getLoc().first,
-                   cur->getLoc().second);
+      log->report(DSNullPtr, IC::FatalError, "");
       return IterOp::Abort;
     }
 
     return IterOp::Proceed;
   };
 
-  iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb);
+  iterate<IterMode::dfs_pre>(mod->getRoot(), cb);
 
-  return !has_bad_null && !missing_mod;
+  return !has_bad_null;
 }

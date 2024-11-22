@@ -1,15 +1,19 @@
 #include <unordered_map>
+
+#include "nitrate-ir/Report.hh"
 #////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -30,11 +34,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
-#define __NITRATE_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
+#ifndef __NITRATE_NR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
+#define __NITRATE_NR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
 
-#include <atomic>
 #include <functional>
+#include <nitrate-ir/Report.hh>
 #include <span>
 #include <string>
 #include <unordered_map>
@@ -43,16 +47,19 @@
 struct qmodule_t;
 
 namespace nr::pass {
-  typedef std::function<bool(qmodule_t*)> pass_func_t;
+  typedef std::function<bool(qmodule_t*, IReport*)> pass_func_t;
 
   class ModulePass {
     std::string_view name;
     pass_func_t func;
 
   public:
-    ModulePass(std::string_view name, pass_func_t func) : name(name), func(func) {}
+    ModulePass(std::string_view name, pass_func_t func)
+        : name(name), func(func) {}
 
-    bool run(qmodule_t* module) const { return func(module); }
+    bool run(qmodule_t* module, IReport* log) const {
+      return func(module, log);
+    }
 
     std::string_view getName() const { return name; }
     pass_func_t getFunc() const { return func; }
@@ -87,7 +94,8 @@ namespace nr::pass {
     PassGroup(std::string_view name, std::span<ModulePass> passes)
         : m_name(name), m_sequence(passes) {}
 
-    bool run(qmodule_t* module, std::function<void(std::string_view name)> on_success = nullptr);
+    bool run(qmodule_t* module,
+             std::function<void(std::string_view name)> on_success = nullptr);
 
     std::string_view getName() const { return m_name; }
 
@@ -106,8 +114,10 @@ namespace nr::pass {
   public:
     static PassGroupRegistry& the();
 
-    void addGroup(const std::string& name, std::initializer_list<std::string_view> passes);
-    void addGroup(const std::string& name, const std::vector<std::string>& passes);
+    void addGroup(const std::string& name,
+                  std::initializer_list<std::string_view> passes);
+    void addGroup(const std::string& name,
+                  const std::vector<std::string>& passes);
     bool hasGroup(const std::string& name);
     static PassGroup get(const std::string& name);
 
@@ -140,4 +150,4 @@ namespace nr::pass {
   };
 }  // namespace nr::pass
 
-#endif  // __NITRATE_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
+#endif  // __NITRATE_NR_DIAGNOSE_PASSES_AUTO_REGISTER_H__

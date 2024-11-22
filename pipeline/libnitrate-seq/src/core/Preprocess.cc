@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -72,7 +74,8 @@ static std::string_view ltrim(std::string_view s) {
 }
 
 static std::string_view rtrim(std::string_view s) {
-  s.remove_suffix(std::min(s.size() - s.find_last_not_of(" \t\n\r") - 1, s.size()));
+  s.remove_suffix(
+      std::min(s.size() - s.find_last_not_of(" \t\n\r") - 1, s.size()));
   return s;
 }
 
@@ -80,14 +83,14 @@ bool qprep_impl_t::run_defer_callbacks(qlex_tok_t last) {
   /**
    * @brief We do it this way because the callback could potentially modify the
    * `defer_callbacks` vector, which would invalidate the iterator.
-   * The callback is able to instruct us to keep it around for the next token or to
-   * remove it.
+   * The callback is able to instruct us to keep it around for the next token or
+   * to remove it.
    *
-   * The callback is able to consume and emit token sequences, which may result in this
-   * `run_defer_callbacks` function being called recursively.
+   * The callback is able to consume and emit token sequences, which may result
+   * in this `run_defer_callbacks` function being called recursively.
    *
-   * So like, if any of the callbacks says to emit a token, we should emit a token. Otherwise,
-   * we should not emit a token.
+   * So like, if any of the callbacks says to emit a token, we should emit a
+   * token. Otherwise, we should not emit a token.
    */
 
   std::vector<DeferCallback> saved;
@@ -117,7 +120,8 @@ std::optional<std::string> qprep_impl_t::run_lua_code(const std::string &s) {
 
   int error = luaL_dostring(m_core->L, std::string(s.data(), s.size()).c_str());
   if (error) {
-    qcore_print(QCORE_ERROR, "Failed to run Lua code: %s\n", lua_tostring(m_core->L, -1));
+    qcore_print(QCORE_ERROR, "Failed to run Lua code: %s\n",
+                lua_tostring(m_core->L, -1));
     return std::nullopt;
   }
 
@@ -137,7 +141,8 @@ std::optional<std::string> qprep_impl_t::run_lua_code(const std::string &s) {
 }
 
 void qprep_impl_t::expand_raw(std::string_view code) {
-  auto ss = std::make_shared<std::istringstream>(std::string(code.data(), code.size()));
+  auto ss = std::make_shared<std::istringstream>(
+      std::string(code.data(), code.size()));
 
   {
     qlex_t *clone = weak_clone(ss, m_filename);
@@ -228,7 +233,8 @@ func_entry:  // do tail call optimization manually
           std::string_view block = ltrim(get_string(x.v.str_idx));
           if (!block.starts_with("fn ")) {
             if (!run_and_expand(std::string(block))) {
-              qcore_print(QCORE_ERROR, "Failed to expand macro block: %s\n", block.data());
+              qcore_print(QCORE_ERROR, "Failed to expand macro block: %s\n",
+                          block.data());
               x.ty = qErro;
               goto emit_token;
             }
@@ -236,18 +242,23 @@ func_entry:  // do tail call optimization manually
             block = ltrim(block.substr(3));
             size_t pos = block.find_first_of("(");
             if (pos == std::string_view::npos) {
-              qcore_print(QCORE_ERROR, "Invalid macro function definition: %s\n", block.data());
+              qcore_print(QCORE_ERROR,
+                          "Invalid macro function definition: %s\n",
+                          block.data());
               x.ty = qErro;
               goto emit_token;
             }
 
             std::string_view name = rtrim(block.substr(0, pos));
-            std::string code = "function " + std::string(name) + std::string(block.substr(pos));
+            std::string code = "function " + std::string(name) +
+                               std::string(block.substr(pos));
 
             { /* Remove the opening brace */
               pos = code.find_first_of("{");
               if (pos == std::string::npos) {
-                qcore_print(QCORE_ERROR, "Invalid macro function definition: %s\n", block.data());
+                qcore_print(QCORE_ERROR,
+                            "Invalid macro function definition: %s\n",
+                            block.data());
                 x.ty = qErro;
                 goto emit_token;
               }
@@ -257,7 +268,9 @@ func_entry:  // do tail call optimization manually
             { /* Remove the closing brace */
               pos = code.find_last_of("}");
               if (pos == std::string::npos) {
-                qcore_print(QCORE_ERROR, "Invalid macro function definition: %s\n", block.data());
+                qcore_print(QCORE_ERROR,
+                            "Invalid macro function definition: %s\n",
+                            block.data());
                 x.ty = qErro;
                 goto emit_token;
               }
@@ -266,7 +279,8 @@ func_entry:  // do tail call optimization manually
             }
 
             if (!run_and_expand(code)) {
-              qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n", name.data());
+              qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n",
+                          name.data());
               x.ty = qErro;
               goto emit_token;
             }
@@ -281,7 +295,8 @@ func_entry:  // do tail call optimization manually
           size_t pos = body.find_first_of("(");
           if (pos != std::string_view::npos) {
             if (!run_and_expand("return " + std::string(body))) {
-              qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n", body.data());
+              qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n",
+                          body.data());
               x.ty = qErro;
               goto emit_token;
             }
@@ -289,7 +304,8 @@ func_entry:  // do tail call optimization manually
             goto func_entry;
           } else {
             if (!run_and_expand("return " + std::string(body) + "()")) {
-              qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n", body.data());
+              qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n",
+                          body.data());
               x.ty = qErro;
               goto emit_token;
             }
@@ -321,10 +337,11 @@ void qprep_impl_t::install_lua_api() {
     lua_setfield(m_core->L, -2, qcall.getName().data());
   }
 
-  lua_setglobal(m_core->L, "nit");
+  lua_setglobal(m_core->L, "n");
 }
 
-qlex_t *qprep_impl_t::weak_clone(std::shared_ptr<std::istream> file, const char *filename) {
+qlex_t *qprep_impl_t::weak_clone(std::shared_ptr<std::istream> file,
+                                 const char *filename) {
   qprep_impl_t *clone = new qprep_impl_t(file, filename, m_env);
 
   clone->m_core = m_core;
@@ -335,8 +352,8 @@ qlex_t *qprep_impl_t::weak_clone(std::shared_ptr<std::istream> file, const char 
   return clone;
 }
 
-qprep_impl_t::qprep_impl_t(std::shared_ptr<std::istream> file, const char *filename,
-                           qcore_env_t env)
+qprep_impl_t::qprep_impl_t(std::shared_ptr<std::istream> file,
+                           const char *filename, qcore_env_t env)
     : qlex_t(file, filename, env) {
   m_core = std::make_shared<Core>();
   m_do_expanse = true;
@@ -368,8 +385,8 @@ CPP_EXPORT qprep_impl_t::~qprep_impl_t() {}
 
 ///=============================================================================
 
-CPP_EXPORT qlex_t *qprep_new(std::shared_ptr<std::istream> file, const char *filename,
-                             qcore_env_t env) {
+CPP_EXPORT qlex_t *qprep_new(std::shared_ptr<std::istream> file,
+                             const char *filename, qcore_env_t env) {
   try {
     return new qprep_impl_t(file, env, filename);
   } catch (std::bad_alloc &) {
@@ -379,7 +396,9 @@ CPP_EXPORT qlex_t *qprep_new(std::shared_ptr<std::istream> file, const char *fil
   }
 }
 
-LIB_EXPORT void qprep_set_fetch_module(qlex_t *ctx, qprep_fetch_module_t fetch_fn, uintptr_t any) {
+LIB_EXPORT void qprep_set_fetch_module(qlex_t *ctx,
+                                       qprep_fetch_module_t fetch_fn,
+                                       uintptr_t any) {
   qprep_impl_t *obj = reinterpret_cast<qprep_impl_t *>(ctx);
   std::lock_guard<std::mutex> lock(obj->m_mutex);
 

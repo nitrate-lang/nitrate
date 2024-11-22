@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -169,9 +171,6 @@ typedef enum qlex_key_t {
   qKContinue,   /* 'continue' */
   qKReturn,     /* 'ret' */
   qKRetif,      /* 'retif' */
-  qKRetz,       /* 'retz' */
-  qKRetv,       /* 'retv' */
-  qKForm,       /* 'form' */
   qKForeach,    /* 'foreach' */
   qKTry,        /* 'try' */
   qKCatch,      /* 'catch' */
@@ -184,7 +183,7 @@ typedef enum qlex_key_t {
   qKFalse,      /* 'false' */
 } __attribute__((packed)) qlex_key_t;
 
-typedef uint32_t qlex_size;
+typedef uint32_t uint32_t;
 
 #if defined(__cplusplus) && defined(__NITRATE_LEXER_IMPL__)
 }
@@ -196,48 +195,47 @@ typedef uint32_t qlex_size;
 struct qlex_t;
 struct qlex_tok_t;
 
-typedef struct qlex_loc_t {
-  uint32_t tag : 24;
-} __attribute__((packed)) qlex_loc_t;
-
-extern "C" const char *qlex_str(struct qlex_t *lexer, struct qlex_tok_t *tok, size_t *len);
+extern "C" const char *qlex_str(struct qlex_t *lexer, struct qlex_tok_t *tok,
+                                size_t *len);
 
 typedef struct qlex_tok_t final {
   /* Token type */
   qlex_ty_t ty : 4;
 
-  /* Location of the token in the source code. */
-  /* The token size will be calculated as needed. */
-  qlex_loc_t start, end;
+  uint32_t start, end;
 
   /* Token data */
   union {
     qlex_punc_t punc;
     qlex_op_t op;
     qlex_key_t key;
-    qlex_size str_idx;
+    uint32_t str_idx;
   } __attribute__((packed)) v;
 
   uint64_t pad : 4;
 
-  qlex_tok_t() : ty(qErro), start({}), end({}), v{.str_idx = 0} {}
+  qlex_tok_t() : ty(qErro), start(0), end(0), v{.str_idx = 0} {}
 
-  qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, qlex_loc_t loc_beg = {}, qlex_loc_t loc_end = {})
+  qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, uint32_t loc_beg = 0,
+             uint32_t loc_end = 0)
       : ty(ty), start(loc_beg), end(loc_end), v{.punc = punc} {}
 
-  qlex_tok_t(qlex_ty_t ty, qlex_op_t op, qlex_loc_t loc_beg = {}, qlex_loc_t loc_end = {})
+  qlex_tok_t(qlex_ty_t ty, qlex_op_t op, uint32_t loc_beg = 0,
+             uint32_t loc_end = 0)
       : ty(ty), start(loc_beg), end(loc_end), v{.op = op} {}
 
-  qlex_tok_t(qlex_ty_t ty, qlex_key_t key, qlex_loc_t loc_beg = {}, qlex_loc_t loc_end = {})
+  qlex_tok_t(qlex_ty_t ty, qlex_key_t key, uint32_t loc_beg = 0,
+             uint32_t loc_end = 0)
       : ty(ty), start(loc_beg), end(loc_end), v{.key = key} {}
 
-  qlex_tok_t(qlex_ty_t ty, qlex_size str_idx, qlex_loc_t loc_beg = {}, qlex_loc_t loc_end = {})
+  qlex_tok_t(qlex_ty_t ty, uint32_t str_idx, uint32_t loc_beg = 0,
+             uint32_t loc_end = 0)
       : ty(ty), start(loc_beg), end(loc_end), v{.str_idx = str_idx} {}
 
-  static qlex_tok_t err(qlex_loc_t loc_start, qlex_loc_t loc_end) {
+  static qlex_tok_t err(uint32_t loc_start, uint32_t loc_end) {
     return qlex_tok_t(qErro, 0, loc_start, loc_end);
   }
-  static qlex_tok_t eof(qlex_loc_t loc_start, qlex_loc_t loc_end) {
+  static qlex_tok_t eof(uint32_t loc_start, uint32_t loc_end) {
     return qlex_tok_t(qEofF, 0, loc_start, loc_end);
   }
 
@@ -305,24 +303,18 @@ typedef struct qlex_tok_t final {
 extern "C" {
 #else
 
-typedef struct qlex_loc_t {
-  uint32_t tag : 24;
-} __attribute__((packed)) qlex_loc_t;
-
 typedef struct qlex_tok_t {
   /* Token type */
   qlex_ty_t ty : 4;
 
-  /* Location of the token in the source code. */
-  /* The token size will be calculated as needed. */
-  qlex_loc_t start, end;
+  uint32_t start, end;
 
   /* Token data */
   union {
     qlex_punc_t punc;
     qlex_op_t op;
     qlex_key_t key;
-    qlex_size str_idx;
+    uint32_t str_idx;
   } __attribute__((packed)) v;
 
   uint64_t pad : 4;

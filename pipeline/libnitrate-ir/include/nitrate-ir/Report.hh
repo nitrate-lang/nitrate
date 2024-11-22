@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -29,31 +31,22 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_REPORT_H__
-#define __NITRATE_QXIR_REPORT_H__
+#ifndef __NITRATE_NR_REPORT_H__
+#define __NITRATE_NR_REPORT_H__
 
 #include <nitrate-ir/IR.h>
-#include <nitrate-lexer/Token.h>
 
 #include <boost/bimap.hpp>
 #include <cstdarg>
-#include <functional>
 #include <span>
-#include <stdexcept>
 #include <string_view>
-#include <unordered_set>
 
 namespace qparse {
   class Node;
 }
 
-namespace nr::diag {
-  class SyntaxError : public std::runtime_error {
-  public:
-    SyntaxError() : std::runtime_error("") {}
-  };
-
-  enum class IssueClass {
+namespace nr {
+  enum class IC {
     Debug = 0,
     Info,
     Warn,
@@ -61,14 +54,13 @@ namespace nr::diag {
     FatalError,
   };
 
-  enum class IssueCode {
+  enum IssueCode {
     CompilerError,
     SignalReceived,
     PTreeInvalid,
     DSPolyCyclicRef,
     DSNullPtr,
     DSBadType,
-    DSMissingMod,
     DSBadTmpNode,
 
     FunctionRedefinition,
@@ -90,157 +82,44 @@ namespace nr::diag {
     Info,
   };
 
-  struct IssueInfo {
-    std::string_view flagname;
-    std::string overview;
-    std::vector<std::string_view> hints;
-
-    bool operator<(const IssueInfo &rhs) const { return flagname < rhs.flagname; }
-  };
-
-  extern const boost::bimap<IssueCode, IssueInfo> issue_info;
-
-  typedef std::function<void(std::string_view, IssueClass)> DiagnosticMessageHandler;
-
-  class IDiagnosticEngine {
+  class IReport {
   public:
-    virtual void report(IssueCode code, std::span<std::string_view> params = {},
-                        std::string_view filename = "", size_t start_line = 1, size_t start_col = 1,
-                        size_t end_line = 1, size_t end_col = 1) = 0;
-  };
-
-  struct DiagMessage {
-    std::string m_msg;
-    qlex_loc_t m_start, m_end;
-    IssueClass m_type;
-    IssueCode m_code;
-
-    DiagMessage(std::string_view msg = "", IssueClass type = IssueClass::Debug,
-                IssueCode code = IssueCode::Info, qlex_loc_t start = {0}, qlex_loc_t end = {0})
-        : m_msg(msg), m_start(start), m_end(end), m_type(type), m_code(code) {}
-
-    uint64_t hash() const;
-  };
-
-  class DiagnosticManager {
-    struct Channel {
-      std::vector<DiagMessage> vec;
-      std::unordered_set<uint64_t> visited;
+    struct ReportData {
+      IssueCode code;
+      IC level;
+      std::string_view param;
+      uint32_t start_offset;
+      uint32_t end_offset;
+      std::string_view filename;
     };
 
-    qmodule_t *m_nr;
-    std::unordered_map<nr_audit_ticket_t, Channel> m_msgs;
-    nr_audit_ticket_t m_last_ticket;
+    virtual ~IReport() = default;
 
-    std::string mint_clang16_message(const DiagMessage &msg) const;
-    std::string mint_plain_message(const DiagMessage &msg) const;
-    std::string mint_modern_message(const DiagMessage &msg) const;
-    size_t dump_diagnostic_vector(std::vector<DiagMessage> &vec, DiagnosticMessageHandler handler,
-                                  nr_diag_format_t style);
+    virtual void report(IssueCode code, IC level,
+                        std::vector<std::string_view> params = {},
+                        uint32_t start_offset = 1, uint32_t end_offset = 0,
+                        std::string_view filename = "") = 0;
 
-  public:
-    DiagnosticManager() {
-      m_nr = nullptr;
-      m_msgs[QXIR_AUDIT_CONV] = {};
-      m_last_ticket = QXIR_AUDIT_CONV;
-    }
+    void report(IssueCode code, IC level, std::string_view message,
+                std::pair<uint32_t, uint32_t> loc = {UINT32_MAX, UINT32_MAX},
+                std::string_view filename = "") {
+      report(code, level, {message}, loc.first, loc.second, filename);
+    };
 
-    void push(nr_audit_ticket_t ticket, DiagMessage &&msg);
-    size_t render(nr_audit_ticket_t ticket, DiagnosticMessageHandler handler,
-                  nr_diag_format_t style);
+    virtual void erase_reports() = 0;
 
-    void set_ctx(qmodule_t *nr) { m_nr = nr; }
-
-    size_t clear(nr_audit_ticket_t t) {
-      if (t == QXIR_AUDIT_ALL) {
-        size_t n = 0;
-        for (auto &[_, msgs] : m_msgs) {
-          n += msgs.vec.size();
-          msgs.vec.clear();
-          msgs.visited.clear();
-        }
-        return n;
-      } else if (t == QXIR_AUDIT_LAST) {
-        size_t n = m_msgs[m_last_ticket].vec.size();
-        m_msgs[m_last_ticket].vec.clear();
-        m_msgs[m_last_ticket].visited.clear();
-        return n;
-      } else {
-        if (!m_msgs.contains(t)) {
-          return 0;
-        }
-
-        size_t n = m_msgs[t].vec.size();
-        m_msgs[t].vec.clear();
-        m_msgs[t].visited.clear();
-        return n;
-      }
-    }
-
-    size_t count(nr_audit_ticket_t t) {
-      if (t == QXIR_AUDIT_ALL) {
-        size_t n = 0;
-        for (const auto &[_, msgs] : m_msgs) {
-          n += msgs.vec.size();
-        }
-        return n;
-      } else if (t == QXIR_AUDIT_LAST) {
-        return m_msgs[m_last_ticket].vec.size();
-      } else {
-        if (!m_msgs.contains(t)) {
-          return 0;
-        }
-
-        return m_msgs[t].vec.size();
-      }
-    }
+    virtual void stream_reports(std::function<void(const ReportData&)> cb) = 0;
   };
 
-  /**
-   * @brief Report a syntax error
-   */
-  void badtree(qparse::Node *node, std::string_view fmt, ...);
+  class ISourceView {
+  public:
+    virtual ~ISourceView() = default;
 
-#define CONV_DEBUG(_msg)               \
-  mod->getDiag().push(QXIR_AUDIT_CONV, \
-                      diag::DiagMessage(_msg, diag::IssueClass::Debug, diag::IssueCode::Info));
+    virtual std::optional<std::pair<uint32_t, uint32_t>> off2rc(
+        uint32_t offset) noexcept = 0;
+    virtual std::optional<std::vector<std::string_view>> rect(
+        uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) noexcept = 0;
+  };
+};  // namespace nr
 
-#define NO_MATCHING_FUNCTION(_funcname)                                                            \
-  mod->getDiag().push(QXIR_AUDIT_CONV,                                                             \
-                      diag::DiagMessage("No matching function named " + std::string(_funcname),    \
-                                        diag::IssueClass::Error, diag::IssueCode::UnknownFunction, \
-                                        cur->getLoc().first, cur->getLoc().second));
-
-#define NO_MATCHING_PARAMETER(_funcname, _paramname)                                               \
-  mod->getDiag().push(                                                                             \
-      QXIR_AUDIT_CONV,                                                                             \
-      diag::DiagMessage("Call to function " + std::string(_funcname) +                             \
-                            " has no matching default parameter named " + std::string(_paramname), \
-                        diag::IssueClass::Error, diag::IssueCode::UnknownArgument,                 \
-                        cur->getLoc().first, cur->getLoc().second));
-
-#define TOO_MANY_ARGUMENTS(_funcname)                                                        \
-  mod->getDiag().push(                                                                       \
-      QXIR_AUDIT_CONV,                                                                       \
-      diag::DiagMessage("Too many arguments provided to function " + std::string(_funcname), \
-                        diag::IssueClass::Error, diag::IssueCode::TooManyArguments,          \
-                        cur->getLoc().first, cur->getLoc().second));
-
-  /**
-   * @brief Report a diagnostic message
-   * @return true always
-   */
-  bool report(diag::IssueCode code, diag::IssueClass type = diag::IssueClass::Error,
-              qlex_loc_t loc_start = {0}, qlex_loc_t loc_end = {0}, int channel = QXIR_AUDIT_CONV);
-
-  /**
-   * @brief Report a diagnostic message
-   * @return true always
-   */
-  bool report(diag::IssueCode code, diag::IssueClass type = diag::IssueClass::Error,
-              std::string_view subject = "", qlex_loc_t loc_start = {0}, qlex_loc_t loc_end = {0},
-              int channel = QXIR_AUDIT_CONV);
-
-};  // namespace nr::diag
-
-#endif  // __NITRATE_QXIR_REPORT_H__
+#endif  // __NITRATE_NR_REPORT_H__

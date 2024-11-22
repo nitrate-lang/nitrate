@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -40,14 +42,17 @@
 using namespace nr;
 
 Int *NRBuilder::createBool(bool value SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
-  return compiler_trace(debug_info(create<Int>(value, IntSize::U1), DEBUG_INFO));
+  return compiler_trace(
+      debug_info(create<Int>(value, IntSize::U1), DEBUG_INFO));
 }
 
-Int *NRBuilder::createFixedInteger(uint128_t value, IntSize width SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+Int *NRBuilder::createFixedInteger(boost::multiprecision::cpp_int value,
+                                   IntSize width
+                                       SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   switch (width) {
@@ -61,19 +66,14 @@ Int *NRBuilder::createFixedInteger(uint128_t value, IntSize width SOURCE_LOCATIO
                        value <= std::numeric_limits<uint8_t>::max());
       break;
     }
-    case nr::IntSize::U16: {
-      contract_enforce(value >= std::numeric_limits<uint16_t>::min() &&
-                       value <= std::numeric_limits<uint16_t>::max());
+    case nr::IntSize::I32: {
+      contract_enforce(value >= std::numeric_limits<int32_t>::min() &&
+                       value <= std::numeric_limits<int32_t>::max());
       break;
     }
-    case nr::IntSize::U32: {
-      contract_enforce(value >= std::numeric_limits<uint32_t>::min() &&
-                       value <= std::numeric_limits<uint32_t>::max());
-      break;
-    }
-    case nr::IntSize::U64: {
-      contract_enforce(value >= std::numeric_limits<uint64_t>::min() &&
-                       value <= std::numeric_limits<uint64_t>::max());
+    case nr::IntSize::I64: {
+      contract_enforce(value >= std::numeric_limits<int64_t>::min() &&
+                       value <= std::numeric_limits<int64_t>::max());
       break;
     }
     case nr::IntSize::U128: {
@@ -83,17 +83,19 @@ Int *NRBuilder::createFixedInteger(uint128_t value, IntSize width SOURCE_LOCATIO
     }
   }
 
-  return compiler_trace(debug_info(create<Int>(value, width), DEBUG_INFO));
+  return compiler_trace(debug_info(
+      create<Int>(value.convert_to<unsigned __int128>(), width), DEBUG_INFO));
 }
 
-Float *NRBuilder::createFixedFloat(bigfloat_t value,
-                                   FloatSize width SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+Float *NRBuilder::createFixedFloat(
+    bigfloat_t value, FloatSize width SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   switch (width) {
     case nr::FloatSize::F16: {
-      contract_enforce(value >= -65504 && value <= 65504 && "This might be a bug?");
+      contract_enforce(value >= -65504 && value <= 65504 &&
+                       "This might be a bug?");
       break;
     }
     case nr::FloatSize::F32: {
@@ -116,8 +118,9 @@ Float *NRBuilder::createFixedFloat(bigfloat_t value,
 }
 
 List *NRBuilder::createStringDataArray(std::string_view value,
-                                       ABIStringStyle style SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+                                       ABIStringStyle style
+                                           SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   // Only C-strings are currently supported
@@ -133,18 +136,17 @@ List *NRBuilder::createStringDataArray(std::string_view value,
   /* Add null byte at end */
   items[value.size()] = compiler_trace(createFixedInteger(0, IntSize::U8));
 
-  List *R = createList(items, true);
-
-  return compiler_trace(debug_info(R, DEBUG_INFO));
+  return compiler_trace(debug_info(createList(items, true), DEBUG_INFO));
 }
 
-List *NRBuilder::createList(std::span<Expr *> items,
-                            /* Require assert(typeof(result)==typeof(array<result.element,
-                             * result.size>)) ? Reason: It has to do with type inference and
-                             * implicit conversions of the elements in the list.
-                             */
-                            bool cast_homogenous SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
+List *NRBuilder::createList(
+    std::span<Expr *> items,
+    /* Require assert(typeof(result)==typeof(array<result.element,
+     * result.size>)) ? Reason: It has to do with type inference and
+     * implicit conversions of the elements in the list.
+     */
+    bool cast_homogenous SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
   ListItems items_copy;

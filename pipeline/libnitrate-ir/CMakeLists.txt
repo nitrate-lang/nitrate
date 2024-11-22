@@ -12,7 +12,7 @@ execute_process(COMMAND find ${CMAKE_CURRENT_SOURCE_DIR} -type f -name "*.*" -ex
 string(REGEX REPLACE " .*" "" SHA256SUMS ${SHA256SUMS})
 string(TOUPPER ${SHA256SUMS} SHA256SUMS)
 string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
-set(__TARGET_VERSION "\"QXIR_${SHA256SUMS}\"")
+set(__TARGET_VERSION "\"NR_${SHA256SUMS}\"")
 message(STATUS "libnitrate-ir VersionId: ${__TARGET_VERSION}")
 
 #================== SET BUILD FLAGS ==================
@@ -24,12 +24,13 @@ else()
   message(FATAL_ERROR "Invalid build type: ${CMAKE_BUILD_TYPE}")
 endif()
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
 add_library(nitrate-ir ${CXX_SOURCES})
 target_include_directories(nitrate-ir PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-lexer/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-parser/include)
 target_link_libraries(nitrate-ir PUBLIC nitrate-core nitrate-parser deflate crypto)
 add_dependencies(nitrate-ir nitrate-core nitrate-parser)

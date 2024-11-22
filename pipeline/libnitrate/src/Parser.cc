@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -165,7 +167,8 @@ class DeserializerAdapterLexer final : public qlex_t {
       }
 
       if (!msgpack_read_uint(*m_file, a) || !msgpack_read_uint(*m_file, b) ||
-          !msgpack_read_uint(*m_file, c) || !msgpack_read_uint(*m_file, d)) [[unlikely]] {
+          !msgpack_read_uint(*m_file, c) || !msgpack_read_uint(*m_file, d))
+          [[unlikely]] {
         free(str);
         return {.ty = qErro};
       }
@@ -205,8 +208,8 @@ class DeserializerAdapterLexer final : public qlex_t {
   }
 
 public:
-  DeserializerAdapterLexer(std::shared_ptr<std::istream> file, const char *filename,
-                           qcore_env_t env)
+  DeserializerAdapterLexer(std::shared_ptr<std::istream> file,
+                           const char *filename, qcore_env_t env)
       : qlex_t(file, filename, env) {
     int ch = file->get();
 
@@ -247,17 +250,18 @@ public:
   virtual ~DeserializerAdapterLexer() override = default;
 };
 
-static std::optional<qparse_node_t *> parse_tokens(qparse_t *L,
-                                                   std::function<void(const char *)> diag_cb) {
+static std::optional<qparse_node_t *> parse_tokens(
+    qparse_t *L, std::function<void(const char *)> diag_cb) {
   qparse_node_t *root = nullptr;
   bool ok = qparse_do(L, &root);
 
   ///============================================================================///
-  /// Some dangerous code here, be careful!                                      ///
+  /// Some dangerous code here, be careful! ///
   qparse_dumps(
       L, false,
       [](const char *msg, size_t, uintptr_t dat) {
-        std::function<void(const char *)> &stack_tmp = *(std::function<void(const char *)> *)dat;
+        std::function<void(const char *)> &stack_tmp =
+            *(std::function<void(const char *)> *)dat;
         stack_tmp(msg);
       },
       (uintptr_t)&diag_cb);
@@ -468,7 +472,7 @@ bool to_json_recurse(Node *N, json &x) {
        * @note [Developer Notes]
        */
 
-      x[1] = (uint32_t)N->as<ConstChar>()->get_value();
+      x[1] = N->as<ConstChar>()->get_value();
 
       break;
     }
@@ -956,69 +960,6 @@ bool to_json_recurse(Node *N, json &x) {
         z[1] = json::array();
 
         if (!to_json_recurse(Z.second, z[1])) {
-          return false;
-        }
-
-        y.push_back(std::move(z));
-      }
-
-      break;
-    }
-
-    case QAST_NODE_GROUP_TY: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      auto &y = x[1] = json::array();
-
-      for (auto &Z : N->as<GroupTy>()->get_items()) {
-        json z;
-
-        if (!to_json_recurse(Z, z)) {
-          return false;
-        }
-
-        y.push_back(std::move(z));
-      }
-
-      break;
-    }
-
-    case QAST_NODE_REGION_TY: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      auto &y = x[1] = json::array();
-
-      for (auto &Z : N->as<RegionTy>()->get_items()) {
-        json z;
-
-        if (!to_json_recurse(Z, z)) {
-          return false;
-        }
-
-        y.push_back(std::move(z));
-      }
-
-      break;
-    }
-
-    case QAST_NODE_UNION_TY: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      auto &y = x[1] = json::array();
-
-      for (auto &Z : N->as<UnionTy>()->get_items()) {
-        json z;
-
-        if (!to_json_recurse(Z, z)) {
           return false;
         }
 
@@ -1587,7 +1528,7 @@ bool to_json_recurse(Node *N, json &x) {
        * @note [Developer Notes]
        */
 
-      qcore_implement("ASM node serialization is not supported yet.");
+      qcore_implement();
       break;
     }
 
@@ -1615,36 +1556,6 @@ bool to_json_recurse(Node *N, json &x) {
       }
 
       if (!to_json_recurse(N->as<ReturnIfStmt>()->get_value(), x[2])) {
-        return false;
-      }
-
-      break;
-    }
-
-    case QAST_NODE_RETZ: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      if (!to_json_recurse(N->as<RetZStmt>()->get_cond(), x[1])) {
-        return false;
-      }
-
-      if (!to_json_recurse(N->as<RetZStmt>()->get_value(), x[2])) {
-        return false;
-      }
-
-      break;
-    }
-
-    case QAST_NODE_RETV: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      if (!to_json_recurse(N->as<RetVStmt>()->get_cond(), x[1])) {
         return false;
       }
 
@@ -1728,32 +1639,6 @@ bool to_json_recurse(Node *N, json &x) {
       }
 
       if (!to_json_recurse(W->get_step(), x[3])) {
-        return false;
-      }
-
-      if (!to_json_recurse(W->get_body(), x[4])) {
-        return false;
-      }
-
-      break;
-    }
-
-    case QAST_NODE_FORM: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      FormStmt *W = N->as<FormStmt>();
-
-      x[1] = W->get_idx_ident().c_str();
-      x[2] = W->get_val_ident().c_str();
-
-      if (!to_json_recurse(W->get_maxjobs(), x[3])) {
-        return false;
-      }
-
-      if (!to_json_recurse(W->get_expr(), x[4])) {
         return false;
       }
 

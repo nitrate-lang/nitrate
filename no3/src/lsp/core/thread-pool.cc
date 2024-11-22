@@ -6,7 +6,8 @@
 
 void ThreadPool::Start() {
   uint32_t num_threads =
-      std::jthread::hardware_concurrency();  // Max # of threads the system supports
+      std::jthread::hardware_concurrency();  // Max # of threads the system
+                                             // supports
 
   // We want at least 2 threads
   if (num_threads < 2) {
@@ -16,7 +17,8 @@ void ThreadPool::Start() {
   LOG(INFO) << "Starting thread pool with " << num_threads << " threads";
 
   for (uint32_t ii = 0; ii < num_threads; ++ii) {
-    threads.emplace_back(std::jthread([this](std::stop_token st) { ThreadLoop(st); }));
+    threads.emplace_back(
+        std::jthread([this](std::stop_token st) { ThreadLoop(st); }));
   }
 }
 

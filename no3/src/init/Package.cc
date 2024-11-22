@@ -1,16 +1,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///           ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                  ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓█▓▒▒▓███▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///           ░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///             ░▒▓█▓▒░                                                      ///
-///              ░▒▓██▓▒░                                                    ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
-///   * NITRATE PACKAGE MANAGER - The official app for the Nitrate language. ///
+///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
 ///                                                                          ///
 ///   The Nitrate Toolchain is free software; you can redistribute it or     ///
@@ -107,7 +109,8 @@ bool no3::init::Package::writeReadme() {
   }
 
   std::string capitalized_name = m_name;
-  if (!capitalized_name.empty()) capitalized_name[0] = std::toupper(capitalized_name[0]);
+  if (!capitalized_name.empty())
+    capitalized_name[0] = std::toupper(capitalized_name[0]);
 
   readme << "# " << capitalized_name << " Project\n\n";
 
@@ -151,7 +154,8 @@ bool no3::init::Package::writeConfig() {
   grp.set("name", m_name);
   grp.set("description", m_description);
 
-  if (!m_author.empty()) grp.set("authors", std::vector<std::string>({m_author}));
+  if (!m_author.empty())
+    grp.set("authors", std::vector<std::string>({m_author}));
 
   if (!m_email.empty()) grp.set("emails", std::vector<std::string>({m_email}));
 
@@ -254,7 +258,8 @@ bool no3::init::Package::create() {
   }
 
   if (!m_license.empty() && !validateLicense(m_license)) {
-    LOG(ERROR) << "Invalid package SPDX license identifier: " << m_license << std::endl;
+    LOG(ERROR) << "Invalid package SPDX license identifier: " << m_license
+               << std::endl;
     return false;
   }
 
@@ -263,64 +268,76 @@ bool no3::init::Package::create() {
       if (m_force) {
         std::filesystem::remove_all(m_output / m_name);
       } else {
-        LOG(ERROR) << "Package already exists: " << m_output / m_name << std::endl;
+        LOG(ERROR) << "Package already exists: " << m_output / m_name
+                   << std::endl;
         return false;
       }
     }
 
     if (!std::filesystem::create_directories(m_output / m_name)) {
-      LOG(ERROR) << "Failed to create package directory: " << m_output / m_name << std::endl;
+      LOG(ERROR) << "Failed to create package directory: " << m_output / m_name
+                 << std::endl;
       return false;
     }
   } catch (const std::exception &e) {
-    LOG(ERROR) << "Failed to check package existence: " << e.what() << std::endl;
+    LOG(ERROR) << "Failed to check package existence: " << e.what()
+               << std::endl;
     return false;
   }
 
   return createPackage();
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::output(const std::string &output) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::output(
+    const std::string &output) {
   m_output = output;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::name(const std::string &name) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::name(
+    const std::string &name) {
   m_name = name;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::license(const std::string &license) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::license(
+    const std::string &license) {
   m_license = license;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::author(const std::string &author) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::author(
+    const std::string &author) {
   m_author = author;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::email(const std::string &email) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::email(
+    const std::string &email) {
   m_email = email;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::url(const std::string &url) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::url(
+    const std::string &url) {
   m_url = url;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::version(const std::string &version) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::version(
+    const std::string &version) {
   m_version = version;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::description(const std::string &description) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::description(
+    const std::string &description) {
   m_description = description;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::type(no3::init::PackageType type) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::type(
+    no3::init::PackageType type) {
   m_type = type;
   return *this;
 }
@@ -336,6 +353,7 @@ no3::init::PackageBuilder &no3::init::PackageBuilder::force(bool force) {
 }
 
 no3::init::Package no3::init::PackageBuilder::build() {
-  return no3::init::Package(m_output, m_name, m_license, m_author, m_email, m_url, m_version,
-                            m_description, m_type, m_verbose, m_force);
+  return no3::init::Package(m_output, m_name, m_license, m_author, m_email,
+                            m_url, m_version, m_description, m_type, m_verbose,
+                            m_force);
 }

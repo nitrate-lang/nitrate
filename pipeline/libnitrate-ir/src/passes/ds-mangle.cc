@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -32,7 +34,7 @@
 #include <nitrate-ir/IR.h>
 
 #include <boost/bimap.hpp>
-#include <nitrate-ir/Format.hh>
+#include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Report.hh>
 #include <passes/PassList.hh>
@@ -45,13 +47,12 @@
  */
 
 using namespace nr;
-using namespace nr::diag;
 
-bool nr::pass::ds_mangle(qmodule_t *mod) {
+bool nr::pass::ds_mangle(qmodule_t *mod, IReport *log) {
   SymbolEncoding se;
   bool failed = false;
 
-  iterate<dfs_pre, IterMP::none>(mod->getRoot(), [&](Expr *, Expr **cur) -> IterOp {
+  iterate<dfs_pre>(mod->getRoot(), [&](Expr *, Expr **cur) -> IterOp {
     if ((*cur)->getKind() == QIR_NODE_FN) {
       Fn *fn = (*cur)->as<Fn>();
       auto name = se.mangle_name(fn, fn->getAbiTag());
@@ -59,8 +60,8 @@ bool nr::pass::ds_mangle(qmodule_t *mod) {
         fn->setName(mod->internString(*name));
       } else {
         failed = true;
-        report(IssueCode::NameManglingTypeInfer, IssueClass::Error, fn->getName(), fn->locBeg(),
-               fn->locEnd());
+        log->report(NameManglingTypeInfer, IC::Error, fn->getName(),
+                    fn->getLoc());
       }
     } else if ((*cur)->getKind() == QIR_NODE_LOCAL) {
       Local *local = (*cur)->as<Local>();
@@ -70,8 +71,8 @@ bool nr::pass::ds_mangle(qmodule_t *mod) {
         local->setName(mod->internString(*name));
       } else {
         failed = true;
-        report(IssueCode::NameManglingTypeInfer, IssueClass::Error, local->getName(),
-               local->locBeg(), local->locEnd());
+        log->report(NameManglingTypeInfer, IC::Error, local->getName(),
+                    local->getLoc());
       }
     }
 
@@ -79,7 +80,7 @@ bool nr::pass::ds_mangle(qmodule_t *mod) {
   });
 
   /* Update identifiers to use the new names */
-  iterate<dfs_pre, IterMP::none>(mod->getRoot(), [](Expr *, Expr **cur) -> IterOp {
+  iterate<dfs_pre>(mod->getRoot(), [](Expr *, Expr **cur) -> IterOp {
     if ((*cur)->getKind() != QIR_NODE_IDENT) {
       return IterOp::Proceed;
     }

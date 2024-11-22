@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -29,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_TYPE_DECL_H__
-#define __NITRATE_QXIR_TYPE_DECL_H__
+#ifndef __NITRATE_NR_TYPE_DECL_H__
+#define __NITRATE_NR_TYPE_DECL_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,7 +44,7 @@ extern "C" {
 typedef struct nr_node_t nr_node_t;
 
 /**
- * @brief Nitrate QXIR module.
+ * @brief Nitrate NR module.
  */
 typedef struct qmodule_t qmodule_t;
 
@@ -70,7 +72,6 @@ typedef enum nr_ty_t {
   QIR_NODE_IF,     /* If statement */
   QIR_NODE_WHILE,  /* While loop */
   QIR_NODE_FOR,    /* For loop */
-  QIR_NODE_FORM,   /* Parallel for loop */
   QIR_NODE_CASE,   /* Case statement */
   QIR_NODE_SWITCH, /* Switch statement */
   QIR_NODE_FN,     /* Function definition */
@@ -103,7 +104,7 @@ typedef enum nr_ty_t {
   QIR_NODE_TMP, /* Temp node; must be resolved with more information */
 } nr_ty_t;
 
-#define QIR_NODE_COUNT 47
+#define QIR_NODE_COUNT 46
 
 typedef struct nr_conf_t nr_conf_t;
 
@@ -125,4 +126,4 @@ typedef enum nr_val_t {
 }
 #endif
 
-#endif  // __NITRATE_QXIR_TYPE_DECL_H__
+#endif  // __NITRATE_NR_TYPE_DECL_H__

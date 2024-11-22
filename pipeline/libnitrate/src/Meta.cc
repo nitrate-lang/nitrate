@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -46,10 +48,10 @@ static bool impl_use_json(qlex_t *L, FILE *O) {
 
   qlex_tok_t tok;
   while ((tok = qlex_next(L)).ty != qEofF) {
-    qlex_size sl = qlex_line(L, tok.start);
-    qlex_size sc = qlex_col(L, tok.start);
-    qlex_size el = qlex_line(L, tok.end);
-    qlex_size ec = qlex_col(L, tok.end);
+    uint32_t sl = qlex_line(L, tok.start);
+    uint32_t sc = qlex_col(L, tok.start);
+    uint32_t el = qlex_line(L, tok.end);
+    uint32_t ec = qlex_col(L, tok.end);
 
     switch (tok.ty) {
       case qEofF: { /* End of file */
@@ -63,38 +65,44 @@ static bool impl_use_json(qlex_t *L, FILE *O) {
       }
 
       case qKeyW: { /* Keyword */
-        fprintf(O, "[3,\"%s\",%u,%u,%u,%u],", qlex_kwstr(tok.v.key), sl, sc, el, ec);
+        fprintf(O, "[3,\"%s\",%u,%u,%u,%u],", qlex_kwstr(tok.v.key), sl, sc, el,
+                ec);
         break;
       }
 
       case qOper: { /* Operator */
-        fprintf(O, "[4,\"%s\",%u,%u,%u,%u],", qlex_opstr(tok.v.op), sl, sc, el, ec);
+        fprintf(O, "[4,\"%s\",%u,%u,%u,%u],", qlex_opstr(tok.v.op), sl, sc, el,
+                ec);
         break;
       }
 
       case qPunc: { /* Punctuation */
-        fprintf(O, "[5,\"%s\",%u,%u,%u,%u],", qlex_punctstr(tok.v.punc), sl, sc, el, ec);
+        fprintf(O, "[5,\"%s\",%u,%u,%u,%u],", qlex_punctstr(tok.v.punc), sl, sc,
+                el, ec);
         break;
       }
 
       case qName: { /* Identifier */
-        /// We assume that identifiers are not allowed to contain NULL bytes and other special
-        /// characters.
-        fprintf(O, "[6,\"%s\",%u,%u,%u,%u],", qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        /// We assume that identifiers are not allowed to contain NULL bytes and
+        /// other special characters.
+        fprintf(O, "[6,\"%s\",%u,%u,%u,%u],", qlex_str(L, &tok, nullptr), sl,
+                sc, el, ec);
         break;
       }
 
       case qIntL: { /* Integer literal */
-        /// We assume that int's are not allowed to contain NULL bytes and other special
-        /// characters.
-        fprintf(O, "[7,\"%s\",%u,%u,%u,%u],", qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        /// We assume that int's are not allowed to contain NULL bytes and other
+        /// special characters.
+        fprintf(O, "[7,\"%s\",%u,%u,%u,%u],", qlex_str(L, &tok, nullptr), sl,
+                sc, el, ec);
         break;
       }
 
       case qNumL: { /* Floating-point literal */
-        /// We assume that int's are not allowed to contain NULL bytes and other special
-        /// characters.
-        fprintf(O, "[8,\"%s\",%u,%u,%u,%u],", qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        /// We assume that int's are not allowed to contain NULL bytes and other
+        /// special characters.
+        fprintf(O, "[8,\"%s\",%u,%u,%u,%u],", qlex_str(L, &tok, nullptr), sl,
+                sc, el, ec);
         break;
       }
 
@@ -103,7 +111,8 @@ static bool impl_use_json(qlex_t *L, FILE *O) {
         const char *str = qlex_str(L, &tok, &S);
         std::string_view sv(str, S);
 
-        fprintf(O, "[9,%s,%u,%u,%u,%u],", create_json_string(sv).c_str(), sl, sc, el, ec);
+        fprintf(O, "[9,%s,%u,%u,%u,%u],", create_json_string(sv).c_str(), sl,
+                sc, el, ec);
         break;
       }
 
@@ -112,21 +121,24 @@ static bool impl_use_json(qlex_t *L, FILE *O) {
         const char *str = qlex_str(L, &tok, &S);
         std::string_view sv(str, S);
 
-        fprintf(O, "[10,%s,%u,%u,%u,%u],", create_json_string(sv).c_str(), sl, sc, el, ec);
+        fprintf(O, "[10,%s,%u,%u,%u,%u],", create_json_string(sv).c_str(), sl,
+                sc, el, ec);
         break;
       }
 
       case qMacB: { /* Macro block */
-        /// We assume that int's are not allowed to contain NULL bytes and other special
-        /// characters.
-        fprintf(O, "[11,\"%s\",%u,%u,%u,%u],", qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        /// We assume that int's are not allowed to contain NULL bytes and other
+        /// special characters.
+        fprintf(O, "[11,\"%s\",%u,%u,%u,%u],", qlex_str(L, &tok, nullptr), sl,
+                sc, el, ec);
         break;
       }
 
       case qMacr: { /* Macro call */
-        /// We assume that int's are not allowed to contain NULL bytes and other special
-        /// characters.
-        fprintf(O, "[12,\"%s\",%u,%u,%u,%u],", qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        /// We assume that int's are not allowed to contain NULL bytes and other
+        /// special characters.
+        fprintf(O, "[12,\"%s\",%u,%u,%u,%u],", qlex_str(L, &tok, nullptr), sl,
+                sc, el, ec);
         break;
       }
 
@@ -135,7 +147,8 @@ static bool impl_use_json(qlex_t *L, FILE *O) {
         const char *str = qlex_str(L, &tok, &S);
         std::string_view sv(str, S);
 
-        fprintf(O, "[13,%s,%u,%u,%u,%u],", create_json_string(sv).c_str(), sl, sc, el, ec);
+        fprintf(O, "[13,%s,%u,%u,%u,%u],", create_json_string(sv).c_str(), sl,
+                sc, el, ec);
         break;
       }
     }
@@ -146,8 +159,8 @@ static bool impl_use_json(qlex_t *L, FILE *O) {
   return true;
 }
 
-static bool msgpack_write_tok(FILE *O, uint8_t t, std::string_view v, uint32_t a, uint32_t b,
-                              uint32_t c, uint32_t d) {
+static bool msgpack_write_tok(FILE *O, uint8_t t, std::string_view v,
+                              uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
   fputc(0b10010000 | 6, O);
 
   // Write type
@@ -191,10 +204,10 @@ static bool impl_use_msgpack(qlex_t *L, FILE *O) {
 
   qlex_tok_t tok;
   while ((tok = qlex_next(L)).ty != qEofF) {
-    qlex_size sl = qlex_line(L, tok.start);
-    qlex_size sc = qlex_col(L, tok.start);
-    qlex_size el = qlex_line(L, tok.end);
-    qlex_size ec = qlex_col(L, tok.end);
+    uint32_t sl = qlex_line(L, tok.start);
+    uint32_t sc = qlex_col(L, tok.start);
+    uint32_t el = qlex_line(L, tok.end);
+    uint32_t ec = qlex_col(L, tok.end);
 
     switch (tok.ty) {
       case qEofF: { /* End of file */
@@ -224,28 +237,32 @@ static bool impl_use_msgpack(qlex_t *L, FILE *O) {
       }
 
       case qPunc: { /* Punctuation */
-        if (!msgpack_write_tok(O, 5, qlex_punctstr(tok.v.punc), sl, sc, el, ec)) {
+        if (!msgpack_write_tok(O, 5, qlex_punctstr(tok.v.punc), sl, sc, el,
+                               ec)) {
           return false;
         }
         break;
       }
 
       case qName: { /* Identifier */
-        if (!msgpack_write_tok(O, 6, qlex_str(L, &tok, nullptr), sl, sc, el, ec)) {
+        if (!msgpack_write_tok(O, 6, qlex_str(L, &tok, nullptr), sl, sc, el,
+                               ec)) {
           return false;
         }
         break;
       }
 
       case qIntL: { /* Integer literal */
-        if (!msgpack_write_tok(O, 7, qlex_str(L, &tok, nullptr), sl, sc, el, ec)) {
+        if (!msgpack_write_tok(O, 7, qlex_str(L, &tok, nullptr), sl, sc, el,
+                               ec)) {
           return false;
         }
         break;
       }
 
       case qNumL: { /* Floating-point literal */
-        if (!msgpack_write_tok(O, 8, qlex_str(L, &tok, nullptr), sl, sc, el, ec)) {
+        if (!msgpack_write_tok(O, 8, qlex_str(L, &tok, nullptr), sl, sc, el,
+                               ec)) {
           return false;
         }
         break;
@@ -274,14 +291,16 @@ static bool impl_use_msgpack(qlex_t *L, FILE *O) {
       }
 
       case qMacB: { /* Macro block */
-        if (!msgpack_write_tok(O, 11, qlex_str(L, &tok, nullptr), sl, sc, el, ec)) {
+        if (!msgpack_write_tok(O, 11, qlex_str(L, &tok, nullptr), sl, sc, el,
+                               ec)) {
           return false;
         }
         break;
       }
 
       case qMacr: { /* Macro call */
-        if (!msgpack_write_tok(O, 12, qlex_str(L, &tok, nullptr), sl, sc, el, ec)) {
+        if (!msgpack_write_tok(O, 12, qlex_str(L, &tok, nullptr), sl, sc, el,
+                               ec)) {
           return false;
         }
         break;

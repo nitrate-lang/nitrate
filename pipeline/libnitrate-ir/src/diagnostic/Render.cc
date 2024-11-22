@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -34,18 +36,19 @@
 #include <nitrate-parser/Node.h>
 
 #include <core/Config.hh>
-#include <cstddef>
+#include <core/Diagnostic.hh>
 #include <cstdint>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
-#include <nitrate-ir/Report.hh>
 #include <sstream>
 
-using namespace nr::diag;
+#include "nitrate-ir/Report.hh"
+
+using namespace nr;
 
 ///============================================================================///
 
-static void print_qsizeloc(std::stringstream &ss, qlex_size num) {
+static void print_qsizeloc(std::stringstream &ss, uint32_t num) {
   if (num == UINT32_MAX) {
     ss << "?";
   } else {
@@ -53,18 +56,23 @@ static void print_qsizeloc(std::stringstream &ss, qlex_size num) {
   }
 }
 
-std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const {
+std::string nr::mint_plain_message(const IReport::ReportData &R,
+                                   ISourceView *B) {
   std::stringstream ss;
-  qlex_t *lx = m_nr->getLexer();
-  qlex_size sl, sc, el, ec;
+  uint32_t sl, sc, el, ec;
 
   {  // Print the filename and location information
-    ss << qlex_filename(lx) << ":";
+    /// FIXME: Render filename
+    ss << "??" << ":";
 
-    sl = qlex_line(lx, msg.m_start);
-    sc = qlex_col(lx, msg.m_start);
-    el = qlex_line(lx, msg.m_end);
-    ec = qlex_col(lx, msg.m_end);
+    auto default_if = std::pair<uint32_t, uint32_t>({UINT32_MAX, UINT32_MAX});
+    auto beg = B->off2rc(R.start_offset).value_or(default_if);
+    auto end = B->off2rc(R.end_offset).value_or(default_if);
+
+    sl = beg.first;
+    sc = beg.second;
+    el = end.first;
+    ec = end.second;
 
     if (sl != UINT32_MAX || sc != UINT32_MAX) {
       print_qsizeloc(ss, sl);
@@ -79,41 +87,41 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
   (void)ec;
   (void)el;
 
-  switch (msg.m_type) {
-    case IssueClass::Debug:
+  switch (R.level) {
+    case IC::Debug:
       ss << "debug";
       break;
-    case IssueClass::Info:
+    case IC::Info:
       ss << "info";
       break;
-    case IssueClass::Warn:
+    case IC::Warn:
       ss << "warning";
       break;
-    case IssueClass::Error:
+    case IC::Error:
       ss << "error";
       break;
-    case IssueClass::FatalError:
+    case IC::FatalError:
       ss << "fatal error";
       break;
   }
 
-  ss << ": " << msg.m_msg;
+  ss << ": " << R.param;
 
-  if (msg.m_code != IssueCode::Info) {
-    ss << " [-Werror=" << issue_info.left.at(msg.m_code).flagname << "]";
+  if (R.code != Info) {
+    ss << " [-Werror=" << issue_info.left.at(R.code).flagname << "]";
   }
 
-  qlex_size res = qlex_spanx(
-      lx, msg.m_start, msg.m_end,
-      [](const char *str, qlex_size len, uintptr_t x) {
-        if (len > 100) {
-          len = 100;
-        }
+  uint32_t res = UINT32_MAX; /*qlex_spanx(
+       lx, R.start_offset, R.end_offset,
+       [](const char *str, uint32_t len, uintptr_t x) {
+         if (len > 100) {
+           len = 100;
+         }
 
-        std::stringstream &ss = *reinterpret_cast<std::stringstream *>(x);
-        ss << '\n' << std::string_view(str, len);
-      },
-      reinterpret_cast<uintptr_t>(&ss));
+         std::stringstream &ss = *reinterpret_cast<std::stringstream *>(x);
+         ss << '\n' << std::string_view(str, len);
+       },
+       reinterpret_cast<uintptr_t>(&ss));*/
   if (res == UINT32_MAX) {
     ss << "\n# [failed to extract source code snippet]\n";
   }
@@ -121,20 +129,25 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
   return ss.str();
 }
 
-std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) const {
+std::string nr::mint_clang16_message(const IReport::ReportData &R,
+                                     ISourceView *B) {
   std::stringstream ss;
-  qlex_t *lx = m_nr->getLexer();
-  qlex_size sl, sc, el, ec;
+  uint32_t sl, sc, el, ec;
 
   {  // Print the filename and location information
-    ss << "\x1b[39;1m" << qlex_filename(lx) << ":";
+    ss << "\x1b[39;1m" << "??" << ":";
 
-    sl = qlex_line(lx, msg.m_start);
-    sc = qlex_col(lx, msg.m_start);
-    el = qlex_line(lx, msg.m_end);
-    ec = qlex_col(lx, msg.m_end);
+    auto default_if = std::pair<uint32_t, uint32_t>({UINT32_MAX, UINT32_MAX});
+    auto beg = B->off2rc(R.start_offset).value_or(default_if);
+    auto end = B->off2rc(R.end_offset).value_or(default_if);
 
-    if (sl != UINT32_MAX || sc != UINT32_MAX || el != UINT32_MAX || ec != UINT32_MAX) {
+    sl = beg.first;
+    sc = beg.second;
+    el = end.first;
+    ec = end.second;
+
+    if (sl != UINT32_MAX || sc != UINT32_MAX || el != UINT32_MAX ||
+        ec != UINT32_MAX) {
       print_qsizeloc(ss, sl);
       ss << ":";
       print_qsizeloc(ss, sc);
@@ -150,55 +163,60 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
     ss << " ";
   }
 
-  switch (msg.m_type) {
-    case IssueClass::Debug:
-      ss << "\x1b[1mdebug:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != IssueCode::Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[1m-Werror=" << issue_info.left.at(msg.m_code).flagname
+  switch (R.level) {
+    case IC::Debug:
+      ss << "\x1b[1mdebug:\x1b[0m " << R.param;
+      if (R.code != Info) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[1m-Werror="
+           << issue_info.left.at(R.code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
-    case IssueClass::Info:
-      ss << "\x1b[37;1minfo:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != IssueCode::Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[37;1m-Werror=" << issue_info.left.at(msg.m_code).flagname
+    case IC::Info:
+      ss << "\x1b[37;1minfo:\x1b[0m " << R.param;
+      if (R.code != Info) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[37;1m-Werror="
+           << issue_info.left.at(R.code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
-    case IssueClass::Warn:
-      ss << "\x1b[35;1mwarning:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != IssueCode::Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[35;1m-Werror=" << issue_info.left.at(msg.m_code).flagname
+    case IC::Warn:
+      ss << "\x1b[35;1mwarning:\x1b[0m " << R.param;
+      if (R.code != Info) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[35;1m-Werror="
+           << issue_info.left.at(R.code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
-    case IssueClass::Error:
-      ss << "\x1b[31;1merror:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != IssueCode::Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1m-Werror=" << issue_info.left.at(msg.m_code).flagname
+    case IC::Error:
+      ss << "\x1b[31;1merror:\x1b[0m " << R.param;
+      if (R.code != Info) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1m-Werror="
+           << issue_info.left.at(R.code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
-    case IssueClass::FatalError:
-      ss << "\x1b[31;1;4mfatal error:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != IssueCode::Info) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1;4m-Werror=" << issue_info.left.at(msg.m_code).flagname
+    case IC::FatalError:
+      ss << "\x1b[31;1;4mfatal error:\x1b[0m " << R.param;
+      if (R.code != Info) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1;4m-Werror="
+           << issue_info.left.at(R.code).flagname
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
   }
 
-  qlex_size res = qlex_spanx(
-      lx, msg.m_start, msg.m_end,
-      [](const char *str, qlex_size len, uintptr_t x) {
-        if (len > 100) {
-          len = 100;
-        }
+  uint32_t res = UINT32_MAX; /* qlex_spanx(
+       lx, R.start_offset, R.end_offset,
+       [](const char *str, uint32_t len, uintptr_t x) {
+         if (len > 100) {
+           len = 100;
+         }
 
-        std::stringstream &ss = *reinterpret_cast<std::stringstream *>(x);
-        ss << '\n' << std::string_view(str, len) << '\n';
-      },
-      reinterpret_cast<uintptr_t>(&ss));
+         std::stringstream &ss = *reinterpret_cast<std::stringstream *>(x);
+         ss << '\n' << std::string_view(str, len) << '\n';
+       },
+       reinterpret_cast<uintptr_t>(&ss)); */
   if (res == UINT32_MAX) {
     ss << "\n# [\x1b[35;1mfailed to extract source code snippet\x1b[0m]\n";
   }
@@ -208,246 +226,179 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
 
 ///============================================================================///
 
-using namespace nr::diag;
+using namespace nr;
 
-uint64_t DiagMessage::hash() const {
-  /* Not quite a PHF, but it's pretty close as long as there are not two many subject strings */
-  /* In the worst case messages will be discarded, but that can be fixed by passing a parameter
-     to disable deduplication */
+uint64_t DiagDatum::hash() const {
+  /* Not quite a PHF, but it's pretty close as long as there are not two many
+   * subject strings */
+  /* In the worst case messages will be discarded, but that can be fixed by
+     passing a parameter to disable deduplication */
 
   struct BitPack {
-    IssueClass m_type : 3;
-    IssueCode m_code : 10;
-    uint64_t m_msg_trunc : 7;
+    IC level : 3;
+    IssueCode code : 10;
+    uint64_t param_trunc : 7;
     uint64_t m_end_trunc : 20;
     uint64_t m_start : 24;
   } __attribute__((packed)) bp;
 
-  bp.m_type = m_type;
-  bp.m_code = m_code;
-  bp.m_msg_trunc = std::hash<std::string_view>{}(m_msg);
-  bp.m_start = m_start.tag;
-  bp.m_end_trunc = m_end.tag;
+  bp.level = level;
+  bp.code = code;
+  bp.param_trunc = std::hash<std::string_view>{}(param);
+  bp.m_start = start_offset;
+  bp.m_end_trunc = end_offset;
 
   return std::bit_cast<uint64_t>(bp);
 }
 
-void DiagnosticManager::push(nr_audit_ticket_t ticket, DiagMessage &&msg) {
-  auto &chan = m_msgs[ticket];
-
-  switch (msg.m_type) {
-    case IssueClass::Debug:
-      break;
-    case IssueClass::Info:
-      break;
-    case IssueClass::Warn:
-      break;
-    case IssueClass::Error:
-      current->setFailbit(true);
-      break;
-    case IssueClass::FatalError:
-      current->setFailbit(true);
-      break;
+void DiagnosticManager::report(IssueCode code, IC level,
+                               std::vector<std::string_view> params,
+                               uint32_t start_offset, uint32_t end_offset,
+                               std::string_view filename) {
+  std::string message;
+  for (auto p : params) {
+    message += std::string(p) + "; ";
   }
+
+  DiagDatum R(code, level, message, start_offset, end_offset, filename);
 
   { /* Prevent duplicates and maintain order of messages */
-    auto hash = msg.hash();
-    if (chan.visited.contains(hash)) {
+    auto hash = R.hash();
+    if (m_visited.contains(hash)) {
       return;
     }
-    chan.visited.insert(hash);
+    m_visited.insert(hash);
   }
 
-  chan.vec.push_back(std::move(msg));
+  m_vec.emplace_back(std::move(R));
 }
 
-size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
-                                                 DiagnosticMessageHandler handler,
-                                                 nr_diag_format_t style) {
-  for (auto &msg : vec) {
-    switch (style) {
+void DiagnosticManager::stream_reports(
+    std::function<void(const ReportData &)> cb) {
+  for (auto &item : m_vec) {
+    ReportData datum;
+    datum.code = item.code;
+    datum.level = item.level;
+    datum.param = item.param;
+    datum.start_offset = item.start_offset;
+    datum.end_offset = item.end_offset;
+    datum.filename = item.filename;
+
+    cb(datum);
+  }
+}
+
+static const std::unordered_map<IC, nr_level_t> issue_class_map = {
+    {IC::Debug, NR_LEVEL_DEBUG},      {IC::Info, NR_LEVEL_INFO},
+    {IC::Warn, NR_LEVEL_WARN},        {IC::Error, NR_LEVEL_ERROR},
+    {IC::FatalError, NR_LEVEL_FATAL},
+};
+
+LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
+                             nr_report_cb cb, uintptr_t data) {
+  if (!cb) {
+    return;
+  }
+
+  ISourceView *B = nr->getOffsetResolver().get();
+
+  nr->getDiag()->stream_reports([&](IReport::ReportData R) {
+    std::stringstream ss;
+
+    switch (format) {
       /**
        * @brief Code decimal serialization of the error code.
        * @example `801802`
        * @format <code>
        */
-      case QXIR_DIAG_ASCII_ECODE: {
-        handler(std::to_string(static_cast<uint64_t>(msg.m_code)), msg.m_type);
+      case NR_DIAG_ASCII_ECODE: {
+        ss << std::to_string(static_cast<uint64_t>(R.code));
         break;
       }
 
       /**
-       * @brief Code decimal serialization of the error code and source location.
+       * @brief Code decimal serialization of the error code and source
+       * location.
        * @example `801802:1:1:/path/to/filename.q`
        * @format <code>:<line>:<col>:<path>
        *
        * @note UTF-8 characters in the path are preserved.
        */
-      case QXIR_DIAG_UTF8_ECODE_LOC: {
-        std::stringstream ss;
-        ss << std::to_string(static_cast<uint64_t>(msg.m_code)) << ":";
-        ss << qlex_line(m_nr->getLexer(), msg.m_start) << ":";
-        ss << qlex_col(m_nr->getLexer(), msg.m_start) << ":";
-        ss << qlex_filename(m_nr->getLexer());
+      case NR_DIAG_UTF8_ECODE_LOC: {
+        ss << std::to_string(static_cast<uint64_t>(R.code)) << ":";
+        auto beg = B->off2rc(R.start_offset);
 
-        handler(ss.str(), msg.m_type);
+        ss << beg->first << ":";
+        ss << beg->second << ":";
+        ss << "??";
+
         break;
       }
 
       /**
-       * @brief Code decimal serialization of the error code and UTF-8 error message.
+       * @brief Code decimal serialization of the error code and UTF-8 error
+       * message.
        * @example `801802:This is an UTF-8 error message.`
        * @format <code>:<utf8_message>
        */
-      case QXIR_DIAG_UTF8_ECODE_ETEXT: {
-        std::stringstream ss;
-        ss << std::to_string(static_cast<uint64_t>(msg.m_code)) << ":";
-        ss << msg.m_msg;
+      case NR_DIAG_UTF8_ECODE_ETEXT: {
+        ss << std::to_string(static_cast<uint64_t>(R.code)) << ":";
+        ss << R.param;
 
-        handler(ss.str(), msg.m_type);
         break;
       }
 
       /**
        * @brief Unspecified format.
        * @note No-ANSI colors are included
-       * @note Includes source location information as well as source code snippets (if
-       * available).
+       * @note Includes source location information as well as source code
+       * snippets (if available).
        * @note Includes error messages and suggestions.
-       * @note Basically, everything you expect from a mainstream compiler (except without
-       * color).
+       * @note Basically, everything you expect from a mainstream compiler
+       * (except without color).
        */
-      case QXIR_DIAG_NOSTD_TTY_UTF8: {
-        handler(mint_plain_message(msg), msg.m_type);
+      case NR_DIAG_NOSTD_TTY_UTF8: {
+        ss << nr::mint_plain_message(R, B);
         break;
       }
 
       /**
        * @brief Unspecified format.
-       * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
+       * @note Similar to `NR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+       * differences.
        */
-      case QXIR_DIAG_NONSTD_ANSI16_UTF8_FULL: {
-        handler(mint_clang16_message(msg), msg.m_type);
+      case NR_DIAG_NONSTD_ANSI16_UTF8_FULL: {
+        ss << nr::mint_clang16_message(R, B);
         break;
       }
 
       /**
        * @brief Unspecified format.
-       * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
+       * @note Similar to `NR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+       * differences.
        */
-      case QXIR_DIAG_NONSTD_ANSI256_UTF8_FULL: {
-        handler(mint_clang16_message(msg), msg.m_type);
+      case NR_DIAG_NONSTD_ANSI256_UTF8_FULL: {
+        ss << nr::mint_clang16_message(R, B);
         break;
       }
 
       /**
        * @brief Unspecified format.
-       * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
+       * @note Similar to `NR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+       * differences.
        */
-      case QXIR_DIAG_NONSTD_ANSIRGB_UTF8_FULL: {
-        handler(mint_modern_message(msg), msg.m_type);
+      case NR_DIAG_NONSTD_ANSIRGB_UTF8_FULL: {
+        ss << nr::mint_modern_message(R, B);
         break;
       }
     }
-  }
 
-  return vec.size();
+    std::string message = ss.str();
+    const uint8_t *ptr = (const uint8_t *)message.c_str();
+    auto lvl = issue_class_map.at(R.level);
+
+    cb(ptr, message.size(), lvl, data);
+  });
 }
 
-size_t DiagnosticManager::render(nr_audit_ticket_t ticket, DiagnosticMessageHandler handler,
-                                 nr_diag_format_t style) {
-  if (ticket == QXIR_AUDIT_ALL) {
-    size_t n = 0;
-    for (auto &[_, msgs] : m_msgs) {
-      n += dump_diagnostic_vector(msgs.vec, handler, style);
-    }
-    return n;
-  } else if (ticket == QXIR_AUDIT_LAST) {
-    return dump_diagnostic_vector(m_msgs[m_last_ticket].vec, handler, style);
-  } else {
-    if (!m_msgs.contains(ticket)) {
-      return 0;
-    }
-
-    return dump_diagnostic_vector(m_msgs[ticket].vec, handler, style);
-  }
-}
-
-namespace nr::diag {
-  void badtree_impl(qlex_loc_t start, qlex_loc_t end, std::string_view fmt, va_list args) {
-    std::string msg;
-
-    {  // Format the message
-      char *c_msg = nullptr;
-      int r = vasprintf(&c_msg, fmt.data(), args);
-      if (r < 0) {
-        qcore_panic("Failed to format diagnostic message");
-      }
-      msg = c_msg;
-      free(c_msg);
-    }
-
-    report(IssueCode::PTreeInvalid, IssueClass::Error, fmt, start, end);
-
-    if (current->getConf()->has(QQV_FASTERROR, QQV_ON)) {
-      throw SyntaxError();
-    }
-  }
-
-  void badtree(qparse::Node *node, std::string_view fmt, ...) {
-    if (!node) {
-      qcore_panic("badtree: node is NULL");
-    }
-
-    current->setFailbit(true);
-
-    if (!current->isDiagnosticsEnabled()) {
-      return;
-    }
-
-    va_list args;
-    va_start(args, fmt);
-    badtree_impl(node->get_start_pos(), node->get_end_pos(), fmt, args);
-    va_end(args);
-  }
-}  // namespace nr::diag
-
-static const std::unordered_map<IssueClass, nr_level_t> issue_class_map = {
-    {IssueClass::Debug, QXIR_LEVEL_DEBUG},      {IssueClass::Info, QXIR_LEVEL_INFO},
-    {IssueClass::Warn, QXIR_LEVEL_WARN},        {IssueClass::Error, QXIR_LEVEL_ERROR},
-    {IssueClass::FatalError, QXIR_LEVEL_FATAL},
-};
-
-LIB_EXPORT size_t nr_diag_read(qmodule_t *nr, nr_audit_ticket_t ticket, nr_diag_format_t format,
-                               nr_report_cb cb, uintptr_t data) {
-  if (!cb) {
-    nr->getDiag().count(ticket);
-  }
-
-  auto res = nr->getDiag().render(
-      ticket,
-      [cb, data](std::string_view v, IssueClass lvl) {
-        cb(reinterpret_cast<const uint8_t *>(v.data()), v.size(), issue_class_map.at(lvl), data);
-      },
-      format);
-
-  return res;
-}
-
-LIB_EXPORT size_t nr_diag_clear(qmodule_t *nr, nr_audit_ticket_t ticket) {
-  return nr->getDiag().clear(ticket);
-}
-
-bool nr::diag::report(diag::IssueCode code, diag::IssueClass type, qlex_loc_t loc_start,
-                      qlex_loc_t loc_end, int channel) {
-  current->getDiag().push(channel, diag::DiagMessage("", type, code, loc_start, loc_end));
-
-  return true;
-}
-
-bool nr::diag::report(diag::IssueCode code, diag::IssueClass type, std::string_view subject,
-                      qlex_loc_t loc_start, qlex_loc_t loc_end, int channel) {
-  current->getDiag().push(channel, diag::DiagMessage(subject, type, code, loc_start, loc_end));
-
-  return true;
-}
+LIB_EXPORT void nr_diag_clear(qmodule_t *nr) { nr->getDiag()->erase_reports(); }

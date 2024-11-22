@@ -1,4 +1,4 @@
-#!qpkg run
+#!nitrate run
 
 @use "v1.0";
 

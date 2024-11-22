@@ -1,16 +1,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///           ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                  ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓█▓▒▒▓███▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///           ░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///             ░▒▓█▓▒░                                                      ///
-///              ░▒▓██▓▒░                                                    ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
-///   * NITRATE PACKAGE MANAGER - The official app for the Nitrate language. ///
+///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
 ///                                                                          ///
 ///   The Nitrate Toolchain is free software; you can redistribute it or     ///
@@ -69,22 +71,26 @@ namespace no3 {
 
       RESET = FG_DEFAULT | BG_DEFAULT,
 
-      COLOR_MASK = FG_BLACK | FG_RED | FG_GREEN | FG_YELLOW | FG_BLUE | FG_PURPLE | FG_CYAN |
-                   FG_WHITE | FG_DEFAULT,
+      COLOR_MASK = FG_BLACK | FG_RED | FG_GREEN | FG_YELLOW | FG_BLUE |
+                   FG_PURPLE | FG_CYAN | FG_WHITE | FG_DEFAULT,
       ATTRIBUTE_MASK = BOLD | UNDERLINE | ILTALIC | STRIKE,
-      BG_COLOR_MASK = BG_BLACK | BG_RED | BG_GREEN | BG_YELLOW | BG_BLUE | BG_PURPLE | BG_CYAN |
-                      BG_WHITE | BG_DEFAULT
+      BG_COLOR_MASK = BG_BLACK | BG_RED | BG_GREEN | BG_YELLOW | BG_BLUE |
+                      BG_PURPLE | BG_CYAN | BG_WHITE | BG_DEFAULT
     };
 
     static inline Style operator|(Style a, Style b) {
-      return static_cast<Style>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+      return static_cast<Style>(static_cast<uint32_t>(a) |
+                                static_cast<uint32_t>(b));
     }
 
     static inline Style operator&(Style a, Style b) {
-      return static_cast<Style>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+      return static_cast<Style>(static_cast<uint32_t>(a) &
+                                static_cast<uint32_t>(b));
     }
 
-    static inline bool operator==(Style a, uint32_t b) { return static_cast<uint32_t>(a) == b; }
+    static inline bool operator==(Style a, uint32_t b) {
+      return static_cast<uint32_t>(a) == b;
+    }
 
     class AnsiCerr final {
       Style style;
@@ -114,15 +120,20 @@ namespace no3 {
       return out.write(msg);
     }
 
-    static inline void operator<<(AnsiCerr &out, std::ostream &(*var)(std::ostream &)) {
+    static inline void operator<<(AnsiCerr &out,
+                                  std::ostream &(*var)(std::ostream &)) {
       if (var == static_cast<std::ostream &(*)(std::ostream &)>(std::endl)) {
         out.newline();
       }
     }
 
-    static inline void operator|=(AnsiCerr &out, Style style) { out.set_style(style); }
+    static inline void operator|=(AnsiCerr &out, Style style) {
+      out.set_style(style);
+    }
 
     extern thread_local AnsiCerr acout;
+
+    bool IsUsingColors();
   }  // namespace ansi
 
 }  // namespace no3

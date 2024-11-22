@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -105,9 +107,9 @@ typedef struct qparse_setting_t {
  * for more information.
  *
  * @note The exact values of the default configuration options are subject to
- * change in future versions of the library. A best effort is made to ensure that
- * the default values are reasonable and **SECURE** for the language sandbox, with a stronger
- * emphasis on security.
+ * change in future versions of the library. A best effort is made to ensure
+ * that the default values are reasonable and **SECURE** for the language
+ * sandbox, with a stronger emphasis on security.
  *
  * @note This function is thread-safe.
  */
@@ -120,8 +122,8 @@ qparse_conf_t *qparse_conf_new(bool use_defaults);
  *
  *
  * @warning The caller for ensuring that the configuration object is not used
- * after it has been freed. This includes ensuring that no other threads or instances
- * have references to the configuration object.
+ * after it has been freed. This includes ensuring that no other threads or
+ * instances have references to the configuration object.
  *
  * @note It is safe to pass NULL to this function.
  *
@@ -141,12 +143,14 @@ void qparse_conf_free(qparse_conf_t *conf);
  *
  * @note The semantics of the configuration change will be validated on every
  * call to this function. If the configuration change causes a known issue, the
- * function will return false and the configuration will not be changed. This check is not
- * guaranteed to catch all issues, but it is a best effort to prevent common mistakes.
+ * function will return false and the configuration will not be changed. This
+ * check is not guaranteed to catch all issues, but it is a best effort to
+ * prevent common mistakes.
  *
  * @note This function is thread-safe.
  */
-bool qparse_conf_setopt(qparse_conf_t *conf, qparse_key_t key, qparse_val_t value);
+bool qparse_conf_setopt(qparse_conf_t *conf, qparse_key_t key,
+                        qparse_val_t value);
 
 /**
  * @brief Get the value of a configuration option for the parser.
@@ -156,12 +160,13 @@ bool qparse_conf_setopt(qparse_conf_t *conf, qparse_key_t key, qparse_val_t valu
  * @param value A pointer to a variable to store the value of the configuration
  * option or NULL.
  *
- * @return True if the configuration option was found, false if the configuration
- * option was not found.
+ * @return True if the configuration option was found, false if the
+ * configuration option was not found.
  *
  * @note This function is thread-safe.
  */
-bool qparse_conf_getopt(qparse_conf_t *conf, qparse_key_t key, qparse_val_t *value);
+bool qparse_conf_getopt(qparse_conf_t *conf, qparse_key_t key,
+                        qparse_val_t *value);
 
 /**
  * @brief Get readonly access to the configuration options.
@@ -181,8 +186,8 @@ bool qparse_conf_getopt(qparse_conf_t *conf, qparse_key_t key, qparse_val_t *val
  * configuration options array is owned by the configuration object and will be
  * freed when the configuration object is freed.
  *
- * @warning The returned pointer is only valid until the next call to this function within this
- * thread or this thread exits (thread-local storage).
+ * @warning The returned pointer is only valid until the next call to this
+ * function within this thread or this thread exits (thread-local storage).
  *
  * @note This function is thread-safe.
  */
@@ -193,8 +198,9 @@ const qparse_setting_t *qparse_conf_getopts(qparse_conf_t *conf, size_t *count);
  *
  * @param conf A pointer to the configuration object to clear.
  *
- * @note This function is like `qparse_conf_new` with the `use_defaults` parameter
- * set to false. The configuration object will be empty (and likely invalid if used dry).
+ * @note This function is like `qparse_conf_new` with the `use_defaults`
+ * parameter set to false. The configuration object will be empty (and likely
+ * invalid if used dry).
  * @note This function is thread-safe.
  */
 void qparse_conf_clear(qparse_conf_t *conf);
@@ -210,8 +216,8 @@ void qparse_conf_clear(qparse_conf_t *conf);
  *
  * @note This function is thread-safe.
  */
-void qparse_conf_dump(qparse_conf_t *conf, FILE *stream, const char *field_delim,
-                      const char *line_delim);
+void qparse_conf_dump(qparse_conf_t *conf, FILE *stream,
+                      const char *field_delim, const char *line_delim);
 
 #ifdef __cplusplus
 }

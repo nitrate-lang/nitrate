@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -85,53 +87,6 @@ bool qparse::parser::parse_retif(qparse_t &job, qlex_t *rd, Stmt **node) {
     syntax(tok, "Expected a semicolon after the return-if expression.");
   }
   *node = ReturnIfStmt::get(condition, return_expr);
-  (*node)->set_end_pos(tok.end);
-
-  return true;
-}
-
-bool qparse::parser::parse_retz(qparse_t &job, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok;
-
-  Expr *condition = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa)}, &condition) || !condition) {
-    syntax(tok, "Expected a condition in the return-zero statement.");
-  }
-
-  tok = qlex_next(rd);
-  if (!tok.is<qPuncComa>()) {
-    syntax(tok, "Expected a comma after the return-zero expression.");
-  }
-
-  Expr *return_expr = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &return_expr) || !return_expr) {
-    syntax(tok, "Expected a return expression after the comma.");
-  }
-
-  tok = qlex_next(rd);
-  if (!tok.is<qPuncSemi>()) {
-    syntax(tok, "Expected a semicolon after the return-zero expression.");
-  }
-  *node = RetZStmt::get(condition, return_expr);
-  (*node)->set_end_pos(tok.end);
-
-  return true;
-}
-
-bool qparse::parser::parse_retv(qparse_t &job, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok;
-
-  Expr *cond = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &cond) || !cond) {
-    syntax(tok, "Expected a condition in the return-void statement.");
-  }
-
-  tok = qlex_next(rd);
-  if (!tok.is<qPuncSemi>()) {
-    syntax(tok, "Expected a semicolon after the return-void expression.");
-  }
-
-  *node = RetVStmt::get(cond);
   (*node)->set_end_pos(tok.end);
 
   return true;

@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -228,7 +230,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     }
     case QAST_NODE_CHAR: {
       OBJECT_BEGIN("Char");
-      OBJECT_NUM((uint32_t)n->as<ConstChar>()->get_value());
+      OBJECT_NUM(n->as<ConstChar>()->get_value());
       OBJECT_END();
       break;
     }
@@ -530,33 +532,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_GROUP_TY: {
-      OBJECT_BEGIN("Group");
-      OBJECT_ARRAY(n->as<GroupTy>()->get_items());
-      OBJECT_SUB(n->as<GroupTy>()->get_width());
-      OBJECT_SUB(n->as<GroupTy>()->get_range().first);
-      OBJECT_SUB(n->as<GroupTy>()->get_range().second);
-      OBJECT_END();
-      break;
-    }
-    case QAST_NODE_REGION_TY: {
-      OBJECT_BEGIN("Region");
-      OBJECT_ARRAY(n->as<RegionTy>()->get_items());
-      OBJECT_SUB(n->as<RegionTy>()->get_width());
-      OBJECT_SUB(n->as<RegionTy>()->get_range().first);
-      OBJECT_SUB(n->as<RegionTy>()->get_range().second);
-      OBJECT_END();
-      break;
-    }
-    case QAST_NODE_UNION_TY: {
-      OBJECT_BEGIN("Union");
-      OBJECT_ARRAY(n->as<UnionTy>()->get_items());
-      OBJECT_SUB(n->as<UnionTy>()->get_width());
-      OBJECT_SUB(n->as<UnionTy>()->get_range().first);
-      OBJECT_SUB(n->as<UnionTy>()->get_range().second);
-      OBJECT_END();
-      break;
-    }
+
     case QAST_NODE_ARRAY_TY: {
       OBJECT_BEGIN("Array");
       OBJECT_SUB(n->as<ArrayTy>()->get_item());
@@ -808,19 +784,6 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_RETZ: {
-      OBJECT_BEGIN("RetZ");
-      OBJECT_SUB(n->as<RetZStmt>()->get_cond());
-      OBJECT_SUB(n->as<RetZStmt>()->get_value());
-      OBJECT_END();
-      break;
-    }
-    case QAST_NODE_RETV: {
-      OBJECT_BEGIN("RetV");
-      OBJECT_SUB(n->as<RetVStmt>()->get_cond());
-      OBJECT_END();
-      break;
-    }
     case QAST_NODE_BREAK: {
       OBJECT_EMPTY("Break");
       break;
@@ -850,16 +813,6 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_SUB(n->as<ForStmt>()->get_cond());
       OBJECT_SUB(n->as<ForStmt>()->get_step());
       OBJECT_SUB(n->as<ForStmt>()->get_body());
-      OBJECT_END();
-      break;
-    }
-    case QAST_NODE_FORM: {
-      OBJECT_BEGIN("Form");
-      OBJECT_SUB(n->as<FormStmt>()->get_maxjobs());
-      OBJECT_STR(n->as<FormStmt>()->get_idx_ident());
-      OBJECT_STR(n->as<FormStmt>()->get_val_ident());
-      OBJECT_SUB(n->as<FormStmt>()->get_expr());
-      OBJECT_SUB(n->as<FormStmt>()->get_body());
       OBJECT_END();
       break;
     }
@@ -907,8 +860,8 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
   }
 }
 
-LIB_EXPORT char *qparse_repr(const qparse_node_t *node, bool minify, size_t indent,
-                             size_t *outlen) {
+LIB_EXPORT char *qparse_repr(const qparse_node_t *node, bool minify,
+                             size_t indent, size_t *outlen) {
   size_t outlen_v = 0;
 
   /* Eliminate internal edge cases */
@@ -930,7 +883,8 @@ LIB_EXPORT char *qparse_repr(const qparse_node_t *node, bool minify, size_t inde
   return strdup(str.c_str());
 }
 
-static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t *out_size) {
+static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out,
+                        size_t *out_size) {
   struct libdeflate_compressor *ctx{};
 
   /* Allocate a compressor context; level 8 is a fairly good tradeoff */
@@ -959,8 +913,8 @@ static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t
   }
 }
 
-LIB_EXPORT void qparse_brepr(const qparse_node_t *_node, bool compress, uint8_t **out,
-                             size_t *outlen) {
+LIB_EXPORT void qparse_brepr(const qparse_node_t *_node, bool compress,
+                             uint8_t **out, size_t *outlen) {
   /* Validate the output buffer */
   if (!out || !outlen) {
     qcore_panic("Invalid output buffer for AST representation");
@@ -968,7 +922,8 @@ LIB_EXPORT void qparse_brepr(const qparse_node_t *_node, bool compress, uint8_t 
 
   /* Generate the AST representation as ASCII */
   char *repr = nullptr;
-  if ((repr = qparse_repr(static_cast<const Node *>(_node), true, 0, outlen)) == NULL) {
+  if ((repr = qparse_repr(static_cast<const Node *>(_node), true, 0, outlen)) ==
+      NULL) {
     qcore_panic("Failed to generate AST representation");
   }
 

@@ -115,12 +115,12 @@ public:
   //  * @param row The row number (0-based).
   //  * @param col The column number (0-based).
   //  * @return The absolute offset in bytes.
-  //  * @note The row and column arguments are clamped to the file boundaries. If you read the
-  //  5000th
-  //  * column when the file has only 3 columns, the function will return the offset in the 3rd
-  //  column.
-  //  * If you return the 5000th row when the file has only 3 rows, the function will return the
-  //  offset
+  //  * @note The row and column arguments are clamped to the file boundaries.
+  //  If you read the 5000th
+  //  * column when the file has only 3 columns, the function will return the
+  //  offset in the 3rd column.
+  //  * If you return the 5000th row when the file has only 3 rows, the function
+  //  will return the offset
   //  * in the 3rd row.
   //  * @note This function is thread-safe.
   //  */

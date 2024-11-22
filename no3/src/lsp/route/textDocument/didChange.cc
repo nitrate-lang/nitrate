@@ -21,7 +21,8 @@ void do_didChange(const lsp::NotificationMessage& notif) {
   }
 
   if (!notif.params()["textDocument"].IsObject()) {
-    LOG(ERROR) << "textDocument field in didChange notification is not an object";
+    LOG(ERROR)
+        << "textDocument field in didChange notification is not an object";
     return;
   }
 
@@ -56,7 +57,8 @@ void do_didChange(const lsp::NotificationMessage& notif) {
   }
 
   if (!notif.params()["contentChanges"].IsArray()) {
-    LOG(ERROR) << "contentChanges field in didChange notification is not an array";
+    LOG(ERROR)
+        << "contentChanges field in didChange notification is not an array";
     return;
   }
 

@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -54,7 +56,8 @@
 
 ///============================================================================///
 
-LIB_EXPORT qlex_t *qlex_direct(const char *src, size_t len, const char *filename, qcore_env_t env) {
+LIB_EXPORT qlex_t *qlex_direct(const char *src, size_t len,
+                               const char *filename, qcore_env_t env) {
   try {
     if (!filename) {
       filename = "<unknown>";
@@ -83,15 +86,21 @@ LIB_EXPORT void qlex_free(qlex_t *obj) {
   }
 }
 
-LIB_EXPORT void qlex_set_flags(qlex_t *obj, qlex_flags_t flags) { obj->m_flags = flags; }
+LIB_EXPORT void qlex_set_flags(qlex_t *obj, qlex_flags_t flags) {
+  obj->m_flags = flags;
+}
 LIB_EXPORT qlex_flags_t qlex_get_flags(qlex_t *obj) { return obj->m_flags; }
 
-LIB_EXPORT void qlex_collect(qlex_t *obj, const qlex_tok_t *tok) { obj->collect_impl(tok); }
+LIB_EXPORT void qlex_collect(qlex_t *obj, const qlex_tok_t *tok) {
+  obj->collect_impl(tok);
+}
 
-LIB_EXPORT void qlex_insert(qlex_t *obj, qlex_tok_t tok) { obj->push_impl(&tok); }
+LIB_EXPORT void qlex_insert(qlex_t *obj, qlex_tok_t tok) {
+  obj->push_impl(&tok);
+}
 LIB_EXPORT const char *qlex_filename(qlex_t *obj) { return obj->m_filename; }
 
-LIB_EXPORT qlex_size qlex_line(qlex_t *obj, qlex_loc_t loc) {
+LIB_EXPORT uint32_t qlex_line(qlex_t *obj, uint32_t loc) {
   try {
     auto r = obj->loc2rowcol(loc);
     if (!r) {
@@ -104,7 +113,7 @@ LIB_EXPORT qlex_size qlex_line(qlex_t *obj, qlex_loc_t loc) {
   }
 }
 
-LIB_EXPORT qlex_size qlex_col(qlex_t *obj, qlex_loc_t loc) {
+LIB_EXPORT uint32_t qlex_col(qlex_t *obj, uint32_t loc) {
   try {
     auto r = obj->loc2rowcol(loc);
     if (!r) {
@@ -117,15 +126,15 @@ LIB_EXPORT qlex_size qlex_col(qlex_t *obj, qlex_loc_t loc) {
   }
 }
 
-LIB_EXPORT qlex_loc_t qlex_offset(qlex_t *obj, qlex_loc_t base, qlex_size offset) {
+LIB_EXPORT uint32_t qlex_offset(qlex_t *obj, uint32_t base, uint32_t offset) {
   try {
     long curpos = 0;
-    std::optional<qlex_size> seek_base_pos;
+    std::optional<uint32_t> seek_base_pos;
     uint8_t *buf = nullptr;
     std::streamsize bufsz = 0;
-    qlex_loc_t res{.tag = 0};
+    uint32_t res = 0;
 
-    if (!(seek_base_pos = obj->loc2offset(base))) {
+    if (!(seek_base_pos = base)) {
       return res;
     }
 
@@ -182,39 +191,18 @@ LIB_EXPORT qlex_loc_t qlex_offset(qlex_t *obj, qlex_loc_t base, qlex_size offset
   }
 }
 
-LIB_EXPORT qlex_size qlex_span(qlex_t *obj, qlex_loc_t start, qlex_loc_t end) {
+LIB_EXPORT uint32_t qlex_spanx(qlex_t *obj, uint32_t start, uint32_t end,
+                               void (*callback)(const char *, uint32_t,
+                                                uintptr_t),
+                               uintptr_t userdata) {
   try {
-    std::optional<qlex_size> begoff, endoff;
+    std::optional<uint32_t> begoff, endoff;
 
-    if (!(begoff = obj->loc2offset(start))) {
+    if (!(begoff = start)) {
       return UINT32_MAX;
     }
 
-    if (!(endoff = obj->loc2offset(end))) {
-      return UINT32_MAX;
-    }
-
-    if (*endoff < *begoff) {
-      return 0;
-    }
-
-    return *endoff - *begoff;
-  } catch (...) {
-    qcore_panic("qlex_span: failed to calculate span");
-  }
-}
-
-LIB_EXPORT qlex_size qlex_spanx(qlex_t *obj, qlex_loc_t start, qlex_loc_t end,
-                                void (*callback)(const char *, qlex_size, uintptr_t),
-                                uintptr_t userdata) {
-  try {
-    std::optional<qlex_size> begoff, endoff;
-
-    if (!(begoff = obj->loc2offset(start))) {
-      return UINT32_MAX;
-    }
-
-    if (!(endoff = obj->loc2offset(end))) {
+    if (!(endoff = end)) {
       return UINT32_MAX;
     }
 
@@ -222,7 +210,7 @@ LIB_EXPORT qlex_size qlex_spanx(qlex_t *obj, qlex_loc_t start, qlex_loc_t end,
       return UINT32_MAX;
     }
 
-    qlex_size span = *endoff - *begoff;
+    uint32_t span = *endoff - *begoff;
 
     long curpos = 0;
     uint8_t *buf = nullptr;
@@ -259,8 +247,8 @@ LIB_EXPORT qlex_size qlex_spanx(qlex_t *obj, qlex_loc_t start, qlex_loc_t end,
   }
 }
 
-LIB_EXPORT void qlex_rect(qlex_t *obj, qlex_size x_0, qlex_size y_0, qlex_size x_1, qlex_size y_1,
-                          char *out, size_t max_size, char fill) {
+LIB_EXPORT void qlex_rect(qlex_t *obj, uint32_t x_0, uint32_t y_0, uint32_t x_1,
+                          uint32_t y_1, char *out, size_t max_size, char fill) {
   try {
     // Bounds check rectangle
     if (x_0 > x_1 || y_0 > y_1) [[unlikely]] {
@@ -281,35 +269,37 @@ LIB_EXPORT void qlex_rect(qlex_t *obj, qlex_size x_0, qlex_size y_0, qlex_size x
     out[buf_size] = '\0';
 
     for (size_t i = 0; i < height; i++) {
-      qlex_size start_off = 0, end_off = 10;
+      uint32_t start_off = 0, end_off = 10;
 
-      qlex_loc_t start = obj->save_loc(y_0 + i, x_0, start_off);
-      qlex_loc_t end = obj->save_loc(y_0 + i, x_1, end_off);
+      uint32_t start = obj->save_loc(y_0 + i, x_0, start_off);
+      uint32_t end = obj->save_loc(y_0 + i, x_1, end_off);
 
       qlex_spanx(
           obj, start, end,
-          [](const char *str, qlex_size len, uintptr_t ptr) { memcpy((void *)ptr, str, len); },
+          [](const char *str, uint32_t len, uintptr_t ptr) {
+            memcpy((void *)ptr, str, len);
+          },
           (uintptr_t)(out + i * width));
     }
   } catch (...) {
   }
 }
 
-LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, qlex_size *offset) {
+LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, uint32_t *offset) {
   try {
 #define SNIPPET_SIZE 100
 
-    qlex_size tok_beg_offset;
+    uint32_t tok_beg_offset;
     char snippet_buf[SNIPPET_SIZE];
     size_t curpos, seek_base_pos, read;
 
     { /* Convert the location to an offset into the source */
-      auto src_offset_opt = obj->loc2offset(tok.start);
+      auto src_offset_opt = tok.start;
       if (!src_offset_opt) {
         return nullptr; /* Return early if translation failed */
       }
 
-      tok_beg_offset = *src_offset_opt - 1;
+      tok_beg_offset = src_offset_opt - 1;
     }
 
     { /* Calculate offsets and seek to the correct position */
@@ -317,7 +307,9 @@ LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, qlex_size *offset) {
       if ((long)curpos == -1) {
         return nullptr;
       }
-      seek_base_pos = tok_beg_offset < SNIPPET_SIZE / 2 ? 0 : tok_beg_offset - SNIPPET_SIZE / 2;
+      seek_base_pos = tok_beg_offset < SNIPPET_SIZE / 2
+                          ? 0
+                          : tok_beg_offset - SNIPPET_SIZE / 2;
 
       obj->m_file->seekg(seek_base_pos, std::ios_base::beg);
     }
@@ -335,7 +327,7 @@ LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, qlex_size *offset) {
     }
 
     // Extract the line that contains the token
-    qlex_size slice_start = 0;
+    uint32_t slice_start = 0;
 
     for (size_t i = 0; i < read; i++) {
       if (snippet_buf[i] == '\n') {
@@ -349,7 +341,7 @@ LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, qlex_size *offset) {
           }
         }
 
-        qlex_size slice_size = slice_end - slice_start;
+        uint32_t slice_size = slice_end - slice_start;
         char *output = (char *)malloc(slice_size + 1);
         if (!output) {
           qcore_panic("qlex_snippet: failed to allocate memory");
@@ -404,65 +396,36 @@ LIB_EXPORT qlex_tok_t qlex_peek(qlex_t *self) {
 
 ///============================================================================///
 
-CPP_EXPORT std::optional<qlex_size> qlex_t::loc2offset(qlex_loc_t loc) {
-  if (m_tag_to_off.find(loc.tag) == m_tag_to_off.end()) [[unlikely]] {
+CPP_EXPORT std::optional<std::pair<uint32_t, uint32_t>> qlex_t::loc2rowcol(
+    uint32_t loc) {
+  if (m_off2rc.left.find(loc) == m_off2rc.left.end()) [[unlikely]] {
     return std::nullopt;
   }
 
-  return m_tag_to_off[loc.tag];
+  return m_off2rc.left.at(loc);
 }
 
-CPP_EXPORT std::optional<std::pair<qlex_size, qlex_size>> qlex_t::loc2rowcol(qlex_loc_t loc) {
-  if (m_tag_to_loc.left.find(loc.tag) == m_tag_to_loc.left.end()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  clever_me_t it = m_tag_to_loc.left.at(loc.tag);
-
-  if (!it.rc_fmt) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  qlex_size row = it.row;
-  qlex_size col = it.col;
-
-  return std::make_pair(row, col);
+CPP_EXPORT uint32_t qlex_t::save_loc(uint32_t row, uint32_t col,
+                                     uint32_t offset) {
+  m_off2rc.insert({offset, {row, col}});
+  return offset;
 }
 
-CPP_EXPORT qlex_loc_t qlex_t::save_loc(qlex_size row, qlex_size col, qlex_size offset) {
-  if (row <= 2097152 && col <= 1024) [[likely]] {
-    clever_me_t bits;
-    static_assert(sizeof(bits) == sizeof(qlex_size));
-
-    bits.rc_fmt = 1;
-    bits.col = col;
-    bits.row = row;
-
-    if (m_tag_to_loc.right.find(bits) != m_tag_to_loc.right.end()) {
-      return {m_tag_to_loc.right.at(bits)};
-    }
-
-    qlex_size tag = m_locctr++;
-    m_tag_to_loc.insert({tag, bits});
-    m_tag_to_off[tag] = offset;
-
-    return {tag};
-  } else {
-    return {0};
-  }
+CPP_EXPORT uint32_t qlex_t::cur_loc() {
+  return save_loc(m_row, m_col, m_offset);
 }
-
-CPP_EXPORT qlex_loc_t qlex_t::cur_loc() { return save_loc(m_row, m_col, m_offset); }
 
 ///============================================================================///
 
-CPP_EXPORT std::string_view qlex_t::get_string(qlex_size idx) {
+CPP_EXPORT std::string_view qlex_t::get_string(uint32_t idx) {
 #if MEMORY_OVER_SPEED == 1
-  if (auto it = m_strings->first.left.find(idx); it != m_strings->first.left.end()) [[likely]] {
+  if (auto it = m_strings->first.left.find(idx);
+      it != m_strings->first.left.end()) [[likely]] {
     return it->second;
   }
 #else
-  if (auto it = m_strings->first.find(idx); it != m_strings->first.end()) [[likely]] {
+  if (auto it = m_strings->first.find(idx); it != m_strings->first.end())
+      [[likely]] {
     return it->second;
   }
 #endif
@@ -470,9 +433,10 @@ CPP_EXPORT std::string_view qlex_t::get_string(qlex_size idx) {
   return "";
 }
 
-CPP_EXPORT qlex_size qlex_t::put_string(std::string_view str) {
+CPP_EXPORT uint32_t qlex_t::put_string(std::string_view str) {
 #if MEMORY_OVER_SPEED == 1
-  if (auto it = m_strings->first.right.find(str); it != m_strings->first.right.end()) {
+  if (auto it = m_strings->first.right.find(str);
+      it != m_strings->first.right.end()) {
     return it->second;
   }
 
@@ -488,17 +452,20 @@ CPP_EXPORT qlex_size qlex_t::put_string(std::string_view str) {
 #endif
 }
 
-CPP_EXPORT void qlex_t::release_string(qlex_size idx) {
+CPP_EXPORT void qlex_t::release_string(uint32_t idx) {
 #if MEMORY_OVER_SPEED == 1
 
 #else
-  if (auto it = m_strings->first.find(idx); it != m_strings->first.end()) [[likely]] {
+  if (auto it = m_strings->first.find(idx); it != m_strings->first.end())
+      [[likely]] {
     m_strings->first.erase(it);
   }
 #endif
 }
 
-CPP_EXPORT void qlex_t::replace_interner(StringInterner new_interner) { m_strings = new_interner; }
+CPP_EXPORT void qlex_t::replace_interner(StringInterner new_interner) {
+  m_strings = new_interner;
+}
 
 ///============================================================================///
 

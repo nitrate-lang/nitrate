@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -33,13 +35,13 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-ir/Lib.h>
 #include <nitrate-ir/TypeDecl.h>
-#include <nitrate-lexer/Lexer.h>
 
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <iomanip>
+#include <nitrate-ir/Module.hh>
 #include <sstream>
 #include <unordered_set>
 
@@ -56,41 +58,43 @@ struct ConvState {
 };
 
 template <typename L, typename R>
-boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
+boost::bimap<L, R> make_bimap(
+    std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
   return boost::bimap<L, R>(list.begin(), list.end());
 }
 
-static const boost::bimap<Op, std::string_view> opstr_map = make_bimap<Op, std::string_view>({
-    {Op::Plus, "+"},
-    {Op::Minus, "-"},
-    {Op::Times, "*"},
-    {Op::Slash, "/"},
-    {Op::Percent, "%"},
-    {Op::BitAnd, "&"},
-    {Op::BitOr, "|"},
-    {Op::BitXor, "^"},
-    {Op::BitNot, "~"},
-    {Op::LogicAnd, "&&"},
-    {Op::LogicOr, "||"},
-    {Op::LogicNot, "!"},
-    {Op::LShift, "<<"},
-    {Op::RShift, ">>"},
-    {Op::ROTR, ">>>"},
-    {Op::ROTL, "<<<"},
-    {Op::Inc, "++"},
-    {Op::Dec, "--"},
-    {Op::Set, "="},
-    {Op::LT, "<"},
-    {Op::GT, ">"},
-    {Op::LE, "<="},
-    {Op::GE, ">="},
-    {Op::Eq, "=="},
-    {Op::NE, "!="},
-    {Op::Alignof, "alignof"},
-    {Op::BitcastAs, "bitcast_as"},
-    {Op::CastAs, "cast_as"},
-    {Op::Bitsizeof, "bitsizeof"},
-});
+static const boost::bimap<Op, std::string_view> opstr_map =
+    make_bimap<Op, std::string_view>({
+        {Op::Plus, "+"},
+        {Op::Minus, "-"},
+        {Op::Times, "*"},
+        {Op::Slash, "/"},
+        {Op::Percent, "%"},
+        {Op::BitAnd, "&"},
+        {Op::BitOr, "|"},
+        {Op::BitXor, "^"},
+        {Op::BitNot, "~"},
+        {Op::LogicAnd, "&&"},
+        {Op::LogicOr, "||"},
+        {Op::LogicNot, "!"},
+        {Op::LShift, "<<"},
+        {Op::RShift, ">>"},
+        {Op::ROTR, ">>>"},
+        {Op::ROTL, "<<<"},
+        {Op::Inc, "++"},
+        {Op::Dec, "--"},
+        {Op::Set, "="},
+        {Op::LT, "<"},
+        {Op::GT, ">"},
+        {Op::LE, "<="},
+        {Op::GE, ">="},
+        {Op::Eq, "=="},
+        {Op::NE, "!="},
+        {Op::Alignof, "alignof"},
+        {Op::BitcastAs, "bitcast_as"},
+        {Op::CastAs, "cast_as"},
+        {Op::Bitsizeof, "bitsizeof"},
+    });
 
 static inline FILE &operator<<(FILE &ss, const char *s) {
   fprintf(&ss, "%s", s);
@@ -109,6 +113,11 @@ static inline FILE &operator<<(FILE &ss, const std::string_view &s) {
 
 static inline FILE &operator<<(FILE &ss, const size_t s) {
   fprintf(&ss, "%zu", s);
+  return ss;
+}
+
+static inline FILE &operator<<(FILE &ss, const double s) {
+  fprintf(&ss, "%f", s);
   return ss;
 }
 
@@ -168,7 +177,8 @@ static void indent(FILE &ss, ConvState &state) {
   }
 }
 
-static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &state
+static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
+                              ConvState &state
 #if !defined(NDEBUG)
                               ,
                               std::unordered_set<Expr *> &visited, bool is_cylic
@@ -188,7 +198,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
     visited.insert(n);
   }
 #define recurse(x) serialize_recurse(x, ss, typedefs, state, visited, is_cylic)
-#define recurse_ex(x, stream) serialize_recurse(x, stream, typedefs, state, visited, is_cylic)
+#define recurse_ex(x, stream) \
+  serialize_recurse(x, stream, typedefs, state, visited, is_cylic)
 #else
 #define recurse(x) serialize_recurse(x, ss, typedefs, state)
 #define recurse_ex(x, stream) serialize_recurse(x, stream, typedefs, state)
@@ -294,10 +305,11 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
         recurse(n->as<Call>()->getTarget());
       }
       ss << "(";
-      for (auto it = n->as<Call>()->getArgs().begin(); it != n->as<Call>()->getArgs().end(); ++it) {
+      for (auto it = n->as<Call>()->getArgs().begin();
+           it != n->as<Call>()->getArgs().end(); ++it) {
         recurse(*it);
         if (std::next(it) != n->as<Call>()->getArgs().end()) {
-          ss << ",";
+          ss << ", ";
         }
       }
       ss << ")";
@@ -307,7 +319,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
       ss << "seq {";
       state.indent++;
       indent(ss, state);
-      for (auto it = n->as<Seq>()->getItems().begin(); it != n->as<Seq>()->getItems().end(); ++it) {
+      for (auto it = n->as<Seq>()->getItems().begin();
+           it != n->as<Seq>()->getItems().end(); ++it) {
         if ((*it)->getKind() == QIR_NODE_IGN) {
           continue;
         }
@@ -394,16 +407,6 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
       recurse(n->as<For>()->getBody());
       break;
     }
-    case QIR_NODE_FORM: {
-      ss << "form (";
-      recurse(n->as<Form>()->getMaxJobs());
-      ss << ") (" << n->as<Form>()->getIdxIdent() << "; ";
-      ss << n->as<Form>()->getValIdent() << "; ";
-      recurse(n->as<Form>()->getExpr());
-      ss << ") ";
-      recurse(n->as<Form>()->getBody());
-      break;
-    }
     case QIR_NODE_CASE: {
       ss << "case ";
       recurse(n->as<Case>()->getCond());
@@ -417,8 +420,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
       ss << ") {";
       state.indent++;
       indent(ss, state);
-      for (auto it = n->as<Switch>()->getCases().begin(); it != n->as<Switch>()->getCases().end();
-           ++it) {
+      for (auto it = n->as<Switch>()->getCases().begin();
+           it != n->as<Switch>()->getCases().end(); ++it) {
         recurse(*it);
         ss << ",";
         indent(ss, state);
@@ -434,11 +437,13 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
       ss << "fn ";
       ss << n->as<Fn>()->getName();
       ss << "(";
-      for (auto it = n->as<Fn>()->getParams().begin(); it != n->as<Fn>()->getParams().end(); ++it) {
+      for (auto it = n->as<Fn>()->getParams().begin();
+           it != n->as<Fn>()->getParams().end(); ++it) {
         ss << it->second << ": ";
         recurse(it->first);
-        if (std::next(it) != n->as<Fn>()->getParams().end() || n->as<Fn>()->isVariadic()) {
-          ss << ",";
+        if (std::next(it) != n->as<Fn>()->getParams().end() ||
+            n->as<Fn>()->isVariadic()) {
+          ss << ", ";
         }
       }
       if (n->as<Fn>()->isVariadic()) {
@@ -446,12 +451,15 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
       }
       ss << ") -> ";
       recurse(n->as<Fn>()->getReturn());
-      ss << " ";
-      recurse(n->as<Fn>()->getBody());
+
+      if (n->as<Fn>()->getBody().has_value()) {
+        ss << " ";
+        recurse(n->as<Fn>()->getBody().value());
+      }
       break;
     }
     case QIR_NODE_ASM: {
-      qcore_implement("ASM serialization");
+      qcore_implement();
     }
     case QIR_NODE_IGN: {
       break;
@@ -538,7 +546,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
         indent(typedefs, state);
         for (auto it = n->as<StructTy>()->getFields().begin();
              it != n->as<StructTy>()->getFields().end(); ++it) {
-          if ((*it)->getKind() == QIR_NODE_STRUCT_TY || (*it)->getKind() == QIR_NODE_UNION_TY) {
+          if ((*it)->getKind() == QIR_NODE_STRUCT_TY ||
+              (*it)->getKind() == QIR_NODE_UNION_TY) {
             typedefs << "%" << (*it)->as<StructTy>()->getUniqId();
           } else {
             recurse_ex(*it, typedefs);
@@ -566,7 +575,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
         indent(typedefs, state);
         for (auto it = n->as<UnionTy>()->getFields().begin();
              it != n->as<UnionTy>()->getFields().end(); ++it) {
-          if ((*it)->getKind() == QIR_NODE_STRUCT_TY || (*it)->getKind() == QIR_NODE_UNION_TY) {
+          if ((*it)->getKind() == QIR_NODE_STRUCT_TY ||
+              (*it)->getKind() == QIR_NODE_UNION_TY) {
             typedefs << "%" << (*it)->as<StructTy>()->getUniqId();
           } else {
             recurse_ex(*it, typedefs);
@@ -596,8 +606,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
     case QIR_NODE_FN_TY: {
       ss << "fn (";
       bool variadic = n->as<FnTy>()->getAttrs().contains(FnAttr::Variadic);
-      for (auto it = n->as<FnTy>()->getParams().begin(); it != n->as<FnTy>()->getParams().end();
-           ++it) {
+      for (auto it = n->as<FnTy>()->getParams().begin();
+           it != n->as<FnTy>()->getParams().end(); ++it) {
         recurse(*it);
         if (std::next(it) != n->as<FnTy>()->getParams().end() || variadic) {
           ss << ",";
@@ -620,22 +630,27 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
   return true;
 }
 
-static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
+static bool to_codeform(std::optional<qmodule_t *> mod, Expr *node, bool minify,
+                        size_t indent_size, FILE &ss) {
   ConvState state(indent_size, minify);
-  qmodule_t *mod = node->getModule();
 
-  if (!minify) {
+  if (mod.has_value() && !minify) {
     { /* Print the module name */
-      ss << "; Module: " << mod->getName() << "\n";
+      ss << "; Module: " << (mod.value())->getName() << "\n";
     }
 
     { /* Print the mutation passes applied */
       ss << "; Passes: [";
       size_t i = 0;
-      for (auto it = mod->getPassesApplied().begin(); it != mod->getPassesApplied().end(); ++it) {
-        ss << *it;
+      for (auto it = mod.value()->getPassesApplied().begin();
+           it != mod.value()->getPassesApplied().end(); ++it) {
+        if (it->second != ModulePassType::Transform) {
+          continue;
+        }
 
-        if (std::next(it) != mod->getPassesApplied().end()) {
+        ss << it->first;
+
+        if (std::next(it) != mod.value()->getPassesApplied().end()) {
           ss << ",";
 
           if (!minify) {
@@ -654,10 +669,15 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
     { /* Print the analysis passes applied */
       ss << "; Checks: [";
       size_t i = 0;
-      for (auto it = mod->getChecksApplied().begin(); it != mod->getChecksApplied().end(); ++it) {
-        ss << *it;
+      for (auto it = mod.value()->getPassesApplied().begin();
+           it != mod.value()->getPassesApplied().end(); ++it) {
+        if (it->second != ModulePassType::Check) {
+          continue;
+        }
 
-        if (std::next(it) != mod->getChecksApplied().end()) {
+        ss << it->first;
+
+        if (std::next(it) != mod.value()->getPassesApplied().end()) {
           ss << ",";
 
           if (!minify) {
@@ -702,43 +722,36 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
     return false;
   }
 
-  try {
-    /* Serialize the AST recursively */
-    bool result = serialize_recurse(node, *body, *typedefs, state
+  /* Serialize the AST recursively */
+  bool result = serialize_recurse(node, *body, *typedefs, state
 #if !defined(NDEBUG)
-                                    ,
-                                    v, is_cylic
+                                  ,
+                                  v, is_cylic
 #endif
-    );
+  );
 
-    if (!result) {
-      fclose(typedefs);
-      fclose(body);
-      free(body_content);
-      free(typedef_content);
-      return false;
-    }
-
-    fclose(typedefs);
-    fclose(body);
-
-    fwrite(typedef_content, 1, typedef_content_size, &ss);
-    fwrite(body_content, 1, body_content_size, &ss);
-
-    free(body_content);
-    free(typedef_content);
-
-    return true;
-  } catch (...) {
+  if (!result) {
     fclose(typedefs);
     fclose(body);
     free(body_content);
     free(typedef_content);
     return false;
   }
+
+  fclose(typedefs);
+  fclose(body);
+
+  fwrite(typedef_content, 1, typedef_content_size, &ss);
+  fwrite(body_content, 1, body_content_size, &ss);
+
+  free(body_content);
+  free(typedef_content);
+
+  return true;
 }
 
-LIB_EXPORT bool nr_write(const nr_node_t *_node, nr_serial_t mode, FILE *out, size_t *outlen,
+LIB_EXPORT bool nr_write(qmodule_t *mod, const nr_node_t *_node,
+                         nr_serial_t mode, FILE *out, size_t *outlen,
                          uint32_t argcnt, ...) {
   (void)argcnt;
 
@@ -754,15 +767,16 @@ LIB_EXPORT bool nr_write(const nr_node_t *_node, nr_serial_t mode, FILE *out, si
     }
   }
 
-  try {
-    switch (mode) {
-      case QXIR_SERIAL_CODE: {
-        status = to_codeform(node, false, 2, *out);
-        break;
+  switch (mode) {
+    case NR_SERIAL_CODE: {
+      if (mod) {
+        status = to_codeform(mod, node, false, 2, *out);
+
+      } else {
+        status = to_codeform(std::nullopt, node, false, 2, *out);
       }
+      break;
     }
-  } catch (...) {
-    return false;
   }
 
   if (outlen) {

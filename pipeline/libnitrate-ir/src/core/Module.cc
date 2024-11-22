@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -32,6 +34,8 @@
 #include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
 
+#include <core/Diagnostic.hh>
+#include <memory>
 #include <mutex>
 #include <nitrate-ir/Module.hh>
 
@@ -40,41 +44,59 @@ using namespace nr;
 static std::vector<std::optional<qmodule_t *>> nr_modules;
 static std::mutex nr_modules_mutex;
 
+class LexerSourceResolver : public ISourceView {
+public:
+  virtual std::optional<std::pair<uint32_t, uint32_t>> off2rc(
+      uint32_t) noexcept override {
+    return std::nullopt;
+    /// TODO: Implement source offset resolver
+    qcore_implement();
+  }
+
+  virtual std::optional<std::vector<std::string_view>> rect(
+      uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) noexcept override {
+    /// TODO: Implement source offset resolver
+    qcore_implement();
+
+    (void)x0;
+    (void)y0;
+    (void)x1;
+    (void)y1;
+
+    return std::nullopt;
+  }
+
+  virtual ~LexerSourceResolver() = default;
+};
+
 qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
-  m_passes_applied.clear();
+  m_applied.clear();
   m_strings.clear();
-  m_diag = std::make_unique<diag::DiagnosticManager>();
-  m_diag->set_ctx(this);
-  m_type_mgr = std::make_unique<TypeManager>();
+
+  m_offset_resolver = std::make_unique<LexerSourceResolver>();
+  m_diagnostics = std::make_unique<DiagnosticManager>();
+
   m_module_name = name;
 
-  m_conf = nullptr;
-  m_lexer = nullptr;
   m_root = nullptr;
   m_diagnostics_enabled = true;
-  m_failbit = false;
 
   m_id = id;
 }
 
-qmodule_t::~qmodule_t() {
-  m_conf = nullptr;
-  m_lexer = nullptr;
-  m_root = nullptr;
+qmodule_t::~qmodule_t() { m_root = nullptr; }
+
+void qmodule_t::enableDiagnostics(bool is_enabled) noexcept {
+  m_diagnostics_enabled = is_enabled;
 }
 
-Type *qmodule_t::lookupType(TypeID tid) { return m_type_mgr->get(tid); }
-
-void qmodule_t::enableDiagnostics(bool is_enabled) noexcept { m_diagnostics_enabled = is_enabled; }
-
 std::string_view qmodule_t::internString(std::string_view sv) {
-  for (const auto &str : m_strings) {
-    if (str == sv) {
-      return str;
-    }
+  auto it = m_strings.find(sv);
+  if (it == m_strings.end()) {
+    return m_strings.emplace(sv, std::string(sv)).first->second;
+  } else {
+    return it->second;
   }
-
-  return m_strings.insert(std::string(sv)).first->c_str();
 }
 
 ///=============================================================================
@@ -109,52 +131,20 @@ CPP_EXPORT qmodule_t *nr::getModule(ModuleId mid) {
   return nr_modules.at(mid).value();
 }
 
-LIB_EXPORT qmodule_t *nr_new(qlex_t *lexer, nr_conf_t *conf, const char *name) {
-  try {
-    if (!conf) {
-      return nullptr;
-    }
-
-    if (!name) {
-      name = "module";
-    }
-
-    qmodule_t *obj = createModule(name);
-    if (!obj) {
-      return nullptr;
-    }
-
-    obj->setConf(conf);
-    obj->setLexer(lexer);
-
-    return obj;
-  } catch (...) {
-    return nullptr;
-  }
-}
-
 LIB_EXPORT void nr_free(qmodule_t *mod) {
-  try {
-    if (!mod) {
-      return;
-    }
-
-    std::lock_guard<std::mutex> lock(nr_modules_mutex);
-
-    auto mid = mod->getModuleId();
-    delete mod;
-    nr_modules.at(mid).reset();
-  } catch (...) {
-    qcore_panic("nr_free failed");
+  if (!mod) {
+    return;
   }
+
+  std::lock_guard<std::mutex> lock(nr_modules_mutex);
+
+  auto mid = mod->getModuleId();
+  delete mod;
+  nr_modules.at(mid).reset();
 }
 
 LIB_EXPORT size_t nr_max_modules(void) { return MAX_MODULE_INSTANCES; }
 
-LIB_EXPORT qlex_t *nr_get_lexer(qmodule_t *mod) { return mod->getLexer(); }
-
 LIB_EXPORT nr_node_t *nr_base(qmodule_t *mod) {
   return reinterpret_cast<nr_node_t *>(mod->getRoot());
 }
-
-LIB_EXPORT nr_conf_t *nr_get_conf(qmodule_t *mod) { return mod->getConf(); }

@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -49,8 +51,8 @@
 #define TRANSCODE_TARGET_CSHARP
 #endif
 
-static const std::unordered_map<qcode_lang_t,
-                                std::function<bool(qmodule_t*, std::ostream&, std::ostream&)>>
+static const std::unordered_map<
+    qcode_lang_t, std::function<bool(qmodule_t*, std::ostream&, std::ostream&)>>
     transcoders = {
 #ifdef TRANSCODE_TARGET_C11
         {QCODE_C11, codegen::for_c11},
@@ -92,12 +94,15 @@ public:
 
 class OStreamDiscard : public std::streambuf {
 public:
-  virtual std::streamsize xsputn(const char* s, std::streamsize n) override { return n; }
+  virtual std::streamsize xsputn(const char*, std::streamsize n) override {
+    return n;
+  }
   virtual int overflow(int c) override { return c; }
 };
 
-LIB_EXPORT bool qcode_transcode(qmodule_t* module, qcode_conf_t* conf, qcode_lang_t lang,
-                                qcode_style_t style, FILE* err, FILE* out) {
+LIB_EXPORT bool qcode_transcode(qmodule_t* module, qcode_conf_t*,
+                                qcode_lang_t lang, qcode_style_t, FILE* err,
+                                FILE* out) {
   std::unique_ptr<std::streambuf> err_stream_buf, out_stream_buf;
 
   /* If the error stream is provided, use it. Otherwise, discard the output. */
@@ -130,7 +135,9 @@ LIB_EXPORT bool qcode_transcode(qmodule_t* module, qcode_conf_t* conf, qcode_lan
     return status;
   } else {
     /* Panic if the transcoder is not available. */
-    qcore_panicf("The code generator was not built with transcoder support for target %s.",
-                 target_names.at(lang).data());
+    qcore_panicf(
+        "The code generator was not built with transcoder support for target "
+        "%s.",
+        target_names.at(lang).data());
   }
 }

@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -42,7 +44,8 @@ namespace codegen::conf {
 }
 
 template <typename L, typename R>
-boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
+boost::bimap<L, R> make_bimap(
+    std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
   return boost::bimap<L, R>(list.begin(), list.end());
 }
 
@@ -97,11 +100,13 @@ LIB_EXPORT qcode_conf_t *qcode_conf_new(bool use_defaults) {
 
 LIB_EXPORT void qcode_conf_free(qcode_conf_t *conf) { delete conf; }
 
-LIB_EXPORT bool qcode_conf_setopt(qcode_conf_t *conf, qcode_key_t key, qcode_val_t value) {
+LIB_EXPORT bool qcode_conf_setopt(qcode_conf_t *conf, qcode_key_t key,
+                                  qcode_val_t value) {
   return conf->SetAndVerify(key, value);
 }
 
-LIB_EXPORT bool qcode_conf_getopt(qcode_conf_t *conf, qcode_key_t key, qcode_val_t *value) {
+LIB_EXPORT bool qcode_conf_getopt(qcode_conf_t *conf, qcode_key_t key,
+                                  qcode_val_t *value) {
   auto val = conf->Get(key);
 
   if (!val.has_value()) {
@@ -115,9 +120,12 @@ LIB_EXPORT bool qcode_conf_getopt(qcode_conf_t *conf, qcode_key_t key, qcode_val
   return true;
 }
 
-LIB_EXPORT qcode_setting_t *qcode_conf_getopts(qcode_conf_t *conf, size_t *count) {
+LIB_EXPORT qcode_setting_t *qcode_conf_getopts(qcode_conf_t *conf,
+                                               size_t *count) {
   if (!count) {
-    qcore_panic("qcode_conf_getopts: Contract violation: 'count' parameter cannot be NULL.");
+    qcore_panic(
+        "qcode_conf_getopts: Contract violation: 'count' parameter cannot be "
+        "NULL.");
   }
 
   const qcode_setting_t *ptr = conf->GetAll(*count);
@@ -140,10 +148,13 @@ LIB_EXPORT qcode_setting_t *qcode_conf_getopts(qcode_conf_t *conf, size_t *count
 
 LIB_EXPORT void qcode_conf_clear(qcode_conf_t *conf) { conf->ClearNoVerify(); }
 
-LIB_EXPORT size_t qcode_conf_dump(qcode_conf_t *conf, FILE *stream, const char *field_delim,
+LIB_EXPORT size_t qcode_conf_dump(qcode_conf_t *conf, FILE *stream,
+                                  const char *field_delim,
                                   const char *line_delim) {
   if (!stream) {
-    qcore_panic("qcode_conf_dump: Contract violation: 'stream' parameter cannot be NULL.");
+    qcore_panic(
+        "qcode_conf_dump: Contract violation: 'stream' parameter cannot be "
+        "NULL.");
   }
 
   if (!field_delim) {
@@ -168,8 +179,10 @@ LIB_EXPORT size_t qcode_conf_dump(qcode_conf_t *conf, FILE *stream, const char *
       qcore_panic("qcode_conf_dump: Unhandled qcode_val_t value.");
     }
 
-    bytes += fprintf(stream, "%s%s%s%s", options_bimap.left.at(settings[i].key).data(), field_delim,
-                     values_bimap.left.at(settings[i].value).data(), line_delim);
+    bytes +=
+        fprintf(stream, "%s%s%s%s",
+                options_bimap.left.at(settings[i].key).data(), field_delim,
+                values_bimap.left.at(settings[i].value).data(), line_delim);
   }
 
   return bytes;

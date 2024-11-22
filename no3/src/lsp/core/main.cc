@@ -5,7 +5,6 @@
 #include <boost/throw_exception.hpp>
 #include <csignal>
 #include <filesystem>
-#include <iostream>
 #include <lsp/core/license-data.hh>
 #include <lsp/core/server.hh>
 #include <memory>
@@ -16,16 +15,9 @@
 static constexpr void create_parser(argparse::ArgumentParser& parser) {
   ///=================== BASIC CONFIGURATION ======================
 
-  parser.add_argument("--license")
-      .default_value(false)
-      .implicit_value(true)
-      .help("Print the software license");
-
   parser.add_argument("--config")
       .default_value(std::string(""))
       .help("Specify the configuration file");
-
-  parser.add_argument("--log").default_value("no3-lsp.log").help("Specify the log file");
 
   ///=================== CONNECTION CONFIGURATION ======================
 
@@ -33,7 +25,8 @@ static constexpr void create_parser(argparse::ArgumentParser& parser) {
 
   group.add_argument("--pipe").help("Specify the pipe file to connect to");
   group.add_argument("--port").help("Specify the port to connect to");
-  group.add_argument("--stdio").default_value(false).implicit_value(true).help("Use standard I/O");
+  group.add_argument("--stdio").default_value(false).implicit_value(true).help(
+      "Use standard I/O");
 }
 
 LIB_EXPORT int nitrated_main(int argc, char** argv) {
@@ -55,18 +48,6 @@ LIB_EXPORT int nitrated_main(int argc, char** argv) {
   create_parser(parser);
 
   parser.parse_args(args);
-
-  if (parser["--license"] == true) {
-    std::cout << license_text << std::endl;
-    return 0;
-  }
-
-  { /* Setup log file */
-    std::string log_file = parser.get<std::string>("--log");
-
-    static MyLogSink sink(log_file);
-    google::AddLogSink(&sink);
-  }
 
   std::unique_ptr<Configuration> config;
   { /* Setup config */

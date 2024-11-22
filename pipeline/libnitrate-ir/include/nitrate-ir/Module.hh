@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -29,12 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_MODULE_H__
-#define __NITRATE_QXIR_MODULE_H__
+#ifndef __NITRATE_NR_MODULE_H__
+#define __NITRATE_NR_MODULE_H__
 
 #include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>
-#include <nitrate-lexer/Lexer.h>
 
 #include <boost/bimap.hpp>
 #include <cstddef>
@@ -44,7 +45,6 @@
 #include <nitrate-core/Classes.hh>
 #include <nitrate-ir/Report.hh>
 #include <string>
-#include <unordered_set>
 #include <vector>
 
 namespace nr {
@@ -133,65 +133,70 @@ namespace nr {
   class Asm;
   class Tmp;
 
-  struct ExtensionData {
-    qlex_loc_t loc_begin = {};
-    uint16_t loc_size = 0;
+  enum class ModulePassType {
+    Transform,
+    Check,
   };
+
+  class NRBuilder;
 }  // namespace nr
 
 struct qmodule_t final {
 private:
-  using FunctionNameBimap = boost::bimap<std::string_view, std::pair<nr::FnTy *, nr::Fn *>>;
+  friend class nr::Expr;
+  friend class nr::NRBuilder;
+
+  using FunctionNameBimap =
+      boost::bimap<std::string_view, std::pair<nr::FnTy *, nr::Fn *>>;
   using GlobalVariableNameBimap = boost::bimap<std::string_view, nr::Local *>;
-  using FunctionParamMap =
-      std::unordered_map<std::string_view,
-                         std::vector<std::tuple<std::string, nr::Type *, nr::Expr *>>>;
+  using FunctionParamMap = std::unordered_map<
+      std::string_view,
+      std::vector<std::tuple<std::string, nr::Type *, nr::Expr *>>>;
   using TypenameMap = std::unordered_map<std::string_view, nr::Type *>;
-  using CompositeFieldMap =
-      std::unordered_map<std::string_view,
-                         std::vector<std::tuple<std::string, nr::Type *, nr::Expr *>>>;
+  using CompositeFieldMap = std::unordered_map<
+      std::string_view,
+      std::vector<std::tuple<std::string, nr::Type *, nr::Expr *>>>;
   using NamedConstMap = std::unordered_map<std::string_view, nr::Expr *>;
+  using ModulePasses = std::vector<std::pair<std::string, nr::ModulePassType>>;
 
   ///=============================================================================
-  nr::Expr *m_root{};                                 /* Root node of the module */
-  std::unordered_map<uint64_t, uint64_t> m_key_map{}; /* Place for IRGraph key-value pairs */
-  std::unordered_map<uint64_t, std::unique_ptr<nr::ExtensionData>> m_extension_data_map{};
+  nr::Expr *m_root{}; /* Root node of the module */
+  std::unordered_map<uint64_t, uint64_t>
+      m_key_map{}; /* Place for IRGraph key-value pairs */
   uint64_t m_extension_data_ctr = 1;
 
   ///=============================================================================
 
   ///=============================================================================
   /// BEGIN: Data structures requisite for efficient lowering
-  FunctionNameBimap functions{};          /* Lookup for function names to their nodes */
-  GlobalVariableNameBimap variables{};    /* Lookup for global variables names to their nodes */
-  FunctionParamMap m_parameters{};        /* Lookup for function parameters */
-  TypenameMap m_typedef_map{};            /* Lookup type names to their type nodes */
+  FunctionNameBimap functions{}; /* Lookup for function names to their nodes */
+  GlobalVariableNameBimap
+      variables{}; /* Lookup for global variables names to their nodes */
+  FunctionParamMap m_parameters{}; /* Lookup for function parameters */
+  TypenameMap m_typedef_map{};     /* Lookup type names to their type nodes */
   CompositeFieldMap m_composite_fields{}; /* */
   NamedConstMap m_named_constants{};      /* Lookup for named constants */
-  bool m_failbit{};                       /* Set if module lowering fails */
 
   void reset_module_temporaries(void) {
     functions.clear(), variables.clear(), m_parameters.clear();
-    m_typedef_map.clear(), m_composite_fields.clear(), m_named_constants.clear();
-    m_failbit = false;
+    m_typedef_map.clear(), m_composite_fields.clear(),
+        m_named_constants.clear();
   }
   /// END: Data structures requisite for efficient lowering
   ///=============================================================================
 
-  std::unique_ptr<nr::diag::DiagnosticManager> m_diag{}; /* Diagnostic manager instance */
-  std::unique_ptr<nr::TypeManager> m_type_mgr{};         /* Type manager instance */
-  std::unordered_set<std::string> m_strings{};           /* Interned strings */
-  std::vector<std::string> m_passes_applied{};           /* Module mutation tracking */
-  std::vector<std::string> m_checks_applied{};           /* Module analysis pass tracking */
-  nr::TargetInfo m_target_info{};                        /* Build target information */
-  std::string m_module_name{};                           /* Not nessesarily unique module name */
-  nr::ModuleId m_id{};                                   /* Module ID unique to the
-                                                             process during its lifetime */
+  std::unique_ptr<nr::IReport> m_diagnostics;
+  std::unique_ptr<nr::ISourceView> m_offset_resolver;
+  std::unordered_map<std::string_view, std::string>
+      m_strings{};                /* Interned strings */
+  ModulePasses m_applied{};       /* Module pass tracking */
+  nr::TargetInfo m_target_info{}; /* Build target information */
+  std::string m_module_name{};    /* Not nessesarily unique module name */
+  nr::ModuleId m_id{};            /* Module ID unique to the
+                                     process during its lifetime */
   bool m_diagnostics_enabled{};
 
   qcore_arena m_node_arena{};
-  nr_conf_t *m_conf{};
-  qlex_t *m_lexer{};
 
 public:
   qmodule_t(nr::ModuleId id, const std::string &name = "?");
@@ -199,32 +204,19 @@ public:
 
   nr::ModuleId getModuleId() noexcept { return m_id; }
 
-  nr::Type *lookupType(nr::TypeID tid);
-
   void setRoot(nr::Expr *root) noexcept { m_root = root; }
   nr::Expr *&getRoot() noexcept { return m_root; }
 
-  void setLexer(qlex_t *lexer) noexcept { m_lexer = lexer; }
-  qlex_t *getLexer() noexcept { return m_lexer; }
-
-  void setConf(nr_conf_t *conf) noexcept { m_conf = conf; }
-  nr_conf_t *getConf() noexcept { return m_conf; }
-
-  std::unordered_map<uint64_t, uint64_t> &getKeyMap() noexcept { return m_key_map; }
-  auto &getExtensionData() noexcept { return m_extension_data_map; }
-  uint64_t &getExtensionDataCtr() noexcept { return m_extension_data_ctr; }
+  std::unordered_map<uint64_t, uint64_t> &getKeyMap() noexcept {
+    return m_key_map;
+  }
 
   void enableDiagnostics(bool is_enabled) noexcept;
   bool isDiagnosticsEnabled() const noexcept { return m_diagnostics_enabled; }
 
-  void applyPassLabel(const std::string &label) { m_passes_applied.push_back(label); }
-  const auto &getPassesApplied() const { return m_passes_applied; }
-  void applyCheckLabel(const std::string &label) { m_checks_applied.push_back(label); }
-  const auto &getChecksApplied() const { return m_checks_applied; }
-
-  bool hasPassBeenRun(const std::string &label) {
-    return std::find(m_passes_applied.begin(), m_passes_applied.end(), label) !=
-           m_passes_applied.end();
+  const auto &getPassesApplied() const { return m_applied; }
+  void applyPassLabel(const std::string &label, nr::ModulePassType type) {
+    m_applied.push_back({label, type});
   }
 
   const std::string getName() const { return m_module_name; }
@@ -241,12 +233,12 @@ public:
 
   qcore_arena_t &getNodeArena() { return *m_node_arena.get(); }
 
-  nr::diag::DiagnosticManager &getDiag() { return *m_diag; }
+  std::unique_ptr<nr::IReport> &getDiag() { return m_diagnostics; }
+  std::unique_ptr<nr::ISourceView> &getOffsetResolver() {
+    return m_offset_resolver;
+  }
 
   const nr::TargetInfo &getTargetInfo() const { return m_target_info; }
-
-  void setFailbit(bool fail) { m_failbit = fail; }
-  bool getFailbit() const { return m_failbit; }
 };
 
 constexpr size_t QMODULE_SIZE = sizeof(qmodule_t);

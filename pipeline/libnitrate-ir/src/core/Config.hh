@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -29,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_QXIR_CORE_CONFIG_H__
-#define __NITRATE_QXIR_CORE_CONFIG_H__
+#ifndef __NITRATE_NR_CORE_CONFIG_H__
+#define __NITRATE_NR_CORE_CONFIG_H__
 
 #include <nitrate-ir/Config.h>
 
@@ -54,8 +56,9 @@ public:
   ~nr_conf_t() = default;
 
   bool SetAndVerify(nr_key_t key, nr_val_t value) {
-    auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const nr_setting_t &setting) { return setting.key == key; });
+    auto it = std::find_if(
+        m_data.begin(), m_data.end(),
+        [key](const nr_setting_t &setting) { return setting.key == key; });
 
     if (!verify_prechange(key, value)) {
       return false;
@@ -71,8 +74,9 @@ public:
   }
 
   std::optional<nr_val_t> Get(nr_key_t key) const {
-    auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const nr_setting_t &setting) { return setting.key == key; });
+    auto it = std::find_if(
+        m_data.begin(), m_data.end(),
+        [key](const nr_setting_t &setting) { return setting.key == key; });
 
     if (it == m_data.end()) {
       return std::nullopt;
@@ -94,4 +98,4 @@ public:
   bool has(nr_key_t option, nr_val_t value) const noexcept;
 };
 
-#endif  // __NITRATE_QXIR_CORE_CONFIG_H__
+#endif  // __NITRATE_NR_CORE_CONFIG_H__

@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -29,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <string_view>
+#include <unordered_map>
 #define IRBUILDER_IMPL
 
 #include <nitrate-core/Error.h>
@@ -38,106 +42,134 @@
 
 using namespace nr;
 
-NRBuilder &NRBuilder::insertAfter(Expr *last SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(last != nullptr);
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+NRBuilder &NRBuilder::insertAfter(Expr *last) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
 
   return *this;
 }
 
-NRBuilder &NRBuilder::insertAfterVariable(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+NRBuilder &NRBuilder::insertAfterVariable(std::string_view name) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
 
   return *this;
 }
 
-NRBuilder &NRBuilder::insertAfterFunction(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+NRBuilder &NRBuilder::insertAfterFunction(std::string_view name) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
 
   return *this;
 }
 
-NRBuilder &NRBuilder::insertBefore(Expr *last SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(last != nullptr);
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+NRBuilder &NRBuilder::insertBefore(Expr *last) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
 
   return *this;
 }
 
-NRBuilder &NRBuilder::insertBeforeVariable(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+NRBuilder &NRBuilder::insertBeforeVariable(std::string_view name) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
 
   return *this;
 }
 
-NRBuilder &NRBuilder::insertBeforeFunction(std::string_view name SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed || m_state == SelfState::FailEarly);
-  contract_enforce(!name.empty());
-
-  if (m_state == SelfState::FailEarly) {
-    return *this;
-  }
-
+NRBuilder &NRBuilder::insertBeforeFunction(std::string_view name) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
 
   return *this;
 }
 
 ///=============================================================================
 
-std::optional<Local *> NRBuilder::lookup_global(std::string_view global) noexcept {
-  /// TODO: Implement
-  qcore_implement(__func__);
-  (void)global;
+static std::string join_name_segment(const std::string &a,
+                                     const std::string &b) {
+  if (!a.empty() && !b.empty()) {
+    return a + "::" + b;
+  } else {
+    return a + b;
+  }
 }
 
-std::optional<Local *> NRBuilder::lookup_local(std::string_view local) noexcept {
-  /// TODO: Implement
-  qcore_implement(__func__);
-  (void)local;
+static void drop_tail_scope(std::string &scope) {
+  auto sep_it = scope.find_last_of("::");
+  if (sep_it == std::string_view::npos) {
+    scope = "";
+  } else {
+    scope = scope.substr(0, sep_it);
+  }
 }
 
-std::optional<Fn *> NRBuilder::lookup_function(std::string_view function) noexcept {
-  /// TODO: Implement
-  qcore_implement(__func__);
-  (void)function;
+template <typename T>
+static std::optional<T> find_in_scope_map(
+    const std::unordered_map<std::string_view, T> &map,
+    std::string_view qualified_name) {
+  auto sep_it = qualified_name.find_last_of("$$");
+  if (sep_it == std::string_view::npos) {
+    auto it = map.find(qualified_name);
+    return it == map.end() ? std::nullopt : std::optional<T>(it->second);
+  }
+
+  std::string scope = std::string(qualified_name.substr(0, sep_it - 1));
+  std::string name = std::string(qualified_name.substr(sep_it + 1));
+  std::string the_case;
+
+  std::optional<T> R;
+
+  while (true) {
+    the_case = join_name_segment(scope, name);
+
+    auto it = map.find(the_case);
+    if (it != map.end()) {
+      R = it->second;
+      break;
+    }
+
+    if (scope.empty()) {
+      break;
+    } else {
+      drop_tail_scope(scope);
+    }
+  };
+
+  return R;
+}
+
+std::optional<Expr *> NRBuilder::resolve_name(std::string_view name,
+                                              Kind kind) const noexcept {
+  std::optional<Expr *> R;
+
+  switch (kind) {
+    case Kind::TypeDef: {
+      R = find_in_scope_map(m_named_types, name);
+      break;
+    }
+
+    case Kind::ScopedEnum: {
+      auto idx = name.find_last_of("::");
+      if (idx != std::string_view::npos) {
+        std::string_view basename = name.substr(0, idx - 1);
+        std::string_view field_name = name.substr(idx + 1);
+
+        if (const auto &submap =
+                find_in_scope_map(m_named_constant_group, basename)) {
+          auto it = submap.value().find(field_name);
+          if (it != submap.value().end()) {
+            R = it->second;
+          }
+        }
+      }
+      break;
+    }
+
+    case Kind::Function: {
+      R = find_in_scope_map(m_named_functions, name);
+    }
+  }
+
+  return R;
 }

@@ -38,7 +38,7 @@ Nitrate is *only* offically distributed via the SNAP store. Otherworldly methods
 To install Nitrate, you may download the latest stable release via the SNAP store:
   
 ```bash
-sudo snap install qpkg # Hopefully, the name 'no3' will become available. 
+sudo snap install nitrate
 ```
 
 ### Windows

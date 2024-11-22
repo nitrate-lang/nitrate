@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -58,10 +60,12 @@ typedef uint32_t qlex_flags_t;
  * @param env Parent environment.
  *
  * @return New lexer context or NULL if an error occurred.
- * @note The lifetime of the file stream and environment must exceed the lifetime of the lexer.
+ * @note The lifetime of the file stream and environment must exceed the
+ * lifetime of the lexer.
  * @note This function is thread-safe.
  */
-qlex_t *qlex_new(std::shared_ptr<std::istream> file, const char *filename, qcore_env_t env);
+qlex_t *qlex_new(std::shared_ptr<std::istream> file, const char *filename,
+                 qcore_env_t env);
 
 #endif
 
@@ -79,10 +83,13 @@ extern "C" {
  *
  * @return New lexer context or NULL if an error occurred.
  * @note This function is thread-safe.
- * @note The lifetime of the file stream and environment must exceed the lifetime of the lexer.
- * @warning The source code pointer must be valid for the duration of the lexer context.
+ * @note The lifetime of the file stream and environment must exceed the
+ * lifetime of the lexer.
+ * @warning The source code pointer must be valid for the duration of the lexer
+ * context.
  */
-qlex_t *qlex_direct(const char *src, size_t len, const char *filename, qcore_env_t env);
+qlex_t *qlex_direct(const char *src, size_t len, const char *filename,
+                    qcore_env_t env);
 
 /**
  * @brief Destroy a lexer context.
@@ -105,7 +112,7 @@ qlex_flags_t qlex_get_flags(qlex_t *lexer);
  * @return Size of the token in bytes. Returns 0 if the token is invalid.
  * @note This function is thread-safe.
  */
-qlex_size qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok);
+uint32_t qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok);
 
 /**
  * @brief Write a token to a buffer.
@@ -115,22 +122,24 @@ qlex_size qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok);
  * @param buf Buffer to write the token to.
  * @param size Size of the buffer.
  *
- * @return Number of bytes written. Rerturns 0 if the buffer is too small or the token is invalid.
+ * @return Number of bytes written. Rerturns 0 if the buffer is too small or the
+ * token is invalid.
  * @note This function is thread-safe.
  * @warning Buffer WILL NOT be null-terminated.
  */
-qlex_size qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *buf, qlex_size size);
+uint32_t qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *buf,
+                        uint32_t size);
 
 /**
- * @brief Send a signal to the lexer that the resources for the token will never be needed by the
- * client.
+ * @brief Send a signal to the lexer that the resources for the token will never
+ * be needed by the client.
  *
  * @param lexer Lexer context.
  * @param tok Token to suggest for deallocation.
  *
  * @note This function is thread-safe.
- * @note This function merely suggests that the token can be deallocated. The lexer may choose to
- * ignore this suggestion.
+ * @note This function merely suggests that the token can be deallocated. The
+ * lexer may choose to ignore this suggestion.
  */
 void qlex_collect(qlex_t *lexer, const qlex_tok_t *tok);
 
@@ -165,8 +174,8 @@ qlex_tok_t qlex_peek(qlex_t *lexer);
  */
 void qlex_insert(qlex_t *lexer, qlex_tok_t tok);
 
-static inline qlex_loc_t qlex_begin(const qlex_tok_t *tok) { return tok->start; }
-static inline qlex_loc_t qlex_end(const qlex_tok_t *tok) { return tok->end; }
+static inline uint32_t qlex_begin(const qlex_tok_t *tok) { return tok->start; }
+static inline uint32_t qlex_end(const qlex_tok_t *tok) { return tok->end; }
 
 /**
  * @brief Return non-owning pointer to the filename associated with the lexer.
@@ -186,7 +195,7 @@ const char *qlex_filename(qlex_t *lexer);
  * @return Line number or UINT32_MAX on error.
  * @note This function is thread-safe.
  */
-qlex_size qlex_line(qlex_t *lexer, qlex_loc_t loc);
+uint32_t qlex_line(qlex_t *lexer, uint32_t loc);
 
 /**
  * @brief Get the column number of a location.
@@ -197,9 +206,9 @@ qlex_size qlex_line(qlex_t *lexer, qlex_loc_t loc);
  * @return Column number or UINT32_MAX on error.
  * @note This function is thread-safe.
  */
-qlex_size qlex_col(qlex_t *lexer, qlex_loc_t loc);
+uint32_t qlex_col(qlex_t *lexer, uint32_t loc);
 
-char *qlex_snippet(qlex_t *lexer, qlex_tok_t loc, qlex_size *offset);
+char *qlex_snippet(qlex_t *lexer, qlex_tok_t loc, uint32_t *offset);
 
 /**
  * @brief Calculate offset in source file from location structure.
@@ -211,7 +220,7 @@ char *qlex_snippet(qlex_t *lexer, qlex_tok_t loc, qlex_size *offset);
  * @return New location structure. Tag member will be 0 on error.
  * @note This function is thread-safe.
  */
-qlex_loc_t qlex_offset(qlex_t *lexer, qlex_loc_t base, qlex_size offset);
+uint32_t qlex_offset(qlex_t *lexer, uint32_t base, uint32_t offset);
 
 /**
  * @brief Get the number of bytes between two locations.
@@ -219,31 +228,21 @@ qlex_loc_t qlex_offset(qlex_t *lexer, qlex_loc_t base, qlex_size offset);
  * @param lexer Lexer context.
  * @param start Start location.
  * @param end End location.
- *
- * @return Number of bytes between the two locations or UINT32_MAX on error.
- * @note This function is thread-safe.
- */
-qlex_size qlex_span(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end);
-
-/**
- * @brief Get the number of bytes between two locations.
- *
- * @param lexer Lexer context.
- * @param start Start location.
- * @param end End location.
- * @param callback Callback function to call with the slice of the source in the span.
+ * @param callback Callback function to call with the slice of the source in the
+ * span.
  * @param userdata Userdata to pass to the callback.
  *
  * @return Number of bytes between the two locations or UINT32_MAX on error.
  * @note This function is thread-safe.
- * @note If the callback is ever called this function is guaranteed to not return UINT32_MAX.
- *       Otherwise, the return value is UINT32_MAX.
+ * @note If the callback is ever called this function is guaranteed to not
+ * return UINT32_MAX. Otherwise, the return value is UINT32_MAX.
  */
-qlex_size qlex_spanx(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end,
-                     void (*callback)(const char *, qlex_size, uintptr_t), uintptr_t userdata);
+uint32_t qlex_spanx(qlex_t *lexer, uint32_t start, uint32_t end,
+                    void (*callback)(const char *, uint32_t, uintptr_t),
+                    uintptr_t userdata);
 
-void qlex_rect(qlex_t *lexer, qlex_size x_0, qlex_size y_0, qlex_size x_1, qlex_size y_1, char *out,
-               size_t max_size, char fill);
+void qlex_rect(qlex_t *lexer, uint32_t x_0, uint32_t y_0, uint32_t x_1,
+               uint32_t y_1, char *out, size_t max_size, char fill);
 
 /**
  * @brief Get the string representation of a token type.
@@ -290,13 +289,13 @@ bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b);
  * @param tok Token.
  * @param len Pointer to store the length of the string.
  *
- * @return The internal string value for the token or empty string if this operation is applicable
- * for this token type.
+ * @return The internal string value for the token or empty string if this
+ * operation is applicable for this token type.
  * @note This function is thread-safe.
  * @warning The lifetime shall exist for the duration of the lexer context.
  * @warning DO NOT MODIFY THE RETURNED STRING.
- * @warning The returned string is NULL-terminated, however, it may contain any bytes within the
- * data including NULL bytes.
+ * @warning The returned string is NULL-terminated, however, it may contain any
+ * bytes within the data including NULL bytes.
  */
 const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len);
 
@@ -304,7 +303,8 @@ const char *qlex_opstr(qlex_op_t op);
 const char *qlex_kwstr(qlex_key_t kw);
 const char *qlex_punctstr(qlex_punc_t punct);
 
-void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, qlex_tok_t *out);
+void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str,
+                      qlex_tok_t *out);
 
 #ifdef __cplusplus
 }

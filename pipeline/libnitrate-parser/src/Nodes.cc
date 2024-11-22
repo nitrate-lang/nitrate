@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -36,6 +38,7 @@
 #include <nitrate-parser/Parser.h>
 
 #include <cstring>
+#include <iomanip>
 #include <unordered_map>
 
 #include "LibMacro.h"
@@ -44,7 +47,9 @@ using namespace qparse;
 
 ///=============================================================================
 namespace qparse {
-  void ArenaAllocatorImpl::swap(qcore_arena_t &arena) { std::swap(*m_arena.get(), arena); }
+  void ArenaAllocatorImpl::swap(qcore_arena_t &arena) {
+    std::swap(*m_arena.get(), arena);
+  }
 
   CPP_EXPORT thread_local ArenaAllocatorImpl qparse_arena;
 }  // namespace qparse
@@ -54,7 +59,9 @@ LIB_EXPORT void *ArenaAllocatorImpl::allocate(std::size_t size) {
   return qcore_arena_alloc_ex(m_arena.get(), size, alignment);
 }
 
-LIB_EXPORT void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }
+LIB_EXPORT void ArenaAllocatorImpl::deallocate(void *ptr) noexcept {
+  (void)ptr;
+}
 
 ///=============================================================================
 
@@ -63,38 +70,50 @@ LIB_EXPORT const char *Node::type_name(qparse_ty_t type) {
   { QAST_NODE_##__name, "QAST_NODE_" #__name }
 
   static const std::unordered_map<qparse_ty_t, const char *> names = {
-      NAMEOF_ROW(STMT),       NAMEOF_ROW(TYPE),        NAMEOF_ROW(DECL),
-      NAMEOF_ROW(EXPR),       NAMEOF_ROW(CEXPR),       NAMEOF_ROW(UNRES_TY),
-      NAMEOF_ROW(U1_TY),      NAMEOF_ROW(U8_TY),       NAMEOF_ROW(U16_TY),
-      NAMEOF_ROW(U32_TY),     NAMEOF_ROW(U64_TY),      NAMEOF_ROW(U128_TY),
-      NAMEOF_ROW(I8_TY),      NAMEOF_ROW(I16_TY),      NAMEOF_ROW(I32_TY),
-      NAMEOF_ROW(I64_TY),     NAMEOF_ROW(I128_TY),     NAMEOF_ROW(F16_TY),
-      NAMEOF_ROW(F32_TY),     NAMEOF_ROW(F64_TY),      NAMEOF_ROW(F128_TY),
-      NAMEOF_ROW(VOID_TY),    NAMEOF_ROW(PTR_TY),      NAMEOF_ROW(OPAQUE_TY),
-      NAMEOF_ROW(TUPLE_TY),   NAMEOF_ROW(ARRAY_TY),    NAMEOF_ROW(REF_TY),
-      NAMEOF_ROW(STRUCT_TY),  NAMEOF_ROW(GROUP_TY),    NAMEOF_ROW(REGION_TY),
-      NAMEOF_ROW(UNION_TY),   NAMEOF_ROW(FN_TY),       NAMEOF_ROW(UNEXPR),
-      NAMEOF_ROW(BINEXPR),    NAMEOF_ROW(POST_UNEXPR), NAMEOF_ROW(TEREXPR),
-      NAMEOF_ROW(INT),        NAMEOF_ROW(FLOAT),       NAMEOF_ROW(BOOL),
-      NAMEOF_ROW(STRING),     NAMEOF_ROW(CHAR),        NAMEOF_ROW(NULL),
-      NAMEOF_ROW(UNDEF),      NAMEOF_ROW(CALL),        NAMEOF_ROW(TEMPL_CALL),
-      NAMEOF_ROW(LIST),       NAMEOF_ROW(ASSOC),       NAMEOF_ROW(FIELD),
-      NAMEOF_ROW(INDEX),      NAMEOF_ROW(SLICE),       NAMEOF_ROW(FSTRING),
-      NAMEOF_ROW(IDENT),      NAMEOF_ROW(SEQ_POINT),   NAMEOF_ROW(STMT_EXPR),
-      NAMEOF_ROW(TYPE_EXPR),  NAMEOF_ROW(BLOCK),       NAMEOF_ROW(VOLSTMT),
-      NAMEOF_ROW(CONST),      NAMEOF_ROW(VAR),         NAMEOF_ROW(LET),
-      NAMEOF_ROW(INLINE_ASM), NAMEOF_ROW(IF),          NAMEOF_ROW(WHILE),
-      NAMEOF_ROW(FOR),        NAMEOF_ROW(FORM),        NAMEOF_ROW(FOREACH),
-      NAMEOF_ROW(BREAK),      NAMEOF_ROW(CONTINUE),    NAMEOF_ROW(RETURN),
-      NAMEOF_ROW(RETIF),      NAMEOF_ROW(RETZ),        NAMEOF_ROW(RETV),
-      NAMEOF_ROW(CASE),       NAMEOF_ROW(SWITCH),      NAMEOF_ROW(TYPEDEF),
-      NAMEOF_ROW(FNDECL),     NAMEOF_ROW(FN),          NAMEOF_ROW(COMPOSITE_FIELD),
-      NAMEOF_ROW(STRUCT),     NAMEOF_ROW(GROUP),       NAMEOF_ROW(REGION),
-      NAMEOF_ROW(UNION),      NAMEOF_ROW(ENUM),        NAMEOF_ROW(SUBSYSTEM),
-      NAMEOF_ROW(EXPORT),     NAMEOF_ROW(EXPR_STMT),
+      NAMEOF_ROW(STMT),      NAMEOF_ROW(TYPE),
+      NAMEOF_ROW(DECL),      NAMEOF_ROW(EXPR),
+      NAMEOF_ROW(CEXPR),     NAMEOF_ROW(UNRES_TY),
+      NAMEOF_ROW(U1_TY),     NAMEOF_ROW(U8_TY),
+      NAMEOF_ROW(U16_TY),    NAMEOF_ROW(U32_TY),
+      NAMEOF_ROW(U64_TY),    NAMEOF_ROW(U128_TY),
+      NAMEOF_ROW(I8_TY),     NAMEOF_ROW(I16_TY),
+      NAMEOF_ROW(I32_TY),    NAMEOF_ROW(I64_TY),
+      NAMEOF_ROW(I128_TY),   NAMEOF_ROW(F16_TY),
+      NAMEOF_ROW(F32_TY),    NAMEOF_ROW(F64_TY),
+      NAMEOF_ROW(F128_TY),   NAMEOF_ROW(VOID_TY),
+      NAMEOF_ROW(PTR_TY),    NAMEOF_ROW(OPAQUE_TY),
+      NAMEOF_ROW(TUPLE_TY),  NAMEOF_ROW(ARRAY_TY),
+      NAMEOF_ROW(REF_TY),    NAMEOF_ROW(STRUCT_TY),
+      NAMEOF_ROW(FN_TY),     NAMEOF_ROW(UNEXPR),
+      NAMEOF_ROW(BINEXPR),   NAMEOF_ROW(POST_UNEXPR),
+      NAMEOF_ROW(TEREXPR),   NAMEOF_ROW(INT),
+      NAMEOF_ROW(FLOAT),     NAMEOF_ROW(BOOL),
+      NAMEOF_ROW(STRING),    NAMEOF_ROW(CHAR),
+      NAMEOF_ROW(NULL),      NAMEOF_ROW(UNDEF),
+      NAMEOF_ROW(CALL),      NAMEOF_ROW(TEMPL_CALL),
+      NAMEOF_ROW(LIST),      NAMEOF_ROW(ASSOC),
+      NAMEOF_ROW(FIELD),     NAMEOF_ROW(INDEX),
+      NAMEOF_ROW(SLICE),     NAMEOF_ROW(FSTRING),
+      NAMEOF_ROW(IDENT),     NAMEOF_ROW(SEQ_POINT),
+      NAMEOF_ROW(STMT_EXPR), NAMEOF_ROW(TYPE_EXPR),
+      NAMEOF_ROW(BLOCK),     NAMEOF_ROW(VOLSTMT),
+      NAMEOF_ROW(CONST),     NAMEOF_ROW(VAR),
+      NAMEOF_ROW(LET),       NAMEOF_ROW(INLINE_ASM),
+      NAMEOF_ROW(IF),        NAMEOF_ROW(WHILE),
+      NAMEOF_ROW(FOR),       NAMEOF_ROW(FOREACH),
+      NAMEOF_ROW(BREAK),     NAMEOF_ROW(CONTINUE),
+      NAMEOF_ROW(RETURN),    NAMEOF_ROW(RETIF),
+      NAMEOF_ROW(CASE),      NAMEOF_ROW(SWITCH),
+      NAMEOF_ROW(TYPEDEF),   NAMEOF_ROW(FNDECL),
+      NAMEOF_ROW(FN),        NAMEOF_ROW(COMPOSITE_FIELD),
+      NAMEOF_ROW(STRUCT),    NAMEOF_ROW(GROUP),
+      NAMEOF_ROW(REGION),    NAMEOF_ROW(UNION),
+      NAMEOF_ROW(ENUM),      NAMEOF_ROW(SUBSYSTEM),
+      NAMEOF_ROW(EXPORT),    NAMEOF_ROW(EXPR_STMT),
   };
 
-  qcore_assert(names.size() == QAST_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
+  qcore_assert(names.size() == QAST_NODE_COUNT,
+               "Polymorphic type size lookup table is incomplete");
   qcore_assert(names.contains(type));
 
   return names.at(type);
@@ -105,97 +124,51 @@ LIB_EXPORT uint32_t Node::this_sizeof() {
   { typeid(__type).hash_code(), sizeof(__type) }
 
   static const std::unordered_map<size_t, uint32_t> sizes = {
-      SIZEOF_ROW(Stmt),
-      SIZEOF_ROW(Type),
-      SIZEOF_ROW(Decl),
-      SIZEOF_ROW(Expr),
-      SIZEOF_ROW(ConstExpr),
-      SIZEOF_ROW(UnresolvedType),
-      SIZEOF_ROW(InferType),
-      SIZEOF_ROW(TemplType),
-      SIZEOF_ROW(U1),
-      SIZEOF_ROW(U8),
-      SIZEOF_ROW(U16),
-      SIZEOF_ROW(U32),
-      SIZEOF_ROW(U64),
-      SIZEOF_ROW(U128),
-      SIZEOF_ROW(I8),
-      SIZEOF_ROW(I16),
-      SIZEOF_ROW(I32),
-      SIZEOF_ROW(I64),
-      SIZEOF_ROW(I128),
-      SIZEOF_ROW(F16),
-      SIZEOF_ROW(F32),
-      SIZEOF_ROW(F64),
-      SIZEOF_ROW(F128),
-      SIZEOF_ROW(VoidTy),
-      SIZEOF_ROW(PtrTy),
-      SIZEOF_ROW(OpaqueTy),
-      SIZEOF_ROW(TupleTy),
-      SIZEOF_ROW(ArrayTy),
-      SIZEOF_ROW(RefTy),
-      SIZEOF_ROW(StructTy),
-      SIZEOF_ROW(GroupTy),
-      SIZEOF_ROW(RegionTy),
-      SIZEOF_ROW(UnionTy),
-      SIZEOF_ROW(FuncTy),
-      SIZEOF_ROW(UnaryExpr),
-      SIZEOF_ROW(BinExpr),
-      SIZEOF_ROW(PostUnaryExpr),
-      SIZEOF_ROW(TernaryExpr),
-      SIZEOF_ROW(ConstInt),
-      SIZEOF_ROW(ConstFloat),
-      SIZEOF_ROW(ConstBool),
-      SIZEOF_ROW(ConstString),
-      SIZEOF_ROW(ConstChar),
-      SIZEOF_ROW(ConstNull),
-      SIZEOF_ROW(ConstUndef),
-      SIZEOF_ROW(Call),
-      SIZEOF_ROW(TemplCall),
-      SIZEOF_ROW(List),
-      SIZEOF_ROW(Assoc),
-      SIZEOF_ROW(Field),
-      SIZEOF_ROW(Index),
-      SIZEOF_ROW(Slice),
-      SIZEOF_ROW(FString),
-      SIZEOF_ROW(Ident),
-      SIZEOF_ROW(SeqPoint),
-      SIZEOF_ROW(StmtExpr),
-      SIZEOF_ROW(TypeExpr),
-      SIZEOF_ROW(Block),
-      SIZEOF_ROW(VolStmt),
-      SIZEOF_ROW(ConstDecl),
-      SIZEOF_ROW(VarDecl),
-      SIZEOF_ROW(LetDecl),
-      SIZEOF_ROW(InlineAsm),
-      SIZEOF_ROW(IfStmt),
-      SIZEOF_ROW(WhileStmt),
-      SIZEOF_ROW(ForStmt),
-      SIZEOF_ROW(FormStmt),
-      SIZEOF_ROW(ForeachStmt),
-      SIZEOF_ROW(BreakStmt),
-      SIZEOF_ROW(ContinueStmt),
-      SIZEOF_ROW(ReturnStmt),
-      SIZEOF_ROW(ReturnIfStmt),
-      SIZEOF_ROW(RetZStmt),
-      SIZEOF_ROW(RetVStmt),
-      SIZEOF_ROW(CaseStmt),
-      SIZEOF_ROW(SwitchStmt),
-      SIZEOF_ROW(TypedefDecl),
-      SIZEOF_ROW(FnDecl),
-      SIZEOF_ROW(FnDef),
-      SIZEOF_ROW(CompositeField),
-      SIZEOF_ROW(StructDef),
-      SIZEOF_ROW(GroupDef),
-      SIZEOF_ROW(RegionDef),
-      SIZEOF_ROW(UnionDef),
-      SIZEOF_ROW(EnumDef),
-      SIZEOF_ROW(SubsystemDecl),
-      SIZEOF_ROW(ExportDecl),
-      SIZEOF_ROW(ExprStmt),
+      SIZEOF_ROW(Stmt),        SIZEOF_ROW(Type),
+      SIZEOF_ROW(Decl),        SIZEOF_ROW(Expr),
+      SIZEOF_ROW(ConstExpr),   SIZEOF_ROW(UnresolvedType),
+      SIZEOF_ROW(InferType),   SIZEOF_ROW(TemplType),
+      SIZEOF_ROW(U1),          SIZEOF_ROW(U8),
+      SIZEOF_ROW(U16),         SIZEOF_ROW(U32),
+      SIZEOF_ROW(U64),         SIZEOF_ROW(U128),
+      SIZEOF_ROW(I8),          SIZEOF_ROW(I16),
+      SIZEOF_ROW(I32),         SIZEOF_ROW(I64),
+      SIZEOF_ROW(I128),        SIZEOF_ROW(F16),
+      SIZEOF_ROW(F32),         SIZEOF_ROW(F64),
+      SIZEOF_ROW(F128),        SIZEOF_ROW(VoidTy),
+      SIZEOF_ROW(PtrTy),       SIZEOF_ROW(OpaqueTy),
+      SIZEOF_ROW(TupleTy),     SIZEOF_ROW(ArrayTy),
+      SIZEOF_ROW(RefTy),       SIZEOF_ROW(StructTy),
+      SIZEOF_ROW(FuncTy),      SIZEOF_ROW(UnaryExpr),
+      SIZEOF_ROW(BinExpr),     SIZEOF_ROW(PostUnaryExpr),
+      SIZEOF_ROW(TernaryExpr), SIZEOF_ROW(ConstInt),
+      SIZEOF_ROW(ConstFloat),  SIZEOF_ROW(ConstBool),
+      SIZEOF_ROW(ConstString), SIZEOF_ROW(ConstChar),
+      SIZEOF_ROW(ConstNull),   SIZEOF_ROW(ConstUndef),
+      SIZEOF_ROW(Call),        SIZEOF_ROW(TemplCall),
+      SIZEOF_ROW(List),        SIZEOF_ROW(Assoc),
+      SIZEOF_ROW(Field),       SIZEOF_ROW(Index),
+      SIZEOF_ROW(Slice),       SIZEOF_ROW(FString),
+      SIZEOF_ROW(Ident),       SIZEOF_ROW(SeqPoint),
+      SIZEOF_ROW(StmtExpr),    SIZEOF_ROW(TypeExpr),
+      SIZEOF_ROW(Block),       SIZEOF_ROW(VolStmt),
+      SIZEOF_ROW(ConstDecl),   SIZEOF_ROW(VarDecl),
+      SIZEOF_ROW(LetDecl),     SIZEOF_ROW(InlineAsm),
+      SIZEOF_ROW(IfStmt),      SIZEOF_ROW(WhileStmt),
+      SIZEOF_ROW(ForStmt),     SIZEOF_ROW(ForeachStmt),
+      SIZEOF_ROW(BreakStmt),   SIZEOF_ROW(ContinueStmt),
+      SIZEOF_ROW(ReturnStmt),  SIZEOF_ROW(ReturnIfStmt),
+      SIZEOF_ROW(CaseStmt),    SIZEOF_ROW(SwitchStmt),
+      SIZEOF_ROW(TypedefDecl), SIZEOF_ROW(FnDecl),
+      SIZEOF_ROW(FnDef),       SIZEOF_ROW(CompositeField),
+      SIZEOF_ROW(StructDef),   SIZEOF_ROW(GroupDef),
+      SIZEOF_ROW(RegionDef),   SIZEOF_ROW(UnionDef),
+      SIZEOF_ROW(EnumDef),     SIZEOF_ROW(SubsystemDecl),
+      SIZEOF_ROW(ExportDecl),  SIZEOF_ROW(ExprStmt),
   };
 
-  qcore_assert(sizes.size() == QAST_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
+  qcore_assert(sizes.size() == QAST_NODE_COUNT,
+               "Polymorphic type size lookup table is incomplete");
 
   size_t id = typeid(*this).hash_code();
   qcore_assert(sizes.contains(id));
@@ -238,9 +211,6 @@ LIB_EXPORT qparse_ty_t Node::this_typeid() {
       TYPEID_ROW(ArrayTy, ARRAY_TY),
       TYPEID_ROW(RefTy, REF_TY),
       TYPEID_ROW(StructTy, STRUCT_TY),
-      TYPEID_ROW(GroupTy, GROUP_TY),
-      TYPEID_ROW(RegionTy, REGION_TY),
-      TYPEID_ROW(UnionTy, UNION_TY),
       TYPEID_ROW(FuncTy, FN_TY),
       TYPEID_ROW(UnaryExpr, UNEXPR),
       TYPEID_ROW(BinExpr, BINEXPR),
@@ -274,14 +244,11 @@ LIB_EXPORT qparse_ty_t Node::this_typeid() {
       TYPEID_ROW(IfStmt, IF),
       TYPEID_ROW(WhileStmt, WHILE),
       TYPEID_ROW(ForStmt, FOR),
-      TYPEID_ROW(FormStmt, FORM),
       TYPEID_ROW(ForeachStmt, FOREACH),
       TYPEID_ROW(BreakStmt, BREAK),
       TYPEID_ROW(ContinueStmt, CONTINUE),
       TYPEID_ROW(ReturnStmt, RETURN),
       TYPEID_ROW(ReturnIfStmt, RETIF),
-      TYPEID_ROW(RetZStmt, RETZ),
-      TYPEID_ROW(RetVStmt, RETV),
       TYPEID_ROW(CaseStmt, CASE),
       TYPEID_ROW(SwitchStmt, SWITCH),
       TYPEID_ROW(TypedefDecl, TYPEDEF),
@@ -328,9 +295,6 @@ LIB_EXPORT bool Node::is_type() {
     case QAST_NODE_PTR_TY:
     case QAST_NODE_OPAQUE_TY:
     case QAST_NODE_STRUCT_TY:
-    case QAST_NODE_GROUP_TY:
-    case QAST_NODE_REGION_TY:
-    case QAST_NODE_UNION_TY:
     case QAST_NODE_ARRAY_TY:
     case QAST_NODE_TUPLE_TY:
     case QAST_NODE_FN_TY:
@@ -365,14 +329,11 @@ LIB_EXPORT bool Node::is_stmt() {
     case QAST_NODE_INLINE_ASM:
     case QAST_NODE_RETURN:
     case QAST_NODE_RETIF:
-    case QAST_NODE_RETZ:
-    case QAST_NODE_RETV:
     case QAST_NODE_BREAK:
     case QAST_NODE_CONTINUE:
     case QAST_NODE_IF:
     case QAST_NODE_WHILE:
     case QAST_NODE_FOR:
-    case QAST_NODE_FORM:
     case QAST_NODE_FOREACH:
     case QAST_NODE_CASE:
     case QAST_NODE_SWITCH:
@@ -526,20 +487,10 @@ LIB_EXPORT bool Type::is_composite() {
     case QAST_NODE_ARRAY_TY:
     case QAST_NODE_TUPLE_TY:
     case QAST_NODE_STRUCT_TY:
-    case QAST_NODE_GROUP_TY:
-    case QAST_NODE_REGION_TY:
       return true;
     default:
       return false;
   }
-}
-
-LIB_EXPORT bool Type::is_union() {
-  if (is<RefTy>()) {
-    return as<RefTy>()->get_item()->is_union();
-  }
-
-  return this_typeid() == QAST_NODE_UNION_TY;
 }
 
 LIB_EXPORT bool Type::is_numeric() {
@@ -876,7 +827,9 @@ void UnresolvedType::print_impl(std::ostream &os, bool debug) {
   os << m_name;
 }
 
-UnresolvedType *UnresolvedType::clone_impl() { return UnresolvedType::get(m_name); }
+UnresolvedType *UnresolvedType::clone_impl() {
+  return UnresolvedType::get(m_name);
+}
 
 bool InferType::verify_impl(std::ostream &os) {
   (void)os;
@@ -1274,7 +1227,9 @@ StructTy *StructTy::clone_impl() {
   return StructTy::get(fields);
 }
 
-LIB_EXPORT void StructTy::add_item(String name, Type *item) { m_items.push_back({name, item}); }
+LIB_EXPORT void StructTy::add_item(String name, Type *item) {
+  m_items.push_back({name, item});
+}
 
 LIB_EXPORT void StructTy::add_items(std::initializer_list<StructItem> fields) {
   for (auto [name, item] : fields) {
@@ -1288,213 +1243,6 @@ LIB_EXPORT void StructTy::remove_item(String name) {
   std::erase_if(m_items, [name](auto &field) { return field.first == name; });
 }
 
-bool GroupTy::verify_impl(std::ostream &os) {
-  for (size_t i = 0; i < m_items.size(); i++) {
-    if (!m_items[i]) {
-      os << "GroupTy: item " << i << " is NULL\n";
-      return false;
-    }
-
-    if (!m_items[i]->verify(os)) {
-      os << "GroupTy: item " << i << " is invalid\n";
-      return false;
-    }
-  }
-
-  return true;
-}
-
-void GroupTy::canonicalize_impl() {
-  for (auto item : m_items) {
-    if (item) {
-      item->canonicalize();
-    }
-  }
-}
-
-void GroupTy::print_impl(std::ostream &os, bool debug) {
-  os << "group<";
-
-  for (size_t i = 0; i < m_items.size(); i++) {
-    if (m_items[i]) {
-      m_items[i]->print(os, debug);
-    } else {
-      os << "?";
-    }
-
-    if (i + 1 < m_items.size()) {
-      os << ", ";
-    }
-  }
-
-  os << ">";
-}
-
-GroupTy *GroupTy::clone_impl() {
-  std::vector<Type *, Arena<Type *>> fields;
-  for (auto item : m_items) {
-    if (item) {
-      fields.push_back(item->clone());
-    } else {
-      fields.push_back(nullptr);
-    }
-  }
-
-  return GroupTy::get(fields);
-}
-
-LIB_EXPORT void GroupTy::add_item(Type *item) { m_items.push_back(item); }
-
-LIB_EXPORT void GroupTy::add_items(std::initializer_list<Type *> fields) {
-  for (auto field : fields) {
-    add_item(field);
-  }
-}
-
-LIB_EXPORT void GroupTy::clear_items() { m_items.clear(); }
-
-LIB_EXPORT void GroupTy::remove_item(Type *item) {
-  std::erase_if(m_items, [item](auto &field) { return field == item; });
-}
-
-bool RegionTy::verify_impl(std::ostream &os) {
-  for (size_t i = 0; i < m_items.size(); i++) {
-    if (!m_items[i]) {
-      os << "RegionTy: item " << i << " is NULL\n";
-      return false;
-    }
-
-    if (!m_items[i]->verify(os)) {
-      os << "RegionTy: item " << i << " is invalid\n";
-      return false;
-    }
-  }
-
-  return true;
-}
-
-void RegionTy::canonicalize_impl() {
-  for (auto item : m_items) {
-    if (item) {
-      item->canonicalize();
-    }
-  }
-}
-
-void RegionTy::print_impl(std::ostream &os, bool debug) {
-  os << "region<";
-
-  for (size_t i = 0; i < m_items.size(); i++) {
-    if (m_items[i]) {
-      m_items[i]->print(os, debug);
-    } else {
-      os << "?";
-    }
-
-    if (i + 1 < m_items.size()) {
-      os << ", ";
-    }
-  }
-
-  os << ">";
-}
-
-RegionTy *RegionTy::clone_impl() {
-  std::vector<Type *, Arena<Type *>> fields;
-  for (auto item : m_items) {
-    if (item) {
-      fields.push_back(item->clone());
-    } else {
-      fields.push_back(nullptr);
-    }
-  }
-
-  return RegionTy::get(fields);
-}
-
-LIB_EXPORT void RegionTy::add_item(Type *item) { m_items.push_back(item); }
-
-LIB_EXPORT void RegionTy::add_items(std::initializer_list<Type *> fields) {
-  for (auto field : fields) {
-    add_item(field);
-  }
-}
-
-LIB_EXPORT void RegionTy::clear_items() { m_items.clear(); }
-
-LIB_EXPORT void RegionTy::remove_item(Type *item) {
-  std::erase_if(m_items, [item](auto &field) { return field == item; });
-}
-
-bool UnionTy::verify_impl(std::ostream &os) {
-  for (size_t i = 0; i < m_items.size(); i++) {
-    if (!m_items[i]) {
-      os << "UnionTy: item " << i << " is NULL\n";
-      return false;
-    }
-
-    if (!m_items[i]->verify(os)) {
-      os << "UnionTy: item " << i << " is invalid\n";
-      return false;
-    }
-  }
-
-  return true;
-}
-
-void UnionTy::canonicalize_impl() {
-  for (auto item : m_items) {
-    if (item) {
-      item->canonicalize();
-    }
-  }
-}
-
-void UnionTy::print_impl(std::ostream &os, bool debug) {
-  os << "union<";
-
-  for (size_t i = 0; i < m_items.size(); i++) {
-    if (m_items[i]) {
-      m_items[i]->print(os, debug);
-    } else {
-      os << "?";
-    }
-
-    if (i + 1 < m_items.size()) {
-      os << ", ";
-    }
-  }
-
-  os << ">";
-}
-
-UnionTy *UnionTy::clone_impl() {
-  std::vector<Type *, Arena<Type *>> fields;
-  for (auto item : m_items) {
-    if (item) {
-      fields.push_back(item->clone());
-    } else {
-      fields.push_back(nullptr);
-    }
-  }
-
-  return UnionTy::get(fields);
-}
-
-LIB_EXPORT void UnionTy::add_item(Type *item) { m_items.push_back(item); }
-
-LIB_EXPORT void UnionTy::add_items(std::initializer_list<Type *> fields) {
-  for (auto field : fields) {
-    add_item(field);
-  }
-}
-
-LIB_EXPORT void UnionTy::clear_items() { m_items.clear(); }
-
-LIB_EXPORT void UnionTy::remove_item(Type *item) {
-  std::erase_if(m_items, [item](auto &field) { return field == item; });
-}
-
 bool FuncTy::verify_impl(std::ostream &os) {
   if (!m_return) {
     os << "FuncTy: return type is NULL\n";
@@ -1504,7 +1252,8 @@ bool FuncTy::verify_impl(std::ostream &os) {
   std::set<String> names({});
   for (size_t i = 0; i < m_params.size(); i++) {
     if (names.contains(std::get<0>(m_params[i]))) {
-      os << "FuncTy: duplicate param name '" << std::get<0>(m_params[i]) << "'\n";
+      os << "FuncTy: duplicate param name '" << std::get<0>(m_params[i])
+         << "'\n";
       return false;
     }
 
@@ -1643,8 +1392,8 @@ FuncTy *FuncTy::clone_impl() {
 
   Type *ret = m_return ? m_return->clone() : nullptr;
 
-  return FuncTy::get(ret, params, m_variadic, m_purity, m_is_foreign, m_crashpoint, m_noexcept,
-                     m_noreturn);
+  return FuncTy::get(ret, params, m_variadic, m_purity, m_is_foreign,
+                     m_crashpoint, m_noexcept, m_noreturn);
 }
 
 LIB_EXPORT bool FuncTy::is_noreturn() { return m_noreturn; }
@@ -1659,7 +1408,8 @@ LIB_EXPORT void FuncTy::add_params(std::initializer_list<FuncParam> params) {
 }
 LIB_EXPORT void FuncTy::clear_params() { m_params.clear(); }
 LIB_EXPORT void FuncTy::remove_param(String name) {
-  std::erase_if(m_params, [name](auto &param) { return std::get<0>(param) == name; });
+  std::erase_if(m_params,
+                [name](auto &param) { return std::get<0>(param) == name; });
 }
 
 ///=============================================================================
@@ -1978,16 +1728,33 @@ void ConstBool::print_impl(std::ostream &os, bool debug) {
 
 ConstBool *ConstBool::clone_impl() { return ConstBool::get(m_value); }
 
-bool ConstChar::verify_impl(std::ostream &os) {
-  (void)os;
-  return true;
-}
+bool ConstChar::verify_impl(std::ostream &) { return true; }
 
 void ConstChar::canonicalize_impl() {}
 
-void ConstChar::print_impl(std::ostream &os, bool debug) {
-  (void)debug;
-  os << "'\\u{" << std::hex << (int32_t)m_value << "}'" << std::dec;
+void ConstChar::print_impl(std::ostream &os, bool) {
+  switch (m_value) {
+    case '\n':
+      os << "'\\n'";
+      break;
+    case '\t':
+      os << "'\\t'";
+      break;
+    case '\r':
+      os << "'\\r'";
+      break;
+    case '\0':
+      os << "'\\0'";
+      break;
+    default:
+      if (std::isprint(m_value)) {
+        os << "'" << m_value << "'";
+      } else {
+        os << "'\\x" << std::hex << std::setw(2) << std::setfill('0')
+           << (int)m_value << "'";
+      }
+      break;
+  }
 }
 
 ConstChar *ConstChar::clone_impl() { return ConstChar::get(m_value); }
@@ -2175,7 +1942,7 @@ void TemplCall::print_impl(std::ostream &os, bool debug) {
   (void)os;
   (void)debug;
 
-  qcore_implement(__func__);
+  qcore_implement();
 }
 
 TemplCall *TemplCall::clone_impl() {
@@ -2201,7 +1968,9 @@ LIB_EXPORT void TemplCall::add_template_arg(String name, ConstExpr *arg) {
   m_template_args[name] = arg;
 }
 LIB_EXPORT void TemplCall::clear_template_args() { m_template_args.clear(); }
-LIB_EXPORT void TemplCall::remove_template_arg(String name) { m_template_args.erase(name); }
+LIB_EXPORT void TemplCall::remove_template_arg(String name) {
+  m_template_args.erase(name);
+}
 
 bool List::verify_impl(std::ostream &os) {
   for (size_t i = 0; i < m_items.size(); i++) {
@@ -2564,8 +2333,12 @@ FString *FString::clone_impl() {
   return FString::get(items);
 }
 
-LIB_EXPORT void qparse::FString::add_item(qparse::String item) { m_items.push_back(item); }
-LIB_EXPORT void qparse::FString::add_item(qparse::Expr *item) { m_items.push_back(item); }
+LIB_EXPORT void qparse::FString::add_item(qparse::String item) {
+  m_items.push_back(item);
+}
+LIB_EXPORT void qparse::FString::add_item(qparse::Expr *item) {
+  m_items.push_back(item);
+}
 
 bool Ident::verify_impl(std::ostream &os) {
   if (m_name.empty()) {
@@ -3179,86 +2952,6 @@ ForStmt *ForStmt::clone_impl() {
   return ForStmt::get(init, cond, step, body);
 }
 
-bool FormStmt::verify_impl(std::ostream &os) {
-  if (!m_expr) {
-    os << "FormStmt: expr is NULL\n";
-    return false;
-  }
-
-  if (!m_maxjobs) {
-    os << "FormStmt: maxjobs is NULL\n";
-    return false;
-  }
-
-  if (!m_body) {
-    os << "FormStmt: body is NULL\n";
-    return false;
-  }
-
-  if (!m_expr->verify(os)) {
-    os << "FormStmt: expr is invalid\n";
-    return false;
-  }
-
-  if (!m_maxjobs->verify(os)) {
-    os << "FormStmt: maxjobs is invalid\n";
-    return false;
-  }
-
-  if (!m_body->verify(os)) {
-    os << "FormStmt: body is invalid\n";
-    return false;
-  }
-
-  return true;
-}
-
-void FormStmt::canonicalize_impl() {
-  if (m_expr) {
-    m_expr->canonicalize();
-  }
-
-  if (m_maxjobs) {
-    m_maxjobs->canonicalize();
-  }
-
-  if (m_body) {
-    m_body->canonicalize();
-  }
-}
-
-void FormStmt::print_impl(std::ostream &os, bool debug) {
-  os << "form (";
-  if (m_maxjobs) {
-    m_maxjobs->print(os, debug);
-  } else {
-    os << "?";
-  }
-  os << ") (" << m_idx_ident << ", " << m_val_ident << " in ";
-
-  if (m_expr) {
-    m_expr->print(os, debug);
-  } else {
-    os << "?";
-  }
-
-  os << ")";
-
-  if (m_body) {
-    m_body->print(os, debug);
-  } else {
-    os << "?";
-  }
-}
-
-FormStmt *FormStmt::clone_impl() {
-  Expr *expr = m_expr ? m_expr->clone() : nullptr;
-  Expr *maxjobs = m_maxjobs ? m_maxjobs->clone() : nullptr;
-  Block *body = m_body ? m_body->clone() : nullptr;
-
-  return FormStmt::get(m_idx_ident, m_val_ident, expr, maxjobs, body);
-}
-
 bool ForeachStmt::verify_impl(std::ostream &os) {
   if (!m_expr) {
     os << "ForeachStmt: expr is NULL\n";
@@ -3438,100 +3131,6 @@ ReturnIfStmt *ReturnIfStmt::clone_impl() {
   return ReturnIfStmt::get(cond, value);
 }
 
-bool RetZStmt::verify_impl(std::ostream &os) {
-  if (!m_cond) {
-    os << "RetZStmt: cond is NULL\n";
-    return false;
-  }
-
-  if (!m_value) {
-    os << "RetZStmt: value is NULL\n";
-    return false;
-  }
-
-  if (!m_cond->verify(os)) {
-    os << "RetZStmt: cond is invalid\n";
-    return false;
-  }
-
-  if (!m_value->verify(os)) {
-    os << "RetZStmt: value is invalid\n";
-    return false;
-  }
-
-  return true;
-}
-
-void RetZStmt::canonicalize_impl() {
-  if (m_cond) {
-    m_cond->canonicalize();
-  }
-
-  if (m_value) {
-    m_value->canonicalize();
-  }
-}
-
-void RetZStmt::print_impl(std::ostream &os, bool debug) {
-  os << "retz (";
-
-  if (m_cond) {
-    m_cond->print(os, debug);
-  } else {
-    os << "?";
-  }
-
-  os << ") ";
-
-  if (m_value) {
-    m_value->print(os, debug);
-  } else {
-    os << "?";
-  }
-
-  os << ";";
-}
-
-RetZStmt *RetZStmt::clone_impl() {
-  Expr *cond = m_cond ? m_cond->clone() : nullptr;
-  Expr *value = m_value ? m_value->clone() : nullptr;
-
-  return RetZStmt::get(cond, value);
-}
-
-bool RetVStmt::verify_impl(std::ostream &os) {
-  if (!m_cond) {
-    os << "RetVStmt: cond is NULL\n";
-    return false;
-  }
-
-  return true;
-}
-
-void RetVStmt::canonicalize_impl() {
-  if (m_cond) {
-    m_cond->canonicalize();
-  }
-}
-
-void RetVStmt::print_impl(std::ostream &os, bool debug) {
-  os << "retv (";
-
-  if (m_cond) {
-    m_cond->print(os, debug);
-  } else {
-    os << "?";
-  }
-
-  os << ")";
-}
-
-RetVStmt *RetVStmt::clone_impl() {
-  Expr *cond = m_cond ? m_cond->clone() : nullptr;
-
-  return RetVStmt::get(cond);
-}
-
 bool CaseStmt::verify_impl(std::ostream &os) {
   if (!m_cond) {
     os << "CaseStmt: cond is NULL\n";
@@ -3669,7 +3268,9 @@ SwitchStmt *SwitchStmt::clone_impl() {
   return SwitchStmt::get(cond, m_cases, _default);
 }
 
-LIB_EXPORT void SwitchStmt::add_case(CaseStmt *item) { m_cases.push_back(item); }
+LIB_EXPORT void SwitchStmt::add_case(CaseStmt *item) {
+  m_cases.push_back(item);
+}
 LIB_EXPORT void SwitchStmt::clear_cases() { m_cases.clear(); }
 LIB_EXPORT void SwitchStmt::remove_case(CaseStmt *item) {
   std::erase_if(m_cases, [item](auto &field) { return field == item; });
@@ -4023,10 +3624,13 @@ StructDef *StructDef::clone_impl() {
     }
   }
 
-  return StructDef::get(m_name, static_cast<StructTy *>(type), fields, methods, static_methods);
+  return StructDef::get(m_name, static_cast<StructTy *>(type), fields, methods,
+                        static_methods);
 }
 
-LIB_EXPORT void StructDef::add_method(FnDecl *item) { m_methods.push_back(item); }
+LIB_EXPORT void StructDef::add_method(FnDecl *item) {
+  m_methods.push_back(item);
+}
 LIB_EXPORT void StructDef::add_methods(std::initializer_list<FnDecl *> items) {
   m_methods.insert(m_methods.end(), items.begin(), items.end());
 }
@@ -4035,17 +3639,24 @@ LIB_EXPORT void StructDef::remove_method(FnDecl *item) {
   std::erase_if(m_methods, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT void StructDef::add_static_method(FnDecl *item) { m_static_methods.push_back(item); }
-LIB_EXPORT void StructDef::add_static_methods(std::initializer_list<FnDecl *> items) {
+LIB_EXPORT void StructDef::add_static_method(FnDecl *item) {
+  m_static_methods.push_back(item);
+}
+LIB_EXPORT void StructDef::add_static_methods(
+    std::initializer_list<FnDecl *> items) {
   m_static_methods.insert(m_static_methods.end(), items.begin(), items.end());
 }
 LIB_EXPORT void StructDef::clear_static_methods() { m_static_methods.clear(); }
 LIB_EXPORT void StructDef::remove_static_method(FnDecl *item) {
-  std::erase_if(m_static_methods, [item](auto &field) { return field == item; });
+  std::erase_if(m_static_methods,
+                [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT void StructDef::add_field(CompositeField *item) { m_fields.push_back(item); }
-LIB_EXPORT void StructDef::add_fields(std::initializer_list<CompositeField *> items) {
+LIB_EXPORT void StructDef::add_field(CompositeField *item) {
+  m_fields.push_back(item);
+}
+LIB_EXPORT void StructDef::add_fields(
+    std::initializer_list<CompositeField *> items) {
   m_fields.insert(m_fields.end(), items.begin(), items.end());
 }
 LIB_EXPORT void StructDef::clear_fields() { m_fields.clear(); }
@@ -4183,10 +3794,13 @@ GroupDef *GroupDef::clone_impl() {
     }
   }
 
-  return GroupDef::get(m_name, static_cast<GroupTy *>(type), fields, methods, static_methods);
+  return GroupDef::get(m_name, static_cast<StructTy *>(type), fields, methods,
+                       static_methods);
 }
 
-LIB_EXPORT void GroupDef::add_method(FnDecl *item) { m_methods.push_back(item); }
+LIB_EXPORT void GroupDef::add_method(FnDecl *item) {
+  m_methods.push_back(item);
+}
 LIB_EXPORT void GroupDef::add_methods(std::initializer_list<FnDecl *> items) {
   m_methods.insert(m_methods.end(), items.begin(), items.end());
 }
@@ -4195,17 +3809,24 @@ LIB_EXPORT void GroupDef::remove_method(FnDecl *item) {
   std::erase_if(m_methods, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT void GroupDef::add_static_method(FnDecl *item) { m_static_methods.push_back(item); }
-LIB_EXPORT void GroupDef::add_static_methods(std::initializer_list<FnDecl *> items) {
+LIB_EXPORT void GroupDef::add_static_method(FnDecl *item) {
+  m_static_methods.push_back(item);
+}
+LIB_EXPORT void GroupDef::add_static_methods(
+    std::initializer_list<FnDecl *> items) {
   m_static_methods.insert(m_static_methods.end(), items.begin(), items.end());
 }
 LIB_EXPORT void GroupDef::clear_static_methods() { m_static_methods.clear(); }
 LIB_EXPORT void GroupDef::remove_static_method(FnDecl *item) {
-  std::erase_if(m_static_methods, [item](auto &field) { return field == item; });
+  std::erase_if(m_static_methods,
+                [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT void GroupDef::add_field(CompositeField *item) { m_fields.push_back(item); }
-LIB_EXPORT void GroupDef::add_fields(std::initializer_list<CompositeField *> items) {
+LIB_EXPORT void GroupDef::add_field(CompositeField *item) {
+  m_fields.push_back(item);
+}
+LIB_EXPORT void GroupDef::add_fields(
+    std::initializer_list<CompositeField *> items) {
   m_fields.insert(m_fields.end(), items.begin(), items.end());
 }
 LIB_EXPORT void GroupDef::clear_fields() { m_fields.clear(); }
@@ -4343,10 +3964,13 @@ RegionDef *RegionDef::clone_impl() {
     }
   }
 
-  return RegionDef::get(m_name, static_cast<RegionTy *>(type), fields, methods, static_methods);
+  return RegionDef::get(m_name, static_cast<StructTy *>(type), fields, methods,
+                        static_methods);
 }
 
-LIB_EXPORT void RegionDef::add_method(FnDecl *item) { m_methods.push_back(item); }
+LIB_EXPORT void RegionDef::add_method(FnDecl *item) {
+  m_methods.push_back(item);
+}
 LIB_EXPORT void RegionDef::add_methods(std::initializer_list<FnDecl *> items) {
   m_methods.insert(m_methods.end(), items.begin(), items.end());
 }
@@ -4355,17 +3979,24 @@ LIB_EXPORT void RegionDef::remove_method(FnDecl *item) {
   std::erase_if(m_methods, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT void RegionDef::add_static_method(FnDecl *item) { m_static_methods.push_back(item); }
-LIB_EXPORT void RegionDef::add_static_methods(std::initializer_list<FnDecl *> items) {
+LIB_EXPORT void RegionDef::add_static_method(FnDecl *item) {
+  m_static_methods.push_back(item);
+}
+LIB_EXPORT void RegionDef::add_static_methods(
+    std::initializer_list<FnDecl *> items) {
   m_static_methods.insert(m_static_methods.end(), items.begin(), items.end());
 }
 LIB_EXPORT void RegionDef::clear_static_methods() { m_static_methods.clear(); }
 LIB_EXPORT void RegionDef::remove_static_method(FnDecl *item) {
-  std::erase_if(m_static_methods, [item](auto &field) { return field == item; });
+  std::erase_if(m_static_methods,
+                [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT void RegionDef::add_field(CompositeField *item) { m_fields.push_back(item); }
-LIB_EXPORT void RegionDef::add_fields(std::initializer_list<CompositeField *> items) {
+LIB_EXPORT void RegionDef::add_field(CompositeField *item) {
+  m_fields.push_back(item);
+}
+LIB_EXPORT void RegionDef::add_fields(
+    std::initializer_list<CompositeField *> items) {
   m_fields.insert(m_fields.end(), items.begin(), items.end());
 }
 LIB_EXPORT void RegionDef::clear_fields() { m_fields.clear(); }
@@ -4503,10 +4134,13 @@ UnionDef *UnionDef::clone_impl() {
     }
   }
 
-  return UnionDef::get(m_name, static_cast<UnionTy *>(type), fields, methods, static_methods);
+  return UnionDef::get(m_name, static_cast<StructTy *>(type), fields, methods,
+                       static_methods);
 }
 
-LIB_EXPORT void UnionDef::add_method(FnDecl *item) { m_methods.push_back(item); }
+LIB_EXPORT void UnionDef::add_method(FnDecl *item) {
+  m_methods.push_back(item);
+}
 LIB_EXPORT void UnionDef::add_methods(std::initializer_list<FnDecl *> items) {
   m_methods.insert(m_methods.end(), items.begin(), items.end());
 }
@@ -4515,17 +4149,24 @@ LIB_EXPORT void UnionDef::remove_method(FnDecl *item) {
   std::erase_if(m_methods, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT void UnionDef::add_static_method(FnDecl *item) { m_static_methods.push_back(item); }
-LIB_EXPORT void UnionDef::add_static_methods(std::initializer_list<FnDecl *> items) {
+LIB_EXPORT void UnionDef::add_static_method(FnDecl *item) {
+  m_static_methods.push_back(item);
+}
+LIB_EXPORT void UnionDef::add_static_methods(
+    std::initializer_list<FnDecl *> items) {
   m_static_methods.insert(m_static_methods.end(), items.begin(), items.end());
 }
 LIB_EXPORT void UnionDef::clear_static_methods() { m_static_methods.clear(); }
 LIB_EXPORT void UnionDef::remove_static_method(FnDecl *item) {
-  std::erase_if(m_static_methods, [item](auto &field) { return field == item; });
+  std::erase_if(m_static_methods,
+                [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT void UnionDef::add_field(CompositeField *item) { m_fields.push_back(item); }
-LIB_EXPORT void UnionDef::add_fields(std::initializer_list<CompositeField *> items) {
+LIB_EXPORT void UnionDef::add_field(CompositeField *item) {
+  m_fields.push_back(item);
+}
+LIB_EXPORT void UnionDef::add_fields(
+    std::initializer_list<CompositeField *> items) {
   m_fields.insert(m_fields.end(), items.begin(), items.end());
 }
 LIB_EXPORT void UnionDef::clear_fields() { m_fields.clear(); }
@@ -4641,8 +4282,11 @@ SubsystemDecl *SubsystemDecl::clone_impl() {
   return SubsystemDecl::get(m_name, body, m_deps);
 }
 
-LIB_EXPORT void SubsystemDecl::add_dep(qparse::String dep) { m_deps.insert(dep); }
-LIB_EXPORT void qparse::SubsystemDecl::add_deps(const qparse::SubsystemDeps &deps) {
+LIB_EXPORT void SubsystemDecl::add_dep(qparse::String dep) {
+  m_deps.insert(dep);
+}
+LIB_EXPORT void qparse::SubsystemDecl::add_deps(
+    const qparse::SubsystemDeps &deps) {
   m_deps.insert(deps.begin(), deps.end());
 }
 LIB_EXPORT void SubsystemDecl::clear_deps() { m_deps.clear(); }
@@ -4788,15 +4432,6 @@ LIB_EXPORT qparse_node_t *qparse_alloc(qparse_ty_t type, qcore_arena_t *arena) {
     case QAST_NODE_STRUCT_TY:
       node = StructTy::get();
       break;
-    case QAST_NODE_GROUP_TY:
-      node = GroupTy::get();
-      break;
-    case QAST_NODE_REGION_TY:
-      node = RegionTy::get();
-      break;
-    case QAST_NODE_UNION_TY:
-      node = UnionTy::get();
-      break;
     case QAST_NODE_FN_TY:
       node = FuncTy::get();
       break;
@@ -4893,9 +4528,6 @@ LIB_EXPORT qparse_node_t *qparse_alloc(qparse_ty_t type, qcore_arena_t *arena) {
     case QAST_NODE_FOR:
       node = ForStmt::get();
       break;
-    case QAST_NODE_FORM:
-      node = FormStmt::get();
-      break;
     case QAST_NODE_FOREACH:
       node = ForeachStmt::get();
       break;
@@ -4910,12 +4542,6 @@ LIB_EXPORT qparse_node_t *qparse_alloc(qparse_ty_t type, qcore_arena_t *arena) {
       break;
     case QAST_NODE_RETIF:
       node = ReturnIfStmt::get();
-      break;
-    case QAST_NODE_RETZ:
-      node = RetZStmt::get();
-      break;
-    case QAST_NODE_RETV:
-      node = RetVStmt::get();
       break;
     case QAST_NODE_CASE:
       node = CaseStmt::get();

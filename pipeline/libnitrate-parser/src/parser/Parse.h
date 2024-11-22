@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -76,8 +78,8 @@ namespace qparse::parser {
 
   bool parse_function(qparse_t &job, qlex_t *rd, Stmt **node);
 
-  bool parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> terminators, Expr **node,
-                  size_t depth = 0);
+  bool parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> terminators,
+                  Expr **node, size_t depth = 0);
 
   bool parse_type(qparse_t &job, qlex_t *rd, Type **node);
 
@@ -87,17 +89,11 @@ namespace qparse::parser {
 
   bool parse_retif(qparse_t &job, qlex_t *rd, Stmt **node);
 
-  bool parse_retz(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_retv(qparse_t &job, qlex_t *rd, Stmt **node);
-
   bool parse_if(qparse_t &job, qlex_t *rd, Stmt **node);
 
   bool parse_while(qparse_t &job, qlex_t *rd, Stmt **node);
 
   bool parse_for(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_form(qparse_t &job, qlex_t *rd, Stmt **node);
 
   bool parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node);
 
@@ -107,7 +103,8 @@ namespace qparse::parser {
 
   bool parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node);
 
-  bool parse_attributes(qparse_t &job, qlex_t *rd, std::set<ConstExpr *> &attributes);
+  bool parse_attributes(qparse_t &job, qlex_t *rd,
+                        std::set<ConstExpr *> &attributes);
   bool parse_composite_field(qparse_t &job, qlex_t *rd, CompositeField **node);
 };  // namespace qparse::parser
 

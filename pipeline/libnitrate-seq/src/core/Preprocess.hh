@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -39,7 +41,8 @@
 #include <optional>
 #include <string_view>
 
-#define get_engine() ((qprep_impl_t *)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1)))
+#define get_engine() \
+  ((qprep_impl_t *)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1)))
 
 struct lua_State;
 
@@ -51,11 +54,13 @@ enum class DeferOp {
 
 struct qprep_impl_t;
 
-typedef std::function<DeferOp(qprep_impl_t *obj, qlex_tok_t last)> DeferCallback;
+typedef std::function<DeferOp(qprep_impl_t *obj, qlex_tok_t last)>
+    DeferCallback;
 
 extern std::string_view nit_code_prefix;
 
-struct __attribute__((visibility("default"))) qprep_impl_t final : public qlex_t {
+struct __attribute__((visibility("default"))) qprep_impl_t final
+    : public qlex_t {
   struct Core {
     lua_State *L = nullptr;
     std::vector<DeferCallback> defer_callbacks;
@@ -81,8 +86,10 @@ struct __attribute__((visibility("default"))) qprep_impl_t final : public qlex_t
   qlex_t *weak_clone(std::shared_ptr<std::istream> file, const char *filename);
 
 public:
-  qprep_impl_t(std::shared_ptr<std::istream> file, const char *filename, qcore_env_t env);
-  qprep_impl_t(std::shared_ptr<std::istream> file, qcore_env_t env, const char *filename);
+  qprep_impl_t(std::shared_ptr<std::istream> file, const char *filename,
+               qcore_env_t env);
+  qprep_impl_t(std::shared_ptr<std::istream> file, qcore_env_t env,
+               const char *filename);
   virtual ~qprep_impl_t() override;
 };
 

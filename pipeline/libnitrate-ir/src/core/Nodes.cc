@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -29,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
+#define __NR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
 #include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
@@ -41,7 +43,6 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <cstdint>
 #include <cstring>
-#include <memory>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <set>
@@ -65,21 +66,6 @@ void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }
 
 ///=============================================================================
 
-CPP_EXPORT ExtensionData *Expr::getExtensionData() noexcept {
-  qmodule_t *mod = getModule();
-  qcore_assert(mod != nullptr, "Module is not set");
-
-  auto it = mod->getExtensionData().find(m_extension_ptr);
-
-  if (it == mod->getExtensionData().end()) [[unlikely]] {
-    return mod->getExtensionData()
-        .emplace(mod->getExtensionDataCtr()++, std::make_unique<ExtensionData>())
-        .first->second.get();
-  }
-
-  return it->second.get();
-}
-
 CPP_EXPORT uint32_t Expr::getKindSize(nr_ty_t type) noexcept {
   static const std::unordered_map<nr_ty_t, uint32_t> sizes = {
       {QIR_NODE_BINEXPR, sizeof(BinExpr)},
@@ -100,7 +86,6 @@ CPP_EXPORT uint32_t Expr::getKindSize(nr_ty_t type) noexcept {
       {QIR_NODE_IF, sizeof(If)},
       {QIR_NODE_WHILE, sizeof(While)},
       {QIR_NODE_FOR, sizeof(For)},
-      {QIR_NODE_FORM, sizeof(Form)},
       {QIR_NODE_CASE, sizeof(Case)},
       {QIR_NODE_SWITCH, sizeof(Switch)},
       {QIR_NODE_FN, sizeof(Fn)},
@@ -131,7 +116,8 @@ CPP_EXPORT uint32_t Expr::getKindSize(nr_ty_t type) noexcept {
       {QIR_NODE_TMP, sizeof(Tmp)},
   };
 
-  qcore_assert(sizes.size() == QIR_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
+  qcore_assert(sizes.size() == QIR_NODE_COUNT,
+               "Polymorphic type size lookup table is incomplete");
 
   return sizes.at(type);
 }
@@ -156,7 +142,6 @@ CPP_EXPORT const char *Expr::getKindName(nr_ty_t type) noexcept {
       {QIR_NODE_IF, "if"},
       {QIR_NODE_WHILE, "while"},
       {QIR_NODE_FOR, "for"},
-      {QIR_NODE_FORM, "form"},
       {QIR_NODE_CASE, "case"},
       {QIR_NODE_SWITCH, "switch"},
       {QIR_NODE_FN, "fn"},
@@ -187,7 +172,8 @@ CPP_EXPORT const char *Expr::getKindName(nr_ty_t type) noexcept {
       {QIR_NODE_TMP, "tmp"},
   };
 
-  qcore_assert(names.size() == QIR_NODE_COUNT, "Polymorphic type name lookup table is incomplete");
+  qcore_assert(names.size() == QIR_NODE_COUNT,
+               "Polymorphic type name lookup table is incomplete");
 
   return names.at(type);
 }
@@ -224,7 +210,14 @@ CPP_EXPORT bool Expr::isType() const noexcept {
 }
 
 CPP_EXPORT std::optional<nr::Type *> nr::Expr::getType() noexcept {
-  return static_cast<Type *>(nr_infer(this));
+  /// TODO: Communicate the ptrSizeBytes properly here
+  Type *R = static_cast<Type *>(nr_infer(this, 8));
+
+  if (R) {
+    return R;
+  } else {
+    return std::nullopt;
+  }
 }
 
 CPP_EXPORT bool nr::Expr::isSame(const nr::Expr *other) const {
@@ -388,26 +381,6 @@ CPP_EXPORT bool nr::Expr::isSame(const nr::Expr *other) const {
       }
       return true;
     }
-    case QIR_NODE_FORM: {
-      auto a = as<Form>();
-      auto b = other->as<Form>();
-      if (!a->m_maxjobs->isSame(b->m_maxjobs)) {
-        return false;
-      }
-      if (a->m_idx_ident != b->m_idx_ident) {
-        return false;
-      }
-      if (a->m_val_ident != b->m_val_ident) {
-        return false;
-      }
-      if (!a->m_expr->isSame(b->m_expr)) {
-        return false;
-      }
-      if (!a->m_body->isSame(b->m_body)) {
-        return false;
-      }
-      return true;
-    }
     case QIR_NODE_CASE: {
       auto a = as<Case>();
       auto b = other->as<Case>();
@@ -458,13 +431,17 @@ CPP_EXPORT bool nr::Expr::isSame(const nr::Expr *other) const {
           return false;
         }
       }
-      if (!a->m_body->isSame(b->m_body)) {
+      if (a->m_body.has_value() && b->m_body.has_value()) {
+        if (!a->m_body.value()->isSame(b->m_body.value())) {
+          return false;
+        }
+      } else if (!a->m_body.has_value() ^ b->m_body.has_value()) {
         return false;
       }
       return true;
     }
     case QIR_NODE_ASM: {
-      qcore_implement("Expr::isSame for QIR_NODE_ASM");
+      qcore_implement();
       break;
     }
     case QIR_NODE_IGN: {
@@ -559,15 +536,16 @@ CPP_EXPORT bool nr::Expr::isSame(const nr::Expr *other) const {
         return false;
       }
 
-      throw std::runtime_error("Expr::isSame: attempt to compare fine structure of QIR_NODE_TMP");
-      break;
+      qcore_panic(
+          "Expr::isSame: attempt to compare fine structure of QIR_NODE_TMP");
     }
   }
 
   __builtin_unreachable();
 }
 
-static bool isCyclicUtil(nr::Expr *base, std::unordered_set<nr::Expr *> &visited,
+static bool isCyclicUtil(nr::Expr *base,
+                         std::unordered_set<nr::Expr *> &visited,
                          std::unordered_set<nr::Expr *> &recStack) {
   bool has_cycle = false;
 
@@ -579,17 +557,19 @@ static bool isCyclicUtil(nr::Expr *base, std::unordered_set<nr::Expr *> &visited
 
     // Recur for all the vertices adjacent
     // to this vertex
-    iterate<IterMode::children>(base, [&](nr::Expr *, nr::Expr **cur) -> IterOp {
-      if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack)) [[unlikely]] {
-        has_cycle = true;
-        return IterOp::Abort;
-      } else if (recStack.contains(*cur)) [[unlikely]] {
-        has_cycle = true;
-        return IterOp::Abort;
-      }
+    iterate<IterMode::children>(
+        base, [&](nr::Expr *, nr::Expr **cur) -> IterOp {
+          if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack))
+              [[unlikely]] {
+            has_cycle = true;
+            return IterOp::Abort;
+          } else if (recStack.contains(*cur)) [[unlikely]] {
+            has_cycle = true;
+            return IterOp::Abort;
+          }
 
-      return IterOp::Proceed;
-    });
+          return IterOp::Proceed;
+        });
   }
 
   // Remove the vertex from recursion stack
@@ -603,7 +583,8 @@ CPP_EXPORT bool nr::Expr::isAcyclic() const noexcept {
 
   Expr *ptr = const_cast<Expr *>(this);
   iterate<IterMode::children>(ptr, [&](Expr *, Expr **cur) -> IterOp {
-    if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack)) [[unlikely]] {
+    if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack))
+        [[unlikely]] {
       has_cycle = true;
       return IterOp::Abort;
     }
@@ -692,10 +673,6 @@ CPP_EXPORT std::string_view nr::Expr::getName() const noexcept {
       break;
     }
 
-    case QIR_NODE_FORM: {
-      break;
-    }
-
     case QIR_NODE_CASE: {
       break;
     }
@@ -714,7 +691,7 @@ CPP_EXPORT std::string_view nr::Expr::getName() const noexcept {
     }
 
     case QIR_NODE_ASM: {
-      qcore_implement("Expr::getName for QIR_NODE_ASM");
+      qcore_implement();
       break;
     }
 
@@ -815,65 +792,25 @@ CPP_EXPORT std::string_view nr::Expr::getName() const noexcept {
   return R;
 }
 
-CPP_EXPORT std::pair<qlex_loc_t, qlex_loc_t> nr::Expr::getLoc() noexcept {
-  ExtensionData *ext = getExtensionData();
-
-  qmodule_t *mod = getModule();
-  qcore_assert(mod != nullptr, "Module is not set");
-
-  qlex_t *lexer = mod->getLexer();
-  qcore_assert(lexer != nullptr, "Lexer is not set");
-
-  return {ext->loc_begin, qlex_offset(lexer, ext->loc_begin, ext->loc_size)};
+CPP_EXPORT std::pair<uint32_t, uint32_t> nr::Expr::getLoc() noexcept {
+  return {m_src_offset, m_src_offset + m_span};
 }
 
-CPP_EXPORT qlex_loc_t nr::Expr::locBeg() noexcept {
-  ExtensionData *ext = getExtensionData();
+CPP_EXPORT uint32_t nr::Expr::locBeg() noexcept { return m_src_offset; }
 
-  qmodule_t *mod = getModule();
-  qcore_assert(mod != nullptr, "Module is not set");
-
-  qlex_t *lexer = mod->getLexer();
-  qcore_assert(lexer != nullptr, "Lexer is not set");
-
-  return ext->loc_begin;
-}
-
-CPP_EXPORT qlex_loc_t nr::Expr::locEnd() noexcept {
-  ExtensionData *ext = getExtensionData();
-
-  qmodule_t *mod = getModule();
-  qcore_assert(mod != nullptr, "Module is not set");
-
-  qlex_t *lexer = mod->getLexer();
-  qcore_assert(lexer != nullptr, "Lexer is not set");
-
-  return qlex_offset(lexer, ext->loc_begin, ext->loc_size);
-}
-
-CPP_EXPORT void nr::Expr::setLocDangerous(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept {
-  ExtensionData *ext = getExtensionData();
-
-  qmodule_t *mod = getModule();
-  qcore_assert(mod != nullptr, "Module is not set");
-
-  qlex_t *lexer = mod->getLexer();
-  qcore_assert(lexer != nullptr, "Lexer is not set");
-
-  ext->loc_begin = loc.first;
-  ext->loc_size = qlex_span(lexer, loc.first, loc.second);
+CPP_EXPORT uint32_t nr::Expr::locEnd() noexcept {
+  return m_src_offset + m_span;
 }
 
 CPP_EXPORT Type *Expr::asType() noexcept {
 #ifndef NDEBUG
   if (!isType()) {
-    qcore_panicf("Failed to cast a non-type node `%s` to a type node", getKindName());
+    qcore_panicf("Failed to cast a non-type node `%s` to a type node",
+                 getKindName());
   }
 #endif
   return static_cast<Type *>(this);
 }
-
-CPP_EXPORT bool Expr::is(nr_ty_t type) const noexcept { return type == getKind(); }
 
 CPP_EXPORT void nr::Expr::dump(std::ostream &os, bool isForDebug) const {
   (void)isForDebug;
@@ -882,7 +819,7 @@ CPP_EXPORT void nr::Expr::dump(std::ostream &os, bool isForDebug) const {
   size_t len = 0;
 
   FILE *fmembuf = open_memstream(&cstr, &len);
-  if (!nr_write(this, QXIR_SERIAL_CODE, fmembuf, nullptr, 0)) {
+  if (!nr_write(nullptr, this, NR_SERIAL_CODE, fmembuf, nullptr, 0)) {
     qcore_panic("Failed to dump expression");
   }
   fflush(fmembuf);
@@ -985,11 +922,6 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
       case QIR_NODE_FOR: {
         break;
       }
-      case QIR_NODE_FORM: {
-        MIXIN_STRING(cur->as<Form>()->m_idx_ident);
-        MIXIN_STRING(cur->as<Form>()->m_val_ident);
-        break;
-      }
       case QIR_NODE_CASE: {
         break;
       }
@@ -1004,7 +936,7 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
         break;
       }
       case QIR_NODE_ASM: {
-        qcore_implement("QIR_NODE_ASM node hashing");
+        qcore_implement();
         break;
       }
       case QIR_NODE_U1_TY: {
@@ -1084,33 +1016,21 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
       case QIR_NODE_TMP: {
         MIXIN_PRIMITIVE(cur->as<Tmp>()->m_type);
 
-        if (std::holds_alternative<LetTmpNodeCradle>(cur->as<Tmp>()->m_data)) {
-          static_assert(std::tuple_size_v<LetTmpNodeCradle> == 2);
-
-          LetTmpNodeCradle &data = std::get<LetTmpNodeCradle>(cur->as<Tmp>()->m_data);
-          MIXIN_STRING(std::get<0>(data));
-          if (std::get<1>(data) != nullptr) {
-            MIXIN_STRING(std::get<1>(data)->getStateUUID());
+        if (std::holds_alternative<CallArgsTmpNodeCradle>(
+                cur->as<Tmp>()->m_data)) {
+          const CallArgsTmpNodeCradle &data =
+              std::get<CallArgsTmpNodeCradle>(cur->as<Tmp>()->m_data);
+          if (data.base != nullptr) {
+            MIXIN_STRING(data.base->getStateUUID());
           }
-        } else if (std::holds_alternative<CallArgsTmpNodeCradle>(cur->as<Tmp>()->m_data)) {
-          static_assert(std::tuple_size_v<CallArgsTmpNodeCradle> == 2);
-          CallArgsTmpNodeCradle &data = std::get<CallArgsTmpNodeCradle>(cur->as<Tmp>()->m_data);
-          if (std::get<0>(data) != nullptr) {
-            MIXIN_STRING(std::get<0>(data)->getStateUUID());
-          }
-          for (auto &arg : std::get<1>(data)) {
+          for (const auto &arg : data.args) {
             MIXIN_STRING(arg.first);
             MIXIN_STRING(arg.second->getStateUUID());
           }
-        } else if (std::holds_alternative<FieldTmpNodeCradle>(cur->as<Tmp>()->m_data)) {
-          static_assert(std::tuple_size_v<FieldTmpNodeCradle> == 2);
-          FieldTmpNodeCradle &data = std::get<FieldTmpNodeCradle>(cur->as<Tmp>()->m_data);
-          if (std::get<0>(data) != nullptr) {
-            MIXIN_STRING(std::get<0>(data)->getStateUUID());
-          }
-          MIXIN_STRING(std::get<1>(data));
-        } else if (std::holds_alternative<std::string_view>(cur->as<Tmp>()->m_data)) {
-          std::string_view &data = std::get<std::string_view>(cur->as<Tmp>()->m_data);
+        } else if (std::holds_alternative<std::string_view>(
+                       cur->as<Tmp>()->m_data)) {
+          std::string_view &data =
+              std::get<std::string_view>(cur->as<Tmp>()->m_data);
           MIXIN_STRING(data);
         } else {
           qcore_panic("Unknown TmpNodeCradle inner type");
@@ -1132,12 +1052,6 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
   std::memcpy(uuid.data, hash.data(), uuid.size());
   boost::uuids::name_generator gen(uuid);
   return gen("nr");
-}
-
-CPP_EXPORT qmodule_t *nr::Expr::getModule() const noexcept { return ::getModule(m_module_idx); }
-
-CPP_EXPORT void nr::Expr::setModuleDangerous(qmodule_t *module) noexcept {
-  m_module_idx = module->getModuleId();
 }
 
 CPP_EXPORT uint64_t Expr::getUniqId() const {
@@ -1183,11 +1097,17 @@ CPP_EXPORT bool Type::is_primitive() const {
   }
 }
 
-CPP_EXPORT bool Type::is_array() const { return getKind() == QIR_NODE_ARRAY_TY; }
+CPP_EXPORT bool Type::is_array() const {
+  return getKind() == QIR_NODE_ARRAY_TY;
+}
 
-CPP_EXPORT bool Type::is_pointer() const { return getKind() == QIR_NODE_PTR_TY; }
+CPP_EXPORT bool Type::is_pointer() const {
+  return getKind() == QIR_NODE_PTR_TY;
+}
 
-CPP_EXPORT bool Type::is_function() const { return getKind() == QIR_NODE_FN_TY; }
+CPP_EXPORT bool Type::is_function() const {
+  return getKind() == QIR_NODE_FN_TY;
+}
 
 CPP_EXPORT bool Type::is_composite() const {
   switch (getKind()) {
@@ -1200,7 +1120,9 @@ CPP_EXPORT bool Type::is_composite() const {
   }
 }
 
-CPP_EXPORT bool Type::is_union() const { return getKind() == QIR_NODE_UNION_TY; }
+CPP_EXPORT bool Type::is_union() const {
+  return getKind() == QIR_NODE_UNION_TY;
+}
 
 CPP_EXPORT bool Type::is_numeric() const {
   switch (getKind()) {
@@ -1299,9 +1221,7 @@ CPP_EXPORT bool Type::is_ptr_to(const Type *type) const {
   return false;
 }
 
-CPP_EXPORT nr::uint128_t Int::str2u128(std::string_view s) noexcept {
-  /// FIXME: I don't understand this function
-
+CPP_EXPORT uint128_t Int::str2u128(std::string_view s) noexcept {
   uint128_t x = 0;
 
   for (char c : s) {
@@ -1311,7 +1231,8 @@ CPP_EXPORT nr::uint128_t Int::str2u128(std::string_view s) noexcept {
 
     // Check for overflow
     if (x > (std::numeric_limits<uint128_t>::max() - (c - '0')) / 10) {
-      qcore_panicf("Overflow when converting string `%s` to uint128_t", s.data());
+      qcore_panicf("Overflow when converting string `%s` to uint128_t",
+                   s.data());
     }
 
     x = x * 10 + (c - '0');
@@ -1320,83 +1241,6 @@ CPP_EXPORT nr::uint128_t Int::str2u128(std::string_view s) noexcept {
   return x;
 }
 
-CPP_EXPORT std::string_view Int::u128_2_cstr_interned(uint128_t x) noexcept {
-  static constexpr std::array<std::string_view, 256> static_table = {
-      "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",   "8",   "9",   "10",  "11",  "12",
-      "13",  "14",  "15",  "16",  "17",  "18",  "19",  "20",  "21",  "22",  "23",  "24",  "25",
-      "26",  "27",  "28",  "29",  "30",  "31",  "32",  "33",  "34",  "35",  "36",  "37",  "38",
-      "39",  "40",  "41",  "42",  "43",  "44",  "45",  "46",  "47",  "48",  "49",  "50",  "51",
-      "52",  "53",  "54",  "55",  "56",  "57",  "58",  "59",  "60",  "61",  "62",  "63",  "64",
-      "65",  "66",  "67",  "68",  "69",  "70",  "71",  "72",  "73",  "74",  "75",  "76",  "77",
-      "78",  "79",  "80",  "81",  "82",  "83",  "84",  "85",  "86",  "87",  "88",  "89",  "90",
-      "91",  "92",  "93",  "94",  "95",  "96",  "97",  "98",  "99",  "100", "101", "102", "103",
-      "104", "105", "106", "107", "108", "109", "110", "111", "112", "113", "114", "115", "116",
-      "117", "118", "119", "120", "121", "122", "123", "124", "125", "126", "127", "128", "129",
-      "130", "131", "132", "133", "134", "135", "136", "137", "138", "139", "140", "141", "142",
-      "143", "144", "145", "146", "147", "148", "149", "150", "151", "152", "153", "154", "155",
-      "156", "157", "158", "159", "160", "161", "162", "163", "164", "165", "166", "167", "168",
-      "169", "170", "171", "172", "173", "174", "175", "176", "177", "178", "179", "180", "181",
-      "182", "183", "184", "185", "186", "187", "188", "189", "190", "191", "192", "193", "194",
-      "195", "196", "197", "198", "199", "200", "201", "202", "203", "204", "205", "206", "207",
-      "208", "209", "210", "211", "212", "213", "214", "215", "216", "217", "218", "219", "220",
-      "221", "222", "223", "224", "225", "226", "227", "228", "229", "230", "231", "232", "233",
-      "234", "235", "236", "237", "238", "239", "240", "241", "242", "243", "244", "245", "246",
-      "247", "248", "249", "250", "251", "252", "253", "254", "255"};
-
-  if (x <= 255) [[likely]] {
-    return static_table[(uint8_t)x];
-  }
-
-  if (x == UINT16_MAX) {
-    return "65535";
-  } else if (x == UINT32_MAX) {
-    return "4294967295";
-  } else if (x == UINT64_MAX) {
-    return "18446744073709551615";
-  }
-
-  /// FIXME: I don't understand this function
-
-  char buf[40] = {0};
-
-  char *ptr = buf + sizeof(buf) - 1;
-
-  do {
-    *--ptr = '0' + (x % 10).convert_to<int>();
-    x /= 10;
-  } while (x != 0);
-
-  return current->internString(std::string_view(ptr, buf + sizeof(buf) - ptr));
-}
-
 Expr *nr::createIgn() {
-  Expr *ptr = nullptr;
-
-  if ((ptr = (Expr *)already_alloc(QIR_NODE_IGN)) == nullptr) [[unlikely]] {
-    ptr = new (Arena<Expr>().allocate(1)) Expr(QIR_NODE_IGN);
-    ptr->setModuleDangerous(current);
-    alloc_memorize(QIR_NODE_IGN, (void *)ptr);
-  }
-
-  return ptr;
-}
-
-Type *nr::createUPtrIntTy() {
-  size_t ptr_size = current->getTargetInfo().PointerSizeBytes;
-
-  switch (ptr_size) {
-    case 1:
-      return create<U8Ty>();
-    case 2:
-      return create<U16Ty>();
-    case 4:
-      return create<U32Ty>();
-    case 8:
-      return create<U64Ty>();
-    case 16:
-      return create<U128Ty>();
-    default:
-      qcore_panicf("Unsupported construction for unsigned integer pointer type of size: %zu",
-                   ptr_size);
-  }
+  return new (Arena<Expr>().allocate(1)) Expr(QIR_NODE_IGN);
 }

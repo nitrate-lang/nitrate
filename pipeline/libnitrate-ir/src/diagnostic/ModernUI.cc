@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -21,7 +23,7 @@
 ///   The Nitrate Toolcain is distributed in the hope that it will be        ///
 ///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
 ///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
-///   Lesser General Public License for more issue_info.                        ///
+///   Lesser General Public License for more details.                        ///
 ///                                                                          ///
 ///   You should have received a copy of the GNU Lesser General Public       ///
 ///   License along with the Nitrate Toolchain; if not, see                  ///
@@ -31,124 +33,106 @@
 
 #include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
-#include <nitrate-lexer/Lexer.h>
 #include <nitrate-parser/Node.h>
 
 #include <boost/bimap.hpp>
 #include <core/Config.hh>
+#include <core/Diagnostic.hh>
 #include <cstdint>
 #include <iomanip>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
-#include <nitrate-ir/Report.hh>
 #include <sstream>
 
-using namespace nr::diag;
+using namespace nr;
 
 template <typename L, typename R>
-boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
+boost::bimap<L, R> make_bimap(
+    std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
   return boost::bimap<L, R>(list.begin(), list.end());
 }
 
 /// FIXME: Write correct stuff here
 
-const boost::bimap<IssueCode, IssueInfo> nr::diag::issue_info = make_bimap<IssueCode, IssueInfo>({
-    {IssueCode::Info, {"info", "%s", {}}},
-    {IssueCode::CompilerError, {"Compiler Error", "An error occurred during compilation: %s", {}}},
-    {IssueCode::PTreeInvalid,
-     {"ptree-invalid", /* FIXME: Summarize */
-      "%s",
-      {}}},
-    {IssueCode::SignalReceived,
-     {"signal-recv", "The compiler received an unrecoverable process signal.", {}}},
-    {IssueCode::DSPolyCyclicRef,
-     {"ds-cyclic-ref",
-      "Cyclic polymorphic node reference detected in internal module IR data structure.",
-      {"This is an (INTERNAL) compiler error. Please report this issue."}}},
-    {IssueCode::DSNullPtr,
-     {"ds-nullptr",
-      "Nullptr detected in internal module IR data structure.",
-      {"This is an (INTERNAL) compiler error. Please report this issue."}}},
-    {IssueCode::DSBadType,
-     {"ds-bad-type",
-      "Internal module IR data structure contains a bad type.",
-      {"This is an (INTERNAL) compiler error. Please report this issue."}}},
-    {IssueCode::DSMissingMod,
-     {"ds-missing-mod",
-      "Internal module IR data structure contains a node with a missing module pointer.",
-      {"This is an (INTERNAL) compiler error. Please report this issue."}}},
-    {IssueCode::DSBadTmpNode,
-     {"ds-bad-tmp-node",
-      "Internal module IR data structure contains an unexpected temporary node.",
-      {"This is an (INTERNAL) compiler error. Please report this issue."}}},
-    {IssueCode::FunctionRedefinition,
-     {"function-redefinition", /* FIXME: Summarize */
-      "write me",
-      {}}},
-    {IssueCode::VariableRedefinition,
-     {"variable-redefinition", /* FIXME: Summarize */
-      "Variable '%s' is redefined.",
-      {"Ensure that all variables in scope are only defined once."}}},
-    {IssueCode::UnknownFunction,
-     {"unknown-function", /* FIXME: Summarize */
-      "write me",
-      {}}},
-    {IssueCode::TooManyArguments,
-     {"too-many-arguments", /* FIXME: Summarize */
-      "write me",
-      {}}},
-    {IssueCode::UnknownArgument,
-     {"unknown-argument", /* FIXME: Summarize */
-      "write me",
-      {}}},
-    {IssueCode::TypeInference,
-     {"type-inference", /* FIXME: Summarize */
-      "Preliminary type checking failed.",
-      {}}},
-    {IssueCode::NameManglingTypeInfer,
-     {"nm-type-infer", /* FIXME: Summarize */
-      "Failed to mangle the name of symbol named: '%s'.",
-      {
-          "Ensure that the symbol node is correctly typed.",
-      }}},
-    {IssueCode::UnexpectedUndefLiteral,
-     {"bad-undef-keyword",
-      "Unexpected 'undef' keyword",
-      {"The 'undef' keyword is only permitted as default values for variable declarations and as "
-       "function arguments."}}},
+const boost::bimap<IssueCode, IssueInfo> nr::issue_info =
+    make_bimap<IssueCode, IssueInfo>({
+        {Info, {"info", "%s", {}}},
+        {CompilerError,
+         {"Compiler Error", "An error occurred during compilation: %s", {}}},
+        {PTreeInvalid, {"ptree-invalid", "%s", {}}},
+        {SignalReceived,
+         {"signal-recv",
+          "The compiler received an unrecoverable process signal.",
+          {}}},
+        {DSPolyCyclicRef,
+         {"ds-cyclic-ref",
+          "Cyclic polymorphic node reference detected in internal module IR "
+          "data structure.",
+          {"This is an (INTERNAL) compiler error. Please report this issue."}}},
+        {DSNullPtr,
+         {"ds-nullptr",
+          "Nullptr detected in internal module IR data structure.",
+          {"This is an (INTERNAL) compiler error. Please report this issue."}}},
+        {DSBadType,
+         {"ds-bad-type",
+          "Internal module IR data structure contains a bad type.",
+          {"This is an (INTERNAL) compiler error. Please report this issue."}}},
+        {DSBadTmpNode,
+         {"ds-bad-tmp-node",
+          "Internal module IR data structure contains an unexpected temporary "
+          "node.",
+          {"This is an (INTERNAL) compiler error. Please report this issue."}}},
+        {FunctionRedefinition, {"function-redefinition", "write me", {}}},
+        {VariableRedefinition,
+         {"variable-redefinition",
+          "Variable '%s' is redefined.",
+          {"Ensure that all variables in scope are only defined once."}}},
+        {UnknownFunction, {"unknown-function", "write me", {}}},
+        {TooManyArguments, {"too-many-arguments", "write me", {}}},
+        {UnknownArgument, {"unknown-argument", "write me", {}}},
+        {TypeInference, {"type-inference", "Type inference failed: %s", {}}},
+        {NameManglingTypeInfer,
+         {"nm-type-infer",
+          "Failed to mangle the name of symbol named: '%s'.",
+          {
+              "Ensure that the symbol node is correctly typed.",
+          }}},
+        {UnexpectedUndefLiteral,
+         {"bad-undef-keyword",
+          "Unexpected 'undef' keyword",
+          {"The 'undef' keyword is only permitted as default values for "
+           "variable declarations."}}},
 
-    {IssueCode::UnknownType,
-     {"unknown-type", /* FIXME: Summarize */
-      "write me",
-      {}}},
-    {IssueCode::UnresolvedIdentifier,
-     {"unresolved-identifier", /* FIXME: Summarize */
-      "404 - Identifier '%s' not found.",
-      {"Make sure the identifier is defined in the current scope.", "Check for typos.",
-       "Check for visibility."}}},
-    {IssueCode::TypeRedefinition,
-     {"type-redefinition",
-      "Type '%s' is redefined.",
-      {"Ensure that the one-defintion-rule (ODR) is obeyed.", "Check for typos.",
-       "Check for visibility."}}},
-    {IssueCode::BadCast,
-     {"bad-cast",
-      "%s",
-      {
-          "Ensure that the cast is valid.",
-      }}},
+        {UnknownType, {"unknown-type", "write me", {}}},
+        {UnresolvedIdentifier,
+         {"unresolved-identifier",
+          "404 - Identifier '%s' not found.",
+          {"Make sure the identifier is defined in the current scope.",
+           "Check for typos.", "Check for visibility."}}},
+        {TypeRedefinition,
+         {"type-redefinition",
+          "Type '%s' is redefined.",
+          {"Ensure that the one-defintion-rule (ODR) is obeyed.",
+           "Check for typos.", "Check for visibility."}}},
+        {BadCast,
+         {"bad-cast",
+          "%s",
+          {
+              "Ensure that the cast is valid.",
+          }}},
 
-    {IssueCode::MissingReturn,
-     {"missing-return",
-      "Function '%s' is missing a return statement.",
-      {"Make sure all code paths return a value.",
-       "Check for missing return statements in conditional branches.",
-       "If your code is complicated, consider using an unreachable assertion."}}},
-});
+        {MissingReturn,
+         {"missing-return",
+          "Function '%s' is missing a return statement.",
+          {"Make sure all code paths return a value.",
+           "Check for missing return statements in conditional branches.",
+           "If your code is complicated, consider using an unreachable "
+           "assertion."}}},
+    });
 
 ///============================================================================///
 
-static void print_qsizeloc(std::stringstream &ss, qlex_size num) {
+static void print_qsizeloc(std::stringstream &ss, uint32_t num) {
   if (num == UINT32_MAX) {
     ss << "?";
   } else {
@@ -156,7 +140,8 @@ static void print_qsizeloc(std::stringstream &ss, qlex_size num) {
   }
 }
 
-static std::vector<std::string_view> word_break(std::string_view text, size_t max_width) {
+static std::vector<std::string_view> word_break(std::string_view text,
+                                                size_t max_width) {
   std::vector<std::string_view> lines;
   size_t word_beg = 0, cur_beg = 0, cur_len = 0;
 
@@ -245,7 +230,8 @@ static std::vector<std::string_view> word_break(std::string_view text, size_t ma
   return lines;
 }
 
-static std::string format_overview(std::string_view overview, std::string_view param) {
+static std::string format_overview(std::string_view overview,
+                                   std::string_view param) {
   std::string formatted;
   size_t i = 0;
 
@@ -267,8 +253,8 @@ static std::string format_overview(std::string_view overview, std::string_view p
   return formatted;
 }
 
-static void confine_rect_bounds(int64_t &x_0, int64_t &y_0, int64_t &x_1, int64_t &y_1,
-                                size_t win_width) {
+static void confine_rect_bounds(int64_t &x_0, int64_t &y_0, int64_t &x_1,
+                                int64_t &y_1, size_t win_width) {
   if (x_1 < x_0) {
     x_1 = x_0;
   }
@@ -305,22 +291,28 @@ static void confine_rect_bounds(int64_t &x_0, int64_t &y_0, int64_t &x_1, int64_
   if (y_1 < 0) y_1 = 0;
 }
 
-std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const {
+std::string nr::mint_modern_message(const IReport::ReportData &R,
+                                    ISourceView *B) {
   constexpr size_t WIDTH = 70;
 
   std::stringstream ss;
-  qlex_t *lx = m_nr->getLexer();
-  qlex_size sl, sc, el, ec;
+  uint32_t sl, sc, el, ec;
 
   { /* Print filename and source row:column start and end */
-    ss << "\x1b[37;1m" << qlex_filename(lx) << ":";
+    /// FIXME: Render filename
+    ss << "\x1b[37;1m" << "??" << ":";
 
-    sl = qlex_line(lx, msg.m_start);
-    sc = qlex_col(lx, msg.m_start);
-    el = qlex_line(lx, msg.m_end);
-    ec = qlex_col(lx, msg.m_end);
+    auto default_if = std::pair<uint32_t, uint32_t>(UINT32_MAX, UINT32_MAX);
+    auto beg = B->off2rc(R.start_offset).value_or(default_if);
+    auto end = B->off2rc(R.end_offset).value_or(default_if);
 
-    if (sl != UINT32_MAX || sc != UINT32_MAX || el != UINT32_MAX || ec != UINT32_MAX) {
+    sl = beg.first;
+    sc = beg.second;
+    el = end.first;
+    ec = end.second;
+
+    if (sl != UINT32_MAX || sc != UINT32_MAX || el != UINT32_MAX ||
+        ec != UINT32_MAX) {
       print_qsizeloc(ss, sl);
       ss << ":";
       print_qsizeloc(ss, sc);
@@ -337,26 +329,26 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
   }
 
   { /* Print message flagname */
-    switch (msg.m_type) {
-      case IssueClass::Debug:
-        ss << "\x1b[1mdebug:\x1b[0m \x1b[1m" << issue_info.left.at(msg.m_code).flagname
-           << "\x1b[0m\n";
+    switch (R.level) {
+      case IC::Debug:
+        ss << "\x1b[1mdebug:\x1b[0m \x1b[1m"
+           << issue_info.left.at(R.code).flagname << "\x1b[0m\n";
         break;
-      case IssueClass::Info:
-        ss << "\x1b[37;1minfo:\x1b[0m \x1b[37;1m" << issue_info.left.at(msg.m_code).flagname
-           << "\x1b[0m\n";
+      case IC::Info:
+        ss << "\x1b[37;1minfo:\x1b[0m \x1b[37;1m"
+           << issue_info.left.at(R.code).flagname << "\x1b[0m\n";
         break;
-      case IssueClass::Warn:
-        ss << "\x1b[35;1mwarning:\x1b[0m \x1b[35;1m" << issue_info.left.at(msg.m_code).flagname
-           << "\x1b[0m\n";
+      case IC::Warn:
+        ss << "\x1b[35;1mwarning:\x1b[0m \x1b[35;1m"
+           << issue_info.left.at(R.code).flagname << "\x1b[0m\n";
         break;
-      case IssueClass::Error:
-        ss << "\x1b[31;1merror:\x1b[0m \x1b[31;1m" << issue_info.left.at(msg.m_code).flagname
-           << "\x1b[0m\n";
+      case IC::Error:
+        ss << "\x1b[31;1merror:\x1b[0m \x1b[31;1m"
+           << issue_info.left.at(R.code).flagname << "\x1b[0m\n";
         break;
-      case IssueClass::FatalError:
+      case IC::FatalError:
         ss << "\x1b[31;1;4mfatal error:\x1b[0m \x1b[31;1;4m"
-           << issue_info.left.at(msg.m_code).flagname << "\x1b[0m\n";
+           << issue_info.left.at(R.code).flagname << "\x1b[0m\n";
         break;
     }
   }
@@ -372,7 +364,7 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
   }
 
   { /* Print message overview */
-    auto data = format_overview(issue_info.left.at(msg.m_code).overview, msg.m_msg);
+    auto data = format_overview(issue_info.left.at(R.code).overview, R.param);
     auto lines = word_break(data, WIDTH);
 
     if (lines.size() == 0) {
@@ -383,12 +375,13 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
       for (size_t i = 1; i < lines.size() - 1; i++) {
         ss << ind << "\x1b[33m║\x1b[0m \x1b[35;1m" << lines[i] << "\x1b[0m\n";
       }
-      ss << ind << "\x1b[33m╚\x1b[0m \x1b[35;1m" << lines[lines.size() - 1] << "\x1b[0m\n\n";
+      ss << ind << "\x1b[33m╚\x1b[0m \x1b[35;1m" << lines[lines.size() - 1]
+         << "\x1b[0m\n\n";
     }
   }
 
   { /* Print code intelligence */
-    auto hints = issue_info.left.at(msg.m_code).hints;
+    auto hints = issue_info.left.at(R.code).hints;
 
     if (!hints.empty()) {
       ss << ind << "\x1b[33m╔═\x1b[0m \x1b[32;1mCode Intelligence:\x1b[0m\n";
@@ -401,9 +394,11 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
         } else {
           ss << ind << "\x1b[33m╠═\x1b[0m \x1b[37m" << lines[0] << "\x1b[0m\n";
           for (size_t i = 1; i < lines.size() - 1; i++) {
-            ss << ind << "\x1b[33m║\x1b[0m   \x1b[37m" << lines[i] << "\x1b[0m\n";
+            ss << ind << "\x1b[33m║\x1b[0m   \x1b[37m" << lines[i]
+               << "\x1b[0m\n";
           }
-          ss << ind << "\x1b[33m║\x1b[0m   \x1b[37m" << lines[lines.size() - 1] << "\x1b[0m\n";
+          ss << ind << "\x1b[33m║\x1b[0m   \x1b[37m" << lines[lines.size() - 1]
+             << "\x1b[0m\n";
         }
       }
 
@@ -418,38 +413,22 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
     int64_t x_0 = sc, y_0 = sl, x_1 = ec, y_1 = el;
     confine_rect_bounds(x_0, y_0, x_1, y_1, WINDOW_WIDTH);
 
-    size_t width = x_1 - x_0;
-    size_t height = y_1 - y_0;
-    size_t buf_size = width * height + 1;
-    std::unique_ptr<char[]> out(new char[buf_size]);
+    auto source_lines = B->rect(x_0, y_0, x_1, y_1);
 
-    qlex_rect(lx, x_0, y_0, x_1, y_1, out.get(), buf_size, ' ');
-
-    std::vector<std::string_view> source_lines;
-
-    for (size_t i = 0; i < height; i++) {
-      source_lines.push_back(std::string_view(&out[i * width], width));
-    }
-
-    /*= {
-        R"(pub "c" fn main(args: [string]): i32 {                      )",
-        R"(  print(20); // Hello world                                 )",
-        R"(}                                                           )"};
-        */
-
-    { /* Render code view */
+    if (source_lines.has_value()) {
       std::string sep;
       for (size_t i = 0; i < WINDOW_WIDTH + 2; i++) {
         sep += "━";
       }
 
       ss << ind << "  \x1b[32m┏" << sep << "┓\x1b[0m\n";
-      for (size_t i = 0; i < source_lines.size(); i++) {
-        auto lines = word_break(source_lines[i], WINDOW_WIDTH);
+      for (size_t i = 0; i < source_lines.value().size(); i++) {
+        auto lines = word_break(source_lines.value()[i], WINDOW_WIDTH);
 
         for (const auto &line : lines) {
           if (sl != UINT32_MAX) {
-            ss << std::setw(ind_sz + 1) << (sl - (source_lines.size() / 2)) + i + 1;
+            ss << std::setw(ind_sz + 1)
+               << (sl - (source_lines.value().size() / 2)) + i + 1;
           } else {
             ss << std::setw(ind_sz + 1) << "?";
           }

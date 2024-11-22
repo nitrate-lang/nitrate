@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -35,50 +37,99 @@
 
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
+#include <unordered_map>
 
 using namespace nr;
 
-Fn *NRBuilder::createFunctionDefintion(std::string_view name, std::span<Type *> params,
-                                       Type *ret_ty, bool is_variadic, Vis visibility,
-                                       Purity purity, bool thread_safe, bool is_noexcept,
-                                       bool foreign SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement(__func__);
-  (void)name;
-  (void)params;
-  (void)ret_ty;
-  (void)is_variadic;
+Fn *NRBuilder::createFunctionDefintion(
+    std::string_view name, std::span<FnParam> params, Type *ret_ty,
+    bool is_variadic, Vis visibility, Purity purity, bool thread_safe,
+    bool is_noexcept, bool foreign SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(ret_ty != nullptr && static_cast<Expr *>(ret_ty)->isType());
+
+  Params parameters(params.size());
+  std::unordered_map<size_t, Expr *> default_arguments;
+
+  for (size_t i = 0; i < params.size(); i++) {
+    contract_enforce(static_cast<Expr *>(std::get<1>(params[i]))->isType());
+    parameters[i] = {std::get<1>(params[i]), std::get<0>(params[i])};
+
+    if (std::get<2>(params[i]).has_value()) {
+      default_arguments[i] = std::get<2>(params[i]).value();
+    }
+  }
+
+  /// TODO: Do something useful with the metadata:
+  /// [visibility,purity,thread_safety,noexcept,foriegn]
   (void)visibility;
   (void)purity;
   (void)thread_safe;
   (void)is_noexcept;
   (void)foreign;
-  ignore_caller_info();
+
+  Fn *fn = create<Fn>(name, std::move(parameters), ret_ty, std::nullopt,
+                      is_variadic, AbiTag::Default);
+
+  if (m_named_functions.contains(name)) [[unlikely]] {
+    /// TODO: Handle duplicate symbol
+    qcore_implement();
+  }
+
+  m_named_functions[name] = fn;
+  m_function_defaults[fn] = std::move(default_arguments);
+
+  return compiler_trace(debug_info(fn, DEBUG_INFO));
 }
 
-Fn *NRBuilder::createFunctionDeclaration(std::string_view name, std::span<Type *> params,
-                                         Type *ret_ty, bool is_variadic, Vis visibility,
-                                         Purity purity, bool thread_safe, bool is_noexcept,
-                                         bool foreign SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement(__func__);
-  (void)name;
-  (void)params;
-  (void)ret_ty;
-  (void)is_variadic;
+Fn *NRBuilder::createFunctionDeclaration(
+    std::string_view name, std::span<FnParam> params, Type *ret_ty,
+    bool is_variadic, Vis visibility, Purity purity, bool thread_safe,
+    bool is_noexcept, bool foreign SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(ret_ty != nullptr && static_cast<Expr *>(ret_ty)->isType());
+
+  Params parameters(params.size());
+  std::unordered_map<size_t, Expr *> default_arguments;
+
+  for (size_t i = 0; i < params.size(); i++) {
+    contract_enforce(static_cast<Expr *>(std::get<1>(params[i]))->isType());
+    parameters[i] = {std::get<1>(params[i]), std::get<0>(params[i])};
+
+    if (std::get<2>(params[i]).has_value()) {
+      default_arguments[i] = std::get<2>(params[i]).value();
+    }
+  }
+
+  /// TODO: Do something useful with the metadata:
+  /// [visibility,purity,thread_safety,noexcept,foriegn]
   (void)visibility;
   (void)purity;
   (void)thread_safe;
   (void)is_noexcept;
   (void)foreign;
-  ignore_caller_info();
+
+  Fn *fn = create<Fn>(name, std::move(parameters), ret_ty, std::nullopt,
+                      is_variadic, AbiTag::Default);
+
+  if (m_named_functions.contains(name)) [[unlikely]] {
+    /// TODO: Handle duplicate symbol
+    qcore_implement();
+  }
+
+  m_named_functions[name] = fn;
+  m_function_defaults[fn] = std::move(default_arguments);
+
+  return compiler_trace(debug_info(fn, DEBUG_INFO));
 }
 
-Fn *NRBuilder::createAnonymousFunction(std::span<Type *> params, Type *ret_ty, bool is_variadic,
-                                       Purity purity, bool thread_safe,
-                                       bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
+Fn *NRBuilder::createAnonymousFunction(
+    std::span<FnParam> params, Type *ret_ty, bool is_variadic, Purity purity,
+    bool thread_safe, bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
   (void)params;
   (void)ret_ty;
   (void)is_variadic;
@@ -88,11 +139,11 @@ Fn *NRBuilder::createAnonymousFunction(std::span<Type *> params, Type *ret_ty, b
   ignore_caller_info();
 }
 
-Fn *NRBuilder::createOperatorOverload(Op op, std::span<Type *> params, Type *ret_ty, Purity purity,
-                                      bool thread_safe,
-                                      bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
+Fn *NRBuilder::createOperatorOverload(
+    Op op, std::span<Type *> params, Type *ret_ty, Purity purity,
+    bool thread_safe, bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
   (void)op;
   (void)params;
   (void)ret_ty;
@@ -102,13 +153,13 @@ Fn *NRBuilder::createOperatorOverload(Op op, std::span<Type *> params, Type *ret
   ignore_caller_info();
 }
 
-Fn *NRBuilder::createTemplateFunction(std::string_view name,
-                                      std::span<std::string_view> template_params,
-                                      std::span<Type *> params, Type *ret_ty, bool is_variadic,
-                                      Vis visibility, Purity purity, bool thread_safe,
-                                      bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
+Fn *NRBuilder::createTemplateFunction(
+    std::string_view name, std::span<std::string_view> template_params,
+    std::span<FnParam> params, Type *ret_ty, bool is_variadic, Vis visibility,
+    Purity purity, bool thread_safe,
+    bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement
-  qcore_implement(__func__);
+  qcore_implement();
   (void)name;
   (void)template_params;
   (void)params;
@@ -121,15 +172,21 @@ Fn *NRBuilder::createTemplateFunction(std::string_view name,
   ignore_caller_info();
 }
 
-Local *NRBuilder::createVariable(std::string_view name, Type *ty, Vis visibility,
-                                 StorageClass storage,
-                                 bool is_readonly SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement(__func__);
-  (void)name;
-  (void)ty;
+Local *NRBuilder::createVariable(
+    std::string_view name, Type *ty, Vis visibility, StorageClass storage,
+    bool is_readonly SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(ty != nullptr && static_cast<Expr *>(ty)->isType());
+
+  Local *local = create<Local>(name, createIgn(), AbiTag::Default);
+
+  /// TODO: Do something with these
   (void)visibility;
   (void)storage;
   (void)is_readonly;
-  ignore_caller_info();
+
+  local = compiler_trace(debug_info(local, DEBUG_INFO));
+
+  return local;
 }

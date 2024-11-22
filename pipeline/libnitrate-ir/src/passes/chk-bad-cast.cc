@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -33,7 +35,6 @@
 #include <passes/PassList.hh>
 
 using namespace nr;
-using namespace nr::diag;
 
 /**
  * -- Overview of the IR type nodes:
@@ -63,24 +64,41 @@ using namespace nr::diag;
  * +========================================================+
  */
 
-static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
+static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L,
+                           Type* R) {
+  static constexpr std::array<std::string_view, 13> texts = {
+      "`as` expected both struct types to have the same number of fields",
+      "Field cast failed in recursive struct cast",
+      "`as` expected both types to have the same number of entries",
+      "Field cast failed in recursive array to struct cast",
+      "Bad cast to/from struct type",
+      "Illegal direct cast of opaque in `as`",
+      "Bad cast from non-void type into void type",
+      "`as` prohibits pointer type casts",
+      "`as` prohibits union type casts",
+      "`as` prohibits array type casts",
+      "`as` prohibits function type casts",
+      "Casting between numeric and non-numeric types is not allowed in `as`",
+      "Invalid cast in `as` expression",
+  };
+
   if (L->isSame(R)) {
     return true;
   }
 
-  const auto prepare = [](std::string msg, Type* L, Type* R) -> std::string {
-    return msg + ": " + L->getKindName() + " -> " + R->getKindName() + ".";
+  const auto prepare = [](std::string_view msg, Type* L,
+                          Type* R) -> std::string {
+    return std::string(msg) + ": " + L->getKindName() + " -> " +
+           R->getKindName() + ".";
   };
 
   /* Recursively check struct field casting */
-  if (L->getKind() == QIR_NODE_STRUCT_TY && R->getKind() == QIR_NODE_STRUCT_TY) {
+  if (L->getKind() == QIR_NODE_STRUCT_TY &&
+      R->getKind() == QIR_NODE_STRUCT_TY) {
     StructTy *LS = L->as<StructTy>(), *RS = R->as<StructTy>();
 
     if (LS->getFields().size() != RS->getFields().size()) {
-      report(IssueCode::BadCast, IssueClass::Error,
-             prepare("`as` expected both struct types to have the same number of fields", L, R),
-             N->locBeg(), N->locEnd());
-      M->setFailbit(true);
+      log->report(BadCast, IC::Error, prepare(texts[0], L, R), N->getLoc());
 
       return false;
     }
@@ -88,11 +106,9 @@ static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
     for (size_t i = 0; i < LS->getFields().size(); i++) {
       Type *LT = LS->getFields()[i], *RT = RS->getFields()[i];
 
-      if (!verify_cast_as(M, N, LT, RT)) {
-        report(IssueCode::BadCast, IssueClass::Error,
-               prepare("Field cast failed in recursive struct cast", L, R), N->locBeg(),
-               N->locEnd());
-        M->setFailbit(true);
+      if (!verify_cast_as(M, log, N, LT, RT)) {
+        log->report(BadCast, IC::Error, prepare(texts[1], L, R), N->getLoc());
+
         return false;
       }
     }
@@ -104,10 +120,7 @@ static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
     StructTy* RS = R->as<StructTy>();
 
     if (LS->getCount() != RS->getFields().size()) {
-      report(IssueCode::BadCast, IssueClass::Error,
-             prepare("`as` expected both types to have the same number of entries", L, R),
-             N->locBeg(), N->locEnd());
-      M->setFailbit(true);
+      log->report(BadCast, IC::Error, prepare(texts[2], L, R), N->getLoc());
 
       return false;
     }
@@ -115,64 +128,57 @@ static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
     for (size_t i = 0; i < LS->getCount(); i++) {
       Type* RT = RS->getFields()[i];
 
-      if (!verify_cast_as(M, N, LS->getElement(), RT)) {
-        report(IssueCode::BadCast, IssueClass::Error,
-               prepare("Field cast failed in recursive array to struct cast", L, R), N->locBeg(),
-               N->locEnd());
-        M->setFailbit(true);
+      if (!verify_cast_as(M, log, N, LS->getElement(), RT)) {
+        log->report(BadCast, IC::Error, prepare(texts[3], L, R), N->getLoc());
+
         return false;
       }
     }
 
     return true;
-  } else if (L->getKind() == QIR_NODE_STRUCT_TY || R->getKind() == QIR_NODE_STRUCT_TY) {
-    report(IssueCode::BadCast, IssueClass::Error, prepare("Bad cast to/from struct type", L, R),
-           N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+  } else if (L->getKind() == QIR_NODE_STRUCT_TY ||
+             R->getKind() == QIR_NODE_STRUCT_TY) {
+    log->report(BadCast, IC::Error, prepare(texts[4], L, R), N->getLoc());
+
     return false;
   }
 
   /* Opaque types cannot be casted to anything */
-  if (L->getKind() == QIR_NODE_OPAQUE_TY || R->getKind() == QIR_NODE_OPAQUE_TY) {
-    report(IssueCode::BadCast, IssueClass::Error,
-           prepare("Illegal direct cast of opaque in `as`", L, R), N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+  if (L->getKind() == QIR_NODE_OPAQUE_TY ||
+      R->getKind() == QIR_NODE_OPAQUE_TY) {
+    log->report(BadCast, IC::Error, prepare(texts[5], L, R), N->getLoc());
+
     return false;
   }
 
   if (!L->is_void() && R->is_void()) {
-    report(IssueCode::BadCast, IssueClass::Error,
-           prepare("Bad cast from non-void type into void type", L, R), N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+    log->report(BadCast, IC::Error, prepare(texts[6], L, R), N->getLoc());
+
     return false;
   }
 
   /* `cast_as` does not support pointer casts */
   if (L->is_pointer() || R->is_pointer()) {
-    report(IssueCode::BadCast, IssueClass::Error,
-           prepare("`as` prohibits pointer type casts", L, R), N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+    log->report(BadCast, IC::Error, prepare(texts[7], L, R), N->getLoc());
+
     return false;
   }
 
   if (L->getKind() == QIR_NODE_UNION_TY || R->getKind() == QIR_NODE_UNION_TY) {
-    report(IssueCode::BadCast, IssueClass::Error, prepare("`as` prohibits union type casts", L, R),
-           N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+    log->report(BadCast, IC::Error, prepare(texts[8], L, R), N->getLoc());
+
     return false;
   }
 
   if (L->getKind() == QIR_NODE_ARRAY_TY || R->getKind() == QIR_NODE_ARRAY_TY) {
-    report(IssueCode::BadCast, IssueClass::Error, prepare("`as` prohibits array type casts", L, R),
-           N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+    log->report(BadCast, IC::Error, prepare(texts[9], L, R), N->getLoc());
+
     return false;
   }
 
   if (L->getKind() == QIR_NODE_FN_TY || R->getKind() == QIR_NODE_FN_TY) {
-    report(IssueCode::BadCast, IssueClass::Error,
-           prepare("`as` prohibits function type casts", L, R), N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+    log->report(BadCast, IC::Error, prepare(texts[10], L, R), N->getLoc());
+
     return false;
   }
 
@@ -180,50 +186,51 @@ static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
   if (L->is_numeric() && R->is_numeric()) {
     return true;
   } else if (L->is_numeric() || R->is_numeric()) {
-    report(IssueCode::BadCast, IssueClass::Error,
-           prepare("Casting between numeric and non-numeric types is not allowed in `as`", L, R),
-           N->locBeg(), N->locEnd());
-    M->setFailbit(true);
+    log->report(BadCast, IC::Error, prepare(texts[11], L, R), N->getLoc());
+
     return false;
   }
 
-  report(IssueCode::BadCast, IssueClass::Error, prepare("Invalid cast in `as` expression", L, R),
-         N->locBeg(), N->locEnd());
-  M->setFailbit(true);
+  log->report(BadCast, IC::Error, prepare(texts[12], L, R), N->getLoc());
 
   return false;
 }
 
-bool nr::pass::chk_bad_cast(qmodule_t* M) {
+bool nr::pass::chk_bad_cast(qmodule_t* M, IReport* log) {
   /**
-   * Perform validation checks on `cast_as` expressions to ensure that the cast is indeed
-   * accecptable.
+   * Perform validation checks on `cast_as` expressions to ensure that the cast
+   * is indeed accecptable.
    */
 
-  iterate<dfs_pre>(M->getRoot(), [&](Expr* /* parent */, Expr** C /* current */) -> IterOp {
-    Expr* N = *C;
+  iterate<dfs_pre>(M->getRoot(),
+                   [&](Expr* /* parent */, Expr** C /* current */) -> IterOp {
+                     Expr* N = *C;
 
-    /**
-     * If the node is not a binary expression OR the binary expression operator is not a cast_as,
-     * the node is not subject to scrutiny by this analysis pass.
-     */
-    if (N->getKind() != QIR_NODE_BINEXPR || N->as<BinExpr>()->getOp() != Op::CastAs) {
-      return IterOp::Proceed;
-    }
+                     /**
+                      * If the node is not a binary expression OR the binary
+                      * expression operator is not a cast_as, the node is not
+                      * subject to scrutiny by this analysis pass.
+                      */
+                     if (N->getKind() != QIR_NODE_BINEXPR ||
+                         N->as<BinExpr>()->getOp() != Op::CastAs) {
+                       return IterOp::Proceed;
+                     }
 
-    BinExpr* BE = N->as<BinExpr>();
-    Type *L = BE->getLHS()->getType().value_or(nullptr), *R = BE->getRHS()->asType();
+                     BinExpr* BE = N->as<BinExpr>();
+                     Type *L = BE->getLHS()->getType().value_or(nullptr),
+                          *R = BE->getRHS()->asType();
 
-    /* No inference was possible on the left-hand side of the cast, therefore no cast is possible */
-    if (L == nullptr) {
-      return IterOp::Proceed;
-    }
+                     /* No inference was possible on the left-hand side of the
+                      * cast, therefore no cast is possible */
+                     if (L == nullptr) {
+                       return IterOp::Proceed;
+                     }
 
-    /* Casting to the same type is always legal */
-    (void)verify_cast_as(M, N, L, R);
+                     /* Casting to the same type is always legal */
+                     (void)verify_cast_as(M, log, N, L, R);
 
-    return IterOp::Proceed;
-  });
+                     return IterOp::Proceed;
+                   });
 
   return true;
 }

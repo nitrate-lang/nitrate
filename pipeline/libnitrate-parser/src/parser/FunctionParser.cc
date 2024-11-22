@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -140,8 +142,10 @@ static bool parse_fn_parameter(qparse_t &job, qlex_t *rd, FuncParam &param) {
     tok = qlex_peek(rd);
 
     Expr *value = nullptr;
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
-                    &value) ||
+    if (!parse_expr(
+            job, rd,
+            {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
+            &value) ||
         !value) {
       syntax(tok, "Expected an expression after '='");
     }
@@ -210,14 +214,16 @@ static FunctionProperties read_function_properties(qlex_t *rd) {
     return FunctionProperties();
   }
 
-  bool partial_pure = state.pure_ctr || state.quasipure_ctr || state.retropure_ctr;
+  bool partial_pure =
+      state.pure_ctr || state.quasipure_ctr || state.retropure_ctr;
 
   if (partial_pure && state.impure_ctr) {
     syntax(tok, "Cannot mix 'pure', 'quasipure', 'retropure' with 'impure'");
     return FunctionProperties();
   }
 
-  if (partial_pure && (state.pure_ctr + state.quasipure_ctr + state.retropure_ctr) != 1) {
+  if (partial_pure &&
+      (state.pure_ctr + state.quasipure_ctr + state.retropure_ctr) != 1) {
     syntax(tok, "Multiple purity specifiers; Illegal combination");
     return FunctionProperties();
   }
@@ -285,8 +291,8 @@ static bool parse_captures_and_name(qlex_tok_t &c, qlex_t *rd, FnDecl *fndecl,
   return true;
 }
 
-static bool parse_parameters(qparse_t &job, qlex_tok_t &c, qlex_t *rd, FuncTy *ftype,
-                             bool &is_variadic) {
+static bool parse_parameters(qparse_t &job, qlex_tok_t &c, qlex_t *rd,
+                             FuncTy *ftype, bool &is_variadic) {
   if (!c.is<qPuncLPar>()) {
     syntax(c, "Expected '(' after function name");
   }
@@ -323,7 +329,8 @@ static bool parse_parameters(qparse_t &job, qlex_tok_t &c, qlex_t *rd, FuncTy *f
       return false;
     }
 
-    ftype->add_param(std::get<0>(param), std::get<1>(param), std::get<2>(param));
+    ftype->add_param(std::get<0>(param), std::get<1>(param),
+                     std::get<2>(param));
 
     c = qlex_peek(rd);
     if (c.is<qPuncComa>()) {
@@ -360,8 +367,8 @@ static bool translate_purity(FunctionProperties prop, FuncTy *ftype) {
   return true;
 }
 
-static bool parse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &job, Expr *&req_in,
-                              Expr *&req_out) {
+static bool parse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &job,
+                              Expr *&req_in, Expr *&req_out) {
   if (c.is<qKPromise>()) {
     /* Parse constraint block */
     qlex_next(rd);
@@ -387,7 +394,8 @@ static bool parse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &job, Expr *&r
       if (c.is<qOpIn>()) {
         Expr *expr = nullptr;
 
-        if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
+        if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) ||
+            !expr) {
           syntax(c, "Expected an expression after 'in'");
           return false;
         }
@@ -406,7 +414,8 @@ static bool parse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &job, Expr *&r
       } else if (c.is<qOpOut>()) {
         Expr *expr = nullptr;
 
-        if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
+        if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) ||
+            !expr) {
           syntax(c, "Expected an expression after 'out'");
           return false;
         }
@@ -474,7 +483,8 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   { /* Function declaration with implicit return type of void */
-    if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() || tok.is<qPuncSemi>()) {
+    if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() ||
+        tok.is<qPuncSemi>()) {
       ftype->set_return_ty(VoidTy::get());
 
       tok = qlex_peek(rd);

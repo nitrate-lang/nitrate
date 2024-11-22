@@ -78,7 +78,8 @@ static RGBA hslaToRgba(float h, float s, float l, float a) {
   return RGBA{(r + m) * 255, (g + m) * 255, (b + m) * 255, a * 255};
 }
 
-void do_documentColor(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
+void do_documentColor(const lsp::RequestMessage& req,
+                      lsp::ResponseMessage& resp) {
   if (!req.params().HasMember("textDocument")) {
     resp.error(lsp::ErrorCodes::InvalidParams, "Missing textDocument");
     return;
@@ -95,7 +96,8 @@ void do_documentColor(const lsp::RequestMessage& req, lsp::ResponseMessage& resp
   }
 
   if (!req.params()["textDocument"]["uri"].IsString()) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "textDocument.uri is not a string");
+    resp.error(lsp::ErrorCodes::InvalidParams,
+               "textDocument.uri is not a string");
     return;
   }
 
@@ -124,13 +126,13 @@ void do_documentColor(const lsp::RequestMessage& req, lsp::ResponseMessage& resp
       continue;
     }
 
-    qlex_size start_line = qlex_line(lexer.get(), tok.start);
-    qlex_size start_col = qlex_col(lexer.get(), tok.start);
-    qlex_size end_line = qlex_line(lexer.get(), tok.end);
-    qlex_size end_col = qlex_col(lexer.get(), tok.end);
+    uint32_t start_line = qlex_line(lexer.get(), tok.start);
+    uint32_t start_col = qlex_col(lexer.get(), tok.start);
+    uint32_t end_line = qlex_line(lexer.get(), tok.end);
+    uint32_t end_col = qlex_col(lexer.get(), tok.end);
 
-    if (start_line == UINT32_MAX || start_col == UINT32_MAX || end_line == UINT32_MAX ||
-        end_col == UINT32_MAX) {
+    if (start_line == UINT32_MAX || start_col == UINT32_MAX ||
+        end_line == UINT32_MAX || end_col == UINT32_MAX) {
       LOG(WARNING) << "Failed to get source location";
       continue;
     }
@@ -145,7 +147,8 @@ void do_documentColor(const lsp::RequestMessage& req, lsp::ResponseMessage& resp
 
       std::regex rgx(R"((\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+))");
       std::cmatch match;
-      if (!std::regex_search(value.begin(), value.end(), match, rgx) || match.size() != 5) {
+      if (!std::regex_search(value.begin(), value.end(), match, rgx) ||
+          match.size() != 5) {
         continue;
       }
 
@@ -174,7 +177,8 @@ void do_documentColor(const lsp::RequestMessage& req, lsp::ResponseMessage& resp
 
       std::regex rgx(R"((\d+)\s*,\s*(\d+)\s*,\s*(\d+))");
       std::cmatch match;
-      if (!std::regex_search(value.begin(), value.end(), match, rgx) || match.size() != 4) {
+      if (!std::regex_search(value.begin(), value.end(), match, rgx) ||
+          match.size() != 4) {
         continue;
       }
 
@@ -202,7 +206,8 @@ void do_documentColor(const lsp::RequestMessage& req, lsp::ResponseMessage& resp
 
       std::regex rgx(R"((\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?\s*,\s*(\d+)%?)");
       std::cmatch match;
-      if (!std::regex_search(value.begin(), value.end(), match, rgx) || match.size() != 5) {
+      if (!std::regex_search(value.begin(), value.end(), match, rgx) ||
+          match.size() != 5) {
         continue;
       }
 
@@ -233,7 +238,8 @@ void do_documentColor(const lsp::RequestMessage& req, lsp::ResponseMessage& resp
 
       std::regex rgx(R"((\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?)");
       std::cmatch match;
-      if (!std::regex_search(value.begin(), value.end(), match, rgx) || match.size() != 4) {
+      if (!std::regex_search(value.begin(), value.end(), match, rgx) ||
+          match.size() != 4) {
         continue;
       }
 
@@ -270,7 +276,8 @@ void do_documentColor(const lsp::RequestMessage& req, lsp::ResponseMessage& resp
     Value end(kObjectType);
 
     start.AddMember("line", color.range.start.line, resp->GetAllocator());
-    start.AddMember("character", color.range.start.character, resp->GetAllocator());
+    start.AddMember("character", color.range.start.character,
+                    resp->GetAllocator());
     end.AddMember("line", color.range.end.line, resp->GetAllocator());
     end.AddMember("character", color.range.end.character, resp->GetAllocator());
     range.AddMember("start", start, resp->GetAllocator());

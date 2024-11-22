@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
-/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
-///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
-///    ░▒▓█▓▒░                                                               ///
-///     ░▒▓██▓▒░                                                             ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
@@ -48,10 +50,12 @@
  * @param env Parent environment.
  *
  * @return New preprocessor context or NULL if an error occurred.
- * @note The lifetime of the file stream and environment must exceed the lifetime of the lexer.
+ * @note The lifetime of the file stream and environment must exceed the
+ * lifetime of the lexer.
  * @note This function is thread-safe.
  */
-qlex_t *qprep_new(std::shared_ptr<std::istream> file, const char *filename, qcore_env_t env);
+qlex_t *qprep_new(std::shared_ptr<std::istream> file, const char *filename,
+                  qcore_env_t env);
 
 #endif
 
@@ -71,8 +75,9 @@ extern "C" {
  * @return True if the module was fetched successfully, false otherwise.
  * @note This function is thread-safe.
  */
-typedef bool (*qprep_fetch_module_t)(qlex_t *ctx, const char *import_name, char **content,
-                                     size_t *content_size, uintptr_t any);
+typedef bool (*qprep_fetch_module_t)(qlex_t *ctx, const char *import_name,
+                                     char **content, size_t *content_size,
+                                     uintptr_t any);
 
 /**
  * @brief Set the fetch module function for the preprocessor context.
@@ -83,7 +88,8 @@ typedef bool (*qprep_fetch_module_t)(qlex_t *ctx, const char *import_name, char 
  *
  * @note This function is thread-safe.
  */
-void qprep_set_fetch_module(qlex_t *ctx, qprep_fetch_module_t fetch_fn, uintptr_t any);
+void qprep_set_fetch_module(qlex_t *ctx, qprep_fetch_module_t fetch_fn,
+                            uintptr_t any);
 
 #ifdef __cplusplus
 }

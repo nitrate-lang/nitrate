@@ -1,16 +1,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
-///           ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                  ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓█▓▒▒▓███▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
-///           ░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
-///             ░▒▓█▓▒░                                                      ///
-///              ░▒▓██▓▒░                                                    ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
 ///                                                                          ///
-///   * NITRATE PACKAGE MANAGER - The official app for the Nitrate language. ///
+///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
 ///                                                                          ///
 ///   The Nitrate Toolchain is free software; you can redistribute it or     ///
@@ -71,7 +73,8 @@ static std::string JsonEscapeString(const std::string &str) {
   return ss.str();
 }
 
-std::string no3::conf::ConfigGroup::dump(no3::conf::ConfigItemSerializationTarget target) const {
+std::string no3::conf::ConfigGroup::dump(
+    no3::conf::ConfigItemSerializationTarget target) const {
   std::stringstream ss;
 
   if (target == ConfigItemSerializationTarget::JSON) {
@@ -133,7 +136,8 @@ std::string no3::conf::ConfigGroup::dump(no3::conf::ConfigItemSerializationTarge
   return ss.str();
 }
 
-std::string no3::conf::Config::dump(no3::conf::ConfigItemSerializationTarget target) const {
+std::string no3::conf::Config::dump(
+    no3::conf::ConfigItemSerializationTarget target) const {
   std::stringstream ss;
 
   ss << m_root.dump(target);
@@ -141,12 +145,14 @@ std::string no3::conf::Config::dump(no3::conf::ConfigItemSerializationTarget tar
   return ss.str();
 }
 
-std::optional<no3::conf::Config> no3::conf::IParser::parsef(const std::string &path) {
+std::optional<no3::conf::Config> no3::conf::IParser::parsef(
+    const std::string &path) {
   try {
     std::ifstream file(path);
     if (!file.is_open()) return std::nullopt;
 
-    std::string data((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    std::string data((std::istreambuf_iterator<char>(file)),
+                     std::istreambuf_iterator<char>());
     return parse(data);
   } catch (...) {
     return std::nullopt;
