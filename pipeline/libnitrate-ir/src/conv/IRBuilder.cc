@@ -283,8 +283,8 @@ void NRBuilder::finish(SOURCE_LOCATION_PARAM_ONCE) noexcept {
 static thread_local class NullLog : public IReport {
 public:
   virtual void report(IssueCode, IC, std::vector<std::string_view> = {},
-                      uint32_t = 1, uint32_t = 0,
-                      std::string_view = "") override {}
+                      std::tuple<uint32_t, uint32_t, std::string_view> = {
+                          UINT32_MAX, UINT32_MAX, ""}) override {}
 
   virtual void erase_reports() override {}
 

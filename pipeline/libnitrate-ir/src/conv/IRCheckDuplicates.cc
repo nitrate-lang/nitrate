@@ -42,6 +42,15 @@
 using namespace nr;
 
 bool NRBuilder::check_duplicates(Seq *, IReport *I) noexcept {
+  if (m_duplicate_functions.empty()) {
+    return true;
+  }
+
+  for (auto fn : m_duplicate_functions) {
+    I->report(CompilerError, IC::Debug, {"Duplicate function: ", fn->getName()},
+              fn->getLoc());
+  }
+
   I->report(CompilerError, IC::Debug,
             "NRBuilder::check_duplicates() not implemented");
 

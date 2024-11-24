@@ -73,8 +73,7 @@ Fn *NRBuilder::createFunctionDefintion(
                       is_variadic, AbiTag::Default);
 
   if (m_named_functions.contains(name)) [[unlikely]] {
-    /// TODO: Handle duplicate symbol
-    qcore_implement();
+    m_duplicate_functions.insert(fn);
   }
 
   m_named_functions[name] = fn;
@@ -115,8 +114,7 @@ Fn *NRBuilder::createFunctionDeclaration(
                       is_variadic, AbiTag::Default);
 
   if (m_named_functions.contains(name)) [[unlikely]] {
-    /// TODO: Handle duplicate symbol
-    qcore_implement();
+    m_duplicate_functions.insert(fn);
   }
 
   m_named_functions[name] = fn;

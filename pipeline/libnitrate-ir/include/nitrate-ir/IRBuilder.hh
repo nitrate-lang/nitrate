@@ -127,6 +127,7 @@ namespace nr {
     std::unordered_map<std::string_view, Fn *> m_named_functions;
     std::unordered_map<Fn *, std::unordered_map<size_t, Expr *>>
         m_function_defaults;
+    std::unordered_set<Fn *> m_duplicate_functions;
 
     ///**************************************************************************///
     // Builder helper methods
@@ -154,16 +155,16 @@ namespace nr {
     void try_resolve_calls(Expr *root) const noexcept;
     void connect_nodes(Seq *root) const noexcept;
 
-    static bool check_acyclic(Seq *root, IReport *I) noexcept;
-    static bool check_duplicates(Seq *root, IReport *I) noexcept;
-    static bool check_symbols_exist(Seq *root, IReport *I) noexcept;
-    static bool check_function_calls(Seq *root, IReport *I) noexcept;
-    static bool check_returns(Seq *root, IReport *I) noexcept;
-    static bool check_scopes(Seq *root, IReport *I) noexcept;
-    static bool check_mutability(Seq *root, IReport *I) noexcept;
-    static bool check_control_flow(Seq *root, IReport *I) noexcept;
-    static bool check_types(Seq *root, IReport *I) noexcept;
-    static bool check_safety_claims(Seq *root, IReport *I) noexcept;
+    bool check_acyclic(Seq *root, IReport *I) noexcept;
+    bool check_duplicates(Seq *root, IReport *I) noexcept;
+    bool check_symbols_exist(Seq *root, IReport *I) noexcept;
+    bool check_function_calls(Seq *root, IReport *I) noexcept;
+    bool check_returns(Seq *root, IReport *I) noexcept;
+    bool check_scopes(Seq *root, IReport *I) noexcept;
+    bool check_mutability(Seq *root, IReport *I) noexcept;
+    bool check_control_flow(Seq *root, IReport *I) noexcept;
+    bool check_types(Seq *root, IReport *I) noexcept;
+    bool check_safety_claims(Seq *root, IReport *I) noexcept;
 
 #if defined(NDEBUG)
 #define SOURCE_LOCATION_PARAM

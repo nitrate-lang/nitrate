@@ -792,14 +792,9 @@ CPP_EXPORT std::string_view nr::Expr::getName() const noexcept {
   return R;
 }
 
-CPP_EXPORT std::pair<uint32_t, uint32_t> nr::Expr::getLoc() noexcept {
-  return {m_src_offset, m_src_offset + m_span};
-}
-
-CPP_EXPORT uint32_t nr::Expr::locBeg() noexcept { return m_src_offset; }
-
-CPP_EXPORT uint32_t nr::Expr::locEnd() noexcept {
-  return m_src_offset + m_span;
+CPP_EXPORT std::tuple<uint32_t, uint32_t, std::string_view>
+nr::Expr::getLoc() noexcept {
+  return {m_src_offset, m_src_offset + m_span, ""};
 }
 
 CPP_EXPORT Type *Expr::asType() noexcept {

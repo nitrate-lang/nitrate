@@ -246,9 +246,7 @@ namespace nr {
     // Returns "" if the construct is not named.
     std::string_view getName() const noexcept;
 
-    std::pair<uint32_t, uint32_t> getLoc() noexcept;
-    uint32_t locBeg() noexcept;
-    uint32_t locEnd() noexcept;
+    std::tuple<uint32_t, uint32_t, std::string_view> getLoc() noexcept;
 
     std::optional<Type *> getType() noexcept;
 
