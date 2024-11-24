@@ -794,6 +794,10 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
         }
 
         FnAttrs attrs;
+        if (E->as<Fn>()->isVariadic()) {
+          attrs.insert(FnAttr::Variadic);
+        }
+
         T = create<FnTy>(std::move(params), E->as<Fn>()->getReturn(),
                          std::move(attrs));
         break;

@@ -256,7 +256,7 @@ void DiagnosticManager::report(
     std::tuple<uint32_t, uint32_t, std::string_view> loc) {
   std::string message;
   for (auto p : params) {
-    message += std::string(p) + "; ";
+    message += std::string(p);
   }
 
   DiagDatum R(code, level, message, std::get<0>(loc), std::get<1>(loc),

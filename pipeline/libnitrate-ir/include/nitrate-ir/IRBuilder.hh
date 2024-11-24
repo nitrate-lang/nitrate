@@ -127,6 +127,7 @@ namespace nr {
     std::unordered_map<std::string_view, Fn *> m_named_functions;
     std::unordered_map<Fn *, std::unordered_map<size_t, Expr *>>
         m_function_defaults;
+
     std::unordered_set<Fn *> m_duplicate_functions;
 
     ///**************************************************************************///
@@ -283,11 +284,6 @@ namespace nr {
         Purity purity = Purity::Impure, bool thread_safe = false,
         bool is_noexcept = false,
         bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
-
-    Fn *createAnonymousFunction(
-        std::span<FnParam> params, Type *ret_ty, bool is_variadic = false,
-        Purity purity = Purity::Impure, bool thread_safe = false,
-        bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;
 
     /* This is the only intended way to overload operaters */
     Fn *createOperatorOverload(

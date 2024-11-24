@@ -174,7 +174,8 @@ static int do_parse(std::string source, std::string output) {
   return 0;
 }
 
-static int do_nr(std::string source, std::string output, std::string opts) {
+static int do_nr(std::string source, std::string output, std::string opts,
+                 bool verbose) {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
@@ -210,10 +211,12 @@ static int do_nr(std::string source, std::string output, std::string opts) {
 
   nr_diag_read(
       mod.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
-      [](const uint8_t *msg, size_t len, nr_level_t, uintptr_t) {
-        std::cerr.write((const char *)msg, len);
+      [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
+        if (verbose || lvl != NR_LEVEL_DEBUG) {
+          std::cerr.write((const char *)msg, len);
+        }
       },
-      0);
+      verbose);
 
   if (!ok) {
     LOG(ERROR) << "Failed to lower source file: " << source;
@@ -387,7 +390,7 @@ namespace no3::router {
       std::string output = nr_parser.get<std::string>("--output");
       std::string opts = nr_parser.get<std::string>("--opts");
 
-      return do_nr(source, output, opts);
+      return do_nr(source, output, opts, nr_parser["--verbose"] == true);
     } else if (parser.is_subcommand_used("codegen")) {
       auto &nr_parser = *subparsers.at("codegen");
 

@@ -60,6 +60,7 @@ struct PState {
   std::string ns_prefix;
   std::stack<qparse::String> composite_expanse;
   nr::AbiTag abi_mode = nr::AbiTag::Internal;
+  size_t anon_fn_ctr = 0;
 
   std::string scope_name(std::string_view suffix) const {
     if (ns_prefix.empty()) {
@@ -1440,17 +1441,24 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
 
     auto props = convert_purity(func_ty->get_purity());
 
+    std::string_view name;
+
+    if (n->get_name().empty()) {
+      name = b.intern(s.join_scope("_A$" + std::to_string(s.anon_fn_ctr++)));
+    } else {
+      name = b.intern(s.join_scope(n->get_name()));
+    }
+
     Fn *fndef = b.createFunctionDefintion(
-        b.intern(s.join_scope(n->get_name())), parameters,
-        ret_type.value()->asType(), func_ty->is_variadic(), Vis::Pub,
-        props.first, props.second, func_ty->is_noexcept(),
+        name, parameters, ret_type.value()->asType(), func_ty->is_variadic(),
+        Vis::Pub, props.first, props.second, func_ty->is_noexcept(),
         func_ty->is_foreign());
 
     fndef->setAbiTag(s.abi_mode);
 
     { /* Function body */
       std::string old_ns = s.ns_prefix;
-      s.ns_prefix = s.join_scope(n->get_name());
+      s.ns_prefix = name;
 
       auto body = next_one(n->get_body());
       if (!body.has_value()) {

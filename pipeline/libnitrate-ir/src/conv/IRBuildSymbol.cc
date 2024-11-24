@@ -123,20 +123,6 @@ Fn *NRBuilder::createFunctionDeclaration(
   return compiler_trace(debug_info(fn, DEBUG_INFO));
 }
 
-Fn *NRBuilder::createAnonymousFunction(
-    std::span<FnParam> params, Type *ret_ty, bool is_variadic, Purity purity,
-    bool thread_safe, bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-  (void)params;
-  (void)ret_ty;
-  (void)is_variadic;
-  (void)purity;
-  (void)thread_safe;
-  (void)is_noexcept;
-  ignore_caller_info();
-}
-
 Fn *NRBuilder::createOperatorOverload(
     Op op, std::span<Type *> params, Type *ret_ty, Purity purity,
     bool thread_safe, bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {

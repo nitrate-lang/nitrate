@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <unordered_map>
+
 #include "nitrate-ir/Report.hh"
 #define IRBUILDER_IMPL
 
@@ -41,19 +43,27 @@
 
 using namespace nr;
 
-bool NRBuilder::check_duplicates(Seq *, IReport *I) noexcept {
-  if (m_duplicate_functions.empty()) {
-    return true;
-  }
+bool NRBuilder::check_duplicates(Seq *root, IReport *I) noexcept {
+  bool ok = true;
 
   for (auto fn : m_duplicate_functions) {
-    I->report(CompilerError, IC::Debug, {"Duplicate function: ", fn->getName()},
-              fn->getLoc());
+    if (auto fn_type = fn->getType()) {
+      std::stringstream ss;
+      fn_type.value()->dump(ss);
+
+      I->report(CompilerError, IC::Error,
+                {"Duplicate function \"", fn->getName(), "\": ", ss.str()},
+                fn->getLoc());
+
+    } else {
+      I->report(CompilerError, IC::Error,
+                {"Duplicate function \"", fn->getName(), "\""}, fn->getLoc());
+    }
+
+    ok = false;
   }
 
-  I->report(CompilerError, IC::Debug,
-            "NRBuilder::check_duplicates() not implemented");
+  ///=====================================================================
 
-  /// TODO: Implement check
-  return true;
+  return ok;
 }

@@ -1486,18 +1486,18 @@ namespace nr {
     void iter_children(Expr **base, IterCallback cb, ChildSelect cs) noexcept;
   }  // namespace detail
 
-  template <IterMode mode>
-  void iterate(Expr *&base, IterCallback cb, ChildSelect cs = nullptr) {
+  template <IterMode mode, typename T>
+  void iterate(T *&base, IterCallback cb, ChildSelect cs = nullptr) {
     if constexpr (mode == dfs_pre) {
-      return detail::dfs_pre_impl(&base, cb, cs);
+      return detail::dfs_pre_impl((Expr **)&base, cb, cs);
     } else if constexpr (mode == dfs_post) {
-      return detail::dfs_post_impl(&base, cb, cs);
+      return detail::dfs_post_impl((Expr **)&base, cb, cs);
     } else if constexpr (mode == bfs_pre) {
-      return detail::bfs_pre_impl(&base, cb, cs);
+      return detail::bfs_pre_impl((Expr **)&base, cb, cs);
     } else if constexpr (mode == bfs_post) {
-      return detail::bfs_post_impl(&base, cb, cs);
+      return detail::bfs_post_impl((Expr **)&base, cb, cs);
     } else if constexpr (mode == children) {
-      return detail::iter_children(&base, cb, cs);
+      return detail::iter_children((Expr **)&base, cb, cs);
     } else {
       static_assert(mode != mode, "Invalid iteration mode.");
     }
