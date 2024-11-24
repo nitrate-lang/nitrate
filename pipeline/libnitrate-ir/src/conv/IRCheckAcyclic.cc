@@ -40,10 +40,10 @@
 
 using namespace nr;
 
-bool NRBuilder::check_acyclic(Seq *root, IReport *log) noexcept {
+bool NRBuilder::check_acyclic(Seq *root, IReport *I) noexcept {
   bool is_acyclic = root->isAcyclic();
   if (!is_acyclic) {
-    log->report(DSPolyCyclicRef, IC::FatalError);
+    I->report(DSPolyCyclicRef, IC::FatalError);
   }
 
   return is_acyclic;

@@ -128,8 +128,9 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
 
   if (!R) {
     R = createModule(name);
-    R->getDiag() = std::move(G);
   }
+
+  R->getDiag() = std::move(G);
 
   std::swap(nr::nr_arena.get(), *scratch_arena.get());
   *mod = R;

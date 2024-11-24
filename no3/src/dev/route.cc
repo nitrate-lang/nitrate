@@ -243,7 +243,7 @@ static int do_nr(std::string source, std::string output, std::string opts) {
 }
 
 static int do_codegen(std::string source, std::string output, std::string opts,
-                      std::string target) {
+                      std::string target, bool verbose) {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
@@ -279,10 +279,14 @@ static int do_codegen(std::string source, std::string output, std::string opts,
 
   nr_diag_read(
       mod.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
-      [](const uint8_t *msg, size_t len, nr_level_t, uintptr_t) {
+      [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
+        if (!verbose && lvl == NR_LEVEL_DEBUG) {
+          return;
+        }
+
         std::cerr.write((const char *)msg, len);
       },
-      0);
+      verbose);
 
   if (!ok) {
     LOG(ERROR) << "Failed to lower source file: " << source;
@@ -394,7 +398,8 @@ namespace no3::router {
       std::string opts = nr_parser.get<std::string>("--opts");
       std::string target = nr_parser.get<std::string>("--target");
 
-      return do_codegen(source, output, opts, target);
+      return do_codegen(source, output, opts, target,
+                        nr_parser["--verbose"] == true);
     } else if (parser.is_used("--demangle")) {
       std::string mangled_name = parser.get<std::string>("--demangle");
       if (mangled_name.starts_with("@")) {

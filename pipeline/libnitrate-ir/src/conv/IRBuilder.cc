@@ -280,6 +280,18 @@ void NRBuilder::finish(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   m_state = SelfState::Finished;
 }
 
+static thread_local class NullLog : public IReport {
+public:
+  virtual void report(IssueCode, IC, std::vector<std::string_view> = {},
+                      uint32_t = 1, uint32_t = 0,
+                      std::string_view = "") override {}
+
+  virtual void erase_reports() override {}
+
+  virtual void stream_reports(
+      std::function<void(const ReportData &)>) override{};
+} g_null_log;
+
 bool NRBuilder::verify(
     std::optional<IReport *> the_log SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Finished ||
@@ -292,49 +304,28 @@ bool NRBuilder::verify(
   }
 
   if (!the_log.has_value()) {
-    /// TODO: Create mock instance
-    qcore_implement();
+    the_log = &g_null_log;
   }
 
-  IReport *log = the_log.value();
+  IReport *I = the_log.value();
 
-  if (!check_acyclic(m_root, log)) {
+  if (!check_acyclic(m_root, I)) {
     return false;
   }
 
-  if (!check_duplicates(m_root, log)) {
-    return false;
-  }
+  bool ok = true;
 
-  if (!check_symbols_exist(m_root, log)) {
-    return false;
-  }
+  ok &= check_duplicates(m_root, I);
+  ok &= check_symbols_exist(m_root, I);
+  ok &= check_function_calls(m_root, I);
+  ok &= check_returns(m_root, I);
+  ok &= check_scopes(m_root, I);
+  ok &= check_mutability(m_root, I);
+  ok &= check_control_flow(m_root, I);
+  ok &= check_types(m_root, I);
+  ok &= check_safety_claims(m_root, I);
 
-  if (!check_function_calls(m_root, log)) {
-    return false;
-  }
-
-  if (!check_returns(m_root, log)) {
-    return false;
-  }
-
-  if (!check_scopes(m_root, log)) {
-    return false;
-  }
-
-  if (!check_mutability(m_root, log)) {
-    return false;
-  }
-
-  if (!check_control_flow(m_root, log)) {
-    return false;
-  }
-
-  if (!check_types(m_root, log)) {
-    return false;
-  }
-
-  if (!check_safety_claims(m_root, log)) {
+  if (!ok) {
     return false;
   }
 

@@ -40,7 +40,10 @@
 
 using namespace nr;
 
-bool NRBuilder::check_safety_claims(Seq *, IReport *) noexcept {
+bool NRBuilder::check_safety_claims(Seq *, IReport *I) noexcept {
+  I->report(CompilerError, IC::Debug,
+            "NRBuilder::check_safety_claims() not implemented");
+
   /// TODO: Implement check
   return true;
 }

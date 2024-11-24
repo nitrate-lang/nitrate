@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "nitrate-ir/Report.hh"
 #define IRBUILDER_IMPL
 
 #include <nitrate-core/Error.h>
@@ -40,7 +41,10 @@
 
 using namespace nr;
 
-bool NRBuilder::check_duplicates(Seq *, IReport *) noexcept {
+bool NRBuilder::check_duplicates(Seq *, IReport *I) noexcept {
+  I->report(CompilerError, IC::Debug,
+            "NRBuilder::check_duplicates() not implemented");
+
   /// TODO: Implement check
   return true;
 }
