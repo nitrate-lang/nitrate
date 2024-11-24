@@ -47,15 +47,18 @@
 #include <core/ANSI.hh>
 #include <core/Config.hh>
 #include <core/Logger.hh>
+#include <fstream>
 #include <iostream>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-parser/Classes.hh>
 #include <nitrate-seq/Classes.hh>
-#include <string>
 #include <string_view>
 #include <unordered_map>
+
+#include "nitrate-ir/IR.h"
+#include "nitrate-parser/Parser.h"
 
 using namespace argparse;
 using namespace no3;
@@ -121,6 +124,187 @@ namespace no3::benchmark {
     return R;
   }
 }  // namespace no3::benchmark
+
+static int do_parse(std::string source, std::string output) {
+  qcore_env env;
+
+  auto file = std::make_shared<std::fstream>(source, std::ios::in);
+  if (!file->is_open()) {
+    LOG(ERROR) << "Failed to open source file: " << source;
+    return 1;
+  }
+
+  qprep lexer(file, "in", env.get());
+  qparse_conf conf;
+  qparser parser(lexer.get(), conf.get(), env.get());
+
+  qparse_node_t *tree = nullptr;
+
+  bool ok = qparse_do(parser.get(), &tree);
+
+  qparse_dumps(
+      parser.get(), !ansi::IsUsingColors(),
+      [](const char *msg, size_t len, uintptr_t) { std::cerr.write(msg, len); },
+      0);
+
+  if (!ok) {
+    LOG(ERROR) << "Failed to parse source file: " << source;
+    return 1;
+  }
+
+  { /* Write output */
+    std::ostream *out = nullptr;
+    std::shared_ptr<std::ostream> out_ptr;
+
+    if (output.empty()) {
+      out = &std::cout;
+    } else {
+      out_ptr = std::make_shared<std::ofstream>(output);
+      out = out_ptr.get();
+    }
+
+    size_t len = 0;
+    char *serialized = qparse_repr(tree, false, 2, &len);
+    std::string repr(serialized, len);
+    free(serialized);
+
+    *out << repr << std::endl;
+  }
+
+  return 0;
+}
+
+static int do_nr(std::string source, std::string output, std::string opts) {
+  if (!opts.empty()) {
+    LOG(ERROR) << "Options are not implemented yet";
+  }
+
+  qcore_env env;
+
+  auto file = std::make_shared<std::fstream>(source, std::ios::in);
+  if (!file->is_open()) {
+    LOG(ERROR) << "Failed to open source file: " << source;
+    return 1;
+  }
+
+  qprep lexer(file, "in", env.get());
+  qparse_conf conf;
+  qparser parser(lexer.get(), conf.get(), env.get());
+
+  qparse_node_t *tree = nullptr;
+
+  bool ok = qparse_do(parser.get(), &tree);
+
+  qparse_dumps(
+      parser.get(), !ansi::IsUsingColors(),
+      [](const char *msg, size_t len, uintptr_t) { std::cerr.write(msg, len); },
+      0);
+
+  if (!ok) {
+    LOG(ERROR) << "Failed to parse source file: " << source;
+    return 1;
+  }
+
+  qmodule mod;
+  ok = nr_lower(&mod.get(), tree, "module", true);
+
+  nr_diag_read(
+      mod.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
+      [](const uint8_t *msg, size_t len, nr_level_t, uintptr_t) {
+        std::cerr.write((const char *)msg, len);
+      },
+      0);
+
+  if (!ok) {
+    LOG(ERROR) << "Failed to lower source file: " << source;
+    return 1;
+  }
+
+  { /* Write output */
+    FILE *out = output.empty() ? stdout : fopen(output.c_str(), "wb");
+
+    if (!out) {
+      LOG(ERROR) << "Failed to open output file: " << output;
+      return 1;
+    }
+
+    ok = nr_write(mod.get(), nullptr, NR_SERIAL_CODE, out, nullptr, 0);
+    if (out != stdout) {
+      fclose(out);
+    }
+
+    if (!ok) {
+      LOG(ERROR) << "Failed to write output file: " << output;
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+static int do_codegen(std::string source, std::string output, std::string opts,
+                      std::string target) {
+  if (!opts.empty()) {
+    LOG(ERROR) << "Options are not implemented yet";
+  }
+
+  qcore_env env;
+
+  auto file = std::make_shared<std::fstream>(source, std::ios::in);
+  if (!file->is_open()) {
+    LOG(ERROR) << "Failed to open source file: " << source;
+    return 1;
+  }
+
+  qprep lexer(file, "in", env.get());
+  qparse_conf conf;
+  qparser parser(lexer.get(), conf.get(), env.get());
+
+  qparse_node_t *tree = nullptr;
+
+  bool ok = qparse_do(parser.get(), &tree);
+
+  qparse_dumps(
+      parser.get(), !ansi::IsUsingColors(),
+      [](const char *msg, size_t len, uintptr_t) { std::cerr.write(msg, len); },
+      0);
+
+  if (!ok) {
+    LOG(ERROR) << "Failed to parse source file: " << source;
+    return 1;
+  }
+
+  qmodule mod;
+  ok = nr_lower(&mod.get(), tree, "module", true);
+
+  nr_diag_read(
+      mod.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
+      [](const uint8_t *msg, size_t len, nr_level_t, uintptr_t) {
+        std::cerr.write((const char *)msg, len);
+      },
+      0);
+
+  if (!ok) {
+    LOG(ERROR) << "Failed to lower source file: " << source;
+    return 1;
+  }
+
+  FILE *out = output.empty() ? stdout : fopen(output.c_str(), "wb");
+
+  qcode_conf codegen_conf;
+  ok = qcode_ir(mod.get(), codegen_conf.get(), stderr, out);
+
+  if (out != stdout) {
+    fclose(out);
+  }
+
+  if (!ok) {
+    LOG(ERROR) << "Failed to generate code for source file: " << source;
+    return 1;
+  }
+
+  return 0;
+}
 
 static int do_dev_test() {
   /// TODO: Implement testing
@@ -189,10 +373,7 @@ namespace no3::router {
       std::string source = parse_parser.get<std::string>("source");
       std::string output = parse_parser.get<std::string>("--output");
 
-      /// TODO: Implement parsing
-      LOG(ERROR) << "Parsing is not implemented yet";
-
-      return 0;
+      return do_parse(source, output);
     } else if (parser.is_subcommand_used("nr")) {
       auto &nr_parser = *subparsers.at("nr");
 
@@ -202,10 +383,7 @@ namespace no3::router {
       std::string output = nr_parser.get<std::string>("--output");
       std::string opts = nr_parser.get<std::string>("--opts");
 
-      /// TODO: Implement ir generation
-      LOG(ERROR) << "IR generation is not implemented yet";
-
-      return 0;
+      return do_nr(source, output, opts);
     } else if (parser.is_subcommand_used("codegen")) {
       auto &nr_parser = *subparsers.at("codegen");
 
@@ -216,10 +394,7 @@ namespace no3::router {
       std::string opts = nr_parser.get<std::string>("--opts");
       std::string target = nr_parser.get<std::string>("--target");
 
-      /// TODO: Implement codegen
-      LOG(ERROR) << "Codegen is not implemented yet";
-
-      return 1;
+      return do_codegen(source, output, opts, target);
     } else if (parser.is_used("--demangle")) {
       std::string mangled_name = parser.get<std::string>("--demangle");
       if (mangled_name.starts_with("@")) {

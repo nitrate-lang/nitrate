@@ -759,7 +759,11 @@ LIB_EXPORT bool nr_write(qmodule_t *mod, const nr_node_t *_node,
   Expr *node;
   long start, end;
 
-  node = static_cast<Expr *>(const_cast<nr_node_t *>(_node));
+  if (_node) {
+    node = static_cast<Expr *>(const_cast<nr_node_t *>(_node));
+  } else {
+    node = mod->getRoot();
+  }
 
   if (outlen) {
     if ((start = ftell(out)) == -1) {
