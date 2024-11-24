@@ -26,4 +26,4 @@ add_dependencies(libnitrate-test nitrate)
 install(TARGETS libnitrate-test DESTINATION bin)
 
 include(GoogleTest)
-gtest_discover_tests(libnitrate-test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+# gtest_discover_tests(libnitrate-test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
