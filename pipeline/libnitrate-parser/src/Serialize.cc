@@ -938,7 +938,8 @@ LIB_EXPORT void qparse_brepr(const qparse_node_t *_node, bool compress,
   }
 }
 
-std::ostream &std::operator<<(std::ostream &os, const qlex_op_t &op) {
+CPP_EXPORT std::ostream &std::operator<<(std::ostream &os,
+                                         const qlex_op_t &op) {
   os << qlex_opstr((qlex_op_t)op);
   return os;
 }
