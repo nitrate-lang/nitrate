@@ -12,7 +12,7 @@ extern void (**nlr_ctors_start)();
 extern void (**nlr_ctors_end)();
 extern void runo3_pre_ctors();
 extern void runo3_post_ctors();
-extern void runo3_main();
+extern int runo3_main(int argc, char** argv, char** envp);
 
 static nlr_alloc_fn g_alloc;
 static nlr_dealloc_fn g_dealloc;
@@ -68,7 +68,7 @@ void nlr_initialize(nlr_alloc_fn _alloc, nlr_dealloc_fn _dealloc,
   g_reservoir.size = NLR_RESERVOIR_SIZE;
 }
 
-void nlr_start() {
+int nlr_start(int argc, char** argv, char** envp) {
   // Call the pre-constructor function
   runo3_pre_ctors();
 
@@ -81,5 +81,5 @@ void nlr_start() {
   runo3_post_ctors();
 
   // Call the main function
-  runo3_main();
+  return runo3_main(argc, argv, envp);
 }

@@ -31,7 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <stddef.h>
 #include <stdint.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 uint64_t _nlr_alloc_impl(uint64_t size);
 void _nlr_dealloc_impl(uint64_t ptr);
@@ -61,11 +64,13 @@ extern void nlr_initialize(nlr_alloc_fn alloc, nlr_dealloc_fn dealloc,
                            nlr_nmem_fn nmem, nlr_panic_fn panic,
                            nlr_csprng_fn csprng);
 
-extern void nlr_start();
+extern int nlr_start(int argc, char** argv, char** envp);
 
-void _start() {
+void _start(int argc, char** argv, char** envp) {
   nlr_initialize(_nlr_alloc_impl, _nlr_dealloc_impl, _nlr_nmem_impl,
                  _nlr_panic_impl, _nlr_csprng_impl);
 
-  nlr_start();
+  int rc = nlr_start(argc, argv, envp);
+
+  syscall(SYS_exit_group, rc);
 }
