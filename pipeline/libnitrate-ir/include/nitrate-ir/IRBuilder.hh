@@ -167,6 +167,8 @@ namespace nr {
     bool check_types(Seq *root, IReport *I) noexcept;
     bool check_safety_claims(Seq *root, IReport *I) noexcept;
 
+    void flatten_symbols(Seq *root) noexcept;
+
 #if defined(NDEBUG)
 #define SOURCE_LOCATION_PARAM
 #define SOURCE_LOCATION_PARAM_ONCE

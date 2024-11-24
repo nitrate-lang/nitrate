@@ -31,9 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <unordered_map>
-
-#include "nitrate-ir/Report.hh"
 #define IRBUILDER_IMPL
 
 #include <nitrate-core/Error.h>
@@ -43,8 +40,41 @@
 
 using namespace nr;
 
+void NRBuilder::flatten_symbols(Seq *root) noexcept {
+  std::unordered_set<Expr *> symbols;
+
+  iterate<dfs_post>(root, [&](Expr *P, Expr **C) -> IterOp {
+    if (!P) {
+      return IterOp::Proceed;
+    }
+
+    bool replace_with_ident = !P->is(QIR_NODE_SEQ);
+
+    if ((!P->is(QIR_NODE_EXTERN) && (*C)->is(QIR_NODE_FN)) ||
+        (*C)->is(QIR_NODE_EXTERN)) {
+      symbols.insert(*C);
+
+      if (replace_with_ident) {
+        *C = create<Ident>((*C)->getName(), *C);
+      } else {
+        *C = createIgn();
+      }
+    }
+
+    return IterOp::Proceed;
+  });
+
+  for (auto ele : symbols) {
+    root->getItems().push_back(ele);
+  }
+}
+
+///=============================================================================
+
 bool NRBuilder::check_duplicates(Seq *root, IReport *I) noexcept {
   bool ok = true;
+
+  flatten_symbols(root);
 
   for (auto fn : m_duplicate_functions) {
     if (auto fn_type = fn->getType()) {
@@ -64,6 +94,12 @@ bool NRBuilder::check_duplicates(Seq *root, IReport *I) noexcept {
   }
 
   ///=====================================================================
+
+  iterate<dfs_pre>(root, [&](Expr *, Expr **) -> IterOp {
+    //
+
+    return IterOp::Proceed;
+  });
 
   return ok;
 }

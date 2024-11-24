@@ -361,6 +361,11 @@ LIB_EXPORT nr_node_t *nr_clone(const nr_node_t *node) {
         if (in_visited.contains(n->getTarget())) {
           n->setTarget(static_cast<Expr *>(map[n->getTarget()]));
         }
+      } else if (cur->is(QIR_NODE_IDENT)) [[unlikely]] {
+        Ident *n = cur->as<Ident>();
+        if (in_visited.contains(n->getWhat())) {
+          n->setWhat(static_cast<Expr *>(map[n->getWhat()]));
+        }
       }
 
       return IterOp::Proceed;

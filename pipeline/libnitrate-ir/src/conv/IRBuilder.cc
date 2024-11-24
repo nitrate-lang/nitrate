@@ -178,11 +178,6 @@ std::string_view NRBuilder::intern(std::string_view in) noexcept {
   }
 }
 
-nr_node_t *nr_clone_impl(
-    const nr_node_t *_node,
-    std::unordered_map<const nr_node_t *, nr_node_t *> &map,
-    std::unordered_set<nr_node_t *> &in_visited);
-
 NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
   contract_enforce(
       m_state == SelfState::Constructed || m_state == SelfState::Finished ||
@@ -199,31 +194,10 @@ NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
   } else {
     contract_enforce(m_root != nullptr);
 
-    std::unordered_map<const nr_node_t *, nr_node_t *> node_map;
+    Expr *out_expr = static_cast<Expr *>(nr_clone(m_root));
 
-    { /* Deep clone the root node */
-      std::unordered_set<nr_node_t *> in_visited;
-
-      Expr *out_expr =
-          static_cast<Expr *>(nr_clone_impl(m_root, node_map, in_visited));
-
-      { /* Resolve Directed Acyclic* Graph Internal References */
-        iterate<dfs_pre>(out_expr, [&](Expr *, Expr **_cur) -> IterOp {
-          Expr *cur = *_cur;
-
-          // If the new data-structure contains a pointer to the old
-          // data-structure resolve it here.
-          if (in_visited.contains(cur)) {
-            *_cur = static_cast<Expr *>(node_map.at(cur));
-          }
-
-          return IterOp::Proceed;
-        });
-      }
-
-      contract_enforce(out_expr->getKind() == QIR_NODE_SEQ);
-      r.m_root = out_expr->as<Seq>();
-    }
+    contract_enforce(out_expr->getKind() == QIR_NODE_SEQ);
+    r.m_root = out_expr->as<Seq>();
   }
 
   return r;
