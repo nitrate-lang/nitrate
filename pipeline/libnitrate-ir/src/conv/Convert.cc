@@ -159,11 +159,11 @@ nr::List *nr::createStringLiteral(std::string_view value) noexcept {
   items.resize(value.size() + 1);
 
   for (size_t i = 0; i < value.size(); i++) {
-    items[i] = create<Int>(value[i], IntSize::U8);
+    items[i] = create<Int>(value[i], 8);
   }
 
   /* Add null byte at end */
-  items[value.size()] = create<Int>(0, IntSize::U8);
+  items[value.size()] = create<Int>(0, 8);
 
   return create<List>(items, true);
 }
@@ -629,12 +629,12 @@ static EResult nrgen_int(NRBuilder &b, PState &, IReport *G,
   }
 
   if (num <= 2147483647) {
-    return b.createFixedInteger(num, IntSize::I32);
+    return b.createFixedInteger(num, 32);
   } else if (num <= 9223372036854775807) {
-    return b.createFixedInteger(num, IntSize::I64);
+    return b.createFixedInteger(num, 64);
   } else if (num <= boost::multiprecision::cpp_int(
                         "340282366920938463463374607431768211455")) {
-    return b.createFixedInteger(num, IntSize::U128);
+    return b.createFixedInteger(num, 128);
   } else {
     G->report(CompilerError, IC::Error,
               "Integer literal is not representable in u128 type");
@@ -651,22 +651,22 @@ static EResult nrgen_float(NRBuilder &b, PState &, IReport *G,
     sv.remove_suffix(4);
     boost::multiprecision::cpp_dec_float_100 num(sv);
 
-    return b.createFixedFloat(num.convert_to<long double>(), FloatSize::F128);
+    return b.createFixedFloat(num, FloatSize::F128);
   } else if (sv.ends_with("f64")) {
     sv.remove_suffix(3);
     boost::multiprecision::cpp_dec_float_100 num(sv);
 
-    return b.createFixedFloat(num.convert_to<long double>(), FloatSize::F64);
+    return b.createFixedFloat(num, FloatSize::F64);
   } else if (sv.ends_with("f32")) {
     sv.remove_suffix(3);
     boost::multiprecision::cpp_dec_float_100 num(sv);
 
-    return b.createFixedFloat(num.convert_to<long double>(), FloatSize::F32);
+    return b.createFixedFloat(num, FloatSize::F32);
   } else if (sv.ends_with("f16")) {
     sv.remove_suffix(3);
     boost::multiprecision::cpp_dec_float_100 num(sv);
 
-    return b.createFixedFloat(num.convert_to<long double>(), FloatSize::F16);
+    return b.createFixedFloat(num, FloatSize::F16);
   } else {
     if (!std::all_of(sv.begin(), sv.end(),
                      [](char c) { return std::isdigit(c) || c == '.'; })) {
@@ -677,7 +677,7 @@ static EResult nrgen_float(NRBuilder &b, PState &, IReport *G,
 
     boost::multiprecision::cpp_dec_float_100 num(sv);
 
-    return b.createFixedFloat(num.convert_to<long double>(), FloatSize::F32);
+    return b.createFixedFloat(num, FloatSize::F32);
   }
 }
 
@@ -688,7 +688,7 @@ static EResult nrgen_string(NRBuilder &b, PState &, IReport *,
 
 static EResult nrgen_char(NRBuilder &b, PState &, IReport *,
                           qparse::ConstChar *n) {
-  return b.createFixedInteger(n->get_value(), IntSize::U8);
+  return b.createFixedInteger(n->get_value(), 8);
 }
 
 static EResult nrgen_bool(NRBuilder &b, PState &, IReport *,
@@ -1225,10 +1225,85 @@ static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
 
 static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
                             qparse::StructDef *n) {
-  /// TODO: Struct def
-  qcore_implement();
+  std::vector<std::tuple<std::string_view, Type *, Expr *>> fields(
+      n->get_fields().size());
 
-  return std::nullopt;
+  std::string old_ns = s.ns_prefix;
+  s.ns_prefix = s.join_scope(n->get_name());
+
+  for (size_t i = 0; i < n->get_fields().size(); i++) {
+    auto field = n->get_fields()[i];
+    auto field_type = next_one(field->get_type());
+    if (!field_type.has_value()) {
+      G->report(nr::CompilerError, IC::Error,
+                "Failed to lower struct field type", n->get_pos());
+      s.ns_prefix = old_ns;
+      return std::nullopt;
+    }
+
+    auto field_name = b.intern(field->get_name());
+
+    Expr *field_default = nullptr;
+    if (field->get_value() == nullptr) {
+      auto val = b.getDefaultValue(field_type.value()->asType());
+      if (!val.has_value()) {
+        G->report(nr::CompilerError, IC::Error,
+                  "Failed to lower struct field default value", n->get_pos());
+        s.ns_prefix = old_ns;
+        return std::nullopt;
+      }
+
+      field_default = val.value();
+    } else {
+      auto val = next_one(field->get_value());
+      if (!val.has_value()) {
+        G->report(nr::CompilerError, IC::Error,
+                  "Failed to lower struct field default value", n->get_pos());
+        s.ns_prefix = old_ns;
+        return std::nullopt;
+      }
+
+      field_default = val.value();
+    }
+
+    fields[i] = {field_name, field_type.value()->asType(), field_default};
+  }
+
+  std::swap(s.ns_prefix, old_ns);
+  b.createNamedTypeAlias(b.getStructTy(fields),
+                         b.intern(s.join_scope(n->get_name())));
+  std::swap(s.ns_prefix, old_ns);
+
+  BResult R;
+  R = std::vector<Expr *>();
+
+  for (const auto &method : n->get_methods()) {
+    auto val = next_one(method);
+    if (!val.has_value()) {
+      G->report(nr::CompilerError, IC::Error, "Failed to lower struct method",
+                n->get_pos());
+      s.ns_prefix = old_ns;
+      return std::nullopt;
+    }
+
+    R->push_back(val.value());
+  }
+
+  for (const auto &method : n->get_static_methods()) {
+    auto val = next_one(method);
+    if (!val.has_value()) {
+      G->report(nr::CompilerError, IC::Error,
+                "Failed to lower struct static method", n->get_pos());
+      s.ns_prefix = old_ns;
+      return std::nullopt;
+    }
+
+    R->push_back(val.value());
+  }
+
+  s.ns_prefix = old_ns;
+
+  return R;
 }
 
 static BResult nrgen_region(NRBuilder &b, PState &s, IReport *G,
@@ -1275,9 +1350,9 @@ static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
     } else {
       if (last.has_value()) {
         last = field_value = create<BinExpr>(
-            last.value(), b.createFixedInteger(1, IntSize::I32), Op::Plus);
+            last.value(), b.createFixedInteger(1, 32), Op::Plus);
       } else {
-        last = field_value = b.createFixedInteger(0, IntSize::I32);
+        last = field_value = b.createFixedInteger(0, 32);
       }
     }
 
@@ -1552,10 +1627,7 @@ static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_composite_field(NRBuilder &b, PState &s, IReport *G,
                                      qparse::CompositeField *n) {
-  /// TODO: field def
-  qcore_implement();
-
-  return std::nullopt;
+  qcore_panic("Unreachable");
 }
 
 static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G,
@@ -1621,6 +1693,11 @@ static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G,
     type = b.getUnknownTy();
   } else if (type.has_value() && !init.has_value()) {
     init = b.getDefaultValue(type.value()->asType());
+    if (!init.has_value()) {
+      G->report(TypeInference, IC::Error,
+                "Failed to get default value for type in var declaration");
+      return std::nullopt;
+    }
   } else {
     G->report(TypeInference, IC::Error,
               "Expected a type specifier or initial value in var declaration");
@@ -1654,6 +1731,11 @@ static EResult nrgen_let(NRBuilder &b, PState &s, IReport *G,
     type = b.getUnknownTy();
   } else if (type.has_value() && !init.has_value()) {
     init = b.getDefaultValue(type.value()->asType());
+    if (!init.has_value()) {
+      G->report(TypeInference, IC::Error,
+                "Failed to get default value for type in let declaration");
+      return std::nullopt;
+    }
   } else {
     G->report(TypeInference, IC::Error,
               "Expected a type specifier or initial value in let declaration");
@@ -1757,7 +1839,7 @@ static EResult nrgen_while(NRBuilder &b, PState &s, IReport *G,
   auto body = next_one(n->get_body());
 
   if (!cond.has_value()) {
-    cond = create<Int>(1, IntSize::U1);
+    cond = create<Int>(1, 1);
   }
 
   cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
@@ -1779,20 +1861,20 @@ static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G,
   auto body = next_one(n->get_body());
 
   if (!init.has_value()) {
-    init = create<Int>(1, IntSize::I32);
+    init = create<Int>(1, 32);
   }
 
   if (!cond.has_value()) {
-    cond = create<Int>(1, IntSize::I32);  // infinite loop like 'for (;;) {}'
+    cond = create<Int>(1, 32);  // infinite loop like 'for (;;) {}'
     cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
   }
 
   if (!step.has_value()) {
-    step = create<Int>(1, IntSize::I32);
+    step = create<Int>(1, 32);
   }
 
   if (!body.has_value()) {
-    body = create<Int>(1, IntSize::I32);
+    body = create<Int>(1, 32);
   }
 
   return create<For>(init.value(), cond.value(), step.value(), body.value());

@@ -43,6 +43,7 @@
 #include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>
 
+#include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <cassert>
@@ -88,7 +89,7 @@ namespace nr {
     CStr, /* Only supported variant */
   };
 
-  using bigfloat_t = long double;
+  using bigfloat_t = boost::multiprecision::cpp_dec_float_100;
   using boost::multiprecision::uint128_t;
 
   class __attribute__((visibility("default"))) NRBuilder {
@@ -323,7 +324,7 @@ namespace nr {
     Int *createBool(bool value SOURCE_LOCATION_PARAM) noexcept;
 
     Int *createFixedInteger(boost::multiprecision::cpp_int value,
-                            IntSize width SOURCE_LOCATION_PARAM) noexcept;
+                            uint8_t width SOURCE_LOCATION_PARAM) noexcept;
 
     Float *createFixedFloat(bigfloat_t value,
                             FloatSize width SOURCE_LOCATION_PARAM) noexcept;
@@ -344,7 +345,8 @@ namespace nr {
     ///**************************************************************************///
     // Create values
 
-    Expr *getDefaultValue(Type *_for SOURCE_LOCATION_PARAM) noexcept;
+    std::optional<Expr *> getDefaultValue(
+        Type *_for SOURCE_LOCATION_PARAM) noexcept;
 
     ///**************************************************************************///
     // Create types
@@ -375,6 +377,10 @@ namespace nr {
     PtrTy *getPtrTy(Type *pointee SOURCE_LOCATION_PARAM) noexcept;
 
     OpaqueTy *getOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM) noexcept;
+
+    StructTy *getStructTy(
+        std::span<std::tuple<std::string_view, Type *, Expr *>> fields
+            SOURCE_LOCATION_PARAM) noexcept;
 
     StructTy *getStructTy(
         std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept;

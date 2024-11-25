@@ -88,8 +88,8 @@ static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L,
 
   const auto prepare = [](std::string_view msg, Type* L,
                           Type* R) -> std::string {
-    return std::string(msg) + ": " + L->getKindName() + " -> " +
-           R->getKindName() + ".";
+    return std::string(msg) + ": " + std::string(L->getKindName()) + " -> " +
+           std::string(R->getKindName()) + ".";
   };
 
   /* Recursively check struct field casting */

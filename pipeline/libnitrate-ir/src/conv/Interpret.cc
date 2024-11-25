@@ -64,10 +64,10 @@ namespace comptime {
 
   struct IntegerValue {
     boost::multiprecision::cpp_int v;
-    IntSize w;
+    uint8_t w;
     bool is_signed;
 
-    IntegerValue(uint128_t val = 0, IntSize width = IntSize::I32) noexcept {
+    IntegerValue(uint128_t val = 0, uint8_t width = 32) noexcept {
       v = val;
       w = width;
       is_signed = false;

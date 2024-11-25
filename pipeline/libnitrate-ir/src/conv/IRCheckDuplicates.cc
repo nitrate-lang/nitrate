@@ -96,7 +96,8 @@ bool NRBuilder::check_duplicates(Seq *root, IReport *I) noexcept {
   ///=====================================================================
 
   iterate<dfs_pre>(root, [&](Expr *, Expr **) -> IterOp {
-    //
+    /// TODO: Check variable names for conflicts.
+    /// TODO: Warn user about using reserved namespaces.
 
     return IterOp::Proceed;
   });
