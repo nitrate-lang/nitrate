@@ -286,26 +286,68 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
     switch (tok.ty) {
       case qIntL: {
         /**
-         * @brief
+         * @brief Parse integer literal with type suffix
          */
 
         stack.push(LOC_121(ConstInt::get(tok.as_string(rd)), tok));
+
+        tok = qlex_peek(rd);
+        if (tok.is(qName)) {
+          Type *suffix = nullptr;
+          if (!parse_type(job, rd, &suffix) || !suffix) {
+            syntax(tok, "Unknown integer literal suffix");
+            return false;
+          }
+
+          Expr *integer = stack.top();
+          stack.pop();
+          stack.push(LOC_121(
+              BinExpr::get(integer, qOpAs, TypeExpr::get(suffix)), tok));
+        }
         continue;
       }
       case qNumL: {
         /**
-         * @brief
+         * @brief Parse floating-point literal with type suffix
          */
 
         stack.push(LOC_121(ConstFloat::get(tok.as_string(rd)), tok));
+
+        tok = qlex_peek(rd);
+        if (tok.is(qName)) {
+          Type *suffix = nullptr;
+          if (!parse_type(job, rd, &suffix) || !suffix) {
+            syntax(tok, "Unknown float literal suffix");
+            return false;
+          }
+
+          Expr *num = stack.top();
+          stack.pop();
+          stack.push(
+              LOC_121(BinExpr::get(num, qOpAs, TypeExpr::get(suffix)), tok));
+        }
         continue;
       }
       case qText: {
         /**
-         * @brief
+         * @brief Parse string literal with type suffix
          */
 
         stack.push(LOC_121(ConstString::get(tok.as_string(rd)), tok));
+
+        tok = qlex_peek(rd);
+        if (tok.is(qName)) {
+          Type *suffix = nullptr;
+          if (!parse_type(job, rd, &suffix) || !suffix) {
+            syntax(tok, "Unknown string literal suffix");
+            return false;
+          }
+
+          Expr *num = stack.top();
+          stack.pop();
+          stack.push(
+              LOC_121(BinExpr::get(num, qOpAs, TypeExpr::get(suffix)), tok));
+        }
         continue;
       }
       case qChar: {
@@ -313,18 +355,23 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
          * @brief
          */
         auto str = tok.as_string(rd);
-        if (str.size() > 4) {
-          syntax(tok, "Invalid character literal");
-          return false;
-        }
-        str.resize(4, '\0');
+        qcore_assert(str.size() == 1);
 
-        char32_t v = 0;
-        for (size_t i = 0; i < 4; i++) {
-          v |= (char32_t)str[i] >> (i * 8);
-        }
+        stack.push(LOC_121(ConstChar::get(str.at(0)), tok));
 
-        stack.push(LOC_121(ConstChar::get(v), tok));
+        tok = qlex_peek(rd);
+        if (tok.is(qName)) {
+          Type *suffix = nullptr;
+          if (!parse_type(job, rd, &suffix) || !suffix) {
+            syntax(tok, "Unknown char literal suffix");
+            return false;
+          }
+
+          Expr *num = stack.top();
+          stack.pop();
+          stack.push(
+              LOC_121(BinExpr::get(num, qOpAs, TypeExpr::get(suffix)), tok));
+        }
         continue;
       }
       case qKeyW: {
