@@ -531,6 +531,59 @@ static EResult nrgen_cexpr(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
                              qparse::BinExpr *n) {
+  if (n->get_lhs() && n->get_rhs() && n->get_op() == qOpAs &&
+      n->get_rhs()->is(QAST_NODE_TYPE_EXPR)) {
+    qparse::Type *type = n->get_rhs()->as<qparse::TypeExpr>()->get_type();
+
+    bool is_integer_ty = type->is_integral();
+    bool is_integer_lit = n->get_lhs()->this_typeid() == QAST_NODE_INT;
+
+    bool is_float_ty = type->is_floating_point();
+    bool is_float_lit = n->get_lhs()->this_typeid() == QAST_NODE_FLOAT;
+
+    if ((is_integer_lit && is_integer_ty) || (is_float_lit && is_float_ty)) {
+      if (is_integer_lit) {
+        static const std::unordered_map<qparse_ty_t, uint8_t>
+            integer_lit_suffixes = {
+                {QAST_NODE_U1_TY, 1},   {QAST_NODE_U8_TY, 8},
+                {QAST_NODE_U16_TY, 16}, {QAST_NODE_U32_TY, 32},
+                {QAST_NODE_U64_TY, 64}, {QAST_NODE_U128_TY, 128},
+
+                /* Signeness is not expressed in the QIR_NODE_INT */
+                // {QAST_NODE_I8_TY, 8},     {QAST_NODE_I16_TY, 16},
+                // {QAST_NODE_I32_TY, 32},   {QAST_NODE_I64_TY, 64},
+                // {QAST_NODE_I128_TY, 128},
+            };
+
+        auto it = integer_lit_suffixes.find(type->this_typeid());
+        if (it != integer_lit_suffixes.end()) {
+          qparse::ConstInt *N = n->get_lhs()->as<qparse::ConstInt>();
+
+          return b.createFixedInteger(
+              boost::multiprecision::cpp_int(N->get_value().view()),
+              it->second);
+        }
+      } else {
+        static const std::unordered_map<qparse_ty_t, FloatSize>
+            float_lit_suffixes = {{
+                {QAST_NODE_F16_TY, FloatSize::F16},
+                {QAST_NODE_F32_TY, FloatSize::F32},
+                {QAST_NODE_F64_TY, FloatSize::F64},
+                {QAST_NODE_F128_TY, FloatSize::F128},
+            }};
+
+        auto it = float_lit_suffixes.find(type->this_typeid());
+        if (it != float_lit_suffixes.end()) {
+          qparse::ConstFloat *N = n->get_lhs()->as<qparse::ConstFloat>();
+
+          return b.createFixedFloat(
+              boost::multiprecision::cpp_dec_float_100(N->get_value().view()),
+              it->second);
+        }
+      }
+    }
+  }
+
   auto lhs = next_one(n->get_lhs());
   if (!lhs.has_value()) {
     G->report(CompilerError, IC::Error,
@@ -653,41 +706,8 @@ static EResult nrgen_int(NRBuilder &b, PState &, IReport *G,
 
 static EResult nrgen_float(NRBuilder &b, PState &, IReport *G,
                            qparse::ConstFloat *n) {
-  auto val = n->get_value();
-  std::string_view sv = val;
-
-  if (sv.ends_with("f128")) {
-    sv.remove_suffix(4);
-    boost::multiprecision::cpp_dec_float_100 num(sv);
-
-    return b.createFixedFloat(num, FloatSize::F128);
-  } else if (sv.ends_with("f64")) {
-    sv.remove_suffix(3);
-    boost::multiprecision::cpp_dec_float_100 num(sv);
-
-    return b.createFixedFloat(num, FloatSize::F64);
-  } else if (sv.ends_with("f32")) {
-    sv.remove_suffix(3);
-    boost::multiprecision::cpp_dec_float_100 num(sv);
-
-    return b.createFixedFloat(num, FloatSize::F32);
-  } else if (sv.ends_with("f16")) {
-    sv.remove_suffix(3);
-    boost::multiprecision::cpp_dec_float_100 num(sv);
-
-    return b.createFixedFloat(num, FloatSize::F16);
-  } else {
-    if (!std::all_of(sv.begin(), sv.end(),
-                     [](char c) { return std::isdigit(c) || c == '.'; })) {
-      G->report(nr::CompilerError, IC::Error,
-                "Unexpected floating point type suffix");
-      return std::nullopt;
-    }
-
-    boost::multiprecision::cpp_dec_float_100 num(sv);
-
-    return b.createFixedFloat(num, FloatSize::F32);
-  }
+  boost::multiprecision::cpp_dec_float_100 num(n->get_value().view());
+  return b.createFixedFloat(num, FloatSize::F64);
 }
 
 static EResult nrgen_string(NRBuilder &b, PState &, IReport *,
