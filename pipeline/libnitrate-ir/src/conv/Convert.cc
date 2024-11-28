@@ -141,19 +141,6 @@ LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
 
 ///=============================================================================
 
-static nr::Tmp *create_simple_call(
-    NRBuilder &b, PState &, IReport *, std::string_view name,
-    std::vector<std::pair<std::string_view, nr::Expr *>,
-                nr::Arena<std::pair<std::string_view, nr::Expr *>>>
-        args = {}) {
-  nr::CallArgsTmpNodeCradle datapack;
-
-  datapack.base = nr::create<nr::Ident>(b.intern(name), nullptr);
-  datapack.args = std::move(args);
-
-  return create<nr::Tmp>(nr::TmpType::CALL, std::move(datapack));
-}
-
 nr::List *nr::createStringLiteral(std::string_view value) noexcept {
   ListItems items;
   items.resize(value.size() + 1);
@@ -440,7 +427,12 @@ static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &s,
       auto bits = nr::create<nr::UnExpr>(rhs, nr::Op::Bitsizeof);
       auto arg = nr::create<nr::BinExpr>(
           bits, nr::create<nr::Float>(8, nr::FloatSize::F64), nr::Op::Slash);
-      R = create_simple_call(b, s, G, "std::ceil", {{"0", arg}});
+
+      std::array<std::pair<std::string_view, Expr *>, 1> args;
+      args[0] = {"_0", arg};
+      R = b.createCall(nr::create<nr::Ident>(b.intern("std::ceil"), nullptr),
+                       args);
+
       break;
     }
 
@@ -1166,7 +1158,7 @@ static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *,
                               qparse::UnresolvedType *n) {
   auto str = s.scope_name(n->get_name());
 
-  return create<Tmp>(TmpType::NAMED_TYPE, b.intern(str));
+  return b.getUnknownNamedTy(b.intern(str));
 }
 
 static EResult nrgen_infer_ty(NRBuilder &b, PState &, IReport *,

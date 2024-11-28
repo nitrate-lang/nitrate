@@ -167,7 +167,7 @@ std::optional<Expr *> NRBuilder::resolve_name(std::string_view name,
     }
 
     case Kind::Function: {
-      R = find_in_scope_map(m_named_functions, name);
+      R = find_in_scope_map(m_functions, name);
     }
   }
 

@@ -44,7 +44,7 @@
 
 using namespace nr;
 
-void NRBuilder::try_resolve_types(Expr *root) const noexcept {
+void NRBuilder::try_resolve_types(Expr *root) noexcept {
   /**
    * @brief Resolve the `TmpType::NAMED_TYPE` nodes by replacing them with the
    * actual types they represent.
@@ -54,18 +54,34 @@ void NRBuilder::try_resolve_types(Expr *root) const noexcept {
   iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
     Expr *N = *C;
 
-    if (N->is(QIR_NODE_TMP) &&
-        N->as<Tmp>()->getTmpType() == TmpType::NAMED_TYPE) {
-      /* Get the fully-qualified name */
-      std::string_view type_name =
-          std::get<std::string_view>(N->as<Tmp>()->getData());
+    if (!N->is(QIR_NODE_TMP)) {
+      return IterOp::Proceed;
+    }
 
-      auto result = resolve_name(type_name, Kind::TypeDef);
-      if (result.has_value()) [[likely]] {
-        /* Replace the current node */
-        *C = result.value();
-      } else {
-        /* Fallthrough */
+    std::string_view type_name;
+
+    bool is_default_value_expr =
+        N->is(QIR_NODE_TMP) &&
+        N->as<Tmp>()->getTmpType() == TmpType::DEFAULT_VALUE;
+
+    if (N->as<Tmp>()->getTmpType() == TmpType::NAMED_TYPE ||
+        is_default_value_expr) {
+      /* Get the fully-qualified type name */
+      type_name = std::get<std::string_view>(N->as<Tmp>()->getData());
+    } else {
+      return IterOp::Proceed;
+    }
+
+    auto result = resolve_name(type_name, Kind::TypeDef);
+    if (result.has_value()) [[likely]] {
+      /* Replace the current node */
+      *C = result.value();
+
+      if (is_default_value_expr) {
+        /* Replace the default value expression with the actual default value */
+        if (auto def = getDefaultValue(result.value()->asType())) {
+          *C = def.value();
+        }
       }
     }
 
@@ -231,7 +247,7 @@ void NRBuilder::try_resolve_calls(Expr *root) const noexcept {
   });
 }
 
-void NRBuilder::connect_nodes(Seq *root) const noexcept {
+void NRBuilder::connect_nodes(Seq *root) noexcept {
   /* The order of the following matters */
 
   try_resolve_types(root);

@@ -865,11 +865,10 @@ namespace comptime {
 
       case QIR_NODE_LIST: {
         List *n = x->as<List>();
-        std::vector<Value> items;
-        items.resize(n->getItems().size());
+        std::vector<Value> items(n->size());
 
-        for (size_t i = 0; i < n->getItems().size(); i++) {
-          auto tmp = evaluate(P, n->getItems()[i]);
+        for (size_t i = 0; i < n->size(); i++) {
+          auto tmp = evaluate(P, n->at(i));
           if (!tmp.has_value()) {
             P.eprintn("Failed to convert list element");
             return std::nullopt;

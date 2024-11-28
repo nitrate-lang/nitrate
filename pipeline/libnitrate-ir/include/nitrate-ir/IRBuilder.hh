@@ -125,7 +125,7 @@ namespace nr {
     std::unordered_map<std::string_view,
                        std::unordered_map<std::string_view, Expr *>>
         m_named_constant_group;
-    std::unordered_map<std::string_view, Fn *> m_named_functions;
+    std::unordered_map<std::string_view, Fn *> m_functions;
     std::unordered_map<Fn *, std::unordered_map<size_t, Expr *>>
         m_function_defaults;
 
@@ -152,10 +152,10 @@ namespace nr {
     NRBuilder &insertBeforeVariable(std::string_view name) noexcept;
     NRBuilder &insertBeforeFunction(std::string_view name) noexcept;
 
-    void try_resolve_types(Expr *root) const noexcept;
+    void try_resolve_types(Expr *root) noexcept;
     void try_resolve_names(Expr *root) const noexcept;
     void try_resolve_calls(Expr *root) const noexcept;
-    void connect_nodes(Seq *root) const noexcept;
+    void connect_nodes(Seq *root) noexcept;
 
     bool check_acyclic(Seq *root, IReport *I) noexcept;
     bool check_duplicates(Seq *root, IReport *I) noexcept;

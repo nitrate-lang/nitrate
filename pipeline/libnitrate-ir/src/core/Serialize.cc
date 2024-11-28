@@ -250,12 +250,12 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
 
       bool is_cstring = false;
       std::string c_string;
-      for (size_t i = 0; i < L->getItems().size(); i++) {
-        if (L->getItems()[i]->getKind() != QIR_NODE_BINEXPR) {
+      for (size_t i = 0; i < L->size(); i++) {
+        if (L->at(i)->getKind() != QIR_NODE_BINEXPR) {
           break;
         }
 
-        BinExpr *BE = L->getItems()[i]->as<BinExpr>();
+        BinExpr *BE = L->at(i)->as<BinExpr>();
 
         if (BE->getLHS()->getKind() != QIR_NODE_INT) {
           break;
@@ -271,7 +271,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
 
         c_string.push_back((char)BE->getLHS()->as<Int>()->getValue());
 
-        if (i + 1 == L->getItems().size()) {  // Last item
+        if (i + 1 == L->size()) {  // Last item
           if (BE->getLHS()->as<Int>()->getValue() != 0) {
             break;
           }
@@ -285,9 +285,9 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
 
       if (!is_cstring) {
         ss << "{";
-        for (auto it = L->getItems().begin(); it != L->getItems().end(); ++it) {
+        for (auto it = L->begin(); it != L->end(); ++it) {
           recurse(*it);
-          if (std::next(it) != L->getItems().end()) {
+          if (std::next(it) != L->end()) {
             ss << ",";
           }
         }

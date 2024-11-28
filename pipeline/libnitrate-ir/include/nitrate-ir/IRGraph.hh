@@ -878,6 +878,8 @@ namespace nr {
 
     QCLASS_REFLECT()
 
+    /// FIXME: Implement run-length compression
+
     ListItems m_items;
     bool m_is_homogenous;
 
@@ -885,9 +887,12 @@ namespace nr {
     List(const ListItems &items, bool is_homogenous)
         : Expr(QIR_NODE_LIST), m_items(items), m_is_homogenous(is_homogenous) {}
 
-    const ListItems &getItems() const noexcept { return m_items; }
-    ListItems &getItems() noexcept { return m_items; }
-    void setItems(const ListItems &items) noexcept { m_items = items; }
+    auto begin() const noexcept { return m_items.begin(); }
+    auto end() const noexcept { return m_items.end(); }
+    size_t size() const noexcept { return m_items.size(); }
+
+    Expr *operator[](size_t idx) const noexcept { return m_items[idx]; }
+    Expr *at(size_t idx) const noexcept { return m_items.at(idx); }
 
     bool isHomogenous() const noexcept { return m_is_homogenous; }
   };
@@ -1250,6 +1255,7 @@ namespace nr {
   enum class TmpType {
     CALL,
     NAMED_TYPE,
+    DEFAULT_VALUE,
   };
 
   struct CallArgsTmpNodeCradle {

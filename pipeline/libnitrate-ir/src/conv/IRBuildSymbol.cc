@@ -72,11 +72,11 @@ Fn *NRBuilder::createFunctionDefintion(
   Fn *fn = create<Fn>(name, std::move(parameters), ret_ty, std::nullopt,
                       is_variadic, AbiTag::Default);
 
-  if (m_named_functions.contains(name)) [[unlikely]] {
+  if (m_functions.contains(name)) [[unlikely]] {
     m_duplicate_functions.insert(fn);
   }
 
-  m_named_functions[name] = fn;
+  m_functions[name] = fn;
   m_function_defaults[fn] = std::move(default_arguments);
 
   return compiler_trace(debug_info(fn, DEBUG_INFO));
@@ -113,11 +113,11 @@ Fn *NRBuilder::createFunctionDeclaration(
   Fn *fn = create<Fn>(name, std::move(parameters), ret_ty, std::nullopt,
                       is_variadic, AbiTag::Default);
 
-  if (m_named_functions.contains(name)) [[unlikely]] {
+  if (m_functions.contains(name)) [[unlikely]] {
     m_duplicate_functions.insert(fn);
   }
 
-  m_named_functions[name] = fn;
+  m_functions[name] = fn;
   m_function_defaults[fn] = std::move(default_arguments);
 
   return compiler_trace(debug_info(fn, DEBUG_INFO));

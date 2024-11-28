@@ -557,7 +557,11 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
     }
 
     case QIR_NODE_TMP: {
-      /// TODO: Defer to later
+      Tmp *tmp = _for->as<Tmp>();
+      if (tmp->getTmpType() == TmpType::NAMED_TYPE) {
+        std::string_view name = std::get<std::string_view>(tmp->getData());
+        E = create<Tmp>(TmpType::DEFAULT_VALUE, name);
+      }
       break;
     }
 

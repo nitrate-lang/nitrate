@@ -647,12 +647,12 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
         break;
       }
       case QIR_NODE_LIST: {
-        if (E->as<List>()->getItems().empty()) {
+        if (E->as<List>()->size() == 0) {
           T = create<StructTy>(StructFields());
         } else {
           std::vector<Type *> types;
           bool failed = false;
-          for (auto &item : E->as<List>()->getItems()) {
+          for (const auto &item : *E->as<List>()) {
             Type *x = item->getType().value_or(nullptr);
             if (!x) {
               T = nullptr;

@@ -1745,16 +1745,16 @@ static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
    * @note [Write assumptions here]
    */
 
-  if (N->getItems().empty()) {
+  if (N->size() == 0) {
     llvm::StructType *ST = llvm::StructType::get(m.getContext(), {}, true);
     llvm::AllocaInst *AI = b.CreateAlloca(ST);
     return b.CreateLoad(ST, AI);
   }
 
   std::vector<llvm::Value *> items;
-  items.reserve(N->getItems().size());
+  items.reserve(N->size());
 
-  for (auto &node : N->getItems()) {
+  for (const auto &node : *N) {
     val_t R = V(m, b, cf, s, node);
     if (!R) {
       debug("Failed to get item");

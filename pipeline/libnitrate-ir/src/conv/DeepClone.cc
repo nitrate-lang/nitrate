@@ -93,8 +93,8 @@ nr_node_t *nr_clone_impl(
     case QIR_NODE_LIST: {
       List *n = static_cast<List *>(in);
       ListItems items;
-      items.reserve(n->getItems().size());
-      for (auto item : n->getItems()) {
+      items.reserve(n->size());
+      for (const auto &item : *n) {
         items.push_back(clone(item));
       }
       out = create<List>(std::move(items), n->isHomogenous());
