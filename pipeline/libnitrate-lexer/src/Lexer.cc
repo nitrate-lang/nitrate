@@ -41,7 +41,6 @@
 #include <boost/bimap.hpp>
 #include <boost/unordered_map.hpp>
 #include <cctype>
-#include <charconv>
 #include <cmath>
 #include <csetjmp>
 #include <cstdint>
@@ -270,7 +269,6 @@ static bool lex_is_space(char c) {
 }
 
 enum class NumType {
-  Invalid,
   Decimal,
   DecimalExplicit,
   Hexadecimal,
@@ -325,81 +323,6 @@ static bool validate_identifier(std::string_view id) {
   }
 
   return state == 0;
-}
-
-static NumType check_number_literal_type(qlex::num_buf_t &input) {
-  if (num_cache.size() > 4096) {
-    num_cache = {};
-  } else if (num_cache.find(input) != num_cache.end()) {
-    return num_cache[input];
-  }
-
-  if (input.empty()) return num_cache[input] = NumType::Invalid;
-
-  /* Check if it's a single digit */
-  if (input.size() < 3) {
-    if (std::isdigit(input[0]))
-      return num_cache[input] = NumType::Decimal;
-    else
-      return num_cache[input] = NumType::Invalid;
-  }
-
-  std::transform(input.begin(), input.end(), input.begin(), ::tolower);
-  std::erase(input, '_');
-
-  std::string prefix;
-  prefix.push_back(input[0]);
-  prefix.push_back(input[1]);
-
-  size_t i;
-
-  if (prefix == "0x") {
-    for (i = 2; i < input.size(); i++)
-      if (!((input[i] >= '0' && input[i] <= '9') ||
-            (input[i] >= 'a' && input[i] <= 'f')))
-        return num_cache[input] = NumType::Invalid;
-
-    return num_cache[input] = NumType::Hexadecimal;
-  } else if (prefix == "0b") {
-    for (i = 2; i < input.size(); i++)
-      if (!(input[i] == '0' || input[i] == '1'))
-        return num_cache[input] = NumType::Invalid;
-
-    return num_cache[input] = NumType::Binary;
-  } else if (prefix == "0o") {
-    for (i = 2; i < input.size(); i++)
-      if (!(input[i] >= '0' && input[i] <= '7'))
-        return num_cache[input] = NumType::Invalid;
-
-    return num_cache[input] = NumType::Octal;
-  } else if (prefix == "0d") {
-    for (i = 2; i < input.size(); i++)
-      if (!(input[i] >= '0' && input[i] <= '9'))
-        return num_cache[input] = NumType::Invalid;
-
-    return num_cache[input] = NumType::DecimalExplicit;
-  } else {
-    for (i = 0; i < input.size(); i++) {
-      if (!(input[i] >= '0' && input[i] <= '9')) {
-        try {
-          double x;
-          auto r =
-              std::from_chars(input.data(), input.data() + input.size(), x);
-
-          if (r.ec == std::errc::invalid_argument ||
-              r.ec == std::errc::result_out_of_range) {
-            return num_cache[input] = NumType::Invalid;
-          }
-
-          return num_cache[input] = NumType::Floating;
-        } catch (...) {
-          return num_cache[input] = NumType::Invalid;
-        }
-      }
-    }
-
-    return num_cache[input] = NumType::Decimal;
-  }
 }
 
 static bool canonicalize_float(std::string_view input, std::string &norm) {
@@ -518,9 +441,8 @@ static bool canonicalize_number(qlex::num_buf_t &number, std::string &norm,
       }
       break;
     }
-    case NumType::Invalid:
     case NumType::Floating: {
-      __builtin_unreachable();
+      qcore_panic("unreachable");
     }
   }
 
@@ -626,17 +548,14 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
           }
         }
         case LexState::Identifier: {
-          qlex::ident_buf_t ibuf;
-          ibuf += buf[0];
-
           { /* Read in what is hopefully an identifier */
             int colon_state = 0;
 
             while (std::isalnum(c) || c == '_' || c == ':') {
               if (c != ':' && colon_state == 1) {
-                if (!ibuf.ends_with("::")) {
-                  char tc = ibuf.back();
-                  ibuf.pop_back();
+                if (!buf.ends_with("::")) {
+                  char tc = buf.back();
+                  buf.pop_back();
                   m_pushback.push_back(tc);
                   break;
                 }
@@ -645,120 +564,170 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
                 colon_state = 1;
               }
 
-              ibuf += c;
+              buf += c;
               c = getc();
             }
           }
 
           /* Check for f-string */
-          if (ibuf == "f" && c == '"') {
+          if (buf == "f" && c == '"') {
             m_pushback.push_back(c);
             return qlex_tok_t(qKeyW, qKFString, start_pos, cur_loc());
           }
 
           /* We overshot; this must be a punctor ':' */
-          if (ibuf.size() > 0 && ibuf.back() == ':') {
-            char tc = ibuf.back();
-            ibuf.pop_back();
+          if (buf.size() > 0 && buf.back() == ':') {
+            char tc = buf.back();
+            buf.pop_back();
             m_pushback.push_back(tc);
           }
           m_pushback.push_back(c);
 
           { /* Determine if it's a keyword or an identifier */
-            auto it = qlex::keywords.left.find(ibuf);
+            auto it = qlex::keywords.left.find(buf);
             if (it != qlex::keywords.left.end()) {
               return qlex_tok_t(qKeyW, it->second, start_pos, cur_loc());
             }
           }
 
           { /* Check if it's an operator */
-            auto it = qlex::word_operators.left.find(ibuf);
+            auto it = qlex::word_operators.left.find(buf);
             if (it != qlex::word_operators.left.end()) {
               return qlex_tok_t(qOper, it->second, start_pos, cur_loc());
             }
           }
 
           /* Ensure it's a valid identifier */
-          if (!validate_identifier(ibuf)) {
+          if (!validate_identifier(buf)) {
             goto error_0;
           }
 
+          /* For compiler internal debugging */
+          qcore_assert(buf != "__builtin_lexer_crash",
+                       "The source code invoked a compiler panic API.");
+
+          if (buf == "__builtin_lexer_abort") {
+            return qlex_tok_t(qEofF, start_pos, cur_loc());
+          }
+
           /* Return the identifier */
-          return qlex_tok_t(qName, put_string(ibuf), start_pos, cur_loc());
+          return qlex_tok_t(qName, put_string(buf), start_pos, cur_loc());
         }
         case LexState::Integer: {
-          qlex::num_buf_t nbuf;
+          NumType type = NumType::Decimal;
 
-          nbuf += buf[0];
-          { /* Read in what is hopefully an integer */
-            while (true) {
-              if (!(std::isxdigit(c) || c == '_' || c == '-' || c == '.' ||
-                    c == 'x' || c == 'b' || c == 'd' || c == 'o' || c == 'e' ||
-                    c == '.')) {
+          /* [0x, 0X, 0d, 0D, 0b, 0B, 0o, 0O] */
+          if (buf.size() == 1 && buf[0] == '0') {
+            switch (c) {
+              case 'x':
+              case 'X':
+                type = NumType::Hexadecimal;
+                buf += c;
+                c = getc();
+                break;
+              case 'b':
+              case 'B':
+                type = NumType::Binary;
+                buf += c;
+                c = getc();
+                break;
+              case 'o':
+              case 'O':
+                type = NumType::Octal;
+                buf += c;
+                c = getc();
+                break;
+              case 'd':
+              case 'D':
+                type = NumType::DecimalExplicit;
+                buf += c;
+                c = getc();
+                break;
+            }
+          }
+
+          bool is_lexing = true;
+          while (is_lexing) {
+            /* Skip over the integer syntax formatting */
+            if (c == '_') {
+              while (lex_is_space(c) || c == '_' || c == '\\') {
+                c = getc();
+              }
+            } else if (lex_is_space(c)) {
+              is_lexing = false;
+              break;
+            }
+
+            switch (type) {
+              case NumType::Decimal: {
+                if (std::isdigit(c)) {
+                  buf += c;
+                } else {
+                  m_pushback.push_back(c);
+                  is_lexing = false;
+                }
                 break;
               }
 
-              if (c == '_') {
-                do {
-                  c = getc();
-                } while (lex_is_space(c) || c == '_' || c == '\\');
+              case NumType::DecimalExplicit: {
+                if (std::isdigit(c)) {
+                  buf += c;
+                } else {
+                  m_pushback.push_back(c);
+                  is_lexing = false;
+                }
+                break;
               }
 
-              nbuf += c;
+              case NumType::Hexadecimal: {
+                if (std::isxdigit(c)) {
+                  buf += c;
+                } else {
+                  m_pushback.push_back(c);
+                  is_lexing = false;
+                }
+                break;
+              }
+
+              case NumType::Binary: {
+                if (c == '0' || c == '1') {
+                  buf += c;
+                } else {
+                  m_pushback.push_back(c);
+                  is_lexing = false;
+                }
+                break;
+              }
+
+              case NumType::Octal: {
+                if (c >= '0' && c <= '7') {
+                  buf += c;
+                } else {
+                  m_pushback.push_back(c);
+                  is_lexing = false;
+                }
+                break;
+              }
+
+              case NumType::Floating: {
+                /// TODO: Lexer subtype
+                buf += c;
+                break;
+              }
+            }
+
+            if (is_lexing) {
               c = getc();
             }
           }
 
-          { /* Handle lexical ambiguity */
-            std::vector<char> items;
-
-            bool cutting = true;
-            while (cutting) {
-              if (nbuf.empty()) {
-                break;
-              }
-
-              char last = nbuf.back();
-
-              switch (last) {
-                case '_':
-                case '.':
-                case '-':
-                  items.push_back(last);
-                  nbuf.pop_back();
-                  break;
-                default:
-                  cutting = false;
-                  break;
-              }
-            }
-
-            for (auto it = items.rbegin(); it != items.rend(); ++it) {
-              m_pushback.push_back(*it);
-            }
-            m_pushback.push_back(c);
-          }
-
-          /* Check if it's a floating point number */
-          NumType type;
-
           std::string norm;
-          if ((type = check_number_literal_type(nbuf)) == NumType::Floating) {
-            if (canonicalize_float(nbuf, norm)) {
+          if (type == NumType::Floating) {
+            if (canonicalize_float(buf, norm)) {
               return qlex_tok_t(qNumL, put_string(std::move(norm)), start_pos,
                                 cur_loc());
-            } else {
-              goto error_0;
             }
-          }
-
-          /* Check if it's a valid number */
-          if (type == NumType::Invalid) {
-            goto error_0;
-          }
-
-          /* Canonicalize the number */
-          if (canonicalize_number(nbuf, norm, type)) {
+          } else if (canonicalize_number(buf, norm, type)) {
             return qlex_tok_t(qIntL, put_string(std::move(norm)), start_pos,
                               cur_loc());
           }
