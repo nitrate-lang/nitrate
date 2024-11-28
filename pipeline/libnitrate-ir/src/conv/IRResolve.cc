@@ -89,7 +89,7 @@ void NRBuilder::try_resolve_types(Expr *root) noexcept {
   });
 }
 
-void NRBuilder::try_resolve_names(Expr *root) const noexcept {
+void NRBuilder::try_resolve_names(Expr *root) noexcept {
   /**
    * @brief Resolve identifiers by hooking them to the node they represent. This
    * may create cyclic references, which is okay because these hooks are not
@@ -103,11 +103,10 @@ void NRBuilder::try_resolve_names(Expr *root) const noexcept {
     if (N->is(QIR_NODE_IDENT) && N->as<Ident>()->getWhat() == nullptr) {
       Ident *I = N->as<Ident>();
 
-      auto enum_opt = resolve_name(I->getName(), Kind::ScopedEnum);
-      if (enum_opt.has_value()) {
+      if (auto enum_opt = resolve_name(I->getName(), Kind::ScopedEnum)) {
         *C = enum_opt.value();
-      } else {
-        /// TODO: Resolve identifier reference
+      } else if (auto var_opt = resolve_name(I->getName(), Kind::Variable)) {
+        *C = var_opt.value();
       }
     }
 
@@ -196,7 +195,7 @@ end:
   return;
 }
 
-void NRBuilder::try_resolve_calls(Expr *root) const noexcept {
+void NRBuilder::try_resolve_calls(Expr *root) noexcept {
   /**
    * @brief Resolve the `TmpType::CALL` nodes by replacing them with function
    * call expression nodes with any default arguments filled in.

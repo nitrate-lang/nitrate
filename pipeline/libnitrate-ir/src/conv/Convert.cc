@@ -56,6 +56,11 @@
 using namespace nr;
 
 struct PState {
+private:
+  size_t scope_ctr = 0;
+  std::stack<std::string> old_scopes;
+
+public:
   bool inside_function = false;
   std::string ns_prefix;
   std::stack<qparse::String> composite_expanse;
@@ -74,6 +79,18 @@ struct PState {
       return std::string(suffix);
     }
     return ns_prefix + "::" + std::string(suffix);
+  }
+
+  void inc_scope() {
+    old_scopes.push(ns_prefix);
+    if (scope_ctr++ != 0) {
+      ns_prefix = join_scope("__" + std::to_string(scope_ctr));
+    }
+  }
+
+  void dec_scope() {
+    ns_prefix = old_scopes.top();
+    old_scopes.pop();
   }
 };
 
@@ -1426,6 +1443,9 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G,
   return fndecl;
 }
 
+static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G,
+                           qparse::Block *n, bool insert_scope_id);
+
 static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
   bool failed = false;
 
@@ -1527,7 +1547,7 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
       std::string old_ns = s.ns_prefix;
       s.ns_prefix = name;
 
-      auto body = next_one(n->get_body());
+      auto body = nrgen_block(b, s, G, n->get_body(), false);
       if (!body.has_value()) {
         G->report(CompilerError, nr::IC::Error,
                   "Failed to convert function body", n->get_pos());
@@ -1548,7 +1568,7 @@ static BResult nrgen_subsystem(NRBuilder &b, PState &s, IReport *G,
   std::string old_ns = s.ns_prefix;
   s.ns_prefix = s.join_scope(n->get_name());
 
-  auto body = next_any(n->get_body());
+  auto body = nrgen_block(b, s, G, n->get_body(), false);
   if (!body.has_value()) {
     G->report(nr::CompilerError, IC::Error, "Failed to lower subsystem body",
               n->get_pos());
@@ -1557,7 +1577,7 @@ static BResult nrgen_subsystem(NRBuilder &b, PState &s, IReport *G,
 
   s.ns_prefix = old_ns;
 
-  return body;
+  return BResult({body.value()});
 }
 
 static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
@@ -1623,9 +1643,15 @@ static EResult nrgen_composite_field(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G,
-                           qparse::Block *n) {
+                           qparse::Block *n, bool insert_scope_id) {
   SeqItems items;
   items.reserve(n->get_items().size());
+
+  std::string old_ns = s.ns_prefix;
+
+  if (insert_scope_id) {
+    s.inc_scope();
+  }
 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
     auto item = next_any(*it);
@@ -1635,7 +1661,20 @@ static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G,
       return std::nullopt;
     }
 
-    items.insert(items.end(), item.value().begin(), item.value().end());
+    if ((*it)->this_typeid() == QAST_NODE_BLOCK) {
+      /* Reduce unneeded nesting in the IR */
+      qcore_assert(item->size() == 1);
+      Seq *inner = item->at(0)->as<Seq>();
+
+      items.insert(items.end(), inner->getItems().begin(),
+                   inner->getItems().end());
+    } else {
+      items.insert(items.end(), item.value().begin(), item.value().end());
+    }
+  }
+
+  if (insert_scope_id) {
+    s.dec_scope();
   }
 
   return create<Seq>(std::move(items));
@@ -1847,6 +1886,8 @@ static EResult nrgen_while(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G,
                          qparse::ForStmt *n) {
+  s.inc_scope();
+
   auto init = next_one(n->get_init());
   auto cond = next_one(n->get_cond());
   auto step = next_one(n->get_step());
@@ -1868,6 +1909,8 @@ static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G,
   if (!body.has_value()) {
     body = create<Int>(1, 32);
   }
+
+  s.dec_scope();
 
   return create<For>(init.value(), cond.value(), step.value(), body.value());
 }
@@ -2183,7 +2226,7 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, qparse::Node *n) {
       break;
 
     case QAST_NODE_BLOCK:
-      out = nrgen_block(b, s, G, n->as<qparse::Block>());
+      out = nrgen_block(b, s, G, n->as<qparse::Block>(), true);
       break;
 
     case QAST_NODE_CONST:

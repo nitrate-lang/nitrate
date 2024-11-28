@@ -139,6 +139,7 @@ namespace nr {
       TypeDef,
       ScopedEnum,
       Function,
+      Variable,
     };
 
     std::optional<Expr *> resolve_name(std::string_view name,
@@ -153,8 +154,8 @@ namespace nr {
     NRBuilder &insertBeforeFunction(std::string_view name) noexcept;
 
     void try_resolve_types(Expr *root) noexcept;
-    void try_resolve_names(Expr *root) const noexcept;
-    void try_resolve_calls(Expr *root) const noexcept;
+    void try_resolve_names(Expr *root) noexcept;
+    void try_resolve_calls(Expr *root) noexcept;
     void connect_nodes(Seq *root) noexcept;
 
     bool check_acyclic(Seq *root, IReport *I) noexcept;

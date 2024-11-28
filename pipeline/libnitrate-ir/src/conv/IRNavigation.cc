@@ -31,14 +31,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <string_view>
-#include <unordered_map>
 #define IRBUILDER_IMPL
 
 #include <nitrate-core/Error.h>
 
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
+#include <string_view>
+#include <unordered_map>
 
 using namespace nr;
 
@@ -168,6 +168,11 @@ std::optional<Expr *> NRBuilder::resolve_name(std::string_view name,
 
     case Kind::Function: {
       R = find_in_scope_map(m_functions, name);
+    }
+
+    case Kind::Variable: {
+      /// TODO: Implement variable resolution
+      return std::nullopt;
     }
   }
 
