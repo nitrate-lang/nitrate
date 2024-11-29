@@ -184,7 +184,10 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     return;
   }
 
-  switch (n->this_typeid()) {
+  switch (n->getKind()) {
+    case QAST_NODE_NODE: {
+      break;
+    }
     case QAST_NODE_BINEXPR: {
       OBJECT_BEGIN("BExpr");
       OBJECT_ALI(n->as<BinExpr>()->get_op());

@@ -333,11 +333,15 @@ bool to_json_recurse(Node *N, json &x) {
     return true;
   }
 
-  qparse_ty_t id = N->this_typeid();
+  qparse_ty_t id = N->getKind();
 
   x[0] = id;
 
   switch (id) {
+    case QAST_NODE_NODE: {
+      break;
+    }
+
     case QAST_NODE_BINEXPR: {
       /**
        * @brief [Brief Description]

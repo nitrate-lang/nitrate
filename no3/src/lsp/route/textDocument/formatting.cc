@@ -336,7 +336,11 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
     return;
   }
 
-  switch (C->this_typeid()) {
+  switch (C->getKind()) {
+    case QAST_NODE_NODE: {
+      break;
+    }
+
     case QAST_NODE_BINEXPR: {
       BinExpr* N = C->as<BinExpr>();
       S.line << "(";
@@ -440,12 +444,11 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       }
 
       for (auto it = N->get_args().begin(); it != N->get_args().end(); it++) {
-        bool is_call = it->second->this_typeid() == QAST_NODE_CALL;
-        bool is_other =
-            it->second->this_typeid() == QAST_NODE_LIST ||
-            (it->second->this_typeid() == QAST_NODE_STMT_EXPR &&
-             (it->second->as<StmtExpr>()->get_stmt()->this_typeid() ==
-              QAST_NODE_FN));
+        bool is_call = it->second->getKind() == QAST_NODE_CALL;
+        bool is_other = it->second->getKind() == QAST_NODE_LIST ||
+                        (it->second->getKind() == QAST_NODE_STMT_EXPR &&
+                         (it->second->as<StmtExpr>()->get_stmt()->getKind() ==
+                          QAST_NODE_FN));
 
         S.line.seekg(0, std::ios::end);
         size_t line_width = S.line.tellg();
@@ -494,12 +497,12 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
         break;
       }
 
-      auto ty = N->get_items().front()->this_typeid();
+      auto ty = N->get_items().front()->getKind();
       if (N->get_items().size() > 0 &&
           (ty == QAST_NODE_ASSOC || ty == QAST_NODE_LIST ||
            ty == QAST_NODE_CALL || ty == QAST_NODE_TEMPL_CALL ||
            (ty == QAST_NODE_STMT_EXPR &&
-            N->get_items().front()->as<StmtExpr>()->get_stmt()->this_typeid() ==
+            N->get_items().front()->as<StmtExpr>()->get_stmt()->getKind() ==
                 QAST_NODE_FN))) {
         S.line << "[\n";
         S.flush_line();
@@ -560,7 +563,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       Field* N = C->as<Field>();
       bool break_chain_call = false;
 
-      if (N->get_base()->this_typeid() == QAST_NODE_CALL) {
+      if (N->get_base()->getKind() == QAST_NODE_CALL) {
         break_chain_call = true;
       }
 
@@ -889,7 +892,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
            it++) {
         S.line << std::get<0>(*it);
         auto param_ty = std::get<1>(*it);
-        if ((param_ty && param_ty->this_typeid() != QAST_NODE_INFER_TY) ||
+        if ((param_ty && param_ty->getKind() != QAST_NODE_INFER_TY) ||
             std::get<2>(*it)) {
           S.line << ": ";
           recurse(std::get<1>(*it), S);
@@ -911,7 +914,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       S.line << ")";
 
       if (N->get_return_ty() &&
-          N->get_return_ty()->this_typeid() != QAST_NODE_VOID_TY) {
+          N->get_return_ty()->getKind() != QAST_NODE_VOID_TY) {
         S.line << ": ";
         recurse(N->get_return_ty(), S);
       }
@@ -935,7 +938,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
     case QAST_NODE_TEMPL_TY: {
       TemplType* N = C->as<TemplType>();
 
-      if (N->get_template()->this_typeid() == QAST_NODE_UNRES_TY) {
+      if (N->get_template()->getKind() == QAST_NODE_UNRES_TY) {
         auto name = N->get_template()->as<UnresolvedType>()->get_name();
 
         if (name == "__builtin_result") {
@@ -1045,7 +1048,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
         S.line << std::get<0>(*it);
         auto param_ty = std::get<1>(*it);
-        if ((param_ty && param_ty->this_typeid() != QAST_NODE_INFER_TY) ||
+        if ((param_ty && param_ty->getKind() != QAST_NODE_INFER_TY) ||
             std::get<2>(*it)) {
           S.line << ": ";
           recurse(std::get<1>(*it), S);
@@ -1067,7 +1070,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       S.line << ")";
 
       if (F->get_return_ty() &&
-          F->get_return_ty()->this_typeid() != QAST_NODE_VOID_TY) {
+          F->get_return_ty()->getKind() != QAST_NODE_VOID_TY) {
         S.line << ": ";
         recurse(F->get_return_ty(), S);
       }
@@ -1169,7 +1172,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
         S.line << std::get<0>(*it);
         auto param_ty = std::get<1>(*it);
-        if ((param_ty && param_ty->this_typeid() != QAST_NODE_INFER_TY) ||
+        if ((param_ty && param_ty->getKind() != QAST_NODE_INFER_TY) ||
             std::get<2>(*it)) {
           S.line << ": ";
           recurse(std::get<1>(*it), S);
@@ -1191,7 +1194,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       S.line << ")";
 
       if (F->get_return_ty() &&
-          F->get_return_ty()->this_typeid() != QAST_NODE_VOID_TY) {
+          F->get_return_ty()->getKind() != QAST_NODE_VOID_TY) {
         S.line << ": ";
         recurse(F->get_return_ty(), S);
       }
@@ -1200,8 +1203,8 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       bool arrow_syntax =
           (N->get_body()->get_items().size() == 1) && !N->get_precond() &&
           !N->get_postcond() &&
-          (N->get_body()->get_items()[0]->this_typeid() == QAST_NODE_RETURN ||
-           N->get_body()->get_items()[0]->this_typeid() == QAST_NODE_CALL);
+          (N->get_body()->get_items()[0]->getKind() == QAST_NODE_RETURN ||
+           N->get_body()->get_items()[0]->getKind() == QAST_NODE_CALL);
 
       if (arrow_syntax) {
         S.line << "=> ";
@@ -1266,7 +1269,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
       for (auto it = N->get_body()->get_items().begin();
            it != N->get_body()->get_items().end(); it++) {
-        qparse_ty_t ty = (*it)->this_typeid();
+        qparse_ty_t ty = (*it)->getKind();
 
         if (ty == QAST_NODE_FNDECL) {
           imports.push_back(*it);
@@ -1329,7 +1332,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
         S.line << " ";
 
         recurse(exports.front(), S);
-        if (exports.front()->this_typeid() != QAST_NODE_FN) {
+        if (exports.front()->getKind() != QAST_NODE_FN) {
           S.line << ";";
         }
       } else if (!exports.empty()) {
@@ -1409,7 +1412,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
         if (N->get_items().size() == 1) {
           Stmt* stmt = N->get_items()[0];
           recurse(stmt, S);
-          if (!no_has_semicolon.contains(stmt->this_typeid())) {
+          if (!no_has_semicolon.contains(stmt->getKind())) {
             S.line << ";";
           }
 
@@ -1425,7 +1428,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
         if (N->get_items().size() == 1) {
           Stmt* stmt = N->get_items()[0];
           recurse(stmt, S);
-          if (!no_has_semicolon.contains(stmt->this_typeid())) {
+          if (!no_has_semicolon.contains(stmt->getKind())) {
             S.line << ";";
           }
 
@@ -1440,7 +1443,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       }
 
       for (auto it = N->get_items().begin(); it != N->get_items().end(); ++it) {
-        qparse_ty_t ty = (*it)->this_typeid();
+        qparse_ty_t ty = (*it)->getKind();
 
         put_indent(S);
         recurse(*it, S);
@@ -1448,9 +1451,9 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
           S.line << ";";
         }
 
-        bool do_double_line = double_sep.contains((*it)->this_typeid()) ||
+        bool do_double_line = double_sep.contains((*it)->getKind()) ||
                               (std::next(it) != N->get_items().end() &&
-                               (*std::next(it))->this_typeid() != ty);
+                               (*std::next(it))->getKind() != ty);
 
         if (std::next(it) != N->get_items().end() && do_double_line) {
           S.line << "\n\n";

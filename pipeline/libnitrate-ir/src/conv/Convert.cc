@@ -524,10 +524,10 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
     qparse::Type *type = n->get_rhs()->as<qparse::TypeExpr>()->get_type();
 
     bool is_integer_ty = type->is_integral();
-    bool is_integer_lit = n->get_lhs()->this_typeid() == QAST_NODE_INT;
+    bool is_integer_lit = n->get_lhs()->getKind() == QAST_NODE_INT;
 
     bool is_float_ty = type->is_floating_point();
-    bool is_float_lit = n->get_lhs()->this_typeid() == QAST_NODE_FLOAT;
+    bool is_float_lit = n->get_lhs()->getKind() == QAST_NODE_FLOAT;
 
     if ((is_integer_lit && is_integer_ty) || (is_float_lit && is_float_ty)) {
       if (is_integer_lit) {
@@ -543,7 +543,7 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
                 // {QAST_NODE_I128_TY, 128},
             };
 
-        auto it = integer_lit_suffixes.find(type->this_typeid());
+        auto it = integer_lit_suffixes.find(type->getKind());
         if (it != integer_lit_suffixes.end()) {
           qparse::ConstInt *N = n->get_lhs()->as<qparse::ConstInt>();
 
@@ -560,7 +560,7 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
                 {QAST_NODE_F128_TY, FloatSize::F128},
             }};
 
-        auto it = float_lit_suffixes.find(type->this_typeid());
+        auto it = float_lit_suffixes.find(type->getKind());
         if (it != float_lit_suffixes.end()) {
           qparse::ConstFloat *N = n->get_lhs()->as<qparse::ConstFloat>();
 
@@ -1630,7 +1630,7 @@ static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G,
       return std::nullopt;
     }
 
-    if ((*it)->this_typeid() == QAST_NODE_BLOCK) {
+    if ((*it)->getKind() == QAST_NODE_BLOCK) {
       /* Reduce unneeded nesting in the IR */
       qcore_assert(item->size() == 1);
       Seq *inner = item->at(0)->as<Seq>();
@@ -1981,7 +1981,11 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, qparse::Node *n) {
 
   std::optional<nr::Expr *> out;
 
-  switch (n->this_typeid()) {
+  switch (n->getKind()) {
+    case QAST_NODE_NODE: {
+      break;
+    }
+
     case QAST_NODE_BINEXPR:
       out = nrgen_binexpr(b, s, G, n->as<qparse::BinExpr>());
       break;
@@ -2275,7 +2279,7 @@ static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, qparse::Node *n) {
 
   BResult out;
 
-  switch (n->this_typeid()) {
+  switch (n->getKind()) {
     case QAST_NODE_TYPEDEF:
       out = nrgen_typedef(b, s, G, n->as<qparse::TypedefDecl>());
       break;

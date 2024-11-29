@@ -45,6 +45,7 @@ typedef struct qparse_node_t qparse_node_t;
  * @brief Nitrate abstract syntax tree node type.
  */
 typedef enum qparse_ty_t {
+  QAST_NODE_NODE,
   QAST_NODE_BINEXPR,
   QAST_NODE_UNEXPR,
   QAST_NODE_TEREXPR,
@@ -148,6 +149,7 @@ uint32_t qparse_endpos(qparse_node_t *node);
 #include <optional>
 #include <ostream>
 #include <set>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <variant>
@@ -210,12 +212,95 @@ public:                                                       \
                                                               \
 public:
 
-struct qparse_node_t {
-public:
-  qparse_node_t() = default;
-};
+struct qparse_node_t {};
 
 namespace qparse {
+  class Node;
+  class Stmt;
+  class Type;
+  class Decl;
+  class Expr;
+  class ExprStmt;
+  class StmtExpr;
+  class TypeExpr;
+  class LitExpr;
+  class FlowStmt;
+  class DeclStmt;
+  class TypeBuiltin;
+  class TypeComplex;
+  class TypeComposite;
+  class UnresolvedType;
+  class InferType;
+  class TemplType;
+  class U1;
+  class U8;
+  class U16;
+  class U32;
+  class U64;
+  class U128;
+  class I8;
+  class I16;
+  class I32;
+  class I64;
+  class I128;
+  class F16;
+  class F32;
+  class F64;
+  class F128;
+  class VoidTy;
+  class PtrTy;
+  class OpaqueTy;
+  class TupleTy;
+  class ArrayTy;
+  class RefTy;
+  class StructTy;
+  class FuncTy;
+  class UnaryExpr;
+  class BinExpr;
+  class PostUnaryExpr;
+  class TernaryExpr;
+  class ConstInt;
+  class ConstFloat;
+  class ConstBool;
+  class ConstString;
+  class ConstChar;
+  class ConstNull;
+  class ConstUndef;
+  class Call;
+  class TemplCall;
+  class List;
+  class Assoc;
+  class Field;
+  class Index;
+  class Slice;
+  class FString;
+  class Ident;
+  class SeqPoint;
+  class Block;
+  class VolStmt;
+  class ConstDecl;
+  class VarDecl;
+  class LetDecl;
+  class InlineAsm;
+  class IfStmt;
+  class WhileStmt;
+  class ForStmt;
+  class ForeachStmt;
+  class BreakStmt;
+  class ContinueStmt;
+  class ReturnStmt;
+  class ReturnIfStmt;
+  class CaseStmt;
+  class SwitchStmt;
+  class TypedefDecl;
+  class FnDecl;
+  class FnDef;
+  class CompositeField;
+  class StructDef;
+  class EnumDef;
+  class SubsystemDecl;
+  class ExportDecl;
+
   enum class Vis {
     PUBLIC,
     PRIVATE,
@@ -237,73 +322,247 @@ namespace qparse {
 
   class Node : public qparse_node_t {
   protected:
-    uint32_t m_pos_start{}, m_pos_end{};
-
-    virtual void hello() {}
+    qparse_ty_t m_node_type;
+    uint32_t m_pos_start, m_pos_end;
 
   public:
-    Node() = default;
+    Node(qparse_ty_t ty = QAST_NODE_NODE)
+        : m_node_type(ty), m_pos_start(0), m_pos_end(0){};
 
-    uint32_t this_sizeof();
-    qparse_ty_t this_typeid();
-    const char *this_nameof();
+    ///======================================================================
+    /* Efficient LLVM reflection */
+
+    static constexpr uint32_t getKindSize(qparse_ty_t kind) noexcept;
+    static constexpr std::string_view getKindName(qparse_ty_t kind) noexcept;
+
+    template <typename T>
+    static constexpr qparse_ty_t getTypeCode() noexcept {
+      if constexpr (std::is_same_v<T, Node>) {
+        return QAST_NODE_NODE;
+      } else if constexpr (std::is_same_v<T, Decl>) {
+        return QAST_NODE_NODE;
+      } else if constexpr (std::is_same_v<T, Stmt>) {
+        return QAST_NODE_NODE;
+      } else if constexpr (std::is_same_v<T, Type>) {
+        return QAST_NODE_NODE;
+      } else if constexpr (std::is_same_v<T, BinExpr>) {
+        return QAST_NODE_BINEXPR;
+      } else if constexpr (std::is_same_v<T, UnaryExpr>) {
+        return QAST_NODE_UNEXPR;
+      } else if constexpr (std::is_same_v<T, TernaryExpr>) {
+        return QAST_NODE_TEREXPR;
+      } else if constexpr (std::is_same_v<T, ConstInt>) {
+        return QAST_NODE_INT;
+      } else if constexpr (std::is_same_v<T, ConstFloat>) {
+        return QAST_NODE_FLOAT;
+      } else if constexpr (std::is_same_v<T, ConstString>) {
+        return QAST_NODE_STRING;
+      } else if constexpr (std::is_same_v<T, ConstChar>) {
+        return QAST_NODE_CHAR;
+      } else if constexpr (std::is_same_v<T, ConstBool>) {
+        return QAST_NODE_BOOL;
+      } else if constexpr (std::is_same_v<T, ConstNull>) {
+        return QAST_NODE_NULL;
+      } else if constexpr (std::is_same_v<T, ConstUndef>) {
+        return QAST_NODE_UNDEF;
+      } else if constexpr (std::is_same_v<T, Call>) {
+        return QAST_NODE_CALL;
+      } else if constexpr (std::is_same_v<T, List>) {
+        return QAST_NODE_LIST;
+      } else if constexpr (std::is_same_v<T, Assoc>) {
+        return QAST_NODE_ASSOC;
+      } else if constexpr (std::is_same_v<T, Field>) {
+        return QAST_NODE_FIELD;
+      } else if constexpr (std::is_same_v<T, Index>) {
+        return QAST_NODE_INDEX;
+      } else if constexpr (std::is_same_v<T, Slice>) {
+        return QAST_NODE_SLICE;
+      } else if constexpr (std::is_same_v<T, FString>) {
+        return QAST_NODE_FSTRING;
+      } else if constexpr (std::is_same_v<T, Ident>) {
+        return QAST_NODE_IDENT;
+      } else if constexpr (std::is_same_v<T, SeqPoint>) {
+        return QAST_NODE_SEQ_POINT;
+      } else if constexpr (std::is_same_v<T, PostUnaryExpr>) {
+        return QAST_NODE_POST_UNEXPR;
+      } else if constexpr (std::is_same_v<T, StmtExpr>) {
+        return QAST_NODE_STMT_EXPR;
+      } else if constexpr (std::is_same_v<T, TypeExpr>) {
+        return QAST_NODE_TYPE_EXPR;
+      } else if constexpr (std::is_same_v<T, TemplCall>) {
+        return QAST_NODE_TEMPL_CALL;
+      } else if constexpr (std::is_same_v<T, RefTy>) {
+        return QAST_NODE_REF_TY;
+      } else if constexpr (std::is_same_v<T, U1>) {
+        return QAST_NODE_U1_TY;
+      } else if constexpr (std::is_same_v<T, U8>) {
+        return QAST_NODE_U8_TY;
+      } else if constexpr (std::is_same_v<T, U16>) {
+        return QAST_NODE_U16_TY;
+      } else if constexpr (std::is_same_v<T, U32>) {
+        return QAST_NODE_U32_TY;
+      } else if constexpr (std::is_same_v<T, U64>) {
+        return QAST_NODE_U64_TY;
+      } else if constexpr (std::is_same_v<T, U128>) {
+        return QAST_NODE_U128_TY;
+      } else if constexpr (std::is_same_v<T, I8>) {
+        return QAST_NODE_I8_TY;
+      } else if constexpr (std::is_same_v<T, I16>) {
+        return QAST_NODE_I16_TY;
+      } else if constexpr (std::is_same_v<T, I32>) {
+        return QAST_NODE_I32_TY;
+      } else if constexpr (std::is_same_v<T, I64>) {
+        return QAST_NODE_I64_TY;
+      } else if constexpr (std::is_same_v<T, I128>) {
+        return QAST_NODE_I128_TY;
+      } else if constexpr (std::is_same_v<T, F16>) {
+        return QAST_NODE_F16_TY;
+      } else if constexpr (std::is_same_v<T, F32>) {
+        return QAST_NODE_F32_TY;
+      } else if constexpr (std::is_same_v<T, F64>) {
+        return QAST_NODE_F64_TY;
+      } else if constexpr (std::is_same_v<T, F128>) {
+        return QAST_NODE_F128_TY;
+      } else if constexpr (std::is_same_v<T, VoidTy>) {
+        return QAST_NODE_VOID_TY;
+      } else if constexpr (std::is_same_v<T, PtrTy>) {
+        return QAST_NODE_PTR_TY;
+      } else if constexpr (std::is_same_v<T, OpaqueTy>) {
+        return QAST_NODE_OPAQUE_TY;
+      } else if constexpr (std::is_same_v<T, StructTy>) {
+        return QAST_NODE_STRUCT_TY;
+      } else if constexpr (std::is_same_v<T, ArrayTy>) {
+        return QAST_NODE_ARRAY_TY;
+      } else if constexpr (std::is_same_v<T, TupleTy>) {
+        return QAST_NODE_TUPLE_TY;
+      } else if constexpr (std::is_same_v<T, FuncTy>) {
+        return QAST_NODE_FN_TY;
+      } else if constexpr (std::is_same_v<T, UnresolvedType>) {
+        return QAST_NODE_UNRES_TY;
+      } else if constexpr (std::is_same_v<T, InferType>) {
+        return QAST_NODE_INFER_TY;
+      } else if constexpr (std::is_same_v<T, TemplType>) {
+        return QAST_NODE_TEMPL_TY;
+      } else if constexpr (std::is_same_v<T, TypedefDecl>) {
+        return QAST_NODE_TYPEDEF;
+      } else if constexpr (std::is_same_v<T, FnDecl>) {
+        return QAST_NODE_FNDECL;
+      } else if constexpr (std::is_same_v<T, StructDef>) {
+        return QAST_NODE_STRUCT;
+      } else if constexpr (std::is_same_v<T, EnumDef>) {
+        return QAST_NODE_ENUM;
+      } else if constexpr (std::is_same_v<T, FnDef>) {
+        return QAST_NODE_FN;
+      } else if constexpr (std::is_same_v<T, SubsystemDecl>) {
+        return QAST_NODE_SUBSYSTEM;
+      } else if constexpr (std::is_same_v<T, ExportDecl>) {
+        return QAST_NODE_EXPORT;
+      } else if constexpr (std::is_same_v<T, CompositeField>) {
+        return QAST_NODE_COMPOSITE_FIELD;
+      } else if constexpr (std::is_same_v<T, Block>) {
+        return QAST_NODE_BLOCK;
+      } else if constexpr (std::is_same_v<T, ConstDecl>) {
+        return QAST_NODE_CONST;
+      } else if constexpr (std::is_same_v<T, VarDecl>) {
+        return QAST_NODE_VAR;
+      } else if constexpr (std::is_same_v<T, LetDecl>) {
+        return QAST_NODE_LET;
+      } else if constexpr (std::is_same_v<T, InlineAsm>) {
+        return QAST_NODE_INLINE_ASM;
+      } else if constexpr (std::is_same_v<T, ReturnStmt>) {
+        return QAST_NODE_RETURN;
+      } else if constexpr (std::is_same_v<T, ReturnIfStmt>) {
+        return QAST_NODE_RETIF;
+      } else if constexpr (std::is_same_v<T, BreakStmt>) {
+        return QAST_NODE_BREAK;
+      } else if constexpr (std::is_same_v<T, ContinueStmt>) {
+        return QAST_NODE_CONTINUE;
+      } else if constexpr (std::is_same_v<T, IfStmt>) {
+        return QAST_NODE_IF;
+      } else if constexpr (std::is_same_v<T, WhileStmt>) {
+        return QAST_NODE_WHILE;
+      } else if constexpr (std::is_same_v<T, ForStmt>) {
+        return QAST_NODE_FOR;
+      } else if constexpr (std::is_same_v<T, ForeachStmt>) {
+        return QAST_NODE_FOREACH;
+      } else if constexpr (std::is_same_v<T, CaseStmt>) {
+        return QAST_NODE_CASE;
+      } else if constexpr (std::is_same_v<T, SwitchStmt>) {
+        return QAST_NODE_SWITCH;
+      } else if constexpr (std::is_same_v<T, ExprStmt>) {
+        return QAST_NODE_EXPR_STMT;
+      } else if constexpr (std::is_same_v<T, VolStmt>) {
+        return QAST_NODE_VOLSTMT;
+      }
+    }
+
+    constexpr qparse_ty_t getKind() const noexcept { return m_node_type; }
+    constexpr std::string_view getKindName() const noexcept {
+      return getKindName(m_node_type);
+    }
+
+    ///======================================================================
 
     bool is_type();
     bool is_stmt();
     bool is_decl();
     bool is_expr();
 
-    std::string to_string(bool minify = false);
+    std::string to_string() {
+      std::stringstream ss;
+      print(ss, false);
+      return ss.str();
+    };
 
     template <typename T>
-    constexpr const T *as() const {
-#if !defined(NDEBUG)
-      auto p = dynamic_cast<const T *>(this);
-
-      if (!p) {
-        const char *this_str = typeid(*this).name();
-        const char *other_str = typeid(T).name();
-
-        qcore_panicf(
-            "qparse_node_t::as(const %s *this): Invalid cast from `%s` to "
-            "`%s`.",
-            this_str, this_str, other_str);
-        __builtin_unreachable();
+    static constexpr T *safeCastAs(Node *ptr) noexcept {
+      if (!ptr) {
+        return nullptr;
       }
-      return p;
-#else
-      return reinterpret_cast<const T *>(this);
+
+#ifndef NDEBUG
+      if (getTypeCode<T>() != ptr->getKind()) [[unlikely]] {
+        qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(),
+                     getKindName(getTypeCode<T>()));
+      }
 #endif
+
+      return static_cast<T *>(ptr);
     }
 
+    /**
+     * @brief Type-safe cast (type check only in debug mode).
+     *
+     * @tparam T The type to cast to.
+     * @return T* The casted pointer. It may be nullptr if the source pointer is
+     * nullptr.
+     * @warning This function will panic if the cast is invalid.
+     */
     template <typename T>
-    T *as() {
-#if !defined(NDEBUG)
-      auto p = dynamic_cast<T *>(this);
+    constexpr T *as() noexcept {
+      return safeCastAs<T>(this);
+    }
 
-      if (!p) {
-        const char *this_str = typeid(*this).name();
-        const char *other_str = typeid(T).name();
-
-        qcore_panicf(
-            "qparse_node_t::as(%s *this): Invalid cast from `%s` to `%s`.",
-            this_str, this_str, other_str);
-        __builtin_unreachable();
-      }
-      return p;
-#else
-      return reinterpret_cast<T *>(this);
-#endif
+    /**
+     * @brief Type-safe cast (type check only in debug mode).
+     *
+     * @tparam T The type to cast to.
+     * @return const T* The casted pointer. It may be nullptr if the source
+     * pointer is nullptr.
+     * @warning This function will panic if the cast is invalid.
+     */
+    template <typename T>
+    constexpr const T *as() const noexcept {
+      return safeCastAs<T>(const_cast<Node *>(this));
     }
 
     template <typename T>
     bool is() const {
-      return typeid(*this) == typeid(T);
+      return Node::getTypeCode<T>() == getKind();
     }
 
-    bool is(const qparse_ty_t type);
+    bool is(qparse_ty_t type) const { return type == getKind(); }
 
-    static const char *type_name(qparse_ty_t type);
     void dump(bool isForDebug = false) { print(std::cerr, isForDebug); }
     void print(std::ostream &os, bool isForDebug = false);
 
@@ -314,6 +573,8 @@ namespace qparse {
     std::tuple<uint32_t, uint32_t, std::string_view> get_pos() {
       return {m_pos_start, m_pos_end, ""};
     }
+
+    PNODE_IMPL_CORE(Node)
   };
 
   constexpr size_t PNODE_BASE_SIZE = sizeof(Node);
@@ -1626,6 +1887,99 @@ namespace qparse {
 
     PNODE_IMPL_CORE(ExportDecl)
   };
+
+  ///=============================================================================
+
+  constexpr std::string_view Node::getKindName(qparse_ty_t type) noexcept {
+    const std::array<std::string_view, std::numeric_limits<qparse_ty_t>::max()>
+        names = []() {
+          std::array<std::string_view, std::numeric_limits<qparse_ty_t>::max()>
+              R;
+          R.fill("");
+
+          R[QAST_NODE_BINEXPR] = "Binexpr";
+          R[QAST_NODE_UNEXPR] = "Unexpr";
+          R[QAST_NODE_TEREXPR] = "Terexpr";
+          R[QAST_NODE_INT] = "Int";
+          R[QAST_NODE_FLOAT] = "Float";
+          R[QAST_NODE_STRING] = "String";
+          R[QAST_NODE_CHAR] = "Char";
+          R[QAST_NODE_BOOL] = "Bool";
+          R[QAST_NODE_NULL] = "Null";
+          R[QAST_NODE_UNDEF] = "Undef";
+          R[QAST_NODE_CALL] = "Call";
+          R[QAST_NODE_LIST] = "List";
+          R[QAST_NODE_ASSOC] = "Assoc";
+          R[QAST_NODE_FIELD] = "Field";
+          R[QAST_NODE_INDEX] = "Index";
+          R[QAST_NODE_SLICE] = "Slice";
+          R[QAST_NODE_FSTRING] = "Fstring";
+          R[QAST_NODE_IDENT] = "Ident";
+          R[QAST_NODE_SEQ_POINT] = "SeqPoint";
+          R[QAST_NODE_POST_UNEXPR] = "PostUnexpr";
+          R[QAST_NODE_STMT_EXPR] = "StmtExpr";
+          R[QAST_NODE_TYPE_EXPR] = "peExpr";
+          R[QAST_NODE_TEMPL_CALL] = "TemplCall";
+          R[QAST_NODE_REF_TY] = "Ref";
+          R[QAST_NODE_U1_TY] = "U1";
+          R[QAST_NODE_U8_TY] = "U8";
+          R[QAST_NODE_U16_TY] = "U16";
+          R[QAST_NODE_U32_TY] = "U32";
+          R[QAST_NODE_U64_TY] = "U64";
+          R[QAST_NODE_U128_TY] = "U128";
+          R[QAST_NODE_I8_TY] = "I8";
+          R[QAST_NODE_I16_TY] = "I16";
+          R[QAST_NODE_I32_TY] = "I32";
+          R[QAST_NODE_I64_TY] = "I64";
+          R[QAST_NODE_I128_TY] = "I128";
+          R[QAST_NODE_F16_TY] = "F16";
+          R[QAST_NODE_F32_TY] = "F32";
+          R[QAST_NODE_F64_TY] = "F64";
+          R[QAST_NODE_F128_TY] = "F128";
+          R[QAST_NODE_VOID_TY] = "Void";
+          R[QAST_NODE_PTR_TY] = "Ptr";
+          R[QAST_NODE_OPAQUE_TY] = "Opaque";
+          R[QAST_NODE_STRUCT_TY] = "Struct";
+          R[QAST_NODE_ARRAY_TY] = "Array";
+          R[QAST_NODE_TUPLE_TY] = "Tuple";
+          R[QAST_NODE_FN_TY] = "Fn";
+          R[QAST_NODE_UNRES_TY] = "Unres";
+          R[QAST_NODE_INFER_TY] = "Infer";
+          R[QAST_NODE_TEMPL_TY] = "Templ";
+          R[QAST_NODE_TYPEDEF] = "pedef";
+          R[QAST_NODE_FNDECL] = "Fndecl";
+          R[QAST_NODE_STRUCT] = "Struct";
+          R[QAST_NODE_ENUM] = "Enum";
+          R[QAST_NODE_FN] = "Fn";
+          R[QAST_NODE_SUBSYSTEM] = "Subsystem";
+          R[QAST_NODE_EXPORT] = "Export";
+          R[QAST_NODE_COMPOSITE_FIELD] = "CompositeField";
+          R[QAST_NODE_BLOCK] = "Block";
+          R[QAST_NODE_CONST] = "Const";
+          R[QAST_NODE_VAR] = "Var";
+          R[QAST_NODE_LET] = "Let";
+          R[QAST_NODE_INLINE_ASM] = "InlineAsm";
+          R[QAST_NODE_RETURN] = "Return";
+          R[QAST_NODE_RETIF] = "Retif";
+          R[QAST_NODE_BREAK] = "Break";
+          R[QAST_NODE_CONTINUE] = "Continue";
+          R[QAST_NODE_IF] = "If";
+          R[QAST_NODE_WHILE] = "While";
+          R[QAST_NODE_FOR] = "For";
+          R[QAST_NODE_FOREACH] = "Foreach";
+          R[QAST_NODE_CASE] = "Case";
+          R[QAST_NODE_SWITCH] = "Switch";
+          R[QAST_NODE_EXPR_STMT] = "ExprStmt";
+          R[QAST_NODE_VOLSTMT] = "Volstmt";
+
+          return R;
+        }();
+
+    qcore_assert(names.size() == QAST_NODE_COUNT,
+                 "Polymorphic type name lookup table is incomplete");
+
+    return names[type];
+  }
 }  // namespace qparse
 
 namespace std {
