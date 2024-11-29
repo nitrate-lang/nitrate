@@ -396,9 +396,8 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
   }
 }
 
-LIB_EXPORT qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf,
-                                qcore_env_t env) {
-  if (!lexer || !conf) {
+LIB_EXPORT qparse_t *qparse_new(qlex_t *lexer, qcore_env_t env) {
+  if (!lexer) {
     return nullptr;
   }
   static std::atomic<uint64_t> job_id = 1;  // 0 is reserved for invalid job
@@ -409,7 +408,6 @@ LIB_EXPORT qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf,
   parser->env = env;
   parser->id = job_id++;
   parser->lexer = lexer;
-  parser->conf = conf;
   parser->failed = false;
   parser->impl->diag.set_ctx(parser);
 
@@ -427,7 +425,6 @@ LIB_EXPORT void qparse_free(qparse_t *parser) {
 
   parser->impl = nullptr;
   parser->lexer = nullptr;
-  parser->conf = nullptr;
 
   delete parser;
 }
@@ -463,8 +460,6 @@ LIB_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
   } catch (std::exception &e) {
     qcore_panicf("qparse_do: unhandled exception: %s", e.what());
   } catch (...) {
-    /*== This will be caught iff QPK_CRASHGUARD is
-     * QPV_ON ==*/
     abort();
   }
 }

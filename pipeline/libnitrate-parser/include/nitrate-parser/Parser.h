@@ -36,7 +36,6 @@
 
 #include <nitrate-core/Env.h>
 #include <nitrate-lexer/Lexer.h>
-#include <nitrate-parser/Config.h>
 #include <nitrate-parser/Node.h>
 #include <stdbool.h>
 
@@ -51,20 +50,17 @@ typedef struct qparse_t qparse_t;
  * parser configuration.
  *
  * @param lexer Lexer stream object.
- * @param conf Parser configuration object.
  * @param env The environment.
  *
  * @return A new parser instance or NULL if an error occurred.
  *
- * @note If `!lexer` or `!conf`, NULL is returned.
+ * @note If `!lexer` NULL is returned.
  * @note The returned object must be freed with `qparse_free`.
- * @note The lexer object and configuration object are not owned by the returned
- * parser object.
  * @note The returned instance does not contain internal locks.
  *
  * @note This function is thread safe.
  */
-qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf, qcore_env_t env);
+qparse_t *qparse_new(qlex_t *lexer, qcore_env_t env);
 
 /**
  * @brief Free a parser instance.

@@ -34,7 +34,6 @@
 #ifndef __NITRATE_PARSER_LIB_H__
 #define __NITRATE_PARSER_LIB_H__
 
-#include <nitrate-parser/Config.h>
 #include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
 #include <stdbool.h>

@@ -41,26 +41,12 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-parser/Parser.h>
 
-class qparse_conf final {
-  qparse_conf_t *m_conf;
-
-public:
-  qparse_conf(bool use_default = true) {
-    if ((m_conf = qparse_conf_new(use_default)) == nullptr) {
-      qcore_panic("qparse_conf_new failed");
-    }
-  }
-  ~qparse_conf() { qparse_conf_free(m_conf); }
-
-  qparse_conf_t *get() const { return m_conf; }
-};
-
 class qparser final {
   qparse_t *m_parser;
 
 public:
-  qparser(qlex_t *scanner, qparse_conf_t *conf, qcore_env_t env) {
-    if ((m_parser = qparse_new(scanner, conf, env)) == nullptr) {
+  qparser(qlex_t *scanner, qcore_env_t env) {
+    if ((m_parser = qparse_new(scanner, env)) == nullptr) {
       qcore_panic("qparse_new failed");
     }
   }

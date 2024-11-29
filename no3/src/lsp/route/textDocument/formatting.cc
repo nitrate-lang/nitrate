@@ -1816,8 +1816,7 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
 
   qcore_env env;
   qlex lexer(ss, uri.c_str(), env.get());
-  qparse_conf conf;
-  qparser parser(lexer.get(), conf.get(), env.get());
+  qparser parser(lexer.get(), env.get());
 
   qparse_node_t* root = nullptr;
   if (!qparse_do(parser.get(), &root)) {

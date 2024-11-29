@@ -291,18 +291,8 @@ bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
     out_mode = OutMode::MsgPack;
   }
 
-  qparse_conf conf;
-
-  { /* Should the parser use the crashguard signal handler? */
-    if (opts.contains("-fparse-crashguard=off")) {
-      qparse_conf_setopt(conf.get(), QPK_CRASHGUARD, QPV_OFF);
-    } else if (opts.contains("-fparse-crashguard=on")) {
-      qparse_conf_setopt(conf.get(), QPK_CRASHGUARD, QPV_ON);
-    }
-  }
-
   DeserializerAdapterLexer lex(source, nullptr, qcore_env_current());
-  qparser par(&lex, conf.get(), qcore_env_current());
+  qparser par(&lex, qcore_env_current());
 
   auto root = parse_tokens(par.get(), diag_cb);
   if (!root.has_value()) {
