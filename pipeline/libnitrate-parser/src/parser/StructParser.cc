@@ -331,7 +331,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
   sdef->get_fields() = std::move(fields);
   sdef->get_methods() = std::move(methods);
   sdef->get_static_methods() = std::move(static_methods);
-  sdef->add_tags(std::move(attributes));
+  sdef->get_tags().insert(attributes.begin(), attributes.end());
 
   *node = sdef;
 

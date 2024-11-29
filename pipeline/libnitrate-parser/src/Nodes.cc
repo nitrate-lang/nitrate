@@ -1249,22 +1249,6 @@ StructTy *StructTy::clone_impl() {
   return StructTy::get(fields);
 }
 
-LIB_EXPORT void StructTy::add_item(String name, Type *item) {
-  m_items.push_back({name, item});
-}
-
-LIB_EXPORT void StructTy::add_items(std::initializer_list<StructItem> fields) {
-  for (auto [name, item] : fields) {
-    add_item(name, item);
-  }
-}
-
-LIB_EXPORT void StructTy::clear_items() { m_items.clear(); }
-
-LIB_EXPORT void StructTy::remove_item(String name) {
-  std::erase_if(m_items, [name](auto &field) { return field.first == name; });
-}
-
 bool FuncTy::verify_impl(std::ostream &os) {
   if (!m_return) {
     os << "FuncTy: return type is NULL\n";
@@ -1419,20 +1403,6 @@ FuncTy *FuncTy::clone_impl() {
 }
 
 LIB_EXPORT bool FuncTy::is_noreturn() { return m_noreturn; }
-
-LIB_EXPORT void FuncTy::add_param(String name, Type *ty, Expr *default_val) {
-  m_params.push_back({name, ty, default_val});
-}
-LIB_EXPORT void FuncTy::add_params(std::initializer_list<FuncParam> params) {
-  for (auto [name, ty, expr] : params) {
-    add_param(name, ty, expr);
-  }
-}
-LIB_EXPORT void FuncTy::clear_params() { m_params.clear(); }
-LIB_EXPORT void FuncTy::remove_param(String name) {
-  std::erase_if(m_params,
-                [name](auto &param) { return std::get<0>(param) == name; });
-}
 
 ///=============================================================================
 
@@ -1893,17 +1863,6 @@ Call *Call::clone_impl() {
   return Call::get(func, args);
 }
 
-LIB_EXPORT void Call::add_arg(CallArg arg) { m_args.push_back(arg); }
-LIB_EXPORT void Call::add_args(std::initializer_list<CallArg> args) {
-  for (auto arg : args) {
-    add_arg(arg);
-  }
-}
-LIB_EXPORT void Call::clear_args() { m_args.clear(); }
-LIB_EXPORT void Call::remove_arg(String name) {
-  std::erase_if(m_args, [name](auto &arg) { return arg.first == name; });
-}
-
 bool TemplCall::verify_impl(std::ostream &os) {
   if (!m_func) {
     os << "TemplCall: function is NULL\n";
@@ -1986,14 +1945,6 @@ TemplCall *TemplCall::clone_impl() {
   return TemplCall::get(func, args, template_args);
 }
 
-LIB_EXPORT void TemplCall::add_template_arg(String name, ConstExpr *arg) {
-  m_template_args[name] = arg;
-}
-LIB_EXPORT void TemplCall::clear_template_args() { m_template_args.clear(); }
-LIB_EXPORT void TemplCall::remove_template_arg(String name) {
-  m_template_args.erase(name);
-}
-
 bool List::verify_impl(std::ostream &os) {
   for (size_t i = 0; i < m_items.size(); i++) {
     if (!m_items[i]) {
@@ -2047,12 +1998,6 @@ List *List::clone_impl() {
   }
 
   return List::get(items);
-}
-
-LIB_EXPORT void List::add_item(Expr *item) { m_items.push_back(item); }
-LIB_EXPORT void List::clear_items() { m_items.clear(); }
-LIB_EXPORT void List::remove_item(Expr *item) {
-  std::erase_if(m_items, [item](auto &field) { return field == item; });
 }
 
 bool Assoc::verify_impl(std::ostream &os) {
@@ -2355,13 +2300,6 @@ FString *FString::clone_impl() {
   return FString::get(items);
 }
 
-LIB_EXPORT void qparse::FString::add_item(qparse::String item) {
-  m_items.push_back(item);
-}
-LIB_EXPORT void qparse::FString::add_item(qparse::Expr *item) {
-  m_items.push_back(item);
-}
-
 bool Ident::verify_impl(std::ostream &os) {
   if (m_name.empty()) {
     os << "Ident: name is empty\n";
@@ -2429,12 +2367,6 @@ SeqPoint *SeqPoint::clone_impl() {
   return SeqPoint::get(items);
 }
 
-LIB_EXPORT void SeqPoint::add_item(Expr *item) { m_items.push_back(item); }
-LIB_EXPORT void SeqPoint::clear_items() { m_items.clear(); }
-LIB_EXPORT void SeqPoint::remove_item(Expr *item) {
-  std::erase_if(m_items, [item](auto &field) { return field == item; });
-}
-
 ///=============================================================================
 
 bool Block::verify_impl(std::ostream &os) {
@@ -2488,12 +2420,6 @@ Block *Block::clone_impl() {
   }
 
   return Block::get(items, m_safety);
-}
-
-LIB_EXPORT void Block::add_item(Stmt *item) { m_items.push_back(item); }
-LIB_EXPORT void Block::clear_items() { m_items.clear(); }
-LIB_EXPORT void Block::remove_item(Stmt *item) {
-  std::erase_if(m_items, [item](auto &field) { return field == item; });
 }
 
 bool VolStmt::verify_impl(std::ostream &os) {
@@ -2732,12 +2658,6 @@ InlineAsm *InlineAsm::clone_impl() {
   }
 
   return InlineAsm::get(m_code, args);
-}
-
-LIB_EXPORT void InlineAsm::add_arg(Expr *arg) { m_args.push_back(arg); }
-LIB_EXPORT void InlineAsm::clear_args() { m_args.clear(); }
-LIB_EXPORT void InlineAsm::remove_arg(Expr *arg) {
-  std::erase_if(m_args, [arg](auto &field) { return field == arg; });
 }
 
 bool IfStmt::verify_impl(std::ostream &os) {
@@ -3290,14 +3210,6 @@ SwitchStmt *SwitchStmt::clone_impl() {
   return SwitchStmt::get(cond, m_cases, _default);
 }
 
-LIB_EXPORT void SwitchStmt::add_case(CaseStmt *item) {
-  m_cases.push_back(item);
-}
-LIB_EXPORT void SwitchStmt::clear_cases() { m_cases.clear(); }
-LIB_EXPORT void SwitchStmt::remove_case(CaseStmt *item) {
-  std::erase_if(m_cases, [item](auto &field) { return field == item; });
-}
-
 bool TypedefDecl::verify_impl(std::ostream &os) {
   if (!m_type) {
     os << "TypedefDecl: type is NULL\n";
@@ -3650,42 +3562,6 @@ StructDef *StructDef::clone_impl() {
                         static_methods);
 }
 
-LIB_EXPORT void StructDef::add_method(FnDecl *item) {
-  m_methods.push_back(item);
-}
-LIB_EXPORT void StructDef::add_methods(std::initializer_list<FnDecl *> items) {
-  m_methods.insert(m_methods.end(), items.begin(), items.end());
-}
-LIB_EXPORT void StructDef::clear_methods() { m_methods.clear(); }
-LIB_EXPORT void StructDef::remove_method(FnDecl *item) {
-  std::erase_if(m_methods, [item](auto &field) { return field == item; });
-}
-
-LIB_EXPORT void StructDef::add_static_method(FnDecl *item) {
-  m_static_methods.push_back(item);
-}
-LIB_EXPORT void StructDef::add_static_methods(
-    std::initializer_list<FnDecl *> items) {
-  m_static_methods.insert(m_static_methods.end(), items.begin(), items.end());
-}
-LIB_EXPORT void StructDef::clear_static_methods() { m_static_methods.clear(); }
-LIB_EXPORT void StructDef::remove_static_method(FnDecl *item) {
-  std::erase_if(m_static_methods,
-                [item](auto &field) { return field == item; });
-}
-
-LIB_EXPORT void StructDef::add_field(CompositeField *item) {
-  m_fields.push_back(item);
-}
-LIB_EXPORT void StructDef::add_fields(
-    std::initializer_list<CompositeField *> items) {
-  m_fields.insert(m_fields.end(), items.begin(), items.end());
-}
-LIB_EXPORT void StructDef::clear_fields() { m_fields.clear(); }
-LIB_EXPORT void StructDef::remove_field(CompositeField *item) {
-  std::erase_if(m_fields, [item](auto &field) { return field == item; });
-}
-
 bool EnumDef::verify_impl(std::ostream &os) {
   for (auto item : m_items) {
     if (!item.second) {
@@ -3742,15 +3618,6 @@ EnumDef *EnumDef::clone_impl() {
   return EnumDef::get(m_name, type, items);
 }
 
-LIB_EXPORT void EnumDef::add_item(EnumItem item) { m_items.push_back(item); }
-LIB_EXPORT void EnumDef::add_items(std::initializer_list<EnumItem> items) {
-  m_items.insert(m_items.end(), items.begin(), items.end());
-}
-LIB_EXPORT void EnumDef::clear_items() { m_items.clear(); }
-LIB_EXPORT void EnumDef::remove_item(EnumItem item) {
-  std::erase_if(m_items, [item](auto &field) { return field == item; });
-}
-
 bool SubsystemDecl::verify_impl(std::ostream &os) {
   if (m_type) {
     os << "SubsystemDecl: type must be NULL\n";
@@ -3793,16 +3660,6 @@ SubsystemDecl *SubsystemDecl::clone_impl() {
 
   return SubsystemDecl::get(m_name, body, m_deps);
 }
-
-LIB_EXPORT void SubsystemDecl::add_dep(qparse::String dep) {
-  m_deps.insert(dep);
-}
-LIB_EXPORT void qparse::SubsystemDecl::add_deps(
-    const qparse::SubsystemDeps &deps) {
-  m_deps.insert(deps.begin(), deps.end());
-}
-LIB_EXPORT void SubsystemDecl::clear_deps() { m_deps.clear(); }
-LIB_EXPORT void SubsystemDecl::remove_dep(String dep) { m_deps.erase(dep); }
 
 bool ExportDecl::verify_impl(std::ostream &os) {
   if (m_type) {

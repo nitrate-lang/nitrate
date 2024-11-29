@@ -53,6 +53,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
     qlex_tok_t tok;
 
     *group = Block::get();
+    Block *block = *group;
 
     if (expect_braces) {
       tok = qlex_next(rd);
@@ -105,7 +106,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
         stmt->set_start_pos(expr->get_start_pos());
         stmt->set_end_pos(tok.end);
 
-        (*group)->add_item(stmt);
+        block->get_items().push_back(stmt);
         continue;
       }
 
@@ -121,7 +122,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
             return false;
           }
           for (auto &decl : items) {
-            (*group)->add_item(decl);
+            block->get_items().push_back(decl);
           }
           break;
         }
@@ -132,7 +133,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
             return false;
           }
           for (auto &decl : items) {
-            (*group)->add_item(decl);
+            block->get_items().push_back(decl);
           }
           break;
         }
@@ -143,7 +144,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
             return false;
           }
           for (auto &decl : items) {
-            (*group)->add_item(decl);
+            block->get_items().push_back(decl);
           }
           break;
         }
@@ -379,7 +380,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
       if (node) {
         node->set_start_pos(loc_start);
         /* End position is supplied by producer */
-        (*group)->add_item(node);
+        block->get_items().push_back(node);
       }
     }
 

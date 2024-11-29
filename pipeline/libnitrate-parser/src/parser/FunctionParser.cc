@@ -389,8 +389,8 @@ static bool parse_parameters(qparse_t &job, qlex_t *rd, FuncTy *ftype,
       return false;
     }
 
-    ftype->add_param(std::get<0>(param), std::get<1>(param),
-                     std::get<2>(param));
+    ftype->get_params().push_back(
+        {std::get<0>(param), std::get<1>(param), std::get<2>(param)});
 
     c = qlex_peek(rd);
     if (c.is<qPuncComa>()) {
@@ -574,7 +574,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
           return true;
         }
 
-        fndecl->add_tags(std::move(attributes));
+        fndecl->get_tags().insert(attributes.begin(), attributes.end());
       }
 
       *node = fndecl;
@@ -606,7 +606,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
               return true;
             }
 
-            fndecl->add_tags(std::move(attributes));
+            fndecl->get_tags().insert(attributes.begin(), attributes.end());
           }
           *node = fndecl;
           (*node)->set_end_pos(tok.start);
@@ -646,7 +646,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
           return true;
         }
 
-        fndecl->add_tags(std::move(attributes));
+        fndecl->get_tags().insert(attributes.begin(), attributes.end());
       }
 
       *node = fndecl;
@@ -684,7 +684,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
     }
 
     fndecl = FnDef::get(fndecl, fnbody, req_in, req_out, captures);
-    fndecl->add_tags(std::move(attributes));
+    fndecl->get_tags().insert(attributes.begin(), attributes.end());
 
     *node = fndecl;
     (*node)->set_end_pos(tok.end);

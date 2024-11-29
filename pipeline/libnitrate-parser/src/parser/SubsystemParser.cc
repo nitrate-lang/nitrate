@@ -95,8 +95,8 @@ bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   SubsystemDecl *sub = SubsystemDecl::get(name, block);
   sub->set_end_pos(block->get_end_pos());
-  sub->add_deps(deps);
-  sub->add_tags(std::move(attributes));
+  sub->get_deps() = deps;
+  sub->get_tags().insert(attributes.begin(), attributes.end());
 
   *node = sub;
 

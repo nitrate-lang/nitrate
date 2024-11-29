@@ -471,14 +471,6 @@ namespace qparse {
 
     DeclTags &get_tags() { return m_tags; }
     void set_tags(DeclTags t) { m_tags = t; }
-    void add_tag(ConstExpr *tag) { m_tags.insert(tag); }
-    void add_tags(const std::set<ConstExpr *> &tags) {
-      for (const auto &tag : tags) {
-        m_tags.insert(tag);
-      }
-    }
-    void clear_tags() { m_tags.clear(); }
-    void remove_tag(ConstExpr *tag) { m_tags.erase(tag); }
 
     auto &get_template_params() { return m_template_parameters; }
     void set_template_params(std::optional<TemplateParameters> x) {
@@ -787,10 +779,6 @@ namespace qparse {
     TupleTy(const TupleTyItems &items) : m_items(items) {}
 
     TupleTyItems &get_items() { return m_items; }
-    void add_item(Type *item);
-    void add_items(std::initializer_list<Type *> items);
-    void clear_items();
-    void remove_item(Type *item);
 
     PNODE_IMPL_CORE(TupleTy)
   };
@@ -835,10 +823,6 @@ namespace qparse {
     StructTy(const StructItems &items) : m_items(items) {}
 
     StructItems &get_items() { return m_items; }
-    void add_item(String name, Type *type);
-    void add_items(std::initializer_list<StructItem> items);
-    void clear_items();
-    void remove_item(String name);
 
     PNODE_IMPL_CORE(StructTy)
   };
@@ -916,10 +900,6 @@ namespace qparse {
     void set_return_ty(Type *return_ty) { m_return = return_ty; }
 
     FuncParams &get_params() { return m_params; }
-    void add_param(String name, Type *type, Expr *default_val = nullptr);
-    void add_params(std::initializer_list<FuncParam> params);
-    void clear_params();
-    void remove_param(String name);
 
     FuncPurity get_purity() { return m_purity; }
     void set_purity(FuncPurity purity) { m_purity = purity; }
@@ -1112,10 +1092,6 @@ namespace qparse {
     void set_func(Expr *func) { m_func = func; }
 
     CallArgs &get_args() { return m_args; }
-    void add_arg(CallArg arg);
-    void add_args(std::initializer_list<CallArg> args);
-    void clear_args();
-    void remove_arg(String name);
 
     PNODE_IMPL_CORE(Call)
   };
@@ -1139,10 +1115,6 @@ namespace qparse {
     void set_func(Expr *func) { m_func = func; }
 
     TemplateArgs &get_template_args() { return m_template_args; }
-    void add_template_arg(String name, ConstExpr *arg);
-    void add_template_args(std::map<String, ConstExpr *> args);
-    void clear_template_args();
-    void remove_template_arg(String name);
 
     PNODE_IMPL_CORE(TemplCall)
   };
@@ -1158,10 +1130,6 @@ namespace qparse {
     List(const ListData &items) : m_items(items) {}
 
     ListData &get_items() { return m_items; }
-    void add_item(Expr *item);
-    void add_items(std::initializer_list<Expr *> items);
-    void clear_items();
-    void remove_item(Expr *item);
 
     PNODE_IMPL_CORE(List)
   };
@@ -1254,8 +1222,6 @@ namespace qparse {
     FString(FStringItems items = {}) : m_items(items) {}
 
     FStringItems &get_items() { return m_items; }
-    void add_item(String item);
-    void add_item(Expr *item);
 
     PNODE_IMPL_CORE(FString)
   };
@@ -1282,10 +1248,6 @@ namespace qparse {
     SeqPoint(const SeqPointItems &items) : m_items(items) {}
 
     SeqPointItems &get_items() { return m_items; }
-    void add_item(Expr *item);
-    void add_items(std::initializer_list<Expr *> items);
-    void clear_items();
-    void remove_item(Expr *item);
 
     PNODE_IMPL_CORE(SeqPoint)
   };
@@ -1312,10 +1274,6 @@ namespace qparse {
         : m_items(items), m_safety(safety) {}
 
     BlockItems &get_items() { return m_items; }
-    void add_item(Stmt *item);
-    void add_items(std::initializer_list<Stmt *> items);
-    void clear_items();
-    void remove_item(Stmt *item);
 
     SafetyMode get_safety() { return m_safety; }
     void set_safety(SafetyMode safety) { m_safety = safety; }
@@ -1395,10 +1353,6 @@ namespace qparse {
     void set_code(String code) { m_code = code; }
 
     InlineAsmArgs &get_args() { return m_args; }
-    void add_arg(Expr *arg);
-    void add_args(std::initializer_list<Expr *> args);
-    void clear_args();
-    void remove_arg(Expr *arg);
 
     PNODE_IMPL_CORE(InlineAsm)
   };
@@ -1582,10 +1536,6 @@ namespace qparse {
     void set_cond(Expr *cond) { m_cond = cond; }
 
     SwitchCases &get_cases() { return m_cases; }
-    void add_case(CaseStmt *case_);
-    void add_cases(std::initializer_list<CaseStmt *> cases);
-    void clear_cases();
-    void remove_case(CaseStmt *case_);
 
     Stmt *get_default() { return m_default; }
     void set_default(Stmt *default_) { m_default = default_; }
@@ -1649,9 +1599,6 @@ namespace qparse {
     void set_postcond(Expr *postcond) { m_postcond = postcond; }
 
     FnCaptures &get_captures() { return m_captures; }
-    void add_capture(String name, bool by_ref) {
-      m_captures.push_back({name, by_ref});
-    }
 
     PNODE_IMPL_CORE(FnDef)
   };
@@ -1709,22 +1656,10 @@ namespace qparse {
     }
 
     StructDefMethods &get_methods() { return m_methods; }
-    void add_method(FnDecl *method);
-    void add_methods(std::initializer_list<FnDecl *> methods);
-    void clear_methods();
-    void remove_method(FnDecl *method);
 
     StructDefStaticMethods &get_static_methods() { return m_static_methods; }
-    void add_static_method(FnDecl *method);
-    void add_static_methods(std::initializer_list<FnDecl *> methods);
-    void clear_static_methods();
-    void remove_static_method(FnDecl *method);
 
     StructDefFields &get_fields() { return m_fields; }
-    void add_field(CompositeField *field);
-    void add_fields(std::initializer_list<CompositeField *> fields);
-    void clear_fields();
-    void remove_field(CompositeField *field);
 
     CompositeType get_composite_type() { return m_comp_type; }
     void set_composite_type(CompositeType t) { m_comp_type = t; }
@@ -1749,10 +1684,6 @@ namespace qparse {
     virtual Type *get_type() override { return static_cast<Type *>(m_type); }
 
     EnumDefItems &get_items() { return m_items; }
-    void add_item(EnumItem item);
-    void add_items(std::initializer_list<EnumItem> items);
-    void clear_items();
-    void remove_item(EnumItem item);
 
     PNODE_IMPL_CORE(EnumDef)
   };
@@ -1773,10 +1704,6 @@ namespace qparse {
     void set_body(Block *body) { m_body = body; }
 
     SubsystemDeps &get_deps() { return m_deps; }
-    void add_dep(String dep);
-    void add_deps(const SubsystemDeps &deps);
-    void clear_deps();
-    void remove_dep(String dep);
 
     PNODE_IMPL_CORE(SubsystemDecl)
   };

@@ -14,6 +14,7 @@
 -I/usr/lib/llvm-14/include
 -I.build/debug/_deps/googletest-src/googletest/include
 -D__NITRATE_IMPL__
+-D__NITRATE_LEXER_CPP__
 -DLLVM_SUUPORT_ALL_TARGETS
 -Wall
 -Wextra
