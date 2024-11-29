@@ -564,17 +564,9 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
                     syntax(tok, "Expected a constant integer in list element");
                     return false;
                   }
-                  size_t count_val = 0;
 
-                  try {
-                    count_val =
-                        std::stoi(count->as<ConstInt>()->get_value().c_str());
-                  } catch (std::out_of_range &) {
-                    syntax(tok,
-                           "Expected a constant integer in list element. "
-                           "std::stoi() failed");
-                    return false;
-                  }
+                  size_t count_val =
+                      std::stoi(count->as<ConstInt>()->get_value().c_str());
 
                   if (count_val > MAX_LIST_DUP) {
                     syntax(tok,
