@@ -133,7 +133,7 @@ static bool parse_fn_parameter(qparse_t &job, qlex_t *rd, FuncParam &param) {
 
     tok = qlex_peek(rd);
   } else {
-    type = InferType::get();
+    type = InferTy::get();
   }
 
   if (tok.is<qOpSet>()) {
@@ -635,7 +635,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
         qlex_next(rd);
       }
 
-      fndecl = FnDef::get(fndecl, fnbody, nullptr, nullptr, captures);
+      FnDef *fndef = FnDef::get(fndecl, fnbody, nullptr, nullptr, captures);
 
       tok = qlex_peek(rd);
       if (tok.is<qKWith>()) {
@@ -646,10 +646,10 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
           return true;
         }
 
-        fndecl->get_tags().insert(attributes.begin(), attributes.end());
+        fndef->get_tags().insert(attributes.begin(), attributes.end());
       }
 
-      *node = fndecl;
+      *node = fndef;
       (*node)->set_end_pos(fnbody->get_end_pos());
       return true;
     }
@@ -683,10 +683,10 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
       ftype->set_return_ty(VoidTy::get());
     }
 
-    fndecl = FnDef::get(fndecl, fnbody, req_in, req_out, captures);
-    fndecl->get_tags().insert(attributes.begin(), attributes.end());
+    FnDef *fndef = FnDef::get(fndecl, fnbody, req_in, req_out, captures);
+    fndef->get_tags().insert(attributes.begin(), attributes.end());
 
-    *node = fndecl;
+    *node = fndef;
     (*node)->set_end_pos(tok.end);
     return true;
   }

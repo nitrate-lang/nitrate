@@ -577,18 +577,18 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     }
     case QAST_NODE_UNRES_TY: {
       OBJECT_BEGIN("Unres");
-      OBJECT_STR(n->as<UnresolvedType>()->get_name());
-      OBJECT_SUB(n->as<UnresolvedType>()->get_width());
-      OBJECT_SUB(n->as<UnresolvedType>()->get_range().first);
-      OBJECT_SUB(n->as<UnresolvedType>()->get_range().second);
+      OBJECT_STR(n->as<NamedTy>()->get_name());
+      OBJECT_SUB(n->as<NamedTy>()->get_width());
+      OBJECT_SUB(n->as<NamedTy>()->get_range().first);
+      OBJECT_SUB(n->as<NamedTy>()->get_range().second);
       OBJECT_END();
       break;
     }
     case QAST_NODE_INFER_TY: {
       OBJECT_BEGIN("Infer");
-      OBJECT_SUB(n->as<InferType>()->get_width());
-      OBJECT_SUB(n->as<InferType>()->get_range().first);
-      OBJECT_SUB(n->as<InferType>()->get_range().second);
+      OBJECT_SUB(n->as<InferTy>()->get_width());
+      OBJECT_SUB(n->as<InferTy>()->get_range().first);
+      OBJECT_SUB(n->as<InferTy>()->get_range().second);
       OBJECT_END();
       break;
     }

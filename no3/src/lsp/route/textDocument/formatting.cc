@@ -924,7 +924,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
     }
 
     case QAST_NODE_UNRES_TY: {
-      S.line << C->as<UnresolvedType>()->get_name();
+      S.line << C->as<NamedTy>()->get_name();
       put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
@@ -939,7 +939,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       TemplType* N = C->as<TemplType>();
 
       if (N->get_template()->getKind() == QAST_NODE_UNRES_TY) {
-        auto name = N->get_template()->as<UnresolvedType>()->get_name();
+        auto name = N->get_template()->as<NamedTy>()->get_name();
 
         if (name == "__builtin_result") {
           qcore_assert(N->get_args().size() == 1);

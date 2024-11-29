@@ -251,8 +251,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
       static_cast<FnDecl *>(method)->set_visibility(vis);
 
       { /* Add the 'this' parameter to the method */
-        FuncParam fn_this{"this", RefTy::get(UnresolvedType::get(name)),
-                          nullptr};
+        FuncParam fn_this{"this", RefTy::get(NamedTy::get(name)), nullptr};
 
         if (method->is<FnDecl>()) {
           fdecl = static_cast<FnDecl *>(method);

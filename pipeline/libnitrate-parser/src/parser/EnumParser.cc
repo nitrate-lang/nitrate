@@ -62,8 +62,7 @@ static bool parse_enum_field(qparse_t &job, qlex_t *rd, EnumDefItems &fields) {
     }
 
     item.second = expr;
-    item.second->set_start_pos(expr->get_start_pos());
-    item.second->set_end_pos(expr->get_end_pos());
+    item.second->set_pos(expr->get_pos());
 
     tok = qlex_peek(rd);
   }

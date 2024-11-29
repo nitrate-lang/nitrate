@@ -174,7 +174,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
        *       It is a placeholder for a type that is defined elsewhere.
        */
 
-      inner = UnresolvedType::get(tok.as_string(rd));
+      inner = NamedTy::get(tok.as_string(rd));
       goto type_suffix;
     }
 
@@ -196,7 +196,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
        * @brief Parse a vector type.
        */
 
-      inner = TemplType::get(UnresolvedType::get("__builtin_vec"),
+      inner = TemplType::get(NamedTy::get("__builtin_vec"),
                              TemplTypeArgs{TypeExpr::get(type)});
       goto type_suffix;
     }
@@ -223,7 +223,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
       }
 
       inner = TemplType::get(
-          UnresolvedType::get("__builtin_umap"),
+          NamedTy::get("__builtin_umap"),
           TemplTypeArgs{TypeExpr::get(type), TypeExpr::get(value_type)});
       goto type_suffix;
     }
@@ -270,7 +270,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
       goto error_end;
     }
 
-    inner = TemplType::get(UnresolvedType::get("__builtin_uset"),
+    inner = TemplType::get(NamedTy::get("__builtin_uset"),
                            TemplTypeArgs{TypeExpr::get(type)});
     goto type_suffix;
   } else if (tok.is<qPuncLPar>()) {
@@ -332,7 +332,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
      * @brief Parse an inferred type.
      */
 
-    inner = InferType::get();
+    inner = InferTy::get();
     goto type_suffix;
   } else {
     syntax(tok, "Expected a type");
@@ -458,7 +458,7 @@ type_suffix: {
 
     if (tok.is<qOpTernary>()) { /* Parse optional type */
       qlex_next(rd);
-      inner = TemplType::get(UnresolvedType::get("__builtin_result"),
+      inner = TemplType::get(NamedTy::get("__builtin_result"),
                              TemplTypeArgs{TypeExpr::get(inner)});
       continue;
     }

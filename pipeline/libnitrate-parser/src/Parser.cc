@@ -103,7 +103,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
         }
 
         ExprStmt *stmt = ExprStmt::get(expr);
-        stmt->set_start_pos(expr->get_start_pos());
+        stmt->set_start_pos(std::get<0>(expr->get_pos()));
         stmt->set_end_pos(tok.end);
 
         block->get_items().push_back(stmt);

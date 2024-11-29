@@ -1180,12 +1180,12 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *,
-                              qparse::UnresolvedType *n) {
+                              qparse::NamedTy *n) {
   return b.getUnknownNamedTy(b.intern(s.scope_name(n->get_name())));
 }
 
 static EResult nrgen_infer_ty(NRBuilder &b, PState &, IReport *,
-                              qparse::InferType *) {
+                              qparse::InferTy *) {
   return b.getUnknownTy();
 }
 
@@ -2171,11 +2171,11 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, qparse::Node *n) {
       break;
 
     case QAST_NODE_UNRES_TY:
-      out = nrgen_unres_ty(b, s, G, n->as<qparse::UnresolvedType>());
+      out = nrgen_unres_ty(b, s, G, n->as<qparse::NamedTy>());
       break;
 
     case QAST_NODE_INFER_TY:
-      out = nrgen_infer_ty(b, s, G, n->as<qparse::InferType>());
+      out = nrgen_infer_ty(b, s, G, n->as<qparse::InferTy>());
       break;
 
     case QAST_NODE_TEMPL_TY:

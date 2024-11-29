@@ -1027,7 +1027,7 @@ bool to_json_recurse(Node *N, json &x) {
        * @note [Developer Notes]
        */
 
-      x[1] = N->as<UnresolvedType>()->get_name().c_str();
+      x[1] = N->as<NamedTy>()->get_name().c_str();
 
       break;
     }
