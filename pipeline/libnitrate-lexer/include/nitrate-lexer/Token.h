@@ -176,7 +176,6 @@ typedef enum qlex_key_t {
   qKCatch,      /* 'catch' */
   qKThrow,      /* 'throw' */
   qK__Asm__,    /* '__asm__' */
-  qKVoid,       /* 'void' */
   qKUndef,      /* 'undef' */
   qKNull,       /* 'null' */
   qKTrue,       /* 'true' */

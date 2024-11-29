@@ -122,7 +122,6 @@ namespace qlex {
           {"catch", qKCatch},
           {"throw", qKThrow},
           {"__asm__", qK__Asm__},
-          {"void", qKVoid},
           {"undef", qKUndef},
           {"null", qKNull},
           {"true", qKTrue},
