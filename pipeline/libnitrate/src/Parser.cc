@@ -644,7 +644,7 @@ bool to_json_recurse(Node *N, json &x) {
       break;
     }
 
-    case QAST_NODE_SEQ_POINT: {
+    case QAST_NODE_SEQ: {
       /**
        * @brief [Brief Description]
        * @note [Developer Notes]
@@ -1573,7 +1573,7 @@ bool to_json_recurse(Node *N, json &x) {
       break;
     }
 
-    case QAST_NODE_VOLSTMT: {
+    case QAST_NODE_VOLATILE: {
       /**
        * @brief [Brief Description]
        * @note [Developer Notes]

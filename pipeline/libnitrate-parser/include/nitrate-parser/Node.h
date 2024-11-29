@@ -46,6 +46,7 @@ typedef struct qparse_node_t qparse_node_t;
  */
 typedef enum qparse_ty_t {
   QAST_NODE_NODE,
+
   QAST_NODE_BINEXPR,
   QAST_NODE_UNEXPR,
   QAST_NODE_TEREXPR,
@@ -64,7 +65,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_SLICE,
   QAST_NODE_FSTRING,
   QAST_NODE_IDENT,
-  QAST_NODE_SEQ_POINT,
+  QAST_NODE_SEQ,
   QAST_NODE_POST_UNEXPR,
   QAST_NODE_STMT_EXPR,
   QAST_NODE_TYPE_EXPR,
@@ -122,10 +123,10 @@ typedef enum qparse_ty_t {
   QAST_NODE_CASE,
   QAST_NODE_SWITCH,
   QAST_NODE_EXPR_STMT,
-  QAST_NODE_VOLSTMT,
+  QAST_NODE_VOLATILE,
 
   QAST_NODE_FIRST = QAST_NODE_NODE,
-  QAST_NODE_LAST = QAST_NODE_VOLSTMT,
+  QAST_NODE_LAST = QAST_NODE_VOLATILE,
 } qparse_ty_t;
 
 #define QAST_NODE_COUNT (QAST_NODE_LAST - QAST_NODE_FIRST + 1)
@@ -380,7 +381,7 @@ namespace qparse {
       } else if constexpr (std::is_same_v<T, Ident>) {
         return QAST_NODE_IDENT;
       } else if constexpr (std::is_same_v<T, SeqPoint>) {
-        return QAST_NODE_SEQ_POINT;
+        return QAST_NODE_SEQ;
       } else if constexpr (std::is_same_v<T, PostUnaryExpr>) {
         return QAST_NODE_POST_UNEXPR;
       } else if constexpr (std::is_same_v<T, StmtExpr>) {
@@ -490,7 +491,7 @@ namespace qparse {
       } else if constexpr (std::is_same_v<T, ExprStmt>) {
         return QAST_NODE_EXPR_STMT;
       } else if constexpr (std::is_same_v<T, VolStmt>) {
-        return QAST_NODE_VOLSTMT;
+        return QAST_NODE_VOLATILE;
       }
     }
 
@@ -1371,7 +1372,7 @@ namespace qparse {
 
   public:
     SeqPoint(const SeqPointItems &items)
-        : Expr(QAST_NODE_SEQ_POINT), m_items(items) {}
+        : Expr(QAST_NODE_SEQ), m_items(items) {}
 
     SeqPointItems &get_items() { return m_items; }
 
@@ -1408,7 +1409,7 @@ namespace qparse {
     Stmt *m_stmt;
 
   public:
-    VolStmt(Stmt *stmt = nullptr) : Stmt(QAST_NODE_VOLSTMT), m_stmt(stmt) {}
+    VolStmt(Stmt *stmt = nullptr) : Stmt(QAST_NODE_VOLATILE), m_stmt(stmt) {}
 
     Stmt *get_stmt() { return m_stmt; }
     void set_stmt(Stmt *stmt) { m_stmt = stmt; }
@@ -1844,7 +1845,7 @@ namespace qparse {
       R[QAST_NODE_SLICE] = "Slice";
       R[QAST_NODE_FSTRING] = "Fstring";
       R[QAST_NODE_IDENT] = "Ident";
-      R[QAST_NODE_SEQ_POINT] = "SeqPoint";
+      R[QAST_NODE_SEQ] = "SeqPoint";
       R[QAST_NODE_POST_UNEXPR] = "PostUnexpr";
       R[QAST_NODE_STMT_EXPR] = "StmtExpr";
       R[QAST_NODE_TYPE_EXPR] = "peExpr";
@@ -1899,7 +1900,7 @@ namespace qparse {
       R[QAST_NODE_CASE] = "Case";
       R[QAST_NODE_SWITCH] = "Switch";
       R[QAST_NODE_EXPR_STMT] = "ExprStmt";
-      R[QAST_NODE_VOLSTMT] = "Volstmt";
+      R[QAST_NODE_VOLATILE] = "Volstmt";
 
       return R;
     }();

@@ -339,7 +339,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_SEQ_POINT: {
+    case QAST_NODE_SEQ: {
       OBJECT_BEGIN("Seq");
       OBJECT_ARRAY(n->as<SeqPoint>()->get_items());
       OBJECT_END();
@@ -750,7 +750,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_VOLSTMT: {
+    case QAST_NODE_VOLATILE: {
       OBJECT_BEGIN("VStmt");
       OBJECT_SUB(n->as<VolStmt>()->get_stmt());
       OBJECT_END();

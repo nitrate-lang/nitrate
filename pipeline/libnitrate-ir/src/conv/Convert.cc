@@ -2058,7 +2058,7 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, qparse::Node *n) {
       out = nrgen_ident(b, s, G, n->as<qparse::Ident>());
       break;
 
-    case QAST_NODE_SEQ_POINT:
+    case QAST_NODE_SEQ:
       out = nrgen_seq_point(b, s, G, n->as<qparse::SeqPoint>());
       break;
 
@@ -2258,7 +2258,7 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, qparse::Node *n) {
       out = nrgen_expr_stmt(b, s, G, n->as<qparse::ExprStmt>());
       break;
 
-    case QAST_NODE_VOLSTMT:
+    case QAST_NODE_VOLATILE:
       out = nrgen_volstmt(b, s, G, n->as<qparse::VolStmt>());
       break;
 

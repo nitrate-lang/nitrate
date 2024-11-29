@@ -106,7 +106,7 @@ LIB_EXPORT bool Node::is_stmt() {
     case QAST_NODE_EXPORT:
     case QAST_NODE_COMPOSITE_FIELD:
     case QAST_NODE_BLOCK:
-    case QAST_NODE_VOLSTMT:
+    case QAST_NODE_VOLATILE:
     case QAST_NODE_CONST:
     case QAST_NODE_VAR:
     case QAST_NODE_LET:
@@ -555,7 +555,7 @@ LIB_EXPORT bool FuncTy::is_noreturn() { return m_noreturn; }
 //     case QAST_NODE_IDENT:
 //       node = Ident::get();
 //       break;
-//     case QAST_NODE_SEQ_POINT:
+//     case QAST_NODE_SEQ:
 //       node = SeqPoint::get();
 //       break;
 //     case QAST_NODE_STMT_EXPR:
@@ -567,7 +567,7 @@ LIB_EXPORT bool FuncTy::is_noreturn() { return m_noreturn; }
 //     case QAST_NODE_BLOCK:
 //       node = Block::get();
 //       break;
-//     case QAST_NODE_VOLSTMT:
+//     case QAST_NODE_VOLATILE:
 //       node = VolStmt::get();
 //       break;
 //     case QAST_NODE_CONST:

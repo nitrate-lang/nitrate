@@ -639,7 +639,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       break;
     }
 
-    case QAST_NODE_SEQ_POINT: {
+    case QAST_NODE_SEQ: {
       SeqPoint* N = C->as<SeqPoint>();
 
       S.line << "(";
@@ -1688,7 +1688,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       break;
     }
 
-    case QAST_NODE_VOLSTMT: {
+    case QAST_NODE_VOLATILE: {
       VolStmt* N = C->as<VolStmt>();
       S.line << "volatile ";
       recurse(N->get_stmt(), S);

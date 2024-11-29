@@ -1,5 +1,5 @@
 type usize = u64;
 
-fn main() {
+fn main(): usize {
   
 }
