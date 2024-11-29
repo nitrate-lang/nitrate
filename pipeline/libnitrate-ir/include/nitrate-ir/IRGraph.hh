@@ -1510,8 +1510,8 @@ namespace nr {
   }
 
   constexpr uint32_t Expr::getKindSize(nr_ty_t type) noexcept {
-    const std::array<size_t, std::numeric_limits<nr_ty_t>::max()> sizes = []() {
-      std::array<size_t, std::numeric_limits<nr_ty_t>::max()> R;
+    const std::array<size_t, NR_NODE_COUNT> sizes = []() {
+      std::array<size_t, NR_NODE_COUNT> R;
       R.fill(0);
 
       R[NR_NODE_BINEXPR] = sizeof(BinExpr);
@@ -1564,70 +1564,63 @@ namespace nr {
       return R;
     }();
 
-    qcore_assert(sizes.size() == NR_NODE_COUNT,
-                 "Polymorphic type size lookup table is incomplete");
-
     return sizes[type];
   }
 
   constexpr std::string_view Expr::getKindName(nr_ty_t type) noexcept {
-    const std::array<std::string_view, std::numeric_limits<nr_ty_t>::max()>
-        names = []() {
-          std::array<std::string_view, std::numeric_limits<nr_ty_t>::max()> R;
-          R.fill("");
+    const std::array<std::string_view, NR_NODE_COUNT> names = []() {
+      std::array<std::string_view, NR_NODE_COUNT> R;
+      R.fill("");
 
-          R[NR_NODE_BINEXPR] = "bin_expr";
-          R[NR_NODE_UNEXPR] = "unary_expr";
-          R[NR_NODE_POST_UNEXPR] = "post_unary_expr";
-          R[NR_NODE_INT] = "int";
-          R[NR_NODE_FLOAT] = "float";
-          R[NR_NODE_LIST] = "list";
-          R[NR_NODE_CALL] = "call";
-          R[NR_NODE_SEQ] = "seq";
-          R[NR_NODE_INDEX] = "index";
-          R[NR_NODE_IDENT] = "ident";
-          R[NR_NODE_EXTERN] = "extern";
-          R[NR_NODE_LOCAL] = "local";
-          R[NR_NODE_RET] = "return";
-          R[NR_NODE_BRK] = "break";
-          R[NR_NODE_CONT] = "continue";
-          R[NR_NODE_IF] = "if";
-          R[NR_NODE_WHILE] = "while";
-          R[NR_NODE_FOR] = "for";
-          R[NR_NODE_CASE] = "case";
-          R[NR_NODE_SWITCH] = "switch";
-          R[NR_NODE_FN] = "fn";
-          R[NR_NODE_ASM] = "asm";
-          R[NR_NODE_IGN] = "ignore";
-          R[NR_NODE_U1_TY] = "u1";
-          R[NR_NODE_U8_TY] = "u8";
-          R[NR_NODE_U16_TY] = "u16";
-          R[NR_NODE_U32_TY] = "u32";
-          R[NR_NODE_U64_TY] = "u64";
-          R[NR_NODE_U128_TY] = "u128";
-          R[NR_NODE_I8_TY] = "i8";
-          R[NR_NODE_I16_TY] = "i16";
-          R[NR_NODE_I32_TY] = "i32";
-          R[NR_NODE_I64_TY] = "i64";
-          R[NR_NODE_I128_TY] = "i128";
-          R[NR_NODE_F16_TY] = "f16";
-          R[NR_NODE_F32_TY] = "f32";
-          R[NR_NODE_F64_TY] = "f64";
-          R[NR_NODE_F128_TY] = "f128";
-          R[NR_NODE_VOID_TY] = "void";
-          R[NR_NODE_PTR_TY] = "ptr";
-          R[NR_NODE_OPAQUE_TY] = "opaque";
-          R[NR_NODE_STRUCT_TY] = "struct";
-          R[NR_NODE_UNION_TY] = "union";
-          R[NR_NODE_ARRAY_TY] = "array";
-          R[NR_NODE_FN_TY] = "fn_ty";
-          R[NR_NODE_TMP] = "tmp";
+      R[NR_NODE_BINEXPR] = "bin_expr";
+      R[NR_NODE_UNEXPR] = "unary_expr";
+      R[NR_NODE_POST_UNEXPR] = "post_unary_expr";
+      R[NR_NODE_INT] = "int";
+      R[NR_NODE_FLOAT] = "float";
+      R[NR_NODE_LIST] = "list";
+      R[NR_NODE_CALL] = "call";
+      R[NR_NODE_SEQ] = "seq";
+      R[NR_NODE_INDEX] = "index";
+      R[NR_NODE_IDENT] = "ident";
+      R[NR_NODE_EXTERN] = "extern";
+      R[NR_NODE_LOCAL] = "local";
+      R[NR_NODE_RET] = "return";
+      R[NR_NODE_BRK] = "break";
+      R[NR_NODE_CONT] = "continue";
+      R[NR_NODE_IF] = "if";
+      R[NR_NODE_WHILE] = "while";
+      R[NR_NODE_FOR] = "for";
+      R[NR_NODE_CASE] = "case";
+      R[NR_NODE_SWITCH] = "switch";
+      R[NR_NODE_FN] = "fn";
+      R[NR_NODE_ASM] = "asm";
+      R[NR_NODE_IGN] = "ignore";
+      R[NR_NODE_U1_TY] = "u1";
+      R[NR_NODE_U8_TY] = "u8";
+      R[NR_NODE_U16_TY] = "u16";
+      R[NR_NODE_U32_TY] = "u32";
+      R[NR_NODE_U64_TY] = "u64";
+      R[NR_NODE_U128_TY] = "u128";
+      R[NR_NODE_I8_TY] = "i8";
+      R[NR_NODE_I16_TY] = "i16";
+      R[NR_NODE_I32_TY] = "i32";
+      R[NR_NODE_I64_TY] = "i64";
+      R[NR_NODE_I128_TY] = "i128";
+      R[NR_NODE_F16_TY] = "f16";
+      R[NR_NODE_F32_TY] = "f32";
+      R[NR_NODE_F64_TY] = "f64";
+      R[NR_NODE_F128_TY] = "f128";
+      R[NR_NODE_VOID_TY] = "void";
+      R[NR_NODE_PTR_TY] = "ptr";
+      R[NR_NODE_OPAQUE_TY] = "opaque";
+      R[NR_NODE_STRUCT_TY] = "struct";
+      R[NR_NODE_UNION_TY] = "union";
+      R[NR_NODE_ARRAY_TY] = "array";
+      R[NR_NODE_FN_TY] = "fn_ty";
+      R[NR_NODE_TMP] = "tmp";
 
-          return R;
-        }();
-
-    qcore_assert(names.size() == NR_NODE_COUNT,
-                 "Polymorphic type name lookup table is incomplete");
+      return R;
+    }();
 
     return names[type];
   }

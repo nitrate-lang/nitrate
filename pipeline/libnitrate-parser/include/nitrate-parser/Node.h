@@ -123,9 +123,12 @@ typedef enum qparse_ty_t {
   QAST_NODE_SWITCH,
   QAST_NODE_EXPR_STMT,
   QAST_NODE_VOLSTMT,
+
+  QAST_NODE_FIRST = QAST_NODE_NODE,
+  QAST_NODE_LAST = QAST_NODE_VOLSTMT,
 } qparse_ty_t;
 
-#define QAST_NODE_COUNT 74
+#define QAST_NODE_COUNT (QAST_NODE_LAST - QAST_NODE_FIRST + 1)
 
 typedef struct qparse_node_t qparse_node_t;
 
@@ -301,6 +304,9 @@ namespace qparse {
   class SubsystemDecl;
   class ExportDecl;
 
+}  // namespace qparse
+
+namespace qparse {
   enum class Vis {
     PUBLIC,
     PRIVATE,
@@ -321,7 +327,6 @@ namespace qparse {
   };
 
   class Node : public qparse_node_t {
-  protected:
     qparse_ty_t m_node_type;
     uint32_t m_pos_start, m_pos_end;
 
@@ -587,7 +592,6 @@ namespace qparse {
   class Expr;
 
   class Type : public Node {
-  protected:
     Expr *m_width, *m_range_start, *m_range_end;
     bool m_volatile;
 
@@ -671,11 +675,8 @@ namespace qparse {
   };
 
   class Expr : public Node {
-  protected:
-    Type *m_type;
-
   public:
-    Expr() : m_type(nullptr) {}
+    Expr() {}
 
     bool is_binexpr();
     bool is_unaryexpr();
@@ -683,7 +684,6 @@ namespace qparse {
   };
 
   class ExprStmt : public Stmt {
-  protected:
     Expr *m_expr;
 
   public:
@@ -696,7 +696,6 @@ namespace qparse {
   };
 
   class StmtExpr : public Expr {
-  protected:
     Stmt *m_stmt;
 
   public:
@@ -709,7 +708,6 @@ namespace qparse {
   };
 
   class TypeExpr : public Expr {
-  protected:
     Type *m_type;
 
   public:
@@ -1082,7 +1080,6 @@ namespace qparse {
   ///=============================================================================
 
   class UnaryExpr : public Expr {
-  protected:
     Expr *m_rhs;
     qlex_op_t m_op;
 
@@ -1100,7 +1097,6 @@ namespace qparse {
   };
 
   class BinExpr : public Expr {
-  protected:
     Expr *m_lhs;
     Expr *m_rhs;
     qlex_op_t m_op;
@@ -1122,7 +1118,6 @@ namespace qparse {
   };
 
   class PostUnaryExpr : public Expr {
-  protected:
     Expr *m_lhs;
     qlex_op_t m_op;
 
@@ -1140,7 +1135,6 @@ namespace qparse {
   };
 
   class TernaryExpr : public Expr {
-  protected:
     Expr *m_cond;
     Expr *m_lhs;
     Expr *m_rhs;
@@ -1240,7 +1234,6 @@ namespace qparse {
   typedef std::vector<CallArg, Arena<CallArg>> CallArgs;
 
   class Call : public Expr {
-  protected:
     Expr *m_func;
     CallArgs m_args;
 
@@ -1261,7 +1254,6 @@ namespace qparse {
       TemplateArgs;
 
   class TemplCall : public Call {
-  protected:
     TemplateArgs m_template_args;
     Expr *m_func;
     CallArgs m_args;
@@ -1282,7 +1274,6 @@ namespace qparse {
   typedef std::vector<Expr *, Arena<Expr *>> ListData;
 
   class List : public Expr {
-  protected:
     ListData m_items;
 
   public:
@@ -1295,7 +1286,6 @@ namespace qparse {
   };
 
   class Assoc : public Expr {
-  protected:
     Expr *m_key;
     Expr *m_value;
 
@@ -1313,7 +1303,6 @@ namespace qparse {
   };
 
   class Field : public Expr {
-  protected:
     Expr *m_base;
     String m_field;
 
@@ -1331,7 +1320,6 @@ namespace qparse {
   };
 
   class Index : public Expr {
-  protected:
     Expr *m_base;
     Expr *m_index;
 
@@ -1349,7 +1337,6 @@ namespace qparse {
   };
 
   class Slice : public Expr {
-  protected:
     Expr *m_base;
     Expr *m_start;
     Expr *m_end;
@@ -1375,7 +1362,6 @@ namespace qparse {
       FStringItems;
 
   class FString : public Expr {
-  protected:
     FStringItems m_items;
 
   public:
@@ -1400,7 +1386,6 @@ namespace qparse {
 
   typedef std::vector<Expr *, Arena<Expr *>> SeqPointItems;
   class SeqPoint : public Expr {
-  protected:
     SeqPointItems m_items;
 
   public:
@@ -1423,7 +1408,6 @@ namespace qparse {
   };
 
   class Block : public Stmt {
-  protected:
     BlockItems m_items;
     SafetyMode m_safety;
 
@@ -1442,7 +1426,6 @@ namespace qparse {
   };
 
   class VolStmt : public Stmt {
-  protected:
     Stmt *m_stmt;
 
   public:
@@ -1455,7 +1438,6 @@ namespace qparse {
   };
 
   class ConstDecl : public Decl {
-  protected:
     Expr *m_value;
 
   public:
@@ -1469,7 +1451,6 @@ namespace qparse {
   };
 
   class VarDecl : public Decl {
-  protected:
     Expr *m_value;
 
   public:
@@ -1483,7 +1464,6 @@ namespace qparse {
   };
 
   class LetDecl : public Decl {
-  protected:
     Expr *m_value;
 
   public:
@@ -1499,7 +1479,6 @@ namespace qparse {
   typedef std::vector<Expr *, Arena<Expr *>> InlineAsmArgs;
 
   class InlineAsm : public Stmt {
-  protected:
     String m_code;
     InlineAsmArgs m_args;
 
@@ -1518,7 +1497,6 @@ namespace qparse {
   };
 
   class IfStmt : public FlowStmt {
-  protected:
     Expr *m_cond;
     Block *m_then;
     Block *m_else;
@@ -1540,7 +1518,6 @@ namespace qparse {
   };
 
   class WhileStmt : public FlowStmt {
-  protected:
     Expr *m_cond;
     Block *m_body;
 
@@ -1558,7 +1535,6 @@ namespace qparse {
   };
 
   class ForStmt : public FlowStmt {
-  protected:
     Expr *m_init;
     Expr *m_cond;
     Expr *m_step;
@@ -1585,7 +1561,6 @@ namespace qparse {
   };
 
   class ForeachStmt : public FlowStmt {
-  protected:
     String m_idx_ident;
     String m_val_ident;
     Expr *m_expr;
@@ -1629,7 +1604,6 @@ namespace qparse {
   };
 
   class ReturnStmt : public FlowStmt {
-  protected:
     Expr *m_value;
 
   public:
@@ -1642,7 +1616,6 @@ namespace qparse {
   };
 
   class ReturnIfStmt : public FlowStmt {
-  protected:
     Expr *m_cond;
     Expr *m_value;
 
@@ -1660,7 +1633,6 @@ namespace qparse {
   };
 
   class CaseStmt : public FlowStmt {
-  protected:
     Expr *m_cond;
     Block *m_body;
 
@@ -1679,7 +1651,6 @@ namespace qparse {
 
   typedef std::vector<CaseStmt *, Arena<CaseStmt *>> SwitchCases;
   class SwitchStmt : public FlowStmt {
-  protected:
     Expr *m_cond;
     SwitchCases m_cases;
     Stmt *m_default;
@@ -1706,7 +1677,6 @@ namespace qparse {
   ///=============================================================================
 
   class TypedefDecl : public Decl {
-  protected:
   public:
     TypedefDecl(String name = "", Type *type = nullptr) : Decl(name, type) {}
 
@@ -1714,7 +1684,6 @@ namespace qparse {
   };
 
   class FnDecl : public Decl {
-  protected:
   public:
     FnDecl(String name = "", FuncTy *type = nullptr) : Decl(name, type) {}
 
@@ -1729,7 +1698,6 @@ namespace qparse {
       FnCaptures;
 
   class FnDef : public FnDecl {
-  protected:
     FnCaptures m_captures;
     Block *m_body;
     Expr *m_precond;
@@ -1766,7 +1734,6 @@ namespace qparse {
   enum class CompositeType { Region, Struct, Group, Class, Union };
 
   class CompositeField : public Decl {
-  protected:
     Expr *m_value;
 
   public:
@@ -1786,7 +1753,6 @@ namespace qparse {
   typedef std::vector<FnDecl *, Arena<FnDecl *>> StructDefStaticMethods;
 
   class StructDef : public Decl {
-  protected:
     StructDefMethods m_methods;
     StructDefStaticMethods m_static_methods;
     StructDefFields m_fields;
@@ -1831,7 +1797,6 @@ namespace qparse {
   typedef std::vector<EnumItem, Arena<EnumItem>> EnumDefItems;
 
   class EnumDef : public Decl {
-  protected:
     EnumDefItems m_items;
 
   public:
@@ -1851,7 +1816,6 @@ namespace qparse {
   typedef std::set<String, std::less<String>, Arena<String>> SubsystemDeps;
 
   class SubsystemDecl : public Decl {
-  protected:
     Block *m_body;
     SubsystemDeps m_deps;
 
@@ -1869,7 +1833,6 @@ namespace qparse {
   };
 
   class ExportDecl : public Decl {
-  protected:
     Block *m_body;
     String m_abi_name;
 
@@ -1891,92 +1854,87 @@ namespace qparse {
   ///=============================================================================
 
   constexpr std::string_view Node::getKindName(qparse_ty_t type) noexcept {
-    const std::array<std::string_view, std::numeric_limits<qparse_ty_t>::max()>
-        names = []() {
-          std::array<std::string_view, std::numeric_limits<qparse_ty_t>::max()>
-              R;
-          R.fill("");
+    const std::array<std::string_view, QAST_NODE_COUNT> names = []() {
+      std::array<std::string_view, QAST_NODE_COUNT> R;
+      R.fill("");
 
-          R[QAST_NODE_BINEXPR] = "Binexpr";
-          R[QAST_NODE_UNEXPR] = "Unexpr";
-          R[QAST_NODE_TEREXPR] = "Terexpr";
-          R[QAST_NODE_INT] = "Int";
-          R[QAST_NODE_FLOAT] = "Float";
-          R[QAST_NODE_STRING] = "String";
-          R[QAST_NODE_CHAR] = "Char";
-          R[QAST_NODE_BOOL] = "Bool";
-          R[QAST_NODE_NULL] = "Null";
-          R[QAST_NODE_UNDEF] = "Undef";
-          R[QAST_NODE_CALL] = "Call";
-          R[QAST_NODE_LIST] = "List";
-          R[QAST_NODE_ASSOC] = "Assoc";
-          R[QAST_NODE_FIELD] = "Field";
-          R[QAST_NODE_INDEX] = "Index";
-          R[QAST_NODE_SLICE] = "Slice";
-          R[QAST_NODE_FSTRING] = "Fstring";
-          R[QAST_NODE_IDENT] = "Ident";
-          R[QAST_NODE_SEQ_POINT] = "SeqPoint";
-          R[QAST_NODE_POST_UNEXPR] = "PostUnexpr";
-          R[QAST_NODE_STMT_EXPR] = "StmtExpr";
-          R[QAST_NODE_TYPE_EXPR] = "peExpr";
-          R[QAST_NODE_TEMPL_CALL] = "TemplCall";
-          R[QAST_NODE_REF_TY] = "Ref";
-          R[QAST_NODE_U1_TY] = "U1";
-          R[QAST_NODE_U8_TY] = "U8";
-          R[QAST_NODE_U16_TY] = "U16";
-          R[QAST_NODE_U32_TY] = "U32";
-          R[QAST_NODE_U64_TY] = "U64";
-          R[QAST_NODE_U128_TY] = "U128";
-          R[QAST_NODE_I8_TY] = "I8";
-          R[QAST_NODE_I16_TY] = "I16";
-          R[QAST_NODE_I32_TY] = "I32";
-          R[QAST_NODE_I64_TY] = "I64";
-          R[QAST_NODE_I128_TY] = "I128";
-          R[QAST_NODE_F16_TY] = "F16";
-          R[QAST_NODE_F32_TY] = "F32";
-          R[QAST_NODE_F64_TY] = "F64";
-          R[QAST_NODE_F128_TY] = "F128";
-          R[QAST_NODE_VOID_TY] = "Void";
-          R[QAST_NODE_PTR_TY] = "Ptr";
-          R[QAST_NODE_OPAQUE_TY] = "Opaque";
-          R[QAST_NODE_STRUCT_TY] = "Struct";
-          R[QAST_NODE_ARRAY_TY] = "Array";
-          R[QAST_NODE_TUPLE_TY] = "Tuple";
-          R[QAST_NODE_FN_TY] = "Fn";
-          R[QAST_NODE_UNRES_TY] = "Unres";
-          R[QAST_NODE_INFER_TY] = "Infer";
-          R[QAST_NODE_TEMPL_TY] = "Templ";
-          R[QAST_NODE_TYPEDEF] = "pedef";
-          R[QAST_NODE_FNDECL] = "Fndecl";
-          R[QAST_NODE_STRUCT] = "Struct";
-          R[QAST_NODE_ENUM] = "Enum";
-          R[QAST_NODE_FN] = "Fn";
-          R[QAST_NODE_SUBSYSTEM] = "Subsystem";
-          R[QAST_NODE_EXPORT] = "Export";
-          R[QAST_NODE_COMPOSITE_FIELD] = "CompositeField";
-          R[QAST_NODE_BLOCK] = "Block";
-          R[QAST_NODE_CONST] = "Const";
-          R[QAST_NODE_VAR] = "Var";
-          R[QAST_NODE_LET] = "Let";
-          R[QAST_NODE_INLINE_ASM] = "InlineAsm";
-          R[QAST_NODE_RETURN] = "Return";
-          R[QAST_NODE_RETIF] = "Retif";
-          R[QAST_NODE_BREAK] = "Break";
-          R[QAST_NODE_CONTINUE] = "Continue";
-          R[QAST_NODE_IF] = "If";
-          R[QAST_NODE_WHILE] = "While";
-          R[QAST_NODE_FOR] = "For";
-          R[QAST_NODE_FOREACH] = "Foreach";
-          R[QAST_NODE_CASE] = "Case";
-          R[QAST_NODE_SWITCH] = "Switch";
-          R[QAST_NODE_EXPR_STMT] = "ExprStmt";
-          R[QAST_NODE_VOLSTMT] = "Volstmt";
+      R[QAST_NODE_BINEXPR] = "Binexpr";
+      R[QAST_NODE_UNEXPR] = "Unexpr";
+      R[QAST_NODE_TEREXPR] = "Terexpr";
+      R[QAST_NODE_INT] = "Int";
+      R[QAST_NODE_FLOAT] = "Float";
+      R[QAST_NODE_STRING] = "String";
+      R[QAST_NODE_CHAR] = "Char";
+      R[QAST_NODE_BOOL] = "Bool";
+      R[QAST_NODE_NULL] = "Null";
+      R[QAST_NODE_UNDEF] = "Undef";
+      R[QAST_NODE_CALL] = "Call";
+      R[QAST_NODE_LIST] = "List";
+      R[QAST_NODE_ASSOC] = "Assoc";
+      R[QAST_NODE_FIELD] = "Field";
+      R[QAST_NODE_INDEX] = "Index";
+      R[QAST_NODE_SLICE] = "Slice";
+      R[QAST_NODE_FSTRING] = "Fstring";
+      R[QAST_NODE_IDENT] = "Ident";
+      R[QAST_NODE_SEQ_POINT] = "SeqPoint";
+      R[QAST_NODE_POST_UNEXPR] = "PostUnexpr";
+      R[QAST_NODE_STMT_EXPR] = "StmtExpr";
+      R[QAST_NODE_TYPE_EXPR] = "peExpr";
+      R[QAST_NODE_TEMPL_CALL] = "TemplCall";
+      R[QAST_NODE_REF_TY] = "Ref";
+      R[QAST_NODE_U1_TY] = "U1";
+      R[QAST_NODE_U8_TY] = "U8";
+      R[QAST_NODE_U16_TY] = "U16";
+      R[QAST_NODE_U32_TY] = "U32";
+      R[QAST_NODE_U64_TY] = "U64";
+      R[QAST_NODE_U128_TY] = "U128";
+      R[QAST_NODE_I8_TY] = "I8";
+      R[QAST_NODE_I16_TY] = "I16";
+      R[QAST_NODE_I32_TY] = "I32";
+      R[QAST_NODE_I64_TY] = "I64";
+      R[QAST_NODE_I128_TY] = "I128";
+      R[QAST_NODE_F16_TY] = "F16";
+      R[QAST_NODE_F32_TY] = "F32";
+      R[QAST_NODE_F64_TY] = "F64";
+      R[QAST_NODE_F128_TY] = "F128";
+      R[QAST_NODE_VOID_TY] = "Void";
+      R[QAST_NODE_PTR_TY] = "Ptr";
+      R[QAST_NODE_OPAQUE_TY] = "Opaque";
+      R[QAST_NODE_STRUCT_TY] = "Struct";
+      R[QAST_NODE_ARRAY_TY] = "Array";
+      R[QAST_NODE_TUPLE_TY] = "Tuple";
+      R[QAST_NODE_FN_TY] = "Fn";
+      R[QAST_NODE_UNRES_TY] = "Unres";
+      R[QAST_NODE_INFER_TY] = "Infer";
+      R[QAST_NODE_TEMPL_TY] = "Templ";
+      R[QAST_NODE_TYPEDEF] = "pedef";
+      R[QAST_NODE_FNDECL] = "Fndecl";
+      R[QAST_NODE_STRUCT] = "Struct";
+      R[QAST_NODE_ENUM] = "Enum";
+      R[QAST_NODE_FN] = "Fn";
+      R[QAST_NODE_SUBSYSTEM] = "Subsystem";
+      R[QAST_NODE_EXPORT] = "Export";
+      R[QAST_NODE_COMPOSITE_FIELD] = "CompositeField";
+      R[QAST_NODE_BLOCK] = "Block";
+      R[QAST_NODE_CONST] = "Const";
+      R[QAST_NODE_VAR] = "Var";
+      R[QAST_NODE_LET] = "Let";
+      R[QAST_NODE_INLINE_ASM] = "InlineAsm";
+      R[QAST_NODE_RETURN] = "Return";
+      R[QAST_NODE_RETIF] = "Retif";
+      R[QAST_NODE_BREAK] = "Break";
+      R[QAST_NODE_CONTINUE] = "Continue";
+      R[QAST_NODE_IF] = "If";
+      R[QAST_NODE_WHILE] = "While";
+      R[QAST_NODE_FOR] = "For";
+      R[QAST_NODE_FOREACH] = "Foreach";
+      R[QAST_NODE_CASE] = "Case";
+      R[QAST_NODE_SWITCH] = "Switch";
+      R[QAST_NODE_EXPR_STMT] = "ExprStmt";
+      R[QAST_NODE_VOLSTMT] = "Volstmt";
 
-          return R;
-        }();
-
-    qcore_assert(names.size() == QAST_NODE_COUNT,
-                 "Polymorphic type name lookup table is incomplete");
+      return R;
+    }();
 
     return names[type];
   }

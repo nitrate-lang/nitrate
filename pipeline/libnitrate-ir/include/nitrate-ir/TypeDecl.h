@@ -102,9 +102,12 @@ typedef enum nr_ty_t {
   NR_NODE_FN_TY,     /* Function type */
 
   NR_NODE_TMP, /* Temp node; must be resolved with more information */
+
+  NR_NODE_FIRST = NR_NODE_BINEXPR,
+  NR_NODE_LAST = NR_NODE_TMP,
 } nr_ty_t;
 
-#define NR_NODE_COUNT 46
+#define NR_NODE_COUNT (NR_NODE_LAST - NR_NODE_FIRST + 1)
 
 typedef struct nr_conf_t nr_conf_t;
 
