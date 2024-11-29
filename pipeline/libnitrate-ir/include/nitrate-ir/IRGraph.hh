@@ -1943,12 +1943,45 @@ namespace nr {
         if (a->m_type != b->m_type) {
           return false;
         }
-        if (a->m_data != b->m_data) {
-          return false;
+
+        switch (a->m_type) {
+          case nr::TmpType::CALL: {
+            const auto &AD = std::get<CallArgsTmpNodeCradle>(a->m_data);
+            const auto &BD = std::get<CallArgsTmpNodeCradle>(b->m_data);
+
+            if (AD.args.size() != BD.args.size()) {
+              return false;
+            }
+
+            if (!AD.base->isSame(BD.base)) {
+              return false;
+            }
+
+            for (size_t i = 0; i < AD.args.size(); i++) {
+              if (AD.args[i].first != BD.args[i].first) {
+                return false;
+              }
+
+              if (!AD.args[i].second->isSame(BD.args[i].second)) {
+                return false;
+              }
+            }
+
+            return true;
+          }
+
+          case nr::TmpType::DEFAULT_VALUE: {
+            return std::get<std::string_view>(a->m_data) ==
+                   std::get<std::string_view>(b->m_data);
+          }
+
+          case nr::TmpType::NAMED_TYPE: {
+            return std::get<std::string_view>(a->m_data) ==
+                   std::get<std::string_view>(b->m_data);
+          }
         }
 
-        qcore_panic(
-            "Expr::isSame: attempt to compare fine structure of NR_NODE_TMP");
+        qcore_implement();
       }
     }
 
