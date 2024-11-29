@@ -63,8 +63,7 @@ namespace nr {
     DSBadType,
     DSBadTmpNode,
 
-    FunctionRedefinition,
-    VariableRedefinition,
+    NameConflict,
     UnknownFunction,
     TooManyArguments,
     UnknownArgument,

@@ -1381,8 +1381,11 @@ static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
     }
   }
 
-  b.createNamedConstantDefinition(b.intern(s.join_scope(n->get_name())),
-                                  values);
+  auto name = b.intern(s.join_scope(n->get_name()));
+  b.createNamedConstantDefinition(name, values);
+
+  /* FIXME: Allow for first class enum types */
+  b.createNamedTypeAlias(b.getI32Ty(), name);
 
   return std::vector<Expr *>();
 }
