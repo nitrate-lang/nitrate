@@ -188,7 +188,7 @@ OpaqueTy *NRBuilder::getOpaqueTy(
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(
-      !name.empty() && std::isalnum(name[0]) &&
+      !name.empty() && (std::isalnum(name[0]) || name[0] == '_') &&
       "Non alphanumeric starter characters are reserved internally");
 
   OpaqueTy *opaque_ty = create<OpaqueTy>(intern(name));
@@ -202,7 +202,8 @@ StructTy *NRBuilder::getStructTy(
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(std::all_of(fields.begin(), fields.end(), [](auto x) {
-    if (std::get<0>(x).empty() || !std::isalnum(std::get<0>(x)[0])) {
+    if (std::get<0>(x).empty() ||
+        !(std::isalnum(std::get<0>(x)[0]) || std::get<0>(x)[0] == '_')) {
       return false;
     }
 
@@ -352,7 +353,7 @@ void NRBuilder::createNamedTypeAlias(
   contract_enforce(m_root != nullptr);
   contract_enforce(type != nullptr && static_cast<Expr *>(type)->isType());
   contract_enforce(
-      !name.empty() && std::isalnum(name[0]) &&
+      !name.empty() && (std::isalnum(name[0]) || name[0] == '_') &&
       "Non alphanumeric starter characters are reserved internally");
 
   if (m_named_types.contains(name)) [[unlikely]] {
@@ -369,7 +370,7 @@ void NRBuilder::createNamedConstantDefinition(
         SOURCE_LOCATION_PARAM) {
   contract_enforce(m_root != nullptr);
   contract_enforce(
-      !name.empty() && std::isalnum(name[0]) &&
+      !name.empty() && (std::isalnum(name[0]) || name[0] == '_') &&
       "Non alphanumeric starter characters are reserved internally");
   contract_enforce(std::all_of(values.begin(), values.end(), [](auto e) {
     return !e.first.empty() && e.second != nullptr;
