@@ -206,7 +206,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
 #endif
 
   switch (n->getKind()) {
-    case QIR_NODE_BINEXPR: {
+    case NR_NODE_BINEXPR: {
       ss << "(";
       recurse(n->as<BinExpr>()->getLHS());
       ss << " ";
@@ -216,7 +216,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << ")";
       break;
     }
-    case QIR_NODE_UNEXPR: {
+    case NR_NODE_UNEXPR: {
       ss << "(";
       ss << n->as<UnExpr>()->getOp();
       ss << "(";
@@ -224,24 +224,24 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "))";
       break;
     }
-    case QIR_NODE_POST_UNEXPR: {
+    case NR_NODE_POST_UNEXPR: {
       ss << "(";
       recurse(n->as<PostUnExpr>()->getExpr());
       ss << n->as<PostUnExpr>()->getOp();
       ss << ")";
       break;
     }
-    case QIR_NODE_INT: {
+    case NR_NODE_INT: {
       recurse(n->as<Int>()->getType().value_or(nullptr));
       ss << " " << n->as<Int>()->getValueString();
       break;
     }
-    case QIR_NODE_FLOAT: {
+    case NR_NODE_FLOAT: {
       recurse(n->as<Float>()->getType().value_or(nullptr));
       ss << " " << n->as<Float>()->getValue();
       break;
     }
-    case QIR_NODE_LIST: {
+    case NR_NODE_LIST: {
       // Check if it matches the string literal pattern
       List *L = n->as<List>();
 
@@ -251,17 +251,17 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       bool is_cstring = false;
       std::string c_string;
       for (size_t i = 0; i < L->size(); i++) {
-        if (L->at(i)->getKind() != QIR_NODE_BINEXPR) {
+        if (L->at(i)->getKind() != NR_NODE_BINEXPR) {
           break;
         }
 
         BinExpr *BE = L->at(i)->as<BinExpr>();
 
-        if (BE->getLHS()->getKind() != QIR_NODE_INT) {
+        if (BE->getLHS()->getKind() != NR_NODE_INT) {
           break;
         }
 
-        if (BE->getRHS()->getKind() != QIR_NODE_I8_TY) {
+        if (BE->getRHS()->getKind() != NR_NODE_I8_TY) {
           break;
         }
 
@@ -295,11 +295,11 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       }
       break;
     }
-    case QIR_NODE_CALL: {
+    case NR_NODE_CALL: {
       auto tkind = n->as<Call>()->getTarget()->getKind();
-      if (tkind == QIR_NODE_LOCAL) {
+      if (tkind == NR_NODE_LOCAL) {
         ss << n->as<Call>()->getTarget()->as<Local>()->getName();
-      } else if (tkind == QIR_NODE_FN) {
+      } else if (tkind == NR_NODE_FN) {
         ss << n->as<Call>()->getTarget()->as<Fn>()->getName();
       } else {
         recurse(n->as<Call>()->getTarget());
@@ -315,13 +315,13 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << ")";
       break;
     }
-    case QIR_NODE_SEQ: {
+    case NR_NODE_SEQ: {
       ss << "seq {";
       state.indent++;
       indent(ss, state);
       for (auto it = n->as<Seq>()->getItems().begin();
            it != n->as<Seq>()->getItems().end(); ++it) {
-        if ((*it)->getKind() == QIR_NODE_IGN) {
+        if ((*it)->getKind() == NR_NODE_IGN) {
           continue;
         }
 
@@ -337,26 +337,26 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "}";
       break;
     }
-    case QIR_NODE_INDEX: {
+    case NR_NODE_INDEX: {
       recurse(n->as<Index>()->getExpr());
       ss << "[";
       recurse(n->as<Index>()->getIndex());
       ss << "]";
       break;
     }
-    case QIR_NODE_IDENT: {
+    case NR_NODE_IDENT: {
       recurse(n->as<Ident>()->getType().value_or(nullptr));
       ss << " " << n->as<Ident>()->getName();
       break;
     }
-    case QIR_NODE_EXTERN: {
+    case NR_NODE_EXTERN: {
       ss << "extern ";
       escape_string(ss, n->as<Extern>()->getAbiName());
       ss << " ";
       recurse(n->as<Extern>()->getValue());
       break;
     }
-    case QIR_NODE_LOCAL: {
+    case NR_NODE_LOCAL: {
       ss << "local ";
       ss << n->as<Local>()->getName();
       if (auto ty = n->as<Local>()->getValue()->getType()) {
@@ -368,21 +368,21 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       recurse(n->as<Local>()->getValue());
       break;
     }
-    case QIR_NODE_RET: {
+    case NR_NODE_RET: {
       ss << "ret ";
       recurse(n->as<Ret>()->getExpr());
       break;
     }
-    case QIR_NODE_BRK: {
+    case NR_NODE_BRK: {
       ss << "brk";
       break;
     }
-    case QIR_NODE_CONT: {
+    case NR_NODE_CONT: {
       ss << "cont";
       break;
     }
 
-    case QIR_NODE_IF: {
+    case NR_NODE_IF: {
       ss << "if (";
       recurse(n->as<If>()->getCond());
       ss << ") then ";
@@ -391,14 +391,14 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       recurse(n->as<If>()->getElse());
       break;
     }
-    case QIR_NODE_WHILE: {
+    case NR_NODE_WHILE: {
       ss << "while (";
       recurse(n->as<While>()->getCond());
       ss << ") ";
       recurse(n->as<While>()->getBody());
       break;
     }
-    case QIR_NODE_FOR: {
+    case NR_NODE_FOR: {
       ss << "for (";
       recurse(n->as<For>()->getInit());
       ss << "; ";
@@ -409,14 +409,14 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       recurse(n->as<For>()->getBody());
       break;
     }
-    case QIR_NODE_CASE: {
+    case NR_NODE_CASE: {
       ss << "case ";
       recurse(n->as<Case>()->getCond());
       ss << ": ";
       recurse(n->as<Case>()->getBody());
       break;
     }
-    case QIR_NODE_SWITCH: {
+    case NR_NODE_SWITCH: {
       ss << "switch (";
       recurse(n->as<Switch>()->getCond());
       ss << ") {";
@@ -435,7 +435,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "}";
       break;
     }
-    case QIR_NODE_FN: {
+    case NR_NODE_FN: {
       ss << "fn ";
       ss << n->as<Fn>()->getName();
       ss << "(";
@@ -460,87 +460,87 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       }
       break;
     }
-    case QIR_NODE_ASM: {
+    case NR_NODE_ASM: {
       qcore_implement();
     }
-    case QIR_NODE_IGN: {
+    case NR_NODE_IGN: {
       break;
     }
-    case QIR_NODE_U1_TY: {
+    case NR_NODE_U1_TY: {
       ss << "u1";
       break;
     }
-    case QIR_NODE_U8_TY: {
+    case NR_NODE_U8_TY: {
       ss << "u8";
       break;
     }
-    case QIR_NODE_U16_TY: {
+    case NR_NODE_U16_TY: {
       ss << "u16";
       break;
     }
-    case QIR_NODE_U32_TY: {
+    case NR_NODE_U32_TY: {
       ss << "u32";
       break;
     }
-    case QIR_NODE_U64_TY: {
+    case NR_NODE_U64_TY: {
       ss << "u64";
       break;
     }
-    case QIR_NODE_U128_TY: {
+    case NR_NODE_U128_TY: {
       ss << "u128";
       break;
     }
-    case QIR_NODE_I8_TY: {
+    case NR_NODE_I8_TY: {
       ss << "i8";
       break;
     }
-    case QIR_NODE_I16_TY: {
+    case NR_NODE_I16_TY: {
       ss << "i16";
       break;
     }
-    case QIR_NODE_I32_TY: {
+    case NR_NODE_I32_TY: {
       ss << "i32";
       break;
     }
-    case QIR_NODE_I64_TY: {
+    case NR_NODE_I64_TY: {
       ss << "i64";
       break;
     }
-    case QIR_NODE_I128_TY: {
+    case NR_NODE_I128_TY: {
       ss << "i128";
       break;
     }
-    case QIR_NODE_F16_TY: {
+    case NR_NODE_F16_TY: {
       ss << "f16";
       break;
     }
-    case QIR_NODE_F32_TY: {
+    case NR_NODE_F32_TY: {
       ss << "f32";
       break;
     }
-    case QIR_NODE_F64_TY: {
+    case NR_NODE_F64_TY: {
       ss << "f64";
       break;
     }
-    case QIR_NODE_F128_TY: {
+    case NR_NODE_F128_TY: {
       ss << "f128";
       break;
     }
-    case QIR_NODE_VOID_TY: {
+    case NR_NODE_VOID_TY: {
       ss << "void";
       break;
     }
-    case QIR_NODE_PTR_TY: {
+    case NR_NODE_PTR_TY: {
       recurse(n->as<PtrTy>()->getPointee());
       ss << "*";
       break;
     }
-    case QIR_NODE_OPAQUE_TY: {
+    case NR_NODE_OPAQUE_TY: {
       ss << "opaque ";
       ss << n->as<OpaqueTy>()->getName();
       break;
     }
-    case QIR_NODE_STRUCT_TY: {
+    case NR_NODE_STRUCT_TY: {
       uint64_t type_id = n->as<StructTy>()->getUniqId();
       if (!state.types.contains(type_id)) {
         typedefs << "%" << type_id << " = struct {";
@@ -548,8 +548,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
         indent(typedefs, state);
         for (auto it = n->as<StructTy>()->getFields().begin();
              it != n->as<StructTy>()->getFields().end(); ++it) {
-          if ((*it)->getKind() == QIR_NODE_STRUCT_TY ||
-              (*it)->getKind() == QIR_NODE_UNION_TY) {
+          if ((*it)->getKind() == NR_NODE_STRUCT_TY ||
+              (*it)->getKind() == NR_NODE_UNION_TY) {
             typedefs << "%" << (*it)->as<StructTy>()->getUniqId();
           } else {
             recurse_ex(*it, typedefs);
@@ -569,7 +569,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "%" << type_id;
       break;
     }
-    case QIR_NODE_UNION_TY: {
+    case NR_NODE_UNION_TY: {
       uint64_t type_id = n->as<UnionTy>()->getUniqId();
       if (!state.types.contains(type_id)) {
         typedefs << "%" << type_id << " = union {";
@@ -577,8 +577,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
         indent(typedefs, state);
         for (auto it = n->as<UnionTy>()->getFields().begin();
              it != n->as<UnionTy>()->getFields().end(); ++it) {
-          if ((*it)->getKind() == QIR_NODE_STRUCT_TY ||
-              (*it)->getKind() == QIR_NODE_UNION_TY) {
+          if ((*it)->getKind() == NR_NODE_STRUCT_TY ||
+              (*it)->getKind() == NR_NODE_UNION_TY) {
             typedefs << "%" << (*it)->as<StructTy>()->getUniqId();
           } else {
             recurse_ex(*it, typedefs);
@@ -598,14 +598,14 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "%" << type_id;
       break;
     }
-    case QIR_NODE_ARRAY_TY: {
+    case NR_NODE_ARRAY_TY: {
       ss << "[";
       recurse(n->as<ArrayTy>()->getElement());
       ss << "; " << n->as<ArrayTy>()->getCount();
       ss << "]";
       break;
     }
-    case QIR_NODE_FN_TY: {
+    case NR_NODE_FN_TY: {
       ss << "fn (";
       bool variadic = n->as<FnTy>()->getAttrs().contains(FnAttr::Variadic);
       for (auto it = n->as<FnTy>()->getParams().begin();
@@ -622,7 +622,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       recurse(n->as<FnTy>()->getReturn());
       break;
     }
-    case QIR_NODE_TMP: {
+    case NR_NODE_TMP: {
       ss << "`" << static_cast<uint64_t>(n->as<Tmp>()->getTmpType());
       ss << ";" << n->as<Tmp>()->getData().index() << "`";
       break;

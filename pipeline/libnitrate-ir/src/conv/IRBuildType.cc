@@ -407,97 +407,97 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
   std::optional<Expr *> E;
 
   switch (_for->getKind()) {
-    case QIR_NODE_U1_TY: {
+    case NR_NODE_U1_TY: {
       E = createBool(false);
       break;
     }
 
-    case QIR_NODE_U8_TY: {
+    case NR_NODE_U8_TY: {
       E = createFixedInteger(0, 8);
       break;
     }
 
-    case QIR_NODE_U16_TY: {
+    case NR_NODE_U16_TY: {
       E = createFixedInteger(0, 16);
       break;
     }
 
-    case QIR_NODE_U32_TY: {
+    case NR_NODE_U32_TY: {
       E = createFixedInteger(0, 32);
       break;
     }
 
-    case QIR_NODE_U64_TY: {
+    case NR_NODE_U64_TY: {
       E = createFixedInteger(0, 64);
       break;
     }
 
-    case QIR_NODE_U128_TY: {
+    case NR_NODE_U128_TY: {
       E = createFixedInteger(0, 128);
       break;
     }
 
-    case QIR_NODE_I8_TY: {
+    case NR_NODE_I8_TY: {
       E = createFixedInteger(0, 8);
       break;
     }
 
-    case QIR_NODE_I16_TY: {
+    case NR_NODE_I16_TY: {
       E = createFixedInteger(0, 16);
       break;
     }
 
-    case QIR_NODE_I32_TY: {
+    case NR_NODE_I32_TY: {
       E = createFixedInteger(0, 32);
       break;
     }
 
-    case QIR_NODE_I64_TY: {
+    case NR_NODE_I64_TY: {
       E = createFixedInteger(0, 64);
       break;
     }
 
-    case QIR_NODE_I128_TY: {
+    case NR_NODE_I128_TY: {
       E = createFixedInteger(0, 128);
       break;
     }
 
-    case QIR_NODE_F16_TY: {
+    case NR_NODE_F16_TY: {
       E = createFixedFloat(0.0f, FloatSize::F16);
       break;
     }
 
-    case QIR_NODE_F32_TY: {
+    case NR_NODE_F32_TY: {
       E = createFixedFloat(0.0f, FloatSize::F32);
       break;
     }
 
-    case QIR_NODE_F64_TY: {
+    case NR_NODE_F64_TY: {
       E = createFixedFloat(0.0f, FloatSize::F64);
       break;
     }
 
-    case QIR_NODE_F128_TY: {
+    case NR_NODE_F128_TY: {
       E = createFixedFloat(0.0f, FloatSize::F128);
       break;
     }
 
-    case QIR_NODE_VOID_TY: {
+    case NR_NODE_VOID_TY: {
       E = create<VoidTy>();
       break;
     }
 
-    case QIR_NODE_PTR_TY: {
+    case NR_NODE_PTR_TY: {
       E = create<BinExpr>(createFixedInteger(0, 64), _for, Op::BitcastAs);
       break;
     }
 
-    case QIR_NODE_OPAQUE_TY: {
+    case NR_NODE_OPAQUE_TY: {
       E = std::nullopt;
       break;
     }
 
-    case QIR_NODE_STRUCT_TY: {
+    case NR_NODE_STRUCT_TY: {
       StructTy *struct_ty = _for->as<StructTy>();
 
       std::vector<Expr *> fields(struct_ty->getFields().size());
@@ -516,7 +516,7 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
       break;
     }
 
-    case QIR_NODE_UNION_TY: {
+    case NR_NODE_UNION_TY: {
       UnionTy *union_ty = _for->as<UnionTy>();
 
       if (union_ty->getFields().empty()) {
@@ -528,7 +528,7 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
       break;
     }
 
-    case QIR_NODE_ARRAY_TY: {
+    case NR_NODE_ARRAY_TY: {
       auto array_ty = _for->as<ArrayTy>();
 
       /// FIXME: This is horribly inefficient in terms of memory, especially for
@@ -550,13 +550,13 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
       break;
     }
 
-    case QIR_NODE_FN_TY: {
+    case NR_NODE_FN_TY: {
       FnTy *fn_ty = _for->as<FnTy>();
       E = create<BinExpr>(createFixedInteger(0, 64), fn_ty, Op::BitcastAs);
       break;
     }
 
-    case QIR_NODE_TMP: {
+    case NR_NODE_TMP: {
       Tmp *tmp = _for->as<Tmp>();
       if (tmp->getTmpType() == TmpType::NAMED_TYPE) {
         std::string_view name = std::get<std::string_view>(tmp->getData());

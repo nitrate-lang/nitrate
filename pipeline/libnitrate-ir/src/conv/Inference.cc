@@ -42,12 +42,12 @@ using namespace nr;
 
 static bool is_unsigned_integer(nr_ty_t ty) {
   switch (ty) {
-    case QIR_NODE_U1_TY:
-    case QIR_NODE_U8_TY:
-    case QIR_NODE_U16_TY:
-    case QIR_NODE_U32_TY:
-    case QIR_NODE_U64_TY:
-    case QIR_NODE_U128_TY:
+    case NR_NODE_U1_TY:
+    case NR_NODE_U8_TY:
+    case NR_NODE_U16_TY:
+    case NR_NODE_U32_TY:
+    case NR_NODE_U64_TY:
+    case NR_NODE_U128_TY:
       return true;
     default:
       return false;
@@ -56,11 +56,11 @@ static bool is_unsigned_integer(nr_ty_t ty) {
 
 static bool is_signed_integer(nr_ty_t ty) {
   switch (ty) {
-    case QIR_NODE_I8_TY:
-    case QIR_NODE_I16_TY:
-    case QIR_NODE_I32_TY:
-    case QIR_NODE_I64_TY:
-    case QIR_NODE_I128_TY:
+    case NR_NODE_I8_TY:
+    case NR_NODE_I16_TY:
+    case NR_NODE_I32_TY:
+    case NR_NODE_I64_TY:
+    case NR_NODE_I128_TY:
       return true;
     default:
       return false;
@@ -69,21 +69,21 @@ static bool is_signed_integer(nr_ty_t ty) {
 
 static bool is_primitive_numeric(nr_ty_t ty) {
   switch (ty) {
-    case QIR_NODE_U1_TY:
-    case QIR_NODE_U8_TY:
-    case QIR_NODE_U16_TY:
-    case QIR_NODE_U32_TY:
-    case QIR_NODE_U64_TY:
-    case QIR_NODE_U128_TY:
-    case QIR_NODE_I8_TY:
-    case QIR_NODE_I16_TY:
-    case QIR_NODE_I32_TY:
-    case QIR_NODE_I64_TY:
-    case QIR_NODE_I128_TY:
-    case QIR_NODE_F16_TY:
-    case QIR_NODE_F32_TY:
-    case QIR_NODE_F64_TY:
-    case QIR_NODE_F128_TY:
+    case NR_NODE_U1_TY:
+    case NR_NODE_U8_TY:
+    case NR_NODE_U16_TY:
+    case NR_NODE_U32_TY:
+    case NR_NODE_U64_TY:
+    case NR_NODE_U128_TY:
+    case NR_NODE_I8_TY:
+    case NR_NODE_I16_TY:
+    case NR_NODE_I32_TY:
+    case NR_NODE_I64_TY:
+    case NR_NODE_I128_TY:
+    case NR_NODE_F16_TY:
+    case NR_NODE_F32_TY:
+    case NR_NODE_F64_TY:
+    case NR_NODE_F128_TY:
       return true;
     default:
       return false;
@@ -92,15 +92,15 @@ static bool is_primitive_numeric(nr_ty_t ty) {
 
 static Type *signed_complement(nr_ty_t ty) {
   switch (ty) {
-    case QIR_NODE_I8_TY:
+    case NR_NODE_I8_TY:
       return create<U8Ty>();
-    case QIR_NODE_I16_TY:
+    case NR_NODE_I16_TY:
       return create<U16Ty>();
-    case QIR_NODE_I32_TY:
+    case NR_NODE_I32_TY:
       return create<U32Ty>();
-    case QIR_NODE_I64_TY:
+    case NR_NODE_I64_TY:
       return create<U64Ty>();
-    case QIR_NODE_I128_TY:
+    case NR_NODE_I128_TY:
       return create<U128Ty>();
     default:
       return nullptr;
@@ -127,23 +127,23 @@ static Type *binexpr_promote(Type *L, Type *R, uint32_t PtrSizeBytes) {
   if (is_primitive_numeric(LT) && is_primitive_numeric(RT)) {
     ///===========================================================================
     /// NOTE: Floating point always takes precedence over integers.
-    if (L->is(QIR_NODE_VOID_TY) || R->is(QIR_NODE_VOID_TY)) {
+    if (L->is(NR_NODE_VOID_TY) || R->is(NR_NODE_VOID_TY)) {
       return nullptr;
     }
 
-    if (L->is(QIR_NODE_F128_TY) || R->is(QIR_NODE_F128_TY)) {
+    if (L->is(NR_NODE_F128_TY) || R->is(NR_NODE_F128_TY)) {
       return create<F128Ty>();
     }
 
-    if (L->is(QIR_NODE_F64_TY) || R->is(QIR_NODE_F64_TY)) {
+    if (L->is(NR_NODE_F64_TY) || R->is(NR_NODE_F64_TY)) {
       return create<F64Ty>();
     }
 
-    if (L->is(QIR_NODE_F32_TY) || R->is(QIR_NODE_F32_TY)) {
+    if (L->is(NR_NODE_F32_TY) || R->is(NR_NODE_F32_TY)) {
       return create<F32Ty>();
     }
 
-    if (L->is(QIR_NODE_F16_TY) || R->is(QIR_NODE_F16_TY)) {
+    if (L->is(NR_NODE_F16_TY) || R->is(NR_NODE_F16_TY)) {
       return create<F16Ty>();
     }
     ///===========================================================================
@@ -207,7 +207,7 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
     T = E->asType();
   } else {
     switch (E->getKind()) {
-      case QIR_NODE_BINEXPR: {
+      case NR_NODE_BINEXPR: {
         BinExpr *B = E->as<BinExpr>();
         switch (B->getOp()) {
           case Op::Plus: {
@@ -347,7 +347,7 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
         }
         break;
       }
-      case QIR_NODE_UNEXPR: {
+      case NR_NODE_UNEXPR: {
         UnExpr *U = E->as<UnExpr>();
         switch (E->as<UnExpr>()->getOp()) {
           case Op::Plus: {
@@ -362,7 +362,7 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
             Type *x = U->getExpr()->getType().value_or(nullptr);
             if (!x) {
               T = nullptr;
-            } else if (x->is(QIR_NODE_PTR_TY)) {
+            } else if (x->is(NR_NODE_PTR_TY)) {
               T = x->as<PtrTy>()->getPointee();
             } else {
               T = nullptr;  // Invalid operation: * is only valid on pointers
@@ -481,7 +481,7 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
         }
         break;
       }
-      case QIR_NODE_POST_UNEXPR: {
+      case NR_NODE_POST_UNEXPR: {
         PostUnExpr *P = E->as<PostUnExpr>();
         switch (E->as<PostUnExpr>()->getOp()) {
           case Op::Plus: {
@@ -603,7 +603,7 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
         }
         break;
       }
-      case QIR_NODE_INT: {
+      case NR_NODE_INT: {
         Int *I = E->as<Int>();
 
         uint8_t size = I->getSize();
@@ -626,7 +626,7 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
 
         break;
       }
-      case QIR_NODE_FLOAT: {
+      case NR_NODE_FLOAT: {
         Float *F = E->as<Float>();
 
         switch (F->getSize()) {
@@ -646,7 +646,7 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
 
         break;
       }
-      case QIR_NODE_LIST: {
+      case NR_NODE_LIST: {
         if (E->as<List>()->size() == 0) {
           T = create<StructTy>(StructFields());
         } else {
@@ -675,18 +675,18 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
         }
         break;
       }
-      case QIR_NODE_CALL: {
+      case NR_NODE_CALL: {
         Type *x = E->as<Call>()->getTarget()->getType().value_or(nullptr);
         if (!x) {
           T = nullptr;
         } else {
-          qcore_assert(x->getKind() == QIR_NODE_FN_TY,
+          qcore_assert(x->getKind() == NR_NODE_FN_TY,
                        "Call target must be a function");
           T = x->as<FnTy>()->getReturn();
         }
         break;
       }
-      case QIR_NODE_SEQ: {
+      case NR_NODE_SEQ: {
         if (E->as<Seq>()->getItems().empty()) {
           T = create<VoidTy>();
         } else {
@@ -694,7 +694,7 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
         }
         break;
       }
-      case QIR_NODE_INDEX: {
+      case NR_NODE_INDEX: {
         Type *B = E->as<Index>()->getExpr()->getType().value_or(nullptr);
         if (!B) {
           T = nullptr;
@@ -702,13 +702,13 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
         }
         Expr *V = E->as<Index>()->getIndex();
 
-        if (B->is(QIR_NODE_PTR_TY)) {  // *X -> X
+        if (B->is(NR_NODE_PTR_TY)) {  // *X -> X
           T = B->as<PtrTy>()->getPointee();
-        } else if (B->is(QIR_NODE_ARRAY_TY)) {  // [X; N] -> X
+        } else if (B->is(NR_NODE_ARRAY_TY)) {  // [X; N] -> X
           T = B->as<ArrayTy>()->getElement();
-        } else if (B->is(QIR_NODE_STRUCT_TY)) {  // struct { a, b, c } -> a | b
-                                                 // | c
-          if (!V->is(QIR_NODE_INT)) {
+        } else if (B->is(NR_NODE_STRUCT_TY)) {  // struct { a, b, c } -> a | b
+                                                // | c
+          if (!V->is(NR_NODE_INT)) {
             T = nullptr;  // Invalid must be of type int to index into a struct
           } else {
             nr::uint128_t num = V->as<Int>()->getValue();
@@ -718,8 +718,8 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
               T = nullptr;  // Invalid out of bounds
             }
           }
-        } else if (B->is(QIR_NODE_UNION_TY)) {
-          if (!V->is(QIR_NODE_INT)) {
+        } else if (B->is(NR_NODE_UNION_TY)) {
+          if (!V->is(NR_NODE_INT)) {
             T = nullptr;  // Invalid must be of type int to index into a union
           } else {
             nr::uint128_t num = V->as<Int>()->getValue();
@@ -735,53 +735,53 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
         }
         break;
       }
-      case QIR_NODE_IDENT: {
+      case NR_NODE_IDENT: {
         if (E->as<Ident>()->getWhat() != nullptr) {
           T = E->as<Ident>()->getWhat()->getType().value_or(nullptr);
         }
         break;
       }
-      case QIR_NODE_EXTERN: {
+      case NR_NODE_EXTERN: {
         T = create<VoidTy>();
         break;
       }
-      case QIR_NODE_LOCAL: {
+      case NR_NODE_LOCAL: {
         T = E->as<Local>()->getValue()->getType().value_or(nullptr);
         break;
       }
-      case QIR_NODE_RET: {
+      case NR_NODE_RET: {
         T = E->as<Ret>()->getExpr()->getType().value_or(nullptr);
         break;
       }
-      case QIR_NODE_BRK: {
+      case NR_NODE_BRK: {
         T = create<VoidTy>();
         break;
       }
-      case QIR_NODE_CONT: {
+      case NR_NODE_CONT: {
         T = create<VoidTy>();
         break;
       }
-      case QIR_NODE_IF: {
+      case NR_NODE_IF: {
         T = create<VoidTy>();
         break;
       }
-      case QIR_NODE_WHILE: {
+      case NR_NODE_WHILE: {
         T = create<VoidTy>();
         break;
       }
-      case QIR_NODE_FOR: {
+      case NR_NODE_FOR: {
         T = create<VoidTy>();
         break;
       }
-      case QIR_NODE_CASE: {
+      case NR_NODE_CASE: {
         T = create<VoidTy>();
         break;
       }
-      case QIR_NODE_SWITCH: {
+      case NR_NODE_SWITCH: {
         T = create<VoidTy>();
         break;
       }
-      case QIR_NODE_FN: {
+      case NR_NODE_FN: {
         FnParams params;
         for (auto &param : E->as<Fn>()->getParams()) {
           Type *paramType = param.first->getType().value_or(nullptr);
@@ -802,15 +802,15 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
                          std::move(attrs));
         break;
       }
-      case QIR_NODE_ASM: {
+      case NR_NODE_ASM: {
         T = create<VoidTy>();
         break;
       }
-      case QIR_NODE_IGN: {
+      case NR_NODE_IGN: {
         T = create<VoidTy>();
         break;
       }
-      case QIR_NODE_TMP: {
+      case NR_NODE_TMP: {
         T = nullptr;
         break;
       }
@@ -826,39 +826,39 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
 
 bool nr::Type::hasKnownSize() noexcept {
   switch (this->getKind()) {
-    case QIR_NODE_U1_TY:
-    case QIR_NODE_U8_TY:
-    case QIR_NODE_U16_TY:
-    case QIR_NODE_U32_TY:
-    case QIR_NODE_U64_TY:
-    case QIR_NODE_U128_TY:
-    case QIR_NODE_I8_TY:
-    case QIR_NODE_I16_TY:
-    case QIR_NODE_I32_TY:
-    case QIR_NODE_I64_TY:
-    case QIR_NODE_I128_TY:
-    case QIR_NODE_F16_TY:
-    case QIR_NODE_F32_TY:
-    case QIR_NODE_F64_TY:
-    case QIR_NODE_F128_TY:
-    case QIR_NODE_VOID_TY:
-    case QIR_NODE_PTR_TY:
-    case QIR_NODE_FN_TY:
+    case NR_NODE_U1_TY:
+    case NR_NODE_U8_TY:
+    case NR_NODE_U16_TY:
+    case NR_NODE_U32_TY:
+    case NR_NODE_U64_TY:
+    case NR_NODE_U128_TY:
+    case NR_NODE_I8_TY:
+    case NR_NODE_I16_TY:
+    case NR_NODE_I32_TY:
+    case NR_NODE_I64_TY:
+    case NR_NODE_I128_TY:
+    case NR_NODE_F16_TY:
+    case NR_NODE_F32_TY:
+    case NR_NODE_F64_TY:
+    case NR_NODE_F128_TY:
+    case NR_NODE_VOID_TY:
+    case NR_NODE_PTR_TY:
+    case NR_NODE_FN_TY:
       return true;
-    case QIR_NODE_STRUCT_TY: {
+    case NR_NODE_STRUCT_TY: {
       return std::all_of(this->as<StructTy>()->getFields().begin(),
                          this->as<StructTy>()->getFields().end(),
                          [](Type *T) { return T->hasKnownSize(); });
     }
-    case QIR_NODE_UNION_TY: {
+    case NR_NODE_UNION_TY: {
       return std::all_of(this->as<UnionTy>()->getFields().begin(),
                          this->as<UnionTy>()->getFields().end(),
                          [](Type *T) { return T->hasKnownSize(); });
     }
-    case QIR_NODE_ARRAY_TY: {
+    case NR_NODE_ARRAY_TY: {
       return this->as<ArrayTy>()->getElement()->hasKnownSize();
     }
-    case QIR_NODE_OPAQUE_TY: {
+    case NR_NODE_OPAQUE_TY: {
       return false;
     }
     default: {
@@ -869,39 +869,39 @@ bool nr::Type::hasKnownSize() noexcept {
 
 bool nr::Type::hasKnownAlign() noexcept {
   switch (this->getKind()) {
-    case QIR_NODE_U1_TY:
-    case QIR_NODE_U8_TY:
-    case QIR_NODE_U16_TY:
-    case QIR_NODE_U32_TY:
-    case QIR_NODE_U64_TY:
-    case QIR_NODE_U128_TY:
-    case QIR_NODE_I8_TY:
-    case QIR_NODE_I16_TY:
-    case QIR_NODE_I32_TY:
-    case QIR_NODE_I64_TY:
-    case QIR_NODE_I128_TY:
-    case QIR_NODE_F16_TY:
-    case QIR_NODE_F32_TY:
-    case QIR_NODE_F64_TY:
-    case QIR_NODE_F128_TY:
-    case QIR_NODE_VOID_TY:
-    case QIR_NODE_PTR_TY:
-    case QIR_NODE_FN_TY:
+    case NR_NODE_U1_TY:
+    case NR_NODE_U8_TY:
+    case NR_NODE_U16_TY:
+    case NR_NODE_U32_TY:
+    case NR_NODE_U64_TY:
+    case NR_NODE_U128_TY:
+    case NR_NODE_I8_TY:
+    case NR_NODE_I16_TY:
+    case NR_NODE_I32_TY:
+    case NR_NODE_I64_TY:
+    case NR_NODE_I128_TY:
+    case NR_NODE_F16_TY:
+    case NR_NODE_F32_TY:
+    case NR_NODE_F64_TY:
+    case NR_NODE_F128_TY:
+    case NR_NODE_VOID_TY:
+    case NR_NODE_PTR_TY:
+    case NR_NODE_FN_TY:
       return true;
-    case QIR_NODE_STRUCT_TY: {
+    case NR_NODE_STRUCT_TY: {
       return std::all_of(this->as<StructTy>()->getFields().begin(),
                          this->as<StructTy>()->getFields().end(),
                          [](Type *T) { return T->hasKnownAlign(); });
     }
-    case QIR_NODE_UNION_TY: {
+    case NR_NODE_UNION_TY: {
       return std::all_of(this->as<UnionTy>()->getFields().begin(),
                          this->as<UnionTy>()->getFields().end(),
                          [](Type *T) { return T->hasKnownAlign(); });
     }
-    case QIR_NODE_ARRAY_TY: {
+    case NR_NODE_ARRAY_TY: {
       return this->as<ArrayTy>()->getElement()->hasKnownAlign();
     }
-    case QIR_NODE_OPAQUE_TY: {
+    case NR_NODE_OPAQUE_TY: {
       return false;
     }
     default: {
@@ -917,94 +917,94 @@ CPP_EXPORT uint64_t nr::Type::getSizeBits(uint32_t PtrSizeBytes) {
   uint64_t size;
 
   switch (this->getKind()) {
-    case QIR_NODE_U1_TY: {
+    case NR_NODE_U1_TY: {
       size = 8;
       break;
     }
-    case QIR_NODE_U8_TY: {
+    case NR_NODE_U8_TY: {
       size = 8;
       break;
     }
-    case QIR_NODE_U16_TY: {
+    case NR_NODE_U16_TY: {
       size = 16;
       break;
     }
-    case QIR_NODE_U32_TY: {
+    case NR_NODE_U32_TY: {
       size = 32;
       break;
     }
-    case QIR_NODE_U64_TY: {
+    case NR_NODE_U64_TY: {
       size = 64;
       break;
     }
-    case QIR_NODE_U128_TY: {
+    case NR_NODE_U128_TY: {
       size = 128;
       break;
     }
-    case QIR_NODE_I8_TY: {
+    case NR_NODE_I8_TY: {
       size = 8;
       break;
     }
-    case QIR_NODE_I16_TY: {
+    case NR_NODE_I16_TY: {
       size = 16;
       break;
     }
-    case QIR_NODE_I32_TY: {
+    case NR_NODE_I32_TY: {
       size = 32;
       break;
     }
-    case QIR_NODE_I64_TY: {
+    case NR_NODE_I64_TY: {
       size = 64;
       break;
     }
-    case QIR_NODE_I128_TY: {
+    case NR_NODE_I128_TY: {
       size = 128;
       break;
     }
-    case QIR_NODE_F16_TY: {
+    case NR_NODE_F16_TY: {
       size = 16;
       break;
     }
-    case QIR_NODE_F32_TY: {
+    case NR_NODE_F32_TY: {
       size = 32;
       break;
     }
-    case QIR_NODE_F64_TY: {
+    case NR_NODE_F64_TY: {
       size = 64;
       break;
     }
-    case QIR_NODE_F128_TY: {
+    case NR_NODE_F128_TY: {
       size = 128;
       break;
     }
-    case QIR_NODE_VOID_TY: {
+    case NR_NODE_VOID_TY: {
       size = 0;
       break;
     }
-    case QIR_NODE_PTR_TY: {
+    case NR_NODE_PTR_TY: {
       size = PtrSizeBytes * 8;
       break;
     }
-    case QIR_NODE_STRUCT_TY: {
+    case NR_NODE_STRUCT_TY: {
       size = 0;
       for (auto &field : this->as<StructTy>()->getFields()) {
         size += field->getSizeBits(PtrSizeBytes);
       }
       break;
     }
-    case QIR_NODE_UNION_TY: {
+    case NR_NODE_UNION_TY: {
       size = 0;
       for (auto &field : this->as<UnionTy>()->getFields()) {
         size = std::max(size, field->getSizeBits(PtrSizeBytes));
       }
       break;
     }
-    case QIR_NODE_ARRAY_TY: {
+    case NR_NODE_ARRAY_TY: {
       size = this->as<ArrayTy>()->getElement()->getSizeBits(PtrSizeBytes) *
              this->as<ArrayTy>()->getCount();
       break;
     }
-    case QIR_NODE_FN_TY: {
+    case NR_NODE_FN_TY: {
       size = PtrSizeBytes * 8;
       break;
     }
@@ -1023,93 +1023,93 @@ CPP_EXPORT uint64_t nr::Type::getAlignBits(uint32_t PtrSizeBytes) {
   uint64_t align;
 
   switch (this->getKind()) {
-    case QIR_NODE_U1_TY: {
+    case NR_NODE_U1_TY: {
       align = 8;
       break;
     }
-    case QIR_NODE_U8_TY: {
+    case NR_NODE_U8_TY: {
       align = 8;
       break;
     }
-    case QIR_NODE_U16_TY: {
+    case NR_NODE_U16_TY: {
       align = 16;
       break;
     }
-    case QIR_NODE_U32_TY: {
+    case NR_NODE_U32_TY: {
       align = 32;
       break;
     }
-    case QIR_NODE_U64_TY: {
+    case NR_NODE_U64_TY: {
       align = 64;
       break;
     }
-    case QIR_NODE_U128_TY: {
+    case NR_NODE_U128_TY: {
       align = 128;
       break;
     }
-    case QIR_NODE_I8_TY: {
+    case NR_NODE_I8_TY: {
       align = 8;
       break;
     }
-    case QIR_NODE_I16_TY: {
+    case NR_NODE_I16_TY: {
       align = 16;
       break;
     }
-    case QIR_NODE_I32_TY: {
+    case NR_NODE_I32_TY: {
       align = 32;
       break;
     }
-    case QIR_NODE_I64_TY: {
+    case NR_NODE_I64_TY: {
       align = 64;
       break;
     }
-    case QIR_NODE_I128_TY: {
+    case NR_NODE_I128_TY: {
       align = 128;
       break;
     }
-    case QIR_NODE_F16_TY: {
+    case NR_NODE_F16_TY: {
       align = 16;
       break;
     }
-    case QIR_NODE_F32_TY: {
+    case NR_NODE_F32_TY: {
       align = 32;
       break;
     }
-    case QIR_NODE_F64_TY: {
+    case NR_NODE_F64_TY: {
       align = 64;
       break;
     }
-    case QIR_NODE_F128_TY: {
+    case NR_NODE_F128_TY: {
       align = 128;
       break;
     }
-    case QIR_NODE_VOID_TY: {
+    case NR_NODE_VOID_TY: {
       align = 0;
       break;
     }
-    case QIR_NODE_PTR_TY: {
+    case NR_NODE_PTR_TY: {
       align = PtrSizeBytes * 8;
       break;
     }
-    case QIR_NODE_STRUCT_TY: {
+    case NR_NODE_STRUCT_TY: {
       align = 0;
       for (const auto &field : this->as<StructTy>()->getFields()) {
         align = std::max(align, field->getSizeBits(PtrSizeBytes));
       }
       break;
     }
-    case QIR_NODE_UNION_TY: {
+    case NR_NODE_UNION_TY: {
       align = 0;
       for (const auto &field : this->as<UnionTy>()->getFields()) {
         align = std::max(align, field->getSizeBits(PtrSizeBytes));
       }
       break;
     }
-    case QIR_NODE_ARRAY_TY: {
+    case NR_NODE_ARRAY_TY: {
       align = this->as<ArrayTy>()->getElement()->getAlignBits(PtrSizeBytes);
       break;
     }
-    case QIR_NODE_FN_TY: {
+    case NR_NODE_FN_TY: {
       align = PtrSizeBytes * 8;
       break;
     }

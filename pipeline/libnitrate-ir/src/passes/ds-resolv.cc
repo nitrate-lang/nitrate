@@ -158,7 +158,7 @@
 // }
 
 // static bool resolve_node(nr::Expr **_cur) {
-//   if ((*_cur)->getKind() != QIR_NODE_TMP) {
+//   if ((*_cur)->getKind() != NR_NODE_TMP) {
 //     return true;
 //   }
 
@@ -175,7 +175,7 @@
 //       const Expr *base = std::get<0>(info);
 //       const auto &user_args = std::get<1>(info);
 
-//       if (base->getKind() == QIR_NODE_IDENT) { /* Direct call */
+//       if (base->getKind() == NR_NODE_IDENT) { /* Direct call */
 //         std::string funcname = std::string(base->as<Ident>()->getName());
 
 //         { /* Resolve the function */
@@ -457,7 +457,7 @@
 //   bool error = false;
 
 //   auto cb = [&](Expr *, Expr **_cur) -> IterOp {
-//     if ((*_cur)->getKind() != QIR_NODE_IDENT) {
+//     if ((*_cur)->getKind() != NR_NODE_IDENT) {
 //       return IterOp::Proceed;
 //     }
 
@@ -494,7 +494,7 @@
 //   /// Resolve function parameters
 
 //   auto cb2 = [&](Expr *, Expr **_cur) -> IterOp {
-//     if ((*_cur)->getKind() != QIR_NODE_FN) {
+//     if ((*_cur)->getKind() != NR_NODE_FN) {
 //       return IterOp::Proceed;
 //     }
 
@@ -502,11 +502,11 @@
 //     auto name = cur->getName();
 
 //     auto inner = [name, mod](Expr *, Expr **_cur) -> IterOp {
-//       if ((*_cur)->getKind() == QIR_NODE_FN) {
+//       if ((*_cur)->getKind() == NR_NODE_FN) {
 //         return IterOp::SkipChildren;
 //       }
 
-//       if ((*_cur)->getKind() != QIR_NODE_IDENT) {
+//       if ((*_cur)->getKind() != NR_NODE_IDENT) {
 //         return IterOp::Proceed;
 //       }
 
@@ -548,7 +548,7 @@
 //   ///=============================================================================
 
 //   auto cb3 = [&](Expr *, Expr **_cur) -> IterOp {
-//     if ((*_cur)->getKind() != QIR_NODE_IDENT) {
+//     if ((*_cur)->getKind() != NR_NODE_IDENT) {
 //       return IterOp::Proceed;
 //     }
 

@@ -141,97 +141,97 @@ namespace nr {
     template <typename T>
     static constexpr nr_ty_t getTypeCode() noexcept {
       if constexpr (std::is_same_v<T, BinExpr>) {
-        return QIR_NODE_BINEXPR;
+        return NR_NODE_BINEXPR;
       } else if constexpr (std::is_same_v<T, UnExpr>) {
-        return QIR_NODE_UNEXPR;
+        return NR_NODE_UNEXPR;
       } else if constexpr (std::is_same_v<T, PostUnExpr>) {
-        return QIR_NODE_POST_UNEXPR;
+        return NR_NODE_POST_UNEXPR;
       } else if constexpr (std::is_same_v<T, Int>) {
-        return QIR_NODE_INT;
+        return NR_NODE_INT;
       } else if constexpr (std::is_same_v<T, Float>) {
-        return QIR_NODE_FLOAT;
+        return NR_NODE_FLOAT;
       } else if constexpr (std::is_same_v<T, List>) {
-        return QIR_NODE_LIST;
+        return NR_NODE_LIST;
       } else if constexpr (std::is_same_v<T, Call>) {
-        return QIR_NODE_CALL;
+        return NR_NODE_CALL;
       } else if constexpr (std::is_same_v<T, Seq>) {
-        return QIR_NODE_SEQ;
+        return NR_NODE_SEQ;
       } else if constexpr (std::is_same_v<T, Index>) {
-        return QIR_NODE_INDEX;
+        return NR_NODE_INDEX;
       } else if constexpr (std::is_same_v<T, Ident>) {
-        return QIR_NODE_IDENT;
+        return NR_NODE_IDENT;
       } else if constexpr (std::is_same_v<T, Extern>) {
-        return QIR_NODE_EXTERN;
+        return NR_NODE_EXTERN;
       } else if constexpr (std::is_same_v<T, Local>) {
-        return QIR_NODE_LOCAL;
+        return NR_NODE_LOCAL;
       } else if constexpr (std::is_same_v<T, Ret>) {
-        return QIR_NODE_RET;
+        return NR_NODE_RET;
       } else if constexpr (std::is_same_v<T, Brk>) {
-        return QIR_NODE_BRK;
+        return NR_NODE_BRK;
       } else if constexpr (std::is_same_v<T, Cont>) {
-        return QIR_NODE_CONT;
+        return NR_NODE_CONT;
       } else if constexpr (std::is_same_v<T, If>) {
-        return QIR_NODE_IF;
+        return NR_NODE_IF;
       } else if constexpr (std::is_same_v<T, While>) {
-        return QIR_NODE_WHILE;
+        return NR_NODE_WHILE;
       } else if constexpr (std::is_same_v<T, For>) {
-        return QIR_NODE_FOR;
+        return NR_NODE_FOR;
       } else if constexpr (std::is_same_v<T, Case>) {
-        return QIR_NODE_CASE;
+        return NR_NODE_CASE;
       } else if constexpr (std::is_same_v<T, Switch>) {
-        return QIR_NODE_SWITCH;
+        return NR_NODE_SWITCH;
       } else if constexpr (std::is_same_v<T, Fn>) {
-        return QIR_NODE_FN;
+        return NR_NODE_FN;
       } else if constexpr (std::is_same_v<T, Asm>) {
-        return QIR_NODE_ASM;
+        return NR_NODE_ASM;
       } else if constexpr (std::is_same_v<T, Expr>) {
-        return QIR_NODE_IGN;
+        return NR_NODE_IGN;
       } else if constexpr (std::is_same_v<T, U1Ty>) {
-        return QIR_NODE_U1_TY;
+        return NR_NODE_U1_TY;
       } else if constexpr (std::is_same_v<T, U8Ty>) {
-        return QIR_NODE_U8_TY;
+        return NR_NODE_U8_TY;
       } else if constexpr (std::is_same_v<T, U16Ty>) {
-        return QIR_NODE_U16_TY;
+        return NR_NODE_U16_TY;
       } else if constexpr (std::is_same_v<T, U32Ty>) {
-        return QIR_NODE_U32_TY;
+        return NR_NODE_U32_TY;
       } else if constexpr (std::is_same_v<T, U64Ty>) {
-        return QIR_NODE_U64_TY;
+        return NR_NODE_U64_TY;
       } else if constexpr (std::is_same_v<T, U128Ty>) {
-        return QIR_NODE_U128_TY;
+        return NR_NODE_U128_TY;
       } else if constexpr (std::is_same_v<T, I8Ty>) {
-        return QIR_NODE_I8_TY;
+        return NR_NODE_I8_TY;
       } else if constexpr (std::is_same_v<T, I16Ty>) {
-        return QIR_NODE_I16_TY;
+        return NR_NODE_I16_TY;
       } else if constexpr (std::is_same_v<T, I32Ty>) {
-        return QIR_NODE_I32_TY;
+        return NR_NODE_I32_TY;
       } else if constexpr (std::is_same_v<T, I64Ty>) {
-        return QIR_NODE_I64_TY;
+        return NR_NODE_I64_TY;
       } else if constexpr (std::is_same_v<T, I128Ty>) {
-        return QIR_NODE_I128_TY;
+        return NR_NODE_I128_TY;
       } else if constexpr (std::is_same_v<T, F16Ty>) {
-        return QIR_NODE_F16_TY;
+        return NR_NODE_F16_TY;
       } else if constexpr (std::is_same_v<T, F32Ty>) {
-        return QIR_NODE_F32_TY;
+        return NR_NODE_F32_TY;
       } else if constexpr (std::is_same_v<T, F64Ty>) {
-        return QIR_NODE_F64_TY;
+        return NR_NODE_F64_TY;
       } else if constexpr (std::is_same_v<T, F128Ty>) {
-        return QIR_NODE_F128_TY;
+        return NR_NODE_F128_TY;
       } else if constexpr (std::is_same_v<T, VoidTy>) {
-        return QIR_NODE_VOID_TY;
+        return NR_NODE_VOID_TY;
       } else if constexpr (std::is_same_v<T, PtrTy>) {
-        return QIR_NODE_PTR_TY;
+        return NR_NODE_PTR_TY;
       } else if constexpr (std::is_same_v<T, OpaqueTy>) {
-        return QIR_NODE_OPAQUE_TY;
+        return NR_NODE_OPAQUE_TY;
       } else if constexpr (std::is_same_v<T, StructTy>) {
-        return QIR_NODE_STRUCT_TY;
+        return NR_NODE_STRUCT_TY;
       } else if constexpr (std::is_same_v<T, UnionTy>) {
-        return QIR_NODE_UNION_TY;
+        return NR_NODE_UNION_TY;
       } else if constexpr (std::is_same_v<T, ArrayTy>) {
-        return QIR_NODE_ARRAY_TY;
+        return NR_NODE_ARRAY_TY;
       } else if constexpr (std::is_same_v<T, FnTy>) {
-        return QIR_NODE_FN_TY;
+        return NR_NODE_FN_TY;
       } else if constexpr (std::is_same_v<T, Tmp>) {
-        return QIR_NODE_TMP;
+        return NR_NODE_TMP;
       } else {
         static_assert(
             !std::is_same_v<T, T>,
@@ -241,29 +241,29 @@ namespace nr {
 
     constexpr bool isType() const noexcept {
       switch (getKind()) {
-        case QIR_NODE_U1_TY:
-        case QIR_NODE_U8_TY:
-        case QIR_NODE_U16_TY:
-        case QIR_NODE_U32_TY:
-        case QIR_NODE_U64_TY:
-        case QIR_NODE_U128_TY:
-        case QIR_NODE_I8_TY:
-        case QIR_NODE_I16_TY:
-        case QIR_NODE_I32_TY:
-        case QIR_NODE_I64_TY:
-        case QIR_NODE_I128_TY:
-        case QIR_NODE_F16_TY:
-        case QIR_NODE_F32_TY:
-        case QIR_NODE_F64_TY:
-        case QIR_NODE_F128_TY:
-        case QIR_NODE_VOID_TY:
-        case QIR_NODE_PTR_TY:
-        case QIR_NODE_OPAQUE_TY:
-        case QIR_NODE_STRUCT_TY:
-        case QIR_NODE_UNION_TY:
-        case QIR_NODE_ARRAY_TY:
-        case QIR_NODE_FN_TY:
-        case QIR_NODE_TMP:
+        case NR_NODE_U1_TY:
+        case NR_NODE_U8_TY:
+        case NR_NODE_U16_TY:
+        case NR_NODE_U32_TY:
+        case NR_NODE_U64_TY:
+        case NR_NODE_U128_TY:
+        case NR_NODE_I8_TY:
+        case NR_NODE_I16_TY:
+        case NR_NODE_I32_TY:
+        case NR_NODE_I64_TY:
+        case NR_NODE_I128_TY:
+        case NR_NODE_F16_TY:
+        case NR_NODE_F32_TY:
+        case NR_NODE_F64_TY:
+        case NR_NODE_F128_TY:
+        case NR_NODE_VOID_TY:
+        case NR_NODE_PTR_TY:
+        case NR_NODE_OPAQUE_TY:
+        case NR_NODE_STRUCT_TY:
+        case NR_NODE_UNION_TY:
+        case NR_NODE_ARRAY_TY:
+        case NR_NODE_FN_TY:
+        case NR_NODE_TMP:
           return true;
         default:
           return false;
@@ -271,7 +271,7 @@ namespace nr {
     }
 
     constexpr bool isLiteral() const noexcept {
-      return m_node_type == QIR_NODE_INT || m_node_type == QIR_NODE_FLOAT;
+      return m_node_type == NR_NODE_INT || m_node_type == NR_NODE_FLOAT;
     }
 
     // Returns "" if the construct is not named.
@@ -481,7 +481,7 @@ namespace nr {
 
   public:
     BinExpr(Expr *lhs, Expr *rhs, Op op)
-        : Expr(QIR_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
+        : Expr(NR_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
     Expr *getLHS() noexcept { return m_lhs; }
     Expr *getRHS() noexcept { return m_rhs; }
@@ -501,7 +501,7 @@ namespace nr {
     Op m_op;
 
   public:
-    UnExpr(Expr *expr, Op op) : Expr(QIR_NODE_UNEXPR), m_expr(expr), m_op(op) {}
+    UnExpr(Expr *expr, Op op) : Expr(NR_NODE_UNEXPR), m_expr(expr), m_op(op) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Op getOp() noexcept { return m_op; }
@@ -520,7 +520,7 @@ namespace nr {
 
   public:
     PostUnExpr(Expr *expr, Op op)
-        : Expr(QIR_NODE_POST_UNEXPR), m_expr(expr), m_op(op) {}
+        : Expr(NR_NODE_POST_UNEXPR), m_expr(expr), m_op(op) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Op getOp() noexcept { return m_op; }
@@ -543,7 +543,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    U1Ty() : Type(QIR_NODE_U1_TY) {}
+    U1Ty() : Type(NR_NODE_U1_TY) {}
   };
 
   class U8Ty final : public Type {
@@ -552,7 +552,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    U8Ty() : Type(QIR_NODE_U8_TY) {}
+    U8Ty() : Type(NR_NODE_U8_TY) {}
   };
 
   class U16Ty final : public Type {
@@ -561,7 +561,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    U16Ty() : Type(QIR_NODE_U16_TY) {}
+    U16Ty() : Type(NR_NODE_U16_TY) {}
   };
 
   class U32Ty final : public Type {
@@ -570,7 +570,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    U32Ty() : Type(QIR_NODE_U32_TY) {}
+    U32Ty() : Type(NR_NODE_U32_TY) {}
   };
 
   class U64Ty final : public Type {
@@ -579,7 +579,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    U64Ty() : Type(QIR_NODE_U64_TY) {}
+    U64Ty() : Type(NR_NODE_U64_TY) {}
   };
 
   class U128Ty final : public Type {
@@ -588,7 +588,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    U128Ty() : Type(QIR_NODE_U128_TY) {}
+    U128Ty() : Type(NR_NODE_U128_TY) {}
   };
 
   class I8Ty final : public Type {
@@ -597,7 +597,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    I8Ty() : Type(QIR_NODE_I8_TY) {}
+    I8Ty() : Type(NR_NODE_I8_TY) {}
   };
 
   class I16Ty final : public Type {
@@ -606,7 +606,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    I16Ty() : Type(QIR_NODE_I16_TY){};
+    I16Ty() : Type(NR_NODE_I16_TY){};
   };
 
   class I32Ty final : public Type {
@@ -615,7 +615,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    I32Ty() : Type(QIR_NODE_I32_TY) {}
+    I32Ty() : Type(NR_NODE_I32_TY) {}
   };
 
   class I64Ty final : public Type {
@@ -624,7 +624,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    I64Ty() : Type(QIR_NODE_I64_TY) {}
+    I64Ty() : Type(NR_NODE_I64_TY) {}
   };
 
   class I128Ty final : public Type {
@@ -633,7 +633,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    I128Ty() : Type(QIR_NODE_I128_TY) {}
+    I128Ty() : Type(NR_NODE_I128_TY) {}
   };
 
   class F16Ty final : public Type {
@@ -642,7 +642,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    F16Ty() : Type(QIR_NODE_F16_TY) {}
+    F16Ty() : Type(NR_NODE_F16_TY) {}
   };
 
   class F32Ty final : public Type {
@@ -651,7 +651,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    F32Ty() : Type(QIR_NODE_F32_TY) {}
+    F32Ty() : Type(NR_NODE_F32_TY) {}
   };
 
   class F64Ty final : public Type {
@@ -660,7 +660,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    F64Ty() : Type(QIR_NODE_F64_TY) {}
+    F64Ty() : Type(NR_NODE_F64_TY) {}
   };
 
   class F128Ty final : public Type {
@@ -669,7 +669,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    F128Ty() : Type(QIR_NODE_F128_TY) {}
+    F128Ty() : Type(NR_NODE_F128_TY) {}
   };
 
   class VoidTy final : public Type {
@@ -678,7 +678,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    VoidTy() : Type(QIR_NODE_VOID_TY) {}
+    VoidTy() : Type(NR_NODE_VOID_TY) {}
   };
 
   /// ===========================================================================
@@ -697,7 +697,7 @@ namespace nr {
     Type *m_pointee;
 
   public:
-    PtrTy(Type *pointee) : Type(QIR_NODE_PTR_TY), m_pointee(pointee) {}
+    PtrTy(Type *pointee) : Type(NR_NODE_PTR_TY), m_pointee(pointee) {}
 
     Type *getPointee() noexcept { return m_pointee; }
   };
@@ -710,7 +710,7 @@ namespace nr {
     std::string_view m_name;
 
   public:
-    OpaqueTy(std::string_view name) : Type(QIR_NODE_OPAQUE_TY), m_name(name) {}
+    OpaqueTy(std::string_view name) : Type(NR_NODE_OPAQUE_TY), m_name(name) {}
   };
 
   typedef std::vector<Type *, Arena<Type *>> StructFields;
@@ -724,7 +724,7 @@ namespace nr {
 
   public:
     StructTy(const StructFields &fields)
-        : Type(QIR_NODE_STRUCT_TY), m_fields(fields) {}
+        : Type(NR_NODE_STRUCT_TY), m_fields(fields) {}
 
     const StructFields &getFields() noexcept { return m_fields; }
   };
@@ -740,7 +740,7 @@ namespace nr {
 
   public:
     UnionTy(const UnionFields &fields)
-        : Type(QIR_NODE_UNION_TY), m_fields(fields) {}
+        : Type(NR_NODE_UNION_TY), m_fields(fields) {}
 
     const UnionFields &getFields() noexcept { return m_fields; }
   };
@@ -755,7 +755,7 @@ namespace nr {
 
   public:
     ArrayTy(Type *element, size_t size)
-        : Type(QIR_NODE_ARRAY_TY), m_element(element), m_size(size) {}
+        : Type(NR_NODE_ARRAY_TY), m_element(element), m_size(size) {}
 
     Type *getElement() noexcept { return m_element; }
     size_t getCount() { return m_size; }
@@ -781,7 +781,7 @@ namespace nr {
 
   public:
     FnTy(const FnParams &params, Type *ret, const FnAttrs &attrs)
-        : Type(QIR_NODE_FN_TY),
+        : Type(NR_NODE_FN_TY),
           m_params(params),
           m_attrs(attrs),
           m_return(ret) {}
@@ -813,10 +813,10 @@ namespace nr {
 
   public:
     Int(uint128_t val, uint8_t size)
-        : Expr(QIR_NODE_INT), m_value(val), m_size(size) {}
+        : Expr(NR_NODE_INT), m_value(val), m_size(size) {}
 
     Int(std::string_view str, uint8_t size)
-        : Expr(QIR_NODE_INT), m_value(str2u128(str)) {
+        : Expr(NR_NODE_INT), m_value(str2u128(str)) {
       m_size = size;
     }
 
@@ -851,8 +851,8 @@ namespace nr {
 
   public:
     Float(double dec, FloatSize size)
-        : Expr(QIR_NODE_FLOAT), m_data{dec}, m_size(size) {}
-    Float(std::string_view str) : Expr(QIR_NODE_FLOAT) {
+        : Expr(NR_NODE_FLOAT), m_data{dec}, m_size(size) {}
+    Float(std::string_view str) : Expr(NR_NODE_FLOAT) {
       m_data = std::stod(std::string(str));
       if (str.ends_with("f128")) {
         m_size = FloatSize::F128;
@@ -885,7 +885,7 @@ namespace nr {
 
   public:
     List(const ListItems &items, bool is_homogenous)
-        : Expr(QIR_NODE_LIST), m_items(items), m_is_homogenous(is_homogenous) {}
+        : Expr(NR_NODE_LIST), m_items(items), m_is_homogenous(is_homogenous) {}
 
     auto begin() const noexcept { return m_items.begin(); }
     auto end() const noexcept { return m_items.end(); }
@@ -919,7 +919,7 @@ namespace nr {
 
   public:
     Call(Expr *ref, const CallArgs &args)
-        : Expr(QIR_NODE_CALL), m_iref(ref), m_args(args) {}
+        : Expr(NR_NODE_CALL), m_iref(ref), m_args(args) {}
 
     Expr *getTarget() noexcept { return m_iref; }
     Expr *setTarget(Expr *ref) noexcept { return m_iref = ref; }
@@ -941,7 +941,7 @@ namespace nr {
     SeqItems m_items;
 
   public:
-    Seq(const SeqItems &items) : Expr(QIR_NODE_SEQ), m_items(items) {}
+    Seq(const SeqItems &items) : Expr(NR_NODE_SEQ), m_items(items) {}
 
     const SeqItems &getItems() const noexcept { return m_items; }
     SeqItems &getItems() noexcept { return m_items; }
@@ -958,7 +958,7 @@ namespace nr {
 
   public:
     Index(Expr *expr, Expr *index)
-        : Expr(QIR_NODE_INDEX), m_expr(expr), m_index(index) {}
+        : Expr(NR_NODE_INDEX), m_expr(expr), m_index(index) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
@@ -977,7 +977,7 @@ namespace nr {
 
   public:
     Ident(std::string_view name, Expr *what)
-        : Expr(QIR_NODE_IDENT), m_name(name), m_what(what) {}
+        : Expr(NR_NODE_IDENT), m_name(name), m_what(what) {}
 
     Expr *getWhat() noexcept { return m_what; }
     Expr *setWhat(Expr *what) noexcept { return m_what = what; }
@@ -997,7 +997,7 @@ namespace nr {
 
   public:
     Extern(Expr *value, std::string_view abi_name)
-        : Expr(QIR_NODE_EXTERN), m_abi_name(abi_name), m_value(value) {}
+        : Expr(NR_NODE_EXTERN), m_abi_name(abi_name), m_value(value) {}
 
     std::string_view getAbiName() const noexcept { return m_abi_name; }
     std::string_view setAbiName(std::string_view abi_name) noexcept {
@@ -1019,7 +1019,7 @@ namespace nr {
 
   public:
     Local(std::string_view name, Expr *value, AbiTag abi_tag)
-        : Expr(QIR_NODE_LOCAL),
+        : Expr(NR_NODE_LOCAL),
           m_name(name),
           m_value(value),
           m_abi_tag(abi_tag) {}
@@ -1043,7 +1043,7 @@ namespace nr {
     Expr *m_expr;
 
   public:
-    Ret(Expr *expr) : Expr(QIR_NODE_RET), m_expr(expr) {}
+    Ret(Expr *expr) : Expr(NR_NODE_RET), m_expr(expr) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
@@ -1055,7 +1055,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    Brk() : Expr(QIR_NODE_BRK) {}
+    Brk() : Expr(NR_NODE_BRK) {}
   };
 
   class Cont final : public Expr {
@@ -1064,7 +1064,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    Cont() : Expr(QIR_NODE_CONT) {}
+    Cont() : Expr(NR_NODE_CONT) {}
   };
 
   class If final : public Expr {
@@ -1078,7 +1078,7 @@ namespace nr {
 
   public:
     If(Expr *cond, Expr *then, Expr *else_)
-        : Expr(QIR_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {}
+        : Expr(NR_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1100,7 +1100,7 @@ namespace nr {
 
   public:
     While(Expr *cond, Seq *body)
-        : Expr(QIR_NODE_WHILE), m_cond(cond), m_body(body) {}
+        : Expr(NR_NODE_WHILE), m_cond(cond), m_body(body) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1121,7 +1121,7 @@ namespace nr {
 
   public:
     For(Expr *init, Expr *cond, Expr *step, Expr *body)
-        : Expr(QIR_NODE_FOR),
+        : Expr(NR_NODE_FOR),
           m_init(init),
           m_cond(cond),
           m_step(step),
@@ -1150,7 +1150,7 @@ namespace nr {
 
   public:
     Case(Expr *cond, Expr *body)
-        : Expr(QIR_NODE_CASE), m_cond(cond), m_body(body) {}
+        : Expr(NR_NODE_CASE), m_cond(cond), m_body(body) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1172,7 +1172,7 @@ namespace nr {
 
   public:
     Switch(Expr *cond, const SwitchCases &cases, Expr *default_)
-        : Expr(QIR_NODE_SWITCH),
+        : Expr(NR_NODE_SWITCH),
           m_cond(cond),
           m_default(default_),
           m_cases(cases) {}
@@ -1208,7 +1208,7 @@ namespace nr {
   public:
     Fn(std::string_view name, const Params &params, Type *ret_ty,
        std::optional<Seq *> body, bool variadic, AbiTag abi_tag)
-        : Expr(QIR_NODE_FN),
+        : Expr(NR_NODE_FN),
           m_name(name),
           m_params(params),
           m_return(ret_ty),
@@ -1245,7 +1245,7 @@ namespace nr {
     QCLASS_REFLECT()
 
   public:
-    Asm() : Expr(QIR_NODE_ASM) { qcore_implement(); }
+    Asm() : Expr(NR_NODE_ASM) { qcore_implement(); }
   };
 
   ///=============================================================================
@@ -1281,7 +1281,7 @@ namespace nr {
 
   public:
     Tmp(TmpType type, const TmpNodeCradle &data = {})
-        : Type(QIR_NODE_TMP), m_type(type), m_data(data) {}
+        : Type(NR_NODE_TMP), m_type(type), m_data(data) {}
 
     TmpType getTmpType() noexcept { return m_type; }
     TmpNodeCradle &getData() noexcept { return m_data; }
@@ -1315,192 +1315,192 @@ namespace nr {
     std::string_view R = "";
 
     switch (this->getKind()) {
-      case QIR_NODE_BINEXPR: {
+      case NR_NODE_BINEXPR: {
         break;
       }
 
-      case QIR_NODE_UNEXPR: {
+      case NR_NODE_UNEXPR: {
         break;
       }
 
-      case QIR_NODE_POST_UNEXPR: {
+      case NR_NODE_POST_UNEXPR: {
         break;
       }
 
-      case QIR_NODE_INT: {
+      case NR_NODE_INT: {
         break;
       }
 
-      case QIR_NODE_FLOAT: {
+      case NR_NODE_FLOAT: {
         break;
       }
 
-      case QIR_NODE_LIST: {
+      case NR_NODE_LIST: {
         break;
       }
 
-      case QIR_NODE_CALL: {
+      case NR_NODE_CALL: {
         break;
       }
 
-      case QIR_NODE_SEQ: {
+      case NR_NODE_SEQ: {
         break;
       }
 
-      case QIR_NODE_INDEX: {
+      case NR_NODE_INDEX: {
         break;
       }
 
-      case QIR_NODE_IDENT: {
+      case NR_NODE_IDENT: {
         R = as<Ident>()->m_name;
         break;
       }
 
-      case QIR_NODE_EXTERN: {
+      case NR_NODE_EXTERN: {
         break;
       }
 
-      case QIR_NODE_LOCAL: {
+      case NR_NODE_LOCAL: {
         R = as<Local>()->m_name;
         break;
       }
 
-      case QIR_NODE_RET: {
+      case NR_NODE_RET: {
         break;
       }
 
-      case QIR_NODE_BRK: {
+      case NR_NODE_BRK: {
         break;
       }
 
-      case QIR_NODE_CONT: {
+      case NR_NODE_CONT: {
         break;
       }
 
-      case QIR_NODE_IF: {
+      case NR_NODE_IF: {
         break;
       }
 
-      case QIR_NODE_WHILE: {
+      case NR_NODE_WHILE: {
         break;
       }
 
-      case QIR_NODE_FOR: {
+      case NR_NODE_FOR: {
         break;
       }
 
-      case QIR_NODE_CASE: {
+      case NR_NODE_CASE: {
         break;
       }
 
-      case QIR_NODE_SWITCH: {
+      case NR_NODE_SWITCH: {
         break;
       }
 
-      case QIR_NODE_IGN: {
+      case NR_NODE_IGN: {
         break;
       }
 
-      case QIR_NODE_FN: {
+      case NR_NODE_FN: {
         R = as<Fn>()->m_name;
         break;
       }
 
-      case QIR_NODE_ASM: {
+      case NR_NODE_ASM: {
         qcore_implement();
         break;
       }
 
-      case QIR_NODE_U1_TY: {
+      case NR_NODE_U1_TY: {
         break;
       }
 
-      case QIR_NODE_U8_TY: {
+      case NR_NODE_U8_TY: {
         break;
       }
 
-      case QIR_NODE_U16_TY: {
+      case NR_NODE_U16_TY: {
         break;
       }
 
-      case QIR_NODE_U32_TY: {
+      case NR_NODE_U32_TY: {
         break;
       }
 
-      case QIR_NODE_U64_TY: {
+      case NR_NODE_U64_TY: {
         break;
       }
 
-      case QIR_NODE_U128_TY: {
+      case NR_NODE_U128_TY: {
         break;
       }
 
-      case QIR_NODE_I8_TY: {
+      case NR_NODE_I8_TY: {
         break;
       }
 
-      case QIR_NODE_I16_TY: {
+      case NR_NODE_I16_TY: {
         break;
       }
 
-      case QIR_NODE_I32_TY: {
+      case NR_NODE_I32_TY: {
         break;
       }
 
-      case QIR_NODE_I64_TY: {
+      case NR_NODE_I64_TY: {
         break;
       }
 
-      case QIR_NODE_I128_TY: {
+      case NR_NODE_I128_TY: {
         break;
       }
 
-      case QIR_NODE_F16_TY: {
+      case NR_NODE_F16_TY: {
         break;
       }
 
-      case QIR_NODE_F32_TY: {
+      case NR_NODE_F32_TY: {
         break;
       }
 
-      case QIR_NODE_F64_TY: {
+      case NR_NODE_F64_TY: {
         break;
       }
 
-      case QIR_NODE_F128_TY: {
+      case NR_NODE_F128_TY: {
         break;
       }
 
-      case QIR_NODE_VOID_TY: {
+      case NR_NODE_VOID_TY: {
         break;
       }
 
-      case QIR_NODE_PTR_TY: {
+      case NR_NODE_PTR_TY: {
         break;
       }
 
-      case QIR_NODE_OPAQUE_TY: {
+      case NR_NODE_OPAQUE_TY: {
         R = as<OpaqueTy>()->m_name;
         break;
       }
 
-      case QIR_NODE_STRUCT_TY: {
+      case NR_NODE_STRUCT_TY: {
         break;
       }
 
-      case QIR_NODE_UNION_TY: {
+      case NR_NODE_UNION_TY: {
         break;
       }
 
-      case QIR_NODE_ARRAY_TY: {
+      case NR_NODE_ARRAY_TY: {
         break;
       }
 
-      case QIR_NODE_FN_TY: {
+      case NR_NODE_FN_TY: {
         break;
       }
 
-      case QIR_NODE_TMP: {
+      case NR_NODE_TMP: {
         break;
       }
     }
@@ -1513,57 +1513,57 @@ namespace nr {
       std::array<size_t, std::numeric_limits<nr_ty_t>::max()> R;
       R.fill(0);
 
-      R[QIR_NODE_BINEXPR] = sizeof(BinExpr);
-      R[QIR_NODE_UNEXPR] = sizeof(UnExpr);
-      R[QIR_NODE_POST_UNEXPR] = sizeof(PostUnExpr);
-      R[QIR_NODE_INT] = sizeof(Int);
-      R[QIR_NODE_FLOAT] = sizeof(Float);
-      R[QIR_NODE_LIST] = sizeof(List);
-      R[QIR_NODE_CALL] = sizeof(Call);
-      R[QIR_NODE_SEQ] = sizeof(Seq);
-      R[QIR_NODE_INDEX] = sizeof(Index);
-      R[QIR_NODE_IDENT] = sizeof(Ident);
-      R[QIR_NODE_EXTERN] = sizeof(Extern);
-      R[QIR_NODE_LOCAL] = sizeof(Local);
-      R[QIR_NODE_RET] = sizeof(Ret);
-      R[QIR_NODE_BRK] = sizeof(Brk);
-      R[QIR_NODE_CONT] = sizeof(Cont);
-      R[QIR_NODE_IF] = sizeof(If);
-      R[QIR_NODE_WHILE] = sizeof(While);
-      R[QIR_NODE_FOR] = sizeof(For);
-      R[QIR_NODE_CASE] = sizeof(Case);
-      R[QIR_NODE_SWITCH] = sizeof(Switch);
-      R[QIR_NODE_FN] = sizeof(Fn);
-      R[QIR_NODE_ASM] = sizeof(Asm);
-      R[QIR_NODE_IGN] = sizeof(Expr);
-      R[QIR_NODE_U1_TY] = sizeof(U1Ty);
-      R[QIR_NODE_U8_TY] = sizeof(U8Ty);
-      R[QIR_NODE_U16_TY] = sizeof(U16Ty);
-      R[QIR_NODE_U32_TY] = sizeof(U32Ty);
-      R[QIR_NODE_U64_TY] = sizeof(U64Ty);
-      R[QIR_NODE_U128_TY] = sizeof(U128Ty);
-      R[QIR_NODE_I8_TY] = sizeof(I8Ty);
-      R[QIR_NODE_I16_TY] = sizeof(I16Ty);
-      R[QIR_NODE_I32_TY] = sizeof(I32Ty);
-      R[QIR_NODE_I64_TY] = sizeof(I64Ty);
-      R[QIR_NODE_I128_TY] = sizeof(I128Ty);
-      R[QIR_NODE_F16_TY] = sizeof(F16Ty);
-      R[QIR_NODE_F32_TY] = sizeof(F32Ty);
-      R[QIR_NODE_F64_TY] = sizeof(F64Ty);
-      R[QIR_NODE_F128_TY] = sizeof(F128Ty);
-      R[QIR_NODE_VOID_TY] = sizeof(VoidTy);
-      R[QIR_NODE_PTR_TY] = sizeof(PtrTy);
-      R[QIR_NODE_OPAQUE_TY] = sizeof(OpaqueTy);
-      R[QIR_NODE_STRUCT_TY] = sizeof(StructTy);
-      R[QIR_NODE_UNION_TY] = sizeof(UnionTy);
-      R[QIR_NODE_ARRAY_TY] = sizeof(ArrayTy);
-      R[QIR_NODE_FN_TY] = sizeof(FnTy);
-      R[QIR_NODE_TMP] = sizeof(Tmp);
+      R[NR_NODE_BINEXPR] = sizeof(BinExpr);
+      R[NR_NODE_UNEXPR] = sizeof(UnExpr);
+      R[NR_NODE_POST_UNEXPR] = sizeof(PostUnExpr);
+      R[NR_NODE_INT] = sizeof(Int);
+      R[NR_NODE_FLOAT] = sizeof(Float);
+      R[NR_NODE_LIST] = sizeof(List);
+      R[NR_NODE_CALL] = sizeof(Call);
+      R[NR_NODE_SEQ] = sizeof(Seq);
+      R[NR_NODE_INDEX] = sizeof(Index);
+      R[NR_NODE_IDENT] = sizeof(Ident);
+      R[NR_NODE_EXTERN] = sizeof(Extern);
+      R[NR_NODE_LOCAL] = sizeof(Local);
+      R[NR_NODE_RET] = sizeof(Ret);
+      R[NR_NODE_BRK] = sizeof(Brk);
+      R[NR_NODE_CONT] = sizeof(Cont);
+      R[NR_NODE_IF] = sizeof(If);
+      R[NR_NODE_WHILE] = sizeof(While);
+      R[NR_NODE_FOR] = sizeof(For);
+      R[NR_NODE_CASE] = sizeof(Case);
+      R[NR_NODE_SWITCH] = sizeof(Switch);
+      R[NR_NODE_FN] = sizeof(Fn);
+      R[NR_NODE_ASM] = sizeof(Asm);
+      R[NR_NODE_IGN] = sizeof(Expr);
+      R[NR_NODE_U1_TY] = sizeof(U1Ty);
+      R[NR_NODE_U8_TY] = sizeof(U8Ty);
+      R[NR_NODE_U16_TY] = sizeof(U16Ty);
+      R[NR_NODE_U32_TY] = sizeof(U32Ty);
+      R[NR_NODE_U64_TY] = sizeof(U64Ty);
+      R[NR_NODE_U128_TY] = sizeof(U128Ty);
+      R[NR_NODE_I8_TY] = sizeof(I8Ty);
+      R[NR_NODE_I16_TY] = sizeof(I16Ty);
+      R[NR_NODE_I32_TY] = sizeof(I32Ty);
+      R[NR_NODE_I64_TY] = sizeof(I64Ty);
+      R[NR_NODE_I128_TY] = sizeof(I128Ty);
+      R[NR_NODE_F16_TY] = sizeof(F16Ty);
+      R[NR_NODE_F32_TY] = sizeof(F32Ty);
+      R[NR_NODE_F64_TY] = sizeof(F64Ty);
+      R[NR_NODE_F128_TY] = sizeof(F128Ty);
+      R[NR_NODE_VOID_TY] = sizeof(VoidTy);
+      R[NR_NODE_PTR_TY] = sizeof(PtrTy);
+      R[NR_NODE_OPAQUE_TY] = sizeof(OpaqueTy);
+      R[NR_NODE_STRUCT_TY] = sizeof(StructTy);
+      R[NR_NODE_UNION_TY] = sizeof(UnionTy);
+      R[NR_NODE_ARRAY_TY] = sizeof(ArrayTy);
+      R[NR_NODE_FN_TY] = sizeof(FnTy);
+      R[NR_NODE_TMP] = sizeof(Tmp);
 
       return R;
     }();
 
-    qcore_assert(sizes.size() == QIR_NODE_COUNT,
+    qcore_assert(sizes.size() == NR_NODE_COUNT,
                  "Polymorphic type size lookup table is incomplete");
 
     return sizes[type];
@@ -1575,57 +1575,57 @@ namespace nr {
           std::array<std::string_view, std::numeric_limits<nr_ty_t>::max()> R;
           R.fill("");
 
-          R[QIR_NODE_BINEXPR] = "bin_expr";
-          R[QIR_NODE_UNEXPR] = "unary_expr";
-          R[QIR_NODE_POST_UNEXPR] = "post_unary_expr";
-          R[QIR_NODE_INT] = "int";
-          R[QIR_NODE_FLOAT] = "float";
-          R[QIR_NODE_LIST] = "list";
-          R[QIR_NODE_CALL] = "call";
-          R[QIR_NODE_SEQ] = "seq";
-          R[QIR_NODE_INDEX] = "index";
-          R[QIR_NODE_IDENT] = "ident";
-          R[QIR_NODE_EXTERN] = "extern";
-          R[QIR_NODE_LOCAL] = "local";
-          R[QIR_NODE_RET] = "return";
-          R[QIR_NODE_BRK] = "break";
-          R[QIR_NODE_CONT] = "continue";
-          R[QIR_NODE_IF] = "if";
-          R[QIR_NODE_WHILE] = "while";
-          R[QIR_NODE_FOR] = "for";
-          R[QIR_NODE_CASE] = "case";
-          R[QIR_NODE_SWITCH] = "switch";
-          R[QIR_NODE_FN] = "fn";
-          R[QIR_NODE_ASM] = "asm";
-          R[QIR_NODE_IGN] = "ignore";
-          R[QIR_NODE_U1_TY] = "u1";
-          R[QIR_NODE_U8_TY] = "u8";
-          R[QIR_NODE_U16_TY] = "u16";
-          R[QIR_NODE_U32_TY] = "u32";
-          R[QIR_NODE_U64_TY] = "u64";
-          R[QIR_NODE_U128_TY] = "u128";
-          R[QIR_NODE_I8_TY] = "i8";
-          R[QIR_NODE_I16_TY] = "i16";
-          R[QIR_NODE_I32_TY] = "i32";
-          R[QIR_NODE_I64_TY] = "i64";
-          R[QIR_NODE_I128_TY] = "i128";
-          R[QIR_NODE_F16_TY] = "f16";
-          R[QIR_NODE_F32_TY] = "f32";
-          R[QIR_NODE_F64_TY] = "f64";
-          R[QIR_NODE_F128_TY] = "f128";
-          R[QIR_NODE_VOID_TY] = "void";
-          R[QIR_NODE_PTR_TY] = "ptr";
-          R[QIR_NODE_OPAQUE_TY] = "opaque";
-          R[QIR_NODE_STRUCT_TY] = "struct";
-          R[QIR_NODE_UNION_TY] = "union";
-          R[QIR_NODE_ARRAY_TY] = "array";
-          R[QIR_NODE_FN_TY] = "fn_ty";
-          R[QIR_NODE_TMP] = "tmp";
+          R[NR_NODE_BINEXPR] = "bin_expr";
+          R[NR_NODE_UNEXPR] = "unary_expr";
+          R[NR_NODE_POST_UNEXPR] = "post_unary_expr";
+          R[NR_NODE_INT] = "int";
+          R[NR_NODE_FLOAT] = "float";
+          R[NR_NODE_LIST] = "list";
+          R[NR_NODE_CALL] = "call";
+          R[NR_NODE_SEQ] = "seq";
+          R[NR_NODE_INDEX] = "index";
+          R[NR_NODE_IDENT] = "ident";
+          R[NR_NODE_EXTERN] = "extern";
+          R[NR_NODE_LOCAL] = "local";
+          R[NR_NODE_RET] = "return";
+          R[NR_NODE_BRK] = "break";
+          R[NR_NODE_CONT] = "continue";
+          R[NR_NODE_IF] = "if";
+          R[NR_NODE_WHILE] = "while";
+          R[NR_NODE_FOR] = "for";
+          R[NR_NODE_CASE] = "case";
+          R[NR_NODE_SWITCH] = "switch";
+          R[NR_NODE_FN] = "fn";
+          R[NR_NODE_ASM] = "asm";
+          R[NR_NODE_IGN] = "ignore";
+          R[NR_NODE_U1_TY] = "u1";
+          R[NR_NODE_U8_TY] = "u8";
+          R[NR_NODE_U16_TY] = "u16";
+          R[NR_NODE_U32_TY] = "u32";
+          R[NR_NODE_U64_TY] = "u64";
+          R[NR_NODE_U128_TY] = "u128";
+          R[NR_NODE_I8_TY] = "i8";
+          R[NR_NODE_I16_TY] = "i16";
+          R[NR_NODE_I32_TY] = "i32";
+          R[NR_NODE_I64_TY] = "i64";
+          R[NR_NODE_I128_TY] = "i128";
+          R[NR_NODE_F16_TY] = "f16";
+          R[NR_NODE_F32_TY] = "f32";
+          R[NR_NODE_F64_TY] = "f64";
+          R[NR_NODE_F128_TY] = "f128";
+          R[NR_NODE_VOID_TY] = "void";
+          R[NR_NODE_PTR_TY] = "ptr";
+          R[NR_NODE_OPAQUE_TY] = "opaque";
+          R[NR_NODE_STRUCT_TY] = "struct";
+          R[NR_NODE_UNION_TY] = "union";
+          R[NR_NODE_ARRAY_TY] = "array";
+          R[NR_NODE_FN_TY] = "fn_ty";
+          R[NR_NODE_TMP] = "tmp";
 
           return R;
         }();
 
-    qcore_assert(names.size() == QIR_NODE_COUNT,
+    qcore_assert(names.size() == NR_NODE_COUNT,
                  "Polymorphic type name lookup table is incomplete");
 
     return names[type];
@@ -1639,7 +1639,7 @@ namespace nr {
     }
 
     switch (kind) {
-      case QIR_NODE_BINEXPR: {
+      case NR_NODE_BINEXPR: {
         auto a = as<BinExpr>();
         auto b = other->as<BinExpr>();
         if (a->m_op != b->m_op) {
@@ -1647,7 +1647,7 @@ namespace nr {
         }
         return a->m_lhs->isSame(b->m_lhs) && a->m_rhs->isSame(b->m_rhs);
       }
-      case QIR_NODE_UNEXPR: {
+      case NR_NODE_UNEXPR: {
         auto a = as<UnExpr>();
         auto b = other->as<UnExpr>();
         if (a->m_op != b->m_op) {
@@ -1655,7 +1655,7 @@ namespace nr {
         }
         return a->m_expr->isSame(b->m_expr);
       }
-      case QIR_NODE_POST_UNEXPR: {
+      case NR_NODE_POST_UNEXPR: {
         auto a = as<PostUnExpr>();
         auto b = other->as<PostUnExpr>();
         if (a->m_op != b->m_op) {
@@ -1663,13 +1663,13 @@ namespace nr {
         }
         return a->m_expr->isSame(b->m_expr);
       }
-      case QIR_NODE_INT: {
+      case NR_NODE_INT: {
         return as<Int>()->getValue() == other->as<Int>()->getValue();
       }
-      case QIR_NODE_FLOAT: {
+      case NR_NODE_FLOAT: {
         return as<Float>()->getValue() == other->as<Float>()->getValue();
       }
-      case QIR_NODE_LIST: {
+      case NR_NODE_LIST: {
         auto a = as<List>();
         auto b = other->as<List>();
         if (a->m_items.size() != b->m_items.size()) {
@@ -1682,7 +1682,7 @@ namespace nr {
         }
         return true;
       }
-      case QIR_NODE_CALL: {
+      case NR_NODE_CALL: {
         auto a = as<Call>();
         auto b = other->as<Call>();
         if (!a->m_iref->isSame(b->m_iref)) {
@@ -1698,7 +1698,7 @@ namespace nr {
         }
         return true;
       }
-      case QIR_NODE_SEQ: {
+      case NR_NODE_SEQ: {
         auto a = as<Seq>();
         auto b = other->as<Seq>();
         if (a->m_items.size() != b->m_items.size()) {
@@ -1711,7 +1711,7 @@ namespace nr {
         }
         return true;
       }
-      case QIR_NODE_INDEX: {
+      case NR_NODE_INDEX: {
         auto a = as<Index>();
         auto b = other->as<Index>();
         if (!a->m_expr->isSame(b->m_expr)) {
@@ -1722,10 +1722,10 @@ namespace nr {
         }
         return true;
       }
-      case QIR_NODE_IDENT: {
+      case NR_NODE_IDENT: {
         return as<Ident>()->m_name == other->as<Ident>()->m_name;
       }
-      case QIR_NODE_EXTERN: {
+      case NR_NODE_EXTERN: {
         auto a = as<Extern>();
         auto b = other->as<Extern>();
         if (a->m_abi_name != b->m_abi_name) {
@@ -1733,7 +1733,7 @@ namespace nr {
         }
         return a->m_value->isSame(b->m_value);
       }
-      case QIR_NODE_LOCAL: {
+      case NR_NODE_LOCAL: {
         auto a = as<Local>();
         auto b = other->as<Local>();
         if (a->m_name != b->m_name) {
@@ -1741,16 +1741,16 @@ namespace nr {
         }
         return a->m_value->isSame(b->m_value);
       }
-      case QIR_NODE_RET: {
+      case NR_NODE_RET: {
         return as<Ret>()->m_expr->isSame(other->as<Ret>()->m_expr);
       }
-      case QIR_NODE_BRK: {
+      case NR_NODE_BRK: {
         return true;
       }
-      case QIR_NODE_CONT: {
+      case NR_NODE_CONT: {
         return true;
       }
-      case QIR_NODE_IF: {
+      case NR_NODE_IF: {
         auto a = as<If>();
         auto b = other->as<If>();
         if (!a->m_cond->isSame(b->m_cond)) {
@@ -1764,7 +1764,7 @@ namespace nr {
         }
         return true;
       }
-      case QIR_NODE_WHILE: {
+      case NR_NODE_WHILE: {
         auto a = as<While>();
         auto b = other->as<While>();
         if (!a->m_cond->isSame(b->m_cond)) {
@@ -1775,7 +1775,7 @@ namespace nr {
         }
         return true;
       }
-      case QIR_NODE_FOR: {
+      case NR_NODE_FOR: {
         auto a = as<For>();
         auto b = other->as<For>();
         if (!a->m_init->isSame(b->m_init)) {
@@ -1792,7 +1792,7 @@ namespace nr {
         }
         return true;
       }
-      case QIR_NODE_CASE: {
+      case NR_NODE_CASE: {
         auto a = as<Case>();
         auto b = other->as<Case>();
         if (!a->m_cond->isSame(b->m_cond)) {
@@ -1803,7 +1803,7 @@ namespace nr {
         }
         return true;
       }
-      case QIR_NODE_SWITCH: {
+      case NR_NODE_SWITCH: {
         auto a = as<Switch>();
         auto b = other->as<Switch>();
         if (!a->m_cond->isSame(b->m_cond)) {
@@ -1822,7 +1822,7 @@ namespace nr {
         }
         return true;
       }
-      case QIR_NODE_FN: {
+      case NR_NODE_FN: {
         auto a = as<Fn>();
         auto b = other->as<Fn>();
         if (a->m_name != b->m_name) {
@@ -1851,37 +1851,37 @@ namespace nr {
         }
         return true;
       }
-      case QIR_NODE_ASM: {
+      case NR_NODE_ASM: {
         qcore_implement();
         break;
       }
-      case QIR_NODE_IGN: {
+      case NR_NODE_IGN: {
         return true;
       }
-      case QIR_NODE_U1_TY:
-      case QIR_NODE_U8_TY:
-      case QIR_NODE_U16_TY:
-      case QIR_NODE_U32_TY:
-      case QIR_NODE_U64_TY:
-      case QIR_NODE_U128_TY:
-      case QIR_NODE_I8_TY:
-      case QIR_NODE_I16_TY:
-      case QIR_NODE_I32_TY:
-      case QIR_NODE_I64_TY:
-      case QIR_NODE_I128_TY:
-      case QIR_NODE_F16_TY:
-      case QIR_NODE_F32_TY:
-      case QIR_NODE_F64_TY:
-      case QIR_NODE_F128_TY:
-      case QIR_NODE_VOID_TY:
+      case NR_NODE_U1_TY:
+      case NR_NODE_U8_TY:
+      case NR_NODE_U16_TY:
+      case NR_NODE_U32_TY:
+      case NR_NODE_U64_TY:
+      case NR_NODE_U128_TY:
+      case NR_NODE_I8_TY:
+      case NR_NODE_I16_TY:
+      case NR_NODE_I32_TY:
+      case NR_NODE_I64_TY:
+      case NR_NODE_I128_TY:
+      case NR_NODE_F16_TY:
+      case NR_NODE_F32_TY:
+      case NR_NODE_F64_TY:
+      case NR_NODE_F128_TY:
+      case NR_NODE_VOID_TY:
         return true;
-      case QIR_NODE_PTR_TY: {
+      case NR_NODE_PTR_TY: {
         return as<PtrTy>()->m_pointee->isSame(other->as<PtrTy>()->m_pointee);
       }
-      case QIR_NODE_OPAQUE_TY: {
+      case NR_NODE_OPAQUE_TY: {
         return as<OpaqueTy>()->m_name == other->as<OpaqueTy>()->m_name;
       }
-      case QIR_NODE_STRUCT_TY: {
+      case NR_NODE_STRUCT_TY: {
         auto a = as<StructTy>();
         auto b = other->as<StructTy>();
         if (a->m_fields.size() != b->m_fields.size()) {
@@ -1894,7 +1894,7 @@ namespace nr {
         }
         return true;
       }
-      case QIR_NODE_UNION_TY: {
+      case NR_NODE_UNION_TY: {
         auto a = as<UnionTy>();
         auto b = other->as<UnionTy>();
         if (a->m_fields.size() != b->m_fields.size()) {
@@ -1907,7 +1907,7 @@ namespace nr {
         }
         return true;
       }
-      case QIR_NODE_ARRAY_TY: {
+      case NR_NODE_ARRAY_TY: {
         auto a = as<ArrayTy>();
         auto b = other->as<ArrayTy>();
         if (!a->m_element->isSame(b->m_element)) {
@@ -1918,7 +1918,7 @@ namespace nr {
         }
         return true;
       }
-      case QIR_NODE_FN_TY: {
+      case NR_NODE_FN_TY: {
         auto a = as<FnTy>();
         auto b = other->as<FnTy>();
         if (a->m_params.size() != b->m_params.size()) {
@@ -1937,7 +1937,7 @@ namespace nr {
         }
         return true;
       }
-      case QIR_NODE_TMP: {
+      case NR_NODE_TMP: {
         auto a = as<Tmp>();
         auto b = other->as<Tmp>();
         if (a->m_type != b->m_type) {
@@ -1948,7 +1948,7 @@ namespace nr {
         }
 
         qcore_panic(
-            "Expr::isSame: attempt to compare fine structure of QIR_NODE_TMP");
+            "Expr::isSame: attempt to compare fine structure of NR_NODE_TMP");
       }
     }
 
@@ -1958,25 +1958,25 @@ namespace nr {
   Expr *createIgn();
 
   namespace mem {
-    extern Brk static_QIR_NODE_BRK;
-    extern Cont static_QIR_NODE_CONT;
-    extern Expr static_QIR_NODE_IGN;
-    extern U1Ty static_QIR_NODE_U1_TY;
-    extern U8Ty static_QIR_NODE_U8_TY;
-    extern U16Ty static_QIR_NODE_U16_TY;
-    extern U32Ty static_QIR_NODE_U32_TY;
-    extern U64Ty static_QIR_NODE_U64_TY;
-    extern U128Ty static_QIR_NODE_U128_TY;
-    extern I8Ty static_QIR_NODE_I8_TY;
-    extern I16Ty static_QIR_NODE_I16_TY;
-    extern I32Ty static_QIR_NODE_I32_TY;
-    extern I64Ty static_QIR_NODE_I64_TY;
-    extern I128Ty static_QIR_NODE_I128_TY;
-    extern F16Ty static_QIR_NODE_F16_TY;
-    extern F32Ty static_QIR_NODE_F32_TY;
-    extern F64Ty static_QIR_NODE_F64_TY;
-    extern F128Ty static_QIR_NODE_F128_TY;
-    extern VoidTy static_QIR_NODE_VOID_TY;
+    extern Brk static_NR_NODE_BRK;
+    extern Cont static_NR_NODE_CONT;
+    extern Expr static_NR_NODE_IGN;
+    extern U1Ty static_NR_NODE_U1_TY;
+    extern U8Ty static_NR_NODE_U8_TY;
+    extern U16Ty static_NR_NODE_U16_TY;
+    extern U32Ty static_NR_NODE_U32_TY;
+    extern U64Ty static_NR_NODE_U64_TY;
+    extern U128Ty static_NR_NODE_U128_TY;
+    extern I8Ty static_NR_NODE_I8_TY;
+    extern I16Ty static_NR_NODE_I16_TY;
+    extern I32Ty static_NR_NODE_I32_TY;
+    extern I64Ty static_NR_NODE_I64_TY;
+    extern I128Ty static_NR_NODE_I128_TY;
+    extern F16Ty static_NR_NODE_F16_TY;
+    extern F32Ty static_NR_NODE_F32_TY;
+    extern F64Ty static_NR_NODE_F64_TY;
+    extern F128Ty static_NR_NODE_F128_TY;
+    extern VoidTy static_NR_NODE_VOID_TY;
   };  // namespace mem
 
   template <typename T, typename... Args>
@@ -2006,52 +2006,52 @@ namespace nr {
 
     constexpr nr_ty_t ty = Expr::getTypeCode<T>();
 
-    NORMAL_ALLOC(QIR_NODE_BINEXPR);
-    NORMAL_ALLOC(QIR_NODE_UNEXPR);
-    NORMAL_ALLOC(QIR_NODE_POST_UNEXPR);
-    CACHE_ALLOC(QIR_NODE_INT);
-    NORMAL_ALLOC(QIR_NODE_FLOAT);
-    NORMAL_ALLOC(QIR_NODE_LIST);
-    NORMAL_ALLOC(QIR_NODE_CALL);
-    NORMAL_ALLOC(QIR_NODE_SEQ);
-    NORMAL_ALLOC(QIR_NODE_INDEX);
-    NORMAL_ALLOC(QIR_NODE_IDENT);
-    NORMAL_ALLOC(QIR_NODE_EXTERN);
-    NORMAL_ALLOC(QIR_NODE_LOCAL);
-    NORMAL_ALLOC(QIR_NODE_RET);
-    REUSE_ALLOC(QIR_NODE_BRK);
-    REUSE_ALLOC(QIR_NODE_CONT);
-    NORMAL_ALLOC(QIR_NODE_IF);
-    NORMAL_ALLOC(QIR_NODE_WHILE);
-    NORMAL_ALLOC(QIR_NODE_FOR);
-    NORMAL_ALLOC(QIR_NODE_CASE);
-    NORMAL_ALLOC(QIR_NODE_SWITCH);
-    NORMAL_ALLOC(QIR_NODE_FN);
-    NORMAL_ALLOC(QIR_NODE_ASM);
-    REUSE_ALLOC(QIR_NODE_IGN);
-    REUSE_ALLOC(QIR_NODE_U1_TY);
-    REUSE_ALLOC(QIR_NODE_U8_TY);
-    REUSE_ALLOC(QIR_NODE_U16_TY);
-    REUSE_ALLOC(QIR_NODE_U32_TY);
-    REUSE_ALLOC(QIR_NODE_U64_TY);
-    REUSE_ALLOC(QIR_NODE_U128_TY);
-    REUSE_ALLOC(QIR_NODE_I8_TY);
-    REUSE_ALLOC(QIR_NODE_I16_TY);
-    REUSE_ALLOC(QIR_NODE_I32_TY);
-    REUSE_ALLOC(QIR_NODE_I64_TY);
-    REUSE_ALLOC(QIR_NODE_I128_TY);
-    REUSE_ALLOC(QIR_NODE_F16_TY);
-    REUSE_ALLOC(QIR_NODE_F32_TY);
-    REUSE_ALLOC(QIR_NODE_F64_TY);
-    REUSE_ALLOC(QIR_NODE_F128_TY);
-    REUSE_ALLOC(QIR_NODE_VOID_TY);
-    NORMAL_ALLOC(QIR_NODE_PTR_TY);
-    NORMAL_ALLOC(QIR_NODE_OPAQUE_TY);
-    NORMAL_ALLOC(QIR_NODE_STRUCT_TY);
-    NORMAL_ALLOC(QIR_NODE_UNION_TY);
-    NORMAL_ALLOC(QIR_NODE_ARRAY_TY);
-    NORMAL_ALLOC(QIR_NODE_FN_TY);
-    NORMAL_ALLOC(QIR_NODE_TMP);
+    NORMAL_ALLOC(NR_NODE_BINEXPR);
+    NORMAL_ALLOC(NR_NODE_UNEXPR);
+    NORMAL_ALLOC(NR_NODE_POST_UNEXPR);
+    CACHE_ALLOC(NR_NODE_INT);
+    NORMAL_ALLOC(NR_NODE_FLOAT);
+    NORMAL_ALLOC(NR_NODE_LIST);
+    NORMAL_ALLOC(NR_NODE_CALL);
+    NORMAL_ALLOC(NR_NODE_SEQ);
+    NORMAL_ALLOC(NR_NODE_INDEX);
+    NORMAL_ALLOC(NR_NODE_IDENT);
+    NORMAL_ALLOC(NR_NODE_EXTERN);
+    NORMAL_ALLOC(NR_NODE_LOCAL);
+    NORMAL_ALLOC(NR_NODE_RET);
+    REUSE_ALLOC(NR_NODE_BRK);
+    REUSE_ALLOC(NR_NODE_CONT);
+    NORMAL_ALLOC(NR_NODE_IF);
+    NORMAL_ALLOC(NR_NODE_WHILE);
+    NORMAL_ALLOC(NR_NODE_FOR);
+    NORMAL_ALLOC(NR_NODE_CASE);
+    NORMAL_ALLOC(NR_NODE_SWITCH);
+    NORMAL_ALLOC(NR_NODE_FN);
+    NORMAL_ALLOC(NR_NODE_ASM);
+    REUSE_ALLOC(NR_NODE_IGN);
+    REUSE_ALLOC(NR_NODE_U1_TY);
+    REUSE_ALLOC(NR_NODE_U8_TY);
+    REUSE_ALLOC(NR_NODE_U16_TY);
+    REUSE_ALLOC(NR_NODE_U32_TY);
+    REUSE_ALLOC(NR_NODE_U64_TY);
+    REUSE_ALLOC(NR_NODE_U128_TY);
+    REUSE_ALLOC(NR_NODE_I8_TY);
+    REUSE_ALLOC(NR_NODE_I16_TY);
+    REUSE_ALLOC(NR_NODE_I32_TY);
+    REUSE_ALLOC(NR_NODE_I64_TY);
+    REUSE_ALLOC(NR_NODE_I128_TY);
+    REUSE_ALLOC(NR_NODE_F16_TY);
+    REUSE_ALLOC(NR_NODE_F32_TY);
+    REUSE_ALLOC(NR_NODE_F64_TY);
+    REUSE_ALLOC(NR_NODE_F128_TY);
+    REUSE_ALLOC(NR_NODE_VOID_TY);
+    NORMAL_ALLOC(NR_NODE_PTR_TY);
+    NORMAL_ALLOC(NR_NODE_OPAQUE_TY);
+    NORMAL_ALLOC(NR_NODE_STRUCT_TY);
+    NORMAL_ALLOC(NR_NODE_UNION_TY);
+    NORMAL_ALLOC(NR_NODE_ARRAY_TY);
+    NORMAL_ALLOC(NR_NODE_FN_TY);
+    NORMAL_ALLOC(NR_NODE_TMP);
 
 #undef CACHE_ALLOC
 #undef NORMAL_ALLOC
@@ -2121,7 +2121,7 @@ namespace nr {
 
     nr_ty_t ty = r->getKind();
 
-    if (ty != QIR_NODE_INT) {
+    if (ty != NR_NODE_INT) {
       return std::nullopt;
     }
 

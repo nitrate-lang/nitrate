@@ -480,215 +480,215 @@ struct State {
   }
 };
 
-static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                                nr::BinExpr *N);
-static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                               nr::UnExpr *N);
-static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
-                                    State &s, nr::PostUnExpr *N);
-static val_t QIR_NODE_INT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::Int *N);
-static val_t QIR_NODE_FLOAT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::Float *N);
-static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::List *N);
-static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::Call *N);
-static val_t QIR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::Seq *N);
-static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::Index *N);
-static val_t QIR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::Ident *N);
-static val_t QIR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                               nr::Extern *N);
-static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::Local *N);
-static val_t QIR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::Ret *N);
-static val_t QIR_NODE_BRK_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::Brk *N);
-static val_t QIR_NODE_CONT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::Cont *N);
-static val_t QIR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                           nr::If *N);
-static val_t QIR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::While *N);
-static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::For *N);
-static val_t QIR_NODE_CASE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::Case *N);
-static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                               nr::Switch *N);
-static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                           nr::Fn *N);
-static val_t QIR_NODE_ASM_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::Asm *N);
-static ty_t QIR_NODE_U1_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::U1Ty *N);
-static ty_t QIR_NODE_U8_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::U8Ty *N);
-static ty_t QIR_NODE_U16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::U16Ty *N);
-static ty_t QIR_NODE_U32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::U32Ty *N);
-static ty_t QIR_NODE_U64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::U64Ty *N);
-static ty_t QIR_NODE_U128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                               nr::U128Ty *N);
-static ty_t QIR_NODE_I8_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::I8Ty *N);
-static ty_t QIR_NODE_I16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::I16Ty *N);
-static ty_t QIR_NODE_I32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::I32Ty *N);
-static ty_t QIR_NODE_I64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::I64Ty *N);
-static ty_t QIR_NODE_I128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                               nr::I128Ty *N);
-static ty_t QIR_NODE_F16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::F16Ty *N);
-static ty_t QIR_NODE_F32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::F32Ty *N);
-static ty_t QIR_NODE_F64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::F64Ty *N);
-static ty_t QIR_NODE_F128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                               nr::F128Ty *N);
-static ty_t QIR_NODE_VOID_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                               nr::VoidTy *N);
-static ty_t QIR_NODE_PTR_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::PtrTy *N);
-static ty_t QIR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                                 nr::OpaqueTy *N);
-static ty_t QIR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                                 nr::StructTy *N);
-static ty_t QIR_NODE_UNION_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                                nr::UnionTy *N);
-static ty_t QIR_NODE_ARRAY_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                                nr::ArrayTy *N);
-static ty_t QIR_NODE_FN_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::FnTy *N);
+static val_t NR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                               nr::BinExpr *N);
+static val_t NR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::UnExpr *N);
+static val_t NR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
+                                   State &s, nr::PostUnExpr *N);
+static val_t NR_NODE_INT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                           nr::Int *N);
+static val_t NR_NODE_FLOAT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::Float *N);
+static val_t NR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::List *N);
+static val_t NR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::Call *N);
+static val_t NR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                           nr::Seq *N);
+static val_t NR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::Index *N);
+static val_t NR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::Ident *N);
+static val_t NR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::Extern *N);
+static val_t NR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::Local *N);
+static val_t NR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                           nr::Ret *N);
+static val_t NR_NODE_BRK_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                           nr::Brk *N);
+static val_t NR_NODE_CONT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::Cont *N);
+static val_t NR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                          nr::If *N);
+static val_t NR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::While *N);
+static val_t NR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                           nr::For *N);
+static val_t NR_NODE_CASE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::Case *N);
+static val_t NR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::Switch *N);
+static val_t NR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                          nr::Fn *N);
+static val_t NR_NODE_ASM_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                           nr::Asm *N);
+static ty_t NR_NODE_U1_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::U1Ty *N);
+static ty_t NR_NODE_U8_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::U8Ty *N);
+static ty_t NR_NODE_U16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::U16Ty *N);
+static ty_t NR_NODE_U32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::U32Ty *N);
+static ty_t NR_NODE_U64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::U64Ty *N);
+static ty_t NR_NODE_U128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::U128Ty *N);
+static ty_t NR_NODE_I8_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::I8Ty *N);
+static ty_t NR_NODE_I16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::I16Ty *N);
+static ty_t NR_NODE_I32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::I32Ty *N);
+static ty_t NR_NODE_I64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::I64Ty *N);
+static ty_t NR_NODE_I128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::I128Ty *N);
+static ty_t NR_NODE_F16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::F16Ty *N);
+static ty_t NR_NODE_F32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::F32Ty *N);
+static ty_t NR_NODE_F64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::F64Ty *N);
+static ty_t NR_NODE_F128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::F128Ty *N);
+static ty_t NR_NODE_VOID_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::VoidTy *N);
+static ty_t NR_NODE_PTR_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::PtrTy *N);
+static ty_t NR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                                nr::OpaqueTy *N);
+static ty_t NR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                                nr::StructTy *N);
+static ty_t NR_NODE_UNION_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                               nr::UnionTy *N);
+static ty_t NR_NODE_ARRAY_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                               nr::ArrayTy *N);
+static ty_t NR_NODE_FN_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::FnTy *N);
 
 auto V(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Expr *N) -> val_t {
   val_t R;
 
   switch (N->getKind()) {
-    case QIR_NODE_BINEXPR: {
-      R = QIR_NODE_BINEXPR_C(m, b, cf, s, N->as<nr::BinExpr>());
+    case NR_NODE_BINEXPR: {
+      R = NR_NODE_BINEXPR_C(m, b, cf, s, N->as<nr::BinExpr>());
       break;
     }
 
-    case QIR_NODE_UNEXPR: {
-      R = QIR_NODE_UNEXPR_C(m, b, cf, s, N->as<nr::UnExpr>());
+    case NR_NODE_UNEXPR: {
+      R = NR_NODE_UNEXPR_C(m, b, cf, s, N->as<nr::UnExpr>());
       break;
     }
 
-    case QIR_NODE_POST_UNEXPR: {
-      R = QIR_NODE_POST_UNEXPR_C(m, b, cf, s, N->as<nr::PostUnExpr>());
+    case NR_NODE_POST_UNEXPR: {
+      R = NR_NODE_POST_UNEXPR_C(m, b, cf, s, N->as<nr::PostUnExpr>());
       break;
     }
 
-    case QIR_NODE_INT: {
-      R = QIR_NODE_INT_C(m, b, cf, s, N->as<nr::Int>());
+    case NR_NODE_INT: {
+      R = NR_NODE_INT_C(m, b, cf, s, N->as<nr::Int>());
       break;
     }
 
-    case QIR_NODE_FLOAT: {
-      R = QIR_NODE_FLOAT_C(m, b, cf, s, N->as<nr::Float>());
+    case NR_NODE_FLOAT: {
+      R = NR_NODE_FLOAT_C(m, b, cf, s, N->as<nr::Float>());
       break;
     }
 
-    case QIR_NODE_LIST: {
-      R = QIR_NODE_LIST_C(m, b, cf, s, N->as<nr::List>());
+    case NR_NODE_LIST: {
+      R = NR_NODE_LIST_C(m, b, cf, s, N->as<nr::List>());
       break;
     }
 
-    case QIR_NODE_CALL: {
-      R = QIR_NODE_CALL_C(m, b, cf, s, N->as<nr::Call>());
+    case NR_NODE_CALL: {
+      R = NR_NODE_CALL_C(m, b, cf, s, N->as<nr::Call>());
       break;
     }
 
-    case QIR_NODE_SEQ: {
-      R = QIR_NODE_SEQ_C(m, b, cf, s, N->as<nr::Seq>());
+    case NR_NODE_SEQ: {
+      R = NR_NODE_SEQ_C(m, b, cf, s, N->as<nr::Seq>());
       break;
     }
 
-    case QIR_NODE_INDEX: {
-      R = QIR_NODE_INDEX_C(m, b, cf, s, N->as<nr::Index>());
+    case NR_NODE_INDEX: {
+      R = NR_NODE_INDEX_C(m, b, cf, s, N->as<nr::Index>());
       break;
     }
 
-    case QIR_NODE_IDENT: {
-      R = QIR_NODE_IDENT_C(m, b, cf, s, N->as<nr::Ident>());
+    case NR_NODE_IDENT: {
+      R = NR_NODE_IDENT_C(m, b, cf, s, N->as<nr::Ident>());
       break;
     }
 
-    case QIR_NODE_EXTERN: {
-      R = QIR_NODE_EXTERN_C(m, b, cf, s, N->as<nr::Extern>());
+    case NR_NODE_EXTERN: {
+      R = NR_NODE_EXTERN_C(m, b, cf, s, N->as<nr::Extern>());
       break;
     }
 
-    case QIR_NODE_LOCAL: {
-      R = QIR_NODE_LOCAL_C(m, b, cf, s, N->as<nr::Local>());
+    case NR_NODE_LOCAL: {
+      R = NR_NODE_LOCAL_C(m, b, cf, s, N->as<nr::Local>());
       break;
     }
 
-    case QIR_NODE_RET: {
-      R = QIR_NODE_RET_C(m, b, cf, s, N->as<nr::Ret>());
+    case NR_NODE_RET: {
+      R = NR_NODE_RET_C(m, b, cf, s, N->as<nr::Ret>());
       break;
     }
 
-    case QIR_NODE_BRK: {
-      R = QIR_NODE_BRK_C(m, b, cf, s, N->as<nr::Brk>());
+    case NR_NODE_BRK: {
+      R = NR_NODE_BRK_C(m, b, cf, s, N->as<nr::Brk>());
       break;
     }
 
-    case QIR_NODE_CONT: {
-      R = QIR_NODE_CONT_C(m, b, cf, s, N->as<nr::Cont>());
+    case NR_NODE_CONT: {
+      R = NR_NODE_CONT_C(m, b, cf, s, N->as<nr::Cont>());
       break;
     }
 
-    case QIR_NODE_IF: {
-      R = QIR_NODE_IF_C(m, b, cf, s, N->as<nr::If>());
+    case NR_NODE_IF: {
+      R = NR_NODE_IF_C(m, b, cf, s, N->as<nr::If>());
       break;
     }
 
-    case QIR_NODE_WHILE: {
-      R = QIR_NODE_WHILE_C(m, b, cf, s, N->as<nr::While>());
+    case NR_NODE_WHILE: {
+      R = NR_NODE_WHILE_C(m, b, cf, s, N->as<nr::While>());
       break;
     }
 
-    case QIR_NODE_FOR: {
-      R = QIR_NODE_FOR_C(m, b, cf, s, N->as<nr::For>());
+    case NR_NODE_FOR: {
+      R = NR_NODE_FOR_C(m, b, cf, s, N->as<nr::For>());
       break;
     }
 
-    case QIR_NODE_CASE: {
-      R = QIR_NODE_CASE_C(m, b, cf, s, N->as<nr::Case>());
+    case NR_NODE_CASE: {
+      R = NR_NODE_CASE_C(m, b, cf, s, N->as<nr::Case>());
       break;
     }
 
-    case QIR_NODE_SWITCH: {
-      R = QIR_NODE_SWITCH_C(m, b, cf, s, N->as<nr::Switch>());
+    case NR_NODE_SWITCH: {
+      R = NR_NODE_SWITCH_C(m, b, cf, s, N->as<nr::Switch>());
       break;
     }
 
-    case QIR_NODE_FN: {
-      R = QIR_NODE_FN_C(m, b, cf, s, N->as<nr::Fn>());
+    case NR_NODE_FN: {
+      R = NR_NODE_FN_C(m, b, cf, s, N->as<nr::Fn>());
       break;
     }
 
-    case QIR_NODE_ASM: {
-      R = QIR_NODE_ASM_C(m, b, cf, s, N->as<nr::Asm>());
+    case NR_NODE_ASM: {
+      R = NR_NODE_ASM_C(m, b, cf, s, N->as<nr::Asm>());
       break;
     }
 
-    case QIR_NODE_IGN: {
+    case NR_NODE_IGN: {
       R = nullptr;
       break;
     }
 
-    case QIR_NODE_TMP: {
+    case NR_NODE_TMP: {
       qcore_panic("unexpected temporary node");
     }
 
@@ -705,117 +705,117 @@ auto T(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Expr *N) -> ty_t {
   ty_t R;
 
   switch (N->getKind()) {
-    case QIR_NODE_U1_TY: {
-      R = QIR_NODE_U1_TY_C(m, b, cf, s, N->as<nr::U1Ty>());
+    case NR_NODE_U1_TY: {
+      R = NR_NODE_U1_TY_C(m, b, cf, s, N->as<nr::U1Ty>());
       break;
     }
 
-    case QIR_NODE_U8_TY: {
-      R = QIR_NODE_U8_TY_C(m, b, cf, s, N->as<nr::U8Ty>());
+    case NR_NODE_U8_TY: {
+      R = NR_NODE_U8_TY_C(m, b, cf, s, N->as<nr::U8Ty>());
       break;
     }
 
-    case QIR_NODE_U16_TY: {
-      R = QIR_NODE_U16_TY_C(m, b, cf, s, N->as<nr::U16Ty>());
+    case NR_NODE_U16_TY: {
+      R = NR_NODE_U16_TY_C(m, b, cf, s, N->as<nr::U16Ty>());
       break;
     }
 
-    case QIR_NODE_U32_TY: {
-      R = QIR_NODE_U32_TY_C(m, b, cf, s, N->as<nr::U32Ty>());
+    case NR_NODE_U32_TY: {
+      R = NR_NODE_U32_TY_C(m, b, cf, s, N->as<nr::U32Ty>());
       break;
     }
 
-    case QIR_NODE_U64_TY: {
-      R = QIR_NODE_U64_TY_C(m, b, cf, s, N->as<nr::U64Ty>());
+    case NR_NODE_U64_TY: {
+      R = NR_NODE_U64_TY_C(m, b, cf, s, N->as<nr::U64Ty>());
       break;
     }
 
-    case QIR_NODE_U128_TY: {
-      R = QIR_NODE_U128_TY_C(m, b, cf, s, N->as<nr::U128Ty>());
+    case NR_NODE_U128_TY: {
+      R = NR_NODE_U128_TY_C(m, b, cf, s, N->as<nr::U128Ty>());
       break;
     }
 
-    case QIR_NODE_I8_TY: {
-      R = QIR_NODE_I8_TY_C(m, b, cf, s, N->as<nr::I8Ty>());
+    case NR_NODE_I8_TY: {
+      R = NR_NODE_I8_TY_C(m, b, cf, s, N->as<nr::I8Ty>());
       break;
     }
 
-    case QIR_NODE_I16_TY: {
-      R = QIR_NODE_I16_TY_C(m, b, cf, s, N->as<nr::I16Ty>());
+    case NR_NODE_I16_TY: {
+      R = NR_NODE_I16_TY_C(m, b, cf, s, N->as<nr::I16Ty>());
       break;
     }
 
-    case QIR_NODE_I32_TY: {
-      R = QIR_NODE_I32_TY_C(m, b, cf, s, N->as<nr::I32Ty>());
+    case NR_NODE_I32_TY: {
+      R = NR_NODE_I32_TY_C(m, b, cf, s, N->as<nr::I32Ty>());
       break;
     }
 
-    case QIR_NODE_I64_TY: {
-      R = QIR_NODE_I64_TY_C(m, b, cf, s, N->as<nr::I64Ty>());
+    case NR_NODE_I64_TY: {
+      R = NR_NODE_I64_TY_C(m, b, cf, s, N->as<nr::I64Ty>());
       break;
     }
 
-    case QIR_NODE_I128_TY: {
-      R = QIR_NODE_I128_TY_C(m, b, cf, s, N->as<nr::I128Ty>());
+    case NR_NODE_I128_TY: {
+      R = NR_NODE_I128_TY_C(m, b, cf, s, N->as<nr::I128Ty>());
       break;
     }
 
-    case QIR_NODE_F16_TY: {
-      R = QIR_NODE_F16_TY_C(m, b, cf, s, N->as<nr::F16Ty>());
+    case NR_NODE_F16_TY: {
+      R = NR_NODE_F16_TY_C(m, b, cf, s, N->as<nr::F16Ty>());
       break;
     }
 
-    case QIR_NODE_F32_TY: {
-      R = QIR_NODE_F32_TY_C(m, b, cf, s, N->as<nr::F32Ty>());
+    case NR_NODE_F32_TY: {
+      R = NR_NODE_F32_TY_C(m, b, cf, s, N->as<nr::F32Ty>());
       break;
     }
 
-    case QIR_NODE_F64_TY: {
-      R = QIR_NODE_F64_TY_C(m, b, cf, s, N->as<nr::F64Ty>());
+    case NR_NODE_F64_TY: {
+      R = NR_NODE_F64_TY_C(m, b, cf, s, N->as<nr::F64Ty>());
       break;
     }
 
-    case QIR_NODE_F128_TY: {
-      R = QIR_NODE_F128_TY_C(m, b, cf, s, N->as<nr::F128Ty>());
+    case NR_NODE_F128_TY: {
+      R = NR_NODE_F128_TY_C(m, b, cf, s, N->as<nr::F128Ty>());
       break;
     }
 
-    case QIR_NODE_VOID_TY: {
-      R = QIR_NODE_VOID_TY_C(m, b, cf, s, N->as<nr::VoidTy>());
+    case NR_NODE_VOID_TY: {
+      R = NR_NODE_VOID_TY_C(m, b, cf, s, N->as<nr::VoidTy>());
       break;
     }
 
-    case QIR_NODE_PTR_TY: {
-      R = QIR_NODE_PTR_TY_C(m, b, cf, s, N->as<nr::PtrTy>());
+    case NR_NODE_PTR_TY: {
+      R = NR_NODE_PTR_TY_C(m, b, cf, s, N->as<nr::PtrTy>());
       break;
     }
 
-    case QIR_NODE_OPAQUE_TY: {
-      R = QIR_NODE_OPAQUE_TY_C(m, b, cf, s, N->as<nr::OpaqueTy>());
+    case NR_NODE_OPAQUE_TY: {
+      R = NR_NODE_OPAQUE_TY_C(m, b, cf, s, N->as<nr::OpaqueTy>());
       break;
     }
 
-    case QIR_NODE_STRUCT_TY: {
-      R = QIR_NODE_STRUCT_TY_C(m, b, cf, s, N->as<nr::StructTy>());
+    case NR_NODE_STRUCT_TY: {
+      R = NR_NODE_STRUCT_TY_C(m, b, cf, s, N->as<nr::StructTy>());
       break;
     }
 
-    case QIR_NODE_UNION_TY: {
-      R = QIR_NODE_UNION_TY_C(m, b, cf, s, N->as<nr::UnionTy>());
+    case NR_NODE_UNION_TY: {
+      R = NR_NODE_UNION_TY_C(m, b, cf, s, N->as<nr::UnionTy>());
       break;
     }
 
-    case QIR_NODE_ARRAY_TY: {
-      R = QIR_NODE_ARRAY_TY_C(m, b, cf, s, N->as<nr::ArrayTy>());
+    case NR_NODE_ARRAY_TY: {
+      R = NR_NODE_ARRAY_TY_C(m, b, cf, s, N->as<nr::ArrayTy>());
       break;
     }
 
-    case QIR_NODE_FN_TY: {
-      R = QIR_NODE_FN_TY_C(m, b, cf, s, N->as<nr::FnTy>());
+    case NR_NODE_FN_TY: {
+      R = NR_NODE_FN_TY_C(m, b, cf, s, N->as<nr::FnTy>());
       break;
     }
 
-    case QIR_NODE_TMP: {
+    case NR_NODE_TMP: {
       qcore_panic("unexpected temporary node");
     }
 
@@ -863,7 +863,7 @@ static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(
     return std::nullopt;
   }
 
-  if (root->getKind() != QIR_NODE_SEQ) {
+  if (root->getKind() != NR_NODE_SEQ) {
     e << "error: expected sequence node as root" << std::endl;
     return std::nullopt;
   }
@@ -879,9 +879,9 @@ static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(
 
   // Forward declare all functions
   nr::iterate<nr::dfs_pre>(root, [&](nr::Expr *, nr::Expr **N) -> nr::IterOp {
-    if ((*N)->getKind() == QIR_NODE_SEQ || (*N)->getKind() == QIR_NODE_EXTERN) {
+    if ((*N)->getKind() == NR_NODE_SEQ || (*N)->getKind() == NR_NODE_EXTERN) {
       return nr::IterOp::Proceed;
-    } else if ((*N)->getKind() != QIR_NODE_FN) {
+    } else if ((*N)->getKind() != NR_NODE_FN) {
       return nr::IterOp::SkipChildren;
     }
 
@@ -956,7 +956,7 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s,
       }
 
       /* Composite casting */
-      else if (LT->is_array() && RT->getKind() == QIR_NODE_STRUCT_TY) {
+      else if (LT->is_array() && RT->getKind() == NR_NODE_STRUCT_TY) {
         nr::ArrayTy *base = LT->as<nr::ArrayTy>();
         nr::StructTy *ST = RT->as<nr::StructTy>();
 
@@ -1033,8 +1033,8 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return E;
 }
 
-static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                                nr::BinExpr *N) {
+static val_t NR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                               nr::BinExpr *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1233,7 +1233,7 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
     }
 
     case nr::Op::Set: { /* '=': Assignment operator */
-      if (N->getLHS()->getKind() != QIR_NODE_IDENT) {
+      if (N->getLHS()->getKind() != NR_NODE_IDENT) {
         qcore_panic("expected identifier for assignment");
       }
 
@@ -1377,8 +1377,8 @@ nr::Op::Slash); return create_simple_call(s, "std::ceil", {{"0", arg}});
       return STD_UNOP(Bitsizeof);
     }
 */
-static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                               nr::UnExpr *N) {
+static val_t NR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::UnExpr *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1412,7 +1412,7 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
       break;
     }
     case nr::Op::BitAnd: {
-      if (N->getExpr()->getKind() != QIR_NODE_IDENT) {
+      if (N->getExpr()->getKind() != NR_NODE_IDENT) {
         qcore_panic("expected identifier for address_of");
       }
 
@@ -1442,7 +1442,7 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
       break;
     }
     case nr::Op::Inc: {
-      if (N->getExpr()->getKind() != QIR_NODE_IDENT) {
+      if (N->getExpr()->getKind() != NR_NODE_IDENT) {
         qcore_panic("expected identifier for increment");
       }
 
@@ -1490,7 +1490,7 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
       break;
     }
     case nr::Op::Dec: {
-      if (N->getExpr()->getKind() != QIR_NODE_IDENT) {
+      if (N->getExpr()->getKind() != NR_NODE_IDENT) {
         qcore_panic("expected identifier for decrement");
       }
 
@@ -1570,8 +1570,8 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return R;
 }
 
-static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
-                                    State &s, nr::PostUnExpr *N) {
+static val_t NR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
+                                   State &s, nr::PostUnExpr *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1584,7 +1584,7 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
 
   switch (N->getOp()) {
     case nr::Op::Inc: {
-      if (N->getExpr()->getKind() != QIR_NODE_IDENT) {
+      if (N->getExpr()->getKind() != NR_NODE_IDENT) {
         qcore_panic("expected identifier for increment");
       }
 
@@ -1632,7 +1632,7 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
       break;
     }
     case nr::Op::Dec: {
-      if (N->getExpr()->getKind() != QIR_NODE_IDENT) {
+      if (N->getExpr()->getKind() != NR_NODE_IDENT) {
         qcore_panic("expected identifier for decrement");
       }
 
@@ -1688,8 +1688,8 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
   return R;
 }
 
-static val_t QIR_NODE_INT_C(ctx_t &m, craft_t &, const Mode &, State &,
-                            nr::Int *N) {
+static val_t NR_NODE_INT_C(ctx_t &m, craft_t &, const Mode &, State &,
+                           nr::Int *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1722,8 +1722,8 @@ static val_t QIR_NODE_INT_C(ctx_t &m, craft_t &, const Mode &, State &,
   return R;
 }
 
-static val_t QIR_NODE_FLOAT_C(ctx_t &m, craft_t &, const Mode &, State &,
-                              nr::Float *N) {
+static val_t NR_NODE_FLOAT_C(ctx_t &m, craft_t &, const Mode &, State &,
+                             nr::Float *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1735,8 +1735,8 @@ static val_t QIR_NODE_FLOAT_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::ConstantFP::get(m.getContext(), llvm::APFloat(N->getValue()));
 }
 
-static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::List *N) {
+static val_t NR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::List *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1796,8 +1796,8 @@ static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   }
 }
 
-static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::Call *N) {
+static val_t NR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::Call *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1904,8 +1904,8 @@ static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   }
 }
 
-static val_t QIR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::Seq *N) {
+static val_t NR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                           nr::Seq *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1931,8 +1931,8 @@ static val_t QIR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return R;
 }
 
-static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::Index *N) {
+static val_t NR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::Index *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1947,7 +1947,7 @@ static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
     return std::nullopt;
   }
 
-  if (N->getExpr()->getKind() == QIR_NODE_IDENT) {
+  if (N->getExpr()->getKind() == NR_NODE_IDENT) {
     nr::Ident *B = N->getExpr()->as<nr::Ident>();
     auto find = s.find_named_value(m, B->getName());
     if (!find) {
@@ -1981,15 +1981,15 @@ static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
     } else {
       qcore_panic("unexpected type for index");
     }
-  } else if (N->getExpr()->getKind() == QIR_NODE_LIST) {
+  } else if (N->getExpr()->getKind() == NR_NODE_LIST) {
     qcore_implement();
   } else {
     qcore_panic("unexpected base expression for index");
   }
 }
 
-static val_t QIR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &, State &s,
-                              nr::Ident *N) {
+static val_t NR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &, State &s,
+                             nr::Ident *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2018,8 +2018,8 @@ static val_t QIR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &, State &s,
   qcore_panic("unexpected type for identifier");
 }
 
-static val_t QIR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                               nr::Extern *N) {
+static val_t NR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::Extern *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2042,8 +2042,8 @@ static val_t QIR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return R;
 }
 
-static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::Local *N) {
+static val_t NR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::Local *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2092,8 +2092,8 @@ static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   }
 }
 
-static val_t QIR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::Ret *N) {
+static val_t NR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                           nr::Ret *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2104,7 +2104,7 @@ static val_t QIR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
 
   val_t R;
 
-  if (N->getExpr()->getKind() != QIR_NODE_VOID_TY) {
+  if (N->getExpr()->getKind() != NR_NODE_VOID_TY) {
     R = V(m, b, cf, s, N->getExpr());
     if (!R) {
       debug("Failed to get return value");
@@ -2122,8 +2122,8 @@ static val_t QIR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return R;
 }
 
-static val_t QIR_NODE_BRK_C(ctx_t &, craft_t &b, const Mode &, State &s,
-                            nr::Brk *) {
+static val_t NR_NODE_BRK_C(ctx_t &, craft_t &b, const Mode &, State &s,
+                           nr::Brk *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2139,8 +2139,8 @@ static val_t QIR_NODE_BRK_C(ctx_t &, craft_t &b, const Mode &, State &s,
   return b.CreateBr(s.breaks.top());
 }
 
-static val_t QIR_NODE_CONT_C(ctx_t &, craft_t &b, const Mode &, State &s,
-                             nr::Cont *) {
+static val_t NR_NODE_CONT_C(ctx_t &, craft_t &b, const Mode &, State &s,
+                            nr::Cont *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2156,8 +2156,8 @@ static val_t QIR_NODE_CONT_C(ctx_t &, craft_t &b, const Mode &, State &s,
   return b.CreateBr(s.continues.top());
 }
 
-static val_t QIR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                           nr::If *N) {
+static val_t NR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                          nr::If *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2210,8 +2210,8 @@ static val_t QIR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return end;
 }
 
-static val_t QIR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::While *N) {
+static val_t NR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::While *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2266,8 +2266,8 @@ static val_t QIR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return end;
 }
 
-static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::For *N) {
+static val_t NR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                           nr::For *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2339,8 +2339,8 @@ static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return end;
 }
 
-static val_t QIR_NODE_CASE_C(ctx_t &, craft_t &, const Mode &, State &,
-                             nr::Case *) {
+static val_t NR_NODE_CASE_C(ctx_t &, craft_t &, const Mode &, State &,
+                            nr::Case *) {
   qcore_panic("code path unreachable");
 }
 
@@ -2370,8 +2370,8 @@ static bool check_switch_trivial(nr::Switch *N) {
   return true;
 }
 
-static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                               nr::Switch *N) {
+static val_t NR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                              nr::Switch *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2483,8 +2483,8 @@ static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   }
 }
 
-static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                           nr::Fn *N) {
+static val_t NR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                          nr::Fn *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2604,8 +2604,8 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return fn;
 }
 
-static val_t QIR_NODE_ASM_C(ctx_t &, craft_t &, const Mode &, State &,
-                            nr::Asm *) {
+static val_t NR_NODE_ASM_C(ctx_t &, craft_t &, const Mode &, State &,
+                           nr::Asm *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2617,8 +2617,8 @@ static val_t QIR_NODE_ASM_C(ctx_t &, craft_t &, const Mode &, State &,
   qcore_implement();
 }
 
-static ty_t QIR_NODE_U1_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                             nr::U1Ty *) {
+static ty_t NR_NODE_U1_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                            nr::U1Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2630,8 +2630,8 @@ static ty_t QIR_NODE_U1_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getInt1Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_U8_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                             nr::U8Ty *) {
+static ty_t NR_NODE_U8_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                            nr::U8Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2643,8 +2643,8 @@ static ty_t QIR_NODE_U8_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getInt8Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_U16_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                              nr::U16Ty *) {
+static ty_t NR_NODE_U16_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                             nr::U16Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2656,8 +2656,8 @@ static ty_t QIR_NODE_U16_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getInt16Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_U32_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                              nr::U32Ty *) {
+static ty_t NR_NODE_U32_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                             nr::U32Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2669,8 +2669,8 @@ static ty_t QIR_NODE_U32_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getInt32Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_U64_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                              nr::U64Ty *) {
+static ty_t NR_NODE_U64_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                             nr::U64Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2682,8 +2682,8 @@ static ty_t QIR_NODE_U64_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getInt64Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_U128_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                               nr::U128Ty *) {
+static ty_t NR_NODE_U128_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                              nr::U128Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2695,8 +2695,8 @@ static ty_t QIR_NODE_U128_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getInt128Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_I8_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                             nr::I8Ty *) {
+static ty_t NR_NODE_I8_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                            nr::I8Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2708,8 +2708,8 @@ static ty_t QIR_NODE_I8_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getInt8Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_I16_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                              nr::I16Ty *) {
+static ty_t NR_NODE_I16_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                             nr::I16Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2721,8 +2721,8 @@ static ty_t QIR_NODE_I16_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getInt16Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_I32_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                              nr::I32Ty *) {
+static ty_t NR_NODE_I32_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                             nr::I32Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2734,8 +2734,8 @@ static ty_t QIR_NODE_I32_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getInt32Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_I64_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                              nr::I64Ty *) {
+static ty_t NR_NODE_I64_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                             nr::I64Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2747,8 +2747,8 @@ static ty_t QIR_NODE_I64_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getInt64Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_I128_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                               nr::I128Ty *) {
+static ty_t NR_NODE_I128_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                              nr::I128Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2760,8 +2760,8 @@ static ty_t QIR_NODE_I128_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getInt128Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_F16_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                              nr::F16Ty *) {
+static ty_t NR_NODE_F16_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                             nr::F16Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2773,8 +2773,8 @@ static ty_t QIR_NODE_F16_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getHalfTy(m.getContext());
 }
 
-static ty_t QIR_NODE_F32_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                              nr::F32Ty *) {
+static ty_t NR_NODE_F32_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                             nr::F32Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2786,8 +2786,8 @@ static ty_t QIR_NODE_F32_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getFloatTy(m.getContext());
 }
 
-static ty_t QIR_NODE_F64_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                              nr::F64Ty *) {
+static ty_t NR_NODE_F64_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                             nr::F64Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2799,8 +2799,8 @@ static ty_t QIR_NODE_F64_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getDoubleTy(m.getContext());
 }
 
-static ty_t QIR_NODE_F128_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                               nr::F128Ty *) {
+static ty_t NR_NODE_F128_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                              nr::F128Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2812,8 +2812,8 @@ static ty_t QIR_NODE_F128_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getFP128Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_VOID_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                               nr::VoidTy *) {
+static ty_t NR_NODE_VOID_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                              nr::VoidTy *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2825,8 +2825,8 @@ static ty_t QIR_NODE_VOID_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::Type::getVoidTy(m.getContext());
 }
 
-static ty_t QIR_NODE_PTR_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::PtrTy *N) {
+static ty_t NR_NODE_PTR_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                             nr::PtrTy *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2844,8 +2844,8 @@ static ty_t QIR_NODE_PTR_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return llvm::PointerType::get(R.value(), 0);
 }
 
-static ty_t QIR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                                 nr::OpaqueTy *N) {
+static ty_t NR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
+                                nr::OpaqueTy *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2859,8 +2859,8 @@ static ty_t QIR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
   return llvm::StructType::create(m.getContext(), N->getName());
 }
 
-static ty_t QIR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                                 nr::StructTy *N) {
+static ty_t NR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                                nr::StructTy *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2885,8 +2885,8 @@ static ty_t QIR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return llvm::StructType::get(m.getContext(), elements, true);
 }
 
-static ty_t QIR_NODE_UNION_TY_C(ctx_t &, craft_t &, const Mode &, State &,
-                                nr::UnionTy *) {
+static ty_t NR_NODE_UNION_TY_C(ctx_t &, craft_t &, const Mode &, State &,
+                               nr::UnionTy *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2899,8 +2899,8 @@ static ty_t QIR_NODE_UNION_TY_C(ctx_t &, craft_t &, const Mode &, State &,
   qcore_implement();
 }
 
-static ty_t QIR_NODE_ARRAY_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                                nr::ArrayTy *N) {
+static ty_t NR_NODE_ARRAY_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                               nr::ArrayTy *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2918,8 +2918,8 @@ static ty_t QIR_NODE_ARRAY_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return llvm::ArrayType::get(R.value(), N->getCount());
 }
 
-static ty_t QIR_NODE_FN_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::FnTy *N) {
+static ty_t NR_NODE_FN_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+                            nr::FnTy *N) {
   /**
    * @brief [Write explanation here]
    *

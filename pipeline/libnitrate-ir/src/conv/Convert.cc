@@ -549,7 +549,7 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
                 {QAST_NODE_U16_TY, 16}, {QAST_NODE_U32_TY, 32},
                 {QAST_NODE_U64_TY, 64}, {QAST_NODE_U128_TY, 128},
 
-                /* Signeness is not expressed in the QIR_NODE_INT */
+                /* Signeness is not expressed in the NR_NODE_INT */
                 // {QAST_NODE_I8_TY, 8},     {QAST_NODE_I16_TY, 16},
                 // {QAST_NODE_I32_TY, 32},   {QAST_NODE_I64_TY, 64},
                 // {QAST_NODE_I128_TY, 128},
@@ -1109,7 +1109,7 @@ static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G,
     return std::nullopt;
   }
 
-  if (result.value()->getKind() != QIR_NODE_INT) {
+  if (result.value()->getKind() != NR_NODE_INT) {
     G->report(CompilerError, IC::Error,
               "Non integer literal array size is not supported", n->get_pos());
     return std::nullopt;
@@ -1897,7 +1897,7 @@ static EResult nrgen_while(NRBuilder &b, PState &s, IReport *G,
 
   if (!body.has_value()) {
     body = create<Seq>(SeqItems({}));
-  } else if (body.value()->getKind() != QIR_NODE_SEQ) {
+  } else if (body.value()->getKind() != NR_NODE_SEQ) {
     body = create<Seq>(SeqItems({body.value()}));
   }
 

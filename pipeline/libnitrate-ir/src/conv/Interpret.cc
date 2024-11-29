@@ -107,12 +107,12 @@ namespace comptime {
       if (std::holds_alternative<IntegerValue>(m_data)) {
         using SubObj = std::array<nr_ty_t, 2>;
         static const std::array<std::array<nr_ty_t, 2>, 6> tab = {
-            SubObj({QIR_NODE_U1_TY, QIR_NODE_U1_TY}),
-            SubObj({QIR_NODE_U8_TY, QIR_NODE_I8_TY}),
-            SubObj({QIR_NODE_U16_TY, QIR_NODE_I16_TY}),
-            SubObj({QIR_NODE_U32_TY, QIR_NODE_I32_TY}),
-            SubObj({QIR_NODE_U64_TY, QIR_NODE_I64_TY}),
-            SubObj({QIR_NODE_U128_TY, QIR_NODE_I128_TY}),
+            SubObj({NR_NODE_U1_TY, NR_NODE_U1_TY}),
+            SubObj({NR_NODE_U8_TY, NR_NODE_I8_TY}),
+            SubObj({NR_NODE_U16_TY, NR_NODE_I16_TY}),
+            SubObj({NR_NODE_U32_TY, NR_NODE_I32_TY}),
+            SubObj({NR_NODE_U64_TY, NR_NODE_I64_TY}),
+            SubObj({NR_NODE_U128_TY, NR_NODE_I128_TY}),
         };
 
         const IntegerValue &v = std::get<IntegerValue>(m_data);
@@ -120,10 +120,10 @@ namespace comptime {
         return tab[(int)v.w][(int)v.is_signed];
       } else if (std::holds_alternative<FloatingValue>(m_data)) {
         static const std::array<nr_ty_t, 4> tab = {
-            QIR_NODE_F16_TY,
-            QIR_NODE_F32_TY,
-            QIR_NODE_F64_TY,
-            QIR_NODE_F128_TY,
+            NR_NODE_F16_TY,
+            NR_NODE_F32_TY,
+            NR_NODE_F64_TY,
+            NR_NODE_F128_TY,
         };
 
         return tab[(int)std::get<FloatingValue>(m_data).second];
@@ -682,7 +682,7 @@ namespace comptime {
         ///                          SIMPLE EXPRESSION NODES ///
         ///**********************************************************************///
 
-      case QIR_NODE_BINEXPR: {
+      case NR_NODE_BINEXPR: {
         BinExpr *B = x->as<BinExpr>();
 
         auto L = evaluate(P, B->getLHS());
@@ -702,7 +702,7 @@ namespace comptime {
         return compute_binexpr(P, L.value(), B->getOp(), R.value());
       }
 
-      case QIR_NODE_UNEXPR: {
+      case NR_NODE_UNEXPR: {
         UnExpr *U = x->as<UnExpr>();
 
         auto E = evaluate(P, U->getExpr());
@@ -720,7 +720,7 @@ namespace comptime {
         return E;
       }
 
-      case QIR_NODE_POST_UNEXPR: {
+      case NR_NODE_POST_UNEXPR: {
         PostUnExpr *U = x->as<PostUnExpr>();
 
         auto E = evaluate(P, U->getExpr());
@@ -741,109 +741,109 @@ namespace comptime {
         ///                     COMPLEX EXPRESSION NODES ///
         ///**********************************************************************///
 
-      case QIR_NODE_CALL: {
+      case NR_NODE_CALL: {
         /// TODO: Implement expression
         P.eprintn("Call expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_SEQ: {
+      case NR_NODE_SEQ: {
         /// TODO: Implement expression
         P.eprintn("Sequence expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_INDEX: {
+      case NR_NODE_INDEX: {
         /// TODO: Implement expression
         P.eprintn("Index expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_IDENT: {
+      case NR_NODE_IDENT: {
         /// TODO: Implement expression
         P.eprintn("Identifier expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_EXTERN: {
+      case NR_NODE_EXTERN: {
         /// TODO: Implement expression
         P.eprintn("Extern expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_LOCAL: {
+      case NR_NODE_LOCAL: {
         /// TODO: Implement expression
         P.eprintn("Local expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_RET: {
+      case NR_NODE_RET: {
         /// TODO: Implement expression
         P.eprintn("Return expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_BRK: {
+      case NR_NODE_BRK: {
         /// TODO: Implement expression
         P.eprintn("Break expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_CONT: {
+      case NR_NODE_CONT: {
         /// TODO: Implement expression
         P.eprintn("Continue expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_IF: {
+      case NR_NODE_IF: {
         /// TODO: Implement expression
         P.eprintn("If expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_WHILE: {
+      case NR_NODE_WHILE: {
         /// TODO: Implement expression
         P.eprintn("While expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_FOR: {
+      case NR_NODE_FOR: {
         /// TODO: Implement expression
         P.eprintn("For expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_CASE: {
+      case NR_NODE_CASE: {
         /// TODO: Implement expression
         P.eprintn("Case expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_SWITCH: {
+      case NR_NODE_SWITCH: {
         /// TODO: Implement expression
         P.eprintn("Switch expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_FN: {
+      case NR_NODE_FN: {
         /// TODO: Implement expression
         P.eprintn("Function expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_ASM: {
+      case NR_NODE_ASM: {
         /// TODO: Implement expression
         P.eprintn("Asm expressions are not yet implemented");
         return std::nullopt;
       }
 
-      case QIR_NODE_IGN: {
-        P.eprintn("Unexpected 'QIR_NODE_IGN' node in program DAG");
+      case NR_NODE_IGN: {
+        P.eprintn("Unexpected 'NR_NODE_IGN' node in program DAG");
         return std::nullopt;
       }
 
-      case QIR_NODE_TMP: {
-        P.eprintn("Unexpected 'QIR_NODE_TMP' node in program DAG");
+      case NR_NODE_TMP: {
+        P.eprintn("Unexpected 'NR_NODE_TMP' node in program DAG");
         return std::nullopt;
       }
 
@@ -851,19 +851,19 @@ namespace comptime {
         ///                          PASS THROUGH NODES ///
         ///**********************************************************************///
 
-      case QIR_NODE_INT: {
+      case NR_NODE_INT: {
         Int *n = x->as<Int>();
 
         return Value(IntegerValue(n->getValue(), n->getSize()));
       }
 
-      case QIR_NODE_FLOAT: {
+      case NR_NODE_FLOAT: {
         Float *n = x->as<Float>();
 
         return Value(FloatingValue(n->getValue(), n->getSize()));
       }
 
-      case QIR_NODE_LIST: {
+      case NR_NODE_LIST: {
         List *n = x->as<List>();
         std::vector<Value> items(n->size());
 
@@ -880,28 +880,28 @@ namespace comptime {
         return Value(std::move(items));
       }
 
-      case QIR_NODE_U1_TY:
-      case QIR_NODE_U8_TY:
-      case QIR_NODE_U16_TY:
-      case QIR_NODE_U32_TY:
-      case QIR_NODE_U64_TY:
-      case QIR_NODE_U128_TY:
-      case QIR_NODE_I8_TY:
-      case QIR_NODE_I16_TY:
-      case QIR_NODE_I32_TY:
-      case QIR_NODE_I64_TY:
-      case QIR_NODE_I128_TY:
-      case QIR_NODE_F16_TY:
-      case QIR_NODE_F32_TY:
-      case QIR_NODE_F64_TY:
-      case QIR_NODE_F128_TY:
-      case QIR_NODE_VOID_TY:
-      case QIR_NODE_PTR_TY:
-      case QIR_NODE_OPAQUE_TY:
-      case QIR_NODE_STRUCT_TY:
-      case QIR_NODE_UNION_TY:
-      case QIR_NODE_ARRAY_TY:
-      case QIR_NODE_FN_TY: {
+      case NR_NODE_U1_TY:
+      case NR_NODE_U8_TY:
+      case NR_NODE_U16_TY:
+      case NR_NODE_U32_TY:
+      case NR_NODE_U64_TY:
+      case NR_NODE_U128_TY:
+      case NR_NODE_I8_TY:
+      case NR_NODE_I16_TY:
+      case NR_NODE_I32_TY:
+      case NR_NODE_I64_TY:
+      case NR_NODE_I128_TY:
+      case NR_NODE_F16_TY:
+      case NR_NODE_F32_TY:
+      case NR_NODE_F64_TY:
+      case NR_NODE_F128_TY:
+      case NR_NODE_VOID_TY:
+      case NR_NODE_PTR_TY:
+      case NR_NODE_OPAQUE_TY:
+      case NR_NODE_STRUCT_TY:
+      case NR_NODE_UNION_TY:
+      case NR_NODE_ARRAY_TY:
+      case NR_NODE_FN_TY: {
         // return x;
         /// TODO: Do conversion
         qcore_implement();
@@ -911,101 +911,101 @@ namespace comptime {
 
   static Type *valuety_to_type(const ValueTy &V) {
     switch (V.ty) {
-      case QIR_NODE_U1_TY: {
+      case NR_NODE_U1_TY: {
         return create<U1Ty>();
       }
 
-      case QIR_NODE_U8_TY: {
+      case NR_NODE_U8_TY: {
         return create<U8Ty>();
       }
 
-      case QIR_NODE_U16_TY: {
+      case NR_NODE_U16_TY: {
         return create<U64Ty>();
       }
 
-      case QIR_NODE_U32_TY: {
+      case NR_NODE_U32_TY: {
         return create<U32Ty>();
       }
 
-      case QIR_NODE_U64_TY: {
+      case NR_NODE_U64_TY: {
         return create<U64Ty>();
       }
 
-      case QIR_NODE_U128_TY: {
+      case NR_NODE_U128_TY: {
         return create<U128Ty>();
       }
 
-      case QIR_NODE_I8_TY: {
+      case NR_NODE_I8_TY: {
         return create<I8Ty>();
       }
 
-      case QIR_NODE_I16_TY: {
+      case NR_NODE_I16_TY: {
         return create<I16Ty>();
       }
 
-      case QIR_NODE_I32_TY: {
+      case NR_NODE_I32_TY: {
         return create<I32Ty>();
       }
 
-      case QIR_NODE_I64_TY: {
+      case NR_NODE_I64_TY: {
         return create<I64Ty>();
       }
 
-      case QIR_NODE_I128_TY: {
+      case NR_NODE_I128_TY: {
         return create<I128Ty>();
       }
 
-      case QIR_NODE_F16_TY: {
+      case NR_NODE_F16_TY: {
         return create<F16Ty>();
       }
 
-      case QIR_NODE_F32_TY: {
+      case NR_NODE_F32_TY: {
         return create<F32Ty>();
       }
 
-      case QIR_NODE_F64_TY: {
+      case NR_NODE_F64_TY: {
         return create<F64Ty>();
       }
 
-      case QIR_NODE_F128_TY: {
+      case NR_NODE_F128_TY: {
         return create<F128Ty>();
       }
 
-      case QIR_NODE_VOID_TY: {
+      case NR_NODE_VOID_TY: {
         return create<VoidTy>();
       }
 
-      case QIR_NODE_PTR_TY: {
+      case NR_NODE_PTR_TY: {
         /// TODO:
         qcore_implement();
         // return create<Ty>();
       }
 
-      case QIR_NODE_OPAQUE_TY: {
+      case NR_NODE_OPAQUE_TY: {
         /// TODO:
         qcore_implement();
         // return create<Ty>();
       }
 
-      case QIR_NODE_STRUCT_TY: {
+      case NR_NODE_STRUCT_TY: {
         /// TODO:
         qcore_implement();
         // return create<Ty>();
       }
 
-      case QIR_NODE_UNION_TY: {
+      case NR_NODE_UNION_TY: {
         /// TODO:
         qcore_implement();
         // return create<Ty>();
       }
 
-      case QIR_NODE_ARRAY_TY: {
+      case NR_NODE_ARRAY_TY: {
         /// TODO:
         qcore_implement();
         // return create<Ty>();
       }
 
-      case QIR_NODE_FN_TY: {
+      case NR_NODE_FN_TY: {
         /// TODO:
         qcore_implement();
         // return create<Ty>();

@@ -53,7 +53,7 @@ bool nr::pass::ds_mangle(qmodule_t *mod, IReport *log) {
   bool failed = false;
 
   iterate<dfs_pre>(mod->getRoot(), [&](Expr *, Expr **cur) -> IterOp {
-    if ((*cur)->getKind() == QIR_NODE_FN) {
+    if ((*cur)->getKind() == NR_NODE_FN) {
       Fn *fn = (*cur)->as<Fn>();
       auto name = se.mangle_name(fn, fn->getAbiTag());
       if (name) [[likely]] {
@@ -63,7 +63,7 @@ bool nr::pass::ds_mangle(qmodule_t *mod, IReport *log) {
         log->report(NameManglingTypeInfer, IC::Error, fn->getName(),
                     fn->getLoc());
       }
-    } else if ((*cur)->getKind() == QIR_NODE_LOCAL) {
+    } else if ((*cur)->getKind() == NR_NODE_LOCAL) {
       Local *local = (*cur)->as<Local>();
       auto name = se.mangle_name(local, local->getAbiTag());
       if (name) [[likely]] {
@@ -81,7 +81,7 @@ bool nr::pass::ds_mangle(qmodule_t *mod, IReport *log) {
 
   /* Update identifiers to use the new names */
   iterate<dfs_pre>(mod->getRoot(), [](Expr *, Expr **cur) -> IterOp {
-    if ((*cur)->getKind() != QIR_NODE_IDENT) {
+    if ((*cur)->getKind() != NR_NODE_IDENT) {
       return IterOp::Proceed;
     }
 

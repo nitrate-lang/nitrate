@@ -54,14 +54,14 @@ void NRBuilder::try_resolve_types(Expr *root) noexcept {
   iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
     Expr *N = *C;
 
-    if (!N->is(QIR_NODE_TMP)) {
+    if (!N->is(NR_NODE_TMP)) {
       return IterOp::Proceed;
     }
 
     std::string_view type_name;
 
     bool is_default_value_expr =
-        N->is(QIR_NODE_TMP) &&
+        N->is(NR_NODE_TMP) &&
         N->as<Tmp>()->getTmpType() == TmpType::DEFAULT_VALUE;
 
     if (N->as<Tmp>()->getTmpType() == TmpType::NAMED_TYPE ||
@@ -100,7 +100,7 @@ void NRBuilder::try_resolve_names(Expr *root) noexcept {
   iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
     Expr *N = *C;
 
-    if (N->is(QIR_NODE_IDENT) && N->as<Ident>()->getWhat() == nullptr) {
+    if (N->is(NR_NODE_IDENT) && N->as<Ident>()->getWhat() == nullptr) {
       Ident *I = N->as<Ident>();
 
       if (auto enum_opt = resolve_name(I->getName(), Kind::ScopedEnum)) {
@@ -205,7 +205,7 @@ void NRBuilder::try_resolve_calls(Expr *root) noexcept {
   iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
     Expr *N = *C;
 
-    if (N->is(QIR_NODE_TMP) && N->as<Tmp>()->getTmpType() == TmpType::CALL) {
+    if (N->is(NR_NODE_TMP) && N->as<Tmp>()->getTmpType() == TmpType::CALL) {
       const auto &data =
           std::get<CallArgsTmpNodeCradle>(N->as<Tmp>()->getData());
       Fn *target_fn = nullptr;
@@ -215,7 +215,7 @@ void NRBuilder::try_resolve_calls(Expr *root) noexcept {
         qcore_assert(data.base != nullptr);
 
         // Skip over indirect function calls
-        if (!data.base->is(QIR_NODE_IDENT)) {
+        if (!data.base->is(NR_NODE_IDENT)) {
           goto end;
         }
 
@@ -228,7 +228,7 @@ void NRBuilder::try_resolve_calls(Expr *root) noexcept {
           goto end;
         }
 
-        qcore_assert(result.value()->is(QIR_NODE_FN));
+        qcore_assert(result.value()->is(NR_NODE_FN));
         target_fn = result.value()->as<Fn>();
         default_args = &m_function_defaults.at(target_fn);
       }

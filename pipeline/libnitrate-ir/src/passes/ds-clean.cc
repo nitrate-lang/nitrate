@@ -46,7 +46,7 @@
 using namespace nr;
 
 static void seq_mark_non_functional(Expr* P, Expr** C) {
-  if (!P || P->getKind() != QIR_NODE_SEQ) {
+  if (!P || P->getKind() != NR_NODE_SEQ) {
     return;
   }
 
@@ -55,213 +55,213 @@ static void seq_mark_non_functional(Expr* P, Expr** C) {
 #define IGNORE_NODE() *C = createIgn()
 
   switch (N->getKind()) {
-    case QIR_NODE_BINEXPR: {
+    case NR_NODE_BINEXPR: {
       break;
     }
 
-    case QIR_NODE_UNEXPR: {
+    case NR_NODE_UNEXPR: {
       break;
     }
 
-    case QIR_NODE_POST_UNEXPR: {
+    case NR_NODE_POST_UNEXPR: {
       break;
     }
 
-    case QIR_NODE_INT: {
+    case NR_NODE_INT: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_FLOAT: {
+    case NR_NODE_FLOAT: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_LIST: {
+    case NR_NODE_LIST: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_CALL: {
+    case NR_NODE_CALL: {
       break;
     }
 
-    case QIR_NODE_SEQ: {
+    case NR_NODE_SEQ: {
       break;
     }
 
-    case QIR_NODE_INDEX: {
+    case NR_NODE_INDEX: {
       break;
     }
 
-    case QIR_NODE_IDENT: {
+    case NR_NODE_IDENT: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_EXTERN: {
+    case NR_NODE_EXTERN: {
       break;
     }
 
-    case QIR_NODE_LOCAL: {
+    case NR_NODE_LOCAL: {
       break;
     }
 
-    case QIR_NODE_RET: {
+    case NR_NODE_RET: {
       break;
     }
 
-    case QIR_NODE_BRK: {
+    case NR_NODE_BRK: {
       break;
     }
 
-    case QIR_NODE_CONT: {
+    case NR_NODE_CONT: {
       break;
     }
 
-    case QIR_NODE_IF: {
+    case NR_NODE_IF: {
       break;
     }
 
-    case QIR_NODE_WHILE: {
+    case NR_NODE_WHILE: {
       break;
     }
 
-    case QIR_NODE_FOR: {
+    case NR_NODE_FOR: {
       break;
     }
 
-    case QIR_NODE_CASE: {
+    case NR_NODE_CASE: {
       break;
     }
 
-    case QIR_NODE_SWITCH: {
+    case NR_NODE_SWITCH: {
       break;
     }
 
-    case QIR_NODE_FN: {
+    case NR_NODE_FN: {
       break;
     }
 
-    case QIR_NODE_ASM: {
+    case NR_NODE_ASM: {
       break;
     }
 
-    case QIR_NODE_IGN: {
+    case NR_NODE_IGN: {
       break;
     }
 
-    case QIR_NODE_U1_TY: {
+    case NR_NODE_U1_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_U8_TY: {
+    case NR_NODE_U8_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_U16_TY: {
+    case NR_NODE_U16_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_U32_TY: {
+    case NR_NODE_U32_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_U64_TY: {
+    case NR_NODE_U64_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_U128_TY: {
+    case NR_NODE_U128_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_I8_TY: {
+    case NR_NODE_I8_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_I16_TY: {
+    case NR_NODE_I16_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_I32_TY: {
+    case NR_NODE_I32_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_I64_TY: {
+    case NR_NODE_I64_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_I128_TY: {
+    case NR_NODE_I128_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_F16_TY: {
+    case NR_NODE_F16_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_F32_TY: {
+    case NR_NODE_F32_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_F64_TY: {
+    case NR_NODE_F64_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_F128_TY: {
+    case NR_NODE_F128_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_VOID_TY: {
+    case NR_NODE_VOID_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_PTR_TY: {
+    case NR_NODE_PTR_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_OPAQUE_TY: {
+    case NR_NODE_OPAQUE_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_STRUCT_TY: {
+    case NR_NODE_STRUCT_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_UNION_TY: {
+    case NR_NODE_UNION_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_ARRAY_TY: {
+    case NR_NODE_ARRAY_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_FN_TY: {
+    case NR_NODE_FN_TY: {
       IGNORE_NODE();
       break;
     }
 
-    case QIR_NODE_TMP: {
+    case NR_NODE_TMP: {
       qcore_assert(false);
       break;
     }
@@ -271,7 +271,7 @@ static void seq_mark_non_functional(Expr* P, Expr** C) {
 }
 
 static void seq_sweep_ign_nodes(Expr* P, Expr** C) {
-  if (P && P->getKind() == QIR_NODE_SEQ && (*C)->getKind() == QIR_NODE_IGN) {
+  if (P && P->getKind() == NR_NODE_SEQ && (*C)->getKind() == NR_NODE_IGN) {
     SeqItems& V = P->as<Seq>()->getItems();
 
     auto it = std::find(V.begin(), V.end(), *C);
@@ -283,7 +283,7 @@ static void seq_sweep_ign_nodes(Expr* P, Expr** C) {
 
 static void ignore_empty_seq(Expr* P, Expr** C) {
   /* Don't ignore the root node! */
-  if (P && P->getKind() == QIR_NODE_SEQ && (*C)->getKind() == QIR_NODE_SEQ) {
+  if (P && P->getKind() == NR_NODE_SEQ && (*C)->getKind() == NR_NODE_SEQ) {
     Seq* S = (*C)->as<Seq>();
 
     if (S->getItems().empty()) {
@@ -293,17 +293,17 @@ static void ignore_empty_seq(Expr* P, Expr** C) {
 }
 
 static void ignore_empty_extern(Expr*, Expr** C) {
-  if ((*C)->getKind() == QIR_NODE_EXTERN) {
+  if ((*C)->getKind() == NR_NODE_EXTERN) {
     Extern* E = (*C)->as<Extern>();
 
-    if (E->getValue()->getKind() == QIR_NODE_IGN) {
+    if (E->getValue()->getKind() == NR_NODE_IGN) {
       *C = createIgn();
     }
   }
 }
 
 static void remove_unneeded_cast(Expr*, Expr** C) {
-  if ((*C)->getKind() == QIR_NODE_BINEXPR) {
+  if ((*C)->getKind() == NR_NODE_BINEXPR) {
     BinExpr* E = (*C)->as<BinExpr>();
 
     if (E->getOp() == Op::CastAs || E->getOp() == Op::BitcastAs) {

@@ -48,10 +48,10 @@ void NRBuilder::flatten_symbols(Seq *root) noexcept {
       return IterOp::Proceed;
     }
 
-    bool replace_with_ident = !P->is(QIR_NODE_SEQ);
+    bool replace_with_ident = !P->is(NR_NODE_SEQ);
 
-    if ((!P->is(QIR_NODE_EXTERN) && (*C)->is(QIR_NODE_FN)) ||
-        (*C)->is(QIR_NODE_EXTERN)) {
+    if ((!P->is(NR_NODE_EXTERN) && (*C)->is(NR_NODE_FN)) ||
+        (*C)->is(NR_NODE_EXTERN)) {
       symbols.insert(*C);
 
       if (replace_with_ident) {

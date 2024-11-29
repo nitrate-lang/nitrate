@@ -52,59 +52,59 @@ typedef struct qmodule_t qmodule_t;
  * @brief Nitrate abstract syntax tree node type.
  */
 typedef enum nr_ty_t {
-  QIR_NODE_BINEXPR,     /* Binary expression */
-  QIR_NODE_UNEXPR,      /* Unary expression */
-  QIR_NODE_POST_UNEXPR, /* Postfix unary expression */
+  NR_NODE_BINEXPR,     /* Binary expression */
+  NR_NODE_UNEXPR,      /* Unary expression */
+  NR_NODE_POST_UNEXPR, /* Postfix unary expression */
 
-  QIR_NODE_INT,   /* Integer literal */
-  QIR_NODE_FLOAT, /* Floating-point literal */
-  QIR_NODE_LIST,  /* List literal */
+  NR_NODE_INT,   /* Integer literal */
+  NR_NODE_FLOAT, /* Floating-point literal */
+  NR_NODE_LIST,  /* List literal */
 
-  QIR_NODE_CALL,   /* Function call */
-  QIR_NODE_SEQ,    /* Sequence */
-  QIR_NODE_INDEX,  /* Index / member access */
-  QIR_NODE_IDENT,  /* Identifier */
-  QIR_NODE_EXTERN, /* Linker visibility modifier */
-  QIR_NODE_LOCAL,  /* Variable declaration */
-  QIR_NODE_RET,    /* Return statement */
-  QIR_NODE_BRK,    /* Break statement */
-  QIR_NODE_CONT,   /* Continue statement */
-  QIR_NODE_IF,     /* If statement */
-  QIR_NODE_WHILE,  /* While loop */
-  QIR_NODE_FOR,    /* For loop */
-  QIR_NODE_CASE,   /* Case statement */
-  QIR_NODE_SWITCH, /* Switch statement */
-  QIR_NODE_FN,     /* Function definition */
-  QIR_NODE_ASM,    /* Inline assembly */
-  QIR_NODE_IGN,    /* No-op */
+  NR_NODE_CALL,   /* Function call */
+  NR_NODE_SEQ,    /* Sequence */
+  NR_NODE_INDEX,  /* Index / member access */
+  NR_NODE_IDENT,  /* Identifier */
+  NR_NODE_EXTERN, /* Linker visibility modifier */
+  NR_NODE_LOCAL,  /* Variable declaration */
+  NR_NODE_RET,    /* Return statement */
+  NR_NODE_BRK,    /* Break statement */
+  NR_NODE_CONT,   /* Continue statement */
+  NR_NODE_IF,     /* If statement */
+  NR_NODE_WHILE,  /* While loop */
+  NR_NODE_FOR,    /* For loop */
+  NR_NODE_CASE,   /* Case statement */
+  NR_NODE_SWITCH, /* Switch statement */
+  NR_NODE_FN,     /* Function definition */
+  NR_NODE_ASM,    /* Inline assembly */
+  NR_NODE_IGN,    /* No-op */
 
-  QIR_NODE_U1_TY,     /* 1-bit unsigned integer (boolean) */
-  QIR_NODE_U8_TY,     /* 8-bit unsigned integer */
-  QIR_NODE_U16_TY,    /* 16-bit unsigned integer */
-  QIR_NODE_U32_TY,    /* 32-bit unsigned integer */
-  QIR_NODE_U64_TY,    /* 64-bit unsigned integer */
-  QIR_NODE_U128_TY,   /* 128-bit unsigned integer */
-  QIR_NODE_I8_TY,     /* 8-bit signed integer */
-  QIR_NODE_I16_TY,    /* 16-bit signed integer */
-  QIR_NODE_I32_TY,    /* 32-bit signed integer */
-  QIR_NODE_I64_TY,    /* 64-bit signed integer */
-  QIR_NODE_I128_TY,   /* 128-bit signed integer */
-  QIR_NODE_F16_TY,    /* 16-bit floating-point */
-  QIR_NODE_F32_TY,    /* 32-bit floating-point */
-  QIR_NODE_F64_TY,    /* 64-bit floating-point */
-  QIR_NODE_F128_TY,   /* 128-bit floating-point */
-  QIR_NODE_VOID_TY,   /* Void type */
-  QIR_NODE_PTR_TY,    /* Pointer type */
-  QIR_NODE_OPAQUE_TY, /* Opaque type */
-  QIR_NODE_STRUCT_TY, /* Struct type */
-  QIR_NODE_UNION_TY,  /* Union type */
-  QIR_NODE_ARRAY_TY,  /* Array type */
-  QIR_NODE_FN_TY,     /* Function type */
+  NR_NODE_U1_TY,     /* 1-bit unsigned integer (boolean) */
+  NR_NODE_U8_TY,     /* 8-bit unsigned integer */
+  NR_NODE_U16_TY,    /* 16-bit unsigned integer */
+  NR_NODE_U32_TY,    /* 32-bit unsigned integer */
+  NR_NODE_U64_TY,    /* 64-bit unsigned integer */
+  NR_NODE_U128_TY,   /* 128-bit unsigned integer */
+  NR_NODE_I8_TY,     /* 8-bit signed integer */
+  NR_NODE_I16_TY,    /* 16-bit signed integer */
+  NR_NODE_I32_TY,    /* 32-bit signed integer */
+  NR_NODE_I64_TY,    /* 64-bit signed integer */
+  NR_NODE_I128_TY,   /* 128-bit signed integer */
+  NR_NODE_F16_TY,    /* 16-bit floating-point */
+  NR_NODE_F32_TY,    /* 32-bit floating-point */
+  NR_NODE_F64_TY,    /* 64-bit floating-point */
+  NR_NODE_F128_TY,   /* 128-bit floating-point */
+  NR_NODE_VOID_TY,   /* Void type */
+  NR_NODE_PTR_TY,    /* Pointer type */
+  NR_NODE_OPAQUE_TY, /* Opaque type */
+  NR_NODE_STRUCT_TY, /* Struct type */
+  NR_NODE_UNION_TY,  /* Union type */
+  NR_NODE_ARRAY_TY,  /* Array type */
+  NR_NODE_FN_TY,     /* Function type */
 
-  QIR_NODE_TMP, /* Temp node; must be resolved with more information */
+  NR_NODE_TMP, /* Temp node; must be resolved with more information */
 } nr_ty_t;
 
-#define QIR_NODE_COUNT 46
+#define NR_NODE_COUNT 46
 
 typedef struct nr_conf_t nr_conf_t;
 

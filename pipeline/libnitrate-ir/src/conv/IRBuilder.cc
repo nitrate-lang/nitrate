@@ -196,7 +196,7 @@ NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
 
     Expr *out_expr = static_cast<Expr *>(nr_clone(m_root));
 
-    contract_enforce(out_expr->getKind() == QIR_NODE_SEQ);
+    contract_enforce(out_expr->getKind() == NR_NODE_SEQ);
     r.m_root = out_expr->as<Seq>();
   }
 

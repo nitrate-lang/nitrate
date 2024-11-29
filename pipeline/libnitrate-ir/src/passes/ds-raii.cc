@@ -51,7 +51,7 @@ bool nr::pass::ds_raii(qmodule_t *M, IReport *) {
     }
 
     iterate<dfs_pre>(F, [](Expr *, Expr **C) -> IterOp {
-      if ((*C)->getKind() != QIR_NODE_SEQ) {
+      if ((*C)->getKind() != NR_NODE_SEQ) {
         return IterOp::Proceed;
       }
 
@@ -64,13 +64,13 @@ bool nr::pass::ds_raii(qmodule_t *M, IReport *) {
       /// destructors in reverse order
       auto first_ubr = std::find_if(SI.begin(), SI.end(), [](Expr *E) {
         nr_ty_t ty = E->getKind();
-        return ty == QIR_NODE_RET || ty == QIR_NODE_CONT || ty == QIR_NODE_BRK;
+        return ty == NR_NODE_RET || ty == NR_NODE_CONT || ty == NR_NODE_BRK;
       });
 
       for (size_t i = 0; i < SI.size(); ++i) {
         Expr *E = SI[i];
 
-        if (E->getKind() == QIR_NODE_LOCAL) {
+        if (E->getKind() == NR_NODE_LOCAL) {
           (void)first_ubr;
           // Local *L = E->as<Local>();
           // Fn *D = createIgn()->as<Fn>();

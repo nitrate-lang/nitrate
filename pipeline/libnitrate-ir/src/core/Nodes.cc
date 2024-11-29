@@ -59,25 +59,25 @@ namespace nr {
   thread_local ArenaAllocatorImpl nr_arena;
 
   namespace mem {
-    Brk static_QIR_NODE_BRK;
-    Cont static_QIR_NODE_CONT;
-    Expr static_QIR_NODE_IGN(QIR_NODE_IGN);
-    U1Ty static_QIR_NODE_U1_TY;
-    U8Ty static_QIR_NODE_U8_TY;
-    U16Ty static_QIR_NODE_U16_TY;
-    U32Ty static_QIR_NODE_U32_TY;
-    U64Ty static_QIR_NODE_U64_TY;
-    U128Ty static_QIR_NODE_U128_TY;
-    I8Ty static_QIR_NODE_I8_TY;
-    I16Ty static_QIR_NODE_I16_TY;
-    I32Ty static_QIR_NODE_I32_TY;
-    I64Ty static_QIR_NODE_I64_TY;
-    I128Ty static_QIR_NODE_I128_TY;
-    F16Ty static_QIR_NODE_F16_TY;
-    F32Ty static_QIR_NODE_F32_TY;
-    F64Ty static_QIR_NODE_F64_TY;
-    F128Ty static_QIR_NODE_F128_TY;
-    VoidTy static_QIR_NODE_VOID_TY;
+    Brk static_NR_NODE_BRK;
+    Cont static_NR_NODE_CONT;
+    Expr static_NR_NODE_IGN(NR_NODE_IGN);
+    U1Ty static_NR_NODE_U1_TY;
+    U8Ty static_NR_NODE_U8_TY;
+    U16Ty static_NR_NODE_U16_TY;
+    U32Ty static_NR_NODE_U32_TY;
+    U64Ty static_NR_NODE_U64_TY;
+    U128Ty static_NR_NODE_U128_TY;
+    I8Ty static_NR_NODE_I8_TY;
+    I16Ty static_NR_NODE_I16_TY;
+    I32Ty static_NR_NODE_I32_TY;
+    I64Ty static_NR_NODE_I64_TY;
+    I128Ty static_NR_NODE_I128_TY;
+    F16Ty static_NR_NODE_F16_TY;
+    F32Ty static_NR_NODE_F32_TY;
+    F64Ty static_NR_NODE_F64_TY;
+    F128Ty static_NR_NODE_F128_TY;
+    VoidTy static_NR_NODE_VOID_TY;
   }  // namespace mem
 }  // namespace nr
 
@@ -185,154 +185,154 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
 #define MIXIN_STRING(x) EVP_DigestUpdate(ctx, x.data(), x.size())
 
     switch (kind) {
-      case QIR_NODE_BINEXPR: {
+      case NR_NODE_BINEXPR: {
         MIXIN_PRIMITIVE(cur->as<BinExpr>()->m_op);
         break;
       }
-      case QIR_NODE_UNEXPR: {
+      case NR_NODE_UNEXPR: {
         MIXIN_PRIMITIVE(cur->as<UnExpr>()->m_op);
         break;
       }
-      case QIR_NODE_POST_UNEXPR: {
+      case NR_NODE_POST_UNEXPR: {
         MIXIN_PRIMITIVE(cur->as<PostUnExpr>()->m_op);
         break;
       }
-      case QIR_NODE_INT: {
+      case NR_NODE_INT: {
         uint128_t x = cur->as<Int>()->getValue();
         MIXIN_PRIMITIVE(x);
         break;
       }
-      case QIR_NODE_FLOAT: {
+      case NR_NODE_FLOAT: {
         double v = cur->as<Float>()->getValue();
         FloatSize s = cur->as<Float>()->getSize();
         MIXIN_PRIMITIVE(v);
         MIXIN_PRIMITIVE(s);
         break;
       }
-      case QIR_NODE_LIST: {
+      case NR_NODE_LIST: {
         break;
       }
-      case QIR_NODE_CALL: {
+      case NR_NODE_CALL: {
         break;
       }
-      case QIR_NODE_SEQ: {
+      case NR_NODE_SEQ: {
         break;
       }
-      case QIR_NODE_INDEX: {
+      case NR_NODE_INDEX: {
         break;
       }
-      case QIR_NODE_IDENT: {
+      case NR_NODE_IDENT: {
         MIXIN_STRING(cur->as<Ident>()->m_name);
         break;
       }
-      case QIR_NODE_EXTERN: {
+      case NR_NODE_EXTERN: {
         MIXIN_STRING(cur->as<Extern>()->m_abi_name);
         break;
       }
-      case QIR_NODE_LOCAL: {
+      case NR_NODE_LOCAL: {
         MIXIN_STRING(cur->as<Local>()->m_name);
         break;
       }
-      case QIR_NODE_RET: {
+      case NR_NODE_RET: {
         break;
       }
-      case QIR_NODE_BRK: {
+      case NR_NODE_BRK: {
         break;
       }
-      case QIR_NODE_CONT: {
+      case NR_NODE_CONT: {
         break;
       }
-      case QIR_NODE_IF: {
+      case NR_NODE_IF: {
         break;
       }
-      case QIR_NODE_WHILE: {
+      case NR_NODE_WHILE: {
         break;
       }
-      case QIR_NODE_FOR: {
+      case NR_NODE_FOR: {
         break;
       }
-      case QIR_NODE_CASE: {
+      case NR_NODE_CASE: {
         break;
       }
-      case QIR_NODE_SWITCH: {
+      case NR_NODE_SWITCH: {
         break;
       }
-      case QIR_NODE_IGN: {
+      case NR_NODE_IGN: {
         break;
       }
-      case QIR_NODE_FN: {
+      case NR_NODE_FN: {
         MIXIN_STRING(cur->as<Fn>()->m_name);
         break;
       }
-      case QIR_NODE_ASM: {
+      case NR_NODE_ASM: {
         qcore_implement();
         break;
       }
-      case QIR_NODE_U1_TY: {
+      case NR_NODE_U1_TY: {
         break;
       }
-      case QIR_NODE_U8_TY: {
+      case NR_NODE_U8_TY: {
         break;
       }
-      case QIR_NODE_U16_TY: {
+      case NR_NODE_U16_TY: {
         break;
       }
-      case QIR_NODE_U32_TY: {
+      case NR_NODE_U32_TY: {
         break;
       }
-      case QIR_NODE_U64_TY: {
+      case NR_NODE_U64_TY: {
         break;
       }
-      case QIR_NODE_U128_TY: {
+      case NR_NODE_U128_TY: {
         break;
       }
-      case QIR_NODE_I8_TY: {
+      case NR_NODE_I8_TY: {
         break;
       }
-      case QIR_NODE_I16_TY: {
+      case NR_NODE_I16_TY: {
         break;
       }
-      case QIR_NODE_I32_TY: {
+      case NR_NODE_I32_TY: {
         break;
       }
-      case QIR_NODE_I64_TY: {
+      case NR_NODE_I64_TY: {
         break;
       }
-      case QIR_NODE_I128_TY: {
+      case NR_NODE_I128_TY: {
         break;
       }
-      case QIR_NODE_F16_TY: {
+      case NR_NODE_F16_TY: {
         break;
       }
-      case QIR_NODE_F32_TY: {
+      case NR_NODE_F32_TY: {
         break;
       }
-      case QIR_NODE_F64_TY: {
+      case NR_NODE_F64_TY: {
         break;
       }
-      case QIR_NODE_F128_TY: {
+      case NR_NODE_F128_TY: {
         break;
       }
-      case QIR_NODE_VOID_TY: {
+      case NR_NODE_VOID_TY: {
         break;
       }
-      case QIR_NODE_PTR_TY: {
+      case NR_NODE_PTR_TY: {
         break;
       }
-      case QIR_NODE_OPAQUE_TY: {
+      case NR_NODE_OPAQUE_TY: {
         MIXIN_STRING(cur->as<OpaqueTy>()->m_name);
         break;
       }
-      case QIR_NODE_STRUCT_TY: {
+      case NR_NODE_STRUCT_TY: {
         break;
       }
-      case QIR_NODE_UNION_TY: {
+      case NR_NODE_UNION_TY: {
         break;
       }
-      case QIR_NODE_ARRAY_TY: {
+      case NR_NODE_ARRAY_TY: {
         break;
       }
-      case QIR_NODE_FN_TY: {
+      case NR_NODE_FN_TY: {
         std::set<FnAttr> tags;
         for (auto &tag : cur->as<FnTy>()->m_attrs) {
           tags.insert(tag);
@@ -342,7 +342,7 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
         }
         break;
       }
-      case QIR_NODE_TMP: {
+      case NR_NODE_TMP: {
         MIXIN_PRIMITIVE(cur->as<Tmp>()->m_type);
 
         if (std::holds_alternative<CallArgsTmpNodeCradle>(
@@ -406,72 +406,64 @@ CPP_EXPORT uint64_t Expr::getUniqId() const {
 
 CPP_EXPORT bool Type::is_primitive() const {
   switch (getKind()) {
-    case QIR_NODE_U1_TY:
-    case QIR_NODE_U8_TY:
-    case QIR_NODE_U16_TY:
-    case QIR_NODE_U32_TY:
-    case QIR_NODE_U64_TY:
-    case QIR_NODE_U128_TY:
-    case QIR_NODE_I8_TY:
-    case QIR_NODE_I16_TY:
-    case QIR_NODE_I32_TY:
-    case QIR_NODE_I64_TY:
-    case QIR_NODE_I128_TY:
-    case QIR_NODE_F16_TY:
-    case QIR_NODE_F32_TY:
-    case QIR_NODE_F64_TY:
-    case QIR_NODE_F128_TY:
-    case QIR_NODE_VOID_TY:
+    case NR_NODE_U1_TY:
+    case NR_NODE_U8_TY:
+    case NR_NODE_U16_TY:
+    case NR_NODE_U32_TY:
+    case NR_NODE_U64_TY:
+    case NR_NODE_U128_TY:
+    case NR_NODE_I8_TY:
+    case NR_NODE_I16_TY:
+    case NR_NODE_I32_TY:
+    case NR_NODE_I64_TY:
+    case NR_NODE_I128_TY:
+    case NR_NODE_F16_TY:
+    case NR_NODE_F32_TY:
+    case NR_NODE_F64_TY:
+    case NR_NODE_F128_TY:
+    case NR_NODE_VOID_TY:
       return true;
     default:
       return false;
   }
 }
 
-CPP_EXPORT bool Type::is_array() const {
-  return getKind() == QIR_NODE_ARRAY_TY;
-}
+CPP_EXPORT bool Type::is_array() const { return getKind() == NR_NODE_ARRAY_TY; }
 
-CPP_EXPORT bool Type::is_pointer() const {
-  return getKind() == QIR_NODE_PTR_TY;
-}
+CPP_EXPORT bool Type::is_pointer() const { return getKind() == NR_NODE_PTR_TY; }
 
-CPP_EXPORT bool Type::is_function() const {
-  return getKind() == QIR_NODE_FN_TY;
-}
+CPP_EXPORT bool Type::is_function() const { return getKind() == NR_NODE_FN_TY; }
 
 CPP_EXPORT bool Type::is_composite() const {
   switch (getKind()) {
-    case QIR_NODE_STRUCT_TY:
-    case QIR_NODE_UNION_TY:
-    case QIR_NODE_ARRAY_TY:
+    case NR_NODE_STRUCT_TY:
+    case NR_NODE_UNION_TY:
+    case NR_NODE_ARRAY_TY:
       return true;
     default:
       return false;
   }
 }
 
-CPP_EXPORT bool Type::is_union() const {
-  return getKind() == QIR_NODE_UNION_TY;
-}
+CPP_EXPORT bool Type::is_union() const { return getKind() == NR_NODE_UNION_TY; }
 
 CPP_EXPORT bool Type::is_numeric() const {
   switch (getKind()) {
-    case QIR_NODE_U1_TY:
-    case QIR_NODE_U8_TY:
-    case QIR_NODE_U16_TY:
-    case QIR_NODE_U32_TY:
-    case QIR_NODE_U64_TY:
-    case QIR_NODE_U128_TY:
-    case QIR_NODE_I8_TY:
-    case QIR_NODE_I16_TY:
-    case QIR_NODE_I32_TY:
-    case QIR_NODE_I64_TY:
-    case QIR_NODE_I128_TY:
-    case QIR_NODE_F16_TY:
-    case QIR_NODE_F32_TY:
-    case QIR_NODE_F64_TY:
-    case QIR_NODE_F128_TY:
+    case NR_NODE_U1_TY:
+    case NR_NODE_U8_TY:
+    case NR_NODE_U16_TY:
+    case NR_NODE_U32_TY:
+    case NR_NODE_U64_TY:
+    case NR_NODE_U128_TY:
+    case NR_NODE_I8_TY:
+    case NR_NODE_I16_TY:
+    case NR_NODE_I32_TY:
+    case NR_NODE_I64_TY:
+    case NR_NODE_I128_TY:
+    case NR_NODE_F16_TY:
+    case NR_NODE_F32_TY:
+    case NR_NODE_F64_TY:
+    case NR_NODE_F128_TY:
       return true;
     default:
       return false;
@@ -480,17 +472,17 @@ CPP_EXPORT bool Type::is_numeric() const {
 
 CPP_EXPORT bool Type::is_integral() const {
   switch (getKind()) {
-    case QIR_NODE_U1_TY:
-    case QIR_NODE_U8_TY:
-    case QIR_NODE_U16_TY:
-    case QIR_NODE_U32_TY:
-    case QIR_NODE_U64_TY:
-    case QIR_NODE_U128_TY:
-    case QIR_NODE_I8_TY:
-    case QIR_NODE_I16_TY:
-    case QIR_NODE_I32_TY:
-    case QIR_NODE_I64_TY:
-    case QIR_NODE_I128_TY:
+    case NR_NODE_U1_TY:
+    case NR_NODE_U8_TY:
+    case NR_NODE_U16_TY:
+    case NR_NODE_U32_TY:
+    case NR_NODE_U64_TY:
+    case NR_NODE_U128_TY:
+    case NR_NODE_I8_TY:
+    case NR_NODE_I16_TY:
+    case NR_NODE_I32_TY:
+    case NR_NODE_I64_TY:
+    case NR_NODE_I128_TY:
       return true;
     default:
       return false;
@@ -499,10 +491,10 @@ CPP_EXPORT bool Type::is_integral() const {
 
 CPP_EXPORT bool Type::is_floating_point() const {
   switch (getKind()) {
-    case QIR_NODE_F16_TY:
-    case QIR_NODE_F32_TY:
-    case QIR_NODE_F64_TY:
-    case QIR_NODE_F128_TY:
+    case NR_NODE_F16_TY:
+    case NR_NODE_F32_TY:
+    case NR_NODE_F64_TY:
+    case NR_NODE_F128_TY:
       return true;
     default:
       return false;
@@ -511,15 +503,15 @@ CPP_EXPORT bool Type::is_floating_point() const {
 
 CPP_EXPORT bool Type::is_signed() const {
   switch (getKind()) {
-    case QIR_NODE_I8_TY:
-    case QIR_NODE_I16_TY:
-    case QIR_NODE_I32_TY:
-    case QIR_NODE_I64_TY:
-    case QIR_NODE_I128_TY:
-    case QIR_NODE_F16_TY:
-    case QIR_NODE_F32_TY:
-    case QIR_NODE_F64_TY:
-    case QIR_NODE_F128_TY:
+    case NR_NODE_I8_TY:
+    case NR_NODE_I16_TY:
+    case NR_NODE_I32_TY:
+    case NR_NODE_I64_TY:
+    case NR_NODE_I128_TY:
+    case NR_NODE_F16_TY:
+    case NR_NODE_F32_TY:
+    case NR_NODE_F64_TY:
+    case NR_NODE_F128_TY:
       return true;
     default:
       return false;
@@ -528,21 +520,21 @@ CPP_EXPORT bool Type::is_signed() const {
 
 CPP_EXPORT bool Type::is_unsigned() const {
   switch (getKind()) {
-    case QIR_NODE_U1_TY:
-    case QIR_NODE_U8_TY:
-    case QIR_NODE_U16_TY:
-    case QIR_NODE_U32_TY:
-    case QIR_NODE_U64_TY:
-    case QIR_NODE_U128_TY:
+    case NR_NODE_U1_TY:
+    case NR_NODE_U8_TY:
+    case NR_NODE_U16_TY:
+    case NR_NODE_U32_TY:
+    case NR_NODE_U64_TY:
+    case NR_NODE_U128_TY:
       return true;
     default:
       return false;
   }
 }
 
-CPP_EXPORT bool Type::is_void() const { return getKind() == QIR_NODE_VOID_TY; }
+CPP_EXPORT bool Type::is_void() const { return getKind() == NR_NODE_VOID_TY; }
 
-CPP_EXPORT bool Type::is_bool() const { return getKind() == QIR_NODE_U1_TY; }
+CPP_EXPORT bool Type::is_bool() const { return getKind() == NR_NODE_U1_TY; }
 
 CPP_EXPORT bool Type::is_ptr_to(const Type *type) const {
   if (is_pointer()) {
@@ -595,5 +587,5 @@ CPP_EXPORT Int *Int::get(uint128_t val, uint8_t size) noexcept {
 ///=============================================================================
 
 Expr *nr::createIgn() {
-  return new (Arena<Expr>().allocate(1)) Expr(QIR_NODE_IGN);
+  return new (Arena<Expr>().allocate(1)) Expr(NR_NODE_IGN);
 }
