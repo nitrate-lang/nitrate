@@ -93,10 +93,26 @@ bool NRBuilder::check_duplicates(Seq *root, IReport *I) noexcept {
     ok = false;
   }
 
+  for (auto var : m_duplicate_variables) {
+    if (auto var_type = var->getType()) {
+      std::stringstream ss;
+      var_type.value()->dump(ss);
+
+      I->report(CompilerError, IC::Error,
+                {"Duplicate variable \"", var->getName(), "\": ", ss.str()},
+                var->getLoc());
+
+    } else {
+      I->report(CompilerError, IC::Error,
+                {"Duplicate variable \"", var->getName(), "\""}, var->getLoc());
+    }
+
+    ok = false;
+  }
+
   ///=====================================================================
 
   iterate<dfs_pre>(root, [&](Expr *, Expr **) -> IterOp {
-    /// TODO: Check variable names for conflicts.
     /// TODO: Warn user about using reserved namespaces.
 
     return IterOp::Proceed;

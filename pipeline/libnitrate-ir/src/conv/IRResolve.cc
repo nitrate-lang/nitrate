@@ -106,7 +106,7 @@ void NRBuilder::try_resolve_names(Expr *root) noexcept {
       if (auto enum_opt = resolve_name(I->getName(), Kind::ScopedEnum)) {
         *C = enum_opt.value();
       } else if (auto var_opt = resolve_name(I->getName(), Kind::Variable)) {
-        *C = var_opt.value();
+        I->setWhat(var_opt.value());
       }
     }
 

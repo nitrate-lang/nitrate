@@ -1193,9 +1193,7 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *,
                               qparse::UnresolvedType *n) {
-  auto str = s.scope_name(n->get_name());
-
-  return b.getUnknownNamedTy(b.intern(str));
+  return b.getUnknownNamedTy(b.intern(s.scope_name(n->get_name())));
 }
 
 static EResult nrgen_infer_ty(NRBuilder &b, PState &, IReport *,
@@ -1307,11 +1305,11 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
     for (size_t i = 0; i < items.size(); i++) {
       templ_names[i] = b.intern(std::get<qparse::String>(items[i]));
     }
-    b.createStructTemplateDefintion(b.intern(s.scope_name(n->get_name())),
+    b.createStructTemplateDefintion(b.intern(s.join_scope(n->get_name())),
                                     templ_names, b.getStructTy(fields));
   } else {
     b.createNamedTypeAlias(b.getStructTy(fields),
-                           b.intern(s.scope_name(n->get_name())));
+                           b.intern(s.join_scope(n->get_name())));
   }
   std::swap(s.ns_prefix, old_ns);
 
@@ -1383,7 +1381,7 @@ static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
     }
   }
 
-  b.createNamedConstantDefinition(b.intern(s.scope_name(n->get_name())),
+  b.createNamedConstantDefinition(b.intern(s.join_scope(n->get_name())),
                                   values);
 
   return std::vector<Expr *>();
@@ -1442,7 +1440,7 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G,
   auto props = convert_purity(func_ty->get_purity());
 
   Fn *fndecl = b.createFunctionDeclaration(
-      b.intern(s.scope_name(n->get_name())), parameters,
+      b.intern(s.join_scope(n->get_name())), parameters,
       ret_type.value()->asType(), func_ty->is_variadic(), Vis::Pub, props.first,
       props.second, func_ty->is_noexcept(), func_ty->is_foreign());
 
@@ -1712,7 +1710,7 @@ static EResult nrgen_const(NRBuilder &b, PState &s, IReport *G,
   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
   Local *local =
-      b.createVariable(b.intern(s.scope_name(n->get_name())),
+      b.createVariable(b.intern(s.join_scope(n->get_name())),
                        type.value()->asType(), visibility, storage, true);
 
   local->setValue(init.value());
@@ -1750,7 +1748,7 @@ static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G,
   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
   Local *local =
-      b.createVariable(b.intern(s.scope_name(n->get_name())),
+      b.createVariable(b.intern(s.join_scope(n->get_name())),
                        type.value()->asType(), visibility, storage, false);
 
   local->setValue(init.value());
@@ -1788,7 +1786,7 @@ static EResult nrgen_let(NRBuilder &b, PState &s, IReport *G,
   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
   Local *local =
-      b.createVariable(b.intern(s.scope_name(n->get_name())),
+      b.createVariable(b.intern(s.join_scope(n->get_name())),
                        type.value()->asType(), visibility, storage, false);
 
   local->setValue(init.value());

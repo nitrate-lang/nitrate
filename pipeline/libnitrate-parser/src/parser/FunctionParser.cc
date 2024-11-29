@@ -35,6 +35,7 @@
 #include <parser/Parse.h>
 
 #include "nitrate-lexer/Lexer.h"
+#include "nitrate-lexer/Token.h"
 #include "nitrate-parser/Node.h"
 
 using namespace qparse;
@@ -252,13 +253,14 @@ static FunctionProperties read_function_properties(qlex_t *rd) {
   return props;
 }
 
-static bool parse_captures_and_name(qlex_tok_t &c, qlex_t *rd, FnDecl *fndecl,
+static bool parse_captures_and_name(qlex_t *rd, FnDecl *fndecl,
                                     FnCaptures &captures) {
-  if (c.is(qName)) {
-    fndecl->set_name(c.as_string(rd));
-    c = qlex_peek(rd);
-  } else if (c.is<qPuncLBrk>()) {
-    while (true) {
+  qlex_tok_t c = qlex_peek(rd);
+
+  if (c.is<qPuncLBrk>()) {
+    qlex_next(rd);
+
+    while (!c.is<qEofF>()) {
       c = qlex_next(rd);
 
       if (c.is<qPuncRBrk>()) {
@@ -288,13 +290,20 @@ static bool parse_captures_and_name(qlex_tok_t &c, qlex_t *rd, FnDecl *fndecl,
     c = qlex_peek(rd);
   }
 
+  if (c.is(qName)) {
+    qlex_next(rd);
+    fndecl->set_name(c.as_string(rd));
+  }
+
   return true;
 }
 
 bool parse_template_parameters(
-    qparse_t &job, qlex_tok_t &c, qlex_t *rd,
+    qparse_t &job, qlex_t *rd,
     std::optional<TemplateParameters> &template_params) {
   template_params = std::nullopt;
+
+  qlex_tok_t c = qlex_peek(rd);
 
   if (!c.is<qOpLT>()) {
     return true;
@@ -339,10 +348,13 @@ bool parse_template_parameters(
   return true;
 }
 
-static bool parse_parameters(qparse_t &job, qlex_tok_t &c, qlex_t *rd,
-                             FuncTy *ftype, bool &is_variadic) {
+static bool parse_parameters(qparse_t &job, qlex_t *rd, FuncTy *ftype,
+                             bool &is_variadic) {
+  qlex_tok_t c = qlex_peek(rd);
+
   if (!c.is<qPuncLPar>()) {
     syntax(c, "Expected '(' after function name");
+    return false;
   }
 
   qlex_next(rd);
@@ -504,34 +516,44 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
   std::optional<TemplateParameters> params;
 
   prop = read_function_properties(rd);
-  tok = qlex_next(rd);
 
   { /* Parse function name or anonymous function capture list */
-    if (!parse_captures_and_name(tok, rd, fndecl, captures)) {
+    tok = qlex_peek(rd);
+
+    if (!parse_captures_and_name(rd, fndecl, captures)) {
       syntax(tok, "Expected a function name or capture list");
       return false;
     }
   }
 
   { /* Parse possible template parameters */
-    if (!parse_template_parameters(job, tok, rd,
-                                   fndecl->get_template_params())) {
+    tok = qlex_peek(rd);
+
+    if (!parse_template_parameters(job, rd, fndecl->get_template_params())) {
+      syntax(tok, "Failed to parse template parameters");
       return false;
     }
   }
 
   { /* Parse function parameters */
-    if (!parse_parameters(job, tok, rd, ftype, is_variadic)) {
+    tok = qlex_peek(rd);
+
+    if (!parse_parameters(job, rd, ftype, is_variadic)) {
+      syntax(tok, "Failed to parse function parameters");
       return false;
     }
   }
 
   { /* Convert function properties */
+    tok = qlex_peek(rd);
+
     if (!translate_purity(prop, ftype)) {
       syntax(tok, "Failed to translate purity");
       return false;
     }
   }
+
+  tok = qlex_peek(rd);
 
   { /* Set function type and assign to function declaration */
     ftype->set_variadic(is_variadic);

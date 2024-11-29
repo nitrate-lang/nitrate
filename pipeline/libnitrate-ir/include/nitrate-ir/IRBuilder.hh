@@ -128,8 +128,10 @@ namespace nr {
     std::unordered_map<std::string_view, Fn *> m_functions;
     std::unordered_map<Fn *, std::unordered_map<size_t, Expr *>>
         m_function_defaults;
-
     std::unordered_set<Fn *> m_duplicate_functions;
+
+    std::unordered_map<std::string_view, Local *> m_variables;
+    std::unordered_set<Local *> m_duplicate_variables;
 
     ///**************************************************************************///
     // Builder helper methods

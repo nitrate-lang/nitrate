@@ -170,6 +170,12 @@ Local *NRBuilder::createVariable(
   (void)storage;
   (void)is_readonly;
 
+  if (m_variables.contains(name)) [[unlikely]] {
+    m_duplicate_variables.insert(local);
+  }
+
+  m_variables[name] = local;
+
   local = compiler_trace(debug_info(local, DEBUG_INFO));
 
   return local;

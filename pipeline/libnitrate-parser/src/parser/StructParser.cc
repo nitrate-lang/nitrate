@@ -156,7 +156,7 @@ bool parser::parse_composite_field(qparse_t &job, qlex_t *rd,
 }
 
 bool parse_template_parameters(
-    qparse_t &job, qlex_tok_t &c, qlex_t *rd,
+    qparse_t &job, qlex_t *rd,
     std::optional<TemplateParameters> &template_params);
 
 bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
@@ -186,8 +186,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   {
-    tok = qlex_peek(rd);
-    if (!parse_template_parameters(job, tok, rd, sdef->get_template_params())) {
+    if (!parse_template_parameters(job, rd, sdef->get_template_params())) {
       return false;
     }
   }
