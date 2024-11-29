@@ -68,12 +68,6 @@ namespace qparse::parser {
 
   bool parse_struct(qparse_t &job, qlex_t *rd, Stmt **node);
 
-  bool parse_region(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_group(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_union(qparse_t &job, qlex_t *rd, Stmt **node);
-
   bool parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node);
 
   bool parse_function(qparse_t &job, qlex_t *rd, Stmt **node);

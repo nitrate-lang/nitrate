@@ -159,37 +159,47 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
         }
 
         case qKStruct: {
-          if (!parse_struct(job, rd, &node)) {
+          if (!parse_struct(job, rd, &node) || !node) {
             return false;
           }
+
+          node->as<StructDef>()->set_composite_type(CompositeType::Struct);
           break;
         }
 
         case qKRegion: {
-          if (!parse_region(job, rd, &node)) {
+          if (!parse_struct(job, rd, &node) || !node) {
             return false;
           }
+
+          node->as<StructDef>()->set_composite_type(CompositeType::Region);
           break;
         }
 
         case qKGroup: {
-          if (!parse_group(job, rd, &node)) {
+          if (!parse_struct(job, rd, &node) || !node) {
             return false;
           }
+
+          node->as<StructDef>()->set_composite_type(CompositeType::Group);
           break;
         }
 
         case qKClass: {
-          if (!parse_group(job, rd, &node)) {
+          if (!parse_struct(job, rd, &node) || !node) {
             return false;
           }
+
+          node->as<StructDef>()->set_composite_type(CompositeType::Class);
           break;
         }
 
         case qKUnion: {
-          if (!parse_union(job, rd, &node)) {
+          if (!parse_struct(job, rd, &node) || !node) {
             return false;
           }
+
+          node->as<StructDef>()->set_composite_type(CompositeType::Union);
           break;
         }
 

@@ -105,9 +105,6 @@ typedef enum qparse_ty_t {
   QAST_NODE_TYPEDEF,
   QAST_NODE_FNDECL,
   QAST_NODE_STRUCT,
-  QAST_NODE_REGION,
-  QAST_NODE_GROUP,
-  QAST_NODE_UNION,
   QAST_NODE_ENUM,
   QAST_NODE_FN,
   QAST_NODE_SUBSYSTEM,
@@ -133,7 +130,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_VOLSTMT,
 } qparse_ty_t;
 
-#define QAST_NODE_COUNT 82
+#define QAST_NODE_COUNT 79
 
 typedef struct qparse_node_t qparse_node_t;
 
@@ -1659,6 +1656,8 @@ namespace qparse {
     PNODE_IMPL_CORE(FnDef)
   };
 
+  enum class CompositeType { Region, Struct, Group, Class, Union };
+
   class CompositeField : public Decl {
   protected:
     Expr *m_value;
@@ -1684,16 +1683,19 @@ namespace qparse {
     StructDefMethods m_methods;
     StructDefStaticMethods m_static_methods;
     StructDefFields m_fields;
+    CompositeType m_comp_type;
 
   public:
-    StructDef(String name = "", StructTy *type = nullptr,
+    StructDef(String name = "", CompositeType comp_type = CompositeType::Struct,
+              StructTy *type = nullptr,
               std::initializer_list<CompositeField *> fields = {},
               std::initializer_list<FnDecl *> methods = {},
               std::initializer_list<FnDecl *> static_methods = {})
         : Decl(name, type),
           m_methods(methods),
           m_static_methods(static_methods),
-          m_fields(fields) {}
+          m_fields(fields),
+          m_comp_type(comp_type) {}
     StructDef(String name, StructTy *type, const StructDefFields &fields,
               const StructDefMethods &methods,
               const StructDefStaticMethods &static_methods)
@@ -1724,164 +1726,10 @@ namespace qparse {
     void clear_fields();
     void remove_field(CompositeField *field);
 
+    CompositeType get_composite_type() { return m_comp_type; }
+    void set_composite_type(CompositeType t) { m_comp_type = t; }
+
     PNODE_IMPL_CORE(StructDef)
-  };
-
-  typedef std::vector<CompositeField *, Arena<CompositeField *>> GroupDefFields;
-  typedef std::vector<FnDecl *, Arena<FnDecl *>> GroupDefMethods;
-  typedef std::vector<FnDecl *, Arena<FnDecl *>> GroupDefStaticMethods;
-
-  class GroupDef : public Decl {
-  protected:
-    GroupDefMethods m_methods;
-    GroupDefStaticMethods m_static_methods;
-    GroupDefFields m_fields;
-
-  public:
-    GroupDef(String name = "", StructTy *type = nullptr,
-             std::initializer_list<CompositeField *> fields = {},
-             std::initializer_list<FnDecl *> methods = {},
-             std::initializer_list<FnDecl *> static_methods = {})
-        : Decl(name, type),
-          m_methods(methods),
-          m_static_methods(static_methods),
-          m_fields(fields) {}
-    GroupDef(String name, StructTy *type, const GroupDefFields &fields,
-             const GroupDefMethods &methods,
-             const GroupDefStaticMethods &static_methods)
-        : Decl(name, type),
-          m_methods(methods),
-          m_static_methods(static_methods),
-          m_fields(fields) {}
-
-    virtual StructTy *get_type() override {
-      return static_cast<StructTy *>(m_type);
-    }
-
-    GroupDefMethods &get_methods() { return m_methods; }
-    void add_method(FnDecl *method);
-    void add_methods(std::initializer_list<FnDecl *> methods);
-    void clear_methods();
-    void remove_method(FnDecl *method);
-
-    GroupDefStaticMethods &get_static_methods() { return m_static_methods; }
-    void add_static_method(FnDecl *method);
-    void add_static_methods(std::initializer_list<FnDecl *> methods);
-    void clear_static_methods();
-    void remove_static_method(FnDecl *method);
-
-    GroupDefFields &get_fields() { return m_fields; }
-    void add_field(CompositeField *field);
-    void add_fields(std::initializer_list<CompositeField *> fields);
-    void clear_fields();
-    void remove_field(CompositeField *field);
-
-    PNODE_IMPL_CORE(GroupDef);
-  };
-
-  typedef std::vector<CompositeField *, Arena<CompositeField *>>
-      RegionDefFields;
-  typedef std::vector<FnDecl *, Arena<FnDecl *>> RegionDefMethods;
-  typedef std::vector<FnDecl *, Arena<FnDecl *>> RegionDefStaticMethods;
-
-  class RegionDef : public Decl {
-  protected:
-    RegionDefMethods m_methods;
-    RegionDefStaticMethods m_static_methods;
-    RegionDefFields m_fields;
-
-  public:
-    RegionDef(String name = "", StructTy *type = nullptr,
-              std::initializer_list<CompositeField *> fields = {},
-              std::initializer_list<FnDecl *> methods = {},
-              std::initializer_list<FnDecl *> static_methods = {})
-        : Decl(name, type),
-          m_methods(methods),
-          m_static_methods(static_methods),
-          m_fields(fields) {}
-    RegionDef(String name, StructTy *type, const RegionDefFields &fields,
-              const RegionDefMethods &methods,
-              const RegionDefStaticMethods &static_methods)
-        : Decl(name, type),
-          m_methods(methods),
-          m_static_methods(static_methods),
-          m_fields(fields) {}
-
-    virtual StructTy *get_type() override {
-      return static_cast<StructTy *>(m_type);
-    }
-
-    RegionDefMethods &get_methods() { return m_methods; }
-    void add_method(FnDecl *method);
-    void add_methods(std::initializer_list<FnDecl *> methods);
-    void clear_methods();
-    void remove_method(FnDecl *method);
-
-    RegionDefStaticMethods &get_static_methods() { return m_static_methods; }
-    void add_static_method(FnDecl *method);
-    void add_static_methods(std::initializer_list<FnDecl *> methods);
-    void clear_static_methods();
-    void remove_static_method(FnDecl *method);
-
-    RegionDefFields &get_fields() { return m_fields; }
-    void add_field(CompositeField *field);
-    void add_fields(std::initializer_list<CompositeField *> fields);
-    void clear_fields();
-    void remove_field(CompositeField *field);
-
-    PNODE_IMPL_CORE(RegionDef);
-  };
-
-  typedef std::vector<CompositeField *, Arena<CompositeField *>> UnionDefFields;
-  typedef std::vector<FnDecl *, Arena<FnDecl *>> UnionDefMethods;
-  typedef std::vector<FnDecl *, Arena<FnDecl *>> UnionDefStaticMethods;
-
-  class UnionDef : public Decl {
-  protected:
-    UnionDefMethods m_methods;
-    UnionDefStaticMethods m_static_methods;
-    UnionDefFields m_fields;
-
-  public:
-    UnionDef(String name = "", StructTy *type = nullptr,
-             std::initializer_list<CompositeField *> fields = {},
-             std::initializer_list<FnDecl *> methods = {},
-             std::initializer_list<FnDecl *> static_methods = {})
-        : Decl(name, type),
-          m_methods(methods),
-          m_static_methods(static_methods),
-          m_fields(fields) {}
-    UnionDef(String name, StructTy *type, const UnionDefFields &fields,
-             const UnionDefMethods &methods,
-             const UnionDefStaticMethods &static_methods)
-        : Decl(name, type),
-          m_methods(methods),
-          m_static_methods(static_methods),
-          m_fields(fields) {}
-
-    virtual StructTy *get_type() override {
-      return static_cast<StructTy *>(m_type);
-    }
-
-    UnionDefMethods &get_methods() { return m_methods; }
-    void add_method(FnDecl *method);
-    void add_methods(std::initializer_list<FnDecl *> methods);
-    void clear_methods();
-    void remove_method(FnDecl *method);
-
-    UnionDefStaticMethods &get_static_methods() { return m_static_methods; }
-    void add_static_method(FnDecl *method);
-    void add_static_methods(std::initializer_list<FnDecl *> methods);
-    void clear_static_methods();
-    void remove_static_method(FnDecl *method);
-
-    UnionDefFields &get_fields() { return m_fields; }
-    void add_field(CompositeField *field);
-    void add_fields(std::initializer_list<CompositeField *> fields);
-    void clear_fields();
-    void remove_field(CompositeField *field);
-
-    PNODE_IMPL_CORE(UnionDef);
   };
 
   typedef std::pair<String, ConstExpr *> EnumItem;

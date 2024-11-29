@@ -1335,30 +1335,6 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
   return R;
 }
 
-static BResult nrgen_region(NRBuilder &b, PState &s, IReport *G,
-                            qparse::RegionDef *n) {
-  /// TODO: Region def
-  qcore_implement();
-
-  return std::nullopt;
-}
-
-static BResult nrgen_group(NRBuilder &b, PState &s, IReport *G,
-                           qparse::GroupDef *n) {
-  /// TODO: Group def
-  qcore_implement();
-
-  return std::nullopt;
-}
-
-static BResult nrgen_union(NRBuilder &b, PState &s, IReport *G,
-                           qparse::UnionDef *n) {
-  /// TODO: Union def
-  qcore_implement();
-
-  return std::nullopt;
-}
-
 static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
                           qparse::EnumDef *n) {
   std::unordered_map<std::string_view, Expr *> values;
@@ -2341,18 +2317,6 @@ static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, qparse::Node *n) {
 
     case QAST_NODE_STRUCT:
       out = nrgen_struct(b, s, G, n->as<qparse::StructDef>());
-      break;
-
-    case QAST_NODE_REGION:
-      out = nrgen_region(b, s, G, n->as<qparse::RegionDef>());
-      break;
-
-    case QAST_NODE_GROUP:
-      out = nrgen_group(b, s, G, n->as<qparse::GroupDef>());
-      break;
-
-    case QAST_NODE_UNION:
-      out = nrgen_union(b, s, G, n->as<qparse::UnionDef>());
       break;
 
     case QAST_NODE_SUBSYSTEM:

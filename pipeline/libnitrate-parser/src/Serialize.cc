@@ -644,39 +644,6 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_REGION: {
-      OBJECT_BEGIN("Region");
-      OBJECT_STR(n->as<RegionDef>()->get_name());
-      OBJECT_ARRAY(n->as<RegionDef>()->get_fields());
-      OBJECT_ARRAY(n->as<RegionDef>()->get_methods());
-      OBJECT_ARRAY(n->as<RegionDef>()->get_static_methods());
-      OBJECT_ARRAY(n->as<RegionDef>()->get_tags());
-      OBJECT_NUM((int)n->as<RegionDef>()->get_visibility());
-      OBJECT_END();
-      break;
-    }
-    case QAST_NODE_GROUP: {
-      OBJECT_BEGIN("Group");
-      OBJECT_STR(n->as<GroupDef>()->get_name());
-      OBJECT_ARRAY(n->as<GroupDef>()->get_fields());
-      OBJECT_ARRAY(n->as<GroupDef>()->get_methods());
-      OBJECT_ARRAY(n->as<GroupDef>()->get_static_methods());
-      OBJECT_ARRAY(n->as<GroupDef>()->get_tags());
-      OBJECT_NUM((int)n->as<GroupDef>()->get_visibility());
-      OBJECT_END();
-      break;
-    }
-    case QAST_NODE_UNION: {
-      OBJECT_BEGIN("Union");
-      OBJECT_STR(n->as<UnionDef>()->get_name());
-      OBJECT_ARRAY(n->as<UnionDef>()->get_fields());
-      OBJECT_ARRAY(n->as<UnionDef>()->get_methods());
-      OBJECT_ARRAY(n->as<UnionDef>()->get_static_methods());
-      OBJECT_ARRAY(n->as<UnionDef>()->get_tags());
-      OBJECT_NUM((int)n->as<UnionDef>()->get_visibility());
-      OBJECT_END();
-      break;
-    }
     case QAST_NODE_ENUM: {
       OBJECT_BEGIN("Enum");
       OBJECT_STR(n->as<EnumDef>()->get_name());

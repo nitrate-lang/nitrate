@@ -35,9 +35,125 @@
 
 #include <parser/Parse.h>
 
+#include "nitrate-lexer/Token.h"
+
 using namespace qparse;
 using namespace qparse::parser;
 using namespace qparse::diag;
+
+bool qparse::parser::parse_attributes(qparse_t &job, qlex_t *rd,
+                                      std::set<ConstExpr *> &attributes) {
+  qlex_tok_t tok = qlex_next(rd);
+
+  { /* The implementation list should be enclosed in square brackets ex: [abc,
+       hello] */
+    if (!tok.is<qPuncLBrk>()) {
+      syntax(tok, "Expected '[' after 'impl' in definition");
+    }
+  }
+
+  /* Parse an arbitrary number of attributes */
+  while (true) {
+    /* Check for termination */
+    tok = qlex_peek(rd);
+    if (tok.is(qEofF)) {
+      syntax(tok, "Unexpected end of file in definition");
+      return false;
+    }
+
+    if (tok.is<qPuncRBrk>()) {
+      qlex_next(rd);
+      break;
+    }
+
+    Expr *impl = nullptr;
+
+    if (!parse_expr(
+            job, rd,
+            {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncComa)}, &impl,
+            0)) {
+      syntax(tok, "Failed to parse declaration attribute expression");
+      return false;
+    }
+
+    attributes.insert(ConstExpr::get(impl));
+
+    /* Check for a comma */
+    tok = qlex_peek(rd);
+    if (tok.is<qPuncComa>()) {
+      qlex_next(rd);
+    }
+  }
+
+  return true;
+}
+
+bool parser::parse_composite_field(qparse_t &job, qlex_t *rd,
+                                   CompositeField **node) {
+  /*
+   * Format: "name: type [= expr],"
+   */
+
+  std::string name;
+  qlex_tok_t tok;
+  Type *type = nullptr;
+  Expr *value = nullptr;
+
+  { /*First token is the field name */
+    tok = qlex_next(rd);
+    if (!tok.is(qName)) {
+      syntax(tok, "Expected field name in composite definition");
+    }
+    name = tok.as_string(rd);
+  }
+
+  { /* Next token should be a colon */
+    tok = qlex_next(rd);
+    if (!tok.is<qPuncColn>()) {
+      syntax(tok, "Expected colon after field name in composite definition");
+    }
+  }
+
+  { /* Next section should be the field type */
+    if (!parse_type(job, rd, &type)) {
+      syntax(tok, "Expected field type in composite definition");
+    }
+  }
+
+  /* Check for a default value */
+  tok = qlex_peek(rd);
+  if (tok.is<qPuncComa>() || tok.is<qPuncSemi>() || tok.is<qPuncRCur>()) {
+    if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
+      qlex_next(rd);
+    }
+    *node = CompositeField::get(name, type);
+    (*node)->set_end_pos(tok.start);
+    return true;
+  }
+
+  { /* Optional default value */
+    if (!tok.is<qOpSet>()) {
+      syntax(tok,
+             "Expected '=' or ',' after field type in composite definition");
+    }
+    qlex_next(rd);
+
+    /* Parse the default value */
+    if (!parse_expr(job, rd,
+                    {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
+                     qlex_tok_t(qPunc, qPuncRCur)},
+                    &value) ||
+        !value) {
+      syntax(tok, "Expected default value after '=' in composite definition");
+      return false;
+    }
+  }
+
+  *node = CompositeField::get(name, type, value);
+  (*node)->set_end_pos(value->get_end_pos());
+
+  return true;
+}
 
 bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
   /**
@@ -194,7 +310,6 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
   { /* Check for an implementation/trait list */
     if (tok.is<qKWith>()) {
       qlex_next(rd);
-
       if (!parse_attributes(job, rd, attributes)) {
         return false;
       }

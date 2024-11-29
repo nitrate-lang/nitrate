@@ -1093,24 +1093,6 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       break;
     }
 
-    case QAST_NODE_REGION: {
-      S.line << "region";
-      put_composite_defintion(C->as<RegionDef>(), S);
-      break;
-    }
-
-    case QAST_NODE_GROUP: {
-      S.line << "group";
-      put_composite_defintion(C->as<GroupDef>(), S);
-      break;
-    }
-
-    case QAST_NODE_UNION: {
-      S.line << "union";
-      put_composite_defintion(C->as<UnionDef>(), S);
-      break;
-    }
-
     case QAST_NODE_ENUM: {
       EnumDef* N = C->as<EnumDef>();
       S.line << "enum " << N->get_name();
@@ -1413,10 +1395,8 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       };
 
       static const std::unordered_set<qparse_ty_t> double_sep = {
-          QAST_NODE_FNDECL, QAST_NODE_STRUCT,    QAST_NODE_REGION,
-          QAST_NODE_GROUP,  QAST_NODE_UNION,     QAST_NODE_ENUM,
-          QAST_NODE_FN,     QAST_NODE_SUBSYSTEM, QAST_NODE_EXPORT,
-          QAST_NODE_BLOCK,
+          QAST_NODE_FNDECL,    QAST_NODE_STRUCT, QAST_NODE_ENUM,  QAST_NODE_FN,
+          QAST_NODE_SUBSYSTEM, QAST_NODE_EXPORT, QAST_NODE_BLOCK,
       };
 
       Block* N = C->as<Block>();
