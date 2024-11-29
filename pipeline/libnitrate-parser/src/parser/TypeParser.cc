@@ -88,16 +88,6 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
 
   if ((tok = qlex_next(rd)).ty == qKeyW) {
     switch (tok.as<qlex_key_t>()) {
-      case qKVoid: {
-        /** Nitrate VOID TYPE
-         *
-         * @brief Parse a void type.
-         */
-
-        inner = VoidTy::get();
-        goto type_suffix;
-      }
-
       case qKFn: {
         /** Nitrate FUNCTION TYPE
          *

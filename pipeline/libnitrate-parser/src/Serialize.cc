@@ -611,6 +611,22 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     case QAST_NODE_FNDECL: {
       OBJECT_BEGIN("FnDecl");
       OBJECT_STR(n->as<FnDecl>()->get_name());
+      { /* Template parameters */
+        state.indent++;
+        indent(ss, state);
+        ss << "[";
+        for (const auto &[name, type, def] :
+             n->as<FnDecl>()->get_template_params().value_or(
+                 TemplateParameters())) {
+          OBJECT_BEGIN("TParam");
+          OBJECT_STR(name);
+          OBJECT_SUB(type);
+          OBJECT_SUB(def);
+          OBJECT_END();
+        }
+        ss << "]";
+        state.indent--;
+      }
       OBJECT_SUB(n->as<FnDecl>()->get_type());
       OBJECT_ARRAY(n->as<FnDecl>()->get_tags());
       OBJECT_NUM((int)n->as<FnDecl>()->get_visibility());
@@ -695,6 +711,22 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       }
       ss << "]";
       state.indent--;
+      { /* Template parameters */
+        state.indent++;
+        indent(ss, state);
+        ss << "[";
+        for (const auto &[name, type, def] :
+             n->as<FnDef>()->get_template_params().value_or(
+                 TemplateParameters())) {
+          OBJECT_BEGIN("TParam");
+          OBJECT_STR(name);
+          OBJECT_SUB(type);
+          OBJECT_SUB(def);
+          OBJECT_END();
+        }
+        ss << "]";
+        state.indent--;
+      }
       OBJECT_SUB(n->as<FnDef>()->get_type());
       OBJECT_SUB(n->as<FnDef>()->get_precond());
       OBJECT_SUB(n->as<FnDef>()->get_postcond());

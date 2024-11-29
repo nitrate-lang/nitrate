@@ -154,6 +154,7 @@ uint32_t qparse_endpos(qparse_node_t *node);
 #include <iostream>
 #include <map>
 #include <nitrate-core/Classes.hh>
+#include <optional>
 #include <ostream>
 #include <set>
 #include <stdexcept>
@@ -442,9 +443,14 @@ namespace qparse {
   typedef std::set<ConstExpr *, std::less<ConstExpr *>, Arena<ConstExpr *>>
       DeclTags;
 
+  typedef std::tuple<String, Type *, ConstExpr *> TemplateParameter;
+  typedef std::vector<TemplateParameter, Arena<TemplateParameter>>
+      TemplateParameters;
+
   class Decl : public Stmt {
   protected:
     DeclTags m_tags;
+    std::optional<TemplateParameters> m_template_parameters;
     String m_name;
     Type *m_type;
     Visibility m_visibility;
@@ -452,8 +458,13 @@ namespace qparse {
   public:
     Decl(String name = "", Type *type = nullptr,
          std::initializer_list<ConstExpr *> tags = {},
+         const std::optional<TemplateParameters> &params = std::nullopt,
          Visibility visibility = Visibility::PRIVATE)
-        : m_tags(tags), m_name(name), m_type(type), m_visibility(visibility) {}
+        : m_tags(tags),
+          m_template_parameters(params),
+          m_name(name),
+          m_type(type),
+          m_visibility(visibility) {}
 
     String get_name() { return m_name; }
     void set_name(String name) { m_name = name; }
@@ -462,6 +473,7 @@ namespace qparse {
     void set_type(Type *type) { m_type = type; }
 
     DeclTags &get_tags() { return m_tags; }
+    void set_tags(DeclTags t) { m_tags = t; }
     void add_tag(ConstExpr *tag) { m_tags.insert(tag); }
     void add_tags(const std::set<ConstExpr *> &tags) {
       for (const auto &tag : tags) {
@@ -470,6 +482,11 @@ namespace qparse {
     }
     void clear_tags() { m_tags.clear(); }
     void remove_tag(ConstExpr *tag) { m_tags.erase(tag); }
+
+    auto &get_template_params() { return m_template_parameters; }
+    void set_template_params(std::optional<TemplateParameters> x) {
+      m_template_parameters = x;
+    }
 
     Visibility get_visibility() { return m_visibility; }
     void set_visibility(Visibility visibility) { m_visibility = visibility; }
@@ -1619,7 +1636,11 @@ namespace qparse {
           m_captures(captures),
           m_body(body),
           m_precond(precond),
-          m_postcond(postcond) {}
+          m_postcond(postcond) {
+      set_template_params(decl->get_template_params());
+      set_visibility(decl->get_visibility());
+      set_tags(decl->get_tags());
+    }
 
     Block *get_body() { return m_body; }
     void set_body(Block *body) { m_body = body; }

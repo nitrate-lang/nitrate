@@ -36,6 +36,7 @@
 
 #include "nitrate-lexer/Lexer.h"
 #include "nitrate-lexer/Token.h"
+#include "nitrate-parser/Node.h"
 
 using namespace qparse;
 using namespace qparse::parser;
@@ -123,29 +124,29 @@ static bool parse_fn_parameter(qparse_t &job, qlex_t *rd, FuncParam &param) {
 
   name = tok.as_string(rd);
   tok = qlex_peek(rd);
-  if (!tok.is<qPuncColn>()) {
-    type = InferType::get();
-    param = {name, type, nullptr};
-    return true;
-  }
-  qlex_next(rd);
 
-  if (!parse_type(job, rd, &type)) {
+  if (tok.is<qPuncColn>()) {
     qlex_next(rd);
-    syntax(tok, "Expected a type after ':'");
-  }
 
-  tok = qlex_peek(rd);
+    if (!parse_type(job, rd, &type) || !type) {
+      qlex_next(rd);
+      syntax(tok, "Expected a type after ':'");
+    }
+
+    tok = qlex_peek(rd);
+  } else {
+    type = InferType::get();
+  }
 
   if (tok.is<qOpSet>()) {
     qlex_next(rd);
     tok = qlex_peek(rd);
 
     Expr *value = nullptr;
-    if (!parse_expr(
-            job, rd,
-            {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
-            &value) ||
+    if (!parse_expr(job, rd,
+                    {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar),
+                     qlex_tok_t(qOper, qOpGT)},
+                    &value) ||
         !value) {
       syntax(tok, "Expected an expression after '='");
     }
@@ -256,7 +257,7 @@ static bool parse_captures_and_name(qlex_tok_t &c, qlex_t *rd, FnDecl *fndecl,
                                     FnCaptures &captures) {
   if (c.is(qName)) {
     fndecl->set_name(c.as_string(rd));
-    c = qlex_next(rd);
+    c = qlex_peek(rd);
   } else if (c.is<qPuncLBrk>()) {
     while (true) {
       c = qlex_next(rd);
@@ -285,8 +286,56 @@ static bool parse_captures_and_name(qlex_tok_t &c, qlex_t *rd, FnDecl *fndecl,
       }
     }
 
-    c = qlex_next(rd);
+    c = qlex_peek(rd);
   }
+
+  return true;
+}
+
+static bool parse_template_parameters(
+    qparse_t &job, qlex_tok_t &c, qlex_t *rd,
+    std::optional<TemplateParameters> &template_params) {
+  template_params = std::nullopt;
+
+  if (!c.is<qOpLT>()) {
+    return true;
+  }
+
+  qlex_next(rd);
+
+  TemplateParameters params;
+
+  while (1) {
+    c = qlex_peek(rd);
+    if (c.is(qEofF)) {
+      syntax(c, "Unexpected EOF in function signature");
+      return false;
+    }
+
+    if (c.is<qOpGT>()) {
+      qlex_next(rd);
+      break;
+    }
+
+    FuncParam param;
+    if (!parse_fn_parameter(job, rd, param)) {
+      syntax(c, "Expected a parameter");
+      return false;
+    }
+
+    params.push_back({std::get<0>(param), std::get<1>(param),
+                      ConstExpr::get(std::get<2>(param))});
+
+    c = qlex_peek(rd);
+    if (c.is<qPuncComa>()) {
+      qlex_next(rd);
+      continue;
+    }
+  }
+
+  c = qlex_peek(rd);
+
+  template_params = std::move(params);
 
   return true;
 }
@@ -296,6 +345,8 @@ static bool parse_parameters(qparse_t &job, qlex_tok_t &c, qlex_t *rd,
   if (!c.is<qPuncLPar>()) {
     syntax(c, "Expected '(' after function name");
   }
+
+  qlex_next(rd);
 
   is_variadic = false;
 
@@ -451,6 +502,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok{};
   FunctionProperties prop;
   bool is_variadic = false;
+  std::optional<TemplateParameters> params;
 
   prop = read_function_properties(rd);
   tok = qlex_next(rd);
@@ -458,6 +510,13 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
   { /* Parse function name or anonymous function capture list */
     if (!parse_captures_and_name(tok, rd, fndecl, captures)) {
       syntax(tok, "Expected a function name or capture list");
+      return false;
+    }
+  }
+
+  { /* Parse possible template parameters */
+    if (!parse_template_parameters(job, tok, rd,
+                                   fndecl->get_template_params())) {
       return false;
     }
   }
