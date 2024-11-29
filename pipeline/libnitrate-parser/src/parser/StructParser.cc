@@ -219,19 +219,19 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
       }
     }
 
-    Visibility vis = Visibility::PRIVATE;
+    Vis vis = Vis::PRIVATE;
 
     { /* Check for visibility qualifiers */
       if (tok.is<qKPub>()) {
-        vis = Visibility::PUBLIC;
+        vis = Vis::PUBLIC;
         qlex_next(rd);
         tok = qlex_peek(rd);
       } else if (tok.is<qKSec>()) {
-        vis = Visibility::PRIVATE;
+        vis = Vis::PRIVATE;
         qlex_next(rd);
         tok = qlex_peek(rd);
       } else if (tok.is<qKPro>()) {
-        vis = Visibility::PROTECTED;
+        vis = Vis::PROTECTED;
         qlex_next(rd);
         tok = qlex_peek(rd);
       }

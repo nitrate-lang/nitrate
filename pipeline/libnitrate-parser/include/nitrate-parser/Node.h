@@ -204,69 +204,18 @@ namespace qparse {
   bool operator!=(const Arena<T> &, const Arena<U> &) {
     return false;
   }
-
-  class AstError : public std::runtime_error {
-  public:
-    AstError(const std::string &msg)
-        : std::runtime_error("QAST Error: " + msg) {}
-  };
-
-  class AstIllegalOperation : public AstError {
-  public:
-    AstIllegalOperation(const std::string &msg)
-        : AstError("QAST Illegal Operation: " + msg) {}
-  };
-
-  class InvariantViolation : public AstError {
-  public:
-    InvariantViolation(const std::string &msg)
-        : AstError("QAST Invariant Violation: " + msg) {}
-  };
-
-  class EFac final {
-    EFac() = delete;
-
-  public:
-    static AstError error(const std::string &msg) { return AstError(msg); }
-    static AstIllegalOperation illegal(const std::string &msg) {
-      return AstIllegalOperation(msg);
-    }
-    static InvariantViolation never(const std::string &msg) {
-      return InvariantViolation(msg);
-    }
-  };
 };  // namespace qparse
 
-#define PNODE_IMPL_CORE(__typename)                                   \
-protected:                                                            \
-  virtual bool verify_impl(std::ostream &os) override;                \
-                                                                      \
-protected:                                                            \
-  virtual void canonicalize_impl() override;                          \
-                                                                      \
-protected:                                                            \
-  virtual void print_impl(std::ostream &os, bool debug) override;     \
-                                                                      \
-public:                                                               \
-  virtual __typename *clone_impl() override;                          \
-                                                                      \
-public:                                                               \
-public:                                                               \
-  template <typename T = __typename, typename... Args>                \
-  static __typename *get(Args &&...args) {                            \
-    void *ptr = Arena<__typename>().allocate(1);                      \
-    return new (ptr) __typename(std::forward<Args>(args)...);         \
-  }                                                                   \
-                                                                      \
-public:                                                               \
-  virtual __typename *clone(ArenaAllocatorImpl &arena = qparse_arena) \
-      override {                                                      \
-    ArenaAllocatorImpl old = qparse_arena;                            \
-    qparse_arena = arena;                                             \
-    __typename *node = clone_impl();                                  \
-    qparse_arena = old;                                               \
-    return node;                                                      \
-  }
+#define PNODE_IMPL_CORE(__typename)                           \
+public:                                                       \
+public:                                                       \
+  template <typename T = __typename, typename... Args>        \
+  static __typename *get(Args &&...args) {                    \
+    void *ptr = Arena<__typename>().allocate(1);              \
+    return new (ptr) __typename(std::forward<Args>(args)...); \
+  }                                                           \
+                                                              \
+public:
 
 struct qparse_node_t {
 public:
@@ -274,7 +223,7 @@ public:
 };
 
 namespace qparse {
-  enum class Visibility {
+  enum class Vis {
     PUBLIC,
     PRIVATE,
     PROTECTED,
@@ -295,12 +244,9 @@ namespace qparse {
 
   class Node : public qparse_node_t {
   protected:
-    virtual bool verify_impl(std::ostream &os) = 0;
-    virtual void canonicalize_impl() = 0;
-    virtual void print_impl(std::ostream &os, bool debug) = 0;
-    virtual Node *clone_impl() = 0;
-
     uint32_t m_pos_start{}, m_pos_end{};
+
+    virtual void hello() {}
 
   public:
     Node() = default;
@@ -313,7 +259,6 @@ namespace qparse {
     bool is_stmt();
     bool is_decl();
     bool is_expr();
-    bool is_const_expr();
 
     std::string to_string(bool minify = false);
 
@@ -364,15 +309,10 @@ namespace qparse {
     }
 
     bool is(const qparse_ty_t type);
-    bool verify(std::ostream &os = std::cerr);
-    void canonicalize();
-    virtual Node *clone(ArenaAllocatorImpl &arena = qparse_arena) = 0;
 
     static const char *type_name(qparse_ty_t type);
-    void dump(bool isForDebug = false) { print_impl(std::cerr, isForDebug); }
-    void print(std::ostream &os, bool isForDebug = false) {
-      print_impl(os, isForDebug);
-    }
+    void dump(bool isForDebug = false) { print(std::cerr, isForDebug); }
+    void print(std::ostream &os, bool isForDebug = false);
 
     void set_start_pos(uint32_t pos) { m_pos_start = pos; }
     void set_end_pos(uint32_t pos) { m_pos_end = pos; }
@@ -388,8 +328,6 @@ namespace qparse {
   class Stmt : public Node {
   public:
     Stmt() = default;
-
-    virtual Stmt *clone(ArenaAllocatorImpl &arena = qparse_arena) = 0;
   };
 
   class ConstExpr;
@@ -423,8 +361,6 @@ namespace qparse {
     bool is_volatile();
     bool is_ptr_to(Type *type);
 
-    virtual Type *clone(ArenaAllocatorImpl &arena = qparse_arena) = 0;
-
     ConstExpr *get_width() { return m_width; }
     void set_width(ConstExpr *width) { m_width = width; }
 
@@ -450,13 +386,13 @@ namespace qparse {
     std::optional<TemplateParameters> m_template_parameters;
     String m_name;
     Type *m_type;
-    Visibility m_visibility;
+    Vis m_visibility;
 
   public:
     Decl(String name = "", Type *type = nullptr,
          std::initializer_list<ConstExpr *> tags = {},
          const std::optional<TemplateParameters> &params = std::nullopt,
-         Visibility visibility = Visibility::PRIVATE)
+         Vis visibility = Vis::PRIVATE)
         : m_tags(tags),
           m_template_parameters(params),
           m_name(name),
@@ -477,10 +413,8 @@ namespace qparse {
       m_template_parameters = x;
     }
 
-    Visibility get_visibility() { return m_visibility; }
-    void set_visibility(Visibility visibility) { m_visibility = visibility; }
-
-    virtual Decl *clone(ArenaAllocatorImpl &arena = qparse_arena) = 0;
+    Vis get_visibility() { return m_visibility; }
+    void set_visibility(Vis visibility) { m_visibility = visibility; }
   };
 
   class Expr : public Node {
@@ -493,8 +427,6 @@ namespace qparse {
     bool is_binexpr();
     bool is_unaryexpr();
     bool is_ternaryexpr();
-
-    virtual Expr *clone(ArenaAllocatorImpl &arena = qparse_arena) = 0;
   };
 
   class ExprStmt : public Stmt {
@@ -552,43 +484,31 @@ namespace qparse {
   class LitExpr : public ConstExpr {
   public:
     LitExpr() = default;
-
-    virtual LitExpr *clone(ArenaAllocatorImpl &arena = qparse_arena) = 0;
   };
 
   class FlowStmt : public Stmt {
   public:
     FlowStmt() = default;
-
-    virtual FlowStmt *clone(ArenaAllocatorImpl &arena = qparse_arena) = 0;
   };
 
   class DeclStmt : public Stmt {
   public:
     DeclStmt() = default;
-
-    virtual DeclStmt *clone(ArenaAllocatorImpl &arena = qparse_arena) = 0;
   };
 
   class TypeBuiltin : public Type {
   public:
     TypeBuiltin() = default;
-
-    virtual TypeBuiltin *clone(ArenaAllocatorImpl &arena = qparse_arena) = 0;
   };
 
   class TypeComplex : public Type {
   public:
     TypeComplex() = default;
-
-    virtual TypeComplex *clone(ArenaAllocatorImpl &arena = qparse_arena) = 0;
   };
 
   class TypeComposite : public Type {
   public:
     TypeComposite() = default;
-
-    virtual TypeComposite *clone(ArenaAllocatorImpl &arena = qparse_arena) = 0;
   };
 
   class UnresolvedType : public Type {

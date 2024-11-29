@@ -248,10 +248,10 @@ template <typename T>
 static void put_composite_defintion(T* N, AutomatonState& S) {
   using namespace qparse;
 
-  static const std::unordered_map<Visibility, std::string_view> vis_str = {
-      {Visibility::PRIVATE, "sec"},
-      {Visibility::PUBLIC, "pub"},
-      {Visibility::PROTECTED, "pro"},
+  static const std::unordered_map<Vis, std::string_view> vis_str = {
+      {Vis::PRIVATE, "sec"},
+      {Vis::PUBLIC, "pub"},
+      {Vis::PROTECTED, "pro"},
   };
 
   S.line << " " << N->get_name() << " ";
