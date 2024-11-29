@@ -572,7 +572,13 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
   }
 
   if (!E.has_value()) {
-    return E;
+    return std::nullopt;
+  }
+
+  if (auto type = E.value()->getType()) {
+    if (!type.value()->isSame(_for)) {
+      E = create<BinExpr>(E.value(), _for->asExpr(), Op::CastAs);
+    }
   }
 
   return compiler_trace(E.value());

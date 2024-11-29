@@ -74,7 +74,7 @@ void NRBuilder::flatten_symbols(Seq *root) noexcept {
   }
 }
 
-void NRBuilder::try_resolve_types(Expr *root) noexcept {
+void NRBuilder::try_transform_alpha(Expr *root) noexcept {
   /**
    * @brief Resolve the `TmpType::NAMED_TYPE` nodes by replacing them with the
    * actual types they represent.
@@ -88,8 +88,6 @@ void NRBuilder::try_resolve_types(Expr *root) noexcept {
       return IterOp::Proceed;
     }
 
-    std::string_view type_name;
-
     bool is_default_value_expr =
         N->is(NR_NODE_TMP) &&
         N->as<Tmp>()->getTmpType() == TmpType::DEFAULT_VALUE;
@@ -97,20 +95,20 @@ void NRBuilder::try_resolve_types(Expr *root) noexcept {
     if (N->as<Tmp>()->getTmpType() == TmpType::NAMED_TYPE ||
         is_default_value_expr) {
       /* Get the fully-qualified type name */
-      type_name = std::get<std::string_view>(N->as<Tmp>()->getData());
-    } else {
-      return IterOp::Proceed;
-    }
+      std::string_view type_name =
+          std::get<std::string_view>(N->as<Tmp>()->getData());
 
-    auto result = resolve_name(type_name, Kind::TypeDef);
-    if (result.has_value()) [[likely]] {
-      /* Replace the current node */
-      *C = result.value();
+      auto result = resolve_name(type_name, Kind::TypeDef);
+      if (result.has_value()) [[likely]] {
+        /* Replace the current node */
+        *C = result.value();
 
-      if (is_default_value_expr) {
-        /* Replace the default value expression with the actual default value */
-        if (auto def = getDefaultValue(result.value()->asType())) {
-          *C = def.value();
+        if (is_default_value_expr) {
+          /* Replace the default value expression with the actual default value
+           */
+          if (auto def = getDefaultValue(result.value()->asType())) {
+            *C = def.value();
+          }
         }
       }
     }
@@ -119,7 +117,7 @@ void NRBuilder::try_resolve_types(Expr *root) noexcept {
   });
 }
 
-void NRBuilder::try_resolve_names(Expr *root) noexcept {
+void NRBuilder::try_transform_beta(Expr *root) noexcept {
   /**
    * @brief Resolve identifiers by hooking them to the node they represent. This
    * may create cyclic references, which is okay because these hooks are not
@@ -222,7 +220,7 @@ static void resolve_function_call(
   }
 }
 
-void NRBuilder::try_resolve_calls(Expr *root) const noexcept {
+void NRBuilder::try_transform_gamma(Expr *root) const noexcept {
   using namespace std;
 
   /* Foreach node in the IR Graph: if the node is a TMP CALL node, replace it
@@ -310,9 +308,9 @@ void NRBuilder::try_resolve_calls(Expr *root) const noexcept {
 void NRBuilder::connect_nodes(Seq *root) noexcept {
   /* The order of the following matters */
 
-  try_resolve_types(root);
-  try_resolve_names(root);
-  try_resolve_calls(root);
+  try_transform_alpha(root);
+  try_transform_beta(root);
+  try_transform_gamma(root);
 
   flatten_symbols(root);
 }

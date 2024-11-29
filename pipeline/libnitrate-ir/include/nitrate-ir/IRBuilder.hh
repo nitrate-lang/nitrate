@@ -155,9 +155,9 @@ namespace nr {
     NRBuilder &insertBeforeVariable(std::string_view name) noexcept;
     NRBuilder &insertBeforeFunction(std::string_view name) noexcept;
 
-    void try_resolve_types(Expr *root) noexcept;
-    void try_resolve_names(Expr *root) noexcept;
-    void try_resolve_calls(Expr *root) const noexcept;
+    void try_transform_alpha(Expr *root) noexcept;
+    void try_transform_beta(Expr *root) noexcept;
+    void try_transform_gamma(Expr *root) const noexcept;
     void connect_nodes(Seq *root) noexcept;
     void flatten_symbols(Seq *root) noexcept;
 
