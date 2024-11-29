@@ -137,25 +137,6 @@ Fn *NRBuilder::createOperatorOverload(
   ignore_caller_info();
 }
 
-Fn *NRBuilder::createTemplateFunction(
-    std::string_view name, std::span<std::string_view> template_params,
-    std::span<FnParam> params, Type *ret_ty, bool is_variadic, Vis visibility,
-    Purity purity, bool thread_safe,
-    bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-  (void)name;
-  (void)template_params;
-  (void)params;
-  (void)ret_ty;
-  (void)is_variadic;
-  (void)visibility;
-  (void)purity;
-  (void)thread_safe;
-  (void)is_noexcept;
-  ignore_caller_info();
-}
-
 Local *NRBuilder::createVariable(
     std::string_view name, Type *ty, Vis visibility, StorageClass storage,
     bool is_readonly SOURCE_LOCATION_PARAM) noexcept {

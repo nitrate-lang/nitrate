@@ -325,28 +325,6 @@ FnTy *NRBuilder::getFnTy(std::span<Type *> params, Type *ret_ty,
   return compiler_trace(debug_info(fn_ty, DEBUG_INFO));
 }
 
-StructTy *NRBuilder::createStructTemplateDefintion(
-    std::string_view name, std::span<std::string_view> template_params,
-    StructTy *ty SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-  (void)name;
-  (void)template_params;
-  (void)ty;
-  ignore_caller_info();
-}
-
-UnionTy *NRBuilder::createUnionTemplateDefintion(
-    std::string_view name, std::span<std::string_view> template_params,
-    UnionTy *ty SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-  (void)name;
-  (void)template_params;
-  (void)ty;
-  ignore_caller_info();
-}
-
 void NRBuilder::createNamedTypeAlias(
     Type *type, std::string_view name SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
@@ -382,21 +360,6 @@ void NRBuilder::createNamedConstantDefinition(
   }
 
   m_named_constant_group[name] = values;
-}
-
-Type *NRBuilder::getTemplateInstance(Type *base,
-                                     std::span<Type *> template_params
-                                         SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed);
-  contract_enforce(m_root != nullptr);
-  contract_enforce(base != nullptr && static_cast<Expr *>(base)->isType());
-  contract_enforce(
-      std::all_of(template_params.begin(), template_params.end(), [](Type *ty) {
-        return ty != nullptr && static_cast<Type *>(ty)->isType();
-      }));
-
-  /// TODO: Implement
-  qcore_implement();
 }
 
 std::optional<Expr *> NRBuilder::getDefaultValue(

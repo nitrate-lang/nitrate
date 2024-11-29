@@ -296,13 +296,6 @@ namespace nr {
         Purity purity = Purity::Impure, bool thread_safe = false,
         bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;
 
-    Fn *createTemplateFunction(
-        std::string_view name, std::span<std::string_view> template_params,
-        std::span<FnParam> params, Type *ret_ty, bool is_variadic = false,
-        Vis visibility = Vis::Sec, Purity purity = Purity::Impure,
-        bool thread_safe = false,
-        bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;
-
     /* Works for both local and global variables */
     Local *createVariable(
         std::string_view name, Type *ty, Vis visibility = Vis::Sec,
@@ -398,35 +391,10 @@ namespace nr {
                   bool thread_safe = false, bool is_noexcept = false,
                   bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
 
-    /**
-     * Each entry in `params` shall correspond to the name of an opaque type in
-     * the supplied struct. The fields of the struct type are searched
-     * recursively to resolve all such fields upon instaniation. The opaque type
-     * mentioned above must begin with some reserved prefix to ensure the space
-     * of names doesn't conflict with other normal opaque types.
-     */
-    StructTy *createStructTemplateDefintion(
-        std::string_view name, std::span<std::string_view> template_params,
-        StructTy *ty SOURCE_LOCATION_PARAM) noexcept;
-
-    /**
-     * Each entry in `params` shall correspond to the name of an opaque type in
-     * the supplied union. The fields of the union type are searched recursively
-     * to resolve all such fields upon instaniation. The opaque type mentioned
-     * above must begin with some reserved prefix to ensure the space of names
-     * doesn't conflict with other normal opaque types.
-     */
-    UnionTy *createUnionTemplateDefintion(
-        std::string_view name, std::span<std::string_view> template_params,
-        UnionTy *ty SOURCE_LOCATION_PARAM) noexcept;
-
     void createNamedConstantDefinition(
         std::string_view name,
         const std::unordered_map<std::string_view, Expr *> &values
             SOURCE_LOCATION_PARAM);
-
-    Type *getTemplateInstance(Type *base, std::span<Type *> template_params
-                                              SOURCE_LOCATION_PARAM) noexcept;
 
     void createNamedTypeAlias(
         Type *type, std::string_view name SOURCE_LOCATION_PARAM) noexcept;

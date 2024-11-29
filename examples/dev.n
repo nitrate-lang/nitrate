@@ -1,12 +1,5 @@
 type usize = u64;
 
-subsystem std {
-  import fn impure tsafe noexcept panic(code: u64, msg: slice<u8> = []);
-
-  class slice<T> {
-    sec ptr: *T;
-    sec len: usize;
-  }
+fn main() {
+  
 }
-
-let x: std::slice<u32>;

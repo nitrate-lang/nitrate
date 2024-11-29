@@ -972,9 +972,9 @@ static EResult nrgen_type_expr(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_templ_call(NRBuilder &, PState &, IReport *G,
                                 qparse::TemplCall *n) {
-  /// TODO: Implement template function calls
-
-  G->report(CompilerError, IC::Error, "Template call not implemented",
+  G->report(CompilerError, IC::FatalError,
+            "Attempted to lower an unexpected "
+            "template function call",
             n->get_pos());
 
   return std::nullopt;
@@ -1201,36 +1201,12 @@ static EResult nrgen_infer_ty(NRBuilder &b, PState &, IReport *,
   return b.getUnknownTy();
 }
 
-static EResult nrgen_templ_ty(NRBuilder &b, PState &s, IReport *G,
+static EResult nrgen_templ_ty(NRBuilder &, PState &, IReport *G,
                               qparse::TemplType *n) {
-  auto base_template = next_one(n->get_template());
-  if (!base_template.has_value()) {
-    G->report(CompilerError, IC::Error, "Failed to lower template type base",
-              n->get_pos());
-    return std::nullopt;
-  }
-
-  const qparse::TemplTypeArgs &templ_args = n->get_args();
-  std::vector<Type *> template_args(templ_args.size());
-
-  for (size_t i = 0; i < template_args.size(); i++) {
-    auto tmp = next_one(templ_args[i]);
-    if (!tmp.has_value()) {
-      G->report(CompilerError, IC::Error,
-                "Failed to generate template instance argument", n->get_pos());
-      return std::nullopt;
-    }
-
-    if (!tmp.value()->isType()) {
-      G->report(CompilerError, IC::Error,
-                "The template instance argument is not a type", n->get_pos());
-      return std::nullopt;
-    }
-
-    template_args[i] = tmp.value()->asType();
-  }
-
-  return b.getTemplateInstance(base_template.value()->asType(), template_args);
+  G->report(nr::CompilerError, IC::FatalError,
+            "Attempted to lower an unexpected qparse::TemplType node",
+            n->get_pos());
+  return std::nullopt;
 }
 
 static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
@@ -1253,6 +1229,12 @@ static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
 static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
                             qparse::StructDef *n) {
   bool is_template = n->get_template_params().has_value();
+  if (is_template) {
+    G->report(nr::CompilerError, IC::FatalError,
+              "Attempted to lower an unexpected template struct node",
+              n->get_pos());
+    return std::nullopt;
+  }
 
   std::vector<std::tuple<std::string_view, Type *, Expr *>> fields(
       n->get_fields().size());
@@ -1299,18 +1281,8 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
   }
 
   std::swap(s.ns_prefix, old_ns);
-  if (is_template) {
-    const auto &items = n->get_template_params().value();
-    std::vector<std::string_view> templ_names(items.size());
-    for (size_t i = 0; i < items.size(); i++) {
-      templ_names[i] = b.intern(std::get<qparse::String>(items[i]));
-    }
-    b.createStructTemplateDefintion(b.intern(s.join_scope(n->get_name())),
-                                    templ_names, b.getStructTy(fields));
-  } else {
-    b.createNamedTypeAlias(b.getStructTy(fields),
-                           b.intern(s.join_scope(n->get_name())));
-  }
+  b.createNamedTypeAlias(b.getStructTy(fields),
+                         b.intern(s.join_scope(n->get_name())));
   std::swap(s.ns_prefix, old_ns);
 
   BResult R;
