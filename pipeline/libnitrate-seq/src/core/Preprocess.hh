@@ -39,6 +39,7 @@
 #include <mutex>
 #include <nitrate-lexer/Base.hh>
 #include <optional>
+#include <random>
 #include <string_view>
 
 #define get_engine() \
@@ -74,6 +75,7 @@ struct __attribute__((visibility("default"))) qprep_impl_t final
   std::mutex m_mutex;
   bool m_do_expanse = true;
   size_t m_depth = 0;
+  std::mt19937 m_qsys_random_engine;
 
   virtual qlex_tok_t next_impl() override;
 
