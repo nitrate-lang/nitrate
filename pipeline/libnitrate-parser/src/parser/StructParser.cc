@@ -35,7 +35,7 @@
 
 #include <parser/Parse.h>
 
-#include "nitrate-lexer/Token.h"
+#include "nitrate-lexer/Lexer.h"
 
 using namespace qparse;
 using namespace qparse::parser;
@@ -155,6 +155,10 @@ bool parser::parse_composite_field(qparse_t &job, qlex_t *rd,
   return true;
 }
 
+bool parse_template_parameters(
+    qparse_t &job, qlex_tok_t &c, qlex_t *rd,
+    std::optional<TemplateParameters> &template_params);
+
 bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
   /**
    * @brief Parse a struct composite type definition
@@ -170,6 +174,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
   FnDecl *fdecl = nullptr;
   FuncTy *ft = nullptr;
   CompositeField *field = nullptr;
+  StructDef *sdef = StructDef::get();
 
   { /* First token should be the name of the definition */
     tok = qlex_next(rd);
@@ -177,6 +182,13 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
       name = tok.as_string(rd);
     } else {
       syntax(tok, "Expected struct name in struct definition");
+    }
+  }
+
+  {
+    tok = qlex_peek(rd);
+    if (!parse_template_parameters(job, tok, rd, sdef->get_template_params())) {
+      return false;
     }
   }
 
@@ -316,9 +328,13 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
     }
   }
 
-  StructDef *sdef =
-      StructDef::get(name, nullptr, fields, methods, static_methods);
+  sdef->set_name(name);
+  sdef->get_fields() = std::move(fields);
+  sdef->get_methods() = std::move(methods);
+  sdef->get_static_methods() = std::move(static_methods);
   sdef->add_tags(std::move(attributes));
+
   *node = sdef;
+
   return true;
 }

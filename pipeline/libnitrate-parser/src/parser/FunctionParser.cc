@@ -35,7 +35,6 @@
 #include <parser/Parse.h>
 
 #include "nitrate-lexer/Lexer.h"
-#include "nitrate-lexer/Token.h"
 #include "nitrate-parser/Node.h"
 
 using namespace qparse;
@@ -292,7 +291,7 @@ static bool parse_captures_and_name(qlex_tok_t &c, qlex_t *rd, FnDecl *fndecl,
   return true;
 }
 
-static bool parse_template_parameters(
+bool parse_template_parameters(
     qparse_t &job, qlex_tok_t &c, qlex_t *rd,
     std::optional<TemplateParameters> &template_params) {
   template_params = std::nullopt;
@@ -308,7 +307,7 @@ static bool parse_template_parameters(
   while (1) {
     c = qlex_peek(rd);
     if (c.is(qEofF)) {
-      syntax(c, "Unexpected EOF in function signature");
+      syntax(c, "Unexpected EOF in signature");
       return false;
     }
 
