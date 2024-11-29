@@ -1,3 +1,12 @@
-type W = i32;
+type usize = u64;
 
-fn main(): W => ret 0;
+subsystem std {
+  import fn impure tsafe noexcept panic(code: u64, msg: slice<u8> = []);
+
+  class slice<T> {
+    sec ptr: *T;
+    sec len: usize;
+  }
+}
+
+let x: std::slice<u32>;
