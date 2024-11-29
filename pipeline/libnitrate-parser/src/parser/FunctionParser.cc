@@ -329,8 +329,8 @@ bool parse_template_parameters(
       return false;
     }
 
-    params.push_back({std::get<0>(param), std::get<1>(param),
-                      ConstExpr::get(std::get<2>(param))});
+    params.push_back(
+        {std::get<0>(param), std::get<1>(param), std::get<2>(param)});
 
     c = qlex_peek(rd);
     if (c.is<qPuncComa>()) {
@@ -567,7 +567,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
 
       tok = qlex_peek(rd);
       if (tok.is<qKWith>()) {
-        std::set<ConstExpr *> attributes;
+        std::set<Expr *> attributes;
         qlex_next(rd);
 
         if (!parse_attributes(job, rd, attributes)) {
@@ -599,7 +599,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
             tok.is<qPuncSemi>()) {
           tok = qlex_peek(rd);
           if (tok.is<qKWith>()) {
-            std::set<ConstExpr *> attributes;
+            std::set<Expr *> attributes;
             qlex_next(rd);
 
             if (!parse_attributes(job, rd, attributes)) {
@@ -639,7 +639,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
 
       tok = qlex_peek(rd);
       if (tok.is<qKWith>()) {
-        std::set<ConstExpr *> attributes;
+        std::set<Expr *> attributes;
         qlex_next(rd);
 
         if (!parse_attributes(job, rd, attributes)) {
@@ -658,7 +658,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
   if (tok.is<qPuncLCur>()) {
     Block *fnbody = nullptr;
     Expr *req_in = nullptr, *req_out = nullptr;
-    std::set<ConstExpr *> attributes;
+    std::set<Expr *> attributes;
 
     if (!parse(job, rd, &fnbody)) {
       syntax(tok, "Expected a block after '{'");

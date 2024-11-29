@@ -42,7 +42,7 @@ using namespace qparse::parser;
 using namespace qparse::diag;
 
 bool qparse::parser::parse_attributes(qparse_t &job, qlex_t *rd,
-                                      std::set<ConstExpr *> &attributes) {
+                                      std::set<Expr *> &attributes) {
   qlex_tok_t tok = qlex_next(rd);
 
   { /* The implementation list should be enclosed in square brackets ex: [abc,
@@ -76,7 +76,7 @@ bool qparse::parser::parse_attributes(qparse_t &job, qlex_t *rd,
       return false;
     }
 
-    attributes.insert(ConstExpr::get(impl));
+    attributes.insert(impl);
 
     /* Check for a comma */
     tok = qlex_peek(rd);
@@ -169,7 +169,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
   StructDefFields fields;
   StructDefMethods methods;
   StructDefStaticMethods static_methods;
-  std::set<ConstExpr *> attributes;
+  std::set<Expr *> attributes;
   Stmt *method = nullptr;
   FnDecl *fdecl = nullptr;
   FuncTy *ft = nullptr;

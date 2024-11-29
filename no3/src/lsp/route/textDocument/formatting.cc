@@ -337,18 +337,6 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
   }
 
   switch (C->this_typeid()) {
-    case QAST_NODE_STMT:
-    case QAST_NODE_TYPE:
-    case QAST_NODE_DECL:
-    case QAST_NODE_EXPR: {
-      break;
-    }
-
-    case QAST_NODE_CEXPR: {
-      recurse(C->as<ConstExpr>()->get_value(), S);
-      break;
-    }
-
     case QAST_NODE_BINEXPR: {
       BinExpr* N = C->as<BinExpr>();
       S.line << "(";

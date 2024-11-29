@@ -338,21 +338,6 @@ bool to_json_recurse(Node *N, json &x) {
   x[0] = id;
 
   switch (id) {
-    case QAST_NODE_CEXPR: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      auto &y = x[1] = json::array();
-
-      if (!to_json_recurse(N->as<ConstExpr>()->get_value(), y)) {
-        return false;
-      }
-
-      break;
-    }
-
     case QAST_NODE_BINEXPR: {
       /**
        * @brief [Brief Description]

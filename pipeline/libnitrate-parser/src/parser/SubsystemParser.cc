@@ -83,7 +83,7 @@ bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
     syntax(qlex_peek(rd), "Expected block in subsystem definition");
   }
 
-  std::set<ConstExpr *> attributes;
+  std::set<Expr *> attributes;
   tok = qlex_peek(rd);
   if (tok.is<qKWith>()) {
     qlex_next(rd);

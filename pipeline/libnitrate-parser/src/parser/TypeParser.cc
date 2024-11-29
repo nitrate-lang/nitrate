@@ -78,7 +78,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
   Type *type, *inner, *value_type;
   type = inner = value_type = nullptr;
   Stmt *fn = nullptr;
-  ConstExpr *size = nullptr;
+  Expr *size = nullptr;
   vector<Type *> types;
   string name;
 
@@ -244,7 +244,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
         syntax(tok, "Expected array size after ';'");
         goto error_end;
       }
-      size = ConstExpr::get(_size);
+      size = _size;
     }
 
     if (!(tok = qlex_next(rd)).is<qPuncRBrk>()) {
@@ -429,7 +429,7 @@ type_suffix: {
         }
         qlex_next(rd);
 
-        inner->set_range(ConstExpr::get(start), ConstExpr::get(end));
+        inner->set_range(start, end);
       } else { /* Parse bit-field width */
         Expr *expr = nullptr;
         if (!parse_expr(job, rd,
@@ -450,7 +450,7 @@ type_suffix: {
           goto error_end;
         }
 
-        inner->set_width(ConstExpr::get(expr));
+        inner->set_width(expr);
       }
 
       continue;

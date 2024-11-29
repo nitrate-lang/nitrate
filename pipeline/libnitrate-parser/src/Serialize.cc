@@ -859,17 +859,6 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_STMT:
-    case QAST_NODE_TYPE:
-    case QAST_NODE_DECL:
-    case QAST_NODE_EXPR: {
-      qcore_panicf("Invalid node type for serialization: %s", n->this_nameof());
-    }
-    case QAST_NODE_CEXPR:
-      OBJECT_BEGIN("CExpr");
-      OBJECT_SUB(n->as<ConstExpr>()->get_value());
-      OBJECT_END();
-      break;
   }
 }
 

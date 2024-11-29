@@ -45,12 +45,6 @@ typedef struct qparse_node_t qparse_node_t;
  * @brief Nitrate abstract syntax tree node type.
  */
 typedef enum qparse_ty_t {
-  QAST_NODE_STMT,
-  QAST_NODE_TYPE,
-  QAST_NODE_DECL,
-  QAST_NODE_EXPR,
-  QAST_NODE_CEXPR,
-
   QAST_NODE_BINEXPR,
   QAST_NODE_UNEXPR,
   QAST_NODE_TEREXPR,
@@ -130,7 +124,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_VOLSTMT,
 } qparse_ty_t;
 
-#define QAST_NODE_COUNT 79
+#define QAST_NODE_COUNT 74
 
 typedef struct qparse_node_t qparse_node_t;
 
@@ -154,7 +148,6 @@ uint32_t qparse_endpos(qparse_node_t *node);
 #include <optional>
 #include <ostream>
 #include <set>
-#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <variant>
@@ -330,11 +323,11 @@ namespace qparse {
     Stmt() = default;
   };
 
-  class ConstExpr;
+  class Expr;
 
   class Type : public Node {
   protected:
-    ConstExpr *m_width, *m_range_start, *m_range_end;
+    Expr *m_width, *m_range_start, *m_range_end;
     bool m_volatile;
 
   public:
@@ -361,22 +354,21 @@ namespace qparse {
     bool is_volatile();
     bool is_ptr_to(Type *type);
 
-    ConstExpr *get_width() { return m_width; }
-    void set_width(ConstExpr *width) { m_width = width; }
+    Expr *get_width() { return m_width; }
+    void set_width(Expr *width) { m_width = width; }
 
-    std::pair<ConstExpr *, ConstExpr *> get_range() {
+    std::pair<Expr *, Expr *> get_range() {
       return {m_range_start, m_range_end};
     }
-    void set_range(ConstExpr *start, ConstExpr *end) {
+    void set_range(Expr *start, Expr *end) {
       m_range_start = start;
       m_range_end = end;
     }
   };
 
-  typedef std::set<ConstExpr *, std::less<ConstExpr *>, Arena<ConstExpr *>>
-      DeclTags;
+  typedef std::set<Expr *, std::less<Expr *>, Arena<Expr *>> DeclTags;
 
-  typedef std::tuple<String, Type *, ConstExpr *> TemplateParameter;
+  typedef std::tuple<String, Type *, Expr *> TemplateParameter;
   typedef std::vector<TemplateParameter, Arena<TemplateParameter>>
       TemplateParameters;
 
@@ -390,7 +382,7 @@ namespace qparse {
 
   public:
     Decl(String name = "", Type *type = nullptr,
-         std::initializer_list<ConstExpr *> tags = {},
+         std::initializer_list<Expr *> tags = {},
          const std::optional<TemplateParameters> &params = std::nullopt,
          Vis visibility = Vis::PRIVATE)
         : m_tags(tags),
@@ -468,20 +460,7 @@ namespace qparse {
     PNODE_IMPL_CORE(TypeExpr)
   };
 
-  class ConstExpr : public Expr {
-  protected:
-    Expr *m_value;
-
-  public:
-    ConstExpr(Expr *value = nullptr) : m_value(value) {}
-
-    Expr *get_value() { return m_value; }
-    void set_value(Expr *value) { m_value = value; }
-
-    PNODE_IMPL_CORE(ConstExpr)
-  };
-
-  class LitExpr : public ConstExpr {
+  class LitExpr : public Expr {
   public:
     LitExpr() = default;
   };
@@ -705,17 +684,17 @@ namespace qparse {
 
   class ArrayTy : public TypeComposite {
     Type *m_item;
-    ConstExpr *m_size;
+    Expr *m_size;
 
   public:
-    ArrayTy(Type *item = nullptr, ConstExpr *size = nullptr)
+    ArrayTy(Type *item = nullptr, Expr *size = nullptr)
         : m_item(item), m_size(size) {}
 
     Type *get_item() { return m_item; }
     void set_item(Type *item) { m_item = item; }
 
-    ConstExpr *get_size() { return m_size; }
-    void set_size(ConstExpr *size) { m_size = size; }
+    Expr *get_size() { return m_size; }
+    void set_size(Expr *size) { m_size = size; }
 
     PNODE_IMPL_CORE(ArrayTy)
   };
@@ -1016,8 +995,8 @@ namespace qparse {
     PNODE_IMPL_CORE(Call)
   };
 
-  typedef std::map<String, ConstExpr *, std::less<String>,
-                   Arena<std::pair<const String, ConstExpr *>>>
+  typedef std::map<String, Expr *, std::less<String>,
+                   Arena<std::pair<const String, Expr *>>>
       TemplateArgs;
 
   class TemplCall : public Call {
@@ -1587,7 +1566,7 @@ namespace qparse {
     PNODE_IMPL_CORE(StructDef)
   };
 
-  typedef std::pair<String, ConstExpr *> EnumItem;
+  typedef std::pair<String, Expr *> EnumItem;
   typedef std::vector<EnumItem, Arena<EnumItem>> EnumDefItems;
 
   class EnumDef : public Decl {

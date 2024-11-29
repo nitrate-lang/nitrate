@@ -95,7 +95,7 @@ namespace qparse::parser {
   bool parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node);
 
   bool parse_attributes(qparse_t &job, qlex_t *rd,
-                        std::set<ConstExpr *> &attributes);
+                        std::set<Expr *> &attributes);
   bool parse_composite_field(qparse_t &job, qlex_t *rd, CompositeField **node);
 };  // namespace qparse::parser
 

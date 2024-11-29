@@ -387,7 +387,7 @@ static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &, PState &,
   return R;
 }
 
-static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &s,
+static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
                                                     IReport *G, nr::Expr *rhs,
                                                     qlex_op_t op) {
 #define STD_UNOP(op) nr::create<nr::UnExpr>(rhs, nr::Op::op)
@@ -515,18 +515,6 @@ static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &,
   }
 
   return R;
-}
-
-static EResult nrgen_cexpr(NRBuilder &b, PState &s, IReport *G,
-                           qparse::ConstExpr *n) {
-  auto c = next_one(n->get_value());
-  if (!c.has_value()) {
-    G->report(CompilerError, IC::Error, "Failed to lower constant expression",
-              n->get_pos());
-    return std::nullopt;
-  }
-
-  return c;
 }
 
 static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
@@ -704,7 +692,7 @@ static EResult nrgen_int(NRBuilder &b, PState &, IReport *G,
   }
 }
 
-static EResult nrgen_float(NRBuilder &b, PState &, IReport *G,
+static EResult nrgen_float(NRBuilder &b, PState &, IReport *,
                            qparse::ConstFloat *n) {
   boost::multiprecision::cpp_dec_float_100 num(n->get_value().view());
   return b.createFixedFloat(num, FloatSize::F64);
@@ -1618,8 +1606,8 @@ static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
   return items;
 }
 
-static EResult nrgen_composite_field(NRBuilder &b, PState &s, IReport *G,
-                                     qparse::CompositeField *n) {
+static EResult nrgen_composite_field(NRBuilder &, PState &, IReport *,
+                                     qparse::CompositeField *) {
   qcore_panic("Unreachable");
 }
 
@@ -1896,7 +1884,7 @@ static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G,
   return create<For>(init.value(), cond.value(), step.value(), body.value());
 }
 
-static EResult nrgen_foreach(NRBuilder &, PState &, IReport *G,
+static EResult nrgen_foreach(NRBuilder &, PState &, IReport *,
                              qparse::ForeachStmt *) {
   /**
    * @brief Convert a foreach loop to a nr expression.
@@ -1994,10 +1982,6 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, qparse::Node *n) {
   std::optional<nr::Expr *> out;
 
   switch (n->this_typeid()) {
-    case QAST_NODE_CEXPR:
-      out = nrgen_cexpr(b, s, G, n->as<qparse::ConstExpr>());
-      break;
-
     case QAST_NODE_BINEXPR:
       out = nrgen_binexpr(b, s, G, n->as<qparse::BinExpr>());
       break;

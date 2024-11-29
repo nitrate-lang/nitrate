@@ -67,44 +67,77 @@ LIB_EXPORT const char *Node::type_name(qparse_ty_t type) {
   { QAST_NODE_##__name, "QAST_NODE_" #__name }
 
   static const std::unordered_map<qparse_ty_t, const char *> names = {
-      NAMEOF_ROW(STMT),      NAMEOF_ROW(TYPE),
-      NAMEOF_ROW(DECL),      NAMEOF_ROW(EXPR),
-      NAMEOF_ROW(CEXPR),     NAMEOF_ROW(UNRES_TY),
-      NAMEOF_ROW(U1_TY),     NAMEOF_ROW(U8_TY),
-      NAMEOF_ROW(U16_TY),    NAMEOF_ROW(U32_TY),
-      NAMEOF_ROW(U64_TY),    NAMEOF_ROW(U128_TY),
-      NAMEOF_ROW(I8_TY),     NAMEOF_ROW(I16_TY),
-      NAMEOF_ROW(I32_TY),    NAMEOF_ROW(I64_TY),
-      NAMEOF_ROW(I128_TY),   NAMEOF_ROW(F16_TY),
-      NAMEOF_ROW(F32_TY),    NAMEOF_ROW(F64_TY),
-      NAMEOF_ROW(F128_TY),   NAMEOF_ROW(VOID_TY),
-      NAMEOF_ROW(PTR_TY),    NAMEOF_ROW(OPAQUE_TY),
-      NAMEOF_ROW(TUPLE_TY),  NAMEOF_ROW(ARRAY_TY),
-      NAMEOF_ROW(REF_TY),    NAMEOF_ROW(STRUCT_TY),
-      NAMEOF_ROW(FN_TY),     NAMEOF_ROW(UNEXPR),
-      NAMEOF_ROW(BINEXPR),   NAMEOF_ROW(POST_UNEXPR),
-      NAMEOF_ROW(TEREXPR),   NAMEOF_ROW(INT),
-      NAMEOF_ROW(FLOAT),     NAMEOF_ROW(BOOL),
-      NAMEOF_ROW(STRING),    NAMEOF_ROW(CHAR),
-      NAMEOF_ROW(NULL),      NAMEOF_ROW(UNDEF),
-      NAMEOF_ROW(CALL),      NAMEOF_ROW(TEMPL_CALL),
-      NAMEOF_ROW(LIST),      NAMEOF_ROW(ASSOC),
-      NAMEOF_ROW(FIELD),     NAMEOF_ROW(INDEX),
-      NAMEOF_ROW(SLICE),     NAMEOF_ROW(FSTRING),
-      NAMEOF_ROW(IDENT),     NAMEOF_ROW(SEQ_POINT),
-      NAMEOF_ROW(STMT_EXPR), NAMEOF_ROW(TYPE_EXPR),
-      NAMEOF_ROW(BLOCK),     NAMEOF_ROW(VOLSTMT),
-      NAMEOF_ROW(CONST),     NAMEOF_ROW(VAR),
-      NAMEOF_ROW(LET),       NAMEOF_ROW(INLINE_ASM),
-      NAMEOF_ROW(IF),        NAMEOF_ROW(WHILE),
-      NAMEOF_ROW(FOR),       NAMEOF_ROW(FOREACH),
-      NAMEOF_ROW(BREAK),     NAMEOF_ROW(CONTINUE),
-      NAMEOF_ROW(RETURN),    NAMEOF_ROW(RETIF),
-      NAMEOF_ROW(CASE),      NAMEOF_ROW(SWITCH),
-      NAMEOF_ROW(TYPEDEF),   NAMEOF_ROW(FNDECL),
-      NAMEOF_ROW(FN),        NAMEOF_ROW(COMPOSITE_FIELD),
-      NAMEOF_ROW(STRUCT),    NAMEOF_ROW(ENUM),
-      NAMEOF_ROW(SUBSYSTEM), NAMEOF_ROW(EXPORT),
+      NAMEOF_ROW(UNRES_TY),
+      NAMEOF_ROW(U1_TY),
+      NAMEOF_ROW(U8_TY),
+      NAMEOF_ROW(U16_TY),
+      NAMEOF_ROW(U32_TY),
+      NAMEOF_ROW(U64_TY),
+      NAMEOF_ROW(U128_TY),
+      NAMEOF_ROW(I8_TY),
+      NAMEOF_ROW(I16_TY),
+      NAMEOF_ROW(I32_TY),
+      NAMEOF_ROW(I64_TY),
+      NAMEOF_ROW(I128_TY),
+      NAMEOF_ROW(F16_TY),
+      NAMEOF_ROW(F32_TY),
+      NAMEOF_ROW(F64_TY),
+      NAMEOF_ROW(F128_TY),
+      NAMEOF_ROW(VOID_TY),
+      NAMEOF_ROW(PTR_TY),
+      NAMEOF_ROW(OPAQUE_TY),
+      NAMEOF_ROW(TUPLE_TY),
+      NAMEOF_ROW(ARRAY_TY),
+      NAMEOF_ROW(REF_TY),
+      NAMEOF_ROW(STRUCT_TY),
+      NAMEOF_ROW(FN_TY),
+      NAMEOF_ROW(UNEXPR),
+      NAMEOF_ROW(BINEXPR),
+      NAMEOF_ROW(POST_UNEXPR),
+      NAMEOF_ROW(TEREXPR),
+      NAMEOF_ROW(INT),
+      NAMEOF_ROW(FLOAT),
+      NAMEOF_ROW(BOOL),
+      NAMEOF_ROW(STRING),
+      NAMEOF_ROW(CHAR),
+      NAMEOF_ROW(NULL),
+      NAMEOF_ROW(UNDEF),
+      NAMEOF_ROW(CALL),
+      NAMEOF_ROW(TEMPL_CALL),
+      NAMEOF_ROW(LIST),
+      NAMEOF_ROW(ASSOC),
+      NAMEOF_ROW(FIELD),
+      NAMEOF_ROW(INDEX),
+      NAMEOF_ROW(SLICE),
+      NAMEOF_ROW(FSTRING),
+      NAMEOF_ROW(IDENT),
+      NAMEOF_ROW(SEQ_POINT),
+      NAMEOF_ROW(STMT_EXPR),
+      NAMEOF_ROW(TYPE_EXPR),
+      NAMEOF_ROW(BLOCK),
+      NAMEOF_ROW(VOLSTMT),
+      NAMEOF_ROW(CONST),
+      NAMEOF_ROW(VAR),
+      NAMEOF_ROW(LET),
+      NAMEOF_ROW(INLINE_ASM),
+      NAMEOF_ROW(IF),
+      NAMEOF_ROW(WHILE),
+      NAMEOF_ROW(FOR),
+      NAMEOF_ROW(FOREACH),
+      NAMEOF_ROW(BREAK),
+      NAMEOF_ROW(CONTINUE),
+      NAMEOF_ROW(RETURN),
+      NAMEOF_ROW(RETIF),
+      NAMEOF_ROW(CASE),
+      NAMEOF_ROW(SWITCH),
+      NAMEOF_ROW(TYPEDEF),
+      NAMEOF_ROW(FNDECL),
+      NAMEOF_ROW(FN),
+      NAMEOF_ROW(COMPOSITE_FIELD),
+      NAMEOF_ROW(STRUCT),
+      NAMEOF_ROW(ENUM),
+      NAMEOF_ROW(SUBSYSTEM),
+      NAMEOF_ROW(EXPORT),
       NAMEOF_ROW(EXPR_STMT),
   };
 
@@ -124,7 +157,6 @@ LIB_EXPORT uint32_t Node::this_sizeof() {
       SIZEOF_ROW(Type),
       SIZEOF_ROW(Decl),
       SIZEOF_ROW(Expr),
-      SIZEOF_ROW(ConstExpr),
       SIZEOF_ROW(UnresolvedType),
       SIZEOF_ROW(InferType),
       SIZEOF_ROW(TemplType),
@@ -215,11 +247,6 @@ LIB_EXPORT qparse_ty_t Node::this_typeid() {
   { typeid(__type).hash_code(), QAST_NODE_##__name }
 
   static const std::unordered_map<size_t, qparse_ty_t> typeid_map = {
-      TYPEID_ROW(Stmt, STMT),
-      TYPEID_ROW(Type, TYPE),
-      TYPEID_ROW(Decl, DECL),
-      TYPEID_ROW(Expr, EXPR),
-      TYPEID_ROW(ConstExpr, CEXPR),
       TYPEID_ROW(UnresolvedType, UNRES_TY),
       TYPEID_ROW(InferType, INFER_TY),
       TYPEID_ROW(TemplType, TEMPL_TY),
@@ -305,7 +332,6 @@ LIB_EXPORT const char *Node::this_nameof() { return type_name(this_typeid()); }
 
 LIB_EXPORT bool Node::is_type() {
   switch (this_typeid()) {
-    case QAST_NODE_TYPE:
     case QAST_NODE_REF_TY:
     case QAST_NODE_U1_TY:
     case QAST_NODE_U8_TY:
@@ -340,7 +366,6 @@ LIB_EXPORT bool Node::is_type() {
 
 LIB_EXPORT bool Node::is_stmt() {
   switch (this_typeid()) {
-    case QAST_NODE_STMT:
     case QAST_NODE_TYPEDEF:
     case QAST_NODE_FNDECL:
     case QAST_NODE_STRUCT:
@@ -392,8 +417,6 @@ LIB_EXPORT bool Node::is_decl() {
 
 LIB_EXPORT bool Node::is_expr() {
   switch (this_typeid()) {
-    case QAST_NODE_EXPR:
-    case QAST_NODE_CEXPR:
     case QAST_NODE_BINEXPR:
     case QAST_NODE_UNEXPR:
     case QAST_NODE_TEREXPR:
@@ -656,41 +679,11 @@ LIB_EXPORT bool Type::is_ptr_to(Type *type) {
 
 ///=============================================================================
 
-LIB_EXPORT bool Expr::is_binexpr() {
-  if (is<BinExpr>()) {
-    return true;
-  }
+LIB_EXPORT bool Expr::is_binexpr() { return is<BinExpr>(); }
 
-  if (!is<ConstExpr>()) {
-    return false;
-  }
+LIB_EXPORT bool Expr::is_unaryexpr() { return is<UnaryExpr>(); }
 
-  return as<ConstExpr>()->get_value()->is_binexpr();
-}
-
-LIB_EXPORT bool Expr::is_unaryexpr() {
-  if (is<UnaryExpr>()) {
-    return true;
-  }
-
-  if (!is<ConstExpr>()) {
-    return false;
-  }
-
-  return as<ConstExpr>()->get_value()->is_unaryexpr();
-}
-
-LIB_EXPORT bool Expr::is_ternaryexpr() {
-  if (is<TernaryExpr>()) {
-    return true;
-  }
-
-  if (!is<ConstExpr>()) {
-    return false;
-  }
-
-  return as<ConstExpr>()->get_value()->is_ternaryexpr();
-}
+LIB_EXPORT bool Expr::is_ternaryexpr() { return is<TernaryExpr>(); }
 
 ///=============================================================================
 
@@ -708,17 +701,6 @@ LIB_EXPORT qparse_node_t *qparse_alloc(qparse_ty_t type, qcore_arena_t *arena) {
   qparse_arena.swap(*arena);
 
   switch (type) {
-    case QAST_NODE_STMT:
-      qcore_panic("qparse_alloc(): QAST_NODE_STMT is not valid here");
-    case QAST_NODE_TYPE:
-      qcore_panic("qparse_alloc(): QAST_NODE_TYPE is not valid here");
-    case QAST_NODE_DECL:
-      qcore_panic("qparse_alloc(): QAST_NODE_DECL is not valid here");
-    case QAST_NODE_EXPR:
-      qcore_panic("qparse_alloc(): QAST_NODE_EXPR is not valid here");
-    case QAST_NODE_CEXPR:
-      node = ConstExpr::get();
-      break;
     case QAST_NODE_UNRES_TY:
       node = UnresolvedType::get();
       break;
