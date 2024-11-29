@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __NITRATE_LEXER_IMPL__
-
 #include <nitrate-core/Error.h>
 #include <nitrate-lexer/Lexer.h>
 #include <string.h>

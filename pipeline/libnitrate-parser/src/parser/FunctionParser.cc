@@ -32,11 +32,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /// TODO: Source location
+#include <nitrate-lexer/Lexer.h>
+#include <nitrate-parser/Node.h>
 #include <parser/Parse.h>
-
-#include "nitrate-lexer/Lexer.h"
-#include "nitrate-lexer/Token.h"
-#include "nitrate-parser/Node.h"
 
 using namespace qparse;
 using namespace qparse::parser;
@@ -260,7 +258,7 @@ static bool parse_captures_and_name(qlex_t *rd, FnDecl *fndecl,
   if (c.is<qPuncLBrk>()) {
     qlex_next(rd);
 
-    while (!c.is<qEofF>()) {
+    while (!c.is(qEofF)) {
       c = qlex_next(rd);
 
       if (c.is<qPuncRBrk>()) {

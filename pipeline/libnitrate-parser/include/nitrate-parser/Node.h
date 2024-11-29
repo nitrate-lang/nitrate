@@ -141,7 +141,7 @@ uint32_t qparse_endpos(qparse_node_t *node);
 /// END: ABSTRACT SYNTAX TREE DATA TYPES
 ///=============================================================================
 
-#if (defined(__cplusplus)) || defined(__QPARSE_IMPL__)
+#if (defined(__cplusplus)) || defined(__NITRATE_IMPL__)
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Memory.h>

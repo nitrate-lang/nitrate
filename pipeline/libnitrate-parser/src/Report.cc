@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QPARSE_IMPL__
-
 #include <Impl.h>
 #include <ParseReport.h>
 #include <nitrate-core/Error.h>

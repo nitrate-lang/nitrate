@@ -38,6 +38,7 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
 #include <stdint.h>
 
 typedef enum qlex_ty_t {
@@ -182,22 +183,23 @@ typedef enum qlex_key_t {
   qKFalse,      /* 'false' */
 } __attribute__((packed)) qlex_key_t;
 
-typedef uint32_t uint32_t;
-
-#if defined(__cplusplus) && defined(__NITRATE_LEXER_IMPL__)
-}
-
-#include <stdexcept>
-#include <string>
-#include <type_traits>
-
 struct qlex_t;
 struct qlex_tok_t;
 
-extern "C" const char *qlex_str(struct qlex_t *lexer, struct qlex_tok_t *tok,
-                                size_t *len);
+const char *qlex_str(struct qlex_t *lexer, struct qlex_tok_t *tok, size_t *len);
 
-typedef struct qlex_tok_t final {
+#ifdef __cplusplus
+}
+#endif
+
+#if defined(__cplusplus) && defined(__NITRATE_LEXER_CPP__)
+
+#include <string>
+#include <type_traits>
+
+#endif
+
+typedef struct qlex_tok_t {
   /* Token type */
   qlex_ty_t ty : 4;
 
@@ -212,6 +214,8 @@ typedef struct qlex_tok_t final {
   } __attribute__((packed)) v;
 
   uint64_t pad : 4;
+
+#if defined(__cplusplus) && defined(__NITRATE_LEXER_CPP__)
 
   qlex_tok_t() : ty(qErro), start(0), end(0), v{.str_idx = 0} {}
 
@@ -298,32 +302,10 @@ typedef struct qlex_tok_t final {
         __builtin_unreachable();
     }
   }
-} __attribute__((packed)) qlex_tok_t;
-extern "C" {
-#else
 
-typedef struct qlex_tok_t {
-  /* Token type */
-  qlex_ty_t ty : 4;
-
-  uint32_t start, end;
-
-  /* Token data */
-  union {
-    qlex_punc_t punc;
-    qlex_op_t op;
-    qlex_key_t key;
-    uint32_t str_idx;
-  } __attribute__((packed)) v;
-
-  uint64_t pad : 4;
-} __attribute__((packed)) qlex_tok_t;
 #endif
+} __attribute__((packed)) qlex_tok_t;
 
 #define QLEX_TOK_SIZE (sizeof(qlex_tok_t))
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  // __NITRATE_LEXER_TOKEN_H__

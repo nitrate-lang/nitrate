@@ -31,9 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QPARSE_IMPL__
-#define __NITRATE_LEXER_IMPL__
-
 #include <Impl.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-parser/Node.h>

@@ -34,8 +34,6 @@
 #ifndef __NITRATE_PARSER_IMPL_H__
 #define __NITRATE_PARSER_IMPL_H__
 
-#define __QPARSE_IMPL__
-
 #include <ParseReport.h>
 #include <nitrate-parser/Node.h>
 

@@ -34,9 +34,6 @@
 #ifndef __NITRATE_PARSE_H__
 #define __NITRATE_PARSE_H__
 
-#define __NITRATE_LEXER_IMPL__
-#define __QPARSE_IMPL__
-
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif

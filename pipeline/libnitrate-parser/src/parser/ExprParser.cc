@@ -32,7 +32,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /// TODO: Source location
-#define __NITRATE_LEXER_IMPL__
 
 #include <nitrate-parser/Node.h>
 #include <parser/Parse.h>

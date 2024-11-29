@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QPARSE_IMPL__
-
 #include <libdeflate.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-lexer/Lexer.h>
