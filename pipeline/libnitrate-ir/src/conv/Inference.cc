@@ -197,11 +197,14 @@ static Type *binexpr_promote(Type *L, Type *R, uint32_t PtrSizeBytes) {
   }
 }
 
-LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
+static Expr *nr_infer_impl(Expr *_node, uint32_t PtrSizeBytes,
+                           std::unordered_set<Expr *> &visited) {
   qcore_assert(_node != nullptr);
 
   Expr *E = static_cast<Expr *>(_node);
   Type *T = nullptr;
+
+  visited.insert(_node);
 
   if (E->isType()) {
     T = E->asType();
@@ -736,8 +739,11 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
         break;
       }
       case NR_NODE_IDENT: {
-        if (E->as<Ident>()->getWhat() != nullptr) {
-          T = E->as<Ident>()->getWhat()->getType().value_or(nullptr);
+        Expr *what = E->as<Ident>()->getWhat();
+        if (!visited.contains(what)) [[likely]] {
+          if (what != nullptr) {
+            T = what->getType().value_or(nullptr);
+          }
         }
         break;
       }
@@ -822,6 +828,27 @@ LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes) {
   }
 
   return T;
+}
+
+LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes,
+                               void *res) {
+  static thread_local struct State {
+    std::unordered_set<Expr *> visited;
+    size_t depth = 0;
+  } state;
+
+  state.depth++;
+
+  auto R =
+      nr_infer_impl(static_cast<Expr *>(_node), PtrSizeBytes, state.visited);
+
+  state.depth--;
+
+  if (state.depth == 0) {
+    state.visited.clear();
+  }
+
+  return R;
 }
 
 bool nr::Type::hasKnownSize() noexcept {

@@ -290,11 +290,12 @@ size_t nr_max_modules(void);
  *
  * @param node Node to perform type inference on.
  * @param PtrSizeBytes Size of a pointer on the target platform
+ * @param res Should be NULL
  * @return Type of the node or NULL if inference failed.
  *
  * @note This function is thread-safe.
  */
-nr_node_t *nr_infer(nr_node_t *node, uint32_t PtrSizeBytes);
+nr_node_t *nr_infer(nr_node_t *node, uint32_t PtrSizeBytes, void *res);
 
 /**
  * @brief Clone a NR node. Optionally into a different module.

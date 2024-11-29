@@ -1303,7 +1303,7 @@ namespace nr {
 
   constexpr std::optional<nr::Type *> nr::Expr::getType() noexcept {
     /// TODO: Communicate the ptrSizeBytes properly here
-    Type *R = static_cast<Type *>(nr_infer(this, 8));
+    Type *R = static_cast<Type *>(nr_infer(this, 8, nullptr));
 
     if (R) {
       return R;
