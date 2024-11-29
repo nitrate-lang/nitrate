@@ -896,61 +896,6 @@ LIB_EXPORT char *qparse_repr(const qparse_node_t *node, bool minify,
   return strdup(str.c_str());
 }
 
-static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out,
-                        size_t *out_size) {
-  struct libdeflate_compressor *ctx{};
-
-  /* Allocate a compressor context; level 8 is a fairly good tradeoff */
-  ctx = libdeflate_alloc_compressor(8);
-
-  /* Compute the largest possible compressed buffer size */
-  *out_size = libdeflate_deflate_compress_bound(ctx, in_size);
-
-  /* Allocate memory for the compressed buffer */
-  *out = (uint8_t *)malloc(*out_size);
-
-  if (*out == NULL) {
-    libdeflate_free_compressor(ctx);
-    qcore_panic("Failed to allocate memory for compressed AST representation");
-  }
-
-  /* Compress the data */
-  *out_size = libdeflate_deflate_compress(ctx, in, in_size, *out, *out_size);
-
-  /* Liberate the compressor context */
-  libdeflate_free_compressor(ctx);
-
-  /* Check for compression failure */
-  if (out_size == 0) {
-    qcore_panic("Failed to compress AST representation");
-  }
-}
-
-LIB_EXPORT void qparse_brepr(const qparse_node_t *_node, bool compress,
-                             uint8_t **out, size_t *outlen) {
-  /* Validate the output buffer */
-  if (!out || !outlen) {
-    qcore_panic("Invalid output buffer for AST representation");
-  }
-
-  /* Generate the AST representation as ASCII */
-  char *repr = nullptr;
-  if ((repr = qparse_repr(static_cast<const Node *>(_node), true, 0, outlen)) ==
-      NULL) {
-    qcore_panic("Failed to generate AST representation");
-  }
-
-  /* Compress the AST representation */
-  if (compress) {
-    uint8_t *tmp_out = nullptr;
-    raw_deflate((const uint8_t *)repr, *outlen, &tmp_out, outlen);
-    free(repr);
-    repr = (char *)tmp_out;
-  } else {
-    *out = (uint8_t *)repr;
-  }
-}
-
 CPP_EXPORT std::ostream &std::operator<<(std::ostream &os,
                                          const qlex_op_t &op) {
   os << qlex_opstr((qlex_op_t)op);

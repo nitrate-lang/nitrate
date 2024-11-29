@@ -92,19 +92,6 @@ char *qparse_repr(const qparse_node_t *_node, bool minify, size_t indent,
                   size_t *outlen);
 
 /**
- * @brief Serialize a parse tree to a binary representation.
- *
- * @param node The root node of the parse tree.
- * @param compress Whether to compress the output.
- * @param out The output buffer.
- * @param outlen The length of the output buffer.
- *
- * @note This function is thread safe.
- */
-void qparse_brepr(const qparse_node_t *node, bool compress, uint8_t **out,
-                  size_t *outlen);
-
-/**
  * @brief Parse Nitrate code into a parse tree.
  *
  * @param parser The parser instance to use for parsing.

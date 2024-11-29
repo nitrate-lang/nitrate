@@ -315,7 +315,7 @@ namespace qparse {
     bool is_expr();
     bool is_const_expr();
 
-    std::string to_string(bool minify = false, bool binary_repr = false);
+    std::string to_string(bool minify = false);
 
     template <typename T>
     constexpr const T *as() const {

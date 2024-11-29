@@ -424,16 +424,12 @@ LIB_EXPORT bool Node::is(qparse_ty_t type) { return type == this_typeid(); }
 LIB_EXPORT bool Node::verify(std::ostream &os) { return verify_impl(os); }
 LIB_EXPORT void Node::canonicalize() { canonicalize_impl(); }
 
-LIB_EXPORT std::string Node::to_string(bool minify, bool binary_repr) {
+LIB_EXPORT std::string Node::to_string(bool minify) {
 #define INDENT_STEP 1
   size_t len = 0;
   uint8_t *outbuf = nullptr;
 
-  if (binary_repr) {
-    qparse_brepr(this, minify, &outbuf, &len);
-  } else {
-    outbuf = (uint8_t *)qparse_repr(this, minify, INDENT_STEP, &len);
-  }
+  outbuf = (uint8_t *)qparse_repr(this, minify, INDENT_STEP, &len);
 
   std::string result((char *)outbuf, len);
 
