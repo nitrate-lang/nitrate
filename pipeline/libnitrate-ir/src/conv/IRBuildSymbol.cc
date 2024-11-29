@@ -73,7 +73,7 @@ Fn *NRBuilder::createFunctionDefintion(
                       is_variadic, AbiTag::Default);
 
   if (m_functions.contains(name)) [[unlikely]] {
-    m_duplicate_functions.insert(fn);
+    m_duplicate_functions->insert(fn);
   }
 
   m_functions[name] = fn;
@@ -114,7 +114,7 @@ Fn *NRBuilder::createFunctionDeclaration(
                       is_variadic, AbiTag::Default);
 
   if (m_functions.contains(name)) [[unlikely]] {
-    m_duplicate_functions.insert(fn);
+    m_duplicate_functions->insert(fn);
   }
 
   m_functions[name] = fn;
@@ -171,7 +171,7 @@ Local *NRBuilder::createVariable(
   (void)is_readonly;
 
   if (m_variables.contains(name)) [[unlikely]] {
-    m_duplicate_variables.insert(local);
+    m_duplicate_variables->insert(local);
   }
 
   m_variables[name] = local;

@@ -31,6 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <algorithm>
+#include <unordered_map>
+
+#include "nitrate-ir/Report.hh"
 #define IRBUILDER_IMPL
 
 #include <nitrate-core/Error.h>
@@ -40,83 +44,73 @@
 
 using namespace nr;
 
-void NRBuilder::flatten_symbols(Seq *root) noexcept {
-  std::unordered_set<Expr *> symbols;
+///=============================================================================
 
-  iterate<dfs_post>(root, [&](Expr *P, Expr **C) -> IterOp {
-    if (!P) {
-      return IterOp::Proceed;
-    }
+struct Conflict {
+  std::string_view name;
+  Expr *expr;
+  Kind kind;
+};
 
-    bool replace_with_ident = !P->is(NR_NODE_SEQ);
-
-    if ((!P->is(NR_NODE_EXTERN) && (*C)->is(NR_NODE_FN)) ||
-        (*C)->is(NR_NODE_EXTERN)) {
-      symbols.insert(*C);
-
-      if (replace_with_ident) {
-        *C = create<Ident>((*C)->getName(), *C);
-      } else {
-        *C = createIgn();
+static void print_conflict_errors(const std::vector<Conflict> &conflicts,
+                                  IReport *I) {
+  for (const auto &conflict : conflicts) {
+    switch (conflict.kind) {
+      case Kind::Function: {
+        I->report(nr::FunctionRedefinition, IC::Error, {conflict.name},
+                  conflict.expr->getLoc());
+        break;
       }
+
+      case Kind::Variable: {
+        I->report(nr::VariableRedefinition, IC::Error, {conflict.name},
+                  conflict.expr->getLoc());
+        break;
+      }
+
+      default:
+        qcore_implement();
+        break;
     }
-
-    return IterOp::Proceed;
-  });
-
-  for (auto ele : symbols) {
-    root->getItems().push_back(ele);
   }
 }
-
-///=============================================================================
 
 bool NRBuilder::check_duplicates(Seq *root, IReport *I) noexcept {
   bool ok = true;
 
-  flatten_symbols(root);
+  std::vector<Conflict> conflicts;
+  std::unordered_map<std::string_view, Kind> names_map;
 
-  for (auto fn : m_duplicate_functions) {
-    if (auto fn_type = fn->getType()) {
-      std::stringstream ss;
-      fn_type.value()->dump(ss);
+  {
+    names_map.reserve(m_functions.size() + m_variables.size());
 
-      I->report(CompilerError, IC::Error,
-                {"Duplicate function \"", fn->getName(), "\": ", ss.str()},
-                fn->getLoc());
+    std::for_each(m_functions.begin(), m_functions.end(),
+                  [&](auto x) { names_map[x.first] = Kind::Function; });
 
-    } else {
-      I->report(CompilerError, IC::Error,
-                {"Duplicate function \"", fn->getName(), "\""}, fn->getLoc());
-    }
-
-    ok = false;
+    std::for_each(m_variables.begin(), m_variables.end(),
+                  [&](auto x) { names_map[x.first] = Kind::Variable; });
   }
 
-  for (auto var : m_duplicate_variables) {
-    if (auto var_type = var->getType()) {
-      std::stringstream ss;
-      var_type.value()->dump(ss);
+  { /* Diagnose duplicate symbols */
+    conflicts.reserve(m_duplicate_functions->size() +
+                      m_duplicate_variables->size());
 
-      I->report(CompilerError, IC::Error,
-                {"Duplicate variable \"", var->getName(), "\": ", ss.str()},
-                var->getLoc());
+    std::for_each(m_duplicate_functions->begin(), m_duplicate_functions->end(),
+                  [&](auto x) {
+                    conflicts.push_back({x->getName(), x, Kind::Function});
+                  });
 
-    } else {
-      I->report(CompilerError, IC::Error,
-                {"Duplicate variable \"", var->getName(), "\""}, var->getLoc());
-    }
+    std::for_each(m_duplicate_variables->begin(), m_duplicate_variables->end(),
+                  [&](auto x) {
+                    conflicts.push_back({x->getName(), x, Kind::Variable});
+                  });
 
-    ok = false;
+    /* Release the memory */
+    m_duplicate_functions = std::nullopt;
+    m_duplicate_variables = std::nullopt;
   }
 
-  ///=====================================================================
-
-  iterate<dfs_pre>(root, [&](Expr *, Expr **) -> IterOp {
-    /// TODO: Warn user about using reserved namespaces.
-
-    return IterOp::Proceed;
-  });
+  print_conflict_errors(conflicts, I);
 
   return ok;
 }

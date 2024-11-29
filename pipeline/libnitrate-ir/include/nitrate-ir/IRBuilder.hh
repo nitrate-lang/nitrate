@@ -89,6 +89,13 @@ namespace nr {
     CStr, /* Only supported variant */
   };
 
+  enum class Kind {
+    TypeDef,
+    ScopedEnum,
+    Function,
+    Variable,
+  };
+
   using bigfloat_t = boost::multiprecision::cpp_dec_float_100;
   using boost::multiprecision::uint128_t;
 
@@ -128,21 +135,14 @@ namespace nr {
     std::unordered_map<std::string_view, Fn *> m_functions;
     std::unordered_map<Fn *, std::unordered_map<size_t, Expr *>>
         m_function_defaults;
-    std::unordered_set<Fn *> m_duplicate_functions;
-
     std::unordered_map<std::string_view, Local *> m_variables;
-    std::unordered_set<Local *> m_duplicate_variables;
+
+    std::optional<std::unordered_set<Fn *>> m_duplicate_functions;
+    std::optional<std::unordered_set<Local *>> m_duplicate_variables;
 
     ///**************************************************************************///
     // Builder helper methods
     ///**************************************************************************///
-
-    enum class Kind {
-      TypeDef,
-      ScopedEnum,
-      Function,
-      Variable,
-    };
 
     std::optional<Expr *> resolve_name(std::string_view name,
                                        Kind kind) const noexcept;
@@ -157,8 +157,9 @@ namespace nr {
 
     void try_resolve_types(Expr *root) noexcept;
     void try_resolve_names(Expr *root) noexcept;
-    void try_resolve_calls(Expr *root) noexcept;
+    void try_resolve_calls(Expr *root) const noexcept;
     void connect_nodes(Seq *root) noexcept;
+    void flatten_symbols(Seq *root) noexcept;
 
     bool check_acyclic(Seq *root, IReport *I) noexcept;
     bool check_duplicates(Seq *root, IReport *I) noexcept;
@@ -170,8 +171,6 @@ namespace nr {
     bool check_control_flow(Seq *root, IReport *I) noexcept;
     bool check_types(Seq *root, IReport *I) noexcept;
     bool check_safety_claims(Seq *root, IReport *I) noexcept;
-
-    void flatten_symbols(Seq *root) noexcept;
 
 #if defined(NDEBUG)
 #define SOURCE_LOCATION_PARAM

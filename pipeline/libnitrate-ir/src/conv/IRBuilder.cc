@@ -57,6 +57,9 @@ NRBuilder::NRBuilder(std::string module_name,
   m_root = nullptr;
 
   m_root = create<Seq>(SeqItems());
+
+  m_duplicate_functions = std::unordered_set<Fn *>();
+  m_duplicate_variables = std::unordered_set<Local *>();
 }
 
 NRBuilder::~NRBuilder() noexcept {

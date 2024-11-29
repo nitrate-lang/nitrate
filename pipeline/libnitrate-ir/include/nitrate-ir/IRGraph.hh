@@ -1258,11 +1258,12 @@ namespace nr {
     DEFAULT_VALUE,
   };
 
+  using CallArguments = std::vector<std::pair<std::string_view, Expr *>,
+                                    Arena<std::pair<std::string_view, Expr *>>>;
+
   struct CallArgsTmpNodeCradle {
     Expr *base;
-    std::vector<std::pair<std::string_view, Expr *>,
-                Arena<std::pair<std::string_view, Expr *>>>
-        args;
+    CallArguments args;
 
     bool operator==(const CallArgsTmpNodeCradle &rhs) const {
       return base == rhs.base && args == rhs.args;
