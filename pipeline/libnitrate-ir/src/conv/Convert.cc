@@ -1254,6 +1254,8 @@ static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
 
 static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
                             qparse::StructDef *n) {
+  bool is_template = n->get_template_params().has_value();
+
   std::vector<std::tuple<std::string_view, Type *, Expr *>> fields(
       n->get_fields().size());
 
@@ -1299,8 +1301,18 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
   }
 
   std::swap(s.ns_prefix, old_ns);
-  b.createNamedTypeAlias(b.getStructTy(fields),
-                         b.intern(s.scope_name(n->get_name())));
+  if (is_template) {
+    const auto &items = n->get_template_params().value();
+    std::vector<std::string_view> templ_names(items.size());
+    for (size_t i = 0; i < items.size(); i++) {
+      templ_names[i] = b.intern(std::get<qparse::String>(items[i]));
+    }
+    b.createStructTemplateDefintion(b.intern(s.scope_name(n->get_name())),
+                                    templ_names, b.getStructTy(fields));
+  } else {
+    b.createNamedTypeAlias(b.getStructTy(fields),
+                           b.intern(s.scope_name(n->get_name())));
+  }
   std::swap(s.ns_prefix, old_ns);
 
   BResult R;

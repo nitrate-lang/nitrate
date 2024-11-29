@@ -636,6 +636,22 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     case QAST_NODE_STRUCT: {
       OBJECT_BEGIN("Struct");
       OBJECT_STR(n->as<StructDef>()->get_name());
+      { /* Template parameters */
+        state.indent++;
+        indent(ss, state);
+        ss << "[";
+        for (const auto &[name, type, def] :
+             n->as<StructDef>()->get_template_params().value_or(
+                 TemplateParameters())) {
+          OBJECT_BEGIN("TParam");
+          OBJECT_STR(name);
+          OBJECT_SUB(type);
+          OBJECT_SUB(def);
+          OBJECT_END();
+        }
+        ss << "]";
+        state.indent--;
+      }
       OBJECT_ARRAY(n->as<StructDef>()->get_fields());
       OBJECT_ARRAY(n->as<StructDef>()->get_methods());
       OBJECT_ARRAY(n->as<StructDef>()->get_static_methods());
