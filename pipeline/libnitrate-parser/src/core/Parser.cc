@@ -300,9 +300,7 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Block **group, bool expect_braces,
       }
 
       case qK__Asm__: {
-        if (!recurse_inline_asm(S, rd, &node)) {
-          return false;
-        }
+        node = recurse_inline_asm(S, rd).value_or(nullptr);
         break;
       }
 
