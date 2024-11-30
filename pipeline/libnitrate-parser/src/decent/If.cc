@@ -46,13 +46,9 @@ qparse::Stmt *qparse::recurse_if(qparse_t &S, qlex_t &rd) {
   Stmt *then_block = nullptr;
   if (peek().is<qOpArrow>()) {
     next();
-    if (!recurse(S, rd, &then_block, false, true)) {
-      return mock_stmt(QAST_NODE_IF);
-    }
+    then_block = recurse(S, rd, false, true);
   } else {
-    if (!recurse(S, rd, &then_block, true)) {
-      return mock_stmt(QAST_NODE_IF);
-    };
+    then_block = recurse(S, rd, true);
   }
 
   qlex_tok_t tok = peek();
@@ -63,17 +59,13 @@ qparse::Stmt *qparse::recurse_if(qparse_t &S, qlex_t &rd) {
     if (peek().is<qOpArrow>()) {
       next();
 
-      if (!recurse(S, rd, &else_block, false, true)) {
-        return mock_stmt(QAST_NODE_IF);
-      }
+      else_block = recurse(S, rd, false, true);
     } else {
       if (peek().is<qKIf>()) {
         next();
         else_block = recurse_if(S, rd);
       } else {
-        if (!recurse(S, rd, &else_block, true, false)) {
-          return mock_stmt(QAST_NODE_IF);
-        }
+        else_block = recurse(S, rd, true, false);
       }
     }
 

@@ -622,10 +622,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
 
       Stmt *fnbody = nullptr;
 
-      if (!recurse(S, rd, &fnbody, false, true)) {
-        syntax(tok, "Expected a block after '=>'");
-        return false;
-      }
+      fnbody = recurse(S, rd, false, true);
 
       if (!ftype->get_return_ty()) {
         ftype->set_return_ty(VoidTy::get());
@@ -660,9 +657,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
     Expr *req_in = nullptr, *req_out = nullptr;
     std::set<Expr *> attributes;
 
-    if (!recurse(S, rd, &fnbody)) {
-      syntax(tok, "Expected a block after '{'");
-    }
+    fnbody = recurse(S, rd);
 
     tok = peek();
 

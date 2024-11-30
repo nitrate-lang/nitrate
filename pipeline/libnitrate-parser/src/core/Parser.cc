@@ -44,12 +44,11 @@
 
 using namespace qparse;
 
-bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
-                     bool single_stmt) {
+Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
+                      bool single_stmt) {
   qlex_tok_t tok;
 
   Block *block = Block::get();
-  *group = block;
 
   if (expect_braces) {
     tok = next();
@@ -66,7 +65,7 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
     if (expect_braces) {
       if (tok.is<qPuncRCur>()) {
         next();
-        return true;
+        return block;
       }
     }
 
@@ -79,18 +78,18 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
     if (!tok.is(qKeyW)) {
       if (tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() || tok.is<qPuncRPar>()) {
         syntax(tok, "Unexpected closing brace");
-        return false;
+        return mock_stmt(QAST_NODE_BLOCK);
       }
 
       Expr *expr = nullptr;
       if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr)) {
         syntax(tok, "Expected expression");
-        return false;
+        return mock_stmt(QAST_NODE_BLOCK);
       }
 
       if (!expr) {
         syntax(tok, "Expected valid expression");
-        return false;
+        return mock_stmt(QAST_NODE_BLOCK);
       }
 
       tok = next();
@@ -115,7 +114,7 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
       case qKVar: {
         std::vector<Stmt *> items;
         if (!recurse_var(S, rd, items)) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
         for (auto &decl : items) {
           block->get_items().push_back(decl);
@@ -126,7 +125,7 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
       case qKLet: {
         std::vector<Stmt *> items;
         if (!recurse_let(S, rd, items)) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
         for (auto &decl : items) {
           block->get_items().push_back(decl);
@@ -137,7 +136,7 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
       case qKConst: {
         std::vector<Stmt *> items;
         if (!recurse_const(S, rd, items)) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
         for (auto &decl : items) {
           block->get_items().push_back(decl);
@@ -147,14 +146,14 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
 
       case qKEnum: {
         if (!recurse_enum(S, rd, &node)) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
         break;
       }
 
       case qKStruct: {
         if (!recurse_struct(S, rd, &node) || !node) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
 
         node->as<StructDef>()->set_composite_type(CompositeType::Struct);
@@ -163,7 +162,7 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
 
       case qKRegion: {
         if (!recurse_struct(S, rd, &node) || !node) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
 
         node->as<StructDef>()->set_composite_type(CompositeType::Region);
@@ -172,7 +171,7 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
 
       case qKGroup: {
         if (!recurse_struct(S, rd, &node) || !node) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
 
         node->as<StructDef>()->set_composite_type(CompositeType::Group);
@@ -181,7 +180,7 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
 
       case qKClass: {
         if (!recurse_struct(S, rd, &node) || !node) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
 
         node->as<StructDef>()->set_composite_type(CompositeType::Class);
@@ -190,7 +189,7 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
 
       case qKUnion: {
         if (!recurse_struct(S, rd, &node) || !node) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
 
         node->as<StructDef>()->set_composite_type(CompositeType::Union);
@@ -204,14 +203,14 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
 
       case qKSubsystem: {
         if (!recurse_subsystem(S, rd, &node)) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
         break;
       }
 
       case qKFn: {
         if (!recurse_function(S, rd, &node)) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
         break;
       }
@@ -219,21 +218,21 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
       case qKPub:
       case qKImport: {  // they both declare external functions
         if (!recurse_pub(S, rd, &node)) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
         break;
       }
 
       case qKSec: {
         if (!recurse_sec(S, rd, &node)) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
         break;
       }
 
       case qKPro: {
         if (!recurse_pro(S, rd, &node)) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
         break;
       }
@@ -265,28 +264,28 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
 
       case qKWhile: {
         if (!recurse_while(S, rd, &node)) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
         break;
       }
 
       case qKFor: {
         if (!recurse_for(S, rd, &node)) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
         break;
       }
 
       case qKForeach: {
         if (!recurse_foreach(S, rd, &node)) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
         break;
       }
 
       case qKSwitch: {
         if (!recurse_switch(S, rd, &node)) {
-          return false;
+          return mock_stmt(QAST_NODE_BLOCK);
         }
         break;
       }
@@ -310,13 +309,9 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
         Stmt *block = nullptr;
         tok = peek();
         if (tok.is<qPuncLCur>()) {
-          if (!recurse(S, rd, &block)) {
-            return false;
-          }
+          block = recurse(S, rd);
         } else {
-          if (!recurse(S, rd, &block, false, true)) {
-            return false;
-          }
+          block = recurse(S, rd, false, true);
         }
 
         /// FIXME: Set safety
@@ -328,13 +323,9 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
       case qKSafe: {
         tok = peek();
         if (tok.is<qPuncLCur>()) {
-          if (!recurse(S, rd, &node)) {
-            return false;
-          }
+          node = recurse(S, rd);
         } else {
-          if (!recurse(S, rd, &node, false, true)) {
-            return false;
-          }
+          node = recurse(S, rd, false, true);
         }
 
         /// FIXME: Set safety
@@ -345,13 +336,9 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
       case qKVolatile: {
         tok = peek();
         if (tok.is<qPuncLCur>()) {
-          if (!recurse(S, rd, &node)) {
-            return false;
-          }
+          node = recurse(S, rd);
         } else {
-          if (!recurse(S, rd, &node, false, true)) {
-            return false;
-          }
+          node = recurse(S, rd, false, true);
         }
 
         node = VolStmt::get(block);
@@ -374,7 +361,7 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
     syntax(tok, "Expected '}'");
   }
 
-  return true;
+  return block;
 }
 
 C_EXPORT qparse_t *qparse_new(qlex_t *lexer, qcore_env_t env) {
@@ -421,8 +408,7 @@ C_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
   qparse::install_reference(L);
 
   parser_ctx = L;
-  bool status =
-      qparse::recurse(*L, *L->lexer, (qparse::Stmt **)out, false, false);
+  *out = qparse::recurse(*L, *L->lexer, false, false);
   parser_ctx = nullptr;
 
   /*== Uninstall thread-local references to the parser ==*/
@@ -432,7 +418,7 @@ C_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
   qparse::qparse_arena.swap(*L->arena.get());
 
   /*==================== Return status ====================*/
-  return status && !L->failed;
+  return !L->failed;
 }
 
 C_EXPORT bool qparse_and_dump(qparse_t *L, FILE *out, void *x0, void *x1) {

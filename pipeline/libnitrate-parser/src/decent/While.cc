@@ -44,9 +44,9 @@ bool qparse::recurse_while(qparse_t &S, qlex_t &rd, Stmt **node) {
 
   if (peek().is<qOpArrow>()) {
     next();
-    if (!recurse(S, rd, &then_block, false, true)) return false;
+    then_block = recurse(S, rd, false, true);
   } else {
-    if (!recurse(S, rd, &then_block, true)) return false;
+    then_block = recurse(S, rd, true);
   }
 
   *node = WhileStmt::get(cond, then_block);

@@ -69,12 +69,8 @@ namespace qparse {
   bool recurse_attributes(qparse_t &S, qlex_t &rd,
                           std::set<Expr *> &attributes);
 
-  bool recurse(qparse_t &S, qlex_t &rd, Stmt **node, bool expect_braces = true,
-               bool single_stmt = false);
-
-  // Expr *recurse_expr(qparse_t &S, qlex_t &rd, std::set<qlex_tok_t>
-  // terminators,
-  //                    size_t depth = 0);
+  Stmt *recurse(qparse_t &S, qlex_t &rd, bool expect_braces = true,
+                bool single_stmt = false);
 
   bool recurse_expr(qparse_t &S, qlex_t &rd, std::set<qlex_tok_t> terminators,
                     Expr **node, size_t depth = 0);

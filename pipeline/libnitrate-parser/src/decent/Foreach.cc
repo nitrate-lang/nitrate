@@ -91,17 +91,9 @@ bool qparse::recurse_foreach(qparse_t &S, qlex_t &rd, Stmt **node) {
   Stmt *block = nullptr;
   if (tok.is<qOpArrow>()) {
     next();
-    if (!recurse(S, rd, &block, false, true)) {
-      syntax(
-          tok,
-          "Expected block or statement list after '=>' in foreach statement");
-    }
+    block = recurse(S, rd, false, true);
   } else {
-    if (!recurse(S, rd, &block)) {
-      syntax(
-          tok,
-          "Expected block or statement list after '=>' in foreach statement");
-    }
+    block = recurse(S, rd);
   }
 
   *node = ForeachStmt::get(first_ident, second_ident, expr, block);

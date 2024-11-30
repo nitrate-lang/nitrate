@@ -92,13 +92,9 @@ bool qparse::recurse_for(qparse_t &S, qlex_t &rd, Stmt **node) {
 
     if (peek().is<qOpArrow>()) {
       tok = next();
-      if (!recurse(S, rd, &then_block, false, true)) {
-        syntax(tok, "Expected single statement after '=>' in for loop");
-      }
+      then_block = recurse(S, rd, false, true);
     } else {
-      if (!recurse(S, rd, &then_block, true)) {
-        syntax(tok, "Failed to parse block in for loop");
-      }
+      then_block = recurse(S, rd, true);
     }
 
     *node = ForStmt::get(x0, x1, x2, then_block);
@@ -146,9 +142,9 @@ bool qparse::recurse_for(qparse_t &S, qlex_t &rd, Stmt **node) {
 
     if (peek().is<qOpArrow>()) {
       tok = next();
-      if (!recurse(S, rd, &then_block, false, true)) return false;
+      then_block = recurse(S, rd, false, true);
     } else {
-      if (!recurse(S, rd, &then_block, true)) return false;
+      then_block = recurse(S, rd, true);
     }
 
     *node = ForStmt::get(x0, x1, x2, then_block);

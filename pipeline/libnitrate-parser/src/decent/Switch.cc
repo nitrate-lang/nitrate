@@ -65,9 +65,7 @@ bool qparse::recurse_switch(qparse_t &S, qlex_t &rd, Stmt **node) {
         syntax(tok, "Expected ':' after 'default' keyword");
       }
 
-      if (!recurse(S, rd, &default_case)) {
-        syntax(tok, "Expected block after 'default' keyword");
-      }
+      default_case = recurse(S, rd);
 
       continue;
     }
@@ -87,10 +85,7 @@ bool qparse::recurse_switch(qparse_t &S, qlex_t &rd, Stmt **node) {
       syntax(tok, "Expected ':' after case expression");
     }
 
-    Stmt *case_block = nullptr;
-    if (!recurse(S, rd, &case_block)) {
-      syntax(tok, "Expected block after case expression");
-    }
+    Stmt *case_block = recurse(S, rd);
 
     CaseStmt *case_stmt = CaseStmt::get(case_expr, case_block);
     case_stmt->set_end_pos(case_block->get_end_pos());
