@@ -33,13 +33,10 @@
 
 /// TODO: Source location
 
+#include <nitrate-lexer/Lexer.h>
+#include <nitrate-parser/Node.h>
+
 #include <decent/Recurse.hh>
-
-#include "nitrate-lexer/Lexer.h"
-#include "nitrate-parser/Node.h"
-
-using namespace qparse;
-using namespace qparse;
 
 bool qparse::recurse_attributes(qparse_t &S, qlex_t &rd,
                                 std::set<Expr *> &attributes) {
@@ -87,7 +84,7 @@ bool qparse::recurse_attributes(qparse_t &S, qlex_t &rd,
   return true;
 }
 
-Decl *qparse::recurse_composite_field(qparse_t &S, qlex_t &rd) {
+qparse::Decl *qparse::recurse_composite_field(qparse_t &S, qlex_t &rd) {
   /*
    * Format: "name: type [= expr],"
    */
@@ -160,13 +157,10 @@ Decl *qparse::recurse_composite_field(qparse_t &S, qlex_t &rd) {
 
 bool recurse_template_parameters(
     qparse_t &S, qlex_t &rd,
-    std::optional<TemplateParameters> &template_params);
+    std::optional<qparse::TemplateParameters> &template_params);
 
-bool qparse::recurse_struct(qparse_t &S, qlex_t &rd, Stmt **node) {
-  /**
-   * @brief Parse a struct composite type definition
-   */
-
+qparse::Stmt *qparse::recurse_struct(qparse_t &S, qlex_t &rd,
+                                     CompositeType type) {
   qlex_tok_t tok;
   std::string name;
   StructDefFields fields;
@@ -179,18 +173,21 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t &rd, Stmt **node) {
   Decl *field = nullptr;
   StructDef *sdef = StructDef::get();
 
+  sdef->set_composite_type(type);
+
   { /* First token should be the name of the definition */
     tok = next();
     if (tok.is(qName)) {
       name = tok.as_string(&rd);
     } else {
       syntax(tok, "Expected struct name in struct definition");
+      return mock_stmt(QAST_NODE_STRUCT);
     }
   }
 
   {
     if (!recurse_template_parameters(S, rd, sdef->get_template_params())) {
-      return false;
+      return mock_stmt(QAST_NODE_STRUCT);
     }
   }
 
@@ -198,6 +195,7 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t &rd, Stmt **node) {
     tok = next();
     if (!tok.is<qPuncLCur>()) {
       syntax(tok, "Expected '{' after struct name in struct definition");
+      return mock_stmt(QAST_NODE_STRUCT);
     }
   }
 
@@ -207,7 +205,7 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t &rd, Stmt **node) {
       tok = peek();
       if (tok.is(qEofF)) {
         syntax(tok, "Unexpected end of file in struct definition");
-        return false;
+        return mock_stmt(QAST_NODE_STRUCT);
       }
       if (tok.is<qPuncRCur>()) {
         next();
@@ -247,7 +245,7 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t &rd, Stmt **node) {
       /* Parse the function definition */
       if (!recurse_function(S, rd, &method) || !method) {
         syntax(tok, "Expected function definition in struct definition");
-        return false;
+        return mock_stmt(QAST_NODE_STRUCT);
       }
 
       /* Assign the visibility to the method */
@@ -280,12 +278,13 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t &rd, Stmt **node) {
         syntax(
             tok,
             "Expected function definition after 'static' in struct definition");
+        return mock_stmt(QAST_NODE_STRUCT);
       }
 
       /* Parse the function definition */
       if (!recurse_function(S, rd, &method) || !method) {
         syntax(tok, "Expected function definition in struct definition");
-        return false;
+        return mock_stmt(QAST_NODE_STRUCT);
       }
 
       /* Assign the visibility to the method */
@@ -321,7 +320,7 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t &rd, Stmt **node) {
     if (tok.is<qKWith>()) {
       next();
       if (!recurse_attributes(S, rd, attributes)) {
-        return false;
+        return mock_stmt(QAST_NODE_STRUCT);
       }
     }
   }
@@ -332,7 +331,5 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t &rd, Stmt **node) {
   sdef->get_static_methods() = std::move(static_methods);
   sdef->get_tags().insert(attributes.begin(), attributes.end());
 
-  *node = sdef;
-
-  return true;
+  return sdef;
 }

@@ -150,47 +150,27 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
       }
 
       case qKStruct: {
-        if (!recurse_struct(S, rd, &node) || !node) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
-
-        node->as<StructDef>()->set_composite_type(CompositeType::Struct);
+        node = recurse_struct(S, rd, CompositeType::Struct);
         break;
       }
 
       case qKRegion: {
-        if (!recurse_struct(S, rd, &node) || !node) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
-
-        node->as<StructDef>()->set_composite_type(CompositeType::Region);
+        node = recurse_struct(S, rd, CompositeType::Region);
         break;
       }
 
       case qKGroup: {
-        if (!recurse_struct(S, rd, &node) || !node) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
-
-        node->as<StructDef>()->set_composite_type(CompositeType::Group);
+        node = recurse_struct(S, rd, CompositeType::Group);
         break;
       }
 
       case qKClass: {
-        if (!recurse_struct(S, rd, &node) || !node) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
-
-        node->as<StructDef>()->set_composite_type(CompositeType::Class);
+        node = recurse_struct(S, rd, CompositeType::Class);
         break;
       }
 
       case qKUnion: {
-        if (!recurse_struct(S, rd, &node) || !node) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
-
-        node->as<StructDef>()->set_composite_type(CompositeType::Union);
+        node = recurse_struct(S, rd, CompositeType::Union);
         break;
       }
 

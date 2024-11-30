@@ -113,7 +113,7 @@ static void indent(ConvStream &ss, ConvState &state) {
 #define OBJECT_BEGIN(__name) \
   state.indent++;            \
   indent(ss, state);         \
-  ss << "(" __name;
+  ss << "(" << __name;
 
 #define OBJECT_SUB(__field) serialize_recurse(__field, ss, state);
 #define OBJECT_STR(__field) \
@@ -633,7 +633,17 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       break;
     }
     case QAST_NODE_STRUCT: {
-      OBJECT_BEGIN("Struct");
+      static const std::unordered_map<CompositeType, std::string_view> kw_name =
+          {
+              {CompositeType::Region, "RegionDef"},
+              {CompositeType::Struct, "StructDef"},
+              {CompositeType::Group, "GroupDef"},
+              {CompositeType::Class, "ClassDef"},
+              {CompositeType::Union, "UnionDef"},
+          };
+
+      auto kw = kw_name.at(n->as<StructDef>()->get_composite_type());
+      OBJECT_BEGIN(kw);
       OBJECT_STR(n->as<StructDef>()->get_name());
       { /* Template parameters */
         state.indent++;
