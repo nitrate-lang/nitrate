@@ -31,14 +31,15 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <nitrate-parser/Node.h>
+
 #include <decent/Recurse.hh>
 
-using namespace qparse;
-
-bool qparse::recurse_switch(qparse_t &S, qlex_t &rd, Stmt **node) {
+qparse::Stmt *qparse::recurse_switch(qparse_t &S, qlex_t &rd) {
   Expr *cond = nullptr;
   if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncLCur)}, &cond)) {
     syntax(peek(), "Expected switch condition");
+    return mock_stmt(QAST_NODE_SWITCH);
   }
 
   SwitchCases cases;
@@ -47,6 +48,7 @@ bool qparse::recurse_switch(qparse_t &S, qlex_t &rd, Stmt **node) {
   qlex_tok_t tok = next();
   if (!tok.is<qPuncLCur>()) {
     syntax(tok, "Expected '{' after switch condition");
+    return mock_stmt(QAST_NODE_SWITCH);
   }
 
   while ((tok = peek()).ty != qEofF) {
@@ -58,11 +60,13 @@ bool qparse::recurse_switch(qparse_t &S, qlex_t &rd, Stmt **node) {
       next();
       if (default_case) {
         syntax(tok, "Multiple default cases in switch statement");
+        return mock_stmt(QAST_NODE_SWITCH);
       }
 
       tok = next();
       if (!tok.is<qPuncColn>()) {
         syntax(tok, "Expected ':' after 'default' keyword");
+        return mock_stmt(QAST_NODE_SWITCH);
       }
 
       default_case = recurse(S, rd);
@@ -72,17 +76,20 @@ bool qparse::recurse_switch(qparse_t &S, qlex_t &rd, Stmt **node) {
 
     if (!tok.is<qKCase>()) {
       syntax(tok, "Expected 'case' or 'default' keyword in switch statement");
+      return mock_stmt(QAST_NODE_SWITCH);
     }
     next();
 
     Expr *case_expr = nullptr;
     if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncColn)}, &case_expr)) {
       syntax(peek(), "Expected case expression");
+      return mock_stmt(QAST_NODE_SWITCH);
     }
 
     tok = next();
     if (!tok.is<qPuncColn>()) {
       syntax(tok, "Expected ':' after case expression");
+      return mock_stmt(QAST_NODE_SWITCH);
     }
 
     Stmt *case_block = recurse(S, rd);
@@ -95,10 +102,10 @@ bool qparse::recurse_switch(qparse_t &S, qlex_t &rd, Stmt **node) {
   tok = next();
   if (!tok.is<qPuncRCur>()) {
     syntax(tok, "Expected '}' after switch statement");
+    return mock_stmt(QAST_NODE_SWITCH);
   }
 
-  *node = SwitchStmt::get(cond, cases, default_case);
-  (*node)->set_end_pos(tok.end);
-
-  return true;
+  auto R = SwitchStmt::get(cond, cases, default_case);
+  R->set_end_pos(tok.end);
+  return R;
 }

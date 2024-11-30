@@ -276,9 +276,7 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
       }
 
       case qKSwitch: {
-        if (!recurse_switch(S, rd, &node)) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
+        node = recurse_switch(S, rd);
         break;
       }
 
