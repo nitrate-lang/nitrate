@@ -42,11 +42,10 @@
 #include <decent/Recurse.hh>
 #include <nitrate-core/Classes.hh>
 
-using namespace qparse::parser;
 using namespace qparse;
 
-bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
-                           bool expect_braces, bool single_stmt) {
+bool qparse::recurse(qparse_t &S, qlex_t *rd, Block **group, bool expect_braces,
+                     bool single_stmt) {
   qlex_tok_t tok;
 
   *group = Block::get();
@@ -84,7 +83,7 @@ bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
       }
 
       Expr *expr = nullptr;
-      if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr)) {
+      if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr)) {
         syntax(tok, "Expected expression");
         return false;
       }
@@ -115,7 +114,7 @@ bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
     switch (tok.as<qlex_key_t>()) {
       case qKVar: {
         std::vector<Stmt *> items;
-        if (!parse_var(S, rd, items)) {
+        if (!recurse_var(S, rd, items)) {
           return false;
         }
         for (auto &decl : items) {
@@ -126,7 +125,7 @@ bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
 
       case qKLet: {
         std::vector<Stmt *> items;
-        if (!parse_let(S, rd, items)) {
+        if (!recurse_let(S, rd, items)) {
           return false;
         }
         for (auto &decl : items) {
@@ -137,7 +136,7 @@ bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
 
       case qKConst: {
         std::vector<Stmt *> items;
-        if (!parse_const(S, rd, items)) {
+        if (!recurse_const(S, rd, items)) {
           return false;
         }
         for (auto &decl : items) {
@@ -147,14 +146,14 @@ bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
       }
 
       case qKEnum: {
-        if (!parse_enum(S, rd, &node)) {
+        if (!recurse_enum(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKStruct: {
-        if (!parse_struct(S, rd, &node) || !node) {
+        if (!recurse_struct(S, rd, &node) || !node) {
           return false;
         }
 
@@ -163,7 +162,7 @@ bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
       }
 
       case qKRegion: {
-        if (!parse_struct(S, rd, &node) || !node) {
+        if (!recurse_struct(S, rd, &node) || !node) {
           return false;
         }
 
@@ -172,7 +171,7 @@ bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
       }
 
       case qKGroup: {
-        if (!parse_struct(S, rd, &node) || !node) {
+        if (!recurse_struct(S, rd, &node) || !node) {
           return false;
         }
 
@@ -181,7 +180,7 @@ bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
       }
 
       case qKClass: {
-        if (!parse_struct(S, rd, &node) || !node) {
+        if (!recurse_struct(S, rd, &node) || !node) {
           return false;
         }
 
@@ -190,7 +189,7 @@ bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
       }
 
       case qKUnion: {
-        if (!parse_struct(S, rd, &node) || !node) {
+        if (!recurse_struct(S, rd, &node) || !node) {
           return false;
         }
 
@@ -199,21 +198,21 @@ bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
       }
 
       case qKType: {
-        if (!parse_typedef(S, rd, &node)) {
+        if (!recurse_typedef(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKSubsystem: {
-        if (!parse_subsystem(S, rd, &node)) {
+        if (!recurse_subsystem(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKFn: {
-        if (!parse_function(S, rd, &node)) {
+        if (!recurse_function(S, rd, &node)) {
           return false;
         }
         break;
@@ -221,35 +220,35 @@ bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
 
       case qKPub:
       case qKImport: {  // they both declare external functions
-        if (!parse_pub(S, rd, &node)) {
+        if (!recurse_pub(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKSec: {
-        if (!parse_sec(S, rd, &node)) {
+        if (!recurse_sec(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKPro: {
-        if (!parse_pro(S, rd, &node)) {
+        if (!recurse_pro(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKReturn: {
-        if (!parse_return(S, rd, &node)) {
+        if (!recurse_return(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKRetif: {
-        if (!parse_retif(S, rd, &node)) {
+        if (!recurse_retif(S, rd, &node)) {
           return false;
         }
         break;
@@ -266,42 +265,42 @@ bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
       }
 
       case qKIf: {
-        if (!parse_if(S, rd, &node)) {
+        if (!recurse_if(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKWhile: {
-        if (!parse_while(S, rd, &node)) {
+        if (!recurse_while(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKFor: {
-        if (!parse_for(S, rd, &node)) {
+        if (!recurse_for(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKForeach: {
-        if (!parse_foreach(S, rd, &node)) {
+        if (!recurse_foreach(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKSwitch: {
-        if (!parse_switch(S, rd, &node)) {
+        if (!recurse_switch(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qK__Asm__: {
-        if (!parse_inline_asm(S, rd, &node)) {
+        if (!recurse_inline_asm(S, rd, &node)) {
           return false;
         }
         break;
@@ -321,11 +320,11 @@ bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
         Block *block = nullptr;
         tok = qlex_peek(rd);
         if (tok.is<qPuncLCur>()) {
-          if (!parse(S, rd, &block)) {
+          if (!recurse(S, rd, &block)) {
             return false;
           }
         } else {
-          if (!parse(S, rd, &block, false, true)) {
+          if (!recurse(S, rd, &block, false, true)) {
             return false;
           }
         }
@@ -339,11 +338,11 @@ bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
         Block *block = nullptr;
         tok = qlex_peek(rd);
         if (tok.is<qPuncLCur>()) {
-          if (!parse(S, rd, &block)) {
+          if (!recurse(S, rd, &block)) {
             return false;
           }
         } else {
-          if (!parse(S, rd, &block, false, true)) {
+          if (!recurse(S, rd, &block, false, true)) {
             return false;
           }
         }
@@ -356,11 +355,11 @@ bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
         Block *block = nullptr;
         tok = qlex_peek(rd);
         if (tok.is<qPuncLCur>()) {
-          if (!parse(S, rd, &block)) {
+          if (!recurse(S, rd, &block)) {
             return false;
           }
         } else {
-          if (!parse(S, rd, &block, false, true)) {
+          if (!recurse(S, rd, &block, false, true)) {
             return false;
           }
         }
@@ -433,7 +432,7 @@ C_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
 
   parser_ctx = L;
   bool status =
-      qparse::parser::parse(*L, L->lexer, (qparse::Block **)out, false, false);
+      qparse::recurse(*L, L->lexer, (qparse::Block **)out, false, false);
   parser_ctx = nullptr;
 
   /*== Uninstall thread-local references to the parser ==*/

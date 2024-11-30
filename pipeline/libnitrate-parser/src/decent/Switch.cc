@@ -33,12 +33,11 @@
 
 #include <decent/Recurse.hh>
 
-using namespace qparse::parser;
 using namespace qparse;
 
-bool qparse::parser::parse_switch(qparse_t &S, qlex_t *rd, Stmt **node) {
+bool qparse::recurse_switch(qparse_t &S, qlex_t *rd, Stmt **node) {
   Expr *cond = nullptr;
-  if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncLCur)}, &cond)) {
+  if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncLCur)}, &cond)) {
     syntax(qlex_peek(rd), "Expected switch condition");
   }
 
@@ -66,7 +65,7 @@ bool qparse::parser::parse_switch(qparse_t &S, qlex_t *rd, Stmt **node) {
         syntax(tok, "Expected ':' after 'default' keyword");
       }
 
-      if (!parse(S, rd, &default_case)) {
+      if (!recurse(S, rd, &default_case)) {
         syntax(tok, "Expected block after 'default' keyword");
       }
 
@@ -79,7 +78,7 @@ bool qparse::parser::parse_switch(qparse_t &S, qlex_t *rd, Stmt **node) {
     qlex_next(rd);
 
     Expr *case_expr = nullptr;
-    if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncColn)}, &case_expr)) {
+    if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncColn)}, &case_expr)) {
       syntax(qlex_peek(rd), "Expected case expression");
     }
 
@@ -89,7 +88,7 @@ bool qparse::parser::parse_switch(qparse_t &S, qlex_t *rd, Stmt **node) {
     }
 
     Block *case_block = nullptr;
-    if (!parse(S, rd, &case_block)) {
+    if (!recurse(S, rd, &case_block)) {
       syntax(tok, "Expected block after case expression");
     }
 

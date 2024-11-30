@@ -38,7 +38,6 @@
 #include <decent/Recurse.hh>
 
 using namespace qparse;
-using namespace qparse::parser;
 using namespace qparse;
 
 struct GetPropState {
@@ -111,7 +110,7 @@ static bool fn_get_property(qlex_t *rd, GetPropState &state) {
   return false;
 }
 
-static bool parse_fn_parameter(qparse_t &S, qlex_t *rd, FuncParam &param) {
+static bool recurse_fn_parameter(qparse_t &S, qlex_t *rd, FuncParam &param) {
   auto tok = qlex_next(rd);
 
   std::string name;
@@ -127,7 +126,7 @@ static bool parse_fn_parameter(qparse_t &S, qlex_t *rd, FuncParam &param) {
   if (tok.is<qPuncColn>()) {
     qlex_next(rd);
 
-    if (!parse_type(S, rd, &type) || !type) {
+    if (!recurse_type(S, rd, &type) || !type) {
       qlex_next(rd);
       syntax(tok, "Expected a type after ':'");
     }
@@ -142,10 +141,10 @@ static bool parse_fn_parameter(qparse_t &S, qlex_t *rd, FuncParam &param) {
     tok = qlex_peek(rd);
 
     Expr *value = nullptr;
-    if (!parse_expr(S, rd,
-                    {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar),
-                     qlex_tok_t(qOper, qOpGT)},
-                    &value) ||
+    if (!recurse_expr(S, rd,
+                      {qlex_tok_t(qPunc, qPuncComa),
+                       qlex_tok_t(qPunc, qPuncRPar), qlex_tok_t(qOper, qOpGT)},
+                      &value) ||
         !value) {
       syntax(tok, "Expected an expression after '='");
     }
@@ -252,8 +251,8 @@ static FunctionProperties read_function_properties(qlex_t *rd) {
   return props;
 }
 
-static bool parse_captures_and_name(qlex_t *rd, FnDecl *fndecl,
-                                    FnCaptures &captures) {
+static bool recurse_captures_and_name(qlex_t *rd, FnDecl *fndecl,
+                                      FnCaptures &captures) {
   qlex_tok_t c = qlex_peek(rd);
 
   if (c.is<qPuncLBrk>()) {
@@ -297,7 +296,7 @@ static bool parse_captures_and_name(qlex_t *rd, FnDecl *fndecl,
   return true;
 }
 
-bool parse_template_parameters(
+bool recurse_template_parameters(
     qparse_t &S, qlex_t *rd,
     std::optional<TemplateParameters> &template_params) {
   template_params = std::nullopt;
@@ -325,7 +324,7 @@ bool parse_template_parameters(
     }
 
     FuncParam param;
-    if (!parse_fn_parameter(S, rd, param)) {
+    if (!recurse_fn_parameter(S, rd, param)) {
       syntax(c, "Expected a parameter");
       return false;
     }
@@ -347,8 +346,8 @@ bool parse_template_parameters(
   return true;
 }
 
-static bool parse_parameters(qparse_t &S, qlex_t *rd, FuncTy *ftype,
-                             bool &is_variadic) {
+static bool recurse_parameters(qparse_t &S, qlex_t *rd, FuncTy *ftype,
+                               bool &is_variadic) {
   qlex_tok_t c = qlex_peek(rd);
 
   if (!c.is<qPuncLPar>()) {
@@ -385,7 +384,7 @@ static bool parse_parameters(qparse_t &S, qlex_t *rd, FuncTy *ftype,
     }
 
     FuncParam param;
-    if (!parse_fn_parameter(S, rd, param)) {
+    if (!recurse_fn_parameter(S, rd, param)) {
       syntax(c, "Expected a parameter");
       return false;
     }
@@ -428,8 +427,8 @@ static bool translate_purity(FunctionProperties prop, FuncTy *ftype) {
   return true;
 }
 
-static bool parse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &S,
-                              Expr *&req_in, Expr *&req_out) {
+static bool recurse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &S,
+                                Expr *&req_in, Expr *&req_out) {
   if (c.is<qKPromise>()) {
     /* Parse constraint block */
     qlex_next(rd);
@@ -455,7 +454,7 @@ static bool parse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &S,
       if (c.is<qOpIn>()) {
         Expr *expr = nullptr;
 
-        if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) ||
+        if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) ||
             !expr) {
           syntax(c, "Expected an expression after 'in'");
           return false;
@@ -475,7 +474,7 @@ static bool parse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &S,
       } else if (c.is<qOpOut>()) {
         Expr *expr = nullptr;
 
-        if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) ||
+        if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) ||
             !expr) {
           syntax(c, "Expected an expression after 'out'");
           return false;
@@ -504,7 +503,7 @@ static bool parse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &S,
   return true;
 }
 
-bool qparse::parser::parse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
+bool qparse::recurse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
   FnDecl *fndecl = FnDecl::get();
   FuncTy *ftype = FuncTy::get();
   Type *ret_type = nullptr;
@@ -519,7 +518,7 @@ bool qparse::parser::parse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
   { /* Parse function name or anonymous function capture list */
     tok = qlex_peek(rd);
 
-    if (!parse_captures_and_name(rd, fndecl, captures)) {
+    if (!recurse_captures_and_name(rd, fndecl, captures)) {
       syntax(tok, "Expected a function name or capture list");
       return false;
     }
@@ -528,7 +527,7 @@ bool qparse::parser::parse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
   { /* Parse possible template parameters */
     tok = qlex_peek(rd);
 
-    if (!parse_template_parameters(S, rd, fndecl->get_template_params())) {
+    if (!recurse_template_parameters(S, rd, fndecl->get_template_params())) {
       syntax(tok, "Failed to parse template parameters");
       return false;
     }
@@ -537,7 +536,7 @@ bool qparse::parser::parse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
   { /* Parse function parameters */
     tok = qlex_peek(rd);
 
-    if (!parse_parameters(S, rd, ftype, is_variadic)) {
+    if (!recurse_parameters(S, rd, ftype, is_variadic)) {
       syntax(tok, "Failed to parse function parameters");
       return false;
     }
@@ -571,7 +570,7 @@ bool qparse::parser::parse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
         std::set<Expr *> attributes;
         qlex_next(rd);
 
-        if (!parse_attributes(S, rd, attributes)) {
+        if (!recurse_attributes(S, rd, attributes)) {
           return true;
         }
 
@@ -588,7 +587,7 @@ bool qparse::parser::parse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
     if (tok.is<qPuncColn>()) {
       qlex_next(rd);
 
-      if (!parse_type(S, rd, &ret_type)) {
+      if (!recurse_type(S, rd, &ret_type)) {
         syntax(tok, "Expected a return type after ':'");
       }
 
@@ -603,7 +602,7 @@ bool qparse::parser::parse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
             std::set<Expr *> attributes;
             qlex_next(rd);
 
-            if (!parse_attributes(S, rd, attributes)) {
+            if (!recurse_attributes(S, rd, attributes)) {
               return true;
             }
 
@@ -623,7 +622,7 @@ bool qparse::parser::parse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
 
       Block *fnbody = nullptr;
 
-      if (!parse(S, rd, &fnbody, false, true)) {
+      if (!recurse(S, rd, &fnbody, false, true)) {
         syntax(tok, "Expected a block after '=>'");
         return false;
       }
@@ -643,7 +642,7 @@ bool qparse::parser::parse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
         std::set<Expr *> attributes;
         qlex_next(rd);
 
-        if (!parse_attributes(S, rd, attributes)) {
+        if (!recurse_attributes(S, rd, attributes)) {
           return true;
         }
 
@@ -661,13 +660,13 @@ bool qparse::parser::parse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
     Expr *req_in = nullptr, *req_out = nullptr;
     std::set<Expr *> attributes;
 
-    if (!parse(S, rd, &fnbody)) {
+    if (!recurse(S, rd, &fnbody)) {
       syntax(tok, "Expected a block after '{'");
     }
 
     tok = qlex_peek(rd);
 
-    if (!parse_constraints(tok, rd, S, req_in, req_out)) {
+    if (!recurse_constraints(tok, rd, S, req_in, req_out)) {
       return false;
     }
 
@@ -675,7 +674,7 @@ bool qparse::parser::parse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
     if (tok.is<qKWith>()) {
       qlex_next(rd);
 
-      if (!parse_attributes(S, rd, attributes)) {
+      if (!recurse_attributes(S, rd, attributes)) {
         return true;
       }
     }

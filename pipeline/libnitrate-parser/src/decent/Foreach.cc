@@ -33,10 +33,9 @@
 
 #include <decent/Recurse.hh>
 
-using namespace qparse::parser;
 using namespace qparse;
 
-bool qparse::parser::parse_foreach(qparse_t &S, qlex_t *rd, Stmt **node) {
+bool qparse::recurse_foreach(qparse_t &S, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_next(rd);
   bool has_parens = false;
 
@@ -71,7 +70,7 @@ bool qparse::parser::parse_foreach(qparse_t &S, qlex_t *rd, Stmt **node) {
 
   Expr *expr = nullptr;
   if (has_parens) {
-    if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &expr) || !expr) {
+    if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &expr) || !expr) {
       syntax(tok, "Expected expression after '(' in foreach statement");
     }
     tok = qlex_next(rd);
@@ -79,9 +78,9 @@ bool qparse::parser::parse_foreach(qparse_t &S, qlex_t *rd, Stmt **node) {
       syntax(tok, "Expected ')' after expression in foreach statement");
     }
   } else {
-    if (!parse_expr(S, rd,
-                    {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
-                    &expr) ||
+    if (!recurse_expr(
+            S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
+            &expr) ||
         !expr) {
       syntax(tok, "Expected expression after 'in' in foreach statement");
     }
@@ -92,13 +91,13 @@ bool qparse::parser::parse_foreach(qparse_t &S, qlex_t *rd, Stmt **node) {
   Block *block = nullptr;
   if (tok.is<qOpArrow>()) {
     qlex_next(rd);
-    if (!parse(S, rd, &block, false, true)) {
+    if (!recurse(S, rd, &block, false, true)) {
       syntax(
           tok,
           "Expected block or statement list after '=>' in foreach statement");
     }
   } else {
-    if (!parse(S, rd, &block)) {
+    if (!recurse(S, rd, &block)) {
       syntax(
           tok,
           "Expected block or statement list after '=>' in foreach statement");

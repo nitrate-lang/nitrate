@@ -34,11 +34,10 @@
 #include <decent/Recurse.hh>
 
 using namespace qparse;
-using namespace qparse::parser;
 using namespace qparse;
 
-static bool parse_decl(qparse_t &S, qlex_tok_t tok, qlex_t *rd,
-                       std::pair<std::string, Type *> &decl) {
+static bool recurse_decl(qparse_t &S, qlex_tok_t tok, qlex_t *rd,
+                         std::pair<std::string, Type *> &decl) {
   if (!tok.is(qName)) {
     syntax(tok, "Expected a name in var declaration");
     return false;
@@ -56,7 +55,7 @@ static bool parse_decl(qparse_t &S, qlex_tok_t tok, qlex_t *rd,
 
   Type *type = nullptr;
 
-  if (!parse_type(S, rd, &type)) {
+  if (!recurse_type(S, rd, &type)) {
     syntax(tok, "Failed to parse type in declaration");
   }
 
@@ -64,14 +63,13 @@ static bool parse_decl(qparse_t &S, qlex_tok_t tok, qlex_t *rd,
   return true;
 }
 
-bool qparse::parser::parse_var(qparse_t &S, qlex_t *rd,
-                               std::vector<Stmt *> &nodes) {
+bool qparse::recurse_var(qparse_t &S, qlex_t *rd, std::vector<Stmt *> &nodes) {
   qlex_tok_t tok = qlex_next(rd);
 
   std::vector<std::pair<std::string, Type *>> decls;
   if (tok.is(qName)) {
     std::pair<std::string, Type *> decl;
-    if (!parse_decl(S, tok, rd, decl)) {
+    if (!recurse_decl(S, tok, rd, decl)) {
       return false;
     }
 
@@ -95,7 +93,7 @@ bool qparse::parser::parse_var(qparse_t &S, qlex_t *rd,
     }
   } else if (tok.is<qOpSet>()) {
     Expr *init = nullptr;
-    if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init) || !init) {
+    if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init) || !init) {
       syntax(tok, "Failed to parse initializer in var declaration");
     }
 

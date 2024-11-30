@@ -42,55 +42,39 @@
 #include <core/ParserStruct.hh>
 #include <set>
 
-namespace qparse::parser {
-  bool parse(qparse_t &S, qlex_t *rd, Block **node, bool expect_braces = true,
-             bool single_stmt = false);
+namespace qparse {
+  bool recurse_pub(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_sec(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_pro(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_let(qparse_t &S, qlex_t *rd, std::vector<Stmt *> &node);
+  bool recurse_const(qparse_t &S, qlex_t *rd, std::vector<Stmt *> &node);
+  bool recurse_var(qparse_t &S, qlex_t *rd, std::vector<Stmt *> &node);
+  bool recurse_enum(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_struct(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_subsystem(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_function(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_type(qparse_t &S, qlex_t *rd, Type **node);
+  bool recurse_typedef(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_return(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_retif(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_if(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_while(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_for(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_foreach(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_case(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_switch(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_inline_asm(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_composite_field(qparse_t &S, qlex_t *rd, StructField **node);
 
-  bool parse_pub(qparse_t &S, qlex_t *rd, Stmt **node);
-  bool parse_sec(qparse_t &S, qlex_t *rd, Stmt **node);
-  bool parse_pro(qparse_t &S, qlex_t *rd, Stmt **node);
+  bool recurse_attributes(qparse_t &S, qlex_t *rd,
+                          std::set<Expr *> &attributes);
 
-  bool parse_let(qparse_t &S, qlex_t *rd, std::vector<Stmt *> &node);
+  bool recurse(qparse_t &S, qlex_t *rd, Block **node, bool expect_braces = true,
+               bool single_stmt = false);
 
-  bool parse_const(qparse_t &S, qlex_t *rd, std::vector<Stmt *> &node);
+  bool recurse_expr(qparse_t &S, qlex_t *rd, std::set<qlex_tok_t> terminators,
+                    Expr **node, size_t depth = 0);
 
-  bool parse_var(qparse_t &S, qlex_t *rd, std::vector<Stmt *> &node);
-
-  bool parse_enum(qparse_t &S, qlex_t *rd, Stmt **node);
-
-  bool parse_struct(qparse_t &S, qlex_t *rd, Stmt **node);
-
-  bool parse_subsystem(qparse_t &S, qlex_t *rd, Stmt **node);
-
-  bool parse_function(qparse_t &S, qlex_t *rd, Stmt **node);
-
-  bool parse_expr(qparse_t &S, qlex_t *rd, std::set<qlex_tok_t> terminators,
-                  Expr **node, size_t depth = 0);
-
-  bool parse_type(qparse_t &S, qlex_t *rd, Type **node);
-
-  bool parse_typedef(qparse_t &S, qlex_t *rd, Stmt **node);
-
-  bool parse_return(qparse_t &S, qlex_t *rd, Stmt **node);
-
-  bool parse_retif(qparse_t &S, qlex_t *rd, Stmt **node);
-
-  bool parse_if(qparse_t &S, qlex_t *rd, Stmt **node);
-
-  bool parse_while(qparse_t &S, qlex_t *rd, Stmt **node);
-
-  bool parse_for(qparse_t &S, qlex_t *rd, Stmt **node);
-
-  bool parse_foreach(qparse_t &S, qlex_t *rd, Stmt **node);
-
-  bool parse_case(qparse_t &S, qlex_t *rd, Stmt **node);
-
-  bool parse_switch(qparse_t &S, qlex_t *rd, Stmt **node);
-
-  bool parse_inline_asm(qparse_t &S, qlex_t *rd, Stmt **node);
-
-  bool parse_attributes(qparse_t &S, qlex_t *rd, std::set<Expr *> &attributes);
-  bool parse_composite_field(qparse_t &S, qlex_t *rd, StructField **node);
-};  // namespace qparse::parser
+};  // namespace qparse
 
 #endif  // __NITRATE_PARSE_H__

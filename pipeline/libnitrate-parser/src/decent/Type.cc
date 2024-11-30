@@ -39,7 +39,6 @@
 #include "nitrate-parser/Node.h"
 
 using namespace qparse;
-using namespace qparse::parser;
 using namespace qparse;
 
 /// TODO: Source location
@@ -62,7 +61,7 @@ static const std::unordered_map<std::string_view, Type *(*)()> primitive_types =
      {"f128", []() -> Type * { return F128::get(); }},
      {"void", []() -> Type * { return VoidTy::get(); }}};
 
-bool qparse::parser::parse_type(qparse_t &S, qlex_t *rd, Type **node) {
+bool qparse::recurse_type(qparse_t &S, qlex_t *rd, Type **node) {
   /** Nitrate TYPE PARSER
    *
    * @brief Given a Scanner, parse tokens into a Nitrate type node.
@@ -99,7 +98,7 @@ bool qparse::parser::parse_type(qparse_t &S, qlex_t *rd, Type **node) {
          *       to account for this.
          */
 
-        if (!parse_function(S, rd, &fn) || !fn) {
+        if (!recurse_function(S, rd, &fn) || !fn) {
           syntax(tok, "Malformed function type");
           goto error_end;
         }
@@ -184,7 +183,7 @@ bool qparse::parser::parse_type(qparse_t &S, qlex_t *rd, Type **node) {
      * @brief Parse a vector, map, or array type.
      */
 
-    if (!parse_type(S, rd, &type)) {
+    if (!recurse_type(S, rd, &type)) {
       syntax(tok, "Expected a type after '['");
       goto error_end;
     }
@@ -211,7 +210,7 @@ bool qparse::parser::parse_type(qparse_t &S, qlex_t *rd, Type **node) {
         goto error_end;
       }
 
-      if (!parse_type(S, rd, &value_type)) {
+      if (!recurse_type(S, rd, &value_type)) {
         syntax(tok, "Expected value type after '>' in map type");
         goto error_end;
       }
@@ -239,7 +238,7 @@ bool qparse::parser::parse_type(qparse_t &S, qlex_t *rd, Type **node) {
 
     {
       Expr *_size = nullptr;
-      if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)}, &_size)) {
+      if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)}, &_size)) {
         syntax(tok, "Expected array size after ';'");
         goto error_end;
       }
@@ -259,7 +258,7 @@ bool qparse::parser::parse_type(qparse_t &S, qlex_t *rd, Type **node) {
      * @brief Parse a set type.
      */
 
-    if (!parse_type(S, rd, &type)) {
+    if (!recurse_type(S, rd, &type)) {
       syntax(tok, "Expected a type after '{'");
       goto error_end;
     }
@@ -284,7 +283,7 @@ bool qparse::parser::parse_type(qparse_t &S, qlex_t *rd, Type **node) {
         break;
       }
 
-      if (!parse_type(S, rd, &type)) {
+      if (!recurse_type(S, rd, &type)) {
         syntax(tok, "Expected a type in tuple type");
         goto error_end;
       }
@@ -305,7 +304,7 @@ bool qparse::parser::parse_type(qparse_t &S, qlex_t *rd, Type **node) {
      * @brief Parse a pointer type.
      */
 
-    if (!parse_type(S, rd, &type)) {
+    if (!recurse_type(S, rd, &type)) {
       syntax(tok, "Expected a type after '*'");
       goto error_end;
     }
@@ -318,7 +317,7 @@ bool qparse::parser::parse_type(qparse_t &S, qlex_t *rd, Type **node) {
      * @brief Parse a mutable type.
      */
 
-    if (!parse_type(S, rd, &type)) {
+    if (!recurse_type(S, rd, &type)) {
       syntax(tok, "Expected a type after '!' mutable type");
       goto error_end;
     }
@@ -357,7 +356,7 @@ type_suffix: {
       }
 
       Type *arg = nullptr;
-      if (!parse_type(S, rd, &arg)) {
+      if (!recurse_type(S, rd, &arg)) {
         syntax(tok, "Expected a template type argument");
         goto error_end;
       }
@@ -410,7 +409,7 @@ type_suffix: {
         if (tok.is<qPuncColn>()) {
           start = nullptr;
         } else {
-          if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncColn)}, &start)) {
+          if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncColn)}, &start)) {
             syntax(tok, "Expected start of confinement range");
             goto error_end;
           }
@@ -421,7 +420,7 @@ type_suffix: {
         if (tok.is<qPuncRBrk>()) {
           end = nullptr;
         } else {
-          if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)}, &end)) {
+          if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)}, &end)) {
             syntax(tok, "Expected end of confinement range");
             goto error_end;
           }
@@ -431,20 +430,20 @@ type_suffix: {
         inner->set_range(start, end);
       } else { /* Parse bit-field width */
         Expr *expr = nullptr;
-        if (!parse_expr(S, rd,
-                        {
-                            qlex_tok_t(qPunc, qPuncRPar),  //
-                            qlex_tok_t(qPunc, qPuncRBrk),  //
-                            qlex_tok_t(qPunc, qPuncLCur),  //
-                            qlex_tok_t(qPunc, qPuncRCur),  //
-                            qlex_tok_t(qPunc, qPuncComa),  //
-                            qlex_tok_t(qPunc, qPuncColn),  //
-                            qlex_tok_t(qPunc, qPuncSemi),  //
-                            qlex_tok_t(qOper, qOpSet),     //
-                            qlex_tok_t(qOper, qOpMinus),   //
-                            qlex_tok_t(qOper, qOpGT),      //
-                        },
-                        &expr)) {
+        if (!recurse_expr(S, rd,
+                          {
+                              qlex_tok_t(qPunc, qPuncRPar),  //
+                              qlex_tok_t(qPunc, qPuncRBrk),  //
+                              qlex_tok_t(qPunc, qPuncLCur),  //
+                              qlex_tok_t(qPunc, qPuncRCur),  //
+                              qlex_tok_t(qPunc, qPuncComa),  //
+                              qlex_tok_t(qPunc, qPuncColn),  //
+                              qlex_tok_t(qPunc, qPuncSemi),  //
+                              qlex_tok_t(qOper, qOpSet),     //
+                              qlex_tok_t(qOper, qOpMinus),   //
+                              qlex_tok_t(qOper, qOpGT),      //
+                          },
+                          &expr)) {
           syntax(tok, "Expected expression for bit-field width");
           goto error_end;
         }

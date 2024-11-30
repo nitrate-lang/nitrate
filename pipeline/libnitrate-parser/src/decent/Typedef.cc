@@ -33,10 +33,9 @@
 
 #include <decent/Recurse.hh>
 
-using namespace qparse::parser;
 using namespace qparse;
 
-bool qparse::parser::parse_typedef(qparse_t &S, qlex_t *rd, Stmt **node) {
+bool qparse::recurse_typedef(qparse_t &S, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_next(rd);
   if (!tok.is(qName)) {
     syntax(tok, "Expected name in typedef declaration");
@@ -50,7 +49,7 @@ bool qparse::parser::parse_typedef(qparse_t &S, qlex_t *rd, Stmt **node) {
   }
 
   Type *type = nullptr;
-  if (!parse_type(S, rd, &type)) {
+  if (!recurse_type(S, rd, &type)) {
     syntax(tok, "Failed to parse type in typedef declaration");
   }
 

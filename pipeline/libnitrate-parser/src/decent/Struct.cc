@@ -38,11 +38,10 @@
 #include "nitrate-lexer/Lexer.h"
 
 using namespace qparse;
-using namespace qparse::parser;
 using namespace qparse;
 
-bool qparse::parser::parse_attributes(qparse_t &S, qlex_t *rd,
-                                      std::set<Expr *> &attributes) {
+bool qparse::recurse_attributes(qparse_t &S, qlex_t *rd,
+                                std::set<Expr *> &attributes) {
   qlex_tok_t tok = qlex_next(rd);
 
   { /* The implementation list should be enclosed in square brackets ex: [abc,
@@ -68,7 +67,7 @@ bool qparse::parser::parse_attributes(qparse_t &S, qlex_t *rd,
 
     Expr *impl = nullptr;
 
-    if (!parse_expr(
+    if (!recurse_expr(
             S, rd, {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncComa)},
             &impl, 0)) {
       syntax(tok, "Failed to parse declaration attribute expression");
@@ -87,8 +86,8 @@ bool qparse::parser::parse_attributes(qparse_t &S, qlex_t *rd,
   return true;
 }
 
-bool parser::parse_composite_field(qparse_t &S, qlex_t *rd,
-                                   StructField **node) {
+bool qparse::recurse_composite_field(qparse_t &S, qlex_t *rd,
+                                     StructField **node) {
   /*
    * Format: "name: type [= expr],"
    */
@@ -114,7 +113,7 @@ bool parser::parse_composite_field(qparse_t &S, qlex_t *rd,
   }
 
   { /* Next section should be the field type */
-    if (!parse_type(S, rd, &type)) {
+    if (!recurse_type(S, rd, &type)) {
       syntax(tok, "Expected field type in composite definition");
     }
   }
@@ -138,10 +137,11 @@ bool parser::parse_composite_field(qparse_t &S, qlex_t *rd,
     qlex_next(rd);
 
     /* Parse the default value */
-    if (!parse_expr(S, rd,
-                    {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
-                     qlex_tok_t(qPunc, qPuncRCur)},
-                    &value) ||
+    if (!recurse_expr(
+            S, rd,
+            {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
+             qlex_tok_t(qPunc, qPuncRCur)},
+            &value) ||
         !value) {
       syntax(tok, "Expected default value after '=' in composite definition");
       return false;
@@ -154,11 +154,11 @@ bool parser::parse_composite_field(qparse_t &S, qlex_t *rd,
   return true;
 }
 
-bool parse_template_parameters(
+bool recurse_template_parameters(
     qparse_t &S, qlex_t *rd,
     std::optional<TemplateParameters> &template_params);
 
-bool parser::parse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
+bool qparse::recurse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
   /**
    * @brief Parse a struct composite type definition
    */
@@ -185,7 +185,7 @@ bool parser::parse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
   }
 
   {
-    if (!parse_template_parameters(S, rd, sdef->get_template_params())) {
+    if (!recurse_template_parameters(S, rd, sdef->get_template_params())) {
       return false;
     }
   }
@@ -241,7 +241,7 @@ bool parser::parse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
       qlex_next(rd);
 
       /* Parse the function definition */
-      if (!parse_function(S, rd, &method) || !method) {
+      if (!recurse_function(S, rd, &method) || !method) {
         syntax(tok, "Expected function definition in struct definition");
         return false;
       }
@@ -279,7 +279,7 @@ bool parser::parse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
       }
 
       /* Parse the function definition */
-      if (!parse_function(S, rd, &method) || !method) {
+      if (!recurse_function(S, rd, &method) || !method) {
         syntax(tok, "Expected function definition in struct definition");
         return false;
       }
@@ -291,7 +291,7 @@ bool parser::parse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
       static_methods.push_back(static_cast<FnDecl *>(method));
     } else {
       /* Parse a normal field */
-      if (!parse_composite_field(S, rd, &field)) {
+      if (!recurse_composite_field(S, rd, &field)) {
         syntax(tok, "Expected field definition in struct definition");
         return false;
       }
@@ -319,7 +319,7 @@ bool parser::parse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
   { /* Check for an implementation/trait list */
     if (tok.is<qKWith>()) {
       qlex_next(rd);
-      if (!parse_attributes(S, rd, attributes)) {
+      if (!recurse_attributes(S, rd, attributes)) {
         return false;
       }
     }
