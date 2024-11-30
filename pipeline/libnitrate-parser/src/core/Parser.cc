@@ -241,16 +241,12 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Block **group, bool expect_braces,
       }
 
       case qKReturn: {
-        if (!recurse_return(S, rd, &node)) {
-          return false;
-        }
+        node = recurse_return(S, rd);
         break;
       }
 
       case qKRetif: {
-        if (!recurse_retif(S, rd, &node)) {
-          return false;
-        }
+        node = recurse_retif(S, rd);
         break;
       }
 

@@ -33,60 +33,66 @@
 
 #include <decent/Recurse.hh>
 
+#include "nitrate-parser/Node.h"
+
 using namespace qparse;
 
-bool qparse::recurse_return(qparse_t &S, qlex_t &rd, Stmt **node) {
+Stmt *qparse::recurse_return(qparse_t &S, qlex_t &rd) {
   qlex_tok_t tok = peek();
 
   if (tok.is<qPuncSemi>()) {
     next();
-    *node = ReturnStmt::get();
-    (*node)->set_end_pos(tok.end);
-    return true;
+    auto R = ReturnStmt::get();
+    R->set_end_pos(tok.end);
+    return R;
   }
 
   Expr *expr = nullptr;
   if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
     syntax(tok, "Expected an expression in the return statement.");
+    return mock_stmt(QAST_NODE_RETURN);
   }
-
-  *node = ReturnStmt::get(expr);
 
   tok = next();
 
   if (!tok.is<qPuncSemi>()) {
     syntax(tok, "Expected a semicolon after the return statement.");
+    return mock_stmt(QAST_NODE_RETURN);
   }
 
-  (*node)->set_end_pos(tok.end);
+  auto R = ReturnStmt::get(expr);
+  R->set_end_pos(tok.end);
 
-  return true;
+  return R;
 }
 
-bool qparse::recurse_retif(qparse_t &S, qlex_t &rd, Stmt **node) {
-  qlex_tok_t tok;
-
+Stmt *qparse::recurse_retif(qparse_t &S, qlex_t &rd) {
   Expr *condition = nullptr;
   if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncComa)}, &condition)) {
-    syntax(tok, "Expected a condition in the return-if statement.");
+    syntax(peek(), "Expected a condition in the return-if statement.");
+    return mock_stmt(QAST_NODE_RETIF);
   }
 
-  tok = next();
+  qlex_tok_t tok = next();
   if (!tok.is<qPuncComa>()) {
     syntax(tok, "Expected a comma after the return-if expression.");
+    return mock_stmt(QAST_NODE_RETIF);
   }
 
   Expr *return_expr = nullptr;
   if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &return_expr)) {
     syntax(tok, "Expected a return expression after the comma.");
+    return mock_stmt(QAST_NODE_RETIF);
   }
 
   tok = next();
   if (!tok.is<qPuncSemi>()) {
     syntax(tok, "Expected a semicolon after the return-if expression.");
+    return mock_stmt(QAST_NODE_RETIF);
   }
-  *node = ReturnIfStmt::get(condition, return_expr);
-  (*node)->set_end_pos(tok.end);
 
-  return true;
+  auto R = ReturnIfStmt::get(condition, return_expr);
+  R->set_end_pos(tok.end);
+
+  return R;
 }

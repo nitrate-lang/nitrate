@@ -55,8 +55,8 @@ namespace qparse {
   bool recurse_function(qparse_t &S, qlex_t &rd, Stmt **node);
   bool recurse_type(qparse_t &S, qlex_t &rd, Type **node);
   bool recurse_typedef(qparse_t &S, qlex_t &rd, Stmt **node);
-  bool recurse_return(qparse_t &S, qlex_t &rd, Stmt **node);
-  bool recurse_retif(qparse_t &S, qlex_t &rd, Stmt **node);
+  Stmt *recurse_return(qparse_t &S, qlex_t &rd);
+  Stmt *recurse_retif(qparse_t &S, qlex_t &rd);
   bool recurse_if(qparse_t &S, qlex_t &rd, Stmt **node);
   bool recurse_while(qparse_t &S, qlex_t &rd, Stmt **node);
   bool recurse_for(qparse_t &S, qlex_t &rd, Stmt **node);

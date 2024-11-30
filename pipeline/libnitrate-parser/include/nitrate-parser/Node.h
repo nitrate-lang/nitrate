@@ -579,13 +579,17 @@ namespace qparse {
     };
 
     constexpr void set_start_pos(uint32_t pos) { m_pos_start = pos; }
-    constexpr void set_end_pos(uint32_t pos) { m_pos_end = pos; }
-    constexpr void set_pos(
+    constexpr Node *set_end_pos(uint32_t pos) {
+      m_pos_end = pos;
+      return this;
+    }
+    constexpr Node *set_pos(
         std::tuple<uint32_t, uint32_t, std::string_view> pos) {
       m_pos_start = std::get<0>(pos);
       m_pos_end = std::get<1>(pos);
 
       /// FIXME: Use the filename info
+      return this;
     }
 
     constexpr uint32_t get_end_pos() { return m_pos_end; }
