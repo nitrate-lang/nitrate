@@ -31,13 +31,15 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <nitrate-parser/Node.h>
+
 #include <decent/Recurse.hh>
 
 using namespace qparse;
 using namespace qparse;
 
-std::optional<InlineAsm *> qparse::recurse_inline_asm(qparse_t &, qlex_t &rd) {
+Stmt *qparse::recurse_inline_asm(qparse_t &, qlex_t &rd) {
   syntax(peek(), "Inline assembly is not supported");
 
-  return std::nullopt;
+  return mock_stmt(QAST_NODE_INLINE_ASM);
 }

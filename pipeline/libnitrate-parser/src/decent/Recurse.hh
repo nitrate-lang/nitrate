@@ -63,7 +63,7 @@ namespace qparse {
   bool recurse_foreach(qparse_t &S, qlex_t &rd, Stmt **node);
   bool recurse_case(qparse_t &S, qlex_t &rd, Stmt **node);
   bool recurse_switch(qparse_t &S, qlex_t &rd, Stmt **node);
-  std::optional<InlineAsm *> recurse_inline_asm(qparse_t &S, qlex_t &rd);
+  Stmt *recurse_inline_asm(qparse_t &S, qlex_t &rd);
   bool recurse_composite_field(qparse_t &S, qlex_t &rd, StructField **node);
 
   bool recurse_attributes(qparse_t &S, qlex_t &rd,
@@ -71,6 +71,10 @@ namespace qparse {
 
   bool recurse(qparse_t &S, qlex_t &rd, Block **node, bool expect_braces = true,
                bool single_stmt = false);
+
+  // Expr *recurse_expr(qparse_t &S, qlex_t &rd, std::set<qlex_tok_t>
+  // terminators,
+  //                    size_t depth = 0);
 
   bool recurse_expr(qparse_t &S, qlex_t &rd, std::set<qlex_tok_t> terminators,
                     Expr **node, size_t depth = 0);

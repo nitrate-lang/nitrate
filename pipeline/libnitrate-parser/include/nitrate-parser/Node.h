@@ -1991,6 +1991,13 @@ namespace qparse {
 
     return names[type];
   }
+
+  Stmt *mock_stmt(qparse_ty_t expected);
+  Expr *mock_expr(qparse_ty_t expected);
+  Type *mock_type(qparse_ty_t expected);
+  Decl *mock_decl(qparse_ty_t expected);
+  Block *mock_block(qparse_ty_t expected);
+
 }  // namespace qparse
 
 namespace std {

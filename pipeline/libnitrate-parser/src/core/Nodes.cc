@@ -85,3 +85,38 @@ CPP_EXPORT bool Type::is_ptr_to(Type *type) noexcept {
 
   return item->is(type->getKind());
 }
+
+Stmt *qparse::mock_stmt(qparse_ty_t expected) {
+  (void)expected;
+
+  static Stmt node(QAST_NODE_NODE);
+  return &node;
+}
+
+Expr *qparse::mock_expr(qparse_ty_t expected) {
+  (void)expected;
+
+  static Expr node(QAST_NODE_NODE);
+  return &node;
+}
+
+Type *qparse::mock_type(qparse_ty_t expected) {
+  (void)expected;
+
+  static Type node(QAST_NODE_NODE);
+  return &node;
+}
+
+Decl *qparse::mock_decl(qparse_ty_t expected) {
+  (void)expected;
+
+  static Decl node(QAST_NODE_NODE);
+  return &node;
+}
+
+Block *qparse::mock_block(qparse_ty_t expected) {
+  (void)expected;
+
+  static Block node;
+  return &node;
+}
