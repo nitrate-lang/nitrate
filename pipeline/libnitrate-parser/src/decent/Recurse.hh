@@ -51,7 +51,7 @@ namespace qparse {
   bool recurse_var(qparse_t &S, qlex_t &rd, std::vector<Stmt *> &node);
   Stmt *recurse_enum(qparse_t &S, qlex_t &rd);
   bool recurse_struct(qparse_t &S, qlex_t &rd, Stmt **node);
-  bool recurse_subsystem(qparse_t &S, qlex_t &rd, Stmt **node);
+  Stmt *recurse_subsystem(qparse_t &S, qlex_t &rd);
   bool recurse_function(qparse_t &S, qlex_t &rd, Stmt **node);
   bool recurse_type(qparse_t &S, qlex_t &rd, Type **node);
   Stmt *recurse_typedef(qparse_t &S, qlex_t &rd);

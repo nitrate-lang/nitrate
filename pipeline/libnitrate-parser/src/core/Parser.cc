@@ -200,9 +200,7 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
       }
 
       case qKSubsystem: {
-        if (!recurse_subsystem(S, rd, &node)) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
+        node = recurse_subsystem(S, rd);
         break;
       }
 

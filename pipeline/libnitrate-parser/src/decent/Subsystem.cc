@@ -31,14 +31,15 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <nitrate-parser/Node.h>
+
 #include <decent/Recurse.hh>
 
-using namespace qparse;
-
-bool qparse::recurse_subsystem(qparse_t &S, qlex_t &rd, Stmt **node) {
+qparse::Stmt *qparse::recurse_subsystem(qparse_t &S, qlex_t &rd) {
   qlex_tok_t tok = next();
   if (!tok.is(qName)) {
     syntax(tok, "Expected subsystem name");
+    return mock_stmt(QAST_NODE_SUBSYSTEM);
   }
 
   std::string name = tok.as_string(&rd);
@@ -51,21 +52,25 @@ bool qparse::recurse_subsystem(qparse_t &S, qlex_t &rd, Stmt **node) {
     tok = next();
     if (!tok.is<qPuncLBrk>()) {
       syntax(tok, "Expected '[' after subsystem dependencies");
+      return mock_stmt(QAST_NODE_SUBSYSTEM);
     }
 
     while (true) {
       tok = next();
       if (tok.is(qEofF)) {
         syntax(tok, "Unexpected end of file in subsystem dependencies");
+        return mock_stmt(QAST_NODE_SUBSYSTEM);
         break;
       }
 
       if (tok.is<qPuncRBrk>()) {
+        return mock_stmt(QAST_NODE_SUBSYSTEM);
         break;
       }
 
       if (!tok.is(qName)) {
         syntax(tok, "Expected dependency name");
+        return mock_stmt(QAST_NODE_SUBSYSTEM);
       }
 
       deps.insert(tok.as_string(&rd));
@@ -85,7 +90,7 @@ bool qparse::recurse_subsystem(qparse_t &S, qlex_t &rd, Stmt **node) {
     next();
 
     if (!recurse_attributes(S, rd, attributes)) {
-      return false;
+      return mock_stmt(QAST_NODE_SUBSYSTEM);
     }
   }
 
@@ -94,7 +99,5 @@ bool qparse::recurse_subsystem(qparse_t &S, qlex_t &rd, Stmt **node) {
   sub->get_deps() = deps;
   sub->get_tags().insert(attributes.begin(), attributes.end());
 
-  *node = sub;
-
-  return true;
+  return sub;
 }
