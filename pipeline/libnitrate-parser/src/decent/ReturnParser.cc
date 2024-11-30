@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <decent/Parse.h>
+#include <decent/Recurse.hh>
 
 using namespace qparse::parser;
 using namespace qparse;

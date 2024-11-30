@@ -33,10 +33,10 @@
 
 /// TODO: Source location
 
-#include <decent/Parse.h>
 #include <nitrate-parser/Node.h>
 
 #include <cstddef>
+#include <decent/Recurse.hh>
 #include <stack>
 #include <stdexcept>
 #include <string_view>

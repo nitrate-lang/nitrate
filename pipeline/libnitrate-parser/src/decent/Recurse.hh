@@ -34,15 +34,11 @@
 #ifndef __NITRATE_PARSE_H__
 #define __NITRATE_PARSE_H__
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
-#include <core/ParseReport.h>
 #include <nitrate-lexer/Token.h>
 #include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
 
+#include <core/ParseReport.hh>
 #include <core/ParserStruct.hh>
 #include <set>
 

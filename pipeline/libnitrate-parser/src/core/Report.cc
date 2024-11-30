@@ -31,10 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/ParseReport.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-parser/Parser.h>
 
+#include <core/ParseReport.hh>
 #include <core/ParserStruct.hh>
 #include <sstream>
 

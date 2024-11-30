@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <decent/Parse.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-parser/Node.h>
@@ -40,6 +39,7 @@
 #include <atomic>
 #include <core/ParserStruct.hh>
 #include <cstring>
+#include <decent/Recurse.hh>
 #include <nitrate-core/Classes.hh>
 
 using namespace qparse::parser;

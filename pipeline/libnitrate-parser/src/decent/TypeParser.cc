@@ -31,8 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <decent/Parse.h>
-
+#include <decent/Recurse.hh>
 #include <unordered_map>
 
 #include "nitrate-lexer/Lexer.h"
