@@ -1231,7 +1231,12 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
   s.ns_prefix = s.join_scope(n->get_name());
 
   for (size_t i = 0; i < n->get_fields().size(); i++) {
-    auto field = n->get_fields()[i];
+    auto field_raw = n->get_fields()[i];
+    if (!field_raw->is(QAST_NODE_STRUCT_FIELD)) {
+      return std::nullopt;
+    }
+    qparse::StructField *field = field_raw->as<qparse::StructField>();
+
     auto field_type = next_one(field->get_type());
     if (!field_type.has_value()) {
       G->report(nr::CompilerError, IC::Error,

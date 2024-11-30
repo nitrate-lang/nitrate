@@ -1811,7 +1811,7 @@ namespace qparse {
     PNODE_IMPL_CORE(StructField)
   };
 
-  typedef std::vector<StructField *, Arena<StructField *>> StructDefFields;
+  typedef std::vector<Decl *, Arena<Decl *>> StructDefFields;
   typedef std::vector<FnDecl *, Arena<FnDecl *>> StructDefMethods;
   typedef std::vector<FnDecl *, Arena<FnDecl *>> StructDefStaticMethods;
 

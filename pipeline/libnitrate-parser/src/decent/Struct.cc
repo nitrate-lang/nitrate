@@ -36,6 +36,7 @@
 #include <decent/Recurse.hh>
 
 #include "nitrate-lexer/Lexer.h"
+#include "nitrate-parser/Node.h"
 
 using namespace qparse;
 using namespace qparse;
@@ -86,8 +87,7 @@ bool qparse::recurse_attributes(qparse_t &S, qlex_t &rd,
   return true;
 }
 
-bool qparse::recurse_composite_field(qparse_t &S, qlex_t &rd,
-                                     StructField **node) {
+Decl *qparse::recurse_composite_field(qparse_t &S, qlex_t &rd) {
   /*
    * Format: "name: type [= expr],"
    */
@@ -101,6 +101,7 @@ bool qparse::recurse_composite_field(qparse_t &S, qlex_t &rd,
     tok = next();
     if (!tok.is(qName)) {
       syntax(tok, "Expected field name in composite definition");
+      return mock_decl(QAST_NODE_STRUCT_FIELD);
     }
     name = tok.as_string(&rd);
   }
@@ -109,12 +110,14 @@ bool qparse::recurse_composite_field(qparse_t &S, qlex_t &rd,
     tok = next();
     if (!tok.is<qPuncColn>()) {
       syntax(tok, "Expected colon after field name in composite definition");
+      return mock_decl(QAST_NODE_STRUCT_FIELD);
     }
   }
 
   { /* Next section should be the field type */
     if (!recurse_type(S, rd, &type)) {
       syntax(tok, "Expected field type in composite definition");
+      return mock_decl(QAST_NODE_STRUCT_FIELD);
     }
   }
 
@@ -124,15 +127,16 @@ bool qparse::recurse_composite_field(qparse_t &S, qlex_t &rd,
     if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
       next();
     }
-    *node = StructField::get(name, type);
-    (*node)->set_end_pos(tok.start);
-    return true;
+    auto R = StructField::get(name, type);
+    R->set_end_pos(tok.start);
+    return R;
   }
 
   { /* Optional default value */
     if (!tok.is<qOpSet>()) {
       syntax(tok,
              "Expected '=' or ',' after field type in composite definition");
+      return mock_decl(QAST_NODE_STRUCT_FIELD);
     }
     next();
 
@@ -144,14 +148,14 @@ bool qparse::recurse_composite_field(qparse_t &S, qlex_t &rd,
             &value) ||
         !value) {
       syntax(tok, "Expected default value after '=' in composite definition");
-      return false;
+      return mock_decl(QAST_NODE_STRUCT_FIELD);
     }
   }
 
-  *node = StructField::get(name, type, value);
-  (*node)->set_end_pos(value->get_end_pos());
+  auto R = StructField::get(name, type, value);
+  R->set_end_pos(value->get_end_pos());
 
-  return true;
+  return R;
 }
 
 bool recurse_template_parameters(
@@ -172,7 +176,7 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t &rd, Stmt **node) {
   Stmt *method = nullptr;
   FnDecl *fdecl = nullptr;
   FuncTy *ft = nullptr;
-  StructField *field = nullptr;
+  Decl *field = nullptr;
   StructDef *sdef = StructDef::get();
 
   { /* First token should be the name of the definition */
@@ -291,10 +295,7 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t &rd, Stmt **node) {
       static_methods.push_back(static_cast<FnDecl *>(method));
     } else {
       /* Parse a normal field */
-      if (!recurse_composite_field(S, rd, &field)) {
-        syntax(tok, "Expected field definition in struct definition");
-        return false;
-      }
+      field = recurse_composite_field(S, rd);
 
       tok = peek();
       if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
