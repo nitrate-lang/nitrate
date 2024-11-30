@@ -33,8 +33,8 @@
 
 /// TODO: Source location
 
+#include <decent/Parse.h>
 #include <nitrate-parser/Node.h>
-#include <parser/Parse.h>
 
 #include <cstddef>
 #include <stack>

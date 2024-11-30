@@ -31,12 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <Impl.h>
-#include <ParseReport.h>
+#include <core/ParseReport.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-parser/Parser.h>
 
-#include <ParserStruct.hh>
+#include <core/ParserStruct.hh>
 #include <sstream>
 
 using namespace qparse::diag;
@@ -200,7 +199,7 @@ namespace qparse::diag {
     diag.tok = tok;
     diag.type = MessageType::Syntax;
 
-    g_parser_inst->impl->diag.push(std::move(diag));
+    g_parser_inst->diag.push(std::move(diag));
     g_parser_inst->failed = true;
   }
 

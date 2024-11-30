@@ -33,6 +33,7 @@
 
 #include <nitrate-core/Env.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <threads.h>
 
 #include <cstdio>
@@ -40,8 +41,6 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
-
-#include "LibMacro.h"
 
 struct Environment {
   std::unordered_map<std::string, std::string> env;
@@ -56,7 +55,7 @@ extern "C" {
 __attribute__((visibility("default"))) bool qcore_fuzzing = true;
 }
 
-LIB_EXPORT qcore_env_t qcore_env_create(qcore_env_t env) {
+C_EXPORT qcore_env_t qcore_env_create(qcore_env_t env) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
   if (!g_envs.count(env)) {
@@ -66,16 +65,16 @@ LIB_EXPORT qcore_env_t qcore_env_create(qcore_env_t env) {
   return env;
 }
 
-LIB_EXPORT void qcore_env_destroy(qcore_env_t env) {
+C_EXPORT void qcore_env_destroy(qcore_env_t env) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
   qcore_assert(g_envs.count(env), "Environment does not exist.");
   g_envs.erase(env);
 }
 
-LIB_EXPORT qcore_env_t qcore_env_current() { return g_current_env; }
+C_EXPORT qcore_env_t qcore_env_current() { return g_current_env; }
 
-LIB_EXPORT void qcore_env_set_current(qcore_env_t env) {
+C_EXPORT void qcore_env_set_current(qcore_env_t env) {
   if (env == 0) {
     return;
   }
@@ -86,7 +85,7 @@ LIB_EXPORT void qcore_env_set_current(qcore_env_t env) {
   g_current_env = env;
 }
 
-LIB_EXPORT void qcore_env_set(const char *key, const char *value) {
+C_EXPORT void qcore_env_set(const char *key, const char *value) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
   qcore_assert(g_envs.count(g_current_env),
@@ -99,7 +98,7 @@ LIB_EXPORT void qcore_env_set(const char *key, const char *value) {
   }
 }
 
-LIB_EXPORT const char *qcore_env_get(const char *key) {
+C_EXPORT const char *qcore_env_get(const char *key) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
   qcore_assert(g_envs.count(g_current_env),
@@ -112,7 +111,7 @@ LIB_EXPORT const char *qcore_env_get(const char *key) {
   }
 }
 
-LIB_EXPORT void qcore_begin(qcore_log_t level) {
+C_EXPORT void qcore_begin(qcore_log_t level) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
   qcore_assert(g_envs.count(g_current_env),
@@ -124,7 +123,7 @@ LIB_EXPORT void qcore_begin(qcore_log_t level) {
 
 #include <iostream>
 
-LIB_EXPORT void qcore_end() {
+C_EXPORT void qcore_end() {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
   qcore_assert(g_envs.count(g_current_env),
@@ -166,7 +165,7 @@ LIB_EXPORT void qcore_end() {
   }
 }
 
-LIB_EXPORT int qcore_vwritef(const char *fmt, va_list args) {
+C_EXPORT int qcore_vwritef(const char *fmt, va_list args) {
   char *buffer = NULL;
   int size = vasprintf(&buffer, fmt, args);
   if (size < 0) {

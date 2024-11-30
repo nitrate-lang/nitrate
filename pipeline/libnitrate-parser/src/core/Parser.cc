@@ -31,18 +31,16 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <Impl.h>
+#include <decent/Parse.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
-#include <parser/Parse.h>
 
-#include <ParserStruct.hh>
 #include <atomic>
+#include <core/ParserStruct.hh>
 #include <cstring>
 #include <nitrate-core/Classes.hh>
-
-#include "LibMacro.h"
 
 using namespace qparse::parser;
 using namespace qparse::diag;
@@ -390,7 +388,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
   return true;
 }
 
-LIB_EXPORT qparse_t *qparse_new(qlex_t *lexer, qcore_env_t env) {
+C_EXPORT qparse_t *qparse_new(qlex_t *lexer, qcore_env_t env) {
   if (!lexer) {
     return nullptr;
   }
@@ -398,26 +396,22 @@ LIB_EXPORT qparse_t *qparse_new(qlex_t *lexer, qcore_env_t env) {
 
   qparse_t *parser = new qparse_t();
 
-  parser->impl = new qparse_impl_t();
   parser->env = env;
   parser->id = job_id++;
   parser->lexer = lexer;
   parser->failed = false;
-  parser->impl->diag.set_ctx(parser);
+  parser->diag.set_ctx(parser);
 
   qlex_set_flags(lexer, qlex_get_flags(lexer) | QLEX_NO_COMMENTS);
 
   return parser;
 }
 
-LIB_EXPORT void qparse_free(qparse_t *parser) {
+C_EXPORT void qparse_free(qparse_t *parser) {
   if (!parser) {
     return;
   }
 
-  delete parser->impl;
-
-  parser->impl = nullptr;
   parser->lexer = nullptr;
 
   delete parser;
@@ -425,7 +419,7 @@ LIB_EXPORT void qparse_free(qparse_t *parser) {
 
 static thread_local qparse_t *parser_ctx;
 
-LIB_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
+C_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
   if (!L || !out) {
     return false;
   }
@@ -452,7 +446,7 @@ LIB_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
   return status && !L->failed;
 }
 
-LIB_EXPORT bool qparse_and_dump(qparse_t *L, FILE *out, void *x0, void *x1) {
+C_EXPORT bool qparse_and_dump(qparse_t *L, FILE *out, void *x0, void *x1) {
   (void)x0;
   (void)x1;
 
@@ -476,7 +470,7 @@ LIB_EXPORT bool qparse_and_dump(qparse_t *L, FILE *out, void *x0, void *x1) {
   return true;
 }
 
-LIB_EXPORT bool qparse_check(qparse_t *parser, const qparse_node_t *base) {
+C_EXPORT bool qparse_check(qparse_t *parser, const qparse_node_t *base) {
   if (!parser || !base) {
     return false;
   }
@@ -485,18 +479,12 @@ LIB_EXPORT bool qparse_check(qparse_t *parser, const qparse_node_t *base) {
     return false;
   }
 
-  if (!parser->impl) {
-    qcore_panic(
-        "qpase_check: invariant violation: "
-        "parser->impl is NULL");
-  }
-
   /* TODO: Implement checks */
   return true;
 }
 
-LIB_EXPORT void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb,
-                             uintptr_t data) {
+C_EXPORT void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb,
+                           uintptr_t data) {
   if (!parser || !cb) {
     return;
   }
@@ -504,8 +492,8 @@ LIB_EXPORT void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb,
   auto adapter = [&](const char *msg) { cb(msg, std::strlen(msg), data); };
 
   if (no_ansi) {
-    parser->impl->diag.render(adapter, qparse::diag::FormatStyle::ClangPlain);
+    parser->diag.render(adapter, qparse::diag::FormatStyle::ClangPlain);
   } else {
-    parser->impl->diag.render(adapter, qparse::diag::FormatStyle::Clang16Color);
+    parser->diag.render(adapter, qparse::diag::FormatStyle::Clang16Color);
   }
 }

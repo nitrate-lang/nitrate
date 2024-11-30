@@ -31,82 +31,74 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <parser/Parse.h>
+#include <decent/Parse.h>
 
 using namespace qparse::parser;
 using namespace qparse::diag;
 
-bool qparse::parser::parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node) {
+bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_next(rd);
-  bool has_parens = false;
-
-  if (tok.is<qPuncLPar>()) {
-    has_parens = true;
-    tok = qlex_next(rd);
-  }
-
   if (!tok.is(qName)) {
-    syntax(tok, "Expected identifier as index variable in foreach statement");
-  }
-  std::string first_ident = tok.as_string(rd), second_ident;
-
-  tok = qlex_next(rd);
-
-  if (tok.is<qPuncComa>()) {
-    tok = qlex_next(rd);
-    if (!tok.is(qName)) {
-      syntax(tok, "Expected identifier as value variable in foreach statement");
-    }
-
-    second_ident = tok.as_string(rd);
-
-    tok = qlex_next(rd);
-  } else {
-    second_ident = "_";
+    syntax(tok, "Expected subsystem name");
   }
 
-  if (!tok.is<qOpIn>()) {
-    syntax(tok, "Expected 'in' after value variable in foreach statement");
-  }
-
-  Expr *expr = nullptr;
-  if (has_parens) {
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &expr) || !expr) {
-      syntax(tok, "Expected expression after '(' in foreach statement");
-    }
-    tok = qlex_next(rd);
-    if (!tok.is<qPuncRPar>()) {
-      syntax(tok, "Expected ')' after expression in foreach statement");
-    }
-  } else {
-    if (!parse_expr(job, rd,
-                    {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
-                    &expr) ||
-        !expr) {
-      syntax(tok, "Expected expression after 'in' in foreach statement");
-    }
-  }
+  std::string name = tok.as_string(rd);
+  SubsystemDeps deps;
 
   tok = qlex_peek(rd);
-
-  Block *block = nullptr;
-  if (tok.is<qOpArrow>()) {
+  if (tok.is<qPuncColn>()) {
     qlex_next(rd);
-    if (!parse(job, rd, &block, false, true)) {
-      syntax(
-          tok,
-          "Expected block or statement list after '=>' in foreach statement");
+
+    tok = qlex_next(rd);
+    if (!tok.is<qPuncLBrk>()) {
+      syntax(tok, "Expected '[' after subsystem dependencies");
     }
-  } else {
-    if (!parse(job, rd, &block)) {
-      syntax(
-          tok,
-          "Expected block or statement list after '=>' in foreach statement");
+
+    while (true) {
+      tok = qlex_next(rd);
+      if (tok.is(qEofF)) {
+        syntax(tok, "Unexpected end of file in subsystem dependencies");
+        break;
+      }
+
+      if (tok.is<qPuncRBrk>()) {
+        break;
+      }
+
+      if (!tok.is(qName)) {
+        syntax(tok, "Expected dependency name");
+      }
+
+      deps.insert(tok.as_string(rd));
+
+      tok = qlex_peek(rd);
+      if (tok.is<qPuncComa>()) {
+        qlex_next(rd);
+      }
     }
   }
 
-  *node = ForeachStmt::get(first_ident, second_ident, expr, block);
-  (*node)->set_end_pos(block->get_end_pos());
+  Block *block = nullptr;
+  if (!parse(job, rd, &block, true)) {
+    syntax(qlex_peek(rd), "Expected block in subsystem definition");
+  }
+
+  std::set<Expr *> attributes;
+  tok = qlex_peek(rd);
+  if (tok.is<qKWith>()) {
+    qlex_next(rd);
+
+    if (!parse_attributes(job, rd, attributes)) {
+      return false;
+    }
+  }
+
+  SubsystemDecl *sub = SubsystemDecl::get(name, block);
+  sub->set_end_pos(block->get_end_pos());
+  sub->get_deps() = deps;
+  sub->get_tags().insert(attributes.begin(), attributes.end());
+
+  *node = sub;
 
   return true;
 }

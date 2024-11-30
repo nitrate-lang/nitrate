@@ -31,97 +31,71 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <parser/Parse.h>
+#ifndef __NITRATE_PARSE_H__
+#define __NITRATE_PARSE_H__
 
-using namespace qparse;
-using namespace qparse::parser;
-using namespace qparse::diag;
+#ifndef __cplusplus
+#error "This header requires C++"
+#endif
 
-static bool parse_enum_field(qparse_t &job, qlex_t *rd, EnumDefItems &fields) {
-  qlex_tok_t tok = qlex_next(rd);
-  if (!tok.is(qName)) {
-    syntax(tok, "Enum field must be named by an identifier");
-    return false;
-  }
+#include <core/ParseReport.h>
+#include <nitrate-lexer/Token.h>
+#include <nitrate-parser/Node.h>
+#include <nitrate-parser/Parser.h>
 
-  EnumItem item;
+#include <core/ParserStruct.hh>
+#include <set>
 
-  item.first = tok.as_string(rd);
+namespace qparse::parser {
+  bool parse(qparse_t &job, qlex_t *rd, Block **node, bool expect_braces = true,
+             bool single_stmt = false);
 
-  tok = qlex_peek(rd);
-  if (tok.is<qOpSet>()) {
-    qlex_next(rd);
-    Expr *expr = nullptr;
-    if (!parse_expr(
-            job, rd,
-            {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},
-            &expr) ||
-        !expr) {
-      syntax(tok, "Expected an expression after '='");
-      return false;
-    }
+  bool parse_pub(qparse_t &job, qlex_t *rd, Stmt **node);
+  bool parse_sec(qparse_t &job, qlex_t *rd, Stmt **node);
+  bool parse_pro(qparse_t &job, qlex_t *rd, Stmt **node);
 
-    item.second = expr;
-    item.second->set_pos(expr->get_pos());
+  bool parse_let(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
 
-    tok = qlex_peek(rd);
-  }
+  bool parse_const(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
 
-  fields.push_back(item);
+  bool parse_var(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
 
-  if (tok.is<qPuncComa>()) {
-    qlex_next(rd);
-    return true;
-  }
+  bool parse_enum(qparse_t &job, qlex_t *rd, Stmt **node);
 
-  if (!tok.is<qPuncRCur>()) {
-    syntax(tok, "Expected a comma or a closing curly brace");
-    return false;
-  }
+  bool parse_struct(qparse_t &job, qlex_t *rd, Stmt **node);
 
-  return true;
-}
+  bool parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node);
 
-bool qparse::parser::parse_enum(qparse_t &job, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_next(rd);
-  if (!tok.is(qName)) {
-    syntax(tok, "Enum definition must be named by an identifier");
-    return false;
-  }
+  bool parse_function(qparse_t &job, qlex_t *rd, Stmt **node);
 
-  std::string name = tok.as_string(rd);
+  bool parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> terminators,
+                  Expr **node, size_t depth = 0);
 
-  tok = qlex_peek(rd);
-  Type *type = nullptr;
-  if (tok.is<qPuncColn>()) {
-    qlex_next(rd);
-    if (!parse_type(job, rd, &type)) {
-      return false;
-    }
-  }
+  bool parse_type(qparse_t &job, qlex_t *rd, Type **node);
 
-  tok = qlex_next(rd);
-  if (!tok.is<qPuncLCur>()) {
-    syntax(tok, "Expected a '{' to start the enum definition");
-    return false;
-  }
+  bool parse_typedef(qparse_t &job, qlex_t *rd, Stmt **node);
 
-  EnumDefItems fields;
+  bool parse_return(qparse_t &job, qlex_t *rd, Stmt **node);
 
-  while (true) {
-    tok = qlex_peek(rd);
-    if (tok.is<qPuncRCur>()) {
-      qlex_next(rd);
-      break;
-    }
+  bool parse_retif(qparse_t &job, qlex_t *rd, Stmt **node);
 
-    if (!parse_enum_field(job, rd, fields)) {
-      return false;
-    }
-  }
+  bool parse_if(qparse_t &job, qlex_t *rd, Stmt **node);
 
-  *node = EnumDef::get(name, type, fields);
-  (*node)->set_end_pos(tok.end);
+  bool parse_while(qparse_t &job, qlex_t *rd, Stmt **node);
 
-  return true;
-}
+  bool parse_for(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_case(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_switch(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_attributes(qparse_t &job, qlex_t *rd,
+                        std::set<Expr *> &attributes);
+  bool parse_composite_field(qparse_t &job, qlex_t *rd, StructField **node);
+};  // namespace qparse::parser
+
+#endif  // __NITRATE_PARSE_H__

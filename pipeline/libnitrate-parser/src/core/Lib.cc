@@ -31,59 +31,114 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <parser/Parse.h>
+#include <nitrate-core/Lib.h>
+#include <nitrate-core/Macro.h>
+#include <nitrate-lexer/Lib.h>
+#include <nitrate-parser/Lib.h>
+#include <sys/resource.h>
 
-using namespace qparse::parser;
+#include <atomic>
 
-bool qparse::parser::parse_if(qparse_t &job, qlex_t *rd, Stmt **node) {
-  Expr *cond = nullptr;
-  if (!parse_expr(job, rd,
-                  {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
-                  &cond)) {
-    return false;
-  }
+static std::atomic<size_t> qparse_lib_ref_count = 0;
 
-  Block *then_block = nullptr;
-  if (qlex_peek(rd).is<qOpArrow>()) {
-    qlex_next(rd);
-    if (!parse(job, rd, &then_block, false, true)) return false;
-  } else {
-    if (!parse(job, rd, &then_block, true)) return false;
-  }
+static void increase_stack_size() {
+  const rlim_t kStackSize = 64 * 1024 * 1024;  // min stack size = 64 MB
+  struct rlimit rl;
+  int result;
 
-  qlex_tok_t tok = qlex_peek(rd);
-  if (tok.is<qKElse>()) {
-    qlex_next(rd);
-    Block *else_block = nullptr;
-
-    if (qlex_peek(rd).is<qOpArrow>()) {
-      qlex_next(rd);
-
-      if (!parse(job, rd, &else_block, false, true)) {
-        return false;
-      }
-    } else {
-      if (qlex_peek(rd).is<qKIf>()) {
-        qlex_next(rd);
-        if (!parse_if(job, rd, reinterpret_cast<Stmt **>(&else_block))) {
-          return false;
-        }
-      } else {
-        if (!parse(job, rd, &else_block, true, false)) {
-          return false;
-        }
+  result = getrlimit(RLIMIT_STACK, &rl);
+  if (result == 0) {
+    if (rl.rlim_cur < kStackSize) {
+      rl.rlim_cur = kStackSize;
+      result = setrlimit(RLIMIT_STACK, &rl);
+      if (result != 0) {
+        qcore_panicf("setrlimit returned result = %d\n", result);
       }
     }
-
-    uint32_t loc_end = else_block->get_end_pos();
-    *node = IfStmt::get(cond, then_block, else_block);
-    (*node)->set_end_pos(loc_end);
-
-  } else {
-    uint32_t loc_end = then_block->get_end_pos();
-    *node = IfStmt::get(cond, then_block, nullptr);
-    (*node)->set_end_pos(loc_end);
   }
+}
+
+static bool do_init() {
+  increase_stack_size();
 
   return true;
 }
+
+static void do_deinit() {}
+
+C_EXPORT bool qparse_lib_init() {
+  if (qparse_lib_ref_count++ > 1) {
+    return true;
+  }
+
+  if (!qcore_lib_init()) {
+    return false;
+  }
+
+  if (!qlex_lib_init()) {
+    return false;
+  }
+
+  return do_init();
+}
+
+C_EXPORT void qparse_lib_deinit() {
+  if (--qparse_lib_ref_count > 0) {
+    return;
+  }
+
+  qlex_lib_deinit();
+  qcore_lib_deinit();
+
+  return do_deinit();
+}
+
+C_EXPORT const char* qparse_lib_version() {
+  static const char* version_string =
+
+      "[" __TARGET_VERSION
+      "] ["
+
+#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
+    defined(_M_X64) || defined(_M_AMD64)
+      "x86_64-"
+#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
+      "x86-"
+#elif defined(__aarch64__)
+      "aarch64-"
+#elif defined(__arm__)
+      "arm-"
+#else
+      "unknown-"
+#endif
+
+#if defined(__linux__)
+      "linux-"
+#elif defined(__APPLE__)
+      "macos-"
+#elif defined(_WIN32)
+      "win32-"
+#else
+      "unknown-"
+#endif
+
+#if defined(__clang__)
+      "clang] "
+#elif defined(__GNUC__)
+      "gnu] "
+#else
+      "unknown] "
+#endif
+
+#if NDEBUG
+      "[release]"
+#else
+      "[debug]"
+#endif
+
+      ;
+
+  return version_string;
+}
+
+C_EXPORT const char* qparse_strerror() { return ""; }

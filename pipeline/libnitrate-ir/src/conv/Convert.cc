@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-ir/IR.h>
 #include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
@@ -105,8 +105,8 @@ static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G,
 #define next_one(n) nrgen_one(b, s, G, n)
 #define next_any(n) nrgen_any(b, s, G, n)
 
-LIB_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
-                         bool diagnostics) {
+C_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
+                       bool diagnostics) {
   if (!mod || !base) {
     return false;
   }

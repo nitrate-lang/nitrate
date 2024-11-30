@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-ir/IR.h>
 #include <nitrate-ir/TypeDecl.h>
 

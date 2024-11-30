@@ -31,63 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <parser/Parse.h>
+#ifndef __NITRATE_CORE_MACRO_H__
+#define __NITRATE_CORE_MACRO_H__
 
-using namespace qparse::parser;
-using namespace qparse::diag;
+#define C_EXPORT extern "C" __attribute__((visibility("default")))
+#define CPP_EXPORT __attribute__((visibility("default")))
 
-bool qparse::parser::parse_return(qparse_t &job, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_peek(rd);
-
-  if (tok.is<qPuncSemi>()) {
-    qlex_next(rd);
-    *node = ReturnStmt::get();
-    (*node)->set_end_pos(tok.end);
-    return true;
-  }
-
-  Expr *expr = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
-    syntax(tok, "Expected an expression in the return statement.");
-  }
-
-  *node = ReturnStmt::get(expr);
-
-  tok = qlex_next(rd);
-
-  if (!tok.is<qPuncSemi>()) {
-    syntax(tok, "Expected a semicolon after the return statement.");
-  }
-
-  (*node)->set_end_pos(tok.end);
-
-  return true;
-}
-
-bool qparse::parser::parse_retif(qparse_t &job, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok;
-
-  Expr *condition = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa)}, &condition)) {
-    syntax(tok, "Expected a condition in the return-if statement.");
-  }
-
-  tok = qlex_next(rd);
-  if (!tok.is<qPuncComa>()) {
-    syntax(tok, "Expected a comma after the return-if expression.");
-  }
-
-  Expr *return_expr = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &return_expr)) {
-    syntax(tok, "Expected a return expression after the comma.");
-  }
-
-  tok = qlex_next(rd);
-  if (!tok.is<qPuncSemi>()) {
-    syntax(tok, "Expected a semicolon after the return-if expression.");
-  }
-  *node = ReturnIfStmt::get(condition, return_expr);
-  (*node)->set_end_pos(tok.end);
-
-  return true;
-}
+#endif  // __NITRATE_CORE_MACRO_H__

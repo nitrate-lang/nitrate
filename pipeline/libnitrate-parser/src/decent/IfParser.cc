@@ -31,112 +31,59 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <parser/Parse.h>
+#include <decent/Parse.h>
 
-using namespace qparse::diag;
 using namespace qparse::parser;
 
-bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_peek(rd);
-
-  String abiName;
-
-  if (tok.is(qText)) {
-    qlex_next(rd);
-
-    abiName = tok.as_string(rd);
-    std::transform(abiName.begin(), abiName.end(), abiName.begin(), ::tolower);
-
-    tok = qlex_peek(rd);
+bool qparse::parser::parse_if(qparse_t &job, qlex_t *rd, Stmt **node) {
+  Expr *cond = nullptr;
+  if (!parse_expr(job, rd,
+                  {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
+                  &cond)) {
+    return false;
   }
 
-  if (tok.is<qPuncLCur>()) {
-    Block *block = nullptr;
-    if (!parse(job, rd, &block, true)) {
-      return false;
+  Block *then_block = nullptr;
+  if (qlex_peek(rd).is<qOpArrow>()) {
+    qlex_next(rd);
+    if (!parse(job, rd, &then_block, false, true)) return false;
+  } else {
+    if (!parse(job, rd, &then_block, true)) return false;
+  }
+
+  qlex_tok_t tok = qlex_peek(rd);
+  if (tok.is<qKElse>()) {
+    qlex_next(rd);
+    Block *else_block = nullptr;
+
+    if (qlex_peek(rd).is<qOpArrow>()) {
+      qlex_next(rd);
+
+      if (!parse(job, rd, &else_block, false, true)) {
+        return false;
+      }
+    } else {
+      if (qlex_peek(rd).is<qKIf>()) {
+        qlex_next(rd);
+        if (!parse_if(job, rd, reinterpret_cast<Stmt **>(&else_block))) {
+          return false;
+        }
+      } else {
+        if (!parse(job, rd, &else_block, true, false)) {
+          return false;
+        }
+      }
     }
 
-    *node = ExportDecl::get(block, abiName);
-    (*node)->set_end_pos(block->get_end_pos());
-    return true;
+    uint32_t loc_end = else_block->get_end_pos();
+    *node = IfStmt::get(cond, then_block, else_block);
+    (*node)->set_end_pos(loc_end);
+
+  } else {
+    uint32_t loc_end = then_block->get_end_pos();
+    *node = IfStmt::get(cond, then_block, nullptr);
+    (*node)->set_end_pos(loc_end);
   }
-
-  Block *block = nullptr;
-  if (!parse(job, rd, &block, false, true)) {
-    syntax(tok, "Expected block or statement list after 'pub'");
-    return false;
-  }
-
-  *node = ExportDecl::get(block, abiName);
-  (*node)->set_end_pos(block->get_end_pos());
-  return true;
-}
-
-bool qparse::parser::parse_sec(qparse_t &job, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_peek(rd);
-
-  String abiName;
-
-  if (tok.is(qText)) {
-    qlex_next(rd);
-
-    abiName = tok.as_string(rd);
-    std::transform(abiName.begin(), abiName.end(), abiName.begin(), ::tolower);
-
-    tok = qlex_peek(rd);
-  }
-
-  if (tok.is<qPuncLCur>()) {
-    Block *block = nullptr;
-    if (!parse(job, rd, &block, true)) return false;
-
-    *node = block;
-    (*node)->set_end_pos(block->get_end_pos());
-    return true;
-  }
-
-  Block *block = nullptr;
-  if (!parse(job, rd, &block, false, true)) {
-    syntax(tok, "Expected block or statement list after 'sec'");
-    return false;
-  }
-
-  *node = block;
-  (*node)->set_end_pos(block->get_end_pos());
-  return true;
-}
-
-bool qparse::parser::parse_pro(qparse_t &job, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_peek(rd);
-
-  String abiName;
-
-  if (tok.is(qText)) {
-    qlex_next(rd);
-
-    abiName = tok.as_string(rd);
-    std::transform(abiName.begin(), abiName.end(), abiName.begin(), ::tolower);
-
-    tok = qlex_peek(rd);
-  }
-
-  if (tok.is<qPuncLCur>()) {
-    Block *block = nullptr;
-    if (!parse(job, rd, &block, true)) return false;
-
-    *node = block;
-    (*node)->set_end_pos(block->get_end_pos());
-    return true;
-  }
-
-  Block *block = nullptr;
-  if (!parse(job, rd, &block, false, true)) {
-    syntax(tok, "Expected block or statement list after 'pro'");
-    return false;
-  }
-
-  *node = block;
-  (*node)->set_end_pos(block->get_end_pos());
 
   return true;
 }

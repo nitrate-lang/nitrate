@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
 #include <llvm-14/llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm-14/llvm/ExecutionEngine/MCJIT.h>
 #include <llvm-14/llvm/ExecutionEngine/SectionMemoryManager.h>
@@ -66,6 +65,7 @@
 #include <llvm-14/llvm/Transforms/IPO/PassManagerBuilder.h>
 #include <llvm-14/llvm/Transforms/InstCombine/InstCombine.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Config.h>
 #include <nitrate-ir/TypeDecl.h>
@@ -224,8 +224,8 @@ static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(
     qmodule_t *module, qcode_conf_t *conf, std::ostream &err,
     llvm::raw_ostream &out);
 
-LIB_EXPORT bool qcode_ir(qmodule_t *module, qcode_conf_t *conf, FILE *err,
-                         FILE *out) {
+C_EXPORT bool qcode_ir(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+                       FILE *out) {
   return qcode_adapter(module, conf, err, out,
                        [](qmodule_t *m, qcode_conf_t *c, std::ostream &e,
                           llvm::raw_pwrite_stream &o) -> bool {
@@ -244,8 +244,8 @@ LIB_EXPORT bool qcode_ir(qmodule_t *module, qcode_conf_t *conf, FILE *err,
                        });
 }
 
-LIB_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err,
-                          FILE *out) {
+C_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+                        FILE *out) {
   return qcode_adapter(
       module, conf, err, out,
       [](qmodule_t *m, qcode_conf_t *c, std::ostream &e,
@@ -331,8 +331,8 @@ LIB_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err,
       });
 }
 
-LIB_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err,
-                          FILE *out) {
+C_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+                        FILE *out) {
   return qcode_adapter(
       module, conf, err, out,
       [](qmodule_t *m, qcode_conf_t *c, std::ostream &e,

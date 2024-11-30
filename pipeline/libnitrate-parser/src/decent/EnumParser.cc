@@ -31,10 +31,97 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_CORE_MACRO_H__
-#define __NITRATE_CORE_MACRO_H__
+#include <decent/Parse.h>
 
-#define LIB_EXPORT extern "C" __attribute__((visibility("default")))
-#define CPP_EXPORT __attribute__((visibility("default")))
+using namespace qparse;
+using namespace qparse::parser;
+using namespace qparse::diag;
 
-#endif  // __NITRATE_CORE_MACRO_H__
+static bool parse_enum_field(qparse_t &job, qlex_t *rd, EnumDefItems &fields) {
+  qlex_tok_t tok = qlex_next(rd);
+  if (!tok.is(qName)) {
+    syntax(tok, "Enum field must be named by an identifier");
+    return false;
+  }
+
+  EnumItem item;
+
+  item.first = tok.as_string(rd);
+
+  tok = qlex_peek(rd);
+  if (tok.is<qOpSet>()) {
+    qlex_next(rd);
+    Expr *expr = nullptr;
+    if (!parse_expr(
+            job, rd,
+            {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},
+            &expr) ||
+        !expr) {
+      syntax(tok, "Expected an expression after '='");
+      return false;
+    }
+
+    item.second = expr;
+    item.second->set_pos(expr->get_pos());
+
+    tok = qlex_peek(rd);
+  }
+
+  fields.push_back(item);
+
+  if (tok.is<qPuncComa>()) {
+    qlex_next(rd);
+    return true;
+  }
+
+  if (!tok.is<qPuncRCur>()) {
+    syntax(tok, "Expected a comma or a closing curly brace");
+    return false;
+  }
+
+  return true;
+}
+
+bool qparse::parser::parse_enum(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok = qlex_next(rd);
+  if (!tok.is(qName)) {
+    syntax(tok, "Enum definition must be named by an identifier");
+    return false;
+  }
+
+  std::string name = tok.as_string(rd);
+
+  tok = qlex_peek(rd);
+  Type *type = nullptr;
+  if (tok.is<qPuncColn>()) {
+    qlex_next(rd);
+    if (!parse_type(job, rd, &type)) {
+      return false;
+    }
+  }
+
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncLCur>()) {
+    syntax(tok, "Expected a '{' to start the enum definition");
+    return false;
+  }
+
+  EnumDefItems fields;
+
+  while (true) {
+    tok = qlex_peek(rd);
+    if (tok.is<qPuncRCur>()) {
+      qlex_next(rd);
+      break;
+    }
+
+    if (!parse_enum_field(job, rd, fields)) {
+      return false;
+    }
+  }
+
+  *node = EnumDef::get(name, type, fields);
+  (*node)->set_end_pos(tok.end);
+
+  return true;
+}

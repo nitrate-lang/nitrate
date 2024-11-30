@@ -741,9 +741,15 @@ namespace qparse {
   public:
     constexpr Expr(qparse_ty_t ty) : Node(ty) {}
 
-    bool is_binexpr();
-    bool is_unaryexpr();
-    bool is_ternaryexpr();
+    constexpr bool is_binexpr() const noexcept {
+      return getKind() == QAST_NODE_BINEXPR;
+    }
+    constexpr bool is_unaryexpr() const noexcept {
+      return getKind() == QAST_NODE_UNEXPR;
+    }
+    constexpr bool is_ternaryexpr() const noexcept {
+      return getKind() == QAST_NODE_TEREXPR;
+    }
   };
 
   class ExprStmt : public Stmt {
@@ -1090,7 +1096,7 @@ namespace qparse {
       }
     }
 
-    bool is_noreturn();
+    bool is_noreturn() { return m_noreturn; }
     void set_noreturn(bool noreturn);
 
     Type *get_return_ty() { return m_return; }

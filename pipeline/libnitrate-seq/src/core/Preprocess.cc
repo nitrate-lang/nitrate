@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Lexer.h>
 #include <nitrate-lexer/Lib.h>
 #include <nitrate-lexer/Token.h>
@@ -47,8 +47,6 @@
 #include <qcall/List.hh>
 #include <sstream>
 #include <string_view>
-
-#include "LibMacro.h"
 
 extern "C" {
 #include <lua/lauxlib.h>
@@ -396,9 +394,8 @@ CPP_EXPORT qlex_t *qprep_new(std::shared_ptr<std::istream> file,
   }
 }
 
-LIB_EXPORT void qprep_set_fetch_module(qlex_t *ctx,
-                                       qprep_fetch_module_t fetch_fn,
-                                       uintptr_t any) {
+C_EXPORT void qprep_set_fetch_module(qlex_t *ctx, qprep_fetch_module_t fetch_fn,
+                                     uintptr_t any) {
   qprep_impl_t *obj = reinterpret_cast<qprep_impl_t *>(ctx);
   std::lock_guard<std::mutex> lock(obj->m_mutex);
 

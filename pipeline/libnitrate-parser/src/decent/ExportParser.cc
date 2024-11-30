@@ -31,37 +31,112 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <parser/Parse.h>
+#include <decent/Parse.h>
 
-using namespace qparse::parser;
 using namespace qparse::diag;
+using namespace qparse::parser;
 
-bool qparse::parser::parse_typedef(qparse_t &job, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_next(rd);
-  if (!tok.is(qName)) {
-    syntax(tok, "Expected name in typedef declaration");
+bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok = qlex_peek(rd);
+
+  String abiName;
+
+  if (tok.is(qText)) {
+    qlex_next(rd);
+
+    abiName = tok.as_string(rd);
+    std::transform(abiName.begin(), abiName.end(), abiName.begin(), ::tolower);
+
+    tok = qlex_peek(rd);
   }
 
-  std::string name = tok.as_string(rd);
+  if (tok.is<qPuncLCur>()) {
+    Block *block = nullptr;
+    if (!parse(job, rd, &block, true)) {
+      return false;
+    }
 
-  tok = qlex_next(rd);
-  if (!tok.is<qOpSet>()) {
-    syntax(tok, "Expected '=' in typedef declaration");
+    *node = ExportDecl::get(block, abiName);
+    (*node)->set_end_pos(block->get_end_pos());
+    return true;
   }
 
-  Type *type = nullptr;
-  if (!parse_type(job, rd, &type)) {
-    syntax(tok, "Failed to parse type in typedef declaration");
-  }
-
-  tok = qlex_next(rd);
-  if (!tok.is<qPuncSemi>()) {
-    syntax(tok, "Expected ';' in typedef declaration");
+  Block *block = nullptr;
+  if (!parse(job, rd, &block, false, true)) {
+    syntax(tok, "Expected block or statement list after 'pub'");
     return false;
   }
 
-  *node = TypedefDecl::get(name, type);
-  (*node)->set_end_pos(tok.end);
+  *node = ExportDecl::get(block, abiName);
+  (*node)->set_end_pos(block->get_end_pos());
+  return true;
+}
+
+bool qparse::parser::parse_sec(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok = qlex_peek(rd);
+
+  String abiName;
+
+  if (tok.is(qText)) {
+    qlex_next(rd);
+
+    abiName = tok.as_string(rd);
+    std::transform(abiName.begin(), abiName.end(), abiName.begin(), ::tolower);
+
+    tok = qlex_peek(rd);
+  }
+
+  if (tok.is<qPuncLCur>()) {
+    Block *block = nullptr;
+    if (!parse(job, rd, &block, true)) return false;
+
+    *node = block;
+    (*node)->set_end_pos(block->get_end_pos());
+    return true;
+  }
+
+  Block *block = nullptr;
+  if (!parse(job, rd, &block, false, true)) {
+    syntax(tok, "Expected block or statement list after 'sec'");
+    return false;
+  }
+
+  *node = block;
+  (*node)->set_end_pos(block->get_end_pos());
+  return true;
+}
+
+bool qparse::parser::parse_pro(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok = qlex_peek(rd);
+
+  String abiName;
+
+  if (tok.is(qText)) {
+    qlex_next(rd);
+
+    abiName = tok.as_string(rd);
+    std::transform(abiName.begin(), abiName.end(), abiName.begin(), ::tolower);
+
+    tok = qlex_peek(rd);
+  }
+
+  if (tok.is<qPuncLCur>()) {
+    Block *block = nullptr;
+    if (!parse(job, rd, &block, true)) return false;
+
+    *node = block;
+    (*node)->set_end_pos(block->get_end_pos());
+    return true;
+  }
+
+  Block *block = nullptr;
+  if (!parse(job, rd, &block, false, true)) {
+    syntax(tok, "Expected block or statement list after 'pro'");
+    return false;
+  }
+
+  *node = block;
+  (*node)->set_end_pos(block->get_end_pos());
 
   return true;
 }

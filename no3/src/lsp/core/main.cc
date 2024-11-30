@@ -1,5 +1,6 @@
 #include <argparse.h>
 #include <glog/logging.h>
+#include <nitrate-core/Macro.h>
 
 #include <boost/assert/source_location.hpp>
 #include <boost/throw_exception.hpp>
@@ -9,8 +10,6 @@
 #include <lsp/core/server.hh>
 #include <memory>
 #include <optional>
-
-#include "LibMacro.h"
 
 static constexpr void create_parser(argparse::ArgumentParser& parser) {
   ///=================== BASIC CONFIGURATION ======================
@@ -29,7 +28,7 @@ static constexpr void create_parser(argparse::ArgumentParser& parser) {
       "Use standard I/O");
 }
 
-LIB_EXPORT int nitrated_main(int argc, char** argv) {
+C_EXPORT int nitrated_main(int argc, char** argv) {
   std::vector<std::string> args(argv, argv + argc);
 
   {

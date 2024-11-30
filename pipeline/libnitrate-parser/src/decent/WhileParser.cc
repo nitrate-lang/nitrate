@@ -31,10 +31,28 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_CORE_MACRO_H__
-#define __NITRATE_CORE_MACRO_H__
+#include <decent/Parse.h>
 
-#define LIB_EXPORT extern "C" __attribute__((visibility("default")))
-#define CPP_EXPORT __attribute__((visibility("default")))
+using namespace qparse::parser;
 
-#endif  // __NITRATE_CORE_MACRO_H__
+bool qparse::parser::parse_while(qparse_t &job, qlex_t *rd, Stmt **node) {
+  Expr *cond = nullptr;
+  if (!parse_expr(job, rd,
+                  {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
+                  &cond))
+    return false;
+
+  Block *then_block = nullptr;
+
+  if (qlex_peek(rd).is<qOpArrow>()) {
+    qlex_next(rd);
+    if (!parse(job, rd, &then_block, false, true)) return false;
+  } else {
+    if (!parse(job, rd, &then_block, true)) return false;
+  }
+
+  *node = WhileStmt::get(cond, then_block);
+  (*node)->set_end_pos(then_block->get_end_pos());
+
+  return true;
+}

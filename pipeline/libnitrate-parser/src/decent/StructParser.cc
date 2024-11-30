@@ -33,7 +33,7 @@
 
 /// TODO: Source location
 
-#include <parser/Parse.h>
+#include <decent/Parse.h>
 
 #include "nitrate-lexer/Lexer.h"
 

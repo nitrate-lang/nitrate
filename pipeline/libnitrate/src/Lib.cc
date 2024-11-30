@@ -34,6 +34,7 @@
 #define LIBNITRATE_INTERNAL
 
 #include <nitrate-core/Lib.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-emit/Lib.h>
 #include <nitrate-ir/Lib.h>
 #include <nitrate-lexer/Lib.h>
@@ -42,8 +43,6 @@
 #include <nitrate/code.h>
 
 #include <atomic>
-
-#include "LibMacro.h"
 
 extern "C" {
 __attribute__((visibility("default"))) bool nit_lib_ready;
@@ -58,7 +57,7 @@ static bool do_init() {
 
 static void do_deinit() { nit_lib_ready = false; }
 
-LIB_EXPORT bool nit_lib_init() {
+C_EXPORT bool nit_lib_init() {
   if (nit_lib_ref_count++ > 1) {
     return true;
   }
@@ -90,7 +89,7 @@ LIB_EXPORT bool nit_lib_init() {
   return do_init();
 }
 
-LIB_EXPORT void nit_deinit() {
+C_EXPORT void nit_deinit() {
   if (--nit_lib_ref_count > 0) {
     return;
   }
@@ -105,7 +104,7 @@ LIB_EXPORT void nit_deinit() {
   qcore_lib_deinit();
 }
 
-LIB_EXPORT const char* nit_lib_version() {
+C_EXPORT const char* nit_lib_version() {
   static const char* version_string =
 
       "[" __TARGET_VERSION

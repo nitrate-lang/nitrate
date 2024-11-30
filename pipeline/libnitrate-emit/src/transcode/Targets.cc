@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-emit/Code.h>
 
 #include <core/Config.hh>
@@ -100,9 +100,9 @@ public:
   virtual int overflow(int c) override { return c; }
 };
 
-LIB_EXPORT bool qcode_transcode(qmodule_t* module, qcode_conf_t*,
-                                qcode_lang_t lang, qcode_style_t, FILE* err,
-                                FILE* out) {
+C_EXPORT bool qcode_transcode(qmodule_t* module, qcode_conf_t*,
+                              qcode_lang_t lang, qcode_style_t, FILE* err,
+                              FILE* out) {
   std::unique_ptr<std::streambuf> err_stream_buf, out_stream_buf;
 
   /* If the error stream is provided, use it. Otherwise, discard the output. */

@@ -32,15 +32,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Lib.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Lib.h>
 
 #include <atomic>
 
-#include "LibMacro.h"
-
 static std::atomic<size_t> qlex_lib_ref_count = 0;
 
-LIB_EXPORT bool qlex_lib_init() {
+C_EXPORT bool qlex_lib_init() {
   if (qlex_lib_ref_count++ > 1) {
     return true;
   }
@@ -54,7 +53,7 @@ LIB_EXPORT bool qlex_lib_init() {
   return true;
 }
 
-LIB_EXPORT void qlex_lib_deinit() {
+C_EXPORT void qlex_lib_deinit() {
   if (--qlex_lib_ref_count > 0) {
     return;
   }
@@ -65,7 +64,7 @@ LIB_EXPORT void qlex_lib_deinit() {
   return;
 }
 
-LIB_EXPORT const char* qlex_lib_version() {
+C_EXPORT const char* qlex_lib_version() {
   static const char* version_string =
 
       "[" __TARGET_VERSION
@@ -113,4 +112,4 @@ LIB_EXPORT const char* qlex_lib_version() {
   return version_string;
 }
 
-LIB_EXPORT const char* qlex_strerror() { return ""; }
+C_EXPORT const char* qlex_strerror() { return ""; }

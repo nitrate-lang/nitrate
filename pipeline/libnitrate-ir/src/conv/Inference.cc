@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-ir/IR.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
@@ -830,8 +830,7 @@ static Expr *nr_infer_impl(Expr *_node, uint32_t PtrSizeBytes,
   return T;
 }
 
-LIB_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes,
-                               void *res) {
+C_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes, void *) {
   static thread_local struct State {
     std::unordered_set<Expr *> visited;
     size_t depth = 0;

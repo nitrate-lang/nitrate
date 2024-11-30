@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Lexer.h>
 #include <string.h>
 
@@ -50,8 +51,6 @@
 #include <string_view>
 #include <utility>
 #include <vector>
-
-#include "LibMacro.h"
 
 ///============================================================================///
 /// BEGIN: LEXICAL GRAMMAR CONSTRAINTS
@@ -1088,12 +1087,12 @@ error_0: { /* Reset the lexer and return error token */
 
 ///============================================================================///
 
-LIB_EXPORT uint32_t qlex_tok_size(qlex_t *, const qlex_tok_t *tok) {
+C_EXPORT uint32_t qlex_tok_size(qlex_t *, const qlex_tok_t *tok) {
   return tok->end - tok->start;
 }
 
-LIB_EXPORT uint32_t qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok,
-                                   char *buf, uint32_t size) {
+C_EXPORT uint32_t qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok,
+                                 char *buf, uint32_t size) {
   try {
     size_t ret;
 
@@ -1154,7 +1153,7 @@ LIB_EXPORT uint32_t qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok,
   __builtin_unreachable();
 }
 
-LIB_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
+C_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
   switch (ty) {
     case qEofF:
       return "eof";
@@ -1187,8 +1186,7 @@ LIB_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
   __builtin_unreachable();
 }
 
-LIB_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a,
-                        const qlex_tok_t *b) {
+C_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
   try {
     if (a->ty != b->ty) return false;
 
@@ -1223,8 +1221,7 @@ LIB_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a,
   __builtin_unreachable();
 }
 
-LIB_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a,
-                        const qlex_tok_t *b) {
+C_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
   try {
     if (a->ty != b->ty) return a->ty < b->ty;
 
@@ -1258,7 +1255,7 @@ LIB_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a,
   __builtin_unreachable();
 }
 
-LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len) {
+C_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len) {
   size_t _len;
   if (!len) len = &_len;
 
@@ -1299,7 +1296,7 @@ LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len) {
   __builtin_unreachable();
 }
 
-LIB_EXPORT const char *qlex_opstr(qlex_op_t op) {
+C_EXPORT const char *qlex_opstr(qlex_op_t op) {
   try {
     return qlex::operators.right.at(op).data();
   } catch (...) {
@@ -1307,7 +1304,7 @@ LIB_EXPORT const char *qlex_opstr(qlex_op_t op) {
   }
 }
 
-LIB_EXPORT const char *qlex_kwstr(qlex_key_t kw) {
+C_EXPORT const char *qlex_kwstr(qlex_key_t kw) {
   try {
     return qlex::keywords.right.at(kw).data();
   } catch (...) {
@@ -1315,7 +1312,7 @@ LIB_EXPORT const char *qlex_kwstr(qlex_key_t kw) {
   }
 }
 
-LIB_EXPORT const char *qlex_punctstr(qlex_punc_t punct) {
+C_EXPORT const char *qlex_punctstr(qlex_punc_t punct) {
   try {
     return qlex::punctuation.right.at(punct).data();
   } catch (...) {
@@ -1323,8 +1320,8 @@ LIB_EXPORT const char *qlex_punctstr(qlex_punc_t punct) {
   }
 }
 
-LIB_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str,
-                                 qlex_tok_t *out) {
+C_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str,
+                               qlex_tok_t *out) {
   try {
     out->ty = ty;
     out->start = out->end = 0;

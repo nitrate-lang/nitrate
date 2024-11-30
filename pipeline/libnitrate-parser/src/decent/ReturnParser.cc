@@ -31,85 +31,63 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <parser/Parse.h>
+#include <decent/Parse.h>
 
-using namespace qparse;
 using namespace qparse::parser;
 using namespace qparse::diag;
 
-static bool parse_decl(qparse_t &job, qlex_tok_t tok, qlex_t *rd,
-                       std::pair<std::string, Type *> &decl) {
-  if (!tok.is(qName)) {
-    syntax(tok, "Expected a name in var declaration");
-    return false;
-  }
+bool qparse::parser::parse_return(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok = qlex_peek(rd);
 
-  std::string name = tok.as_string(rd);
-
-  tok = qlex_peek(rd);
-  if (!tok.is<qPuncColn>()) {
-    decl = std::make_pair(name, nullptr);
+  if (tok.is<qPuncSemi>()) {
+    qlex_next(rd);
+    *node = ReturnStmt::get();
+    (*node)->set_end_pos(tok.end);
     return true;
   }
 
-  qlex_next(rd);
-
-  Type *type = nullptr;
-
-  if (!parse_type(job, rd, &type)) {
-    syntax(tok, "Failed to parse type in declaration");
+  Expr *expr = nullptr;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
+    syntax(tok, "Expected an expression in the return statement.");
   }
 
-  decl = std::make_pair(name, type);
+  *node = ReturnStmt::get(expr);
+
+  tok = qlex_next(rd);
+
+  if (!tok.is<qPuncSemi>()) {
+    syntax(tok, "Expected a semicolon after the return statement.");
+  }
+
+  (*node)->set_end_pos(tok.end);
+
   return true;
 }
 
-bool qparse::parser::parse_var(qparse_t &job, qlex_t *rd,
-                               std::vector<Stmt *> &nodes) {
-  qlex_tok_t tok = qlex_next(rd);
+bool qparse::parser::parse_retif(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok;
 
-  std::vector<std::pair<std::string, Type *>> decls;
-  if (tok.is(qName)) {
-    std::pair<std::string, Type *> decl;
-    if (!parse_decl(job, tok, rd, decl)) {
-      return false;
-    }
-
-    decls.push_back(decl);
-  } else {
-    syntax(tok, "Expected a name or '[' in var declaration");
-    return false;
-  }
-
-  if (decls.empty()) {
-    syntax(tok, "Empty list of var declarations");
-    return false;
+  Expr *condition = nullptr;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa)}, &condition)) {
+    syntax(tok, "Expected a condition in the return-if statement.");
   }
 
   tok = qlex_next(rd);
-  if (tok.is<qPuncSemi>()) {
-    for (auto &decl : decls) {
-      VarDecl *var_decl = VarDecl::get(decl.first, decl.second, nullptr);
-      var_decl->set_end_pos(tok.end);
-      nodes.push_back(var_decl);
-    }
-  } else if (tok.is<qOpSet>()) {
-    Expr *init = nullptr;
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init) || !init) {
-      syntax(tok, "Failed to parse initializer in var declaration");
-    }
-
-    tok = qlex_next(rd);
-    if (!tok.is<qPuncSemi>()) {
-      syntax(tok, "Expected a ';' after the initializer in var declaration");
-    }
-
-    VarDecl *var_decl = VarDecl::get(decls[0].first, decls[0].second, init);
-    var_decl->set_end_pos(tok.end);
-    nodes.push_back(var_decl);
-  } else {
-    syntax(tok, "Expected a ';' or '=' after the var declaration");
+  if (!tok.is<qPuncComa>()) {
+    syntax(tok, "Expected a comma after the return-if expression.");
   }
+
+  Expr *return_expr = nullptr;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &return_expr)) {
+    syntax(tok, "Expected a return expression after the comma.");
+  }
+
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncSemi>()) {
+    syntax(tok, "Expected a semicolon after the return-if expression.");
+  }
+  *node = ReturnIfStmt::get(condition, return_expr);
+  (*node)->set_end_pos(tok.end);
 
   return true;
 }

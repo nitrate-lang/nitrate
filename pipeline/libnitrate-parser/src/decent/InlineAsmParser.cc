@@ -31,72 +31,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSE_H__
-#define __NITRATE_PARSE_H__
+#include <decent/Parse.h>
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+using namespace qparse;
+using namespace qparse::parser;
+using namespace qparse::diag;
 
-#include <Impl.h>
-#include <ParseReport.h>
-#include <nitrate-lexer/Token.h>
-#include <nitrate-parser/Node.h>
-#include <nitrate-parser/Parser.h>
+bool qparse::parser::parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node) {
+  (void)job;
+  (void)rd;
+  (void)node;
 
-#include <ParserStruct.hh>
-#include <set>
-
-namespace qparse::parser {
-  bool parse(qparse_t &job, qlex_t *rd, Block **node, bool expect_braces = true,
-             bool single_stmt = false);
-
-  bool parse_pub(qparse_t &job, qlex_t *rd, Stmt **node);
-  bool parse_sec(qparse_t &job, qlex_t *rd, Stmt **node);
-  bool parse_pro(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_let(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
-
-  bool parse_const(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
-
-  bool parse_var(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
-
-  bool parse_enum(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_struct(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_function(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> terminators,
-                  Expr **node, size_t depth = 0);
-
-  bool parse_type(qparse_t &job, qlex_t *rd, Type **node);
-
-  bool parse_typedef(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_return(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_retif(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_if(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_while(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_for(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_case(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_switch(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node);
-
-  bool parse_attributes(qparse_t &job, qlex_t *rd,
-                        std::set<Expr *> &attributes);
-  bool parse_composite_field(qparse_t &job, qlex_t *rd, StructField **node);
-};  // namespace qparse::parser
-
-#endif  // __NITRATE_PARSE_H__
+  syntax(qlex_peek(rd), "Inline assembly statement parsing not implemented");
+  return false;
+}

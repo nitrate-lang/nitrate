@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 
 #include <core/Diagnostic.hh>
 #include <memory>
@@ -131,7 +131,7 @@ CPP_EXPORT qmodule_t *nr::getModule(ModuleId mid) {
   return nr_modules.at(mid).value();
 }
 
-LIB_EXPORT void nr_free(qmodule_t *mod) {
+C_EXPORT void nr_free(qmodule_t *mod) {
   if (!mod) {
     return;
   }
@@ -143,8 +143,8 @@ LIB_EXPORT void nr_free(qmodule_t *mod) {
   nr_modules.at(mid).reset();
 }
 
-LIB_EXPORT size_t nr_max_modules(void) { return MAX_MODULE_INSTANCES; }
+C_EXPORT size_t nr_max_modules(void) { return MAX_MODULE_INSTANCES; }
 
-LIB_EXPORT nr_node_t *nr_base(qmodule_t *mod) {
+C_EXPORT nr_node_t *nr_base(qmodule_t *mod) {
   return reinterpret_cast<nr_node_t *>(mod->getRoot());
 }

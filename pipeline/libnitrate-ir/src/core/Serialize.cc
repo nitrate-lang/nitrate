@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-ir/Lib.h>
 #include <nitrate-ir/TypeDecl.h>
 
@@ -752,9 +752,8 @@ static bool to_codeform(std::optional<qmodule_t *> mod, Expr *node, bool minify,
   return true;
 }
 
-LIB_EXPORT bool nr_write(qmodule_t *mod, const nr_node_t *_node,
-                         nr_serial_t mode, FILE *out, size_t *outlen,
-                         uint32_t argcnt, ...) {
+C_EXPORT bool nr_write(qmodule_t *mod, const nr_node_t *_node, nr_serial_t mode,
+                       FILE *out, size_t *outlen, uint32_t argcnt, ...) {
   (void)argcnt;
 
   bool status;

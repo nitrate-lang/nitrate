@@ -32,9 +32,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /// TODO: Source location
+#include <decent/Parse.h>
 #include <nitrate-lexer/Lexer.h>
 #include <nitrate-parser/Node.h>
-#include <parser/Parse.h>
 
 using namespace qparse;
 using namespace qparse::parser;

@@ -34,15 +34,14 @@
 #define QCORE_NDEBUG
 
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-core/Memory.h>
 
 #include <alloc/Collection.hh>
 
-#include "../LibMacro.h"
-
-LIB_EXPORT qcore_arena_t *qcore_arena_open_ex(qcore_arena_t *A,
-                                              qcore_alloc_mode_t mode,
-                                              bool is_thread_safe) {
+C_EXPORT qcore_arena_t *qcore_arena_open_ex(qcore_arena_t *A,
+                                            qcore_alloc_mode_t mode,
+                                            bool is_thread_safe) {
   qcore_assert(A != nullptr, "qcore_arena_open_ex: invalid arena");
 
   mem::qcore_arena_t *X;
@@ -78,8 +77,8 @@ LIB_EXPORT qcore_arena_t *qcore_arena_open_ex(qcore_arena_t *A,
   return A;
 }
 
-LIB_EXPORT void *qcore_arena_alloc_ex(qcore_arena_t *A, size_t size,
-                                      size_t align) {
+C_EXPORT void *qcore_arena_alloc_ex(qcore_arena_t *A, size_t size,
+                                    size_t align) {
   void *ptr;
 
   qcore_assert(A != nullptr, "qcore_arena_alloc_ex: invalid arena");
@@ -92,7 +91,7 @@ LIB_EXPORT void *qcore_arena_alloc_ex(qcore_arena_t *A, size_t size,
   return ptr;
 }
 
-LIB_EXPORT void qcore_arena_close(qcore_arena_t *A) {
+C_EXPORT void qcore_arena_close(qcore_arena_t *A) {
   qcore_assert(A != nullptr, "qcore_arena_close: invalid arena");
 
   mem::qcore_arena_t *X = reinterpret_cast<mem::qcore_arena_t *>(*A);

@@ -32,15 +32,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Lexer.h>
 #include <nitrate-parser/Node.h>
 
-#include <ParserStruct.hh>
+#include <core/ParserStruct.hh>
 #include <cstring>
 #include <nitrate-core/Classes.hh>
 #include <sstream>
-
-#include "LibMacro.h"
 
 using namespace qparse;
 
@@ -864,8 +863,8 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
   }
 }
 
-LIB_EXPORT char *qparse_repr(const qparse_node_t *node, bool minify,
-                             size_t indent, size_t *outlen) {
+C_EXPORT char *qparse_repr(const qparse_node_t *node, bool minify,
+                           size_t indent, size_t *outlen) {
   size_t outlen_v = 0;
 
   /* Eliminate internal edge cases */

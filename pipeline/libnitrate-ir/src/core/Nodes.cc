@@ -35,8 +35,8 @@
 #include <sstream>
 #define __NR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
-#include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-ir/IR.h>
 #include <openssl/evp.h>
 

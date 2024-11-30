@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-parser/Node.h>
 
 #include <core/Config.hh>
@@ -294,8 +294,8 @@ static const std::unordered_map<IC, nr_level_t> issue_class_map = {
     {IC::FatalError, NR_LEVEL_FATAL},
 };
 
-LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
-                             nr_report_cb cb, uintptr_t data) {
+C_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
+                           nr_report_cb cb, uintptr_t data) {
   if (!cb) {
     return;
   }
@@ -401,4 +401,4 @@ LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
   });
 }
 
-LIB_EXPORT void nr_diag_clear(qmodule_t *nr) { nr->getDiag()->erase_reports(); }
+C_EXPORT void nr_diag_clear(qmodule_t *nr) { nr->getDiag()->erase_reports(); }

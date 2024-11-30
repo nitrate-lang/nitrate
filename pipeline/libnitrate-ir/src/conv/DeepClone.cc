@@ -33,8 +33,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-ir/IR.h>
 #include <nitrate-parser/Parser.h>
 
@@ -332,7 +332,7 @@ nr_node_t *nr_clone_impl(
   return static_cast<nr_node_t *>(out);
 }
 
-LIB_EXPORT nr_node_t *nr_clone(const nr_node_t *node) {
+C_EXPORT nr_node_t *nr_clone(const nr_node_t *node) {
   nr_node_t *out;
 
   if (!node) {

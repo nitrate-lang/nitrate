@@ -31,28 +31,57 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <parser/Parse.h>
+#include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
+#include <nitrate-parser/Node.h>
+#include <nitrate-parser/Parser.h>
 
-using namespace qparse::parser;
+#include <cstddef>
+#include <cstring>
 
-bool qparse::parser::parse_while(qparse_t &job, qlex_t *rd, Stmt **node) {
-  Expr *cond = nullptr;
-  if (!parse_expr(job, rd,
-                  {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
-                  &cond))
-    return false;
+using namespace qparse;
 
-  Block *then_block = nullptr;
-
-  if (qlex_peek(rd).is<qOpArrow>()) {
-    qlex_next(rd);
-    if (!parse(job, rd, &then_block, false, true)) return false;
-  } else {
-    if (!parse(job, rd, &then_block, true)) return false;
+///=============================================================================
+namespace qparse {
+  void ArenaAllocatorImpl::swap(qcore_arena_t &arena) {
+    std::swap(*m_arena.get(), arena);
   }
 
-  *node = WhileStmt::get(cond, then_block);
-  (*node)->set_end_pos(then_block->get_end_pos());
+  CPP_EXPORT thread_local ArenaAllocatorImpl qparse_arena;
+}  // namespace qparse
 
-  return true;
+C_EXPORT void *ArenaAllocatorImpl::allocate(std::size_t size) {
+  const std::size_t alignment = 16;
+  return qcore_arena_alloc_ex(m_arena.get(), size, alignment);
+}
+
+C_EXPORT void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }
+
+///=============================================================================
+
+CPP_EXPORT std::ostream &Node::dump(std::ostream &os,
+                                    bool isForDebug) const noexcept {
+  (void)isForDebug;
+
+  size_t size = 0;
+  char *buf = qparse_repr(this, false, 2, &size);
+
+  os << std::string_view(buf, size);
+
+  return os;
+}
+
+///=============================================================================
+
+CPP_EXPORT bool Type::is_ptr_to(Type *type) noexcept {
+  if (!is_pointer()) {
+    return false;
+  }
+
+  Type *item = as<PtrTy>()->get_item();
+  while (item->is<RefTy>()) {
+    item = item->as<RefTy>()->get_item();
+  }
+
+  return item->is(type->getKind());
 }
