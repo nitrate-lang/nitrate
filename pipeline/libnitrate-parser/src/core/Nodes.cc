@@ -113,10 +113,3 @@ Decl *qparse::mock_decl(qparse_ty_t expected) {
   static Decl node(QAST_NODE_NODE);
   return &node;
 }
-
-Block *qparse::mock_block(qparse_ty_t expected) {
-  (void)expected;
-
-  static Block node;
-  return &node;
-}

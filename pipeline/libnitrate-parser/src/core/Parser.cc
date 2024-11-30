@@ -44,12 +44,12 @@
 
 using namespace qparse;
 
-bool qparse::recurse(qparse_t &S, qlex_t &rd, Block **group, bool expect_braces,
+bool qparse::recurse(qparse_t &S, qlex_t &rd, Stmt **group, bool expect_braces,
                      bool single_stmt) {
   qlex_tok_t tok;
 
-  *group = Block::get();
-  Block *block = *group;
+  Block *block = Block::get();
+  *group = block;
 
   if (expect_braces) {
     tok = next();
@@ -59,7 +59,7 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Block **group, bool expect_braces,
   }
 
   while ((tok = peek()).ty != qEofF) {
-    if (single_stmt && (*group)->get_items().size() > 0) {
+    if (single_stmt && block->get_items().size() > 0) {
       break;
     }
 
@@ -198,9 +198,7 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Block **group, bool expect_braces,
       }
 
       case qKType: {
-        if (!recurse_typedef(S, rd, &node)) {
-          return false;
-        }
+        node = recurse_typedef(S, rd);
         break;
       }
 
@@ -261,9 +259,7 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Block **group, bool expect_braces,
       }
 
       case qKIf: {
-        if (!recurse_if(S, rd, &node)) {
-          return false;
-        }
+        node = recurse_if(S, rd);
         break;
       }
 
@@ -311,7 +307,7 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Block **group, bool expect_braces,
       }
 
       case qKUnsafe: {
-        Block *block = nullptr;
+        Stmt *block = nullptr;
         tok = peek();
         if (tok.is<qPuncLCur>()) {
           if (!recurse(S, rd, &block)) {
@@ -323,37 +319,37 @@ bool qparse::recurse(qparse_t &S, qlex_t &rd, Block **group, bool expect_braces,
           }
         }
 
-        block->set_safety(SafetyMode::Unsafe);
+        /// FIXME: Set safety
+        // block->set_safety(SafetyMode::Unsafe);
         node = block;
         break;
       }
 
       case qKSafe: {
-        Block *block = nullptr;
         tok = peek();
         if (tok.is<qPuncLCur>()) {
-          if (!recurse(S, rd, &block)) {
+          if (!recurse(S, rd, &node)) {
             return false;
           }
         } else {
-          if (!recurse(S, rd, &block, false, true)) {
+          if (!recurse(S, rd, &node, false, true)) {
             return false;
           }
         }
-        block->set_safety(SafetyMode::Safe);
-        node = block;
+
+        /// FIXME: Set safety
+        // block->set_safety(SafetyMode::Safe);
         break;
       }
 
       case qKVolatile: {
-        Block *block = nullptr;
         tok = peek();
         if (tok.is<qPuncLCur>()) {
-          if (!recurse(S, rd, &block)) {
+          if (!recurse(S, rd, &node)) {
             return false;
           }
         } else {
-          if (!recurse(S, rd, &block, false, true)) {
+          if (!recurse(S, rd, &node, false, true)) {
             return false;
           }
         }
@@ -426,7 +422,7 @@ C_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
 
   parser_ctx = L;
   bool status =
-      qparse::recurse(*L, *L->lexer, (qparse::Block **)out, false, false);
+      qparse::recurse(*L, *L->lexer, (qparse::Stmt **)out, false, false);
   parser_ctx = nullptr;
 
   /*== Uninstall thread-local references to the parser ==*/

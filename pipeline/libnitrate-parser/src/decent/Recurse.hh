@@ -54,10 +54,10 @@ namespace qparse {
   bool recurse_subsystem(qparse_t &S, qlex_t &rd, Stmt **node);
   bool recurse_function(qparse_t &S, qlex_t &rd, Stmt **node);
   bool recurse_type(qparse_t &S, qlex_t &rd, Type **node);
-  bool recurse_typedef(qparse_t &S, qlex_t &rd, Stmt **node);
+  Stmt *recurse_typedef(qparse_t &S, qlex_t &rd);
   Stmt *recurse_return(qparse_t &S, qlex_t &rd);
   Stmt *recurse_retif(qparse_t &S, qlex_t &rd);
-  bool recurse_if(qparse_t &S, qlex_t &rd, Stmt **node);
+  Stmt *recurse_if(qparse_t &S, qlex_t &rd);
   bool recurse_while(qparse_t &S, qlex_t &rd, Stmt **node);
   bool recurse_for(qparse_t &S, qlex_t &rd, Stmt **node);
   bool recurse_foreach(qparse_t &S, qlex_t &rd, Stmt **node);
@@ -69,7 +69,7 @@ namespace qparse {
   bool recurse_attributes(qparse_t &S, qlex_t &rd,
                           std::set<Expr *> &attributes);
 
-  bool recurse(qparse_t &S, qlex_t &rd, Block **node, bool expect_braces = true,
+  bool recurse(qparse_t &S, qlex_t &rd, Stmt **node, bool expect_braces = true,
                bool single_stmt = false);
 
   // Expr *recurse_expr(qparse_t &S, qlex_t &rd, std::set<qlex_tok_t>

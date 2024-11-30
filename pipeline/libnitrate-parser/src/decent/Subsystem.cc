@@ -77,7 +77,7 @@ bool qparse::recurse_subsystem(qparse_t &S, qlex_t &rd, Stmt **node) {
     }
   }
 
-  Block *block = nullptr;
+  Stmt *block = nullptr;
   if (!recurse(S, rd, &block, true)) {
     syntax(peek(), "Expected block in subsystem definition");
   }

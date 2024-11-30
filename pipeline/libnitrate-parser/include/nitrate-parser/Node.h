@@ -1556,39 +1556,39 @@ namespace qparse {
 
   class IfStmt : public Stmt {
     Expr *m_cond;
-    Block *m_then;
-    Block *m_else;
+    Stmt *m_then;
+    Stmt *m_else;
 
   public:
-    constexpr IfStmt(Expr *cond = nullptr, Block *then = nullptr,
-                     Block *else_ = nullptr)
+    constexpr IfStmt(Expr *cond = nullptr, Stmt *then = nullptr,
+                     Stmt *else_ = nullptr)
         : Stmt(QAST_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
     Expr *get_cond() { return m_cond; }
     void set_cond(Expr *cond) { m_cond = cond; }
 
-    Block *get_then() { return m_then; }
-    void set_then(Block *then) { m_then = then; }
+    Stmt *get_then() { return m_then; }
+    void set_then(Stmt *then) { m_then = then; }
 
-    Block *get_else() { return m_else; }
-    void set_else(Block *else_) { m_else = else_; }
+    Stmt *get_else() { return m_else; }
+    void set_else(Stmt *else_) { m_else = else_; }
 
     PNODE_IMPL_CORE(IfStmt)
   };
 
   class WhileStmt : public Stmt {
     Expr *m_cond;
-    Block *m_body;
+    Stmt *m_body;
 
   public:
-    constexpr WhileStmt(Expr *cond = nullptr, Block *body = nullptr)
+    constexpr WhileStmt(Expr *cond = nullptr, Stmt *body = nullptr)
         : Stmt(QAST_NODE_WHILE), m_cond(cond), m_body(body) {}
 
     Expr *get_cond() { return m_cond; }
     void set_cond(Expr *cond) { m_cond = cond; }
 
-    Block *get_body() { return m_body; }
-    void set_body(Block *body) { m_body = body; }
+    Stmt *get_body() { return m_body; }
+    void set_body(Stmt *body) { m_body = body; }
 
     PNODE_IMPL_CORE(WhileStmt)
   };
@@ -1597,11 +1597,11 @@ namespace qparse {
     Expr *m_init;
     Expr *m_cond;
     Expr *m_step;
-    Block *m_body;
+    Stmt *m_body;
 
   public:
     constexpr ForStmt(Expr *init = nullptr, Expr *cond = nullptr,
-                      Expr *step = nullptr, Block *body = nullptr)
+                      Expr *step = nullptr, Stmt *body = nullptr)
         : Stmt(QAST_NODE_FOR),
           m_init(init),
           m_cond(cond),
@@ -1617,8 +1617,8 @@ namespace qparse {
     Expr *get_step() { return m_step; }
     void set_step(Expr *step) { m_step = step; }
 
-    Block *get_body() { return m_body; }
-    void set_body(Block *body) { m_body = body; }
+    Stmt *get_body() { return m_body; }
+    void set_body(Stmt *body) { m_body = body; }
 
     PNODE_IMPL_CORE(ForStmt)
   };
@@ -1627,11 +1627,11 @@ namespace qparse {
     String m_idx_ident;
     String m_val_ident;
     Expr *m_expr;
-    Block *m_body;
+    Stmt *m_body;
 
   public:
     ForeachStmt(String idx_ident = "", String val_ident = "",
-                Expr *expr = nullptr, Block *body = nullptr)
+                Expr *expr = nullptr, Stmt *body = nullptr)
         : Stmt(QAST_NODE_FOREACH),
           m_idx_ident(idx_ident),
           m_val_ident(val_ident),
@@ -1647,8 +1647,8 @@ namespace qparse {
     Expr *get_expr() { return m_expr; }
     void set_expr(Expr *expr) { m_expr = expr; }
 
-    Block *get_body() { return m_body; }
-    void set_body(Block *body) { m_body = body; }
+    Stmt *get_body() { return m_body; }
+    void set_body(Stmt *body) { m_body = body; }
 
     PNODE_IMPL_CORE(ForeachStmt)
   };
@@ -1699,17 +1699,17 @@ namespace qparse {
 
   class CaseStmt : public Stmt {
     Expr *m_cond;
-    Block *m_body;
+    Stmt *m_body;
 
   public:
-    constexpr CaseStmt(Expr *cond = nullptr, Block *body = nullptr)
+    constexpr CaseStmt(Expr *cond = nullptr, Stmt *body = nullptr)
         : Stmt(QAST_NODE_CASE), m_cond(cond), m_body(body) {}
 
     Expr *get_cond() { return m_cond; }
     void set_cond(Expr *cond) { m_cond = cond; }
 
-    Block *get_body() { return m_body; }
-    void set_body(Block *body) { m_body = body; }
+    Stmt *get_body() { return m_body; }
+    void set_body(Stmt *body) { m_body = body; }
 
     PNODE_IMPL_CORE(CaseStmt)
   };
@@ -1763,14 +1763,13 @@ namespace qparse {
 
   class FnDef : public Decl {
     FnCaptures m_captures;
-    Block *m_body;
+    Stmt *m_body;
     Expr *m_precond;
     Expr *m_postcond;
 
   public:
-    FnDef(FnDecl *decl = nullptr, Block *body = nullptr,
-          Expr *precond = nullptr, Expr *postcond = nullptr,
-          FnCaptures captures = {})
+    FnDef(FnDecl *decl = nullptr, Stmt *body = nullptr, Expr *precond = nullptr,
+          Expr *postcond = nullptr, FnCaptures captures = {})
         : Decl(QAST_NODE_FN, decl->get_name(), decl->get_type()),
           m_captures(captures),
           m_body(body),
@@ -1781,8 +1780,8 @@ namespace qparse {
       set_tags(decl->get_tags());
     }
 
-    Block *get_body() { return m_body; }
-    void set_body(Block *body) { m_body = body; }
+    Stmt *get_body() { return m_body; }
+    void set_body(Stmt *body) { m_body = body; }
 
     Expr *get_precond() { return m_precond; }
     void set_precond(Expr *precond) { m_precond = precond; }
@@ -1862,18 +1861,18 @@ namespace qparse {
   typedef std::set<String, std::less<String>, Arena<String>> SubsystemDeps;
 
   class SubsystemDecl : public Decl {
-    Block *m_body;
+    Stmt *m_body;
     SubsystemDeps m_deps;
 
   public:
-    SubsystemDecl(String name = "", Block *body = nullptr,
+    SubsystemDecl(String name = "", Stmt *body = nullptr,
                   SubsystemDeps deps = {})
         : Decl(QAST_NODE_SUBSYSTEM, name, nullptr),
           m_body(body),
           m_deps(deps) {}
 
-    Block *get_body() { return m_body; }
-    void set_body(Block *body) { m_body = body; }
+    Stmt *get_body() { return m_body; }
+    void set_body(Stmt *body) { m_body = body; }
 
     SubsystemDeps &get_deps() { return m_deps; }
 
@@ -1881,17 +1880,17 @@ namespace qparse {
   };
 
   class ExportDecl : public Decl {
-    Block *m_body;
+    Stmt *m_body;
     String m_abi_name;
 
   public:
-    ExportDecl(Block *content, String abi_name = "")
+    ExportDecl(Stmt *content, String abi_name = "")
         : Decl(QAST_NODE_EXPORT, "", nullptr),
           m_body(content),
           m_abi_name(abi_name) {}
 
-    Block *get_body() { return m_body; }
-    void set_body(Block *body) { m_body = body; }
+    Stmt *get_body() { return m_body; }
+    void set_body(Stmt *body) { m_body = body; }
 
     String get_abi_name() { return m_abi_name; }
     void set_abi_name(String abi_name) { m_abi_name = abi_name; }
@@ -2000,7 +1999,6 @@ namespace qparse {
   Expr *mock_expr(qparse_ty_t expected);
   Type *mock_type(qparse_ty_t expected);
   Decl *mock_decl(qparse_ty_t expected);
-  Block *mock_block(qparse_ty_t expected);
 
 }  // namespace qparse
 

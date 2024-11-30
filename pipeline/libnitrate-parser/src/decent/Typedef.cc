@@ -31,36 +31,38 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <nitrate-parser/Node.h>
+
 #include <decent/Recurse.hh>
 
-using namespace qparse;
-
-bool qparse::recurse_typedef(qparse_t &S, qlex_t &rd, Stmt **node) {
+qparse::Stmt *qparse::recurse_typedef(qparse_t &S, qlex_t &rd) {
   qlex_tok_t tok = next();
   if (!tok.is(qName)) {
     syntax(tok, "Expected name in typedef declaration");
+    return mock_stmt(QAST_NODE_TYPEDEF);
   }
 
-  std::string name = tok.as_string(&rd);
+  auto name = tok.as_string(&rd);
 
   tok = next();
   if (!tok.is<qOpSet>()) {
     syntax(tok, "Expected '=' in typedef declaration");
+    return mock_stmt(QAST_NODE_TYPEDEF);
   }
 
   Type *type = nullptr;
   if (!recurse_type(S, rd, &type)) {
     syntax(tok, "Failed to parse type in typedef declaration");
+    return mock_stmt(QAST_NODE_TYPEDEF);
   }
 
   tok = next();
   if (!tok.is<qPuncSemi>()) {
     syntax(tok, "Expected ';' in typedef declaration");
-    return false;
+    return mock_stmt(QAST_NODE_TYPEDEF);
   }
 
-  *node = TypedefDecl::get(name, type);
-  (*node)->set_end_pos(tok.end);
-
-  return true;
+  auto R = TypedefDecl::get(name, type);
+  R->set_end_pos(tok.end);
+  return R;
 }

@@ -33,55 +33,58 @@
 
 #include <decent/Recurse.hh>
 
-bool qparse::recurse_if(qparse_t &S, qlex_t &rd, Stmt **node) {
+#include "nitrate-parser/Node.h"
+
+qparse::Stmt *qparse::recurse_if(qparse_t &S, qlex_t &rd) {
   Expr *cond = nullptr;
   if (!recurse_expr(S, rd,
                     {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
                     &cond)) {
-    return false;
+    return mock_stmt(QAST_NODE_IF);
   }
 
-  Block *then_block = nullptr;
+  Stmt *then_block = nullptr;
   if (peek().is<qOpArrow>()) {
     next();
-    if (!recurse(S, rd, &then_block, false, true)) return false;
+    if (!recurse(S, rd, &then_block, false, true)) {
+      return mock_stmt(QAST_NODE_IF);
+    }
   } else {
-    if (!recurse(S, rd, &then_block, true)) return false;
+    if (!recurse(S, rd, &then_block, true)) {
+      return mock_stmt(QAST_NODE_IF);
+    };
   }
 
   qlex_tok_t tok = peek();
   if (tok.is<qKElse>()) {
     next();
-    Block *else_block = nullptr;
+    Stmt *else_block = nullptr;
 
     if (peek().is<qOpArrow>()) {
       next();
 
       if (!recurse(S, rd, &else_block, false, true)) {
-        return false;
+        return mock_stmt(QAST_NODE_IF);
       }
     } else {
       if (peek().is<qKIf>()) {
         next();
-        if (!recurse_if(S, rd, reinterpret_cast<Stmt **>(&else_block))) {
-          return false;
-        }
+        else_block = recurse_if(S, rd);
       } else {
         if (!recurse(S, rd, &else_block, true, false)) {
-          return false;
+          return mock_stmt(QAST_NODE_IF);
         }
       }
     }
 
     uint32_t loc_end = else_block->get_end_pos();
-    *node = IfStmt::get(cond, then_block, else_block);
-    (*node)->set_end_pos(loc_end);
-
+    auto R = IfStmt::get(cond, then_block, else_block);
+    R->set_end_pos(loc_end);
+    return R;
   } else {
     uint32_t loc_end = then_block->get_end_pos();
-    *node = IfStmt::get(cond, then_block, nullptr);
-    (*node)->set_end_pos(loc_end);
+    auto R = IfStmt::get(cond, then_block, nullptr);
+    R->set_end_pos(loc_end);
+    return R;
   }
-
-  return true;
 }

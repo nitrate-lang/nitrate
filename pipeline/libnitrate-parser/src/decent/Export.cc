@@ -50,7 +50,7 @@ bool qparse::recurse_pub(qparse_t &S, qlex_t &rd, Stmt **node) {
   }
 
   if (tok.is<qPuncLCur>()) {
-    Block *block = nullptr;
+    Stmt *block = nullptr;
     if (!recurse(S, rd, &block, true)) {
       return false;
     }
@@ -60,7 +60,7 @@ bool qparse::recurse_pub(qparse_t &S, qlex_t &rd, Stmt **node) {
     return true;
   }
 
-  Block *block = nullptr;
+  Stmt *block = nullptr;
   if (!recurse(S, rd, &block, false, true)) {
     syntax(tok, "Expected block or statement list after 'pub'");
     return false;
@@ -86,7 +86,7 @@ bool qparse::recurse_sec(qparse_t &S, qlex_t &rd, Stmt **node) {
   }
 
   if (tok.is<qPuncLCur>()) {
-    Block *block = nullptr;
+    Stmt *block = nullptr;
     if (!recurse(S, rd, &block, true)) return false;
 
     *node = block;
@@ -94,7 +94,7 @@ bool qparse::recurse_sec(qparse_t &S, qlex_t &rd, Stmt **node) {
     return true;
   }
 
-  Block *block = nullptr;
+  Stmt *block = nullptr;
   if (!recurse(S, rd, &block, false, true)) {
     syntax(tok, "Expected block or statement list after 'sec'");
     return false;
@@ -120,7 +120,7 @@ bool qparse::recurse_pro(qparse_t &S, qlex_t &rd, Stmt **node) {
   }
 
   if (tok.is<qPuncLCur>()) {
-    Block *block = nullptr;
+    Stmt *block = nullptr;
     if (!recurse(S, rd, &block, true)) return false;
 
     *node = block;
@@ -128,7 +128,7 @@ bool qparse::recurse_pro(qparse_t &S, qlex_t &rd, Stmt **node) {
     return true;
   }
 
-  Block *block = nullptr;
+  Stmt *block = nullptr;
   if (!recurse(S, rd, &block, false, true)) {
     syntax(tok, "Expected block or statement list after 'pro'");
     return false;

@@ -88,7 +88,7 @@ bool qparse::recurse_foreach(qparse_t &S, qlex_t &rd, Stmt **node) {
 
   tok = peek();
 
-  Block *block = nullptr;
+  Stmt *block = nullptr;
   if (tok.is<qOpArrow>()) {
     next();
     if (!recurse(S, rd, &block, false, true)) {

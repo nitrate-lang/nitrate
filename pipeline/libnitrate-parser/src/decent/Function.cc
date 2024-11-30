@@ -620,7 +620,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
     if (tok.is<qOpArrow>()) {
       next();
 
-      Block *fnbody = nullptr;
+      Stmt *fnbody = nullptr;
 
       if (!recurse(S, rd, &fnbody, false, true)) {
         syntax(tok, "Expected a block after '=>'");
@@ -656,7 +656,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
   }
 
   if (tok.is<qPuncLCur>()) {
-    Block *fnbody = nullptr;
+    Stmt *fnbody = nullptr;
     Expr *req_in = nullptr, *req_out = nullptr;
     std::set<Expr *> attributes;
 

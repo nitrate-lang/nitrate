@@ -40,7 +40,7 @@ bool qparse::recurse_while(qparse_t &S, qlex_t &rd, Stmt **node) {
                     &cond))
     return false;
 
-  Block *then_block = nullptr;
+  Stmt *then_block = nullptr;
 
   if (peek().is<qOpArrow>()) {
     next();

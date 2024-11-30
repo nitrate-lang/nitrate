@@ -1513,10 +1513,16 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
     fndef->setAbiTag(s.abi_mode);
 
     { /* Function body */
+
+      if (!n->get_body()->is(QAST_NODE_BLOCK)) {
+        return std::nullopt;
+      }
+
       std::string old_ns = s.ns_prefix;
       s.ns_prefix = name;
 
-      auto body = nrgen_block(b, s, G, n->get_body(), false);
+      auto body =
+          nrgen_block(b, s, G, n->get_body()->as<qparse::Block>(), false);
       if (!body.has_value()) {
         G->report(CompilerError, nr::IC::Error,
                   "Failed to convert function body", n->get_pos());
@@ -1534,10 +1540,14 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, qparse::FnDef *n) {
 
 static BResult nrgen_subsystem(NRBuilder &b, PState &s, IReport *G,
                                qparse::SubsystemDecl *n) {
+  if (!n->get_body()->is(QAST_NODE_BLOCK)) {
+    return std::nullopt;
+  }
+
   std::string old_ns = s.ns_prefix;
   s.ns_prefix = s.join_scope(n->get_name());
 
-  auto body = nrgen_block(b, s, G, n->get_body(), false);
+  auto body = nrgen_block(b, s, G, n->get_body()->as<qparse::Block>(), false);
   if (!body.has_value()) {
     G->report(nr::CompilerError, IC::Error, "Failed to lower subsystem body",
               n->get_pos());
@@ -1580,10 +1590,14 @@ static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
     return std::nullopt;
   }
 
+  if (!n->get_body()->is(QAST_NODE_BLOCK)) {
+    return std::nullopt;
+  }
+
   AbiTag old = s.abi_mode;
   s.abi_mode = it->second.second;
 
-  const auto &body = n->get_body()->get_items();
+  const auto &body = n->get_body()->as<qparse::Block>()->get_items();
   std::vector<nr::Expr *> items;
 
   for (size_t i = 0; i < body.size(); i++) {

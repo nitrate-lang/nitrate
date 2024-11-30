@@ -42,7 +42,7 @@ bool qparse::recurse_switch(qparse_t &S, qlex_t &rd, Stmt **node) {
   }
 
   SwitchCases cases;
-  Block *default_case = nullptr;
+  Stmt *default_case = nullptr;
 
   qlex_tok_t tok = next();
   if (!tok.is<qPuncLCur>()) {
@@ -87,7 +87,7 @@ bool qparse::recurse_switch(qparse_t &S, qlex_t &rd, Stmt **node) {
       syntax(tok, "Expected ':' after case expression");
     }
 
-    Block *case_block = nullptr;
+    Stmt *case_block = nullptr;
     if (!recurse(S, rd, &case_block)) {
       syntax(tok, "Expected block after case expression");
     }

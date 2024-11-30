@@ -88,7 +88,7 @@ bool qparse::recurse_for(qparse_t &S, qlex_t &rd, Stmt **node) {
       return false;
     }
 
-    Block *then_block = nullptr;
+    Stmt *then_block = nullptr;
 
     if (peek().is<qOpArrow>()) {
       tok = next();
@@ -142,7 +142,7 @@ bool qparse::recurse_for(qparse_t &S, qlex_t &rd, Stmt **node) {
             &x2))
       return false;
 
-    Block *then_block = nullptr;
+    Stmt *then_block = nullptr;
 
     if (peek().is<qOpArrow>()) {
       tok = next();
