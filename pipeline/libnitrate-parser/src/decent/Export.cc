@@ -35,7 +35,7 @@
 
 using namespace qparse;
 
-bool qparse::recurse_pub(qparse_t &S, qlex_t &rd, Stmt **node) {
+qparse::Stmt *qparse::recurse_pub(qparse_t &S, qlex_t &rd) {
   qlex_tok_t tok = peek();
 
   String abiName;
@@ -52,16 +52,16 @@ bool qparse::recurse_pub(qparse_t &S, qlex_t &rd, Stmt **node) {
   if (tok.is<qPuncLCur>()) {
     Stmt *block = recurse(S, rd, true);
 
-    *node = ExportDecl::get(block, abiName);
-    (*node)->set_end_pos(block->get_end_pos());
-    return true;
+    auto R = ExportDecl::get(block, abiName);
+    R->set_end_pos(block->get_end_pos());
+    return R;
   }
 
   Stmt *block = recurse(S, rd, false, true);
 
-  *node = ExportDecl::get(block, abiName);
-  (*node)->set_end_pos(block->get_end_pos());
-  return true;
+  auto R = ExportDecl::get(block, abiName);
+  R->set_end_pos(block->get_end_pos());
+  return R;
 }
 
 bool qparse::recurse_sec(qparse_t &S, qlex_t &rd, Stmt **node) {

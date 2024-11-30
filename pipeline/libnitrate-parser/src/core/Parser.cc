@@ -217,9 +217,7 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
 
       case qKPub:
       case qKImport: {  // they both declare external functions
-        if (!recurse_pub(S, rd, &node)) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
+        node = recurse_pub(S, rd);
         break;
       }
 
