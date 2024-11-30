@@ -153,7 +153,7 @@ private:
       std::string_view,
       std::vector<std::tuple<std::string, nr::Type *, nr::Expr *>>>;
   using TypenameMap = std::unordered_map<std::string_view, nr::Type *>;
-  using CompositeFieldMap = std::unordered_map<
+  using StructFieldMap = std::unordered_map<
       std::string_view,
       std::vector<std::tuple<std::string, nr::Type *, nr::Expr *>>>;
   using NamedConstMap = std::unordered_map<std::string_view, nr::Expr *>;
@@ -174,8 +174,8 @@ private:
       variables{}; /* Lookup for global variables names to their nodes */
   FunctionParamMap m_parameters{}; /* Lookup for function parameters */
   TypenameMap m_typedef_map{};     /* Lookup type names to their type nodes */
-  CompositeFieldMap m_composite_fields{}; /* */
-  NamedConstMap m_named_constants{};      /* Lookup for named constants */
+  StructFieldMap m_composite_fields{}; /* */
+  NamedConstMap m_named_constants{};   /* Lookup for named constants */
 
   void reset_module_temporaries(void) {
     functions.clear(), variables.clear(), m_parameters.clear();
@@ -226,7 +226,7 @@ public:
   auto &getGlobalVariables() { return variables; }
   auto &getParameterMap() { return m_parameters; }
   auto &getTypeMap() { return m_typedef_map; }
-  auto &getCompositeFields() { return m_composite_fields; }
+  auto &getStructFields() { return m_composite_fields; }
   auto &getNamedConstants() { return m_named_constants; }
 
   std::string_view internString(std::string_view sv);

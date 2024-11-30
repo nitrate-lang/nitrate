@@ -1362,8 +1362,8 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       break;
     }
 
-    case QAST_NODE_COMPOSITE_FIELD: {
-      CompositeField* N = C->as<CompositeField>();
+    case QAST_NODE_STRUCT_FIELD: {
+      StructField* N = C->as<StructField>();
 
       S.line << N->get_name() << ": ";
       recurse(N->get_type(), S);

@@ -22,7 +22,7 @@ parts:
       - libzstd-dev
       - libclang-common-14-dev
       - rapidjson-dev
-      - libdeflate-dev
+      - libgsl-dev
       - libreadline-dev
       - nlohmann-json3-dev
       - libgoogle-glog-dev
@@ -33,7 +33,6 @@ parts:
      - enable-patchelf
     stage-packages:
       - git
-      - libdeflate0
     override-stage: |
         snapcraftctl stage
         rm -rf $SNAPCRAFT_PART_INSTALL/usr/include

@@ -33,7 +33,7 @@ add_library(nitrate-parser ${CXX_SOURCES})
 target_include_directories(nitrate-parser PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-lexer/include)
-target_link_libraries(nitrate-parser PUBLIC nitrate-core nitrate-lexer deflate)
+target_link_libraries(nitrate-parser PUBLIC nitrate-core nitrate-lexer)
 add_dependencies(nitrate-parser nitrate-core nitrate-lexer)
 
 install(TARGETS nitrate-parser DESTINATION lib)

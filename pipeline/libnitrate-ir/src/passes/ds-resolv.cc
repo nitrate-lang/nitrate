@@ -401,8 +401,8 @@
 //   }
 
 //   { /* Phase 3 */
-//     for (auto it = mod->getCompositeFields().begin(); it !=
-//     mod->getCompositeFields().end(); it++) {
+//     for (auto it = mod->getStructFields().begin(); it !=
+//     mod->getStructFields().end(); it++) {
 //       for (auto &[name, type, expr] : it->second) {
 //         Expr *tmp = type;
 //         if (!recursive_resolve(&tmp)) {

@@ -1255,13 +1255,13 @@ bool to_json_recurse(Node *N, json &x) {
       break;
     }
 
-    case QAST_NODE_COMPOSITE_FIELD: {
+    case QAST_NODE_STRUCT_FIELD: {
       /**
        * @brief [Brief Description]
        * @note [Developer Notes]
        */
 
-      CompositeField *W = N->as<CompositeField>();
+      StructField *W = N->as<StructField>();
 
       x[1] = W->get_name().c_str();
 

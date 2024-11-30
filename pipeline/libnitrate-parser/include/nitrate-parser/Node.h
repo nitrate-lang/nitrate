@@ -34,16 +34,29 @@
 #ifndef __NITRATE_PARSER_NODE_H__
 #define __NITRATE_PARSER_NODE_H__
 
+#ifndef __cplusplus
+#error "This code requires c++"
+#endif
+
+#include <nitrate-core/Error.h>
+#include <nitrate-core/Memory.h>
 #include <nitrate-lexer/Token.h>
 
-/**
- * @brief Nitrate abstract syntax tree node.
- */
+#include <cassert>
+#include <iostream>
+#include <map>
+#include <nitrate-core/Classes.hh>
+#include <optional>
+#include <ostream>
+#include <set>
+#include <sstream>
+#include <string>
+#include <tuple>
+#include <variant>
+#include <vector>
+
 typedef struct qparse_node_t qparse_node_t;
 
-/**
- * @brief Nitrate abstract syntax tree node type.
- */
 typedef enum qparse_ty_t {
   QAST_NODE_NODE,
 
@@ -105,7 +118,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_FN,
   QAST_NODE_SUBSYSTEM,
   QAST_NODE_EXPORT,
-  QAST_NODE_COMPOSITE_FIELD,
+  QAST_NODE_STRUCT_FIELD,
 
   QAST_NODE_BLOCK,
   QAST_NODE_CONST,
@@ -130,34 +143,6 @@ typedef enum qparse_ty_t {
 } qparse_ty_t;
 
 #define QAST_NODE_COUNT (QAST_NODE_LAST - QAST_NODE_FIRST + 1)
-
-typedef struct qparse_node_t qparse_node_t;
-
-uint32_t qparse_startpos(qparse_node_t *node);
-uint32_t qparse_endpos(qparse_node_t *node);
-
-///=============================================================================
-/// END: ABSTRACT SYNTAX TREE DATA TYPES
-///=============================================================================
-
-#if (defined(__cplusplus)) || defined(__NITRATE_IMPL__)
-
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Memory.h>
-#include <nitrate-lexer/Token.h>
-
-#include <cassert>
-#include <iostream>
-#include <map>
-#include <nitrate-core/Classes.hh>
-#include <optional>
-#include <ostream>
-#include <set>
-#include <sstream>
-#include <string>
-#include <tuple>
-#include <variant>
-#include <vector>
 
 namespace qparse {
   class ArenaAllocatorImpl {
@@ -293,7 +278,7 @@ namespace qparse {
   class TypedefDecl;
   class FnDecl;
   class FnDef;
-  class CompositeField;
+  class StructField;
   class StructDef;
   class EnumDef;
   class SubsystemDecl;
@@ -456,8 +441,8 @@ namespace qparse {
         return QAST_NODE_SUBSYSTEM;
       } else if constexpr (std::is_same_v<T, ExportDecl>) {
         return QAST_NODE_EXPORT;
-      } else if constexpr (std::is_same_v<T, CompositeField>) {
-        return QAST_NODE_COMPOSITE_FIELD;
+      } else if constexpr (std::is_same_v<T, StructField>) {
+        return QAST_NODE_STRUCT_FIELD;
       } else if constexpr (std::is_same_v<T, Block>) {
         return QAST_NODE_BLOCK;
       } else if constexpr (std::is_same_v<T, ConstDecl>) {
@@ -1718,22 +1703,20 @@ namespace qparse {
 
   enum class CompositeType { Region, Struct, Group, Class, Union };
 
-  class CompositeField : public Decl {
+  class StructField : public Decl {
     Expr *m_value;
 
   public:
-    CompositeField(String name = "", Type *type = nullptr,
-                   Expr *value = nullptr)
-        : Decl(QAST_NODE_COMPOSITE_FIELD, name, type), m_value(value) {}
+    StructField(String name = "", Type *type = nullptr, Expr *value = nullptr)
+        : Decl(QAST_NODE_STRUCT_FIELD, name, type), m_value(value) {}
 
     Expr *get_value() { return m_value; }
     void set_value(Expr *value) { m_value = value; }
 
-    PNODE_IMPL_CORE(CompositeField)
+    PNODE_IMPL_CORE(StructField)
   };
 
-  typedef std::vector<CompositeField *, Arena<CompositeField *>>
-      StructDefFields;
+  typedef std::vector<StructField *, Arena<StructField *>> StructDefFields;
   typedef std::vector<FnDecl *, Arena<FnDecl *>> StructDefMethods;
   typedef std::vector<FnDecl *, Arena<FnDecl *>> StructDefStaticMethods;
 
@@ -1820,6 +1803,15 @@ namespace qparse {
     PNODE_IMPL_CORE(ExportDecl)
   };
 
+  template <typename T, typename... Args>
+  static inline T *make(Args &&...args) {
+    T *new_obj = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+
+    /// TODO: Cache nodes
+
+    return new_obj;
+  }
+
   ///=============================================================================
 
   constexpr std::string_view Node::getKindName(qparse_ty_t type) noexcept {
@@ -1883,7 +1875,7 @@ namespace qparse {
       R[QAST_NODE_FN] = "Fn";
       R[QAST_NODE_SUBSYSTEM] = "Subsystem";
       R[QAST_NODE_EXPORT] = "Export";
-      R[QAST_NODE_COMPOSITE_FIELD] = "CompositeField";
+      R[QAST_NODE_STRUCT_FIELD] = "StructField";
       R[QAST_NODE_BLOCK] = "Block";
       R[QAST_NODE_CONST] = "Const";
       R[QAST_NODE_VAR] = "Var";
@@ -1915,7 +1907,5 @@ namespace std {
   std::ostream &operator<<(std::ostream &os, const qlex_op_t &op);
   std::ostream &operator<<(std::ostream &os, const qparse::FuncPurity &purity);
 }  // namespace std
-
-#endif
 
 #endif  // __NITRATE_PARSER_NODE_H__

@@ -1607,7 +1607,7 @@ static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_composite_field(NRBuilder &, PState &, IReport *,
-                                     qparse::CompositeField *) {
+                                     qparse::StructField *) {
   qcore_panic("Unreachable");
 }
 
@@ -2190,8 +2190,8 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, qparse::Node *n) {
       out = nrgen_fn(b, s, G, n->as<qparse::FnDef>());
       break;
 
-    case QAST_NODE_COMPOSITE_FIELD:
-      out = nrgen_composite_field(b, s, G, n->as<qparse::CompositeField>());
+    case QAST_NODE_STRUCT_FIELD:
+      out = nrgen_composite_field(b, s, G, n->as<qparse::StructField>());
       break;
 
     case QAST_NODE_BLOCK:

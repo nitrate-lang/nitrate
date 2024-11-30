@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <libdeflate.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-lexer/Lexer.h>
 #include <nitrate-parser/Node.h>
@@ -735,11 +734,11 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_COMPOSITE_FIELD: {
+    case QAST_NODE_STRUCT_FIELD: {
       OBJECT_BEGIN("Field");
-      OBJECT_STR(n->as<CompositeField>()->get_name());
-      OBJECT_SUB(n->as<CompositeField>()->get_type());
-      OBJECT_SUB(n->as<CompositeField>()->get_value());
+      OBJECT_STR(n->as<StructField>()->get_name());
+      OBJECT_SUB(n->as<StructField>()->get_type());
+      OBJECT_SUB(n->as<StructField>()->get_value());
       OBJECT_END();
       break;
     }

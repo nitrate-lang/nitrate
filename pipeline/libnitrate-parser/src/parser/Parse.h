@@ -96,7 +96,7 @@ namespace qparse::parser {
 
   bool parse_attributes(qparse_t &job, qlex_t *rd,
                         std::set<Expr *> &attributes);
-  bool parse_composite_field(qparse_t &job, qlex_t *rd, CompositeField **node);
+  bool parse_composite_field(qparse_t &job, qlex_t *rd, StructField **node);
 };  // namespace qparse::parser
 
 #endif  // __NITRATE_PARSE_H__

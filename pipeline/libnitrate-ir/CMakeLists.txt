@@ -32,7 +32,7 @@ add_library(nitrate-ir ${CXX_SOURCES})
 target_include_directories(nitrate-ir PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-parser/include)
-target_link_libraries(nitrate-ir PUBLIC nitrate-core nitrate-parser deflate crypto)
+target_link_libraries(nitrate-ir PUBLIC nitrate-core nitrate-parser crypto)
 add_dependencies(nitrate-ir nitrate-core nitrate-parser)
 
 install(TARGETS nitrate-ir DESTINATION lib)

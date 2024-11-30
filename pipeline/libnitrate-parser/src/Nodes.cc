@@ -104,7 +104,7 @@ LIB_EXPORT bool Node::is_stmt() {
     case QAST_NODE_FN:
     case QAST_NODE_SUBSYSTEM:
     case QAST_NODE_EXPORT:
-    case QAST_NODE_COMPOSITE_FIELD:
+    case QAST_NODE_STRUCT_FIELD:
     case QAST_NODE_BLOCK:
     case QAST_NODE_VOLATILE:
     case QAST_NODE_CONST:
@@ -135,7 +135,7 @@ LIB_EXPORT bool Node::is_decl() {
     case QAST_NODE_TYPEDEF:
     case QAST_NODE_FNDECL:
     case QAST_NODE_FN:
-    case QAST_NODE_COMPOSITE_FIELD:
+    case QAST_NODE_STRUCT_FIELD:
     case QAST_NODE_STRUCT:
     case QAST_NODE_ENUM:
     case QAST_NODE_SUBSYSTEM:
@@ -624,8 +624,8 @@ LIB_EXPORT bool FuncTy::is_noreturn() { return m_noreturn; }
 //     case QAST_NODE_FN:
 //       node = FnDef::get();
 //       break;
-//     case QAST_NODE_COMPOSITE_FIELD:
-//       node = CompositeField::get();
+//     case QAST_NODE_STRUCT_FIELD:
+//       node = StructField::get();
 //       break;
 //     case QAST_NODE_STRUCT:
 //       node = StructDef::get();

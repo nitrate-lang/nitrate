@@ -12,7 +12,7 @@ RUN apt clean
 RUN apt update --fix-missing && apt upgrade -y
 RUN apt install -y cmake make clang llvm-14 upx gnupg2 dpkg-dev
 RUN apt install -y  libssl-dev libboost-all-dev libzstd-dev libclang-common-14-dev \
-                    rapidjson-dev libdeflate-dev libreadline-dev libclang-dev      \
+                    rapidjson-dev libgsl-dev libreadline-dev libclang-dev      \
                     libclang-cpp-dev nlohmann-json3-dev libgoogle-glog-dev         \
                     libyaml-cpp-dev
 RUN apt purge -y g++

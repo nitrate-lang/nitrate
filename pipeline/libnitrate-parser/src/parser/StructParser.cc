@@ -89,7 +89,7 @@ bool qparse::parser::parse_attributes(qparse_t &job, qlex_t *rd,
 }
 
 bool parser::parse_composite_field(qparse_t &job, qlex_t *rd,
-                                   CompositeField **node) {
+                                   StructField **node) {
   /*
    * Format: "name: type [= expr],"
    */
@@ -126,7 +126,7 @@ bool parser::parse_composite_field(qparse_t &job, qlex_t *rd,
     if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
       qlex_next(rd);
     }
-    *node = CompositeField::get(name, type);
+    *node = StructField::get(name, type);
     (*node)->set_end_pos(tok.start);
     return true;
   }
@@ -149,7 +149,7 @@ bool parser::parse_composite_field(qparse_t &job, qlex_t *rd,
     }
   }
 
-  *node = CompositeField::get(name, type, value);
+  *node = StructField::get(name, type, value);
   (*node)->set_end_pos(value->get_end_pos());
 
   return true;
@@ -173,7 +173,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
   Stmt *method = nullptr;
   FnDecl *fdecl = nullptr;
   FuncTy *ft = nullptr;
-  CompositeField *field = nullptr;
+  StructField *field = nullptr;
   StructDef *sdef = StructDef::get();
 
   { /* First token should be the name of the definition */
