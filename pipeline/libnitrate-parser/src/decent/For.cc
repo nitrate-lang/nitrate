@@ -38,16 +38,16 @@
 using namespace qparse;
 using namespace qparse;
 
-bool qparse::recurse_for(qparse_t &S, qlex_t *rd, Stmt **node) {
+bool qparse::recurse_for(qparse_t &S, qlex_t &rd, Stmt **node) {
   Expr *x0 = nullptr, *x1 = nullptr, *x2 = nullptr;
 
-  qlex_tok_t tok = qlex_peek(rd);
+  qlex_tok_t tok = peek();
   if (tok.is<qPuncLPar>()) {
-    tok = qlex_next(rd);
-    tok = qlex_peek(rd);
+    tok = next();
+    tok = peek();
 
     if (tok.is<qKLet>()) {
-      qlex_next(rd);
+      next();
       std::vector<Stmt *> let_node;
       if (!recurse_let(S, rd, let_node)) {
         syntax(tok, "Failed to parse let statement in for loop");
@@ -63,7 +63,7 @@ bool qparse::recurse_for(qparse_t &S, qlex_t *rd, Stmt **node) {
         syntax(tok, "Failed to parse for loop initializer");
       }
 
-      tok = qlex_next(rd);
+      tok = next();
       if (!tok.is<qPuncSemi>()) {
         syntax(tok, "Expected ';' after for loop initializer");
       }
@@ -73,7 +73,7 @@ bool qparse::recurse_for(qparse_t &S, qlex_t *rd, Stmt **node) {
       syntax(tok, "Failed to parse for loop condition");
     }
 
-    tok = qlex_next(rd);
+    tok = next();
     if (!tok.is<qPuncSemi>()) {
       syntax(tok, "Expected ';' after for loop condition");
     }
@@ -82,7 +82,7 @@ bool qparse::recurse_for(qparse_t &S, qlex_t *rd, Stmt **node) {
       syntax(tok, "Failed to parse for loop increment");
       return false;
     }
-    tok = qlex_next(rd);
+    tok = next();
     if (!tok.is<qPuncRPar>()) {
       syntax(tok, "Expected ')' after for loop increment");
       return false;
@@ -90,8 +90,8 @@ bool qparse::recurse_for(qparse_t &S, qlex_t *rd, Stmt **node) {
 
     Block *then_block = nullptr;
 
-    if (qlex_peek(rd).is<qOpArrow>()) {
-      tok = qlex_next(rd);
+    if (peek().is<qOpArrow>()) {
+      tok = next();
       if (!recurse(S, rd, &then_block, false, true)) {
         syntax(tok, "Expected single statement after '=>' in for loop");
       }
@@ -105,10 +105,10 @@ bool qparse::recurse_for(qparse_t &S, qlex_t *rd, Stmt **node) {
 
     return true;
   } else {
-    tok = qlex_peek(rd);
+    tok = peek();
 
     if (tok.is<qKLet>()) {
-      qlex_next(rd);
+      next();
       std::vector<Stmt *> let_node;
       if (!recurse_let(S, rd, let_node)) {
         syntax(tok, "Failed to parse let statement in for loop");
@@ -124,7 +124,7 @@ bool qparse::recurse_for(qparse_t &S, qlex_t *rd, Stmt **node) {
         return false;
       }
 
-      tok = qlex_next(rd);
+      tok = next();
       if (!tok.is<qPuncSemi>()) {
         syntax(tok, "Expected ';' after for loop initializer");
       }
@@ -132,7 +132,7 @@ bool qparse::recurse_for(qparse_t &S, qlex_t *rd, Stmt **node) {
 
     if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x1)) return false;
 
-    tok = qlex_next(rd);
+    tok = next();
     if (!tok.is<qPuncSemi>()) {
       syntax(tok, "Expected ';' after for loop condition");
     }
@@ -144,8 +144,8 @@ bool qparse::recurse_for(qparse_t &S, qlex_t *rd, Stmt **node) {
 
     Block *then_block = nullptr;
 
-    if (qlex_peek(rd).is<qOpArrow>()) {
-      tok = qlex_next(rd);
+    if (peek().is<qOpArrow>()) {
+      tok = next();
       if (!recurse(S, rd, &then_block, false, true)) return false;
     } else {
       if (!recurse(S, rd, &then_block, true)) return false;

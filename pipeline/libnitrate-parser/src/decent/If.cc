@@ -33,7 +33,7 @@
 
 #include <decent/Recurse.hh>
 
-bool qparse::recurse_if(qparse_t &S, qlex_t *rd, Stmt **node) {
+bool qparse::recurse_if(qparse_t &S, qlex_t &rd, Stmt **node) {
   Expr *cond = nullptr;
   if (!recurse_expr(S, rd,
                     {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
@@ -42,27 +42,27 @@ bool qparse::recurse_if(qparse_t &S, qlex_t *rd, Stmt **node) {
   }
 
   Block *then_block = nullptr;
-  if (qlex_peek(rd).is<qOpArrow>()) {
-    qlex_next(rd);
+  if (peek().is<qOpArrow>()) {
+    next();
     if (!recurse(S, rd, &then_block, false, true)) return false;
   } else {
     if (!recurse(S, rd, &then_block, true)) return false;
   }
 
-  qlex_tok_t tok = qlex_peek(rd);
+  qlex_tok_t tok = peek();
   if (tok.is<qKElse>()) {
-    qlex_next(rd);
+    next();
     Block *else_block = nullptr;
 
-    if (qlex_peek(rd).is<qOpArrow>()) {
-      qlex_next(rd);
+    if (peek().is<qOpArrow>()) {
+      next();
 
       if (!recurse(S, rd, &else_block, false, true)) {
         return false;
       }
     } else {
-      if (qlex_peek(rd).is<qKIf>()) {
-        qlex_next(rd);
+      if (peek().is<qKIf>()) {
+        next();
         if (!recurse_if(S, rd, reinterpret_cast<Stmt **>(&else_block))) {
           return false;
         }

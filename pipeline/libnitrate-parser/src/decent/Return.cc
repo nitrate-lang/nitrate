@@ -35,11 +35,11 @@
 
 using namespace qparse;
 
-bool qparse::recurse_return(qparse_t &S, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_peek(rd);
+bool qparse::recurse_return(qparse_t &S, qlex_t &rd, Stmt **node) {
+  qlex_tok_t tok = peek();
 
   if (tok.is<qPuncSemi>()) {
-    qlex_next(rd);
+    next();
     *node = ReturnStmt::get();
     (*node)->set_end_pos(tok.end);
     return true;
@@ -52,7 +52,7 @@ bool qparse::recurse_return(qparse_t &S, qlex_t *rd, Stmt **node) {
 
   *node = ReturnStmt::get(expr);
 
-  tok = qlex_next(rd);
+  tok = next();
 
   if (!tok.is<qPuncSemi>()) {
     syntax(tok, "Expected a semicolon after the return statement.");
@@ -63,7 +63,7 @@ bool qparse::recurse_return(qparse_t &S, qlex_t *rd, Stmt **node) {
   return true;
 }
 
-bool qparse::recurse_retif(qparse_t &S, qlex_t *rd, Stmt **node) {
+bool qparse::recurse_retif(qparse_t &S, qlex_t &rd, Stmt **node) {
   qlex_tok_t tok;
 
   Expr *condition = nullptr;
@@ -71,7 +71,7 @@ bool qparse::recurse_retif(qparse_t &S, qlex_t *rd, Stmt **node) {
     syntax(tok, "Expected a condition in the return-if statement.");
   }
 
-  tok = qlex_next(rd);
+  tok = next();
   if (!tok.is<qPuncComa>()) {
     syntax(tok, "Expected a comma after the return-if expression.");
   }
@@ -81,7 +81,7 @@ bool qparse::recurse_retif(qparse_t &S, qlex_t *rd, Stmt **node) {
     syntax(tok, "Expected a return expression after the comma.");
   }
 
-  tok = qlex_next(rd);
+  tok = next();
   if (!tok.is<qPuncSemi>()) {
     syntax(tok, "Expected a semicolon after the return-if expression.");
   }

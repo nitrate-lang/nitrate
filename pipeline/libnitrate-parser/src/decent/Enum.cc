@@ -36,8 +36,8 @@
 using namespace qparse;
 using namespace qparse;
 
-static bool recurse_enum_field(qparse_t &S, qlex_t *rd, EnumDefItems &fields) {
-  qlex_tok_t tok = qlex_next(rd);
+static bool recurse_enum_field(qparse_t &S, qlex_t &rd, EnumDefItems &fields) {
+  qlex_tok_t tok = next();
   if (!tok.is(qName)) {
     syntax(tok, "Enum field must be named by an identifier");
     return false;
@@ -45,11 +45,11 @@ static bool recurse_enum_field(qparse_t &S, qlex_t *rd, EnumDefItems &fields) {
 
   EnumItem item;
 
-  item.first = tok.as_string(rd);
+  item.first = tok.as_string(&rd);
 
-  tok = qlex_peek(rd);
+  tok = peek();
   if (tok.is<qOpSet>()) {
-    qlex_next(rd);
+    next();
     Expr *expr = nullptr;
     if (!recurse_expr(
             S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},
@@ -62,13 +62,13 @@ static bool recurse_enum_field(qparse_t &S, qlex_t *rd, EnumDefItems &fields) {
     item.second = expr;
     item.second->set_pos(expr->get_pos());
 
-    tok = qlex_peek(rd);
+    tok = peek();
   }
 
   fields.push_back(item);
 
   if (tok.is<qPuncComa>()) {
-    qlex_next(rd);
+    next();
     return true;
   }
 
@@ -80,25 +80,25 @@ static bool recurse_enum_field(qparse_t &S, qlex_t *rd, EnumDefItems &fields) {
   return true;
 }
 
-bool qparse::recurse_enum(qparse_t &S, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_next(rd);
+bool qparse::recurse_enum(qparse_t &S, qlex_t &rd, Stmt **node) {
+  qlex_tok_t tok = next();
   if (!tok.is(qName)) {
     syntax(tok, "Enum definition must be named by an identifier");
     return false;
   }
 
-  std::string name = tok.as_string(rd);
+  std::string name = tok.as_string(&rd);
 
-  tok = qlex_peek(rd);
+  tok = peek();
   Type *type = nullptr;
   if (tok.is<qPuncColn>()) {
-    qlex_next(rd);
+    next();
     if (!recurse_type(S, rd, &type)) {
       return false;
     }
   }
 
-  tok = qlex_next(rd);
+  tok = next();
   if (!tok.is<qPuncLCur>()) {
     syntax(tok, "Expected a '{' to start the enum definition");
     return false;
@@ -107,9 +107,9 @@ bool qparse::recurse_enum(qparse_t &S, qlex_t *rd, Stmt **node) {
   EnumDefItems fields;
 
   while (true) {
-    tok = qlex_peek(rd);
+    tok = peek();
     if (tok.is<qPuncRCur>()) {
-      qlex_next(rd);
+      next();
       break;
     }
 

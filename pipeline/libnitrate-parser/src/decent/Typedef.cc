@@ -35,15 +35,15 @@
 
 using namespace qparse;
 
-bool qparse::recurse_typedef(qparse_t &S, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_next(rd);
+bool qparse::recurse_typedef(qparse_t &S, qlex_t &rd, Stmt **node) {
+  qlex_tok_t tok = next();
   if (!tok.is(qName)) {
     syntax(tok, "Expected name in typedef declaration");
   }
 
-  std::string name = tok.as_string(rd);
+  std::string name = tok.as_string(&rd);
 
-  tok = qlex_next(rd);
+  tok = next();
   if (!tok.is<qOpSet>()) {
     syntax(tok, "Expected '=' in typedef declaration");
   }
@@ -53,7 +53,7 @@ bool qparse::recurse_typedef(qparse_t &S, qlex_t *rd, Stmt **node) {
     syntax(tok, "Failed to parse type in typedef declaration");
   }
 
-  tok = qlex_next(rd);
+  tok = next();
   if (!tok.is<qPuncSemi>()) {
     syntax(tok, "Expected ';' in typedef declaration");
     return false;

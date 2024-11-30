@@ -44,7 +44,7 @@
 
 using namespace qparse;
 
-bool qparse::recurse(qparse_t &S, qlex_t *rd, Block **group, bool expect_braces,
+bool qparse::recurse(qparse_t &S, qlex_t &rd, Block **group, bool expect_braces,
                      bool single_stmt) {
   qlex_tok_t tok;
 
@@ -52,27 +52,27 @@ bool qparse::recurse(qparse_t &S, qlex_t *rd, Block **group, bool expect_braces,
   Block *block = *group;
 
   if (expect_braces) {
-    tok = qlex_next(rd);
+    tok = next();
     if (!tok.is<qPuncLCur>()) {
       syntax(tok, "Expected '{'");
     }
   }
 
-  while ((tok = qlex_peek(rd)).ty != qEofF) {
+  while ((tok = peek()).ty != qEofF) {
     if (single_stmt && (*group)->get_items().size() > 0) {
       break;
     }
 
     if (expect_braces) {
       if (tok.is<qPuncRCur>()) {
-        qlex_next(rd);
+        next();
         return true;
       }
     }
 
     if (tok.is<qPuncSemi>()) /* Skip excessive semicolons */
     {
-      qlex_next(rd);
+      next();
       continue;
     }
 
@@ -93,7 +93,7 @@ bool qparse::recurse(qparse_t &S, qlex_t *rd, Block **group, bool expect_braces,
         return false;
       }
 
-      tok = qlex_next(rd);
+      tok = next();
       if (!tok.is<qPuncSemi>()) {
         syntax(tok, "Expected ';'");
       }
@@ -106,7 +106,7 @@ bool qparse::recurse(qparse_t &S, qlex_t *rd, Block **group, bool expect_braces,
       continue;
     }
 
-    qlex_next(rd);
+    next();
 
     Stmt *node = nullptr;
 
@@ -318,7 +318,7 @@ bool qparse::recurse(qparse_t &S, qlex_t *rd, Block **group, bool expect_braces,
 
       case qKUnsafe: {
         Block *block = nullptr;
-        tok = qlex_peek(rd);
+        tok = peek();
         if (tok.is<qPuncLCur>()) {
           if (!recurse(S, rd, &block)) {
             return false;
@@ -336,7 +336,7 @@ bool qparse::recurse(qparse_t &S, qlex_t *rd, Block **group, bool expect_braces,
 
       case qKSafe: {
         Block *block = nullptr;
-        tok = qlex_peek(rd);
+        tok = peek();
         if (tok.is<qPuncLCur>()) {
           if (!recurse(S, rd, &block)) {
             return false;
@@ -353,7 +353,7 @@ bool qparse::recurse(qparse_t &S, qlex_t *rd, Block **group, bool expect_braces,
 
       case qKVolatile: {
         Block *block = nullptr;
-        tok = qlex_peek(rd);
+        tok = peek();
         if (tok.is<qPuncLCur>()) {
           if (!recurse(S, rd, &block)) {
             return false;
@@ -432,7 +432,7 @@ C_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
 
   parser_ctx = L;
   bool status =
-      qparse::recurse(*L, L->lexer, (qparse::Block **)out, false, false);
+      qparse::recurse(*L, *L->lexer, (qparse::Block **)out, false, false);
   parser_ctx = nullptr;
 
   /*== Uninstall thread-local references to the parser ==*/

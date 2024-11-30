@@ -36,22 +36,22 @@
 using namespace qparse;
 
 namespace qparse {
-  static bool recurse_decl(qparse_t &S, qlex_tok_t tok, qlex_t *rd,
+  static bool recurse_decl(qparse_t &S, qlex_tok_t tok, qlex_t &rd,
                            std::pair<std::string, Type *> &decl) {
     if (!tok.is(qName)) {
       syntax(tok, "Expected a name in constant declaration");
       return false;
     }
 
-    std::string name = tok.as_string(rd);
+    std::string name = tok.as_string(&rd);
 
-    tok = qlex_peek(rd);
+    tok = peek();
     if (!tok.is<qPuncColn>()) {
       decl = std::make_pair(name, nullptr);
       return true;
     }
 
-    qlex_next(rd);
+    next();
 
     Type *type = nullptr;
     if (!recurse_type(S, rd, &type)) {
@@ -63,9 +63,9 @@ namespace qparse {
   }
 }  // namespace qparse
 
-bool qparse::recurse_const(qparse_t &S, qlex_t *rd,
+bool qparse::recurse_const(qparse_t &S, qlex_t &rd,
                            std::vector<Stmt *> &nodes) {
-  qlex_tok_t tok = qlex_next(rd);
+  qlex_tok_t tok = next();
 
   std::vector<std::pair<std::string, Type *>> decls;
   if (tok.is(qName)) {
@@ -85,7 +85,7 @@ bool qparse::recurse_const(qparse_t &S, qlex_t *rd,
     return false;
   }
 
-  tok = qlex_next(rd);
+  tok = next();
   if (tok.is<qPuncSemi>()) {
     for (auto &decl : decls) {
       ConstDecl *const_decl = ConstDecl::get(decl.first, decl.second, nullptr);
@@ -98,7 +98,7 @@ bool qparse::recurse_const(qparse_t &S, qlex_t *rd,
       syntax(tok, "Expected an expression after '=' in constant declaration");
     }
 
-    tok = qlex_next(rd);
+    tok = next();
     if (!tok.is<qPuncSemi>()) {
       syntax(tok,
              "Expected a ';' after the initializer in constant declaration");

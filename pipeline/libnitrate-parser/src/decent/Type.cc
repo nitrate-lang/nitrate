@@ -61,7 +61,7 @@ static const std::unordered_map<std::string_view, Type *(*)()> primitive_types =
      {"f128", []() -> Type * { return F128::get(); }},
      {"void", []() -> Type * { return VoidTy::get(); }}};
 
-bool qparse::recurse_type(qparse_t &S, qlex_t *rd, Type **node) {
+bool qparse::recurse_type(qparse_t &S, qlex_t &rd, Type **node) {
   /** Nitrate TYPE PARSER
    *
    * @brief Given a Scanner, parse tokens into a Nitrate type node.
@@ -84,7 +84,7 @@ bool qparse::recurse_type(qparse_t &S, qlex_t *rd, Type **node) {
 
   *node = nullptr;
 
-  if ((tok = qlex_next(rd)).ty == qKeyW) {
+  if ((tok = next()).ty == qKeyW) {
     switch (tok.as<qlex_key_t>()) {
       case qKFn: {
         /** Nitrate FUNCTION TYPE
@@ -126,19 +126,19 @@ bool qparse::recurse_type(qparse_t &S, qlex_t *rd, Type **node) {
          *       is distinguisable by its name.
          */
 
-        if (!(tok = qlex_next(rd)).is<qPuncLPar>()) {
+        if (!(tok = next()).is<qPuncLPar>()) {
           syntax(tok, "Expected '(' after 'opaque'");
           goto error_end;
         }
 
-        if ((tok = qlex_next(rd)).ty != qName) {
+        if ((tok = next()).ty != qName) {
           syntax(tok, "Expected a name after 'opaque('");
           goto error_end;
         }
 
-        name = tok.as_string(rd); /* Save the name of the opaque type. */
+        name = tok.as_string(&rd); /* Save the name of the opaque type. */
 
-        if (!(tok = qlex_next(rd)).is<qPuncRPar>()) {
+        if (!(tok = next()).is<qPuncRPar>()) {
           syntax(tok, "Expected ')' after 'opaque(name'");
           goto error_end;
         }
@@ -155,13 +155,13 @@ bool qparse::recurse_type(qparse_t &S, qlex_t *rd, Type **node) {
 
     __builtin_unreachable();
   } else if (tok.is(qName)) {
-    if (primitive_types.contains(tok.as_string(rd))) {
+    if (primitive_types.contains(tok.as_string(&rd))) {
       /** Nitrate PRIMITIVE TYPE
        *
        * @brief Parse a primitive type.
        */
 
-      inner = primitive_types.at(tok.as_string(rd))();
+      inner = primitive_types.at(tok.as_string(&rd))();
       goto type_suffix;
     } else {
       /** Nitrate ANY NAMED TYPE
@@ -172,7 +172,7 @@ bool qparse::recurse_type(qparse_t &S, qlex_t *rd, Type **node) {
        *       It is a placeholder for a type that is defined elsewhere.
        */
 
-      inner = NamedTy::get(tok.as_string(rd));
+      inner = NamedTy::get(tok.as_string(&rd));
       goto type_suffix;
     }
 
@@ -188,7 +188,7 @@ bool qparse::recurse_type(qparse_t &S, qlex_t *rd, Type **node) {
       goto error_end;
     }
 
-    if ((tok = qlex_next(rd)).is<qPuncRBrk>()) {
+    if ((tok = next()).is<qPuncRBrk>()) {
       /** Nitrate VECTOR TYPE
        *
        * @brief Parse a vector type.
@@ -205,7 +205,7 @@ bool qparse::recurse_type(qparse_t &S, qlex_t *rd, Type **node) {
        * @brief Parse a map type.
        */
 
-      if (!(tok = qlex_next(rd)).is<qOpGT>()) {
+      if (!(tok = next()).is<qOpGT>()) {
         syntax(tok, "Expected '>' after '-' in map type");
         goto error_end;
       }
@@ -215,7 +215,7 @@ bool qparse::recurse_type(qparse_t &S, qlex_t *rd, Type **node) {
         goto error_end;
       }
 
-      if (!(tok = qlex_next(rd)).is<qPuncRBrk>()) {
+      if (!(tok = next()).is<qPuncRBrk>()) {
         syntax(tok, "Expected ']' after map type");
         goto error_end;
       }
@@ -245,7 +245,7 @@ bool qparse::recurse_type(qparse_t &S, qlex_t *rd, Type **node) {
       size = _size;
     }
 
-    if (!(tok = qlex_next(rd)).is<qPuncRBrk>()) {
+    if (!(tok = next()).is<qPuncRBrk>()) {
       syntax(tok, "Expected ']' after array size");
       goto error_end;
     }
@@ -263,7 +263,7 @@ bool qparse::recurse_type(qparse_t &S, qlex_t *rd, Type **node) {
       goto error_end;
     }
 
-    if (!(tok = qlex_next(rd)).is<qPuncRCur>()) {
+    if (!(tok = next()).is<qPuncRCur>()) {
       syntax(tok, "Expected '}' after set type");
       goto error_end;
     }
@@ -278,8 +278,8 @@ bool qparse::recurse_type(qparse_t &S, qlex_t *rd, Type **node) {
      */
 
     while (true) {
-      if ((tok = qlex_peek(rd)).is<qPuncRPar>()) {
-        qlex_next(rd);
+      if ((tok = peek()).is<qPuncRPar>()) {
+        next();
         break;
       }
 
@@ -290,9 +290,9 @@ bool qparse::recurse_type(qparse_t &S, qlex_t *rd, Type **node) {
 
       types.push_back(type);
 
-      tok = qlex_peek(rd);
+      tok = peek();
       if (tok.is<qPuncComa>()) {
-        qlex_next(rd);
+        next();
       }
     }
 
@@ -342,14 +342,14 @@ type_suffix: {
    *
    */
 
-  tok = qlex_peek(rd);
+  tok = peek();
   if (tok.is<qOpLT>()) {
-    qlex_next(rd);
+    next();
 
     TemplTypeArgs args;
 
     while (true) {
-      tok = qlex_peek(rd);
+      tok = peek();
       if (tok.is<qOpGT>() || tok.is<qOpRShift>() || tok.is<qOpROTR>() ||
           tok.ty == qEofF) {
         break;
@@ -363,27 +363,27 @@ type_suffix: {
 
       args.push_back(TypeExpr::get(arg));
 
-      tok = qlex_peek(rd);
+      tok = peek();
       if (tok.is<qPuncComa>()) {
-        qlex_next(rd);
+        next();
       }
     }
 
-    tok = qlex_next(rd);
+    tok = next();
 
     if (tok.is<qOpGT>()) {
     } else if (tok.is<qOpRShift>()) {
       tok.v.op = qOpGT;
-      qlex_insert(rd, tok);
+      qlex_insert(&rd, tok);
     } else if (tok.is<qOpROTR>()) {
       tok.v.op = qOpRShift;
-      qlex_insert(rd, tok);
+      qlex_insert(&rd, tok);
     } else {
       syntax(tok, "Expected '>' after template type arguments");
       goto error_end;
     }
 
-    qlex_peek(rd);
+    peek();
 
     inner = TemplType::get(inner, args);
   }
@@ -394,18 +394,18 @@ type_suffix: {
    */
 
   while (true) {
-    tok = qlex_peek(rd);
+    tok = peek();
 
     if (tok.is<qPuncColn>()) { /* Parse bit-field width or confinement range */
-      qlex_next(rd);
-      tok = qlex_peek(rd);
+      next();
+      tok = peek();
 
       if (tok.is<qPuncLBrk>()) { /* Parse confinement range */
-        qlex_next(rd);
+        next();
 
         Expr *start = nullptr, *end = nullptr;
 
-        tok = qlex_peek(rd);
+        tok = peek();
         if (tok.is<qPuncColn>()) {
           start = nullptr;
         } else {
@@ -414,8 +414,8 @@ type_suffix: {
             goto error_end;
           }
         }
-        qlex_next(rd);
-        tok = qlex_peek(rd);
+        next();
+        tok = peek();
 
         if (tok.is<qPuncRBrk>()) {
           end = nullptr;
@@ -425,7 +425,7 @@ type_suffix: {
             goto error_end;
           }
         }
-        qlex_next(rd);
+        next();
 
         inner->set_range(start, end);
       } else { /* Parse bit-field width */
@@ -455,7 +455,7 @@ type_suffix: {
     }
 
     if (tok.is<qOpTernary>()) { /* Parse optional type */
-      qlex_next(rd);
+      next();
       inner = TemplType::get(NamedTy::get("__builtin_result"),
                              TemplTypeArgs{TypeExpr::get(inner)});
       continue;

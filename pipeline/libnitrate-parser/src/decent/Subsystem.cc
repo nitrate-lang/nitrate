@@ -35,26 +35,26 @@
 
 using namespace qparse;
 
-bool qparse::recurse_subsystem(qparse_t &S, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_next(rd);
+bool qparse::recurse_subsystem(qparse_t &S, qlex_t &rd, Stmt **node) {
+  qlex_tok_t tok = next();
   if (!tok.is(qName)) {
     syntax(tok, "Expected subsystem name");
   }
 
-  std::string name = tok.as_string(rd);
+  std::string name = tok.as_string(&rd);
   SubsystemDeps deps;
 
-  tok = qlex_peek(rd);
+  tok = peek();
   if (tok.is<qPuncColn>()) {
-    qlex_next(rd);
+    next();
 
-    tok = qlex_next(rd);
+    tok = next();
     if (!tok.is<qPuncLBrk>()) {
       syntax(tok, "Expected '[' after subsystem dependencies");
     }
 
     while (true) {
-      tok = qlex_next(rd);
+      tok = next();
       if (tok.is(qEofF)) {
         syntax(tok, "Unexpected end of file in subsystem dependencies");
         break;
@@ -68,24 +68,24 @@ bool qparse::recurse_subsystem(qparse_t &S, qlex_t *rd, Stmt **node) {
         syntax(tok, "Expected dependency name");
       }
 
-      deps.insert(tok.as_string(rd));
+      deps.insert(tok.as_string(&rd));
 
-      tok = qlex_peek(rd);
+      tok = peek();
       if (tok.is<qPuncComa>()) {
-        qlex_next(rd);
+        next();
       }
     }
   }
 
   Block *block = nullptr;
   if (!recurse(S, rd, &block, true)) {
-    syntax(qlex_peek(rd), "Expected block in subsystem definition");
+    syntax(peek(), "Expected block in subsystem definition");
   }
 
   std::set<Expr *> attributes;
-  tok = qlex_peek(rd);
+  tok = peek();
   if (tok.is<qKWith>()) {
-    qlex_next(rd);
+    next();
 
     if (!recurse_attributes(S, rd, attributes)) {
       return false;

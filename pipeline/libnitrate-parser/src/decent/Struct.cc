@@ -40,9 +40,9 @@
 using namespace qparse;
 using namespace qparse;
 
-bool qparse::recurse_attributes(qparse_t &S, qlex_t *rd,
+bool qparse::recurse_attributes(qparse_t &S, qlex_t &rd,
                                 std::set<Expr *> &attributes) {
-  qlex_tok_t tok = qlex_next(rd);
+  qlex_tok_t tok = next();
 
   { /* The implementation list should be enclosed in square brackets ex: [abc,
        hello] */
@@ -54,14 +54,14 @@ bool qparse::recurse_attributes(qparse_t &S, qlex_t *rd,
   /* Parse an arbitrary number of attributes */
   while (true) {
     /* Check for termination */
-    tok = qlex_peek(rd);
+    tok = peek();
     if (tok.is(qEofF)) {
       syntax(tok, "Unexpected end of file in definition");
       return false;
     }
 
     if (tok.is<qPuncRBrk>()) {
-      qlex_next(rd);
+      next();
       break;
     }
 
@@ -77,16 +77,16 @@ bool qparse::recurse_attributes(qparse_t &S, qlex_t *rd,
     attributes.insert(impl);
 
     /* Check for a comma */
-    tok = qlex_peek(rd);
+    tok = peek();
     if (tok.is<qPuncComa>()) {
-      qlex_next(rd);
+      next();
     }
   }
 
   return true;
 }
 
-bool qparse::recurse_composite_field(qparse_t &S, qlex_t *rd,
+bool qparse::recurse_composite_field(qparse_t &S, qlex_t &rd,
                                      StructField **node) {
   /*
    * Format: "name: type [= expr],"
@@ -98,15 +98,15 @@ bool qparse::recurse_composite_field(qparse_t &S, qlex_t *rd,
   Expr *value = nullptr;
 
   { /*First token is the field name */
-    tok = qlex_next(rd);
+    tok = next();
     if (!tok.is(qName)) {
       syntax(tok, "Expected field name in composite definition");
     }
-    name = tok.as_string(rd);
+    name = tok.as_string(&rd);
   }
 
   { /* Next token should be a colon */
-    tok = qlex_next(rd);
+    tok = next();
     if (!tok.is<qPuncColn>()) {
       syntax(tok, "Expected colon after field name in composite definition");
     }
@@ -119,10 +119,10 @@ bool qparse::recurse_composite_field(qparse_t &S, qlex_t *rd,
   }
 
   /* Check for a default value */
-  tok = qlex_peek(rd);
+  tok = peek();
   if (tok.is<qPuncComa>() || tok.is<qPuncSemi>() || tok.is<qPuncRCur>()) {
     if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
-      qlex_next(rd);
+      next();
     }
     *node = StructField::get(name, type);
     (*node)->set_end_pos(tok.start);
@@ -134,7 +134,7 @@ bool qparse::recurse_composite_field(qparse_t &S, qlex_t *rd,
       syntax(tok,
              "Expected '=' or ',' after field type in composite definition");
     }
-    qlex_next(rd);
+    next();
 
     /* Parse the default value */
     if (!recurse_expr(
@@ -155,10 +155,10 @@ bool qparse::recurse_composite_field(qparse_t &S, qlex_t *rd,
 }
 
 bool recurse_template_parameters(
-    qparse_t &S, qlex_t *rd,
+    qparse_t &S, qlex_t &rd,
     std::optional<TemplateParameters> &template_params);
 
-bool qparse::recurse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
+bool qparse::recurse_struct(qparse_t &S, qlex_t &rd, Stmt **node) {
   /**
    * @brief Parse a struct composite type definition
    */
@@ -176,9 +176,9 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
   StructDef *sdef = StructDef::get();
 
   { /* First token should be the name of the definition */
-    tok = qlex_next(rd);
+    tok = next();
     if (tok.is(qName)) {
-      name = tok.as_string(rd);
+      name = tok.as_string(&rd);
     } else {
       syntax(tok, "Expected struct name in struct definition");
     }
@@ -191,7 +191,7 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
   }
 
   { /* Next token should be an open curly bracket */
-    tok = qlex_next(rd);
+    tok = next();
     if (!tok.is<qPuncLCur>()) {
       syntax(tok, "Expected '{' after struct name in struct definition");
     }
@@ -200,20 +200,20 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
   /* Parse the fields and methods */
   while (true) {
     { /* Check for the end of the content */
-      tok = qlex_peek(rd);
+      tok = peek();
       if (tok.is(qEofF)) {
         syntax(tok, "Unexpected end of file in struct definition");
         return false;
       }
       if (tok.is<qPuncRCur>()) {
-        qlex_next(rd);
+        next();
         break;
       }
     }
 
     { /* Ignore free semicolons */
       if (tok.is<qPuncSemi>()) {
-        qlex_next(rd);
+        next();
         continue;
       }
     }
@@ -223,22 +223,22 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
     { /* Check for visibility qualifiers */
       if (tok.is<qKPub>()) {
         vis = Vis::PUBLIC;
-        qlex_next(rd);
-        tok = qlex_peek(rd);
+        next();
+        tok = peek();
       } else if (tok.is<qKSec>()) {
         vis = Vis::PRIVATE;
-        qlex_next(rd);
-        tok = qlex_peek(rd);
+        next();
+        tok = peek();
       } else if (tok.is<qKPro>()) {
         vis = Vis::PROTECTED;
-        qlex_next(rd);
-        tok = qlex_peek(rd);
+        next();
+        tok = peek();
       }
     }
 
     /* Check for a function definition */
     if (tok.is<qKFn>()) {
-      qlex_next(rd);
+      next();
 
       /* Parse the function definition */
       if (!recurse_function(S, rd, &method) || !method) {
@@ -268,8 +268,8 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
       /* Add the method to the list */
       methods.push_back(static_cast<FnDecl *>(method));
     } else if (tok.is<qKStatic>()) {
-      qlex_next(rd);
-      tok = qlex_next(rd);
+      next();
+      tok = next();
 
       /* Static fields are not currently supported */
       if (!tok.is<qKFn>()) {
@@ -296,9 +296,9 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
         return false;
       }
 
-      tok = qlex_peek(rd);
+      tok = peek();
       if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
-        qlex_next(rd);
+        next();
       }
 
       /* Assign the visibility to the field */
@@ -309,16 +309,16 @@ bool qparse::recurse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
   }
 
   { /* Ignore optional semicolon */
-    tok = qlex_peek(rd);
+    tok = peek();
     if (tok.is<qPuncSemi>()) {
-      qlex_next(rd);
+      next();
     }
   }
 
-  tok = qlex_peek(rd);
+  tok = peek();
   { /* Check for an implementation/trait list */
     if (tok.is<qKWith>()) {
-      qlex_next(rd);
+      next();
       if (!recurse_attributes(S, rd, attributes)) {
         return false;
       }

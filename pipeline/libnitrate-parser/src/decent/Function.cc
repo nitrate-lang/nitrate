@@ -51,8 +51,8 @@ struct GetPropState {
   size_t inline_ctr = 0;
 };
 
-static bool fn_get_property(qlex_t *rd, GetPropState &state) {
-  qlex_tok_t tok = qlex_peek(rd);
+static bool fn_get_property(qlex_t &rd, GetPropState &state) {
+  qlex_tok_t tok = peek();
 
   if (tok.is(qEofF)) {
     syntax(tok, "Expected a function property but found EOF");
@@ -60,49 +60,49 @@ static bool fn_get_property(qlex_t *rd, GetPropState &state) {
   }
 
   if (tok.is<qKNoexcept>()) {
-    qlex_next(rd);
+    next();
     state.noexcept_ctr++;
     return true;
   }
 
   if (tok.is<qKForeign>()) {
-    qlex_next(rd);
+    next();
     state.foreign_ctr++;
     return true;
   }
 
   if (tok.is<qKImpure>()) {
-    qlex_next(rd);
+    next();
     state.impure_ctr++;
     return true;
   }
 
   if (tok.is<qKTsafe>()) {
-    qlex_next(rd);
+    next();
     state.tsafe_ctr++;
     return true;
   }
 
   if (tok.is<qKPure>()) {
-    qlex_next(rd);
+    next();
     state.pure_ctr++;
     return true;
   }
 
   if (tok.is<qKQuasipure>()) {
-    qlex_next(rd);
+    next();
     state.quasipure_ctr++;
     return true;
   }
 
   if (tok.is<qKRetropure>()) {
-    qlex_next(rd);
+    next();
     state.retropure_ctr++;
     return true;
   }
 
   if (tok.is<qKInline>()) {
-    qlex_next(rd);
+    next();
     state.inline_ctr++;
     return true;
   }
@@ -110,8 +110,8 @@ static bool fn_get_property(qlex_t *rd, GetPropState &state) {
   return false;
 }
 
-static bool recurse_fn_parameter(qparse_t &S, qlex_t *rd, FuncParam &param) {
-  auto tok = qlex_next(rd);
+static bool recurse_fn_parameter(qparse_t &S, qlex_t &rd, FuncParam &param) {
+  auto tok = next();
 
   std::string name;
   Type *type = nullptr;
@@ -120,25 +120,25 @@ static bool recurse_fn_parameter(qparse_t &S, qlex_t *rd, FuncParam &param) {
     syntax(tok, "Expected a parameter name before ':'");
   }
 
-  name = tok.as_string(rd);
-  tok = qlex_peek(rd);
+  name = tok.as_string(&rd);
+  tok = peek();
 
   if (tok.is<qPuncColn>()) {
-    qlex_next(rd);
+    next();
 
     if (!recurse_type(S, rd, &type) || !type) {
-      qlex_next(rd);
+      next();
       syntax(tok, "Expected a type after ':'");
     }
 
-    tok = qlex_peek(rd);
+    tok = peek();
   } else {
     type = InferTy::get();
   }
 
   if (tok.is<qOpSet>()) {
-    qlex_next(rd);
-    tok = qlex_peek(rd);
+    next();
+    tok = peek();
 
     Expr *value = nullptr;
     if (!recurse_expr(S, rd,
@@ -166,10 +166,10 @@ struct FunctionProperties {
   Purity _purity = Purity::Impure;
 };
 
-static FunctionProperties read_function_properties(qlex_t *rd) {
+static FunctionProperties read_function_properties(qlex_t &rd) {
   GetPropState state;
 
-  qlex_tok_t tok = qlex_peek(rd);
+  qlex_tok_t tok = peek();
 
   while (fn_get_property(rd, state));
 
@@ -251,15 +251,15 @@ static FunctionProperties read_function_properties(qlex_t *rd) {
   return props;
 }
 
-static bool recurse_captures_and_name(qlex_t *rd, FnDecl *fndecl,
+static bool recurse_captures_and_name(qlex_t &rd, FnDecl *fndecl,
                                       FnCaptures &captures) {
-  qlex_tok_t c = qlex_peek(rd);
+  qlex_tok_t c = peek();
 
   if (c.is<qPuncLBrk>()) {
-    qlex_next(rd);
+    next();
 
     while (!c.is(qEofF)) {
-      c = qlex_next(rd);
+      c = next();
 
       if (c.is<qPuncRBrk>()) {
         break;
@@ -269,7 +269,7 @@ static bool recurse_captures_and_name(qlex_t *rd, FnDecl *fndecl,
 
       if (c.is<qOpBitAnd>()) {
         is_mut = true;
-        c = qlex_next(rd);
+        c = next();
       }
 
       if (!c.is(qName)) {
@@ -277,49 +277,49 @@ static bool recurse_captures_and_name(qlex_t *rd, FnDecl *fndecl,
         return false;
       }
 
-      captures.push_back({c.as_string(rd), is_mut});
-      c = qlex_peek(rd);
+      captures.push_back({c.as_string(&rd), is_mut});
+      c = peek();
 
       if (c.is<qPuncComa>()) {
-        qlex_next(rd);
+        next();
       }
     }
 
-    c = qlex_peek(rd);
+    c = peek();
   }
 
   if (c.is(qName)) {
-    qlex_next(rd);
-    fndecl->set_name(c.as_string(rd));
+    next();
+    fndecl->set_name(c.as_string(&rd));
   }
 
   return true;
 }
 
 bool recurse_template_parameters(
-    qparse_t &S, qlex_t *rd,
+    qparse_t &S, qlex_t &rd,
     std::optional<TemplateParameters> &template_params) {
   template_params = std::nullopt;
 
-  qlex_tok_t c = qlex_peek(rd);
+  qlex_tok_t c = peek();
 
   if (!c.is<qOpLT>()) {
     return true;
   }
 
-  qlex_next(rd);
+  next();
 
   TemplateParameters params;
 
   while (1) {
-    c = qlex_peek(rd);
+    c = peek();
     if (c.is(qEofF)) {
       syntax(c, "Unexpected EOF in signature");
       return false;
     }
 
     if (c.is<qOpGT>()) {
-      qlex_next(rd);
+      next();
       break;
     }
 
@@ -332,50 +332,50 @@ bool recurse_template_parameters(
     params.push_back(
         {std::get<0>(param), std::get<1>(param), std::get<2>(param)});
 
-    c = qlex_peek(rd);
+    c = peek();
     if (c.is<qPuncComa>()) {
-      qlex_next(rd);
+      next();
       continue;
     }
   }
 
-  c = qlex_peek(rd);
+  c = peek();
 
   template_params = std::move(params);
 
   return true;
 }
 
-static bool recurse_parameters(qparse_t &S, qlex_t *rd, FuncTy *ftype,
+static bool recurse_parameters(qparse_t &S, qlex_t &rd, FuncTy *ftype,
                                bool &is_variadic) {
-  qlex_tok_t c = qlex_peek(rd);
+  qlex_tok_t c = peek();
 
   if (!c.is<qPuncLPar>()) {
     syntax(c, "Expected '(' after function name");
     return false;
   }
 
-  qlex_next(rd);
+  next();
 
   is_variadic = false;
 
   while (1) {
-    c = qlex_peek(rd);
+    c = peek();
     if (c.is(qEofF)) {
       syntax(c, "Unexpected EOF in function signature");
       return false;
     }
 
     if (c.is<qPuncRPar>()) {
-      qlex_next(rd);
+      next();
       break;
     }
 
     if (c.is<qOpEllipsis>()) {
       is_variadic = true;
 
-      qlex_next(rd);
-      c = qlex_next(rd);
+      next();
+      c = next();
       if (!c.is<qPuncRPar>()) {
         syntax(c, "Expected ')' after '...'");
       }
@@ -392,14 +392,14 @@ static bool recurse_parameters(qparse_t &S, qlex_t *rd, FuncTy *ftype,
     ftype->get_params().push_back(
         {std::get<0>(param), std::get<1>(param), std::get<2>(param)});
 
-    c = qlex_peek(rd);
+    c = peek();
     if (c.is<qPuncComa>()) {
-      qlex_next(rd);
+      next();
       continue;
     }
   }
 
-  c = qlex_peek(rd);
+  c = peek();
 
   return true;
 }
@@ -427,30 +427,30 @@ static bool translate_purity(FunctionProperties prop, FuncTy *ftype) {
   return true;
 }
 
-static bool recurse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &S,
+static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, qparse_t &S,
                                 Expr *&req_in, Expr *&req_out) {
   if (c.is<qKPromise>()) {
     /* Parse constraint block */
-    qlex_next(rd);
+    next();
 
-    c = qlex_next(rd);
+    c = next();
     if (!c.is<qPuncLCur>()) {
       syntax(c, "Expected '{' after 'req'");
     }
 
     while (true) {
-      c = qlex_peek(rd);
+      c = peek();
       if (c.is(qEofF)) {
         syntax(c, "Unexpected EOF in 'req' block");
         return false;
       }
 
       if (c.is<qPuncRCur>()) {
-        qlex_next(rd);
+        next();
         break;
       }
 
-      qlex_next(rd);
+      next();
       if (c.is<qOpIn>()) {
         Expr *expr = nullptr;
 
@@ -460,7 +460,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &S,
           return false;
         }
 
-        c = qlex_next(rd);
+        c = next();
         if (!c.is<qPuncSemi>()) {
           syntax(c, "Expected ';' after expression");
           return false;
@@ -480,7 +480,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &S,
           return false;
         }
 
-        c = qlex_next(rd);
+        c = next();
         if (!c.is<qPuncSemi>()) {
           syntax(c, "Expected ';' after expression");
           return false;
@@ -497,13 +497,13 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &S,
       }
     }
 
-    c = qlex_peek(rd);
+    c = peek();
   }
 
   return true;
 }
 
-bool qparse::recurse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
+bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
   FnDecl *fndecl = FnDecl::get();
   FuncTy *ftype = FuncTy::get();
   Type *ret_type = nullptr;
@@ -516,7 +516,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
   prop = read_function_properties(rd);
 
   { /* Parse function name or anonymous function capture list */
-    tok = qlex_peek(rd);
+    tok = peek();
 
     if (!recurse_captures_and_name(rd, fndecl, captures)) {
       syntax(tok, "Expected a function name or capture list");
@@ -525,7 +525,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
   }
 
   { /* Parse possible template parameters */
-    tok = qlex_peek(rd);
+    tok = peek();
 
     if (!recurse_template_parameters(S, rd, fndecl->get_template_params())) {
       syntax(tok, "Failed to parse template parameters");
@@ -534,7 +534,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
   }
 
   { /* Parse function parameters */
-    tok = qlex_peek(rd);
+    tok = peek();
 
     if (!recurse_parameters(S, rd, ftype, is_variadic)) {
       syntax(tok, "Failed to parse function parameters");
@@ -543,7 +543,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
   }
 
   { /* Convert function properties */
-    tok = qlex_peek(rd);
+    tok = peek();
 
     if (!translate_purity(prop, ftype)) {
       syntax(tok, "Failed to translate purity");
@@ -551,7 +551,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
     }
   }
 
-  tok = qlex_peek(rd);
+  tok = peek();
 
   { /* Set function type and assign to function declaration */
     ftype->set_variadic(is_variadic);
@@ -565,10 +565,10 @@ bool qparse::recurse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
         tok.is<qPuncSemi>()) {
       ftype->set_return_ty(VoidTy::get());
 
-      tok = qlex_peek(rd);
+      tok = peek();
       if (tok.is<qKWith>()) {
         std::set<Expr *> attributes;
-        qlex_next(rd);
+        next();
 
         if (!recurse_attributes(S, rd, attributes)) {
           return true;
@@ -585,22 +585,22 @@ bool qparse::recurse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
 
   { /* Function with explicit return type */
     if (tok.is<qPuncColn>()) {
-      qlex_next(rd);
+      next();
 
       if (!recurse_type(S, rd, &ret_type)) {
         syntax(tok, "Expected a return type after ':'");
       }
 
       ftype->set_return_ty(ret_type);
-      tok = qlex_peek(rd);
+      tok = peek();
 
       { /* Function declaration with explicit return type */
         if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() ||
             tok.is<qPuncSemi>()) {
-          tok = qlex_peek(rd);
+          tok = peek();
           if (tok.is<qKWith>()) {
             std::set<Expr *> attributes;
-            qlex_next(rd);
+            next();
 
             if (!recurse_attributes(S, rd, attributes)) {
               return true;
@@ -618,7 +618,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
 
   { /* Function definition with arrow syntax */
     if (tok.is<qOpArrow>()) {
-      qlex_next(rd);
+      next();
 
       Block *fnbody = nullptr;
 
@@ -631,16 +631,16 @@ bool qparse::recurse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
         ftype->set_return_ty(VoidTy::get());
       }
 
-      while ((tok = qlex_peek(rd)).is<qPuncSemi>()) {
-        qlex_next(rd);
+      while ((tok = peek()).is<qPuncSemi>()) {
+        next();
       }
 
       FnDef *fndef = FnDef::get(fndecl, fnbody, nullptr, nullptr, captures);
 
-      tok = qlex_peek(rd);
+      tok = peek();
       if (tok.is<qKWith>()) {
         std::set<Expr *> attributes;
-        qlex_next(rd);
+        next();
 
         if (!recurse_attributes(S, rd, attributes)) {
           return true;
@@ -664,15 +664,15 @@ bool qparse::recurse_function(qparse_t &S, qlex_t *rd, Stmt **node) {
       syntax(tok, "Expected a block after '{'");
     }
 
-    tok = qlex_peek(rd);
+    tok = peek();
 
     if (!recurse_constraints(tok, rd, S, req_in, req_out)) {
       return false;
     }
 
-    tok = qlex_peek(rd);
+    tok = peek();
     if (tok.is<qKWith>()) {
-      qlex_next(rd);
+      next();
 
       if (!recurse_attributes(S, rd, attributes)) {
         return true;

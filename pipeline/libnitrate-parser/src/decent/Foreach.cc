@@ -35,31 +35,31 @@
 
 using namespace qparse;
 
-bool qparse::recurse_foreach(qparse_t &S, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_next(rd);
+bool qparse::recurse_foreach(qparse_t &S, qlex_t &rd, Stmt **node) {
+  qlex_tok_t tok = next();
   bool has_parens = false;
 
   if (tok.is<qPuncLPar>()) {
     has_parens = true;
-    tok = qlex_next(rd);
+    tok = next();
   }
 
   if (!tok.is(qName)) {
     syntax(tok, "Expected identifier as index variable in foreach statement");
   }
-  std::string first_ident = tok.as_string(rd), second_ident;
+  std::string first_ident = tok.as_string(&rd), second_ident;
 
-  tok = qlex_next(rd);
+  tok = next();
 
   if (tok.is<qPuncComa>()) {
-    tok = qlex_next(rd);
+    tok = next();
     if (!tok.is(qName)) {
       syntax(tok, "Expected identifier as value variable in foreach statement");
     }
 
-    second_ident = tok.as_string(rd);
+    second_ident = tok.as_string(&rd);
 
-    tok = qlex_next(rd);
+    tok = next();
   } else {
     second_ident = "_";
   }
@@ -73,7 +73,7 @@ bool qparse::recurse_foreach(qparse_t &S, qlex_t *rd, Stmt **node) {
     if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &expr) || !expr) {
       syntax(tok, "Expected expression after '(' in foreach statement");
     }
-    tok = qlex_next(rd);
+    tok = next();
     if (!tok.is<qPuncRPar>()) {
       syntax(tok, "Expected ')' after expression in foreach statement");
     }
@@ -86,11 +86,11 @@ bool qparse::recurse_foreach(qparse_t &S, qlex_t *rd, Stmt **node) {
     }
   }
 
-  tok = qlex_peek(rd);
+  tok = peek();
 
   Block *block = nullptr;
   if (tok.is<qOpArrow>()) {
-    qlex_next(rd);
+    next();
     if (!recurse(S, rd, &block, false, true)) {
       syntax(
           tok,

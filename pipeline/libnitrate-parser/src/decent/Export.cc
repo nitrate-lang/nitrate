@@ -35,18 +35,18 @@
 
 using namespace qparse;
 
-bool qparse::recurse_pub(qparse_t &S, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_peek(rd);
+bool qparse::recurse_pub(qparse_t &S, qlex_t &rd, Stmt **node) {
+  qlex_tok_t tok = peek();
 
   String abiName;
 
   if (tok.is(qText)) {
-    qlex_next(rd);
+    next();
 
-    abiName = tok.as_string(rd);
+    abiName = tok.as_string(&rd);
     std::transform(abiName.begin(), abiName.end(), abiName.begin(), ::tolower);
 
-    tok = qlex_peek(rd);
+    tok = peek();
   }
 
   if (tok.is<qPuncLCur>()) {
@@ -71,18 +71,18 @@ bool qparse::recurse_pub(qparse_t &S, qlex_t *rd, Stmt **node) {
   return true;
 }
 
-bool qparse::recurse_sec(qparse_t &S, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_peek(rd);
+bool qparse::recurse_sec(qparse_t &S, qlex_t &rd, Stmt **node) {
+  qlex_tok_t tok = peek();
 
   String abiName;
 
   if (tok.is(qText)) {
-    qlex_next(rd);
+    next();
 
-    abiName = tok.as_string(rd);
+    abiName = tok.as_string(&rd);
     std::transform(abiName.begin(), abiName.end(), abiName.begin(), ::tolower);
 
-    tok = qlex_peek(rd);
+    tok = peek();
   }
 
   if (tok.is<qPuncLCur>()) {
@@ -105,18 +105,18 @@ bool qparse::recurse_sec(qparse_t &S, qlex_t *rd, Stmt **node) {
   return true;
 }
 
-bool qparse::recurse_pro(qparse_t &S, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_peek(rd);
+bool qparse::recurse_pro(qparse_t &S, qlex_t &rd, Stmt **node) {
+  qlex_tok_t tok = peek();
 
   String abiName;
 
   if (tok.is(qText)) {
-    qlex_next(rd);
+    next();
 
-    abiName = tok.as_string(rd);
+    abiName = tok.as_string(&rd);
     std::transform(abiName.begin(), abiName.end(), abiName.begin(), ::tolower);
 
-    tok = qlex_peek(rd);
+    tok = peek();
   }
 
   if (tok.is<qPuncLCur>()) {

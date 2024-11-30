@@ -33,7 +33,7 @@
 
 #include <decent/Recurse.hh>
 
-bool qparse::recurse_while(qparse_t &S, qlex_t *rd, Stmt **node) {
+bool qparse::recurse_while(qparse_t &S, qlex_t &rd, Stmt **node) {
   Expr *cond = nullptr;
   if (!recurse_expr(S, rd,
                     {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
@@ -42,8 +42,8 @@ bool qparse::recurse_while(qparse_t &S, qlex_t *rd, Stmt **node) {
 
   Block *then_block = nullptr;
 
-  if (qlex_peek(rd).is<qOpArrow>()) {
-    qlex_next(rd);
+  if (peek().is<qOpArrow>()) {
+    next();
     if (!recurse(S, rd, &then_block, false, true)) return false;
   } else {
     if (!recurse(S, rd, &then_block, true)) return false;

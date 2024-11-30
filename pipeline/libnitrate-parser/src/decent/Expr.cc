@@ -52,7 +52,7 @@ static inline qparse::Expr *LOC_121(qparse::Expr *p, qlex_tok_t t) {
 
 using namespace qparse;
 
-static Call *recurse_function_call(qparse_t &S, Expr *callee, qlex_t *rd,
+static Call *recurse_function_call(qparse_t &S, Expr *callee, qlex_t &rd,
                                    size_t depth) {
   /**
    * @brief
@@ -67,14 +67,14 @@ static Call *recurse_function_call(qparse_t &S, Expr *callee, qlex_t *rd,
      * @brief
      */
 
-    tok = qlex_peek(rd);
+    tok = peek();
 
     if (tok.is<qPuncRPar>()) {
       /**
        * @brief
        */
 
-      qlex_next(rd);
+      next();
       break;
     }
 
@@ -88,20 +88,20 @@ static Call *recurse_function_call(qparse_t &S, Expr *callee, qlex_t *rd,
 
     { /* Parse named argument */
       ident = tok;
-      qlex_next(rd);
-      tok = qlex_peek(rd);
+      next();
+      tok = peek();
 
       if (!tok.is<qPuncColn>()) {
         /**
          * @brief
          */
 
-        qlex_insert(rd, tok);
-        qlex_insert(rd, ident);
+        qlex_insert(&rd, tok);
+        qlex_insert(&rd, ident);
         goto parse_pos_arg;
       }
 
-      qlex_next(rd);
+      next();
 
       Expr *arg = nullptr;
       if (!recurse_expr(
@@ -114,7 +114,7 @@ static Call *recurse_function_call(qparse_t &S, Expr *callee, qlex_t *rd,
         return nullptr;
       }
 
-      call_args.push_back({ident.as_string(rd), arg});
+      call_args.push_back({ident.as_string(&rd), arg});
       goto comma;
     }
 
@@ -136,9 +136,9 @@ static Call *recurse_function_call(qparse_t &S, Expr *callee, qlex_t *rd,
   }
 
   comma: {
-    tok = qlex_peek(rd);
+    tok = peek();
     if (tok.is<qPuncComa>()) {
-      qlex_next(rd);
+      next();
     }
     continue;
   }
@@ -147,24 +147,19 @@ static Call *recurse_function_call(qparse_t &S, Expr *callee, qlex_t *rd,
   return Call::get(callee, call_args);
 }
 
-static bool recurse_fstring(qparse_t &S, FString **node, qlex_t *rd,
+static bool recurse_fstring(qparse_t &S, FString **node, qlex_t &rd,
                             size_t depth) {
   /**
    * @brief Parse an F-string expression
    * @return true if it is okay to proceed, false otherwise
    */
 
-  qlex_tok_t tok = qlex_next(rd);
+  qlex_tok_t tok = next();
   if (!tok.is(qText)) {
     syntax(tok, "Expected a string literal in F-string expression");
   }
 
-  std::string_view fstr;
-  { /* Get the string literal */
-    size_t len;
-    const char *ptr = qlex_str(rd, &tok, &len);
-    fstr = std::string_view(ptr, len);
-  }
+  auto fstr = tok.as_string(&rd);
 
   std::string tmp;
   tmp.reserve(fstr.size());
@@ -183,12 +178,12 @@ static bool recurse_fstring(qparse_t &S, FString **node, qlex_t *rd,
       w_end = i + 1;
       state = 0;
 
-      std::string_view sub = fstr.substr(w_beg, w_end - w_beg);
+      auto sub = fstr.substr(w_beg, w_end - w_beg);
 
       qlex_t *subrd = qlex_direct(sub.data(), sub.size(), "fstring", S.env);
       qlex_tok_t subtok = qlex_peek(subrd);
 
-      if (!recurse_expr(S, subrd, {qlex_tok_t(qPunc, qPuncRCur)}, &expr,
+      if (!recurse_expr(S, *subrd, {qlex_tok_t(qPunc, qPuncRCur)}, &expr,
                         depth + 1) ||
           !expr) {
         syntax(subtok, "Expected an expression in F-string parameter");
@@ -232,7 +227,7 @@ static bool recurse_fstring(qparse_t &S, FString **node, qlex_t *rd,
 /// TODO: qlex_op_t precedence
 /// TODO: qlex_op_t associativity
 
-bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
+bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
                           std::set<qlex_tok_t> terminators, Expr **node,
                           size_t depth) {
   /**
@@ -240,7 +235,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
    */
 
   if (depth > MAX_EXPR_DEPTH) {
-    syntax(qlex_peek(rd),
+    syntax(peek(),
            "Expression depth exceeded; Expressions can not be nested more than "
            "%d times",
            MAX_EXPR_DEPTH);
@@ -250,7 +245,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
   std::stack<Expr *> stack;
 
   while (true) {
-    qlex_tok_t tok = qlex_peek(rd);
+    qlex_tok_t tok = peek();
 
     if (tok.is(qEofF)) {
       // syntax(tok, "Unexpected end of file while parsing expression");
@@ -277,7 +272,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
       return true;
     }
 
-    qlex_next(rd);
+    next();
 
     switch (tok.ty) {
       case qIntL: {
@@ -285,9 +280,9 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
          * @brief Parse integer literal with type suffix
          */
 
-        stack.push(LOC_121(ConstInt::get(tok.as_string(rd)), tok));
+        stack.push(LOC_121(ConstInt::get(tok.as_string(&rd)), tok));
 
-        tok = qlex_peek(rd);
+        tok = peek();
         if (tok.is(qName)) {
           Type *suffix = nullptr;
           if (!recurse_type(S, rd, &suffix) || !suffix) {
@@ -307,9 +302,9 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
          * @brief Parse floating-point literal with type suffix
          */
 
-        stack.push(LOC_121(ConstFloat::get(tok.as_string(rd)), tok));
+        stack.push(LOC_121(ConstFloat::get(tok.as_string(&rd)), tok));
 
-        tok = qlex_peek(rd);
+        tok = peek();
         if (tok.is(qName)) {
           Type *suffix = nullptr;
           if (!recurse_type(S, rd, &suffix) || !suffix) {
@@ -329,9 +324,9 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
          * @brief Parse string literal with type suffix
          */
 
-        stack.push(LOC_121(ConstString::get(tok.as_string(rd)), tok));
+        stack.push(LOC_121(ConstString::get(tok.as_string(&rd)), tok));
 
-        tok = qlex_peek(rd);
+        tok = peek();
         if (tok.is(qName)) {
           Type *suffix = nullptr;
           if (!recurse_type(S, rd, &suffix) || !suffix) {
@@ -350,12 +345,12 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
         /**
          * @brief
          */
-        auto str = tok.as_string(rd);
+        auto str = tok.as_string(&rd);
         qcore_assert(str.size() == 1);
 
         stack.push(LOC_121(ConstChar::get(str.at(0)), tok));
 
-        tok = qlex_peek(rd);
+        tok = peek();
         if (tok.is(qName)) {
           Type *suffix = nullptr;
           if (!recurse_type(S, rd, &suffix) || !suffix) {
@@ -396,8 +391,8 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
             }
             StmtExpr *adapter = StmtExpr::get(f);
 
-            if (qlex_peek(rd).is<qPuncLPar>()) {
-              qlex_next(rd);
+            if (peek().is<qPuncLPar>()) {
+              next();
               Call *fcall = recurse_function_call(S, adapter, rd, depth);
 
               if (fcall == nullptr) {
@@ -455,7 +450,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
               return false;
             }
 
-            if (!qlex_next(rd).is<qPuncRPar>()) {
+            if (!next().is<qPuncRPar>()) {
               syntax(tok, "Expected ')' to close the parentheses");
               return false;
             }
@@ -476,9 +471,9 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
           case qPuncLCur: {
             ListData elements;
             while (true) {
-              tok = qlex_peek(rd);
+              tok = peek();
               if (tok.is<qPuncRCur>()) {
-                qlex_next(rd);
+                next();
                 break;
               }
 
@@ -490,7 +485,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
                 return false;
               }
 
-              tok = qlex_next(rd);
+              tok = next();
               if (!tok.is<qPuncColn>()) {
                 syntax(tok, "Expected ':' in list element");
                 return false;
@@ -507,9 +502,9 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
 
               elements.push_back(Assoc::get(key, value));
 
-              tok = qlex_peek(rd);
+              tok = peek();
               if (tok.is<qPuncComa>()) {
-                qlex_next(rd);
+                next();
               }
             }
 
@@ -525,9 +520,9 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
             if (stack.empty()) {
               ListData elements;
               while (true) {
-                tok = qlex_peek(rd);
+                tok = peek();
                 if (tok.is<qPuncRBrk>()) {
-                  qlex_next(rd);
+                  next();
                   stack.push(List::get(elements));
                   break;
                 }
@@ -543,9 +538,9 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
                   return false;
                 }
 
-                tok = qlex_peek(rd);
+                tok = peek();
                 if (tok.is<qPuncSemi>()) {
-                  qlex_next(rd);
+                  next();
 
                   Expr *count = nullptr;
                   if (!recurse_expr(S, rd,
@@ -576,13 +571,13 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
                     elements.push_back(element);
                   }
 
-                  tok = qlex_peek(rd);
+                  tok = peek();
                 } else if (element) {
                   elements.push_back(element);
                 }
 
                 if (tok.is<qPuncComa>()) {
-                  qlex_next(rd);
+                  next();
                 }
               }
 
@@ -606,7 +601,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
               return false;
             }
 
-            tok = qlex_next(rd);
+            tok = next();
             if (tok.is<qPuncColn>()) {
               Expr *end = nullptr;
               if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)}, &end,
@@ -616,7 +611,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
                 return false;
               }
 
-              tok = qlex_next(rd);
+              tok = next();
               if (!tok.is<qPuncRBrk>()) {
                 syntax(tok, "Expected ']' to close the list index");
                 return false;
@@ -631,18 +626,18 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
               return false;
             }
 
-            tok = qlex_peek(rd);
+            tok = peek();
             if (tok.is<qOpInc>()) {
               PostUnaryExpr *p =
                   PostUnaryExpr::get(Index::get(left, index), qOpInc);
               stack.push(p);
-              qlex_next(rd);
+              next();
               continue;
             } else if (tok.is<qOpDec>()) {
               PostUnaryExpr *p =
                   PostUnaryExpr::get(Index::get(left, index), qOpDec);
               stack.push(p);
-              qlex_next(rd);
+              next();
               continue;
             }
 
@@ -684,25 +679,25 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
           Expr *left = stack.top();
           stack.pop();
 
-          tok = qlex_next(rd);
+          tok = next();
           if (!tok.is(qName)) {
             syntax(tok, "Expected an identifier after '.'");
             return false;
           }
 
-          std::string ident = tok.as_string(rd);
-          tok = qlex_peek(rd);
+          std::string ident = tok.as_string(&rd);
+          tok = peek();
           if (tok.is<qOpInc>()) {
             PostUnaryExpr *p =
                 PostUnaryExpr::get(Field::get(left, ident), qOpInc);
             stack.push(p);
-            qlex_next(rd);
+            next();
             continue;
           } else if (tok.is<qOpDec>()) {
             PostUnaryExpr *p =
                 PostUnaryExpr::get(Field::get(left, ident), qOpDec);
             stack.push(p);
-            qlex_next(rd);
+            next();
             continue;
           }
 
@@ -767,10 +762,9 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
         break;
       }
       case qName: {
-        std::string ident = tok.as_string(rd);
-        if (qlex_peek(rd).ty == qPunc &&
-            (qlex_peek(rd)).as<qlex_punc_t>() == qPuncLPar) {
-          qlex_next(rd);
+        std::string ident = tok.as_string(&rd);
+        if (peek().ty == qPunc && (peek()).as<qlex_punc_t>() == qPuncLPar) {
+          next();
 
           Call *fcall = recurse_function_call(S, Ident::get(ident), rd, depth);
           if (fcall == nullptr) {
@@ -780,15 +774,15 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
 
           stack.push(fcall);
           continue;
-        } else if (qlex_peek(rd).is<qOpInc>()) {
+        } else if (peek().is<qOpInc>()) {
           PostUnaryExpr *p = PostUnaryExpr::get(Ident::get(ident), qOpInc);
           stack.push(p);
-          qlex_next(rd);
+          next();
           continue;
-        } else if (qlex_peek(rd).is<qOpDec>()) {
+        } else if (peek().is<qOpDec>()) {
           PostUnaryExpr *p = PostUnaryExpr::get(Ident::get(ident), qOpDec);
           stack.push(p);
-          qlex_next(rd);
+          next();
           continue;
         } else {
           Ident *id = Ident::get(ident);
@@ -805,6 +799,6 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t *rd,
     }
   }
 
-  syntax(qlex_peek(rd), "Unexpected end of expression");
+  syntax(peek(), "Unexpected end of expression");
   return false;
 }
