@@ -36,7 +36,7 @@
 using namespace qparse;
 using namespace qparse::parser;
 
-bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {
+bool qparse::parser::parse_pub(qparse_t &S, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_peek(rd);
 
   String abiName;
@@ -52,7 +52,7 @@ bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   if (tok.is<qPuncLCur>()) {
     Block *block = nullptr;
-    if (!parse(job, rd, &block, true)) {
+    if (!parse(S, rd, &block, true)) {
       return false;
     }
 
@@ -62,7 +62,7 @@ bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   Block *block = nullptr;
-  if (!parse(job, rd, &block, false, true)) {
+  if (!parse(S, rd, &block, false, true)) {
     syntax(tok, "Expected block or statement list after 'pub'");
     return false;
   }
@@ -72,7 +72,7 @@ bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {
   return true;
 }
 
-bool qparse::parser::parse_sec(qparse_t &job, qlex_t *rd, Stmt **node) {
+bool qparse::parser::parse_sec(qparse_t &S, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_peek(rd);
 
   String abiName;
@@ -88,7 +88,7 @@ bool qparse::parser::parse_sec(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   if (tok.is<qPuncLCur>()) {
     Block *block = nullptr;
-    if (!parse(job, rd, &block, true)) return false;
+    if (!parse(S, rd, &block, true)) return false;
 
     *node = block;
     (*node)->set_end_pos(block->get_end_pos());
@@ -96,7 +96,7 @@ bool qparse::parser::parse_sec(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   Block *block = nullptr;
-  if (!parse(job, rd, &block, false, true)) {
+  if (!parse(S, rd, &block, false, true)) {
     syntax(tok, "Expected block or statement list after 'sec'");
     return false;
   }
@@ -106,7 +106,7 @@ bool qparse::parser::parse_sec(qparse_t &job, qlex_t *rd, Stmt **node) {
   return true;
 }
 
-bool qparse::parser::parse_pro(qparse_t &job, qlex_t *rd, Stmt **node) {
+bool qparse::parser::parse_pro(qparse_t &S, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_peek(rd);
 
   String abiName;
@@ -122,7 +122,7 @@ bool qparse::parser::parse_pro(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   if (tok.is<qPuncLCur>()) {
     Block *block = nullptr;
-    if (!parse(job, rd, &block, true)) return false;
+    if (!parse(S, rd, &block, true)) return false;
 
     *node = block;
     (*node)->set_end_pos(block->get_end_pos());
@@ -130,7 +130,7 @@ bool qparse::parser::parse_pro(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   Block *block = nullptr;
-  if (!parse(job, rd, &block, false, true)) {
+  if (!parse(S, rd, &block, false, true)) {
     syntax(tok, "Expected block or statement list after 'pro'");
     return false;
   }

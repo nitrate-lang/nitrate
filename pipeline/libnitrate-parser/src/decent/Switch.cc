@@ -36,9 +36,9 @@
 using namespace qparse::parser;
 using namespace qparse;
 
-bool qparse::parser::parse_switch(qparse_t &job, qlex_t *rd, Stmt **node) {
+bool qparse::parser::parse_switch(qparse_t &S, qlex_t *rd, Stmt **node) {
   Expr *cond = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncLCur)}, &cond)) {
+  if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncLCur)}, &cond)) {
     syntax(qlex_peek(rd), "Expected switch condition");
   }
 
@@ -66,7 +66,7 @@ bool qparse::parser::parse_switch(qparse_t &job, qlex_t *rd, Stmt **node) {
         syntax(tok, "Expected ':' after 'default' keyword");
       }
 
-      if (!parse(job, rd, &default_case)) {
+      if (!parse(S, rd, &default_case)) {
         syntax(tok, "Expected block after 'default' keyword");
       }
 
@@ -79,7 +79,7 @@ bool qparse::parser::parse_switch(qparse_t &job, qlex_t *rd, Stmt **node) {
     qlex_next(rd);
 
     Expr *case_expr = nullptr;
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncColn)}, &case_expr)) {
+    if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncColn)}, &case_expr)) {
       syntax(qlex_peek(rd), "Expected case expression");
     }
 
@@ -89,7 +89,7 @@ bool qparse::parser::parse_switch(qparse_t &job, qlex_t *rd, Stmt **node) {
     }
 
     Block *case_block = nullptr;
-    if (!parse(job, rd, &case_block)) {
+    if (!parse(S, rd, &case_block)) {
       syntax(tok, "Expected block after case expression");
     }
 

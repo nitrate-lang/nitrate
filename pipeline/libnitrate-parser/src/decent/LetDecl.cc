@@ -37,7 +37,7 @@ using namespace qparse;
 using namespace qparse::parser;
 using namespace qparse;
 
-static bool parse_decl(qparse_t &job, qlex_tok_t tok, qlex_t *rd,
+static bool parse_decl(qparse_t &S, qlex_tok_t tok, qlex_t *rd,
                        std::pair<std::string, Type *> &decl) {
   if (!tok.is(qName)) {
     syntax(tok, "Expected a name in let declaration");
@@ -56,7 +56,7 @@ static bool parse_decl(qparse_t &job, qlex_tok_t tok, qlex_t *rd,
 
   Type *type = nullptr;
 
-  if (!parse_type(job, rd, &type)) {
+  if (!parse_type(S, rd, &type)) {
     syntax(tok, "Failed to parse type in declaration");
   }
 
@@ -64,14 +64,14 @@ static bool parse_decl(qparse_t &job, qlex_tok_t tok, qlex_t *rd,
   return true;
 }
 
-bool qparse::parser::parse_let(qparse_t &job, qlex_t *rd,
+bool qparse::parser::parse_let(qparse_t &S, qlex_t *rd,
                                std::vector<Stmt *> &nodes) {
   qlex_tok_t tok = qlex_next(rd);
 
   std::vector<std::pair<std::string, Type *>> decls;
   if (tok.is(qName)) {
     std::pair<std::string, Type *> decl;
-    if (!parse_decl(job, tok, rd, decl)) {
+    if (!parse_decl(S, tok, rd, decl)) {
       return false;
     }
 
@@ -95,7 +95,7 @@ bool qparse::parser::parse_let(qparse_t &job, qlex_t *rd,
     }
   } else if (tok.is<qOpSet>()) {
     Expr *init = nullptr;
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init) || !init) {
+    if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init) || !init) {
       syntax(tok, "Failed to parse initializer in let declaration");
     }
 

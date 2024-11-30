@@ -53,7 +53,7 @@ static inline qparse::Expr *LOC_121(qparse::Expr *p, qlex_tok_t t) {
 using namespace qparse;
 using namespace qparse::parser;
 
-static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd,
+static Call *parse_function_call(qparse_t &S, Expr *callee, qlex_t *rd,
                                  size_t depth) {
   /**
    * @brief
@@ -106,7 +106,7 @@ static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd,
 
       Expr *arg = nullptr;
       if (!parse_expr(
-              job, rd,
+              S, rd,
               {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
               &arg, depth + 1) ||
           !arg) {
@@ -122,9 +122,8 @@ static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd,
   parse_pos_arg: {
     Expr *arg = nullptr;
     if (!parse_expr(
-            job, rd,
-            {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)}, &arg,
-            depth + 1) ||
+            S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
+            &arg, depth + 1) ||
         !arg) {
       syntax(tok,
              "Expected an expression in positional function call argument");
@@ -149,7 +148,7 @@ static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd,
   return Call::get(callee, call_args);
 }
 
-static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd,
+static bool parse_fstring(qparse_t &S, FString **node, qlex_t *rd,
                           size_t depth) {
   /**
    * @brief Parse an F-string expression
@@ -187,10 +186,10 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd,
 
       std::string_view sub = fstr.substr(w_beg, w_end - w_beg);
 
-      qlex_t *subrd = qlex_direct(sub.data(), sub.size(), "fstring", job.env);
+      qlex_t *subrd = qlex_direct(sub.data(), sub.size(), "fstring", S.env);
       qlex_tok_t subtok = qlex_peek(subrd);
 
-      if (!parse_expr(job, subrd, {qlex_tok_t(qPunc, qPuncRCur)}, &expr,
+      if (!parse_expr(S, subrd, {qlex_tok_t(qPunc, qPuncRCur)}, &expr,
                       depth + 1) ||
           !expr) {
         syntax(subtok, "Expected an expression in F-string parameter");
@@ -234,7 +233,7 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd,
 /// TODO: qlex_op_t precedence
 /// TODO: qlex_op_t associativity
 
-bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
+bool qparse::parser::parse_expr(qparse_t &S, qlex_t *rd,
                                 std::set<qlex_tok_t> terminators, Expr **node,
                                 size_t depth) {
   /**
@@ -292,7 +291,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
         tok = qlex_peek(rd);
         if (tok.is(qName)) {
           Type *suffix = nullptr;
-          if (!parse_type(job, rd, &suffix) || !suffix) {
+          if (!parse_type(S, rd, &suffix) || !suffix) {
             syntax(tok, "Unknown integer literal suffix");
             return false;
           }
@@ -314,7 +313,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
         tok = qlex_peek(rd);
         if (tok.is(qName)) {
           Type *suffix = nullptr;
-          if (!parse_type(job, rd, &suffix) || !suffix) {
+          if (!parse_type(S, rd, &suffix) || !suffix) {
             syntax(tok, "Unknown float literal suffix");
             return false;
           }
@@ -336,7 +335,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
         tok = qlex_peek(rd);
         if (tok.is(qName)) {
           Type *suffix = nullptr;
-          if (!parse_type(job, rd, &suffix) || !suffix) {
+          if (!parse_type(S, rd, &suffix) || !suffix) {
             syntax(tok, "Unknown string literal suffix");
             return false;
           }
@@ -360,7 +359,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
         tok = qlex_peek(rd);
         if (tok.is(qName)) {
           Type *suffix = nullptr;
-          if (!parse_type(job, rd, &suffix) || !suffix) {
+          if (!parse_type(S, rd, &suffix) || !suffix) {
             syntax(tok, "Unknown char literal suffix");
             return false;
           }
@@ -392,7 +391,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
           }
           case qKFn: {
             Stmt *f = nullptr;
-            if (!parse_function(job, rd, &f)) {
+            if (!parse_function(S, rd, &f)) {
               syntax(tok, "Expected a function definition in expression");
               return false;
             }
@@ -400,7 +399,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
 
             if (qlex_peek(rd).is<qPuncLPar>()) {
               qlex_next(rd);
-              Call *fcall = parse_function_call(job, adapter, rd, depth);
+              Call *fcall = parse_function_call(S, adapter, rd, depth);
 
               if (fcall == nullptr) {
                 syntax(tok,
@@ -417,7 +416,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
           }
           case qKFString: {
             FString *f = nullptr;
-            if (!parse_fstring(job, &f, rd, depth)) {
+            if (!parse_fstring(S, &f, rd, depth)) {
               syntax(tok, "Expected an F-string in expression");
               return false;
             }
@@ -436,7 +435,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
         switch (tok.as<qlex_punc_t>()) {
           case qPuncLPar: {
             if (!stack.empty() && stack.top()->is<Field>()) {
-              Call *fcall = parse_function_call(job, stack.top(), rd, depth);
+              Call *fcall = parse_function_call(S, stack.top(), rd, depth);
 
               if (fcall == nullptr) {
                 syntax(tok, "Expected a function call in expression");
@@ -451,7 +450,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
             Expr *expr = nullptr;
             auto terminators_copy = terminators;
             terminators_copy.insert(qlex_tok_t(qPunc, qPuncRPar));
-            if (!parse_expr(job, rd, terminators_copy, &expr, depth + 1) ||
+            if (!parse_expr(S, rd, terminators_copy, &expr, depth + 1) ||
                 !expr) {
               syntax(tok, "Expected an expression in parentheses");
               return false;
@@ -485,7 +484,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
               }
 
               Expr *key = nullptr, *value = nullptr;
-              if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncColn)}, &key,
+              if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncColn)}, &key,
                               depth + 1) ||
                   !key) {
                 syntax(tok, "Expected a key in list element");
@@ -498,7 +497,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
                 return false;
               }
 
-              if (!parse_expr(job, rd,
+              if (!parse_expr(S, rd,
                               {qlex_tok_t(qPunc, qPuncComa),
                                qlex_tok_t(qPunc, qPuncRCur)},
                               &value, depth + 1) ||
@@ -535,7 +534,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
                 }
 
                 Expr *element = nullptr;
-                if (!parse_expr(job, rd,
+                if (!parse_expr(S, rd,
                                 {qlex_tok_t(qPunc, qPuncComa),
                                  qlex_tok_t(qPunc, qPuncSemi),
                                  qlex_tok_t(qPunc, qPuncRBrk)},
@@ -550,7 +549,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
                   qlex_next(rd);
 
                   Expr *count = nullptr;
-                  if (!parse_expr(job, rd,
+                  if (!parse_expr(S, rd,
                                   {qlex_tok_t(qPunc, qPuncRBrk),
                                    qlex_tok_t(qPunc, qPuncComa)},
                                   &count, depth + 1) ||
@@ -599,7 +598,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
             Expr *index = nullptr, *left = stack.top();
             stack.pop();
 
-            if (!parse_expr(job, rd,
+            if (!parse_expr(S, rd,
                             {qlex_tok_t(qPunc, qPuncRBrk),
                              qlex_tok_t(qPunc, qPuncColn)},
                             &index, depth + 1) ||
@@ -611,7 +610,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
             tok = qlex_next(rd);
             if (tok.is<qPuncColn>()) {
               Expr *end = nullptr;
-              if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRBrk)}, &end,
+              if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)}, &end,
                               depth + 1) ||
                   !end) {
                 syntax(tok, "Expected an end index in list");
@@ -660,8 +659,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
             Expr *right = nullptr, *left = stack.top();
             stack.pop();
 
-            if (!parse_expr(job, rd, terminators, &right, depth + 1) ||
-                !right) {
+            if (!parse_expr(S, rd, terminators, &right, depth + 1) || !right) {
               syntax(tok, "Expected an expression after ','");
               return false;
             }
@@ -720,7 +718,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
           }
 
           Type *type = nullptr;
-          if (!parse_type(job, rd, &type)) {
+          if (!parse_type(S, rd, &type)) {
             syntax(tok, "Failed to parse type in 'as' expression");
             return false;
           }
@@ -738,7 +736,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
           }
 
           Type *type = nullptr;
-          if (!parse_type(job, rd, &type)) {
+          if (!parse_type(S, rd, &type)) {
             syntax(tok, "Failed to parse type in 'bitcast as' expression");
             return false;
           }
@@ -749,7 +747,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
           continue;
         }
 
-        if (!parse_expr(job, rd, terminators, &expr, depth + 1) || !expr) {
+        if (!parse_expr(S, rd, terminators, &expr, depth + 1) || !expr) {
           syntax(tok, "Failed to parse expression in binary operation");
           return false;
         }
@@ -774,7 +772,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd,
             (qlex_peek(rd)).as<qlex_punc_t>() == qPuncLPar) {
           qlex_next(rd);
 
-          Call *fcall = parse_function_call(job, Ident::get(ident), rd, depth);
+          Call *fcall = parse_function_call(S, Ident::get(ident), rd, depth);
           if (fcall == nullptr) {
             syntax(tok, "Expected a function call in expression");
             return false;

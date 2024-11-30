@@ -37,7 +37,7 @@ using namespace qparse;
 using namespace qparse::parser;
 using namespace qparse;
 
-static bool parse_enum_field(qparse_t &job, qlex_t *rd, EnumDefItems &fields) {
+static bool parse_enum_field(qparse_t &S, qlex_t *rd, EnumDefItems &fields) {
   qlex_tok_t tok = qlex_next(rd);
   if (!tok.is(qName)) {
     syntax(tok, "Enum field must be named by an identifier");
@@ -53,8 +53,7 @@ static bool parse_enum_field(qparse_t &job, qlex_t *rd, EnumDefItems &fields) {
     qlex_next(rd);
     Expr *expr = nullptr;
     if (!parse_expr(
-            job, rd,
-            {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},
+            S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},
             &expr) ||
         !expr) {
       syntax(tok, "Expected an expression after '='");
@@ -82,7 +81,7 @@ static bool parse_enum_field(qparse_t &job, qlex_t *rd, EnumDefItems &fields) {
   return true;
 }
 
-bool qparse::parser::parse_enum(qparse_t &job, qlex_t *rd, Stmt **node) {
+bool qparse::parser::parse_enum(qparse_t &S, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_next(rd);
   if (!tok.is(qName)) {
     syntax(tok, "Enum definition must be named by an identifier");
@@ -95,7 +94,7 @@ bool qparse::parser::parse_enum(qparse_t &job, qlex_t *rd, Stmt **node) {
   Type *type = nullptr;
   if (tok.is<qPuncColn>()) {
     qlex_next(rd);
-    if (!parse_type(job, rd, &type)) {
+    if (!parse_type(S, rd, &type)) {
       return false;
     }
   }
@@ -115,7 +114,7 @@ bool qparse::parser::parse_enum(qparse_t &job, qlex_t *rd, Stmt **node) {
       break;
     }
 
-    if (!parse_enum_field(job, rd, fields)) {
+    if (!parse_enum_field(S, rd, fields)) {
       return false;
     }
   }

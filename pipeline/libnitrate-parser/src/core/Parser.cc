@@ -45,7 +45,7 @@
 using namespace qparse::parser;
 using namespace qparse;
 
-bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
+bool qparse::parser::parse(qparse_t &S, qlex_t *rd, Block **group,
                            bool expect_braces, bool single_stmt) {
   qlex_tok_t tok;
 
@@ -84,7 +84,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
       }
 
       Expr *expr = nullptr;
-      if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr)) {
+      if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr)) {
         syntax(tok, "Expected expression");
         return false;
       }
@@ -115,7 +115,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
     switch (tok.as<qlex_key_t>()) {
       case qKVar: {
         std::vector<Stmt *> items;
-        if (!parse_var(job, rd, items)) {
+        if (!parse_var(S, rd, items)) {
           return false;
         }
         for (auto &decl : items) {
@@ -126,7 +126,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
 
       case qKLet: {
         std::vector<Stmt *> items;
-        if (!parse_let(job, rd, items)) {
+        if (!parse_let(S, rd, items)) {
           return false;
         }
         for (auto &decl : items) {
@@ -137,7 +137,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
 
       case qKConst: {
         std::vector<Stmt *> items;
-        if (!parse_const(job, rd, items)) {
+        if (!parse_const(S, rd, items)) {
           return false;
         }
         for (auto &decl : items) {
@@ -147,14 +147,14 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
       }
 
       case qKEnum: {
-        if (!parse_enum(job, rd, &node)) {
+        if (!parse_enum(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKStruct: {
-        if (!parse_struct(job, rd, &node) || !node) {
+        if (!parse_struct(S, rd, &node) || !node) {
           return false;
         }
 
@@ -163,7 +163,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
       }
 
       case qKRegion: {
-        if (!parse_struct(job, rd, &node) || !node) {
+        if (!parse_struct(S, rd, &node) || !node) {
           return false;
         }
 
@@ -172,7 +172,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
       }
 
       case qKGroup: {
-        if (!parse_struct(job, rd, &node) || !node) {
+        if (!parse_struct(S, rd, &node) || !node) {
           return false;
         }
 
@@ -181,7 +181,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
       }
 
       case qKClass: {
-        if (!parse_struct(job, rd, &node) || !node) {
+        if (!parse_struct(S, rd, &node) || !node) {
           return false;
         }
 
@@ -190,7 +190,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
       }
 
       case qKUnion: {
-        if (!parse_struct(job, rd, &node) || !node) {
+        if (!parse_struct(S, rd, &node) || !node) {
           return false;
         }
 
@@ -199,21 +199,21 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
       }
 
       case qKType: {
-        if (!parse_typedef(job, rd, &node)) {
+        if (!parse_typedef(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKSubsystem: {
-        if (!parse_subsystem(job, rd, &node)) {
+        if (!parse_subsystem(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKFn: {
-        if (!parse_function(job, rd, &node)) {
+        if (!parse_function(S, rd, &node)) {
           return false;
         }
         break;
@@ -221,35 +221,35 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
 
       case qKPub:
       case qKImport: {  // they both declare external functions
-        if (!parse_pub(job, rd, &node)) {
+        if (!parse_pub(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKSec: {
-        if (!parse_sec(job, rd, &node)) {
+        if (!parse_sec(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKPro: {
-        if (!parse_pro(job, rd, &node)) {
+        if (!parse_pro(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKReturn: {
-        if (!parse_return(job, rd, &node)) {
+        if (!parse_return(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKRetif: {
-        if (!parse_retif(job, rd, &node)) {
+        if (!parse_retif(S, rd, &node)) {
           return false;
         }
         break;
@@ -266,42 +266,42 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
       }
 
       case qKIf: {
-        if (!parse_if(job, rd, &node)) {
+        if (!parse_if(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKWhile: {
-        if (!parse_while(job, rd, &node)) {
+        if (!parse_while(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKFor: {
-        if (!parse_for(job, rd, &node)) {
+        if (!parse_for(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKForeach: {
-        if (!parse_foreach(job, rd, &node)) {
+        if (!parse_foreach(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qKSwitch: {
-        if (!parse_switch(job, rd, &node)) {
+        if (!parse_switch(S, rd, &node)) {
           return false;
         }
         break;
       }
 
       case qK__Asm__: {
-        if (!parse_inline_asm(job, rd, &node)) {
+        if (!parse_inline_asm(S, rd, &node)) {
           return false;
         }
         break;
@@ -321,11 +321,11 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
         Block *block = nullptr;
         tok = qlex_peek(rd);
         if (tok.is<qPuncLCur>()) {
-          if (!parse(job, rd, &block)) {
+          if (!parse(S, rd, &block)) {
             return false;
           }
         } else {
-          if (!parse(job, rd, &block, false, true)) {
+          if (!parse(S, rd, &block, false, true)) {
             return false;
           }
         }
@@ -339,11 +339,11 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
         Block *block = nullptr;
         tok = qlex_peek(rd);
         if (tok.is<qPuncLCur>()) {
-          if (!parse(job, rd, &block)) {
+          if (!parse(S, rd, &block)) {
             return false;
           }
         } else {
-          if (!parse(job, rd, &block, false, true)) {
+          if (!parse(S, rd, &block, false, true)) {
             return false;
           }
         }
@@ -356,11 +356,11 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
         Block *block = nullptr;
         tok = qlex_peek(rd);
         if (tok.is<qPuncLCur>()) {
-          if (!parse(job, rd, &block)) {
+          if (!parse(S, rd, &block)) {
             return false;
           }
         } else {
-          if (!parse(job, rd, &block, false, true)) {
+          if (!parse(S, rd, &block, false, true)) {
             return false;
           }
         }

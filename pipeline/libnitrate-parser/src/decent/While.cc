@@ -35,9 +35,9 @@
 
 using namespace qparse::parser;
 
-bool qparse::parser::parse_while(qparse_t &job, qlex_t *rd, Stmt **node) {
+bool qparse::parser::parse_while(qparse_t &S, qlex_t *rd, Stmt **node) {
   Expr *cond = nullptr;
-  if (!parse_expr(job, rd,
+  if (!parse_expr(S, rd,
                   {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
                   &cond))
     return false;
@@ -46,9 +46,9 @@ bool qparse::parser::parse_while(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   if (qlex_peek(rd).is<qOpArrow>()) {
     qlex_next(rd);
-    if (!parse(job, rd, &then_block, false, true)) return false;
+    if (!parse(S, rd, &then_block, false, true)) return false;
   } else {
-    if (!parse(job, rd, &then_block, true)) return false;
+    if (!parse(S, rd, &then_block, true)) return false;
   }
 
   *node = WhileStmt::get(cond, then_block);

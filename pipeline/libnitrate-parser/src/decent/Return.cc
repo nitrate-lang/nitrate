@@ -36,7 +36,7 @@
 using namespace qparse::parser;
 using namespace qparse;
 
-bool qparse::parser::parse_return(qparse_t &job, qlex_t *rd, Stmt **node) {
+bool qparse::parser::parse_return(qparse_t &S, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_peek(rd);
 
   if (tok.is<qPuncSemi>()) {
@@ -47,7 +47,7 @@ bool qparse::parser::parse_return(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   Expr *expr = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
+  if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
     syntax(tok, "Expected an expression in the return statement.");
   }
 
@@ -64,11 +64,11 @@ bool qparse::parser::parse_return(qparse_t &job, qlex_t *rd, Stmt **node) {
   return true;
 }
 
-bool qparse::parser::parse_retif(qparse_t &job, qlex_t *rd, Stmt **node) {
+bool qparse::parser::parse_retif(qparse_t &S, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok;
 
   Expr *condition = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa)}, &condition)) {
+  if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncComa)}, &condition)) {
     syntax(tok, "Expected a condition in the return-if statement.");
   }
 
@@ -78,7 +78,7 @@ bool qparse::parser::parse_retif(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   Expr *return_expr = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &return_expr)) {
+  if (!parse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &return_expr)) {
     syntax(tok, "Expected a return expression after the comma.");
   }
 

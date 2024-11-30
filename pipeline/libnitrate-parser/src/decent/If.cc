@@ -35,9 +35,9 @@
 
 using namespace qparse::parser;
 
-bool qparse::parser::parse_if(qparse_t &job, qlex_t *rd, Stmt **node) {
+bool qparse::parser::parse_if(qparse_t &S, qlex_t *rd, Stmt **node) {
   Expr *cond = nullptr;
-  if (!parse_expr(job, rd,
+  if (!parse_expr(S, rd,
                   {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
                   &cond)) {
     return false;
@@ -46,9 +46,9 @@ bool qparse::parser::parse_if(qparse_t &job, qlex_t *rd, Stmt **node) {
   Block *then_block = nullptr;
   if (qlex_peek(rd).is<qOpArrow>()) {
     qlex_next(rd);
-    if (!parse(job, rd, &then_block, false, true)) return false;
+    if (!parse(S, rd, &then_block, false, true)) return false;
   } else {
-    if (!parse(job, rd, &then_block, true)) return false;
+    if (!parse(S, rd, &then_block, true)) return false;
   }
 
   qlex_tok_t tok = qlex_peek(rd);
@@ -59,17 +59,17 @@ bool qparse::parser::parse_if(qparse_t &job, qlex_t *rd, Stmt **node) {
     if (qlex_peek(rd).is<qOpArrow>()) {
       qlex_next(rd);
 
-      if (!parse(job, rd, &else_block, false, true)) {
+      if (!parse(S, rd, &else_block, false, true)) {
         return false;
       }
     } else {
       if (qlex_peek(rd).is<qKIf>()) {
         qlex_next(rd);
-        if (!parse_if(job, rd, reinterpret_cast<Stmt **>(&else_block))) {
+        if (!parse_if(S, rd, reinterpret_cast<Stmt **>(&else_block))) {
           return false;
         }
       } else {
-        if (!parse(job, rd, &else_block, true, false)) {
+        if (!parse(S, rd, &else_block, true, false)) {
           return false;
         }
       }

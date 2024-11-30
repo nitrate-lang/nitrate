@@ -41,7 +41,7 @@ using namespace qparse;
 using namespace qparse::parser;
 using namespace qparse;
 
-bool qparse::parser::parse_attributes(qparse_t &job, qlex_t *rd,
+bool qparse::parser::parse_attributes(qparse_t &S, qlex_t *rd,
                                       std::set<Expr *> &attributes) {
   qlex_tok_t tok = qlex_next(rd);
 
@@ -69,9 +69,8 @@ bool qparse::parser::parse_attributes(qparse_t &job, qlex_t *rd,
     Expr *impl = nullptr;
 
     if (!parse_expr(
-            job, rd,
-            {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncComa)}, &impl,
-            0)) {
+            S, rd, {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncComa)},
+            &impl, 0)) {
       syntax(tok, "Failed to parse declaration attribute expression");
       return false;
     }
@@ -88,7 +87,7 @@ bool qparse::parser::parse_attributes(qparse_t &job, qlex_t *rd,
   return true;
 }
 
-bool parser::parse_composite_field(qparse_t &job, qlex_t *rd,
+bool parser::parse_composite_field(qparse_t &S, qlex_t *rd,
                                    StructField **node) {
   /*
    * Format: "name: type [= expr],"
@@ -115,7 +114,7 @@ bool parser::parse_composite_field(qparse_t &job, qlex_t *rd,
   }
 
   { /* Next section should be the field type */
-    if (!parse_type(job, rd, &type)) {
+    if (!parse_type(S, rd, &type)) {
       syntax(tok, "Expected field type in composite definition");
     }
   }
@@ -139,7 +138,7 @@ bool parser::parse_composite_field(qparse_t &job, qlex_t *rd,
     qlex_next(rd);
 
     /* Parse the default value */
-    if (!parse_expr(job, rd,
+    if (!parse_expr(S, rd,
                     {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
                      qlex_tok_t(qPunc, qPuncRCur)},
                     &value) ||
@@ -156,10 +155,10 @@ bool parser::parse_composite_field(qparse_t &job, qlex_t *rd,
 }
 
 bool parse_template_parameters(
-    qparse_t &job, qlex_t *rd,
+    qparse_t &S, qlex_t *rd,
     std::optional<TemplateParameters> &template_params);
 
-bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
+bool parser::parse_struct(qparse_t &S, qlex_t *rd, Stmt **node) {
   /**
    * @brief Parse a struct composite type definition
    */
@@ -186,7 +185,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   {
-    if (!parse_template_parameters(job, rd, sdef->get_template_params())) {
+    if (!parse_template_parameters(S, rd, sdef->get_template_params())) {
       return false;
     }
   }
@@ -242,7 +241,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
       qlex_next(rd);
 
       /* Parse the function definition */
-      if (!parse_function(job, rd, &method) || !method) {
+      if (!parse_function(S, rd, &method) || !method) {
         syntax(tok, "Expected function definition in struct definition");
         return false;
       }
@@ -280,7 +279,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
       }
 
       /* Parse the function definition */
-      if (!parse_function(job, rd, &method) || !method) {
+      if (!parse_function(S, rd, &method) || !method) {
         syntax(tok, "Expected function definition in struct definition");
         return false;
       }
@@ -292,7 +291,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
       static_methods.push_back(static_cast<FnDecl *>(method));
     } else {
       /* Parse a normal field */
-      if (!parse_composite_field(job, rd, &field)) {
+      if (!parse_composite_field(S, rd, &field)) {
         syntax(tok, "Expected field definition in struct definition");
         return false;
       }
@@ -320,7 +319,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
   { /* Check for an implementation/trait list */
     if (tok.is<qKWith>()) {
       qlex_next(rd);
-      if (!parse_attributes(job, rd, attributes)) {
+      if (!parse_attributes(S, rd, attributes)) {
         return false;
       }
     }

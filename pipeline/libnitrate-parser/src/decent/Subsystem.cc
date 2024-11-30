@@ -36,7 +36,7 @@
 using namespace qparse::parser;
 using namespace qparse;
 
-bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
+bool qparse::parser::parse_subsystem(qparse_t &S, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_next(rd);
   if (!tok.is(qName)) {
     syntax(tok, "Expected subsystem name");
@@ -79,7 +79,7 @@ bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   Block *block = nullptr;
-  if (!parse(job, rd, &block, true)) {
+  if (!parse(S, rd, &block, true)) {
     syntax(qlex_peek(rd), "Expected block in subsystem definition");
   }
 
@@ -88,7 +88,7 @@ bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
   if (tok.is<qKWith>()) {
     qlex_next(rd);
 
-    if (!parse_attributes(job, rd, attributes)) {
+    if (!parse_attributes(S, rd, attributes)) {
       return false;
     }
   }
