@@ -84,6 +84,9 @@ typedef enum qparse_ty_t {
   QAST_NODE_TYPE_EXPR,
   QAST_NODE_TEMPL_CALL,
 
+  QAST_NODE__EXPR_FIRST = QAST_NODE_BINEXPR,
+  QAST_NODE__EXPR_LAST = QAST_NODE_TEMPL_CALL,
+
   QAST_NODE_REF_TY,
   QAST_NODE_U1_TY,
   QAST_NODE_U8_TY,
@@ -111,6 +114,9 @@ typedef enum qparse_ty_t {
   QAST_NODE_INFER_TY,
   QAST_NODE_TEMPL_TY,
 
+  QAST_NODE__TYPE_FIRST = QAST_NODE_REF_TY,
+  QAST_NODE__TYPE_LAST = QAST_NODE_TEMPL_TY,
+
   QAST_NODE_TYPEDEF,
   QAST_NODE_FNDECL,
   QAST_NODE_STRUCT,
@@ -119,6 +125,9 @@ typedef enum qparse_ty_t {
   QAST_NODE_SUBSYSTEM,
   QAST_NODE_EXPORT,
   QAST_NODE_STRUCT_FIELD,
+
+  QAST_NODE__DECL_FIRST = QAST_NODE_TYPEDEF,
+  QAST_NODE__DECL_LAST = QAST_NODE_STRUCT_FIELD,
 
   QAST_NODE_BLOCK,
   QAST_NODE_CONST,
@@ -138,11 +147,14 @@ typedef enum qparse_ty_t {
   QAST_NODE_EXPR_STMT,
   QAST_NODE_VOLATILE,
 
-  QAST_NODE_FIRST = QAST_NODE_NODE,
-  QAST_NODE_LAST = QAST_NODE_VOLATILE,
+  QAST_NODE__STMT_FIRST = QAST_NODE__DECL_FIRST,
+  QAST_NODE__STMT_LAST = QAST_NODE_VOLATILE,
+
+  QAST_NODE__FIRST = QAST_NODE_NODE,
+  QAST_NODE__LAST = QAST_NODE_VOLATILE,
 } qparse_ty_t;
 
-#define QAST_NODE_COUNT (QAST_NODE_LAST - QAST_NODE_FIRST + 1)
+#define QAST_NODE_COUNT (QAST_NODE__LAST - QAST_NODE__FIRST + 1)
 
 namespace qparse {
   class ArenaAllocatorImpl {
@@ -311,7 +323,8 @@ namespace qparse {
     uint32_t m_pos_start, m_pos_end;
 
   public:
-    Node(qparse_ty_t ty) : m_node_type(ty), m_pos_start(0), m_pos_end(0){};
+    constexpr Node(qparse_ty_t ty)
+        : m_node_type(ty), m_pos_start(0), m_pos_end(0){};
 
     ///======================================================================
     /* Efficient LLVM reflection */
@@ -487,10 +500,25 @@ namespace qparse {
 
     ///======================================================================
 
-    bool is_type();
-    bool is_stmt();
-    bool is_decl();
-    bool is_expr();
+    constexpr bool is_type() const noexcept {
+      auto kind = getKind();
+      return kind >= QAST_NODE__TYPE_FIRST && kind <= QAST_NODE__TYPE_LAST;
+    }
+
+    constexpr bool is_stmt() const noexcept {
+      auto kind = getKind();
+      return kind >= QAST_NODE__STMT_FIRST && kind <= QAST_NODE__STMT_LAST;
+    }
+
+    constexpr bool is_decl() const noexcept {
+      auto kind = getKind();
+      return kind >= QAST_NODE__DECL_FIRST && kind <= QAST_NODE__DECL_LAST;
+    }
+
+    constexpr bool is_expr() const noexcept {
+      auto kind = getKind();
+      return kind >= QAST_NODE__EXPR_FIRST && kind <= QAST_NODE__EXPR_LAST;
+    }
 
     template <typename T>
     static constexpr T *safeCastAs(Node *ptr) noexcept {
@@ -535,44 +563,45 @@ namespace qparse {
     }
 
     template <typename T>
-    bool is() const {
+    constexpr bool is() const noexcept {
       return Node::getTypeCode<T>() == getKind();
     }
 
-    bool is(qparse_ty_t type) const { return type == getKind(); }
+    constexpr bool is(qparse_ty_t type) const { return type == getKind(); }
 
-    void dump(bool isForDebug = false) { print(std::cerr, isForDebug); }
-    void print(std::ostream &os, bool isForDebug = false);
+    std::ostream &dump(std::ostream &os = std::cerr,
+                       bool isForDebug = false) const noexcept;
 
     std::string to_string() {
       std::stringstream ss;
-      print(ss, false);
+      dump(ss, false);
       return ss.str();
     };
 
-    void set_start_pos(uint32_t pos) { m_pos_start = pos; }
-    void set_end_pos(uint32_t pos) { m_pos_end = pos; }
-    void set_pos(std::tuple<uint32_t, uint32_t, std::string_view> pos) {
+    constexpr void set_start_pos(uint32_t pos) { m_pos_start = pos; }
+    constexpr void set_end_pos(uint32_t pos) { m_pos_end = pos; }
+    constexpr void set_pos(
+        std::tuple<uint32_t, uint32_t, std::string_view> pos) {
       m_pos_start = std::get<0>(pos);
       m_pos_end = std::get<1>(pos);
 
       /// FIXME: Use the filename info
     }
 
-    uint32_t get_end_pos() { return m_pos_end; }
-    uint32_t get_start_pos() { return m_pos_start; }
-    std::tuple<uint32_t, uint32_t, std::string_view> get_pos() {
+    constexpr uint32_t get_end_pos() { return m_pos_end; }
+    constexpr uint32_t get_start_pos() { return m_pos_start; }
+    constexpr std::tuple<uint32_t, uint32_t, std::string_view> get_pos() {
       return {m_pos_start, m_pos_end, ""};
     }
 
     PNODE_IMPL_CORE(Node)
-  };
+  } __attribute__((packed));
 
   constexpr size_t PNODE_BASE_SIZE = sizeof(Node);
 
   class Stmt : public Node {
   public:
-    Stmt(qparse_ty_t ty) : Node(ty){};
+    constexpr Stmt(qparse_ty_t ty) : Node(ty){};
   };
 
   class Expr;
@@ -582,37 +611,83 @@ namespace qparse {
     bool m_volatile;
 
   public:
-    Type(qparse_ty_t ty, bool is_volatile = false)
+    constexpr Type(qparse_ty_t ty, bool is_volatile = false)
         : Node(ty),
           m_width(nullptr),
           m_range_start(nullptr),
           m_range_end(nullptr),
           m_volatile(is_volatile) {}
 
-    bool is_primitive();
-    bool is_array();
-    bool is_tuple();
-    bool is_pointer();
-    bool is_function();
-    bool is_composite();
-    bool is_numeric();
-    bool is_integral();
-    bool is_floating_point();
-    bool is_signed();
-    bool is_unsigned();
-    bool is_void();
-    bool is_bool();
-    bool is_ref();
-    bool is_volatile();
-    bool is_ptr_to(Type *type);
+    constexpr bool is_primitive() const noexcept {
+      switch (getKind()) {
+        case QAST_NODE_U1_TY:
+        case QAST_NODE_U8_TY:
+        case QAST_NODE_U16_TY:
+        case QAST_NODE_U32_TY:
+        case QAST_NODE_U64_TY:
+        case QAST_NODE_U128_TY:
+        case QAST_NODE_I8_TY:
+        case QAST_NODE_I16_TY:
+        case QAST_NODE_I32_TY:
+        case QAST_NODE_I64_TY:
+        case QAST_NODE_I128_TY:
+        case QAST_NODE_F16_TY:
+        case QAST_NODE_F32_TY:
+        case QAST_NODE_F64_TY:
+        case QAST_NODE_F128_TY:
+        case QAST_NODE_VOID_TY:
+          return true;
+        default:
+          return false;
+      }
+    }
+    constexpr bool is_array() const { return getKind() == QAST_NODE_ARRAY_TY; };
+    constexpr bool is_tuple() const noexcept {
+      return getKind() == QAST_NODE_TUPLE_TY;
+    }
+    constexpr bool is_pointer() const noexcept {
+      return getKind() == QAST_NODE_PTR_TY;
+    }
+    constexpr bool is_function() const noexcept {
+      return getKind() == QAST_NODE_FN_TY;
+    }
+    constexpr bool is_composite() const noexcept {
+      return getKind() == QAST_NODE_STRUCT_TY || is_array() || is_tuple();
+    }
+    constexpr bool is_numeric() const noexcept {
+      return getKind() >= QAST_NODE_U1_TY && getKind() <= QAST_NODE_F128_TY;
+    }
+    constexpr bool is_integral() const noexcept {
+      return getKind() >= QAST_NODE_U1_TY && getKind() <= QAST_NODE_I128_TY;
+    }
+    constexpr bool is_floating_point() const noexcept {
+      return getKind() >= QAST_NODE_F16_TY && getKind() <= QAST_NODE_F128_TY;
+    }
+    constexpr bool is_signed() const noexcept {
+      return getKind() >= QAST_NODE_I8_TY && getKind() <= QAST_NODE_I128_TY;
+    }
+    constexpr bool is_unsigned() const noexcept {
+      return getKind() >= QAST_NODE_U1_TY && getKind() <= QAST_NODE_U128_TY;
+    }
+    constexpr bool is_void() const noexcept {
+      return getKind() == QAST_NODE_VOID_TY;
+    }
+    constexpr bool is_bool() const noexcept {
+      return getKind() == QAST_NODE_U1_TY;
+    }
+    constexpr bool is_ref() const noexcept {
+      return getKind() == QAST_NODE_REF_TY;
+    }
+    constexpr bool is_volatile() const noexcept { return m_volatile; }
+    bool is_ptr_to(Type *type) noexcept;
 
-    Expr *get_width() { return m_width; }
-    void set_width(Expr *width) { m_width = width; }
+    constexpr Expr *get_width() { return m_width; }
+    constexpr void set_width(Expr *width) { m_width = width; }
 
-    std::pair<Expr *, Expr *> get_range() {
+    constexpr std::pair<Expr *, Expr *> get_range() {
       return {m_range_start, m_range_end};
     }
-    void set_range(Expr *start, Expr *end) {
+    constexpr void set_range(Expr *start, Expr *end) {
       m_range_start = start;
       m_range_end = end;
     }
@@ -634,7 +709,7 @@ namespace qparse {
 
   public:
     Decl(qparse_ty_t ty, String name = "", Type *type = nullptr,
-         std::initializer_list<Expr *> tags = {},
+         DeclTags tags = {},
          const std::optional<TemplateParameters> &params = std::nullopt,
          Vis visibility = Vis::PRIVATE)
         : Stmt(ty),
@@ -664,7 +739,7 @@ namespace qparse {
 
   class Expr : public Node {
   public:
-    Expr(qparse_ty_t ty) : Node(ty) {}
+    constexpr Expr(qparse_ty_t ty) : Node(ty) {}
 
     bool is_binexpr();
     bool is_unaryexpr();
@@ -675,7 +750,8 @@ namespace qparse {
     Expr *m_expr;
 
   public:
-    ExprStmt(Expr *expr = nullptr) : Stmt(QAST_NODE_EXPR_STMT), m_expr(expr) {}
+    constexpr ExprStmt(Expr *expr = nullptr)
+        : Stmt(QAST_NODE_EXPR_STMT), m_expr(expr) {}
 
     Expr *get_expr() { return m_expr; }
     void set_expr(Expr *expr) { m_expr = expr; }
@@ -687,7 +763,8 @@ namespace qparse {
     Stmt *m_stmt;
 
   public:
-    StmtExpr(Stmt *stmt = nullptr) : Expr(QAST_NODE_STMT_EXPR), m_stmt(stmt) {}
+    constexpr StmtExpr(Stmt *stmt = nullptr)
+        : Expr(QAST_NODE_STMT_EXPR), m_stmt(stmt) {}
 
     Stmt *get_stmt() { return m_stmt; }
     void set_stmt(Stmt *stmt) { m_stmt = stmt; }
@@ -699,7 +776,8 @@ namespace qparse {
     Type *m_type;
 
   public:
-    TypeExpr(Type *type = nullptr) : Expr(QAST_NODE_TYPE_EXPR), m_type(type) {}
+    constexpr TypeExpr(Type *type = nullptr)
+        : Expr(QAST_NODE_TYPE_EXPR), m_type(type) {}
 
     Type *get_type() { return m_type; }
     void set_type(Type *type) { m_type = type; }
@@ -721,7 +799,7 @@ namespace qparse {
 
   class InferTy : public Type {
   public:
-    InferTy() : Type(QAST_NODE_INFER_TY) {}
+    constexpr InferTy() : Type(QAST_NODE_INFER_TY) {}
 
     PNODE_IMPL_CORE(InferTy)
   };
@@ -745,112 +823,112 @@ namespace qparse {
 
   class U1 : public Type {
   public:
-    U1() : Type(QAST_NODE_U1_TY){};
+    constexpr U1() : Type(QAST_NODE_U1_TY){};
 
     PNODE_IMPL_CORE(U1)
   };
 
   class U8 : public Type {
   public:
-    U8() : Type(QAST_NODE_U8_TY){};
+    constexpr U8() : Type(QAST_NODE_U8_TY){};
 
     PNODE_IMPL_CORE(U8)
   };
 
   class U16 : public Type {
   public:
-    U16() : Type(QAST_NODE_U16_TY){};
+    constexpr U16() : Type(QAST_NODE_U16_TY){};
 
     PNODE_IMPL_CORE(U16)
   };
 
   class U32 : public Type {
   public:
-    U32() : Type(QAST_NODE_U32_TY){};
+    constexpr U32() : Type(QAST_NODE_U32_TY){};
 
     PNODE_IMPL_CORE(U32)
   };
 
   class U64 : public Type {
   public:
-    U64() : Type(QAST_NODE_U64_TY){};
+    constexpr U64() : Type(QAST_NODE_U64_TY){};
 
     PNODE_IMPL_CORE(U64)
   };
 
   class U128 : public Type {
   public:
-    U128() : Type(QAST_NODE_U128_TY){};
+    constexpr U128() : Type(QAST_NODE_U128_TY){};
 
     PNODE_IMPL_CORE(U128)
   };
 
   class I8 : public Type {
   public:
-    I8() : Type(QAST_NODE_I8_TY){};
+    constexpr I8() : Type(QAST_NODE_I8_TY){};
 
     PNODE_IMPL_CORE(I8)
   };
 
   class I16 : public Type {
   public:
-    I16() : Type(QAST_NODE_I16_TY){};
+    constexpr I16() : Type(QAST_NODE_I16_TY){};
 
     PNODE_IMPL_CORE(I16)
   };
 
   class I32 : public Type {
   public:
-    I32() : Type(QAST_NODE_I32_TY){};
+    constexpr I32() : Type(QAST_NODE_I32_TY){};
 
     PNODE_IMPL_CORE(I32)
   };
 
   class I64 : public Type {
   public:
-    I64() : Type(QAST_NODE_I64_TY){};
+    constexpr I64() : Type(QAST_NODE_I64_TY){};
 
     PNODE_IMPL_CORE(I64)
   };
 
   class I128 : public Type {
   public:
-    I128() : Type(QAST_NODE_I128_TY){};
+    constexpr I128() : Type(QAST_NODE_I128_TY){};
 
     PNODE_IMPL_CORE(I128)
   };
 
   class F16 : public Type {
   public:
-    F16() : Type(QAST_NODE_F16_TY){};
+    constexpr F16() : Type(QAST_NODE_F16_TY){};
 
     PNODE_IMPL_CORE(F16)
   };
 
   class F32 : public Type {
   public:
-    F32() : Type(QAST_NODE_F32_TY){};
+    constexpr F32() : Type(QAST_NODE_F32_TY){};
 
     PNODE_IMPL_CORE(F32)
   };
 
   class F64 : public Type {
   public:
-    F64() : Type(QAST_NODE_F64_TY){};
+    constexpr F64() : Type(QAST_NODE_F64_TY){};
 
     PNODE_IMPL_CORE(F64)
   };
 
   class F128 : public Type {
   public:
-    F128() : Type(QAST_NODE_F128_TY){};
+    constexpr F128() : Type(QAST_NODE_F128_TY){};
 
     PNODE_IMPL_CORE(F128)
   };
 
   class VoidTy : public Type {
   public:
-    VoidTy() : Type(QAST_NODE_VOID_TY) {}
+    constexpr VoidTy() : Type(QAST_NODE_VOID_TY) {}
 
     PNODE_IMPL_CORE(VoidTy)
   };
@@ -860,7 +938,7 @@ namespace qparse {
     bool m_is_volatile;
 
   public:
-    PtrTy(Type *item = nullptr, bool is_volatile = false)
+    constexpr PtrTy(Type *item = nullptr, bool is_volatile = false)
         : Type(QAST_NODE_PTR_TY), m_item(item), m_is_volatile(is_volatile) {}
 
     Type *get_item() { return m_item; }
@@ -902,7 +980,7 @@ namespace qparse {
     Expr *m_size;
 
   public:
-    ArrayTy(Type *item = nullptr, Expr *size = nullptr)
+    constexpr ArrayTy(Type *item = nullptr, Expr *size = nullptr)
         : Type(QAST_NODE_ARRAY_TY), m_item(item), m_size(size) {}
 
     Type *get_item() { return m_item; }
@@ -918,7 +996,8 @@ namespace qparse {
     Type *m_item;
 
   public:
-    RefTy(Type *item = nullptr) : Type(QAST_NODE_REF_TY), m_item(item) {}
+    constexpr RefTy(Type *item = nullptr)
+        : Type(QAST_NODE_REF_TY), m_item(item) {}
 
     Type *get_item() { return m_item; }
     void set_item(Type *item) { m_item = item; }
@@ -1044,7 +1123,7 @@ namespace qparse {
     qlex_op_t m_op;
 
   public:
-    UnaryExpr(qlex_op_t op = qOpTernary, Expr *rhs = nullptr)
+    constexpr UnaryExpr(qlex_op_t op = qOpTernary, Expr *rhs = nullptr)
         : Expr(QAST_NODE_UNEXPR), m_rhs(rhs), m_op(op) {}
 
     Expr *get_rhs() { return m_rhs; }
@@ -1062,7 +1141,8 @@ namespace qparse {
     qlex_op_t m_op;
 
   public:
-    BinExpr(Expr *lhs = nullptr, qlex_op_t op = qOpTernary, Expr *rhs = nullptr)
+    constexpr BinExpr(Expr *lhs = nullptr, qlex_op_t op = qOpTernary,
+                      Expr *rhs = nullptr)
         : Expr(QAST_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
     Expr *get_lhs() { return m_lhs; }
@@ -1082,7 +1162,7 @@ namespace qparse {
     qlex_op_t m_op;
 
   public:
-    PostUnaryExpr(Expr *lhs = nullptr, qlex_op_t op = qOpTernary)
+    constexpr PostUnaryExpr(Expr *lhs = nullptr, qlex_op_t op = qOpTernary)
         : Expr(QAST_NODE_POST_UNEXPR), m_lhs(lhs), m_op(op) {}
 
     Expr *get_lhs() { return m_lhs; }
@@ -1100,7 +1180,8 @@ namespace qparse {
     Expr *m_rhs;
 
   public:
-    TernaryExpr(Expr *cond = nullptr, Expr *lhs = nullptr, Expr *rhs = nullptr)
+    constexpr TernaryExpr(Expr *cond = nullptr, Expr *lhs = nullptr,
+                          Expr *rhs = nullptr)
         : Expr(QAST_NODE_TEREXPR), m_cond(cond), m_lhs(lhs), m_rhs(rhs) {}
 
     Expr *get_cond() { return m_cond; }
@@ -1148,7 +1229,8 @@ namespace qparse {
     bool m_value;
 
   public:
-    ConstBool(bool value = false) : Expr(QAST_NODE_BOOL), m_value(value) {}
+    constexpr ConstBool(bool value = false)
+        : Expr(QAST_NODE_BOOL), m_value(value) {}
 
     bool get_value() { return m_value; }
 
@@ -1170,7 +1252,8 @@ namespace qparse {
     uint8_t m_value;
 
   public:
-    ConstChar(uint8_t value = 0) : Expr(QAST_NODE_CHAR), m_value(value) {}
+    constexpr ConstChar(uint8_t value = 0)
+        : Expr(QAST_NODE_CHAR), m_value(value) {}
 
     uint8_t get_value() { return m_value; }
 
@@ -1179,14 +1262,14 @@ namespace qparse {
 
   class ConstNull : public Expr {
   public:
-    ConstNull() : Expr(QAST_NODE_NULL) {}
+    constexpr ConstNull() : Expr(QAST_NODE_NULL) {}
 
     PNODE_IMPL_CORE(ConstNull)
   };
 
   class ConstUndef : public Expr {
   public:
-    ConstUndef() : Expr(QAST_NODE_UNDEF) {}
+    constexpr ConstUndef() : Expr(QAST_NODE_UNDEF) {}
 
     PNODE_IMPL_CORE(ConstUndef)
   };
@@ -1256,7 +1339,7 @@ namespace qparse {
     Expr *m_value;
 
   public:
-    Assoc(Expr *key = nullptr, Expr *value = nullptr)
+    constexpr Assoc(Expr *key = nullptr, Expr *value = nullptr)
         : Expr(QAST_NODE_ASSOC), m_key(key), m_value(value) {}
 
     Expr *get_key() { return m_key; }
@@ -1290,7 +1373,7 @@ namespace qparse {
     Expr *m_index;
 
   public:
-    Index(Expr *base = nullptr, Expr *index = nullptr)
+    constexpr Index(Expr *base = nullptr, Expr *index = nullptr)
         : Expr(QAST_NODE_INDEX), m_base(base), m_index(index) {}
 
     Expr *get_base() { return m_base; }
@@ -1308,7 +1391,8 @@ namespace qparse {
     Expr *m_end;
 
   public:
-    Slice(Expr *base = nullptr, Expr *start = nullptr, Expr *end = nullptr)
+    constexpr Slice(Expr *base = nullptr, Expr *start = nullptr,
+                    Expr *end = nullptr)
         : Expr(QAST_NODE_SLICE), m_base(base), m_start(start), m_end(end) {}
 
     Expr *get_base() { return m_base; }
@@ -1394,7 +1478,8 @@ namespace qparse {
     Stmt *m_stmt;
 
   public:
-    VolStmt(Stmt *stmt = nullptr) : Stmt(QAST_NODE_VOLATILE), m_stmt(stmt) {}
+    constexpr VolStmt(Stmt *stmt = nullptr)
+        : Stmt(QAST_NODE_VOLATILE), m_stmt(stmt) {}
 
     Stmt *get_stmt() { return m_stmt; }
     void set_stmt(Stmt *stmt) { m_stmt = stmt; }
@@ -1465,7 +1550,8 @@ namespace qparse {
     Block *m_else;
 
   public:
-    IfStmt(Expr *cond = nullptr, Block *then = nullptr, Block *else_ = nullptr)
+    constexpr IfStmt(Expr *cond = nullptr, Block *then = nullptr,
+                     Block *else_ = nullptr)
         : Stmt(QAST_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
     Expr *get_cond() { return m_cond; }
@@ -1485,7 +1571,7 @@ namespace qparse {
     Block *m_body;
 
   public:
-    WhileStmt(Expr *cond = nullptr, Block *body = nullptr)
+    constexpr WhileStmt(Expr *cond = nullptr, Block *body = nullptr)
         : Stmt(QAST_NODE_WHILE), m_cond(cond), m_body(body) {}
 
     Expr *get_cond() { return m_cond; }
@@ -1504,8 +1590,8 @@ namespace qparse {
     Block *m_body;
 
   public:
-    ForStmt(Expr *init = nullptr, Expr *cond = nullptr, Expr *step = nullptr,
-            Block *body = nullptr)
+    constexpr ForStmt(Expr *init = nullptr, Expr *cond = nullptr,
+                      Expr *step = nullptr, Block *body = nullptr)
         : Stmt(QAST_NODE_FOR),
           m_init(init),
           m_cond(cond),
@@ -1559,14 +1645,14 @@ namespace qparse {
 
   class BreakStmt : public Stmt {
   public:
-    BreakStmt() : Stmt(QAST_NODE_BREAK){};
+    constexpr BreakStmt() : Stmt(QAST_NODE_BREAK){};
 
     PNODE_IMPL_CORE(BreakStmt)
   };
 
   class ContinueStmt : public Stmt {
   public:
-    ContinueStmt() : Stmt(QAST_NODE_CONTINUE){};
+    constexpr ContinueStmt() : Stmt(QAST_NODE_CONTINUE){};
 
     PNODE_IMPL_CORE(ContinueStmt)
   };
@@ -1575,7 +1661,7 @@ namespace qparse {
     Expr *m_value;
 
   public:
-    ReturnStmt(Expr *value = nullptr)
+    constexpr ReturnStmt(Expr *value = nullptr)
         : Stmt(QAST_NODE_RETURN), m_value(value) {}
 
     Expr *get_value() { return m_value; }
@@ -1589,7 +1675,7 @@ namespace qparse {
     Expr *m_value;
 
   public:
-    ReturnIfStmt(Expr *cond = nullptr, Expr *value = nullptr)
+    constexpr ReturnIfStmt(Expr *cond = nullptr, Expr *value = nullptr)
         : Stmt(QAST_NODE_RETIF), m_cond(cond), m_value(value) {}
 
     Expr *get_cond() { return m_cond; }
@@ -1606,7 +1692,7 @@ namespace qparse {
     Block *m_body;
 
   public:
-    CaseStmt(Expr *cond = nullptr, Block *body = nullptr)
+    constexpr CaseStmt(Expr *cond = nullptr, Block *body = nullptr)
         : Stmt(QAST_NODE_CASE), m_cond(cond), m_body(body) {}
 
     Expr *get_cond() { return m_cond; }
