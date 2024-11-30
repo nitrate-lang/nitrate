@@ -35,7 +35,7 @@
 
 using namespace qparse;
 using namespace qparse::parser;
-using namespace qparse::diag;
+using namespace qparse;
 
 static bool parse_enum_field(qparse_t &job, qlex_t *rd, EnumDefItems &fields) {
   qlex_tok_t tok = qlex_next(rd);

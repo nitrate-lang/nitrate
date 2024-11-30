@@ -37,7 +37,7 @@
 
 using namespace qparse;
 using namespace qparse::parser;
-using namespace qparse::diag;
+using namespace qparse;
 
 bool qparse::parser::parse_for(qparse_t &job, qlex_t *rd, Stmt **node) {
   Expr *x0 = nullptr, *x1 = nullptr, *x2 = nullptr;

@@ -34,7 +34,7 @@
 #include <decent/Parse.h>
 
 using namespace qparse::parser;
-using namespace qparse::diag;
+using namespace qparse;
 
 bool qparse::parser::parse_switch(qparse_t &job, qlex_t *rd, Stmt **node) {
   Expr *cond = nullptr;

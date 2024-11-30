@@ -34,7 +34,7 @@
 #include <decent/Parse.h>
 
 using namespace qparse::parser;
-using namespace qparse::diag;
+using namespace qparse;
 
 namespace qparse::parser {
   static bool parse_decl(qparse_t &job, qlex_tok_t tok, qlex_t *rd,

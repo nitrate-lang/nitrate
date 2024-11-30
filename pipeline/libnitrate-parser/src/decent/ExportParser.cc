@@ -33,7 +33,7 @@
 
 #include <decent/Parse.h>
 
-using namespace qparse::diag;
+using namespace qparse;
 using namespace qparse::parser;
 
 bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {

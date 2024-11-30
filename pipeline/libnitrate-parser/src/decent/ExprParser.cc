@@ -52,7 +52,6 @@ static inline qparse::Expr *LOC_121(qparse::Expr *p, qlex_tok_t t) {
 
 using namespace qparse;
 using namespace qparse::parser;
-using namespace qparse::diag;
 
 static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd,
                                  size_t depth) {

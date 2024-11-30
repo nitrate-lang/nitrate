@@ -35,7 +35,7 @@
 
 using namespace qparse;
 using namespace qparse::parser;
-using namespace qparse::diag;
+using namespace qparse;
 
 static bool parse_decl(qparse_t &job, qlex_tok_t tok, qlex_t *rd,
                        std::pair<std::string, Type *> &decl) {

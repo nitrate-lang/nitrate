@@ -34,7 +34,7 @@
 #include <decent/Parse.h>
 
 using namespace qparse::parser;
-using namespace qparse::diag;
+using namespace qparse;
 
 bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_next(rd);

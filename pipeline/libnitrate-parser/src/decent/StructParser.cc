@@ -39,7 +39,7 @@
 
 using namespace qparse;
 using namespace qparse::parser;
-using namespace qparse::diag;
+using namespace qparse;
 
 bool qparse::parser::parse_attributes(qparse_t &job, qlex_t *rd,
                                       std::set<Expr *> &attributes) {

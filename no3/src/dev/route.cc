@@ -245,6 +245,7 @@ static int do_nr(std::string source, std::string output, std::string opts,
 
 static int do_codegen(std::string source, std::string output, std::string opts,
                       std::string target, bool verbose) {
+  (void)target;
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }

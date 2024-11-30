@@ -147,14 +147,6 @@ namespace nr {
     std::optional<Expr *> resolve_name(std::string_view name,
                                        Kind kind) const noexcept;
 
-    NRBuilder &insertAfter(Expr *last) noexcept;
-    NRBuilder &insertAfterVariable(std::string_view name) noexcept;
-    NRBuilder &insertAfterFunction(std::string_view name) noexcept;
-
-    NRBuilder &insertBefore(Expr *last) noexcept;
-    NRBuilder &insertBeforeVariable(std::string_view name) noexcept;
-    NRBuilder &insertBeforeFunction(std::string_view name) noexcept;
-
     void try_transform_alpha(Expr *root) noexcept;
     void try_transform_beta(Expr *root) noexcept;
     void try_transform_gamma(Expr *root) const noexcept;

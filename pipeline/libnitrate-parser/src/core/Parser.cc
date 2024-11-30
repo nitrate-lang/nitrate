@@ -43,7 +43,7 @@
 #include <nitrate-core/Classes.hh>
 
 using namespace qparse::parser;
-using namespace qparse::diag;
+using namespace qparse;
 
 bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group,
                            bool expect_braces, bool single_stmt) {
@@ -429,7 +429,7 @@ C_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
   qparse::qparse_arena.swap(*L->arena.get());
 
   /*== Install thread-local references to the parser ==*/
-  qparse::diag::install_reference(L);
+  qparse::install_reference(L);
 
   parser_ctx = L;
   bool status =
@@ -437,7 +437,7 @@ C_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
   parser_ctx = nullptr;
 
   /*== Uninstall thread-local references to the parser ==*/
-  qparse::diag::install_reference(nullptr);
+  qparse::install_reference(nullptr);
 
   /*=============== Swap out their arena ===============*/
   qparse::qparse_arena.swap(*L->arena.get());
@@ -492,8 +492,8 @@ C_EXPORT void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb,
   auto adapter = [&](const char *msg) { cb(msg, std::strlen(msg), data); };
 
   if (no_ansi) {
-    parser->diag.render(adapter, qparse::diag::FormatStyle::ClangPlain);
+    parser->diag.render(adapter, qparse::FormatStyle::ClangPlain);
   } else {
-    parser->diag.render(adapter, qparse::diag::FormatStyle::Clang16Color);
+    parser->diag.render(adapter, qparse::FormatStyle::Clang16Color);
   }
 }

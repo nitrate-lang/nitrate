@@ -41,7 +41,7 @@
 
 using namespace qparse;
 using namespace qparse::parser;
-using namespace qparse::diag;
+using namespace qparse;
 
 /// TODO: Source location
 

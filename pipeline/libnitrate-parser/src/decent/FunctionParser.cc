@@ -38,7 +38,7 @@
 
 using namespace qparse;
 using namespace qparse::parser;
-using namespace qparse::diag;
+using namespace qparse;
 
 struct GetPropState {
   size_t noexcept_ctr = 0;

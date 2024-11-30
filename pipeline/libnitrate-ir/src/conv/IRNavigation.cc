@@ -42,50 +42,6 @@
 
 using namespace nr;
 
-NRBuilder &NRBuilder::insertAfter(Expr *last) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-
-  return *this;
-}
-
-NRBuilder &NRBuilder::insertAfterVariable(std::string_view name) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-
-  return *this;
-}
-
-NRBuilder &NRBuilder::insertAfterFunction(std::string_view name) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-
-  return *this;
-}
-
-NRBuilder &NRBuilder::insertBefore(Expr *last) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-
-  return *this;
-}
-
-NRBuilder &NRBuilder::insertBeforeVariable(std::string_view name) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-
-  return *this;
-}
-
-NRBuilder &NRBuilder::insertBeforeFunction(std::string_view name) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-
-  return *this;
-}
-
-///=============================================================================
-
 static std::string join_name_segment(const std::string &a,
                                      const std::string &b) {
   if (!a.empty() && !b.empty()) {

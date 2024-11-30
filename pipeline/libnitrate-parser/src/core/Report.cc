@@ -38,9 +38,9 @@
 #include <core/ParserStruct.hh>
 #include <sstream>
 
-using namespace qparse::diag;
+using namespace qparse;
 
-thread_local qparse_t *g_parser_inst;
+static thread_local qparse_t *g_parser_inst;
 
 ///============================================================================///
 
@@ -64,14 +64,7 @@ std::string DiagnosticManager::mint_plain_message(
   }
   ss << "error: " << msg.msg << " [";
 
-  switch (msg.type) {
-    case MessageType::Syntax:
-      ss << "SyntaxError";
-      break;
-    case MessageType::FatalError:
-      ss << "FatalError";
-      break;
-  }
+  ss << "SyntaxError";
 
   ss << "]\n";
 
@@ -112,14 +105,7 @@ std::string DiagnosticManager::mint_clang16_message(
 
   ss << "\x1b[31;1merror:\x1b[0m \x1b[37;1m" << msg.msg << " [";
 
-  switch (msg.type) {
-    case MessageType::Syntax:
-      ss << "SyntaxError";
-      break;
-    case MessageType::FatalError:
-      ss << "FatalError";
-      break;
-  }
+  ss << "SyntaxError";
 
   ss << "]\x1b[0m\n";
 
@@ -139,14 +125,9 @@ std::string DiagnosticManager::mint_clang16_message(
   return ss.str();
 }
 
-std::string DiagnosticManager::mint_clang_truecolor_message(
-    const DiagMessage &msg) const {
-  return mint_clang16_message(msg); /* For now this will do okay */
-}
-
 ///============================================================================///
 
-using namespace qparse::diag;
+using namespace qparse;
 
 void DiagnosticManager::push(DiagMessage &&msg) {
   m_msgs.push_back(std::move(msg));
@@ -165,11 +146,6 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler,
         handler(mint_clang16_message(msg).c_str());
       }
       break;
-    case FormatStyle::ClangTrueColor:
-      for (const auto &msg : m_msgs) {
-        handler(mint_clang_truecolor_message(msg).c_str());
-      }
-      break;
     default:
       qcore_panicf("Unsupported diagnostic format style: %d",
                    static_cast<int>(style));
@@ -178,7 +154,7 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler,
   return m_msgs.size();
 }
 
-namespace qparse::diag {
+namespace qparse {
   void install_reference(qparse_t *parser) { g_parser_inst = parser; }
 
   void syntax_impl(const qlex_tok_t &tok, std::string_view fmt, va_list args) {
@@ -197,7 +173,6 @@ namespace qparse::diag {
     DiagMessage diag;
     diag.msg = msg;
     diag.tok = tok;
-    diag.type = MessageType::Syntax;
 
     g_parser_inst->diag.push(std::move(diag));
     g_parser_inst->failed = true;
@@ -209,4 +184,4 @@ namespace qparse::diag {
     syntax_impl(tok, fmt, args);
     va_end(args);
   }
-}  // namespace qparse::diag
+}  // namespace qparse

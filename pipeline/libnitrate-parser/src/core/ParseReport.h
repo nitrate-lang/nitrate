@@ -43,26 +43,10 @@
 #include <queue>
 #include <string_view>
 
-namespace qparse::diag {
-  class SyntaxError : public std::runtime_error {
-  public:
-    SyntaxError() : std::runtime_error("") {}
-  };
-
-  enum class MessageType {
-    Syntax,
-    FatalError,
-  };
-
-  enum ControlFlow {
-    cont, /* Continue parsing */
-    stop, /* Stop parsing (throw an error) */
-  };
-
+namespace qparse {
   enum class FormatStyle {
-    Clang16Color,   /* Clang-like 16 color diagnostic format */
-    ClangPlain,     /* Clang-like plain text diagnostic format */
-    ClangTrueColor, /* Clang-like RGB TrueColor diagnostic format */
+    Clang16Color, /* Clang-like 16 color diagnostic format */
+    ClangPlain,   /* Clang-like plain text diagnostic format */
     Default = Clang16Color,
   };
 
@@ -71,7 +55,6 @@ namespace qparse::diag {
   struct DiagMessage {
     std::string msg;
     qlex_tok_t tok;
-    MessageType type;
   };
 
   class DiagnosticManager {
@@ -80,7 +63,6 @@ namespace qparse::diag {
 
     std::string mint_clang16_message(const DiagMessage &msg) const;
     std::string mint_plain_message(const DiagMessage &msg) const;
-    std::string mint_clang_truecolor_message(const DiagMessage &msg) const;
 
   public:
     void push(DiagMessage &&msg);
@@ -96,6 +78,6 @@ namespace qparse::diag {
    * @brief Report a syntax error
    */
   void syntax(const qlex_tok_t &tok, std::string_view fmt, ...);
-};  // namespace qparse::diag
+};  // namespace qparse
 
 #endif  // __NITRATE_PARSER_REPORT_H__

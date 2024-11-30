@@ -35,7 +35,7 @@
 
 using namespace qparse;
 using namespace qparse::parser;
-using namespace qparse::diag;
+using namespace qparse;
 
 bool qparse::parser::parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node) {
   (void)job;
