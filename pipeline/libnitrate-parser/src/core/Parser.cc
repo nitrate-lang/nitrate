@@ -263,16 +263,12 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
       }
 
       case qKWhile: {
-        if (!recurse_while(S, rd, &node)) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
+        node = recurse_while(S, rd);
         break;
       }
 
       case qKFor: {
-        if (!recurse_for(S, rd, &node)) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
+        node = recurse_for(S, rd);
         break;
       }
 

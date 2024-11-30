@@ -33,12 +33,11 @@
 
 /// TODO: Source location
 
+#include <nitrate-parser/Node.h>
+
 #include <decent/Recurse.hh>
 
-using namespace qparse;
-using namespace qparse;
-
-bool qparse::recurse_for(qparse_t &S, qlex_t &rd, Stmt **node) {
+qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
   Expr *x0 = nullptr, *x1 = nullptr, *x2 = nullptr;
 
   qlex_tok_t tok = peek();
@@ -51,41 +50,48 @@ bool qparse::recurse_for(qparse_t &S, qlex_t &rd, Stmt **node) {
       std::vector<Stmt *> let_node;
       if (!recurse_let(S, rd, let_node)) {
         syntax(tok, "Failed to parse let statement in for loop");
+        return mock_stmt(QAST_NODE_FOR);
       }
 
       if (let_node.size() != 1) {
         syntax(tok, "Expected let statement to have exactly one declaration");
+        return mock_stmt(QAST_NODE_FOR);
+
       } else {
         x0 = StmtExpr::get(let_node[0]);
       }
     } else {
       if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x0)) {
         syntax(tok, "Failed to parse for loop initializer");
+        return mock_stmt(QAST_NODE_FOR);
       }
 
       tok = next();
       if (!tok.is<qPuncSemi>()) {
         syntax(tok, "Expected ';' after for loop initializer");
+        return mock_stmt(QAST_NODE_FOR);
       }
     }
 
     if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x1)) {
       syntax(tok, "Failed to parse for loop condition");
+      return mock_stmt(QAST_NODE_FOR);
     }
 
     tok = next();
     if (!tok.is<qPuncSemi>()) {
       syntax(tok, "Expected ';' after for loop condition");
+      return mock_stmt(QAST_NODE_FOR);
     }
 
     if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &x2)) {
       syntax(tok, "Failed to parse for loop increment");
-      return false;
+      return mock_stmt(QAST_NODE_FOR);
     }
     tok = next();
     if (!tok.is<qPuncRPar>()) {
       syntax(tok, "Expected ')' after for loop increment");
-      return false;
+      return mock_stmt(QAST_NODE_FOR);
     }
 
     Stmt *then_block = nullptr;
@@ -97,9 +103,7 @@ bool qparse::recurse_for(qparse_t &S, qlex_t &rd, Stmt **node) {
       then_block = recurse(S, rd, true);
     }
 
-    *node = ForStmt::get(x0, x1, x2, then_block);
-
-    return true;
+    return ForStmt::get(x0, x1, x2, then_block);
   } else {
     tok = peek();
 
@@ -108,35 +112,42 @@ bool qparse::recurse_for(qparse_t &S, qlex_t &rd, Stmt **node) {
       std::vector<Stmt *> let_node;
       if (!recurse_let(S, rd, let_node)) {
         syntax(tok, "Failed to parse let statement in for loop");
+        return mock_stmt(QAST_NODE_FOR);
       }
 
       if (let_node.size() != 1) {
         syntax(tok, "Expected let statement to have exactly one declaration");
+        return mock_stmt(QAST_NODE_FOR);
       } else {
         x0 = StmtExpr::get(let_node[0]);
       }
     } else {
       if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x0)) {
-        return false;
+        return mock_stmt(QAST_NODE_FOR);
       }
 
       tok = next();
       if (!tok.is<qPuncSemi>()) {
         syntax(tok, "Expected ';' after for loop initializer");
+        return mock_stmt(QAST_NODE_FOR);
       }
     }
 
-    if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x1)) return false;
+    if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x1)) {
+      return mock_stmt(QAST_NODE_FOR);
+    };
 
     tok = next();
     if (!tok.is<qPuncSemi>()) {
       syntax(tok, "Expected ';' after for loop condition");
+      return mock_stmt(QAST_NODE_FOR);
     }
 
     if (!recurse_expr(
             S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
-            &x2))
-      return false;
+            &x2)) {
+      return mock_stmt(QAST_NODE_FOR);
+    }
 
     Stmt *then_block = nullptr;
 
@@ -147,8 +158,6 @@ bool qparse::recurse_for(qparse_t &S, qlex_t &rd, Stmt **node) {
       then_block = recurse(S, rd, true);
     }
 
-    *node = ForStmt::get(x0, x1, x2, then_block);
-
-    return true;
+    return ForStmt::get(x0, x1, x2, then_block);
   }
 }

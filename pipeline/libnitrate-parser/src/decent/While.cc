@@ -31,14 +31,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <nitrate-parser/Node.h>
+
 #include <decent/Recurse.hh>
 
-bool qparse::recurse_while(qparse_t &S, qlex_t &rd, Stmt **node) {
+qparse::Stmt *qparse::recurse_while(qparse_t &S, qlex_t &rd) {
   Expr *cond = nullptr;
   if (!recurse_expr(S, rd,
                     {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
-                    &cond))
-    return false;
+                    &cond)) {
+    return mock_stmt(QAST_NODE_WHILE);
+  }
 
   Stmt *then_block = nullptr;
 
@@ -49,8 +52,8 @@ bool qparse::recurse_while(qparse_t &S, qlex_t &rd, Stmt **node) {
     then_block = recurse(S, rd, true);
   }
 
-  *node = WhileStmt::get(cond, then_block);
-  (*node)->set_end_pos(then_block->get_end_pos());
+  auto R = WhileStmt::get(cond, then_block);
+  R->set_end_pos(then_block->get_end_pos());
 
-  return true;
+  return R;
 }
