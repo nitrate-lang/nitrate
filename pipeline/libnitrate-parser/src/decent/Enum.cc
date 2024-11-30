@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <nitrate-parser/Node.h>
+
 #include <decent/Recurse.hh>
 
 using namespace qparse;
@@ -80,11 +82,11 @@ static bool recurse_enum_field(qparse_t &S, qlex_t &rd, EnumDefItems &fields) {
   return true;
 }
 
-bool qparse::recurse_enum(qparse_t &S, qlex_t &rd, Stmt **node) {
+qparse::Stmt *qparse::recurse_enum(qparse_t &S, qlex_t &rd) {
   qlex_tok_t tok = next();
   if (!tok.is(qName)) {
     syntax(tok, "Enum definition must be named by an identifier");
-    return false;
+    return mock_stmt(QAST_NODE_ENUM);
   }
 
   std::string name = tok.as_string(&rd);
@@ -94,14 +96,14 @@ bool qparse::recurse_enum(qparse_t &S, qlex_t &rd, Stmt **node) {
   if (tok.is<qPuncColn>()) {
     next();
     if (!recurse_type(S, rd, &type)) {
-      return false;
+      return mock_stmt(QAST_NODE_ENUM);
     }
   }
 
   tok = next();
   if (!tok.is<qPuncLCur>()) {
     syntax(tok, "Expected a '{' to start the enum definition");
-    return false;
+    return mock_stmt(QAST_NODE_ENUM);
   }
 
   EnumDefItems fields;
@@ -114,12 +116,12 @@ bool qparse::recurse_enum(qparse_t &S, qlex_t &rd, Stmt **node) {
     }
 
     if (!recurse_enum_field(S, rd, fields)) {
-      return false;
+      return mock_stmt(QAST_NODE_ENUM);
     }
   }
 
-  *node = EnumDef::get(name, type, fields);
-  (*node)->set_end_pos(tok.end);
+  auto R = EnumDef::get(name, type, fields);
+  R->set_end_pos(tok.end);
 
-  return true;
+  return R;
 }

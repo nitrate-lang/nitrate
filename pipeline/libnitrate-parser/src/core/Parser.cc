@@ -145,9 +145,7 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
       }
 
       case qKEnum: {
-        if (!recurse_enum(S, rd, &node)) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
+        node = recurse_enum(S, rd);
         break;
       }
 
@@ -227,9 +225,7 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
       }
 
       case qKPro: {
-        if (!recurse_pro(S, rd, &node)) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
+        node = recurse_pro(S, rd);
         break;
       }
 
