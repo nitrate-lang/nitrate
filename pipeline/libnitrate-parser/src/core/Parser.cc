@@ -222,9 +222,7 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
       }
 
       case qKSec: {
-        if (!recurse_sec(S, rd, &node)) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
+        node = recurse_sec(S, rd);
         break;
       }
 

@@ -44,7 +44,7 @@
 
 namespace qparse {
   Stmt *recurse_pub(qparse_t &S, qlex_t &rd);
-  bool recurse_sec(qparse_t &S, qlex_t &rd, Stmt **node);
+  Stmt *recurse_sec(qparse_t &S, qlex_t &rd);
   bool recurse_pro(qparse_t &S, qlex_t &rd, Stmt **node);
   bool recurse_let(qparse_t &S, qlex_t &rd, std::vector<Stmt *> &node);
   bool recurse_const(qparse_t &S, qlex_t &rd, std::vector<Stmt *> &node);

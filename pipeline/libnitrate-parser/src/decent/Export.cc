@@ -64,7 +64,7 @@ qparse::Stmt *qparse::recurse_pub(qparse_t &S, qlex_t &rd) {
   return R;
 }
 
-bool qparse::recurse_sec(qparse_t &S, qlex_t &rd, Stmt **node) {
+Stmt *qparse::recurse_sec(qparse_t &S, qlex_t &rd) {
   qlex_tok_t tok = peek();
 
   String abiName;
@@ -81,16 +81,14 @@ bool qparse::recurse_sec(qparse_t &S, qlex_t &rd, Stmt **node) {
   if (tok.is<qPuncLCur>()) {
     Stmt *block = recurse(S, rd, true);
 
-    *node = block;
-    (*node)->set_end_pos(block->get_end_pos());
-    return true;
+    block->set_end_pos(block->get_end_pos());
+    return block;
   }
 
   Stmt *block = recurse(S, rd, false, true);
 
-  *node = block;
-  (*node)->set_end_pos(block->get_end_pos());
-  return true;
+  block->set_end_pos(block->get_end_pos());
+  return block;
 }
 
 bool qparse::recurse_pro(qparse_t &S, qlex_t &rd, Stmt **node) {
