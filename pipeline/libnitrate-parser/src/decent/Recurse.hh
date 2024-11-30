@@ -60,8 +60,7 @@ namespace qparse {
   Stmt *recurse_if(qparse_t &S, qlex_t &rd);
   Stmt *recurse_while(qparse_t &S, qlex_t &rd);
   Stmt *recurse_for(qparse_t &S, qlex_t &rd);
-  bool recurse_foreach(qparse_t &S, qlex_t &rd, Stmt **node);
-  bool recurse_case(qparse_t &S, qlex_t &rd, Stmt **node);
+  Stmt *recurse_foreach(qparse_t &S, qlex_t &rd);
   bool recurse_switch(qparse_t &S, qlex_t &rd, Stmt **node);
   Stmt *recurse_inline_asm(qparse_t &S, qlex_t &rd);
   bool recurse_composite_field(qparse_t &S, qlex_t &rd, StructField **node);

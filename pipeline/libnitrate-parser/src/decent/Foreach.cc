@@ -31,11 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <nitrate-parser/Node.h>
+
 #include <decent/Recurse.hh>
 
-using namespace qparse;
-
-bool qparse::recurse_foreach(qparse_t &S, qlex_t &rd, Stmt **node) {
+qparse::Stmt *qparse::recurse_foreach(qparse_t &S, qlex_t &rd) {
   qlex_tok_t tok = next();
   bool has_parens = false;
 
@@ -46,6 +46,7 @@ bool qparse::recurse_foreach(qparse_t &S, qlex_t &rd, Stmt **node) {
 
   if (!tok.is(qName)) {
     syntax(tok, "Expected identifier as index variable in foreach statement");
+    return mock_stmt(QAST_NODE_FOREACH);
   }
   std::string first_ident = tok.as_string(&rd), second_ident;
 
@@ -55,6 +56,7 @@ bool qparse::recurse_foreach(qparse_t &S, qlex_t &rd, Stmt **node) {
     tok = next();
     if (!tok.is(qName)) {
       syntax(tok, "Expected identifier as value variable in foreach statement");
+      return mock_stmt(QAST_NODE_FOREACH);
     }
 
     second_ident = tok.as_string(&rd);
@@ -66,16 +68,19 @@ bool qparse::recurse_foreach(qparse_t &S, qlex_t &rd, Stmt **node) {
 
   if (!tok.is<qOpIn>()) {
     syntax(tok, "Expected 'in' after value variable in foreach statement");
+    return mock_stmt(QAST_NODE_FOREACH);
   }
 
   Expr *expr = nullptr;
   if (has_parens) {
     if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &expr) || !expr) {
       syntax(tok, "Expected expression after '(' in foreach statement");
+      return mock_stmt(QAST_NODE_FOREACH);
     }
     tok = next();
     if (!tok.is<qPuncRPar>()) {
       syntax(tok, "Expected ')' after expression in foreach statement");
+      return mock_stmt(QAST_NODE_FOREACH);
     }
   } else {
     if (!recurse_expr(
@@ -83,6 +88,7 @@ bool qparse::recurse_foreach(qparse_t &S, qlex_t &rd, Stmt **node) {
             &expr) ||
         !expr) {
       syntax(tok, "Expected expression after 'in' in foreach statement");
+      return mock_stmt(QAST_NODE_FOREACH);
     }
   }
 
@@ -96,8 +102,7 @@ bool qparse::recurse_foreach(qparse_t &S, qlex_t &rd, Stmt **node) {
     block = recurse(S, rd);
   }
 
-  *node = ForeachStmt::get(first_ident, second_ident, expr, block);
-  (*node)->set_end_pos(block->get_end_pos());
-
-  return true;
+  auto R = ForeachStmt::get(first_ident, second_ident, expr, block);
+  R->set_end_pos(block->get_end_pos());
+  return R;
 }
