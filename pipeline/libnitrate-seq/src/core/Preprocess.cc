@@ -368,8 +368,28 @@ qprep_impl_t::qprep_impl_t(std::shared_ptr<std::istream> file, qcore_env_t env,
   { /* Create the Lua state */
     m_core->L = luaL_newstate();
 
-    /* Load the special selection of standard libraries */
-    luaL_openlibs(m_core->L);
+    { /* Load the special selection of standard libraries */
+      static const luaL_Reg loadedlibs[] = {
+          {LUA_GNAME, luaopen_base},
+          // {LUA_LOADLIBNAME, luaopen_package},
+          // {LUA_COLIBNAME, luaopen_coroutine},
+          {LUA_TABLIBNAME, luaopen_table},
+          {LUA_IOLIBNAME, luaopen_io},
+          // {LUA_OSLIBNAME, luaopen_os},
+          {LUA_STRLIBNAME, luaopen_string},
+          {LUA_MATHLIBNAME, luaopen_math},
+          {LUA_UTF8LIBNAME, luaopen_utf8},
+          {LUA_DBLIBNAME, luaopen_debug},
+          {NULL, NULL}};
+
+      const luaL_Reg *lib;
+      /* "require" functions from 'loadedlibs' and set results to global table
+       */
+      for (lib = loadedlibs; lib->func; lib++) {
+        luaL_requiref(m_core->L, lib->name, lib->func, 1);
+        lua_pop(m_core->L, 1); /* remove lib */
+      }
+    }
 
     /* Install the Nitrate API */
     install_lua_api();
