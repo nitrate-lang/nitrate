@@ -46,8 +46,8 @@ if os.system('docker build -t nitrate-debug:latest -f tools/Debug.Dockerfile .')
 
 
 def regenerate_runner():
-    if os.system('docker build -t no3-run:latest -f tools/Runner.Dockerfile .') != 0:
-        print("Runner build failed.")
+    if os.system('docker build -t wesleyjones256/no3-dist:latest -f tools/no3-dist-container.Dockerfile .') != 0:
+        print("Container build failed.")
         sys.exit(1)
 
 
