@@ -17,7 +17,7 @@ export function activate(context: ExtensionContext) {
 
   const serverOptions: ServerOptions = {
     command: "nitrate",
-    args: ['lsp', "--log", lspLogPath, "--no-color"],
+    args: ['lsp', "--log", lspLogPath],
     transport: TransportKind.stdio
   };
 
