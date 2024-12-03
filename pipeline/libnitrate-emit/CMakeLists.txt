@@ -45,6 +45,9 @@ set(BUILD_FLAGS_COMMON
   -DTRANSCODE_TARGET_CSHARP              \
   -DLLVM_SUUPORT_ALL_TARGETS")
 
+find_library(libz z REQUIRED)
+find_library(libtinfo tinfo REQUIRED)
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_VERSION=\\\"undefined\\\" ${BUILD_FLAGS_COMMON}")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -65,7 +68,7 @@ foreach(lib ${LLVM_LIBS})
   target_link_libraries(nitrate-emit PUBLIC ${lib})
   message(STATUS "Linking ${lib}")
 endforeach()
-target_link_libraries(nitrate-emit PUBLIC z tinfo)
+target_link_libraries(nitrate-emit PUBLIC ${libz} ${libtinfo})
 add_dependencies(nitrate-emit nitrate-core nitrate-ir)
 set_target_properties(nitrate-emit PROPERTIES OUTPUT_NAME nitrate-emit)
 
