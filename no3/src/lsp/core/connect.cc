@@ -48,9 +48,10 @@ ManagedHandle open_connection(ConnectionType type, const std::string& param) {
 class FdStreamBuf : public std::streambuf {
   int m_fd;
   bool m_close;
+  char c = 0;
 
 public:
-  FdStreamBuf(int fd, bool close) : m_fd(fd), m_close(close) {}
+  FdStreamBuf(int fd, bool close) : m_fd(fd), m_close(close) { errno = 0; }
   ~FdStreamBuf() {
     LOG(INFO) << "Closing file descriptor";
 
@@ -89,7 +90,6 @@ public:
   }
 
   virtual int_type underflow() override {
-    char c = 0;
     ssize_t res = read(m_fd, &c, 1);
     if (res < 0) {
       LOG(ERROR) << "Failed to read from stream: " << strerror(errno);
@@ -199,6 +199,7 @@ static std::optional<int> get_tcp_client(const std::string& host,
 
   if (close(fd) == -1) {
     LOG(ERROR) << "Failed to close listening socket: " << strerror(errno);
+    return std::nullopt;
   }
 
   return client_fd;
