@@ -28,9 +28,6 @@ endif()
 
 file(GLOB_RECURSE NO3_CXX_SOURCES "src/*.cc")
 
-find_library(boost_filesystem boost_filesystem REQUIRED)
-find_library(yaml-cpp yaml-cpp REQUIRED)
-
 #================== CREATE APPLICATION RELEASE BUILD ================
 add_executable(no3 ${NO3_CXX_SOURCES})
 target_include_directories(no3 PUBLIC src ${CMAKE_SOURCE_DIR}/libnitrate-core/include
@@ -40,14 +37,14 @@ target_include_directories(no3 PUBLIC src ${CMAKE_SOURCE_DIR}/libnitrate-core/in
   ${CMAKE_SOURCE_DIR}/libnitrate-ir/include
   ${CMAKE_SOURCE_DIR}/libnitrate-emit/include)
 target_link_libraries(no3 PUBLIC
-  ${boost_filesystem}
+  libboost_filesystem.a
   nitrate-emit
   nitrate-ir
   nitrate-parser
   nitrate-lexer
   nitrate-seq
   nitrate-core
-  ${yaml-cpp}
+  libyaml-cpp.a
   libglog.a
   libgflags.a)
 add_dependencies(no3 nitrate-emit
