@@ -4,7 +4,7 @@
   "description": "The official Nitrate Language Server",
   "author": "Wesley Jones",
   "license": "LGPL-2.1-or-later",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "icon": "./icons/icon-light.png",
   "repository": {
     "type": "git",
