@@ -34,18 +34,12 @@
 #include <core/ANSI.hh>
 #include <iostream>
 
-thread_local no3::ansi::AnsiCerr no3::ansi::acout;
-
-no3::ansi::AnsiCerr::AnsiCerr() {
-  style = Style::FG_DEFAULT | Style::BG_DEFAULT;
-}
-
-no3::ansi::AnsiCerr no3::ansi::AnsiCerr::newline() {
-  std::cerr << std::endl;
+no3::ansi::AnsiOut no3::ansi::AnsiOut::newline() {
+  m_out << std::endl;
   return *this;
 }
 
-no3::ansi::AnsiCerr &no3::ansi::AnsiCerr::operator<<(const std::string &str) {
+no3::ansi::AnsiOut &no3::ansi::AnsiOut::operator<<(const std::string &str) {
   std::stringstream ansi_str;
 
   ansi_str << "\x1b[";
@@ -122,8 +116,8 @@ no3::ansi::AnsiCerr &no3::ansi::AnsiCerr::operator<<(const std::string &str) {
 
   ansi_str << "m";
 
-  std::cerr << ansi_str.str() << str << reset;
-  std::cerr.flush();
+  m_out << ansi_str.str() << str << reset;
+  m_out.flush();
 
   return *this;
 }

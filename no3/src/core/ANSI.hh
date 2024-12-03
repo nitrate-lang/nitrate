@@ -92,46 +92,45 @@ namespace no3 {
       return static_cast<uint32_t>(a) == b;
     }
 
-    class AnsiCerr final {
+    class AnsiOut final {
+      std::ostream &m_out;
       Style style;
 
     public:
-      AnsiCerr();
+      AnsiOut(std::ostream &out) : m_out(out), style(Style::RESET){};
 
-      AnsiCerr &operator<<(const std::string &str);
+      AnsiOut &operator<<(const std::string &str);
 
       template <class T>
-      AnsiCerr &write(const T &msg) {
+      AnsiOut &write(const T &msg) {
         std::stringstream ss;
         ss << msg;
         return operator<<(ss.str());
       }
 
-      AnsiCerr newline();
+      AnsiOut newline();
 
-      AnsiCerr &set_style(Style style) {
+      AnsiOut &set_style(Style style) {
         this->style = style;
         return *this;
       }
     };
 
     template <class T>
-    AnsiCerr &operator<<(AnsiCerr &out, const T &msg) {
+    AnsiOut &operator<<(AnsiOut &out, const T &msg) {
       return out.write(msg);
     }
 
-    static inline void operator<<(AnsiCerr &out,
+    static inline void operator<<(AnsiOut &out,
                                   std::ostream &(*var)(std::ostream &)) {
       if (var == static_cast<std::ostream &(*)(std::ostream &)>(std::endl)) {
         out.newline();
       }
     }
 
-    static inline void operator|=(AnsiCerr &out, Style style) {
+    static inline void operator|=(AnsiOut &out, Style style) {
       out.set_style(style);
     }
-
-    extern thread_local AnsiCerr acout;
 
     bool IsUsingColors();
   }  // namespace ansi
