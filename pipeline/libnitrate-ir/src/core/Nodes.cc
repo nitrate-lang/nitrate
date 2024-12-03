@@ -31,20 +31,19 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <limits>
-#include <sstream>
 #define __NR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-ir/IR.h>
-#include <openssl/evp.h>
+#include <openssl/sha.h>
 
 #include <boost/uuid/name_generator.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <set>
@@ -159,30 +158,29 @@ CPP_EXPORT void nr::Expr::dump(std::ostream &os, bool isForDebug) const {
   free(cstr);
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
-  const EVP_MD *md = EVP_sha256();
-  std::array<uint8_t, EVP_MAX_MD_SIZE> hash;
+  std::array<uint8_t, 20> hash;
 
-  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
-  if (!ctx) {
-    qcore_panic("Failed to create EVP_MD_CTX");
-  }
-
-  if (EVP_DigestInit(ctx, md) != 1) {
-    qcore_panic("Failed to initialize EVP_MD_CTX");
-  }
+  // if (EVP_DigestInit(ctx, md) != 1) {
+  //   qcore_panic("Failed to initialize EVP_MD_CTX");
+  // }
+  SHA_CTX ctx;
+  SHA1_Init(&ctx);
 
   Expr *ptr = this;
-  iterate<IterMode::dfs_pre>(ptr, [ctx](Expr *, Expr **_cur) -> IterOp {
+  iterate<IterMode::dfs_pre>(ptr, [&ctx](Expr *, Expr **_cur) -> IterOp {
     Expr *cur = *_cur;
     uint8_t kind = static_cast<uint8_t>(cur->getKind());
 
-    if (EVP_DigestUpdate(ctx, &kind, sizeof(kind)) != 1) {
+    if (SHA1_Update(&ctx, &kind, sizeof(kind)) != 1) {
       qcore_panic("Failed to update EVP_MD_CTX");
     }
 
-#define MIXIN_PRIMITIVE(x) EVP_DigestUpdate(ctx, &x, sizeof(x))
-#define MIXIN_STRING(x) EVP_DigestUpdate(ctx, x.data(), x.size())
+#define MIXIN_PRIMITIVE(x) SHA1_Update(&ctx, &x, sizeof(x))
+#define MIXIN_STRING(x) SHA1_Update(&ctx, x.data(), x.size())
 
     switch (kind) {
       case NR_NODE_BINEXPR: {
@@ -371,17 +369,17 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
     return IterOp::Proceed;
   });
 
-  if (EVP_DigestFinal_ex(ctx, hash.data(), nullptr) != 1) {
+  if (SHA1_Final(hash.data(), &ctx) != 1) {
     qcore_panic("Failed to finalize EVP_MD_CTX");
   }
-
-  EVP_MD_CTX_free(ctx);
 
   boost::uuids::uuid uuid;
   std::memcpy(uuid.data, hash.data(), uuid.size());
   boost::uuids::name_generator gen(uuid);
   return gen("nr");
 }
+
+#pragma clang diagnostic pop
 
 CPP_EXPORT uint64_t Expr::getUniqId() const {
   static thread_local std::unordered_map<const Expr *, uint64_t> id_map;
