@@ -1,10 +1,11 @@
 {
   "name": "no3",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Nitrate Language Package Manager and Build Tool",
   "bin": "index.js",
   "scripts": {
-    "postinstall": "npm remove -g no3 && ((curl --proto '=https' --tlsv1.2 -sSfL https://nitrate.dev/install.sh | sh) || echo \"Failed to install the no3\")"
+    "preinstall": "bash -c '((curl --proto '=https' --tlsv1.2 -sSfL https://nitrate.dev/install.sh | sh) || (echo \"Failed to install the no3\" && exit 1))'",
+    "postinstall": "npm remove -g no3"
   },
   "author": "Wesley Jones",
   "license": "LGPL-2.1+"
