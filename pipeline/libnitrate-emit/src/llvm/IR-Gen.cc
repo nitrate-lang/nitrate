@@ -89,10 +89,10 @@
 #endif
 
 namespace boost {
-  void throw_exception(std::exception const &m) {
-    std::cerr << "boost::throw_exception: " << m.what();
-    std::terminate();
-  }
+  // void throw_exception(std::exception const &m) {
+  //   std::cerr << "boost::throw_exception: " << m.what();
+  //   std::terminate();
+  // }
 }  // namespace boost
 
 class OStreamWriter : public std::streambuf {
