@@ -31,9 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <llvm-15/llvm/MC/TargetRegistry.h>
-#include <llvm-15/llvm/Support/ManagedStatic.h>
-#include <llvm-15/llvm/Support/TargetSelect.h>
+#include <llvm-16/llvm/MC/TargetRegistry.h>
+#include <llvm-16/llvm/Support/ManagedStatic.h>
+#include <llvm-16/llvm/Support/TargetSelect.h>
 #include <nitrate-core/Lib.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-emit/Lib.h>

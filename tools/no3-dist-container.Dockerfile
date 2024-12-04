@@ -1,7 +1,7 @@
 # Run it like:
 # docker run -e HOST_CWD="$PWD" -v /:/mnt --rm -it no3-dist:latest [no3-args]
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 RUN apt-get update
 

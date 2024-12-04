@@ -1,16 +1,16 @@
 # Description: Dockerfile for building the project in Release mode
 # Year: 2024 AD
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 ######################### Install dependencies #########################
 RUN apt clean
 RUN apt update --fix-missing && apt upgrade -y
 RUN apt install -y  libboost-all-dev libssl-dev libgoogle-glog-dev   \
                     libyaml-cpp-dev rapidjson-dev nlohmann-json3-dev \
-                    libreadline-dev
-RUN apt install -y cmake make clang llvm-15
-RUN apt install -y libclang-common-15-dev
+                    libreadline-dev libzstd-dev
+RUN apt install -y cmake make clang
+RUN apt install -y libpolly-16-dev llvm-16
 
 ############################ Install clang #############################
 RUN update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
