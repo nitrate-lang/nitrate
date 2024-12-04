@@ -31,39 +31,39 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <llvm-14/llvm/ExecutionEngine/ExecutionEngine.h>
-#include <llvm-14/llvm/ExecutionEngine/MCJIT.h>
-#include <llvm-14/llvm/ExecutionEngine/SectionMemoryManager.h>
-#include <llvm-14/llvm/IR/BasicBlock.h>
-#include <llvm-14/llvm/IR/Constant.h>
-#include <llvm-14/llvm/IR/DataLayout.h>
-#include <llvm-14/llvm/IR/DerivedTypes.h>
-#include <llvm-14/llvm/IR/Function.h>
-#include <llvm-14/llvm/IR/GlobalValue.h>
-#include <llvm-14/llvm/IR/GlobalVariable.h>
-#include <llvm-14/llvm/IR/IRBuilder.h>
-#include <llvm-14/llvm/IR/Instructions.h>
-#include <llvm-14/llvm/IR/LLVMContext.h>
-#include <llvm-14/llvm/IR/LegacyPassManager.h>
-#include <llvm-14/llvm/IR/PassManager.h>
-#include <llvm-14/llvm/IR/Type.h>
-#include <llvm-14/llvm/IR/Value.h>
-#include <llvm-14/llvm/IR/Verifier.h>
-#include <llvm-14/llvm/InitializePasses.h>
-#include <llvm-14/llvm/MC/TargetRegistry.h>
-#include <llvm-14/llvm/Passes/PassBuilder.h>
-#include <llvm-14/llvm/Support/CodeGen.h>
-#include <llvm-14/llvm/Support/Host.h>
-#include <llvm-14/llvm/Support/ManagedStatic.h>
-#include <llvm-14/llvm/Support/MemoryBuffer.h>
-#include <llvm-14/llvm/Support/TargetSelect.h>
-#include <llvm-14/llvm/Support/raw_os_ostream.h>
-#include <llvm-14/llvm/Support/raw_ostream.h>
-#include <llvm-14/llvm/Target/TargetMachine.h>
-#include <llvm-14/llvm/Target/TargetOptions.h>
-#include <llvm-14/llvm/Transforms/IPO.h>
-#include <llvm-14/llvm/Transforms/IPO/PassManagerBuilder.h>
-#include <llvm-14/llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm-15/llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm-15/llvm/ExecutionEngine/MCJIT.h>
+#include <llvm-15/llvm/ExecutionEngine/SectionMemoryManager.h>
+#include <llvm-15/llvm/IR/BasicBlock.h>
+#include <llvm-15/llvm/IR/Constant.h>
+#include <llvm-15/llvm/IR/DataLayout.h>
+#include <llvm-15/llvm/IR/DerivedTypes.h>
+#include <llvm-15/llvm/IR/Function.h>
+#include <llvm-15/llvm/IR/GlobalValue.h>
+#include <llvm-15/llvm/IR/GlobalVariable.h>
+#include <llvm-15/llvm/IR/IRBuilder.h>
+#include <llvm-15/llvm/IR/Instructions.h>
+#include <llvm-15/llvm/IR/LLVMContext.h>
+#include <llvm-15/llvm/IR/LegacyPassManager.h>
+#include <llvm-15/llvm/IR/PassManager.h>
+#include <llvm-15/llvm/IR/Type.h>
+#include <llvm-15/llvm/IR/Value.h>
+#include <llvm-15/llvm/IR/Verifier.h>
+#include <llvm-15/llvm/InitializePasses.h>
+#include <llvm-15/llvm/MC/TargetRegistry.h>
+#include <llvm-15/llvm/Passes/PassBuilder.h>
+#include <llvm-15/llvm/Support/CodeGen.h>
+#include <llvm-15/llvm/Support/Host.h>
+#include <llvm-15/llvm/Support/ManagedStatic.h>
+#include <llvm-15/llvm/Support/MemoryBuffer.h>
+#include <llvm-15/llvm/Support/TargetSelect.h>
+#include <llvm-15/llvm/Support/raw_os_ostream.h>
+#include <llvm-15/llvm/Support/raw_ostream.h>
+#include <llvm-15/llvm/Target/TargetMachine.h>
+#include <llvm-15/llvm/Target/TargetOptions.h>
+#include <llvm-15/llvm/Transforms/IPO.h>
+#include <llvm-15/llvm/Transforms/IPO/PassManagerBuilder.h>
+#include <llvm-15/llvm/Transforms/InstCombine/InstCombine.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-emit/Code.h>
@@ -983,7 +983,7 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s,
             b.CreateStore(F.value(), b.CreateStructGEP(new_st_ty, new_st, i));
           }
 
-          E = b.CreateLoad(new_st->getType()->getPointerElementType(), new_st);
+          E = b.CreateLoad(new_st->getAllocatedType(), new_st);
         }
       } else if (LT->is_array() && RT->is_array()) {
         nr::ArrayTy *FROM = LT->as<nr::ArrayTy>();
@@ -1015,8 +1015,7 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s,
             b.CreateStore(F.value(), b.CreateStructGEP(new_arr_ty, new_arr, i));
           }
 
-          E = b.CreateLoad(new_arr->getType()->getPointerElementType(),
-                           new_arr);
+          E = b.CreateLoad(new_arr->getAllocatedType(), new_arr);
         }
       } else {
         std::cout << "Failed to cast from " << LT->getKindName() << " to "
@@ -1463,7 +1462,7 @@ static val_t NR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
       }
 
       llvm::Value *current =
-          b.CreateLoad(V->getType()->getPointerElementType(), V);
+          b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
       llvm::Value *new_val;
 
       if (current->getType()->isIntegerTy()) {
@@ -1511,7 +1510,7 @@ static val_t NR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
       }
 
       llvm::Value *current =
-          b.CreateLoad(V->getType()->getPointerElementType(), V);
+          b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
       llvm::Value *new_val;
 
       if (current->getType()->isIntegerTy()) {
@@ -1605,7 +1604,7 @@ static val_t NR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
       }
 
       llvm::Value *current =
-          b.CreateLoad(V->getType()->getPointerElementType(), V);
+          b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
       llvm::Value *new_val;
 
       if (current->getType()->isIntegerTy()) {
@@ -1653,7 +1652,7 @@ static val_t NR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
       }
 
       llvm::Value *current =
-          b.CreateLoad(V->getType()->getPointerElementType(), V);
+          b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
       llvm::Value *new_val;
 
       if (current->getType()->isIntegerTy()) {
@@ -1863,8 +1862,8 @@ static val_t NR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
       return std::nullopt;
     }
 
-    llvm::Value *target =
-        b.CreateLoad(T.value()->getType()->getPointerElementType(), T.value());
+    llvm::Value *target = b.CreateLoad(
+        T.value()->getType()->getNonOpaquePointerElementType(), T.value());
 
     if (!target->getType()->isFunctionTy()) {
       debug("Expected function type for target");
@@ -1959,11 +1958,12 @@ static val_t NR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
       qcore_panic("expected data pointer");
     }
 
-    if (!find->first->getType()->getPointerElementType()) {
+    if (!find->first->getType()->getNonOpaquePointerElementType()) {
       qcore_panic("unexpected type for index");
     }
 
-    llvm::Type *base_ty = find->first->getType()->getPointerElementType();
+    llvm::Type *base_ty =
+        find->first->getType()->getNonOpaquePointerElementType();
 
     if (base_ty->isArrayTy()) {
       llvm::Value *zero =
@@ -1974,10 +1974,10 @@ static val_t NR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
 
       return b.CreateLoad(base_ty->getArrayElementType(), elem);
     } else if (base_ty->isPointerTy()) {
-      llvm::Value *elem =
-          b.CreateGEP(base_ty->getPointerElementType(), find->first, I.value());
+      llvm::Value *elem = b.CreateGEP(base_ty->getNonOpaquePointerElementType(),
+                                      find->first, I.value());
 
-      return b.CreateLoad(base_ty->getPointerElementType(), elem);
+      return b.CreateLoad(base_ty->getNonOpaquePointerElementType(), elem);
     } else {
       qcore_panic("unexpected type for index");
     }
@@ -2010,8 +2010,9 @@ static val_t NR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &, State &s,
     return find->first;
   } else {
     if (find->first->getType()->isPointerTy()) {
-      return b.CreateLoad(find->first->getType()->getPointerElementType(),
-                          find->first);
+      return b.CreateLoad(
+          find->first->getType()->getNonOpaquePointerElementType(),
+          find->first);
     }
   }
 

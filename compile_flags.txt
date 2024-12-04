@@ -11,7 +11,7 @@
 -I./pipeline/libnitrate/include
 -I./pipeline/libnitrate/src
 -I./no3/src
--I/usr/lib/llvm-14/include
+-I/usr/lib/llvm-15/include
 -I.build/debug/_deps/googletest-src/googletest/include
 -D__NITRATE_IMPL__
 -D__NITRATE_LEXER_CPP__

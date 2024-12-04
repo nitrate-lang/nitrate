@@ -9,7 +9,8 @@ RUN apt update --fix-missing && apt upgrade -y
 RUN apt install -y  libboost-all-dev libssl-dev libgoogle-glog-dev   \
                     libyaml-cpp-dev rapidjson-dev nlohmann-json3-dev \
                     libreadline-dev
-RUN apt install -y cmake make clang llvm-14
+RUN apt install -y cmake make clang llvm-15
+RUN apt install -y libclang-common-15-dev
 
 ############################ Install clang #############################
 RUN update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
