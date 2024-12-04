@@ -14,21 +14,16 @@ parts:
   nitrate:
     plugin: cmake
     cmake-parameters:
-      - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DSTRIP_OUTPUT=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang
+      - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DSTRIP_OUTPUT=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang
     source: .
     build-packages:
-      - libssl-dev
-      - libboost-all-dev
-      - libzstd-dev
-      - libclang-common-14-dev
-      - rapidjson-dev
-      - libgsl-dev
-      - libreadline-dev
-      - nlohmann-json3-dev
-      - libgoogle-glog-dev
-      - clang
-      - llvm-14-dev
-      - libyaml-cpp-dev
+     - libboost-all-dev
+     - libssl-dev
+     - libgoogle-glog-dev
+     - libyaml-cpp-dev
+     - rapidjson-dev
+     - nlohmann-json3-dev
+     - libreadline-dev
     build-attributes:
      - enable-patchelf
     stage-packages:
