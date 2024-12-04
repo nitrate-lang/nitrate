@@ -366,6 +366,7 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
   return true;
 }
 
+#ifdef NO3_MAIN
 int main(int argc, char *argv[]) {
   if (!no3_init()) {
     std::cerr << "Failed to initialize no3\n";
@@ -374,3 +375,4 @@ int main(int argc, char *argv[]) {
 
   return no3_command(argc, argv);
 }
+#endif

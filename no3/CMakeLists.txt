@@ -28,7 +28,7 @@ endif()
 
 file(GLOB_RECURSE NO3_CXX_SOURCES "src/*.cc")
 
-#================== CREATE APPLICATION RELEASE BUILD ================
+#================== CREATE APPLICATION BUILD ================
 add_executable(no3 ${NO3_CXX_SOURCES})
 target_include_directories(no3 PUBLIC src ${CMAKE_SOURCE_DIR}/libnitrate-core/include
   ${CMAKE_SOURCE_DIR}/libnitrate-lexer/include
@@ -47,6 +47,7 @@ target_link_libraries(no3 PUBLIC
   libyaml-cpp.a
   libglog.a
   libgflags.a)
+target_compile_options(no3 PUBLIC -DNO3_MAIN)
 add_dependencies(no3 nitrate-emit
   nitrate-ir
   nitrate-parser
@@ -55,4 +56,37 @@ add_dependencies(no3 nitrate-emit
   nitrate-core)
 target_link_options(no3 PRIVATE -static-libgcc -static-libstdc++)
 
+if(BUILD_SHARED_LIBS STREQUAL "OFF")
+
+  #================== CREATE LIBRARY BUILD ================
+  add_library(no3-cli ${NO3_CXX_SOURCES})
+  target_include_directories(no3-cli PUBLIC src ${CMAKE_SOURCE_DIR}/libnitrate-core/include
+    ${CMAKE_SOURCE_DIR}/libnitrate-lexer/include
+    ${CMAKE_SOURCE_DIR}/libnitrate-seq/include
+    ${CMAKE_SOURCE_DIR}/libnitrate-parser/include
+    ${CMAKE_SOURCE_DIR}/libnitrate-ir/include
+    ${CMAKE_SOURCE_DIR}/libnitrate-emit/include)
+  target_link_libraries(no3-cli PUBLIC
+    libboost_filesystem.a
+    nitrate-emit
+    nitrate-ir
+    nitrate-parser
+    nitrate-lexer
+    nitrate-seq
+    nitrate-core
+    libyaml-cpp.a
+    libglog.a
+    libgflags.a)
+  add_dependencies(no3-cli nitrate-emit
+    nitrate-ir
+    nitrate-parser
+    nitrate-lexer
+    nitrate-seq
+    nitrate-core)
+
+  install(TARGETS no3-cli DESTINATION lib)
+
+endif()
+
 install(TARGETS no3 DESTINATION bin)
+
