@@ -245,7 +245,6 @@ static int do_nr(std::string source, std::string output, std::string opts,
 
 static int do_codegen(std::string source, std::string output, std::string opts,
                       std::string target, bool verbose) {
-  (void)target;
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
@@ -294,14 +293,33 @@ static int do_codegen(std::string source, std::string output, std::string opts,
     return 1;
   }
 
-  FILE *out = output.empty() ? stdout : fopen(output.c_str(), "wb");
+  bool use_tmpfile = output.empty();
+
+  FILE *out = use_tmpfile ? tmpfile() : fopen(output.c_str(), "wb");
 
   qcode_conf codegen_conf;
-  ok = qcode_ir(mod.get(), codegen_conf.get(), stderr, out);
-
-  if (out != stdout) {
-    fclose(out);
+  if (target == "ir") {
+    ok = qcode_ir(mod.get(), codegen_conf.get(), stderr, out);
+  } else if (target == "asm") {
+    ok = qcode_asm(mod.get(), codegen_conf.get(), stderr, out);
+  } else if (target == "obj") {
+    ok = qcode_obj(mod.get(), codegen_conf.get(), stderr, out);
+  } else {
+    LOG(ERROR) << "Unknown target specified: " << target;
+    return 1;
   }
+
+  if (use_tmpfile) {
+    rewind(out);
+    char buf[4096];
+
+    while (!feof(out)) {
+      size_t len = fread(buf, 1, sizeof(buf), out);
+      fwrite(buf, 1, len, stdout);
+    }
+  }
+
+  fclose(out);
 
   if (!ok) {
     LOG(ERROR) << "Failed to generate code for source file: " << source;
