@@ -55,11 +55,7 @@ static bool recurse_decl(qparse_t &S, qlex_tok_t tok, qlex_t &rd,
 
   next();
 
-  Type *type = nullptr;
-
-  if (!recurse_type(S, rd, &type)) {
-    syntax(tok, "Failed to parse type in declaration");
-  }
+  Type *type = recurse_type(S, rd);
 
   decl = std::make_pair(name, type);
   return true;
@@ -96,10 +92,7 @@ std::vector<Stmt *> qparse::recurse_var(qparse_t &S, qlex_t &rd) {
       nodes.push_back(var_decl);
     }
   } else if (tok.is<qOpSet>()) {
-    Expr *init = nullptr;
-    if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init) || !init) {
-      syntax(tok, "Failed to parse initializer in var declaration");
-    }
+    Expr *init = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
     tok = next();
     if (!tok.is<qPuncSemi>()) {

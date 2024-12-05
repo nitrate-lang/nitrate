@@ -36,12 +36,8 @@
 #include "nitrate-parser/Node.h"
 
 qparse::Stmt *qparse::recurse_if(qparse_t &S, qlex_t &rd) {
-  Expr *cond = nullptr;
-  if (!recurse_expr(S, rd,
-                    {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
-                    &cond)) {
-    return mock_stmt(QAST_NODE_IF);
-  }
+  Expr *cond = recurse_expr(
+      S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
 
   Stmt *then_block = nullptr;
   if (peek().is<qOpArrow>()) {

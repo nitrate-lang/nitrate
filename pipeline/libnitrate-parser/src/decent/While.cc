@@ -36,12 +36,8 @@
 #include <decent/Recurse.hh>
 
 qparse::Stmt *qparse::recurse_while(qparse_t &S, qlex_t &rd) {
-  Expr *cond = nullptr;
-  if (!recurse_expr(S, rd,
-                    {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
-                    &cond)) {
-    return mock_stmt(QAST_NODE_WHILE);
-  }
+  Expr *cond = recurse_expr(
+      S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
 
   Stmt *then_block = nullptr;
 

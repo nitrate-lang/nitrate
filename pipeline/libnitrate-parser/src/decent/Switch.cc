@@ -36,11 +36,7 @@
 #include <decent/Recurse.hh>
 
 qparse::Stmt *qparse::recurse_switch(qparse_t &S, qlex_t &rd) {
-  Expr *cond = nullptr;
-  if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncLCur)}, &cond)) {
-    syntax(peek(), "Expected switch condition");
-    return mock_stmt(QAST_NODE_SWITCH);
-  }
+  Expr *cond = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncLCur)});
 
   SwitchCases cases;
   Stmt *default_case = nullptr;
@@ -80,11 +76,7 @@ qparse::Stmt *qparse::recurse_switch(qparse_t &S, qlex_t &rd) {
     }
     next();
 
-    Expr *case_expr = nullptr;
-    if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncColn)}, &case_expr)) {
-      syntax(peek(), "Expected case expression");
-      return mock_stmt(QAST_NODE_SWITCH);
-    }
+    Expr *case_expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncColn)});
 
     tok = next();
     if (!tok.is<qPuncColn>()) {

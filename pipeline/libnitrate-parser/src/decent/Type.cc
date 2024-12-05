@@ -61,7 +61,7 @@ static const std::unordered_map<std::string_view, Type *(*)()> primitive_types =
      {"f128", []() -> Type * { return F128::get(); }},
      {"void", []() -> Type * { return VoidTy::get(); }}};
 
-bool qparse::recurse_type(qparse_t &S, qlex_t &rd, Type **node) {
+Type *qparse::recurse_type(qparse_t &S, qlex_t &rd) {
   /** Nitrate TYPE PARSER
    *
    * @brief Given a Scanner, parse tokens into a Nitrate type node.
@@ -82,8 +82,6 @@ bool qparse::recurse_type(qparse_t &S, qlex_t &rd, Type **node) {
 
   qlex_tok_t tok;
 
-  *node = nullptr;
-
   if ((tok = next()).ty == qKeyW) {
     switch (tok.as<qlex_key_t>()) {
       case qKFn: {
@@ -98,10 +96,7 @@ bool qparse::recurse_type(qparse_t &S, qlex_t &rd, Type **node) {
          *       to account for this.
          */
 
-        if (!recurse_function(S, rd, &fn) || !fn) {
-          syntax(tok, "Malformed function type");
-          goto error_end;
-        }
+        fn = recurse_function(S, rd);
 
         if (!fn->is<FnDecl>()) {
           syntax(tok, "Expected a function declaration but got something else");
@@ -183,10 +178,7 @@ bool qparse::recurse_type(qparse_t &S, qlex_t &rd, Type **node) {
      * @brief Parse a vector, map, or array type.
      */
 
-    if (!recurse_type(S, rd, &type)) {
-      syntax(tok, "Expected a type after '['");
-      goto error_end;
-    }
+    type = recurse_type(S, rd);
 
     if ((tok = next()).is<qPuncRBrk>()) {
       /** Nitrate VECTOR TYPE
@@ -210,10 +202,7 @@ bool qparse::recurse_type(qparse_t &S, qlex_t &rd, Type **node) {
         goto error_end;
       }
 
-      if (!recurse_type(S, rd, &value_type)) {
-        syntax(tok, "Expected value type after '>' in map type");
-        goto error_end;
-      }
+      value_type = recurse_type(S, rd);
 
       if (!(tok = next()).is<qPuncRBrk>()) {
         syntax(tok, "Expected ']' after map type");
@@ -236,14 +225,7 @@ bool qparse::recurse_type(qparse_t &S, qlex_t &rd, Type **node) {
       goto error_end;
     }
 
-    {
-      Expr *_size = nullptr;
-      if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)}, &_size)) {
-        syntax(tok, "Expected array size after ';'");
-        goto error_end;
-      }
-      size = _size;
-    }
+    size = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)});
 
     if (!(tok = next()).is<qPuncRBrk>()) {
       syntax(tok, "Expected ']' after array size");
@@ -258,10 +240,7 @@ bool qparse::recurse_type(qparse_t &S, qlex_t &rd, Type **node) {
      * @brief Parse a set type.
      */
 
-    if (!recurse_type(S, rd, &type)) {
-      syntax(tok, "Expected a type after '{'");
-      goto error_end;
-    }
+    type = recurse_type(S, rd);
 
     if (!(tok = next()).is<qPuncRCur>()) {
       syntax(tok, "Expected '}' after set type");
@@ -283,10 +262,7 @@ bool qparse::recurse_type(qparse_t &S, qlex_t &rd, Type **node) {
         break;
       }
 
-      if (!recurse_type(S, rd, &type)) {
-        syntax(tok, "Expected a type in tuple type");
-        goto error_end;
-      }
+      type = recurse_type(S, rd);
 
       types.push_back(type);
 
@@ -304,10 +280,7 @@ bool qparse::recurse_type(qparse_t &S, qlex_t &rd, Type **node) {
      * @brief Parse a pointer type.
      */
 
-    if (!recurse_type(S, rd, &type)) {
-      syntax(tok, "Expected a type after '*'");
-      goto error_end;
-    }
+    type = recurse_type(S, rd);
 
     inner = PtrTy::get(type);
     goto type_suffix;
@@ -317,10 +290,7 @@ bool qparse::recurse_type(qparse_t &S, qlex_t &rd, Type **node) {
      * @brief Parse a mutable type.
      */
 
-    if (!recurse_type(S, rd, &type)) {
-      syntax(tok, "Expected a type after '!' mutable type");
-      goto error_end;
-    }
+    type = recurse_type(S, rd);
 
     inner = RefTy::get(type);
     goto type_suffix;
@@ -355,11 +325,7 @@ type_suffix: {
         break;
       }
 
-      Type *arg = nullptr;
-      if (!recurse_type(S, rd, &arg)) {
-        syntax(tok, "Expected a template type argument");
-        goto error_end;
-      }
+      Type *arg = recurse_type(S, rd);
 
       args.push_back(TypeExpr::get(arg));
 
@@ -409,10 +375,7 @@ type_suffix: {
         if (tok.is<qPuncColn>()) {
           start = nullptr;
         } else {
-          if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncColn)}, &start)) {
-            syntax(tok, "Expected start of confinement range");
-            goto error_end;
-          }
+          start = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncColn)});
         }
         next();
         tok = peek();
@@ -420,33 +383,25 @@ type_suffix: {
         if (tok.is<qPuncRBrk>()) {
           end = nullptr;
         } else {
-          if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)}, &end)) {
-            syntax(tok, "Expected end of confinement range");
-            goto error_end;
-          }
+          end = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)});
         }
         next();
 
         inner->set_range(start, end);
       } else { /* Parse bit-field width */
-        Expr *expr = nullptr;
-        if (!recurse_expr(S, rd,
-                          {
-                              qlex_tok_t(qPunc, qPuncRPar),  //
-                              qlex_tok_t(qPunc, qPuncRBrk),  //
-                              qlex_tok_t(qPunc, qPuncLCur),  //
-                              qlex_tok_t(qPunc, qPuncRCur),  //
-                              qlex_tok_t(qPunc, qPuncComa),  //
-                              qlex_tok_t(qPunc, qPuncColn),  //
-                              qlex_tok_t(qPunc, qPuncSemi),  //
-                              qlex_tok_t(qOper, qOpSet),     //
-                              qlex_tok_t(qOper, qOpMinus),   //
-                              qlex_tok_t(qOper, qOpGT),      //
-                          },
-                          &expr)) {
-          syntax(tok, "Expected expression for bit-field width");
-          goto error_end;
-        }
+        Expr *expr = recurse_expr(S, rd,
+                                  {
+                                      qlex_tok_t(qPunc, qPuncRPar),  //
+                                      qlex_tok_t(qPunc, qPuncRBrk),  //
+                                      qlex_tok_t(qPunc, qPuncLCur),  //
+                                      qlex_tok_t(qPunc, qPuncRCur),  //
+                                      qlex_tok_t(qPunc, qPuncComa),  //
+                                      qlex_tok_t(qPunc, qPuncColn),  //
+                                      qlex_tok_t(qPunc, qPuncSemi),  //
+                                      qlex_tok_t(qOper, qOpSet),     //
+                                      qlex_tok_t(qOper, qOpMinus),   //
+                                      qlex_tok_t(qOper, qOpGT),      //
+                                  });
 
         inner->set_width(expr);
       }
@@ -467,9 +422,8 @@ type_suffix: {
 
   assert(inner != nullptr);
 
-  *node = inner;
-  return true;
+  return inner;
 
 error_end:
-  return false;
+  return mock_type(QAST_NODE_VOID_TY);
 }

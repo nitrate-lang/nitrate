@@ -38,7 +38,6 @@
 #include <cstddef>
 #include <decent/Recurse.hh>
 #include <stack>
-#include <stdexcept>
 #include <string_view>
 
 #define MAX_EXPR_DEPTH (10000)
@@ -103,32 +102,18 @@ static Call *recurse_function_call(qparse_t &S, Expr *callee, qlex_t &rd,
 
       next();
 
-      Expr *arg = nullptr;
-      if (!recurse_expr(
-              S, rd,
-              {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
-              &arg, depth + 1) ||
-          !arg) {
-        syntax(tok, "Expected an expression in named function call argument");
-
-        return nullptr;
-      }
+      Expr *arg = recurse_expr(
+          S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
+          depth + 1);
 
       call_args.push_back({ident.as_string(&rd), arg});
       goto comma;
     }
 
   parse_pos_arg: {
-    Expr *arg = nullptr;
-    if (!recurse_expr(
-            S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
-            &arg, depth + 1) ||
-        !arg) {
-      syntax(tok,
-             "Expected an expression in positional function call argument");
-
-      return nullptr;
-    }
+    Expr *arg = recurse_expr(
+        S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
+        depth + 1);
 
     call_args.push_back({std::to_string(pos_arg_count++), arg});
 
@@ -181,15 +166,8 @@ static bool recurse_fstring(qparse_t &S, FString **node, qlex_t &rd,
       auto sub = fstr.substr(w_beg, w_end - w_beg);
 
       qlex_t *subrd = qlex_direct(sub.data(), sub.size(), "fstring", S.env);
-      qlex_tok_t subtok = qlex_peek(subrd);
 
-      if (!recurse_expr(S, *subrd, {qlex_tok_t(qPunc, qPuncRCur)}, &expr,
-                        depth + 1) ||
-          !expr) {
-        syntax(subtok, "Expected an expression in F-string parameter");
-        qlex_free(subrd);
-        return false;
-      }
+      expr = recurse_expr(S, *subrd, {qlex_tok_t(qPunc, qPuncRCur)}, depth + 1);
 
       qlex_free(subrd);
 
@@ -227,19 +205,14 @@ static bool recurse_fstring(qparse_t &S, FString **node, qlex_t &rd,
 /// TODO: qlex_op_t precedence
 /// TODO: qlex_op_t associativity
 
-bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
-                          std::set<qlex_tok_t> terminators, Expr **node,
-                          size_t depth) {
-  /**
-   * @brief
-   */
-
+Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
+                           std::set<qlex_tok_t> terminators, size_t depth) {
   if (depth > MAX_EXPR_DEPTH) {
     syntax(peek(),
            "Expression depth exceeded; Expressions can not be nested more than "
            "%d times",
            MAX_EXPR_DEPTH);
-    return false;
+    return mock_expr(QAST_NODE_VOID_TY);
   }
 
   std::stack<Expr *> stack;
@@ -249,27 +222,20 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
     if (tok.is(qEofF)) {
       // syntax(tok, "Unexpected end of file while parsing expression");
-      return false;
+      return mock_expr(QAST_NODE_VOID_TY);
     }
 
     if (terminators.contains(tok)) {
-      /**
-       * @brief
-       */
-
       if (stack.empty()) {
-        node = nullptr;
-        return true;
+        return mock_expr(QAST_NODE_VOID_TY);
       }
 
       if (stack.size() != 1) {
         syntax(tok, "Expected a single expression on the stack");
-        return false;
+        return mock_expr(QAST_NODE_VOID_TY);
       }
 
-      /* */
-      *node = stack.top();
-      return true;
+      return stack.top();
     }
 
     next();
@@ -284,11 +250,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
         tok = peek();
         if (tok.is(qName)) {
-          Type *suffix = nullptr;
-          if (!recurse_type(S, rd, &suffix) || !suffix) {
-            syntax(tok, "Unknown integer literal suffix");
-            return false;
-          }
+          Type *suffix = recurse_type(S, rd);
 
           Expr *integer = stack.top();
           stack.pop();
@@ -306,11 +268,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
         tok = peek();
         if (tok.is(qName)) {
-          Type *suffix = nullptr;
-          if (!recurse_type(S, rd, &suffix) || !suffix) {
-            syntax(tok, "Unknown float literal suffix");
-            return false;
-          }
+          Type *suffix = recurse_type(S, rd);
 
           Expr *num = stack.top();
           stack.pop();
@@ -328,11 +286,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
         tok = peek();
         if (tok.is(qName)) {
-          Type *suffix = nullptr;
-          if (!recurse_type(S, rd, &suffix) || !suffix) {
-            syntax(tok, "Unknown string literal suffix");
-            return false;
-          }
+          Type *suffix = recurse_type(S, rd);
 
           Expr *num = stack.top();
           stack.pop();
@@ -352,11 +306,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
         tok = peek();
         if (tok.is(qName)) {
-          Type *suffix = nullptr;
-          if (!recurse_type(S, rd, &suffix) || !suffix) {
-            syntax(tok, "Unknown char literal suffix");
-            return false;
-          }
+          Type *suffix = recurse_type(S, rd);
 
           Expr *num = stack.top();
           stack.pop();
@@ -384,11 +334,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
             continue;
           }
           case qKFn: {
-            Stmt *f = nullptr;
-            if (!recurse_function(S, rd, &f)) {
-              syntax(tok, "Expected a function definition in expression");
-              return false;
-            }
+            Stmt *f = recurse_function(S, rd);
             StmtExpr *adapter = StmtExpr::get(f);
 
             if (peek().is<qPuncLPar>()) {
@@ -399,7 +345,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
                 syntax(tok,
                        "Expected a function call after function definition "
                        "expression");
-                return false;
+                return mock_expr(QAST_NODE_VOID_TY);
               }
 
               stack.push(fcall);
@@ -412,7 +358,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
             FString *f = nullptr;
             if (!recurse_fstring(S, &f, rd, depth)) {
               syntax(tok, "Expected an F-string in expression");
-              return false;
+              return mock_expr(QAST_NODE_VOID_TY);
             }
             stack.push(f);
             continue;
@@ -420,7 +366,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
           default: {
             syntax(tok, "Unexpected keyword in expression");
-            return false;
+            return mock_expr(QAST_NODE_VOID_TY);
           }
         }
         break;
@@ -433,7 +379,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
               if (fcall == nullptr) {
                 syntax(tok, "Expected a function call in expression");
-                return false;
+                return mock_expr(QAST_NODE_VOID_TY);
               }
 
               stack.pop();
@@ -444,15 +390,11 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
             Expr *expr = nullptr;
             auto terminators_copy = terminators;
             terminators_copy.insert(qlex_tok_t(qPunc, qPuncRPar));
-            if (!recurse_expr(S, rd, terminators_copy, &expr, depth + 1) ||
-                !expr) {
-              syntax(tok, "Expected an expression in parentheses");
-              return false;
-            }
+            expr = recurse_expr(S, rd, terminators_copy, depth + 1);
 
             if (!next().is<qPuncRPar>()) {
               syntax(tok, "Expected ')' to close the parentheses");
-              return false;
+              return mock_expr(QAST_NODE_VOID_TY);
             }
 
             stack.push(expr);
@@ -461,12 +403,10 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
           case qPuncRPar: {
             if (stack.size() != 1) {
               syntax(tok, "Expected a single expression on the stack");
-              return false;
+              return mock_expr(QAST_NODE_VOID_TY);
             }
 
-            *node = stack.top();
-            stack.pop();
-            return true;
+            return stack.top();
           }
           case qPuncLCur: {
             ListData elements;
@@ -482,13 +422,13 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
                                 depth + 1) ||
                   !key) {
                 syntax(tok, "Expected a key in list element");
-                return false;
+                return mock_expr(QAST_NODE_VOID_TY);
               }
 
               tok = next();
               if (!tok.is<qPuncColn>()) {
                 syntax(tok, "Expected ':' in list element");
-                return false;
+                return mock_expr(QAST_NODE_VOID_TY);
               }
 
               if (!recurse_expr(S, rd,
@@ -497,7 +437,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
                                 &value, depth + 1) ||
                   !value) {
                 syntax(tok, "Expected a value in list element");
-                return false;
+                return mock_expr(QAST_NODE_VOID_TY);
               }
 
               elements.push_back(Assoc::get(key, value));
@@ -535,7 +475,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
                                   &element, depth + 1) ||
                     !element) {
                   syntax(tok, "Expected an element in list");
-                  return false;
+                  return mock_expr(QAST_NODE_VOID_TY);
                 }
 
                 tok = peek();
@@ -549,12 +489,12 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
                                     &count, depth + 1) ||
                       !count) {
                     syntax(tok, "Expected a count in list element");
-                    return false;
+                    return mock_expr(QAST_NODE_VOID_TY);
                   }
 
                   if (!count->is<ConstInt>()) {
                     syntax(tok, "Expected a constant integer in list element");
-                    return false;
+                    return mock_expr(QAST_NODE_VOID_TY);
                   }
 
                   size_t count_val =
@@ -564,7 +504,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
                     syntax(tok,
                            "List element duplication count exceeds the maximum "
                            "limit");
-                    return false;
+                    return mock_expr(QAST_NODE_VOID_TY);
                   }
 
                   for (size_t i = 0; i < count_val; i++) {
@@ -586,7 +526,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
             if (stack.size() != 1) {
               syntax(tok, "Expected a single expression on the stack");
-              return false;
+              return mock_expr(QAST_NODE_VOID_TY);
             }
 
             Expr *index = nullptr, *left = stack.top();
@@ -598,7 +538,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
                               &index, depth + 1) ||
                 !index) {
               syntax(tok, "Expected an index in list");
-              return false;
+              return mock_expr(QAST_NODE_VOID_TY);
             }
 
             tok = next();
@@ -608,13 +548,13 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
                                 depth + 1) ||
                   !end) {
                 syntax(tok, "Expected an end index in list");
-                return false;
+                return mock_expr(QAST_NODE_VOID_TY);
               }
 
               tok = next();
               if (!tok.is<qPuncRBrk>()) {
                 syntax(tok, "Expected ']' to close the list index");
-                return false;
+                return mock_expr(QAST_NODE_VOID_TY);
               }
 
               stack.push(Slice::get(left, index, end));
@@ -623,7 +563,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
             if (!tok.is<qPuncRBrk>()) {
               syntax(tok, "Expected ']' to close the list index");
-              return false;
+              return mock_expr(QAST_NODE_VOID_TY);
             }
 
             tok = peek();
@@ -647,7 +587,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
           case qPuncComa: {
             if (stack.size() != 1) {
               syntax(tok, "Expected a single expression on the stack");
-              return false;
+              return mock_expr(QAST_NODE_VOID_TY);
             }
 
             Expr *right = nullptr, *left = stack.top();
@@ -656,7 +596,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
             if (!recurse_expr(S, rd, terminators, &right, depth + 1) ||
                 !right) {
               syntax(tok, "Expected an expression after ','");
-              return false;
+              return mock_expr(QAST_NODE_VOID_TY);
             }
 
             stack.push(SeqPoint::get(SeqPoint({left, right})));
@@ -664,7 +604,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
           }
           default: {
             syntax(tok, "Unexpected punctuation in expression");
-            return false;
+            return mock_expr(QAST_NODE_VOID_TY);
           } break;
         }
       }
@@ -673,7 +613,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
         if (op == qOpDot) {
           if (stack.size() != 1) {
             syntax(tok, "Expected a single expression on the stack");
-            return false;
+            return mock_expr(QAST_NODE_VOID_TY);
           }
 
           Expr *left = stack.top();
@@ -682,7 +622,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
           tok = next();
           if (!tok.is(qName)) {
             syntax(tok, "Expected an identifier after '.'");
-            return false;
+            return mock_expr(QAST_NODE_VOID_TY);
           }
 
           std::string ident = tok.as_string(&rd);
@@ -709,14 +649,10 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
         if (op == qOpAs) {
           if (stack.size() != 1) {
             syntax(tok, "Expected a single expression on the stack");
-            return false;
+            return mock_expr(QAST_NODE_VOID_TY);
           }
 
-          Type *type = nullptr;
-          if (!recurse_type(S, rd, &type)) {
-            syntax(tok, "Failed to parse type in 'as' expression");
-            return false;
-          }
+          Type *type = recurse_type(S, rd);
 
           Expr *left = stack.top();
           stack.pop();
@@ -727,14 +663,10 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
         if (op == qOpBitcastAs) {
           if (stack.size() != 1) {
             syntax(tok, "Expected a single expression on the stack");
-            return false;
+            return mock_expr(QAST_NODE_VOID_TY);
           }
 
-          Type *type = nullptr;
-          if (!recurse_type(S, rd, &type)) {
-            syntax(tok, "Failed to parse type in 'bitcast as' expression");
-            return false;
-          }
+          Type *type = recurse_type(S, rd);
 
           Expr *left = stack.top();
           stack.pop();
@@ -744,7 +676,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
         if (!recurse_expr(S, rd, terminators, &expr, depth + 1) || !expr) {
           syntax(tok, "Failed to parse expression in binary operation");
-          return false;
+          return mock_expr(QAST_NODE_VOID_TY);
         }
 
         if (stack.empty()) {
@@ -757,7 +689,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
           continue;
         } else {
           syntax(tok, "Unexpected operator in expression");
-          return false;
+          return mock_expr(QAST_NODE_VOID_TY);
         }
         break;
       }
@@ -769,7 +701,7 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
           Call *fcall = recurse_function_call(S, Ident::get(ident), rd, depth);
           if (fcall == nullptr) {
             syntax(tok, "Expected a function call in expression");
-            return false;
+            return mock_expr(QAST_NODE_VOID_TY);
           }
 
           stack.push(fcall);
@@ -794,11 +726,11 @@ bool qparse::recurse_expr(qparse_t &S, qlex_t &rd,
       }
       default: {
         syntax(tok, "Unexpected token in expression");
-        return false;
+        return mock_expr(QAST_NODE_VOID_TY);
       }
     }
   }
 
   syntax(peek(), "Unexpected end of expression");
-  return false;
+  return mock_expr(QAST_NODE_VOID_TY);
 }

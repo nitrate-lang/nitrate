@@ -52,8 +52,8 @@ namespace qparse {
   Stmt *recurse_enum(qparse_t &S, qlex_t &rd);
   Stmt *recurse_struct(qparse_t &S, qlex_t &rd, CompositeType type);
   Stmt *recurse_subsystem(qparse_t &S, qlex_t &rd);
-  bool recurse_function(qparse_t &S, qlex_t &rd, Stmt **node);
-  bool recurse_type(qparse_t &S, qlex_t &rd, Type **node);
+  Stmt *recurse_function(qparse_t &S, qlex_t &rd);
+  Type *recurse_type(qparse_t &S, qlex_t &rd);
   Stmt *recurse_typedef(qparse_t &S, qlex_t &rd);
   Stmt *recurse_return(qparse_t &S, qlex_t &rd);
   Stmt *recurse_retif(qparse_t &S, qlex_t &rd);
@@ -71,8 +71,16 @@ namespace qparse {
   Stmt *recurse(qparse_t &S, qlex_t &rd, bool expect_braces = true,
                 bool single_stmt = false);
 
-  bool recurse_expr(qparse_t &S, qlex_t &rd, std::set<qlex_tok_t> terminators,
-                    Expr **node, size_t depth = 0);
+  Expr *recurse_expr(qparse_t &S, qlex_t &rd, std::set<qlex_tok_t> terminators,
+                     size_t depth = 0);
+
+  static inline bool recurse_expr(qparse_t &S, qlex_t &rd,
+                                  std::set<qlex_tok_t> terminators, Expr **node,
+                                  size_t depth = 0) {
+    *node = recurse_expr(S, rd, terminators, depth);
+
+    return true;
+  }
 
 #define next() qlex_next(&rd)
 #define peek() qlex_peek(&rd)

@@ -52,14 +52,8 @@ static bool recurse_enum_field(qparse_t &S, qlex_t &rd, EnumDefItems &fields) {
   tok = peek();
   if (tok.is<qOpSet>()) {
     next();
-    Expr *expr = nullptr;
-    if (!recurse_expr(
-            S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},
-            &expr) ||
-        !expr) {
-      syntax(tok, "Expected an expression after '='");
-      return false;
-    }
+    Expr *expr = recurse_expr(
+        S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)});
 
     item.second = expr;
     item.second->set_pos(expr->get_pos());
@@ -95,9 +89,7 @@ qparse::Stmt *qparse::recurse_enum(qparse_t &S, qlex_t &rd) {
   Type *type = nullptr;
   if (tok.is<qPuncColn>()) {
     next();
-    if (!recurse_type(S, rd, &type)) {
-      return mock_stmt(QAST_NODE_ENUM);
-    }
+    type = recurse_type(S, rd);
   }
 
   tok = next();

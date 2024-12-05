@@ -50,11 +50,7 @@ qparse::Stmt *qparse::recurse_typedef(qparse_t &S, qlex_t &rd) {
     return mock_stmt(QAST_NODE_TYPEDEF);
   }
 
-  Type *type = nullptr;
-  if (!recurse_type(S, rd, &type)) {
-    syntax(tok, "Failed to parse type in typedef declaration");
-    return mock_stmt(QAST_NODE_TYPEDEF);
-  }
+  Type *type = recurse_type(S, rd);
 
   tok = next();
   if (!tok.is<qPuncSemi>()) {

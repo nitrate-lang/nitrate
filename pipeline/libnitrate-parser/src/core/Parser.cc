@@ -81,11 +81,7 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
         return mock_stmt(QAST_NODE_BLOCK);
       }
 
-      Expr *expr = nullptr;
-      if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr)) {
-        syntax(tok, "Expected expression");
-        return mock_stmt(QAST_NODE_BLOCK);
-      }
+      Expr *expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
       if (!expr) {
         syntax(tok, "Expected valid expression");
@@ -173,9 +169,7 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
       }
 
       case qKFn: {
-        if (!recurse_function(S, rd, &node)) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
+        node = recurse_function(S, rd);
         break;
       }
 

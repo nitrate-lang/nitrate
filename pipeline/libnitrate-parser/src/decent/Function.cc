@@ -126,10 +126,7 @@ static bool recurse_fn_parameter(qparse_t &S, qlex_t &rd, FuncParam &param) {
   if (tok.is<qPuncColn>()) {
     next();
 
-    if (!recurse_type(S, rd, &type) || !type) {
-      next();
-      syntax(tok, "Expected a type after ':'");
-    }
+    type = recurse_type(S, rd);
 
     tok = peek();
   } else {
@@ -140,14 +137,10 @@ static bool recurse_fn_parameter(qparse_t &S, qlex_t &rd, FuncParam &param) {
     next();
     tok = peek();
 
-    Expr *value = nullptr;
-    if (!recurse_expr(S, rd,
-                      {qlex_tok_t(qPunc, qPuncComa),
-                       qlex_tok_t(qPunc, qPuncRPar), qlex_tok_t(qOper, qOpGT)},
-                      &value) ||
-        !value) {
-      syntax(tok, "Expected an expression after '='");
-    }
+    Expr *value =
+        recurse_expr(S, rd,
+                     {qlex_tok_t(qPunc, qPuncComa),
+                      qlex_tok_t(qPunc, qPuncRPar), qlex_tok_t(qOper, qOpGT)});
 
     param = {name, type, value};
   } else {
@@ -452,13 +445,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, qparse_t &S,
 
       next();
       if (c.is<qOpIn>()) {
-        Expr *expr = nullptr;
-
-        if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) ||
-            !expr) {
-          syntax(c, "Expected an expression after 'in'");
-          return false;
-        }
+        Expr *expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
         c = next();
         if (!c.is<qPuncSemi>()) {
@@ -472,13 +459,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, qparse_t &S,
           req_in = expr;
         }
       } else if (c.is<qOpOut>()) {
-        Expr *expr = nullptr;
-
-        if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) ||
-            !expr) {
-          syntax(c, "Expected an expression after 'out'");
-          return false;
-        }
+        Expr *expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
         c = next();
         if (!c.is<qPuncSemi>()) {
@@ -503,7 +484,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, qparse_t &S,
   return true;
 }
 
-bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
+Stmt *qparse::recurse_function(qparse_t &S, qlex_t &rd) {
   FnDecl *fndecl = FnDecl::get();
   FuncTy *ftype = FuncTy::get();
   Type *ret_type = nullptr;
@@ -520,7 +501,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
 
     if (!recurse_captures_and_name(rd, fndecl, captures)) {
       syntax(tok, "Expected a function name or capture list");
-      return false;
+      return mock_stmt(QAST_NODE_FN);
     }
   }
 
@@ -529,7 +510,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
 
     if (!recurse_template_parameters(S, rd, fndecl->get_template_params())) {
       syntax(tok, "Failed to parse template parameters");
-      return false;
+      return mock_stmt(QAST_NODE_FN);
     }
   }
 
@@ -538,7 +519,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
 
     if (!recurse_parameters(S, rd, ftype, is_variadic)) {
       syntax(tok, "Failed to parse function parameters");
-      return false;
+      return mock_stmt(QAST_NODE_FN);
     }
   }
 
@@ -547,7 +528,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
 
     if (!translate_purity(prop, ftype)) {
       syntax(tok, "Failed to translate purity");
-      return false;
+      return mock_stmt(QAST_NODE_FN);
     }
   }
 
@@ -571,15 +552,15 @@ bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
         next();
 
         if (!recurse_attributes(S, rd, attributes)) {
-          return true;
+          return mock_stmt(QAST_NODE_FN);
         }
 
         fndecl->get_tags().insert(attributes.begin(), attributes.end());
       }
 
-      *node = fndecl;
-      (*node)->set_end_pos(tok.start);
-      return true;
+      fndecl->set_end_pos(tok.start);
+
+      return fndecl;
     }
   }
 
@@ -587,9 +568,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
     if (tok.is<qPuncColn>()) {
       next();
 
-      if (!recurse_type(S, rd, &ret_type)) {
-        syntax(tok, "Expected a return type after ':'");
-      }
+      ret_type = recurse_type(S, rd);
 
       ftype->set_return_ty(ret_type);
       tok = peek();
@@ -603,14 +582,14 @@ bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
             next();
 
             if (!recurse_attributes(S, rd, attributes)) {
-              return true;
+              return mock_stmt(QAST_NODE_FN);
             }
 
             fndecl->get_tags().insert(attributes.begin(), attributes.end());
           }
-          *node = fndecl;
-          (*node)->set_end_pos(tok.start);
-          return true;
+          fndecl->set_end_pos(tok.start);
+
+          return fndecl;
         }
       }
     }
@@ -640,15 +619,15 @@ bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
         next();
 
         if (!recurse_attributes(S, rd, attributes)) {
-          return true;
+          return mock_stmt(QAST_NODE_FN);
         }
 
         fndef->get_tags().insert(attributes.begin(), attributes.end());
       }
 
-      *node = fndef;
-      (*node)->set_end_pos(fnbody->get_end_pos());
-      return true;
+      fndef->set_end_pos(fnbody->get_end_pos());
+
+      return fndef;
     }
   }
 
@@ -662,7 +641,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
     tok = peek();
 
     if (!recurse_constraints(tok, rd, S, req_in, req_out)) {
-      return false;
+      return mock_stmt(QAST_NODE_FN);
     }
 
     tok = peek();
@@ -670,7 +649,7 @@ bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
       next();
 
       if (!recurse_attributes(S, rd, attributes)) {
-        return true;
+        return mock_stmt(QAST_NODE_FN);
       }
     }
 
@@ -681,16 +660,16 @@ bool qparse::recurse_function(qparse_t &S, qlex_t &rd, Stmt **node) {
     FnDef *fndef = FnDef::get(fndecl, fnbody, req_in, req_out, captures);
     fndef->get_tags().insert(attributes.begin(), attributes.end());
 
-    *node = fndef;
-    (*node)->set_end_pos(tok.end);
-    return true;
+    fndef->set_end_pos(tok.end);
+
+    return fndef;
   }
 
   if (ret_type) {
     syntax(tok, "Expected '{', '=>', or ';' in function declaration");
-    return true;
+    return mock_stmt(QAST_NODE_FN);
   }
 
   syntax(tok, "Expected ':', '{', '=>', or ';' in function declaration");
-  return true;
+  return mock_stmt(QAST_NODE_FN);
 }

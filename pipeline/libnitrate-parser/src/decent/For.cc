@@ -57,10 +57,7 @@ qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
         x0 = StmtExpr::get(let_node[0]);
       }
     } else {
-      if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x0)) {
-        syntax(tok, "Failed to parse for loop initializer");
-        return mock_stmt(QAST_NODE_FOR);
-      }
+      x0 = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
       tok = next();
       if (!tok.is<qPuncSemi>()) {
@@ -69,10 +66,7 @@ qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
       }
     }
 
-    if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x1)) {
-      syntax(tok, "Failed to parse for loop condition");
-      return mock_stmt(QAST_NODE_FOR);
-    }
+    x1 = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
     tok = next();
     if (!tok.is<qPuncSemi>()) {
@@ -80,10 +74,7 @@ qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
       return mock_stmt(QAST_NODE_FOR);
     }
 
-    if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &x2)) {
-      syntax(tok, "Failed to parse for loop increment");
-      return mock_stmt(QAST_NODE_FOR);
-    }
+    x2 = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)});
     tok = next();
     if (!tok.is<qPuncRPar>()) {
       syntax(tok, "Expected ')' after for loop increment");
@@ -114,9 +105,7 @@ qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
         x0 = StmtExpr::get(let_node[0]);
       }
     } else {
-      if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x0)) {
-        return mock_stmt(QAST_NODE_FOR);
-      }
+      x0 = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
       tok = next();
       if (!tok.is<qPuncSemi>()) {
@@ -125,9 +114,7 @@ qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
       }
     }
 
-    if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x1)) {
-      return mock_stmt(QAST_NODE_FOR);
-    };
+    x1 = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
     tok = next();
     if (!tok.is<qPuncSemi>()) {
@@ -135,11 +122,8 @@ qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
       return mock_stmt(QAST_NODE_FOR);
     }
 
-    if (!recurse_expr(
-            S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)},
-            &x2)) {
-      return mock_stmt(QAST_NODE_FOR);
-    }
+    x2 = recurse_expr(
+        S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
 
     Stmt *then_block = nullptr;
 

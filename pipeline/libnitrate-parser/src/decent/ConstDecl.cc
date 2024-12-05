@@ -53,10 +53,7 @@ namespace qparse {
 
     next();
 
-    Type *type = nullptr;
-    if (!recurse_type(S, rd, &type)) {
-      syntax(tok, "Expected a type after ':' in constant declaration");
-    }
+    Type *type = recurse_type(S, rd);
 
     decl = std::make_pair(name, type);
     return true;
@@ -94,10 +91,7 @@ std::vector<Stmt *> qparse::recurse_const(qparse_t &S, qlex_t &rd) {
       nodes.push_back(const_decl);
     }
   } else if (tok.is<qOpSet>()) {
-    Expr *init = nullptr;
-    if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init) || !init) {
-      syntax(tok, "Expected an expression after '=' in constant declaration");
-    }
+    Expr *init = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
     tok = next();
     if (!tok.is<qPuncSemi>()) {

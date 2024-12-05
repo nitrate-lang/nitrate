@@ -47,11 +47,7 @@ Stmt *qparse::recurse_return(qparse_t &S, qlex_t &rd) {
     return R;
   }
 
-  Expr *expr = nullptr;
-  if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
-    syntax(tok, "Expected an expression in the return statement.");
-    return mock_stmt(QAST_NODE_RETURN);
-  }
+  Expr *expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
   tok = next();
 
@@ -67,11 +63,7 @@ Stmt *qparse::recurse_return(qparse_t &S, qlex_t &rd) {
 }
 
 Stmt *qparse::recurse_retif(qparse_t &S, qlex_t &rd) {
-  Expr *condition = nullptr;
-  if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncComa)}, &condition)) {
-    syntax(peek(), "Expected a condition in the return-if statement.");
-    return mock_stmt(QAST_NODE_RETIF);
-  }
+  Expr *condition = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncComa)});
 
   qlex_tok_t tok = next();
   if (!tok.is<qPuncComa>()) {
@@ -79,11 +71,7 @@ Stmt *qparse::recurse_retif(qparse_t &S, qlex_t &rd) {
     return mock_stmt(QAST_NODE_RETIF);
   }
 
-  Expr *return_expr = nullptr;
-  if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &return_expr)) {
-    syntax(tok, "Expected a return expression after the comma.");
-    return mock_stmt(QAST_NODE_RETIF);
-  }
+  Expr *return_expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
   tok = next();
   if (!tok.is<qPuncSemi>()) {

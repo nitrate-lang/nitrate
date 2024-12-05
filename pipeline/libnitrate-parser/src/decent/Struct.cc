@@ -63,14 +63,8 @@ bool qparse::recurse_attributes(qparse_t &S, qlex_t &rd,
       break;
     }
 
-    Expr *impl = nullptr;
-
-    if (!recurse_expr(
-            S, rd, {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncComa)},
-            &impl, 0)) {
-      syntax(tok, "Failed to parse declaration attribute expression");
-      return false;
-    }
+    Expr *impl = recurse_expr(
+        S, rd, {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncComa)});
 
     attributes.insert(impl);
 
@@ -112,10 +106,7 @@ qparse::Decl *qparse::recurse_composite_field(qparse_t &S, qlex_t &rd) {
   }
 
   { /* Next section should be the field type */
-    if (!recurse_type(S, rd, &type)) {
-      syntax(tok, "Expected field type in composite definition");
-      return mock_decl(QAST_NODE_STRUCT_FIELD);
-    }
+    type = recurse_type(S, rd);
   }
 
   /* Check for a default value */
@@ -138,15 +129,10 @@ qparse::Decl *qparse::recurse_composite_field(qparse_t &S, qlex_t &rd) {
     next();
 
     /* Parse the default value */
-    if (!recurse_expr(
-            S, rd,
-            {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
-             qlex_tok_t(qPunc, qPuncRCur)},
-            &value) ||
-        !value) {
-      syntax(tok, "Expected default value after '=' in composite definition");
-      return mock_decl(QAST_NODE_STRUCT_FIELD);
-    }
+    value = recurse_expr(
+        S, rd,
+        {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
+         qlex_tok_t(qPunc, qPuncRCur)});
   }
 
   auto R = StructField::get(name, type, value);
@@ -243,10 +229,7 @@ qparse::Stmt *qparse::recurse_struct(qparse_t &S, qlex_t &rd,
       next();
 
       /* Parse the function definition */
-      if (!recurse_function(S, rd, &method) || !method) {
-        syntax(tok, "Expected function definition in struct definition");
-        return mock_stmt(QAST_NODE_STRUCT);
-      }
+      method = recurse_function(S, rd);
 
       /* Assign the visibility to the method */
       static_cast<FnDecl *>(method)->set_visibility(vis);
@@ -282,10 +265,7 @@ qparse::Stmt *qparse::recurse_struct(qparse_t &S, qlex_t &rd,
       }
 
       /* Parse the function definition */
-      if (!recurse_function(S, rd, &method) || !method) {
-        syntax(tok, "Expected function definition in struct definition");
-        return mock_stmt(QAST_NODE_STRUCT);
-      }
+      method = recurse_function(S, rd);
 
       /* Assign the visibility to the method */
       static_cast<FnDecl *>(method)->set_visibility(vis);
