@@ -80,6 +80,8 @@
 #include <streambuf>
 #include <unordered_map>
 
+/// TODO: Find way to remove the 's.branch_early' edge case
+
 using namespace llvm;
 using namespace std;
 
@@ -92,6 +94,8 @@ using namespace std;
 #else
 #define debug(...)
 #endif
+
+#define let const auto &
 
 typedef function<bool(qmodule_t *, qcode_conf_t *, ostream &err,
                       raw_pwrite_stream &out)>
@@ -156,8 +160,7 @@ public:
   optional<pair<Value *, PtrClass>> find_named_value(ctx_t &m,
                                                      string_view name) const {
     if (is_inside_function()) {
-      for (const auto &[cur_name, inst] :
-           m_stackframe.top().getLocalVariables()) {
+      for (let[cur_name, inst] : m_stackframe.top().getLocalVariables()) {
         if (cur_name == name) {
           return {{inst, PtrClass::DataPtr}};
         }
@@ -397,7 +400,7 @@ static optional<unique_ptr<Module>> fabricate_llvmir(const qmodule_t *src,
                                                      raw_ostream &) {
   static thread_local unique_ptr<LLVMContext> context;
 
-  const auto root = src->getRoot();
+  let root = src->getRoot();
   if (!root) {
     e << "error: missing root node" << endl;
     return nullopt;
@@ -580,25 +583,26 @@ namespace lower {
       if (N->getRHS()->isType()) { /* Do casting */
         PROD_LHS()
 
-        ty_t TY = T(N->getRHS()->asType());
-        if (!TY) {
+        auto TY = T(N->getRHS()->asType());
+        if (!TY.has_value()) {
           debug("Failed to get RHS type");
           return nullopt;
         }
 
-        nr::Type *L_T = N->getLHS()->getType().value_or(nullptr);
-        if (!L_T) {
+        auto L_T = N->getLHS()->getType();
+        if (!L_T.has_value()) {
           debug("Failed to get LHS type");
           return nullopt;
         }
 
-        nr::Type *R_T = N->getRHS()->getType().value_or(nullptr);
-        if (!R_T) {
+        auto R_T = N->getRHS()->getType();
+        if (!R_T.has_value()) {
           debug("Failed to get RHS type");
           return nullopt;
         }
 
-        return binexpr_do_cast(m, b, s, L.value(), O, TY.value(), L_T, R_T);
+        return binexpr_do_cast(m, b, s, L.value(), O, TY.value(), L_T.value(),
+                               R_T.value());
       }
 
       val_t R = V(N->getRHS());
@@ -811,24 +815,17 @@ namespace lower {
 
     static val_t for_UNEXPR(ctx_t &m, craft_t &b, State &s,
                             const nr::UnExpr *N) {
-#define PROD_SUB()                     \
-  val_t E = V(N->getExpr());           \
-  if (!E) {                            \
-    debug("Failed to get expression"); \
-    return nullopt;                    \
-  }
-
       val_t R;
 
       switch (N->getOp()) {
         case nr::Op::Plus: {
-          PROD_SUB();
-          R = E;
+          R = V(N->getExpr());
           break;
         }
         case nr::Op::Minus: {
-          PROD_SUB();
-          R = b.CreateNeg(E.value());
+          if (val_t E = V(N->getExpr())) {
+            R = b.CreateNeg(E.value());
+          }
           break;
         }
         case nr::Op::Times: {
@@ -855,14 +852,16 @@ namespace lower {
           break;
         }
         case nr::Op::BitNot: {
-          PROD_SUB();
-          R = b.CreateNot(E.value());
+          if (val_t E = V(N->getExpr())) {
+            R = b.CreateNot(E.value());
+          }
           break;
         }
         case nr::Op::LogicNot: {
-          PROD_SUB();
-          R = b.CreateICmpEQ(E.value(),
-                             ConstantInt::get(b.getContext(), APInt(1, 0)));
+          if (val_t E = V(N->getExpr())) {
+            R = b.CreateICmpEQ(E.value(),
+                               ConstantInt::get(b.getContext(), APInt(1, 0)));
+          }
           break;
         }
         case nr::Op::Inc: {
@@ -998,8 +997,6 @@ namespace lower {
         }
       }
 
-#undef PROD_SUB
-
       return R;
     }
 
@@ -1120,26 +1117,11 @@ namespace lower {
     static val_t for_INT(ctx_t &, craft_t &b, State &, const nr::Int *N) {
       unsigned __int128 lit = N->getValue().convert_to<unsigned __int128>();
 
-      ConstantInt *R = nullptr;
+      array<uint64_t, 2> parts;
+      parts[1] = (lit >> 64) & 0xffffffffffffffff;
+      parts[0] = lit & 0xffffffffffffffff;
 
-      if (lit == 0) {
-        R = ConstantInt::get(b.getContext(), APInt(32, 0));
-      } else if (lit > UINT64_MAX) {
-        array<uint64_t, 2> parts;
-        parts[1] = (lit >> 64) & 0xffffffffffffffff;
-        parts[0] = lit & 0xffffffffffffffff;
-        R = ConstantInt::get(b.getContext(), APInt(128, parts));
-      } else {
-        uint8_t l2 = log2(lit);
-
-        if (l2 <= 32) {
-          R = ConstantInt::get(b.getContext(), APInt(32, lit));
-        } else {
-          R = ConstantInt::get(b.getContext(), APInt(64, lit));
-        }
-      }
-
-      return R;
+      return ConstantInt::get(b.getContext(), APInt(N->getSize(), parts));
     }
 
     static val_t for_FLOAT(ctx_t &, craft_t &b, State &, const nr::Float *N) {
@@ -1156,7 +1138,7 @@ namespace lower {
       vector<Value *> items;
       items.reserve(N->size());
 
-      for (const auto &node : *N) {
+      for (let node : *N) {
         val_t R = V(node);
         if (!R) {
           debug("Failed to get item");
@@ -1206,7 +1188,7 @@ namespace lower {
 
       for (auto &node : N->getItems()) {
         R = V(node);
-        if (!R) {
+        if (!R.has_value()) {
           debug("Failed to get item");
           return nullopt;
         }
@@ -1264,25 +1246,24 @@ namespace lower {
     }
 
     static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, const nr::Ident *N) {
-      auto find = s.find_named_value(m, N->getName());
-      if (!find) {
-        debug("Failed to find named value " << N->getName());
-        return nullopt;
-      }
+      if (auto find = s.find_named_value(m, N->getName())) {
+        debug("Found named value " << N->getName());
 
-      debug("Found named value " << N->getName());
+        if (find->second == PtrClass::Function) {
+          return find->first;
+        } else if (find->second == PtrClass::DataPtr) {
+          if (find->first->getType()->isPointerTy()) {
+            auto type =
+                find->first->getType()->getNonOpaquePointerElementType();
 
-      if (find->second == PtrClass::Function) {
-        return find->first;
-      } else {
-        if (find->first->getType()->isPointerTy()) {
-          return b.CreateLoad(
-              find->first->getType()->getNonOpaquePointerElementType(),
-              find->first);
+            return b.CreateLoad(type, find->first);
+          }
         }
       }
 
-      qcore_panic("unexpected type for identifier");
+      debug("Failed to produce ident value " << N->getName());
+
+      return nullopt;
     }
 
     static val_t for_ASM(ctx_t &, craft_t &, State &, const nr::Asm *) {
@@ -1460,107 +1441,73 @@ namespace lower {
 
   namespace control {
     static val_t for_CALL(ctx_t &m, craft_t &b, State &s, const nr::Call *N) {
-      /* Direct call */
-      if (!N->getTarget()->getName().empty()) {
-        string_view fn_name = N->getTarget()->getName();
-        auto find = s.find_named_value(m, fn_name);
-        if (!find) {
-          debug("Failed to find function " << fn_name);
-          return nullopt;
-        }
+      if (N->getTarget()->is(NR_NODE_FN)) { /* Direct call */
+        let func_name = N->getTarget()->getName();
 
-        if (find->second != PtrClass::Function) {
-          debug("Expected function pointer");
-          return nullopt;
-        }
+        if (let find = s.find_named_value(m, func_name)) {
+          if (find->second == PtrClass::Function) {
+            let func_def = cast<Function>(find->first);
 
-        Function *func_def = cast<Function>(find->first);
-        FunctionType *FT = func_def->getFunctionType();
+            let arguments = N->getArgs();
+            vector<Value *> args(arguments.size());
 
-        vector<Value *> args;
+            /* Lower the function arguments */
+            bool failed = false;
+            transform(arguments.begin(), arguments.end(), args.begin(),
+                      [&](auto node) -> Value * {
+                        if (let R = V(node)) {
+                          return R.value();
+                        } else {
+                          failed = true;
+                          debug("Failed to get argument");
 
-        { /* Arguments */
-          args.reserve(N->getArgs().size());
+                          return nullptr;
+                        }
+                      });
 
-          for (auto &node : N->getArgs()) {
-            val_t R = V(node);
-            if (!R) {
-              debug("Failed to get argument");
+            if (failed) {
               return nullopt;
             }
 
-            args.push_back(R.value());
+            /* LLVM will perform validation on the arguments */
+            return b.CreateCall(func_def, args);
           }
         }
+      } else { /* Indirect call */
+        if (let T = V(N->getTarget())) {
+          let target = T.value()->getType();
 
-        { /* Verify call */
-          if (!(FT->getNumParams() == args.size() ||
-                (FT->isVarArg() && FT->getNumParams() <= args.size()))) {
-            debug("Expected " << FT->getNumParams() << " arguments, but got "
-                              << args.size());
-            return nullopt;
+          /* Ensure the target is a function */
+          if (target->isFunctionTy()) {
+            let function = cast<Function>(T.value());
+
+            let arguments = N->getArgs();
+            vector<Value *> args(arguments.size());
+
+            bool failed = false;
+            transform(arguments.begin(), arguments.end(), args.begin(),
+                      [&](auto node) -> Value * {
+                        if (let R = V(node)) {
+                          return R.value();
+                        } else {
+                          failed = true;
+                          debug("Failed to get argument");
+
+                          return nullptr;
+                        }
+                      });
+
+            return b.CreateCall(function, args);
           }
         }
-
-        return b.CreateCall(func_def, args);
       }
-      /* Indirect call */
-      else {
-        val_t T = V(N->getTarget());
-        if (!T) {
-          debug("Failed to get target");
-          return nullopt;
-        }
 
-        if (!T.value()->getType()->isPointerTy()) {
-          debug("Expected pointer type for target");
-          return nullopt;
-        }
-
-        Value *target = b.CreateLoad(
-            T.value()->getType()->getNonOpaquePointerElementType(), T.value());
-
-        if (!target->getType()->isFunctionTy()) {
-          debug("Expected function type for target");
-          return nullopt;
-        }
-
-        FunctionType *FT = cast<FunctionType>(target->getType());
-
-        vector<Value *> args;
-
-        { /* Arguments */
-          args.reserve(N->getArgs().size());
-
-          for (auto &node : N->getArgs()) {
-            val_t R = V(node);
-            if (!R) {
-              debug("Failed to get argument");
-              return nullopt;
-            }
-
-            args.push_back(R.value());
-          }
-        }
-
-        { /* Verify call */
-          if (!(FT->getNumParams() == args.size() ||
-                (FT->isVarArg() && FT->getNumParams() <= args.size()))) {
-            debug("Expected " << FT->getNumParams() << " arguments, but got "
-                              << args.size());
-            return nullopt;
-          }
-        }
-
-        Function *func = cast<Function>(target);
-
-        return b.CreateCall(func, args);
-      }
+      return nullopt;
     }
 
     static val_t for_RET(ctx_t &m, craft_t &b, State &s, const nr::Ret *N) {
       if (!N->getExpr()->is(NR_NODE_VOID_TY)) {
-        if (val_t R = V(N->getExpr())) {
+        if (let R = V(N->getExpr())) {
           b.CreateStore(R.value(), s.get_return_block().getValue());
         } else {
           debug("Failed to get return value");
@@ -1569,14 +1516,14 @@ namespace lower {
         }
       }
 
-      auto br = b.CreateBr(s.get_return_block().getBlock());
+      let br = b.CreateBr(s.get_return_block().getBlock());
       s.branch_early = true;
 
       return br;
     }
 
     static val_t for_BRK(ctx_t &, craft_t &b, State &s, const nr::Brk *) {
-      if (auto block = s.get_break_block()) {
+      if (let block = s.get_break_block()) {
         s.branch_early = true;
 
         return b.CreateBr(block.value());
@@ -1586,7 +1533,7 @@ namespace lower {
     }
 
     static val_t for_CONT(ctx_t &, craft_t &b, State &s, const nr::Cont *) {
-      if (auto block = s.get_skip_block()) {
+      if (let block = s.get_skip_block()) {
         s.branch_early = true;
 
         return b.CreateBr(block.value());
@@ -1596,159 +1543,148 @@ namespace lower {
     }
 
     static val_t for_IF(ctx_t &m, craft_t &b, State &s, const nr::If *N) {
-      BasicBlock *then, *els, *end;
-
-      then = BasicBlock::Create(b.getContext(), "then",
-                                s.get_stackframe().getFunction());
-      els = BasicBlock::Create(b.getContext(), "else",
-                               s.get_stackframe().getFunction());
-      end = BasicBlock::Create(b.getContext(), "end",
-                               s.get_stackframe().getFunction());
-
-      val_t R = V(N->getCond());
-      if (!R) {
-        debug("Failed to get condition");
+      if (!s.is_inside_function()) {
         return nullopt;
       }
 
-      b.CreateCondBr(R.value(), then, els);
-      b.SetInsertPoint(then);
+      let then = BasicBlock::Create(b.getContext(), "",
+                                    s.get_stackframe().getFunction());
+      let els = BasicBlock::Create(b.getContext(), "",
+                                   s.get_stackframe().getFunction());
+      let end = BasicBlock::Create(b.getContext(), "",
+                                   s.get_stackframe().getFunction());
 
-      bool old_branch_early = s.branch_early;
-      val_t R_T = V(N->getThen());
-      if (!R_T) {
-        debug("Failed to get then");
-        return nullopt;
-      }
-
-      if (!s.branch_early) {
-        b.CreateBr(end);
-      }
-      s.branch_early = old_branch_early;
-
-      b.SetInsertPoint(els);
-
+      let old_branch_early = s.branch_early;
       s.branch_early = false;
-      val_t R_E = V(N->getElse());
-      if (!R_E) {
-        debug("Failed to get else");
-        return nullopt;
-      }
-      if (!s.branch_early) {
-        b.CreateBr(end);
-      }
-      s.branch_early = old_branch_early;
-      b.SetInsertPoint(end);
 
-      return end;
+      if (let R = V(N->getCond())) {
+        b.CreateCondBr(R.value(), then, els);
+        b.SetInsertPoint(then);
+
+        if (let R_T = V(N->getThen())) {
+          if (!s.branch_early) {
+            b.CreateBr(end);
+          }
+          s.branch_early = false;
+
+          b.SetInsertPoint(els);
+          if (let R_E = V(N->getElse())) {
+            if (!s.branch_early) {
+              b.CreateBr(end);
+            }
+            s.branch_early = old_branch_early;
+            b.SetInsertPoint(end);
+
+            return end;
+          }
+        }
+      }
+
+      s.branch_early = old_branch_early;
+
+      return nullopt;
     }
 
     static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, const nr::While *N) {
-      BasicBlock *begin, *body, *end;
+      if (!s.is_inside_function()) {
+        return nullopt;
+      }
 
-      begin = BasicBlock::Create(b.getContext(), "begin",
-                                 s.get_stackframe().getFunction());
-      body = BasicBlock::Create(b.getContext(), "body",
-                                s.get_stackframe().getFunction());
-      end = BasicBlock::Create(b.getContext(), "end",
-                               s.get_stackframe().getFunction());
+      let begin = BasicBlock::Create(b.getContext(), "",
+                                     s.get_stackframe().getFunction());
+      let body = BasicBlock::Create(b.getContext(), "",
+                                    s.get_stackframe().getFunction());
+      let end = BasicBlock::Create(b.getContext(), "",
+                                   s.get_stackframe().getFunction());
+
+      let old_branch_early = s.branch_early;
+      s.branch_early = false;
 
       b.CreateBr(begin);
       b.SetInsertPoint(begin);
 
-      val_t R = V(N->getCond());
-      if (!R) {
-        debug("Failed to get condition");
-        return nullopt;
+      val_t R;
+
+      if (let C = V(N->getCond())) {
+        b.CreateCondBr(C.value(), body, end);
+        b.SetInsertPoint(body);
+
+        s.push_break_block(end);
+        s.push_skip_block(begin);
+
+        if (let R_B = V(N->getBody())) {
+          if (!s.branch_early) {
+            b.CreateBr(begin);
+          }
+          s.branch_early = true;
+
+          b.SetInsertPoint(end);
+
+          R = end;
+        }
+
+        s.pop_skip_block();
+        s.pop_break_block();
       }
 
-      b.CreateCondBr(R.value(), body, end);
-      b.SetInsertPoint(body);
-      s.push_break_block(end);
-      s.push_skip_block(begin);
+      s.branch_early = old_branch_early;
 
-      bool branch_early = s.branch_early;
-
-      val_t R_B = V(N->getBody());
-      if (!R_B) {
-        debug("Failed to get body");
-        return nullopt;
-      }
-
-      if (!s.branch_early) {
-        b.CreateBr(begin);
-      }
-      s.branch_early = branch_early;
-
-      s.pop_skip_block();
-      s.pop_break_block();
-
-      b.SetInsertPoint(end);
-
-      return end;
+      return R;
     }
 
     static val_t for_FOR(ctx_t &m, craft_t &b, State &s, const nr::For *N) {
-      BasicBlock *begin, *body, *step, *end;
-
-      begin = BasicBlock::Create(b.getContext(), "begin",
-                                 s.get_stackframe().getFunction());
-      body = BasicBlock::Create(b.getContext(), "body",
-                                s.get_stackframe().getFunction());
-      step = BasicBlock::Create(b.getContext(), "step",
-                                s.get_stackframe().getFunction());
-      end = BasicBlock::Create(b.getContext(), "end",
-                               s.get_stackframe().getFunction());
-
-      val_t R = V(N->getInit());
-      if (!R) {
-        debug("Failed to get init");
+      if (!s.is_inside_function()) {
         return nullopt;
       }
 
-      b.CreateBr(begin);
-      b.SetInsertPoint(begin);
+      let begin = BasicBlock::Create(b.getContext(), "",
+                                     s.get_stackframe().getFunction());
+      let body = BasicBlock::Create(b.getContext(), "",
+                                    s.get_stackframe().getFunction());
+      let step = BasicBlock::Create(b.getContext(), "",
+                                    s.get_stackframe().getFunction());
+      let end = BasicBlock::Create(b.getContext(), "",
+                                   s.get_stackframe().getFunction());
 
-      val_t R_C = V(N->getCond());
-      if (!R_C) {
-        debug("Failed to get condition");
-        return nullopt;
+      val_t R;
+
+      if (let I = V(N->getInit())) {
+        b.CreateBr(begin);
+
+        b.SetInsertPoint(begin);
+        if (let C = V(N->getCond())) {
+          b.CreateCondBr(C.value(), body, end);
+
+          b.SetInsertPoint(step);
+          if (let S = V(N->getStep())) {
+            b.CreateBr(begin);
+
+            bool old_branch_early = s.branch_early;
+            s.branch_early = false;
+
+            s.push_break_block(end);
+            s.push_skip_block(step);
+
+            b.SetInsertPoint(body);
+            if (let B = V(N->getBody())) {
+              if (!s.branch_early) {
+                b.CreateBr(step);
+              }
+              s.branch_early = true;
+
+              R = end;
+              b.SetInsertPoint(end);
+            }
+
+            s.pop_skip_block();
+            s.pop_break_block();
+
+            s.branch_early = old_branch_early;
+          }
+        }
       }
 
-      b.CreateCondBr(R_C.value(), body, end);
-      b.SetInsertPoint(body);
-      s.push_break_block(end);
-      s.push_skip_block(step);
-
-      bool branch_early = s.branch_early;
-
-      val_t R_B = V(N->getBody());
-      if (!R_B) {
-        debug("Failed to get body");
-        return nullopt;
-      }
-
-      if (!s.branch_early) {
-        b.CreateBr(step);
-      }
-      s.branch_early = branch_early;
-
-      b.SetInsertPoint(step);
-
-      val_t R_S = V(N->getStep());
-      if (!R_S) {
-        debug("Failed to get step");
-        return nullopt;
-      }
-
-      b.CreateBr(begin);
-
-      s.pop_skip_block();
-      s.pop_break_block();
-
-      b.SetInsertPoint(end);
-
-      return end;
+      return R;
     }
 
     static val_t for_CASE(ctx_t &, craft_t &, State &, const nr::Case *) {
@@ -1915,20 +1851,20 @@ namespace lower {
       }
 
       static ty_t for_FN_TY(craft_t &b, const nr::FnTy *N) {
-        const auto &params = N->getParams();
+        let params = N->getParams();
         vector<Type *> param_types(params.size());
         bool failed = false;
 
-        std::transform(params.begin(), params.end(), param_types.begin(),
-                       [&](auto param) -> Type * {
-                         if (auto R = T(param)) {
-                           return R.value();
-                         } else {
-                           failed = true;
+        transform(params.begin(), params.end(), param_types.begin(),
+                  [&](auto param) -> Type * {
+                    if (auto R = T(param)) {
+                      return R.value();
+                    } else {
+                      failed = true;
 
-                           return nullptr;
-                         }
-                       });
+                      return nullptr;
+                    }
+                  });
 
         if (!failed) {
           if (auto R = T(N->getReturn())) {
@@ -1947,24 +1883,24 @@ namespace lower {
           return StructType::create(b.getContext(), N->getName());
         }
 
-        return std::nullopt;
+        return nullopt;
       }
 
       static ty_t for_STRUCT_TY(craft_t &b, const nr::StructTy *N) {
-        const auto &fields = N->getFields();
+        let fields = N->getFields();
         vector<Type *> elements(fields.size());
         bool failed = false;
 
-        std::transform(fields.begin(), fields.end(), elements.begin(),
-                       [&](auto field) -> Type * {
-                         if (auto R = T(field)) {
-                           return R.value();
-                         } else {
-                           failed = true;
+        transform(fields.begin(), fields.end(), elements.begin(),
+                  [&](auto field) -> Type * {
+                    if (auto R = T(field)) {
+                      return R.value();
+                    } else {
+                      failed = true;
 
-                           return nullptr;
-                         }
-                       });
+                      return nullptr;
+                    }
+                  });
 
         if (failed) {
           return nullopt;
@@ -1992,14 +1928,14 @@ namespace lower {
 #pragma GCC diagnostic pop
 
 static auto V_gen(ctx_t &m, craft_t &b, State &s, const nr::Expr *N) -> val_t {
-  static const auto dispatch = []() constexpr {
+  static let dispatch = []() constexpr {
 #define FUNCTION(_enum, _func, _type)                                         \
   R[_enum] = [](ctx_t &m, craft_t &b, State &s, const nr::Expr *N) -> val_t { \
     return _func(m, b, s, N->as<_type>());                                    \
   }
     using func_t = val_t (*)(ctx_t &, craft_t &, State &, const nr::Expr *);
 
-    std::array<func_t, NR_NODE_LAST + 1> R;
+    array<func_t, NR_NODE_LAST + 1> R;
     R.fill([](ctx_t &, craft_t &, State &, const nr::Expr *n) -> val_t {
       qcore_panicf("illegal node in input: kind=%s", n->getKindName());
     });
@@ -2050,14 +1986,14 @@ static auto V_gen(ctx_t &m, craft_t &b, State &s, const nr::Expr *N) -> val_t {
 }
 
 static auto T_gen(craft_t &b, const nr::Expr *N) -> ty_t {
-  static const auto dispatch = []() constexpr {
+  static let dispatch = []() constexpr {
 #define FUNCTION(_enum, _func, _type)                    \
   R[_enum] = [](craft_t &b, const nr::Expr *N) -> ty_t { \
     return _func(b, N->as<_type>());                     \
   }
     using func_t = ty_t (*)(craft_t &, const nr::Expr *);
 
-    std::array<func_t, NR_NODE_LAST + 1> R;
+    array<func_t, NR_NODE_LAST + 1> R;
     R.fill([](craft_t &, const nr::Expr *n) -> ty_t {
       qcore_panicf("illegal node in input: kind=%s", n->getKindName());
     });
