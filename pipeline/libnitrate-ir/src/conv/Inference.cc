@@ -161,16 +161,16 @@ static std::optional<Type *> promote(std::optional<Type *> lhs,
   }
 }
 
-static std::optional<Expr *> nr_infer_impl(
-    Expr *_node, std::unordered_set<Expr *> &visited) {
+static std::optional<const Type *> nr_infer_impl(
+    const Expr *_node, std::unordered_set<const Expr *> &visited) {
   visited.insert(_node);
 
-  Expr *E = static_cast<Expr *>(_node);
-  std::optional<Type *> R;
+  const Expr *E = static_cast<const Expr *>(_node);
+  std::optional<const Type *> R;
 
   switch (E->getKind()) {
     case NR_NODE_BINEXPR: {
-      switch (BinExpr *B = E->as<BinExpr>(); B->getOp()) {
+      switch (const BinExpr *B = E->as<BinExpr>(); B->getOp()) {
         case Op::Plus: {
           R = promote(B->getLHS()->getType(), B->getRHS()->getType());
           break;
@@ -283,7 +283,7 @@ static std::optional<Expr *> nr_infer_impl(
       break;
     }
     case NR_NODE_UNEXPR: {
-      switch (UnExpr *U = E->as<UnExpr>(); E->as<UnExpr>()->getOp()) {
+      switch (const UnExpr *U = E->as<UnExpr>(); E->as<UnExpr>()->getOp()) {
         case Op::Plus: {
           R = U->getExpr()->getType();
           break;
@@ -356,8 +356,8 @@ static std::optional<Expr *> nr_infer_impl(
       break;
     }
     case NR_NODE_POST_UNEXPR: {
-      PostUnExpr *P = E->as<PostUnExpr>();
-      switch (E->as<PostUnExpr>()->getOp()) {
+      switch (const PostUnExpr *P = E->as<PostUnExpr>();
+              E->as<PostUnExpr>()->getOp()) {
         case Op::Inc: {
           R = P->getExpr()->getType();
           break;
@@ -632,15 +632,15 @@ static std::optional<Expr *> nr_infer_impl(
   return R;
 }
 
-C_EXPORT nr_node_t *nr_infer(nr_node_t *_node, void *) {
+C_EXPORT nr_node_t *nr_infer(const nr_node_t *_node, void *) {
   static thread_local struct State {
-    std::unordered_set<Expr *> visited;
+    std::unordered_set<const Expr *> visited;
     size_t depth = 0;
   } state;
 
   state.depth++;
 
-  auto R = nr_infer_impl(static_cast<Expr *>(_node), state.visited);
+  auto R = nr_infer_impl(static_cast<const Expr *>(_node), state.visited);
 
   state.depth--;
 
@@ -648,7 +648,7 @@ C_EXPORT nr_node_t *nr_infer(nr_node_t *_node, void *) {
     state.visited.clear();
   }
 
-  return R.value_or(nullptr);
+  return const_cast<Type *>(R.value_or(nullptr));
 }
 
 CPP_EXPORT std::optional<uint64_t> nr::Type::getSizeBits() const {

@@ -282,7 +282,7 @@ namespace nr {
       return {m_src_offset, m_src_offset + m_span, ""};
     }
 
-    constexpr std::optional<Type *> getType() noexcept;
+    constexpr std::optional<Type *> getType() const noexcept;
 
     template <typename T>
     static constexpr T *safeCastAs(Expr *ptr) noexcept {
@@ -328,6 +328,9 @@ namespace nr {
 
     constexpr Expr *asExpr() noexcept { return this; }
     constexpr Type *asType() noexcept;
+    constexpr const Type *asType() const noexcept {
+      return const_cast<Expr *>(this)->asType();
+    }
 
     /**
      * @brief Type check.
@@ -489,9 +492,9 @@ namespace nr {
     BinExpr(Expr *lhs, Expr *rhs, Op op)
         : Expr(NR_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
-    Expr *getLHS() noexcept { return m_lhs; }
-    Expr *getRHS() noexcept { return m_rhs; }
-    Op getOp() noexcept { return m_op; }
+    Expr *getLHS() const noexcept { return m_lhs; }
+    Expr *getRHS() const noexcept { return m_rhs; }
+    Op getOp() const noexcept { return m_op; }
 
     Expr *setLHS(Expr *lhs) noexcept { return m_lhs = lhs; }
     Expr *setRHS(Expr *rhs) noexcept { return m_rhs = rhs; }
@@ -509,8 +512,8 @@ namespace nr {
   public:
     UnExpr(Expr *expr, Op op) : Expr(NR_NODE_UNEXPR), m_expr(expr), m_op(op) {}
 
-    Expr *getExpr() noexcept { return m_expr; }
-    Op getOp() noexcept { return m_op; }
+    Expr *getExpr() const noexcept { return m_expr; }
+    Op getOp() const noexcept { return m_op; }
 
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
     Op setOp(Op op) noexcept { return m_op = op; }
@@ -528,8 +531,8 @@ namespace nr {
     PostUnExpr(Expr *expr, Op op)
         : Expr(NR_NODE_POST_UNEXPR), m_expr(expr), m_op(op) {}
 
-    Expr *getExpr() noexcept { return m_expr; }
-    Op getOp() noexcept { return m_op; }
+    Expr *getExpr() const noexcept { return m_expr; }
+    Op getOp() const noexcept { return m_op; }
 
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
     Op setOp(Op op) noexcept { return m_op = op; }
@@ -941,7 +944,7 @@ namespace nr {
     Call(Expr *ref, const CallArgs &args)
         : Expr(NR_NODE_CALL), m_iref(ref), m_args(args) {}
 
-    Expr *getTarget() noexcept { return m_iref; }
+    Expr *getTarget() const noexcept { return m_iref; }
     Expr *setTarget(Expr *ref) noexcept { return m_iref = ref; }
 
     const CallArgs &getArgs() const noexcept { return m_args; }
@@ -980,10 +983,10 @@ namespace nr {
     Index(Expr *expr, Expr *index)
         : Expr(NR_NODE_INDEX), m_expr(expr), m_index(index) {}
 
-    Expr *getExpr() noexcept { return m_expr; }
+    Expr *getExpr() const noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
 
-    Expr *getIndex() noexcept { return m_index; }
+    Expr *getIndex() const noexcept { return m_index; }
     Expr *setIndex(Expr *index) noexcept { return m_index = index; }
   };
 
@@ -999,7 +1002,7 @@ namespace nr {
     Ident(std::string_view name, Expr *what)
         : Expr(NR_NODE_IDENT), m_name(name), m_what(what) {}
 
-    Expr *getWhat() noexcept { return m_what; }
+    Expr *getWhat() const noexcept { return m_what; }
     Expr *setWhat(Expr *what) noexcept { return m_what = what; }
 
     std::string_view setName(std::string_view name) noexcept {
@@ -1024,7 +1027,7 @@ namespace nr {
       return m_abi_name = abi_name;
     }
 
-    Expr *getValue() noexcept { return m_value; }
+    Expr *getValue() const noexcept { return m_value; }
     Expr *setValue(Expr *value) noexcept { return m_value = value; }
   };
 
@@ -1048,7 +1051,7 @@ namespace nr {
       return m_name = name;
     }
 
-    Expr *getValue() noexcept { return m_value; }
+    Expr *getValue() const noexcept { return m_value; }
     Expr *setValue(Expr *value) noexcept { return m_value = value; }
 
     AbiTag getAbiTag() const noexcept { return m_abi_tag; }
@@ -1065,7 +1068,7 @@ namespace nr {
   public:
     Ret(Expr *expr) : Expr(NR_NODE_RET), m_expr(expr) {}
 
-    Expr *getExpr() noexcept { return m_expr; }
+    Expr *getExpr() const noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
   };
 
@@ -1100,13 +1103,13 @@ namespace nr {
     If(Expr *cond, Expr *then, Expr *else_)
         : Expr(NR_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
-    Expr *getCond() noexcept { return m_cond; }
+    Expr *getCond() const noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
 
-    Expr *getThen() noexcept { return m_then; }
+    Expr *getThen() const noexcept { return m_then; }
     Expr *setThen(Expr *then) noexcept { return m_then = then; }
 
-    Expr *getElse() noexcept { return m_else; }
+    Expr *getElse() const noexcept { return m_else; }
     Expr *setElse(Expr *else_) noexcept { return m_else = else_; }
   };
 
@@ -1122,10 +1125,10 @@ namespace nr {
     While(Expr *cond, Seq *body)
         : Expr(NR_NODE_WHILE), m_cond(cond), m_body(body) {}
 
-    Expr *getCond() noexcept { return m_cond; }
+    Expr *getCond() const noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
 
-    Seq *getBody() noexcept { return m_body; }
+    Seq *getBody() const noexcept { return m_body; }
     Seq *setBody(Seq *body) noexcept { return m_body = body; }
   };
 
@@ -1147,16 +1150,16 @@ namespace nr {
           m_step(step),
           m_body(body) {}
 
-    Expr *getInit() noexcept { return m_init; }
+    Expr *getInit() const noexcept { return m_init; }
     Expr *setInit(Expr *init) noexcept { return m_init = init; }
 
-    Expr *getCond() noexcept { return m_cond; }
+    Expr *getCond() const noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
 
-    Expr *getStep() noexcept { return m_step; }
+    Expr *getStep() const noexcept { return m_step; }
     Expr *setStep(Expr *step) noexcept { return m_step = step; }
 
-    Expr *getBody() noexcept { return m_body; }
+    Expr *getBody() const noexcept { return m_body; }
     Expr *setBody(Expr *body) noexcept { return m_body = body; }
   };
 
@@ -1197,10 +1200,10 @@ namespace nr {
           m_default(default_),
           m_cases(cases) {}
 
-    Expr *getCond() noexcept { return m_cond; }
+    Expr *getCond() const noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
 
-    Expr *getDefault() noexcept { return m_default; }
+    Expr *getDefault() const noexcept { return m_default; }
     Expr *setDefault(Expr *default_) noexcept { return m_default = default_; }
 
     const SwitchCases &getCases() const noexcept { return m_cases; }
@@ -1244,15 +1247,15 @@ namespace nr {
     Params &getParams() noexcept { return m_params; }
     void setParams(const Params &params) noexcept { m_params = params; }
 
-    Type *getReturn() noexcept { return m_return; }
+    Type *getReturn() const noexcept { return m_return; }
     Type *setReturn(Type *ret_ty) noexcept { return m_return = ret_ty; }
 
-    std::optional<Seq *> getBody() noexcept { return m_body; }
+    std::optional<Seq *> getBody() const noexcept { return m_body; }
     std::optional<Seq *> setBody(std::optional<Seq *> body) noexcept {
       return m_body = body;
     }
 
-    bool isVariadic() noexcept { return m_variadic; }
+    bool isVariadic() const noexcept { return m_variadic; }
     void setVariadic(bool variadic) noexcept { m_variadic = variadic; }
 
     AbiTag getAbiTag() const noexcept { return m_abi_tag; }
@@ -1321,7 +1324,7 @@ namespace nr {
     return static_cast<Type *>(this);
   }
 
-  constexpr std::optional<nr::Type *> nr::Expr::getType() noexcept {
+  constexpr std::optional<nr::Type *> nr::Expr::getType() const noexcept {
     Type *R = static_cast<Type *>(nr_infer(this, nullptr));
 
     if (R) {
@@ -2121,6 +2124,12 @@ namespace nr {
   typedef std::function<IterOp(Expr *p, Expr **c)> IterCallback;
   typedef std::function<bool(Expr **a, Expr **b)> ChildSelect;
 
+  typedef std::function<IterOp(const Expr *const p, const Expr *const *const c)>
+      ConstIterCallback;
+  typedef std::function<bool(const Expr *const *const a,
+                             const Expr *const *const b)>
+      ConstChildSelect;
+
   namespace detail {
     void dfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept;
     void dfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept;
@@ -2141,6 +2150,33 @@ namespace nr {
       return detail::bfs_post_impl((Expr **)&base, cb, cs);
     } else if constexpr (mode == children) {
       return detail::iter_children((Expr **)&base, cb, cs);
+    } else {
+      static_assert(mode != mode, "Invalid iteration mode.");
+    }
+  }
+
+  template <IterMode mode, typename T>
+  void iterate(const T *base, ConstIterCallback cb,
+               ConstChildSelect cs = nullptr) {
+    T *ref = const_cast<T *>(base);
+    const auto const_cb = [&](Expr *p, Expr **c) -> IterOp {
+      return cb(static_cast<const Expr *const>(p),
+                const_cast<const Expr *const *const>(c));
+    };
+    const auto const_cs = [&](Expr **a, Expr **b) -> bool {
+      return cs(const_cast<const Expr *const *const>(a),
+                const_cast<const Expr *const *const>(b));
+    };
+    if constexpr (mode == dfs_pre) {
+      return detail::dfs_pre_impl((Expr **)&ref, const_cb, const_cs);
+    } else if constexpr (mode == dfs_post) {
+      return detail::dfs_post_impl((Expr **)&ref, const_cb, const_cs);
+    } else if constexpr (mode == bfs_pre) {
+      return detail::bfs_pre_impl((Expr **)&ref, const_cb, const_cs);
+    } else if constexpr (mode == bfs_post) {
+      return detail::bfs_pre_impl((Expr **)&ref, const_cb, const_cs);
+    } else if constexpr (mode == children) {
+      return detail::iter_children((Expr **)&ref, const_cb, const_cs);
     } else {
       static_assert(mode != mode, "Invalid iteration mode.");
     }

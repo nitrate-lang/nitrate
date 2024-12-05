@@ -366,12 +366,13 @@ public:
 };
 
 static auto T_gen(craft_t &b, const nr::Expr *N) -> ty_t;
-static auto V_gen(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t;
+static auto V_gen(ctx_t &m, craft_t &b, State &s, const nr::Expr *N) -> val_t;
 
 #define T(N) T_gen(b, N)
 #define V(N) V_gen(m, b, s, N)
 
-static void make_forward_declaration(ctx_t &m, craft_t &b, State &, nr::Fn *N) {
+static void make_forward_declaration(ctx_t &m, craft_t &b, State &,
+                                     const nr::Fn *N) {
   vector<Type *> args;
   for (auto &arg : N->getParams()) {
     auto ty = T(arg.first);
@@ -395,12 +396,12 @@ static void make_forward_declaration(ctx_t &m, craft_t &b, State &, nr::Fn *N) {
   debug("Forward declared function: " << N->getName());
 }
 
-static optional<unique_ptr<Module>> fabricate_llvmir(qmodule_t *src,
+static optional<unique_ptr<Module>> fabricate_llvmir(const qmodule_t *src,
                                                      qcode_conf_t *, ostream &e,
                                                      raw_ostream &) {
   static thread_local unique_ptr<LLVMContext> context;
 
-  nr::Expr *root = src->getRoot();
+  const auto root = src->getRoot();
   if (!root) {
     e << "error: missing root node" << endl;
     return nullopt;
@@ -418,18 +419,22 @@ static optional<unique_ptr<Module>> fabricate_llvmir(qmodule_t *src,
   State s;
 
   // Forward declare all functions
-  nr::iterate<nr::dfs_pre>(root, [&](nr::Expr *, nr::Expr **N) -> nr::IterOp {
-    if ((*N)->getKind() == NR_NODE_SEQ || (*N)->getKind() == NR_NODE_EXTERN) {
-      return nr::IterOp::Proceed;
-    } else if ((*N)->getKind() != NR_NODE_FN) {
-      return nr::IterOp::SkipChildren;
-    }
+  nr::iterate<nr::dfs_pre>(
+      root,
+      [&](const nr::Expr *, const nr::Expr *const *const N) -> nr::IterOp {
+        if ((*N)->getKind() == NR_NODE_SEQ ||
+            (*N)->getKind() == NR_NODE_EXTERN) {
+          return nr::IterOp::Proceed;
+        } else if ((*N)->getKind() != NR_NODE_FN) {
+          return nr::IterOp::SkipChildren;
+        }
 
-    make_forward_declaration(*m, *b, s, (*N)->as<nr::Fn>());
-    return nr::IterOp::Proceed;
-  });
+        make_forward_declaration(*m, *b, s, (*N)->as<nr::Fn>());
 
-  nr::Seq *seq = root->as<nr::Seq>();
+        return nr::IterOp::Proceed;
+      });
+
+  const nr::Seq *seq = root->as<nr::Seq>();
 
   for (auto &node : seq->getItems()) {
     val_t R = V_gen(*m, *b, s, node);
@@ -565,7 +570,8 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, Value *L, nr::Op O,
 
 namespace lower {
   namespace expr {
-    static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, nr::BinExpr *N) {
+    static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s,
+                             const nr::BinExpr *N) {
 #define PROD_LHS()              \
   val_t L = V(N->getLHS());     \
   if (!L) {                     \
@@ -807,7 +813,8 @@ namespace lower {
       return E;
     }
 
-    static val_t for_UNEXPR(ctx_t &m, craft_t &b, State &s, nr::UnExpr *N) {
+    static val_t for_UNEXPR(ctx_t &m, craft_t &b, State &s,
+                            const nr::UnExpr *N) {
 #define PROD_SUB()                     \
   val_t E = V(N->getExpr());           \
   if (!E) {                            \
@@ -1001,7 +1008,7 @@ namespace lower {
     }
 
     static val_t for_POST_UNEXPR(ctx_t &m, craft_t &b, State &s,
-                                 nr::PostUnExpr *N) {
+                                 const nr::PostUnExpr *N) {
       val_t R;
 
       switch (N->getOp()) {
@@ -1114,7 +1121,7 @@ namespace lower {
       return R;
     }
 
-    static val_t for_INT(ctx_t &, craft_t &b, State &, nr::Int *N) {
+    static val_t for_INT(ctx_t &, craft_t &b, State &, const nr::Int *N) {
       unsigned __int128 lit = N->getValue().convert_to<unsigned __int128>();
 
       ConstantInt *R = nullptr;
@@ -1139,11 +1146,11 @@ namespace lower {
       return R;
     }
 
-    static val_t for_FLOAT(ctx_t &, craft_t &b, State &, nr::Float *N) {
+    static val_t for_FLOAT(ctx_t &, craft_t &b, State &, const nr::Float *N) {
       return ConstantFP::get(b.getContext(), APFloat(N->getValue()));
     }
 
-    static val_t for_LIST(ctx_t &m, craft_t &b, State &s, nr::List *N) {
+    static val_t for_LIST(ctx_t &m, craft_t &b, State &s, const nr::List *N) {
       if (N->size() == 0) {
         StructType *ST = StructType::get(b.getContext(), {}, true);
         AllocaInst *AI = b.CreateAlloca(ST);
@@ -1194,7 +1201,7 @@ namespace lower {
       }
     }
 
-    static val_t for_SEQ(ctx_t &m, craft_t &b, State &s, nr::Seq *N) {
+    static val_t for_SEQ(ctx_t &m, craft_t &b, State &s, const nr::Seq *N) {
       if (N->getItems().empty()) {
         return Constant::getNullValue(Type::getInt32Ty(b.getContext()));
       }
@@ -1212,7 +1219,7 @@ namespace lower {
       return R;
     }
 
-    static val_t for_INDEX(ctx_t &m, craft_t &b, State &s, nr::Index *N) {
+    static val_t for_INDEX(ctx_t &m, craft_t &b, State &s, const nr::Index *N) {
       val_t I = V(N->getIndex());
       if (!I) {
         debug("Failed to get index");
@@ -1260,7 +1267,7 @@ namespace lower {
       }
     }
 
-    static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, nr::Ident *N) {
+    static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, const nr::Ident *N) {
       auto find = s.find_named_value(m, N->getName());
       if (!find) {
         debug("Failed to find named value " << N->getName());
@@ -1282,14 +1289,15 @@ namespace lower {
       qcore_panic("unexpected type for identifier");
     }
 
-    static val_t for_ASM(ctx_t &, craft_t &, State &, nr::Asm *) {
+    static val_t for_ASM(ctx_t &, craft_t &, State &, const nr::Asm *) {
       qcore_implement();
     }
   }  // namespace expr
 
   namespace symbol {
 
-    static val_t for_EXTERN(ctx_t &m, craft_t &b, State &s, nr::Extern *N) {
+    static val_t for_EXTERN(ctx_t &m, craft_t &b, State &s,
+                            const nr::Extern *N) {
       s.push_linkage(GlobalValue::ExternalLinkage);
 
       val_t R = V(N->getValue());
@@ -1304,7 +1312,7 @@ namespace lower {
       return R;
     }
 
-    static val_t for_LOCAL(ctx_t &m, craft_t &b, State &s, nr::Local *N) {
+    static val_t for_LOCAL(ctx_t &m, craft_t &b, State &s, const nr::Local *N) {
       auto x = N->getValue()->getType();
       if (!x.has_value()) {
         debug("Failed to get type");
@@ -1344,7 +1352,7 @@ namespace lower {
       }
     }
 
-    static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N) {
+    static val_t for_FN(ctx_t &m, craft_t &b, State &s, const nr::Fn *N) {
       vector<Type *> params;
 
       { /* Lower parameter types */
@@ -1456,7 +1464,7 @@ namespace lower {
   }  // namespace symbol
 
   namespace control {
-    static val_t for_CALL(ctx_t &m, craft_t &b, State &s, nr::Call *N) {
+    static val_t for_CALL(ctx_t &m, craft_t &b, State &s, const nr::Call *N) {
       /* Direct call */
       if (!N->getTarget()->getName().empty()) {
         string_view fn_name = N->getTarget()->getName();
@@ -1555,7 +1563,7 @@ namespace lower {
       }
     }
 
-    static val_t for_RET(ctx_t &m, craft_t &b, State &s, nr::Ret *N) {
+    static val_t for_RET(ctx_t &m, craft_t &b, State &s, const nr::Ret *N) {
       val_t R;
 
       if (N->getExpr()->getKind() != NR_NODE_VOID_TY) {
@@ -1576,7 +1584,7 @@ namespace lower {
       return R;
     }
 
-    static val_t for_BRK(ctx_t &, craft_t &b, State &s, nr::Brk *) {
+    static val_t for_BRK(ctx_t &, craft_t &b, State &s, const nr::Brk *) {
       if (auto block = s.get_break_block()) {
         s.did_brk = true;
         return b.CreateBr(block.value());
@@ -1585,7 +1593,7 @@ namespace lower {
       }
     }
 
-    static val_t for_CONT(ctx_t &, craft_t &b, State &s, nr::Cont *) {
+    static val_t for_CONT(ctx_t &, craft_t &b, State &s, const nr::Cont *) {
       if (auto block = s.get_skip_block()) {
         s.did_cont = true;
         return b.CreateBr(block.value());
@@ -1594,7 +1602,7 @@ namespace lower {
       }
     }
 
-    static val_t for_IF(ctx_t &m, craft_t &b, State &s, nr::If *N) {
+    static val_t for_IF(ctx_t &m, craft_t &b, State &s, const nr::If *N) {
       BasicBlock *then, *els, *end;
 
       then = BasicBlock::Create(b.getContext(), "then",
@@ -1642,7 +1650,7 @@ namespace lower {
       return end;
     }
 
-    static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, nr::While *N) {
+    static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, const nr::While *N) {
       BasicBlock *begin, *body, *end;
 
       begin = BasicBlock::Create(b.getContext(), "begin",
@@ -1691,7 +1699,7 @@ namespace lower {
       return end;
     }
 
-    static val_t for_FOR(ctx_t &m, craft_t &b, State &s, nr::For *N) {
+    static val_t for_FOR(ctx_t &m, craft_t &b, State &s, const nr::For *N) {
       BasicBlock *begin, *body, *step, *end;
 
       begin = BasicBlock::Create(b.getContext(), "begin",
@@ -1758,11 +1766,11 @@ namespace lower {
       return end;
     }
 
-    static val_t for_CASE(ctx_t &, craft_t &, State &, nr::Case *) {
+    static val_t for_CASE(ctx_t &, craft_t &, State &, const nr::Case *) {
       qcore_panic("code path unreachable");
     }
 
-    static bool check_switch_trivial(nr::Switch *N) {
+    static bool check_switch_trivial(const nr::Switch *N) {
       auto C_T = N->getCond()->getType();
       if (!C_T) {
         debug("Failed to get condition type");
@@ -1788,7 +1796,8 @@ namespace lower {
       return true;
     }
 
-    static val_t for_SWITCH(ctx_t &m, craft_t &b, State &s, nr::Switch *N) {
+    static val_t for_SWITCH(ctx_t &m, craft_t &b, State &s,
+                            const nr::Switch *N) {
       val_t R = V(N->getCond());
       if (!R) {
         debug("Failed to get condition");
@@ -1997,16 +2006,16 @@ namespace lower {
 
 #pragma GCC diagnostic pop
 
-static auto V_gen(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t {
+static auto V_gen(ctx_t &m, craft_t &b, State &s, const nr::Expr *N) -> val_t {
   static const auto dispatch = []() constexpr {
-#define FUNCTION(_enum, _func, _type)                                   \
-  R[_enum] = [](ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t { \
-    return _func(m, b, s, N->as<_type>());                              \
+#define FUNCTION(_enum, _func, _type)                                         \
+  R[_enum] = [](ctx_t &m, craft_t &b, State &s, const nr::Expr *N) -> val_t { \
+    return _func(m, b, s, N->as<_type>());                                    \
   }
-    using func_t = val_t (*)(ctx_t &, craft_t &, State &, nr::Expr *);
+    using func_t = val_t (*)(ctx_t &, craft_t &, State &, const nr::Expr *);
 
     std::array<func_t, NR_NODE_LAST + 1> R;
-    R.fill([](ctx_t &, craft_t &, State &, nr::Expr *) -> val_t {
+    R.fill([](ctx_t &, craft_t &, State &, const nr::Expr *) -> val_t {
       qcore_panic("illegal node in input");
     });
 
@@ -2038,11 +2047,11 @@ static auto V_gen(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t {
       FUNCTION(NR_NODE_FN, for_FN, nr::Fn);
       FUNCTION(NR_NODE_ASM, for_ASM, nr::Asm);
 
-      R[NR_NODE_IGN] = [](ctx_t &, craft_t &, State &, nr::Expr *) -> val_t {
-        return nullptr;
-      };
+      R[NR_NODE_IGN] = [](ctx_t &, craft_t &, State &,
+                          const nr::Expr *) -> val_t { return nullptr; };
 
-      R[NR_NODE_TMP] = [](ctx_t &, craft_t &, State &, nr::Expr *) -> val_t {
+      R[NR_NODE_TMP] = [](ctx_t &, craft_t &, State &,
+                          const nr::Expr *) -> val_t {
         qcore_panic("unexpected temporary node");
       };
     }
@@ -2156,7 +2165,7 @@ static bool qcode_adapter(qmodule_t *module, qcode_conf_t *conf, FILE *err,
   return true;
 }
 
-static optional<unique_ptr<Module>> fabricate_llvmir(qmodule_t *module,
+static optional<unique_ptr<Module>> fabricate_llvmir(const qmodule_t *module,
                                                      qcode_conf_t *conf,
                                                      ostream &err,
                                                      raw_ostream &out);

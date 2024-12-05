@@ -294,7 +294,7 @@ size_t nr_max_modules(void);
  *
  * @note This function is thread-safe.
  */
-nr_node_t *nr_infer(nr_node_t *node, void *res);
+nr_node_t *nr_infer(const nr_node_t *node, void *res);
 
 /**
  * @brief Clone a NR node. Optionally into a different module.

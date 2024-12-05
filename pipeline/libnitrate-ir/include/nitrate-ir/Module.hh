@@ -206,6 +206,7 @@ public:
 
   void setRoot(nr::Expr *root) noexcept { m_root = root; }
   nr::Expr *&getRoot() noexcept { return m_root; }
+  nr::Expr *getRoot() const noexcept { return m_root; }
 
   std::unordered_map<uint64_t, uint64_t> &getKeyMap() noexcept {
     return m_key_map;
