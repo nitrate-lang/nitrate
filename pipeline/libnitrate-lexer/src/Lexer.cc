@@ -54,7 +54,7 @@
 
 ///============================================================================///
 /// BEGIN: LEXICAL GRAMMAR CONSTRAINTS
-#define FLOATING_POINT_PRECISION 20
+#define FLOATING_POINT_PRECISION 100
 /// END:   LEXICAL GRAMMAR CONSTRAINTS
 ///============================================================================///
 
@@ -322,7 +322,7 @@ static bool validate_identifier(std::string_view id) {
 }
 
 static bool canonicalize_float(std::string_view input, std::string &norm) {
-  double mantissa = 0, exponent = 0, x = 0;
+  long double mantissa = 0, exponent = 0, x = 0;
   size_t e_pos = 0;
 
   if ((e_pos = input.find('e')) == std::string::npos) {
@@ -340,7 +340,19 @@ static bool canonicalize_float(std::string_view input, std::string &norm) {
 
   std::stringstream ss;
   ss << std::fixed << std::setprecision(FLOATING_POINT_PRECISION) << x;
-  norm = ss.str();
+  std::string str = ss.str();
+
+  if (str.find('.') != std::string::npos) {
+    while (!str.empty() && str.back() == '0') {
+      str.pop_back();
+    }
+
+    if (str.back() == '.') {
+      str.pop_back();
+    }
+  }
+
+  norm = str;
 
   return true;
 }
@@ -642,6 +654,13 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
             }
           }
 
+          enum class FloatPart {
+            MantissaPost,
+            ExponentSign,
+            ExponentPre,
+            ExponentPost,
+          } float_lit_state = FloatPart::MantissaPost;
+
           bool is_lexing = true;
           while (is_lexing) {
             /* Skip over the integer syntax formatting */
@@ -658,6 +677,14 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
               case NumType::Decimal: {
                 if (std::isdigit(c)) {
                   buf += c;
+                } else if (c == '.') {
+                  buf += c;
+                  type = NumType::Floating;
+                  float_lit_state = FloatPart::MantissaPost;
+                } else if (c == 'e' || c == 'E') {
+                  buf += 'e';
+                  type = NumType::Floating;
+                  float_lit_state = FloatPart::ExponentSign;
                 } else {
                   m_pushback.push_back(c);
                   is_lexing = false;
@@ -706,8 +733,59 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
               }
 
               case NumType::Floating: {
-                /// TODO: Lexer subtype
-                buf += c;
+                switch (float_lit_state) {
+                  case FloatPart::MantissaPost: {
+                    if (std::isdigit(c)) {
+                      buf += c;
+                    } else if (c == 'e' || c == 'E') {
+                      buf += 'e';
+                      float_lit_state = FloatPart::ExponentSign;
+                    } else {
+                      m_pushback.push_back(c);
+                      is_lexing = false;
+                    }
+                    break;
+                  }
+
+                  case FloatPart::ExponentSign: {
+                    if (c == '-') {
+                      buf += c;
+                    } else if (c == '+') {
+                      float_lit_state = FloatPart::ExponentPre;
+                    } else if (std::isdigit(c)) {
+                      buf += c;
+                      float_lit_state = FloatPart::ExponentPre;
+                    } else {
+                      m_pushback.push_back(c);
+                      is_lexing = false;
+                    }
+                    break;
+                  }
+
+                  case FloatPart::ExponentPre: {
+                    if (std::isdigit(c)) {
+                      buf += c;
+                    } else if (c == '.') {
+                      buf += c;
+                      float_lit_state = FloatPart::ExponentPost;
+                    } else {
+                      m_pushback.push_back(c);
+                      is_lexing = false;
+                    }
+                    break;
+                  }
+
+                  case FloatPart::ExponentPost: {
+                    if (std::isdigit(c)) {
+                      buf += c;
+                    } else {
+                      m_pushback.push_back(c);
+                      is_lexing = false;
+                    }
+                    break;
+                  }
+                }
+
                 break;
               }
             }
