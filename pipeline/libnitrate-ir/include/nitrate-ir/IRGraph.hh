@@ -132,9 +132,9 @@ namespace nr {
 
     static constexpr uint32_t getKindSize(nr_ty_t kind) noexcept;
     constexpr nr_ty_t getKind() const noexcept { return m_node_type; }
-    static constexpr std::string_view getKindName(nr_ty_t kind) noexcept;
+    static constexpr const char *getKindName(nr_ty_t kind) noexcept;
 
-    constexpr std::string_view getKindName() const noexcept {
+    constexpr const char *getKindName() const noexcept {
       return getKindName(m_node_type);
     }
 
@@ -1589,9 +1589,9 @@ namespace nr {
     return sizes[type];
   }
 
-  constexpr std::string_view Expr::getKindName(nr_ty_t type) noexcept {
-    const std::array<std::string_view, NR_NODE_COUNT> names = []() {
-      std::array<std::string_view, NR_NODE_COUNT> R;
+  constexpr const char *Expr::getKindName(nr_ty_t type) noexcept {
+    const std::array<const char *, NR_NODE_COUNT> names = []() {
+      std::array<const char *, NR_NODE_COUNT> R;
       R.fill("");
 
       R[NR_NODE_BINEXPR] = "bin_expr";
@@ -2159,14 +2159,19 @@ namespace nr {
   void iterate(const T *base, ConstIterCallback cb,
                ConstChildSelect cs = nullptr) {
     T *ref = const_cast<T *>(base);
-    const auto const_cb = [&](Expr *p, Expr **c) -> IterOp {
+
+    const auto const_cb = cb != nullptr ? [&](Expr *p, Expr **c) -> IterOp {
       return cb(static_cast<const Expr *const>(p),
                 const_cast<const Expr *const *const>(c));
-    };
-    const auto const_cs = [&](Expr **a, Expr **b) -> bool {
+    }
+    : IterCallback(nullptr);
+
+    const auto const_cs = cs != nullptr ? [&](Expr **a, Expr **b) -> bool {
       return cs(const_cast<const Expr *const *const>(a),
                 const_cast<const Expr *const *const>(b));
-    };
+    }
+    : ChildSelect(nullptr);
+
     if constexpr (mode == dfs_pre) {
       return detail::dfs_pre_impl((Expr **)&ref, const_cb, const_cs);
     } else if constexpr (mode == dfs_post) {

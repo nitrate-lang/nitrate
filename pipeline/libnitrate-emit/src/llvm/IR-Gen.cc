@@ -144,17 +144,13 @@ class State {
   bool m_inside_fn;
 
 public:
-  bool did_ret;
-  bool did_brk;
-  bool did_cont;
+  bool branch_early;
 
 public:
   State() {
     m_current_linkage.push(GlobalValue::LinkageTypes::PrivateLinkage);
     m_inside_fn = false;
-    did_ret = false;
-    did_brk = false;
-    did_cont = false;
+    branch_early = false;
   }
 
   optional<pair<Value *, PtrClass>> find_named_value(ctx_t &m,
@@ -1437,7 +1433,7 @@ namespace lower {
           s.get_stackframe().addVariable(N->getParams()[i].second, param_alloc);
         }
 
-        bool old_did_ret = s.did_ret;
+        bool old_branch_early = s.branch_early;
 
         for (auto &node : N->getBody().value()->getItems()) {
           val_t R = V(node);
@@ -1449,10 +1445,10 @@ namespace lower {
           }
         }
 
-        if (!s.did_ret) {
+        if (!s.branch_early) {
           b.CreateBr(exit);
         }
-        s.did_ret = old_did_ret;
+        s.branch_early = old_branch_early;
 
         s.pop_return_block();
         s.pop_stackframe();
@@ -1564,29 +1560,25 @@ namespace lower {
     }
 
     static val_t for_RET(ctx_t &m, craft_t &b, State &s, const nr::Ret *N) {
-      val_t R;
-
-      if (N->getExpr()->getKind() != NR_NODE_VOID_TY) {
-        R = V(N->getExpr());
-        if (!R) {
+      if (!N->getExpr()->is(NR_NODE_VOID_TY)) {
+        if (val_t R = V(N->getExpr())) {
+          b.CreateStore(R.value(), s.get_return_block().getValue());
+        } else {
           debug("Failed to get return value");
+
           return nullopt;
         }
-
-        b.CreateStore(R.value(), s.get_return_block().getValue());
-      } else {
-        R = Constant::getNullValue(Type::getInt32Ty(b.getContext()));
       }
 
-      b.CreateBr(s.get_return_block().getBlock());
-      s.did_ret = true;
+      auto br = b.CreateBr(s.get_return_block().getBlock());
+      s.branch_early = true;
 
-      return R;
+      return br;
     }
 
     static val_t for_BRK(ctx_t &, craft_t &b, State &s, const nr::Brk *) {
       if (auto block = s.get_break_block()) {
-        s.did_brk = true;
+        s.branch_early = true;
         return b.CreateBr(block.value());
       } else {
         return nullopt;
@@ -1595,7 +1587,7 @@ namespace lower {
 
     static val_t for_CONT(ctx_t &, craft_t &b, State &s, const nr::Cont *) {
       if (auto block = s.get_skip_block()) {
-        s.did_cont = true;
+        s.branch_early = true;
         return b.CreateBr(block.value());
       } else {
         return nullopt;
@@ -1621,30 +1613,30 @@ namespace lower {
       b.CreateCondBr(R.value(), then, els);
       b.SetInsertPoint(then);
 
-      bool old_did_ret = s.did_ret;
+      bool old_branch_early = s.branch_early;
       val_t R_T = V(N->getThen());
       if (!R_T) {
         debug("Failed to get then");
         return nullopt;
       }
 
-      if (!s.did_ret) {
+      if (!s.branch_early) {
         b.CreateBr(end);
       }
-      s.did_ret = old_did_ret;
+      s.branch_early = old_branch_early;
 
       b.SetInsertPoint(els);
 
-      s.did_ret = false;
+      s.branch_early = false;
       val_t R_E = V(N->getElse());
       if (!R_E) {
         debug("Failed to get else");
         return nullopt;
       }
-      if (!s.did_ret) {
+      if (!s.branch_early) {
         b.CreateBr(end);
       }
-      s.did_ret = old_did_ret;
+      s.branch_early = old_branch_early;
       b.SetInsertPoint(end);
 
       return end;
@@ -1674,9 +1666,7 @@ namespace lower {
       s.push_break_block(end);
       s.push_skip_block(begin);
 
-      bool did_brk = s.did_brk;
-      bool did_cont = s.did_cont;
-      bool old_ret = s.did_ret;
+      bool branch_early = s.branch_early;
 
       val_t R_B = V(N->getBody());
       if (!R_B) {
@@ -1684,12 +1674,10 @@ namespace lower {
         return nullopt;
       }
 
-      if (!s.did_brk && !s.did_cont && !s.did_ret) {
+      if (!s.branch_early) {
         b.CreateBr(begin);
       }
-      s.did_brk = did_brk;
-      s.did_cont = did_cont;
-      s.did_ret = old_ret;
+      s.branch_early = branch_early;
 
       s.pop_skip_block();
       s.pop_break_block();
@@ -1731,9 +1719,7 @@ namespace lower {
       s.push_break_block(end);
       s.push_skip_block(step);
 
-      bool did_brk = s.did_brk;
-      bool did_cont = s.did_cont;
-      bool old_ret = s.did_ret;
+      bool branch_early = s.branch_early;
 
       val_t R_B = V(N->getBody());
       if (!R_B) {
@@ -1741,12 +1727,10 @@ namespace lower {
         return nullopt;
       }
 
-      if (!s.did_brk && !s.did_cont && !s.did_ret) {
+      if (!s.branch_early) {
         b.CreateBr(step);
       }
-      s.did_brk = did_brk;
-      s.did_cont = did_cont;
-      s.did_ret = old_ret;
+      s.branch_early = branch_early;
 
       b.SetInsertPoint(step);
 
@@ -1827,13 +1811,13 @@ namespace lower {
             return nullopt;
           }
 
-          bool did_ret = s.did_ret;
+          bool branch_early = s.branch_early;
           val_t R_B = V(C->getBody());
           if (!R_B) {
             debug("Failed to get case body");
             return nullopt;
           }
-          s.did_ret = did_ret;
+          s.branch_early = branch_early;
 
           SI->addCase(cast<ConstantInt>(R_C.value()), case_block);
         }
@@ -2015,8 +1999,8 @@ static auto V_gen(ctx_t &m, craft_t &b, State &s, const nr::Expr *N) -> val_t {
     using func_t = val_t (*)(ctx_t &, craft_t &, State &, const nr::Expr *);
 
     std::array<func_t, NR_NODE_LAST + 1> R;
-    R.fill([](ctx_t &, craft_t &, State &, const nr::Expr *) -> val_t {
-      qcore_panic("illegal node in input");
+    R.fill([](ctx_t &, craft_t &, State &, const nr::Expr *n) -> val_t {
+      qcore_panicf("illegal node in input: kind=%s", n->getKindName());
     });
 
     { /* NRGraph recursive llvm-ir builders */
@@ -2073,8 +2057,8 @@ static auto T_gen(craft_t &b, const nr::Expr *N) -> ty_t {
     using func_t = ty_t (*)(craft_t &, const nr::Expr *);
 
     std::array<func_t, NR_NODE_LAST + 1> R;
-    R.fill([](craft_t &, const nr::Expr *) -> ty_t {
-      qcore_panic("illegal node in input");
+    R.fill([](craft_t &, const nr::Expr *n) -> ty_t {
+      qcore_panicf("illegal node in input: kind=%s", n->getKindName());
     });
 
     { /* NRGraph recursive llvm-ir builders */
