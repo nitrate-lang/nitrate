@@ -304,8 +304,8 @@ namespace nr {
     // Returns "" if the construct is not named.
     constexpr std::string_view getName() const noexcept;
 
-    constexpr std::tuple<uint32_t, uint32_t, std::string_view>
-    getLoc() noexcept {
+    constexpr std::tuple<uint32_t, uint32_t, std::string_view> getLoc()
+        const noexcept {
       return {m_src_offset, m_src_offset + m_span, ""};
     }
 
@@ -385,6 +385,12 @@ namespace nr {
      * @param isForDebug Whether to print the node for debugging.
      */
     void dump(std::ostream &os = std::cout, bool isForDebug = false) const;
+
+    std::string toString() const noexcept {
+      std::stringstream ss;
+      dump(ss, false);
+      return ss.str();
+    };
 
     /**
      * @brief Get a hashcode for the node. The code is unique its the nodes and
@@ -830,6 +836,10 @@ namespace nr {
     const FnParams &getParams() const noexcept { return m_params; }
     Type *getReturn() const noexcept { return m_return; }
     const FnAttrs &getAttrs() const noexcept { return m_attrs; }
+
+    bool isVariadic() const noexcept {
+      return m_attrs.contains(FnAttr::Variadic);
+    }
 
     uint8_t getPlatformPointerSizeBytes() const noexcept {
       return m_platform_ptr_size_bytes;
@@ -2272,13 +2282,6 @@ namespace nr {
 
 namespace std {
   template <auto mode = nr::dfs_pre>
-  void for_each(nr::Expr *v, std::function<bool(nr_ty_t, nr::Expr *)> f) {
-    nr::iterate<mode>(v, [&](auto, auto c) -> nr::IterOp {
-      return f((*c)->getKind(), *c) ? nr::IterOp::Proceed : nr::IterOp::Abort;
-    });
-  }
-
-  template <auto mode = nr::dfs_pre>
   void for_each(const nr::Expr *const v,
                 std::function<bool(nr_ty_t, const nr::Expr *const)> f) {
     nr::iterate<mode>(v, [&](auto, auto c) -> nr::IterOp {
@@ -2292,6 +2295,31 @@ namespace std {
       return f((*c)->getKind(), c) ? nr::IterOp::Proceed : nr::IterOp::Abort;
     });
   }
+
+  template <typename T, auto mode = nr::dfs_pre>
+  void for_each(const nr::Expr *const v, std::function<bool(const T *)> f) {
+    nr::iterate<mode>(
+        v, [&](auto, const nr::Expr *const *const c) -> nr::IterOp {
+          if ((*c)->getKind() != nr::Expr::getTypeCode<T>()) {
+            return nr::IterOp::Proceed;
+          }
+
+          return f((*c)->as<T>()) ? nr::IterOp::Proceed : nr::IterOp::Abort;
+        });
+  }
+
+  template <typename T, auto mode = nr::dfs_pre>
+  void transform(nr::Expr *v, std::function<bool(T **)> f) {
+    nr::iterate<mode>(v, [&](auto, auto c) -> nr::IterOp {
+      if ((*c)->getKind() != nr::Expr::getTypeCode<T>()) {
+        return nr::IterOp::Proceed;
+      }
+
+      return f(reinterpret_cast<T **>(c)) ? nr::IterOp::Proceed
+                                          : nr::IterOp::Abort;
+    });
+  }
+
 }  // namespace std
 
 #endif

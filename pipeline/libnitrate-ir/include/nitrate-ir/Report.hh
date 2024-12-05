@@ -65,8 +65,9 @@ namespace nr {
 
     NameConflict,
     UnknownFunction,
-    TooManyArguments,
-    UnknownArgument,
+    VariadicNotEnoughArguments,
+    TwoManyArguments,
+    TwoFewArguments,
     TypeInference,
     NameManglingTypeInfer,
     UnexpectedUndefLiteral,

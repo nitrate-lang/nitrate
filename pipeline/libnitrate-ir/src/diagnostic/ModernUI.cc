@@ -44,6 +44,8 @@
 #include <nitrate-ir/Module.hh>
 #include <sstream>
 
+#include "nitrate-ir/Report.hh"
+
 using namespace nr;
 
 template <typename L, typename R>
@@ -88,8 +90,18 @@ const boost::bimap<IssueCode, IssueInfo> nr::issue_info =
           {{"Ensure that the name is unique."},
            {"Try wrapping your code in a named subsystem"}}}},
         {UnknownFunction, {"unknown-function", "write me", {}}},
-        {TooManyArguments, {"too-many-arguments", "write me", {}}},
-        {UnknownArgument, {"unknown-argument", "write me", {}}},
+        {VariadicNotEnoughArguments,
+         {"variadic-not-enough-args",
+          "Variadic function call '%s' has too few arguments.",
+          {"Ensure that the number of arguments is correct."}}},
+        {TwoManyArguments,
+         {"too-many-args",
+          "Function call '%s' has too many arguments.",
+          {"Ensure that the number of arguments is correct."}}},
+        {TwoFewArguments,
+         {"too-few-args",
+          "Function call '%s' has too few arguments.",
+          {"Ensure that the number of arguments is correct."}}},
         {TypeInference, {"type-inference", "Type inference failed: %s", {}}},
         {NameManglingTypeInfer,
          {"nm-type-infer",
