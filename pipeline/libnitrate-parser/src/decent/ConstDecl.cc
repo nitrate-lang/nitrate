@@ -33,6 +33,8 @@
 
 #include <decent/Recurse.hh>
 
+/// TODO: Cleanup this code; it's a mess from refactoring.
+
 using namespace qparse;
 
 namespace qparse {

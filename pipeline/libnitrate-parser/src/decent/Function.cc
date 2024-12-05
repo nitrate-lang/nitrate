@@ -32,6 +32,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /// TODO: Source location
+
+/// TODO: Cleanup this code; it's a mess from refactoring.
+
 #include <nitrate-lexer/Lexer.h>
 #include <nitrate-parser/Node.h>
 

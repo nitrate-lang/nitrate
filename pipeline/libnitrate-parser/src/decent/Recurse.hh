@@ -41,6 +41,7 @@
 #include <core/ParseReport.hh>
 #include <core/ParserStruct.hh>
 #include <set>
+#include <unordered_set>
 
 namespace qparse {
   Stmt *recurse_pub(qparse_t &S, qlex_t &rd);
@@ -71,7 +72,18 @@ namespace qparse {
   Stmt *recurse(qparse_t &S, qlex_t &rd, bool expect_braces = true,
                 bool single_stmt = false);
 
-  Expr *recurse_expr(qparse_t &S, qlex_t &rd, std::set<qlex_tok_t> terminators,
+  struct tok_hash {
+    std::size_t operator()(qlex_tok_t const &v) const {
+      union {
+        size_t i;
+        qlex_tok_t t;
+      } u = {.t = v};
+      return u.i;
+    }
+  };
+
+  Expr *recurse_expr(qparse_t &S, qlex_t &rd,
+                     std::unordered_set<qlex_tok_t, tok_hash> terminators,
                      size_t depth = 0);
 
 #define next() qlex_next(&rd)

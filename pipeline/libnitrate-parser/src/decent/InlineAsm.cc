@@ -38,7 +38,7 @@
 using namespace qparse;
 
 Stmt *qparse::recurse_inline_asm(qparse_t &, qlex_t &rd) {
-  diagnostic << current() << "Inline assembly is not yet supported";
+  diagnostic << current() << "Inline assembly is not yet implemented";
 
   return mock_stmt(QAST_NODE_INLINE_ASM);
 }

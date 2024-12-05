@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+/// TODO: Cleanup this code; it's a mess from refactoring.
+
 #include <decent/Recurse.hh>
 #include <unordered_map>
 

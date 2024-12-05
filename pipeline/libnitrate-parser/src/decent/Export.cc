@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+/// TODO: Cleanup this code; it's a mess from refactoring.
+
 #include <decent/Recurse.hh>
 
 qparse::Stmt *qparse::recurse_pub(qparse_t &S, qlex_t &rd) {

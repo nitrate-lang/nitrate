@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+/// TODO: Cleanup this code; it's a mess from refactoring.
+
 #include <nitrate-parser/Node.h>
 
 #include <decent/Recurse.hh>

@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+/// TODO: Cleanup this code; it's a mess from refactoring.
+
 /// TODO: Source location
 
 #include <nitrate-parser/Node.h>

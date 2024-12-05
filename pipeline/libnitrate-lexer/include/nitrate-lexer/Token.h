@@ -257,7 +257,31 @@ typedef struct qlex_tok_t {
 
   inline bool is(qlex_ty_t val) const { return ty == val; }
 
-  bool operator==(const qlex_tok_t &rhs) = delete;
+  bool operator==(const qlex_tok_t &rhs) const {
+    if (ty != rhs.ty) return false;
+    switch (ty) {
+      case qEofF:
+      case qErro:
+        return true;
+      case qPunc:
+        return v.punc == rhs.v.punc;
+      case qOper:
+        return v.op == rhs.v.op;
+      case qKeyW:
+        return v.key == rhs.v.key;
+      case qIntL:
+      case qNumL:
+      case qText:
+      case qName:
+      case qChar:
+      case qMacB:
+      case qMacr:
+      case qNote:
+        return v.str_idx == rhs.v.str_idx;
+      default:
+        __builtin_unreachable();
+    }
+  }
 
   template <auto V>
   bool is() const {

@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+/// TODO: Cleanup this code; it's a mess from refactoring.
+
 /// TODO: Source location
 
 #include <nitrate-parser/Node.h>
@@ -205,7 +207,8 @@ static bool recurse_fstring(qparse_t &S, FString **node, qlex_t &rd,
 /// TODO: qlex_op_t associativity
 
 Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
-                           std::set<qlex_tok_t> terminators, size_t depth) {
+                           std::unordered_set<qlex_tok_t, tok_hash> terminators,
+                           size_t depth) {
   if (depth > MAX_EXPR_DEPTH) {
     diagnostic
         << peek()
