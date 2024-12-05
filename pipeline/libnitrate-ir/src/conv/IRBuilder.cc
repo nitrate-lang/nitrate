@@ -60,6 +60,8 @@ NRBuilder::NRBuilder(std::string module_name,
 
   m_duplicate_functions = std::unordered_set<Fn *>();
   m_duplicate_variables = std::unordered_set<Local *>();
+  m_duplicate_named_types = std::unordered_set<std::string_view>();
+  m_duplicate_named_constants = std::unordered_set<std::string_view>();
 }
 
 NRBuilder::~NRBuilder() noexcept {

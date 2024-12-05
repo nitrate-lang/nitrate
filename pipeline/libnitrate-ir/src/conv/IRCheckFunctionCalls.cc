@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "nitrate-ir/TypeDecl.h"
 #define IRBUILDER_IMPL
 
 #include <nitrate-core/Error.h>
@@ -40,9 +41,11 @@
 
 using namespace nr;
 
-bool NRBuilder::check_function_calls(Seq *, IReport *I) noexcept {
+bool NRBuilder::check_function_calls(Seq *root, IReport *I) noexcept {
   I->report(CompilerError, IC::Debug,
             "NRBuilder::check_function_calls() not implemented");
+
+  std::for_each<dfs_pre>(root, [&](nr_ty_t, auto) { return true; });
 
   /// TODO: Implement check
   return true;

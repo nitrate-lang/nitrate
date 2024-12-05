@@ -144,12 +144,11 @@ Local *NRBuilder::createVariable(
   contract_enforce(m_root != nullptr);
   contract_enforce(ty != nullptr && static_cast<Expr *>(ty)->isType());
 
-  Local *local = create<Local>(name, createIgn(), AbiTag::Default);
+  Local *local =
+      create<Local>(name, createIgn(), AbiTag::Default, is_readonly, storage);
 
-  /// TODO: Do something with these
+  /// TODO: Set the visibility of the local variable
   (void)visibility;
-  (void)storage;
-  (void)is_readonly;
 
   if (m_variables.contains(name)) [[unlikely]] {
     m_duplicate_variables->insert(local);

@@ -58,33 +58,6 @@
 #include <unordered_map>
 
 namespace nr {
-  enum class Purity {
-    Impure = 0,
-    Pure = 1,
-    Quasipure = 2,
-    Retropure = 3,
-  };
-
-  enum class Vis {
-    Sec = 0,
-    Pub = 1,
-    Pro = 2,
-  };
-
-  enum class StorageClass {
-    /* Automatic storeage duration */
-    LLVM_StackAlloa,
-
-    /* Static storage duration */
-    LLVM_Static,
-
-    /* Thread-local storage duration */
-    LLVM_ThreadLocal,
-
-    /* Dynamic allocation */
-    Managed,
-  };
-
   enum class ABIStringStyle {
     CStr, /* Only supported variant */
   };
@@ -139,6 +112,9 @@ namespace nr {
 
     std::optional<std::unordered_set<Fn *>> m_duplicate_functions;
     std::optional<std::unordered_set<Local *>> m_duplicate_variables;
+    std::optional<std::unordered_set<std::string_view>> m_duplicate_named_types;
+    std::optional<std::unordered_set<std::string_view>>
+        m_duplicate_named_constants;
 
     ///**************************************************************************///
     // Builder helper methods

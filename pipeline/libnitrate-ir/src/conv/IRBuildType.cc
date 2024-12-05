@@ -335,8 +335,7 @@ void NRBuilder::createNamedTypeAlias(
       "Non alphanumeric starter characters are reserved internally");
 
   if (m_named_types.contains(name)) [[unlikely]] {
-    /// TODO: Handle error when the name is already set
-    qcore_implement();
+    m_duplicate_named_types->insert(name);
   }
 
   m_named_types[name] = type;
@@ -355,8 +354,7 @@ void NRBuilder::createNamedConstantDefinition(
   }));
 
   if (m_named_constant_group.contains(name)) [[unlikely]] {
-    /// TODO: Handle error when the name is already set
-    qcore_implement();
+    m_duplicate_named_constants->insert(name);
   }
 
   m_named_constant_group[name] = values;

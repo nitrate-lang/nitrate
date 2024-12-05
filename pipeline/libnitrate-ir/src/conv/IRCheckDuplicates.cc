@@ -155,8 +155,9 @@ bool NRBuilder::check_duplicates(Seq *, IReport *I) noexcept {
   }
 
   { /* Diagnose duplicate symbols */
-    conflicts.reserve(m_duplicate_functions->size() +
-                      m_duplicate_variables->size());
+    conflicts.reserve(
+        m_duplicate_functions->size() + m_duplicate_variables->size() +
+        m_duplicate_named_types->size() + m_duplicate_named_constants->size());
 
     std::for_each(m_duplicate_functions->begin(), m_duplicate_functions->end(),
                   [&](auto x) {
@@ -170,9 +171,23 @@ bool NRBuilder::check_duplicates(Seq *, IReport *I) noexcept {
                                          Kind::Variable, std::nullopt});
                   });
 
+    std::for_each(m_duplicate_named_types->begin(),
+                  m_duplicate_named_types->end(), [&](auto x) {
+                    conflicts.push_back({x, Kind::TypeDef, m_named_types[x],
+                                         Kind::TypeDef, std::nullopt});
+                  });
+
+    std::for_each(m_duplicate_named_constants->begin(),
+                  m_duplicate_named_constants->end(), [&](auto x) {
+                    conflicts.push_back({x, Kind::ScopedEnum, createIgn(),
+                                         Kind::ScopedEnum, std::nullopt});
+                  });
+
     /* Release the memory */
     m_duplicate_functions = std::nullopt;
     m_duplicate_variables = std::nullopt;
+    m_duplicate_named_types = std::nullopt;
+    m_duplicate_named_constants = std::nullopt;
   }
 
   print_conflict_errors(conflicts, I);

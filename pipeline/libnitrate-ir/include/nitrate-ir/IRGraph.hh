@@ -117,6 +117,33 @@ namespace nr {
 #define QCLASS_REFLECT() private:
 #endif
 
+  enum class Purity {
+    Impure = 0,
+    Pure = 1,
+    Quasipure = 2,
+    Retropure = 3,
+  };
+
+  enum class Vis {
+    Sec = 0,
+    Pub = 1,
+    Pro = 2,
+  };
+
+  enum class StorageClass {
+    /* Automatic storeage duration */
+    LLVM_StackAlloa,
+
+    /* Static storage duration */
+    LLVM_Static,
+
+    /* Thread-local storage duration */
+    LLVM_ThreadLocal,
+
+    /* Dynamic allocation */
+    Managed,
+  };
+
   class Expr : public nr_node_t {
     QCLASS_REFLECT()
 
@@ -384,11 +411,6 @@ namespace nr {
      * @note This code may be different for different compiler runs.
      */
     uint64_t getUniqId() const;
-
-    ///=====================================================================
-    /// BEGIN: Internal library use only
-    /// END:   Internal library use only
-    ///=====================================================================
 
   } __attribute__((packed)) __attribute__((aligned(1)));
 
@@ -1039,23 +1061,37 @@ namespace nr {
     std::string_view m_name;
     Expr *m_value;
     AbiTag m_abi_tag;
+    StorageClass m_storage_class;
+    bool m_readonly;
 
   public:
-    Local(std::string_view name, Expr *value, AbiTag abi_tag)
+    Local(std::string_view name, Expr *value, AbiTag abi_tag,
+          bool readonly = false,
+          StorageClass storage_class = StorageClass::LLVM_StackAlloa)
         : Expr(NR_NODE_LOCAL),
           m_name(name),
           m_value(value),
-          m_abi_tag(abi_tag) {}
+          m_abi_tag(abi_tag),
+          m_storage_class(storage_class),
+          m_readonly(readonly) {}
 
     std::string_view setName(std::string_view name) noexcept {
       return m_name = name;
     }
 
     Expr *getValue() const noexcept { return m_value; }
-    Expr *setValue(Expr *value) noexcept { return m_value = value; }
+    void setValue(Expr *value) noexcept { m_value = value; }
 
     AbiTag getAbiTag() const noexcept { return m_abi_tag; }
-    AbiTag setAbiTag(AbiTag abi_tag) noexcept { return m_abi_tag = abi_tag; }
+    void setAbiTag(AbiTag abi_tag) noexcept { m_abi_tag = abi_tag; }
+
+    StorageClass getStorageClass() const noexcept { return m_storage_class; }
+    void setStorageClass(StorageClass storage_class) noexcept {
+      m_storage_class = storage_class;
+    }
+
+    bool isReadonly() const noexcept { return m_readonly; }
+    void setReadonly(bool readonly) noexcept { m_readonly = readonly; }
   };
 
   class Ret final : public Expr {
@@ -2233,5 +2269,29 @@ namespace nr {
     return N;
   }
 }  // namespace nr
+
+namespace std {
+  template <auto mode = nr::dfs_pre>
+  void for_each(nr::Expr *v, std::function<bool(nr_ty_t, nr::Expr *)> f) {
+    nr::iterate<mode>(v, [&](auto, auto c) -> nr::IterOp {
+      return f((*c)->getKind(), *c) ? nr::IterOp::Proceed : nr::IterOp::Abort;
+    });
+  }
+
+  template <auto mode = nr::dfs_pre>
+  void for_each(const nr::Expr *const v,
+                std::function<bool(nr_ty_t, const nr::Expr *const)> f) {
+    nr::iterate<mode>(v, [&](auto, auto c) -> nr::IterOp {
+      return f((*c)->getKind(), *c) ? nr::IterOp::Proceed : nr::IterOp::Abort;
+    });
+  }
+
+  template <auto mode = nr::dfs_pre>
+  void transform(nr::Expr *v, std::function<bool(nr_ty_t, nr::Expr **)> f) {
+    nr::iterate<mode>(v, [&](auto, auto c) -> nr::IterOp {
+      return f((*c)->getKind(), c) ? nr::IterOp::Proceed : nr::IterOp::Abort;
+    });
+  }
+}  // namespace std
 
 #endif
