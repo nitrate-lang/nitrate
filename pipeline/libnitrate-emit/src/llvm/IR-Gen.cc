@@ -101,34 +101,47 @@ enum class PtrClass {
   Function,
 };
 
-struct State {
-  std::stack<std::pair<llvm::AllocaInst *, llvm::BasicBlock *>> return_val;
-  std::stack<llvm::GlobalValue::LinkageTypes> linkage;
+class FunctionReturnBlock {
+  llvm::AllocaInst *m_value;
+  llvm::BasicBlock *m_block;
+
+public:
+  FunctionReturnBlock(llvm::AllocaInst *value, llvm::BasicBlock *block)
+      : m_value(value), m_block(block) {}
+
+  llvm::AllocaInst *getValue() const { return m_value; }
+  llvm::BasicBlock *getBlock() const { return m_block; }
+};
+
+class State {
+  std::stack<FunctionReturnBlock> m_return_block_stack;
+  bool m_inside_fn;
+  std::stack<llvm::GlobalValue::LinkageTypes> m_current_linkage;
+  std::stack<llvm::BasicBlock *> m_break_stack;
+
+public:
   std::stack<
       std::pair<llvm::Function *,
                 std::unordered_map<std::string_view, llvm::AllocaInst *>>>
       locals;
-  std::stack<llvm::BasicBlock *> breaks;
   std::stack<llvm::BasicBlock *> continues;
 
-  bool in_fn;
   bool did_ret;
   bool did_brk;
   bool did_cont;
 
-  static State defaults() {
-    State s;
-    s.linkage.push(llvm::GlobalValue::LinkageTypes::PrivateLinkage);
-    s.in_fn = false;
-    s.did_ret = false;
-    s.did_brk = false;
-    s.did_cont = false;
-    return s;
+public:
+  State() {
+    m_current_linkage.push(llvm::GlobalValue::LinkageTypes::PrivateLinkage);
+    m_inside_fn = false;
+    did_ret = false;
+    did_brk = false;
+    did_cont = false;
   }
 
   std::optional<std::pair<llvm::Value *, PtrClass>> find_named_value(
-      ctx_t &m, std::string_view name) {
-    if (in_fn) {
+      ctx_t &m, std::string_view name) const {
+    if (is_inside_function()) {
       for (const auto &[cur_name, inst] : locals.top().second) {
         if (cur_name == name) {
           return {{inst, PtrClass::DataPtr}};
@@ -147,6 +160,77 @@ struct State {
     debug("Failed to find named value: " << name);
     return std::nullopt;
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+
+  void push_return_block(llvm::AllocaInst *value, llvm::BasicBlock *block) {
+    m_return_block_stack.push(FunctionReturnBlock(value, block));
+  }
+
+  const FunctionReturnBlock &get_return_block() const {
+    if (m_return_block_stack.empty()) [[unlikely]] {
+      qcore_panic("return block stack is empty");
+    }
+
+    return m_return_block_stack.top();
+  }
+
+  void pop_return_block() {
+    if (m_return_block_stack.empty()) [[unlikely]] {
+      qcore_panic("cannot pop the last return block");
+    }
+
+    m_return_block_stack.pop();
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+
+  bool is_inside_function() const { return m_inside_fn; }
+  void set_inside_function(bool inside) { m_inside_fn = inside; }
+
+  /////////////////////////////////////////////////////////////////////////////
+
+  void push_linkage(llvm::GlobalValue::LinkageTypes linkage) {
+    m_current_linkage.push(linkage);
+  }
+
+  llvm::GlobalValue::LinkageTypes get_linkage() const {
+    if (m_current_linkage.empty()) [[unlikely]] {
+      qcore_panic("linkage stack is empty");
+    }
+
+    return m_current_linkage.top();
+  }
+
+  void pop_linkage() {
+    if (m_current_linkage.empty()) [[unlikely]] {
+      qcore_panic("cannot pop the last linkage");
+    }
+
+    m_current_linkage.pop();
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+
+  void push_break_block(llvm::BasicBlock *block) { m_break_stack.push(block); }
+
+  std::optional<llvm::BasicBlock *> get_break_block() const {
+    if (m_break_stack.empty()) {
+      return std::nullopt;
+    }
+
+    return m_break_stack.top();
+  }
+
+  void pop_break_block() {
+    if (m_break_stack.empty()) {
+      qcore_panic("cannot pop the last break block");
+    }
+
+    m_break_stack.pop();
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
 };
 
 class OStreamWriter : public std::streambuf {
@@ -818,7 +902,7 @@ static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(
   std::unique_ptr<llvm::Module> m =
       std::make_unique<llvm::Module>(src->getName(), *context);
 
-  State s = State::defaults();
+  State s;
 
   // Forward declare all functions
   nr::iterate<nr::dfs_pre>(root, [&](nr::Expr *, nr::Expr **N) -> nr::IterOp {
@@ -1845,16 +1929,16 @@ static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, nr::Ident *N) {
 }
 
 static val_t for_EXTERN(ctx_t &m, craft_t &b, State &s, nr::Extern *N) {
-  s.linkage.push(llvm::GlobalValue::ExternalLinkage);
+  s.push_linkage(llvm::GlobalValue::ExternalLinkage);
 
   val_t R = V(m, b, s, N->getValue());
   if (!R) {
-    s.linkage.pop();
+    s.pop_linkage();
     debug("Failed to get value");
     return std::nullopt;
   }
 
-  s.linkage.pop();
+  s.pop_linkage();
 
   return R;
 }
@@ -1872,7 +1956,7 @@ static val_t for_LOCAL(ctx_t &m, craft_t &b, State &s, nr::Local *N) {
     return std::nullopt;
   }
 
-  if (s.in_fn) {
+  if (s.is_inside_function()) {
     llvm::AllocaInst *local =
         b.CreateAlloca(R_T.value(), nullptr, N->getName());
 
@@ -1893,7 +1977,7 @@ static val_t for_LOCAL(ctx_t &m, craft_t &b, State &s, nr::Local *N) {
     auto init = llvm::Constant::getNullValue(R_T.value());
 
     llvm::GlobalVariable *global = new llvm::GlobalVariable(
-        m, R_T.value(), false, s.linkage.top(), init, N->getName());
+        m, R_T.value(), false, s.get_linkage(), init, N->getName());
 
     /// TODO: Set the initializer value during program load???
     return global;
@@ -1910,23 +1994,24 @@ static val_t for_RET(ctx_t &m, craft_t &b, State &s, nr::Ret *N) {
       return std::nullopt;
     }
 
-    b.CreateStore(R.value(), s.return_val.top().first);
+    b.CreateStore(R.value(), s.get_return_block().getValue());
   } else {
     R = llvm::Constant::getNullValue(llvm::Type::getInt32Ty(m.getContext()));
   }
 
-  b.CreateBr(s.return_val.top().second);
+  b.CreateBr(s.get_return_block().getBlock());
   s.did_ret = true;
 
   return R;
 }
 
 static val_t for_BRK(ctx_t &, craft_t &b, State &s, nr::Brk *) {
-  qcore_assert(!s.breaks.empty(), "break statement outside of loop?");
-  qcore_assert(s.breaks.top(), "break statement outside of loop?");
-
-  s.did_brk = true;
-  return b.CreateBr(s.breaks.top());
+  if (auto block = s.get_break_block()) {
+    s.did_brk = true;
+    return b.CreateBr(block.value());
+  } else {
+    return std::nullopt;
+  }
 }
 
 static val_t for_CONT(ctx_t &, craft_t &b, State &s, nr::Cont *) {
@@ -2001,7 +2086,7 @@ static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, nr::While *N) {
 
   b.CreateCondBr(R.value(), body, end);
   b.SetInsertPoint(body);
-  s.breaks.push(end);
+  s.push_break_block(end);
   s.continues.push(begin);
 
   bool did_brk = s.did_brk;
@@ -2022,7 +2107,7 @@ static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, nr::While *N) {
   s.did_ret = old_ret;
 
   s.continues.pop();
-  s.breaks.pop();
+  s.pop_break_block();
 
   b.SetInsertPoint(end);
 
@@ -2055,7 +2140,7 @@ static val_t for_FOR(ctx_t &m, craft_t &b, State &s, nr::For *N) {
 
   b.CreateCondBr(R_C.value(), body, end);
   b.SetInsertPoint(body);
-  s.breaks.push(end);
+  s.push_break_block(end);
   s.continues.push(step);
 
   bool did_brk = s.did_brk;
@@ -2086,7 +2171,7 @@ static val_t for_FOR(ctx_t &m, craft_t &b, State &s, nr::For *N) {
   b.CreateBr(begin);
 
   s.continues.pop();
-  s.breaks.pop();
+  s.pop_break_block();
 
   b.SetInsertPoint(end);
 
@@ -2135,7 +2220,7 @@ static val_t for_SWITCH(ctx_t &m, craft_t &b, State &s, nr::Switch *N) {
   if (is_trivial) {
     llvm::BasicBlock *end =
         llvm::BasicBlock::Create(m.getContext(), "", s.locals.top().first);
-    s.breaks.push(end);
+    s.push_break_block(end);
 
     llvm::SwitchInst *SI = b.CreateSwitch(R.value(), end, N->getCases().size());
 
@@ -2164,7 +2249,7 @@ static val_t for_SWITCH(ctx_t &m, craft_t &b, State &s, nr::Switch *N) {
       SI->addCase(llvm::cast<llvm::ConstantInt>(R_C.value()), case_block);
     }
 
-    s.breaks.pop();
+    s.pop_break_block();
 
     b.SetInsertPoint(end);
 
@@ -2218,8 +2303,7 @@ static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N) {
     return callee;
   }
 
-  bool in_fn_old = s.in_fn;
-  s.in_fn = true;
+  s.set_inside_function(true);
 
   llvm::Function *fn = llvm::dyn_cast<llvm::Function>(callee);
 
@@ -2237,13 +2321,13 @@ static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N) {
     if (!ret_ty->isVoidTy()) {
       ret_val_alloc = b.CreateAlloca(ret_ty, nullptr, "__ret");
     }
-    s.return_val.push({ret_val_alloc, exit});
+    s.push_return_block(ret_val_alloc, exit);
 
     {
       b.SetInsertPoint(exit);
       if (!ret_ty->isVoidTy()) {
         llvm::LoadInst *ret_val =
-            b.CreateLoad(ret_ty, s.return_val.top().first);
+            b.CreateLoad(ret_ty, s.get_return_block().getValue());
         b.CreateRet(ret_val);
       } else {
         b.CreateRetVoid();
@@ -2267,8 +2351,7 @@ static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N) {
     for (auto &node : N->getBody().value()->getItems()) {
       val_t R = V(m, b, s, node);
       if (!R) {
-        s.return_val.pop();
-        s.in_fn = in_fn_old;
+        s.pop_return_block();
         s.locals.pop();
         debug("Failed to get body");
         return std::nullopt;
@@ -2280,8 +2363,7 @@ static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N) {
     }
     s.did_ret = old_did_ret;
 
-    s.return_val.pop();
-    s.in_fn = in_fn_old;
+    s.pop_return_block();
     s.locals.pop();
   }
 
