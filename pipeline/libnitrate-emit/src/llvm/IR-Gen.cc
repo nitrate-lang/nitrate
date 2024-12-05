@@ -31,39 +31,38 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <llvm-16/llvm/ExecutionEngine/ExecutionEngine.h>
-#include <llvm-16/llvm/ExecutionEngine/MCJIT.h>
-#include <llvm-16/llvm/ExecutionEngine/SectionMemoryManager.h>
-#include <llvm-16/llvm/IR/BasicBlock.h>
-#include <llvm-16/llvm/IR/Constant.h>
-#include <llvm-16/llvm/IR/DataLayout.h>
-#include <llvm-16/llvm/IR/DerivedTypes.h>
-#include <llvm-16/llvm/IR/Function.h>
-#include <llvm-16/llvm/IR/GlobalValue.h>
-#include <llvm-16/llvm/IR/GlobalVariable.h>
-#include <llvm-16/llvm/IR/IRBuilder.h>
-#include <llvm-16/llvm/IR/Instructions.h>
-#include <llvm-16/llvm/IR/LLVMContext.h>
-#include <llvm-16/llvm/IR/LegacyPassManager.h>
-#include <llvm-16/llvm/IR/PassManager.h>
-#include <llvm-16/llvm/IR/Type.h>
-#include <llvm-16/llvm/IR/Value.h>
-#include <llvm-16/llvm/IR/Verifier.h>
-#include <llvm-16/llvm/InitializePasses.h>
-#include <llvm-16/llvm/MC/TargetRegistry.h>
-#include <llvm-16/llvm/Passes/PassBuilder.h>
-#include <llvm-16/llvm/Support/CodeGen.h>
-#include <llvm-16/llvm/Support/Host.h>
-#include <llvm-16/llvm/Support/ManagedStatic.h>
-#include <llvm-16/llvm/Support/MemoryBuffer.h>
-#include <llvm-16/llvm/Support/TargetSelect.h>
-#include <llvm-16/llvm/Support/raw_os_ostream.h>
-#include <llvm-16/llvm/Support/raw_ostream.h>
-#include <llvm-16/llvm/Target/TargetMachine.h>
-#include <llvm-16/llvm/Target/TargetOptions.h>
-#include <llvm-16/llvm/Transforms/IPO.h>
-#include <llvm-16/llvm/Transforms/IPO/PassManagerBuilder.h>
-#include <llvm-16/llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm-17/llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm-17/llvm/ExecutionEngine/MCJIT.h>
+#include <llvm-17/llvm/ExecutionEngine/SectionMemoryManager.h>
+#include <llvm-17/llvm/IR/BasicBlock.h>
+#include <llvm-17/llvm/IR/Constant.h>
+#include <llvm-17/llvm/IR/DataLayout.h>
+#include <llvm-17/llvm/IR/DerivedTypes.h>
+#include <llvm-17/llvm/IR/Function.h>
+#include <llvm-17/llvm/IR/GlobalValue.h>
+#include <llvm-17/llvm/IR/GlobalVariable.h>
+#include <llvm-17/llvm/IR/IRBuilder.h>
+#include <llvm-17/llvm/IR/Instructions.h>
+#include <llvm-17/llvm/IR/LLVMContext.h>
+#include <llvm-17/llvm/IR/LegacyPassManager.h>
+#include <llvm-17/llvm/IR/PassManager.h>
+#include <llvm-17/llvm/IR/Type.h>
+#include <llvm-17/llvm/IR/Value.h>
+#include <llvm-17/llvm/IR/Verifier.h>
+#include <llvm-17/llvm/InitializePasses.h>
+#include <llvm-17/llvm/MC/TargetRegistry.h>
+#include <llvm-17/llvm/Passes/PassBuilder.h>
+#include <llvm-17/llvm/Support/CodeGen.h>
+#include <llvm-17/llvm/Support/Host.h>
+#include <llvm-17/llvm/Support/ManagedStatic.h>
+#include <llvm-17/llvm/Support/MemoryBuffer.h>
+#include <llvm-17/llvm/Support/TargetSelect.h>
+#include <llvm-17/llvm/Support/raw_os_ostream.h>
+#include <llvm-17/llvm/Support/raw_ostream.h>
+#include <llvm-17/llvm/Target/TargetMachine.h>
+#include <llvm-17/llvm/Target/TargetOptions.h>
+#include <llvm-17/llvm/Transforms/IPO.h>
+#include <llvm-17/llvm/Transforms/InstCombine/InstCombine.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-emit/Code.h>
@@ -88,12 +87,67 @@
 #define debug(...)
 #endif
 
-namespace boost {
-  // void throw_exception(std::exception const &m) {
-  //   std::cerr << "boost::throw_exception: " << m.what();
-  //   std::terminate();
-  // }
-}  // namespace boost
+typedef std::function<bool(qmodule_t *, qcode_conf_t *, std::ostream &err,
+                           llvm::raw_pwrite_stream &out)>
+    qcode_adapter_fn;
+
+using ctx_t = llvm::Module;
+using craft_t = llvm::IRBuilder<>;
+using val_t = std::optional<llvm::Value *>;
+using ty_t = std::optional<llvm::Type *>;
+
+enum class PtrClass {
+  DataPtr,
+  Function,
+};
+
+struct State {
+  std::stack<std::pair<llvm::AllocaInst *, llvm::BasicBlock *>> return_val;
+  std::stack<llvm::GlobalValue::LinkageTypes> linkage;
+  std::stack<
+      std::pair<llvm::Function *,
+                std::unordered_map<std::string_view, llvm::AllocaInst *>>>
+      locals;
+  std::stack<llvm::BasicBlock *> breaks;
+  std::stack<llvm::BasicBlock *> continues;
+
+  bool in_fn;
+  bool did_ret;
+  bool did_brk;
+  bool did_cont;
+
+  static State defaults() {
+    State s;
+    s.linkage.push(llvm::GlobalValue::LinkageTypes::PrivateLinkage);
+    s.in_fn = false;
+    s.did_ret = false;
+    s.did_brk = false;
+    s.did_cont = false;
+    return s;
+  }
+
+  std::optional<std::pair<llvm::Value *, PtrClass>> find_named_value(
+      ctx_t &m, std::string_view name) {
+    if (in_fn) {
+      for (const auto &[cur_name, inst] : locals.top().second) {
+        if (cur_name == name) {
+          return {{inst, PtrClass::DataPtr}};
+        }
+      }
+    }
+
+    if (llvm::GlobalVariable *global = m.getGlobalVariable(name)) {
+      return {{global, PtrClass::DataPtr}};
+    }
+
+    if (llvm::Function *func = m.getFunction(name)) {
+      return {{func, PtrClass::Function}};
+    }
+
+    debug("Failed to find named value: " << name);
+    return std::nullopt;
+  }
+};
 
 class OStreamWriter : public std::streambuf {
   FILE *m_file;
@@ -171,10 +225,6 @@ public:
     return pos;
   }
 };
-
-typedef std::function<bool(qmodule_t *, qcode_conf_t *, std::ostream &err,
-                           llvm::raw_pwrite_stream &out)>
-    qcode_adapter_fn;
 
 static bool qcode_adapter(qmodule_t *module, qcode_conf_t *conf, FILE *err,
                           FILE *out, qcode_adapter_fn impl) {
@@ -418,268 +468,162 @@ C_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err,
       });
 }
 
-typedef llvm::Module ctx_t;
-typedef llvm::IRBuilder<> craft_t;
-typedef std::optional<llvm::Value *> val_t;
-typedef std::optional<llvm::Type *> ty_t;
+static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, nr::BinExpr *N);
+static val_t for_UNEXPR(ctx_t &m, craft_t &b, State &s, nr::UnExpr *N);
+static val_t for_POST_UNEXPR(ctx_t &m, craft_t &b, State &s, nr::PostUnExpr *N);
+static val_t for_INT(ctx_t &m, craft_t &b, State &s, nr::Int *N);
+static val_t for_FLOAT(ctx_t &m, craft_t &b, State &s, nr::Float *N);
+static val_t for_LIST(ctx_t &m, craft_t &b, State &s, nr::List *N);
+static val_t for_CALL(ctx_t &m, craft_t &b, State &s, nr::Call *N);
+static val_t for_SEQ(ctx_t &m, craft_t &b, State &s, nr::Seq *N);
+static val_t for_INDEX(ctx_t &m, craft_t &b, State &s, nr::Index *N);
+static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, nr::Ident *N);
+static val_t for_EXTERN(ctx_t &m, craft_t &b, State &s, nr::Extern *N);
+static val_t for_LOCAL(ctx_t &m, craft_t &b, State &s, nr::Local *N);
+static val_t for_RET(ctx_t &m, craft_t &b, State &s, nr::Ret *N);
+static val_t for_BRK(ctx_t &m, craft_t &b, State &s, nr::Brk *N);
+static val_t for_CONT(ctx_t &m, craft_t &b, State &s, nr::Cont *N);
+static val_t for_IF(ctx_t &m, craft_t &b, State &s, nr::If *N);
+static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, nr::While *N);
+static val_t for_FOR(ctx_t &m, craft_t &b, State &s, nr::For *N);
+static val_t for_CASE(ctx_t &m, craft_t &b, State &s, nr::Case *N);
+static val_t for_SWITCH(ctx_t &m, craft_t &b, State &s, nr::Switch *N);
+static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N);
+static val_t for_ASM(ctx_t &m, craft_t &b, State &s, nr::Asm *N);
+static ty_t for_U1_TY(ctx_t &m, craft_t &b, State &s, nr::U1Ty *N);
+static ty_t for_U8_TY(ctx_t &m, craft_t &b, State &s, nr::U8Ty *N);
+static ty_t for_U16_TY(ctx_t &m, craft_t &b, State &s, nr::U16Ty *N);
+static ty_t for_U32_TY(ctx_t &m, craft_t &b, State &s, nr::U32Ty *N);
+static ty_t for_U64_TY(ctx_t &m, craft_t &b, State &s, nr::U64Ty *N);
+static ty_t for_U128_TY(ctx_t &m, craft_t &b, State &s, nr::U128Ty *N);
+static ty_t for_I8_TY(ctx_t &m, craft_t &b, State &s, nr::I8Ty *N);
+static ty_t for_I16_TY(ctx_t &m, craft_t &b, State &s, nr::I16Ty *N);
+static ty_t for_I32_TY(ctx_t &m, craft_t &b, State &s, nr::I32Ty *N);
+static ty_t for_I64_TY(ctx_t &m, craft_t &b, State &s, nr::I64Ty *N);
+static ty_t for_I128_TY(ctx_t &m, craft_t &b, State &s, nr::I128Ty *N);
+static ty_t for_F16_TY(ctx_t &m, craft_t &b, State &s, nr::F16Ty *N);
+static ty_t for_F32_TY(ctx_t &m, craft_t &b, State &s, nr::F32Ty *N);
+static ty_t for_F64_TY(ctx_t &m, craft_t &b, State &s, nr::F64Ty *N);
+static ty_t for_F128_TY(ctx_t &m, craft_t &b, State &s, nr::F128Ty *N);
+static ty_t for_VOID_TY(ctx_t &m, craft_t &b, State &s, nr::VoidTy *N);
+static ty_t for_PTR_TY(ctx_t &m, craft_t &b, State &s, nr::PtrTy *N);
+static ty_t for_OPAQUE_TY(ctx_t &m, craft_t &b, State &s, nr::OpaqueTy *N);
+static ty_t for_STRUCT_TY(ctx_t &m, craft_t &b, State &s, nr::StructTy *N);
+static ty_t for_UNION_TY(ctx_t &m, craft_t &b, State &s, nr::UnionTy *N);
+static ty_t for_ARRAY_TY(ctx_t &m, craft_t &b, State &s, nr::ArrayTy *N);
+static ty_t for_FN_TY(ctx_t &m, craft_t &b, State &s, nr::FnTy *N);
 
-struct Mode {
-  size_t PtrSizeBytes = 8;
-};
-
-enum class PtrClass {
-  DataPtr,
-  Function,
-};
-
-struct State {
-  std::stack<std::pair<llvm::AllocaInst *, llvm::BasicBlock *>> return_val;
-  std::stack<llvm::GlobalValue::LinkageTypes> linkage;
-  std::stack<
-      std::pair<llvm::Function *,
-                std::unordered_map<std::string_view, llvm::AllocaInst *>>>
-      locals;
-  std::stack<llvm::BasicBlock *> breaks;
-  std::stack<llvm::BasicBlock *> continues;
-
-  bool in_fn;
-  bool did_ret;
-  bool did_brk;
-  bool did_cont;
-
-  static State defaults() {
-    State s;
-    s.linkage.push(llvm::GlobalValue::LinkageTypes::PrivateLinkage);
-    s.in_fn = false;
-    s.did_ret = false;
-    s.did_brk = false;
-    s.did_cont = false;
-    return s;
-  }
-
-  std::optional<std::pair<llvm::Value *, PtrClass>> find_named_value(
-      ctx_t &m, std::string_view name) {
-    if (in_fn) {
-      for (const auto &[cur_name, inst] : locals.top().second) {
-        if (cur_name == name) {
-          return {{inst, PtrClass::DataPtr}};
-        }
-      }
-    }
-
-    if (llvm::GlobalVariable *global = m.getGlobalVariable(name)) {
-      return {{global, PtrClass::DataPtr}};
-    }
-
-    if (llvm::Function *func = m.getFunction(name)) {
-      return {{func, PtrClass::Function}};
-    }
-
-    debug("Failed to find named value: " << name);
-    return std::nullopt;
-  }
-};
-
-static val_t NR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                               nr::BinExpr *N);
-static val_t NR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::UnExpr *N);
-static val_t NR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
-                                   State &s, nr::PostUnExpr *N);
-static val_t NR_NODE_INT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                           nr::Int *N);
-static val_t NR_NODE_FLOAT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::Float *N);
-static val_t NR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::List *N);
-static val_t NR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::Call *N);
-static val_t NR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                           nr::Seq *N);
-static val_t NR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::Index *N);
-static val_t NR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::Ident *N);
-static val_t NR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::Extern *N);
-static val_t NR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::Local *N);
-static val_t NR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                           nr::Ret *N);
-static val_t NR_NODE_BRK_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                           nr::Brk *N);
-static val_t NR_NODE_CONT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::Cont *N);
-static val_t NR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                          nr::If *N);
-static val_t NR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::While *N);
-static val_t NR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                           nr::For *N);
-static val_t NR_NODE_CASE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::Case *N);
-static val_t NR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::Switch *N);
-static val_t NR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                          nr::Fn *N);
-static val_t NR_NODE_ASM_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                           nr::Asm *N);
-static ty_t NR_NODE_U1_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::U1Ty *N);
-static ty_t NR_NODE_U8_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::U8Ty *N);
-static ty_t NR_NODE_U16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::U16Ty *N);
-static ty_t NR_NODE_U32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::U32Ty *N);
-static ty_t NR_NODE_U64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::U64Ty *N);
-static ty_t NR_NODE_U128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::U128Ty *N);
-static ty_t NR_NODE_I8_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::I8Ty *N);
-static ty_t NR_NODE_I16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::I16Ty *N);
-static ty_t NR_NODE_I32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::I32Ty *N);
-static ty_t NR_NODE_I64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::I64Ty *N);
-static ty_t NR_NODE_I128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::I128Ty *N);
-static ty_t NR_NODE_F16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::F16Ty *N);
-static ty_t NR_NODE_F32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::F32Ty *N);
-static ty_t NR_NODE_F64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::F64Ty *N);
-static ty_t NR_NODE_F128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::F128Ty *N);
-static ty_t NR_NODE_VOID_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::VoidTy *N);
-static ty_t NR_NODE_PTR_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::PtrTy *N);
-static ty_t NR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                                nr::OpaqueTy *N);
-static ty_t NR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                                nr::StructTy *N);
-static ty_t NR_NODE_UNION_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                               nr::UnionTy *N);
-static ty_t NR_NODE_ARRAY_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                               nr::ArrayTy *N);
-static ty_t NR_NODE_FN_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::FnTy *N);
-
-auto V(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Expr *N) -> val_t {
+auto V(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t {
   val_t R;
 
   switch (N->getKind()) {
     case NR_NODE_BINEXPR: {
-      R = NR_NODE_BINEXPR_C(m, b, cf, s, N->as<nr::BinExpr>());
+      R = for_BINEXPR(m, b, s, N->as<nr::BinExpr>());
       break;
     }
 
     case NR_NODE_UNEXPR: {
-      R = NR_NODE_UNEXPR_C(m, b, cf, s, N->as<nr::UnExpr>());
+      R = for_UNEXPR(m, b, s, N->as<nr::UnExpr>());
       break;
     }
 
     case NR_NODE_POST_UNEXPR: {
-      R = NR_NODE_POST_UNEXPR_C(m, b, cf, s, N->as<nr::PostUnExpr>());
+      R = for_POST_UNEXPR(m, b, s, N->as<nr::PostUnExpr>());
       break;
     }
 
     case NR_NODE_INT: {
-      R = NR_NODE_INT_C(m, b, cf, s, N->as<nr::Int>());
+      R = for_INT(m, b, s, N->as<nr::Int>());
       break;
     }
 
     case NR_NODE_FLOAT: {
-      R = NR_NODE_FLOAT_C(m, b, cf, s, N->as<nr::Float>());
+      R = for_FLOAT(m, b, s, N->as<nr::Float>());
       break;
     }
 
     case NR_NODE_LIST: {
-      R = NR_NODE_LIST_C(m, b, cf, s, N->as<nr::List>());
+      R = for_LIST(m, b, s, N->as<nr::List>());
       break;
     }
 
     case NR_NODE_CALL: {
-      R = NR_NODE_CALL_C(m, b, cf, s, N->as<nr::Call>());
+      R = for_CALL(m, b, s, N->as<nr::Call>());
       break;
     }
 
     case NR_NODE_SEQ: {
-      R = NR_NODE_SEQ_C(m, b, cf, s, N->as<nr::Seq>());
+      R = for_SEQ(m, b, s, N->as<nr::Seq>());
       break;
     }
 
     case NR_NODE_INDEX: {
-      R = NR_NODE_INDEX_C(m, b, cf, s, N->as<nr::Index>());
+      R = for_INDEX(m, b, s, N->as<nr::Index>());
       break;
     }
 
     case NR_NODE_IDENT: {
-      R = NR_NODE_IDENT_C(m, b, cf, s, N->as<nr::Ident>());
+      R = for_IDENT(m, b, s, N->as<nr::Ident>());
       break;
     }
 
     case NR_NODE_EXTERN: {
-      R = NR_NODE_EXTERN_C(m, b, cf, s, N->as<nr::Extern>());
+      R = for_EXTERN(m, b, s, N->as<nr::Extern>());
       break;
     }
 
     case NR_NODE_LOCAL: {
-      R = NR_NODE_LOCAL_C(m, b, cf, s, N->as<nr::Local>());
+      R = for_LOCAL(m, b, s, N->as<nr::Local>());
       break;
     }
 
     case NR_NODE_RET: {
-      R = NR_NODE_RET_C(m, b, cf, s, N->as<nr::Ret>());
+      R = for_RET(m, b, s, N->as<nr::Ret>());
       break;
     }
 
     case NR_NODE_BRK: {
-      R = NR_NODE_BRK_C(m, b, cf, s, N->as<nr::Brk>());
+      R = for_BRK(m, b, s, N->as<nr::Brk>());
       break;
     }
 
     case NR_NODE_CONT: {
-      R = NR_NODE_CONT_C(m, b, cf, s, N->as<nr::Cont>());
+      R = for_CONT(m, b, s, N->as<nr::Cont>());
       break;
     }
 
     case NR_NODE_IF: {
-      R = NR_NODE_IF_C(m, b, cf, s, N->as<nr::If>());
+      R = for_IF(m, b, s, N->as<nr::If>());
       break;
     }
 
     case NR_NODE_WHILE: {
-      R = NR_NODE_WHILE_C(m, b, cf, s, N->as<nr::While>());
+      R = for_WHILE(m, b, s, N->as<nr::While>());
       break;
     }
 
     case NR_NODE_FOR: {
-      R = NR_NODE_FOR_C(m, b, cf, s, N->as<nr::For>());
+      R = for_FOR(m, b, s, N->as<nr::For>());
       break;
     }
 
     case NR_NODE_CASE: {
-      R = NR_NODE_CASE_C(m, b, cf, s, N->as<nr::Case>());
+      R = for_CASE(m, b, s, N->as<nr::Case>());
       break;
     }
 
     case NR_NODE_SWITCH: {
-      R = NR_NODE_SWITCH_C(m, b, cf, s, N->as<nr::Switch>());
+      R = for_SWITCH(m, b, s, N->as<nr::Switch>());
       break;
     }
 
     case NR_NODE_FN: {
-      R = NR_NODE_FN_C(m, b, cf, s, N->as<nr::Fn>());
+      R = for_FN(m, b, s, N->as<nr::Fn>());
       break;
     }
 
     case NR_NODE_ASM: {
-      R = NR_NODE_ASM_C(m, b, cf, s, N->as<nr::Asm>());
+      R = for_ASM(m, b, s, N->as<nr::Asm>());
       break;
     }
 
@@ -701,117 +645,117 @@ auto V(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Expr *N) -> val_t {
   return R;
 }
 
-auto T(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Expr *N) -> ty_t {
+auto T(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t {
   ty_t R;
 
   switch (N->getKind()) {
     case NR_NODE_U1_TY: {
-      R = NR_NODE_U1_TY_C(m, b, cf, s, N->as<nr::U1Ty>());
+      R = for_U1_TY(m, b, s, N->as<nr::U1Ty>());
       break;
     }
 
     case NR_NODE_U8_TY: {
-      R = NR_NODE_U8_TY_C(m, b, cf, s, N->as<nr::U8Ty>());
+      R = for_U8_TY(m, b, s, N->as<nr::U8Ty>());
       break;
     }
 
     case NR_NODE_U16_TY: {
-      R = NR_NODE_U16_TY_C(m, b, cf, s, N->as<nr::U16Ty>());
+      R = for_U16_TY(m, b, s, N->as<nr::U16Ty>());
       break;
     }
 
     case NR_NODE_U32_TY: {
-      R = NR_NODE_U32_TY_C(m, b, cf, s, N->as<nr::U32Ty>());
+      R = for_U32_TY(m, b, s, N->as<nr::U32Ty>());
       break;
     }
 
     case NR_NODE_U64_TY: {
-      R = NR_NODE_U64_TY_C(m, b, cf, s, N->as<nr::U64Ty>());
+      R = for_U64_TY(m, b, s, N->as<nr::U64Ty>());
       break;
     }
 
     case NR_NODE_U128_TY: {
-      R = NR_NODE_U128_TY_C(m, b, cf, s, N->as<nr::U128Ty>());
+      R = for_U128_TY(m, b, s, N->as<nr::U128Ty>());
       break;
     }
 
     case NR_NODE_I8_TY: {
-      R = NR_NODE_I8_TY_C(m, b, cf, s, N->as<nr::I8Ty>());
+      R = for_I8_TY(m, b, s, N->as<nr::I8Ty>());
       break;
     }
 
     case NR_NODE_I16_TY: {
-      R = NR_NODE_I16_TY_C(m, b, cf, s, N->as<nr::I16Ty>());
+      R = for_I16_TY(m, b, s, N->as<nr::I16Ty>());
       break;
     }
 
     case NR_NODE_I32_TY: {
-      R = NR_NODE_I32_TY_C(m, b, cf, s, N->as<nr::I32Ty>());
+      R = for_I32_TY(m, b, s, N->as<nr::I32Ty>());
       break;
     }
 
     case NR_NODE_I64_TY: {
-      R = NR_NODE_I64_TY_C(m, b, cf, s, N->as<nr::I64Ty>());
+      R = for_I64_TY(m, b, s, N->as<nr::I64Ty>());
       break;
     }
 
     case NR_NODE_I128_TY: {
-      R = NR_NODE_I128_TY_C(m, b, cf, s, N->as<nr::I128Ty>());
+      R = for_I128_TY(m, b, s, N->as<nr::I128Ty>());
       break;
     }
 
     case NR_NODE_F16_TY: {
-      R = NR_NODE_F16_TY_C(m, b, cf, s, N->as<nr::F16Ty>());
+      R = for_F16_TY(m, b, s, N->as<nr::F16Ty>());
       break;
     }
 
     case NR_NODE_F32_TY: {
-      R = NR_NODE_F32_TY_C(m, b, cf, s, N->as<nr::F32Ty>());
+      R = for_F32_TY(m, b, s, N->as<nr::F32Ty>());
       break;
     }
 
     case NR_NODE_F64_TY: {
-      R = NR_NODE_F64_TY_C(m, b, cf, s, N->as<nr::F64Ty>());
+      R = for_F64_TY(m, b, s, N->as<nr::F64Ty>());
       break;
     }
 
     case NR_NODE_F128_TY: {
-      R = NR_NODE_F128_TY_C(m, b, cf, s, N->as<nr::F128Ty>());
+      R = for_F128_TY(m, b, s, N->as<nr::F128Ty>());
       break;
     }
 
     case NR_NODE_VOID_TY: {
-      R = NR_NODE_VOID_TY_C(m, b, cf, s, N->as<nr::VoidTy>());
+      R = for_VOID_TY(m, b, s, N->as<nr::VoidTy>());
       break;
     }
 
     case NR_NODE_PTR_TY: {
-      R = NR_NODE_PTR_TY_C(m, b, cf, s, N->as<nr::PtrTy>());
+      R = for_PTR_TY(m, b, s, N->as<nr::PtrTy>());
       break;
     }
 
     case NR_NODE_OPAQUE_TY: {
-      R = NR_NODE_OPAQUE_TY_C(m, b, cf, s, N->as<nr::OpaqueTy>());
+      R = for_OPAQUE_TY(m, b, s, N->as<nr::OpaqueTy>());
       break;
     }
 
     case NR_NODE_STRUCT_TY: {
-      R = NR_NODE_STRUCT_TY_C(m, b, cf, s, N->as<nr::StructTy>());
+      R = for_STRUCT_TY(m, b, s, N->as<nr::StructTy>());
       break;
     }
 
     case NR_NODE_UNION_TY: {
-      R = NR_NODE_UNION_TY_C(m, b, cf, s, N->as<nr::UnionTy>());
+      R = for_UNION_TY(m, b, s, N->as<nr::UnionTy>());
       break;
     }
 
     case NR_NODE_ARRAY_TY: {
-      R = NR_NODE_ARRAY_TY_C(m, b, cf, s, N->as<nr::ArrayTy>());
+      R = for_ARRAY_TY(m, b, s, N->as<nr::ArrayTy>());
       break;
     }
 
     case NR_NODE_FN_TY: {
-      R = NR_NODE_FN_TY_C(m, b, cf, s, N->as<nr::FnTy>());
+      R = for_FN_TY(m, b, s, N->as<nr::FnTy>());
       break;
     }
 
@@ -828,11 +772,11 @@ auto T(ctx_t &m, craft_t &b, const Mode &cf, State &s, nr::Expr *N) -> ty_t {
   return R;
 }
 
-static void make_forward_declaration(ctx_t &m, craft_t &b, const Mode &cf,
-                                     State &s, nr::Fn *N) {
+static void make_forward_declaration(ctx_t &m, craft_t &b, State &s,
+                                     nr::Fn *N) {
   std::vector<llvm::Type *> args;
   for (auto &arg : N->getParams()) {
-    auto ty = T(m, b, cf, s, arg.first);
+    auto ty = T(m, b, s, arg.first);
     if (!ty) {
       debug("Failed to forward declare function: " << N->getName());
       return;
@@ -841,7 +785,7 @@ static void make_forward_declaration(ctx_t &m, craft_t &b, const Mode &cf,
     args.push_back(*ty);
   }
 
-  auto ret_ty = T(m, b, cf, s, N->getReturn());
+  auto ret_ty = T(m, b, s, N->getReturn());
   if (!ret_ty) {
     debug("Failed to forward declare function: " << N->getName());
     return;
@@ -874,7 +818,6 @@ static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(
   std::unique_ptr<llvm::Module> m =
       std::make_unique<llvm::Module>(src->getName(), *context);
 
-  Mode cf; /* For readonly config settings */
   State s = State::defaults();
 
   // Forward declare all functions
@@ -885,14 +828,14 @@ static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(
       return nr::IterOp::SkipChildren;
     }
 
-    make_forward_declaration(*m, *b, cf, s, (*N)->as<nr::Fn>());
+    make_forward_declaration(*m, *b, s, (*N)->as<nr::Fn>());
     return nr::IterOp::Proceed;
   });
 
   nr::Seq *seq = root->as<nr::Seq>();
 
   for (auto &node : seq->getItems()) {
-    val_t R = V(*m, *b, cf, s, node);
+    val_t R = V(*m, *b, s, node);
     if (!R) {
       e << "error: failed to lower code" << std::endl;
       return std::nullopt;
@@ -902,17 +845,12 @@ static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(
   return m;
 }
 
-static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             llvm::Value *L, nr::Op O, llvm::Type *R,
-                             nr::Type *LT, nr::Type *RT) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
+static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, llvm::Value *L,
+                             nr::Op O, llvm::Type *R, nr::Type *LT,
+                             nr::Type *RT) {
   val_t E;
 
   if (LT->isSame(RT)) {
@@ -973,7 +911,7 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s,
             }
 
             val_t F = binexpr_do_cast(
-                m, b, cf, s, b.CreateExtractValue(L, i), nr::Op::CastAs,
+                m, b, s, b.CreateExtractValue(L, i), nr::Op::CastAs,
                 new_st_ty->getElementType(i), x.value(), ST->getFields()[i]);
             if (!F) {
               debug("Failed to cast element " << i);
@@ -1005,7 +943,7 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s,
               return std::nullopt;
             }
             val_t F = binexpr_do_cast(
-                m, b, cf, s, b.CreateExtractValue(L, i), nr::Op::CastAs,
+                m, b, s, b.CreateExtractValue(L, i), nr::Op::CastAs,
                 new_arr_ty->getElementType(), x.value(), y.value());
             if (!F) {
               debug("Failed to cast element " << i);
@@ -1032,21 +970,12 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return E;
 }
 
-static val_t NR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                               nr::BinExpr *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
-#define PROD_LHS()                       \
-  val_t L = V(m, b, cf, s, N->getLHS()); \
-  if (!L) {                              \
-    debug("Failed to get LHS");          \
-    return std::nullopt;                 \
+static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, nr::BinExpr *N) {
+#define PROD_LHS()                   \
+  val_t L = V(m, b, s, N->getLHS()); \
+  if (!L) {                          \
+    debug("Failed to get LHS");      \
+    return std::nullopt;             \
   }
 
   nr::Op O = N->getOp();
@@ -1054,7 +983,7 @@ static val_t NR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   if (N->getRHS()->isType()) { /* Do casting */
     PROD_LHS()
 
-    ty_t TY = T(m, b, cf, s, N->getRHS()->asType());
+    ty_t TY = T(m, b, s, N->getRHS()->asType());
     if (!TY) {
       debug("Failed to get RHS type");
       return std::nullopt;
@@ -1072,10 +1001,10 @@ static val_t NR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
       return std::nullopt;
     }
 
-    return binexpr_do_cast(m, b, cf, s, L.value(), O, TY.value(), L_T, R_T);
+    return binexpr_do_cast(m, b, s, L.value(), O, TY.value(), L_T, R_T);
   }
 
-  val_t R = V(m, b, cf, s, N->getRHS());
+  val_t R = V(m, b, s, N->getRHS());
 
   val_t E;
 
@@ -1194,17 +1123,18 @@ static val_t NR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
         return std::nullopt;
       }
 
-      size_t num_bits = x.value()->getSizeBits(cf.PtrSizeBytes);
-      llvm::ConstantInt *num_bits_c = llvm::ConstantInt::get(
-          m.getContext(), llvm::APInt(num_bits, num_bits));
+      if (auto num_bits = x.value()->getSizeBits()) {
+        llvm::ConstantInt *num_bits_c = llvm::ConstantInt::get(
+            m.getContext(), llvm::APInt(num_bits.value(), num_bits.value()));
 
-      llvm::Value *n = b.CreateURem(R.value(), num_bits_c);
-      llvm::Value *lshift = b.CreateLShr(L.value(), n);
-      llvm::Value *sub = b.CreateSub(num_bits_c, R.value());
-      llvm::Value *rshift =
-          b.CreateShl(L.value(), b.CreateURem(sub, num_bits_c));
+        llvm::Value *n = b.CreateURem(R.value(), num_bits_c);
+        llvm::Value *lshift = b.CreateLShr(L.value(), n);
+        llvm::Value *sub = b.CreateSub(num_bits_c, R.value());
+        llvm::Value *rshift =
+            b.CreateShl(L.value(), b.CreateURem(sub, num_bits_c));
 
-      E = b.CreateOr(lshift, rshift);
+        E = b.CreateOr(lshift, rshift);
+      }
       break;
     }
 
@@ -1217,17 +1147,18 @@ static val_t NR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
         debug("Failed to get type");
         return std::nullopt;
       }
-      size_t num_bits = x.value()->getSizeBits(cf.PtrSizeBytes);
-      llvm::ConstantInt *num_bits_c = llvm::ConstantInt::get(
-          m.getContext(), llvm::APInt(num_bits, num_bits));
+      if (auto num_bits = x.value()->getSizeBits()) {
+        llvm::ConstantInt *num_bits_c = llvm::ConstantInt::get(
+            m.getContext(), llvm::APInt(num_bits.value(), num_bits.value()));
 
-      llvm::Value *n = b.CreateURem(R.value(), num_bits_c);
-      llvm::Value *lshift = b.CreateShl(L.value(), n);
-      llvm::Value *sub = b.CreateSub(num_bits_c, R.value());
-      llvm::Value *rshift =
-          b.CreateLShr(L.value(), b.CreateURem(sub, num_bits_c));
+        llvm::Value *n = b.CreateURem(R.value(), num_bits_c);
+        llvm::Value *lshift = b.CreateShl(L.value(), n);
+        llvm::Value *sub = b.CreateSub(num_bits_c, R.value());
+        llvm::Value *rshift =
+            b.CreateLShr(L.value(), b.CreateURem(sub, num_bits_c));
 
-      E = b.CreateOr(lshift, rshift);
+        E = b.CreateOr(lshift, rshift);
+      }
       break;
     }
 
@@ -1335,62 +1266,12 @@ static val_t NR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return E;
 }
 
-/*
-case qOpPlus: {
-      return STD_UNOP(Plus);
-    }
-    case qOpMinus: {
-      return STD_UNOP(Minus);
-    }
-    case qOpTimes: {
-      return STD_UNOP(Times);
-    }
-    case qOpBitAnd: {
-      return STD_UNOP(BitAnd);
-    }
-    case qOpBitNot: {
-      return STD_UNOP(BitNot);
-    }
-
-    case qOpLogicNot: {
-      return STD_UNOP(LogicNot);
-    }
-    case qOpInc: {
-      return STD_UNOP(Inc);
-    }
-    case qOpDec: {
-      return STD_UNOP(Dec);
-    }
-    case qOpSizeof: {
-      auto bits = nr::create<nr::UnExpr>(rhs, nr::Op::Bitsizeof);
-      auto arg = nr::create<nr::BinExpr>(bits, nr::create<nr::Float>(8),
-nr::Op::Slash); return create_simple_call(s, "std::ceil", {{"0", arg}});
-    }
-    case qOpAlignof: {
-      return STD_UNOP(Alignof);
-    }
-    case qOpTypeof: {
-      return create_simple_call(s, "__detail::type_of", {{"0", rhs}});
-    }
-    case qOpBitsizeof: {
-      return STD_UNOP(Bitsizeof);
-    }
-*/
-static val_t NR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::UnExpr *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
-#define PROD_SUB()                        \
-  val_t E = V(m, b, cf, s, N->getExpr()); \
-  if (!E) {                               \
-    debug("Failed to get expression");    \
-    return std::nullopt;                  \
+static val_t for_UNEXPR(ctx_t &m, craft_t &b, State &s, nr::UnExpr *N) {
+#define PROD_SUB()                     \
+  val_t E = V(m, b, s, N->getExpr());  \
+  if (!E) {                            \
+    debug("Failed to get expression"); \
+    return std::nullopt;               \
   }
 
   val_t R;
@@ -1471,11 +1352,13 @@ static val_t NR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
           debug("Failed to get type");
           return std::nullopt;
         }
-        new_val = b.CreateAdd(
-            current,
-            llvm::ConstantInt::get(
-                m.getContext(),
-                llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
+        if (auto size = x.value()->getSizeBits()) {
+          new_val = b.CreateAdd(
+              current, llvm::ConstantInt::get(m.getContext(),
+                                              llvm::APInt(size.value(), 1)));
+        } else {
+          qcore_panic("Failed to get size");
+        }
       } else if (current->getType()->isFloatingPointTy()) {
         new_val = b.CreateFAdd(
             current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
@@ -1519,11 +1402,14 @@ static val_t NR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
           debug("Failed to get type");
           return std::nullopt;
         }
-        new_val = b.CreateSub(
-            current,
-            llvm::ConstantInt::get(
-                m.getContext(),
-                llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
+        if (auto size = x.value()->getSizeBits()) {
+          new_val = b.CreateSub(
+              current, llvm::ConstantInt::get(m.getContext(),
+                                              llvm::APInt(size.value(), 1)));
+        } else {
+          qcore_panic("Failed to get size");
+        }
+
       } else if (current->getType()->isFloatingPointTy()) {
         new_val = b.CreateFSub(
             current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
@@ -1542,9 +1428,12 @@ static val_t NR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
         debug("Failed to get type");
         return std::nullopt;
       }
-      R = llvm::ConstantInt::get(
-          m.getContext(),
-          llvm::APInt(64, x.value()->getAlignBytes(cf.PtrSizeBytes)));
+      if (auto align = x.value()->getAlignBytes()) {
+        R = llvm::ConstantInt::get(m.getContext(),
+                                   llvm::APInt(64, align.value()));
+      } else {
+        qcore_panic("Failed to get alignment");
+      }
       break;
     }
     case nr::Op::Bitsizeof: {
@@ -1553,9 +1442,12 @@ static val_t NR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
         debug("Failed to get type");
         return std::nullopt;
       }
-      R = llvm::ConstantInt::get(
-          m.getContext(),
-          llvm::APInt(64, x.value()->getSizeBits(cf.PtrSizeBytes)));
+      if (auto size = x.value()->getSizeBits()) {
+        R = llvm::ConstantInt::get(m.getContext(),
+                                   llvm::APInt(64, size.value()));
+      } else {
+        qcore_panic("Failed to get size");
+      }
       break;
     }
 
@@ -1569,16 +1461,8 @@ static val_t NR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return R;
 }
 
-static val_t NR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
-                                   State &s, nr::PostUnExpr *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_POST_UNEXPR(ctx_t &m, craft_t &b, State &s,
+                             nr::PostUnExpr *N) {
   val_t R;
 
   switch (N->getOp()) {
@@ -1613,11 +1497,13 @@ static val_t NR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
           debug("Failed to get type");
           return std::nullopt;
         }
-        new_val = b.CreateAdd(
-            current,
-            llvm::ConstantInt::get(
-                m.getContext(),
-                llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
+        if (auto size = x.value()->getSizeBits()) {
+          new_val = b.CreateAdd(
+              current, llvm::ConstantInt::get(m.getContext(),
+                                              llvm::APInt(size.value(), 1)));
+        } else {
+          qcore_panic("Failed to get size");
+        }
       } else if (current->getType()->isFloatingPointTy()) {
         new_val = b.CreateFAdd(
             current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
@@ -1661,11 +1547,13 @@ static val_t NR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
           debug("Failed to get type");
           return std::nullopt;
         }
-        new_val = b.CreateSub(
-            current,
-            llvm::ConstantInt::get(
-                m.getContext(),
-                llvm::APInt(x.value()->getSizeBits(cf.PtrSizeBytes), 1)));
+        if (auto size = x.value()->getSizeBits()) {
+          new_val = b.CreateSub(
+              current, llvm::ConstantInt::get(m.getContext(),
+                                              llvm::APInt(size.value(), 1)));
+        } else {
+          qcore_panic("Failed to get size");
+        }
       } else if (current->getType()->isFloatingPointTy()) {
         new_val = b.CreateFSub(
             current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
@@ -1687,16 +1575,7 @@ static val_t NR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf,
   return R;
 }
 
-static val_t NR_NODE_INT_C(ctx_t &m, craft_t &, const Mode &, State &,
-                           nr::Int *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_INT(ctx_t &m, craft_t &, State &, nr::Int *N) {
   unsigned __int128 lit = N->getValue().convert_to<unsigned __int128>();
 
   llvm::ConstantInt *R = nullptr;
@@ -1721,29 +1600,11 @@ static val_t NR_NODE_INT_C(ctx_t &m, craft_t &, const Mode &, State &,
   return R;
 }
 
-static val_t NR_NODE_FLOAT_C(ctx_t &m, craft_t &, const Mode &, State &,
-                             nr::Float *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_FLOAT(ctx_t &m, craft_t &, State &, nr::Float *N) {
   return llvm::ConstantFP::get(m.getContext(), llvm::APFloat(N->getValue()));
 }
 
-static val_t NR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::List *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_LIST(ctx_t &m, craft_t &b, State &s, nr::List *N) {
   if (N->size() == 0) {
     llvm::StructType *ST = llvm::StructType::get(m.getContext(), {}, true);
     llvm::AllocaInst *AI = b.CreateAlloca(ST);
@@ -1754,7 +1615,7 @@ static val_t NR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   items.reserve(N->size());
 
   for (const auto &node : *N) {
-    val_t R = V(m, b, cf, s, node);
+    val_t R = V(m, b, s, node);
     if (!R) {
       debug("Failed to get item");
       return std::nullopt;
@@ -1795,16 +1656,7 @@ static val_t NR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   }
 }
 
-static val_t NR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::Call *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_CALL(ctx_t &m, craft_t &b, State &s, nr::Call *N) {
   /* Direct call */
   if (!N->getTarget()->getName().empty()) {
     std::string_view fn_name = N->getTarget()->getName();
@@ -1828,7 +1680,7 @@ static val_t NR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
       args.reserve(N->getArgs().size());
 
       for (auto &node : N->getArgs()) {
-        val_t R = V(m, b, cf, s, node);
+        val_t R = V(m, b, s, node);
         if (!R) {
           debug("Failed to get argument");
           return std::nullopt;
@@ -1851,7 +1703,7 @@ static val_t NR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   }
   /* Indirect call */
   else {
-    val_t T = V(m, b, cf, s, N->getTarget());
+    val_t T = V(m, b, s, N->getTarget());
     if (!T) {
       debug("Failed to get target");
       return std::nullopt;
@@ -1878,7 +1730,7 @@ static val_t NR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
       args.reserve(N->getArgs().size());
 
       for (auto &node : N->getArgs()) {
-        val_t R = V(m, b, cf, s, node);
+        val_t R = V(m, b, s, node);
         if (!R) {
           debug("Failed to get argument");
           return std::nullopt;
@@ -1903,16 +1755,7 @@ static val_t NR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   }
 }
 
-static val_t NR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                           nr::Seq *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_SEQ(ctx_t &m, craft_t &b, State &s, nr::Seq *N) {
   if (N->getItems().empty()) {
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(m.getContext()));
   }
@@ -1920,7 +1763,7 @@ static val_t NR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   val_t R;
 
   for (auto &node : N->getItems()) {
-    R = V(m, b, cf, s, node);
+    R = V(m, b, s, node);
     if (!R) {
       debug("Failed to get item");
       return std::nullopt;
@@ -1930,17 +1773,8 @@ static val_t NR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return R;
 }
 
-static val_t NR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::Index *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
-  val_t I = V(m, b, cf, s, N->getIndex());
+static val_t for_INDEX(ctx_t &m, craft_t &b, State &s, nr::Index *N) {
+  val_t I = V(m, b, s, N->getIndex());
   if (!I) {
     debug("Failed to get index");
     return std::nullopt;
@@ -1988,16 +1822,7 @@ static val_t NR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   }
 }
 
-static val_t NR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &, State &s,
-                             nr::Ident *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, nr::Ident *N) {
   auto find = s.find_named_value(m, N->getName());
   if (!find) {
     debug("Failed to find named value " << N->getName());
@@ -2019,19 +1844,10 @@ static val_t NR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &, State &s,
   qcore_panic("unexpected type for identifier");
 }
 
-static val_t NR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::Extern *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_EXTERN(ctx_t &m, craft_t &b, State &s, nr::Extern *N) {
   s.linkage.push(llvm::GlobalValue::ExternalLinkage);
 
-  val_t R = V(m, b, cf, s, N->getValue());
+  val_t R = V(m, b, s, N->getValue());
   if (!R) {
     s.linkage.pop();
     debug("Failed to get value");
@@ -2043,23 +1859,14 @@ static val_t NR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return R;
 }
 
-static val_t NR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::Local *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_LOCAL(ctx_t &m, craft_t &b, State &s, nr::Local *N) {
   auto x = N->getValue()->getType();
   if (!x.has_value()) {
     debug("Failed to get type");
     return std::nullopt;
   }
 
-  ty_t R_T = T(m, b, cf, s, x.value());
+  ty_t R_T = T(m, b, s, x.value());
   if (!R_T) {
     debug("Failed to get type");
     return std::nullopt;
@@ -2070,7 +1877,7 @@ static val_t NR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
         b.CreateAlloca(R_T.value(), nullptr, N->getName());
 
     if (N->getValue()) {
-      val_t R = V(m, b, cf, s, N->getValue());
+      val_t R = V(m, b, s, N->getValue());
       if (!R) {
         debug("Failed to get value");
         return std::nullopt;
@@ -2093,20 +1900,11 @@ static val_t NR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   }
 }
 
-static val_t NR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                           nr::Ret *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_RET(ctx_t &m, craft_t &b, State &s, nr::Ret *N) {
   val_t R;
 
   if (N->getExpr()->getKind() != NR_NODE_VOID_TY) {
-    R = V(m, b, cf, s, N->getExpr());
+    R = V(m, b, s, N->getExpr());
     if (!R) {
       debug("Failed to get return value");
       return std::nullopt;
@@ -2123,16 +1921,7 @@ static val_t NR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return R;
 }
 
-static val_t NR_NODE_BRK_C(ctx_t &, craft_t &b, const Mode &, State &s,
-                           nr::Brk *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_BRK(ctx_t &, craft_t &b, State &s, nr::Brk *) {
   qcore_assert(!s.breaks.empty(), "break statement outside of loop?");
   qcore_assert(s.breaks.top(), "break statement outside of loop?");
 
@@ -2140,16 +1929,7 @@ static val_t NR_NODE_BRK_C(ctx_t &, craft_t &b, const Mode &, State &s,
   return b.CreateBr(s.breaks.top());
 }
 
-static val_t NR_NODE_CONT_C(ctx_t &, craft_t &b, const Mode &, State &s,
-                            nr::Cont *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_CONT(ctx_t &, craft_t &b, State &s, nr::Cont *) {
   qcore_assert(!s.continues.empty(), "continue statement outside of loop?");
   qcore_assert(s.continues.top(), "continue statement outside of loop?");
 
@@ -2157,23 +1937,14 @@ static val_t NR_NODE_CONT_C(ctx_t &, craft_t &b, const Mode &, State &s,
   return b.CreateBr(s.continues.top());
 }
 
-static val_t NR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                          nr::If *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_IF(ctx_t &m, craft_t &b, State &s, nr::If *N) {
   llvm::BasicBlock *then, *els, *end;
 
   then = llvm::BasicBlock::Create(m.getContext(), "then", s.locals.top().first);
   els = llvm::BasicBlock::Create(m.getContext(), "else", s.locals.top().first);
   end = llvm::BasicBlock::Create(m.getContext(), "end", s.locals.top().first);
 
-  val_t R = V(m, b, cf, s, N->getCond());
+  val_t R = V(m, b, s, N->getCond());
   if (!R) {
     debug("Failed to get condition");
     return std::nullopt;
@@ -2183,7 +1954,7 @@ static val_t NR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   b.SetInsertPoint(then);
 
   bool old_did_ret = s.did_ret;
-  val_t R_T = V(m, b, cf, s, N->getThen());
+  val_t R_T = V(m, b, s, N->getThen());
   if (!R_T) {
     debug("Failed to get then");
     return std::nullopt;
@@ -2197,7 +1968,7 @@ static val_t NR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   b.SetInsertPoint(els);
 
   s.did_ret = false;
-  val_t R_E = V(m, b, cf, s, N->getElse());
+  val_t R_E = V(m, b, s, N->getElse());
   if (!R_E) {
     debug("Failed to get else");
     return std::nullopt;
@@ -2211,16 +1982,7 @@ static val_t NR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return end;
 }
 
-static val_t NR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::While *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, nr::While *N) {
   llvm::BasicBlock *begin, *body, *end;
 
   begin =
@@ -2231,7 +1993,7 @@ static val_t NR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   b.CreateBr(begin);
   b.SetInsertPoint(begin);
 
-  val_t R = V(m, b, cf, s, N->getCond());
+  val_t R = V(m, b, s, N->getCond());
   if (!R) {
     debug("Failed to get condition");
     return std::nullopt;
@@ -2246,7 +2008,7 @@ static val_t NR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   bool did_cont = s.did_cont;
   bool old_ret = s.did_ret;
 
-  val_t R_B = V(m, b, cf, s, N->getBody());
+  val_t R_B = V(m, b, s, N->getBody());
   if (!R_B) {
     debug("Failed to get body");
     return std::nullopt;
@@ -2267,16 +2029,7 @@ static val_t NR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return end;
 }
 
-static val_t NR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                           nr::For *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_FOR(ctx_t &m, craft_t &b, State &s, nr::For *N) {
   llvm::BasicBlock *begin, *body, *step, *end;
 
   begin =
@@ -2285,7 +2038,7 @@ static val_t NR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   step = llvm::BasicBlock::Create(m.getContext(), "step", s.locals.top().first);
   end = llvm::BasicBlock::Create(m.getContext(), "end", s.locals.top().first);
 
-  val_t R = V(m, b, cf, s, N->getInit());
+  val_t R = V(m, b, s, N->getInit());
   if (!R) {
     debug("Failed to get init");
     return std::nullopt;
@@ -2294,7 +2047,7 @@ static val_t NR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   b.CreateBr(begin);
   b.SetInsertPoint(begin);
 
-  val_t R_C = V(m, b, cf, s, N->getCond());
+  val_t R_C = V(m, b, s, N->getCond());
   if (!R_C) {
     debug("Failed to get condition");
     return std::nullopt;
@@ -2309,7 +2062,7 @@ static val_t NR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   bool did_cont = s.did_cont;
   bool old_ret = s.did_ret;
 
-  val_t R_B = V(m, b, cf, s, N->getBody());
+  val_t R_B = V(m, b, s, N->getBody());
   if (!R_B) {
     debug("Failed to get body");
     return std::nullopt;
@@ -2324,7 +2077,7 @@ static val_t NR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
 
   b.SetInsertPoint(step);
 
-  val_t R_S = V(m, b, cf, s, N->getStep());
+  val_t R_S = V(m, b, s, N->getStep());
   if (!R_S) {
     debug("Failed to get step");
     return std::nullopt;
@@ -2340,8 +2093,7 @@ static val_t NR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return end;
 }
 
-static val_t NR_NODE_CASE_C(ctx_t &, craft_t &, const Mode &, State &,
-                            nr::Case *) {
+static val_t for_CASE(ctx_t &, craft_t &, State &, nr::Case *) {
   qcore_panic("code path unreachable");
 }
 
@@ -2371,17 +2123,8 @@ static bool check_switch_trivial(nr::Switch *N) {
   return true;
 }
 
-static val_t NR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                              nr::Switch *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
-  val_t R = V(m, b, cf, s, N->getCond());
+static val_t for_SWITCH(ctx_t &m, craft_t &b, State &s, nr::Switch *N) {
+  val_t R = V(m, b, s, N->getCond());
   if (!R) {
     debug("Failed to get condition");
     return std::nullopt;
@@ -2404,14 +2147,14 @@ static val_t NR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
 
       nr::Case *C = node->as<nr::Case>();
 
-      val_t R_C = V(m, b, cf, s, C->getCond());
+      val_t R_C = V(m, b, s, C->getCond());
       if (!R_C) {
         debug("Failed to get case condition");
         return std::nullopt;
       }
 
       bool did_ret = s.did_ret;
-      val_t R_B = V(m, b, cf, s, C->getBody());
+      val_t R_B = V(m, b, s, C->getBody());
       if (!R_B) {
         debug("Failed to get case body");
         return std::nullopt;
@@ -2427,80 +2170,20 @@ static val_t NR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
 
     return SI;
   } else {
+    /// TODO: Implement conversion for node
+
     qcore_implement();
-    //   /// TODO: Implement conversion for node
-
-    //   llvm::BasicBlock *end = llvm::BasicBlock::Create(m.getContext(), "",
-    //   s.locals.top().first); s.blocks.push({nullptr, end});
-
-    //   for (auto &node : N->getCases()) {
-    //     nr::Case *C = node->as<nr::Case>();
-
-    //     val_t R_C = V(m, b, cf, s, C->getCond());
-    //     if (!R_C) {
-    //       debug("Failed to get case condition");
-    //       return std::nullopt;
-    //     }
-
-    //     llvm::BasicBlock *then, *els, *end;
-
-    //     then = llvm::BasicBlock::Create(m.getContext(), "then",
-    //     s.locals.top().first); els = llvm::BasicBlock::Create(m.getContext(),
-    //     "else", s.locals.top().first); end =
-    //     llvm::BasicBlock::Create(m.getContext(), "end",
-    //     s.locals.top().first);
-
-    //     b.CreateCondBr(R.value(), then, els);
-    //     b.SetInsertPoint(then);
-
-    //     bool old_did_ret = s.did_ret;
-    //     val_t R_T = V(m, b, cf, s, C->getBody());
-    //     if (!R_T) {
-    //       debug("Failed to get cond");
-    //       return std::nullopt;
-    //     }
-
-    //     if (!s.did_ret) {
-    //       b.CreateBr(end);
-    //     }
-    //     s.did_ret = old_did_ret;
-
-    //     b.SetInsertPoint(els);
-
-    //     s.did_ret = false;
-    //     val_t R_E = V(m, b, cf, s, N->getElse());
-    //     if (!R_E) {
-    //       debug("Failed to get else");
-    //       return std::nullopt;
-    //     }
-    //     if (!s.did_ret) {
-    //       b.CreateBr(end);
-    //     }
-    //     s.did_ret = old_did_ret;
-    //     b.SetInsertPoint(end);
-
-    //     return end;
-    //   }
   }
 }
 
-static val_t NR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                          nr::Fn *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N) {
   std::vector<llvm::Type *> params;
 
   { /* Lower parameter types */
     params.reserve(N->getParams().size());
 
     for (auto &param : N->getParams()) {
-      ty_t R = T(m, b, cf, s, param.first);
+      ty_t R = T(m, b, s, param.first);
       if (!R) {
         debug("Failed to get parameter type");
         return std::nullopt;
@@ -2519,7 +2202,7 @@ static val_t NR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
       debug("Failed to get return type");
       return std::nullopt;
     }
-    ty_t R = T(m, b, cf, s, x.value()->as<nr::FnTy>()->getReturn());
+    ty_t R = T(m, b, s, x.value()->as<nr::FnTy>()->getReturn());
     if (!R) {
       debug("Failed to get return type");
       return std::nullopt;
@@ -2582,7 +2265,7 @@ static val_t NR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
     bool old_did_ret = s.did_ret;
 
     for (auto &node : N->getBody().value()->getItems()) {
-      val_t R = V(m, b, cf, s, node);
+      val_t R = V(m, b, s, node);
       if (!R) {
         s.return_val.pop();
         s.in_fn = in_fn_old;
@@ -2605,238 +2288,76 @@ static val_t NR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return fn;
 }
 
-static val_t NR_NODE_ASM_C(ctx_t &, craft_t &, const Mode &, State &,
-                           nr::Asm *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static val_t for_ASM(ctx_t &, craft_t &, State &, nr::Asm *) {
   qcore_implement();
 }
 
-static ty_t NR_NODE_U1_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                            nr::U1Ty *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_U1_TY(ctx_t &m, craft_t &, State &, nr::U1Ty *) {
   return llvm::Type::getInt1Ty(m.getContext());
 }
 
-static ty_t NR_NODE_U8_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                            nr::U8Ty *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_U8_TY(ctx_t &m, craft_t &, State &, nr::U8Ty *) {
   return llvm::Type::getInt8Ty(m.getContext());
 }
 
-static ty_t NR_NODE_U16_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                             nr::U16Ty *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_U16_TY(ctx_t &m, craft_t &, State &, nr::U16Ty *) {
   return llvm::Type::getInt16Ty(m.getContext());
 }
 
-static ty_t NR_NODE_U32_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                             nr::U32Ty *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_U32_TY(ctx_t &m, craft_t &, State &, nr::U32Ty *) {
   return llvm::Type::getInt32Ty(m.getContext());
 }
 
-static ty_t NR_NODE_U64_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                             nr::U64Ty *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_U64_TY(ctx_t &m, craft_t &, State &, nr::U64Ty *) {
   return llvm::Type::getInt64Ty(m.getContext());
 }
 
-static ty_t NR_NODE_U128_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                              nr::U128Ty *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_U128_TY(ctx_t &m, craft_t &, State &, nr::U128Ty *) {
   return llvm::Type::getInt128Ty(m.getContext());
 }
 
-static ty_t NR_NODE_I8_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                            nr::I8Ty *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_I8_TY(ctx_t &m, craft_t &, State &, nr::I8Ty *) {
   return llvm::Type::getInt8Ty(m.getContext());
 }
 
-static ty_t NR_NODE_I16_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                             nr::I16Ty *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_I16_TY(ctx_t &m, craft_t &, State &, nr::I16Ty *) {
   return llvm::Type::getInt16Ty(m.getContext());
 }
 
-static ty_t NR_NODE_I32_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                             nr::I32Ty *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_I32_TY(ctx_t &m, craft_t &, State &, nr::I32Ty *) {
   return llvm::Type::getInt32Ty(m.getContext());
 }
 
-static ty_t NR_NODE_I64_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                             nr::I64Ty *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_I64_TY(ctx_t &m, craft_t &, State &, nr::I64Ty *) {
   return llvm::Type::getInt64Ty(m.getContext());
 }
 
-static ty_t NR_NODE_I128_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                              nr::I128Ty *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_I128_TY(ctx_t &m, craft_t &, State &, nr::I128Ty *) {
   return llvm::Type::getInt128Ty(m.getContext());
 }
 
-static ty_t NR_NODE_F16_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                             nr::F16Ty *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_F16_TY(ctx_t &m, craft_t &, State &, nr::F16Ty *) {
   return llvm::Type::getHalfTy(m.getContext());
 }
 
-static ty_t NR_NODE_F32_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                             nr::F32Ty *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_F32_TY(ctx_t &m, craft_t &, State &, nr::F32Ty *) {
   return llvm::Type::getFloatTy(m.getContext());
 }
 
-static ty_t NR_NODE_F64_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                             nr::F64Ty *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_F64_TY(ctx_t &m, craft_t &, State &, nr::F64Ty *) {
   return llvm::Type::getDoubleTy(m.getContext());
 }
 
-static ty_t NR_NODE_F128_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                              nr::F128Ty *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_F128_TY(ctx_t &m, craft_t &, State &, nr::F128Ty *) {
   return llvm::Type::getFP128Ty(m.getContext());
 }
 
-static ty_t NR_NODE_VOID_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                              nr::VoidTy *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_VOID_TY(ctx_t &m, craft_t &, State &, nr::VoidTy *) {
   return llvm::Type::getVoidTy(m.getContext());
 }
 
-static ty_t NR_NODE_PTR_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                             nr::PtrTy *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
-  ty_t R = T(m, b, cf, s, N->getPointee());
+static ty_t for_PTR_TY(ctx_t &m, craft_t &b, State &s, nr::PtrTy *N) {
+  ty_t R = T(m, b, s, N->getPointee());
   if (!R) {
     debug("Failed to get pointee type");
     return std::nullopt;
@@ -2845,36 +2366,18 @@ static ty_t NR_NODE_PTR_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return llvm::PointerType::get(R.value(), 0);
 }
 
-static ty_t NR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &, const Mode &, State &,
-                                nr::OpaqueTy *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_OPAQUE_TY(ctx_t &m, craft_t &, State &, nr::OpaqueTy *N) {
   qcore_assert(!N->getName().empty());
 
   return llvm::StructType::create(m.getContext(), N->getName());
 }
 
-static ty_t NR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                                nr::StructTy *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_STRUCT_TY(ctx_t &m, craft_t &b, State &s, nr::StructTy *N) {
   std::vector<llvm::Type *> elements;
   elements.reserve(N->getFields().size());
 
   for (auto &field : N->getFields()) {
-    ty_t R = T(m, b, cf, s, field);
+    ty_t R = T(m, b, s, field);
     if (!R) {
       debug("Failed to get field type");
       return std::nullopt;
@@ -2886,31 +2389,13 @@ static ty_t NR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return llvm::StructType::get(m.getContext(), elements, true);
 }
 
-static ty_t NR_NODE_UNION_TY_C(ctx_t &, craft_t &, const Mode &, State &,
-                               nr::UnionTy *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_UNION_TY(ctx_t &, craft_t &, State &, nr::UnionTy *) {
   /// TODO: Implement conversion for node
   qcore_implement();
 }
 
-static ty_t NR_NODE_ARRAY_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                               nr::ArrayTy *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
-  ty_t R = T(m, b, cf, s, N->getElement());
+static ty_t for_ARRAY_TY(ctx_t &m, craft_t &b, State &s, nr::ArrayTy *N) {
+  ty_t R = T(m, b, s, N->getElement());
   if (!R) {
     debug("Failed to get element type");
     return std::nullopt;
@@ -2919,21 +2404,12 @@ static ty_t NR_NODE_ARRAY_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return llvm::ArrayType::get(R.value(), N->getCount());
 }
 
-static ty_t NR_NODE_FN_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                            nr::FnTy *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
+static ty_t for_FN_TY(ctx_t &m, craft_t &b, State &s, nr::FnTy *N) {
   std::vector<llvm::Type *> params;
   params.reserve(N->getParams().size());
 
   for (auto &param : N->getParams()) {
-    ty_t R = T(m, b, cf, s, param);
+    ty_t R = T(m, b, s, param);
     if (!R) {
       debug("Failed to get parameter type");
       return std::nullopt;
@@ -2942,7 +2418,7 @@ static ty_t NR_NODE_FN_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
     params.push_back(R.value());
   }
 
-  ty_t R = T(m, b, cf, s, N->getReturn());
+  ty_t R = T(m, b, s, N->getReturn());
   if (!R) {
     debug("Failed to get return type");
     return std::nullopt;
@@ -2952,3 +2428,5 @@ static ty_t NR_NODE_FN_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
 
   return llvm::FunctionType::get(R.value(), params, is_vararg);
 }
+
+#pragma GCC diagnostic pop

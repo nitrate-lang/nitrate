@@ -394,19 +394,27 @@ namespace nr {
   class Type : public Expr {
     friend Expr;
 
-    uint64_t getAlignBits(uint32_t PtrSizeBytes);
+    std::optional<uint64_t> getAlignBits() const;
 
   public:
     Type(nr_ty_t ty) : Expr(ty) {}
 
-    bool hasKnownSize() noexcept;
-    bool hasKnownAlign() noexcept;
-    uint64_t getSizeBits(uint32_t PtrSizeBytes);
-    inline uint64_t getSizeBytes(uint32_t PtrSizeBytes) {
-      return std::ceil(getSizeBits(PtrSizeBytes) / 8.0);
+    std::optional<uint64_t> getSizeBits() const;
+
+    std::optional<uint64_t> getSizeBytes() const {
+      if (auto size = getSizeBits()) [[likely]] {
+        return std::ceil(size.value() / 8.0);
+      } else {
+        return std::nullopt;
+      }
     }
-    inline uint64_t getAlignBytes(uint32_t PtrSizeBytes) {
-      return std::ceil(getAlignBits(PtrSizeBytes) / 8.0);
+
+    std::optional<uint64_t> getAlignBytes() const {
+      if (auto align = getAlignBits()) [[likely]] {
+        return std::ceil(align.value() / 8.0);
+      } else {
+        return std::nullopt;
+      }
     }
 
     bool is_primitive() const;
@@ -695,11 +703,18 @@ namespace nr {
     QCLASS_REFLECT()
 
     Type *m_pointee;
+    uint8_t m_platform_ptr_size_bytes;
 
   public:
-    PtrTy(Type *pointee) : Type(NR_NODE_PTR_TY), m_pointee(pointee) {}
+    PtrTy(Type *pointee, uint8_t platform_size_bytes = 8)
+        : Type(NR_NODE_PTR_TY),
+          m_pointee(pointee),
+          m_platform_ptr_size_bytes(platform_size_bytes) {}
 
     Type *getPointee() noexcept { return m_pointee; }
+    uint8_t getPlatformPointerSizeBytes() const noexcept {
+      return m_platform_ptr_size_bytes;
+    }
   };
 
   class OpaqueTy final : public Type {
@@ -726,7 +741,7 @@ namespace nr {
     StructTy(const StructFields &fields)
         : Type(NR_NODE_STRUCT_TY), m_fields(fields) {}
 
-    const StructFields &getFields() noexcept { return m_fields; }
+    const StructFields &getFields() const noexcept { return m_fields; }
   };
 
   typedef std::vector<Type *, Arena<Type *>> UnionFields;
@@ -742,7 +757,7 @@ namespace nr {
     UnionTy(const UnionFields &fields)
         : Type(NR_NODE_UNION_TY), m_fields(fields) {}
 
-    const UnionFields &getFields() noexcept { return m_fields; }
+    const UnionFields &getFields() const noexcept { return m_fields; }
   };
 
   class ArrayTy final : public Type {
@@ -757,8 +772,8 @@ namespace nr {
     ArrayTy(Type *element, size_t size)
         : Type(NR_NODE_ARRAY_TY), m_element(element), m_size(size) {}
 
-    Type *getElement() noexcept { return m_element; }
-    size_t getCount() { return m_size; }
+    Type *getElement() const noexcept { return m_element; }
+    size_t getCount() const { return m_size; }
   };
 
   enum class FnAttr {
@@ -778,17 +793,24 @@ namespace nr {
     FnParams m_params;
     FnAttrs m_attrs;
     Type *m_return;
+    uint8_t m_platform_ptr_size_bytes;
 
   public:
-    FnTy(const FnParams &params, Type *ret, const FnAttrs &attrs)
+    FnTy(const FnParams &params, Type *ret, const FnAttrs &attrs,
+         uint8_t platform_ptr_size_bytes = 8)
         : Type(NR_NODE_FN_TY),
           m_params(params),
           m_attrs(attrs),
-          m_return(ret) {}
+          m_return(ret),
+          m_platform_ptr_size_bytes(platform_ptr_size_bytes) {}
 
     const FnParams &getParams() noexcept { return m_params; }
     Type *getReturn() noexcept { return m_return; }
     const FnAttrs &getAttrs() noexcept { return m_attrs; }
+
+    uint8_t getPlatformPointerSizeBytes() const noexcept {
+      return m_platform_ptr_size_bytes;
+    }
   };
 
   ///=============================================================================
@@ -1302,8 +1324,7 @@ namespace nr {
   }
 
   constexpr std::optional<nr::Type *> nr::Expr::getType() noexcept {
-    /// TODO: Communicate the ptrSizeBytes properly here
-    Type *R = static_cast<Type *>(nr_infer(this, 8, nullptr));
+    Type *R = static_cast<Type *>(nr_infer(this, nullptr));
 
     if (R) {
       return R;

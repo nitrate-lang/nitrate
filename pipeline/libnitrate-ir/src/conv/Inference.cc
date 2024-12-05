@@ -38,57 +38,9 @@
 #include <cstdint>
 #include <nitrate-ir/IRGraph.hh>
 
+/// TODO: Test this code
+
 using namespace nr;
-
-static bool is_unsigned_integer(nr_ty_t ty) {
-  switch (ty) {
-    case NR_NODE_U1_TY:
-    case NR_NODE_U8_TY:
-    case NR_NODE_U16_TY:
-    case NR_NODE_U32_TY:
-    case NR_NODE_U64_TY:
-    case NR_NODE_U128_TY:
-      return true;
-    default:
-      return false;
-  }
-}
-
-static bool is_signed_integer(nr_ty_t ty) {
-  switch (ty) {
-    case NR_NODE_I8_TY:
-    case NR_NODE_I16_TY:
-    case NR_NODE_I32_TY:
-    case NR_NODE_I64_TY:
-    case NR_NODE_I128_TY:
-      return true;
-    default:
-      return false;
-  }
-}
-
-static bool is_primitive_numeric(nr_ty_t ty) {
-  switch (ty) {
-    case NR_NODE_U1_TY:
-    case NR_NODE_U8_TY:
-    case NR_NODE_U16_TY:
-    case NR_NODE_U32_TY:
-    case NR_NODE_U64_TY:
-    case NR_NODE_U128_TY:
-    case NR_NODE_I8_TY:
-    case NR_NODE_I16_TY:
-    case NR_NODE_I32_TY:
-    case NR_NODE_I64_TY:
-    case NR_NODE_I128_TY:
-    case NR_NODE_F16_TY:
-    case NR_NODE_F32_TY:
-    case NR_NODE_F64_TY:
-    case NR_NODE_F128_TY:
-      return true;
-    default:
-      return false;
-  }
-}
 
 static Type *signed_complement(nr_ty_t ty) {
   switch (ty) {
@@ -107,10 +59,13 @@ static Type *signed_complement(nr_ty_t ty) {
   }
 }
 
-static Type *binexpr_promote(Type *L, Type *R, uint32_t PtrSizeBytes) {
-  if (L == nullptr || R == nullptr) {
-    return nullptr;
+static std::optional<Type *> promote(std::optional<Type *> lhs,
+                                     std::optional<Type *> rhs) {
+  if (!lhs.has_value() || !rhs.has_value()) {
+    return std::nullopt;
   }
+
+  auto L = lhs.value(), R = rhs.value();
 
   ///===========================================================================
   /// NOTE: If L && R are the same type, the type is their identity.
@@ -124,11 +79,11 @@ static Type *binexpr_promote(Type *L, Type *R, uint32_t PtrSizeBytes) {
   ///===========================================================================
   /// NOTE: Primitive numeric types are promoted according to the following
   /// rules:
-  if (is_primitive_numeric(LT) && is_primitive_numeric(RT)) {
+  if (L->is_numeric() && R->is_numeric()) {
     ///===========================================================================
     /// NOTE: Floating point always takes precedence over integers.
     if (L->is(NR_NODE_VOID_TY) || R->is(NR_NODE_VOID_TY)) {
-      return nullptr;
+      return std::nullopt;
     }
 
     if (L->is(NR_NODE_F128_TY) || R->is(NR_NODE_F128_TY)) {
@@ -150,18 +105,23 @@ static Type *binexpr_promote(Type *L, Type *R, uint32_t PtrSizeBytes) {
 
     ///===========================================================================
     /// NOTE: If L && R are both unsigned integers, the larger type is used.
-    if (is_unsigned_integer(LT) && is_unsigned_integer(RT)) {
-      size_t LS = L->getSizeBits(PtrSizeBytes),
-             RS = R->getSizeBits(PtrSizeBytes);
+    if (L->is_unsigned() && R->is_unsigned()) {
+      auto LS = L->getSizeBits(), RS = R->getSizeBits();
+      if (!LS.has_value() || !RS.has_value()) {
+        return std::nullopt;
+      }
       return LS > RS ? L : R;
     }
     ///===========================================================================
 
     ///===========================================================================
     /// NOTE: If L && R are both signed integers, the larger type is used.
-    if (is_signed_integer(LT) && is_signed_integer(RT)) {
-      size_t LS = L->getSizeBits(PtrSizeBytes),
-             RS = R->getSizeBits(PtrSizeBytes);
+    if ((L->is_signed() && L->is_integral()) &&
+        (R->is_signed() && R->is_integral())) {
+      auto LS = L->getSizeBits(), RS = R->getSizeBits();
+      if (!LS.has_value() || !RS.has_value()) {
+        return std::nullopt;
+      }
       return LS > RS ? L : R;
     }
     ///===========================================================================
@@ -169,668 +129,522 @@ static Type *binexpr_promote(Type *L, Type *R, uint32_t PtrSizeBytes) {
     ///===========================================================================
     /// NOTE: If either L or R is a signed integer, the signed integer is
     /// promoted.
-    if (is_signed_integer(LT)) {
-      size_t LS = L->getSizeBits(PtrSizeBytes),
-             RS = R->getSizeBits(PtrSizeBytes);
+    if (L->is_integral() && L->is_signed()) {
+      auto LS = L->getSizeBits(), RS = R->getSizeBits();
+      if (!LS.has_value() || !RS.has_value()) {
+        return std::nullopt;
+      }
       if (LS > RS) {
         return signed_complement(LT);
       } else {
         return R;
       }
-    } else if (is_signed_integer(RT)) {
-      size_t LS = L->getSizeBits(PtrSizeBytes),
-             RS = R->getSizeBits(PtrSizeBytes);
+    } else if (R->is_integral() && R->is_signed()) {
+      auto LS = L->getSizeBits(), RS = R->getSizeBits();
+      if (!LS.has_value() || !RS.has_value()) {
+        return std::nullopt;
+      }
       if (RS > LS) {
         return signed_complement(RT);
       } else {
         return L;
       }
     } else {
-      qcore_assert(false, "Unreachable");
+      return std::nullopt;
     }
     ///===========================================================================
   }
   ///===========================================================================
 
   else {
-    return nullptr;
+    return std::nullopt;
   }
 }
 
-static Expr *nr_infer_impl(Expr *_node, uint32_t PtrSizeBytes,
-                           std::unordered_set<Expr *> &visited) {
-  qcore_assert(_node != nullptr);
-
-  Expr *E = static_cast<Expr *>(_node);
-  Type *T = nullptr;
-
+static std::optional<Expr *> nr_infer_impl(
+    Expr *_node, std::unordered_set<Expr *> &visited) {
   visited.insert(_node);
 
-  if (E->isType()) {
-    T = E->asType();
-  } else {
-    switch (E->getKind()) {
-      case NR_NODE_BINEXPR: {
-        BinExpr *B = E->as<BinExpr>();
-        switch (B->getOp()) {
-          case Op::Plus: {
-            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr),
-                                PtrSizeBytes);
-            break;
-          }
-          case Op::Minus: {
-            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr),
-                                PtrSizeBytes);
-            break;
-          }
-          case Op::Times: {
-            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr),
-                                PtrSizeBytes);
-            break;
-          }
-          case Op::Slash: {
-            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr),
-                                PtrSizeBytes);
-            break;
-          }
-          case Op::Percent: {
-            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr),
-                                PtrSizeBytes);
-            break;
-          }
-          case Op::BitAnd: {
-            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr),
-                                PtrSizeBytes);
-            break;
-          }
-          case Op::BitOr: {
-            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr),
-                                PtrSizeBytes);
-            break;
-          }
-          case Op::BitXor: {
-            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr),
-                                PtrSizeBytes);
-            break;
-          }
-          case Op::BitNot: {
-            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
-                                B->getRHS()->getType().value_or(nullptr),
-                                PtrSizeBytes);
-            break;
-          }
-          case Op::LogicAnd: {
-            T = create<U1Ty>();
-            break;
-          }
-          case Op::LogicOr: {
-            T = create<U1Ty>();
-            break;
-          }
-          case Op::LogicNot: {
-            T = create<U1Ty>();
-            break;
-          }
-          case Op::LShift: {
-            T = B->getLHS()->getType().value_or(nullptr);
-            break;
-          }
-          case Op::RShift: {
-            T = B->getLHS()->getType().value_or(nullptr);
-            break;
-          }
-          case Op::ROTR: {
-            T = B->getLHS()->getType().value_or(nullptr);
-            break;
-          }
-          case Op::ROTL: {
-            T = B->getLHS()->getType().value_or(nullptr);
-            break;
-          }
-          case Op::Inc: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Dec: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Set: {
-            T = B->getRHS()->getType().value_or(nullptr);
-            break;
-          }
-          case Op::LT: {
-            T = create<U1Ty>();
-            break;
-          }
-          case Op::GT: {
-            T = create<U1Ty>();
-            break;
-          }
-          case Op::LE: {
-            T = create<U1Ty>();
-            break;
-          }
-          case Op::GE: {
-            T = create<U1Ty>();
-            break;
-          }
-          case Op::Eq: {
-            T = create<U1Ty>();
-            break;
-          }
-          case Op::NE: {
-            T = create<U1Ty>();
-            break;
-          }
-          case Op::Alignof: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::BitcastAs: {
-            T = B->getRHS()->getType().value_or(nullptr);
-            break;
-          }
-          case Op::CastAs: {
-            T = B->getRHS()->getType().value_or(nullptr);
-            break;
-          }
-          case Op::Bitsizeof: {
-            T = nullptr;  // Illegal
-            break;
-          }
-        }
-        break;
-      }
-      case NR_NODE_UNEXPR: {
-        UnExpr *U = E->as<UnExpr>();
-        switch (E->as<UnExpr>()->getOp()) {
-          case Op::Plus: {
-            T = U->getExpr()->getType().value_or(nullptr);
-            break;
-          }
-          case Op::Minus: {
-            T = U->getExpr()->getType().value_or(nullptr);
-            break;
-          }
-          case Op::Times: {
-            Type *x = U->getExpr()->getType().value_or(nullptr);
-            if (!x) {
-              T = nullptr;
-            } else if (x->is(NR_NODE_PTR_TY)) {
-              T = x->as<PtrTy>()->getPointee();
-            } else {
-              T = nullptr;  // Invalid operation: * is only valid on pointers
-            }
-            break;
-          }
-          case Op::Slash: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Percent: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::BitAnd: {
-            Type *x = U->getExpr()->getType().value_or(nullptr);
-            if (x) {
-              T = create<PtrTy>(x);
-            } else {
-              T = nullptr;
-            }
-            break;
-          }
-          case Op::BitOr: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::BitXor: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::BitNot: {
-            T = U->getExpr()->getType().value_or(nullptr);
-            break;
-          }
-          case Op::LogicAnd: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::LogicOr: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::LogicNot: {
-            T = create<U1Ty>();
-            break;
-          }
-          case Op::LShift: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::RShift: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::ROTR: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::ROTL: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Inc: {
-            T = U->getExpr()->getType().value_or(nullptr);
-            break;
-          }
-          case Op::Dec: {
-            T = U->getExpr()->getType().value_or(nullptr);
-            break;
-          }
-          case Op::Set: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::LT: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::GT: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::LE: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::GE: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Eq: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::NE: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Alignof: {
-            T = create<U64Ty>();
-            break;
-          }
-          case Op::BitcastAs: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::CastAs: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Bitsizeof: {
-            T = create<U64Ty>();
-            break;
-          }
-        }
-        break;
-      }
-      case NR_NODE_POST_UNEXPR: {
-        PostUnExpr *P = E->as<PostUnExpr>();
-        switch (E->as<PostUnExpr>()->getOp()) {
-          case Op::Plus: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Minus: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Times: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Slash: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Percent: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::BitAnd: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::BitOr: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::BitXor: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::BitNot: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::LogicAnd: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::LogicOr: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::LogicNot: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::LShift: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::RShift: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::ROTR: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::ROTL: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Inc: {
-            T = P->getExpr()->getType().value_or(nullptr);
-            break;
-          }
-          case Op::Dec: {
-            T = P->getExpr()->getType().value_or(nullptr);
-            break;
-          }
-          case Op::Set: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::LT: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::GT: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::LE: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::GE: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Eq: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::NE: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Alignof: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::BitcastAs: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::CastAs: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Bitsizeof: {
-            T = nullptr;  // Illegal
-            break;
-          }
-        }
-        break;
-      }
-      case NR_NODE_INT: {
-        Int *I = E->as<Int>();
+  Expr *E = static_cast<Expr *>(_node);
+  std::optional<Type *> R;
 
-        uint8_t size = I->getSize();
-
-        if (size == 1) {
-          T = create<U1Ty>();
-        } else if (size <= 8) {
-          T = create<U8Ty>();
-        } else if (size <= 16) {
-          T = create<U16Ty>();
-        } else if (size <= 32) {
-          T = create<U32Ty>();
-        } else if (size <= 64) {
-          T = create<U64Ty>();
-        } else if (size <= 128) {
-          T = create<U128Ty>();
-        } else {
-          T = nullptr;
-        }
-
-        break;
-      }
-      case NR_NODE_FLOAT: {
-        Float *F = E->as<Float>();
-
-        switch (F->getSize()) {
-          case nr::FloatSize::F16:
-            T = create<F16Ty>();
-            break;
-          case nr::FloatSize::F32:
-            T = create<F32Ty>();
-            break;
-          case nr::FloatSize::F64:
-            T = create<F64Ty>();
-            break;
-          case nr::FloatSize::F128:
-            T = create<F128Ty>();
-            break;
-        }
-
-        break;
-      }
-      case NR_NODE_LIST: {
-        if (E->as<List>()->size() == 0) {
-          T = create<StructTy>(StructFields());
-        } else {
-          std::vector<Type *> types;
-          bool failed = false;
-          for (const auto &item : *E->as<List>()) {
-            Type *x = item->getType().value_or(nullptr);
-            if (!x) {
-              T = nullptr;
-              failed = true;
-              break;
-            }
-            types.push_back(x);
-          }
-          if (!failed) {
-            bool homogeneous =
-                std::all_of(types.begin(), types.end(),
-                            [&](Type *X) { return X->isSame(types.front()); });
-
-            if (homogeneous) {
-              T = create<ArrayTy>(types.front(), types.size());
-            } else {
-              T = create<StructTy>(StructFields(types.begin(), types.end()));
-            }
-          }
-        }
-        break;
-      }
-      case NR_NODE_CALL: {
-        Type *x = E->as<Call>()->getTarget()->getType().value_or(nullptr);
-        if (!x) {
-          T = nullptr;
-        } else {
-          qcore_assert(x->getKind() == NR_NODE_FN_TY,
-                       "Call target must be a function");
-          T = x->as<FnTy>()->getReturn();
-        }
-        break;
-      }
-      case NR_NODE_SEQ: {
-        if (E->as<Seq>()->getItems().empty()) {
-          T = create<VoidTy>();
-        } else {
-          T = E->as<Seq>()->getItems().back()->getType().value_or(nullptr);
-        }
-        break;
-      }
-      case NR_NODE_INDEX: {
-        Type *B = E->as<Index>()->getExpr()->getType().value_or(nullptr);
-        if (!B) {
-          T = nullptr;
+  switch (E->getKind()) {
+    case NR_NODE_BINEXPR: {
+      switch (BinExpr *B = E->as<BinExpr>(); B->getOp()) {
+        case Op::Plus: {
+          R = promote(B->getLHS()->getType(), B->getRHS()->getType());
           break;
         }
+        case Op::Minus: {
+          R = promote(B->getLHS()->getType(), B->getRHS()->getType());
+          break;
+        }
+        case Op::Times: {
+          R = promote(B->getLHS()->getType(), B->getRHS()->getType());
+          break;
+        }
+        case Op::Slash: {
+          R = promote(B->getLHS()->getType(), B->getRHS()->getType());
+          break;
+        }
+        case Op::Percent: {
+          R = promote(B->getLHS()->getType(), B->getRHS()->getType());
+          break;
+        }
+        case Op::BitAnd: {
+          R = promote(B->getLHS()->getType(), B->getRHS()->getType());
+          break;
+        }
+        case Op::BitOr: {
+          R = promote(B->getLHS()->getType(), B->getRHS()->getType());
+          break;
+        }
+        case Op::BitXor: {
+          R = promote(B->getLHS()->getType(), B->getRHS()->getType());
+          break;
+        }
+        case Op::BitNot: {
+          R = promote(B->getLHS()->getType(), B->getRHS()->getType());
+          break;
+        }
+        case Op::LogicAnd: {
+          R = create<U1Ty>();
+          break;
+        }
+        case Op::LogicOr: {
+          R = create<U1Ty>();
+          break;
+        }
+        case Op::LogicNot: {
+          R = create<U1Ty>();
+          break;
+        }
+        case Op::LShift: {
+          R = B->getLHS()->getType();
+          break;
+        }
+        case Op::RShift: {
+          R = B->getLHS()->getType();
+          break;
+        }
+        case Op::ROTR: {
+          R = B->getLHS()->getType();
+          break;
+        }
+        case Op::ROTL: {
+          R = B->getLHS()->getType();
+          break;
+        }
+        case Op::Inc: {
+          R = std::nullopt;
+          break;
+        }
+        case Op::Dec: {
+          R = std::nullopt;
+          break;
+        }
+        case Op::Set: {
+          R = B->getRHS()->getType();
+          break;
+        }
+        case Op::LT: {
+          R = create<U1Ty>();
+          break;
+        }
+        case Op::GT: {
+          R = create<U1Ty>();
+          break;
+        }
+        case Op::LE: {
+          R = create<U1Ty>();
+          break;
+        }
+        case Op::GE: {
+          R = create<U1Ty>();
+          break;
+        }
+        case Op::Eq: {
+          R = create<U1Ty>();
+          break;
+        }
+        case Op::NE: {
+          R = create<U1Ty>();
+          break;
+        }
+        case Op::Alignof: {
+          R = std::nullopt;
+          break;
+        }
+        case Op::BitcastAs: {
+          R = B->getRHS()->getType();
+          break;
+        }
+        case Op::CastAs: {
+          R = B->getRHS()->getType();
+          break;
+        }
+        case Op::Bitsizeof: {
+          R = std::nullopt;
+          break;
+        }
+      }
+      break;
+    }
+    case NR_NODE_UNEXPR: {
+      switch (UnExpr *U = E->as<UnExpr>(); E->as<UnExpr>()->getOp()) {
+        case Op::Plus: {
+          R = U->getExpr()->getType();
+          break;
+        }
+        case Op::Minus: {
+          R = U->getExpr()->getType();
+          break;
+        }
+        case Op::Times: {
+          if (auto x = U->getExpr()->getType()) {
+            /* Operator '*' is only valid on pointers */
+            if (x.value()->is(NR_NODE_PTR_TY)) {
+              R = x.value()->as<PtrTy>()->getPointee();
+            }
+          }
+          break;
+        }
+        case Op::BitAnd: {
+          if (auto x = U->getExpr()->getType()) {
+            R = create<PtrTy>(x.value());
+          }
+          break;
+        }
+        case Op::BitNot: {
+          R = U->getExpr()->getType();
+          break;
+        }
+        case Op::LogicNot: {
+          R = create<U1Ty>();
+          break;
+        }
+
+        case Op::Inc: {
+          R = U->getExpr()->getType();
+          break;
+        }
+        case Op::Dec: {
+          R = U->getExpr()->getType();
+          break;
+        }
+        case Op::Alignof: {
+          R = create<U64Ty>();
+          break;
+        }
+        case Op::Bitsizeof: {
+          R = create<U64Ty>();
+          break;
+        }
+        case Op::Slash:
+        case Op::Percent:
+        case Op::BitOr:
+        case Op::BitXor:
+        case Op::LogicAnd:
+        case Op::LogicOr:
+        case Op::LShift:
+        case Op::RShift:
+        case Op::ROTR:
+        case Op::ROTL:
+        case Op::Set:
+        case Op::LT:
+        case Op::GT:
+        case Op::LE:
+        case Op::GE:
+        case Op::Eq:
+        case Op::NE:
+        case Op::BitcastAs:
+        case Op::CastAs: {
+          R = std::nullopt;
+          break;
+        }
+      }
+      break;
+    }
+    case NR_NODE_POST_UNEXPR: {
+      PostUnExpr *P = E->as<PostUnExpr>();
+      switch (E->as<PostUnExpr>()->getOp()) {
+        case Op::Inc: {
+          R = P->getExpr()->getType();
+          break;
+        }
+        case Op::Dec: {
+          R = P->getExpr()->getType();
+          break;
+        }
+        case Op::Plus:
+        case Op::Minus:
+        case Op::Times:
+        case Op::Slash:
+        case Op::Percent:
+        case Op::BitAnd:
+        case Op::BitOr:
+        case Op::BitXor:
+        case Op::BitNot:
+        case Op::LogicAnd:
+        case Op::LogicOr:
+        case Op::LogicNot:
+        case Op::LShift:
+        case Op::RShift:
+        case Op::ROTR:
+        case Op::ROTL:
+        case Op::Set:
+        case Op::LT:
+        case Op::GT:
+        case Op::LE:
+        case Op::GE:
+        case Op::Eq:
+        case Op::NE:
+        case Op::Alignof:
+        case Op::BitcastAs:
+        case Op::CastAs:
+        case Op::Bitsizeof: {
+          R = std::nullopt;
+          break;
+        }
+      }
+      break;
+    }
+    case NR_NODE_INT: {
+      auto size = E->as<Int>()->getSize();
+
+      if (size == 1) {
+        R = create<U1Ty>();
+      } else if (size <= 8) {
+        R = create<U8Ty>();
+      } else if (size <= 16) {
+        R = create<U16Ty>();
+      } else if (size <= 32) {
+        R = create<U32Ty>();
+      } else if (size <= 64) {
+        R = create<U64Ty>();
+      } else if (size <= 128) {
+        R = create<U128Ty>();
+      }
+
+      break;
+    }
+    case NR_NODE_FLOAT: {
+      switch (E->as<Float>()->getSize()) {
+        case nr::FloatSize::F16:
+          R = create<F16Ty>();
+          break;
+        case nr::FloatSize::F32:
+          R = create<F32Ty>();
+          break;
+        case nr::FloatSize::F64:
+          R = create<F64Ty>();
+          break;
+        case nr::FloatSize::F128:
+          R = create<F128Ty>();
+          break;
+      }
+
+      break;
+    }
+    case NR_NODE_LIST: {
+      if (E->as<List>()->size() == 0) {
+        R = create<StructTy>(StructFields());
+      } else {
+        std::vector<Type *> types;
+        bool failed = false;
+        for (const auto &item : *E->as<List>()) {
+          auto x = item->getType();
+          if (!x) {
+            R = std::nullopt;
+            failed = true;
+            break;
+          }
+          types.push_back(x.value());
+        }
+        if (!failed) {
+          if (E->as<List>()->isHomogenous()) {
+            R = create<ArrayTy>(types.front(), types.size());
+          } else {
+            R = create<StructTy>(StructFields(types.begin(), types.end()));
+          }
+        }
+      }
+      break;
+    }
+    case NR_NODE_CALL: {
+      if (auto x = E->as<Call>()->getTarget()->getType()) {
+        if (x.value()->is_function()) {
+          R = x.value()->as<FnTy>()->getReturn();
+        }
+      }
+      break;
+    }
+    case NR_NODE_SEQ: {
+      if (E->as<Seq>()->getItems().empty()) {
+        R = create<VoidTy>();
+      } else {
+        R = E->as<Seq>()->getItems().back()->getType();
+      }
+      break;
+    }
+    case NR_NODE_INDEX: {
+      if (auto B_ = E->as<Index>()->getExpr()->getType();
+          auto B = B_.value_or(nullptr)) {
         Expr *V = E->as<Index>()->getIndex();
 
         if (B->is(NR_NODE_PTR_TY)) {  // *X -> X
-          T = B->as<PtrTy>()->getPointee();
+          R = B->as<PtrTy>()->getPointee();
         } else if (B->is(NR_NODE_ARRAY_TY)) {  // [X; N] -> X
-          T = B->as<ArrayTy>()->getElement();
+          R = B->as<ArrayTy>()->getElement();
         } else if (B->is(NR_NODE_STRUCT_TY)) {  // struct { a, b, c } -> a | b
                                                 // | c
           if (!V->is(NR_NODE_INT)) {
-            T = nullptr;  // Invalid must be of type int to index into a struct
+            R = std::nullopt;  // Invalid must be of type int to index into a
+                               // struct
           } else {
             nr::uint128_t num = V->as<Int>()->getValue();
             if (num < B->as<StructTy>()->getFields().size()) {
-              T = B->as<StructTy>()->getFields()[num.convert_to<std::size_t>()];
+              R = B->as<StructTy>()->getFields()[num.convert_to<std::size_t>()];
             } else {
-              T = nullptr;  // Invalid out of bounds
+              R = std::nullopt;  // Invalid out of bounds
             }
           }
         } else if (B->is(NR_NODE_UNION_TY)) {
           if (!V->is(NR_NODE_INT)) {
-            T = nullptr;  // Invalid must be of type int to index into a union
+            R = std::nullopt;  // Invalid must be of type int to index into a
+                               // union
           } else {
             nr::uint128_t num = V->as<Int>()->getValue();
 
             if (num < B->as<UnionTy>()->getFields().size()) {
-              T = B->as<UnionTy>()->getFields()[num.convert_to<std::size_t>()];
+              R = B->as<UnionTy>()->getFields()[num.convert_to<std::size_t>()];
             } else {
-              T = nullptr;  // Invalid out of bounds
+              R = std::nullopt;  // Invalid out of bounds
             }
           }
-        } else {
-          T = nullptr;  // Invalid type to index into
         }
-        break;
       }
-      case NR_NODE_IDENT: {
-        Expr *what = E->as<Ident>()->getWhat();
-        if (!visited.contains(what)) [[likely]] {
-          if (what != nullptr) {
-            T = what->getType().value_or(nullptr);
-          }
+      break;
+    }
+    case NR_NODE_IDENT: {
+      Expr *what = E->as<Ident>()->getWhat();
+      if (!visited.contains(what)) [[likely]] {
+        if (what != nullptr) {
+          R = what->getType();
         }
-        break;
       }
-      case NR_NODE_EXTERN: {
-        T = create<VoidTy>();
-        break;
-      }
-      case NR_NODE_LOCAL: {
-        T = E->as<Local>()->getValue()->getType().value_or(nullptr);
-        break;
-      }
-      case NR_NODE_RET: {
-        T = E->as<Ret>()->getExpr()->getType().value_or(nullptr);
-        break;
-      }
-      case NR_NODE_BRK: {
-        T = create<VoidTy>();
-        break;
-      }
-      case NR_NODE_CONT: {
-        T = create<VoidTy>();
-        break;
-      }
-      case NR_NODE_IF: {
-        T = create<VoidTy>();
-        break;
-      }
-      case NR_NODE_WHILE: {
-        T = create<VoidTy>();
-        break;
-      }
-      case NR_NODE_FOR: {
-        T = create<VoidTy>();
-        break;
-      }
-      case NR_NODE_CASE: {
-        T = create<VoidTy>();
-        break;
-      }
-      case NR_NODE_SWITCH: {
-        T = create<VoidTy>();
-        break;
-      }
-      case NR_NODE_FN: {
-        FnParams params;
-        for (auto &param : E->as<Fn>()->getParams()) {
-          Type *paramType = param.first->getType().value_or(nullptr);
-          if (paramType) {
-            params.push_back(paramType);
-          } else {
-            T = nullptr;
-            break;
-          }
-        }
+      break;
+    }
+    case NR_NODE_EXTERN: {
+      R = create<VoidTy>();
+      break;
+    }
+    case NR_NODE_LOCAL: {
+      R = E->as<Local>()->getValue()->getType();
+      break;
+    }
+    case NR_NODE_RET: {
+      R = E->as<Ret>()->getExpr()->getType();
+      break;
+    }
+    case NR_NODE_BRK: {
+      R = create<VoidTy>();
+      break;
+    }
+    case NR_NODE_CONT: {
+      R = create<VoidTy>();
+      break;
+    }
+    case NR_NODE_IF: {
+      R = create<VoidTy>();
+      break;
+    }
+    case NR_NODE_WHILE: {
+      R = create<VoidTy>();
+      break;
+    }
+    case NR_NODE_FOR: {
+      R = create<VoidTy>();
+      break;
+    }
+    case NR_NODE_CASE: {
+      R = create<VoidTy>();
+      break;
+    }
+    case NR_NODE_SWITCH: {
+      R = create<VoidTy>();
+      break;
+    }
+    case NR_NODE_FN: {
+      bool failed = false;
+      const auto &params = E->as<Fn>()->getParams();
+      FnParams param_types(params.size());
 
+      for (size_t i = 0; i < params.size(); ++i) {
+        if (auto paramType = params[i].first->getType()) {
+          param_types[i] = paramType.value();
+        } else {
+          failed = true;
+          break;
+        }
+      }
+
+      if (!failed) {
         FnAttrs attrs;
         if (E->as<Fn>()->isVariadic()) {
           attrs.insert(FnAttr::Variadic);
         }
 
-        T = create<FnTy>(std::move(params), E->as<Fn>()->getReturn(),
+        R = create<FnTy>(std::move(param_types), E->as<Fn>()->getReturn(),
                          std::move(attrs));
-        break;
       }
-      case NR_NODE_ASM: {
-        T = create<VoidTy>();
-        break;
-      }
-      case NR_NODE_IGN: {
-        T = create<VoidTy>();
-        break;
-      }
-      case NR_NODE_TMP: {
-        T = nullptr;
-        break;
-      }
-      default: {
-        T = nullptr;  // Unknown node kind
-        break;
-      }
+
+      break;
+    }
+    case NR_NODE_ASM: {
+      R = create<VoidTy>();
+      break;
+    }
+    case NR_NODE_IGN: {
+      R = create<VoidTy>();
+      break;
+    }
+    case NR_NODE_TMP: {
+      R = std::nullopt;
+      break;
+    }
+
+    case NR_NODE_U1_TY:
+    case NR_NODE_U8_TY:
+    case NR_NODE_U16_TY:
+    case NR_NODE_U32_TY:
+    case NR_NODE_U64_TY:
+    case NR_NODE_U128_TY:
+    case NR_NODE_I8_TY:
+    case NR_NODE_I16_TY:
+    case NR_NODE_I32_TY:
+    case NR_NODE_I64_TY:
+    case NR_NODE_I128_TY:
+    case NR_NODE_F16_TY:
+    case NR_NODE_F32_TY:
+    case NR_NODE_F64_TY:
+    case NR_NODE_F128_TY:
+    case NR_NODE_VOID_TY:
+    case NR_NODE_PTR_TY:
+    case NR_NODE_OPAQUE_TY:
+    case NR_NODE_STRUCT_TY:
+    case NR_NODE_UNION_TY:
+    case NR_NODE_ARRAY_TY:
+    case NR_NODE_FN_TY: {
+      R = E->asType();
+      break;
     }
   }
 
-  return T;
+  return R;
 }
 
-C_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes, void *) {
+C_EXPORT nr_node_t *nr_infer(nr_node_t *_node, void *) {
   static thread_local struct State {
     std::unordered_set<Expr *> visited;
     size_t depth = 0;
@@ -838,8 +652,7 @@ C_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes, void *) {
 
   state.depth++;
 
-  auto R =
-      nr_infer_impl(static_cast<Expr *>(_node), PtrSizeBytes, state.visited);
+  auto R = nr_infer_impl(static_cast<Expr *>(_node), state.visited);
 
   state.depth--;
 
@@ -847,302 +660,191 @@ C_EXPORT nr_node_t *nr_infer(nr_node_t *_node, uint32_t PtrSizeBytes, void *) {
     state.visited.clear();
   }
 
-  return R;
+  return R.value_or(nullptr);
 }
 
-bool nr::Type::hasKnownSize() noexcept {
-  switch (this->getKind()) {
-    case NR_NODE_U1_TY:
-    case NR_NODE_U8_TY:
-    case NR_NODE_U16_TY:
-    case NR_NODE_U32_TY:
-    case NR_NODE_U64_TY:
-    case NR_NODE_U128_TY:
-    case NR_NODE_I8_TY:
-    case NR_NODE_I16_TY:
-    case NR_NODE_I32_TY:
-    case NR_NODE_I64_TY:
-    case NR_NODE_I128_TY:
-    case NR_NODE_F16_TY:
-    case NR_NODE_F32_TY:
-    case NR_NODE_F64_TY:
-    case NR_NODE_F128_TY:
-    case NR_NODE_VOID_TY:
-    case NR_NODE_PTR_TY:
-    case NR_NODE_FN_TY:
-      return true;
-    case NR_NODE_STRUCT_TY: {
-      return std::all_of(this->as<StructTy>()->getFields().begin(),
-                         this->as<StructTy>()->getFields().end(),
-                         [](Type *T) { return T->hasKnownSize(); });
-    }
-    case NR_NODE_UNION_TY: {
-      return std::all_of(this->as<UnionTy>()->getFields().begin(),
-                         this->as<UnionTy>()->getFields().end(),
-                         [](Type *T) { return T->hasKnownSize(); });
-    }
-    case NR_NODE_ARRAY_TY: {
-      return this->as<ArrayTy>()->getElement()->hasKnownSize();
-    }
-    case NR_NODE_OPAQUE_TY: {
-      return false;
-    }
-    default: {
-      return false;
-    }
-  }
-}
-
-bool nr::Type::hasKnownAlign() noexcept {
-  switch (this->getKind()) {
-    case NR_NODE_U1_TY:
-    case NR_NODE_U8_TY:
-    case NR_NODE_U16_TY:
-    case NR_NODE_U32_TY:
-    case NR_NODE_U64_TY:
-    case NR_NODE_U128_TY:
-    case NR_NODE_I8_TY:
-    case NR_NODE_I16_TY:
-    case NR_NODE_I32_TY:
-    case NR_NODE_I64_TY:
-    case NR_NODE_I128_TY:
-    case NR_NODE_F16_TY:
-    case NR_NODE_F32_TY:
-    case NR_NODE_F64_TY:
-    case NR_NODE_F128_TY:
-    case NR_NODE_VOID_TY:
-    case NR_NODE_PTR_TY:
-    case NR_NODE_FN_TY:
-      return true;
-    case NR_NODE_STRUCT_TY: {
-      return std::all_of(this->as<StructTy>()->getFields().begin(),
-                         this->as<StructTy>()->getFields().end(),
-                         [](Type *T) { return T->hasKnownAlign(); });
-    }
-    case NR_NODE_UNION_TY: {
-      return std::all_of(this->as<UnionTy>()->getFields().begin(),
-                         this->as<UnionTy>()->getFields().end(),
-                         [](Type *T) { return T->hasKnownAlign(); });
-    }
-    case NR_NODE_ARRAY_TY: {
-      return this->as<ArrayTy>()->getElement()->hasKnownAlign();
-    }
-    case NR_NODE_OPAQUE_TY: {
-      return false;
-    }
-    default: {
-      return false;
-    }
-  }
-}
-
-CPP_EXPORT uint64_t nr::Type::getSizeBits(uint32_t PtrSizeBytes) {
-  qcore_assert(this->hasKnownSize(),
-               "Attempted to get the size of a type with an unknown size");
-
-  uint64_t size;
-
+CPP_EXPORT std::optional<uint64_t> nr::Type::getSizeBits() const {
   switch (this->getKind()) {
     case NR_NODE_U1_TY: {
-      size = 8;
-      break;
+      return 8;
     }
     case NR_NODE_U8_TY: {
-      size = 8;
-      break;
+      return 8;
     }
     case NR_NODE_U16_TY: {
-      size = 16;
-      break;
+      return 16;
     }
     case NR_NODE_U32_TY: {
-      size = 32;
-      break;
+      return 32;
     }
     case NR_NODE_U64_TY: {
-      size = 64;
-      break;
+      return 64;
     }
     case NR_NODE_U128_TY: {
-      size = 128;
-      break;
+      return 128;
     }
     case NR_NODE_I8_TY: {
-      size = 8;
-      break;
+      return 8;
     }
     case NR_NODE_I16_TY: {
-      size = 16;
-      break;
+      return 16;
     }
     case NR_NODE_I32_TY: {
-      size = 32;
-      break;
+      return 32;
     }
     case NR_NODE_I64_TY: {
-      size = 64;
-      break;
+      return 64;
     }
     case NR_NODE_I128_TY: {
-      size = 128;
-      break;
+      return 128;
     }
     case NR_NODE_F16_TY: {
-      size = 16;
-      break;
+      return 16;
     }
     case NR_NODE_F32_TY: {
-      size = 32;
-      break;
+      return 32;
     }
     case NR_NODE_F64_TY: {
-      size = 64;
-      break;
+      return 64;
     }
     case NR_NODE_F128_TY: {
-      size = 128;
-      break;
+      return 128;
     }
     case NR_NODE_VOID_TY: {
-      size = 0;
-      break;
+      return 0;
     }
     case NR_NODE_PTR_TY: {
-      size = PtrSizeBytes * 8;
-      break;
+      return this->as<PtrTy>()->getPlatformPointerSizeBytes() * 8;
     }
     case NR_NODE_STRUCT_TY: {
-      size = 0;
-      for (auto &field : this->as<StructTy>()->getFields()) {
-        size += field->getSizeBits(PtrSizeBytes);
+      size_t sum = 0;
+      for (auto field : this->as<StructTy>()->getFields()) {
+        if (auto field_size = field->getSizeBits()) {
+          sum += field_size.value();
+        } else {
+          return std::nullopt;
+        }
       }
-      break;
+      return sum;
     }
     case NR_NODE_UNION_TY: {
-      size = 0;
-      for (auto &field : this->as<UnionTy>()->getFields()) {
-        size = std::max(size, field->getSizeBits(PtrSizeBytes));
+      size_t max = 0;
+      for (auto field : this->as<UnionTy>()->getFields()) {
+        if (auto field_size = field->getSizeBits()) {
+          max = std::max(max, field_size.value());
+        } else {
+          return std::nullopt;
+        }
       }
-      break;
+      return max;
     }
     case NR_NODE_ARRAY_TY: {
-      size = this->as<ArrayTy>()->getElement()->getSizeBits(PtrSizeBytes) *
-             this->as<ArrayTy>()->getCount();
+      if (auto element_size =
+              this->as<ArrayTy>()->getElement()->getSizeBits()) {
+        return element_size.value() * this->as<ArrayTy>()->getCount();
+      } else {
+        return std::nullopt;
+      }
       break;
     }
     case NR_NODE_FN_TY: {
-      size = PtrSizeBytes * 8;
-      break;
+      return this->as<FnTy>()->getPlatformPointerSizeBytes() * 8;
+    }
+    case NR_NODE_OPAQUE_TY: {
+      return std::nullopt;
     }
     default: {
-      qcore_panicf("Invalid type kind: %d", this->getKind());
+      return std::nullopt;
     }
   }
-
-  return size;
 }
 
-CPP_EXPORT uint64_t nr::Type::getAlignBits(uint32_t PtrSizeBytes) {
-  qcore_assert(this->hasKnownSize(),
-               "Attempted to get the size of a type with an unknown size");
-
-  uint64_t align;
-
+CPP_EXPORT std::optional<uint64_t> nr::Type::getAlignBits() const {
   switch (this->getKind()) {
     case NR_NODE_U1_TY: {
-      align = 8;
-      break;
+      return 8;
     }
     case NR_NODE_U8_TY: {
-      align = 8;
-      break;
+      return 8;
     }
     case NR_NODE_U16_TY: {
-      align = 16;
-      break;
+      return 16;
     }
     case NR_NODE_U32_TY: {
-      align = 32;
-      break;
+      return 32;
     }
     case NR_NODE_U64_TY: {
-      align = 64;
-      break;
+      return 64;
     }
     case NR_NODE_U128_TY: {
-      align = 128;
-      break;
+      return 128;
     }
     case NR_NODE_I8_TY: {
-      align = 8;
-      break;
+      return 8;
     }
     case NR_NODE_I16_TY: {
-      align = 16;
-      break;
+      return 16;
     }
     case NR_NODE_I32_TY: {
-      align = 32;
-      break;
+      return 32;
     }
     case NR_NODE_I64_TY: {
-      align = 64;
-      break;
+      return 64;
     }
     case NR_NODE_I128_TY: {
-      align = 128;
-      break;
+      return 128;
     }
     case NR_NODE_F16_TY: {
-      align = 16;
-      break;
+      return 16;
     }
     case NR_NODE_F32_TY: {
-      align = 32;
-      break;
+      return 32;
     }
     case NR_NODE_F64_TY: {
-      align = 64;
-      break;
+      return 64;
     }
     case NR_NODE_F128_TY: {
-      align = 128;
-      break;
+      return 128;
     }
     case NR_NODE_VOID_TY: {
-      align = 0;
-      break;
+      return 0;
     }
     case NR_NODE_PTR_TY: {
-      align = PtrSizeBytes * 8;
-      break;
+      return this->as<PtrTy>()->getPlatformPointerSizeBytes() * 8;
     }
     case NR_NODE_STRUCT_TY: {
-      align = 0;
-      for (const auto &field : this->as<StructTy>()->getFields()) {
-        align = std::max(align, field->getSizeBits(PtrSizeBytes));
+      size_t max_align = 0;
+      for (auto field : this->as<StructTy>()->getFields()) {
+        if (auto field_align = field->getAlignBits()) {
+          max_align = std::max(max_align, field_align.value());
+        } else {
+          return std::nullopt;
+        }
       }
-      break;
+      return max_align;
     }
     case NR_NODE_UNION_TY: {
-      align = 0;
-      for (const auto &field : this->as<UnionTy>()->getFields()) {
-        align = std::max(align, field->getSizeBits(PtrSizeBytes));
+      size_t max_align = 0;
+      for (auto field : this->as<UnionTy>()->getFields()) {
+        if (auto field_align = field->getAlignBits()) {
+          max_align = std::max(max_align, field_align.value());
+        } else {
+          return std::nullopt;
+        }
       }
-      break;
+      return max_align;
     }
     case NR_NODE_ARRAY_TY: {
-      align = this->as<ArrayTy>()->getElement()->getAlignBits(PtrSizeBytes);
-      break;
+      return this->as<ArrayTy>()->getElement()->getAlignBits();
     }
     case NR_NODE_FN_TY: {
-      align = PtrSizeBytes * 8;
-      break;
+      return this->as<FnTy>()->getPlatformPointerSizeBytes() * 8;
+    }
+    case NR_NODE_OPAQUE_TY: {
+      return std::nullopt;
     }
     default: {
-      qcore_panicf("Invalid type kind: %d", this->getKind());
+      return std::nullopt;
     }
   }
-
-  return align;
 }

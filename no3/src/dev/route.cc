@@ -435,8 +435,8 @@ namespace no3::router {
       std::cout << demangled_name.value() << std::endl;
       return 0;
     } else {
-      LOG(ERROR) << "Unknown subcommand for dev" << std::endl;
-      LOG(ERROR) << parser;
+      std::cerr << "Unknown subcommand for dev" << std::endl;
+      std::cerr << parser;
 
       return 1;
     }
