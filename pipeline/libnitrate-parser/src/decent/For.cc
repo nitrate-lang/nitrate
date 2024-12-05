@@ -47,11 +47,7 @@ qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
 
     if (tok.is<qKLet>()) {
       next();
-      std::vector<Stmt *> let_node;
-      if (!recurse_let(S, rd, let_node)) {
-        syntax(tok, "Failed to parse let statement in for loop");
-        return mock_stmt(QAST_NODE_FOR);
-      }
+      std::vector<Stmt *> let_node = recurse_let(S, rd);
 
       if (let_node.size() != 1) {
         syntax(tok, "Expected let statement to have exactly one declaration");
@@ -109,11 +105,7 @@ qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
 
     if (tok.is<qKLet>()) {
       next();
-      std::vector<Stmt *> let_node;
-      if (!recurse_let(S, rd, let_node)) {
-        syntax(tok, "Failed to parse let statement in for loop");
-        return mock_stmt(QAST_NODE_FOR);
-      }
+      std::vector<Stmt *> let_node = recurse_let(S, rd);
 
       if (let_node.size() != 1) {
         syntax(tok, "Expected let statement to have exactly one declaration");

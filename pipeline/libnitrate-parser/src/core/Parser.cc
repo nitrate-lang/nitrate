@@ -112,33 +112,21 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
     uint32_t loc_start = tok.start;
     switch (tok.as<qlex_key_t>()) {
       case qKVar: {
-        std::vector<Stmt *> items;
-        if (!recurse_var(S, rd, items)) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
-        for (auto &decl : items) {
+        for (auto decl : recurse_var(S, rd)) {
           block->get_items().push_back(decl);
         }
         break;
       }
 
       case qKLet: {
-        std::vector<Stmt *> items;
-        if (!recurse_let(S, rd, items)) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
-        for (auto &decl : items) {
+        for (auto decl : recurse_let(S, rd)) {
           block->get_items().push_back(decl);
         }
         break;
       }
 
       case qKConst: {
-        std::vector<Stmt *> items;
-        if (!recurse_const(S, rd, items)) {
-          return mock_stmt(QAST_NODE_BLOCK);
-        }
-        for (auto &decl : items) {
+        for (auto decl : recurse_const(S, rd)) {
           block->get_items().push_back(decl);
         }
         break;

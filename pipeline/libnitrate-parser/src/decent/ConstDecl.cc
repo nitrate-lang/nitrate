@@ -63,27 +63,28 @@ namespace qparse {
   }
 }  // namespace qparse
 
-bool qparse::recurse_const(qparse_t &S, qlex_t &rd,
-                           std::vector<Stmt *> &nodes) {
+std::vector<Stmt *> qparse::recurse_const(qparse_t &S, qlex_t &rd) {
   qlex_tok_t tok = next();
 
   std::vector<std::pair<std::string, Type *>> decls;
   if (tok.is(qName)) {
     std::pair<std::string, Type *> decl;
     if (!recurse_decl(S, tok, rd, decl)) {
-      return false;
+      return {mock_stmt(QAST_NODE_CONST)};
     }
 
     decls.push_back(decl);
   } else {
     syntax(tok, "Expected a name or '[' in constant declaration");
-    return false;
+    return {mock_stmt(QAST_NODE_CONST)};
   }
 
   if (decls.empty()) {
     syntax(tok, "Empty list of constant declarations");
-    return false;
+    return {mock_stmt(QAST_NODE_CONST)};
   }
+
+  std::vector<Stmt *> nodes;
 
   tok = next();
   if (tok.is<qPuncSemi>()) {
@@ -112,5 +113,5 @@ bool qparse::recurse_const(qparse_t &S, qlex_t &rd,
     syntax(tok, "Expected a ';' or '=' after the constant declaration");
   }
 
-  return true;
+  return nodes;
 }

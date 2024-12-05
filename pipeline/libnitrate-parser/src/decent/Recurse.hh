@@ -46,9 +46,9 @@ namespace qparse {
   Stmt *recurse_pub(qparse_t &S, qlex_t &rd);
   Stmt *recurse_sec(qparse_t &S, qlex_t &rd);
   Stmt *recurse_pro(qparse_t &S, qlex_t &rd);
-  bool recurse_let(qparse_t &S, qlex_t &rd, std::vector<Stmt *> &node);
-  bool recurse_const(qparse_t &S, qlex_t &rd, std::vector<Stmt *> &node);
-  bool recurse_var(qparse_t &S, qlex_t &rd, std::vector<Stmt *> &node);
+  std::vector<Stmt *> recurse_let(qparse_t &S, qlex_t &rd);
+  std::vector<Stmt *> recurse_const(qparse_t &S, qlex_t &rd);
+  std::vector<Stmt *> recurse_var(qparse_t &S, qlex_t &rd);
   Stmt *recurse_enum(qparse_t &S, qlex_t &rd);
   Stmt *recurse_struct(qparse_t &S, qlex_t &rd, CompositeType type);
   Stmt *recurse_subsystem(qparse_t &S, qlex_t &rd);

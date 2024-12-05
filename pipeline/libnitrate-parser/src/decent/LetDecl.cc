@@ -33,6 +33,8 @@
 
 #include <decent/Recurse.hh>
 
+#include "nitrate-parser/Node.h"
+
 using namespace qparse;
 using namespace qparse;
 
@@ -63,26 +65,28 @@ static bool recurse_decl(qparse_t &S, qlex_tok_t tok, qlex_t &rd,
   return true;
 }
 
-bool qparse::recurse_let(qparse_t &S, qlex_t &rd, std::vector<Stmt *> &nodes) {
+std::vector<Stmt *> qparse::recurse_let(qparse_t &S, qlex_t &rd) {
   qlex_tok_t tok = next();
 
   std::vector<std::pair<std::string, Type *>> decls;
   if (tok.is(qName)) {
     std::pair<std::string, Type *> decl;
     if (!recurse_decl(S, tok, rd, decl)) {
-      return false;
+      return {mock_stmt(QAST_NODE_LET)};
     }
 
     decls.push_back(decl);
   } else {
     syntax(tok, "Expected a name or '[' in let declaration");
-    return false;
+    return {mock_stmt(QAST_NODE_LET)};
   }
 
   if (decls.empty()) {
     syntax(tok, "Empty list of let declarations");
-    return false;
+    return {mock_stmt(QAST_NODE_LET)};
   }
+
+  std::vector<Stmt *> nodes;
 
   tok = next();
   if (tok.is<qPuncSemi>()) {
@@ -109,5 +113,5 @@ bool qparse::recurse_let(qparse_t &S, qlex_t &rd, std::vector<Stmt *> &nodes) {
     syntax(tok, "Expected a ';' or '=' after the let declaration");
   }
 
-  return true;
+  return nodes;
 }
