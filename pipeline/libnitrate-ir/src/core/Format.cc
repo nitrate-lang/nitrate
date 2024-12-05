@@ -147,7 +147,7 @@ static bool decode_ns_size_value(std::string_view &input, std::ostream &ss) {
   return true;
 }
 
-static void mangle_type(Type *n, std::ostream &ss) {
+static void mangle_type(const Type *n, std::ostream &ss) {
   /**
    * @brief Name mangling for Nitrate is inspired by the Itanium C++ ABI.
    * @ref https://itanium-cxx-abi.github.io/cxx-abi/abi.html#mangling
@@ -295,6 +295,12 @@ static void mangle_type(Type *n, std::ostream &ss) {
       break;
     }
 
+    case NR_NODE_CONST_TY: {
+      ss << 'K';
+      mangle_type(n->as<ConstTy>()->getItem(), ss);
+      break;
+    }
+
     case NR_NODE_OPAQUE_TY: {
       ss << 'N';
       encode_ns_size_value(n->as<OpaqueTy>()->getName(), ss);
@@ -426,6 +432,14 @@ static bool demangle_type(std::string_view &name, std::ostream &ss) {
       ss << '*';
       name.remove_prefix(1);
       return demangle_type(name, ss);
+    }
+
+    case 'K': {
+      ss << "const<";
+      name.remove_prefix(1);
+      auto ret = demangle_type(name, ss);
+      ss << ">";
+      return ret;
     }
 
     case 'N': {
@@ -657,6 +671,12 @@ static std::optional<std::string> demangle_nit_abi(std::string_view name) {
 
 CPP_EXPORT std::optional<std::string> nr::SymbolEncoding::mangle_name(
     const nr::Expr *symbol, AbiTag abi) const noexcept {
+  if (symbol->isType()) {
+    std::stringstream ss;
+    mangle_type(symbol->asType(), ss);
+    return ss.str();
+  }
+
   static std::unordered_set<nr_ty_t> valid = {
       NR_NODE_FN,
       NR_NODE_LOCAL,
@@ -696,6 +716,11 @@ CPP_EXPORT std::optional<std::string> nr::SymbolEncoding::demangle_name(
 
   if (symbol.starts_with("_Q")) {
     return demangle_nit_abi(symbol);
+  }
+
+  std::stringstream ss;
+  if (demangle_type(symbol, ss)) {
+    return ss.str();
   } else {
     return demangle_c_abi(symbol);
   }

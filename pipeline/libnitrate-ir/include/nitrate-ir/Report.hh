@@ -72,6 +72,7 @@ namespace nr {
     NameManglingTypeInfer,
     UnexpectedUndefLiteral,
     ReturnTypeMismatch,
+    ConstAssign,
 
     UnknownType,
     UnresolvedIdentifier,

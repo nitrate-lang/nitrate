@@ -247,6 +247,8 @@ namespace nr {
         return NR_NODE_VOID_TY;
       } else if constexpr (std::is_same_v<T, PtrTy>) {
         return NR_NODE_PTR_TY;
+      } else if constexpr (std::is_same_v<T, ConstTy>) {
+        return NR_NODE_CONST_TY;
       } else if constexpr (std::is_same_v<T, OpaqueTy>) {
         return NR_NODE_OPAQUE_TY;
       } else if constexpr (std::is_same_v<T, StructTy>) {
@@ -285,6 +287,7 @@ namespace nr {
         case NR_NODE_F128_TY:
         case NR_NODE_VOID_TY:
         case NR_NODE_PTR_TY:
+        case NR_NODE_CONST_TY:
         case NR_NODE_OPAQUE_TY:
         case NR_NODE_STRUCT_TY:
         case NR_NODE_UNION_TY:
@@ -448,20 +451,139 @@ namespace nr {
       }
     }
 
-    bool is_primitive() const;
-    bool is_array() const;
-    bool is_pointer() const;
-    bool is_function() const;
-    bool is_composite() const;
-    bool is_union() const;
-    bool is_numeric() const;
-    bool is_integral() const;
-    bool is_floating_point() const;
-    bool is_signed() const;
-    bool is_unsigned() const;
-    bool is_void() const;
-    bool is_bool() const;
-    bool is_ptr_to(const Type *type) const;
+    constexpr bool is_primitive() const {
+      switch (getKind()) {
+        case NR_NODE_U1_TY:
+        case NR_NODE_U8_TY:
+        case NR_NODE_U16_TY:
+        case NR_NODE_U32_TY:
+        case NR_NODE_U64_TY:
+        case NR_NODE_U128_TY:
+        case NR_NODE_I8_TY:
+        case NR_NODE_I16_TY:
+        case NR_NODE_I32_TY:
+        case NR_NODE_I64_TY:
+        case NR_NODE_I128_TY:
+        case NR_NODE_F16_TY:
+        case NR_NODE_F32_TY:
+        case NR_NODE_F64_TY:
+        case NR_NODE_F128_TY:
+        case NR_NODE_VOID_TY:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    constexpr bool is_array() const { return getKind() == NR_NODE_ARRAY_TY; }
+
+    constexpr bool is_pointer() const { return getKind() == NR_NODE_PTR_TY; }
+
+    constexpr bool is_readonly() const { return getKind() == NR_NODE_CONST_TY; }
+
+    constexpr bool is_function() const { return getKind() == NR_NODE_FN_TY; }
+
+    constexpr bool is_composite() const {
+      switch (getKind()) {
+        case NR_NODE_STRUCT_TY:
+        case NR_NODE_UNION_TY:
+        case NR_NODE_ARRAY_TY:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    constexpr bool is_union() const { return getKind() == NR_NODE_UNION_TY; }
+
+    constexpr bool is_numeric() const {
+      switch (getKind()) {
+        case NR_NODE_U1_TY:
+        case NR_NODE_U8_TY:
+        case NR_NODE_U16_TY:
+        case NR_NODE_U32_TY:
+        case NR_NODE_U64_TY:
+        case NR_NODE_U128_TY:
+        case NR_NODE_I8_TY:
+        case NR_NODE_I16_TY:
+        case NR_NODE_I32_TY:
+        case NR_NODE_I64_TY:
+        case NR_NODE_I128_TY:
+        case NR_NODE_F16_TY:
+        case NR_NODE_F32_TY:
+        case NR_NODE_F64_TY:
+        case NR_NODE_F128_TY:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    constexpr bool is_integral() const {
+      switch (getKind()) {
+        case NR_NODE_U1_TY:
+        case NR_NODE_U8_TY:
+        case NR_NODE_U16_TY:
+        case NR_NODE_U32_TY:
+        case NR_NODE_U64_TY:
+        case NR_NODE_U128_TY:
+        case NR_NODE_I8_TY:
+        case NR_NODE_I16_TY:
+        case NR_NODE_I32_TY:
+        case NR_NODE_I64_TY:
+        case NR_NODE_I128_TY:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    constexpr bool is_floating_point() const {
+      switch (getKind()) {
+        case NR_NODE_F16_TY:
+        case NR_NODE_F32_TY:
+        case NR_NODE_F64_TY:
+        case NR_NODE_F128_TY:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    constexpr bool is_signed() const {
+      switch (getKind()) {
+        case NR_NODE_I8_TY:
+        case NR_NODE_I16_TY:
+        case NR_NODE_I32_TY:
+        case NR_NODE_I64_TY:
+        case NR_NODE_I128_TY:
+        case NR_NODE_F16_TY:
+        case NR_NODE_F32_TY:
+        case NR_NODE_F64_TY:
+        case NR_NODE_F128_TY:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    constexpr bool is_unsigned() const {
+      switch (getKind()) {
+        case NR_NODE_U1_TY:
+        case NR_NODE_U8_TY:
+        case NR_NODE_U16_TY:
+        case NR_NODE_U32_TY:
+        case NR_NODE_U64_TY:
+        case NR_NODE_U128_TY:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    constexpr bool is_void() const { return getKind() == NR_NODE_VOID_TY; }
+
+    constexpr bool is_bool() const { return getKind() == NR_NODE_U1_TY; }
   };
 
   ///=============================================================================
@@ -746,6 +868,19 @@ namespace nr {
     }
   };
 
+  class ConstTy final : public Type {
+    friend Expr;
+
+    QCLASS_REFLECT()
+
+    Type *m_item;
+
+  public:
+    ConstTy(Type *item) : Type(NR_NODE_CONST_TY), m_item(item) {}
+
+    Type *getItem() const noexcept { return m_item; }
+  };
+
   class OpaqueTy final : public Type {
     friend Expr;
 
@@ -951,8 +1086,6 @@ namespace nr {
 
     bool isHomogenous() const noexcept { return m_is_homogenous; }
   };
-
-  List *createStringLiteral(std::string_view str) noexcept;
 
   ///=============================================================================
   /// END: LITERALS
@@ -1548,6 +1681,11 @@ namespace nr {
         break;
       }
 
+      case NR_NODE_CONST_TY: {
+        R = as<ConstTy>()->m_item->getName();
+        break;
+      }
+
       case NR_NODE_OPAQUE_TY: {
         R = as<OpaqueTy>()->m_name;
         break;
@@ -1622,6 +1760,7 @@ namespace nr {
       R[NR_NODE_F128_TY] = sizeof(F128Ty);
       R[NR_NODE_VOID_TY] = sizeof(VoidTy);
       R[NR_NODE_PTR_TY] = sizeof(PtrTy);
+      R[NR_NODE_CONST_TY] = sizeof(ConstTy);
       R[NR_NODE_OPAQUE_TY] = sizeof(OpaqueTy);
       R[NR_NODE_STRUCT_TY] = sizeof(StructTy);
       R[NR_NODE_UNION_TY] = sizeof(UnionTy);
@@ -1680,6 +1819,7 @@ namespace nr {
       R[NR_NODE_F128_TY] = "f128";
       R[NR_NODE_VOID_TY] = "void";
       R[NR_NODE_PTR_TY] = "ptr";
+      R[NR_NODE_CONST_TY] = "const";
       R[NR_NODE_OPAQUE_TY] = "opaque";
       R[NR_NODE_STRUCT_TY] = "struct";
       R[NR_NODE_UNION_TY] = "union";
@@ -1940,6 +2080,9 @@ namespace nr {
       case NR_NODE_PTR_TY: {
         return as<PtrTy>()->m_pointee->isSame(other->as<PtrTy>()->m_pointee);
       }
+      case NR_NODE_CONST_TY: {
+        return as<ConstTy>()->m_item->isSame(other->as<ConstTy>()->m_item);
+      }
       case NR_NODE_OPAQUE_TY: {
         return as<OpaqueTy>()->m_name == other->as<OpaqueTy>()->m_name;
       }
@@ -2056,22 +2199,7 @@ namespace nr {
     extern Brk static_NR_NODE_BRK;
     extern Cont static_NR_NODE_CONT;
     extern Expr static_NR_NODE_IGN;
-    extern U1Ty static_NR_NODE_U1_TY;
-    extern U8Ty static_NR_NODE_U8_TY;
-    extern U16Ty static_NR_NODE_U16_TY;
-    extern U32Ty static_NR_NODE_U32_TY;
-    extern U64Ty static_NR_NODE_U64_TY;
-    extern U128Ty static_NR_NODE_U128_TY;
-    extern I8Ty static_NR_NODE_I8_TY;
-    extern I16Ty static_NR_NODE_I16_TY;
-    extern I32Ty static_NR_NODE_I32_TY;
-    extern I64Ty static_NR_NODE_I64_TY;
-    extern I128Ty static_NR_NODE_I128_TY;
-    extern F16Ty static_NR_NODE_F16_TY;
-    extern F32Ty static_NR_NODE_F32_TY;
-    extern F64Ty static_NR_NODE_F64_TY;
-    extern F128Ty static_NR_NODE_F128_TY;
-    extern VoidTy static_NR_NODE_VOID_TY;
+
   };  // namespace mem
 
   template <typename T, typename... Args>
@@ -2081,12 +2209,9 @@ namespace nr {
      * immutable items.
      */
 
-#define NEW_ALLOC(TYPE) \
-  new (Arena<TYPE>().allocate(1)) TYPE(std::forward<Args>(args)...)
-
-#define NORMAL_ALLOC(NAME)    \
-  if constexpr (ty == NAME) { \
-    return NEW_ALLOC(T);      \
+#define NORMAL_ALLOC(NAME)                                              \
+  if constexpr (ty == NAME) {                                           \
+    return new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...); \
   }
 
 #define REUSE_ALLOC(NAME)       \
@@ -2124,23 +2249,24 @@ namespace nr {
     NORMAL_ALLOC(NR_NODE_FN);
     NORMAL_ALLOC(NR_NODE_ASM);
     REUSE_ALLOC(NR_NODE_IGN);
-    REUSE_ALLOC(NR_NODE_U1_TY);
-    REUSE_ALLOC(NR_NODE_U8_TY);
-    REUSE_ALLOC(NR_NODE_U16_TY);
-    REUSE_ALLOC(NR_NODE_U32_TY);
-    REUSE_ALLOC(NR_NODE_U64_TY);
-    REUSE_ALLOC(NR_NODE_U128_TY);
-    REUSE_ALLOC(NR_NODE_I8_TY);
-    REUSE_ALLOC(NR_NODE_I16_TY);
-    REUSE_ALLOC(NR_NODE_I32_TY);
-    REUSE_ALLOC(NR_NODE_I64_TY);
-    REUSE_ALLOC(NR_NODE_I128_TY);
-    REUSE_ALLOC(NR_NODE_F16_TY);
-    REUSE_ALLOC(NR_NODE_F32_TY);
-    REUSE_ALLOC(NR_NODE_F64_TY);
-    REUSE_ALLOC(NR_NODE_F128_TY);
-    REUSE_ALLOC(NR_NODE_VOID_TY);
+    NORMAL_ALLOC(NR_NODE_U1_TY);
+    NORMAL_ALLOC(NR_NODE_U8_TY);
+    NORMAL_ALLOC(NR_NODE_U16_TY);
+    NORMAL_ALLOC(NR_NODE_U32_TY);
+    NORMAL_ALLOC(NR_NODE_U64_TY);
+    NORMAL_ALLOC(NR_NODE_U128_TY);
+    NORMAL_ALLOC(NR_NODE_I8_TY);
+    NORMAL_ALLOC(NR_NODE_I16_TY);
+    NORMAL_ALLOC(NR_NODE_I32_TY);
+    NORMAL_ALLOC(NR_NODE_I64_TY);
+    NORMAL_ALLOC(NR_NODE_I128_TY);
+    NORMAL_ALLOC(NR_NODE_F16_TY);
+    NORMAL_ALLOC(NR_NODE_F32_TY);
+    NORMAL_ALLOC(NR_NODE_F64_TY);
+    NORMAL_ALLOC(NR_NODE_F128_TY);
+    NORMAL_ALLOC(NR_NODE_VOID_TY);
     NORMAL_ALLOC(NR_NODE_PTR_TY);
+    NORMAL_ALLOC(NR_NODE_CONST_TY);
     NORMAL_ALLOC(NR_NODE_OPAQUE_TY);
     NORMAL_ALLOC(NR_NODE_STRUCT_TY);
     NORMAL_ALLOC(NR_NODE_UNION_TY);
@@ -2150,7 +2276,6 @@ namespace nr {
 
 #undef CACHE_ALLOC
 #undef NORMAL_ALLOC
-#undef NEW_ALLOC
   }
 
   enum IterMode {

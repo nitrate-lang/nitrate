@@ -106,6 +106,7 @@ namespace nr {
   class F128Ty;
   class VoidTy;
   class PtrTy;
+  class ConstTy;
   class OpaqueTy;
   class StructTy;
   class UnionTy;

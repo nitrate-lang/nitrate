@@ -61,22 +61,7 @@ namespace nr {
     Brk static_NR_NODE_BRK;
     Cont static_NR_NODE_CONT;
     Expr static_NR_NODE_IGN(NR_NODE_IGN);
-    U1Ty static_NR_NODE_U1_TY;
-    U8Ty static_NR_NODE_U8_TY;
-    U16Ty static_NR_NODE_U16_TY;
-    U32Ty static_NR_NODE_U32_TY;
-    U64Ty static_NR_NODE_U64_TY;
-    U128Ty static_NR_NODE_U128_TY;
-    I8Ty static_NR_NODE_I8_TY;
-    I16Ty static_NR_NODE_I16_TY;
-    I32Ty static_NR_NODE_I32_TY;
-    I64Ty static_NR_NODE_I64_TY;
-    I128Ty static_NR_NODE_I128_TY;
-    F16Ty static_NR_NODE_F16_TY;
-    F32Ty static_NR_NODE_F32_TY;
-    F64Ty static_NR_NODE_F64_TY;
-    F128Ty static_NR_NODE_F128_TY;
-    VoidTy static_NR_NODE_VOID_TY;
+
   }  // namespace mem
 }  // namespace nr
 
@@ -318,6 +303,9 @@ CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
       case NR_NODE_PTR_TY: {
         break;
       }
+      case NR_NODE_CONST_TY: {
+        break;
+      }
       case NR_NODE_OPAQUE_TY: {
         MIXIN_STRING(cur->as<OpaqueTy>()->m_name);
         break;
@@ -399,148 +387,6 @@ CPP_EXPORT uint64_t Expr::getUniqId() const {
   id_map[this] = last;
 
   return last++;
-}
-
-///=============================================================================
-
-CPP_EXPORT bool Type::is_primitive() const {
-  switch (getKind()) {
-    case NR_NODE_U1_TY:
-    case NR_NODE_U8_TY:
-    case NR_NODE_U16_TY:
-    case NR_NODE_U32_TY:
-    case NR_NODE_U64_TY:
-    case NR_NODE_U128_TY:
-    case NR_NODE_I8_TY:
-    case NR_NODE_I16_TY:
-    case NR_NODE_I32_TY:
-    case NR_NODE_I64_TY:
-    case NR_NODE_I128_TY:
-    case NR_NODE_F16_TY:
-    case NR_NODE_F32_TY:
-    case NR_NODE_F64_TY:
-    case NR_NODE_F128_TY:
-    case NR_NODE_VOID_TY:
-      return true;
-    default:
-      return false;
-  }
-}
-
-CPP_EXPORT bool Type::is_array() const { return getKind() == NR_NODE_ARRAY_TY; }
-
-CPP_EXPORT bool Type::is_pointer() const { return getKind() == NR_NODE_PTR_TY; }
-
-CPP_EXPORT bool Type::is_function() const { return getKind() == NR_NODE_FN_TY; }
-
-CPP_EXPORT bool Type::is_composite() const {
-  switch (getKind()) {
-    case NR_NODE_STRUCT_TY:
-    case NR_NODE_UNION_TY:
-    case NR_NODE_ARRAY_TY:
-      return true;
-    default:
-      return false;
-  }
-}
-
-CPP_EXPORT bool Type::is_union() const { return getKind() == NR_NODE_UNION_TY; }
-
-CPP_EXPORT bool Type::is_numeric() const {
-  switch (getKind()) {
-    case NR_NODE_U1_TY:
-    case NR_NODE_U8_TY:
-    case NR_NODE_U16_TY:
-    case NR_NODE_U32_TY:
-    case NR_NODE_U64_TY:
-    case NR_NODE_U128_TY:
-    case NR_NODE_I8_TY:
-    case NR_NODE_I16_TY:
-    case NR_NODE_I32_TY:
-    case NR_NODE_I64_TY:
-    case NR_NODE_I128_TY:
-    case NR_NODE_F16_TY:
-    case NR_NODE_F32_TY:
-    case NR_NODE_F64_TY:
-    case NR_NODE_F128_TY:
-      return true;
-    default:
-      return false;
-  }
-}
-
-CPP_EXPORT bool Type::is_integral() const {
-  switch (getKind()) {
-    case NR_NODE_U1_TY:
-    case NR_NODE_U8_TY:
-    case NR_NODE_U16_TY:
-    case NR_NODE_U32_TY:
-    case NR_NODE_U64_TY:
-    case NR_NODE_U128_TY:
-    case NR_NODE_I8_TY:
-    case NR_NODE_I16_TY:
-    case NR_NODE_I32_TY:
-    case NR_NODE_I64_TY:
-    case NR_NODE_I128_TY:
-      return true;
-    default:
-      return false;
-  }
-}
-
-CPP_EXPORT bool Type::is_floating_point() const {
-  switch (getKind()) {
-    case NR_NODE_F16_TY:
-    case NR_NODE_F32_TY:
-    case NR_NODE_F64_TY:
-    case NR_NODE_F128_TY:
-      return true;
-    default:
-      return false;
-  }
-}
-
-CPP_EXPORT bool Type::is_signed() const {
-  switch (getKind()) {
-    case NR_NODE_I8_TY:
-    case NR_NODE_I16_TY:
-    case NR_NODE_I32_TY:
-    case NR_NODE_I64_TY:
-    case NR_NODE_I128_TY:
-    case NR_NODE_F16_TY:
-    case NR_NODE_F32_TY:
-    case NR_NODE_F64_TY:
-    case NR_NODE_F128_TY:
-      return true;
-    default:
-      return false;
-  }
-}
-
-CPP_EXPORT bool Type::is_unsigned() const {
-  switch (getKind()) {
-    case NR_NODE_U1_TY:
-    case NR_NODE_U8_TY:
-    case NR_NODE_U16_TY:
-    case NR_NODE_U32_TY:
-    case NR_NODE_U64_TY:
-    case NR_NODE_U128_TY:
-      return true;
-    default:
-      return false;
-  }
-}
-
-CPP_EXPORT bool Type::is_void() const { return getKind() == NR_NODE_VOID_TY; }
-
-CPP_EXPORT bool Type::is_bool() const { return getKind() == NR_NODE_U1_TY; }
-
-CPP_EXPORT bool Type::is_ptr_to(const Type *type) const {
-  if (is_pointer()) {
-    return as<PtrTy>()->m_pointee->isSame(type);
-  }
-
-  return false;
 }
 
 ///=============================================================================

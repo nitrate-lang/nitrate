@@ -158,21 +158,7 @@ C_EXPORT bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
 
 ///=============================================================================
 
-nr::List *nr::createStringLiteral(std::string_view value) noexcept {
-  ListItems items;
-  items.resize(value.size() + 1);
-
-  for (size_t i = 0; i < value.size(); i++) {
-    items[i] = create<Int>(value[i], 8);
-  }
-
-  /* Add null byte at end */
-  items[value.size()] = create<Int>(0, 8);
-
-  return create<List>(items, true);
-}
-
-static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &, PState &,
+static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
                                                      IReport *, nr::Expr *lhs,
                                                      nr::Expr *rhs,
                                                      qlex_op_t op) {
@@ -370,7 +356,7 @@ static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &, PState &,
       break;
     }
     case qOpIn: {
-      auto methname = createStringLiteral("has");
+      auto methname = b.createStringDataArray("has");
       auto method = nr::create<nr::Index>(rhs, methname);
       R = nr::create<nr::Call>(method, nr::CallArgs({lhs}));
       break;
@@ -476,7 +462,7 @@ static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
         break;
       }
 
-      R = createStringLiteral(res.value());
+      R = b.createStringDataArray(res.value());
       break;
     }
 
@@ -805,7 +791,7 @@ static EResult nrgen_field(NRBuilder &b, PState &s, IReport *G,
 
   /// TODO: Support for named composite field indexing
 
-  Expr *field = createStringLiteral(n->get_field());
+  Expr *field = b.createStringDataArray(n->get_field());
   return create<Index>(base.value(), field);
 }
 
@@ -870,7 +856,7 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
     auto val = n->get_items().front();
 
     if (std::holds_alternative<qparse::String>(val)) {
-      return createStringLiteral(std::get<qparse::String>(val));
+      return b.createStringDataArray(std::get<qparse::String>(val));
     } else if (std::holds_alternative<qparse::Expr *>(val)) {
       auto expr = next_one(std::get<qparse::Expr *>(val));
 
@@ -887,13 +873,14 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
     }
   }
 
-  Expr *concated = createStringLiteral("");
+  Expr *concated = b.createStringDataArray("");
 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
     if (std::holds_alternative<qparse::String>(*it)) {
       auto val = std::get<qparse::String>(*it);
 
-      concated = create<BinExpr>(concated, createStringLiteral(val), Op::Plus);
+      concated =
+          create<BinExpr>(concated, b.createStringDataArray(val), Op::Plus);
     } else if (std::holds_alternative<qparse::Expr *>(*it)) {
       auto val = std::get<qparse::Expr *>(*it);
       auto expr = next_one(val);

@@ -1850,6 +1850,10 @@ namespace lower {
         return nullopt;
       }
 
+      static ty_t for_CONST_TY(craft_t &b, const nr::ConstTy *N) {
+        return T(N->getItem());
+      }
+
       static ty_t for_FN_TY(craft_t &b, const nr::FnTy *N) {
         let params = N->getParams();
         vector<Type *> param_types(params.size());
@@ -2019,6 +2023,7 @@ static auto T_gen(craft_t &b, const nr::Expr *N) -> ty_t {
       FUNCTION(NR_NODE_F128_TY, for_F128_TY, nr::F128Ty);
       FUNCTION(NR_NODE_VOID_TY, for_VOID_TY, nr::VoidTy);
       FUNCTION(NR_NODE_PTR_TY, for_PTR_TY, nr::PtrTy);
+      FUNCTION(NR_NODE_CONST_TY, for_CONST_TY, nr::ConstTy);
       FUNCTION(NR_NODE_OPAQUE_TY, for_OPAQUE_TY, nr::OpaqueTy);
       FUNCTION(NR_NODE_STRUCT_TY, for_STRUCT_TY, nr::StructTy);
       FUNCTION(NR_NODE_UNION_TY, for_UNION_TY, nr::UnionTy);

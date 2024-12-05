@@ -40,10 +40,25 @@
 
 using namespace nr;
 
-bool NRBuilder::check_mutability(Seq *, IReport *I) noexcept {
-  I->report(CompilerError, IC::Debug,
-            "NRBuilder::check_mutability() not implemented");
+bool NRBuilder::check_mutability(Seq *root, IReport *I) noexcept {
+  bool failed = false;
 
-  /// TODO: Implement check
-  return true;
+  std::for_each<BinExpr>(root, [&](const BinExpr *x) {
+    if (x->getOp() != Op::Set) {
+      return;
+    }
+
+    auto lhs_type = x->getLHS()->getType();
+
+    if (!lhs_type.has_value()) {
+      return;
+    }
+
+    if (lhs_type.value()->is_readonly()) {
+      failed = true;
+      I->report(ConstAssign, IC::Error, "", x->getLoc());
+    }
+  });
+
+  return !failed;
 }

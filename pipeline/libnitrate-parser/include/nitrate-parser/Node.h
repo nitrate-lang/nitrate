@@ -244,6 +244,7 @@ namespace qparse {
   class F128;
   class VoidTy;
   class PtrTy;
+  class ConstTy;
   class OpaqueTy;
   class TupleTy;
   class ArrayTy;

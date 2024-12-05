@@ -100,6 +100,7 @@ typedef enum nr_ty_t {
   NR_NODE_UNION_TY,  /* Union type */
   NR_NODE_ARRAY_TY,  /* Array type */
   NR_NODE_FN_TY,     /* Function type */
+  NR_NODE_CONST_TY,  /* Constant wrapper type */
 
   NR_NODE_TMP, /* Temp node; must be resolved with more information */
 

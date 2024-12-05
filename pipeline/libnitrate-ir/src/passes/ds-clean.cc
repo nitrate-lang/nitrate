@@ -236,6 +236,11 @@ static void seq_mark_non_functional(Expr* P, Expr** C) {
       break;
     }
 
+    case NR_NODE_CONST_TY: {
+      IGNORE_NODE();
+      break;
+    }
+
     case NR_NODE_OPAQUE_TY: {
       IGNORE_NODE();
       break;

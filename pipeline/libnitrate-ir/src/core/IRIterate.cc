@@ -233,6 +233,11 @@ namespace nr::detail {
             reinterpret_cast<Expr **>(&base->as<PtrTy>()->m_pointee));
         break;
       }
+      case NR_NODE_CONST_TY: {
+        children.push_back(
+            reinterpret_cast<Expr **>(&base->as<ConstTy>()->m_item));
+        break;
+      }
       case NR_NODE_OPAQUE_TY: {
         break;
       }

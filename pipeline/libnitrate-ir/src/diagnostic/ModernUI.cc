@@ -115,6 +115,12 @@ const boost::bimap<IssueCode, IssueInfo> nr::issue_info =
           {"The 'undef' keyword is only permitted as default values for "
            "variable declarations."}}},
         {ReturnTypeMismatch, {"return-type-mismatch", "%s", {}}},
+        {
+            ConstAssign,
+            {"const-assign",
+             "Cannot assign to a constant variable.",
+             {"Ensure that the variable is not marked as constant."}},
+        },
 
         {UnknownType, {"unknown-type", "write me", {}}},
         {UnresolvedIdentifier,

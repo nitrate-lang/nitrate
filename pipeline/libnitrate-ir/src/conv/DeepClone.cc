@@ -50,6 +50,8 @@ nr_node_t *nr_clone_impl(
     const nr_node_t *_node,
     std::unordered_map<const nr_node_t *, nr_node_t *> &map,
     std::unordered_set<nr_node_t *> &in_visited) {
+  /// TODO: This code has bugs; fix it
+
 #define clone(X) static_cast<Expr *>(nr_clone_impl(X, map, in_visited))
 
   using namespace nr;
@@ -276,6 +278,11 @@ nr_node_t *nr_clone_impl(
     case NR_NODE_PTR_TY: {
       PtrTy *n = static_cast<PtrTy *>(in);
       out = create<PtrTy>(clone(n->getPointee())->asType());
+      break;
+    }
+    case NR_NODE_CONST_TY: {
+      ConstTy *n = static_cast<ConstTy *>(in);
+      out = create<ConstTy>(clone(n->getItem())->asType());
       break;
     }
     case NR_NODE_OPAQUE_TY: {

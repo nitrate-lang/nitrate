@@ -454,6 +454,15 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
       break;
     }
 
+    case NR_NODE_CONST_TY: {
+      ConstTy *const_ty = _for->as<ConstTy>();
+      auto e = getDefaultValue(const_ty->getItem());
+      if (e) {
+        E = create<BinExpr>(e.value(), _for, Op::CastAs);
+      }
+      break;
+    }
+
     case NR_NODE_OPAQUE_TY: {
       E = std::nullopt;
       break;

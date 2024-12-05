@@ -67,6 +67,12 @@ static std::optional<Type *> promote(std::optional<Type *> lhs,
 
   auto L = lhs.value(), R = rhs.value();
 
+  if (L->is_readonly() && !R->is_readonly()) {
+    R = create<ConstTy>(R);
+  } else if (!L->is_readonly() && R->is_readonly()) {
+    L = create<ConstTy>(L);
+  }
+
   ///===========================================================================
   /// NOTE: If L && R are the same type, the type is their identity.
   if (L->isSame(R)) {
@@ -161,12 +167,12 @@ static std::optional<Type *> promote(std::optional<Type *> lhs,
   }
 }
 
-static std::optional<const Type *> nr_infer_impl(
+static std::optional<Type *> nr_infer_impl(
     const Expr *_node, std::unordered_set<const Expr *> &visited) {
   visited.insert(_node);
 
   const Expr *E = static_cast<const Expr *>(_node);
-  std::optional<const Type *> R;
+  std::optional<Type *> R;
 
   switch (E->getKind()) {
     case NR_NODE_BINEXPR: {
@@ -403,15 +409,15 @@ static std::optional<const Type *> nr_infer_impl(
       if (size == 1) {
         R = create<U1Ty>();
       } else if (size <= 8) {
-        R = create<U8Ty>();
+        R = create<I8Ty>();
       } else if (size <= 16) {
-        R = create<U16Ty>();
+        R = create<I16Ty>();
       } else if (size <= 32) {
-        R = create<U32Ty>();
+        R = create<I32Ty>();
       } else if (size <= 64) {
-        R = create<U64Ty>();
+        R = create<I64Ty>();
       } else if (size <= 128) {
-        R = create<U128Ty>();
+        R = create<I128Ty>();
       }
 
       break;
@@ -528,7 +534,11 @@ static std::optional<const Type *> nr_infer_impl(
       break;
     }
     case NR_NODE_LOCAL: {
-      R = E->as<Local>()->getValue()->getType();
+      const Local *local = E->as<Local>();
+      R = local->getValue()->getType();
+      if (R.has_value() && local->isReadonly()) {
+        R = create<ConstTy>(R.value());
+      }
       break;
     }
     case NR_NODE_RET: {
@@ -619,12 +629,13 @@ static std::optional<const Type *> nr_infer_impl(
     case NR_NODE_F128_TY:
     case NR_NODE_VOID_TY:
     case NR_NODE_PTR_TY:
+    case NR_NODE_CONST_TY:
     case NR_NODE_OPAQUE_TY:
     case NR_NODE_STRUCT_TY:
     case NR_NODE_UNION_TY:
     case NR_NODE_ARRAY_TY:
     case NR_NODE_FN_TY: {
-      R = E->asType();
+      R = const_cast<Type *>(E->asType());
       break;
     }
   }
@@ -703,6 +714,9 @@ CPP_EXPORT std::optional<uint64_t> nr::Type::getSizeBits() const {
     }
     case NR_NODE_PTR_TY: {
       return this->as<PtrTy>()->getPlatformPointerSizeBytes() * 8;
+    }
+    case NR_NODE_CONST_TY: {
+      return this->as<ConstTy>()->getItem()->getSizeBits();
     }
     case NR_NODE_STRUCT_TY: {
       size_t sum = 0;
@@ -799,6 +813,9 @@ CPP_EXPORT std::optional<uint64_t> nr::Type::getAlignBits() const {
     }
     case NR_NODE_PTR_TY: {
       return this->as<PtrTy>()->getPlatformPointerSizeBytes() * 8;
+    }
+    case NR_NODE_CONST_TY: {
+      return this->as<ConstTy>()->getItem()->getAlignBits();
     }
     case NR_NODE_STRUCT_TY: {
       size_t max_align = 0;

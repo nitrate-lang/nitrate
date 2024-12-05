@@ -249,28 +249,19 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       bool is_cstring = false;
       std::string c_string;
       for (size_t i = 0; i < L->size(); i++) {
-        if (L->at(i)->getKind() != NR_NODE_BINEXPR) {
+        if (!L->at(i)->is(NR_NODE_INT)) {
           break;
         }
 
-        BinExpr *BE = L->at(i)->as<BinExpr>();
-
-        if (BE->getLHS()->getKind() != NR_NODE_INT) {
+        Int *C = L->at(i)->as<Int>();
+        if (C->getSize() != 8) {
           break;
         }
 
-        if (BE->getRHS()->getKind() != NR_NODE_I8_TY) {
-          break;
-        }
-
-        if (BE->getOp() != Op::CastAs) {
-          break;
-        }
-
-        c_string.push_back((char)BE->getLHS()->as<Int>()->getValue());
+        c_string.push_back((uint8_t)C->getValue());
 
         if (i + 1 == L->size()) {  // Last item
-          if (BE->getLHS()->as<Int>()->getValue() != 0) {
+          if (C->getValue() != 0) {
             break;
           }
 
@@ -531,6 +522,12 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
     case NR_NODE_PTR_TY: {
       recurse(n->as<PtrTy>()->getPointee());
       ss << "*";
+      break;
+    }
+    case NR_NODE_CONST_TY: {
+      ss << "const<";
+      recurse(n->as<ConstTy>()->getItem());
+      ss << ">";
       break;
     }
     case NR_NODE_OPAQUE_TY: {
