@@ -77,14 +77,14 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
 
     if (!tok.is(qKeyW)) {
       if (tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() || tok.is<qPuncRPar>()) {
-        syntax(tok, "Unexpected closing brace");
+        diagnostic << tok << "Unexpected closing brace";
         return mock_stmt(QAST_NODE_BLOCK);
       }
 
       Expr *expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
       if (!expr) {
-        syntax(tok, "Expected valid expression");
+        diagnostic << tok << "Expected valid expression";
         return mock_stmt(QAST_NODE_BLOCK);
       }
 
@@ -250,17 +250,17 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
       }
 
       case qKUnsafe: {
-        Stmt *block = nullptr;
         tok = peek();
         if (tok.is<qPuncLCur>()) {
-          block = recurse(S, rd);
+          node = recurse(S, rd);
         } else {
-          block = recurse(S, rd, false, true);
+          node = recurse(S, rd, false, true);
         }
 
-        /// FIXME: Set safety
-        // block->set_safety(SafetyMode::Unsafe);
-        node = block;
+        if (node->is(QAST_NODE_BLOCK)) {
+          node->as<Block>()->set_safety(SafetyMode::Unsafe);
+        }
+
         break;
       }
 
@@ -272,8 +272,10 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
           node = recurse(S, rd, false, true);
         }
 
-        /// FIXME: Set safety
-        // block->set_safety(SafetyMode::Safe);
+        if (node->is(QAST_NODE_BLOCK)) {
+          node->as<Block>()->set_safety(SafetyMode::Unsafe);
+        }
+
         break;
       }
 
@@ -290,7 +292,7 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
       }
 
       default:
-        syntax(tok, "Unexpected keyword");
+        diagnostic << tok << "Unexpected keyword";
         break;
     }
 

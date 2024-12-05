@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-parser/Parser.h>
 
 #include <core/ParseReport.hh>
@@ -40,7 +41,7 @@
 
 using namespace qparse;
 
-static thread_local qparse_t *g_parser_inst;
+CPP_EXPORT thread_local DiagnosticManager *qparse::diagnostic;
 
 ///============================================================================///
 
@@ -127,8 +128,6 @@ std::string DiagnosticManager::mint_clang16_message(
 
 ///============================================================================///
 
-using namespace qparse;
-
 void DiagnosticManager::push(DiagMessage &&msg) {
   m_msgs.push_back(std::move(msg));
 }
@@ -154,34 +153,6 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler,
   return m_msgs.size();
 }
 
-namespace qparse {
-  void install_reference(qparse_t *parser) { g_parser_inst = parser; }
-
-  void syntax_impl(const qlex_tok_t &tok, std::string_view fmt, va_list args) {
-    std::string msg;
-
-    {  // Format the message
-      char *c_msg = nullptr;
-      int r = vasprintf(&c_msg, fmt.data(), args);
-      if (r < 0) {
-        qcore_panic("Failed to format diagnostic message");
-      }
-      msg = c_msg;
-      free(c_msg);
-    }
-
-    DiagMessage diag;
-    diag.msg = msg;
-    diag.tok = tok;
-
-    g_parser_inst->diag.push(std::move(diag));
-    g_parser_inst->failed = true;
-  }
-
-  void syntax(const qlex_tok_t &tok, std::string_view fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    syntax_impl(tok, fmt, args);
-    va_end(args);
-  }
-}  // namespace qparse
+void qparse::install_reference(qparse_t *parser) {
+  diagnostic = parser ? &parser->diag : nullptr;
+}

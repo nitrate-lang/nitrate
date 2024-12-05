@@ -221,7 +221,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
     qlex_tok_t tok = peek();
 
     if (tok.is(qEofF)) {
-      // syntax(tok, "Unexpected end of file while parsing expression");
+      // diagnostic << tok << "Unexpected end of file while parsing expression";
       return mock_expr(QAST_NODE_VOID_TY);
     }
 
@@ -231,7 +231,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
       }
 
       if (stack.size() != 1) {
-        syntax(tok, "Expected a single expression on the stack");
+        diagnostic << tok << "Expected a single expression on the stack";
         return mock_expr(QAST_NODE_VOID_TY);
       }
 
@@ -365,7 +365,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
           }
 
           default: {
-            syntax(tok, "Unexpected keyword in expression");
+            diagnostic << tok << "Unexpected keyword in expression";
             return mock_expr(QAST_NODE_VOID_TY);
           }
         }
@@ -378,7 +378,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
               Call *fcall = recurse_function_call(S, stack.top(), rd, depth);
 
               if (fcall == nullptr) {
-                syntax(tok, "Expected a function call in expression");
+                diagnostic << tok << "Expected a function call in expression";
                 return mock_expr(QAST_NODE_VOID_TY);
               }
 
@@ -402,7 +402,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
           }
           case qPuncRPar: {
             if (stack.size() != 1) {
-              syntax(tok, "Expected a single expression on the stack");
+              diagnostic << tok << "Expected a single expression on the stack";
               return mock_expr(QAST_NODE_VOID_TY);
             }
 
@@ -475,7 +475,8 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
                                              depth + 1);
 
                   if (!count->is<ConstInt>()) {
-                    syntax(tok, "Expected a constant integer in list element");
+                    diagnostic << tok
+                               << "Expected a constant integer in list element";
                     return mock_expr(QAST_NODE_VOID_TY);
                   }
 
@@ -507,7 +508,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
             }
 
             if (stack.size() != 1) {
-              syntax(tok, "Expected a single expression on the stack");
+              diagnostic << tok << "Expected a single expression on the stack";
               return mock_expr(QAST_NODE_VOID_TY);
             }
 
@@ -559,7 +560,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
           }
           case qPuncComa: {
             if (stack.size() != 1) {
-              syntax(tok, "Expected a single expression on the stack");
+              diagnostic << tok << "Expected a single expression on the stack";
               return mock_expr(QAST_NODE_VOID_TY);
             }
 
@@ -572,7 +573,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
             continue;
           }
           default: {
-            syntax(tok, "Unexpected punctuation in expression");
+            diagnostic << tok << "Unexpected punctuation in expression";
             return mock_expr(QAST_NODE_VOID_TY);
           } break;
         }
@@ -581,7 +582,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
         qlex_op_t op = tok.as<qlex_op_t>();
         if (op == qOpDot) {
           if (stack.size() != 1) {
-            syntax(tok, "Expected a single expression on the stack");
+            diagnostic << tok << "Expected a single expression on the stack";
             return mock_expr(QAST_NODE_VOID_TY);
           }
 
@@ -617,7 +618,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
         if (op == qOpAs) {
           if (stack.size() != 1) {
-            syntax(tok, "Expected a single expression on the stack");
+            diagnostic << tok << "Expected a single expression on the stack";
             return mock_expr(QAST_NODE_VOID_TY);
           }
 
@@ -631,7 +632,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
         if (op == qOpBitcastAs) {
           if (stack.size() != 1) {
-            syntax(tok, "Expected a single expression on the stack");
+            diagnostic << tok << "Expected a single expression on the stack";
             return mock_expr(QAST_NODE_VOID_TY);
           }
 
@@ -654,7 +655,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
           stack.push(BinExpr::get(left, (qlex_op_t)op, expr));
           continue;
         } else {
-          syntax(tok, "Unexpected operator in expression");
+          diagnostic << tok << "Unexpected operator in expression";
           return mock_expr(QAST_NODE_VOID_TY);
         }
         break;
@@ -666,7 +667,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
           Call *fcall = recurse_function_call(S, Ident::get(ident), rd, depth);
           if (fcall == nullptr) {
-            syntax(tok, "Expected a function call in expression");
+            diagnostic << tok << "Expected a function call in expression";
             return mock_expr(QAST_NODE_VOID_TY);
           }
 
@@ -691,7 +692,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
         }
       }
       default: {
-        syntax(tok, "Unexpected token in expression");
+        diagnostic << tok << "Unexpected token in expression";
         return mock_expr(QAST_NODE_VOID_TY);
       }
     }

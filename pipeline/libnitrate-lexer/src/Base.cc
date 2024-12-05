@@ -390,6 +390,14 @@ C_EXPORT qlex_tok_t qlex_peek(qlex_t *self) {
   }
 }
 
+C_EXPORT qlex_tok_t qlex_current(qlex_t *lexer) {
+  try {
+    return lexer->current();
+  } catch (...) {
+    qcore_panic("qlex_current: failed to get current token");
+  }
+}
+
 ///============================================================================///
 
 CPP_EXPORT std::optional<std::pair<uint32_t, uint32_t>> qlex_t::loc2rowcol(
@@ -524,16 +532,18 @@ CPP_EXPORT qlex_tok_t qlex_t::next() {
     } while (m_flags & QLEX_NO_COMMENTS && tok.ty == qNote);
   }
 
-  return tok;
+  return m_current_tok = tok;
 }
 
 CPP_EXPORT qlex_tok_t qlex_t::peek() {
   if (m_next_tok.ty != qErro) {
-    return m_next_tok;
+    return m_current_tok = m_next_tok;
   }
 
-  return m_next_tok = next();
+  return m_current_tok = (m_next_tok = next());
 }
+
+CPP_EXPORT qlex_tok_t qlex_t::current() { return m_current_tok; }
 
 ///============================================================================///
 

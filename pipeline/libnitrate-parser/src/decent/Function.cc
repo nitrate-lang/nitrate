@@ -55,7 +55,7 @@ static bool fn_get_property(qlex_t &rd, GetPropState &state) {
   qlex_tok_t tok = peek();
 
   if (tok.is(qEofF)) {
-    syntax(tok, "Expected a function property but found EOF");
+    diagnostic << tok << "Expected a function property but found EOF";
     return false;
   }
 
@@ -266,7 +266,7 @@ static bool recurse_captures_and_name(qlex_t &rd, FnDecl *fndecl,
       }
 
       if (!c.is(qName)) {
-        syntax(c, "Expected a capture name");
+        diagnostic << c << "Expected a capture name";
         return false;
       }
 
@@ -307,7 +307,7 @@ bool recurse_template_parameters(
   while (1) {
     c = peek();
     if (c.is(qEofF)) {
-      syntax(c, "Unexpected EOF in signature");
+      diagnostic << c << "Unexpected EOF in signature";
       return false;
     }
 
@@ -318,7 +318,7 @@ bool recurse_template_parameters(
 
     FuncParam param;
     if (!recurse_fn_parameter(S, rd, param)) {
-      syntax(c, "Expected a parameter");
+      diagnostic << c << "Expected a parameter";
       return false;
     }
 
@@ -355,7 +355,7 @@ static bool recurse_parameters(qparse_t &S, qlex_t &rd, FuncTy *ftype,
   while (1) {
     c = peek();
     if (c.is(qEofF)) {
-      syntax(c, "Unexpected EOF in function signature");
+      diagnostic << c << "Unexpected EOF in function signature";
       return false;
     }
 
@@ -378,7 +378,7 @@ static bool recurse_parameters(qparse_t &S, qlex_t &rd, FuncTy *ftype,
 
     FuncParam param;
     if (!recurse_fn_parameter(S, rd, param)) {
-      syntax(c, "Expected a parameter");
+      diagnostic << c << "Expected a parameter";
       return false;
     }
 
@@ -500,7 +500,7 @@ Stmt *qparse::recurse_function(qparse_t &S, qlex_t &rd) {
     tok = peek();
 
     if (!recurse_captures_and_name(rd, fndecl, captures)) {
-      syntax(tok, "Expected a function name or capture list");
+      diagnostic << tok << "Expected a function name or capture list";
       return mock_stmt(QAST_NODE_FN);
     }
   }
@@ -509,7 +509,7 @@ Stmt *qparse::recurse_function(qparse_t &S, qlex_t &rd) {
     tok = peek();
 
     if (!recurse_template_parameters(S, rd, fndecl->get_template_params())) {
-      syntax(tok, "Failed to parse template parameters");
+      diagnostic << tok << "Failed to parse template parameters";
       return mock_stmt(QAST_NODE_FN);
     }
   }
@@ -518,7 +518,7 @@ Stmt *qparse::recurse_function(qparse_t &S, qlex_t &rd) {
     tok = peek();
 
     if (!recurse_parameters(S, rd, ftype, is_variadic)) {
-      syntax(tok, "Failed to parse function parameters");
+      diagnostic << tok << "Failed to parse function parameters";
       return mock_stmt(QAST_NODE_FN);
     }
   }
@@ -527,7 +527,7 @@ Stmt *qparse::recurse_function(qparse_t &S, qlex_t &rd) {
     tok = peek();
 
     if (!translate_purity(prop, ftype)) {
-      syntax(tok, "Failed to translate purity");
+      diagnostic << tok << "Failed to translate purity";
       return mock_stmt(QAST_NODE_FN);
     }
   }

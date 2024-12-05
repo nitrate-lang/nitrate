@@ -41,7 +41,7 @@ using namespace qparse;
 static bool recurse_enum_field(qparse_t &S, qlex_t &rd, EnumDefItems &fields) {
   qlex_tok_t tok = next();
   if (!tok.is(qName)) {
-    syntax(tok, "Enum field must be named by an identifier");
+    diagnostic << tok << "Enum field must be named by an identifier";
     return false;
   }
 
@@ -69,7 +69,7 @@ static bool recurse_enum_field(qparse_t &S, qlex_t &rd, EnumDefItems &fields) {
   }
 
   if (!tok.is<qPuncRCur>()) {
-    syntax(tok, "Expected a comma or a closing curly brace");
+    diagnostic << tok << "Expected a comma or a closing curly brace";
     return false;
   }
 
@@ -79,7 +79,7 @@ static bool recurse_enum_field(qparse_t &S, qlex_t &rd, EnumDefItems &fields) {
 qparse::Stmt *qparse::recurse_enum(qparse_t &S, qlex_t &rd) {
   qlex_tok_t tok = next();
   if (!tok.is(qName)) {
-    syntax(tok, "Enum definition must be named by an identifier");
+    diagnostic << tok << "Enum definition must be named by an identifier";
     return mock_stmt(QAST_NODE_ENUM);
   }
 

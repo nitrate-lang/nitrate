@@ -99,7 +99,9 @@ Type *qparse::recurse_type(qparse_t &S, qlex_t &rd) {
         fn = recurse_function(S, rd);
 
         if (!fn->is<FnDecl>()) {
-          syntax(tok, "Expected a function declaration but got something else");
+          diagnostic
+              << tok
+              << "Expected a function declaration but got something else";
           goto error_end;
         }
 
@@ -303,7 +305,7 @@ Type *qparse::recurse_type(qparse_t &S, qlex_t &rd) {
     inner = InferTy::get();
     goto type_suffix;
   } else {
-    syntax(tok, "Expected a type");
+    diagnostic << tok << "Expected a type";
     goto error_end;
   }
 

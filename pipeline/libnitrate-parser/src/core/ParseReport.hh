@@ -39,8 +39,7 @@
 
 #include <cstdarg>
 #include <functional>
-#include <memory>
-#include <queue>
+#include <sstream>
 #include <string_view>
 
 namespace qparse {
@@ -74,10 +73,81 @@ namespace qparse {
   /* Set reference to the current parser */
   void install_reference(qparse_t *parser);
 
-  /**
-   * @brief Report a syntax error
-   */
-  void syntax(const qlex_tok_t &tok, std::string_view fmt, ...);
+  class MessageBuffer {
+    std::stringstream m_buffer;
+    std::function<void(std::string, qlex_tok_t)> m_publisher;
+    qlex_tok_t m_start_loc;
+
+  public:
+    MessageBuffer(std::function<void(std::string, qlex_tok_t)> publisher)
+        : m_publisher(publisher), m_start_loc({}) {}
+
+    MessageBuffer(MessageBuffer &&O) {
+      m_buffer = std::move(O.m_buffer);
+      m_start_loc = std::move(O.m_start_loc);
+      m_publisher = std::move(O.m_publisher);
+      O.m_publisher = nullptr;
+    }
+
+    ~MessageBuffer() {
+      if (m_publisher) {
+        m_publisher(m_buffer.str(), m_start_loc);
+      }
+    }
+
+    template <typename T>
+    void write(const T &value) {
+      if constexpr (std::is_same_v<T, qlex_tok_t>) {
+        m_start_loc = value;
+      } else {
+        m_buffer << value;
+      }
+    }
+  };
+
+  template <typename T>
+  MessageBuffer operator<<(DiagnosticManager *log, const T &value) {
+    MessageBuffer buf([log](std::string msg, qlex_tok_t start_loc) {
+      log->push({msg, start_loc});
+    });
+
+    buf.write(value);
+
+    return buf;
+  };
+
+  template <typename T>
+  MessageBuffer operator<<(MessageBuffer &&buf, const T &value) {
+    buf.write(value);
+    return std::move(buf);
+  };
+
+  extern thread_local DiagnosticManager *diagnostic;
+
+  // [[deprecated("Syntax(...) is migrating to 'diagnostic << message'")]]
+  static inline void syntax(const qlex_tok_t &tok, std::string_view fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+
+    {
+      std::string msg;
+
+      {  // Format the message
+        char *c_msg = nullptr;
+        int r = vasprintf(&c_msg, fmt.data(), args);
+        if (r < 0) {
+          qcore_panic("Failed to format diagnostic message");
+        }
+        msg = c_msg;
+        free(c_msg);
+      }
+
+      diagnostic << tok << msg;
+    }
+
+    va_end(args);
+  }
+
 };  // namespace qparse
 
 #endif  // __NITRATE_PARSER_REPORT_H__

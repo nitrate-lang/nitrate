@@ -54,7 +54,7 @@ bool qparse::recurse_attributes(qparse_t &S, qlex_t &rd,
     /* Check for termination */
     tok = peek();
     if (tok.is(qEofF)) {
-      syntax(tok, "Unexpected end of file in definition");
+      diagnostic << tok << "Unexpected end of file in definition";
       return false;
     }
 
@@ -91,7 +91,7 @@ qparse::Decl *qparse::recurse_composite_field(qparse_t &S, qlex_t &rd) {
   { /*First token is the field name */
     tok = next();
     if (!tok.is(qName)) {
-      syntax(tok, "Expected field name in composite definition");
+      diagnostic << tok << "Expected field name in composite definition";
       return mock_decl(QAST_NODE_STRUCT_FIELD);
     }
     name = tok.as_string(&rd);
@@ -100,7 +100,8 @@ qparse::Decl *qparse::recurse_composite_field(qparse_t &S, qlex_t &rd) {
   { /* Next token should be a colon */
     tok = next();
     if (!tok.is<qPuncColn>()) {
-      syntax(tok, "Expected colon after field name in composite definition");
+      diagnostic << tok
+                 << "Expected colon after field name in composite definition";
       return mock_decl(QAST_NODE_STRUCT_FIELD);
     }
   }
@@ -166,7 +167,7 @@ qparse::Stmt *qparse::recurse_struct(qparse_t &S, qlex_t &rd,
     if (tok.is(qName)) {
       name = tok.as_string(&rd);
     } else {
-      syntax(tok, "Expected struct name in struct definition");
+      diagnostic << tok << "Expected struct name in struct definition";
       return mock_stmt(QAST_NODE_STRUCT);
     }
   }
@@ -190,7 +191,7 @@ qparse::Stmt *qparse::recurse_struct(qparse_t &S, qlex_t &rd,
     { /* Check for the end of the content */
       tok = peek();
       if (tok.is(qEofF)) {
-        syntax(tok, "Unexpected end of file in struct definition");
+        diagnostic << tok << "Unexpected end of file in struct definition";
         return mock_stmt(QAST_NODE_STRUCT);
       }
       if (tok.is<qPuncRCur>()) {

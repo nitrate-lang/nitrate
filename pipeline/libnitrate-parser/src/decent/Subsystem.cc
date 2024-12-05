@@ -38,7 +38,7 @@
 qparse::Stmt *qparse::recurse_subsystem(qparse_t &S, qlex_t &rd) {
   qlex_tok_t tok = next();
   if (!tok.is(qName)) {
-    syntax(tok, "Expected subsystem name");
+    diagnostic << tok << "Expected subsystem name";
     return mock_stmt(QAST_NODE_SUBSYSTEM);
   }
 
@@ -58,7 +58,7 @@ qparse::Stmt *qparse::recurse_subsystem(qparse_t &S, qlex_t &rd) {
     while (true) {
       tok = next();
       if (tok.is(qEofF)) {
-        syntax(tok, "Unexpected end of file in subsystem dependencies");
+        diagnostic << tok << "Unexpected end of file in subsystem dependencies";
         return mock_stmt(QAST_NODE_SUBSYSTEM);
         break;
       }
@@ -69,7 +69,7 @@ qparse::Stmt *qparse::recurse_subsystem(qparse_t &S, qlex_t &rd) {
       }
 
       if (!tok.is(qName)) {
-        syntax(tok, "Expected dependency name");
+        diagnostic << tok << "Expected dependency name";
         return mock_stmt(QAST_NODE_SUBSYSTEM);
       }
 

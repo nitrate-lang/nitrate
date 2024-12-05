@@ -38,7 +38,7 @@
 qparse::Stmt *qparse::recurse_typedef(qparse_t &S, qlex_t &rd) {
   qlex_tok_t tok = next();
   if (!tok.is(qName)) {
-    syntax(tok, "Expected name in typedef declaration");
+    diagnostic << tok << "Expected name in typedef declaration";
     return mock_stmt(QAST_NODE_TYPEDEF);
   }
 

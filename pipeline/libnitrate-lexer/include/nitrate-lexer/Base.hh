@@ -34,6 +34,7 @@
 #ifndef __NITRATE_LEXER_BASE_H__
 #define __NITRATE_LEXER_BASE_H__
 
+#include <nitrate-core/Env.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-lexer/Lexer.h>
 #include <nitrate-lexer/Token.h>
@@ -47,8 +48,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-
-#include "nitrate-core/Env.h"
 
 #if MEMORY_OVER_SPEED == 1
 #include <unordered_map>
@@ -82,7 +81,7 @@ private:
   std::deque<qlex_tok_t> m_tok_buf;
   std::deque<char> m_pushback;
 
-  qlex_tok_t m_next_tok;
+  qlex_tok_t m_next_tok, m_current_tok;
 
   uint32_t m_row;
   uint32_t m_col;
@@ -134,6 +133,7 @@ public:
 
   qlex_tok_t next();
   qlex_tok_t peek();
+  qlex_tok_t current();
 
   void push_impl(const qlex_tok_t *tok);
   void collect_impl(const qlex_tok_t *tok);
@@ -144,6 +144,7 @@ public:
          qcore_env_t env)
       : m_getc_pos(GETC_BUFFER_SIZE),
         m_next_tok({}),
+        m_current_tok({}),
         m_row(1),
         m_col(0),
         m_offset(std::numeric_limits<uint32_t>::max()),

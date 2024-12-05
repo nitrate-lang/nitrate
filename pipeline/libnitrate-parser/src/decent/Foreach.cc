@@ -45,7 +45,8 @@ qparse::Stmt *qparse::recurse_foreach(qparse_t &S, qlex_t &rd) {
   }
 
   if (!tok.is(qName)) {
-    syntax(tok, "Expected identifier as index variable in foreach statement");
+    diagnostic << tok
+               << "Expected identifier as index variable in foreach statement";
     return mock_stmt(QAST_NODE_FOREACH);
   }
   std::string first_ident = tok.as_string(&rd), second_ident;
@@ -55,7 +56,9 @@ qparse::Stmt *qparse::recurse_foreach(qparse_t &S, qlex_t &rd) {
   if (tok.is<qPuncComa>()) {
     tok = next();
     if (!tok.is(qName)) {
-      syntax(tok, "Expected identifier as value variable in foreach statement");
+      diagnostic
+          << tok
+          << "Expected identifier as value variable in foreach statement";
       return mock_stmt(QAST_NODE_FOREACH);
     }
 

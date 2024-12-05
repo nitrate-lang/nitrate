@@ -55,7 +55,7 @@ qparse::Stmt *qparse::recurse_switch(qparse_t &S, qlex_t &rd) {
     if (tok.is<qKDefault>()) {
       next();
       if (default_case) {
-        syntax(tok, "Multiple default cases in switch statement");
+        diagnostic << tok << "Multiple default cases in switch statement";
         return mock_stmt(QAST_NODE_SWITCH);
       }
 

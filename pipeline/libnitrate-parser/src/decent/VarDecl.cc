@@ -41,7 +41,7 @@ using namespace qparse;
 static bool recurse_decl(qparse_t &S, qlex_tok_t tok, qlex_t &rd,
                          std::pair<std::string, Type *> &decl) {
   if (!tok.is(qName)) {
-    syntax(tok, "Expected a name in var declaration");
+    diagnostic << tok << "Expected a name in var declaration";
     return false;
   }
 
@@ -78,7 +78,7 @@ std::vector<Stmt *> qparse::recurse_var(qparse_t &S, qlex_t &rd) {
   }
 
   if (decls.empty()) {
-    syntax(tok, "Empty list of var declarations");
+    diagnostic << tok << "Empty list of var declarations";
     return {mock_stmt(QAST_NODE_VAR)};
   }
 

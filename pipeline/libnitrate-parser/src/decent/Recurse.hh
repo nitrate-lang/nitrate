@@ -76,6 +76,7 @@ namespace qparse {
 
 #define next() qlex_next(&rd)
 #define peek() qlex_peek(&rd)
+#define current() qlex_current(&rd)
 
 };  // namespace qparse
 

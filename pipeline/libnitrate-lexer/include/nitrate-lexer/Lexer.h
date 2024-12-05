@@ -165,6 +165,16 @@ qlex_tok_t qlex_next(qlex_t *lexer);
 qlex_tok_t qlex_peek(qlex_t *lexer);
 
 /**
+ * @brief Get the current token.
+ *
+ * @param lexer Lexer context.
+ *
+ * @return The current token.
+ * @note This function is thread-safe.
+ */
+qlex_tok_t qlex_current(qlex_t *lexer);
+
+/**
  * @brief Push token into the lexer.
  *
  * @param lexer Lexer context.

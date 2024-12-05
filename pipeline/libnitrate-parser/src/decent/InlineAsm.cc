@@ -36,10 +36,9 @@
 #include <decent/Recurse.hh>
 
 using namespace qparse;
-using namespace qparse;
 
 Stmt *qparse::recurse_inline_asm(qparse_t &, qlex_t &rd) {
-  syntax(peek(), "Inline assembly is not supported");
+  diagnostic << current() << "Inline assembly is not yet supported";
 
   return mock_stmt(QAST_NODE_INLINE_ASM);
 }
