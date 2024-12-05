@@ -75,7 +75,7 @@ std::vector<Stmt *> qparse::recurse_let(qparse_t &S, qlex_t &rd) {
 
     decls.push_back(decl);
   } else {
-    syntax(tok, "Expected a name or '[' in let declaration");
+    diagnostic << tok << "Expected a name or '[' in let declaration";
     return {mock_stmt(QAST_NODE_LET)};
   }
 
@@ -98,14 +98,15 @@ std::vector<Stmt *> qparse::recurse_let(qparse_t &S, qlex_t &rd) {
 
     tok = next();
     if (!tok.is<qPuncSemi>()) {
-      syntax(tok, "Expected a ';' after the initializer in let declaration");
+      diagnostic << tok
+                 << "Expected a ';' after the initializer in let declaration";
     }
 
     LetDecl *let_decl = LetDecl::get(decls[0].first, decls[0].second, init);
     let_decl->set_end_pos(tok.end);
     nodes.push_back(let_decl);
   } else {
-    syntax(tok, "Expected a ';' or '=' after the let declaration");
+    diagnostic << tok << "Expected a ';' or '=' after the let declaration";
   }
 
   return nodes;

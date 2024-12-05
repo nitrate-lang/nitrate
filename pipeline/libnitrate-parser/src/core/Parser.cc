@@ -53,7 +53,7 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
   if (expect_braces) {
     tok = next();
     if (!tok.is<qPuncLCur>()) {
-      syntax(tok, "Expected '{'");
+      diagnostic << tok << "Expected '{'";
     }
   }
 
@@ -90,7 +90,7 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
 
       tok = next();
       if (!tok.is<qPuncSemi>()) {
-        syntax(tok, "Expected ';'");
+        diagnostic << tok << "Expected ';'";
       }
 
       ExprStmt *stmt = ExprStmt::get(expr);
@@ -304,7 +304,7 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
   }
 
   if (expect_braces) {
-    syntax(tok, "Expected '}'");
+    diagnostic << tok << "Expected '}'";
   }
 
   return block;

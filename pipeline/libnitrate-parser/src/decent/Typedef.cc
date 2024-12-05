@@ -46,7 +46,7 @@ qparse::Stmt *qparse::recurse_typedef(qparse_t &S, qlex_t &rd) {
 
   tok = next();
   if (!tok.is<qOpSet>()) {
-    syntax(tok, "Expected '=' in typedef declaration");
+    diagnostic << tok << "Expected '=' in typedef declaration";
     return mock_stmt(QAST_NODE_TYPEDEF);
   }
 
@@ -54,7 +54,7 @@ qparse::Stmt *qparse::recurse_typedef(qparse_t &S, qlex_t &rd) {
 
   tok = next();
   if (!tok.is<qPuncSemi>()) {
-    syntax(tok, "Expected ';' in typedef declaration");
+    diagnostic << tok << "Expected ';' in typedef declaration";
     return mock_stmt(QAST_NODE_TYPEDEF);
   }
 

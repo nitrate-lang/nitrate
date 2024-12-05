@@ -43,7 +43,7 @@ qparse::Stmt *qparse::recurse_switch(qparse_t &S, qlex_t &rd) {
 
   qlex_tok_t tok = next();
   if (!tok.is<qPuncLCur>()) {
-    syntax(tok, "Expected '{' after switch condition");
+    diagnostic << tok << "Expected '{' after switch condition";
     return mock_stmt(QAST_NODE_SWITCH);
   }
 
@@ -61,7 +61,7 @@ qparse::Stmt *qparse::recurse_switch(qparse_t &S, qlex_t &rd) {
 
       tok = next();
       if (!tok.is<qPuncColn>()) {
-        syntax(tok, "Expected ':' after 'default' keyword");
+        diagnostic << tok << "Expected ':' after 'default' keyword";
         return mock_stmt(QAST_NODE_SWITCH);
       }
 
@@ -71,7 +71,8 @@ qparse::Stmt *qparse::recurse_switch(qparse_t &S, qlex_t &rd) {
     }
 
     if (!tok.is<qKCase>()) {
-      syntax(tok, "Expected 'case' or 'default' keyword in switch statement");
+      diagnostic << tok
+                 << "Expected 'case' or 'default' keyword in switch statement";
       return mock_stmt(QAST_NODE_SWITCH);
     }
     next();
@@ -80,7 +81,7 @@ qparse::Stmt *qparse::recurse_switch(qparse_t &S, qlex_t &rd) {
 
     tok = next();
     if (!tok.is<qPuncColn>()) {
-      syntax(tok, "Expected ':' after case expression");
+      diagnostic << tok << "Expected ':' after case expression";
       return mock_stmt(QAST_NODE_SWITCH);
     }
 
@@ -93,7 +94,7 @@ qparse::Stmt *qparse::recurse_switch(qparse_t &S, qlex_t &rd) {
 
   tok = next();
   if (!tok.is<qPuncRCur>()) {
-    syntax(tok, "Expected '}' after switch statement");
+    diagnostic << tok << "Expected '}' after switch statement";
     return mock_stmt(QAST_NODE_SWITCH);
   }
 

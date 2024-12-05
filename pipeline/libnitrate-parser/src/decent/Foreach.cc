@@ -70,7 +70,8 @@ qparse::Stmt *qparse::recurse_foreach(qparse_t &S, qlex_t &rd) {
   }
 
   if (!tok.is<qOpIn>()) {
-    syntax(tok, "Expected 'in' after value variable in foreach statement");
+    diagnostic << tok
+               << "Expected 'in' after value variable in foreach statement";
     return mock_stmt(QAST_NODE_FOREACH);
   }
 
@@ -79,7 +80,7 @@ qparse::Stmt *qparse::recurse_foreach(qparse_t &S, qlex_t &rd) {
     expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)});
     tok = next();
     if (!tok.is<qPuncRPar>()) {
-      syntax(tok, "Expected ')' after expression in foreach statement");
+      diagnostic << tok << "Expected ')' after expression in foreach statement";
       return mock_stmt(QAST_NODE_FOREACH);
     }
   } else {

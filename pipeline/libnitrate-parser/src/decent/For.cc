@@ -62,7 +62,7 @@ qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
 
       tok = next();
       if (!tok.is<qPuncSemi>()) {
-        syntax(tok, "Expected ';' after for loop initializer");
+        diagnostic << tok << "Expected ';' after for loop initializer";
         return mock_stmt(QAST_NODE_FOR);
       }
     }
@@ -71,14 +71,14 @@ qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
 
     tok = next();
     if (!tok.is<qPuncSemi>()) {
-      syntax(tok, "Expected ';' after for loop condition");
+      diagnostic << tok << "Expected ';' after for loop condition";
       return mock_stmt(QAST_NODE_FOR);
     }
 
     x2 = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)});
     tok = next();
     if (!tok.is<qPuncRPar>()) {
-      syntax(tok, "Expected ')' after for loop increment");
+      diagnostic << tok << "Expected ')' after for loop increment";
       return mock_stmt(QAST_NODE_FOR);
     }
 
@@ -111,7 +111,7 @@ qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
 
       tok = next();
       if (!tok.is<qPuncSemi>()) {
-        syntax(tok, "Expected ';' after for loop initializer");
+        diagnostic << tok << "Expected ';' after for loop initializer";
         return mock_stmt(QAST_NODE_FOR);
       }
     }
@@ -120,7 +120,7 @@ qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
 
     tok = next();
     if (!tok.is<qPuncSemi>()) {
-      syntax(tok, "Expected ';' after for loop condition");
+      diagnostic << tok << "Expected ';' after for loop condition";
       return mock_stmt(QAST_NODE_FOR);
     }
 

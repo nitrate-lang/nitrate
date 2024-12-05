@@ -124,19 +124,19 @@ Type *qparse::recurse_type(qparse_t &S, qlex_t &rd) {
          */
 
         if (!(tok = next()).is<qPuncLPar>()) {
-          syntax(tok, "Expected '(' after 'opaque'");
+          diagnostic << tok << "Expected '(' after 'opaque'";
           goto error_end;
         }
 
         if ((tok = next()).ty != qName) {
-          syntax(tok, "Expected a name after 'opaque('");
+          diagnostic << tok << "Expected a name after 'opaque('";
           goto error_end;
         }
 
         name = tok.as_string(&rd); /* Save the name of the opaque type. */
 
         if (!(tok = next()).is<qPuncRPar>()) {
-          syntax(tok, "Expected ')' after 'opaque(name'");
+          diagnostic << tok << "Expected ')' after 'opaque(name'";
           goto error_end;
         }
 
@@ -200,14 +200,14 @@ Type *qparse::recurse_type(qparse_t &S, qlex_t &rd) {
        */
 
       if (!(tok = next()).is<qOpGT>()) {
-        syntax(tok, "Expected '>' after '-' in map type");
+        diagnostic << tok << "Expected '>' after '-' in map type";
         goto error_end;
       }
 
       value_type = recurse_type(S, rd);
 
       if (!(tok = next()).is<qPuncRBrk>()) {
-        syntax(tok, "Expected ']' after map type");
+        diagnostic << tok << "Expected ']' after map type";
         goto error_end;
       }
 
@@ -223,14 +223,14 @@ Type *qparse::recurse_type(qparse_t &S, qlex_t &rd) {
      */
 
     if (!tok.is<qPuncSemi>()) {
-      syntax(tok, "Expected ';' separator in array type before size");
+      diagnostic << tok << "Expected ';' separator in array type before size";
       goto error_end;
     }
 
     size = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)});
 
     if (!(tok = next()).is<qPuncRBrk>()) {
-      syntax(tok, "Expected ']' after array size");
+      diagnostic << tok << "Expected ']' after array size";
       goto error_end;
     }
 
@@ -245,7 +245,7 @@ Type *qparse::recurse_type(qparse_t &S, qlex_t &rd) {
     type = recurse_type(S, rd);
 
     if (!(tok = next()).is<qPuncRCur>()) {
-      syntax(tok, "Expected '}' after set type");
+      diagnostic << tok << "Expected '}' after set type";
       goto error_end;
     }
 
@@ -347,7 +347,7 @@ type_suffix: {
       tok.v.op = qOpRShift;
       qlex_insert(&rd, tok);
     } else {
-      syntax(tok, "Expected '>' after template type arguments");
+      diagnostic << tok << "Expected '>' after template type arguments";
       goto error_end;
     }
 

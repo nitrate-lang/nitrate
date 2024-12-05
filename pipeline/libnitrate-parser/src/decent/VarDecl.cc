@@ -73,7 +73,7 @@ std::vector<Stmt *> qparse::recurse_var(qparse_t &S, qlex_t &rd) {
 
     decls.push_back(decl);
   } else {
-    syntax(tok, "Expected a name or '[' in var declaration");
+    diagnostic << tok << "Expected a name or '[' in var declaration";
     return {mock_stmt(QAST_NODE_VAR)};
   }
 
@@ -96,14 +96,15 @@ std::vector<Stmt *> qparse::recurse_var(qparse_t &S, qlex_t &rd) {
 
     tok = next();
     if (!tok.is<qPuncSemi>()) {
-      syntax(tok, "Expected a ';' after the initializer in var declaration");
+      diagnostic << tok
+                 << "Expected a ';' after the initializer in var declaration";
     }
 
     VarDecl *var_decl = VarDecl::get(decls[0].first, decls[0].second, init);
     var_decl->set_end_pos(tok.end);
     nodes.push_back(var_decl);
   } else {
-    syntax(tok, "Expected a ';' or '=' after the var declaration");
+    diagnostic << tok << "Expected a ';' or '=' after the var declaration";
   }
 
   return nodes;

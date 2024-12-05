@@ -51,7 +51,7 @@ qparse::Stmt *qparse::recurse_subsystem(qparse_t &S, qlex_t &rd) {
 
     tok = next();
     if (!tok.is<qPuncLBrk>()) {
-      syntax(tok, "Expected '[' after subsystem dependencies");
+      diagnostic << tok << "Expected '[' after subsystem dependencies";
       return mock_stmt(QAST_NODE_SUBSYSTEM);
     }
 

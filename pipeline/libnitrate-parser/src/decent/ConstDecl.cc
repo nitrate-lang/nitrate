@@ -72,7 +72,7 @@ std::vector<Stmt *> qparse::recurse_const(qparse_t &S, qlex_t &rd) {
 
     decls.push_back(decl);
   } else {
-    syntax(tok, "Expected a name or '[' in constant declaration");
+    diagnostic << tok << "Expected a name or '[' in constant declaration";
     return {mock_stmt(QAST_NODE_CONST)};
   }
 
@@ -95,8 +95,9 @@ std::vector<Stmt *> qparse::recurse_const(qparse_t &S, qlex_t &rd) {
 
     tok = next();
     if (!tok.is<qPuncSemi>()) {
-      syntax(tok,
-             "Expected a ';' after the initializer in constant declaration");
+      diagnostic
+          << tok
+          << "Expected a ';' after the initializer in constant declaration";
     }
 
     ConstDecl *const_decl =
@@ -104,7 +105,7 @@ std::vector<Stmt *> qparse::recurse_const(qparse_t &S, qlex_t &rd) {
     const_decl->set_end_pos(tok.end);
     nodes.push_back(const_decl);
   } else {
-    syntax(tok, "Expected a ';' or '=' after the constant declaration");
+    diagnostic << tok << "Expected a ';' or '=' after the constant declaration";
   }
 
   return nodes;

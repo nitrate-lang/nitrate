@@ -52,7 +52,7 @@ Stmt *qparse::recurse_return(qparse_t &S, qlex_t &rd) {
   tok = next();
 
   if (!tok.is<qPuncSemi>()) {
-    syntax(tok, "Expected a semicolon after the return statement.");
+    diagnostic << tok << "Expected a semicolon after the return statement.";
     return mock_stmt(QAST_NODE_RETURN);
   }
 
@@ -67,7 +67,7 @@ Stmt *qparse::recurse_retif(qparse_t &S, qlex_t &rd) {
 
   qlex_tok_t tok = next();
   if (!tok.is<qPuncComa>()) {
-    syntax(tok, "Expected a comma after the return-if expression.");
+    diagnostic << tok << "Expected a comma after the return-if expression.";
     return mock_stmt(QAST_NODE_RETIF);
   }
 
@@ -75,7 +75,7 @@ Stmt *qparse::recurse_retif(qparse_t &S, qlex_t &rd) {
 
   tok = next();
   if (!tok.is<qPuncSemi>()) {
-    syntax(tok, "Expected a semicolon after the return-if expression.");
+    diagnostic << tok << "Expected a semicolon after the return-if expression.";
     return mock_stmt(QAST_NODE_RETIF);
   }
 

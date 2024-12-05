@@ -38,7 +38,6 @@
 #include <cstddef>
 #include <decent/Recurse.hh>
 #include <stack>
-#include <string_view>
 
 #define MAX_EXPR_DEPTH (10000)
 #define MAX_LIST_DUP (10000)
@@ -141,7 +140,7 @@ static bool recurse_fstring(qparse_t &S, FString **node, qlex_t &rd,
 
   qlex_tok_t tok = next();
   if (!tok.is(qText)) {
-    syntax(tok, "Expected a string literal in F-string expression");
+    diagnostic << tok << "Expected a string literal in F-string expression";
   }
 
   auto fstr = tok.as_string(&rd);
@@ -194,7 +193,7 @@ static bool recurse_fstring(qparse_t &S, FString **node, qlex_t &rd,
   }
 
   if (state != 0) {
-    syntax(tok, "F-string expression is not properly closed with '}'");
+    diagnostic << tok << "F-string expression is not properly closed with '}'";
   }
 
   *node = FString::get(std::move(items));
@@ -208,10 +207,10 @@ static bool recurse_fstring(qparse_t &S, FString **node, qlex_t &rd,
 Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
                            std::set<qlex_tok_t> terminators, size_t depth) {
   if (depth > MAX_EXPR_DEPTH) {
-    syntax(peek(),
-           "Expression depth exceeded; Expressions can not be nested more than "
-           "%d times",
-           MAX_EXPR_DEPTH);
+    diagnostic
+        << peek()
+        << "Expression depth exceeded; Expressions can not be nested more than "
+        << MAX_EXPR_DEPTH << " times";
     return mock_expr(QAST_NODE_VOID_TY);
   }
 
@@ -342,9 +341,10 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
               Call *fcall = recurse_function_call(S, adapter, rd, depth);
 
               if (fcall == nullptr) {
-                syntax(tok,
-                       "Expected a function call after function definition "
-                       "expression");
+                diagnostic
+                    << tok
+                    << "Expected a function call after function definition "
+                       "expression";
                 return mock_expr(QAST_NODE_VOID_TY);
               }
 
@@ -357,7 +357,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
           case qKFString: {
             FString *f = nullptr;
             if (!recurse_fstring(S, &f, rd, depth)) {
-              syntax(tok, "Expected an F-string in expression");
+              diagnostic << tok << "Expected an F-string in expression";
               return mock_expr(QAST_NODE_VOID_TY);
             }
             stack.push(f);
@@ -393,7 +393,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
             expr = recurse_expr(S, rd, terminators_copy, depth + 1);
 
             if (!next().is<qPuncRPar>()) {
-              syntax(tok, "Expected ')' to close the parentheses");
+              diagnostic << tok << "Expected ')' to close the parentheses";
               return mock_expr(QAST_NODE_VOID_TY);
             }
 
@@ -423,7 +423,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
               tok = next();
               if (!tok.is<qPuncColn>()) {
-                syntax(tok, "Expected ':' in list element");
+                diagnostic << tok << "Expected ':' in list element";
                 return mock_expr(QAST_NODE_VOID_TY);
               }
 
@@ -484,9 +484,9 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
                       std::stoi(count->as<ConstInt>()->get_value().c_str());
 
                   if (count_val > MAX_LIST_DUP) {
-                    syntax(tok,
-                           "List element duplication count exceeds the maximum "
-                           "limit");
+                    diagnostic << tok
+                               << "List element duplication count exceeds the "
+                                  "maximum limit";
                     return mock_expr(QAST_NODE_VOID_TY);
                   }
 
@@ -527,7 +527,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
               tok = next();
               if (!tok.is<qPuncRBrk>()) {
-                syntax(tok, "Expected ']' to close the list index");
+                diagnostic << tok << "Expected ']' to close the list index";
                 return mock_expr(QAST_NODE_VOID_TY);
               }
 
@@ -536,7 +536,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
             }
 
             if (!tok.is<qPuncRBrk>()) {
-              syntax(tok, "Expected ']' to close the list index");
+              diagnostic << tok << "Expected ']' to close the list index";
               return mock_expr(QAST_NODE_VOID_TY);
             }
 
@@ -591,7 +591,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
 
           tok = next();
           if (!tok.is(qName)) {
-            syntax(tok, "Expected an identifier after '.'");
+            diagnostic << tok << "Expected an identifier after '.'";
             return mock_expr(QAST_NODE_VOID_TY);
           }
 
@@ -698,6 +698,6 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
     }
   }
 
-  syntax(peek(), "Unexpected end of expression");
+  diagnostic << peek() << "Unexpected end of expression";
   return mock_expr(QAST_NODE_VOID_TY);
 }

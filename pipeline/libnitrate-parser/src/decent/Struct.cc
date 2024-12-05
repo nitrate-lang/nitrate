@@ -45,7 +45,7 @@ bool qparse::recurse_attributes(qparse_t &S, qlex_t &rd,
   { /* The implementation list should be enclosed in square brackets ex: [abc,
        hello] */
     if (!tok.is<qPuncLBrk>()) {
-      syntax(tok, "Expected '[' after 'impl' in definition");
+      diagnostic << tok << "Expected '[' after 'impl' in definition";
     }
   }
 
@@ -123,8 +123,9 @@ qparse::Decl *qparse::recurse_composite_field(qparse_t &S, qlex_t &rd) {
 
   { /* Optional default value */
     if (!tok.is<qOpSet>()) {
-      syntax(tok,
-             "Expected '=' or ',' after field type in composite definition");
+      diagnostic
+          << tok
+          << "Expected '=' or ',' after field type in composite definition";
       return mock_decl(QAST_NODE_STRUCT_FIELD);
     }
     next();
@@ -181,7 +182,8 @@ qparse::Stmt *qparse::recurse_struct(qparse_t &S, qlex_t &rd,
   { /* Next token should be an open curly bracket */
     tok = next();
     if (!tok.is<qPuncLCur>()) {
-      syntax(tok, "Expected '{' after struct name in struct definition");
+      diagnostic << tok
+                 << "Expected '{' after struct name in struct definition";
       return mock_stmt(QAST_NODE_STRUCT);
     }
   }
@@ -259,9 +261,9 @@ qparse::Stmt *qparse::recurse_struct(qparse_t &S, qlex_t &rd,
 
       /* Static fields are not currently supported */
       if (!tok.is<qKFn>()) {
-        syntax(
-            tok,
-            "Expected function definition after 'static' in struct definition");
+        diagnostic << tok
+                   << "Expected function definition after 'static' in struct "
+                      "definition";
         return mock_stmt(QAST_NODE_STRUCT);
       }
 

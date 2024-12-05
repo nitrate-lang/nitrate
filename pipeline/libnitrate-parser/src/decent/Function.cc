@@ -117,7 +117,7 @@ static bool recurse_fn_parameter(qparse_t &S, qlex_t &rd, FuncParam &param) {
   Type *type = nullptr;
 
   if (!tok.is(qName)) {
-    syntax(tok, "Expected a parameter name before ':'");
+    diagnostic << tok << "Expected a parameter name before ':'";
   }
 
   name = tok.as_string(&rd);
@@ -167,42 +167,42 @@ static FunctionProperties read_function_properties(qlex_t &rd) {
   while (fn_get_property(rd, state));
 
   if (state.noexcept_ctr > 1) {
-    syntax(tok, "Multiple 'noexcept' specifiers");
+    diagnostic << tok << "Multiple 'noexcept' specifiers";
     return FunctionProperties();
   }
 
   if (state.foreign_ctr > 1) {
-    syntax(tok, "Multiple 'foreign' specifiers");
+    diagnostic << tok << "Multiple 'foreign' specifiers";
     return FunctionProperties();
   }
 
   if (state.impure_ctr > 1) {
-    syntax(tok, "Multiple 'impure' specifiers");
+    diagnostic << tok << "Multiple 'impure' specifiers";
     return FunctionProperties();
   }
 
   if (state.tsafe_ctr > 1) {
-    syntax(tok, "Multiple 'tsafe' specifiers");
+    diagnostic << tok << "Multiple 'tsafe' specifiers";
     return FunctionProperties();
   }
 
   if (state.pure_ctr > 1) {
-    syntax(tok, "Multiple 'pure' specifiers");
+    diagnostic << tok << "Multiple 'pure' specifiers";
     return FunctionProperties();
   }
 
   if (state.quasipure_ctr > 1) {
-    syntax(tok, "Multiple 'quasipure' specifiers");
+    diagnostic << tok << "Multiple 'quasipure' specifiers";
     return FunctionProperties();
   }
 
   if (state.retropure_ctr > 1) {
-    syntax(tok, "Multiple 'retropure' specifiers");
+    diagnostic << tok << "Multiple 'retropure' specifiers";
     return FunctionProperties();
   }
 
   if (state.inline_ctr > 1) {
-    syntax(tok, "Multiple 'inline' specifiers");
+    diagnostic << tok << "Multiple 'inline' specifiers";
     return FunctionProperties();
   }
 
@@ -210,13 +210,14 @@ static FunctionProperties read_function_properties(qlex_t &rd) {
       state.pure_ctr || state.quasipure_ctr || state.retropure_ctr;
 
   if (partial_pure && state.impure_ctr) {
-    syntax(tok, "Cannot mix 'pure', 'quasipure', 'retropure' with 'impure'");
+    diagnostic << tok
+               << "Cannot mix 'pure', 'quasipure', 'retropure' with 'impure'";
     return FunctionProperties();
   }
 
   if (partial_pure &&
       (state.pure_ctr + state.quasipure_ctr + state.retropure_ctr) != 1) {
-    syntax(tok, "Multiple purity specifiers; Illegal combination");
+    diagnostic << tok << "Multiple purity specifiers; Illegal combination";
     return FunctionProperties();
   }
 
@@ -344,7 +345,7 @@ static bool recurse_parameters(qparse_t &S, qlex_t &rd, FuncTy *ftype,
   qlex_tok_t c = peek();
 
   if (!c.is<qPuncLPar>()) {
-    syntax(c, "Expected '(' after function name");
+    diagnostic << c << "Expected '(' after function name";
     return false;
   }
 
@@ -370,7 +371,7 @@ static bool recurse_parameters(qparse_t &S, qlex_t &rd, FuncTy *ftype,
       next();
       c = next();
       if (!c.is<qPuncRPar>()) {
-        syntax(c, "Expected ')' after '...'");
+        diagnostic << c << "Expected ')' after '...'";
       }
 
       break;
@@ -428,13 +429,13 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, qparse_t &S,
 
     c = next();
     if (!c.is<qPuncLCur>()) {
-      syntax(c, "Expected '{' after 'req'");
+      diagnostic << c << "Expected '{' after 'req'";
     }
 
     while (true) {
       c = peek();
       if (c.is(qEofF)) {
-        syntax(c, "Unexpected EOF in 'req' block");
+        diagnostic << c << "Unexpected EOF in 'req' block";
         return false;
       }
 
@@ -449,7 +450,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, qparse_t &S,
 
         c = next();
         if (!c.is<qPuncSemi>()) {
-          syntax(c, "Expected ';' after expression");
+          diagnostic << c << "Expected ';' after expression";
           return false;
         }
 
@@ -463,7 +464,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, qparse_t &S,
 
         c = next();
         if (!c.is<qPuncSemi>()) {
-          syntax(c, "Expected ';' after expression");
+          diagnostic << c << "Expected ';' after expression";
           return false;
         }
 
@@ -473,7 +474,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, qparse_t &S,
           req_out = expr;
         }
       } else {
-        syntax(c, "Expected 'in' or 'out' after 'req'");
+        diagnostic << c << "Expected 'in' or 'out' after 'req'";
         return false;
       }
     }
@@ -666,10 +667,11 @@ Stmt *qparse::recurse_function(qparse_t &S, qlex_t &rd) {
   }
 
   if (ret_type) {
-    syntax(tok, "Expected '{', '=>', or ';' in function declaration");
+    diagnostic << tok << "Expected '{', '=>', or ';' in function declaration";
     return mock_stmt(QAST_NODE_FN);
   }
 
-  syntax(tok, "Expected ':', '{', '=>', or ';' in function declaration");
+  diagnostic << tok
+             << "Expected ':', '{', '=>', or ';' in function declaration";
   return mock_stmt(QAST_NODE_FN);
 }

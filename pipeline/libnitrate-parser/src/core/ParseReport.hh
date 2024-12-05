@@ -40,7 +40,6 @@
 #include <cstdarg>
 #include <functional>
 #include <sstream>
-#include <string_view>
 
 namespace qparse {
   enum class FormatStyle {
@@ -123,30 +122,6 @@ namespace qparse {
   };
 
   extern thread_local DiagnosticManager *diagnostic;
-
-  // [[deprecated("Syntax(...) is migrating to 'diagnostic << message'")]]
-  static inline void syntax(const qlex_tok_t &tok, std::string_view fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-
-    {
-      std::string msg;
-
-      {  // Format the message
-        char *c_msg = nullptr;
-        int r = vasprintf(&c_msg, fmt.data(), args);
-        if (r < 0) {
-          qcore_panic("Failed to format diagnostic message");
-        }
-        msg = c_msg;
-        free(c_msg);
-      }
-
-      diagnostic << tok << msg;
-    }
-
-    va_end(args);
-  }
 
 };  // namespace qparse
 

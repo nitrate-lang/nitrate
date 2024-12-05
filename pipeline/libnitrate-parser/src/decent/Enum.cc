@@ -94,7 +94,7 @@ qparse::Stmt *qparse::recurse_enum(qparse_t &S, qlex_t &rd) {
 
   tok = next();
   if (!tok.is<qPuncLCur>()) {
-    syntax(tok, "Expected a '{' to start the enum definition");
+    diagnostic << tok << "Expected a '{' to start the enum definition";
     return mock_stmt(QAST_NODE_ENUM);
   }
 
