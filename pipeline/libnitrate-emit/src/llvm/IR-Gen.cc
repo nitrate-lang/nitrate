@@ -1597,9 +1597,6 @@ namespace lower {
       let end = BasicBlock::Create(b.getContext(), "",
                                    s.get_stackframe().getFunction());
 
-      let old_branch_early = s.branch_early;
-      s.branch_early = false;
-
       b.CreateBr(begin);
       b.SetInsertPoint(begin);
 
@@ -1608,6 +1605,9 @@ namespace lower {
       if (let C = V(N->getCond())) {
         b.CreateCondBr(C.value(), body, end);
         b.SetInsertPoint(body);
+
+        let old_branch_early = s.branch_early;
+        s.branch_early = false;
 
         s.push_break_block(end);
         s.push_skip_block(begin);
@@ -1623,11 +1623,11 @@ namespace lower {
           R = end;
         }
 
+        s.branch_early = old_branch_early;
+
         s.pop_skip_block();
         s.pop_break_block();
       }
-
-      s.branch_early = old_branch_early;
 
       return R;
     }

@@ -144,12 +144,12 @@ namespace nr {
     // Builder helper methods
     ///**************************************************************************///
 
-    std::optional<Expr *> resolve_name(std::string_view name,
-                                       Kind kind) const noexcept;
+    std::optional<std::pair<Expr *, std::string_view>> resolve_name(
+        std::string_view name, Kind kind) noexcept;
 
     void try_transform_alpha(Expr *root) noexcept;
     void try_transform_beta(Expr *root) noexcept;
-    void try_transform_gamma(Expr *root) const noexcept;
+    void try_transform_gamma(Expr *root) noexcept;
     void connect_nodes(Seq *root) noexcept;
     void flatten_symbols(Seq *root) noexcept;
 

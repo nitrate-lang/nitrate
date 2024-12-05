@@ -89,9 +89,9 @@ void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }
 
 ///=============================================================================
 
-static bool isCyclicUtil(nr::Expr *base,
-                         std::unordered_set<nr::Expr *> &visited,
-                         std::unordered_set<nr::Expr *> &recStack) {
+static bool isCyclicUtil(const nr::Expr *const base,
+                         std::unordered_set<const nr::Expr *> &visited,
+                         std::unordered_set<const nr::Expr *> &recStack) {
   bool has_cycle = false;
 
   if (!visited.contains(base)) {
@@ -103,7 +103,8 @@ static bool isCyclicUtil(nr::Expr *base,
     // Recur for all the vertices adjacent
     // to this vertex
     iterate<IterMode::children>(
-        base, [&](nr::Expr *, nr::Expr **cur) -> IterOp {
+        base,
+        [&](const nr::Expr *, const nr::Expr *const *const cur) -> IterOp {
           if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack))
               [[unlikely]] {
             has_cycle = true;
@@ -123,19 +124,19 @@ static bool isCyclicUtil(nr::Expr *base,
 }
 
 CPP_EXPORT bool nr::Expr::isAcyclic() const noexcept {
-  std::unordered_set<Expr *> visited, recStack;
+  std::unordered_set<const Expr *> visited, recStack;
   bool has_cycle = false;
 
-  Expr *ptr = const_cast<Expr *>(this);
-  iterate<IterMode::children>(ptr, [&](Expr *, Expr **cur) -> IterOp {
-    if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack))
-        [[unlikely]] {
-      has_cycle = true;
-      return IterOp::Abort;
-    }
+  iterate<IterMode::children>(
+      this, [&](const Expr *const, const Expr *const *const cur) -> IterOp {
+        if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack))
+            [[unlikely]] {
+          has_cycle = true;
+          return IterOp::Abort;
+        }
 
-    return IterOp::Proceed;
-  });
+        return IterOp::Proceed;
+      });
 
   return !has_cycle;
 }

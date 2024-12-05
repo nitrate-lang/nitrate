@@ -319,7 +319,28 @@ nr_node_t *nr_clone_impl(
     }
     case NR_NODE_TMP: {
       Tmp *n = static_cast<Tmp *>(in);
-      out = create<Tmp>(n->getTmpType(), n->getData());
+      switch (n->getTmpType()) {
+        case TmpType::NAMED_TYPE: {
+          std::string_view type_name = std::get<std::string_view>(n->getData());
+          out = create<Tmp>(TmpType::NAMED_TYPE, type_name);
+          break;
+        }
+        case TmpType::DEFAULT_VALUE: {
+          std::string_view type_name = std::get<std::string_view>(n->getData());
+          out = create<Tmp>(TmpType::DEFAULT_VALUE, type_name);
+          break;
+        }
+        case TmpType::CALL: {
+          const auto &data = std::get<CallArgsTmpNodeCradle>(n->getData());
+          CallArguments args;
+          for (auto arg : data.args) {
+            args.push_back({arg.first, clone(arg.second)});
+          }
+          Expr *base = clone(data.base);
+          out = create<Tmp>(TmpType::CALL, CallArgsTmpNodeCradle{base, args});
+          break;
+        }
+      }
       break;
     }
   }

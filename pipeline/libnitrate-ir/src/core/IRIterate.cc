@@ -264,6 +264,26 @@ namespace nr::detail {
         break;
       }
       case NR_NODE_TMP: {
+        Tmp *tmp = base->as<Tmp>();
+        switch (tmp->getTmpType()) {
+          case TmpType::NAMED_TYPE: {
+            break;
+          }
+
+          case TmpType::DEFAULT_VALUE: {
+            break;
+          }
+
+          case TmpType::CALL: {
+            auto &data = get<CallArgsTmpNodeCradle>(tmp->getData());
+
+            children.push_back(&data.base);
+            for (auto &arg : data.args) {
+              children.push_back(&arg.second);
+            }
+            break;
+          }
+        }
         break;
       }
     }

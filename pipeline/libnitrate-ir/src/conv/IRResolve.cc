@@ -101,12 +101,12 @@ void NRBuilder::try_transform_alpha(Expr *root) noexcept {
       auto result = resolve_name(type_name, Kind::TypeDef);
       if (result.has_value()) [[likely]] {
         /* Replace the current node */
-        *C = result.value();
+        *C = result.value().first;
 
         if (is_default_value_expr) {
           /* Replace the default value expression with the actual default value
            */
-          if (auto def = getDefaultValue(result.value()->asType())) {
+          if (auto def = getDefaultValue(result.value().first->asType())) {
             *C = def.value();
           }
         }
@@ -132,9 +132,10 @@ void NRBuilder::try_transform_beta(Expr *root) noexcept {
       Ident *I = N->as<Ident>();
 
       if (auto enum_opt = resolve_name(I->getName(), Kind::ScopedEnum)) {
-        *C = enum_opt.value();
+        *C = enum_opt.value().first;
       } else if (auto var_opt = resolve_name(I->getName(), Kind::Variable)) {
-        I->setWhat(var_opt.value());
+        I->setWhat(var_opt.value().first);
+        I->setName(var_opt.value().second);
       }
     }
 
@@ -220,7 +221,7 @@ static void resolve_function_call(
   }
 }
 
-void NRBuilder::try_transform_gamma(Expr *root) const noexcept {
+void NRBuilder::try_transform_gamma(Expr *root) noexcept {
   using namespace std;
 
   /* Foreach node in the IR Graph: if the node is a TMP CALL node, replace it
@@ -245,8 +246,8 @@ void NRBuilder::try_transform_gamma(Expr *root) const noexcept {
         /* Search the map of function defintions, conducting name resoltion in
          * the process */
         if (auto callee_opt = resolve_name(callee_name, Kind::Function)) {
-          qcore_assert(callee_opt.value()->is(NR_NODE_FN));
-          auto callee_func = callee_opt.value()->as<Fn>();
+          qcore_assert(callee_opt.value().first->is(NR_NODE_FN));
+          auto callee_func = callee_opt.value().first->as<Fn>();
 
           /* Perform type inference on the callee node */
           if (auto callee_type_opt = callee_func->getType();
@@ -270,7 +271,7 @@ void NRBuilder::try_transform_gamma(Expr *root) const noexcept {
           }
         } else if (auto callee_opt =
                        resolve_name(callee_name, Kind::Variable)) {
-          qcore_assert(callee_opt.value()->is(NR_NODE_LOCAL));
+          qcore_assert(callee_opt.value().first->is(NR_NODE_LOCAL));
 
           /* Check that the caller does not use any named arguments */
           bool only_positional_args =
@@ -278,7 +279,7 @@ void NRBuilder::try_transform_gamma(Expr *root) const noexcept {
                      [](auto x) { return isdigit(x.first.at(0)); });
 
           if (only_positional_args) {
-            auto callee_local = callee_opt.value()->as<Local>();
+            auto callee_local = callee_opt.value().first->as<Local>();
 
             /* Perform type inference on the callee node */
             if (auto local_type = callee_local->getType();
