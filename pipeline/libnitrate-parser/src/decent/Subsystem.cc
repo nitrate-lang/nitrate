@@ -84,7 +84,7 @@ qparse::Stmt *qparse::recurse_subsystem(qparse_t &S, qlex_t &rd) {
     }
   }
 
-  Stmt *block = recurse(S, rd, true);
+  Stmt *block = recurse_block(S, rd, true);
 
   std::set<Expr *> attributes;
   tok = peek();

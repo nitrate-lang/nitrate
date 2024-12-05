@@ -69,8 +69,8 @@ namespace qparse {
   bool recurse_attributes(qparse_t &S, qlex_t &rd,
                           std::set<Expr *> &attributes);
 
-  Stmt *recurse(qparse_t &S, qlex_t &rd, bool expect_braces = true,
-                bool single_stmt = false);
+  Stmt *recurse_block(qparse_t &S, qlex_t &rd, bool expect_braces = true,
+                      bool single_stmt = false);
 
   struct tok_hash {
     std::size_t operator()(qlex_tok_t const &v) const {

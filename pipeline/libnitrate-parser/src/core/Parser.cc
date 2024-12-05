@@ -44,8 +44,8 @@
 
 using namespace qparse;
 
-Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
-                      bool single_stmt) {
+Stmt *qparse::recurse_block(qparse_t &S, qlex_t &rd, bool expect_braces,
+                            bool single_stmt) {
   qlex_tok_t tok;
 
   Block *block = Block::get();
@@ -252,9 +252,9 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
       case qKUnsafe: {
         tok = peek();
         if (tok.is<qPuncLCur>()) {
-          node = recurse(S, rd);
+          node = recurse_block(S, rd);
         } else {
-          node = recurse(S, rd, false, true);
+          node = recurse_block(S, rd, false, true);
         }
 
         if (node->is(QAST_NODE_BLOCK)) {
@@ -267,9 +267,9 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
       case qKSafe: {
         tok = peek();
         if (tok.is<qPuncLCur>()) {
-          node = recurse(S, rd);
+          node = recurse_block(S, rd);
         } else {
-          node = recurse(S, rd, false, true);
+          node = recurse_block(S, rd, false, true);
         }
 
         if (node->is(QAST_NODE_BLOCK)) {
@@ -282,9 +282,9 @@ Stmt *qparse::recurse(qparse_t &S, qlex_t &rd, bool expect_braces,
       case qKVolatile: {
         tok = peek();
         if (tok.is<qPuncLCur>()) {
-          node = recurse(S, rd);
+          node = recurse_block(S, rd);
         } else {
-          node = recurse(S, rd, false, true);
+          node = recurse_block(S, rd, false, true);
         }
 
         node = VolStmt::get(block);
@@ -354,7 +354,7 @@ C_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
   qparse::install_reference(L);
 
   parser_ctx = L;
-  *out = qparse::recurse(*L, *L->lexer, false, false);
+  *out = qparse::recurse_block(*L, *L->lexer, false, false);
   parser_ctx = nullptr;
 
   /*== Uninstall thread-local references to the parser ==*/

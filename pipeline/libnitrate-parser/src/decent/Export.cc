@@ -50,14 +50,14 @@ qparse::Stmt *qparse::recurse_pub(qparse_t &S, qlex_t &rd) {
   }
 
   if (tok.is<qPuncLCur>()) {
-    Stmt *block = recurse(S, rd, true);
+    Stmt *block = recurse_block(S, rd, true);
 
     auto R = ExportDecl::get(block, abiName);
     R->set_end_pos(block->get_end_pos());
     return R;
   }
 
-  Stmt *block = recurse(S, rd, false, true);
+  Stmt *block = recurse_block(S, rd, false, true);
 
   auto R = ExportDecl::get(block, abiName);
   R->set_end_pos(block->get_end_pos());
@@ -79,13 +79,13 @@ qparse::Stmt *qparse::recurse_sec(qparse_t &S, qlex_t &rd) {
   }
 
   if (tok.is<qPuncLCur>()) {
-    Stmt *block = recurse(S, rd, true);
+    Stmt *block = recurse_block(S, rd, true);
 
     block->set_end_pos(block->get_end_pos());
     return block;
   }
 
-  Stmt *block = recurse(S, rd, false, true);
+  Stmt *block = recurse_block(S, rd, false, true);
 
   block->set_end_pos(block->get_end_pos());
   return block;
@@ -106,13 +106,13 @@ qparse::Stmt *qparse::recurse_pro(qparse_t &S, qlex_t &rd) {
   }
 
   if (tok.is<qPuncLCur>()) {
-    Stmt *block = recurse(S, rd, true);
+    Stmt *block = recurse_block(S, rd, true);
 
     block->set_end_pos(block->get_end_pos());
     return block;
   }
 
-  Stmt *block = recurse(S, rd, false, true);
+  Stmt *block = recurse_block(S, rd, false, true);
 
   block->set_end_pos(block->get_end_pos());
 

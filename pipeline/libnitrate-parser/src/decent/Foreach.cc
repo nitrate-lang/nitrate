@@ -95,9 +95,9 @@ qparse::Stmt *qparse::recurse_foreach(qparse_t &S, qlex_t &rd) {
   Stmt *block = nullptr;
   if (tok.is<qOpArrow>()) {
     next();
-    block = recurse(S, rd, false, true);
+    block = recurse_block(S, rd, false, true);
   } else {
-    block = recurse(S, rd);
+    block = recurse_block(S, rd);
   }
 
   auto R = ForeachStmt::get(first_ident, second_ident, expr, block);

@@ -605,7 +605,7 @@ Stmt *qparse::recurse_function(qparse_t &S, qlex_t &rd) {
 
       Stmt *fnbody = nullptr;
 
-      fnbody = recurse(S, rd, false, true);
+      fnbody = recurse_block(S, rd, false, true);
 
       if (!ftype->get_return_ty()) {
         ftype->set_return_ty(VoidTy::get());
@@ -640,7 +640,7 @@ Stmt *qparse::recurse_function(qparse_t &S, qlex_t &rd) {
     Expr *req_in = nullptr, *req_out = nullptr;
     std::set<Expr *> attributes;
 
-    fnbody = recurse(S, rd);
+    fnbody = recurse_block(S, rd);
 
     tok = peek();
 

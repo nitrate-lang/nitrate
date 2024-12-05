@@ -38,19 +38,19 @@
 #include <decent/Recurse.hh>
 
 qparse::Stmt *qparse::recurse_while(qparse_t &S, qlex_t &rd) {
-  Expr *cond = recurse_expr(
+  auto while_cond = recurse_expr(
       S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
 
   Stmt *then_block = nullptr;
 
   if (peek().is<qOpArrow>()) {
     next();
-    then_block = recurse(S, rd, false, true);
+    then_block = recurse_block(S, rd, false, true);
   } else {
-    then_block = recurse(S, rd, true);
+    then_block = recurse_block(S, rd, true);
   }
 
-  auto R = WhileStmt::get(cond, then_block);
+  auto R = WhileStmt::get(while_cond, then_block);
   R->set_end_pos(then_block->get_end_pos());
 
   return R;

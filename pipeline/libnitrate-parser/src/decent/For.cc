@@ -88,9 +88,9 @@ qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
 
     if (peek().is<qOpArrow>()) {
       tok = next();
-      then_block = recurse(S, rd, false, true);
+      then_block = recurse_block(S, rd, false, true);
     } else {
-      then_block = recurse(S, rd, true);
+      then_block = recurse_block(S, rd, true);
     }
 
     return ForStmt::get(x0, x1, x2, then_block);
@@ -133,9 +133,9 @@ qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
 
     if (peek().is<qOpArrow>()) {
       tok = next();
-      then_block = recurse(S, rd, false, true);
+      then_block = recurse_block(S, rd, false, true);
     } else {
-      then_block = recurse(S, rd, true);
+      then_block = recurse_block(S, rd, true);
     }
 
     return ForStmt::get(x0, x1, x2, then_block);

@@ -67,7 +67,7 @@ qparse::Stmt *qparse::recurse_switch(qparse_t &S, qlex_t &rd) {
         return mock_stmt(QAST_NODE_SWITCH);
       }
 
-      default_case = recurse(S, rd);
+      default_case = recurse_block(S, rd);
 
       continue;
     }
@@ -87,7 +87,7 @@ qparse::Stmt *qparse::recurse_switch(qparse_t &S, qlex_t &rd) {
       return mock_stmt(QAST_NODE_SWITCH);
     }
 
-    Stmt *case_block = recurse(S, rd);
+    Stmt *case_block = recurse_block(S, rd);
 
     CaseStmt *case_stmt = CaseStmt::get(case_expr, case_block);
     case_stmt->set_end_pos(case_block->get_end_pos());
