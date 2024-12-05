@@ -74,14 +74,6 @@ namespace qparse {
   Expr *recurse_expr(qparse_t &S, qlex_t &rd, std::set<qlex_tok_t> terminators,
                      size_t depth = 0);
 
-  static inline bool recurse_expr(qparse_t &S, qlex_t &rd,
-                                  std::set<qlex_tok_t> terminators, Expr **node,
-                                  size_t depth = 0) {
-    *node = recurse_expr(S, rd, terminators, depth);
-
-    return true;
-  }
-
 #define next() qlex_next(&rd)
 #define peek() qlex_peek(&rd)
 

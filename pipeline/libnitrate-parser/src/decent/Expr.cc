@@ -418,12 +418,8 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
               }
 
               Expr *key = nullptr, *value = nullptr;
-              if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncColn)}, &key,
-                                depth + 1) ||
-                  !key) {
-                syntax(tok, "Expected a key in list element");
-                return mock_expr(QAST_NODE_VOID_TY);
-              }
+              key = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncColn)},
+                                 depth + 1);
 
               tok = next();
               if (!tok.is<qPuncColn>()) {
@@ -431,14 +427,10 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
                 return mock_expr(QAST_NODE_VOID_TY);
               }
 
-              if (!recurse_expr(S, rd,
-                                {qlex_tok_t(qPunc, qPuncComa),
-                                 qlex_tok_t(qPunc, qPuncRCur)},
-                                &value, depth + 1) ||
-                  !value) {
-                syntax(tok, "Expected a value in list element");
-                return mock_expr(QAST_NODE_VOID_TY);
-              }
+              value = recurse_expr(
+                  S, rd,
+                  {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},
+                  depth + 1);
 
               elements.push_back(Assoc::get(key, value));
 
@@ -467,30 +459,20 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
                   break;
                 }
 
-                Expr *element = nullptr;
-                if (!recurse_expr(S, rd,
-                                  {qlex_tok_t(qPunc, qPuncComa),
-                                   qlex_tok_t(qPunc, qPuncSemi),
-                                   qlex_tok_t(qPunc, qPuncRBrk)},
-                                  &element, depth + 1) ||
-                    !element) {
-                  syntax(tok, "Expected an element in list");
-                  return mock_expr(QAST_NODE_VOID_TY);
-                }
+                Expr *element = recurse_expr(
+                    S, rd,
+                    {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
+                     qlex_tok_t(qPunc, qPuncRBrk)},
+                    depth + 1);
 
                 tok = peek();
                 if (tok.is<qPuncSemi>()) {
                   next();
 
-                  Expr *count = nullptr;
-                  if (!recurse_expr(S, rd,
-                                    {qlex_tok_t(qPunc, qPuncRBrk),
-                                     qlex_tok_t(qPunc, qPuncComa)},
-                                    &count, depth + 1) ||
-                      !count) {
-                    syntax(tok, "Expected a count in list element");
-                    return mock_expr(QAST_NODE_VOID_TY);
-                  }
+                  Expr *count = recurse_expr(S, rd,
+                                             {qlex_tok_t(qPunc, qPuncRBrk),
+                                              qlex_tok_t(qPunc, qPuncComa)},
+                                             depth + 1);
 
                   if (!count->is<ConstInt>()) {
                     syntax(tok, "Expected a constant integer in list element");
@@ -532,24 +514,15 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
             Expr *index = nullptr, *left = stack.top();
             stack.pop();
 
-            if (!recurse_expr(S, rd,
-                              {qlex_tok_t(qPunc, qPuncRBrk),
-                               qlex_tok_t(qPunc, qPuncColn)},
-                              &index, depth + 1) ||
-                !index) {
-              syntax(tok, "Expected an index in list");
-              return mock_expr(QAST_NODE_VOID_TY);
-            }
+            index = recurse_expr(
+                S, rd,
+                {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncColn)},
+                depth + 1);
 
             tok = next();
             if (tok.is<qPuncColn>()) {
-              Expr *end = nullptr;
-              if (!recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)}, &end,
-                                depth + 1) ||
-                  !end) {
-                syntax(tok, "Expected an end index in list");
-                return mock_expr(QAST_NODE_VOID_TY);
-              }
+              Expr *end = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)},
+                                       depth + 1);
 
               tok = next();
               if (!tok.is<qPuncRBrk>()) {
@@ -593,11 +566,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
             Expr *right = nullptr, *left = stack.top();
             stack.pop();
 
-            if (!recurse_expr(S, rd, terminators, &right, depth + 1) ||
-                !right) {
-              syntax(tok, "Expected an expression after ','");
-              return mock_expr(QAST_NODE_VOID_TY);
-            }
+            right = recurse_expr(S, rd, terminators, depth + 1);
 
             stack.push(SeqPoint::get(SeqPoint({left, right})));
             continue;
@@ -674,10 +643,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
           continue;
         }
 
-        if (!recurse_expr(S, rd, terminators, &expr, depth + 1) || !expr) {
-          syntax(tok, "Failed to parse expression in binary operation");
-          return mock_expr(QAST_NODE_VOID_TY);
-        }
+        expr = recurse_expr(S, rd, terminators, depth + 1);
 
         if (stack.empty()) {
           stack.push(UnaryExpr::get((qlex_op_t)op, expr));
