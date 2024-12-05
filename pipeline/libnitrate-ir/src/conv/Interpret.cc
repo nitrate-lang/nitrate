@@ -402,16 +402,6 @@ namespace comptime {
           break;
         }
 
-        case Op::ROTR: {
-          /// TODO: Implement operator
-          break;
-        }
-
-        case Op::ROTL: {
-          /// TODO: Implement operator
-          break;
-        }
-
         case Op::Set: {
           /// TODO: Implement operator
           break;

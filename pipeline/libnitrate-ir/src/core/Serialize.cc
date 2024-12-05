@@ -79,8 +79,6 @@ static const boost::bimap<Op, std::string_view> opstr_map =
         {Op::LogicNot, "!"},
         {Op::LShift, "<<"},
         {Op::RShift, ">>"},
-        {Op::ROTR, ">>>"},
-        {Op::ROTL, "<<<"},
         {Op::Inc, "++"},
         {Op::Dec, "--"},
         {Op::Set, "="},

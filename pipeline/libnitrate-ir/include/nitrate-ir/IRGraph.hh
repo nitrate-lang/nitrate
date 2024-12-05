@@ -452,8 +452,6 @@ namespace nr {
     LogicNot,  /* '!': Logical NOT operator */
     LShift,    /* '<<': Left shift operator */
     RShift,    /* '>>': Right shift operator */
-    ROTR,      /* '>>>': Rotate right operator */
-    ROTL,      /* '<<<': Rotate left operator */
     Inc,       /* '++': Increment operator */
     Dec,       /* '--': Decrement operator */
     Set,       /* '=': Assignment operator */

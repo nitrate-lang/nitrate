@@ -252,11 +252,13 @@ static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &, PState &,
       break;
     }
     case qOpROTR: {
-      R = STD_BINOP(ROTR);
+      /* TODO: Implement '>>>' operator */
+      qcore_implement();
       break;
     }
     case qOpROTL: {
-      R = STD_BINOP(ROTL);
+      /* TODO: Implement '<<<' operator */
+      qcore_implement();
       break;
     }
     case qOpInc: {
@@ -330,11 +332,13 @@ static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &, PState &,
       break;
     }
     case qOpROTRSet: {
-      R = ASSIGN_BINOP(ROTR);
+      /* TODO: Implement '>>>=' operator */
+      qcore_implement();
       break;
     }
     case qOpROTLSet: {
-      R = ASSIGN_BINOP(ROTL);
+      /* TODO: Implement '<<<=' operator */
+      qcore_implement();
       break;
     }
     case qOpLT: {

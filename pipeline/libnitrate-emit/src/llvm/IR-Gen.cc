@@ -80,21 +80,27 @@
 #include <streambuf>
 #include <unordered_map>
 
+using namespace llvm;
+using namespace std;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #if defined(QCORE_DEBUG)
 #define debug(...) \
-  std::cerr << "[debug]: ln " << __LINE__ << ": " << __VA_ARGS__ << std::endl
+  cerr << "[debug]: ln " << __LINE__ << ": " << __VA_ARGS__ << endl
 #else
 #define debug(...)
 #endif
 
-typedef std::function<bool(qmodule_t *, qcode_conf_t *, std::ostream &err,
-                           llvm::raw_pwrite_stream &out)>
+typedef function<bool(qmodule_t *, qcode_conf_t *, ostream &err,
+                      raw_pwrite_stream &out)>
     qcode_adapter_fn;
 
-using ctx_t = llvm::Module;
-using craft_t = llvm::IRBuilder<>;
-using val_t = std::optional<llvm::Value *>;
-using ty_t = std::optional<llvm::Type *>;
+using ctx_t = Module;
+using craft_t = IRBuilder<>;
+using val_t = optional<Value *>;
+using ty_t = optional<Type *>;
 
 enum class PtrClass {
   DataPtr,
@@ -102,27 +108,27 @@ enum class PtrClass {
 };
 
 class FunctionReturnBlock {
-  llvm::AllocaInst *m_value;
-  llvm::BasicBlock *m_block;
+  AllocaInst *m_value;
+  BasicBlock *m_block;
 
 public:
-  FunctionReturnBlock(llvm::AllocaInst *value, llvm::BasicBlock *block)
+  FunctionReturnBlock(AllocaInst *value, BasicBlock *block)
       : m_value(value), m_block(block) {}
 
-  llvm::AllocaInst *getValue() const { return m_value; }
-  llvm::BasicBlock *getBlock() const { return m_block; }
+  AllocaInst *getValue() const { return m_value; }
+  BasicBlock *getBlock() const { return m_block; }
 };
 
 class FunctionStackFrame {
-  llvm::Function *m_fn;
-  std::unordered_map<std::string_view, llvm::AllocaInst *> m_locals;
+  Function *m_fn;
+  unordered_map<string_view, AllocaInst *> m_locals;
 
 public:
-  FunctionStackFrame(llvm::Function *fn) : m_fn(fn) {}
+  FunctionStackFrame(Function *fn) : m_fn(fn) {}
 
-  llvm::Function *getFunction() const { return m_fn; }
+  Function *getFunction() const { return m_fn; }
 
-  void addVariable(std::string_view name, llvm::AllocaInst *inst) {
+  void addVariable(string_view name, AllocaInst *inst) {
     m_locals[name] = inst;
   }
 
@@ -130,12 +136,12 @@ public:
 };
 
 class State {
-  std::stack<FunctionReturnBlock> m_return_block_stack;
+  stack<FunctionReturnBlock> m_return_block_stack;
+  stack<GlobalValue::LinkageTypes> m_current_linkage;
+  stack<BasicBlock *> m_break_stack;
+  stack<BasicBlock *> m_skip_stack;
+  stack<FunctionStackFrame> m_stackframe;
   bool m_inside_fn;
-  std::stack<llvm::GlobalValue::LinkageTypes> m_current_linkage;
-  std::stack<llvm::BasicBlock *> m_break_stack;
-  std::stack<llvm::BasicBlock *> m_skip_stack;
-  std::stack<FunctionStackFrame> m_stackframe;
 
 public:
   bool did_ret;
@@ -144,15 +150,15 @@ public:
 
 public:
   State() {
-    m_current_linkage.push(llvm::GlobalValue::LinkageTypes::PrivateLinkage);
+    m_current_linkage.push(GlobalValue::LinkageTypes::PrivateLinkage);
     m_inside_fn = false;
     did_ret = false;
     did_brk = false;
     did_cont = false;
   }
 
-  std::optional<std::pair<llvm::Value *, PtrClass>> find_named_value(
-      ctx_t &m, std::string_view name) const {
+  optional<pair<Value *, PtrClass>> find_named_value(ctx_t &m,
+                                                     string_view name) const {
     if (is_inside_function()) {
       for (const auto &[cur_name, inst] :
            m_stackframe.top().getLocalVariables()) {
@@ -162,21 +168,21 @@ public:
       }
     }
 
-    if (llvm::GlobalVariable *global = m.getGlobalVariable(name)) {
+    if (GlobalVariable *global = m.getGlobalVariable(name)) {
       return {{global, PtrClass::DataPtr}};
     }
 
-    if (llvm::Function *func = m.getFunction(name)) {
+    if (Function *func = m.getFunction(name)) {
       return {{func, PtrClass::Function}};
     }
 
     debug("Failed to find named value: " << name);
-    return std::nullopt;
+    return nullopt;
   }
 
   /////////////////////////////////////////////////////////////////////////////
 
-  void push_return_block(llvm::AllocaInst *value, llvm::BasicBlock *block) {
+  void push_return_block(AllocaInst *value, BasicBlock *block) {
     m_return_block_stack.push(FunctionReturnBlock(value, block));
   }
 
@@ -203,11 +209,11 @@ public:
 
   /////////////////////////////////////////////////////////////////////////////
 
-  void push_linkage(llvm::GlobalValue::LinkageTypes linkage) {
+  void push_linkage(GlobalValue::LinkageTypes linkage) {
     m_current_linkage.push(linkage);
   }
 
-  llvm::GlobalValue::LinkageTypes get_linkage() const {
+  GlobalValue::LinkageTypes get_linkage() const {
     if (m_current_linkage.empty()) [[unlikely]] {
       qcore_panic("linkage stack is empty");
     }
@@ -225,11 +231,11 @@ public:
 
   /////////////////////////////////////////////////////////////////////////////
 
-  void push_break_block(llvm::BasicBlock *block) { m_break_stack.push(block); }
+  void push_break_block(BasicBlock *block) { m_break_stack.push(block); }
 
-  std::optional<llvm::BasicBlock *> get_break_block() const {
+  optional<BasicBlock *> get_break_block() const {
     if (m_break_stack.empty()) {
-      return std::nullopt;
+      return nullopt;
     }
 
     return m_break_stack.top();
@@ -245,11 +251,11 @@ public:
 
   /////////////////////////////////////////////////////////////////////////////
 
-  void push_skip_block(llvm::BasicBlock *block) { m_skip_stack.push(block); }
+  void push_skip_block(BasicBlock *block) { m_skip_stack.push(block); }
 
-  std::optional<llvm::BasicBlock *> get_skip_block() const {
+  optional<BasicBlock *> get_skip_block() const {
     if (m_skip_stack.empty()) {
-      return std::nullopt;
+      return nullopt;
     }
 
     return m_skip_stack.top();
@@ -265,7 +271,7 @@ public:
 
   /////////////////////////////////////////////////////////////////////////////
 
-  void push_stackframe(llvm::Function *fn) {
+  void push_stackframe(Function *fn) {
     m_stackframe.push(FunctionStackFrame(fn));
   }
 
@@ -286,30 +292,30 @@ public:
   }
 };
 
-class OStreamWriter : public std::streambuf {
+class OStreamWriter : public streambuf {
   FILE *m_file;
 
 public:
   OStreamWriter(FILE *file) : m_file(file) {}
 
-  virtual std::streamsize xsputn(const char *s, std::streamsize n) override {
+  virtual streamsize xsputn(const char *s, streamsize n) override {
     return fwrite(s, 1, n, m_file);
   }
 
   virtual int overflow(int c) override { return fputc(c, m_file); }
 
   // Get current position
-  virtual std::streampos seekoff(std::streamoff off, std::ios_base::seekdir way,
-                                 std::ios_base::openmode) override {
-    if (way == std::ios_base::cur) {
+  virtual streampos seekoff(streamoff off, ios_base::seekdir way,
+                            ios_base::openmode) override {
+    if (way == ios_base::cur) {
       if (fseek(m_file, off, SEEK_CUR) == -1) {
         return -1;
       }
-    } else if (way == std::ios_base::end) {
+    } else if (way == ios_base::end) {
       if (fseek(m_file, off, SEEK_END) == -1) {
         return -1;
       }
-    } else if (way == std::ios_base::beg) {
+    } else if (way == ios_base::beg) {
       if (fseek(m_file, off, SEEK_SET) == -1) {
         return -1;
       }
@@ -318,8 +324,7 @@ public:
     return ftell(m_file);
   }
 
-  virtual std::streampos seekpos(std::streampos sp,
-                                 std::ios_base::openmode) override {
+  virtual streampos seekpos(streampos sp, ios_base::openmode) override {
     if (fseek(m_file, sp, SEEK_SET) == -1) {
       return -1;
     }
@@ -328,20 +333,17 @@ public:
   }
 };
 
-class OStreamDiscard : public std::streambuf {
+class OStreamDiscard : public streambuf {
 public:
-  virtual std::streamsize xsputn(const char *, std::streamsize n) override {
-    return n;
-  }
+  virtual streamsize xsputn(const char *, streamsize n) override { return n; }
   virtual int overflow(int c) override { return c; }
 };
 
-class my_pwrite_ostream : public llvm::raw_pwrite_stream {
-  std::ostream &m_os;
+class my_pwrite_ostream : public raw_pwrite_stream {
+  ostream &m_os;
 
 public:
-  my_pwrite_ostream(std::ostream &os)
-      : llvm::raw_pwrite_stream(true), m_os(os) {}
+  my_pwrite_ostream(ostream &os) : raw_pwrite_stream(true), m_os(os) {}
 
   void write_impl(const char *ptr, size_t size) override {
     m_os.write(ptr, size);
@@ -363,555 +365,12 @@ public:
   }
 };
 
-static bool qcode_adapter(qmodule_t *module, qcode_conf_t *conf, FILE *err,
-                          FILE *out, qcode_adapter_fn impl) {
-  std::unique_ptr<std::streambuf> err_stream_buf, out_stream_buf;
-
-  {
-    /* If the error stream is provided, use it. Otherwise, discard the output.
-     */
-    if (err) {
-      err_stream_buf = std::make_unique<OStreamWriter>(err);
-    } else {
-      err_stream_buf = std::make_unique<OStreamDiscard>();
-    }
-
-    /* If the output stream is provided, use it. Otherwise, discard the output.
-     */
-    if (out) {
-      out_stream_buf = std::make_unique<OStreamWriter>(out);
-    } else {
-      out_stream_buf = std::make_unique<OStreamDiscard>();
-    }
-  }
-
-  std::ostream err_stream(err_stream_buf.get());
-  std::ostream out_stream(out_stream_buf.get());
-
-  {
-    my_pwrite_ostream llvm_adapt(out_stream);
-    if (!impl(module, conf, err_stream, llvm_adapt)) {
-      err_stream.flush();
-      out_stream.flush();
-      err &&fflush(err);
-      out &&fflush(out);
-      return false;
-    }
-  }
-
-  err_stream.flush();
-  out_stream.flush();
-  err &&fflush(err);
-  out &&fflush(out);
-
-  return true;
-}
-
-static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(
-    qmodule_t *module, qcode_conf_t *conf, std::ostream &err,
-    llvm::raw_ostream &out);
-
-C_EXPORT bool qcode_ir(qmodule_t *module, qcode_conf_t *conf, FILE *err,
-                       FILE *out) {
-  return qcode_adapter(module, conf, err, out,
-                       [](qmodule_t *m, qcode_conf_t *c, std::ostream &e,
-                          llvm::raw_pwrite_stream &o) -> bool {
-                         auto module = fabricate_llvmir(m, c, e, o);
-                         if (!module) {
-                           e << "error: failed to fabricate LLVM IR"
-                             << std::endl;
-                           return false;
-                         }
-
-                         bool failed = llvm::verifyModule(*module->get(), &o);
-
-                         module.value()->print(o, nullptr);
-
-                         return !failed;
-                       });
-}
-
-C_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err,
-                        FILE *out) {
-  return qcode_adapter(
-      module, conf, err, out,
-      [](qmodule_t *m, qcode_conf_t *c, std::ostream &e,
-         llvm::raw_pwrite_stream &o) -> bool {
-        auto module_opt = fabricate_llvmir(m, c, e, o);
-        if (!module_opt) {
-          e << "error: failed to fabricate LLVM IR" << std::endl;
-          return false;
-        }
-
-        std::string targetTriple = m->getTargetInfo().TargetTriple.value_or(
-            llvm::sys::getDefaultTargetTriple());
-        std::string CPU = m->getTargetInfo().CPU.value_or("generic");
-        std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
-        bool relocPIC = true;
-
-        llvm::TargetOptions opt;
-        std::string lookupTarget_err;
-        auto Target =
-            llvm::TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
-        if (!Target) {
-          e << "error: failed to lookup target: " << lookupTarget_err
-            << std::endl;
-          return false;
-        }
-
-        auto TargetMachine = Target->createTargetMachine(
-            targetTriple, CPU, Features, opt,
-            relocPIC ? llvm::Reloc::PIC_ : llvm::Reloc::Static);
-
-        auto &module = *module_opt.value();
-
-        if (llvm::verifyModule(module, &o)) {
-          e << "error: failed to verify module" << std::endl;
-          return false;
-        }
-
-        module.setDataLayout(TargetMachine->createDataLayout());
-        module.setTargetTriple(targetTriple);
-
-        ///==========================================================================
-
-        // Create the analysis managers.
-        // These must be declared in this order so that they are destroyed in
-        // the correct order due to inter-analysis-manager references.
-        llvm::LoopAnalysisManager LAM;
-        llvm::FunctionAnalysisManager FAM;
-        llvm::CGSCCAnalysisManager CGAM;
-        llvm::ModuleAnalysisManager MAM;
-
-        // Create the new pass manager builder.
-        // Take a look at the PassBuilder constructor parameters for more
-        // customization, e.g. specifying a TargetMachine or various debugging
-        // options.
-        llvm::PassBuilder PB;
-
-        // Register all the basic analyses with the managers.
-        PB.registerModuleAnalyses(MAM);
-        PB.registerCGSCCAnalyses(CGAM);
-        PB.registerFunctionAnalyses(FAM);
-        PB.registerLoopAnalyses(LAM);
-        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
-
-        llvm::ModulePassManager MPM =
-            PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
-
-        // Optimize the IR!
-        MPM.run(module, MAM);
-
-        ///==========================================================================
-
-        std::error_code ec;
-
-        llvm::legacy::PassManager pass;
-        TargetMachine->addPassesToEmitFile(pass, o, nullptr,
-                                           llvm::CGFT_AssemblyFile);
-        if (!pass.run(module)) {
-          e << "error: failed to emit object code" << std::endl;
-          return false;
-        }
-
-        return true;
-      });
-}
-
-C_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err,
-                        FILE *out) {
-  return qcode_adapter(
-      module, conf, err, out,
-      [](qmodule_t *m, qcode_conf_t *c, std::ostream &e,
-         llvm::raw_pwrite_stream &o) -> bool {
-        auto module_opt = fabricate_llvmir(m, c, e, o);
-        if (!module_opt) {
-          e << "error: failed to fabricate LLVM IR" << std::endl;
-          return false;
-        }
-
-        std::string targetTriple = m->getTargetInfo().TargetTriple.value_or(
-            llvm::sys::getDefaultTargetTriple());
-        std::string CPU = m->getTargetInfo().CPU.value_or("generic");
-        std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
-        bool relocPIC = true;
-
-        llvm::TargetOptions opt;
-        std::string lookupTarget_err;
-        auto Target =
-            llvm::TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
-        if (!Target) {
-          e << "error: failed to lookup target: " << lookupTarget_err
-            << std::endl;
-          return false;
-        }
-
-        auto TargetMachine = Target->createTargetMachine(
-            targetTriple, CPU, Features, opt,
-            relocPIC ? llvm::Reloc::PIC_ : llvm::Reloc::Static);
-
-        auto &module = *module_opt.value();
-
-        if (llvm::verifyModule(module, &o)) {
-          e << "error: failed to verify module" << std::endl;
-          return false;
-        }
-
-        module.setDataLayout(TargetMachine->createDataLayout());
-        module.setTargetTriple(targetTriple);
-
-        ///==========================================================================
-
-        // Create the analysis managers.
-        // These must be declared in this order so that they are destroyed in
-        // the correct order due to inter-analysis-manager references.
-        llvm::LoopAnalysisManager LAM;
-        llvm::FunctionAnalysisManager FAM;
-        llvm::CGSCCAnalysisManager CGAM;
-        llvm::ModuleAnalysisManager MAM;
-
-        // Create the new pass manager builder.
-        // Take a look at the PassBuilder constructor parameters for more
-        // customization, e.g. specifying a TargetMachine or various debugging
-        // options.
-        llvm::PassBuilder PB;
-
-        // Register all the basic analyses with the managers.
-        PB.registerModuleAnalyses(MAM);
-        PB.registerCGSCCAnalyses(CGAM);
-        PB.registerFunctionAnalyses(FAM);
-        PB.registerLoopAnalyses(LAM);
-        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
-
-        llvm::ModulePassManager MPM =
-            PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
-
-        // Optimize the IR!
-        MPM.run(module, MAM);
-
-        ///==========================================================================
-
-        std::error_code ec;
-
-        llvm::legacy::PassManager pass;
-        TargetMachine->addPassesToEmitFile(pass, o, nullptr,
-                                           llvm::CGFT_ObjectFile);
-        if (!pass.run(module)) {
-          e << "error: failed to emit object code" << std::endl;
-          return false;
-        }
-
-        return true;
-      });
-}
-
-static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, nr::BinExpr *N);
-static val_t for_UNEXPR(ctx_t &m, craft_t &b, State &s, nr::UnExpr *N);
-static val_t for_POST_UNEXPR(ctx_t &m, craft_t &b, State &s, nr::PostUnExpr *N);
-static val_t for_INT(ctx_t &m, craft_t &b, State &s, nr::Int *N);
-static val_t for_FLOAT(ctx_t &m, craft_t &b, State &s, nr::Float *N);
-static val_t for_LIST(ctx_t &m, craft_t &b, State &s, nr::List *N);
-static val_t for_CALL(ctx_t &m, craft_t &b, State &s, nr::Call *N);
-static val_t for_SEQ(ctx_t &m, craft_t &b, State &s, nr::Seq *N);
-static val_t for_INDEX(ctx_t &m, craft_t &b, State &s, nr::Index *N);
-static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, nr::Ident *N);
-static val_t for_EXTERN(ctx_t &m, craft_t &b, State &s, nr::Extern *N);
-static val_t for_LOCAL(ctx_t &m, craft_t &b, State &s, nr::Local *N);
-static val_t for_RET(ctx_t &m, craft_t &b, State &s, nr::Ret *N);
-static val_t for_BRK(ctx_t &m, craft_t &b, State &s, nr::Brk *N);
-static val_t for_CONT(ctx_t &m, craft_t &b, State &s, nr::Cont *N);
-static val_t for_IF(ctx_t &m, craft_t &b, State &s, nr::If *N);
-static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, nr::While *N);
-static val_t for_FOR(ctx_t &m, craft_t &b, State &s, nr::For *N);
-static val_t for_CASE(ctx_t &m, craft_t &b, State &s, nr::Case *N);
-static val_t for_SWITCH(ctx_t &m, craft_t &b, State &s, nr::Switch *N);
-static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N);
-static val_t for_ASM(ctx_t &m, craft_t &b, State &s, nr::Asm *N);
-static ty_t for_U1_TY(ctx_t &m, craft_t &b, State &s, nr::U1Ty *N);
-static ty_t for_U8_TY(ctx_t &m, craft_t &b, State &s, nr::U8Ty *N);
-static ty_t for_U16_TY(ctx_t &m, craft_t &b, State &s, nr::U16Ty *N);
-static ty_t for_U32_TY(ctx_t &m, craft_t &b, State &s, nr::U32Ty *N);
-static ty_t for_U64_TY(ctx_t &m, craft_t &b, State &s, nr::U64Ty *N);
-static ty_t for_U128_TY(ctx_t &m, craft_t &b, State &s, nr::U128Ty *N);
-static ty_t for_I8_TY(ctx_t &m, craft_t &b, State &s, nr::I8Ty *N);
-static ty_t for_I16_TY(ctx_t &m, craft_t &b, State &s, nr::I16Ty *N);
-static ty_t for_I32_TY(ctx_t &m, craft_t &b, State &s, nr::I32Ty *N);
-static ty_t for_I64_TY(ctx_t &m, craft_t &b, State &s, nr::I64Ty *N);
-static ty_t for_I128_TY(ctx_t &m, craft_t &b, State &s, nr::I128Ty *N);
-static ty_t for_F16_TY(ctx_t &m, craft_t &b, State &s, nr::F16Ty *N);
-static ty_t for_F32_TY(ctx_t &m, craft_t &b, State &s, nr::F32Ty *N);
-static ty_t for_F64_TY(ctx_t &m, craft_t &b, State &s, nr::F64Ty *N);
-static ty_t for_F128_TY(ctx_t &m, craft_t &b, State &s, nr::F128Ty *N);
-static ty_t for_VOID_TY(ctx_t &m, craft_t &b, State &s, nr::VoidTy *N);
-static ty_t for_PTR_TY(ctx_t &m, craft_t &b, State &s, nr::PtrTy *N);
-static ty_t for_OPAQUE_TY(ctx_t &m, craft_t &b, State &s, nr::OpaqueTy *N);
-static ty_t for_STRUCT_TY(ctx_t &m, craft_t &b, State &s, nr::StructTy *N);
-static ty_t for_UNION_TY(ctx_t &m, craft_t &b, State &s, nr::UnionTy *N);
-static ty_t for_ARRAY_TY(ctx_t &m, craft_t &b, State &s, nr::ArrayTy *N);
-static ty_t for_FN_TY(ctx_t &m, craft_t &b, State &s, nr::FnTy *N);
-
-auto V(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t {
-  val_t R;
-
-  switch (N->getKind()) {
-    case NR_NODE_BINEXPR: {
-      R = for_BINEXPR(m, b, s, N->as<nr::BinExpr>());
-      break;
-    }
-
-    case NR_NODE_UNEXPR: {
-      R = for_UNEXPR(m, b, s, N->as<nr::UnExpr>());
-      break;
-    }
-
-    case NR_NODE_POST_UNEXPR: {
-      R = for_POST_UNEXPR(m, b, s, N->as<nr::PostUnExpr>());
-      break;
-    }
-
-    case NR_NODE_INT: {
-      R = for_INT(m, b, s, N->as<nr::Int>());
-      break;
-    }
-
-    case NR_NODE_FLOAT: {
-      R = for_FLOAT(m, b, s, N->as<nr::Float>());
-      break;
-    }
-
-    case NR_NODE_LIST: {
-      R = for_LIST(m, b, s, N->as<nr::List>());
-      break;
-    }
-
-    case NR_NODE_CALL: {
-      R = for_CALL(m, b, s, N->as<nr::Call>());
-      break;
-    }
-
-    case NR_NODE_SEQ: {
-      R = for_SEQ(m, b, s, N->as<nr::Seq>());
-      break;
-    }
-
-    case NR_NODE_INDEX: {
-      R = for_INDEX(m, b, s, N->as<nr::Index>());
-      break;
-    }
-
-    case NR_NODE_IDENT: {
-      R = for_IDENT(m, b, s, N->as<nr::Ident>());
-      break;
-    }
-
-    case NR_NODE_EXTERN: {
-      R = for_EXTERN(m, b, s, N->as<nr::Extern>());
-      break;
-    }
-
-    case NR_NODE_LOCAL: {
-      R = for_LOCAL(m, b, s, N->as<nr::Local>());
-      break;
-    }
-
-    case NR_NODE_RET: {
-      R = for_RET(m, b, s, N->as<nr::Ret>());
-      break;
-    }
-
-    case NR_NODE_BRK: {
-      R = for_BRK(m, b, s, N->as<nr::Brk>());
-      break;
-    }
-
-    case NR_NODE_CONT: {
-      R = for_CONT(m, b, s, N->as<nr::Cont>());
-      break;
-    }
-
-    case NR_NODE_IF: {
-      R = for_IF(m, b, s, N->as<nr::If>());
-      break;
-    }
-
-    case NR_NODE_WHILE: {
-      R = for_WHILE(m, b, s, N->as<nr::While>());
-      break;
-    }
-
-    case NR_NODE_FOR: {
-      R = for_FOR(m, b, s, N->as<nr::For>());
-      break;
-    }
-
-    case NR_NODE_CASE: {
-      R = for_CASE(m, b, s, N->as<nr::Case>());
-      break;
-    }
-
-    case NR_NODE_SWITCH: {
-      R = for_SWITCH(m, b, s, N->as<nr::Switch>());
-      break;
-    }
-
-    case NR_NODE_FN: {
-      R = for_FN(m, b, s, N->as<nr::Fn>());
-      break;
-    }
-
-    case NR_NODE_ASM: {
-      R = for_ASM(m, b, s, N->as<nr::Asm>());
-      break;
-    }
-
-    case NR_NODE_IGN: {
-      R = nullptr;
-      break;
-    }
-
-    case NR_NODE_TMP: {
-      qcore_panic("unexpected temporary node");
-    }
-
-    default: {
-      debug("Expected an expression, but got: " << N->getKindName());
-      return std::nullopt;
-    }
-  }
-
-  return R;
-}
-
-auto T(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t {
-  ty_t R;
-
-  switch (N->getKind()) {
-    case NR_NODE_U1_TY: {
-      R = for_U1_TY(m, b, s, N->as<nr::U1Ty>());
-      break;
-    }
-
-    case NR_NODE_U8_TY: {
-      R = for_U8_TY(m, b, s, N->as<nr::U8Ty>());
-      break;
-    }
-
-    case NR_NODE_U16_TY: {
-      R = for_U16_TY(m, b, s, N->as<nr::U16Ty>());
-      break;
-    }
-
-    case NR_NODE_U32_TY: {
-      R = for_U32_TY(m, b, s, N->as<nr::U32Ty>());
-      break;
-    }
-
-    case NR_NODE_U64_TY: {
-      R = for_U64_TY(m, b, s, N->as<nr::U64Ty>());
-      break;
-    }
-
-    case NR_NODE_U128_TY: {
-      R = for_U128_TY(m, b, s, N->as<nr::U128Ty>());
-      break;
-    }
-
-    case NR_NODE_I8_TY: {
-      R = for_I8_TY(m, b, s, N->as<nr::I8Ty>());
-      break;
-    }
-
-    case NR_NODE_I16_TY: {
-      R = for_I16_TY(m, b, s, N->as<nr::I16Ty>());
-      break;
-    }
-
-    case NR_NODE_I32_TY: {
-      R = for_I32_TY(m, b, s, N->as<nr::I32Ty>());
-      break;
-    }
-
-    case NR_NODE_I64_TY: {
-      R = for_I64_TY(m, b, s, N->as<nr::I64Ty>());
-      break;
-    }
-
-    case NR_NODE_I128_TY: {
-      R = for_I128_TY(m, b, s, N->as<nr::I128Ty>());
-      break;
-    }
-
-    case NR_NODE_F16_TY: {
-      R = for_F16_TY(m, b, s, N->as<nr::F16Ty>());
-      break;
-    }
-
-    case NR_NODE_F32_TY: {
-      R = for_F32_TY(m, b, s, N->as<nr::F32Ty>());
-      break;
-    }
-
-    case NR_NODE_F64_TY: {
-      R = for_F64_TY(m, b, s, N->as<nr::F64Ty>());
-      break;
-    }
-
-    case NR_NODE_F128_TY: {
-      R = for_F128_TY(m, b, s, N->as<nr::F128Ty>());
-      break;
-    }
-
-    case NR_NODE_VOID_TY: {
-      R = for_VOID_TY(m, b, s, N->as<nr::VoidTy>());
-      break;
-    }
-
-    case NR_NODE_PTR_TY: {
-      R = for_PTR_TY(m, b, s, N->as<nr::PtrTy>());
-      break;
-    }
-
-    case NR_NODE_OPAQUE_TY: {
-      R = for_OPAQUE_TY(m, b, s, N->as<nr::OpaqueTy>());
-      break;
-    }
-
-    case NR_NODE_STRUCT_TY: {
-      R = for_STRUCT_TY(m, b, s, N->as<nr::StructTy>());
-      break;
-    }
-
-    case NR_NODE_UNION_TY: {
-      R = for_UNION_TY(m, b, s, N->as<nr::UnionTy>());
-      break;
-    }
-
-    case NR_NODE_ARRAY_TY: {
-      R = for_ARRAY_TY(m, b, s, N->as<nr::ArrayTy>());
-      break;
-    }
-
-    case NR_NODE_FN_TY: {
-      R = for_FN_TY(m, b, s, N->as<nr::FnTy>());
-      break;
-    }
-
-    case NR_NODE_TMP: {
-      qcore_panic("unexpected temporary node");
-    }
-
-    default: {
-      debug("Expected a type, but got: " << N->getKindName());
-      return std::nullopt;
-    }
-  }
-
-  return R;
-}
+auto T(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t;
+auto V(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t;
 
 static void make_forward_declaration(ctx_t &m, craft_t &b, State &s,
                                      nr::Fn *N) {
-  std::vector<llvm::Type *> args;
+  vector<Type *> args;
   for (auto &arg : N->getParams()) {
     auto ty = T(m, b, s, arg.first);
     if (!ty) {
@@ -928,32 +387,31 @@ static void make_forward_declaration(ctx_t &m, craft_t &b, State &s,
     return;
   }
 
-  auto fn_ty = llvm::FunctionType::get(*ret_ty, args, false);
+  auto fn_ty = FunctionType::get(*ret_ty, args, false);
   m.getOrInsertFunction(N->getName(), fn_ty);
 
   debug("Forward declared function: " << N->getName());
 }
 
-static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(
-    qmodule_t *src, qcode_conf_t *, std::ostream &e, llvm::raw_ostream &) {
-  static thread_local std::unique_ptr<llvm::LLVMContext> context;
+static optional<unique_ptr<Module>> fabricate_llvmir(qmodule_t *src,
+                                                     qcode_conf_t *, ostream &e,
+                                                     raw_ostream &) {
+  static thread_local unique_ptr<LLVMContext> context;
 
   nr::Expr *root = src->getRoot();
   if (!root) {
-    e << "error: missing root node" << std::endl;
-    return std::nullopt;
+    e << "error: missing root node" << endl;
+    return nullopt;
   }
 
   if (root->getKind() != NR_NODE_SEQ) {
-    e << "error: expected sequence node as root" << std::endl;
-    return std::nullopt;
+    e << "error: expected sequence node as root" << endl;
+    return nullopt;
   }
 
-  context = std::make_unique<llvm::LLVMContext>();
-  std::unique_ptr<llvm::IRBuilder<>> b =
-      std::make_unique<llvm::IRBuilder<>>(*context);
-  std::unique_ptr<llvm::Module> m =
-      std::make_unique<llvm::Module>(src->getName(), *context);
+  context = make_unique<LLVMContext>();
+  unique_ptr<IRBuilder<>> b = make_unique<IRBuilder<>>(*context);
+  unique_ptr<Module> m = make_unique<Module>(src->getName(), *context);
 
   State s;
 
@@ -974,20 +432,16 @@ static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(
   for (auto &node : seq->getItems()) {
     val_t R = V(*m, *b, s, node);
     if (!R) {
-      e << "error: failed to lower code" << std::endl;
-      return std::nullopt;
+      e << "error: failed to lower code" << endl;
+      return nullopt;
     }
   }
 
   return m;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-
-static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, llvm::Value *L,
-                             nr::Op O, llvm::Type *R, nr::Type *LT,
-                             nr::Type *RT) {
+static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, Value *L, nr::Op O,
+                             Type *R, nr::Type *LT, nr::Type *RT) {
   val_t E;
 
   if (LT->isSame(RT)) {
@@ -1007,7 +461,7 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, llvm::Value *L,
     }
 
     case nr::Op::CastAs: {
-      llvm::Type *IR_LT = L->getType();
+      Type *IR_LT = L->getType();
       /* Handle floating point */
       if (IR_LT->isFloatingPointTy() && RT->is_signed()) {
         E = b.CreateFPToSI(L, R);
@@ -1036,15 +490,15 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, llvm::Value *L,
         nr::StructTy *ST = RT->as<nr::StructTy>();
 
         if (base->getCount() == ST->getFields().size()) {
-          llvm::StructType *new_st_ty = llvm::cast<llvm::StructType>(R);
-          llvm::AllocaInst *new_st = b.CreateAlloca(new_st_ty);
+          StructType *new_st_ty = cast<StructType>(R);
+          AllocaInst *new_st = b.CreateAlloca(new_st_ty);
 
           for (size_t i = 0; i < ST->getFields().size(); i++) {
-            std::cout << "Casting element " << i << std::endl;
+            cout << "Casting element " << i << endl;
             auto x = base->getElement()->getType();
             if (!x.has_value()) {
               debug("Failed to get element type");
-              return std::nullopt;
+              return nullopt;
             }
 
             val_t F = binexpr_do_cast(
@@ -1052,7 +506,7 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, llvm::Value *L,
                 new_st_ty->getElementType(i), x.value(), ST->getFields()[i]);
             if (!F) {
               debug("Failed to cast element " << i);
-              return std::nullopt;
+              return nullopt;
             }
 
             b.CreateStore(F.value(), b.CreateStructGEP(new_st_ty, new_st, i));
@@ -1065,26 +519,26 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, llvm::Value *L,
         nr::ArrayTy *TO = RT->as<nr::ArrayTy>();
 
         if (FROM->getCount() == TO->getCount()) {
-          llvm::ArrayType *new_arr_ty = llvm::cast<llvm::ArrayType>(R);
-          llvm::AllocaInst *new_arr = b.CreateAlloca(new_arr_ty);
+          ArrayType *new_arr_ty = cast<ArrayType>(R);
+          AllocaInst *new_arr = b.CreateAlloca(new_arr_ty);
 
           for (size_t i = 0; i < FROM->getCount(); i++) {
             auto x = FROM->getElement()->getType();
             if (!x.has_value()) {
               debug("Failed to get element type");
-              return std::nullopt;
+              return nullopt;
             }
             auto y = TO->getElement()->getType();
             if (!y.has_value()) {
               debug("Failed to get element type");
-              return std::nullopt;
+              return nullopt;
             }
             val_t F = binexpr_do_cast(
                 m, b, s, b.CreateExtractValue(L, i), nr::Op::CastAs,
                 new_arr_ty->getElementType(), x.value(), y.value());
             if (!F) {
               debug("Failed to cast element " << i);
-              return std::nullopt;
+              return nullopt;
             }
 
             b.CreateStore(F.value(), b.CreateStructGEP(new_arr_ty, new_arr, i));
@@ -1093,8 +547,8 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, llvm::Value *L,
           E = b.CreateLoad(new_arr->getAllocatedType(), new_arr);
         }
       } else {
-        std::cout << "Failed to cast from " << LT->getKindName() << " to "
-                  << RT->getKindName() << std::endl;
+        cout << "Failed to cast from " << LT->getKindName() << " to "
+             << RT->getKindName() << endl;
       }
       break;
     }
@@ -1107,1470 +561,1763 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, llvm::Value *L,
   return E;
 }
 
-static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, nr::BinExpr *N) {
+namespace lower {
+  static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, nr::BinExpr *N) {
 #define PROD_LHS()                   \
   val_t L = V(m, b, s, N->getLHS()); \
   if (!L) {                          \
     debug("Failed to get LHS");      \
-    return std::nullopt;             \
+    return nullopt;                  \
   }
 
-  nr::Op O = N->getOp();
+    nr::Op O = N->getOp();
 
-  if (N->getRHS()->isType()) { /* Do casting */
-    PROD_LHS()
+    if (N->getRHS()->isType()) { /* Do casting */
+      PROD_LHS()
 
-    ty_t TY = T(m, b, s, N->getRHS()->asType());
-    if (!TY) {
-      debug("Failed to get RHS type");
-      return std::nullopt;
+      ty_t TY = T(m, b, s, N->getRHS()->asType());
+      if (!TY) {
+        debug("Failed to get RHS type");
+        return nullopt;
+      }
+
+      nr::Type *L_T = N->getLHS()->getType().value_or(nullptr);
+      if (!L_T) {
+        debug("Failed to get LHS type");
+        return nullopt;
+      }
+
+      nr::Type *R_T = N->getRHS()->getType().value_or(nullptr);
+      if (!R_T) {
+        debug("Failed to get RHS type");
+        return nullopt;
+      }
+
+      return binexpr_do_cast(m, b, s, L.value(), O, TY.value(), L_T, R_T);
     }
 
-    nr::Type *L_T = N->getLHS()->getType().value_or(nullptr);
-    if (!L_T) {
-      debug("Failed to get LHS type");
-      return std::nullopt;
+    val_t R = V(m, b, s, N->getRHS());
+
+    val_t E;
+
+    switch (O) {
+      case nr::Op::Plus: { /* '+': Addition operator */
+        PROD_LHS()
+        E = b.CreateAdd(L.value(), R.value());
+        break;
+      }
+
+      case nr::Op::Minus: { /* '-': Subtraction operator */
+        PROD_LHS()
+        E = b.CreateSub(L.value(), R.value());
+        break;
+      }
+
+      case nr::Op::Times: { /* '*': Multiplication operator */
+        PROD_LHS()
+        E = b.CreateMul(L.value(), R.value());
+        break;
+      }
+
+      case nr::Op::Slash: { /* '/': Division operator */
+        PROD_LHS()
+        auto x = N->getLHS()->getType();
+        if (!x.has_value()) {
+          debug("Failed to get type");
+          return nullopt;
+        }
+        if (x.value()->is_signed()) {
+          E = b.CreateSDiv(L.value(), R.value());
+        } else if (x.value()->is_unsigned()) {
+          E = b.CreateUDiv(L.value(), R.value());
+        } else {
+          qcore_panic("unexpected type for division");
+        }
+        break;
+      }
+
+      case nr::Op::Percent: { /* '%': Modulus operator */
+        PROD_LHS()
+        auto x = N->getLHS()->getType();
+        if (!x.has_value()) {
+          debug("Failed to get type");
+          return nullopt;
+        }
+        if (x.value()->is_signed()) {
+          E = b.CreateSRem(L.value(), R.value());
+        } else if (x.value()->is_unsigned()) {
+          E = b.CreateURem(L.value(), R.value());
+        } else {
+          qcore_panic("unexpected type for modulus");
+        }
+        break;
+      }
+
+      case nr::Op::BitAnd: { /* '&': Bitwise AND operator */
+        PROD_LHS()
+        E = b.CreateAnd(L.value(), R.value());
+        break;
+      }
+
+      case nr::Op::BitOr: { /* '|': Bitwise OR operator */
+        PROD_LHS()
+        E = b.CreateOr(L.value(), R.value());
+        break;
+      }
+
+      case nr::Op::BitXor: { /* '^': Bitwise XOR operator */
+        PROD_LHS()
+        E = b.CreateXor(L.value(), R.value());
+        break;
+      }
+
+      case nr::Op::LogicAnd: { /* '&&': Logical AND operator */
+        PROD_LHS()
+        E = b.CreateLogicalAnd(L.value(), R.value());
+        break;
+      }
+
+      case nr::Op::LogicOr: { /* '||': Logical OR operator */
+        PROD_LHS()
+        E = b.CreateLogicalOr(L.value(), R.value());
+        break;
+      }
+
+      case nr::Op::LShift: { /* '<<': Left shift operator */
+        PROD_LHS()
+        E = b.CreateShl(L.value(), R.value());
+        break;
+      }
+
+      case nr::Op::RShift: { /* '>>': Right shift operator */
+        PROD_LHS()
+        auto x = N->getLHS()->getType();
+        if (!x.has_value()) {
+          debug("Failed to get type");
+          return nullopt;
+        }
+        if (x.value()->is_signed()) {
+          E = b.CreateAShr(L.value(), R.value());
+        } else if (x.value()->is_unsigned()) {
+          E = b.CreateLShr(L.value(), R.value());
+        } else {
+          qcore_panic("unexpected type for shift");
+        }
+        break;
+      }
+
+      case nr::Op::Set: { /* '=': Assignment operator */
+        if (N->getLHS()->getKind() == NR_NODE_IDENT) {
+          if (auto find = s.find_named_value(
+                  m, N->getLHS()->as<nr::Ident>()->getName())) {
+            if (find->second == PtrClass::DataPtr) {
+              b.CreateStore(R.value(), find->first);
+
+              E = R;
+            }
+          }
+        }
+        break;
+      }
+
+      case nr::Op::LT: { /* '<': Less than operator */
+        PROD_LHS()
+        auto x = N->getLHS()->getType();
+        if (!x.has_value()) {
+          debug("Failed to get type");
+          return nullopt;
+        }
+        if (x.value()->is_signed()) {
+          E = b.CreateICmpSLT(L.value(), R.value());
+        } else if (x.value()->is_unsigned()) {
+          E = b.CreateICmpULT(L.value(), R.value());
+        } else {
+          qcore_panic("unexpected type for comparison");
+        }
+        break;
+      }
+
+      case nr::Op::GT: { /* '>': Greater than operator */
+        PROD_LHS()
+        auto x = N->getLHS()->getType();
+        if (!x.has_value()) {
+          debug("Failed to get type");
+          return nullopt;
+        }
+        if (x.value()->is_signed()) {
+          E = b.CreateICmpSGT(L.value(), R.value());
+        } else if (x.value()->is_unsigned()) {
+          E = b.CreateICmpUGT(L.value(), R.value());
+        } else {
+          qcore_panic("unexpected type for comparison");
+        }
+        break;
+      }
+
+      case nr::Op::LE: { /* '<=': Less than or equal to operator */
+        PROD_LHS()
+        auto x = N->getLHS()->getType();
+        if (!x.has_value()) {
+          debug("Failed to get type");
+          return nullopt;
+        }
+        if (x.value()->is_signed()) {
+          E = b.CreateICmpSLE(L.value(), R.value());
+        } else if (x.value()->is_unsigned()) {
+          E = b.CreateICmpULE(L.value(), R.value());
+        } else {
+          qcore_panic("unexpected type for comparison");
+        }
+        break;
+      }
+
+      case nr::Op::GE: { /* '>=': Greater than or equal to operator */
+        PROD_LHS()
+        auto x = N->getLHS()->getType();
+        if (x.value()->is_signed()) {
+          E = b.CreateICmpSGE(L.value(), R.value());
+        } else if (x.value()->is_unsigned()) {
+          E = b.CreateICmpUGE(L.value(), R.value());
+        } else {
+          qcore_panic("unexpected type for comparison");
+        }
+        break;
+      }
+
+      case nr::Op::Eq: { /* '==': Equal to operator */
+        PROD_LHS()
+        E = b.CreateICmpEQ(L.value(), R.value());
+        break;
+      }
+
+      case nr::Op::NE: { /* '!=': Not equal to operator */
+        PROD_LHS()
+        E = b.CreateICmpNE(L.value(), R.value());
+        break;
+      }
+
+      default: {
+        qcore_panic("unexpected binary operator");
+      }
     }
 
-    nr::Type *R_T = N->getRHS()->getType().value_or(nullptr);
-    if (!R_T) {
-      debug("Failed to get RHS type");
-      return std::nullopt;
-    }
-
-    return binexpr_do_cast(m, b, s, L.value(), O, TY.value(), L_T, R_T);
+    return E;
   }
 
-  val_t R = V(m, b, s, N->getRHS());
-
-  val_t E;
-
-  switch (O) {
-    case nr::Op::Plus: { /* '+': Addition operator */
-      PROD_LHS()
-      E = b.CreateAdd(L.value(), R.value());
-      break;
-    }
-
-    case nr::Op::Minus: { /* '-': Subtraction operator */
-      PROD_LHS()
-      E = b.CreateSub(L.value(), R.value());
-      break;
-    }
-
-    case nr::Op::Times: { /* '*': Multiplication operator */
-      PROD_LHS()
-      E = b.CreateMul(L.value(), R.value());
-      break;
-    }
-
-    case nr::Op::Slash: { /* '/': Division operator */
-      PROD_LHS()
-      auto x = N->getLHS()->getType();
-      if (!x.has_value()) {
-        debug("Failed to get type");
-        return std::nullopt;
-      }
-      if (x.value()->is_signed()) {
-        E = b.CreateSDiv(L.value(), R.value());
-      } else if (x.value()->is_unsigned()) {
-        E = b.CreateUDiv(L.value(), R.value());
-      } else {
-        qcore_panic("unexpected type for division");
-      }
-      break;
-    }
-
-    case nr::Op::Percent: { /* '%': Modulus operator */
-      PROD_LHS()
-      auto x = N->getLHS()->getType();
-      if (!x.has_value()) {
-        debug("Failed to get type");
-        return std::nullopt;
-      }
-      if (x.value()->is_signed()) {
-        E = b.CreateSRem(L.value(), R.value());
-      } else if (x.value()->is_unsigned()) {
-        E = b.CreateURem(L.value(), R.value());
-      } else {
-        qcore_panic("unexpected type for modulus");
-      }
-      break;
-    }
-
-    case nr::Op::BitAnd: { /* '&': Bitwise AND operator */
-      PROD_LHS()
-      E = b.CreateAnd(L.value(), R.value());
-      break;
-    }
-
-    case nr::Op::BitOr: { /* '|': Bitwise OR operator */
-      PROD_LHS()
-      E = b.CreateOr(L.value(), R.value());
-      break;
-    }
-
-    case nr::Op::BitXor: { /* '^': Bitwise XOR operator */
-      PROD_LHS()
-      E = b.CreateXor(L.value(), R.value());
-      break;
-    }
-
-    case nr::Op::LogicAnd: { /* '&&': Logical AND operator */
-      PROD_LHS()
-      E = b.CreateLogicalAnd(L.value(), R.value());
-      break;
-    }
-
-    case nr::Op::LogicOr: { /* '||': Logical OR operator */
-      PROD_LHS()
-      E = b.CreateLogicalOr(L.value(), R.value());
-      break;
-    }
-
-    case nr::Op::LShift: { /* '<<': Left shift operator */
-      PROD_LHS()
-      E = b.CreateShl(L.value(), R.value());
-      break;
-    }
-
-    case nr::Op::RShift: { /* '>>': Right shift operator */
-      PROD_LHS()
-      auto x = N->getLHS()->getType();
-      if (!x.has_value()) {
-        debug("Failed to get type");
-        return std::nullopt;
-      }
-      if (x.value()->is_signed()) {
-        E = b.CreateAShr(L.value(), R.value());
-      } else if (x.value()->is_unsigned()) {
-        E = b.CreateLShr(L.value(), R.value());
-      } else {
-        qcore_panic("unexpected type for shift");
-      }
-      break;
-    }
-
-    case nr::Op::ROTR: { /* '>>>': Rotate right operator */
-      PROD_LHS()
-      // Formula: (L >> (R % num_bits)) | (L << ((num_bits - R) % num_bits))
-      auto x = N->getLHS()->getType();
-      if (!x.has_value()) {
-        debug("Failed to get type");
-        return std::nullopt;
-      }
-
-      if (auto num_bits = x.value()->getSizeBits()) {
-        llvm::ConstantInt *num_bits_c = llvm::ConstantInt::get(
-            m.getContext(), llvm::APInt(num_bits.value(), num_bits.value()));
-
-        llvm::Value *n = b.CreateURem(R.value(), num_bits_c);
-        llvm::Value *lshift = b.CreateLShr(L.value(), n);
-        llvm::Value *sub = b.CreateSub(num_bits_c, R.value());
-        llvm::Value *rshift =
-            b.CreateShl(L.value(), b.CreateURem(sub, num_bits_c));
-
-        E = b.CreateOr(lshift, rshift);
-      }
-      break;
-    }
-
-    case nr::Op::ROTL: { /* '<<<': Rotate left operator */
-      PROD_LHS()
-      // Formula: (L << (R % num_bits)) | (L >> ((num_bits - R) % num_bits))
-
-      auto x = N->getLHS()->getType();
-      if (!x.has_value()) {
-        debug("Failed to get type");
-        return std::nullopt;
-      }
-      if (auto num_bits = x.value()->getSizeBits()) {
-        llvm::ConstantInt *num_bits_c = llvm::ConstantInt::get(
-            m.getContext(), llvm::APInt(num_bits.value(), num_bits.value()));
-
-        llvm::Value *n = b.CreateURem(R.value(), num_bits_c);
-        llvm::Value *lshift = b.CreateShl(L.value(), n);
-        llvm::Value *sub = b.CreateSub(num_bits_c, R.value());
-        llvm::Value *rshift =
-            b.CreateLShr(L.value(), b.CreateURem(sub, num_bits_c));
-
-        E = b.CreateOr(lshift, rshift);
-      }
-      break;
-    }
-
-    case nr::Op::Set: { /* '=': Assignment operator */
-      if (N->getLHS()->getKind() != NR_NODE_IDENT) {
-        qcore_panic("expected identifier for assignment");
-      }
-
-      nr::Ident *I = N->getLHS()->as<nr::Ident>();
-      auto find = s.find_named_value(m, I->getName());
-      if (!find) {
-        qcore_panic("failed to find named value");
-      }
-      if (find->second != PtrClass::DataPtr) {
-        qcore_panic("expected data pointer");
-      }
-
-      b.CreateStore(R.value(), find->first);
-
-      E = R;
-      break;
-    }
-
-    case nr::Op::LT: { /* '<': Less than operator */
-      PROD_LHS()
-      auto x = N->getLHS()->getType();
-      if (!x.has_value()) {
-        debug("Failed to get type");
-        return std::nullopt;
-      }
-      if (x.value()->is_signed()) {
-        E = b.CreateICmpSLT(L.value(), R.value());
-      } else if (x.value()->is_unsigned()) {
-        E = b.CreateICmpULT(L.value(), R.value());
-      } else {
-        qcore_panic("unexpected type for comparison");
-      }
-      break;
-    }
-
-    case nr::Op::GT: { /* '>': Greater than operator */
-      PROD_LHS()
-      auto x = N->getLHS()->getType();
-      if (!x.has_value()) {
-        debug("Failed to get type");
-        return std::nullopt;
-      }
-      if (x.value()->is_signed()) {
-        E = b.CreateICmpSGT(L.value(), R.value());
-      } else if (x.value()->is_unsigned()) {
-        E = b.CreateICmpUGT(L.value(), R.value());
-      } else {
-        qcore_panic("unexpected type for comparison");
-      }
-      break;
-    }
-
-    case nr::Op::LE: { /* '<=': Less than or equal to operator */
-      PROD_LHS()
-      auto x = N->getLHS()->getType();
-      if (!x.has_value()) {
-        debug("Failed to get type");
-        return std::nullopt;
-      }
-      if (x.value()->is_signed()) {
-        E = b.CreateICmpSLE(L.value(), R.value());
-      } else if (x.value()->is_unsigned()) {
-        E = b.CreateICmpULE(L.value(), R.value());
-      } else {
-        qcore_panic("unexpected type for comparison");
-      }
-      break;
-    }
-
-    case nr::Op::GE: { /* '>=': Greater than or equal to operator */
-      PROD_LHS()
-      auto x = N->getLHS()->getType();
-      if (x.value()->is_signed()) {
-        E = b.CreateICmpSGE(L.value(), R.value());
-      } else if (x.value()->is_unsigned()) {
-        E = b.CreateICmpUGE(L.value(), R.value());
-      } else {
-        qcore_panic("unexpected type for comparison");
-      }
-      break;
-    }
-
-    case nr::Op::Eq: { /* '==': Equal to operator */
-      PROD_LHS()
-      E = b.CreateICmpEQ(L.value(), R.value());
-      break;
-    }
-
-    case nr::Op::NE: { /* '!=': Not equal to operator */
-      PROD_LHS()
-      E = b.CreateICmpNE(L.value(), R.value());
-      break;
-    }
-
-    default: {
-      qcore_panic("unexpected binary operator");
-    }
-  }
-
-  return E;
-}
-
-static val_t for_UNEXPR(ctx_t &m, craft_t &b, State &s, nr::UnExpr *N) {
+  static val_t for_UNEXPR(ctx_t &m, craft_t &b, State &s, nr::UnExpr *N) {
 #define PROD_SUB()                     \
   val_t E = V(m, b, s, N->getExpr());  \
   if (!E) {                            \
     debug("Failed to get expression"); \
-    return std::nullopt;               \
+    return nullopt;                    \
   }
 
-  val_t R;
+    val_t R;
 
-  switch (N->getOp()) {
-    case nr::Op::Plus: {
-      PROD_SUB();
-      R = E;
-      break;
-    }
-    case nr::Op::Minus: {
-      PROD_SUB();
-      R = b.CreateNeg(E.value());
-      break;
-    }
-    case nr::Op::Times: {
-      /// TODO: Dereference
-      break;
-    }
-    case nr::Op::BitAnd: {
-      if (N->getExpr()->getKind() != NR_NODE_IDENT) {
-        qcore_panic("expected identifier for address_of");
+    switch (N->getOp()) {
+      case nr::Op::Plus: {
+        PROD_SUB();
+        R = E;
+        break;
       }
-
-      nr::Ident *I = N->getExpr()->as<nr::Ident>();
-      auto find = s.find_named_value(m, I->getName());
-      if (!find) {
-        qcore_panic("failed to find identifier for address_of");
+      case nr::Op::Minus: {
+        PROD_SUB();
+        R = b.CreateNeg(E.value());
+        break;
       }
-
-      llvm::Value *V = find->first;
-      if (!V->getType()->isPointerTy()) {
-        qcore_panic("expected pointer type for address_of");
+      case nr::Op::Times: {
+        /// TODO: Dereference
+        break;
       }
+      case nr::Op::BitAnd: {
+        if (N->getExpr()->getKind() != NR_NODE_IDENT) {
+          qcore_panic("expected identifier for address_of");
+        }
 
-      R = V;
-      break;
-    }
-    case nr::Op::BitNot: {
-      PROD_SUB();
-      R = b.CreateNot(E.value());
-      break;
-    }
-    case nr::Op::LogicNot: {
-      PROD_SUB();
-      R = b.CreateICmpEQ(
-          E.value(), llvm::ConstantInt::get(m.getContext(), llvm::APInt(1, 0)));
-      break;
-    }
-    case nr::Op::Inc: {
-      if (N->getExpr()->getKind() != NR_NODE_IDENT) {
-        qcore_panic("expected identifier for increment");
+        nr::Ident *I = N->getExpr()->as<nr::Ident>();
+        auto find = s.find_named_value(m, I->getName());
+        if (!find) {
+          qcore_panic("failed to find identifier for address_of");
+        }
+
+        Value *V = find->first;
+        if (!V->getType()->isPointerTy()) {
+          qcore_panic("expected pointer type for address_of");
+        }
+
+        R = V;
+        break;
       }
-
-      nr::Ident *I = N->getExpr()->as<nr::Ident>();
-      auto find = s.find_named_value(m, I->getName());
-      if (!find) {
-        qcore_panic("failed to find identifier for increment");
+      case nr::Op::BitNot: {
+        PROD_SUB();
+        R = b.CreateNot(E.value());
+        break;
       }
-
-      if (find->second != PtrClass::DataPtr) {
-        qcore_panic("expected data pointer");
+      case nr::Op::LogicNot: {
+        PROD_SUB();
+        R = b.CreateICmpEQ(E.value(),
+                           ConstantInt::get(m.getContext(), APInt(1, 0)));
+        break;
       }
+      case nr::Op::Inc: {
+        if (N->getExpr()->getKind() != NR_NODE_IDENT) {
+          qcore_panic("expected identifier for increment");
+        }
 
-      llvm::Value *V = find->first;
+        nr::Ident *I = N->getExpr()->as<nr::Ident>();
+        auto find = s.find_named_value(m, I->getName());
+        if (!find) {
+          qcore_panic("failed to find identifier for increment");
+        }
 
-      if (!V->getType()->isPointerTy()) {
-        qcore_panic("expected pointer type for increment");
+        if (find->second != PtrClass::DataPtr) {
+          qcore_panic("expected data pointer");
+        }
+
+        Value *V = find->first;
+
+        if (!V->getType()->isPointerTy()) {
+          qcore_panic("expected pointer type for increment");
+        }
+
+        Value *current =
+            b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
+        Value *new_val;
+
+        if (current->getType()->isIntegerTy()) {
+          auto x = N->getExpr()->getType();
+          if (!x.has_value()) {
+            debug("Failed to get type");
+            return nullopt;
+          }
+          if (auto size = x.value()->getSizeBits()) {
+            new_val = b.CreateAdd(
+                current,
+                ConstantInt::get(m.getContext(), APInt(size.value(), 1)));
+          } else {
+            qcore_panic("Failed to get size");
+          }
+        } else if (current->getType()->isFloatingPointTy()) {
+          new_val = b.CreateFAdd(current,
+                                 ConstantFP::get(m.getContext(), APFloat(1.0)));
+        } else {
+          qcore_panic("unexpected type for increment");
+        }
+
+        b.CreateStore(new_val, V);
+
+        R = new_val;
+        break;
       }
+      case nr::Op::Dec: {
+        if (N->getExpr()->getKind() != NR_NODE_IDENT) {
+          qcore_panic("expected identifier for decrement");
+        }
 
-      llvm::Value *current =
-          b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
-      llvm::Value *new_val;
+        nr::Ident *I = N->getExpr()->as<nr::Ident>();
+        auto find = s.find_named_value(m, I->getName());
+        if (!find) {
+          qcore_panic("failed to find identifier for decrement");
+        }
 
-      if (current->getType()->isIntegerTy()) {
+        if (find->second != PtrClass::DataPtr) {
+          qcore_panic("expected data pointer");
+        }
+
+        Value *V = find->first;
+
+        if (!V->getType()->isPointerTy()) {
+          qcore_panic("expected pointer type for decrement");
+        }
+
+        Value *current =
+            b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
+        Value *new_val;
+
+        if (current->getType()->isIntegerTy()) {
+          auto x = N->getExpr()->getType();
+          if (!x.has_value()) {
+            debug("Failed to get type");
+            return nullopt;
+          }
+          if (auto size = x.value()->getSizeBits()) {
+            new_val = b.CreateSub(
+                current,
+                ConstantInt::get(m.getContext(), APInt(size.value(), 1)));
+          } else {
+            qcore_panic("Failed to get size");
+          }
+
+        } else if (current->getType()->isFloatingPointTy()) {
+          new_val = b.CreateFSub(current,
+                                 ConstantFP::get(m.getContext(), APFloat(1.0)));
+        } else {
+          qcore_panic("unexpected type for decrement");
+        }
+
+        b.CreateStore(new_val, V);
+
+        R = new_val;
+        break;
+      }
+      case nr::Op::Alignof: {
         auto x = N->getExpr()->getType();
         if (!x.has_value()) {
           debug("Failed to get type");
-          return std::nullopt;
+          return nullopt;
         }
-        if (auto size = x.value()->getSizeBits()) {
-          new_val = b.CreateAdd(
-              current, llvm::ConstantInt::get(m.getContext(),
-                                              llvm::APInt(size.value(), 1)));
+        if (auto align = x.value()->getAlignBytes()) {
+          R = ConstantInt::get(m.getContext(), APInt(64, align.value()));
         } else {
-          qcore_panic("Failed to get size");
+          qcore_panic("Failed to get alignment");
         }
-      } else if (current->getType()->isFloatingPointTy()) {
-        new_val = b.CreateFAdd(
-            current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
-      } else {
-        qcore_panic("unexpected type for increment");
+        break;
       }
-
-      b.CreateStore(new_val, V);
-
-      R = new_val;
-      break;
-    }
-    case nr::Op::Dec: {
-      if (N->getExpr()->getKind() != NR_NODE_IDENT) {
-        qcore_panic("expected identifier for decrement");
-      }
-
-      nr::Ident *I = N->getExpr()->as<nr::Ident>();
-      auto find = s.find_named_value(m, I->getName());
-      if (!find) {
-        qcore_panic("failed to find identifier for decrement");
-      }
-
-      if (find->second != PtrClass::DataPtr) {
-        qcore_panic("expected data pointer");
-      }
-
-      llvm::Value *V = find->first;
-
-      if (!V->getType()->isPointerTy()) {
-        qcore_panic("expected pointer type for decrement");
-      }
-
-      llvm::Value *current =
-          b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
-      llvm::Value *new_val;
-
-      if (current->getType()->isIntegerTy()) {
+      case nr::Op::Bitsizeof: {
         auto x = N->getExpr()->getType();
         if (!x.has_value()) {
           debug("Failed to get type");
-          return std::nullopt;
+          return nullopt;
         }
         if (auto size = x.value()->getSizeBits()) {
-          new_val = b.CreateSub(
-              current, llvm::ConstantInt::get(m.getContext(),
-                                              llvm::APInt(size.value(), 1)));
+          R = ConstantInt::get(m.getContext(), APInt(64, size.value()));
         } else {
           qcore_panic("Failed to get size");
         }
-
-      } else if (current->getType()->isFloatingPointTy()) {
-        new_val = b.CreateFSub(
-            current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
-      } else {
-        qcore_panic("unexpected type for decrement");
+        break;
       }
 
-      b.CreateStore(new_val, V);
-
-      R = new_val;
-      break;
-    }
-    case nr::Op::Alignof: {
-      auto x = N->getExpr()->getType();
-      if (!x.has_value()) {
-        debug("Failed to get type");
-        return std::nullopt;
+      default: {
+        qcore_panic("unexpected unary operator");
       }
-      if (auto align = x.value()->getAlignBytes()) {
-        R = llvm::ConstantInt::get(m.getContext(),
-                                   llvm::APInt(64, align.value()));
-      } else {
-        qcore_panic("Failed to get alignment");
-      }
-      break;
     }
-    case nr::Op::Bitsizeof: {
-      auto x = N->getExpr()->getType();
-      if (!x.has_value()) {
-        debug("Failed to get type");
-        return std::nullopt;
-      }
-      if (auto size = x.value()->getSizeBits()) {
-        R = llvm::ConstantInt::get(m.getContext(),
-                                   llvm::APInt(64, size.value()));
-      } else {
-        qcore_panic("Failed to get size");
-      }
-      break;
-    }
-
-    default: {
-      qcore_panic("unexpected unary operator");
-    }
-  }
 
 #undef PROD_SUB
 
-  return R;
-}
+    return R;
+  }
 
-static val_t for_POST_UNEXPR(ctx_t &m, craft_t &b, State &s,
-                             nr::PostUnExpr *N) {
-  val_t R;
+  static val_t for_POST_UNEXPR(ctx_t &m, craft_t &b, State &s,
+                               nr::PostUnExpr *N) {
+    val_t R;
 
-  switch (N->getOp()) {
-    case nr::Op::Inc: {
-      if (N->getExpr()->getKind() != NR_NODE_IDENT) {
-        qcore_panic("expected identifier for increment");
-      }
-
-      nr::Ident *I = N->getExpr()->as<nr::Ident>();
-      auto find = s.find_named_value(m, I->getName());
-      if (!find) {
-        qcore_panic("failed to find identifier for increment");
-      }
-
-      if (find->second != PtrClass::DataPtr) {
-        qcore_panic("expected data pointer");
-      }
-
-      llvm::Value *V = find->first;
-
-      if (!V->getType()->isPointerTy()) {
-        qcore_panic("expected pointer type for increment");
-      }
-
-      llvm::Value *current =
-          b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
-      llvm::Value *new_val;
-
-      if (current->getType()->isIntegerTy()) {
-        auto x = N->getExpr()->getType();
-        if (!x.has_value()) {
-          debug("Failed to get type");
-          return std::nullopt;
+    switch (N->getOp()) {
+      case nr::Op::Inc: {
+        if (N->getExpr()->getKind() != NR_NODE_IDENT) {
+          qcore_panic("expected identifier for increment");
         }
-        if (auto size = x.value()->getSizeBits()) {
-          new_val = b.CreateAdd(
-              current, llvm::ConstantInt::get(m.getContext(),
-                                              llvm::APInt(size.value(), 1)));
+
+        nr::Ident *I = N->getExpr()->as<nr::Ident>();
+        auto find = s.find_named_value(m, I->getName());
+        if (!find) {
+          qcore_panic("failed to find identifier for increment");
+        }
+
+        if (find->second != PtrClass::DataPtr) {
+          qcore_panic("expected data pointer");
+        }
+
+        Value *V = find->first;
+
+        if (!V->getType()->isPointerTy()) {
+          qcore_panic("expected pointer type for increment");
+        }
+
+        Value *current =
+            b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
+        Value *new_val;
+
+        if (current->getType()->isIntegerTy()) {
+          auto x = N->getExpr()->getType();
+          if (!x.has_value()) {
+            debug("Failed to get type");
+            return nullopt;
+          }
+          if (auto size = x.value()->getSizeBits()) {
+            new_val = b.CreateAdd(
+                current,
+                ConstantInt::get(m.getContext(), APInt(size.value(), 1)));
+          } else {
+            qcore_panic("Failed to get size");
+          }
+        } else if (current->getType()->isFloatingPointTy()) {
+          new_val = b.CreateFAdd(current,
+                                 ConstantFP::get(m.getContext(), APFloat(1.0)));
         } else {
-          qcore_panic("Failed to get size");
+          qcore_panic("unexpected type for increment");
         }
-      } else if (current->getType()->isFloatingPointTy()) {
-        new_val = b.CreateFAdd(
-            current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
-      } else {
-        qcore_panic("unexpected type for increment");
+
+        b.CreateStore(new_val, V);
+
+        R = current;
+        break;
       }
-
-      b.CreateStore(new_val, V);
-
-      R = current;
-      break;
-    }
-    case nr::Op::Dec: {
-      if (N->getExpr()->getKind() != NR_NODE_IDENT) {
-        qcore_panic("expected identifier for decrement");
-      }
-
-      nr::Ident *I = N->getExpr()->as<nr::Ident>();
-      auto find = s.find_named_value(m, I->getName());
-      if (!find) {
-        qcore_panic("failed to find identifier for decrement");
-      }
-
-      if (find->second != PtrClass::DataPtr) {
-        qcore_panic("expected data pointer");
-      }
-
-      llvm::Value *V = find->first;
-
-      if (!V->getType()->isPointerTy()) {
-        qcore_panic("expected pointer type for decrement");
-      }
-
-      llvm::Value *current =
-          b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
-      llvm::Value *new_val;
-
-      if (current->getType()->isIntegerTy()) {
-        auto x = N->getExpr()->getType();
-        if (!x.has_value()) {
-          debug("Failed to get type");
-          return std::nullopt;
+      case nr::Op::Dec: {
+        if (N->getExpr()->getKind() != NR_NODE_IDENT) {
+          qcore_panic("expected identifier for decrement");
         }
-        if (auto size = x.value()->getSizeBits()) {
-          new_val = b.CreateSub(
-              current, llvm::ConstantInt::get(m.getContext(),
-                                              llvm::APInt(size.value(), 1)));
+
+        nr::Ident *I = N->getExpr()->as<nr::Ident>();
+        auto find = s.find_named_value(m, I->getName());
+        if (!find) {
+          qcore_panic("failed to find identifier for decrement");
+        }
+
+        if (find->second != PtrClass::DataPtr) {
+          qcore_panic("expected data pointer");
+        }
+
+        Value *V = find->first;
+
+        if (!V->getType()->isPointerTy()) {
+          qcore_panic("expected pointer type for decrement");
+        }
+
+        Value *current =
+            b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
+        Value *new_val;
+
+        if (current->getType()->isIntegerTy()) {
+          auto x = N->getExpr()->getType();
+          if (!x.has_value()) {
+            debug("Failed to get type");
+            return nullopt;
+          }
+          if (auto size = x.value()->getSizeBits()) {
+            new_val = b.CreateSub(
+                current,
+                ConstantInt::get(m.getContext(), APInt(size.value(), 1)));
+          } else {
+            qcore_panic("Failed to get size");
+          }
+        } else if (current->getType()->isFloatingPointTy()) {
+          new_val = b.CreateFSub(current,
+                                 ConstantFP::get(m.getContext(), APFloat(1.0)));
         } else {
-          qcore_panic("Failed to get size");
+          qcore_panic("unexpected type for decrement");
         }
-      } else if (current->getType()->isFloatingPointTy()) {
-        new_val = b.CreateFSub(
-            current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
+
+        b.CreateStore(new_val, V);
+
+        R = current;
+        break;
+      }
+
+      default: {
+        qcore_panic("unexpected post-unary operator");
+      }
+    }
+
+    return R;
+  }
+
+  static val_t for_INT(ctx_t &m, craft_t &, State &, nr::Int *N) {
+    unsigned __int128 lit = N->getValue().convert_to<unsigned __int128>();
+
+    ConstantInt *R = nullptr;
+
+    if (lit == 0) {
+      R = ConstantInt::get(m.getContext(), APInt(32, 0));
+    } else if (lit > UINT64_MAX) {
+      array<uint64_t, 2> parts;
+      parts[1] = (lit >> 64) & 0xffffffffffffffff;
+      parts[0] = lit & 0xffffffffffffffff;
+      R = ConstantInt::get(m.getContext(), APInt(128, parts));
+    } else {
+      uint8_t l2 = log2(lit);
+
+      if (l2 <= 32) {
+        R = ConstantInt::get(m.getContext(), APInt(32, lit));
       } else {
-        qcore_panic("unexpected type for decrement");
-      }
-
-      b.CreateStore(new_val, V);
-
-      R = current;
-      break;
-    }
-
-    default: {
-      qcore_panic("unexpected post-unary operator");
-    }
-  }
-
-  return R;
-}
-
-static val_t for_INT(ctx_t &m, craft_t &, State &, nr::Int *N) {
-  unsigned __int128 lit = N->getValue().convert_to<unsigned __int128>();
-
-  llvm::ConstantInt *R = nullptr;
-
-  if (lit == 0) {
-    R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(32, 0));
-  } else if (lit > UINT64_MAX) {
-    std::array<uint64_t, 2> parts;
-    parts[1] = (lit >> 64) & 0xffffffffffffffff;
-    parts[0] = lit & 0xffffffffffffffff;
-    R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(128, parts));
-  } else {
-    uint8_t l2 = std::log2(lit);
-
-    if (l2 <= 32) {
-      R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(32, lit));
-    } else {
-      R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(64, lit));
-    }
-  }
-
-  return R;
-}
-
-static val_t for_FLOAT(ctx_t &m, craft_t &, State &, nr::Float *N) {
-  return llvm::ConstantFP::get(m.getContext(), llvm::APFloat(N->getValue()));
-}
-
-static val_t for_LIST(ctx_t &m, craft_t &b, State &s, nr::List *N) {
-  if (N->size() == 0) {
-    llvm::StructType *ST = llvm::StructType::get(m.getContext(), {}, true);
-    llvm::AllocaInst *AI = b.CreateAlloca(ST);
-    return b.CreateLoad(ST, AI);
-  }
-
-  std::vector<llvm::Value *> items;
-  items.reserve(N->size());
-
-  for (const auto &node : *N) {
-    val_t R = V(m, b, s, node);
-    if (!R) {
-      debug("Failed to get item");
-      return std::nullopt;
-    }
-
-    items.push_back(R.value());
-  }
-
-  bool is_homogeneous = std::all_of(
-      items.begin(), items.end(),
-      [&](llvm::Value *V) { return V->getType() == items[0]->getType(); });
-
-  if (is_homogeneous) {  // It's a Basic Array
-    llvm::ArrayType *AT =
-        llvm::ArrayType::get(items[0]->getType(), items.size());
-    llvm::AllocaInst *AI = b.CreateAlloca(AT);
-
-    for (size_t i = 0; i < items.size(); i++) {
-      b.CreateStore(items[i], b.CreateStructGEP(AT, AI, i));
-    }
-
-    return b.CreateLoad(AT, AI);
-  } else {  // It's an implicit struct value
-    std::vector<llvm::Type *> types;
-    types.reserve(items.size());
-    for (auto &item : items) {
-      types.push_back(item->getType());
-    }
-
-    llvm::StructType *ST = llvm::StructType::get(m.getContext(), types, true);
-    llvm::AllocaInst *AI = b.CreateAlloca(ST);
-
-    for (size_t i = 0; i < items.size(); i++) {
-      b.CreateStore(items[i], b.CreateStructGEP(ST, AI, i));
-    }
-
-    return b.CreateLoad(ST, AI);
-  }
-}
-
-static val_t for_CALL(ctx_t &m, craft_t &b, State &s, nr::Call *N) {
-  /* Direct call */
-  if (!N->getTarget()->getName().empty()) {
-    std::string_view fn_name = N->getTarget()->getName();
-    auto find = s.find_named_value(m, fn_name);
-    if (!find) {
-      debug("Failed to find function " << fn_name);
-      return std::nullopt;
-    }
-
-    if (find->second != PtrClass::Function) {
-      debug("Expected function pointer");
-      return std::nullopt;
-    }
-
-    llvm::Function *func_def = llvm::cast<llvm::Function>(find->first);
-    llvm::FunctionType *FT = func_def->getFunctionType();
-
-    std::vector<llvm::Value *> args;
-
-    { /* Arguments */
-      args.reserve(N->getArgs().size());
-
-      for (auto &node : N->getArgs()) {
-        val_t R = V(m, b, s, node);
-        if (!R) {
-          debug("Failed to get argument");
-          return std::nullopt;
-        }
-
-        args.push_back(R.value());
+        R = ConstantInt::get(m.getContext(), APInt(64, lit));
       }
     }
 
-    { /* Verify call */
-      if (!(FT->getNumParams() == args.size() ||
-            (FT->isVarArg() && FT->getNumParams() <= args.size()))) {
-        debug("Expected " << FT->getNumParams() << " arguments, but got "
-                          << args.size());
-        return std::nullopt;
-      }
-    }
-
-    return b.CreateCall(func_def, args);
-  }
-  /* Indirect call */
-  else {
-    val_t T = V(m, b, s, N->getTarget());
-    if (!T) {
-      debug("Failed to get target");
-      return std::nullopt;
-    }
-
-    if (!T.value()->getType()->isPointerTy()) {
-      debug("Expected pointer type for target");
-      return std::nullopt;
-    }
-
-    llvm::Value *target = b.CreateLoad(
-        T.value()->getType()->getNonOpaquePointerElementType(), T.value());
-
-    if (!target->getType()->isFunctionTy()) {
-      debug("Expected function type for target");
-      return std::nullopt;
-    }
-
-    llvm::FunctionType *FT = llvm::cast<llvm::FunctionType>(target->getType());
-
-    std::vector<llvm::Value *> args;
-
-    { /* Arguments */
-      args.reserve(N->getArgs().size());
-
-      for (auto &node : N->getArgs()) {
-        val_t R = V(m, b, s, node);
-        if (!R) {
-          debug("Failed to get argument");
-          return std::nullopt;
-        }
-
-        args.push_back(R.value());
-      }
-    }
-
-    { /* Verify call */
-      if (!(FT->getNumParams() == args.size() ||
-            (FT->isVarArg() && FT->getNumParams() <= args.size()))) {
-        debug("Expected " << FT->getNumParams() << " arguments, but got "
-                          << args.size());
-        return std::nullopt;
-      }
-    }
-
-    llvm::Function *func = llvm::cast<llvm::Function>(target);
-
-    return b.CreateCall(func, args);
-  }
-}
-
-static val_t for_SEQ(ctx_t &m, craft_t &b, State &s, nr::Seq *N) {
-  if (N->getItems().empty()) {
-    return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(m.getContext()));
+    return R;
   }
 
-  val_t R;
-
-  for (auto &node : N->getItems()) {
-    R = V(m, b, s, node);
-    if (!R) {
-      debug("Failed to get item");
-      return std::nullopt;
-    }
+  static val_t for_FLOAT(ctx_t &m, craft_t &, State &, nr::Float *N) {
+    return ConstantFP::get(m.getContext(), APFloat(N->getValue()));
   }
 
-  return R;
-}
-
-static val_t for_INDEX(ctx_t &m, craft_t &b, State &s, nr::Index *N) {
-  val_t I = V(m, b, s, N->getIndex());
-  if (!I) {
-    debug("Failed to get index");
-    return std::nullopt;
-  }
-
-  if (N->getExpr()->getKind() == NR_NODE_IDENT) {
-    nr::Ident *B = N->getExpr()->as<nr::Ident>();
-    auto find = s.find_named_value(m, B->getName());
-    if (!find) {
-      debug("Failed to find named value " << B->getName());
-      return std::nullopt;
+  static val_t for_LIST(ctx_t &m, craft_t &b, State &s, nr::List *N) {
+    if (N->size() == 0) {
+      StructType *ST = StructType::get(m.getContext(), {}, true);
+      AllocaInst *AI = b.CreateAlloca(ST);
+      return b.CreateLoad(ST, AI);
     }
 
-    if (find->second != PtrClass::DataPtr) {
-      qcore_panic("expected data pointer");
-    }
+    vector<Value *> items;
+    items.reserve(N->size());
 
-    if (!find->first->getType()->getNonOpaquePointerElementType()) {
-      qcore_panic("unexpected type for index");
-    }
-
-    llvm::Type *base_ty =
-        find->first->getType()->getNonOpaquePointerElementType();
-
-    if (base_ty->isArrayTy()) {
-      llvm::Value *zero =
-          llvm::ConstantInt::get(m.getContext(), llvm::APInt(32, 0));
-      llvm::Value *indices[] = {zero, I.value()};
-
-      llvm::Value *elem = b.CreateGEP(base_ty, find->first, indices);
-
-      return b.CreateLoad(base_ty->getArrayElementType(), elem);
-    } else if (base_ty->isPointerTy()) {
-      llvm::Value *elem = b.CreateGEP(base_ty->getNonOpaquePointerElementType(),
-                                      find->first, I.value());
-
-      return b.CreateLoad(base_ty->getNonOpaquePointerElementType(), elem);
-    } else {
-      qcore_panic("unexpected type for index");
-    }
-  } else if (N->getExpr()->getKind() == NR_NODE_LIST) {
-    qcore_implement();
-  } else {
-    qcore_panic("unexpected base expression for index");
-  }
-}
-
-static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, nr::Ident *N) {
-  auto find = s.find_named_value(m, N->getName());
-  if (!find) {
-    debug("Failed to find named value " << N->getName());
-    return std::nullopt;
-  }
-
-  debug("Found named value " << N->getName());
-
-  if (find->second == PtrClass::Function) {
-    return find->first;
-  } else {
-    if (find->first->getType()->isPointerTy()) {
-      return b.CreateLoad(
-          find->first->getType()->getNonOpaquePointerElementType(),
-          find->first);
-    }
-  }
-
-  qcore_panic("unexpected type for identifier");
-}
-
-static val_t for_EXTERN(ctx_t &m, craft_t &b, State &s, nr::Extern *N) {
-  s.push_linkage(llvm::GlobalValue::ExternalLinkage);
-
-  val_t R = V(m, b, s, N->getValue());
-  if (!R) {
-    s.pop_linkage();
-    debug("Failed to get value");
-    return std::nullopt;
-  }
-
-  s.pop_linkage();
-
-  return R;
-}
-
-static val_t for_LOCAL(ctx_t &m, craft_t &b, State &s, nr::Local *N) {
-  auto x = N->getValue()->getType();
-  if (!x.has_value()) {
-    debug("Failed to get type");
-    return std::nullopt;
-  }
-
-  ty_t R_T = T(m, b, s, x.value());
-  if (!R_T) {
-    debug("Failed to get type");
-    return std::nullopt;
-  }
-
-  if (s.is_inside_function()) {
-    llvm::AllocaInst *local =
-        b.CreateAlloca(R_T.value(), nullptr, N->getName());
-
-    if (N->getValue()) {
-      val_t R = V(m, b, s, N->getValue());
+    for (const auto &node : *N) {
+      val_t R = V(m, b, s, node);
       if (!R) {
-        debug("Failed to get value");
-        return std::nullopt;
+        debug("Failed to get item");
+        return nullopt;
       }
-      b.CreateStore(R.value(), local);
+
+      items.push_back(R.value());
+    }
+
+    bool is_homogeneous = all_of(items.begin(), items.end(), [&](Value *V) {
+      return V->getType() == items[0]->getType();
+    });
+
+    if (is_homogeneous) {  // It's a Basic Array
+      ArrayType *AT = ArrayType::get(items[0]->getType(), items.size());
+      AllocaInst *AI = b.CreateAlloca(AT);
+
+      for (size_t i = 0; i < items.size(); i++) {
+        b.CreateStore(items[i], b.CreateStructGEP(AT, AI, i));
+      }
+
+      return b.CreateLoad(AT, AI);
+    } else {  // It's an implicit struct value
+      vector<Type *> types;
+      types.reserve(items.size());
+      for (auto &item : items) {
+        types.push_back(item->getType());
+      }
+
+      StructType *ST = StructType::get(m.getContext(), types, true);
+      AllocaInst *AI = b.CreateAlloca(ST);
+
+      for (size_t i = 0; i < items.size(); i++) {
+        b.CreateStore(items[i], b.CreateStructGEP(ST, AI, i));
+      }
+
+      return b.CreateLoad(ST, AI);
+    }
+  }
+
+  static val_t for_CALL(ctx_t &m, craft_t &b, State &s, nr::Call *N) {
+    /* Direct call */
+    if (!N->getTarget()->getName().empty()) {
+      string_view fn_name = N->getTarget()->getName();
+      auto find = s.find_named_value(m, fn_name);
+      if (!find) {
+        debug("Failed to find function " << fn_name);
+        return nullopt;
+      }
+
+      if (find->second != PtrClass::Function) {
+        debug("Expected function pointer");
+        return nullopt;
+      }
+
+      Function *func_def = cast<Function>(find->first);
+      FunctionType *FT = func_def->getFunctionType();
+
+      vector<Value *> args;
+
+      { /* Arguments */
+        args.reserve(N->getArgs().size());
+
+        for (auto &node : N->getArgs()) {
+          val_t R = V(m, b, s, node);
+          if (!R) {
+            debug("Failed to get argument");
+            return nullopt;
+          }
+
+          args.push_back(R.value());
+        }
+      }
+
+      { /* Verify call */
+        if (!(FT->getNumParams() == args.size() ||
+              (FT->isVarArg() && FT->getNumParams() <= args.size()))) {
+          debug("Expected " << FT->getNumParams() << " arguments, but got "
+                            << args.size());
+          return nullopt;
+        }
+      }
+
+      return b.CreateCall(func_def, args);
+    }
+    /* Indirect call */
+    else {
+      val_t T = V(m, b, s, N->getTarget());
+      if (!T) {
+        debug("Failed to get target");
+        return nullopt;
+      }
+
+      if (!T.value()->getType()->isPointerTy()) {
+        debug("Expected pointer type for target");
+        return nullopt;
+      }
+
+      Value *target = b.CreateLoad(
+          T.value()->getType()->getNonOpaquePointerElementType(), T.value());
+
+      if (!target->getType()->isFunctionTy()) {
+        debug("Expected function type for target");
+        return nullopt;
+      }
+
+      FunctionType *FT = cast<FunctionType>(target->getType());
+
+      vector<Value *> args;
+
+      { /* Arguments */
+        args.reserve(N->getArgs().size());
+
+        for (auto &node : N->getArgs()) {
+          val_t R = V(m, b, s, node);
+          if (!R) {
+            debug("Failed to get argument");
+            return nullopt;
+          }
+
+          args.push_back(R.value());
+        }
+      }
+
+      { /* Verify call */
+        if (!(FT->getNumParams() == args.size() ||
+              (FT->isVarArg() && FT->getNumParams() <= args.size()))) {
+          debug("Expected " << FT->getNumParams() << " arguments, but got "
+                            << args.size());
+          return nullopt;
+        }
+      }
+
+      Function *func = cast<Function>(target);
+
+      return b.CreateCall(func, args);
+    }
+  }
+
+  static val_t for_SEQ(ctx_t &m, craft_t &b, State &s, nr::Seq *N) {
+    if (N->getItems().empty()) {
+      return Constant::getNullValue(Type::getInt32Ty(m.getContext()));
+    }
+
+    val_t R;
+
+    for (auto &node : N->getItems()) {
+      R = V(m, b, s, node);
+      if (!R) {
+        debug("Failed to get item");
+        return nullopt;
+      }
+    }
+
+    return R;
+  }
+
+  static val_t for_INDEX(ctx_t &m, craft_t &b, State &s, nr::Index *N) {
+    val_t I = V(m, b, s, N->getIndex());
+    if (!I) {
+      debug("Failed to get index");
+      return nullopt;
+    }
+
+    if (N->getExpr()->getKind() == NR_NODE_IDENT) {
+      nr::Ident *B = N->getExpr()->as<nr::Ident>();
+      auto find = s.find_named_value(m, B->getName());
+      if (!find) {
+        debug("Failed to find named value " << B->getName());
+        return nullopt;
+      }
+
+      if (find->second != PtrClass::DataPtr) {
+        qcore_panic("expected data pointer");
+      }
+
+      if (!find->first->getType()->getNonOpaquePointerElementType()) {
+        qcore_panic("unexpected type for index");
+      }
+
+      Type *base_ty = find->first->getType()->getNonOpaquePointerElementType();
+
+      if (base_ty->isArrayTy()) {
+        Value *zero = ConstantInt::get(m.getContext(), APInt(32, 0));
+        Value *indices[] = {zero, I.value()};
+
+        Value *elem = b.CreateGEP(base_ty, find->first, indices);
+
+        return b.CreateLoad(base_ty->getArrayElementType(), elem);
+      } else if (base_ty->isPointerTy()) {
+        Value *elem = b.CreateGEP(base_ty->getNonOpaquePointerElementType(),
+                                  find->first, I.value());
+
+        return b.CreateLoad(base_ty->getNonOpaquePointerElementType(), elem);
+      } else {
+        qcore_panic("unexpected type for index");
+      }
+    } else if (N->getExpr()->getKind() == NR_NODE_LIST) {
+      qcore_implement();
     } else {
-      b.CreateStore(llvm::Constant::getNullValue(R_T.value()), local);
+      qcore_panic("unexpected base expression for index");
+    }
+  }
+
+  static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, nr::Ident *N) {
+    auto find = s.find_named_value(m, N->getName());
+    if (!find) {
+      debug("Failed to find named value " << N->getName());
+      return nullopt;
     }
 
-    s.get_stackframe().addVariable(N->getName(), local);
-    return local;
-  } else {
-    auto init = llvm::Constant::getNullValue(R_T.value());
+    debug("Found named value " << N->getName());
 
-    llvm::GlobalVariable *global = new llvm::GlobalVariable(
-        m, R_T.value(), false, s.get_linkage(), init, N->getName());
+    if (find->second == PtrClass::Function) {
+      return find->first;
+    } else {
+      if (find->first->getType()->isPointerTy()) {
+        return b.CreateLoad(
+            find->first->getType()->getNonOpaquePointerElementType(),
+            find->first);
+      }
+    }
 
-    /// TODO: Set the initializer value during program load???
-    return global;
+    qcore_panic("unexpected type for identifier");
   }
-}
 
-static val_t for_RET(ctx_t &m, craft_t &b, State &s, nr::Ret *N) {
-  val_t R;
+  static val_t for_EXTERN(ctx_t &m, craft_t &b, State &s, nr::Extern *N) {
+    s.push_linkage(GlobalValue::ExternalLinkage);
 
-  if (N->getExpr()->getKind() != NR_NODE_VOID_TY) {
-    R = V(m, b, s, N->getExpr());
+    val_t R = V(m, b, s, N->getValue());
     if (!R) {
-      debug("Failed to get return value");
-      return std::nullopt;
+      s.pop_linkage();
+      debug("Failed to get value");
+      return nullopt;
     }
 
-    b.CreateStore(R.value(), s.get_return_block().getValue());
-  } else {
-    R = llvm::Constant::getNullValue(llvm::Type::getInt32Ty(m.getContext()));
+    s.pop_linkage();
+
+    return R;
   }
 
-  b.CreateBr(s.get_return_block().getBlock());
-  s.did_ret = true;
+  static val_t for_LOCAL(ctx_t &m, craft_t &b, State &s, nr::Local *N) {
+    auto x = N->getValue()->getType();
+    if (!x.has_value()) {
+      debug("Failed to get type");
+      return nullopt;
+    }
 
-  return R;
-}
+    ty_t R_T = T(m, b, s, x.value());
+    if (!R_T) {
+      debug("Failed to get type");
+      return nullopt;
+    }
 
-static val_t for_BRK(ctx_t &, craft_t &b, State &s, nr::Brk *) {
-  if (auto block = s.get_break_block()) {
-    s.did_brk = true;
-    return b.CreateBr(block.value());
-  } else {
-    return std::nullopt;
-  }
-}
+    if (s.is_inside_function()) {
+      AllocaInst *local = b.CreateAlloca(R_T.value(), nullptr, N->getName());
 
-static val_t for_CONT(ctx_t &, craft_t &b, State &s, nr::Cont *) {
-  if (auto block = s.get_skip_block()) {
-    s.did_cont = true;
-    return b.CreateBr(block.value());
-  } else {
-    return std::nullopt;
-  }
-}
+      if (N->getValue()) {
+        val_t R = V(m, b, s, N->getValue());
+        if (!R) {
+          debug("Failed to get value");
+          return nullopt;
+        }
+        b.CreateStore(R.value(), local);
+      } else {
+        b.CreateStore(Constant::getNullValue(R_T.value()), local);
+      }
 
-static val_t for_IF(ctx_t &m, craft_t &b, State &s, nr::If *N) {
-  llvm::BasicBlock *then, *els, *end;
+      s.get_stackframe().addVariable(N->getName(), local);
+      return local;
+    } else {
+      auto init = Constant::getNullValue(R_T.value());
 
-  then = llvm::BasicBlock::Create(m.getContext(), "then",
-                                  s.get_stackframe().getFunction());
-  els = llvm::BasicBlock::Create(m.getContext(), "else",
-                                 s.get_stackframe().getFunction());
-  end = llvm::BasicBlock::Create(m.getContext(), "end",
-                                 s.get_stackframe().getFunction());
+      GlobalVariable *global = new GlobalVariable(
+          m, R_T.value(), false, s.get_linkage(), init, N->getName());
 
-  val_t R = V(m, b, s, N->getCond());
-  if (!R) {
-    debug("Failed to get condition");
-    return std::nullopt;
-  }
-
-  b.CreateCondBr(R.value(), then, els);
-  b.SetInsertPoint(then);
-
-  bool old_did_ret = s.did_ret;
-  val_t R_T = V(m, b, s, N->getThen());
-  if (!R_T) {
-    debug("Failed to get then");
-    return std::nullopt;
+      /// TODO: Set the initializer value during program load???
+      return global;
+    }
   }
 
-  if (!s.did_ret) {
-    b.CreateBr(end);
-  }
-  s.did_ret = old_did_ret;
+  static val_t for_RET(ctx_t &m, craft_t &b, State &s, nr::Ret *N) {
+    val_t R;
 
-  b.SetInsertPoint(els);
+    if (N->getExpr()->getKind() != NR_NODE_VOID_TY) {
+      R = V(m, b, s, N->getExpr());
+      if (!R) {
+        debug("Failed to get return value");
+        return nullopt;
+      }
 
-  s.did_ret = false;
-  val_t R_E = V(m, b, s, N->getElse());
-  if (!R_E) {
-    debug("Failed to get else");
-    return std::nullopt;
-  }
-  if (!s.did_ret) {
-    b.CreateBr(end);
-  }
-  s.did_ret = old_did_ret;
-  b.SetInsertPoint(end);
+      b.CreateStore(R.value(), s.get_return_block().getValue());
+    } else {
+      R = Constant::getNullValue(Type::getInt32Ty(m.getContext()));
+    }
 
-  return end;
-}
+    b.CreateBr(s.get_return_block().getBlock());
+    s.did_ret = true;
 
-static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, nr::While *N) {
-  llvm::BasicBlock *begin, *body, *end;
-
-  begin = llvm::BasicBlock::Create(m.getContext(), "begin",
-                                   s.get_stackframe().getFunction());
-  body = llvm::BasicBlock::Create(m.getContext(), "body",
-                                  s.get_stackframe().getFunction());
-  end = llvm::BasicBlock::Create(m.getContext(), "end",
-                                 s.get_stackframe().getFunction());
-
-  b.CreateBr(begin);
-  b.SetInsertPoint(begin);
-
-  val_t R = V(m, b, s, N->getCond());
-  if (!R) {
-    debug("Failed to get condition");
-    return std::nullopt;
+    return R;
   }
 
-  b.CreateCondBr(R.value(), body, end);
-  b.SetInsertPoint(body);
-  s.push_break_block(end);
-  s.push_skip_block(begin);
-
-  bool did_brk = s.did_brk;
-  bool did_cont = s.did_cont;
-  bool old_ret = s.did_ret;
-
-  val_t R_B = V(m, b, s, N->getBody());
-  if (!R_B) {
-    debug("Failed to get body");
-    return std::nullopt;
+  static val_t for_BRK(ctx_t &, craft_t &b, State &s, nr::Brk *) {
+    if (auto block = s.get_break_block()) {
+      s.did_brk = true;
+      return b.CreateBr(block.value());
+    } else {
+      return nullopt;
+    }
   }
 
-  if (!s.did_brk && !s.did_cont && !s.did_ret) {
+  static val_t for_CONT(ctx_t &, craft_t &b, State &s, nr::Cont *) {
+    if (auto block = s.get_skip_block()) {
+      s.did_cont = true;
+      return b.CreateBr(block.value());
+    } else {
+      return nullopt;
+    }
+  }
+
+  static val_t for_IF(ctx_t &m, craft_t &b, State &s, nr::If *N) {
+    BasicBlock *then, *els, *end;
+
+    then = BasicBlock::Create(m.getContext(), "then",
+                              s.get_stackframe().getFunction());
+    els = BasicBlock::Create(m.getContext(), "else",
+                             s.get_stackframe().getFunction());
+    end = BasicBlock::Create(m.getContext(), "end",
+                             s.get_stackframe().getFunction());
+
+    val_t R = V(m, b, s, N->getCond());
+    if (!R) {
+      debug("Failed to get condition");
+      return nullopt;
+    }
+
+    b.CreateCondBr(R.value(), then, els);
+    b.SetInsertPoint(then);
+
+    bool old_did_ret = s.did_ret;
+    val_t R_T = V(m, b, s, N->getThen());
+    if (!R_T) {
+      debug("Failed to get then");
+      return nullopt;
+    }
+
+    if (!s.did_ret) {
+      b.CreateBr(end);
+    }
+    s.did_ret = old_did_ret;
+
+    b.SetInsertPoint(els);
+
+    s.did_ret = false;
+    val_t R_E = V(m, b, s, N->getElse());
+    if (!R_E) {
+      debug("Failed to get else");
+      return nullopt;
+    }
+    if (!s.did_ret) {
+      b.CreateBr(end);
+    }
+    s.did_ret = old_did_ret;
+    b.SetInsertPoint(end);
+
+    return end;
+  }
+
+  static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, nr::While *N) {
+    BasicBlock *begin, *body, *end;
+
+    begin = BasicBlock::Create(m.getContext(), "begin",
+                               s.get_stackframe().getFunction());
+    body = BasicBlock::Create(m.getContext(), "body",
+                              s.get_stackframe().getFunction());
+    end = BasicBlock::Create(m.getContext(), "end",
+                             s.get_stackframe().getFunction());
+
     b.CreateBr(begin);
-  }
-  s.did_brk = did_brk;
-  s.did_cont = did_cont;
-  s.did_ret = old_ret;
+    b.SetInsertPoint(begin);
 
-  s.pop_skip_block();
-  s.pop_break_block();
-
-  b.SetInsertPoint(end);
-
-  return end;
-}
-
-static val_t for_FOR(ctx_t &m, craft_t &b, State &s, nr::For *N) {
-  llvm::BasicBlock *begin, *body, *step, *end;
-
-  begin = llvm::BasicBlock::Create(m.getContext(), "begin",
-                                   s.get_stackframe().getFunction());
-  body = llvm::BasicBlock::Create(m.getContext(), "body",
-                                  s.get_stackframe().getFunction());
-  step = llvm::BasicBlock::Create(m.getContext(), "step",
-                                  s.get_stackframe().getFunction());
-  end = llvm::BasicBlock::Create(m.getContext(), "end",
-                                 s.get_stackframe().getFunction());
-
-  val_t R = V(m, b, s, N->getInit());
-  if (!R) {
-    debug("Failed to get init");
-    return std::nullopt;
-  }
-
-  b.CreateBr(begin);
-  b.SetInsertPoint(begin);
-
-  val_t R_C = V(m, b, s, N->getCond());
-  if (!R_C) {
-    debug("Failed to get condition");
-    return std::nullopt;
-  }
-
-  b.CreateCondBr(R_C.value(), body, end);
-  b.SetInsertPoint(body);
-  s.push_break_block(end);
-  s.push_skip_block(step);
-
-  bool did_brk = s.did_brk;
-  bool did_cont = s.did_cont;
-  bool old_ret = s.did_ret;
-
-  val_t R_B = V(m, b, s, N->getBody());
-  if (!R_B) {
-    debug("Failed to get body");
-    return std::nullopt;
-  }
-
-  if (!s.did_brk && !s.did_cont && !s.did_ret) {
-    b.CreateBr(step);
-  }
-  s.did_brk = did_brk;
-  s.did_cont = did_cont;
-  s.did_ret = old_ret;
-
-  b.SetInsertPoint(step);
-
-  val_t R_S = V(m, b, s, N->getStep());
-  if (!R_S) {
-    debug("Failed to get step");
-    return std::nullopt;
-  }
-
-  b.CreateBr(begin);
-
-  s.pop_skip_block();
-  s.pop_break_block();
-
-  b.SetInsertPoint(end);
-
-  return end;
-}
-
-static val_t for_CASE(ctx_t &, craft_t &, State &, nr::Case *) {
-  qcore_panic("code path unreachable");
-}
-
-static bool check_switch_trivial(nr::Switch *N) {
-  auto C_T = N->getCond()->getType();
-  if (!C_T) {
-    debug("Failed to get condition type");
-    return false;
-  }
-
-  if (!C_T.value()->is_integral()) {
-    return false;
-  }
-
-  for (auto &node : N->getCases()) {
-    nr::Case *C = node->as<nr::Case>();
-    auto x = C->getCond()->getType();
-    if (!x) {
-      debug("Failed to get case condition type");
-      return false;
+    val_t R = V(m, b, s, N->getCond());
+    if (!R) {
+      debug("Failed to get condition");
+      return nullopt;
     }
-    if (!x.value()->isSame(C_T.value())) {
-      return false;
-    }
-  }
 
-  return true;
-}
-
-static val_t for_SWITCH(ctx_t &m, craft_t &b, State &s, nr::Switch *N) {
-  val_t R = V(m, b, s, N->getCond());
-  if (!R) {
-    debug("Failed to get condition");
-    return std::nullopt;
-  }
-
-  bool is_trivial = check_switch_trivial(N);
-
-  if (is_trivial) {
-    llvm::BasicBlock *end = llvm::BasicBlock::Create(
-        m.getContext(), "", s.get_stackframe().getFunction());
+    b.CreateCondBr(R.value(), body, end);
+    b.SetInsertPoint(body);
     s.push_break_block(end);
+    s.push_skip_block(begin);
 
-    llvm::SwitchInst *SI = b.CreateSwitch(R.value(), end, N->getCases().size());
+    bool did_brk = s.did_brk;
+    bool did_cont = s.did_cont;
+    bool old_ret = s.did_ret;
 
-    for (auto &node : N->getCases()) {
-      llvm::BasicBlock *case_block = llvm::BasicBlock::Create(
-          m.getContext(), "", s.get_stackframe().getFunction());
-      b.SetInsertPoint(case_block);
-      case_block->moveBefore(end);
-
-      nr::Case *C = node->as<nr::Case>();
-
-      val_t R_C = V(m, b, s, C->getCond());
-      if (!R_C) {
-        debug("Failed to get case condition");
-        return std::nullopt;
-      }
-
-      bool did_ret = s.did_ret;
-      val_t R_B = V(m, b, s, C->getBody());
-      if (!R_B) {
-        debug("Failed to get case body");
-        return std::nullopt;
-      }
-      s.did_ret = did_ret;
-
-      SI->addCase(llvm::cast<llvm::ConstantInt>(R_C.value()), case_block);
+    val_t R_B = V(m, b, s, N->getBody());
+    if (!R_B) {
+      debug("Failed to get body");
+      return nullopt;
     }
 
+    if (!s.did_brk && !s.did_cont && !s.did_ret) {
+      b.CreateBr(begin);
+    }
+    s.did_brk = did_brk;
+    s.did_cont = did_cont;
+    s.did_ret = old_ret;
+
+    s.pop_skip_block();
     s.pop_break_block();
 
     b.SetInsertPoint(end);
 
-    return SI;
-  } else {
-    /// TODO: Implement conversion for node
+    return end;
+  }
 
+  static val_t for_FOR(ctx_t &m, craft_t &b, State &s, nr::For *N) {
+    BasicBlock *begin, *body, *step, *end;
+
+    begin = BasicBlock::Create(m.getContext(), "begin",
+                               s.get_stackframe().getFunction());
+    body = BasicBlock::Create(m.getContext(), "body",
+                              s.get_stackframe().getFunction());
+    step = BasicBlock::Create(m.getContext(), "step",
+                              s.get_stackframe().getFunction());
+    end = BasicBlock::Create(m.getContext(), "end",
+                             s.get_stackframe().getFunction());
+
+    val_t R = V(m, b, s, N->getInit());
+    if (!R) {
+      debug("Failed to get init");
+      return nullopt;
+    }
+
+    b.CreateBr(begin);
+    b.SetInsertPoint(begin);
+
+    val_t R_C = V(m, b, s, N->getCond());
+    if (!R_C) {
+      debug("Failed to get condition");
+      return nullopt;
+    }
+
+    b.CreateCondBr(R_C.value(), body, end);
+    b.SetInsertPoint(body);
+    s.push_break_block(end);
+    s.push_skip_block(step);
+
+    bool did_brk = s.did_brk;
+    bool did_cont = s.did_cont;
+    bool old_ret = s.did_ret;
+
+    val_t R_B = V(m, b, s, N->getBody());
+    if (!R_B) {
+      debug("Failed to get body");
+      return nullopt;
+    }
+
+    if (!s.did_brk && !s.did_cont && !s.did_ret) {
+      b.CreateBr(step);
+    }
+    s.did_brk = did_brk;
+    s.did_cont = did_cont;
+    s.did_ret = old_ret;
+
+    b.SetInsertPoint(step);
+
+    val_t R_S = V(m, b, s, N->getStep());
+    if (!R_S) {
+      debug("Failed to get step");
+      return nullopt;
+    }
+
+    b.CreateBr(begin);
+
+    s.pop_skip_block();
+    s.pop_break_block();
+
+    b.SetInsertPoint(end);
+
+    return end;
+  }
+
+  static val_t for_CASE(ctx_t &, craft_t &, State &, nr::Case *) {
+    qcore_panic("code path unreachable");
+  }
+
+  static bool check_switch_trivial(nr::Switch *N) {
+    auto C_T = N->getCond()->getType();
+    if (!C_T) {
+      debug("Failed to get condition type");
+      return false;
+    }
+
+    if (!C_T.value()->is_integral()) {
+      return false;
+    }
+
+    for (auto &node : N->getCases()) {
+      nr::Case *C = node->as<nr::Case>();
+      auto x = C->getCond()->getType();
+      if (!x) {
+        debug("Failed to get case condition type");
+        return false;
+      }
+      if (!x.value()->isSame(C_T.value())) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  static val_t for_SWITCH(ctx_t &m, craft_t &b, State &s, nr::Switch *N) {
+    val_t R = V(m, b, s, N->getCond());
+    if (!R) {
+      debug("Failed to get condition");
+      return nullopt;
+    }
+
+    bool is_trivial = check_switch_trivial(N);
+
+    if (is_trivial) {
+      BasicBlock *end = BasicBlock::Create(m.getContext(), "",
+                                           s.get_stackframe().getFunction());
+      s.push_break_block(end);
+
+      SwitchInst *SI = b.CreateSwitch(R.value(), end, N->getCases().size());
+
+      for (auto &node : N->getCases()) {
+        BasicBlock *case_block = BasicBlock::Create(
+            m.getContext(), "", s.get_stackframe().getFunction());
+        b.SetInsertPoint(case_block);
+        case_block->moveBefore(end);
+
+        nr::Case *C = node->as<nr::Case>();
+
+        val_t R_C = V(m, b, s, C->getCond());
+        if (!R_C) {
+          debug("Failed to get case condition");
+          return nullopt;
+        }
+
+        bool did_ret = s.did_ret;
+        val_t R_B = V(m, b, s, C->getBody());
+        if (!R_B) {
+          debug("Failed to get case body");
+          return nullopt;
+        }
+        s.did_ret = did_ret;
+
+        SI->addCase(cast<ConstantInt>(R_C.value()), case_block);
+      }
+
+      s.pop_break_block();
+
+      b.SetInsertPoint(end);
+
+      return SI;
+    } else {
+      /// TODO: Implement conversion for node
+
+      qcore_implement();
+    }
+  }
+
+  static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N) {
+    vector<Type *> params;
+
+    { /* Lower parameter types */
+      params.reserve(N->getParams().size());
+
+      for (auto &param : N->getParams()) {
+        ty_t R = T(m, b, s, param.first);
+        if (!R) {
+          debug("Failed to get parameter type");
+          return nullopt;
+        }
+
+        params.push_back(R.value());
+      }
+    }
+
+    Type *ret_ty;
+
+    { /* Lower return type */
+      // Use type inference to get return type
+      auto x = N->getType();
+      if (!x.has_value()) {
+        debug("Failed to get return type");
+        return nullopt;
+      }
+      ty_t R = T(m, b, s, x.value()->as<nr::FnTy>()->getReturn());
+      if (!R) {
+        debug("Failed to get return type");
+        return nullopt;
+      }
+
+      ret_ty = R.value();
+    }
+
+    FunctionType *fn_ty = FunctionType::get(ret_ty, params, false);
+    Value *callee = m.getOrInsertFunction(N->getName(), fn_ty).getCallee();
+
+    if (!N->getBody().has_value()) {  // It is a declaration
+      return callee;
+    }
+
+    s.set_inside_function(true);
+
+    Function *fn = dyn_cast<Function>(callee);
+
+    s.push_stackframe(fn);
+
+    { /* Lower function body */
+      BasicBlock *entry, *exit;
+
+      entry = BasicBlock::Create(m.getContext(), "entry", fn);
+      exit = BasicBlock::Create(m.getContext(), "end", fn);
+
+      b.SetInsertPoint(entry);
+
+      AllocaInst *ret_val_alloc = nullptr;
+      if (!ret_ty->isVoidTy()) {
+        ret_val_alloc = b.CreateAlloca(ret_ty, nullptr, "__ret");
+      }
+      s.push_return_block(ret_val_alloc, exit);
+
+      {
+        b.SetInsertPoint(exit);
+        if (!ret_ty->isVoidTy()) {
+          LoadInst *ret_val =
+              b.CreateLoad(ret_ty, s.get_return_block().getValue());
+          b.CreateRet(ret_val);
+        } else {
+          b.CreateRetVoid();
+        }
+      }
+
+      b.SetInsertPoint(entry);
+
+      for (size_t i = 0; i < N->getParams().size(); i++) {
+        fn->getArg(i)->setName(N->getParams()[i].second);
+
+        AllocaInst *param_alloc = b.CreateAlloca(
+            fn->getArg(i)->getType(), nullptr, N->getParams()[i].second);
+
+        b.CreateStore(fn->getArg(i), param_alloc);
+        s.get_stackframe().addVariable(N->getParams()[i].second, param_alloc);
+      }
+
+      bool old_did_ret = s.did_ret;
+
+      for (auto &node : N->getBody().value()->getItems()) {
+        val_t R = V(m, b, s, node);
+        if (!R) {
+          s.pop_return_block();
+          s.pop_stackframe();
+          debug("Failed to get body");
+          return nullopt;
+        }
+      }
+
+      if (!s.did_ret) {
+        b.CreateBr(exit);
+      }
+      s.did_ret = old_did_ret;
+
+      s.pop_return_block();
+      s.pop_stackframe();
+    }
+
+    return fn;
+  }
+
+  static val_t for_ASM(ctx_t &, craft_t &, State &, nr::Asm *) {
     qcore_implement();
   }
-}
 
-static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N) {
-  std::vector<llvm::Type *> params;
+  static ty_t for_U1_TY(ctx_t &m, craft_t &, State &, nr::U1Ty *) {
+    return Type::getInt1Ty(m.getContext());
+  }
 
-  { /* Lower parameter types */
+  static ty_t for_U8_TY(ctx_t &m, craft_t &, State &, nr::U8Ty *) {
+    return Type::getInt8Ty(m.getContext());
+  }
+
+  static ty_t for_U16_TY(ctx_t &m, craft_t &, State &, nr::U16Ty *) {
+    return Type::getInt16Ty(m.getContext());
+  }
+
+  static ty_t for_U32_TY(ctx_t &m, craft_t &, State &, nr::U32Ty *) {
+    return Type::getInt32Ty(m.getContext());
+  }
+
+  static ty_t for_U64_TY(ctx_t &m, craft_t &, State &, nr::U64Ty *) {
+    return Type::getInt64Ty(m.getContext());
+  }
+
+  static ty_t for_U128_TY(ctx_t &m, craft_t &, State &, nr::U128Ty *) {
+    return Type::getInt128Ty(m.getContext());
+  }
+
+  static ty_t for_I8_TY(ctx_t &m, craft_t &, State &, nr::I8Ty *) {
+    return Type::getInt8Ty(m.getContext());
+  }
+
+  static ty_t for_I16_TY(ctx_t &m, craft_t &, State &, nr::I16Ty *) {
+    return Type::getInt16Ty(m.getContext());
+  }
+
+  static ty_t for_I32_TY(ctx_t &m, craft_t &, State &, nr::I32Ty *) {
+    return Type::getInt32Ty(m.getContext());
+  }
+
+  static ty_t for_I64_TY(ctx_t &m, craft_t &, State &, nr::I64Ty *) {
+    return Type::getInt64Ty(m.getContext());
+  }
+
+  static ty_t for_I128_TY(ctx_t &m, craft_t &, State &, nr::I128Ty *) {
+    return Type::getInt128Ty(m.getContext());
+  }
+
+  static ty_t for_F16_TY(ctx_t &m, craft_t &, State &, nr::F16Ty *) {
+    return Type::getHalfTy(m.getContext());
+  }
+
+  static ty_t for_F32_TY(ctx_t &m, craft_t &, State &, nr::F32Ty *) {
+    return Type::getFloatTy(m.getContext());
+  }
+
+  static ty_t for_F64_TY(ctx_t &m, craft_t &, State &, nr::F64Ty *) {
+    return Type::getDoubleTy(m.getContext());
+  }
+
+  static ty_t for_F128_TY(ctx_t &m, craft_t &, State &, nr::F128Ty *) {
+    return Type::getFP128Ty(m.getContext());
+  }
+
+  static ty_t for_VOID_TY(ctx_t &m, craft_t &, State &, nr::VoidTy *) {
+    return Type::getVoidTy(m.getContext());
+  }
+
+  static ty_t for_PTR_TY(ctx_t &m, craft_t &b, State &s, nr::PtrTy *N) {
+    ty_t R = T(m, b, s, N->getPointee());
+    if (!R) {
+      debug("Failed to get pointee type");
+      return nullopt;
+    }
+
+    return PointerType::get(R.value(), 0);
+  }
+
+  static ty_t for_OPAQUE_TY(ctx_t &m, craft_t &, State &, nr::OpaqueTy *N) {
+    qcore_assert(!N->getName().empty());
+
+    return StructType::create(m.getContext(), N->getName());
+  }
+
+  static ty_t for_STRUCT_TY(ctx_t &m, craft_t &b, State &s, nr::StructTy *N) {
+    vector<Type *> elements;
+    elements.reserve(N->getFields().size());
+
+    for (auto &field : N->getFields()) {
+      ty_t R = T(m, b, s, field);
+      if (!R) {
+        debug("Failed to get field type");
+        return nullopt;
+      }
+
+      elements.push_back(R.value());
+    }
+
+    return StructType::get(m.getContext(), elements, true);
+  }
+
+  static ty_t for_UNION_TY(ctx_t &, craft_t &, State &, nr::UnionTy *) {
+    /// TODO: Implement conversion for node
+    qcore_implement();
+  }
+
+  static ty_t for_ARRAY_TY(ctx_t &m, craft_t &b, State &s, nr::ArrayTy *N) {
+    ty_t R = T(m, b, s, N->getElement());
+    if (!R) {
+      debug("Failed to get element type");
+      return nullopt;
+    }
+
+    return ArrayType::get(R.value(), N->getCount());
+  }
+
+  static ty_t for_FN_TY(ctx_t &m, craft_t &b, State &s, nr::FnTy *N) {
+    vector<Type *> params;
     params.reserve(N->getParams().size());
 
     for (auto &param : N->getParams()) {
-      ty_t R = T(m, b, s, param.first);
+      ty_t R = T(m, b, s, param);
       if (!R) {
         debug("Failed to get parameter type");
-        return std::nullopt;
+        return nullopt;
       }
 
       params.push_back(R.value());
     }
-  }
 
-  llvm::Type *ret_ty;
-
-  { /* Lower return type */
-    // Use type inference to get return type
-    auto x = N->getType();
-    if (!x.has_value()) {
-      debug("Failed to get return type");
-      return std::nullopt;
-    }
-    ty_t R = T(m, b, s, x.value()->as<nr::FnTy>()->getReturn());
+    ty_t R = T(m, b, s, N->getReturn());
     if (!R) {
       debug("Failed to get return type");
-      return std::nullopt;
+      return nullopt;
     }
 
-    ret_ty = R.value();
+    bool is_vararg = N->getAttrs().contains(nr::FnAttr::Variadic);
+
+    return FunctionType::get(R.value(), params, is_vararg);
   }
 
-  llvm::FunctionType *fn_ty = llvm::FunctionType::get(ret_ty, params, false);
-  llvm::Value *callee = m.getOrInsertFunction(N->getName(), fn_ty).getCallee();
-
-  if (!N->getBody().has_value()) {  // It is a declaration
-    return callee;
-  }
-
-  s.set_inside_function(true);
-
-  llvm::Function *fn = llvm::dyn_cast<llvm::Function>(callee);
-
-  s.push_stackframe(fn);
-
-  { /* Lower function body */
-    llvm::BasicBlock *entry, *exit;
-
-    entry = llvm::BasicBlock::Create(m.getContext(), "entry", fn);
-    exit = llvm::BasicBlock::Create(m.getContext(), "end", fn);
-
-    b.SetInsertPoint(entry);
-
-    llvm::AllocaInst *ret_val_alloc = nullptr;
-    if (!ret_ty->isVoidTy()) {
-      ret_val_alloc = b.CreateAlloca(ret_ty, nullptr, "__ret");
-    }
-    s.push_return_block(ret_val_alloc, exit);
-
-    {
-      b.SetInsertPoint(exit);
-      if (!ret_ty->isVoidTy()) {
-        llvm::LoadInst *ret_val =
-            b.CreateLoad(ret_ty, s.get_return_block().getValue());
-        b.CreateRet(ret_val);
-      } else {
-        b.CreateRetVoid();
-      }
-    }
-
-    b.SetInsertPoint(entry);
-
-    for (size_t i = 0; i < N->getParams().size(); i++) {
-      fn->getArg(i)->setName(N->getParams()[i].second);
-
-      llvm::AllocaInst *param_alloc = b.CreateAlloca(
-          fn->getArg(i)->getType(), nullptr, N->getParams()[i].second);
-
-      b.CreateStore(fn->getArg(i), param_alloc);
-      s.get_stackframe().addVariable(N->getParams()[i].second, param_alloc);
-    }
-
-    bool old_did_ret = s.did_ret;
-
-    for (auto &node : N->getBody().value()->getItems()) {
-      val_t R = V(m, b, s, node);
-      if (!R) {
-        s.pop_return_block();
-        s.pop_stackframe();
-        debug("Failed to get body");
-        return std::nullopt;
-      }
-    }
-
-    if (!s.did_ret) {
-      b.CreateBr(exit);
-    }
-    s.did_ret = old_did_ret;
-
-    s.pop_return_block();
-    s.pop_stackframe();
-  }
-
-  return fn;
-}
-
-static val_t for_ASM(ctx_t &, craft_t &, State &, nr::Asm *) {
-  qcore_implement();
-}
-
-static ty_t for_U1_TY(ctx_t &m, craft_t &, State &, nr::U1Ty *) {
-  return llvm::Type::getInt1Ty(m.getContext());
-}
-
-static ty_t for_U8_TY(ctx_t &m, craft_t &, State &, nr::U8Ty *) {
-  return llvm::Type::getInt8Ty(m.getContext());
-}
-
-static ty_t for_U16_TY(ctx_t &m, craft_t &, State &, nr::U16Ty *) {
-  return llvm::Type::getInt16Ty(m.getContext());
-}
-
-static ty_t for_U32_TY(ctx_t &m, craft_t &, State &, nr::U32Ty *) {
-  return llvm::Type::getInt32Ty(m.getContext());
-}
-
-static ty_t for_U64_TY(ctx_t &m, craft_t &, State &, nr::U64Ty *) {
-  return llvm::Type::getInt64Ty(m.getContext());
-}
-
-static ty_t for_U128_TY(ctx_t &m, craft_t &, State &, nr::U128Ty *) {
-  return llvm::Type::getInt128Ty(m.getContext());
-}
-
-static ty_t for_I8_TY(ctx_t &m, craft_t &, State &, nr::I8Ty *) {
-  return llvm::Type::getInt8Ty(m.getContext());
-}
-
-static ty_t for_I16_TY(ctx_t &m, craft_t &, State &, nr::I16Ty *) {
-  return llvm::Type::getInt16Ty(m.getContext());
-}
-
-static ty_t for_I32_TY(ctx_t &m, craft_t &, State &, nr::I32Ty *) {
-  return llvm::Type::getInt32Ty(m.getContext());
-}
-
-static ty_t for_I64_TY(ctx_t &m, craft_t &, State &, nr::I64Ty *) {
-  return llvm::Type::getInt64Ty(m.getContext());
-}
-
-static ty_t for_I128_TY(ctx_t &m, craft_t &, State &, nr::I128Ty *) {
-  return llvm::Type::getInt128Ty(m.getContext());
-}
-
-static ty_t for_F16_TY(ctx_t &m, craft_t &, State &, nr::F16Ty *) {
-  return llvm::Type::getHalfTy(m.getContext());
-}
-
-static ty_t for_F32_TY(ctx_t &m, craft_t &, State &, nr::F32Ty *) {
-  return llvm::Type::getFloatTy(m.getContext());
-}
-
-static ty_t for_F64_TY(ctx_t &m, craft_t &, State &, nr::F64Ty *) {
-  return llvm::Type::getDoubleTy(m.getContext());
-}
-
-static ty_t for_F128_TY(ctx_t &m, craft_t &, State &, nr::F128Ty *) {
-  return llvm::Type::getFP128Ty(m.getContext());
-}
-
-static ty_t for_VOID_TY(ctx_t &m, craft_t &, State &, nr::VoidTy *) {
-  return llvm::Type::getVoidTy(m.getContext());
-}
-
-static ty_t for_PTR_TY(ctx_t &m, craft_t &b, State &s, nr::PtrTy *N) {
-  ty_t R = T(m, b, s, N->getPointee());
-  if (!R) {
-    debug("Failed to get pointee type");
-    return std::nullopt;
-  }
-
-  return llvm::PointerType::get(R.value(), 0);
-}
-
-static ty_t for_OPAQUE_TY(ctx_t &m, craft_t &, State &, nr::OpaqueTy *N) {
-  qcore_assert(!N->getName().empty());
-
-  return llvm::StructType::create(m.getContext(), N->getName());
-}
-
-static ty_t for_STRUCT_TY(ctx_t &m, craft_t &b, State &s, nr::StructTy *N) {
-  std::vector<llvm::Type *> elements;
-  elements.reserve(N->getFields().size());
-
-  for (auto &field : N->getFields()) {
-    ty_t R = T(m, b, s, field);
-    if (!R) {
-      debug("Failed to get field type");
-      return std::nullopt;
-    }
-
-    elements.push_back(R.value());
-  }
-
-  return llvm::StructType::get(m.getContext(), elements, true);
-}
-
-static ty_t for_UNION_TY(ctx_t &, craft_t &, State &, nr::UnionTy *) {
-  /// TODO: Implement conversion for node
-  qcore_implement();
-}
-
-static ty_t for_ARRAY_TY(ctx_t &m, craft_t &b, State &s, nr::ArrayTy *N) {
-  ty_t R = T(m, b, s, N->getElement());
-  if (!R) {
-    debug("Failed to get element type");
-    return std::nullopt;
-  }
-
-  return llvm::ArrayType::get(R.value(), N->getCount());
-}
-
-static ty_t for_FN_TY(ctx_t &m, craft_t &b, State &s, nr::FnTy *N) {
-  std::vector<llvm::Type *> params;
-  params.reserve(N->getParams().size());
-
-  for (auto &param : N->getParams()) {
-    ty_t R = T(m, b, s, param);
-    if (!R) {
-      debug("Failed to get parameter type");
-      return std::nullopt;
-    }
-
-    params.push_back(R.value());
-  }
-
-  ty_t R = T(m, b, s, N->getReturn());
-  if (!R) {
-    debug("Failed to get return type");
-    return std::nullopt;
-  }
-
-  bool is_vararg = N->getAttrs().contains(nr::FnAttr::Variadic);
-
-  return llvm::FunctionType::get(R.value(), params, is_vararg);
-}
+}  // namespace lower
 
 #pragma GCC diagnostic pop
+
+auto V(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t {
+  static const auto dispatch = []() constexpr {
+#define FUNCTION(_enum, _func, _type)                                   \
+  R[_enum] = [](ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t { \
+    return _func(m, b, s, N->as<_type>());                              \
+  }
+    using func_t = val_t (*)(ctx_t &, craft_t &, State &, nr::Expr *);
+
+    std::array<func_t, NR_NODE_LAST + 1> R;
+    R.fill([](ctx_t &, craft_t &, State &, nr::Expr *) -> val_t {
+      qcore_panic("illegal node in input");
+    });
+
+    { /* NRGraph recursive llvm-ir builders */
+      using namespace lower;
+
+      FUNCTION(NR_NODE_BINEXPR, for_BINEXPR, nr::BinExpr);
+      FUNCTION(NR_NODE_UNEXPR, for_UNEXPR, nr::UnExpr);
+      FUNCTION(NR_NODE_POST_UNEXPR, for_POST_UNEXPR, nr::PostUnExpr);
+      FUNCTION(NR_NODE_INT, for_INT, nr::Int);
+      FUNCTION(NR_NODE_FLOAT, for_FLOAT, nr::Float);
+      FUNCTION(NR_NODE_LIST, for_LIST, nr::List);
+      FUNCTION(NR_NODE_CALL, for_CALL, nr::Call);
+      FUNCTION(NR_NODE_SEQ, for_SEQ, nr::Seq);
+      FUNCTION(NR_NODE_INDEX, for_INDEX, nr::Index);
+      FUNCTION(NR_NODE_IDENT, for_IDENT, nr::Ident);
+      FUNCTION(NR_NODE_EXTERN, for_EXTERN, nr::Extern);
+      FUNCTION(NR_NODE_LOCAL, for_LOCAL, nr::Local);
+      FUNCTION(NR_NODE_RET, for_RET, nr::Ret);
+      FUNCTION(NR_NODE_BRK, for_BRK, nr::Brk);
+      FUNCTION(NR_NODE_CONT, for_CONT, nr::Cont);
+      FUNCTION(NR_NODE_IF, for_IF, nr::If);
+      FUNCTION(NR_NODE_WHILE, for_WHILE, nr::While);
+      FUNCTION(NR_NODE_FOR, for_FOR, nr::For);
+      FUNCTION(NR_NODE_CASE, for_CASE, nr::Case);
+      FUNCTION(NR_NODE_SWITCH, for_SWITCH, nr::Switch);
+      FUNCTION(NR_NODE_FN, for_FN, nr::Fn);
+      FUNCTION(NR_NODE_ASM, for_ASM, nr::Asm);
+
+      R[NR_NODE_IGN] = [](ctx_t &, craft_t &, State &, nr::Expr *) -> val_t {
+        return nullptr;
+      };
+
+      R[NR_NODE_TMP] = [](ctx_t &, craft_t &, State &, nr::Expr *) -> val_t {
+        qcore_panic("unexpected temporary node");
+      };
+    }
+
+#undef FUNCTION
+
+    return R;
+  }();
+
+  return dispatch[N->getKind()](m, b, s, N);
+}
+
+auto T(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t {
+  static const auto dispatch = []() constexpr {
+#define FUNCTION(_enum, _func, _type)                                  \
+  R[_enum] = [](ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t { \
+    return _func(m, b, s, N->as<_type>());                             \
+  }
+    using func_t = ty_t (*)(ctx_t &, craft_t &, State &, nr::Expr *);
+
+    std::array<func_t, NR_NODE_LAST + 1> R;
+    R.fill([](ctx_t &, craft_t &, State &, nr::Expr *) -> ty_t {
+      qcore_panic("illegal node in input");
+    });
+
+    { /* NRGraph recursive llvm-ir builders */
+      using namespace lower;
+
+      FUNCTION(NR_NODE_U1_TY, for_U1_TY, nr::U1Ty);
+      FUNCTION(NR_NODE_U8_TY, for_U8_TY, nr::U8Ty);
+      FUNCTION(NR_NODE_U16_TY, for_U16_TY, nr::U16Ty);
+      FUNCTION(NR_NODE_U32_TY, for_U32_TY, nr::U32Ty);
+      FUNCTION(NR_NODE_U64_TY, for_U64_TY, nr::U64Ty);
+      FUNCTION(NR_NODE_U128_TY, for_U128_TY, nr::U128Ty);
+      FUNCTION(NR_NODE_I8_TY, for_I8_TY, nr::I8Ty);
+      FUNCTION(NR_NODE_I16_TY, for_I16_TY, nr::I16Ty);
+      FUNCTION(NR_NODE_I32_TY, for_I32_TY, nr::I32Ty);
+      FUNCTION(NR_NODE_I64_TY, for_I64_TY, nr::I64Ty);
+      FUNCTION(NR_NODE_I128_TY, for_I128_TY, nr::I128Ty);
+      FUNCTION(NR_NODE_F16_TY, for_F16_TY, nr::F16Ty);
+      FUNCTION(NR_NODE_F32_TY, for_F32_TY, nr::F32Ty);
+      FUNCTION(NR_NODE_F64_TY, for_F64_TY, nr::F64Ty);
+      FUNCTION(NR_NODE_F128_TY, for_F128_TY, nr::F128Ty);
+      FUNCTION(NR_NODE_VOID_TY, for_VOID_TY, nr::VoidTy);
+      FUNCTION(NR_NODE_PTR_TY, for_PTR_TY, nr::PtrTy);
+      FUNCTION(NR_NODE_OPAQUE_TY, for_OPAQUE_TY, nr::OpaqueTy);
+      FUNCTION(NR_NODE_STRUCT_TY, for_STRUCT_TY, nr::StructTy);
+      FUNCTION(NR_NODE_UNION_TY, for_UNION_TY, nr::UnionTy);
+      FUNCTION(NR_NODE_ARRAY_TY, for_ARRAY_TY, nr::ArrayTy);
+      FUNCTION(NR_NODE_FN_TY, for_FN_TY, nr::FnTy);
+
+      R[NR_NODE_IGN] = [](ctx_t &, craft_t &, State &, nr::Expr *) -> ty_t {
+        return nullptr;
+      };
+
+      R[NR_NODE_TMP] = [](ctx_t &, craft_t &, State &, nr::Expr *) -> ty_t {
+        qcore_panic("unexpected temporary node");
+      };
+    }
+
+#undef FUNCTION
+
+    return R;
+  }();
+
+  return dispatch[N->getKind()](m, b, s, N);
+}
+
+static bool qcode_adapter(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+                          FILE *out, qcode_adapter_fn impl) {
+  unique_ptr<streambuf> err_stream_buf, out_stream_buf;
+
+  {
+    /* If the error stream is provided, use it. Otherwise, discard the output.
+     */
+    if (err) {
+      err_stream_buf = make_unique<OStreamWriter>(err);
+    } else {
+      err_stream_buf = make_unique<OStreamDiscard>();
+    }
+
+    /* If the output stream is provided, use it. Otherwise, discard the output.
+     */
+    if (out) {
+      out_stream_buf = make_unique<OStreamWriter>(out);
+    } else {
+      out_stream_buf = make_unique<OStreamDiscard>();
+    }
+  }
+
+  ostream err_stream(err_stream_buf.get());
+  ostream out_stream(out_stream_buf.get());
+
+  {
+    my_pwrite_ostream llvm_adapt(out_stream);
+    if (!impl(module, conf, err_stream, llvm_adapt)) {
+      err_stream.flush();
+      out_stream.flush();
+      err &&fflush(err);
+      out &&fflush(out);
+      return false;
+    }
+  }
+
+  err_stream.flush();
+  out_stream.flush();
+  err &&fflush(err);
+  out &&fflush(out);
+
+  return true;
+}
+
+static optional<unique_ptr<Module>> fabricate_llvmir(qmodule_t *module,
+                                                     qcode_conf_t *conf,
+                                                     ostream &err,
+                                                     raw_ostream &out);
+
+C_EXPORT bool qcode_ir(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+                       FILE *out) {
+  return qcode_adapter(module, conf, err, out,
+                       [](qmodule_t *m, qcode_conf_t *c, ostream &e,
+                          raw_pwrite_stream &o) -> bool {
+                         auto module = fabricate_llvmir(m, c, e, o);
+                         if (!module) {
+                           e << "error: failed to fabricate LLVM IR" << endl;
+                           return false;
+                         }
+
+                         bool failed = verifyModule(*module->get(), &o);
+
+                         module.value()->print(o, nullptr);
+
+                         return !failed;
+                       });
+}
+
+C_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+                        FILE *out) {
+  return qcode_adapter(
+      module, conf, err, out,
+      [](qmodule_t *m, qcode_conf_t *c, ostream &e,
+         raw_pwrite_stream &o) -> bool {
+        auto module_opt = fabricate_llvmir(m, c, e, o);
+        if (!module_opt) {
+          e << "error: failed to fabricate LLVM IR" << endl;
+          return false;
+        }
+
+        string targetTriple = m->getTargetInfo().TargetTriple.value_or(
+            sys::getDefaultTargetTriple());
+        string CPU = m->getTargetInfo().CPU.value_or("generic");
+        string Features = m->getTargetInfo().CPUFeatures.value_or("");
+        bool relocPIC = true;
+
+        TargetOptions opt;
+        string lookupTarget_err;
+        auto Target =
+            TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
+        if (!Target) {
+          e << "error: failed to lookup target: " << lookupTarget_err << endl;
+          return false;
+        }
+
+        auto TargetMachine =
+            Target->createTargetMachine(targetTriple, CPU, Features, opt,
+                                        relocPIC ? Reloc::PIC_ : Reloc::Static);
+
+        auto &module = *module_opt.value();
+
+        if (verifyModule(module, &o)) {
+          e << "error: failed to verify module" << endl;
+          return false;
+        }
+
+        module.setDataLayout(TargetMachine->createDataLayout());
+        module.setTargetTriple(targetTriple);
+
+        ///==========================================================================
+
+        // Create the analysis managers.
+        // These must be declared in this order so that they are destroyed in
+        // the correct order due to inter-analysis-manager references.
+        LoopAnalysisManager LAM;
+        FunctionAnalysisManager FAM;
+        CGSCCAnalysisManager CGAM;
+        ModuleAnalysisManager MAM;
+
+        // Create the new pass manager builder.
+        // Take a look at the PassBuilder constructor parameters for more
+        // customization, e.g. specifying a TargetMachine or various debugging
+        // options.
+        PassBuilder PB;
+
+        // Register all the basic analyses with the managers.
+        PB.registerModuleAnalyses(MAM);
+        PB.registerCGSCCAnalyses(CGAM);
+        PB.registerFunctionAnalyses(FAM);
+        PB.registerLoopAnalyses(LAM);
+        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+        ModulePassManager MPM =
+            PB.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
+
+        // Optimize the IR!
+        MPM.run(module, MAM);
+
+        ///==========================================================================
+
+        error_code ec;
+
+        legacy::PassManager pass;
+        TargetMachine->addPassesToEmitFile(pass, o, nullptr, CGFT_AssemblyFile);
+        if (!pass.run(module)) {
+          e << "error: failed to emit object code" << endl;
+          return false;
+        }
+
+        return true;
+      });
+}
+
+C_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+                        FILE *out) {
+  return qcode_adapter(
+      module, conf, err, out,
+      [](qmodule_t *m, qcode_conf_t *c, ostream &e,
+         raw_pwrite_stream &o) -> bool {
+        auto module_opt = fabricate_llvmir(m, c, e, o);
+        if (!module_opt) {
+          e << "error: failed to fabricate LLVM IR" << endl;
+          return false;
+        }
+
+        string targetTriple = m->getTargetInfo().TargetTriple.value_or(
+            sys::getDefaultTargetTriple());
+        string CPU = m->getTargetInfo().CPU.value_or("generic");
+        string Features = m->getTargetInfo().CPUFeatures.value_or("");
+        bool relocPIC = true;
+
+        TargetOptions opt;
+        string lookupTarget_err;
+        auto Target =
+            TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
+        if (!Target) {
+          e << "error: failed to lookup target: " << lookupTarget_err << endl;
+          return false;
+        }
+
+        auto TargetMachine =
+            Target->createTargetMachine(targetTriple, CPU, Features, opt,
+                                        relocPIC ? Reloc::PIC_ : Reloc::Static);
+
+        auto &module = *module_opt.value();
+
+        if (verifyModule(module, &o)) {
+          e << "error: failed to verify module" << endl;
+          return false;
+        }
+
+        module.setDataLayout(TargetMachine->createDataLayout());
+        module.setTargetTriple(targetTriple);
+
+        ///==========================================================================
+
+        // Create the analysis managers.
+        // These must be declared in this order so that they are destroyed in
+        // the correct order due to inter-analysis-manager references.
+        LoopAnalysisManager LAM;
+        FunctionAnalysisManager FAM;
+        CGSCCAnalysisManager CGAM;
+        ModuleAnalysisManager MAM;
+
+        // Create the new pass manager builder.
+        // Take a look at the PassBuilder constructor parameters for more
+        // customization, e.g. specifying a TargetMachine or various debugging
+        // options.
+        PassBuilder PB;
+
+        // Register all the basic analyses with the managers.
+        PB.registerModuleAnalyses(MAM);
+        PB.registerCGSCCAnalyses(CGAM);
+        PB.registerFunctionAnalyses(FAM);
+        PB.registerLoopAnalyses(LAM);
+        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+        ModulePassManager MPM =
+            PB.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
+
+        // Optimize the IR!
+        MPM.run(module, MAM);
+
+        ///==========================================================================
+
+        error_code ec;
+
+        legacy::PassManager pass;
+        TargetMachine->addPassesToEmitFile(pass, o, nullptr, CGFT_ObjectFile);
+        if (!pass.run(module)) {
+          e << "error: failed to emit object code" << endl;
+          return false;
+        }
+
+        return true;
+      });
+}

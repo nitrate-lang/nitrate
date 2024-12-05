@@ -227,14 +227,6 @@ static std::optional<Expr *> nr_infer_impl(
           R = B->getLHS()->getType();
           break;
         }
-        case Op::ROTR: {
-          R = B->getLHS()->getType();
-          break;
-        }
-        case Op::ROTL: {
-          R = B->getLHS()->getType();
-          break;
-        }
         case Op::Inc: {
           R = std::nullopt;
           break;
@@ -348,8 +340,6 @@ static std::optional<Expr *> nr_infer_impl(
         case Op::LogicOr:
         case Op::LShift:
         case Op::RShift:
-        case Op::ROTR:
-        case Op::ROTL:
         case Op::Set:
         case Op::LT:
         case Op::GT:
@@ -390,8 +380,6 @@ static std::optional<Expr *> nr_infer_impl(
         case Op::LogicNot:
         case Op::LShift:
         case Op::RShift:
-        case Op::ROTR:
-        case Op::ROTL:
         case Op::Set:
         case Op::LT:
         case Op::GT:
