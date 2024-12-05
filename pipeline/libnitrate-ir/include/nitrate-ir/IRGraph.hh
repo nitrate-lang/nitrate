@@ -709,7 +709,7 @@ namespace nr {
           m_pointee(pointee),
           m_platform_ptr_size_bytes(platform_size_bytes) {}
 
-    Type *getPointee() noexcept { return m_pointee; }
+    Type *getPointee() const noexcept { return m_pointee; }
     uint8_t getPlatformPointerSizeBytes() const noexcept {
       return m_platform_ptr_size_bytes;
     }
@@ -802,9 +802,9 @@ namespace nr {
           m_return(ret),
           m_platform_ptr_size_bytes(platform_ptr_size_bytes) {}
 
-    const FnParams &getParams() noexcept { return m_params; }
-    Type *getReturn() noexcept { return m_return; }
-    const FnAttrs &getAttrs() noexcept { return m_attrs; }
+    const FnParams &getParams() const noexcept { return m_params; }
+    Type *getReturn() const noexcept { return m_return; }
+    const FnAttrs &getAttrs() const noexcept { return m_attrs; }
 
     uint8_t getPlatformPointerSizeBytes() const noexcept {
       return m_platform_ptr_size_bytes;

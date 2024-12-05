@@ -365,14 +365,13 @@ public:
   }
 };
 
-static auto T_gen(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t;
+static auto T_gen(craft_t &b, const nr::Expr *N) -> ty_t;
 static auto V_gen(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t;
 
-#define T(N) T_gen(m, b, s, N)
+#define T(N) T_gen(b, N)
 #define V(N) V_gen(m, b, s, N)
 
-static void make_forward_declaration(ctx_t &m, craft_t &b, State &s,
-                                     nr::Fn *N) {
+static void make_forward_declaration(ctx_t &m, craft_t &b, State &, nr::Fn *N) {
   vector<Type *> args;
   for (auto &arg : N->getParams()) {
     auto ty = T(arg.first);
@@ -1846,74 +1845,74 @@ namespace lower {
 
   namespace types {
     namespace prim {
-      static auto for_U1_TY(ctx_t &, craft_t &b, State &, nr::U1Ty *) {
+      static auto for_U1_TY(craft_t &b, const nr::U1Ty *) {
         return Type::getInt1Ty(b.getContext());
       }
 
-      static auto for_U8_TY(ctx_t &, craft_t &b, State &, nr::U8Ty *) {
+      static auto for_U8_TY(craft_t &b, const nr::U8Ty *) {
         return Type::getInt8Ty(b.getContext());
       }
 
-      static auto for_U16_TY(ctx_t &, craft_t &b, State &, nr::U16Ty *) {
+      static auto for_U16_TY(craft_t &b, const nr::U16Ty *) {
         return Type::getInt16Ty(b.getContext());
       }
 
-      static auto for_U32_TY(ctx_t &, craft_t &b, State &, nr::U32Ty *) {
+      static auto for_U32_TY(craft_t &b, const nr::U32Ty *) {
         return Type::getInt32Ty(b.getContext());
       }
 
-      static auto for_U64_TY(ctx_t &, craft_t &b, State &, nr::U64Ty *) {
+      static auto for_U64_TY(craft_t &b, const nr::U64Ty *) {
         return Type::getInt64Ty(b.getContext());
       }
 
-      static auto for_U128_TY(ctx_t &, craft_t &b, State &, nr::U128Ty *) {
+      static auto for_U128_TY(craft_t &b, const nr::U128Ty *) {
         return Type::getInt128Ty(b.getContext());
       }
 
-      static auto for_I8_TY(ctx_t &, craft_t &b, State &, nr::I8Ty *) {
+      static auto for_I8_TY(craft_t &b, const nr::I8Ty *) {
         return Type::getInt8Ty(b.getContext());
       }
 
-      static auto for_I16_TY(ctx_t &, craft_t &b, State &, nr::I16Ty *) {
+      static auto for_I16_TY(craft_t &b, const nr::I16Ty *) {
         return Type::getInt16Ty(b.getContext());
       }
 
-      static auto for_I32_TY(ctx_t &, craft_t &b, State &, nr::I32Ty *) {
+      static auto for_I32_TY(craft_t &b, const nr::I32Ty *) {
         return Type::getInt32Ty(b.getContext());
       }
 
-      static auto for_I64_TY(ctx_t &, craft_t &b, State &, nr::I64Ty *) {
+      static auto for_I64_TY(craft_t &b, const nr::I64Ty *) {
         return Type::getInt64Ty(b.getContext());
       }
 
-      static auto for_I128_TY(ctx_t &, craft_t &b, State &, nr::I128Ty *) {
+      static auto for_I128_TY(craft_t &b, const nr::I128Ty *) {
         return Type::getInt128Ty(b.getContext());
       }
 
-      static auto for_F16_TY(ctx_t &, craft_t &b, State &, nr::F16Ty *) {
+      static auto for_F16_TY(craft_t &b, const nr::F16Ty *) {
         return Type::getHalfTy(b.getContext());
       }
 
-      static auto for_F32_TY(ctx_t &, craft_t &b, State &, nr::F32Ty *) {
+      static auto for_F32_TY(craft_t &b, const nr::F32Ty *) {
         return Type::getFloatTy(b.getContext());
       }
 
-      static auto for_F64_TY(ctx_t &, craft_t &b, State &, nr::F64Ty *) {
+      static auto for_F64_TY(craft_t &b, const nr::F64Ty *) {
         return Type::getDoubleTy(b.getContext());
       }
 
-      static auto for_F128_TY(ctx_t &, craft_t &b, State &, nr::F128Ty *) {
+      static auto for_F128_TY(craft_t &b, const nr::F128Ty *) {
         return Type::getFP128Ty(b.getContext());
       }
 
-      static auto for_VOID_TY(ctx_t &, craft_t &b, State &, nr::VoidTy *) {
+      static auto for_VOID_TY(craft_t &b, const nr::VoidTy *) {
         return Type::getVoidTy(b.getContext());
       }
 
     }  // namespace prim
 
     namespace other {
-      static ty_t for_PTR_TY(ctx_t &m, craft_t &b, State &s, nr::PtrTy *N) {
+      static ty_t for_PTR_TY(craft_t &b, const nr::PtrTy *N) {
         if (ty_t pointee = T(N->getPointee())) {
           return PointerType::get(pointee.value(), 0);
         }
@@ -1921,7 +1920,7 @@ namespace lower {
         return nullopt;
       }
 
-      static ty_t for_FN_TY(ctx_t &m, craft_t &b, State &s, nr::FnTy *N) {
+      static ty_t for_FN_TY(craft_t &b, const nr::FnTy *N) {
         const auto &params = N->getParams();
         vector<Type *> param_types(params.size());
         bool failed = false;
@@ -1949,7 +1948,7 @@ namespace lower {
         return nullopt;
       }
 
-      static ty_t for_OPAQUE_TY(ctx_t &, craft_t &b, State &, nr::OpaqueTy *N) {
+      static ty_t for_OPAQUE_TY(craft_t &b, const nr::OpaqueTy *N) {
         if (!N->getName().empty()) {
           return StructType::create(b.getContext(), N->getName());
         }
@@ -1957,8 +1956,7 @@ namespace lower {
         return std::nullopt;
       }
 
-      static ty_t for_STRUCT_TY(ctx_t &m, craft_t &b, State &s,
-                                nr::StructTy *N) {
+      static ty_t for_STRUCT_TY(craft_t &b, const nr::StructTy *N) {
         const auto &fields = N->getFields();
         vector<Type *> elements(fields.size());
         bool failed = false;
@@ -1981,12 +1979,12 @@ namespace lower {
         return StructType::get(b.getContext(), std::move(elements), true);
       }
 
-      static ty_t for_UNION_TY(ctx_t &, craft_t &, State &, nr::UnionTy *) {
+      static ty_t for_UNION_TY(craft_t &, const nr::UnionTy *) {
         /// TODO: Implement conversion for node
         qcore_implement();
       }
 
-      static ty_t for_ARRAY_TY(ctx_t &m, craft_t &b, State &s, nr::ArrayTy *N) {
+      static ty_t for_ARRAY_TY(craft_t &b, const nr::ArrayTy *N) {
         if (auto R = T(N->getElement())) {
           return ArrayType::get(R.value(), N->getCount());
         }
@@ -2057,16 +2055,16 @@ static auto V_gen(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t {
   return dispatch[N->getKind()](m, b, s, N);
 }
 
-static auto T_gen(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t {
+static auto T_gen(craft_t &b, const nr::Expr *N) -> ty_t {
   static const auto dispatch = []() constexpr {
-#define FUNCTION(_enum, _func, _type)                                  \
-  R[_enum] = [](ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t { \
-    return _func(m, b, s, N->as<_type>());                             \
+#define FUNCTION(_enum, _func, _type)                    \
+  R[_enum] = [](craft_t &b, const nr::Expr *N) -> ty_t { \
+    return _func(b, N->as<_type>());                     \
   }
-    using func_t = ty_t (*)(ctx_t &, craft_t &, State &, nr::Expr *);
+    using func_t = ty_t (*)(craft_t &, const nr::Expr *);
 
     std::array<func_t, NR_NODE_LAST + 1> R;
-    R.fill([](ctx_t &, craft_t &, State &, nr::Expr *) -> ty_t {
+    R.fill([](craft_t &, const nr::Expr *) -> ty_t {
       qcore_panic("illegal node in input");
     });
 
@@ -2097,11 +2095,11 @@ static auto T_gen(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t {
       FUNCTION(NR_NODE_ARRAY_TY, for_ARRAY_TY, nr::ArrayTy);
       FUNCTION(NR_NODE_FN_TY, for_FN_TY, nr::FnTy);
 
-      R[NR_NODE_IGN] = [](ctx_t &, craft_t &, State &, nr::Expr *) -> ty_t {
+      R[NR_NODE_IGN] = [](craft_t &, const nr::Expr *) -> ty_t {
         return nullptr;
       };
 
-      R[NR_NODE_TMP] = [](ctx_t &, craft_t &, State &, nr::Expr *) -> ty_t {
+      R[NR_NODE_TMP] = [](craft_t &, const nr::Expr *) -> ty_t {
         qcore_panic("unexpected temporary node");
       };
     }
@@ -2111,7 +2109,7 @@ static auto T_gen(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t {
     return R;
   }();
 
-  return dispatch[N->getKind()](m, b, s, N);
+  return dispatch[N->getKind()](b, N);
 }
 
 static bool qcode_adapter(qmodule_t *module, qcode_conf_t *conf, FILE *err,
