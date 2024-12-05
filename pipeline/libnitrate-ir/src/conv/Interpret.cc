@@ -53,11 +53,20 @@ namespace comptime {
     void eprintn(std::string_view message) { m_eprintn_cb(message); }
 
     void prepare(nr::Expr *E) {
+      if (E->is(NR_NODE_INT) || E->is(NR_NODE_FLOAT)) {
+        m_result = E;
+        return;
+      }
+
       /// TODO: Verify and lower expression to LLVM-IR
       (void)E;
     }
 
     void emulate() {
+      if (m_result.has_value()) {
+        return;
+      }
+
       /// TODO: Emulate the LLVM-IR for comptime
 
       eprintn("Comptime evaluation is not supported yet");

@@ -994,7 +994,13 @@ namespace nr {
 
     QCLASS_REFLECT()
 
-    static std::unordered_map<uint128_t, Int *> m_cache;
+    struct map_hash {
+      std::size_t operator()(std::pair<uint128_t, uint8_t> const &v) const {
+        return std::hash<uint128_t>()(v.first) ^ std::hash<uint8_t>()(v.second);
+      }
+    };
+    static std::unordered_map<std::pair<uint128_t, uint8_t>, Int *, map_hash>
+        m_cache;
 
     unsigned __int128 m_value __attribute__((aligned(16)));
     uint8_t m_size;

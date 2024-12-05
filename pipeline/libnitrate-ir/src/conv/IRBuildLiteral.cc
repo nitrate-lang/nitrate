@@ -54,7 +54,7 @@ Int *NRBuilder::createFixedInteger(boost::multiprecision::cpp_int value,
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
-  contract_enforce(width != 0 && width >= 0 && width <= std::exp2(width) - 1);
+  contract_enforce(width > 0 && width <= std::exp2(width) - 1);
 
   return compiler_trace(debug_info(
       create<Int>(value.convert_to<unsigned __int128>(), width), DEBUG_INFO));
@@ -100,8 +100,7 @@ List *NRBuilder::createStringDataArray(std::string_view value,
   // Only C-strings are currently supported
   contract_enforce(style == ABIStringStyle::CStr);
 
-  std::vector<Expr *> items;
-  items.resize(value.size() + 1);
+  std::vector<Expr *> items(value.size() + 1);
 
   for (size_t i = 0; i < value.size(); i++) {
     items[i] = compiler_trace(createFixedInteger(value[i], 8));

@@ -126,7 +126,8 @@ Fn *NRBuilder::createFunctionDeclaration(
 Fn *NRBuilder::createOperatorOverload(
     Op op, std::span<Type *> params, Type *ret_ty, Purity purity,
     bool thread_safe, bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
+  /// TODO: Implement operator overloading
+
   qcore_implement();
   (void)op;
   (void)params;

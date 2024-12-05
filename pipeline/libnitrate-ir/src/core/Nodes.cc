@@ -415,18 +415,20 @@ CPP_EXPORT std::string Int::getValueString() const noexcept {
   return ((uint128_t)m_value).str();
 }
 
-std::unordered_map<uint128_t, Int *> Int::m_cache;
+std::unordered_map<std::pair<uint128_t, uint8_t>, Int *, Int::map_hash>
+    Int::m_cache;
+
 static std::mutex m_cache_mtx;
 
 CPP_EXPORT Int *Int::get(uint128_t val, uint8_t size) noexcept {
   std::lock_guard<std::mutex> lock(m_cache_mtx);
 
-  auto it = m_cache.find(val);
+  auto it = m_cache.find({val, size});
   if (it != m_cache.end()) [[likely]] {
     return it->second;
   }
 
-  return m_cache[val] = new Int(val, size);
+  return m_cache[{val, size}] = new Int(val, size);
 }
 
 ///=============================================================================
