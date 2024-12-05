@@ -247,7 +247,12 @@ void NRBuilder::try_transform_gamma(Expr *root) noexcept {
          * the process */
         if (auto callee_opt = resolve_name(callee_name, Kind::Function)) {
           qcore_assert(callee_opt.value().first->is(NR_NODE_FN));
-          auto callee_func = callee_opt.value().first->as<Fn>();
+          auto callee_func_ptr = callee_opt.value().first->as<Fn>();
+
+          /* This layer of indirection is needed to maintain the acylic
+           * properties */
+          auto callee_func =
+              create<Ident>(callee_func_ptr->getName(), callee_func_ptr);
 
           /* Perform type inference on the callee node */
           if (auto callee_type_opt = callee_func->getType();
@@ -255,14 +260,15 @@ void NRBuilder::try_transform_gamma(Expr *root) noexcept {
               callee_type_opt.value()->is_function()) {
             auto callee_func_type = callee_type_opt.value()->as<FnTy>();
 
-            const auto &func_default_args = m_function_defaults.at(callee_func);
+            const auto &func_default_args =
+                m_function_defaults.at(callee_func_ptr);
 
             /* Use this lookup table to efficiently match named arguments to
              * their index according to the callee's defintion */
-            auto param_count = callee_func->getParams().size();
+            auto param_count = callee_func_ptr->getParams().size();
             name_index_map.reserve(param_count);
             for (size_t i = 0; i < param_count; ++i) {
-              name_index_map[callee_func->getParams()[i].second] = i;
+              name_index_map[callee_func_ptr->getParams()[i].second] = i;
             }
 
             /* Do the actual IRGraph Call resoltuon */
@@ -279,7 +285,12 @@ void NRBuilder::try_transform_gamma(Expr *root) noexcept {
                      [](auto x) { return isdigit(x.first.at(0)); });
 
           if (only_positional_args) {
-            auto callee_local = callee_opt.value().first->as<Local>();
+            auto callee_local_ptr = callee_opt.value().first->as<Local>();
+
+            /* This layer of indirection is needed to maintain the acylic
+             * properties */
+            auto callee_local =
+                create<Ident>(callee_local_ptr->getName(), callee_local_ptr);
 
             /* Perform type inference on the callee node */
             if (auto local_type = callee_local->getType();

@@ -71,6 +71,7 @@ namespace nr {
     TypeInference,
     NameManglingTypeInfer,
     UnexpectedUndefLiteral,
+    ReturnTypeMismatch,
 
     UnknownType,
     UnresolvedIdentifier,

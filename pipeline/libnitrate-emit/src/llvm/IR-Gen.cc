@@ -1441,11 +1441,11 @@ namespace lower {
 
   namespace control {
     static val_t for_CALL(ctx_t &m, craft_t &b, State &s, const nr::Call *N) {
-      if (N->getTarget()->is(NR_NODE_FN)) { /* Direct call */
+      if (N->getTarget()->is(NR_NODE_IDENT)) {
         let func_name = N->getTarget()->getName();
 
         if (let find = s.find_named_value(m, func_name)) {
-          if (find->second == PtrClass::Function) {
+          if (find->second == PtrClass::Function) { /* Direct call */
             let func_def = cast<Function>(find->first);
 
             let arguments = N->getArgs();

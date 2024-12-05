@@ -114,6 +114,7 @@ const boost::bimap<IssueCode, IssueInfo> nr::issue_info =
           "Unexpected 'undef' keyword",
           {"The 'undef' keyword is only permitted as default values for "
            "variable declarations."}}},
+        {ReturnTypeMismatch, {"return-type-mismatch", "%s", {}}},
 
         {UnknownType, {"unknown-type", "write me", {}}},
         {UnresolvedIdentifier,

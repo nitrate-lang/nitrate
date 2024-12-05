@@ -86,6 +86,7 @@ namespace nr::detail {
         break;
       }
       case NR_NODE_CALL: {
+        children.push_back(&base->as<Call>()->m_iref);
         children.reserve(base->as<Call>()->m_args.size());
         for (Expr *&child : base->as<Call>()->m_args) {
           children.push_back(&child);

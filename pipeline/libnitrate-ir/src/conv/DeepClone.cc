@@ -106,7 +106,7 @@ nr_node_t *nr_clone_impl(
       for (auto arg : n->getArgs()) {
         args.push_back(clone(arg));
       }
-      out = create<Call>(n->getTarget(), std::move(args));
+      out = create<Call>(clone(n->getTarget()), std::move(args));
       break;
     }
     case NR_NODE_SEQ: {

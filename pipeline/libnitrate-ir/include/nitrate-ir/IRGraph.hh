@@ -2283,9 +2283,11 @@ namespace nr {
 namespace std {
   template <auto mode = nr::dfs_pre>
   void for_each(const nr::Expr *const v,
-                std::function<bool(nr_ty_t, const nr::Expr *const)> f) {
+                std::function<void(nr_ty_t, const nr::Expr *const)> f) {
     nr::iterate<mode>(v, [&](auto, auto c) -> nr::IterOp {
-      return f((*c)->getKind(), *c) ? nr::IterOp::Proceed : nr::IterOp::Abort;
+      f((*c)->getKind(), *c);
+
+      return nr::IterOp::Abort;
     });
   }
 
@@ -2297,15 +2299,17 @@ namespace std {
   }
 
   template <typename T, auto mode = nr::dfs_pre>
-  void for_each(const nr::Expr *const v, std::function<bool(const T *)> f) {
-    nr::iterate<mode>(
-        v, [&](auto, const nr::Expr *const *const c) -> nr::IterOp {
-          if ((*c)->getKind() != nr::Expr::getTypeCode<T>()) {
-            return nr::IterOp::Proceed;
-          }
+  void for_each(const nr::Expr *const v, std::function<void(const T *)> f) {
+    nr::iterate<mode>(v,
+                      [&](auto, const nr::Expr *const *const c) -> nr::IterOp {
+                        if ((*c)->getKind() != nr::Expr::getTypeCode<T>()) {
+                          return nr::IterOp::Proceed;
+                        }
 
-          return f((*c)->as<T>()) ? nr::IterOp::Proceed : nr::IterOp::Abort;
-        });
+                        f((*c)->as<T>());
+
+                        return nr::IterOp::Proceed;
+                      });
   }
 
   template <typename T, auto mode = nr::dfs_pre>

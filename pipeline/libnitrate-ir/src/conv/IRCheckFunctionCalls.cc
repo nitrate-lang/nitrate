@@ -100,15 +100,13 @@ bool NRBuilder::check_function_calls(Seq *root, IReport *I) noexcept {
             // The argument is valid
           }
 
-          return true;
+          return;
         }
       }
     }
 
     /* Fallthough to error flag */
     failed = true;
-
-    return true;
   });
 
   return !failed;
