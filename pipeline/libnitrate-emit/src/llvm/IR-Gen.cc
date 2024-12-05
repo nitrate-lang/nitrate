@@ -365,14 +365,17 @@ public:
   }
 };
 
-auto T(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t;
-auto V(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t;
+static auto T_gen(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t;
+static auto V_gen(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t;
+
+#define T(N) T_gen(m, b, s, N)
+#define V(N) V_gen(m, b, s, N)
 
 static void make_forward_declaration(ctx_t &m, craft_t &b, State &s,
                                      nr::Fn *N) {
   vector<Type *> args;
   for (auto &arg : N->getParams()) {
-    auto ty = T(m, b, s, arg.first);
+    auto ty = T(arg.first);
     if (!ty) {
       debug("Failed to forward declare function: " << N->getName());
       return;
@@ -381,7 +384,7 @@ static void make_forward_declaration(ctx_t &m, craft_t &b, State &s,
     args.push_back(*ty);
   }
 
-  auto ret_ty = T(m, b, s, N->getReturn());
+  auto ret_ty = T(N->getReturn());
   if (!ret_ty) {
     debug("Failed to forward declare function: " << N->getName());
     return;
@@ -430,7 +433,7 @@ static optional<unique_ptr<Module>> fabricate_llvmir(qmodule_t *src,
   nr::Seq *seq = root->as<nr::Seq>();
 
   for (auto &node : seq->getItems()) {
-    val_t R = V(*m, *b, s, node);
+    val_t R = V_gen(*m, *b, s, node);
     if (!R) {
       e << "error: failed to lower code" << endl;
       return nullopt;
@@ -562,1417 +565,1441 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, Value *L, nr::Op O,
 }
 
 namespace lower {
-  static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, nr::BinExpr *N) {
-#define PROD_LHS()                   \
-  val_t L = V(m, b, s, N->getLHS()); \
-  if (!L) {                          \
-    debug("Failed to get LHS");      \
-    return nullopt;                  \
+  namespace expr {
+    static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, nr::BinExpr *N) {
+#define PROD_LHS()              \
+  val_t L = V(N->getLHS());     \
+  if (!L) {                     \
+    debug("Failed to get LHS"); \
+    return nullopt;             \
   }
 
-    nr::Op O = N->getOp();
+      nr::Op O = N->getOp();
 
-    if (N->getRHS()->isType()) { /* Do casting */
-      PROD_LHS()
-
-      ty_t TY = T(m, b, s, N->getRHS()->asType());
-      if (!TY) {
-        debug("Failed to get RHS type");
-        return nullopt;
-      }
-
-      nr::Type *L_T = N->getLHS()->getType().value_or(nullptr);
-      if (!L_T) {
-        debug("Failed to get LHS type");
-        return nullopt;
-      }
-
-      nr::Type *R_T = N->getRHS()->getType().value_or(nullptr);
-      if (!R_T) {
-        debug("Failed to get RHS type");
-        return nullopt;
-      }
-
-      return binexpr_do_cast(m, b, s, L.value(), O, TY.value(), L_T, R_T);
-    }
-
-    val_t R = V(m, b, s, N->getRHS());
-
-    val_t E;
-
-    switch (O) {
-      case nr::Op::Plus: { /* '+': Addition operator */
+      if (N->getRHS()->isType()) { /* Do casting */
         PROD_LHS()
-        E = b.CreateAdd(L.value(), R.value());
-        break;
-      }
 
-      case nr::Op::Minus: { /* '-': Subtraction operator */
-        PROD_LHS()
-        E = b.CreateSub(L.value(), R.value());
-        break;
-      }
-
-      case nr::Op::Times: { /* '*': Multiplication operator */
-        PROD_LHS()
-        E = b.CreateMul(L.value(), R.value());
-        break;
-      }
-
-      case nr::Op::Slash: { /* '/': Division operator */
-        PROD_LHS()
-        auto x = N->getLHS()->getType();
-        if (!x.has_value()) {
-          debug("Failed to get type");
+        ty_t TY = T(N->getRHS()->asType());
+        if (!TY) {
+          debug("Failed to get RHS type");
           return nullopt;
         }
-        if (x.value()->is_signed()) {
-          E = b.CreateSDiv(L.value(), R.value());
-        } else if (x.value()->is_unsigned()) {
-          E = b.CreateUDiv(L.value(), R.value());
-        } else {
-          qcore_panic("unexpected type for division");
-        }
-        break;
-      }
 
-      case nr::Op::Percent: { /* '%': Modulus operator */
-        PROD_LHS()
-        auto x = N->getLHS()->getType();
-        if (!x.has_value()) {
-          debug("Failed to get type");
+        nr::Type *L_T = N->getLHS()->getType().value_or(nullptr);
+        if (!L_T) {
+          debug("Failed to get LHS type");
           return nullopt;
         }
-        if (x.value()->is_signed()) {
-          E = b.CreateSRem(L.value(), R.value());
-        } else if (x.value()->is_unsigned()) {
-          E = b.CreateURem(L.value(), R.value());
-        } else {
-          qcore_panic("unexpected type for modulus");
-        }
-        break;
-      }
 
-      case nr::Op::BitAnd: { /* '&': Bitwise AND operator */
-        PROD_LHS()
-        E = b.CreateAnd(L.value(), R.value());
-        break;
-      }
-
-      case nr::Op::BitOr: { /* '|': Bitwise OR operator */
-        PROD_LHS()
-        E = b.CreateOr(L.value(), R.value());
-        break;
-      }
-
-      case nr::Op::BitXor: { /* '^': Bitwise XOR operator */
-        PROD_LHS()
-        E = b.CreateXor(L.value(), R.value());
-        break;
-      }
-
-      case nr::Op::LogicAnd: { /* '&&': Logical AND operator */
-        PROD_LHS()
-        E = b.CreateLogicalAnd(L.value(), R.value());
-        break;
-      }
-
-      case nr::Op::LogicOr: { /* '||': Logical OR operator */
-        PROD_LHS()
-        E = b.CreateLogicalOr(L.value(), R.value());
-        break;
-      }
-
-      case nr::Op::LShift: { /* '<<': Left shift operator */
-        PROD_LHS()
-        E = b.CreateShl(L.value(), R.value());
-        break;
-      }
-
-      case nr::Op::RShift: { /* '>>': Right shift operator */
-        PROD_LHS()
-        auto x = N->getLHS()->getType();
-        if (!x.has_value()) {
-          debug("Failed to get type");
+        nr::Type *R_T = N->getRHS()->getType().value_or(nullptr);
+        if (!R_T) {
+          debug("Failed to get RHS type");
           return nullopt;
         }
-        if (x.value()->is_signed()) {
-          E = b.CreateAShr(L.value(), R.value());
-        } else if (x.value()->is_unsigned()) {
-          E = b.CreateLShr(L.value(), R.value());
-        } else {
-          qcore_panic("unexpected type for shift");
-        }
-        break;
+
+        return binexpr_do_cast(m, b, s, L.value(), O, TY.value(), L_T, R_T);
       }
 
-      case nr::Op::Set: { /* '=': Assignment operator */
-        if (N->getLHS()->getKind() == NR_NODE_IDENT) {
-          if (auto find = s.find_named_value(
-                  m, N->getLHS()->as<nr::Ident>()->getName())) {
-            if (find->second == PtrClass::DataPtr) {
-              b.CreateStore(R.value(), find->first);
+      val_t R = V(N->getRHS());
 
-              E = R;
+      val_t E;
+
+      switch (O) {
+        case nr::Op::Plus: { /* '+': Addition operator */
+          PROD_LHS()
+          E = b.CreateAdd(L.value(), R.value());
+          break;
+        }
+
+        case nr::Op::Minus: { /* '-': Subtraction operator */
+          PROD_LHS()
+          E = b.CreateSub(L.value(), R.value());
+          break;
+        }
+
+        case nr::Op::Times: { /* '*': Multiplication operator */
+          PROD_LHS()
+          E = b.CreateMul(L.value(), R.value());
+          break;
+        }
+
+        case nr::Op::Slash: { /* '/': Division operator */
+          PROD_LHS()
+          auto x = N->getLHS()->getType();
+          if (!x.has_value()) {
+            debug("Failed to get type");
+            return nullopt;
+          }
+          if (x.value()->is_signed()) {
+            E = b.CreateSDiv(L.value(), R.value());
+          } else if (x.value()->is_unsigned()) {
+            E = b.CreateUDiv(L.value(), R.value());
+          } else {
+            qcore_panic("unexpected type for division");
+          }
+          break;
+        }
+
+        case nr::Op::Percent: { /* '%': Modulus operator */
+          PROD_LHS()
+          auto x = N->getLHS()->getType();
+          if (!x.has_value()) {
+            debug("Failed to get type");
+            return nullopt;
+          }
+          if (x.value()->is_signed()) {
+            E = b.CreateSRem(L.value(), R.value());
+          } else if (x.value()->is_unsigned()) {
+            E = b.CreateURem(L.value(), R.value());
+          } else {
+            qcore_panic("unexpected type for modulus");
+          }
+          break;
+        }
+
+        case nr::Op::BitAnd: { /* '&': Bitwise AND operator */
+          PROD_LHS()
+          E = b.CreateAnd(L.value(), R.value());
+          break;
+        }
+
+        case nr::Op::BitOr: { /* '|': Bitwise OR operator */
+          PROD_LHS()
+          E = b.CreateOr(L.value(), R.value());
+          break;
+        }
+
+        case nr::Op::BitXor: { /* '^': Bitwise XOR operator */
+          PROD_LHS()
+          E = b.CreateXor(L.value(), R.value());
+          break;
+        }
+
+        case nr::Op::LogicAnd: { /* '&&': Logical AND operator */
+          PROD_LHS()
+          E = b.CreateLogicalAnd(L.value(), R.value());
+          break;
+        }
+
+        case nr::Op::LogicOr: { /* '||': Logical OR operator */
+          PROD_LHS()
+          E = b.CreateLogicalOr(L.value(), R.value());
+          break;
+        }
+
+        case nr::Op::LShift: { /* '<<': Left shift operator */
+          PROD_LHS()
+          E = b.CreateShl(L.value(), R.value());
+          break;
+        }
+
+        case nr::Op::RShift: { /* '>>': Right shift operator */
+          PROD_LHS()
+          auto x = N->getLHS()->getType();
+          if (!x.has_value()) {
+            debug("Failed to get type");
+            return nullopt;
+          }
+          if (x.value()->is_signed()) {
+            E = b.CreateAShr(L.value(), R.value());
+          } else if (x.value()->is_unsigned()) {
+            E = b.CreateLShr(L.value(), R.value());
+          } else {
+            qcore_panic("unexpected type for shift");
+          }
+          break;
+        }
+
+        case nr::Op::Set: { /* '=': Assignment operator */
+          if (N->getLHS()->getKind() == NR_NODE_IDENT) {
+            if (auto find = s.find_named_value(
+                    m, N->getLHS()->as<nr::Ident>()->getName())) {
+              if (find->second == PtrClass::DataPtr) {
+                b.CreateStore(R.value(), find->first);
+
+                E = R;
+              }
             }
           }
+          break;
         }
-        break;
+
+        case nr::Op::LT: { /* '<': Less than operator */
+          PROD_LHS()
+          auto x = N->getLHS()->getType();
+          if (!x.has_value()) {
+            debug("Failed to get type");
+            return nullopt;
+          }
+          if (x.value()->is_signed()) {
+            E = b.CreateICmpSLT(L.value(), R.value());
+          } else if (x.value()->is_unsigned()) {
+            E = b.CreateICmpULT(L.value(), R.value());
+          } else {
+            qcore_panic("unexpected type for comparison");
+          }
+          break;
+        }
+
+        case nr::Op::GT: { /* '>': Greater than operator */
+          PROD_LHS()
+          auto x = N->getLHS()->getType();
+          if (!x.has_value()) {
+            debug("Failed to get type");
+            return nullopt;
+          }
+          if (x.value()->is_signed()) {
+            E = b.CreateICmpSGT(L.value(), R.value());
+          } else if (x.value()->is_unsigned()) {
+            E = b.CreateICmpUGT(L.value(), R.value());
+          } else {
+            qcore_panic("unexpected type for comparison");
+          }
+          break;
+        }
+
+        case nr::Op::LE: { /* '<=': Less than or equal to operator */
+          PROD_LHS()
+          auto x = N->getLHS()->getType();
+          if (!x.has_value()) {
+            debug("Failed to get type");
+            return nullopt;
+          }
+          if (x.value()->is_signed()) {
+            E = b.CreateICmpSLE(L.value(), R.value());
+          } else if (x.value()->is_unsigned()) {
+            E = b.CreateICmpULE(L.value(), R.value());
+          } else {
+            qcore_panic("unexpected type for comparison");
+          }
+          break;
+        }
+
+        case nr::Op::GE: { /* '>=': Greater than or equal to operator */
+          PROD_LHS()
+          auto x = N->getLHS()->getType();
+          if (x.value()->is_signed()) {
+            E = b.CreateICmpSGE(L.value(), R.value());
+          } else if (x.value()->is_unsigned()) {
+            E = b.CreateICmpUGE(L.value(), R.value());
+          } else {
+            qcore_panic("unexpected type for comparison");
+          }
+          break;
+        }
+
+        case nr::Op::Eq: { /* '==': Equal to operator */
+          PROD_LHS()
+          E = b.CreateICmpEQ(L.value(), R.value());
+          break;
+        }
+
+        case nr::Op::NE: { /* '!=': Not equal to operator */
+          PROD_LHS()
+          E = b.CreateICmpNE(L.value(), R.value());
+          break;
+        }
+
+        default: {
+          qcore_panic("unexpected binary operator");
+        }
       }
 
-      case nr::Op::LT: { /* '<': Less than operator */
-        PROD_LHS()
-        auto x = N->getLHS()->getType();
-        if (!x.has_value()) {
-          debug("Failed to get type");
-          return nullopt;
-        }
-        if (x.value()->is_signed()) {
-          E = b.CreateICmpSLT(L.value(), R.value());
-        } else if (x.value()->is_unsigned()) {
-          E = b.CreateICmpULT(L.value(), R.value());
-        } else {
-          qcore_panic("unexpected type for comparison");
-        }
-        break;
-      }
-
-      case nr::Op::GT: { /* '>': Greater than operator */
-        PROD_LHS()
-        auto x = N->getLHS()->getType();
-        if (!x.has_value()) {
-          debug("Failed to get type");
-          return nullopt;
-        }
-        if (x.value()->is_signed()) {
-          E = b.CreateICmpSGT(L.value(), R.value());
-        } else if (x.value()->is_unsigned()) {
-          E = b.CreateICmpUGT(L.value(), R.value());
-        } else {
-          qcore_panic("unexpected type for comparison");
-        }
-        break;
-      }
-
-      case nr::Op::LE: { /* '<=': Less than or equal to operator */
-        PROD_LHS()
-        auto x = N->getLHS()->getType();
-        if (!x.has_value()) {
-          debug("Failed to get type");
-          return nullopt;
-        }
-        if (x.value()->is_signed()) {
-          E = b.CreateICmpSLE(L.value(), R.value());
-        } else if (x.value()->is_unsigned()) {
-          E = b.CreateICmpULE(L.value(), R.value());
-        } else {
-          qcore_panic("unexpected type for comparison");
-        }
-        break;
-      }
-
-      case nr::Op::GE: { /* '>=': Greater than or equal to operator */
-        PROD_LHS()
-        auto x = N->getLHS()->getType();
-        if (x.value()->is_signed()) {
-          E = b.CreateICmpSGE(L.value(), R.value());
-        } else if (x.value()->is_unsigned()) {
-          E = b.CreateICmpUGE(L.value(), R.value());
-        } else {
-          qcore_panic("unexpected type for comparison");
-        }
-        break;
-      }
-
-      case nr::Op::Eq: { /* '==': Equal to operator */
-        PROD_LHS()
-        E = b.CreateICmpEQ(L.value(), R.value());
-        break;
-      }
-
-      case nr::Op::NE: { /* '!=': Not equal to operator */
-        PROD_LHS()
-        E = b.CreateICmpNE(L.value(), R.value());
-        break;
-      }
-
-      default: {
-        qcore_panic("unexpected binary operator");
-      }
+      return E;
     }
 
-    return E;
-  }
-
-  static val_t for_UNEXPR(ctx_t &m, craft_t &b, State &s, nr::UnExpr *N) {
+    static val_t for_UNEXPR(ctx_t &m, craft_t &b, State &s, nr::UnExpr *N) {
 #define PROD_SUB()                     \
-  val_t E = V(m, b, s, N->getExpr());  \
+  val_t E = V(N->getExpr());           \
   if (!E) {                            \
     debug("Failed to get expression"); \
     return nullopt;                    \
   }
 
-    val_t R;
+      val_t R;
 
-    switch (N->getOp()) {
-      case nr::Op::Plus: {
-        PROD_SUB();
-        R = E;
-        break;
-      }
-      case nr::Op::Minus: {
-        PROD_SUB();
-        R = b.CreateNeg(E.value());
-        break;
-      }
-      case nr::Op::Times: {
-        /// TODO: Dereference
-        break;
-      }
-      case nr::Op::BitAnd: {
-        if (N->getExpr()->getKind() != NR_NODE_IDENT) {
-          qcore_panic("expected identifier for address_of");
+      switch (N->getOp()) {
+        case nr::Op::Plus: {
+          PROD_SUB();
+          R = E;
+          break;
         }
-
-        nr::Ident *I = N->getExpr()->as<nr::Ident>();
-        auto find = s.find_named_value(m, I->getName());
-        if (!find) {
-          qcore_panic("failed to find identifier for address_of");
+        case nr::Op::Minus: {
+          PROD_SUB();
+          R = b.CreateNeg(E.value());
+          break;
         }
-
-        Value *V = find->first;
-        if (!V->getType()->isPointerTy()) {
-          qcore_panic("expected pointer type for address_of");
+        case nr::Op::Times: {
+          /// TODO: Dereference
+          break;
         }
+        case nr::Op::BitAnd: {
+          if (N->getExpr()->getKind() != NR_NODE_IDENT) {
+            qcore_panic("expected identifier for address_of");
+          }
 
-        R = V;
-        break;
-      }
-      case nr::Op::BitNot: {
-        PROD_SUB();
-        R = b.CreateNot(E.value());
-        break;
-      }
-      case nr::Op::LogicNot: {
-        PROD_SUB();
-        R = b.CreateICmpEQ(E.value(),
-                           ConstantInt::get(m.getContext(), APInt(1, 0)));
-        break;
-      }
-      case nr::Op::Inc: {
-        if (N->getExpr()->getKind() != NR_NODE_IDENT) {
-          qcore_panic("expected identifier for increment");
+          nr::Ident *I = N->getExpr()->as<nr::Ident>();
+          auto find = s.find_named_value(m, I->getName());
+          if (!find) {
+            qcore_panic("failed to find identifier for address_of");
+          }
+
+          Value *V = find->first;
+          if (!V->getType()->isPointerTy()) {
+            qcore_panic("expected pointer type for address_of");
+          }
+
+          R = V;
+          break;
         }
-
-        nr::Ident *I = N->getExpr()->as<nr::Ident>();
-        auto find = s.find_named_value(m, I->getName());
-        if (!find) {
-          qcore_panic("failed to find identifier for increment");
+        case nr::Op::BitNot: {
+          PROD_SUB();
+          R = b.CreateNot(E.value());
+          break;
         }
-
-        if (find->second != PtrClass::DataPtr) {
-          qcore_panic("expected data pointer");
+        case nr::Op::LogicNot: {
+          PROD_SUB();
+          R = b.CreateICmpEQ(E.value(),
+                             ConstantInt::get(b.getContext(), APInt(1, 0)));
+          break;
         }
+        case nr::Op::Inc: {
+          if (N->getExpr()->getKind() != NR_NODE_IDENT) {
+            qcore_panic("expected identifier for increment");
+          }
 
-        Value *V = find->first;
+          nr::Ident *I = N->getExpr()->as<nr::Ident>();
+          auto find = s.find_named_value(m, I->getName());
+          if (!find) {
+            qcore_panic("failed to find identifier for increment");
+          }
 
-        if (!V->getType()->isPointerTy()) {
-          qcore_panic("expected pointer type for increment");
+          if (find->second != PtrClass::DataPtr) {
+            qcore_panic("expected data pointer");
+          }
+
+          Value *V = find->first;
+
+          if (!V->getType()->isPointerTy()) {
+            qcore_panic("expected pointer type for increment");
+          }
+
+          Value *current =
+              b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
+          Value *new_val;
+
+          if (current->getType()->isIntegerTy()) {
+            auto x = N->getExpr()->getType();
+            if (!x.has_value()) {
+              debug("Failed to get type");
+              return nullopt;
+            }
+            if (auto size = x.value()->getSizeBits()) {
+              new_val = b.CreateAdd(
+                  current,
+                  ConstantInt::get(b.getContext(), APInt(size.value(), 1)));
+            } else {
+              qcore_panic("Failed to get size");
+            }
+          } else if (current->getType()->isFloatingPointTy()) {
+            new_val = b.CreateFAdd(
+                current, ConstantFP::get(b.getContext(), APFloat(1.0)));
+          } else {
+            qcore_panic("unexpected type for increment");
+          }
+
+          b.CreateStore(new_val, V);
+
+          R = new_val;
+          break;
         }
+        case nr::Op::Dec: {
+          if (N->getExpr()->getKind() != NR_NODE_IDENT) {
+            qcore_panic("expected identifier for decrement");
+          }
 
-        Value *current =
-            b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
-        Value *new_val;
+          nr::Ident *I = N->getExpr()->as<nr::Ident>();
+          auto find = s.find_named_value(m, I->getName());
+          if (!find) {
+            qcore_panic("failed to find identifier for decrement");
+          }
 
-        if (current->getType()->isIntegerTy()) {
+          if (find->second != PtrClass::DataPtr) {
+            qcore_panic("expected data pointer");
+          }
+
+          Value *V = find->first;
+
+          if (!V->getType()->isPointerTy()) {
+            qcore_panic("expected pointer type for decrement");
+          }
+
+          Value *current =
+              b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
+          Value *new_val;
+
+          if (current->getType()->isIntegerTy()) {
+            auto x = N->getExpr()->getType();
+            if (!x.has_value()) {
+              debug("Failed to get type");
+              return nullopt;
+            }
+            if (auto size = x.value()->getSizeBits()) {
+              new_val = b.CreateSub(
+                  current,
+                  ConstantInt::get(b.getContext(), APInt(size.value(), 1)));
+            } else {
+              qcore_panic("Failed to get size");
+            }
+
+          } else if (current->getType()->isFloatingPointTy()) {
+            new_val = b.CreateFSub(
+                current, ConstantFP::get(b.getContext(), APFloat(1.0)));
+          } else {
+            qcore_panic("unexpected type for decrement");
+          }
+
+          b.CreateStore(new_val, V);
+
+          R = new_val;
+          break;
+        }
+        case nr::Op::Alignof: {
+          auto x = N->getExpr()->getType();
+          if (!x.has_value()) {
+            debug("Failed to get type");
+            return nullopt;
+          }
+          if (auto align = x.value()->getAlignBytes()) {
+            R = ConstantInt::get(b.getContext(), APInt(64, align.value()));
+          } else {
+            qcore_panic("Failed to get alignment");
+          }
+          break;
+        }
+        case nr::Op::Bitsizeof: {
           auto x = N->getExpr()->getType();
           if (!x.has_value()) {
             debug("Failed to get type");
             return nullopt;
           }
           if (auto size = x.value()->getSizeBits()) {
-            new_val = b.CreateAdd(
-                current,
-                ConstantInt::get(m.getContext(), APInt(size.value(), 1)));
+            R = ConstantInt::get(b.getContext(), APInt(64, size.value()));
           } else {
             qcore_panic("Failed to get size");
           }
-        } else if (current->getType()->isFloatingPointTy()) {
-          new_val = b.CreateFAdd(current,
-                                 ConstantFP::get(m.getContext(), APFloat(1.0)));
-        } else {
-          qcore_panic("unexpected type for increment");
+          break;
         }
 
-        b.CreateStore(new_val, V);
-
-        R = new_val;
-        break;
+        default: {
+          qcore_panic("unexpected unary operator");
+        }
       }
-      case nr::Op::Dec: {
-        if (N->getExpr()->getKind() != NR_NODE_IDENT) {
-          qcore_panic("expected identifier for decrement");
-        }
-
-        nr::Ident *I = N->getExpr()->as<nr::Ident>();
-        auto find = s.find_named_value(m, I->getName());
-        if (!find) {
-          qcore_panic("failed to find identifier for decrement");
-        }
-
-        if (find->second != PtrClass::DataPtr) {
-          qcore_panic("expected data pointer");
-        }
-
-        Value *V = find->first;
-
-        if (!V->getType()->isPointerTy()) {
-          qcore_panic("expected pointer type for decrement");
-        }
-
-        Value *current =
-            b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
-        Value *new_val;
-
-        if (current->getType()->isIntegerTy()) {
-          auto x = N->getExpr()->getType();
-          if (!x.has_value()) {
-            debug("Failed to get type");
-            return nullopt;
-          }
-          if (auto size = x.value()->getSizeBits()) {
-            new_val = b.CreateSub(
-                current,
-                ConstantInt::get(m.getContext(), APInt(size.value(), 1)));
-          } else {
-            qcore_panic("Failed to get size");
-          }
-
-        } else if (current->getType()->isFloatingPointTy()) {
-          new_val = b.CreateFSub(current,
-                                 ConstantFP::get(m.getContext(), APFloat(1.0)));
-        } else {
-          qcore_panic("unexpected type for decrement");
-        }
-
-        b.CreateStore(new_val, V);
-
-        R = new_val;
-        break;
-      }
-      case nr::Op::Alignof: {
-        auto x = N->getExpr()->getType();
-        if (!x.has_value()) {
-          debug("Failed to get type");
-          return nullopt;
-        }
-        if (auto align = x.value()->getAlignBytes()) {
-          R = ConstantInt::get(m.getContext(), APInt(64, align.value()));
-        } else {
-          qcore_panic("Failed to get alignment");
-        }
-        break;
-      }
-      case nr::Op::Bitsizeof: {
-        auto x = N->getExpr()->getType();
-        if (!x.has_value()) {
-          debug("Failed to get type");
-          return nullopt;
-        }
-        if (auto size = x.value()->getSizeBits()) {
-          R = ConstantInt::get(m.getContext(), APInt(64, size.value()));
-        } else {
-          qcore_panic("Failed to get size");
-        }
-        break;
-      }
-
-      default: {
-        qcore_panic("unexpected unary operator");
-      }
-    }
 
 #undef PROD_SUB
 
-    return R;
-  }
+      return R;
+    }
 
-  static val_t for_POST_UNEXPR(ctx_t &m, craft_t &b, State &s,
-                               nr::PostUnExpr *N) {
-    val_t R;
+    static val_t for_POST_UNEXPR(ctx_t &m, craft_t &b, State &s,
+                                 nr::PostUnExpr *N) {
+      val_t R;
 
-    switch (N->getOp()) {
-      case nr::Op::Inc: {
-        if (N->getExpr()->getKind() != NR_NODE_IDENT) {
-          qcore_panic("expected identifier for increment");
-        }
-
-        nr::Ident *I = N->getExpr()->as<nr::Ident>();
-        auto find = s.find_named_value(m, I->getName());
-        if (!find) {
-          qcore_panic("failed to find identifier for increment");
-        }
-
-        if (find->second != PtrClass::DataPtr) {
-          qcore_panic("expected data pointer");
-        }
-
-        Value *V = find->first;
-
-        if (!V->getType()->isPointerTy()) {
-          qcore_panic("expected pointer type for increment");
-        }
-
-        Value *current =
-            b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
-        Value *new_val;
-
-        if (current->getType()->isIntegerTy()) {
-          auto x = N->getExpr()->getType();
-          if (!x.has_value()) {
-            debug("Failed to get type");
-            return nullopt;
+      switch (N->getOp()) {
+        case nr::Op::Inc: {
+          if (N->getExpr()->getKind() != NR_NODE_IDENT) {
+            qcore_panic("expected identifier for increment");
           }
-          if (auto size = x.value()->getSizeBits()) {
-            new_val = b.CreateAdd(
-                current,
-                ConstantInt::get(m.getContext(), APInt(size.value(), 1)));
+
+          nr::Ident *I = N->getExpr()->as<nr::Ident>();
+          auto find = s.find_named_value(m, I->getName());
+          if (!find) {
+            qcore_panic("failed to find identifier for increment");
+          }
+
+          if (find->second != PtrClass::DataPtr) {
+            qcore_panic("expected data pointer");
+          }
+
+          Value *V = find->first;
+
+          if (!V->getType()->isPointerTy()) {
+            qcore_panic("expected pointer type for increment");
+          }
+
+          Value *current =
+              b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
+          Value *new_val;
+
+          if (current->getType()->isIntegerTy()) {
+            auto x = N->getExpr()->getType();
+            if (!x.has_value()) {
+              debug("Failed to get type");
+              return nullopt;
+            }
+            if (auto size = x.value()->getSizeBits()) {
+              new_val = b.CreateAdd(
+                  current,
+                  ConstantInt::get(b.getContext(), APInt(size.value(), 1)));
+            } else {
+              qcore_panic("Failed to get size");
+            }
+          } else if (current->getType()->isFloatingPointTy()) {
+            new_val = b.CreateFAdd(
+                current, ConstantFP::get(b.getContext(), APFloat(1.0)));
           } else {
-            qcore_panic("Failed to get size");
+            qcore_panic("unexpected type for increment");
           }
-        } else if (current->getType()->isFloatingPointTy()) {
-          new_val = b.CreateFAdd(current,
-                                 ConstantFP::get(m.getContext(), APFloat(1.0)));
-        } else {
-          qcore_panic("unexpected type for increment");
+
+          b.CreateStore(new_val, V);
+
+          R = current;
+          break;
         }
-
-        b.CreateStore(new_val, V);
-
-        R = current;
-        break;
-      }
-      case nr::Op::Dec: {
-        if (N->getExpr()->getKind() != NR_NODE_IDENT) {
-          qcore_panic("expected identifier for decrement");
-        }
-
-        nr::Ident *I = N->getExpr()->as<nr::Ident>();
-        auto find = s.find_named_value(m, I->getName());
-        if (!find) {
-          qcore_panic("failed to find identifier for decrement");
-        }
-
-        if (find->second != PtrClass::DataPtr) {
-          qcore_panic("expected data pointer");
-        }
-
-        Value *V = find->first;
-
-        if (!V->getType()->isPointerTy()) {
-          qcore_panic("expected pointer type for decrement");
-        }
-
-        Value *current =
-            b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
-        Value *new_val;
-
-        if (current->getType()->isIntegerTy()) {
-          auto x = N->getExpr()->getType();
-          if (!x.has_value()) {
-            debug("Failed to get type");
-            return nullopt;
+        case nr::Op::Dec: {
+          if (N->getExpr()->getKind() != NR_NODE_IDENT) {
+            qcore_panic("expected identifier for decrement");
           }
-          if (auto size = x.value()->getSizeBits()) {
-            new_val = b.CreateSub(
-                current,
-                ConstantInt::get(m.getContext(), APInt(size.value(), 1)));
+
+          nr::Ident *I = N->getExpr()->as<nr::Ident>();
+          auto find = s.find_named_value(m, I->getName());
+          if (!find) {
+            qcore_panic("failed to find identifier for decrement");
+          }
+
+          if (find->second != PtrClass::DataPtr) {
+            qcore_panic("expected data pointer");
+          }
+
+          Value *V = find->first;
+
+          if (!V->getType()->isPointerTy()) {
+            qcore_panic("expected pointer type for decrement");
+          }
+
+          Value *current =
+              b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
+          Value *new_val;
+
+          if (current->getType()->isIntegerTy()) {
+            auto x = N->getExpr()->getType();
+            if (!x.has_value()) {
+              debug("Failed to get type");
+              return nullopt;
+            }
+            if (auto size = x.value()->getSizeBits()) {
+              new_val = b.CreateSub(
+                  current,
+                  ConstantInt::get(b.getContext(), APInt(size.value(), 1)));
+            } else {
+              qcore_panic("Failed to get size");
+            }
+          } else if (current->getType()->isFloatingPointTy()) {
+            new_val = b.CreateFSub(
+                current, ConstantFP::get(b.getContext(), APFloat(1.0)));
           } else {
-            qcore_panic("Failed to get size");
+            qcore_panic("unexpected type for decrement");
           }
-        } else if (current->getType()->isFloatingPointTy()) {
-          new_val = b.CreateFSub(current,
-                                 ConstantFP::get(m.getContext(), APFloat(1.0)));
+
+          b.CreateStore(new_val, V);
+
+          R = current;
+          break;
+        }
+
+        default: {
+          qcore_panic("unexpected post-unary operator");
+        }
+      }
+
+      return R;
+    }
+
+    static val_t for_INT(ctx_t &, craft_t &b, State &, nr::Int *N) {
+      unsigned __int128 lit = N->getValue().convert_to<unsigned __int128>();
+
+      ConstantInt *R = nullptr;
+
+      if (lit == 0) {
+        R = ConstantInt::get(b.getContext(), APInt(32, 0));
+      } else if (lit > UINT64_MAX) {
+        array<uint64_t, 2> parts;
+        parts[1] = (lit >> 64) & 0xffffffffffffffff;
+        parts[0] = lit & 0xffffffffffffffff;
+        R = ConstantInt::get(b.getContext(), APInt(128, parts));
+      } else {
+        uint8_t l2 = log2(lit);
+
+        if (l2 <= 32) {
+          R = ConstantInt::get(b.getContext(), APInt(32, lit));
         } else {
-          qcore_panic("unexpected type for decrement");
-        }
-
-        b.CreateStore(new_val, V);
-
-        R = current;
-        break;
-      }
-
-      default: {
-        qcore_panic("unexpected post-unary operator");
-      }
-    }
-
-    return R;
-  }
-
-  static val_t for_INT(ctx_t &m, craft_t &, State &, nr::Int *N) {
-    unsigned __int128 lit = N->getValue().convert_to<unsigned __int128>();
-
-    ConstantInt *R = nullptr;
-
-    if (lit == 0) {
-      R = ConstantInt::get(m.getContext(), APInt(32, 0));
-    } else if (lit > UINT64_MAX) {
-      array<uint64_t, 2> parts;
-      parts[1] = (lit >> 64) & 0xffffffffffffffff;
-      parts[0] = lit & 0xffffffffffffffff;
-      R = ConstantInt::get(m.getContext(), APInt(128, parts));
-    } else {
-      uint8_t l2 = log2(lit);
-
-      if (l2 <= 32) {
-        R = ConstantInt::get(m.getContext(), APInt(32, lit));
-      } else {
-        R = ConstantInt::get(m.getContext(), APInt(64, lit));
-      }
-    }
-
-    return R;
-  }
-
-  static val_t for_FLOAT(ctx_t &m, craft_t &, State &, nr::Float *N) {
-    return ConstantFP::get(m.getContext(), APFloat(N->getValue()));
-  }
-
-  static val_t for_LIST(ctx_t &m, craft_t &b, State &s, nr::List *N) {
-    if (N->size() == 0) {
-      StructType *ST = StructType::get(m.getContext(), {}, true);
-      AllocaInst *AI = b.CreateAlloca(ST);
-      return b.CreateLoad(ST, AI);
-    }
-
-    vector<Value *> items;
-    items.reserve(N->size());
-
-    for (const auto &node : *N) {
-      val_t R = V(m, b, s, node);
-      if (!R) {
-        debug("Failed to get item");
-        return nullopt;
-      }
-
-      items.push_back(R.value());
-    }
-
-    bool is_homogeneous = all_of(items.begin(), items.end(), [&](Value *V) {
-      return V->getType() == items[0]->getType();
-    });
-
-    if (is_homogeneous) {  // It's a Basic Array
-      ArrayType *AT = ArrayType::get(items[0]->getType(), items.size());
-      AllocaInst *AI = b.CreateAlloca(AT);
-
-      for (size_t i = 0; i < items.size(); i++) {
-        b.CreateStore(items[i], b.CreateStructGEP(AT, AI, i));
-      }
-
-      return b.CreateLoad(AT, AI);
-    } else {  // It's an implicit struct value
-      vector<Type *> types;
-      types.reserve(items.size());
-      for (auto &item : items) {
-        types.push_back(item->getType());
-      }
-
-      StructType *ST = StructType::get(m.getContext(), types, true);
-      AllocaInst *AI = b.CreateAlloca(ST);
-
-      for (size_t i = 0; i < items.size(); i++) {
-        b.CreateStore(items[i], b.CreateStructGEP(ST, AI, i));
-      }
-
-      return b.CreateLoad(ST, AI);
-    }
-  }
-
-  static val_t for_CALL(ctx_t &m, craft_t &b, State &s, nr::Call *N) {
-    /* Direct call */
-    if (!N->getTarget()->getName().empty()) {
-      string_view fn_name = N->getTarget()->getName();
-      auto find = s.find_named_value(m, fn_name);
-      if (!find) {
-        debug("Failed to find function " << fn_name);
-        return nullopt;
-      }
-
-      if (find->second != PtrClass::Function) {
-        debug("Expected function pointer");
-        return nullopt;
-      }
-
-      Function *func_def = cast<Function>(find->first);
-      FunctionType *FT = func_def->getFunctionType();
-
-      vector<Value *> args;
-
-      { /* Arguments */
-        args.reserve(N->getArgs().size());
-
-        for (auto &node : N->getArgs()) {
-          val_t R = V(m, b, s, node);
-          if (!R) {
-            debug("Failed to get argument");
-            return nullopt;
-          }
-
-          args.push_back(R.value());
+          R = ConstantInt::get(b.getContext(), APInt(64, lit));
         }
       }
 
-      { /* Verify call */
-        if (!(FT->getNumParams() == args.size() ||
-              (FT->isVarArg() && FT->getNumParams() <= args.size()))) {
-          debug("Expected " << FT->getNumParams() << " arguments, but got "
-                            << args.size());
-          return nullopt;
-        }
-      }
-
-      return b.CreateCall(func_def, args);
-    }
-    /* Indirect call */
-    else {
-      val_t T = V(m, b, s, N->getTarget());
-      if (!T) {
-        debug("Failed to get target");
-        return nullopt;
-      }
-
-      if (!T.value()->getType()->isPointerTy()) {
-        debug("Expected pointer type for target");
-        return nullopt;
-      }
-
-      Value *target = b.CreateLoad(
-          T.value()->getType()->getNonOpaquePointerElementType(), T.value());
-
-      if (!target->getType()->isFunctionTy()) {
-        debug("Expected function type for target");
-        return nullopt;
-      }
-
-      FunctionType *FT = cast<FunctionType>(target->getType());
-
-      vector<Value *> args;
-
-      { /* Arguments */
-        args.reserve(N->getArgs().size());
-
-        for (auto &node : N->getArgs()) {
-          val_t R = V(m, b, s, node);
-          if (!R) {
-            debug("Failed to get argument");
-            return nullopt;
-          }
-
-          args.push_back(R.value());
-        }
-      }
-
-      { /* Verify call */
-        if (!(FT->getNumParams() == args.size() ||
-              (FT->isVarArg() && FT->getNumParams() <= args.size()))) {
-          debug("Expected " << FT->getNumParams() << " arguments, but got "
-                            << args.size());
-          return nullopt;
-        }
-      }
-
-      Function *func = cast<Function>(target);
-
-      return b.CreateCall(func, args);
-    }
-  }
-
-  static val_t for_SEQ(ctx_t &m, craft_t &b, State &s, nr::Seq *N) {
-    if (N->getItems().empty()) {
-      return Constant::getNullValue(Type::getInt32Ty(m.getContext()));
+      return R;
     }
 
-    val_t R;
-
-    for (auto &node : N->getItems()) {
-      R = V(m, b, s, node);
-      if (!R) {
-        debug("Failed to get item");
-        return nullopt;
-      }
+    static val_t for_FLOAT(ctx_t &, craft_t &b, State &, nr::Float *N) {
+      return ConstantFP::get(b.getContext(), APFloat(N->getValue()));
     }
 
-    return R;
-  }
-
-  static val_t for_INDEX(ctx_t &m, craft_t &b, State &s, nr::Index *N) {
-    val_t I = V(m, b, s, N->getIndex());
-    if (!I) {
-      debug("Failed to get index");
-      return nullopt;
-    }
-
-    if (N->getExpr()->getKind() == NR_NODE_IDENT) {
-      nr::Ident *B = N->getExpr()->as<nr::Ident>();
-      auto find = s.find_named_value(m, B->getName());
-      if (!find) {
-        debug("Failed to find named value " << B->getName());
-        return nullopt;
+    static val_t for_LIST(ctx_t &m, craft_t &b, State &s, nr::List *N) {
+      if (N->size() == 0) {
+        StructType *ST = StructType::get(b.getContext(), {}, true);
+        AllocaInst *AI = b.CreateAlloca(ST);
+        return b.CreateLoad(ST, AI);
       }
 
-      if (find->second != PtrClass::DataPtr) {
-        qcore_panic("expected data pointer");
-      }
+      vector<Value *> items;
+      items.reserve(N->size());
 
-      if (!find->first->getType()->getNonOpaquePointerElementType()) {
-        qcore_panic("unexpected type for index");
-      }
-
-      Type *base_ty = find->first->getType()->getNonOpaquePointerElementType();
-
-      if (base_ty->isArrayTy()) {
-        Value *zero = ConstantInt::get(m.getContext(), APInt(32, 0));
-        Value *indices[] = {zero, I.value()};
-
-        Value *elem = b.CreateGEP(base_ty, find->first, indices);
-
-        return b.CreateLoad(base_ty->getArrayElementType(), elem);
-      } else if (base_ty->isPointerTy()) {
-        Value *elem = b.CreateGEP(base_ty->getNonOpaquePointerElementType(),
-                                  find->first, I.value());
-
-        return b.CreateLoad(base_ty->getNonOpaquePointerElementType(), elem);
-      } else {
-        qcore_panic("unexpected type for index");
-      }
-    } else if (N->getExpr()->getKind() == NR_NODE_LIST) {
-      qcore_implement();
-    } else {
-      qcore_panic("unexpected base expression for index");
-    }
-  }
-
-  static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, nr::Ident *N) {
-    auto find = s.find_named_value(m, N->getName());
-    if (!find) {
-      debug("Failed to find named value " << N->getName());
-      return nullopt;
-    }
-
-    debug("Found named value " << N->getName());
-
-    if (find->second == PtrClass::Function) {
-      return find->first;
-    } else {
-      if (find->first->getType()->isPointerTy()) {
-        return b.CreateLoad(
-            find->first->getType()->getNonOpaquePointerElementType(),
-            find->first);
-      }
-    }
-
-    qcore_panic("unexpected type for identifier");
-  }
-
-  static val_t for_EXTERN(ctx_t &m, craft_t &b, State &s, nr::Extern *N) {
-    s.push_linkage(GlobalValue::ExternalLinkage);
-
-    val_t R = V(m, b, s, N->getValue());
-    if (!R) {
-      s.pop_linkage();
-      debug("Failed to get value");
-      return nullopt;
-    }
-
-    s.pop_linkage();
-
-    return R;
-  }
-
-  static val_t for_LOCAL(ctx_t &m, craft_t &b, State &s, nr::Local *N) {
-    auto x = N->getValue()->getType();
-    if (!x.has_value()) {
-      debug("Failed to get type");
-      return nullopt;
-    }
-
-    ty_t R_T = T(m, b, s, x.value());
-    if (!R_T) {
-      debug("Failed to get type");
-      return nullopt;
-    }
-
-    if (s.is_inside_function()) {
-      AllocaInst *local = b.CreateAlloca(R_T.value(), nullptr, N->getName());
-
-      if (N->getValue()) {
-        val_t R = V(m, b, s, N->getValue());
+      for (const auto &node : *N) {
+        val_t R = V(node);
         if (!R) {
-          debug("Failed to get value");
+          debug("Failed to get item");
           return nullopt;
         }
-        b.CreateStore(R.value(), local);
-      } else {
-        b.CreateStore(Constant::getNullValue(R_T.value()), local);
+
+        items.push_back(R.value());
       }
 
-      s.get_stackframe().addVariable(N->getName(), local);
-      return local;
-    } else {
-      auto init = Constant::getNullValue(R_T.value());
+      bool is_homogeneous = all_of(items.begin(), items.end(), [&](Value *V) {
+        return V->getType() == items[0]->getType();
+      });
 
-      GlobalVariable *global = new GlobalVariable(
-          m, R_T.value(), false, s.get_linkage(), init, N->getName());
+      if (is_homogeneous) {  // It's a Basic Array
+        ArrayType *AT = ArrayType::get(items[0]->getType(), items.size());
+        AllocaInst *AI = b.CreateAlloca(AT);
 
-      /// TODO: Set the initializer value during program load???
-      return global;
+        for (size_t i = 0; i < items.size(); i++) {
+          b.CreateStore(items[i], b.CreateStructGEP(AT, AI, i));
+        }
+
+        return b.CreateLoad(AT, AI);
+      } else {  // It's an implicit struct value
+        vector<Type *> types;
+        types.reserve(items.size());
+        for (auto &item : items) {
+          types.push_back(item->getType());
+        }
+
+        StructType *ST = StructType::get(b.getContext(), types, true);
+        AllocaInst *AI = b.CreateAlloca(ST);
+
+        for (size_t i = 0; i < items.size(); i++) {
+          b.CreateStore(items[i], b.CreateStructGEP(ST, AI, i));
+        }
+
+        return b.CreateLoad(ST, AI);
+      }
     }
-  }
 
-  static val_t for_RET(ctx_t &m, craft_t &b, State &s, nr::Ret *N) {
-    val_t R;
+    static val_t for_SEQ(ctx_t &m, craft_t &b, State &s, nr::Seq *N) {
+      if (N->getItems().empty()) {
+        return Constant::getNullValue(Type::getInt32Ty(b.getContext()));
+      }
 
-    if (N->getExpr()->getKind() != NR_NODE_VOID_TY) {
-      R = V(m, b, s, N->getExpr());
-      if (!R) {
-        debug("Failed to get return value");
+      val_t R;
+
+      for (auto &node : N->getItems()) {
+        R = V(node);
+        if (!R) {
+          debug("Failed to get item");
+          return nullopt;
+        }
+      }
+
+      return R;
+    }
+
+    static val_t for_INDEX(ctx_t &m, craft_t &b, State &s, nr::Index *N) {
+      val_t I = V(N->getIndex());
+      if (!I) {
+        debug("Failed to get index");
         return nullopt;
       }
 
-      b.CreateStore(R.value(), s.get_return_block().getValue());
-    } else {
-      R = Constant::getNullValue(Type::getInt32Ty(m.getContext()));
+      if (N->getExpr()->getKind() == NR_NODE_IDENT) {
+        nr::Ident *B = N->getExpr()->as<nr::Ident>();
+        auto find = s.find_named_value(m, B->getName());
+        if (!find) {
+          debug("Failed to find named value " << B->getName());
+          return nullopt;
+        }
+
+        if (find->second != PtrClass::DataPtr) {
+          qcore_panic("expected data pointer");
+        }
+
+        if (!find->first->getType()->getNonOpaquePointerElementType()) {
+          qcore_panic("unexpected type for index");
+        }
+
+        Type *base_ty =
+            find->first->getType()->getNonOpaquePointerElementType();
+
+        if (base_ty->isArrayTy()) {
+          Value *zero = ConstantInt::get(b.getContext(), APInt(32, 0));
+          Value *indices[] = {zero, I.value()};
+
+          Value *elem = b.CreateGEP(base_ty, find->first, indices);
+
+          return b.CreateLoad(base_ty->getArrayElementType(), elem);
+        } else if (base_ty->isPointerTy()) {
+          Value *elem = b.CreateGEP(base_ty->getNonOpaquePointerElementType(),
+                                    find->first, I.value());
+
+          return b.CreateLoad(base_ty->getNonOpaquePointerElementType(), elem);
+        } else {
+          qcore_panic("unexpected type for index");
+        }
+      } else if (N->getExpr()->getKind() == NR_NODE_LIST) {
+        qcore_implement();
+      } else {
+        qcore_panic("unexpected base expression for index");
+      }
     }
 
-    b.CreateBr(s.get_return_block().getBlock());
-    s.did_ret = true;
+    static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, nr::Ident *N) {
+      auto find = s.find_named_value(m, N->getName());
+      if (!find) {
+        debug("Failed to find named value " << N->getName());
+        return nullopt;
+      }
 
-    return R;
-  }
+      debug("Found named value " << N->getName());
 
-  static val_t for_BRK(ctx_t &, craft_t &b, State &s, nr::Brk *) {
-    if (auto block = s.get_break_block()) {
-      s.did_brk = true;
-      return b.CreateBr(block.value());
-    } else {
-      return nullopt;
-    }
-  }
+      if (find->second == PtrClass::Function) {
+        return find->first;
+      } else {
+        if (find->first->getType()->isPointerTy()) {
+          return b.CreateLoad(
+              find->first->getType()->getNonOpaquePointerElementType(),
+              find->first);
+        }
+      }
 
-  static val_t for_CONT(ctx_t &, craft_t &b, State &s, nr::Cont *) {
-    if (auto block = s.get_skip_block()) {
-      s.did_cont = true;
-      return b.CreateBr(block.value());
-    } else {
-      return nullopt;
-    }
-  }
-
-  static val_t for_IF(ctx_t &m, craft_t &b, State &s, nr::If *N) {
-    BasicBlock *then, *els, *end;
-
-    then = BasicBlock::Create(m.getContext(), "then",
-                              s.get_stackframe().getFunction());
-    els = BasicBlock::Create(m.getContext(), "else",
-                             s.get_stackframe().getFunction());
-    end = BasicBlock::Create(m.getContext(), "end",
-                             s.get_stackframe().getFunction());
-
-    val_t R = V(m, b, s, N->getCond());
-    if (!R) {
-      debug("Failed to get condition");
-      return nullopt;
+      qcore_panic("unexpected type for identifier");
     }
 
-    b.CreateCondBr(R.value(), then, els);
-    b.SetInsertPoint(then);
+    static val_t for_ASM(ctx_t &, craft_t &, State &, nr::Asm *) {
+      qcore_implement();
+    }
+  }  // namespace expr
 
-    bool old_did_ret = s.did_ret;
-    val_t R_T = V(m, b, s, N->getThen());
-    if (!R_T) {
-      debug("Failed to get then");
-      return nullopt;
+  namespace symbol {
+
+    static val_t for_EXTERN(ctx_t &m, craft_t &b, State &s, nr::Extern *N) {
+      s.push_linkage(GlobalValue::ExternalLinkage);
+
+      val_t R = V(N->getValue());
+      if (!R) {
+        s.pop_linkage();
+        debug("Failed to get value");
+        return nullopt;
+      }
+
+      s.pop_linkage();
+
+      return R;
     }
 
-    if (!s.did_ret) {
-      b.CreateBr(end);
+    static val_t for_LOCAL(ctx_t &m, craft_t &b, State &s, nr::Local *N) {
+      auto x = N->getValue()->getType();
+      if (!x.has_value()) {
+        debug("Failed to get type");
+        return nullopt;
+      }
+
+      ty_t R_T = T(x.value());
+      if (!R_T) {
+        debug("Failed to get type");
+        return nullopt;
+      }
+
+      if (s.is_inside_function()) {
+        AllocaInst *local = b.CreateAlloca(R_T.value(), nullptr, N->getName());
+
+        if (N->getValue()) {
+          val_t R = V(N->getValue());
+          if (!R) {
+            debug("Failed to get value");
+            return nullopt;
+          }
+          b.CreateStore(R.value(), local);
+        } else {
+          b.CreateStore(Constant::getNullValue(R_T.value()), local);
+        }
+
+        s.get_stackframe().addVariable(N->getName(), local);
+        return local;
+      } else {
+        auto init = Constant::getNullValue(R_T.value());
+
+        GlobalVariable *global = new GlobalVariable(
+            m, R_T.value(), false, s.get_linkage(), init, N->getName());
+
+        /// TODO: Set the initializer value during program load???
+        return global;
+      }
     }
-    s.did_ret = old_did_ret;
 
-    b.SetInsertPoint(els);
+    static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N) {
+      vector<Type *> params;
 
-    s.did_ret = false;
-    val_t R_E = V(m, b, s, N->getElse());
-    if (!R_E) {
-      debug("Failed to get else");
-      return nullopt;
+      { /* Lower parameter types */
+        params.reserve(N->getParams().size());
+
+        for (auto &param : N->getParams()) {
+          ty_t R = T(param.first);
+          if (!R) {
+            debug("Failed to get parameter type");
+            return nullopt;
+          }
+
+          params.push_back(R.value());
+        }
+      }
+
+      Type *ret_ty;
+
+      { /* Lower return type */
+        // Use type inference to get return type
+        auto x = N->getType();
+        if (!x.has_value()) {
+          debug("Failed to get return type");
+          return nullopt;
+        }
+        ty_t R = T(x.value()->as<nr::FnTy>()->getReturn());
+        if (!R) {
+          debug("Failed to get return type");
+          return nullopt;
+        }
+
+        ret_ty = R.value();
+      }
+
+      FunctionType *fn_ty = FunctionType::get(ret_ty, params, false);
+      Value *callee = m.getOrInsertFunction(N->getName(), fn_ty).getCallee();
+
+      if (!N->getBody().has_value()) {  // It is a declaration
+        return callee;
+      }
+
+      s.set_inside_function(true);
+
+      Function *fn = dyn_cast<Function>(callee);
+
+      s.push_stackframe(fn);
+
+      { /* Lower function body */
+        BasicBlock *entry, *exit;
+
+        entry = BasicBlock::Create(b.getContext(), "entry", fn);
+        exit = BasicBlock::Create(b.getContext(), "end", fn);
+
+        b.SetInsertPoint(entry);
+
+        AllocaInst *ret_val_alloc = nullptr;
+        if (!ret_ty->isVoidTy()) {
+          ret_val_alloc = b.CreateAlloca(ret_ty, nullptr, "__ret");
+        }
+        s.push_return_block(ret_val_alloc, exit);
+
+        {
+          b.SetInsertPoint(exit);
+          if (!ret_ty->isVoidTy()) {
+            LoadInst *ret_val =
+                b.CreateLoad(ret_ty, s.get_return_block().getValue());
+            b.CreateRet(ret_val);
+          } else {
+            b.CreateRetVoid();
+          }
+        }
+
+        b.SetInsertPoint(entry);
+
+        for (size_t i = 0; i < N->getParams().size(); i++) {
+          fn->getArg(i)->setName(N->getParams()[i].second);
+
+          AllocaInst *param_alloc = b.CreateAlloca(
+              fn->getArg(i)->getType(), nullptr, N->getParams()[i].second);
+
+          b.CreateStore(fn->getArg(i), param_alloc);
+          s.get_stackframe().addVariable(N->getParams()[i].second, param_alloc);
+        }
+
+        bool old_did_ret = s.did_ret;
+
+        for (auto &node : N->getBody().value()->getItems()) {
+          val_t R = V(node);
+          if (!R) {
+            s.pop_return_block();
+            s.pop_stackframe();
+            debug("Failed to get body");
+            return nullopt;
+          }
+        }
+
+        if (!s.did_ret) {
+          b.CreateBr(exit);
+        }
+        s.did_ret = old_did_ret;
+
+        s.pop_return_block();
+        s.pop_stackframe();
+      }
+
+      return fn;
     }
-    if (!s.did_ret) {
-      b.CreateBr(end);
+
+  }  // namespace symbol
+
+  namespace control {
+    static val_t for_CALL(ctx_t &m, craft_t &b, State &s, nr::Call *N) {
+      /* Direct call */
+      if (!N->getTarget()->getName().empty()) {
+        string_view fn_name = N->getTarget()->getName();
+        auto find = s.find_named_value(m, fn_name);
+        if (!find) {
+          debug("Failed to find function " << fn_name);
+          return nullopt;
+        }
+
+        if (find->second != PtrClass::Function) {
+          debug("Expected function pointer");
+          return nullopt;
+        }
+
+        Function *func_def = cast<Function>(find->first);
+        FunctionType *FT = func_def->getFunctionType();
+
+        vector<Value *> args;
+
+        { /* Arguments */
+          args.reserve(N->getArgs().size());
+
+          for (auto &node : N->getArgs()) {
+            val_t R = V(node);
+            if (!R) {
+              debug("Failed to get argument");
+              return nullopt;
+            }
+
+            args.push_back(R.value());
+          }
+        }
+
+        { /* Verify call */
+          if (!(FT->getNumParams() == args.size() ||
+                (FT->isVarArg() && FT->getNumParams() <= args.size()))) {
+            debug("Expected " << FT->getNumParams() << " arguments, but got "
+                              << args.size());
+            return nullopt;
+          }
+        }
+
+        return b.CreateCall(func_def, args);
+      }
+      /* Indirect call */
+      else {
+        val_t T = V(N->getTarget());
+        if (!T) {
+          debug("Failed to get target");
+          return nullopt;
+        }
+
+        if (!T.value()->getType()->isPointerTy()) {
+          debug("Expected pointer type for target");
+          return nullopt;
+        }
+
+        Value *target = b.CreateLoad(
+            T.value()->getType()->getNonOpaquePointerElementType(), T.value());
+
+        if (!target->getType()->isFunctionTy()) {
+          debug("Expected function type for target");
+          return nullopt;
+        }
+
+        FunctionType *FT = cast<FunctionType>(target->getType());
+
+        vector<Value *> args;
+
+        { /* Arguments */
+          args.reserve(N->getArgs().size());
+
+          for (auto &node : N->getArgs()) {
+            val_t R = V(node);
+            if (!R) {
+              debug("Failed to get argument");
+              return nullopt;
+            }
+
+            args.push_back(R.value());
+          }
+        }
+
+        { /* Verify call */
+          if (!(FT->getNumParams() == args.size() ||
+                (FT->isVarArg() && FT->getNumParams() <= args.size()))) {
+            debug("Expected " << FT->getNumParams() << " arguments, but got "
+                              << args.size());
+            return nullopt;
+          }
+        }
+
+        Function *func = cast<Function>(target);
+
+        return b.CreateCall(func, args);
+      }
     }
-    s.did_ret = old_did_ret;
-    b.SetInsertPoint(end);
 
-    return end;
-  }
+    static val_t for_RET(ctx_t &m, craft_t &b, State &s, nr::Ret *N) {
+      val_t R;
 
-  static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, nr::While *N) {
-    BasicBlock *begin, *body, *end;
+      if (N->getExpr()->getKind() != NR_NODE_VOID_TY) {
+        R = V(N->getExpr());
+        if (!R) {
+          debug("Failed to get return value");
+          return nullopt;
+        }
 
-    begin = BasicBlock::Create(m.getContext(), "begin",
+        b.CreateStore(R.value(), s.get_return_block().getValue());
+      } else {
+        R = Constant::getNullValue(Type::getInt32Ty(b.getContext()));
+      }
+
+      b.CreateBr(s.get_return_block().getBlock());
+      s.did_ret = true;
+
+      return R;
+    }
+
+    static val_t for_BRK(ctx_t &, craft_t &b, State &s, nr::Brk *) {
+      if (auto block = s.get_break_block()) {
+        s.did_brk = true;
+        return b.CreateBr(block.value());
+      } else {
+        return nullopt;
+      }
+    }
+
+    static val_t for_CONT(ctx_t &, craft_t &b, State &s, nr::Cont *) {
+      if (auto block = s.get_skip_block()) {
+        s.did_cont = true;
+        return b.CreateBr(block.value());
+      } else {
+        return nullopt;
+      }
+    }
+
+    static val_t for_IF(ctx_t &m, craft_t &b, State &s, nr::If *N) {
+      BasicBlock *then, *els, *end;
+
+      then = BasicBlock::Create(b.getContext(), "then",
+                                s.get_stackframe().getFunction());
+      els = BasicBlock::Create(b.getContext(), "else",
                                s.get_stackframe().getFunction());
-    body = BasicBlock::Create(m.getContext(), "body",
-                              s.get_stackframe().getFunction());
-    end = BasicBlock::Create(m.getContext(), "end",
-                             s.get_stackframe().getFunction());
+      end = BasicBlock::Create(b.getContext(), "end",
+                               s.get_stackframe().getFunction());
 
-    b.CreateBr(begin);
-    b.SetInsertPoint(begin);
+      val_t R = V(N->getCond());
+      if (!R) {
+        debug("Failed to get condition");
+        return nullopt;
+      }
 
-    val_t R = V(m, b, s, N->getCond());
-    if (!R) {
-      debug("Failed to get condition");
-      return nullopt;
+      b.CreateCondBr(R.value(), then, els);
+      b.SetInsertPoint(then);
+
+      bool old_did_ret = s.did_ret;
+      val_t R_T = V(N->getThen());
+      if (!R_T) {
+        debug("Failed to get then");
+        return nullopt;
+      }
+
+      if (!s.did_ret) {
+        b.CreateBr(end);
+      }
+      s.did_ret = old_did_ret;
+
+      b.SetInsertPoint(els);
+
+      s.did_ret = false;
+      val_t R_E = V(N->getElse());
+      if (!R_E) {
+        debug("Failed to get else");
+        return nullopt;
+      }
+      if (!s.did_ret) {
+        b.CreateBr(end);
+      }
+      s.did_ret = old_did_ret;
+      b.SetInsertPoint(end);
+
+      return end;
     }
 
-    b.CreateCondBr(R.value(), body, end);
-    b.SetInsertPoint(body);
-    s.push_break_block(end);
-    s.push_skip_block(begin);
+    static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, nr::While *N) {
+      BasicBlock *begin, *body, *end;
 
-    bool did_brk = s.did_brk;
-    bool did_cont = s.did_cont;
-    bool old_ret = s.did_ret;
+      begin = BasicBlock::Create(b.getContext(), "begin",
+                                 s.get_stackframe().getFunction());
+      body = BasicBlock::Create(b.getContext(), "body",
+                                s.get_stackframe().getFunction());
+      end = BasicBlock::Create(b.getContext(), "end",
+                               s.get_stackframe().getFunction());
 
-    val_t R_B = V(m, b, s, N->getBody());
-    if (!R_B) {
-      debug("Failed to get body");
-      return nullopt;
-    }
-
-    if (!s.did_brk && !s.did_cont && !s.did_ret) {
       b.CreateBr(begin);
-    }
-    s.did_brk = did_brk;
-    s.did_cont = did_cont;
-    s.did_ret = old_ret;
+      b.SetInsertPoint(begin);
 
-    s.pop_skip_block();
-    s.pop_break_block();
-
-    b.SetInsertPoint(end);
-
-    return end;
-  }
-
-  static val_t for_FOR(ctx_t &m, craft_t &b, State &s, nr::For *N) {
-    BasicBlock *begin, *body, *step, *end;
-
-    begin = BasicBlock::Create(m.getContext(), "begin",
-                               s.get_stackframe().getFunction());
-    body = BasicBlock::Create(m.getContext(), "body",
-                              s.get_stackframe().getFunction());
-    step = BasicBlock::Create(m.getContext(), "step",
-                              s.get_stackframe().getFunction());
-    end = BasicBlock::Create(m.getContext(), "end",
-                             s.get_stackframe().getFunction());
-
-    val_t R = V(m, b, s, N->getInit());
-    if (!R) {
-      debug("Failed to get init");
-      return nullopt;
-    }
-
-    b.CreateBr(begin);
-    b.SetInsertPoint(begin);
-
-    val_t R_C = V(m, b, s, N->getCond());
-    if (!R_C) {
-      debug("Failed to get condition");
-      return nullopt;
-    }
-
-    b.CreateCondBr(R_C.value(), body, end);
-    b.SetInsertPoint(body);
-    s.push_break_block(end);
-    s.push_skip_block(step);
-
-    bool did_brk = s.did_brk;
-    bool did_cont = s.did_cont;
-    bool old_ret = s.did_ret;
-
-    val_t R_B = V(m, b, s, N->getBody());
-    if (!R_B) {
-      debug("Failed to get body");
-      return nullopt;
-    }
-
-    if (!s.did_brk && !s.did_cont && !s.did_ret) {
-      b.CreateBr(step);
-    }
-    s.did_brk = did_brk;
-    s.did_cont = did_cont;
-    s.did_ret = old_ret;
-
-    b.SetInsertPoint(step);
-
-    val_t R_S = V(m, b, s, N->getStep());
-    if (!R_S) {
-      debug("Failed to get step");
-      return nullopt;
-    }
-
-    b.CreateBr(begin);
-
-    s.pop_skip_block();
-    s.pop_break_block();
-
-    b.SetInsertPoint(end);
-
-    return end;
-  }
-
-  static val_t for_CASE(ctx_t &, craft_t &, State &, nr::Case *) {
-    qcore_panic("code path unreachable");
-  }
-
-  static bool check_switch_trivial(nr::Switch *N) {
-    auto C_T = N->getCond()->getType();
-    if (!C_T) {
-      debug("Failed to get condition type");
-      return false;
-    }
-
-    if (!C_T.value()->is_integral()) {
-      return false;
-    }
-
-    for (auto &node : N->getCases()) {
-      nr::Case *C = node->as<nr::Case>();
-      auto x = C->getCond()->getType();
-      if (!x) {
-        debug("Failed to get case condition type");
-        return false;
+      val_t R = V(N->getCond());
+      if (!R) {
+        debug("Failed to get condition");
+        return nullopt;
       }
-      if (!x.value()->isSame(C_T.value())) {
-        return false;
-      }
-    }
 
-    return true;
-  }
-
-  static val_t for_SWITCH(ctx_t &m, craft_t &b, State &s, nr::Switch *N) {
-    val_t R = V(m, b, s, N->getCond());
-    if (!R) {
-      debug("Failed to get condition");
-      return nullopt;
-    }
-
-    bool is_trivial = check_switch_trivial(N);
-
-    if (is_trivial) {
-      BasicBlock *end = BasicBlock::Create(m.getContext(), "",
-                                           s.get_stackframe().getFunction());
+      b.CreateCondBr(R.value(), body, end);
+      b.SetInsertPoint(body);
       s.push_break_block(end);
+      s.push_skip_block(begin);
 
-      SwitchInst *SI = b.CreateSwitch(R.value(), end, N->getCases().size());
+      bool did_brk = s.did_brk;
+      bool did_cont = s.did_cont;
+      bool old_ret = s.did_ret;
 
-      for (auto &node : N->getCases()) {
-        BasicBlock *case_block = BasicBlock::Create(
-            m.getContext(), "", s.get_stackframe().getFunction());
-        b.SetInsertPoint(case_block);
-        case_block->moveBefore(end);
-
-        nr::Case *C = node->as<nr::Case>();
-
-        val_t R_C = V(m, b, s, C->getCond());
-        if (!R_C) {
-          debug("Failed to get case condition");
-          return nullopt;
-        }
-
-        bool did_ret = s.did_ret;
-        val_t R_B = V(m, b, s, C->getBody());
-        if (!R_B) {
-          debug("Failed to get case body");
-          return nullopt;
-        }
-        s.did_ret = did_ret;
-
-        SI->addCase(cast<ConstantInt>(R_C.value()), case_block);
+      val_t R_B = V(N->getBody());
+      if (!R_B) {
+        debug("Failed to get body");
+        return nullopt;
       }
 
+      if (!s.did_brk && !s.did_cont && !s.did_ret) {
+        b.CreateBr(begin);
+      }
+      s.did_brk = did_brk;
+      s.did_cont = did_cont;
+      s.did_ret = old_ret;
+
+      s.pop_skip_block();
       s.pop_break_block();
 
       b.SetInsertPoint(end);
 
-      return SI;
-    } else {
-      /// TODO: Implement conversion for node
-
-      qcore_implement();
+      return end;
     }
-  }
 
-  static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N) {
-    vector<Type *> params;
+    static val_t for_FOR(ctx_t &m, craft_t &b, State &s, nr::For *N) {
+      BasicBlock *begin, *body, *step, *end;
 
-    { /* Lower parameter types */
-      params.reserve(N->getParams().size());
+      begin = BasicBlock::Create(b.getContext(), "begin",
+                                 s.get_stackframe().getFunction());
+      body = BasicBlock::Create(b.getContext(), "body",
+                                s.get_stackframe().getFunction());
+      step = BasicBlock::Create(b.getContext(), "step",
+                                s.get_stackframe().getFunction());
+      end = BasicBlock::Create(b.getContext(), "end",
+                               s.get_stackframe().getFunction());
 
-      for (auto &param : N->getParams()) {
-        ty_t R = T(m, b, s, param.first);
-        if (!R) {
-          debug("Failed to get parameter type");
+      val_t R = V(N->getInit());
+      if (!R) {
+        debug("Failed to get init");
+        return nullopt;
+      }
+
+      b.CreateBr(begin);
+      b.SetInsertPoint(begin);
+
+      val_t R_C = V(N->getCond());
+      if (!R_C) {
+        debug("Failed to get condition");
+        return nullopt;
+      }
+
+      b.CreateCondBr(R_C.value(), body, end);
+      b.SetInsertPoint(body);
+      s.push_break_block(end);
+      s.push_skip_block(step);
+
+      bool did_brk = s.did_brk;
+      bool did_cont = s.did_cont;
+      bool old_ret = s.did_ret;
+
+      val_t R_B = V(N->getBody());
+      if (!R_B) {
+        debug("Failed to get body");
+        return nullopt;
+      }
+
+      if (!s.did_brk && !s.did_cont && !s.did_ret) {
+        b.CreateBr(step);
+      }
+      s.did_brk = did_brk;
+      s.did_cont = did_cont;
+      s.did_ret = old_ret;
+
+      b.SetInsertPoint(step);
+
+      val_t R_S = V(N->getStep());
+      if (!R_S) {
+        debug("Failed to get step");
+        return nullopt;
+      }
+
+      b.CreateBr(begin);
+
+      s.pop_skip_block();
+      s.pop_break_block();
+
+      b.SetInsertPoint(end);
+
+      return end;
+    }
+
+    static val_t for_CASE(ctx_t &, craft_t &, State &, nr::Case *) {
+      qcore_panic("code path unreachable");
+    }
+
+    static bool check_switch_trivial(nr::Switch *N) {
+      auto C_T = N->getCond()->getType();
+      if (!C_T) {
+        debug("Failed to get condition type");
+        return false;
+      }
+
+      if (!C_T.value()->is_integral()) {
+        return false;
+      }
+
+      for (auto &node : N->getCases()) {
+        nr::Case *C = node->as<nr::Case>();
+        auto x = C->getCond()->getType();
+        if (!x) {
+          debug("Failed to get case condition type");
+          return false;
+        }
+        if (!x.value()->isSame(C_T.value())) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    static val_t for_SWITCH(ctx_t &m, craft_t &b, State &s, nr::Switch *N) {
+      val_t R = V(N->getCond());
+      if (!R) {
+        debug("Failed to get condition");
+        return nullopt;
+      }
+
+      bool is_trivial = check_switch_trivial(N);
+
+      if (is_trivial) {
+        BasicBlock *end = BasicBlock::Create(b.getContext(), "",
+                                             s.get_stackframe().getFunction());
+        s.push_break_block(end);
+
+        SwitchInst *SI = b.CreateSwitch(R.value(), end, N->getCases().size());
+
+        for (auto &node : N->getCases()) {
+          BasicBlock *case_block = BasicBlock::Create(
+              b.getContext(), "", s.get_stackframe().getFunction());
+          b.SetInsertPoint(case_block);
+          case_block->moveBefore(end);
+
+          nr::Case *C = node->as<nr::Case>();
+
+          val_t R_C = V(C->getCond());
+          if (!R_C) {
+            debug("Failed to get case condition");
+            return nullopt;
+          }
+
+          bool did_ret = s.did_ret;
+          val_t R_B = V(C->getBody());
+          if (!R_B) {
+            debug("Failed to get case body");
+            return nullopt;
+          }
+          s.did_ret = did_ret;
+
+          SI->addCase(cast<ConstantInt>(R_C.value()), case_block);
+        }
+
+        s.pop_break_block();
+
+        b.SetInsertPoint(end);
+
+        return SI;
+      } else {
+        /// TODO: Implement conversion for node
+
+        qcore_implement();
+      }
+    }
+
+  }  // namespace control
+
+  namespace types {
+    namespace prim {
+      static auto for_U1_TY(ctx_t &, craft_t &b, State &, nr::U1Ty *) {
+        return Type::getInt1Ty(b.getContext());
+      }
+
+      static auto for_U8_TY(ctx_t &, craft_t &b, State &, nr::U8Ty *) {
+        return Type::getInt8Ty(b.getContext());
+      }
+
+      static auto for_U16_TY(ctx_t &, craft_t &b, State &, nr::U16Ty *) {
+        return Type::getInt16Ty(b.getContext());
+      }
+
+      static auto for_U32_TY(ctx_t &, craft_t &b, State &, nr::U32Ty *) {
+        return Type::getInt32Ty(b.getContext());
+      }
+
+      static auto for_U64_TY(ctx_t &, craft_t &b, State &, nr::U64Ty *) {
+        return Type::getInt64Ty(b.getContext());
+      }
+
+      static auto for_U128_TY(ctx_t &, craft_t &b, State &, nr::U128Ty *) {
+        return Type::getInt128Ty(b.getContext());
+      }
+
+      static auto for_I8_TY(ctx_t &, craft_t &b, State &, nr::I8Ty *) {
+        return Type::getInt8Ty(b.getContext());
+      }
+
+      static auto for_I16_TY(ctx_t &, craft_t &b, State &, nr::I16Ty *) {
+        return Type::getInt16Ty(b.getContext());
+      }
+
+      static auto for_I32_TY(ctx_t &, craft_t &b, State &, nr::I32Ty *) {
+        return Type::getInt32Ty(b.getContext());
+      }
+
+      static auto for_I64_TY(ctx_t &, craft_t &b, State &, nr::I64Ty *) {
+        return Type::getInt64Ty(b.getContext());
+      }
+
+      static auto for_I128_TY(ctx_t &, craft_t &b, State &, nr::I128Ty *) {
+        return Type::getInt128Ty(b.getContext());
+      }
+
+      static auto for_F16_TY(ctx_t &, craft_t &b, State &, nr::F16Ty *) {
+        return Type::getHalfTy(b.getContext());
+      }
+
+      static auto for_F32_TY(ctx_t &, craft_t &b, State &, nr::F32Ty *) {
+        return Type::getFloatTy(b.getContext());
+      }
+
+      static auto for_F64_TY(ctx_t &, craft_t &b, State &, nr::F64Ty *) {
+        return Type::getDoubleTy(b.getContext());
+      }
+
+      static auto for_F128_TY(ctx_t &, craft_t &b, State &, nr::F128Ty *) {
+        return Type::getFP128Ty(b.getContext());
+      }
+
+      static auto for_VOID_TY(ctx_t &, craft_t &b, State &, nr::VoidTy *) {
+        return Type::getVoidTy(b.getContext());
+      }
+
+    }  // namespace prim
+
+    namespace other {
+      static ty_t for_PTR_TY(ctx_t &m, craft_t &b, State &s, nr::PtrTy *N) {
+        if (ty_t pointee = T(N->getPointee())) {
+          return PointerType::get(pointee.value(), 0);
+        }
+
+        return nullopt;
+      }
+
+      static ty_t for_FN_TY(ctx_t &m, craft_t &b, State &s, nr::FnTy *N) {
+        const auto &params = N->getParams();
+        vector<Type *> param_types(params.size());
+        bool failed = false;
+
+        std::transform(params.begin(), params.end(), param_types.begin(),
+                       [&](auto param) -> Type * {
+                         if (auto R = T(param)) {
+                           return R.value();
+                         } else {
+                           failed = true;
+
+                           return nullptr;
+                         }
+                       });
+
+        if (!failed) {
+          if (auto R = T(N->getReturn())) {
+            bool is_vararg = N->getAttrs().contains(nr::FnAttr::Variadic);
+
+            return FunctionType::get(R.value(), std::move(param_types),
+                                     is_vararg);
+          }
+        }
+
+        return nullopt;
+      }
+
+      static ty_t for_OPAQUE_TY(ctx_t &, craft_t &b, State &, nr::OpaqueTy *N) {
+        if (!N->getName().empty()) {
+          return StructType::create(b.getContext(), N->getName());
+        }
+
+        return std::nullopt;
+      }
+
+      static ty_t for_STRUCT_TY(ctx_t &m, craft_t &b, State &s,
+                                nr::StructTy *N) {
+        const auto &fields = N->getFields();
+        vector<Type *> elements(fields.size());
+        bool failed = false;
+
+        std::transform(fields.begin(), fields.end(), elements.begin(),
+                       [&](auto field) -> Type * {
+                         if (auto R = T(field)) {
+                           return R.value();
+                         } else {
+                           failed = true;
+
+                           return nullptr;
+                         }
+                       });
+
+        if (failed) {
           return nullopt;
         }
 
-        params.push_back(R.value());
-      }
-    }
-
-    Type *ret_ty;
-
-    { /* Lower return type */
-      // Use type inference to get return type
-      auto x = N->getType();
-      if (!x.has_value()) {
-        debug("Failed to get return type");
-        return nullopt;
-      }
-      ty_t R = T(m, b, s, x.value()->as<nr::FnTy>()->getReturn());
-      if (!R) {
-        debug("Failed to get return type");
-        return nullopt;
+        return StructType::get(b.getContext(), std::move(elements), true);
       }
 
-      ret_ty = R.value();
-    }
-
-    FunctionType *fn_ty = FunctionType::get(ret_ty, params, false);
-    Value *callee = m.getOrInsertFunction(N->getName(), fn_ty).getCallee();
-
-    if (!N->getBody().has_value()) {  // It is a declaration
-      return callee;
-    }
-
-    s.set_inside_function(true);
-
-    Function *fn = dyn_cast<Function>(callee);
-
-    s.push_stackframe(fn);
-
-    { /* Lower function body */
-      BasicBlock *entry, *exit;
-
-      entry = BasicBlock::Create(m.getContext(), "entry", fn);
-      exit = BasicBlock::Create(m.getContext(), "end", fn);
-
-      b.SetInsertPoint(entry);
-
-      AllocaInst *ret_val_alloc = nullptr;
-      if (!ret_ty->isVoidTy()) {
-        ret_val_alloc = b.CreateAlloca(ret_ty, nullptr, "__ret");
+      static ty_t for_UNION_TY(ctx_t &, craft_t &, State &, nr::UnionTy *) {
+        /// TODO: Implement conversion for node
+        qcore_implement();
       }
-      s.push_return_block(ret_val_alloc, exit);
 
-      {
-        b.SetInsertPoint(exit);
-        if (!ret_ty->isVoidTy()) {
-          LoadInst *ret_val =
-              b.CreateLoad(ret_ty, s.get_return_block().getValue());
-          b.CreateRet(ret_val);
-        } else {
-          b.CreateRetVoid();
+      static ty_t for_ARRAY_TY(ctx_t &m, craft_t &b, State &s, nr::ArrayTy *N) {
+        if (auto R = T(N->getElement())) {
+          return ArrayType::get(R.value(), N->getCount());
         }
-      }
 
-      b.SetInsertPoint(entry);
-
-      for (size_t i = 0; i < N->getParams().size(); i++) {
-        fn->getArg(i)->setName(N->getParams()[i].second);
-
-        AllocaInst *param_alloc = b.CreateAlloca(
-            fn->getArg(i)->getType(), nullptr, N->getParams()[i].second);
-
-        b.CreateStore(fn->getArg(i), param_alloc);
-        s.get_stackframe().addVariable(N->getParams()[i].second, param_alloc);
-      }
-
-      bool old_did_ret = s.did_ret;
-
-      for (auto &node : N->getBody().value()->getItems()) {
-        val_t R = V(m, b, s, node);
-        if (!R) {
-          s.pop_return_block();
-          s.pop_stackframe();
-          debug("Failed to get body");
-          return nullopt;
-        }
-      }
-
-      if (!s.did_ret) {
-        b.CreateBr(exit);
-      }
-      s.did_ret = old_did_ret;
-
-      s.pop_return_block();
-      s.pop_stackframe();
-    }
-
-    return fn;
-  }
-
-  static val_t for_ASM(ctx_t &, craft_t &, State &, nr::Asm *) {
-    qcore_implement();
-  }
-
-  static ty_t for_U1_TY(ctx_t &m, craft_t &, State &, nr::U1Ty *) {
-    return Type::getInt1Ty(m.getContext());
-  }
-
-  static ty_t for_U8_TY(ctx_t &m, craft_t &, State &, nr::U8Ty *) {
-    return Type::getInt8Ty(m.getContext());
-  }
-
-  static ty_t for_U16_TY(ctx_t &m, craft_t &, State &, nr::U16Ty *) {
-    return Type::getInt16Ty(m.getContext());
-  }
-
-  static ty_t for_U32_TY(ctx_t &m, craft_t &, State &, nr::U32Ty *) {
-    return Type::getInt32Ty(m.getContext());
-  }
-
-  static ty_t for_U64_TY(ctx_t &m, craft_t &, State &, nr::U64Ty *) {
-    return Type::getInt64Ty(m.getContext());
-  }
-
-  static ty_t for_U128_TY(ctx_t &m, craft_t &, State &, nr::U128Ty *) {
-    return Type::getInt128Ty(m.getContext());
-  }
-
-  static ty_t for_I8_TY(ctx_t &m, craft_t &, State &, nr::I8Ty *) {
-    return Type::getInt8Ty(m.getContext());
-  }
-
-  static ty_t for_I16_TY(ctx_t &m, craft_t &, State &, nr::I16Ty *) {
-    return Type::getInt16Ty(m.getContext());
-  }
-
-  static ty_t for_I32_TY(ctx_t &m, craft_t &, State &, nr::I32Ty *) {
-    return Type::getInt32Ty(m.getContext());
-  }
-
-  static ty_t for_I64_TY(ctx_t &m, craft_t &, State &, nr::I64Ty *) {
-    return Type::getInt64Ty(m.getContext());
-  }
-
-  static ty_t for_I128_TY(ctx_t &m, craft_t &, State &, nr::I128Ty *) {
-    return Type::getInt128Ty(m.getContext());
-  }
-
-  static ty_t for_F16_TY(ctx_t &m, craft_t &, State &, nr::F16Ty *) {
-    return Type::getHalfTy(m.getContext());
-  }
-
-  static ty_t for_F32_TY(ctx_t &m, craft_t &, State &, nr::F32Ty *) {
-    return Type::getFloatTy(m.getContext());
-  }
-
-  static ty_t for_F64_TY(ctx_t &m, craft_t &, State &, nr::F64Ty *) {
-    return Type::getDoubleTy(m.getContext());
-  }
-
-  static ty_t for_F128_TY(ctx_t &m, craft_t &, State &, nr::F128Ty *) {
-    return Type::getFP128Ty(m.getContext());
-  }
-
-  static ty_t for_VOID_TY(ctx_t &m, craft_t &, State &, nr::VoidTy *) {
-    return Type::getVoidTy(m.getContext());
-  }
-
-  static ty_t for_PTR_TY(ctx_t &m, craft_t &b, State &s, nr::PtrTy *N) {
-    ty_t R = T(m, b, s, N->getPointee());
-    if (!R) {
-      debug("Failed to get pointee type");
-      return nullopt;
-    }
-
-    return PointerType::get(R.value(), 0);
-  }
-
-  static ty_t for_OPAQUE_TY(ctx_t &m, craft_t &, State &, nr::OpaqueTy *N) {
-    qcore_assert(!N->getName().empty());
-
-    return StructType::create(m.getContext(), N->getName());
-  }
-
-  static ty_t for_STRUCT_TY(ctx_t &m, craft_t &b, State &s, nr::StructTy *N) {
-    vector<Type *> elements;
-    elements.reserve(N->getFields().size());
-
-    for (auto &field : N->getFields()) {
-      ty_t R = T(m, b, s, field);
-      if (!R) {
-        debug("Failed to get field type");
         return nullopt;
       }
-
-      elements.push_back(R.value());
-    }
-
-    return StructType::get(m.getContext(), elements, true);
-  }
-
-  static ty_t for_UNION_TY(ctx_t &, craft_t &, State &, nr::UnionTy *) {
-    /// TODO: Implement conversion for node
-    qcore_implement();
-  }
-
-  static ty_t for_ARRAY_TY(ctx_t &m, craft_t &b, State &s, nr::ArrayTy *N) {
-    ty_t R = T(m, b, s, N->getElement());
-    if (!R) {
-      debug("Failed to get element type");
-      return nullopt;
-    }
-
-    return ArrayType::get(R.value(), N->getCount());
-  }
-
-  static ty_t for_FN_TY(ctx_t &m, craft_t &b, State &s, nr::FnTy *N) {
-    vector<Type *> params;
-    params.reserve(N->getParams().size());
-
-    for (auto &param : N->getParams()) {
-      ty_t R = T(m, b, s, param);
-      if (!R) {
-        debug("Failed to get parameter type");
-        return nullopt;
-      }
-
-      params.push_back(R.value());
-    }
-
-    ty_t R = T(m, b, s, N->getReturn());
-    if (!R) {
-      debug("Failed to get return type");
-      return nullopt;
-    }
-
-    bool is_vararg = N->getAttrs().contains(nr::FnAttr::Variadic);
-
-    return FunctionType::get(R.value(), params, is_vararg);
-  }
-
+    }  // namespace other
+  }  // namespace types
 }  // namespace lower
 
 #pragma GCC diagnostic pop
 
-auto V(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t {
+static auto V_gen(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t {
   static const auto dispatch = []() constexpr {
 #define FUNCTION(_enum, _func, _type)                                   \
   R[_enum] = [](ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t { \
@@ -1986,7 +2013,9 @@ auto V(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t {
     });
 
     { /* NRGraph recursive llvm-ir builders */
-      using namespace lower;
+      using namespace lower::control;
+      using namespace lower::expr;
+      using namespace lower::symbol;
 
       FUNCTION(NR_NODE_BINEXPR, for_BINEXPR, nr::BinExpr);
       FUNCTION(NR_NODE_UNEXPR, for_UNEXPR, nr::UnExpr);
@@ -2028,7 +2057,7 @@ auto V(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> val_t {
   return dispatch[N->getKind()](m, b, s, N);
 }
 
-auto T(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t {
+static auto T_gen(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t {
   static const auto dispatch = []() constexpr {
 #define FUNCTION(_enum, _func, _type)                                  \
   R[_enum] = [](ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t { \
@@ -2042,7 +2071,8 @@ auto T(ctx_t &m, craft_t &b, State &s, nr::Expr *N) -> ty_t {
     });
 
     { /* NRGraph recursive llvm-ir builders */
-      using namespace lower;
+      using namespace lower::types::prim;
+      using namespace lower::types::other;
 
       FUNCTION(NR_NODE_U1_TY, for_U1_TY, nr::U1Ty);
       FUNCTION(NR_NODE_U8_TY, for_U8_TY, nr::U8Ty);
