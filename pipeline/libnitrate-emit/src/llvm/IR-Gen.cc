@@ -113,19 +113,31 @@ public:
   llvm::BasicBlock *getBlock() const { return m_block; }
 };
 
+class FunctionStackFrame {
+  llvm::Function *m_fn;
+  std::unordered_map<std::string_view, llvm::AllocaInst *> m_locals;
+
+public:
+  FunctionStackFrame(llvm::Function *fn) : m_fn(fn) {}
+
+  llvm::Function *getFunction() const { return m_fn; }
+
+  void addVariable(std::string_view name, llvm::AllocaInst *inst) {
+    m_locals[name] = inst;
+  }
+
+  const auto &getLocalVariables() const { return m_locals; }
+};
+
 class State {
   std::stack<FunctionReturnBlock> m_return_block_stack;
   bool m_inside_fn;
   std::stack<llvm::GlobalValue::LinkageTypes> m_current_linkage;
   std::stack<llvm::BasicBlock *> m_break_stack;
+  std::stack<llvm::BasicBlock *> m_skip_stack;
+  std::stack<FunctionStackFrame> m_stackframe;
 
 public:
-  std::stack<
-      std::pair<llvm::Function *,
-                std::unordered_map<std::string_view, llvm::AllocaInst *>>>
-      locals;
-  std::stack<llvm::BasicBlock *> continues;
-
   bool did_ret;
   bool did_brk;
   bool did_cont;
@@ -142,7 +154,8 @@ public:
   std::optional<std::pair<llvm::Value *, PtrClass>> find_named_value(
       ctx_t &m, std::string_view name) const {
     if (is_inside_function()) {
-      for (const auto &[cur_name, inst] : locals.top().second) {
+      for (const auto &[cur_name, inst] :
+           m_stackframe.top().getLocalVariables()) {
         if (cur_name == name) {
           return {{inst, PtrClass::DataPtr}};
         }
@@ -231,6 +244,46 @@ public:
   }
 
   /////////////////////////////////////////////////////////////////////////////
+
+  void push_skip_block(llvm::BasicBlock *block) { m_skip_stack.push(block); }
+
+  std::optional<llvm::BasicBlock *> get_skip_block() const {
+    if (m_skip_stack.empty()) {
+      return std::nullopt;
+    }
+
+    return m_skip_stack.top();
+  }
+
+  void pop_skip_block() {
+    if (m_skip_stack.empty()) {
+      qcore_panic("cannot pop the last skip block");
+    }
+
+    m_skip_stack.pop();
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+
+  void push_stackframe(llvm::Function *fn) {
+    m_stackframe.push(FunctionStackFrame(fn));
+  }
+
+  FunctionStackFrame &get_stackframe() {
+    if (m_stackframe.empty()) {
+      qcore_panic("stackframe is empty");
+    }
+
+    return m_stackframe.top();
+  }
+
+  void pop_stackframe() {
+    if (m_stackframe.empty()) {
+      qcore_panic("cannot pop the last stackframe");
+    }
+
+    m_stackframe.pop();
+  }
 };
 
 class OStreamWriter : public std::streambuf {
@@ -1971,7 +2024,7 @@ static val_t for_LOCAL(ctx_t &m, craft_t &b, State &s, nr::Local *N) {
       b.CreateStore(llvm::Constant::getNullValue(R_T.value()), local);
     }
 
-    s.locals.top().second.emplace(N->getName(), local);
+    s.get_stackframe().addVariable(N->getName(), local);
     return local;
   } else {
     auto init = llvm::Constant::getNullValue(R_T.value());
@@ -2015,19 +2068,23 @@ static val_t for_BRK(ctx_t &, craft_t &b, State &s, nr::Brk *) {
 }
 
 static val_t for_CONT(ctx_t &, craft_t &b, State &s, nr::Cont *) {
-  qcore_assert(!s.continues.empty(), "continue statement outside of loop?");
-  qcore_assert(s.continues.top(), "continue statement outside of loop?");
-
-  s.did_cont = true;
-  return b.CreateBr(s.continues.top());
+  if (auto block = s.get_skip_block()) {
+    s.did_cont = true;
+    return b.CreateBr(block.value());
+  } else {
+    return std::nullopt;
+  }
 }
 
 static val_t for_IF(ctx_t &m, craft_t &b, State &s, nr::If *N) {
   llvm::BasicBlock *then, *els, *end;
 
-  then = llvm::BasicBlock::Create(m.getContext(), "then", s.locals.top().first);
-  els = llvm::BasicBlock::Create(m.getContext(), "else", s.locals.top().first);
-  end = llvm::BasicBlock::Create(m.getContext(), "end", s.locals.top().first);
+  then = llvm::BasicBlock::Create(m.getContext(), "then",
+                                  s.get_stackframe().getFunction());
+  els = llvm::BasicBlock::Create(m.getContext(), "else",
+                                 s.get_stackframe().getFunction());
+  end = llvm::BasicBlock::Create(m.getContext(), "end",
+                                 s.get_stackframe().getFunction());
 
   val_t R = V(m, b, s, N->getCond());
   if (!R) {
@@ -2070,10 +2127,12 @@ static val_t for_IF(ctx_t &m, craft_t &b, State &s, nr::If *N) {
 static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, nr::While *N) {
   llvm::BasicBlock *begin, *body, *end;
 
-  begin =
-      llvm::BasicBlock::Create(m.getContext(), "begin", s.locals.top().first);
-  body = llvm::BasicBlock::Create(m.getContext(), "body", s.locals.top().first);
-  end = llvm::BasicBlock::Create(m.getContext(), "end", s.locals.top().first);
+  begin = llvm::BasicBlock::Create(m.getContext(), "begin",
+                                   s.get_stackframe().getFunction());
+  body = llvm::BasicBlock::Create(m.getContext(), "body",
+                                  s.get_stackframe().getFunction());
+  end = llvm::BasicBlock::Create(m.getContext(), "end",
+                                 s.get_stackframe().getFunction());
 
   b.CreateBr(begin);
   b.SetInsertPoint(begin);
@@ -2087,7 +2146,7 @@ static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, nr::While *N) {
   b.CreateCondBr(R.value(), body, end);
   b.SetInsertPoint(body);
   s.push_break_block(end);
-  s.continues.push(begin);
+  s.push_skip_block(begin);
 
   bool did_brk = s.did_brk;
   bool did_cont = s.did_cont;
@@ -2106,7 +2165,7 @@ static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, nr::While *N) {
   s.did_cont = did_cont;
   s.did_ret = old_ret;
 
-  s.continues.pop();
+  s.pop_skip_block();
   s.pop_break_block();
 
   b.SetInsertPoint(end);
@@ -2117,11 +2176,14 @@ static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, nr::While *N) {
 static val_t for_FOR(ctx_t &m, craft_t &b, State &s, nr::For *N) {
   llvm::BasicBlock *begin, *body, *step, *end;
 
-  begin =
-      llvm::BasicBlock::Create(m.getContext(), "begin", s.locals.top().first);
-  body = llvm::BasicBlock::Create(m.getContext(), "body", s.locals.top().first);
-  step = llvm::BasicBlock::Create(m.getContext(), "step", s.locals.top().first);
-  end = llvm::BasicBlock::Create(m.getContext(), "end", s.locals.top().first);
+  begin = llvm::BasicBlock::Create(m.getContext(), "begin",
+                                   s.get_stackframe().getFunction());
+  body = llvm::BasicBlock::Create(m.getContext(), "body",
+                                  s.get_stackframe().getFunction());
+  step = llvm::BasicBlock::Create(m.getContext(), "step",
+                                  s.get_stackframe().getFunction());
+  end = llvm::BasicBlock::Create(m.getContext(), "end",
+                                 s.get_stackframe().getFunction());
 
   val_t R = V(m, b, s, N->getInit());
   if (!R) {
@@ -2141,7 +2203,7 @@ static val_t for_FOR(ctx_t &m, craft_t &b, State &s, nr::For *N) {
   b.CreateCondBr(R_C.value(), body, end);
   b.SetInsertPoint(body);
   s.push_break_block(end);
-  s.continues.push(step);
+  s.push_skip_block(step);
 
   bool did_brk = s.did_brk;
   bool did_cont = s.did_cont;
@@ -2170,7 +2232,7 @@ static val_t for_FOR(ctx_t &m, craft_t &b, State &s, nr::For *N) {
 
   b.CreateBr(begin);
 
-  s.continues.pop();
+  s.pop_skip_block();
   s.pop_break_block();
 
   b.SetInsertPoint(end);
@@ -2218,15 +2280,15 @@ static val_t for_SWITCH(ctx_t &m, craft_t &b, State &s, nr::Switch *N) {
   bool is_trivial = check_switch_trivial(N);
 
   if (is_trivial) {
-    llvm::BasicBlock *end =
-        llvm::BasicBlock::Create(m.getContext(), "", s.locals.top().first);
+    llvm::BasicBlock *end = llvm::BasicBlock::Create(
+        m.getContext(), "", s.get_stackframe().getFunction());
     s.push_break_block(end);
 
     llvm::SwitchInst *SI = b.CreateSwitch(R.value(), end, N->getCases().size());
 
     for (auto &node : N->getCases()) {
-      llvm::BasicBlock *case_block =
-          llvm::BasicBlock::Create(m.getContext(), "", s.locals.top().first);
+      llvm::BasicBlock *case_block = llvm::BasicBlock::Create(
+          m.getContext(), "", s.get_stackframe().getFunction());
       b.SetInsertPoint(case_block);
       case_block->moveBefore(end);
 
@@ -2307,7 +2369,7 @@ static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N) {
 
   llvm::Function *fn = llvm::dyn_cast<llvm::Function>(callee);
 
-  s.locals.push({fn, {}});
+  s.push_stackframe(fn);
 
   { /* Lower function body */
     llvm::BasicBlock *entry, *exit;
@@ -2343,7 +2405,7 @@ static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N) {
           fn->getArg(i)->getType(), nullptr, N->getParams()[i].second);
 
       b.CreateStore(fn->getArg(i), param_alloc);
-      s.locals.top().second.emplace(N->getParams()[i].second, param_alloc);
+      s.get_stackframe().addVariable(N->getParams()[i].second, param_alloc);
     }
 
     bool old_did_ret = s.did_ret;
@@ -2352,7 +2414,7 @@ static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N) {
       val_t R = V(m, b, s, node);
       if (!R) {
         s.pop_return_block();
-        s.locals.pop();
+        s.pop_stackframe();
         debug("Failed to get body");
         return std::nullopt;
       }
@@ -2364,7 +2426,7 @@ static val_t for_FN(ctx_t &m, craft_t &b, State &s, nr::Fn *N) {
     s.did_ret = old_did_ret;
 
     s.pop_return_block();
-    s.locals.pop();
+    s.pop_stackframe();
   }
 
   return fn;
