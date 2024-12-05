@@ -25,8 +25,8 @@ parts:
      - nlohmann-json3-dev
      - libreadline-dev
      - libzstd-dev
-     - llvm-17-dev
-     - libpolly-17-dev
+     - llvm-18-dev
+     - libpolly-18-dev
      - clang
     build-attributes:
      - enable-patchelf

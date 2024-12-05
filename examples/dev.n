@@ -1,5 +1,14 @@
-type usize = u64;
+struct T {
+  x: i32,
+  y: i32,
+}
 
-fn main(): usize {
-  
+let x: T;
+
+fn main(): i32 {
+  if (19) {
+    ret 10;
+  } else {
+    ret 20;
+  }
 }

@@ -10,7 +10,7 @@ RUN apt install -y  libboost-all-dev libssl-dev libgoogle-glog-dev   \
                     libyaml-cpp-dev rapidjson-dev nlohmann-json3-dev \
                     libreadline-dev libzstd-dev
 RUN apt install -y cmake make clang
-RUN apt install -y libpolly-17-dev llvm-17
+RUN apt install -y libpolly-18-dev llvm-18
 
 ############################ Install clang #############################
 RUN update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100

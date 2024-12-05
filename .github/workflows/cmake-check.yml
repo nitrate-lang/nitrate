@@ -37,7 +37,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo apt install -y cmake make clang llvm-17
+        sudo apt install -y cmake make clang llvm-18
         sudo apt install -y libboost-all-dev libssl-dev libgoogle-glog-dev   \
                             libyaml-cpp-dev rapidjson-dev nlohmann-json3-dev \
                             libreadline-dev

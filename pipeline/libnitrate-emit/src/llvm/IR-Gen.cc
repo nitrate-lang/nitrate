@@ -31,38 +31,38 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <llvm-17/llvm/ExecutionEngine/ExecutionEngine.h>
-#include <llvm-17/llvm/ExecutionEngine/MCJIT.h>
-#include <llvm-17/llvm/ExecutionEngine/SectionMemoryManager.h>
-#include <llvm-17/llvm/IR/BasicBlock.h>
-#include <llvm-17/llvm/IR/Constant.h>
-#include <llvm-17/llvm/IR/DataLayout.h>
-#include <llvm-17/llvm/IR/DerivedTypes.h>
-#include <llvm-17/llvm/IR/Function.h>
-#include <llvm-17/llvm/IR/GlobalValue.h>
-#include <llvm-17/llvm/IR/GlobalVariable.h>
-#include <llvm-17/llvm/IR/IRBuilder.h>
-#include <llvm-17/llvm/IR/Instructions.h>
-#include <llvm-17/llvm/IR/LLVMContext.h>
-#include <llvm-17/llvm/IR/LegacyPassManager.h>
-#include <llvm-17/llvm/IR/PassManager.h>
-#include <llvm-17/llvm/IR/Type.h>
-#include <llvm-17/llvm/IR/Value.h>
-#include <llvm-17/llvm/IR/Verifier.h>
-#include <llvm-17/llvm/InitializePasses.h>
-#include <llvm-17/llvm/MC/TargetRegistry.h>
-#include <llvm-17/llvm/Passes/PassBuilder.h>
-#include <llvm-17/llvm/Support/CodeGen.h>
-#include <llvm-17/llvm/Support/Host.h>
-#include <llvm-17/llvm/Support/ManagedStatic.h>
-#include <llvm-17/llvm/Support/MemoryBuffer.h>
-#include <llvm-17/llvm/Support/TargetSelect.h>
-#include <llvm-17/llvm/Support/raw_os_ostream.h>
-#include <llvm-17/llvm/Support/raw_ostream.h>
-#include <llvm-17/llvm/Target/TargetMachine.h>
-#include <llvm-17/llvm/Target/TargetOptions.h>
-#include <llvm-17/llvm/Transforms/IPO.h>
-#include <llvm-17/llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm-18/llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm-18/llvm/ExecutionEngine/MCJIT.h>
+#include <llvm-18/llvm/ExecutionEngine/SectionMemoryManager.h>
+#include <llvm-18/llvm/IR/BasicBlock.h>
+#include <llvm-18/llvm/IR/Constant.h>
+#include <llvm-18/llvm/IR/DataLayout.h>
+#include <llvm-18/llvm/IR/DerivedTypes.h>
+#include <llvm-18/llvm/IR/Function.h>
+#include <llvm-18/llvm/IR/GlobalValue.h>
+#include <llvm-18/llvm/IR/GlobalVariable.h>
+#include <llvm-18/llvm/IR/IRBuilder.h>
+#include <llvm-18/llvm/IR/Instructions.h>
+#include <llvm-18/llvm/IR/LLVMContext.h>
+#include <llvm-18/llvm/IR/LegacyPassManager.h>
+#include <llvm-18/llvm/IR/PassManager.h>
+#include <llvm-18/llvm/IR/Type.h>
+#include <llvm-18/llvm/IR/Value.h>
+#include <llvm-18/llvm/IR/Verifier.h>
+#include <llvm-18/llvm/InitializePasses.h>
+#include <llvm-18/llvm/MC/TargetRegistry.h>
+#include <llvm-18/llvm/Passes/PassBuilder.h>
+#include <llvm-18/llvm/Support/CodeGen.h>
+#include <llvm-18/llvm/Support/ManagedStatic.h>
+#include <llvm-18/llvm/Support/MemoryBuffer.h>
+#include <llvm-18/llvm/Support/TargetSelect.h>
+#include <llvm-18/llvm/Support/raw_os_ostream.h>
+#include <llvm-18/llvm/Support/raw_ostream.h>
+#include <llvm-18/llvm/Target/TargetMachine.h>
+#include <llvm-18/llvm/Target/TargetOptions.h>
+#include <llvm-18/llvm/TargetParser/Host.h>
+#include <llvm-18/llvm/Transforms/IPO.h>
+#include <llvm-18/llvm/Transforms/InstCombine/InstCombine.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-emit/Code.h>
@@ -1368,7 +1368,6 @@ namespace lower {
       Type *ret_ty;
 
       { /* Lower return type */
-        // Use type inference to get return type
         auto x = N->getType();
         if (!x.has_value()) {
           debug("Failed to get return type");
@@ -1579,6 +1578,7 @@ namespace lower {
     static val_t for_BRK(ctx_t &, craft_t &b, State &s, const nr::Brk *) {
       if (auto block = s.get_break_block()) {
         s.branch_early = true;
+
         return b.CreateBr(block.value());
       } else {
         return nullopt;
@@ -1588,6 +1588,7 @@ namespace lower {
     static val_t for_CONT(ctx_t &, craft_t &b, State &s, const nr::Cont *) {
       if (auto block = s.get_skip_block()) {
         s.branch_early = true;
+
         return b.CreateBr(block.value());
       } else {
         return nullopt;
@@ -2248,7 +2249,8 @@ C_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err,
         error_code ec;
 
         legacy::PassManager pass;
-        TargetMachine->addPassesToEmitFile(pass, o, nullptr, CGFT_AssemblyFile);
+        TargetMachine->addPassesToEmitFile(pass, o, nullptr,
+                                           CodeGenFileType::AssemblyFile);
         if (!pass.run(module)) {
           e << "error: failed to emit object code" << endl;
           return false;
@@ -2333,7 +2335,8 @@ C_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err,
         error_code ec;
 
         legacy::PassManager pass;
-        TargetMachine->addPassesToEmitFile(pass, o, nullptr, CGFT_ObjectFile);
+        TargetMachine->addPassesToEmitFile(pass, o, nullptr,
+                                           CodeGenFileType::ObjectFile);
         if (!pass.run(module)) {
           e << "error: failed to emit object code" << endl;
           return false;
