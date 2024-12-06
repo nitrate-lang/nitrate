@@ -1300,27 +1300,6 @@ bool to_json_recurse(Node *N, json &x) {
       break;
     }
 
-    case QAST_NODE_CONST: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      ConstDecl *W = N->as<ConstDecl>();
-
-      x[1] = W->get_name().c_str();
-
-      if (!to_json_recurse(W->get_type(), x[2])) {
-        return false;
-      }
-
-      if (!to_json_recurse(W->get_value(), x[3])) {
-        return false;
-      }
-
-      break;
-    }
-
     case QAST_NODE_VAR: {
       /**
        * @brief [Brief Description]
@@ -1328,27 +1307,6 @@ bool to_json_recurse(Node *N, json &x) {
        */
 
       VarDecl *W = N->as<VarDecl>();
-
-      x[1] = W->get_name().c_str();
-
-      if (!to_json_recurse(W->get_type(), x[2])) {
-        return false;
-      }
-
-      if (!to_json_recurse(W->get_value(), x[3])) {
-        return false;
-      }
-
-      break;
-    }
-
-    case QAST_NODE_LET: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      LetDecl *W = N->as<LetDecl>();
 
       x[1] = W->get_name().c_str();
 

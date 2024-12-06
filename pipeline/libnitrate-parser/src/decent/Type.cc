@@ -251,6 +251,11 @@ Type *npar::recurse_type(npar_t &S, qlex_t &rd) {
      */
 
     while (true) {
+      if (peek().is(qEofF)) {
+        diagnostic << current() << "Unexpected EOF in tuple type";
+        goto error_end;
+      }
+
       if ((tok = peek()).is<qPuncRPar>()) {
         next();
         break;

@@ -131,9 +131,7 @@ typedef enum npar_ty_t {
   QAST_NODE__DECL_LAST = QAST_NODE_STRUCT_FIELD,
 
   QAST_NODE_BLOCK,
-  QAST_NODE_CONST,
   QAST_NODE_VAR,
-  QAST_NODE_LET,
   QAST_NODE_INLINE_ASM,
   QAST_NODE_RETURN,
   QAST_NODE_RETIF,
@@ -275,9 +273,7 @@ namespace npar {
   class SeqPoint;
   class Block;
   class VolStmt;
-  class ConstDecl;
   class VarDecl;
-  class LetDecl;
   class InlineAsm;
   class IfStmt;
   class WhileStmt;
@@ -464,12 +460,8 @@ namespace npar {
         return QAST_NODE_STRUCT_FIELD;
       } else if constexpr (std::is_same_v<T, Block>) {
         return QAST_NODE_BLOCK;
-      } else if constexpr (std::is_same_v<T, ConstDecl>) {
-        return QAST_NODE_CONST;
       } else if constexpr (std::is_same_v<T, VarDecl>) {
         return QAST_NODE_VAR;
-      } else if constexpr (std::is_same_v<T, LetDecl>) {
-        return QAST_NODE_LET;
       } else if constexpr (std::is_same_v<T, InlineAsm>) {
         return QAST_NODE_INLINE_ASM;
       } else if constexpr (std::is_same_v<T, ReturnStmt>) {
@@ -1493,43 +1485,25 @@ namespace npar {
     PNODE_IMPL_CORE(VolStmt)
   };
 
-  class ConstDecl : public Decl {
-    Expr *m_value;
-
-  public:
-    ConstDecl(String name, Type *type, Expr *value)
-        : Decl(QAST_NODE_CONST, name, type), m_value(value) {}
-
-    Expr *get_value() { return m_value; }
-    void set_value(Expr *value) { m_value = value; }
-
-    PNODE_IMPL_CORE(ConstDecl)
-  };
+  enum class VarDeclType { Const, Var, Let, Any };
 
   class VarDecl : public Decl {
     Expr *m_value;
+    VarDeclType m_decl_type;
 
   public:
-    VarDecl(String name, Type *type, Expr *value)
-        : Decl(QAST_NODE_VAR, name, type), m_value(value) {}
+    VarDecl(String name, Type *type, Expr *value, VarDeclType decl_type)
+        : Decl(QAST_NODE_VAR, name, type),
+          m_value(value),
+          m_decl_type(decl_type) {}
 
     Expr *get_value() { return m_value; }
     void set_value(Expr *value) { m_value = value; }
+
+    VarDeclType get_decl_type() { return m_decl_type; }
+    void set_decl_type(VarDeclType decl_type) { m_decl_type = decl_type; }
 
     PNODE_IMPL_CORE(VarDecl)
-  };
-
-  class LetDecl : public Decl {
-    Expr *m_value;
-
-  public:
-    LetDecl(String name, Type *type, Expr *value)
-        : Decl(QAST_NODE_LET, name, type), m_value(value) {}
-
-    Expr *get_value() { return m_value; }
-    void set_value(Expr *value) { m_value = value; }
-
-    PNODE_IMPL_CORE(LetDecl)
   };
 
   typedef std::vector<Expr *, Arena<Expr *>> InlineAsmArgs;
@@ -1976,9 +1950,7 @@ namespace npar {
       R[QAST_NODE_EXPORT] = "Export";
       R[QAST_NODE_STRUCT_FIELD] = "StructField";
       R[QAST_NODE_BLOCK] = "Block";
-      R[QAST_NODE_CONST] = "Const";
-      R[QAST_NODE_VAR] = "Var";
-      R[QAST_NODE_LET] = "Let";
+      R[QAST_NODE_VAR] = "Let";
       R[QAST_NODE_INLINE_ASM] = "InlineAsm";
       R[QAST_NODE_RETURN] = "Return";
       R[QAST_NODE_RETIF] = "Retif";

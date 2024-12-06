@@ -766,27 +766,11 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_CONST: {
-      OBJECT_BEGIN("Const");
-      OBJECT_STR(n->as<ConstDecl>()->get_name());
-      OBJECT_SUB(n->as<ConstDecl>()->get_type());
-      OBJECT_SUB(n->as<ConstDecl>()->get_value());
-      OBJECT_END();
-      break;
-    }
     case QAST_NODE_VAR: {
-      OBJECT_BEGIN("Var");
+      OBJECT_BEGIN("Let");
       OBJECT_STR(n->as<VarDecl>()->get_name());
       OBJECT_SUB(n->as<VarDecl>()->get_type());
       OBJECT_SUB(n->as<VarDecl>()->get_value());
-      OBJECT_END();
-      break;
-    }
-    case QAST_NODE_LET: {
-      OBJECT_BEGIN("Let");
-      OBJECT_STR(n->as<LetDecl>()->get_name());
-      OBJECT_SUB(n->as<LetDecl>()->get_type());
-      OBJECT_SUB(n->as<LetDecl>()->get_value());
       OBJECT_END();
       break;
     }

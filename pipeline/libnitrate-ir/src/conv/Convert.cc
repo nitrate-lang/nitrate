@@ -1651,79 +1651,8 @@ static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G, npar::Block *n,
   return create<Seq>(std::move(items));
 }
 
-static EResult nrgen_const(NRBuilder &b, PState &s, IReport *G,
-                           npar::ConstDecl *n) {
-  auto init = next_one(n->get_value());
-  auto type = next_one(n->get_type());
-
-  if (!init.has_value()) {
-    G->report(TypeInference, IC::Error,
-              "Expected initial value in const declaration");
-    return std::nullopt;
-  }
-
-  if (type.has_value()) { /* Do implicit cast */
-    init = create<BinExpr>(init.value(), type.value(), Op::CastAs);
-  } else if (!type.has_value()) {
-    type = b.getUnknownTy();
-  }
-
-  qcore_assert(init.has_value() && type.has_value());
-
-  StorageClass storage = s.inside_function ? StorageClass::LLVM_StackAlloa
-                                           : StorageClass::LLVM_Static;
-  Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
-
-  Local *local =
-      b.createVariable(b.intern(s.join_scope(n->get_name())),
-                       type.value()->asType(), visibility, storage, true);
-
-  local->setValue(init.value());
-  local->setAbiTag(s.abi_mode);
-
-  return local;
-}
-
 static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G,
                          npar::VarDecl *n) {
-  auto init = next_one(n->get_value());
-  auto type = next_one(n->get_type());
-
-  if (init.has_value() && type.has_value()) { /* Do implicit cast */
-    init = create<BinExpr>(init.value(), type.value(), Op::CastAs);
-  } else if (init.has_value() && !type.has_value()) {
-    type = b.getUnknownTy();
-  } else if (type.has_value() && !init.has_value()) {
-    init = b.getDefaultValue(type.value()->asType());
-    if (!init.has_value()) {
-      G->report(TypeInference, IC::Error,
-                "Failed to get default value for type in var declaration");
-      return std::nullopt;
-    }
-  } else {
-    G->report(TypeInference, IC::Error,
-              "Expected a type specifier or initial value in var declaration");
-    return std::nullopt;
-  }
-
-  qcore_assert(init.has_value() && type.has_value());
-
-  StorageClass storage =
-      s.inside_function ? StorageClass::Managed : StorageClass::LLVM_Static;
-  Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
-
-  Local *local =
-      b.createVariable(b.intern(s.join_scope(n->get_name())),
-                       type.value()->asType(), visibility, storage, false);
-
-  local->setValue(init.value());
-  local->setAbiTag(s.abi_mode);
-
-  return local;
-}
-
-static EResult nrgen_let(NRBuilder &b, PState &s, IReport *G,
-                         npar::LetDecl *n) {
   auto init = next_one(n->get_value());
   auto type = next_one(n->get_type());
 
@@ -2199,16 +2128,8 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar::Node *n) {
       out = nrgen_block(b, s, G, n->as<npar::Block>(), true);
       break;
 
-    case QAST_NODE_CONST:
-      out = nrgen_const(b, s, G, n->as<npar::ConstDecl>());
-      break;
-
     case QAST_NODE_VAR:
       out = nrgen_var(b, s, G, n->as<npar::VarDecl>());
-      break;
-
-    case QAST_NODE_LET:
-      out = nrgen_let(b, s, G, n->as<npar::LetDecl>());
       break;
 
     case QAST_NODE_INLINE_ASM:

@@ -108,21 +108,21 @@ Stmt *npar::recurse_block(npar_t &S, qlex_t &rd, bool expect_braces,
     uint32_t loc_start = tok.start;
     switch (tok.as<qlex_key_t>()) {
       case qKVar: {
-        for (auto decl : recurse_var(S, rd)) {
+        for (auto decl : recurse_variable(S, rd, VarDeclType::Var)) {
           block->get_items().push_back(decl);
         }
         break;
       }
 
       case qKLet: {
-        for (auto decl : recurse_let(S, rd)) {
+        for (auto decl : recurse_variable(S, rd, VarDeclType::Let)) {
           block->get_items().push_back(decl);
         }
         break;
       }
 
       case qKConst: {
-        for (auto decl : recurse_const(S, rd)) {
+        for (auto decl : recurse_variable(S, rd, VarDeclType::Const)) {
           block->get_items().push_back(decl);
         }
         break;

@@ -1283,8 +1283,8 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //           imports.push_back(*it);
 //         } else if (ty == QAST_NODE_FN) {
 //           exports.push_back(*it);
-//         } else if (ty == QAST_NODE_LET) {
-//           LetDecl* V = (*it)->as<LetDecl>();
+//         } else if (ty == QAST_NODE_VAR) {
+//           VarDecl* V = (*it)->as<VarDecl>();
 //           V->get_value() ? exports.push_back(*it) : imports.push_back(*it);
 //         } else if (ty == QAST_NODE_VAR) {
 //           VarDecl* V = (*it)->as<VarDecl>();
@@ -1513,8 +1513,8 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //       break;
 //     }
 
-//     case QAST_NODE_LET: {
-//       LetDecl* N = C->as<LetDecl>();
+//     case QAST_NODE_VAR: {
+//       VarDecl* N = C->as<VarDecl>();
 //       S.line << "let " << N->get_name();
 //       if (N->get_type()) {
 //         S.line << ": ";

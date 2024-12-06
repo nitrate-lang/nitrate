@@ -31,82 +31,64 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: Cleanup this code; it's a mess from refactoring.
-
 #include <nitrate-parser/Node.h>
 
 #include <decent/Recurse.hh>
 
 using namespace npar;
 
-static bool recurse_decl(npar_t &S, qlex_tok_t tok, qlex_t &rd,
-                         std::pair<std::string, Type *> &decl) {
-  if (!tok.is(qName)) {
-    diagnostic << tok << "Expected a name in var declaration";
-    return false;
+static std::optional<Type *> recurse_variable_type(npar_t &S, qlex_t &rd) {
+  if (next_if(qPuncColn)) {
+    return recurse_type(S, rd);
+  } else {
+    return std::nullopt;
   }
-
-  let name = tok.as_string(&rd);
-
-  tok = peek();
-  if (!tok.is<qPuncColn>()) {
-    decl = std::make_pair(name, nullptr);
-    return true;
-  }
-
-  next();
-
-  Type *type = recurse_type(S, rd);
-
-  decl = std::make_pair(name, type);
-  return true;
 }
 
-std::vector<Stmt *> npar::recurse_var(npar_t &S, qlex_t &rd) {
-  qlex_tok_t tok = next();
-
-  std::vector<std::pair<std::string, Type *>> decls;
-  if (tok.is(qName)) {
-    std::pair<std::string, Type *> decl;
-    if (!recurse_decl(S, tok, rd, decl)) {
-      return {mock_stmt(QAST_NODE_VAR)};
-    }
-
-    decls.push_back(decl);
+static std::optional<Expr *> recurse_variable_value(npar_t &S, qlex_t &rd) {
+  if (next_if(qOpSet)) {
+    return recurse_expr(
+        S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi)});
   } else {
-    diagnostic << tok << "Expected a name or '[' in var declaration";
-    return {mock_stmt(QAST_NODE_VAR)};
+    return std::nullopt;
   }
+}
 
-  if (decls.empty()) {
-    diagnostic << tok << "Empty list of var declarations";
-    return {mock_stmt(QAST_NODE_VAR)};
-  }
+static Stmt *recurse_variable_instance(npar_t &S, qlex_t &rd,
+                                       VarDeclType decl_type) {
+  if (let tok = next(); tok.is(qName)) {
+    let name = tok.as_string(&rd);
+    let type = recurse_variable_type(S, rd);
+    let value = recurse_variable_value(S, rd);
 
-  std::vector<Stmt *> nodes;
-
-  tok = next();
-  if (tok.is<qPuncSemi>()) {
-    for (auto &decl : decls) {
-      VarDecl *var_decl = VarDecl::get(decl.first, decl.second, nullptr);
-      var_decl->set_end_pos(tok.end);
-      nodes.push_back(var_decl);
-    }
-  } else if (tok.is<qOpSet>()) {
-    Expr *init = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
-
-    tok = next();
-    if (!tok.is<qPuncSemi>()) {
-      diagnostic << tok
-                 << "Expected a ';' after the initializer in var declaration";
-    }
-
-    VarDecl *var_decl = VarDecl::get(decls[0].first, decls[0].second, init);
-    var_decl->set_end_pos(tok.end);
-    nodes.push_back(var_decl);
+    return VarDecl::get(name, type.value_or(nullptr), value.value_or(nullptr),
+                        decl_type);
   } else {
-    diagnostic << tok << "Expected a ';' or '=' after the var declaration";
+    diagnostic << tok << "Expected variable name";
   }
 
-  return nodes;
+  return mock_stmt(QAST_NODE_VAR);
+}
+
+std::vector<Stmt *> npar::recurse_variable(npar_t &S, qlex_t &rd,
+                                           VarDeclType decl_type) {
+  std::vector<Stmt *> variables;
+
+  while (true) {
+    if (peek().is(qEofF)) {
+      diagnostic << current() << "Unexpected EOF in variable declaration";
+      break;
+    }
+
+    if (next_if(qPuncSemi)) {
+      return variables;
+    }
+
+    let var = recurse_variable_instance(S, rd, decl_type);
+    variables.push_back(var);
+
+    next_if(qPuncComa);
+  }
+
+  return {mock_stmt(QAST_NODE_VAR)};
 }
