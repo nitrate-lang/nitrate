@@ -184,6 +184,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
 
   switch (n->getKind()) {
     case QAST_NODE_NODE: {
+      OBJECT_EMPTY("Bad");
       break;
     }
     case QAST_NODE_BINEXPR: {

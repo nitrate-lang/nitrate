@@ -489,7 +489,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, qparse_t &S,
 }
 
 Stmt *qparse::recurse_function(qparse_t &S, qlex_t &rd) {
-  FnDecl *fndecl = FnDecl::get();
+  FnDecl *fndecl = FnDecl::get("", nullptr);
   FuncTy *ftype = FuncTy::get();
   Type *ret_type = nullptr;
   FnCaptures captures;

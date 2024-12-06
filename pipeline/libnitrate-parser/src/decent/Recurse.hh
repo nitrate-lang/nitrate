@@ -34,6 +34,7 @@
 #ifndef __NITRATE_PARSE_H__
 #define __NITRATE_PARSE_H__
 
+#include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Token.h>
 #include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
@@ -75,10 +76,14 @@ namespace qparse {
   struct tok_hash {
     std::size_t operator()(qlex_tok_t const &v) const {
       union {
-        size_t i;
-        qlex_tok_t t;
-      } u = {.t = v};
-      return u.i;
+        uint64_t w;
+        struct {
+          qlex_ty_t ty;
+          uint32_t val;
+        } st;
+      } u = {.st = {.ty = v.ty, .val = v.v.str_idx}};
+
+      return u.w;
     }
   };
 

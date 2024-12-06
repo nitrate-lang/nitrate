@@ -31,27 +31,48 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: Cleanup this code; it's a mess from refactoring.
-
 #include <nitrate-parser/Node.h>
 
 #include <decent/Recurse.hh>
 
-qparse::Stmt *qparse::recurse_while(qparse_t &S, qlex_t &rd) {
-  auto while_cond = recurse_expr(
-      S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
+using namespace qparse;
 
-  Stmt *then_block = nullptr;
+static Expr *recurse_while_cond(qparse_t &S, qlex_t &rd) {
+  let cur = peek();
 
+  if (cur.is<qOpArrow>() || cur.is<qPuncLCur>()) {
+    return ConstBool::get(true);
+  } else {
+    return recurse_expr(
+        S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
+  }
+}
+
+static Stmt *recurse_while_body(qparse_t &S, qlex_t &rd) {
   if (peek().is<qOpArrow>()) {
     next();
-    then_block = recurse_block(S, rd, false, true);
+    return recurse_block(S, rd, false, true);
   } else {
-    then_block = recurse_block(S, rd, true);
+    return recurse_block(S, rd, true);
   }
+}
 
-  auto R = WhileStmt::get(while_cond, then_block);
-  R->set_end_pos(then_block->get_end_pos());
+qparse::Stmt *qparse::recurse_while(qparse_t &S, qlex_t &rd) {
+  /**
+   * Example syntax:
+   *  `while {}`,                 `while => call();`
+   *  `while (cond) => call();`,  `while cond => call();`
+   *  `while (cond) { call(); }`, `while cond { call(); }`
+   */
 
-  return R;
+  /* The condition expression is optional */
+  let cond = recurse_while_cond(S, rd);
+
+  /* Support for single statement implicit block */
+  let body = recurse_while_body(S, rd);
+
+  let stmt = WhileStmt::get(cond, body);
+  stmt->set_end_pos(body->get_end_pos());
+
+  return stmt;
 }

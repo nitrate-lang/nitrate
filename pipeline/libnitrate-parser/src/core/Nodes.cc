@@ -110,6 +110,6 @@ Type *qparse::mock_type(qparse_ty_t expected) {
 Decl *qparse::mock_decl(qparse_ty_t expected) {
   (void)expected;
 
-  static Decl node(QAST_NODE_NODE);
+  static Decl node(QAST_NODE_NODE, "", nullptr);
   return &node;
 }

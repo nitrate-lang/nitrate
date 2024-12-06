@@ -118,7 +118,7 @@ qparse::Decl *qparse::recurse_composite_field(qparse_t &S, qlex_t &rd) {
     if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
       next();
     }
-    auto R = StructField::get(name, type);
+    auto R = StructField::get(name, type, nullptr);
     R->set_end_pos(tok.start);
     return R;
   }
@@ -161,7 +161,7 @@ qparse::Stmt *qparse::recurse_struct(qparse_t &S, qlex_t &rd,
   FnDecl *fdecl = nullptr;
   FuncTy *ft = nullptr;
   Decl *field = nullptr;
-  StructDef *sdef = StructDef::get();
+  StructDef *sdef = StructDef::get("", nullptr);
 
   sdef->set_composite_type(type);
 

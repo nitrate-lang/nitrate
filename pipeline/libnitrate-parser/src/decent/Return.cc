@@ -44,7 +44,7 @@ Stmt *qparse::recurse_return(qparse_t &S, qlex_t &rd) {
 
   if (tok.is<qPuncSemi>()) {
     next();
-    auto R = ReturnStmt::get();
+    auto R = ReturnStmt::get(nullptr);
     R->set_end_pos(tok.end);
     return R;
   }

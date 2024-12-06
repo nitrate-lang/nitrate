@@ -95,8 +95,6 @@ using namespace std;
 #define debug(...)
 #endif
 
-#define let const auto &
-
 typedef function<bool(qmodule_t *, qcode_conf_t *, ostream &err,
                       raw_pwrite_stream &out)>
     qcode_adapter_fn;

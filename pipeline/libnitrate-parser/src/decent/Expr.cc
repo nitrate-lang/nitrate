@@ -214,6 +214,7 @@ Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
         << peek()
         << "Expression depth exceeded; Expressions can not be nested more than "
         << MAX_EXPR_DEPTH << " times";
+
     return mock_expr(QAST_NODE_VOID_TY);
   }
 
