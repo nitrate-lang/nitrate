@@ -31,50 +31,45 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: Cleanup this code; it's a mess from refactoring.
+#include <nitrate-parser/Node.h>
 
 #include <decent/Recurse.hh>
 
-#include "nitrate-parser/Node.h"
+using namespace npar;
+
+static Stmt *recurse_if_then(npar_t &S, qlex_t &rd) {
+  if (peek().is<qOpArrow>()) {
+    return (next(), recurse_block(S, rd, false, true));
+  } else {
+    return recurse_block(S, rd, true);
+  }
+}
+
+static Stmt *recurse_if_else(npar_t &S, qlex_t &rd) {
+  let tok = peek();
+
+  if (tok.is<qOpArrow>()) {
+    return (next(), recurse_block(S, rd, false, true));
+  } else if (tok.is<qKIf>()) {
+    return (next(), recurse_if(S, rd));
+  } else {
+    return recurse_block(S, rd, true);
+  }
+}
 
 npar::Stmt *npar::recurse_if(npar_t &S, qlex_t &rd) {
-  Expr *cond = recurse_expr(
+  let cond = recurse_expr(
       S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
 
-  Stmt *then_block = nullptr;
-  if (peek().is<qOpArrow>()) {
-    next();
-    then_block = recurse_block(S, rd, false, true);
-  } else {
-    then_block = recurse_block(S, rd, true);
+  let then = recurse_if_then(S, rd);
+
+  std::optional<Stmt *> ele;
+  if (peek().is<qKElse>()) {
+    ele = (next(), recurse_if_else(S, rd));
   }
 
-  qlex_tok_t tok = peek();
-  if (tok.is<qKElse>()) {
-    next();
-    Stmt *else_block = nullptr;
+  let stmt = IfStmt::get(cond, then, ele.value_or(nullptr));
+  stmt->set_end_pos(current().end);
 
-    if (peek().is<qOpArrow>()) {
-      next();
-
-      else_block = recurse_block(S, rd, false, true);
-    } else {
-      if (peek().is<qKIf>()) {
-        next();
-        else_block = recurse_if(S, rd);
-      } else {
-        else_block = recurse_block(S, rd, true, false);
-      }
-    }
-
-    uint32_t loc_end = else_block->get_end_pos();
-    auto R = IfStmt::get(cond, then_block, else_block);
-    R->set_end_pos(loc_end);
-    return R;
-  } else {
-    uint32_t loc_end = then_block->get_end_pos();
-    auto R = IfStmt::get(cond, then_block, nullptr);
-    R->set_end_pos(loc_end);
-    return R;
-  }
+  return stmt;
 }
