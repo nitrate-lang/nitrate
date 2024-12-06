@@ -94,6 +94,19 @@ namespace npar {
 #define peek() qlex_peek(&rd)
 #define current() qlex_current(&rd)
 
+  template <auto tok>
+  static bool next_if_(qlex_t &rd) {
+    let t = peek();
+    if (t.is<tok>()) {
+      next();
+      return true;
+    }
+
+    return false;
+  }
+
+#define next_if(tok) next_if_<tok>(rd)
+
 };  // namespace npar
 
 #endif  // __NITRATE_PARSE_H__

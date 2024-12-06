@@ -740,6 +740,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     case QAST_NODE_EXPORT: {
       OBJECT_BEGIN("Export");
       OBJECT_STR(n->as<ExportDecl>()->get_abi_name());
+      OBJECT_ARRAY(n->as<ExportDecl>()->get_attrs());
       OBJECT_SUB(n->as<ExportDecl>()->get_body());
       OBJECT_END();
       break;

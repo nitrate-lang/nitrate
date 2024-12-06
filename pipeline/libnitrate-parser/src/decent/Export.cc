@@ -35,83 +35,94 @@
 
 #include <decent/Recurse.hh>
 
+using namespace npar;
+
+static std::optional<SymbolAttributes> recurse_export_attributes(npar_t &S,
+                                                                 qlex_t &rd) {
+  SymbolAttributes attributes;
+
+  if (!next_if(qPuncLBrk)) {
+    return attributes;
+  }
+
+  while (true) {
+    let tok = peek();
+
+    if (!tok.is(qEofF)) {
+      if (next_if(qPuncRBrk)) {
+        return attributes;
+      }
+
+      let attribute = recurse_expr(
+          S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRBrk)});
+
+      attributes.insert(attribute);
+
+      next_if(qPuncComa);
+    } else {
+      diagnostic << tok << "Encountered EOF while parsing export attributes";
+      break;
+    }
+  }
+
+  return std::nullopt;
+}
+
+static Stmt *recurse_export_body(npar_t &S, qlex_t &rd) {
+  if (peek().is<qPuncLCur>()) {
+    return recurse_block(S, rd, true);
+  } else {
+    return recurse_block(S, rd, false, true);
+  }
+}
+
 npar::Stmt *npar::recurse_pub(npar_t &S, qlex_t &rd) {
-  qlex_tok_t tok = peek();
+  let abi_id = peek().is(qText) ? next().as_string(&rd) : "";
 
-  std::string_view abiName;
+  if (let attrs = recurse_export_attributes(S, rd)) {
+    let body = recurse_export_body(S, rd);
 
-  if (tok.is(qText)) {
-    next();
+    let stmt = ExportDecl::get(body, abi_id, Vis::PUBLIC, attrs.value());
+    stmt->set_end_pos(body->get_end_pos());
 
-    abiName = tok.as_string(&rd);
-
-    tok = peek();
+    return stmt;
+  } else {
+    diagnostic << current() << "Malformed export attributes";
   }
 
-  if (tok.is<qPuncLCur>()) {
-    Stmt *block = recurse_block(S, rd, true);
-
-    auto R = ExportDecl::get(block, abiName);
-    R->set_end_pos(block->get_end_pos());
-    return R;
-  }
-
-  Stmt *block = recurse_block(S, rd, false, true);
-
-  auto R = ExportDecl::get(block, abiName);
-  R->set_end_pos(block->get_end_pos());
-  return R;
+  return mock_stmt(QAST_NODE_EXPORT);
 }
 
 npar::Stmt *npar::recurse_sec(npar_t &S, qlex_t &rd) {
-  qlex_tok_t tok = peek();
+  let abi_id = peek().is(qText) ? next().as_string(&rd) : "";
 
-  std::string_view abiName;
+  if (let attrs = recurse_export_attributes(S, rd)) {
+    let body = recurse_export_body(S, rd);
 
-  if (tok.is(qText)) {
-    next();
+    let stmt = ExportDecl::get(body, abi_id, Vis::PRIVATE, attrs.value());
+    stmt->set_end_pos(body->get_end_pos());
 
-    abiName = tok.as_string(&rd);
-
-    tok = peek();
+    return stmt;
+  } else {
+    diagnostic << current() << "Malformed export attributes";
   }
 
-  if (tok.is<qPuncLCur>()) {
-    Stmt *block = recurse_block(S, rd, true);
-
-    block->set_end_pos(block->get_end_pos());
-    return block;
-  }
-
-  Stmt *block = recurse_block(S, rd, false, true);
-
-  block->set_end_pos(block->get_end_pos());
-  return block;
+  return mock_stmt(QAST_NODE_EXPORT);
 }
 
 npar::Stmt *npar::recurse_pro(npar_t &S, qlex_t &rd) {
-  qlex_tok_t tok = peek();
+  let abi_id = peek().is(qText) ? next().as_string(&rd) : "";
 
-  std::string_view abiName;
+  if (let attrs = recurse_export_attributes(S, rd)) {
+    let body = recurse_export_body(S, rd);
 
-  if (tok.is(qText)) {
-    next();
+    let stmt = ExportDecl::get(body, abi_id, Vis::PROTECTED, attrs.value());
+    stmt->set_end_pos(body->get_end_pos());
 
-    abiName = tok.as_string(&rd);
-
-    tok = peek();
+    return stmt;
+  } else {
+    diagnostic << current() << "Malformed export attributes";
   }
 
-  if (tok.is<qPuncLCur>()) {
-    Stmt *block = recurse_block(S, rd, true);
-
-    block->set_end_pos(block->get_end_pos());
-    return block;
-  }
-
-  Stmt *block = recurse_block(S, rd, false, true);
-
-  block->set_end_pos(block->get_end_pos());
-
-  return block;
+  return mock_stmt(QAST_NODE_EXPORT);
 }

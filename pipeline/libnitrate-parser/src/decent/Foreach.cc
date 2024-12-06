@@ -51,12 +51,15 @@ npar::Stmt *npar::recurse_foreach(npar_t &S, qlex_t &rd) {
                << "Expected identifier as index variable in foreach statement";
     return mock_stmt(QAST_NODE_FOREACH);
   }
-  std::string_view first_ident = tok.as_string(&rd), second_ident;
+
+  let first_ident = tok.as_string(&rd);
+  std::string_view second_ident;
 
   tok = next();
 
   if (tok.is<qPuncComa>()) {
     tok = next();
+
     if (!tok.is(qName)) {
       diagnostic
           << tok
@@ -81,6 +84,7 @@ npar::Stmt *npar::recurse_foreach(npar_t &S, qlex_t &rd) {
   if (has_parens) {
     expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)});
     tok = next();
+
     if (!tok.is<qPuncRPar>()) {
       diagnostic << tok << "Expected ')' after expression in foreach statement";
       return mock_stmt(QAST_NODE_FOREACH);
@@ -100,7 +104,8 @@ npar::Stmt *npar::recurse_foreach(npar_t &S, qlex_t &rd) {
     block = recurse_block(S, rd);
   }
 
-  auto R = ForeachStmt::get(first_ident, second_ident, expr, block);
+  let R = ForeachStmt::get(first_ident, second_ident, expr, block);
   R->set_end_pos(block->get_end_pos());
+
   return R;
 }

@@ -34,6 +34,7 @@
 #ifndef __NITRATE_PARSER_NODE_H__
 #define __NITRATE_PARSER_NODE_H__
 
+#include <unordered_set>
 #ifndef __cplusplus
 #error "This code requires c++"
 #endif
@@ -1868,21 +1869,35 @@ namespace npar {
     PNODE_IMPL_CORE(ScopeDecl)
   };
 
+  using SymbolAttributes =
+      std::unordered_set<Expr *, std::hash<Expr *>, std::equal_to<Expr *>,
+                         Arena<Expr *>>;
+
   class ExportDecl : public Decl {
-    Stmt *m_body;
+    SymbolAttributes m_attrs;
     String m_abi_name;
+    Stmt *m_body;
+    Vis m_vis;
 
   public:
-    ExportDecl(Stmt *content, String abi_name)
+    ExportDecl(Stmt *content, String abi_name, Vis vis, SymbolAttributes attrs)
         : Decl(QAST_NODE_EXPORT, "", nullptr),
+          m_attrs(attrs),
+          m_abi_name(abi_name),
           m_body(content),
-          m_abi_name(abi_name) {}
+          m_vis(vis) {}
 
     Stmt *get_body() { return m_body; }
     void set_body(Stmt *body) { m_body = body; }
 
     String get_abi_name() { return m_abi_name; }
     void set_abi_name(String abi_name) { m_abi_name = abi_name; }
+
+    Vis get_vis() { return m_vis; }
+    void set_vis(Vis vis) { m_vis = vis; }
+
+    SymbolAttributes &get_attrs() { return m_attrs; }
+    void set_attrs(SymbolAttributes attrs) { m_attrs = attrs; }
 
     PNODE_IMPL_CORE(ExportDecl)
   };
