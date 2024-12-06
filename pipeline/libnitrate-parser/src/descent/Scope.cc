@@ -85,11 +85,13 @@ static Stmt *recurse_scope_block(npar_t &S, qlex_t &rd) {
 
   if (tok.is<qPuncLCur>()) {
     return recurse_block(S, rd, true, false);
-  } else if (tok.is<qOpArrow>()) {
-    return (next(), recurse_block(S, rd, false, true));
-  } else {
+  } else if (next_if(qPuncSemi)) {
     return Block::get();
   }
+
+  next_if(qOpArrow);
+
+  return recurse_block(S, rd, false, true);
 }
 
 npar::Stmt *npar::recurse_scope(npar_t &S, qlex_t &rd) {
