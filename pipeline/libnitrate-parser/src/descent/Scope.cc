@@ -37,6 +37,14 @@
 
 using namespace npar;
 
+static std::string_view recurse_scope_name(qlex_t &rd) {
+  if (let tok = next_if(qName)) {
+    return tok->as_string(&rd);
+  } else {
+    return "";
+  }
+}
+
 static std::optional<ScopeDeps> recurse_scope_deps(qlex_t &rd) {
   ScopeDeps dependencies;
 
@@ -85,22 +93,18 @@ static Stmt *recurse_scope_block(npar_t &S, qlex_t &rd) {
 }
 
 npar::Stmt *npar::recurse_scope(npar_t &S, qlex_t &rd) {
-  if (let tok = peek(); tok.is(qName)) {
-    let scope_name = (next(), tok.as_string(&rd));
+  let scope_name = recurse_scope_name(rd);
 
-    if (let implicit_dependencies = recurse_scope_deps(rd)) {
-      let scope_block = recurse_scope_block(S, rd);
+  if (let implicit_dependencies = recurse_scope_deps(rd)) {
+    let scope_block = recurse_scope_block(S, rd);
 
-      let stmt = ScopeDecl::get(scope_name, scope_block,
-                                std::move(implicit_dependencies.value()));
-      stmt->set_end_pos(scope_block->get_end_pos());
+    let stmt = ScopeDecl::get(scope_name, scope_block,
+                              std::move(implicit_dependencies.value()));
+    stmt->set_end_pos(scope_block->get_end_pos());
 
-      return stmt;
-    } else {
-      diagnostic << tok << "Expected scope dependencies";
-    }
+    return stmt;
   } else {
-    diagnostic << tok << "Expected name for scope";
+    diagnostic << current() << "Expected scope dependencies";
   }
 
   return mock_stmt(QAST_NODE_SUBSYSTEM);
