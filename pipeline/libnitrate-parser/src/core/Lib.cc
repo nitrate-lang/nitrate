@@ -39,7 +39,7 @@
 
 #include <atomic>
 
-static std::atomic<size_t> qparse_lib_ref_count = 0;
+static std::atomic<size_t> npar_lib_ref_count = 0;
 
 static void increase_stack_size() {
   const rlim_t kStackSize = 64 * 1024 * 1024;  // min stack size = 64 MB
@@ -66,8 +66,8 @@ static bool do_init() {
 
 static void do_deinit() {}
 
-C_EXPORT bool qparse_lib_init() {
-  if (qparse_lib_ref_count++ > 1) {
+C_EXPORT bool npar_lib_init() {
+  if (npar_lib_ref_count++ > 1) {
     return true;
   }
 
@@ -82,8 +82,8 @@ C_EXPORT bool qparse_lib_init() {
   return do_init();
 }
 
-C_EXPORT void qparse_lib_deinit() {
-  if (--qparse_lib_ref_count > 0) {
+C_EXPORT void npar_lib_deinit() {
+  if (--npar_lib_ref_count > 0) {
     return;
   }
 
@@ -93,7 +93,7 @@ C_EXPORT void qparse_lib_deinit() {
   return do_deinit();
 }
 
-C_EXPORT const char* qparse_lib_version() {
+C_EXPORT const char* npar_lib_version() {
   static const char* version_string =
 
       "[" __TARGET_VERSION
@@ -141,4 +141,4 @@ C_EXPORT const char* qparse_lib_version() {
   return version_string;
 }
 
-C_EXPORT const char* qparse_strerror() { return ""; }
+C_EXPORT const char* npar_strerror() { return ""; }

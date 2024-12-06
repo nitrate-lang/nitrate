@@ -35,9 +35,9 @@
 
 #include <decent/Recurse.hh>
 
-using namespace qparse;
+using namespace npar;
 
-static Expr *recurse_while_cond(qparse_t &S, qlex_t &rd) {
+static Expr *recurse_while_cond(npar_t &S, qlex_t &rd) {
   let cur = peek();
 
   if (cur.is<qOpArrow>() || cur.is<qPuncLCur>()) {
@@ -48,7 +48,7 @@ static Expr *recurse_while_cond(qparse_t &S, qlex_t &rd) {
   }
 }
 
-static Stmt *recurse_while_body(qparse_t &S, qlex_t &rd) {
+static Stmt *recurse_while_body(npar_t &S, qlex_t &rd) {
   if (peek().is<qOpArrow>()) {
     next();
     return recurse_block(S, rd, false, true);
@@ -57,7 +57,7 @@ static Stmt *recurse_while_body(qparse_t &S, qlex_t &rd) {
   }
 }
 
-qparse::Stmt *qparse::recurse_while(qparse_t &S, qlex_t &rd) {
+npar::Stmt *npar::recurse_while(npar_t &S, qlex_t &rd) {
   /**
    * Example syntax:
    *  `while {}`,                 `while => call();`

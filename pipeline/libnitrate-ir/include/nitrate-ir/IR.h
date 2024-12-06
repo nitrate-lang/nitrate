@@ -44,7 +44,7 @@
 extern "C" {
 #endif
 
-typedef struct qparse_node_t qparse_node_t;
+typedef struct npar_node_t npar_node_t;
 
 /**
  * @brief Free a QModule instance and ALL of its associated resources.
@@ -114,7 +114,7 @@ bool nr_read(qmodule_t *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
  *
  * @note This function is thread safe.
  */
-bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
+bool nr_lower(qmodule_t **mod, npar_node_t *base, const char *name,
               bool diagnostics);
 
 typedef void (*nr_node_cb)(nr_node_t *cur, uintptr_t userdata);

@@ -37,7 +37,7 @@
 
 #include "nitrate-parser/Node.h"
 
-qparse::Stmt *qparse::recurse_if(qparse_t &S, qlex_t &rd) {
+npar::Stmt *npar::recurse_if(npar_t &S, qlex_t &rd) {
   Expr *cond = recurse_expr(
       S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
 

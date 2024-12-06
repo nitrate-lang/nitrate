@@ -37,7 +37,7 @@
 
 #include <decent/Recurse.hh>
 
-qparse::Stmt *qparse::recurse_foreach(qparse_t &S, qlex_t &rd) {
+npar::Stmt *npar::recurse_foreach(npar_t &S, qlex_t &rd) {
   qlex_tok_t tok = next();
   bool has_parens = false;
 

@@ -41,7 +41,7 @@
 #include <functional>
 #include <sstream>
 
-namespace qparse {
+namespace npar {
   enum class FormatStyle {
     Clang16Color, /* Clang-like 16 color diagnostic format */
     ClangPlain,   /* Clang-like plain text diagnostic format */
@@ -56,7 +56,7 @@ namespace qparse {
   };
 
   class DiagnosticManager {
-    qparse_t *m_parser;
+    npar_t *m_parser;
     std::vector<DiagMessage> m_msgs;
 
     std::string mint_clang16_message(const DiagMessage &msg) const;
@@ -66,11 +66,11 @@ namespace qparse {
     void push(DiagMessage &&msg);
     size_t render(DiagnosticMessageHandler handler, FormatStyle style) const;
 
-    void set_ctx(qparse_t *parser) { m_parser = parser; }
+    void set_ctx(npar_t *parser) { m_parser = parser; }
   };
 
   /* Set reference to the current parser */
-  void install_reference(qparse_t *parser);
+  void install_reference(npar_t *parser);
 
   class MessageBuffer {
     std::stringstream m_buffer;
@@ -123,6 +123,6 @@ namespace qparse {
 
   extern thread_local DiagnosticManager *diagnostic;
 
-};  // namespace qparse
+};  // namespace npar
 
 #endif  // __NITRATE_PARSER_REPORT_H__

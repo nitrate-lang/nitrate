@@ -41,7 +41,7 @@
 #include <nitrate-core/Classes.hh>
 #include <sstream>
 
-using namespace qparse;
+using namespace npar;
 
 struct ConvState {
   int32_t indent;
@@ -874,8 +874,8 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
   }
 }
 
-C_EXPORT char *qparse_repr(const qparse_node_t *node, bool minify,
-                           size_t indent, size_t *outlen) {
+C_EXPORT char *npar_repr(const npar_node_t *node, bool minify, size_t indent,
+                         size_t *outlen) {
   size_t outlen_v = 0;
 
   /* Eliminate internal edge cases */

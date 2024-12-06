@@ -250,14 +250,14 @@ public:
   virtual ~DeserializerAdapterLexer() override = default;
 };
 
-static std::optional<qparse_node_t *> parse_tokens(
-    qparse_t *L, std::function<void(const char *)> diag_cb) {
-  qparse_node_t *root = nullptr;
-  bool ok = qparse_do(L, &root);
+static std::optional<npar_node_t *> parse_tokens(
+    npar_t *L, std::function<void(const char *)> diag_cb) {
+  npar_node_t *root = nullptr;
+  bool ok = npar_do(L, &root);
 
   ///============================================================================///
   /// Some dangerous code here, be careful! ///
-  qparse_dumps(
+  npar_dumps(
       L, false,
       [](const char *msg, size_t, uintptr_t dat) {
         std::function<void(const char *)> &stack_tmp =
@@ -274,7 +274,7 @@ static std::optional<qparse_node_t *> parse_tokens(
   return root;
 }
 
-bool to_json_recurse(qparse::Node *N, json &x);
+bool to_json_recurse(npar::Node *N, json &x);
 
 bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
                         std::function<void(const char *)> diag_cb,
@@ -292,7 +292,7 @@ bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
   }
 
   DeserializerAdapterLexer lex(source, nullptr, qcore_env_current());
-  qparser par(&lex, qcore_env_current());
+  nr_syn par(&lex, qcore_env_current());
 
   auto root = parse_tokens(par.get(), diag_cb);
   if (!root.has_value()) {
@@ -303,7 +303,7 @@ bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
 
   json o = json::array();
 
-  if (!to_json_recurse(static_cast<qparse::Node *>(root.value()), o)) {
+  if (!to_json_recurse(static_cast<npar::Node *>(root.value()), o)) {
     return false;
   }
 
@@ -325,7 +325,7 @@ bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
 
 ///============================================================================///
 
-using namespace qparse;
+using namespace npar;
 
 bool to_json_recurse(Node *N, json &x) {
   if (!N) {
@@ -333,7 +333,7 @@ bool to_json_recurse(Node *N, json &x) {
     return true;
   }
 
-  qparse_ty_t id = N->getKind();
+  npar_ty_t id = N->getKind();
 
   x[0] = id;
 

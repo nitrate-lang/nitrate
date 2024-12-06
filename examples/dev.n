@@ -1,14 +1,1 @@
-struct T {
-  x: i32,
-  y: i32,
-}
-
-let x: T;
-
-fn main(): i32 {
-  if (19) {
-    ret 10;
-  } else {
-    ret 20;
-  }
-}
+while => 0;

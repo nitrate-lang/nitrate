@@ -39,16 +39,16 @@
 #include <cstddef>
 #include <cstring>
 
-using namespace qparse;
+using namespace npar;
 
 ///=============================================================================
-namespace qparse {
+namespace npar {
   void ArenaAllocatorImpl::swap(qcore_arena_t &arena) {
     std::swap(*m_arena.get(), arena);
   }
 
-  CPP_EXPORT thread_local ArenaAllocatorImpl qparse_arena;
-}  // namespace qparse
+  CPP_EXPORT thread_local ArenaAllocatorImpl npar_arena;
+}  // namespace npar
 
 C_EXPORT void *ArenaAllocatorImpl::allocate(std::size_t size) {
   const std::size_t alignment = 16;
@@ -64,7 +64,7 @@ CPP_EXPORT std::ostream &Node::dump(std::ostream &os,
   (void)isForDebug;
 
   size_t size = 0;
-  char *buf = qparse_repr(this, false, 2, &size);
+  char *buf = npar_repr(this, false, 2, &size);
 
   os << std::string_view(buf, size);
 
@@ -86,28 +86,28 @@ CPP_EXPORT bool Type::is_ptr_to(Type *type) noexcept {
   return item->is(type->getKind());
 }
 
-Stmt *qparse::mock_stmt(qparse_ty_t expected) {
+Stmt *npar::mock_stmt(npar_ty_t expected) {
   (void)expected;
 
   static Stmt node(QAST_NODE_NODE);
   return &node;
 }
 
-Expr *qparse::mock_expr(qparse_ty_t expected) {
+Expr *npar::mock_expr(npar_ty_t expected) {
   (void)expected;
 
   static Expr node(QAST_NODE_NODE);
   return &node;
 }
 
-Type *qparse::mock_type(qparse_ty_t expected) {
+Type *npar::mock_type(npar_ty_t expected) {
   (void)expected;
 
   static Type node(QAST_NODE_NODE);
   return &node;
 }
 
-Decl *qparse::mock_decl(qparse_ty_t expected) {
+Decl *npar::mock_decl(npar_ty_t expected) {
   (void)expected;
 
   static Decl node(QAST_NODE_NODE, "", nullptr);

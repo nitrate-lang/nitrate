@@ -35,7 +35,7 @@
 
 #include <decent/Recurse.hh>
 
-qparse::Stmt *qparse::recurse_pub(qparse_t &S, qlex_t &rd) {
+npar::Stmt *npar::recurse_pub(npar_t &S, qlex_t &rd) {
   qlex_tok_t tok = peek();
 
   String abiName;
@@ -64,7 +64,7 @@ qparse::Stmt *qparse::recurse_pub(qparse_t &S, qlex_t &rd) {
   return R;
 }
 
-qparse::Stmt *qparse::recurse_sec(qparse_t &S, qlex_t &rd) {
+npar::Stmt *npar::recurse_sec(npar_t &S, qlex_t &rd) {
   qlex_tok_t tok = peek();
 
   String abiName;
@@ -91,7 +91,7 @@ qparse::Stmt *qparse::recurse_sec(qparse_t &S, qlex_t &rd) {
   return block;
 }
 
-qparse::Stmt *qparse::recurse_pro(qparse_t &S, qlex_t &rd) {
+npar::Stmt *npar::recurse_pro(npar_t &S, qlex_t &rd) {
   qlex_tok_t tok = peek();
 
   String abiName;

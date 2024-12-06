@@ -37,10 +37,9 @@
 
 #include <decent/Recurse.hh>
 
-using namespace qparse;
-using namespace qparse;
+using namespace npar;
 
-static bool recurse_enum_field(qparse_t &S, qlex_t &rd, EnumDefItems &fields) {
+static bool recurse_enum_field(npar_t &S, qlex_t &rd, EnumDefItems &fields) {
   qlex_tok_t tok = next();
   if (!tok.is(qName)) {
     diagnostic << tok << "Enum field must be named by an identifier";
@@ -78,7 +77,7 @@ static bool recurse_enum_field(qparse_t &S, qlex_t &rd, EnumDefItems &fields) {
   return true;
 }
 
-qparse::Stmt *qparse::recurse_enum(qparse_t &S, qlex_t &rd) {
+npar::Stmt *npar::recurse_enum(npar_t &S, qlex_t &rd) {
   qlex_tok_t tok = next();
   if (!tok.is(qName)) {
     diagnostic << tok << "Enum definition must be named by an identifier";

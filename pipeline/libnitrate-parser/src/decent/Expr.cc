@@ -44,15 +44,15 @@
 #define MAX_EXPR_DEPTH (10000)
 #define MAX_LIST_DUP (10000)
 
-static inline qparse::Expr *LOC_121(qparse::Expr *p, qlex_tok_t t) {
+static inline npar::Expr *LOC_121(npar::Expr *p, qlex_tok_t t) {
   p->set_start_pos(t.start);
   p->set_end_pos(t.end);
   return p;
 }
 
-using namespace qparse;
+using namespace npar;
 
-static Call *recurse_function_call(qparse_t &S, Expr *callee, qlex_t &rd,
+static Call *recurse_function_call(npar_t &S, Expr *callee, qlex_t &rd,
                                    size_t depth) {
   /**
    * @brief
@@ -133,7 +133,7 @@ static Call *recurse_function_call(qparse_t &S, Expr *callee, qlex_t &rd,
   return Call::get(callee, call_args);
 }
 
-static bool recurse_fstring(qparse_t &S, FString **node, qlex_t &rd,
+static bool recurse_fstring(npar_t &S, FString **node, qlex_t &rd,
                             size_t depth) {
   /**
    * @brief Parse an F-string expression
@@ -206,9 +206,9 @@ static bool recurse_fstring(qparse_t &S, FString **node, qlex_t &rd,
 /// TODO: qlex_op_t precedence
 /// TODO: qlex_op_t associativity
 
-Expr *qparse::recurse_expr(qparse_t &S, qlex_t &rd,
-                           std::unordered_set<qlex_tok_t, tok_hash> terminators,
-                           size_t depth) {
+Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
+                         std::unordered_set<qlex_tok_t, tok_hash> terminators,
+                         size_t depth) {
   if (depth > MAX_EXPR_DEPTH) {
     diagnostic
         << peek()

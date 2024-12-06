@@ -135,13 +135,13 @@ static int do_parse(std::string source, std::string output) {
   }
 
   qprep lexer(file, "in", env.get());
-  qparser parser(lexer.get(), env.get());
+  nr_syn parser(lexer.get(), env.get());
 
-  qparse_node_t *tree = nullptr;
+  npar_node_t *tree = nullptr;
 
-  bool ok = qparse_do(parser.get(), &tree);
+  bool ok = npar_do(parser.get(), &tree);
 
-  qparse_dumps(
+  npar_dumps(
       parser.get(), !ansi::IsUsingColors(),
       [](const char *msg, size_t len, uintptr_t) { std::cerr.write(msg, len); },
       0);
@@ -163,7 +163,7 @@ static int do_parse(std::string source, std::string output) {
     }
 
     size_t len = 0;
-    char *serialized = qparse_repr(tree, false, 2, &len);
+    char *serialized = npar_repr(tree, false, 2, &len);
     std::string repr(serialized, len);
     free(serialized);
 
@@ -188,13 +188,13 @@ static int do_nr(std::string source, std::string output, std::string opts,
   }
 
   qprep lexer(file, "in", env.get());
-  qparser parser(lexer.get(), env.get());
+  nr_syn parser(lexer.get(), env.get());
 
-  qparse_node_t *tree = nullptr;
+  npar_node_t *tree = nullptr;
 
-  bool ok = qparse_do(parser.get(), &tree);
+  bool ok = npar_do(parser.get(), &tree);
 
-  qparse_dumps(
+  npar_dumps(
       parser.get(), !ansi::IsUsingColors(),
       [](const char *msg, size_t len, uintptr_t) { std::cerr.write(msg, len); },
       0);
@@ -258,13 +258,13 @@ static int do_codegen(std::string source, std::string output, std::string opts,
   }
 
   qprep lexer(file, "in", env.get());
-  qparser parser(lexer.get(), env.get());
+  nr_syn parser(lexer.get(), env.get());
 
-  qparse_node_t *tree = nullptr;
+  npar_node_t *tree = nullptr;
 
-  bool ok = qparse_do(parser.get(), &tree);
+  bool ok = npar_do(parser.get(), &tree);
 
-  qparse_dumps(
+  npar_dumps(
       parser.get(), !ansi::IsUsingColors(),
       [](const char *msg, size_t len, uintptr_t) { std::cerr.write(msg, len); },
       0);

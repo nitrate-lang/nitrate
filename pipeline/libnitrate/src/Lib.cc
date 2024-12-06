@@ -74,7 +74,7 @@ C_EXPORT bool nit_lib_init() {
     return false;
   }
 
-  if (!qparse_lib_init()) {
+  if (!npar_lib_init()) {
     return false;
   }
 
@@ -98,7 +98,7 @@ C_EXPORT void nit_deinit() {
 
   qcode_lib_deinit();
   nr_lib_deinit();
-  qparse_lib_deinit();
+  npar_lib_deinit();
   qprep_lib_deinit();
   qlex_lib_deinit();
   qcore_lib_deinit();

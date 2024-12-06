@@ -40,8 +40,8 @@
 
 #include <decent/Recurse.hh>
 
-bool qparse::recurse_attributes(qparse_t &S, qlex_t &rd,
-                                std::set<Expr *> &attributes) {
+bool npar::recurse_attributes(npar_t &S, qlex_t &rd,
+                              std::set<Expr *> &attributes) {
   qlex_tok_t tok = next();
 
   { /* The implementation list should be enclosed in square brackets ex: [abc,
@@ -80,7 +80,7 @@ bool qparse::recurse_attributes(qparse_t &S, qlex_t &rd,
   return true;
 }
 
-qparse::Decl *qparse::recurse_composite_field(qparse_t &S, qlex_t &rd) {
+npar::Decl *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
   /*
    * Format: "name: type [= expr],"
    */
@@ -146,11 +146,10 @@ qparse::Decl *qparse::recurse_composite_field(qparse_t &S, qlex_t &rd) {
 }
 
 bool recurse_template_parameters(
-    qparse_t &S, qlex_t &rd,
-    std::optional<qparse::TemplateParameters> &template_params);
+    npar_t &S, qlex_t &rd,
+    std::optional<npar::TemplateParameters> &template_params);
 
-qparse::Stmt *qparse::recurse_struct(qparse_t &S, qlex_t &rd,
-                                     CompositeType type) {
+npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
   qlex_tok_t tok;
   std::string name;
   StructDefFields fields;

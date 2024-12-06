@@ -37,7 +37,7 @@
 
 #include <decent/Recurse.hh>
 
-qparse::Stmt *qparse::recurse_typedef(qparse_t &S, qlex_t &rd) {
+npar::Stmt *npar::recurse_typedef(npar_t &S, qlex_t &rd) {
   qlex_tok_t tok = next();
   if (!tok.is(qName)) {
     diagnostic << tok << "Expected name in typedef declaration";

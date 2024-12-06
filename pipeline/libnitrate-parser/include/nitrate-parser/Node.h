@@ -55,9 +55,9 @@
 #include <variant>
 #include <vector>
 
-typedef struct qparse_node_t qparse_node_t;
+typedef struct npar_node_t npar_node_t;
 
-typedef enum qparse_ty_t {
+typedef enum npar_ty_t {
   QAST_NODE_NODE,
 
   QAST_NODE_BINEXPR,
@@ -152,11 +152,11 @@ typedef enum qparse_ty_t {
 
   QAST_NODE__FIRST = QAST_NODE_NODE,
   QAST_NODE__LAST = QAST_NODE_VOLATILE,
-} qparse_ty_t;
+} npar_ty_t;
 
 #define QAST_NODE_COUNT (QAST_NODE__LAST - QAST_NODE__FIRST + 1)
 
-namespace qparse {
+namespace npar {
   class ArenaAllocatorImpl {
     qcore_arena m_arena;
 
@@ -171,7 +171,7 @@ namespace qparse {
     qcore_arena_t &get() { return *m_arena.get(); }
   };
 
-  extern thread_local ArenaAllocatorImpl qparse_arena;
+  extern thread_local ArenaAllocatorImpl npar_arena;
 
   template <class T>
   struct Arena {
@@ -183,7 +183,7 @@ namespace qparse {
     constexpr Arena(const Arena<U> &) noexcept {}
 
     [[nodiscard]] T *allocate(std::size_t n) {
-      return static_cast<T *>(qparse_arena.allocate(sizeof(T) * n));
+      return static_cast<T *>(npar_arena.allocate(sizeof(T) * n));
     }
 
     void deallocate(T *p, std::size_t n) noexcept {
@@ -200,7 +200,7 @@ namespace qparse {
   bool operator!=(const Arena<T> &, const Arena<U> &) {
     return false;
   }
-};  // namespace qparse
+};  // namespace npar
 
 #define PNODE_IMPL_CORE(__typename)                           \
 public:                                                       \
@@ -213,9 +213,9 @@ public:                                                       \
                                                               \
 public:
 
-struct qparse_node_t {};
+struct npar_node_t {};
 
-namespace qparse {
+namespace npar {
   class Node;
   class Stmt;
   class Type;
@@ -297,9 +297,9 @@ namespace qparse {
   class SubsystemDecl;
   class ExportDecl;
 
-}  // namespace qparse
+}  // namespace npar
 
-namespace qparse {
+namespace npar {
   enum class Vis {
     PUBLIC,
     PRIVATE,
@@ -319,22 +319,22 @@ namespace qparse {
     std::string_view view() { return std::string_view(data(), size()); }
   };
 
-  class Node : public qparse_node_t {
-    qparse_ty_t m_node_type;
+  class Node : public npar_node_t {
+    npar_ty_t m_node_type;
     uint32_t m_pos_start, m_pos_end;
 
   public:
-    constexpr Node(qparse_ty_t ty)
+    constexpr Node(npar_ty_t ty)
         : m_node_type(ty), m_pos_start(0), m_pos_end(0){};
 
     ///======================================================================
     /* Efficient LLVM reflection */
 
-    static constexpr uint32_t getKindSize(qparse_ty_t kind) noexcept;
-    static constexpr std::string_view getKindName(qparse_ty_t kind) noexcept;
+    static constexpr uint32_t getKindSize(npar_ty_t kind) noexcept;
+    static constexpr std::string_view getKindName(npar_ty_t kind) noexcept;
 
     template <typename T>
-    static constexpr qparse_ty_t getTypeCode() noexcept {
+    static constexpr npar_ty_t getTypeCode() noexcept {
       if constexpr (std::is_same_v<T, Node>) {
         return QAST_NODE_NODE;
       } else if constexpr (std::is_same_v<T, Decl>) {
@@ -494,7 +494,7 @@ namespace qparse {
       }
     }
 
-    constexpr qparse_ty_t getKind() const noexcept { return m_node_type; }
+    constexpr npar_ty_t getKind() const noexcept { return m_node_type; }
     constexpr std::string_view getKindName() const noexcept {
       return getKindName(m_node_type);
     }
@@ -568,7 +568,7 @@ namespace qparse {
       return Node::getTypeCode<T>() == getKind();
     }
 
-    constexpr bool is(qparse_ty_t type) const { return type == getKind(); }
+    constexpr bool is(npar_ty_t type) const { return type == getKind(); }
 
     std::ostream &dump(std::ostream &os = std::cerr,
                        bool isForDebug = false) const noexcept;
@@ -606,7 +606,7 @@ namespace qparse {
 
   class Stmt : public Node {
   public:
-    constexpr Stmt(qparse_ty_t ty) : Node(ty){};
+    constexpr Stmt(npar_ty_t ty) : Node(ty){};
   };
 
   class Expr;
@@ -616,7 +616,7 @@ namespace qparse {
     bool m_volatile;
 
   public:
-    constexpr Type(qparse_ty_t ty, bool is_volatile = false)
+    constexpr Type(npar_ty_t ty, bool is_volatile = false)
         : Node(ty),
           m_width(nullptr),
           m_range_start(nullptr),
@@ -713,7 +713,7 @@ namespace qparse {
     Vis m_visibility;
 
   public:
-    Decl(qparse_ty_t ty, String name, Type *type, DeclTags tags = {},
+    Decl(npar_ty_t ty, String name, Type *type, DeclTags tags = {},
          const std::optional<TemplateParameters> &params = std::nullopt,
          Vis visibility = Vis::PRIVATE)
         : Stmt(ty),
@@ -743,7 +743,7 @@ namespace qparse {
 
   class Expr : public Node {
   public:
-    constexpr Expr(qparse_ty_t ty) : Node(ty) {}
+    constexpr Expr(npar_ty_t ty) : Node(ty) {}
 
     constexpr bool is_binexpr() const noexcept {
       return getKind() == QAST_NODE_BINEXPR;
@@ -1894,7 +1894,7 @@ namespace qparse {
 
   ///=============================================================================
 
-  constexpr std::string_view Node::getKindName(qparse_ty_t type) noexcept {
+  constexpr std::string_view Node::getKindName(npar_ty_t type) noexcept {
     const std::array<std::string_view, QAST_NODE_COUNT> names = []() {
       std::array<std::string_view, QAST_NODE_COUNT> R;
       R.fill("");
@@ -1980,18 +1980,18 @@ namespace qparse {
     return names[type];
   }
 
-  Stmt *mock_stmt(qparse_ty_t expected);
-  Expr *mock_expr(qparse_ty_t expected);
-  Type *mock_type(qparse_ty_t expected);
-  Decl *mock_decl(qparse_ty_t expected);
+  Stmt *mock_stmt(npar_ty_t expected);
+  Expr *mock_expr(npar_ty_t expected);
+  Type *mock_type(npar_ty_t expected);
+  Decl *mock_decl(npar_ty_t expected);
 
-}  // namespace qparse
+}  // namespace npar
 
 namespace std {
   std::ostream &operator<<(std::ostream &os, const qlex_op_t &op);
   std::ostream &operator<<(std::ostream &os, const qlex_op_t &expr);
   std::ostream &operator<<(std::ostream &os, const qlex_op_t &op);
-  std::ostream &operator<<(std::ostream &os, const qparse::FuncPurity &purity);
+  std::ostream &operator<<(std::ostream &os, const npar::FuncPurity &purity);
 }  // namespace std
 
 #endif  // __NITRATE_PARSER_NODE_H__

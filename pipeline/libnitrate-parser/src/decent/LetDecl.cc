@@ -37,10 +37,9 @@
 
 #include "nitrate-parser/Node.h"
 
-using namespace qparse;
-using namespace qparse;
+using namespace npar;
 
-static bool recurse_decl(qparse_t &S, qlex_tok_t tok, qlex_t &rd,
+static bool recurse_decl(npar_t &S, qlex_tok_t tok, qlex_t &rd,
                          std::pair<std::string, Type *> &decl) {
   if (!tok.is(qName)) {
     diagnostic << tok << "Expected a name in let declaration";
@@ -65,7 +64,7 @@ static bool recurse_decl(qparse_t &S, qlex_tok_t tok, qlex_t &rd,
   return true;
 }
 
-std::vector<Stmt *> qparse::recurse_let(qparse_t &S, qlex_t &rd) {
+std::vector<Stmt *> npar::recurse_let(npar_t &S, qlex_t &rd) {
   qlex_tok_t tok = next();
 
   std::vector<std::pair<std::string, Type *>> decls;

@@ -40,8 +40,7 @@
 #include "nitrate-lexer/Token.h"
 #include "nitrate-parser/Node.h"
 
-using namespace qparse;
-using namespace qparse;
+using namespace npar;
 
 /// TODO: Source location
 
@@ -63,7 +62,7 @@ static const std::unordered_map<std::string_view, Type *(*)()> primitive_types =
      {"f128", []() -> Type * { return F128::get(); }},
      {"void", []() -> Type * { return VoidTy::get(); }}};
 
-Type *qparse::recurse_type(qparse_t &S, qlex_t &rd) {
+Type *npar::recurse_type(npar_t &S, qlex_t &rd) {
   /** Nitrate TYPE PARSER
    *
    * @brief Given a Scanner, parse tokens into a Nitrate type node.

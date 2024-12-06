@@ -37,7 +37,7 @@
 
 #include <decent/Recurse.hh>
 
-qparse::Stmt *qparse::recurse_subsystem(qparse_t &S, qlex_t &rd) {
+npar::Stmt *npar::recurse_subsystem(npar_t &S, qlex_t &rd) {
   qlex_tok_t tok = next();
   if (!tok.is(qName)) {
     diagnostic << tok << "Expected subsystem name";

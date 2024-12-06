@@ -224,9 +224,9 @@ static void put_indent(AutomatonState& S) {
   }
 }
 
-static void recurse(qparse::Node* C, AutomatonState& S);
+static void recurse(npar::Node* C, AutomatonState& S);
 
-static void put_type_metadata(qparse::Type* N, AutomatonState& S) {
+static void put_type_metadata(npar::Type* N, AutomatonState& S) {
   auto range = N->get_range();
 
   if (range.first || range.second) {
@@ -245,7 +245,7 @@ static void put_type_metadata(qparse::Type* N, AutomatonState& S) {
 
 template <typename T>
 static void put_composite_defintion(T* N, AutomatonState& S) {
-  using namespace qparse;
+  using namespace npar;
 
   static const std::unordered_map<Vis, std::string_view> vis_str = {
       {Vis::PRIVATE, "sec"},
@@ -318,7 +318,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
   S.line << "}";
 }
 
-// static void recurse(qparse::Node* C, AutomatonState& S) {
+// static void recurse(npar::Node* C, AutomatonState& S) {
 //   /**
 //    * TODO: Resolve the following issues:
 //    * - Parentheses are currently lost and the order of sub-expressions is not
@@ -329,7 +329,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //    * - Maximum line width is not supported at all (might me okay)
 //    */
 
-//   using namespace qparse;
+//   using namespace npar;
 
 //   if (!C) {
 //     return;
@@ -716,103 +716,103 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //     case QAST_NODE_REF_TY: {
 //       S.line << "&";
 //       recurse(C->as<RefTy>()->get_item(), S);
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_U1_TY: {
 //       S.line << "u1";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_U8_TY: {
 //       S.line << "u8";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_U16_TY: {
 //       S.line << "u16";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_U32_TY: {
 //       S.line << "u32";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_U64_TY: {
 //       S.line << "u64";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_U128_TY: {
 //       S.line << "u128";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_I8_TY: {
 //       S.line << "i8";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_I16_TY: {
 //       S.line << "i16";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_I32_TY: {
 //       S.line << "i32";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_I64_TY: {
 //       S.line << "i64";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_I128_TY: {
 //       S.line << "i128";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_F16_TY: {
 //       S.line << "f16";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_F32_TY: {
 //       S.line << "f32";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_F64_TY: {
 //       S.line << "f64";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_F128_TY: {
 //       S.line << "f128";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_VOID_TY: {
 //       S.line << "void";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
@@ -824,7 +824,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 
 //     case QAST_NODE_OPAQUE_TY: {
 //       S.line << "opaque(" << C->as<OpaqueTy>()->get_name() << ")";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
@@ -840,7 +840,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //       S.line << "; ";
 //       recurse(N->get_size(), S);
 //       S.line << "]";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
@@ -858,7 +858,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //       }
 //       S.line << ")";
 
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
@@ -924,19 +924,19 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //         recurse(N->get_return_ty(), S);
 //       }
 
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_UNRES_TY: {
 //       S.line << C->as<NamedTy>()->get_name();
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
 //     case QAST_NODE_INFER_TY: {
 //       S.line << "?";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
@@ -951,7 +951,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //           recurse(N->get_args().front(), S);
 //           S.line << "?";
 
-//           put_type_metadata(C->as<qparse::Type>(), S);
+//           put_type_metadata(C->as<npar::Type>(), S);
 //           break;
 //         } else if (name == "__builtin_vec") {
 //           qcore_assert(N->get_args().size() == 1);
@@ -960,7 +960,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //           recurse(N->get_args().front(), S);
 //           S.line << "]";
 
-//           put_type_metadata(C->as<qparse::Type>(), S);
+//           put_type_metadata(C->as<npar::Type>(), S);
 //           break;
 //         } else if (name == "__builtin_uset") {
 //           qcore_assert(N->get_args().size() == 1);
@@ -969,7 +969,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //           recurse(N->get_args().front(), S);
 //           S.line << "}";
 
-//           put_type_metadata(C->as<qparse::Type>(), S);
+//           put_type_metadata(C->as<npar::Type>(), S);
 //           break;
 //         } else if (name == "__builtin_umap") {
 //           qcore_assert(N->get_args().size() == 2);
@@ -980,7 +980,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //           recurse(N->get_args()[1], S);
 //           S.line << "]";
 
-//           put_type_metadata(C->as<qparse::Type>(), S);
+//           put_type_metadata(C->as<npar::Type>(), S);
 //           break;
 //         }
 //       }
@@ -996,7 +996,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //         }
 //       }
 //       S.line << ">";
-//       put_type_metadata(C->as<qparse::Type>(), S);
+//       put_type_metadata(C->as<npar::Type>(), S);
 //       break;
 //     }
 
@@ -1277,7 +1277,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 
 //       for (auto it = N->get_body()->get_items().begin();
 //            it != N->get_body()->get_items().end(); it++) {
-//         qparse_ty_t ty = (*it)->getKind();
+//         npar_ty_t ty = (*it)->getKind();
 
 //         if (ty == QAST_NODE_FNDECL) {
 //           imports.push_back(*it);
@@ -1387,13 +1387,13 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //     }
 
 //     case QAST_NODE_BLOCK: {
-//       static const std::unordered_set<qparse_ty_t> no_has_semicolon = {
+//       static const std::unordered_set<npar_ty_t> no_has_semicolon = {
 //           QAST_NODE_FN,
 //           QAST_NODE_EXPORT,
 //           QAST_NODE_BLOCK,
 //       };
 
-//       static const std::unordered_set<qparse_ty_t> double_sep = {
+//       static const std::unordered_set<npar_ty_t> double_sep = {
 //           QAST_NODE_FNDECL,    QAST_NODE_STRUCT, QAST_NODE_ENUM,
 //           QAST_NODE_FN, QAST_NODE_SUBSYSTEM, QAST_NODE_EXPORT,
 //           QAST_NODE_BLOCK,
@@ -1453,7 +1453,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 
 //       for (auto it = N->get_items().begin(); it != N->get_items().end();
 //       ++it) {
-//         qparse_ty_t ty = (*it)->getKind();
+//         npar_ty_t ty = (*it)->getKind();
 
 //         put_indent(S);
 //         recurse(*it, S);
@@ -1742,7 +1742,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //   }
 // }
 
-static void recurse(qparse::Node*, AutomatonState&) {
+static void recurse(npar::Node*, AutomatonState&) {
   (void)write_float_literal;
   (void)escape_char_literal;
   (void)escape_string_literal;
@@ -1827,15 +1827,15 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
 
   qcore_env env;
   qlex lexer(ss, uri.c_str(), env.get());
-  qparser parser(lexer.get(), env.get());
+  nr_syn parser(lexer.get(), env.get());
 
-  qparse_node_t* root = nullptr;
-  if (!qparse_do(parser.get(), &root)) {
+  npar_node_t* root = nullptr;
+  if (!npar_do(parser.get(), &root)) {
     return;
   }
 
   /// FIXME: Re-enable checking once checking is fixed
-  // if (!qparse_check(parser.get(), root)) {
+  // if (!npar_check(parser.get(), root)) {
   //   return;
   // }
 
@@ -1843,7 +1843,7 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
 
   AutomatonState S(options.tabSize);
 
-  recurse(static_cast<qparse::Node*>(root), S);
+  recurse(static_cast<npar::Node*>(root), S);
 
   ///==========================================================
   /// Send the whole new file contents

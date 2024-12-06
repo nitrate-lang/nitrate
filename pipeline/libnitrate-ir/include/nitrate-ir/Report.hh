@@ -41,7 +41,7 @@
 #include <span>
 #include <string_view>
 
-namespace qparse {
+namespace npar {
   class Node;
 }
 

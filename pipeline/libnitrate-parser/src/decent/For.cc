@@ -39,7 +39,7 @@
 
 #include <decent/Recurse.hh>
 
-qparse::Stmt *qparse::recurse_for(qparse_t &S, qlex_t &rd) {
+npar::Stmt *npar::recurse_for(npar_t &S, qlex_t &rd) {
   Expr *x0 = nullptr, *x1 = nullptr, *x2 = nullptr;
 
   qlex_tok_t tok = peek();

@@ -40,8 +40,7 @@
 
 #include <decent/Recurse.hh>
 
-using namespace qparse;
-using namespace qparse;
+using namespace npar;
 
 struct GetPropState {
   size_t noexcept_ctr = 0;
@@ -113,7 +112,7 @@ static bool fn_get_property(qlex_t &rd, GetPropState &state) {
   return false;
 }
 
-static bool recurse_fn_parameter(qparse_t &S, qlex_t &rd, FuncParam &param) {
+static bool recurse_fn_parameter(npar_t &S, qlex_t &rd, FuncParam &param) {
   auto tok = next();
 
   std::string name;
@@ -294,8 +293,7 @@ static bool recurse_captures_and_name(qlex_t &rd, FnDecl *fndecl,
 }
 
 bool recurse_template_parameters(
-    qparse_t &S, qlex_t &rd,
-    std::optional<TemplateParameters> &template_params) {
+    npar_t &S, qlex_t &rd, std::optional<TemplateParameters> &template_params) {
   template_params = std::nullopt;
 
   qlex_tok_t c = peek();
@@ -343,7 +341,7 @@ bool recurse_template_parameters(
   return true;
 }
 
-static bool recurse_parameters(qparse_t &S, qlex_t &rd, FuncTy *ftype,
+static bool recurse_parameters(npar_t &S, qlex_t &rd, FuncTy *ftype,
                                bool &is_variadic) {
   qlex_tok_t c = peek();
 
@@ -424,7 +422,7 @@ static bool translate_purity(FunctionProperties prop, FuncTy *ftype) {
   return true;
 }
 
-static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, qparse_t &S,
+static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, npar_t &S,
                                 Expr *&req_in, Expr *&req_out) {
   if (c.is<qKPromise>()) {
     /* Parse constraint block */
@@ -488,7 +486,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, qparse_t &S,
   return true;
 }
 
-Stmt *qparse::recurse_function(qparse_t &S, qlex_t &rd) {
+Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
   FnDecl *fndecl = FnDecl::get("", nullptr);
   FuncTy *ftype = FuncTy::get();
   Type *ret_type = nullptr;

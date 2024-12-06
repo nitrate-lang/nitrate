@@ -345,7 +345,7 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
       return false;
     }
 
-    if (!qparse_lib_init()) {
+    if (!npar_lib_init()) {
       LOG(ERROR) << "Failed to initialize NITRATE-PARSE library" << std::endl;
       return false;
     }

@@ -91,7 +91,7 @@ C_EXPORT bool nr_lib_init() {
     return false;
   }
 
-  if (!qparse_lib_init()) {
+  if (!npar_lib_init()) {
     return false;
   }
 
@@ -103,7 +103,7 @@ C_EXPORT void nr_lib_deinit() {
     return;
   }
 
-  qparse_lib_deinit();
+  npar_lib_deinit();
   qcore_lib_deinit();
 
   return do_deinit();

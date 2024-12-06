@@ -42,10 +42,10 @@
 #include <decent/Recurse.hh>
 #include <nitrate-core/Classes.hh>
 
-using namespace qparse;
+using namespace npar;
 
-Stmt *qparse::recurse_block(qparse_t &S, qlex_t &rd, bool expect_braces,
-                            bool single_stmt) {
+Stmt *npar::recurse_block(npar_t &S, qlex_t &rd, bool expect_braces,
+                          bool single_stmt) {
   qlex_tok_t tok;
 
   Block *block = Block::get();
@@ -310,13 +310,13 @@ Stmt *qparse::recurse_block(qparse_t &S, qlex_t &rd, bool expect_braces,
   return block;
 }
 
-C_EXPORT qparse_t *qparse_new(qlex_t *lexer, qcore_env_t env) {
+C_EXPORT npar_t *npar_new(qlex_t *lexer, qcore_env_t env) {
   if (!lexer) {
     return nullptr;
   }
   static std::atomic<uint64_t> job_id = 1;  // 0 is reserved for invalid job
 
-  qparse_t *parser = new qparse_t();
+  npar_t *parser = new npar_t();
 
   parser->env = env;
   parser->id = job_id++;
@@ -329,7 +329,7 @@ C_EXPORT qparse_t *qparse_new(qlex_t *lexer, qcore_env_t env) {
   return parser;
 }
 
-C_EXPORT void qparse_free(qparse_t *parser) {
+C_EXPORT void npar_free(npar_t *parser) {
   if (!parser) {
     return;
   }
@@ -339,50 +339,50 @@ C_EXPORT void qparse_free(qparse_t *parser) {
   delete parser;
 }
 
-static thread_local qparse_t *parser_ctx;
+static thread_local npar_t *parser_ctx;
 
-C_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
+C_EXPORT bool npar_do(npar_t *L, npar_node_t **out) {
   if (!L || !out) {
     return false;
   }
   *out = nullptr;
 
   /*=============== Swap in their arena  ===============*/
-  qparse::qparse_arena.swap(*L->arena.get());
+  npar::npar_arena.swap(*L->arena.get());
 
   /*== Install thread-local references to the parser ==*/
-  qparse::install_reference(L);
+  npar::install_reference(L);
 
   parser_ctx = L;
-  *out = qparse::recurse_block(*L, *L->lexer, false, false);
+  *out = npar::recurse_block(*L, *L->lexer, false, false);
   parser_ctx = nullptr;
 
   /*== Uninstall thread-local references to the parser ==*/
-  qparse::install_reference(nullptr);
+  npar::install_reference(nullptr);
 
   /*=============== Swap out their arena ===============*/
-  qparse::qparse_arena.swap(*L->arena.get());
+  npar::npar_arena.swap(*L->arena.get());
 
   /*==================== Return status ====================*/
   return !L->failed;
 }
 
-C_EXPORT bool qparse_and_dump(qparse_t *L, FILE *out, void *x0, void *x1) {
+C_EXPORT bool npar_and_dump(npar_t *L, FILE *out, void *x0, void *x1) {
   (void)x0;
   (void)x1;
 
-  qparse_node_t *node = nullptr;
+  npar_node_t *node = nullptr;
 
   if (!L || !out) {
     return false;
   }
 
-  if (!qparse_do(L, &node)) {
+  if (!npar_do(L, &node)) {
     return false;
   }
 
   size_t len = 0;
-  char *repr = qparse_repr(node, false, 2, &len);
+  char *repr = npar_repr(node, false, 2, &len);
 
   fwrite(repr, 1, len, out);
 
@@ -391,7 +391,7 @@ C_EXPORT bool qparse_and_dump(qparse_t *L, FILE *out, void *x0, void *x1) {
   return true;
 }
 
-C_EXPORT bool qparse_check(qparse_t *parser, const qparse_node_t *base) {
+C_EXPORT bool npar_check(npar_t *parser, const npar_node_t *base) {
   if (!parser || !base) {
     return false;
   }
@@ -404,8 +404,8 @@ C_EXPORT bool qparse_check(qparse_t *parser, const qparse_node_t *base) {
   return true;
 }
 
-C_EXPORT void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb,
-                           uintptr_t data) {
+C_EXPORT void npar_dumps(npar_t *parser, bool no_ansi, npar_dump_cb cb,
+                         uintptr_t data) {
   if (!parser || !cb) {
     return;
   }
@@ -413,8 +413,8 @@ C_EXPORT void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb,
   auto adapter = [&](const char *msg) { cb(msg, std::strlen(msg), data); };
 
   if (no_ansi) {
-    parser->diag.render(adapter, qparse::FormatStyle::ClangPlain);
+    parser->diag.render(adapter, npar::FormatStyle::ClangPlain);
   } else {
-    parser->diag.render(adapter, qparse::FormatStyle::Clang16Color);
+    parser->diag.render(adapter, npar::FormatStyle::Clang16Color);
   }
 }

@@ -37,9 +37,9 @@
 
 #include "nitrate-parser/Node.h"
 
-using namespace qparse;
+using namespace npar;
 
-Stmt *qparse::recurse_return(qparse_t &S, qlex_t &rd) {
+Stmt *npar::recurse_return(npar_t &S, qlex_t &rd) {
   qlex_tok_t tok = peek();
 
   if (tok.is<qPuncSemi>()) {
@@ -64,7 +64,7 @@ Stmt *qparse::recurse_return(qparse_t &S, qlex_t &rd) {
   return R;
 }
 
-Stmt *qparse::recurse_retif(qparse_t &S, qlex_t &rd) {
+Stmt *npar::recurse_retif(npar_t &S, qlex_t &rd) {
   Expr *condition = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncComa)});
 
   qlex_tok_t tok = next();

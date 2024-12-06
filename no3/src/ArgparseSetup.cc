@@ -562,7 +562,7 @@ namespace no3::argparse_setup {
 
     subparsers["bench"] = std::move(bench);
 
-    /*================= QPARSE SUBPARSER =================*/
+    /*================= PARSE SUBPARSER =================*/
     auto parse = std::make_unique<ArgumentParser>("parse", "1.0",
                                                   default_arguments::help);
 
@@ -693,8 +693,8 @@ namespace no3::argparse_setup {
     std::stringstream ss;
 
     std::array<std::string_view, 6> NO3_DEPS = {
-        qcore_lib_version(),  qlex_lib_version(), qprep_lib_version(),
-        qparse_lib_version(), nr_lib_version(),   qcode_lib_version()};
+        qcore_lib_version(), qlex_lib_version(), qprep_lib_version(),
+        npar_lib_version(),  nr_lib_version(),   qcode_lib_version()};
 
     ss << "{\"ver\":\"" << __TARGET_VERSION
        << "\",\"stable\":" << (NO3_STABLE ? "true" : "false") << ",\"using\":[";

@@ -44,7 +44,7 @@
 #include <string_view>
 #include <unordered_set>
 
-namespace qparse {
+namespace npar {
   class Node;
 }
 

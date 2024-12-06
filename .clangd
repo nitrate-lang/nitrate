@@ -2,8 +2,8 @@ InlayHints:
   BlockEnd: No
   Designators: No
   Enabled: Yes
-  ParameterNames: Yes
-  DeducedTypes: Yes
+  ParameterNames: No
+  DeducedTypes: No
   TypeNameLimit: 24
 Diagnostics:
   ClangTidy:

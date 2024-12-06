@@ -39,9 +39,9 @@
 #include <core/ParserStruct.hh>
 #include <sstream>
 
-using namespace qparse;
+using namespace npar;
 
-CPP_EXPORT thread_local DiagnosticManager *qparse::diagnostic;
+CPP_EXPORT thread_local DiagnosticManager *npar::diagnostic;
 
 ///============================================================================///
 
@@ -153,6 +153,6 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler,
   return m_msgs.size();
 }
 
-void qparse::install_reference(qparse_t *parser) {
+void npar::install_reference(npar_t *parser) {
   diagnostic = parser ? &parser->diag : nullptr;
 }

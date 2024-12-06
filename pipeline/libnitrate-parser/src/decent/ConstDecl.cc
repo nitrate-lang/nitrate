@@ -35,10 +35,10 @@
 
 /// TODO: Cleanup this code; it's a mess from refactoring.
 
-using namespace qparse;
+using namespace npar;
 
-namespace qparse {
-  static bool recurse_decl(qparse_t &S, qlex_tok_t tok, qlex_t &rd,
+namespace npar {
+  static bool recurse_decl(npar_t &S, qlex_tok_t tok, qlex_t &rd,
                            std::pair<std::string, Type *> &decl) {
     if (!tok.is(qName)) {
       diagnostic << tok << "Expected a name in constant declaration";
@@ -60,9 +60,9 @@ namespace qparse {
     decl = std::make_pair(name, type);
     return true;
   }
-}  // namespace qparse
+}  // namespace npar
 
-std::vector<Stmt *> qparse::recurse_const(qparse_t &S, qlex_t &rd) {
+std::vector<Stmt *> npar::recurse_const(npar_t &S, qlex_t &rd) {
   qlex_tok_t tok = next();
 
   std::vector<std::pair<std::string, Type *>> decls;

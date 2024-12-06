@@ -44,33 +44,32 @@
 #include <set>
 #include <unordered_set>
 
-namespace qparse {
-  Stmt *recurse_pub(qparse_t &S, qlex_t &rd);
-  Stmt *recurse_sec(qparse_t &S, qlex_t &rd);
-  Stmt *recurse_pro(qparse_t &S, qlex_t &rd);
-  std::vector<Stmt *> recurse_let(qparse_t &S, qlex_t &rd);
-  std::vector<Stmt *> recurse_const(qparse_t &S, qlex_t &rd);
-  std::vector<Stmt *> recurse_var(qparse_t &S, qlex_t &rd);
-  Stmt *recurse_enum(qparse_t &S, qlex_t &rd);
-  Stmt *recurse_struct(qparse_t &S, qlex_t &rd, CompositeType type);
-  Stmt *recurse_subsystem(qparse_t &S, qlex_t &rd);
-  Stmt *recurse_function(qparse_t &S, qlex_t &rd);
-  Type *recurse_type(qparse_t &S, qlex_t &rd);
-  Stmt *recurse_typedef(qparse_t &S, qlex_t &rd);
-  Stmt *recurse_return(qparse_t &S, qlex_t &rd);
-  Stmt *recurse_retif(qparse_t &S, qlex_t &rd);
-  Stmt *recurse_if(qparse_t &S, qlex_t &rd);
-  Stmt *recurse_while(qparse_t &S, qlex_t &rd);
-  Stmt *recurse_for(qparse_t &S, qlex_t &rd);
-  Stmt *recurse_foreach(qparse_t &S, qlex_t &rd);
-  Stmt *recurse_switch(qparse_t &S, qlex_t &rd);
-  Stmt *recurse_inline_asm(qparse_t &S, qlex_t &rd);
-  Decl *recurse_composite_field(qparse_t &S, qlex_t &rd);
+namespace npar {
+  Stmt *recurse_pub(npar_t &S, qlex_t &rd);
+  Stmt *recurse_sec(npar_t &S, qlex_t &rd);
+  Stmt *recurse_pro(npar_t &S, qlex_t &rd);
+  std::vector<Stmt *> recurse_let(npar_t &S, qlex_t &rd);
+  std::vector<Stmt *> recurse_const(npar_t &S, qlex_t &rd);
+  std::vector<Stmt *> recurse_var(npar_t &S, qlex_t &rd);
+  Stmt *recurse_enum(npar_t &S, qlex_t &rd);
+  Stmt *recurse_struct(npar_t &S, qlex_t &rd, CompositeType type);
+  Stmt *recurse_subsystem(npar_t &S, qlex_t &rd);
+  Stmt *recurse_function(npar_t &S, qlex_t &rd);
+  Type *recurse_type(npar_t &S, qlex_t &rd);
+  Stmt *recurse_typedef(npar_t &S, qlex_t &rd);
+  Stmt *recurse_return(npar_t &S, qlex_t &rd);
+  Stmt *recurse_retif(npar_t &S, qlex_t &rd);
+  Stmt *recurse_if(npar_t &S, qlex_t &rd);
+  Stmt *recurse_while(npar_t &S, qlex_t &rd);
+  Stmt *recurse_for(npar_t &S, qlex_t &rd);
+  Stmt *recurse_foreach(npar_t &S, qlex_t &rd);
+  Stmt *recurse_switch(npar_t &S, qlex_t &rd);
+  Stmt *recurse_inline_asm(npar_t &S, qlex_t &rd);
+  Decl *recurse_composite_field(npar_t &S, qlex_t &rd);
 
-  bool recurse_attributes(qparse_t &S, qlex_t &rd,
-                          std::set<Expr *> &attributes);
+  bool recurse_attributes(npar_t &S, qlex_t &rd, std::set<Expr *> &attributes);
 
-  Stmt *recurse_block(qparse_t &S, qlex_t &rd, bool expect_braces = true,
+  Stmt *recurse_block(npar_t &S, qlex_t &rd, bool expect_braces = true,
                       bool single_stmt = false);
 
   struct tok_hash {
@@ -87,7 +86,7 @@ namespace qparse {
     }
   };
 
-  Expr *recurse_expr(qparse_t &S, qlex_t &rd,
+  Expr *recurse_expr(npar_t &S, qlex_t &rd,
                      std::unordered_set<qlex_tok_t, tok_hash> terminators,
                      size_t depth = 0);
 
@@ -95,6 +94,6 @@ namespace qparse {
 #define peek() qlex_peek(&rd)
 #define current() qlex_current(&rd)
 
-};  // namespace qparse
+};  // namespace npar
 
 #endif  // __NITRATE_PARSE_H__
