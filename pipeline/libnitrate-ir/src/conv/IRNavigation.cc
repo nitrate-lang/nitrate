@@ -31,60 +31,16 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <string_view>
-#include <unordered_map>
 #define IRBUILDER_IMPL
 
 #include <nitrate-core/Error.h>
 
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
+#include <string_view>
+#include <unordered_map>
 
 using namespace nr;
-
-NRBuilder &NRBuilder::insertAfter(Expr *last) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-
-  return *this;
-}
-
-NRBuilder &NRBuilder::insertAfterVariable(std::string_view name) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-
-  return *this;
-}
-
-NRBuilder &NRBuilder::insertAfterFunction(std::string_view name) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-
-  return *this;
-}
-
-NRBuilder &NRBuilder::insertBefore(Expr *last) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-
-  return *this;
-}
-
-NRBuilder &NRBuilder::insertBeforeVariable(std::string_view name) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-
-  return *this;
-}
-
-NRBuilder &NRBuilder::insertBeforeFunction(std::string_view name) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-
-  return *this;
-}
-
-///=============================================================================
 
 static std::string join_name_segment(const std::string &a,
                                      const std::string &b) {
@@ -105,27 +61,29 @@ static void drop_tail_scope(std::string &scope) {
 }
 
 template <typename T>
-static std::optional<T> find_in_scope_map(
+static std::optional<std::pair<T, std::string>> find_in_scope_map(
     const std::unordered_map<std::string_view, T> &map,
     std::string_view qualified_name) {
   auto sep_it = qualified_name.find_last_of("$$");
   if (sep_it == std::string_view::npos) {
     auto it = map.find(qualified_name);
-    return it == map.end() ? std::nullopt : std::optional<T>(it->second);
+    return it == map.end() ? std::nullopt
+                           : std::optional<std::pair<T, std::string>>(
+                                 {it->second, std::string(qualified_name)});
   }
 
   std::string scope = std::string(qualified_name.substr(0, sep_it - 1));
   std::string name = std::string(qualified_name.substr(sep_it + 1));
   std::string the_case;
 
-  std::optional<T> R;
+  std::optional<std::pair<T, std::string>> R;
 
   while (true) {
     the_case = join_name_segment(scope, name);
 
     auto it = map.find(the_case);
     if (it != map.end()) {
-      R = it->second;
+      R = {it->second, the_case};
       break;
     }
 
@@ -139,9 +97,9 @@ static std::optional<T> find_in_scope_map(
   return R;
 }
 
-std::optional<Expr *> NRBuilder::resolve_name(std::string_view name,
-                                              Kind kind) const noexcept {
-  std::optional<Expr *> R;
+std::optional<std::pair<Expr *, std::string_view>> NRBuilder::resolve_name(
+    std::string_view name, Kind kind) noexcept {
+  std::optional<std::pair<Expr *, std::string>> R;
 
   switch (kind) {
     case Kind::TypeDef: {
@@ -157,9 +115,9 @@ std::optional<Expr *> NRBuilder::resolve_name(std::string_view name,
 
         if (const auto &submap =
                 find_in_scope_map(m_named_constant_group, basename)) {
-          auto it = submap.value().find(field_name);
-          if (it != submap.value().end()) {
-            R = it->second;
+          auto it = submap.value().first.find(field_name);
+          if (it != submap.value().first.end()) {
+            R = {it->second, std::string(name)};
           }
         }
       }
@@ -167,9 +125,19 @@ std::optional<Expr *> NRBuilder::resolve_name(std::string_view name,
     }
 
     case Kind::Function: {
-      R = find_in_scope_map(m_named_functions, name);
+      R = find_in_scope_map(m_functions, name);
+      break;
+    }
+
+    case Kind::Variable: {
+      R = find_in_scope_map(m_variables, name);
+      break;
     }
   }
 
-  return R;
+  if (!R.has_value()) {
+    return std::nullopt;
+  }
+
+  return {{R->first, intern(R->second)}};
 }

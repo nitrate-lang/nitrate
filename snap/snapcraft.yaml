@@ -1,5 +1,5 @@
 name: nitrate
-base: core22
+base: core24
 version: '0.0.0'
 summary: Nitrate Package and Build System
 description: |
@@ -14,26 +14,25 @@ parts:
   nitrate:
     plugin: cmake
     cmake-parameters:
-      - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DSTRIP_OUTPUT=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang
+      - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DSTRIP_OUTPUT=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang
     source: .
     build-packages:
-      - libssl-dev
-      - libboost-all-dev
-      - libzstd-dev
-      - libclang-common-14-dev
-      - rapidjson-dev
-      - libdeflate-dev
-      - libreadline-dev
-      - nlohmann-json3-dev
-      - libgoogle-glog-dev
-      - clang
-      - llvm-14-dev
-      - libyaml-cpp-dev
+     - libboost-all-dev
+     - libssl-dev
+     - libgoogle-glog-dev
+     - libyaml-cpp-dev
+     - rapidjson-dev
+     - nlohmann-json3-dev
+     - libreadline-dev
+     - libzstd-dev
+     - llvm-18-dev
+     - libpolly-18-dev
+     - clang
     build-attributes:
      - enable-patchelf
     stage-packages:
       - git
-      - libdeflate0
+      - libunwind8
     override-stage: |
         snapcraftctl stage
         rm -rf $SNAPCRAFT_PART_INSTALL/usr/include

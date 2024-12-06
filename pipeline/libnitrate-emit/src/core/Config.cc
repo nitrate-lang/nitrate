@@ -33,8 +33,8 @@
 
 #include "Config.hh"
 
-#include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-emit/Config.h>
 
 #include <boost/bimap.hpp>
@@ -88,7 +88,7 @@ static void assign_default_options(qcode_conf_t &conf) {
   }
 }
 
-LIB_EXPORT qcode_conf_t *qcode_conf_new(bool use_defaults) {
+C_EXPORT qcode_conf_t *qcode_conf_new(bool use_defaults) {
   qcode_conf_t *obj = new qcode_conf_t();
 
   if (use_defaults) {
@@ -98,15 +98,15 @@ LIB_EXPORT qcode_conf_t *qcode_conf_new(bool use_defaults) {
   return obj;
 }
 
-LIB_EXPORT void qcode_conf_free(qcode_conf_t *conf) { delete conf; }
+C_EXPORT void qcode_conf_free(qcode_conf_t *conf) { delete conf; }
 
-LIB_EXPORT bool qcode_conf_setopt(qcode_conf_t *conf, qcode_key_t key,
-                                  qcode_val_t value) {
+C_EXPORT bool qcode_conf_setopt(qcode_conf_t *conf, qcode_key_t key,
+                                qcode_val_t value) {
   return conf->SetAndVerify(key, value);
 }
 
-LIB_EXPORT bool qcode_conf_getopt(qcode_conf_t *conf, qcode_key_t key,
-                                  qcode_val_t *value) {
+C_EXPORT bool qcode_conf_getopt(qcode_conf_t *conf, qcode_key_t key,
+                                qcode_val_t *value) {
   auto val = conf->Get(key);
 
   if (!val.has_value()) {
@@ -120,8 +120,8 @@ LIB_EXPORT bool qcode_conf_getopt(qcode_conf_t *conf, qcode_key_t key,
   return true;
 }
 
-LIB_EXPORT qcode_setting_t *qcode_conf_getopts(qcode_conf_t *conf,
-                                               size_t *count) {
+C_EXPORT qcode_setting_t *qcode_conf_getopts(qcode_conf_t *conf,
+                                             size_t *count) {
   if (!count) {
     qcore_panic(
         "qcode_conf_getopts: Contract violation: 'count' parameter cannot be "
@@ -146,11 +146,11 @@ LIB_EXPORT qcode_setting_t *qcode_conf_getopts(qcode_conf_t *conf,
   return copy;
 }
 
-LIB_EXPORT void qcode_conf_clear(qcode_conf_t *conf) { conf->ClearNoVerify(); }
+C_EXPORT void qcode_conf_clear(qcode_conf_t *conf) { conf->ClearNoVerify(); }
 
-LIB_EXPORT size_t qcode_conf_dump(qcode_conf_t *conf, FILE *stream,
-                                  const char *field_delim,
-                                  const char *line_delim) {
+C_EXPORT size_t qcode_conf_dump(qcode_conf_t *conf, FILE *stream,
+                                const char *field_delim,
+                                const char *line_delim) {
   if (!stream) {
     qcore_panic(
         "qcode_conf_dump: Contract violation: 'stream' parameter cannot be "

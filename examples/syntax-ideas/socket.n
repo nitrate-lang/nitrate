@@ -35,7 +35,7 @@
 
 @import typesystem::alias;
 
-subsystem orbit::core::net::socket {
+scope orbit::core::net::socket {
     enum L1Proto {
         IRDA            = 0000000,
         

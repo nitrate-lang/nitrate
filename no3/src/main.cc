@@ -64,6 +64,8 @@
 using namespace no3;
 using argparse::ArgumentParser;
 
+static core::MyLogSink G_google_log_sink;
+
 namespace no3::router {
   static int run_init_mode(const ArgumentParser &parser) {
     using namespace init;
@@ -178,17 +180,6 @@ namespace no3::router {
       args.push_back(parser.get<std::string>("--config"));
     }
 
-    if (parser.is_used("--log")) {
-      std::fstream log_file(parser.get<std::string>("--log"));
-      if (!log_file.is_open()) {
-        LOG(ERROR) << "Failed to open log file";
-        return -2;
-      }
-
-      qcore_implement();
-      /// TODO: Handle log stream redirect
-    }
-
     if (parser.is_used("--pipe")) {
       args.push_back("--pipe");
       args.push_back(parser.get<std::string>("--pipe"));
@@ -211,9 +202,26 @@ namespace no3::router {
         inner_command += " ";
       }
     }
+
+    auto log_file = std::make_unique<std::fstream>(
+        parser.get<std::string>("--log"), std::ios::app);
+
+    if (!log_file->is_open()) {
+      LOG(ERROR) << "Failed to open log file";
+      return -2;
+    }
+
+    auto old_stream = G_google_log_sink.redirect_to_stream(std::move(log_file));
+
+    /// TODO: Handle log stream redirect
+
     LOG(INFO) << "Invoking LSP: \"" << inner_command << "\"";
 
-    return nitrated_main(args.size(), c_args.data());
+    int ret = nitrated_main(args.size(), c_args.data());
+
+    G_google_log_sink.redirect_to_stream(std::move(old_stream));
+
+    return ret;
   }
 
   int run_dev_mode(
@@ -318,8 +326,7 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
     google::InitGoogleLogging("no3");
     google::InstallFailureSignalHandler();
 
-    static core::MyLogSink sink;
-    google::AddLogSink(&sink);
+    google::AddLogSink(&G_google_log_sink);
   }
 
   { /* Initialize libraries */
@@ -338,7 +345,7 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
       return false;
     }
 
-    if (!qparse_lib_init()) {
+    if (!npar_lib_init()) {
       LOG(ERROR) << "Failed to initialize NITRATE-PARSE library" << std::endl;
       return false;
     }
@@ -359,6 +366,7 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
   return true;
 }
 
+#ifdef NO3_MAIN
 int main(int argc, char *argv[]) {
   if (!no3_init()) {
     std::cerr << "Failed to initialize no3\n";
@@ -367,3 +375,4 @@ int main(int argc, char *argv[]) {
 
   return no3_command(argc, argv);
 }
+#endif

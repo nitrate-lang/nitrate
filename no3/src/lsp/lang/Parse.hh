@@ -10,8 +10,8 @@
 namespace lang {
   class ParseTreeWrapper {
     qlex m_lexer;
-    qparser context;
-    const qparse::Node* m_root;
+    nr_syn context;
+    const npar::Node* m_root;
 
   public:
     ParseTreeWrapper();
@@ -20,7 +20,7 @@ namespace lang {
     bool is_okay() const { return m_root != nullptr; }
     bool from_syncfs(const std::string& uri);
 
-    const qparse::Node* root() const { return m_root; }
+    const npar::Node* root() const { return m_root; }
     qlex_t* lexer() { return m_lexer.get(); }
   };
   using ParseTree = std::shared_ptr<ParseTreeWrapper>;

@@ -34,6 +34,7 @@
 #define LIBNITRATE_INTERNAL
 #include <nitrate-core/Env.h>
 #include <nitrate-core/Lib.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-emit/Lib.h>
 #include <nitrate-ir/Lib.h>
 #include <nitrate-lexer/Lib.h>
@@ -51,8 +52,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
-#include "LibMacro.h"
 
 static const char *empty_options[] = {NULL};
 
@@ -79,11 +78,11 @@ static bool parse_options(const char *const options[],
 
 static void diag_nop(const char *, const char *, uint64_t) {}
 
-LIB_EXPORT void nit_diag_stdout(const char *message, const char *, uint64_t) {
+C_EXPORT void nit_diag_stdout(const char *message, const char *, uint64_t) {
   fprintf(stdout, "%s", message);
 }
 
-LIB_EXPORT void nit_diag_stderr(const char *message, const char *, uint64_t) {
+C_EXPORT void nit_diag_stderr(const char *message, const char *, uint64_t) {
   fprintf(stderr, "%s", message);
 }
 
@@ -141,8 +140,8 @@ static bool check_out_stream_usable(FILE *stream, const char *name) {
   return true;
 }
 
-LIB_EXPORT bool nit_cc(nit_stream_t *S, FILE *O, nit_diag_cb diag_cb,
-                       uint64_t userdata, const char *const options[]) {
+C_EXPORT bool nit_cc(nit_stream_t *S, FILE *O, nit_diag_cb diag_cb,
+                     uint64_t userdata, const char *const options[]) {
   /* This API will be used by mortals, protect them from themselves */
   if (!nit_lib_ready && !nit_lib_init()) {
     return false;
@@ -235,9 +234,9 @@ static bool impl_subsys_codegen(
   return false;
 }
 
-LIB_EXPORT void nit_fclose(nit_stream_t *f) { delete f; }
+C_EXPORT void nit_fclose(nit_stream_t *f) { delete f; }
 
-LIB_EXPORT nit_stream_t *nit_from(FILE *f, bool auto_close) {
+C_EXPORT nit_stream_t *nit_from(FILE *f, bool auto_close) {
   if (!f) {
     return nullptr;
   }
@@ -245,7 +244,7 @@ LIB_EXPORT nit_stream_t *nit_from(FILE *f, bool auto_close) {
   return new nit_stream_t(f, auto_close);
 }
 
-LIB_EXPORT nit_stream_t *nit_join(size_t num, ...) {
+C_EXPORT nit_stream_t *nit_join(size_t num, ...) {
   va_list va;
   va_start(va, num);
   nit_stream_t *obj = nit_joinv(num, va);
@@ -254,7 +253,7 @@ LIB_EXPORT nit_stream_t *nit_join(size_t num, ...) {
   return obj;
 }
 
-LIB_EXPORT nit_stream_t *nit_joinv(size_t num, va_list va) {
+C_EXPORT nit_stream_t *nit_joinv(size_t num, va_list va) {
   std::vector<FILE *> streams;
   streams.resize(num);
 
@@ -265,6 +264,6 @@ LIB_EXPORT nit_stream_t *nit_joinv(size_t num, va_list va) {
   return new nit_stream_t(streams);
 }
 
-LIB_EXPORT nit_stream_t *nit_njoin(size_t num, FILE **files) {
+C_EXPORT nit_stream_t *nit_njoin(size_t num, FILE **files) {
   return new nit_stream_t(std::vector<FILE *>(files, files + num));
 }

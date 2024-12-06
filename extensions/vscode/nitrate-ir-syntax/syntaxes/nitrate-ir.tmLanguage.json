@@ -35,7 +35,7 @@
       "patterns": [
         {
           "name": "keyword.control.nr",
-          "match": "\\b(const|volatile|alloc|seq|async|extern|local|ret|brk|cont|if|then|else|while|for|form|foreach|case|switch|default|fn|opaque|struct|union|alignof|typeof|offsetof|bitcast_as|cast_as|bitsizeof)\\b"
+          "match": "\\b(const|alloc|seq|async|extern|local|ret|brk|cont|if|then|else|while|for|form|foreach|case|switch|default|fn|opaque|struct|union|alignof|typeof|offsetof|bitcast_as|cast_as|bitsizeof)\\b"
         }
       ]
     },

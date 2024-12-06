@@ -33,12 +33,11 @@
 
 #include <execinfo.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 
 #include <cstdlib>
 #include <iostream>
 #include <vector>
-
-#include "LibMacro.h"
 
 #define PROJECT_REPO_URL "https://github.com/Kracken256/nitrate"
 #define PANIC_LINE_LENGTH 80
@@ -269,16 +268,16 @@ static void panic_render_report(const std::vector<std::string> &lines) {
   std::cerr << "\nAborting..." << std::endl;
 }
 
-LIB_EXPORT void qcore_panic_(const char *msg) { qcore_panicf_("%s", msg); }
+C_EXPORT void qcore_panic_(const char *msg) { qcore_panicf_("%s", msg); }
 
-LIB_EXPORT void qcore_panicf_(const char *_fmt, ...) {
+C_EXPORT void qcore_panicf_(const char *_fmt, ...) {
   va_list args;
   va_start(args, _fmt);
   qcore_vpanicf_(_fmt, args);
   va_end(args);  // Unreachable, but whatever
 }  // Unreachable, but whatever
 
-LIB_EXPORT void qcore_vpanicf_(const char *fmt, va_list args) {
+C_EXPORT void qcore_vpanicf_(const char *fmt, va_list args) {
   char *msg = nullptr;
 
   { /* Parse the format string */
@@ -293,17 +292,15 @@ LIB_EXPORT void qcore_vpanicf_(const char *fmt, va_list args) {
   abort();
 }
 
-LIB_EXPORT void qcore_debug_(const char *msg) {
-  return qcore_debugf_("%s", msg);
-}
+C_EXPORT void qcore_debug_(const char *msg) { return qcore_debugf_("%s", msg); }
 
-LIB_EXPORT void qcore_debugf_(const char *fmt, ...) {
+C_EXPORT void qcore_debugf_(const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
   qcore_vdebugf_(fmt, args);
   va_end(args);
 }
 
-LIB_EXPORT void qcore_vdebugf_(const char *fmt, va_list args) {
+C_EXPORT void qcore_vdebugf_(const char *fmt, va_list args) {
   vfprintf(stderr, fmt, args);
 }

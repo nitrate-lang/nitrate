@@ -42,7 +42,7 @@
 
 #define __NR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
-#include <core/LibMacro.h>
+#include <nitrate-core/Macro.h>
 
 #include <algorithm>
 #include <nitrate-ir/IRGraph.hh>
@@ -59,97 +59,98 @@ namespace nr::detail {
     }
 
     switch (base->getKind()) {
-      case QIR_NODE_BINEXPR: {
+      case NR_NODE_BINEXPR: {
         children.push_back(&base->as<BinExpr>()->m_lhs);
         children.push_back(&base->as<BinExpr>()->m_rhs);
         break;
       }
-      case QIR_NODE_UNEXPR: {
+      case NR_NODE_UNEXPR: {
         children.push_back(&base->as<UnExpr>()->m_expr);
         break;
       }
-      case QIR_NODE_POST_UNEXPR: {
+      case NR_NODE_POST_UNEXPR: {
         children.push_back(&base->as<PostUnExpr>()->m_expr);
         break;
       }
-      case QIR_NODE_INT: {
+      case NR_NODE_INT: {
         break;
       }
-      case QIR_NODE_FLOAT: {
+      case NR_NODE_FLOAT: {
         break;
       }
-      case QIR_NODE_LIST: {
+      case NR_NODE_LIST: {
         children.reserve(base->as<List>()->m_items.size());
         for (Expr *&child : base->as<List>()->m_items) {
           children.push_back(&child);
         }
         break;
       }
-      case QIR_NODE_CALL: {
+      case NR_NODE_CALL: {
+        children.push_back(&base->as<Call>()->m_iref);
         children.reserve(base->as<Call>()->m_args.size());
         for (Expr *&child : base->as<Call>()->m_args) {
           children.push_back(&child);
         }
         break;
       }
-      case QIR_NODE_SEQ: {
+      case NR_NODE_SEQ: {
         children.reserve(base->as<Seq>()->m_items.size());
         for (Expr *&child : base->as<Seq>()->m_items) {
           children.push_back(&child);
         }
         break;
       }
-      case QIR_NODE_INDEX: {
+      case NR_NODE_INDEX: {
         children.push_back(&base->as<Index>()->m_expr);
         children.push_back(&base->as<Index>()->m_index);
         break;
       }
-      case QIR_NODE_IDENT: {
+      case NR_NODE_IDENT: {
         break;
       }
-      case QIR_NODE_EXTERN: {
+      case NR_NODE_EXTERN: {
         children.push_back(&base->as<Extern>()->m_value);
         break;
       }
-      case QIR_NODE_LOCAL: {
+      case NR_NODE_LOCAL: {
         children.push_back(&base->as<Local>()->m_value);
         break;
       }
-      case QIR_NODE_RET: {
+      case NR_NODE_RET: {
         children.push_back(&base->as<Ret>()->m_expr);
         break;
       }
-      case QIR_NODE_BRK: {
+      case NR_NODE_BRK: {
         break;
       }
-      case QIR_NODE_CONT: {
+      case NR_NODE_CONT: {
         break;
       }
-      case QIR_NODE_IF: {
+      case NR_NODE_IF: {
         children.push_back(&base->as<If>()->m_cond);
         children.push_back(&base->as<If>()->m_then);
         children.push_back(&base->as<If>()->m_else);
         break;
       }
-      case QIR_NODE_WHILE: {
+      case NR_NODE_WHILE: {
         children.push_back(&base->as<While>()->m_cond);
         children.push_back(
             reinterpret_cast<Expr **>(&base->as<While>()->m_body));
         break;
       }
-      case QIR_NODE_FOR: {
+      case NR_NODE_FOR: {
         children.push_back(&base->as<For>()->m_init);
         children.push_back(&base->as<For>()->m_cond);
         children.push_back(&base->as<For>()->m_step);
         children.push_back(&base->as<For>()->m_body);
         break;
       }
-      case QIR_NODE_CASE: {
+      case NR_NODE_CASE: {
         children.push_back(&base->as<Case>()->m_cond);
         children.push_back(&base->as<Case>()->m_body);
         break;
       }
-      case QIR_NODE_SWITCH: {
+      case NR_NODE_SWITCH: {
         children.push_back(&base->as<Switch>()->m_cond);
         children.reserve(base->as<Switch>()->m_cases.size() + 2);
         for (Case *&child : base->as<Switch>()->m_cases) {
@@ -159,7 +160,7 @@ namespace nr::detail {
             reinterpret_cast<Expr **>(&base->as<Switch>()->m_default));
         break;
       }
-      case QIR_NODE_FN: {
+      case NR_NODE_FN: {
         children.reserve(base->as<Fn>()->m_params.size() + 1);
         for (auto &child : base->as<Fn>()->m_params) {
           children.push_back(reinterpret_cast<Expr **>(&child.first));
@@ -172,89 +173,94 @@ namespace nr::detail {
         }
         break;
       }
-      case QIR_NODE_ASM: {
+      case NR_NODE_ASM: {
         qcore_implement();
         break;
       }
-      case QIR_NODE_IGN: {
+      case NR_NODE_IGN: {
         break;
       }
-      case QIR_NODE_U1_TY: {
+      case NR_NODE_U1_TY: {
         break;
       }
-      case QIR_NODE_U8_TY: {
+      case NR_NODE_U8_TY: {
         break;
       }
-      case QIR_NODE_U16_TY: {
+      case NR_NODE_U16_TY: {
         break;
       }
-      case QIR_NODE_U32_TY: {
+      case NR_NODE_U32_TY: {
         break;
       }
-      case QIR_NODE_U64_TY: {
+      case NR_NODE_U64_TY: {
         break;
       }
-      case QIR_NODE_U128_TY: {
+      case NR_NODE_U128_TY: {
         break;
       }
-      case QIR_NODE_I8_TY: {
+      case NR_NODE_I8_TY: {
         break;
       }
-      case QIR_NODE_I16_TY: {
+      case NR_NODE_I16_TY: {
         break;
       }
-      case QIR_NODE_I32_TY: {
+      case NR_NODE_I32_TY: {
         break;
       }
-      case QIR_NODE_I64_TY: {
+      case NR_NODE_I64_TY: {
         break;
       }
-      case QIR_NODE_I128_TY: {
+      case NR_NODE_I128_TY: {
         break;
       }
-      case QIR_NODE_F16_TY: {
+      case NR_NODE_F16_TY: {
         break;
       }
-      case QIR_NODE_F32_TY: {
+      case NR_NODE_F32_TY: {
         break;
       }
-      case QIR_NODE_F64_TY: {
+      case NR_NODE_F64_TY: {
         break;
       }
-      case QIR_NODE_F128_TY: {
+      case NR_NODE_F128_TY: {
         break;
       }
-      case QIR_NODE_VOID_TY: {
+      case NR_NODE_VOID_TY: {
         break;
       }
-      case QIR_NODE_PTR_TY: {
+      case NR_NODE_PTR_TY: {
         children.push_back(
             reinterpret_cast<Expr **>(&base->as<PtrTy>()->m_pointee));
         break;
       }
-      case QIR_NODE_OPAQUE_TY: {
+      case NR_NODE_CONST_TY: {
+        children.push_back(
+            reinterpret_cast<Expr **>(&base->as<ConstTy>()->m_item));
         break;
       }
-      case QIR_NODE_STRUCT_TY: {
+      case NR_NODE_OPAQUE_TY: {
+        break;
+      }
+      case NR_NODE_STRUCT_TY: {
         children.reserve(base->as<StructTy>()->m_fields.size());
         for (Type *&child : base->as<StructTy>()->m_fields) {
           children.push_back(reinterpret_cast<Expr **>(&child));
         }
         break;
       }
-      case QIR_NODE_UNION_TY: {
+      case NR_NODE_UNION_TY: {
         children.reserve(base->as<UnionTy>()->m_fields.size());
         for (Type *&child : base->as<UnionTy>()->m_fields) {
           children.push_back(reinterpret_cast<Expr **>(&child));
         }
         break;
       }
-      case QIR_NODE_ARRAY_TY: {
+      case NR_NODE_ARRAY_TY: {
         children.push_back(
             reinterpret_cast<Expr **>(&base->as<ArrayTy>()->m_element));
         break;
       }
-      case QIR_NODE_FN_TY: {
+      case NR_NODE_FN_TY: {
         children.reserve(base->as<FnTy>()->m_params.size() + 1);
         for (Type *&child : base->as<FnTy>()->m_params) {
           children.push_back(reinterpret_cast<Expr **>(&child));
@@ -263,7 +269,27 @@ namespace nr::detail {
             reinterpret_cast<Expr **>(&base->as<FnTy>()->m_return));
         break;
       }
-      case QIR_NODE_TMP: {
+      case NR_NODE_TMP: {
+        Tmp *tmp = base->as<Tmp>();
+        switch (tmp->getTmpType()) {
+          case TmpType::NAMED_TYPE: {
+            break;
+          }
+
+          case TmpType::DEFAULT_VALUE: {
+            break;
+          }
+
+          case TmpType::CALL: {
+            auto &data = get<CallArgsTmpNodeCradle>(tmp->getData());
+
+            children.push_back(&data.base);
+            for (auto &arg : data.args) {
+              children.push_back(&arg.second);
+            }
+            break;
+          }
+        }
         break;
       }
     }

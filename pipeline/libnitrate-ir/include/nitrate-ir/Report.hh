@@ -41,7 +41,7 @@
 #include <span>
 #include <string_view>
 
-namespace qparse {
+namespace npar {
   class Node;
 }
 
@@ -63,14 +63,16 @@ namespace nr {
     DSBadType,
     DSBadTmpNode,
 
-    FunctionRedefinition,
-    VariableRedefinition,
+    NameConflict,
     UnknownFunction,
-    TooManyArguments,
-    UnknownArgument,
+    VariadicNotEnoughArguments,
+    TwoManyArguments,
+    TwoFewArguments,
     TypeInference,
     NameManglingTypeInfer,
     UnexpectedUndefLiteral,
+    ReturnTypeMismatch,
+    ConstAssign,
 
     UnknownType,
     UnresolvedIdentifier,
@@ -95,15 +97,15 @@ namespace nr {
 
     virtual ~IReport() = default;
 
-    virtual void report(IssueCode code, IC level,
-                        std::vector<std::string_view> params = {},
-                        uint32_t start_offset = 1, uint32_t end_offset = 0,
-                        std::string_view filename = "") = 0;
+    virtual void report(
+        IssueCode code, IC level, std::vector<std::string_view> params = {},
+        std::tuple<uint32_t, uint32_t, std::string_view> location = {
+            UINT32_MAX, UINT32_MAX, ""}) = 0;
 
     void report(IssueCode code, IC level, std::string_view message,
-                std::pair<uint32_t, uint32_t> loc = {UINT32_MAX, UINT32_MAX},
-                std::string_view filename = "") {
-      report(code, level, {message}, loc.first, loc.second, filename);
+                std::tuple<uint32_t, uint32_t, std::string_view> loc = {
+                    UINT32_MAX, UINT32_MAX, ""}) {
+      report(code, level, std::vector<std::string_view>({message}), loc);
     };
 
     virtual void erase_reports() = 0;

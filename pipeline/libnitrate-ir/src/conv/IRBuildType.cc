@@ -188,7 +188,7 @@ OpaqueTy *NRBuilder::getOpaqueTy(
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(
-      !name.empty() && std::isalnum(name[0]) &&
+      !name.empty() && (std::isalnum(name[0]) || name[0] == '_') &&
       "Non alphanumeric starter characters are reserved internally");
 
   OpaqueTy *opaque_ty = create<OpaqueTy>(intern(name));
@@ -197,11 +197,48 @@ OpaqueTy *NRBuilder::getOpaqueTy(
 }
 
 StructTy *NRBuilder::getStructTy(
+    std::span<std::tuple<std::string_view, Type *, Expr *>> fields
+        SOURCE_LOCATION_PARAM) noexcept {
+  contract_enforce(m_state == SelfState::Constructed);
+  contract_enforce(m_root != nullptr);
+  contract_enforce(std::all_of(fields.begin(), fields.end(), [](auto x) {
+    if (std::get<0>(x).empty() ||
+        !(std::isalnum(std::get<0>(x)[0]) || std::get<0>(x)[0] == '_')) {
+      return false;
+    }
+
+    Type *ty = std::get<1>(x);
+    if (ty == nullptr || !static_cast<Expr *>(ty)->isType()) {
+      return false;
+    }
+
+    return std::get<2>(x) != nullptr;
+  }));
+
+  if (fields.empty()) {
+    return compiler_trace(
+        debug_info(create<StructTy>(StructFields()), DEBUG_INFO));
+  }
+
+  StructFields fields_copy;
+  fields_copy.resize(fields.size());
+  for (size_t i = 0; i < fields.size(); i++) {
+    fields_copy[i] = compiler_trace(std::get<1>(fields[i]));
+  }
+
+  /// TODO: Implement default values for struct fields
+
+  StructTy *struct_ty = create<StructTy>(std::move(fields_copy));
+
+  return compiler_trace(debug_info(struct_ty, DEBUG_INFO));
+}
+
+StructTy *NRBuilder::getStructTy(
     std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
-  contract_enforce(std::all_of(fields.begin(), fields.end(), [](Type *ty) {
-    return ty != nullptr && static_cast<Expr *>(ty)->isType();
+  contract_enforce(std::all_of(fields.begin(), fields.end(), [](Type *x) {
+    return x != nullptr && static_cast<Expr *>(x)->isType();
   }));
 
   if (fields.empty()) {
@@ -288,40 +325,17 @@ FnTy *NRBuilder::getFnTy(std::span<Type *> params, Type *ret_ty,
   return compiler_trace(debug_info(fn_ty, DEBUG_INFO));
 }
 
-StructTy *NRBuilder::createStructTemplateDefintion(
-    std::string_view name, std::span<std::string_view> template_params,
-    StructTy *ty SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-  (void)name;
-  (void)template_params;
-  (void)ty;
-  ignore_caller_info();
-}
-
-UnionTy *NRBuilder::createUnionTemplateDefintion(
-    std::string_view name, std::span<std::string_view> template_params,
-    UnionTy *ty SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-  (void)name;
-  (void)template_params;
-  (void)ty;
-  ignore_caller_info();
-}
-
 void NRBuilder::createNamedTypeAlias(
     Type *type, std::string_view name SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(type != nullptr && static_cast<Expr *>(type)->isType());
   contract_enforce(
-      !name.empty() && std::isalnum(name[0]) &&
+      !name.empty() && (std::isalnum(name[0]) || name[0] == '_') &&
       "Non alphanumeric starter characters are reserved internally");
 
   if (m_named_types.contains(name)) [[unlikely]] {
-    /// TODO: Handle error when the name is already set
-    qcore_implement();
+    m_duplicate_named_types->insert(name);
   }
 
   m_named_types[name] = type;
@@ -333,41 +347,209 @@ void NRBuilder::createNamedConstantDefinition(
         SOURCE_LOCATION_PARAM) {
   contract_enforce(m_root != nullptr);
   contract_enforce(
-      !name.empty() && std::isalnum(name[0]) &&
+      !name.empty() && (std::isalnum(name[0]) || name[0] == '_') &&
       "Non alphanumeric starter characters are reserved internally");
   contract_enforce(std::all_of(values.begin(), values.end(), [](auto e) {
     return !e.first.empty() && e.second != nullptr;
   }));
 
   if (m_named_constant_group.contains(name)) [[unlikely]] {
-    /// TODO: Handle error when the name is already set
-    qcore_implement();
+    m_duplicate_named_constants->insert(name);
   }
 
   m_named_constant_group[name] = values;
 }
 
-Type *NRBuilder::getTemplateInstance(Type *base,
-                                     std::span<Type *> template_params
-                                         SOURCE_LOCATION_PARAM) noexcept {
-  contract_enforce(m_state == SelfState::Constructed);
-  contract_enforce(m_root != nullptr);
-  contract_enforce(base != nullptr && static_cast<Expr *>(base)->isType());
-  contract_enforce(
-      std::all_of(template_params.begin(), template_params.end(), [](Type *ty) {
-        return ty != nullptr && static_cast<Type *>(ty)->isType();
-      }));
-
-  /// TODO: Implement
-  qcore_implement();
-}
-
-Expr *NRBuilder::getDefaultValue(Type *_for SOURCE_LOCATION_PARAM) noexcept {
+std::optional<Expr *> NRBuilder::getDefaultValue(
+    Type *_for SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(_for != nullptr && static_cast<Expr *>(_for)->isType());
 
-  /// TODO: Get a default value for the type
+  std::optional<Expr *> E;
 
-  qcore_implement();
+  switch (_for->getKind()) {
+    case NR_NODE_U1_TY: {
+      E = createBool(false);
+      break;
+    }
+
+    case NR_NODE_U8_TY: {
+      E = createFixedInteger(0, 8);
+      break;
+    }
+
+    case NR_NODE_U16_TY: {
+      E = createFixedInteger(0, 16);
+      break;
+    }
+
+    case NR_NODE_U32_TY: {
+      E = createFixedInteger(0, 32);
+      break;
+    }
+
+    case NR_NODE_U64_TY: {
+      E = createFixedInteger(0, 64);
+      break;
+    }
+
+    case NR_NODE_U128_TY: {
+      E = createFixedInteger(0, 128);
+      break;
+    }
+
+    case NR_NODE_I8_TY: {
+      E = createFixedInteger(0, 8);
+      break;
+    }
+
+    case NR_NODE_I16_TY: {
+      E = createFixedInteger(0, 16);
+      break;
+    }
+
+    case NR_NODE_I32_TY: {
+      E = createFixedInteger(0, 32);
+      break;
+    }
+
+    case NR_NODE_I64_TY: {
+      E = createFixedInteger(0, 64);
+      break;
+    }
+
+    case NR_NODE_I128_TY: {
+      E = createFixedInteger(0, 128);
+      break;
+    }
+
+    case NR_NODE_F16_TY: {
+      E = createFixedFloat(0.0f, FloatSize::F16);
+      break;
+    }
+
+    case NR_NODE_F32_TY: {
+      E = createFixedFloat(0.0f, FloatSize::F32);
+      break;
+    }
+
+    case NR_NODE_F64_TY: {
+      E = createFixedFloat(0.0f, FloatSize::F64);
+      break;
+    }
+
+    case NR_NODE_F128_TY: {
+      E = createFixedFloat(0.0f, FloatSize::F128);
+      break;
+    }
+
+    case NR_NODE_VOID_TY: {
+      E = create<VoidTy>();
+      break;
+    }
+
+    case NR_NODE_PTR_TY: {
+      E = create<BinExpr>(createFixedInteger(0, 64), _for, Op::BitcastAs);
+      break;
+    }
+
+    case NR_NODE_CONST_TY: {
+      ConstTy *const_ty = _for->as<ConstTy>();
+      auto e = getDefaultValue(const_ty->getItem());
+      if (e) {
+        E = create<BinExpr>(e.value(), _for, Op::CastAs);
+      }
+      break;
+    }
+
+    case NR_NODE_OPAQUE_TY: {
+      E = std::nullopt;
+      break;
+    }
+
+    case NR_NODE_STRUCT_TY: {
+      StructTy *struct_ty = _for->as<StructTy>();
+
+      std::vector<Expr *> fields(struct_ty->getFields().size());
+      for (size_t i = 0; i < fields.size(); i++) {
+        auto f = getDefaultValue(struct_ty->getFields()[i]);
+        if (!f.has_value()) {
+          goto end;
+        }
+
+        fields[i] = f.value();
+      }
+
+      E = create<BinExpr>(createList(fields, false), _for, Op::CastAs);
+
+    end:
+      break;
+    }
+
+    case NR_NODE_UNION_TY: {
+      UnionTy *union_ty = _for->as<UnionTy>();
+
+      if (union_ty->getFields().empty()) {
+        E = create<BinExpr>(createList({}, false), _for, Op::CastAs);
+      } else {
+        E = getDefaultValue(union_ty->getFields()[0]);
+      }
+
+      break;
+    }
+
+    case NR_NODE_ARRAY_TY: {
+      auto array_ty = _for->as<ArrayTy>();
+
+      /// FIXME: This is horribly inefficient in terms of memory, especially for
+      /// large arrays.
+
+      std::vector<Expr *> elements(array_ty->getCount());
+      for (size_t i = 0; i < elements.size(); i++) {
+        auto f = getDefaultValue(array_ty->getElement());
+        if (!f.has_value()) {
+          goto end2;
+        }
+
+        elements[i] = f.value();
+      }
+
+      E = create<BinExpr>(createList(elements, true), _for, Op::CastAs);
+
+    end2:
+      break;
+    }
+
+    case NR_NODE_FN_TY: {
+      FnTy *fn_ty = _for->as<FnTy>();
+      E = create<BinExpr>(createFixedInteger(0, 64), fn_ty, Op::BitcastAs);
+      break;
+    }
+
+    case NR_NODE_TMP: {
+      Tmp *tmp = _for->as<Tmp>();
+      if (tmp->getTmpType() == TmpType::NAMED_TYPE) {
+        std::string_view name = std::get<std::string_view>(tmp->getData());
+        E = create<Tmp>(TmpType::DEFAULT_VALUE, name);
+      }
+      break;
+    }
+
+    default: {
+      contract_enforce(false && "Unknown type");
+    }
+  }
+
+  if (!E.has_value()) {
+    return std::nullopt;
+  }
+
+  if (auto type = E.value()->getType()) {
+    if (!type.value()->isSame(_for)) {
+      E = create<BinExpr>(E.value(), _for->asExpr(), Op::CastAs);
+    }
+  }
+
+  return compiler_trace(E.value());
 }

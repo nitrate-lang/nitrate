@@ -82,7 +82,7 @@ namespace qcall {
   /* ====== Data Feching ======= */
   int sys_fetch(lua_State* L);
 
-  /* ===== Non-Determinism ===== */
+  /* ===== Random Generator ===== */
   int sys_random(lua_State* L);
 
   /* ====== Time and Date ====== */

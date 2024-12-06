@@ -44,7 +44,7 @@
 extern "C" {
 #endif
 
-typedef struct qparse_node_t qparse_node_t;
+typedef struct npar_node_t npar_node_t;
 
 /**
  * @brief Free a QModule instance and ALL of its associated resources.
@@ -114,7 +114,7 @@ bool nr_read(qmodule_t *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
  *
  * @note This function is thread safe.
  */
-bool nr_lower(qmodule_t **mod, qparse_node_t *base, const char *name,
+bool nr_lower(qmodule_t **mod, npar_node_t *base, const char *name,
               bool diagnostics);
 
 typedef void (*nr_node_cb)(nr_node_t *cur, uintptr_t userdata);
@@ -289,12 +289,12 @@ size_t nr_max_modules(void);
  * @brief Performs type inference on a NR node.
  *
  * @param node Node to perform type inference on.
- * @param PtrSizeBytes Size of a pointer on the target platform
+ * @param res Should be NULL
  * @return Type of the node or NULL if inference failed.
  *
  * @note This function is thread-safe.
  */
-nr_node_t *nr_infer(nr_node_t *node, uint32_t PtrSizeBytes);
+nr_node_t *nr_infer(const nr_node_t *node, void *res);
 
 /**
  * @brief Clone a NR node. Optionally into a different module.

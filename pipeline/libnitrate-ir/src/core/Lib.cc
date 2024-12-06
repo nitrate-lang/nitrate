@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Lib.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-ir/Lib.h>
 #include <nitrate-parser/Lib.h>
 #include <sys/resource.h>
@@ -39,8 +40,6 @@
 #include <atomic>
 #include <boost/assert/source_location.hpp>
 #include <core/PassManager.hh>
-
-#include "core/LibMacro.h"
 
 namespace boost {
   void throw_exception(std::exception const& m, boost::source_location const&) {
@@ -83,7 +82,7 @@ static bool do_init() {
 
 static void do_deinit() {}
 
-LIB_EXPORT bool nr_lib_init() {
+C_EXPORT bool nr_lib_init() {
   if (nr_lib_ref_count++ > 1) {
     return true;
   }
@@ -92,25 +91,25 @@ LIB_EXPORT bool nr_lib_init() {
     return false;
   }
 
-  if (!qparse_lib_init()) {
+  if (!npar_lib_init()) {
     return false;
   }
 
   return do_init();
 }
 
-LIB_EXPORT void nr_lib_deinit() {
+C_EXPORT void nr_lib_deinit() {
   if (--nr_lib_ref_count > 0) {
     return;
   }
 
-  qparse_lib_deinit();
+  npar_lib_deinit();
   qcore_lib_deinit();
 
   return do_deinit();
 }
 
-LIB_EXPORT const char* nr_lib_version() {
+C_EXPORT const char* nr_lib_version() {
   static const char* version_string =
 
       "[" __TARGET_VERSION
@@ -158,4 +157,4 @@ LIB_EXPORT const char* nr_lib_version() {
   return version_string;
 }
 
-LIB_EXPORT const char* nr_strerror() { return ""; }
+C_EXPORT const char* nr_strerror() { return ""; }

@@ -54,8 +54,8 @@ bool nr::pass::chk_missing_return(qmodule_t* M, IReport* log) {
 
     /* Skip the function declarations and all functions that have a void return
      * type. */
-    if (fn->getBody().value()->getKind() == QIR_NODE_IGN ||
-        fnty->getReturn()->getKind() == QIR_NODE_VOID_TY) {
+    if (fn->getBody().value()->getKind() == NR_NODE_IGN ||
+        fnty->getReturn()->getKind() == NR_NODE_VOID_TY) {
       continue;
     }
 
@@ -64,7 +64,7 @@ bool nr::pass::chk_missing_return(qmodule_t* M, IReport* log) {
     Seq* body = fn->getBody().value()->as<Seq>();
     bool any_ret =
         std::any_of(body->getItems().begin(), body->getItems().end(),
-                    [](auto item) { return item->getKind() == QIR_NODE_RET; });
+                    [](auto item) { return item->getKind() == NR_NODE_RET; });
 
     if (!any_ret) { /* If no return statement is found, this is an error. */
       log->report(MissingReturn, IC::Error, key, fn->getLoc());

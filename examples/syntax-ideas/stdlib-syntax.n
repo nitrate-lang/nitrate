@@ -1,6 +1,6 @@
 @use "v1.0";
 
-subsystem std {
+scope std {
   /// @brief Print debug information to a writer callback function.
   /// @param s The format string.
   /// @param args The typesafe variadic arguments.

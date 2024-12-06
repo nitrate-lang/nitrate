@@ -56,7 +56,7 @@ static void flatten_externs(qmodule_t *mod) {
   std::unordered_set<Expr **> externs;
 
   IterCallback cb = [&externs](Expr *, Expr **cur) -> IterOp {
-    if ((*cur)->getKind() == QIR_NODE_EXTERN) {
+    if ((*cur)->getKind() == NR_NODE_EXTERN) {
       externs.insert(cur);
     }
 
@@ -86,14 +86,14 @@ static void flatten_functions_recurse(qmodule_t *mod, Expr *&base,
                                       std::unordered_set<Expr **> &functions) {
   IterCallback cb = [mod, cur_scope, &functions](Expr *par,
                                                  Expr **cur) -> IterOp {
-    if ((*cur)->getKind() != QIR_NODE_FN) {
+    if ((*cur)->getKind() != NR_NODE_FN) {
       return IterOp::Proceed;
     }
     if (!(*cur)->as<Fn>()->getBody().has_value()) {
       return IterOp::Proceed;
     }
 
-    bool is_extern = par ? par->getKind() == QIR_NODE_EXTERN : false;
+    bool is_extern = par ? par->getKind() == NR_NODE_EXTERN : false;
 
     static thread_local std::atomic<uint64_t> counter = 0;
     std::string orig_name = std::string((*cur)->as<Fn>()->getName());

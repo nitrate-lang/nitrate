@@ -36,17 +36,24 @@
 
 #include <glog/logging.h>
 
+#include <iostream>
+#include <memory>
+
 namespace no3::core {
   void SetColorMode(bool use_color);
   void SetDebugMode(bool debug);
 
   struct MyLogSink : google::LogSink {
+    std::unique_ptr<std::ostream> m_out;
+
   public:
+    MyLogSink() : m_out(std::make_unique<std::ostream>(std::cerr.rdbuf())) {}
     void send(google::LogSeverity severity, const char*,
               const char* base_filename, int line, const struct tm* tm,
               const char* message, std::size_t message_len) override;
 
-    void redirect_to_stream(std::fstream stream);
+    std::unique_ptr<std::ostream> redirect_to_stream(
+        std::unique_ptr<std::ostream> new_stream);
   };
 }  // namespace no3::core
 

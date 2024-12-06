@@ -16,11 +16,11 @@ set(__TARGET_VERSION "\"CODEGEN_${SHA256SUMS}\"")
 message(STATUS "libnitrate-emit VersionId: ${__TARGET_VERSION}")
 
 #================== GET LLVM LIBRARIES =====================
-execute_process(COMMAND llvm-config-14 --ldflags
+execute_process(COMMAND llvm-config-18 --ldflags
   OUTPUT_VARIABLE LLVM_LD_FLAGS
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-execute_process(COMMAND llvm-config-14 --link-static --libfiles
+execute_process(COMMAND llvm-config-18 --link-static --libfiles
   OUTPUT_VARIABLE LLVM_LIBS_RAW
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 
@@ -45,6 +45,10 @@ set(BUILD_FLAGS_COMMON
   -DTRANSCODE_TARGET_CSHARP              \
   -DLLVM_SUUPORT_ALL_TARGETS")
 
+find_library(libz z REQUIRED)
+find_library(libzstd zstd REQUIRED)
+find_library(libtinfo tinfo REQUIRED)
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_VERSION=\\\"undefined\\\" ${BUILD_FLAGS_COMMON}")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -59,13 +63,13 @@ add_library(nitrate-emit ${CXX_SOURCES})
 target_include_directories(nitrate-emit PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-ir/include
-  /usr/lib/llvm-14/include)
+  /usr/lib/llvm-18/include)
 target_link_libraries(nitrate-emit PUBLIC nitrate-core nitrate-ir)
 foreach(lib ${LLVM_LIBS})
   target_link_libraries(nitrate-emit PUBLIC ${lib})
   message(STATUS "Linking ${lib}")
 endforeach()
-target_link_libraries(nitrate-emit PUBLIC z tinfo)
+target_link_libraries(nitrate-emit PUBLIC ${libz} ${libtinfo} ${libzstd})
 add_dependencies(nitrate-emit nitrate-core nitrate-ir)
 set_target_properties(nitrate-emit PROPERTIES OUTPUT_NAME nitrate-emit)
 

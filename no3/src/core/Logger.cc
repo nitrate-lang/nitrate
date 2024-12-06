@@ -91,7 +91,7 @@ void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
 
     if (color) {
       using namespace ansi;
-      AnsiCerr out;
+      AnsiOut out(*m_out);
 
       out.set_style(sev_colors.at(severity));
       out << sev_prefix.at(severity);
@@ -117,23 +117,29 @@ void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
       out.set_style(Style::RESET);
       out << std::endl;
     } else {
-#define out std::cerr
-
-      out << sev_prefix.at(severity);
+      *m_out << sev_prefix.at(severity);
 
       if (debug) {
-        out << "[" << base_filename << ":" << line << " ";
+        *m_out << "[" << base_filename << ":" << line << " ";
 
         { /* Get timestamp */
           char timestamp[64];
           strftime(timestamp, sizeof(timestamp), "%b %d %H:%M:%S", tm);
-          out << timestamp;
+          *m_out << timestamp;
         }
 
-        out << "] ";
+        *m_out << "] ";
       }
 
-      out << message << std::endl;
+      *m_out << message << std::endl;
     }
   }
+}
+
+std::unique_ptr<std::ostream> no3::core::MyLogSink::redirect_to_stream(
+    std::unique_ptr<std::ostream> new_stream) {
+  std::lock_guard<std::mutex> lock(g_log_mutex);
+  std::unique_ptr<std::ostream> old_stream = std::move(m_out);
+  m_out = std::move(new_stream);
+  return old_stream;
 }

@@ -72,12 +72,11 @@ Fn *NRBuilder::createFunctionDefintion(
   Fn *fn = create<Fn>(name, std::move(parameters), ret_ty, std::nullopt,
                       is_variadic, AbiTag::Default);
 
-  if (m_named_functions.contains(name)) [[unlikely]] {
-    /// TODO: Handle duplicate symbol
-    qcore_implement();
+  if (m_functions.contains(name)) [[unlikely]] {
+    m_duplicate_functions->insert(fn);
   }
 
-  m_named_functions[name] = fn;
+  m_functions[name] = fn;
   m_function_defaults[fn] = std::move(default_arguments);
 
   return compiler_trace(debug_info(fn, DEBUG_INFO));
@@ -114,58 +113,25 @@ Fn *NRBuilder::createFunctionDeclaration(
   Fn *fn = create<Fn>(name, std::move(parameters), ret_ty, std::nullopt,
                       is_variadic, AbiTag::Default);
 
-  if (m_named_functions.contains(name)) [[unlikely]] {
-    /// TODO: Handle duplicate symbol
-    qcore_implement();
+  if (m_functions.contains(name)) [[unlikely]] {
+    m_duplicate_functions->insert(fn);
   }
 
-  m_named_functions[name] = fn;
+  m_functions[name] = fn;
   m_function_defaults[fn] = std::move(default_arguments);
 
   return compiler_trace(debug_info(fn, DEBUG_INFO));
 }
 
-Fn *NRBuilder::createAnonymousFunction(
-    std::span<FnParam> params, Type *ret_ty, bool is_variadic, Purity purity,
-    bool thread_safe, bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-  (void)params;
-  (void)ret_ty;
-  (void)is_variadic;
-  (void)purity;
-  (void)thread_safe;
-  (void)is_noexcept;
-  ignore_caller_info();
-}
-
 Fn *NRBuilder::createOperatorOverload(
     Op op, std::span<Type *> params, Type *ret_ty, Purity purity,
     bool thread_safe, bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
+  /// TODO: Implement operator overloading
+
   qcore_implement();
   (void)op;
   (void)params;
   (void)ret_ty;
-  (void)purity;
-  (void)thread_safe;
-  (void)is_noexcept;
-  ignore_caller_info();
-}
-
-Fn *NRBuilder::createTemplateFunction(
-    std::string_view name, std::span<std::string_view> template_params,
-    std::span<FnParam> params, Type *ret_ty, bool is_variadic, Vis visibility,
-    Purity purity, bool thread_safe,
-    bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
-  /// TODO: Implement
-  qcore_implement();
-  (void)name;
-  (void)template_params;
-  (void)params;
-  (void)ret_ty;
-  (void)is_variadic;
-  (void)visibility;
   (void)purity;
   (void)thread_safe;
   (void)is_noexcept;
@@ -179,12 +145,17 @@ Local *NRBuilder::createVariable(
   contract_enforce(m_root != nullptr);
   contract_enforce(ty != nullptr && static_cast<Expr *>(ty)->isType());
 
-  Local *local = create<Local>(name, createIgn(), AbiTag::Default);
+  Local *local =
+      create<Local>(name, createIgn(), AbiTag::Default, is_readonly, storage);
 
-  /// TODO: Do something with these
+  /// TODO: Set the visibility of the local variable
   (void)visibility;
-  (void)storage;
-  (void)is_readonly;
+
+  if (m_variables.contains(name)) [[unlikely]] {
+    m_duplicate_variables->insert(local);
+  }
+
+  m_variables[name] = local;
 
   local = compiler_trace(debug_info(local, DEBUG_INFO));
 

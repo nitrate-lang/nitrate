@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-ir/Config.h>
 
 #include <boost/bimap.hpp>
@@ -76,7 +76,7 @@ static void assign_default_options(nr_conf_t &conf) {
   }
 }
 
-LIB_EXPORT nr_conf_t *nr_conf_new(bool use_defaults) {
+C_EXPORT nr_conf_t *nr_conf_new(bool use_defaults) {
   nr_conf_t *obj = new nr_conf_t();
 
   if (use_defaults) {
@@ -86,13 +86,13 @@ LIB_EXPORT nr_conf_t *nr_conf_new(bool use_defaults) {
   return obj;
 }
 
-LIB_EXPORT void nr_conf_free(nr_conf_t *conf) { delete conf; }
+C_EXPORT void nr_conf_free(nr_conf_t *conf) { delete conf; }
 
-LIB_EXPORT bool nr_conf_setopt(nr_conf_t *conf, nr_key_t key, nr_val_t value) {
+C_EXPORT bool nr_conf_setopt(nr_conf_t *conf, nr_key_t key, nr_val_t value) {
   return conf->SetAndVerify(key, value);
 }
 
-LIB_EXPORT bool nr_conf_getopt(nr_conf_t *conf, nr_key_t key, nr_val_t *value) {
+C_EXPORT bool nr_conf_getopt(nr_conf_t *conf, nr_key_t key, nr_val_t *value) {
   auto val = conf->Get(key);
 
   if (!val.has_value()) {
@@ -106,7 +106,7 @@ LIB_EXPORT bool nr_conf_getopt(nr_conf_t *conf, nr_key_t key, nr_val_t *value) {
   return true;
 }
 
-LIB_EXPORT nr_setting_t *nr_conf_getopts(nr_conf_t *conf, size_t *count) {
+C_EXPORT nr_setting_t *nr_conf_getopts(nr_conf_t *conf, size_t *count) {
   if (!count) {
     qcore_panic(
         "nr_conf_getopts: Contract violation: 'count' parameter cannot be "
@@ -131,11 +131,10 @@ LIB_EXPORT nr_setting_t *nr_conf_getopts(nr_conf_t *conf, size_t *count) {
   return copy;
 }
 
-LIB_EXPORT void nr_conf_clear(nr_conf_t *conf) { conf->ClearNoVerify(); }
+C_EXPORT void nr_conf_clear(nr_conf_t *conf) { conf->ClearNoVerify(); }
 
-LIB_EXPORT size_t nr_conf_dump(nr_conf_t *conf, FILE *stream,
-                               const char *field_delim,
-                               const char *line_delim) {
+C_EXPORT size_t nr_conf_dump(nr_conf_t *conf, FILE *stream,
+                             const char *field_delim, const char *line_delim) {
   if (!stream) {
     qcore_panic(
         "nr_conf_dump: Contract violation: 'stream' parameter cannot be NULL.");

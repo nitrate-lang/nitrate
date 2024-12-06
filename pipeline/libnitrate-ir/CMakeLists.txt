@@ -24,15 +24,17 @@ else()
   message(FATAL_ERROR "Invalid build type: ${CMAKE_BUILD_TYPE}")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti")
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
+
+find_library(libcrypto crypto REQUIRED)
 
 add_library(nitrate-ir ${CXX_SOURCES})
 target_include_directories(nitrate-ir PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-parser/include)
-target_link_libraries(nitrate-ir PUBLIC nitrate-core nitrate-parser deflate crypto)
+target_link_libraries(nitrate-ir PUBLIC nitrate-core nitrate-parser ${libcrypto})
 add_dependencies(nitrate-ir nitrate-core nitrate-parser)
 
 install(TARGETS nitrate-ir DESTINATION lib)

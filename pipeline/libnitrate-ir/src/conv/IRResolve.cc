@@ -36,15 +36,45 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-ir/TypeDecl.h>
 
+#include <algorithm>
 #include <cctype>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
+#include <string>
 #include <unordered_map>
-#include <unordered_set>
 
 using namespace nr;
 
-void NRBuilder::try_resolve_types(Expr *root) const noexcept {
+void NRBuilder::flatten_symbols(Seq *root) noexcept {
+  std::unordered_set<Expr *> symbols;
+
+  iterate<dfs_post>(root, [&](Expr *P, Expr **C) -> IterOp {
+    if (!P) {
+      return IterOp::Proceed;
+    }
+
+    bool replace_with_ident = !P->is(NR_NODE_SEQ);
+
+    if ((!P->is(NR_NODE_EXTERN) && (*C)->is(NR_NODE_FN)) ||
+        (*C)->is(NR_NODE_EXTERN)) {
+      symbols.insert(*C);
+
+      if (replace_with_ident) {
+        *C = create<Ident>((*C)->getName(), *C);
+      } else {
+        *C = createIgn();
+      }
+    }
+
+    return IterOp::Proceed;
+  });
+
+  for (auto ele : symbols) {
+    root->getItems().push_back(ele);
+  }
+}
+
+void NRBuilder::try_transform_alpha(Expr *root) noexcept {
   /**
    * @brief Resolve the `TmpType::NAMED_TYPE` nodes by replacing them with the
    * actual types they represent.
@@ -54,18 +84,32 @@ void NRBuilder::try_resolve_types(Expr *root) const noexcept {
   iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
     Expr *N = *C;
 
-    if (N->is(QIR_NODE_TMP) &&
-        N->as<Tmp>()->getTmpType() == TmpType::NAMED_TYPE) {
-      /* Get the fully-qualified name */
+    if (!N->is(NR_NODE_TMP)) {
+      return IterOp::Proceed;
+    }
+
+    bool is_default_value_expr =
+        N->is(NR_NODE_TMP) &&
+        N->as<Tmp>()->getTmpType() == TmpType::DEFAULT_VALUE;
+
+    if (N->as<Tmp>()->getTmpType() == TmpType::NAMED_TYPE ||
+        is_default_value_expr) {
+      /* Get the fully-qualified type name */
       std::string_view type_name =
           std::get<std::string_view>(N->as<Tmp>()->getData());
 
       auto result = resolve_name(type_name, Kind::TypeDef);
       if (result.has_value()) [[likely]] {
         /* Replace the current node */
-        *C = result.value();
-      } else {
-        /* Fallthrough */
+        *C = result.value().first;
+
+        if (is_default_value_expr) {
+          /* Replace the default value expression with the actual default value
+           */
+          if (auto def = getDefaultValue(result.value().first->asType())) {
+            *C = def.value();
+          }
+        }
       }
     }
 
@@ -73,7 +117,7 @@ void NRBuilder::try_resolve_types(Expr *root) const noexcept {
   });
 }
 
-void NRBuilder::try_resolve_names(Expr *root) const noexcept {
+void NRBuilder::try_transform_beta(Expr *root) noexcept {
   /**
    * @brief Resolve identifiers by hooking them to the node they represent. This
    * may create cyclic references, which is okay because these hooks are not
@@ -84,14 +128,14 @@ void NRBuilder::try_resolve_names(Expr *root) const noexcept {
   iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
     Expr *N = *C;
 
-    if (N->is(QIR_NODE_IDENT) && N->as<Ident>()->getWhat() == nullptr) {
+    if (N->is(NR_NODE_IDENT) && N->as<Ident>()->getWhat() == nullptr) {
       Ident *I = N->as<Ident>();
 
-      auto enum_opt = resolve_name(I->getName(), Kind::ScopedEnum);
-      if (enum_opt.has_value()) {
-        *C = enum_opt.value();
-      } else {
-        /// TODO: Resolve identifier reference
+      if (auto enum_opt = resolve_name(I->getName(), Kind::ScopedEnum)) {
+        *C = enum_opt.value().first;
+      } else if (auto var_opt = resolve_name(I->getName(), Kind::Variable)) {
+        I->setWhat(var_opt.value().first);
+        I->setName(var_opt.value().second);
       }
     }
 
@@ -99,142 +143,186 @@ void NRBuilder::try_resolve_names(Expr *root) const noexcept {
   });
 }
 
-static void resolve_direct_call(
-    Expr **C, Fn *target_fn,
-    const std::unordered_map<std::string_view, size_t> &name_to_index_map,
-    const std::unordered_map<size_t, Expr *> &default_args,
-    const CallArgsTmpNodeCradle &data) {
-  std::unordered_map<size_t, Expr *> arguments;
-  arguments.reserve(data.args.size());
+static void resolve_function_call(
+    Expr **C, Expr *callee_ref, FnTy *callee_ty,
+    const std::unordered_map<std::string_view, size_t> &name_index_map,
+    const std::optional<std::unordered_map<size_t, Expr *>> &func_default_args,
+    const CallArguments &user_arguments) {
+  using namespace std;
 
-  { /* Allocate the arguments */
-    for (const auto &[argument_name, argument_value] : data.args) {
-      bool is_positional = std::isdigit(argument_name.at(0));
+  unordered_map<size_t, Expr *> temporary_map(user_arguments.size());
+  auto callee_arg_count = callee_ty->getParams().size();
 
-      if (is_positional) {
-        size_t position = std::stoul(std::string(argument_name));
+  /* Allocate the user supplied arguments into the temporary map. Fail early on
+   * error */
+  if (all_of(user_arguments.begin(), user_arguments.end(),
+             [&](auto user_argument) {
+               auto argument_name = user_argument.first;
+               qcore_assert(!argument_name.empty());
+               auto argument_value = user_argument.second;
 
-        // Ensure we don't add the same argument twice
-        if (!arguments.contains(position)) [[likely]] {
-          arguments[position] = argument_value;
-          continue;
-        }
-      } else {
-        auto it = name_to_index_map.find(argument_name);
-        if (it != name_to_index_map.end()) [[likely]] {
-          // Ensure we don't add the same argument twice
-          if (!arguments.contains(it->second)) [[likely]] {
-            arguments[it->second] = argument_value;
-            continue;
+               bool is_positional = isdigit(argument_name[0]);
+
+               if (is_positional) {
+                 auto position = stoul(string(argument_name));
+
+                 /* Don't add the same argument twice */
+                 if (!temporary_map.contains(position)) [[likely]] {
+                   temporary_map[position] = argument_value;
+                   return true;
+                 }
+               } else if (auto it = name_index_map.find(argument_name);
+                          it != name_index_map.end()) {
+                 /* Don't add the same argument twice */
+                 if (!temporary_map.contains(it->second)) [[likely]] {
+                   temporary_map[it->second] = argument_value;
+                   return true;
+                 }
+               }
+
+               return false;
+             })) {
+    /* If default arguments were presented, use them to fill in any missing
+     * caller arguments */
+    if (func_default_args.has_value()) {
+      for (size_t i = 0; i < callee_arg_count; ++i) {
+        if (!temporary_map.contains(i)) {
+          auto it = func_default_args->find(i);
+          if (it != func_default_args->end()) {
+            temporary_map[i] = it->second;
           }
         }
       }
-
-      goto end;
     }
 
-    for (size_t i = 0; i < target_fn->getParams().size(); ++i) {
-      if (!arguments.contains(i)) {
-        auto it = default_args.find(i);
-        if (it != default_args.end()) {
-          arguments[i] = it->second;
+    bool is_variadic = callee_ty->getAttrs().contains(FnAttr::Variadic);
+    bool is_count_valid = is_variadic
+                              ? temporary_map.size() >= callee_arg_count
+                              : temporary_map.size() == callee_arg_count;
+
+    if (is_count_valid) {
+      /* Check if the arguments are contiguous and that the first one starts at
+       * index 0 */
+      size_t i = 0;
+      bool is_contiguous_and_grounded =
+          all_of(temporary_map.begin(), temporary_map.end(),
+                 [&](auto &) { return temporary_map.contains(i++); });
+
+      /* Emit the Call IR expression */
+      if (is_contiguous_and_grounded) {
+        CallArgs flattened(temporary_map.size());
+        for (const auto &[index, value] : temporary_map) {
+          flattened[index] = value;
         }
+
+        *C = create<Call>(callee_ref, std::move(flattened));
       }
     }
   }
-
-  { /* Validate the arguments vector */
-    if (target_fn->isVariadic()) {
-      if (arguments.size() < target_fn->getParams().size()) [[unlikely]] {
-        goto end;
-      }
-    } else {
-      if (arguments.size() != target_fn->getParams().size()) [[unlikely]] {
-        goto end;
-      }
-    }
-
-    std::unordered_set<size_t> set;
-    for (const auto &[k, _] : arguments) {
-      set.insert(k);
-    }
-
-    // Check if elements are contiguous and start at zero
-    for (size_t i = 0; i < arguments.size(); i++) {
-      if (set.find(i) == set.end()) [[unlikely]] {
-        goto end;
-      }
-    }
-  }
-
-  { /* Emit the Call IR expression */
-    CallArgs flattened(arguments.size());
-    for (const auto &[index, value] : arguments) {
-      flattened[index] = value;
-    }
-
-    *C = create<Call>(target_fn, std::move(flattened));
-  }
-
-end:
-  return;
 }
 
-void NRBuilder::try_resolve_calls(Expr *root) const noexcept {
-  /**
-   * @brief Resolve the `TmpType::CALL` nodes by replacing them with function
-   * call expression nodes with any default arguments filled in.
-   * @note Any nodes that fail to resolve are left alone.
-   */
+void NRBuilder::try_transform_gamma(Expr *root) noexcept {
+  using namespace std;
 
+  /* Foreach node in the IR Graph: if the node is a TMP CALL node, replace it
+   * with the appropriate call expression. On failture, skip the node leaving it
+   * unchanged. */
   iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
-    Expr *N = *C;
+    auto N = *C;
 
-    if (N->is(QIR_NODE_TMP) && N->as<Tmp>()->getTmpType() == TmpType::CALL) {
-      const auto &data =
-          std::get<CallArgsTmpNodeCradle>(N->as<Tmp>()->getData());
-      Fn *target_fn = nullptr;
-      const std::unordered_map<size_t, Expr *> *default_args = nullptr;
+    if (N->is(NR_NODE_TMP) && N->as<Tmp>()->getTmpType() == TmpType::CALL) {
+      /* The first stage of conversion stored this context information */
+      const auto &data = get<CallArgsTmpNodeCradle>(N->as<Tmp>()->getData());
 
-      { /* Get the target function node */
-        qcore_assert(data.base != nullptr);
+      qcore_assert(data.base != nullptr);
 
-        // Skip over indirect function calls
-        if (!data.base->is(QIR_NODE_IDENT)) {
-          goto end;
+      /* Currently, this code only supported direct function calls */
+      if (data.base->is(NR_NODE_IDENT)) {
+        auto callee_name = data.base->as<Ident>()->getName();
+        qcore_assert(!callee_name.empty());
+
+        unordered_map<string_view, size_t> name_index_map;
+
+        /* Search the map of function defintions, conducting name resoltion in
+         * the process */
+        if (auto callee_opt = resolve_name(callee_name, Kind::Function)) {
+          qcore_assert(callee_opt.value().first->is(NR_NODE_FN));
+          auto callee_func_ptr = callee_opt.value().first->as<Fn>();
+
+          /* This layer of indirection is needed to maintain the acylic
+           * properties */
+          auto callee_func =
+              create<Ident>(callee_func_ptr->getName(), callee_func_ptr);
+
+          /* Perform type inference on the callee node */
+          if (auto callee_type_opt = callee_func->getType();
+              callee_type_opt.has_value() &&
+              callee_type_opt.value()->is_function()) {
+            auto callee_func_type = callee_type_opt.value()->as<FnTy>();
+
+            const auto &func_default_args =
+                m_function_defaults.at(callee_func_ptr);
+
+            /* Use this lookup table to efficiently match named arguments to
+             * their index according to the callee's defintion */
+            auto param_count = callee_func_ptr->getParams().size();
+            name_index_map.reserve(param_count);
+            for (size_t i = 0; i < param_count; ++i) {
+              name_index_map[callee_func_ptr->getParams()[i].second] = i;
+            }
+
+            /* Do the actual IRGraph Call resoltuon */
+            resolve_function_call(C, callee_func, callee_func_type,
+                                  name_index_map, func_default_args, data.args);
+          }
+        } else if (auto callee_opt =
+                       resolve_name(callee_name, Kind::Variable)) {
+          qcore_assert(callee_opt.value().first->is(NR_NODE_LOCAL));
+
+          /* Check that the caller does not use any named arguments */
+          bool only_positional_args =
+              all_of(data.args.begin(), data.args.end(),
+                     [](auto x) { return isdigit(x.first.at(0)); });
+
+          if (only_positional_args) {
+            auto callee_local_ptr = callee_opt.value().first->as<Local>();
+
+            /* This layer of indirection is needed to maintain the acylic
+             * properties */
+            auto callee_local =
+                create<Ident>(callee_local_ptr->getName(), callee_local_ptr);
+
+            /* Perform type inference on the callee node */
+            if (auto local_type = callee_local->getType();
+                local_type.has_value() && local_type.value()->is_function()) {
+              auto callee_func_type = local_type.value()->as<FnTy>();
+
+              /* Create an identity map */
+              auto param_count = callee_func_type->getParams().size();
+              name_index_map.reserve(param_count);
+              for (size_t i = 0; i < param_count; ++i) {
+                name_index_map[to_string(i)] = i;
+              }
+
+              /* Do the actual IRGraph Call resoltuon */
+              resolve_function_call(C, callee_local, callee_func_type,
+                                    name_index_map, nullopt, data.args);
+            }
+          }
         }
-
-        // Get name of target function
-        std::string_view target_name = data.base->as<Ident>()->getName();
-
-        // Find the target function by name
-        auto result = resolve_name(target_name, Kind::Function);
-        if (!result.has_value()) [[unlikely]] {
-          goto end;
-        }
-
-        qcore_assert(result.value()->is(QIR_NODE_FN));
-        target_fn = result.value()->as<Fn>();
-        default_args = &m_function_defaults.at(target_fn);
       }
-
-      std::unordered_map<std::string_view, size_t> name_to_index_map;
-      for (size_t i = 0; i < target_fn->getParams().size(); ++i) {
-        name_to_index_map[target_fn->getParams()[i].second] = i;
-      }
-
-      resolve_direct_call(C, target_fn, name_to_index_map, *default_args, data);
     }
 
-  end:
     return IterOp::Proceed;
   });
 }
 
-void NRBuilder::connect_nodes(Seq *root) const noexcept {
+void NRBuilder::connect_nodes(Seq *root) noexcept {
   /* The order of the following matters */
 
-  try_resolve_types(root);
-  try_resolve_names(root);
-  try_resolve_calls(root);
+  try_transform_alpha(root);
+  try_transform_beta(root);
+  try_transform_gamma(root);
+
+  flatten_symbols(root);
 }

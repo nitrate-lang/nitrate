@@ -31,9 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __NITRATE_LEXER_IMPL__
-
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Lexer.h>
 #include <string.h>
 
@@ -50,14 +49,13 @@
 #include <sstream>
 #include <utility>
 
-#include "LibMacro.h"
 #include "nitrate-core/Env.h"
 #include "nitrate-lexer/Token.h"
 
 ///============================================================================///
 
-LIB_EXPORT qlex_t *qlex_direct(const char *src, size_t len,
-                               const char *filename, qcore_env_t env) {
+C_EXPORT qlex_t *qlex_direct(const char *src, size_t len, const char *filename,
+                             qcore_env_t env) {
   try {
     if (!filename) {
       filename = "<unknown>";
@@ -78,7 +76,7 @@ LIB_EXPORT qlex_t *qlex_direct(const char *src, size_t len,
   }
 }
 
-LIB_EXPORT void qlex_free(qlex_t *obj) {
+C_EXPORT void qlex_free(qlex_t *obj) {
   try {
     delete obj;
   } catch (...) {
@@ -86,21 +84,19 @@ LIB_EXPORT void qlex_free(qlex_t *obj) {
   }
 }
 
-LIB_EXPORT void qlex_set_flags(qlex_t *obj, qlex_flags_t flags) {
+C_EXPORT void qlex_set_flags(qlex_t *obj, qlex_flags_t flags) {
   obj->m_flags = flags;
 }
-LIB_EXPORT qlex_flags_t qlex_get_flags(qlex_t *obj) { return obj->m_flags; }
+C_EXPORT qlex_flags_t qlex_get_flags(qlex_t *obj) { return obj->m_flags; }
 
-LIB_EXPORT void qlex_collect(qlex_t *obj, const qlex_tok_t *tok) {
+C_EXPORT void qlex_collect(qlex_t *obj, const qlex_tok_t *tok) {
   obj->collect_impl(tok);
 }
 
-LIB_EXPORT void qlex_insert(qlex_t *obj, qlex_tok_t tok) {
-  obj->push_impl(&tok);
-}
-LIB_EXPORT const char *qlex_filename(qlex_t *obj) { return obj->m_filename; }
+C_EXPORT void qlex_insert(qlex_t *obj, qlex_tok_t tok) { obj->push_impl(&tok); }
+C_EXPORT const char *qlex_filename(qlex_t *obj) { return obj->m_filename; }
 
-LIB_EXPORT uint32_t qlex_line(qlex_t *obj, uint32_t loc) {
+C_EXPORT uint32_t qlex_line(qlex_t *obj, uint32_t loc) {
   try {
     auto r = obj->loc2rowcol(loc);
     if (!r) {
@@ -113,7 +109,7 @@ LIB_EXPORT uint32_t qlex_line(qlex_t *obj, uint32_t loc) {
   }
 }
 
-LIB_EXPORT uint32_t qlex_col(qlex_t *obj, uint32_t loc) {
+C_EXPORT uint32_t qlex_col(qlex_t *obj, uint32_t loc) {
   try {
     auto r = obj->loc2rowcol(loc);
     if (!r) {
@@ -126,7 +122,7 @@ LIB_EXPORT uint32_t qlex_col(qlex_t *obj, uint32_t loc) {
   }
 }
 
-LIB_EXPORT uint32_t qlex_offset(qlex_t *obj, uint32_t base, uint32_t offset) {
+C_EXPORT uint32_t qlex_offset(qlex_t *obj, uint32_t base, uint32_t offset) {
   try {
     long curpos = 0;
     std::optional<uint32_t> seek_base_pos;
@@ -191,10 +187,10 @@ LIB_EXPORT uint32_t qlex_offset(qlex_t *obj, uint32_t base, uint32_t offset) {
   }
 }
 
-LIB_EXPORT uint32_t qlex_spanx(qlex_t *obj, uint32_t start, uint32_t end,
-                               void (*callback)(const char *, uint32_t,
-                                                uintptr_t),
-                               uintptr_t userdata) {
+C_EXPORT uint32_t qlex_spanx(qlex_t *obj, uint32_t start, uint32_t end,
+                             void (*callback)(const char *, uint32_t,
+                                              uintptr_t),
+                             uintptr_t userdata) {
   try {
     std::optional<uint32_t> begoff, endoff;
 
@@ -247,8 +243,8 @@ LIB_EXPORT uint32_t qlex_spanx(qlex_t *obj, uint32_t start, uint32_t end,
   }
 }
 
-LIB_EXPORT void qlex_rect(qlex_t *obj, uint32_t x_0, uint32_t y_0, uint32_t x_1,
-                          uint32_t y_1, char *out, size_t max_size, char fill) {
+C_EXPORT void qlex_rect(qlex_t *obj, uint32_t x_0, uint32_t y_0, uint32_t x_1,
+                        uint32_t y_1, char *out, size_t max_size, char fill) {
   try {
     // Bounds check rectangle
     if (x_0 > x_1 || y_0 > y_1) [[unlikely]] {
@@ -285,7 +281,7 @@ LIB_EXPORT void qlex_rect(qlex_t *obj, uint32_t x_0, uint32_t y_0, uint32_t x_1,
   }
 }
 
-LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, uint32_t *offset) {
+C_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, uint32_t *offset) {
   try {
 #define SNIPPET_SIZE 100
 
@@ -364,7 +360,7 @@ LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, uint32_t *offset) {
   }
 }
 
-LIB_EXPORT qlex_tok_t qlex_next(qlex_t *self) {
+C_EXPORT qlex_tok_t qlex_next(qlex_t *self) {
   try {
     qcore_env_t old = qcore_env_current();
     qcore_env_set_current(self->m_env);
@@ -379,7 +375,7 @@ LIB_EXPORT qlex_tok_t qlex_next(qlex_t *self) {
   }
 }
 
-LIB_EXPORT qlex_tok_t qlex_peek(qlex_t *self) {
+C_EXPORT qlex_tok_t qlex_peek(qlex_t *self) {
   try {
     qcore_env_t old = qcore_env_current();
     qcore_env_set_current(self->m_env);
@@ -391,6 +387,14 @@ LIB_EXPORT qlex_tok_t qlex_peek(qlex_t *self) {
     return tok;
   } catch (...) {
     qcore_panic("qlex_peek: failed to peek next token");
+  }
+}
+
+C_EXPORT qlex_tok_t qlex_current(qlex_t *lexer) {
+  try {
+    return lexer->current();
+  } catch (...) {
+    qcore_panic("qlex_current: failed to get current token");
   }
 }
 
@@ -528,16 +532,18 @@ CPP_EXPORT qlex_tok_t qlex_t::next() {
     } while (m_flags & QLEX_NO_COMMENTS && tok.ty == qNote);
   }
 
-  return tok;
+  return m_current_tok = tok;
 }
 
 CPP_EXPORT qlex_tok_t qlex_t::peek() {
   if (m_next_tok.ty != qErro) {
-    return m_next_tok;
+    return m_current_tok = m_next_tok;
   }
 
-  return m_next_tok = next();
+  return m_current_tok = (m_next_tok = next());
 }
+
+CPP_EXPORT qlex_tok_t qlex_t::current() { return m_current_tok; }
 
 ///============================================================================///
 

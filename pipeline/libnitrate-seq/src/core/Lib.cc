@@ -32,12 +32,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Lib.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Lib.h>
 #include <nitrate-seq/Lib.h>
 
 #include <atomic>
-
-#include "core/LibMacro.h"
 
 static std::atomic<size_t> qprep_lib_ref_count = 0;
 
@@ -45,7 +44,7 @@ bool do_init() { return true; }
 
 void do_deinit() { return; }
 
-LIB_EXPORT bool qprep_lib_init() {
+C_EXPORT bool qprep_lib_init() {
   if (qprep_lib_ref_count++ > 1) {
     return true;
   }
@@ -61,7 +60,7 @@ LIB_EXPORT bool qprep_lib_init() {
   return do_init();
 }
 
-LIB_EXPORT void qprep_lib_deinit() {
+C_EXPORT void qprep_lib_deinit() {
   if (--qprep_lib_ref_count > 0) {
     return;
   }
@@ -74,7 +73,7 @@ LIB_EXPORT void qprep_lib_deinit() {
   return;
 }
 
-LIB_EXPORT const char* qprep_lib_version() {
+C_EXPORT const char* qprep_lib_version() {
   static const char* version_string =
 
       "[" __TARGET_VERSION
@@ -122,4 +121,4 @@ LIB_EXPORT const char* qprep_lib_version() {
   return version_string;
 }
 
-LIB_EXPORT const char* qprep_strerror() { return ""; }
+C_EXPORT const char* qprep_strerror() { return ""; }

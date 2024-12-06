@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-parser/Node.h>
 
 #include <boost/bimap.hpp>
@@ -43,6 +43,8 @@
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <sstream>
+
+#include "nitrate-ir/Report.hh"
 
 using namespace nr;
 
@@ -58,7 +60,7 @@ const boost::bimap<IssueCode, IssueInfo> nr::issue_info =
     make_bimap<IssueCode, IssueInfo>({
         {Info, {"info", "%s", {}}},
         {CompilerError,
-         {"Compiler Error", "An error occurred during compilation: %s", {}}},
+         {"error", "An error occurred during compilation: %s", {}}},
         {PTreeInvalid, {"ptree-invalid", "%s", {}}},
         {SignalReceived,
          {"signal-recv",
@@ -82,14 +84,24 @@ const boost::bimap<IssueCode, IssueInfo> nr::issue_info =
           "Internal module IR data structure contains an unexpected temporary "
           "node.",
           {"This is an (INTERNAL) compiler error. Please report this issue."}}},
-        {FunctionRedefinition, {"function-redefinition", "write me", {}}},
-        {VariableRedefinition,
-         {"variable-redefinition",
-          "Variable '%s' is redefined.",
-          {"Ensure that all variables in scope are only defined once."}}},
+        {NameConflict,
+         {"name-conflict",
+          "Naming conflict: %s",
+          {{"Ensure that the name is unique."},
+           {"Try wrapping your code in a scope"}}}},
         {UnknownFunction, {"unknown-function", "write me", {}}},
-        {TooManyArguments, {"too-many-arguments", "write me", {}}},
-        {UnknownArgument, {"unknown-argument", "write me", {}}},
+        {VariadicNotEnoughArguments,
+         {"variadic-not-enough-args",
+          "Variadic function call '%s' has too few arguments.",
+          {"Ensure that the number of arguments is correct."}}},
+        {TwoManyArguments,
+         {"too-many-args",
+          "Function call '%s' has too many arguments.",
+          {"Ensure that the number of arguments is correct."}}},
+        {TwoFewArguments,
+         {"too-few-args",
+          "Function call '%s' has too few arguments.",
+          {"Ensure that the number of arguments is correct."}}},
         {TypeInference, {"type-inference", "Type inference failed: %s", {}}},
         {NameManglingTypeInfer,
          {"nm-type-infer",
@@ -102,6 +114,13 @@ const boost::bimap<IssueCode, IssueInfo> nr::issue_info =
           "Unexpected 'undef' keyword",
           {"The 'undef' keyword is only permitted as default values for "
            "variable declarations."}}},
+        {ReturnTypeMismatch, {"return-type-mismatch", "%s", {}}},
+        {
+            ConstAssign,
+            {"const-assign",
+             "Cannot assign to a constant variable.",
+             {"Ensure that the variable is not marked as constant."}},
+        },
 
         {UnknownType, {"unknown-type", "write me", {}}},
         {UnresolvedIdentifier,

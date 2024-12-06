@@ -32,19 +32,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Lib.h>
+#include <nitrate-core/Macro.h>
 
 #include <atomic>
 
-#include "LibMacro.h"
-
 static std::atomic<size_t> qcore_lib_ref_count = 0;
 
-LIB_EXPORT bool qcore_lib_init() {
+C_EXPORT bool qcore_lib_init() {
   qcore_lib_ref_count++;
   return true;
 }
 
-LIB_EXPORT void qcore_lib_deinit() {
+C_EXPORT void qcore_lib_deinit() {
   qcore_lib_ref_count--;
 
   if (qcore_lib_ref_count > 0) {
@@ -55,7 +54,7 @@ LIB_EXPORT void qcore_lib_deinit() {
   // Nothing to do for now.
 }
 
-LIB_EXPORT const char* qcore_lib_version() {
+C_EXPORT const char* qcore_lib_version() {
   static const char* version_string =
 
       "[" __TARGET_VERSION

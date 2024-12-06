@@ -43,6 +43,7 @@
 #include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>
 
+#include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <cassert>
@@ -57,38 +58,18 @@
 #include <unordered_map>
 
 namespace nr {
-  enum class Purity {
-    Impure = 0,
-    Pure = 1,
-    Quasipure = 2,
-    Retropure = 3,
-  };
-
-  enum class Vis {
-    Sec = 0,
-    Pub = 1,
-    Pro = 2,
-  };
-
-  enum class StorageClass {
-    /* Automatic storeage duration */
-    LLVM_StackAlloa,
-
-    /* Static storage duration */
-    LLVM_Static,
-
-    /* Thread-local storage duration */
-    LLVM_ThreadLocal,
-
-    /* Dynamic allocation */
-    Managed,
-  };
-
   enum class ABIStringStyle {
     CStr, /* Only supported variant */
   };
 
-  using bigfloat_t = long double;
+  enum class Kind {
+    TypeDef,
+    ScopedEnum,
+    Function,
+    Variable,
+  };
+
+  using bigfloat_t = boost::multiprecision::cpp_dec_float_100;
   using boost::multiprecision::uint128_t;
 
   class __attribute__((visibility("default"))) NRBuilder {
@@ -124,46 +105,40 @@ namespace nr {
     std::unordered_map<std::string_view,
                        std::unordered_map<std::string_view, Expr *>>
         m_named_constant_group;
-    std::unordered_map<std::string_view, Fn *> m_named_functions;
+    std::unordered_map<std::string_view, Fn *> m_functions;
     std::unordered_map<Fn *, std::unordered_map<size_t, Expr *>>
         m_function_defaults;
+    std::unordered_map<std::string_view, Local *> m_variables;
+
+    std::optional<std::unordered_set<Fn *>> m_duplicate_functions;
+    std::optional<std::unordered_set<Local *>> m_duplicate_variables;
+    std::optional<std::unordered_set<std::string_view>> m_duplicate_named_types;
+    std::optional<std::unordered_set<std::string_view>>
+        m_duplicate_named_constants;
 
     ///**************************************************************************///
     // Builder helper methods
     ///**************************************************************************///
 
-    enum class Kind {
-      TypeDef,
-      ScopedEnum,
-      Function,
-    };
+    std::optional<std::pair<Expr *, std::string_view>> resolve_name(
+        std::string_view name, Kind kind) noexcept;
 
-    std::optional<Expr *> resolve_name(std::string_view name,
-                                       Kind kind) const noexcept;
+    void try_transform_alpha(Expr *root) noexcept;
+    void try_transform_beta(Expr *root) noexcept;
+    void try_transform_gamma(Expr *root) noexcept;
+    void connect_nodes(Seq *root) noexcept;
+    void flatten_symbols(Seq *root) noexcept;
 
-    NRBuilder &insertAfter(Expr *last) noexcept;
-    NRBuilder &insertAfterVariable(std::string_view name) noexcept;
-    NRBuilder &insertAfterFunction(std::string_view name) noexcept;
-
-    NRBuilder &insertBefore(Expr *last) noexcept;
-    NRBuilder &insertBeforeVariable(std::string_view name) noexcept;
-    NRBuilder &insertBeforeFunction(std::string_view name) noexcept;
-
-    void try_resolve_types(Expr *root) const noexcept;
-    void try_resolve_names(Expr *root) const noexcept;
-    void try_resolve_calls(Expr *root) const noexcept;
-    void connect_nodes(Seq *root) const noexcept;
-
-    static bool check_acyclic(Seq *root, IReport *L) noexcept;
-    static bool check_duplicates(Seq *root, IReport *L) noexcept;
-    static bool check_symbols_exist(Seq *root, IReport *L) noexcept;
-    static bool check_function_calls(Seq *root, IReport *L) noexcept;
-    static bool check_returns(Seq *root, IReport *L) noexcept;
-    static bool check_scopes(Seq *root, IReport *L) noexcept;
-    static bool check_mutability(Seq *root, IReport *L) noexcept;
-    static bool check_control_flow(Seq *root, IReport *L) noexcept;
-    static bool check_types(Seq *root, IReport *L) noexcept;
-    static bool check_safety_claims(Seq *root, IReport *L) noexcept;
+    bool check_acyclic(Seq *root, IReport *I) noexcept;
+    bool check_duplicates(Seq *root, IReport *I) noexcept;
+    bool check_symbols_exist(Seq *root, IReport *I) noexcept;
+    bool check_function_calls(Seq *root, IReport *I) noexcept;
+    bool check_returns(Seq *root, IReport *I) noexcept;
+    bool check_scopes(Seq *root, IReport *I) noexcept;
+    bool check_mutability(Seq *root, IReport *I) noexcept;
+    bool check_control_flow(Seq *root, IReport *I) noexcept;
+    bool check_types(Seq *root, IReport *I) noexcept;
+    bool check_safety_claims(Seq *root, IReport *I) noexcept;
 
 #if defined(NDEBUG)
 #define SOURCE_LOCATION_PARAM
@@ -283,22 +258,10 @@ namespace nr {
         bool is_noexcept = false,
         bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
 
-    Fn *createAnonymousFunction(
-        std::span<FnParam> params, Type *ret_ty, bool is_variadic = false,
-        Purity purity = Purity::Impure, bool thread_safe = false,
-        bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;
-
     /* This is the only intended way to overload operaters */
     Fn *createOperatorOverload(
         Op op, std::span<Type *> params, Type *ret_ty,
         Purity purity = Purity::Impure, bool thread_safe = false,
-        bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;
-
-    Fn *createTemplateFunction(
-        std::string_view name, std::span<std::string_view> template_params,
-        std::span<FnParam> params, Type *ret_ty, bool is_variadic = false,
-        Vis visibility = Vis::Sec, Purity purity = Purity::Impure,
-        bool thread_safe = false,
         bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;
 
     /* Works for both local and global variables */
@@ -324,7 +287,7 @@ namespace nr {
     Int *createBool(bool value SOURCE_LOCATION_PARAM) noexcept;
 
     Int *createFixedInteger(boost::multiprecision::cpp_int value,
-                            IntSize width SOURCE_LOCATION_PARAM) noexcept;
+                            uint8_t width SOURCE_LOCATION_PARAM) noexcept;
 
     Float *createFixedFloat(bigfloat_t value,
                             FloatSize width SOURCE_LOCATION_PARAM) noexcept;
@@ -345,7 +308,8 @@ namespace nr {
     ///**************************************************************************///
     // Create values
 
-    Expr *getDefaultValue(Type *_for SOURCE_LOCATION_PARAM) noexcept;
+    std::optional<Expr *> getDefaultValue(
+        Type *_for SOURCE_LOCATION_PARAM) noexcept;
 
     ///**************************************************************************///
     // Create types
@@ -378,6 +342,10 @@ namespace nr {
     OpaqueTy *getOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM) noexcept;
 
     StructTy *getStructTy(
+        std::span<std::tuple<std::string_view, Type *, Expr *>> fields
+            SOURCE_LOCATION_PARAM) noexcept;
+
+    StructTy *getStructTy(
         std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept;
 
     UnionTy *getUnionTy(
@@ -391,35 +359,10 @@ namespace nr {
                   bool thread_safe = false, bool is_noexcept = false,
                   bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
 
-    /**
-     * Each entry in `params` shall correspond to the name of an opaque type in
-     * the supplied struct. The fields of the struct type are searched
-     * recursively to resolve all such fields upon instaniation. The opaque type
-     * mentioned above must begin with some reserved prefix to ensure the space
-     * of names doesn't conflict with other normal opaque types.
-     */
-    StructTy *createStructTemplateDefintion(
-        std::string_view name, std::span<std::string_view> template_params,
-        StructTy *ty SOURCE_LOCATION_PARAM) noexcept;
-
-    /**
-     * Each entry in `params` shall correspond to the name of an opaque type in
-     * the supplied union. The fields of the union type are searched recursively
-     * to resolve all such fields upon instaniation. The opaque type mentioned
-     * above must begin with some reserved prefix to ensure the space of names
-     * doesn't conflict with other normal opaque types.
-     */
-    UnionTy *createUnionTemplateDefintion(
-        std::string_view name, std::span<std::string_view> template_params,
-        UnionTy *ty SOURCE_LOCATION_PARAM) noexcept;
-
     void createNamedConstantDefinition(
         std::string_view name,
         const std::unordered_map<std::string_view, Expr *> &values
             SOURCE_LOCATION_PARAM);
-
-    Type *getTemplateInstance(Type *base, std::span<Type *> template_params
-                                              SOURCE_LOCATION_PARAM) noexcept;
 
     void createNamedTypeAlias(
         Type *type, std::string_view name SOURCE_LOCATION_PARAM) noexcept;

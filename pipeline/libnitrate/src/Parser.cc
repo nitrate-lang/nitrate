@@ -250,14 +250,14 @@ public:
   virtual ~DeserializerAdapterLexer() override = default;
 };
 
-static std::optional<qparse_node_t *> parse_tokens(
-    qparse_t *L, std::function<void(const char *)> diag_cb) {
-  qparse_node_t *root = nullptr;
-  bool ok = qparse_do(L, &root);
+static std::optional<npar_node_t *> parse_tokens(
+    npar_t *L, std::function<void(const char *)> diag_cb) {
+  npar_node_t *root = nullptr;
+  bool ok = npar_do(L, &root);
 
   ///============================================================================///
   /// Some dangerous code here, be careful! ///
-  qparse_dumps(
+  npar_dumps(
       L, false,
       [](const char *msg, size_t, uintptr_t dat) {
         std::function<void(const char *)> &stack_tmp =
@@ -274,7 +274,7 @@ static std::optional<qparse_node_t *> parse_tokens(
   return root;
 }
 
-bool to_json_recurse(qparse::Node *N, json &x);
+bool to_json_recurse(npar::Node *N, json &x);
 
 bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
                         std::function<void(const char *)> diag_cb,
@@ -291,18 +291,8 @@ bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
     out_mode = OutMode::MsgPack;
   }
 
-  qparse_conf conf;
-
-  { /* Should the parser use the crashguard signal handler? */
-    if (opts.contains("-fparse-crashguard=off")) {
-      qparse_conf_setopt(conf.get(), QPK_CRASHGUARD, QPV_OFF);
-    } else if (opts.contains("-fparse-crashguard=on")) {
-      qparse_conf_setopt(conf.get(), QPK_CRASHGUARD, QPV_ON);
-    }
-  }
-
   DeserializerAdapterLexer lex(source, nullptr, qcore_env_current());
-  qparser par(&lex, conf.get(), qcore_env_current());
+  nr_syn par(&lex, qcore_env_current());
 
   auto root = parse_tokens(par.get(), diag_cb);
   if (!root.has_value()) {
@@ -313,7 +303,7 @@ bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
 
   json o = json::array();
 
-  if (!to_json_recurse(static_cast<qparse::Node *>(root.value()), o)) {
+  if (!to_json_recurse(static_cast<npar::Node *>(root.value()), o)) {
     return false;
   }
 
@@ -335,7 +325,7 @@ bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
 
 ///============================================================================///
 
-using namespace qparse;
+using namespace npar;
 
 bool to_json_recurse(Node *N, json &x) {
   if (!N) {
@@ -343,23 +333,12 @@ bool to_json_recurse(Node *N, json &x) {
     return true;
   }
 
-  qparse_ty_t id = N->this_typeid();
+  npar_ty_t id = N->getKind();
 
   x[0] = id;
 
   switch (id) {
-    case QAST_NODE_CEXPR: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      auto &y = x[1] = json::array();
-
-      if (!to_json_recurse(N->as<ConstExpr>()->get_value(), y)) {
-        return false;
-      }
-
+    case QAST_NODE_NODE: {
       break;
     }
 
@@ -665,7 +644,7 @@ bool to_json_recurse(Node *N, json &x) {
       break;
     }
 
-    case QAST_NODE_SEQ_POINT: {
+    case QAST_NODE_SEQ: {
       /**
        * @brief [Brief Description]
        * @note [Developer Notes]
@@ -1048,7 +1027,7 @@ bool to_json_recurse(Node *N, json &x) {
        * @note [Developer Notes]
        */
 
-      x[1] = N->as<UnresolvedType>()->get_name().c_str();
+      x[1] = N->as<NamedTy>()->get_name().c_str();
 
       break;
     }
@@ -1169,144 +1148,6 @@ bool to_json_recurse(Node *N, json &x) {
       break;
     }
 
-    case QAST_NODE_REGION: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      RegionDef *W = N->as<RegionDef>();
-
-      x[1] = W->get_name().c_str();
-
-      auto &y = x[2] = json::array();
-
-      for (auto &Z : W->get_fields()) {
-        json z;
-        if (!to_json_recurse(Z, z)) {
-          return false;
-        }
-
-        y.push_back(std::move(z));
-      }
-
-      auto &z = x[3] = json::array();
-
-      for (auto &Z : W->get_methods()) {
-        json w;
-        if (!to_json_recurse(Z, w)) {
-          return false;
-        }
-
-        z.push_back(std::move(w));
-      }
-
-      auto &w = x[4] = json::array();
-
-      for (auto &Z : W->get_static_methods()) {
-        json v;
-        if (!to_json_recurse(Z, v)) {
-          return false;
-        }
-
-        w.push_back(std::move(v));
-      }
-
-      break;
-    }
-
-    case QAST_NODE_GROUP: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      GroupDef *W = N->as<GroupDef>();
-
-      x[1] = W->get_name().c_str();
-
-      auto &y = x[2] = json::array();
-
-      for (auto &Z : W->get_fields()) {
-        json z;
-        if (!to_json_recurse(Z, z)) {
-          return false;
-        }
-
-        y.push_back(std::move(z));
-      }
-
-      auto &z = x[3] = json::array();
-
-      for (auto &Z : W->get_methods()) {
-        json w;
-        if (!to_json_recurse(Z, w)) {
-          return false;
-        }
-
-        z.push_back(std::move(w));
-      }
-
-      auto &w = x[4] = json::array();
-
-      for (auto &Z : W->get_static_methods()) {
-        json v;
-        if (!to_json_recurse(Z, v)) {
-          return false;
-        }
-
-        w.push_back(std::move(v));
-      }
-
-      break;
-    }
-
-    case QAST_NODE_UNION: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      UnionDef *W = N->as<UnionDef>();
-
-      x[1] = W->get_name().c_str();
-
-      auto &y = x[2] = json::array();
-
-      for (auto &Z : W->get_fields()) {
-        json z;
-        if (!to_json_recurse(Z, z)) {
-          return false;
-        }
-
-        y.push_back(std::move(z));
-      }
-
-      auto &z = x[3] = json::array();
-
-      for (auto &Z : W->get_methods()) {
-        json w;
-        if (!to_json_recurse(Z, w)) {
-          return false;
-        }
-
-        z.push_back(std::move(w));
-      }
-
-      auto &w = x[4] = json::array();
-
-      for (auto &Z : W->get_static_methods()) {
-        json v;
-        if (!to_json_recurse(Z, v)) {
-          return false;
-        }
-
-        w.push_back(std::move(v));
-      }
-
-      break;
-    }
-
     case QAST_NODE_ENUM: {
       /**
        * @brief [Brief Description]
@@ -1379,7 +1220,7 @@ bool to_json_recurse(Node *N, json &x) {
        * @note [Developer Notes]
        */
 
-      SubsystemDecl *W = N->as<SubsystemDecl>();
+      ScopeDecl *W = N->as<ScopeDecl>();
 
       x[1] = W->get_name().c_str();
 
@@ -1414,13 +1255,13 @@ bool to_json_recurse(Node *N, json &x) {
       break;
     }
 
-    case QAST_NODE_COMPOSITE_FIELD: {
+    case QAST_NODE_STRUCT_FIELD: {
       /**
        * @brief [Brief Description]
        * @note [Developer Notes]
        */
 
-      CompositeField *W = N->as<CompositeField>();
+      StructField *W = N->as<StructField>();
 
       x[1] = W->get_name().c_str();
 
@@ -1459,27 +1300,6 @@ bool to_json_recurse(Node *N, json &x) {
       break;
     }
 
-    case QAST_NODE_CONST: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      ConstDecl *W = N->as<ConstDecl>();
-
-      x[1] = W->get_name().c_str();
-
-      if (!to_json_recurse(W->get_type(), x[2])) {
-        return false;
-      }
-
-      if (!to_json_recurse(W->get_value(), x[3])) {
-        return false;
-      }
-
-      break;
-    }
-
     case QAST_NODE_VAR: {
       /**
        * @brief [Brief Description]
@@ -1487,27 +1307,6 @@ bool to_json_recurse(Node *N, json &x) {
        */
 
       VarDecl *W = N->as<VarDecl>();
-
-      x[1] = W->get_name().c_str();
-
-      if (!to_json_recurse(W->get_type(), x[2])) {
-        return false;
-      }
-
-      if (!to_json_recurse(W->get_value(), x[3])) {
-        return false;
-      }
-
-      break;
-    }
-
-    case QAST_NODE_LET: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      LetDecl *W = N->as<LetDecl>();
 
       x[1] = W->get_name().c_str();
 
@@ -1538,7 +1337,8 @@ bool to_json_recurse(Node *N, json &x) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<ReturnStmt>()->get_value(), x[1])) {
+      if (!to_json_recurse(N->as<ReturnStmt>()->get_value().value_or(nullptr),
+                           x[1])) {
         return false;
       }
 
@@ -1726,19 +1526,6 @@ bool to_json_recurse(Node *N, json &x) {
 
       auto &y = x[1] = json::array();
       if (!to_json_recurse(N->as<ExprStmt>()->get_expr(), y)) {
-        return false;
-      }
-
-      break;
-    }
-
-    case QAST_NODE_VOLSTMT: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      if (!to_json_recurse(N->as<VolStmt>()->get_stmt(), x[1])) {
         return false;
       }
 

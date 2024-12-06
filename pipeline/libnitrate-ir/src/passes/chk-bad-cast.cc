@@ -39,28 +39,28 @@ using namespace nr;
 /**
  * -- Overview of the IR type nodes:
  * +========================================================+
- * | QIR_NODE_U1_TY     => 1-bit unsigned integer (boolean) |
- * | QIR_NODE_U8_TY     => 8-bit unsigned integer           |
- * | QIR_NODE_U16_TY    => 16-bit unsigned integer          |
- * | QIR_NODE_U32_TY    => 32-bit unsigned integer          |
- * | QIR_NODE_U64_TY    => 64-bit unsigned integer          |
- * | QIR_NODE_U128_TY   => 128-bit unsigned integer         |
- * | QIR_NODE_I8_TY     => 8-bit signed integer             |
- * | QIR_NODE_I16_TY    => 16-bit signed integer            |
- * | QIR_NODE_I32_TY    => 32-bit signed integer            |
- * | QIR_NODE_I64_TY    => 64-bit signed integer            |
- * | QIR_NODE_I128_TY   => 128-bit signed integer           |
- * | QIR_NODE_F16_TY    => 16-bit floating-point            |
- * | QIR_NODE_F32_TY    => 32-bit floating-point            |
- * | QIR_NODE_F64_TY    => 64-bit floating-point            |
- * | QIR_NODE_F128_TY   => 128-bit floating-point           |
- * | QIR_NODE_VOID_TY   => Void type                        |
- * | QIR_NODE_PTR_TY    => Pointer type                     |
- * | QIR_NODE_OPAQUE_TY => Opaque type                      |
- * | QIR_NODE_STRUCT_TY => Struct type                      |
- * | QIR_NODE_UNION_TY  => Union type                       |
- * | QIR_NODE_ARRAY_TY  => Array type                       |
- * | QIR_NODE_FN_TY     => Function type                    |
+ * | NR_NODE_U1_TY     => 1-bit unsigned integer (boolean) |
+ * | NR_NODE_U8_TY     => 8-bit unsigned integer           |
+ * | NR_NODE_U16_TY    => 16-bit unsigned integer          |
+ * | NR_NODE_U32_TY    => 32-bit unsigned integer          |
+ * | NR_NODE_U64_TY    => 64-bit unsigned integer          |
+ * | NR_NODE_U128_TY   => 128-bit unsigned integer         |
+ * | NR_NODE_I8_TY     => 8-bit signed integer             |
+ * | NR_NODE_I16_TY    => 16-bit signed integer            |
+ * | NR_NODE_I32_TY    => 32-bit signed integer            |
+ * | NR_NODE_I64_TY    => 64-bit signed integer            |
+ * | NR_NODE_I128_TY   => 128-bit signed integer           |
+ * | NR_NODE_F16_TY    => 16-bit floating-point            |
+ * | NR_NODE_F32_TY    => 32-bit floating-point            |
+ * | NR_NODE_F64_TY    => 64-bit floating-point            |
+ * | NR_NODE_F128_TY   => 128-bit floating-point           |
+ * | NR_NODE_VOID_TY   => Void type                        |
+ * | NR_NODE_PTR_TY    => Pointer type                     |
+ * | NR_NODE_OPAQUE_TY => Opaque type                      |
+ * | NR_NODE_STRUCT_TY => Struct type                      |
+ * | NR_NODE_UNION_TY  => Union type                       |
+ * | NR_NODE_ARRAY_TY  => Array type                       |
+ * | NR_NODE_FN_TY     => Function type                    |
  * +========================================================+
  */
 
@@ -88,13 +88,12 @@ static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L,
 
   const auto prepare = [](std::string_view msg, Type* L,
                           Type* R) -> std::string {
-    return std::string(msg) + ": " + L->getKindName() + " -> " +
-           R->getKindName() + ".";
+    return std::string(msg) + ": " + std::string(L->getKindName()) + " -> " +
+           std::string(R->getKindName()) + ".";
   };
 
   /* Recursively check struct field casting */
-  if (L->getKind() == QIR_NODE_STRUCT_TY &&
-      R->getKind() == QIR_NODE_STRUCT_TY) {
+  if (L->getKind() == NR_NODE_STRUCT_TY && R->getKind() == NR_NODE_STRUCT_TY) {
     StructTy *LS = L->as<StructTy>(), *RS = R->as<StructTy>();
 
     if (LS->getFields().size() != RS->getFields().size()) {
@@ -115,7 +114,7 @@ static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L,
 
     return true;
   }
-  if (L->getKind() == QIR_NODE_ARRAY_TY && R->getKind() == QIR_NODE_STRUCT_TY) {
+  if (L->getKind() == NR_NODE_ARRAY_TY && R->getKind() == NR_NODE_STRUCT_TY) {
     ArrayTy* LS = L->as<ArrayTy>();
     StructTy* RS = R->as<StructTy>();
 
@@ -136,16 +135,15 @@ static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L,
     }
 
     return true;
-  } else if (L->getKind() == QIR_NODE_STRUCT_TY ||
-             R->getKind() == QIR_NODE_STRUCT_TY) {
+  } else if (L->getKind() == NR_NODE_STRUCT_TY ||
+             R->getKind() == NR_NODE_STRUCT_TY) {
     log->report(BadCast, IC::Error, prepare(texts[4], L, R), N->getLoc());
 
     return false;
   }
 
   /* Opaque types cannot be casted to anything */
-  if (L->getKind() == QIR_NODE_OPAQUE_TY ||
-      R->getKind() == QIR_NODE_OPAQUE_TY) {
+  if (L->getKind() == NR_NODE_OPAQUE_TY || R->getKind() == NR_NODE_OPAQUE_TY) {
     log->report(BadCast, IC::Error, prepare(texts[5], L, R), N->getLoc());
 
     return false;
@@ -164,19 +162,19 @@ static bool verify_cast_as(qmodule_t* M, IReport* log, Expr* N, Type* L,
     return false;
   }
 
-  if (L->getKind() == QIR_NODE_UNION_TY || R->getKind() == QIR_NODE_UNION_TY) {
+  if (L->getKind() == NR_NODE_UNION_TY || R->getKind() == NR_NODE_UNION_TY) {
     log->report(BadCast, IC::Error, prepare(texts[8], L, R), N->getLoc());
 
     return false;
   }
 
-  if (L->getKind() == QIR_NODE_ARRAY_TY || R->getKind() == QIR_NODE_ARRAY_TY) {
+  if (L->getKind() == NR_NODE_ARRAY_TY || R->getKind() == NR_NODE_ARRAY_TY) {
     log->report(BadCast, IC::Error, prepare(texts[9], L, R), N->getLoc());
 
     return false;
   }
 
-  if (L->getKind() == QIR_NODE_FN_TY || R->getKind() == QIR_NODE_FN_TY) {
+  if (L->getKind() == NR_NODE_FN_TY || R->getKind() == NR_NODE_FN_TY) {
     log->report(BadCast, IC::Error, prepare(texts[10], L, R), N->getLoc());
 
     return false;
@@ -211,7 +209,7 @@ bool nr::pass::chk_bad_cast(qmodule_t* M, IReport* log) {
                       * expression operator is not a cast_as, the node is not
                       * subject to scrutiny by this analysis pass.
                       */
-                     if (N->getKind() != QIR_NODE_BINEXPR ||
+                     if (N->getKind() != NR_NODE_BINEXPR ||
                          N->as<BinExpr>()->getOp() != Op::CastAs) {
                        return IterOp::Proceed;
                      }

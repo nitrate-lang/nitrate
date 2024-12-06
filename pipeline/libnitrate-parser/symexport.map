@@ -1,6 +1,6 @@
 {
     global:
-        qparse_*;
+        npar_*;
         _Z*;
     local:
         *;

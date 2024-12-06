@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 
 #include <cstddef>
 #include <nitrate-ir/Classes.hh>
@@ -147,7 +147,7 @@ static bool decode_ns_size_value(std::string_view &input, std::ostream &ss) {
   return true;
 }
 
-static void mangle_type(Type *n, std::ostream &ss) {
+static void mangle_type(const Type *n, std::ostream &ss) {
   /**
    * @brief Name mangling for Nitrate is inspired by the Itanium C++ ABI.
    * @ref https://itanium-cxx-abi.github.io/cxx-abi/abi.html#mangling
@@ -209,100 +209,106 @@ static void mangle_type(Type *n, std::ostream &ss) {
    */
 
   switch (n->getKind()) {
-    case QIR_NODE_U1_TY: {
+    case NR_NODE_U1_TY: {
       ss << 'b';
       break;
     }
 
-    case QIR_NODE_U8_TY: {
+    case NR_NODE_U8_TY: {
       ss << 'h';
       break;
     }
 
-    case QIR_NODE_U16_TY: {
+    case NR_NODE_U16_TY: {
       ss << 't';
       break;
     }
 
-    case QIR_NODE_U32_TY: {
+    case NR_NODE_U32_TY: {
       ss << 'j';
       break;
     }
 
-    case QIR_NODE_U64_TY: {
+    case NR_NODE_U64_TY: {
       ss << 'm';
       break;
     }
 
-    case QIR_NODE_U128_TY: {
+    case NR_NODE_U128_TY: {
       ss << 'o';
       break;
     }
 
-    case QIR_NODE_I8_TY: {
+    case NR_NODE_I8_TY: {
       ss << 'a';
       break;
     }
 
-    case QIR_NODE_I16_TY: {
+    case NR_NODE_I16_TY: {
       ss << 's';
       break;
     }
 
-    case QIR_NODE_I32_TY: {
+    case NR_NODE_I32_TY: {
       ss << 'i';
       break;
     }
 
-    case QIR_NODE_I64_TY: {
+    case NR_NODE_I64_TY: {
       ss << 'l';
       break;
     }
 
-    case QIR_NODE_I128_TY: {
+    case NR_NODE_I128_TY: {
       ss << 'n';
       break;
     }
 
-    case QIR_NODE_F16_TY: {
+    case NR_NODE_F16_TY: {
       ss << "Dh";
       break;
     }
 
-    case QIR_NODE_F32_TY: {
+    case NR_NODE_F32_TY: {
       ss << "Df";
       break;
     }
 
-    case QIR_NODE_F64_TY: {
+    case NR_NODE_F64_TY: {
       ss << "Dd";
       break;
     }
 
-    case QIR_NODE_F128_TY: {
+    case NR_NODE_F128_TY: {
       ss << "De";
       break;
     }
 
-    case QIR_NODE_VOID_TY: {
+    case NR_NODE_VOID_TY: {
       ss << 'v';
       break;
     }
 
-    case QIR_NODE_PTR_TY: {
+    case NR_NODE_PTR_TY: {
       ss << 'P';
       mangle_type(n->as<PtrTy>()->getPointee(), ss);
       break;
     }
 
-    case QIR_NODE_OPAQUE_TY: {
+    case NR_NODE_CONST_TY: {
+      ss << 'K';
+      mangle_type(n->as<ConstTy>()->getItem(), ss);
+      break;
+    }
+
+    case NR_NODE_OPAQUE_TY: {
       ss << 'N';
       encode_ns_size_value(n->as<OpaqueTy>()->getName(), ss);
       ss << 'E';
       break;
     }
 
-    case QIR_NODE_STRUCT_TY: {
+    case NR_NODE_STRUCT_TY: {
       /**
        * @brief Unlike C++, Nitrate encodes field types into the name.
        * Making any changes to a struct will break ABI compatibility
@@ -317,7 +323,7 @@ static void mangle_type(Type *n, std::ostream &ss) {
       break;
     }
 
-    case QIR_NODE_UNION_TY: {
+    case NR_NODE_UNION_TY: {
       /**
        * @brief Unlike C++, Nitrate encodes field types into the name.
        * Making any changes to a union will break ABI compatibility
@@ -332,7 +338,7 @@ static void mangle_type(Type *n, std::ostream &ss) {
       break;
     }
 
-    case QIR_NODE_ARRAY_TY: {
+    case NR_NODE_ARRAY_TY: {
       ss << 'A';
       ss << n->as<ArrayTy>()->getCount();
       ss << '_';
@@ -340,7 +346,7 @@ static void mangle_type(Type *n, std::ostream &ss) {
       break;
     }
 
-    case QIR_NODE_FN_TY: {
+    case NR_NODE_FN_TY: {
       /**
        * @brief Unlike C++, Nitrate also encodes the parameter types
        * into the name. This is to avoid runtime UB when calling
@@ -426,6 +432,14 @@ static bool demangle_type(std::string_view &name, std::ostream &ss) {
       ss << '*';
       name.remove_prefix(1);
       return demangle_type(name, ss);
+    }
+
+    case 'K': {
+      ss << "const<";
+      name.remove_prefix(1);
+      auto ret = demangle_type(name, ss);
+      ss << ">";
+      return ret;
     }
 
     case 'N': {
@@ -657,9 +671,15 @@ static std::optional<std::string> demangle_nit_abi(std::string_view name) {
 
 CPP_EXPORT std::optional<std::string> nr::SymbolEncoding::mangle_name(
     const nr::Expr *symbol, AbiTag abi) const noexcept {
+  if (symbol->isType()) {
+    std::stringstream ss;
+    mangle_type(symbol->asType(), ss);
+    return ss.str();
+  }
+
   static std::unordered_set<nr_ty_t> valid = {
-      QIR_NODE_FN,
-      QIR_NODE_LOCAL,
+      NR_NODE_FN,
+      NR_NODE_LOCAL,
   };
 
   nr_ty_t kind = symbol->getKind();
@@ -696,6 +716,11 @@ CPP_EXPORT std::optional<std::string> nr::SymbolEncoding::demangle_name(
 
   if (symbol.starts_with("_Q")) {
     return demangle_nit_abi(symbol);
+  }
+
+  std::stringstream ss;
+  if (demangle_type(symbol, ss)) {
+    return ss.str();
   } else {
     return demangle_c_abi(symbol);
   }

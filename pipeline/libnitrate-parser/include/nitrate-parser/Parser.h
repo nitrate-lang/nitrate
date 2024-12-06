@@ -36,7 +36,6 @@
 
 #include <nitrate-core/Env.h>
 #include <nitrate-lexer/Lexer.h>
-#include <nitrate-parser/Config.h>
 #include <nitrate-parser/Node.h>
 #include <stdbool.h>
 
@@ -44,27 +43,24 @@
 extern "C" {
 #endif
 
-typedef struct qparse_t qparse_t;
+typedef struct npar_t npar_t;
 
 /**
  * @brief Create a new parser instance from non-owning references to a lexer and
  * parser configuration.
  *
  * @param lexer Lexer stream object.
- * @param conf Parser configuration object.
  * @param env The environment.
  *
  * @return A new parser instance or NULL if an error occurred.
  *
- * @note If `!lexer` or `!conf`, NULL is returned.
- * @note The returned object must be freed with `qparse_free`.
- * @note The lexer object and configuration object are not owned by the returned
- * parser object.
+ * @note If `!lexer` NULL is returned.
+ * @note The returned object must be freed with `npar_free`.
  * @note The returned instance does not contain internal locks.
  *
  * @note This function is thread safe.
  */
-qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf, qcore_env_t env);
+npar_t *npar_new(qlex_t *lexer, qcore_env_t env);
 
 /**
  * @brief Free a parser instance.
@@ -78,7 +74,7 @@ qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf, qcore_env_t env);
  * separately.
  * @note This function is thread safe.
  */
-void qparse_free(qparse_t *parser);
+void npar_free(npar_t *parser);
 
 /**
  * @brief Serialize a parse tree to a string.
@@ -92,21 +88,8 @@ void qparse_free(qparse_t *parser);
  *
  * @note This function is thread safe.
  */
-char *qparse_repr(const qparse_node_t *_node, bool minify, size_t indent,
-                  size_t *outlen);
-
-/**
- * @brief Serialize a parse tree to a binary representation.
- *
- * @param node The root node of the parse tree.
- * @param compress Whether to compress the output.
- * @param out The output buffer.
- * @param outlen The length of the output buffer.
- *
- * @note This function is thread safe.
- */
-void qparse_brepr(const qparse_node_t *node, bool compress, uint8_t **out,
-                  size_t *outlen);
+char *npar_repr(const npar_node_t *_node, bool minify, size_t indent,
+                size_t *outlen);
 
 /**
  * @brief Parse Nitrate code into a parse tree.
@@ -122,7 +105,7 @@ void qparse_brepr(const qparse_node_t *node, bool compress, uint8_t **out,
  *
  * @note This function is thread safe.
  */
-bool qparse_do(qparse_t *parser, qparse_node_t **out);
+bool npar_do(npar_t *parser, npar_node_t **out);
 
 /**
  * @brief Parse Nitrate code into a parse tree and dump it to a file.
@@ -140,7 +123,7 @@ bool qparse_do(qparse_t *parser, qparse_node_t **out);
  *
  * @note This function is thread safe.
  */
-bool qparse_and_dump(qparse_t *parser, FILE *out, void *x0, void *x1);
+bool npar_and_dump(npar_t *parser, FILE *out, void *x0, void *x1);
 
 /**
  * @brief Check if the parse tree is valid.
@@ -157,7 +140,7 @@ bool qparse_and_dump(qparse_t *parser, FILE *out, void *x0, void *x1);
  *
  * @note This function is thread safe.
  */
-bool qparse_check(qparse_t *parser, const qparse_node_t *base);
+bool npar_check(npar_t *parser, const npar_node_t *base);
 
 /**
  * @brief A callback function to facilitate the communication reports generated
@@ -169,7 +152,7 @@ bool qparse_check(qparse_t *parser, const qparse_node_t *base);
  *
  * @note This function is thread safe.
  */
-typedef void (*qparse_dump_cb)(const char *msg, size_t len, uintptr_t data);
+typedef void (*npar_dump_cb)(const char *msg, size_t len, uintptr_t data);
 
 /**
  * @brief Dump the parser's reports to a callback function.
@@ -182,8 +165,7 @@ typedef void (*qparse_dump_cb)(const char *msg, size_t len, uintptr_t data);
  *
  * @note This function is thread safe.
  */
-void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb,
-                  uintptr_t data);
+void npar_dumps(npar_t *parser, bool no_ansi, npar_dump_cb cb, uintptr_t data);
 
 #ifdef __cplusplus
 }

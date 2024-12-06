@@ -47,11 +47,15 @@ ManagedHandle open_connection(ConnectionType type, const std::string& param) {
 
 class FdStreamBuf : public std::streambuf {
   int m_fd;
+  bool m_close;
+  char c = 0;
 
 public:
-  FdStreamBuf(int fd) : m_fd(fd) {}
+  FdStreamBuf(int fd, bool close) : m_fd(fd), m_close(close) { errno = 0; }
   ~FdStreamBuf() {
-    if (m_fd != -1) {
+    LOG(INFO) << "Closing file descriptor";
+
+    if (m_close) {
       if (close(m_fd) == -1) {
         LOG(ERROR) << "Failed to close file descriptor: " << strerror(errno);
       }
@@ -86,7 +90,6 @@ public:
   }
 
   virtual int_type underflow() override {
-    char c;
     ssize_t res = read(m_fd, &c, 1);
     if (res < 0) {
       LOG(ERROR) << "Failed to read from stream: " << strerror(errno);
@@ -150,8 +153,8 @@ static ManagedHandle connect_to_pipe(const std::string& path) {
     return std::nullopt;
   }
 
-  auto in_buf = std::make_shared<FdStreamBuf>(conn.value());
-  auto out_buf = std::make_shared<FdStreamBuf>(conn.value());
+  auto in_buf = std::make_shared<FdStreamBuf>(conn.value(), true);
+  auto out_buf = std::make_shared<FdStreamBuf>(conn.value(), true);
   auto stream = std::make_pair(std::make_unique<BufIStream>(in_buf),
                                std::make_unique<BufOStream>(out_buf));
 
@@ -196,6 +199,7 @@ static std::optional<int> get_tcp_client(const std::string& host,
 
   if (close(fd) == -1) {
     LOG(ERROR) << "Failed to close listening socket: " << strerror(errno);
+    return std::nullopt;
   }
 
   return client_fd;
@@ -208,8 +212,8 @@ static ManagedHandle connect_to_tcp_port(uint16_t tcp_port) {
     return std::nullopt;
   }
 
-  auto in_buf = std::make_shared<FdStreamBuf>(conn.value());
-  auto out_buf = std::make_shared<FdStreamBuf>(conn.value());
+  auto in_buf = std::make_shared<FdStreamBuf>(conn.value(), true);
+  auto out_buf = std::make_shared<FdStreamBuf>(conn.value(), true);
   auto stream = std::make_pair(std::make_unique<BufIStream>(in_buf),
                                std::make_unique<BufOStream>(out_buf));
 
@@ -221,8 +225,8 @@ static ManagedHandle connect_to_tcp_port(uint16_t tcp_port) {
 static ManagedHandle connect_to_stdio() {
   LOG(INFO) << "Connecting to stdio";
 
-  auto in_buf = std::make_shared<FdStreamBuf>(STDIN_FILENO);
-  auto out_buf = std::make_shared<FdStreamBuf>(STDOUT_FILENO);
+  auto in_buf = std::make_shared<FdStreamBuf>(STDIN_FILENO, false);
+  auto out_buf = std::make_shared<FdStreamBuf>(STDOUT_FILENO, false);
   auto stream = std::make_pair(std::make_unique<BufIStream>(in_buf),
                                std::make_unique<BufOStream>(out_buf));
 

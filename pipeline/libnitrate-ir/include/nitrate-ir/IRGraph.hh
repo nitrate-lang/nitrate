@@ -117,6 +117,33 @@ namespace nr {
 #define QCLASS_REFLECT() private:
 #endif
 
+  enum class Purity {
+    Impure = 0,
+    Pure = 1,
+    Quasipure = 2,
+    Retropure = 3,
+  };
+
+  enum class Vis {
+    Sec = 0,
+    Pub = 1,
+    Pro = 2,
+  };
+
+  enum class StorageClass {
+    /* Automatic storeage duration */
+    LLVM_StackAlloa,
+
+    /* Static storage duration */
+    LLVM_Static,
+
+    /* Thread-local storage duration */
+    LLVM_ThreadLocal,
+
+    /* Dynamic allocation */
+    Managed,
+  };
+
   class Expr : public nr_node_t {
     QCLASS_REFLECT()
 
@@ -128,109 +155,112 @@ namespace nr {
     Expr &operator=(const Expr &) = delete;
 
   public:
-    Expr(nr_ty_t ty) : m_node_type(ty), m_span(0), m_src_offset(0) {}
+    constexpr Expr(nr_ty_t ty) : m_node_type(ty), m_span(0), m_src_offset(0) {}
 
-    static uint32_t getKindSize(nr_ty_t kind) noexcept;
-    nr_ty_t getKind() const noexcept { return m_node_type; }
-    const char *getKindName() const noexcept {
+    static constexpr uint32_t getKindSize(nr_ty_t kind) noexcept;
+    constexpr nr_ty_t getKind() const noexcept { return m_node_type; }
+    static constexpr const char *getKindName(nr_ty_t kind) noexcept;
+
+    constexpr const char *getKindName() const noexcept {
       return getKindName(m_node_type);
     }
-    static const char *getKindName(nr_ty_t kind) noexcept;
 
     template <typename T>
-    constexpr static nr_ty_t getTypeCode() noexcept {
+    static constexpr nr_ty_t getTypeCode() noexcept {
       if constexpr (std::is_same_v<T, BinExpr>) {
-        return QIR_NODE_BINEXPR;
+        return NR_NODE_BINEXPR;
       } else if constexpr (std::is_same_v<T, UnExpr>) {
-        return QIR_NODE_UNEXPR;
+        return NR_NODE_UNEXPR;
       } else if constexpr (std::is_same_v<T, PostUnExpr>) {
-        return QIR_NODE_POST_UNEXPR;
+        return NR_NODE_POST_UNEXPR;
       } else if constexpr (std::is_same_v<T, Int>) {
-        return QIR_NODE_INT;
+        return NR_NODE_INT;
       } else if constexpr (std::is_same_v<T, Float>) {
-        return QIR_NODE_FLOAT;
+        return NR_NODE_FLOAT;
       } else if constexpr (std::is_same_v<T, List>) {
-        return QIR_NODE_LIST;
+        return NR_NODE_LIST;
       } else if constexpr (std::is_same_v<T, Call>) {
-        return QIR_NODE_CALL;
+        return NR_NODE_CALL;
       } else if constexpr (std::is_same_v<T, Seq>) {
-        return QIR_NODE_SEQ;
+        return NR_NODE_SEQ;
       } else if constexpr (std::is_same_v<T, Index>) {
-        return QIR_NODE_INDEX;
+        return NR_NODE_INDEX;
       } else if constexpr (std::is_same_v<T, Ident>) {
-        return QIR_NODE_IDENT;
+        return NR_NODE_IDENT;
       } else if constexpr (std::is_same_v<T, Extern>) {
-        return QIR_NODE_EXTERN;
+        return NR_NODE_EXTERN;
       } else if constexpr (std::is_same_v<T, Local>) {
-        return QIR_NODE_LOCAL;
+        return NR_NODE_LOCAL;
       } else if constexpr (std::is_same_v<T, Ret>) {
-        return QIR_NODE_RET;
+        return NR_NODE_RET;
       } else if constexpr (std::is_same_v<T, Brk>) {
-        return QIR_NODE_BRK;
+        return NR_NODE_BRK;
       } else if constexpr (std::is_same_v<T, Cont>) {
-        return QIR_NODE_CONT;
+        return NR_NODE_CONT;
       } else if constexpr (std::is_same_v<T, If>) {
-        return QIR_NODE_IF;
+        return NR_NODE_IF;
       } else if constexpr (std::is_same_v<T, While>) {
-        return QIR_NODE_WHILE;
+        return NR_NODE_WHILE;
       } else if constexpr (std::is_same_v<T, For>) {
-        return QIR_NODE_FOR;
+        return NR_NODE_FOR;
       } else if constexpr (std::is_same_v<T, Case>) {
-        return QIR_NODE_CASE;
+        return NR_NODE_CASE;
       } else if constexpr (std::is_same_v<T, Switch>) {
-        return QIR_NODE_SWITCH;
+        return NR_NODE_SWITCH;
       } else if constexpr (std::is_same_v<T, Fn>) {
-        return QIR_NODE_FN;
+        return NR_NODE_FN;
       } else if constexpr (std::is_same_v<T, Asm>) {
-        return QIR_NODE_ASM;
+        return NR_NODE_ASM;
       } else if constexpr (std::is_same_v<T, Expr>) {
-        return QIR_NODE_IGN;
+        return NR_NODE_IGN;
       } else if constexpr (std::is_same_v<T, U1Ty>) {
-        return QIR_NODE_U1_TY;
+        return NR_NODE_U1_TY;
       } else if constexpr (std::is_same_v<T, U8Ty>) {
-        return QIR_NODE_U8_TY;
+        return NR_NODE_U8_TY;
       } else if constexpr (std::is_same_v<T, U16Ty>) {
-        return QIR_NODE_U16_TY;
+        return NR_NODE_U16_TY;
       } else if constexpr (std::is_same_v<T, U32Ty>) {
-        return QIR_NODE_U32_TY;
+        return NR_NODE_U32_TY;
       } else if constexpr (std::is_same_v<T, U64Ty>) {
-        return QIR_NODE_U64_TY;
+        return NR_NODE_U64_TY;
       } else if constexpr (std::is_same_v<T, U128Ty>) {
-        return QIR_NODE_U128_TY;
+        return NR_NODE_U128_TY;
       } else if constexpr (std::is_same_v<T, I8Ty>) {
-        return QIR_NODE_I8_TY;
+        return NR_NODE_I8_TY;
       } else if constexpr (std::is_same_v<T, I16Ty>) {
-        return QIR_NODE_I16_TY;
+        return NR_NODE_I16_TY;
       } else if constexpr (std::is_same_v<T, I32Ty>) {
-        return QIR_NODE_I32_TY;
+        return NR_NODE_I32_TY;
       } else if constexpr (std::is_same_v<T, I64Ty>) {
-        return QIR_NODE_I64_TY;
+        return NR_NODE_I64_TY;
       } else if constexpr (std::is_same_v<T, I128Ty>) {
-        return QIR_NODE_I128_TY;
+        return NR_NODE_I128_TY;
       } else if constexpr (std::is_same_v<T, F16Ty>) {
-        return QIR_NODE_F16_TY;
+        return NR_NODE_F16_TY;
       } else if constexpr (std::is_same_v<T, F32Ty>) {
-        return QIR_NODE_F32_TY;
+        return NR_NODE_F32_TY;
       } else if constexpr (std::is_same_v<T, F64Ty>) {
-        return QIR_NODE_F64_TY;
+        return NR_NODE_F64_TY;
       } else if constexpr (std::is_same_v<T, F128Ty>) {
-        return QIR_NODE_F128_TY;
+        return NR_NODE_F128_TY;
       } else if constexpr (std::is_same_v<T, VoidTy>) {
-        return QIR_NODE_VOID_TY;
+        return NR_NODE_VOID_TY;
       } else if constexpr (std::is_same_v<T, PtrTy>) {
-        return QIR_NODE_PTR_TY;
+        return NR_NODE_PTR_TY;
+      } else if constexpr (std::is_same_v<T, ConstTy>) {
+        return NR_NODE_CONST_TY;
       } else if constexpr (std::is_same_v<T, OpaqueTy>) {
-        return QIR_NODE_OPAQUE_TY;
+        return NR_NODE_OPAQUE_TY;
       } else if constexpr (std::is_same_v<T, StructTy>) {
-        return QIR_NODE_STRUCT_TY;
+        return NR_NODE_STRUCT_TY;
       } else if constexpr (std::is_same_v<T, UnionTy>) {
-        return QIR_NODE_UNION_TY;
+        return NR_NODE_UNION_TY;
       } else if constexpr (std::is_same_v<T, ArrayTy>) {
-        return QIR_NODE_ARRAY_TY;
+        return NR_NODE_ARRAY_TY;
       } else if constexpr (std::is_same_v<T, FnTy>) {
-        return QIR_NODE_FN_TY;
+        return NR_NODE_FN_TY;
       } else if constexpr (std::is_same_v<T, Tmp>) {
-        return QIR_NODE_TMP;
+        return NR_NODE_TMP;
       } else {
         static_assert(
             !std::is_same_v<T, T>,
@@ -238,226 +268,66 @@ namespace nr {
       }
     }
 
-    bool isType() const noexcept;
-    inline bool isLiteral() const noexcept {
-      return m_node_type == QIR_NODE_INT || m_node_type == QIR_NODE_FLOAT;
+    constexpr bool isType() const noexcept {
+      switch (getKind()) {
+        case NR_NODE_U1_TY:
+        case NR_NODE_U8_TY:
+        case NR_NODE_U16_TY:
+        case NR_NODE_U32_TY:
+        case NR_NODE_U64_TY:
+        case NR_NODE_U128_TY:
+        case NR_NODE_I8_TY:
+        case NR_NODE_I16_TY:
+        case NR_NODE_I32_TY:
+        case NR_NODE_I64_TY:
+        case NR_NODE_I128_TY:
+        case NR_NODE_F16_TY:
+        case NR_NODE_F32_TY:
+        case NR_NODE_F64_TY:
+        case NR_NODE_F128_TY:
+        case NR_NODE_VOID_TY:
+        case NR_NODE_PTR_TY:
+        case NR_NODE_CONST_TY:
+        case NR_NODE_OPAQUE_TY:
+        case NR_NODE_STRUCT_TY:
+        case NR_NODE_UNION_TY:
+        case NR_NODE_ARRAY_TY:
+        case NR_NODE_FN_TY:
+        case NR_NODE_TMP:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    constexpr bool isLiteral() const noexcept {
+      return m_node_type == NR_NODE_INT || m_node_type == NR_NODE_FLOAT;
     }
 
     // Returns "" if the construct is not named.
-    std::string_view getName() const noexcept;
+    constexpr std::string_view getName() const noexcept;
 
-    std::pair<uint32_t, uint32_t> getLoc() noexcept;
-    uint32_t locBeg() noexcept;
-    uint32_t locEnd() noexcept;
+    constexpr std::tuple<uint32_t, uint32_t, std::string_view> getLoc()
+        const noexcept {
+      return {m_src_offset, m_src_offset + m_span, ""};
+    }
 
-    std::optional<Type *> getType() noexcept;
+    constexpr std::optional<Type *> getType() const noexcept;
 
     template <typename T>
-    static T *safeCastAs(Expr *ptr) noexcept {
-      if constexpr (getTypeCode<T>()) {
-      }  // Validate the type via a static_assert in getTypeCode.
-
+    static constexpr T *safeCastAs(Expr *ptr) noexcept {
       if (!ptr) {
         return nullptr;
       }
 
 #ifndef NDEBUG
-      switch (ptr->getKind()) {
-        case QIR_NODE_BINEXPR: {
-          if constexpr (!std::is_same_v<T, BinExpr>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_UNEXPR: {
-          if constexpr (!std::is_same_v<T, UnExpr>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_POST_UNEXPR: {
-          if constexpr (!std::is_same_v<T, PostUnExpr>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_INT: {
-          if constexpr (!std::is_same_v<T, Int>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_FLOAT: {
-          if constexpr (!std::is_same_v<T, Float>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_LIST: {
-          if constexpr (!std::is_same_v<T, List>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_CALL: {
-          if constexpr (!std::is_same_v<T, Call>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_SEQ: {
-          if constexpr (!std::is_same_v<T, Seq>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_INDEX: {
-          if constexpr (!std::is_same_v<T, Index>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_IDENT: {
-          if constexpr (!std::is_same_v<T, Ident>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_EXTERN: {
-          if constexpr (!std::is_same_v<T, Extern>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_LOCAL: {
-          if constexpr (!std::is_same_v<T, Local>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_RET: {
-          if constexpr (!std::is_same_v<T, Ret>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_BRK: {
-          if constexpr (!std::is_same_v<T, Brk>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_CONT: {
-          if constexpr (!std::is_same_v<T, Cont>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_IF: {
-          if constexpr (!std::is_same_v<T, If>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_WHILE: {
-          if constexpr (!std::is_same_v<T, While>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_FOR: {
-          if constexpr (!std::is_same_v<T, For>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_CASE: {
-          if constexpr (!std::is_same_v<T, Case>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_SWITCH: {
-          if constexpr (!std::is_same_v<T, Switch>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_FN: {
-          if constexpr (!std::is_same_v<T, Fn>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_ASM: {
-          if constexpr (!std::is_same_v<T, Asm>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_IGN: {
-          if constexpr (!std::is_same_v<T, Expr>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_U1_TY: {
-          if constexpr (!std::is_same_v<T, U1Ty>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_U8_TY: {
-          if constexpr (!std::is_same_v<T, U8Ty>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_U16_TY: {
-          if constexpr (!std::is_same_v<T, U16Ty>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_U32_TY: {
-          if constexpr (!std::is_same_v<T, U32Ty>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_U64_TY: {
-          if constexpr (!std::is_same_v<T, U64Ty>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_U128_TY: {
-          if constexpr (!std::is_same_v<T, U128Ty>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_I8_TY: {
-          if constexpr (!std::is_same_v<T, I8Ty>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_I16_TY: {
-          if constexpr (!std::is_same_v<T, I16Ty>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_I32_TY: {
-          if constexpr (!std::is_same_v<T, I32Ty>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_I64_TY: {
-          if constexpr (!std::is_same_v<T, I64Ty>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_I128_TY: {
-          if constexpr (!std::is_same_v<T, I128Ty>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_F16_TY: {
-          if constexpr (!std::is_same_v<T, F16Ty>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_F32_TY: {
-          if constexpr (!std::is_same_v<T, F32Ty>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_F64_TY: {
-          if constexpr (!std::is_same_v<T, F64Ty>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_F128_TY: {
-          if constexpr (!std::is_same_v<T, F128Ty>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_VOID_TY: {
-          if constexpr (!std::is_same_v<T, VoidTy>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_PTR_TY: {
-          if constexpr (!std::is_same_v<T, PtrTy>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_OPAQUE_TY: {
-          if constexpr (!std::is_same_v<T, OpaqueTy>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_STRUCT_TY: {
-          if constexpr (!std::is_same_v<T, StructTy>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_UNION_TY: {
-          if constexpr (!std::is_same_v<T, UnionTy>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_ARRAY_TY: {
-          if constexpr (!std::is_same_v<T, ArrayTy>) goto cast_panic;
-          break;
-        }
-        case QIR_NODE_FN_TY: {
-          if constexpr (!std::is_same_v<T, FnTy>) goto cast_panic;
-          break;
-        }
-
-        case QIR_NODE_TMP: {
-          if constexpr (!std::is_same_v<T, Tmp>) goto cast_panic;
-          break;
-        }
+      if (getTypeCode<T>() != ptr->getKind()) [[unlikely]] {
+        qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(),
+                     getKindName(getTypeCode<T>()));
       }
 #endif
 
       return static_cast<T *>(ptr);
-
-#ifndef NDEBUG
-    cast_panic:
-      qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(),
-                   getKindName(getTypeCode<T>()));
-#endif
     }
 
     /**
@@ -469,7 +339,7 @@ namespace nr {
      * @warning This function will panic if the cast is invalid.
      */
     template <typename T>
-    T *as() noexcept {
+    constexpr T *as() noexcept {
       return safeCastAs<T>(this);
     }
 
@@ -482,12 +352,15 @@ namespace nr {
      * @warning This function will panic if the cast is invalid.
      */
     template <typename T>
-    const T *as() const noexcept {
+    constexpr const T *as() const noexcept {
       return safeCastAs<T>(const_cast<Expr *>(this));
     }
 
-    Expr *asExpr() noexcept { return this; }
-    Type *asType() noexcept;
+    constexpr Expr *asExpr() noexcept { return this; }
+    constexpr Type *asType() noexcept;
+    constexpr const Type *asType() const noexcept {
+      return const_cast<Expr *>(this)->asType();
+    }
 
     /**
      * @brief Type check.
@@ -496,7 +369,7 @@ namespace nr {
      * @return true If the type matches.
      * @return false If the type does not match.
      */
-    bool is(nr_ty_t type) const noexcept { return type == getKind(); }
+    constexpr bool is(nr_ty_t type) const noexcept { return type == getKind(); }
 
     /**
      * @brief Compare two nodes for equality.
@@ -505,7 +378,7 @@ namespace nr {
      * @note This compare will be insensitive to metadata like module, source
      * location, etc.
      */
-    bool isSame(const Expr *other) const;
+    constexpr bool isSame(const Expr *other) const;
 
     bool isAcyclic() const noexcept;
 
@@ -515,6 +388,12 @@ namespace nr {
      * @param isForDebug Whether to print the node for debugging.
      */
     void dump(std::ostream &os = std::cout, bool isForDebug = false) const;
+
+    std::string toString() const noexcept {
+      std::stringstream ss;
+      dump(ss, false);
+      return ss.str();
+    };
 
     /**
      * @brief Get a hashcode for the node. The code is unique its the nodes and
@@ -542,45 +421,169 @@ namespace nr {
      */
     uint64_t getUniqId() const;
 
-    ///=====================================================================
-    /// BEGIN: Internal library use only
-    /// END:   Internal library use only
-    ///=====================================================================
-
   } __attribute__((packed)) __attribute__((aligned(1)));
 
   static_assert(sizeof(Expr) == 8);
 
   class Type : public Expr {
-    uint64_t getAlignBits(uint32_t PtrSizeBytes);
+    friend Expr;
+
+    std::optional<uint64_t> getAlignBits() const;
 
   public:
     Type(nr_ty_t ty) : Expr(ty) {}
 
-    bool hasKnownSize() noexcept;
-    bool hasKnownAlign() noexcept;
-    uint64_t getSizeBits(uint32_t PtrSizeBytes);
-    inline uint64_t getSizeBytes(uint32_t PtrSizeBytes) {
-      return std::ceil(getSizeBits(PtrSizeBytes) / 8.0);
-    }
-    inline uint64_t getAlignBytes(uint32_t PtrSizeBytes) {
-      return std::ceil(getAlignBits(PtrSizeBytes) / 8.0);
+    std::optional<uint64_t> getSizeBits() const;
+
+    std::optional<uint64_t> getSizeBytes() const {
+      if (auto size = getSizeBits()) [[likely]] {
+        return std::ceil(size.value() / 8.0);
+      } else {
+        return std::nullopt;
+      }
     }
 
-    bool is_primitive() const;
-    bool is_array() const;
-    bool is_pointer() const;
-    bool is_function() const;
-    bool is_composite() const;
-    bool is_union() const;
-    bool is_numeric() const;
-    bool is_integral() const;
-    bool is_floating_point() const;
-    bool is_signed() const;
-    bool is_unsigned() const;
-    bool is_void() const;
-    bool is_bool() const;
-    bool is_ptr_to(const Type *type) const;
+    std::optional<uint64_t> getAlignBytes() const {
+      if (auto align = getAlignBits()) [[likely]] {
+        return std::ceil(align.value() / 8.0);
+      } else {
+        return std::nullopt;
+      }
+    }
+
+    constexpr bool is_primitive() const {
+      switch (getKind()) {
+        case NR_NODE_U1_TY:
+        case NR_NODE_U8_TY:
+        case NR_NODE_U16_TY:
+        case NR_NODE_U32_TY:
+        case NR_NODE_U64_TY:
+        case NR_NODE_U128_TY:
+        case NR_NODE_I8_TY:
+        case NR_NODE_I16_TY:
+        case NR_NODE_I32_TY:
+        case NR_NODE_I64_TY:
+        case NR_NODE_I128_TY:
+        case NR_NODE_F16_TY:
+        case NR_NODE_F32_TY:
+        case NR_NODE_F64_TY:
+        case NR_NODE_F128_TY:
+        case NR_NODE_VOID_TY:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    constexpr bool is_array() const { return getKind() == NR_NODE_ARRAY_TY; }
+
+    constexpr bool is_pointer() const { return getKind() == NR_NODE_PTR_TY; }
+
+    constexpr bool is_readonly() const { return getKind() == NR_NODE_CONST_TY; }
+
+    constexpr bool is_function() const { return getKind() == NR_NODE_FN_TY; }
+
+    constexpr bool is_composite() const {
+      switch (getKind()) {
+        case NR_NODE_STRUCT_TY:
+        case NR_NODE_UNION_TY:
+        case NR_NODE_ARRAY_TY:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    constexpr bool is_union() const { return getKind() == NR_NODE_UNION_TY; }
+
+    constexpr bool is_numeric() const {
+      switch (getKind()) {
+        case NR_NODE_U1_TY:
+        case NR_NODE_U8_TY:
+        case NR_NODE_U16_TY:
+        case NR_NODE_U32_TY:
+        case NR_NODE_U64_TY:
+        case NR_NODE_U128_TY:
+        case NR_NODE_I8_TY:
+        case NR_NODE_I16_TY:
+        case NR_NODE_I32_TY:
+        case NR_NODE_I64_TY:
+        case NR_NODE_I128_TY:
+        case NR_NODE_F16_TY:
+        case NR_NODE_F32_TY:
+        case NR_NODE_F64_TY:
+        case NR_NODE_F128_TY:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    constexpr bool is_integral() const {
+      switch (getKind()) {
+        case NR_NODE_U1_TY:
+        case NR_NODE_U8_TY:
+        case NR_NODE_U16_TY:
+        case NR_NODE_U32_TY:
+        case NR_NODE_U64_TY:
+        case NR_NODE_U128_TY:
+        case NR_NODE_I8_TY:
+        case NR_NODE_I16_TY:
+        case NR_NODE_I32_TY:
+        case NR_NODE_I64_TY:
+        case NR_NODE_I128_TY:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    constexpr bool is_floating_point() const {
+      switch (getKind()) {
+        case NR_NODE_F16_TY:
+        case NR_NODE_F32_TY:
+        case NR_NODE_F64_TY:
+        case NR_NODE_F128_TY:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    constexpr bool is_signed() const {
+      switch (getKind()) {
+        case NR_NODE_I8_TY:
+        case NR_NODE_I16_TY:
+        case NR_NODE_I32_TY:
+        case NR_NODE_I64_TY:
+        case NR_NODE_I128_TY:
+        case NR_NODE_F16_TY:
+        case NR_NODE_F32_TY:
+        case NR_NODE_F64_TY:
+        case NR_NODE_F128_TY:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    constexpr bool is_unsigned() const {
+      switch (getKind()) {
+        case NR_NODE_U1_TY:
+        case NR_NODE_U8_TY:
+        case NR_NODE_U16_TY:
+        case NR_NODE_U32_TY:
+        case NR_NODE_U64_TY:
+        case NR_NODE_U128_TY:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    constexpr bool is_void() const { return getKind() == NR_NODE_VOID_TY; }
+
+    constexpr bool is_bool() const { return getKind() == NR_NODE_U1_TY; }
   };
 
   ///=============================================================================
@@ -602,8 +605,6 @@ namespace nr {
     LogicNot,  /* '!': Logical NOT operator */
     LShift,    /* '<<': Left shift operator */
     RShift,    /* '>>': Right shift operator */
-    ROTR,      /* '>>>': Rotate right operator */
-    ROTL,      /* '<<<': Rotate left operator */
     Inc,       /* '++': Increment operator */
     Dec,       /* '--': Decrement operator */
     Set,       /* '=': Assignment operator */
@@ -629,6 +630,8 @@ namespace nr {
   std::ostream &operator<<(std::ostream &os, Op op);
 
   class BinExpr final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     Expr *m_lhs;
@@ -637,11 +640,11 @@ namespace nr {
 
   public:
     BinExpr(Expr *lhs, Expr *rhs, Op op)
-        : Expr(QIR_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
+        : Expr(NR_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
-    Expr *getLHS() noexcept { return m_lhs; }
-    Expr *getRHS() noexcept { return m_rhs; }
-    Op getOp() noexcept { return m_op; }
+    Expr *getLHS() const noexcept { return m_lhs; }
+    Expr *getRHS() const noexcept { return m_rhs; }
+    Op getOp() const noexcept { return m_op; }
 
     Expr *setLHS(Expr *lhs) noexcept { return m_lhs = lhs; }
     Expr *setRHS(Expr *rhs) noexcept { return m_rhs = rhs; }
@@ -649,22 +652,26 @@ namespace nr {
   };
 
   class UnExpr final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     Expr *m_expr;
     Op m_op;
 
   public:
-    UnExpr(Expr *expr, Op op) : Expr(QIR_NODE_UNEXPR), m_expr(expr), m_op(op) {}
+    UnExpr(Expr *expr, Op op) : Expr(NR_NODE_UNEXPR), m_expr(expr), m_op(op) {}
 
-    Expr *getExpr() noexcept { return m_expr; }
-    Op getOp() noexcept { return m_op; }
+    Expr *getExpr() const noexcept { return m_expr; }
+    Op getOp() const noexcept { return m_op; }
 
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
     Op setOp(Op op) noexcept { return m_op = op; }
   };
 
   class PostUnExpr final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     Expr *m_expr;
@@ -672,10 +679,10 @@ namespace nr {
 
   public:
     PostUnExpr(Expr *expr, Op op)
-        : Expr(QIR_NODE_POST_UNEXPR), m_expr(expr), m_op(op) {}
+        : Expr(NR_NODE_POST_UNEXPR), m_expr(expr), m_op(op) {}
 
-    Expr *getExpr() noexcept { return m_expr; }
-    Op getOp() noexcept { return m_op; }
+    Expr *getExpr() const noexcept { return m_expr; }
+    Op getOp() const noexcept { return m_op; }
 
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
     Op setOp(Op op) noexcept { return m_op = op; }
@@ -690,115 +697,147 @@ namespace nr {
   /// ===========================================================================
 
   class U1Ty final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    U1Ty() : Type(QIR_NODE_U1_TY) {}
+    U1Ty() : Type(NR_NODE_U1_TY) {}
   };
 
   class U8Ty final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    U8Ty() : Type(QIR_NODE_U8_TY) {}
+    U8Ty() : Type(NR_NODE_U8_TY) {}
   };
 
   class U16Ty final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    U16Ty() : Type(QIR_NODE_U16_TY) {}
+    U16Ty() : Type(NR_NODE_U16_TY) {}
   };
 
   class U32Ty final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    U32Ty() : Type(QIR_NODE_U32_TY) {}
+    U32Ty() : Type(NR_NODE_U32_TY) {}
   };
 
   class U64Ty final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    U64Ty() : Type(QIR_NODE_U64_TY) {}
+    U64Ty() : Type(NR_NODE_U64_TY) {}
   };
 
   class U128Ty final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    U128Ty() : Type(QIR_NODE_U128_TY) {}
+    U128Ty() : Type(NR_NODE_U128_TY) {}
   };
 
   class I8Ty final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    I8Ty() : Type(QIR_NODE_I8_TY) {}
+    I8Ty() : Type(NR_NODE_I8_TY) {}
   };
 
   class I16Ty final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    I16Ty() : Type(QIR_NODE_I16_TY){};
+    I16Ty() : Type(NR_NODE_I16_TY){};
   };
 
   class I32Ty final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    I32Ty() : Type(QIR_NODE_I32_TY) {}
+    I32Ty() : Type(NR_NODE_I32_TY) {}
   };
 
   class I64Ty final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    I64Ty() : Type(QIR_NODE_I64_TY) {}
+    I64Ty() : Type(NR_NODE_I64_TY) {}
   };
 
   class I128Ty final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    I128Ty() : Type(QIR_NODE_I128_TY) {}
+    I128Ty() : Type(NR_NODE_I128_TY) {}
   };
 
   class F16Ty final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    F16Ty() : Type(QIR_NODE_F16_TY) {}
+    F16Ty() : Type(NR_NODE_F16_TY) {}
   };
 
   class F32Ty final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    F32Ty() : Type(QIR_NODE_F32_TY) {}
+    F32Ty() : Type(NR_NODE_F32_TY) {}
   };
 
   class F64Ty final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    F64Ty() : Type(QIR_NODE_F64_TY) {}
+    F64Ty() : Type(NR_NODE_F64_TY) {}
   };
 
   class F128Ty final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    F128Ty() : Type(QIR_NODE_F128_TY) {}
+    F128Ty() : Type(NR_NODE_F128_TY) {}
   };
 
   class VoidTy final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    VoidTy() : Type(QIR_NODE_VOID_TY) {}
+    VoidTy() : Type(NR_NODE_VOID_TY) {}
   };
 
   /// ===========================================================================
@@ -810,54 +849,84 @@ namespace nr {
   /// ===========================================================================
 
   class PtrTy final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     Type *m_pointee;
+    uint8_t m_platform_ptr_size_bytes;
 
   public:
-    PtrTy(Type *pointee) : Type(QIR_NODE_PTR_TY), m_pointee(pointee) {}
+    PtrTy(Type *pointee, uint8_t platform_size_bytes = 8)
+        : Type(NR_NODE_PTR_TY),
+          m_pointee(pointee),
+          m_platform_ptr_size_bytes(platform_size_bytes) {}
 
-    Type *getPointee() noexcept { return m_pointee; }
+    Type *getPointee() const noexcept { return m_pointee; }
+    uint8_t getPlatformPointerSizeBytes() const noexcept {
+      return m_platform_ptr_size_bytes;
+    }
+  };
+
+  class ConstTy final : public Type {
+    friend Expr;
+
+    QCLASS_REFLECT()
+
+    Type *m_item;
+
+  public:
+    ConstTy(Type *item) : Type(NR_NODE_CONST_TY), m_item(item) {}
+
+    Type *getItem() const noexcept { return m_item; }
   };
 
   class OpaqueTy final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     std::string_view m_name;
 
   public:
-    OpaqueTy(std::string_view name) : Type(QIR_NODE_OPAQUE_TY), m_name(name) {}
+    OpaqueTy(std::string_view name) : Type(NR_NODE_OPAQUE_TY), m_name(name) {}
   };
 
   typedef std::vector<Type *, Arena<Type *>> StructFields;
 
   class StructTy final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     StructFields m_fields;
 
   public:
     StructTy(const StructFields &fields)
-        : Type(QIR_NODE_STRUCT_TY), m_fields(fields) {}
+        : Type(NR_NODE_STRUCT_TY), m_fields(fields) {}
 
-    const StructFields &getFields() noexcept { return m_fields; }
+    const StructFields &getFields() const noexcept { return m_fields; }
   };
 
   typedef std::vector<Type *, Arena<Type *>> UnionFields;
 
   class UnionTy final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     UnionFields m_fields;
 
   public:
     UnionTy(const UnionFields &fields)
-        : Type(QIR_NODE_UNION_TY), m_fields(fields) {}
+        : Type(NR_NODE_UNION_TY), m_fields(fields) {}
 
-    const UnionFields &getFields() noexcept { return m_fields; }
+    const UnionFields &getFields() const noexcept { return m_fields; }
   };
 
   class ArrayTy final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     Type *m_element;
@@ -865,10 +934,10 @@ namespace nr {
 
   public:
     ArrayTy(Type *element, size_t size)
-        : Type(QIR_NODE_ARRAY_TY), m_element(element), m_size(size) {}
+        : Type(NR_NODE_ARRAY_TY), m_element(element), m_size(size) {}
 
-    Type *getElement() noexcept { return m_element; }
-    size_t getCount() { return m_size; }
+    Type *getElement() const noexcept { return m_element; }
+    size_t getCount() const { return m_size; }
   };
 
   enum class FnAttr {
@@ -881,22 +950,35 @@ namespace nr {
       FnAttrs;
 
   class FnTy final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     FnParams m_params;
     FnAttrs m_attrs;
     Type *m_return;
+    uint8_t m_platform_ptr_size_bytes;
 
   public:
-    FnTy(const FnParams &params, Type *ret, const FnAttrs &attrs)
-        : Type(QIR_NODE_FN_TY),
+    FnTy(const FnParams &params, Type *ret, const FnAttrs &attrs,
+         uint8_t platform_ptr_size_bytes = 8)
+        : Type(NR_NODE_FN_TY),
           m_params(params),
           m_attrs(attrs),
-          m_return(ret) {}
+          m_return(ret),
+          m_platform_ptr_size_bytes(platform_ptr_size_bytes) {}
 
-    const FnParams &getParams() noexcept { return m_params; }
-    Type *getReturn() noexcept { return m_return; }
-    const FnAttrs &getAttrs() noexcept { return m_attrs; }
+    const FnParams &getParams() const noexcept { return m_params; }
+    Type *getReturn() const noexcept { return m_return; }
+    const FnAttrs &getAttrs() const noexcept { return m_attrs; }
+
+    bool isVariadic() const noexcept {
+      return m_attrs.contains(FnAttr::Variadic);
+    }
+
+    uint8_t getPlatformPointerSizeBytes() const noexcept {
+      return m_platform_ptr_size_bytes;
+    }
   };
 
   ///=============================================================================
@@ -907,40 +989,44 @@ namespace nr {
   /// BEGIN: LITERALS
   ///=============================================================================
 
-  enum class IntSize : uint8_t {
-    U1,
-    U8,
-    I32,
-    I64,
-    U128,
-  };
-
   class Int final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
-    IntSize m_size;
-    uint128_t m_value;
+    struct map_hash {
+      std::size_t operator()(std::pair<uint128_t, uint8_t> const &v) const {
+        return std::hash<uint128_t>()(v.first) ^ std::hash<uint8_t>()(v.second);
+      }
+    };
+    static std::unordered_map<std::pair<uint128_t, uint8_t>, Int *, map_hash>
+        m_cache;
+
+    unsigned __int128 m_value __attribute__((aligned(16)));
+    uint8_t m_size;
 
     static uint128_t str2u128(std::string_view x) noexcept;
 
   public:
-    Int(uint128_t val, IntSize size)
-        : Expr(QIR_NODE_INT), m_size(size), m_value(val) {}
+    Int(uint128_t val, uint8_t size)
+        : Expr(NR_NODE_INT), m_value(val), m_size(size) {}
 
-    Int(std::string_view str, IntSize size) : Expr(QIR_NODE_INT) {
+    Int(std::string_view str, uint8_t size)
+        : Expr(NR_NODE_INT), m_value(str2u128(str)) {
       m_size = size;
-      m_value = str2u128(str);
     }
 
-    IntSize getSize() const noexcept { return m_size; }
+    static Int *get(uint128_t val, uint8_t size) noexcept;
+    static Int *get(std::string_view str, uint8_t size) noexcept {
+      return get(str2u128(str), size);
+    }
 
+    uint8_t getSize() const noexcept { return m_size; }
     uint128_t getValue() const noexcept { return m_value; }
+    std::string getValueString() const noexcept;
+  } __attribute__((packed));
 
-    std::string getValueString() const noexcept { return m_value.str(); }
-
-  } __attribute__((aligned(16)));
-
-  static_assert(sizeof(Int) == 32);
+  static_assert(sizeof(Int) == 48);
 
   enum class FloatSize : uint8_t {
     F16,
@@ -950,6 +1036,8 @@ namespace nr {
   };
 
   class Float final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     double m_data;
@@ -959,8 +1047,8 @@ namespace nr {
 
   public:
     Float(double dec, FloatSize size)
-        : Expr(QIR_NODE_FLOAT), m_data{dec}, m_size(size) {}
-    Float(std::string_view str) : Expr(QIR_NODE_FLOAT) {
+        : Expr(NR_NODE_FLOAT), m_data{dec}, m_size(size) {}
+    Float(std::string_view str) : Expr(NR_NODE_FLOAT) {
       m_data = std::stod(std::string(str));
       if (str.ends_with("f128")) {
         m_size = FloatSize::F128;
@@ -982,23 +1070,28 @@ namespace nr {
   typedef std::vector<Expr *, Arena<Expr *>> ListItems;
 
   class List final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
+
+    /// FIXME: Implement run-length compression
 
     ListItems m_items;
     bool m_is_homogenous;
 
   public:
     List(const ListItems &items, bool is_homogenous)
-        : Expr(QIR_NODE_LIST), m_items(items), m_is_homogenous(is_homogenous) {}
+        : Expr(NR_NODE_LIST), m_items(items), m_is_homogenous(is_homogenous) {}
 
-    const ListItems &getItems() const noexcept { return m_items; }
-    ListItems &getItems() noexcept { return m_items; }
-    void setItems(const ListItems &items) noexcept { m_items = items; }
+    auto begin() const noexcept { return m_items.begin(); }
+    auto end() const noexcept { return m_items.end(); }
+    size_t size() const noexcept { return m_items.size(); }
+
+    Expr *operator[](size_t idx) const noexcept { return m_items[idx]; }
+    Expr *at(size_t idx) const noexcept { return m_items.at(idx); }
 
     bool isHomogenous() const noexcept { return m_is_homogenous; }
   };
-
-  List *createStringLiteral(std::string_view str) noexcept;
 
   ///=============================================================================
   /// END: LITERALS
@@ -1011,6 +1104,8 @@ namespace nr {
   typedef std::vector<Expr *, Arena<Expr *>> CallArgs;
 
   class Call final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     Expr *m_iref; /* Possibly cyclic reference to the target. */
@@ -1018,9 +1113,9 @@ namespace nr {
 
   public:
     Call(Expr *ref, const CallArgs &args)
-        : Expr(QIR_NODE_CALL), m_iref(ref), m_args(args) {}
+        : Expr(NR_NODE_CALL), m_iref(ref), m_args(args) {}
 
-    Expr *getTarget() noexcept { return m_iref; }
+    Expr *getTarget() const noexcept { return m_iref; }
     Expr *setTarget(Expr *ref) noexcept { return m_iref = ref; }
 
     const CallArgs &getArgs() const noexcept { return m_args; }
@@ -1033,12 +1128,14 @@ namespace nr {
   typedef std::vector<Expr *, Arena<Expr *>> SeqItems;
 
   class Seq final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     SeqItems m_items;
 
   public:
-    Seq(const SeqItems &items) : Expr(QIR_NODE_SEQ), m_items(items) {}
+    Seq(const SeqItems &items) : Expr(NR_NODE_SEQ), m_items(items) {}
 
     const SeqItems &getItems() const noexcept { return m_items; }
     SeqItems &getItems() noexcept { return m_items; }
@@ -1046,6 +1143,8 @@ namespace nr {
   };
 
   class Index final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     Expr *m_expr;
@@ -1053,16 +1152,18 @@ namespace nr {
 
   public:
     Index(Expr *expr, Expr *index)
-        : Expr(QIR_NODE_INDEX), m_expr(expr), m_index(index) {}
+        : Expr(NR_NODE_INDEX), m_expr(expr), m_index(index) {}
 
-    Expr *getExpr() noexcept { return m_expr; }
+    Expr *getExpr() const noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
 
-    Expr *getIndex() noexcept { return m_index; }
+    Expr *getIndex() const noexcept { return m_index; }
     Expr *setIndex(Expr *index) noexcept { return m_index = index; }
   };
 
   class Ident final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     std::string_view m_name;
@@ -1070,9 +1171,9 @@ namespace nr {
 
   public:
     Ident(std::string_view name, Expr *what)
-        : Expr(QIR_NODE_IDENT), m_name(name), m_what(what) {}
+        : Expr(NR_NODE_IDENT), m_name(name), m_what(what) {}
 
-    Expr *getWhat() noexcept { return m_what; }
+    Expr *getWhat() const noexcept { return m_what; }
     Expr *setWhat(Expr *what) noexcept { return m_what = what; }
 
     std::string_view setName(std::string_view name) noexcept {
@@ -1081,6 +1182,8 @@ namespace nr {
   };
 
   class Extern final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     std::string_view m_abi_name;
@@ -1088,69 +1191,93 @@ namespace nr {
 
   public:
     Extern(Expr *value, std::string_view abi_name)
-        : Expr(QIR_NODE_EXTERN), m_abi_name(abi_name), m_value(value) {}
+        : Expr(NR_NODE_EXTERN), m_abi_name(abi_name), m_value(value) {}
 
     std::string_view getAbiName() const noexcept { return m_abi_name; }
     std::string_view setAbiName(std::string_view abi_name) noexcept {
       return m_abi_name = abi_name;
     }
 
-    Expr *getValue() noexcept { return m_value; }
+    Expr *getValue() const noexcept { return m_value; }
     Expr *setValue(Expr *value) noexcept { return m_value = value; }
   };
 
   class Local final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     std::string_view m_name;
     Expr *m_value;
     AbiTag m_abi_tag;
+    StorageClass m_storage_class;
+    bool m_readonly;
 
   public:
-    Local(std::string_view name, Expr *value, AbiTag abi_tag)
-        : Expr(QIR_NODE_LOCAL),
+    Local(std::string_view name, Expr *value, AbiTag abi_tag,
+          bool readonly = false,
+          StorageClass storage_class = StorageClass::LLVM_StackAlloa)
+        : Expr(NR_NODE_LOCAL),
           m_name(name),
           m_value(value),
-          m_abi_tag(abi_tag) {}
+          m_abi_tag(abi_tag),
+          m_storage_class(storage_class),
+          m_readonly(readonly) {}
 
     std::string_view setName(std::string_view name) noexcept {
       return m_name = name;
     }
 
-    Expr *getValue() noexcept { return m_value; }
-    Expr *setValue(Expr *value) noexcept { return m_value = value; }
+    Expr *getValue() const noexcept { return m_value; }
+    void setValue(Expr *value) noexcept { m_value = value; }
 
     AbiTag getAbiTag() const noexcept { return m_abi_tag; }
-    AbiTag setAbiTag(AbiTag abi_tag) noexcept { return m_abi_tag = abi_tag; }
+    void setAbiTag(AbiTag abi_tag) noexcept { m_abi_tag = abi_tag; }
+
+    StorageClass getStorageClass() const noexcept { return m_storage_class; }
+    void setStorageClass(StorageClass storage_class) noexcept {
+      m_storage_class = storage_class;
+    }
+
+    bool isReadonly() const noexcept { return m_readonly; }
+    void setReadonly(bool readonly) noexcept { m_readonly = readonly; }
   };
 
   class Ret final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     Expr *m_expr;
 
   public:
-    Ret(Expr *expr) : Expr(QIR_NODE_RET), m_expr(expr) {}
+    Ret(Expr *expr) : Expr(NR_NODE_RET), m_expr(expr) {}
 
-    Expr *getExpr() noexcept { return m_expr; }
+    Expr *getExpr() const noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
   };
 
   class Brk final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    Brk() : Expr(QIR_NODE_BRK) {}
+    Brk() : Expr(NR_NODE_BRK) {}
   };
 
   class Cont final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    Cont() : Expr(QIR_NODE_CONT) {}
+    Cont() : Expr(NR_NODE_CONT) {}
   };
 
   class If final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     Expr *m_cond;
@@ -1159,19 +1286,21 @@ namespace nr {
 
   public:
     If(Expr *cond, Expr *then, Expr *else_)
-        : Expr(QIR_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {}
+        : Expr(NR_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
-    Expr *getCond() noexcept { return m_cond; }
+    Expr *getCond() const noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
 
-    Expr *getThen() noexcept { return m_then; }
+    Expr *getThen() const noexcept { return m_then; }
     Expr *setThen(Expr *then) noexcept { return m_then = then; }
 
-    Expr *getElse() noexcept { return m_else; }
+    Expr *getElse() const noexcept { return m_else; }
     Expr *setElse(Expr *else_) noexcept { return m_else = else_; }
   };
 
   class While final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     Expr *m_cond;
@@ -1179,16 +1308,18 @@ namespace nr {
 
   public:
     While(Expr *cond, Seq *body)
-        : Expr(QIR_NODE_WHILE), m_cond(cond), m_body(body) {}
+        : Expr(NR_NODE_WHILE), m_cond(cond), m_body(body) {}
 
-    Expr *getCond() noexcept { return m_cond; }
+    Expr *getCond() const noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
 
-    Seq *getBody() noexcept { return m_body; }
+    Seq *getBody() const noexcept { return m_body; }
     Seq *setBody(Seq *body) noexcept { return m_body = body; }
   };
 
   class For final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     Expr *m_init;
@@ -1198,26 +1329,28 @@ namespace nr {
 
   public:
     For(Expr *init, Expr *cond, Expr *step, Expr *body)
-        : Expr(QIR_NODE_FOR),
+        : Expr(NR_NODE_FOR),
           m_init(init),
           m_cond(cond),
           m_step(step),
           m_body(body) {}
 
-    Expr *getInit() noexcept { return m_init; }
+    Expr *getInit() const noexcept { return m_init; }
     Expr *setInit(Expr *init) noexcept { return m_init = init; }
 
-    Expr *getCond() noexcept { return m_cond; }
+    Expr *getCond() const noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
 
-    Expr *getStep() noexcept { return m_step; }
+    Expr *getStep() const noexcept { return m_step; }
     Expr *setStep(Expr *step) noexcept { return m_step = step; }
 
-    Expr *getBody() noexcept { return m_body; }
+    Expr *getBody() const noexcept { return m_body; }
     Expr *setBody(Expr *body) noexcept { return m_body = body; }
   };
 
   class Case final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     Expr *m_cond;
@@ -1225,7 +1358,7 @@ namespace nr {
 
   public:
     Case(Expr *cond, Expr *body)
-        : Expr(QIR_NODE_CASE), m_cond(cond), m_body(body) {}
+        : Expr(NR_NODE_CASE), m_cond(cond), m_body(body) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1237,6 +1370,8 @@ namespace nr {
   typedef std::vector<Case *, Arena<Case *>> SwitchCases;
 
   class Switch final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     Expr *m_cond;
@@ -1245,15 +1380,15 @@ namespace nr {
 
   public:
     Switch(Expr *cond, const SwitchCases &cases, Expr *default_)
-        : Expr(QIR_NODE_SWITCH),
+        : Expr(NR_NODE_SWITCH),
           m_cond(cond),
           m_default(default_),
           m_cases(cases) {}
 
-    Expr *getCond() noexcept { return m_cond; }
+    Expr *getCond() const noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
 
-    Expr *getDefault() noexcept { return m_default; }
+    Expr *getDefault() const noexcept { return m_default; }
     Expr *setDefault(Expr *default_) noexcept { return m_default = default_; }
 
     const SwitchCases &getCases() const noexcept { return m_cases; }
@@ -1267,6 +1402,8 @@ namespace nr {
       Params;
 
   class Fn final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     std::string_view m_name;
@@ -1279,7 +1416,7 @@ namespace nr {
   public:
     Fn(std::string_view name, const Params &params, Type *ret_ty,
        std::optional<Seq *> body, bool variadic, AbiTag abi_tag)
-        : Expr(QIR_NODE_FN),
+        : Expr(NR_NODE_FN),
           m_name(name),
           m_params(params),
           m_return(ret_ty),
@@ -1295,15 +1432,15 @@ namespace nr {
     Params &getParams() noexcept { return m_params; }
     void setParams(const Params &params) noexcept { m_params = params; }
 
-    Type *getReturn() noexcept { return m_return; }
+    Type *getReturn() const noexcept { return m_return; }
     Type *setReturn(Type *ret_ty) noexcept { return m_return = ret_ty; }
 
-    std::optional<Seq *> getBody() noexcept { return m_body; }
+    std::optional<Seq *> getBody() const noexcept { return m_body; }
     std::optional<Seq *> setBody(std::optional<Seq *> body) noexcept {
       return m_body = body;
     }
 
-    bool isVariadic() noexcept { return m_variadic; }
+    bool isVariadic() const noexcept { return m_variadic; }
     void setVariadic(bool variadic) noexcept { m_variadic = variadic; }
 
     AbiTag getAbiTag() const noexcept { return m_abi_tag; }
@@ -1311,10 +1448,12 @@ namespace nr {
   };
 
   class Asm final : public Expr {
+    friend Expr;
+
     QCLASS_REFLECT()
 
   public:
-    Asm() : Expr(QIR_NODE_ASM) { qcore_implement(); }
+    Asm() : Expr(NR_NODE_ASM) { qcore_implement(); }
   };
 
   ///=============================================================================
@@ -1324,13 +1463,15 @@ namespace nr {
   enum class TmpType {
     CALL,
     NAMED_TYPE,
+    DEFAULT_VALUE,
   };
+
+  using CallArguments = std::vector<std::pair<std::string_view, Expr *>,
+                                    Arena<std::pair<std::string_view, Expr *>>>;
 
   struct CallArgsTmpNodeCradle {
     Expr *base;
-    std::vector<std::pair<std::string_view, Expr *>,
-                Arena<std::pair<std::string_view, Expr *>>>
-        args;
+    CallArguments args;
 
     bool operator==(const CallArgsTmpNodeCradle &rhs) const {
       return base == rhs.base && args == rhs.args;
@@ -1340,6 +1481,8 @@ namespace nr {
   typedef std::variant<CallArgsTmpNodeCradle, std::string_view> TmpNodeCradle;
 
   class Tmp final : public Type {
+    friend Expr;
+
     QCLASS_REFLECT()
 
     TmpType m_type;
@@ -1347,120 +1490,798 @@ namespace nr {
 
   public:
     Tmp(TmpType type, const TmpNodeCradle &data = {})
-        : Type(QIR_NODE_TMP), m_type(type), m_data(data) {}
+        : Type(NR_NODE_TMP), m_type(type), m_data(data) {}
 
     TmpType getTmpType() noexcept { return m_type; }
     TmpNodeCradle &getData() noexcept { return m_data; }
     const TmpNodeCradle &getData() const noexcept { return m_data; }
   };
 
-  // static auto already_alloc = [](nr_ty_t ty) -> void * {
-  //   auto it = current->getKeyMap().find((uint64_t)ty);
-  //   if (it != current->getKeyMap().end()) [[likely]] {
-  //     return reinterpret_cast<void *>(it->second);
-  //   }
+  ///=============================================================================
 
-  //   return nullptr;
-  // };
+  constexpr Type *Expr::asType() noexcept {
+#ifndef NDEBUG
+    if (!isType()) {
+      qcore_panicf("Failed to cast a non-type node `%s` to a type node",
+                   getKindName());
+    }
+#endif
+    return static_cast<Type *>(this);
+  }
 
-  // static auto alloc_memorize = [](nr_ty_t ty, void *ptr) -> void {
-  //   current->getKeyMap().emplace((uint64_t)ty,
-  //   reinterpret_cast<uintptr_t>(ptr));
-  // };
+  constexpr std::optional<nr::Type *> nr::Expr::getType() const noexcept {
+    Type *R = static_cast<Type *>(nr_infer(this, nullptr));
+
+    if (R) {
+      return R;
+    } else {
+      return std::nullopt;
+    }
+  }
+
+  constexpr std::string_view Expr::getName() const noexcept {
+    std::string_view R = "";
+
+    switch (this->getKind()) {
+      case NR_NODE_BINEXPR: {
+        break;
+      }
+
+      case NR_NODE_UNEXPR: {
+        break;
+      }
+
+      case NR_NODE_POST_UNEXPR: {
+        break;
+      }
+
+      case NR_NODE_INT: {
+        break;
+      }
+
+      case NR_NODE_FLOAT: {
+        break;
+      }
+
+      case NR_NODE_LIST: {
+        break;
+      }
+
+      case NR_NODE_CALL: {
+        break;
+      }
+
+      case NR_NODE_SEQ: {
+        break;
+      }
+
+      case NR_NODE_INDEX: {
+        break;
+      }
+
+      case NR_NODE_IDENT: {
+        R = as<Ident>()->m_name;
+        break;
+      }
+
+      case NR_NODE_EXTERN: {
+        break;
+      }
+
+      case NR_NODE_LOCAL: {
+        R = as<Local>()->m_name;
+        break;
+      }
+
+      case NR_NODE_RET: {
+        break;
+      }
+
+      case NR_NODE_BRK: {
+        break;
+      }
+
+      case NR_NODE_CONT: {
+        break;
+      }
+
+      case NR_NODE_IF: {
+        break;
+      }
+
+      case NR_NODE_WHILE: {
+        break;
+      }
+
+      case NR_NODE_FOR: {
+        break;
+      }
+
+      case NR_NODE_CASE: {
+        break;
+      }
+
+      case NR_NODE_SWITCH: {
+        break;
+      }
+
+      case NR_NODE_IGN: {
+        break;
+      }
+
+      case NR_NODE_FN: {
+        R = as<Fn>()->m_name;
+        break;
+      }
+
+      case NR_NODE_ASM: {
+        qcore_implement();
+        break;
+      }
+
+      case NR_NODE_U1_TY: {
+        break;
+      }
+
+      case NR_NODE_U8_TY: {
+        break;
+      }
+
+      case NR_NODE_U16_TY: {
+        break;
+      }
+
+      case NR_NODE_U32_TY: {
+        break;
+      }
+
+      case NR_NODE_U64_TY: {
+        break;
+      }
+
+      case NR_NODE_U128_TY: {
+        break;
+      }
+
+      case NR_NODE_I8_TY: {
+        break;
+      }
+
+      case NR_NODE_I16_TY: {
+        break;
+      }
+
+      case NR_NODE_I32_TY: {
+        break;
+      }
+
+      case NR_NODE_I64_TY: {
+        break;
+      }
+
+      case NR_NODE_I128_TY: {
+        break;
+      }
+
+      case NR_NODE_F16_TY: {
+        break;
+      }
+
+      case NR_NODE_F32_TY: {
+        break;
+      }
+
+      case NR_NODE_F64_TY: {
+        break;
+      }
+
+      case NR_NODE_F128_TY: {
+        break;
+      }
+
+      case NR_NODE_VOID_TY: {
+        break;
+      }
+
+      case NR_NODE_PTR_TY: {
+        break;
+      }
+
+      case NR_NODE_CONST_TY: {
+        R = as<ConstTy>()->m_item->getName();
+        break;
+      }
+
+      case NR_NODE_OPAQUE_TY: {
+        R = as<OpaqueTy>()->m_name;
+        break;
+      }
+
+      case NR_NODE_STRUCT_TY: {
+        break;
+      }
+
+      case NR_NODE_UNION_TY: {
+        break;
+      }
+
+      case NR_NODE_ARRAY_TY: {
+        break;
+      }
+
+      case NR_NODE_FN_TY: {
+        break;
+      }
+
+      case NR_NODE_TMP: {
+        break;
+      }
+    }
+
+    return R;
+  }
+
+  constexpr uint32_t Expr::getKindSize(nr_ty_t type) noexcept {
+    const std::array<size_t, NR_NODE_COUNT> sizes = []() {
+      std::array<size_t, NR_NODE_COUNT> R;
+      R.fill(0);
+
+      R[NR_NODE_BINEXPR] = sizeof(BinExpr);
+      R[NR_NODE_UNEXPR] = sizeof(UnExpr);
+      R[NR_NODE_POST_UNEXPR] = sizeof(PostUnExpr);
+      R[NR_NODE_INT] = sizeof(Int);
+      R[NR_NODE_FLOAT] = sizeof(Float);
+      R[NR_NODE_LIST] = sizeof(List);
+      R[NR_NODE_CALL] = sizeof(Call);
+      R[NR_NODE_SEQ] = sizeof(Seq);
+      R[NR_NODE_INDEX] = sizeof(Index);
+      R[NR_NODE_IDENT] = sizeof(Ident);
+      R[NR_NODE_EXTERN] = sizeof(Extern);
+      R[NR_NODE_LOCAL] = sizeof(Local);
+      R[NR_NODE_RET] = sizeof(Ret);
+      R[NR_NODE_BRK] = sizeof(Brk);
+      R[NR_NODE_CONT] = sizeof(Cont);
+      R[NR_NODE_IF] = sizeof(If);
+      R[NR_NODE_WHILE] = sizeof(While);
+      R[NR_NODE_FOR] = sizeof(For);
+      R[NR_NODE_CASE] = sizeof(Case);
+      R[NR_NODE_SWITCH] = sizeof(Switch);
+      R[NR_NODE_FN] = sizeof(Fn);
+      R[NR_NODE_ASM] = sizeof(Asm);
+      R[NR_NODE_IGN] = sizeof(Expr);
+      R[NR_NODE_U1_TY] = sizeof(U1Ty);
+      R[NR_NODE_U8_TY] = sizeof(U8Ty);
+      R[NR_NODE_U16_TY] = sizeof(U16Ty);
+      R[NR_NODE_U32_TY] = sizeof(U32Ty);
+      R[NR_NODE_U64_TY] = sizeof(U64Ty);
+      R[NR_NODE_U128_TY] = sizeof(U128Ty);
+      R[NR_NODE_I8_TY] = sizeof(I8Ty);
+      R[NR_NODE_I16_TY] = sizeof(I16Ty);
+      R[NR_NODE_I32_TY] = sizeof(I32Ty);
+      R[NR_NODE_I64_TY] = sizeof(I64Ty);
+      R[NR_NODE_I128_TY] = sizeof(I128Ty);
+      R[NR_NODE_F16_TY] = sizeof(F16Ty);
+      R[NR_NODE_F32_TY] = sizeof(F32Ty);
+      R[NR_NODE_F64_TY] = sizeof(F64Ty);
+      R[NR_NODE_F128_TY] = sizeof(F128Ty);
+      R[NR_NODE_VOID_TY] = sizeof(VoidTy);
+      R[NR_NODE_PTR_TY] = sizeof(PtrTy);
+      R[NR_NODE_CONST_TY] = sizeof(ConstTy);
+      R[NR_NODE_OPAQUE_TY] = sizeof(OpaqueTy);
+      R[NR_NODE_STRUCT_TY] = sizeof(StructTy);
+      R[NR_NODE_UNION_TY] = sizeof(UnionTy);
+      R[NR_NODE_ARRAY_TY] = sizeof(ArrayTy);
+      R[NR_NODE_FN_TY] = sizeof(FnTy);
+      R[NR_NODE_TMP] = sizeof(Tmp);
+
+      return R;
+    }();
+
+    return sizes[type];
+  }
+
+  constexpr const char *Expr::getKindName(nr_ty_t type) noexcept {
+    const std::array<const char *, NR_NODE_COUNT> names = []() {
+      std::array<const char *, NR_NODE_COUNT> R;
+      R.fill("");
+
+      R[NR_NODE_BINEXPR] = "bin_expr";
+      R[NR_NODE_UNEXPR] = "unary_expr";
+      R[NR_NODE_POST_UNEXPR] = "post_unary_expr";
+      R[NR_NODE_INT] = "int";
+      R[NR_NODE_FLOAT] = "float";
+      R[NR_NODE_LIST] = "list";
+      R[NR_NODE_CALL] = "call";
+      R[NR_NODE_SEQ] = "seq";
+      R[NR_NODE_INDEX] = "index";
+      R[NR_NODE_IDENT] = "ident";
+      R[NR_NODE_EXTERN] = "extern";
+      R[NR_NODE_LOCAL] = "local";
+      R[NR_NODE_RET] = "return";
+      R[NR_NODE_BRK] = "break";
+      R[NR_NODE_CONT] = "continue";
+      R[NR_NODE_IF] = "if";
+      R[NR_NODE_WHILE] = "while";
+      R[NR_NODE_FOR] = "for";
+      R[NR_NODE_CASE] = "case";
+      R[NR_NODE_SWITCH] = "switch";
+      R[NR_NODE_FN] = "fn";
+      R[NR_NODE_ASM] = "asm";
+      R[NR_NODE_IGN] = "ignore";
+      R[NR_NODE_U1_TY] = "u1";
+      R[NR_NODE_U8_TY] = "u8";
+      R[NR_NODE_U16_TY] = "u16";
+      R[NR_NODE_U32_TY] = "u32";
+      R[NR_NODE_U64_TY] = "u64";
+      R[NR_NODE_U128_TY] = "u128";
+      R[NR_NODE_I8_TY] = "i8";
+      R[NR_NODE_I16_TY] = "i16";
+      R[NR_NODE_I32_TY] = "i32";
+      R[NR_NODE_I64_TY] = "i64";
+      R[NR_NODE_I128_TY] = "i128";
+      R[NR_NODE_F16_TY] = "f16";
+      R[NR_NODE_F32_TY] = "f32";
+      R[NR_NODE_F64_TY] = "f64";
+      R[NR_NODE_F128_TY] = "f128";
+      R[NR_NODE_VOID_TY] = "void";
+      R[NR_NODE_PTR_TY] = "ptr";
+      R[NR_NODE_CONST_TY] = "const";
+      R[NR_NODE_OPAQUE_TY] = "opaque";
+      R[NR_NODE_STRUCT_TY] = "struct";
+      R[NR_NODE_UNION_TY] = "union";
+      R[NR_NODE_ARRAY_TY] = "array";
+      R[NR_NODE_FN_TY] = "fn_ty";
+      R[NR_NODE_TMP] = "tmp";
+
+      return R;
+    }();
+
+    return names[type];
+  }
+
+  constexpr bool nr::Expr::isSame(const nr::Expr *other) const {
+    nr_ty_t kind = getKind();
+
+    if (kind != other->getKind()) {
+      return false;
+    }
+
+    switch (kind) {
+      case NR_NODE_BINEXPR: {
+        auto a = as<BinExpr>();
+        auto b = other->as<BinExpr>();
+        if (a->m_op != b->m_op) {
+          return false;
+        }
+        return a->m_lhs->isSame(b->m_lhs) && a->m_rhs->isSame(b->m_rhs);
+      }
+      case NR_NODE_UNEXPR: {
+        auto a = as<UnExpr>();
+        auto b = other->as<UnExpr>();
+        if (a->m_op != b->m_op) {
+          return false;
+        }
+        return a->m_expr->isSame(b->m_expr);
+      }
+      case NR_NODE_POST_UNEXPR: {
+        auto a = as<PostUnExpr>();
+        auto b = other->as<PostUnExpr>();
+        if (a->m_op != b->m_op) {
+          return false;
+        }
+        return a->m_expr->isSame(b->m_expr);
+      }
+      case NR_NODE_INT: {
+        return as<Int>()->getValue() == other->as<Int>()->getValue();
+      }
+      case NR_NODE_FLOAT: {
+        return as<Float>()->getValue() == other->as<Float>()->getValue();
+      }
+      case NR_NODE_LIST: {
+        auto a = as<List>();
+        auto b = other->as<List>();
+        if (a->m_items.size() != b->m_items.size()) {
+          return false;
+        }
+        for (size_t i = 0; i < a->m_items.size(); i++) {
+          if (!a->m_items[i]->isSame(b->m_items[i])) {
+            return false;
+          }
+        }
+        return true;
+      }
+      case NR_NODE_CALL: {
+        auto a = as<Call>();
+        auto b = other->as<Call>();
+        if (!a->m_iref->isSame(b->m_iref)) {
+          return false;
+        }
+        if (a->m_args.size() != b->m_args.size()) {
+          return false;
+        }
+        for (size_t i = 0; i < a->m_args.size(); i++) {
+          if (!a->m_args[i]->isSame(b->m_args[i])) {
+            return false;
+          }
+        }
+        return true;
+      }
+      case NR_NODE_SEQ: {
+        auto a = as<Seq>();
+        auto b = other->as<Seq>();
+        if (a->m_items.size() != b->m_items.size()) {
+          return false;
+        }
+        for (size_t i = 0; i < a->m_items.size(); i++) {
+          if (!a->m_items[i]->isSame(b->m_items[i])) {
+            return false;
+          }
+        }
+        return true;
+      }
+      case NR_NODE_INDEX: {
+        auto a = as<Index>();
+        auto b = other->as<Index>();
+        if (!a->m_expr->isSame(b->m_expr)) {
+          return false;
+        }
+        if (!a->m_index->isSame(b->m_index)) {
+          return false;
+        }
+        return true;
+      }
+      case NR_NODE_IDENT: {
+        return as<Ident>()->m_name == other->as<Ident>()->m_name;
+      }
+      case NR_NODE_EXTERN: {
+        auto a = as<Extern>();
+        auto b = other->as<Extern>();
+        if (a->m_abi_name != b->m_abi_name) {
+          return false;
+        }
+        return a->m_value->isSame(b->m_value);
+      }
+      case NR_NODE_LOCAL: {
+        auto a = as<Local>();
+        auto b = other->as<Local>();
+        if (a->m_name != b->m_name) {
+          return false;
+        }
+        return a->m_value->isSame(b->m_value);
+      }
+      case NR_NODE_RET: {
+        return as<Ret>()->m_expr->isSame(other->as<Ret>()->m_expr);
+      }
+      case NR_NODE_BRK: {
+        return true;
+      }
+      case NR_NODE_CONT: {
+        return true;
+      }
+      case NR_NODE_IF: {
+        auto a = as<If>();
+        auto b = other->as<If>();
+        if (!a->m_cond->isSame(b->m_cond)) {
+          return false;
+        }
+        if (!a->m_then->isSame(b->m_then)) {
+          return false;
+        }
+        if (!a->m_else->isSame(b->m_else)) {
+          return false;
+        }
+        return true;
+      }
+      case NR_NODE_WHILE: {
+        auto a = as<While>();
+        auto b = other->as<While>();
+        if (!a->m_cond->isSame(b->m_cond)) {
+          return false;
+        }
+        if (!a->m_body->isSame(b->m_body)) {
+          return false;
+        }
+        return true;
+      }
+      case NR_NODE_FOR: {
+        auto a = as<For>();
+        auto b = other->as<For>();
+        if (!a->m_init->isSame(b->m_init)) {
+          return false;
+        }
+        if (!a->m_cond->isSame(b->m_cond)) {
+          return false;
+        }
+        if (!a->m_step->isSame(b->m_step)) {
+          return false;
+        }
+        if (!a->m_body->isSame(b->m_body)) {
+          return false;
+        }
+        return true;
+      }
+      case NR_NODE_CASE: {
+        auto a = as<Case>();
+        auto b = other->as<Case>();
+        if (!a->m_cond->isSame(b->m_cond)) {
+          return false;
+        }
+        if (!a->m_body->isSame(b->m_body)) {
+          return false;
+        }
+        return true;
+      }
+      case NR_NODE_SWITCH: {
+        auto a = as<Switch>();
+        auto b = other->as<Switch>();
+        if (!a->m_cond->isSame(b->m_cond)) {
+          return false;
+        }
+        if (!a->m_default->isSame(b->m_default)) {
+          return false;
+        }
+        if (a->m_cases.size() != b->m_cases.size()) {
+          return false;
+        }
+        for (size_t i = 0; i < a->m_cases.size(); i++) {
+          if (!a->m_cases[i]->isSame(b->m_cases[i])) {
+            return false;
+          }
+        }
+        return true;
+      }
+      case NR_NODE_FN: {
+        auto a = as<Fn>();
+        auto b = other->as<Fn>();
+        if (a->m_name != b->m_name) {
+          return false;
+        }
+        if (!a->m_return->isSame(b->m_return)) {
+          return false;
+        }
+        if (a->m_params.size() != b->m_params.size()) {
+          return false;
+        }
+        for (size_t i = 0; i < a->m_params.size(); i++) {
+          if (a->m_params[i].second != b->m_params[i].second) {
+            return false;
+          }
+          if (!a->m_params[i].first->isSame(b->m_params[i].first)) {
+            return false;
+          }
+        }
+        if (a->m_body.has_value() && b->m_body.has_value()) {
+          if (!a->m_body.value()->isSame(b->m_body.value())) {
+            return false;
+          }
+        } else if (!a->m_body.has_value() ^ b->m_body.has_value()) {
+          return false;
+        }
+        return true;
+      }
+      case NR_NODE_ASM: {
+        qcore_implement();
+        break;
+      }
+      case NR_NODE_IGN: {
+        return true;
+      }
+      case NR_NODE_U1_TY:
+      case NR_NODE_U8_TY:
+      case NR_NODE_U16_TY:
+      case NR_NODE_U32_TY:
+      case NR_NODE_U64_TY:
+      case NR_NODE_U128_TY:
+      case NR_NODE_I8_TY:
+      case NR_NODE_I16_TY:
+      case NR_NODE_I32_TY:
+      case NR_NODE_I64_TY:
+      case NR_NODE_I128_TY:
+      case NR_NODE_F16_TY:
+      case NR_NODE_F32_TY:
+      case NR_NODE_F64_TY:
+      case NR_NODE_F128_TY:
+      case NR_NODE_VOID_TY:
+        return true;
+      case NR_NODE_PTR_TY: {
+        return as<PtrTy>()->m_pointee->isSame(other->as<PtrTy>()->m_pointee);
+      }
+      case NR_NODE_CONST_TY: {
+        return as<ConstTy>()->m_item->isSame(other->as<ConstTy>()->m_item);
+      }
+      case NR_NODE_OPAQUE_TY: {
+        return as<OpaqueTy>()->m_name == other->as<OpaqueTy>()->m_name;
+      }
+      case NR_NODE_STRUCT_TY: {
+        auto a = as<StructTy>();
+        auto b = other->as<StructTy>();
+        if (a->m_fields.size() != b->m_fields.size()) {
+          return false;
+        }
+        for (size_t i = 0; i < a->m_fields.size(); i++) {
+          if (!a->m_fields[i]->isSame(b->m_fields[i])) {
+            return false;
+          }
+        }
+        return true;
+      }
+      case NR_NODE_UNION_TY: {
+        auto a = as<UnionTy>();
+        auto b = other->as<UnionTy>();
+        if (a->m_fields.size() != b->m_fields.size()) {
+          return false;
+        }
+        for (size_t i = 0; i < a->m_fields.size(); i++) {
+          if (!a->m_fields[i]->isSame(b->m_fields[i])) {
+            return false;
+          }
+        }
+        return true;
+      }
+      case NR_NODE_ARRAY_TY: {
+        auto a = as<ArrayTy>();
+        auto b = other->as<ArrayTy>();
+        if (!a->m_element->isSame(b->m_element)) {
+          return false;
+        }
+        if (a->m_size != b->m_size) {
+          return false;
+        }
+        return true;
+      }
+      case NR_NODE_FN_TY: {
+        auto a = as<FnTy>();
+        auto b = other->as<FnTy>();
+        if (a->m_params.size() != b->m_params.size()) {
+          return false;
+        }
+        for (size_t i = 0; i < a->m_params.size(); i++) {
+          if (!a->m_params[i]->isSame(b->m_params[i])) {
+            return false;
+          }
+        }
+        if (!a->m_return->isSame(b->m_return)) {
+          return false;
+        }
+        if (a->m_attrs != b->m_attrs) {
+          return false;
+        }
+        return true;
+      }
+      case NR_NODE_TMP: {
+        auto a = as<Tmp>();
+        auto b = other->as<Tmp>();
+        if (a->m_type != b->m_type) {
+          return false;
+        }
+
+        switch (a->m_type) {
+          case nr::TmpType::CALL: {
+            const auto &AD = std::get<CallArgsTmpNodeCradle>(a->m_data);
+            const auto &BD = std::get<CallArgsTmpNodeCradle>(b->m_data);
+
+            if (AD.args.size() != BD.args.size()) {
+              return false;
+            }
+
+            if (!AD.base->isSame(BD.base)) {
+              return false;
+            }
+
+            for (size_t i = 0; i < AD.args.size(); i++) {
+              if (AD.args[i].first != BD.args[i].first) {
+                return false;
+              }
+
+              if (!AD.args[i].second->isSame(BD.args[i].second)) {
+                return false;
+              }
+            }
+
+            return true;
+          }
+
+          case nr::TmpType::DEFAULT_VALUE: {
+            return std::get<std::string_view>(a->m_data) ==
+                   std::get<std::string_view>(b->m_data);
+          }
+
+          case nr::TmpType::NAMED_TYPE: {
+            return std::get<std::string_view>(a->m_data) ==
+                   std::get<std::string_view>(b->m_data);
+          }
+        }
+
+        qcore_implement();
+      }
+    }
+
+    __builtin_unreachable();
+  }
 
   Expr *createIgn();
 
+  namespace mem {
+    extern Brk static_NR_NODE_BRK;
+    extern Cont static_NR_NODE_CONT;
+    extern Expr static_NR_NODE_IGN;
+
+  };  // namespace mem
+
   template <typename T, typename... Args>
-  constexpr static T *create(Args &&...args) {
-    return new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
-    //     /**
-    //      * Create nodes and minimize the number of allocations by reusing
-    //      stateless
-    //      * nodes.
-    //      *
-    //      * @note The base class contains source location information, this
-    //      information will be lost in
-    //      * deduplicated nodes. In addition, the constExpr bit and the mutable
-    //      bit will be lost, but
-    //      * these have no semantic significance in the contexts where
-    //      deduplicated nodes are used.
-    //      */
+  static constexpr inline T *create(Args &&...args) {
+    /**
+     * Create nodes and minimizes the number of allocations by reusing
+     * immutable items.
+     */
 
-    //     constexpr nr_ty_t ty = Expr::getTypeCode<T>();
-    //     T *ptr = nullptr;
+#define NORMAL_ALLOC(NAME)                                              \
+  if constexpr (ty == NAME) {                                           \
+    return new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...); \
+  }
 
-    // #define REUSE_ALLOCATION()                                             \
-//   if ((ptr = (T *)already_alloc(ty)) == nullptr) [[unlikely]] {        \
-//     ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...); \
-//     ptr->setModuleDangerous(current);                                  \
-//     alloc_memorize(ty, (void *)ptr);                                   \
-//   }
+#define REUSE_ALLOC(NAME)       \
+  if constexpr (ty == NAME) {   \
+    return &mem::static_##NAME; \
+  }
 
-    //     switch (ty) {
-    //       case QIR_NODE_BINEXPR:
-    //       case QIR_NODE_UNEXPR:
-    //       case QIR_NODE_POST_UNEXPR:
-    //       case QIR_NODE_INT:
-    //       case QIR_NODE_FLOAT:
-    //       case QIR_NODE_LIST:
-    //       case QIR_NODE_CALL:
-    //       case QIR_NODE_SEQ:
-    //       case QIR_NODE_INDEX:
-    //       case QIR_NODE_IDENT:
-    //       case QIR_NODE_EXTERN:
-    //       case QIR_NODE_LOCAL:
-    //       case QIR_NODE_RET:
-    //         ptr = new (Arena<T>().allocate(1))
-    //         T(std::forward<Args>(args)...); ptr->setModuleDangerous(current);
-    //         break;
-    //       case QIR_NODE_BRK:
-    //       case QIR_NODE_CONT:
-    //         REUSE_ALLOCATION();
-    //         break;
-    //       case QIR_NODE_IF:
-    //       case QIR_NODE_WHILE:
-    //       case QIR_NODE_FOR:
-    //       case QIR_NODE_CASE:
-    //       case QIR_NODE_SWITCH:
-    //       case QIR_NODE_FN:
-    //       case QIR_NODE_ASM:
-    //         ptr = new (Arena<T>().allocate(1))
-    //         T(std::forward<Args>(args)...); ptr->setModuleDangerous(current);
-    //         break;
-    //       case QIR_NODE_IGN:
-    //       case QIR_NODE_U1_TY:
-    //       case QIR_NODE_U8_TY:
-    //       case QIR_NODE_U16_TY:
-    //       case QIR_NODE_U32_TY:
-    //       case QIR_NODE_U64_TY:
-    //       case QIR_NODE_U128_TY:
-    //       case QIR_NODE_I8_TY:
-    //       case QIR_NODE_I16_TY:
-    //       case QIR_NODE_I32_TY:
-    //       case QIR_NODE_I64_TY:
-    //       case QIR_NODE_I128_TY:
-    //       case QIR_NODE_F16_TY:
-    //       case QIR_NODE_F32_TY:
-    //       case QIR_NODE_F64_TY:
-    //       case QIR_NODE_F128_TY:
-    //       case QIR_NODE_VOID_TY:
-    //         REUSE_ALLOCATION();
-    //         break;
-    //       case QIR_NODE_PTR_TY:
-    //       case QIR_NODE_OPAQUE_TY:
-    //       case QIR_NODE_STRUCT_TY:
-    //       case QIR_NODE_UNION_TY:
-    //       case QIR_NODE_ARRAY_TY:
-    //       case QIR_NODE_FN_TY:
-    //       case QIR_NODE_TMP:
-    //         ptr = new (Arena<T>().allocate(1))
-    //         T(std::forward<Args>(args)...); ptr->setModuleDangerous(current);
-    //         break;
-    //     }
+#define CACHE_ALLOC(NAME)                       \
+  if constexpr (ty == NAME) {                   \
+    return T::get(std::forward<Args>(args)...); \
+  }
 
-    // #undef REUSE_ALLOCATION
-    //
-    // return ptr;
+    constexpr nr_ty_t ty = Expr::getTypeCode<T>();
+
+    NORMAL_ALLOC(NR_NODE_BINEXPR);
+    NORMAL_ALLOC(NR_NODE_UNEXPR);
+    NORMAL_ALLOC(NR_NODE_POST_UNEXPR);
+    CACHE_ALLOC(NR_NODE_INT);
+    NORMAL_ALLOC(NR_NODE_FLOAT);
+    NORMAL_ALLOC(NR_NODE_LIST);
+    NORMAL_ALLOC(NR_NODE_CALL);
+    NORMAL_ALLOC(NR_NODE_SEQ);
+    NORMAL_ALLOC(NR_NODE_INDEX);
+    NORMAL_ALLOC(NR_NODE_IDENT);
+    NORMAL_ALLOC(NR_NODE_EXTERN);
+    NORMAL_ALLOC(NR_NODE_LOCAL);
+    NORMAL_ALLOC(NR_NODE_RET);
+    REUSE_ALLOC(NR_NODE_BRK);
+    REUSE_ALLOC(NR_NODE_CONT);
+    NORMAL_ALLOC(NR_NODE_IF);
+    NORMAL_ALLOC(NR_NODE_WHILE);
+    NORMAL_ALLOC(NR_NODE_FOR);
+    NORMAL_ALLOC(NR_NODE_CASE);
+    NORMAL_ALLOC(NR_NODE_SWITCH);
+    NORMAL_ALLOC(NR_NODE_FN);
+    NORMAL_ALLOC(NR_NODE_ASM);
+    REUSE_ALLOC(NR_NODE_IGN);
+    NORMAL_ALLOC(NR_NODE_U1_TY);
+    NORMAL_ALLOC(NR_NODE_U8_TY);
+    NORMAL_ALLOC(NR_NODE_U16_TY);
+    NORMAL_ALLOC(NR_NODE_U32_TY);
+    NORMAL_ALLOC(NR_NODE_U64_TY);
+    NORMAL_ALLOC(NR_NODE_U128_TY);
+    NORMAL_ALLOC(NR_NODE_I8_TY);
+    NORMAL_ALLOC(NR_NODE_I16_TY);
+    NORMAL_ALLOC(NR_NODE_I32_TY);
+    NORMAL_ALLOC(NR_NODE_I64_TY);
+    NORMAL_ALLOC(NR_NODE_I128_TY);
+    NORMAL_ALLOC(NR_NODE_F16_TY);
+    NORMAL_ALLOC(NR_NODE_F32_TY);
+    NORMAL_ALLOC(NR_NODE_F64_TY);
+    NORMAL_ALLOC(NR_NODE_F128_TY);
+    NORMAL_ALLOC(NR_NODE_VOID_TY);
+    NORMAL_ALLOC(NR_NODE_PTR_TY);
+    NORMAL_ALLOC(NR_NODE_CONST_TY);
+    NORMAL_ALLOC(NR_NODE_OPAQUE_TY);
+    NORMAL_ALLOC(NR_NODE_STRUCT_TY);
+    NORMAL_ALLOC(NR_NODE_UNION_TY);
+    NORMAL_ALLOC(NR_NODE_ARRAY_TY);
+    NORMAL_ALLOC(NR_NODE_FN_TY);
+    NORMAL_ALLOC(NR_NODE_TMP);
+
+#undef CACHE_ALLOC
+#undef NORMAL_ALLOC
   }
 
   enum IterMode {
@@ -1480,6 +2301,12 @@ namespace nr {
   typedef std::function<IterOp(Expr *p, Expr **c)> IterCallback;
   typedef std::function<bool(Expr **a, Expr **b)> ChildSelect;
 
+  typedef std::function<IterOp(const Expr *const p, const Expr *const *const c)>
+      ConstIterCallback;
+  typedef std::function<bool(const Expr *const *const a,
+                             const Expr *const *const b)>
+      ConstChildSelect;
+
   namespace detail {
     void dfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept;
     void dfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept;
@@ -1488,18 +2315,50 @@ namespace nr {
     void iter_children(Expr **base, IterCallback cb, ChildSelect cs) noexcept;
   }  // namespace detail
 
-  template <IterMode mode>
-  void iterate(Expr *&base, IterCallback cb, ChildSelect cs = nullptr) {
+  template <IterMode mode, typename T>
+  void iterate(T *&base, IterCallback cb, ChildSelect cs = nullptr) {
     if constexpr (mode == dfs_pre) {
-      return detail::dfs_pre_impl(&base, cb, cs);
+      return detail::dfs_pre_impl((Expr **)&base, cb, cs);
     } else if constexpr (mode == dfs_post) {
-      return detail::dfs_post_impl(&base, cb, cs);
+      return detail::dfs_post_impl((Expr **)&base, cb, cs);
     } else if constexpr (mode == bfs_pre) {
-      return detail::bfs_pre_impl(&base, cb, cs);
+      return detail::bfs_pre_impl((Expr **)&base, cb, cs);
     } else if constexpr (mode == bfs_post) {
-      return detail::bfs_post_impl(&base, cb, cs);
+      return detail::bfs_post_impl((Expr **)&base, cb, cs);
     } else if constexpr (mode == children) {
-      return detail::iter_children(&base, cb, cs);
+      return detail::iter_children((Expr **)&base, cb, cs);
+    } else {
+      static_assert(mode != mode, "Invalid iteration mode.");
+    }
+  }
+
+  template <IterMode mode, typename T>
+  void iterate(const T *base, ConstIterCallback cb,
+               ConstChildSelect cs = nullptr) {
+    T *ref = const_cast<T *>(base);
+
+    const auto const_cb = cb != nullptr ? [&](Expr *p, Expr **c) -> IterOp {
+      return cb(static_cast<const Expr *const>(p),
+                const_cast<const Expr *const *const>(c));
+    }
+    : IterCallback(nullptr);
+
+    const auto const_cs = cs != nullptr ? [&](Expr **a, Expr **b) -> bool {
+      return cs(const_cast<const Expr *const *const>(a),
+                const_cast<const Expr *const *const>(b));
+    }
+    : ChildSelect(nullptr);
+
+    if constexpr (mode == dfs_pre) {
+      return detail::dfs_pre_impl((Expr **)&ref, const_cb, const_cs);
+    } else if constexpr (mode == dfs_post) {
+      return detail::dfs_post_impl((Expr **)&ref, const_cb, const_cs);
+    } else if constexpr (mode == bfs_pre) {
+      return detail::bfs_pre_impl((Expr **)&ref, const_cb, const_cs);
+    } else if constexpr (mode == bfs_post) {
+      return detail::bfs_pre_impl((Expr **)&ref, const_cb, const_cs);
+    } else if constexpr (mode == children) {
+      return detail::iter_children((Expr **)&ref, const_cb, const_cs);
     } else {
       static_assert(mode != mode, "Invalid iteration mode.");
     }
@@ -1526,7 +2385,7 @@ namespace nr {
 
     nr_ty_t ty = r->getKind();
 
-    if (ty != QIR_NODE_INT) {
+    if (ty != NR_NODE_INT) {
       return std::nullopt;
     }
 
@@ -1551,5 +2410,51 @@ namespace nr {
     return N;
   }
 }  // namespace nr
+
+namespace std {
+  template <auto mode = nr::dfs_pre>
+  void for_each(const nr::Expr *const v,
+                std::function<void(nr_ty_t, const nr::Expr *const)> f) {
+    nr::iterate<mode>(v, [&](auto, auto c) -> nr::IterOp {
+      f((*c)->getKind(), *c);
+
+      return nr::IterOp::Abort;
+    });
+  }
+
+  template <auto mode = nr::dfs_pre>
+  void transform(nr::Expr *v, std::function<bool(nr_ty_t, nr::Expr **)> f) {
+    nr::iterate<mode>(v, [&](auto, auto c) -> nr::IterOp {
+      return f((*c)->getKind(), c) ? nr::IterOp::Proceed : nr::IterOp::Abort;
+    });
+  }
+
+  template <typename T, auto mode = nr::dfs_pre>
+  void for_each(const nr::Expr *const v, std::function<void(const T *)> f) {
+    nr::iterate<mode>(v,
+                      [&](auto, const nr::Expr *const *const c) -> nr::IterOp {
+                        if ((*c)->getKind() != nr::Expr::getTypeCode<T>()) {
+                          return nr::IterOp::Proceed;
+                        }
+
+                        f((*c)->as<T>());
+
+                        return nr::IterOp::Proceed;
+                      });
+  }
+
+  template <typename T, auto mode = nr::dfs_pre>
+  void transform(nr::Expr *v, std::function<bool(T **)> f) {
+    nr::iterate<mode>(v, [&](auto, auto c) -> nr::IterOp {
+      if ((*c)->getKind() != nr::Expr::getTypeCode<T>()) {
+        return nr::IterOp::Proceed;
+      }
+
+      return f(reinterpret_cast<T **>(c)) ? nr::IterOp::Proceed
+                                          : nr::IterOp::Abort;
+    });
+  }
+
+}  // namespace std
 
 #endif

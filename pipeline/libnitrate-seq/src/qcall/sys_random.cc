@@ -32,11 +32,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Env.h>
-#include <openssl/rand.h>
 
 #include <core/Preprocess.hh>
 #include <cstdio>
 #include <qcall/List.hh>
+#include <random>
 
 extern "C" {
 #include <lua/lauxlib.h>
@@ -44,7 +44,7 @@ extern "C" {
 
 int qcall::sys_random(lua_State* L) {
   /**
-   * @brief Get a cryptographic random number (in the range [a, b]).
+   * @brief Get a uniform random number (in the range [a, b]).
    */
 
   int64_t min, max;
@@ -83,18 +83,14 @@ int qcall::sys_random(lua_State* L) {
     return luaL_error(L, "Invalid range: min > max");
   }
 
-  union {
-    uint8_t buf[8];
-    uint64_t num;
-  } u;
+  auto engine = get_engine();
 
-  if (RAND_bytes(u.buf, sizeof(u.buf)) != 1) {
-    return luaL_error(L, "Failed to generate random number");
-  }
+  static_assert(sizeof(engine->m_qsys_random_engine()) == 8);
 
-  u.num = (u.num % (max - min + 1)) + min;
+  uint64_t num = engine->m_qsys_random_engine();
+  num = (num % (max - min + 1)) + min;
 
-  lua_pushinteger(L, u.num);
+  lua_pushinteger(L, num);
 
   return 1;
 }

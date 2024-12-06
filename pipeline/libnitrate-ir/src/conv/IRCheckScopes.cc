@@ -40,7 +40,10 @@
 
 using namespace nr;
 
-bool NRBuilder::check_scopes(Seq *, IReport *) noexcept {
+bool NRBuilder::check_scopes(Seq *, IReport *I) noexcept {
+  I->report(CompilerError, IC::Debug,
+            "NRBuilder::check_scopes() not implemented");
+
   /// TODO: Implement check
   return true;
 }

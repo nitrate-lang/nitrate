@@ -44,7 +44,7 @@
 #include <string_view>
 #include <unordered_set>
 
-namespace qparse {
+namespace npar {
   class Node;
 }
 
@@ -98,8 +98,8 @@ namespace nr {
 
     virtual void report(IssueCode code, IC level,
                         std::vector<std::string_view> params = {},
-                        uint32_t start_offset = 1, uint32_t end_offset = 0,
-                        std::string_view filename = "") override;
+                        std::tuple<uint32_t, uint32_t, std::string_view> loc = {
+                            UINT32_MAX, UINT32_MAX, ""}) override;
 
     virtual void stream_reports(
         std::function<void(const ReportData &)> cb) override;

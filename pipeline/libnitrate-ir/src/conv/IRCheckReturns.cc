@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "nitrate-ir/Report.hh"
 #define IRBUILDER_IMPL
 
 #include <nitrate-core/Error.h>
@@ -40,7 +41,60 @@
 
 using namespace nr;
 
-bool NRBuilder::check_returns(Seq *, IReport *) noexcept {
-  /// TODO: Implement check
-  return true;
+bool NRBuilder::check_returns(Seq *root, IReport *I) noexcept {
+  bool failed = false;
+
+  std::for_each<Fn>(root, [&](const Fn *x) {
+    /* Skip function declarations */
+    if (!x->getBody()) {
+      return;
+    }
+
+    auto fn_ty_opt = x->getType();
+    if (!fn_ty_opt) {
+      I->report(TypeInference, IC::Error, "Failed to deduce function type",
+                x->getLoc());
+      failed = true;
+
+      return;
+    }
+
+    const auto fn_ty = fn_ty_opt.value()->as<FnTy>();
+    const auto return_ty = fn_ty->getReturn();
+
+    bool found_ret = false;
+
+    std::for_each<Ret>(x->getBody().value(), [&](const Ret *y) {
+      found_ret = true;
+
+      auto ret_expr_ty_opt = y->getExpr()->getType();
+      if (!ret_expr_ty_opt) {
+        I->report(TypeInference, IC::Error,
+                  "Failed to deduce return expression type", y->getLoc());
+        failed = true;
+
+        return;
+      }
+
+      /// TODO: Implement return type coercion
+
+      if (!return_ty->isSame(ret_expr_ty_opt.value())) {
+        I->report(ReturnTypeMismatch, IC::Error,
+                  {"Return value type '", ret_expr_ty_opt.value()->toString(),
+                   "' does not match function return type '",
+                   return_ty->toString(), "'"},
+                  y->getLoc());
+        failed = true;
+
+        return;
+      }
+    });
+
+    if (!found_ret) {
+      I->report(MissingReturn, IC::Error, x->getName(), x->getLoc());
+      failed = true;
+    }
+  });
+
+  return !failed;
 }

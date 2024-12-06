@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-parser/Node.h>
 
 #include <core/Config.hh>
@@ -251,16 +251,16 @@ uint64_t DiagDatum::hash() const {
   return std::bit_cast<uint64_t>(bp);
 }
 
-void DiagnosticManager::report(IssueCode code, IC level,
-                               std::vector<std::string_view> params,
-                               uint32_t start_offset, uint32_t end_offset,
-                               std::string_view filename) {
+void DiagnosticManager::report(
+    IssueCode code, IC level, std::vector<std::string_view> params,
+    std::tuple<uint32_t, uint32_t, std::string_view> loc) {
   std::string message;
   for (auto p : params) {
-    message += std::string(p) + "; ";
+    message += std::string(p);
   }
 
-  DiagDatum R(code, level, message, start_offset, end_offset, filename);
+  DiagDatum R(code, level, message, std::get<0>(loc), std::get<1>(loc),
+              std::get<2>(loc));
 
   { /* Prevent duplicates and maintain order of messages */
     auto hash = R.hash();
@@ -294,8 +294,8 @@ static const std::unordered_map<IC, nr_level_t> issue_class_map = {
     {IC::FatalError, NR_LEVEL_FATAL},
 };
 
-LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
-                             nr_report_cb cb, uintptr_t data) {
+C_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
+                           nr_report_cb cb, uintptr_t data) {
   if (!cb) {
     return;
   }
@@ -401,4 +401,4 @@ LIB_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
   });
 }
 
-LIB_EXPORT void nr_diag_clear(qmodule_t *nr) { nr->getDiag()->erase_reports(); }
+C_EXPORT void nr_diag_clear(qmodule_t *nr) { nr->getDiag()->erase_reports(); }

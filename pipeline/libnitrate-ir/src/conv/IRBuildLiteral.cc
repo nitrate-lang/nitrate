@@ -45,43 +45,16 @@ Int *NRBuilder::createBool(bool value SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
-  return compiler_trace(
-      debug_info(create<Int>(value, IntSize::U1), DEBUG_INFO));
+  return compiler_trace(debug_info(create<Int>(value, 1), DEBUG_INFO));
 }
 
 Int *NRBuilder::createFixedInteger(boost::multiprecision::cpp_int value,
-                                   IntSize width
+                                   uint8_t width
                                        SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
-  switch (width) {
-    case nr::IntSize::U1: {
-      contract_enforce(value >= std::numeric_limits<bool>::min() &&
-                       value <= std::numeric_limits<bool>::max());
-      break;
-    }
-    case nr::IntSize::U8: {
-      contract_enforce(value >= std::numeric_limits<uint8_t>::min() &&
-                       value <= std::numeric_limits<uint8_t>::max());
-      break;
-    }
-    case nr::IntSize::I32: {
-      contract_enforce(value >= std::numeric_limits<int32_t>::min() &&
-                       value <= std::numeric_limits<int32_t>::max());
-      break;
-    }
-    case nr::IntSize::I64: {
-      contract_enforce(value >= std::numeric_limits<int64_t>::min() &&
-                       value <= std::numeric_limits<int64_t>::max());
-      break;
-    }
-    case nr::IntSize::U128: {
-      contract_enforce(value >= std::numeric_limits<uint128_t>::min() &&
-                       value <= std::numeric_limits<uint128_t>::max());
-      break;
-    }
-  }
+  contract_enforce(width > 0 && width <= std::exp2(width) - 1);
 
   return compiler_trace(debug_info(
       create<Int>(value.convert_to<unsigned __int128>(), width), DEBUG_INFO));
@@ -92,29 +65,30 @@ Float *NRBuilder::createFixedFloat(
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
-  switch (width) {
-    case nr::FloatSize::F16: {
-      contract_enforce(value >= -65504 && value <= 65504 &&
-                       "This might be a bug?");
-      break;
-    }
-    case nr::FloatSize::F32: {
-      contract_enforce(value >= std::numeric_limits<_Float32>::min() &&
-                       value <= std::numeric_limits<_Float32>::max());
-      break;
-    }
-    case nr::FloatSize::F64: {
-      contract_enforce(value >= std::numeric_limits<_Float64>::min() &&
-                       value <= std::numeric_limits<_Float64>::max());
-      break;
-    }
-    case nr::FloatSize::F128: {
-      /// FIXME: Find out how to verify
-      break;
-    }
-  }
+  // switch (width) {
+  //   case nr::FloatSize::F16: {
+  //     contract_enforce(value >= -65504 && value <= 65504 &&
+  //                      "This might be a bug?");
+  //     break;
+  //   }
+  //   case nr::FloatSize::F32: {
+  //     contract_enforce(value >= std::numeric_limits<_Float32>::min() &&
+  //                      value <= std::numeric_limits<_Float32>::max());
+  //     break;
+  //   }
+  //   case nr::FloatSize::F64: {
+  //     contract_enforce(value >= std::numeric_limits<_Float64>::min() &&
+  //                      value <= std::numeric_limits<_Float64>::max());
+  //     break;
+  //   }
+  //   case nr::FloatSize::F128: {
+  //     /// FIXME: Find out how to verify
+  //     break;
+  //   }
+  // }
 
-  return compiler_trace(debug_info(create<Float>(value, width), DEBUG_INFO));
+  return compiler_trace(debug_info(
+      create<Float>(value.convert_to<long double>(), width), DEBUG_INFO));
 }
 
 List *NRBuilder::createStringDataArray(std::string_view value,
@@ -126,15 +100,14 @@ List *NRBuilder::createStringDataArray(std::string_view value,
   // Only C-strings are currently supported
   contract_enforce(style == ABIStringStyle::CStr);
 
-  std::vector<Expr *> items;
-  items.resize(value.size() + 1);
+  std::vector<Expr *> items(value.size() + 1);
 
   for (size_t i = 0; i < value.size(); i++) {
-    items[i] = compiler_trace(createFixedInteger(value[i], IntSize::U8));
+    items[i] = compiler_trace(createFixedInteger(value[i], 8));
   }
 
   /* Add null byte at end */
-  items[value.size()] = compiler_trace(createFixedInteger(0, IntSize::U8));
+  items[value.size()] = compiler_trace(createFixedInteger(0, 8));
 
   return compiler_trace(debug_info(createList(items, true), DEBUG_INFO));
 }

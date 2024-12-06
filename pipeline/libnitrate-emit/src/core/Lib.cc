@@ -31,17 +31,16 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <llvm-14/llvm/MC/TargetRegistry.h>
-#include <llvm-14/llvm/Support/ManagedStatic.h>
-#include <llvm-14/llvm/Support/TargetSelect.h>
+#include <llvm-18/llvm/MC/TargetRegistry.h>
+#include <llvm-18/llvm/Support/ManagedStatic.h>
+#include <llvm-18/llvm/Support/TargetSelect.h>
 #include <nitrate-core/Lib.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-emit/Lib.h>
 #include <sys/resource.h>
 
 #include <atomic>
 #include <iostream>
-
-#include "core/LibMacro.h"
 
 static std::atomic<size_t> qcode_lib_ref_count = 0;
 
@@ -95,7 +94,7 @@ static bool do_init() {
 
 static void do_deinit() { DoinitializeLLVM(); }
 
-LIB_EXPORT bool qcode_lib_init() {
+C_EXPORT bool qcode_lib_init() {
   if (qcode_lib_ref_count++ > 1) {
     return true;
   }
@@ -107,7 +106,7 @@ LIB_EXPORT bool qcode_lib_init() {
   return do_init();
 }
 
-LIB_EXPORT void qcode_lib_deinit() {
+C_EXPORT void qcode_lib_deinit() {
   if (--qcode_lib_ref_count > 0) {
     return;
   }
@@ -117,7 +116,7 @@ LIB_EXPORT void qcode_lib_deinit() {
   qcore_lib_deinit();
 }
 
-LIB_EXPORT const char* qcode_lib_version() {
+C_EXPORT const char* qcode_lib_version() {
   static const char* version_string =
 
       "[" __TARGET_VERSION
@@ -165,4 +164,4 @@ LIB_EXPORT const char* qcode_lib_version() {
   return version_string;
 }
 
-LIB_EXPORT const char* qcode_strerror() { return ""; }
+C_EXPORT const char* qcode_strerror() { return ""; }

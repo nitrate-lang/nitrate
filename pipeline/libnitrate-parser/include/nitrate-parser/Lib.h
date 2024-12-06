@@ -34,7 +34,6 @@
 #ifndef __NITRATE_PARSER_LIB_H__
 #define __NITRATE_PARSER_LIB_H__
 
-#include <nitrate-parser/Config.h>
 #include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
 #include <stdbool.h>
@@ -52,7 +51,7 @@ extern "C" {
  * multiple times. Each time will not reinitialize the library, but will
  * increment the reference count.
  */
-bool qparse_lib_init();
+bool npar_lib_init();
 
 /**
  * @brief Deinitialize the library.
@@ -62,7 +61,7 @@ bool qparse_lib_init();
  * multiple times. Each time will not deinitialize the library, but when
  * the reference count reaches zero, the library will be deinitialized.
  */
-void qparse_lib_deinit();
+void npar_lib_deinit();
 
 /**
  * @brief Get the version of the library.
@@ -73,7 +72,7 @@ void qparse_lib_deinit();
  * @note This function is safe to call before initialization and after
  * deinitialization.
  */
-const char* qparse_lib_version();
+const char* npar_lib_version();
 
 /**
  * @brief Get the last error message from the current thread.
@@ -84,7 +83,7 @@ const char* qparse_lib_version();
  * @note This function is safe to call before initialization and after
  * deinitialization.
  */
-const char* qparse_strerror();
+const char* npar_strerror();
 
 #ifdef __cplusplus
 }
