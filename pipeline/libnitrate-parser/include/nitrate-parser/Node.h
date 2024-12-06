@@ -1469,7 +1469,7 @@ namespace npar {
     PNODE_IMPL_CORE(Block)
   };
 
-  enum class VarDeclType { Const, Var, Let, Any };
+  enum class VarDeclType { Const, Var, Let };
 
   using VarDeclAttributes =
       std::unordered_set<Expr *, std::hash<Expr *>, std::equal_to<Expr *>,

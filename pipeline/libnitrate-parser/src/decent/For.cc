@@ -49,7 +49,7 @@ npar::Stmt *npar::recurse_for(npar_t &S, qlex_t &rd) {
 
     if (tok.is<qKLet>()) {
       next();
-      std::vector<Stmt *> let_node = recurse_variable(S, rd, VarDeclType::Any);
+      std::vector<Stmt *> let_node = recurse_variable(S, rd, VarDeclType::Let);
 
       if (let_node.size() != 1) {
         diagnostic << tok
@@ -99,7 +99,7 @@ npar::Stmt *npar::recurse_for(npar_t &S, qlex_t &rd) {
 
     if (tok.is<qKLet>()) {
       next();
-      std::vector<Stmt *> let_node = recurse_variable(S, rd, VarDeclType::Any);
+      std::vector<Stmt *> let_node = recurse_variable(S, rd, VarDeclType::Let);
 
       if (let_node.size() != 1) {
         diagnostic << tok
