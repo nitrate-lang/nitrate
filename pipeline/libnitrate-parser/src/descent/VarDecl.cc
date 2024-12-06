@@ -85,18 +85,19 @@ static std::optional<Expr *> recurse_variable_value(npar_t &S, qlex_t &rd) {
   }
 }
 
-static Stmt *recurse_variable_instance(npar_t &S, qlex_t &rd,
-                                       VarDeclType decl_type) {
+static std::optional<Stmt *> recurse_variable_instance(npar_t &S, qlex_t &rd,
+                                                       VarDeclType decl_type) {
   if (let attributes = recurse_variable_attributes(S, rd)) {
-    if (let tok = next(); tok.is(qName)) {
-      let name = tok.as_string(&rd);
+    if (let tok = next_if(qName)) {
+      let name = tok->as_string(&rd);
       let type = recurse_variable_type(S, rd);
       let value = recurse_variable_value(S, rd);
 
       return VarDecl::get(name, type.value_or(nullptr), value.value_or(nullptr),
                           decl_type, std::move(attributes.value()));
     } else {
-      diagnostic << tok << "Expected variable name";
+      diagnostic << current() << "Expected variable name";
+      return std::nullopt;
     }
   } else {
     diagnostic << current() << "Malformed variable attributes";
@@ -119,8 +120,12 @@ std::vector<Stmt *> npar::recurse_variable(npar_t &S, qlex_t &rd,
       return variables;
     }
 
-    let var = recurse_variable_instance(S, rd, decl_type);
-    variables.push_back(var);
+    if (let var_opt = recurse_variable_instance(S, rd, decl_type)) {
+      variables.push_back(var_opt.value());
+    } else {
+      diagnostic << current() << "Failed to parse variable declaration";
+      break;
+    }
 
     next_if(qPuncComa);
   }

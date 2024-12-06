@@ -93,14 +93,21 @@ namespace npar {
 #define current() qlex_current(&rd)
 
   template <auto tok>
-  static bool next_if_(qlex_t &rd) {
+  static std::optional<qlex_tok_t> next_if_(qlex_t &rd) {
     let t = peek();
-    if (t.is<tok>()) {
-      next();
-      return true;
+    if constexpr (std::is_same_v<decltype(tok), qlex_ty_t>) {
+      if (t.is(tok)) {
+        next();
+        return t;
+      }
+    } else {
+      if (t.is<tok>()) {
+        next();
+        return t;
+      }
     }
 
-    return false;
+    return std::nullopt;
   }
 
 #define next_if(tok) next_if_<tok>(rd)

@@ -69,6 +69,11 @@ static Call *recurse_function_call(npar_t &S, Expr *callee, qlex_t &rd,
 
     tok = peek();
 
+    if (tok.is(qEofF)) {
+      diagnostic << tok << "Unexpected end of file while parsing function call";
+      return nullptr;
+    }
+
     if (tok.is<qPuncRPar>()) {
       /**
        * @brief
