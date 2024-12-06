@@ -307,7 +307,7 @@ bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b);
  * @warning The returned string is NULL-terminated, however, it may contain any
  * bytes within the data including NULL bytes.
  */
-const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len);
+const char *qlex_str(qlex_t *lexer, const qlex_tok_t *tok, size_t *len);
 
 const char *qlex_opstr(qlex_op_t op);
 const char *qlex_kwstr(qlex_key_t kw);

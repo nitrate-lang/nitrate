@@ -1220,7 +1220,7 @@ bool to_json_recurse(Node *N, json &x) {
        * @note [Developer Notes]
        */
 
-      SubsystemDecl *W = N->as<SubsystemDecl>();
+      ScopeDecl *W = N->as<ScopeDecl>();
 
       x[1] = W->get_name().c_str();
 

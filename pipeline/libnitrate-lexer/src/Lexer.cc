@@ -69,7 +69,7 @@ namespace qlex {
 
   static const boost::bimap<std::string_view, qlex_key_t> keywords =
       make_bimap<std::string_view, qlex_key_t>({
-          {"subsystem", qKSubsystem},
+          {"scope", qKScope},
           {"import", qKImport},
           {"pub", qKPub},
           {"sec", qKSec},
@@ -1333,7 +1333,8 @@ C_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
   __builtin_unreachable();
 }
 
-C_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len) {
+C_EXPORT const char *qlex_str(qlex_t *lexer, const qlex_tok_t *tok,
+                              size_t *len) {
   size_t _len;
   if (!len) len = &_len;
 

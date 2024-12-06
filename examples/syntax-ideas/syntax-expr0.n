@@ -1,6 +1,6 @@
 @import orbit::stream;
 
-pub subsystem orbit::codex::json::detail {
+pub scope orbit::codex::json::detail {
 
     /// @brief Convert a arbitrary byte stream to a JSON string
     /// @param s The stream to convert

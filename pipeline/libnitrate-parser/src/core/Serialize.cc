@@ -729,11 +729,11 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       break;
     }
     case QAST_NODE_SUBSYSTEM: {
-      OBJECT_BEGIN("Subsystem");
-      OBJECT_STR(n->as<SubsystemDecl>()->get_name());
-      OBJECT_ARRAY(n->as<SubsystemDecl>()->get_tags());
-      OBJECT_TAGS(n->as<SubsystemDecl>()->get_deps());
-      OBJECT_SUB(n->as<SubsystemDecl>()->get_body());
+      OBJECT_BEGIN("Scope");
+      OBJECT_STR(n->as<ScopeDecl>()->get_name());
+      OBJECT_ARRAY(n->as<ScopeDecl>()->get_tags());
+      OBJECT_TAGS(n->as<ScopeDecl>()->get_deps());
+      OBJECT_SUB(n->as<ScopeDecl>()->get_body());
       OBJECT_END();
       break;
     }

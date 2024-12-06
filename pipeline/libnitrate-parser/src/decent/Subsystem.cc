@@ -37,69 +37,69 @@
 
 #include <decent/Recurse.hh>
 
-npar::Stmt *npar::recurse_subsystem(npar_t &S, qlex_t &rd) {
-  qlex_tok_t tok = next();
-  if (!tok.is(qName)) {
-    diagnostic << tok << "Expected subsystem name";
-    return mock_stmt(QAST_NODE_SUBSYSTEM);
+using namespace npar;
+
+static std::optional<ScopeDeps> recurse_scope_deps(qlex_t &rd) {
+  ScopeDeps dependencies;
+
+  if (!peek().is<qPuncColn>()) {
+    return dependencies;
   }
 
-  let name = tok.as_string(&rd);
-  SubsystemDeps deps;
-
-  tok = peek();
-  if (tok.is<qPuncColn>()) {
-    next();
-
-    tok = next();
-    if (!tok.is<qPuncLBrk>()) {
-      diagnostic << tok << "Expected '[' after subsystem dependencies";
-      return mock_stmt(QAST_NODE_SUBSYSTEM);
-    }
-
+  if (auto tok = (next(), next()); tok.is<qPuncLBrk>()) {
     while (true) {
       tok = next();
-      if (tok.is(qEofF)) {
-        diagnostic << tok << "Unexpected end of file in subsystem dependencies";
-        return mock_stmt(QAST_NODE_SUBSYSTEM);
-        break;
-      }
 
       if (tok.is<qPuncRBrk>()) {
-        return mock_stmt(QAST_NODE_SUBSYSTEM);
+        return dependencies;
+      }
+
+      if (tok.is(qName)) {
+        let dependency_name = tok.as_string(&rd);
+
+        dependencies.insert(dependency_name);
+
+        if (peek().is<qPuncComa>()) {
+          next();
+        }
+      } else {
+        diagnostic << tok << "Expected dependency name";
         break;
       }
-
-      if (!tok.is(qName)) {
-        diagnostic << tok << "Expected dependency name";
-        return mock_stmt(QAST_NODE_SUBSYSTEM);
-      }
-
-      deps.insert(tok.as_string(&rd));
-
-      tok = peek();
-      if (tok.is<qPuncComa>()) {
-        next();
-      }
     }
+  } else {
+    diagnostic << tok << "Expected '[' at start of scope dependencies";
   }
 
-  Stmt *block = recurse_block(S, rd, true);
+  return std::nullopt;
+}
 
-  std::set<Expr *> attributes;
-  tok = peek();
-  if (tok.is<qKWith>()) {
-    next();
+static Stmt *recurse_scope_block(npar_t &S, qlex_t &rd) {
+  if (peek().is<qPuncLCur>()) {
+    return recurse_block(S, rd, true);
+  } else {
+    return Block::get();
+  }
+}
 
-    if (!recurse_attributes(S, rd, attributes)) {
-      return mock_stmt(QAST_NODE_SUBSYSTEM);
+npar::Stmt *npar::recurse_scope(npar_t &S, qlex_t &rd) {
+  if (let tok = peek(); tok.is(qName)) {
+    let scope_name = (next(), tok.as_string(&rd));
+
+    if (let implicit_dependencies = recurse_scope_deps(rd)) {
+      let scope_block = recurse_scope_block(S, rd);
+
+      let stmt = ScopeDecl::get(scope_name, scope_block,
+                                std::move(implicit_dependencies.value()));
+      stmt->set_end_pos(scope_block->get_end_pos());
+
+      return stmt;
+    } else {
+      diagnostic << tok << "Expected scope dependencies";
     }
+  } else {
+    diagnostic << tok << "Expected name for scope";
   }
 
-  SubsystemDecl *sub = SubsystemDecl::get(name, block);
-  sub->set_end_pos(block->get_end_pos());
-  sub->get_deps() = deps;
-  sub->get_tags().insert(attributes.begin(), attributes.end());
-
-  return sub;
+  return mock_stmt(QAST_NODE_SUBSYSTEM);
 }

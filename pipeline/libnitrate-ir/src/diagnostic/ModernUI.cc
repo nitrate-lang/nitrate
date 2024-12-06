@@ -88,7 +88,7 @@ const boost::bimap<IssueCode, IssueInfo> nr::issue_info =
          {"name-conflict",
           "Naming conflict: %s",
           {{"Ensure that the name is unique."},
-           {"Try wrapping your code in a named subsystem"}}}},
+           {"Try wrapping your code in a scope"}}}},
         {UnknownFunction, {"unknown-function", "write me", {}}},
         {VariadicNotEnoughArguments,
          {"variadic-not-enough-args",

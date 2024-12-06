@@ -53,7 +53,7 @@ namespace npar {
   std::vector<Stmt *> recurse_var(npar_t &S, qlex_t &rd);
   Stmt *recurse_enum(npar_t &S, qlex_t &rd);
   Stmt *recurse_struct(npar_t &S, qlex_t &rd, CompositeType type);
-  Stmt *recurse_subsystem(npar_t &S, qlex_t &rd);
+  Stmt *recurse_scope(npar_t &S, qlex_t &rd);
   Stmt *recurse_function(npar_t &S, qlex_t &rd);
   Type *recurse_type(npar_t &S, qlex_t &rd);
   Stmt *recurse_typedef(npar_t &S, qlex_t &rd);

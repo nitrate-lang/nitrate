@@ -163,8 +163,8 @@ Stmt *npar::recurse_block(npar_t &S, qlex_t &rd, bool expect_braces,
         break;
       }
 
-      case qKSubsystem: {
-        node = recurse_subsystem(S, rd);
+      case qKScope: {
+        node = recurse_scope(S, rd);
         break;
       }
 

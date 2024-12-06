@@ -127,7 +127,7 @@ typedef enum qlex_op_t {
 } __attribute__((packed)) qlex_op_t;
 
 typedef enum qlex_key_t {
-  qKSubsystem,  /* 'subsystem' */
+  qKScope,      /* 'scope' */
   qKImport,     /* 'import' */
   qKPub,        /* 'pub' */
   qKSec,        /* 'sec' */
@@ -186,7 +186,8 @@ typedef enum qlex_key_t {
 struct qlex_t;
 struct qlex_tok_t;
 
-const char *qlex_str(struct qlex_t *lexer, struct qlex_tok_t *tok, size_t *len);
+const char *qlex_str(struct qlex_t *lexer, const struct qlex_tok_t *tok,
+                     size_t *len);
 
 #ifdef __cplusplus
 }
@@ -294,7 +295,7 @@ typedef struct qlex_tok_t {
     }
   }
 
-  inline std::string_view as_string(qlex_t *lexer) {
+  inline std::string_view as_string(qlex_t *lexer) const {
     size_t len;
     const char *s = qlex_str(lexer, this, &len);
 

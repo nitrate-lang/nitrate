@@ -1526,8 +1526,8 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
   }
 }
 
-static BResult nrgen_subsystem(NRBuilder &b, PState &s, IReport *G,
-                               npar::SubsystemDecl *n) {
+static BResult nrgen_scope(NRBuilder &b, PState &s, IReport *G,
+                           npar::ScopeDecl *n) {
   if (!n->get_body()->is(QAST_NODE_BLOCK)) {
     return std::nullopt;
   }
@@ -1537,7 +1537,7 @@ static BResult nrgen_subsystem(NRBuilder &b, PState &s, IReport *G,
 
   auto body = nrgen_block(b, s, G, n->get_body()->as<npar::Block>(), false);
   if (!body.has_value()) {
-    G->report(nr::CompilerError, IC::Error, "Failed to lower subsystem body",
+    G->report(nr::CompilerError, IC::Error, "Failed to lower scope body",
               n->get_pos());
     return std::nullopt;
   }
@@ -2294,7 +2294,7 @@ static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar::Node *n) {
       break;
 
     case QAST_NODE_SUBSYSTEM:
-      out = nrgen_subsystem(b, s, G, n->as<npar::SubsystemDecl>());
+      out = nrgen_scope(b, s, G, n->as<npar::ScopeDecl>());
       break;
 
     case QAST_NODE_EXPORT:

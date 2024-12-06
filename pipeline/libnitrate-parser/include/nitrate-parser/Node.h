@@ -294,7 +294,7 @@ namespace npar {
   class StructField;
   class StructDef;
   class EnumDef;
-  class SubsystemDecl;
+  class ScopeDecl;
   class ExportDecl;
 
 }  // namespace npar
@@ -455,7 +455,7 @@ namespace npar {
         return QAST_NODE_ENUM;
       } else if constexpr (std::is_same_v<T, FnDef>) {
         return QAST_NODE_FN;
-      } else if constexpr (std::is_same_v<T, SubsystemDecl>) {
+      } else if constexpr (std::is_same_v<T, ScopeDecl>) {
         return QAST_NODE_SUBSYSTEM;
       } else if constexpr (std::is_same_v<T, ExportDecl>) {
         return QAST_NODE_EXPORT;
@@ -1848,14 +1848,14 @@ namespace npar {
     PNODE_IMPL_CORE(EnumDef)
   };
 
-  typedef std::set<String, std::less<String>, Arena<String>> SubsystemDeps;
+  typedef std::set<String, std::less<String>, Arena<String>> ScopeDeps;
 
-  class SubsystemDecl : public Decl {
+  class ScopeDecl : public Decl {
     Stmt *m_body;
-    SubsystemDeps m_deps;
+    ScopeDeps m_deps;
 
   public:
-    SubsystemDecl(String name, Stmt *body, SubsystemDeps deps = {})
+    ScopeDecl(String name, Stmt *body, ScopeDeps deps = {})
         : Decl(QAST_NODE_SUBSYSTEM, name, nullptr),
           m_body(body),
           m_deps(deps) {}
@@ -1863,9 +1863,9 @@ namespace npar {
     Stmt *get_body() { return m_body; }
     void set_body(Stmt *body) { m_body = body; }
 
-    SubsystemDeps &get_deps() { return m_deps; }
+    ScopeDeps &get_deps() { return m_deps; }
 
-    PNODE_IMPL_CORE(SubsystemDecl)
+    PNODE_IMPL_CORE(ScopeDecl)
   };
 
   class ExportDecl : public Decl {
@@ -1957,7 +1957,7 @@ namespace npar {
       R[QAST_NODE_STRUCT] = "Struct";
       R[QAST_NODE_ENUM] = "Enum";
       R[QAST_NODE_FN] = "Fn";
-      R[QAST_NODE_SUBSYSTEM] = "Subsystem";
+      R[QAST_NODE_SUBSYSTEM] = "Scope";
       R[QAST_NODE_EXPORT] = "Export";
       R[QAST_NODE_STRUCT_FIELD] = "StructField";
       R[QAST_NODE_BLOCK] = "Block";

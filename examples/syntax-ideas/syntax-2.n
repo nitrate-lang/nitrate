@@ -1,6 +1,6 @@
 @import traits;
 
-subsystem Simulator {
+scope Simulator {
     group Vec<<N>> {
         data: [f32; N as ct_number],
 

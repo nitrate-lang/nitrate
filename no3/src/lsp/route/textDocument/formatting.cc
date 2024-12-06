@@ -1249,8 +1249,8 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //     }
 
 //     case QAST_NODE_SUBSYSTEM: {
-//       SubsystemDecl* N = C->as<SubsystemDecl>();
-//       S.line << "subsystem " << N->get_name();
+//       ScopeDecl* N = C->as<ScopeDecl>();
+//       S.line << "scope " << N->get_name();
 
 //       if (!N->get_deps().empty()) {
 //         S.line << ": [";
