@@ -1532,19 +1532,6 @@ bool to_json_recurse(Node *N, json &x) {
       break;
     }
 
-    case QAST_NODE_VOLATILE: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      if (!to_json_recurse(N->as<VolStmt>()->get_stmt(), x[1])) {
-        return false;
-      }
-
-      break;
-    }
-
     default: {
       qcore_panicf("Unexpected node type: %d", id);
     }

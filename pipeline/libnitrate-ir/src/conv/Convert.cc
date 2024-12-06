@@ -1894,14 +1894,6 @@ static EResult nrgen_expr_stmt(NRBuilder &b, PState &s, IReport *G,
   return next_one(n->get_expr());
 }
 
-static EResult nrgen_volstmt(NRBuilder &, PState &, IReport *G,
-                             npar::VolStmt *n) {
-  G->report(CompilerError, IC::Error, "Volatile statements are not supported",
-            n->get_pos());
-
-  return std::nullopt;
-}
-
 static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar::Node *n) {
   using namespace nr;
 
@@ -2178,10 +2170,6 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar::Node *n) {
 
     case QAST_NODE_EXPR_STMT:
       out = nrgen_expr_stmt(b, s, G, n->as<npar::ExprStmt>());
-      break;
-
-    case QAST_NODE_VOLATILE:
-      out = nrgen_volstmt(b, s, G, n->as<npar::VolStmt>());
       break;
 
     default: {

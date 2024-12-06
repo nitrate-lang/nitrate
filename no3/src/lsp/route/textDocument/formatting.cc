@@ -1699,14 +1699,6 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //       break;
 //     }
 
-//     case QAST_NODE_VOLATILE: {
-//       VolStmt* N = C->as<VolStmt>();
-//       S.line << "volatile ";
-//       recurse(N->get_stmt(), S);
-//       break;
-//     }
-//   }
-
 //   if (C->is_decl()) {
 //     Decl* N = C->as<Decl>();
 

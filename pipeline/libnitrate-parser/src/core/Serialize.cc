@@ -760,12 +760,6 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_VOLATILE: {
-      OBJECT_BEGIN("VStmt");
-      OBJECT_SUB(n->as<VolStmt>()->get_stmt());
-      OBJECT_END();
-      break;
-    }
     case QAST_NODE_VAR: {
       OBJECT_BEGIN("Let");
       OBJECT_STR(n->as<VarDecl>()->get_name());

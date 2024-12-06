@@ -279,18 +279,6 @@ Stmt *npar::recurse_block(npar_t &S, qlex_t &rd, bool expect_braces,
         break;
       }
 
-      case qKVolatile: {
-        tok = peek();
-        if (tok.is<qPuncLCur>()) {
-          node = recurse_block(S, rd);
-        } else {
-          node = recurse_block(S, rd, false, true);
-        }
-
-        node = VolStmt::get(block);
-        break;
-      }
-
       default:
         diagnostic << tok << "Unexpected keyword";
         break;

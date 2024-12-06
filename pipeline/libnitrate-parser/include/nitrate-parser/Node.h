@@ -144,13 +144,12 @@ typedef enum npar_ty_t {
   QAST_NODE_CASE,
   QAST_NODE_SWITCH,
   QAST_NODE_EXPR_STMT,
-  QAST_NODE_VOLATILE,
 
   QAST_NODE__STMT_FIRST = QAST_NODE__DECL_FIRST,
-  QAST_NODE__STMT_LAST = QAST_NODE_VOLATILE,
+  QAST_NODE__STMT_LAST = QAST_NODE_EXPR_STMT,
 
   QAST_NODE__FIRST = QAST_NODE_NODE,
-  QAST_NODE__LAST = QAST_NODE_VOLATILE,
+  QAST_NODE__LAST = QAST_NODE_EXPR_STMT,
 } npar_ty_t;
 
 #define QAST_NODE_COUNT (QAST_NODE__LAST - QAST_NODE__FIRST + 1)
@@ -272,7 +271,6 @@ namespace npar {
   class Ident;
   class SeqPoint;
   class Block;
-  class VolStmt;
   class VarDecl;
   class InlineAsm;
   class IfStmt;
@@ -486,8 +484,6 @@ namespace npar {
         return QAST_NODE_SWITCH;
       } else if constexpr (std::is_same_v<T, ExprStmt>) {
         return QAST_NODE_EXPR_STMT;
-      } else if constexpr (std::is_same_v<T, VolStmt>) {
-        return QAST_NODE_VOLATILE;
       }
     }
 
@@ -1473,18 +1469,6 @@ namespace npar {
     PNODE_IMPL_CORE(Block)
   };
 
-  class VolStmt : public Stmt {
-    Stmt *m_stmt;
-
-  public:
-    constexpr VolStmt(Stmt *stmt) : Stmt(QAST_NODE_VOLATILE), m_stmt(stmt) {}
-
-    Stmt *get_stmt() { return m_stmt; }
-    void set_stmt(Stmt *stmt) { m_stmt = stmt; }
-
-    PNODE_IMPL_CORE(VolStmt)
-  };
-
   enum class VarDeclType { Const, Var, Let, Any };
 
   using VarDeclAttributes =
@@ -1975,7 +1959,6 @@ namespace npar {
       R[QAST_NODE_CASE] = "Case";
       R[QAST_NODE_SWITCH] = "Switch";
       R[QAST_NODE_EXPR_STMT] = "ExprStmt";
-      R[QAST_NODE_VOLATILE] = "Volstmt";
 
       return R;
     }();

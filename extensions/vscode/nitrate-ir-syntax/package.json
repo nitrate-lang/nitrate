@@ -3,7 +3,7 @@
   "displayName": "Nitrate IR: Syntax Highlighting",
   "publisher": "qpkg",
   "description": "Syntax highlighting support for the Nitrate Language intermediate representation (IR) files.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/nitrate-ir-syntax",
   "icon": "./icons/icon-light.png",
   "engines": {
