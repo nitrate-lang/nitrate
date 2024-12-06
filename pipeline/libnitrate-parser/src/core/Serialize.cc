@@ -769,6 +769,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     case QAST_NODE_VAR: {
       OBJECT_BEGIN("Let");
       OBJECT_STR(n->as<VarDecl>()->get_name());
+      OBJECT_ARRAY(n->as<VarDecl>()->get_attributes());
       OBJECT_SUB(n->as<VarDecl>()->get_type());
       OBJECT_SUB(n->as<VarDecl>()->get_value());
       OBJECT_END();

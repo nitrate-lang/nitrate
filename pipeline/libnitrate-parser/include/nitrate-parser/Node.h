@@ -1487,13 +1487,20 @@ namespace npar {
 
   enum class VarDeclType { Const, Var, Let, Any };
 
+  using VarDeclAttributes =
+      std::unordered_set<Expr *, std::hash<Expr *>, std::equal_to<Expr *>,
+                         Arena<Expr *>>;
+
   class VarDecl : public Decl {
+    VarDeclAttributes m_attributes;
     Expr *m_value;
     VarDeclType m_decl_type;
 
   public:
-    VarDecl(String name, Type *type, Expr *value, VarDeclType decl_type)
+    VarDecl(String name, Type *type, Expr *value, VarDeclType decl_type,
+            VarDeclAttributes attributes)
         : Decl(QAST_NODE_VAR, name, type),
+          m_attributes(attributes),
           m_value(value),
           m_decl_type(decl_type) {}
 
@@ -1502,6 +1509,11 @@ namespace npar {
 
     VarDeclType get_decl_type() { return m_decl_type; }
     void set_decl_type(VarDeclType decl_type) { m_decl_type = decl_type; }
+
+    VarDeclAttributes &get_attributes() { return m_attributes; }
+    void set_attributes(VarDeclAttributes attributes) {
+      m_attributes = attributes;
+    }
 
     PNODE_IMPL_CORE(VarDecl)
   };
