@@ -34,11 +34,9 @@
 #ifndef __NITRATE_PARSER_NODE_H__
 #define __NITRATE_PARSER_NODE_H__
 
-#include <unordered_set>
 #ifndef __cplusplus
 #error "This code requires c++"
 #endif
-
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Memory.h>
 #include <nitrate-lexer/Token.h>
@@ -47,12 +45,14 @@
 #include <iostream>
 #include <map>
 #include <nitrate-core/Classes.hh>
+#include <nitrate-parser/Vistor.hh>
 #include <optional>
 #include <ostream>
 #include <set>
 #include <sstream>
 #include <string>
 #include <tuple>
+#include <unordered_set>
 #include <variant>
 #include <vector>
 
@@ -214,87 +214,6 @@ public:
 struct npar_node_t {};
 
 namespace npar {
-  class Node;
-  class Stmt;
-  class Type;
-  class Decl;
-  class Expr;
-  class ExprStmt;
-  class StmtExpr;
-  class TypeExpr;
-  class NamedTy;
-  class InferTy;
-  class TemplType;
-  class U1;
-  class U8;
-  class U16;
-  class U32;
-  class U64;
-  class U128;
-  class I8;
-  class I16;
-  class I32;
-  class I64;
-  class I128;
-  class F16;
-  class F32;
-  class F64;
-  class F128;
-  class VoidTy;
-  class PtrTy;
-  class ConstTy;
-  class OpaqueTy;
-  class TupleTy;
-  class ArrayTy;
-  class RefTy;
-  class StructTy;
-  class FuncTy;
-  class UnaryExpr;
-  class BinExpr;
-  class PostUnaryExpr;
-  class TernaryExpr;
-  class ConstInt;
-  class ConstFloat;
-  class ConstBool;
-  class ConstString;
-  class ConstChar;
-  class ConstNull;
-  class ConstUndef;
-  class Call;
-  class TemplCall;
-  class List;
-  class Assoc;
-  class Field;
-  class Index;
-  class Slice;
-  class FString;
-  class Ident;
-  class SeqPoint;
-  class Block;
-  class VarDecl;
-  class InlineAsm;
-  class IfStmt;
-  class WhileStmt;
-  class ForStmt;
-  class ForeachStmt;
-  class BreakStmt;
-  class ContinueStmt;
-  class ReturnStmt;
-  class ReturnIfStmt;
-  class CaseStmt;
-  class SwitchStmt;
-  class TypedefDecl;
-  class FnDecl;
-  class FnDef;
-  class StructField;
-  class StructDef;
-  class EnumDef;
-  class ScopeDecl;
-  class ExportDecl;
-
-}  // namespace npar
-
-namespace npar {
   enum class Vis {
     PUBLIC,
     PRIVATE,
@@ -325,6 +244,299 @@ namespace npar {
   public:
     constexpr Node(npar_ty_t ty)
         : m_node_type(ty), m_pos_start(0), m_pos_end(0){};
+
+    constexpr void accept(ASTVisitor &v) {
+      switch (getKind()) {
+        case QAST_NODE_NODE: {
+          v.visit(*as<Node>());
+          break;
+        }
+        case QAST_NODE_BINEXPR: {
+          v.visit(*as<BinExpr>());
+          break;
+        }
+        case QAST_NODE_UNEXPR: {
+          v.visit(*as<UnaryExpr>());
+          break;
+        }
+        case QAST_NODE_TEREXPR: {
+          v.visit(*as<TernaryExpr>());
+          break;
+        }
+        case QAST_NODE_INT: {
+          v.visit(*as<ConstInt>());
+          break;
+        }
+        case QAST_NODE_FLOAT: {
+          v.visit(*as<ConstFloat>());
+          break;
+        }
+        case QAST_NODE_STRING: {
+          v.visit(*as<ConstString>());
+          break;
+        }
+        case QAST_NODE_CHAR: {
+          v.visit(*as<ConstChar>());
+          break;
+        }
+        case QAST_NODE_BOOL: {
+          v.visit(*as<ConstBool>());
+          break;
+        }
+        case QAST_NODE_NULL: {
+          v.visit(*as<ConstNull>());
+          break;
+        }
+        case QAST_NODE_UNDEF: {
+          v.visit(*as<ConstUndef>());
+          break;
+        }
+        case QAST_NODE_CALL: {
+          v.visit(*as<Call>());
+          break;
+        }
+        case QAST_NODE_LIST: {
+          v.visit(*as<List>());
+          break;
+        }
+        case QAST_NODE_ASSOC: {
+          v.visit(*as<Assoc>());
+          break;
+        }
+        case QAST_NODE_FIELD: {
+          v.visit(*as<Field>());
+          break;
+        }
+        case QAST_NODE_INDEX: {
+          v.visit(*as<Index>());
+          break;
+        }
+        case QAST_NODE_SLICE: {
+          v.visit(*as<Slice>());
+          break;
+        }
+        case QAST_NODE_FSTRING: {
+          v.visit(*as<FString>());
+          break;
+        }
+        case QAST_NODE_IDENT: {
+          v.visit(*as<Ident>());
+          break;
+        }
+        case QAST_NODE_SEQ: {
+          v.visit(*as<SeqPoint>());
+          break;
+        }
+        case QAST_NODE_POST_UNEXPR: {
+          v.visit(*as<PostUnaryExpr>());
+          break;
+        }
+        case QAST_NODE_STMT_EXPR: {
+          v.visit(*as<StmtExpr>());
+          break;
+        }
+        case QAST_NODE_TYPE_EXPR: {
+          v.visit(*as<TypeExpr>());
+          break;
+        }
+        case QAST_NODE_TEMPL_CALL: {
+          v.visit(*as<TemplCall>());
+          break;
+        }
+        case QAST_NODE_REF_TY: {
+          v.visit(*as<RefTy>());
+          break;
+        }
+        case QAST_NODE_U1_TY: {
+          v.visit(*as<U1>());
+          break;
+        }
+        case QAST_NODE_U8_TY: {
+          v.visit(*as<U8>());
+          break;
+        }
+        case QAST_NODE_U16_TY: {
+          v.visit(*as<U16>());
+          break;
+        }
+        case QAST_NODE_U32_TY: {
+          v.visit(*as<U32>());
+          break;
+        }
+        case QAST_NODE_U64_TY: {
+          v.visit(*as<U64>());
+          break;
+        }
+        case QAST_NODE_U128_TY: {
+          v.visit(*as<U128>());
+          break;
+        }
+        case QAST_NODE_I8_TY: {
+          v.visit(*as<I8>());
+          break;
+        }
+        case QAST_NODE_I16_TY: {
+          v.visit(*as<I16>());
+          break;
+        }
+        case QAST_NODE_I32_TY: {
+          v.visit(*as<I32>());
+          break;
+        }
+        case QAST_NODE_I64_TY: {
+          v.visit(*as<I64>());
+          break;
+        }
+        case QAST_NODE_I128_TY: {
+          v.visit(*as<I128>());
+          break;
+        }
+        case QAST_NODE_F16_TY: {
+          v.visit(*as<F16>());
+          break;
+        }
+        case QAST_NODE_F32_TY: {
+          v.visit(*as<F32>());
+          break;
+        }
+        case QAST_NODE_F64_TY: {
+          v.visit(*as<F64>());
+          break;
+        }
+        case QAST_NODE_F128_TY: {
+          v.visit(*as<F128>());
+          break;
+        }
+        case QAST_NODE_VOID_TY: {
+          v.visit(*as<VoidTy>());
+          break;
+        }
+        case QAST_NODE_PTR_TY: {
+          v.visit(*as<PtrTy>());
+          break;
+        }
+        case QAST_NODE_OPAQUE_TY: {
+          v.visit(*as<OpaqueTy>());
+          break;
+        }
+        case QAST_NODE_STRUCT_TY: {
+          v.visit(*as<StructTy>());
+          break;
+        }
+        case QAST_NODE_ARRAY_TY: {
+          v.visit(*as<ArrayTy>());
+          break;
+        }
+        case QAST_NODE_TUPLE_TY: {
+          v.visit(*as<TupleTy>());
+          break;
+        }
+        case QAST_NODE_FN_TY: {
+          v.visit(*as<FuncTy>());
+          break;
+        }
+        case QAST_NODE_UNRES_TY: {
+          v.visit(*as<NamedTy>());
+          break;
+        }
+        case QAST_NODE_INFER_TY: {
+          v.visit(*as<InferTy>());
+          break;
+        }
+        case QAST_NODE_TEMPL_TY: {
+          v.visit(*as<TemplType>());
+          break;
+        }
+        case QAST_NODE_TYPEDEF: {
+          v.visit(*as<TypedefDecl>());
+          break;
+        }
+        case QAST_NODE_FNDECL: {
+          v.visit(*as<FnDecl>());
+          break;
+        }
+        case QAST_NODE_STRUCT: {
+          v.visit(*as<StructDef>());
+          break;
+        }
+        case QAST_NODE_ENUM: {
+          v.visit(*as<EnumDef>());
+          break;
+        }
+        case QAST_NODE_FN: {
+          v.visit(*as<FnDef>());
+          break;
+        }
+        case QAST_NODE_SUBSYSTEM: {
+          v.visit(*as<ScopeDecl>());
+          break;
+        }
+        case QAST_NODE_EXPORT: {
+          v.visit(*as<ExportDecl>());
+          break;
+        }
+        case QAST_NODE_STRUCT_FIELD: {
+          v.visit(*as<StructField>());
+          break;
+        }
+        case QAST_NODE_BLOCK: {
+          v.visit(*as<Block>());
+          break;
+        }
+        case QAST_NODE_VAR: {
+          v.visit(*as<VarDecl>());
+          break;
+        }
+        case QAST_NODE_INLINE_ASM: {
+          v.visit(*as<InlineAsm>());
+          break;
+        }
+        case QAST_NODE_RETURN: {
+          v.visit(*as<ReturnStmt>());
+          break;
+        }
+        case QAST_NODE_RETIF: {
+          v.visit(*as<ReturnIfStmt>());
+          break;
+        }
+        case QAST_NODE_BREAK: {
+          v.visit(*as<BreakStmt>());
+          break;
+        }
+        case QAST_NODE_CONTINUE: {
+          v.visit(*as<ContinueStmt>());
+          break;
+        }
+        case QAST_NODE_IF: {
+          v.visit(*as<IfStmt>());
+          break;
+        }
+        case QAST_NODE_WHILE: {
+          v.visit(*as<WhileStmt>());
+          break;
+        }
+        case QAST_NODE_FOR: {
+          v.visit(*as<ForStmt>());
+          break;
+        }
+        case QAST_NODE_FOREACH: {
+          v.visit(*as<ForeachStmt>());
+          break;
+        }
+        case QAST_NODE_CASE: {
+          v.visit(*as<CaseStmt>());
+          break;
+        }
+        case QAST_NODE_SWITCH: {
+          v.visit(*as<SwitchStmt>());
+          break;
+        }
+        case QAST_NODE_EXPR_STMT: {
+          v.visit(*as<ExprStmt>());
+          break;
+        }
+      }
+    };
 
     ///======================================================================
     /* Efficient LLVM reflection */
