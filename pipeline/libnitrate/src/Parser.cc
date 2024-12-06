@@ -1379,7 +1379,8 @@ bool to_json_recurse(Node *N, json &x) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<ReturnStmt>()->get_value(), x[1])) {
+      if (!to_json_recurse(N->as<ReturnStmt>()->get_value().value_or(nullptr),
+                           x[1])) {
         return false;
       }
 

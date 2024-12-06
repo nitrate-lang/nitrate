@@ -798,7 +798,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     }
     case QAST_NODE_RETURN: {
       OBJECT_BEGIN("Ret");
-      OBJECT_SUB(n->as<ReturnStmt>()->get_value());
+      OBJECT_SUB(n->as<ReturnStmt>()->get_value().value_or(nullptr));
       OBJECT_END();
       break;
     }

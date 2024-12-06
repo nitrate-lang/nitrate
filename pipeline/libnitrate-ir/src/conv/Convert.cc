@@ -1771,7 +1771,7 @@ static EResult nrgen_inline_asm(NRBuilder &, PState &, IReport *G,
 static EResult nrgen_return(NRBuilder &b, PState &s, IReport *G,
                             npar::ReturnStmt *n) {
   if (n->get_value()) {
-    auto val = next_one(n->get_value());
+    auto val = next_one(n->get_value().value_or(nullptr));
     if (!val.has_value()) {
       G->report(nr::CompilerError, IC::Error,
                 "Failed to lower return statement value", n->get_pos());

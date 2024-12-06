@@ -31,58 +31,63 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: Cleanup this code; it's a mess from refactoring.
+#include <nitrate-parser/Node.h>
 
 #include <decent/Recurse.hh>
-
-#include "nitrate-parser/Node.h"
 
 using namespace npar;
 
 Stmt *npar::recurse_return(npar_t &S, qlex_t &rd) {
-  qlex_tok_t tok = peek();
+  /**
+   * Syntax examples:
+   *   `ret 0;`, `ret;`, `ret 0, 1;`, `ret call();`
+   */
 
-  if (tok.is<qPuncSemi>()) {
-    next();
-    auto R = ReturnStmt::get(nullptr);
-    R->set_end_pos(tok.end);
+  /* Return void */
+  if (let tok = peek(); tok.is<qPuncSemi>()) {
+    let stmt = (next(), ReturnStmt::get(std::nullopt));
+    stmt->set_end_pos(tok.end);
+
+    return stmt;
+  }
+
+  let expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+
+  if (let tok = peek(); tok.is<qPuncSemi>()) {
+    let R = (next(), ReturnStmt::get(expr));
+    R->set_end_pos(current().end);
+
     return R;
+  } else {
+    diagnostic << tok << "Expected ';' after the return statement.";
   }
 
-  Expr *expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
-
-  tok = next();
-
-  if (!tok.is<qPuncSemi>()) {
-    diagnostic << tok << "Expected a semicolon after the return statement.";
-    return mock_stmt(QAST_NODE_RETURN);
-  }
-
-  auto R = ReturnStmt::get(expr);
-  R->set_end_pos(tok.end);
-
-  return R;
+  return mock_stmt(QAST_NODE_RETURN);
 }
 
 Stmt *npar::recurse_retif(npar_t &S, qlex_t &rd) {
-  Expr *condition = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncComa)});
+  /**
+   * Syntax examples:
+   *   `retif cond(), 1;`, `retif failed, -1;`
+   */
 
-  qlex_tok_t tok = next();
-  if (!tok.is<qPuncComa>()) {
-    diagnostic << tok << "Expected a comma after the return-if expression.";
-    return mock_stmt(QAST_NODE_RETIF);
+  let condition = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncComa)});
+
+  if (let tok = peek(); tok.is<qPuncComa>()) {
+    let return_expr =
+        (next(), recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}));
+
+    if (let tok = peek(); tok.is<qPuncSemi>()) {
+      let R = (next(), ReturnIfStmt::get(condition, return_expr));
+      R->set_end_pos(current().end);
+
+      return R;
+    } else {
+      diagnostic << tok << "Expected ';' after the retif value.";
+    }
+  } else {
+    diagnostic << tok << "Expected ',' after the retif condition.";
   }
 
-  Expr *return_expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
-
-  tok = next();
-  if (!tok.is<qPuncSemi>()) {
-    diagnostic << tok << "Expected a semicolon after the return-if expression.";
-    return mock_stmt(QAST_NODE_RETIF);
-  }
-
-  auto R = ReturnIfStmt::get(condition, return_expr);
-  R->set_end_pos(tok.end);
-
-  return R;
+  return mock_stmt(QAST_NODE_RETIF);
 }

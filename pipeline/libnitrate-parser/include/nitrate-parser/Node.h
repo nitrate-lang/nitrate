@@ -1660,13 +1660,13 @@ namespace npar {
   };
 
   class ReturnStmt : public Stmt {
-    Expr *m_value;
+    std::optional<Expr *> m_value;
 
   public:
-    constexpr ReturnStmt(Expr *value)
+    constexpr ReturnStmt(std::optional<Expr *> value)
         : Stmt(QAST_NODE_RETURN), m_value(value) {}
 
-    Expr *get_value() { return m_value; }
+    std::optional<Expr *> get_value() { return m_value; }
     void set_value(Expr *value) { m_value = value; }
 
     PNODE_IMPL_CORE(ReturnStmt)
