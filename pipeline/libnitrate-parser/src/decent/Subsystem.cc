@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: Cleanup this code; it's a mess from refactoring.
-
 #include <nitrate-parser/Node.h>
 
 #include <decent/Recurse.hh>
@@ -75,8 +73,12 @@ static std::optional<ScopeDeps> recurse_scope_deps(qlex_t &rd) {
 }
 
 static Stmt *recurse_scope_block(npar_t &S, qlex_t &rd) {
-  if (peek().is<qPuncLCur>()) {
-    return recurse_block(S, rd, true);
+  let tok = peek();
+
+  if (tok.is<qPuncLCur>()) {
+    return recurse_block(S, rd, true, false);
+  } else if (tok.is<qOpArrow>()) {
+    return (next(), recurse_block(S, rd, false, true));
   } else {
     return Block::get();
   }
