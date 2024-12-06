@@ -39,7 +39,7 @@
 #include <atomic>
 #include <core/ParserStruct.hh>
 #include <cstring>
-#include <decent/Recurse.hh>
+#include <descent/Recurse.hh>
 #include <nitrate-core/Classes.hh>
 
 using namespace npar;

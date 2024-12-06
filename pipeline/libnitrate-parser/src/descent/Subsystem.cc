@@ -33,7 +33,7 @@
 
 #include <nitrate-parser/Node.h>
 
-#include <decent/Recurse.hh>
+#include <descent/Recurse.hh>
 
 using namespace npar;
 

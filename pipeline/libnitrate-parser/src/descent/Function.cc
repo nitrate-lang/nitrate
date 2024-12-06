@@ -38,7 +38,7 @@
 #include <nitrate-lexer/Lexer.h>
 #include <nitrate-parser/Node.h>
 
-#include <decent/Recurse.hh>
+#include <descent/Recurse.hh>
 
 using namespace npar;
 

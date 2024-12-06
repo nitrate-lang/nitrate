@@ -33,7 +33,7 @@
 
 #include <nitrate-parser/Node.h>
 
-#include <decent/Recurse.hh>
+#include <descent/Recurse.hh>
 
 npar::Stmt *npar::recurse_typedef(npar_t &S, qlex_t &rd) {
   /**

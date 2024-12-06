@@ -37,7 +37,7 @@
 #include <nitrate-lexer/Token.h>
 #include <nitrate-parser/Node.h>
 
-#include <decent/Recurse.hh>
+#include <descent/Recurse.hh>
 #include <unordered_map>
 
 using namespace npar;

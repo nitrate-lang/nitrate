@@ -38,7 +38,7 @@
 #include <nitrate-parser/Node.h>
 
 #include <cstddef>
-#include <decent/Recurse.hh>
+#include <descent/Recurse.hh>
 #include <stack>
 
 #define MAX_EXPR_DEPTH (10000)

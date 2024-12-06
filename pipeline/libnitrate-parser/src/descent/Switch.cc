@@ -35,7 +35,7 @@
 
 #include <nitrate-parser/Node.h>
 
-#include <decent/Recurse.hh>
+#include <descent/Recurse.hh>
 
 npar::Stmt *npar::recurse_switch(npar_t &S, qlex_t &rd) {
   Expr *cond = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncLCur)});
