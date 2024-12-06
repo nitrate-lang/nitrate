@@ -194,7 +194,7 @@ const char *qlex_str(struct qlex_t *lexer, const struct qlex_tok_t *tok,
 
 #if defined(__cplusplus) && defined(__NITRATE_LEXER_CPP__)
 
-#include <string>
+#include <string_view>
 #include <type_traits>
 
 #endif
@@ -217,33 +217,33 @@ typedef struct qlex_tok_t {
 
 #if defined(__cplusplus) && defined(__NITRATE_LEXER_CPP__)
 
-  qlex_tok_t() : ty(qErro), start(0), end(0), v{.str_idx = 0} {}
+  constexpr qlex_tok_t() : ty(qErro), start(0), end(0), v{.str_idx = 0} {}
 
-  qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, uint32_t loc_beg = 0,
-             uint32_t loc_end = 0)
+  constexpr qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, uint32_t loc_beg = 0,
+                       uint32_t loc_end = 0)
       : ty(ty), start(loc_beg), end(loc_end), v{.punc = punc} {}
 
-  qlex_tok_t(qlex_ty_t ty, qlex_op_t op, uint32_t loc_beg = 0,
-             uint32_t loc_end = 0)
+  constexpr qlex_tok_t(qlex_ty_t ty, qlex_op_t op, uint32_t loc_beg = 0,
+                       uint32_t loc_end = 0)
       : ty(ty), start(loc_beg), end(loc_end), v{.op = op} {}
 
-  qlex_tok_t(qlex_ty_t ty, qlex_key_t key, uint32_t loc_beg = 0,
-             uint32_t loc_end = 0)
+  constexpr qlex_tok_t(qlex_ty_t ty, qlex_key_t key, uint32_t loc_beg = 0,
+                       uint32_t loc_end = 0)
       : ty(ty), start(loc_beg), end(loc_end), v{.key = key} {}
 
-  qlex_tok_t(qlex_ty_t ty, uint32_t str_idx, uint32_t loc_beg = 0,
-             uint32_t loc_end = 0)
+  constexpr qlex_tok_t(qlex_ty_t ty, uint32_t str_idx, uint32_t loc_beg = 0,
+                       uint32_t loc_end = 0)
       : ty(ty), start(loc_beg), end(loc_end), v{.str_idx = str_idx} {}
 
-  static qlex_tok_t err(uint32_t loc_start, uint32_t loc_end) {
+  constexpr static qlex_tok_t err(uint32_t loc_start, uint32_t loc_end) {
     return qlex_tok_t(qErro, 0, loc_start, loc_end);
   }
-  static qlex_tok_t eof(uint32_t loc_start, uint32_t loc_end) {
+  constexpr static qlex_tok_t eof(uint32_t loc_start, uint32_t loc_end) {
     return qlex_tok_t(qEofF, 0, loc_start, loc_end);
   }
 
   template <typename T>
-  T as() const {
+  constexpr T as() const {
     if constexpr (std::is_same_v<T, qlex_punc_t>) {
       return v.punc;
     } else if constexpr (std::is_same_v<T, qlex_key_t>) {
@@ -255,9 +255,9 @@ typedef struct qlex_tok_t {
     static_assert(std::is_same_v<T, T>, "Invalid type");
   }
 
-  inline bool is(qlex_ty_t val) const { return ty == val; }
+  constexpr bool is(qlex_ty_t val) const { return ty == val; }
 
-  bool operator==(const qlex_tok_t &rhs) const {
+  constexpr bool operator==(const qlex_tok_t &rhs) const {
     if (ty != rhs.ty) return false;
     switch (ty) {
       case qEofF:
@@ -284,7 +284,7 @@ typedef struct qlex_tok_t {
   }
 
   template <auto V>
-  bool is() const {
+  constexpr bool is() const {
     if constexpr (std::is_same_v<decltype(V), qlex_key_t>) {
       return ty == qKeyW && as<qlex_key_t>() == V;
     } else if constexpr (std::is_same_v<decltype(V), qlex_punc_t>) {
@@ -301,7 +301,7 @@ typedef struct qlex_tok_t {
     return std::string_view(s, len);
   }
 
-  bool operator<(const qlex_tok_t &rhs) const {
+  constexpr bool operator<(const qlex_tok_t &rhs) const {
     if (ty != rhs.ty) return ty < rhs.ty;
     switch (ty) {
       case qEofF:

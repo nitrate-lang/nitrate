@@ -71,7 +71,7 @@ namespace npar {
                       bool single_stmt = false);
 
   struct tok_hash {
-    std::size_t operator()(qlex_tok_t const &v) const {
+    constexpr std::size_t operator()(qlex_tok_t const &v) const {
       union {
         uint64_t w;
         struct {

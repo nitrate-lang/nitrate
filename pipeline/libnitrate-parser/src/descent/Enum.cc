@@ -31,90 +31,105 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: Cleanup this code; it's a mess from refactoring.
-
 #include <nitrate-parser/Node.h>
 
 #include <descent/Recurse.hh>
 
 using namespace npar;
 
-static bool recurse_enum_field(npar_t &S, qlex_t &rd, EnumDefItems &fields) {
-  qlex_tok_t tok = next();
-  if (!tok.is(qName)) {
-    diagnostic << tok << "Enum field must be named by an identifier";
-    return false;
+constexpr static std::string_view recurse_enum_name(qlex_t &rd) {
+  if (let tok = next_if(qName)) {
+    return tok->as_string(&rd);
+  } else {
+    return "";
+  }
+}
+
+constexpr static std::optional<Type *> recurse_enum_type(npar_t &S,
+                                                         qlex_t &rd) {
+  if (next_if(qPuncColn)) {
+    return recurse_type(S, rd);
+  } else {
+    return std::nullopt;
+  }
+}
+
+constexpr static std::optional<Expr *> recurse_enum_item_value(npar_t &S,
+                                                               qlex_t &rd) {
+  if (next_if(qOpSet)) {
+    return recurse_expr(
+        S, rd,
+        {qlex_tok_t(qPunc, qPuncSemi), qlex_tok_t(qPunc, qPuncComa),
+         qlex_tok_t(qPunc, qPuncRCur)});
+  } else {
+    return std::nullopt;
+  }
+}
+
+constexpr static std::optional<EnumItem> recurse_enum_item(npar_t &S,
+                                                           qlex_t &rd) {
+  if (let name = next_if(qName)) {
+    let value = recurse_enum_item_value(S, rd);
+
+    return EnumItem(name->as_string(&rd), value.value_or(nullptr));
+  } else {
+    diagnostic << current() << "Enum field is missing a name.";
   }
 
-  EnumItem item;
+  return std::nullopt;
+}
 
-  item.first = tok.as_string(&rd);
+constexpr static std::optional<EnumDefItems> recurse_enum_items(npar_t &S,
+                                                                qlex_t &rd) {
+  EnumDefItems items;
 
-  tok = peek();
-  if (tok.is<qOpSet>()) {
-    next();
-    Expr *expr = recurse_expr(
-        S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)});
-
-    item.second = expr;
-    item.second->set_pos(expr->get_pos());
-
-    tok = peek();
+  if (next_if(qPuncSemi)) {
+    return items;
   }
 
-  fields.push_back(item);
+  if (next_if(qPuncLCur)) {
+    while (true) {
+      if (peek().is(qEofF)) {
+        diagnostic << current()
+                   << "Unexpected EOF encountered while parsing enum fields.";
+        break;
+      }
 
-  if (tok.is<qPuncComa>()) {
-    next();
-    return true;
+      if (next_if(qPuncRCur)) {
+        return items;
+      }
+
+      if (let item = recurse_enum_item(S, rd)) {
+        items.push_back(item.value());
+      } else {
+        break;
+      }
+
+      if (let tok = peek(); tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
+        next();
+      }
+    }
+  } else if (next_if(qOpArrow)) {
+    if (let item = recurse_enum_item(S, rd)) {
+      items.push_back(item.value());
+      return items;
+    }
   }
 
-  if (!tok.is<qPuncRCur>()) {
-    diagnostic << tok << "Expected a comma or a closing curly brace";
-    return false;
-  }
-
-  return true;
+  return std::nullopt;
 }
 
 npar::Stmt *npar::recurse_enum(npar_t &S, qlex_t &rd) {
-  qlex_tok_t tok = next();
-  if (!tok.is(qName)) {
-    diagnostic << tok << "Enum definition must be named by an identifier";
-    return mock_stmt(QAST_NODE_ENUM);
+  let name = recurse_enum_name(rd);
+  let type = recurse_enum_type(S, rd);
+
+  if (let items = recurse_enum_items(S, rd)) {
+    let stmt =
+        EnumDef::get(name, type.value_or(nullptr), std::move(items.value()));
+    stmt->set_end_pos(current().end);
+
+    return stmt;
   }
 
-  let name = tok.as_string(&rd);
-
-  tok = peek();
-  Type *type = nullptr;
-  if (tok.is<qPuncColn>()) {
-    next();
-    type = recurse_type(S, rd);
-  }
-
-  tok = next();
-  if (!tok.is<qPuncLCur>()) {
-    diagnostic << tok << "Expected a '{' to start the enum definition";
-    return mock_stmt(QAST_NODE_ENUM);
-  }
-
-  EnumDefItems fields;
-
-  while (true) {
-    tok = peek();
-    if (tok.is<qPuncRCur>()) {
-      next();
-      break;
-    }
-
-    if (!recurse_enum_field(S, rd, fields)) {
-      return mock_stmt(QAST_NODE_ENUM);
-    }
-  }
-
-  auto R = EnumDef::get(name, type, fields);
-  R->set_end_pos(tok.end);
-
-  return R;
+  return mock_stmt(QAST_NODE_ENUM);
 }
