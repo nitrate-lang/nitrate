@@ -84,7 +84,7 @@ npar::Stmt *npar::recurse_enum(npar_t &S, qlex_t &rd) {
     return mock_stmt(QAST_NODE_ENUM);
   }
 
-  std::string name = tok.as_string(&rd);
+  let name = tok.as_string(&rd);
 
   tok = peek();
   Type *type = nullptr;

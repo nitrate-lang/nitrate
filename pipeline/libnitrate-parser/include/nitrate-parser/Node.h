@@ -316,6 +316,10 @@ namespace npar {
         : std::basic_string<char, std::char_traits<char>, Arena<char>>(
               str.c_str(), str.size()) {}
 
+    String(std::string_view str)
+        : std::basic_string<char, std::char_traits<char>, Arena<char>>(
+              str.data(), str.size()) {}
+
     std::string_view view() { return std::string_view(data(), size()); }
   };
 

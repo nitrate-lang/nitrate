@@ -44,7 +44,7 @@ npar::Stmt *npar::recurse_subsystem(npar_t &S, qlex_t &rd) {
     return mock_stmt(QAST_NODE_SUBSYSTEM);
   }
 
-  std::string name = tok.as_string(&rd);
+  let name = tok.as_string(&rd);
   SubsystemDeps deps;
 
   tok = peek();

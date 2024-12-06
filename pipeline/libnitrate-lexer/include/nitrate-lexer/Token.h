@@ -294,11 +294,11 @@ typedef struct qlex_tok_t {
     }
   }
 
-  inline std::string as_string(qlex_t *lexer) {
+  inline std::string_view as_string(qlex_t *lexer) {
     size_t len;
     const char *s = qlex_str(lexer, this, &len);
 
-    return std::string(s, len);
+    return std::string_view(s, len);
   }
 
   bool operator<(const qlex_tok_t &rhs) const {

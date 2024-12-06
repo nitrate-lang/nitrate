@@ -45,7 +45,7 @@ namespace npar {
       return false;
     }
 
-    std::string name = tok.as_string(&rd);
+    let name = tok.as_string(&rd);
 
     tok = peek();
     if (!tok.is<qPuncColn>()) {

@@ -51,7 +51,7 @@ npar::Stmt *npar::recurse_foreach(npar_t &S, qlex_t &rd) {
                << "Expected identifier as index variable in foreach statement";
     return mock_stmt(QAST_NODE_FOREACH);
   }
-  std::string first_ident = tok.as_string(&rd), second_ident;
+  std::string_view first_ident = tok.as_string(&rd), second_ident;
 
   tok = next();
 

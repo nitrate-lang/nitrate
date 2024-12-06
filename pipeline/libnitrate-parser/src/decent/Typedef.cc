@@ -38,13 +38,14 @@
 #include <decent/Recurse.hh>
 
 npar::Stmt *npar::recurse_typedef(npar_t &S, qlex_t &rd) {
-  qlex_tok_t tok = next();
+  qlex_tok_t tok = peek();
   if (!tok.is(qName)) {
     diagnostic << tok << "Expected name in typedef declaration";
     return mock_stmt(QAST_NODE_TYPEDEF);
   }
+  next();
 
-  auto name = tok.as_string(&rd);
+  let name = tok.as_string(&rd);
 
   tok = next();
   if (!tok.is<qOpSet>()) {

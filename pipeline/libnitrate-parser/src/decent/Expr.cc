@@ -599,7 +599,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
             return mock_expr(QAST_NODE_VOID_TY);
           }
 
-          std::string ident = tok.as_string(&rd);
+          let ident = tok.as_string(&rd);
           tok = peek();
           if (tok.is<qOpInc>()) {
             PostUnaryExpr *p =
@@ -665,7 +665,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
         break;
       }
       case qName: {
-        std::string ident = tok.as_string(&rd);
+        let ident = tok.as_string(&rd);
         if (peek().ty == qPunc && (peek()).as<qlex_punc_t>() == qPuncLPar) {
           next();
 

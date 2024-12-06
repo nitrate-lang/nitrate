@@ -33,12 +33,12 @@
 
 /// TODO: Cleanup this code; it's a mess from refactoring.
 
+#include <nitrate-lexer/Lexer.h>
+#include <nitrate-lexer/Token.h>
+#include <nitrate-parser/Node.h>
+
 #include <decent/Recurse.hh>
 #include <unordered_map>
-
-#include "nitrate-lexer/Lexer.h"
-#include "nitrate-lexer/Token.h"
-#include "nitrate-parser/Node.h"
 
 using namespace npar;
 
@@ -63,15 +63,6 @@ static const std::unordered_map<std::string_view, Type *(*)()> primitive_types =
      {"void", []() -> Type * { return VoidTy::get(); }}};
 
 Type *npar::recurse_type(npar_t &S, qlex_t &rd) {
-  /** Nitrate TYPE PARSER
-   *
-   * @brief Given a Scanner, parse tokens into a Nitrate type node.
-   *
-   * @note No validation is done here. This is just a parser.
-   *
-   * @return true if it is okay to proceed, false otherwise.
-   */
-
   using namespace std;
 
   Type *type, *inner, *value_type;

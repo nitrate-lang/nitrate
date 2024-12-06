@@ -46,7 +46,7 @@ static bool recurse_decl(npar_t &S, qlex_tok_t tok, qlex_t &rd,
     return false;
   }
 
-  std::string name = tok.as_string(&rd);
+  let name = tok.as_string(&rd);
 
   tok = peek();
   if (!tok.is<qPuncColn>()) {

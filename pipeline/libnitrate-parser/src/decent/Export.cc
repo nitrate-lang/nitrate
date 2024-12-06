@@ -38,13 +38,12 @@
 npar::Stmt *npar::recurse_pub(npar_t &S, qlex_t &rd) {
   qlex_tok_t tok = peek();
 
-  String abiName;
+  std::string_view abiName;
 
   if (tok.is(qText)) {
     next();
 
     abiName = tok.as_string(&rd);
-    std::transform(abiName.begin(), abiName.end(), abiName.begin(), ::tolower);
 
     tok = peek();
   }
@@ -67,13 +66,12 @@ npar::Stmt *npar::recurse_pub(npar_t &S, qlex_t &rd) {
 npar::Stmt *npar::recurse_sec(npar_t &S, qlex_t &rd) {
   qlex_tok_t tok = peek();
 
-  String abiName;
+  std::string_view abiName;
 
   if (tok.is(qText)) {
     next();
 
     abiName = tok.as_string(&rd);
-    std::transform(abiName.begin(), abiName.end(), abiName.begin(), ::tolower);
 
     tok = peek();
   }
@@ -94,13 +92,12 @@ npar::Stmt *npar::recurse_sec(npar_t &S, qlex_t &rd) {
 npar::Stmt *npar::recurse_pro(npar_t &S, qlex_t &rd) {
   qlex_tok_t tok = peek();
 
-  String abiName;
+  std::string_view abiName;
 
   if (tok.is(qText)) {
     next();
 
     abiName = tok.as_string(&rd);
-    std::transform(abiName.begin(), abiName.end(), abiName.begin(), ::tolower);
 
     tok = peek();
   }
