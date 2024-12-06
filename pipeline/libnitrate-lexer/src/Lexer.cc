@@ -86,8 +86,7 @@ namespace qlex {
           {"union", qKUnion},
           {"opaque", qKOpaque},
           {"enum", qKEnum},
-          {"fstring", qKFString},
-          {"with", qKWith},
+          {"__fstring", qK__FString},
           {"fn", qKFn},
           {"noexcept", qKNoexcept},
           {"foreign", qKForeign},
@@ -107,8 +106,6 @@ namespace qlex {
           {"while", qKWhile},
           {"do", qKDo},
           {"switch", qKSwitch},
-          {"case", qKCase},
-          {"default", qKDefault},
           {"break", qKBreak},
           {"continue", qKContinue},
           {"ret", qKReturn},
@@ -579,7 +576,7 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
           /* Check for f-string */
           if (buf == "f" && c == '"') {
             m_pushback.push_back(c);
-            return qlex_tok_t(qKeyW, qKFString, start_pos, cur_loc());
+            return qlex_tok_t(qKeyW, qK__FString, start_pos, cur_loc());
           }
 
           /* We overshot; this must be a punctor ':' */

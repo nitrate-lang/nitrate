@@ -851,8 +851,8 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     case QAST_NODE_SWITCH: {
       OBJECT_BEGIN("Switch");
       OBJECT_SUB(n->as<SwitchStmt>()->get_cond());
-      OBJECT_ARRAY(n->as<SwitchStmt>()->get_cases());
       OBJECT_SUB(n->as<SwitchStmt>()->get_default());
+      OBJECT_ARRAY(n->as<SwitchStmt>()->get_cases());
       OBJECT_END();
       break;
     }

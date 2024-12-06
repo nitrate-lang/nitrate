@@ -299,16 +299,6 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
     }
   }
 
-  tok = peek();
-  { /* Check for an implementation/trait list */
-    if (tok.is<qKWith>()) {
-      next();
-      if (!recurse_attributes(S, rd, attributes)) {
-        return mock_stmt(QAST_NODE_STRUCT);
-      }
-    }
-  }
-
   sdef->set_name(name);
   sdef->get_fields() = std::move(fields);
   sdef->get_methods() = std::move(methods);

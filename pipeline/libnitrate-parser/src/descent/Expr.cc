@@ -363,7 +363,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
             stack.push(adapter);
             continue;
           }
-          case qKFString: {
+          case qK__FString: {
             FString *f = nullptr;
             if (!recurse_fstring(S, &f, rd, depth)) {
               diagnostic << tok << "Expected an F-string in expression";

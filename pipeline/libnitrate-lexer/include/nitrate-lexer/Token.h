@@ -144,8 +144,7 @@ typedef enum qlex_key_t {
   qKUnion,      /* 'union' */
   qKOpaque,     /* 'opaque' */
   qKEnum,       /* 'enum' */
-  qKFString,    /* 'fstring' */
-  qKWith,       /* 'with' */
+  qK__FString,  /* '__fstring' */
   qKFn,         /* 'fn' */
   qKNoexcept,   /* 'noexcept' */
   qKForeign,    /* 'foreign' */
@@ -165,8 +164,6 @@ typedef enum qlex_key_t {
   qKWhile,      /* 'while' */
   qKDo,         /* 'do' */
   qKSwitch,     /* 'switch' */
-  qKCase,       /* 'case' */
-  qKDefault,    /* 'default' */
   qKBreak,      /* 'break' */
   qKContinue,   /* 'continue' */
   qKReturn,     /* 'ret' */

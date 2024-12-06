@@ -548,18 +548,6 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
         tok.is<qPuncSemi>()) {
       ftype->set_return_ty(VoidTy::get());
 
-      tok = peek();
-      if (tok.is<qKWith>()) {
-        std::set<Expr *> attributes;
-        next();
-
-        if (!recurse_attributes(S, rd, attributes)) {
-          return mock_stmt(QAST_NODE_FN);
-        }
-
-        fndecl->get_tags().insert(attributes.begin(), attributes.end());
-      }
-
       fndecl->set_end_pos(tok.start);
 
       return fndecl;
@@ -578,17 +566,6 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
       { /* Function declaration with explicit return type */
         if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() ||
             tok.is<qPuncSemi>()) {
-          tok = peek();
-          if (tok.is<qKWith>()) {
-            std::set<Expr *> attributes;
-            next();
-
-            if (!recurse_attributes(S, rd, attributes)) {
-              return mock_stmt(QAST_NODE_FN);
-            }
-
-            fndecl->get_tags().insert(attributes.begin(), attributes.end());
-          }
           fndecl->set_end_pos(tok.start);
 
           return fndecl;
@@ -615,18 +592,6 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
 
       FnDef *fndef = FnDef::get(fndecl, fnbody, nullptr, nullptr, captures);
 
-      tok = peek();
-      if (tok.is<qKWith>()) {
-        std::set<Expr *> attributes;
-        next();
-
-        if (!recurse_attributes(S, rd, attributes)) {
-          return mock_stmt(QAST_NODE_FN);
-        }
-
-        fndef->get_tags().insert(attributes.begin(), attributes.end());
-      }
-
       fndef->set_end_pos(fnbody->get_end_pos());
 
       return fndef;
@@ -644,15 +609,6 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
 
     if (!recurse_constraints(tok, rd, S, req_in, req_out)) {
       return mock_stmt(QAST_NODE_FN);
-    }
-
-    tok = peek();
-    if (tok.is<qKWith>()) {
-      next();
-
-      if (!recurse_attributes(S, rd, attributes)) {
-        return mock_stmt(QAST_NODE_FN);
-      }
     }
 
     if (!ftype->get_return_ty()) {
