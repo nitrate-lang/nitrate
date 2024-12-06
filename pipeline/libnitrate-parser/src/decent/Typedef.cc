@@ -31,37 +31,37 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: Cleanup this code; it's a mess from refactoring.
-
 #include <nitrate-parser/Node.h>
 
 #include <decent/Recurse.hh>
 
 npar::Stmt *npar::recurse_typedef(npar_t &S, qlex_t &rd) {
-  qlex_tok_t tok = peek();
-  if (!tok.is(qName)) {
+  /**
+   * Syntax examples:
+   *   `type name = type;`
+   */
+
+  if (qlex_tok_t tok = peek(); tok.is(qName)) {
+    let name = (next(), tok.as_string(&rd));
+
+    if (tok = peek(); tok.is<qOpSet>()) {
+      let type = (next(), recurse_type(S, rd));
+
+      if (tok = peek(); tok.is<qPuncSemi>()) {
+        let R = (next(), TypedefDecl::get(name, type));
+
+        R->set_end_pos(tok.end);
+
+        return R;
+      } else {
+        diagnostic << tok << "Expected ';' in typedef declaration";
+      }
+    } else {
+      diagnostic << tok << "Expected '=' in typedef declaration";
+    }
+  } else {
     diagnostic << tok << "Expected name in typedef declaration";
-    return mock_stmt(QAST_NODE_TYPEDEF);
-  }
-  next();
-
-  let name = tok.as_string(&rd);
-
-  tok = next();
-  if (!tok.is<qOpSet>()) {
-    diagnostic << tok << "Expected '=' in typedef declaration";
-    return mock_stmt(QAST_NODE_TYPEDEF);
   }
 
-  Type *type = recurse_type(S, rd);
-
-  tok = next();
-  if (!tok.is<qPuncSemi>()) {
-    diagnostic << tok << "Expected ';' in typedef declaration";
-    return mock_stmt(QAST_NODE_TYPEDEF);
-  }
-
-  auto R = TypedefDecl::get(name, type);
-  R->set_end_pos(tok.end);
-  return R;
+  return mock_stmt(QAST_NODE_TYPEDEF);
 }
