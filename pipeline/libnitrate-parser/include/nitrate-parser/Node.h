@@ -756,7 +756,6 @@ namespace npar {
     constexpr ExprStmt(Expr *expr) : Stmt(QAST_NODE_EXPR_STMT), m_expr(expr) {}
 
     Expr *get_expr() { return m_expr; }
-    void set_expr(Expr *expr) { m_expr = expr; }
 
     PNODE_IMPL_CORE(ExprStmt)
   };
@@ -768,7 +767,6 @@ namespace npar {
     constexpr StmtExpr(Stmt *stmt) : Expr(QAST_NODE_STMT_EXPR), m_stmt(stmt) {}
 
     Stmt *get_stmt() { return m_stmt; }
-    void set_stmt(Stmt *stmt) { m_stmt = stmt; }
 
     PNODE_IMPL_CORE(StmtExpr)
   };
@@ -780,7 +778,6 @@ namespace npar {
     constexpr TypeExpr(Type *type) : Expr(QAST_NODE_TYPE_EXPR), m_type(type) {}
 
     Type *get_type() { return m_type; }
-    void set_type(Type *type) { m_type = type; }
 
     PNODE_IMPL_CORE(TypeExpr)
   };
@@ -792,7 +789,6 @@ namespace npar {
     NamedTy(String name) : Type(QAST_NODE_UNRES_TY), m_name(name) {}
 
     String get_name() { return m_name; }
-    void set_name(String name) { m_name = name; }
 
     PNODE_IMPL_CORE(NamedTy)
   };
@@ -814,7 +810,6 @@ namespace npar {
         : Type(QAST_NODE_TEMPL_TY), m_template(templ), m_args(args) {}
 
     Type *get_template() { return m_template; }
-    void set_template(Type *templ) { m_template = templ; }
 
     TemplTypeArgs &get_args() { return m_args; }
 
@@ -942,10 +937,8 @@ namespace npar {
         : Type(QAST_NODE_PTR_TY), m_item(item), m_is_volatile(is_volatile) {}
 
     Type *get_item() { return m_item; }
-    void set_item(Type *item) { m_item = item; }
 
     bool is_volatile() { return m_is_volatile; }
-    void set_volatile(bool is_volatile) { m_is_volatile = is_volatile; }
 
     PNODE_IMPL_CORE(PtrTy)
   };
@@ -957,7 +950,6 @@ namespace npar {
     OpaqueTy(String name) : Type(QAST_NODE_OPAQUE_TY), m_name(name) {}
 
     String get_name() { return m_name; }
-    void set_name(String name) { m_name = name; }
 
     PNODE_IMPL_CORE(OpaqueTy)
   };
@@ -984,10 +976,8 @@ namespace npar {
         : Type(QAST_NODE_ARRAY_TY), m_item(item), m_size(size) {}
 
     Type *get_item() { return m_item; }
-    void set_item(Type *item) { m_item = item; }
 
     Expr *get_size() { return m_size; }
-    void set_size(Expr *size) { m_size = size; }
 
     PNODE_IMPL_CORE(ArrayTy)
   };
@@ -999,7 +989,6 @@ namespace npar {
     constexpr RefTy(Type *item) : Type(QAST_NODE_REF_TY), m_item(item) {}
 
     Type *get_item() { return m_item; }
-    void set_item(Type *item) { m_item = item; }
 
     PNODE_IMPL_CORE(RefTy)
   };
@@ -1126,10 +1115,8 @@ namespace npar {
         : Expr(QAST_NODE_UNEXPR), m_rhs(rhs), m_op(op) {}
 
     Expr *get_rhs() { return m_rhs; }
-    void set_rhs(Expr *rhs) { m_rhs = rhs; }
 
     qlex_op_t get_op() { return m_op; }
-    void set_op(qlex_op_t op) { m_op = op; }
 
     PNODE_IMPL_CORE(UnaryExpr)
   };
@@ -1144,13 +1131,10 @@ namespace npar {
         : Expr(QAST_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
     Expr *get_lhs() { return m_lhs; }
-    void set_lhs(Expr *lhs) { m_lhs = lhs; }
 
     Expr *get_rhs() { return m_rhs; }
-    void set_rhs(Expr *rhs) { m_rhs = rhs; }
 
     qlex_op_t get_op() { return m_op; }
-    void set_op(qlex_op_t op) { m_op = op; }
 
     PNODE_IMPL_CORE(BinExpr)
   };
@@ -1164,10 +1148,8 @@ namespace npar {
         : Expr(QAST_NODE_POST_UNEXPR), m_lhs(lhs), m_op(op) {}
 
     Expr *get_lhs() { return m_lhs; }
-    void set_lhs(Expr *lhs) { m_lhs = lhs; }
 
     qlex_op_t get_op() { return m_op; }
-    void set_op(qlex_op_t op) { m_op = op; }
 
     PNODE_IMPL_CORE(PostUnaryExpr)
   };
@@ -1182,13 +1164,10 @@ namespace npar {
         : Expr(QAST_NODE_TEREXPR), m_cond(cond), m_lhs(lhs), m_rhs(rhs) {}
 
     Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
 
     Expr *get_lhs() { return m_lhs; }
-    void set_lhs(Expr *lhs) { m_lhs = lhs; }
 
     Expr *get_rhs() { return m_rhs; }
-    void set_rhs(Expr *rhs) { m_rhs = rhs; }
 
     PNODE_IMPL_CORE(TernaryExpr)
   };
@@ -1285,7 +1264,6 @@ namespace npar {
         : Expr(QAST_NODE_CALL), m_func(func), m_args(args) {}
 
     Expr *get_func() { return m_func; }
-    void set_func(Expr *func) { m_func = func; }
 
     CallArgs &get_args() { return m_args; }
 
@@ -1309,7 +1287,6 @@ namespace npar {
           m_args(args) {}
 
     Expr *get_func() { return m_func; }
-    void set_func(Expr *func) { m_func = func; }
 
     TemplateArgs &get_template_args() { return m_template_args; }
     CallArgs &get_args() { return m_args; }
@@ -1339,10 +1316,8 @@ namespace npar {
         : Expr(QAST_NODE_ASSOC), m_key(key), m_value(value) {}
 
     Expr *get_key() { return m_key; }
-    void set_key(Expr *key) { m_key = key; }
 
     Expr *get_value() { return m_value; }
-    void set_value(Expr *value) { m_value = value; }
 
     PNODE_IMPL_CORE(Assoc)
   };
@@ -1356,10 +1331,8 @@ namespace npar {
         : Expr(QAST_NODE_FIELD), m_base(base), m_field(field) {}
 
     Expr *get_base() { return m_base; }
-    void set_base(Expr *base) { m_base = base; }
 
     String get_field() { return m_field; }
-    void set_field(String field) { m_field = field; }
 
     PNODE_IMPL_CORE(Field)
   };
@@ -1373,10 +1346,8 @@ namespace npar {
         : Expr(QAST_NODE_INDEX), m_base(base), m_index(index) {}
 
     Expr *get_base() { return m_base; }
-    void set_base(Expr *base) { m_base = base; }
 
     Expr *get_index() { return m_index; }
-    void set_index(Expr *index) { m_index = index; }
 
     PNODE_IMPL_CORE(Index)
   };
@@ -1391,13 +1362,10 @@ namespace npar {
         : Expr(QAST_NODE_SLICE), m_base(base), m_start(start), m_end(end) {}
 
     Expr *get_base() { return m_base; }
-    void set_base(Expr *base) { m_base = base; }
 
     Expr *get_start() { return m_start; }
-    void set_start(Expr *start) { m_start = start; }
 
     Expr *get_end() { return m_end; }
-    void set_end(Expr *end) { m_end = end; }
 
     PNODE_IMPL_CORE(Slice)
   };
@@ -1425,7 +1393,6 @@ namespace npar {
     Ident(String name) : Expr(QAST_NODE_IDENT), m_name(name) {}
 
     String get_name() { return m_name; }
-    void set_name(String name) { m_name = name; }
 
     PNODE_IMPL_CORE(Ident)
   };
@@ -1489,10 +1456,8 @@ namespace npar {
           m_decl_type(decl_type) {}
 
     Expr *get_value() { return m_value; }
-    void set_value(Expr *value) { m_value = value; }
 
     VarDeclType get_decl_type() { return m_decl_type; }
-    void set_decl_type(VarDeclType decl_type) { m_decl_type = decl_type; }
 
     VarDeclAttributes &get_attributes() { return m_attributes; }
     void set_attributes(VarDeclAttributes attributes) {
@@ -1513,7 +1478,6 @@ namespace npar {
         : Stmt(QAST_NODE_INLINE_ASM), m_code(code), m_args(args) {}
 
     String get_code() { return m_code; }
-    void set_code(String code) { m_code = code; }
 
     InlineAsmArgs &get_args() { return m_args; }
 
@@ -1530,13 +1494,10 @@ namespace npar {
         : Stmt(QAST_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
     Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
 
     Stmt *get_then() { return m_then; }
-    void set_then(Stmt *then) { m_then = then; }
 
     Stmt *get_else() { return m_else; }
-    void set_else(Stmt *else_) { m_else = else_; }
 
     PNODE_IMPL_CORE(IfStmt)
   };
@@ -1550,10 +1511,8 @@ namespace npar {
         : Stmt(QAST_NODE_WHILE), m_cond(cond), m_body(body) {}
 
     Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
 
     Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
 
     PNODE_IMPL_CORE(WhileStmt)
   };
@@ -1573,16 +1532,12 @@ namespace npar {
           m_body(body) {}
 
     Expr *get_init() { return m_init; }
-    void set_init(Expr *init) { m_init = init; }
 
     Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
 
     Expr *get_step() { return m_step; }
-    void set_step(Expr *step) { m_step = step; }
 
     Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
 
     PNODE_IMPL_CORE(ForStmt)
   };
@@ -1602,16 +1557,12 @@ namespace npar {
           m_body(body) {}
 
     String get_idx_ident() { return m_idx_ident; }
-    void set_idx_ident(String idx_ident) { m_idx_ident = idx_ident; }
 
     String get_val_ident() { return m_val_ident; }
-    void set_val_ident(String val_ident) { m_val_ident = val_ident; }
 
     Expr *get_expr() { return m_expr; }
-    void set_expr(Expr *expr) { m_expr = expr; }
 
     Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
 
     PNODE_IMPL_CORE(ForeachStmt)
   };
@@ -1638,7 +1589,6 @@ namespace npar {
         : Stmt(QAST_NODE_RETURN), m_value(value) {}
 
     std::optional<Expr *> get_value() { return m_value; }
-    void set_value(Expr *value) { m_value = value; }
 
     PNODE_IMPL_CORE(ReturnStmt)
   };
@@ -1652,10 +1602,8 @@ namespace npar {
         : Stmt(QAST_NODE_RETIF), m_cond(cond), m_value(value) {}
 
     Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
 
     Expr *get_value() { return m_value; }
-    void set_value(Expr *value) { m_value = value; }
 
     PNODE_IMPL_CORE(ReturnIfStmt)
   };
@@ -1669,10 +1617,8 @@ namespace npar {
         : Stmt(QAST_NODE_CASE), m_cond(cond), m_body(body) {}
 
     Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
 
     Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
 
     PNODE_IMPL_CORE(CaseStmt)
   };
@@ -1691,12 +1637,10 @@ namespace npar {
           m_default(default_) {}
 
     Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
 
     SwitchCases &get_cases() { return m_cases; }
 
     Stmt *get_default() { return m_default; }
-    void set_default(Stmt *default_) { m_default = default_; }
 
     PNODE_IMPL_CORE(SwitchStmt)
   };
@@ -1768,7 +1712,6 @@ namespace npar {
         : Decl(QAST_NODE_STRUCT_FIELD, name, type), m_value(value) {}
 
     Expr *get_value() { return m_value; }
-    void set_value(Expr *value) { m_value = value; }
 
     PNODE_IMPL_CORE(StructField)
   };
@@ -1832,7 +1775,6 @@ namespace npar {
           m_deps(deps) {}
 
     Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
 
     ScopeDeps &get_deps() { return m_deps; }
 
@@ -1858,16 +1800,12 @@ namespace npar {
           m_vis(vis) {}
 
     Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
 
     String get_abi_name() { return m_abi_name; }
-    void set_abi_name(String abi_name) { m_abi_name = abi_name; }
 
     Vis get_vis() { return m_vis; }
-    void set_vis(Vis vis) { m_vis = vis; }
 
     SymbolAttributes &get_attrs() { return m_attrs; }
-    void set_attrs(SymbolAttributes attrs) { m_attrs = attrs; }
 
     PNODE_IMPL_CORE(ExportDecl)
   };
