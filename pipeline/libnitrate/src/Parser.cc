@@ -1074,7 +1074,7 @@ bool to_json_recurse(npar_node_t *N, json &x) {
        * @note [Developer Notes]
        */
 
-      TypedefDecl *W = N->as<TypedefDecl>();
+      TypedefStmt *W = N->as<TypedefStmt>();
 
       x[1] = W->get_name().c_str();
 
@@ -1214,13 +1214,13 @@ bool to_json_recurse(npar_node_t *N, json &x) {
       break;
     }
 
-    case QAST_NODE_SUBSYSTEM: {
+    case QAST_NODE_SCOPE: {
       /**
        * @brief [Brief Description]
        * @note [Developer Notes]
        */
 
-      ScopeDecl *W = N->as<ScopeDecl>();
+      ScopeStmt *W = N->as<ScopeStmt>();
 
       x[1] = W->get_name().c_str();
 
@@ -1243,9 +1243,8 @@ bool to_json_recurse(npar_node_t *N, json &x) {
        * @note [Developer Notes]
        */
 
-      ExportDecl *W = N->as<ExportDecl>();
+      ExportStmt *W = N->as<ExportStmt>();
 
-      x[1] = W->get_name().c_str();
       x[2] = W->get_abi_name().c_str();
 
       if (!to_json_recurse(W->get_body(), x[3])) {

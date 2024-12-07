@@ -1297,7 +1297,7 @@ void AST_Writer::visit(SwitchStmt& n) {
   end_obj();
 }
 
-void AST_Writer::visit(TypedefDecl& n) {
+void AST_Writer::visit(TypedefStmt& n) {
   begin_obj();
 
   { /* Write kind */
@@ -1307,7 +1307,11 @@ void AST_Writer::visit(TypedefDecl& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("name");
+  string(n.get_name());
+
+  string("type");
+  n.get_type()->accept(*this);
 
   end_obj();
 }
@@ -1387,7 +1391,7 @@ void AST_Writer::visit(EnumDef& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ScopeDecl& n) {
+void AST_Writer::visit(ScopeStmt& n) {
   begin_obj();
 
   { /* Write kind */
@@ -1397,12 +1401,25 @@ void AST_Writer::visit(ScopeDecl& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("name");
+  string(n.get_name());
+
+  { /* Write implicit dependencies */
+    string("depends");
+
+    let deps = n.get_deps();
+    begin_arr(deps.size());
+    std::for_each(deps.begin(), deps.end(), [&](let dep) { string(dep); });
+    end_arr();
+  }
+
+  string("body");
+  n.get_body()->accept(*this);
 
   end_obj();
 }
 
-void AST_Writer::visit(ExportDecl& n) {
+void AST_Writer::visit(ExportStmt& n) {
   begin_obj();
 
   { /* Write kind */
@@ -1412,7 +1429,39 @@ void AST_Writer::visit(ExportDecl& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("abi");
+  string(n.get_abi_name());
+
+  string("vis");
+  switch (n.get_vis()) {
+    case Vis::PUBLIC: {
+      string("pub");
+      break;
+    }
+
+    case Vis::PRIVATE: {
+      string("sec");
+      break;
+    }
+
+    case Vis::PROTECTED: {
+      string("pro");
+      break;
+    }
+  }
+
+  { /* Write attributes */
+    string("attrs");
+
+    let attrs = n.get_attrs();
+    begin_arr(attrs.size());
+    std::for_each(attrs.begin(), attrs.end(),
+                  [&](let attr) { attr->accept(*this); });
+    end_arr();
+  }
+
+  string("body");
+  n.get_body()->accept(*this);
 
   end_obj();
 }

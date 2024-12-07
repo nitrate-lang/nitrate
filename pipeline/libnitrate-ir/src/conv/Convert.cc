@@ -1182,7 +1182,7 @@ static EResult nrgen_templ_ty(NRBuilder &, PState &, IReport *G,
 }
 
 static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
-                             npar::TypedefDecl *n) {
+                             npar::TypedefStmt *n) {
   auto type = next_one(n->get_type());
   if (!type.has_value()) {
     G->report(nr::CompilerError, IC::Error,
@@ -1527,7 +1527,7 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
 }
 
 static BResult nrgen_scope(NRBuilder &b, PState &s, IReport *G,
-                           npar::ScopeDecl *n) {
+                           npar::ScopeStmt *n) {
   if (!n->get_body()->is(QAST_NODE_BLOCK)) {
     return std::nullopt;
   }
@@ -1548,7 +1548,7 @@ static BResult nrgen_scope(NRBuilder &b, PState &s, IReport *G,
 }
 
 static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
-                            npar::ExportDecl *n) {
+                            npar::ExportStmt *n) {
   static const std::unordered_map<std::string_view,
                                   std::pair<std::string_view, AbiTag>>
       abi_name_map = {
@@ -2191,7 +2191,7 @@ static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
 
   switch (n->getKind()) {
     case QAST_NODE_TYPEDEF:
-      out = nrgen_typedef(b, s, G, n->as<npar::TypedefDecl>());
+      out = nrgen_typedef(b, s, G, n->as<npar::TypedefStmt>());
       break;
 
     case QAST_NODE_ENUM:
@@ -2202,12 +2202,12 @@ static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
       out = nrgen_struct(b, s, G, n->as<npar::StructDef>());
       break;
 
-    case QAST_NODE_SUBSYSTEM:
-      out = nrgen_scope(b, s, G, n->as<npar::ScopeDecl>());
+    case QAST_NODE_SCOPE:
+      out = nrgen_scope(b, s, G, n->as<npar::ScopeStmt>());
       break;
 
     case QAST_NODE_EXPORT:
-      out = nrgen_export(b, s, G, n->as<npar::ExportDecl>());
+      out = nrgen_export(b, s, G, n->as<npar::ExportStmt>());
       break;
 
     default: {

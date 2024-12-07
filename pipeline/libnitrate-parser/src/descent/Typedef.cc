@@ -48,7 +48,7 @@ npar::Stmt *npar::recurse_typedef(npar_t &S, qlex_t &rd) {
       let type = (next(), recurse_type(S, rd));
 
       if (tok = peek(); tok.is<qPuncSemi>()) {
-        let R = (next(), TypedefDecl::get(name, type));
+        let R = (next(), TypedefStmt::get(name, type));
 
         R->set_end_pos(tok.end);
 

@@ -1001,7 +1001,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //     }
 
 //     case QAST_NODE_TYPEDEF: {
-//       TypedefDecl* N = C->as<TypedefDecl>();
+//       TypedefStmt* N = C->as<TypedefStmt>();
 //       S.line << "type " << N->get_name() << " = ";
 //       recurse(N->get_type(), S);
 //       break;
@@ -1248,8 +1248,8 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //       break;
 //     }
 
-//     case QAST_NODE_SUBSYSTEM: {
-//       ScopeDecl* N = C->as<ScopeDecl>();
+//     case QAST_NODE_SCOPE: {
+//       ScopeStmt* N = C->as<ScopeStmt>();
 //       S.line << "scope " << N->get_name();
 
 //       if (!N->get_deps().empty()) {
@@ -1272,7 +1272,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //     }
 
 //     case QAST_NODE_EXPORT: {
-//       ExportDecl* N = C->as<ExportDecl>();
+//       ExportStmt* N = C->as<ExportStmt>();
 //       std::vector<Stmt*> imports, exports;
 
 //       for (auto it = N->get_body()->get_items().begin();
@@ -1395,7 +1395,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 
 //       static const std::unordered_set<npar_ty_t> double_sep = {
 //           QAST_NODE_FNDECL,    QAST_NODE_STRUCT, QAST_NODE_ENUM,
-//           QAST_NODE_FN, QAST_NODE_SUBSYSTEM, QAST_NODE_EXPORT,
+//           QAST_NODE_FN, QAST_NODE_SCOPE, QAST_NODE_EXPORT,
 //           QAST_NODE_BLOCK,
 //       };
 

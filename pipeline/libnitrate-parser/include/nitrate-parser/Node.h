@@ -123,7 +123,7 @@ typedef enum npar_ty_t {
   QAST_NODE_STRUCT,
   QAST_NODE_ENUM,
   QAST_NODE_FN,
-  QAST_NODE_SUBSYSTEM,
+  QAST_NODE_SCOPE,
   QAST_NODE_EXPORT,
   QAST_NODE_STRUCT_FIELD,
 
@@ -425,7 +425,7 @@ public:
         break;
       }
       case QAST_NODE_TYPEDEF: {
-        v.visit(*as<TypedefDecl>());
+        v.visit(*as<TypedefStmt>());
         break;
       }
       case QAST_NODE_FNDECL: {
@@ -444,12 +444,12 @@ public:
         v.visit(*as<FnDef>());
         break;
       }
-      case QAST_NODE_SUBSYSTEM: {
-        v.visit(*as<ScopeDecl>());
+      case QAST_NODE_SCOPE: {
+        v.visit(*as<ScopeStmt>());
         break;
       }
       case QAST_NODE_EXPORT: {
-        v.visit(*as<ExportDecl>());
+        v.visit(*as<ExportStmt>());
         break;
       }
       case QAST_NODE_STRUCT_FIELD: {
@@ -631,7 +631,7 @@ public:
       return QAST_NODE_INFER_TY;
     } else if constexpr (std::is_same_v<T, TemplType>) {
       return QAST_NODE_TEMPL_TY;
-    } else if constexpr (std::is_same_v<T, TypedefDecl>) {
+    } else if constexpr (std::is_same_v<T, TypedefStmt>) {
       return QAST_NODE_TYPEDEF;
     } else if constexpr (std::is_same_v<T, FnDecl>) {
       return QAST_NODE_FNDECL;
@@ -641,9 +641,9 @@ public:
       return QAST_NODE_ENUM;
     } else if constexpr (std::is_same_v<T, FnDef>) {
       return QAST_NODE_FN;
-    } else if constexpr (std::is_same_v<T, ScopeDecl>) {
-      return QAST_NODE_SUBSYSTEM;
-    } else if constexpr (std::is_same_v<T, ExportDecl>) {
+    } else if constexpr (std::is_same_v<T, ScopeStmt>) {
+      return QAST_NODE_SCOPE;
+    } else if constexpr (std::is_same_v<T, ExportStmt>) {
       return QAST_NODE_EXPORT;
     } else if constexpr (std::is_same_v<T, StructField>) {
       return QAST_NODE_STRUCT_FIELD;
@@ -1861,15 +1861,65 @@ namespace npar {
     PNODE_IMPL_CORE(SwitchStmt)
   };
 
-  ///=============================================================================
+  using SymbolAttributes =
+      std::unordered_set<Expr *, std::hash<Expr *>, std::equal_to<Expr *>,
+                         Arena<Expr *>>;
 
-  class TypedefDecl : public Decl {
+  class ExportStmt : public Stmt {
+    SymbolAttributes m_attrs;
+    String m_abi_name;
+    Stmt *m_body;
+    Vis m_vis;
+
   public:
-    TypedefDecl(String name, Type *type)
-        : Decl(QAST_NODE_TYPEDEF, name, type) {}
+    ExportStmt(Stmt *content, String abi_name, Vis vis, SymbolAttributes attrs)
+        : Stmt(QAST_NODE_EXPORT),
+          m_attrs(attrs),
+          m_abi_name(abi_name),
+          m_body(content),
+          m_vis(vis) {}
 
-    PNODE_IMPL_CORE(TypedefDecl)
+    Stmt *get_body() { return m_body; }
+    String get_abi_name() { return m_abi_name; }
+    Vis get_vis() { return m_vis; }
+    SymbolAttributes &get_attrs() { return m_attrs; }
+
+    PNODE_IMPL_CORE(ExportStmt)
   };
+
+  typedef std::set<String, std::less<String>, Arena<String>> ScopeDeps;
+
+  class ScopeStmt : public Stmt {
+    ScopeDeps m_deps;
+    std::string m_name;
+    Stmt *m_body;
+
+  public:
+    ScopeStmt(String name, Stmt *body, ScopeDeps deps = {})
+        : Stmt(QAST_NODE_SCOPE), m_deps(deps), m_name(name), m_body(body) {}
+
+    String get_name() { return m_name; }
+    Stmt *get_body() { return m_body; }
+    ScopeDeps &get_deps() { return m_deps; }
+
+    PNODE_IMPL_CORE(ScopeStmt)
+  };
+
+  class TypedefStmt : public Stmt {
+    std::string m_name;
+    Type *m_type;
+
+  public:
+    TypedefStmt(String name, Type *type)
+        : Stmt(QAST_NODE_TYPEDEF), m_name(name), m_type(type) {}
+
+    String get_name() { return m_name; }
+    Type *get_type() { return m_type; }
+
+    PNODE_IMPL_CORE(TypedefStmt)
+  };
+
+  ///=============================================================================
 
   class FnDecl : public Decl {
   public:
@@ -1978,54 +2028,6 @@ namespace npar {
     PNODE_IMPL_CORE(EnumDef)
   };
 
-  typedef std::set<String, std::less<String>, Arena<String>> ScopeDeps;
-
-  class ScopeDecl : public Decl {
-    Stmt *m_body;
-    ScopeDeps m_deps;
-
-  public:
-    ScopeDecl(String name, Stmt *body, ScopeDeps deps = {})
-        : Decl(QAST_NODE_SUBSYSTEM, name, nullptr),
-          m_body(body),
-          m_deps(deps) {}
-
-    Stmt *get_body() { return m_body; }
-
-    ScopeDeps &get_deps() { return m_deps; }
-
-    PNODE_IMPL_CORE(ScopeDecl)
-  };
-
-  using SymbolAttributes =
-      std::unordered_set<Expr *, std::hash<Expr *>, std::equal_to<Expr *>,
-                         Arena<Expr *>>;
-
-  class ExportDecl : public Decl {
-    SymbolAttributes m_attrs;
-    String m_abi_name;
-    Stmt *m_body;
-    Vis m_vis;
-
-  public:
-    ExportDecl(Stmt *content, String abi_name, Vis vis, SymbolAttributes attrs)
-        : Decl(QAST_NODE_EXPORT, "", nullptr),
-          m_attrs(attrs),
-          m_abi_name(abi_name),
-          m_body(content),
-          m_vis(vis) {}
-
-    Stmt *get_body() { return m_body; }
-
-    String get_abi_name() { return m_abi_name; }
-
-    Vis get_vis() { return m_vis; }
-
-    SymbolAttributes &get_attrs() { return m_attrs; }
-
-    PNODE_IMPL_CORE(ExportDecl)
-  };
-
   template <typename T, typename... Args>
   static inline T *make(Args &&...args) {
     T *new_obj = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
@@ -2103,7 +2105,7 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) noexcept {
     R[QAST_NODE_STRUCT] = "Struct";
     R[QAST_NODE_ENUM] = "Enum";
     R[QAST_NODE_FN] = "Fn";
-    R[QAST_NODE_SUBSYSTEM] = "Scope";
+    R[QAST_NODE_SCOPE] = "Scope";
     R[QAST_NODE_EXPORT] = "Export";
     R[QAST_NODE_STRUCT_FIELD] = "StructField";
     R[QAST_NODE_BLOCK] = "Block";

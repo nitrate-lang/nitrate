@@ -80,7 +80,7 @@ npar::Stmt *npar::recurse_pub(npar_t &S, qlex_t &rd) {
   if (let attrs = recurse_export_attributes(S, rd)) {
     let body = recurse_export_body(S, rd);
 
-    let stmt = ExportDecl::get(body, abi_id, Vis::PUBLIC, attrs.value());
+    let stmt = ExportStmt::get(body, abi_id, Vis::PUBLIC, attrs.value());
     stmt->set_end_pos(body->get_end_pos());
 
     return stmt;
@@ -97,7 +97,7 @@ npar::Stmt *npar::recurse_sec(npar_t &S, qlex_t &rd) {
   if (let attrs = recurse_export_attributes(S, rd)) {
     let body = recurse_export_body(S, rd);
 
-    let stmt = ExportDecl::get(body, abi_id, Vis::PRIVATE, attrs.value());
+    let stmt = ExportStmt::get(body, abi_id, Vis::PRIVATE, attrs.value());
     stmt->set_end_pos(body->get_end_pos());
 
     return stmt;
@@ -114,7 +114,7 @@ npar::Stmt *npar::recurse_pro(npar_t &S, qlex_t &rd) {
   if (let attrs = recurse_export_attributes(S, rd)) {
     let body = recurse_export_body(S, rd);
 
-    let stmt = ExportDecl::get(body, abi_id, Vis::PROTECTED, attrs.value());
+    let stmt = ExportStmt::get(body, abi_id, Vis::PROTECTED, attrs.value());
     stmt->set_end_pos(body->get_end_pos());
 
     return stmt;

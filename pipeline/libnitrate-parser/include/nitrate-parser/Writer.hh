@@ -152,14 +152,14 @@ namespace npar {
     void visit(ReturnIfStmt&) override;
     void visit(CaseStmt&) override;
     void visit(SwitchStmt&) override;
-    void visit(TypedefDecl&) override;
+    void visit(TypedefStmt&) override;
     void visit(FnDecl&) override;
     void visit(FnDef&) override;
     void visit(StructField&) override;
     void visit(StructDef&) override;
     void visit(EnumDef&) override;
-    void visit(ScopeDecl&) override;
-    void visit(ExportDecl&) override;
+    void visit(ScopeStmt&) override;
+    void visit(ExportStmt&) override;
   };
 
   class AST_JsonWriter : public AST_Writer {

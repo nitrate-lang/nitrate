@@ -100,7 +100,7 @@ npar::Stmt *npar::recurse_scope(npar_t &S, qlex_t &rd) {
   if (let implicit_dependencies = recurse_scope_deps(rd)) {
     let scope_block = recurse_scope_block(S, rd);
 
-    let stmt = ScopeDecl::get(scope_name, scope_block,
+    let stmt = ScopeStmt::get(scope_name, scope_block,
                               std::move(implicit_dependencies.value()));
     stmt->set_end_pos(scope_block->get_end_pos());
 
@@ -109,5 +109,5 @@ npar::Stmt *npar::recurse_scope(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Expected scope dependencies";
   }
 
-  return mock_stmt(QAST_NODE_SUBSYSTEM);
+  return mock_stmt(QAST_NODE_SCOPE);
 }

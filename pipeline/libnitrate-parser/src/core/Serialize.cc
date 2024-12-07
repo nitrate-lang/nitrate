@@ -557,8 +557,8 @@ using namespace npar;
 //     }
 //     case QAST_NODE_TYPEDEF: {
 //       OBJECT_BEGIN("Typedef");
-//       OBJECT_STR(n->as<TypedefDecl>()->get_name());
-//       OBJECT_SUB(n->as<TypedefDecl>()->get_type());
+//       OBJECT_STR(n->as<TypedefStmt>()->get_name());
+//       OBJECT_SUB(n->as<TypedefStmt>()->get_type());
 //       OBJECT_END();
 //       break;
 //     }
@@ -683,20 +683,20 @@ using namespace npar;
 //       OBJECT_END();
 //       break;
 //     }
-//     case QAST_NODE_SUBSYSTEM: {
+//     case QAST_NODE_SCOPE: {
 //       OBJECT_BEGIN("Scope");
-//       OBJECT_STR(n->as<ScopeDecl>()->get_name());
-//       OBJECT_ARRAY(n->as<ScopeDecl>()->get_tags());
-//       OBJECT_TAGS(n->as<ScopeDecl>()->get_deps());
-//       OBJECT_SUB(n->as<ScopeDecl>()->get_body());
+//       OBJECT_STR(n->as<ScopeStmt>()->get_name());
+//       OBJECT_ARRAY(n->as<ScopeStmt>()->get_tags());
+//       OBJECT_TAGS(n->as<ScopeStmt>()->get_deps());
+//       OBJECT_SUB(n->as<ScopeStmt>()->get_body());
 //       OBJECT_END();
 //       break;
 //     }
 //     case QAST_NODE_EXPORT: {
 //       OBJECT_BEGIN("Export");
-//       OBJECT_STR(n->as<ExportDecl>()->get_abi_name());
-//       OBJECT_ARRAY(n->as<ExportDecl>()->get_attrs());
-//       OBJECT_SUB(n->as<ExportDecl>()->get_body());
+//       OBJECT_STR(n->as<ExportStmt>()->get_abi_name());
+//       OBJECT_ARRAY(n->as<ExportStmt>()->get_attrs());
+//       OBJECT_SUB(n->as<ExportStmt>()->get_body());
 //       OBJECT_END();
 //       break;
 //     }

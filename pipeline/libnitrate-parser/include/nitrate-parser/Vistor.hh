@@ -106,14 +106,14 @@ namespace npar {
   class ReturnIfStmt;
   class CaseStmt;
   class SwitchStmt;
-  class TypedefDecl;
+  class TypedefStmt;
   class FnDecl;
   class FnDef;
   class StructField;
   class StructDef;
   class EnumDef;
-  class ScopeDecl;
-  class ExportDecl;
+  class ScopeStmt;
+  class ExportStmt;
 
 }  // namespace npar
 
@@ -184,14 +184,14 @@ namespace npar {
     virtual void visit(ReturnIfStmt& n) = 0;
     virtual void visit(CaseStmt& n) = 0;
     virtual void visit(SwitchStmt& n) = 0;
-    virtual void visit(TypedefDecl& n) = 0;
+    virtual void visit(TypedefStmt& n) = 0;
     virtual void visit(FnDecl& n) = 0;
     virtual void visit(FnDef& n) = 0;
     virtual void visit(StructField& n) = 0;
     virtual void visit(StructDef& n) = 0;
     virtual void visit(EnumDef& n) = 0;
-    virtual void visit(ScopeDecl& n) = 0;
-    virtual void visit(ExportDecl& n) = 0;
+    virtual void visit(ScopeStmt& n) = 0;
+    virtual void visit(ExportStmt& n) = 0;
   };
 }  // namespace npar
 
