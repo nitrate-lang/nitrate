@@ -119,6 +119,8 @@ namespace npar {
 namespace npar {
   class ASTVisitor {
   public:
+    virtual ~ASTVisitor() = default;
+
     virtual void visit(npar_node_t& n) = 0;
     virtual void visit(ExprStmt& n) = 0;
     virtual void visit(StmtExpr& n) = 0;

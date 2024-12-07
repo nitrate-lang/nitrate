@@ -77,21 +77,6 @@ npar_t *npar_new(qlex_t *lexer, qcore_env_t env);
 void npar_free(npar_t *parser);
 
 /**
- * @brief Serialize a parse tree to a string.
- *
- * @param _node The root node of the parse tree.
- * @param minify Whether to minify the output.
- * @param indent The number of spaces to indent the output.
- * @param outlen The length of the output string.
- *
- * @return The serialized parse tree as a string.
- *
- * @note This function is thread safe.
- */
-char *npar_repr(const npar_node_t *_node, bool minify, size_t indent,
-                size_t *outlen);
-
-/**
  * @brief Parse Nitrate code into a parse tree.
  *
  * @param parser The parser instance to use for parsing.
@@ -106,24 +91,6 @@ char *npar_repr(const npar_node_t *_node, bool minify, size_t indent,
  * @note This function is thread safe.
  */
 bool npar_do(npar_t *parser, npar_node_t **out);
-
-/**
- * @brief Parse Nitrate code into a parse tree and dump it to a file.
- *
- * @param parser The parser instance to use for parsing.
- * @param out The file to dump the parse tree to.
- * @param x0 Unused.
- * @param x1 Unused.
- *
- * @return Returns true if no non-fatal parsing errors occurred, false
- * otherwise. A value of true, however, does not guarantee that the parse tree
- * is valid.
- *
- * @note If `!parser` or `!out`, false is returned.
- *
- * @note This function is thread safe.
- */
-bool npar_and_dump(npar_t *parser, FILE *out, void *x0, void *x1);
 
 /**
  * @brief Check if the parse tree is valid.

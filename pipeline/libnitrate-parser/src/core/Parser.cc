@@ -372,30 +372,6 @@ C_EXPORT bool npar_do(npar_t* L, npar_node_t** out) {
   return !L->failed;
 }
 
-C_EXPORT bool npar_and_dump(npar_t* L, FILE* out, void* x0, void* x1) {
-  (void)x0;
-  (void)x1;
-
-  npar_node_t* node = nullptr;
-
-  if (!L || !out) {
-    return false;
-  }
-
-  if (!npar_do(L, &node)) {
-    return false;
-  }
-
-  size_t len = 0;
-  char* repr = npar_repr(node, false, 2, &len);
-
-  fwrite(repr, 1, len, out);
-
-  free(repr);
-
-  return true;
-}
-
 C_EXPORT bool npar_check(npar_t* parser, const npar_node_t* base) {
   if (!parser || !base) {
     return false;

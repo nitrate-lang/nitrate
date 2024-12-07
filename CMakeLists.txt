@@ -20,7 +20,7 @@ else()
   message(FATAL_ERROR "Unsupported compiler pair: '${CMAKE_CXX_COMPILER}' and '${CMAKE_C_COMPILER}'")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 
 # Modern security hardening flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstack-protector -fPIC")

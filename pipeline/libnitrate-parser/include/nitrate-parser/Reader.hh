@@ -34,12 +34,14 @@
 #ifndef __NITRATE_PARSER_READER_H__
 #define __NITRATE_PARSER_READER_H__
 
+#include <nitrate-core/Macro.h>
+
 #include <istream>
 #include <nitrate-parser/Vistor.hh>
 #include <optional>
 
 namespace npar {
-  class AST_JsonReader final {
+  class CPP_EXPORT AST_JsonReader final {
     std::istream& m_is;
     npar_node_t* m_root;
     bool m_okay;
@@ -51,6 +53,7 @@ namespace npar {
         : m_is(is), m_root(nullptr), m_okay(false) {
       parse();
     }
+    virtual ~AST_JsonReader() = default;
 
     constexpr bool okay() const { return m_okay; }
 
@@ -63,7 +66,7 @@ namespace npar {
     }
   };
 
-  class AST_MsgPackReader final {
+  class CPP_EXPORT AST_MsgPackReader final {
     std::istream& m_is;
     npar_node_t* m_root;
     bool m_okay;
@@ -75,6 +78,7 @@ namespace npar {
         : m_is(is), m_root(nullptr), m_okay(false) {
       parse();
     }
+    virtual ~AST_MsgPackReader() = default;
 
     constexpr bool okay() const { return m_okay; }
 
@@ -87,7 +91,7 @@ namespace npar {
     }
   };
 
-  class AST_Reader final {
+  class CPP_EXPORT AST_Reader final {
     std::istream& m_is;
     npar_node_t* m_root;
     bool m_okay;
@@ -114,6 +118,7 @@ namespace npar {
           break;
       }
     }
+    virtual ~AST_Reader() = default;
 
     constexpr bool okay() const { return m_okay; }
 

@@ -38,6 +38,7 @@
 
 #include <cstddef>
 #include <cstring>
+#include <nitrate-parser/Writer.hh>
 
 using namespace npar;
 
@@ -63,10 +64,8 @@ CPP_EXPORT std::ostream &npar_node_t::dump(std::ostream &os,
                                            bool isForDebug) const noexcept {
   (void)isForDebug;
 
-  size_t size = 0;
-  char *buf = npar_repr(this, false, 2, &size);
-
-  os << std::string_view(buf, size);
+  AST_JsonWriter writer(os);
+  const_cast<npar_node_t *>(this)->accept(writer);
 
   return os;
 }

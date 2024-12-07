@@ -34,7 +34,6 @@ set(BUILD_FLAGS_COMMON
   "-Wno-deprecated-enum-enum-conversion  \
   -Wno-error=unused-but-set-variable     \
   -Wno-unused-parameter                  \
-  -fno-rtti                              \
   -fno-exceptions                        \
                                          \
   -DTRANSCODE_TARGET_C11                 \

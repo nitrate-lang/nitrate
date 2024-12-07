@@ -2136,11 +2136,4 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) noexcept {
   return names[type];
 }
 
-namespace std {
-  std::ostream &operator<<(std::ostream &os, const qlex_op_t &op);
-  std::ostream &operator<<(std::ostream &os, const qlex_op_t &expr);
-  std::ostream &operator<<(std::ostream &os, const qlex_op_t &op);
-  std::ostream &operator<<(std::ostream &os, const npar::FuncPurity &purity);
-}  // namespace std
-
 #endif  // __NITRATE_PARSER_NODE_H__
