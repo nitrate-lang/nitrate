@@ -80,7 +80,7 @@ bool npar::recurse_attributes(npar_t &S, qlex_t &rd,
   return true;
 }
 
-npar::Decl *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
+npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
   /*
    * Format: "name: type [= expr],"
    */
@@ -118,7 +118,7 @@ npar::Decl *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
     if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
       next();
     }
-    auto R = StructField::get(name, type, nullptr);
+    auto R = StructField::get(name, type, nullptr, Vis::PRIVATE);
     R->set_end_pos(tok.start);
     return R;
   }
@@ -139,7 +139,7 @@ npar::Decl *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
          qlex_tok_t(qPunc, qPuncRCur)});
   }
 
-  auto R = StructField::get(name, type, value);
+  auto R = StructField::get(name, type, value, Vis::PRIVATE);
   R->set_end_pos(value->get_end_pos());
 
   return R;
@@ -159,7 +159,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
   Stmt *method = nullptr;
   FnDecl *fdecl = nullptr;
   FuncTy *ft = nullptr;
-  Decl *field = nullptr;
+  Stmt *field = nullptr;
   StructDef *sdef = StructDef::get("", nullptr);
 
   sdef->set_composite_type(type);
@@ -286,7 +286,9 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       }
 
       /* Assign the visibility to the field */
-      field->set_visibility(vis);
+      if (field->is(QAST_NODE_STRUCT_FIELD)) {
+        static_cast<StructField *>(field)->set_visibility(vis);
+      }
 
       fields.push_back(field);
     }

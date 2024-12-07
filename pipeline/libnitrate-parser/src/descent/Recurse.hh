@@ -63,7 +63,7 @@ namespace npar {
   Stmt *recurse_foreach(npar_t &S, qlex_t &rd);
   Stmt *recurse_switch(npar_t &S, qlex_t &rd);
   Stmt *recurse_inline_asm(npar_t &S, qlex_t &rd);
-  Decl *recurse_composite_field(npar_t &S, qlex_t &rd);
+  Stmt *recurse_composite_field(npar_t &S, qlex_t &rd);
 
   bool recurse_attributes(npar_t &S, qlex_t &rd, std::set<Expr *> &attributes);
 

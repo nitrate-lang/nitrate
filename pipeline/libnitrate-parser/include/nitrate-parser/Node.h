@@ -932,7 +932,7 @@ namespace npar {
           m_type(type),
           m_visibility(visibility) {}
 
-    String get_name() { return m_name; }
+    String &get_name() { return m_name; }
     void set_name(String name) { m_name = name; }
 
     Type *get_type() { return m_type; }
@@ -1004,7 +1004,7 @@ namespace npar {
   public:
     NamedTy(String name) : Type(QAST_NODE_UNRES_TY), m_name(name) {}
 
-    String get_name() { return m_name; }
+    String &get_name() { return m_name; }
 
     PNODE_IMPL_CORE(NamedTy)
   };
@@ -1165,7 +1165,7 @@ namespace npar {
   public:
     OpaqueTy(String name) : Type(QAST_NODE_OPAQUE_TY), m_name(name) {}
 
-    String get_name() { return m_name; }
+    String &get_name() { return m_name; }
 
     PNODE_IMPL_CORE(OpaqueTy)
   };
@@ -1399,7 +1399,7 @@ namespace npar {
     ConstInt(uint64_t value)
         : Expr(QAST_NODE_INT), m_value(std::to_string(value)) {}
 
-    String get_value() { return m_value; }
+    String &get_value() { return m_value; }
 
     PNODE_IMPL_CORE(ConstInt)
   };
@@ -1412,7 +1412,7 @@ namespace npar {
     ConstFloat(double value)
         : Expr(QAST_NODE_FLOAT), m_value(std::to_string(value)) {}
 
-    String get_value() { return m_value; }
+    String &get_value() { return m_value; }
 
     PNODE_IMPL_CORE(ConstFloat)
   };
@@ -1435,7 +1435,7 @@ namespace npar {
   public:
     ConstString(String value) : Expr(QAST_NODE_STRING), m_value(value) {}
 
-    String get_value() { return m_value; }
+    String &get_value() { return m_value; }
 
     PNODE_IMPL_CORE(ConstString)
   };
@@ -1548,7 +1548,7 @@ namespace npar {
 
     Expr *get_base() { return m_base; }
 
-    String get_field() { return m_field; }
+    String &get_field() { return m_field; }
 
     PNODE_IMPL_CORE(Field)
   };
@@ -1608,7 +1608,7 @@ namespace npar {
   public:
     Ident(String name) : Expr(QAST_NODE_IDENT), m_name(name) {}
 
-    String get_name() { return m_name; }
+    String &get_name() { return m_name; }
 
     PNODE_IMPL_CORE(Ident)
   };
@@ -1693,7 +1693,7 @@ namespace npar {
     InlineAsm(String code, const InlineAsmArgs &args)
         : Stmt(QAST_NODE_INLINE_ASM), m_code(code), m_args(args) {}
 
-    String get_code() { return m_code; }
+    String &get_code() { return m_code; }
 
     InlineAsmArgs &get_args() { return m_args; }
 
@@ -1772,9 +1772,9 @@ namespace npar {
           m_expr(expr),
           m_body(body) {}
 
-    String get_idx_ident() { return m_idx_ident; }
+    String &get_idx_ident() { return m_idx_ident; }
 
-    String get_val_ident() { return m_val_ident; }
+    String &get_val_ident() { return m_val_ident; }
 
     Expr *get_expr() { return m_expr; }
 
@@ -1880,7 +1880,7 @@ namespace npar {
           m_vis(vis) {}
 
     Stmt *get_body() { return m_body; }
-    String get_abi_name() { return m_abi_name; }
+    String &get_abi_name() { return m_abi_name; }
     Vis get_vis() { return m_vis; }
     SymbolAttributes &get_attrs() { return m_attrs; }
 
@@ -1891,14 +1891,14 @@ namespace npar {
 
   class ScopeStmt : public Stmt {
     ScopeDeps m_deps;
-    std::string m_name;
+    String m_name;
     Stmt *m_body;
 
   public:
     ScopeStmt(String name, Stmt *body, ScopeDeps deps = {})
         : Stmt(QAST_NODE_SCOPE), m_deps(deps), m_name(name), m_body(body) {}
 
-    String get_name() { return m_name; }
+    String &get_name() { return m_name; }
     Stmt *get_body() { return m_body; }
     ScopeDeps &get_deps() { return m_deps; }
 
@@ -1906,18 +1906,69 @@ namespace npar {
   };
 
   class TypedefStmt : public Stmt {
-    std::string m_name;
+    String m_name;
     Type *m_type;
 
   public:
     TypedefStmt(String name, Type *type)
         : Stmt(QAST_NODE_TYPEDEF), m_name(name), m_type(type) {}
 
-    String get_name() { return m_name; }
+    String &get_name() { return m_name; }
     Type *get_type() { return m_type; }
 
     PNODE_IMPL_CORE(TypedefStmt)
   };
+
+  class StructField : public Stmt {
+    String m_name;
+    Type *m_type;
+    Expr *m_value;
+    Vis m_visibility;
+
+  public:
+    StructField(String name, Type *type, Expr *value, Vis visibility)
+        : Stmt(QAST_NODE_STRUCT_FIELD),
+          m_name(name),
+          m_type(type),
+          m_value(value),
+          m_visibility(visibility) {}
+
+    String &get_name() { return m_name; }
+    Type *get_type() { return m_type; }
+    Expr *get_value() { return m_value; }
+    Vis get_visibility() { return m_visibility; }
+    void set_visibility(Vis visibility) { m_visibility = visibility; }
+
+    PNODE_IMPL_CORE(StructField)
+  };
+
+  typedef std::pair<String, Expr *> EnumItem;
+  typedef std::vector<EnumItem, Arena<EnumItem>> EnumDefItems;
+
+  class EnumDef : public Stmt {
+    EnumDefItems m_items;
+    String m_name;
+    Type *m_type;
+
+  public:
+    EnumDef(String name, Type *type, const EnumDefItems &items)
+        : Stmt(QAST_NODE_ENUM), m_items(items), m_name(name), m_type(type) {}
+
+    EnumDefItems &get_items() { return m_items; }
+    String &get_name() { return m_name; }
+    Type *get_type() { return m_type; }
+
+    PNODE_IMPL_CORE(EnumDef)
+  };
+
+  template <typename T, typename... Args>
+  static inline T *make(Args &&...args) {
+    T *new_obj = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+
+    /// TODO: Cache nodes
+
+    return new_obj;
+  }
 
   ///=============================================================================
 
@@ -1970,19 +2021,7 @@ namespace npar {
 
   enum class CompositeType { Region, Struct, Group, Class, Union };
 
-  class StructField : public Decl {
-    Expr *m_value;
-
-  public:
-    StructField(String name, Type *type, Expr *value)
-        : Decl(QAST_NODE_STRUCT_FIELD, name, type), m_value(value) {}
-
-    Expr *get_value() { return m_value; }
-
-    PNODE_IMPL_CORE(StructField)
-  };
-
-  typedef std::vector<Decl *, Arena<Decl *>> StructDefFields;
+  typedef std::vector<Stmt *, Arena<Stmt *>> StructDefFields;
   typedef std::vector<FnDecl *, Arena<FnDecl *>> StructDefMethods;
   typedef std::vector<FnDecl *, Arena<FnDecl *>> StructDefStaticMethods;
 
@@ -2012,30 +2051,6 @@ namespace npar {
 
     PNODE_IMPL_CORE(StructDef)
   };
-
-  typedef std::pair<String, Expr *> EnumItem;
-  typedef std::vector<EnumItem, Arena<EnumItem>> EnumDefItems;
-
-  class EnumDef : public Decl {
-    EnumDefItems m_items;
-
-  public:
-    EnumDef(String name, Type *type, const EnumDefItems &items)
-        : Decl(QAST_NODE_ENUM, name, type), m_items(items) {}
-
-    EnumDefItems &get_items() { return m_items; }
-
-    PNODE_IMPL_CORE(EnumDef)
-  };
-
-  template <typename T, typename... Args>
-  static inline T *make(Args &&...args) {
-    T *new_obj = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
-
-    /// TODO: Cache nodes
-
-    return new_obj;
-  }
 
   ///=============================================================================
 
@@ -2100,7 +2115,7 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) noexcept {
     R[QAST_NODE_UNRES_TY] = "Unres";
     R[QAST_NODE_INFER_TY] = "Infer";
     R[QAST_NODE_TEMPL_TY] = "Templ";
-    R[QAST_NODE_TYPEDEF] = "pedef";
+    R[QAST_NODE_TYPEDEF] = "Typedef";
     R[QAST_NODE_FNDECL] = "Fndecl";
     R[QAST_NODE_STRUCT] = "Struct";
     R[QAST_NODE_ENUM] = "Enum";

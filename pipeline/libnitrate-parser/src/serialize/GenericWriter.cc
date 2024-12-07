@@ -557,8 +557,6 @@ void AST_Writer::visit(StructTy& n) {
     end_obj();
   }
 
-  /// TODO: Implement support for this node
-
   end_obj();
 }
 
@@ -572,7 +570,93 @@ void AST_Writer::visit(FuncTy& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  write_type_metadata(n);
+
+  string("return");
+  n.get_return_ty()->accept(*this);
+
+  string("variadic");
+  boolean(n.is_variadic());
+
+  string("foreign");
+  boolean(n.is_foreign());
+
+  string("crashpoint");
+  boolean(n.is_crashpoint());
+
+  string("noexcept");
+  boolean(n.is_noexcept());
+
+  string("noreturn");
+  boolean(n.is_noreturn());
+
+  switch (n.get_purity()) {
+    case FuncPurity::IMPURE_THREAD_UNSAFE: {
+      string("thread_safe");
+      boolean(false);
+
+      string("purity");
+      string("impure");
+      break;
+    }
+
+    case FuncPurity::IMPURE_THREAD_SAFE: {
+      string("thread_safe");
+      boolean(true);
+
+      string("purity");
+      string("impure");
+      break;
+    }
+
+    case FuncPurity::PURE: {
+      string("thread_safe");
+      boolean(true);
+
+      string("purity");
+      string("pure");
+      break;
+    }
+
+    case FuncPurity::QUASIPURE: {
+      string("thread_safe");
+      boolean(true);
+
+      string("purity");
+      string("quasipure");
+      break;
+    }
+
+    case FuncPurity::RETROPURE: {
+      string("thread_safe");
+      boolean(true);
+
+      string("purity");
+      string("retropure");
+      break;
+    }
+  }
+
+  { /* Write parameters */
+    string("params");
+
+    let params = n.get_params();
+    begin_arr(params.size());
+    std::for_each(params.begin(), params.end(), [&](let param) {
+      begin_obj();
+      string("name");
+      string(std::get<0>(param));
+
+      string("type");
+      std::get<1>(param)->accept(*this);
+
+      string("default");
+      std::get<2>(param) ? std::get<2>(param)->accept(*this) : null();
+
+      end_obj();
+    });
+    end_arr();
+  }
 
   end_obj();
 }
@@ -1084,7 +1168,18 @@ void AST_Writer::visit(InlineAsm& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("code");
+  string(n.get_code());
+
+  { /* Write arguments */
+    string("params");
+
+    let args = n.get_args();
+    begin_arr(args.size());
+    std::for_each(args.begin(), args.end(),
+                  [&](let arg) { arg->accept(*this); });
+    end_arr();
+  }
 
   end_obj();
 }
@@ -1356,7 +1451,32 @@ void AST_Writer::visit(StructField& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("name");
+  string(n.get_name());
+
+  string("vis");
+  switch (n.get_visibility()) {
+    case Vis::PUBLIC: {
+      string("pub");
+      break;
+    }
+
+    case Vis::PRIVATE: {
+      string("sec");
+      break;
+    }
+
+    case Vis::PROTECTED: {
+      string("pro");
+      break;
+    }
+  }
+
+  string("type");
+  n.get_type()->accept(*this);
+
+  string("init");
+  n.get_value() ? n.get_value()->accept(*this) : null();
 
   end_obj();
 }
@@ -1386,7 +1506,27 @@ void AST_Writer::visit(EnumDef& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("name");
+  string(n.get_name());
+
+  string("type");
+  n.get_type() ? n.get_type()->accept(*this) : null();
+
+  { /* Write items */
+    string("fields");
+
+    let items = n.get_items();
+    begin_arr(items.size());
+    std::for_each(items.begin(), items.end(), [&](let item) {
+      begin_obj();
+      string("name");
+      string(item.first);
+      string("value");
+      item.second ? item.second->accept(*this) : null();
+      end_obj();
+    });
+    end_arr();
+  }
 
   end_obj();
 }
