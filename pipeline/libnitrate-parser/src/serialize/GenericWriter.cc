@@ -68,9 +68,6 @@ void AST_Writer::write_type_metadata(Type& n) {
 
   string("max");
   n.get_range().second ? n.get_range().second->accept(*this) : null();
-
-  string("volatile");
-  boolean(n.is_volatile());
 }
 
 void AST_Writer::visit(npar_node_t& n) {
@@ -1153,7 +1150,37 @@ void AST_Writer::visit(VarDecl& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("mode");
+  switch (n.get_decl_type()) {
+    case VarDeclType::Const:
+      string("const");
+      break;
+    case VarDeclType::Var:
+      string("var");
+      break;
+    case VarDeclType::Let:
+      string("let");
+      break;
+  }
+
+  string("name");
+  string(n.get_name());
+
+  string("type");
+  n.get_type() ? n.get_type()->accept(*this) : null();
+
+  string("value");
+  n.get_value() ? n.get_value()->accept(*this) : null();
+
+  { /* Write attributes */
+    string("attributes");
+
+    let attrs = n.get_attributes();
+    begin_arr(attrs.size());
+    std::for_each(attrs.begin(), attrs.end(),
+                  [&](let attr) { attr->accept(*this); });
+    end_arr();
+  }
 
   end_obj();
 }
@@ -1421,7 +1448,35 @@ void AST_Writer::visit(FnDecl& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("name");
+  string(n.get_name());
+
+  string("type");
+  n.get_type()->accept(*this);
+
+  { /* Write parameters */
+    string("template");
+
+    if (let params = n.get_template_params()) {
+      begin_arr(params->size());
+      std::for_each(params->begin(), params->end(), [&](let param) {
+        begin_obj();
+        string("name");
+        string(std::get<0>(param));
+
+        string("type");
+        std::get<1>(param)->accept(*this);
+
+        string("default");
+        std::get<2>(param) ? std::get<2>(param)->accept(*this) : null();
+
+        end_obj();
+      });
+      end_arr();
+    } else {
+      null();
+    }
+  }
 
   end_obj();
 }
@@ -1436,7 +1491,62 @@ void AST_Writer::visit(FnDef& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("name");
+  string(n.get_name());
+
+  string("type");
+  n.get_type()->accept(*this);
+
+  { /* Write capture group */
+    string("capture");
+
+    let captures = n.get_captures();
+    begin_arr(captures.size());
+    std::for_each(captures.begin(), captures.end(), [&](let cap) {
+      begin_obj();
+      string("name");
+      string(cap.first);
+
+      string("is_ref");
+      boolean(cap.second);
+
+      end_obj();
+    });
+    end_arr();
+  }
+
+  { /* Write template parameters */
+    string("template");
+
+    if (let params = n.get_template_params()) {
+      begin_arr(params->size());
+      std::for_each(params->begin(), params->end(), [&](let param) {
+        begin_obj();
+        string("name");
+        string(std::get<0>(param));
+
+        string("type");
+        std::get<1>(param)->accept(*this);
+
+        string("default");
+        std::get<2>(param) ? std::get<2>(param)->accept(*this) : null();
+
+        end_obj();
+      });
+      end_arr();
+    } else {
+      null();
+    }
+  }
+
+  string("precond");
+  n.get_precond() ? n.get_precond()->accept(*this) : null();
+
+  string("postcond");
+  n.get_postcond() ? n.get_postcond()->accept(*this) : null();
+
+  string("body");
+  n.get_body()->accept(*this);
 
   end_obj();
 }
@@ -1491,7 +1601,93 @@ void AST_Writer::visit(StructDef& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("name");
+  string(n.get_name());
+
+  string("mode");
+  switch (n.get_composite_type()) {
+    case CompositeType::Region: {
+      string("region");
+      break;
+    }
+
+    case CompositeType::Struct: {
+      string("struct");
+      break;
+    }
+
+    case CompositeType::Group: {
+      string("group");
+      break;
+    }
+
+    case CompositeType::Class: {
+      string("class");
+      break;
+    }
+
+    case CompositeType::Union: {
+      string("union");
+      break;
+    }
+  }
+
+  { /* Write template parameters */
+    string("template");
+
+    if (let params = n.get_template_params()) {
+      begin_arr(params->size());
+      std::for_each(params->begin(), params->end(), [&](let param) {
+        begin_obj();
+        string("name");
+        string(std::get<0>(param));
+
+        string("type");
+        std::get<1>(param)->accept(*this);
+
+        string("default");
+        std::get<2>(param) ? std::get<2>(param)->accept(*this) : null();
+
+        end_obj();
+      });
+      end_arr();
+    } else {
+      null();
+    }
+  }
+
+  string("type");
+  n.get_type()->accept(*this);
+
+  { /* Write fields */
+    string("fields");
+
+    let fields = n.get_fields();
+    begin_arr(fields.size());
+    std::for_each(fields.begin(), fields.end(),
+                  [&](let field) { field->accept(*this); });
+    end_arr();
+  }
+
+  { /* Write methods */
+    string("methods");
+
+    let methods = n.get_methods();
+    begin_arr(methods.size());
+    std::for_each(methods.begin(), methods.end(),
+                  [&](let method) { method->accept(*this); });
+    end_arr();
+  }
+
+  { /* Write static methods */
+    string("statics");
+
+    let statics = n.get_static_methods();
+    begin_arr(statics.size());
+    std::for_each(statics.begin(), statics.end(),
+                  [&](let method) { method->accept(*this); });
+    end_arr();
+  }
 
   end_obj();
 }

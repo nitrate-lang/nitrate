@@ -601,7 +601,6 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
   if (tok.is<qPuncLCur>()) {
     Stmt *fnbody = nullptr;
     Expr *req_in = nullptr, *req_out = nullptr;
-    std::set<Expr *> attributes;
 
     fnbody = recurse_block(S, rd);
 
@@ -616,7 +615,6 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
     }
 
     FnDef *fndef = FnDef::get(fndecl, fnbody, req_in, req_out, captures);
-    fndef->get_tags().insert(attributes.begin(), attributes.end());
 
     fndef->set_end_pos(tok.end);
 

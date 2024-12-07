@@ -41,7 +41,6 @@ struct npar_node_t;
 namespace npar {
   class Stmt;
   class Type;
-  class Decl;
   class Expr;
   class ExprStmt;
   class StmtExpr;

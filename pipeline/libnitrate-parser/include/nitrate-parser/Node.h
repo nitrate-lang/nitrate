@@ -127,9 +127,6 @@ typedef enum npar_ty_t {
   QAST_NODE_EXPORT,
   QAST_NODE_STRUCT_FIELD,
 
-  QAST_NODE__DECL_FIRST = QAST_NODE_TYPEDEF,
-  QAST_NODE__DECL_LAST = QAST_NODE_STRUCT_FIELD,
-
   QAST_NODE_BLOCK,
   QAST_NODE_VAR,
   QAST_NODE_INLINE_ASM,
@@ -145,7 +142,7 @@ typedef enum npar_ty_t {
   QAST_NODE_SWITCH,
   QAST_NODE_EXPR_STMT,
 
-  QAST_NODE__STMT_FIRST = QAST_NODE__DECL_FIRST,
+  QAST_NODE__STMT_FIRST = QAST_NODE_TYPEDEF,
   QAST_NODE__STMT_LAST = QAST_NODE_EXPR_STMT,
 
   QAST_NODE__FIRST = QAST_NODE_NODE,
@@ -527,8 +524,6 @@ public:
 
     if constexpr (std::is_same_v<T, npar_node_t>) {
       return QAST_NODE_NODE;
-    } else if constexpr (std::is_same_v<T, Decl>) {
-      return QAST_NODE_NODE;
     } else if constexpr (std::is_same_v<T, Stmt>) {
       return QAST_NODE_NODE;
     } else if constexpr (std::is_same_v<T, Type>) {
@@ -695,11 +690,6 @@ public:
     return kind >= QAST_NODE__STMT_FIRST && kind <= QAST_NODE__STMT_LAST;
   }
 
-  constexpr bool is_decl() const noexcept {
-    auto kind = getKind();
-    return kind >= QAST_NODE__DECL_FIRST && kind <= QAST_NODE__DECL_LAST;
-  }
-
   constexpr bool is_expr() const noexcept {
     auto kind = getKind();
     return kind >= QAST_NODE__EXPR_FIRST && kind <= QAST_NODE__EXPR_LAST;
@@ -822,15 +812,13 @@ namespace npar {
 
   class Type : public npar_node_t {
     Expr *m_width, *m_range_start, *m_range_end;
-    bool m_volatile;
 
   public:
-    constexpr Type(npar_ty_t ty, bool is_volatile = false)
+    constexpr Type(npar_ty_t ty)
         : npar_node_t(ty),
           m_width(nullptr),
           m_range_start(nullptr),
-          m_range_end(nullptr),
-          m_volatile(is_volatile) {}
+          m_range_end(nullptr) {}
 
     constexpr bool is_primitive() const noexcept {
       switch (getKind()) {
@@ -892,7 +880,6 @@ namespace npar {
     constexpr bool is_ref() const noexcept {
       return getKind() == QAST_NODE_REF_TY;
     }
-    constexpr bool is_volatile() const noexcept { return m_volatile; }
     bool is_ptr_to(Type *type) noexcept;
 
     constexpr Expr *get_width() { return m_width; }
@@ -912,43 +899,6 @@ namespace npar {
   typedef std::tuple<String, Type *, Expr *> TemplateParameter;
   typedef std::vector<TemplateParameter, Arena<TemplateParameter>>
       TemplateParameters;
-
-  class Decl : public Stmt {
-  protected:
-    DeclTags m_tags;
-    std::optional<TemplateParameters> m_template_parameters;
-    String m_name;
-    Type *m_type;
-    Vis m_visibility;
-
-  public:
-    Decl(npar_ty_t ty, String name, Type *type, DeclTags tags = {},
-         const std::optional<TemplateParameters> &params = std::nullopt,
-         Vis visibility = Vis::PRIVATE)
-        : Stmt(ty),
-          m_tags(tags),
-          m_template_parameters(params),
-          m_name(name),
-          m_type(type),
-          m_visibility(visibility) {}
-
-    String &get_name() { return m_name; }
-    void set_name(String name) { m_name = name; }
-
-    Type *get_type() { return m_type; }
-    void set_type(Type *type) { m_type = type; }
-
-    DeclTags &get_tags() { return m_tags; }
-    void set_tags(DeclTags t) { m_tags = t; }
-
-    auto &get_template_params() { return m_template_parameters; }
-    void set_template_params(std::optional<TemplateParameters> x) {
-      m_template_parameters = x;
-    }
-
-    Vis get_visibility() { return m_visibility; }
-    void set_visibility(Vis visibility) { m_visibility = visibility; }
-  };
 
   class Expr : public npar_node_t {
   public:
@@ -1658,19 +1608,25 @@ namespace npar {
       std::unordered_set<Expr *, std::hash<Expr *>, std::equal_to<Expr *>,
                          Arena<Expr *>>;
 
-  class VarDecl : public Decl {
+  class VarDecl : public Stmt {
     VarDeclAttributes m_attributes;
+    String m_name;
+    Type *m_type;
     Expr *m_value;
     VarDeclType m_decl_type;
 
   public:
     VarDecl(String name, Type *type, Expr *value, VarDeclType decl_type,
             VarDeclAttributes attributes)
-        : Decl(QAST_NODE_VAR, name, type),
+        : Stmt(QAST_NODE_VAR),
           m_attributes(attributes),
+          m_name(name),
+          m_type(type),
           m_value(value),
           m_decl_type(decl_type) {}
 
+    String &get_name() { return m_name; }
+    Type *get_type() { return m_type; }
     Expr *get_value() { return m_value; }
 
     VarDeclType get_decl_type() { return m_decl_type; }
@@ -1961,22 +1917,28 @@ namespace npar {
     PNODE_IMPL_CORE(EnumDef)
   };
 
-  template <typename T, typename... Args>
-  static inline T *make(Args &&...args) {
-    T *new_obj = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+  class FnDecl : public Stmt {
+    std::optional<TemplateParameters> m_template_parameters;
+    String m_name;
+    FuncTy *m_type;
 
-    /// TODO: Cache nodes
-
-    return new_obj;
-  }
-
-  ///=============================================================================
-
-  class FnDecl : public Decl {
   public:
-    FnDecl(String name, FuncTy *type) : Decl(QAST_NODE_FNDECL, name, type) {}
+    FnDecl(String name, FuncTy *type,
+           std::optional<TemplateParameters> params = std::nullopt)
+        : Stmt(QAST_NODE_FNDECL),
+          m_template_parameters(params),
+          m_name(name),
+          m_type(type) {}
 
-    FuncTy *get_type() { return static_cast<FuncTy *>(m_type); }
+    String get_name() { return m_name; }
+    void set_name(String name) { m_name = name; }
+
+    FuncTy *get_type() { return m_type; }
+    void set_type(FuncTy *type) { m_type = type; }
+
+    std::optional<TemplateParameters> &get_template_params() {
+      return m_template_parameters;
+    }
 
     PNODE_IMPL_CORE(FnDecl)
   };
@@ -1984,8 +1946,11 @@ namespace npar {
   typedef std::vector<std::pair<String, bool>, Arena<std::pair<String, bool>>>
       FnCaptures;
 
-  class FnDef : public Decl {
+  class FnDef : public Stmt {
     FnCaptures m_captures;
+    std::optional<TemplateParameters> m_template_parameters;
+    String m_name;
+    FuncTy *m_type;
     Stmt *m_body;
     Expr *m_precond;
     Expr *m_postcond;
@@ -1993,15 +1958,22 @@ namespace npar {
   public:
     FnDef(FnDecl *decl, Stmt *body, Expr *precond, Expr *postcond,
           FnCaptures captures = {})
-        : Decl(QAST_NODE_FN, decl->get_name(), decl->get_type()),
+        : Stmt(QAST_NODE_FN),
           m_captures(captures),
+          m_template_parameters(decl->get_template_params()),
+          m_name(decl->get_name()),
+          m_type(decl->get_type()),
           m_body(body),
           m_precond(precond),
-          m_postcond(postcond) {
-      set_template_params(decl->get_template_params());
-      set_visibility(decl->get_visibility());
-      set_tags(decl->get_tags());
+          m_postcond(postcond) {}
+
+    FnCaptures &get_captures() { return m_captures; }
+
+    std::optional<TemplateParameters> &get_template_params() {
+      return m_template_parameters;
     }
+
+    String &get_name() { return m_name; }
 
     Stmt *get_body() { return m_body; }
     void set_body(Stmt *body) { m_body = body; }
@@ -2011,8 +1983,6 @@ namespace npar {
 
     Expr *get_postcond() { return m_postcond; }
     void set_postcond(Expr *postcond) { m_postcond = postcond; }
-
-    FnCaptures &get_captures() { return m_captures; }
 
     FuncTy *get_type() { return static_cast<FuncTy *>(m_type); }
 
@@ -2025,26 +1995,41 @@ namespace npar {
   typedef std::vector<FnDecl *, Arena<FnDecl *>> StructDefMethods;
   typedef std::vector<FnDecl *, Arena<FnDecl *>> StructDefStaticMethods;
 
-  class StructDef : public Decl {
+  class StructDef : public Stmt {
     StructDefMethods m_methods;
     StructDefStaticMethods m_static_methods;
     StructDefFields m_fields;
+    std::optional<TemplateParameters> m_template_parameters;
     CompositeType m_comp_type;
+    String m_name;
+    Type *m_type;
 
   public:
     StructDef(String name, StructTy *type, const StructDefFields &fields = {},
               const StructDefMethods &methods = {},
-              const StructDefStaticMethods &static_methods = {})
-        : Decl(QAST_NODE_STRUCT, name, type),
+              const StructDefStaticMethods &static_methods = {},
+              std::optional<TemplateParameters> params = std::nullopt,
+              CompositeType t = CompositeType::Struct)
+        : Stmt(QAST_NODE_STRUCT),
           m_methods(methods),
           m_static_methods(static_methods),
-          m_fields(fields) {}
+          m_fields(fields),
+          m_template_parameters(params),
+          m_comp_type(t),
+          m_name(name),
+          m_type(type) {}
 
+    String &get_name() { return m_name; }
+    void set_name(String name) { m_name = name; }
     StructTy *get_type() { return static_cast<StructTy *>(m_type); }
 
     StructDefMethods &get_methods() { return m_methods; }
     StructDefStaticMethods &get_static_methods() { return m_static_methods; }
     StructDefFields &get_fields() { return m_fields; }
+
+    std::optional<TemplateParameters> &get_template_params() {
+      return m_template_parameters;
+    }
 
     CompositeType get_composite_type() { return m_comp_type; }
     void set_composite_type(CompositeType t) { m_comp_type = t; }
@@ -2052,13 +2037,20 @@ namespace npar {
     PNODE_IMPL_CORE(StructDef)
   };
 
+  template <typename T, typename... Args>
+  static inline T *make(Args &&...args) {
+    T *new_obj = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+
+    /// TODO: Cache nodes
+
+    return new_obj;
+  }
+
   ///=============================================================================
 
   Stmt *mock_stmt(npar_ty_t expected);
   Expr *mock_expr(npar_ty_t expected);
   Type *mock_type(npar_ty_t expected);
-  Decl *mock_decl(npar_ty_t expected);
-
 }  // namespace npar
 
 constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) noexcept {
@@ -2087,7 +2079,7 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) noexcept {
     R[QAST_NODE_SEQ] = "SeqPoint";
     R[QAST_NODE_POST_UNEXPR] = "PostUnexpr";
     R[QAST_NODE_STMT_EXPR] = "StmtExpr";
-    R[QAST_NODE_TYPE_EXPR] = "peExpr";
+    R[QAST_NODE_TYPE_EXPR] = "TypeExpr";
     R[QAST_NODE_TEMPL_CALL] = "TemplCall";
     R[QAST_NODE_REF_TY] = "Ref";
     R[QAST_NODE_U1_TY] = "U1";
@@ -2111,15 +2103,15 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) noexcept {
     R[QAST_NODE_STRUCT_TY] = "Struct";
     R[QAST_NODE_ARRAY_TY] = "Array";
     R[QAST_NODE_TUPLE_TY] = "Tuple";
-    R[QAST_NODE_FN_TY] = "Fn";
+    R[QAST_NODE_FN_TY] = "FuncTy";
     R[QAST_NODE_UNRES_TY] = "Unres";
     R[QAST_NODE_INFER_TY] = "Infer";
     R[QAST_NODE_TEMPL_TY] = "Templ";
     R[QAST_NODE_TYPEDEF] = "Typedef";
-    R[QAST_NODE_FNDECL] = "Fndecl";
+    R[QAST_NODE_FNDECL] = "FnDecl";
     R[QAST_NODE_STRUCT] = "Struct";
     R[QAST_NODE_ENUM] = "Enum";
-    R[QAST_NODE_FN] = "Fn";
+    R[QAST_NODE_FN] = "FnDef";
     R[QAST_NODE_SCOPE] = "Scope";
     R[QAST_NODE_EXPORT] = "Export";
     R[QAST_NODE_STRUCT_FIELD] = "StructField";

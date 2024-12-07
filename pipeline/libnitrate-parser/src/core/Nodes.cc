@@ -106,10 +106,3 @@ Type *npar::mock_type(npar_ty_t expected) {
   static Type node(QAST_NODE_NODE);
   return &node;
 }
-
-Decl *npar::mock_decl(npar_ty_t expected) {
-  (void)expected;
-
-  static Decl node(QAST_NODE_NODE, "", nullptr);
-  return &node;
-}

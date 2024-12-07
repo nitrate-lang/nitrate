@@ -1536,20 +1536,5 @@ bool to_json_recurse(npar_node_t *N, json &x) {
     }
   }
 
-  if (N->is_decl()) {
-    x[x.size()] = N->as<Decl>()->get_visibility();
-
-    auto &y = x[x.size()] = json::array();
-
-    for (auto &Z : N->as<Decl>()->get_tags()) {
-      json z;
-      if (!to_json_recurse(Z, z)) {
-        return false;
-      }
-
-      y.push_back(std::move(z));
-    }
-  }
-
   return true;
 }

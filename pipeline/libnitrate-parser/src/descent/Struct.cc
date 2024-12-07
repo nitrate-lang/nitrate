@@ -94,7 +94,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
     tok = next();
     if (!tok.is(qName)) {
       diagnostic << tok << "Expected field name in composite definition";
-      return mock_decl(QAST_NODE_STRUCT_FIELD);
+      return mock_stmt(QAST_NODE_STRUCT_FIELD);
     }
     name = tok.as_string(&rd);
   }
@@ -104,7 +104,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
     if (!tok.is<qPuncColn>()) {
       diagnostic << tok
                  << "Expected colon after field name in composite definition";
-      return mock_decl(QAST_NODE_STRUCT_FIELD);
+      return mock_stmt(QAST_NODE_STRUCT_FIELD);
     }
   }
 
@@ -128,7 +128,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
       diagnostic
           << tok
           << "Expected '=' or ',' after field type in composite definition";
-      return mock_decl(QAST_NODE_STRUCT_FIELD);
+      return mock_stmt(QAST_NODE_STRUCT_FIELD);
     }
     next();
 
@@ -155,7 +155,6 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
   StructDefFields fields;
   StructDefMethods methods;
   StructDefStaticMethods static_methods;
-  std::set<Expr *> attributes;
   Stmt *method = nullptr;
   FnDecl *fdecl = nullptr;
   FuncTy *ft = nullptr;
@@ -235,9 +234,6 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       /* Parse the function definition */
       method = recurse_function(S, rd);
 
-      /* Assign the visibility to the method */
-      static_cast<FnDecl *>(method)->set_visibility(vis);
-
       { /* Add the 'this' parameter to the method */
         FuncParam fn_this{"this", RefTy::get(NamedTy::get(name)), nullptr};
 
@@ -271,9 +267,6 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       /* Parse the function definition */
       method = recurse_function(S, rd);
 
-      /* Assign the visibility to the method */
-      static_cast<FnDecl *>(method)->set_visibility(vis);
-
       /* Add the method to the list */
       static_methods.push_back(static_cast<FnDecl *>(method));
     } else {
@@ -305,7 +298,6 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
   sdef->get_fields() = std::move(fields);
   sdef->get_methods() = std::move(methods);
   sdef->get_static_methods() = std::move(static_methods);
-  sdef->get_tags().insert(attributes.begin(), attributes.end());
 
   return sdef;
 }
