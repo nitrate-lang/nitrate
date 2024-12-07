@@ -39,6 +39,7 @@
 #include <functional>
 #include <nitrate-parser/Vistor.hh>
 #include <ostream>
+#include <stack>
 #include <string_view>
 
 namespace npar {
@@ -103,7 +104,6 @@ namespace npar {
     void visit(F128&) override;
     void visit(VoidTy&) override;
     void visit(PtrTy&) override;
-    void visit(ConstTy&) override;
     void visit(OpaqueTy&) override;
     void visit(TupleTy&) override;
     void visit(ArrayTy&) override;
@@ -156,6 +156,10 @@ namespace npar {
 
   class AST_JsonWriter : public AST_Writer {
     std::ostream& m_os;
+    std::stack<bool> m_comma;
+    std::stack<size_t> m_count;
+
+    void delim();
 
     void str_impl(std::string_view str);
     void uint_impl(uint64_t val);
@@ -183,7 +187,10 @@ namespace npar {
               std::bind(&AST_JsonWriter::begin_arr_impl, this,
                         std::placeholders::_1),
               std::bind(&AST_JsonWriter::end_arr_impl, this)),
-          m_os(os) {}
+          m_os(os) {
+      m_comma.push(false);
+      m_count.push(0);
+    }
   };
 
   class AST_MsgPackWriter : public AST_Writer {

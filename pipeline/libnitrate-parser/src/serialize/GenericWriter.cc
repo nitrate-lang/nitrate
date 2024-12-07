@@ -32,372 +32,970 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
+#include <nitrate-parser/Node.h>
 
+#include <algorithm>
 #include <nitrate-parser/Writer.hh>
 
 using namespace npar;
 
-void AST_Writer::visit(npar_node_t&) {
-  /// TODO: Implement support for this node
-  qcore_implement();
-}
+void AST_Writer::visit(npar_node_t& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(ExprStmt&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(ExprStmt& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(StmtExpr&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(StmtExpr& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(TypeExpr&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(TypeExpr& n) {
+  begin_obj();
 
-void AST_Writer::visit(NamedTy&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(InferTy&) {
+void AST_Writer::visit(NamedTy& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(TemplType&) {
+void AST_Writer::visit(InferTy& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(TemplType& n) {
+  begin_obj();
 
-void AST_Writer::visit(U1&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(U1& n) {
+  begin_obj();
 
-void AST_Writer::visit(U8&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(U8& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(U16&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(U16& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(U32&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(U32& n) {
+  begin_obj();
 
-void AST_Writer::visit(U64&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(U128&) {
+void AST_Writer::visit(U64& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(I8&) {
+void AST_Writer::visit(U128& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(I8& n) {
+  begin_obj();
 
-void AST_Writer::visit(I16&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(I16& n) {
+  begin_obj();
 
-void AST_Writer::visit(I32&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(I32& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(I64&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(I64& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(I128&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(I128& n) {
+  begin_obj();
 
-void AST_Writer::visit(F16&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(F32&) {
+void AST_Writer::visit(F16& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(F64&) {
+void AST_Writer::visit(F32& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(F128&) {
+void AST_Writer::visit(F64& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(VoidTy&) {
+void AST_Writer::visit(F128& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(VoidTy& n) {
+  begin_obj();
 
-void AST_Writer::visit(PtrTy&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(PtrTy& n) {
+  begin_obj();
 
-void AST_Writer::visit(ConstTy&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(OpaqueTy& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(OpaqueTy&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(TupleTy& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(TupleTy&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(ArrayTy& n) {
+  begin_obj();
 
-void AST_Writer::visit(ArrayTy&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(RefTy&) {
+void AST_Writer::visit(RefTy& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(StructTy&) {
+void AST_Writer::visit(StructTy& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(FuncTy& n) {
+  begin_obj();
 
-void AST_Writer::visit(FuncTy&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(UnaryExpr& n) {
+  begin_obj();
 
-void AST_Writer::visit(UnaryExpr&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(BinExpr& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(BinExpr&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(PostUnaryExpr& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(PostUnaryExpr&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(TernaryExpr& n) {
+  begin_obj();
 
-void AST_Writer::visit(TernaryExpr&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(ConstInt&) {
+void AST_Writer::visit(ConstInt& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(ConstFloat&) {
+void AST_Writer::visit(ConstFloat& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(ConstBool& n) {
+  begin_obj();
 
-void AST_Writer::visit(ConstBool&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(ConstString& n) {
+  begin_obj();
 
-void AST_Writer::visit(ConstString&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(ConstChar& n) {
+  begin_obj();
 
-void AST_Writer::visit(ConstChar&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(ConstNull& n) {
+  begin_obj();
 
-void AST_Writer::visit(ConstNull&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(ConstUndef& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(ConstUndef&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(Call& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(Call&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(TemplCall& n) {
+  begin_obj();
 
-void AST_Writer::visit(TemplCall&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(List&) {
+void AST_Writer::visit(List& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(Assoc&) {
+void AST_Writer::visit(Assoc& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(Field& n) {
+  begin_obj();
 
-void AST_Writer::visit(Field&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(Index& n) {
+  begin_obj();
 
-void AST_Writer::visit(Index&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(Slice& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(Slice&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(FString& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(FString&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(Ident& n) {
+  begin_obj();
 
-void AST_Writer::visit(Ident&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(SeqPoint&) {
+void AST_Writer::visit(SeqPoint& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(Block&) {
-  /// TODO: Implement support for this node
-  qcore_implement();
+void AST_Writer::visit(Block& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
+  { /* Write safety profile*/
+    string("safe");
+
+    switch (n.get_safety()) {
+      case SafetyMode::Unknown:
+        null();
+        break;
+      case SafetyMode::Safe:
+        string("yes");
+        break;
+      case SafetyMode::Unsafe:
+        string("no");
+        break;
+    }
+  }
+
+  { /* Write body */
+    string("body");
+
+    let items = n.get_items();
+    begin_arr(items.size());
+    std::for_each(items.begin(), items.end(),
+                  [&](auto& item) { item->accept(*this); });
+    end_arr();
+  }
+
+  end_obj();
 }
 
-void AST_Writer::visit(VarDecl&) {
+void AST_Writer::visit(VarDecl& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(InlineAsm& n) {
+  begin_obj();
 
-void AST_Writer::visit(InlineAsm&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(IfStmt& n) {
+  begin_obj();
 
-void AST_Writer::visit(IfStmt&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(WhileStmt& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(WhileStmt&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(ForStmt& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(ForStmt&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(ForeachStmt& n) {
+  begin_obj();
 
-void AST_Writer::visit(ForeachStmt&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(BreakStmt&) {
+void AST_Writer::visit(BreakStmt& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(ContinueStmt&) {
+void AST_Writer::visit(ContinueStmt& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(ReturnStmt& n) {
+  begin_obj();
 
-void AST_Writer::visit(ReturnStmt&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(ReturnIfStmt& n) {
+  begin_obj();
 
-void AST_Writer::visit(ReturnIfStmt&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(CaseStmt& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(CaseStmt&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(SwitchStmt& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(SwitchStmt&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(TypedefDecl& n) {
+  begin_obj();
 
-void AST_Writer::visit(TypedefDecl&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(FnDecl&) {
+void AST_Writer::visit(FnDecl& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
 
-void AST_Writer::visit(FnDef&) {
+void AST_Writer::visit(FnDef& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(StructField& n) {
+  begin_obj();
 
-void AST_Writer::visit(StructField&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(StructDef& n) {
+  begin_obj();
 
-void AST_Writer::visit(StructDef&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(EnumDef& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(EnumDef&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(ScopeDecl& n) {
+  begin_obj();
+
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
 
-void AST_Writer::visit(ScopeDecl&) {
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }
+
+void AST_Writer::visit(ExportDecl& n) {
+  begin_obj();
 
-void AST_Writer::visit(ExportDecl&) {
+  { /* Write kind */
+    string("kind");
+    string(n.getKindName());
+  }
+
   /// TODO: Implement support for this node
-  qcore_implement();
+
+  end_obj();
 }

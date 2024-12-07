@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 
 #include <nitrate-parser/Writer.hh>
 
@@ -81,50 +82,75 @@ static void escape_string(std::ostream &os, const std::string_view &input) {
   os << "\"";
 }
 
-void AST_JsonWriter::str_impl(std::string_view str) {
-  (void)m_os;
-  (void)escape_string;
+void AST_JsonWriter::delim() {
+  qcore_assert(!m_count.empty() && !m_comma.empty());
 
-  /// TODO: Implement support for JSON
-  qcore_implement();
+  if (m_count.top()++ > 0) {
+    bool use_comma = m_comma.top() == true || (m_count.top() & 1) != 0;
+
+    m_os << (use_comma ? "," : ":");
+  }
+}
+
+void AST_JsonWriter::str_impl(std::string_view str) {
+  delim();
+
+  escape_string(m_os, str);
 }
 
 void AST_JsonWriter::uint_impl(uint64_t val) {
-  /// TODO: Implement support for JSON
-  qcore_implement();
+  delim();
+
+  m_os << val;
 }
 
 void AST_JsonWriter::double_impl(double val) {
-  /// TODO: Implement support for JSON
-  qcore_implement();
+  delim();
+
+  m_os << val;
 }
 
 void AST_JsonWriter::bool_impl(bool val) {
-  /// TODO: Implement support for JSON
-  qcore_implement();
+  delim();
+
+  m_os << (val ? "true" : "false");
 }
 
 void AST_JsonWriter::null_impl() {
-  /// TODO: Implement support for JSON
-  qcore_implement();
+  delim();
+
+  m_os << "null";
 }
 
 void AST_JsonWriter::begin_obj_impl() {
-  /// TODO: Implement support for JSON
-  qcore_implement();
+  delim();
+
+  m_comma.push(false);
+  m_count.push(0);
+  m_os << "{";
 }
 
 void AST_JsonWriter::end_obj_impl() {
-  /// TODO: Implement support for JSON
-  qcore_implement();
+  qcore_assert(!m_count.empty() && !m_comma.empty());
+
+  m_os << "}";
+  m_count.pop();
+  m_comma.pop();
 }
 
 void AST_JsonWriter::begin_arr_impl(size_t max_size) {
-  /// TODO: Implement support for JSON
-  qcore_implement();
+  (void)max_size;
+  delim();
+
+  m_comma.push(true);
+  m_count.push(0);
+  m_os << "[";
 }
 
 void AST_JsonWriter::end_arr_impl() {
-  /// TODO: Implement support for JSON
-  qcore_implement();
+  qcore_assert(!m_count.empty() && !m_comma.empty());
+
+  m_os << "]";
+  m_count.pop();
+  m_comma.pop();
 }

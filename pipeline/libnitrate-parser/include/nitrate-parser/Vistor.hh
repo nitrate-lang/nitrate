@@ -66,7 +66,6 @@ namespace npar {
   class F128;
   class VoidTy;
   class PtrTy;
-  class ConstTy;
   class OpaqueTy;
   class TupleTy;
   class ArrayTy;
@@ -145,7 +144,6 @@ namespace npar {
     virtual void visit(F128& n) = 0;
     virtual void visit(VoidTy& n) = 0;
     virtual void visit(PtrTy& n) = 0;
-    virtual void visit(ConstTy& n) = 0;
     virtual void visit(OpaqueTy& n) = 0;
     virtual void visit(TupleTy& n) = 0;
     virtual void visit(ArrayTy& n) = 0;

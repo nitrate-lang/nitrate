@@ -276,7 +276,7 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
         }
 
         if (node->is(QAST_NODE_BLOCK)) {
-          node->as<Block>()->set_safety(SafetyMode::Unsafe);
+          node->as<Block>()->set_safety(SafetyMode::Safe);
         }
 
         break;
