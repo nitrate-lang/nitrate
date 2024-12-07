@@ -34,6 +34,8 @@
 #ifndef __NITRATE_PARSER_WRITER_H__
 #define __NITRATE_PARSER_WRITER_H__
 
+#include <nitrate-lexer/Token.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <functional>

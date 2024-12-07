@@ -33,6 +33,7 @@
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
+#include <nitrate-lexer/Lexer.h>
 #include <nitrate-parser/Node.h>
 
 #include <algorithm>
@@ -176,7 +177,16 @@ void AST_Writer::visit(TemplType& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  write_type_metadata(n);
+
+  string("template");
+  n.get_template()->accept(*this);
+
+  string("args");
+  let args = n.get_args();
+  begin_arr(args.size());
+  std::for_each(args.begin(), args.end(), [&](let arg) { arg->accept(*this); });
+  end_arr();
 
   end_obj();
 }
@@ -431,7 +441,10 @@ void AST_Writer::visit(PtrTy& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  write_type_metadata(n);
+
+  string("to");
+  n.get_item()->accept(*this);
 
   end_obj();
 }
@@ -446,7 +459,10 @@ void AST_Writer::visit(OpaqueTy& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  write_type_metadata(n);
+
+  string("name");
+  string(n.get_name());
 
   end_obj();
 }
@@ -461,7 +477,17 @@ void AST_Writer::visit(TupleTy& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  write_type_metadata(n);
+
+  { /* Write sub fields */
+    string("fields");
+
+    let fields = n.get_items();
+    begin_arr(fields.size());
+    std::for_each(fields.begin(), fields.end(),
+                  [&](let field) { field->accept(*this); });
+    end_arr();
+  }
 
   end_obj();
 }
@@ -476,7 +502,13 @@ void AST_Writer::visit(ArrayTy& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  write_type_metadata(n);
+
+  string("of");
+  n.get_item()->accept(*this);
+
+  string("size");
+  n.get_size()->accept(*this);
 
   end_obj();
 }
@@ -491,7 +523,10 @@ void AST_Writer::visit(RefTy& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  write_type_metadata(n);
+
+  string("to");
+  n.get_item()->accept(*this);
 
   end_obj();
 }
@@ -505,6 +540,22 @@ void AST_Writer::visit(StructTy& n) {
   }
 
   write_source_location(n);
+
+  write_type_metadata(n);
+
+  { /* Write struct fields */
+    string("fields");
+
+    begin_obj();
+    let fields = n.get_items();
+
+    std::for_each(fields.begin(), fields.end(), [&](let field) {
+      string(field.first);
+      field.second->accept(*this);
+    });
+
+    end_obj();
+  }
 
   /// TODO: Implement support for this node
 
@@ -536,7 +587,11 @@ void AST_Writer::visit(UnaryExpr& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("op");
+  string(qlex_opstr(n.get_op()));
+
+  string("rhs");
+  n.get_rhs()->accept(*this);
 
   end_obj();
 }
@@ -551,7 +606,14 @@ void AST_Writer::visit(BinExpr& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("op");
+  string(qlex_opstr(n.get_op()));
+
+  string("lhs");
+  n.get_lhs()->accept(*this);
+
+  string("rhs");
+  n.get_rhs()->accept(*this);
 
   end_obj();
 }
@@ -566,7 +628,11 @@ void AST_Writer::visit(PostUnaryExpr& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("op");
+  string(qlex_opstr(n.get_op()));
+
+  string("lhs");
+  n.get_lhs()->accept(*this);
 
   end_obj();
 }
@@ -581,7 +647,14 @@ void AST_Writer::visit(TernaryExpr& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("cond");
+  n.get_cond()->accept(*this);
+
+  string("lhs");
+  n.get_lhs()->accept(*this);
+
+  string("rhs");
+  n.get_rhs()->accept(*this);
 
   end_obj();
 }
@@ -596,7 +669,8 @@ void AST_Writer::visit(ConstInt& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("value");
+  string(n.get_value());
 
   end_obj();
 }
@@ -611,7 +685,8 @@ void AST_Writer::visit(ConstFloat& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("value");
+  string(n.get_value());
 
   end_obj();
 }
@@ -626,7 +701,8 @@ void AST_Writer::visit(ConstBool& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("value");
+  boolean(n.get_value());
 
   end_obj();
 }
@@ -641,7 +717,8 @@ void AST_Writer::visit(ConstString& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("value");
+  string(n.get_value());
 
   end_obj();
 }
@@ -656,7 +733,8 @@ void AST_Writer::visit(ConstChar& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("value");
+  string(std::array<char, 2>{(char)n.get_value(), 0}.data());
 
   end_obj();
 }
@@ -671,8 +749,6 @@ void AST_Writer::visit(ConstNull& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
-
   end_obj();
 }
 
@@ -685,8 +761,6 @@ void AST_Writer::visit(ConstUndef& n) {
   }
 
   write_source_location(n);
-
-  /// TODO: Implement support for this node
 
   end_obj();
 }
@@ -701,7 +775,24 @@ void AST_Writer::visit(Call& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("callee");
+  n.get_func()->accept(*this);
+
+  { /* Write arguments */
+    string("args");
+
+    let args = n.get_args();
+    begin_arr(args.size());
+    std::for_each(args.begin(), args.end(), [&](let arg) {
+      begin_obj();
+      string("name");
+      string(arg.first);
+      string("value");
+      arg.second->accept(*this);
+      end_obj();
+    });
+    end_arr();
+  }
 
   end_obj();
 }
@@ -716,7 +807,36 @@ void AST_Writer::visit(TemplCall& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("callee");
+  n.get_func()->accept(*this);
+
+  { /* Write template arguments */
+    string("template");
+
+    let args = n.get_template_args();
+    begin_obj();
+    std::for_each(args.begin(), args.end(), [&](let arg) {
+      string(arg.first);
+      arg.second->accept(*this);
+    });
+    end_obj();
+  }
+
+  { /* Write arguments */
+    string("args");
+
+    let args = n.get_args();
+    begin_arr(args.size());
+    std::for_each(args.begin(), args.end(), [&](let arg) {
+      begin_obj();
+      string("name");
+      string(arg.first);
+      string("value");
+      arg.second->accept(*this);
+      end_obj();
+    });
+    end_arr();
+  }
 
   end_obj();
 }
@@ -731,7 +851,15 @@ void AST_Writer::visit(List& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  { /* Write elements */
+    string("elements");
+
+    let items = n.get_items();
+    begin_arr(items.size());
+    std::for_each(items.begin(), items.end(),
+                  [&](let item) { item->accept(*this); });
+    end_arr();
+  }
 
   end_obj();
 }
@@ -746,7 +874,11 @@ void AST_Writer::visit(Assoc& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("key");
+  n.get_key()->accept(*this);
+
+  string("value");
+  n.get_value()->accept(*this);
 
   end_obj();
 }
@@ -761,7 +893,11 @@ void AST_Writer::visit(Field& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("field");
+  string(n.get_field());
+
+  string("base");
+  n.get_base()->accept(*this);
 
   end_obj();
 }
@@ -776,7 +912,11 @@ void AST_Writer::visit(Index& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("base");
+  n.get_base()->accept(*this);
+
+  string("index");
+  n.get_index()->accept(*this);
 
   end_obj();
 }
@@ -791,7 +931,14 @@ void AST_Writer::visit(Slice& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("base");
+  n.get_base()->accept(*this);
+
+  string("start");
+  n.get_start()->accept(*this);
+
+  string("end");
+  n.get_end()->accept(*this);
 
   end_obj();
 }
@@ -806,7 +953,30 @@ void AST_Writer::visit(FString& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  { /* Write items */
+    string("terms");
+
+    let items = n.get_items();
+    begin_arr(items.size());
+    std::for_each(items.begin(), items.end(), [&](let item) {
+      if (std::holds_alternative<String>(item)) {
+        begin_obj();
+
+        string("kind");
+        let kind_name =
+            npar_node_t::getKindName(npar_node_t::getTypeCode<ConstString>());
+        string(kind_name);
+
+        string("value");
+        string(std::get<String>(item));
+
+        end_obj();
+      } else {
+        std::get<Expr*>(item)->accept(*this);
+      }
+    });
+    end_arr();
+  }
 
   end_obj();
 }
@@ -821,7 +991,8 @@ void AST_Writer::visit(Ident& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("name");
+  string(n.get_name());
 
   end_obj();
 }
@@ -836,7 +1007,15 @@ void AST_Writer::visit(SeqPoint& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  { /* Write items */
+    string("terms");
+
+    let items = n.get_items();
+    begin_arr(items.size());
+    std::for_each(items.begin(), items.end(),
+                  [&](let item) { item->accept(*this); });
+    end_arr();
+  }
 
   end_obj();
 }
@@ -873,7 +1052,7 @@ void AST_Writer::visit(Block& n) {
     let items = n.get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(),
-                  [&](auto& item) { item->accept(*this); });
+                  [&](let item) { item->accept(*this); });
     end_arr();
   }
 
@@ -1061,7 +1240,11 @@ void AST_Writer::visit(ReturnIfStmt& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("cond");
+  n.get_cond()->accept(*this);
+
+  string("expr");
+  n.get_value()->accept(*this);
 
   end_obj();
 }
@@ -1076,7 +1259,11 @@ void AST_Writer::visit(CaseStmt& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("match");
+  n.get_cond() ? n.get_cond()->accept(*this) : null();
+
+  string("body");
+  n.get_body()->accept(*this);
 
   end_obj();
 }
@@ -1091,7 +1278,21 @@ void AST_Writer::visit(SwitchStmt& n) {
 
   write_source_location(n);
 
-  /// TODO: Implement support for this node
+  string("match");
+  n.get_cond()->accept(*this);
+
+  { /* Write cases */
+    string("cases");
+
+    let cases = n.get_cases();
+    begin_arr(cases.size());
+    std::for_each(cases.begin(), cases.end(),
+                  [&](let item) { item->accept(*this); });
+    end_arr();
+  }
+
+  string("default");
+  n.get_default() ? n.get_default()->accept(*this) : null();
 
   end_obj();
 }
