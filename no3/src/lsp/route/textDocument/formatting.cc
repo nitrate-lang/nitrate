@@ -224,7 +224,7 @@ static void put_indent(AutomatonState& S) {
   }
 }
 
-static void recurse(npar::Node* C, AutomatonState& S);
+static void recurse(npar_node_t* C, AutomatonState& S);
 
 static void put_type_metadata(npar::Type* N, AutomatonState& S) {
   auto range = N->get_range();
@@ -318,7 +318,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
   S.line << "}";
 }
 
-// static void recurse(npar::Node* C, AutomatonState& S) {
+// static void recurse(npar_node_t* C, AutomatonState& S) {
 //   /**
 //    * TODO: Resolve the following issues:
 //    * - Parentheses are currently lost and the order of sub-expressions is not
@@ -1734,7 +1734,7 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //   }
 // }
 
-static void recurse(npar::Node*, AutomatonState&) {
+static void recurse(npar_node_t*, AutomatonState&) {
   (void)write_float_literal;
   (void)escape_char_literal;
   (void)escape_string_literal;
@@ -1835,7 +1835,7 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
 
   AutomatonState S(options.tabSize);
 
-  recurse(static_cast<npar::Node*>(root), S);
+  recurse(static_cast<npar_node_t*>(root), S);
 
   ///==========================================================
   /// Send the whole new file contents

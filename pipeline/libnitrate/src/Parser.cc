@@ -274,7 +274,7 @@ static std::optional<npar_node_t *> parse_tokens(
   return root;
 }
 
-bool to_json_recurse(npar::Node *N, json &x);
+bool to_json_recurse(npar_node_t *N, json &x);
 
 bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
                         std::function<void(const char *)> diag_cb,
@@ -303,7 +303,7 @@ bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
 
   json o = json::array();
 
-  if (!to_json_recurse(static_cast<npar::Node *>(root.value()), o)) {
+  if (!to_json_recurse(static_cast<npar_node_t *>(root.value()), o)) {
     return false;
   }
 
@@ -327,7 +327,7 @@ bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
 
 using namespace npar;
 
-bool to_json_recurse(Node *N, json &x) {
+bool to_json_recurse(npar_node_t *N, json &x) {
   if (!N) {
     x = nullptr;
     return true;
