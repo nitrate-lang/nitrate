@@ -40,6 +40,38 @@
 
 using namespace npar;
 
+void AST_Writer::write_source_location(npar_node_t& n) const {
+  if (m_include_source_location) {
+    string("loc");
+    begin_obj();
+
+    string("beg");
+    uint64(n.get_start_pos());
+
+    string("end");
+    uint64(n.get_end_pos());
+
+    string("src");
+    string(std::get<2>(n.get_pos()));
+
+    end_obj();
+  }
+}
+
+void AST_Writer::write_type_metadata(Type& n) {
+  string("width");
+  n.get_width() ? n.get_width()->accept(*this) : null();
+
+  string("min");
+  n.get_range().first ? n.get_range().first->accept(*this) : null();
+
+  string("max");
+  n.get_range().second ? n.get_range().second->accept(*this) : null();
+
+  string("volatile");
+  boolean(n.is_volatile());
+}
+
 void AST_Writer::visit(npar_node_t& n) {
   begin_obj();
 
@@ -48,7 +80,7 @@ void AST_Writer::visit(npar_node_t& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
 
   end_obj();
 }
@@ -61,7 +93,10 @@ void AST_Writer::visit(ExprStmt& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  string("expr");
+  n.get_expr()->accept(*this);
 
   end_obj();
 }
@@ -74,7 +109,10 @@ void AST_Writer::visit(StmtExpr& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  string("stmt");
+  n.get_stmt()->accept(*this);
 
   end_obj();
 }
@@ -87,7 +125,10 @@ void AST_Writer::visit(TypeExpr& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  string("type");
+  n.get_type()->accept(*this);
 
   end_obj();
 }
@@ -100,7 +141,12 @@ void AST_Writer::visit(NamedTy& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
+
+  string("name");
+  string(n.get_name());
 
   end_obj();
 }
@@ -113,7 +159,9 @@ void AST_Writer::visit(InferTy& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -125,6 +173,8 @@ void AST_Writer::visit(TemplType& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -139,7 +189,9 @@ void AST_Writer::visit(U1& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -152,7 +204,9 @@ void AST_Writer::visit(U8& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -165,7 +219,9 @@ void AST_Writer::visit(U16& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -178,7 +234,9 @@ void AST_Writer::visit(U32& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -191,7 +249,9 @@ void AST_Writer::visit(U64& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -204,7 +264,9 @@ void AST_Writer::visit(U128& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -217,7 +279,9 @@ void AST_Writer::visit(I8& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -230,7 +294,9 @@ void AST_Writer::visit(I16& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -243,7 +309,9 @@ void AST_Writer::visit(I32& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -256,7 +324,9 @@ void AST_Writer::visit(I64& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -269,7 +339,9 @@ void AST_Writer::visit(I128& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -282,7 +354,9 @@ void AST_Writer::visit(F16& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -295,7 +369,9 @@ void AST_Writer::visit(F32& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -308,7 +384,9 @@ void AST_Writer::visit(F64& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -321,7 +399,9 @@ void AST_Writer::visit(F128& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -334,7 +414,9 @@ void AST_Writer::visit(VoidTy& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  write_type_metadata(n);
 
   end_obj();
 }
@@ -346,6 +428,8 @@ void AST_Writer::visit(PtrTy& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -360,6 +444,8 @@ void AST_Writer::visit(OpaqueTy& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -372,6 +458,8 @@ void AST_Writer::visit(TupleTy& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -386,6 +474,8 @@ void AST_Writer::visit(ArrayTy& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -398,6 +488,8 @@ void AST_Writer::visit(RefTy& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -412,6 +504,8 @@ void AST_Writer::visit(StructTy& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -424,6 +518,8 @@ void AST_Writer::visit(FuncTy& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -438,6 +534,8 @@ void AST_Writer::visit(UnaryExpr& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -450,6 +548,8 @@ void AST_Writer::visit(BinExpr& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -464,6 +564,8 @@ void AST_Writer::visit(PostUnaryExpr& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -476,6 +578,8 @@ void AST_Writer::visit(TernaryExpr& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -490,6 +594,8 @@ void AST_Writer::visit(ConstInt& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -502,6 +608,8 @@ void AST_Writer::visit(ConstFloat& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -516,6 +624,8 @@ void AST_Writer::visit(ConstBool& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -528,6 +638,8 @@ void AST_Writer::visit(ConstString& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -542,6 +654,8 @@ void AST_Writer::visit(ConstChar& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -554,6 +668,8 @@ void AST_Writer::visit(ConstNull& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -568,6 +684,8 @@ void AST_Writer::visit(ConstUndef& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -580,6 +698,8 @@ void AST_Writer::visit(Call& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -594,6 +714,8 @@ void AST_Writer::visit(TemplCall& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -606,6 +728,8 @@ void AST_Writer::visit(List& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -620,6 +744,8 @@ void AST_Writer::visit(Assoc& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -632,6 +758,8 @@ void AST_Writer::visit(Field& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -646,6 +774,8 @@ void AST_Writer::visit(Index& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -658,6 +788,8 @@ void AST_Writer::visit(Slice& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -672,6 +804,8 @@ void AST_Writer::visit(FString& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -684,6 +818,8 @@ void AST_Writer::visit(Ident& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -698,6 +834,8 @@ void AST_Writer::visit(SeqPoint& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -711,7 +849,9 @@ void AST_Writer::visit(Block& n) {
     string(n.getKindName());
   }
 
-  { /* Write safety profile*/
+  write_source_location(n);
+
+  { /* Write safety profile */
     string("safe");
 
     switch (n.get_safety()) {
@@ -748,6 +888,8 @@ void AST_Writer::visit(VarDecl& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -760,6 +902,8 @@ void AST_Writer::visit(InlineAsm& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -774,7 +918,20 @@ void AST_Writer::visit(IfStmt& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  string("cond");
+  n.get_cond()->accept(*this);
+
+  string("then");
+  n.get_then()->accept(*this);
+
+  string("else");
+  if (n.get_else()) {
+    n.get_else()->accept(*this);
+  } else {
+    null();
+  }
 
   end_obj();
 }
@@ -787,7 +944,13 @@ void AST_Writer::visit(WhileStmt& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  string("cond");
+  n.get_cond()->accept(*this);
+
+  string("body");
+  n.get_body()->accept(*this);
 
   end_obj();
 }
@@ -800,7 +963,19 @@ void AST_Writer::visit(ForStmt& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  string("init");
+  n.get_init()->accept(*this);
+
+  string("cond");
+  n.get_cond()->accept(*this);
+
+  string("step");
+  n.get_step()->accept(*this);
+
+  string("body");
+  n.get_body()->accept(*this);
 
   end_obj();
 }
@@ -813,7 +988,19 @@ void AST_Writer::visit(ForeachStmt& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  string("idx");
+  string(n.get_idx_ident());
+
+  string("val");
+  string(n.get_val_ident());
+
+  string("expr");
+  n.get_expr()->accept(*this);
+
+  string("body");
+  n.get_body()->accept(*this);
 
   end_obj();
 }
@@ -826,7 +1013,7 @@ void AST_Writer::visit(BreakStmt& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
 
   end_obj();
 }
@@ -839,7 +1026,7 @@ void AST_Writer::visit(ContinueStmt& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
 
   end_obj();
 }
@@ -852,7 +1039,14 @@ void AST_Writer::visit(ReturnStmt& n) {
     string(n.getKindName());
   }
 
-  /// TODO: Implement support for this node
+  write_source_location(n);
+
+  string("expr");
+  if (n.get_value()) {
+    n.get_value().value()->accept(*this);
+  } else {
+    null();
+  }
 
   end_obj();
 }
@@ -864,6 +1058,8 @@ void AST_Writer::visit(ReturnIfStmt& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -878,6 +1074,8 @@ void AST_Writer::visit(CaseStmt& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -890,6 +1088,8 @@ void AST_Writer::visit(SwitchStmt& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -904,6 +1104,8 @@ void AST_Writer::visit(TypedefDecl& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -916,6 +1118,8 @@ void AST_Writer::visit(FnDecl& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -930,6 +1134,8 @@ void AST_Writer::visit(FnDef& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -942,6 +1148,8 @@ void AST_Writer::visit(StructField& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -956,6 +1164,8 @@ void AST_Writer::visit(StructDef& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -968,6 +1178,8 @@ void AST_Writer::visit(EnumDef& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 
@@ -982,6 +1194,8 @@ void AST_Writer::visit(ScopeDecl& n) {
     string(n.getKindName());
   }
 
+  write_source_location(n);
+
   /// TODO: Implement support for this node
 
   end_obj();
@@ -994,6 +1208,8 @@ void AST_Writer::visit(ExportDecl& n) {
     string("kind");
     string(n.getKindName());
   }
+
+  write_source_location(n);
 
   /// TODO: Implement support for this node
 

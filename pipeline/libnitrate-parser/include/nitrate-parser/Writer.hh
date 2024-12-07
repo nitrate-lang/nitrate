@@ -64,12 +64,17 @@ namespace npar {
     BeginArray begin_arr;
     EndArray end_arr;
 
+    bool m_include_source_location;
+
+    void write_source_location(npar_node_t& n) const;
+    void write_type_metadata(Type& n);
+
   public:
     AST_Writer(InsertString str_impl, InsertUInt64 uint_impl,
                InsertDouble dbl_impl, InsertBool bool_impl,
                InsertNull null_impl, BeginObject begin_obj_impl,
                EndObject end_obj_impl, BeginArray begin_arr_impl,
-               EndArray end_arr_impl)
+               EndArray end_arr_impl, bool include_source_location = true)
         : string(str_impl),
           uint64(uint_impl),
           dbl(dbl_impl),
@@ -78,7 +83,8 @@ namespace npar {
           begin_obj(begin_obj_impl),
           end_obj(end_obj_impl),
           begin_arr(begin_arr_impl),
-          end_arr(end_arr_impl) {}
+          end_arr(end_arr_impl),
+          m_include_source_location(include_source_location) {}
 
     void visit(npar_node_t& n) override;
     void visit(ExprStmt&) override;
