@@ -41,7 +41,7 @@
 namespace npar {
   class AST_JsonReader final {
     std::istream& m_is;
-    Node* m_root;
+    npar_node_t* m_root;
     bool m_okay;
 
     void parse();
@@ -54,7 +54,7 @@ namespace npar {
 
     constexpr bool okay() const { return m_okay; }
 
-    constexpr std::optional<Node*> get() const {
+    constexpr std::optional<npar_node_t*> get() const {
       if (!m_okay || !m_root) {
         return std::nullopt;
       }
@@ -65,7 +65,7 @@ namespace npar {
 
   class AST_MsgPackReader final {
     std::istream& m_is;
-    Node* m_root;
+    npar_node_t* m_root;
     bool m_okay;
 
     void parse();
@@ -78,7 +78,7 @@ namespace npar {
 
     constexpr bool okay() const { return m_okay; }
 
-    constexpr std::optional<Node*> get() const {
+    constexpr std::optional<npar_node_t*> get() const {
       if (!m_okay || !m_root) {
         return std::nullopt;
       }
@@ -89,7 +89,7 @@ namespace npar {
 
   class AST_Reader final {
     std::istream& m_is;
-    Node* m_root;
+    npar_node_t* m_root;
     bool m_okay;
 
     enum class InputFormat {
@@ -117,7 +117,7 @@ namespace npar {
 
     constexpr bool okay() const { return m_okay; }
 
-    constexpr std::optional<Node*> get() const {
+    constexpr std::optional<npar_node_t*> get() const {
       if (!m_okay || !m_root) {
         return std::nullopt;
       }

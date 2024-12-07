@@ -98,8 +98,9 @@ using EResult = std::optional<Expr *>;
 using BResult = std::optional<std::vector<nr::Expr *>>;
 
 static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, IReport *G,
-                                           npar::Node *node);
-static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar::Node *node);
+                                           npar_node_t *node);
+static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G,
+                         npar_node_t *node);
 
 #define next_one(n) nrgen_one(b, s, G, n)
 #define next_any(n) nrgen_any(b, s, G, n)
@@ -127,8 +128,7 @@ C_EXPORT bool nr_lower(qmodule_t **mod, npar_node_t *base, const char *name,
   qmodule_t *R = nullptr;
   bool success = false;
 
-  if (auto root =
-          nrgen_one(builder, s, G.get(), static_cast<npar::Node *>(base))) {
+  if (auto root = nrgen_one(builder, s, G.get(), base)) {
     builder.appendToRoot(root.value());
     builder.finish();
 
@@ -1894,7 +1894,7 @@ static EResult nrgen_expr_stmt(NRBuilder &b, PState &s, IReport *G,
   return next_one(n->get_expr());
 }
 
-static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar::Node *n) {
+static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
   using namespace nr;
 
   if (!n) {
@@ -2180,7 +2180,7 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar::Node *n) {
   return out;
 }
 
-static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar::Node *n) {
+static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
   using namespace nr;
 
   if (!n) {

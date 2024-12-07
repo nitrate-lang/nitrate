@@ -37,8 +37,53 @@
 
 using namespace npar;
 
+static void escape_string(std::ostream &os, const std::string_view &input) {
+  os << "\"";
+
+  for (char ch : input) {
+    switch (ch) {
+      case '"':
+        os << "\\\"";
+        break;
+      case '\\':
+        os << "\\\\";
+        break;
+      case '\b':
+        os << "\\b";
+        break;
+      case '\f':
+        os << "\\f";
+        break;
+      case '\n':
+        os << "\\n";
+        break;
+      case '\r':
+        os << "\\r";
+        break;
+      case '\t':
+        os << "\\t";
+        break;
+      case '\0':
+        os << "\\0";
+        break;
+      default:
+        if (ch >= 32 && ch < 127) {
+          os << ch;
+        } else {
+          char hex[5];
+          snprintf(hex, sizeof(hex), "\\x%02x", (int)(uint8_t)ch);
+          os << hex;
+        }
+        break;
+    }
+  }
+
+  os << "\"";
+}
+
 void AST_JsonWriter::str_impl(std::string_view str) {
   (void)m_os;
+  (void)escape_string;
 
   /// TODO: Implement support for JSON
   qcore_implement();

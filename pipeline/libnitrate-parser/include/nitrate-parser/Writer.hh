@@ -79,7 +79,7 @@ namespace npar {
           begin_arr(begin_arr_impl),
           end_arr(end_arr_impl) {}
 
-    void visit(Node& n) override;
+    void visit(npar_node_t& n) override;
     void visit(ExprStmt&) override;
     void visit(StmtExpr&) override;
     void visit(TypeExpr&) override;

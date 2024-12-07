@@ -59,8 +59,8 @@ C_EXPORT void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }
 
 ///=============================================================================
 
-CPP_EXPORT std::ostream &Node::dump(std::ostream &os,
-                                    bool isForDebug) const noexcept {
+CPP_EXPORT std::ostream &npar_node_t::dump(std::ostream &os,
+                                           bool isForDebug) const noexcept {
   (void)isForDebug;
 
   size_t size = 0;

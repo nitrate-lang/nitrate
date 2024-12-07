@@ -40,13 +40,10 @@
 #include <cstdarg>
 #include <functional>
 #include <nitrate-ir/Report.hh>
-#include <span>
 #include <string_view>
 #include <unordered_set>
 
-namespace npar {
-  class Node;
-}
+struct npar_node_t;
 
 namespace nr {
   struct IssueInfo {

@@ -37,7 +37,7 @@
 
 using namespace npar;
 
-void AST_Writer::visit(Node&) {
+void AST_Writer::visit(npar_node_t&) {
   /// TODO: Implement support for this node
   qcore_implement();
 }

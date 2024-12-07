@@ -38,12 +38,9 @@
 
 #include <boost/bimap.hpp>
 #include <cstdarg>
-#include <span>
 #include <string_view>
 
-namespace npar {
-  class Node;
-}
+struct npar_node_t;
 
 namespace nr {
   enum class IC {
