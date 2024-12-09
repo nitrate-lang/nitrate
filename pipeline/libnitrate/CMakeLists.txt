@@ -47,7 +47,6 @@ set_target_properties(nitrate PROPERTIES OUTPUT_NAME nitrate)
 
 if(BUILD_TESTING)
   add_subdirectory(test)
-  add_subdirectory(fuzzer)
 endif()
 
 install(TARGETS nitrate DESTINATION lib)

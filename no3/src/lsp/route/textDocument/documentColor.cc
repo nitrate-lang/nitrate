@@ -114,7 +114,7 @@ void do_documentColor(const lsp::RequestMessage& req,
     return;
   }
 
-  auto ss = std::make_shared<std::stringstream>(std::move(text_content));
+  std::stringstream ss(std::move(text_content));
 
   qcore_env env;
   qlex lexer(ss, uri.c_str(), env.get());

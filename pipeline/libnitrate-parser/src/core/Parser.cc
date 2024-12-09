@@ -301,20 +301,6 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
   return block;
 }
 
-void example() {
-  std::stringstream buf;
-
-  AST_MsgPackWriter writer(buf);
-  Stmt(QAST_NODE_NODE).accept(writer);
-
-  buf.seekg(0);
-
-  if (auto node = AST_Reader(buf).get()) {
-  } else {
-    // error
-  }
-}
-
 C_EXPORT npar_t* npar_new(qlex_t* lexer, qcore_env_t env) {
   if (!lexer) {
     return nullptr;

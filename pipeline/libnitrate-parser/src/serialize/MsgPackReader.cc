@@ -38,9 +38,8 @@
 
 using namespace npar;
 
-void AST_MsgPackReader::parse() {
-  (void)m_is;
-
-  /// TODO: Implement JSON parsing
+void AST_MsgPackReader::parse_stream(std::istream& is) {
+  (void)is;
+  /// TODO: Implement MsgPack parsing
   qcore_implement();
 }

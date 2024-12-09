@@ -31,77 +31,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBNITRATE_INTERNAL
+#pragma once
 
-#include <nitrate-core/Lib.h>
-#include <nitrate/code.h>
-
-#include <SerialUtil.hh>
-#include <functional>
-#include <memory>
-#include <nitrate-core/Classes.hh>
-#include <nitrate-ir/Classes.hh>
+#include <cstdint>
+#include <cstdio>
+#include <istream>
+#include <string>
 #include <string_view>
-#include <unordered_set>
 
-static bool impl_use_json(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct JSON serialization
-
-  (void)R;
-  (void)O;
-
-  return true;
-}
-
-static bool impl_use_msgpack(qmodule_t *R, FILE *O) {
-  /// TODO: Do correct MsgPack serialization
-
-  return impl_use_json(R, O);
-}
-
-bool impl_subsys_nr(std::shared_ptr<std::istream> source, FILE *output,
-                    std::function<void(const char *)> diag_cb,
-                    const std::unordered_set<std::string_view> &opts) {
-  enum class OutMode {
-    JSON,
-    MsgPack,
-  } out_mode = OutMode::JSON;
-
-  if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
-    return false;
-  } else if (opts.contains("-fuse-msgpack")) {
-    out_mode = OutMode::MsgPack;
-  }
-
-  nr_conf conf;
-
-  { /* Should the ir use the crashguard signal handler? */
-    if (opts.contains("-fir-crashguard=off")) {
-      nr_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_OFF);
-    } else if (opts.contains("-fparse-crashguard=on")) {
-      nr_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_ON);
-    }
-  }
-
-  (void)source;
-
-  qmodule ir_module;
-
-  bool ok = nr_lower(&ir_module.get(), nullptr, "FILE", true);
-  if (!ok) {
-    diag_cb("Failed to lower IR module.\n");
-    return false;
-  }
-
-  switch (out_mode) {
-    case OutMode::JSON:
-      ok = impl_use_json(ir_module.get(), output);
-      break;
-    case OutMode::MsgPack:
-      ok = impl_use_msgpack(ir_module.get(), output);
-      break;
-  }
-
-  return ok;
-}
+std::string create_json_string(std::string_view input);
+bool read_json_string(std::istream &I, char **str, size_t &len);
+bool msgpack_write_uint(FILE *O, uint64_t x);
+bool msgpack_read_uint(std::istream &I, uint64_t &x);
+bool msgpack_write_str(FILE *O, std::string_view str);
+bool msgpack_read_str(std::istream &I, char **str, size_t &len);

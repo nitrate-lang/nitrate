@@ -275,8 +275,8 @@ static thread_local boost::unordered_map<qlex::num_buf_t, qlex::num_buf_t>
 
 ///============================================================================///
 
-CPP_EXPORT qlex_t *qlex_new(std::shared_ptr<std::istream> file,
-                            const char *filename, qcore_env_t env) {
+CPP_EXPORT qlex_t *qlex_new(std::istream &file, const char *filename,
+                            qcore_env_t env) {
   try {
     return new qlex_t(file, filename, env);
   } catch (std::bad_alloc &) {

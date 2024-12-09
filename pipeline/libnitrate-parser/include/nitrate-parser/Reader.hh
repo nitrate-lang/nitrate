@@ -36,99 +36,64 @@
 
 #include <nitrate-core/Macro.h>
 
+#include <cstdint>
 #include <istream>
 #include <nitrate-parser/Vistor.hh>
 #include <optional>
+#include <stack>
 
 namespace npar {
-  class CPP_EXPORT AST_JsonReader final {
-    std::istream& m_is;
-    npar_node_t* m_root;
-    bool m_okay;
-
-    void parse();
-
-  public:
-    constexpr AST_JsonReader(std::istream& is)
-        : m_is(is), m_root(nullptr), m_okay(false) {
-      parse();
-    }
-    virtual ~AST_JsonReader() = default;
-
-    constexpr bool okay() const { return m_okay; }
-
-    constexpr std::optional<npar_node_t*> get() const {
-      if (!m_okay || !m_root) {
-        return std::nullopt;
-      }
-
-      return m_root;
-    }
-  };
-
-  class CPP_EXPORT AST_MsgPackReader final {
-    std::istream& m_is;
-    npar_node_t* m_root;
-    bool m_okay;
-
-    void parse();
-
-  public:
-    constexpr AST_MsgPackReader(std::istream& is)
-        : m_is(is), m_root(nullptr), m_okay(false) {
-      parse();
-    }
-    virtual ~AST_MsgPackReader() = default;
-
-    constexpr bool okay() const { return m_okay; }
-
-    constexpr std::optional<npar_node_t*> get() const {
-      if (!m_okay || !m_root) {
-        return std::nullopt;
-      }
-
-      return m_root;
-    }
-  };
-
-  class CPP_EXPORT AST_Reader final {
-    std::istream& m_is;
-    npar_node_t* m_root;
-    bool m_okay;
-
-    enum class InputFormat {
-      JSON,
-      MSGPACK,
+  class CPP_EXPORT AST_Reader {
+    enum class State {
+      ObjStart,
+      ObjEnd,
     };
 
-    InputFormat determine_format();
+    std::stack<State> m_state;
+    std::stack<npar_node_t*> m_parse;
 
-    void parse_json();
-    void parse_msgpack();
+    void handle_state();
+
+    /// TODO: Implement state
+
+  protected:
+    void str(std::string_view str);
+    void uint(uint64_t val);
+    void dbl(double val);
+    void boolean(bool val);
+    void null();
+    void begin_obj();
+    void end_obj();
+    void begin_arr(size_t max_size);
+    void end_arr();
 
   public:
-    constexpr AST_Reader(std::istream& is)
-        : m_is(is), m_root(nullptr), m_okay(false) {
-      switch (determine_format()) {
-        case InputFormat::JSON:
-          parse_json();
-          break;
-        case InputFormat::MSGPACK:
-          parse_msgpack();
-          break;
-      }
-    }
+    AST_Reader() { m_state.push(State::ObjStart); }
     virtual ~AST_Reader() = default;
 
-    constexpr bool okay() const { return m_okay; }
-
-    constexpr std::optional<npar_node_t*> get() const {
-      if (!m_okay || !m_root) {
+    std::optional<npar_node_t*> get() {
+      if (m_parse.empty() || m_parse.top() == nullptr) {
         return std::nullopt;
       }
 
-      return m_root;
+      return m_parse.top();
     }
+  };
+
+  class CPP_EXPORT AST_JsonReader final : public AST_Reader {
+    void parse_stream(std::istream& is);
+
+  public:
+    AST_JsonReader(std::istream& is) { parse_stream(is); }
+    virtual ~AST_JsonReader() = default;
+  };
+
+  class CPP_EXPORT AST_MsgPackReader final : public AST_Reader {
+    void parse_stream(std::istream& is);
+
+  public:
+    AST_MsgPackReader(std::istream& is) { parse_stream(is); }
+    virtual ~AST_MsgPackReader() = default;
   };
 }  // namespace npar
 

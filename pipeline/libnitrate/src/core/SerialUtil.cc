@@ -35,7 +35,7 @@
 
 #include <nitrate-core/Error.h>
 
-#include <SerialUtil.hh>
+#include <core/SerialUtil.hh>
 
 std::string create_json_string(std::string_view input) {
   std::string output = "\"";

@@ -31,15 +31,36 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstdint>
-#include <cstdio>
-#include <istream>
-#include <string>
-#include <string_view>
+#pragma once
 
-std::string create_json_string(std::string_view input);
-bool read_json_string(std::istream &I, char **str, size_t &len);
-bool msgpack_write_uint(FILE *O, uint64_t x);
-bool msgpack_read_uint(std::istream &I, uint64_t &x);
-bool msgpack_write_str(FILE *O, std::string_view str);
-bool msgpack_read_str(std::istream &I, char **str, size_t &len);
+#include <functional>
+#include <iostream>
+#include <string_view>
+#include <unordered_set>
+
+namespace nit {
+  typedef bool (*subsystem_func)(
+      std::istream &source, std::ostream &output,
+      std::function<void(const char *)> diag_cb,
+      const std::unordered_set<std::string_view> &opts);
+
+  bool basic_lexer(std::istream &source, std::ostream &output,
+                   std::function<void(const char *)> diag_cb,
+                   const std::unordered_set<std::string_view> &opts);
+
+  bool meta(std::istream &source, std::ostream &output,
+            std::function<void(const char *)> diag_cb,
+            const std::unordered_set<std::string_view> &opts);
+
+  bool parser(std::istream &source, std::ostream &output,
+              std::function<void(const char *)> diag_cb,
+              const std::unordered_set<std::string_view> &opts);
+
+  bool nr(std::istream &source, std::ostream &output,
+          std::function<void(const char *)> diag_cb,
+          const std::unordered_set<std::string_view> &opts);
+
+  bool codegen(std::istream &source, std::ostream &output,
+               std::function<void(const char *)> diag_cb,
+               const std::unordered_set<std::string_view> &opts);
+}  // namespace nit

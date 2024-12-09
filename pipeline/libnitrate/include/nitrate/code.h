@@ -98,7 +98,7 @@ typedef void (*nit_diag_cb)(const char *message, const char *by,
  * which will result in an error being returned for an otherwise valid call.
  * This is not a bug, but a feature to maximize the efficiency of the system.
  */
-bool nit_cc(nit_stream_t *source, FILE *output, nit_diag_cb diag_cb,
+bool nit_cc(nit_stream_t *source, nit_stream_t *output, nit_diag_cb diag_cb,
             uint64_t userdata, const char *const options[]);
 
 /**
@@ -134,6 +134,19 @@ void nit_diag_stderr(const char *, const char *, uint64_t);
 extern bool nit_lib_ready;
 bool nit_lib_init();
 #endif
+
+static inline nit_stream_t *NIT_STREAM(FILE *c_stream) {
+  return nit_from(c_stream, true);
+}
+
+static inline nit_stream_t *NIT_MEMOPEN(const void *data_ptr,
+                                        size_t data_size) {
+  return nit_from(fmemopen((void *)data_ptr, data_size, "rb"), true);
+}
+
+static inline nit_stream_t *NIT_OPEM_STREAM(char **buf_ptr, size_t *buf_size) {
+  return nit_from(open_memstream(buf_ptr, buf_size), true);
+}
 
 #ifdef __cplusplus
 }

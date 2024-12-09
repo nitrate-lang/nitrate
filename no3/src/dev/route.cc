@@ -128,8 +128,8 @@ namespace no3::benchmark {
 static int do_parse(std::string source, std::string output) {
   qcore_env env;
 
-  auto file = std::make_shared<std::fstream>(source, std::ios::in);
-  if (!file->is_open()) {
+  std::fstream file(source, std::ios::in);
+  if (!file.is_open()) {
     LOG(ERROR) << "Failed to open source file: " << source;
     return 1;
   }
@@ -178,8 +178,8 @@ static int do_nr(std::string source, std::string output, std::string opts,
 
   qcore_env env;
 
-  auto file = std::make_shared<std::fstream>(source, std::ios::in);
-  if (!file->is_open()) {
+  std::fstream file(source, std::ios::in);
+  if (!file.is_open()) {
     LOG(ERROR) << "Failed to open source file: " << source;
     return 1;
   }
@@ -248,8 +248,8 @@ static int do_codegen(std::string source, std::string output, std::string opts,
 
   qcore_env env;
 
-  auto file = std::make_shared<std::fstream>(source, std::ios::in);
-  if (!file->is_open()) {
+  std::fstream file(source, std::ios::in);
+  if (!file.is_open()) {
     LOG(ERROR) << "Failed to open source file: " << source;
     return 1;
   }

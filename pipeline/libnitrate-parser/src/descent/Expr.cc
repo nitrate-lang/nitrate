@@ -39,6 +39,7 @@
 
 #include <cstddef>
 #include <descent/Recurse.hh>
+#include <sstream>
 #include <stack>
 
 #define MAX_EXPR_DEPTH (10000)
@@ -169,9 +170,11 @@ static bool recurse_fstring(npar_t &S, FString **node, qlex_t &rd,
       w_end = i + 1;
       state = 0;
 
-      auto sub = fstr.substr(w_beg, w_end - w_beg);
+      std::string sub(fstr.substr(w_beg, w_end - w_beg));
 
-      qlex_t *subrd = qlex_direct(sub.data(), sub.size(), "fstring", S.env);
+      std::istringstream ss(sub);
+
+      qlex_t *subrd = qlex_new(ss, "fstring", S.env);
 
       expr = recurse_expr(S, *subrd, {qlex_tok_t(qPunc, qPuncRCur)}, depth + 1);
 

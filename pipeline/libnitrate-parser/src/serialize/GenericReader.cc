@@ -38,23 +38,47 @@
 
 using namespace npar;
 
-AST_Reader::InputFormat AST_Reader::determine_format() {
-  (void)m_is;
-
-  /// TODO: Detect format
+void AST_Reader::str(std::string_view str) {
+  /// TODO: Implement generic deserializer
   qcore_implement();
 }
 
-void AST_Reader::parse_json() {
-  let reader = AST_JsonReader(m_is);
-
-  m_okay = reader.okay();
-  m_root = reader.get().value_or(nullptr);
+void AST_Reader::uint(uint64_t val) {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
 }
 
-void AST_Reader::parse_msgpack() {
-  let reader = AST_MsgPackReader(m_is);
+void AST_Reader::dbl(double val) {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
 
-  m_okay = reader.okay();
-  m_root = reader.get().value_or(nullptr);
+void AST_Reader::boolean(bool val) {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
+
+void AST_Reader::null() {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
+
+void AST_Reader::begin_obj() {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
+
+void AST_Reader::end_obj() {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
+
+void AST_Reader::begin_arr(size_t max_size) {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
+
+void AST_Reader::end_arr() {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
 }

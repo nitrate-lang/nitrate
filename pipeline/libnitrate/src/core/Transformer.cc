@@ -42,8 +42,9 @@
 #include <nitrate-seq/Lib.h>
 #include <nitrate/code.h>
 
-#include <Stream.hh>
 #include <cerrno>
+#include <core/Stream.hh>
+#include <core/Transformer.hh>
 #include <cstdarg>
 #include <cstddef>
 #include <cstdlib>
@@ -55,25 +56,27 @@
 
 static const char *empty_options[] = {NULL};
 
-static bool parse_options(const char *const options[],
-                          std::vector<std::string_view> &opts) {
+static std::optional<std::vector<std::string_view>> parse_options(
+    const char *const options[]) {
   constexpr size_t max_options = 100000;
 
   if (!options) {
-    return true;
+    return std::nullopt;
   }
+
+  std::vector<std::string_view> opts;
 
   for (size_t i = 0; options[i]; i++) {
     if (i >= max_options) {
       qcore_print(QCORE_ERROR, "Too many options provided, max is %zu",
                   max_options);
-      return false;
+      return std::nullopt;
     }
 
     opts.push_back(options[i]);
   }
 
-  return true;
+  return opts;
 }
 
 static void diag_nop(const char *, const char *, uint64_t) {}
@@ -86,145 +89,71 @@ C_EXPORT void nit_diag_stderr(const char *message, const char *, uint64_t) {
   fprintf(stderr, "%s", message);
 }
 
-typedef bool (*nit_subsystem_impl)(
-    std::shared_ptr<std::istream> source, FILE *output,
-    std::function<void(const char *)> diag_cb,
-    const std::unordered_set<std::string_view> &opts);
-
-bool impl_subsys_basic_lexer(std::shared_ptr<std::istream> source, FILE *output,
-                             std::function<void(const char *)> diag_cb,
-                             const std::unordered_set<std::string_view> &opts);
-
-bool impl_subsys_meta(std::shared_ptr<std::istream> source, FILE *output,
-                      std::function<void(const char *)> diag_cb,
-                      const std::unordered_set<std::string_view> &opts);
-
-bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
-                        std::function<void(const char *)> diag_cb,
-                        const std::unordered_set<std::string_view> &opts);
-
-bool impl_subsys_nr(std::shared_ptr<std::istream> source, FILE *output,
-                    std::function<void(const char *)> diag_cb,
-                    const std::unordered_set<std::string_view> &opts);
-
-static bool impl_subsys_codegen(
-    std::shared_ptr<std::istream> source, FILE *output,
-    std::function<void(const char *)> diag_cb,
-    const std::unordered_set<std::string_view> &opts);
-
-static const std::unordered_map<std::string_view, nit_subsystem_impl>
+static const std::unordered_map<std::string_view, nit::subsystem_func>
     dispatch_funcs = {
-        {"lex", impl_subsys_basic_lexer}, {"meta", impl_subsys_meta},
-        {"parse", impl_subsys_parser},    {"ir", impl_subsys_nr},
-        {"codegen", impl_subsys_codegen},
+        {"lex", nit::basic_lexer}, {"meta", nit::meta},
+        {"parse", nit::parser},    {"ir", nit::nr},
+        {"codegen", nit::codegen},
 };
 
-static bool check_out_stream_usable(FILE *stream, const char *name) {
-  long pos = ftell(stream);
-  if (pos == -1) {
-    qcore_print(QCORE_DEBUG, "nit_cc: %s pipe is not seekable", name);
-    return false;
-  }
-
-  if (fseek(stream, 0, SEEK_SET) == -1) {
-    qcore_print(QCORE_DEBUG, "nit_cc: Failed to rewind %s pipe", name);
-    return false;
-  }
-
-  if (fseek(stream, pos, SEEK_SET) == -1) {
-    qcore_print(QCORE_DEBUG, "nit_cc: Failed to restore %s pipe position",
-                name);
-    return false;
-  }
-
-  return true;
-}
-
-C_EXPORT bool nit_cc(nit_stream_t *S, FILE *O, nit_diag_cb diag_cb,
+C_EXPORT bool nit_cc(nit_stream_t *S, nit_stream_t *O, nit_diag_cb diag_cb,
                      uint64_t userdata, const char *const options[]) {
+  qcore_assert(S && O);
+
   /* This API will be used by mortals, protect them from themselves */
   if (!nit_lib_ready && !nit_lib_init()) {
     return false;
   }
 
-  { /* Argument validate and normalize */
-    if (!S) qcore_panic("source pipe is NULL");
-    if (!O) qcore_panic("output pipe is NULL");
+  options = options ? options : empty_options;
+  diag_cb = diag_cb ? diag_cb : diag_nop;
 
-    if (!options) {
-      options = empty_options;
-    }
-
-    if (!diag_cb) {
-      diag_cb = diag_nop;
-    }
-  }
-
-  qcore_env env;
-
-  std::vector<std::string_view> opts;
-  if (!parse_options(options, opts)) {
-    qcore_print(QCORE_ERROR, "Failed to parse options");
-    return false;
-  }
-
-  if (opts.empty()) {
-    return true;
-  }
-
-  const auto subsystem = dispatch_funcs.find(opts[0]);
-  if (subsystem == dispatch_funcs.end()) {
-    qcore_print(QCORE_ERROR, "Unknown subsystem name in options: %s",
-                opts[0].data());
-    return false;
-  }
-
-  std::unordered_set<std::string_view> opts_set(opts.begin() + 1, opts.end());
-
-  bool is_output_usable = check_out_stream_usable(O, "output");
   errno = 0;
 
-  FILE *out_alias = nullptr;
-  char *out_alias_buf = nullptr;
-  size_t out_alias_size = 0;
+  if (let options_opt = parse_options(options)) {
+    let opts = options_opt.value();
 
-  if (!is_output_usable) {
-    out_alias = open_memstream(&out_alias_buf, &out_alias_size);
-    if (!out_alias) {
-      qcore_print(QCORE_ERROR, "Failed to open temporary output stream");
-      return false;
+    if (!opts.empty()) {
+      if (dispatch_funcs.contains(opts.at(0))) {
+        let subsystem = dispatch_funcs.at(opts.at(0));
+
+        let input_stream = std::make_shared<std::istream>(S);
+        let output_stream = std::make_shared<std::ostream>(O);
+
+        std::unordered_set<std::string_view> opts_set(opts.begin() + 1,
+                                                      opts.end());
+
+        qcore_env env; /* Don't remove me */
+
+        let is_success = subsystem(
+            *input_stream, *output_stream,
+            [&](let msg) {
+              /* string_views's in opts are null terminated */
+              diag_cb(msg, opts[0].data(), userdata);
+            },
+            opts_set);
+
+        output_stream->flush();
+
+        return is_success;
+      } else { /* Unknown subsystem */
+        qcore_print(QCORE_ERROR, "Unknown subsystem name in options: %s",
+                    opts[0].data());
+        return false;
+      }
+    } else { /* Nothing to do */
+      return true;
     }
-  } else {
-    out_alias = O;
+  } else { /* Options parse error */
+    return false;
   }
-
-  auto input_stream = std::make_shared<std::istream>(S);
-
-  bool ok = subsystem->second(
-      input_stream, out_alias,
-      [&](const char *msg) {
-        /* string_views's in opts are null terminated */
-        diag_cb(msg, opts[0].data(), userdata);
-      },
-      opts_set);
-
-  if (!is_output_usable) {
-    fclose(out_alias);
-    ok &= fwrite(out_alias_buf, 1, out_alias_size, O) == out_alias_size;
-    free(out_alias_buf);
-  }
-
-  fflush(O);
-
-  return ok;
 }
 
 ///============================================================================///
 
-static bool impl_subsys_codegen(
-    std::shared_ptr<std::istream> source, FILE *output,
-    std::function<void(const char *)> diag_cb,
-    const std::unordered_set<std::string_view> &opts) {
+bool nit::codegen(std::istream &source, std::ostream &output,
+                  std::function<void(const char *)> diag_cb,
+                  const std::unordered_set<std::string_view> &opts) {
   (void)source;
   (void)output;
   (void)diag_cb;

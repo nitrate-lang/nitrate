@@ -1815,7 +1815,7 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
     return;
   }
 
-  auto ss = std::make_shared<std::stringstream>(std::move(text_content));
+  std::stringstream ss(std::move(text_content));
 
   qcore_env env;
   qlex lexer(ss, uri.c_str(), env.get());

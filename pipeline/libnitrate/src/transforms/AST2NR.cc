@@ -31,27 +31,65 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
-#include <rapidjson/document.h>
-#include <rapidjson/istreamwrapper.h>
+#define LIBNITRATE_INTERNAL
 
-#include <iostream>
-#include <nitrate-parser/Reader.hh>
+#include <nitrate-core/Lib.h>
+#include <nitrate/code.h>
 
-using namespace npar;
+#include <core/SerialUtil.hh>
+#include <core/Transformer.hh>
+#include <functional>
+#include <nitrate-core/Classes.hh>
+#include <nitrate-ir/Classes.hh>
+#include <string_view>
+#include <unordered_set>
 
-void AST_JsonReader::parse_stream(std::istream& is) {
-  rapidjson::Document doc;
-  rapidjson::IStreamWrapper wrapper(is);
-  doc.ParseStream(wrapper);
+bool nit::nr(std::istream &source, std::ostream &output,
+             std::function<void(const char *)> diag_cb,
+             const std::unordered_set<std::string_view> &opts) {
+  enum class OutMode {
+    JSON,
+    MsgPack,
+  } out_mode = OutMode::JSON;
 
-  if (!doc.HasParseError()) {
-    for (auto it = doc.Begin(); it != doc.End(); ++it) {
-      std::cout << it->GetType() << std::endl;
+  if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
+    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
+    return false;
+  } else if (opts.contains("-fuse-msgpack")) {
+    out_mode = OutMode::MsgPack;
+  }
+
+  nr_conf conf;
+
+  { /* Should the ir use the crashguard signal handler? */
+    if (opts.contains("-fir-crashguard=off")) {
+      nr_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_OFF);
+    } else if (opts.contains("-fparse-crashguard=on")) {
+      nr_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_ON);
     }
   }
 
-  /// TODO: Implement JSON parsing
-  qcore_implement();
+  (void)source;
+
+  qmodule ir_module;
+
+  bool ok = nr_lower(&ir_module.get(), nullptr, "FILE", true);
+  if (!ok) {
+    diag_cb("Failed to lower IR module.\n");
+    return false;
+  }
+
+  (void)out_mode;
+  (void)output;
+  qcore_print(QCORE_INFO, "Not implemented yet.");
+  return false;
+
+  // switch (out_mode) {
+  //   case OutMode::JSON:
+  //     ok = impl_use_json(ir_module.get(), output);
+  //     break;
+  //   case OutMode::MsgPack:
+  //     ok = impl_use_msgpack(ir_module.get(), output);
+  //     break;
+  // }
 }
