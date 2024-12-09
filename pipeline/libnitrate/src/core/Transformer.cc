@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <streambuf>
 #define LIBNITRATE_INTERNAL
 #include <nitrate-core/Env.h>
 #include <nitrate-core/Lib.h>
@@ -79,13 +80,13 @@ static std::optional<std::vector<std::string_view>> parse_options(
   return opts;
 }
 
-static void diag_nop(const char *, const char *, uint64_t) {}
+static void diag_nop(const char *, const char *, void *) {}
 
-C_EXPORT void nit_diag_stdout(const char *message, const char *, uint64_t) {
+C_EXPORT void nit_diag_stdout(const char *message, const char *, void *) {
   fprintf(stdout, "%s", message);
 }
 
-C_EXPORT void nit_diag_stderr(const char *message, const char *, uint64_t) {
+C_EXPORT void nit_diag_stderr(const char *message, const char *, void *) {
   fprintf(stderr, "%s", message);
 }
 
@@ -96,19 +97,51 @@ static const std::unordered_map<std::string_view, nit::subsystem_func>
         {"codegen", nit::codegen},
 };
 
-C_EXPORT bool nit_cc(nit_stream_t *S, nit_stream_t *O, nit_diag_cb diag_cb,
-                     uint64_t userdata, const char *const options[]) {
-  qcore_assert(S && O);
+extern bool nit_lib_init();
+extern void nit_deinit();
 
-  /* This API will be used by mortals, protect them from themselves */
-  if (!nit_lib_ready && !nit_lib_init()) {
-    return false;
+class LibraryInitRAII {
+  bool ok;
+
+public:
+  LibraryInitRAII() { ok = nit_lib_init(); }
+  ~LibraryInitRAII() {
+    if (ok) {
+      nit_deinit();
+    }
   }
+
+  bool is_initialized() const { return ok; }
+};
+
+class null_ostream_t : public std::streambuf {
+public:
+  null_ostream_t() : std::streambuf() {}
+
+  int underflow() override { return EOF; }
+  std::streamsize xsputn(const char *, std::streamsize n) override { return n; }
+};
+
+C_EXPORT bool nit_cc(nit_stream_t *in, nit_stream_t *out, nit_diag_cb diag_cb,
+                     void *opaque, const char *const options[]) {
+  static null_ostream_t null_ostream;
+
+  errno = 0;
+
+  if (!in) return false;
+
+  std::streambuf *the_output =
+      out ? static_cast<std::streambuf *>(out)
+          : static_cast<std::streambuf *>(&null_ostream);
 
   options = options ? options : empty_options;
   diag_cb = diag_cb ? diag_cb : diag_nop;
 
-  errno = 0;
+  LibraryInitRAII init_manager;
+
+  if (!init_manager.is_initialized()) {
+    return false;
+  }
 
   if (let options_opt = parse_options(options)) {
     let opts = options_opt.value();
@@ -117,19 +150,19 @@ C_EXPORT bool nit_cc(nit_stream_t *S, nit_stream_t *O, nit_diag_cb diag_cb,
       if (dispatch_funcs.contains(opts.at(0))) {
         let subsystem = dispatch_funcs.at(opts.at(0));
 
-        let input_stream = std::make_shared<std::istream>(S);
-        let output_stream = std::make_shared<std::ostream>(O);
-
         std::unordered_set<std::string_view> opts_set(opts.begin() + 1,
                                                       opts.end());
 
         qcore_env env; /* Don't remove me */
 
+        let input_stream = std::make_shared<std::istream>(in);
+        let output_stream = std::make_shared<std::ostream>(the_output);
+
         let is_success = subsystem(
             *input_stream, *output_stream,
             [&](let msg) {
               /* string_views's in opts are null terminated */
-              diag_cb(msg, opts[0].data(), userdata);
+              diag_cb(msg, opts[0].data(), opaque);
             },
             opts_set);
 

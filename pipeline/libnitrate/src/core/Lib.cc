@@ -44,20 +44,9 @@
 
 #include <atomic>
 
-extern "C" {
-__attribute__((visibility("default"))) bool nit_lib_ready;
-}
-
 static std::atomic<size_t> nit_lib_ref_count = 0;
 
-static bool do_init() {
-  nit_lib_ready = true;
-  return true;
-}
-
-static void do_deinit() { nit_lib_ready = false; }
-
-C_EXPORT bool nit_lib_init() {
+bool nit_lib_init() {
   if (nit_lib_ref_count++ > 1) {
     return true;
   }
@@ -86,15 +75,13 @@ C_EXPORT bool nit_lib_init() {
     return false;
   }
 
-  return do_init();
+  return true;
 }
 
-C_EXPORT void nit_deinit() {
+void nit_deinit() {
   if (--nit_lib_ref_count > 0) {
     return;
   }
-
-  do_deinit();
 
   qcode_lib_deinit();
   nr_lib_deinit();
@@ -102,52 +89,4 @@ C_EXPORT void nit_deinit() {
   qprep_lib_deinit();
   qlex_lib_deinit();
   qcore_lib_deinit();
-}
-
-C_EXPORT const char* nit_lib_version() {
-  static const char* version_string =
-
-      "[" __TARGET_VERSION
-      "] ["
-
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
-    defined(_M_X64) || defined(_M_AMD64)
-      "x86_64-"
-#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
-      "x86-"
-#elif defined(__aarch64__)
-      "aarch64-"
-#elif defined(__arm__)
-      "arm-"
-#else
-      "unknown-"
-#endif
-
-#if defined(__linux__)
-      "linux-"
-#elif defined(__APPLE__)
-      "macos-"
-#elif defined(_WIN32)
-      "win32-"
-#else
-      "unknown-"
-#endif
-
-#if defined(__clang__)
-      "clang] "
-#elif defined(__GNUC__)
-      "gnu] "
-#else
-      "unknown] "
-#endif
-
-#if NDEBUG
-      "[release]"
-#else
-      "[debug]"
-#endif
-
-      ;
-
-  return version_string;
 }

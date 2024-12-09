@@ -11,7 +11,5 @@ int main() {
   nit_fclose(in);
   nit_fclose(out);
 
-  nit_deinit();
-
   return ok ? 0 : 1;
 }

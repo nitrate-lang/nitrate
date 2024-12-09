@@ -42,102 +42,25 @@
 extern "C" {
 #endif
 
+/// @brief Nitrate stream type.
 typedef struct nit_stream_t nit_stream_t;
 
+/// @brief Close a Nitrate stream.
 void nit_fclose(nit_stream_t *);
+
+/// @brief Create a Nitrate stream from a C stream.
 nit_stream_t *nit_from(FILE *, bool auto_close);
+
+/// @brief Concatenate multiple streams into a single stream.
 nit_stream_t *nit_join(size_t num, /* ... FILE* */...);
+
+/// @brief Concatenate multiple streams into a single stream.
 nit_stream_t *nit_joinv(size_t num, /* ... FILE* */ va_list va);
+
+/// @brief Concatenate multiple streams into a single stream.
 nit_stream_t *nit_njoin(size_t num, FILE **streams);
 
-typedef void (*nit_diag_cb)(const char *message, const char *by,
-                            uint64_t userdata);
-
-/**
- * @brief Generic interface to transformation utilities provided by the Nitrate
- * Toolchain.
- *
- * @param source Input pipe to read data from.
- * @param output The output pipe to write data to.
- * @param diag_cb [Nullable] Callback function to report diagnostics.
- * @param userdata User data to pass to the diagnostic callback.
- * @param options [Nullable] NULL terminated array of options to pass to the
- * transformer.
- *
- * @return `true` if the transformation was successful, `false` otherwise.
- *
- * @note The `source` can not be the same pipe as the `output`.
- * @note The `diag_cb` function is optional. If provided, it will be called to
- * report diagnostics. The `userdata` parameter will be passed to the callback
- * function on each invocation. `userdata` can be used to create closures.
- * `userdata` can be any value, it is not checked internally.
- *
- * @note The `options` parameter is optional. If provided, it will be passed to
- * the transformer otherwise an empty array will be passed.
- * @warning Don't forget the that the last element of the `options` array must
- * be `NULL`. This is how the function knows when to stop reading the array.
- *
- * @note The `options` array is validated internally to the fullest extent
- * possible by the appropriate subsystem. However, it is not guaranteed that all
- * possible options will trigger well defined transformations. The transformer
- * may ignore some options or may not be able to handle them. See the
- * documentation for each component for more information on what options are
- * available. This function is mostly just a wrapper around various internal
- * subsystems and therefore has limited knowledge of the actual semantics of the
- * options.
- *
- * @note The library will be initialized automatically if it is not already
- * initialized. This is done to make the library easier to use. However, this
- * may not be the desired behavior in some cases. To prevent this behavior, call
- * `nit_lib_init` before calling this function. If the library is already
- * initialized, this will not increment the library's reference count otherwise
- * it will.
- *
- * @warning This function is thread-safe. However, it it may block other threads
- * in some cases. Some components can the number of concurrent runs on them
- * which will result in an error being returned for an otherwise valid call.
- * This is not a bug, but a feature to maximize the efficiency of the system.
- */
-bool nit_cc(nit_stream_t *source, nit_stream_t *output, nit_diag_cb diag_cb,
-            uint64_t userdata, const char *const options[]);
-
-/**
- * @brief Deinitialize the Nitrate library.
- *
- * @note This function should be called when the Nitrate library is no longer
- * needed.
- * @note This library is reference counted internally, so it is safe to call
- * this function multiple times. When the reference count actually reaches zero,
- * the library will be deinitialized along with any *external* components that
- * were initialized by the library. If the library is not initialized, this
- * function will do nothing.
- *
- * @note To check if the library is initialized, use the `nit_lib_ready`
- * variable. Beware that this variable is not atomic, therefore may not be safe
- * in a multithreaded environment.
- *
- * @note This function is thread-safe.
- */
-void nit_deinit(void);
-
-/**
- * @brief Predefined diagnostic callback that writes to `stdout`.
- */
-void nit_diag_stdout(const char *, const char *, uint64_t);
-
-/**
- * @brief Predefined diagnostic callback that writes to `stderr`.
- */
-void nit_diag_stderr(const char *, const char *, uint64_t);
-
-#ifdef LIBNITRATE_INTERNAL
-extern bool nit_lib_ready;
-bool nit_lib_init();
-#endif
-
-static inline nit_stream_t *NIT_STREAM(FILE *c_stream) {
-  return nit_from(c_stream, true);
-}
+///=============================================================================
 
 static inline nit_stream_t *NIT_MEMOPEN(const void *data_ptr,
                                         size_t data_size) {
@@ -147,6 +70,55 @@ static inline nit_stream_t *NIT_MEMOPEN(const void *data_ptr,
 static inline nit_stream_t *NIT_OPEM_STREAM(char **buf_ptr, size_t *buf_size) {
   return nit_from(open_memstream(buf_ptr, buf_size), true);
 }
+
+/// @brief Predefined diagnostic callback that writes to `stdout`.
+void nit_diag_stdout(const char *, const char *, void *);
+
+/// @brief Predefined diagnostic callback that writes to `stderr`.
+void nit_diag_stderr(const char *, const char *, void *);
+
+/// @brief Diagnostic callback function prototype.
+typedef void (*nit_diag_cb)(const char *message, const char *by, void *opaque);
+
+/******************************************************************************
+ * @brief Generic Nitrate Toolchain tranformation function.                   *
+ *                                                                            *
+ ******************************************************************************
+ *                                                                            *
+ * @param in      Transform input, or `NULL` to indicate no input             *
+ * @param out     Transform output, or `NULL` to discard output               *
+ * @param diag    Diagnostic callback function, or `NULL` to discard          *
+ * @param opaque  Context to pass to the diagnostic callback                  *
+ * @param options NULL-terminated array of options, or `NULL` for empty       *
+ *                                                                            *
+ * @return `true` if the transformation was successful, `false` otherwise.    *
+ *                                                                            *
+ ******************************************************************************
+ *                                                                            *
+ * @note The input and output streams are not closed by this function. It is  *
+ * the caller's responsibility to close the streams. The input and output     *
+ * streams cannot be the same.                                                *
+ *                                                                            *
+ * @warning Some internal validation is performed on the `options` parameter. *
+ * However, there is no guarantee that all permutations of options are        *
+ * guaranteed to trigger well-defined deterministic transformations. If an    *
+ * option is not recognized, the transformer will fail. See the documentation *
+ * for more information on available options and their respective usage.      *
+ *                                                                            *
+ * @note Dependency initialization and deinitialization are handled           *
+ * automatically. To increase performance for multiple calls, consider        *
+ * manually initializing/deinitializing this library's dependencies.          *
+ *                                                                            *
+ * @note This function is thread-safe. However, it it may block in sometimes. *
+ * Some components can limit the number of concurrent internal contexts that  *
+ * may be created. Such internal operations will block until a slot is able   *
+ * to be allocated.                                                           *
+ *                                                                            *
+ ******************************************************************************
+ * @note This function is an ideal target for fuzz based testing              *
+ *****************************************************************************/
+bool nit_cc(nit_stream_t *in, nit_stream_t *out, nit_diag_cb diag, void *opaque,
+            const char *const options[]);
 
 #ifdef __cplusplus
 }

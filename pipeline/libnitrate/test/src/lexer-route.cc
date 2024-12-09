@@ -51,5 +51,4 @@ TEST(LexerRoute, flag_use_json) {
   EXPECT_EQ(output_code, expected_json);
 
   free(output_buf);
-  nit_deinit();
 }
