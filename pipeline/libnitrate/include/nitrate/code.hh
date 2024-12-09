@@ -31,113 +31,76 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#ifndef __LIBNITRATE_CODE_HH__
+#define __LIBNITRATE_CODE_HH__
 
-#include <queue>
-#include <streambuf>
-#include <vector>
+#include <nitrate/code.h>
+#include <nitrate/stream.h>
 
-struct nit_stream_t : public std::streambuf {
-private:
-  std::queue<FILE*> m_files;
-  char ch;
-  bool m_close_me;
+#include <cstdbool>
+#include <functional>
+#include <future>
+#include <iostream>
+#include <memory>
+#include <optional>
+#include <span>
+#include <string_view>
 
-public:
-  nit_stream_t(FILE* f, bool auto_close) {
-    m_files.push(f);
-    m_close_me = auto_close;
-  }
-  nit_stream_t(std::vector<FILE*> stream_join, bool auto_close) {
-    for (auto f : stream_join) {
-      m_files.push(f);
+namespace nitrate {
+  class Stream final {
+    nit_stream_t *m_stream;
+
+    Stream(const Stream &) = delete;
+    Stream &operator=(const Stream &) = delete;
+
+  public:
+    Stream(FILE *file, bool auto_close = false) {
+      m_stream = nit_from(file, auto_close);
     }
-    m_close_me = auto_close;
-  }
-  virtual ~nit_stream_t() {
-    if (m_close_me) {
-      while (!m_files.empty()) {
-        auto f = m_files.front();
-        m_files.pop();
-        fclose(f);
+
+    Stream(const std::vector<FILE *> &merge_files, bool auto_close = false) {
+      m_stream = nit_njoin(auto_close, merge_files.size(), merge_files.data());
+    }
+
+    Stream(std::span<FILE *> merge_files, bool auto_close = false) {
+      m_stream = nit_njoin(auto_close, merge_files.size(), merge_files.data());
+    }
+
+    Stream(Stream &&other) noexcept {
+      this->m_stream = other.m_stream;
+      other.m_stream = nullptr;
+    }
+
+    ~Stream() {
+      if (m_stream) {
+        nit_fclose(m_stream);
       }
-    }
-  }
+    };
 
-  virtual int_type underflow() override {
-    if (m_files.empty()) {
-      return traits_type::eof();
-    }
+    bool is_open() const { return m_stream != nullptr; }
 
-    int c;
-    ch = c = fgetc(m_files.front());
+    nit_stream_t *get() const { return m_stream; }
+  };
 
-    if (feof(m_files.front())) {
-      m_files.pop();
-      return underflow();
-    } else if (ferror(m_files.front())) {
-      return traits_type::eof();
-    }
+  using DiagnosticFunc =
+      std::function<void(std::string_view message, std::string_view by)>;
 
-    setg(&ch, &ch, &ch + 1);
+  std::future<bool> transform(
+      std::shared_ptr<Stream> in, std::shared_ptr<Stream> out,
+      const std::vector<std::string> &options,
+      std::optional<DiagnosticFunc> diag = [](std::string_view message,
+                                              std::string_view) {
+        std::cerr << message;
+        std::cerr.flush();
+      });
 
-    return traits_type::to_int_type(ch);
-  }
+  std::future<bool> transform(
+      Stream in, Stream out, const std::vector<std::string> &options,
+      std::optional<DiagnosticFunc> diag = [](std::string_view message,
+                                              std::string_view) {
+        std::cerr << message;
+        std::cerr.flush();
+      });
+}  // namespace nitrate
 
-  virtual std::streamsize xsgetn(char* s, std::streamsize count) override {
-    if (m_files.empty()) {
-      return 0;
-    }
-
-    std::streamsize bytes_read = 0;
-
-    while (bytes_read < count) {
-      size_t n = fread(s + bytes_read, 1, count - bytes_read, m_files.front());
-      bytes_read += n;
-
-      if (feof(m_files.front())) {
-        m_files.pop();
-        return bytes_read + xsgetn(s + bytes_read, count - bytes_read);
-      } else if (ferror(m_files.front())) {
-        return 0;
-      }
-    }
-
-    return bytes_read;
-  }
-
-  virtual std::streamsize xsputn(const char* s,
-                                 std::streamsize count) override {
-    if (m_files.empty()) {
-      return 0;
-    }
-
-    std::streamsize bytes_written = 0;
-
-    while (bytes_written < count) {
-      size_t n =
-          fwrite(s + bytes_written, 1, count - bytes_written, m_files.front());
-      bytes_written += n;
-
-      if (ferror(m_files.front())) {
-        return 0;
-      }
-    }
-
-    return bytes_written;
-  }
-
-  virtual int_type overflow(int_type ch) override {
-    if (m_files.empty()) {
-      return traits_type::eof();
-    }
-
-    if (ch != traits_type::eof()) {
-      if (fputc(ch, m_files.front()) == EOF) {
-        return traits_type::eof();
-      }
-    }
-
-    return traits_type::not_eof(ch);
-  }
-};
+#endif  // __LIBNITRATE_CODE_HH__

@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <streambuf>
 #define LIBNITRATE_INTERNAL
+
 #include <nitrate-core/Env.h>
 #include <nitrate-core/Lib.h>
 #include <nitrate-core/Macro.h>
@@ -41,7 +41,6 @@
 #include <nitrate-lexer/Lib.h>
 #include <nitrate-parser/Lib.h>
 #include <nitrate-seq/Lib.h>
-#include <nitrate/code.h>
 
 #include <cerrno>
 #include <core/Stream.hh>
@@ -50,6 +49,8 @@
 #include <cstddef>
 #include <cstdlib>
 #include <functional>
+#include <nitrate/code.hh>
+#include <streambuf>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
@@ -90,6 +91,57 @@ C_EXPORT void nit_diag_stderr(const char *message, const char *, void *) {
   fprintf(stderr, "%s", message);
 }
 
+///============================================================================///
+
+bool nit::codegen(std::istream &source, std::ostream &output,
+                  std::function<void(const char *)> diag_cb,
+                  const std::unordered_set<std::string_view> &opts) {
+  (void)source;
+  (void)output;
+  (void)diag_cb;
+  (void)opts;
+
+  /// TODO: Implement codegen wrapper
+  return false;
+}
+
+C_EXPORT void nit_fclose(nit_stream_t *f) { delete f; }
+
+C_EXPORT nit_stream_t *nit_from(FILE *f, bool auto_close) {
+  if (!f) {
+    return nullptr;
+  }
+
+  return new nit_stream_t(f, auto_close);
+}
+
+C_EXPORT nit_stream_t *nit_join(bool auto_close, size_t num, ...) {
+  va_list va;
+  va_start(va, num);
+  nit_stream_t *obj = nit_joinv(auto_close, num, va);
+  va_end(va);
+
+  return obj;
+}
+
+C_EXPORT nit_stream_t *nit_joinv(bool auto_close, size_t num, va_list va) {
+  std::vector<FILE *> streams;
+  streams.resize(num);
+
+  for (size_t i = 0; i < num; i++) {
+    streams[i] = va_arg(va, FILE *);
+  }
+
+  return new nit_stream_t(streams, auto_close);
+}
+
+C_EXPORT nit_stream_t *nit_njoin(bool auto_close, size_t num,
+                                 FILE *const *files) {
+  return new nit_stream_t(std::vector<FILE *>(files, files + num), auto_close);
+}
+
+///============================================================================///
+
 static const std::unordered_map<std::string_view, nit::subsystem_func>
     dispatch_funcs = {
         {"lex", nit::basic_lexer}, {"meta", nit::meta},
@@ -122,7 +174,7 @@ public:
   std::streamsize xsputn(const char *, std::streamsize n) override { return n; }
 };
 
-C_EXPORT bool nit_cc(nit_stream_t *in, nit_stream_t *out, nit_diag_cb diag_cb,
+C_EXPORT bool nit_cc(nit_stream_t *in, nit_stream_t *out, nit_diag_func diag_cb,
                      void *opaque, const char *const options[]) {
   static null_ostream_t null_ostream;
 
@@ -182,50 +234,58 @@ C_EXPORT bool nit_cc(nit_stream_t *in, nit_stream_t *out, nit_diag_cb diag_cb,
   }
 }
 
-///============================================================================///
+static void nit_diag_functor(const char *message, const char *by, void *ctx) {
+  const auto &callback = *reinterpret_cast<nitrate::DiagnosticFunc *>(ctx);
 
-bool nit::codegen(std::istream &source, std::ostream &output,
-                  std::function<void(const char *)> diag_cb,
-                  const std::unordered_set<std::string_view> &opts) {
-  (void)source;
-  (void)output;
-  (void)diag_cb;
-  (void)opts;
-
-  /// TODO: Implement codegen wrapper
-  return false;
+  callback(message, by);
 }
 
-C_EXPORT void nit_fclose(nit_stream_t *f) { delete f; }
+CPP_EXPORT std::future<bool> nitrate::transform(
+    std::shared_ptr<Stream> in, std::shared_ptr<Stream> out,
+    const std::vector<std::string> &options,
+    std::optional<DiagnosticFunc> diag) {
+  return std::async(std::launch::async, [=]() {
+    /* Convert options to C strings */
+    std::vector<const char *> options_c_str(options.size() + 1);
+    for (size_t i = 0; i < options.size(); i++) {
+      options_c_str[i] = options[i].c_str();
+    }
+    options_c_str[options.size()] = nullptr;
 
-C_EXPORT nit_stream_t *nit_from(FILE *f, bool auto_close) {
-  if (!f) {
-    return nullptr;
-  }
+    void *functor_ctx = nullptr;
+    DiagnosticFunc callback = diag.value_or(nullptr);
 
-  return new nit_stream_t(f, auto_close);
+    if (callback != nullptr) {
+      functor_ctx = reinterpret_cast<void *>(&callback);
+    }
+
+    return nit_cc(in.get()->get(), out.get()->get(),
+                  functor_ctx ? nit_diag_functor : nullptr, functor_ctx,
+                  options_c_str.data());
+  });
 }
 
-C_EXPORT nit_stream_t *nit_join(size_t num, ...) {
-  va_list va;
-  va_start(va, num);
-  nit_stream_t *obj = nit_joinv(num, va);
-  va_end(va);
+CPP_EXPORT std::future<bool> nitrate::transform(
+    Stream in, Stream out, const std::vector<std::string> &options,
+    std::optional<DiagnosticFunc> diag) {
+  return std::async(std::launch::async, [Out = std::move(out),
+                                         In = std::move(in), options,
+                                         Diag = std::move(diag)]() {
+    /* Convert options to C strings */
+    std::vector<const char *> options_c_str(options.size() + 1);
+    for (size_t i = 0; i < options.size(); i++) {
+      options_c_str[i] = options[i].c_str();
+    }
+    options_c_str[options.size()] = nullptr;
 
-  return obj;
-}
+    void *functor_ctx = nullptr;
+    DiagnosticFunc callback = Diag.value_or(nullptr);
 
-C_EXPORT nit_stream_t *nit_joinv(size_t num, va_list va) {
-  std::vector<FILE *> streams;
-  streams.resize(num);
+    if (callback != nullptr) {
+      functor_ctx = reinterpret_cast<void *>(&callback);
+    }
 
-  for (size_t i = 0; i < num; i++) {
-    streams[i] = va_arg(va, FILE *);
-  }
-
-  return new nit_stream_t(streams);
-}
-
-C_EXPORT nit_stream_t *nit_njoin(size_t num, FILE **files) {
-  return new nit_stream_t(std::vector<FILE *>(files, files + num));
+    return nit_cc(In.get(), Out.get(), functor_ctx ? nit_diag_functor : nullptr,
+                  functor_ctx, options_c_str.data());
+  });
 }

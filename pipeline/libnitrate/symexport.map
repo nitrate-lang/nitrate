@@ -1,6 +1,7 @@
 {
     global:
         nit_*;
+        *nitrate9transform*;
     local:
         *;
 };

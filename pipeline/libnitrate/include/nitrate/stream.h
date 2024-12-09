@@ -31,113 +31,55 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#ifndef __LIBNITRATE_STREAM_H__
+#define __LIBNITRATE_STREAM_H__
 
-#include <queue>
-#include <streambuf>
-#include <vector>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 
-struct nit_stream_t : public std::streambuf {
-private:
-  std::queue<FILE*> m_files;
-  char ch;
-  bool m_close_me;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-public:
-  nit_stream_t(FILE* f, bool auto_close) {
-    m_files.push(f);
-    m_close_me = auto_close;
-  }
-  nit_stream_t(std::vector<FILE*> stream_join, bool auto_close) {
-    for (auto f : stream_join) {
-      m_files.push(f);
-    }
-    m_close_me = auto_close;
-  }
-  virtual ~nit_stream_t() {
-    if (m_close_me) {
-      while (!m_files.empty()) {
-        auto f = m_files.front();
-        m_files.pop();
-        fclose(f);
-      }
-    }
-  }
+/// @brief Nitrate stream type.
+typedef struct nit_stream_t nit_stream_t;
 
-  virtual int_type underflow() override {
-    if (m_files.empty()) {
-      return traits_type::eof();
-    }
+/// @brief Close a Nitrate stream.
+void nit_fclose(nit_stream_t *);
 
-    int c;
-    ch = c = fgetc(m_files.front());
+/// @brief Create a Nitrate stream from a C stream.
+nit_stream_t *nit_from(FILE *, bool auto_close);
 
-    if (feof(m_files.front())) {
-      m_files.pop();
-      return underflow();
-    } else if (ferror(m_files.front())) {
-      return traits_type::eof();
-    }
+/// @brief Concatenate multiple streams into a single stream.
+nit_stream_t *nit_join(bool auto_close, size_t num, /* ... FILE* */...);
 
-    setg(&ch, &ch, &ch + 1);
+/// @brief Concatenate multiple streams into a single stream.
+nit_stream_t *nit_joinv(bool auto_close, size_t num,
+                        /* ... FILE* */ va_list va);
 
-    return traits_type::to_int_type(ch);
-  }
+/// @brief Concatenate multiple streams into a single stream.
+nit_stream_t *nit_njoin(bool auto_close, size_t num, FILE *const *streams);
 
-  virtual std::streamsize xsgetn(char* s, std::streamsize count) override {
-    if (m_files.empty()) {
-      return 0;
-    }
+///=============================================================================
 
-    std::streamsize bytes_read = 0;
+static inline nit_stream_t *NIT_MEMOPEN(const void *data_ptr,
+                                        size_t data_size) {
+  return nit_from(fmemopen((void *)data_ptr, data_size, "rb"), true);
+}
 
-    while (bytes_read < count) {
-      size_t n = fread(s + bytes_read, 1, count - bytes_read, m_files.front());
-      bytes_read += n;
+static inline nit_stream_t *NIT_OPEM_STREAM(char **buf_ptr, size_t *buf_size) {
+  return nit_from(open_memstream(buf_ptr, buf_size), true);
+}
 
-      if (feof(m_files.front())) {
-        m_files.pop();
-        return bytes_read + xsgetn(s + bytes_read, count - bytes_read);
-      } else if (ferror(m_files.front())) {
-        return 0;
-      }
-    }
+/// @brief Predefined diagnostic callback that writes to `stdout`.
+void nit_diag_stdout(const char *, const char *, void *);
 
-    return bytes_read;
-  }
+/// @brief Predefined diagnostic callback that writes to `stderr`.
+void nit_diag_stderr(const char *, const char *, void *);
 
-  virtual std::streamsize xsputn(const char* s,
-                                 std::streamsize count) override {
-    if (m_files.empty()) {
-      return 0;
-    }
+#ifdef __cplusplus
+}
+#endif
 
-    std::streamsize bytes_written = 0;
-
-    while (bytes_written < count) {
-      size_t n =
-          fwrite(s + bytes_written, 1, count - bytes_written, m_files.front());
-      bytes_written += n;
-
-      if (ferror(m_files.front())) {
-        return 0;
-      }
-    }
-
-    return bytes_written;
-  }
-
-  virtual int_type overflow(int_type ch) override {
-    if (m_files.empty()) {
-      return traits_type::eof();
-    }
-
-    if (ch != traits_type::eof()) {
-      if (fputc(ch, m_files.front()) == EOF) {
-        return traits_type::eof();
-      }
-    }
-
-    return traits_type::not_eof(ch);
-  }
-};
+#endif  // __LIBNITRATE_STREAM_H__

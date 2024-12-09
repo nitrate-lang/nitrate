@@ -34,51 +34,17 @@
 #ifndef __LIBNITRATE_CODE_H__
 #define __LIBNITRATE_CODE_H__
 
+#include <nitrate/stream.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/// @brief Nitrate stream type.
-typedef struct nit_stream_t nit_stream_t;
-
-/// @brief Close a Nitrate stream.
-void nit_fclose(nit_stream_t *);
-
-/// @brief Create a Nitrate stream from a C stream.
-nit_stream_t *nit_from(FILE *, bool auto_close);
-
-/// @brief Concatenate multiple streams into a single stream.
-nit_stream_t *nit_join(size_t num, /* ... FILE* */...);
-
-/// @brief Concatenate multiple streams into a single stream.
-nit_stream_t *nit_joinv(size_t num, /* ... FILE* */ va_list va);
-
-/// @brief Concatenate multiple streams into a single stream.
-nit_stream_t *nit_njoin(size_t num, FILE **streams);
-
-///=============================================================================
-
-static inline nit_stream_t *NIT_MEMOPEN(const void *data_ptr,
-                                        size_t data_size) {
-  return nit_from(fmemopen((void *)data_ptr, data_size, "rb"), true);
-}
-
-static inline nit_stream_t *NIT_OPEM_STREAM(char **buf_ptr, size_t *buf_size) {
-  return nit_from(open_memstream(buf_ptr, buf_size), true);
-}
-
-/// @brief Predefined diagnostic callback that writes to `stdout`.
-void nit_diag_stdout(const char *, const char *, void *);
-
-/// @brief Predefined diagnostic callback that writes to `stderr`.
-void nit_diag_stderr(const char *, const char *, void *);
-
 /// @brief Diagnostic callback function prototype.
-typedef void (*nit_diag_cb)(const char *message, const char *by, void *opaque);
+typedef void (*nit_diag_func)(const char *message, const char *by,
+                              void *opaque);
 
 /******************************************************************************
  * @brief Generic Nitrate Toolchain tranformation function.                   *
@@ -117,8 +83,8 @@ typedef void (*nit_diag_cb)(const char *message, const char *by, void *opaque);
  ******************************************************************************
  * @note This function is an ideal target for fuzz based testing              *
  *****************************************************************************/
-bool nit_cc(nit_stream_t *in, nit_stream_t *out, nit_diag_cb diag, void *opaque,
-            const char *const options[]);
+bool nit_cc(nit_stream_t *in, nit_stream_t *out, nit_diag_func diag,
+            void *opaque, const char *const options[]);
 
 #ifdef __cplusplus
 }
