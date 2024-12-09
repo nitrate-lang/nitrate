@@ -1155,7 +1155,7 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
 error_0: { /* Reset the lexer and return error token */
   reset_automata();
 
-  return qlex_tok_t::err(cur_loc(), cur_loc());
+  return qlex_tok_t::eof(cur_loc(), cur_loc());
 }
 }
 
@@ -1172,9 +1172,6 @@ C_EXPORT uint32_t qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok,
 
     switch (tok->ty) {
       case qEofF:
-      case qErro:
-        ret = 0;
-        break;
       case qKeyW: {
         if ((ret = qlex::keywords.right.at(tok->v.key).size()) <= size) {
           memcpy(buf, qlex::keywords.right.at(tok->v.key).data(), ret);
@@ -1231,8 +1228,6 @@ C_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
   switch (ty) {
     case qEofF:
       return "eof";
-    case qErro:
-      return "err";
     case qKeyW:
       return "key";
     case qOper:
@@ -1266,8 +1261,6 @@ C_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
 
     switch (a->ty) {
       case qEofF:
-      case qErro:
-        return true;
       case qKeyW:
         return a->v.key == b->v.key;
       case qOper:
@@ -1301,8 +1294,6 @@ C_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
 
     switch (a->ty) {
       case qEofF:
-      case qErro:
-        return false;
       case qKeyW:
         return a->v.key < b->v.key;
       case qOper:
@@ -1336,10 +1327,6 @@ C_EXPORT const char *qlex_str(qlex_t *lexer, const qlex_tok_t *tok,
 
   switch (tok->ty) {
     case qEofF:
-    case qErro: {
-      *len = 0;
-      return "";
-    }
     case qKeyW: {
       std::string_view kw = qlex::keywords.right.at(tok->v.key);
       *len = kw.size();
@@ -1406,14 +1393,10 @@ C_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str,
         break;
       }
 
-      case qErro: {
-        break;
-      }
-
       case qKeyW: {
         auto find = qlex::keywords.left.find(str);
         if (find == qlex::keywords.left.end()) [[unlikely]] {
-          out->ty = qErro;
+          out->ty = qEofF;
         } else {
           out->v.key = find->second;
         }
@@ -1423,7 +1406,7 @@ C_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str,
       case qOper: {
         auto find = qlex::operators.left.find(str);
         if (find == qlex::operators.left.end()) [[unlikely]] {
-          out->ty = qErro;
+          out->ty = qEofF;
         } else {
           out->v.op = find->second;
         }
@@ -1433,7 +1416,7 @@ C_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str,
       case qPunc: {
         auto find = qlex::punctuation.left.find(str);
         if (find == qlex::punctuation.left.end()) [[unlikely]] {
-          out->ty = qErro;
+          out->ty = qEofF;
         } else {
           out->v.punc = find->second;
         }

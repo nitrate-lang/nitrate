@@ -122,7 +122,7 @@ void AST_JsonWriter::null_impl() {
   m_os << "null";
 }
 
-void AST_JsonWriter::begin_obj_impl() {
+void AST_JsonWriter::begin_obj_impl(size_t) {
   delim();
 
   m_comma.push(false);
@@ -138,8 +138,7 @@ void AST_JsonWriter::end_obj_impl() {
   m_comma.pop();
 }
 
-void AST_JsonWriter::begin_arr_impl(size_t max_size) {
-  (void)max_size;
+void AST_JsonWriter::begin_arr_impl(size_t) {
   delim();
 
   m_comma.push(true);

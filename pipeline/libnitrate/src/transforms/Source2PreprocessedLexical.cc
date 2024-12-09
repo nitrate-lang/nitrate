@@ -60,11 +60,6 @@
 //         break;
 //       }
 
-//       case qErro: { /* Error, invalid token */
-//         fprintf(O, "[2,\"\",%u,%u,%u,%u],", sl, sc, el, ec);
-//         break;
-//       }
-
 //       case qKeyW: { /* Keyword */
 //         fprintf(O, "[3,\"%s\",%u,%u,%u,%u],", qlex_kwstr(tok.v.key), sl, sc,
 //         el,
@@ -226,13 +221,6 @@
 //     switch (tok.ty) {
 //       case qEofF: { /* End of file */
 //         __builtin_unreachable();
-//         break;
-//       }
-
-//       case qErro: { /* Error, invalid token */
-//         if (!msgpack_write_tok(O, 2, "", sl, sc, el, ec)) {
-//           return false;
-//         }
 //         break;
 //       }
 

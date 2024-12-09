@@ -202,7 +202,6 @@ func_entry:  // do tail call optimization manually
       switch (x.ty) {
         case qEofF:
           return x;
-        case qErro:
         case qKeyW:
         case qIntL:
         case qText:
@@ -232,7 +231,7 @@ func_entry:  // do tail call optimization manually
             if (!run_and_expand(std::string(block))) {
               qcore_print(QCORE_ERROR, "Failed to expand macro block: %s\n",
                           block.data());
-              x.ty = qErro;
+              x.ty = qEofF;
               goto emit_token;
             }
           } else {
@@ -242,7 +241,7 @@ func_entry:  // do tail call optimization manually
               qcore_print(QCORE_ERROR,
                           "Invalid macro function definition: %s\n",
                           block.data());
-              x.ty = qErro;
+              x.ty = qEofF;
               goto emit_token;
             }
 
@@ -256,7 +255,7 @@ func_entry:  // do tail call optimization manually
                 qcore_print(QCORE_ERROR,
                             "Invalid macro function definition: %s\n",
                             block.data());
-                x.ty = qErro;
+                x.ty = qEofF;
                 goto emit_token;
               }
               code.erase(pos, 1);
@@ -268,7 +267,7 @@ func_entry:  // do tail call optimization manually
                 qcore_print(QCORE_ERROR,
                             "Invalid macro function definition: %s\n",
                             block.data());
-                x.ty = qErro;
+                x.ty = qEofF;
                 goto emit_token;
               }
               code.erase(pos, 1);
@@ -278,7 +277,7 @@ func_entry:  // do tail call optimization manually
             if (!run_and_expand(code)) {
               qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n",
                           name.data());
-              x.ty = qErro;
+              x.ty = qEofF;
               goto emit_token;
             }
           }
@@ -294,7 +293,7 @@ func_entry:  // do tail call optimization manually
             if (!run_and_expand("return " + std::string(body))) {
               qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n",
                           body.data());
-              x.ty = qErro;
+              x.ty = qEofF;
               goto emit_token;
             }
 
@@ -303,7 +302,7 @@ func_entry:  // do tail call optimization manually
             if (!run_and_expand("return " + std::string(body) + "()")) {
               qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n",
                           body.data());
-              x.ty = qErro;
+              x.ty = qEofF;
               goto emit_token;
             }
 

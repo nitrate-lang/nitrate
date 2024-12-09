@@ -105,4 +105,39 @@ public:
 
     return bytes_read;
   }
+
+  virtual std::streamsize xsputn(const char* s,
+                                 std::streamsize count) override {
+    if (m_files.empty()) {
+      return 0;
+    }
+
+    std::streamsize bytes_written = 0;
+
+    while (bytes_written < count) {
+      size_t n =
+          fwrite(s + bytes_written, 1, count - bytes_written, m_files.front());
+      bytes_written += n;
+
+      if (ferror(m_files.front())) {
+        return 0;
+      }
+    }
+
+    return bytes_written;
+  }
+
+  virtual int_type overflow(int_type ch) override {
+    if (m_files.empty()) {
+      return traits_type::eof();
+    }
+
+    if (ch != traits_type::eof()) {
+      if (fputc(ch, m_files.front()) == EOF) {
+        return traits_type::eof();
+      }
+    }
+
+    return traits_type::not_eof(ch);
+  }
 };

@@ -74,10 +74,6 @@ int qcall::sys_next(lua_State* L) {
   lua_pushstring(L, "v");
   switch (tok.ty) {
     case qEofF:
-    case qErro: {
-      lua_pushnil(L);
-      break;
-    }
     case qKeyW: {
       lua_pushstring(L, qlex_kwstr(tok.v.key));
       break;

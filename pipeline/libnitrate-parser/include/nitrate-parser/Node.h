@@ -2058,6 +2058,7 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) noexcept {
     std::array<std::string_view, QAST_NODE_COUNT> R;
     R.fill("");
 
+    R[QAST_NODE_NODE] = "Node";
     R[QAST_NODE_BINEXPR] = "Binexpr";
     R[QAST_NODE_UNEXPR] = "Unexpr";
     R[QAST_NODE_TEREXPR] = "Terexpr";

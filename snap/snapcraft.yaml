@@ -22,7 +22,6 @@ parts:
      - libgoogle-glog-dev
      - libyaml-cpp-dev
      - rapidjson-dev
-     - nlohmann-json3-dev
      - libreadline-dev
      - libzstd-dev
      - llvm-18-dev

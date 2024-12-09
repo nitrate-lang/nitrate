@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "nitrate-core/Error.h"
 #define LIBNITRATE_INTERNAL
+#include <nitrate-core/Error.h>
 #include <nitrate-core/Lib.h>
 #include <nitrate/code.h>
 
@@ -45,17 +45,8 @@
 #include <nitrate-lexer/Classes.hh>
 #include <nitrate-parser/Classes.hh>
 #include <nitrate-parser/Writer.hh>
-#include <nlohmann/json.hpp>
 #include <string_view>
 #include <unordered_set>
-
-using json = nlohmann::json;
-
-static inline qlex_tok_t err_tok() {
-  qlex_tok_t tok{};
-  tok.ty = qErro;
-  return tok;
-}
 
 static inline qlex_tok_t eof_tok() {
   qlex_tok_t tok{};
@@ -69,7 +60,6 @@ class DeserializerAdapterLexer final : public qlex_t {
     tab.fill(0);
 
     tab[qEofF] = 1;
-    tab[qErro] = 1;
     tab[qKeyW] = 1;
     tab[qOper] = 1;
     tab[qPunc] = 1;
@@ -105,24 +95,24 @@ class DeserializerAdapterLexer final : public qlex_t {
     { /* Read the token array */
       size_t str_len = 0;
 
-      if (m_file.get() != '[') return err_tok();
+      if (m_file.get() != '[') return eof_tok();
       m_file >> ty;
       ty &= 0xff;
-      if (m_file.get() != ',') return err_tok();
+      if (m_file.get() != ',') return eof_tok();
 
       if (!read_json_string(m_file, &str, str_len)) [[unlikely]] {
-        return err_tok();
+        return eof_tok();
       }
 
-      if (m_file.get() != ',') return err_tok();
+      if (m_file.get() != ',') return eof_tok();
       m_file >> a;
-      if (m_file.get() != ',') return err_tok();
+      if (m_file.get() != ',') return eof_tok();
       m_file >> b;
-      if (m_file.get() != ',') return err_tok();
+      if (m_file.get() != ',') return eof_tok();
       m_file >> c;
-      if (m_file.get() != ',') return err_tok();
+      if (m_file.get() != ',') return eof_tok();
       m_file >> d;
-      if (m_file.get() != ']') return err_tok();
+      if (m_file.get() != ']') return eof_tok();
     }
 
     { /* Check the delimiter */
@@ -134,7 +124,7 @@ class DeserializerAdapterLexer final : public qlex_t {
         return eof_tok();
       } else if (delim != ',') [[unlikely]] {
         free(str);
-        return err_tok();
+        return eof_tok();
       }
     }
 
@@ -152,7 +142,7 @@ class DeserializerAdapterLexer final : public qlex_t {
     }
 
     free(str);
-    return err_tok();
+    return eof_tok();
   }
 
   qlex_tok_t next_impl_msgpack() {
@@ -166,25 +156,25 @@ class DeserializerAdapterLexer final : public qlex_t {
     { /* Read the token array */
       // Array start byte for 6 elements
       if (m_file.get() != 0x96) {
-        return err_tok();
+        return eof_tok();
       }
 
       size_t str_len;
 
       if (!msgpack_read_uint(m_file, ty)) [[unlikely]] {
-        return err_tok();
+        return eof_tok();
       }
       ty &= 0xff;
 
       if (!msgpack_read_str(m_file, &str, str_len)) [[unlikely]] {
-        return err_tok();
+        return eof_tok();
       }
 
       if (!msgpack_read_uint(m_file, a) || !msgpack_read_uint(m_file, b) ||
           !msgpack_read_uint(m_file, c) || !msgpack_read_uint(m_file, d))
           [[unlikely]] {
         free(str);
-        return err_tok();
+        return eof_tok();
       }
     }
 
@@ -204,7 +194,7 @@ class DeserializerAdapterLexer final : public qlex_t {
     }
 
     free(str);
-    return err_tok();
+    return eof_tok();
   }
 
   virtual qlex_tok_t next_impl() override {
@@ -266,8 +256,9 @@ public:
   virtual ~DeserializerAdapterLexer() override = default;
 };
 
-static std::optional<npar_node_t *> parse_tokens(
-    npar_t *L, std::function<void(const char *)> diag_cb) {
+using ArgCallback = std::function<void(const char *)>;
+static std::optional<npar_node_t *> parse_tokens(npar_t *L,
+                                                 ArgCallback diag_cb) {
   npar_node_t *root = nullptr;
   bool ok = npar_do(L, &root);
 
@@ -276,18 +267,13 @@ static std::optional<npar_node_t *> parse_tokens(
   npar_dumps(
       L, false,
       [](const char *msg, size_t, uintptr_t dat) {
-        std::function<void(const char *)> &stack_tmp =
-            *(std::function<void(const char *)> *)dat;
+        let stack_tmp = *(ArgCallback *)dat;
         stack_tmp(msg);
       },
       (uintptr_t)&diag_cb);
   ///============================================================================///
 
-  if (!ok) {
-    return std::nullopt;
-  }
-
-  return root;
+  return ok ? std::make_optional(root) : std::nullopt;
 }
 
 bool nit::parser(std::istream &source, std::ostream &output,

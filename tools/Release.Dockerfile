@@ -7,8 +7,8 @@ FROM ubuntu:24.04
 RUN apt clean
 RUN apt update --fix-missing && apt upgrade -y
 RUN apt install -y  libboost-all-dev libssl-dev libgoogle-glog-dev   \
-                    libyaml-cpp-dev rapidjson-dev nlohmann-json3-dev \
-                    libreadline-dev libzstd-dev
+                    libyaml-cpp-dev rapidjson-dev libreadline-dev    \
+                    libzstd-dev
 RUN apt install -y cmake make clang
 RUN apt install -y libpolly-18-dev llvm-18
 

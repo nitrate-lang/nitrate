@@ -499,40 +499,44 @@ qlex_tok_t qlex_t::step_buffer() {
 CPP_EXPORT qlex_tok_t qlex_t::next() {
   qlex_tok_t tok;
 
-  if (m_next_tok.ty != qErro) {
-    tok = m_next_tok;
-    m_next_tok.ty = qErro;
+  if (m_next_tok.has_value()) {
+    tok = m_next_tok.value();
+    m_next_tok.reset();
   } else {
     do {
-      m_next_tok.ty = qErro;
+      m_next_tok.reset();
       tok = step_buffer();
     } while (m_flags & QLEX_NO_COMMENTS && tok.ty == qNote);
   }
 
-  return m_current_tok = tok;
+  m_current_tok = tok;
+  return tok;
 }
 
 CPP_EXPORT qlex_tok_t qlex_t::peek() {
-  if (m_next_tok.ty != qErro) {
-    return m_current_tok = m_next_tok;
+  if (m_next_tok.has_value()) {
+    m_current_tok = m_next_tok;
+    return m_next_tok.value();
   }
 
-  return m_current_tok = (m_next_tok = next());
+  m_current_tok = (m_next_tok = next());
+  return m_current_tok.value();
 }
 
-CPP_EXPORT qlex_tok_t qlex_t::current() { return m_current_tok; }
+CPP_EXPORT qlex_tok_t qlex_t::current() {
+  return m_current_tok.value_or(qlex_tok_t());
+}
 
 ///============================================================================///
 
 CPP_EXPORT void qlex_t::push_impl(const qlex_tok_t *tok) {
   m_tok_buf.push_front(*tok);
-  m_next_tok.ty = qErro;
+  m_next_tok.reset();
 }
 
 CPP_EXPORT void qlex_t::collect_impl(const qlex_tok_t *tok) {
   switch (tok->ty) {
     case qEofF:
-    case qErro:
     case qKeyW:
     case qOper:
     case qPunc:

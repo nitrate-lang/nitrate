@@ -81,7 +81,7 @@ private:
   std::deque<qlex_tok_t> m_tok_buf;
   std::deque<char> m_pushback;
 
-  qlex_tok_t m_next_tok, m_current_tok;
+  std::optional<qlex_tok_t> m_next_tok, m_current_tok;
 
   uint32_t m_row;
   uint32_t m_col;
@@ -157,8 +157,6 @@ public:
     if (!m_filename) {
       m_filename = "<unknown>";
     }
-
-    m_next_tok.ty = qErro;
   }
   virtual ~qlex_t() {}
 };

@@ -52,9 +52,9 @@ namespace npar {
     using InsertDouble = std::function<void(double)>;
     using InsertBool = std::function<void(bool)>;
     using InsertNull = std::function<void()>;
-    using BeginObject = std::function<void()>;
+    using BeginObject = std::function<void(size_t pair_count)>;
     using EndObject = std::function<void()>;
-    using BeginArray = std::function<void(size_t max_size)>;
+    using BeginArray = std::function<void(size_t size)>;
     using EndArray = std::function<void()>;
 
     InsertString string;
@@ -176,9 +176,9 @@ namespace npar {
     void double_impl(double val);
     void bool_impl(bool val);
     void null_impl();
-    void begin_obj_impl();
+    void begin_obj_impl(size_t pair_count);
     void end_obj_impl();
-    void begin_arr_impl(size_t max_size);
+    void begin_arr_impl(size_t size);
     void end_arr_impl();
 
   public:
@@ -192,7 +192,8 @@ namespace npar {
               std::bind(&AST_JsonWriter::bool_impl, this,
                         std::placeholders::_1),
               std::bind(&AST_JsonWriter::null_impl, this),
-              std::bind(&AST_JsonWriter::begin_obj_impl, this),
+              std::bind(&AST_JsonWriter::begin_obj_impl, this,
+                        std::placeholders::_1),
               std::bind(&AST_JsonWriter::end_obj_impl, this),
               std::bind(&AST_JsonWriter::begin_arr_impl, this,
                         std::placeholders::_1),
@@ -212,9 +213,9 @@ namespace npar {
     void double_impl(double val);
     void bool_impl(bool val);
     void null_impl();
-    void begin_obj_impl();
+    void begin_obj_impl(size_t pair_count);
     void end_obj_impl();
-    void begin_arr_impl(size_t max_size);
+    void begin_arr_impl(size_t size);
     void end_arr_impl();
 
   public:
@@ -228,7 +229,8 @@ namespace npar {
                      std::bind(&AST_MsgPackWriter::bool_impl, this,
                                std::placeholders::_1),
                      std::bind(&AST_MsgPackWriter::null_impl, this),
-                     std::bind(&AST_MsgPackWriter::begin_obj_impl, this),
+                     std::bind(&AST_MsgPackWriter::begin_obj_impl, this,
+                               std::placeholders::_1),
                      std::bind(&AST_MsgPackWriter::end_obj_impl, this),
                      std::bind(&AST_MsgPackWriter::begin_arr_impl, this,
                                std::placeholders::_1),
