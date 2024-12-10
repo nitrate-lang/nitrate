@@ -1,7 +1,8 @@
 #include <nitrate-core/Macro.h>
 
-#include <algorithm>
 #include <lsp/lang/CambrianStyleFormatter.hh>
+
+#include "nitrate-parser/Node.h"
 
 using namespace lsp::fmt;
 
@@ -173,8 +174,19 @@ void CambrianFormatter::write_float_literal(std::string_view float_str) {
 }
 
 void CambrianFormatter::format_type_metadata(npar::Type& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
+  let range = n.get_range();
+  if (range.first || range.second) {
+    line << ": [";
+    if (range.first) range.first->accept(*this);
+    line << ":";
+    if (range.second) range.second->accept(*this);
+    line << "]";
+  }
+
+  if (n.get_width()) {
+    line << ": ";
+    n.get_width()->accept(*this);
+  }
 }
 
 void CambrianFormatter::visit(npar_node_t&) {
@@ -186,6 +198,7 @@ void CambrianFormatter::visit(npar_node_t&) {
 
 void CambrianFormatter::visit(npar::ExprStmt& n) {
   n.get_expr()->accept(*this);
+  line << ";";
 }
 
 void CambrianFormatter::visit(npar::StmtExpr& n) {
@@ -207,8 +220,15 @@ void CambrianFormatter::visit(npar::InferTy& n) {
 }
 
 void CambrianFormatter::visit(npar::TemplType& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
+  n.get_template()->accept(*this);
+
+  line << "<";
+  iterate_except_last(
+      n.get_args().begin(), n.get_args().end(),
+      [&](let arg, size_t) { arg->accept(*this); }, [&](let) { line << ", "; });
+  line << ">";
+
+  format_type_metadata(n);
 }
 
 void CambrianFormatter::visit(npar::U1& n) {
@@ -380,15 +400,9 @@ void CambrianFormatter::visit(npar::ConstChar& n) {
   qcore_implement();
 }
 
-void CambrianFormatter::visit(npar::ConstNull& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
-}
+void CambrianFormatter::visit(npar::ConstNull&) { line << "null"; }
 
-void CambrianFormatter::visit(npar::ConstUndef& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
-}
+void CambrianFormatter::visit(npar::ConstUndef&) { line << "undef"; }
 
 void CambrianFormatter::visit(npar::Call& n) {
   /// TODO: Implement format for node
@@ -430,19 +444,38 @@ void CambrianFormatter::visit(npar::FString& n) {
   qcore_implement();
 }
 
-void CambrianFormatter::visit(npar::Ident& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
-}
+void CambrianFormatter::visit(npar::Ident& n) { line << n.get_name(); }
 
 void CambrianFormatter::visit(npar::SeqPoint& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
+  line << "(";
+  iterate_except_last(
+      n.get_items().begin(), n.get_items().end(),
+      [&](let item, size_t) { item->accept(*this); },
+      [&](let) { line << ", "; });
+  line << ")";
 }
 
 void CambrianFormatter::visit(npar::Block& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
+  switch (n.get_safety()) {
+    case npar::SafetyMode::Safe: {
+      line << "safe ";
+      break;
+    }
+
+    case npar::SafetyMode::Unsafe: {
+      line << "unsafe ";
+      break;
+    }
+
+    case npar::SafetyMode::Unknown: {
+      break;
+    }
+  }
+
+  std::for_each(n.get_items().begin(), n.get_items().end(), [&](let item) {
+    item->accept(*this);
+    line << "\n";
+  });
 }
 
 void CambrianFormatter::visit(npar::VarDecl& n) {
@@ -450,9 +483,12 @@ void CambrianFormatter::visit(npar::VarDecl& n) {
   qcore_implement();
 }
 
-void CambrianFormatter::visit(npar::InlineAsm& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
+void CambrianFormatter::visit(npar::InlineAsm&) {
+  /* Support for inline assembly is not avaliable yet */
+
+  failed = true;
+
+  line << "/* !!! */";
 }
 
 void CambrianFormatter::visit(npar::IfStmt& n) {
