@@ -299,16 +299,15 @@ void ServerContext::handle_notification(const lsp::NotificationMessage& notif) {
 void ServerContext::dispatch(const std::shared_ptr<lsp::Message> message,
                              std::ostream& io) {
   if (message->type() == lsp::MessageType::Request) {
-    std::lock_guard<std::mutex> lock(m_request_queue_mutex);
-    m_request_queue.push([this, message, &io]() {
-      handle_request(*std::static_pointer_cast<lsp::RequestMessage>(message),
-                     io);
-    });
+    // std::lock_guard<std::mutex> lock(m_request_queue_mutex);
+    // m_request_queue.push([this, message, &io]() {
+    handle_request(*std::static_pointer_cast<lsp::RequestMessage>(message), io);
+    // });
   } else if (message->type() == lsp::MessageType::Notification) {
-    m_thread_pool.QueueJob([this, message](std::stop_token) {
-      handle_notification(
-          *std::static_pointer_cast<lsp::NotificationMessage>(message));
-    });
+    // m_thread_pool.QueueJob([this, message](std::stop_token) {
+    handle_notification(
+        *std::static_pointer_cast<lsp::NotificationMessage>(message));
+    // });
   } else {
     LOG(ERROR) << "Unsupported message type";
   }

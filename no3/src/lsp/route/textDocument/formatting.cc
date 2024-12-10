@@ -95,16 +95,14 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   options.insertSpaces = req.params()["options"]["insertSpaces"].GetBool();
 
   std::string uri = req.params()["textDocument"]["uri"].GetString();
-  SyncFS::the().select_uri(uri);
-  SyncFS::the().wait_for_open();
-
-  std::string text_content;
-  if (!SyncFS::the().read_current(text_content)) {
-    resp.error(lsp::ErrorCodes::InternalError, "Failed to read file");
+  auto file_opt = SyncFS::the().open(uri);
+  if (!file_opt.has_value()) {
+    resp.error(lsp::ErrorCodes::InternalError, "Failed to open file");
     return;
   }
+  auto file = file_opt.value();
 
-  std::stringstream ss(std::move(text_content));
+  std::stringstream ss(*file->content());
 
   qcore_env env;
   qlex lexer(ss, uri.c_str(), env.get());

@@ -72,7 +72,12 @@ void do_didChange(const lsp::NotificationMessage& notif) {
     return;
   }
 
-  SyncFS::the().select_uri(uri);
+  auto file_opt = SyncFS::the().open(uri);
+  if (!file_opt.has_value()) {
+    return;
+  }
+
+  auto file = file_opt.value();
 
   for (const auto& content_change : content_changes) {
     if (!content_change.IsObject()) {
@@ -93,7 +98,7 @@ void do_didChange(const lsp::NotificationMessage& notif) {
     std::string_view text(content_change["text"].GetString(),
                           content_change["text"].GetStringLength());
 
-    SyncFS::the().replace(0, SyncFS::the().size().value(), text);
+    file->replace(0, file->size(), text);
   }
 
   latest[uri] = version;

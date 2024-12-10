@@ -26,7 +26,7 @@ namespace lang {
   using ParseTree = std::shared_ptr<ParseTreeWrapper>;
 
   class ParseTreeCache {
-    std::unordered_map<std::string, std::pair<SyncFS::Digest, ParseTree>>
+    std::unordered_map<std::string, std::pair<SyncFSFile::Digest, ParseTree>>
         m_cache;
     size_t m_cache_size = DEFAULT_CACHE_LIMIT;
 
