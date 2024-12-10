@@ -738,6 +738,9 @@ public:
 
   constexpr bool is(npar_ty_t type) const { return type == getKind(); }
 
+  constexpr bool is_expr_stmt(npar_ty_t type) const;
+  constexpr bool is_stmt_expr(npar_ty_t type) const;
+
   std::ostream &dump(std::ostream &os = std::cerr,
                      bool isForDebug = false) const noexcept;
 
@@ -915,7 +918,7 @@ namespace npar {
   public:
     constexpr ExprStmt(Expr *expr) : Stmt(QAST_NODE_EXPR_STMT), m_expr(expr) {}
 
-    Expr *get_expr() { return m_expr; }
+    Expr *get_expr() const { return m_expr; }
 
     PNODE_IMPL_CORE(ExprStmt)
   };
@@ -926,7 +929,7 @@ namespace npar {
   public:
     constexpr StmtExpr(Stmt *stmt) : Expr(QAST_NODE_STMT_EXPR), m_stmt(stmt) {}
 
-    Stmt *get_stmt() { return m_stmt; }
+    Stmt *get_stmt() const { return m_stmt; }
 
     PNODE_IMPL_CORE(StmtExpr)
   };
@@ -2094,6 +2097,14 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) noexcept {
   }();
 
   return names[type];
+}
+
+constexpr bool npar_node_t::is_expr_stmt(npar_ty_t type) const {
+  return is(QAST_NODE_EXPR_STMT) && as<npar::ExprStmt>()->get_expr()->is(type);
+}
+
+constexpr bool npar_node_t::is_stmt_expr(npar_ty_t type) const {
+  return is(QAST_NODE_STMT_EXPR) && as<npar::StmtExpr>()->get_stmt()->is(type);
 }
 
 #endif  // __NITRATE_PARSER_NODE_H__

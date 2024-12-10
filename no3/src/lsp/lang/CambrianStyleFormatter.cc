@@ -580,23 +580,68 @@ void CambrianFormatter::visit(ConstNull&) { line << "null"; }
 void CambrianFormatter::visit(ConstUndef&) { line << "undef"; }
 
 void CambrianFormatter::visit(Call& n) {
+  let wrap_threshold = 8ULL;
+
   n.get_func()->accept(*this);
 
-  line << "(";
-  iterate_except_last(
-      n.get_args().begin(), n.get_args().end(),
-      [&](let arg, size_t) {
+  size_t argc = n.get_args().size();
+
+  bool any_named =
+      std::any_of(n.get_args().begin(), n.get_args().end(), [](let arg) {
         let name = std::get<0>(arg);
-        let value = std::get<1>(arg);
+        return !std::isdigit(name.at(0));
+      });
 
-        if (!name.empty()) {
-          line << name << ": ";
-        }
+  bool any_lambdas = std::any_of(
+      n.get_args().begin(), n.get_args().end(),
+      [](let arg) { return std::get<1>(arg)->is_stmt_expr(QAST_NODE_FN); });
 
-        value->accept(*this);
-      },
-      [&](let) { line << ", "; });
-  line << ")";
+  bool is_wrapping = argc >= wrap_threshold || any_named || any_lambdas;
+
+  if (is_wrapping) {
+    line << "(";
+    size_t line_size = line.length();
+    std::swap(indent, line_size);
+
+    for (auto it = n.get_args().begin(); it != n.get_args().end(); ++it) {
+      let arg = *it;
+      let name = std::get<0>(arg);
+      let value = std::get<1>(arg);
+
+      if (!std::isdigit(name.at(0))) {
+        line << name << ": ";
+      }
+
+      value->accept(*this);
+
+      if (it != n.get_args().end() - 1) {
+        line << ", ";
+      }
+
+      if (it != n.get_args().end() - 1) {
+        line << std::endl << get_indent();
+      }
+    }
+
+    std::swap(indent, line_size);
+    line << ")";
+  } else {
+    line << "(";
+    iterate_except_last(
+        n.get_args().begin(), n.get_args().end(),
+        [&](let arg, size_t) {
+          let name = std::get<0>(arg);
+          let value = std::get<1>(arg);
+
+          if (!std::isdigit(name.at(0))) {
+            line << name << ": ";
+          }
+
+          value->accept(*this);
+        },
+        [&](let) { line << ", "; });
+    line << ")";
+  }
 }
 
 void CambrianFormatter::visit(TemplCall& n) {
@@ -609,7 +654,7 @@ void CambrianFormatter::visit(TemplCall& n) {
         let name = std::get<0>(arg);
         let value = std::get<1>(arg);
 
-        if (!name.empty()) {
+        if (!std::isdigit(name.at(0))) {
           line << name << ": ";
         }
 
@@ -625,7 +670,7 @@ void CambrianFormatter::visit(TemplCall& n) {
         let name = std::get<0>(arg);
         let value = std::get<1>(arg);
 
-        if (!name.empty()) {
+        if (!std::isdigit(name.at(0))) {
           line << name << ": ";
         }
 
@@ -1101,8 +1146,6 @@ void CambrianFormatter::visit(FnDef& n) {
 
   line << " ";
   n.get_body()->accept(*this);
-
-  line << ";";
 }
 
 void CambrianFormatter::visit(StructField& n) {
