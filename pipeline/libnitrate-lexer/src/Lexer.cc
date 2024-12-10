@@ -95,7 +95,6 @@ namespace qlex {
           {"pure", qKPure},
           {"quasipure", qKQuasipure},
           {"retropure", qKRetropure},
-          {"crashpoint", qKCrashpoint},
           {"inline", qKInline},
           {"unsafe", qKUnsafe},
           {"safe", qKSafe},

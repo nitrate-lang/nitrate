@@ -883,10 +883,6 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //         props += " foreign";
 //       }
 
-//       if (N->is_crashpoint()) {
-//         props += " crashpoint";
-//       }
-
 //       S.line << "fn";
 //       if (!props.empty()) {
 //         S.line << std::move(props);
@@ -1032,10 +1028,6 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 //         props += " foreign";
 //       }
 
-//       if (F->is_crashpoint()) {
-//         props += " crashpoint";
-//       }
-
 //       if (!N->get_name().empty()) {
 //         props += " " + N->get_name();
 //       }
@@ -1155,10 +1147,6 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 
 //       if (F->is_foreign()) {
 //         props += " foreign";
-//       }
-
-//       if (F->is_crashpoint()) {
-//         props += " crashpoint";
 //       }
 
 //       if (!N->get_name().empty()) {

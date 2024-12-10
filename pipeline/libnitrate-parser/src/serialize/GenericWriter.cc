@@ -500,7 +500,7 @@ void AST_Writer::visit(StructTy& n) {
 }
 
 void AST_Writer::visit(FuncTy& n) {
-  begin_obj(14);
+  begin_obj(13);
 
   string("kind");
   string(n.getKindName());
@@ -517,9 +517,6 @@ void AST_Writer::visit(FuncTy& n) {
 
   string("foreign");
   boolean(n.is_foreign());
-
-  string("crashpoint");
-  boolean(n.is_crashpoint());
 
   string("noexcept");
   boolean(n.is_noexcept());
