@@ -38,7 +38,7 @@
 
 #include <cstdint>
 #include <istream>
-#include <nitrate-parser/Vistor.hh>
+#include <nitrate-parser/Visitor.hh>
 #include <optional>
 #include <stack>
 
@@ -62,9 +62,9 @@ namespace npar {
     void dbl(double val);
     void boolean(bool val);
     void null();
-    void begin_obj();
+    void begin_obj(size_t pair_count);
     void end_obj();
-    void begin_arr(size_t max_size);
+    void begin_arr(size_t size);
     void end_arr();
 
   public:

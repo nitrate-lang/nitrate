@@ -31,45 +31,54 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBNITRATE_INTERNAL
+#include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 
-#include <nitrate-core/Env.h>
-#include <nitrate-core/Lib.h>
-#include <nitrate/code.h>
+#include <nitrate-ir/Reader.hh>
 
-#include <core/SerialUtil.hh>
-#include <core/Transformer.hh>
-#include <functional>
-#include <nitrate-seq/Classes.hh>
-#include <string_view>
-#include <unordered_set>
+using namespace nr;
 
-extern bool impl_use_msgpack(qlex_t *L, std::ostream &O);
-extern bool impl_use_json(qlex_t *L, std::ostream &O);
+void NR_Reader::str(std::string_view str) {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
 
-bool nit::meta(std::istream &source, std::ostream &output,
-               std::function<void(const char *)> diag_cb,
-               const std::unordered_set<std::string_view> &opts) {
-  (void)diag_cb;
+void NR_Reader::uint(uint64_t val) {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
 
-  qprep lexer(source, nullptr, qcore_env_current());
+void NR_Reader::dbl(double val) {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
 
-  enum class OutMode {
-    JSON,
-    MsgPack,
-  } out_mode = OutMode::JSON;
+void NR_Reader::boolean(bool val) {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
 
-  if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
-    return false;
-  } else if (opts.contains("-fuse-msgpack")) {
-    out_mode = OutMode::MsgPack;
-  }
+void NR_Reader::null() {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
 
-  switch (out_mode) {
-    case OutMode::JSON:
-      return impl_use_json(lexer.get(), output);
-    case OutMode::MsgPack:
-      return impl_use_msgpack(lexer.get(), output);
-  }
+void NR_Reader::begin_obj() {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
+
+void NR_Reader::end_obj() {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
+
+void NR_Reader::begin_arr(size_t max_size) {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
+
+void NR_Reader::end_arr() {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
 }

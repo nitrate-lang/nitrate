@@ -49,6 +49,6 @@ bugs/
 nitrate-lex
 nitrate-meta
 nitrate-parse
-nitrate-ir
 examples/test.q
 
+nitrate-nr

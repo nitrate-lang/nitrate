@@ -63,7 +63,7 @@ void AST_Reader::null() {
   qcore_implement();
 }
 
-void AST_Reader::begin_obj() {
+void AST_Reader::begin_obj(size_t pair_count) {
   /// TODO: Implement generic deserializer
   qcore_implement();
 }
@@ -73,7 +73,7 @@ void AST_Reader::end_obj() {
   qcore_implement();
 }
 
-void AST_Reader::begin_arr(size_t max_size) {
+void AST_Reader::begin_arr(size_t size) {
   /// TODO: Implement generic deserializer
   qcore_implement();
 }

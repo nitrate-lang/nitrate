@@ -31,45 +31,125 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBNITRATE_INTERNAL
+#include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 
-#include <nitrate-core/Env.h>
-#include <nitrate-core/Lib.h>
-#include <nitrate/code.h>
+#include <nitrate-ir/Writer.hh>
 
-#include <core/SerialUtil.hh>
-#include <core/Transformer.hh>
-#include <functional>
-#include <nitrate-seq/Classes.hh>
-#include <string_view>
-#include <unordered_set>
+using namespace nr;
 
-extern bool impl_use_msgpack(qlex_t *L, std::ostream &O);
-extern bool impl_use_json(qlex_t *L, std::ostream &O);
+static void escape_string(std::ostream &os, const std::string_view &input) {
+  os << "\"";
 
-bool nit::meta(std::istream &source, std::ostream &output,
-               std::function<void(const char *)> diag_cb,
-               const std::unordered_set<std::string_view> &opts) {
-  (void)diag_cb;
-
-  qprep lexer(source, nullptr, qcore_env_current());
-
-  enum class OutMode {
-    JSON,
-    MsgPack,
-  } out_mode = OutMode::JSON;
-
-  if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
-    return false;
-  } else if (opts.contains("-fuse-msgpack")) {
-    out_mode = OutMode::MsgPack;
+  for (char ch : input) {
+    switch (ch) {
+      case '"':
+        os << "\\\"";
+        break;
+      case '\\':
+        os << "\\\\";
+        break;
+      case '\b':
+        os << "\\b";
+        break;
+      case '\f':
+        os << "\\f";
+        break;
+      case '\n':
+        os << "\\n";
+        break;
+      case '\r':
+        os << "\\r";
+        break;
+      case '\t':
+        os << "\\t";
+        break;
+      case '\0':
+        os << "\\0";
+        break;
+      default:
+        if (ch >= 32 && ch < 127) {
+          os << ch;
+        } else {
+          char hex[5];
+          snprintf(hex, sizeof(hex), "\\x%02x", (int)(uint8_t)ch);
+          os << hex;
+        }
+        break;
+    }
   }
 
-  switch (out_mode) {
-    case OutMode::JSON:
-      return impl_use_json(lexer.get(), output);
-    case OutMode::MsgPack:
-      return impl_use_msgpack(lexer.get(), output);
+  os << "\"";
+}
+
+void NR_JsonWriter::delim() {
+  qcore_assert(!m_count.empty() && !m_comma.empty());
+
+  if (m_count.top()++ > 0) {
+    bool use_comma = m_comma.top() == true || (m_count.top() & 1) != 0;
+
+    m_os << (use_comma ? "," : ":");
   }
+}
+
+void NR_JsonWriter::str_impl(std::string_view str) {
+  delim();
+
+  escape_string(m_os, str);
+}
+
+void NR_JsonWriter::uint_impl(uint64_t val) {
+  delim();
+
+  m_os << val;
+}
+
+void NR_JsonWriter::double_impl(double val) {
+  delim();
+
+  m_os << val;
+}
+
+void NR_JsonWriter::bool_impl(bool val) {
+  delim();
+
+  m_os << (val ? "true" : "false");
+}
+
+void NR_JsonWriter::null_impl() {
+  delim();
+
+  m_os << "null";
+}
+
+void NR_JsonWriter::begin_obj_impl(size_t) {
+  delim();
+
+  m_comma.push(false);
+  m_count.push(0);
+  m_os << "{";
+}
+
+void NR_JsonWriter::end_obj_impl() {
+  qcore_assert(!m_count.empty() && !m_comma.empty());
+
+  m_os << "}";
+  m_count.pop();
+  m_comma.pop();
+}
+
+void NR_JsonWriter::begin_arr_impl(size_t) {
+  delim();
+
+  m_comma.push(true);
+  m_count.push(0);
+  m_os << "[";
+}
+
+void NR_JsonWriter::end_arr_impl() {
+  qcore_assert(!m_count.empty() && !m_comma.empty());
+
+  m_os << "]";
+  m_count.pop();
+  m_comma.pop();
 }

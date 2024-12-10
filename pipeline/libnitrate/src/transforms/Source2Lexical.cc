@@ -43,311 +43,242 @@
 #include <string_view>
 #include <unordered_set>
 
-// static bool impl_use_json(qlex_t *L, std::ostream &O) {
-//   fputc('[', O);
+bool impl_use_json(qlex_t *L, std::ostream &O) {
+  O << "[";
 
-//   qlex_tok_t tok;
-//   while ((tok = qlex_next(L)).ty != qEofF) {
-//     uint32_t sl = qlex_line(L, tok.start);
-//     uint32_t sc = qlex_col(L, tok.start);
-//     uint32_t el = qlex_line(L, tok.end);
-//     uint32_t ec = qlex_col(L, tok.end);
+  qlex_tok_t tok;
+  while ((tok = qlex_next(L)).ty != qEofF) {
+    uint32_t sl = qlex_line(L, tok.start);
+    uint32_t sc = qlex_col(L, tok.start);
+    uint32_t el = qlex_line(L, tok.end);
+    uint32_t ec = qlex_col(L, tok.end);
 
-//     switch (tok.ty) {
-//       case qEofF: { /* End of file */
-//         __builtin_unreachable();
-//         break;
-//       }
+    switch (tok.ty) {
+      case qEofF: { /* End of file */
+        __builtin_unreachable();
+        break;
+      }
 
-//       case qKeyW: { /* Keyword */
-//         fprintf(O, "[3,\"%s\",%u,%u,%u,%u],", qlex_kwstr(tok.v.key), sl, sc,
-//         el,
-//                 ec);
-//         break;
-//       }
+      case qKeyW: { /* Keyword */
+        O << "[2,\"" << qlex_kwstr(tok.v.key) << "\"," << sl << "," << sc << ","
+          << el << "," << ec << "],";
+        break;
+      }
 
-//       case qOper: { /* Operator */
-//         fprintf(O, "[4,\"%s\",%u,%u,%u,%u],", qlex_opstr(tok.v.op), sl, sc,
-//         el,
-//                 ec);
-//         break;
-//       }
+      case qOper: { /* Operator */
+        O << "[3,\"" << qlex_opstr(tok.v.op) << "\"," << sl << "," << sc << ","
+          << el << "," << ec << "],";
+        break;
+      }
 
-//       case qPunc: { /* Punctuation */
-//         fprintf(O, "[5,\"%s\",%u,%u,%u,%u],", qlex_punctstr(tok.v.punc), sl,
-//         sc,
-//                 el, ec);
-//         break;
-//       }
+      case qPunc: { /* Punctuation */
+        O << "[4,\"" << qlex_punctstr(tok.v.punc) << "\"," << sl << "," << sc
+          << "," << el << "," << ec << "],";
+        break;
+      }
 
-//       case qName: { /* Identifier */
-//         /// We assume that identifiers are not allowed to contain NULL bytes
-//         and
-//         /// other special characters.
-//         fprintf(O, "[6,\"%s\",%u,%u,%u,%u],", qlex_str(L, &tok, nullptr), sl,
-//                 sc, el, ec);
-//         break;
-//       }
+      case qName: { /* Identifier */
+        O << "[5,\"" << qlex_str(L, &tok, nullptr) << "\"," << sl << "," << sc
+          << "," << el << "," << ec << "],";
+        break;
+      }
 
-//       case qIntL: { /* Integer literal */
-//         /// We assume that int's are not allowed to contain NULL bytes and
-//         other
-//         /// special characters.
-//         fprintf(O, "[7,\"%s\",%u,%u,%u,%u],", qlex_str(L, &tok, nullptr), sl,
-//                 sc, el, ec);
-//         break;
-//       }
+      case qIntL: { /* Integer literal */
+        /// We assume that int's are not allowed to contain NULL bytes and
+        O << "[6,\"" << qlex_str(L, &tok, nullptr) << "\"," << sl << "," << sc
+          << "," << el << "," << ec << "],";
+        break;
+      }
 
-//       case qNumL: { /* Floating-point literal */
-//         /// We assume that int's are not allowed to contain NULL bytes and
-//         other
-//         /// special characters.
-//         fprintf(O, "[8,\"%s\",%u,%u,%u,%u],", qlex_str(L, &tok, nullptr), sl,
-//                 sc, el, ec);
-//         break;
-//       }
+      case qNumL: { /* Floating-point literal */
+        /// We assume that int's are not allowed to contain NULL bytes and
+        O << "[7,\"" << qlex_str(L, &tok, nullptr) << "\"," << sl << "," << sc
+          << "," << el << "," << ec << "],";
+        break;
+      }
 
-//       case qText: { /* String literal */
-//         size_t S;
-//         const char *str = qlex_str(L, &tok, &S);
-//         std::string_view sv(str, S);
+      case qText: { /* String literal */
+        size_t S;
+        const char *str = qlex_str(L, &tok, &S);
+        std::string_view sv(str, S);
 
-//         fprintf(O, "[9,%s,%u,%u,%u,%u],", create_json_string(sv).c_str(), sl,
-//                 sc, el, ec);
-//         break;
-//       }
+        O << "[8,\"" << create_json_string(sv) << "\"," << sl << "," << sc
+          << "," << el << "," << ec << "],";
+        break;
+      }
 
-//       case qChar: { /* Character literal */
-//         size_t S;
-//         const char *str = qlex_str(L, &tok, &S);
-//         std::string_view sv(str, S);
+      case qChar: { /* Character literal */
+        size_t S;
+        const char *str = qlex_str(L, &tok, &S);
+        std::string_view sv(str, S);
 
-//         fprintf(O, "[10,%s,%u,%u,%u,%u],", create_json_string(sv).c_str(),
-//         sl,
-//                 sc, el, ec);
-//         break;
-//       }
+        O << "[9,\"" << create_json_string(sv) << "\"," << sl << "," << sc
+          << "," << el << "," << ec << "],";
+        break;
+      }
 
-//       case qMacB: { /* Macro block */
-//         /// We assume that int's are not allowed to contain NULL bytes and
-//         other
-//         /// special characters.
-//         fprintf(O, "[11,\"%s\",%u,%u,%u,%u],", qlex_str(L, &tok, nullptr),
-//         sl,
-//                 sc, el, ec);
-//         break;
-//       }
+      case qMacB: { /* Macro block */
+        /// We assume that int's are not allowed to contain NULL bytes and
+        O << "[10,\"" << qlex_str(L, &tok, nullptr) << "\"," << sl << "," << sc
+          << "," << el << "," << ec << "],";
+        break;
+      }
 
-//       case qMacr: { /* Macro call */
-//         /// We assume that int's are not allowed to contain NULL bytes and
-//         other
-//         /// special characters.
-//         fprintf(O, "[12,\"%s\",%u,%u,%u,%u],", qlex_str(L, &tok, nullptr),
-//         sl,
-//                 sc, el, ec);
-//         break;
-//       }
+      case qMacr: { /* Macro call */
+        /// We assume that int's are not allowed to contain NULL bytes and
+        O << "[11,\"" << qlex_str(L, &tok, nullptr) << "\"," << sl << "," << sc
+          << "," << el << "," << ec << "],";
+        break;
+      }
 
-//       case qNote: { /* Comment */
-//         size_t S;
-//         const char *str = qlex_str(L, &tok, &S);
-//         std::string_view sv(str, S);
+      case qNote: { /* Comment */
+        size_t S;
+        const char *str = qlex_str(L, &tok, &S);
+        std::string_view sv(str, S);
 
-//         fprintf(O, "[13,%s,%u,%u,%u,%u],", create_json_string(sv).c_str(),
-//         sl,
-//                 sc, el, ec);
-//         break;
-//       }
-//     }
-//   }
+        O << "[12,\"" << create_json_string(sv) << "\"," << sl << "," << sc
+          << "," << el << "," << ec << "],";
+        break;
+      }
+    }
+  }
 
-//   fprintf(O, "[1,\"\",0,0,0,0]]");
+  O << "[1,\"\",0,0,0,0]]";
 
-//   return true;
-// }
+  return true;
+}
 
-// static bool msgpack_write_tok(FILE *O, uint8_t t, std::string_view v,
-//                               uint32_t a, uint32_t b, uint32_t c, uint32_t d)
-//                               {
-//   fputc(0b10010000 | 6, O);
+static void msgpack_write_tok(std::ostream &O, uint8_t type,
+                              std::string_view val, uint32_t sl, uint32_t sc,
+                              uint32_t el, uint32_t ec) {
+  O.put(0x96);
 
-//   // Write type
-//   if (!msgpack_write_uint(O, t)) return false;
+  msgpack_write_uint(O, type);
+  msgpack_write_str(O, val);
+  msgpack_write_uint(O, sl);
+  msgpack_write_uint(O, sc);
+  msgpack_write_uint(O, el);
+  msgpack_write_uint(O, ec);
+}
 
-//   // Write value
-//   if (!msgpack_write_str(O, v)) return false;
+bool impl_use_msgpack(qlex_t *L, std::ostream &O) {
+  size_t num_entries = 0;
 
-//   // Write start line
-//   if (!msgpack_write_uint(O, a)) return false;
+  O.put(0xdd);
 
-//   // Write start column
-//   if (!msgpack_write_uint(O, b)) return false;
+  off_t offset = O.tellp();
+  if (offset == -1) {
+    return false;
+  }
 
-//   // Write end line
-//   if (!msgpack_write_uint(O, c)) return false;
+  O.put(0);
+  O.put(0);
+  O.put(0);
+  O.put(0);
 
-//   // Write end column
-//   if (!msgpack_write_uint(O, d)) return false;
+  qlex_tok_t tok;
+  while ((tok = qlex_next(L)).ty != qEofF) {
+    uint32_t sl = qlex_line(L, tok.start);
+    uint32_t sc = qlex_col(L, tok.start);
+    uint32_t el = qlex_line(L, tok.end);
+    uint32_t ec = qlex_col(L, tok.end);
 
-//   return true;
-// }
+    switch (tok.ty) {
+      case qEofF: { /* End of file */
+        __builtin_unreachable();
+        break;
+      }
 
-// static bool impl_use_msgpack(qlex_t *L, std::ostream &O) {
-//   size_t num_entries = 0;
+      case qKeyW: { /* Keyword */
+        msgpack_write_tok(O, 3, qlex_kwstr(tok.v.key), sl, sc, el, ec);
+        break;
+      }
 
-//   fputc(0xdd, O);
+      case qOper: { /* Operator */
+        msgpack_write_tok(O, 4, qlex_opstr(tok.v.op), sl, sc, el, ec);
+        break;
+      }
 
-//   off_t offset = ftello(O);
-//   if (offset == -1) {
-//     return false;
-//   }
+      case qPunc: { /* Punctuation */
+        msgpack_write_tok(O, 5, qlex_punctstr(tok.v.punc), sl, sc, el, ec);
+        break;
+      }
 
-//   /* Placeholder value */
-//   int err = 0;
+      case qName: { /* Identifier */
+        msgpack_write_tok(O, 6, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        break;
+      }
 
-//   err |= fputc(0, O);
-//   err |= fputc(0, O);
-//   err |= fputc(0, O);
-//   err |= fputc(0, O);
+      case qIntL: { /* Integer literal */
+        msgpack_write_tok(O, 7, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        break;
+      }
 
-//   qlex_tok_t tok;
-//   while ((tok = qlex_next(L)).ty != qEofF) {
-//     uint32_t sl = qlex_line(L, tok.start);
-//     uint32_t sc = qlex_col(L, tok.start);
-//     uint32_t el = qlex_line(L, tok.end);
-//     uint32_t ec = qlex_col(L, tok.end);
+      case qNumL: { /* Floating-point literal */
+        msgpack_write_tok(O, 8, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        break;
+      }
 
-//     switch (tok.ty) {
-//       case qEofF: { /* End of file */
-//         __builtin_unreachable();
-//         break;
-//       }
+      case qText: { /* String literal */
+        size_t S;
+        const char *str = qlex_str(L, &tok, &S);
+        std::string_view sv(str, S);
 
-//       case qKeyW: { /* Keyword */
-//         if (!msgpack_write_tok(O, 3, qlex_kwstr(tok.v.key), sl, sc, el, ec))
-//         {
-//           return false;
-//         }
-//         break;
-//       }
+        msgpack_write_tok(O, 9, sv, sl, sc, el, ec);
+        break;
+      }
 
-//       case qOper: { /* Operator */
-//         if (!msgpack_write_tok(O, 4, qlex_opstr(tok.v.op), sl, sc, el, ec)) {
-//           return false;
-//         }
-//         break;
-//       }
+      case qChar: { /* Character literal */
+        size_t S;
+        const char *str = qlex_str(L, &tok, &S);
+        std::string_view sv(str, S);
 
-//       case qPunc: { /* Punctuation */
-//         if (!msgpack_write_tok(O, 5, qlex_punctstr(tok.v.punc), sl, sc, el,
-//                                ec)) {
-//           return false;
-//         }
-//         break;
-//       }
+        msgpack_write_tok(O, 10, sv, sl, sc, el, ec);
+        break;
+      }
 
-//       case qName: { /* Identifier */
-//         if (!msgpack_write_tok(O, 6, qlex_str(L, &tok, nullptr), sl, sc, el,
-//                                ec)) {
-//           return false;
-//         }
-//         break;
-//       }
+      case qMacB: { /* Macro block */
+        msgpack_write_tok(O, 11, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        break;
+      }
 
-//       case qIntL: { /* Integer literal */
-//         if (!msgpack_write_tok(O, 7, qlex_str(L, &tok, nullptr), sl, sc, el,
-//                                ec)) {
-//           return false;
-//         }
-//         break;
-//       }
+      case qMacr: { /* Macro call */
+        msgpack_write_tok(O, 12, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        break;
+      }
 
-//       case qNumL: { /* Floating-point literal */
-//         if (!msgpack_write_tok(O, 8, qlex_str(L, &tok, nullptr), sl, sc, el,
-//                                ec)) {
-//           return false;
-//         }
-//         break;
-//       }
+      case qNote: { /* Comment */
+        size_t S;
+        const char *str = qlex_str(L, &tok, &S);
+        std::string_view sv(str, S);
 
-//       case qText: { /* String literal */
-//         size_t S;
-//         const char *str = qlex_str(L, &tok, &S);
-//         std::string_view sv(str, S);
+        msgpack_write_tok(O, 13, sv, sl, sc, el, ec);
+        break;
+      }
+    }
 
-//         if (!msgpack_write_tok(O, 9, sv, sl, sc, el, ec)) {
-//           return false;
-//         }
-//         break;
-//       }
+    num_entries++;
+  }
 
-//       case qChar: { /* Character literal */
-//         size_t S;
-//         const char *str = qlex_str(L, &tok, &S);
-//         std::string_view sv(str, S);
+  msgpack_write_tok(O, qEofF, "", 0, 0, 0, 0);
+  num_entries++;
 
-//         if (!msgpack_write_tok(O, 10, sv, sl, sc, el, ec)) {
-//           return false;
-//         }
-//         break;
-//       }
+  off_t end_offset = O.tellp();
+  if (end_offset == -1) {
+    return false;
+  }
 
-//       case qMacB: { /* Macro block */
-//         if (!msgpack_write_tok(O, 11, qlex_str(L, &tok, nullptr), sl, sc, el,
-//                                ec)) {
-//           return false;
-//         }
-//         break;
-//       }
+  O.seekp(offset, std::ios_base::beg);
 
-//       case qMacr: { /* Macro call */
-//         if (!msgpack_write_tok(O, 12, qlex_str(L, &tok, nullptr), sl, sc, el,
-//                                ec)) {
-//           return false;
-//         }
-//         break;
-//       }
+  O.put((num_entries >> 24) & 0xff);
+  O.put((num_entries >> 16) & 0xff);
+  O.put((num_entries >> 8) & 0xff);
+  O.put(num_entries & 0xff);
 
-//       case qNote: { /* Comment */
-//         size_t S;
-//         const char *str = qlex_str(L, &tok, &S);
-//         std::string_view sv(str, S);
+  O.seekp(end_offset, std::ios_base::beg);
 
-//         if (!msgpack_write_tok(O, 13, sv, sl, sc, el, ec)) {
-//           return false;
-//         }
-//         break;
-//       }
-//     }
-
-//     num_entries++;
-//   }
-
-//   if (!msgpack_write_tok(O, qEofF, "", 0, 0, 0, 0)) {
-//     return false;
-//   }
-//   num_entries++;
-
-//   off_t end_offset = ftello(O);
-//   if (end_offset == -1) {
-//     return false;
-//   }
-
-//   if (fseeko(O, offset, SEEK_SET) == -1) {
-//     return false;
-//   }
-
-//   err |= fputc((num_entries >> 24) & 0xff, O);
-//   err |= fputc((num_entries >> 16) & 0xff, O);
-//   err |= fputc((num_entries >> 8) & 0xff, O);
-//   err |= fputc(num_entries & 0xff, O);
-
-//   if (fseeko(O, end_offset, SEEK_SET) == -1) {
-//     return false;
-//   }
-
-//   return err != EOF;
-// }
+  return true;
+}
 
 bool nit::basic_lexer(std::istream &source, std::ostream &output,
                       std::function<void(const char *)> diag_cb,
@@ -368,15 +299,10 @@ bool nit::basic_lexer(std::istream &source, std::ostream &output,
     out_mode = OutMode::MsgPack;
   }
 
-  (void)out_mode;
-  (void)output;
-  qcore_print(QCORE_INFO, "Not implemented yet.");
-  return false;
-
-  // switch (out_mode) {
-  //   case OutMode::JSON:
-  //     return impl_use_json(lexer.get(), output);
-  //   case OutMode::MsgPack:
-  //     return impl_use_msgpack(lexer.get(), output);
-  // }
+  switch (out_mode) {
+    case OutMode::JSON:
+      return impl_use_json(lexer.get(), output);
+    case OutMode::MsgPack:
+      return impl_use_msgpack(lexer.get(), output);
+  }
 }

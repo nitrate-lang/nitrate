@@ -31,45 +31,70 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBNITRATE_INTERNAL
+#ifndef __NITRATE_NR_READER_H__
+#define __NITRATE_NR_READER_H__
 
-#include <nitrate-core/Env.h>
-#include <nitrate-core/Lib.h>
-#include <nitrate/code.h>
+#include <nitrate-core/Macro.h>
 
-#include <core/SerialUtil.hh>
-#include <core/Transformer.hh>
-#include <functional>
-#include <nitrate-seq/Classes.hh>
-#include <string_view>
-#include <unordered_set>
+#include <cstdint>
+#include <istream>
+#include <nitrate-ir/Visitor.hh>
+#include <optional>
+#include <stack>
 
-extern bool impl_use_msgpack(qlex_t *L, std::ostream &O);
-extern bool impl_use_json(qlex_t *L, std::ostream &O);
+namespace nr {
+  class CPP_EXPORT NR_Reader {
+    enum class State {
+      ObjStart,
+      ObjEnd,
+    };
 
-bool nit::meta(std::istream &source, std::ostream &output,
-               std::function<void(const char *)> diag_cb,
-               const std::unordered_set<std::string_view> &opts) {
-  (void)diag_cb;
+    std::stack<State> m_state;
+    std::stack<Expr*> m_parse;
 
-  qprep lexer(source, nullptr, qcore_env_current());
+    void handle_state();
 
-  enum class OutMode {
-    JSON,
-    MsgPack,
-  } out_mode = OutMode::JSON;
+    /// TODO: Implement state
 
-  if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
-    return false;
-  } else if (opts.contains("-fuse-msgpack")) {
-    out_mode = OutMode::MsgPack;
-  }
+  protected:
+    void str(std::string_view str);
+    void uint(uint64_t val);
+    void dbl(double val);
+    void boolean(bool val);
+    void null();
+    void begin_obj();
+    void end_obj();
+    void begin_arr(size_t max_size);
+    void end_arr();
 
-  switch (out_mode) {
-    case OutMode::JSON:
-      return impl_use_json(lexer.get(), output);
-    case OutMode::MsgPack:
-      return impl_use_msgpack(lexer.get(), output);
-  }
-}
+  public:
+    NR_Reader() { m_state.push(State::ObjStart); }
+    virtual ~NR_Reader() = default;
+
+    std::optional<Expr*> get() {
+      if (m_parse.empty() || m_parse.top() == nullptr) {
+        return std::nullopt;
+      }
+
+      return m_parse.top();
+    }
+  };
+
+  class CPP_EXPORT NR_JsonReader final : public NR_Reader {
+    void parse_stream(std::istream& is);
+
+  public:
+    NR_JsonReader(std::istream& is) { parse_stream(is); }
+    virtual ~NR_JsonReader() = default;
+  };
+
+  class CPP_EXPORT NR_MsgPackReader final : public NR_Reader {
+    void parse_stream(std::istream& is);
+
+  public:
+    NR_MsgPackReader(std::istream& is) { parse_stream(is); }
+    virtual ~NR_MsgPackReader() = default;
+  };
+}  // namespace nr
+
+#endif

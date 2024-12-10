@@ -40,7 +40,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <nitrate-parser/Vistor.hh>
+#include <nitrate-parser/Visitor.hh>
 #include <ostream>
 #include <stack>
 #include <string_view>

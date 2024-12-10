@@ -45,7 +45,7 @@
 #include <iostream>
 #include <map>
 #include <nitrate-core/Classes.hh>
-#include <nitrate-parser/Vistor.hh>
+#include <nitrate-parser/Visitor.hh>
 #include <optional>
 #include <ostream>
 #include <set>

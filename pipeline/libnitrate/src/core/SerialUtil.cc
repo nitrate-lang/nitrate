@@ -170,42 +170,37 @@ bool read_json_string(std::istream &I, char **str, size_t &len) {
   return false;
 }
 
-#define FPUTC(__x, __O)         \
-  if (fputc(__x, __O) == EOF) { \
-    return false;               \
-  }
-
 #define FGETC(__I)                           \
   if ((ch = __I.get()) == ((uint32_t)EOF)) { \
     return false;                            \
   }
 
-bool msgpack_write_uint(FILE *O, uint64_t x) {
+bool msgpack_write_uint(std::ostream &O, uint64_t x) {
   if (x <= INT8_MAX) {
-    FPUTC(x & 0x7f, O);
+    O.put(x & 0x7f);
   } else if (x <= UINT8_MAX) {
-    FPUTC(0xcc, O);
-    FPUTC(x, O);
+    O.put(0xcc);
+    O.put(x);
   } else if (x <= UINT16_MAX) {
-    FPUTC(0xcd, O);
-    FPUTC((x >> 8) & 0xff, O);
-    FPUTC(x & 0xff, O);
+    O.put(0xcd);
+    O.put((x >> 8) & 0xff);
+    O.put(x & 0xff);
   } else if (x <= UINT32_MAX) {
-    FPUTC(0xce, O);
-    FPUTC((x >> 24) & 0xff, O);
-    FPUTC((x >> 16) & 0xff, O);
-    FPUTC((x >> 8) & 0xff, O);
-    FPUTC(x & 0xff, O);
+    O.put(0xce);
+    O.put((x >> 24) & 0xff);
+    O.put((x >> 16) & 0xff);
+    O.put((x >> 8) & 0xff);
+    O.put(x & 0xff);
   } else {
-    FPUTC(0xcf, O);
-    FPUTC((x >> 56) & 0xff, O);
-    FPUTC((x >> 48) & 0xff, O);
-    FPUTC((x >> 40) & 0xff, O);
-    FPUTC((x >> 32) & 0xff, O);
-    FPUTC((x >> 24) & 0xff, O);
-    FPUTC((x >> 16) & 0xff, O);
-    FPUTC((x >> 8) & 0xff, O);
-    FPUTC(x & 0xff, O);
+    O.put(0xcf);
+    O.put((x >> 56) & 0xff);
+    O.put((x >> 48) & 0xff);
+    O.put((x >> 40) & 0xff);
+    O.put((x >> 32) & 0xff);
+    O.put((x >> 24) & 0xff);
+    O.put((x >> 16) & 0xff);
+    O.put((x >> 8) & 0xff);
+    O.put(x & 0xff);
   }
 
   return true;
@@ -262,29 +257,27 @@ bool msgpack_read_uint(std::istream &I, uint64_t &x) {
   return true;
 }
 
-bool msgpack_write_str(FILE *O, std::string_view str) {
+bool msgpack_write_str(std::ostream &O, std::string_view str) {
   size_t sz = str.size();
 
   if (sz <= 31) {
-    FPUTC(0b10100000 | sz, O);
+    O.put(0b10100000 | sz);
   } else if (sz <= UINT8_MAX) {
-    FPUTC(0xd9, O);
-    FPUTC(sz, O);
+    O.put(0xd9);
+    O.put(sz);
   } else if (sz <= UINT16_MAX) {
-    FPUTC(0xda, O);
-    FPUTC((sz >> 8) & 0xff, O);
-    FPUTC(sz & 0xff, O);
+    O.put(0xda);
+    O.put((sz >> 8) & 0xff);
+    O.put(sz & 0xff);
   } else if (sz <= UINT32_MAX) {
-    FPUTC(0xdb, O);
-    FPUTC((sz >> 24) & 0xff, O);
-    FPUTC((sz >> 16) & 0xff, O);
-    FPUTC((sz >> 8) & 0xff, O);
-    FPUTC(sz & 0xff, O);
+    O.put(0xdb);
+    O.put((sz >> 24) & 0xff);
+    O.put((sz >> 16) & 0xff);
+    O.put((sz >> 8) & 0xff);
+    O.put(sz & 0xff);
   }
 
-  if (fwrite(str.data(), 1, sz, O) != sz) {
-    return false;
-  }
+  O.write(str.data(), sz);
 
   return true;
 }

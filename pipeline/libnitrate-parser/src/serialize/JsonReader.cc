@@ -36,6 +36,7 @@
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
 
+#include <functional>
 #include <iostream>
 #include <nitrate-parser/Reader.hh>
 
@@ -46,12 +47,65 @@ void AST_JsonReader::parse_stream(std::istream& is) {
   rapidjson::IStreamWrapper wrapper(is);
   doc.ParseStream(wrapper);
 
-  if (!doc.HasParseError()) {
-    for (auto it = doc.Begin(); it != doc.End(); ++it) {
-      std::cout << it->GetType() << std::endl;
-    }
-  }
+  std::function<bool(const rapidjson::Value& obj)> handle_value =
+      [&](const rapidjson::Value& obj) -> bool {
+    switch (obj.GetType()) {
+      case rapidjson::kNullType: {
+        null();
+        return true;
+      }
 
-  /// TODO: Implement JSON parsing
-  qcore_implement();
+      case rapidjson::kFalseType: {
+        boolean(false);
+        return true;
+      }
+
+      case rapidjson::kTrueType: {
+        boolean(true);
+        return true;
+      }
+
+      case rapidjson::kObjectType: {
+        begin_obj(obj.MemberCount());
+        for (let member : obj.GetObject()) {
+          if (member.name.IsString()) {
+            str(std::string_view(member.name.GetString(),
+                                 member.name.GetStringLength()));
+          } else {
+            return false;
+          }
+          handle_value(member.value);
+        }
+        end_obj();
+        return true;
+      }
+
+      case rapidjson::kArrayType: {
+        begin_arr(obj.Size());
+        for (let elem : obj.GetArray()) {
+          handle_value(elem);
+        }
+        end_arr();
+        return true;
+      }
+
+      case rapidjson::kStringType: {
+        str(std::string_view(obj.GetString(), doc.GetStringLength()));
+        return true;
+      }
+
+      case rapidjson::kNumberType: {
+        if (obj.IsUint64()) {
+          uint(obj.GetUint64());
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+  };
+
+  if (!doc.HasParseError()) {
+    handle_value(doc);
+  }
 }

@@ -41,6 +41,8 @@
 #include <functional>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-ir/Classes.hh>
+#include <nitrate-ir/Writer.hh>
+#include <nitrate-parser/Reader.hh>
 #include <string_view>
 #include <unordered_set>
 
@@ -59,37 +61,39 @@ bool nit::nr(std::istream &source, std::ostream &output,
     out_mode = OutMode::MsgPack;
   }
 
-  nr_conf conf;
+  std::optional<npar_node_t *> root;
 
-  { /* Should the ir use the crashguard signal handler? */
-    if (opts.contains("-fir-crashguard=off")) {
-      nr_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_OFF);
-    } else if (opts.contains("-fparse-crashguard=on")) {
-      nr_conf_setopt(conf.get(), QQK_CRASHGUARD, QQV_ON);
-    }
+  if (source.peek() == '{') {
+    root = npar::AST_JsonReader(source).get();
+  } else {
+    root = npar::AST_MsgPackReader(source).get();
   }
 
-  (void)source;
+  if (!root.has_value()) {
+    qcore_print(QCORE_ERROR, "Failed to parse input.");
+    return false;
+  }
 
   qmodule ir_module;
 
-  bool ok = nr_lower(&ir_module.get(), nullptr, "FILE", true);
+  bool ok =
+      nr_lower(&ir_module.get(), root.value(), nullptr, diag_cb != nullptr);
   if (!ok) {
     diag_cb("Failed to lower IR module.\n");
     return false;
   }
 
-  (void)out_mode;
-  (void)output;
-  qcore_print(QCORE_INFO, "Not implemented yet.");
-  return false;
+  switch (out_mode) {
+    case OutMode::JSON: {
+      auto writter = nr::NR_JsonWriter(output);
+      ir_module.get()->accept(writter);
+      return false;
+    }
 
-  // switch (out_mode) {
-  //   case OutMode::JSON:
-  //     ok = impl_use_json(ir_module.get(), output);
-  //     break;
-  //   case OutMode::MsgPack:
-  //     ok = impl_use_msgpack(ir_module.get(), output);
-  //     break;
-  // }
+    case OutMode::MsgPack: {
+      auto writter = nr::NR_MsgPackWriter(output);
+      ir_module.get()->accept(writter);
+      return false;
+    }
+  }
 }
