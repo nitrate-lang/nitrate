@@ -100,7 +100,9 @@ std::string_view qmodule_t::internString(std::string_view sv) {
   }
 }
 
-void qmodule_t::accept(nr::NRVisitor &visitor) { m_root->accept(visitor); }
+CPP_EXPORT void qmodule_t::accept(nr::NRVisitor &visitor) {
+  m_root->accept(visitor);
+}
 
 ///=============================================================================
 

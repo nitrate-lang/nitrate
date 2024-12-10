@@ -41,7 +41,7 @@ TEST(MetaRoute, flag_use_json) {
       NULL,         /* End of options */
   };
 
-  EXPECT_TRUE(nit_cc(source, output, nullptr, 0, options));
+  EXPECT_TRUE(nit_pipeline(source, output, nullptr, 0, options));
 
   nit_fclose(source);
   nit_fclose(output);

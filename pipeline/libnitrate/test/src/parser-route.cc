@@ -24,7 +24,7 @@ TEST(ParseRoute, json_to_json) {
       NULL,         /* End of options */
   };
 
-  EXPECT_TRUE(nit_cc(source, output, nit_diag_stderr, 0, options));
+  EXPECT_TRUE(nit_pipeline(source, output, nit_diag_stderr, 0, options));
 
   nit_fclose(source);
   nit_fclose(output);

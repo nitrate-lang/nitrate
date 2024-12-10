@@ -83,8 +83,8 @@ typedef void (*nit_diag_func)(const char *message, const char *by,
  ******************************************************************************
  * @note This function is an ideal target for fuzz based testing              *
  *****************************************************************************/
-bool nit_cc(nit_stream_t *in, nit_stream_t *out, nit_diag_func diag,
-            void *opaque, const char *const options[]);
+bool nit_pipeline(nit_stream_t *in, nit_stream_t *out, nit_diag_func diag,
+                  void *opaque, const char *const options[]);
 
 #ifdef __cplusplus
 }

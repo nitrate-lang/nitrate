@@ -174,8 +174,9 @@ public:
   std::streamsize xsputn(const char *, std::streamsize n) override { return n; }
 };
 
-C_EXPORT bool nit_cc(nit_stream_t *in, nit_stream_t *out, nit_diag_func diag_cb,
-                     void *opaque, const char *const options[]) {
+C_EXPORT bool nit_pipeline(nit_stream_t *in, nit_stream_t *out,
+                           nit_diag_func diag_cb, void *opaque,
+                           const char *const options[]) {
   static null_ostream_t null_ostream;
 
   errno = 0;
@@ -240,7 +241,7 @@ static void nit_diag_functor(const char *message, const char *by, void *ctx) {
   callback(message, by);
 }
 
-CPP_EXPORT std::future<bool> nitrate::transform(
+CPP_EXPORT std::future<bool> nitrate::pipeline(
     std::shared_ptr<Stream> in, std::shared_ptr<Stream> out,
     const std::vector<std::string> &options,
     std::optional<DiagnosticFunc> diag) {
@@ -259,33 +260,34 @@ CPP_EXPORT std::future<bool> nitrate::transform(
       functor_ctx = reinterpret_cast<void *>(&callback);
     }
 
-    return nit_cc(in.get()->get(), out.get()->get(),
-                  functor_ctx ? nit_diag_functor : nullptr, functor_ctx,
-                  options_c_str.data());
+    return nit_pipeline(in.get()->get(), out.get()->get(),
+                        functor_ctx ? nit_diag_functor : nullptr, functor_ctx,
+                        options_c_str.data());
   });
 }
 
-CPP_EXPORT std::future<bool> nitrate::transform(
+CPP_EXPORT std::future<bool> nitrate::pipeline(
     Stream in, Stream out, const std::vector<std::string> &options,
     std::optional<DiagnosticFunc> diag) {
-  return std::async(std::launch::async, [Out = std::move(out),
-                                         In = std::move(in), options,
-                                         Diag = std::move(diag)]() {
-    /* Convert options to C strings */
-    std::vector<const char *> options_c_str(options.size() + 1);
-    for (size_t i = 0; i < options.size(); i++) {
-      options_c_str[i] = options[i].c_str();
-    }
-    options_c_str[options.size()] = nullptr;
+  return std::async(
+      std::launch::async, [Out = std::move(out), In = std::move(in), options,
+                           Diag = std::move(diag)]() {
+        /* Convert options to C strings */
+        std::vector<const char *> options_c_str(options.size() + 1);
+        for (size_t i = 0; i < options.size(); i++) {
+          options_c_str[i] = options[i].c_str();
+        }
+        options_c_str[options.size()] = nullptr;
 
-    void *functor_ctx = nullptr;
-    DiagnosticFunc callback = Diag.value_or(nullptr);
+        void *functor_ctx = nullptr;
+        DiagnosticFunc callback = Diag.value_or(nullptr);
 
-    if (callback != nullptr) {
-      functor_ctx = reinterpret_cast<void *>(&callback);
-    }
+        if (callback != nullptr) {
+          functor_ctx = reinterpret_cast<void *>(&callback);
+        }
 
-    return nit_cc(In.get(), Out.get(), functor_ctx ? nit_diag_functor : nullptr,
-                  functor_ctx, options_c_str.data());
-  });
+        return nit_pipeline(In.get(), Out.get(),
+                            functor_ctx ? nit_diag_functor : nullptr,
+                            functor_ctx, options_c_str.data());
+      });
 }

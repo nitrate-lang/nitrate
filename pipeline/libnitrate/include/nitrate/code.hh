@@ -85,7 +85,7 @@ namespace nitrate {
   using DiagnosticFunc =
       std::function<void(std::string_view message, std::string_view by)>;
 
-  std::future<bool> transform(
+  std::future<bool> pipeline(
       std::shared_ptr<Stream> in, std::shared_ptr<Stream> out,
       const std::vector<std::string> &options,
       std::optional<DiagnosticFunc> diag = [](std::string_view message,
@@ -94,7 +94,7 @@ namespace nitrate {
         std::cerr.flush();
       });
 
-  std::future<bool> transform(
+  std::future<bool> pipeline(
       Stream in, Stream out, const std::vector<std::string> &options,
       std::optional<DiagnosticFunc> diag = [](std::string_view message,
                                               std::string_view) {
