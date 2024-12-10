@@ -47,6 +47,12 @@ else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMEMORY_OVER_SPEED=0")
 endif()
 
+if(BUILD_SHARED_LIBS STREQUAL "ON")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNITRATE_SHARED=1")
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNITRATE_SHARED=0")
+endif()
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   # Fix issue with ASAN and private aliases
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mllvm -asan-use-private-alias=1")
