@@ -3,6 +3,8 @@
 
 #include <lsp/lang/CambrianStyleFormatter.hh>
 
+#include "nitrate-core/Error.h"
+
 using namespace lsp::fmt;
 using namespace npar;
 
@@ -83,11 +85,15 @@ void CambrianFormatter::escape_string_literal_chunk(std::string_view str) {
   }
 }
 
-void CambrianFormatter::escape_string_literal(std::string_view str) {
+void CambrianFormatter::escape_string_literal(std::string_view str,
+                                              bool put_quotes) {
   constexpr size_t max_chunk_size = 60;
 
   if (str.empty()) {
-    line << "\"\"";
+    if (put_quotes) {
+      line << "\"\"";
+    }
+    return;
   }
 
   size_t num_chunks = str.size() / max_chunk_size;
@@ -111,9 +117,15 @@ void CambrianFormatter::escape_string_literal(std::string_view str) {
   }
 
   if (rem > 0) {
-    line << "\"";
+    if (num_chunks > 0 || put_quotes) {
+      line << "\"";
+    }
+
     escape_string_literal_chunk(str.substr(num_chunks * max_chunk_size, rem));
-    line << "\"";
+
+    if (num_chunks > 0 || put_quotes) {
+      line << "\"";
+    }
   }
 }
 
@@ -347,8 +359,70 @@ void CambrianFormatter::visit(RefTy& n) {
 }
 
 void CambrianFormatter::visit(FuncTy& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
+  line << "fn";
+
+  switch (n.get_purity()) {
+    case FuncPurity::IMPURE_THREAD_UNSAFE: {
+      line << " impure";
+      break;
+    }
+
+    case FuncPurity::IMPURE_THREAD_SAFE: {
+      line << " impure tsafe";
+      break;
+    }
+
+    case FuncPurity::PURE: {
+      line << " pure";
+      break;
+    }
+
+    case FuncPurity::QUASIPURE: {
+      line << " quasipure";
+      break;
+    }
+
+    case FuncPurity::RETROPURE: {
+      line << " retropure";
+      break;
+    }
+  }
+
+  if (n.is_foreign()) {
+    line << " foreign";
+  }
+
+  if (n.is_noexcept()) {
+    line << " noexcept";
+  }
+
+  if (n.is_noreturn()) {
+    /// FIXME: Make syntax
+    qcore_implement();
+  }
+
+  line << "(";
+  iterate_except_last(
+      n.get_params().begin(), n.get_params().end(),
+      [&](let param, size_t) {
+        let name = std::get<0>(param);
+        let type = std::get<1>(param);
+        let def = std::get<2>(param);
+
+        line << name << ": ";
+        type->accept(*this);
+        if (def) {
+          line << " = ";
+          def->accept(*this);
+        }
+      },
+      [&](let) { line << ", "; });
+  line << ")";
+
+  line << ": ";
+  n.get_return_ty()->accept(*this);
+
+  line << ";";
 }
 
 void CambrianFormatter::visit(UnaryExpr& n) {
@@ -372,9 +446,6 @@ void CambrianFormatter::visit(PostUnaryExpr& n) {
 }
 
 void CambrianFormatter::visit(TernaryExpr& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
-
   line << "(";
   n.get_cond()->accept(*this);
   line << " ? ";
@@ -489,18 +560,37 @@ void CambrianFormatter::visit(Field& n) {
 }
 
 void CambrianFormatter::visit(Index& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
+  n.get_base()->accept(*this);
+  line << "[";
+  n.get_index()->accept(*this);
+  line << "]";
 }
 
 void CambrianFormatter::visit(Slice& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
+  n.get_base()->accept(*this);
+  line << "[";
+  if (n.get_start()) {
+    n.get_start()->accept(*this);
+  }
+  line << ":";
+  if (n.get_end()) {
+    n.get_end()->accept(*this);
+  }
+  line << "]";
 }
 
 void CambrianFormatter::visit(FString& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
+  line << "f\"";
+  for (let part : n.get_items()) {
+    if (std::holds_alternative<String>(part)) {
+      escape_string_literal(std::get<String>(part), false);
+    } else {
+      line << "{";
+      std::get<Expr*>(part)->accept(*this);
+      line << "}";
+    }
+  }
+  line << "\"";
 }
 
 void CambrianFormatter::visit(Ident& n) { line << n.get_name(); }
@@ -692,13 +782,180 @@ void CambrianFormatter::visit(TypedefStmt& n) {
 }
 
 void CambrianFormatter::visit(FnDecl& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
+  line << "fn";
+
+  switch (n.get_type()->get_purity()) {
+    case FuncPurity::IMPURE_THREAD_UNSAFE: {
+      line << " impure";
+      break;
+    }
+
+    case FuncPurity::IMPURE_THREAD_SAFE: {
+      line << " impure tsafe";
+      break;
+    }
+
+    case FuncPurity::PURE: {
+      line << " pure";
+      break;
+    }
+
+    case FuncPurity::QUASIPURE: {
+      line << " quasipure";
+      break;
+    }
+
+    case FuncPurity::RETROPURE: {
+      line << " retropure";
+      break;
+    }
+  }
+
+  if (n.get_type()->is_foreign()) {
+    line << " foreign";
+  }
+
+  if (n.get_type()->is_noexcept()) {
+    line << " noexcept";
+  }
+
+  if (n.get_type()->is_noreturn()) {
+    /// FIXME: Make syntax
+    qcore_implement();
+  }
+
+  line << " " << n.get_name();
+
+  if (n.get_template_params().has_value()) {
+    line << "<";
+    iterate_except_last(
+        n.get_template_params().value().begin(),
+        n.get_template_params().value().end(),
+        [&](let param, size_t) {
+          line << std::get<0>(param) << ": ";
+          std::get<1>(param)->accept(*this);
+          let val = std::get<2>(param);
+          if (val) {
+            line << " = ";
+            val->accept(*this);
+          }
+        },
+        [&](let) { line << ", "; });
+    line << ">";
+  }
+
+  line << "(";
+  iterate_except_last(
+      n.get_type()->get_params().begin(), n.get_type()->get_params().end(),
+      [&](let param, size_t) {
+        let name = std::get<0>(param);
+        let type = std::get<1>(param);
+        let def = std::get<2>(param);
+
+        line << name << ": ";
+        type->accept(*this);
+        if (def) {
+          line << " = ";
+          def->accept(*this);
+        }
+      },
+      [&](let) { line << ", "; });
+  line << ")";
+
+  line << ": ";
+  n.get_type()->get_return_ty()->accept(*this);
+
+  line << ";";
 }
 
 void CambrianFormatter::visit(FnDef& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
+  line << "fn";
+
+  switch (n.get_type()->get_purity()) {
+    case FuncPurity::IMPURE_THREAD_UNSAFE: {
+      line << " impure";
+      break;
+    }
+
+    case FuncPurity::IMPURE_THREAD_SAFE: {
+      line << " impure tsafe";
+      break;
+    }
+
+    case FuncPurity::PURE: {
+      line << " pure";
+      break;
+    }
+
+    case FuncPurity::QUASIPURE: {
+      line << " quasipure";
+      break;
+    }
+
+    case FuncPurity::RETROPURE: {
+      line << " retropure";
+      break;
+    }
+  }
+
+  if (n.get_type()->is_foreign()) {
+    line << " foreign";
+  }
+
+  if (n.get_type()->is_noexcept()) {
+    line << " noexcept";
+  }
+
+  if (n.get_type()->is_noreturn()) {
+    /// FIXME: Make syntax
+    qcore_implement();
+  }
+
+  line << " " << n.get_name();
+
+  if (n.get_template_params().has_value()) {
+    line << "<";
+    iterate_except_last(
+        n.get_template_params().value().begin(),
+        n.get_template_params().value().end(),
+        [&](let param, size_t) {
+          line << std::get<0>(param) << ": ";
+          std::get<1>(param)->accept(*this);
+          let val = std::get<2>(param);
+          if (val) {
+            line << " = ";
+            val->accept(*this);
+          }
+        },
+        [&](let) { line << ", "; });
+    line << ">";
+  }
+
+  line << "(";
+  iterate_except_last(
+      n.get_type()->get_params().begin(), n.get_type()->get_params().end(),
+      [&](let param, size_t) {
+        let name = std::get<0>(param);
+        let type = std::get<1>(param);
+        let def = std::get<2>(param);
+
+        line << name << ": ";
+        type->accept(*this);
+        if (def) {
+          line << " = ";
+          def->accept(*this);
+        }
+      },
+      [&](let) { line << ", "; });
+  line << ")";
+
+  line << ": ";
+  n.get_type()->get_return_ty()->accept(*this);
+
+  line << " ";
+  n.get_body()->accept(*this);
+
+  line << ";";
 }
 
 void CambrianFormatter::visit(StructField& n) {

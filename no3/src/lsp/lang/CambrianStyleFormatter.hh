@@ -1,6 +1,5 @@
 #pragma once
 
-#include <functional>
 #include <lsp/lang/FmtInterface.hh>
 #include <stack>
 
@@ -25,7 +24,7 @@ namespace lsp::fmt {
     void flush_line();
     std::string escape_char_literal(char ch);
     void escape_string_literal_chunk(std::string_view str);
-    void escape_string_literal(std::string_view str);
+    void escape_string_literal(std::string_view str, bool put_quotes = true);
     void write_float_literal_chunk(std::string_view float_str);
     void write_float_literal(std::string_view float_str);
 
