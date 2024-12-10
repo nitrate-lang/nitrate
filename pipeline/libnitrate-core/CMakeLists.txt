@@ -29,6 +29,7 @@ file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
 add_library(nitrate-core ${CXX_SOURCES})
 target_include_directories(nitrate-core PUBLIC src "include")
+target_link_libraries(nitrate-core PUBLIC unwind)
 
 install(TARGETS nitrate-core DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")
