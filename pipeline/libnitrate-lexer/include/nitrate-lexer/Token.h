@@ -170,6 +170,8 @@ typedef enum qlex_key_t {
   qKTry,       /* 'try' */
   qKCatch,     /* 'catch' */
   qKThrow,     /* 'throw' */
+  qKAsync,     /* 'async' */
+  qKAwait,     /* 'await' */
   qK__Asm__,   /* '__asm__' */
   qKUndef,     /* 'undef' */
   qKNull,      /* 'null' */

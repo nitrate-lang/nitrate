@@ -113,6 +113,8 @@ namespace qlex {
           {"try", qKTry},
           {"catch", qKCatch},
           {"throw", qKThrow},
+          {"async", qKAsync},
+          {"await", qKAwait},
           {"__asm__", qK__Asm__},
           {"undef", qKUndef},
           {"null", qKNull},
