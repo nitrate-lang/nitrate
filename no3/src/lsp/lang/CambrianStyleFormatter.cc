@@ -438,7 +438,7 @@ void CambrianFormatter::visit(TupleTy& n) {
 void CambrianFormatter::visit(ArrayTy& n) {
   line << "[";
   n.get_item()->accept(*this);
-  line << ";";
+  line << "; ";
   n.get_size()->accept(*this);
   line << "]";
 
