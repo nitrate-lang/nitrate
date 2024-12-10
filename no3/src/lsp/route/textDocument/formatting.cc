@@ -122,8 +122,12 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   LOG(INFO) << "Requested document format";
 
   std::stringstream formatted;
-  lsp::fmt::FormatterFactory::create(lsp::fmt::Styleguide::Cambrian)
-      ->format(root, formatted);
+  if (!lsp::fmt::FormatterFactory::create(lsp::fmt::Styleguide::Cambrian,
+                                          formatted)
+           ->format(root)) {
+    resp.error(lsp::ErrorCodes::InternalError, "Failed to format file");
+    return;
+  }
 
   ///==========================================================
   /// Send the whole new file contents

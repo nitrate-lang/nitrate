@@ -1,27 +1,64 @@
 #pragma once
 
 #include <lsp/lang/FmtInterface.hh>
+#include <sstream>
 #include <stack>
 
 namespace lsp::fmt {
   class CambrianFormatter final : public npar::ASTVisitor,
                                   public ICodeFormatter {
+    class LineStreamWritter {
+      std::stringstream m_line_buffer;
+      std::ostream& m_file;
+
+    public:
+      LineStreamWritter(std::ostream& out) : m_file(out) {}
+
+      void reset() {
+        m_line_buffer.str("");
+        m_line_buffer.clear();
+      }
+
+      template <typename T>
+      LineStreamWritter& operator<<(const T& val) {
+        m_line_buffer << val;
+        return *this;
+      }
+
+      LineStreamWritter& operator<<(std::ostream& (*func)(std::ostream&)) {
+        qcore_assert(func ==
+                     static_cast<std::ostream& (*)(std::ostream&)>(std::endl));
+
+        m_file << m_line_buffer.str() << "\n";
+        reset();
+
+        return *this;
+      }
+
+      size_t length() {
+        size_t pos = m_line_buffer.tellp();
+        m_line_buffer.seekp(0, std::ios_base::end);
+        size_t len = m_line_buffer.tellp();
+        m_line_buffer.seekp(pos, std::ios_base::beg);
+        return len;
+      }
+    };
+
+    LineStreamWritter line;
     std::stack<size_t> field_indent_stack;
-    std::stringstream file, line;
     size_t indent;
     const size_t tabSize;
-    bool failed;
+    bool failed, did_root;
 
     void reset_state() {
       field_indent_stack = std::stack<size_t>();
       field_indent_stack.push(1);
-      file = std::stringstream();
-      line = std::stringstream();
+      line.reset();
       indent = 0;
       failed = false;
+      did_root = false;
     }
 
-    void flush_line();
     std::string escape_char_literal(char ch);
     void escape_string_literal_chunk(std::string_view str);
     void escape_string_literal(std::string_view str, bool put_quotes = true);
@@ -115,15 +152,15 @@ namespace lsp::fmt {
     void visit(npar::ExportStmt& n) override;
 
   public:
-    CambrianFormatter(size_t theTabSize = 2) : indent(0), tabSize(theTabSize) {
+    CambrianFormatter(std::ostream& out, size_t theTabSize = 2)
+        : line(out), indent(0), tabSize(theTabSize) {
       reset_state();
+      (void)tabSize;
     }
     virtual ~CambrianFormatter() = default;
 
-    bool format(npar_node_t* root, std::ostream& out) override {
+    bool format(npar_node_t* root) override {
       root->accept(*this);
-      file << line.str();
-      out << file.str();
       bool ok = !failed;
       reset_state();
 

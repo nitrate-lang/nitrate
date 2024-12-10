@@ -8,12 +8,6 @@
 using namespace lsp::fmt;
 using namespace npar;
 
-void CambrianFormatter::flush_line() {
-  file << line.str();
-  line.str("");
-  (void)tabSize;
-}
-
 std::string CambrianFormatter::escape_char_literal(char ch) {
   if (!std::isspace(ch) && !std::isprint(ch)) {
     const char* tab = "0123456789abcdef";
@@ -99,8 +93,7 @@ void CambrianFormatter::escape_string_literal(std::string_view str,
   size_t num_chunks = str.size() / max_chunk_size;
   size_t rem = str.size() % max_chunk_size;
 
-  line.seekg(0, std::ios::end);
-  size_t line_size = line.tellg();
+  size_t line_size = line.length();
 
   for (size_t i = 0; i < num_chunks; i++) {
     line << "\"";
@@ -108,8 +101,7 @@ void CambrianFormatter::escape_string_literal(std::string_view str,
     line << "\"";
 
     if (rem > 0 || i < num_chunks - 1) {
-      line << " \\\n";
-      flush_line();
+      line << " \\" << std::endl;
       if (line_size) {
         line << std::string(line_size, ' ');
       }
@@ -163,16 +155,14 @@ void CambrianFormatter::write_float_literal(std::string_view float_str) {
   size_t num_chunks = float_str.size() / max_chunk_size;
   size_t rem = float_str.size() % max_chunk_size;
 
-  line.seekg(0, std::ios::end);
-  size_t line_size = line.tellg();
+  size_t line_size = line.length();
 
   for (size_t i = 0; i < num_chunks; i++) {
     write_float_literal_chunk(
         float_str.substr(i * max_chunk_size, max_chunk_size));
 
     if (rem > 0 || i < num_chunks - 1) {
-      line << "_ \\\n";
-      flush_line();
+      line << "_ \\" << std::endl;
       if (line_size) {
         line << std::string(line_size, ' ');
       }
@@ -605,6 +595,9 @@ void CambrianFormatter::visit(SeqPoint& n) {
 }
 
 void CambrianFormatter::visit(Block& n) {
+  bool isRootBlock = !did_root;
+  did_root = true;
+
   switch (n.get_safety()) {
     case SafetyMode::Safe: {
       line << "safe ";
@@ -621,12 +614,22 @@ void CambrianFormatter::visit(Block& n) {
     }
   }
 
-  line << "{";
-  std::for_each(n.get_items().begin(), n.get_items().end(), [&](let item) {
-    item->accept(*this);
-    line << "\n";
-  });
-  line << "}";
+  if (isRootBlock) {
+    iterate_except_last(
+        n.get_items().begin(), n.get_items().end(),
+        [&](let item, size_t) {
+          item->accept(*this);
+          line << std::endl;
+        },
+        [&](let) { line << std::endl; });
+  } else {
+    line << "{";
+    std::for_each(n.get_items().begin(), n.get_items().end(), [&](let item) {
+      item->accept(*this);
+      line << std::endl;
+    });
+    line << "}";
+  }
 }
 
 void CambrianFormatter::visit(VarDecl& n) {
@@ -1016,19 +1019,19 @@ void CambrianFormatter::visit(StructDef& n) {
 
   std::for_each(n.get_fields().begin(), n.get_fields().end(), [&](let field) {
     field->accept(*this);
-    line << ",\n";
+    line << "," << std::endl;
   });
 
   std::for_each(n.get_methods().begin(), n.get_methods().end(),
                 [&](let method) {
                   method->accept(*this);
-                  line << "\n";
+                  line << std::endl;
                 });
 
   std::for_each(n.get_static_methods().begin(), n.get_static_methods().end(),
                 [&](let method) {
                   method->accept(*this);
-                  line << "\n";
+                  line << std::endl;
                 });
 }
 
@@ -1046,7 +1049,7 @@ void CambrianFormatter::visit(EnumDef& n) {
       line << " = ";
       item.second->accept(*this);
     }
-    line << ",\n";
+    line << "," << std::endl;
   });
   line << "};";
 }
