@@ -34,11 +34,11 @@ namespace lsp::fmt {
     template <typename IterBegin, typename IterEnd>
     void iterate_except_last(IterBegin beg, IterEnd end, auto body,
                              auto if_not_last) {
-      for (auto it = beg; it != end; it++) {
-        body(*it, std::distance(beg, it));
-
-        if (it != end - 1) {
-          if_not_last(*it);
+      size_t i = 0;
+      for (auto it = beg; it != end; ++it, ++i) {
+        body(*it, i);
+        if (std::next(it) != end) {
+          if_not_last(it);
         }
       }
     }
@@ -123,6 +123,7 @@ namespace lsp::fmt {
 
     bool format(npar_node_t* root, std::ostream& out) override {
       root->accept(*this);
+      file << line.str();
       out << file.str();
       bool ok = !failed;
       reset_state();
