@@ -38,6 +38,7 @@
 #error "This code requires c++"
 #endif
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-core/Memory.h>
 #include <nitrate-lexer/Token.h>
 
@@ -1664,26 +1665,23 @@ namespace npar {
   };
 
   class ForStmt : public Stmt {
-    Expr *m_init;
-    Expr *m_cond;
-    Expr *m_step;
+    std::optional<Stmt *> m_init;
+    std::optional<Expr *> m_cond, m_step;
     Stmt *m_body;
 
   public:
-    constexpr ForStmt(Expr *init, Expr *cond, Expr *step, Stmt *body)
+    constexpr ForStmt(std::optional<Stmt *> init, std::optional<Expr *> cond,
+                      std::optional<Expr *> step, Stmt *body)
         : Stmt(QAST_NODE_FOR),
           m_init(init),
           m_cond(cond),
           m_step(step),
           m_body(body) {}
 
-    Expr *get_init() { return m_init; }
-
-    Expr *get_cond() { return m_cond; }
-
-    Expr *get_step() { return m_step; }
-
-    Stmt *get_body() { return m_body; }
+    let get_init() const { return m_init; }
+    let get_cond() const { return m_cond; }
+    let get_step() const { return m_step; }
+    let get_body() const { return m_body; }
 
     PNODE_IMPL_CORE(ForStmt)
   };

@@ -40,7 +40,8 @@
 #include <descent/Recurse.hh>
 
 npar::Stmt *npar::recurse_for(npar_t &S, qlex_t &rd) {
-  Expr *x0 = nullptr, *x1 = nullptr, *x2 = nullptr;
+  std::optional<Stmt *> x0;
+  std::optional<Expr *> x1, x2;
 
   qlex_tok_t tok = peek();
   if (tok.is<qPuncLPar>()) {
@@ -57,10 +58,10 @@ npar::Stmt *npar::recurse_for(npar_t &S, qlex_t &rd) {
         return mock_stmt(QAST_NODE_FOR);
 
       } else {
-        x0 = StmtExpr::get(let_node[0]);
+        x0 = let_node[0];
       }
     } else {
-      x0 = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+      x0 = ExprStmt::get(recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}));
 
       tok = next();
       if (!tok.is<qPuncSemi>()) {
@@ -106,10 +107,10 @@ npar::Stmt *npar::recurse_for(npar_t &S, qlex_t &rd) {
                    << "Expected let statement to have exactly one declaration";
         return mock_stmt(QAST_NODE_FOR);
       } else {
-        x0 = StmtExpr::get(let_node[0]);
+        x0 = let_node[0];
       }
     } else {
-      x0 = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+      x0 = ExprStmt::get(recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}));
 
       tok = next();
       if (!tok.is<qPuncSemi>()) {

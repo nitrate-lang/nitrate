@@ -661,20 +661,50 @@ void CambrianFormatter::visit(Block& n) {
     }
   }
 
-  if (isRootBlock) {
-    iterate_except_last(
-        n.get_items().begin(), n.get_items().end(),
-        [&](let item, size_t) {
-          item->accept(*this);
-          line << std::endl;
-        },
-        [&](let) { line << std::endl; });
-  } else {
-    line << "{";
-    std::for_each(n.get_items().begin(), n.get_items().end(), [&](let item) {
-      item->accept(*this);
+  static const std::unordered_set<npar_ty_t> extra_seperation = {
+      QAST_NODE_FNDECL,     QAST_NODE_STRUCT, QAST_NODE_ENUM,  QAST_NODE_FN,
+      QAST_NODE_SCOPE,      QAST_NODE_EXPORT, QAST_NODE_BLOCK,
+
+      QAST_NODE_INLINE_ASM, QAST_NODE_IF,     QAST_NODE_WHILE, QAST_NODE_FOR,
+      QAST_NODE_FOREACH,    QAST_NODE_SWITCH,
+  };
+
+  if (!isRootBlock && n.get_items().empty()) {
+    line << "{}";
+    return;
+  }
+
+  if (!isRootBlock) {
+    line << "{" << std::endl;
+    indent += tabSize;
+  }
+
+  let items = n.get_items();
+
+  for (auto it = items.begin(); it != items.end(); ++it) {
+    let item = *it;
+
+    line << get_indent();
+    item->accept(*this);
+    line << std::endl;
+
+    bool is_last_item = it == items.end() - 1;
+
+    bool is_next_item_different =
+        (it + 1 != items.end() &&
+         (*std::next(it))->getKind() != item->getKind());
+
+    bool extra_newline =
+        !is_last_item &&
+        (is_next_item_different || extra_seperation.contains(item->getKind()));
+
+    if (extra_newline) {
       line << std::endl;
-    });
+    }
+  }
+
+  if (!isRootBlock) {
+    indent -= tabSize;
     line << "}";
   }
 }
@@ -754,11 +784,27 @@ void CambrianFormatter::visit(WhileStmt& n) {
 
 void CambrianFormatter::visit(ForStmt& n) {
   line << "for (";
-  n.get_init()->accept(*this);
-  line << "; ";
-  n.get_cond()->accept(*this);
-  line << "; ";
-  n.get_step()->accept(*this);
+
+  if (n.get_init().has_value()) {
+    n.get_init().value()->accept(*this);
+    if (!n.get_init().value()->is_stmt()) {
+      line << ";";
+    }
+  } else {
+    line << ";";
+  }
+
+  if (n.get_cond().has_value()) {
+    line << " ";
+    n.get_cond().value()->accept(*this);
+  }
+  line << ";";
+
+  if (n.get_step().has_value()) {
+    line << " ";
+    n.get_step().value()->accept(*this);
+  }
+
   line << ") ";
   n.get_body()->accept(*this);
 

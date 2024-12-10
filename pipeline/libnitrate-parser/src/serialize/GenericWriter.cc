@@ -1129,13 +1129,25 @@ void AST_Writer::visit(ForStmt& n) {
   write_source_location(n);
 
   string("init");
-  n.get_init()->accept(*this);
+  if (n.get_init()) {
+    n.get_init().value()->accept(*this);
+  } else {
+    null();
+  }
 
   string("cond");
-  n.get_cond()->accept(*this);
+  if (n.get_cond()) {
+    n.get_cond().value()->accept(*this);
+  } else {
+    null();
+  }
 
   string("step");
-  n.get_step()->accept(*this);
+  if (n.get_step()) {
+    n.get_step().value()->accept(*this);
+  } else {
+    null();
+  }
 
   string("body");
   n.get_body()->accept(*this);

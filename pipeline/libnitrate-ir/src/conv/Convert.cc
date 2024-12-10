@@ -1767,9 +1767,9 @@ static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G,
                          npar::ForStmt *n) {
   s.inc_scope();
 
-  auto init = next_one(n->get_init());
-  auto cond = next_one(n->get_cond());
-  auto step = next_one(n->get_step());
+  auto init = next_one(n->get_init().value_or(nullptr));
+  auto cond = next_one(n->get_cond().value_or(nullptr));
+  auto step = next_one(n->get_step().value_or(nullptr));
   auto body = next_one(n->get_body());
 
   if (!init.has_value()) {

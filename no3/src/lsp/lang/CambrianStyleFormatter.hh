@@ -46,6 +46,12 @@ namespace lsp::fmt {
       did_root = false;
     }
 
+    std::string get_indent() const {
+      if (indent == 0) {
+        return "";
+      }
+      return std::string(indent, ' ');
+    }
     std::string escape_char_literal(char ch) const;
     std::string escape_string_literal_chunk(std::string_view str) const;
     void escape_string_literal(std::string_view str, bool put_quotes = true);
@@ -63,6 +69,14 @@ namespace lsp::fmt {
         if (std::next(it) != end) {
           if_not_last(it);
         }
+      }
+    }
+
+    template <typename IterBegin, typename IterEnd>
+    void iterate(IterBegin beg, IterEnd end, auto body) {
+      size_t i = 0;
+      for (auto it = beg; it != end; ++it, ++i) {
+        body(*it, i);
       }
     }
 
