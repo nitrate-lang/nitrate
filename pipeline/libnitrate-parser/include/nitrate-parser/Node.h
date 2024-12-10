@@ -107,7 +107,6 @@ typedef enum npar_ty_t {
   QAST_NODE_VOID_TY,
   QAST_NODE_PTR_TY,
   QAST_NODE_OPAQUE_TY,
-  QAST_NODE_STRUCT_TY,
   QAST_NODE_ARRAY_TY,
   QAST_NODE_TUPLE_TY,
   QAST_NODE_FN_TY,
@@ -393,10 +392,6 @@ public:
         v.visit(*as<OpaqueTy>());
         break;
       }
-      case QAST_NODE_STRUCT_TY: {
-        v.visit(*as<StructTy>());
-        break;
-      }
       case QAST_NODE_ARRAY_TY: {
         v.visit(*as<ArrayTy>());
         break;
@@ -612,8 +607,6 @@ public:
       return QAST_NODE_PTR_TY;
     } else if constexpr (std::is_same_v<T, OpaqueTy>) {
       return QAST_NODE_OPAQUE_TY;
-    } else if constexpr (std::is_same_v<T, StructTy>) {
-      return QAST_NODE_STRUCT_TY;
     } else if constexpr (std::is_same_v<T, ArrayTy>) {
       return QAST_NODE_ARRAY_TY;
     } else if constexpr (std::is_same_v<T, TupleTy>) {
@@ -854,7 +847,7 @@ namespace npar {
       return getKind() == QAST_NODE_FN_TY;
     }
     constexpr bool is_composite() const noexcept {
-      return getKind() == QAST_NODE_STRUCT_TY || is_array() || is_tuple();
+      return is_array() || is_tuple();
     }
     constexpr bool is_numeric() const noexcept {
       return getKind() >= QAST_NODE_U1_TY && getKind() <= QAST_NODE_F128_TY;
@@ -1161,18 +1154,6 @@ namespace npar {
 
   typedef std::pair<String, Type *> StructItem;
   typedef std::vector<StructItem, Arena<StructItem>> StructItems;
-
-  class StructTy : public Type {
-    StructItems m_items;
-
-  public:
-    StructTy(const StructItems &items)
-        : Type(QAST_NODE_STRUCT_TY), m_items(items) {}
-
-    StructItems &get_items() { return m_items; }
-
-    PNODE_IMPL_CORE(StructTy)
-  };
 
   enum class FuncPurity {
     IMPURE_THREAD_UNSAFE,
@@ -1995,10 +1976,9 @@ namespace npar {
     std::optional<TemplateParameters> m_template_parameters;
     CompositeType m_comp_type;
     String m_name;
-    Type *m_type;
 
   public:
-    StructDef(String name, StructTy *type, const StructDefFields &fields = {},
+    StructDef(String name, const StructDefFields &fields = {},
               const StructDefMethods &methods = {},
               const StructDefStaticMethods &static_methods = {},
               std::optional<TemplateParameters> params = std::nullopt,
@@ -2009,12 +1989,10 @@ namespace npar {
           m_fields(fields),
           m_template_parameters(params),
           m_comp_type(t),
-          m_name(name),
-          m_type(type) {}
+          m_name(name) {}
 
     String &get_name() { return m_name; }
     void set_name(String name) { m_name = name; }
-    StructTy *get_type() { return static_cast<StructTy *>(m_type); }
 
     StructDefMethods &get_methods() { return m_methods; }
     StructDefStaticMethods &get_static_methods() { return m_static_methods; }
@@ -2094,7 +2072,6 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) noexcept {
     R[QAST_NODE_VOID_TY] = "Void";
     R[QAST_NODE_PTR_TY] = "Ptr";
     R[QAST_NODE_OPAQUE_TY] = "Opaque";
-    R[QAST_NODE_STRUCT_TY] = "Struct";
     R[QAST_NODE_ARRAY_TY] = "Array";
     R[QAST_NODE_TUPLE_TY] = "Tuple";
     R[QAST_NODE_FN_TY] = "FuncTy";

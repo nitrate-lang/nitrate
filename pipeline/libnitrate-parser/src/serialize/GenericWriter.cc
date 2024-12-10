@@ -472,33 +472,6 @@ void AST_Writer::visit(RefTy& n) {
   end_obj();
 }
 
-void AST_Writer::visit(StructTy& n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n.getKindName());
-
-  write_source_location(n);
-
-  write_type_metadata(n);
-
-  { /* Write struct fields */
-    string("fields");
-
-    let fields = n.get_items();
-    begin_obj(fields.size());
-
-    std::for_each(fields.begin(), fields.end(), [&](let field) {
-      string(field.first);
-      field.second->accept(*this);
-    });
-
-    end_obj();
-  }
-
-  end_obj();
-}
-
 void AST_Writer::visit(FuncTy& n) {
   begin_obj(13);
 
@@ -1462,7 +1435,7 @@ void AST_Writer::visit(StructField& n) {
 }
 
 void AST_Writer::visit(StructDef& n) {
-  begin_obj(9);
+  begin_obj(8);
 
   string("kind");
   string(n.getKindName());
@@ -1524,9 +1497,6 @@ void AST_Writer::visit(StructDef& n) {
       null();
     }
   }
-
-  string("type");
-  n.get_type()->accept(*this);
 
   { /* Write fields */
     string("fields");

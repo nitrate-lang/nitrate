@@ -71,7 +71,6 @@ namespace lsp::fmt {
     void visit(npar::TupleTy& n) override;
     void visit(npar::ArrayTy& n) override;
     void visit(npar::RefTy& n) override;
-    void visit(npar::StructTy& n) override;
     void visit(npar::FuncTy& n) override;
     void visit(npar::UnaryExpr& n) override;
     void visit(npar::BinExpr& n) override;

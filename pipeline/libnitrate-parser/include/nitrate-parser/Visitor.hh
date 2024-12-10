@@ -69,7 +69,6 @@ namespace npar {
   class TupleTy;
   class ArrayTy;
   class RefTy;
-  class StructTy;
   class FuncTy;
   class UnaryExpr;
   class BinExpr;
@@ -149,7 +148,6 @@ namespace npar {
     virtual void visit(TupleTy& n) = 0;
     virtual void visit(ArrayTy& n) = 0;
     virtual void visit(RefTy& n) = 0;
-    virtual void visit(StructTy& n) = 0;
     virtual void visit(FuncTy& n) = 0;
     virtual void visit(UnaryExpr& n) = 0;
     virtual void visit(BinExpr& n) = 0;

@@ -159,7 +159,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
   FnDecl *fdecl = nullptr;
   FuncTy *ft = nullptr;
   Stmt *field = nullptr;
-  StructDef *sdef = StructDef::get("", nullptr);
+  StructDef *sdef = StructDef::get("");
 
   sdef->set_composite_type(type);
 

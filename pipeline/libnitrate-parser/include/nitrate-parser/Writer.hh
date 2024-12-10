@@ -118,7 +118,6 @@ namespace npar {
     void visit(TupleTy&) override;
     void visit(ArrayTy&) override;
     void visit(RefTy&) override;
-    void visit(StructTy&) override;
     void visit(FuncTy&) override;
     void visit(UnaryExpr&) override;
     void visit(BinExpr&) override;

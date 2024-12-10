@@ -503,11 +503,6 @@ void recurse(npar_node_t* C) {
       break;
     }
 
-    case QAST_NODE_STRUCT_TY: {
-      qcore_panic("Unreachable");
-      break;
-    }
-
     case QAST_NODE_ARRAY_TY: {
       ArrayTy* N = C->as<ArrayTy>();
       line << "[";

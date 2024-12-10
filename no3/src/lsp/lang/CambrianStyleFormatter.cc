@@ -8,6 +8,7 @@ using namespace lsp::fmt;
 void CambrianFormatter::flush_line() {
   file << line.str();
   line.str("");
+  (void)tabSize;
 }
 
 std::string CambrianFormatter::escape_char_literal(char ch) {
@@ -327,11 +328,6 @@ void CambrianFormatter::visit(npar::RefTy& n) {
   n.get_item()->accept(*this);
 
   format_type_metadata(n);
-}
-
-void CambrianFormatter::visit(npar::StructTy& n) {
-  /// TODO: Implement format for node
-  qcore_implement();
 }
 
 void CambrianFormatter::visit(npar::FuncTy& n) {

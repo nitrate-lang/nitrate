@@ -1034,26 +1034,6 @@ static EResult nrgen_opaque_ty(NRBuilder &b, PState &, IReport *,
   return b.getOpaqueTy(n->get_name());
 }
 
-static EResult nrgen_struct_ty(NRBuilder &b, PState &s, IReport *G,
-                               npar::StructTy *n) {
-  const npar::StructItems &fields = n->get_items();
-
-  std::vector<Type *> the_fields(fields.size());
-
-  for (size_t i = 0; i < the_fields.size(); i++) {
-    auto item = next_one(fields[i].second);
-    if (!item.has_value()) {
-      G->report(CompilerError, IC::Error, "Failed to lower struct field",
-                n->get_pos());
-      return std::nullopt;
-    }
-
-    the_fields[i] = item.value()->asType();
-  }
-
-  return b.getStructTy(the_fields);
-}
-
 static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G,
                               npar::ArrayTy *n) {
   auto item = next_one(n->get_item());
@@ -2074,10 +2054,6 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
 
     case QAST_NODE_OPAQUE_TY:
       out = nrgen_opaque_ty(b, s, G, n->as<npar::OpaqueTy>());
-      break;
-
-    case QAST_NODE_STRUCT_TY:
-      out = nrgen_struct_ty(b, s, G, n->as<npar::StructTy>());
       break;
 
     case QAST_NODE_ARRAY_TY:
