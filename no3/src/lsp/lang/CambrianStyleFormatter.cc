@@ -266,13 +266,48 @@ void CambrianFormatter::visit(InferTy& n) {
 }
 
 void CambrianFormatter::visit(TemplType& n) {
-  n.get_template()->accept(*this);
+  bool is_optional =
+      n.get_template()->getKind() == QAST_NODE_UNRES_TY &&
+      n.get_template()->as<NamedTy>()->get_name() == "__builtin_result";
 
-  line << "<";
-  iterate_except_last(
-      n.get_args().begin(), n.get_args().end(),
-      [&](let arg, size_t) { arg->accept(*this); }, [&](let) { line << ", "; });
-  line << ">";
+  bool is_vector =
+      n.get_template()->getKind() == QAST_NODE_UNRES_TY &&
+      n.get_template()->as<NamedTy>()->get_name() == "__builtin_vec";
+
+  bool is_map = n.get_template()->getKind() == QAST_NODE_UNRES_TY &&
+                n.get_template()->as<NamedTy>()->get_name() == "__builtin_umap";
+
+  bool is_set = n.get_template()->getKind() == QAST_NODE_UNRES_TY &&
+                n.get_template()->as<NamedTy>()->get_name() == "__builtin_uset";
+
+  size_t argc = n.get_args().size();
+  if (is_optional && argc == 1) {
+    n.get_args().front()->accept(*this);
+    line << "?";
+  } else if (is_vector && argc == 1) {
+    line << "[";
+    n.get_args().front()->accept(*this);
+    line << "]";
+  } else if (is_map && argc == 2) {
+    line << "[";
+    n.get_args().front()->accept(*this);
+    line << "->";
+    n.get_args().back()->accept(*this);
+    line << "]";
+  } else if (is_set && argc == 1) {
+    line << "{";
+    n.get_args().front()->accept(*this);
+    line << "}";
+  } else {
+    n.get_template()->accept(*this);
+
+    line << "<";
+    iterate_except_last(
+        n.get_args().begin(), n.get_args().end(),
+        [&](let arg, size_t) { arg->accept(*this); },
+        [&](let) { line << ", "; });
+    line << ">";
+  }
 
   format_type_metadata(n);
 }
@@ -358,8 +393,9 @@ void CambrianFormatter::visit(VoidTy& n) {
 }
 
 void CambrianFormatter::visit(PtrTy& n) {
-  n.get_item()->accept(*this);
   line << "*";
+  n.get_item()->accept(*this);
+
   format_type_metadata(n);
 }
 
