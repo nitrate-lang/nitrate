@@ -494,14 +494,25 @@ void CambrianFormatter::visit(FuncTy& n) {
         let type = std::get<1>(param);
         let def = std::get<2>(param);
 
-        line << name << ": ";
-        type->accept(*this);
+        line << name;
+
+        if (type->getKind() != QAST_NODE_INFER_TY) {
+          line << ": ";
+          type->accept(*this);
+        }
+
         if (def) {
           line << " = ";
           def->accept(*this);
         }
       },
       [&](let) { line << ", "; });
+  if (n.is_variadic()) {
+    if (!n.get_params().empty()) {
+      line << ", ";
+    }
+    line << "...";
+  }
   line << ")";
 
   if (n.is_noreturn()) {
@@ -510,8 +521,6 @@ void CambrianFormatter::visit(FuncTy& n) {
     line << ": ";
     n.get_return_ty()->accept(*this);
   }
-
-  line << ";";
 }
 
 void CambrianFormatter::visit(UnaryExpr& n) {
@@ -757,7 +766,7 @@ void CambrianFormatter::visit(Block& n) {
 
   if (!isRootBlock) {
     indent -= tabSize;
-    line << "}";
+    line << get_indent() << "}";
   }
 }
 
