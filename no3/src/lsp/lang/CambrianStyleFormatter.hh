@@ -24,16 +24,9 @@ namespace lsp::fmt {
         m_line_buffer << val;
         return *this;
       }
+      LineStreamWritter& operator<<(qlex_op_t op);
 
-      LineStreamWritter& operator<<(std::ostream& (*func)(std::ostream&)) {
-        qcore_assert(func ==
-                     static_cast<std::ostream& (*)(std::ostream&)>(std::endl));
-
-        m_file << m_line_buffer.str() << "\n";
-        reset();
-
-        return *this;
-      }
+      LineStreamWritter& operator<<(std::ostream& (*func)(std::ostream&));
 
       size_t length() {
         size_t pos = m_line_buffer.tellp();

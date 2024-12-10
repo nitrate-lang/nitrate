@@ -1,12 +1,30 @@
+#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
+#include <nitrate-lexer/Lexer.h>
 #include <nitrate-parser/Node.h>
 
 #include <lsp/lang/CambrianStyleFormatter.hh>
 
-#include "nitrate-core/Error.h"
-
 using namespace lsp::fmt;
 using namespace npar;
+
+CambrianFormatter::LineStreamWritter&
+CambrianFormatter::LineStreamWritter::operator<<(
+    std::ostream& (*func)(std::ostream&)) {
+  qcore_assert(func ==
+               static_cast<std::ostream& (*)(std::ostream&)>(std::endl));
+
+  m_file << m_line_buffer.str() << "\n";
+  reset();
+
+  return *this;
+}
+
+CambrianFormatter::LineStreamWritter&
+CambrianFormatter::LineStreamWritter::operator<<(qlex_op_t op) {
+  m_line_buffer << qlex_opstr(op);
+  return *this;
+}
 
 std::string CambrianFormatter::escape_char_literal(char ch) {
   if (!std::isspace(ch) && !std::isprint(ch)) {
@@ -386,11 +404,6 @@ void CambrianFormatter::visit(FuncTy& n) {
     line << " noexcept";
   }
 
-  if (n.is_noreturn()) {
-    /// FIXME: Make syntax
-    qcore_implement();
-  }
-
   line << "(";
   iterate_except_last(
       n.get_params().begin(), n.get_params().end(),
@@ -409,8 +422,12 @@ void CambrianFormatter::visit(FuncTy& n) {
       [&](let) { line << ", "; });
   line << ")";
 
-  line << ": ";
-  n.get_return_ty()->accept(*this);
+  if (n.is_noreturn()) {
+    line << ": null";
+  } else {
+    line << ": ";
+    n.get_return_ty()->accept(*this);
+  }
 
   line << ";";
 }
@@ -822,11 +839,6 @@ void CambrianFormatter::visit(FnDecl& n) {
     line << " noexcept";
   }
 
-  if (n.get_type()->is_noreturn()) {
-    /// FIXME: Make syntax
-    qcore_implement();
-  }
-
   line << " " << n.get_name();
 
   if (n.get_template_params().has_value()) {
@@ -865,8 +877,12 @@ void CambrianFormatter::visit(FnDecl& n) {
       [&](let) { line << ", "; });
   line << ")";
 
-  line << ": ";
-  n.get_type()->get_return_ty()->accept(*this);
+  if (n.get_type()->is_noreturn()) {
+    line << ": null";
+  } else {
+    line << ": ";
+    n.get_type()->get_return_ty()->accept(*this);
+  }
 
   line << ";";
 }
@@ -909,11 +925,6 @@ void CambrianFormatter::visit(FnDef& n) {
     line << " noexcept";
   }
 
-  if (n.get_type()->is_noreturn()) {
-    /// FIXME: Make syntax
-    qcore_implement();
-  }
-
   line << " " << n.get_name();
 
   if (n.get_template_params().has_value()) {
@@ -952,8 +963,12 @@ void CambrianFormatter::visit(FnDef& n) {
       [&](let) { line << ", "; });
   line << ")";
 
-  line << ": ";
-  n.get_type()->get_return_ty()->accept(*this);
+  if (n.get_type()->is_noreturn()) {
+    line << ": null";
+  } else {
+    line << ": ";
+    n.get_type()->get_return_ty()->accept(*this);
+  }
 
   line << " ";
   n.get_body()->accept(*this);
