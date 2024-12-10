@@ -405,11 +405,31 @@ void CambrianFormatter::visit(OpaqueTy& n) {
 }
 
 void CambrianFormatter::visit(TupleTy& n) {
+  /* If the number of fields exceeds the threshold, arange fields into a
+   * matrix of row size ceil(sqrt(n)). */
+
+  let wrap_threshold = 8ULL;
+
   line << "(";
-  iterate_except_last(
-      n.get_items().begin(), n.get_items().end(),
-      [&](let item, size_t) { item->accept(*this); },
-      [&](let) { line << ", "; });
+
+  let items = n.get_items();
+  let line_size = line.length();
+  let break_at = items.size() <= wrap_threshold
+                     ? wrap_threshold
+                     : static_cast<size_t>(std::ceil(std::sqrt(items.size())));
+
+  for (size_t i = 0; i < items.size(); i++) {
+    if (i != 0 && i % break_at == 0) {
+      line << std::endl << std::string(line_size, ' ');
+    }
+
+    let item = items[i];
+    item->accept(*this);
+
+    if (i != items.size() - 1) {
+      line << ", ";
+    }
+  }
   line << ")";
 
   format_type_metadata(n);
