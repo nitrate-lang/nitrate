@@ -28,13 +28,7 @@ namespace lsp::fmt {
 
       LineStreamWritter& operator<<(std::ostream& (*func)(std::ostream&));
 
-      size_t length() {
-        size_t pos = m_line_buffer.tellp();
-        m_line_buffer.seekp(0, std::ios_base::end);
-        size_t len = m_line_buffer.tellp();
-        m_line_buffer.seekp(pos, std::ios_base::beg);
-        return len;
-      }
+      size_t length() { return m_line_buffer.tellp(); }
     };
 
     LineStreamWritter line;
@@ -52,8 +46,8 @@ namespace lsp::fmt {
       did_root = false;
     }
 
-    std::string escape_char_literal(char ch);
-    void escape_string_literal_chunk(std::string_view str);
+    std::string escape_char_literal(char ch) const;
+    std::string escape_string_literal_chunk(std::string_view str) const;
     void escape_string_literal(std::string_view str, bool put_quotes = true);
     void write_float_literal_chunk(std::string_view float_str);
     void write_float_literal(std::string_view float_str);

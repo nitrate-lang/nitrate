@@ -125,7 +125,6 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   if (!lsp::fmt::FormatterFactory::create(lsp::fmt::Styleguide::Cambrian,
                                           formatted)
            ->format(root)) {
-    resp.error(lsp::ErrorCodes::InternalError, "Failed to format file");
     return;
   }
 

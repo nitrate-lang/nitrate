@@ -4,6 +4,7 @@
 #include <nitrate-parser/Node.h>
 
 #include <lsp/lang/CambrianStyleFormatter.hh>
+#include <sstream>
 
 using namespace lsp::fmt;
 using namespace npar;
@@ -26,7 +27,7 @@ CambrianFormatter::LineStreamWritter::operator<<(qlex_op_t op) {
   return *this;
 }
 
-std::string CambrianFormatter::escape_char_literal(char ch) {
+std::string CambrianFormatter::escape_char_literal(char ch) const {
   if (!std::isspace(ch) && !std::isprint(ch)) {
     const char* tab = "0123456789abcdef";
     uint8_t uch = ch;
@@ -60,41 +61,46 @@ std::string CambrianFormatter::escape_char_literal(char ch) {
   }
 }
 
-void CambrianFormatter::escape_string_literal_chunk(std::string_view str) {
+std::string CambrianFormatter::escape_string_literal_chunk(
+    std::string_view str) const {
+  std::stringstream ss;
+
   for (char ch : str) {
     switch (ch) {
       case '\n':
-        line << "\\n";
+        ss << "\\n";
         break;
       case '\t':
-        line << "\\t";
+        ss << "\\t";
         break;
       case '\r':
-        line << "\\r";
+        ss << "\\r";
         break;
       case '\v':
-        line << "\\v";
+        ss << "\\v";
         break;
       case '\f':
-        line << "\\f";
+        ss << "\\f";
         break;
       case '\b':
-        line << "\\b";
+        ss << "\\b";
         break;
       case '\a':
-        line << "\\a";
+        ss << "\\a";
         break;
       case '\\':
-        line << "\\\\";
+        ss << "\\\\";
         break;
       case '"':
-        line << "\\\"";
+        ss << "\\\"";
         break;
       default:
-        line << ch;
+        ss << ch;
         break;
     }
   }
+
+  return ss.str();
 }
 
 void CambrianFormatter::escape_string_literal(std::string_view str,
@@ -108,32 +114,56 @@ void CambrianFormatter::escape_string_literal(std::string_view str,
     return;
   }
 
-  size_t num_chunks = str.size() / max_chunk_size;
-  size_t rem = str.size() % max_chunk_size;
+  let chunks_n = str.size() / max_chunk_size;
+  let rem = str.size() % max_chunk_size;
+  let line_size = line.length();
 
-  size_t line_size = line.length();
+  if (chunks_n) {
+    std::vector<std::string> chunks(chunks_n);
 
-  for (size_t i = 0; i < num_chunks; i++) {
-    line << "\"";
-    escape_string_literal_chunk(str.substr(i * max_chunk_size, max_chunk_size));
-    line << "\"";
+    for (size_t i = 0; i < chunks_n; i++) {
+      chunks[i] = "\"" +
+                  escape_string_literal_chunk(
+                      str.substr(i * max_chunk_size, max_chunk_size)) +
+                  "\"";
+    }
 
-    if (rem > 0 || i < num_chunks - 1) {
-      line << " \\" << std::endl;
-      if (line_size) {
+    let max_segment_size =
+        std::max_element(chunks.begin(), chunks.end(), [](let a, let b) {
+          return a.size() < b.size();
+        })->size();
+
+    for (size_t i = 0; i < chunks.size(); ++i) {
+      if (i != 0 && line_size) {
         line << std::string(line_size, ' ');
+      }
+
+      line << chunks[i];
+
+      let rpad = (max_segment_size - chunks[i].size());
+      if (rpad) {
+        line << std::string(rpad, ' ');
+      }
+
+      if (rem > 0 || i < chunks_n - 1) {
+        line << " \\" << std::endl;
       }
     }
   }
 
   if (rem > 0) {
-    if (num_chunks > 0 || put_quotes) {
+    if (line_size && chunks_n > 0) {
+      line << std::string(line_size, ' ');
+    }
+
+    if (chunks_n > 0 || put_quotes) {
       line << "\"";
     }
 
-    escape_string_literal_chunk(str.substr(num_chunks * max_chunk_size, rem));
+    line << escape_string_literal_chunk(
+        str.substr(chunks_n * max_chunk_size, rem));
 
-    if (num_chunks > 0 || put_quotes) {
+    if (chunks_n > 0 || put_quotes) {
       line << "\"";
     }
   }
@@ -170,16 +200,16 @@ void CambrianFormatter::write_float_literal(std::string_view float_str) {
     line << "";
   }
 
-  size_t num_chunks = float_str.size() / max_chunk_size;
+  size_t chunks_n = float_str.size() / max_chunk_size;
   size_t rem = float_str.size() % max_chunk_size;
 
   size_t line_size = line.length();
 
-  for (size_t i = 0; i < num_chunks; i++) {
+  for (size_t i = 0; i < chunks_n; i++) {
     write_float_literal_chunk(
         float_str.substr(i * max_chunk_size, max_chunk_size));
 
-    if (rem > 0 || i < num_chunks - 1) {
+    if (rem > 0 || i < chunks_n - 1) {
       line << "_ \\" << std::endl;
       if (line_size) {
         line << std::string(line_size, ' ');
@@ -188,13 +218,13 @@ void CambrianFormatter::write_float_literal(std::string_view float_str) {
   }
 
   if (rem > 0) {
-    write_float_literal_chunk(
-        float_str.substr(num_chunks * max_chunk_size, rem));
+    write_float_literal_chunk(float_str.substr(chunks_n * max_chunk_size, rem));
   }
 }
 
 void CambrianFormatter::format_type_metadata(Type& n) {
   let range = n.get_range();
+
   if (range.first || range.second) {
     line << ": [";
     if (range.first) range.first->accept(*this);
