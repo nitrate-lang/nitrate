@@ -1173,7 +1173,6 @@ namespace npar {
     FuncPurity m_purity;
     bool m_variadic;
     bool m_is_foreign;
-    bool m_noexcept;
     bool m_noreturn;
 
   public:
@@ -1183,20 +1182,17 @@ namespace npar {
           m_purity(FuncPurity::IMPURE_THREAD_UNSAFE),
           m_variadic(false),
           m_is_foreign(false),
-          m_noexcept(false),
           m_noreturn(false) {}
 
     FuncTy(Type *return_type, FuncParams parameters, bool variadic = false,
            FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE,
-           bool is_foreign = false, bool noexcept_ = false,
-           bool noreturn = false)
+           bool is_foreign = false, bool noreturn = false)
         : Type(QAST_NODE_FN_TY),
           m_params(parameters),
           m_return(return_type),
           m_purity(purity),
           m_variadic(variadic),
           m_is_foreign(is_foreign),
-          m_noexcept(noexcept_),
           m_noreturn(noreturn) {
       assert(!noreturn || (purity == FuncPurity::IMPURE_THREAD_UNSAFE ||
                            purity == FuncPurity::IMPURE_THREAD_SAFE));
@@ -1204,14 +1200,12 @@ namespace npar {
     FuncTy(Type *return_type, std::vector<Type *, Arena<Type *>> parameters,
            bool variadic = false,
            FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE,
-           bool is_foreign = false, bool noexcept_ = false,
-           bool noreturn = false)
+           bool is_foreign = false, bool noreturn = false)
         : Type(QAST_NODE_FN_TY),
           m_return(return_type),
           m_purity(purity),
           m_variadic(variadic),
           m_is_foreign(is_foreign),
-          m_noexcept(noexcept_),
           m_noreturn(noreturn) {
       assert(!noreturn || (purity == FuncPurity::IMPURE_THREAD_UNSAFE ||
                            purity == FuncPurity::IMPURE_THREAD_SAFE));
@@ -1238,9 +1232,6 @@ namespace npar {
 
     bool is_foreign() { return m_is_foreign; }
     void set_foreign(bool is_foreign) { m_is_foreign = is_foreign; }
-
-    bool is_noexcept() { return m_noexcept; }
-    void set_noexcept(bool noexcept_) { m_noexcept = noexcept_; }
 
     PNODE_IMPL_CORE(FuncTy)
   };

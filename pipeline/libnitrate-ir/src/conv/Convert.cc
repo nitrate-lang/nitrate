@@ -1140,7 +1140,7 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
   auto props = convert_purity(n->get_purity());
 
   return b.getFnTy(params, ret.value()->asType(), n->is_variadic(), props.first,
-                   props.second, n->is_noexcept(), n->is_foreign());
+                   props.second, n->is_foreign());
 }
 
 static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *,
@@ -1374,7 +1374,7 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G,
   Fn *fndecl = b.createFunctionDeclaration(
       b.intern(s.join_scope(n->get_name())), parameters,
       ret_type.value()->asType(), func_ty->is_variadic(), Vis::Pub, props.first,
-      props.second, func_ty->is_noexcept(), func_ty->is_foreign());
+      props.second, func_ty->is_foreign());
 
   fndecl->setAbiTag(s.abi_mode);
 
@@ -1476,8 +1476,7 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
 
     Fn *fndef = b.createFunctionDefintion(
         name, parameters, ret_type.value()->asType(), func_ty->is_variadic(),
-        Vis::Pub, props.first, props.second, func_ty->is_noexcept(),
-        func_ty->is_foreign());
+        Vis::Pub, props.first, props.second, func_ty->is_foreign());
 
     fndef->setAbiTag(s.abi_mode);
 

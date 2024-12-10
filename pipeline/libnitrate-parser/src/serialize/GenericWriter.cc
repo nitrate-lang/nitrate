@@ -473,7 +473,7 @@ void AST_Writer::visit(RefTy& n) {
 }
 
 void AST_Writer::visit(FuncTy& n) {
-  begin_obj(13);
+  begin_obj(12);
 
   string("kind");
   string(n.getKindName());
@@ -490,9 +490,6 @@ void AST_Writer::visit(FuncTy& n) {
 
   string("foreign");
   boolean(n.is_foreign());
-
-  string("noexcept");
-  boolean(n.is_noexcept());
 
   string("noreturn");
   boolean(n.is_noreturn());

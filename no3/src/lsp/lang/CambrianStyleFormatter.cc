@@ -486,10 +486,6 @@ void CambrianFormatter::visit(FuncTy& n) {
     line << " foreign";
   }
 
-  if (n.is_noexcept()) {
-    line << " noexcept";
-  }
-
   line << "(";
   iterate_except_last(
       n.get_params().begin(), n.get_params().end(),
@@ -967,10 +963,6 @@ void CambrianFormatter::visit(FnDecl& n) {
     line << " foreign";
   }
 
-  if (n.get_type()->is_noexcept()) {
-    line << " noexcept";
-  }
-
   line << " " << n.get_name();
 
   if (n.get_template_params().has_value()) {
@@ -1051,10 +1043,6 @@ void CambrianFormatter::visit(FnDef& n) {
 
   if (n.get_type()->is_foreign()) {
     line << " foreign";
-  }
-
-  if (n.get_type()->is_noexcept()) {
-    line << " noexcept";
   }
 
   line << " " << n.get_name();

@@ -88,7 +88,6 @@ namespace qlex {
           {"enum", qKEnum},
           {"__fstring", qK__FString},
           {"fn", qKFn},
-          {"noexcept", qKNoexcept},
           {"foreign", qKForeign},
           {"impure", qKImpure},
           {"tsafe", qKTsafe},

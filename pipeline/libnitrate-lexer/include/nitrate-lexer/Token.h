@@ -145,7 +145,6 @@ typedef enum qlex_key_t {
   qKEnum,      /* 'enum' */
   qK__FString, /* '__fstring' */
   qKFn,        /* 'fn' */
-  qKNoexcept,  /* 'noexcept' */
   qKForeign,   /* 'foreign' */
   qKImpure,    /* 'impure' */
   qKTsafe,     /* 'tsafe' */

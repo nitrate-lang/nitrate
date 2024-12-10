@@ -43,7 +43,6 @@
 using namespace npar;
 
 struct GetPropState {
-  size_t noexcept_ctr = 0;
   size_t foreign_ctr = 0;
   size_t impure_ctr = 0;
   size_t tsafe_ctr = 0;
@@ -59,12 +58,6 @@ static bool fn_get_property(qlex_t &rd, GetPropState &state) {
   if (tok.is(qEofF)) {
     diagnostic << tok << "Expected a function property but found EOF";
     return false;
-  }
-
-  if (tok.is<qKNoexcept>()) {
-    next();
-    state.noexcept_ctr++;
-    return true;
   }
 
   if (tok.is<qKForeign>()) {
@@ -155,7 +148,6 @@ static bool recurse_fn_parameter(npar_t &S, qlex_t &rd, FuncParam &param) {
 enum class Purity { Pure, QuasiPure, RetroPure, Impure };
 
 struct FunctionProperties {
-  bool _noexcept = false;
   bool _foreign = false;
   bool _tsafe = false;
   Purity _purity = Purity::Impure;
@@ -167,11 +159,6 @@ static FunctionProperties read_function_properties(qlex_t &rd) {
   qlex_tok_t tok = peek();
 
   while (fn_get_property(rd, state));
-
-  if (state.noexcept_ctr > 1) {
-    diagnostic << tok << "Multiple 'noexcept' specifiers";
-    return FunctionProperties();
-  }
 
   if (state.foreign_ctr > 1) {
     diagnostic << tok << "Multiple 'foreign' specifiers";
@@ -225,13 +212,11 @@ static FunctionProperties read_function_properties(qlex_t &rd) {
 
   if (partial_pure) {
     state.tsafe_ctr = 1;
-    state.noexcept_ctr = 1;
   }
 
   FunctionProperties props;
 
   props._foreign = state.foreign_ctr;
-  props._noexcept = state.noexcept_ctr;
   props._tsafe = state.tsafe_ctr;
 
   if (state.pure_ctr) {
@@ -539,7 +524,6 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
   { /* Set function type and assign to function declaration */
     ftype->set_variadic(is_variadic);
     ftype->set_foreign(prop._foreign);
-    ftype->set_noexcept(prop._noexcept);
     fndecl->set_type(ftype);
   }
 
