@@ -39,16 +39,19 @@
 #include <atomic>
 #include <core/ParserStruct.hh>
 #include <cstring>
-#include <decent/Recurse.hh>
+#include <descent/Recurse.hh>
 #include <nitrate-core/Classes.hh>
+#include <nitrate-parser/Reader.hh>
+#include <nitrate-parser/Writer.hh>
+#include <sstream>
 
 using namespace npar;
 
-Stmt *npar::recurse_block(npar_t &S, qlex_t &rd, bool expect_braces,
+Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
                           bool single_stmt) {
   qlex_tok_t tok;
 
-  Block *block = Block::get();
+  Block* block = Block::get();
 
   if (expect_braces) {
     tok = next();
@@ -81,7 +84,7 @@ Stmt *npar::recurse_block(npar_t &S, qlex_t &rd, bool expect_braces,
         return mock_stmt(QAST_NODE_BLOCK);
       }
 
-      Expr *expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+      Expr* expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
       if (!expr) {
         diagnostic << tok << "Expected valid expression";
@@ -93,7 +96,7 @@ Stmt *npar::recurse_block(npar_t &S, qlex_t &rd, bool expect_braces,
         diagnostic << tok << "Expected ';'";
       }
 
-      ExprStmt *stmt = ExprStmt::get(expr);
+      ExprStmt* stmt = ExprStmt::get(expr);
       stmt->set_start_pos(std::get<0>(expr->get_pos()));
       stmt->set_end_pos(tok.end);
 
@@ -103,7 +106,7 @@ Stmt *npar::recurse_block(npar_t &S, qlex_t &rd, bool expect_braces,
 
     next();
 
-    Stmt *node = nullptr;
+    Stmt* node = nullptr;
 
     uint32_t loc_start = tok.start;
     switch (tok.as<qlex_key_t>()) {
@@ -273,7 +276,7 @@ Stmt *npar::recurse_block(npar_t &S, qlex_t &rd, bool expect_braces,
         }
 
         if (node->is(QAST_NODE_BLOCK)) {
-          node->as<Block>()->set_safety(SafetyMode::Unsafe);
+          node->as<Block>()->set_safety(SafetyMode::Safe);
         }
 
         break;
@@ -298,13 +301,13 @@ Stmt *npar::recurse_block(npar_t &S, qlex_t &rd, bool expect_braces,
   return block;
 }
 
-C_EXPORT npar_t *npar_new(qlex_t *lexer, qcore_env_t env) {
+C_EXPORT npar_t* npar_new(qlex_t* lexer, qcore_env_t env) {
   if (!lexer) {
     return nullptr;
   }
   static std::atomic<uint64_t> job_id = 1;  // 0 is reserved for invalid job
 
-  npar_t *parser = new npar_t();
+  npar_t* parser = new npar_t();
 
   parser->env = env;
   parser->id = job_id++;
@@ -317,7 +320,7 @@ C_EXPORT npar_t *npar_new(qlex_t *lexer, qcore_env_t env) {
   return parser;
 }
 
-C_EXPORT void npar_free(npar_t *parser) {
+C_EXPORT void npar_free(npar_t* parser) {
   if (!parser) {
     return;
   }
@@ -327,9 +330,9 @@ C_EXPORT void npar_free(npar_t *parser) {
   delete parser;
 }
 
-static thread_local npar_t *parser_ctx;
+static thread_local npar_t* parser_ctx;
 
-C_EXPORT bool npar_do(npar_t *L, npar_node_t **out) {
+C_EXPORT bool npar_do(npar_t* L, npar_node_t** out) {
   if (!L || !out) {
     return false;
   }
@@ -355,31 +358,7 @@ C_EXPORT bool npar_do(npar_t *L, npar_node_t **out) {
   return !L->failed;
 }
 
-C_EXPORT bool npar_and_dump(npar_t *L, FILE *out, void *x0, void *x1) {
-  (void)x0;
-  (void)x1;
-
-  npar_node_t *node = nullptr;
-
-  if (!L || !out) {
-    return false;
-  }
-
-  if (!npar_do(L, &node)) {
-    return false;
-  }
-
-  size_t len = 0;
-  char *repr = npar_repr(node, false, 2, &len);
-
-  fwrite(repr, 1, len, out);
-
-  free(repr);
-
-  return true;
-}
-
-C_EXPORT bool npar_check(npar_t *parser, const npar_node_t *base) {
+C_EXPORT bool npar_check(npar_t* parser, const npar_node_t* base) {
   if (!parser || !base) {
     return false;
   }
@@ -392,13 +371,13 @@ C_EXPORT bool npar_check(npar_t *parser, const npar_node_t *base) {
   return true;
 }
 
-C_EXPORT void npar_dumps(npar_t *parser, bool no_ansi, npar_dump_cb cb,
+C_EXPORT void npar_dumps(npar_t* parser, bool no_ansi, npar_dump_cb cb,
                          uintptr_t data) {
   if (!parser || !cb) {
     return;
   }
 
-  auto adapter = [&](const char *msg) { cb(msg, std::strlen(msg), data); };
+  auto adapter = [&](const char* msg) { cb(msg, std::strlen(msg), data); };
 
   if (no_ansi) {
     parser->diag.render(adapter, npar::FormatStyle::ClangPlain);

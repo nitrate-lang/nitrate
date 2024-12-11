@@ -4,13 +4,13 @@
   "description": "The official Nitrate Language Server",
   "author": "Wesley Jones",
   "license": "LGPL-2.1-or-later",
-  "version": "1.0.5",
+  "version": "1.0.0",
   "icon": "./icons/icon-light.png",
   "repository": {
     "type": "git",
     "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/nitrate"
   },
-  "publisher": "qpkg",
+  "publisher": "nitrate",
   "categories": [
     "Programming Languages"
   ],
@@ -29,8 +29,7 @@
     "compile": "tsc -b",
     "watch": "tsc -b -w",
     "lint": "eslint ./client/src --ext .ts,.tsx",
-    "postinstall": "cd client && npm install && cd ..",
-    "test": "sh ./scripts/e2e.sh"
+    "postinstall": "cd client && npm install && cd .."
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",

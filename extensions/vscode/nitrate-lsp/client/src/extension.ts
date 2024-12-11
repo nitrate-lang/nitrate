@@ -18,6 +18,7 @@ export function activate(context: ExtensionContext) {
 	const serverOptions: ServerOptions = {
 		command: "no3",
 		args: ['lsp', "--log", lspLogPath],
+		options: { env: { "NO_COLOR": "1" } },
 		transport: TransportKind.stdio
 	};
 

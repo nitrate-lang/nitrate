@@ -86,17 +86,14 @@ namespace qlex {
           {"union", qKUnion},
           {"opaque", qKOpaque},
           {"enum", qKEnum},
-          {"fstring", qKFString},
-          {"with", qKWith},
+          {"__fstring", qK__FString},
           {"fn", qKFn},
-          {"noexcept", qKNoexcept},
           {"foreign", qKForeign},
           {"impure", qKImpure},
           {"tsafe", qKTsafe},
           {"pure", qKPure},
           {"quasipure", qKQuasipure},
           {"retropure", qKRetropure},
-          {"crashpoint", qKCrashpoint},
           {"inline", qKInline},
           {"unsafe", qKUnsafe},
           {"safe", qKSafe},
@@ -107,8 +104,6 @@ namespace qlex {
           {"while", qKWhile},
           {"do", qKDo},
           {"switch", qKSwitch},
-          {"case", qKCase},
-          {"default", qKDefault},
           {"break", qKBreak},
           {"continue", qKContinue},
           {"ret", qKReturn},
@@ -117,6 +112,8 @@ namespace qlex {
           {"try", qKTry},
           {"catch", qKCatch},
           {"throw", qKThrow},
+          {"async", qKAsync},
+          {"await", qKAwait},
           {"__asm__", qK__Asm__},
           {"undef", qKUndef},
           {"null", qKNull},
@@ -278,8 +275,8 @@ static thread_local boost::unordered_map<qlex::num_buf_t, qlex::num_buf_t>
 
 ///============================================================================///
 
-CPP_EXPORT qlex_t *qlex_new(std::shared_ptr<std::istream> file,
-                            const char *filename, qcore_env_t env) {
+CPP_EXPORT qlex_t *qlex_new(std::istream &file, const char *filename,
+                            qcore_env_t env) {
   try {
     return new qlex_t(file, filename, env);
   } catch (std::bad_alloc &) {
@@ -579,7 +576,7 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
           /* Check for f-string */
           if (buf == "f" && c == '"') {
             m_pushback.push_back(c);
-            return qlex_tok_t(qKeyW, qKFString, start_pos, cur_loc());
+            return qlex_tok_t(qKeyW, qK__FString, start_pos, cur_loc());
           }
 
           /* We overshot; this must be a punctor ':' */
@@ -1158,7 +1155,7 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
 error_0: { /* Reset the lexer and return error token */
   reset_automata();
 
-  return qlex_tok_t::err(cur_loc(), cur_loc());
+  return qlex_tok_t::eof(cur_loc(), cur_loc());
 }
 }
 
@@ -1175,9 +1172,6 @@ C_EXPORT uint32_t qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok,
 
     switch (tok->ty) {
       case qEofF:
-      case qErro:
-        ret = 0;
-        break;
       case qKeyW: {
         if ((ret = qlex::keywords.right.at(tok->v.key).size()) <= size) {
           memcpy(buf, qlex::keywords.right.at(tok->v.key).data(), ret);
@@ -1227,15 +1221,13 @@ C_EXPORT uint32_t qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok,
     qcore_panic("qlex_tok_write: invalid token");
   }
 
-  __builtin_unreachable();
+  qcore_panic("unreachable");
 }
 
 C_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
   switch (ty) {
     case qEofF:
       return "eof";
-    case qErro:
-      return "err";
     case qKeyW:
       return "key";
     case qOper:
@@ -1260,7 +1252,7 @@ C_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
       return "note";
   }
 
-  __builtin_unreachable();
+  qcore_panic("unreachable");
 }
 
 C_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
@@ -1269,8 +1261,6 @@ C_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
 
     switch (a->ty) {
       case qEofF:
-      case qErro:
-        return true;
       case qKeyW:
         return a->v.key == b->v.key;
       case qOper:
@@ -1295,7 +1285,7 @@ C_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
     qcore_panic("qlex_eq: invalid token");
   }
 
-  __builtin_unreachable();
+  qcore_panic("unreachable");
 }
 
 C_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
@@ -1304,8 +1294,6 @@ C_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
 
     switch (a->ty) {
       case qEofF:
-      case qErro:
-        return false;
       case qKeyW:
         return a->v.key < b->v.key;
       case qOper:
@@ -1329,7 +1317,7 @@ C_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
     qcore_panic("qlex_lt: invalid token");
   }
 
-  __builtin_unreachable();
+  qcore_panic("unreachable");
 }
 
 C_EXPORT const char *qlex_str(qlex_t *lexer, const qlex_tok_t *tok,
@@ -1339,10 +1327,6 @@ C_EXPORT const char *qlex_str(qlex_t *lexer, const qlex_tok_t *tok,
 
   switch (tok->ty) {
     case qEofF:
-    case qErro: {
-      *len = 0;
-      return "";
-    }
     case qKeyW: {
       std::string_view kw = qlex::keywords.right.at(tok->v.key);
       *len = kw.size();
@@ -1371,7 +1355,7 @@ C_EXPORT const char *qlex_str(qlex_t *lexer, const qlex_tok_t *tok,
       return x.data();
   }
 
-  __builtin_unreachable();
+  qcore_panic("unreachable");
 }
 
 C_EXPORT const char *qlex_opstr(qlex_op_t op) {
@@ -1409,14 +1393,10 @@ C_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str,
         break;
       }
 
-      case qErro: {
-        break;
-      }
-
       case qKeyW: {
         auto find = qlex::keywords.left.find(str);
         if (find == qlex::keywords.left.end()) [[unlikely]] {
-          out->ty = qErro;
+          out->ty = qEofF;
         } else {
           out->v.key = find->second;
         }
@@ -1426,7 +1406,7 @@ C_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str,
       case qOper: {
         auto find = qlex::operators.left.find(str);
         if (find == qlex::operators.left.end()) [[unlikely]] {
-          out->ty = qErro;
+          out->ty = qEofF;
         } else {
           out->v.op = find->second;
         }
@@ -1436,7 +1416,7 @@ C_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str,
       case qPunc: {
         auto find = qlex::punctuation.left.find(str);
         if (find == qlex::punctuation.left.end()) [[unlikely]] {
-          out->ty = qErro;
+          out->ty = qEofF;
         } else {
           out->v.punc = find->second;
         }

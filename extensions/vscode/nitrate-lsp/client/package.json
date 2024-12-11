@@ -4,7 +4,7 @@
   "author": "Wesley Jones",
   "license": "LGPL-2.1-or-later",
   "version": "0.0.1",
-  "publisher": "qpkg",
+  "publisher": "nitrate",
   "repository": {
     "type": "git",
     "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/nitrate"

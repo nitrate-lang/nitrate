@@ -37,6 +37,7 @@
 #include <core/Diagnostic.hh>
 #include <memory>
 #include <mutex>
+#include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 
 using namespace nr;
@@ -97,6 +98,10 @@ std::string_view qmodule_t::internString(std::string_view sv) {
   } else {
     return it->second;
   }
+}
+
+CPP_EXPORT void qmodule_t::accept(nr::NRVisitor &visitor) {
+  m_root->accept(visitor);
 }
 
 ///=============================================================================

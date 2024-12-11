@@ -34,12 +34,11 @@
 #ifndef __NITRATE_PARSER_NODE_H__
 #define __NITRATE_PARSER_NODE_H__
 
-#include <unordered_set>
 #ifndef __cplusplus
 #error "This code requires c++"
 #endif
-
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
 #include <nitrate-core/Memory.h>
 #include <nitrate-lexer/Token.h>
 
@@ -47,12 +46,14 @@
 #include <iostream>
 #include <map>
 #include <nitrate-core/Classes.hh>
+#include <nitrate-parser/Visitor.hh>
 #include <optional>
 #include <ostream>
 #include <set>
 #include <sstream>
 #include <string>
 #include <tuple>
+#include <unordered_set>
 #include <variant>
 #include <vector>
 
@@ -107,7 +108,6 @@ typedef enum npar_ty_t {
   QAST_NODE_VOID_TY,
   QAST_NODE_PTR_TY,
   QAST_NODE_OPAQUE_TY,
-  QAST_NODE_STRUCT_TY,
   QAST_NODE_ARRAY_TY,
   QAST_NODE_TUPLE_TY,
   QAST_NODE_FN_TY,
@@ -123,12 +123,9 @@ typedef enum npar_ty_t {
   QAST_NODE_STRUCT,
   QAST_NODE_ENUM,
   QAST_NODE_FN,
-  QAST_NODE_SUBSYSTEM,
+  QAST_NODE_SCOPE,
   QAST_NODE_EXPORT,
   QAST_NODE_STRUCT_FIELD,
-
-  QAST_NODE__DECL_FIRST = QAST_NODE_TYPEDEF,
-  QAST_NODE__DECL_LAST = QAST_NODE_STRUCT_FIELD,
 
   QAST_NODE_BLOCK,
   QAST_NODE_VAR,
@@ -145,7 +142,7 @@ typedef enum npar_ty_t {
   QAST_NODE_SWITCH,
   QAST_NODE_EXPR_STMT,
 
-  QAST_NODE__STMT_FIRST = QAST_NODE__DECL_FIRST,
+  QAST_NODE__STMT_FIRST = QAST_NODE_TYPEDEF,
   QAST_NODE__STMT_LAST = QAST_NODE_EXPR_STMT,
 
   QAST_NODE__FIRST = QAST_NODE_NODE,
@@ -205,96 +202,581 @@ public:                                                       \
 public:                                                       \
   template <typename T = __typename, typename... Args>        \
   static __typename *get(Args &&...args) {                    \
-    void *ptr = Arena<__typename>().allocate(1);              \
+    void *ptr = npar::Arena<__typename>().allocate(1);        \
     return new (ptr) __typename(std::forward<Args>(args)...); \
   }                                                           \
                                                               \
 public:
 
-struct npar_node_t {};
+struct npar_node_t {
+private:
+  npar_ty_t m_node_type;
+  uint32_t m_pos_start, m_pos_end;
+
+public:
+  constexpr npar_node_t(npar_ty_t ty)
+      : m_node_type(ty), m_pos_start(0), m_pos_end(0){};
+
+  constexpr void accept(npar::ASTVisitor &v) {
+    using namespace npar;
+
+    switch (getKind()) {
+      case QAST_NODE_NODE: {
+        v.visit(*as<npar_node_t>());
+        break;
+      }
+      case QAST_NODE_BINEXPR: {
+        v.visit(*as<BinExpr>());
+        break;
+      }
+      case QAST_NODE_UNEXPR: {
+        v.visit(*as<UnaryExpr>());
+        break;
+      }
+      case QAST_NODE_TEREXPR: {
+        v.visit(*as<TernaryExpr>());
+        break;
+      }
+      case QAST_NODE_INT: {
+        v.visit(*as<ConstInt>());
+        break;
+      }
+      case QAST_NODE_FLOAT: {
+        v.visit(*as<ConstFloat>());
+        break;
+      }
+      case QAST_NODE_STRING: {
+        v.visit(*as<ConstString>());
+        break;
+      }
+      case QAST_NODE_CHAR: {
+        v.visit(*as<ConstChar>());
+        break;
+      }
+      case QAST_NODE_BOOL: {
+        v.visit(*as<ConstBool>());
+        break;
+      }
+      case QAST_NODE_NULL: {
+        v.visit(*as<ConstNull>());
+        break;
+      }
+      case QAST_NODE_UNDEF: {
+        v.visit(*as<ConstUndef>());
+        break;
+      }
+      case QAST_NODE_CALL: {
+        v.visit(*as<Call>());
+        break;
+      }
+      case QAST_NODE_LIST: {
+        v.visit(*as<List>());
+        break;
+      }
+      case QAST_NODE_ASSOC: {
+        v.visit(*as<Assoc>());
+        break;
+      }
+      case QAST_NODE_FIELD: {
+        v.visit(*as<Field>());
+        break;
+      }
+      case QAST_NODE_INDEX: {
+        v.visit(*as<Index>());
+        break;
+      }
+      case QAST_NODE_SLICE: {
+        v.visit(*as<Slice>());
+        break;
+      }
+      case QAST_NODE_FSTRING: {
+        v.visit(*as<FString>());
+        break;
+      }
+      case QAST_NODE_IDENT: {
+        v.visit(*as<Ident>());
+        break;
+      }
+      case QAST_NODE_SEQ: {
+        v.visit(*as<SeqPoint>());
+        break;
+      }
+      case QAST_NODE_POST_UNEXPR: {
+        v.visit(*as<PostUnaryExpr>());
+        break;
+      }
+      case QAST_NODE_STMT_EXPR: {
+        v.visit(*as<StmtExpr>());
+        break;
+      }
+      case QAST_NODE_TYPE_EXPR: {
+        v.visit(*as<TypeExpr>());
+        break;
+      }
+      case QAST_NODE_TEMPL_CALL: {
+        v.visit(*as<TemplCall>());
+        break;
+      }
+      case QAST_NODE_REF_TY: {
+        v.visit(*as<RefTy>());
+        break;
+      }
+      case QAST_NODE_U1_TY: {
+        v.visit(*as<U1>());
+        break;
+      }
+      case QAST_NODE_U8_TY: {
+        v.visit(*as<U8>());
+        break;
+      }
+      case QAST_NODE_U16_TY: {
+        v.visit(*as<U16>());
+        break;
+      }
+      case QAST_NODE_U32_TY: {
+        v.visit(*as<U32>());
+        break;
+      }
+      case QAST_NODE_U64_TY: {
+        v.visit(*as<U64>());
+        break;
+      }
+      case QAST_NODE_U128_TY: {
+        v.visit(*as<U128>());
+        break;
+      }
+      case QAST_NODE_I8_TY: {
+        v.visit(*as<I8>());
+        break;
+      }
+      case QAST_NODE_I16_TY: {
+        v.visit(*as<I16>());
+        break;
+      }
+      case QAST_NODE_I32_TY: {
+        v.visit(*as<I32>());
+        break;
+      }
+      case QAST_NODE_I64_TY: {
+        v.visit(*as<I64>());
+        break;
+      }
+      case QAST_NODE_I128_TY: {
+        v.visit(*as<I128>());
+        break;
+      }
+      case QAST_NODE_F16_TY: {
+        v.visit(*as<F16>());
+        break;
+      }
+      case QAST_NODE_F32_TY: {
+        v.visit(*as<F32>());
+        break;
+      }
+      case QAST_NODE_F64_TY: {
+        v.visit(*as<F64>());
+        break;
+      }
+      case QAST_NODE_F128_TY: {
+        v.visit(*as<F128>());
+        break;
+      }
+      case QAST_NODE_VOID_TY: {
+        v.visit(*as<VoidTy>());
+        break;
+      }
+      case QAST_NODE_PTR_TY: {
+        v.visit(*as<PtrTy>());
+        break;
+      }
+      case QAST_NODE_OPAQUE_TY: {
+        v.visit(*as<OpaqueTy>());
+        break;
+      }
+      case QAST_NODE_ARRAY_TY: {
+        v.visit(*as<ArrayTy>());
+        break;
+      }
+      case QAST_NODE_TUPLE_TY: {
+        v.visit(*as<TupleTy>());
+        break;
+      }
+      case QAST_NODE_FN_TY: {
+        v.visit(*as<FuncTy>());
+        break;
+      }
+      case QAST_NODE_UNRES_TY: {
+        v.visit(*as<NamedTy>());
+        break;
+      }
+      case QAST_NODE_INFER_TY: {
+        v.visit(*as<InferTy>());
+        break;
+      }
+      case QAST_NODE_TEMPL_TY: {
+        v.visit(*as<TemplType>());
+        break;
+      }
+      case QAST_NODE_TYPEDEF: {
+        v.visit(*as<TypedefStmt>());
+        break;
+      }
+      case QAST_NODE_FNDECL: {
+        v.visit(*as<FnDecl>());
+        break;
+      }
+      case QAST_NODE_STRUCT: {
+        v.visit(*as<StructDef>());
+        break;
+      }
+      case QAST_NODE_ENUM: {
+        v.visit(*as<EnumDef>());
+        break;
+      }
+      case QAST_NODE_FN: {
+        v.visit(*as<FnDef>());
+        break;
+      }
+      case QAST_NODE_SCOPE: {
+        v.visit(*as<ScopeStmt>());
+        break;
+      }
+      case QAST_NODE_EXPORT: {
+        v.visit(*as<ExportStmt>());
+        break;
+      }
+      case QAST_NODE_STRUCT_FIELD: {
+        v.visit(*as<StructField>());
+        break;
+      }
+      case QAST_NODE_BLOCK: {
+        v.visit(*as<Block>());
+        break;
+      }
+      case QAST_NODE_VAR: {
+        v.visit(*as<VarDecl>());
+        break;
+      }
+      case QAST_NODE_INLINE_ASM: {
+        v.visit(*as<InlineAsm>());
+        break;
+      }
+      case QAST_NODE_RETURN: {
+        v.visit(*as<ReturnStmt>());
+        break;
+      }
+      case QAST_NODE_RETIF: {
+        v.visit(*as<ReturnIfStmt>());
+        break;
+      }
+      case QAST_NODE_BREAK: {
+        v.visit(*as<BreakStmt>());
+        break;
+      }
+      case QAST_NODE_CONTINUE: {
+        v.visit(*as<ContinueStmt>());
+        break;
+      }
+      case QAST_NODE_IF: {
+        v.visit(*as<IfStmt>());
+        break;
+      }
+      case QAST_NODE_WHILE: {
+        v.visit(*as<WhileStmt>());
+        break;
+      }
+      case QAST_NODE_FOR: {
+        v.visit(*as<ForStmt>());
+        break;
+      }
+      case QAST_NODE_FOREACH: {
+        v.visit(*as<ForeachStmt>());
+        break;
+      }
+      case QAST_NODE_CASE: {
+        v.visit(*as<CaseStmt>());
+        break;
+      }
+      case QAST_NODE_SWITCH: {
+        v.visit(*as<SwitchStmt>());
+        break;
+      }
+      case QAST_NODE_EXPR_STMT: {
+        v.visit(*as<ExprStmt>());
+        break;
+      }
+    }
+  };
+
+  ///======================================================================
+  /* Efficient LLVM reflection */
+
+  static constexpr uint32_t getKindSize(npar_ty_t kind) noexcept;
+  static constexpr std::string_view getKindName(npar_ty_t kind) noexcept;
+
+  template <typename T>
+  static constexpr npar_ty_t getTypeCode() noexcept {
+    using namespace npar;
+
+    if constexpr (std::is_same_v<T, npar_node_t>) {
+      return QAST_NODE_NODE;
+    } else if constexpr (std::is_same_v<T, Stmt>) {
+      return QAST_NODE_NODE;
+    } else if constexpr (std::is_same_v<T, Type>) {
+      return QAST_NODE_NODE;
+    } else if constexpr (std::is_same_v<T, BinExpr>) {
+      return QAST_NODE_BINEXPR;
+    } else if constexpr (std::is_same_v<T, UnaryExpr>) {
+      return QAST_NODE_UNEXPR;
+    } else if constexpr (std::is_same_v<T, TernaryExpr>) {
+      return QAST_NODE_TEREXPR;
+    } else if constexpr (std::is_same_v<T, ConstInt>) {
+      return QAST_NODE_INT;
+    } else if constexpr (std::is_same_v<T, ConstFloat>) {
+      return QAST_NODE_FLOAT;
+    } else if constexpr (std::is_same_v<T, ConstString>) {
+      return QAST_NODE_STRING;
+    } else if constexpr (std::is_same_v<T, ConstChar>) {
+      return QAST_NODE_CHAR;
+    } else if constexpr (std::is_same_v<T, ConstBool>) {
+      return QAST_NODE_BOOL;
+    } else if constexpr (std::is_same_v<T, ConstNull>) {
+      return QAST_NODE_NULL;
+    } else if constexpr (std::is_same_v<T, ConstUndef>) {
+      return QAST_NODE_UNDEF;
+    } else if constexpr (std::is_same_v<T, Call>) {
+      return QAST_NODE_CALL;
+    } else if constexpr (std::is_same_v<T, List>) {
+      return QAST_NODE_LIST;
+    } else if constexpr (std::is_same_v<T, Assoc>) {
+      return QAST_NODE_ASSOC;
+    } else if constexpr (std::is_same_v<T, Field>) {
+      return QAST_NODE_FIELD;
+    } else if constexpr (std::is_same_v<T, Index>) {
+      return QAST_NODE_INDEX;
+    } else if constexpr (std::is_same_v<T, Slice>) {
+      return QAST_NODE_SLICE;
+    } else if constexpr (std::is_same_v<T, FString>) {
+      return QAST_NODE_FSTRING;
+    } else if constexpr (std::is_same_v<T, Ident>) {
+      return QAST_NODE_IDENT;
+    } else if constexpr (std::is_same_v<T, SeqPoint>) {
+      return QAST_NODE_SEQ;
+    } else if constexpr (std::is_same_v<T, PostUnaryExpr>) {
+      return QAST_NODE_POST_UNEXPR;
+    } else if constexpr (std::is_same_v<T, StmtExpr>) {
+      return QAST_NODE_STMT_EXPR;
+    } else if constexpr (std::is_same_v<T, TypeExpr>) {
+      return QAST_NODE_TYPE_EXPR;
+    } else if constexpr (std::is_same_v<T, TemplCall>) {
+      return QAST_NODE_TEMPL_CALL;
+    } else if constexpr (std::is_same_v<T, RefTy>) {
+      return QAST_NODE_REF_TY;
+    } else if constexpr (std::is_same_v<T, U1>) {
+      return QAST_NODE_U1_TY;
+    } else if constexpr (std::is_same_v<T, U8>) {
+      return QAST_NODE_U8_TY;
+    } else if constexpr (std::is_same_v<T, U16>) {
+      return QAST_NODE_U16_TY;
+    } else if constexpr (std::is_same_v<T, U32>) {
+      return QAST_NODE_U32_TY;
+    } else if constexpr (std::is_same_v<T, U64>) {
+      return QAST_NODE_U64_TY;
+    } else if constexpr (std::is_same_v<T, U128>) {
+      return QAST_NODE_U128_TY;
+    } else if constexpr (std::is_same_v<T, I8>) {
+      return QAST_NODE_I8_TY;
+    } else if constexpr (std::is_same_v<T, I16>) {
+      return QAST_NODE_I16_TY;
+    } else if constexpr (std::is_same_v<T, I32>) {
+      return QAST_NODE_I32_TY;
+    } else if constexpr (std::is_same_v<T, I64>) {
+      return QAST_NODE_I64_TY;
+    } else if constexpr (std::is_same_v<T, I128>) {
+      return QAST_NODE_I128_TY;
+    } else if constexpr (std::is_same_v<T, F16>) {
+      return QAST_NODE_F16_TY;
+    } else if constexpr (std::is_same_v<T, F32>) {
+      return QAST_NODE_F32_TY;
+    } else if constexpr (std::is_same_v<T, F64>) {
+      return QAST_NODE_F64_TY;
+    } else if constexpr (std::is_same_v<T, F128>) {
+      return QAST_NODE_F128_TY;
+    } else if constexpr (std::is_same_v<T, VoidTy>) {
+      return QAST_NODE_VOID_TY;
+    } else if constexpr (std::is_same_v<T, PtrTy>) {
+      return QAST_NODE_PTR_TY;
+    } else if constexpr (std::is_same_v<T, OpaqueTy>) {
+      return QAST_NODE_OPAQUE_TY;
+    } else if constexpr (std::is_same_v<T, ArrayTy>) {
+      return QAST_NODE_ARRAY_TY;
+    } else if constexpr (std::is_same_v<T, TupleTy>) {
+      return QAST_NODE_TUPLE_TY;
+    } else if constexpr (std::is_same_v<T, FuncTy>) {
+      return QAST_NODE_FN_TY;
+    } else if constexpr (std::is_same_v<T, NamedTy>) {
+      return QAST_NODE_UNRES_TY;
+    } else if constexpr (std::is_same_v<T, InferTy>) {
+      return QAST_NODE_INFER_TY;
+    } else if constexpr (std::is_same_v<T, TemplType>) {
+      return QAST_NODE_TEMPL_TY;
+    } else if constexpr (std::is_same_v<T, TypedefStmt>) {
+      return QAST_NODE_TYPEDEF;
+    } else if constexpr (std::is_same_v<T, FnDecl>) {
+      return QAST_NODE_FNDECL;
+    } else if constexpr (std::is_same_v<T, StructDef>) {
+      return QAST_NODE_STRUCT;
+    } else if constexpr (std::is_same_v<T, EnumDef>) {
+      return QAST_NODE_ENUM;
+    } else if constexpr (std::is_same_v<T, FnDef>) {
+      return QAST_NODE_FN;
+    } else if constexpr (std::is_same_v<T, ScopeStmt>) {
+      return QAST_NODE_SCOPE;
+    } else if constexpr (std::is_same_v<T, ExportStmt>) {
+      return QAST_NODE_EXPORT;
+    } else if constexpr (std::is_same_v<T, StructField>) {
+      return QAST_NODE_STRUCT_FIELD;
+    } else if constexpr (std::is_same_v<T, Block>) {
+      return QAST_NODE_BLOCK;
+    } else if constexpr (std::is_same_v<T, VarDecl>) {
+      return QAST_NODE_VAR;
+    } else if constexpr (std::is_same_v<T, InlineAsm>) {
+      return QAST_NODE_INLINE_ASM;
+    } else if constexpr (std::is_same_v<T, ReturnStmt>) {
+      return QAST_NODE_RETURN;
+    } else if constexpr (std::is_same_v<T, ReturnIfStmt>) {
+      return QAST_NODE_RETIF;
+    } else if constexpr (std::is_same_v<T, BreakStmt>) {
+      return QAST_NODE_BREAK;
+    } else if constexpr (std::is_same_v<T, ContinueStmt>) {
+      return QAST_NODE_CONTINUE;
+    } else if constexpr (std::is_same_v<T, IfStmt>) {
+      return QAST_NODE_IF;
+    } else if constexpr (std::is_same_v<T, WhileStmt>) {
+      return QAST_NODE_WHILE;
+    } else if constexpr (std::is_same_v<T, ForStmt>) {
+      return QAST_NODE_FOR;
+    } else if constexpr (std::is_same_v<T, ForeachStmt>) {
+      return QAST_NODE_FOREACH;
+    } else if constexpr (std::is_same_v<T, CaseStmt>) {
+      return QAST_NODE_CASE;
+    } else if constexpr (std::is_same_v<T, SwitchStmt>) {
+      return QAST_NODE_SWITCH;
+    } else if constexpr (std::is_same_v<T, ExprStmt>) {
+      return QAST_NODE_EXPR_STMT;
+    }
+  }
+
+  constexpr npar_ty_t getKind() const noexcept { return m_node_type; }
+  constexpr std::string_view getKindName() const noexcept {
+    return getKindName(m_node_type);
+  }
+
+  ///======================================================================
+
+  constexpr bool is_type() const noexcept {
+    auto kind = getKind();
+    return kind >= QAST_NODE__TYPE_FIRST && kind <= QAST_NODE__TYPE_LAST;
+  }
+
+  constexpr bool is_stmt() const noexcept {
+    auto kind = getKind();
+    return kind >= QAST_NODE__STMT_FIRST && kind <= QAST_NODE__STMT_LAST;
+  }
+
+  constexpr bool is_expr() const noexcept {
+    auto kind = getKind();
+    return kind >= QAST_NODE__EXPR_FIRST && kind <= QAST_NODE__EXPR_LAST;
+  }
+
+  template <typename T>
+  static constexpr T *safeCastAs(npar_node_t *ptr) noexcept {
+    if (!ptr) {
+      return nullptr;
+    }
+
+#ifndef NDEBUG
+    if (getTypeCode<T>() != ptr->getKind()) [[unlikely]] {
+      qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(),
+                   getKindName(getTypeCode<T>()));
+    }
+#endif
+
+    return static_cast<T *>(ptr);
+  }
+
+  /**
+   * @brief Type-safe cast (type check only in debug mode).
+   *
+   * @tparam T The type to cast to.
+   * @return T* The casted pointer. It may be nullptr if the source pointer is
+   * nullptr.
+   * @warning This function will panic if the cast is invalid.
+   */
+  template <typename T>
+  constexpr T *as() noexcept {
+    return safeCastAs<T>(this);
+  }
+
+  /**
+   * @brief Type-safe cast (type check only in debug mode).
+   *
+   * @tparam T The type to cast to.
+   * @return const T* The casted pointer. It may be nullptr if the source
+   * pointer is nullptr.
+   * @warning This function will panic if the cast is invalid.
+   */
+  template <typename T>
+  constexpr const T *as() const noexcept {
+    return safeCastAs<T>(const_cast<npar_node_t *>(this));
+  }
+
+  template <typename T>
+  constexpr bool is() const noexcept {
+    return npar_node_t::getTypeCode<T>() == getKind();
+  }
+
+  constexpr bool is(npar_ty_t type) const { return type == getKind(); }
+
+  constexpr bool is_expr_stmt(npar_ty_t type) const;
+  constexpr bool is_stmt_expr(npar_ty_t type) const;
+
+  std::ostream &dump(std::ostream &os = std::cerr,
+                     bool isForDebug = false) const noexcept;
+
+  std::string to_string() {
+    std::stringstream ss;
+    dump(ss, false);
+    return ss.str();
+  };
+
+  constexpr void set_start_pos(uint32_t pos) { m_pos_start = pos; }
+  constexpr npar_node_t *set_end_pos(uint32_t pos) {
+    m_pos_end = pos;
+    return this;
+  }
+  constexpr npar_node_t *set_pos(
+      std::tuple<uint32_t, uint32_t, std::string_view> pos) {
+    m_pos_start = std::get<0>(pos);
+    m_pos_end = std::get<1>(pos);
+
+    /// FIXME: Use the filename info
+    return this;
+  }
+
+  constexpr uint32_t get_end_pos() { return m_pos_end; }
+  constexpr uint32_t get_start_pos() { return m_pos_start; }
+  constexpr std::tuple<uint32_t, uint32_t, std::string_view> get_pos() {
+    return {m_pos_start, m_pos_end, ""};
+  }
+
+  PNODE_IMPL_CORE(npar_node_t)
+} __attribute__((packed));
 
 namespace npar {
-  class Node;
-  class Stmt;
-  class Type;
-  class Decl;
-  class Expr;
-  class ExprStmt;
-  class StmtExpr;
-  class TypeExpr;
-  class NamedTy;
-  class InferTy;
-  class TemplType;
-  class U1;
-  class U8;
-  class U16;
-  class U32;
-  class U64;
-  class U128;
-  class I8;
-  class I16;
-  class I32;
-  class I64;
-  class I128;
-  class F16;
-  class F32;
-  class F64;
-  class F128;
-  class VoidTy;
-  class PtrTy;
-  class ConstTy;
-  class OpaqueTy;
-  class TupleTy;
-  class ArrayTy;
-  class RefTy;
-  class StructTy;
-  class FuncTy;
-  class UnaryExpr;
-  class BinExpr;
-  class PostUnaryExpr;
-  class TernaryExpr;
-  class ConstInt;
-  class ConstFloat;
-  class ConstBool;
-  class ConstString;
-  class ConstChar;
-  class ConstNull;
-  class ConstUndef;
-  class Call;
-  class TemplCall;
-  class List;
-  class Assoc;
-  class Field;
-  class Index;
-  class Slice;
-  class FString;
-  class Ident;
-  class SeqPoint;
-  class Block;
-  class VarDecl;
-  class InlineAsm;
-  class IfStmt;
-  class WhileStmt;
-  class ForStmt;
-  class ForeachStmt;
-  class BreakStmt;
-  class ContinueStmt;
-  class ReturnStmt;
-  class ReturnIfStmt;
-  class CaseStmt;
-  class SwitchStmt;
-  class TypedefDecl;
-  class FnDecl;
-  class FnDef;
-  class StructField;
-  class StructDef;
-  class EnumDef;
-  class ScopeDecl;
-  class ExportDecl;
 
-}  // namespace npar
+  constexpr size_t PNODE_BASE_SIZE = sizeof(npar_node_t);
 
-namespace npar {
   enum class Vis {
     PUBLIC,
     PRIVATE,
@@ -318,303 +800,22 @@ namespace npar {
     std::string_view view() { return std::string_view(data(), size()); }
   };
 
-  class Node : public npar_node_t {
-    npar_ty_t m_node_type;
-    uint32_t m_pos_start, m_pos_end;
-
+  class Stmt : public npar_node_t {
   public:
-    constexpr Node(npar_ty_t ty)
-        : m_node_type(ty), m_pos_start(0), m_pos_end(0){};
-
-    ///======================================================================
-    /* Efficient LLVM reflection */
-
-    static constexpr uint32_t getKindSize(npar_ty_t kind) noexcept;
-    static constexpr std::string_view getKindName(npar_ty_t kind) noexcept;
-
-    template <typename T>
-    static constexpr npar_ty_t getTypeCode() noexcept {
-      if constexpr (std::is_same_v<T, Node>) {
-        return QAST_NODE_NODE;
-      } else if constexpr (std::is_same_v<T, Decl>) {
-        return QAST_NODE_NODE;
-      } else if constexpr (std::is_same_v<T, Stmt>) {
-        return QAST_NODE_NODE;
-      } else if constexpr (std::is_same_v<T, Type>) {
-        return QAST_NODE_NODE;
-      } else if constexpr (std::is_same_v<T, BinExpr>) {
-        return QAST_NODE_BINEXPR;
-      } else if constexpr (std::is_same_v<T, UnaryExpr>) {
-        return QAST_NODE_UNEXPR;
-      } else if constexpr (std::is_same_v<T, TernaryExpr>) {
-        return QAST_NODE_TEREXPR;
-      } else if constexpr (std::is_same_v<T, ConstInt>) {
-        return QAST_NODE_INT;
-      } else if constexpr (std::is_same_v<T, ConstFloat>) {
-        return QAST_NODE_FLOAT;
-      } else if constexpr (std::is_same_v<T, ConstString>) {
-        return QAST_NODE_STRING;
-      } else if constexpr (std::is_same_v<T, ConstChar>) {
-        return QAST_NODE_CHAR;
-      } else if constexpr (std::is_same_v<T, ConstBool>) {
-        return QAST_NODE_BOOL;
-      } else if constexpr (std::is_same_v<T, ConstNull>) {
-        return QAST_NODE_NULL;
-      } else if constexpr (std::is_same_v<T, ConstUndef>) {
-        return QAST_NODE_UNDEF;
-      } else if constexpr (std::is_same_v<T, Call>) {
-        return QAST_NODE_CALL;
-      } else if constexpr (std::is_same_v<T, List>) {
-        return QAST_NODE_LIST;
-      } else if constexpr (std::is_same_v<T, Assoc>) {
-        return QAST_NODE_ASSOC;
-      } else if constexpr (std::is_same_v<T, Field>) {
-        return QAST_NODE_FIELD;
-      } else if constexpr (std::is_same_v<T, Index>) {
-        return QAST_NODE_INDEX;
-      } else if constexpr (std::is_same_v<T, Slice>) {
-        return QAST_NODE_SLICE;
-      } else if constexpr (std::is_same_v<T, FString>) {
-        return QAST_NODE_FSTRING;
-      } else if constexpr (std::is_same_v<T, Ident>) {
-        return QAST_NODE_IDENT;
-      } else if constexpr (std::is_same_v<T, SeqPoint>) {
-        return QAST_NODE_SEQ;
-      } else if constexpr (std::is_same_v<T, PostUnaryExpr>) {
-        return QAST_NODE_POST_UNEXPR;
-      } else if constexpr (std::is_same_v<T, StmtExpr>) {
-        return QAST_NODE_STMT_EXPR;
-      } else if constexpr (std::is_same_v<T, TypeExpr>) {
-        return QAST_NODE_TYPE_EXPR;
-      } else if constexpr (std::is_same_v<T, TemplCall>) {
-        return QAST_NODE_TEMPL_CALL;
-      } else if constexpr (std::is_same_v<T, RefTy>) {
-        return QAST_NODE_REF_TY;
-      } else if constexpr (std::is_same_v<T, U1>) {
-        return QAST_NODE_U1_TY;
-      } else if constexpr (std::is_same_v<T, U8>) {
-        return QAST_NODE_U8_TY;
-      } else if constexpr (std::is_same_v<T, U16>) {
-        return QAST_NODE_U16_TY;
-      } else if constexpr (std::is_same_v<T, U32>) {
-        return QAST_NODE_U32_TY;
-      } else if constexpr (std::is_same_v<T, U64>) {
-        return QAST_NODE_U64_TY;
-      } else if constexpr (std::is_same_v<T, U128>) {
-        return QAST_NODE_U128_TY;
-      } else if constexpr (std::is_same_v<T, I8>) {
-        return QAST_NODE_I8_TY;
-      } else if constexpr (std::is_same_v<T, I16>) {
-        return QAST_NODE_I16_TY;
-      } else if constexpr (std::is_same_v<T, I32>) {
-        return QAST_NODE_I32_TY;
-      } else if constexpr (std::is_same_v<T, I64>) {
-        return QAST_NODE_I64_TY;
-      } else if constexpr (std::is_same_v<T, I128>) {
-        return QAST_NODE_I128_TY;
-      } else if constexpr (std::is_same_v<T, F16>) {
-        return QAST_NODE_F16_TY;
-      } else if constexpr (std::is_same_v<T, F32>) {
-        return QAST_NODE_F32_TY;
-      } else if constexpr (std::is_same_v<T, F64>) {
-        return QAST_NODE_F64_TY;
-      } else if constexpr (std::is_same_v<T, F128>) {
-        return QAST_NODE_F128_TY;
-      } else if constexpr (std::is_same_v<T, VoidTy>) {
-        return QAST_NODE_VOID_TY;
-      } else if constexpr (std::is_same_v<T, PtrTy>) {
-        return QAST_NODE_PTR_TY;
-      } else if constexpr (std::is_same_v<T, OpaqueTy>) {
-        return QAST_NODE_OPAQUE_TY;
-      } else if constexpr (std::is_same_v<T, StructTy>) {
-        return QAST_NODE_STRUCT_TY;
-      } else if constexpr (std::is_same_v<T, ArrayTy>) {
-        return QAST_NODE_ARRAY_TY;
-      } else if constexpr (std::is_same_v<T, TupleTy>) {
-        return QAST_NODE_TUPLE_TY;
-      } else if constexpr (std::is_same_v<T, FuncTy>) {
-        return QAST_NODE_FN_TY;
-      } else if constexpr (std::is_same_v<T, NamedTy>) {
-        return QAST_NODE_UNRES_TY;
-      } else if constexpr (std::is_same_v<T, InferTy>) {
-        return QAST_NODE_INFER_TY;
-      } else if constexpr (std::is_same_v<T, TemplType>) {
-        return QAST_NODE_TEMPL_TY;
-      } else if constexpr (std::is_same_v<T, TypedefDecl>) {
-        return QAST_NODE_TYPEDEF;
-      } else if constexpr (std::is_same_v<T, FnDecl>) {
-        return QAST_NODE_FNDECL;
-      } else if constexpr (std::is_same_v<T, StructDef>) {
-        return QAST_NODE_STRUCT;
-      } else if constexpr (std::is_same_v<T, EnumDef>) {
-        return QAST_NODE_ENUM;
-      } else if constexpr (std::is_same_v<T, FnDef>) {
-        return QAST_NODE_FN;
-      } else if constexpr (std::is_same_v<T, ScopeDecl>) {
-        return QAST_NODE_SUBSYSTEM;
-      } else if constexpr (std::is_same_v<T, ExportDecl>) {
-        return QAST_NODE_EXPORT;
-      } else if constexpr (std::is_same_v<T, StructField>) {
-        return QAST_NODE_STRUCT_FIELD;
-      } else if constexpr (std::is_same_v<T, Block>) {
-        return QAST_NODE_BLOCK;
-      } else if constexpr (std::is_same_v<T, VarDecl>) {
-        return QAST_NODE_VAR;
-      } else if constexpr (std::is_same_v<T, InlineAsm>) {
-        return QAST_NODE_INLINE_ASM;
-      } else if constexpr (std::is_same_v<T, ReturnStmt>) {
-        return QAST_NODE_RETURN;
-      } else if constexpr (std::is_same_v<T, ReturnIfStmt>) {
-        return QAST_NODE_RETIF;
-      } else if constexpr (std::is_same_v<T, BreakStmt>) {
-        return QAST_NODE_BREAK;
-      } else if constexpr (std::is_same_v<T, ContinueStmt>) {
-        return QAST_NODE_CONTINUE;
-      } else if constexpr (std::is_same_v<T, IfStmt>) {
-        return QAST_NODE_IF;
-      } else if constexpr (std::is_same_v<T, WhileStmt>) {
-        return QAST_NODE_WHILE;
-      } else if constexpr (std::is_same_v<T, ForStmt>) {
-        return QAST_NODE_FOR;
-      } else if constexpr (std::is_same_v<T, ForeachStmt>) {
-        return QAST_NODE_FOREACH;
-      } else if constexpr (std::is_same_v<T, CaseStmt>) {
-        return QAST_NODE_CASE;
-      } else if constexpr (std::is_same_v<T, SwitchStmt>) {
-        return QAST_NODE_SWITCH;
-      } else if constexpr (std::is_same_v<T, ExprStmt>) {
-        return QAST_NODE_EXPR_STMT;
-      }
-    }
-
-    constexpr npar_ty_t getKind() const noexcept { return m_node_type; }
-    constexpr std::string_view getKindName() const noexcept {
-      return getKindName(m_node_type);
-    }
-
-    ///======================================================================
-
-    constexpr bool is_type() const noexcept {
-      auto kind = getKind();
-      return kind >= QAST_NODE__TYPE_FIRST && kind <= QAST_NODE__TYPE_LAST;
-    }
-
-    constexpr bool is_stmt() const noexcept {
-      auto kind = getKind();
-      return kind >= QAST_NODE__STMT_FIRST && kind <= QAST_NODE__STMT_LAST;
-    }
-
-    constexpr bool is_decl() const noexcept {
-      auto kind = getKind();
-      return kind >= QAST_NODE__DECL_FIRST && kind <= QAST_NODE__DECL_LAST;
-    }
-
-    constexpr bool is_expr() const noexcept {
-      auto kind = getKind();
-      return kind >= QAST_NODE__EXPR_FIRST && kind <= QAST_NODE__EXPR_LAST;
-    }
-
-    template <typename T>
-    static constexpr T *safeCastAs(Node *ptr) noexcept {
-      if (!ptr) {
-        return nullptr;
-      }
-
-#ifndef NDEBUG
-      if (getTypeCode<T>() != ptr->getKind()) [[unlikely]] {
-        qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(),
-                     getKindName(getTypeCode<T>()));
-      }
-#endif
-
-      return static_cast<T *>(ptr);
-    }
-
-    /**
-     * @brief Type-safe cast (type check only in debug mode).
-     *
-     * @tparam T The type to cast to.
-     * @return T* The casted pointer. It may be nullptr if the source pointer is
-     * nullptr.
-     * @warning This function will panic if the cast is invalid.
-     */
-    template <typename T>
-    constexpr T *as() noexcept {
-      return safeCastAs<T>(this);
-    }
-
-    /**
-     * @brief Type-safe cast (type check only in debug mode).
-     *
-     * @tparam T The type to cast to.
-     * @return const T* The casted pointer. It may be nullptr if the source
-     * pointer is nullptr.
-     * @warning This function will panic if the cast is invalid.
-     */
-    template <typename T>
-    constexpr const T *as() const noexcept {
-      return safeCastAs<T>(const_cast<Node *>(this));
-    }
-
-    template <typename T>
-    constexpr bool is() const noexcept {
-      return Node::getTypeCode<T>() == getKind();
-    }
-
-    constexpr bool is(npar_ty_t type) const { return type == getKind(); }
-
-    std::ostream &dump(std::ostream &os = std::cerr,
-                       bool isForDebug = false) const noexcept;
-
-    std::string to_string() {
-      std::stringstream ss;
-      dump(ss, false);
-      return ss.str();
-    };
-
-    constexpr void set_start_pos(uint32_t pos) { m_pos_start = pos; }
-    constexpr Node *set_end_pos(uint32_t pos) {
-      m_pos_end = pos;
-      return this;
-    }
-    constexpr Node *set_pos(
-        std::tuple<uint32_t, uint32_t, std::string_view> pos) {
-      m_pos_start = std::get<0>(pos);
-      m_pos_end = std::get<1>(pos);
-
-      /// FIXME: Use the filename info
-      return this;
-    }
-
-    constexpr uint32_t get_end_pos() { return m_pos_end; }
-    constexpr uint32_t get_start_pos() { return m_pos_start; }
-    constexpr std::tuple<uint32_t, uint32_t, std::string_view> get_pos() {
-      return {m_pos_start, m_pos_end, ""};
-    }
-
-    PNODE_IMPL_CORE(Node)
-  } __attribute__((packed));
-
-  constexpr size_t PNODE_BASE_SIZE = sizeof(Node);
-
-  class Stmt : public Node {
-  public:
-    constexpr Stmt(npar_ty_t ty) : Node(ty){};
+    constexpr Stmt(npar_ty_t ty) : npar_node_t(ty){};
   };
 
   class Expr;
 
-  class Type : public Node {
+  class Type : public npar_node_t {
     Expr *m_width, *m_range_start, *m_range_end;
-    bool m_volatile;
 
   public:
-    constexpr Type(npar_ty_t ty, bool is_volatile = false)
-        : Node(ty),
+    constexpr Type(npar_ty_t ty)
+        : npar_node_t(ty),
           m_width(nullptr),
           m_range_start(nullptr),
-          m_range_end(nullptr),
-          m_volatile(is_volatile) {}
+          m_range_end(nullptr) {}
 
     constexpr bool is_primitive() const noexcept {
       switch (getKind()) {
@@ -650,7 +851,7 @@ namespace npar {
       return getKind() == QAST_NODE_FN_TY;
     }
     constexpr bool is_composite() const noexcept {
-      return getKind() == QAST_NODE_STRUCT_TY || is_array() || is_tuple();
+      return is_array() || is_tuple();
     }
     constexpr bool is_numeric() const noexcept {
       return getKind() >= QAST_NODE_U1_TY && getKind() <= QAST_NODE_F128_TY;
@@ -676,7 +877,6 @@ namespace npar {
     constexpr bool is_ref() const noexcept {
       return getKind() == QAST_NODE_REF_TY;
     }
-    constexpr bool is_volatile() const noexcept { return m_volatile; }
     bool is_ptr_to(Type *type) noexcept;
 
     constexpr Expr *get_width() { return m_width; }
@@ -697,46 +897,9 @@ namespace npar {
   typedef std::vector<TemplateParameter, Arena<TemplateParameter>>
       TemplateParameters;
 
-  class Decl : public Stmt {
-  protected:
-    DeclTags m_tags;
-    std::optional<TemplateParameters> m_template_parameters;
-    String m_name;
-    Type *m_type;
-    Vis m_visibility;
-
+  class Expr : public npar_node_t {
   public:
-    Decl(npar_ty_t ty, String name, Type *type, DeclTags tags = {},
-         const std::optional<TemplateParameters> &params = std::nullopt,
-         Vis visibility = Vis::PRIVATE)
-        : Stmt(ty),
-          m_tags(tags),
-          m_template_parameters(params),
-          m_name(name),
-          m_type(type),
-          m_visibility(visibility) {}
-
-    String get_name() { return m_name; }
-    void set_name(String name) { m_name = name; }
-
-    Type *get_type() { return m_type; }
-    void set_type(Type *type) { m_type = type; }
-
-    DeclTags &get_tags() { return m_tags; }
-    void set_tags(DeclTags t) { m_tags = t; }
-
-    auto &get_template_params() { return m_template_parameters; }
-    void set_template_params(std::optional<TemplateParameters> x) {
-      m_template_parameters = x;
-    }
-
-    Vis get_visibility() { return m_visibility; }
-    void set_visibility(Vis visibility) { m_visibility = visibility; }
-  };
-
-  class Expr : public Node {
-  public:
-    constexpr Expr(npar_ty_t ty) : Node(ty) {}
+    constexpr Expr(npar_ty_t ty) : npar_node_t(ty) {}
 
     constexpr bool is_binexpr() const noexcept {
       return getKind() == QAST_NODE_BINEXPR;
@@ -755,8 +918,7 @@ namespace npar {
   public:
     constexpr ExprStmt(Expr *expr) : Stmt(QAST_NODE_EXPR_STMT), m_expr(expr) {}
 
-    Expr *get_expr() { return m_expr; }
-    void set_expr(Expr *expr) { m_expr = expr; }
+    Expr *get_expr() const { return m_expr; }
 
     PNODE_IMPL_CORE(ExprStmt)
   };
@@ -767,8 +929,7 @@ namespace npar {
   public:
     constexpr StmtExpr(Stmt *stmt) : Expr(QAST_NODE_STMT_EXPR), m_stmt(stmt) {}
 
-    Stmt *get_stmt() { return m_stmt; }
-    void set_stmt(Stmt *stmt) { m_stmt = stmt; }
+    Stmt *get_stmt() const { return m_stmt; }
 
     PNODE_IMPL_CORE(StmtExpr)
   };
@@ -780,7 +941,6 @@ namespace npar {
     constexpr TypeExpr(Type *type) : Expr(QAST_NODE_TYPE_EXPR), m_type(type) {}
 
     Type *get_type() { return m_type; }
-    void set_type(Type *type) { m_type = type; }
 
     PNODE_IMPL_CORE(TypeExpr)
   };
@@ -791,8 +951,7 @@ namespace npar {
   public:
     NamedTy(String name) : Type(QAST_NODE_UNRES_TY), m_name(name) {}
 
-    String get_name() { return m_name; }
-    void set_name(String name) { m_name = name; }
+    String &get_name() { return m_name; }
 
     PNODE_IMPL_CORE(NamedTy)
   };
@@ -814,7 +973,6 @@ namespace npar {
         : Type(QAST_NODE_TEMPL_TY), m_template(templ), m_args(args) {}
 
     Type *get_template() { return m_template; }
-    void set_template(Type *templ) { m_template = templ; }
 
     TemplTypeArgs &get_args() { return m_args; }
 
@@ -942,10 +1100,8 @@ namespace npar {
         : Type(QAST_NODE_PTR_TY), m_item(item), m_is_volatile(is_volatile) {}
 
     Type *get_item() { return m_item; }
-    void set_item(Type *item) { m_item = item; }
 
     bool is_volatile() { return m_is_volatile; }
-    void set_volatile(bool is_volatile) { m_is_volatile = is_volatile; }
 
     PNODE_IMPL_CORE(PtrTy)
   };
@@ -956,8 +1112,7 @@ namespace npar {
   public:
     OpaqueTy(String name) : Type(QAST_NODE_OPAQUE_TY), m_name(name) {}
 
-    String get_name() { return m_name; }
-    void set_name(String name) { m_name = name; }
+    String &get_name() { return m_name; }
 
     PNODE_IMPL_CORE(OpaqueTy)
   };
@@ -984,10 +1139,8 @@ namespace npar {
         : Type(QAST_NODE_ARRAY_TY), m_item(item), m_size(size) {}
 
     Type *get_item() { return m_item; }
-    void set_item(Type *item) { m_item = item; }
 
     Expr *get_size() { return m_size; }
-    void set_size(Expr *size) { m_size = size; }
 
     PNODE_IMPL_CORE(ArrayTy)
   };
@@ -999,25 +1152,12 @@ namespace npar {
     constexpr RefTy(Type *item) : Type(QAST_NODE_REF_TY), m_item(item) {}
 
     Type *get_item() { return m_item; }
-    void set_item(Type *item) { m_item = item; }
 
     PNODE_IMPL_CORE(RefTy)
   };
 
   typedef std::pair<String, Type *> StructItem;
   typedef std::vector<StructItem, Arena<StructItem>> StructItems;
-
-  class StructTy : public Type {
-    StructItems m_items;
-
-  public:
-    StructTy(const StructItems &items)
-        : Type(QAST_NODE_STRUCT_TY), m_items(items) {}
-
-    StructItems &get_items() { return m_items; }
-
-    PNODE_IMPL_CORE(StructTy)
-  };
 
   enum class FuncPurity {
     IMPURE_THREAD_UNSAFE,
@@ -1036,8 +1176,6 @@ namespace npar {
     FuncPurity m_purity;
     bool m_variadic;
     bool m_is_foreign;
-    bool m_crashpoint;
-    bool m_noexcept;
     bool m_noreturn;
 
   public:
@@ -1047,22 +1185,17 @@ namespace npar {
           m_purity(FuncPurity::IMPURE_THREAD_UNSAFE),
           m_variadic(false),
           m_is_foreign(false),
-          m_crashpoint(false),
-          m_noexcept(false),
           m_noreturn(false) {}
 
     FuncTy(Type *return_type, FuncParams parameters, bool variadic = false,
            FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE,
-           bool is_foreign = false, bool crashpoint = false,
-           bool noexcept_ = false, bool noreturn = false)
+           bool is_foreign = false, bool noreturn = false)
         : Type(QAST_NODE_FN_TY),
           m_params(parameters),
           m_return(return_type),
           m_purity(purity),
           m_variadic(variadic),
           m_is_foreign(is_foreign),
-          m_crashpoint(crashpoint),
-          m_noexcept(noexcept_),
           m_noreturn(noreturn) {
       assert(!noreturn || (purity == FuncPurity::IMPURE_THREAD_UNSAFE ||
                            purity == FuncPurity::IMPURE_THREAD_SAFE));
@@ -1070,15 +1203,12 @@ namespace npar {
     FuncTy(Type *return_type, std::vector<Type *, Arena<Type *>> parameters,
            bool variadic = false,
            FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE,
-           bool is_foreign = false, bool crashpoint = false,
-           bool noexcept_ = false, bool noreturn = false)
+           bool is_foreign = false, bool noreturn = false)
         : Type(QAST_NODE_FN_TY),
           m_return(return_type),
           m_purity(purity),
           m_variadic(variadic),
           m_is_foreign(is_foreign),
-          m_crashpoint(crashpoint),
-          m_noexcept(noexcept_),
           m_noreturn(noreturn) {
       assert(!noreturn || (purity == FuncPurity::IMPURE_THREAD_UNSAFE ||
                            purity == FuncPurity::IMPURE_THREAD_SAFE));
@@ -1106,12 +1236,6 @@ namespace npar {
     bool is_foreign() { return m_is_foreign; }
     void set_foreign(bool is_foreign) { m_is_foreign = is_foreign; }
 
-    bool is_crashpoint() { return m_crashpoint; }
-    void set_crashpoint(bool crashpoint) { m_crashpoint = crashpoint; }
-
-    bool is_noexcept() { return m_noexcept; }
-    void set_noexcept(bool noexcept_) { m_noexcept = noexcept_; }
-
     PNODE_IMPL_CORE(FuncTy)
   };
 
@@ -1126,10 +1250,8 @@ namespace npar {
         : Expr(QAST_NODE_UNEXPR), m_rhs(rhs), m_op(op) {}
 
     Expr *get_rhs() { return m_rhs; }
-    void set_rhs(Expr *rhs) { m_rhs = rhs; }
 
     qlex_op_t get_op() { return m_op; }
-    void set_op(qlex_op_t op) { m_op = op; }
 
     PNODE_IMPL_CORE(UnaryExpr)
   };
@@ -1144,13 +1266,10 @@ namespace npar {
         : Expr(QAST_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
     Expr *get_lhs() { return m_lhs; }
-    void set_lhs(Expr *lhs) { m_lhs = lhs; }
 
     Expr *get_rhs() { return m_rhs; }
-    void set_rhs(Expr *rhs) { m_rhs = rhs; }
 
     qlex_op_t get_op() { return m_op; }
-    void set_op(qlex_op_t op) { m_op = op; }
 
     PNODE_IMPL_CORE(BinExpr)
   };
@@ -1164,10 +1283,8 @@ namespace npar {
         : Expr(QAST_NODE_POST_UNEXPR), m_lhs(lhs), m_op(op) {}
 
     Expr *get_lhs() { return m_lhs; }
-    void set_lhs(Expr *lhs) { m_lhs = lhs; }
 
     qlex_op_t get_op() { return m_op; }
-    void set_op(qlex_op_t op) { m_op = op; }
 
     PNODE_IMPL_CORE(PostUnaryExpr)
   };
@@ -1182,13 +1299,10 @@ namespace npar {
         : Expr(QAST_NODE_TEREXPR), m_cond(cond), m_lhs(lhs), m_rhs(rhs) {}
 
     Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
 
     Expr *get_lhs() { return m_lhs; }
-    void set_lhs(Expr *lhs) { m_lhs = lhs; }
 
     Expr *get_rhs() { return m_rhs; }
-    void set_rhs(Expr *rhs) { m_rhs = rhs; }
 
     PNODE_IMPL_CORE(TernaryExpr)
   };
@@ -1204,7 +1318,7 @@ namespace npar {
     ConstInt(uint64_t value)
         : Expr(QAST_NODE_INT), m_value(std::to_string(value)) {}
 
-    String get_value() { return m_value; }
+    String &get_value() { return m_value; }
 
     PNODE_IMPL_CORE(ConstInt)
   };
@@ -1217,7 +1331,7 @@ namespace npar {
     ConstFloat(double value)
         : Expr(QAST_NODE_FLOAT), m_value(std::to_string(value)) {}
 
-    String get_value() { return m_value; }
+    String &get_value() { return m_value; }
 
     PNODE_IMPL_CORE(ConstFloat)
   };
@@ -1240,7 +1354,7 @@ namespace npar {
   public:
     ConstString(String value) : Expr(QAST_NODE_STRING), m_value(value) {}
 
-    String get_value() { return m_value; }
+    String &get_value() { return m_value; }
 
     PNODE_IMPL_CORE(ConstString)
   };
@@ -1285,7 +1399,6 @@ namespace npar {
         : Expr(QAST_NODE_CALL), m_func(func), m_args(args) {}
 
     Expr *get_func() { return m_func; }
-    void set_func(Expr *func) { m_func = func; }
 
     CallArgs &get_args() { return m_args; }
 
@@ -1309,7 +1422,6 @@ namespace npar {
           m_args(args) {}
 
     Expr *get_func() { return m_func; }
-    void set_func(Expr *func) { m_func = func; }
 
     TemplateArgs &get_template_args() { return m_template_args; }
     CallArgs &get_args() { return m_args; }
@@ -1339,10 +1451,8 @@ namespace npar {
         : Expr(QAST_NODE_ASSOC), m_key(key), m_value(value) {}
 
     Expr *get_key() { return m_key; }
-    void set_key(Expr *key) { m_key = key; }
 
     Expr *get_value() { return m_value; }
-    void set_value(Expr *value) { m_value = value; }
 
     PNODE_IMPL_CORE(Assoc)
   };
@@ -1356,10 +1466,8 @@ namespace npar {
         : Expr(QAST_NODE_FIELD), m_base(base), m_field(field) {}
 
     Expr *get_base() { return m_base; }
-    void set_base(Expr *base) { m_base = base; }
 
-    String get_field() { return m_field; }
-    void set_field(String field) { m_field = field; }
+    String &get_field() { return m_field; }
 
     PNODE_IMPL_CORE(Field)
   };
@@ -1373,10 +1481,8 @@ namespace npar {
         : Expr(QAST_NODE_INDEX), m_base(base), m_index(index) {}
 
     Expr *get_base() { return m_base; }
-    void set_base(Expr *base) { m_base = base; }
 
     Expr *get_index() { return m_index; }
-    void set_index(Expr *index) { m_index = index; }
 
     PNODE_IMPL_CORE(Index)
   };
@@ -1391,13 +1497,10 @@ namespace npar {
         : Expr(QAST_NODE_SLICE), m_base(base), m_start(start), m_end(end) {}
 
     Expr *get_base() { return m_base; }
-    void set_base(Expr *base) { m_base = base; }
 
     Expr *get_start() { return m_start; }
-    void set_start(Expr *start) { m_start = start; }
 
     Expr *get_end() { return m_end; }
-    void set_end(Expr *end) { m_end = end; }
 
     PNODE_IMPL_CORE(Slice)
   };
@@ -1424,8 +1527,7 @@ namespace npar {
   public:
     Ident(String name) : Expr(QAST_NODE_IDENT), m_name(name) {}
 
-    String get_name() { return m_name; }
-    void set_name(String name) { m_name = name; }
+    String &get_name() { return m_name; }
 
     PNODE_IMPL_CORE(Ident)
   };
@@ -1469,30 +1571,34 @@ namespace npar {
     PNODE_IMPL_CORE(Block)
   };
 
-  enum class VarDeclType { Const, Var, Let, Any };
+  enum class VarDeclType { Const, Var, Let };
 
   using VarDeclAttributes =
       std::unordered_set<Expr *, std::hash<Expr *>, std::equal_to<Expr *>,
                          Arena<Expr *>>;
 
-  class VarDecl : public Decl {
+  class VarDecl : public Stmt {
     VarDeclAttributes m_attributes;
+    String m_name;
+    Type *m_type;
     Expr *m_value;
     VarDeclType m_decl_type;
 
   public:
     VarDecl(String name, Type *type, Expr *value, VarDeclType decl_type,
             VarDeclAttributes attributes)
-        : Decl(QAST_NODE_VAR, name, type),
+        : Stmt(QAST_NODE_VAR),
           m_attributes(attributes),
+          m_name(name),
+          m_type(type),
           m_value(value),
           m_decl_type(decl_type) {}
 
+    String &get_name() { return m_name; }
+    Type *get_type() { return m_type; }
     Expr *get_value() { return m_value; }
-    void set_value(Expr *value) { m_value = value; }
 
     VarDeclType get_decl_type() { return m_decl_type; }
-    void set_decl_type(VarDeclType decl_type) { m_decl_type = decl_type; }
 
     VarDeclAttributes &get_attributes() { return m_attributes; }
     void set_attributes(VarDeclAttributes attributes) {
@@ -1512,8 +1618,7 @@ namespace npar {
     InlineAsm(String code, const InlineAsmArgs &args)
         : Stmt(QAST_NODE_INLINE_ASM), m_code(code), m_args(args) {}
 
-    String get_code() { return m_code; }
-    void set_code(String code) { m_code = code; }
+    String &get_code() { return m_code; }
 
     InlineAsmArgs &get_args() { return m_args; }
 
@@ -1530,13 +1635,10 @@ namespace npar {
         : Stmt(QAST_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
     Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
 
     Stmt *get_then() { return m_then; }
-    void set_then(Stmt *then) { m_then = then; }
 
     Stmt *get_else() { return m_else; }
-    void set_else(Stmt *else_) { m_else = else_; }
 
     PNODE_IMPL_CORE(IfStmt)
   };
@@ -1550,39 +1652,30 @@ namespace npar {
         : Stmt(QAST_NODE_WHILE), m_cond(cond), m_body(body) {}
 
     Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
 
     Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
 
     PNODE_IMPL_CORE(WhileStmt)
   };
 
   class ForStmt : public Stmt {
-    Expr *m_init;
-    Expr *m_cond;
-    Expr *m_step;
+    std::optional<Stmt *> m_init;
+    std::optional<Expr *> m_cond, m_step;
     Stmt *m_body;
 
   public:
-    constexpr ForStmt(Expr *init, Expr *cond, Expr *step, Stmt *body)
+    constexpr ForStmt(std::optional<Stmt *> init, std::optional<Expr *> cond,
+                      std::optional<Expr *> step, Stmt *body)
         : Stmt(QAST_NODE_FOR),
           m_init(init),
           m_cond(cond),
           m_step(step),
           m_body(body) {}
 
-    Expr *get_init() { return m_init; }
-    void set_init(Expr *init) { m_init = init; }
-
-    Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
-
-    Expr *get_step() { return m_step; }
-    void set_step(Expr *step) { m_step = step; }
-
-    Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
+    let get_init() const { return m_init; }
+    let get_cond() const { return m_cond; }
+    let get_step() const { return m_step; }
+    let get_body() const { return m_body; }
 
     PNODE_IMPL_CORE(ForStmt)
   };
@@ -1601,17 +1694,13 @@ namespace npar {
           m_expr(expr),
           m_body(body) {}
 
-    String get_idx_ident() { return m_idx_ident; }
-    void set_idx_ident(String idx_ident) { m_idx_ident = idx_ident; }
+    String &get_idx_ident() { return m_idx_ident; }
 
-    String get_val_ident() { return m_val_ident; }
-    void set_val_ident(String val_ident) { m_val_ident = val_ident; }
+    String &get_val_ident() { return m_val_ident; }
 
     Expr *get_expr() { return m_expr; }
-    void set_expr(Expr *expr) { m_expr = expr; }
 
     Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
 
     PNODE_IMPL_CORE(ForeachStmt)
   };
@@ -1638,7 +1727,6 @@ namespace npar {
         : Stmt(QAST_NODE_RETURN), m_value(value) {}
 
     std::optional<Expr *> get_value() { return m_value; }
-    void set_value(Expr *value) { m_value = value; }
 
     PNODE_IMPL_CORE(ReturnStmt)
   };
@@ -1652,10 +1740,8 @@ namespace npar {
         : Stmt(QAST_NODE_RETIF), m_cond(cond), m_value(value) {}
 
     Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
 
     Expr *get_value() { return m_value; }
-    void set_value(Expr *value) { m_value = value; }
 
     PNODE_IMPL_CORE(ReturnIfStmt)
   };
@@ -1669,10 +1755,8 @@ namespace npar {
         : Stmt(QAST_NODE_CASE), m_cond(cond), m_body(body) {}
 
     Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
 
     Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
 
     PNODE_IMPL_CORE(CaseStmt)
   };
@@ -1691,31 +1775,136 @@ namespace npar {
           m_default(default_) {}
 
     Expr *get_cond() { return m_cond; }
-    void set_cond(Expr *cond) { m_cond = cond; }
 
     SwitchCases &get_cases() { return m_cases; }
 
     Stmt *get_default() { return m_default; }
-    void set_default(Stmt *default_) { m_default = default_; }
 
     PNODE_IMPL_CORE(SwitchStmt)
   };
 
-  ///=============================================================================
+  using SymbolAttributes =
+      std::unordered_set<Expr *, std::hash<Expr *>, std::equal_to<Expr *>,
+                         Arena<Expr *>>;
 
-  class TypedefDecl : public Decl {
+  class ExportStmt : public Stmt {
+    SymbolAttributes m_attrs;
+    String m_abi_name;
+    Stmt *m_body;
+    Vis m_vis;
+
   public:
-    TypedefDecl(String name, Type *type)
-        : Decl(QAST_NODE_TYPEDEF, name, type) {}
+    ExportStmt(Stmt *content, String abi_name, Vis vis, SymbolAttributes attrs)
+        : Stmt(QAST_NODE_EXPORT),
+          m_attrs(attrs),
+          m_abi_name(abi_name),
+          m_body(content),
+          m_vis(vis) {}
 
-    PNODE_IMPL_CORE(TypedefDecl)
+    Stmt *get_body() { return m_body; }
+    String &get_abi_name() { return m_abi_name; }
+    Vis get_vis() { return m_vis; }
+    SymbolAttributes &get_attrs() { return m_attrs; }
+
+    PNODE_IMPL_CORE(ExportStmt)
   };
 
-  class FnDecl : public Decl {
-  public:
-    FnDecl(String name, FuncTy *type) : Decl(QAST_NODE_FNDECL, name, type) {}
+  typedef std::set<String, std::less<String>, Arena<String>> ScopeDeps;
 
-    FuncTy *get_type() { return static_cast<FuncTy *>(m_type); }
+  class ScopeStmt : public Stmt {
+    ScopeDeps m_deps;
+    String m_name;
+    Stmt *m_body;
+
+  public:
+    ScopeStmt(String name, Stmt *body, ScopeDeps deps = {})
+        : Stmt(QAST_NODE_SCOPE), m_deps(deps), m_name(name), m_body(body) {}
+
+    String &get_name() { return m_name; }
+    Stmt *get_body() { return m_body; }
+    ScopeDeps &get_deps() { return m_deps; }
+
+    PNODE_IMPL_CORE(ScopeStmt)
+  };
+
+  class TypedefStmt : public Stmt {
+    String m_name;
+    Type *m_type;
+
+  public:
+    TypedefStmt(String name, Type *type)
+        : Stmt(QAST_NODE_TYPEDEF), m_name(name), m_type(type) {}
+
+    String &get_name() { return m_name; }
+    Type *get_type() { return m_type; }
+
+    PNODE_IMPL_CORE(TypedefStmt)
+  };
+
+  class StructField : public Stmt {
+    String m_name;
+    Type *m_type;
+    Expr *m_value;
+    Vis m_visibility;
+
+  public:
+    StructField(String name, Type *type, Expr *value, Vis visibility)
+        : Stmt(QAST_NODE_STRUCT_FIELD),
+          m_name(name),
+          m_type(type),
+          m_value(value),
+          m_visibility(visibility) {}
+
+    String &get_name() { return m_name; }
+    Type *get_type() { return m_type; }
+    Expr *get_value() { return m_value; }
+    Vis get_visibility() { return m_visibility; }
+    void set_visibility(Vis visibility) { m_visibility = visibility; }
+
+    PNODE_IMPL_CORE(StructField)
+  };
+
+  typedef std::pair<String, Expr *> EnumItem;
+  typedef std::vector<EnumItem, Arena<EnumItem>> EnumDefItems;
+
+  class EnumDef : public Stmt {
+    EnumDefItems m_items;
+    String m_name;
+    Type *m_type;
+
+  public:
+    EnumDef(String name, Type *type, const EnumDefItems &items)
+        : Stmt(QAST_NODE_ENUM), m_items(items), m_name(name), m_type(type) {}
+
+    EnumDefItems &get_items() { return m_items; }
+    String &get_name() { return m_name; }
+    Type *get_type() { return m_type; }
+
+    PNODE_IMPL_CORE(EnumDef)
+  };
+
+  class FnDecl : public Stmt {
+    std::optional<TemplateParameters> m_template_parameters;
+    String m_name;
+    FuncTy *m_type;
+
+  public:
+    FnDecl(String name, FuncTy *type,
+           std::optional<TemplateParameters> params = std::nullopt)
+        : Stmt(QAST_NODE_FNDECL),
+          m_template_parameters(params),
+          m_name(name),
+          m_type(type) {}
+
+    String get_name() { return m_name; }
+    void set_name(String name) { m_name = name; }
+
+    FuncTy *get_type() { return m_type; }
+    void set_type(FuncTy *type) { m_type = type; }
+
+    std::optional<TemplateParameters> &get_template_params() {
+      return m_template_parameters;
+    }
 
     PNODE_IMPL_CORE(FnDecl)
   };
@@ -1723,8 +1912,11 @@ namespace npar {
   typedef std::vector<std::pair<String, bool>, Arena<std::pair<String, bool>>>
       FnCaptures;
 
-  class FnDef : public Decl {
+  class FnDef : public Stmt {
     FnCaptures m_captures;
+    std::optional<TemplateParameters> m_template_parameters;
+    String m_name;
+    FuncTy *m_type;
     Stmt *m_body;
     Expr *m_precond;
     Expr *m_postcond;
@@ -1732,15 +1924,22 @@ namespace npar {
   public:
     FnDef(FnDecl *decl, Stmt *body, Expr *precond, Expr *postcond,
           FnCaptures captures = {})
-        : Decl(QAST_NODE_FN, decl->get_name(), decl->get_type()),
+        : Stmt(QAST_NODE_FN),
           m_captures(captures),
+          m_template_parameters(decl->get_template_params()),
+          m_name(decl->get_name()),
+          m_type(decl->get_type()),
           m_body(body),
           m_precond(precond),
-          m_postcond(postcond) {
-      set_template_params(decl->get_template_params());
-      set_visibility(decl->get_visibility());
-      set_tags(decl->get_tags());
+          m_postcond(postcond) {}
+
+    FnCaptures &get_captures() { return m_captures; }
+
+    std::optional<TemplateParameters> &get_template_params() {
+      return m_template_parameters;
     }
+
+    String &get_name() { return m_name; }
 
     Stmt *get_body() { return m_body; }
     void set_body(Stmt *body) { m_body = body; }
@@ -1751,8 +1950,6 @@ namespace npar {
     Expr *get_postcond() { return m_postcond; }
     void set_postcond(Expr *postcond) { m_postcond = postcond; }
 
-    FnCaptures &get_captures() { return m_captures; }
-
     FuncTy *get_type() { return static_cast<FuncTy *>(m_type); }
 
     PNODE_IMPL_CORE(FnDef)
@@ -1760,116 +1957,47 @@ namespace npar {
 
   enum class CompositeType { Region, Struct, Group, Class, Union };
 
-  class StructField : public Decl {
-    Expr *m_value;
-
-  public:
-    StructField(String name, Type *type, Expr *value)
-        : Decl(QAST_NODE_STRUCT_FIELD, name, type), m_value(value) {}
-
-    Expr *get_value() { return m_value; }
-    void set_value(Expr *value) { m_value = value; }
-
-    PNODE_IMPL_CORE(StructField)
-  };
-
-  typedef std::vector<Decl *, Arena<Decl *>> StructDefFields;
+  typedef std::vector<Stmt *, Arena<Stmt *>> StructDefFields;
   typedef std::vector<FnDecl *, Arena<FnDecl *>> StructDefMethods;
   typedef std::vector<FnDecl *, Arena<FnDecl *>> StructDefStaticMethods;
 
-  class StructDef : public Decl {
+  class StructDef : public Stmt {
     StructDefMethods m_methods;
     StructDefStaticMethods m_static_methods;
     StructDefFields m_fields;
+    std::optional<TemplateParameters> m_template_parameters;
     CompositeType m_comp_type;
+    String m_name;
 
   public:
-    StructDef(String name, StructTy *type, const StructDefFields &fields = {},
+    StructDef(String name, const StructDefFields &fields = {},
               const StructDefMethods &methods = {},
-              const StructDefStaticMethods &static_methods = {})
-        : Decl(QAST_NODE_STRUCT, name, type),
+              const StructDefStaticMethods &static_methods = {},
+              std::optional<TemplateParameters> params = std::nullopt,
+              CompositeType t = CompositeType::Struct)
+        : Stmt(QAST_NODE_STRUCT),
           m_methods(methods),
           m_static_methods(static_methods),
-          m_fields(fields) {}
+          m_fields(fields),
+          m_template_parameters(params),
+          m_comp_type(t),
+          m_name(name) {}
 
-    StructTy *get_type() { return static_cast<StructTy *>(m_type); }
+    String &get_name() { return m_name; }
+    void set_name(String name) { m_name = name; }
 
     StructDefMethods &get_methods() { return m_methods; }
     StructDefStaticMethods &get_static_methods() { return m_static_methods; }
     StructDefFields &get_fields() { return m_fields; }
 
+    std::optional<TemplateParameters> &get_template_params() {
+      return m_template_parameters;
+    }
+
     CompositeType get_composite_type() { return m_comp_type; }
     void set_composite_type(CompositeType t) { m_comp_type = t; }
 
     PNODE_IMPL_CORE(StructDef)
-  };
-
-  typedef std::pair<String, Expr *> EnumItem;
-  typedef std::vector<EnumItem, Arena<EnumItem>> EnumDefItems;
-
-  class EnumDef : public Decl {
-    EnumDefItems m_items;
-
-  public:
-    EnumDef(String name, Type *type, const EnumDefItems &items)
-        : Decl(QAST_NODE_ENUM, name, type), m_items(items) {}
-
-    EnumDefItems &get_items() { return m_items; }
-
-    PNODE_IMPL_CORE(EnumDef)
-  };
-
-  typedef std::set<String, std::less<String>, Arena<String>> ScopeDeps;
-
-  class ScopeDecl : public Decl {
-    Stmt *m_body;
-    ScopeDeps m_deps;
-
-  public:
-    ScopeDecl(String name, Stmt *body, ScopeDeps deps = {})
-        : Decl(QAST_NODE_SUBSYSTEM, name, nullptr),
-          m_body(body),
-          m_deps(deps) {}
-
-    Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
-
-    ScopeDeps &get_deps() { return m_deps; }
-
-    PNODE_IMPL_CORE(ScopeDecl)
-  };
-
-  using SymbolAttributes =
-      std::unordered_set<Expr *, std::hash<Expr *>, std::equal_to<Expr *>,
-                         Arena<Expr *>>;
-
-  class ExportDecl : public Decl {
-    SymbolAttributes m_attrs;
-    String m_abi_name;
-    Stmt *m_body;
-    Vis m_vis;
-
-  public:
-    ExportDecl(Stmt *content, String abi_name, Vis vis, SymbolAttributes attrs)
-        : Decl(QAST_NODE_EXPORT, "", nullptr),
-          m_attrs(attrs),
-          m_abi_name(abi_name),
-          m_body(content),
-          m_vis(vis) {}
-
-    Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
-
-    String get_abi_name() { return m_abi_name; }
-    void set_abi_name(String abi_name) { m_abi_name = abi_name; }
-
-    Vis get_vis() { return m_vis; }
-    void set_vis(Vis vis) { m_vis = vis; }
-
-    SymbolAttributes &get_attrs() { return m_attrs; }
-    void set_attrs(SymbolAttributes attrs) { m_attrs = attrs; }
-
-    PNODE_IMPL_CORE(ExportDecl)
   };
 
   template <typename T, typename... Args>
@@ -1883,101 +2011,100 @@ namespace npar {
 
   ///=============================================================================
 
-  constexpr std::string_view Node::getKindName(npar_ty_t type) noexcept {
-    const std::array<std::string_view, QAST_NODE_COUNT> names = []() {
-      std::array<std::string_view, QAST_NODE_COUNT> R;
-      R.fill("");
-
-      R[QAST_NODE_BINEXPR] = "Binexpr";
-      R[QAST_NODE_UNEXPR] = "Unexpr";
-      R[QAST_NODE_TEREXPR] = "Terexpr";
-      R[QAST_NODE_INT] = "Int";
-      R[QAST_NODE_FLOAT] = "Float";
-      R[QAST_NODE_STRING] = "String";
-      R[QAST_NODE_CHAR] = "Char";
-      R[QAST_NODE_BOOL] = "Bool";
-      R[QAST_NODE_NULL] = "Null";
-      R[QAST_NODE_UNDEF] = "Undef";
-      R[QAST_NODE_CALL] = "Call";
-      R[QAST_NODE_LIST] = "List";
-      R[QAST_NODE_ASSOC] = "Assoc";
-      R[QAST_NODE_FIELD] = "Field";
-      R[QAST_NODE_INDEX] = "Index";
-      R[QAST_NODE_SLICE] = "Slice";
-      R[QAST_NODE_FSTRING] = "Fstring";
-      R[QAST_NODE_IDENT] = "Ident";
-      R[QAST_NODE_SEQ] = "SeqPoint";
-      R[QAST_NODE_POST_UNEXPR] = "PostUnexpr";
-      R[QAST_NODE_STMT_EXPR] = "StmtExpr";
-      R[QAST_NODE_TYPE_EXPR] = "peExpr";
-      R[QAST_NODE_TEMPL_CALL] = "TemplCall";
-      R[QAST_NODE_REF_TY] = "Ref";
-      R[QAST_NODE_U1_TY] = "U1";
-      R[QAST_NODE_U8_TY] = "U8";
-      R[QAST_NODE_U16_TY] = "U16";
-      R[QAST_NODE_U32_TY] = "U32";
-      R[QAST_NODE_U64_TY] = "U64";
-      R[QAST_NODE_U128_TY] = "U128";
-      R[QAST_NODE_I8_TY] = "I8";
-      R[QAST_NODE_I16_TY] = "I16";
-      R[QAST_NODE_I32_TY] = "I32";
-      R[QAST_NODE_I64_TY] = "I64";
-      R[QAST_NODE_I128_TY] = "I128";
-      R[QAST_NODE_F16_TY] = "F16";
-      R[QAST_NODE_F32_TY] = "F32";
-      R[QAST_NODE_F64_TY] = "F64";
-      R[QAST_NODE_F128_TY] = "F128";
-      R[QAST_NODE_VOID_TY] = "Void";
-      R[QAST_NODE_PTR_TY] = "Ptr";
-      R[QAST_NODE_OPAQUE_TY] = "Opaque";
-      R[QAST_NODE_STRUCT_TY] = "Struct";
-      R[QAST_NODE_ARRAY_TY] = "Array";
-      R[QAST_NODE_TUPLE_TY] = "Tuple";
-      R[QAST_NODE_FN_TY] = "Fn";
-      R[QAST_NODE_UNRES_TY] = "Unres";
-      R[QAST_NODE_INFER_TY] = "Infer";
-      R[QAST_NODE_TEMPL_TY] = "Templ";
-      R[QAST_NODE_TYPEDEF] = "pedef";
-      R[QAST_NODE_FNDECL] = "Fndecl";
-      R[QAST_NODE_STRUCT] = "Struct";
-      R[QAST_NODE_ENUM] = "Enum";
-      R[QAST_NODE_FN] = "Fn";
-      R[QAST_NODE_SUBSYSTEM] = "Scope";
-      R[QAST_NODE_EXPORT] = "Export";
-      R[QAST_NODE_STRUCT_FIELD] = "StructField";
-      R[QAST_NODE_BLOCK] = "Block";
-      R[QAST_NODE_VAR] = "Let";
-      R[QAST_NODE_INLINE_ASM] = "InlineAsm";
-      R[QAST_NODE_RETURN] = "Return";
-      R[QAST_NODE_RETIF] = "Retif";
-      R[QAST_NODE_BREAK] = "Break";
-      R[QAST_NODE_CONTINUE] = "Continue";
-      R[QAST_NODE_IF] = "If";
-      R[QAST_NODE_WHILE] = "While";
-      R[QAST_NODE_FOR] = "For";
-      R[QAST_NODE_FOREACH] = "Foreach";
-      R[QAST_NODE_CASE] = "Case";
-      R[QAST_NODE_SWITCH] = "Switch";
-      R[QAST_NODE_EXPR_STMT] = "ExprStmt";
-
-      return R;
-    }();
-
-    return names[type];
-  }
-
   Stmt *mock_stmt(npar_ty_t expected);
   Expr *mock_expr(npar_ty_t expected);
-  Type *mock_type(npar_ty_t expected);
-  Decl *mock_decl(npar_ty_t expected);
-
+  Type *mock_type();
 }  // namespace npar
 
-namespace std {
-  std::ostream &operator<<(std::ostream &os, const qlex_op_t &op);
-  std::ostream &operator<<(std::ostream &os, const qlex_op_t &expr);
-  std::ostream &operator<<(std::ostream &os, const qlex_op_t &op);
-  std::ostream &operator<<(std::ostream &os, const npar::FuncPurity &purity);
-}  // namespace std
+constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) noexcept {
+  const std::array<std::string_view, QAST_NODE_COUNT> names = []() {
+    std::array<std::string_view, QAST_NODE_COUNT> R;
+    R.fill("");
+
+    R[QAST_NODE_NODE] = "Node";
+    R[QAST_NODE_BINEXPR] = "Binexpr";
+    R[QAST_NODE_UNEXPR] = "Unexpr";
+    R[QAST_NODE_TEREXPR] = "Terexpr";
+    R[QAST_NODE_INT] = "Int";
+    R[QAST_NODE_FLOAT] = "Float";
+    R[QAST_NODE_STRING] = "String";
+    R[QAST_NODE_CHAR] = "Char";
+    R[QAST_NODE_BOOL] = "Bool";
+    R[QAST_NODE_NULL] = "Null";
+    R[QAST_NODE_UNDEF] = "Undef";
+    R[QAST_NODE_CALL] = "Call";
+    R[QAST_NODE_LIST] = "List";
+    R[QAST_NODE_ASSOC] = "Assoc";
+    R[QAST_NODE_FIELD] = "Field";
+    R[QAST_NODE_INDEX] = "Index";
+    R[QAST_NODE_SLICE] = "Slice";
+    R[QAST_NODE_FSTRING] = "Fstring";
+    R[QAST_NODE_IDENT] = "Ident";
+    R[QAST_NODE_SEQ] = "SeqPoint";
+    R[QAST_NODE_POST_UNEXPR] = "PostUnexpr";
+    R[QAST_NODE_STMT_EXPR] = "StmtExpr";
+    R[QAST_NODE_TYPE_EXPR] = "TypeExpr";
+    R[QAST_NODE_TEMPL_CALL] = "TemplCall";
+    R[QAST_NODE_REF_TY] = "Ref";
+    R[QAST_NODE_U1_TY] = "U1";
+    R[QAST_NODE_U8_TY] = "U8";
+    R[QAST_NODE_U16_TY] = "U16";
+    R[QAST_NODE_U32_TY] = "U32";
+    R[QAST_NODE_U64_TY] = "U64";
+    R[QAST_NODE_U128_TY] = "U128";
+    R[QAST_NODE_I8_TY] = "I8";
+    R[QAST_NODE_I16_TY] = "I16";
+    R[QAST_NODE_I32_TY] = "I32";
+    R[QAST_NODE_I64_TY] = "I64";
+    R[QAST_NODE_I128_TY] = "I128";
+    R[QAST_NODE_F16_TY] = "F16";
+    R[QAST_NODE_F32_TY] = "F32";
+    R[QAST_NODE_F64_TY] = "F64";
+    R[QAST_NODE_F128_TY] = "F128";
+    R[QAST_NODE_VOID_TY] = "Void";
+    R[QAST_NODE_PTR_TY] = "Ptr";
+    R[QAST_NODE_OPAQUE_TY] = "Opaque";
+    R[QAST_NODE_ARRAY_TY] = "Array";
+    R[QAST_NODE_TUPLE_TY] = "Tuple";
+    R[QAST_NODE_FN_TY] = "FuncTy";
+    R[QAST_NODE_UNRES_TY] = "Unres";
+    R[QAST_NODE_INFER_TY] = "Infer";
+    R[QAST_NODE_TEMPL_TY] = "Templ";
+    R[QAST_NODE_TYPEDEF] = "Typedef";
+    R[QAST_NODE_FNDECL] = "FnDecl";
+    R[QAST_NODE_STRUCT] = "Struct";
+    R[QAST_NODE_ENUM] = "Enum";
+    R[QAST_NODE_FN] = "FnDef";
+    R[QAST_NODE_SCOPE] = "Scope";
+    R[QAST_NODE_EXPORT] = "Export";
+    R[QAST_NODE_STRUCT_FIELD] = "StructField";
+    R[QAST_NODE_BLOCK] = "Block";
+    R[QAST_NODE_VAR] = "Let";
+    R[QAST_NODE_INLINE_ASM] = "InlineAsm";
+    R[QAST_NODE_RETURN] = "Return";
+    R[QAST_NODE_RETIF] = "Retif";
+    R[QAST_NODE_BREAK] = "Break";
+    R[QAST_NODE_CONTINUE] = "Continue";
+    R[QAST_NODE_IF] = "If";
+    R[QAST_NODE_WHILE] = "While";
+    R[QAST_NODE_FOR] = "For";
+    R[QAST_NODE_FOREACH] = "Foreach";
+    R[QAST_NODE_CASE] = "Case";
+    R[QAST_NODE_SWITCH] = "Switch";
+    R[QAST_NODE_EXPR_STMT] = "ExprStmt";
+
+    return R;
+  }();
+
+  return names[type];
+}
+
+constexpr bool npar_node_t::is_expr_stmt(npar_ty_t type) const {
+  return is(QAST_NODE_EXPR_STMT) && as<npar::ExprStmt>()->get_expr()->is(type);
+}
+
+constexpr bool npar_node_t::is_stmt_expr(npar_ty_t type) const {
+  return is(QAST_NODE_STMT_EXPR) && as<npar::StmtExpr>()->get_stmt()->is(type);
+}
 
 #endif  // __NITRATE_PARSER_NODE_H__

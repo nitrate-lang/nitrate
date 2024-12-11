@@ -248,21 +248,19 @@ namespace nr {
         std::string_view name, std::span<FnParam> params, Type *ret_ty,
         bool is_variadic = false, Vis visibility = Vis::Sec,
         Purity purity = Purity::Impure, bool thread_safe = false,
-        bool is_noexcept = false,
         bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
 
     Fn *createFunctionDeclaration(
         std::string_view name, std::span<FnParam> params, Type *ret_ty,
         bool is_variadic = false, Vis visibility = Vis::Sec,
         Purity purity = Purity::Impure, bool thread_safe = false,
-        bool is_noexcept = false,
         bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
 
     /* This is the only intended way to overload operaters */
     Fn *createOperatorOverload(
         Op op, std::span<Type *> params, Type *ret_ty,
-        Purity purity = Purity::Impure, bool thread_safe = false,
-        bool is_noexcept = false SOURCE_LOCATION_PARAM) noexcept;
+        Purity purity = Purity::Impure,
+        bool thread_safe = false SOURCE_LOCATION_PARAM) noexcept;
 
     /* Works for both local and global variables */
     Local *createVariable(
@@ -356,7 +354,7 @@ namespace nr {
 
     FnTy *getFnTy(std::span<Type *> params, Type *ret_ty,
                   bool is_variadic = false, Purity purity = Purity::Impure,
-                  bool thread_safe = false, bool is_noexcept = false,
+                  bool thread_safe = false,
                   bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
 
     void createNamedConstantDefinition(

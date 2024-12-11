@@ -139,8 +139,7 @@ std::optional<std::string> qprep_impl_t::run_lua_code(const std::string &s) {
 }
 
 void qprep_impl_t::expand_raw(std::string_view code) {
-  auto ss = std::make_shared<std::istringstream>(
-      std::string(code.data(), code.size()));
+  std::istringstream ss(std::string(code.data(), code.size()));
 
   {
     qlex_t *clone = weak_clone(ss, m_filename);
@@ -203,7 +202,6 @@ func_entry:  // do tail call optimization manually
       switch (x.ty) {
         case qEofF:
           return x;
-        case qErro:
         case qKeyW:
         case qIntL:
         case qText:
@@ -233,7 +231,7 @@ func_entry:  // do tail call optimization manually
             if (!run_and_expand(std::string(block))) {
               qcore_print(QCORE_ERROR, "Failed to expand macro block: %s\n",
                           block.data());
-              x.ty = qErro;
+              x.ty = qEofF;
               goto emit_token;
             }
           } else {
@@ -243,7 +241,7 @@ func_entry:  // do tail call optimization manually
               qcore_print(QCORE_ERROR,
                           "Invalid macro function definition: %s\n",
                           block.data());
-              x.ty = qErro;
+              x.ty = qEofF;
               goto emit_token;
             }
 
@@ -257,7 +255,7 @@ func_entry:  // do tail call optimization manually
                 qcore_print(QCORE_ERROR,
                             "Invalid macro function definition: %s\n",
                             block.data());
-                x.ty = qErro;
+                x.ty = qEofF;
                 goto emit_token;
               }
               code.erase(pos, 1);
@@ -269,7 +267,7 @@ func_entry:  // do tail call optimization manually
                 qcore_print(QCORE_ERROR,
                             "Invalid macro function definition: %s\n",
                             block.data());
-                x.ty = qErro;
+                x.ty = qEofF;
                 goto emit_token;
               }
               code.erase(pos, 1);
@@ -279,7 +277,7 @@ func_entry:  // do tail call optimization manually
             if (!run_and_expand(code)) {
               qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n",
                           name.data());
-              x.ty = qErro;
+              x.ty = qEofF;
               goto emit_token;
             }
           }
@@ -295,7 +293,7 @@ func_entry:  // do tail call optimization manually
             if (!run_and_expand("return " + std::string(body))) {
               qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n",
                           body.data());
-              x.ty = qErro;
+              x.ty = qEofF;
               goto emit_token;
             }
 
@@ -304,7 +302,7 @@ func_entry:  // do tail call optimization manually
             if (!run_and_expand("return " + std::string(body) + "()")) {
               qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n",
                           body.data());
-              x.ty = qErro;
+              x.ty = qEofF;
               goto emit_token;
             }
 
@@ -338,8 +336,7 @@ void qprep_impl_t::install_lua_api() {
   lua_setglobal(m_core->L, "n");
 }
 
-qlex_t *qprep_impl_t::weak_clone(std::shared_ptr<std::istream> file,
-                                 const char *filename) {
+qlex_t *qprep_impl_t::weak_clone(std::istream &file, const char *filename) {
   qprep_impl_t *clone = new qprep_impl_t(file, filename, m_env);
 
   clone->m_core = m_core;
@@ -350,15 +347,15 @@ qlex_t *qprep_impl_t::weak_clone(std::shared_ptr<std::istream> file,
   return clone;
 }
 
-qprep_impl_t::qprep_impl_t(std::shared_ptr<std::istream> file,
-                           const char *filename, qcore_env_t env)
+qprep_impl_t::qprep_impl_t(std::istream &file, const char *filename,
+                           qcore_env_t env)
     : qlex_t(file, filename, env) {
   m_core = std::make_shared<Core>();
   m_do_expanse = true;
   m_depth = 0;
 }
 
-qprep_impl_t::qprep_impl_t(std::shared_ptr<std::istream> file, qcore_env_t env,
+qprep_impl_t::qprep_impl_t(std::istream &file, qcore_env_t env,
                            const char *filename)
     : qlex_t(file, filename, env) {
   m_core = std::make_shared<Core>();
@@ -403,8 +400,8 @@ CPP_EXPORT qprep_impl_t::~qprep_impl_t() {}
 
 ///=============================================================================
 
-CPP_EXPORT qlex_t *qprep_new(std::shared_ptr<std::istream> file,
-                             const char *filename, qcore_env_t env) {
+CPP_EXPORT qlex_t *qprep_new(std::istream &file, const char *filename,
+                             qcore_env_t env) {
   try {
     return new qprep_impl_t(file, env, filename);
   } catch (std::bad_alloc &) {

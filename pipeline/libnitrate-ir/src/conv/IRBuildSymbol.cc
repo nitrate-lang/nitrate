@@ -44,7 +44,7 @@ using namespace nr;
 Fn *NRBuilder::createFunctionDefintion(
     std::string_view name, std::span<FnParam> params, Type *ret_ty,
     bool is_variadic, Vis visibility, Purity purity, bool thread_safe,
-    bool is_noexcept, bool foreign SOURCE_LOCATION_PARAM) noexcept {
+    bool foreign SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(ret_ty != nullptr && static_cast<Expr *>(ret_ty)->isType());
@@ -66,7 +66,6 @@ Fn *NRBuilder::createFunctionDefintion(
   (void)visibility;
   (void)purity;
   (void)thread_safe;
-  (void)is_noexcept;
   (void)foreign;
 
   Fn *fn = create<Fn>(name, std::move(parameters), ret_ty, std::nullopt,
@@ -85,7 +84,7 @@ Fn *NRBuilder::createFunctionDefintion(
 Fn *NRBuilder::createFunctionDeclaration(
     std::string_view name, std::span<FnParam> params, Type *ret_ty,
     bool is_variadic, Vis visibility, Purity purity, bool thread_safe,
-    bool is_noexcept, bool foreign SOURCE_LOCATION_PARAM) noexcept {
+    bool foreign SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(ret_ty != nullptr && static_cast<Expr *>(ret_ty)->isType());
@@ -107,7 +106,6 @@ Fn *NRBuilder::createFunctionDeclaration(
   (void)visibility;
   (void)purity;
   (void)thread_safe;
-  (void)is_noexcept;
   (void)foreign;
 
   Fn *fn = create<Fn>(name, std::move(parameters), ret_ty, std::nullopt,
@@ -125,7 +123,7 @@ Fn *NRBuilder::createFunctionDeclaration(
 
 Fn *NRBuilder::createOperatorOverload(
     Op op, std::span<Type *> params, Type *ret_ty, Purity purity,
-    bool thread_safe, bool is_noexcept SOURCE_LOCATION_PARAM) noexcept {
+    bool thread_safe SOURCE_LOCATION_PARAM) noexcept {
   /// TODO: Implement operator overloading
 
   qcore_implement();
@@ -134,7 +132,6 @@ Fn *NRBuilder::createOperatorOverload(
   (void)ret_ty;
   (void)purity;
   (void)thread_safe;
-  (void)is_noexcept;
   ignore_caller_info();
 }
 

@@ -30,19 +30,6 @@ void do_didClose(const lsp::NotificationMessage& notif) {
   }
 
   std::string uri = text_document["uri"].GetString();
-  SyncFS::the().select_uri(uri);
-  auto close_code = SyncFS::the().close();
 
-  switch (close_code) {
-    case SyncFS::CloseCode::OK:
-      break;
-    case SyncFS::CloseCode::NOT_OPEN:
-      LOG(ERROR) << "File is not open";
-      break;
-    case SyncFS::CloseCode::CLOSE_FAILED:
-      LOG(ERROR) << "Failed to close file";
-      break;
-  }
-
-  LOG(INFO) << "Closed file: " << uri;
+  SyncFS::the().close(uri);
 }

@@ -20,7 +20,7 @@ else()
   message(FATAL_ERROR "Unsupported compiler pair: '${CMAKE_CXX_COMPILER}' and '${CMAKE_C_COMPILER}'")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 
 # Modern security hardening flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstack-protector -fPIC")
@@ -45,6 +45,12 @@ if(MEMORY_OVER_SPEED)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMEMORY_OVER_SPEED=1")
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMEMORY_OVER_SPEED=0")
+endif()
+
+if(BUILD_SHARED_LIBS STREQUAL "ON")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNITRATE_SHARED=1")
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNITRATE_SHARED=0")
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -83,7 +89,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 if(BUILD_TESTING)
-  foreach(lib libnitrate-basic-lexer-fuzz)
+  foreach(lib)
     target_compile_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
     target_link_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   endforeach()

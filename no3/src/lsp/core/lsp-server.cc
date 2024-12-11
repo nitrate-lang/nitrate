@@ -10,6 +10,8 @@
 #include <memory>
 #include <stop_token>
 
+using namespace lsp;
+
 ServerContext& ServerContext::the() {
   static ServerContext instance;
   return instance;
@@ -37,7 +39,7 @@ void ServerContext::request_queue_loop(std::stop_token st) {
   }
 }
 
-std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(
+std::optional<std::unique_ptr<Message>> ServerContext::next_message(
     std::istream& io) {
   /**
    * We don't need to lock the std::istream because this is the only place where
@@ -123,7 +125,7 @@ std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(
 
     if (!doc.HasMember("id")) { /* Notification */
       if (!doc.HasMember("params")) {
-        return std::make_unique<lsp::NotificationMessage>(
+        return std::make_unique<NotificationMessage>(
             doc["method"].GetString(),
             rapidjson::Document(rapidjson::kObjectType));
       }
@@ -135,8 +137,8 @@ std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(
 
       rapidjson::Document params;
       params.CopyFrom(doc["params"], params.GetAllocator());
-      return std::make_unique<lsp::NotificationMessage>(
-          doc["method"].GetString(), std::move(params));
+      return std::make_unique<NotificationMessage>(doc["method"].GetString(),
+                                                   std::move(params));
     } else { /* Request or error */
       if (!doc["id"].IsString() && !doc["id"].IsInt()) {
         LOG(ERROR) << "id is not a string or integer";
@@ -156,11 +158,11 @@ std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(
       }
 
       if (doc["id"].IsString()) {
-        return std::make_unique<lsp::RequestMessage>(doc["id"].GetString(),
-                                                     doc["method"].GetString(),
-                                                     std::move(params));
+        return std::make_unique<RequestMessage>(doc["id"].GetString(),
+                                                doc["method"].GetString(),
+                                                std::move(params));
       } else {
-        return std::make_unique<lsp::RequestMessage>(
+        return std::make_unique<RequestMessage>(
             doc["id"].GetInt(), doc["method"].GetString(), std::move(params));
       }
     }
@@ -200,18 +202,18 @@ void ServerContext::register_handlers() {
       continue;
     }
 
-    std::shared_ptr<lsp::Message> message_ptr = std::move(*message);
+    std::shared_ptr<Message> message_ptr = std::move(*message);
     dispatch(message_ptr, *io.second);
   }
 }
 
-void ServerContext::handle_request(const lsp::RequestMessage& req,
+void ServerContext::handle_request(const RequestMessage& req,
                                    std::ostream& io) {
   if (m_callback) {
     m_callback(&req);
   }
 
-  auto response = lsp::ResponseMessage::from_request(req);
+  auto response = ResponseMessage::from_request(req);
 
   auto it = m_request_handlers.find(req.method());
   if (it == m_request_handlers.end()) {
@@ -277,7 +279,7 @@ void ServerContext::handle_request(const lsp::RequestMessage& req,
   }
 }
 
-void ServerContext::handle_notification(const lsp::NotificationMessage& notif) {
+void ServerContext::handle_notification(const NotificationMessage& notif) {
   if (m_callback) {
     m_callback(&notif);
   }
@@ -296,19 +298,18 @@ void ServerContext::handle_notification(const lsp::NotificationMessage& notif) {
   it->second(notif);
 }
 
-void ServerContext::dispatch(const std::shared_ptr<lsp::Message> message,
+void ServerContext::dispatch(const std::shared_ptr<Message> message,
                              std::ostream& io) {
-  if (message->type() == lsp::MessageType::Request) {
-    std::lock_guard<std::mutex> lock(m_request_queue_mutex);
-    m_request_queue.push([this, message, &io]() {
-      handle_request(*std::static_pointer_cast<lsp::RequestMessage>(message),
-                     io);
-    });
-  } else if (message->type() == lsp::MessageType::Notification) {
-    m_thread_pool.QueueJob([this, message](std::stop_token) {
-      handle_notification(
-          *std::static_pointer_cast<lsp::NotificationMessage>(message));
-    });
+  if (message->type() == MessageType::Request) {
+    // std::lock_guard<std::mutex> lock(m_request_queue_mutex);
+    // m_request_queue.push([this, message, &io]() {
+    handle_request(*std::static_pointer_cast<RequestMessage>(message), io);
+    // });
+  } else if (message->type() == MessageType::Notification) {
+    // m_thread_pool.QueueJob([this, message](std::stop_token) {
+    handle_notification(
+        *std::static_pointer_cast<NotificationMessage>(message));
+    // });
   } else {
     LOG(ERROR) << "Unsupported message type";
   }

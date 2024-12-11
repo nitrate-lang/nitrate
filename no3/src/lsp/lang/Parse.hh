@@ -11,7 +11,7 @@ namespace lang {
   class ParseTreeWrapper {
     qlex m_lexer;
     nr_syn context;
-    const npar::Node* m_root;
+    const npar_node_t* m_root;
 
   public:
     ParseTreeWrapper();
@@ -20,13 +20,13 @@ namespace lang {
     bool is_okay() const { return m_root != nullptr; }
     bool from_syncfs(const std::string& uri);
 
-    const npar::Node* root() const { return m_root; }
+    const npar_node_t* root() const { return m_root; }
     qlex_t* lexer() { return m_lexer.get(); }
   };
   using ParseTree = std::shared_ptr<ParseTreeWrapper>;
 
   class ParseTreeCache {
-    std::unordered_map<std::string, std::pair<SyncFS::Digest, ParseTree>>
+    std::unordered_map<std::string, std::pair<SyncFSFile::Digest, ParseTree>>
         m_cache;
     size_t m_cache_size = DEFAULT_CACHE_LIMIT;
 

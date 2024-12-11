@@ -1,3 +1,1 @@
-scope app: []
-scope app: []
-
+scope @(return "name" .. "123");

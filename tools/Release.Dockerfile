@@ -7,8 +7,8 @@ FROM ubuntu:24.04
 RUN apt clean
 RUN apt update --fix-missing && apt upgrade -y
 RUN apt install -y  libboost-all-dev libssl-dev libgoogle-glog-dev   \
-                    libyaml-cpp-dev rapidjson-dev nlohmann-json3-dev \
-                    libreadline-dev libzstd-dev
+                    libyaml-cpp-dev rapidjson-dev libreadline-dev    \
+                    libzstd-dev
 RUN apt install -y cmake make clang
 RUN apt install -y libpolly-18-dev llvm-18
 
@@ -19,7 +19,7 @@ RUN update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
 ########################## Make the build script #######################
 RUN echo "#!/bin/sh" > /opt/build.sh
 RUN echo "mkdir -p /app/.build/release" >> /opt/build.sh
-RUN echo "cmake -S /app -B /app/.build/release -DCMAKE_BUILD_TYPE=Release -DCOVERAGE=OFF -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=/app/build || exit 1" >> /opt/build.sh
+RUN echo "cmake -S /app -B /app/.build/release -DCMAKE_BUILD_TYPE=Release -DCOVERAGE=OFF -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=/app/build || exit 1" >> /opt/build.sh
 RUN echo "cmake --build /app/.build/release -j`nproc` || exit 1" >> /opt/build.sh
 RUN echo "mkdir -p /app/build" >> /opt/build.sh
 RUN echo "rm -rf /app/build/*" >> /opt/build.sh

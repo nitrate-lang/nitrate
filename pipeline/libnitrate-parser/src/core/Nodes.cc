@@ -38,6 +38,7 @@
 
 #include <cstddef>
 #include <cstring>
+#include <nitrate-parser/Writer.hh>
 
 using namespace npar;
 
@@ -59,14 +60,12 @@ C_EXPORT void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }
 
 ///=============================================================================
 
-CPP_EXPORT std::ostream &Node::dump(std::ostream &os,
-                                    bool isForDebug) const noexcept {
+CPP_EXPORT std::ostream &npar_node_t::dump(std::ostream &os,
+                                           bool isForDebug) const noexcept {
   (void)isForDebug;
 
-  size_t size = 0;
-  char *buf = npar_repr(this, false, 2, &size);
-
-  os << std::string_view(buf, size);
+  AST_JsonWriter writer(os);
+  const_cast<npar_node_t *>(this)->accept(writer);
 
   return os;
 }
@@ -100,16 +99,7 @@ Expr *npar::mock_expr(npar_ty_t expected) {
   return &node;
 }
 
-Type *npar::mock_type(npar_ty_t expected) {
-  (void)expected;
-
+Type *npar::mock_type() {
   static Type node(QAST_NODE_NODE);
-  return &node;
-}
-
-Decl *npar::mock_decl(npar_ty_t expected) {
-  (void)expected;
-
-  static Decl node(QAST_NODE_NODE, "", nullptr);
   return &node;
 }

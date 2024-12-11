@@ -50,7 +50,6 @@ typedef uint32_t qlex_flags_t;
 #ifdef __cplusplus
 
 #include <istream>
-#include <memory>
 
 /**
  * @brief Create a new lexer context.
@@ -64,32 +63,13 @@ typedef uint32_t qlex_flags_t;
  * lifetime of the lexer.
  * @note This function is thread-safe.
  */
-qlex_t *qlex_new(std::shared_ptr<std::istream> file, const char *filename,
-                 qcore_env_t env);
+qlex_t *qlex_new(std::istream &file, const char *filename, qcore_env_t env);
 
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Create a new lexer context from a string.
- *
- * @param src Source code.
- * @param len Length of the source code.
- * @param filename Name of the file or NULL for default.
- * @param env Parent environment.
- *
- * @return New lexer context or NULL if an error occurred.
- * @note This function is thread-safe.
- * @note The lifetime of the file stream and environment must exceed the
- * lifetime of the lexer.
- * @warning The source code pointer must be valid for the duration of the lexer
- * context.
- */
-qlex_t *qlex_direct(const char *src, size_t len, const char *filename,
-                    qcore_env_t env);
 
 /**
  * @brief Destroy a lexer context.

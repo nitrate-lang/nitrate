@@ -6,86 +6,8 @@
 #include <fstream>
 #include <lsp/core/SyncFS.hh>
 #include <lsp/core/server.hh>
-#include <sstream>
 
-struct SyncFS::Impl {
-  class File {
-    std::string m_content;
-    std::string m_mime_type;
-    std::vector<std::pair<size_t, size_t>> m_line_to_offset;
-
-    /* Result includes the EOL */
-    bool lsp_read_line(std::stringstream& ss, size_t& line_size,
-                       size_t& line_size_w_eol) {
-      line_size = 0;
-      line_size_w_eol = 0;
-
-      char c;
-      while (ss.get(c)) {
-        if (c == '\r') {
-          line_size_w_eol = ss.peek() == '\n' ? line_size + 2 : line_size + 1;
-          return true;
-        } else if (c == '\n') {
-          line_size_w_eol = line_size + 1;
-          return true;
-        }
-        line_size++;
-      }
-
-      line_size_w_eol = line_size;
-      return line_size > 0;
-    }
-
-    void sync() {
-      m_line_to_offset.clear();
-      m_line_to_offset.shrink_to_fit();
-
-      std::stringstream ss(m_content);
-      size_t offset = 0, line_size_w_eol, line_size;
-      while (lsp_read_line(ss, line_size, line_size_w_eol)) {
-        m_line_to_offset.emplace_back(offset, line_size);
-        offset += line_size_w_eol;
-      }
-
-      if (m_line_to_offset.empty()) {  // never empty
-        m_line_to_offset.emplace_back(0, 0);
-      }
-
-      m_line_to_offset.shrink_to_fit();
-    }
-
-  public:
-    File(std::string_view mime_type) : m_mime_type(mime_type) { sync(); }
-
-    const std::string& content() const { return m_content; }
-
-    void set_content(std::string_view content) {
-      m_content = content;
-      sync();
-    }
-
-    void replace(size_t offset, size_t length, std::string_view text) {
-      m_content.replace(offset, length, text);
-      sync();
-    }
-
-    size_t get_size() const { return m_content.size(); }
-
-    const char* get_mime_type() const { return m_mime_type.c_str(); }
-  };
-
-  std::unordered_map<std::string, File> m_files;
-};
-
-std::optional<size_t> SyncFS::compressed_size() {
-  // No compression yet
-  return size();
-}
-
-SyncFS::SyncFS() {
-  m_impl = std::make_unique<Impl>();
-  LOG(INFO) << "Creating mirrored file system abstraction";
-}
+SyncFS::SyncFS() { LOG(INFO) << "Creating mirrored file system abstraction"; }
 
 SyncFS::~SyncFS() {
   LOG(INFO) << "Destroying mirrored file system abstraction";
@@ -126,137 +48,64 @@ static std::string url_decode(std::string_view str) {
 
   return result;
 }
-void SyncFS::select_uri(std::string_view uri) {
+
+std::optional<std::shared_ptr<SyncFSFile>> SyncFS::open(std::string path) {
+  path = url_decode(path);
+  if (path.starts_with("file://")) {
+    path = path.substr(7);
+  }
+
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  if (!uri.starts_with("file://")) {
-    LOG(ERROR) << "URI scheme not supported: " << uri;
-    return;
-  }
-  uri.remove_prefix(7);  // remove "file://"
-  m_current = url_decode(uri);
-}
-
-SyncFS::OpenCode SyncFS::open(std::string_view mime_type) {
-  std::lock_guard<std::mutex> lock(m_mutex);
-
-  auto it = m_impl->m_files.find(m_current);
-  if (it != m_impl->m_files.end()) [[likely]] {
-    m_opened = true;
-    return OpenCode::ALREADY_OPEN;
+  auto it = m_files.find(path);
+  if (it != m_files.end()) [[likely]] {
+    LOG(INFO) << "SyncFS: File already open: " << path;
+    return it->second;
   }
 
-  if (!std::filesystem::exists(m_current)) {
-    m_opened = false;
-    return OpenCode::NOT_FOUND;
+  if (!std::filesystem::exists(path)) {
+    LOG(ERROR) << "SyncFS: File not found: " << path;
+    return std::nullopt;
   }
 
-  std::ifstream file(m_current);
+  LOG(INFO) << "SyncFS: Opening file: " << path;
+
+  std::ifstream file(path);
   if (!file.is_open()) {
-    m_opened = false;
-    return OpenCode::OPEN_FAILED;
+    LOG(ERROR) << "SyncFS: Failed to open file: " << path;
+    return std::nullopt;
   }
 
   std::string content((std::istreambuf_iterator<char>(file)),
                       std::istreambuf_iterator<char>());
 
-  Impl::File f(mime_type);
-  f.set_content(std::move(content));
-  m_impl->m_files.emplace(m_current, std::move(f));
+  auto ptr = std::make_shared<SyncFSFile>();
+  ptr->set_content(std::make_shared<std::string>(std::move(content)));
 
-  m_opened = true;
-  return OpenCode::OK;
+  m_files[path] = ptr;
+
+  return ptr;
 }
 
-SyncFS::CloseCode SyncFS::close() {
-  m_opened = false;
-
+void SyncFS::close(const std::string& name) {
   std::lock_guard<std::mutex> lock(m_mutex);
-
-  auto it = m_impl->m_files.find(m_current);
-  if (it != m_impl->m_files.end()) [[likely]] {
-    m_impl->m_files.erase(it);
-    return CloseCode::OK;
-  }
-
-  return CloseCode::NOT_OPEN;
+  m_files.erase(name);
 }
 
-SyncFS::ReplaceCode SyncFS::replace(size_t offset, size_t length,
-                                    std::string_view text) {
+///===========================================================================
+
+SyncFSFile::Digest SyncFSFile::thumbprint() {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  auto it = m_impl->m_files.find(m_current);
-  if (it != m_impl->m_files.end()) [[likely]] {
-    it->second.replace(offset, length, text);
-
-    return ReplaceCode::OK;
-  }
-
-  return ReplaceCode::NOT_OPEN;
-}
-
-std::optional<const char*> SyncFS::mime_type() {
-  std::lock_guard<std::mutex> lock(m_mutex);
-
-  auto it = m_impl->m_files.find(m_current);
-  if (it != m_impl->m_files.end()) [[likely]] {
-    return it->second.get_mime_type();
-  }
-  return std::nullopt;
-}
-
-std::optional<size_t> SyncFS::size() {
-  std::lock_guard<std::mutex> lock(m_mutex);
-
-  auto it = m_impl->m_files.find(m_current);
-  if (it != m_impl->m_files.end()) [[likely]] {
-    return it->second.get_size();
-  }
-  return std::nullopt;
-}
-
-bool SyncFS::read_current(std::string& content) {
-  std::lock_guard<std::mutex> lock(m_mutex);
-
-  auto it = m_impl->m_files.find(m_current);
-  if (it != m_impl->m_files.end()) [[likely]] {
-    content = it->second.content();
-    return true;
-  }
-  return false;
-}
-
-std::optional<std::array<uint8_t, 20>> SyncFS::thumbprint() {
-  std::lock_guard<std::mutex> lock(m_mutex);
-
-  auto it = m_impl->m_files.find(m_current);
-  if (it != m_impl->m_files.end()) [[likely]] {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    SHA_CTX ctx;
-    SHA1_Init(&ctx);
-    SHA1_Update(&ctx, it->second.content().data(), it->second.content().size());
+  SHA_CTX ctx;
+  SHA1_Init(&ctx);
+  SHA1_Update(&ctx, content()->data(), content()->size());
 
-    std::array<uint8_t, 20> digest;
-    SHA1_Final(digest.data(), &ctx);
+  std::array<uint8_t, 20> digest;
+  SHA1_Final(digest.data(), &ctx);
 #pragma GCC diagnostic pop
 
-    return digest;
-  }
-
-  return std::nullopt;
-}
-
-void SyncFS::wait_for_open() {
-  while (true) {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    if (m_impl->m_files.contains(m_current)) {
-      return;
-    }
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(2));
-  }
-
-  return;
+  return digest;
 }

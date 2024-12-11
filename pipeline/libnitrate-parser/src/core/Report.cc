@@ -130,6 +130,7 @@ std::string DiagnosticManager::mint_clang16_message(
 
 void DiagnosticManager::push(DiagMessage &&msg) {
   m_msgs.push_back(std::move(msg));
+  m_parser->failed = true;
 }
 
 size_t DiagnosticManager::render(DiagnosticMessageHandler handler,

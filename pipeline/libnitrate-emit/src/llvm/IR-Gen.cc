@@ -80,6 +80,12 @@
 #include <streambuf>
 #include <unordered_map>
 
+#if NITRATE_SHARED == 1
+#define BOOST_NO_EXCEPTIONS
+#include <boost/throw_exception.hpp>
+void boost::throw_exception(std::exception const &e) { qcore_panic(e.what()); }
+#endif
+
 /// TODO: Find way to remove the 's.branch_early' edge case
 
 using namespace llvm;

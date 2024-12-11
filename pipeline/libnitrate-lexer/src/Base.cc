@@ -46,35 +46,12 @@
 #include <cstdio>
 #include <ios>
 #include <nitrate-lexer/Base.hh>
-#include <sstream>
 #include <utility>
 
 #include "nitrate-core/Env.h"
 #include "nitrate-lexer/Token.h"
 
 ///============================================================================///
-
-C_EXPORT qlex_t *qlex_direct(const char *src, size_t len, const char *filename,
-                             qcore_env_t env) {
-  try {
-    if (!filename) {
-      filename = "<unknown>";
-    }
-
-    auto ss = std::make_shared<std::istringstream>(std::string(src, len));
-
-    qlex_t *obj = qlex_new(ss, filename, env);
-    if (!obj) {
-      return nullptr;
-    }
-
-    return obj;
-  } catch (std::bad_alloc &) {
-    return nullptr;
-  } catch (...) {
-    return nullptr;
-  }
-}
 
 C_EXPORT void qlex_free(qlex_t *obj) {
   try {
@@ -134,28 +111,28 @@ C_EXPORT uint32_t qlex_offset(qlex_t *obj, uint32_t base, uint32_t offset) {
       return res;
     }
 
-    if ((curpos = obj->m_file->tellg()) == -1) {
+    if ((curpos = obj->m_file.tellg()) == -1) {
       return res;
     }
 
-    obj->m_file->seekg(*seek_base_pos + offset, std::ios_base::beg);
+    obj->m_file.seekg(*seek_base_pos + offset, std::ios_base::beg);
 
     bufsz = offset;
 
     if ((buf = (uint8_t *)malloc(bufsz + 1)) == nullptr) {
-      obj->m_file->seekg(curpos, std::ios_base::beg);
+      obj->m_file.seekg(curpos, std::ios_base::beg);
       return res;
     }
 
-    if (!obj->m_file->read((char *)buf, bufsz)) {
+    if (!obj->m_file.read((char *)buf, bufsz)) {
       free(buf);
-      obj->m_file->seekg(curpos, std::ios_base::beg);
+      obj->m_file.seekg(curpos, std::ios_base::beg);
 
       return res;
     }
 
     buf[bufsz] = '\0';
-    obj->m_file->seekg(curpos, std::ios_base::beg);
+    obj->m_file.seekg(curpos, std::ios_base::beg);
 
     //===== AUTOMATA TO CALCULATE THE NEW ROW AND COLUMN =====//
     uint32_t row, col;
@@ -212,27 +189,27 @@ C_EXPORT uint32_t qlex_spanx(qlex_t *obj, uint32_t start, uint32_t end,
     uint8_t *buf = nullptr;
     std::streamsize bufsz = 0;
 
-    if ((curpos = obj->m_file->tellg()) == -1) {
+    if ((curpos = obj->m_file.tellg()) == -1) {
       return UINT32_MAX;
     }
 
-    obj->m_file->seekg(*begoff, std::ios_base::beg);
+    obj->m_file.seekg(*begoff, std::ios_base::beg);
 
     bufsz = span;
 
     if ((buf = (uint8_t *)malloc(bufsz + 1)) == nullptr) {
-      obj->m_file->seekg(curpos, std::ios_base::beg);
+      obj->m_file.seekg(curpos, std::ios_base::beg);
       return UINT32_MAX;
     }
 
-    if (!obj->m_file->read((char *)buf, bufsz)) {
+    if (!obj->m_file.read((char *)buf, bufsz)) {
       free(buf);
-      obj->m_file->seekg(curpos, std::ios_base::beg);
+      obj->m_file.seekg(curpos, std::ios_base::beg);
       return UINT32_MAX;
     }
 
     buf[bufsz] = '\0';
-    obj->m_file->seekg(curpos, std::ios_base::beg);
+    obj->m_file.seekg(curpos, std::ios_base::beg);
 
     callback((const char *)buf, bufsz, userdata);
 
@@ -299,7 +276,7 @@ C_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, uint32_t *offset) {
     }
 
     { /* Calculate offsets and seek to the correct position */
-      curpos = obj->m_file->tellg();
+      curpos = obj->m_file.tellg();
       if ((long)curpos == -1) {
         return nullptr;
       }
@@ -307,12 +284,12 @@ C_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, uint32_t *offset) {
                           ? 0
                           : tok_beg_offset - SNIPPET_SIZE / 2;
 
-      obj->m_file->seekg(seek_base_pos, std::ios_base::beg);
+      obj->m_file.seekg(seek_base_pos, std::ios_base::beg);
     }
 
     { /* Read the snippet and calculate token offset */
-      obj->m_file->read(snippet_buf, SNIPPET_SIZE);
-      read = obj->m_file->gcount();
+      obj->m_file.read(snippet_buf, SNIPPET_SIZE);
+      read = obj->m_file.gcount();
       memset(snippet_buf + read, 0, SNIPPET_SIZE - read);
 
       if (tok_beg_offset < SNIPPET_SIZE / 2) {
@@ -345,12 +322,12 @@ C_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, uint32_t *offset) {
         memcpy(output, snippet_buf + slice_start, slice_size);
         output[slice_size] = '\0';
         *offset -= slice_start;
-        obj->m_file->seekg(curpos, std::ios_base::beg);
+        obj->m_file.seekg(curpos, std::ios_base::beg);
         return output;
       }
     }
 
-    obj->m_file->seekg(curpos, std::ios_base::beg);
+    obj->m_file.seekg(curpos, std::ios_base::beg);
 
     return nullptr;
   } catch (std::bad_alloc &) {
@@ -478,8 +455,8 @@ class GetCExcept {};
 char qlex_t::getc() {
   /* Refill the buffer if necessary */
   if (m_getc_pos == GETC_BUFFER_SIZE) [[unlikely]] {
-    m_file->read(m_getc_buf.data(), GETC_BUFFER_SIZE);
-    size_t read = m_file->gcount();
+    m_file.read(m_getc_buf.data(), GETC_BUFFER_SIZE);
+    size_t read = m_file.gcount();
 
     if (read == 0) [[unlikely]] {
       throw GetCExcept();
@@ -522,40 +499,44 @@ qlex_tok_t qlex_t::step_buffer() {
 CPP_EXPORT qlex_tok_t qlex_t::next() {
   qlex_tok_t tok;
 
-  if (m_next_tok.ty != qErro) {
-    tok = m_next_tok;
-    m_next_tok.ty = qErro;
+  if (m_next_tok.has_value()) {
+    tok = m_next_tok.value();
+    m_next_tok.reset();
   } else {
     do {
-      m_next_tok.ty = qErro;
+      m_next_tok.reset();
       tok = step_buffer();
     } while (m_flags & QLEX_NO_COMMENTS && tok.ty == qNote);
   }
 
-  return m_current_tok = tok;
+  m_current_tok = tok;
+  return tok;
 }
 
 CPP_EXPORT qlex_tok_t qlex_t::peek() {
-  if (m_next_tok.ty != qErro) {
-    return m_current_tok = m_next_tok;
+  if (m_next_tok.has_value()) {
+    m_current_tok = m_next_tok;
+    return m_next_tok.value();
   }
 
-  return m_current_tok = (m_next_tok = next());
+  m_current_tok = (m_next_tok = next());
+  return m_current_tok.value();
 }
 
-CPP_EXPORT qlex_tok_t qlex_t::current() { return m_current_tok; }
+CPP_EXPORT qlex_tok_t qlex_t::current() {
+  return m_current_tok.value_or(qlex_tok_t());
+}
 
 ///============================================================================///
 
 CPP_EXPORT void qlex_t::push_impl(const qlex_tok_t *tok) {
   m_tok_buf.push_front(*tok);
-  m_next_tok.ty = qErro;
+  m_next_tok.reset();
 }
 
 CPP_EXPORT void qlex_t::collect_impl(const qlex_tok_t *tok) {
   switch (tok->ty) {
     case qEofF:
-    case qErro:
     case qKeyW:
     case qOper:
     case qPunc:

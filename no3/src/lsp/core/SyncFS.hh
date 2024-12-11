@@ -1,23 +1,61 @@
 #pragma once
 
-#include <atomic>
+#include <glog/logging.h>
+
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
+
+class SyncFSFile {
+  std::shared_ptr<std::string> m_content;
+  std::mutex m_mutex;
+
+public:
+  SyncFSFile() = default;
+  using Digest = std::array<uint8_t, 20>;
+
+  bool replace(size_t offset, int64_t length, std::string_view text) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    if (length < 0) {  // negative length starts from the end
+      length = m_content->size() - offset + length;
+    }
+
+    if (offset + length > m_content->size()) {
+      LOG(ERROR) << "Invalid replace operation: offset=" << offset
+                 << ", length=" << length << ", size=" << m_content->size();
+      return false;
+    }
+
+    m_content->replace(offset, length, text);
+
+    return true;
+  }
+
+  Digest thumbprint();
+
+  std::shared_ptr<const std::string> content() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_content;
+  }
+
+  size_t size() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_content->size();
+  };
+
+  void set_content(std::shared_ptr<std::string> content) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_content = content;
+  }
+};
 
 class SyncFS {
   struct Impl;
-  std::unique_ptr<Impl> m_impl;
-  std::string m_current;
+  std::unordered_map<std::string, std::shared_ptr<SyncFSFile>> m_files;
   std::mutex m_mutex;
-  std::atomic<bool> m_opened;
-
-  /**
-   * @brief Get the current file compressed size in bytes.
-   * @note This function is thread-safe.
-   * @note This is how much space the file takes in memory.
-   */
-  std::optional<size_t> compressed_size();
 
   SyncFS();
   ~SyncFS();
@@ -27,106 +65,9 @@ class SyncFS {
   SyncFS(SyncFS&&) = delete;
 
 public:
-  enum class OpenCode {
-    OK,
-    NOT_FOUND,
-    ALREADY_OPEN,
-    OPEN_FAILED,
-  };
-
-  enum class CloseCode {
-    OK,
-    NOT_OPEN,
-    CLOSE_FAILED,
-  };
-
-  enum class ReplaceCode {
-    OK,
-    NOT_OPEN,
-    REPLACE_FAILED,
-  };
-
   static SyncFS& the();
 
-  /**
-   * @brief Set the current file to act on.
-   * @note This is a thread-local operation.
-   */
-  void select_uri(std::string_view uri);
+  std::optional<std::shared_ptr<SyncFSFile>> open(std::string name);
 
-  ///===========================================================================
-  /// BEGIN: Data synchronization functions
-  ///===========================================================================
-
-  /**
-   * @brief Open the current file.
-   * @note This function is thread-safe.
-   */
-  OpenCode open(std::string_view mime_type);
-
-  /**
-   * @brief Close the current file.
-   * @note This function is thread-safe.
-   */
-  CloseCode close();
-
-  /**
-   * @brief Replace a portion of the current file with new text.
-   * @note This function is thread-safe.
-   */
-  ReplaceCode replace(size_t offset, size_t length, std::string_view text);
-
-  ///===========================================================================
-  /// END: Data synchronization functions
-  ///===========================================================================
-
-  ///===========================================================================
-  /// BEGIN: Data access functions
-  ///===========================================================================
-
-  /**
-   * @brief Get the current file mime type.
-   * @note This function is thread-safe.
-   */
-  std::optional<const char*> mime_type();
-
-  /**
-   * @brief Get the current file size in bytes.
-   * @note This function is thread-safe.
-   */
-  std::optional<size_t> size();
-
-  /**
-   * @brief Get the current file content.
-   * @param[out] content The content of the current file.
-   * @return True if the file was read successfully, false otherwise.
-   * @note This function is thread-safe.
-   */
-  bool read_current(std::string& content);
-
-  using Digest = std::array<uint8_t, 20>;
-
-  std::optional<Digest> thumbprint();
-
-  void wait_for_open();
-
-  // /**
-  //  * @brief Convert a row-column pair to an absolute offset.
-  //  * @param row The row number (0-based).
-  //  * @param col The column number (0-based).
-  //  * @return The absolute offset in bytes.
-  //  * @note The row and column arguments are clamped to the file boundaries.
-  //  If you read the 5000th
-  //  * column when the file has only 3 columns, the function will return the
-  //  offset in the 3rd column.
-  //  * If you return the 5000th row when the file has only 3 rows, the function
-  //  will return the offset
-  //  * in the 3rd row.
-  //  * @note This function is thread-safe.
-  //  */
-  // std::optional<size_t> rc2abs(size_t row, size_t col) const;
-
-  ///===========================================================================
-  /// END: Data access functions
-  ///===========================================================================
+  void close(const std::string& name);
 };

@@ -37,7 +37,6 @@
 #ifndef __cplusplus
 #error "This header is C++ only."
 #endif
-
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>
@@ -51,6 +50,7 @@
 #include <iostream>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-ir/Module.hh>
+#include <nitrate-ir/Visitor.hh>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -327,7 +327,7 @@ namespace nr {
       }
 #endif
 
-      return static_cast<T *>(ptr);
+      return reinterpret_cast<T *>(ptr);
     }
 
     /**
@@ -379,6 +379,245 @@ namespace nr {
      * location, etc.
      */
     constexpr bool isSame(const Expr *other) const;
+
+    constexpr void accept(NRVisitor &v) {
+      switch (getKind()) {
+        case NR_NODE_BINEXPR: {
+          v.visit(*as<BinExpr>());
+          break;
+        }
+
+        case NR_NODE_UNEXPR: {
+          v.visit(*as<UnExpr>());
+          break;
+        }
+
+        case NR_NODE_POST_UNEXPR: {
+          v.visit(*as<PostUnExpr>());
+          break;
+        }
+
+        case NR_NODE_INT: {
+          v.visit(*as<Int>());
+          break;
+        }
+
+        case NR_NODE_FLOAT: {
+          v.visit(*as<Float>());
+          break;
+        }
+
+        case NR_NODE_LIST: {
+          v.visit(*as<List>());
+          break;
+        }
+
+        case NR_NODE_CALL: {
+          v.visit(*as<Call>());
+          break;
+        }
+
+        case NR_NODE_SEQ: {
+          v.visit(*as<Seq>());
+          break;
+        }
+
+        case NR_NODE_INDEX: {
+          v.visit(*as<Index>());
+          break;
+        }
+
+        case NR_NODE_IDENT: {
+          v.visit(*as<Ident>());
+          break;
+        }
+
+        case NR_NODE_EXTERN: {
+          v.visit(*as<Extern>());
+          break;
+        }
+
+        case NR_NODE_LOCAL: {
+          v.visit(*as<Local>());
+          break;
+        }
+
+        case NR_NODE_RET: {
+          v.visit(*as<Ret>());
+          break;
+        }
+
+        case NR_NODE_BRK: {
+          v.visit(*as<Brk>());
+          break;
+        }
+
+        case NR_NODE_CONT: {
+          v.visit(*as<Cont>());
+          break;
+        }
+
+        case NR_NODE_IF: {
+          v.visit(*as<If>());
+          break;
+        }
+
+        case NR_NODE_WHILE: {
+          v.visit(*as<While>());
+          break;
+        }
+
+        case NR_NODE_FOR: {
+          v.visit(*as<For>());
+          break;
+        }
+
+        case NR_NODE_CASE: {
+          v.visit(*as<Case>());
+          break;
+        }
+
+        case NR_NODE_SWITCH: {
+          v.visit(*as<Switch>());
+          break;
+        }
+
+        case NR_NODE_FN: {
+          v.visit(*as<Fn>());
+          break;
+        }
+
+        case NR_NODE_ASM: {
+          v.visit(*as<Asm>());
+          break;
+        }
+
+        case NR_NODE_IGN: {
+          v.visit(*as<Expr>());
+          break;
+        }
+
+        case NR_NODE_U1_TY: {
+          v.visit(*as<U1Ty>());
+          break;
+        }
+
+        case NR_NODE_U8_TY: {
+          v.visit(*as<U8Ty>());
+          break;
+        }
+
+        case NR_NODE_U16_TY: {
+          v.visit(*as<U16Ty>());
+          break;
+        }
+
+        case NR_NODE_U32_TY: {
+          v.visit(*as<U32Ty>());
+          break;
+        }
+
+        case NR_NODE_U64_TY: {
+          v.visit(*as<U64Ty>());
+          break;
+        }
+
+        case NR_NODE_U128_TY: {
+          v.visit(*as<U128Ty>());
+          break;
+        }
+
+        case NR_NODE_I8_TY: {
+          v.visit(*as<I8Ty>());
+          break;
+        }
+
+        case NR_NODE_I16_TY: {
+          v.visit(*as<I16Ty>());
+          break;
+        }
+
+        case NR_NODE_I32_TY: {
+          v.visit(*as<I32Ty>());
+          break;
+        }
+
+        case NR_NODE_I64_TY: {
+          v.visit(*as<I64Ty>());
+          break;
+        }
+
+        case NR_NODE_I128_TY: {
+          v.visit(*as<I128Ty>());
+          break;
+        }
+
+        case NR_NODE_F16_TY: {
+          v.visit(*as<F16Ty>());
+          break;
+        }
+
+        case NR_NODE_F32_TY: {
+          v.visit(*as<F32Ty>());
+          break;
+        }
+
+        case NR_NODE_F64_TY: {
+          v.visit(*as<F64Ty>());
+          break;
+        }
+
+        case NR_NODE_F128_TY: {
+          v.visit(*as<F128Ty>());
+          break;
+        }
+
+        case NR_NODE_VOID_TY: {
+          v.visit(*as<VoidTy>());
+          break;
+        }
+
+        case NR_NODE_PTR_TY: {
+          v.visit(*as<PtrTy>());
+          break;
+        }
+
+        case NR_NODE_CONST_TY: {
+          v.visit(*as<ConstTy>());
+          break;
+        }
+
+        case NR_NODE_OPAQUE_TY: {
+          v.visit(*as<OpaqueTy>());
+          break;
+        }
+
+        case NR_NODE_STRUCT_TY: {
+          v.visit(*as<StructTy>());
+          break;
+        }
+
+        case NR_NODE_UNION_TY: {
+          v.visit(*as<UnionTy>());
+          break;
+        }
+
+        case NR_NODE_ARRAY_TY: {
+          v.visit(*as<ArrayTy>());
+          break;
+        }
+
+        case NR_NODE_FN_TY: {
+          v.visit(*as<FnTy>());
+          break;
+        }
+
+        case NR_NODE_TMP: {
+          v.visit(*as<Tmp>());
+          break;
+        }
+      }
+    }
 
     bool isAcyclic() const noexcept;
 
@@ -2196,7 +2435,7 @@ namespace nr {
       }
     }
 
-    __builtin_unreachable();
+    qcore_panic("unreachable");
   }
 
   Expr *createIgn();

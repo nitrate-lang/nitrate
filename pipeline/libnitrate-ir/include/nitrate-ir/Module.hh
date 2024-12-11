@@ -44,6 +44,7 @@
 #include <memory>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-ir/Report.hh>
+#include <nitrate-ir/Visitor.hh>
 #include <string>
 #include <vector>
 
@@ -80,59 +81,6 @@ namespace nr {
   };
 
   class Expr;
-
-}  // namespace nr
-
-namespace nr {
-  class Expr;
-  class Type;
-  class BinExpr;
-  class UnExpr;
-  class PostUnExpr;
-  class U1Ty;
-  class U8Ty;
-  class U16Ty;
-  class U32Ty;
-  class U64Ty;
-  class U128Ty;
-  class I8Ty;
-  class I16Ty;
-  class I32Ty;
-  class I64Ty;
-  class I128Ty;
-  class F16Ty;
-  class F32Ty;
-  class F64Ty;
-  class F128Ty;
-  class VoidTy;
-  class PtrTy;
-  class ConstTy;
-  class OpaqueTy;
-  class StructTy;
-  class UnionTy;
-  class ArrayTy;
-  class FnTy;
-  class Int;
-  class Float;
-  class List;
-  class Call;
-  class Seq;
-  class Index;
-  class Ident;
-  class Extern;
-  class Local;
-  class Ret;
-  class Brk;
-  class Cont;
-  class If;
-  class While;
-  class For;
-  class Form;
-  class Case;
-  class Switch;
-  class Fn;
-  class Asm;
-  class Tmp;
 
   enum class ModulePassType {
     Transform,
@@ -241,6 +189,8 @@ public:
   }
 
   const nr::TargetInfo &getTargetInfo() const { return m_target_info; }
+
+  void accept(nr::NRVisitor &visitor);
 };
 
 constexpr size_t QMODULE_SIZE = sizeof(qmodule_t);

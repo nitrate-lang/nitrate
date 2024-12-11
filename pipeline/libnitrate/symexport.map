@@ -1,6 +1,7 @@
 {
     global:
         nit_*;
+        *nitrate8pipeline*;
     local:
         *;
 };

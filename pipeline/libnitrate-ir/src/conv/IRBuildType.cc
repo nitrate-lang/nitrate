@@ -295,7 +295,6 @@ ArrayTy *NRBuilder::getArrayTy(Type *element_ty,
 
 FnTy *NRBuilder::getFnTy(std::span<Type *> params, Type *ret_ty,
                          bool is_variadic, Purity purity, bool thread_safe,
-                         bool is_noexcept,
                          bool foreign SOURCE_LOCATION_PARAM) noexcept {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
@@ -316,7 +315,6 @@ FnTy *NRBuilder::getFnTy(std::span<Type *> params, Type *ret_ty,
   /// FIXME: Do something useful with this information
   (void)purity;
   (void)thread_safe;
-  (void)is_noexcept;
   (void)foreign;
 
   FnTy *fn_ty =

@@ -81,7 +81,7 @@ private:
   std::deque<qlex_tok_t> m_tok_buf;
   std::deque<char> m_pushback;
 
-  qlex_tok_t m_next_tok, m_current_tok;
+  std::optional<qlex_tok_t> m_next_tok, m_current_tok;
 
   uint32_t m_row;
   uint32_t m_col;
@@ -114,7 +114,7 @@ public:
   qlex_flags_t m_flags;
 
   const char *m_filename;
-  std::shared_ptr<std::istream> m_file;
+  std::istream &m_file;
 
   ///============================================================================///
 
@@ -140,8 +140,7 @@ public:
 
   ///============================================================================///
 
-  qlex_t(std::shared_ptr<std::istream> file, const char *filename,
-         qcore_env_t env)
+  qlex_t(std::istream &file, const char *filename, qcore_env_t env)
       : m_getc_pos(GETC_BUFFER_SIZE),
         m_next_tok({}),
         m_current_tok({}),
@@ -158,8 +157,6 @@ public:
     if (!m_filename) {
       m_filename = "<unknown>";
     }
-
-    m_next_tok.ty = qErro;
   }
   virtual ~qlex_t() {}
 };

@@ -38,9 +38,11 @@
 #include <nitrate-core/Lib.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
+#include <nitrate-ir/IR.h>
 #include <nitrate-ir/Lib.h>
 #include <nitrate-lexer/Lib.h>
 #include <nitrate-parser/Lib.h>
+#include <nitrate-parser/Parser.h>
 #include <nitrate-seq/Lib.h>
 
 #include <clean/Cleanup.hh>
@@ -53,12 +55,10 @@
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-parser/Classes.hh>
+#include <nitrate-parser/Writer.hh>
 #include <nitrate-seq/Classes.hh>
 #include <string_view>
 #include <unordered_map>
-
-#include "nitrate-ir/IR.h"
-#include "nitrate-parser/Parser.h"
 
 using namespace argparse;
 using namespace no3;
@@ -128,8 +128,8 @@ namespace no3::benchmark {
 static int do_parse(std::string source, std::string output) {
   qcore_env env;
 
-  auto file = std::make_shared<std::fstream>(source, std::ios::in);
-  if (!file->is_open()) {
+  std::fstream file(source, std::ios::in);
+  if (!file.is_open()) {
     LOG(ERROR) << "Failed to open source file: " << source;
     return 1;
   }
@@ -162,12 +162,9 @@ static int do_parse(std::string source, std::string output) {
       out = out_ptr.get();
     }
 
-    size_t len = 0;
-    char *serialized = npar_repr(tree, false, 2, &len);
-    std::string repr(serialized, len);
-    free(serialized);
-
-    *out << repr << std::endl;
+    npar::AST_JsonWriter writer(*out);
+    tree->accept(writer);
+    *out << std::endl;
   }
 
   return 0;
@@ -181,8 +178,8 @@ static int do_nr(std::string source, std::string output, std::string opts,
 
   qcore_env env;
 
-  auto file = std::make_shared<std::fstream>(source, std::ios::in);
-  if (!file->is_open()) {
+  std::fstream file(source, std::ios::in);
+  if (!file.is_open()) {
     LOG(ERROR) << "Failed to open source file: " << source;
     return 1;
   }
@@ -251,8 +248,8 @@ static int do_codegen(std::string source, std::string output, std::string opts,
 
   qcore_env env;
 
-  auto file = std::make_shared<std::fstream>(source, std::ios::in);
-  if (!file->is_open()) {
+  std::fstream file(source, std::ios::in);
+  if (!file.is_open()) {
     LOG(ERROR) << "Failed to open source file: " << source;
     return 1;
   }

@@ -98,8 +98,9 @@ using EResult = std::optional<Expr *>;
 using BResult = std::optional<std::vector<nr::Expr *>>;
 
 static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, IReport *G,
-                                           npar::Node *node);
-static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar::Node *node);
+                                           npar_node_t *node);
+static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G,
+                         npar_node_t *node);
 
 #define next_one(n) nrgen_one(b, s, G, n)
 #define next_any(n) nrgen_any(b, s, G, n)
@@ -127,8 +128,7 @@ C_EXPORT bool nr_lower(qmodule_t **mod, npar_node_t *base, const char *name,
   qmodule_t *R = nullptr;
   bool success = false;
 
-  if (auto root =
-          nrgen_one(builder, s, G.get(), static_cast<npar::Node *>(base))) {
+  if (auto root = nrgen_one(builder, s, G.get(), base)) {
     builder.appendToRoot(root.value());
     builder.finish();
 
@@ -1034,26 +1034,6 @@ static EResult nrgen_opaque_ty(NRBuilder &b, PState &, IReport *,
   return b.getOpaqueTy(n->get_name());
 }
 
-static EResult nrgen_struct_ty(NRBuilder &b, PState &s, IReport *G,
-                               npar::StructTy *n) {
-  const npar::StructItems &fields = n->get_items();
-
-  std::vector<Type *> the_fields(fields.size());
-
-  for (size_t i = 0; i < the_fields.size(); i++) {
-    auto item = next_one(fields[i].second);
-    if (!item.has_value()) {
-      G->report(CompilerError, IC::Error, "Failed to lower struct field",
-                n->get_pos());
-      return std::nullopt;
-    }
-
-    the_fields[i] = item.value()->asType();
-  }
-
-  return b.getStructTy(the_fields);
-}
-
 static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G,
                               npar::ArrayTy *n) {
   auto item = next_one(n->get_item());
@@ -1160,7 +1140,7 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
   auto props = convert_purity(n->get_purity());
 
   return b.getFnTy(params, ret.value()->asType(), n->is_variadic(), props.first,
-                   props.second, n->is_noexcept(), n->is_foreign());
+                   props.second, n->is_foreign());
 }
 
 static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *,
@@ -1182,7 +1162,7 @@ static EResult nrgen_templ_ty(NRBuilder &, PState &, IReport *G,
 }
 
 static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
-                             npar::TypedefDecl *n) {
+                             npar::TypedefStmt *n) {
   auto type = next_one(n->get_type());
   if (!type.has_value()) {
     G->report(nr::CompilerError, IC::Error,
@@ -1394,7 +1374,7 @@ static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G,
   Fn *fndecl = b.createFunctionDeclaration(
       b.intern(s.join_scope(n->get_name())), parameters,
       ret_type.value()->asType(), func_ty->is_variadic(), Vis::Pub, props.first,
-      props.second, func_ty->is_noexcept(), func_ty->is_foreign());
+      props.second, func_ty->is_foreign());
 
   fndecl->setAbiTag(s.abi_mode);
 
@@ -1496,8 +1476,7 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
 
     Fn *fndef = b.createFunctionDefintion(
         name, parameters, ret_type.value()->asType(), func_ty->is_variadic(),
-        Vis::Pub, props.first, props.second, func_ty->is_noexcept(),
-        func_ty->is_foreign());
+        Vis::Pub, props.first, props.second, func_ty->is_foreign());
 
     fndef->setAbiTag(s.abi_mode);
 
@@ -1527,7 +1506,7 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
 }
 
 static BResult nrgen_scope(NRBuilder &b, PState &s, IReport *G,
-                           npar::ScopeDecl *n) {
+                           npar::ScopeStmt *n) {
   if (!n->get_body()->is(QAST_NODE_BLOCK)) {
     return std::nullopt;
   }
@@ -1548,7 +1527,7 @@ static BResult nrgen_scope(NRBuilder &b, PState &s, IReport *G,
 }
 
 static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
-                            npar::ExportDecl *n) {
+                            npar::ExportStmt *n) {
   static const std::unordered_map<std::string_view,
                                   std::pair<std::string_view, AbiTag>>
       abi_name_map = {
@@ -1787,9 +1766,9 @@ static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G,
                          npar::ForStmt *n) {
   s.inc_scope();
 
-  auto init = next_one(n->get_init());
-  auto cond = next_one(n->get_cond());
-  auto step = next_one(n->get_step());
+  auto init = next_one(n->get_init().value_or(nullptr));
+  auto cond = next_one(n->get_cond().value_or(nullptr));
+  auto step = next_one(n->get_step().value_or(nullptr));
   auto body = next_one(n->get_body());
 
   if (!init.has_value()) {
@@ -1894,7 +1873,7 @@ static EResult nrgen_expr_stmt(NRBuilder &b, PState &s, IReport *G,
   return next_one(n->get_expr());
 }
 
-static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar::Node *n) {
+static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
   using namespace nr;
 
   if (!n) {
@@ -2076,10 +2055,6 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar::Node *n) {
       out = nrgen_opaque_ty(b, s, G, n->as<npar::OpaqueTy>());
       break;
 
-    case QAST_NODE_STRUCT_TY:
-      out = nrgen_struct_ty(b, s, G, n->as<npar::StructTy>());
-      break;
-
     case QAST_NODE_ARRAY_TY:
       out = nrgen_array_ty(b, s, G, n->as<npar::ArrayTy>());
       break;
@@ -2180,7 +2155,7 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar::Node *n) {
   return out;
 }
 
-static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar::Node *n) {
+static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
   using namespace nr;
 
   if (!n) {
@@ -2191,7 +2166,7 @@ static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar::Node *n) {
 
   switch (n->getKind()) {
     case QAST_NODE_TYPEDEF:
-      out = nrgen_typedef(b, s, G, n->as<npar::TypedefDecl>());
+      out = nrgen_typedef(b, s, G, n->as<npar::TypedefStmt>());
       break;
 
     case QAST_NODE_ENUM:
@@ -2202,12 +2177,12 @@ static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar::Node *n) {
       out = nrgen_struct(b, s, G, n->as<npar::StructDef>());
       break;
 
-    case QAST_NODE_SUBSYSTEM:
-      out = nrgen_scope(b, s, G, n->as<npar::ScopeDecl>());
+    case QAST_NODE_SCOPE:
+      out = nrgen_scope(b, s, G, n->as<npar::ScopeStmt>());
       break;
 
     case QAST_NODE_EXPORT:
-      out = nrgen_export(b, s, G, n->as<npar::ExportDecl>());
+      out = nrgen_export(b, s, G, n->as<npar::ExportStmt>());
       break;
 
     default: {

@@ -1,3 +1,4 @@
+#include <nitrate-core/Macro.h>
 #include <rapidjson/allocators.h>
 #include <rapidjson/document.h>
 
@@ -6,15 +7,11 @@
 #include <lsp/route/RoutesList.hh>
 #include <string>
 
-using namespace rapidjson;
-
 typedef int64_t DocVersion;
 
-struct Change {
-  std::string text;
-};
-
 void do_didChange(const lsp::NotificationMessage& notif) {
+  using namespace rapidjson;
+
   if (!notif.params().HasMember("textDocument")) {
     LOG(ERROR) << "Missing textDocument field in didChange notification";
     return;
@@ -26,7 +23,7 @@ void do_didChange(const lsp::NotificationMessage& notif) {
     return;
   }
 
-  const auto& text_document = notif.params()["textDocument"];
+  let text_document = notif.params()["textDocument"];
 
   if (!text_document.HasMember("uri")) {
     LOG(ERROR) << "Missing uri field in textDocument object";
@@ -48,8 +45,8 @@ void do_didChange(const lsp::NotificationMessage& notif) {
     return;
   }
 
-  std::string uri = text_document["uri"].GetString();
-  DocVersion version = text_document["version"].GetInt64();
+  let uri = text_document["uri"].GetString();
+  let version = text_document["version"].GetInt64();
 
   if (!notif.params().HasMember("contentChanges")) {
     LOG(ERROR) << "Missing contentChanges field in didChange notification";
@@ -62,19 +59,16 @@ void do_didChange(const lsp::NotificationMessage& notif) {
     return;
   }
 
-  const auto& content_changes = notif.params()["contentChanges"].GetArray();
+  let content_changes = notif.params()["contentChanges"].GetArray();
 
-  static std::mutex m;
-  std::lock_guard lock(m);
-  static std::unordered_map<std::string, DocVersion> latest;
-
-  if (latest[uri] > version) {
+  auto file_opt = SyncFS::the().open(uri);
+  if (!file_opt.has_value()) {
     return;
   }
 
-  SyncFS::the().select_uri(uri);
+  auto file = file_opt.value();
 
-  for (const auto& content_change : content_changes) {
+  for (let content_change : content_changes) {
     if (!content_change.IsObject()) {
       LOG(ERROR) << "contentChange in contentChanges array is not an object";
       return;
@@ -89,12 +83,29 @@ void do_didChange(const lsp::NotificationMessage& notif) {
       LOG(ERROR) << "text field in contentChange object is not a string";
       return;
     }
-
-    std::string_view text(content_change["text"].GetString(),
-                          content_change["text"].GetStringLength());
-
-    SyncFS::the().replace(0, SyncFS::the().size().value(), text);
   }
 
-  latest[uri] = version;
+  { /** BEGIN: CRITICAL SECTION */
+    static std::mutex mutex;
+    static std::unordered_map<std::string, DocVersion> latest;
+
+    std::lock_guard<std::mutex> lock(mutex);
+
+    if (latest[uri] >= version) {
+      LOG(INFO) << "Discarding outdated document " << uri << " version "
+                << version << " (latest is " << latest[uri] << ")";
+      return;
+    }
+
+    for (let content_change : content_changes) {
+      std::string_view text(content_change["text"].GetString(),
+                            content_change["text"].GetStringLength());
+
+      file->replace(0, -1, text);
+    }
+
+    latest[uri] = version;
+
+    LOG(INFO) << "Document " << uri << " updated to version " << version;
+  } /** END: CRITICAL SECTION */
 }
