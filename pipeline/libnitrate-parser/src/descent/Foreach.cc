@@ -31,81 +31,84 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: Cleanup this code; it's a mess from refactoring.
-
+#include <nitrate-lexer/Token.h>
 #include <nitrate-parser/Node.h>
 
 #include <descent/Recurse.hh>
 
-npar::Stmt *npar::recurse_foreach(npar_t &S, qlex_t &rd) {
-  qlex_tok_t tok = next();
-  bool has_parens = false;
+using namespace npar;
 
-  if (tok.is<qPuncLPar>()) {
-    has_parens = true;
-    tok = next();
-  }
+std::optional<std::pair<String, String>> recurse_foreach_names(qlex_t &rd) {
+  if (let ident1 = next_if(qName)) {
+    let ident1_value = ident1->as_string(&rd);
 
-  if (!tok.is(qName)) {
-    diagnostic << tok
-               << "Expected identifier as index variable in foreach statement";
-    return mock_stmt(QAST_NODE_FOREACH);
-  }
-
-  let first_ident = tok.as_string(&rd);
-  std::string_view second_ident;
-
-  tok = next();
-
-  if (tok.is<qPuncComa>()) {
-    tok = next();
-
-    if (!tok.is(qName)) {
-      diagnostic
-          << tok
-          << "Expected identifier as value variable in foreach statement";
-      return mock_stmt(QAST_NODE_FOREACH);
-    }
-
-    second_ident = tok.as_string(&rd);
-
-    tok = next();
-  } else {
-    second_ident = "_";
-  }
-
-  if (!tok.is<qOpIn>()) {
-    diagnostic << tok
-               << "Expected 'in' after value variable in foreach statement";
-    return mock_stmt(QAST_NODE_FOREACH);
-  }
-
-  Expr *expr = nullptr;
-  if (has_parens) {
-    expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)});
-    tok = next();
-
-    if (!tok.is<qPuncRPar>()) {
-      diagnostic << tok << "Expected ')' after expression in foreach statement";
-      return mock_stmt(QAST_NODE_FOREACH);
+    if (next_if(qPuncComa)) {
+      if (let ident2 = next_if(qName)) {
+        let ident2_value = ident2->as_string(&rd);
+        return std::make_pair(ident1_value, ident2_value);
+      } else {
+        diagnostic << current() << "Expected identifier in foreach statement";
+      }
+    } else {
+      return std::make_pair("", ident1_value);
     }
   } else {
-    expr = recurse_expr(
+    diagnostic << current() << "Expected identifier in foreach statement";
+  }
+
+  return std::nullopt;
+}
+
+static Expr *recurse_foreach_expr(npar_t &S, qlex_t &rd, bool has_paren) {
+  if (has_paren) {
+    return recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)});
+  } else {
+    return recurse_expr(
         S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
   }
+}
 
-  tok = peek();
-
-  Stmt *block = nullptr;
-  if (tok.is<qOpArrow>()) {
-    next();
-    block = recurse_block(S, rd, false, true);
+static Stmt *recurse_foreach_body(npar_t &S, qlex_t &rd) {
+  if (next_if(qOpArrow)) {
+    return recurse_block(S, rd, false, true);
   } else {
-    block = recurse_block(S, rd);
+    return recurse_block(S, rd, true, false);
+  }
+}
+
+npar::Stmt *npar::recurse_foreach(npar_t &S, qlex_t &rd) {
+  /**
+   * Syntax examples:
+   *   `foreach (i, v in arr) { }`, `foreach (v in arr) { }`
+   *   `foreach (i, v in arr) => v.put(i);`, `foreach (v in arr) => v.put();`
+   */
+
+  bool has_paren = next_if(qPuncLPar).has_value();
+
+  if (let ident_pair_opt = recurse_foreach_names(rd)) {
+    let[index_name, value_name] = ident_pair_opt.value();
+
+    if (next_if(qOpIn)) {
+      let iter_expr = recurse_foreach_expr(S, rd, has_paren);
+      if (has_paren) {
+        if (!next_if(qPuncRPar)) {
+          diagnostic << current() << "Expected ')' in foreach statement";
+        }
+      }
+
+      let body = recurse_foreach_body(S, rd);
+
+      let foreach_stmt =
+          ForeachStmt::get(index_name, value_name, iter_expr, body);
+      foreach_stmt->set_end_pos(current().end);
+
+      return foreach_stmt;
+    } else {
+      diagnostic << current() << "Expected 'in' keyword in foreach statement";
+    }
+  } else {
+    diagnostic << current() << "Expected identifier pair in foreach statement";
   }
 
-  let R = ForeachStmt::get(first_ident, second_ident, expr, block);
-  R->set_end_pos(block->get_end_pos());
-
-  return R;
+  return mock_stmt(QAST_NODE_FOREACH);
 }
