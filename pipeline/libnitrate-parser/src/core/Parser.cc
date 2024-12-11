@@ -97,7 +97,7 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       ExprStmt* stmt = ExprStmt::get(expr);
-      stmt->set_start_pos(std::get<0>(expr->get_pos()));
+      stmt->set_offset(std::get<0>(expr->get_pos()));
 
       block->get_items().push_back(stmt);
       continue;
@@ -287,7 +287,7 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
     }
 
     if (node) {
-      node->set_start_pos(loc_start);
+      node->set_offset(loc_start);
       /* End position is supplied by producer */
       block->get_items().push_back(node);
     }

@@ -66,17 +66,14 @@ namespace nr {
     std::string param;
     uint32_t start_offset;
     uint32_t end_offset;
-    std::string_view filename;
 
     DiagDatum(IssueCode _code, IC _level, std::string _param,
-              uint32_t _start_offset, uint32_t _end_offset,
-              std::string_view _filename)
+              uint32_t _start_offset, uint32_t _end_offset)
         : code(_code),
           level(_level),
           param(std::move(_param)),
           start_offset(_start_offset),
-          end_offset(_end_offset),
-          filename(_filename) {}
+          end_offset(_end_offset) {}
 
     uint64_t hash() const;
   };
@@ -95,8 +92,8 @@ namespace nr {
 
     virtual void report(IssueCode code, IC level,
                         std::vector<std::string_view> params = {},
-                        std::tuple<uint32_t, uint32_t, std::string_view> loc = {
-                            UINT32_MAX, UINT32_MAX, ""}) override;
+                        std::tuple<uint32_t, uint32_t> loc = {
+                            QLEX_EOFF, UINT32_MAX}) override;
 
     virtual void stream_reports(
         std::function<void(const ReportData &)> cb) override;

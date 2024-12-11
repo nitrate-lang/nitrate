@@ -251,16 +251,15 @@ uint64_t DiagDatum::hash() const {
   return std::bit_cast<uint64_t>(bp);
 }
 
-void DiagnosticManager::report(
-    IssueCode code, IC level, std::vector<std::string_view> params,
-    std::tuple<uint32_t, uint32_t, std::string_view> loc) {
+void DiagnosticManager::report(IssueCode code, IC level,
+                               std::vector<std::string_view> params,
+                               std::tuple<uint32_t, uint32_t> loc) {
   std::string message;
   for (auto p : params) {
     message += std::string(p);
   }
 
-  DiagDatum R(code, level, message, std::get<0>(loc), std::get<1>(loc),
-              std::get<2>(loc));
+  DiagDatum R(code, level, message, std::get<0>(loc), std::get<1>(loc));
 
   { /* Prevent duplicates and maintain order of messages */
     auto hash = R.hash();
@@ -282,7 +281,6 @@ void DiagnosticManager::stream_reports(
     datum.param = item.param;
     datum.start_offset = item.start_offset;
     datum.end_offset = item.end_offset;
-    datum.filename = item.filename;
 
     cb(datum);
   }

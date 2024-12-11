@@ -102,7 +102,7 @@ void do_declaration(const lsp::RequestMessage& req,
 
   //   const npar::Decl* decl = node->as<npar::Decl>();
 
-  //   auto start_pos = decl->get_start_pos();
+  //   auto start_pos = decl->get_offset();
 
   //   resp->SetObject();
   //   resp->AddMember("line", qlex_line(tree->lexer(), start_pos),

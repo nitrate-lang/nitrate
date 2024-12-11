@@ -148,14 +148,16 @@ namespace nr {
     QCLASS_REFLECT()
 
     nr_ty_t m_node_type : 6; /* Typecode of this node. */
-    uint64_t m_span : 26;    /* Size of the node in source code.*/
-    uint32_t m_src_offset;   /* Offset into source code where node starts. */
+    uint32_t m_offset : 32;  /* Offset into source code where node starts. */
+    uint32_t m_fileid : 24;  /* File ID of the source file. */
 
     Expr(const Expr &) = delete;
     Expr &operator=(const Expr &) = delete;
 
   public:
-    constexpr Expr(nr_ty_t ty) : m_node_type(ty), m_span(0), m_src_offset(0) {}
+    constexpr Expr(nr_ty_t ty, uint32_t offset = QLEX_EOFF,
+                   uint32_t fileid = UINT32_MAX)
+        : m_node_type(ty), m_offset(offset), m_fileid(fileid) {}
 
     static constexpr uint32_t getKindSize(nr_ty_t kind) noexcept;
     constexpr nr_ty_t getKind() const noexcept { return m_node_type; }
@@ -307,9 +309,8 @@ namespace nr {
     // Returns "" if the construct is not named.
     constexpr std::string_view getName() const noexcept;
 
-    constexpr std::tuple<uint32_t, uint32_t, std::string_view> getLoc()
-        const noexcept {
-      return {m_src_offset, m_src_offset + m_span, ""};
+    constexpr std::tuple<uint32_t, uint32_t> getLoc() const noexcept {
+      return {m_offset, m_fileid};
     }
 
     constexpr std::optional<Type *> getType() const noexcept;

@@ -46,7 +46,7 @@
 #define MAX_LIST_DUP (10000)
 
 static inline npar::Expr *LOC_121(npar::Expr *p, qlex_tok_t t) {
-  p->set_start_pos(t.start);
+  p->set_offset(t.start);
 
   return p;
 }
@@ -696,7 +696,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
           continue;
         } else {
           Ident *id = Ident::get(ident);
-          id->set_start_pos(tok.start);
+          id->set_offset(tok.start);
 
           stack.push(id);
           continue;

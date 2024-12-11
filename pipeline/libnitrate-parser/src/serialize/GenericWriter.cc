@@ -47,10 +47,18 @@ void AST_Writer::write_source_location(npar_node_t& n) const {
     begin_obj(2);
 
     string("beg");
-    uint64(n.get_start_pos());
+    if (n.get_offset() == UINT32_MAX) {
+      uint64(n.get_offset());
+    } else {
+      null();
+    }
 
-    string("src");
-    string(std::get<1>(n.get_pos()));
+    string("fileid");
+    if (n.get_fileid() == UINT32_MAX) {
+      uint64(n.get_fileid());
+    } else {
+      null();
+    }
 
     end_obj();
   }

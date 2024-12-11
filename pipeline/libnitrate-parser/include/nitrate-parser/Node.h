@@ -204,17 +204,20 @@ public:                                                       \
   static __typename *get(Args &&...args) {                    \
     void *ptr = npar::Arena<__typename>().allocate(1);        \
     return new (ptr) __typename(std::forward<Args>(args)...); \
-  }                                                           \
-                                                              \
-public:
+  }
 
 struct npar_node_t {
 private:
-  npar_ty_t m_node_type;
-  uint32_t m_pos_start;
+  npar_ty_t m_node_type : 7;
+  uint32_t m_fileid : 24;
+  uint32_t m_offset : 32;
+  bool m_mock : 1;
 
 public:
-  constexpr npar_node_t(npar_ty_t ty) : m_node_type(ty), m_pos_start(0){};
+  constexpr npar_node_t(npar_ty_t ty, bool mock = false,
+                        uint32_t fileid = UINT32_MAX,
+                        uint32_t offset = UINT32_MAX)
+      : m_node_type(ty), m_fileid(fileid), m_offset(offset), m_mock(mock){};
 
   constexpr void accept(npar::ASTVisitor &v) {
     using namespace npar;
@@ -749,26 +752,21 @@ public:
     return ss.str();
   };
 
-  constexpr void set_start_pos(uint32_t pos) { m_pos_start = pos; }
-  constexpr npar_node_t *set_pos(std::tuple<uint32_t, std::string_view> pos) {
-    m_pos_start = std::get<0>(pos);
+  constexpr void set_offset(uint32_t pos) { m_offset = pos; }
 
-    /// FIXME: Use the filename info
-    return this;
-  }
+  constexpr uint32_t get_offset() const { return m_offset; }
+  constexpr uint32_t get_fileid() const { return m_fileid; }
 
-  constexpr uint32_t get_start_pos() { return m_pos_start; }
-  constexpr std::tuple<uint32_t, std::string_view> get_pos() {
-    return {m_pos_start, ""};
+  constexpr std::tuple<uint32_t, uint32_t> get_pos() const {
+    return {m_offset, m_fileid};
   }
 
   PNODE_IMPL_CORE(npar_node_t)
 } __attribute__((packed));
 
+static_assert(sizeof(npar_node_t) == 8);
+
 namespace npar {
-
-  constexpr size_t PNODE_BASE_SIZE = sizeof(npar_node_t);
-
   enum class Vis {
     PUBLIC,
     PRIVATE,

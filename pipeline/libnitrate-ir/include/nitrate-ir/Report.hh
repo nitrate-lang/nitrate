@@ -94,27 +94,14 @@ namespace nr {
 
     virtual ~IReport() = default;
 
-    virtual void report(
-        IssueCode code, IC level, std::vector<std::string_view> params = {},
-        std::tuple<uint32_t, uint32_t, std::string_view> location = {
-            UINT32_MAX, UINT32_MAX, ""}) = 0;
+    virtual void report(IssueCode code, IC level,
+                        std::vector<std::string_view> params = {},
+                        std::tuple<uint32_t, uint32_t> location = {
+                            QLEX_EOFF, UINT32_MAX}) = 0;
 
     void report(IssueCode code, IC level, std::string_view message,
-                std::tuple<uint32_t, uint32_t, std::string_view> loc = {
-                    UINT32_MAX, UINT32_MAX, ""}) {
+                std::tuple<uint32_t, uint32_t> loc = {QLEX_EOFF, UINT32_MAX}) {
       report(code, level, std::vector<std::string_view>({message}), loc);
-    };
-
-    void report(IssueCode code, IC level, std::vector<std::string_view> params,
-                std::tuple<uint32_t, std::string_view> location) {
-      report(code, level, params,
-             {std::get<0>(location), UINT32_MAX, std::get<1>(location)});
-    }
-
-    void report(IssueCode code, IC level, std::string_view message,
-                std::tuple<uint32_t, std::string_view> loc) {
-      report(code, level, std::vector<std::string_view>({message}),
-             {std::get<0>(loc), UINT32_MAX, std::get<1>(loc)});
     };
 
     virtual void erase_reports() = 0;
