@@ -44,16 +44,13 @@ using namespace npar;
 void AST_Writer::write_source_location(npar_node_t& n) const {
   if (m_include_source_location) {
     string("loc");
-    begin_obj(3);
+    begin_obj(2);
 
     string("beg");
     uint64(n.get_start_pos());
 
-    string("end");
-    uint64(n.get_end_pos());
-
     string("src");
-    string(std::get<2>(n.get_pos()));
+    string(std::get<1>(n.get_pos()));
 
     end_obj();
   }

@@ -105,6 +105,18 @@ namespace nr {
       report(code, level, std::vector<std::string_view>({message}), loc);
     };
 
+    void report(IssueCode code, IC level, std::vector<std::string_view> params,
+                std::tuple<uint32_t, std::string_view> location) {
+      report(code, level, params,
+             {std::get<0>(location), UINT32_MAX, std::get<1>(location)});
+    }
+
+    void report(IssueCode code, IC level, std::string_view message,
+                std::tuple<uint32_t, std::string_view> loc) {
+      report(code, level, std::vector<std::string_view>({message}),
+             {std::get<0>(loc), UINT32_MAX, std::get<1>(loc)});
+    };
+
     virtual void erase_reports() = 0;
 
     virtual void stream_reports(std::function<void(const ReportData&)> cb) = 0;

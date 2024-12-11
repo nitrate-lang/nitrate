@@ -750,11 +750,8 @@ public:
   };
 
   constexpr void set_start_pos(uint32_t pos) { m_pos_start = pos; }
-  constexpr npar_node_t *set_pos(
-      std::tuple<uint32_t, uint32_t, std::string_view> pos) {
+  constexpr npar_node_t *set_pos(std::tuple<uint32_t, std::string_view> pos) {
     m_pos_start = std::get<0>(pos);
-
-    /// TODO: Remove end_pos
 
     /// FIXME: Use the filename info
     return this;
