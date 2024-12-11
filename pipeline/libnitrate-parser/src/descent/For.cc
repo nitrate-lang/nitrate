@@ -101,8 +101,5 @@ npar::Stmt *npar::recurse_for(npar_t &S, qlex_t &rd) {
 
   let body = recurse_for_body(S, rd);
 
-  let for_stmt = ForStmt::get(init, cond, step, body);
-  for_stmt->set_end_pos(current().end);
-
-  return for_stmt;
+  return ForStmt::get(init, cond, step, body);
 }

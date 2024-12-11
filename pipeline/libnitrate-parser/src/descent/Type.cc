@@ -99,7 +99,6 @@ static Type *recurse_type_metadata(npar_t &S, qlex_t &rd, Type *base) {
     let opt_type = TemplType::get(NamedTy::get("__builtin_result"),
                                   TemplTypeArgs{TypeExpr::get(base)});
     opt_type->set_start_pos(current().start);
-    opt_type->set_end_pos(current().end);
 
     base = opt_type;
   }
@@ -117,7 +116,6 @@ static Type *recurse_function_type(npar_t &S, qlex_t &rd) {
   }
 
   let type = fn->as<FnDecl>()->get_type();
-  type->set_end_pos(current().end);
 
   return type;
 }
@@ -132,7 +130,6 @@ static Type *recurse_opaque_type(qlex_t &rd) {
     if (next_if(qPuncRPar)) {
       let opaque = OpaqueTy::get(name->as_string(&rd));
       opaque->set_start_pos(current().start);
-      opaque->set_end_pos(current().end);
 
       return opaque;
     } else {
@@ -169,8 +166,7 @@ static Type *recurse_type_by_operator(npar_t &S, qlex_t &rd, qlex_op_t op) {
       let pointee = recurse_type(S, rd);
       let ptr_ty = PtrTy::get(pointee);
 
-      ptr_ty->set_end_pos(start);
-      ptr_ty->set_end_pos(current().end);
+      ptr_ty->set_start_pos(start);
 
       return ptr_ty;
     }
@@ -181,7 +177,6 @@ static Type *recurse_type_by_operator(npar_t &S, qlex_t &rd, qlex_op_t op) {
       let ref_ty = RefTy::get(refee);
 
       ref_ty->set_start_pos(start);
-      ref_ty->set_end_pos(current().end);
 
       return ref_ty;
     }
@@ -190,7 +185,6 @@ static Type *recurse_type_by_operator(npar_t &S, qlex_t &rd, qlex_op_t op) {
       let infer = InferTy::get();
 
       infer->set_start_pos(current().start);
-      infer->set_end_pos(current().end);
 
       return infer;
     }
@@ -212,7 +206,6 @@ static Type *recurse_array_or_vector(npar_t &S, qlex_t &rd) {
                                 TemplTypeArgs{TypeExpr::get(first)});
 
     vector->set_start_pos(start);
-    vector->set_end_pos(current().end);
 
     return vector;
   }
@@ -231,7 +224,6 @@ static Type *recurse_array_or_vector(npar_t &S, qlex_t &rd) {
   let array = ArrayTy::get(first, size);
 
   array->set_start_pos(start);
-  array->set_end_pos(current().end);
 
   return array;
 }
@@ -249,7 +241,6 @@ static Type *recurse_set_type(npar_t &S, qlex_t &rd) {
                            TemplTypeArgs{TypeExpr::get(set_type)});
 
   set->set_start_pos(start);
-  set->set_end_pos(current().end);
 
   return set;
 }
@@ -278,7 +269,6 @@ static Type *recurse_tuple_type(npar_t &S, qlex_t &rd) {
   let tuple = TupleTy::get(std::move(items));
 
   tuple->set_start_pos(start);
-  tuple->set_end_pos(current().end);
 
   return tuple;
 }
@@ -350,7 +340,6 @@ static Type *recurse_type_by_name(qlex_t &rd, std::string_view name) {
   }
 
   type.value()->set_start_pos(current().start);
-  type.value()->set_end_pos(current().end);
 
   return type.value();
 }

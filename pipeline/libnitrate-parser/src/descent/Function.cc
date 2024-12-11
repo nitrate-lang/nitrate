@@ -532,8 +532,6 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
         tok.is<qPuncSemi>()) {
       ftype->set_return_ty(VoidTy::get());
 
-      fndecl->set_end_pos(tok.start);
-
       return fndecl;
     }
   }
@@ -550,8 +548,6 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
       { /* Function declaration with explicit return type */
         if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() ||
             tok.is<qPuncSemi>()) {
-          fndecl->set_end_pos(tok.start);
-
           return fndecl;
         }
       }
@@ -576,8 +572,6 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
 
       FnDef *fndef = FnDef::get(fndecl, fnbody, nullptr, nullptr, captures);
 
-      fndef->set_end_pos(fnbody->get_end_pos());
-
       return fndef;
     }
   }
@@ -599,8 +593,6 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
     }
 
     FnDef *fndef = FnDef::get(fndecl, fnbody, req_in, req_out, captures);
-
-    fndef->set_end_pos(tok.end);
 
     return fndef;
   }

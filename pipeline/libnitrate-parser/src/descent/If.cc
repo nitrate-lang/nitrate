@@ -64,11 +64,7 @@ npar::Stmt *npar::recurse_if(npar_t &S, qlex_t &rd) {
       S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
 
   let then = recurse_if_then(S, rd);
-
   let ele = recurse_if_else(S, rd);
 
-  let stmt = IfStmt::get(cond, then, ele.value_or(nullptr));
-  stmt->set_end_pos(current().end);
-
-  return stmt;
+  return IfStmt::get(cond, then, ele.value_or(nullptr));
 }

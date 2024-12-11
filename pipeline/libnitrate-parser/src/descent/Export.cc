@@ -88,11 +88,7 @@ npar::Stmt *npar::recurse_pub(npar_t &S, qlex_t &rd) {
   if (let attrs = recurse_export_attributes(S, rd)) {
     let export_block = recurse_export_body(S, rd);
 
-    let export_stmt =
-        ExportStmt::get(export_block, abi_id, Vis::PUBLIC, attrs.value());
-    export_stmt->set_end_pos(export_block->get_end_pos());
-
-    return export_stmt;
+    return ExportStmt::get(export_block, abi_id, Vis::PUBLIC, attrs.value());
   } else {
     diagnostic << current() << "Malformed export attributes";
   }
@@ -106,11 +102,7 @@ npar::Stmt *npar::recurse_sec(npar_t &S, qlex_t &rd) {
   if (let attrs = recurse_export_attributes(S, rd)) {
     let export_block = recurse_export_body(S, rd);
 
-    let export_stmt =
-        ExportStmt::get(export_block, abi_id, Vis::PRIVATE, attrs.value());
-    export_stmt->set_end_pos(export_block->get_end_pos());
-
-    return export_stmt;
+    return ExportStmt::get(export_block, abi_id, Vis::PRIVATE, attrs.value());
   } else {
     diagnostic << current() << "Malformed export attributes";
   }
@@ -124,11 +116,7 @@ npar::Stmt *npar::recurse_pro(npar_t &S, qlex_t &rd) {
   if (let attrs = recurse_export_attributes(S, rd)) {
     let export_block = recurse_export_body(S, rd);
 
-    let export_stmt =
-        ExportStmt::get(export_block, abi_id, Vis::PROTECTED, attrs.value());
-    export_stmt->set_end_pos(export_block->get_end_pos());
-
-    return export_stmt;
+    return ExportStmt::get(export_block, abi_id, Vis::PROTECTED, attrs.value());
   } else {
     diagnostic << current() << "Malformed export attributes";
   }

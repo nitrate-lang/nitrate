@@ -211,11 +211,10 @@ public:
 struct npar_node_t {
 private:
   npar_ty_t m_node_type;
-  uint32_t m_pos_start, m_pos_end;
+  uint32_t m_pos_start;
 
 public:
-  constexpr npar_node_t(npar_ty_t ty)
-      : m_node_type(ty), m_pos_start(0), m_pos_end(0){};
+  constexpr npar_node_t(npar_ty_t ty) : m_node_type(ty), m_pos_start(0){};
 
   constexpr void accept(npar::ASTVisitor &v) {
     using namespace npar;
@@ -751,23 +750,19 @@ public:
   };
 
   constexpr void set_start_pos(uint32_t pos) { m_pos_start = pos; }
-  constexpr npar_node_t *set_end_pos(uint32_t pos) {
-    m_pos_end = pos;
-    return this;
-  }
   constexpr npar_node_t *set_pos(
       std::tuple<uint32_t, uint32_t, std::string_view> pos) {
     m_pos_start = std::get<0>(pos);
-    m_pos_end = std::get<1>(pos);
+
+    /// TODO: Remove end_pos
 
     /// FIXME: Use the filename info
     return this;
   }
 
-  constexpr uint32_t get_end_pos() { return m_pos_end; }
   constexpr uint32_t get_start_pos() { return m_pos_start; }
-  constexpr std::tuple<uint32_t, uint32_t, std::string_view> get_pos() {
-    return {m_pos_start, m_pos_end, ""};
+  constexpr std::tuple<uint32_t, std::string_view> get_pos() {
+    return {m_pos_start, ""};
   }
 
   PNODE_IMPL_CORE(npar_node_t)

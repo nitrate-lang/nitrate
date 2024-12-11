@@ -70,8 +70,5 @@ npar::Stmt *npar::recurse_while(npar_t &S, qlex_t &rd) {
   /* Support for single statement implicit block */
   let body = recurse_while_body(S, rd);
 
-  let stmt = WhileStmt::get(cond, body);
-  stmt->set_end_pos(body->get_end_pos());
-
-  return stmt;
+  return WhileStmt::get(cond, body);
 }

@@ -119,7 +119,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
       next();
     }
     auto R = StructField::get(name, type, nullptr, Vis::PRIVATE);
-    R->set_end_pos(tok.start);
+
     return R;
   }
 
@@ -140,7 +140,6 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
   }
 
   auto R = StructField::get(name, type, value, Vis::PRIVATE);
-  R->set_end_pos(value->get_end_pos());
 
   return R;
 }

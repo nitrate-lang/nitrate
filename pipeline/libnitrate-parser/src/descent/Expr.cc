@@ -47,7 +47,7 @@
 
 static inline npar::Expr *LOC_121(npar::Expr *p, qlex_tok_t t) {
   p->set_start_pos(t.start);
-  p->set_end_pos(t.end);
+
   return p;
 }
 
@@ -697,7 +697,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
         } else {
           Ident *id = Ident::get(ident);
           id->set_start_pos(tok.start);
-          id->set_end_pos(tok.end);
+
           stack.push(id);
           continue;
         }
