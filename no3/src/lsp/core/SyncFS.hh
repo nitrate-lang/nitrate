@@ -14,13 +14,16 @@ public:
   SyncFSFile() = default;
   using Digest = std::array<uint8_t, 20>;
 
-  bool replace(size_t offset, size_t length, std::string_view text) {
-    /// TODO: Verify this
+  bool replace(size_t offset, int64_t length, std::string_view text) {
     std::lock_guard<std::mutex> lock(m_mutex);
+    length = length >= 0 ? length : m_content->size() - length + 1;
+
     if (offset + length > m_content->size()) {
       return false;
     }
+
     m_content->replace(offset, length, text);
+
     return true;
   }
 

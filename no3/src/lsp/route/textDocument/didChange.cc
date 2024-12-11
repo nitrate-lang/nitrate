@@ -98,7 +98,7 @@ void do_didChange(const lsp::NotificationMessage& notif) {
     std::string_view text(content_change["text"].GetString(),
                           content_change["text"].GetStringLength());
 
-    file->replace(0, file->size(), text);
+    file->replace(0, -1, text);
   }
 
   latest[uri] = version;
