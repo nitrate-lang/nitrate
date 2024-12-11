@@ -31,114 +31,78 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: Cleanup this code; it's a mess from refactoring.
-
-/// TODO: Source location
-
 #include <nitrate-parser/Node.h>
 
 #include <descent/Recurse.hh>
 
-npar::Stmt *npar::recurse_for(npar_t &S, qlex_t &rd) {
-  std::optional<Stmt *> x0;
-  std::optional<Expr *> x1, x2;
+using namespace npar;
 
-  qlex_tok_t tok = peek();
-  if (tok.is<qPuncLPar>()) {
-    tok = next();
-    tok = peek();
-
-    if (tok.is<qKLet>()) {
-      next();
-      std::vector<Stmt *> let_node = recurse_variable(S, rd, VarDeclType::Let);
-
-      if (let_node.size() != 1) {
-        diagnostic << tok
-                   << "Expected let statement to have exactly one declaration";
-        return mock_stmt(QAST_NODE_FOR);
-
-      } else {
-        x0 = let_node[0];
-      }
-    } else {
-      x0 = ExprStmt::get(recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}));
-
-      tok = next();
-      if (!tok.is<qPuncSemi>()) {
-        diagnostic << tok << "Expected ';' after for loop initializer";
-        return mock_stmt(QAST_NODE_FOR);
-      }
-    }
-
-    x1 = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
-
-    tok = next();
-    if (!tok.is<qPuncSemi>()) {
-      diagnostic << tok << "Expected ';' after for loop condition";
-      return mock_stmt(QAST_NODE_FOR);
-    }
-
-    x2 = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)});
-    tok = next();
-    if (!tok.is<qPuncRPar>()) {
-      diagnostic << tok << "Expected ')' after for loop increment";
-      return mock_stmt(QAST_NODE_FOR);
-    }
-
-    Stmt *then_block = nullptr;
-
-    if (peek().is<qOpArrow>()) {
-      tok = next();
-      then_block = recurse_block(S, rd, false, true);
-    } else {
-      then_block = recurse_block(S, rd, true);
-    }
-
-    return ForStmt::get(x0, x1, x2, then_block);
-  } else {
-    tok = peek();
-
-    if (tok.is<qKLet>()) {
-      next();
-      std::vector<Stmt *> let_node = recurse_variable(S, rd, VarDeclType::Let);
-
-      if (let_node.size() != 1) {
-        diagnostic << tok
-                   << "Expected let statement to have exactly one declaration";
-        return mock_stmt(QAST_NODE_FOR);
-      } else {
-        x0 = let_node[0];
-      }
-    } else {
-      x0 = ExprStmt::get(recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}));
-
-      tok = next();
-      if (!tok.is<qPuncSemi>()) {
-        diagnostic << tok << "Expected ';' after for loop initializer";
-        return mock_stmt(QAST_NODE_FOR);
-      }
-    }
-
-    x1 = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
-
-    tok = next();
-    if (!tok.is<qPuncSemi>()) {
-      diagnostic << tok << "Expected ';' after for loop condition";
-      return mock_stmt(QAST_NODE_FOR);
-    }
-
-    x2 = recurse_expr(
-        S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
-
-    Stmt *then_block = nullptr;
-
-    if (peek().is<qOpArrow>()) {
-      tok = next();
-      then_block = recurse_block(S, rd, false, true);
-    } else {
-      then_block = recurse_block(S, rd, true);
-    }
-
-    return ForStmt::get(x0, x1, x2, then_block);
+static std::optional<Stmt *> recurse_for_init_expr(npar_t &S, qlex_t &rd) {
+  if (next_if(qPuncSemi)) {
+    return std::nullopt;
   }
+
+  return recurse_block(S, rd, false, true);
+}
+
+static std::optional<Expr *> recurse_for_cond_expr(npar_t &S, qlex_t &rd) {
+  if (next_if(qPuncSemi)) {
+    return std::nullopt;
+  }
+
+  let cond_expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+
+  if (!next_if(qPuncSemi)) {
+    diagnostic << current() << "Expected semicolon after condition expression";
+  }
+
+  return cond_expr;
+}
+
+static std::optional<Expr *> recurse_for_step_expr(npar_t &S, qlex_t &rd,
+                                                   bool has_paren) {
+  if (has_paren) {
+    if (peek().is<qPuncRPar>()) {
+      return std::nullopt;
+    } else {
+      return recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)});
+    }
+  } else {
+    if (peek().is<qOpArrow>() || peek().is<qPuncLCur>()) {
+      return std::nullopt;
+    } else {
+      return recurse_expr(
+          S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
+    }
+  }
+}
+
+static Stmt *recurse_for_body(npar_t &S, qlex_t &rd) {
+  if (next_if(qOpArrow)) {
+    return recurse_block(S, rd, false, true);
+  } else {
+    return recurse_block(S, rd, true, false);
+  }
+}
+
+npar::Stmt *npar::recurse_for(npar_t &S, qlex_t &rd) {
+  bool has_paren = next_if(qPuncLPar).has_value();
+
+  let init = recurse_for_init_expr(S, rd);
+  let cond = recurse_for_cond_expr(S, rd);
+  let step = recurse_for_step_expr(S, rd, has_paren);
+
+  if (has_paren) {
+    if (!next_if(qPuncRPar)) {
+      diagnostic << current()
+                 << "Expected closing parenthesis in for statement";
+    }
+  }
+
+  let body = recurse_for_body(S, rd);
+
+  let for_stmt = ForStmt::get(init, cond, step, body);
+  for_stmt->set_end_pos(current().end);
+
+  return for_stmt;
 }
