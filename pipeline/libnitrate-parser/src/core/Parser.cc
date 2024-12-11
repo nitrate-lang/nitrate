@@ -52,6 +52,7 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
   qlex_tok_t tok;
 
   Block* block = Block::get();
+  block->set_offset(current().start);
 
   if (expect_braces) {
     tok = next();
