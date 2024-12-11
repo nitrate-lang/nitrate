@@ -35,6 +35,7 @@
 #define __NITRATE_NR_REPORT_H__
 
 #include <nitrate-ir/IR.h>
+#include <nitrate-lexer/Token.h>
 
 #include <boost/bimap.hpp>
 #include <cstdarg>
@@ -97,10 +98,10 @@ namespace nr {
     virtual void report(IssueCode code, IC level,
                         std::vector<std::string_view> params = {},
                         std::tuple<uint32_t, uint32_t> location = {
-                            QLEX_EOFF, UINT32_MAX}) = 0;
+                            QLEX_EOFF, QLEX_NOFILE}) = 0;
 
     void report(IssueCode code, IC level, std::string_view message,
-                std::tuple<uint32_t, uint32_t> loc = {QLEX_EOFF, UINT32_MAX}) {
+                std::tuple<uint32_t, uint32_t> loc = {QLEX_EOFF, QLEX_NOFILE}) {
       report(code, level, std::vector<std::string_view>({message}), loc);
     };
 

@@ -47,17 +47,17 @@ void AST_Writer::write_source_location(npar_node_t& n) const {
     begin_obj(2);
 
     string("beg");
-    if (n.get_offset() == UINT32_MAX) {
-      uint64(n.get_offset());
-    } else {
+    if (n.get_offset() == QLEX_EOFF) {
       null();
+    } else {
+      uint64(n.get_offset());
     }
 
     string("fileid");
-    if (n.get_fileid() == UINT32_MAX) {
-      uint64(n.get_fileid());
-    } else {
+    if (n.get_fileid() == QLEX_NOFILE) {
       null();
+    } else {
+      uint64(n.get_fileid());
     }
 
     end_obj();

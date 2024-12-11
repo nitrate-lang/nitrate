@@ -40,6 +40,7 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>
+#include <nitrate-lexer/Token.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -156,7 +157,7 @@ namespace nr {
 
   public:
     constexpr Expr(nr_ty_t ty, uint32_t offset = QLEX_EOFF,
-                   uint32_t fileid = UINT32_MAX)
+                   uint32_t fileid = QLEX_NOFILE)
         : m_node_type(ty), m_offset(offset), m_fileid(fileid) {}
 
     static constexpr uint32_t getKindSize(nr_ty_t kind) noexcept;

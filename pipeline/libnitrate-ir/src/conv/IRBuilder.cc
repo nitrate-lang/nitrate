@@ -262,8 +262,8 @@ void NRBuilder::finish(SOURCE_LOCATION_PARAM_ONCE) noexcept {
 static thread_local class NullLog : public IReport {
 public:
   virtual void report(IssueCode, IC, std::vector<std::string_view> = {},
-                      std::tuple<uint32_t, uint32_t> = {QLEX_EOFF,
-                                                        UINT32_MAX}) override {}
+                      std::tuple<uint32_t, uint32_t> = {
+                          QLEX_EOFF, QLEX_NOFILE}) override {}
 
   virtual void erase_reports() override {}
 

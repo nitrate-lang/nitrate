@@ -93,7 +93,7 @@ namespace nr {
     virtual void report(IssueCode code, IC level,
                         std::vector<std::string_view> params = {},
                         std::tuple<uint32_t, uint32_t> loc = {
-                            QLEX_EOFF, UINT32_MAX}) override;
+                            QLEX_EOFF, QLEX_NOFILE}) override;
 
     virtual void stream_reports(
         std::function<void(const ReportData &)> cb) override;

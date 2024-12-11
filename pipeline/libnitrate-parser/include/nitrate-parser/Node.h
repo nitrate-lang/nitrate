@@ -215,8 +215,8 @@ private:
 
 public:
   constexpr npar_node_t(npar_ty_t ty, bool mock = false,
-                        uint32_t fileid = UINT32_MAX,
-                        uint32_t offset = UINT32_MAX)
+                        uint32_t fileid = QLEX_NOFILE,
+                        uint32_t offset = QLEX_EOFF)
       : m_node_type(ty), m_fileid(fileid), m_offset(offset), m_mock(mock){};
 
   constexpr void accept(npar::ASTVisitor &v) {

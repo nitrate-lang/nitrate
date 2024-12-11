@@ -49,7 +49,7 @@ using namespace nr;
 ///============================================================================///
 
 static void print_qsizeloc(std::stringstream &ss, uint32_t num) {
-  if (num == UINT32_MAX) {
+  if (num == QLEX_EOFF) {
     ss << "?";
   } else {
     ss << num;
@@ -65,7 +65,7 @@ std::string nr::mint_plain_message(const IReport::ReportData &R,
     /// FIXME: Render filename
     ss << "??" << ":";
 
-    auto default_if = std::pair<uint32_t, uint32_t>({UINT32_MAX, UINT32_MAX});
+    auto default_if = std::pair<uint32_t, uint32_t>({QLEX_EOFF, QLEX_NOFILE});
     auto beg = B->off2rc(R.start_offset).value_or(default_if);
     auto end = B->off2rc(R.end_offset).value_or(default_if);
 
@@ -74,7 +74,7 @@ std::string nr::mint_plain_message(const IReport::ReportData &R,
     el = end.first;
     ec = end.second;
 
-    if (sl != UINT32_MAX || sc != UINT32_MAX) {
+    if (sl != QLEX_EOFF || sc != QLEX_EOFF) {
       print_qsizeloc(ss, sl);
       ss << ":";
       print_qsizeloc(ss, sc);
@@ -111,7 +111,7 @@ std::string nr::mint_plain_message(const IReport::ReportData &R,
     ss << " [-Werror=" << issue_info.left.at(R.code).flagname << "]";
   }
 
-  uint32_t res = UINT32_MAX; /*qlex_spanx(
+  uint32_t res = QLEX_EOFF; /*qlex_spanx(
        lx, R.start_offset, R.end_offset,
        [](const char *str, uint32_t len, uintptr_t x) {
          if (len > 100) {
@@ -122,7 +122,7 @@ std::string nr::mint_plain_message(const IReport::ReportData &R,
          ss << '\n' << std::string_view(str, len);
        },
        reinterpret_cast<uintptr_t>(&ss));*/
-  if (res == UINT32_MAX) {
+  if (res == QLEX_EOFF) {
     ss << "\n# [failed to extract source code snippet]\n";
   }
 
@@ -137,7 +137,7 @@ std::string nr::mint_clang16_message(const IReport::ReportData &R,
   {  // Print the filename and location information
     ss << "\x1b[39;1m" << "??" << ":";
 
-    auto default_if = std::pair<uint32_t, uint32_t>({UINT32_MAX, UINT32_MAX});
+    auto default_if = std::pair<uint32_t, uint32_t>({QLEX_EOFF, QLEX_NOFILE});
     auto beg = B->off2rc(R.start_offset).value_or(default_if);
     auto end = B->off2rc(R.end_offset).value_or(default_if);
 
@@ -146,8 +146,8 @@ std::string nr::mint_clang16_message(const IReport::ReportData &R,
     el = end.first;
     ec = end.second;
 
-    if (sl != UINT32_MAX || sc != UINT32_MAX || el != UINT32_MAX ||
-        ec != UINT32_MAX) {
+    if (sl != QLEX_EOFF || sc != QLEX_EOFF || el != QLEX_EOFF ||
+        ec != QLEX_EOFF) {
       print_qsizeloc(ss, sl);
       ss << ":";
       print_qsizeloc(ss, sc);
@@ -206,7 +206,7 @@ std::string nr::mint_clang16_message(const IReport::ReportData &R,
       break;
   }
 
-  uint32_t res = UINT32_MAX; /* qlex_spanx(
+  uint32_t res = QLEX_EOFF; /* qlex_spanx(
        lx, R.start_offset, R.end_offset,
        [](const char *str, uint32_t len, uintptr_t x) {
          if (len > 100) {
@@ -217,7 +217,7 @@ std::string nr::mint_clang16_message(const IReport::ReportData &R,
          ss << '\n' << std::string_view(str, len) << '\n';
        },
        reinterpret_cast<uintptr_t>(&ss)); */
-  if (res == UINT32_MAX) {
+  if (res == QLEX_EOFF) {
     ss << "\n# [\x1b[35;1mfailed to extract source code snippet\x1b[0m]\n";
   }
 
