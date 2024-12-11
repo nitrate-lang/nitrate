@@ -55,7 +55,6 @@ bool impl_use_json(qlex_t *L, std::ostream &O) {
 
     switch (tok.ty) {
       case qEofF: { /* End of file */
-        __builtin_unreachable();
         break;
       }
 
@@ -185,7 +184,6 @@ bool impl_use_msgpack(qlex_t *L, std::ostream &O) {
 
     switch (tok.ty) {
       case qEofF: { /* End of file */
-        __builtin_unreachable();
         break;
       }
 

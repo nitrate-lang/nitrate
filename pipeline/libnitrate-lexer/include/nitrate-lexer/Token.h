@@ -269,8 +269,6 @@ typedef struct qlex_tok_t {
       case qMacr:
       case qNote:
         return v.str_idx == rhs.v.str_idx;
-      default:
-        __builtin_unreachable();
     }
   }
 
@@ -311,8 +309,6 @@ typedef struct qlex_tok_t {
       case qMacr:
       case qNote:
         return v.str_idx < rhs.v.str_idx;
-      default:
-        __builtin_unreachable();
     }
   }
 

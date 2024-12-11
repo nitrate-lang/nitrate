@@ -1221,7 +1221,7 @@ C_EXPORT uint32_t qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok,
     qcore_panic("qlex_tok_write: invalid token");
   }
 
-  __builtin_unreachable();
+  qcore_panic("unreachable");
 }
 
 C_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
@@ -1252,7 +1252,7 @@ C_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
       return "note";
   }
 
-  __builtin_unreachable();
+  qcore_panic("unreachable");
 }
 
 C_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
@@ -1285,7 +1285,7 @@ C_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
     qcore_panic("qlex_eq: invalid token");
   }
 
-  __builtin_unreachable();
+  qcore_panic("unreachable");
 }
 
 C_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
@@ -1317,7 +1317,7 @@ C_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
     qcore_panic("qlex_lt: invalid token");
   }
 
-  __builtin_unreachable();
+  qcore_panic("unreachable");
 }
 
 C_EXPORT const char *qlex_str(qlex_t *lexer, const qlex_tok_t *tok,
@@ -1355,7 +1355,7 @@ C_EXPORT const char *qlex_str(qlex_t *lexer, const qlex_tok_t *tok,
       return x.data();
   }
 
-  __builtin_unreachable();
+  qcore_panic("unreachable");
 }
 
 C_EXPORT const char *qlex_opstr(qlex_op_t op) {

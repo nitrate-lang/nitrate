@@ -2435,7 +2435,7 @@ namespace nr {
       }
     }
 
-    __builtin_unreachable();
+    qcore_panic("unreachable");
   }
 
   Expr *createIgn();
