@@ -55,8 +55,6 @@ std::optional<std::shared_ptr<SyncFSFile>> SyncFS::open(std::string path) {
     path = path.substr(7);
   }
 
-  LOG(INFO) << "SyncFS: Opening file: " << path;
-
   std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = m_files.find(path);
@@ -69,6 +67,8 @@ std::optional<std::shared_ptr<SyncFSFile>> SyncFS::open(std::string path) {
     LOG(ERROR) << "SyncFS: File not found: " << path;
     return std::nullopt;
   }
+
+  LOG(INFO) << "SyncFS: Opening file: " << path;
 
   std::ifstream file(path);
   if (!file.is_open()) {

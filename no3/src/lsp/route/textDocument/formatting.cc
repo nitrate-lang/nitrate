@@ -110,21 +110,28 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
 
   npar_node_t* root = nullptr;
   if (!npar_do(parser.get(), &root)) {
+    resp.error(lsp::ErrorCodes::InternalError, "Failed to parse document");
     return;
   }
 
   if (!npar_check(parser.get(), root)) {
+    resp.error(lsp::ErrorCodes::InternalError, "Failed to parse document");
     return;
   }
 
   LOG(INFO) << "Requested document format";
 
-  std::stringstream formatted;
+  std::stringstream formatted_ss;
   if (!lsp::fmt::FormatterFactory::create(lsp::fmt::Styleguide::Cambrian,
-                                          formatted)
+                                          formatted_ss)
            ->format(root)) {
+    resp.error(lsp::ErrorCodes::InternalError, "Failed to format document");
     return;
   }
+
+  auto formatted = formatted_ss.str();
+
+  file->replace(0, -1, formatted);
 
   ///==========================================================
   /// Send the whole new file contents
@@ -138,10 +145,9 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   edit["range"].AddMember("end", Value(kObjectType), resp->GetAllocator());
   edit["range"]["end"].AddMember("line", SIZE_MAX, resp->GetAllocator());
   edit["range"]["end"].AddMember("character", SIZE_MAX, resp->GetAllocator());
-  std::string new_text = formatted.str();
   edit.AddMember(
       "newText",
-      Value(new_text.c_str(), new_text.size(), resp->GetAllocator()).Move(),
+      Value(formatted.c_str(), formatted.size(), resp->GetAllocator()).Move(),
       resp->GetAllocator());
 
   resp->PushBack(edit, resp->GetAllocator());

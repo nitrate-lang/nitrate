@@ -1,3 +1,4 @@
+#include <nitrate-core/Macro.h>
 #include <rapidjson/allocators.h>
 #include <rapidjson/document.h>
 
@@ -26,7 +27,7 @@ void do_didChange(const lsp::NotificationMessage& notif) {
     return;
   }
 
-  const auto& text_document = notif.params()["textDocument"];
+  let text_document = notif.params()["textDocument"];
 
   if (!text_document.HasMember("uri")) {
     LOG(ERROR) << "Missing uri field in textDocument object";
@@ -48,8 +49,8 @@ void do_didChange(const lsp::NotificationMessage& notif) {
     return;
   }
 
-  std::string uri = text_document["uri"].GetString();
-  DocVersion version = text_document["version"].GetInt64();
+  let uri = text_document["uri"].GetString();
+  let version = text_document["version"].GetInt64();
 
   if (!notif.params().HasMember("contentChanges")) {
     LOG(ERROR) << "Missing contentChanges field in didChange notification";
@@ -62,13 +63,11 @@ void do_didChange(const lsp::NotificationMessage& notif) {
     return;
   }
 
-  const auto& content_changes = notif.params()["contentChanges"].GetArray();
+  let content_changes = notif.params()["contentChanges"].GetArray();
 
-  static std::mutex m;
-  std::lock_guard lock(m);
   static std::unordered_map<std::string, DocVersion> latest;
 
-  if (latest[uri] > version) {
+  if (latest[uri] >= version) {
     return;
   }
 
@@ -79,7 +78,7 @@ void do_didChange(const lsp::NotificationMessage& notif) {
 
   auto file = file_opt.value();
 
-  for (const auto& content_change : content_changes) {
+  for (let content_change : content_changes) {
     if (!content_change.IsObject()) {
       LOG(ERROR) << "contentChange in contentChanges array is not an object";
       return;

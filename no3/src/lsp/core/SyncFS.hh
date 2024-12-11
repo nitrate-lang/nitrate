@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glog/logging.h>
+
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -16,9 +18,14 @@ public:
 
   bool replace(size_t offset, int64_t length, std::string_view text) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    length = length >= 0 ? length : m_content->size() - length + 1;
+
+    if (length < 0) {  // negative length starts from the end
+      length = m_content->size() - offset + length;
+    }
 
     if (offset + length > m_content->size()) {
+      LOG(ERROR) << "Invalid replace operation: offset=" << offset
+                 << ", length=" << length << ", size=" << m_content->size();
       return false;
     }
 
