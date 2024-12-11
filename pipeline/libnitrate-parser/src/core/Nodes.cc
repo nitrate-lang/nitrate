@@ -99,9 +99,7 @@ Expr *npar::mock_expr(npar_ty_t expected) {
   return &node;
 }
 
-Type *npar::mock_type(npar_ty_t expected) {
-  (void)expected;
-
+Type *npar::mock_type() {
   static Type node(QAST_NODE_NODE);
   return &node;
 }

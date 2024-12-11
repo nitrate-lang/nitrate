@@ -2013,7 +2013,7 @@ namespace npar {
 
   Stmt *mock_stmt(npar_ty_t expected);
   Expr *mock_expr(npar_ty_t expected);
-  Type *mock_type(npar_ty_t expected);
+  Type *mock_type();
 }  // namespace npar
 
 constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) noexcept {
