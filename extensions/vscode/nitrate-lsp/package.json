@@ -4,13 +4,13 @@
   "description": "The official Nitrate Language Server",
   "author": "Wesley Jones",
   "license": "LGPL-2.1-or-later",
-  "version": "1.0.6",
+  "version": "1.0.0",
   "icon": "./icons/icon-light.png",
   "repository": {
     "type": "git",
     "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/nitrate"
   },
-  "publisher": "qpkg",
+  "publisher": "nitrate",
   "categories": [
     "Programming Languages"
   ],
