@@ -70,22 +70,7 @@ namespace npar {
   Stmt *recurse_block(npar_t &S, qlex_t &rd, bool expect_braces = true,
                       bool single_stmt = false);
 
-  struct tok_hash {
-    constexpr std::size_t operator()(qlex_tok_t const &v) const {
-      union {
-        uint64_t w;
-        struct {
-          qlex_ty_t ty;
-          uint32_t val;
-        } st;
-      } u = {.st = {.ty = v.ty, .val = v.v.str_idx}};
-
-      return u.w;
-    }
-  };
-
-  Expr *recurse_expr(npar_t &S, qlex_t &rd,
-                     std::unordered_set<qlex_tok_t, tok_hash> terminators,
+  Expr *recurse_expr(npar_t &S, qlex_t &rd, std::set<qlex_tok_t> terminators,
                      size_t depth = 0);
 
 #define next() qlex_next(&rd)

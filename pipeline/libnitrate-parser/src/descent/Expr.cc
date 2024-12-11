@@ -215,8 +215,7 @@ static bool recurse_fstring(npar_t &S, FString **node, qlex_t &rd,
 /// TODO: qlex_op_t associativity
 
 Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
-                         std::unordered_set<qlex_tok_t, tok_hash> terminators,
-                         size_t depth) {
+                         std::set<qlex_tok_t> terminators, size_t depth) {
   if (depth > MAX_EXPR_DEPTH) {
     diagnostic
         << peek()
