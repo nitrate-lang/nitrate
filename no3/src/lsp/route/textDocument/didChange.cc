@@ -7,15 +7,11 @@
 #include <lsp/route/RoutesList.hh>
 #include <string>
 
-using namespace rapidjson;
-
 typedef int64_t DocVersion;
 
-struct Change {
-  std::string text;
-};
-
 void do_didChange(const lsp::NotificationMessage& notif) {
+  using namespace rapidjson;
+
   if (!notif.params().HasMember("textDocument")) {
     LOG(ERROR) << "Missing textDocument field in didChange notification";
     return;
@@ -65,12 +61,6 @@ void do_didChange(const lsp::NotificationMessage& notif) {
 
   let content_changes = notif.params()["contentChanges"].GetArray();
 
-  static std::unordered_map<std::string, DocVersion> latest;
-
-  if (latest[uri] >= version) {
-    return;
-  }
-
   auto file_opt = SyncFS::the().open(uri);
   if (!file_opt.has_value()) {
     return;
@@ -93,12 +83,29 @@ void do_didChange(const lsp::NotificationMessage& notif) {
       LOG(ERROR) << "text field in contentChange object is not a string";
       return;
     }
-
-    std::string_view text(content_change["text"].GetString(),
-                          content_change["text"].GetStringLength());
-
-    file->replace(0, -1, text);
   }
 
-  latest[uri] = version;
+  { /** BEGIN: CRITICAL SECTION */
+    static std::mutex mutex;
+    static std::unordered_map<std::string, DocVersion> latest;
+
+    std::lock_guard<std::mutex> lock(mutex);
+
+    if (latest[uri] >= version) {
+      LOG(INFO) << "Discarding outdated document " << uri << " version "
+                << version << " (latest is " << latest[uri] << ")";
+      return;
+    }
+
+    for (let content_change : content_changes) {
+      std::string_view text(content_change["text"].GetString(),
+                            content_change["text"].GetStringLength());
+
+      file->replace(0, -1, text);
+    }
+
+    latest[uri] = version;
+
+    LOG(INFO) << "Document " << uri << " updated to version " << version;
+  } /** END: CRITICAL SECTION */
 }
