@@ -35,6 +35,14 @@
 
 using namespace npar;
 
+static std::string_view recurse_abi_name(qlex_t &rd) {
+  if (let tok = next_if(qText)) {
+    return tok->as_string(&rd);
+  } else {
+    return "";
+  }
+}
+
 static std::optional<SymbolAttributes> recurse_export_attributes(npar_t &S,
                                                                  qlex_t &rd) {
   SymbolAttributes attributes;
@@ -75,15 +83,16 @@ static Stmt *recurse_export_body(npar_t &S, qlex_t &rd) {
 }
 
 npar::Stmt *npar::recurse_pub(npar_t &S, qlex_t &rd) {
-  let abi_id = peek().is(qText) ? next().as_string(&rd) : "";
+  let abi_id = recurse_abi_name(rd);
 
   if (let attrs = recurse_export_attributes(S, rd)) {
-    let body = recurse_export_body(S, rd);
+    let export_block = recurse_export_body(S, rd);
 
-    let stmt = ExportStmt::get(body, abi_id, Vis::PUBLIC, attrs.value());
-    stmt->set_end_pos(body->get_end_pos());
+    let export_stmt =
+        ExportStmt::get(export_block, abi_id, Vis::PUBLIC, attrs.value());
+    export_stmt->set_end_pos(export_block->get_end_pos());
 
-    return stmt;
+    return export_stmt;
   } else {
     diagnostic << current() << "Malformed export attributes";
   }
@@ -92,15 +101,16 @@ npar::Stmt *npar::recurse_pub(npar_t &S, qlex_t &rd) {
 }
 
 npar::Stmt *npar::recurse_sec(npar_t &S, qlex_t &rd) {
-  let abi_id = peek().is(qText) ? next().as_string(&rd) : "";
+  let abi_id = recurse_abi_name(rd);
 
   if (let attrs = recurse_export_attributes(S, rd)) {
-    let body = recurse_export_body(S, rd);
+    let export_block = recurse_export_body(S, rd);
 
-    let stmt = ExportStmt::get(body, abi_id, Vis::PRIVATE, attrs.value());
-    stmt->set_end_pos(body->get_end_pos());
+    let export_stmt =
+        ExportStmt::get(export_block, abi_id, Vis::PRIVATE, attrs.value());
+    export_stmt->set_end_pos(export_block->get_end_pos());
 
-    return stmt;
+    return export_stmt;
   } else {
     diagnostic << current() << "Malformed export attributes";
   }
@@ -109,15 +119,16 @@ npar::Stmt *npar::recurse_sec(npar_t &S, qlex_t &rd) {
 }
 
 npar::Stmt *npar::recurse_pro(npar_t &S, qlex_t &rd) {
-  let abi_id = peek().is(qText) ? next().as_string(&rd) : "";
+  let abi_id = recurse_abi_name(rd);
 
   if (let attrs = recurse_export_attributes(S, rd)) {
-    let body = recurse_export_body(S, rd);
+    let export_block = recurse_export_body(S, rd);
 
-    let stmt = ExportStmt::get(body, abi_id, Vis::PROTECTED, attrs.value());
-    stmt->set_end_pos(body->get_end_pos());
+    let export_stmt =
+        ExportStmt::get(export_block, abi_id, Vis::PROTECTED, attrs.value());
+    export_stmt->set_end_pos(export_block->get_end_pos());
 
-    return stmt;
+    return export_stmt;
   } else {
     diagnostic << current() << "Malformed export attributes";
   }

@@ -48,13 +48,13 @@ static std::string_view recurse_scope_name(qlex_t &rd) {
 static std::optional<ScopeDeps> recurse_scope_deps(qlex_t &rd) {
   ScopeDeps dependencies;
 
-  if (!peek().is<qPuncColn>()) {
+  if (!next_if(qPuncColn)) {
     return dependencies;
   }
 
-  if (auto tok = (next(), next()); tok.is<qPuncLBrk>()) {
+  if (next_if(qPuncLBrk)) {
     while (true) {
-      tok = next();
+      let tok = next();
 
       if (tok.is<qPuncRBrk>()) {
         return dependencies;
@@ -65,33 +65,27 @@ static std::optional<ScopeDeps> recurse_scope_deps(qlex_t &rd) {
 
         dependencies.insert(dependency_name);
 
-        if (peek().is<qPuncComa>()) {
-          next();
-        }
+        next_if(qPuncComa);
       } else {
         diagnostic << tok << "Expected dependency name";
         break;
       }
     }
   } else {
-    diagnostic << tok << "Expected '[' at start of scope dependencies";
+    diagnostic << current() << "Expected '[' at start of scope dependencies";
   }
 
   return std::nullopt;
 }
 
 static Stmt *recurse_scope_block(npar_t &S, qlex_t &rd) {
-  let tok = peek();
-
-  if (tok.is<qPuncLCur>()) {
-    return recurse_block(S, rd, true, false);
-  } else if (next_if(qPuncSemi)) {
+  if (next_if(qPuncSemi)) {
     return Block::get();
+  } else if (next_if(qOpArrow)) {
+    return recurse_block(S, rd, false, true);
+  } else {
+    return recurse_block(S, rd, true, false);
   }
-
-  next_if(qOpArrow);
-
-  return recurse_block(S, rd, false, true);
 }
 
 npar::Stmt *npar::recurse_scope(npar_t &S, qlex_t &rd) {
@@ -100,11 +94,11 @@ npar::Stmt *npar::recurse_scope(npar_t &S, qlex_t &rd) {
   if (let implicit_dependencies = recurse_scope_deps(rd)) {
     let scope_block = recurse_scope_block(S, rd);
 
-    let stmt = ScopeStmt::get(scope_name, scope_block,
-                              std::move(implicit_dependencies.value()));
-    stmt->set_end_pos(scope_block->get_end_pos());
+    let scope_stmt = ScopeStmt::get(scope_name, scope_block,
+                                    std::move(implicit_dependencies.value()));
+    scope_stmt->set_end_pos(scope_block->get_end_pos());
 
-    return stmt;
+    return scope_stmt;
   } else {
     diagnostic << current() << "Expected scope dependencies";
   }

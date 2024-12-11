@@ -43,23 +43,22 @@ Stmt *npar::recurse_return(npar_t &S, qlex_t &rd) {
    *   `ret 0;`, `ret;`, `ret 0, 1;`, `ret call();`
    */
 
-  /* Return void */
-  if (let tok = peek(); tok.is<qPuncSemi>()) {
-    let stmt = (next(), ReturnStmt::get(std::nullopt));
-    stmt->set_end_pos(tok.end);
+  if (let tok = next_if(qPuncSemi)) {
+    let void_return = ReturnStmt::get(std::nullopt);
+    void_return->set_end_pos(tok->end);
 
-    return stmt;
+    return void_return;
   }
 
   let expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
-  if (let tok = peek(); tok.is<qPuncSemi>()) {
-    let R = (next(), ReturnStmt::get(expr));
-    R->set_end_pos(current().end);
+  if (next_if(qPuncSemi)) {
+    let return_stmt = ReturnStmt::get(expr);
+    return_stmt->set_end_pos(current().end);
 
-    return R;
+    return return_stmt;
   } else {
-    diagnostic << tok << "Expected ';' after the return statement.";
+    diagnostic << current() << "Expected ';' after the return statement.";
   }
 
   return mock_stmt(QAST_NODE_RETURN);
@@ -73,20 +72,19 @@ Stmt *npar::recurse_retif(npar_t &S, qlex_t &rd) {
 
   let condition = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncComa)});
 
-  if (let tok = peek(); tok.is<qPuncComa>()) {
-    let return_expr =
-        (next(), recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)}));
+  if (next_if(qPuncComa)) {
+    let return_val = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
-    if (let tok = peek(); tok.is<qPuncSemi>()) {
-      let R = (next(), ReturnIfStmt::get(condition, return_expr));
-      R->set_end_pos(current().end);
+    if (next_if(qPuncSemi)) {
+      let retif_stmt = ReturnIfStmt::get(condition, return_val);
+      retif_stmt->set_end_pos(current().end);
 
-      return R;
+      return retif_stmt;
     } else {
-      diagnostic << tok << "Expected ';' after the retif value.";
+      diagnostic << current() << "Expected ';' after the retif value.";
     }
   } else {
-    diagnostic << tok << "Expected ',' after the retif condition.";
+    diagnostic << current() << "Expected ',' after the retif condition.";
   }
 
   return mock_stmt(QAST_NODE_RETIF);

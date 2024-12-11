@@ -105,9 +105,7 @@ constexpr static std::optional<EnumDefItems> recurse_enum_items(npar_t &S,
         break;
       }
 
-      if (let tok = peek(); tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
-        next();
-      }
+      next_if(qPuncComa) || next_if(qPuncSemi);
     }
   } else if (next_if(qOpArrow)) {
     if (let item = recurse_enum_item(S, rd)) {

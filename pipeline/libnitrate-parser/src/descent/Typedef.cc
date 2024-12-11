@@ -41,26 +41,25 @@ npar::Stmt *npar::recurse_typedef(npar_t &S, qlex_t &rd) {
    *   `type name = type;`
    */
 
-  if (qlex_tok_t tok = peek(); tok.is(qName)) {
-    let name = (next(), tok.as_string(&rd));
+  if (let tok = next_if(qName)) {
+    let name = tok->as_string(&rd);
 
-    if (tok = peek(); tok.is<qOpSet>()) {
-      let type = (next(), recurse_type(S, rd));
+    if (next_if(qOpSet)) {
+      let type = recurse_type(S, rd);
 
-      if (tok = peek(); tok.is<qPuncSemi>()) {
-        let R = (next(), TypedefStmt::get(name, type));
+      if (next_if(qPuncSemi)) {
+        let type_def = TypedefStmt::get(name, type);
+        type_def->set_end_pos(current().end);
 
-        R->set_end_pos(tok.end);
-
-        return R;
+        return type_def;
       } else {
-        diagnostic << tok << "Expected ';' in typedef declaration";
+        diagnostic << current() << "Expected ';' in typedef declaration";
       }
     } else {
-      diagnostic << tok << "Expected '=' in typedef declaration";
+      diagnostic << current() << "Expected '=' in typedef declaration";
     }
   } else {
-    diagnostic << tok << "Expected name in typedef declaration";
+    diagnostic << current() << "Expected name in typedef declaration";
   }
 
   return mock_stmt(QAST_NODE_TYPEDEF);

@@ -49,8 +49,7 @@ static Expr *recurse_while_cond(npar_t &S, qlex_t &rd) {
 }
 
 static Stmt *recurse_while_body(npar_t &S, qlex_t &rd) {
-  if (peek().is<qOpArrow>()) {
-    next();
+  if (next_if(qOpArrow)) {
     return recurse_block(S, rd, false, true);
   } else {
     return recurse_block(S, rd, true);

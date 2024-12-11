@@ -38,22 +38,24 @@
 using namespace npar;
 
 static Stmt *recurse_if_then(npar_t &S, qlex_t &rd) {
-  if (peek().is<qOpArrow>()) {
-    return (next(), recurse_block(S, rd, false, true));
+  if (next_if(qOpArrow)) {
+    return recurse_block(S, rd, false, true);
   } else {
     return recurse_block(S, rd, true);
   }
 }
 
-static Stmt *recurse_if_else(npar_t &S, qlex_t &rd) {
-  let tok = peek();
-
-  if (tok.is<qOpArrow>()) {
-    return (next(), recurse_block(S, rd, false, true));
-  } else if (tok.is<qKIf>()) {
-    return (next(), recurse_if(S, rd));
+static std::optional<Stmt *> recurse_if_else(npar_t &S, qlex_t &rd) {
+  if (next_if(qKElse)) {
+    if (next_if(qOpArrow)) {
+      return recurse_block(S, rd, false, true);
+    } else if (next_if(qKIf)) {
+      return recurse_if(S, rd);
+    } else {
+      return recurse_block(S, rd, true);
+    }
   } else {
-    return recurse_block(S, rd, true);
+    return std::nullopt;
   }
 }
 
@@ -63,10 +65,7 @@ npar::Stmt *npar::recurse_if(npar_t &S, qlex_t &rd) {
 
   let then = recurse_if_then(S, rd);
 
-  std::optional<Stmt *> ele;
-  if (peek().is<qKElse>()) {
-    ele = (next(), recurse_if_else(S, rd));
-  }
+  let ele = recurse_if_else(S, rd);
 
   let stmt = IfStmt::get(cond, then, ele.value_or(nullptr));
   stmt->set_end_pos(current().end);
