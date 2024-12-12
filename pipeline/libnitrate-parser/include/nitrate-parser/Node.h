@@ -34,7 +34,7 @@
 #ifndef __NITRATE_PARSER_NODE_H__
 #define __NITRATE_PARSER_NODE_H__
 
-#include <type_traits>
+#include <unordered_map>
 #ifndef __cplusplus
 #error "This code requires c++"
 #endif
@@ -55,8 +55,7 @@
 #include <set>
 #include <string>
 #include <tuple>
-#include <unordered_map>
-#include <unordered_set>
+#include <type_traits>
 #include <variant>
 #include <vector>
 
@@ -763,12 +762,13 @@ namespace npar {
     Pro = 2,
   };
 
-  template <typename PARAM, typename OBJECT,
-            typename COMPARE = std::less<PARAM>,
+  template <typename PARAM, typename OBJECT, typename HASH = std::hash<PARAM>,
+            typename IS_EQUAL = std::equal_to<PARAM>,
             typename ALLOC =
                 std::allocator<std::pair<const PARAM, std::unique_ptr<OBJECT>>>>
   class GenericIntern {
-    std::map<PARAM, std::unique_ptr<OBJECT>, COMPARE, ALLOC> m_map;
+    std::unordered_map<PARAM, std::unique_ptr<OBJECT>, HASH, IS_EQUAL, ALLOC>
+        m_map;
     std::recursive_mutex m_mutex;
 
   public:
@@ -811,16 +811,7 @@ namespace npar {
   static_assert((int)Vis::Sec == 1);
   static_assert((int)Vis::Pro == 2);
 
-  class AutoIntern : public std::string_view {
-    static GenericIntern<std::string_view, std::string> m_intern;
-
-  public:
-    AutoIntern() : std::string_view(""){};
-
-    AutoIntern(const char *str) : std::string_view(*m_intern.get(str)) {}
-    AutoIntern(const std::string &str) : std::string_view(*m_intern.get(str)) {}
-    AutoIntern(std::string_view str) : std::string_view(*m_intern.get(str)) {}
-  };
+  std::string_view SaveString(std::string_view str);
 
   class Stmt : public npar_node_t {
   public:
@@ -953,7 +944,8 @@ namespace npar {
     std::string_view m_name;
 
   public:
-    NamedTy(AutoIntern name) : Type(QAST_NODE_UNRES_TY), m_name(name) {}
+    constexpr NamedTy(std::string_view name)
+        : Type(QAST_NODE_UNRES_TY), m_name(name) {}
 
     let get_name() const { return m_name; }
   };
@@ -1073,7 +1065,8 @@ namespace npar {
     std::string_view m_name;
 
   public:
-    OpaqueTy(AutoIntern name) : Type(QAST_NODE_OPAQUE_TY), m_name(name) {}
+    constexpr OpaqueTy(std::string_view name)
+        : Type(QAST_NODE_OPAQUE_TY), m_name(name) {}
 
     let get_name() const { return m_name; }
   };
@@ -1251,7 +1244,8 @@ namespace npar {
     std::string_view m_value;
 
   public:
-    ConstInt(AutoIntern value) : Expr(QAST_NODE_INT), m_value(value) {}
+    constexpr ConstInt(std::string_view value)
+        : Expr(QAST_NODE_INT), m_value(value) {}
 
     let get_value() const { return m_value; }
   };
@@ -1260,7 +1254,8 @@ namespace npar {
     std::string_view m_value;
 
   public:
-    ConstFloat(AutoIntern value) : Expr(QAST_NODE_FLOAT), m_value(value) {}
+    constexpr ConstFloat(std::string_view value)
+        : Expr(QAST_NODE_FLOAT), m_value(value) {}
 
     let get_value() const { return m_value; }
   };
@@ -1279,7 +1274,8 @@ namespace npar {
     std::string_view m_value;
 
   public:
-    ConstString(AutoIntern value) : Expr(QAST_NODE_STRING), m_value(value) {}
+    constexpr ConstString(std::string_view value)
+        : Expr(QAST_NODE_STRING), m_value(value) {}
 
     let get_value() const { return m_value; }
   };
@@ -1370,7 +1366,7 @@ namespace npar {
     std::string_view m_field;
 
   public:
-    Field(Expr *base, AutoIntern field)
+    constexpr Field(Expr *base, std::string_view field)
         : Expr(QAST_NODE_FIELD), m_base(base), m_field(field) {}
 
     let get_base() const { return m_base; }
@@ -1421,7 +1417,8 @@ namespace npar {
     std::string_view m_name;
 
   public:
-    Ident(AutoIntern name) : Expr(QAST_NODE_IDENT), m_name(name) {}
+    constexpr Ident(std::string_view name)
+        : Expr(QAST_NODE_IDENT), m_name(name) {}
 
     let get_name() const { return m_name; }
   };
@@ -1474,8 +1471,8 @@ namespace npar {
     VarDeclType m_decl_type;
 
   public:
-    VarDecl(AutoIntern name, Type *type, Expr *value, VarDeclType decl_type,
-            VarDeclAttributes attributes)
+    VarDecl(std::string_view name, Type *type, Expr *value,
+            VarDeclType decl_type, VarDeclAttributes attributes)
         : Stmt(QAST_NODE_VAR),
           m_attributes(attributes),
           m_name(name),
@@ -1497,7 +1494,7 @@ namespace npar {
     InlineAsmArgs m_args;
 
   public:
-    InlineAsm(AutoIntern code, const InlineAsmArgs &args)
+    InlineAsm(std::string_view code, const InlineAsmArgs &args)
         : Stmt(QAST_NODE_INLINE_ASM), m_code(code), m_args(args) {}
 
     let get_code() const { return m_code; }
@@ -1557,8 +1554,8 @@ namespace npar {
     Stmt *m_body;
 
   public:
-    ForeachStmt(AutoIntern idx_ident, AutoIntern val_ident, Expr *expr,
-                Stmt *body)
+    constexpr ForeachStmt(std::string_view idx_ident,
+                          std::string_view val_ident, Expr *expr, Stmt *body)
         : Stmt(QAST_NODE_FOREACH),
           m_idx_ident(idx_ident),
           m_val_ident(val_ident),
@@ -1642,7 +1639,7 @@ namespace npar {
     Vis m_vis;
 
   public:
-    ExportStmt(Stmt *content, AutoIntern abi_name, Vis vis,
+    ExportStmt(Stmt *content, std::string_view abi_name, Vis vis,
                SymbolAttributes attrs)
         : Stmt(QAST_NODE_EXPORT),
           m_attrs(attrs),
@@ -1666,7 +1663,7 @@ namespace npar {
     Stmt *m_body;
 
   public:
-    ScopeStmt(AutoIntern name, Stmt *body, ScopeDeps deps = {})
+    ScopeStmt(std::string_view name, Stmt *body, ScopeDeps deps = {})
         : Stmt(QAST_NODE_SCOPE), m_deps(deps), m_name(name), m_body(body) {}
 
     let get_name() const { return m_name; }
@@ -1679,7 +1676,7 @@ namespace npar {
     Type *m_type;
 
   public:
-    TypedefStmt(AutoIntern name, Type *type)
+    constexpr TypedefStmt(std::string_view name, Type *type)
         : Stmt(QAST_NODE_TYPEDEF), m_name(name), m_type(type) {}
 
     let get_name() const { return m_name; }
@@ -1693,7 +1690,8 @@ namespace npar {
     Vis m_visibility;
 
   public:
-    StructField(AutoIntern name, Type *type, Expr *value, Vis visibility)
+    constexpr StructField(std::string_view name, Type *type, Expr *value,
+                          Vis visibility)
         : Stmt(QAST_NODE_STRUCT_FIELD),
           m_name(name),
           m_type(type),
@@ -1717,7 +1715,7 @@ namespace npar {
     Type *m_type;
 
   public:
-    EnumDef(AutoIntern name, Type *type, const EnumDefItems &items)
+    EnumDef(std::string_view name, Type *type, const EnumDefItems &items)
         : Stmt(QAST_NODE_ENUM), m_items(items), m_name(name), m_type(type) {}
 
     let get_items() const { return m_items; }
@@ -1731,7 +1729,7 @@ namespace npar {
     FuncTy *m_type;
 
   public:
-    FnDecl(AutoIntern name, FuncTy *type,
+    FnDecl(std::string_view name, FuncTy *type,
            std::optional<TemplateParameters> params = std::nullopt)
         : Stmt(QAST_NODE_FNDECL),
           m_template_parameters(params),
@@ -1743,7 +1741,7 @@ namespace npar {
     let get_template_params() const { return m_template_parameters; }
 
     void set_type(FuncTy *type) { m_type = type; }
-    void set_name(AutoIntern name) { m_name = name; }
+    void set_name(std::string_view name) { m_name = name; }
     auto &get_template_params() { return m_template_parameters; }
   };
 
@@ -1804,7 +1802,7 @@ namespace npar {
     std::string_view m_name;
 
   public:
-    StructDef(AutoIntern name, const StructDefFields &fields = {},
+    StructDef(std::string_view name, const StructDefFields &fields = {},
               const StructDefMethods &methods = {},
               const StructDefStaticMethods &static_methods = {},
               std::optional<TemplateParameters> params = std::nullopt,
@@ -1823,7 +1821,7 @@ namespace npar {
     let get_fields() const { return m_fields; }
     let get_composite_type() const { return m_comp_type; }
 
-    void set_name(AutoIntern name) { m_name = name; }
+    void set_name(std::string_view name) { m_name = name; }
     void set_composite_type(CompositeType t) { m_comp_type = t; }
     auto &get_methods() { return m_methods; }
     auto &get_static_methods() { return m_static_methods; }
@@ -1833,71 +1831,11 @@ namespace npar {
 
   template <typename T, typename... Args>
   static inline T *make(Args &&...args) {
-    struct LessFunc {
-      constexpr bool inline operator()(const std::tuple<Args...> &lhs,
-                                       const std::tuple<Args...> &rhs) const {
-        const auto n = sizeof...(Args);
+    T *new_obj = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
 
-        const auto less = [](const auto &l, const auto &r) -> bool {
-          using TYPE = std::decay_t<decltype(l)>;
+    //  /// TODO: Cache nodes
 
-          const auto is_node = std::is_base_of_v<npar_node_t, TYPE>;
-
-          if constexpr (is_node) {
-            return l.hash64() < r.hash64();
-          } else if constexpr (std::is_same_v<TYPE, std::nullopt_t>) {
-            return false;
-          } else if constexpr (std::is_same_v<TYPE, std::nullptr_t>) {
-            return false;
-          } else if constexpr (std::is_pointer_v<TYPE>) {
-            if constexpr (std::is_base_of_v<npar_node_t,
-                                            std::remove_pointer_t<TYPE>>) {
-              return l->hash64() < r->hash64();
-            } else if constexpr (std::is_same_v<TYPE, const char *>) {
-              return std::string_view(l) < std::string_view(r);
-            } /* error */
-          } else {
-            return l < r;
-          }
-        };
-
-        if constexpr (n == 0) {
-          return true;
-        } else if constexpr (n == 1) {
-          return less(std::get<0>(lhs), std::get<0>(rhs));
-        } else if constexpr (n == 2) {
-          return less(std::get<0>(lhs), std::get<0>(rhs)) &&
-                 less(std::get<1>(lhs), std::get<1>(rhs));
-        } else if constexpr (n == 3) {
-          return less(std::get<0>(lhs), std::get<0>(rhs)) &&
-                 less(std::get<1>(lhs), std::get<1>(rhs)) &&
-                 less(std::get<2>(lhs), std::get<2>(rhs));
-        } else if constexpr (n == 4) {
-          return less(std::get<0>(lhs), std::get<0>(rhs)) &&
-                 less(std::get<1>(lhs), std::get<1>(rhs)) &&
-                 less(std::get<2>(lhs), std::get<2>(rhs)) &&
-                 less(std::get<3>(lhs), std::get<3>(rhs));
-        } else if constexpr (n == 5) {
-          return less(std::get<0>(lhs), std::get<0>(rhs)) &&
-                 less(std::get<1>(lhs), std::get<1>(rhs)) &&
-                 less(std::get<2>(lhs), std::get<2>(rhs)) &&
-                 less(std::get<3>(lhs), std::get<3>(rhs)) &&
-                 less(std::get<4>(lhs), std::get<4>(rhs));
-        } else {
-          static_assert(n <= 5, "Too many arguments");
-        }
-      }
-    };
-
-    static GenericIntern<std::tuple<Args...>, T, LessFunc> intern;
-
-    return intern.get(std::forward<Args>(args)...);
-
-    // T *new_obj = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
-
-    // / TODO: Cache nodes
-
-    // return new_obj;
+    return new_obj;
   }
 
   ///=============================================================================
@@ -1999,6 +1937,10 @@ constexpr bool npar_node_t::is_stmt_expr(npar_ty_t type) const {
 }
 
 constexpr bool npar_node_t::isSame(const npar_node_t *o) const noexcept {
+  if (this == o) {
+    return true;
+  }
+
   if (getKind() != o->getKind()) {
     return false;
   }
@@ -2089,13 +2031,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const noexcept {
       let us = as<ConstBool>();
       let them = o->as<ConstBool>();
 
-      (void)us;
-      (void)them;
-
-      /// TODO: Implement check Bool
-      qcore_implement();
-
-      return true;
+      return us->get_value() == them->get_value();
     }
 
     case QAST_NODE_NULL: {

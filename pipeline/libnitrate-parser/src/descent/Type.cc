@@ -128,7 +128,7 @@ static Type *recurse_opaque_type(qlex_t &rd) {
 
   if (let name = next_if(qName)) {
     if (next_if(qPuncRPar)) {
-      let opaque = make<OpaqueTy>(name->as_string(&rd));
+      let opaque = make<OpaqueTy>(SaveString(name->as_string(&rd)));
       opaque->set_offset(current().start);
 
       return opaque;
@@ -331,7 +331,7 @@ static Type *recurse_type_by_name(qlex_t &rd, std::string_view name) {
   } else if (name == "void") {
     type = make<VoidTy>();
   } else {
-    type = make<NamedTy>(name);
+    type = make<NamedTy>(SaveString(name));
   }
 
   if (!type.has_value()) {

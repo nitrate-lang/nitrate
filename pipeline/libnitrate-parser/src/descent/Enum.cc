@@ -122,7 +122,7 @@ npar::Stmt *npar::recurse_enum(npar_t &S, qlex_t &rd) {
   let type = recurse_enum_type(S, rd);
 
   if (let items = recurse_enum_items(S, rd)) {
-    return make<EnumDef>(name, type.value_or(nullptr),
+    return make<EnumDef>(SaveString(name), type.value_or(nullptr),
                          std::move(items.value()));
   }
 

@@ -42,10 +42,10 @@ void AST_Hash64::str_impl(std::string_view str) {
   qcore_assert(!m_state.empty());
   m_state.top().second++;
 
-  bool is_field_name =
-      m_state.top().first == false && (m_state.top().second & 1) != 0;
+  bool hash_name =
+      m_state.top().first == true || (m_state.top().second & 1) != 0;
 
-  if (!is_field_name) {
+  if (hash_name) {
     m_sum += std::hash<std::string_view>{}(str);
   }
 }

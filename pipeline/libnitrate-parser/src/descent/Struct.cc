@@ -118,7 +118,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
     if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
       next();
     }
-    auto R = make<StructField>(name, type, nullptr, Vis::Sec);
+    auto R = make<StructField>(SaveString(name), type, nullptr, Vis::Sec);
 
     return R;
   }
@@ -139,7 +139,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
          qlex_tok_t(qPunc, qPuncRCur)});
   }
 
-  auto R = make<StructField>(name, type, value, Vis::Sec);
+  auto R = make<StructField>(SaveString(name), type, value, Vis::Sec);
 
   return R;
 }
@@ -158,7 +158,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
   FnDecl *fdecl = nullptr;
   FuncTy *ft = nullptr;
   Stmt *field = nullptr;
-  StructDef *sdef = make<StructDef>("");
+  StructDef *sdef = make<StructDef>(SaveString(""));
 
   sdef->set_composite_type(type);
 
@@ -293,7 +293,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
     }
   }
 
-  sdef->set_name(name);
+  sdef->set_name(SaveString(name));
   sdef->get_fields() = std::move(fields);
   sdef->get_methods() = std::move(methods);
   sdef->get_static_methods() = std::move(static_methods);

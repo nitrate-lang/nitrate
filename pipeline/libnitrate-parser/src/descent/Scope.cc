@@ -94,7 +94,7 @@ npar::Stmt *npar::recurse_scope(npar_t &S, qlex_t &rd) {
   if (let implicit_dependencies = recurse_scope_deps(rd)) {
     let scope_block = recurse_scope_block(S, rd);
 
-    return make<ScopeStmt>(scope_name, scope_block,
+    return make<ScopeStmt>(SaveString(scope_name), scope_block,
                            std::move(implicit_dependencies.value()));
   } else {
     diagnostic << current() << "Expected scope dependencies";

@@ -271,7 +271,7 @@ static bool recurse_captures_and_name(qlex_t &rd, FnDecl *fndecl,
 
   if (c.is(qName)) {
     next();
-    fndecl->set_name(c.as_string(&rd));
+    fndecl->set_name(SaveString(c.as_string(&rd)));
   }
 
   return true;
@@ -472,7 +472,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, npar_t &S,
 }
 
 Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
-  FnDecl *fndecl = make<FnDecl>("", nullptr);
+  FnDecl *fndecl = make<FnDecl>(SaveString(""), nullptr);
   FuncTy *ftype = make<FuncTy>();
   Type *ret_type = nullptr;
   FnCaptures captures;

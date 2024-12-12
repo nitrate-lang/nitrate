@@ -45,12 +45,6 @@
 #define MAX_EXPR_DEPTH (10000)
 #define MAX_LIST_DUP (10000)
 
-static inline npar::Expr *LOC_121(npar::Expr *p, qlex_tok_t t) {
-  p->set_offset(t.start);
-
-  return p;
-}
-
 using namespace npar;
 
 static Call *recurse_function_call(npar_t &S, Expr *callee, qlex_t &rd,
@@ -256,7 +250,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
          * @brief Parse integer literal with type suffix
          */
 
-        stack.push(LOC_121(make<ConstInt>(tok.as_string(&rd)), tok));
+        stack.push(make<ConstInt>(SaveString(tok.as_string(&rd))));
 
         tok = peek();
         if (tok.is(qName)) {
@@ -264,8 +258,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
 
           Expr *integer = stack.top();
           stack.pop();
-          stack.push(LOC_121(
-              make<BinExpr>(integer, qOpAs, make<TypeExpr>(suffix)), tok));
+          stack.push(make<BinExpr>(integer, qOpAs, make<TypeExpr>(suffix)));
         }
         continue;
       }
@@ -274,7 +267,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
          * @brief Parse floating-point literal with type suffix
          */
 
-        stack.push(LOC_121(make<ConstFloat>(tok.as_string(&rd)), tok));
+        stack.push(make<ConstFloat>(SaveString(tok.as_string(&rd))));
 
         tok = peek();
         if (tok.is(qName)) {
@@ -282,8 +275,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
 
           Expr *num = stack.top();
           stack.pop();
-          stack.push(
-              LOC_121(make<BinExpr>(num, qOpAs, make<TypeExpr>(suffix)), tok));
+          stack.push(make<BinExpr>(num, qOpAs, make<TypeExpr>(suffix)));
         }
         continue;
       }
@@ -292,7 +284,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
          * @brief Parse string literal with type suffix
          */
 
-        stack.push(LOC_121(make<ConstString>(tok.as_string(&rd)), tok));
+        stack.push(make<ConstString>(SaveString(tok.as_string(&rd))));
 
         tok = peek();
         if (tok.is(qName)) {
@@ -300,8 +292,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
 
           Expr *num = stack.top();
           stack.pop();
-          stack.push(
-              LOC_121(make<BinExpr>(num, qOpAs, make<TypeExpr>(suffix)), tok));
+          stack.push(make<BinExpr>(num, qOpAs, make<TypeExpr>(suffix)));
         }
         continue;
       }
@@ -312,7 +303,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
         auto str = tok.as_string(&rd);
         qcore_assert(str.size() == 1);
 
-        stack.push(LOC_121(make<ConstChar>(str.at(0)), tok));
+        stack.push(make<ConstChar>(str.at(0)));
 
         tok = peek();
         if (tok.is(qName)) {
@@ -320,27 +311,26 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
 
           Expr *num = stack.top();
           stack.pop();
-          stack.push(
-              LOC_121(make<BinExpr>(num, qOpAs, make<TypeExpr>(suffix)), tok));
+          stack.push(make<BinExpr>(num, qOpAs, make<TypeExpr>(suffix)));
         }
         continue;
       }
       case qKeyW: {
         switch (tok.as<qlex_key_t>()) {
           case qKTrue: {
-            stack.push(LOC_121(make<ConstBool>(true), tok));
+            stack.push(make<ConstBool>(true));
             continue;
           }
           case qKFalse: {
-            stack.push(LOC_121(make<ConstBool>(false), tok));
+            stack.push(make<ConstBool>(false));
             continue;
           }
           case qKNull: {
-            stack.push(LOC_121(make<ConstNull>(), tok));
+            stack.push(make<ConstNull>());
             continue;
           }
           case qKUndef: {
-            stack.push(LOC_121(make<ConstUndef>(), tok));
+            stack.push(make<ConstUndef>());
             continue;
           }
           case qKFn: {
@@ -609,20 +599,20 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
           let ident = tok.as_string(&rd);
           tok = peek();
           if (tok.is<qOpInc>()) {
-            PostUnaryExpr *p =
-                make<PostUnaryExpr>(make<Field>(left, ident), qOpInc);
+            PostUnaryExpr *p = make<PostUnaryExpr>(
+                make<Field>(left, SaveString(ident)), qOpInc);
             stack.push(p);
             next();
             continue;
           } else if (tok.is<qOpDec>()) {
-            PostUnaryExpr *p =
-                make<PostUnaryExpr>(make<Field>(left, ident), qOpDec);
+            PostUnaryExpr *p = make<PostUnaryExpr>(
+                make<Field>(left, SaveString(ident)), qOpDec);
             stack.push(p);
             next();
             continue;
           }
 
-          stack.push(make<Field>(left, ident));
+          stack.push(make<Field>(left, SaveString(ident)));
           continue;
         }
         Expr *expr = nullptr;
@@ -676,7 +666,8 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
         if (peek().ty == qPunc && (peek()).as<qlex_punc_t>() == qPuncLPar) {
           next();
 
-          Call *fcall = recurse_function_call(S, make<Ident>(ident), rd, depth);
+          Call *fcall = recurse_function_call(S, make<Ident>(SaveString(ident)),
+                                              rd, depth);
           if (fcall == nullptr) {
             diagnostic << tok << "Expected a function call in expression";
             return mock_expr(QAST_NODE_VOID_TY);
@@ -685,17 +676,19 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
           stack.push(fcall);
           continue;
         } else if (peek().is<qOpInc>()) {
-          PostUnaryExpr *p = make<PostUnaryExpr>(make<Ident>(ident), qOpInc);
+          PostUnaryExpr *p =
+              make<PostUnaryExpr>(make<Ident>(SaveString(ident)), qOpInc);
           stack.push(p);
           next();
           continue;
         } else if (peek().is<qOpDec>()) {
-          PostUnaryExpr *p = make<PostUnaryExpr>(make<Ident>(ident), qOpDec);
+          PostUnaryExpr *p =
+              make<PostUnaryExpr>(make<Ident>(SaveString(ident)), qOpDec);
           stack.push(p);
           next();
           continue;
         } else {
-          Ident *id = make<Ident>(ident);
+          Ident *id = make<Ident>(SaveString(ident));
           id->set_offset(tok.start);
 
           stack.push(id);

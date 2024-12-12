@@ -43,7 +43,11 @@
 
 using namespace npar;
 
-GenericIntern<std::string_view, std::string> AutoIntern::m_intern;
+std::string_view npar::SaveString(std::string_view str) {
+  static GenericIntern<std::string, std::string> m_intern;
+
+  return *m_intern.get(str);
+};
 
 ///=============================================================================
 namespace npar {

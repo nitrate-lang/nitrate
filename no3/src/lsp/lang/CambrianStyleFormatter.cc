@@ -5,6 +5,7 @@
 
 #include <lsp/lang/CambrianStyleFormatter.hh>
 #include <sstream>
+#include <unordered_set>
 
 using namespace lsp::fmt;
 using namespace npar;

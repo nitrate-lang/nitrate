@@ -93,7 +93,7 @@ static std::optional<Stmt *> recurse_variable_instance(npar_t &S, qlex_t &rd,
       let type = recurse_variable_type(S, rd);
       let value = recurse_variable_value(S, rd);
 
-      return make<VarDecl>(name, type.value_or(nullptr),
+      return make<VarDecl>(SaveString(name), type.value_or(nullptr),
                            value.value_or(nullptr), decl_type,
                            std::move(attributes.value()));
     } else {

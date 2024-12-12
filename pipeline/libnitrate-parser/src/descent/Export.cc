@@ -88,7 +88,8 @@ npar::Stmt *npar::recurse_pub(npar_t &S, qlex_t &rd) {
   if (let attrs = recurse_export_attributes(S, rd)) {
     let export_block = recurse_export_body(S, rd);
 
-    return make<ExportStmt>(export_block, abi_id, Vis::Pub, attrs.value());
+    return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Pub,
+                            attrs.value());
   } else {
     diagnostic << current() << "Malformed export attributes";
   }
@@ -102,7 +103,8 @@ npar::Stmt *npar::recurse_sec(npar_t &S, qlex_t &rd) {
   if (let attrs = recurse_export_attributes(S, rd)) {
     let export_block = recurse_export_body(S, rd);
 
-    return make<ExportStmt>(export_block, abi_id, Vis::Sec, attrs.value());
+    return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Sec,
+                            attrs.value());
   } else {
     diagnostic << current() << "Malformed export attributes";
   }
@@ -116,7 +118,8 @@ npar::Stmt *npar::recurse_pro(npar_t &S, qlex_t &rd) {
   if (let attrs = recurse_export_attributes(S, rd)) {
     let export_block = recurse_export_body(S, rd);
 
-    return make<ExportStmt>(export_block, abi_id, Vis::Pro, attrs.value());
+    return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Pro,
+                            attrs.value());
   } else {
     diagnostic << current() << "Malformed export attributes";
   }

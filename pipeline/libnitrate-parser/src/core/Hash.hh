@@ -66,7 +66,8 @@ namespace npar {
               std::bind(&AST_Hash64::end_obj_impl, this),
               std::bind(&AST_Hash64::begin_arr_impl, this,
                         std::placeholders::_1),
-              std::bind(&AST_Hash64::end_arr_impl, this)) {
+              std::bind(&AST_Hash64::end_arr_impl, this)),
+          m_sum(0) {
       m_state.push({false, 0});
     }
     virtual ~AST_Hash64() = default;

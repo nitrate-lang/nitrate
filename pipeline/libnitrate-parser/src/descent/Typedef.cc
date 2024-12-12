@@ -48,7 +48,7 @@ npar::Stmt *npar::recurse_typedef(npar_t &S, qlex_t &rd) {
       let type = recurse_type(S, rd);
 
       if (next_if(qPuncSemi)) {
-        return make<TypedefStmt>(name, type);
+        return make<TypedefStmt>(SaveString(name), type);
       } else {
         diagnostic << current() << "Expected ';' in typedef declaration";
       }
