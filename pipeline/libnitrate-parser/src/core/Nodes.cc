@@ -42,10 +42,7 @@
 
 using namespace npar;
 
-Intern<std::string_view,
-       std::basic_string<char, std::char_traits<char>, Arena<char>>,
-       std::string_view>
-    AutoIntern::m_intern;
+GenericIntern<std::string_view, std::string> AutoIntern::m_intern;
 
 ///=============================================================================
 namespace npar {
@@ -73,6 +70,13 @@ CPP_EXPORT std::ostream &npar_node_t::dump(std::ostream &os,
   const_cast<npar_node_t *>(this)->accept(writer);
 
   return os;
+}
+
+CPP_EXPORT uint64_t npar_node_t::hash64() const noexcept {
+  /// TODO: Implement hash64
+  qcore_implement();
+
+  return 0;
 }
 
 ///=============================================================================

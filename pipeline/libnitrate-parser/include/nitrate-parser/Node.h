@@ -34,6 +34,7 @@
 #ifndef __NITRATE_PARSER_NODE_H__
 #define __NITRATE_PARSER_NODE_H__
 
+#include <type_traits>
 #ifndef __cplusplus
 #error "This code requires c++"
 #endif
@@ -45,6 +46,8 @@
 #include <cassert>
 #include <iostream>
 #include <map>
+#include <memory>
+#include <mutex>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-parser/Visitor.hh>
 #include <optional>
@@ -734,7 +737,9 @@ public:
   constexpr bool is_expr_stmt(npar_ty_t type) const;
   constexpr bool is_stmt_expr(npar_ty_t type) const;
 
-  constexpr bool isSame(npar_node_t *other) const noexcept;
+  constexpr bool isSame(const npar_node_t *other) const noexcept;
+
+  uint64_t hash64() const noexcept;
 
   std::ostream &dump(std::ostream &os = std::cerr,
                      bool isForDebug = false) const noexcept;
@@ -758,20 +763,47 @@ namespace npar {
     Pro = 2,
   };
 
-  template <typename PARAM, typename OBJECT, typename VIEW>
-  class Intern {
-    std::unordered_map<PARAM, OBJECT> m_map;
+  template <typename PARAM, typename OBJECT,
+            typename COMPARE = std::less<PARAM>,
+            typename ALLOC =
+                std::allocator<std::pair<const PARAM, std::unique_ptr<OBJECT>>>>
+  class GenericIntern {
+    std::map<PARAM, std::unique_ptr<OBJECT>, COMPARE, ALLOC> m_map;
+    std::recursive_mutex m_mutex;
 
   public:
-    Intern() = default;
+    GenericIntern() {}
 
-    VIEW get(const PARAM &key) {
+    template <typename... Args>
+    OBJECT *get(Args &&...args) noexcept {
+      /* Permit recursion because idk when the 'args' are evaluated; they may
+       * have a recursive call to this? */
+      std::lock_guard<std::recursive_mutex> lock(m_mutex);
+
+      /* Construct the key */
+      let key = PARAM(std::forward<Args>(args)...);
+
+      /* Find the key in the map */
       auto it = m_map.find(key);
-      if (it != m_map.end()) {
-        return it->second;
+
+      /* If the key is not found, insert it */
+      if (it == m_map.end()) {
+        /* Add the [key->allocated] pair to the map */
+        /* Get the iterator to the inserted element object */
+
+        it = m_map
+                 .emplace(std::move(key),
+                          std::make_unique<OBJECT>(std::forward<Args>(args)...))
+                 .first;
       }
 
-      return m_map.emplace(key, OBJECT(key)).first->second;
+      /* Return pointer to the object */
+      return it->second.get();
+    }
+
+    size_t size() noexcept {
+      std::lock_guard<std::recursive_mutex> lock(m_mutex);
+      return m_map.size();
     }
   };
 
@@ -780,17 +812,14 @@ namespace npar {
   static_assert((int)Vis::Pro == 2);
 
   class AutoIntern : public std::string_view {
-    static Intern<std::string_view,
-                  std::basic_string<char, std::char_traits<char>, Arena<char>>,
-                  std::string_view>
-        m_intern;
+    static GenericIntern<std::string_view, std::string> m_intern;
 
   public:
     AutoIntern() : std::string_view(""){};
 
-    AutoIntern(const char *str) : std::string_view(m_intern.get(str)) {}
-    AutoIntern(const std::string &str) : std::string_view(m_intern.get(str)) {}
-    AutoIntern(std::string_view str) : std::string_view(m_intern.get(str)) {}
+    AutoIntern(const char *str) : std::string_view(*m_intern.get(str)) {}
+    AutoIntern(const std::string &str) : std::string_view(*m_intern.get(str)) {}
+    AutoIntern(std::string_view str) : std::string_view(*m_intern.get(str)) {}
   };
 
   class Stmt : public npar_node_t {
@@ -1435,9 +1464,7 @@ namespace npar {
 
   enum class VarDeclType { Const, Var, Let };
 
-  using VarDeclAttributes =
-      std::unordered_set<Expr *, std::hash<Expr *>, std::equal_to<Expr *>,
-                         Arena<Expr *>>;
+  using VarDeclAttributes = std::set<Expr *, std::less<Expr *>, Arena<Expr *>>;
 
   class VarDecl : public Stmt {
     VarDeclAttributes m_attributes;
@@ -1606,9 +1633,7 @@ namespace npar {
     let get_default() const { return m_default; }
   };
 
-  using SymbolAttributes =
-      std::unordered_set<Expr *, std::hash<Expr *>, std::equal_to<Expr *>,
-                         Arena<Expr *>>;
+  using SymbolAttributes = std::set<Expr *, std::less<Expr *>, Arena<Expr *>>;
 
   class ExportStmt : public Stmt {
     SymbolAttributes m_attrs;
@@ -1808,11 +1833,71 @@ namespace npar {
 
   template <typename T, typename... Args>
   static inline T *make(Args &&...args) {
-    T *new_obj = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+    struct LessFunc {
+      constexpr bool inline operator()(const std::tuple<Args...> &lhs,
+                                       const std::tuple<Args...> &rhs) const {
+        const auto n = sizeof...(Args);
 
-    /// TODO: Cache nodes
+        const auto less = [](const auto &l, const auto &r) -> bool {
+          using TYPE = std::decay_t<decltype(l)>;
 
-    return new_obj;
+          const auto is_node = std::is_base_of_v<npar_node_t, TYPE>;
+
+          if constexpr (is_node) {
+            return l.hash64() < r.hash64();
+          } else if constexpr (std::is_same_v<TYPE, std::nullopt_t>) {
+            return false;
+          } else if constexpr (std::is_same_v<TYPE, std::nullptr_t>) {
+            return false;
+          } else if constexpr (std::is_pointer_v<TYPE>) {
+            if constexpr (std::is_base_of_v<npar_node_t,
+                                            std::remove_pointer_t<TYPE>>) {
+              return l->hash64() < r->hash64();
+            } else if constexpr (std::is_same_v<TYPE, const char *>) {
+              return std::string_view(l) < std::string_view(r);
+            } /* error */
+          } else {
+            return l < r;
+          }
+        };
+
+        if constexpr (n == 0) {
+          return true;
+        } else if constexpr (n == 1) {
+          return less(std::get<0>(lhs), std::get<0>(rhs));
+        } else if constexpr (n == 2) {
+          return less(std::get<0>(lhs), std::get<0>(rhs)) &&
+                 less(std::get<1>(lhs), std::get<1>(rhs));
+        } else if constexpr (n == 3) {
+          return less(std::get<0>(lhs), std::get<0>(rhs)) &&
+                 less(std::get<1>(lhs), std::get<1>(rhs)) &&
+                 less(std::get<2>(lhs), std::get<2>(rhs));
+        } else if constexpr (n == 4) {
+          return less(std::get<0>(lhs), std::get<0>(rhs)) &&
+                 less(std::get<1>(lhs), std::get<1>(rhs)) &&
+                 less(std::get<2>(lhs), std::get<2>(rhs)) &&
+                 less(std::get<3>(lhs), std::get<3>(rhs));
+        } else if constexpr (n == 5) {
+          return less(std::get<0>(lhs), std::get<0>(rhs)) &&
+                 less(std::get<1>(lhs), std::get<1>(rhs)) &&
+                 less(std::get<2>(lhs), std::get<2>(rhs)) &&
+                 less(std::get<3>(lhs), std::get<3>(rhs)) &&
+                 less(std::get<4>(lhs), std::get<4>(rhs));
+        } else {
+          static_assert(n <= 5, "Too many arguments");
+        }
+      }
+    };
+
+    static GenericIntern<std::tuple<Args...>, T, LessFunc> intern;
+
+    return intern.get(std::forward<Args>(args)...);
+
+    // T *new_obj = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+
+    // / TODO: Cache nodes
+
+    // return new_obj;
   }
 
   ///=============================================================================
@@ -1913,7 +1998,7 @@ constexpr bool npar_node_t::is_stmt_expr(npar_ty_t type) const {
   return is(QAST_NODE_STMT_EXPR) && as<npar::StmtExpr>()->get_stmt()->is(type);
 }
 
-constexpr bool npar_node_t::isSame(npar_node_t *o) const noexcept {
+constexpr bool npar_node_t::isSame(const npar_node_t *o) const noexcept {
   if (getKind() != o->getKind()) {
     return false;
   }
