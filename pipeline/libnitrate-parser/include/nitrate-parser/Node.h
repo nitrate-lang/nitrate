@@ -208,7 +208,7 @@ public:
                         uint32_t offset = QLEX_EOFF)
       : m_node_type(ty), m_fileid(fileid), m_offset(offset), m_mock(mock){};
 
-  constexpr void accept(npar::ASTVisitor &v) {
+  constexpr void accept(npar::ASTVisitor &v) const {
     using namespace npar;
 
     switch (getKind()) {
@@ -845,16 +845,17 @@ namespace npar {
     }
     bool is_ptr_to(Type *type) noexcept;
 
-    constexpr let get_width() { return m_width; }
-    constexpr void set_width(Expr *width) { m_width = width; }
+    constexpr let get_width() const { return m_width; }
 
-    constexpr std::pair<Expr *, Expr *> get_range() {
+    constexpr std::pair<Expr *, Expr *> get_range() const {
       return {m_range_start, m_range_end};
     }
+
     constexpr void set_range(Expr *start, Expr *end) {
       m_range_start = start;
       m_range_end = end;
     }
+    constexpr void set_width(Expr *width) { m_width = width; }
   };
 
   typedef std::tuple<SmallString, Type *, Expr *> TemplateParameter;
@@ -1117,22 +1118,18 @@ namespace npar {
       }
     }
 
-    bool is_noreturn() { return m_noreturn; }
-
-    let get_return_ty() { return m_return; }
-    void set_return_ty(Type *return_ty) { m_return = return_ty; }
-
+    let is_noreturn() const { return m_noreturn; }
+    let get_return_ty() const { return m_return; }
     let get_params() const { return m_params; }
-    auto &get_params() { return m_params; }
+    let get_purity() const { return m_purity; }
+    let is_variadic() const { return m_variadic; }
+    let is_foreign() const { return m_is_foreign; }
 
-    FuncPurity get_purity() { return m_purity; }
+    void set_return_ty(Type *return_ty) { m_return = return_ty; }
     void set_purity(FuncPurity purity) { m_purity = purity; }
-
-    bool is_variadic() { return m_variadic; }
     void set_variadic(bool variadic) { m_variadic = variadic; }
-
-    bool is_foreign() { return m_is_foreign; }
     void set_foreign(bool is_foreign) { m_is_foreign = is_foreign; }
+    auto &get_params() { return m_params; }
   };
 
   ///=============================================================================
@@ -1400,10 +1397,10 @@ namespace npar {
         : Stmt(QAST_NODE_BLOCK), m_items(items), m_safety(safety) {}
 
     let get_items() const { return m_items; }
-    auto &get_items() { return m_items; }
+    let get_safety() const { return m_safety; }
 
-    SafetyMode get_safety() { return m_safety; }
     void set_safety(SafetyMode safety) { m_safety = safety; }
+    auto &get_items() { return m_items; }
   };
 
   enum class VarDeclType { Const, Var, Let };
@@ -1765,6 +1762,7 @@ namespace npar {
     let get_static_methods() const { return m_static_methods; }
     let get_fields() const { return m_fields; }
     let get_composite_type() const { return m_comp_type; }
+    let get_template_params() const { return m_template_parameters; }
 
     void set_name(SmallString name) { m_name = name; }
     void set_composite_type(CompositeType t) { m_comp_type = t; }

@@ -41,7 +41,7 @@
 
 using namespace npar;
 
-void AST_Writer::write_source_location(npar_node_t& n) const {
+void AST_Writer::write_source_location(npar_node_t const& n) const {
   if (m_include_source_location) {
     string("loc");
     begin_obj(2);
@@ -64,7 +64,7 @@ void AST_Writer::write_source_location(npar_node_t& n) const {
   }
 }
 
-void AST_Writer::write_type_metadata(Type& n) {
+void AST_Writer::write_type_metadata(Type const& n) {
   string("width");
   n.get_width() ? n.get_width()->accept(*this) : null();
 
@@ -75,7 +75,7 @@ void AST_Writer::write_type_metadata(Type& n) {
   n.get_range().second ? n.get_range().second->accept(*this) : null();
 }
 
-void AST_Writer::visit(npar_node_t& n) {
+void AST_Writer::visit(npar_node_t const& n) {
   begin_obj(2);
 
   string("kind");
@@ -86,7 +86,7 @@ void AST_Writer::visit(npar_node_t& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ExprStmt& n) {
+void AST_Writer::visit(ExprStmt const& n) {
   begin_obj(3);
 
   string("kind");
@@ -100,7 +100,7 @@ void AST_Writer::visit(ExprStmt& n) {
   end_obj();
 }
 
-void AST_Writer::visit(StmtExpr& n) {
+void AST_Writer::visit(StmtExpr const& n) {
   begin_obj(3);
 
   string("kind");
@@ -114,7 +114,7 @@ void AST_Writer::visit(StmtExpr& n) {
   end_obj();
 }
 
-void AST_Writer::visit(TypeExpr& n) {
+void AST_Writer::visit(TypeExpr const& n) {
   begin_obj(3);
 
   string("kind");
@@ -128,7 +128,7 @@ void AST_Writer::visit(TypeExpr& n) {
   end_obj();
 }
 
-void AST_Writer::visit(NamedTy& n) {
+void AST_Writer::visit(NamedTy const& n) {
   begin_obj(6);
 
   string("kind");
@@ -144,7 +144,7 @@ void AST_Writer::visit(NamedTy& n) {
   end_obj();
 }
 
-void AST_Writer::visit(InferTy& n) {
+void AST_Writer::visit(InferTy const& n) {
   begin_obj(5);
 
   string("kind");
@@ -157,7 +157,7 @@ void AST_Writer::visit(InferTy& n) {
   end_obj();
 }
 
-void AST_Writer::visit(TemplType& n) {
+void AST_Writer::visit(TemplType const& n) {
   begin_obj(7);
 
   string("kind");
@@ -179,7 +179,7 @@ void AST_Writer::visit(TemplType& n) {
   end_obj();
 }
 
-void AST_Writer::visit(U1& n) {
+void AST_Writer::visit(U1 const& n) {
   begin_obj(5);
 
   string("kind");
@@ -192,7 +192,7 @@ void AST_Writer::visit(U1& n) {
   end_obj();
 }
 
-void AST_Writer::visit(U8& n) {
+void AST_Writer::visit(U8 const& n) {
   begin_obj(5);
 
   string("kind");
@@ -205,7 +205,7 @@ void AST_Writer::visit(U8& n) {
   end_obj();
 }
 
-void AST_Writer::visit(U16& n) {
+void AST_Writer::visit(U16 const& n) {
   begin_obj(5);
 
   string("kind");
@@ -218,7 +218,7 @@ void AST_Writer::visit(U16& n) {
   end_obj();
 }
 
-void AST_Writer::visit(U32& n) {
+void AST_Writer::visit(U32 const& n) {
   begin_obj(5);
 
   string("kind");
@@ -231,7 +231,7 @@ void AST_Writer::visit(U32& n) {
   end_obj();
 }
 
-void AST_Writer::visit(U64& n) {
+void AST_Writer::visit(U64 const& n) {
   begin_obj(5);
 
   string("kind");
@@ -244,7 +244,7 @@ void AST_Writer::visit(U64& n) {
   end_obj();
 }
 
-void AST_Writer::visit(U128& n) {
+void AST_Writer::visit(U128 const& n) {
   begin_obj(5);
 
   string("kind");
@@ -257,7 +257,7 @@ void AST_Writer::visit(U128& n) {
   end_obj();
 }
 
-void AST_Writer::visit(I8& n) {
+void AST_Writer::visit(I8 const& n) {
   begin_obj(5);
 
   string("kind");
@@ -270,7 +270,7 @@ void AST_Writer::visit(I8& n) {
   end_obj();
 }
 
-void AST_Writer::visit(I16& n) {
+void AST_Writer::visit(I16 const& n) {
   begin_obj(5);
 
   string("kind");
@@ -283,7 +283,7 @@ void AST_Writer::visit(I16& n) {
   end_obj();
 }
 
-void AST_Writer::visit(I32& n) {
+void AST_Writer::visit(I32 const& n) {
   begin_obj(5);
 
   string("kind");
@@ -296,7 +296,7 @@ void AST_Writer::visit(I32& n) {
   end_obj();
 }
 
-void AST_Writer::visit(I64& n) {
+void AST_Writer::visit(I64 const& n) {
   begin_obj(5);
 
   string("kind");
@@ -309,7 +309,7 @@ void AST_Writer::visit(I64& n) {
   end_obj();
 }
 
-void AST_Writer::visit(I128& n) {
+void AST_Writer::visit(I128 const& n) {
   begin_obj(5);
 
   string("kind");
@@ -322,7 +322,7 @@ void AST_Writer::visit(I128& n) {
   end_obj();
 }
 
-void AST_Writer::visit(F16& n) {
+void AST_Writer::visit(F16 const& n) {
   begin_obj(5);
 
   string("kind");
@@ -335,7 +335,7 @@ void AST_Writer::visit(F16& n) {
   end_obj();
 }
 
-void AST_Writer::visit(F32& n) {
+void AST_Writer::visit(F32 const& n) {
   begin_obj(5);
 
   string("kind");
@@ -348,7 +348,7 @@ void AST_Writer::visit(F32& n) {
   end_obj();
 }
 
-void AST_Writer::visit(F64& n) {
+void AST_Writer::visit(F64 const& n) {
   begin_obj(5);
 
   string("kind");
@@ -361,7 +361,7 @@ void AST_Writer::visit(F64& n) {
   end_obj();
 }
 
-void AST_Writer::visit(F128& n) {
+void AST_Writer::visit(F128 const& n) {
   begin_obj(5);
 
   string("kind");
@@ -374,7 +374,7 @@ void AST_Writer::visit(F128& n) {
   end_obj();
 }
 
-void AST_Writer::visit(VoidTy& n) {
+void AST_Writer::visit(VoidTy const& n) {
   begin_obj(5);
 
   string("kind");
@@ -387,7 +387,7 @@ void AST_Writer::visit(VoidTy& n) {
   end_obj();
 }
 
-void AST_Writer::visit(PtrTy& n) {
+void AST_Writer::visit(PtrTy const& n) {
   begin_obj(6);
 
   string("kind");
@@ -403,7 +403,7 @@ void AST_Writer::visit(PtrTy& n) {
   end_obj();
 }
 
-void AST_Writer::visit(OpaqueTy& n) {
+void AST_Writer::visit(OpaqueTy const& n) {
   begin_obj(6);
 
   string("kind");
@@ -419,7 +419,7 @@ void AST_Writer::visit(OpaqueTy& n) {
   end_obj();
 }
 
-void AST_Writer::visit(TupleTy& n) {
+void AST_Writer::visit(TupleTy const& n) {
   begin_obj(6);
 
   string("kind");
@@ -442,7 +442,7 @@ void AST_Writer::visit(TupleTy& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ArrayTy& n) {
+void AST_Writer::visit(ArrayTy const& n) {
   begin_obj(7);
 
   string("kind");
@@ -461,7 +461,7 @@ void AST_Writer::visit(ArrayTy& n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefTy& n) {
+void AST_Writer::visit(RefTy const& n) {
   begin_obj(6);
 
   string("kind");
@@ -477,7 +477,7 @@ void AST_Writer::visit(RefTy& n) {
   end_obj();
 }
 
-void AST_Writer::visit(FuncTy& n) {
+void AST_Writer::visit(FuncTy const& n) {
   begin_obj(12);
 
   string("kind");
@@ -570,7 +570,7 @@ void AST_Writer::visit(FuncTy& n) {
   end_obj();
 }
 
-void AST_Writer::visit(UnaryExpr& n) {
+void AST_Writer::visit(UnaryExpr const& n) {
   begin_obj(4);
 
   string("kind");
@@ -587,7 +587,7 @@ void AST_Writer::visit(UnaryExpr& n) {
   end_obj();
 }
 
-void AST_Writer::visit(BinExpr& n) {
+void AST_Writer::visit(BinExpr const& n) {
   begin_obj(5);
 
   string("kind");
@@ -607,7 +607,7 @@ void AST_Writer::visit(BinExpr& n) {
   end_obj();
 }
 
-void AST_Writer::visit(PostUnaryExpr& n) {
+void AST_Writer::visit(PostUnaryExpr const& n) {
   begin_obj(4);
 
   string("kind");
@@ -624,7 +624,7 @@ void AST_Writer::visit(PostUnaryExpr& n) {
   end_obj();
 }
 
-void AST_Writer::visit(TernaryExpr& n) {
+void AST_Writer::visit(TernaryExpr const& n) {
   begin_obj(5);
 
   string("kind");
@@ -644,7 +644,7 @@ void AST_Writer::visit(TernaryExpr& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ConstInt& n) {
+void AST_Writer::visit(ConstInt const& n) {
   begin_obj(3);
 
   string("kind");
@@ -658,7 +658,7 @@ void AST_Writer::visit(ConstInt& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ConstFloat& n) {
+void AST_Writer::visit(ConstFloat const& n) {
   begin_obj(3);
 
   string("kind");
@@ -672,7 +672,7 @@ void AST_Writer::visit(ConstFloat& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ConstBool& n) {
+void AST_Writer::visit(ConstBool const& n) {
   begin_obj(3);
 
   string("kind");
@@ -686,7 +686,7 @@ void AST_Writer::visit(ConstBool& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ConstString& n) {
+void AST_Writer::visit(ConstString const& n) {
   begin_obj(3);
 
   string("kind");
@@ -700,7 +700,7 @@ void AST_Writer::visit(ConstString& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ConstChar& n) {
+void AST_Writer::visit(ConstChar const& n) {
   begin_obj(3);
 
   string("kind");
@@ -714,7 +714,7 @@ void AST_Writer::visit(ConstChar& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ConstNull& n) {
+void AST_Writer::visit(ConstNull const& n) {
   begin_obj(2);
 
   string("kind");
@@ -725,7 +725,7 @@ void AST_Writer::visit(ConstNull& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ConstUndef& n) {
+void AST_Writer::visit(ConstUndef const& n) {
   begin_obj(2);
 
   string("kind");
@@ -736,7 +736,7 @@ void AST_Writer::visit(ConstUndef& n) {
   end_obj();
 }
 
-void AST_Writer::visit(Call& n) {
+void AST_Writer::visit(Call const& n) {
   begin_obj(4);
 
   string("kind");
@@ -769,7 +769,7 @@ void AST_Writer::visit(Call& n) {
   end_obj();
 }
 
-void AST_Writer::visit(TemplCall& n) {
+void AST_Writer::visit(TemplCall const& n) {
   begin_obj(5);
 
   string("kind");
@@ -814,7 +814,7 @@ void AST_Writer::visit(TemplCall& n) {
   end_obj();
 }
 
-void AST_Writer::visit(List& n) {
+void AST_Writer::visit(List const& n) {
   begin_obj(3);
 
   string("kind");
@@ -835,7 +835,7 @@ void AST_Writer::visit(List& n) {
   end_obj();
 }
 
-void AST_Writer::visit(Assoc& n) {
+void AST_Writer::visit(Assoc const& n) {
   begin_obj(4);
 
   string("kind");
@@ -852,7 +852,7 @@ void AST_Writer::visit(Assoc& n) {
   end_obj();
 }
 
-void AST_Writer::visit(Field& n) {
+void AST_Writer::visit(Field const& n) {
   begin_obj(4);
 
   string("kind");
@@ -869,7 +869,7 @@ void AST_Writer::visit(Field& n) {
   end_obj();
 }
 
-void AST_Writer::visit(Index& n) {
+void AST_Writer::visit(Index const& n) {
   begin_obj(4);
 
   string("kind");
@@ -886,7 +886,7 @@ void AST_Writer::visit(Index& n) {
   end_obj();
 }
 
-void AST_Writer::visit(Slice& n) {
+void AST_Writer::visit(Slice const& n) {
   begin_obj(5);
 
   string("kind");
@@ -906,7 +906,7 @@ void AST_Writer::visit(Slice& n) {
   end_obj();
 }
 
-void AST_Writer::visit(FString& n) {
+void AST_Writer::visit(FString const& n) {
   begin_obj(3);
 
   string("kind");
@@ -942,7 +942,7 @@ void AST_Writer::visit(FString& n) {
   end_obj();
 }
 
-void AST_Writer::visit(Ident& n) {
+void AST_Writer::visit(Ident const& n) {
   begin_obj(3);
 
   string("kind");
@@ -956,7 +956,7 @@ void AST_Writer::visit(Ident& n) {
   end_obj();
 }
 
-void AST_Writer::visit(SeqPoint& n) {
+void AST_Writer::visit(SeqPoint const& n) {
   begin_obj(3);
 
   string("kind");
@@ -977,7 +977,7 @@ void AST_Writer::visit(SeqPoint& n) {
   end_obj();
 }
 
-void AST_Writer::visit(Block& n) {
+void AST_Writer::visit(Block const& n) {
   begin_obj(4);
 
   string("kind");
@@ -1014,7 +1014,7 @@ void AST_Writer::visit(Block& n) {
   end_obj();
 }
 
-void AST_Writer::visit(VarDecl& n) {
+void AST_Writer::visit(VarDecl const& n) {
   begin_obj(7);
 
   string("kind");
@@ -1057,7 +1057,7 @@ void AST_Writer::visit(VarDecl& n) {
   end_obj();
 }
 
-void AST_Writer::visit(InlineAsm& n) {
+void AST_Writer::visit(InlineAsm const& n) {
   begin_obj(4);
 
   string("kind");
@@ -1081,7 +1081,7 @@ void AST_Writer::visit(InlineAsm& n) {
   end_obj();
 }
 
-void AST_Writer::visit(IfStmt& n) {
+void AST_Writer::visit(IfStmt const& n) {
   begin_obj(5);
 
   string("kind");
@@ -1105,7 +1105,7 @@ void AST_Writer::visit(IfStmt& n) {
   end_obj();
 }
 
-void AST_Writer::visit(WhileStmt& n) {
+void AST_Writer::visit(WhileStmt const& n) {
   begin_obj(4);
 
   string("kind");
@@ -1122,7 +1122,7 @@ void AST_Writer::visit(WhileStmt& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ForStmt& n) {
+void AST_Writer::visit(ForStmt const& n) {
   begin_obj(6);
 
   string("kind");
@@ -1157,7 +1157,7 @@ void AST_Writer::visit(ForStmt& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ForeachStmt& n) {
+void AST_Writer::visit(ForeachStmt const& n) {
   begin_obj(6);
 
   string("kind");
@@ -1180,7 +1180,7 @@ void AST_Writer::visit(ForeachStmt& n) {
   end_obj();
 }
 
-void AST_Writer::visit(BreakStmt& n) {
+void AST_Writer::visit(BreakStmt const& n) {
   begin_obj(2);
 
   string("kind");
@@ -1191,7 +1191,7 @@ void AST_Writer::visit(BreakStmt& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ContinueStmt& n) {
+void AST_Writer::visit(ContinueStmt const& n) {
   begin_obj(2);
 
   string("kind");
@@ -1202,7 +1202,7 @@ void AST_Writer::visit(ContinueStmt& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ReturnStmt& n) {
+void AST_Writer::visit(ReturnStmt const& n) {
   begin_obj(3);
 
   string("kind");
@@ -1220,7 +1220,7 @@ void AST_Writer::visit(ReturnStmt& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ReturnIfStmt& n) {
+void AST_Writer::visit(ReturnIfStmt const& n) {
   begin_obj(4);
 
   string("kind");
@@ -1237,7 +1237,7 @@ void AST_Writer::visit(ReturnIfStmt& n) {
   end_obj();
 }
 
-void AST_Writer::visit(CaseStmt& n) {
+void AST_Writer::visit(CaseStmt const& n) {
   begin_obj(4);
 
   string("kind");
@@ -1254,7 +1254,7 @@ void AST_Writer::visit(CaseStmt& n) {
   end_obj();
 }
 
-void AST_Writer::visit(SwitchStmt& n) {
+void AST_Writer::visit(SwitchStmt const& n) {
   begin_obj(5);
 
   string("kind");
@@ -1281,7 +1281,7 @@ void AST_Writer::visit(SwitchStmt& n) {
   end_obj();
 }
 
-void AST_Writer::visit(TypedefStmt& n) {
+void AST_Writer::visit(TypedefStmt const& n) {
   begin_obj(4);
 
   string("kind");
@@ -1298,7 +1298,7 @@ void AST_Writer::visit(TypedefStmt& n) {
   end_obj();
 }
 
-void AST_Writer::visit(FnDecl& n) {
+void AST_Writer::visit(FnDecl const& n) {
   begin_obj(5);
 
   string("kind");
@@ -1340,7 +1340,7 @@ void AST_Writer::visit(FnDecl& n) {
   end_obj();
 }
 
-void AST_Writer::visit(FnDef& n) {
+void AST_Writer::visit(FnDef const& n) {
   begin_obj(9);
 
   string("kind");
@@ -1410,7 +1410,7 @@ void AST_Writer::visit(FnDef& n) {
   end_obj();
 }
 
-void AST_Writer::visit(StructField& n) {
+void AST_Writer::visit(StructField const& n) {
   begin_obj(6);
 
   string("kind");
@@ -1448,7 +1448,7 @@ void AST_Writer::visit(StructField& n) {
   end_obj();
 }
 
-void AST_Writer::visit(StructDef& n) {
+void AST_Writer::visit(StructDef const& n) {
   begin_obj(8);
 
   string("kind");
@@ -1545,7 +1545,7 @@ void AST_Writer::visit(StructDef& n) {
   end_obj();
 }
 
-void AST_Writer::visit(EnumDef& n) {
+void AST_Writer::visit(EnumDef const& n) {
   begin_obj(5);
 
   string("kind");
@@ -1581,7 +1581,7 @@ void AST_Writer::visit(EnumDef& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ScopeStmt& n) {
+void AST_Writer::visit(ScopeStmt const& n) {
   begin_obj(5);
 
   string("kind");
@@ -1607,7 +1607,7 @@ void AST_Writer::visit(ScopeStmt& n) {
   end_obj();
 }
 
-void AST_Writer::visit(ExportStmt& n) {
+void AST_Writer::visit(ExportStmt const& n) {
   begin_obj(6);
 
   string("kind");
