@@ -45,7 +45,7 @@
 
 using namespace nr;
 
-void NRBuilder::flatten_symbols(Seq *root) noexcept {
+void NRBuilder::flatten_symbols(Seq *root) {
   std::unordered_set<Expr *> symbols;
 
   iterate<dfs_post>(root, [&](Expr *P, Expr **C) -> IterOp {
@@ -74,7 +74,7 @@ void NRBuilder::flatten_symbols(Seq *root) noexcept {
   }
 }
 
-void NRBuilder::try_transform_alpha(Expr *root) noexcept {
+void NRBuilder::try_transform_alpha(Expr *root) {
   /**
    * @brief Resolve the `TmpType::NAMED_TYPE` nodes by replacing them with the
    * actual types they represent.
@@ -117,7 +117,7 @@ void NRBuilder::try_transform_alpha(Expr *root) noexcept {
   });
 }
 
-void NRBuilder::try_transform_beta(Expr *root) noexcept {
+void NRBuilder::try_transform_beta(Expr *root) {
   /**
    * @brief Resolve identifiers by hooking them to the node they represent. This
    * may create cyclic references, which is okay because these hooks are not
@@ -221,7 +221,7 @@ static void resolve_function_call(
   }
 }
 
-void NRBuilder::try_transform_gamma(Expr *root) noexcept {
+void NRBuilder::try_transform_gamma(Expr *root) {
   using namespace std;
 
   /* Foreach node in the IR Graph: if the node is a TMP CALL node, replace it
@@ -317,7 +317,7 @@ void NRBuilder::try_transform_gamma(Expr *root) noexcept {
   });
 }
 
-void NRBuilder::connect_nodes(Seq *root) noexcept {
+void NRBuilder::connect_nodes(Seq *root) {
   /* The order of the following matters */
 
   try_transform_alpha(root);

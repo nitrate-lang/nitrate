@@ -46,7 +46,7 @@
 using namespace nr;
 
 NRBuilder::NRBuilder(std::string module_name,
-                     TargetInfo target_info SOURCE_LOCATION_PARAM) noexcept {
+                     TargetInfo target_info SOURCE_LOCATION_PARAM) {
   ignore_caller_info();
 
   m_module_name = module_name;
@@ -64,13 +64,13 @@ NRBuilder::NRBuilder(std::string module_name,
   m_duplicate_named_constants = std::unordered_set<std::string_view>();
 }
 
-NRBuilder::~NRBuilder() noexcept {
+NRBuilder::~NRBuilder() {
   m_state = SelfState::Destroyed;
   m_result = std::nullopt;
   m_root = nullptr;
 }
 
-NRBuilder &NRBuilder::operator=(NRBuilder &&rhs) noexcept {
+NRBuilder &NRBuilder::operator=(NRBuilder &&rhs) {
   this->m_module_name = std::move(rhs.m_module_name);
   this->m_target_info = std::move(rhs.m_target_info);
 
@@ -85,7 +85,7 @@ NRBuilder &NRBuilder::operator=(NRBuilder &&rhs) noexcept {
   return *this;
 }
 
-NRBuilder::NRBuilder(NRBuilder &&rhs) noexcept {
+NRBuilder::NRBuilder(NRBuilder &&rhs) {
   this->m_module_name = std::move(rhs.m_module_name);
   this->m_target_info = std::move(rhs.m_target_info);
 
@@ -100,7 +100,7 @@ NRBuilder::NRBuilder(NRBuilder &&rhs) noexcept {
 
 void NRBuilder::contract_enforce_(
     bool cond, std::string_view cond_str SOURCE_LOCATION_PARAM,
-    std::experimental::source_location caller) const noexcept {
+    std::experimental::source_location caller) const {
   if (cond) [[likely]] {
     return;
   }
@@ -168,7 +168,7 @@ void NRBuilder::contract_enforce_(
 #endif
 }
 
-std::string_view NRBuilder::intern(std::string_view in) noexcept {
+std::string_view NRBuilder::intern(std::string_view in) {
   auto it = m_interned_strings.find(in);
 
   if (it == m_interned_strings.end()) {
@@ -183,7 +183,7 @@ std::string_view NRBuilder::intern(std::string_view in) noexcept {
   }
 }
 
-NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
+NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const {
   contract_enforce(
       m_state == SelfState::Constructed || m_state == SelfState::Finished ||
       m_state == SelfState::Verified || m_state == SelfState::Emitted ||
@@ -208,7 +208,7 @@ NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept {
   return r;
 }
 
-size_t NRBuilder::approx_memory_usage(SOURCE_LOCATION_PARAM_ONCE) noexcept {
+size_t NRBuilder::approx_memory_usage(SOURCE_LOCATION_PARAM_ONCE) {
   contract_enforce(
       m_state == SelfState::Constructed || m_state == SelfState::Finished ||
       m_state == SelfState::Verified || m_state == SelfState::Emitted);
@@ -229,7 +229,7 @@ size_t NRBuilder::approx_memory_usage(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   return lower_bound;
 }
 
-size_t NRBuilder::node_count(SOURCE_LOCATION_PARAM_ONCE) noexcept {
+size_t NRBuilder::node_count(SOURCE_LOCATION_PARAM_ONCE) {
   contract_enforce(
       m_state == SelfState::Constructed || m_state == SelfState::Finished ||
       m_state == SelfState::Verified || m_state == SelfState::Emitted);
@@ -248,7 +248,7 @@ size_t NRBuilder::node_count(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   return count;
 }
 
-void NRBuilder::finish(SOURCE_LOCATION_PARAM_ONCE) noexcept {
+void NRBuilder::finish(SOURCE_LOCATION_PARAM_ONCE) {
   contract_enforce(m_state == SelfState::Constructed ||
                    m_state == SelfState::Finished);
   contract_enforce(m_result == std::nullopt);
@@ -271,8 +271,7 @@ public:
       std::function<void(const ReportData &)>) override{};
 } g_null_log;
 
-bool NRBuilder::verify(
-    std::optional<IReport *> the_log SOURCE_LOCATION_PARAM) noexcept {
+bool NRBuilder::verify(std::optional<IReport *> the_log SOURCE_LOCATION_PARAM) {
   contract_enforce(m_state == SelfState::Finished ||
                    m_state == SelfState::Verified);
   contract_enforce(m_result == std::nullopt);
@@ -317,7 +316,7 @@ bool NRBuilder::verify(
   return true;
 }
 
-qmodule_t *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) noexcept {
+qmodule_t *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) {
   contract_enforce(m_state == SelfState::Verified ||
                    m_state == SelfState::Emitted);
   contract_enforce(m_root != nullptr);
@@ -345,7 +344,7 @@ qmodule_t *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) noexcept {
   }
 }
 
-void NRBuilder::appendToRoot(Expr *root SOURCE_LOCATION_PARAM) noexcept {
+void NRBuilder::appendToRoot(Expr *root SOURCE_LOCATION_PARAM) {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 

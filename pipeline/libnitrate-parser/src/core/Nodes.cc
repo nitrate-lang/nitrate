@@ -63,12 +63,12 @@ C_EXPORT void *ArenaAllocatorImpl::allocate(std::size_t size) {
   return qcore_arena_alloc_ex(m_arena.get(), size, alignment);
 }
 
-C_EXPORT void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }
+C_EXPORT void ArenaAllocatorImpl::deallocate(void *ptr) { (void)ptr; }
 
 ///=============================================================================
 
 CPP_EXPORT std::ostream &npar_node_t::dump(std::ostream &os,
-                                           bool isForDebug) const noexcept {
+                                           bool isForDebug) const {
   (void)isForDebug;
 
   AST_JsonWriter writer(os);
@@ -77,7 +77,7 @@ CPP_EXPORT std::ostream &npar_node_t::dump(std::ostream &os,
   return os;
 }
 
-CPP_EXPORT uint64_t npar_node_t::hash64() const noexcept {
+CPP_EXPORT uint64_t npar_node_t::hash64() const {
   AST_Hash64 visitor;
 
   const_cast<npar_node_t *>(this)->accept(visitor);
@@ -87,7 +87,7 @@ CPP_EXPORT uint64_t npar_node_t::hash64() const noexcept {
 
 ///=============================================================================
 
-CPP_EXPORT bool Type::is_ptr_to(Type *type) noexcept {
+CPP_EXPORT bool Type::is_ptr_to(Type *type) {
   if (!is_pointer()) {
     return false;
   }

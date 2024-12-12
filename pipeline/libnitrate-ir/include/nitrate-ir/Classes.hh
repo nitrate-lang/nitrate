@@ -80,10 +80,9 @@ namespace nr {
     SymbolEncoding() = default;
 
     std::optional<std::string> mangle_name(const nr::Expr *symbol,
-                                           AbiTag abi) const noexcept;
+                                           AbiTag abi) const;
 
-    std::optional<std::string> demangle_name(
-        std::string_view symbol) const noexcept;
+    std::optional<std::string> demangle_name(std::string_view symbol) const;
   };
 }  // namespace nr
 

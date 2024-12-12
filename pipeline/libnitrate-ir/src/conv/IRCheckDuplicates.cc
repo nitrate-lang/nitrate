@@ -82,7 +82,7 @@ static void print_conflict_errors(const std::vector<Conflict> &conflicts,
   }
 }
 
-bool NRBuilder::check_duplicates(Seq *, IReport *I) noexcept {
+bool NRBuilder::check_duplicates(Seq *, IReport *I) {
   std::vector<Conflict> conflicts;
   std::unordered_map<std::string_view, std::pair<Kind, Expr *>> names_map;
 

@@ -304,8 +304,7 @@ namespace nr::detail {
     IterAbort() = default;
   };
 
-  CPP_EXPORT void dfs_pre_impl(Expr **base, IterCallback cb,
-                               ChildSelect cs) noexcept {
+  CPP_EXPORT void dfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs) {
     qcore_assert(base != nullptr && cb != nullptr,
                  "dfs_pre_impl: base and cb must not be null");
 
@@ -316,7 +315,7 @@ namespace nr::detail {
     }
 
     const auto syncfn = [](Expr **n, const IterCallback &cb,
-                           const ChildSelect &cs) noexcept {
+                           const ChildSelect &cs) {
       std::stack<std::pair<Expr *, Expr **>> s;
       std::vector<Expr **> children;
 
@@ -350,8 +349,7 @@ namespace nr::detail {
     syncfn(base, cb, cs);
   }
 
-  CPP_EXPORT void dfs_post_impl(Expr **base, IterCallback cb,
-                                ChildSelect cs) noexcept {
+  CPP_EXPORT void dfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs) {
     qcore_assert(base != nullptr && cb != nullptr,
                  "dfs_post_impl: base and cb must not be null");
 
@@ -362,7 +360,7 @@ namespace nr::detail {
     }
 
     const auto syncfn = [](Expr **n, const IterCallback &cb,
-                           const ChildSelect &cs) noexcept {
+                           const ChildSelect &cs) {
       std::stack<std::pair<Expr *, Expr **>> s;
       std::vector<Expr **> children;
 
@@ -393,8 +391,7 @@ namespace nr::detail {
     cb(nullptr, base);
   }
 
-  CPP_EXPORT void bfs_pre_impl(Expr **base, IterCallback cb,
-                               ChildSelect cs) noexcept {
+  CPP_EXPORT void bfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs) {
     qcore_assert(base != nullptr && cb != nullptr,
                  "bfs_pre_impl: base and cb must not be null");
 
@@ -405,7 +402,7 @@ namespace nr::detail {
     }
 
     const auto syncfn = [](Expr **n, const IterCallback &cb,
-                           const ChildSelect &cs) noexcept {
+                           const ChildSelect &cs) {
       std::queue<std::pair<Expr *, Expr **>> s;
       std::vector<Expr **> children;
 
@@ -439,8 +436,7 @@ namespace nr::detail {
     syncfn(base, cb, cs);
   }
 
-  CPP_EXPORT void bfs_post_impl(Expr **base, IterCallback cb,
-                                ChildSelect cs) noexcept {
+  CPP_EXPORT void bfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs) {
     qcore_assert(base != nullptr && cb != nullptr,
                  "bfs_post_impl: base and cb must not be null");
 
@@ -451,7 +447,7 @@ namespace nr::detail {
     }
 
     const auto syncfn = [](Expr **n, const IterCallback &cb,
-                           const ChildSelect &cs) noexcept {
+                           const ChildSelect &cs) {
       std::queue<std::pair<Expr *, Expr **>> s;
       std::vector<Expr **> children;
 
@@ -482,8 +478,7 @@ namespace nr::detail {
     syncfn(base, cb, cs);
   }
 
-  CPP_EXPORT void iter_children(Expr **base, IterCallback cb,
-                                ChildSelect cs) noexcept {
+  CPP_EXPORT void iter_children(Expr **base, IterCallback cb, ChildSelect cs) {
     qcore_assert(base != nullptr && cb != nullptr,
                  "iter_children: base and cb must not be null");
 
@@ -494,7 +489,7 @@ namespace nr::detail {
     }
 
     const auto syncfn = [](Expr **n, const IterCallback &cb,
-                           const ChildSelect &cs) noexcept {
+                           const ChildSelect &cs) {
       std::vector<Expr **> children;
       get_children_sorted(*n, cs, children);
 

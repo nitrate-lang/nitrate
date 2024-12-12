@@ -157,7 +157,7 @@ namespace npar {
     ArenaAllocatorImpl() = default;
 
     void *allocate(std::size_t bytes);
-    void deallocate(void *ptr) noexcept;
+    void deallocate(void *ptr);
 
     void swap(qcore_arena_t &arena);
 
@@ -173,13 +173,13 @@ namespace npar {
     Arena() = default;
 
     template <class U>
-    constexpr Arena(const Arena<U> &) noexcept {}
+    constexpr Arena(const Arena<U> &) {}
 
     [[nodiscard]] T *allocate(std::size_t n) {
       return static_cast<T *>(npar_arena.allocate(sizeof(T) * n));
     }
 
-    void deallocate(T *p, std::size_t n) noexcept {
+    void deallocate(T *p, std::size_t n) {
       (void)n;
       (void)p;
     }
@@ -502,11 +502,11 @@ public:
   ///======================================================================
   /* Efficient LLVM reflection */
 
-  static constexpr uint32_t getKindSize(npar_ty_t kind) noexcept;
-  static constexpr std::string_view getKindName(npar_ty_t kind) noexcept;
+  static constexpr uint32_t getKindSize(npar_ty_t kind);
+  static constexpr std::string_view getKindName(npar_ty_t kind);
 
   template <typename T>
-  static constexpr npar_ty_t getTypeCode() noexcept {
+  static constexpr npar_ty_t getTypeCode() {
     using namespace npar;
 
     if constexpr (std::is_same_v<T, npar_node_t>) {
@@ -658,30 +658,28 @@ public:
     }
   }
 
-  constexpr npar_ty_t getKind() const noexcept { return m_node_type; }
-  constexpr std::string_view getKindName() const noexcept {
-    return getKindName(m_node_type);
-  }
+  constexpr npar_ty_t getKind() const { return m_node_type; }
+  constexpr auto getKindName() const { return getKindName(m_node_type); }
 
   ///======================================================================
 
-  constexpr bool is_type() const noexcept {
+  constexpr bool is_type() const {
     auto kind = getKind();
     return kind >= QAST_NODE__TYPE_FIRST && kind <= QAST_NODE__TYPE_LAST;
   }
 
-  constexpr bool is_stmt() const noexcept {
+  constexpr bool is_stmt() const {
     auto kind = getKind();
     return kind >= QAST_NODE__STMT_FIRST && kind <= QAST_NODE__STMT_LAST;
   }
 
-  constexpr bool is_expr() const noexcept {
+  constexpr bool is_expr() const {
     auto kind = getKind();
     return kind >= QAST_NODE__EXPR_FIRST && kind <= QAST_NODE__EXPR_LAST;
   }
 
   template <typename T>
-  static constexpr T *safeCastAs(npar_node_t *ptr) noexcept {
+  static constexpr T *safeCastAs(npar_node_t *ptr) {
     if (!ptr) {
       return nullptr;
     }
@@ -705,7 +703,7 @@ public:
    * @warning This function will panic if the cast is invalid.
    */
   template <typename T>
-  constexpr T *as() noexcept {
+  constexpr T *as() {
     return safeCastAs<T>(this);
   }
 
@@ -718,12 +716,12 @@ public:
    * @warning This function will panic if the cast is invalid.
    */
   template <typename T>
-  constexpr const T *as() const noexcept {
+  constexpr const T *as() const {
     return safeCastAs<T>(const_cast<npar_node_t *>(this));
   }
 
   template <typename T>
-  constexpr bool is() const noexcept {
+  constexpr bool is() const {
     return npar_node_t::getTypeCode<T>() == getKind();
   }
 
@@ -732,12 +730,12 @@ public:
   constexpr bool is_expr_stmt(npar_ty_t type) const;
   constexpr bool is_stmt_expr(npar_ty_t type) const;
 
-  constexpr bool isSame(const npar_node_t *other) const noexcept;
+  constexpr bool isSame(const npar_node_t *other) const;
 
-  uint64_t hash64() const noexcept;
+  uint64_t hash64() const;
 
   std::ostream &dump(std::ostream &os = std::cerr,
-                     bool isForDebug = false) const noexcept;
+                     bool isForDebug = false) const;
 
   constexpr void set_offset(uint32_t pos) { m_offset = pos; }
 
@@ -783,7 +781,7 @@ namespace npar {
           m_range_start(nullptr),
           m_range_end(nullptr) {}
 
-    constexpr bool is_primitive() const noexcept {
+    constexpr bool is_primitive() const {
       switch (getKind()) {
         case QAST_NODE_U1_TY:
         case QAST_NODE_U8_TY:
@@ -807,43 +805,29 @@ namespace npar {
       }
     }
     constexpr bool is_array() const { return getKind() == QAST_NODE_ARRAY_TY; };
-    constexpr bool is_tuple() const noexcept {
-      return getKind() == QAST_NODE_TUPLE_TY;
-    }
-    constexpr bool is_pointer() const noexcept {
-      return getKind() == QAST_NODE_PTR_TY;
-    }
-    constexpr bool is_function() const noexcept {
-      return getKind() == QAST_NODE_FN_TY;
-    }
-    constexpr bool is_composite() const noexcept {
-      return is_array() || is_tuple();
-    }
-    constexpr bool is_numeric() const noexcept {
+    constexpr bool is_tuple() const { return getKind() == QAST_NODE_TUPLE_TY; }
+    constexpr bool is_pointer() const { return getKind() == QAST_NODE_PTR_TY; }
+    constexpr bool is_function() const { return getKind() == QAST_NODE_FN_TY; }
+    constexpr bool is_composite() const { return is_array() || is_tuple(); }
+    constexpr bool is_numeric() const {
       return getKind() >= QAST_NODE_U1_TY && getKind() <= QAST_NODE_F128_TY;
     }
-    constexpr bool is_integral() const noexcept {
+    constexpr bool is_integral() const {
       return getKind() >= QAST_NODE_U1_TY && getKind() <= QAST_NODE_I128_TY;
     }
-    constexpr bool is_floating_point() const noexcept {
+    constexpr bool is_floating_point() const {
       return getKind() >= QAST_NODE_F16_TY && getKind() <= QAST_NODE_F128_TY;
     }
-    constexpr bool is_signed() const noexcept {
+    constexpr bool is_signed() const {
       return getKind() >= QAST_NODE_I8_TY && getKind() <= QAST_NODE_I128_TY;
     }
-    constexpr bool is_unsigned() const noexcept {
+    constexpr bool is_unsigned() const {
       return getKind() >= QAST_NODE_U1_TY && getKind() <= QAST_NODE_U128_TY;
     }
-    constexpr bool is_void() const noexcept {
-      return getKind() == QAST_NODE_VOID_TY;
-    }
-    constexpr bool is_bool() const noexcept {
-      return getKind() == QAST_NODE_U1_TY;
-    }
-    constexpr bool is_ref() const noexcept {
-      return getKind() == QAST_NODE_REF_TY;
-    }
-    bool is_ptr_to(Type *type) noexcept;
+    constexpr bool is_void() const { return getKind() == QAST_NODE_VOID_TY; }
+    constexpr bool is_bool() const { return getKind() == QAST_NODE_U1_TY; }
+    constexpr bool is_ref() const { return getKind() == QAST_NODE_REF_TY; }
+    bool is_ptr_to(Type *type);
 
     constexpr let get_width() const { return m_width; }
 
@@ -1788,7 +1772,7 @@ namespace npar {
   Type *mock_type();
 }  // namespace npar
 
-constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) noexcept {
+constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) {
   const std::array<std::string_view, QAST_NODE_COUNT> names = []() {
     std::array<std::string_view, QAST_NODE_COUNT> R;
     R.fill("");
@@ -1879,7 +1863,7 @@ constexpr bool npar_node_t::is_stmt_expr(npar_ty_t type) const {
   return is(QAST_NODE_STMT_EXPR) && as<npar::StmtExpr>()->get_stmt()->is(type);
 }
 
-constexpr bool npar_node_t::isSame(const npar_node_t *o) const noexcept {
+constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
   if (this == o) {
     return true;
   }

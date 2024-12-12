@@ -95,7 +95,7 @@ public:
     m_data.shrink_to_fit();
   }
 
-  bool has(nr_key_t option, nr_val_t value) const noexcept;
+  bool has(nr_key_t option, nr_val_t value) const;
 };
 
 #endif  // __NITRATE_NR_CORE_CONFIG_H__

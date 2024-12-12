@@ -121,24 +121,24 @@ namespace nr {
     ///**************************************************************************///
 
     std::optional<std::pair<Expr *, std::string_view>> resolve_name(
-        std::string_view name, Kind kind) noexcept;
+        std::string_view name, Kind kind);
 
-    void try_transform_alpha(Expr *root) noexcept;
-    void try_transform_beta(Expr *root) noexcept;
-    void try_transform_gamma(Expr *root) noexcept;
-    void connect_nodes(Seq *root) noexcept;
-    void flatten_symbols(Seq *root) noexcept;
+    void try_transform_alpha(Expr *root);
+    void try_transform_beta(Expr *root);
+    void try_transform_gamma(Expr *root);
+    void connect_nodes(Seq *root);
+    void flatten_symbols(Seq *root);
 
-    bool check_acyclic(Seq *root, IReport *I) noexcept;
-    bool check_duplicates(Seq *root, IReport *I) noexcept;
-    bool check_symbols_exist(Seq *root, IReport *I) noexcept;
-    bool check_function_calls(Seq *root, IReport *I) noexcept;
-    bool check_returns(Seq *root, IReport *I) noexcept;
-    bool check_scopes(Seq *root, IReport *I) noexcept;
-    bool check_mutability(Seq *root, IReport *I) noexcept;
-    bool check_control_flow(Seq *root, IReport *I) noexcept;
-    bool check_types(Seq *root, IReport *I) noexcept;
-    bool check_safety_claims(Seq *root, IReport *I) noexcept;
+    bool check_acyclic(Seq *root, IReport *I);
+    bool check_duplicates(Seq *root, IReport *I);
+    bool check_symbols_exist(Seq *root, IReport *I);
+    bool check_function_calls(Seq *root, IReport *I);
+    bool check_returns(Seq *root, IReport *I);
+    bool check_scopes(Seq *root, IReport *I);
+    bool check_mutability(Seq *root, IReport *I);
+    bool check_control_flow(Seq *root, IReport *I);
+    bool check_types(Seq *root, IReport *I);
+    bool check_safety_claims(Seq *root, IReport *I);
 
 #if defined(NDEBUG)
 #define SOURCE_LOCATION_PARAM
@@ -147,7 +147,7 @@ namespace nr {
     void contract_enforce_(
         bool cond, std::string_view cond_str,
         std::experimental::source_location caller =
-            std::experimental::source_location::current()) const noexcept;
+            std::experimental::source_location::current()) const;
 #define contract_enforce(cond) contract_enforce_(cond, #cond)
 #else
 #define SOURCE_LOCATION_PARAM                        \
@@ -160,7 +160,7 @@ namespace nr {
     void contract_enforce_(
         bool cond, std::string_view cond_str SOURCE_LOCATION_PARAM,
         std::experimental::source_location caller =
-            std::experimental::source_location::current()) const noexcept;
+            std::experimental::source_location::current()) const;
 #define contract_enforce(cond) contract_enforce_(cond, #cond, caller_info)
 
 #endif
@@ -169,24 +169,24 @@ namespace nr {
 
   public:
     NRBuilder(std::string module_name,
-              TargetInfo target_info SOURCE_LOCATION_PARAM) noexcept;
-    ~NRBuilder() noexcept;
+              TargetInfo target_info SOURCE_LOCATION_PARAM);
+    ~NRBuilder();
 
     /* Moving the module is permitted */
-    NRBuilder &operator=(NRBuilder &&) noexcept;
-    NRBuilder(NRBuilder &&) noexcept;
+    NRBuilder &operator=(NRBuilder &&);
+    NRBuilder(NRBuilder &&);
 
     /** @warning: This is a slow and resource heavy operation for
      * most programs. */
-    NRBuilder deep_clone(SOURCE_LOCATION_PARAM_ONCE) const noexcept;
+    NRBuilder deep_clone(SOURCE_LOCATION_PARAM_ONCE) const;
 
     /** @brief Get an approximate figure of how much memory the
      * builder is currently using. The returned value is a lower bound. */
-    size_t approx_memory_usage(SOURCE_LOCATION_PARAM_ONCE) noexcept;
+    size_t approx_memory_usage(SOURCE_LOCATION_PARAM_ONCE);
 
     /** @brief Count *ALL* nodes currently in the builder. This includes
      * temporary nodes. */
-    size_t node_count(SOURCE_LOCATION_PARAM_ONCE) noexcept;
+    size_t node_count(SOURCE_LOCATION_PARAM_ONCE);
 
     /**
      * @brief Finialize the module build
@@ -194,7 +194,7 @@ namespace nr {
      * @note This function is idempotent, without any overhead from additional
      * calls.
      */
-    void finish(SOURCE_LOCATION_PARAM_ONCE) noexcept;
+    void finish(SOURCE_LOCATION_PARAM_ONCE);
 
     /**
      * @brief Run basic checks on the module:
@@ -229,70 +229,73 @@ namespace nr {
      *
      * @note This function calls `finish()`.
      */
-    bool verify(std::optional<IReport *> sink SOURCE_LOCATION_PARAM) noexcept;
+    bool verify(std::optional<IReport *> sink SOURCE_LOCATION_PARAM);
 
     /**
      * @brief Return the build module.
      * @note `verify()` must be called first.
      */
-    qmodule_t *get_module(SOURCE_LOCATION_PARAM_ONCE) noexcept;
+    qmodule_t *get_module(SOURCE_LOCATION_PARAM_ONCE);
 
-    void appendToRoot(Expr *node SOURCE_LOCATION_PARAM) noexcept;
+    void appendToRoot(Expr *node SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///
     // Create linkable symbols
 
     using FnParam = std::tuple<std::string_view, Type *, std::optional<Expr *>>;
 
-    Fn *createFunctionDefintion(
-        std::string_view name, std::span<FnParam> params, Type *ret_ty,
-        bool is_variadic = false, Vis visibility = Vis::Sec,
-        Purity purity = Purity::Impure, bool thread_safe = false,
-        bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
+    Fn *createFunctionDefintion(std::string_view name,
+                                std::span<FnParam> params, Type *ret_ty,
+                                bool is_variadic = false,
+                                Vis visibility = Vis::Sec,
+                                Purity purity = Purity::Impure,
+                                bool thread_safe = false,
+                                bool foreign = true SOURCE_LOCATION_PARAM);
 
-    Fn *createFunctionDeclaration(
-        std::string_view name, std::span<FnParam> params, Type *ret_ty,
-        bool is_variadic = false, Vis visibility = Vis::Sec,
-        Purity purity = Purity::Impure, bool thread_safe = false,
-        bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
+    Fn *createFunctionDeclaration(std::string_view name,
+                                  std::span<FnParam> params, Type *ret_ty,
+                                  bool is_variadic = false,
+                                  Vis visibility = Vis::Sec,
+                                  Purity purity = Purity::Impure,
+                                  bool thread_safe = false,
+                                  bool foreign = true SOURCE_LOCATION_PARAM);
 
     /* This is the only intended way to overload operaters */
-    Fn *createOperatorOverload(
-        Op op, std::span<Type *> params, Type *ret_ty,
-        Purity purity = Purity::Impure,
-        bool thread_safe = false SOURCE_LOCATION_PARAM) noexcept;
+    Fn *createOperatorOverload(Op op, std::span<Type *> params, Type *ret_ty,
+                               Purity purity = Purity::Impure,
+                               bool thread_safe = false SOURCE_LOCATION_PARAM);
 
     /* Works for both local and global variables */
-    Local *createVariable(
-        std::string_view name, Type *ty, Vis visibility = Vis::Sec,
-        StorageClass storage = StorageClass::LLVM_StackAlloa,
-        bool is_readonly = false SOURCE_LOCATION_PARAM) noexcept;
+    Local *createVariable(std::string_view name, Type *ty,
+                          Vis visibility = Vis::Sec,
+                          StorageClass storage = StorageClass::LLVM_StackAlloa,
+                          bool is_readonly = false SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///
     // Create expressions
 
     Expr *createCall(Expr *target,
                      std::span<std::pair<std::string_view, Expr *>> arguments
-                         SOURCE_LOCATION_PARAM) noexcept;
+                         SOURCE_LOCATION_PARAM);
 
     Expr *createMethodCall(Expr *object, std::string_view name,
                            std::span<std::pair<std::string_view, Expr *>>
-                               arguments SOURCE_LOCATION_PARAM) noexcept;
+                               arguments SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///
     // Create literals
 
-    Int *createBool(bool value SOURCE_LOCATION_PARAM) noexcept;
+    Int *createBool(bool value SOURCE_LOCATION_PARAM);
 
     Int *createFixedInteger(boost::multiprecision::cpp_int value,
-                            uint8_t width SOURCE_LOCATION_PARAM) noexcept;
+                            uint8_t width SOURCE_LOCATION_PARAM);
 
     Float *createFixedFloat(bigfloat_t value,
-                            FloatSize width SOURCE_LOCATION_PARAM) noexcept;
+                            FloatSize width SOURCE_LOCATION_PARAM);
 
-    List *createStringDataArray(std::string_view value,
-                                ABIStringStyle style = ABIStringStyle::CStr
-                                    SOURCE_LOCATION_PARAM) noexcept;
+    List *createStringDataArray(
+        std::string_view value,
+        ABIStringStyle style = ABIStringStyle::CStr SOURCE_LOCATION_PARAM);
 
     List *createList(
         std::span<Expr *> items,
@@ -301,74 +304,69 @@ namespace nr {
          * result.size>)) ? Reason: It has to do with type inference and
          * implicit conversions of the elements in the list.
          */
-        bool cast_homogenous SOURCE_LOCATION_PARAM) noexcept;
+        bool cast_homogenous SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///
     // Create values
 
-    std::optional<Expr *> getDefaultValue(
-        Type *_for SOURCE_LOCATION_PARAM) noexcept;
+    std::optional<Expr *> getDefaultValue(Type *_for SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///
     // Create types
 
-    U1Ty *getU1Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-    U8Ty *getU8Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-    U16Ty *getU16Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-    U32Ty *getU32Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-    U64Ty *getU64Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-    U128Ty *getU128Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-    I8Ty *getI8Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-    I16Ty *getI16Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-    I32Ty *getI32Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-    I64Ty *getI64Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-    I128Ty *getI128Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-    F16Ty *getF16Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-    F32Ty *getF32Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-    F64Ty *getF64Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-    F128Ty *getF128Ty(SOURCE_LOCATION_PARAM_ONCE) noexcept;
-    VoidTy *getVoidTy(SOURCE_LOCATION_PARAM_ONCE) noexcept;
+    U1Ty *getU1Ty(SOURCE_LOCATION_PARAM_ONCE);
+    U8Ty *getU8Ty(SOURCE_LOCATION_PARAM_ONCE);
+    U16Ty *getU16Ty(SOURCE_LOCATION_PARAM_ONCE);
+    U32Ty *getU32Ty(SOURCE_LOCATION_PARAM_ONCE);
+    U64Ty *getU64Ty(SOURCE_LOCATION_PARAM_ONCE);
+    U128Ty *getU128Ty(SOURCE_LOCATION_PARAM_ONCE);
+    I8Ty *getI8Ty(SOURCE_LOCATION_PARAM_ONCE);
+    I16Ty *getI16Ty(SOURCE_LOCATION_PARAM_ONCE);
+    I32Ty *getI32Ty(SOURCE_LOCATION_PARAM_ONCE);
+    I64Ty *getI64Ty(SOURCE_LOCATION_PARAM_ONCE);
+    I128Ty *getI128Ty(SOURCE_LOCATION_PARAM_ONCE);
+    F16Ty *getF16Ty(SOURCE_LOCATION_PARAM_ONCE);
+    F32Ty *getF32Ty(SOURCE_LOCATION_PARAM_ONCE);
+    F64Ty *getF64Ty(SOURCE_LOCATION_PARAM_ONCE);
+    F128Ty *getF128Ty(SOURCE_LOCATION_PARAM_ONCE);
+    VoidTy *getVoidTy(SOURCE_LOCATION_PARAM_ONCE);
 
     /* Type inference unknowns; Converted to proper type upon resolution */
-    OpaqueTy *getUnknownTy(SOURCE_LOCATION_PARAM_ONCE) noexcept;
+    OpaqueTy *getUnknownTy(SOURCE_LOCATION_PARAM_ONCE);
 
-    Type *getUnknownNamedTy(
-        std::string_view name SOURCE_LOCATION_PARAM) noexcept;
+    Type *getUnknownNamedTy(std::string_view name SOURCE_LOCATION_PARAM);
 
-    PtrTy *getPtrTy(Type *pointee SOURCE_LOCATION_PARAM) noexcept;
+    PtrTy *getPtrTy(Type *pointee SOURCE_LOCATION_PARAM);
 
-    OpaqueTy *getOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM) noexcept;
+    OpaqueTy *getOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM);
 
     StructTy *getStructTy(
         std::span<std::tuple<std::string_view, Type *, Expr *>> fields
-            SOURCE_LOCATION_PARAM) noexcept;
+            SOURCE_LOCATION_PARAM);
 
-    StructTy *getStructTy(
-        std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept;
+    StructTy *getStructTy(std::span<Type *> fields SOURCE_LOCATION_PARAM);
 
-    UnionTy *getUnionTy(
-        std::span<Type *> fields SOURCE_LOCATION_PARAM) noexcept;
+    UnionTy *getUnionTy(std::span<Type *> fields SOURCE_LOCATION_PARAM);
 
-    ArrayTy *getArrayTy(Type *element_ty,
-                        size_t count SOURCE_LOCATION_PARAM) noexcept;
+    ArrayTy *getArrayTy(Type *element_ty, size_t count SOURCE_LOCATION_PARAM);
 
     FnTy *getFnTy(std::span<Type *> params, Type *ret_ty,
                   bool is_variadic = false, Purity purity = Purity::Impure,
                   bool thread_safe = false,
-                  bool foreign = true SOURCE_LOCATION_PARAM) noexcept;
+                  bool foreign = true SOURCE_LOCATION_PARAM);
 
     void createNamedConstantDefinition(
         std::string_view name,
         const std::unordered_map<std::string_view, Expr *> &values
             SOURCE_LOCATION_PARAM);
 
-    void createNamedTypeAlias(
-        Type *type, std::string_view name SOURCE_LOCATION_PARAM) noexcept;
+    void createNamedTypeAlias(Type *type,
+                              std::string_view name SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///
     // Other stuff
 
-    std::string_view intern(std::string_view str) noexcept;
+    std::string_view intern(std::string_view str);
     ///**************************************************************************///
 
 #undef SOURCE_LOCATION_PARAM

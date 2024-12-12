@@ -43,7 +43,7 @@ using namespace nr;
 
 Expr *NRBuilder::createCall(Expr *target,
                             std::span<std::pair<std::string_view, Expr *>>
-                                arguments SOURCE_LOCATION_PARAM) noexcept {
+                                arguments SOURCE_LOCATION_PARAM) {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(target != nullptr);
@@ -69,10 +69,9 @@ Expr *NRBuilder::createCall(Expr *target,
   return compiler_trace(debug_info(R, DEBUG_INFO));
 }
 
-Expr *NRBuilder::createMethodCall(
-    Expr *object, std::string_view name,
-    std::span<std::pair<std::string_view, Expr *>> arguments
-        SOURCE_LOCATION_PARAM) noexcept {
+Expr *NRBuilder::createMethodCall(Expr *object, std::string_view name,
+                                  std::span<std::pair<std::string_view, Expr *>>
+                                      arguments SOURCE_LOCATION_PARAM) {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(object != nullptr);

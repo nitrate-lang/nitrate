@@ -171,7 +171,7 @@ C_EXPORT size_t nr_conf_dump(nr_conf_t *conf, FILE *stream,
   return bytes;
 }
 
-bool nr_conf_t::has(nr_key_t option, nr_val_t value) const noexcept {
+bool nr_conf_t::has(nr_key_t option, nr_val_t value) const {
   for (const auto &dat : m_data) {
     if (dat.key == option && dat.value == value) {
       return true;

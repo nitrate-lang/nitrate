@@ -48,14 +48,14 @@ static std::mutex nr_modules_mutex;
 class LexerSourceResolver : public ISourceView {
 public:
   virtual std::optional<std::pair<uint32_t, uint32_t>> off2rc(
-      uint32_t) noexcept override {
+      uint32_t) override {
     return std::nullopt;
     /// TODO: Implement source offset resolver
     qcore_implement();
   }
 
   virtual std::optional<std::vector<std::string_view>> rect(
-      uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) noexcept override {
+      uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) override {
     /// TODO: Implement source offset resolver
     qcore_implement();
 
@@ -87,7 +87,7 @@ qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
 
 qmodule_t::~qmodule_t() { m_root = nullptr; }
 
-void qmodule_t::enableDiagnostics(bool is_enabled) noexcept {
+void qmodule_t::enableDiagnostics(bool is_enabled) {
   m_diagnostics_enabled = is_enabled;
 }
 

@@ -70,7 +70,7 @@ void *ArenaAllocatorImpl::allocate(std::size_t size) {
   return qcore_arena_alloc_ex(m_arena.get(), size, alignment);
 }
 
-void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }
+void ArenaAllocatorImpl::deallocate(void *ptr) { (void)ptr; }
 
 ///=============================================================================
 
@@ -108,7 +108,7 @@ static bool isCyclicUtil(const nr::Expr *const base,
   return has_cycle;
 }
 
-CPP_EXPORT bool nr::Expr::isAcyclic() const noexcept {
+CPP_EXPORT bool nr::Expr::isAcyclic() const {
   std::unordered_set<const Expr *> visited, recStack;
   bool has_cycle = false;
 
@@ -147,7 +147,7 @@ CPP_EXPORT void nr::Expr::dump(std::ostream &os, bool isForDebug) const {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
-CPP_EXPORT boost::uuids::uuid nr::Expr::hash() noexcept {
+CPP_EXPORT boost::uuids::uuid nr::Expr::hash() {
   std::array<uint8_t, 20> hash;
 
   // if (EVP_DigestInit(ctx, md) != 1) {
@@ -391,7 +391,7 @@ CPP_EXPORT uint64_t Expr::getUniqId() const {
 
 ///=============================================================================
 
-CPP_EXPORT uint128_t Int::str2u128(std::string_view s) noexcept {
+CPP_EXPORT uint128_t Int::str2u128(std::string_view s) {
   uint128_t x = 0;
 
   for (char c : s) {
@@ -411,7 +411,7 @@ CPP_EXPORT uint128_t Int::str2u128(std::string_view s) noexcept {
   return x;
 }
 
-CPP_EXPORT std::string Int::getValueString() const noexcept {
+CPP_EXPORT std::string Int::getValueString() const {
   return ((uint128_t)m_value).str();
 }
 
@@ -420,7 +420,7 @@ std::unordered_map<std::pair<uint128_t, uint8_t>, Int *, Int::map_hash>
 
 static std::mutex m_cache_mtx;
 
-CPP_EXPORT Int *Int::get(uint128_t val, uint8_t size) noexcept {
+CPP_EXPORT Int *Int::get(uint128_t val, uint8_t size) {
   std::lock_guard<std::mutex> lock(m_cache_mtx);
 
   auto it = m_cache.find({val, size});

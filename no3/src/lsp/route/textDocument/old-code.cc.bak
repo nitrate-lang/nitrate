@@ -544,8 +544,8 @@ void recurse(npar_node_t* C) {
       std::string props;
       props += purity_str.at(N->get_purity());
 
-      if (N->is_noexcept()) {
-        props += " noexcept";
+      if (N->is_()) {
+        props += " ";
       }
 
       if (N->is_foreign()) {
@@ -688,8 +688,8 @@ void recurse(npar_node_t* C) {
       std::string props;
       props += purity_str.at(F->get_purity());
 
-      if (F->is_noexcept()) {
-        props += " noexcept";
+      if (F->is_()) {
+        props += " ";
       }
 
       if (F->is_foreign()) {
@@ -808,8 +808,8 @@ void recurse(npar_node_t* C) {
       std::string props;
       props += purity_str.at(F->get_purity());
 
-      if (F->is_noexcept()) {
-        props += " noexcept";
+      if (F->is_()) {
+        props += " ";
       }
 
       if (F->is_foreign()) {
