@@ -96,8 +96,8 @@ static Type *recurse_type_metadata(npar_t &S, qlex_t &rd, Type *base) {
   base->set_width(width.value_or(nullptr));
 
   if (next_if(qOpTernary)) {
-    let opt_type = TemplType::get(NamedTy::get("__builtin_result"),
-                                  TemplTypeArgs{TypeExpr::get(base)});
+    let opt_type = make<TemplType>(make<NamedTy>("__builtin_result"),
+                                   TemplTypeArgs{make<TypeExpr>(base)});
     opt_type->set_offset(current().start);
 
     base = opt_type;
@@ -128,7 +128,7 @@ static Type *recurse_opaque_type(qlex_t &rd) {
 
   if (let name = next_if(qName)) {
     if (next_if(qPuncRPar)) {
-      let opaque = OpaqueTy::get(name->as_string(&rd));
+      let opaque = make<OpaqueTy>(name->as_string(&rd));
       opaque->set_offset(current().start);
 
       return opaque;
@@ -164,7 +164,7 @@ static Type *recurse_type_by_operator(npar_t &S, qlex_t &rd, qlex_op_t op) {
     case qOpTimes: {
       let start = current().start;
       let pointee = recurse_type(S, rd);
-      let ptr_ty = PtrTy::get(pointee);
+      let ptr_ty = make<PtrTy>(pointee);
 
       ptr_ty->set_offset(start);
 
@@ -174,7 +174,7 @@ static Type *recurse_type_by_operator(npar_t &S, qlex_t &rd, qlex_op_t op) {
     case qOpBitAnd: {
       let start = current().start;
       let refee = recurse_type(S, rd);
-      let ref_ty = RefTy::get(refee);
+      let ref_ty = make<RefTy>(refee);
 
       ref_ty->set_offset(start);
 
@@ -182,7 +182,7 @@ static Type *recurse_type_by_operator(npar_t &S, qlex_t &rd, qlex_op_t op) {
     }
 
     case qOpTernary: {
-      let infer = InferTy::get();
+      let infer = make<InferTy>();
 
       infer->set_offset(current().start);
 
@@ -202,8 +202,8 @@ static Type *recurse_array_or_vector(npar_t &S, qlex_t &rd) {
   let first = recurse_type(S, rd);
 
   if (next_if(qPuncRBrk)) {
-    let vector = TemplType::get(NamedTy::get("__builtin_vec"),
-                                TemplTypeArgs{TypeExpr::get(first)});
+    let vector = make<TemplType>(make<NamedTy>("__builtin_vec"),
+                                 TemplTypeArgs{make<TypeExpr>(first)});
 
     vector->set_offset(start);
 
@@ -221,7 +221,7 @@ static Type *recurse_array_or_vector(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Expected ']' after array size";
   }
 
-  let array = ArrayTy::get(first, size);
+  let array = make<ArrayTy>(first, size);
 
   array->set_offset(start);
 
@@ -237,8 +237,8 @@ static Type *recurse_set_type(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Expected '}' after set type";
   }
 
-  let set = TemplType::get(NamedTy::get("__builtin_uset"),
-                           TemplTypeArgs{TypeExpr::get(set_type)});
+  let set = make<TemplType>(make<NamedTy>("__builtin_uset"),
+                            TemplTypeArgs{make<TypeExpr>(set_type)});
 
   set->set_offset(start);
 
@@ -266,7 +266,7 @@ static Type *recurse_tuple_type(npar_t &S, qlex_t &rd) {
     next_if(qPuncComa);
   }
 
-  let tuple = TupleTy::get(std::move(items));
+  let tuple = make<TupleTy>(std::move(items));
 
   tuple->set_offset(start);
 
@@ -299,39 +299,39 @@ static Type *recurse_type_by_name(qlex_t &rd, std::string_view name) {
   std::optional<Type *> type;
 
   if (name == "u1") {
-    type = U1::get();
+    type = make<U1>();
   } else if (name == "u8") {
-    type = U8::get();
+    type = make<U8>();
   } else if (name == "u16") {
-    type = U16::get();
+    type = make<U16>();
   } else if (name == "u32") {
-    type = U32::get();
+    type = make<U32>();
   } else if (name == "u64") {
-    type = U64::get();
+    type = make<U64>();
   } else if (name == "u128") {
-    type = U128::get();
+    type = make<U128>();
   } else if (name == "i8") {
-    type = I8::get();
+    type = make<I8>();
   } else if (name == "i16") {
-    type = I16::get();
+    type = make<I16>();
   } else if (name == "i32") {
-    type = I32::get();
+    type = make<I32>();
   } else if (name == "i64") {
-    type = I64::get();
+    type = make<I64>();
   } else if (name == "i128") {
-    type = I128::get();
+    type = make<I128>();
   } else if (name == "f16") {
-    type = F16::get();
+    type = make<F16>();
   } else if (name == "f32") {
-    type = F32::get();
+    type = make<F32>();
   } else if (name == "f64") {
-    type = F64::get();
+    type = make<F64>();
   } else if (name == "f128") {
-    type = F128::get();
+    type = make<F128>();
   } else if (name == "void") {
-    type = VoidTy::get();
+    type = make<VoidTy>();
   } else {
-    type = NamedTy::get(name);
+    type = make<NamedTy>(name);
   }
 
   if (!type.has_value()) {

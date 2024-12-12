@@ -80,7 +80,7 @@ static std::optional<ScopeDeps> recurse_scope_deps(qlex_t &rd) {
 
 static Stmt *recurse_scope_block(npar_t &S, qlex_t &rd) {
   if (next_if(qPuncSemi)) {
-    return Block::get();
+    return make<Block>();
   } else if (next_if(qOpArrow)) {
     return recurse_block(S, rd, false, true);
   } else {
@@ -94,8 +94,8 @@ npar::Stmt *npar::recurse_scope(npar_t &S, qlex_t &rd) {
   if (let implicit_dependencies = recurse_scope_deps(rd)) {
     let scope_block = recurse_scope_block(S, rd);
 
-    return ScopeStmt::get(scope_name, scope_block,
-                          std::move(implicit_dependencies.value()));
+    return make<ScopeStmt>(scope_name, scope_block,
+                           std::move(implicit_dependencies.value()));
   } else {
     diagnostic << current() << "Expected scope dependencies";
   }

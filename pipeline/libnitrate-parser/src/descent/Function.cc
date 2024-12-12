@@ -125,7 +125,7 @@ static bool recurse_fn_parameter(npar_t &S, qlex_t &rd, FuncParam &param) {
 
     tok = peek();
   } else {
-    type = InferTy::get();
+    type = make<InferTy>();
   }
 
   if (tok.is<qOpSet>()) {
@@ -441,7 +441,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, npar_t &S,
         }
 
         if (req_in) {
-          req_in = BinExpr::get(req_in, qOpLogicAnd, expr);
+          req_in = make<BinExpr>(req_in, qOpLogicAnd, expr);
         } else {
           req_in = expr;
         }
@@ -455,7 +455,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, npar_t &S,
         }
 
         if (req_out) {
-          req_out = BinExpr::get(req_out, qOpLogicAnd, expr);
+          req_out = make<BinExpr>(req_out, qOpLogicAnd, expr);
         } else {
           req_out = expr;
         }
@@ -472,8 +472,8 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, npar_t &S,
 }
 
 Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
-  FnDecl *fndecl = FnDecl::get("", nullptr);
-  FuncTy *ftype = FuncTy::get();
+  FnDecl *fndecl = make<FnDecl>("", nullptr);
+  FuncTy *ftype = make<FuncTy>();
   Type *ret_type = nullptr;
   FnCaptures captures;
   qlex_tok_t tok{};
@@ -530,7 +530,7 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
   { /* Function declaration with implicit return type of void */
     if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() ||
         tok.is<qPuncSemi>()) {
-      ftype->set_return_ty(VoidTy::get());
+      ftype->set_return_ty(make<VoidTy>());
 
       return fndecl;
     }
@@ -563,14 +563,14 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
       fnbody = recurse_block(S, rd, false, true);
 
       if (!ftype->get_return_ty()) {
-        ftype->set_return_ty(VoidTy::get());
+        ftype->set_return_ty(make<VoidTy>());
       }
 
       while ((tok = peek()).is<qPuncSemi>()) {
         next();
       }
 
-      FnDef *fndef = FnDef::get(fndecl, fnbody, nullptr, nullptr, captures);
+      FnDef *fndef = make<FnDef>(fndecl, fnbody, nullptr, nullptr, captures);
 
       return fndef;
     }
@@ -589,10 +589,10 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
     }
 
     if (!ftype->get_return_ty()) {
-      ftype->set_return_ty(VoidTy::get());
+      ftype->set_return_ty(make<VoidTy>());
     }
 
-    FnDef *fndef = FnDef::get(fndecl, fnbody, req_in, req_out, captures);
+    FnDef *fndef = make<FnDef>(fndecl, fnbody, req_in, req_out, captures);
 
     return fndef;
   }

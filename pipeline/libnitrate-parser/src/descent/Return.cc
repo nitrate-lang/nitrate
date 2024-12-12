@@ -44,13 +44,13 @@ Stmt *npar::recurse_return(npar_t &S, qlex_t &rd) {
    */
 
   if (let tok = next_if(qPuncSemi)) {
-    return ReturnStmt::get(std::nullopt);
+    return make<ReturnStmt>(std::nullopt);
   }
 
   let expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
   if (next_if(qPuncSemi)) {
-    return ReturnStmt::get(expr);
+    return make<ReturnStmt>(expr);
   } else {
     diagnostic << current() << "Expected ';' after the return statement.";
   }
@@ -70,7 +70,7 @@ Stmt *npar::recurse_retif(npar_t &S, qlex_t &rd) {
     let return_val = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
     if (next_if(qPuncSemi)) {
-      return ReturnIfStmt::get(condition, return_val);
+      return make<ReturnIfStmt>(condition, return_val);
     } else {
       diagnostic << current() << "Expected ';' after the retif value.";
     }

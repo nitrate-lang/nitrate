@@ -118,7 +118,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
     if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
       next();
     }
-    auto R = StructField::get(name, type, nullptr, Vis::Sec);
+    auto R = make<StructField>(name, type, nullptr, Vis::Sec);
 
     return R;
   }
@@ -139,7 +139,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
          qlex_tok_t(qPunc, qPuncRCur)});
   }
 
-  auto R = StructField::get(name, type, value, Vis::Sec);
+  auto R = make<StructField>(name, type, value, Vis::Sec);
 
   return R;
 }
@@ -158,7 +158,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
   FnDecl *fdecl = nullptr;
   FuncTy *ft = nullptr;
   Stmt *field = nullptr;
-  StructDef *sdef = StructDef::get("");
+  StructDef *sdef = make<StructDef>("");
 
   sdef->set_composite_type(type);
 
@@ -234,7 +234,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       method = recurse_function(S, rd);
 
       { /* Add the 'this' parameter to the method */
-        FuncParam fn_this{"this", RefTy::get(NamedTy::get(name)), nullptr};
+        FuncParam fn_this{"this", make<RefTy>(make<NamedTy>(name)), nullptr};
 
         if (method->is<FnDecl>()) {
           fdecl = static_cast<FnDecl *>(method);

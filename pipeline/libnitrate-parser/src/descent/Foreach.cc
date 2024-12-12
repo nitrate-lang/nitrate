@@ -99,7 +99,7 @@ npar::Stmt *npar::recurse_foreach(npar_t &S, qlex_t &rd) {
 
       let body = recurse_foreach_body(S, rd);
 
-      return ForeachStmt::get(index_name, value_name, iter_expr, body);
+      return make<ForeachStmt>(index_name, value_name, iter_expr, body);
     } else {
       diagnostic << current() << "Expected 'in' keyword in foreach statement";
     }

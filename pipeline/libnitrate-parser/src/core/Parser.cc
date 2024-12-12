@@ -51,7 +51,7 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
                           bool single_stmt) {
   qlex_tok_t tok;
 
-  Block* block = Block::get();
+  Block* block = make<Block>();
   block->set_offset(current().start);
 
   if (expect_braces) {
@@ -97,7 +97,7 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
         diagnostic << tok << "Expected ';'";
       }
 
-      ExprStmt* stmt = ExprStmt::get(expr);
+      ExprStmt* stmt = make<ExprStmt>(expr);
       stmt->set_offset(std::get<0>(expr->get_pos()));
 
       block->get_items().push_back(stmt);
@@ -203,12 +203,12 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKBreak: {
-        node = BreakStmt::get();
+        node = make<BreakStmt>();
         break;
       }
 
       case qKContinue: {
-        node = ContinueStmt::get();
+        node = make<ContinueStmt>();
         break;
       }
 
@@ -243,12 +243,12 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKTrue: {
-        node = ExprStmt::get(ConstBool::get(true));
+        node = make<ExprStmt>(make<ConstBool>(true));
         break;
       }
 
       case qKFalse: {
-        node = ExprStmt::get(ConstBool::get(false));
+        node = make<ExprStmt>(make<ConstBool>(false));
         break;
       }
 
