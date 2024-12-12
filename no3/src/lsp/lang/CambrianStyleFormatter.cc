@@ -681,12 +681,57 @@ void CambrianFormatter::visit(TemplCall& n) {
 }
 
 void CambrianFormatter::visit(List& n) {
-  line << "[";
-  iterate_except_last(
-      n.get_items().begin(), n.get_items().end(),
-      [&](let item, size_t) { item->accept(*this); },
-      [&](let) { line << ", "; });
-  line << "]";
+  let wrap_threshold = 8ULL;
+
+  if (n.get_items().empty()) {
+    line << "[]";
+    return;
+  }
+
+  let argc = n.get_items().size();
+  bool is_compressing =
+      argc >= wrap_threshold &&
+      std::all_of(n.get_items().begin(), n.get_items().end(),
+                  [&](let x) { return x->isSame(n.get_items().front()); });
+
+  if (is_compressing) {
+    line << "[";
+    n.get_items().front()->accept(*this);
+    line << "; " << argc << "]";
+  } else {
+    let break_at = argc <= wrap_threshold
+                       ? wrap_threshold
+                       : static_cast<size_t>(std::ceil(std::sqrt(argc)));
+
+    line << "[";
+
+    { /* Write list items */
+      size_t line_size = line.length();
+      std::swap(indent, line_size);
+
+      for (size_t i = 0; i < n.get_items().size(); i++) {
+        let item = n.get_items()[i];
+        item->accept(*this);
+
+        bool is_last = i == n.get_items().size() - 1;
+        if (!is_last) {
+          line << ",";
+        }
+
+        bool is_break = !is_last && i != 0 && (i + 1) % break_at == 0;
+
+        if (is_break) {
+          line << std::endl << get_indent();
+        } else if (!is_last) {
+          line << " ";
+        }
+      }
+
+      std::swap(indent, line_size);
+    }
+
+    line << "]";
+  }
 }
 
 void CambrianFormatter::visit(Assoc& n) {

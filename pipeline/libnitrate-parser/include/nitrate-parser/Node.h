@@ -743,6 +743,8 @@ public:
   constexpr bool is_expr_stmt(npar_ty_t type) const;
   constexpr bool is_stmt_expr(npar_ty_t type) const;
 
+  constexpr bool isSame(npar_node_t *other) const noexcept;
+
   std::ostream &dump(std::ostream &os = std::cerr,
                      bool isForDebug = false) const noexcept;
 
@@ -1214,7 +1216,6 @@ namespace npar {
     }
 
     bool is_noreturn() { return m_noreturn; }
-    void set_noreturn(bool noreturn);
 
     Type *get_return_ty() { return m_return; }
     void set_return_ty(Type *return_ty) { m_return = return_ty; }
@@ -1595,9 +1596,6 @@ namespace npar {
     VarDeclType get_decl_type() { return m_decl_type; }
 
     VarDeclAttributes &get_attributes() { return m_attributes; }
-    void set_attributes(VarDeclAttributes attributes) {
-      m_attributes = attributes;
-    }
 
     PNODE_IMPL_CORE(VarDecl)
   };
@@ -2099,6 +2097,942 @@ constexpr bool npar_node_t::is_expr_stmt(npar_ty_t type) const {
 
 constexpr bool npar_node_t::is_stmt_expr(npar_ty_t type) const {
   return is(QAST_NODE_STMT_EXPR) && as<npar::StmtExpr>()->get_stmt()->is(type);
+}
+
+constexpr bool npar_node_t::isSame(npar_node_t *o) const noexcept {
+  if (getKind() != o->getKind()) {
+    return false;
+  }
+
+  using namespace npar;
+
+  switch (getKind()) {
+    case QAST_NODE_NODE: {
+      let us = as<npar_node_t>();
+      let them = o->as<npar_node_t>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Node
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_BINEXPR: {
+      let us = as<BinExpr>();
+      let them = o->as<BinExpr>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Binexpr
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_UNEXPR: {
+      let us = as<UnaryExpr>();
+      let them = o->as<UnaryExpr>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Unexpr
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_TEREXPR: {
+      let us = as<TernaryExpr>();
+      let them = o->as<TernaryExpr>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Terexpr
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_INT: {
+      let us = as<ConstInt>();
+      let them = o->as<ConstInt>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Int
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_FLOAT: {
+      let us = as<ConstFloat>();
+      let them = o->as<ConstFloat>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Float
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_STRING: {
+      let us = as<ConstString>();
+      let them = o->as<ConstString>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check String
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_CHAR: {
+      let us = as<ConstChar>();
+      let them = o->as<ConstChar>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Char
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_BOOL: {
+      let us = as<ConstBool>();
+      let them = o->as<ConstBool>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Bool
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_NULL: {
+      let us = as<ConstNull>();
+      let them = o->as<ConstNull>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Null
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_UNDEF: {
+      let us = as<ConstUndef>();
+      let them = o->as<ConstUndef>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Undef
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_CALL: {
+      let us = as<Call>();
+      let them = o->as<Call>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Call
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_LIST: {
+      let us = as<List>();
+      let them = o->as<List>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check List
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_ASSOC: {
+      let us = as<Assoc>();
+      let them = o->as<Assoc>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Assoc
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_FIELD: {
+      let us = as<Field>();
+      let them = o->as<Field>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Field
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_INDEX: {
+      let us = as<Index>();
+      let them = o->as<Index>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Index
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_SLICE: {
+      let us = as<Slice>();
+      let them = o->as<Slice>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Slice
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_FSTRING: {
+      let us = as<FString>();
+      let them = o->as<FString>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Fstring
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_IDENT: {
+      let us = as<Ident>();
+      let them = o->as<Ident>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Ident
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_SEQ: {
+      let us = as<SeqPoint>();
+      let them = o->as<SeqPoint>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check SeqPoint
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_POST_UNEXPR: {
+      let us = as<PostUnaryExpr>();
+      let them = o->as<PostUnaryExpr>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check PostUnexpr
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_STMT_EXPR: {
+      let us = as<StmtExpr>();
+      let them = o->as<StmtExpr>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check StmtExpr
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_TYPE_EXPR: {
+      let us = as<TypeExpr>();
+      let them = o->as<TypeExpr>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check TypeExpr
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_TEMPL_CALL: {
+      let us = as<TemplCall>();
+      let them = o->as<TemplCall>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check TemplCall
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_REF_TY: {
+      let us = as<RefTy>();
+      let them = o->as<RefTy>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Ref
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_U1_TY: {
+      let us = as<U1>();
+      let them = o->as<U1>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check U1
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_U8_TY: {
+      let us = as<U8>();
+      let them = o->as<U8>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check U8
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_U16_TY: {
+      let us = as<U16>();
+      let them = o->as<U16>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check U16
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_U32_TY: {
+      let us = as<U32>();
+      let them = o->as<U32>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check U32
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_U64_TY: {
+      let us = as<U64>();
+      let them = o->as<U64>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check U64
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_U128_TY: {
+      let us = as<U128>();
+      let them = o->as<U128>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check U128
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_I8_TY: {
+      let us = as<I8>();
+      let them = o->as<I8>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check I8
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_I16_TY: {
+      let us = as<I16>();
+      let them = o->as<I16>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check I16
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_I32_TY: {
+      let us = as<I32>();
+      let them = o->as<I32>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check I32
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_I64_TY: {
+      let us = as<I64>();
+      let them = o->as<I64>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check I64
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_I128_TY: {
+      let us = as<I128>();
+      let them = o->as<I128>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check I128
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_F16_TY: {
+      let us = as<F16>();
+      let them = o->as<F16>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check F16
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_F32_TY: {
+      let us = as<F32>();
+      let them = o->as<F32>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check F32
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_F64_TY: {
+      let us = as<F64>();
+      let them = o->as<F64>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check F64
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_F128_TY: {
+      let us = as<F128>();
+      let them = o->as<F128>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check F128
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_VOID_TY: {
+      let us = as<VoidTy>();
+      let them = o->as<VoidTy>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Void
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_PTR_TY: {
+      let us = as<PtrTy>();
+      let them = o->as<PtrTy>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Ptr
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_OPAQUE_TY: {
+      let us = as<OpaqueTy>();
+      let them = o->as<OpaqueTy>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Opaque
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_ARRAY_TY: {
+      let us = as<ArrayTy>();
+      let them = o->as<ArrayTy>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Array
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_TUPLE_TY: {
+      let us = as<TupleTy>();
+      let them = o->as<TupleTy>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Tuple
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_FN_TY: {
+      let us = as<FuncTy>();
+      let them = o->as<FuncTy>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check FuncTy
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_UNRES_TY: {
+      let us = as<NamedTy>();
+      let them = o->as<NamedTy>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Unres
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_INFER_TY: {
+      let us = as<InferTy>();
+      let them = o->as<InferTy>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Infer
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_TEMPL_TY: {
+      let us = as<TemplType>();
+      let them = o->as<TemplType>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Templ
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_TYPEDEF: {
+      let us = as<TypedefStmt>();
+      let them = o->as<TypedefStmt>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Typedef
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_FNDECL: {
+      let us = as<FnDecl>();
+      let them = o->as<FnDecl>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check FnDecl
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_STRUCT: {
+      let us = as<StructDef>();
+      let them = o->as<StructDef>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Struct
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_ENUM: {
+      let us = as<EnumDef>();
+      let them = o->as<EnumDef>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Enum
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_FN: {
+      let us = as<FnDef>();
+      let them = o->as<FnDef>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check FnDef
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_SCOPE: {
+      let us = as<ScopeStmt>();
+      let them = o->as<ScopeStmt>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Scope
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_EXPORT: {
+      let us = as<ExportStmt>();
+      let them = o->as<ExportStmt>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Export
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_STRUCT_FIELD: {
+      let us = as<StructField>();
+      let them = o->as<StructField>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check StructField
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_BLOCK: {
+      let us = as<Block>();
+      let them = o->as<Block>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Block
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_VAR: {
+      let us = as<VarDecl>();
+      let them = o->as<VarDecl>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Let
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_INLINE_ASM: {
+      let us = as<InlineAsm>();
+      let them = o->as<InlineAsm>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check InlineAsm
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_RETURN: {
+      let us = as<ReturnStmt>();
+      let them = o->as<ReturnStmt>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Return
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_RETIF: {
+      let us = as<ReturnIfStmt>();
+      let them = o->as<ReturnIfStmt>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Retif
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_BREAK: {
+      let us = as<BreakStmt>();
+      let them = o->as<BreakStmt>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Break
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_CONTINUE: {
+      let us = as<ContinueStmt>();
+      let them = o->as<ContinueStmt>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Continue
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_IF: {
+      let us = as<IfStmt>();
+      let them = o->as<IfStmt>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check If
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_WHILE: {
+      let us = as<WhileStmt>();
+      let them = o->as<WhileStmt>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check While
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_FOR: {
+      let us = as<ForStmt>();
+      let them = o->as<ForStmt>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check For
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_FOREACH: {
+      let us = as<ForeachStmt>();
+      let them = o->as<ForeachStmt>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Foreach
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_CASE: {
+      let us = as<CaseStmt>();
+      let them = o->as<CaseStmt>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Case
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_SWITCH: {
+      let us = as<SwitchStmt>();
+      let them = o->as<SwitchStmt>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check Switch
+      qcore_implement();
+
+      return true;
+    }
+
+    case QAST_NODE_EXPR_STMT: {
+      let us = as<ExprStmt>();
+      let them = o->as<ExprStmt>();
+
+      (void)us;
+      (void)them;
+
+      /// TODO: Implement check ExprStmt
+      qcore_implement();
+
+      return true;
+    }
+  }
+
+  /// TODO: Implement
+  qcore_implement();
 }
 
 #endif  // __NITRATE_PARSER_NODE_H__
