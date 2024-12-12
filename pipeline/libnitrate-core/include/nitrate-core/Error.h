@@ -38,6 +38,7 @@
 extern "C" {
 #endif
 
+#include <errno.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>

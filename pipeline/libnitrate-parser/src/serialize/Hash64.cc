@@ -33,84 +33,79 @@
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
-#include <nitrate-parser/Node.h>
-#include <nitrate-parser/Parser.h>
 
 #include <core/Hash.hh>
-#include <cstddef>
-#include <cstring>
-#include <nitrate-parser/Writer.hh>
 
 using namespace npar;
 
-GenericIntern<std::string_view, std::string> AutoIntern::m_intern;
+void AST_Hash64::str_impl(std::string_view str) {
+  qcore_assert(!m_state.empty());
+  m_state.top().second++;
 
-///=============================================================================
-namespace npar {
-  void ArenaAllocatorImpl::swap(qcore_arena_t &arena) {
-    std::swap(*m_arena.get(), arena);
+  bool is_field_name =
+      m_state.top().first == false && (m_state.top().second & 1) != 0;
+
+  if (!is_field_name) {
+    m_sum += std::hash<std::string_view>{}(str);
   }
-
-  CPP_EXPORT thread_local ArenaAllocatorImpl npar_arena;
-}  // namespace npar
-
-C_EXPORT void *ArenaAllocatorImpl::allocate(std::size_t size) {
-  const std::size_t alignment = 16;
-  return qcore_arena_alloc_ex(m_arena.get(), size, alignment);
 }
 
-C_EXPORT void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }
+void AST_Hash64::uint_impl(uint64_t val) {
+  qcore_assert(!m_state.empty());
+  m_state.top().second++;
 
-///=============================================================================
-
-CPP_EXPORT std::ostream &npar_node_t::dump(std::ostream &os,
-                                           bool isForDebug) const noexcept {
-  (void)isForDebug;
-
-  AST_JsonWriter writer(os);
-  const_cast<npar_node_t *>(this)->accept(writer);
-
-  return os;
+  m_sum += val;
 }
 
-CPP_EXPORT uint64_t npar_node_t::hash64() const noexcept {
-  AST_Hash64 visitor;
+void AST_Hash64::double_impl(double val) {
+  qcore_assert(!m_state.empty());
+  m_state.top().second++;
 
-  const_cast<npar_node_t *>(this)->accept(visitor);
-
-  return visitor.get();
+  m_sum += std::hash<double>{}(val);
 }
 
-///=============================================================================
+void AST_Hash64::bool_impl(bool val) {
+  qcore_assert(!m_state.empty());
+  m_state.top().second++;
 
-CPP_EXPORT bool Type::is_ptr_to(Type *type) noexcept {
-  if (!is_pointer()) {
-    return false;
-  }
-
-  Type *item = as<PtrTy>()->get_item();
-  while (item->is<RefTy>()) {
-    item = item->as<RefTy>()->get_item();
-  }
-
-  return item->is(type->getKind());
+  m_sum += std::hash<bool>{}(val);
 }
 
-Stmt *npar::mock_stmt(npar_ty_t expected) {
-  (void)expected;
+void AST_Hash64::null_impl() {
+  qcore_assert(!m_state.empty());
+  m_state.top().second++;
 
-  static Stmt node(QAST_NODE_NODE);
-  return &node;
+  m_sum += std::hash<std::nullptr_t>{}(nullptr);
 }
 
-Expr *npar::mock_expr(npar_ty_t expected) {
-  (void)expected;
+void AST_Hash64::begin_obj_impl(size_t) {
+  qcore_assert(!m_state.empty());
+  m_state.top().second++;
 
-  static Expr node(QAST_NODE_NODE);
-  return &node;
+  m_sum++;
+
+  m_state.push({false, 0});
 }
 
-Type *npar::mock_type() {
-  static Type node(QAST_NODE_NODE);
-  return &node;
+void AST_Hash64::end_obj_impl() {
+  qcore_assert(!m_state.empty());
+  m_state.pop();
+
+  m_sum++;
+}
+
+void AST_Hash64::begin_arr_impl(size_t size) {
+  qcore_assert(!m_state.empty());
+  m_state.top().second++;
+
+  m_sum += size;
+
+  m_state.push({true, 0});
+}
+
+void AST_Hash64::end_arr_impl() {
+  qcore_assert(!m_state.empty());
+  m_state.pop();
+
+  m_sum++;
 }

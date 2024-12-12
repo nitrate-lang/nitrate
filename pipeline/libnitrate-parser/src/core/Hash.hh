@@ -31,86 +31,48 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
-#include <nitrate-parser/Node.h>
-#include <nitrate-parser/Parser.h>
+#ifndef __NITRATE_PARSER_CORE_HASH_H__
+#define __NITRATE_PARSER_CORE_HASH_H__
 
-#include <core/Hash.hh>
-#include <cstddef>
-#include <cstring>
+#include <cassert>
+#include <cstdint>
 #include <nitrate-parser/Writer.hh>
 
-using namespace npar;
-
-GenericIntern<std::string_view, std::string> AutoIntern::m_intern;
-
-///=============================================================================
 namespace npar {
-  void ArenaAllocatorImpl::swap(qcore_arena_t &arena) {
-    std::swap(*m_arena.get(), arena);
-  }
+  class CPP_EXPORT AST_Hash64 : public AST_Writer {
+    std::stack<std::pair<bool, size_t>> m_state;
+    uint64_t m_sum;
 
-  CPP_EXPORT thread_local ArenaAllocatorImpl npar_arena;
+    void str_impl(std::string_view str);
+    void uint_impl(uint64_t val);
+    void double_impl(double val);
+    void bool_impl(bool val);
+    void null_impl();
+    void begin_obj_impl(size_t pair_count);
+    void end_obj_impl();
+    void begin_arr_impl(size_t size);
+    void end_arr_impl();
+
+  public:
+    AST_Hash64()
+        : AST_Writer(
+              std::bind(&AST_Hash64::str_impl, this, std::placeholders::_1),
+              std::bind(&AST_Hash64::uint_impl, this, std::placeholders::_1),
+              std::bind(&AST_Hash64::double_impl, this, std::placeholders::_1),
+              std::bind(&AST_Hash64::bool_impl, this, std::placeholders::_1),
+              std::bind(&AST_Hash64::null_impl, this),
+              std::bind(&AST_Hash64::begin_obj_impl, this,
+                        std::placeholders::_1),
+              std::bind(&AST_Hash64::end_obj_impl, this),
+              std::bind(&AST_Hash64::begin_arr_impl, this,
+                        std::placeholders::_1),
+              std::bind(&AST_Hash64::end_arr_impl, this)) {
+      m_state.push({false, 0});
+    }
+    virtual ~AST_Hash64() = default;
+
+    uint64_t get() const { return m_sum; }
+  };
 }  // namespace npar
 
-C_EXPORT void *ArenaAllocatorImpl::allocate(std::size_t size) {
-  const std::size_t alignment = 16;
-  return qcore_arena_alloc_ex(m_arena.get(), size, alignment);
-}
-
-C_EXPORT void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }
-
-///=============================================================================
-
-CPP_EXPORT std::ostream &npar_node_t::dump(std::ostream &os,
-                                           bool isForDebug) const noexcept {
-  (void)isForDebug;
-
-  AST_JsonWriter writer(os);
-  const_cast<npar_node_t *>(this)->accept(writer);
-
-  return os;
-}
-
-CPP_EXPORT uint64_t npar_node_t::hash64() const noexcept {
-  AST_Hash64 visitor;
-
-  const_cast<npar_node_t *>(this)->accept(visitor);
-
-  return visitor.get();
-}
-
-///=============================================================================
-
-CPP_EXPORT bool Type::is_ptr_to(Type *type) noexcept {
-  if (!is_pointer()) {
-    return false;
-  }
-
-  Type *item = as<PtrTy>()->get_item();
-  while (item->is<RefTy>()) {
-    item = item->as<RefTy>()->get_item();
-  }
-
-  return item->is(type->getKind());
-}
-
-Stmt *npar::mock_stmt(npar_ty_t expected) {
-  (void)expected;
-
-  static Stmt node(QAST_NODE_NODE);
-  return &node;
-}
-
-Expr *npar::mock_expr(npar_ty_t expected) {
-  (void)expected;
-
-  static Expr node(QAST_NODE_NODE);
-  return &node;
-}
-
-Type *npar::mock_type() {
-  static Type node(QAST_NODE_NODE);
-  return &node;
-}
+#endif
