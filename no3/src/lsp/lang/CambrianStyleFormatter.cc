@@ -1261,17 +1261,17 @@ void CambrianFormatter::visit(ScopeStmt& n) {
 
 void CambrianFormatter::visit(ExportStmt& n) {
   switch (n.get_vis()) {
-    case Vis::PUBLIC: {
+    case Vis::Pub: {
       line << "pub ";
       break;
     }
 
-    case Vis::PRIVATE: {
+    case Vis::Sec: {
       line << "sec ";
       break;
     }
 
-    case Vis::PROTECTED: {
+    case Vis::Pro: {
       line << "pro ";
       break;
     }

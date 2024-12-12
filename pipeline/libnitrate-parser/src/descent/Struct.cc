@@ -118,7 +118,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
     if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
       next();
     }
-    auto R = StructField::get(name, type, nullptr, Vis::PRIVATE);
+    auto R = StructField::get(name, type, nullptr, Vis::Sec);
 
     return R;
   }
@@ -139,7 +139,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
          qlex_tok_t(qPunc, qPuncRCur)});
   }
 
-  auto R = StructField::get(name, type, value, Vis::PRIVATE);
+  auto R = StructField::get(name, type, value, Vis::Sec);
 
   return R;
 }
@@ -208,19 +208,19 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       }
     }
 
-    Vis vis = Vis::PRIVATE;
+    Vis vis = Vis::Sec;
 
     { /* Check for visibility qualifiers */
       if (tok.is<qKPub>()) {
-        vis = Vis::PUBLIC;
+        vis = Vis::Pub;
         next();
         tok = peek();
       } else if (tok.is<qKSec>()) {
-        vis = Vis::PRIVATE;
+        vis = Vis::Sec;
         next();
         tok = peek();
       } else if (tok.is<qKPro>()) {
-        vis = Vis::PROTECTED;
+        vis = Vis::Pro;
         next();
         tok = peek();
       }

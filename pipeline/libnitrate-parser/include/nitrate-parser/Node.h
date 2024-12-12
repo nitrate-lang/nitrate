@@ -768,10 +768,14 @@ static_assert(sizeof(npar_node_t) == 8);
 
 namespace npar {
   enum class Vis {
-    PUBLIC,
-    PRIVATE,
-    PROTECTED,
+    Pub = 0,
+    Sec = 1,
+    Pro = 2,
   };
+
+  static_assert((int)Vis::Pub == 0);
+  static_assert((int)Vis::Sec == 1);
+  static_assert((int)Vis::Pro == 2);
 
   class String
       : public std::basic_string<char, std::char_traits<char>, Arena<char>> {

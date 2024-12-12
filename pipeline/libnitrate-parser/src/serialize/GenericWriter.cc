@@ -1423,17 +1423,17 @@ void AST_Writer::visit(StructField& n) {
 
   string("vis");
   switch (n.get_visibility()) {
-    case Vis::PUBLIC: {
+    case Vis::Pub: {
       string("pub");
       break;
     }
 
-    case Vis::PRIVATE: {
+    case Vis::Sec: {
       string("sec");
       break;
     }
 
-    case Vis::PROTECTED: {
+    case Vis::Pro: {
       string("pro");
       break;
     }
@@ -1620,17 +1620,17 @@ void AST_Writer::visit(ExportStmt& n) {
 
   string("vis");
   switch (n.get_vis()) {
-    case Vis::PUBLIC: {
+    case Vis::Pub: {
       string("pub");
       break;
     }
 
-    case Vis::PRIVATE: {
+    case Vis::Sec: {
       string("sec");
       break;
     }
 
-    case Vis::PROTECTED: {
+    case Vis::Pro: {
       string("pro");
       break;
     }
