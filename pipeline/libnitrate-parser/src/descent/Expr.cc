@@ -216,7 +216,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
         << "Expression depth exceeded; Expressions can not be nested more than "
         << MAX_EXPR_DEPTH << " times";
 
-    return mock_expr(QAST_NODE_VOID_TY);
+    return mock_expr(QAST_VOID_TY);
   }
 
   std::stack<Expr *> stack;
@@ -226,17 +226,17 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
 
     if (tok.is(qEofF)) {
       // diagnostic << tok << "Unexpected end of file while parsing expression";
-      return mock_expr(QAST_NODE_VOID_TY);
+      return mock_expr(QAST_VOID_TY);
     }
 
     if (terminators.contains(tok)) {
       if (stack.empty()) {
-        return mock_expr(QAST_NODE_VOID_TY);
+        return mock_expr(QAST_VOID_TY);
       }
 
       if (stack.size() != 1) {
         diagnostic << tok << "Expected a single expression on the stack";
-        return mock_expr(QAST_NODE_VOID_TY);
+        return mock_expr(QAST_VOID_TY);
       }
 
       return stack.top();
@@ -346,7 +346,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
                     << tok
                     << "Expected a function call after function definition "
                        "expression";
-                return mock_expr(QAST_NODE_VOID_TY);
+                return mock_expr(QAST_VOID_TY);
               }
 
               stack.push(fcall);
@@ -359,7 +359,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
             FString *f = nullptr;
             if (!recurse_fstring(S, &f, rd, depth)) {
               diagnostic << tok << "Expected an F-string in expression";
-              return mock_expr(QAST_NODE_VOID_TY);
+              return mock_expr(QAST_VOID_TY);
             }
             stack.push(f);
             continue;
@@ -367,7 +367,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
 
           default: {
             diagnostic << tok << "Unexpected keyword in expression";
-            return mock_expr(QAST_NODE_VOID_TY);
+            return mock_expr(QAST_VOID_TY);
           }
         }
         break;
@@ -380,7 +380,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
 
               if (fcall == nullptr) {
                 diagnostic << tok << "Expected a function call in expression";
-                return mock_expr(QAST_NODE_VOID_TY);
+                return mock_expr(QAST_VOID_TY);
               }
 
               stack.pop();
@@ -395,7 +395,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
 
             if (!next().is<qPuncRPar>()) {
               diagnostic << tok << "Expected ')' to close the parentheses";
-              return mock_expr(QAST_NODE_VOID_TY);
+              return mock_expr(QAST_VOID_TY);
             }
 
             stack.push(expr);
@@ -404,7 +404,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
           case qPuncRPar: {
             if (stack.size() != 1) {
               diagnostic << tok << "Expected a single expression on the stack";
-              return mock_expr(QAST_NODE_VOID_TY);
+              return mock_expr(QAST_VOID_TY);
             }
 
             return stack.top();
@@ -425,7 +425,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
               tok = next();
               if (!tok.is<qPuncColn>()) {
                 diagnostic << tok << "Expected ':' in list element";
-                return mock_expr(QAST_NODE_VOID_TY);
+                return mock_expr(QAST_VOID_TY);
               }
 
               value = recurse_expr(
@@ -478,7 +478,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
                   if (!count->is<ConstInt>()) {
                     diagnostic << tok
                                << "Expected a constant integer in list element";
-                    return mock_expr(QAST_NODE_VOID_TY);
+                    return mock_expr(QAST_VOID_TY);
                   }
 
                   size_t count_val = std::stoi(
@@ -488,7 +488,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
                     diagnostic << tok
                                << "List element duplication count exceeds the "
                                   "maximum limit";
-                    return mock_expr(QAST_NODE_VOID_TY);
+                    return mock_expr(QAST_VOID_TY);
                   }
 
                   for (size_t i = 0; i < count_val; i++) {
@@ -510,7 +510,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
 
             if (stack.size() != 1) {
               diagnostic << tok << "Expected a single expression on the stack";
-              return mock_expr(QAST_NODE_VOID_TY);
+              return mock_expr(QAST_VOID_TY);
             }
 
             Expr *index = nullptr, *left = stack.top();
@@ -529,7 +529,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
               tok = next();
               if (!tok.is<qPuncRBrk>()) {
                 diagnostic << tok << "Expected ']' to close the list index";
-                return mock_expr(QAST_NODE_VOID_TY);
+                return mock_expr(QAST_VOID_TY);
               }
 
               stack.push(make<Slice>(left, index, end));
@@ -538,7 +538,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
 
             if (!tok.is<qPuncRBrk>()) {
               diagnostic << tok << "Expected ']' to close the list index";
-              return mock_expr(QAST_NODE_VOID_TY);
+              return mock_expr(QAST_VOID_TY);
             }
 
             tok = peek();
@@ -562,7 +562,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
           case qPuncComa: {
             if (stack.size() != 1) {
               diagnostic << tok << "Expected a single expression on the stack";
-              return mock_expr(QAST_NODE_VOID_TY);
+              return mock_expr(QAST_VOID_TY);
             }
 
             Expr *right = nullptr, *left = stack.top();
@@ -575,7 +575,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
           }
           default: {
             diagnostic << tok << "Unexpected punctuation in expression";
-            return mock_expr(QAST_NODE_VOID_TY);
+            return mock_expr(QAST_VOID_TY);
           } break;
         }
       }
@@ -584,7 +584,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
         if (op == qOpDot) {
           if (stack.size() != 1) {
             diagnostic << tok << "Expected a single expression on the stack";
-            return mock_expr(QAST_NODE_VOID_TY);
+            return mock_expr(QAST_VOID_TY);
           }
 
           Expr *left = stack.top();
@@ -593,7 +593,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
           tok = next();
           if (!tok.is(qName)) {
             diagnostic << tok << "Expected an identifier after '.'";
-            return mock_expr(QAST_NODE_VOID_TY);
+            return mock_expr(QAST_VOID_TY);
           }
 
           let ident = tok.as_string(&rd);
@@ -620,7 +620,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
         if (op == qOpAs) {
           if (stack.size() != 1) {
             diagnostic << tok << "Expected a single expression on the stack";
-            return mock_expr(QAST_NODE_VOID_TY);
+            return mock_expr(QAST_VOID_TY);
           }
 
           Type *type = recurse_type(S, rd);
@@ -634,7 +634,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
         if (op == qOpBitcastAs) {
           if (stack.size() != 1) {
             diagnostic << tok << "Expected a single expression on the stack";
-            return mock_expr(QAST_NODE_VOID_TY);
+            return mock_expr(QAST_VOID_TY);
           }
 
           Type *type = recurse_type(S, rd);
@@ -657,7 +657,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
           continue;
         } else {
           diagnostic << tok << "Unexpected operator in expression";
-          return mock_expr(QAST_NODE_VOID_TY);
+          return mock_expr(QAST_VOID_TY);
         }
         break;
       }
@@ -670,7 +670,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
                                               rd, depth);
           if (fcall == nullptr) {
             diagnostic << tok << "Expected a function call in expression";
-            return mock_expr(QAST_NODE_VOID_TY);
+            return mock_expr(QAST_VOID_TY);
           }
 
           stack.push(fcall);
@@ -697,11 +697,11 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
       }
       default: {
         diagnostic << tok << "Unexpected token in expression";
-        return mock_expr(QAST_NODE_VOID_TY);
+        return mock_expr(QAST_VOID_TY);
       }
     }
   }
 
   diagnostic << peek() << "Unexpected end of expression";
-  return mock_expr(QAST_NODE_VOID_TY);
+  return mock_expr(QAST_VOID_TY);
 }

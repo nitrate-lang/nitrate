@@ -59,5 +59,5 @@ npar::Stmt *npar::recurse_typedef(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Expected name in typedef declaration";
   }
 
-  return mock_stmt(QAST_NODE_TYPEDEF);
+  return mock_stmt(QAST_TYPEDEF);
 }

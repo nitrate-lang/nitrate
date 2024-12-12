@@ -126,5 +126,5 @@ npar::Stmt *npar::recurse_enum(npar_t &S, qlex_t &rd) {
                          std::move(items.value()));
   }
 
-  return mock_stmt(QAST_NODE_ENUM);
+  return mock_stmt(QAST_ENUM);
 }

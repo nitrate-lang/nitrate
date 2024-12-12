@@ -94,7 +94,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
     tok = next();
     if (!tok.is(qName)) {
       diagnostic << tok << "Expected field name in composite definition";
-      return mock_stmt(QAST_NODE_STRUCT_FIELD);
+      return mock_stmt(QAST_STRUCT_FIELD);
     }
     name = tok.as_string(&rd);
   }
@@ -104,7 +104,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
     if (!tok.is<qPuncColn>()) {
       diagnostic << tok
                  << "Expected colon after field name in composite definition";
-      return mock_stmt(QAST_NODE_STRUCT_FIELD);
+      return mock_stmt(QAST_STRUCT_FIELD);
     }
   }
 
@@ -128,7 +128,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
       diagnostic
           << tok
           << "Expected '=' or ',' after field type in composite definition";
-      return mock_stmt(QAST_NODE_STRUCT_FIELD);
+      return mock_stmt(QAST_STRUCT_FIELD);
     }
     next();
 
@@ -168,13 +168,13 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       name = tok.as_string(&rd);
     } else {
       diagnostic << tok << "Expected struct name in struct definition";
-      return mock_stmt(QAST_NODE_STRUCT);
+      return mock_stmt(QAST_STRUCT);
     }
   }
 
   {
     if (!recurse_template_parameters(S, rd, sdef->get_template_params())) {
-      return mock_stmt(QAST_NODE_STRUCT);
+      return mock_stmt(QAST_STRUCT);
     }
   }
 
@@ -183,7 +183,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
     if (!tok.is<qPuncLCur>()) {
       diagnostic << tok
                  << "Expected '{' after struct name in struct definition";
-      return mock_stmt(QAST_NODE_STRUCT);
+      return mock_stmt(QAST_STRUCT);
     }
   }
 
@@ -193,7 +193,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       tok = peek();
       if (tok.is(qEofF)) {
         diagnostic << tok << "Unexpected end of file in struct definition";
-        return mock_stmt(QAST_NODE_STRUCT);
+        return mock_stmt(QAST_STRUCT);
       }
       if (tok.is<qPuncRCur>()) {
         next();
@@ -262,7 +262,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
         diagnostic << tok
                    << "Expected function definition after 'static' in struct "
                       "definition";
-        return mock_stmt(QAST_NODE_STRUCT);
+        return mock_stmt(QAST_STRUCT);
       }
 
       /* Parse the function definition */
@@ -280,7 +280,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       }
 
       /* Assign the visibility to the field */
-      if (field->is(QAST_NODE_STRUCT_FIELD)) {
+      if (field->is(QAST_STRUCT_FIELD)) {
         static_cast<StructField *>(field)->set_visibility(vis);
       }
 

@@ -55,7 +55,7 @@ Stmt *npar::recurse_return(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Expected ';' after the return statement.";
   }
 
-  return mock_stmt(QAST_NODE_RETURN);
+  return mock_stmt(QAST_RETURN);
 }
 
 Stmt *npar::recurse_retif(npar_t &S, qlex_t &rd) {
@@ -78,5 +78,5 @@ Stmt *npar::recurse_retif(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Expected ',' after the retif condition.";
   }
 
-  return mock_stmt(QAST_NODE_RETIF);
+  return mock_stmt(QAST_RETIF);
 }

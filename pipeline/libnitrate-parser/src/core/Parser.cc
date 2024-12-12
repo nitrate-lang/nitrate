@@ -82,14 +82,14 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
     if (!tok.is(qKeyW)) {
       if (tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() || tok.is<qPuncRPar>()) {
         diagnostic << tok << "Unexpected closing brace";
-        return mock_stmt(QAST_NODE_BLOCK);
+        return mock_stmt(QAST_BLOCK);
       }
 
       Expr* expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
       if (!expr) {
         diagnostic << tok << "Expected valid expression";
-        return mock_stmt(QAST_NODE_BLOCK);
+        return mock_stmt(QAST_BLOCK);
       }
 
       tok = next();
@@ -260,7 +260,7 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
           node = recurse_block(S, rd, false, true);
         }
 
-        if (node->is(QAST_NODE_BLOCK)) {
+        if (node->is(QAST_BLOCK)) {
           node->as<Block>()->set_safety(SafetyMode::Unsafe);
         }
 
@@ -275,7 +275,7 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
           node = recurse_block(S, rd, false, true);
         }
 
-        if (node->is(QAST_NODE_BLOCK)) {
+        if (node->is(QAST_BLOCK)) {
           node->as<Block>()->set_safety(SafetyMode::Safe);
         }
 

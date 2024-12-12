@@ -103,18 +103,18 @@ CPP_EXPORT bool Type::is_ptr_to(Type *type) const {
 Stmt *npar::mock_stmt(npar_ty_t expected) {
   (void)expected;
 
-  static Stmt node(QAST_NODE_NODE);
+  static Stmt node(QAST_BASE);
   return &node;
 }
 
 Expr *npar::mock_expr(npar_ty_t expected) {
   (void)expected;
 
-  static Expr node(QAST_NODE_NODE);
+  static Expr node(QAST_BASE);
   return &node;
 }
 
 Type *npar::mock_type() {
-  static Type node(QAST_NODE_NODE);
+  static Type node(QAST_BASE);
   return &node;
 }

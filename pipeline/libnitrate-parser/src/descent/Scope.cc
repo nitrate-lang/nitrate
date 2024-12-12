@@ -100,5 +100,5 @@ npar::Stmt *npar::recurse_scope(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Expected scope dependencies";
   }
 
-  return mock_stmt(QAST_NODE_SCOPE);
+  return mock_stmt(QAST_SCOPE);
 }

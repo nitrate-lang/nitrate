@@ -52,7 +52,7 @@ static std::pair<CaseStmt *, bool> recurse_switch_case(npar_t &S, qlex_t &rd) {
   let body = recurse_switch_case_body(S, rd);
 
   let is_default_case =
-      cond->is(QAST_NODE_IDENT) && cond->as<Ident>()->get_name() == "_";
+      cond->is(QAST_IDENT) && cond->as<Ident>()->get_name() == "_";
 
   if (is_default_case) {
     return {make<CaseStmt>(nullptr, body), true};
@@ -108,5 +108,5 @@ npar::Stmt *npar::recurse_switch(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Expected '{' after switch condition.";
   }
 
-  return mock_stmt(QAST_NODE_SWITCH);
+  return mock_stmt(QAST_SWITCH);
 }

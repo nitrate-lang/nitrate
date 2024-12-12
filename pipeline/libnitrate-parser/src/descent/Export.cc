@@ -94,7 +94,7 @@ npar::Stmt *npar::recurse_pub(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Malformed export attributes";
   }
 
-  return mock_stmt(QAST_NODE_EXPORT);
+  return mock_stmt(QAST_EXPORT);
 }
 
 npar::Stmt *npar::recurse_sec(npar_t &S, qlex_t &rd) {
@@ -109,7 +109,7 @@ npar::Stmt *npar::recurse_sec(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Malformed export attributes";
   }
 
-  return mock_stmt(QAST_NODE_EXPORT);
+  return mock_stmt(QAST_EXPORT);
 }
 
 npar::Stmt *npar::recurse_pro(npar_t &S, qlex_t &rd) {
@@ -124,5 +124,5 @@ npar::Stmt *npar::recurse_pro(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Malformed export attributes";
   }
 
-  return mock_stmt(QAST_NODE_EXPORT);
+  return mock_stmt(QAST_EXPORT);
 }

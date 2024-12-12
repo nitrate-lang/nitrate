@@ -104,7 +104,7 @@ static std::optional<Stmt *> recurse_variable_instance(npar_t &S, qlex_t &rd,
     diagnostic << current() << "Malformed variable attributes";
   }
 
-  return mock_stmt(QAST_NODE_VAR);
+  return mock_stmt(QAST_VAR);
 }
 
 std::vector<Stmt *> npar::recurse_variable(npar_t &S, qlex_t &rd,
@@ -131,5 +131,5 @@ std::vector<Stmt *> npar::recurse_variable(npar_t &S, qlex_t &rd,
     next_if(qPuncComa);
   }
 
-  return {mock_stmt(QAST_NODE_VAR)};
+  return {mock_stmt(QAST_VAR)};
 }

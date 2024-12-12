@@ -108,5 +108,5 @@ npar::Stmt *npar::recurse_foreach(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Expected identifier pair in foreach statement";
   }
 
-  return mock_stmt(QAST_NODE_FOREACH);
+  return mock_stmt(QAST_FOREACH);
 }

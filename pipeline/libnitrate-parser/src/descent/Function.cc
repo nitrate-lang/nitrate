@@ -488,7 +488,7 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
 
     if (!recurse_captures_and_name(rd, fndecl, captures)) {
       diagnostic << tok << "Expected a function name or capture list";
-      return mock_stmt(QAST_NODE_FN);
+      return mock_stmt(QAST_FN);
     }
   }
 
@@ -497,7 +497,7 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
 
     if (!recurse_template_parameters(S, rd, fndecl->get_template_params())) {
       diagnostic << tok << "Failed to parse template parameters";
-      return mock_stmt(QAST_NODE_FN);
+      return mock_stmt(QAST_FN);
     }
   }
 
@@ -506,7 +506,7 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
 
     if (!recurse_parameters(S, rd, ftype, is_variadic)) {
       diagnostic << tok << "Failed to parse function parameters";
-      return mock_stmt(QAST_NODE_FN);
+      return mock_stmt(QAST_FN);
     }
   }
 
@@ -515,7 +515,7 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
 
     if (!translate_purity(prop, ftype)) {
       diagnostic << tok << "Failed to translate purity";
-      return mock_stmt(QAST_NODE_FN);
+      return mock_stmt(QAST_FN);
     }
   }
 
@@ -585,7 +585,7 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
     tok = peek();
 
     if (!recurse_constraints(tok, rd, S, req_in, req_out)) {
-      return mock_stmt(QAST_NODE_FN);
+      return mock_stmt(QAST_FN);
     }
 
     if (!ftype->get_return_ty()) {
@@ -599,10 +599,10 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
 
   if (ret_type) {
     diagnostic << tok << "Expected '{', '=>', or ';' in function declaration";
-    return mock_stmt(QAST_NODE_FN);
+    return mock_stmt(QAST_FN);
   }
 
   diagnostic << tok
              << "Expected ':', '{', '=>', or ';' in function declaration";
-  return mock_stmt(QAST_NODE_FN);
+  return mock_stmt(QAST_FN);
 }
