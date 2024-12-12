@@ -234,7 +234,9 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       method = recurse_function(S, rd);
 
       { /* Add the 'this' parameter to the method */
-        FuncParam fn_this{"this", make<RefTy>(make<NamedTy>(name)), nullptr};
+        FuncParam fn_this{SaveString("this"),
+                          make<RefTy>(make<NamedTy>(SaveString(name))),
+                          nullptr};
 
         if (method->is<FnDecl>()) {
           fdecl = static_cast<FnDecl *>(method);

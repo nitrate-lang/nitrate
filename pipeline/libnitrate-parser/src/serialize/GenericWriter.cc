@@ -139,7 +139,7 @@ void AST_Writer::visit(NamedTy& n) {
   write_type_metadata(n);
 
   string("name");
-  string(n.get_name());
+  string(*n.get_name());
 
   end_obj();
 }
@@ -414,7 +414,7 @@ void AST_Writer::visit(OpaqueTy& n) {
   write_type_metadata(n);
 
   string("name");
-  string(n.get_name());
+  string(*n.get_name());
 
   end_obj();
 }
@@ -554,7 +554,7 @@ void AST_Writer::visit(FuncTy& n) {
     std::for_each(params.begin(), params.end(), [&](let param) {
       begin_obj(3);
       string("name");
-      string(std::get<0>(param));
+      string(*std::get<0>(param));
 
       string("type");
       std::get<1>(param)->accept(*this);
@@ -653,7 +653,7 @@ void AST_Writer::visit(ConstInt& n) {
   write_source_location(n);
 
   string("value");
-  string(n.get_value());
+  string(*n.get_value());
 
   end_obj();
 }
@@ -667,7 +667,7 @@ void AST_Writer::visit(ConstFloat& n) {
   write_source_location(n);
 
   string("value");
-  string(n.get_value());
+  string(*n.get_value());
 
   end_obj();
 }
@@ -695,7 +695,7 @@ void AST_Writer::visit(ConstString& n) {
   write_source_location(n);
 
   string("value");
-  string(n.get_value());
+  string(*n.get_value());
 
   end_obj();
 }
@@ -756,7 +756,7 @@ void AST_Writer::visit(Call& n) {
       begin_obj(2);
 
       string("name");
-      string(arg.first);
+      string(*arg.first);
 
       string("value");
       arg.second->accept(*this);
@@ -786,7 +786,7 @@ void AST_Writer::visit(TemplCall& n) {
     let args = n.get_template_args();
     begin_obj(args.size());
     std::for_each(args.begin(), args.end(), [&](let arg) {
-      string(arg.first);
+      string(*arg.first);
       arg.second->accept(*this);
     });
     end_obj();
@@ -801,7 +801,7 @@ void AST_Writer::visit(TemplCall& n) {
       begin_obj(2);
 
       string("name");
-      string(arg.first);
+      string(*arg.first);
 
       string("value");
       arg.second->accept(*this);
@@ -861,7 +861,7 @@ void AST_Writer::visit(Field& n) {
   write_source_location(n);
 
   string("field");
-  string(n.get_field());
+  string(*n.get_field());
 
   string("base");
   n.get_base()->accept(*this);
@@ -920,7 +920,7 @@ void AST_Writer::visit(FString& n) {
     let items = n.get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(), [&](let item) {
-      if (std::holds_alternative<std::string_view>(item)) {
+      if (std::holds_alternative<SmallString>(item)) {
         begin_obj(2);
 
         string("kind");
@@ -929,7 +929,7 @@ void AST_Writer::visit(FString& n) {
         string(kind_name);
 
         string("value");
-        string(std::get<std::string_view>(item));
+        string(*std::get<SmallString>(item));
 
         end_obj();
       } else {
@@ -951,7 +951,7 @@ void AST_Writer::visit(Ident& n) {
   write_source_location(n);
 
   string("name");
-  string(n.get_name());
+  string(*n.get_name());
 
   end_obj();
 }
@@ -1036,7 +1036,7 @@ void AST_Writer::visit(VarDecl& n) {
   }
 
   string("name");
-  string(n.get_name());
+  string(*n.get_name());
 
   string("type");
   n.get_type() ? n.get_type()->accept(*this) : null();
@@ -1066,7 +1066,7 @@ void AST_Writer::visit(InlineAsm& n) {
   write_source_location(n);
 
   string("code");
-  string(n.get_code());
+  string(*n.get_code());
 
   { /* Write arguments */
     string("params");
@@ -1166,10 +1166,10 @@ void AST_Writer::visit(ForeachStmt& n) {
   write_source_location(n);
 
   string("idx");
-  string(n.get_idx_ident());
+  string(*n.get_idx_ident());
 
   string("val");
-  string(n.get_val_ident());
+  string(*n.get_val_ident());
 
   string("expr");
   n.get_expr()->accept(*this);
@@ -1290,7 +1290,7 @@ void AST_Writer::visit(TypedefStmt& n) {
   write_source_location(n);
 
   string("name");
-  string(n.get_name());
+  string(*n.get_name());
 
   string("type");
   n.get_type()->accept(*this);
@@ -1307,7 +1307,7 @@ void AST_Writer::visit(FnDecl& n) {
   write_source_location(n);
 
   string("name");
-  string(n.get_name());
+  string(*n.get_name());
 
   string("type");
   n.get_type()->accept(*this);
@@ -1321,7 +1321,7 @@ void AST_Writer::visit(FnDecl& n) {
         begin_obj(3);
 
         string("name");
-        string(std::get<0>(param));
+        string(*std::get<0>(param));
 
         string("type");
         std::get<1>(param)->accept(*this);
@@ -1349,7 +1349,7 @@ void AST_Writer::visit(FnDef& n) {
   write_source_location(n);
 
   string("name");
-  string(n.get_name());
+  string(*n.get_name());
 
   string("type");
   n.get_type()->accept(*this);
@@ -1363,7 +1363,7 @@ void AST_Writer::visit(FnDef& n) {
       begin_obj(2);
 
       string("name");
-      string(cap.first);
+      string(*cap.first);
 
       string("is_ref");
       boolean(cap.second);
@@ -1382,7 +1382,7 @@ void AST_Writer::visit(FnDef& n) {
         begin_obj(3);
 
         string("name");
-        string(std::get<0>(param));
+        string(*std::get<0>(param));
 
         string("type");
         std::get<1>(param)->accept(*this);
@@ -1419,7 +1419,7 @@ void AST_Writer::visit(StructField& n) {
   write_source_location(n);
 
   string("name");
-  string(n.get_name());
+  string(*n.get_name());
 
   string("vis");
   switch (n.get_visibility()) {
@@ -1457,7 +1457,7 @@ void AST_Writer::visit(StructDef& n) {
   write_source_location(n);
 
   string("name");
-  string(n.get_name());
+  string(*n.get_name());
 
   string("mode");
   switch (n.get_composite_type()) {
@@ -1496,7 +1496,7 @@ void AST_Writer::visit(StructDef& n) {
         begin_obj(3);
 
         string("name");
-        string(std::get<0>(param));
+        string(*std::get<0>(param));
 
         string("type");
         std::get<1>(param)->accept(*this);
@@ -1554,7 +1554,7 @@ void AST_Writer::visit(EnumDef& n) {
   write_source_location(n);
 
   string("name");
-  string(n.get_name());
+  string(*n.get_name());
 
   string("type");
   n.get_type() ? n.get_type()->accept(*this) : null();
@@ -1568,7 +1568,7 @@ void AST_Writer::visit(EnumDef& n) {
       begin_obj(2);
 
       string("name");
-      string(item.first);
+      string(*item.first);
 
       string("value");
       item.second ? item.second->accept(*this) : null();
@@ -1590,14 +1590,14 @@ void AST_Writer::visit(ScopeStmt& n) {
   write_source_location(n);
 
   string("name");
-  string(n.get_name());
+  string(*n.get_name());
 
   { /* Write implicit dependencies */
     string("depends");
 
     let deps = n.get_deps();
     begin_arr(deps.size());
-    std::for_each(deps.begin(), deps.end(), [&](let dep) { string(dep); });
+    std::for_each(deps.begin(), deps.end(), [&](let dep) { string(*dep); });
     end_arr();
   }
 
@@ -1616,7 +1616,7 @@ void AST_Writer::visit(ExportStmt& n) {
   write_source_location(n);
 
   string("abi");
-  string(n.get_abi_name());
+  string(*n.get_abi_name());
 
   string("vis");
   switch (n.get_vis()) {

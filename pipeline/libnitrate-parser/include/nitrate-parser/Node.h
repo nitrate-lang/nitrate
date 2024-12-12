@@ -34,7 +34,6 @@
 #ifndef __NITRATE_PARSER_NODE_H__
 #define __NITRATE_PARSER_NODE_H__
 
-#include <unordered_map>
 #ifndef __cplusplus
 #error "This code requires c++"
 #endif
@@ -43,11 +42,10 @@
 #include <nitrate-core/Memory.h>
 #include <nitrate-lexer/Token.h>
 
+#include <boost/flyweight.hpp>
 #include <cassert>
 #include <iostream>
 #include <map>
-#include <memory>
-#include <mutex>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-parser/Visitor.hh>
 #include <optional>
@@ -58,8 +56,6 @@
 #include <type_traits>
 #include <variant>
 #include <vector>
-
-typedef struct npar_node_t npar_node_t;
 
 typedef enum npar_ty_t {
   QAST_NODE_NODE,
@@ -762,56 +758,13 @@ namespace npar {
     Pro = 2,
   };
 
-  template <typename PARAM, typename OBJECT, typename HASH = std::hash<PARAM>,
-            typename IS_EQUAL = std::equal_to<PARAM>,
-            typename ALLOC =
-                std::allocator<std::pair<const PARAM, std::unique_ptr<OBJECT>>>>
-  class GenericIntern {
-    std::unordered_map<PARAM, std::unique_ptr<OBJECT>, HASH, IS_EQUAL, ALLOC>
-        m_map;
-    std::recursive_mutex m_mutex;
-
-  public:
-    GenericIntern() {}
-
-    template <typename... Args>
-    OBJECT *get(Args &&...args) noexcept {
-      /* Permit recursion because idk when the 'args' are evaluated; they may
-       * have a recursive call to this? */
-      std::lock_guard<std::recursive_mutex> lock(m_mutex);
-
-      /* Construct the key */
-      let key = PARAM(std::forward<Args>(args)...);
-
-      /* Find the key in the map */
-      auto it = m_map.find(key);
-
-      /* If the key is not found, insert it */
-      if (it == m_map.end()) {
-        /* Add the [key->allocated] pair to the map */
-        /* Get the iterator to the inserted element object */
-
-        it = m_map
-                 .emplace(std::move(key),
-                          std::make_unique<OBJECT>(std::forward<Args>(args)...))
-                 .first;
-      }
-
-      /* Return pointer to the object */
-      return it->second.get();
-    }
-
-    size_t size() noexcept {
-      std::lock_guard<std::recursive_mutex> lock(m_mutex);
-      return m_map.size();
-    }
-  };
-
   static_assert((int)Vis::Pub == 0);
   static_assert((int)Vis::Sec == 1);
   static_assert((int)Vis::Pro == 2);
 
-  std::string_view SaveString(std::string_view str);
+  using SmallString = boost::flyweight<std::string>;
+
+  SmallString SaveString(std::string_view str);
 
   class Stmt : public npar_node_t {
   public:
@@ -904,7 +857,7 @@ namespace npar {
     }
   };
 
-  typedef std::tuple<std::string_view, Type *, Expr *> TemplateParameter;
+  typedef std::tuple<SmallString, Type *, Expr *> TemplateParameter;
   typedef std::vector<TemplateParameter, Arena<TemplateParameter>>
       TemplateParameters;
 
@@ -941,11 +894,10 @@ namespace npar {
   };
 
   class NamedTy : public Type {
-    std::string_view m_name;
+    SmallString m_name;
 
   public:
-    constexpr NamedTy(std::string_view name)
-        : Type(QAST_NODE_UNRES_TY), m_name(name) {}
+    NamedTy(SmallString name) : Type(QAST_NODE_UNRES_TY), m_name(name) {}
 
     let get_name() const { return m_name; }
   };
@@ -1062,11 +1014,10 @@ namespace npar {
   };
 
   class OpaqueTy : public Type {
-    std::string_view m_name;
+    SmallString m_name;
 
   public:
-    constexpr OpaqueTy(std::string_view name)
-        : Type(QAST_NODE_OPAQUE_TY), m_name(name) {}
+    OpaqueTy(SmallString name) : Type(QAST_NODE_OPAQUE_TY), m_name(name) {}
 
     let get_name() const { return m_name; }
   };
@@ -1103,7 +1054,7 @@ namespace npar {
     let get_item() const { return m_item; }
   };
 
-  typedef std::pair<std::string_view, Type *> StructItem;
+  typedef std::pair<SmallString, Type *> StructItem;
   typedef std::vector<StructItem, Arena<StructItem>> StructItems;
 
   enum class FuncPurity {
@@ -1114,7 +1065,7 @@ namespace npar {
     RETROPURE,
   };
 
-  typedef std::tuple<std::string_view, Type *, Expr *> FuncParam;
+  typedef std::tuple<SmallString, Type *, Expr *> FuncParam;
   typedef std::vector<FuncParam, Arena<FuncParam>> FuncParams;
 
   class FuncTy : public Type {
@@ -1241,21 +1192,19 @@ namespace npar {
   ///=============================================================================
 
   class ConstInt : public Expr {
-    std::string_view m_value;
+    SmallString m_value;
 
   public:
-    constexpr ConstInt(std::string_view value)
-        : Expr(QAST_NODE_INT), m_value(value) {}
+    ConstInt(SmallString value) : Expr(QAST_NODE_INT), m_value(value) {}
 
     let get_value() const { return m_value; }
   };
 
   class ConstFloat : public Expr {
-    std::string_view m_value;
+    SmallString m_value;
 
   public:
-    constexpr ConstFloat(std::string_view value)
-        : Expr(QAST_NODE_FLOAT), m_value(value) {}
+    ConstFloat(SmallString value) : Expr(QAST_NODE_FLOAT), m_value(value) {}
 
     let get_value() const { return m_value; }
   };
@@ -1271,11 +1220,10 @@ namespace npar {
   };
 
   class ConstString : public Expr {
-    std::string_view m_value;
+    SmallString m_value;
 
   public:
-    constexpr ConstString(std::string_view value)
-        : Expr(QAST_NODE_STRING), m_value(value) {}
+    ConstString(SmallString value) : Expr(QAST_NODE_STRING), m_value(value) {}
 
     let get_value() const { return m_value; }
   };
@@ -1302,7 +1250,7 @@ namespace npar {
 
   ///=============================================================================
 
-  typedef std::pair<std::string_view, Expr *> CallArg;
+  typedef std::pair<SmallString, Expr *> CallArg;
   typedef std::vector<CallArg, Arena<CallArg>> CallArgs;
 
   class Call : public Expr {
@@ -1317,8 +1265,8 @@ namespace npar {
     let get_args() const { return m_args; }
   };
 
-  typedef std::map<std::string_view, Expr *, std::less<std::string_view>,
-                   Arena<std::pair<const std::string_view, Expr *>>>
+  typedef std::map<SmallString, Expr *, std::less<SmallString>,
+                   Arena<std::pair<const SmallString, Expr *>>>
       TemplateArgs;
 
   class TemplCall : public Expr {
@@ -1363,10 +1311,10 @@ namespace npar {
 
   class Field : public Expr {
     Expr *m_base;
-    std::string_view m_field;
+    SmallString m_field;
 
   public:
-    constexpr Field(Expr *base, std::string_view field)
+    Field(Expr *base, SmallString field)
         : Expr(QAST_NODE_FIELD), m_base(base), m_field(field) {}
 
     let get_base() const { return m_base; }
@@ -1399,8 +1347,8 @@ namespace npar {
     let get_end() const { return m_end; }
   };
 
-  typedef std::vector<std::variant<std::string_view, Expr *>,
-                      Arena<std::variant<std::string_view, Expr *>>>
+  typedef std::vector<std::variant<SmallString, Expr *>,
+                      Arena<std::variant<SmallString, Expr *>>>
       FStringItems;
 
   class FString : public Expr {
@@ -1414,11 +1362,10 @@ namespace npar {
   };
 
   class Ident : public Expr {
-    std::string_view m_name;
+    SmallString m_name;
 
   public:
-    constexpr Ident(std::string_view name)
-        : Expr(QAST_NODE_IDENT), m_name(name) {}
+    Ident(SmallString name) : Expr(QAST_NODE_IDENT), m_name(name) {}
 
     let get_name() const { return m_name; }
   };
@@ -1465,14 +1412,14 @@ namespace npar {
 
   class VarDecl : public Stmt {
     VarDeclAttributes m_attributes;
-    std::string_view m_name;
+    SmallString m_name;
     Type *m_type;
     Expr *m_value;
     VarDeclType m_decl_type;
 
   public:
-    VarDecl(std::string_view name, Type *type, Expr *value,
-            VarDeclType decl_type, VarDeclAttributes attributes)
+    VarDecl(SmallString name, Type *type, Expr *value, VarDeclType decl_type,
+            VarDeclAttributes attributes)
         : Stmt(QAST_NODE_VAR),
           m_attributes(attributes),
           m_name(name),
@@ -1490,11 +1437,11 @@ namespace npar {
   typedef std::vector<Expr *, Arena<Expr *>> InlineAsmArgs;
 
   class InlineAsm : public Stmt {
-    std::string_view m_code;
+    SmallString m_code;
     InlineAsmArgs m_args;
 
   public:
-    InlineAsm(std::string_view code, const InlineAsmArgs &args)
+    InlineAsm(SmallString code, const InlineAsmArgs &args)
         : Stmt(QAST_NODE_INLINE_ASM), m_code(code), m_args(args) {}
 
     let get_code() const { return m_code; }
@@ -1548,14 +1495,14 @@ namespace npar {
   };
 
   class ForeachStmt : public Stmt {
-    std::string_view m_idx_ident;
-    std::string_view m_val_ident;
+    SmallString m_idx_ident;
+    SmallString m_val_ident;
     Expr *m_expr;
     Stmt *m_body;
 
   public:
-    constexpr ForeachStmt(std::string_view idx_ident,
-                          std::string_view val_ident, Expr *expr, Stmt *body)
+    ForeachStmt(SmallString idx_ident, SmallString val_ident, Expr *expr,
+                Stmt *body)
         : Stmt(QAST_NODE_FOREACH),
           m_idx_ident(idx_ident),
           m_val_ident(val_ident),
@@ -1634,12 +1581,12 @@ namespace npar {
 
   class ExportStmt : public Stmt {
     SymbolAttributes m_attrs;
-    std::string_view m_abi_name;
+    SmallString m_abi_name;
     Stmt *m_body;
     Vis m_vis;
 
   public:
-    ExportStmt(Stmt *content, std::string_view abi_name, Vis vis,
+    ExportStmt(Stmt *content, SmallString abi_name, Vis vis,
                SymbolAttributes attrs)
         : Stmt(QAST_NODE_EXPORT),
           m_attrs(attrs),
@@ -1653,17 +1600,16 @@ namespace npar {
     let get_attrs() const { return m_attrs; }
   };
 
-  typedef std::set<std::string_view, std::less<std::string_view>,
-                   Arena<std::string_view>>
+  typedef std::set<SmallString, std::less<SmallString>, Arena<SmallString>>
       ScopeDeps;
 
   class ScopeStmt : public Stmt {
     ScopeDeps m_deps;
-    std::string_view m_name;
+    SmallString m_name;
     Stmt *m_body;
 
   public:
-    ScopeStmt(std::string_view name, Stmt *body, ScopeDeps deps = {})
+    ScopeStmt(SmallString name, Stmt *body, ScopeDeps deps = {})
         : Stmt(QAST_NODE_SCOPE), m_deps(deps), m_name(name), m_body(body) {}
 
     let get_name() const { return m_name; }
@@ -1672,11 +1618,11 @@ namespace npar {
   };
 
   class TypedefStmt : public Stmt {
-    std::string_view m_name;
+    SmallString m_name;
     Type *m_type;
 
   public:
-    constexpr TypedefStmt(std::string_view name, Type *type)
+    TypedefStmt(SmallString name, Type *type)
         : Stmt(QAST_NODE_TYPEDEF), m_name(name), m_type(type) {}
 
     let get_name() const { return m_name; }
@@ -1684,14 +1630,13 @@ namespace npar {
   };
 
   class StructField : public Stmt {
-    std::string_view m_name;
+    SmallString m_name;
     Type *m_type;
     Expr *m_value;
     Vis m_visibility;
 
   public:
-    constexpr StructField(std::string_view name, Type *type, Expr *value,
-                          Vis visibility)
+    StructField(SmallString name, Type *type, Expr *value, Vis visibility)
         : Stmt(QAST_NODE_STRUCT_FIELD),
           m_name(name),
           m_type(type),
@@ -1706,16 +1651,16 @@ namespace npar {
     void set_visibility(Vis visibility) { m_visibility = visibility; }
   };
 
-  typedef std::pair<std::string_view, Expr *> EnumItem;
+  typedef std::pair<SmallString, Expr *> EnumItem;
   typedef std::vector<EnumItem, Arena<EnumItem>> EnumDefItems;
 
   class EnumDef : public Stmt {
     EnumDefItems m_items;
-    std::string_view m_name;
+    SmallString m_name;
     Type *m_type;
 
   public:
-    EnumDef(std::string_view name, Type *type, const EnumDefItems &items)
+    EnumDef(SmallString name, Type *type, const EnumDefItems &items)
         : Stmt(QAST_NODE_ENUM), m_items(items), m_name(name), m_type(type) {}
 
     let get_items() const { return m_items; }
@@ -1725,11 +1670,11 @@ namespace npar {
 
   class FnDecl : public Stmt {
     std::optional<TemplateParameters> m_template_parameters;
-    std::string_view m_name;
+    SmallString m_name;
     FuncTy *m_type;
 
   public:
-    FnDecl(std::string_view name, FuncTy *type,
+    FnDecl(SmallString name, FuncTy *type,
            std::optional<TemplateParameters> params = std::nullopt)
         : Stmt(QAST_NODE_FNDECL),
           m_template_parameters(params),
@@ -1741,18 +1686,18 @@ namespace npar {
     let get_template_params() const { return m_template_parameters; }
 
     void set_type(FuncTy *type) { m_type = type; }
-    void set_name(std::string_view name) { m_name = name; }
+    void set_name(SmallString name) { m_name = name; }
     auto &get_template_params() { return m_template_parameters; }
   };
 
-  typedef std::vector<std::pair<std::string_view, bool>,
-                      Arena<std::pair<std::string_view, bool>>>
+  typedef std::vector<std::pair<SmallString, bool>,
+                      Arena<std::pair<SmallString, bool>>>
       FnCaptures;
 
   class FnDef : public Stmt {
     FnCaptures m_captures;
     std::optional<TemplateParameters> m_template_parameters;
-    std::string_view m_name;
+    SmallString m_name;
     FuncTy *m_type;
     Stmt *m_body;
     Expr *m_precond;
@@ -1799,10 +1744,10 @@ namespace npar {
     StructDefFields m_fields;
     std::optional<TemplateParameters> m_template_parameters;
     CompositeType m_comp_type;
-    std::string_view m_name;
+    SmallString m_name;
 
   public:
-    StructDef(std::string_view name, const StructDefFields &fields = {},
+    StructDef(SmallString name, const StructDefFields &fields = {},
               const StructDefMethods &methods = {},
               const StructDefStaticMethods &static_methods = {},
               std::optional<TemplateParameters> params = std::nullopt,
@@ -1821,7 +1766,7 @@ namespace npar {
     let get_fields() const { return m_fields; }
     let get_composite_type() const { return m_comp_type; }
 
-    void set_name(std::string_view name) { m_name = name; }
+    void set_name(SmallString name) { m_name = name; }
     void set_composite_type(CompositeType t) { m_comp_type = t; }
     auto &get_methods() { return m_methods; }
     auto &get_static_methods() { return m_static_methods; }

@@ -63,7 +63,7 @@ static std::optional<ScopeDeps> recurse_scope_deps(qlex_t &rd) {
       if (tok.is(qName)) {
         let dependency_name = tok.as_string(&rd);
 
-        dependencies.insert(dependency_name);
+        dependencies.insert(SaveString(dependency_name));
 
         next_if(qPuncComa);
       } else {

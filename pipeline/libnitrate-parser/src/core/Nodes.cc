@@ -43,10 +43,10 @@
 
 using namespace npar;
 
-std::string_view npar::SaveString(std::string_view str) {
-  static GenericIntern<std::string, std::string> m_intern;
+boost::flyweight<std::string> npar::SaveString(std::string_view str) {
+  boost::flyweight<std::string> flyweight(str.data(), str.size());
 
-  return *m_intern.get(str);
+  return flyweight;
 };
 
 ///=============================================================================

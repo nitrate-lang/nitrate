@@ -137,9 +137,9 @@ static bool recurse_fn_parameter(npar_t &S, qlex_t &rd, FuncParam &param) {
                      {qlex_tok_t(qPunc, qPuncComa),
                       qlex_tok_t(qPunc, qPuncRPar), qlex_tok_t(qOper, qOpGT)});
 
-    param = {name, type, value};
+    param = {SaveString(name), type, value};
   } else {
-    param = {name, type, nullptr};
+    param = {SaveString(name), type, nullptr};
   }
 
   return true;
@@ -258,7 +258,7 @@ static bool recurse_captures_and_name(qlex_t &rd, FnDecl *fndecl,
         return false;
       }
 
-      captures.push_back({c.as_string(&rd), is_mut});
+      captures.push_back({SaveString(c.as_string(&rd)), is_mut});
       c = peek();
 
       if (c.is<qPuncComa>()) {

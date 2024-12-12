@@ -107,7 +107,7 @@ static Call *recurse_function_call(npar_t &S, Expr *callee, qlex_t &rd,
           S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
           depth + 1);
 
-      call_args.push_back({ident.as_string(&rd), arg});
+      call_args.push_back({SaveString(ident.as_string(&rd)), arg});
       goto comma;
     }
 
@@ -116,7 +116,7 @@ static Call *recurse_function_call(npar_t &S, Expr *callee, qlex_t &rd,
         S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
         depth + 1);
 
-    call_args.push_back({std::to_string(pos_arg_count++), arg});
+    call_args.push_back({SaveString(std::to_string(pos_arg_count++)), arg});
 
     goto comma;
   }
@@ -175,7 +175,7 @@ static bool recurse_fstring(npar_t &S, FString **node, qlex_t &rd,
       qlex_free(subrd);
 
       if (!tmp.empty()) {
-        items.push_back(std::move(tmp));
+        items.push_back(SaveString(std::move(tmp)));
         tmp.clear();
       }
 
@@ -192,7 +192,7 @@ static bool recurse_fstring(npar_t &S, FString **node, qlex_t &rd,
   }
 
   if (!tmp.empty()) {
-    items.push_back(std::move(tmp));
+    items.push_back(SaveString(std::move(tmp)));
     tmp.clear();
   }
 

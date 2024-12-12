@@ -557,7 +557,7 @@ void CambrianFormatter::visit(TernaryExpr& n) {
 void CambrianFormatter::visit(ConstInt& n) { line << n.get_value(); }
 
 void CambrianFormatter::visit(ConstFloat& n) {
-  write_float_literal(n.get_value());
+  write_float_literal(*n.get_value());
 }
 
 void CambrianFormatter::visit(ConstBool& n) {
@@ -569,7 +569,7 @@ void CambrianFormatter::visit(ConstBool& n) {
 }
 
 void CambrianFormatter::visit(ConstString& n) {
-  escape_string_literal(n.get_value());
+  escape_string_literal(*n.get_value());
 }
 
 void CambrianFormatter::visit(ConstChar& n) {
@@ -590,7 +590,7 @@ void CambrianFormatter::visit(Call& n) {
   bool any_named =
       std::any_of(n.get_args().begin(), n.get_args().end(), [](let arg) {
         let name = std::get<0>(arg);
-        return !std::isdigit(name.at(0));
+        return !std::isdigit(name->at(0));
       });
 
   bool any_lambdas = std::any_of(
@@ -609,7 +609,7 @@ void CambrianFormatter::visit(Call& n) {
       let name = std::get<0>(arg);
       let value = std::get<1>(arg);
 
-      if (!std::isdigit(name.at(0))) {
+      if (!std::isdigit(name->at(0))) {
         line << name << ": ";
       }
 
@@ -634,7 +634,7 @@ void CambrianFormatter::visit(Call& n) {
           let name = std::get<0>(arg);
           let value = std::get<1>(arg);
 
-          if (!std::isdigit(name.at(0))) {
+          if (!std::isdigit(name->at(0))) {
             line << name << ": ";
           }
 
@@ -655,7 +655,7 @@ void CambrianFormatter::visit(TemplCall& n) {
         let name = std::get<0>(arg);
         let value = std::get<1>(arg);
 
-        if (!std::isdigit(name.at(0))) {
+        if (!std::isdigit(name->at(0))) {
           line << name << ": ";
         }
 
@@ -671,7 +671,7 @@ void CambrianFormatter::visit(TemplCall& n) {
         let name = std::get<0>(arg);
         let value = std::get<1>(arg);
 
-        if (!std::isdigit(name.at(0))) {
+        if (!std::isdigit(name->at(0))) {
           line << name << ": ";
         }
 
@@ -771,8 +771,8 @@ void CambrianFormatter::visit(Slice& n) {
 void CambrianFormatter::visit(FString& n) {
   line << "f\"";
   for (let part : n.get_items()) {
-    if (std::holds_alternative<std::string_view>(part)) {
-      escape_string_literal(std::get<std::string_view>(part), false);
+    if (std::holds_alternative<SmallString>(part)) {
+      escape_string_literal(*std::get<SmallString>(part), false);
     } else {
       line << "{";
       std::get<Expr*>(part)->accept(*this);
@@ -965,7 +965,7 @@ void CambrianFormatter::visit(ForStmt& n) {
 
 void CambrianFormatter::visit(ForeachStmt& n) {
   line << "foreach (";
-  if (n.get_idx_ident().empty()) {
+  if (n.get_idx_ident()->empty()) {
     line << n.get_val_ident();
   } else {
     line << n.get_idx_ident() << ", " << n.get_val_ident();
@@ -1290,7 +1290,7 @@ void CambrianFormatter::visit(EnumDef& n) {
 void CambrianFormatter::visit(ScopeStmt& n) {
   line << "scope";
 
-  if (!n.get_name().empty()) {
+  if (!n.get_name()->empty()) {
     line << " " << n.get_name();
   }
 
@@ -1323,7 +1323,7 @@ void CambrianFormatter::visit(ExportStmt& n) {
     }
   }
 
-  escape_string_literal(n.get_abi_name());
+  escape_string_literal(*n.get_abi_name());
 
   if (!n.get_attrs().empty()) {
     line << "[";
