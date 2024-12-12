@@ -491,8 +491,8 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
                     return mock_expr(QAST_NODE_VOID_TY);
                   }
 
-                  size_t count_val =
-                      std::stoi(count->as<ConstInt>()->get_value().c_str());
+                  size_t count_val = std::stoi(
+                      std::string(count->as<ConstInt>()->get_value()));
 
                   if (count_val > MAX_LIST_DUP) {
                     diagnostic << tok

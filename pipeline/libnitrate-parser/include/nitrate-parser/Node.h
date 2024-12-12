@@ -50,9 +50,9 @@
 #include <optional>
 #include <ostream>
 #include <set>
-#include <sstream>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <unordered_set>
 #include <variant>
 #include <vector>
@@ -198,7 +198,6 @@ namespace npar {
 };  // namespace npar
 
 #define NPAR_GETTER(__typename)                               \
-public:                                                       \
 public:                                                       \
   template <typename T = __typename, typename... Args>        \
   static __typename *get(Args &&...args) {                    \
@@ -748,12 +747,6 @@ public:
   std::ostream &dump(std::ostream &os = std::cerr,
                      bool isForDebug = false) const noexcept;
 
-  std::string to_string() {
-    std::stringstream ss;
-    dump(ss, false);
-    return ss.str();
-  };
-
   constexpr void set_offset(uint32_t pos) { m_offset = pos; }
 
   constexpr uint32_t get_offset() const { return m_offset; }
@@ -775,25 +768,39 @@ namespace npar {
     Pro = 2,
   };
 
+  template <typename PARAM, typename OBJECT, typename VIEW>
+  class Intern {
+    std::unordered_map<PARAM, OBJECT> m_map;
+
+  public:
+    Intern() = default;
+
+    VIEW get(const PARAM &key) {
+      auto it = m_map.find(key);
+      if (it != m_map.end()) {
+        return it->second;
+      }
+
+      return m_map.emplace(key, OBJECT(key)).first->second;
+    }
+  };
+
   static_assert((int)Vis::Pub == 0);
   static_assert((int)Vis::Sec == 1);
   static_assert((int)Vis::Pro == 2);
 
-  class String
-      : public std::basic_string<char, std::char_traits<char>, Arena<char>> {
+  class AutoIntern : public std::string_view {
+    static Intern<std::string_view,
+                  std::basic_string<char, std::char_traits<char>, Arena<char>>,
+                  std::string_view>
+        m_intern;
+
   public:
-    String() = default;
-    String(const char *str)
-        : std::basic_string<char, std::char_traits<char>, Arena<char>>(str) {}
-    String(const std::string &str)
-        : std::basic_string<char, std::char_traits<char>, Arena<char>>(
-              str.c_str(), str.size()) {}
+    AutoIntern() : std::string_view(""){};
 
-    String(std::string_view str)
-        : std::basic_string<char, std::char_traits<char>, Arena<char>>(
-              str.data(), str.size()) {}
-
-    std::string_view view() { return std::string_view(data(), size()); }
+    AutoIntern(const char *str) : std::string_view(m_intern.get(str)) {}
+    AutoIntern(const std::string &str) : std::string_view(m_intern.get(str)) {}
+    AutoIntern(std::string_view str) : std::string_view(m_intern.get(str)) {}
   };
 
   class Stmt : public npar_node_t {
@@ -887,7 +894,7 @@ namespace npar {
     }
   };
 
-  typedef std::tuple<String, Type *, Expr *> TemplateParameter;
+  typedef std::tuple<std::string_view, Type *, Expr *> TemplateParameter;
   typedef std::vector<TemplateParameter, Arena<TemplateParameter>>
       TemplateParameters;
 
@@ -930,10 +937,10 @@ namespace npar {
   };
 
   class NamedTy : public Type {
-    String m_name;
+    std::string_view m_name;
 
   public:
-    NamedTy(String name) : Type(QAST_NODE_UNRES_TY), m_name(name) {}
+    NamedTy(AutoIntern name) : Type(QAST_NODE_UNRES_TY), m_name(name) {}
 
     let get_name() const { return m_name; }
 
@@ -1090,10 +1097,10 @@ namespace npar {
   };
 
   class OpaqueTy : public Type {
-    String m_name;
+    std::string_view m_name;
 
   public:
-    OpaqueTy(String name) : Type(QAST_NODE_OPAQUE_TY), m_name(name) {}
+    OpaqueTy(AutoIntern name) : Type(QAST_NODE_OPAQUE_TY), m_name(name) {}
 
     let get_name() const { return m_name; }
 
@@ -1138,7 +1145,7 @@ namespace npar {
     NPAR_GETTER(RefTy)
   };
 
-  typedef std::pair<String, Type *> StructItem;
+  typedef std::pair<std::string_view, Type *> StructItem;
   typedef std::vector<StructItem, Arena<StructItem>> StructItems;
 
   enum class FuncPurity {
@@ -1149,7 +1156,7 @@ namespace npar {
     RETROPURE,
   };
 
-  typedef std::tuple<String, Type *, Expr *> FuncParam;
+  typedef std::tuple<std::string_view, Type *, Expr *> FuncParam;
   typedef std::vector<FuncParam, Arena<FuncParam>> FuncParams;
 
   class FuncTy : public Type {
@@ -1286,10 +1293,10 @@ namespace npar {
   ///=============================================================================
 
   class ConstInt : public Expr {
-    String m_value;
+    std::string_view m_value;
 
   public:
-    ConstInt(String value) : Expr(QAST_NODE_INT), m_value(value) {}
+    ConstInt(AutoIntern value) : Expr(QAST_NODE_INT), m_value(value) {}
 
     let get_value() const { return m_value; }
 
@@ -1297,10 +1304,10 @@ namespace npar {
   };
 
   class ConstFloat : public Expr {
-    String m_value;
+    std::string_view m_value;
 
   public:
-    ConstFloat(String value) : Expr(QAST_NODE_FLOAT), m_value(value) {}
+    ConstFloat(AutoIntern value) : Expr(QAST_NODE_FLOAT), m_value(value) {}
 
     let get_value() const { return m_value; }
 
@@ -1320,10 +1327,10 @@ namespace npar {
   };
 
   class ConstString : public Expr {
-    String m_value;
+    std::string_view m_value;
 
   public:
-    ConstString(String value) : Expr(QAST_NODE_STRING), m_value(value) {}
+    ConstString(AutoIntern value) : Expr(QAST_NODE_STRING), m_value(value) {}
 
     let get_value() const { return m_value; }
 
@@ -1358,7 +1365,7 @@ namespace npar {
 
   ///=============================================================================
 
-  typedef std::pair<String, Expr *> CallArg;
+  typedef std::pair<std::string_view, Expr *> CallArg;
   typedef std::vector<CallArg, Arena<CallArg>> CallArgs;
 
   class Call : public Expr {
@@ -1375,8 +1382,8 @@ namespace npar {
     NPAR_GETTER(Call)
   };
 
-  typedef std::map<String, Expr *, std::less<String>,
-                   Arena<std::pair<const String, Expr *>>>
+  typedef std::map<std::string_view, Expr *, std::less<std::string_view>,
+                   Arena<std::pair<const std::string_view, Expr *>>>
       TemplateArgs;
 
   class TemplCall : public Expr {
@@ -1427,10 +1434,10 @@ namespace npar {
 
   class Field : public Expr {
     Expr *m_base;
-    String m_field;
+    std::string_view m_field;
 
   public:
-    Field(Expr *base, String field)
+    Field(Expr *base, AutoIntern field)
         : Expr(QAST_NODE_FIELD), m_base(base), m_field(field) {}
 
     let get_base() const { return m_base; }
@@ -1469,8 +1476,8 @@ namespace npar {
     NPAR_GETTER(Slice)
   };
 
-  typedef std::vector<std::variant<String, Expr *>,
-                      Arena<std::variant<String, Expr *>>>
+  typedef std::vector<std::variant<std::string_view, Expr *>,
+                      Arena<std::variant<std::string_view, Expr *>>>
       FStringItems;
 
   class FString : public Expr {
@@ -1486,10 +1493,10 @@ namespace npar {
   };
 
   class Ident : public Expr {
-    String m_name;
+    std::string_view m_name;
 
   public:
-    Ident(String name) : Expr(QAST_NODE_IDENT), m_name(name) {}
+    Ident(AutoIntern name) : Expr(QAST_NODE_IDENT), m_name(name) {}
 
     let get_name() const { return m_name; }
 
@@ -1544,13 +1551,13 @@ namespace npar {
 
   class VarDecl : public Stmt {
     VarDeclAttributes m_attributes;
-    String m_name;
+    std::string_view m_name;
     Type *m_type;
     Expr *m_value;
     VarDeclType m_decl_type;
 
   public:
-    VarDecl(String name, Type *type, Expr *value, VarDeclType decl_type,
+    VarDecl(AutoIntern name, Type *type, Expr *value, VarDeclType decl_type,
             VarDeclAttributes attributes)
         : Stmt(QAST_NODE_VAR),
           m_attributes(attributes),
@@ -1571,11 +1578,11 @@ namespace npar {
   typedef std::vector<Expr *, Arena<Expr *>> InlineAsmArgs;
 
   class InlineAsm : public Stmt {
-    String m_code;
+    std::string_view m_code;
     InlineAsmArgs m_args;
 
   public:
-    InlineAsm(String code, const InlineAsmArgs &args)
+    InlineAsm(AutoIntern code, const InlineAsmArgs &args)
         : Stmt(QAST_NODE_INLINE_ASM), m_code(code), m_args(args) {}
 
     let get_code() const { return m_code; }
@@ -1637,13 +1644,14 @@ namespace npar {
   };
 
   class ForeachStmt : public Stmt {
-    String m_idx_ident;
-    String m_val_ident;
+    std::string_view m_idx_ident;
+    std::string_view m_val_ident;
     Expr *m_expr;
     Stmt *m_body;
 
   public:
-    ForeachStmt(String idx_ident, String val_ident, Expr *expr, Stmt *body)
+    ForeachStmt(AutoIntern idx_ident, AutoIntern val_ident, Expr *expr,
+                Stmt *body)
         : Stmt(QAST_NODE_FOREACH),
           m_idx_ident(idx_ident),
           m_val_ident(val_ident),
@@ -1738,12 +1746,13 @@ namespace npar {
 
   class ExportStmt : public Stmt {
     SymbolAttributes m_attrs;
-    String m_abi_name;
+    std::string_view m_abi_name;
     Stmt *m_body;
     Vis m_vis;
 
   public:
-    ExportStmt(Stmt *content, String abi_name, Vis vis, SymbolAttributes attrs)
+    ExportStmt(Stmt *content, AutoIntern abi_name, Vis vis,
+               SymbolAttributes attrs)
         : Stmt(QAST_NODE_EXPORT),
           m_attrs(attrs),
           m_abi_name(abi_name),
@@ -1758,15 +1767,17 @@ namespace npar {
     NPAR_GETTER(ExportStmt)
   };
 
-  typedef std::set<String, std::less<String>, Arena<String>> ScopeDeps;
+  typedef std::set<std::string_view, std::less<std::string_view>,
+                   Arena<std::string_view>>
+      ScopeDeps;
 
   class ScopeStmt : public Stmt {
     ScopeDeps m_deps;
-    String m_name;
+    std::string_view m_name;
     Stmt *m_body;
 
   public:
-    ScopeStmt(String name, Stmt *body, ScopeDeps deps = {})
+    ScopeStmt(AutoIntern name, Stmt *body, ScopeDeps deps = {})
         : Stmt(QAST_NODE_SCOPE), m_deps(deps), m_name(name), m_body(body) {}
 
     let get_name() const { return m_name; }
@@ -1777,11 +1788,11 @@ namespace npar {
   };
 
   class TypedefStmt : public Stmt {
-    String m_name;
+    std::string_view m_name;
     Type *m_type;
 
   public:
-    TypedefStmt(String name, Type *type)
+    TypedefStmt(AutoIntern name, Type *type)
         : Stmt(QAST_NODE_TYPEDEF), m_name(name), m_type(type) {}
 
     let get_name() const { return m_name; }
@@ -1791,13 +1802,13 @@ namespace npar {
   };
 
   class StructField : public Stmt {
-    String m_name;
+    std::string_view m_name;
     Type *m_type;
     Expr *m_value;
     Vis m_visibility;
 
   public:
-    StructField(String name, Type *type, Expr *value, Vis visibility)
+    StructField(AutoIntern name, Type *type, Expr *value, Vis visibility)
         : Stmt(QAST_NODE_STRUCT_FIELD),
           m_name(name),
           m_type(type),
@@ -1814,16 +1825,16 @@ namespace npar {
     NPAR_GETTER(StructField)
   };
 
-  typedef std::pair<String, Expr *> EnumItem;
+  typedef std::pair<std::string_view, Expr *> EnumItem;
   typedef std::vector<EnumItem, Arena<EnumItem>> EnumDefItems;
 
   class EnumDef : public Stmt {
     EnumDefItems m_items;
-    String m_name;
+    std::string_view m_name;
     Type *m_type;
 
   public:
-    EnumDef(String name, Type *type, const EnumDefItems &items)
+    EnumDef(AutoIntern name, Type *type, const EnumDefItems &items)
         : Stmt(QAST_NODE_ENUM), m_items(items), m_name(name), m_type(type) {}
 
     let get_items() const { return m_items; }
@@ -1835,11 +1846,11 @@ namespace npar {
 
   class FnDecl : public Stmt {
     std::optional<TemplateParameters> m_template_parameters;
-    String m_name;
+    std::string_view m_name;
     FuncTy *m_type;
 
   public:
-    FnDecl(String name, FuncTy *type,
+    FnDecl(AutoIntern name, FuncTy *type,
            std::optional<TemplateParameters> params = std::nullopt)
         : Stmt(QAST_NODE_FNDECL),
           m_template_parameters(params),
@@ -1851,19 +1862,20 @@ namespace npar {
     let get_template_params() const { return m_template_parameters; }
 
     void set_type(FuncTy *type) { m_type = type; }
-    void set_name(String name) { m_name = name; }
+    void set_name(AutoIntern name) { m_name = name; }
     auto &get_template_params() { return m_template_parameters; }
 
     NPAR_GETTER(FnDecl)
   };
 
-  typedef std::vector<std::pair<String, bool>, Arena<std::pair<String, bool>>>
+  typedef std::vector<std::pair<std::string_view, bool>,
+                      Arena<std::pair<std::string_view, bool>>>
       FnCaptures;
 
   class FnDef : public Stmt {
     FnCaptures m_captures;
     std::optional<TemplateParameters> m_template_parameters;
-    String m_name;
+    std::string_view m_name;
     FuncTy *m_type;
     Stmt *m_body;
     Expr *m_precond;
@@ -1912,10 +1924,10 @@ namespace npar {
     StructDefFields m_fields;
     std::optional<TemplateParameters> m_template_parameters;
     CompositeType m_comp_type;
-    String m_name;
+    std::string_view m_name;
 
   public:
-    StructDef(String name, const StructDefFields &fields = {},
+    StructDef(AutoIntern name, const StructDefFields &fields = {},
               const StructDefMethods &methods = {},
               const StructDefStaticMethods &static_methods = {},
               std::optional<TemplateParameters> params = std::nullopt,
@@ -1934,7 +1946,7 @@ namespace npar {
     let get_fields() const { return m_fields; }
     let get_composite_type() const { return m_comp_type; }
 
-    void set_name(String name) { m_name = name; }
+    void set_name(AutoIntern name) { m_name = name; }
     void set_composite_type(CompositeType t) { m_comp_type = t; }
     auto &get_methods() { return m_methods; }
     auto &get_static_methods() { return m_static_methods; }

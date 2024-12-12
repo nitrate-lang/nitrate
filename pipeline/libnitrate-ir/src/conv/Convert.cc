@@ -63,7 +63,7 @@ private:
 public:
   bool inside_function = false;
   std::string ns_prefix;
-  std::stack<npar::String> composite_expanse;
+  std::stack<std::string_view> composite_expanse;
   nr::AbiTag abi_mode = nr::AbiTag::Internal;
   size_t anon_fn_ctr = 0;
 
@@ -537,8 +537,7 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
           npar::ConstInt *N = n->get_lhs()->as<npar::ConstInt>();
 
           return b.createFixedInteger(
-              boost::multiprecision::cpp_int(N->get_value().c_str()),
-              it->second);
+              boost::multiprecision::cpp_int(N->get_value()), it->second);
         }
       } else {
         static const std::unordered_map<npar_ty_t, FloatSize>
@@ -554,7 +553,7 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
           npar::ConstFloat *N = n->get_lhs()->as<npar::ConstFloat>();
 
           return b.createFixedFloat(
-              boost::multiprecision::cpp_dec_float_100(N->get_value().c_str()),
+              boost::multiprecision::cpp_dec_float_100(N->get_value()),
               it->second);
         }
       }
@@ -683,7 +682,7 @@ static EResult nrgen_int(NRBuilder &b, PState &, IReport *G,
 
 static EResult nrgen_float(NRBuilder &b, PState &, IReport *,
                            npar::ConstFloat *n) {
-  boost::multiprecision::cpp_dec_float_100 num(n->get_value().c_str());
+  boost::multiprecision::cpp_dec_float_100 num(n->get_value());
   return b.createFixedFloat(num, FloatSize::F64);
 }
 
@@ -852,8 +851,8 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   if (n->get_items().size() == 1) {
     auto val = n->get_items().front();
 
-    if (std::holds_alternative<npar::String>(val)) {
-      return b.createStringDataArray(std::get<npar::String>(val));
+    if (std::holds_alternative<std::string_view>(val)) {
+      return b.createStringDataArray(std::get<std::string_view>(val));
     } else if (std::holds_alternative<npar::Expr *>(val)) {
       auto expr = next_one(std::get<npar::Expr *>(val));
 
@@ -873,8 +872,8 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   Expr *concated = b.createStringDataArray("");
 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    if (std::holds_alternative<npar::String>(*it)) {
-      auto val = std::get<npar::String>(*it);
+    if (std::holds_alternative<std::string_view>(*it)) {
+      auto val = std::get<std::string_view>(*it);
 
       concated =
           create<BinExpr>(concated, b.createStringDataArray(val), Op::Plus);
@@ -1552,7 +1551,7 @@ static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
   if (it == abi_name_map.end()) {
     G->report(
         CompilerError, IC::Error,
-        "The requested ABI name '" + n->get_abi_name() + "' is not supported",
+        {"The requested ABI name '", n->get_abi_name(), "' is not supported"},
         n->get_pos());
     return std::nullopt;
   }

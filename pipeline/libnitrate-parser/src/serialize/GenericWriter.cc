@@ -920,7 +920,7 @@ void AST_Writer::visit(FString& n) {
     let items = n.get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(), [&](let item) {
-      if (std::holds_alternative<String>(item)) {
+      if (std::holds_alternative<std::string_view>(item)) {
         begin_obj(2);
 
         string("kind");
@@ -929,7 +929,7 @@ void AST_Writer::visit(FString& n) {
         string(kind_name);
 
         string("value");
-        string(std::get<String>(item));
+        string(std::get<std::string_view>(item));
 
         end_obj();
       } else {

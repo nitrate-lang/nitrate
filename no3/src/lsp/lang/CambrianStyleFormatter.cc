@@ -770,8 +770,8 @@ void CambrianFormatter::visit(Slice& n) {
 void CambrianFormatter::visit(FString& n) {
   line << "f\"";
   for (let part : n.get_items()) {
-    if (std::holds_alternative<String>(part)) {
-      escape_string_literal(std::get<String>(part), false);
+    if (std::holds_alternative<std::string_view>(part)) {
+      escape_string_literal(std::get<std::string_view>(part), false);
     } else {
       line << "{";
       std::get<Expr*>(part)->accept(*this);

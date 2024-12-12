@@ -42,6 +42,11 @@
 
 using namespace npar;
 
+Intern<std::string_view,
+       std::basic_string<char, std::char_traits<char>, Arena<char>>,
+       std::string_view>
+    AutoIntern::m_intern;
+
 ///=============================================================================
 namespace npar {
   void ArenaAllocatorImpl::swap(qcore_arena_t &arena) {

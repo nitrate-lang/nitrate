@@ -38,7 +38,8 @@
 
 using namespace npar;
 
-std::optional<std::pair<String, String>> recurse_foreach_names(qlex_t &rd) {
+std::optional<std::pair<std::string_view, std::string_view>>
+recurse_foreach_names(qlex_t &rd) {
   if (let ident1 = next_if(qName)) {
     let ident1_value = ident1->as_string(&rd);
 
