@@ -537,7 +537,7 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
           npar::ConstInt *N = n->get_lhs()->as<npar::ConstInt>();
 
           return b.createFixedInteger(
-              boost::multiprecision::cpp_int(N->get_value().view()),
+              boost::multiprecision::cpp_int(N->get_value().c_str()),
               it->second);
         }
       } else {
@@ -554,7 +554,7 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
           npar::ConstFloat *N = n->get_lhs()->as<npar::ConstFloat>();
 
           return b.createFixedFloat(
-              boost::multiprecision::cpp_dec_float_100(N->get_value().view()),
+              boost::multiprecision::cpp_dec_float_100(N->get_value().c_str()),
               it->second);
         }
       }
@@ -683,7 +683,7 @@ static EResult nrgen_int(NRBuilder &b, PState &, IReport *G,
 
 static EResult nrgen_float(NRBuilder &b, PState &, IReport *,
                            npar::ConstFloat *n) {
-  boost::multiprecision::cpp_dec_float_100 num(n->get_value().view());
+  boost::multiprecision::cpp_dec_float_100 num(n->get_value().c_str());
   return b.createFixedFloat(num, FloatSize::F64);
 }
 

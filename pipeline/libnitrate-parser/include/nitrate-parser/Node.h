@@ -197,7 +197,7 @@ namespace npar {
   }
 };  // namespace npar
 
-#define PNODE_IMPL_CORE(__typename)                           \
+#define NPAR_GETTER(__typename)                               \
 public:                                                       \
 public:                                                       \
   template <typename T = __typename, typename... Args>        \
@@ -763,7 +763,7 @@ public:
     return {m_offset, m_fileid};
   }
 
-  PNODE_IMPL_CORE(npar_node_t)
+  NPAR_GETTER(npar_node_t)
 } __attribute__((packed));
 
 static_assert(sizeof(npar_node_t) == 8);
@@ -875,7 +875,7 @@ namespace npar {
     }
     bool is_ptr_to(Type *type) noexcept;
 
-    constexpr Expr *get_width() { return m_width; }
+    constexpr let get_width() { return m_width; }
     constexpr void set_width(Expr *width) { m_width = width; }
 
     constexpr std::pair<Expr *, Expr *> get_range() {
@@ -887,8 +887,6 @@ namespace npar {
     }
   };
 
-  typedef std::set<Expr *, std::less<Expr *>, Arena<Expr *>> DeclTags;
-
   typedef std::tuple<String, Type *, Expr *> TemplateParameter;
   typedef std::vector<TemplateParameter, Arena<TemplateParameter>>
       TemplateParameters;
@@ -896,16 +894,6 @@ namespace npar {
   class Expr : public npar_node_t {
   public:
     constexpr Expr(npar_ty_t ty) : npar_node_t(ty) {}
-
-    constexpr bool is_binexpr() const noexcept {
-      return getKind() == QAST_NODE_BINEXPR;
-    }
-    constexpr bool is_unaryexpr() const noexcept {
-      return getKind() == QAST_NODE_UNEXPR;
-    }
-    constexpr bool is_ternaryexpr() const noexcept {
-      return getKind() == QAST_NODE_TEREXPR;
-    }
   };
 
   class ExprStmt : public Stmt {
@@ -914,9 +902,9 @@ namespace npar {
   public:
     constexpr ExprStmt(Expr *expr) : Stmt(QAST_NODE_EXPR_STMT), m_expr(expr) {}
 
-    Expr *get_expr() const { return m_expr; }
+    let get_expr() const { return m_expr; }
 
-    PNODE_IMPL_CORE(ExprStmt)
+    NPAR_GETTER(ExprStmt)
   };
 
   class StmtExpr : public Expr {
@@ -925,9 +913,9 @@ namespace npar {
   public:
     constexpr StmtExpr(Stmt *stmt) : Expr(QAST_NODE_STMT_EXPR), m_stmt(stmt) {}
 
-    Stmt *get_stmt() const { return m_stmt; }
+    let get_stmt() const { return m_stmt; }
 
-    PNODE_IMPL_CORE(StmtExpr)
+    NPAR_GETTER(StmtExpr)
   };
 
   class TypeExpr : public Expr {
@@ -936,9 +924,9 @@ namespace npar {
   public:
     constexpr TypeExpr(Type *type) : Expr(QAST_NODE_TYPE_EXPR), m_type(type) {}
 
-    Type *get_type() { return m_type; }
+    let get_type() const { return m_type; }
 
-    PNODE_IMPL_CORE(TypeExpr)
+    NPAR_GETTER(TypeExpr)
   };
 
   class NamedTy : public Type {
@@ -947,19 +935,20 @@ namespace npar {
   public:
     NamedTy(String name) : Type(QAST_NODE_UNRES_TY), m_name(name) {}
 
-    String &get_name() { return m_name; }
+    let get_name() const { return m_name; }
 
-    PNODE_IMPL_CORE(NamedTy)
+    NPAR_GETTER(NamedTy)
   };
 
   class InferTy : public Type {
   public:
     constexpr InferTy() : Type(QAST_NODE_INFER_TY) {}
 
-    PNODE_IMPL_CORE(InferTy)
+    NPAR_GETTER(InferTy)
   };
 
   typedef std::vector<Expr *, Arena<Expr *>> TemplTypeArgs;
+
   class TemplType : public Type {
     Type *m_template;
     TemplTypeArgs m_args;
@@ -968,123 +957,122 @@ namespace npar {
     TemplType(Type *templ, const TemplTypeArgs &args)
         : Type(QAST_NODE_TEMPL_TY), m_template(templ), m_args(args) {}
 
-    Type *get_template() { return m_template; }
+    let get_template() const { return m_template; }
+    let get_args() const { return m_args; }
 
-    TemplTypeArgs &get_args() { return m_args; }
-
-    PNODE_IMPL_CORE(TemplType)
+    NPAR_GETTER(TemplType)
   };
 
   class U1 : public Type {
   public:
     constexpr U1() : Type(QAST_NODE_U1_TY){};
 
-    PNODE_IMPL_CORE(U1)
+    NPAR_GETTER(U1)
   };
 
   class U8 : public Type {
   public:
     constexpr U8() : Type(QAST_NODE_U8_TY){};
 
-    PNODE_IMPL_CORE(U8)
+    NPAR_GETTER(U8)
   };
 
   class U16 : public Type {
   public:
     constexpr U16() : Type(QAST_NODE_U16_TY){};
 
-    PNODE_IMPL_CORE(U16)
+    NPAR_GETTER(U16)
   };
 
   class U32 : public Type {
   public:
     constexpr U32() : Type(QAST_NODE_U32_TY){};
 
-    PNODE_IMPL_CORE(U32)
+    NPAR_GETTER(U32)
   };
 
   class U64 : public Type {
   public:
     constexpr U64() : Type(QAST_NODE_U64_TY){};
 
-    PNODE_IMPL_CORE(U64)
+    NPAR_GETTER(U64)
   };
 
   class U128 : public Type {
   public:
     constexpr U128() : Type(QAST_NODE_U128_TY){};
 
-    PNODE_IMPL_CORE(U128)
+    NPAR_GETTER(U128)
   };
 
   class I8 : public Type {
   public:
     constexpr I8() : Type(QAST_NODE_I8_TY){};
 
-    PNODE_IMPL_CORE(I8)
+    NPAR_GETTER(I8)
   };
 
   class I16 : public Type {
   public:
     constexpr I16() : Type(QAST_NODE_I16_TY){};
 
-    PNODE_IMPL_CORE(I16)
+    NPAR_GETTER(I16)
   };
 
   class I32 : public Type {
   public:
     constexpr I32() : Type(QAST_NODE_I32_TY){};
 
-    PNODE_IMPL_CORE(I32)
+    NPAR_GETTER(I32)
   };
 
   class I64 : public Type {
   public:
     constexpr I64() : Type(QAST_NODE_I64_TY){};
 
-    PNODE_IMPL_CORE(I64)
+    NPAR_GETTER(I64)
   };
 
   class I128 : public Type {
   public:
     constexpr I128() : Type(QAST_NODE_I128_TY){};
 
-    PNODE_IMPL_CORE(I128)
+    NPAR_GETTER(I128)
   };
 
   class F16 : public Type {
   public:
     constexpr F16() : Type(QAST_NODE_F16_TY){};
 
-    PNODE_IMPL_CORE(F16)
+    NPAR_GETTER(F16)
   };
 
   class F32 : public Type {
   public:
     constexpr F32() : Type(QAST_NODE_F32_TY){};
 
-    PNODE_IMPL_CORE(F32)
+    NPAR_GETTER(F32)
   };
 
   class F64 : public Type {
   public:
     constexpr F64() : Type(QAST_NODE_F64_TY){};
 
-    PNODE_IMPL_CORE(F64)
+    NPAR_GETTER(F64)
   };
 
   class F128 : public Type {
   public:
     constexpr F128() : Type(QAST_NODE_F128_TY){};
 
-    PNODE_IMPL_CORE(F128)
+    NPAR_GETTER(F128)
   };
 
   class VoidTy : public Type {
   public:
     constexpr VoidTy() : Type(QAST_NODE_VOID_TY) {}
 
-    PNODE_IMPL_CORE(VoidTy)
+    NPAR_GETTER(VoidTy)
   };
 
   class PtrTy : public Type {
@@ -1095,11 +1083,10 @@ namespace npar {
     constexpr PtrTy(Type *item, bool is_volatile = false)
         : Type(QAST_NODE_PTR_TY), m_item(item), m_is_volatile(is_volatile) {}
 
-    Type *get_item() { return m_item; }
+    let get_item() const { return m_item; }
+    bool is_volatile() const { return m_is_volatile; }
 
-    bool is_volatile() { return m_is_volatile; }
-
-    PNODE_IMPL_CORE(PtrTy)
+    NPAR_GETTER(PtrTy)
   };
 
   class OpaqueTy : public Type {
@@ -1108,9 +1095,9 @@ namespace npar {
   public:
     OpaqueTy(String name) : Type(QAST_NODE_OPAQUE_TY), m_name(name) {}
 
-    String &get_name() { return m_name; }
+    let get_name() const { return m_name; }
 
-    PNODE_IMPL_CORE(OpaqueTy)
+    NPAR_GETTER(OpaqueTy)
   };
 
   typedef std::vector<Type *, Arena<Type *>> TupleTyItems;
@@ -1121,9 +1108,9 @@ namespace npar {
     TupleTy(const TupleTyItems &items)
         : Type(QAST_NODE_TUPLE_TY), m_items(items) {}
 
-    TupleTyItems &get_items() { return m_items; }
+    let get_items() const { return m_items; }
 
-    PNODE_IMPL_CORE(TupleTy)
+    NPAR_GETTER(TupleTy)
   };
 
   class ArrayTy : public Type {
@@ -1134,11 +1121,10 @@ namespace npar {
     constexpr ArrayTy(Type *item, Expr *size)
         : Type(QAST_NODE_ARRAY_TY), m_item(item), m_size(size) {}
 
-    Type *get_item() { return m_item; }
+    let get_item() const { return m_item; }
+    let get_size() const { return m_size; }
 
-    Expr *get_size() { return m_size; }
-
-    PNODE_IMPL_CORE(ArrayTy)
+    NPAR_GETTER(ArrayTy)
   };
 
   class RefTy : public Type {
@@ -1147,9 +1133,9 @@ namespace npar {
   public:
     constexpr RefTy(Type *item) : Type(QAST_NODE_REF_TY), m_item(item) {}
 
-    Type *get_item() { return m_item; }
+    let get_item() const { return m_item; }
 
-    PNODE_IMPL_CORE(RefTy)
+    NPAR_GETTER(RefTy)
   };
 
   typedef std::pair<String, Type *> StructItem;
@@ -1217,10 +1203,11 @@ namespace npar {
 
     bool is_noreturn() { return m_noreturn; }
 
-    Type *get_return_ty() { return m_return; }
+    let get_return_ty() { return m_return; }
     void set_return_ty(Type *return_ty) { m_return = return_ty; }
 
-    FuncParams &get_params() { return m_params; }
+    let get_params() const { return m_params; }
+    auto &get_params() { return m_params; }
 
     FuncPurity get_purity() { return m_purity; }
     void set_purity(FuncPurity purity) { m_purity = purity; }
@@ -1231,7 +1218,7 @@ namespace npar {
     bool is_foreign() { return m_is_foreign; }
     void set_foreign(bool is_foreign) { m_is_foreign = is_foreign; }
 
-    PNODE_IMPL_CORE(FuncTy)
+    NPAR_GETTER(FuncTy)
   };
 
   ///=============================================================================
@@ -1244,11 +1231,10 @@ namespace npar {
     constexpr UnaryExpr(qlex_op_t op, Expr *rhs)
         : Expr(QAST_NODE_UNEXPR), m_rhs(rhs), m_op(op) {}
 
-    Expr *get_rhs() { return m_rhs; }
+    let get_rhs() const { return m_rhs; }
+    qlex_op_t get_op() const { return m_op; }
 
-    qlex_op_t get_op() { return m_op; }
-
-    PNODE_IMPL_CORE(UnaryExpr)
+    NPAR_GETTER(UnaryExpr)
   };
 
   class BinExpr : public Expr {
@@ -1260,13 +1246,11 @@ namespace npar {
     constexpr BinExpr(Expr *lhs, qlex_op_t op, Expr *rhs)
         : Expr(QAST_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
-    Expr *get_lhs() { return m_lhs; }
+    let get_lhs() const { return m_lhs; }
+    let get_rhs() const { return m_rhs; }
+    qlex_op_t get_op() const { return m_op; }
 
-    Expr *get_rhs() { return m_rhs; }
-
-    qlex_op_t get_op() { return m_op; }
-
-    PNODE_IMPL_CORE(BinExpr)
+    NPAR_GETTER(BinExpr)
   };
 
   class PostUnaryExpr : public Expr {
@@ -1277,11 +1261,10 @@ namespace npar {
     constexpr PostUnaryExpr(Expr *lhs, qlex_op_t op = qOpTernary)
         : Expr(QAST_NODE_POST_UNEXPR), m_lhs(lhs), m_op(op) {}
 
-    Expr *get_lhs() { return m_lhs; }
+    let get_lhs() const { return m_lhs; }
+    let get_op() const { return m_op; }
 
-    qlex_op_t get_op() { return m_op; }
-
-    PNODE_IMPL_CORE(PostUnaryExpr)
+    NPAR_GETTER(PostUnaryExpr)
   };
 
   class TernaryExpr : public Expr {
@@ -1293,13 +1276,11 @@ namespace npar {
     constexpr TernaryExpr(Expr *cond, Expr *lhs, Expr *rhs)
         : Expr(QAST_NODE_TEREXPR), m_cond(cond), m_lhs(lhs), m_rhs(rhs) {}
 
-    Expr *get_cond() { return m_cond; }
+    let get_cond() const { return m_cond; }
+    let get_lhs() const { return m_lhs; }
+    let get_rhs() const { return m_rhs; }
 
-    Expr *get_lhs() { return m_lhs; }
-
-    Expr *get_rhs() { return m_rhs; }
-
-    PNODE_IMPL_CORE(TernaryExpr)
+    NPAR_GETTER(TernaryExpr)
   };
 
   ///=============================================================================
@@ -1310,12 +1291,9 @@ namespace npar {
   public:
     ConstInt(String value) : Expr(QAST_NODE_INT), m_value(value) {}
 
-    ConstInt(uint64_t value)
-        : Expr(QAST_NODE_INT), m_value(std::to_string(value)) {}
+    let get_value() const { return m_value; }
 
-    String &get_value() { return m_value; }
-
-    PNODE_IMPL_CORE(ConstInt)
+    NPAR_GETTER(ConstInt)
   };
 
   class ConstFloat : public Expr {
@@ -1323,12 +1301,10 @@ namespace npar {
 
   public:
     ConstFloat(String value) : Expr(QAST_NODE_FLOAT), m_value(value) {}
-    ConstFloat(double value)
-        : Expr(QAST_NODE_FLOAT), m_value(std::to_string(value)) {}
 
-    String &get_value() { return m_value; }
+    let get_value() const { return m_value; }
 
-    PNODE_IMPL_CORE(ConstFloat)
+    NPAR_GETTER(ConstFloat)
   };
 
   class ConstBool : public Expr {
@@ -1338,9 +1314,9 @@ namespace npar {
     constexpr ConstBool(bool value = false)
         : Expr(QAST_NODE_BOOL), m_value(value) {}
 
-    bool get_value() { return m_value; }
+    bool get_value() const { return m_value; }
 
-    PNODE_IMPL_CORE(ConstBool)
+    NPAR_GETTER(ConstBool)
   };
 
   class ConstString : public Expr {
@@ -1349,9 +1325,9 @@ namespace npar {
   public:
     ConstString(String value) : Expr(QAST_NODE_STRING), m_value(value) {}
 
-    String &get_value() { return m_value; }
+    let get_value() const { return m_value; }
 
-    PNODE_IMPL_CORE(ConstString)
+    NPAR_GETTER(ConstString)
   };
 
   class ConstChar : public Expr {
@@ -1361,23 +1337,23 @@ namespace npar {
     constexpr ConstChar(uint8_t value = 0)
         : Expr(QAST_NODE_CHAR), m_value(value) {}
 
-    uint8_t get_value() { return m_value; }
+    uint8_t get_value() const { return m_value; }
 
-    PNODE_IMPL_CORE(ConstChar)
+    NPAR_GETTER(ConstChar)
   };
 
   class ConstNull : public Expr {
   public:
     constexpr ConstNull() : Expr(QAST_NODE_NULL) {}
 
-    PNODE_IMPL_CORE(ConstNull)
+    NPAR_GETTER(ConstNull)
   };
 
   class ConstUndef : public Expr {
   public:
     constexpr ConstUndef() : Expr(QAST_NODE_UNDEF) {}
 
-    PNODE_IMPL_CORE(ConstUndef)
+    NPAR_GETTER(ConstUndef)
   };
 
   ///=============================================================================
@@ -1393,11 +1369,10 @@ namespace npar {
     Call(Expr *func, CallArgs args = {})
         : Expr(QAST_NODE_CALL), m_func(func), m_args(args) {}
 
-    Expr *get_func() { return m_func; }
+    let get_func() const { return m_func; }
+    let get_args() const { return m_args; }
 
-    CallArgs &get_args() { return m_args; }
-
-    PNODE_IMPL_CORE(Call)
+    NPAR_GETTER(Call)
   };
 
   typedef std::map<String, Expr *, std::less<String>,
@@ -1416,12 +1391,11 @@ namespace npar {
           m_func(func),
           m_args(args) {}
 
-    Expr *get_func() { return m_func; }
+    let get_func() const { return m_func; }
+    let get_template_args() const { return m_template_args; }
+    let get_args() const { return m_args; }
 
-    TemplateArgs &get_template_args() { return m_template_args; }
-    CallArgs &get_args() { return m_args; }
-
-    PNODE_IMPL_CORE(TemplCall)
+    NPAR_GETTER(TemplCall)
   };
 
   typedef std::vector<Expr *, Arena<Expr *>> ListData;
@@ -1432,9 +1406,9 @@ namespace npar {
   public:
     List(const ListData &items) : Expr(QAST_NODE_LIST), m_items(items) {}
 
-    ListData &get_items() { return m_items; }
+    let get_items() const { return m_items; }
 
-    PNODE_IMPL_CORE(List)
+    NPAR_GETTER(List)
   };
 
   class Assoc : public Expr {
@@ -1445,11 +1419,10 @@ namespace npar {
     constexpr Assoc(Expr *key, Expr *value)
         : Expr(QAST_NODE_ASSOC), m_key(key), m_value(value) {}
 
-    Expr *get_key() { return m_key; }
+    let get_key() const { return m_key; }
+    let get_value() const { return m_value; }
 
-    Expr *get_value() { return m_value; }
-
-    PNODE_IMPL_CORE(Assoc)
+    NPAR_GETTER(Assoc)
   };
 
   class Field : public Expr {
@@ -1460,11 +1433,10 @@ namespace npar {
     Field(Expr *base, String field)
         : Expr(QAST_NODE_FIELD), m_base(base), m_field(field) {}
 
-    Expr *get_base() { return m_base; }
+    let get_base() const { return m_base; }
+    let get_field() const { return m_field; }
 
-    String &get_field() { return m_field; }
-
-    PNODE_IMPL_CORE(Field)
+    NPAR_GETTER(Field)
   };
 
   class Index : public Expr {
@@ -1475,11 +1447,10 @@ namespace npar {
     constexpr Index(Expr *base, Expr *index)
         : Expr(QAST_NODE_INDEX), m_base(base), m_index(index) {}
 
-    Expr *get_base() { return m_base; }
+    let get_base() const { return m_base; }
+    let get_index() const { return m_index; }
 
-    Expr *get_index() { return m_index; }
-
-    PNODE_IMPL_CORE(Index)
+    NPAR_GETTER(Index)
   };
 
   class Slice : public Expr {
@@ -1491,13 +1462,11 @@ namespace npar {
     constexpr Slice(Expr *base, Expr *start, Expr *end)
         : Expr(QAST_NODE_SLICE), m_base(base), m_start(start), m_end(end) {}
 
-    Expr *get_base() { return m_base; }
+    let get_base() const { return m_base; }
+    let get_start() const { return m_start; }
+    let get_end() const { return m_end; }
 
-    Expr *get_start() { return m_start; }
-
-    Expr *get_end() { return m_end; }
-
-    PNODE_IMPL_CORE(Slice)
+    NPAR_GETTER(Slice)
   };
 
   typedef std::vector<std::variant<String, Expr *>,
@@ -1511,9 +1480,9 @@ namespace npar {
     FString(FStringItems items = {})
         : Expr(QAST_NODE_FSTRING), m_items(items) {}
 
-    FStringItems &get_items() { return m_items; }
+    let get_items() const { return m_items; }
 
-    PNODE_IMPL_CORE(FString)
+    NPAR_GETTER(FString)
   };
 
   class Ident : public Expr {
@@ -1522,9 +1491,9 @@ namespace npar {
   public:
     Ident(String name) : Expr(QAST_NODE_IDENT), m_name(name) {}
 
-    String &get_name() { return m_name; }
+    let get_name() const { return m_name; }
 
-    PNODE_IMPL_CORE(Ident)
+    NPAR_GETTER(Ident)
   };
 
   typedef std::vector<Expr *, Arena<Expr *>> SeqPointItems;
@@ -1535,9 +1504,9 @@ namespace npar {
     SeqPoint(const SeqPointItems &items)
         : Expr(QAST_NODE_SEQ), m_items(items) {}
 
-    SeqPointItems &get_items() { return m_items; }
+    let get_items() const { return m_items; }
 
-    PNODE_IMPL_CORE(SeqPoint)
+    NPAR_GETTER(SeqPoint)
   };
 
   ///=============================================================================
@@ -1558,12 +1527,13 @@ namespace npar {
     Block(const BlockItems &items = {}, SafetyMode safety = SafetyMode::Unknown)
         : Stmt(QAST_NODE_BLOCK), m_items(items), m_safety(safety) {}
 
-    BlockItems &get_items() { return m_items; }
+    let get_items() const { return m_items; }
+    auto &get_items() { return m_items; }
 
     SafetyMode get_safety() { return m_safety; }
     void set_safety(SafetyMode safety) { m_safety = safety; }
 
-    PNODE_IMPL_CORE(Block)
+    NPAR_GETTER(Block)
   };
 
   enum class VarDeclType { Const, Var, Let };
@@ -1589,15 +1559,13 @@ namespace npar {
           m_value(value),
           m_decl_type(decl_type) {}
 
-    String &get_name() { return m_name; }
-    Type *get_type() { return m_type; }
-    Expr *get_value() { return m_value; }
+    let get_name() const { return m_name; }
+    let get_type() const { return m_type; }
+    let get_value() const { return m_value; }
+    let get_decl_type() const { return m_decl_type; }
+    let get_attributes() const { return m_attributes; }
 
-    VarDeclType get_decl_type() { return m_decl_type; }
-
-    VarDeclAttributes &get_attributes() { return m_attributes; }
-
-    PNODE_IMPL_CORE(VarDecl)
+    NPAR_GETTER(VarDecl)
   };
 
   typedef std::vector<Expr *, Arena<Expr *>> InlineAsmArgs;
@@ -1610,11 +1578,10 @@ namespace npar {
     InlineAsm(String code, const InlineAsmArgs &args)
         : Stmt(QAST_NODE_INLINE_ASM), m_code(code), m_args(args) {}
 
-    String &get_code() { return m_code; }
+    let get_code() const { return m_code; }
+    let get_args() const { return m_args; }
 
-    InlineAsmArgs &get_args() { return m_args; }
-
-    PNODE_IMPL_CORE(InlineAsm)
+    NPAR_GETTER(InlineAsm)
   };
 
   class IfStmt : public Stmt {
@@ -1626,13 +1593,11 @@ namespace npar {
     constexpr IfStmt(Expr *cond, Stmt *then, Stmt *else_)
         : Stmt(QAST_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
-    Expr *get_cond() { return m_cond; }
+    let get_cond() const { return m_cond; }
+    let get_then() const { return m_then; }
+    let get_else() const { return m_else; }
 
-    Stmt *get_then() { return m_then; }
-
-    Stmt *get_else() { return m_else; }
-
-    PNODE_IMPL_CORE(IfStmt)
+    NPAR_GETTER(IfStmt)
   };
 
   class WhileStmt : public Stmt {
@@ -1643,11 +1608,10 @@ namespace npar {
     constexpr WhileStmt(Expr *cond, Stmt *body)
         : Stmt(QAST_NODE_WHILE), m_cond(cond), m_body(body) {}
 
-    Expr *get_cond() { return m_cond; }
+    let get_cond() const { return m_cond; }
+    let get_body() const { return m_body; }
 
-    Stmt *get_body() { return m_body; }
-
-    PNODE_IMPL_CORE(WhileStmt)
+    NPAR_GETTER(WhileStmt)
   };
 
   class ForStmt : public Stmt {
@@ -1669,7 +1633,7 @@ namespace npar {
     let get_step() const { return m_step; }
     let get_body() const { return m_body; }
 
-    PNODE_IMPL_CORE(ForStmt)
+    NPAR_GETTER(ForStmt)
   };
 
   class ForeachStmt : public Stmt {
@@ -1686,29 +1650,26 @@ namespace npar {
           m_expr(expr),
           m_body(body) {}
 
-    String &get_idx_ident() { return m_idx_ident; }
+    let get_idx_ident() const { return m_idx_ident; }
+    let get_val_ident() const { return m_val_ident; }
+    let get_expr() const { return m_expr; }
+    let get_body() const { return m_body; }
 
-    String &get_val_ident() { return m_val_ident; }
-
-    Expr *get_expr() { return m_expr; }
-
-    Stmt *get_body() { return m_body; }
-
-    PNODE_IMPL_CORE(ForeachStmt)
+    NPAR_GETTER(ForeachStmt)
   };
 
   class BreakStmt : public Stmt {
   public:
     constexpr BreakStmt() : Stmt(QAST_NODE_BREAK){};
 
-    PNODE_IMPL_CORE(BreakStmt)
+    NPAR_GETTER(BreakStmt)
   };
 
   class ContinueStmt : public Stmt {
   public:
     constexpr ContinueStmt() : Stmt(QAST_NODE_CONTINUE){};
 
-    PNODE_IMPL_CORE(ContinueStmt)
+    NPAR_GETTER(ContinueStmt)
   };
 
   class ReturnStmt : public Stmt {
@@ -1718,9 +1679,9 @@ namespace npar {
     constexpr ReturnStmt(std::optional<Expr *> value)
         : Stmt(QAST_NODE_RETURN), m_value(value) {}
 
-    std::optional<Expr *> get_value() { return m_value; }
+    let get_value() const { return m_value; }
 
-    PNODE_IMPL_CORE(ReturnStmt)
+    NPAR_GETTER(ReturnStmt)
   };
 
   class ReturnIfStmt : public Stmt {
@@ -1731,11 +1692,10 @@ namespace npar {
     constexpr ReturnIfStmt(Expr *cond, Expr *value)
         : Stmt(QAST_NODE_RETIF), m_cond(cond), m_value(value) {}
 
-    Expr *get_cond() { return m_cond; }
+    let get_cond() const { return m_cond; }
+    let get_value() const { return m_value; }
 
-    Expr *get_value() { return m_value; }
-
-    PNODE_IMPL_CORE(ReturnIfStmt)
+    NPAR_GETTER(ReturnIfStmt)
   };
 
   class CaseStmt : public Stmt {
@@ -1746,11 +1706,10 @@ namespace npar {
     constexpr CaseStmt(Expr *cond, Stmt *body)
         : Stmt(QAST_NODE_CASE), m_cond(cond), m_body(body) {}
 
-    Expr *get_cond() { return m_cond; }
+    let get_cond() const { return m_cond; }
+    let get_body() const { return m_body; }
 
-    Stmt *get_body() { return m_body; }
-
-    PNODE_IMPL_CORE(CaseStmt)
+    NPAR_GETTER(CaseStmt)
   };
 
   typedef std::vector<CaseStmt *, Arena<CaseStmt *>> SwitchCases;
@@ -1766,13 +1725,11 @@ namespace npar {
           m_cases(cases),
           m_default(default_) {}
 
-    Expr *get_cond() { return m_cond; }
+    let get_cond() const { return m_cond; }
+    let get_cases() const { return m_cases; }
+    let get_default() const { return m_default; }
 
-    SwitchCases &get_cases() { return m_cases; }
-
-    Stmt *get_default() { return m_default; }
-
-    PNODE_IMPL_CORE(SwitchStmt)
+    NPAR_GETTER(SwitchStmt)
   };
 
   using SymbolAttributes =
@@ -1793,12 +1750,12 @@ namespace npar {
           m_body(content),
           m_vis(vis) {}
 
-    Stmt *get_body() { return m_body; }
-    String &get_abi_name() { return m_abi_name; }
-    Vis get_vis() { return m_vis; }
-    SymbolAttributes &get_attrs() { return m_attrs; }
+    let get_body() const { return m_body; }
+    let get_abi_name() const { return m_abi_name; }
+    let get_vis() const { return m_vis; }
+    let get_attrs() const { return m_attrs; }
 
-    PNODE_IMPL_CORE(ExportStmt)
+    NPAR_GETTER(ExportStmt)
   };
 
   typedef std::set<String, std::less<String>, Arena<String>> ScopeDeps;
@@ -1812,11 +1769,11 @@ namespace npar {
     ScopeStmt(String name, Stmt *body, ScopeDeps deps = {})
         : Stmt(QAST_NODE_SCOPE), m_deps(deps), m_name(name), m_body(body) {}
 
-    String &get_name() { return m_name; }
-    Stmt *get_body() { return m_body; }
-    ScopeDeps &get_deps() { return m_deps; }
+    let get_name() const { return m_name; }
+    let get_body() const { return m_body; }
+    let get_deps() const { return m_deps; }
 
-    PNODE_IMPL_CORE(ScopeStmt)
+    NPAR_GETTER(ScopeStmt)
   };
 
   class TypedefStmt : public Stmt {
@@ -1827,10 +1784,10 @@ namespace npar {
     TypedefStmt(String name, Type *type)
         : Stmt(QAST_NODE_TYPEDEF), m_name(name), m_type(type) {}
 
-    String &get_name() { return m_name; }
-    Type *get_type() { return m_type; }
+    let get_name() const { return m_name; }
+    let get_type() const { return m_type; }
 
-    PNODE_IMPL_CORE(TypedefStmt)
+    NPAR_GETTER(TypedefStmt)
   };
 
   class StructField : public Stmt {
@@ -1847,13 +1804,14 @@ namespace npar {
           m_value(value),
           m_visibility(visibility) {}
 
-    String &get_name() { return m_name; }
-    Type *get_type() { return m_type; }
-    Expr *get_value() { return m_value; }
-    Vis get_visibility() { return m_visibility; }
+    let get_name() const { return m_name; }
+    let get_type() const { return m_type; }
+    let get_value() const { return m_value; }
+    let get_visibility() const { return m_visibility; }
+
     void set_visibility(Vis visibility) { m_visibility = visibility; }
 
-    PNODE_IMPL_CORE(StructField)
+    NPAR_GETTER(StructField)
   };
 
   typedef std::pair<String, Expr *> EnumItem;
@@ -1868,11 +1826,11 @@ namespace npar {
     EnumDef(String name, Type *type, const EnumDefItems &items)
         : Stmt(QAST_NODE_ENUM), m_items(items), m_name(name), m_type(type) {}
 
-    EnumDefItems &get_items() { return m_items; }
-    String &get_name() { return m_name; }
-    Type *get_type() { return m_type; }
+    let get_items() const { return m_items; }
+    let get_name() const { return m_name; }
+    let get_type() const { return m_type; }
 
-    PNODE_IMPL_CORE(EnumDef)
+    NPAR_GETTER(EnumDef)
   };
 
   class FnDecl : public Stmt {
@@ -1888,17 +1846,15 @@ namespace npar {
           m_name(name),
           m_type(type) {}
 
-    String get_name() { return m_name; }
-    void set_name(String name) { m_name = name; }
+    let get_name() const { return m_name; }
+    let get_type() const { return m_type; }
+    let get_template_params() const { return m_template_parameters; }
 
-    FuncTy *get_type() { return m_type; }
     void set_type(FuncTy *type) { m_type = type; }
+    void set_name(String name) { m_name = name; }
+    auto &get_template_params() { return m_template_parameters; }
 
-    std::optional<TemplateParameters> &get_template_params() {
-      return m_template_parameters;
-    }
-
-    PNODE_IMPL_CORE(FnDecl)
+    NPAR_GETTER(FnDecl)
   };
 
   typedef std::vector<std::pair<String, bool>, Arena<std::pair<String, bool>>>
@@ -1925,26 +1881,23 @@ namespace npar {
           m_precond(precond),
           m_postcond(postcond) {}
 
-    FnCaptures &get_captures() { return m_captures; }
+    let get_captures() const { return m_captures; }
+    let get_name() const { return m_name; }
+    let get_body() const { return m_body; }
+    let get_precond() const { return m_precond; }
+    let get_postcond() const { return m_postcond; }
+    let get_type() const { return m_type; }
+    let get_template_params() const { return m_template_parameters; }
+
+    void set_body(Stmt *body) { m_body = body; }
+    void set_precond(Expr *precond) { m_precond = precond; }
+    void set_postcond(Expr *postcond) { m_postcond = postcond; }
 
     std::optional<TemplateParameters> &get_template_params() {
       return m_template_parameters;
     }
 
-    String &get_name() { return m_name; }
-
-    Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
-
-    Expr *get_precond() { return m_precond; }
-    void set_precond(Expr *precond) { m_precond = precond; }
-
-    Expr *get_postcond() { return m_postcond; }
-    void set_postcond(Expr *postcond) { m_postcond = postcond; }
-
-    FuncTy *get_type() { return static_cast<FuncTy *>(m_type); }
-
-    PNODE_IMPL_CORE(FnDef)
+    NPAR_GETTER(FnDef)
   };
 
   enum class CompositeType { Region, Struct, Group, Class, Union };
@@ -1975,21 +1928,20 @@ namespace npar {
           m_comp_type(t),
           m_name(name) {}
 
-    String &get_name() { return m_name; }
+    let get_name() const { return m_name; }
+    let get_methods() const { return m_methods; }
+    let get_static_methods() const { return m_static_methods; }
+    let get_fields() const { return m_fields; }
+    let get_composite_type() const { return m_comp_type; }
+
     void set_name(String name) { m_name = name; }
-
-    StructDefMethods &get_methods() { return m_methods; }
-    StructDefStaticMethods &get_static_methods() { return m_static_methods; }
-    StructDefFields &get_fields() { return m_fields; }
-
-    std::optional<TemplateParameters> &get_template_params() {
-      return m_template_parameters;
-    }
-
-    CompositeType get_composite_type() { return m_comp_type; }
     void set_composite_type(CompositeType t) { m_comp_type = t; }
+    auto &get_methods() { return m_methods; }
+    auto &get_static_methods() { return m_static_methods; }
+    auto &get_fields() { return m_fields; }
+    auto &get_template_params() { return m_template_parameters; }
 
-    PNODE_IMPL_CORE(StructDef)
+    NPAR_GETTER(StructDef)
   };
 
   template <typename T, typename... Args>
@@ -2111,65 +2063,40 @@ constexpr bool npar_node_t::isSame(npar_node_t *o) const noexcept {
       let us = as<npar_node_t>();
       let them = o->as<npar_node_t>();
 
-      (void)us;
-      (void)them;
-
-      /// TODO: Implement check Node
-      qcore_implement();
-
-      return true;
+      return us->m_mock == them->m_mock;
     }
 
     case QAST_NODE_BINEXPR: {
       let us = as<BinExpr>();
       let them = o->as<BinExpr>();
 
-      (void)us;
-      (void)them;
-
-      /// TODO: Implement check Binexpr
-      qcore_implement();
-
-      return true;
+      return us->get_op() == them->get_op() &&
+             us->get_lhs()->isSame(them->get_lhs()) &&
+             us->get_rhs()->isSame(them->get_rhs());
     }
 
     case QAST_NODE_UNEXPR: {
       let us = as<UnaryExpr>();
       let them = o->as<UnaryExpr>();
 
-      (void)us;
-      (void)them;
-
-      /// TODO: Implement check Unexpr
-      qcore_implement();
-
-      return true;
+      return us->get_op() == them->get_op() &&
+             us->get_rhs()->isSame(them->get_rhs());
     }
 
     case QAST_NODE_TEREXPR: {
       let us = as<TernaryExpr>();
       let them = o->as<TernaryExpr>();
 
-      (void)us;
-      (void)them;
-
-      /// TODO: Implement check Terexpr
-      qcore_implement();
-
-      return true;
+      return us->get_cond()->isSame(them->get_cond()) &&
+             us->get_lhs()->isSame(them->get_lhs()) &&
+             us->get_rhs()->isSame(them->get_rhs());
     }
 
     case QAST_NODE_INT: {
       let us = as<ConstInt>();
       let them = o->as<ConstInt>();
 
-      (void)us;
-      (void)them;
-
-      /// TODO: Implement check Int
-      qcore_implement();
-
-      return true;
+      return us->get_value() == them->get_value();
     }
 
     case QAST_NODE_FLOAT: {
@@ -3034,5 +2961,7 @@ constexpr bool npar_node_t::isSame(npar_node_t *o) const noexcept {
   /// TODO: Implement
   qcore_implement();
 }
+
+#undef NPAR_GETTER
 
 #endif  // __NITRATE_PARSER_NODE_H__
