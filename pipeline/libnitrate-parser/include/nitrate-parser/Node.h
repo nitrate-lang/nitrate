@@ -772,14 +772,12 @@ namespace npar {
   class Expr;
 
   class Type : public npar_node_t {
-    Expr *m_width, *m_range_start, *m_range_end;
+    std::pair<Expr *, Expr *> m_range;
+    Expr *m_width;
 
   public:
     constexpr Type(npar_ty_t ty)
-        : npar_node_t(ty),
-          m_width(nullptr),
-          m_range_start(nullptr),
-          m_range_end(nullptr) {}
+        : npar_node_t(ty), m_range({nullptr, nullptr}), m_width(nullptr) {}
 
     constexpr bool is_primitive() const {
       switch (getKind()) {
@@ -827,18 +825,12 @@ namespace npar {
     constexpr bool is_void() const { return getKind() == QAST_NODE_VOID_TY; }
     constexpr bool is_bool() const { return getKind() == QAST_NODE_U1_TY; }
     constexpr bool is_ref() const { return getKind() == QAST_NODE_REF_TY; }
-    bool is_ptr_to(Type *type);
+    bool is_ptr_to(Type *type) const;
 
     constexpr let get_width() const { return m_width; }
+    constexpr let get_range() const { return m_range; }
 
-    constexpr std::pair<Expr *, Expr *> get_range() const {
-      return {m_range_start, m_range_end};
-    }
-
-    constexpr void set_range(Expr *start, Expr *end) {
-      m_range_start = start;
-      m_range_end = end;
-    }
+    constexpr void set_range(Expr *start, Expr *end) { m_range = {start, end}; }
     constexpr void set_width(Expr *width) { m_width = width; }
   };
 

@@ -87,7 +87,7 @@ CPP_EXPORT uint64_t npar_node_t::hash64() const {
 
 ///=============================================================================
 
-CPP_EXPORT bool Type::is_ptr_to(Type *type) {
+CPP_EXPORT bool Type::is_ptr_to(Type *type) const {
   if (!is_pointer()) {
     return false;
   }
