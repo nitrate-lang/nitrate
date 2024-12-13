@@ -276,28 +276,6 @@ namespace npar {
     let get_type() const { return m_type; }
   };
 
-  class StructField : public Stmt {
-    SmallString m_name;
-    Type *m_type;
-    Expr *m_value;
-    Vis m_visibility;
-
-  public:
-    StructField(SmallString name, Type *type, Expr *value, Vis visibility)
-        : Stmt(QAST_STRUCT_FIELD),
-          m_name(name),
-          m_type(type),
-          m_value(value),
-          m_visibility(visibility) {}
-
-    let get_name() const { return m_name; }
-    let get_type() const { return m_type; }
-    let get_value() const { return m_value; }
-    let get_visibility() const { return m_visibility; }
-
-    void set_visibility(Vis visibility) { m_visibility = visibility; }
-  };
-
   class EnumDef : public Stmt {
     EnumDefItems m_items;
     SmallString m_name;

@@ -116,27 +116,26 @@ typedef enum npar_ty_t {
    * Statements
    ****************************************************************************/
 
-  QAST_IF = 60,           /* If statement */
-  QAST_RETIF = 61,        /* Return-if statement */
-  QAST_SWITCH = 62,       /* Switch statement */
-  QAST_CASE = 63,         /* Case statement */
-  QAST_RETURN = 64,       /* Return statement */
-  QAST_BREAK = 65,        /* Break statement */
-  QAST_CONTINUE = 66,     /* Continue statement */
-  QAST_WHILE = 67,        /* While statement */
-  QAST_FOR = 68,          /* For statement */
-  QAST_FOREACH = 69,      /* Foreach statement */
-  QAST_INLINE_ASM = 70,   /* Inline assembly statement */
-  QAST_ESTMT = 71,        /* Expression-statement adapter */
-  QAST_TYPEDEF = 80,      /* Type alias declaration */
-  QAST_STRUCT = 81,       /* Struct definition */
-  QAST_STRUCT_FIELD = 82, /* Struct field */
-  QAST_ENUM = 83,         /* Enum definition */
-  QAST_SCOPE = 84,        /* Namespace scope */
-  QAST_BLOCK = 85,        /* Block statement */
-  QAST_EXPORT = 86,       /* Export statement */
-  QAST_VAR = 87,          /* Variable declaration */
-  QAST_FUNCTION = 88,     /* Function definition */
+  QAST_IF = 60,         /* If statement */
+  QAST_RETIF = 61,      /* Return-if statement */
+  QAST_SWITCH = 62,     /* Switch statement */
+  QAST_CASE = 63,       /* Case statement */
+  QAST_RETURN = 64,     /* Return statement */
+  QAST_BREAK = 65,      /* Break statement */
+  QAST_CONTINUE = 66,   /* Continue statement */
+  QAST_WHILE = 67,      /* While statement */
+  QAST_FOR = 68,        /* For statement */
+  QAST_FOREACH = 69,    /* Foreach statement */
+  QAST_INLINE_ASM = 70, /* Inline assembly statement */
+  QAST_ESTMT = 71,      /* Expression-statement adapter */
+  QAST_TYPEDEF = 80,    /* Type alias declaration */
+  QAST_STRUCT = 81,     /* Struct definition */
+  QAST_ENUM = 83,       /* Enum definition */
+  QAST_SCOPE = 84,      /* Namespace scope */
+  QAST_BLOCK = 85,      /* Block statement */
+  QAST_EXPORT = 86,     /* Export statement */
+  QAST_VAR = 87,        /* Variable declaration */
+  QAST_FUNCTION = 88,   /* Function definition */
 
   QAST__STMT_FIRST = QAST_IF,
   QAST__STMT_LAST = QAST_FUNCTION,
@@ -217,7 +216,6 @@ namespace npar {
   class SwitchStmt;
   class TypedefStmt;
   class FnDef;
-  class StructField;
   class StructDef;
   class EnumDef;
   class ScopeStmt;

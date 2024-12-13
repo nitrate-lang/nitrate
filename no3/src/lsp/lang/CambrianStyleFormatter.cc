@@ -1,9 +1,9 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Lexer.h>
-#include <nitrate-parser/AST.hh>
 
 #include <lsp/lang/CambrianStyleFormatter.hh>
+#include <nitrate-parser/AST.hh>
 #include <sstream>
 #include <unordered_set>
 
@@ -1120,15 +1120,6 @@ void CambrianFormatter::visit(FnDef const& n) {
   }
 }
 
-void CambrianFormatter::visit(StructField const& n) {
-  line << n.get_name() << ": ";
-  n.get_type()->accept(*this);
-  if (n.get_value()) {
-    line << " = ";
-    n.get_value()->accept(*this);
-  }
-}
-
 void CambrianFormatter::visit(StructDef const& n) {
   switch (n.get_composite_type()) {
     case CompositeType::Region: {
@@ -1177,7 +1168,31 @@ void CambrianFormatter::visit(StructDef const& n) {
   }
 
   std::for_each(n.get_fields().begin(), n.get_fields().end(), [&](let field) {
-    field->accept(*this);
+    switch (field.get_vis()) {
+      case Vis::Pub: {
+        line << "pub ";
+        break;
+      }
+
+      case Vis::Sec: {
+        line << "sec ";
+        break;
+      }
+
+      case Vis::Pro: {
+        line << "pro ";
+        break;
+      }
+    }
+
+    line << field.get_name() << ": ";
+    field.get_type()->accept(*this);
+
+    if (field.get_value()) {
+      line << " = ";
+      field.get_value()->accept(*this);
+    }
+
     line << "," << std::endl;
   });
 

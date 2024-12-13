@@ -38,6 +38,8 @@
 #error "This code requires c++"
 #endif
 
+#include <nitrate-core/Macro.h>
+
 #include <map>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-parser/ASTCommon.hh>
@@ -122,9 +124,22 @@ namespace npar {
   using EnumItem = std::pair<SmallString, Expr *>;
   using EnumDefItems = std::vector<EnumItem, Arena<EnumItem>>;
 
-  using StructItem = std::pair<SmallString, Type *>;
-  using StructItems = std::vector<StructItem, Arena<StructItem>>;
-  using StructDefFields = std::vector<Stmt *, Arena<Stmt *>>;
+  class StructField {
+    Vis m_vis;
+    SmallString m_name;
+    Type *m_type;
+    Expr *m_value;
+
+  public:
+    StructField(Vis vis, SmallString name, Type *type, Expr *value)
+        : m_vis(vis), m_name(name), m_type(type), m_value(value) {}
+
+    let get_vis() const { return m_vis; }
+    let get_name() const { return m_name; }
+    let get_type() const { return m_type; }
+    let get_value() const { return m_value; }
+  };
+  using StructDefFields = std::vector<StructField, Arena<StructField>>;
   using StructDefMethods = std::vector<FnDef *, Arena<FnDef *>>;
   using StructDefStaticMethods = std::vector<FnDef *, Arena<FnDef *>>;
 

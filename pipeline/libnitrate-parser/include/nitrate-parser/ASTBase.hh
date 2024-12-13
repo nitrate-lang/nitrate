@@ -285,10 +285,6 @@ public:
         v.visit(*as<ExportStmt>());
         break;
       }
-      case QAST_STRUCT_FIELD: {
-        v.visit(*as<StructField>());
-        break;
-      }
       case QAST_BLOCK: {
         v.visit(*as<Block>());
         break;
@@ -472,8 +468,6 @@ public:
       return QAST_SCOPE;
     } else if constexpr (std::is_same_v<T, ExportStmt>) {
       return QAST_EXPORT;
-    } else if constexpr (std::is_same_v<T, StructField>) {
-      return QAST_STRUCT_FIELD;
     } else if constexpr (std::is_same_v<T, Block>) {
       return QAST_BLOCK;
     } else if constexpr (std::is_same_v<T, VarDecl>) {
@@ -671,7 +665,6 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) {
     R[QAST_FUNCTION] = "FnDef";
     R[QAST_SCOPE] = "Scope";
     R[QAST_EXPORT] = "Export";
-    R[QAST_STRUCT_FIELD] = "StructField";
     R[QAST_BLOCK] = "Block";
     R[QAST_VAR] = "Let";
     R[QAST_INLINE_ASM] = "InlineAsm";

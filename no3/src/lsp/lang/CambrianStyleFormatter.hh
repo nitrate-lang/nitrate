@@ -145,7 +145,6 @@ namespace lsp::fmt {
     void visit(npar::SwitchStmt const& n) override;
     void visit(npar::TypedefStmt const& n) override;
     void visit(npar::FnDef const& n) override;
-    void visit(npar::StructField const& n) override;
     void visit(npar::StructDef const& n) override;
     void visit(npar::EnumDef const& n) override;
     void visit(npar::ScopeStmt const& n) override;

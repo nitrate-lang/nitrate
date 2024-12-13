@@ -938,22 +938,6 @@ void recurse(npar_node_t* C) {
       break;
     }
 
-    case QAST_STRUCT_FIELD: {
-      StructField* N = C->as<StructField>();
-
-      line << N->get_name() << ": ";
-      recurse(N->get_type());
-
-      if (N->get_value()) {
-        line << " = ";
-        recurse(N->get_value());
-      }
-
-      line << ",";
-
-      break;
-    }
-
     case QAST_BLOCK: {
       static const std::unordered_set<npar_ty_t> no_has_semicolon = {
           QAST_FUNCTION,

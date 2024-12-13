@@ -1372,44 +1372,6 @@ void AST_Writer::visit(FnDef const& n) {
   end_obj();
 }
 
-void AST_Writer::visit(StructField const& n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n.getKindName());
-
-  write_source_location(n);
-
-  string("name");
-  string(*n.get_name());
-
-  string("vis");
-  switch (n.get_visibility()) {
-    case Vis::Pub: {
-      string("pub");
-      break;
-    }
-
-    case Vis::Sec: {
-      string("sec");
-      break;
-    }
-
-    case Vis::Pro: {
-      string("pro");
-      break;
-    }
-  }
-
-  string("type");
-  n.get_type()->accept(*this);
-
-  string("init");
-  n.get_value() ? n.get_value()->accept(*this) : null();
-
-  end_obj();
-}
-
 void AST_Writer::visit(StructDef const& n) {
   begin_obj(8);
 
@@ -1479,8 +1441,38 @@ void AST_Writer::visit(StructDef const& n) {
 
     let fields = n.get_fields();
     begin_arr(fields.size());
-    std::for_each(fields.begin(), fields.end(),
-                  [&](let field) { field->accept(*this); });
+    std::for_each(fields.begin(), fields.end(), [&](let field) {
+      begin_obj(4);
+
+      string("name");
+      string(*field.get_name());
+
+      string("type");
+      field.get_type()->accept(*this);
+
+      string("default");
+      field.get_value() ? field.get_value()->accept(*this) : null();
+
+      string("vis");
+      switch (field.get_vis()) {
+        case Vis::Pub: {
+          string("pub");
+          break;
+        }
+
+        case Vis::Sec: {
+          string("sec");
+          break;
+        }
+
+        case Vis::Pro: {
+          string("pro");
+          break;
+        }
+      }
+
+      end_obj();
+    });
     end_arr();
   }
 

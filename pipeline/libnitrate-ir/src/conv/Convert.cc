@@ -1194,13 +1194,9 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
   s.ns_prefix = s.join_scope(*n->get_name());
 
   for (size_t i = 0; i < n->get_fields().size(); i++) {
-    auto field_raw = n->get_fields()[i];
-    if (!field_raw->is(QAST_STRUCT_FIELD)) {
-      return std::nullopt;
-    }
-    npar::StructField *field = field_raw->as<npar::StructField>();
+    let field = n->get_fields()[i];
 
-    auto field_type = next_one(field->get_type());
+    auto field_type = next_one(field.get_type());
     if (!field_type.has_value()) {
       G->report(nr::CompilerError, IC::Error,
                 "Failed to lower struct field type", n->get_pos());
@@ -1208,10 +1204,10 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
       return std::nullopt;
     }
 
-    auto field_name = b.intern(*field->get_name());
+    auto field_name = b.intern(*field.get_name());
 
     Expr *field_default = nullptr;
-    if (field->get_value() == nullptr) {
+    if (field.get_value() == nullptr) {
       auto val = b.getDefaultValue(field_type.value()->asType());
       if (!val.has_value()) {
         G->report(nr::CompilerError, IC::Error,
@@ -1222,7 +1218,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
 
       field_default = val.value();
     } else {
-      auto val = next_one(field->get_value());
+      auto val = next_one(field.get_value());
       if (!val.has_value()) {
         G->report(nr::CompilerError, IC::Error,
                   "Failed to lower struct field default value", n->get_pos());
@@ -1598,11 +1594,6 @@ static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
   s.abi_mode = old;
 
   return items;
-}
-
-static EResult nrgen_composite_field(NRBuilder &, PState &, IReport *,
-                                     npar::StructField *) {
-  qcore_panic("Unreachable");
 }
 
 static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G, npar::Block *n,
@@ -2094,10 +2085,6 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
 
     case QAST_FUNCTION:
       out = nrgen_fn(b, s, G, n->as<npar::FnDef>());
-      break;
-
-    case QAST_STRUCT_FIELD:
-      out = nrgen_composite_field(b, s, G, n->as<npar::StructField>());
       break;
 
     case QAST_BLOCK:

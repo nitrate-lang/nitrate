@@ -155,7 +155,6 @@ namespace npar {
     void visit(SwitchStmt const& n) override;
     void visit(TypedefStmt const& n) override;
     void visit(FnDef const& n) override;
-    void visit(StructField const& n) override;
     void visit(StructDef const& n) override;
     void visit(EnumDef const& n) override;
     void visit(ScopeStmt const& n) override;
