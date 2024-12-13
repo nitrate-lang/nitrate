@@ -38,11 +38,9 @@
 #include <nitrate-lexer/Token.h>
 #include <nitrate-parser/Parser.h>
 
-#include <core/ParseReport.hh>
-#include <core/ParserStruct.hh>
+#include <core/Context.hh>
 #include <nitrate-parser/AST.hh>
 #include <set>
-#include <unordered_set>
 
 namespace npar {
   Stmt *recurse_pub(npar_t &S, qlex_t &rd);

@@ -54,8 +54,6 @@ namespace npar {
 
     void handle_state();
 
-    /// TODO: Implement state
-
   protected:
     void str(std::string_view str);
     void uint(uint64_t val);

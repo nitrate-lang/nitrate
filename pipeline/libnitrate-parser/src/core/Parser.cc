@@ -36,7 +36,7 @@
 #include <nitrate-parser/Parser.h>
 
 #include <atomic>
-#include <core/ParserStruct.hh>
+#include <core/Context.hh>
 #include <cstring>
 #include <descent/Recurse.hh>
 #include <nitrate-core/Classes.hh>
