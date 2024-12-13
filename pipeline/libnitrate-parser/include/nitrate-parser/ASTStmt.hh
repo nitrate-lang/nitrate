@@ -34,6 +34,9 @@
 #ifndef __NITRATE_PARSER_ASTSTMT_H__
 #define __NITRATE_PARSER_ASTSTMT_H__
 
+#include "nitrate-core/Macro.h"
+#include "nitrate-parser/ASTCommon.hh"
+#include "nitrate-parser/ASTData.hh"
 #ifndef __cplusplus
 #error "This code requires c++"
 #endif
@@ -337,40 +340,39 @@ namespace npar {
   };
 
   class StructDef : public Stmt {
+    CompositeType m_comp_type;
+    ExpressionList m_attributes;
+    SmallString m_name;
+    std::optional<TemplateParameters> m_template_parameters;
+    StructDefNames m_names;
+    StructDefFields m_fields;
     StructDefMethods m_methods;
     StructDefStaticMethods m_static_methods;
-    StructDefFields m_fields;
-    std::optional<TemplateParameters> m_template_parameters;
-    CompositeType m_comp_type;
-    SmallString m_name;
 
   public:
-    StructDef(SmallString name, const StructDefFields &fields = {},
-              const StructDefMethods &methods = {},
-              const StructDefStaticMethods &static_methods = {},
-              std::optional<TemplateParameters> params = std::nullopt,
-              CompositeType t = CompositeType::Struct)
+    StructDef(CompositeType comp_type, ExpressionList attributes,
+              SmallString name, std::optional<TemplateParameters> params,
+              const StructDefNames &names, const StructDefFields &fields,
+              const StructDefMethods &methods,
+              const StructDefStaticMethods &static_methods)
         : Stmt(QAST_STRUCT),
-          m_methods(methods),
-          m_static_methods(static_methods),
-          m_fields(fields),
+          m_comp_type(comp_type),
+          m_attributes(attributes),
+          m_name(name),
           m_template_parameters(params),
-          m_comp_type(t),
-          m_name(name) {}
+          m_names(names),
+          m_fields(fields),
+          m_methods(methods),
+          m_static_methods(static_methods) {}
 
+    let get_composite_type() const { return m_comp_type; }
+    let get_attributes() const { return m_attributes; }
     let get_name() const { return m_name; }
+    let get_template_params() const { return m_template_parameters; }
+    let get_names() const { return m_names; }
+    let get_fields() const { return m_fields; }
     let get_methods() const { return m_methods; }
     let get_static_methods() const { return m_static_methods; }
-    let get_fields() const { return m_fields; }
-    let get_composite_type() const { return m_comp_type; }
-    let get_template_params() const { return m_template_parameters; }
-
-    void set_name(SmallString name) { m_name = name; }
-    void set_composite_type(CompositeType t) { m_comp_type = t; }
-    auto &get_methods() { return m_methods; }
-    auto &get_static_methods() { return m_static_methods; }
-    auto &get_fields() { return m_fields; }
-    auto &get_template_params() { return m_template_parameters; }
   };
 
   constexpr bool Stmt::is_expr_stmt(npar_ty_t type) const {

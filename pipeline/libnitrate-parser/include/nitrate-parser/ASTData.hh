@@ -142,6 +142,7 @@ namespace npar {
   using StructDefFields = std::vector<StructField, Arena<StructField>>;
   using StructDefMethods = std::vector<FnDef *, Arena<FnDef *>>;
   using StructDefStaticMethods = std::vector<FnDef *, Arena<FnDef *>>;
+  using StructDefNames = std::vector<SmallString, Arena<SmallString>>;
 
   using FuncParam = std::tuple<SmallString, Type *, Expr *>;
   using FuncParams = std::vector<FuncParam, Arena<FuncParam>>;

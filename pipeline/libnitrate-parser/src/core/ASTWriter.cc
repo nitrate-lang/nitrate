@@ -1373,43 +1373,55 @@ void AST_Writer::visit(FnDef const& n) {
 }
 
 void AST_Writer::visit(StructDef const& n) {
-  begin_obj(8);
+  begin_obj(10);
 
   string("kind");
   string(n.getKindName());
 
   write_source_location(n);
 
-  string("name");
-  string(*n.get_name());
+  { /* Write composite type */
+    string("mode");
+    switch (n.get_composite_type()) {
+      case CompositeType::Region: {
+        string("region");
+        break;
+      }
 
-  string("mode");
-  switch (n.get_composite_type()) {
-    case CompositeType::Region: {
-      string("region");
-      break;
-    }
+      case CompositeType::Struct: {
+        string("struct");
+        break;
+      }
 
-    case CompositeType::Struct: {
-      string("struct");
-      break;
-    }
+      case CompositeType::Group: {
+        string("group");
+        break;
+      }
 
-    case CompositeType::Group: {
-      string("group");
-      break;
-    }
+      case CompositeType::Class: {
+        string("class");
+        break;
+      }
 
-    case CompositeType::Class: {
-      string("class");
-      break;
-    }
-
-    case CompositeType::Union: {
-      string("union");
-      break;
+      case CompositeType::Union: {
+        string("union");
+        break;
+      }
     }
   }
+
+  { /* Write attributes */
+    string("attrs");
+    let attrs = n.get_attributes();
+
+    begin_arr(attrs.size());
+    std::for_each(attrs.begin(), attrs.end(),
+                  [&](let attr) { attr->accept(*this); });
+    end_arr();
+  }
+
+  string("name");
+  string(*n.get_name());
 
   { /* Write template parameters */
     string("template");
@@ -1434,6 +1446,14 @@ void AST_Writer::visit(StructDef const& n) {
     } else {
       null();
     }
+  }
+
+  { /* Write names */
+    string("names");
+    let names = n.get_names();
+    begin_arr(names.size());
+    std::for_each(names.begin(), names.end(), [&](let name) { string(*name); });
+    end_arr();
   }
 
   { /* Write fields */

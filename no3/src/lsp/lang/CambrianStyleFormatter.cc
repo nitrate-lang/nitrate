@@ -1148,6 +1148,15 @@ void CambrianFormatter::visit(StructDef const& n) {
     }
   }
 
+  if (!n.get_attributes().empty()) {
+    line << "[";
+    iterate_except_last(
+        n.get_attributes().begin(), n.get_attributes().end(),
+        [&](let attr, size_t) { attr->accept(*this); },
+        [&](let) { line << ", "; });
+    line << "] ";
+  }
+
   line << " " << n.get_name();
   if (n.get_template_params().has_value()) {
     line << "<";
@@ -1165,6 +1174,13 @@ void CambrianFormatter::visit(StructDef const& n) {
         },
         [&](let) { line << ", "; });
     line << ">";
+  }
+
+  if (!n.get_names().empty()) {
+    line << ": ";
+    iterate_except_last(
+        n.get_names().begin(), n.get_names().end(),
+        [&](let name, size_t) { line << name; }, [&](let) { line << ", "; });
   }
 
   std::for_each(n.get_fields().begin(), n.get_fields().end(), [&](let field) {

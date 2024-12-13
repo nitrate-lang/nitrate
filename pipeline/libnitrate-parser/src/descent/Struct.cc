@@ -41,11 +41,6 @@
 
 using namespace npar;
 
-npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
-  /// TODO: Parse composite field
-  qcore_implement();
-}
-
 npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
   /// TODO: Parse struct
   qcore_implement();
