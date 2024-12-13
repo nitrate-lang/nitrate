@@ -34,9 +34,9 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Lexer.h>
-#include <nitrate-parser/Node.h>
 
 #include <algorithm>
+#include <nitrate-parser/AST.hh>
 #include <nitrate-parser/Writer.hh>
 
 using namespace npar;

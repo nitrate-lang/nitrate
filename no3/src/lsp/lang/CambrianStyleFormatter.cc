@@ -1,7 +1,7 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Lexer.h>
-#include <nitrate-parser/Node.h>
+#include <nitrate-parser/AST.hh>
 
 #include <lsp/lang/CambrianStyleFormatter.hh>
 #include <sstream>

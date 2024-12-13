@@ -32,9 +32,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-lexer/Token.h>
-#include <nitrate-parser/Node.h>
 
 #include <descent/Recurse.hh>
+#include <nitrate-parser/AST.hh>
 
 using namespace npar;
 

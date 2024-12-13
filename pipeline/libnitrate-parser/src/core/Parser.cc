@@ -33,7 +33,6 @@
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
-#include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
 
 #include <atomic>
@@ -41,6 +40,7 @@
 #include <cstring>
 #include <descent/Recurse.hh>
 #include <nitrate-core/Classes.hh>
+#include <nitrate-parser/AST.hh>
 #include <nitrate-parser/Reader.hh>
 #include <nitrate-parser/Writer.hh>
 #include <sstream>

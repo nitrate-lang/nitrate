@@ -38,13 +38,9 @@
 #error "This code requires c++"
 #endif
 
-#include <nitrate-core/Macro.h>
-#include <nitrate-lexer/Token.h>
-
-#include <cassert>
 #include <map>
 #include <nitrate-core/Classes.hh>
-#include <nitrate-parser/ASTTypes.hh>
+#include <nitrate-parser/ASTCommon.hh>
 #include <set>
 #include <tuple>
 #include <variant>
@@ -138,4 +134,4 @@ namespace npar {
                                  Arena<std::pair<SmallString, bool>>>;
 }  // namespace npar
 
-#endif  // __NITRATE_PARSER_ASTDATA_H__
+#endif

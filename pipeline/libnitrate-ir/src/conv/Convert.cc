@@ -34,7 +34,6 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-ir/IR.h>
-#include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
 
 #include <boost/multiprecision/cpp_dec_float.hpp>
@@ -48,6 +47,7 @@
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/Report.hh>
+#include <nitrate-parser/AST.hh>
 #include <stack>
 #include <string>
 #include <string_view>

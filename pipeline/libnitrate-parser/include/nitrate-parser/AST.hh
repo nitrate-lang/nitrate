@@ -31,39 +31,31 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <descent/Recurse.hh>
-#include <nitrate-parser/AST.hh>
+#ifndef __NITRATE_PARSER_AST_H__
+#define __NITRATE_PARSER_AST_H__
 
-using namespace npar;
+#ifndef __cplusplus
+#error "This code requires c++"
+#endif
 
-static Stmt *recurse_if_then(npar_t &S, qlex_t &rd) {
-  if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true);
-  } else {
-    return recurse_block(S, rd, true);
+#include <nitrate-parser/ASTBase.hh>
+#include <nitrate-parser/ASTExpr.hh>
+#include <nitrate-parser/ASTStmt.hh>
+#include <nitrate-parser/ASTType.hh>
+
+namespace npar {
+  template <typename T, typename... Args>
+  static inline T *make(Args &&...args) {
+    T *new_obj = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+
+    //  /// TODO: Cache nodes
+
+    return new_obj;
   }
-}
 
-static std::optional<Stmt *> recurse_if_else(npar_t &S, qlex_t &rd) {
-  if (next_if(qKElse)) {
-    if (next_if(qOpArrow)) {
-      return recurse_block(S, rd, false, true);
-    } else if (next_if(qKIf)) {
-      return recurse_if(S, rd);
-    } else {
-      return recurse_block(S, rd, true);
-    }
-  } else {
-    return std::nullopt;
-  }
-}
+  Stmt *mock_stmt(npar_ty_t expected);
+  Expr *mock_expr(npar_ty_t expected);
+  Type *mock_type();
+}  // namespace npar
 
-npar::Stmt *npar::recurse_if(npar_t &S, qlex_t &rd) {
-  let cond = recurse_expr(
-      S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
-
-  let then = recurse_if_then(S, rd);
-  let ele = recurse_if_else(S, rd);
-
-  return make<IfStmt>(cond, then, ele.value_or(nullptr));
-}
+#endif

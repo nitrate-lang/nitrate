@@ -35,7 +35,7 @@
 #define __NITRATE_PARSER_VISTOR_H__
 
 #include <cassert>
-#include <nitrate-parser/ASTTypes.hh>
+#include <nitrate-parser/ASTCommon.hh>
 
 namespace npar {
   class ASTVisitor {

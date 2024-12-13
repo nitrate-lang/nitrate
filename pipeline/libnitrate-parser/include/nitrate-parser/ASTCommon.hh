@@ -31,20 +31,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_ASTTYPES_H__
-#define __NITRATE_PARSER_ASTTYPES_H__
+#ifndef __NITRATE_PARSER_ASTCOMMON_H__
+#define __NITRATE_PARSER_ASTCOMMON_H__
 
 #ifndef __cplusplus
 #error "This code requires c++"
 #endif
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
-#include <nitrate-core/Memory.h>
-#include <nitrate-lexer/Token.h>
-
 #include <boost/flyweight.hpp>
-#include <cassert>
 #include <string>
 
 typedef enum npar_ty_t {
@@ -238,7 +232,9 @@ namespace npar {
   };
 
   enum class VarDeclType { Const, Var, Let };
+
   enum class CompositeType { Region, Struct, Group, Class, Union };
+
   enum class FuncPurity {
     IMPURE_THREAD_UNSAFE,
     IMPURE_THREAD_SAFE,
@@ -246,6 +242,7 @@ namespace npar {
     QUASIPURE,
     RETROPURE,
   };
+
   enum class SafetyMode {
     Unknown = 0,
     Safe = 1,
@@ -255,4 +252,4 @@ namespace npar {
   using SmallString = boost::flyweight<std::string>;
 }  // namespace npar
 
-#endif  // __NITRATE_PARSER_ASTTYPES_H__
+#endif

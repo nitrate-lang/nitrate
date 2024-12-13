@@ -36,9 +36,9 @@
 /// TODO: Cleanup this code; it's a mess from refactoring.
 
 #include <nitrate-lexer/Lexer.h>
-#include <nitrate-parser/Node.h>
 
 #include <descent/Recurse.hh>
+#include <nitrate-parser/AST.hh>
 
 bool npar::recurse_attributes(npar_t &S, qlex_t &rd,
                               std::set<Expr *> &attributes) {

@@ -1,5 +1,4 @@
 #include <nitrate-core/Error.h>
-#include <nitrate-parser/Node.h>
 #include <rapidjson/document.h>
 
 #include <cctype>
@@ -10,6 +9,7 @@
 #include <lsp/route/RoutesList.hh>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-lexer/Classes.hh>
+#include <nitrate-parser/AST.hh>
 #include <nitrate-parser/Classes.hh>
 #include <sstream>
 #include <string>

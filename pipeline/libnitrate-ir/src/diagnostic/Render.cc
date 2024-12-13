@@ -33,13 +33,13 @@
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
-#include <nitrate-parser/Node.h>
 
 #include <core/Config.hh>
 #include <core/Diagnostic.hh>
 #include <cstdint>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
+#include <nitrate-parser/AST.hh>
 #include <sstream>
 
 #include "nitrate-ir/Report.hh"

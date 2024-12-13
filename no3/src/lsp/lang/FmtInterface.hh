@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nitrate-parser/Node.h>
+#include <nitrate-parser/AST.hh>
 
 namespace lsp::fmt {
   class ICodeFormatter {

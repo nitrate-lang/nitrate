@@ -33,12 +33,12 @@
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
-#include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
 
 #include <core/Hash.hh>
 #include <cstddef>
 #include <cstring>
+#include <nitrate-parser/AST.hh>
 #include <nitrate-parser/Writer.hh>
 
 using namespace npar;

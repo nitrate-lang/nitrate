@@ -38,12 +38,13 @@
 #error "This code requires c++"
 #endif
 
+#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Token.h>
 
-#include <cassert>
 #include <iostream>
-#include <nitrate-parser/ASTTypes.hh>
+#include <nitrate-parser/ASTCommon.hh>
+#include <nitrate-parser/ASTData.hh>
 #include <nitrate-parser/Visitor.hh>
 #include <sstream>
 
@@ -692,4 +693,83 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) {
   return names[type];
 }
 
-#endif  // __NITRATE_PARSER_ASTBASE_H__
+namespace npar {
+  class Stmt : public npar_node_t {
+  public:
+    constexpr Stmt(npar_ty_t ty) : npar_node_t(ty){};
+
+    constexpr bool is_expr_stmt(npar_ty_t type) const;
+  };
+
+  class Type : public npar_node_t {
+    std::pair<Expr *, Expr *> m_range;
+    Expr *m_width;
+
+  public:
+    constexpr Type(npar_ty_t ty)
+        : npar_node_t(ty), m_range({nullptr, nullptr}), m_width(nullptr) {}
+
+    constexpr bool is_primitive() const {
+      switch (getKind()) {
+        case QAST_U1:
+        case QAST_U8:
+        case QAST_U16:
+        case QAST_U32:
+        case QAST_U64:
+        case QAST_U128:
+        case QAST_I8:
+        case QAST_I16:
+        case QAST_I32:
+        case QAST_I64:
+        case QAST_I128:
+        case QAST_F16:
+        case QAST_F32:
+        case QAST_F64:
+        case QAST_F128:
+        case QAST_VOID:
+          return true;
+        default:
+          return false;
+      }
+    }
+    constexpr bool is_array() const { return getKind() == QAST_ARRAY; };
+    constexpr bool is_tuple() const { return getKind() == QAST_TUPLE; }
+    constexpr bool is_pointer() const { return getKind() == QAST_PTR; }
+    constexpr bool is_function() const { return getKind() == QAST_FUNCTOR; }
+    constexpr bool is_composite() const { return is_array() || is_tuple(); }
+    constexpr bool is_numeric() const {
+      return getKind() >= QAST_U1 && getKind() <= QAST_F128;
+    }
+    constexpr bool is_integral() const {
+      return getKind() >= QAST_U1 && getKind() <= QAST_I128;
+    }
+    constexpr bool is_floating_point() const {
+      return getKind() >= QAST_F16 && getKind() <= QAST_F128;
+    }
+    constexpr bool is_signed() const {
+      return getKind() >= QAST_I8 && getKind() <= QAST_I128;
+    }
+    constexpr bool is_unsigned() const {
+      return getKind() >= QAST_U1 && getKind() <= QAST_U128;
+    }
+    constexpr bool is_void() const { return getKind() == QAST_VOID; }
+    constexpr bool is_bool() const { return getKind() == QAST_U1; }
+    constexpr bool is_ref() const { return getKind() == QAST_REF; }
+    bool is_ptr_to(Type *type) const;
+
+    constexpr let get_width() const { return m_width; }
+    constexpr let get_range() const { return m_range; }
+
+    constexpr void set_range(Expr *start, Expr *end) { m_range = {start, end}; }
+    constexpr void set_width(Expr *width) { m_width = width; }
+  };
+
+  class Expr : public npar_node_t {
+  public:
+    constexpr Expr(npar_ty_t ty) : npar_node_t(ty) {}
+
+    constexpr bool is_stmt_expr(npar_ty_t type) const;
+  };
+}  // namespace npar
+
+#endif

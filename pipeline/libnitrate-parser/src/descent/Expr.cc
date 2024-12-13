@@ -35,10 +35,9 @@
 
 /// TODO: Source location
 
-#include <nitrate-parser/Node.h>
-
 #include <cstddef>
 #include <descent/Recurse.hh>
+#include <nitrate-parser/AST.hh>
 #include <sstream>
 #include <stack>
 
