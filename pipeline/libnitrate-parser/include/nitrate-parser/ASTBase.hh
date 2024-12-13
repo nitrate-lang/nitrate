@@ -46,7 +46,6 @@
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTData.hh>
 #include <nitrate-parser/ASTVisitor.hh>
-#include <sstream>
 
 struct npar_node_t {
 private:
@@ -568,23 +567,7 @@ public:
 
   constexpr bool is(npar_ty_t type) const { return type == getKind(); }
 
-  bool isSame(const npar_node_t *o) const {
-    if (this == o) {
-      return true;
-    }
-
-    if (getKind() != o->getKind()) {
-      return false;
-    }
-
-    /// FIXME: Write a more performant comparison
-
-    std::stringstream ss1, ss2;
-    dump(ss1);
-    o->dump(ss2);
-
-    return ss1.str() == ss2.str();
-  }
+  bool isSame(const npar_node_t *o) const;
 
   uint64_t hash64() const;
 

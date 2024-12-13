@@ -40,6 +40,9 @@
 #include <cstring>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTWriter.hh>
+#include <sstream>
+
+#include "nitrate-parser/ASTBase.hh"
 
 using namespace npar;
 
@@ -75,6 +78,21 @@ CPP_EXPORT std::ostream &npar_node_t::dump(std::ostream &os,
   const_cast<npar_node_t *>(this)->accept(writer);
 
   return os;
+}
+
+CPP_EXPORT bool npar_node_t::isSame(const npar_node_t *o) const {
+  if (this == o) {
+    return true;
+  }
+
+  if (getKind() != o->getKind()) {
+    return false;
+  }
+
+  std::stringstream ss1, ss2;
+  AST_MsgPackWriter writer1(ss1, false), writer2(ss2, false);
+
+  return ss1.str() == ss2.str();
 }
 
 CPP_EXPORT uint64_t npar_node_t::hash64() const {

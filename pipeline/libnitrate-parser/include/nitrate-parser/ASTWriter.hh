@@ -181,7 +181,7 @@ namespace npar {
     void end_arr_impl();
 
   public:
-    AST_JsonWriter(std::ostream& os)
+    AST_JsonWriter(std::ostream& os, bool include_source_location = true)
         : AST_Writer(
               std::bind(&AST_JsonWriter::str_impl, this, std::placeholders::_1),
               std::bind(&AST_JsonWriter::uint_impl, this,
@@ -196,7 +196,8 @@ namespace npar {
               std::bind(&AST_JsonWriter::end_obj_impl, this),
               std::bind(&AST_JsonWriter::begin_arr_impl, this,
                         std::placeholders::_1),
-              std::bind(&AST_JsonWriter::end_arr_impl, this)),
+              std::bind(&AST_JsonWriter::end_arr_impl, this),
+              include_source_location),
           m_os(os) {
       m_comma.push(false);
       m_count.push(0);
@@ -218,7 +219,7 @@ namespace npar {
     void end_arr_impl();
 
   public:
-    AST_MsgPackWriter(std::ostream& os)
+    AST_MsgPackWriter(std::ostream& os, bool include_source_location = true)
         : AST_Writer(std::bind(&AST_MsgPackWriter::str_impl, this,
                                std::placeholders::_1),
                      std::bind(&AST_MsgPackWriter::uint_impl, this,
@@ -233,7 +234,8 @@ namespace npar {
                      std::bind(&AST_MsgPackWriter::end_obj_impl, this),
                      std::bind(&AST_MsgPackWriter::begin_arr_impl, this,
                                std::placeholders::_1),
-                     std::bind(&AST_MsgPackWriter::end_arr_impl, this)),
+                     std::bind(&AST_MsgPackWriter::end_arr_impl, this),
+                     include_source_location),
           m_os(os) {}
     virtual ~AST_MsgPackWriter() = default;
   };
