@@ -152,8 +152,7 @@ typedef enum npar_ty_t {
   QAST_BLOCK = 85,        /* Block statement */
   QAST_EXPORT = 86,       /* Export statement */
   QAST_VAR = 87,          /* Variable declaration */
-  QAST_FUNCTION_DECL,     /* Function declaration */
-  QAST_FUNCTION = 89,     /* Function definition */
+  QAST_FUNCTION = 88,     /* Function definition */
 
   QAST__STMT_FIRST = QAST_IF,
   QAST__STMT_LAST = QAST_FUNCTION,
@@ -427,10 +426,6 @@ public:
         v.visit(*as<TypedefStmt>());
         break;
       }
-      case QAST_FUNCTION_DECL: {
-        v.visit(*as<FnDecl>());
-        break;
-      }
       case QAST_STRUCT: {
         v.visit(*as<StructDef>());
         break;
@@ -628,8 +623,6 @@ public:
       return QAST_TEMPLATE;
     } else if constexpr (std::is_same_v<T, TypedefStmt>) {
       return QAST_TYPEDEF;
-    } else if constexpr (std::is_same_v<T, FnDecl>) {
-      return QAST_FUNCTION_DECL;
     } else if constexpr (std::is_same_v<T, StructDef>) {
       return QAST_STRUCT;
     } else if constexpr (std::is_same_v<T, EnumDef>) {
@@ -1651,52 +1644,32 @@ namespace npar {
     let get_type() const { return m_type; }
   };
 
-  class FnDecl : public Stmt {
-    std::optional<TemplateParameters> m_template_parameters;
-    SmallString m_name;
-    FuncTy *m_type;
-
-  public:
-    FnDecl(SmallString name, FuncTy *type,
-           std::optional<TemplateParameters> params = std::nullopt)
-        : Stmt(QAST_FUNCTION_DECL),
-          m_template_parameters(params),
-          m_name(name),
-          m_type(type) {}
-
-    let get_name() const { return m_name; }
-    let get_type() const { return m_type; }
-    let get_template_params() const { return m_template_parameters; }
-
-    void set_type(FuncTy *type) { m_type = type; }
-    void set_name(SmallString name) { m_name = name; }
-    auto &get_template_params() { return m_template_parameters; }
-  };
-
   typedef std::vector<std::pair<SmallString, bool>,
                       Arena<std::pair<SmallString, bool>>>
       FnCaptures;
 
   class FnDef : public Stmt {
     FnCaptures m_captures;
-    std::optional<TemplateParameters> m_template_parameters;
     SmallString m_name;
+    std::optional<TemplateParameters> m_template_parameters;
     FuncTy *m_type;
-    Stmt *m_body;
     Expr *m_precond;
     Expr *m_postcond;
+    std::optional<Stmt *> m_body;
 
   public:
-    FnDef(FnDecl *decl, Stmt *body, Expr *precond, Expr *postcond,
-          FnCaptures captures = {})
+    FnDef(SmallString name, FuncTy *type, const FnCaptures &captures = {},
+          std::optional<TemplateParameters> params = std::nullopt,
+          Expr *precond = nullptr, Expr *postcond = nullptr,
+          std::optional<Stmt *> body = std::nullopt)
         : Stmt(QAST_FUNCTION),
           m_captures(captures),
-          m_template_parameters(decl->get_template_params()),
-          m_name(decl->get_name()),
-          m_type(decl->get_type()),
-          m_body(body),
+          m_name(name),
+          m_template_parameters(params),
+          m_type(type),
           m_precond(precond),
-          m_postcond(postcond) {}
+          m_postcond(postcond),
+          m_body(body) {}
 
     let get_captures() const { return m_captures; }
     let get_name() const { return m_name; }
@@ -1706,9 +1679,15 @@ namespace npar {
     let get_type() const { return m_type; }
     let get_template_params() const { return m_template_parameters; }
 
-    void set_body(Stmt *body) { m_body = body; }
+    bool is_decl() const { return !m_body.has_value(); }
+    bool is_def() const { return m_body.has_value(); }
+
+    void set_body(std::optional<Stmt *> body) { m_body = body; }
     void set_precond(Expr *precond) { m_precond = precond; }
     void set_postcond(Expr *postcond) { m_postcond = postcond; }
+    void set_name(SmallString name) { m_name = name; }
+    void set_type(FuncTy *type) { m_type = type; }
+    void set_captures(FnCaptures captures) { m_captures = captures; }
 
     std::optional<TemplateParameters> &get_template_params() {
       return m_template_parameters;
@@ -1718,8 +1697,8 @@ namespace npar {
   enum class CompositeType { Region, Struct, Group, Class, Union };
 
   typedef std::vector<Stmt *, Arena<Stmt *>> StructDefFields;
-  typedef std::vector<FnDecl *, Arena<FnDecl *>> StructDefMethods;
-  typedef std::vector<FnDecl *, Arena<FnDecl *>> StructDefStaticMethods;
+  typedef std::vector<FnDef *, Arena<FnDef *>> StructDefMethods;
+  typedef std::vector<FnDef *, Arena<FnDef *>> StructDefStaticMethods;
 
   class StructDef : public Stmt {
     StructDefMethods m_methods;
@@ -1829,7 +1808,6 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) {
     R[QAST_INFER] = "Infer";
     R[QAST_TEMPLATE] = "Templ";
     R[QAST_TYPEDEF] = "Typedef";
-    R[QAST_FUNCTION_DECL] = "FnDecl";
     R[QAST_STRUCT] = "Struct";
     R[QAST_ENUM] = "Enum";
     R[QAST_FUNCTION] = "FnDef";
@@ -2491,19 +2469,6 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       (void)them;
 
       /// TODO: Implement check Typedef
-      qcore_implement();
-
-      return true;
-    }
-
-    case QAST_FUNCTION_DECL: {
-      let us = as<FnDecl>();
-      let them = o->as<FnDecl>();
-
-      (void)us;
-      (void)them;
-
-      /// TODO: Implement check FnDecl
       qcore_implement();
 
       return true;

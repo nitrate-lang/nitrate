@@ -110,15 +110,13 @@ static Type *recurse_type_metadata(npar_t &S, qlex_t &rd, Type *base) {
 static Type *recurse_function_type(npar_t &S, qlex_t &rd) {
   let fn = recurse_function(S, rd);
 
-  if (!fn->is<FnDecl>()) {
+  if (!fn->is<FnDef>() || !fn->as<FnDef>()->is_decl()) {
     diagnostic << current()
                << "Expected a function declaration but got something else";
     return mock_type();
   }
 
-  let type = fn->as<FnDecl>()->get_type();
-
-  return type;
+  return fn->as<FnDef>()->get_type();
 }
 
 static Type *recurse_opaque_type(qlex_t &rd) {

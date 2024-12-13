@@ -818,11 +818,11 @@ void CambrianFormatter::visit(Block const& n) {
   }
 
   static const std::unordered_set<npar_ty_t> extra_seperation = {
-      QAST_FUNCTION_DECL, QAST_STRUCT, QAST_ENUM,  QAST_FUNCTION,
-      QAST_SCOPE,         QAST_EXPORT, QAST_BLOCK,
+      QAST_STRUCT,     QAST_ENUM,    QAST_FUNCTION,
+      QAST_SCOPE,      QAST_EXPORT,  QAST_BLOCK,
 
-      QAST_INLINE_ASM,    QAST_IF,     QAST_WHILE, QAST_FOR,
-      QAST_FOREACH,       QAST_SWITCH,
+      QAST_INLINE_ASM, QAST_IF,      QAST_WHILE,
+      QAST_FOR,        QAST_FOREACH, QAST_SWITCH,
   };
 
   if (!isRootBlock && n.get_items().empty()) {
@@ -1033,88 +1033,6 @@ void CambrianFormatter::visit(TypedefStmt const& n) {
   line << ";";
 }
 
-void CambrianFormatter::visit(FnDecl const& n) {
-  line << "fn";
-
-  switch (n.get_type()->get_purity()) {
-    case FuncPurity::IMPURE_THREAD_UNSAFE: {
-      line << " impure";
-      break;
-    }
-
-    case FuncPurity::IMPURE_THREAD_SAFE: {
-      line << " impure tsafe";
-      break;
-    }
-
-    case FuncPurity::PURE: {
-      line << " pure";
-      break;
-    }
-
-    case FuncPurity::QUASIPURE: {
-      line << " quasipure";
-      break;
-    }
-
-    case FuncPurity::RETROPURE: {
-      line << " retropure";
-      break;
-    }
-  }
-
-  if (n.get_type()->is_foreign()) {
-    line << " foreign";
-  }
-
-  line << " " << n.get_name();
-
-  if (n.get_template_params().has_value()) {
-    line << "<";
-    iterate_except_last(
-        n.get_template_params().value().begin(),
-        n.get_template_params().value().end(),
-        [&](let param, size_t) {
-          line << std::get<0>(param) << ": ";
-          std::get<1>(param)->accept(*this);
-          let val = std::get<2>(param);
-          if (val) {
-            line << " = ";
-            val->accept(*this);
-          }
-        },
-        [&](let) { line << ", "; });
-    line << ">";
-  }
-
-  line << "(";
-  iterate_except_last(
-      n.get_type()->get_params().begin(), n.get_type()->get_params().end(),
-      [&](let param, size_t) {
-        let name = std::get<0>(param);
-        let type = std::get<1>(param);
-        let def = std::get<2>(param);
-
-        line << name << ": ";
-        type->accept(*this);
-        if (def) {
-          line << " = ";
-          def->accept(*this);
-        }
-      },
-      [&](let) { line << ", "; });
-  line << ")";
-
-  if (n.get_type()->is_noreturn()) {
-    line << ": null";
-  } else {
-    line << ": ";
-    n.get_type()->get_return_ty()->accept(*this);
-  }
-
-  line << ";";
-}
-
 void CambrianFormatter::visit(FnDef const& n) {
   line << "fn";
 
@@ -1194,8 +1112,12 @@ void CambrianFormatter::visit(FnDef const& n) {
     n.get_type()->get_return_ty()->accept(*this);
   }
 
-  line << " ";
-  n.get_body()->accept(*this);
+  if (n.is_decl()) {
+    line << ";";
+  } else {
+    line << " ";
+    n.get_body().value()->accept(*this);
+  }
 }
 
 void CambrianFormatter::visit(StructField const& n) {

@@ -105,7 +105,6 @@ namespace npar {
   class CaseStmt;
   class SwitchStmt;
   class TypedefStmt;
-  class FnDecl;
   class FnDef;
   class StructField;
   class StructDef;
@@ -184,7 +183,6 @@ namespace npar {
     virtual void visit(CaseStmt const &n) = 0;
     virtual void visit(SwitchStmt const &n) = 0;
     virtual void visit(TypedefStmt const &n) = 0;
-    virtual void visit(FnDecl const &n) = 0;
     virtual void visit(FnDef const &n) = 0;
     virtual void visit(StructField const &n) = 0;
     virtual void visit(StructDef const &n) = 0;

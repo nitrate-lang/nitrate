@@ -1298,48 +1298,6 @@ void AST_Writer::visit(TypedefStmt const& n) {
   end_obj();
 }
 
-void AST_Writer::visit(FnDecl const& n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n.getKindName());
-
-  write_source_location(n);
-
-  string("name");
-  string(*n.get_name());
-
-  string("type");
-  n.get_type()->accept(*this);
-
-  { /* Write parameters */
-    string("template");
-
-    if (let params = n.get_template_params()) {
-      begin_arr(params->size());
-      std::for_each(params->begin(), params->end(), [&](let param) {
-        begin_obj(3);
-
-        string("name");
-        string(*std::get<0>(param));
-
-        string("type");
-        std::get<1>(param)->accept(*this);
-
-        string("default");
-        std::get<2>(param) ? std::get<2>(param)->accept(*this) : null();
-
-        end_obj();
-      });
-      end_arr();
-    } else {
-      null();
-    }
-  }
-
-  end_obj();
-}
-
 void AST_Writer::visit(FnDef const& n) {
   begin_obj(9);
 
@@ -1405,7 +1363,11 @@ void AST_Writer::visit(FnDef const& n) {
   n.get_postcond() ? n.get_postcond()->accept(*this) : null();
 
   string("body");
-  n.get_body()->accept(*this);
+  if (n.get_body().has_value()) {
+    n.get_body().value()->accept(*this);
+  } else {
+    null();
+  }
 
   end_obj();
 }

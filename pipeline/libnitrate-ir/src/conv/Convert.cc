@@ -1318,72 +1318,11 @@ static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
   return std::vector<Expr *>();
 }
 
-static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G,
-                            npar::FnDecl *n) {
-  npar::FuncTy *func_ty = n->get_type();
-  const npar::FuncParams &params = func_ty->get_params();
-
-  std::vector<NRBuilder::FnParam> parameters(params.size());
-
-  for (size_t i = 0; i < params.size(); i++) {
-    const auto &param = params[i];
-    NRBuilder::FnParam p;
-
-    { /* Set function parameter name */
-      std::get<0>(p) = b.intern(*std::get<0>(param));
-    }
-
-    { /* Set function parameter type */
-      auto tmp = next_one(std::get<1>(param));
-      if (!tmp.has_value()) {
-        G->report(CompilerError, nr::IC::Error,
-                  "Failed to convert function declaration parameter type");
-        return std::nullopt;
-      }
-
-      std::get<1>(p) = tmp.value()->asType();
-    }
-
-    { /* Set function parameter default value if it exists */
-      if (std::get<2>(param) != nullptr) {
-        auto val = next_one(std::get<2>(param));
-        if (!val.has_value()) {
-          G->report(
-              CompilerError, nr::IC::Error,
-              "Failed to convert function declaration parameter default value");
-          return std::nullopt;
-        }
-
-        std::get<2>(p) = val.value();
-      }
-    }
-
-    parameters[i] = std::move(p);
-  }
-
-  auto ret_type = next_one(func_ty->get_return_ty());
-  if (!ret_type.has_value()) {
-    G->report(CompilerError, nr::IC::Error,
-              "Failed to convert function declaration return type");
-    return std::nullopt;
-  }
-
-  auto props = convert_purity(func_ty->get_purity());
-
-  Fn *fndecl = b.createFunctionDeclaration(
-      b.intern(s.join_scope(*n->get_name())), parameters,
-      ret_type.value()->asType(), func_ty->is_variadic(), Vis::Pub, props.first,
-      props.second, func_ty->is_foreign());
-
-  fndecl->setAbiTag(s.abi_mode);
-
-  return fndecl;
-}
-
 static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G, npar::Block *n,
                            bool insert_scope_id);
 
-static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
+static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
+                                         npar::FnDef *n) {
   bool failed = false;
 
   {
@@ -1481,14 +1420,15 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
 
     { /* Function body */
 
-      if (!n->get_body()->is(QAST_BLOCK)) {
+      if (!n->get_body().value()->is(QAST_BLOCK)) {
         return std::nullopt;
       }
 
       std::string old_ns = s.ns_prefix;
       s.ns_prefix = name;
 
-      auto body = nrgen_block(b, s, G, n->get_body()->as<npar::Block>(), false);
+      auto body =
+          nrgen_block(b, s, G, n->get_body().value()->as<npar::Block>(), false);
       if (!body.has_value()) {
         G->report(CompilerError, nr::IC::Error,
                   "Failed to convert function body", n->get_pos());
@@ -1501,6 +1441,80 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
     }
 
     return fndef;
+  }
+}
+
+static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
+                                          npar::FnDef *n) {
+  npar::FuncTy *func_ty = n->get_type();
+  const npar::FuncParams &params = func_ty->get_params();
+
+  std::vector<NRBuilder::FnParam> parameters(params.size());
+
+  for (size_t i = 0; i < params.size(); i++) {
+    const auto &param = params[i];
+    NRBuilder::FnParam p;
+
+    { /* Set function parameter name */
+      std::get<0>(p) = b.intern(*std::get<0>(param));
+    }
+
+    { /* Set function parameter type */
+      auto tmp = next_one(std::get<1>(param));
+      if (!tmp.has_value()) {
+        G->report(CompilerError, nr::IC::Error,
+                  "Failed to convert function declaration parameter type");
+        return std::nullopt;
+      }
+
+      std::get<1>(p) = tmp.value()->asType();
+    }
+
+    { /* Set function parameter default value if it exists */
+      if (std::get<2>(param) != nullptr) {
+        auto val = next_one(std::get<2>(param));
+        if (!val.has_value()) {
+          G->report(
+              CompilerError, nr::IC::Error,
+              "Failed to convert function declaration parameter default value");
+          return std::nullopt;
+        }
+
+        std::get<2>(p) = val.value();
+      }
+    }
+
+    parameters[i] = std::move(p);
+  }
+
+  auto ret_type = next_one(func_ty->get_return_ty());
+  if (!ret_type.has_value()) {
+    G->report(CompilerError, nr::IC::Error,
+              "Failed to convert function declaration return type");
+    return std::nullopt;
+  }
+
+  auto props = convert_purity(func_ty->get_purity());
+
+  Fn *fndecl = b.createFunctionDeclaration(
+      b.intern(s.join_scope(*n->get_name())), parameters,
+      ret_type.value()->asType(), func_ty->is_variadic(), Vis::Pub, props.first,
+      props.second, func_ty->is_foreign());
+
+  fndecl->setAbiTag(s.abi_mode);
+
+  return fndecl;
+}
+
+static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
+  if (n->is_decl()) {
+    return nrgen_function_declaration(b, s, G, n);
+  } else if (n->is_def()) {
+    return nrgen_function_definition(b, s, G, n);
+  } else {
+    G->report(CompilerError, IC::Error, "Failed to lower function",
+              n->get_pos());
+    return std::nullopt;
   }
 }
 
@@ -2076,10 +2090,6 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
 
     case QAST_TEMPLATE:
       out = nrgen_templ_ty(b, s, G, n->as<npar::TemplType>());
-      break;
-
-    case QAST_FUNCTION_DECL:
-      out = nrgen_fndecl(b, s, G, n->as<npar::FnDecl>());
       break;
 
     case QAST_FUNCTION:

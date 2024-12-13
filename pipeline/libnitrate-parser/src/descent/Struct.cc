@@ -155,7 +155,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
   StructDefMethods methods;
   StructDefStaticMethods static_methods;
   Stmt *method = nullptr;
-  FnDecl *fdecl = nullptr;
+  FnDef *fdecl = nullptr;
   FuncTy *ft = nullptr;
   Stmt *field = nullptr;
   StructDef *sdef = make<StructDef>(SaveString(""));
@@ -238,13 +238,13 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
                           make<RefTy>(make<NamedTy>(SaveString(name))),
                           nullptr};
 
-        if (method->is<FnDecl>()) {
-          fdecl = static_cast<FnDecl *>(method);
+        if (method->is<FnDef>()) {
+          fdecl = static_cast<FnDef *>(method);
           ft = fdecl->get_type();
           ft->get_params().insert(ft->get_params().begin(), fn_this);
           fdecl->set_type(ft);
         } else {
-          fdecl = static_cast<FnDecl *>(method);
+          fdecl = static_cast<FnDef *>(method);
           ft = fdecl->get_type();
           ft->get_params().insert(ft->get_params().begin(), fn_this);
           fdecl->set_type(ft);
@@ -252,7 +252,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       }
 
       /* Add the method to the list */
-      methods.push_back(static_cast<FnDecl *>(method));
+      methods.push_back(static_cast<FnDef *>(method));
     } else if (tok.is<qKStatic>()) {
       next();
       tok = next();
@@ -269,7 +269,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       method = recurse_function(S, rd);
 
       /* Add the method to the list */
-      static_methods.push_back(static_cast<FnDecl *>(method));
+      static_methods.push_back(static_cast<FnDef *>(method));
     } else {
       /* Parse a normal field */
       field = recurse_composite_field(S, rd);

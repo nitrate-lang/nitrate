@@ -671,79 +671,6 @@ void recurse(npar_node_t* C) {
       break;
     }
 
-    case QAST_FUNCTION_DECL: {
-      static const std::unordered_map<FuncPurity, std::string> purity_str = {
-          {FuncPurity::IMPURE_THREAD_UNSAFE, ""},
-          {FuncPurity::IMPURE_THREAD_SAFE, " tsafe"},
-          {FuncPurity::PURE, " pure"},
-          {FuncPurity::QUASIPURE, " quasipure"},
-          {FuncPurity::RETROPURE, " retropure"}};
-
-      FnDecl* N = C->as<FnDecl>();
-      FuncTy* F = N->get_type();
-      if (!F) {
-        break;
-      }
-
-      std::string props;
-      props += purity_str.at(F->get_purity());
-
-      if (F->is_()) {
-        props += " ";
-      }
-
-      if (F->is_foreign()) {
-        props += " foreign";
-      }
-
-      if (!N->get_name().empty()) {
-        props += " " + N->get_name();
-      }
-
-      line << "fn";
-      if (!props.empty()) {
-        line << std::move(props);
-      }
-
-      line << "(";
-      for (auto it = F->get_params().begin(); it != F->get_params().end();
-           it++) {
-        if (std::get<0>(*it) == "this") {
-          continue;
-        }
-
-        line << std::get<0>(*it);
-        auto param_ty = std::get<1>(*it);
-        if ((param_ty && param_ty->getKind() != QAST_INFER) ||
-            std::get<2>(*it)) {
-          line << ": ";
-          recurse(std::get<1>(*it));
-          if (std::get<2>(*it)) {
-            line << " = ";
-            recurse(std::get<2>(*it));
-          }
-        }
-
-        if (std::next(it) != F->get_params().end() || F->is_variadic()) {
-          line << ", ";
-        }
-      }
-
-      if (F->is_variadic()) {
-        line << "...";
-      }
-
-      line << ")";
-
-      if (F->get_return_ty() &&
-          F->get_return_ty()->getKind() != QAST_VOID) {
-        line << ": ";
-        recurse(F->get_return_ty());
-      }
-
-      break;
-    }
-
     case QAST_STRUCT: {
       line << "struct";
       put_composite_defintion(C->as<StructDef>());
@@ -925,9 +852,7 @@ void recurse(npar_node_t* C) {
       //      it != N->get_body()->get_items().end(); it++) {
       //   npar_ty_t ty = (*it)->getKind();
 
-      //   if (ty == QAST_FUNCTION_DECL) {
-      //     imports.push_back(*it);
-      //   } else if (ty == QAST_FUNCTION) {
+      //   if (ty == QAST_FUNCTION) {
       //     exports.push_back(*it);
       //   } else if (ty == QAST_VAR) {
       //     VarDecl* V = (*it)->as<VarDecl>();
@@ -1037,7 +962,7 @@ void recurse(npar_node_t* C) {
       };
 
       static const std::unordered_set<npar_ty_t> double_sep = {
-          QAST_FUNCTION_DECL, QAST_STRUCT, QAST_ENUM,  QAST_FUNCTION,
+          QAST_STRUCT, QAST_ENUM,  QAST_FUNCTION,
           QAST_SCOPE,  QAST_EXPORT, QAST_BLOCK,
       };
 

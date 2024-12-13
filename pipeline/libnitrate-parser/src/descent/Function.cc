@@ -232,7 +232,7 @@ static FunctionProperties read_function_properties(qlex_t &rd) {
   return props;
 }
 
-static bool recurse_captures_and_name(qlex_t &rd, FnDecl *fndecl,
+static bool recurse_captures_and_name(qlex_t &rd, FnDef *fndecl,
                                       FnCaptures &captures) {
   qlex_tok_t c = peek();
 
@@ -472,7 +472,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, npar_t &S,
 }
 
 Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
-  FnDecl *fndecl = make<FnDecl>(SaveString(""), nullptr);
+  FnDef *fndecl = make<FnDef>(SaveString(""), nullptr);
   FuncTy *ftype = make<FuncTy>();
   Type *ret_type = nullptr;
   FnCaptures captures;
@@ -570,9 +570,10 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
         next();
       }
 
-      FnDef *fndef = make<FnDef>(fndecl, fnbody, nullptr, nullptr, captures);
+      fndecl->set_body(fnbody);
+      fndecl->set_captures(captures);
 
-      return fndef;
+      return fndecl;
     }
   }
 
@@ -592,9 +593,12 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
       ftype->set_return_ty(make<VoidTy>());
     }
 
-    FnDef *fndef = make<FnDef>(fndecl, fnbody, req_in, req_out, captures);
+    fndecl->set_body(fnbody);
+    fndecl->set_precond(req_in);
+    fndecl->set_postcond(req_out);
+    fndecl->set_captures(captures);
 
-    return fndef;
+    return fndecl;
   }
 
   if (ret_type) {
