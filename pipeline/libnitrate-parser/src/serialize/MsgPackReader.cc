@@ -34,7 +34,7 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 
-#include <nitrate-parser/Reader.hh>
+#include <nitrate-parser/ASTReader.hh>
 
 using namespace npar;
 

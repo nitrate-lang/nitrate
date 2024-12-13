@@ -38,7 +38,7 @@
 
 #include <cstdint>
 #include <istream>
-#include <nitrate-parser/Visitor.hh>
+#include <nitrate-parser/ASTVisitor.hh>
 #include <optional>
 #include <stack>
 

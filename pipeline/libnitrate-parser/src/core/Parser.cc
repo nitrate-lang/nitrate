@@ -41,8 +41,8 @@
 #include <descent/Recurse.hh>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-parser/AST.hh>
-#include <nitrate-parser/Reader.hh>
-#include <nitrate-parser/Writer.hh>
+#include <nitrate-parser/ASTReader.hh>
+#include <nitrate-parser/ASTWriter.hh>
 #include <sstream>
 
 using namespace npar;

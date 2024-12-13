@@ -36,7 +36,7 @@
 
 #include <cassert>
 #include <cstdint>
-#include <nitrate-parser/Writer.hh>
+#include <nitrate-parser/ASTWriter.hh>
 
 namespace npar {
   class CPP_EXPORT AST_Hash64 : public AST_Writer {

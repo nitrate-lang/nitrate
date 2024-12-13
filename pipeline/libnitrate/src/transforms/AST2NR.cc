@@ -42,7 +42,7 @@
 #include <nitrate-core/Classes.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/Writer.hh>
-#include <nitrate-parser/Reader.hh>
+#include <nitrate-parser/ASTReader.hh>
 #include <string_view>
 #include <unordered_set>
 

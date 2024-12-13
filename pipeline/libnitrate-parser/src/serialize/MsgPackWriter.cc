@@ -34,7 +34,7 @@
 #include <nitrate-core/Error.h>
 
 #include <bit>
-#include <nitrate-parser/Writer.hh>
+#include <nitrate-parser/ASTWriter.hh>
 
 using namespace npar;
 

@@ -45,7 +45,7 @@
 #include <iostream>
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTData.hh>
-#include <nitrate-parser/Visitor.hh>
+#include <nitrate-parser/ASTVisitor.hh>
 #include <sstream>
 
 struct npar_node_t {
