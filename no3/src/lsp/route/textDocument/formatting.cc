@@ -110,12 +110,10 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
 
   npar_node_t* root = nullptr;
   if (!npar_do(parser.get(), &root)) {
-    resp.error(lsp::ErrorCodes::InternalError, "Failed to parse document");
     return;
   }
 
   if (!npar_check(parser.get(), root)) {
-    resp.error(lsp::ErrorCodes::InternalError, "Failed to parse document");
     return;
   }
 
