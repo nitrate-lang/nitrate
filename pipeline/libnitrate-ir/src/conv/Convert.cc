@@ -509,7 +509,7 @@ static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &,
 static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
                              npar::BinExpr *n) {
   if (n->get_lhs() && n->get_rhs() && n->get_op() == qOpAs &&
-      n->get_rhs()->is(QAST_TYPE_EXPR)) {
+      n->get_rhs()->is(QAST_TEXPR)) {
     npar::Type *type = n->get_rhs()->as<npar::TypeExpr>()->get_type();
 
     bool is_integer_ty = type->is_integral();
@@ -522,13 +522,13 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
       if (is_integer_lit) {
         static const std::unordered_map<npar_ty_t, uint8_t>
             integer_lit_suffixes = {
-                {QAST_U1_TY, 1},   {QAST_U8_TY, 8},   {QAST_U16_TY, 16},
-                {QAST_U32_TY, 32}, {QAST_U64_TY, 64}, {QAST_U128_TY, 128},
+                {QAST_U1, 1},   {QAST_U8, 8},   {QAST_U16, 16},
+                {QAST_U32, 32}, {QAST_U64, 64}, {QAST_U128, 128},
 
                 /* Signeness is not expressed in the NR_NODE_INT */
-                // {QAST_I8_TY, 8},     {QAST_I16_TY, 16},
-                // {QAST_I32_TY, 32},   {QAST_I64_TY, 64},
-                // {QAST_I128_TY, 128},
+                // {QAST_I8, 8},     {QAST_I16, 16},
+                // {QAST_I32, 32},   {QAST_I64, 64},
+                // {QAST_I128, 128},
             };
 
         auto it = integer_lit_suffixes.find(type->getKind());
@@ -542,10 +542,10 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
       } else {
         static const std::unordered_map<npar_ty_t, FloatSize>
             float_lit_suffixes = {{
-                {QAST_F16_TY, FloatSize::F16},
-                {QAST_F32_TY, FloatSize::F32},
-                {QAST_F64_TY, FloatSize::F64},
-                {QAST_F128_TY, FloatSize::F128},
+                {QAST_F16, FloatSize::F16},
+                {QAST_F32, FloatSize::F32},
+                {QAST_F64, FloatSize::F64},
+                {QAST_F128, FloatSize::F128},
             }};
 
         auto it = float_lit_suffixes.find(type->getKind());
@@ -1966,11 +1966,11 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
       out = nrgen_post_unexpr(b, s, G, n->as<npar::PostUnaryExpr>());
       break;
 
-    case QAST_STMT_EXPR:
+    case QAST_SEXPR:
       out = nrgen_stmt_expr(b, s, G, n->as<npar::StmtExpr>());
       break;
 
-    case QAST_TYPE_EXPR:
+    case QAST_TEXPR:
       out = nrgen_type_expr(b, s, G, n->as<npar::TypeExpr>());
       break;
 
@@ -1978,111 +1978,111 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
       out = nrgen_templ_call(b, s, G, n->as<npar::TemplCall>());
       break;
 
-    case QAST_REF_TY:
+    case QAST_REF:
       out = nrgen_ref_ty(b, s, G, n->as<npar::RefTy>());
       break;
 
-    case QAST_U1_TY:
+    case QAST_U1:
       out = nrgen_u1_ty(b, s, G, n->as<npar::U1>());
       break;
 
-    case QAST_U8_TY:
+    case QAST_U8:
       out = nrgen_u8_ty(b, s, G, n->as<npar::U8>());
       break;
 
-    case QAST_U16_TY:
+    case QAST_U16:
       out = nrgen_u16_ty(b, s, G, n->as<npar::U16>());
       break;
 
-    case QAST_U32_TY:
+    case QAST_U32:
       out = nrgen_u32_ty(b, s, G, n->as<npar::U32>());
       break;
 
-    case QAST_U64_TY:
+    case QAST_U64:
       out = nrgen_u64_ty(b, s, G, n->as<npar::U64>());
       break;
 
-    case QAST_U128_TY:
+    case QAST_U128:
       out = nrgen_u128_ty(b, s, G, n->as<npar::U128>());
       break;
 
-    case QAST_I8_TY:
+    case QAST_I8:
       out = nrgen_i8_ty(b, s, G, n->as<npar::I8>());
       break;
 
-    case QAST_I16_TY:
+    case QAST_I16:
       out = nrgen_i16_ty(b, s, G, n->as<npar::I16>());
       break;
 
-    case QAST_I32_TY:
+    case QAST_I32:
       out = nrgen_i32_ty(b, s, G, n->as<npar::I32>());
       break;
 
-    case QAST_I64_TY:
+    case QAST_I64:
       out = nrgen_i64_ty(b, s, G, n->as<npar::I64>());
       break;
 
-    case QAST_I128_TY:
+    case QAST_I128:
       out = nrgen_i128_ty(b, s, G, n->as<npar::I128>());
       break;
 
-    case QAST_F16_TY:
+    case QAST_F16:
       out = nrgen_f16_ty(b, s, G, n->as<npar::F16>());
       break;
 
-    case QAST_F32_TY:
+    case QAST_F32:
       out = nrgen_f32_ty(b, s, G, n->as<npar::F32>());
       break;
 
-    case QAST_F64_TY:
+    case QAST_F64:
       out = nrgen_f64_ty(b, s, G, n->as<npar::F64>());
       break;
 
-    case QAST_F128_TY:
+    case QAST_F128:
       out = nrgen_f128_ty(b, s, G, n->as<npar::F128>());
       break;
 
-    case QAST_VOID_TY:
+    case QAST_VOID:
       out = nrgen_void_ty(b, s, G, n->as<npar::VoidTy>());
       break;
 
-    case QAST_PTR_TY:
+    case QAST_PTR:
       out = nrgen_ptr_ty(b, s, G, n->as<npar::PtrTy>());
       break;
 
-    case QAST_OPAQUE_TY:
+    case QAST_OPAQUE:
       out = nrgen_opaque_ty(b, s, G, n->as<npar::OpaqueTy>());
       break;
 
-    case QAST_ARRAY_TY:
+    case QAST_ARRAY:
       out = nrgen_array_ty(b, s, G, n->as<npar::ArrayTy>());
       break;
 
-    case QAST_TUPLE_TY:
+    case QAST_TUPLE:
       out = nrgen_tuple_ty(b, s, G, n->as<npar::TupleTy>());
       break;
 
-    case QAST_FN_TY:
+    case QAST_FUNCTOR:
       out = nrgen_fn_ty(b, s, G, n->as<npar::FuncTy>());
       break;
 
-    case QAST_UNRES_TY:
+    case QAST_NAMED:
       out = nrgen_unres_ty(b, s, G, n->as<npar::NamedTy>());
       break;
 
-    case QAST_INFER_TY:
+    case QAST_INFER:
       out = nrgen_infer_ty(b, s, G, n->as<npar::InferTy>());
       break;
 
-    case QAST_TEMPL_TY:
+    case QAST_TEMPLATE:
       out = nrgen_templ_ty(b, s, G, n->as<npar::TemplType>());
       break;
 
-    case QAST_FNDECL:
+    case QAST_FUNCTION_DECL:
       out = nrgen_fndecl(b, s, G, n->as<npar::FnDecl>());
       break;
 
-    case QAST_FN:
+    case QAST_FUNCTION:
       out = nrgen_fn(b, s, G, n->as<npar::FnDef>());
       break;
 
@@ -2142,7 +2142,7 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
       out = nrgen_switch(b, s, G, n->as<npar::SwitchStmt>());
       break;
 
-    case QAST_EXPR_STMT:
+    case QAST_ESTMT:
       out = nrgen_expr_stmt(b, s, G, n->as<npar::ExprStmt>());
       break;
 

@@ -58,93 +58,108 @@
 #include <vector>
 
 typedef enum npar_ty_t {
-  QAST_BASE,
+  /*****************************************************************************
+   * Base
+   ****************************************************************************/
 
-  QAST_BINEXPR,
-  QAST_UNEXPR,
-  QAST_TEREXPR,
-  QAST_INT,
-  QAST_FLOAT,
-  QAST_STRING,
-  QAST_CHAR,
-  QAST_BOOL,
-  QAST_NULL,
-  QAST_UNDEF,
-  QAST_CALL,
-  QAST_LIST,
-  QAST_ASSOC,
-  QAST_FIELD,
-  QAST_INDEX,
-  QAST_SLICE,
-  QAST_FSTRING,
-  QAST_IDENT,
-  QAST_SEQ,
-  QAST_POST_UNEXPR,
-  QAST_STMT_EXPR,
-  QAST_TYPE_EXPR,
-  QAST_TEMPL_CALL,
+  QAST_BASE = 0, /* Polymorphic base node */
+
+  /*****************************************************************************
+   * Expressions
+   ****************************************************************************/
+
+  QAST_BINEXPR = 1,     /* Binary expression */
+  QAST_UNEXPR = 2,      /* Unary expression */
+  QAST_POST_UNEXPR = 3, /* Post-unary expression */
+  QAST_TEREXPR = 4,     /* Ternary expression */
+  QAST_INT = 5,         /* Integer literal */
+  QAST_FLOAT = 6,       /* Floating-point literal */
+  QAST_STRING = 7,      /* String literal */
+  QAST_CHAR = 8,        /* Character literal */
+  QAST_BOOL = 9,        /* Boolean literal */
+  QAST_NULL = 10,       /* Null literal */
+  QAST_UNDEF = 11,      /* Undefined expression */
+  QAST_CALL = 12,       /* Function call */
+  QAST_LIST = 13,       /* List expression */
+  QAST_ASSOC = 14,      /* Associative pair */
+  QAST_FIELD = 15,      /* Field access */
+  QAST_INDEX = 16,      /* Index access */
+  QAST_SLICE = 17,      /* Slice access */
+  QAST_FSTRING = 18,    /* Formatted string */
+  QAST_IDENT = 19,      /* Identifier */
+  QAST_SEQ = 20,        /* Sequence point */
+  QAST_SEXPR = 21,      /* Statement expression */
+  QAST_TEXPR = 22,      /* Type expression */
+  QAST_TEMPL_CALL = 23, /* Template call */
 
   QAST__EXPR_FIRST = QAST_BINEXPR,
   QAST__EXPR_LAST = QAST_TEMPL_CALL,
 
-  QAST_REF_TY,
-  QAST_U1_TY,
-  QAST_U8_TY,
-  QAST_U16_TY,
-  QAST_U32_TY,
-  QAST_U64_TY,
-  QAST_U128_TY,
-  QAST_I8_TY,
-  QAST_I16_TY,
-  QAST_I32_TY,
-  QAST_I64_TY,
-  QAST_I128_TY,
-  QAST_F16_TY,
-  QAST_F32_TY,
-  QAST_F64_TY,
-  QAST_F128_TY,
-  QAST_VOID_TY,
-  QAST_PTR_TY,
-  QAST_OPAQUE_TY,
-  QAST_ARRAY_TY,
-  QAST_TUPLE_TY,
-  QAST_FN_TY,
-  QAST_UNRES_TY,
-  QAST_INFER_TY,
-  QAST_TEMPL_TY,
+  /*****************************************************************************
+   * Types
+   ****************************************************************************/
 
-  QAST__TYPE_FIRST = QAST_REF_TY,
-  QAST__TYPE_LAST = QAST_TEMPL_TY,
+  QAST_U1 = 30,       /* 1-bit unsigned integer (boolean) */
+  QAST_U8 = 31,       /* 8-bit unsigned integer */
+  QAST_U16 = 32,      /* 16-bit unsigned integer */
+  QAST_U32 = 33,      /* 32-bit unsigned integer */
+  QAST_U64 = 34,      /* 64-bit unsigned integer */
+  QAST_U128 = 35,     /* 128-bit unsigned integer */
+  QAST_I8 = 36,       /* 8-bit signed integer */
+  QAST_I16 = 37,      /* 16-bit signed integer */
+  QAST_I32 = 38,      /* 32-bit signed integer */
+  QAST_I64 = 39,      /* 64-bit signed integer */
+  QAST_I128 = 40,     /* 128-bit signed integer */
+  QAST_F16 = 41,      /* 16-bit floating-point number */
+  QAST_F32 = 42,      /* 32-bit floating-point number */
+  QAST_F64 = 43,      /* 64-bit floating-point number */
+  QAST_F128 = 44,     /* 128-bit floating-point number */
+  QAST_VOID = 45,     /* Void type */
+  QAST_INFER = 46,    /* Inferred type */
+  QAST_OPAQUE = 47,   /* Opaque named type */
+  QAST_NAMED = 48,    /* Unresolved type name */
+  QAST_REF = 49,      /* Reference type */
+  QAST_PTR = 50,      /* Raw pointer type */
+  QAST_ARRAY = 51,    /* Basic array type */
+  QAST_TUPLE = 52,    /* Tuple type */
+  QAST_TEMPLATE = 53, /* Template type */
+  QAST_FUNCTOR = 54,  /* Function type */
 
-  QAST_TYPEDEF,
-  QAST_FNDECL,
-  QAST_STRUCT,
-  QAST_ENUM,
-  QAST_FN,
-  QAST_SCOPE,
-  QAST_EXPORT,
-  QAST_STRUCT_FIELD,
+  QAST__TYPE_FIRST = QAST_U1,
+  QAST__TYPE_LAST = QAST_FUNCTOR,
 
-  QAST_BLOCK,
-  QAST_VAR,
-  QAST_INLINE_ASM,
-  QAST_RETURN,
-  QAST_RETIF,
-  QAST_BREAK,
-  QAST_CONTINUE,
-  QAST_IF,
-  QAST_WHILE,
-  QAST_FOR,
-  QAST_FOREACH,
-  QAST_CASE,
-  QAST_SWITCH,
-  QAST_EXPR_STMT,
+  /*****************************************************************************
+   * Statements
+   ****************************************************************************/
 
-  QAST__STMT_FIRST = QAST_TYPEDEF,
-  QAST__STMT_LAST = QAST_EXPR_STMT,
+  QAST_IF = 60,           /* If statement */
+  QAST_RETIF = 61,        /* Return-if statement */
+  QAST_SWITCH = 62,       /* Switch statement */
+  QAST_CASE = 63,         /* Case statement */
+  QAST_RETURN = 64,       /* Return statement */
+  QAST_BREAK = 65,        /* Break statement */
+  QAST_CONTINUE = 66,     /* Continue statement */
+  QAST_WHILE = 67,        /* While statement */
+  QAST_FOR = 68,          /* For statement */
+  QAST_FOREACH = 69,      /* Foreach statement */
+  QAST_INLINE_ASM = 70,   /* Inline assembly statement */
+  QAST_ESTMT = 71,        /* Expression-statement adapter */
+  QAST_TYPEDEF = 80,      /* Type alias declaration */
+  QAST_STRUCT = 81,       /* Struct definition */
+  QAST_STRUCT_FIELD = 82, /* Struct field */
+  QAST_ENUM = 83,         /* Enum definition */
+  QAST_SCOPE = 84,        /* Namespace scope */
+  QAST_BLOCK = 85,        /* Block statement */
+  QAST_EXPORT = 86,       /* Export statement */
+  QAST_VAR = 87,          /* Variable declaration */
+  QAST_FUNCTION_DECL,     /* Function declaration */
+  QAST_FUNCTION = 89,     /* Function definition */
+
+  QAST__STMT_FIRST = QAST_IF,
+  QAST__STMT_LAST = QAST_FUNCTION,
 
   QAST__FIRST = QAST_BASE,
-  QAST__LAST = QAST_EXPR_STMT,
+  QAST__LAST = QAST_FUNCTION,
 } npar_ty_t;
 
 #define QAST_COUNT (QAST__LAST - QAST__FIRST + 1)
@@ -296,11 +311,11 @@ public:
         v.visit(*as<PostUnaryExpr>());
         break;
       }
-      case QAST_STMT_EXPR: {
+      case QAST_SEXPR: {
         v.visit(*as<StmtExpr>());
         break;
       }
-      case QAST_TYPE_EXPR: {
+      case QAST_TEXPR: {
         v.visit(*as<TypeExpr>());
         break;
       }
@@ -308,103 +323,103 @@ public:
         v.visit(*as<TemplCall>());
         break;
       }
-      case QAST_REF_TY: {
+      case QAST_REF: {
         v.visit(*as<RefTy>());
         break;
       }
-      case QAST_U1_TY: {
+      case QAST_U1: {
         v.visit(*as<U1>());
         break;
       }
-      case QAST_U8_TY: {
+      case QAST_U8: {
         v.visit(*as<U8>());
         break;
       }
-      case QAST_U16_TY: {
+      case QAST_U16: {
         v.visit(*as<U16>());
         break;
       }
-      case QAST_U32_TY: {
+      case QAST_U32: {
         v.visit(*as<U32>());
         break;
       }
-      case QAST_U64_TY: {
+      case QAST_U64: {
         v.visit(*as<U64>());
         break;
       }
-      case QAST_U128_TY: {
+      case QAST_U128: {
         v.visit(*as<U128>());
         break;
       }
-      case QAST_I8_TY: {
+      case QAST_I8: {
         v.visit(*as<I8>());
         break;
       }
-      case QAST_I16_TY: {
+      case QAST_I16: {
         v.visit(*as<I16>());
         break;
       }
-      case QAST_I32_TY: {
+      case QAST_I32: {
         v.visit(*as<I32>());
         break;
       }
-      case QAST_I64_TY: {
+      case QAST_I64: {
         v.visit(*as<I64>());
         break;
       }
-      case QAST_I128_TY: {
+      case QAST_I128: {
         v.visit(*as<I128>());
         break;
       }
-      case QAST_F16_TY: {
+      case QAST_F16: {
         v.visit(*as<F16>());
         break;
       }
-      case QAST_F32_TY: {
+      case QAST_F32: {
         v.visit(*as<F32>());
         break;
       }
-      case QAST_F64_TY: {
+      case QAST_F64: {
         v.visit(*as<F64>());
         break;
       }
-      case QAST_F128_TY: {
+      case QAST_F128: {
         v.visit(*as<F128>());
         break;
       }
-      case QAST_VOID_TY: {
+      case QAST_VOID: {
         v.visit(*as<VoidTy>());
         break;
       }
-      case QAST_PTR_TY: {
+      case QAST_PTR: {
         v.visit(*as<PtrTy>());
         break;
       }
-      case QAST_OPAQUE_TY: {
+      case QAST_OPAQUE: {
         v.visit(*as<OpaqueTy>());
         break;
       }
-      case QAST_ARRAY_TY: {
+      case QAST_ARRAY: {
         v.visit(*as<ArrayTy>());
         break;
       }
-      case QAST_TUPLE_TY: {
+      case QAST_TUPLE: {
         v.visit(*as<TupleTy>());
         break;
       }
-      case QAST_FN_TY: {
+      case QAST_FUNCTOR: {
         v.visit(*as<FuncTy>());
         break;
       }
-      case QAST_UNRES_TY: {
+      case QAST_NAMED: {
         v.visit(*as<NamedTy>());
         break;
       }
-      case QAST_INFER_TY: {
+      case QAST_INFER: {
         v.visit(*as<InferTy>());
         break;
       }
-      case QAST_TEMPL_TY: {
+      case QAST_TEMPLATE: {
         v.visit(*as<TemplType>());
         break;
       }
@@ -412,7 +427,7 @@ public:
         v.visit(*as<TypedefStmt>());
         break;
       }
-      case QAST_FNDECL: {
+      case QAST_FUNCTION_DECL: {
         v.visit(*as<FnDecl>());
         break;
       }
@@ -424,7 +439,7 @@ public:
         v.visit(*as<EnumDef>());
         break;
       }
-      case QAST_FN: {
+      case QAST_FUNCTION: {
         v.visit(*as<FnDef>());
         break;
       }
@@ -492,7 +507,7 @@ public:
         v.visit(*as<SwitchStmt>());
         break;
       }
-      case QAST_EXPR_STMT: {
+      case QAST_ESTMT: {
         v.visit(*as<ExprStmt>());
         break;
       }
@@ -556,71 +571,71 @@ public:
     } else if constexpr (std::is_same_v<T, PostUnaryExpr>) {
       return QAST_POST_UNEXPR;
     } else if constexpr (std::is_same_v<T, StmtExpr>) {
-      return QAST_STMT_EXPR;
+      return QAST_SEXPR;
     } else if constexpr (std::is_same_v<T, TypeExpr>) {
-      return QAST_TYPE_EXPR;
+      return QAST_TEXPR;
     } else if constexpr (std::is_same_v<T, TemplCall>) {
       return QAST_TEMPL_CALL;
     } else if constexpr (std::is_same_v<T, RefTy>) {
-      return QAST_REF_TY;
+      return QAST_REF;
     } else if constexpr (std::is_same_v<T, U1>) {
-      return QAST_U1_TY;
+      return QAST_U1;
     } else if constexpr (std::is_same_v<T, U8>) {
-      return QAST_U8_TY;
+      return QAST_U8;
     } else if constexpr (std::is_same_v<T, U16>) {
-      return QAST_U16_TY;
+      return QAST_U16;
     } else if constexpr (std::is_same_v<T, U32>) {
-      return QAST_U32_TY;
+      return QAST_U32;
     } else if constexpr (std::is_same_v<T, U64>) {
-      return QAST_U64_TY;
+      return QAST_U64;
     } else if constexpr (std::is_same_v<T, U128>) {
-      return QAST_U128_TY;
+      return QAST_U128;
     } else if constexpr (std::is_same_v<T, I8>) {
-      return QAST_I8_TY;
+      return QAST_I8;
     } else if constexpr (std::is_same_v<T, I16>) {
-      return QAST_I16_TY;
+      return QAST_I16;
     } else if constexpr (std::is_same_v<T, I32>) {
-      return QAST_I32_TY;
+      return QAST_I32;
     } else if constexpr (std::is_same_v<T, I64>) {
-      return QAST_I64_TY;
+      return QAST_I64;
     } else if constexpr (std::is_same_v<T, I128>) {
-      return QAST_I128_TY;
+      return QAST_I128;
     } else if constexpr (std::is_same_v<T, F16>) {
-      return QAST_F16_TY;
+      return QAST_F16;
     } else if constexpr (std::is_same_v<T, F32>) {
-      return QAST_F32_TY;
+      return QAST_F32;
     } else if constexpr (std::is_same_v<T, F64>) {
-      return QAST_F64_TY;
+      return QAST_F64;
     } else if constexpr (std::is_same_v<T, F128>) {
-      return QAST_F128_TY;
+      return QAST_F128;
     } else if constexpr (std::is_same_v<T, VoidTy>) {
-      return QAST_VOID_TY;
+      return QAST_VOID;
     } else if constexpr (std::is_same_v<T, PtrTy>) {
-      return QAST_PTR_TY;
+      return QAST_PTR;
     } else if constexpr (std::is_same_v<T, OpaqueTy>) {
-      return QAST_OPAQUE_TY;
+      return QAST_OPAQUE;
     } else if constexpr (std::is_same_v<T, ArrayTy>) {
-      return QAST_ARRAY_TY;
+      return QAST_ARRAY;
     } else if constexpr (std::is_same_v<T, TupleTy>) {
-      return QAST_TUPLE_TY;
+      return QAST_TUPLE;
     } else if constexpr (std::is_same_v<T, FuncTy>) {
-      return QAST_FN_TY;
+      return QAST_FUNCTOR;
     } else if constexpr (std::is_same_v<T, NamedTy>) {
-      return QAST_UNRES_TY;
+      return QAST_NAMED;
     } else if constexpr (std::is_same_v<T, InferTy>) {
-      return QAST_INFER_TY;
+      return QAST_INFER;
     } else if constexpr (std::is_same_v<T, TemplType>) {
-      return QAST_TEMPL_TY;
+      return QAST_TEMPLATE;
     } else if constexpr (std::is_same_v<T, TypedefStmt>) {
       return QAST_TYPEDEF;
     } else if constexpr (std::is_same_v<T, FnDecl>) {
-      return QAST_FNDECL;
+      return QAST_FUNCTION_DECL;
     } else if constexpr (std::is_same_v<T, StructDef>) {
       return QAST_STRUCT;
     } else if constexpr (std::is_same_v<T, EnumDef>) {
       return QAST_ENUM;
     } else if constexpr (std::is_same_v<T, FnDef>) {
-      return QAST_FN;
+      return QAST_FUNCTION;
     } else if constexpr (std::is_same_v<T, ScopeStmt>) {
       return QAST_SCOPE;
     } else if constexpr (std::is_same_v<T, ExportStmt>) {
@@ -654,7 +669,7 @@ public:
     } else if constexpr (std::is_same_v<T, SwitchStmt>) {
       return QAST_SWITCH;
     } else if constexpr (std::is_same_v<T, ExprStmt>) {
-      return QAST_EXPR_STMT;
+      return QAST_ESTMT;
     }
   }
 
@@ -781,50 +796,50 @@ namespace npar {
 
     constexpr bool is_primitive() const {
       switch (getKind()) {
-        case QAST_U1_TY:
-        case QAST_U8_TY:
-        case QAST_U16_TY:
-        case QAST_U32_TY:
-        case QAST_U64_TY:
-        case QAST_U128_TY:
-        case QAST_I8_TY:
-        case QAST_I16_TY:
-        case QAST_I32_TY:
-        case QAST_I64_TY:
-        case QAST_I128_TY:
-        case QAST_F16_TY:
-        case QAST_F32_TY:
-        case QAST_F64_TY:
-        case QAST_F128_TY:
-        case QAST_VOID_TY:
+        case QAST_U1:
+        case QAST_U8:
+        case QAST_U16:
+        case QAST_U32:
+        case QAST_U64:
+        case QAST_U128:
+        case QAST_I8:
+        case QAST_I16:
+        case QAST_I32:
+        case QAST_I64:
+        case QAST_I128:
+        case QAST_F16:
+        case QAST_F32:
+        case QAST_F64:
+        case QAST_F128:
+        case QAST_VOID:
           return true;
         default:
           return false;
       }
     }
-    constexpr bool is_array() const { return getKind() == QAST_ARRAY_TY; };
-    constexpr bool is_tuple() const { return getKind() == QAST_TUPLE_TY; }
-    constexpr bool is_pointer() const { return getKind() == QAST_PTR_TY; }
-    constexpr bool is_function() const { return getKind() == QAST_FN_TY; }
+    constexpr bool is_array() const { return getKind() == QAST_ARRAY; };
+    constexpr bool is_tuple() const { return getKind() == QAST_TUPLE; }
+    constexpr bool is_pointer() const { return getKind() == QAST_PTR; }
+    constexpr bool is_function() const { return getKind() == QAST_FUNCTOR; }
     constexpr bool is_composite() const { return is_array() || is_tuple(); }
     constexpr bool is_numeric() const {
-      return getKind() >= QAST_U1_TY && getKind() <= QAST_F128_TY;
+      return getKind() >= QAST_U1 && getKind() <= QAST_F128;
     }
     constexpr bool is_integral() const {
-      return getKind() >= QAST_U1_TY && getKind() <= QAST_I128_TY;
+      return getKind() >= QAST_U1 && getKind() <= QAST_I128;
     }
     constexpr bool is_floating_point() const {
-      return getKind() >= QAST_F16_TY && getKind() <= QAST_F128_TY;
+      return getKind() >= QAST_F16 && getKind() <= QAST_F128;
     }
     constexpr bool is_signed() const {
-      return getKind() >= QAST_I8_TY && getKind() <= QAST_I128_TY;
+      return getKind() >= QAST_I8 && getKind() <= QAST_I128;
     }
     constexpr bool is_unsigned() const {
-      return getKind() >= QAST_U1_TY && getKind() <= QAST_U128_TY;
+      return getKind() >= QAST_U1 && getKind() <= QAST_U128;
     }
-    constexpr bool is_void() const { return getKind() == QAST_VOID_TY; }
-    constexpr bool is_bool() const { return getKind() == QAST_U1_TY; }
-    constexpr bool is_ref() const { return getKind() == QAST_REF_TY; }
+    constexpr bool is_void() const { return getKind() == QAST_VOID; }
+    constexpr bool is_bool() const { return getKind() == QAST_U1; }
+    constexpr bool is_ref() const { return getKind() == QAST_REF; }
     bool is_ptr_to(Type *type) const;
 
     constexpr let get_width() const { return m_width; }
@@ -847,7 +862,7 @@ namespace npar {
     Expr *m_expr;
 
   public:
-    constexpr ExprStmt(Expr *expr) : Stmt(QAST_EXPR_STMT), m_expr(expr) {}
+    constexpr ExprStmt(Expr *expr) : Stmt(QAST_ESTMT), m_expr(expr) {}
 
     let get_expr() const { return m_expr; }
   };
@@ -856,7 +871,7 @@ namespace npar {
     Stmt *m_stmt;
 
   public:
-    constexpr StmtExpr(Stmt *stmt) : Expr(QAST_STMT_EXPR), m_stmt(stmt) {}
+    constexpr StmtExpr(Stmt *stmt) : Expr(QAST_SEXPR), m_stmt(stmt) {}
 
     let get_stmt() const { return m_stmt; }
   };
@@ -865,7 +880,7 @@ namespace npar {
     Type *m_type;
 
   public:
-    constexpr TypeExpr(Type *type) : Expr(QAST_TYPE_EXPR), m_type(type) {}
+    constexpr TypeExpr(Type *type) : Expr(QAST_TEXPR), m_type(type) {}
 
     let get_type() const { return m_type; }
   };
@@ -874,14 +889,14 @@ namespace npar {
     SmallString m_name;
 
   public:
-    NamedTy(SmallString name) : Type(QAST_UNRES_TY), m_name(name) {}
+    NamedTy(SmallString name) : Type(QAST_NAMED), m_name(name) {}
 
     let get_name() const { return m_name; }
   };
 
   class InferTy : public Type {
   public:
-    constexpr InferTy() : Type(QAST_INFER_TY) {}
+    constexpr InferTy() : Type(QAST_INFER) {}
   };
 
   typedef std::vector<Expr *, Arena<Expr *>> TemplTypeArgs;
@@ -892,7 +907,7 @@ namespace npar {
 
   public:
     TemplType(Type *templ, const TemplTypeArgs &args)
-        : Type(QAST_TEMPL_TY), m_template(templ), m_args(args) {}
+        : Type(QAST_TEMPLATE), m_template(templ), m_args(args) {}
 
     let get_template() const { return m_template; }
     let get_args() const { return m_args; }
@@ -900,82 +915,82 @@ namespace npar {
 
   class U1 : public Type {
   public:
-    constexpr U1() : Type(QAST_U1_TY){};
+    constexpr U1() : Type(QAST_U1){};
   };
 
   class U8 : public Type {
   public:
-    constexpr U8() : Type(QAST_U8_TY){};
+    constexpr U8() : Type(QAST_U8){};
   };
 
   class U16 : public Type {
   public:
-    constexpr U16() : Type(QAST_U16_TY){};
+    constexpr U16() : Type(QAST_U16){};
   };
 
   class U32 : public Type {
   public:
-    constexpr U32() : Type(QAST_U32_TY){};
+    constexpr U32() : Type(QAST_U32){};
   };
 
   class U64 : public Type {
   public:
-    constexpr U64() : Type(QAST_U64_TY){};
+    constexpr U64() : Type(QAST_U64){};
   };
 
   class U128 : public Type {
   public:
-    constexpr U128() : Type(QAST_U128_TY){};
+    constexpr U128() : Type(QAST_U128){};
   };
 
   class I8 : public Type {
   public:
-    constexpr I8() : Type(QAST_I8_TY){};
+    constexpr I8() : Type(QAST_I8){};
   };
 
   class I16 : public Type {
   public:
-    constexpr I16() : Type(QAST_I16_TY){};
+    constexpr I16() : Type(QAST_I16){};
   };
 
   class I32 : public Type {
   public:
-    constexpr I32() : Type(QAST_I32_TY){};
+    constexpr I32() : Type(QAST_I32){};
   };
 
   class I64 : public Type {
   public:
-    constexpr I64() : Type(QAST_I64_TY){};
+    constexpr I64() : Type(QAST_I64){};
   };
 
   class I128 : public Type {
   public:
-    constexpr I128() : Type(QAST_I128_TY){};
+    constexpr I128() : Type(QAST_I128){};
   };
 
   class F16 : public Type {
   public:
-    constexpr F16() : Type(QAST_F16_TY){};
+    constexpr F16() : Type(QAST_F16){};
   };
 
   class F32 : public Type {
   public:
-    constexpr F32() : Type(QAST_F32_TY){};
+    constexpr F32() : Type(QAST_F32){};
   };
 
   class F64 : public Type {
   public:
-    constexpr F64() : Type(QAST_F64_TY){};
+    constexpr F64() : Type(QAST_F64){};
   };
 
   class F128 : public Type {
   public:
-    constexpr F128() : Type(QAST_F128_TY){};
+    constexpr F128() : Type(QAST_F128){};
   };
 
   class VoidTy : public Type {
   public:
-    constexpr VoidTy() : Type(QAST_VOID_TY) {}
+    constexpr VoidTy() : Type(QAST_VOID) {}
   };
 
   class PtrTy : public Type {
@@ -984,7 +999,7 @@ namespace npar {
 
   public:
     constexpr PtrTy(Type *item, bool is_volatile = false)
-        : Type(QAST_PTR_TY), m_item(item), m_is_volatile(is_volatile) {}
+        : Type(QAST_PTR), m_item(item), m_is_volatile(is_volatile) {}
 
     let get_item() const { return m_item; }
     bool is_volatile() const { return m_is_volatile; }
@@ -994,7 +1009,7 @@ namespace npar {
     SmallString m_name;
 
   public:
-    OpaqueTy(SmallString name) : Type(QAST_OPAQUE_TY), m_name(name) {}
+    OpaqueTy(SmallString name) : Type(QAST_OPAQUE), m_name(name) {}
 
     let get_name() const { return m_name; }
   };
@@ -1004,7 +1019,7 @@ namespace npar {
     TupleTyItems m_items;
 
   public:
-    TupleTy(const TupleTyItems &items) : Type(QAST_TUPLE_TY), m_items(items) {}
+    TupleTy(const TupleTyItems &items) : Type(QAST_TUPLE), m_items(items) {}
 
     let get_items() const { return m_items; }
   };
@@ -1015,7 +1030,7 @@ namespace npar {
 
   public:
     constexpr ArrayTy(Type *item, Expr *size)
-        : Type(QAST_ARRAY_TY), m_item(item), m_size(size) {}
+        : Type(QAST_ARRAY), m_item(item), m_size(size) {}
 
     let get_item() const { return m_item; }
     let get_size() const { return m_size; }
@@ -1025,7 +1040,7 @@ namespace npar {
     Type *m_item;
 
   public:
-    constexpr RefTy(Type *item) : Type(QAST_REF_TY), m_item(item) {}
+    constexpr RefTy(Type *item) : Type(QAST_REF), m_item(item) {}
 
     let get_item() const { return m_item; }
   };
@@ -1054,7 +1069,7 @@ namespace npar {
 
   public:
     FuncTy()
-        : Type(QAST_FN_TY),
+        : Type(QAST_FUNCTOR),
           m_return(nullptr),
           m_purity(FuncPurity::IMPURE_THREAD_UNSAFE),
           m_variadic(false),
@@ -1064,7 +1079,7 @@ namespace npar {
     FuncTy(Type *return_type, FuncParams parameters, bool variadic = false,
            FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE,
            bool is_foreign = false, bool noreturn = false)
-        : Type(QAST_FN_TY),
+        : Type(QAST_FUNCTOR),
           m_params(parameters),
           m_return(return_type),
           m_purity(purity),
@@ -1078,7 +1093,7 @@ namespace npar {
            bool variadic = false,
            FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE,
            bool is_foreign = false, bool noreturn = false)
-        : Type(QAST_FN_TY),
+        : Type(QAST_FUNCTOR),
           m_return(return_type),
           m_purity(purity),
           m_variadic(variadic),
@@ -1644,7 +1659,7 @@ namespace npar {
   public:
     FnDecl(SmallString name, FuncTy *type,
            std::optional<TemplateParameters> params = std::nullopt)
-        : Stmt(QAST_FNDECL),
+        : Stmt(QAST_FUNCTION_DECL),
           m_template_parameters(params),
           m_name(name),
           m_type(type) {}
@@ -1674,7 +1689,7 @@ namespace npar {
   public:
     FnDef(FnDecl *decl, Stmt *body, Expr *precond, Expr *postcond,
           FnCaptures captures = {})
-        : Stmt(QAST_FN),
+        : Stmt(QAST_FUNCTION),
           m_captures(captures),
           m_template_parameters(decl->get_template_params()),
           m_name(decl->get_name()),
@@ -1785,39 +1800,39 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) {
     R[QAST_IDENT] = "Ident";
     R[QAST_SEQ] = "SeqPoint";
     R[QAST_POST_UNEXPR] = "PostUnexpr";
-    R[QAST_STMT_EXPR] = "StmtExpr";
-    R[QAST_TYPE_EXPR] = "TypeExpr";
+    R[QAST_SEXPR] = "StmtExpr";
+    R[QAST_TEXPR] = "TypeExpr";
     R[QAST_TEMPL_CALL] = "TemplCall";
-    R[QAST_REF_TY] = "Ref";
-    R[QAST_U1_TY] = "U1";
-    R[QAST_U8_TY] = "U8";
-    R[QAST_U16_TY] = "U16";
-    R[QAST_U32_TY] = "U32";
-    R[QAST_U64_TY] = "U64";
-    R[QAST_U128_TY] = "U128";
-    R[QAST_I8_TY] = "I8";
-    R[QAST_I16_TY] = "I16";
-    R[QAST_I32_TY] = "I32";
-    R[QAST_I64_TY] = "I64";
-    R[QAST_I128_TY] = "I128";
-    R[QAST_F16_TY] = "F16";
-    R[QAST_F32_TY] = "F32";
-    R[QAST_F64_TY] = "F64";
-    R[QAST_F128_TY] = "F128";
-    R[QAST_VOID_TY] = "Void";
-    R[QAST_PTR_TY] = "Ptr";
-    R[QAST_OPAQUE_TY] = "Opaque";
-    R[QAST_ARRAY_TY] = "Array";
-    R[QAST_TUPLE_TY] = "Tuple";
-    R[QAST_FN_TY] = "FuncTy";
-    R[QAST_UNRES_TY] = "Unres";
-    R[QAST_INFER_TY] = "Infer";
-    R[QAST_TEMPL_TY] = "Templ";
+    R[QAST_REF] = "Ref";
+    R[QAST_U1] = "U1";
+    R[QAST_U8] = "U8";
+    R[QAST_U16] = "U16";
+    R[QAST_U32] = "U32";
+    R[QAST_U64] = "U64";
+    R[QAST_U128] = "U128";
+    R[QAST_I8] = "I8";
+    R[QAST_I16] = "I16";
+    R[QAST_I32] = "I32";
+    R[QAST_I64] = "I64";
+    R[QAST_I128] = "I128";
+    R[QAST_F16] = "F16";
+    R[QAST_F32] = "F32";
+    R[QAST_F64] = "F64";
+    R[QAST_F128] = "F128";
+    R[QAST_VOID] = "Void";
+    R[QAST_PTR] = "Ptr";
+    R[QAST_OPAQUE] = "Opaque";
+    R[QAST_ARRAY] = "Array";
+    R[QAST_TUPLE] = "Tuple";
+    R[QAST_FUNCTOR] = "FuncTy";
+    R[QAST_NAMED] = "Unres";
+    R[QAST_INFER] = "Infer";
+    R[QAST_TEMPLATE] = "Templ";
     R[QAST_TYPEDEF] = "Typedef";
-    R[QAST_FNDECL] = "FnDecl";
+    R[QAST_FUNCTION_DECL] = "FnDecl";
     R[QAST_STRUCT] = "Struct";
     R[QAST_ENUM] = "Enum";
-    R[QAST_FN] = "FnDef";
+    R[QAST_FUNCTION] = "FnDef";
     R[QAST_SCOPE] = "Scope";
     R[QAST_EXPORT] = "Export";
     R[QAST_STRUCT_FIELD] = "StructField";
@@ -1834,7 +1849,7 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) {
     R[QAST_FOREACH] = "Foreach";
     R[QAST_CASE] = "Case";
     R[QAST_SWITCH] = "Switch";
-    R[QAST_EXPR_STMT] = "ExprStmt";
+    R[QAST_ESTMT] = "ExprStmt";
 
     return R;
   }();
@@ -1843,11 +1858,11 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) {
 }
 
 constexpr bool npar_node_t::is_expr_stmt(npar_ty_t type) const {
-  return is(QAST_EXPR_STMT) && as<npar::ExprStmt>()->get_expr()->is(type);
+  return is(QAST_ESTMT) && as<npar::ExprStmt>()->get_expr()->is(type);
 }
 
 constexpr bool npar_node_t::is_stmt_expr(npar_ty_t type) const {
-  return is(QAST_STMT_EXPR) && as<npar::StmtExpr>()->get_stmt()->is(type);
+  return is(QAST_SEXPR) && as<npar::StmtExpr>()->get_stmt()->is(type);
 }
 
 constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
@@ -2104,7 +2119,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_STMT_EXPR: {
+    case QAST_SEXPR: {
       let us = as<StmtExpr>();
       let them = o->as<StmtExpr>();
 
@@ -2117,7 +2132,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_TYPE_EXPR: {
+    case QAST_TEXPR: {
       let us = as<TypeExpr>();
       let them = o->as<TypeExpr>();
 
@@ -2143,7 +2158,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_REF_TY: {
+    case QAST_REF: {
       let us = as<RefTy>();
       let them = o->as<RefTy>();
 
@@ -2156,7 +2171,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_U1_TY: {
+    case QAST_U1: {
       let us = as<U1>();
       let them = o->as<U1>();
 
@@ -2169,7 +2184,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_U8_TY: {
+    case QAST_U8: {
       let us = as<U8>();
       let them = o->as<U8>();
 
@@ -2182,7 +2197,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_U16_TY: {
+    case QAST_U16: {
       let us = as<U16>();
       let them = o->as<U16>();
 
@@ -2195,7 +2210,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_U32_TY: {
+    case QAST_U32: {
       let us = as<U32>();
       let them = o->as<U32>();
 
@@ -2208,7 +2223,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_U64_TY: {
+    case QAST_U64: {
       let us = as<U64>();
       let them = o->as<U64>();
 
@@ -2221,7 +2236,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_U128_TY: {
+    case QAST_U128: {
       let us = as<U128>();
       let them = o->as<U128>();
 
@@ -2234,7 +2249,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_I8_TY: {
+    case QAST_I8: {
       let us = as<I8>();
       let them = o->as<I8>();
 
@@ -2247,7 +2262,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_I16_TY: {
+    case QAST_I16: {
       let us = as<I16>();
       let them = o->as<I16>();
 
@@ -2260,7 +2275,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_I32_TY: {
+    case QAST_I32: {
       let us = as<I32>();
       let them = o->as<I32>();
 
@@ -2273,7 +2288,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_I64_TY: {
+    case QAST_I64: {
       let us = as<I64>();
       let them = o->as<I64>();
 
@@ -2286,7 +2301,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_I128_TY: {
+    case QAST_I128: {
       let us = as<I128>();
       let them = o->as<I128>();
 
@@ -2299,7 +2314,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_F16_TY: {
+    case QAST_F16: {
       let us = as<F16>();
       let them = o->as<F16>();
 
@@ -2312,7 +2327,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_F32_TY: {
+    case QAST_F32: {
       let us = as<F32>();
       let them = o->as<F32>();
 
@@ -2325,7 +2340,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_F64_TY: {
+    case QAST_F64: {
       let us = as<F64>();
       let them = o->as<F64>();
 
@@ -2338,7 +2353,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_F128_TY: {
+    case QAST_F128: {
       let us = as<F128>();
       let them = o->as<F128>();
 
@@ -2351,7 +2366,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_VOID_TY: {
+    case QAST_VOID: {
       let us = as<VoidTy>();
       let them = o->as<VoidTy>();
 
@@ -2364,7 +2379,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_PTR_TY: {
+    case QAST_PTR: {
       let us = as<PtrTy>();
       let them = o->as<PtrTy>();
 
@@ -2377,7 +2392,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_OPAQUE_TY: {
+    case QAST_OPAQUE: {
       let us = as<OpaqueTy>();
       let them = o->as<OpaqueTy>();
 
@@ -2390,7 +2405,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_ARRAY_TY: {
+    case QAST_ARRAY: {
       let us = as<ArrayTy>();
       let them = o->as<ArrayTy>();
 
@@ -2403,7 +2418,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_TUPLE_TY: {
+    case QAST_TUPLE: {
       let us = as<TupleTy>();
       let them = o->as<TupleTy>();
 
@@ -2416,7 +2431,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_FN_TY: {
+    case QAST_FUNCTOR: {
       let us = as<FuncTy>();
       let them = o->as<FuncTy>();
 
@@ -2429,7 +2444,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_UNRES_TY: {
+    case QAST_NAMED: {
       let us = as<NamedTy>();
       let them = o->as<NamedTy>();
 
@@ -2442,7 +2457,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_INFER_TY: {
+    case QAST_INFER: {
       let us = as<InferTy>();
       let them = o->as<InferTy>();
 
@@ -2455,7 +2470,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_TEMPL_TY: {
+    case QAST_TEMPLATE: {
       let us = as<TemplType>();
       let them = o->as<TemplType>();
 
@@ -2481,7 +2496,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_FNDECL: {
+    case QAST_FUNCTION_DECL: {
       let us = as<FnDecl>();
       let them = o->as<FnDecl>();
 
@@ -2520,7 +2535,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_FN: {
+    case QAST_FUNCTION: {
       let us = as<FnDef>();
       let them = o->as<FnDef>();
 
@@ -2741,7 +2756,7 @@ constexpr bool npar_node_t::isSame(const npar_node_t *o) const {
       return true;
     }
 
-    case QAST_EXPR_STMT: {
+    case QAST_ESTMT: {
       let us = as<ExprStmt>();
       let them = o->as<ExprStmt>();
 

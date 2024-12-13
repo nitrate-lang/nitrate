@@ -272,17 +272,17 @@ void CambrianFormatter::visit(InferTy const& n) {
 
 void CambrianFormatter::visit(TemplType const& n) {
   bool is_optional =
-      n.get_template()->getKind() == QAST_UNRES_TY &&
+      n.get_template()->getKind() == QAST_NAMED &&
       n.get_template()->as<NamedTy>()->get_name() == "__builtin_result";
 
   bool is_vector =
-      n.get_template()->getKind() == QAST_UNRES_TY &&
+      n.get_template()->getKind() == QAST_NAMED &&
       n.get_template()->as<NamedTy>()->get_name() == "__builtin_vec";
 
-  bool is_map = n.get_template()->getKind() == QAST_UNRES_TY &&
+  bool is_map = n.get_template()->getKind() == QAST_NAMED &&
                 n.get_template()->as<NamedTy>()->get_name() == "__builtin_umap";
 
-  bool is_set = n.get_template()->getKind() == QAST_UNRES_TY &&
+  bool is_set = n.get_template()->getKind() == QAST_NAMED &&
                 n.get_template()->as<NamedTy>()->get_name() == "__builtin_uset";
 
   size_t argc = n.get_args().size();
@@ -501,7 +501,7 @@ void CambrianFormatter::visit(FuncTy const& n) {
 
         line << name;
 
-        if (type->getKind() != QAST_INFER_TY) {
+        if (type->getKind() != QAST_INFER) {
           line << ": ";
           type->accept(*this);
         }
@@ -599,7 +599,7 @@ void CambrianFormatter::visit(Call const& n) {
 
   bool any_lambdas = std::any_of(
       n.get_args().begin(), n.get_args().end(),
-      [](let arg) { return std::get<1>(arg)->is_stmt_expr(QAST_FN); });
+      [](let arg) { return std::get<1>(arg)->is_stmt_expr(QAST_FUNCTION); });
 
   bool is_wrapping = argc >= wrap_threshold || any_named || any_lambdas;
 
@@ -818,11 +818,11 @@ void CambrianFormatter::visit(Block const& n) {
   }
 
   static const std::unordered_set<npar_ty_t> extra_seperation = {
-      QAST_FNDECL,     QAST_STRUCT, QAST_ENUM,  QAST_FN,
-      QAST_SCOPE,      QAST_EXPORT, QAST_BLOCK,
+      QAST_FUNCTION_DECL, QAST_STRUCT, QAST_ENUM,  QAST_FUNCTION,
+      QAST_SCOPE,         QAST_EXPORT, QAST_BLOCK,
 
-      QAST_INLINE_ASM, QAST_IF,     QAST_WHILE, QAST_FOR,
-      QAST_FOREACH,    QAST_SWITCH,
+      QAST_INLINE_ASM,    QAST_IF,     QAST_WHILE, QAST_FOR,
+      QAST_FOREACH,       QAST_SWITCH,
   };
 
   if (!isRootBlock && n.get_items().empty()) {

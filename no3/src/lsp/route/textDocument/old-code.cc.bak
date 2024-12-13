@@ -126,9 +126,9 @@ void recurse(npar_node_t* C) {
       for (auto it = N->get_args().begin(); it != N->get_args().end(); it++) {
         bool is_call = it->second->getKind() == QAST_CALL;
         bool is_other = it->second->getKind() == QAST_LIST ||
-                        (it->second->getKind() == QAST_STMT_EXPR &&
+                        (it->second->getKind() == QAST_SEXPR &&
                          (it->second->as<StmtExpr>()->get_stmt()->getKind() ==
-                          QAST_FN));
+                          QAST_FUNCTION));
 
         line.seekg(0, std::ios::end);
         size_t line_width = line.tellg();
@@ -181,9 +181,9 @@ void recurse(npar_node_t* C) {
       if (N->get_items().size() > 0 &&
           (ty == QAST_ASSOC || ty == QAST_LIST ||
            ty == QAST_CALL || ty == QAST_TEMPL_CALL ||
-           (ty == QAST_STMT_EXPR &&
+           (ty == QAST_SEXPR &&
             N->get_items().front()->as<StmtExpr>()->get_stmt()->getKind() ==
-                QAST_FN))) {
+                QAST_FUNCTION))) {
         line << "[\n";
         flush_line();
         indent++;
@@ -341,12 +341,12 @@ void recurse(npar_node_t* C) {
       break;
     }
 
-    case QAST_STMT_EXPR: {
+    case QAST_SEXPR: {
       recurse(C->as<StmtExpr>()->get_stmt());
       break;
     }
 
-    case QAST_TYPE_EXPR: {
+    case QAST_TEXPR: {
       recurse(C->as<TypeExpr>()->get_type());
       break;
     }
@@ -388,122 +388,122 @@ void recurse(npar_node_t* C) {
       break;
     }
 
-    case QAST_REF_TY: {
+    case QAST_REF: {
       line << "&";
       recurse(C->as<RefTy>()->get_item());
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_U1_TY: {
+    case QAST_U1: {
       line << "u1";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_U8_TY: {
+    case QAST_U8: {
       line << "u8";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_U16_TY: {
+    case QAST_U16: {
       line << "u16";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_U32_TY: {
+    case QAST_U32: {
       line << "u32";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_U64_TY: {
+    case QAST_U64: {
       line << "u64";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_U128_TY: {
+    case QAST_U128: {
       line << "u128";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_I8_TY: {
+    case QAST_I8: {
       line << "i8";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_I16_TY: {
+    case QAST_I16: {
       line << "i16";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_I32_TY: {
+    case QAST_I32: {
       line << "i32";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_I64_TY: {
+    case QAST_I64: {
       line << "i64";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_I128_TY: {
+    case QAST_I128: {
       line << "i128";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_F16_TY: {
+    case QAST_F16: {
       line << "f16";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_F32_TY: {
+    case QAST_F32: {
       line << "f32";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_F64_TY: {
+    case QAST_F64: {
       line << "f64";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_F128_TY: {
+    case QAST_F128: {
       line << "f128";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_VOID_TY: {
+    case QAST_VOID: {
       line << "void";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_PTR_TY: {
+    case QAST_PTR: {
       line << "*";
       recurse(C->as<PtrTy>()->get_item());
       break;
     }
 
-    case QAST_OPAQUE_TY: {
+    case QAST_OPAQUE: {
       line << "opaque(" << C->as<OpaqueTy>()->get_name() << ")";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_ARRAY_TY: {
+    case QAST_ARRAY: {
       ArrayTy* N = C->as<ArrayTy>();
       line << "[";
       recurse(N->get_item());
@@ -514,7 +514,7 @@ void recurse(npar_node_t* C) {
       break;
     }
 
-    case QAST_TUPLE_TY: {
+    case QAST_TUPLE: {
       TupleTy* N = C->as<TupleTy>();
 
       line << "(";
@@ -531,7 +531,7 @@ void recurse(npar_node_t* C) {
       break;
     }
 
-    case QAST_FN_TY: {
+    case QAST_FUNCTOR: {
       static const std::unordered_map<FuncPurity, std::string> purity_str = {
           {FuncPurity::IMPURE_THREAD_UNSAFE, ""},
           {FuncPurity::IMPURE_THREAD_SAFE, " tsafe"},
@@ -562,7 +562,7 @@ void recurse(npar_node_t* C) {
            it++) {
         line << std::get<0>(*it);
         auto param_ty = std::get<1>(*it);
-        if ((param_ty && param_ty->getKind() != QAST_INFER_TY) ||
+        if ((param_ty && param_ty->getKind() != QAST_INFER) ||
             std::get<2>(*it)) {
           line << ": ";
           recurse(std::get<1>(*it));
@@ -584,7 +584,7 @@ void recurse(npar_node_t* C) {
       line << ")";
 
       if (N->get_return_ty() &&
-          N->get_return_ty()->getKind() != QAST_VOID_TY) {
+          N->get_return_ty()->getKind() != QAST_VOID) {
         line << ": ";
         recurse(N->get_return_ty());
       }
@@ -593,22 +593,22 @@ void recurse(npar_node_t* C) {
       break;
     }
 
-    case QAST_UNRES_TY: {
+    case QAST_NAMED: {
       line << C->as<NamedTy>()->get_name();
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_INFER_TY: {
+    case QAST_INFER: {
       line << "?";
       put_type_metadata(C->as<npar::Type>());
       break;
     }
 
-    case QAST_TEMPL_TY: {
+    case QAST_TEMPLATE: {
       TemplType* N = C->as<TemplType>();
 
-      if (N->get_template()->getKind() == QAST_UNRES_TY) {
+      if (N->get_template()->getKind() == QAST_NAMED) {
         auto name = N->get_template()->as<NamedTy>()->get_name();
 
         if (name == "__builtin_result") {
@@ -671,7 +671,7 @@ void recurse(npar_node_t* C) {
       break;
     }
 
-    case QAST_FNDECL: {
+    case QAST_FUNCTION_DECL: {
       static const std::unordered_map<FuncPurity, std::string> purity_str = {
           {FuncPurity::IMPURE_THREAD_UNSAFE, ""},
           {FuncPurity::IMPURE_THREAD_SAFE, " tsafe"},
@@ -714,7 +714,7 @@ void recurse(npar_node_t* C) {
 
         line << std::get<0>(*it);
         auto param_ty = std::get<1>(*it);
-        if ((param_ty && param_ty->getKind() != QAST_INFER_TY) ||
+        if ((param_ty && param_ty->getKind() != QAST_INFER) ||
             std::get<2>(*it)) {
           line << ": ";
           recurse(std::get<1>(*it));
@@ -736,7 +736,7 @@ void recurse(npar_node_t* C) {
       line << ")";
 
       if (F->get_return_ty() &&
-          F->get_return_ty()->getKind() != QAST_VOID_TY) {
+          F->get_return_ty()->getKind() != QAST_VOID) {
         line << ": ";
         recurse(F->get_return_ty());
       }
@@ -791,7 +791,7 @@ void recurse(npar_node_t* C) {
       break;
     }
 
-    case QAST_FN: {
+    case QAST_FUNCTION: {
       static const std::unordered_map<FuncPurity, std::string> purity_str = {
           {FuncPurity::IMPURE_THREAD_UNSAFE, ""},
           {FuncPurity::IMPURE_THREAD_SAFE, " tsafe"},
@@ -834,7 +834,7 @@ void recurse(npar_node_t* C) {
 
         line << std::get<0>(*it);
         auto param_ty = std::get<1>(*it);
-        if ((param_ty && param_ty->getKind() != QAST_INFER_TY) ||
+        if ((param_ty && param_ty->getKind() != QAST_INFER) ||
             std::get<2>(*it)) {
           line << ": ";
           recurse(std::get<1>(*it));
@@ -856,7 +856,7 @@ void recurse(npar_node_t* C) {
       line << ")";
 
       if (F->get_return_ty() &&
-          F->get_return_ty()->getKind() != QAST_VOID_TY) {
+          F->get_return_ty()->getKind() != QAST_VOID) {
         line << ": ";
         recurse(F->get_return_ty());
       }
@@ -925,9 +925,9 @@ void recurse(npar_node_t* C) {
       //      it != N->get_body()->get_items().end(); it++) {
       //   npar_ty_t ty = (*it)->getKind();
 
-      //   if (ty == QAST_FNDECL) {
+      //   if (ty == QAST_FUNCTION_DECL) {
       //     imports.push_back(*it);
-      //   } else if (ty == QAST_FN) {
+      //   } else if (ty == QAST_FUNCTION) {
       //     exports.push_back(*it);
       //   } else if (ty == QAST_VAR) {
       //     VarDecl* V = (*it)->as<VarDecl>();
@@ -983,7 +983,7 @@ void recurse(npar_node_t* C) {
       //   line << " ";
 
       //   recurse(exports.front());
-      //   if (exports.front()->getKind() != QAST_FN) {
+      //   if (exports.front()->getKind() != QAST_FUNCTION) {
       //     line << ";";
       //   }
       // } else if (!exports.empty()) {
@@ -1031,13 +1031,13 @@ void recurse(npar_node_t* C) {
 
     case QAST_BLOCK: {
       static const std::unordered_set<npar_ty_t> no_has_semicolon = {
-          QAST_FN,
+          QAST_FUNCTION,
           QAST_EXPORT,
           QAST_BLOCK,
       };
 
       static const std::unordered_set<npar_ty_t> double_sep = {
-          QAST_FNDECL, QAST_STRUCT, QAST_ENUM,  QAST_FN,
+          QAST_FUNCTION_DECL, QAST_STRUCT, QAST_ENUM,  QAST_FUNCTION,
           QAST_SCOPE,  QAST_EXPORT, QAST_BLOCK,
       };
 
@@ -1276,7 +1276,7 @@ void recurse(npar_node_t* C) {
       break;
     }
 
-    case QAST_EXPR_STMT: {
+    case QAST_ESTMT: {
       recurse(C->as<ExprStmt>()->get_expr());
       break;
     }
