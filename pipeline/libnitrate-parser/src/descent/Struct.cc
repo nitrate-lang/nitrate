@@ -54,26 +54,26 @@ static ExpressionList recurse_struct_attributes(npar_t &S, qlex_t &rd) {
   }
 
   while (true) {
-    let tok = peek();
-
-    if (!tok.is(qEofF)) {
-      if (next_if(qPuncRBrk)) {
-        return attributes;
-      }
-
-      let attribute = recurse_expr(
-          S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRBrk)});
-
-      attributes.push_back(attribute);
-
-      next_if(qPuncComa);
-    } else {
+    if (next_if(qEofF)) {
       diagnostic
-          << tok
+          << current()
           << "Encountered EOF while parsing composite definition attributes";
-      return attributes;
+      break;
     }
+
+    if (next_if(qPuncRBrk)) {
+      break;
+    }
+
+    let attribute = recurse_expr(
+        S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRBrk)});
+
+    attributes.push_back(attribute);
+
+    next_if(qPuncComa);
   }
+
+  return attributes;
 }
 
 static std::string_view recurse_struct_name(qlex_t &rd) {
