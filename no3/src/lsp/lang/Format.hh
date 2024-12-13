@@ -1,9 +1,8 @@
 #pragma once
 
-#include <nitrate-parser/Node.h>
-
 #include <lsp/lang/CambrianStyleFormatter.hh>
 #include <lsp/lang/FmtInterface.hh>
+#include <nitrate-parser/AST.hh>
 
 namespace lsp::fmt {
   enum class Styleguide { Cambrian };

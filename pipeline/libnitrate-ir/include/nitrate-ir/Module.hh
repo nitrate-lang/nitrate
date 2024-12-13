@@ -151,18 +151,16 @@ public:
   qmodule_t(nr::ModuleId id, const std::string &name = "?");
   ~qmodule_t();
 
-  nr::ModuleId getModuleId() noexcept { return m_id; }
+  nr::ModuleId getModuleId() { return m_id; }
 
-  void setRoot(nr::Expr *root) noexcept { m_root = root; }
-  nr::Expr *&getRoot() noexcept { return m_root; }
-  nr::Expr *getRoot() const noexcept { return m_root; }
+  void setRoot(nr::Expr *root) { m_root = root; }
+  nr::Expr *&getRoot() { return m_root; }
+  nr::Expr *getRoot() const { return m_root; }
 
-  std::unordered_map<uint64_t, uint64_t> &getKeyMap() noexcept {
-    return m_key_map;
-  }
+  std::unordered_map<uint64_t, uint64_t> &getKeyMap() { return m_key_map; }
 
-  void enableDiagnostics(bool is_enabled) noexcept;
-  bool isDiagnosticsEnabled() const noexcept { return m_diagnostics_enabled; }
+  void enableDiagnostics(bool is_enabled);
+  bool isDiagnosticsEnabled() const { return m_diagnostics_enabled; }
 
   const auto &getPassesApplied() const { return m_applied; }
   void applyPassLabel(const std::string &label, nr::ModulePassType type) {

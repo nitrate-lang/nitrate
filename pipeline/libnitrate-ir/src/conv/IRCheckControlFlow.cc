@@ -40,7 +40,7 @@
 
 using namespace nr;
 
-bool NRBuilder::check_control_flow(Seq *, IReport *I) noexcept {
+bool NRBuilder::check_control_flow(Seq *, IReport *I) {
   I->report(CompilerError, IC::Debug,
             "NRBuilder::check_control_flow() not implemented");
 

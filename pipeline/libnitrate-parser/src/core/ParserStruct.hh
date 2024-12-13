@@ -3,10 +3,10 @@
 #include <nitrate-core/Env.h>
 #include <nitrate-core/Memory.h>
 #include <nitrate-lexer/Lexer.h>
-#include <nitrate-parser/Node.h>
 #include <stdbool.h>
 
 #include <core/ParseReport.hh>
+#include <nitrate-parser/AST.hh>
 
 struct npar_t {
   qcore_env_t env; /* The Environment */

@@ -36,11 +36,11 @@
 
 #include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Token.h>
-#include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
 
 #include <core/ParseReport.hh>
 #include <core/ParserStruct.hh>
+#include <nitrate-parser/AST.hh>
 #include <set>
 #include <unordered_set>
 

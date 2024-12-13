@@ -77,7 +77,7 @@ C_EXPORT uint32_t qlex_line(qlex_t *obj, uint32_t loc) {
   try {
     auto r = obj->loc2rowcol(loc);
     if (!r) {
-      return UINT32_MAX;
+      return QLEX_EOFF;
     }
 
     return r->first;
@@ -90,7 +90,7 @@ C_EXPORT uint32_t qlex_col(qlex_t *obj, uint32_t loc) {
   try {
     auto r = obj->loc2rowcol(loc);
     if (!r) {
-      return UINT32_MAX;
+      return QLEX_EOFF;
     }
 
     return r->second;
@@ -137,12 +137,12 @@ C_EXPORT uint32_t qlex_offset(qlex_t *obj, uint32_t base, uint32_t offset) {
     //===== AUTOMATA TO CALCULATE THE NEW ROW AND COLUMN =====//
     uint32_t row, col;
 
-    if ((row = qlex_line(obj, base)) == UINT32_MAX) {
+    if ((row = qlex_line(obj, base)) == QLEX_EOFF) {
       free(buf);
       return res;
     }
 
-    if ((col = qlex_col(obj, base)) == UINT32_MAX) {
+    if ((col = qlex_col(obj, base)) == QLEX_EOFF) {
       free(buf);
       return res;
     }
@@ -172,15 +172,15 @@ C_EXPORT uint32_t qlex_spanx(qlex_t *obj, uint32_t start, uint32_t end,
     std::optional<uint32_t> begoff, endoff;
 
     if (!(begoff = start)) {
-      return UINT32_MAX;
+      return QLEX_EOFF;
     }
 
     if (!(endoff = end)) {
-      return UINT32_MAX;
+      return QLEX_EOFF;
     }
 
     if (*endoff < *begoff) {
-      return UINT32_MAX;
+      return QLEX_EOFF;
     }
 
     uint32_t span = *endoff - *begoff;
@@ -190,7 +190,7 @@ C_EXPORT uint32_t qlex_spanx(qlex_t *obj, uint32_t start, uint32_t end,
     std::streamsize bufsz = 0;
 
     if ((curpos = obj->m_file.tellg()) == -1) {
-      return UINT32_MAX;
+      return QLEX_EOFF;
     }
 
     obj->m_file.seekg(*begoff, std::ios_base::beg);
@@ -199,13 +199,13 @@ C_EXPORT uint32_t qlex_spanx(qlex_t *obj, uint32_t start, uint32_t end,
 
     if ((buf = (uint8_t *)malloc(bufsz + 1)) == nullptr) {
       obj->m_file.seekg(curpos, std::ios_base::beg);
-      return UINT32_MAX;
+      return QLEX_EOFF;
     }
 
     if (!obj->m_file.read((char *)buf, bufsz)) {
       free(buf);
       obj->m_file.seekg(curpos, std::ios_base::beg);
-      return UINT32_MAX;
+      return QLEX_EOFF;
     }
 
     buf[bufsz] = '\0';
@@ -425,7 +425,7 @@ CPP_EXPORT uint32_t qlex_t::put_string(std::string_view str) {
   return m_strings->second++;
 #else
   if (str.empty()) [[unlikely]] {
-    return UINT32_MAX;
+    return QLEX_EOFF;
   }
 
   (*m_strings).first[m_strings->second] = std::string(str);

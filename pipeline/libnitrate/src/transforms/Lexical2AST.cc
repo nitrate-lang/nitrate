@@ -43,8 +43,8 @@
 #include <nitrate-core/Classes.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Classes.hh>
+#include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Classes.hh>
-#include <nitrate-parser/Writer.hh>
 #include <string_view>
 #include <unordered_set>
 

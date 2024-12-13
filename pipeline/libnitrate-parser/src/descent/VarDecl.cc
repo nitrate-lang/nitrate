@@ -31,9 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-parser/Node.h>
-
 #include <descent/Recurse.hh>
+#include <nitrate-parser/AST.hh>
 
 using namespace npar;
 
@@ -93,8 +92,9 @@ static std::optional<Stmt *> recurse_variable_instance(npar_t &S, qlex_t &rd,
       let type = recurse_variable_type(S, rd);
       let value = recurse_variable_value(S, rd);
 
-      return VarDecl::get(name, type.value_or(nullptr), value.value_or(nullptr),
-                          decl_type, std::move(attributes.value()));
+      return make<VarDecl>(SaveString(name), type.value_or(nullptr),
+                           value.value_or(nullptr), decl_type,
+                           std::move(attributes.value()));
     } else {
       diagnostic << current() << "Expected variable name";
       return std::nullopt;
@@ -103,7 +103,7 @@ static std::optional<Stmt *> recurse_variable_instance(npar_t &S, qlex_t &rd,
     diagnostic << current() << "Malformed variable attributes";
   }
 
-  return mock_stmt(QAST_NODE_VAR);
+  return mock_stmt(QAST_VAR);
 }
 
 std::vector<Stmt *> npar::recurse_variable(npar_t &S, qlex_t &rd,
@@ -130,5 +130,5 @@ std::vector<Stmt *> npar::recurse_variable(npar_t &S, qlex_t &rd,
     next_if(qPuncComa);
   }
 
-  return {mock_stmt(QAST_NODE_VAR)};
+  return {mock_stmt(QAST_VAR)};
 }

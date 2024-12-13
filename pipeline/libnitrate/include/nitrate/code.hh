@@ -66,7 +66,7 @@ namespace nitrate {
       m_stream = nit_njoin(auto_close, merge_files.size(), merge_files.data());
     }
 
-    Stream(Stream &&other) noexcept {
+    Stream(Stream &&other) {
       this->m_stream = other.m_stream;
       other.m_stream = nullptr;
     }

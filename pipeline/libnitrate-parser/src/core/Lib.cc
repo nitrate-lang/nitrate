@@ -140,5 +140,3 @@ C_EXPORT const char* npar_lib_version() {
 
   return version_string;
 }
-
-C_EXPORT const char* npar_strerror() { return ""; }

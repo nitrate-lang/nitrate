@@ -670,7 +670,7 @@ static std::optional<std::string> demangle_nit_abi(std::string_view name) {
 }
 
 CPP_EXPORT std::optional<std::string> nr::SymbolEncoding::mangle_name(
-    const nr::Expr *symbol, AbiTag abi) const noexcept {
+    const nr::Expr *symbol, AbiTag abi) const {
   if (symbol->isType()) {
     std::stringstream ss;
     mangle_type(symbol->asType(), ss);
@@ -709,7 +709,7 @@ CPP_EXPORT std::optional<std::string> nr::SymbolEncoding::mangle_name(
 }
 
 CPP_EXPORT std::optional<std::string> nr::SymbolEncoding::demangle_name(
-    std::string_view symbol) const noexcept {
+    std::string_view symbol) const {
   if (symbol.empty()) {
     return std::nullopt;
   }

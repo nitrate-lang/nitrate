@@ -36,8 +36,9 @@
 
 #include <nitrate-core/Env.h>
 #include <nitrate-lexer/Lexer.h>
-#include <nitrate-parser/Node.h>
 #include <stdbool.h>
+
+#include <nitrate-parser/AST.hh>
 
 #ifdef __cplusplus
 extern "C" {

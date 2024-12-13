@@ -54,8 +54,8 @@
 #include <nitrate-core/Classes.hh>
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>
+#include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Classes.hh>
-#include <nitrate-parser/Writer.hh>
 #include <nitrate-seq/Classes.hh>
 #include <string_view>
 #include <unordered_map>

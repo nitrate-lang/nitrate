@@ -40,6 +40,7 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>
+#include <nitrate-lexer/Token.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -68,7 +69,7 @@ namespace nr {
     ArenaAllocatorImpl() = default;
 
     void *allocate(std::size_t bytes);
-    void deallocate(void *ptr) noexcept;
+    void deallocate(void *ptr);
 
     qcore_arena_t &get() { return *m_arena.get(); }
   };
@@ -82,13 +83,13 @@ namespace nr {
     Arena() = default;
 
     template <class U>
-    constexpr Arena(const Arena<U> &) noexcept {}
+    constexpr Arena(const Arena<U> &) {}
 
     [[nodiscard]] T *allocate(std::size_t n) {
       return static_cast<T *>(nr_arena.allocate(sizeof(T) * n));
     }
 
-    void deallocate(T *p, std::size_t n) noexcept {
+    void deallocate(T *p, std::size_t n) {
       (void)n;
       (void)p;
     }
@@ -148,25 +149,27 @@ namespace nr {
     QCLASS_REFLECT()
 
     nr_ty_t m_node_type : 6; /* Typecode of this node. */
-    uint64_t m_span : 26;    /* Size of the node in source code.*/
-    uint32_t m_src_offset;   /* Offset into source code where node starts. */
+    uint32_t m_offset : 32;  /* Offset into source code where node starts. */
+    uint32_t m_fileid : 24;  /* File ID of the source file. */
 
     Expr(const Expr &) = delete;
     Expr &operator=(const Expr &) = delete;
 
   public:
-    constexpr Expr(nr_ty_t ty) : m_node_type(ty), m_span(0), m_src_offset(0) {}
+    constexpr Expr(nr_ty_t ty, uint32_t offset = QLEX_EOFF,
+                   uint32_t fileid = QLEX_NOFILE)
+        : m_node_type(ty), m_offset(offset), m_fileid(fileid) {}
 
-    static constexpr uint32_t getKindSize(nr_ty_t kind) noexcept;
-    constexpr nr_ty_t getKind() const noexcept { return m_node_type; }
-    static constexpr const char *getKindName(nr_ty_t kind) noexcept;
+    static constexpr uint32_t getKindSize(nr_ty_t kind);
+    constexpr nr_ty_t getKind() const { return m_node_type; }
+    static constexpr const char *getKindName(nr_ty_t kind);
 
-    constexpr const char *getKindName() const noexcept {
+    constexpr const char *getKindName() const {
       return getKindName(m_node_type);
     }
 
     template <typename T>
-    static constexpr nr_ty_t getTypeCode() noexcept {
+    static constexpr nr_ty_t getTypeCode() {
       if constexpr (std::is_same_v<T, BinExpr>) {
         return NR_NODE_BINEXPR;
       } else if constexpr (std::is_same_v<T, UnExpr>) {
@@ -268,7 +271,7 @@ namespace nr {
       }
     }
 
-    constexpr bool isType() const noexcept {
+    constexpr bool isType() const {
       switch (getKind()) {
         case NR_NODE_U1_TY:
         case NR_NODE_U8_TY:
@@ -300,22 +303,21 @@ namespace nr {
       }
     }
 
-    constexpr bool isLiteral() const noexcept {
+    constexpr bool isLiteral() const {
       return m_node_type == NR_NODE_INT || m_node_type == NR_NODE_FLOAT;
     }
 
     // Returns "" if the construct is not named.
-    constexpr std::string_view getName() const noexcept;
+    constexpr std::string_view getName() const;
 
-    constexpr std::tuple<uint32_t, uint32_t, std::string_view> getLoc()
-        const noexcept {
-      return {m_src_offset, m_src_offset + m_span, ""};
+    constexpr std::tuple<uint32_t, uint32_t> getLoc() const {
+      return {m_offset, m_fileid};
     }
 
-    constexpr std::optional<Type *> getType() const noexcept;
+    constexpr std::optional<Type *> getType() const;
 
     template <typename T>
-    static constexpr T *safeCastAs(Expr *ptr) noexcept {
+    static constexpr T *safeCastAs(Expr *ptr) {
       if (!ptr) {
         return nullptr;
       }
@@ -339,7 +341,7 @@ namespace nr {
      * @warning This function will panic if the cast is invalid.
      */
     template <typename T>
-    constexpr T *as() noexcept {
+    constexpr T *as() {
       return safeCastAs<T>(this);
     }
 
@@ -352,13 +354,13 @@ namespace nr {
      * @warning This function will panic if the cast is invalid.
      */
     template <typename T>
-    constexpr const T *as() const noexcept {
+    constexpr const T *as() const {
       return safeCastAs<T>(const_cast<Expr *>(this));
     }
 
-    constexpr Expr *asExpr() noexcept { return this; }
-    constexpr Type *asType() noexcept;
-    constexpr const Type *asType() const noexcept {
+    constexpr Expr *asExpr() { return this; }
+    constexpr Type *asType();
+    constexpr const Type *asType() const {
       return const_cast<Expr *>(this)->asType();
     }
 
@@ -369,7 +371,7 @@ namespace nr {
      * @return true If the type matches.
      * @return false If the type does not match.
      */
-    constexpr bool is(nr_ty_t type) const noexcept { return type == getKind(); }
+    constexpr bool is(nr_ty_t type) const { return type == getKind(); }
 
     /**
      * @brief Compare two nodes for equality.
@@ -619,7 +621,7 @@ namespace nr {
       }
     }
 
-    bool isAcyclic() const noexcept;
+    bool isAcyclic() const;
 
     /**
      * @brief Print the node to the output stream.
@@ -628,7 +630,7 @@ namespace nr {
      */
     void dump(std::ostream &os = std::cout, bool isForDebug = false) const;
 
-    std::string toString() const noexcept {
+    std::string toString() const {
       std::stringstream ss;
       dump(ss, false);
       return ss.str();
@@ -641,7 +643,7 @@ namespace nr {
      * @note This code will be the same on different compiler runs as long as
      * the compiler version is the same.
      */
-    boost::uuids::uuid hash() noexcept;
+    boost::uuids::uuid hash();
 
     /**
      * @brief Get a hashcode for the node. The code is unique its the nodes and
@@ -649,9 +651,7 @@ namespace nr {
      * @return std::string The unique identifier.
      * @note Wrapper around hash()
      */
-    std::string getStateUUID() noexcept {
-      return boost::uuids::to_string(hash());
-    }
+    std::string getStateUUID() { return boost::uuids::to_string(hash()); }
 
     /**
      * @brief Get a short code to uniquely identify the node.
@@ -881,13 +881,13 @@ namespace nr {
     BinExpr(Expr *lhs, Expr *rhs, Op op)
         : Expr(NR_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
-    Expr *getLHS() const noexcept { return m_lhs; }
-    Expr *getRHS() const noexcept { return m_rhs; }
-    Op getOp() const noexcept { return m_op; }
+    Expr *getLHS() const { return m_lhs; }
+    Expr *getRHS() const { return m_rhs; }
+    Op getOp() const { return m_op; }
 
-    Expr *setLHS(Expr *lhs) noexcept { return m_lhs = lhs; }
-    Expr *setRHS(Expr *rhs) noexcept { return m_rhs = rhs; }
-    Op setOp(Op op) noexcept { return m_op = op; }
+    Expr *setLHS(Expr *lhs) { return m_lhs = lhs; }
+    Expr *setRHS(Expr *rhs) { return m_rhs = rhs; }
+    Op setOp(Op op) { return m_op = op; }
   };
 
   class UnExpr final : public Expr {
@@ -901,11 +901,11 @@ namespace nr {
   public:
     UnExpr(Expr *expr, Op op) : Expr(NR_NODE_UNEXPR), m_expr(expr), m_op(op) {}
 
-    Expr *getExpr() const noexcept { return m_expr; }
-    Op getOp() const noexcept { return m_op; }
+    Expr *getExpr() const { return m_expr; }
+    Op getOp() const { return m_op; }
 
-    Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
-    Op setOp(Op op) noexcept { return m_op = op; }
+    Expr *setExpr(Expr *expr) { return m_expr = expr; }
+    Op setOp(Op op) { return m_op = op; }
   };
 
   class PostUnExpr final : public Expr {
@@ -920,11 +920,11 @@ namespace nr {
     PostUnExpr(Expr *expr, Op op)
         : Expr(NR_NODE_POST_UNEXPR), m_expr(expr), m_op(op) {}
 
-    Expr *getExpr() const noexcept { return m_expr; }
-    Op getOp() const noexcept { return m_op; }
+    Expr *getExpr() const { return m_expr; }
+    Op getOp() const { return m_op; }
 
-    Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
-    Op setOp(Op op) noexcept { return m_op = op; }
+    Expr *setExpr(Expr *expr) { return m_expr = expr; }
+    Op setOp(Op op) { return m_op = op; }
   };
 
   ///=============================================================================
@@ -1101,8 +1101,8 @@ namespace nr {
           m_pointee(pointee),
           m_platform_ptr_size_bytes(platform_size_bytes) {}
 
-    Type *getPointee() const noexcept { return m_pointee; }
-    uint8_t getPlatformPointerSizeBytes() const noexcept {
+    Type *getPointee() const { return m_pointee; }
+    uint8_t getPlatformPointerSizeBytes() const {
       return m_platform_ptr_size_bytes;
     }
   };
@@ -1117,7 +1117,7 @@ namespace nr {
   public:
     ConstTy(Type *item) : Type(NR_NODE_CONST_TY), m_item(item) {}
 
-    Type *getItem() const noexcept { return m_item; }
+    Type *getItem() const { return m_item; }
   };
 
   class OpaqueTy final : public Type {
@@ -1144,7 +1144,7 @@ namespace nr {
     StructTy(const StructFields &fields)
         : Type(NR_NODE_STRUCT_TY), m_fields(fields) {}
 
-    const StructFields &getFields() const noexcept { return m_fields; }
+    const StructFields &getFields() const { return m_fields; }
   };
 
   typedef std::vector<Type *, Arena<Type *>> UnionFields;
@@ -1160,7 +1160,7 @@ namespace nr {
     UnionTy(const UnionFields &fields)
         : Type(NR_NODE_UNION_TY), m_fields(fields) {}
 
-    const UnionFields &getFields() const noexcept { return m_fields; }
+    const UnionFields &getFields() const { return m_fields; }
   };
 
   class ArrayTy final : public Type {
@@ -1175,7 +1175,7 @@ namespace nr {
     ArrayTy(Type *element, size_t size)
         : Type(NR_NODE_ARRAY_TY), m_element(element), m_size(size) {}
 
-    Type *getElement() const noexcept { return m_element; }
+    Type *getElement() const { return m_element; }
     size_t getCount() const { return m_size; }
   };
 
@@ -1207,15 +1207,13 @@ namespace nr {
           m_return(ret),
           m_platform_ptr_size_bytes(platform_ptr_size_bytes) {}
 
-    const FnParams &getParams() const noexcept { return m_params; }
-    Type *getReturn() const noexcept { return m_return; }
-    const FnAttrs &getAttrs() const noexcept { return m_attrs; }
+    const FnParams &getParams() const { return m_params; }
+    Type *getReturn() const { return m_return; }
+    const FnAttrs &getAttrs() const { return m_attrs; }
 
-    bool isVariadic() const noexcept {
-      return m_attrs.contains(FnAttr::Variadic);
-    }
+    bool isVariadic() const { return m_attrs.contains(FnAttr::Variadic); }
 
-    uint8_t getPlatformPointerSizeBytes() const noexcept {
+    uint8_t getPlatformPointerSizeBytes() const {
       return m_platform_ptr_size_bytes;
     }
   };
@@ -1244,7 +1242,7 @@ namespace nr {
     unsigned __int128 m_value __attribute__((aligned(16)));
     uint8_t m_size;
 
-    static uint128_t str2u128(std::string_view x) noexcept;
+    static uint128_t str2u128(std::string_view x);
 
   public:
     Int(uint128_t val, uint8_t size)
@@ -1255,14 +1253,14 @@ namespace nr {
       m_size = size;
     }
 
-    static Int *get(uint128_t val, uint8_t size) noexcept;
-    static Int *get(std::string_view str, uint8_t size) noexcept {
+    static Int *get(uint128_t val, uint8_t size);
+    static Int *get(std::string_view str, uint8_t size) {
       return get(str2u128(str), size);
     }
 
-    uint8_t getSize() const noexcept { return m_size; }
-    uint128_t getValue() const noexcept { return m_value; }
-    std::string getValueString() const noexcept;
+    uint8_t getSize() const { return m_size; }
+    uint128_t getValue() const { return m_value; }
+    std::string getValueString() const;
   } __attribute__((packed));
 
   static_assert(sizeof(Int) == 48);
@@ -1300,8 +1298,8 @@ namespace nr {
       }
     }
 
-    FloatSize getSize() const noexcept { return m_size; }
-    double getValue() const noexcept { return m_data; }
+    FloatSize getSize() const { return m_size; }
+    double getValue() const { return m_data; }
   } __attribute__((packed));
 
   static_assert(sizeof(Float) == 17);
@@ -1322,14 +1320,14 @@ namespace nr {
     List(const ListItems &items, bool is_homogenous)
         : Expr(NR_NODE_LIST), m_items(items), m_is_homogenous(is_homogenous) {}
 
-    auto begin() const noexcept { return m_items.begin(); }
-    auto end() const noexcept { return m_items.end(); }
-    size_t size() const noexcept { return m_items.size(); }
+    auto begin() const { return m_items.begin(); }
+    auto end() const { return m_items.end(); }
+    size_t size() const { return m_items.size(); }
 
-    Expr *operator[](size_t idx) const noexcept { return m_items[idx]; }
-    Expr *at(size_t idx) const noexcept { return m_items.at(idx); }
+    Expr *operator[](size_t idx) const { return m_items[idx]; }
+    Expr *at(size_t idx) const { return m_items.at(idx); }
 
-    bool isHomogenous() const noexcept { return m_is_homogenous; }
+    bool isHomogenous() const { return m_is_homogenous; }
   };
 
   ///=============================================================================
@@ -1354,14 +1352,14 @@ namespace nr {
     Call(Expr *ref, const CallArgs &args)
         : Expr(NR_NODE_CALL), m_iref(ref), m_args(args) {}
 
-    Expr *getTarget() const noexcept { return m_iref; }
-    Expr *setTarget(Expr *ref) noexcept { return m_iref = ref; }
+    Expr *getTarget() const { return m_iref; }
+    Expr *setTarget(Expr *ref) { return m_iref = ref; }
 
-    const CallArgs &getArgs() const noexcept { return m_args; }
-    CallArgs &getArgs() noexcept { return m_args; }
-    void setArgs(const CallArgs &args) noexcept { m_args = args; }
+    const CallArgs &getArgs() const { return m_args; }
+    CallArgs &getArgs() { return m_args; }
+    void setArgs(const CallArgs &args) { m_args = args; }
 
-    size_t getNumArgs() noexcept { return m_args.size(); }
+    size_t getNumArgs() { return m_args.size(); }
   };
 
   typedef std::vector<Expr *, Arena<Expr *>> SeqItems;
@@ -1376,9 +1374,9 @@ namespace nr {
   public:
     Seq(const SeqItems &items) : Expr(NR_NODE_SEQ), m_items(items) {}
 
-    const SeqItems &getItems() const noexcept { return m_items; }
-    SeqItems &getItems() noexcept { return m_items; }
-    void setItems(const SeqItems &items) noexcept { m_items = items; }
+    const SeqItems &getItems() const { return m_items; }
+    SeqItems &getItems() { return m_items; }
+    void setItems(const SeqItems &items) { m_items = items; }
   };
 
   class Index final : public Expr {
@@ -1393,11 +1391,11 @@ namespace nr {
     Index(Expr *expr, Expr *index)
         : Expr(NR_NODE_INDEX), m_expr(expr), m_index(index) {}
 
-    Expr *getExpr() const noexcept { return m_expr; }
-    Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
+    Expr *getExpr() const { return m_expr; }
+    Expr *setExpr(Expr *expr) { return m_expr = expr; }
 
-    Expr *getIndex() const noexcept { return m_index; }
-    Expr *setIndex(Expr *index) noexcept { return m_index = index; }
+    Expr *getIndex() const { return m_index; }
+    Expr *setIndex(Expr *index) { return m_index = index; }
   };
 
   class Ident final : public Expr {
@@ -1412,12 +1410,10 @@ namespace nr {
     Ident(std::string_view name, Expr *what)
         : Expr(NR_NODE_IDENT), m_name(name), m_what(what) {}
 
-    Expr *getWhat() const noexcept { return m_what; }
-    Expr *setWhat(Expr *what) noexcept { return m_what = what; }
+    Expr *getWhat() const { return m_what; }
+    Expr *setWhat(Expr *what) { return m_what = what; }
 
-    std::string_view setName(std::string_view name) noexcept {
-      return m_name = name;
-    }
+    std::string_view setName(std::string_view name) { return m_name = name; }
   };
 
   class Extern final : public Expr {
@@ -1432,13 +1428,13 @@ namespace nr {
     Extern(Expr *value, std::string_view abi_name)
         : Expr(NR_NODE_EXTERN), m_abi_name(abi_name), m_value(value) {}
 
-    std::string_view getAbiName() const noexcept { return m_abi_name; }
-    std::string_view setAbiName(std::string_view abi_name) noexcept {
+    std::string_view getAbiName() const { return m_abi_name; }
+    std::string_view setAbiName(std::string_view abi_name) {
       return m_abi_name = abi_name;
     }
 
-    Expr *getValue() const noexcept { return m_value; }
-    Expr *setValue(Expr *value) noexcept { return m_value = value; }
+    Expr *getValue() const { return m_value; }
+    Expr *setValue(Expr *value) { return m_value = value; }
   };
 
   class Local final : public Expr {
@@ -1463,23 +1459,21 @@ namespace nr {
           m_storage_class(storage_class),
           m_readonly(readonly) {}
 
-    std::string_view setName(std::string_view name) noexcept {
-      return m_name = name;
-    }
+    std::string_view setName(std::string_view name) { return m_name = name; }
 
-    Expr *getValue() const noexcept { return m_value; }
-    void setValue(Expr *value) noexcept { m_value = value; }
+    Expr *getValue() const { return m_value; }
+    void setValue(Expr *value) { m_value = value; }
 
-    AbiTag getAbiTag() const noexcept { return m_abi_tag; }
-    void setAbiTag(AbiTag abi_tag) noexcept { m_abi_tag = abi_tag; }
+    AbiTag getAbiTag() const { return m_abi_tag; }
+    void setAbiTag(AbiTag abi_tag) { m_abi_tag = abi_tag; }
 
-    StorageClass getStorageClass() const noexcept { return m_storage_class; }
-    void setStorageClass(StorageClass storage_class) noexcept {
+    StorageClass getStorageClass() const { return m_storage_class; }
+    void setStorageClass(StorageClass storage_class) {
       m_storage_class = storage_class;
     }
 
-    bool isReadonly() const noexcept { return m_readonly; }
-    void setReadonly(bool readonly) noexcept { m_readonly = readonly; }
+    bool isReadonly() const { return m_readonly; }
+    void setReadonly(bool readonly) { m_readonly = readonly; }
   };
 
   class Ret final : public Expr {
@@ -1492,8 +1486,8 @@ namespace nr {
   public:
     Ret(Expr *expr) : Expr(NR_NODE_RET), m_expr(expr) {}
 
-    Expr *getExpr() const noexcept { return m_expr; }
-    Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
+    Expr *getExpr() const { return m_expr; }
+    Expr *setExpr(Expr *expr) { return m_expr = expr; }
   };
 
   class Brk final : public Expr {
@@ -1527,14 +1521,14 @@ namespace nr {
     If(Expr *cond, Expr *then, Expr *else_)
         : Expr(NR_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
-    Expr *getCond() const noexcept { return m_cond; }
-    Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
+    Expr *getCond() const { return m_cond; }
+    Expr *setCond(Expr *cond) { return m_cond = cond; }
 
-    Expr *getThen() const noexcept { return m_then; }
-    Expr *setThen(Expr *then) noexcept { return m_then = then; }
+    Expr *getThen() const { return m_then; }
+    Expr *setThen(Expr *then) { return m_then = then; }
 
-    Expr *getElse() const noexcept { return m_else; }
-    Expr *setElse(Expr *else_) noexcept { return m_else = else_; }
+    Expr *getElse() const { return m_else; }
+    Expr *setElse(Expr *else_) { return m_else = else_; }
   };
 
   class While final : public Expr {
@@ -1549,11 +1543,11 @@ namespace nr {
     While(Expr *cond, Seq *body)
         : Expr(NR_NODE_WHILE), m_cond(cond), m_body(body) {}
 
-    Expr *getCond() const noexcept { return m_cond; }
-    Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
+    Expr *getCond() const { return m_cond; }
+    Expr *setCond(Expr *cond) { return m_cond = cond; }
 
-    Seq *getBody() const noexcept { return m_body; }
-    Seq *setBody(Seq *body) noexcept { return m_body = body; }
+    Seq *getBody() const { return m_body; }
+    Seq *setBody(Seq *body) { return m_body = body; }
   };
 
   class For final : public Expr {
@@ -1574,17 +1568,17 @@ namespace nr {
           m_step(step),
           m_body(body) {}
 
-    Expr *getInit() const noexcept { return m_init; }
-    Expr *setInit(Expr *init) noexcept { return m_init = init; }
+    Expr *getInit() const { return m_init; }
+    Expr *setInit(Expr *init) { return m_init = init; }
 
-    Expr *getCond() const noexcept { return m_cond; }
-    Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
+    Expr *getCond() const { return m_cond; }
+    Expr *setCond(Expr *cond) { return m_cond = cond; }
 
-    Expr *getStep() const noexcept { return m_step; }
-    Expr *setStep(Expr *step) noexcept { return m_step = step; }
+    Expr *getStep() const { return m_step; }
+    Expr *setStep(Expr *step) { return m_step = step; }
 
-    Expr *getBody() const noexcept { return m_body; }
-    Expr *setBody(Expr *body) noexcept { return m_body = body; }
+    Expr *getBody() const { return m_body; }
+    Expr *setBody(Expr *body) { return m_body = body; }
   };
 
   class Case final : public Expr {
@@ -1599,11 +1593,11 @@ namespace nr {
     Case(Expr *cond, Expr *body)
         : Expr(NR_NODE_CASE), m_cond(cond), m_body(body) {}
 
-    Expr *getCond() noexcept { return m_cond; }
-    Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
+    Expr *getCond() { return m_cond; }
+    Expr *setCond(Expr *cond) { return m_cond = cond; }
 
-    Expr *getBody() noexcept { return m_body; }
-    Expr *setBody(Expr *body) noexcept { return m_body = body; }
+    Expr *getBody() { return m_body; }
+    Expr *setBody(Expr *body) { return m_body = body; }
   };
 
   typedef std::vector<Case *, Arena<Case *>> SwitchCases;
@@ -1624,16 +1618,16 @@ namespace nr {
           m_default(default_),
           m_cases(cases) {}
 
-    Expr *getCond() const noexcept { return m_cond; }
-    Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
+    Expr *getCond() const { return m_cond; }
+    Expr *setCond(Expr *cond) { return m_cond = cond; }
 
-    Expr *getDefault() const noexcept { return m_default; }
-    Expr *setDefault(Expr *default_) noexcept { return m_default = default_; }
+    Expr *getDefault() const { return m_default; }
+    Expr *setDefault(Expr *default_) { return m_default = default_; }
 
-    const SwitchCases &getCases() const noexcept { return m_cases; }
-    SwitchCases &getCases() noexcept { return m_cases; }
-    void setCases(const SwitchCases &cases) noexcept { m_cases = cases; }
-    void addCase(Case *c) noexcept { m_cases.push_back(c); }
+    const SwitchCases &getCases() const { return m_cases; }
+    SwitchCases &getCases() { return m_cases; }
+    void setCases(const SwitchCases &cases) { m_cases = cases; }
+    void addCase(Case *c) { m_cases.push_back(c); }
   };
 
   typedef std::vector<std::pair<Type *, std::string_view>,
@@ -1663,27 +1657,25 @@ namespace nr {
           m_variadic(variadic),
           m_abi_tag(abi_tag) {}
 
-    std::string_view setName(std::string_view name) noexcept {
-      return m_name = name;
-    }
+    std::string_view setName(std::string_view name) { return m_name = name; }
 
-    const Params &getParams() const noexcept { return m_params; }
-    Params &getParams() noexcept { return m_params; }
-    void setParams(const Params &params) noexcept { m_params = params; }
+    const Params &getParams() const { return m_params; }
+    Params &getParams() { return m_params; }
+    void setParams(const Params &params) { m_params = params; }
 
-    Type *getReturn() const noexcept { return m_return; }
-    Type *setReturn(Type *ret_ty) noexcept { return m_return = ret_ty; }
+    Type *getReturn() const { return m_return; }
+    Type *setReturn(Type *ret_ty) { return m_return = ret_ty; }
 
-    std::optional<Seq *> getBody() const noexcept { return m_body; }
-    std::optional<Seq *> setBody(std::optional<Seq *> body) noexcept {
+    std::optional<Seq *> getBody() const { return m_body; }
+    std::optional<Seq *> setBody(std::optional<Seq *> body) {
       return m_body = body;
     }
 
-    bool isVariadic() const noexcept { return m_variadic; }
-    void setVariadic(bool variadic) noexcept { m_variadic = variadic; }
+    bool isVariadic() const { return m_variadic; }
+    void setVariadic(bool variadic) { m_variadic = variadic; }
 
-    AbiTag getAbiTag() const noexcept { return m_abi_tag; }
-    AbiTag setAbiTag(AbiTag abi_tag) noexcept { return m_abi_tag = abi_tag; }
+    AbiTag getAbiTag() const { return m_abi_tag; }
+    AbiTag setAbiTag(AbiTag abi_tag) { return m_abi_tag = abi_tag; }
   };
 
   class Asm final : public Expr {
@@ -1731,14 +1723,14 @@ namespace nr {
     Tmp(TmpType type, const TmpNodeCradle &data = {})
         : Type(NR_NODE_TMP), m_type(type), m_data(data) {}
 
-    TmpType getTmpType() noexcept { return m_type; }
-    TmpNodeCradle &getData() noexcept { return m_data; }
-    const TmpNodeCradle &getData() const noexcept { return m_data; }
+    TmpType getTmpType() { return m_type; }
+    TmpNodeCradle &getData() { return m_data; }
+    const TmpNodeCradle &getData() const { return m_data; }
   };
 
   ///=============================================================================
 
-  constexpr Type *Expr::asType() noexcept {
+  constexpr Type *Expr::asType() {
 #ifndef NDEBUG
     if (!isType()) {
       qcore_panicf("Failed to cast a non-type node `%s` to a type node",
@@ -1748,7 +1740,7 @@ namespace nr {
     return static_cast<Type *>(this);
   }
 
-  constexpr std::optional<nr::Type *> nr::Expr::getType() const noexcept {
+  constexpr std::optional<nr::Type *> nr::Expr::getType() const {
     Type *R = static_cast<Type *>(nr_infer(this, nullptr));
 
     if (R) {
@@ -1758,7 +1750,7 @@ namespace nr {
     }
   }
 
-  constexpr std::string_view Expr::getName() const noexcept {
+  constexpr std::string_view Expr::getName() const {
     std::string_view R = "";
 
     switch (this->getKind()) {
@@ -1960,7 +1952,7 @@ namespace nr {
     return R;
   }
 
-  constexpr uint32_t Expr::getKindSize(nr_ty_t type) noexcept {
+  constexpr uint32_t Expr::getKindSize(nr_ty_t type) {
     const std::array<size_t, NR_NODE_COUNT> sizes = []() {
       std::array<size_t, NR_NODE_COUNT> R;
       R.fill(0);
@@ -2019,7 +2011,7 @@ namespace nr {
     return sizes[type];
   }
 
-  constexpr const char *Expr::getKindName(nr_ty_t type) noexcept {
+  constexpr const char *Expr::getKindName(nr_ty_t type) {
     const std::array<const char *, NR_NODE_COUNT> names = []() {
       std::array<const char *, NR_NODE_COUNT> R;
       R.fill("");
@@ -2547,11 +2539,11 @@ namespace nr {
       ConstChildSelect;
 
   namespace detail {
-    void dfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept;
-    void dfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept;
-    void bfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept;
-    void bfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs) noexcept;
-    void iter_children(Expr **base, IterCallback cb, ChildSelect cs) noexcept;
+    void dfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs);
+    void dfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs);
+    void bfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs);
+    void bfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs);
+    void iter_children(Expr **base, IterCallback cb, ChildSelect cs);
   }  // namespace detail
 
   template <IterMode mode, typename T>
@@ -2605,10 +2597,10 @@ namespace nr {
 
   std::optional<Expr *> comptime_impl(
       Expr *x, std::optional<std::function<void(std::string_view)>> eprintn =
-                   std::nullopt) noexcept;
+                   std::nullopt);
 
   template <typename T>
-  std::optional<T> uint_as(const Expr *x) noexcept {
+  std::optional<T> uint_as(const Expr *x) {
 #define IS_T(x) std::is_same_v<T, x>
 
     qcore_assert(x != nullptr, "nr::evaluate_as(): x is nullptr.");
@@ -2641,7 +2633,7 @@ namespace nr {
 
   /** Add source debugging information to an IR node */
   template <typename T>
-  static inline T *debug_info(T *N, uint32_t line, uint32_t col) noexcept {
+  static inline T *debug_info(T *N, uint32_t line, uint32_t col) {
     /// TODO: Store source location information
     (void)line;
     (void)col;

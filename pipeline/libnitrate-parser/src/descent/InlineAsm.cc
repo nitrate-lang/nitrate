@@ -31,14 +31,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-parser/Node.h>
-
 #include <descent/Recurse.hh>
+#include <nitrate-parser/AST.hh>
 
 using namespace npar;
 
 Stmt *npar::recurse_inline_asm(npar_t &, qlex_t &rd) {
   diagnostic << current() << "Inline assembly is not yet implemented";
 
-  return mock_stmt(QAST_NODE_INLINE_ASM);
+  return mock_stmt(QAST_INLINE_ASM);
 }

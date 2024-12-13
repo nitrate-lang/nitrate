@@ -31,9 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-parser/Node.h>
-
 #include <descent/Recurse.hh>
+#include <nitrate-parser/AST.hh>
 
 using namespace npar;
 
@@ -63,7 +62,7 @@ static std::optional<ScopeDeps> recurse_scope_deps(qlex_t &rd) {
       if (tok.is(qName)) {
         let dependency_name = tok.as_string(&rd);
 
-        dependencies.insert(dependency_name);
+        dependencies.insert(SaveString(dependency_name));
 
         next_if(qPuncComa);
       } else {
@@ -80,7 +79,7 @@ static std::optional<ScopeDeps> recurse_scope_deps(qlex_t &rd) {
 
 static Stmt *recurse_scope_block(npar_t &S, qlex_t &rd) {
   if (next_if(qPuncSemi)) {
-    return Block::get();
+    return make<Block>();
   } else if (next_if(qOpArrow)) {
     return recurse_block(S, rd, false, true);
   } else {
@@ -94,14 +93,11 @@ npar::Stmt *npar::recurse_scope(npar_t &S, qlex_t &rd) {
   if (let implicit_dependencies = recurse_scope_deps(rd)) {
     let scope_block = recurse_scope_block(S, rd);
 
-    let scope_stmt = ScopeStmt::get(scope_name, scope_block,
-                                    std::move(implicit_dependencies.value()));
-    scope_stmt->set_end_pos(scope_block->get_end_pos());
-
-    return scope_stmt;
+    return make<ScopeStmt>(SaveString(scope_name), scope_block,
+                           std::move(implicit_dependencies.value()));
   } else {
     diagnostic << current() << "Expected scope dependencies";
   }
 
-  return mock_stmt(QAST_NODE_SCOPE);
+  return mock_stmt(QAST_SCOPE);
 }

@@ -31,9 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-parser/Node.h>
-
 #include <descent/Recurse.hh>
+#include <nitrate-parser/AST.hh>
 
 using namespace npar;
 
@@ -122,12 +121,9 @@ npar::Stmt *npar::recurse_enum(npar_t &S, qlex_t &rd) {
   let type = recurse_enum_type(S, rd);
 
   if (let items = recurse_enum_items(S, rd)) {
-    let stmt =
-        EnumDef::get(name, type.value_or(nullptr), std::move(items.value()));
-    stmt->set_end_pos(current().end);
-
-    return stmt;
+    return make<EnumDef>(SaveString(name), type.value_or(nullptr),
+                         std::move(items.value()));
   }
 
-  return mock_stmt(QAST_NODE_ENUM);
+  return mock_stmt(QAST_ENUM);
 }

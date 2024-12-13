@@ -31,9 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-parser/Node.h>
-
 #include <descent/Recurse.hh>
+#include <nitrate-parser/AST.hh>
 
 using namespace npar;
 
@@ -41,7 +40,7 @@ static Expr *recurse_while_cond(npar_t &S, qlex_t &rd) {
   let cur = peek();
 
   if (cur.is<qOpArrow>() || cur.is<qPuncLCur>()) {
-    return ConstBool::get(true);
+    return make<ConstBool>(true);
   } else {
     return recurse_expr(
         S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
@@ -70,8 +69,5 @@ npar::Stmt *npar::recurse_while(npar_t &S, qlex_t &rd) {
   /* Support for single statement implicit block */
   let body = recurse_while_body(S, rd);
 
-  let stmt = WhileStmt::get(cond, body);
-  stmt->set_end_pos(body->get_end_pos());
-
-  return stmt;
+  return make<WhileStmt>(cond, body);
 }

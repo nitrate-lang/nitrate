@@ -317,4 +317,7 @@ typedef struct qlex_tok_t {
 
 #define QLEX_TOK_SIZE (sizeof(qlex_tok_t))
 
+#define QLEX_EOFF (UINT32_MAX)
+#define QLEX_NOFILE (16777215)
+
 #endif  // __NITRATE_LEXER_TOKEN_H__

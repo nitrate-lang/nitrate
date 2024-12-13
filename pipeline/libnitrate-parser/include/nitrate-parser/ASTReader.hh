@@ -31,59 +31,70 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_IR_CLASSES_H__
-#define __NITRATE_IR_CLASSES_H__
+#ifndef __NITRATE_PARSER_READER_H__
+#define __NITRATE_PARSER_READER_H__
 
-#ifndef __cplusplus
-#error "This header is for C++ only."
-#endif
+#include <nitrate-core/Macro.h>
 
-#include <nitrate-core/Error.h>
-#include <nitrate-ir/Config.h>
-#include <nitrate-ir/IR.h>
-
-#include <nitrate-ir/IRGraph.hh>
+#include <cstdint>
+#include <istream>
+#include <nitrate-parser/ASTVisitor.hh>
 #include <optional>
-#include <string>
+#include <stack>
 
-class nr_conf final {
-  nr_conf_t *m_conf;
+namespace npar {
+  class CPP_EXPORT AST_Reader {
+    enum class State {
+      ObjStart,
+      ObjEnd,
+    };
 
-public:
-  nr_conf(bool use_default = true) {
-    if ((m_conf = nr_conf_new(use_default)) == nullptr) {
-      qcore_panic("nr_conf_new failed");
-    }
-  }
-  ~nr_conf() { nr_conf_free(m_conf); }
+    std::stack<State> m_state;
+    std::stack<npar_node_t*> m_parse;
 
-  nr_conf_t *get() const { return m_conf; }
-};
+    void handle_state();
 
-class qmodule final {
-  qmodule_t *m_module;
+    /// TODO: Implement state
 
-public:
-  qmodule() { m_module = nullptr; }
-  ~qmodule() {
-    if (m_module) {
-      nr_free(m_module);
-    }
-  }
+  protected:
+    void str(std::string_view str);
+    void uint(uint64_t val);
+    void dbl(double val);
+    void boolean(bool val);
+    void null();
+    void begin_obj(size_t pair_count);
+    void end_obj();
+    void begin_arr(size_t size);
+    void end_arr();
 
-  qmodule_t *&get() { return m_module; }
-};
-
-namespace nr {
-  class SymbolEncoding final {
   public:
-    SymbolEncoding() = default;
+    AST_Reader() { m_state.push(State::ObjStart); }
+    virtual ~AST_Reader() = default;
 
-    std::optional<std::string> mangle_name(const nr::Expr *symbol,
-                                           AbiTag abi) const;
+    std::optional<npar_node_t*> get() {
+      if (m_parse.empty() || m_parse.top() == nullptr) {
+        return std::nullopt;
+      }
 
-    std::optional<std::string> demangle_name(std::string_view symbol) const;
+      return m_parse.top();
+    }
   };
-}  // namespace nr
 
-#endif  // __NITRATE_IR_CLASSES_H__
+  class CPP_EXPORT AST_JsonReader final : public AST_Reader {
+    void parse_stream(std::istream& is);
+
+  public:
+    AST_JsonReader(std::istream& is) { parse_stream(is); }
+    virtual ~AST_JsonReader() = default;
+  };
+
+  class CPP_EXPORT AST_MsgPackReader final : public AST_Reader {
+    void parse_stream(std::istream& is);
+
+  public:
+    AST_MsgPackReader(std::istream& is) { parse_stream(is); }
+    virtual ~AST_MsgPackReader() = default;
+  };
+}  // namespace npar
+
+#endif

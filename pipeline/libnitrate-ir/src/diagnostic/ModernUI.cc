@@ -33,7 +33,6 @@
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
-#include <nitrate-parser/Node.h>
 
 #include <boost/bimap.hpp>
 #include <core/Config.hh>
@@ -42,6 +41,7 @@
 #include <iomanip>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
+#include <nitrate-parser/AST.hh>
 #include <sstream>
 
 #include "nitrate-ir/Report.hh"
@@ -152,7 +152,7 @@ const boost::bimap<IssueCode, IssueInfo> nr::issue_info =
 ///============================================================================///
 
 static void print_qsizeloc(std::stringstream &ss, uint32_t num) {
-  if (num == UINT32_MAX) {
+  if (num == QLEX_EOFF) {
     ss << "?";
   } else {
     ss << num;
@@ -321,7 +321,7 @@ std::string nr::mint_modern_message(const IReport::ReportData &R,
     /// FIXME: Render filename
     ss << "\x1b[37;1m" << "??" << ":";
 
-    auto default_if = std::pair<uint32_t, uint32_t>(UINT32_MAX, UINT32_MAX);
+    auto default_if = std::pair<uint32_t, uint32_t>(QLEX_EOFF, QLEX_NOFILE);
     auto beg = B->off2rc(R.start_offset).value_or(default_if);
     auto end = B->off2rc(R.end_offset).value_or(default_if);
 
@@ -330,8 +330,8 @@ std::string nr::mint_modern_message(const IReport::ReportData &R,
     el = end.first;
     ec = end.second;
 
-    if (sl != UINT32_MAX || sc != UINT32_MAX || el != UINT32_MAX ||
-        ec != UINT32_MAX) {
+    if (sl != QLEX_EOFF || sc != QLEX_EOFF || el != QLEX_EOFF ||
+        ec != QLEX_EOFF) {
       print_qsizeloc(ss, sl);
       ss << ":";
       print_qsizeloc(ss, sc);
@@ -375,7 +375,7 @@ std::string nr::mint_modern_message(const IReport::ReportData &R,
   std::string ind;
   size_t ind_sz;
 
-  if (sl != UINT32_MAX) {
+  if (sl != QLEX_EOFF) {
     ind_sz = std::ceil(std::log10(sl));
     ind = std::string(ind_sz, ' ');
   } else {
@@ -425,8 +425,8 @@ std::string nr::mint_modern_message(const IReport::ReportData &R,
     }
   }
 
-  if (sl != UINT32_MAX && sc != UINT32_MAX && el != UINT32_MAX &&
-      ec != UINT32_MAX) { /* Source window */
+  if (sl != QLEX_EOFF && sc != QLEX_EOFF && el != QLEX_EOFF &&
+      ec != QLEX_EOFF) { /* Source window */
     constexpr size_t WINDOW_WIDTH = 60;
 
     int64_t x_0 = sc, y_0 = sl, x_1 = ec, y_1 = el;
@@ -445,7 +445,7 @@ std::string nr::mint_modern_message(const IReport::ReportData &R,
         auto lines = word_break(source_lines.value()[i], WINDOW_WIDTH);
 
         for (const auto &line : lines) {
-          if (sl != UINT32_MAX) {
+          if (sl != QLEX_EOFF) {
             ss << std::setw(ind_sz + 1)
                << (sl - (source_lines.value().size() / 2)) + i + 1;
           } else {

@@ -33,14 +33,21 @@
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
-#include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
 
+#include <core/Hash.hh>
 #include <cstddef>
 #include <cstring>
-#include <nitrate-parser/Writer.hh>
+#include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTWriter.hh>
 
 using namespace npar;
+
+boost::flyweight<std::string> npar::SaveString(std::string_view str) {
+  boost::flyweight<std::string> flyweight(str.data(), str.size());
+
+  return flyweight;
+};
 
 ///=============================================================================
 namespace npar {
@@ -56,12 +63,12 @@ C_EXPORT void *ArenaAllocatorImpl::allocate(std::size_t size) {
   return qcore_arena_alloc_ex(m_arena.get(), size, alignment);
 }
 
-C_EXPORT void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }
+C_EXPORT void ArenaAllocatorImpl::deallocate(void *ptr) { (void)ptr; }
 
 ///=============================================================================
 
 CPP_EXPORT std::ostream &npar_node_t::dump(std::ostream &os,
-                                           bool isForDebug) const noexcept {
+                                           bool isForDebug) const {
   (void)isForDebug;
 
   AST_JsonWriter writer(os);
@@ -70,9 +77,17 @@ CPP_EXPORT std::ostream &npar_node_t::dump(std::ostream &os,
   return os;
 }
 
+CPP_EXPORT uint64_t npar_node_t::hash64() const {
+  AST_Hash64 visitor;
+
+  const_cast<npar_node_t *>(this)->accept(visitor);
+
+  return visitor.get();
+}
+
 ///=============================================================================
 
-CPP_EXPORT bool Type::is_ptr_to(Type *type) noexcept {
+CPP_EXPORT bool Type::is_ptr_to(Type *type) const {
   if (!is_pointer()) {
     return false;
   }
@@ -88,18 +103,18 @@ CPP_EXPORT bool Type::is_ptr_to(Type *type) noexcept {
 Stmt *npar::mock_stmt(npar_ty_t expected) {
   (void)expected;
 
-  static Stmt node(QAST_NODE_NODE);
+  static Stmt node(QAST_BASE);
   return &node;
 }
 
 Expr *npar::mock_expr(npar_ty_t expected) {
   (void)expected;
 
-  static Expr node(QAST_NODE_NODE);
+  static Expr node(QAST_BASE);
   return &node;
 }
 
 Type *npar::mock_type() {
-  static Type node(QAST_NODE_NODE);
+  static Type node(QAST_BASE);
   return &node;
 }

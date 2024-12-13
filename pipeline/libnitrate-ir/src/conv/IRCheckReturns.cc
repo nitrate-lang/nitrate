@@ -41,7 +41,7 @@
 
 using namespace nr;
 
-bool NRBuilder::check_returns(Seq *root, IReport *I) noexcept {
+bool NRBuilder::check_returns(Seq *root, IReport *I) {
   bool failed = false;
 
   std::for_each<Fn>(root, [&](const Fn *x) {

@@ -188,7 +188,7 @@ C_EXPORT size_t qcode_conf_dump(qcode_conf_t *conf, FILE *stream,
   return bytes;
 }
 
-bool qcode_conf_t::has(qcode_key_t option, qcode_val_t value) const noexcept {
+bool qcode_conf_t::has(qcode_key_t option, qcode_val_t value) const {
   for (const auto &dat : m_data) {
     if (dat.key == option && dat.value == value) {
       return true;

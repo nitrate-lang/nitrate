@@ -31,9 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-parser/Node.h>
-
 #include <descent/Recurse.hh>
+#include <nitrate-parser/AST.hh>
 
 using namespace npar;
 
@@ -44,24 +43,18 @@ Stmt *npar::recurse_return(npar_t &S, qlex_t &rd) {
    */
 
   if (let tok = next_if(qPuncSemi)) {
-    let void_return = ReturnStmt::get(std::nullopt);
-    void_return->set_end_pos(tok->end);
-
-    return void_return;
+    return make<ReturnStmt>(std::nullopt);
   }
 
   let expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
   if (next_if(qPuncSemi)) {
-    let return_stmt = ReturnStmt::get(expr);
-    return_stmt->set_end_pos(current().end);
-
-    return return_stmt;
+    return make<ReturnStmt>(expr);
   } else {
     diagnostic << current() << "Expected ';' after the return statement.";
   }
 
-  return mock_stmt(QAST_NODE_RETURN);
+  return mock_stmt(QAST_RETURN);
 }
 
 Stmt *npar::recurse_retif(npar_t &S, qlex_t &rd) {
@@ -76,10 +69,7 @@ Stmt *npar::recurse_retif(npar_t &S, qlex_t &rd) {
     let return_val = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
     if (next_if(qPuncSemi)) {
-      let retif_stmt = ReturnIfStmt::get(condition, return_val);
-      retif_stmt->set_end_pos(current().end);
-
-      return retif_stmt;
+      return make<ReturnIfStmt>(condition, return_val);
     } else {
       diagnostic << current() << "Expected ';' after the retif value.";
     }
@@ -87,5 +77,5 @@ Stmt *npar::recurse_retif(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Expected ',' after the retif condition.";
   }
 
-  return mock_stmt(QAST_NODE_RETIF);
+  return mock_stmt(QAST_RETIF);
 }

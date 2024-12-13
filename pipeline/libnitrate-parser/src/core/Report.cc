@@ -52,13 +52,13 @@ std::string DiagnosticManager::mint_plain_message(
   uint32_t line = qlex_line(m_parser->lexer, qlex_begin(&msg.tok));
   uint32_t col = qlex_col(m_parser->lexer, qlex_begin(&msg.tok));
 
-  if (line != UINT32_MAX) {
+  if (line != QLEX_EOFF) {
     ss << line << ":";
   } else {
     ss << "?:";
   }
 
-  if (col != UINT32_MAX) {
+  if (col != QLEX_EOFF) {
     ss << col << ": ";
   } else {
     ss << "?: ";
@@ -92,13 +92,13 @@ std::string DiagnosticManager::mint_clang16_message(
   uint32_t line = qlex_line(m_parser->lexer, qlex_begin(&msg.tok));
   uint32_t col = qlex_col(m_parser->lexer, qlex_begin(&msg.tok));
 
-  if (line != UINT32_MAX) {
+  if (line != QLEX_EOFF) {
     ss << line << ":";
   } else {
     ss << "?:";
   }
 
-  if (col != UINT32_MAX) {
+  if (col != QLEX_EOFF) {
     ss << col << ":\x1b[0m ";
   } else {
     ss << "?:\x1b[0m ";

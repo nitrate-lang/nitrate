@@ -41,10 +41,11 @@
 
 using namespace nr;
 
-Fn *NRBuilder::createFunctionDefintion(
-    std::string_view name, std::span<FnParam> params, Type *ret_ty,
-    bool is_variadic, Vis visibility, Purity purity, bool thread_safe,
-    bool foreign SOURCE_LOCATION_PARAM) noexcept {
+Fn *NRBuilder::createFunctionDefintion(std::string_view name,
+                                       std::span<FnParam> params, Type *ret_ty,
+                                       bool is_variadic, Vis visibility,
+                                       Purity purity, bool thread_safe,
+                                       bool foreign SOURCE_LOCATION_PARAM) {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(ret_ty != nullptr && static_cast<Expr *>(ret_ty)->isType());
@@ -62,7 +63,7 @@ Fn *NRBuilder::createFunctionDefintion(
   }
 
   /// TODO: Do something useful with the metadata:
-  /// [visibility,purity,thread_safety,noexcept,foriegn]
+  /// [visibility,purity,thread_safety,,foriegn]
   (void)visibility;
   (void)purity;
   (void)thread_safe;
@@ -81,10 +82,12 @@ Fn *NRBuilder::createFunctionDefintion(
   return compiler_trace(debug_info(fn, DEBUG_INFO));
 }
 
-Fn *NRBuilder::createFunctionDeclaration(
-    std::string_view name, std::span<FnParam> params, Type *ret_ty,
-    bool is_variadic, Vis visibility, Purity purity, bool thread_safe,
-    bool foreign SOURCE_LOCATION_PARAM) noexcept {
+Fn *NRBuilder::createFunctionDeclaration(std::string_view name,
+                                         std::span<FnParam> params,
+                                         Type *ret_ty, bool is_variadic,
+                                         Vis visibility, Purity purity,
+                                         bool thread_safe,
+                                         bool foreign SOURCE_LOCATION_PARAM) {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(ret_ty != nullptr && static_cast<Expr *>(ret_ty)->isType());
@@ -102,7 +105,7 @@ Fn *NRBuilder::createFunctionDeclaration(
   }
 
   /// TODO: Do something useful with the metadata:
-  /// [visibility,purity,thread_safety,noexcept,foriegn]
+  /// [visibility,purity,thread_safety,,foriegn]
   (void)visibility;
   (void)purity;
   (void)thread_safe;
@@ -121,9 +124,9 @@ Fn *NRBuilder::createFunctionDeclaration(
   return compiler_trace(debug_info(fn, DEBUG_INFO));
 }
 
-Fn *NRBuilder::createOperatorOverload(
-    Op op, std::span<Type *> params, Type *ret_ty, Purity purity,
-    bool thread_safe SOURCE_LOCATION_PARAM) noexcept {
+Fn *NRBuilder::createOperatorOverload(Op op, std::span<Type *> params,
+                                      Type *ret_ty, Purity purity,
+                                      bool thread_safe SOURCE_LOCATION_PARAM) {
   /// TODO: Implement operator overloading
 
   qcore_implement();
@@ -135,9 +138,9 @@ Fn *NRBuilder::createOperatorOverload(
   ignore_caller_info();
 }
 
-Local *NRBuilder::createVariable(
-    std::string_view name, Type *ty, Vis visibility, StorageClass storage,
-    bool is_readonly SOURCE_LOCATION_PARAM) noexcept {
+Local *NRBuilder::createVariable(std::string_view name, Type *ty,
+                                 Vis visibility, StorageClass storage,
+                                 bool is_readonly SOURCE_LOCATION_PARAM) {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
   contract_enforce(ty != nullptr && static_cast<Expr *>(ty)->isType());

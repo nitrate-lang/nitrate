@@ -36,9 +36,9 @@
 /// TODO: Cleanup this code; it's a mess from refactoring.
 
 #include <nitrate-lexer/Lexer.h>
-#include <nitrate-parser/Node.h>
 
 #include <descent/Recurse.hh>
+#include <nitrate-parser/AST.hh>
 
 bool npar::recurse_attributes(npar_t &S, qlex_t &rd,
                               std::set<Expr *> &attributes) {
@@ -94,7 +94,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
     tok = next();
     if (!tok.is(qName)) {
       diagnostic << tok << "Expected field name in composite definition";
-      return mock_stmt(QAST_NODE_STRUCT_FIELD);
+      return mock_stmt(QAST_STRUCT_FIELD);
     }
     name = tok.as_string(&rd);
   }
@@ -104,7 +104,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
     if (!tok.is<qPuncColn>()) {
       diagnostic << tok
                  << "Expected colon after field name in composite definition";
-      return mock_stmt(QAST_NODE_STRUCT_FIELD);
+      return mock_stmt(QAST_STRUCT_FIELD);
     }
   }
 
@@ -118,8 +118,8 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
     if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
       next();
     }
-    auto R = StructField::get(name, type, nullptr, Vis::PRIVATE);
-    R->set_end_pos(tok.start);
+    auto R = make<StructField>(SaveString(name), type, nullptr, Vis::Sec);
+
     return R;
   }
 
@@ -128,7 +128,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
       diagnostic
           << tok
           << "Expected '=' or ',' after field type in composite definition";
-      return mock_stmt(QAST_NODE_STRUCT_FIELD);
+      return mock_stmt(QAST_STRUCT_FIELD);
     }
     next();
 
@@ -139,8 +139,7 @@ npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
          qlex_tok_t(qPunc, qPuncRCur)});
   }
 
-  auto R = StructField::get(name, type, value, Vis::PRIVATE);
-  R->set_end_pos(value->get_end_pos());
+  auto R = make<StructField>(SaveString(name), type, value, Vis::Sec);
 
   return R;
 }
@@ -156,10 +155,10 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
   StructDefMethods methods;
   StructDefStaticMethods static_methods;
   Stmt *method = nullptr;
-  FnDecl *fdecl = nullptr;
+  FnDef *fdecl = nullptr;
   FuncTy *ft = nullptr;
   Stmt *field = nullptr;
-  StructDef *sdef = StructDef::get("");
+  StructDef *sdef = make<StructDef>(SaveString(""));
 
   sdef->set_composite_type(type);
 
@@ -169,13 +168,13 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       name = tok.as_string(&rd);
     } else {
       diagnostic << tok << "Expected struct name in struct definition";
-      return mock_stmt(QAST_NODE_STRUCT);
+      return mock_stmt(QAST_STRUCT);
     }
   }
 
   {
     if (!recurse_template_parameters(S, rd, sdef->get_template_params())) {
-      return mock_stmt(QAST_NODE_STRUCT);
+      return mock_stmt(QAST_STRUCT);
     }
   }
 
@@ -184,7 +183,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
     if (!tok.is<qPuncLCur>()) {
       diagnostic << tok
                  << "Expected '{' after struct name in struct definition";
-      return mock_stmt(QAST_NODE_STRUCT);
+      return mock_stmt(QAST_STRUCT);
     }
   }
 
@@ -194,7 +193,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       tok = peek();
       if (tok.is(qEofF)) {
         diagnostic << tok << "Unexpected end of file in struct definition";
-        return mock_stmt(QAST_NODE_STRUCT);
+        return mock_stmt(QAST_STRUCT);
       }
       if (tok.is<qPuncRCur>()) {
         next();
@@ -209,19 +208,19 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       }
     }
 
-    Vis vis = Vis::PRIVATE;
+    Vis vis = Vis::Sec;
 
     { /* Check for visibility qualifiers */
       if (tok.is<qKPub>()) {
-        vis = Vis::PUBLIC;
+        vis = Vis::Pub;
         next();
         tok = peek();
       } else if (tok.is<qKSec>()) {
-        vis = Vis::PRIVATE;
+        vis = Vis::Sec;
         next();
         tok = peek();
       } else if (tok.is<qKPro>()) {
-        vis = Vis::PROTECTED;
+        vis = Vis::Pro;
         next();
         tok = peek();
       }
@@ -235,15 +234,17 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       method = recurse_function(S, rd);
 
       { /* Add the 'this' parameter to the method */
-        FuncParam fn_this{"this", RefTy::get(NamedTy::get(name)), nullptr};
+        FuncParam fn_this{SaveString("this"),
+                          make<RefTy>(make<NamedTy>(SaveString(name))),
+                          nullptr};
 
-        if (method->is<FnDecl>()) {
-          fdecl = static_cast<FnDecl *>(method);
+        if (method->is<FnDef>()) {
+          fdecl = static_cast<FnDef *>(method);
           ft = fdecl->get_type();
           ft->get_params().insert(ft->get_params().begin(), fn_this);
           fdecl->set_type(ft);
         } else {
-          fdecl = static_cast<FnDecl *>(method);
+          fdecl = static_cast<FnDef *>(method);
           ft = fdecl->get_type();
           ft->get_params().insert(ft->get_params().begin(), fn_this);
           fdecl->set_type(ft);
@@ -251,7 +252,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       }
 
       /* Add the method to the list */
-      methods.push_back(static_cast<FnDecl *>(method));
+      methods.push_back(static_cast<FnDef *>(method));
     } else if (tok.is<qKStatic>()) {
       next();
       tok = next();
@@ -261,14 +262,14 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
         diagnostic << tok
                    << "Expected function definition after 'static' in struct "
                       "definition";
-        return mock_stmt(QAST_NODE_STRUCT);
+        return mock_stmt(QAST_STRUCT);
       }
 
       /* Parse the function definition */
       method = recurse_function(S, rd);
 
       /* Add the method to the list */
-      static_methods.push_back(static_cast<FnDecl *>(method));
+      static_methods.push_back(static_cast<FnDef *>(method));
     } else {
       /* Parse a normal field */
       field = recurse_composite_field(S, rd);
@@ -279,7 +280,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
       }
 
       /* Assign the visibility to the field */
-      if (field->is(QAST_NODE_STRUCT_FIELD)) {
+      if (field->is(QAST_STRUCT_FIELD)) {
         static_cast<StructField *>(field)->set_visibility(vis);
       }
 
@@ -294,7 +295,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
     }
   }
 
-  sdef->set_name(name);
+  sdef->set_name(SaveString(name));
   sdef->get_fields() = std::move(fields);
   sdef->get_methods() = std::move(methods);
   sdef->get_static_methods() = std::move(static_methods);

@@ -41,7 +41,7 @@
 
 using namespace nr;
 
-Int *NRBuilder::createBool(bool value SOURCE_LOCATION_PARAM) noexcept {
+Int *NRBuilder::createBool(bool value SOURCE_LOCATION_PARAM) {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
@@ -49,8 +49,7 @@ Int *NRBuilder::createBool(bool value SOURCE_LOCATION_PARAM) noexcept {
 }
 
 Int *NRBuilder::createFixedInteger(boost::multiprecision::cpp_int value,
-                                   uint8_t width
-                                       SOURCE_LOCATION_PARAM) noexcept {
+                                   uint8_t width SOURCE_LOCATION_PARAM) {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
@@ -60,8 +59,8 @@ Int *NRBuilder::createFixedInteger(boost::multiprecision::cpp_int value,
       create<Int>(value.convert_to<unsigned __int128>(), width), DEBUG_INFO));
 }
 
-Float *NRBuilder::createFixedFloat(
-    bigfloat_t value, FloatSize width SOURCE_LOCATION_PARAM) noexcept {
+Float *NRBuilder::createFixedFloat(bigfloat_t value,
+                                   FloatSize width SOURCE_LOCATION_PARAM) {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
@@ -91,9 +90,8 @@ Float *NRBuilder::createFixedFloat(
       create<Float>(value.convert_to<long double>(), width), DEBUG_INFO));
 }
 
-List *NRBuilder::createStringDataArray(std::string_view value,
-                                       ABIStringStyle style
-                                           SOURCE_LOCATION_PARAM) noexcept {
+List *NRBuilder::createStringDataArray(
+    std::string_view value, ABIStringStyle style SOURCE_LOCATION_PARAM) {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 
@@ -118,7 +116,7 @@ List *NRBuilder::createList(
      * result.size>)) ? Reason: It has to do with type inference and
      * implicit conversions of the elements in the list.
      */
-    bool cast_homogenous SOURCE_LOCATION_PARAM) noexcept {
+    bool cast_homogenous SOURCE_LOCATION_PARAM) {
   contract_enforce(m_state == SelfState::Constructed);
   contract_enforce(m_root != nullptr);
 

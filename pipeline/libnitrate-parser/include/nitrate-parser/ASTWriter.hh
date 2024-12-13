@@ -40,7 +40,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <nitrate-parser/Visitor.hh>
+#include <nitrate-parser/ASTVisitor.hh>
 #include <ostream>
 #include <stack>
 #include <string_view>
@@ -69,8 +69,8 @@ namespace npar {
 
     bool m_include_source_location;
 
-    void write_source_location(npar_node_t& n) const;
-    void write_type_metadata(Type& n);
+    void write_source_location(npar_node_t const& n) const;
+    void write_type_metadata(Type const& n);
 
   public:
     AST_Writer(InsertString str_impl, InsertUInt64 uint_impl,
@@ -90,77 +90,76 @@ namespace npar {
           m_include_source_location(include_source_location) {}
     virtual ~AST_Writer() = default;
 
-    void visit(npar_node_t& n) override;
-    void visit(ExprStmt&) override;
-    void visit(StmtExpr&) override;
-    void visit(TypeExpr&) override;
-    void visit(NamedTy&) override;
-    void visit(InferTy&) override;
-    void visit(TemplType&) override;
-    void visit(U1&) override;
-    void visit(U8&) override;
-    void visit(U16&) override;
-    void visit(U32&) override;
-    void visit(U64&) override;
-    void visit(U128&) override;
-    void visit(I8&) override;
-    void visit(I16&) override;
-    void visit(I32&) override;
-    void visit(I64&) override;
-    void visit(I128&) override;
-    void visit(F16&) override;
-    void visit(F32&) override;
-    void visit(F64&) override;
-    void visit(F128&) override;
-    void visit(VoidTy&) override;
-    void visit(PtrTy&) override;
-    void visit(OpaqueTy&) override;
-    void visit(TupleTy&) override;
-    void visit(ArrayTy&) override;
-    void visit(RefTy&) override;
-    void visit(FuncTy&) override;
-    void visit(UnaryExpr&) override;
-    void visit(BinExpr&) override;
-    void visit(PostUnaryExpr&) override;
-    void visit(TernaryExpr&) override;
-    void visit(ConstInt&) override;
-    void visit(ConstFloat&) override;
-    void visit(ConstBool&) override;
-    void visit(ConstString&) override;
-    void visit(ConstChar&) override;
-    void visit(ConstNull&) override;
-    void visit(ConstUndef&) override;
-    void visit(Call&) override;
-    void visit(TemplCall&) override;
-    void visit(List&) override;
-    void visit(Assoc&) override;
-    void visit(Field&) override;
-    void visit(Index&) override;
-    void visit(Slice&) override;
-    void visit(FString&) override;
-    void visit(Ident&) override;
-    void visit(SeqPoint&) override;
-    void visit(Block&) override;
-    void visit(VarDecl&) override;
-    void visit(InlineAsm&) override;
-    void visit(IfStmt&) override;
-    void visit(WhileStmt&) override;
-    void visit(ForStmt&) override;
-    void visit(ForeachStmt&) override;
-    void visit(BreakStmt&) override;
-    void visit(ContinueStmt&) override;
-    void visit(ReturnStmt&) override;
-    void visit(ReturnIfStmt&) override;
-    void visit(CaseStmt&) override;
-    void visit(SwitchStmt&) override;
-    void visit(TypedefStmt&) override;
-    void visit(FnDecl&) override;
-    void visit(FnDef&) override;
-    void visit(StructField&) override;
-    void visit(StructDef&) override;
-    void visit(EnumDef&) override;
-    void visit(ScopeStmt&) override;
-    void visit(ExportStmt&) override;
+    void visit(npar_node_t const& n) override;
+    void visit(ExprStmt const& n) override;
+    void visit(StmtExpr const& n) override;
+    void visit(TypeExpr const& n) override;
+    void visit(NamedTy const& n) override;
+    void visit(InferTy const& n) override;
+    void visit(TemplType const& n) override;
+    void visit(U1 const& n) override;
+    void visit(U8 const& n) override;
+    void visit(U16 const& n) override;
+    void visit(U32 const& n) override;
+    void visit(U64 const& n) override;
+    void visit(U128 const& n) override;
+    void visit(I8 const& n) override;
+    void visit(I16 const& n) override;
+    void visit(I32 const& n) override;
+    void visit(I64 const& n) override;
+    void visit(I128 const& n) override;
+    void visit(F16 const& n) override;
+    void visit(F32 const& n) override;
+    void visit(F64 const& n) override;
+    void visit(F128 const& n) override;
+    void visit(VoidTy const& n) override;
+    void visit(PtrTy const& n) override;
+    void visit(OpaqueTy const& n) override;
+    void visit(TupleTy const& n) override;
+    void visit(ArrayTy const& n) override;
+    void visit(RefTy const& n) override;
+    void visit(FuncTy const& n) override;
+    void visit(UnaryExpr const& n) override;
+    void visit(BinExpr const& n) override;
+    void visit(PostUnaryExpr const& n) override;
+    void visit(TernaryExpr const& n) override;
+    void visit(ConstInt const& n) override;
+    void visit(ConstFloat const& n) override;
+    void visit(ConstBool const& n) override;
+    void visit(ConstString const& n) override;
+    void visit(ConstChar const& n) override;
+    void visit(ConstNull const& n) override;
+    void visit(ConstUndef const& n) override;
+    void visit(Call const& n) override;
+    void visit(TemplCall const& n) override;
+    void visit(List const& n) override;
+    void visit(Assoc const& n) override;
+    void visit(Field const& n) override;
+    void visit(Index const& n) override;
+    void visit(Slice const& n) override;
+    void visit(FString const& n) override;
+    void visit(Ident const& n) override;
+    void visit(SeqPoint const& n) override;
+    void visit(Block const& n) override;
+    void visit(VarDecl const& n) override;
+    void visit(InlineAsm const& n) override;
+    void visit(IfStmt const& n) override;
+    void visit(WhileStmt const& n) override;
+    void visit(ForStmt const& n) override;
+    void visit(ForeachStmt const& n) override;
+    void visit(BreakStmt const& n) override;
+    void visit(ContinueStmt const& n) override;
+    void visit(ReturnStmt const& n) override;
+    void visit(ReturnIfStmt const& n) override;
+    void visit(CaseStmt const& n) override;
+    void visit(SwitchStmt const& n) override;
+    void visit(TypedefStmt const& n) override;
+    void visit(FnDef const& n) override;
+    void visit(StructField const& n) override;
+    void visit(StructDef const& n) override;
+    void visit(EnumDef const& n) override;
+    void visit(ScopeStmt const& n) override;
+    void visit(ExportStmt const& n) override;
   };
 
   class CPP_EXPORT AST_JsonWriter : public AST_Writer {

@@ -32,13 +32,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-lexer/Token.h>
-#include <nitrate-parser/Node.h>
 
 #include <descent/Recurse.hh>
+#include <nitrate-parser/AST.hh>
 
 using namespace npar;
 
-std::optional<std::pair<String, String>> recurse_foreach_names(qlex_t &rd) {
+std::optional<std::pair<std::string_view, std::string_view>>
+recurse_foreach_names(qlex_t &rd) {
   if (let ident1 = next_if(qName)) {
     let ident1_value = ident1->as_string(&rd);
 
@@ -98,11 +99,8 @@ npar::Stmt *npar::recurse_foreach(npar_t &S, qlex_t &rd) {
 
       let body = recurse_foreach_body(S, rd);
 
-      let foreach_stmt =
-          ForeachStmt::get(index_name, value_name, iter_expr, body);
-      foreach_stmt->set_end_pos(current().end);
-
-      return foreach_stmt;
+      return make<ForeachStmt>(SaveString(index_name), SaveString(value_name),
+                               iter_expr, body);
     } else {
       diagnostic << current() << "Expected 'in' keyword in foreach statement";
     }
@@ -110,5 +108,5 @@ npar::Stmt *npar::recurse_foreach(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Expected identifier pair in foreach statement";
   }
 
-  return mock_stmt(QAST_NODE_FOREACH);
+  return mock_stmt(QAST_FOREACH);
 }

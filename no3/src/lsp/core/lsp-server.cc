@@ -301,15 +301,15 @@ void ServerContext::handle_notification(const NotificationMessage& notif) {
 void ServerContext::dispatch(const std::shared_ptr<Message> message,
                              std::ostream& io) {
   if (message->type() == MessageType::Request) {
-    // std::lock_guard<std::mutex> lock(m_request_queue_mutex);
-    // m_request_queue.push([this, message, &io]() {
-    handle_request(*std::static_pointer_cast<RequestMessage>(message), io);
-    // });
+    std::lock_guard<std::mutex> lock(m_request_queue_mutex);
+    m_request_queue.push([this, message, &io]() {
+      handle_request(*std::static_pointer_cast<RequestMessage>(message), io);
+    });
   } else if (message->type() == MessageType::Notification) {
-    // m_thread_pool.QueueJob([this, message](std::stop_token) {
-    handle_notification(
-        *std::static_pointer_cast<NotificationMessage>(message));
-    // });
+    m_thread_pool.QueueJob([this, message](std::stop_token) {
+      handle_notification(
+          *std::static_pointer_cast<NotificationMessage>(message));
+    });
   } else {
     LOG(ERROR) << "Unsupported message type";
   }

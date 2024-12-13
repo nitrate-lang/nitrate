@@ -34,9 +34,10 @@
 #ifndef __NITRATE_PARSER_LIB_H__
 #define __NITRATE_PARSER_LIB_H__
 
-#include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
 #include <stdbool.h>
+
+#include <nitrate-parser/AST.hh>
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,17 +74,6 @@ void npar_lib_deinit();
  * deinitialization.
  */
 const char* npar_lib_version();
-
-/**
- * @brief Get the last error message from the current thread.
- *
- * @return The last error message from the current thread.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after
- * deinitialization.
- */
-const char* npar_strerror();
 
 #ifdef __cplusplus
 }

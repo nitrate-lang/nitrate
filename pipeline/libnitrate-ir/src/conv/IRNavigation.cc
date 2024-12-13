@@ -98,7 +98,7 @@ static std::optional<std::pair<T, std::string>> find_in_scope_map(
 }
 
 std::optional<std::pair<Expr *, std::string_view>> NRBuilder::resolve_name(
-    std::string_view name, Kind kind) noexcept {
+    std::string_view name, Kind kind) {
   std::optional<std::pair<Expr *, std::string>> R;
 
   switch (kind) {

@@ -36,9 +36,9 @@
 /// TODO: Cleanup this code; it's a mess from refactoring.
 
 #include <nitrate-lexer/Lexer.h>
-#include <nitrate-parser/Node.h>
 
 #include <descent/Recurse.hh>
+#include <nitrate-parser/AST.hh>
 
 using namespace npar;
 
@@ -125,7 +125,7 @@ static bool recurse_fn_parameter(npar_t &S, qlex_t &rd, FuncParam &param) {
 
     tok = peek();
   } else {
-    type = InferTy::get();
+    type = make<InferTy>();
   }
 
   if (tok.is<qOpSet>()) {
@@ -137,9 +137,9 @@ static bool recurse_fn_parameter(npar_t &S, qlex_t &rd, FuncParam &param) {
                      {qlex_tok_t(qPunc, qPuncComa),
                       qlex_tok_t(qPunc, qPuncRPar), qlex_tok_t(qOper, qOpGT)});
 
-    param = {name, type, value};
+    param = {SaveString(name), type, value};
   } else {
-    param = {name, type, nullptr};
+    param = {SaveString(name), type, nullptr};
   }
 
   return true;
@@ -232,7 +232,7 @@ static FunctionProperties read_function_properties(qlex_t &rd) {
   return props;
 }
 
-static bool recurse_captures_and_name(qlex_t &rd, FnDecl *fndecl,
+static bool recurse_captures_and_name(qlex_t &rd, FnDef *fndecl,
                                       FnCaptures &captures) {
   qlex_tok_t c = peek();
 
@@ -258,7 +258,7 @@ static bool recurse_captures_and_name(qlex_t &rd, FnDecl *fndecl,
         return false;
       }
 
-      captures.push_back({c.as_string(&rd), is_mut});
+      captures.push_back({SaveString(c.as_string(&rd)), is_mut});
       c = peek();
 
       if (c.is<qPuncComa>()) {
@@ -271,7 +271,7 @@ static bool recurse_captures_and_name(qlex_t &rd, FnDecl *fndecl,
 
   if (c.is(qName)) {
     next();
-    fndecl->set_name(c.as_string(&rd));
+    fndecl->set_name(SaveString(c.as_string(&rd)));
   }
 
   return true;
@@ -441,7 +441,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, npar_t &S,
         }
 
         if (req_in) {
-          req_in = BinExpr::get(req_in, qOpLogicAnd, expr);
+          req_in = make<BinExpr>(req_in, qOpLogicAnd, expr);
         } else {
           req_in = expr;
         }
@@ -455,7 +455,7 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, npar_t &S,
         }
 
         if (req_out) {
-          req_out = BinExpr::get(req_out, qOpLogicAnd, expr);
+          req_out = make<BinExpr>(req_out, qOpLogicAnd, expr);
         } else {
           req_out = expr;
         }
@@ -472,8 +472,8 @@ static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, npar_t &S,
 }
 
 Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
-  FnDecl *fndecl = FnDecl::get("", nullptr);
-  FuncTy *ftype = FuncTy::get();
+  FnDef *fndecl = make<FnDef>(SaveString(""), nullptr);
+  FuncTy *ftype = make<FuncTy>();
   Type *ret_type = nullptr;
   FnCaptures captures;
   qlex_tok_t tok{};
@@ -488,7 +488,7 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
 
     if (!recurse_captures_and_name(rd, fndecl, captures)) {
       diagnostic << tok << "Expected a function name or capture list";
-      return mock_stmt(QAST_NODE_FN);
+      return mock_stmt(QAST_FUNCTION);
     }
   }
 
@@ -497,7 +497,7 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
 
     if (!recurse_template_parameters(S, rd, fndecl->get_template_params())) {
       diagnostic << tok << "Failed to parse template parameters";
-      return mock_stmt(QAST_NODE_FN);
+      return mock_stmt(QAST_FUNCTION);
     }
   }
 
@@ -506,7 +506,7 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
 
     if (!recurse_parameters(S, rd, ftype, is_variadic)) {
       diagnostic << tok << "Failed to parse function parameters";
-      return mock_stmt(QAST_NODE_FN);
+      return mock_stmt(QAST_FUNCTION);
     }
   }
 
@@ -515,7 +515,7 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
 
     if (!translate_purity(prop, ftype)) {
       diagnostic << tok << "Failed to translate purity";
-      return mock_stmt(QAST_NODE_FN);
+      return mock_stmt(QAST_FUNCTION);
     }
   }
 
@@ -530,9 +530,7 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
   { /* Function declaration with implicit return type of void */
     if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() ||
         tok.is<qPuncSemi>()) {
-      ftype->set_return_ty(VoidTy::get());
-
-      fndecl->set_end_pos(tok.start);
+      ftype->set_return_ty(make<VoidTy>());
 
       return fndecl;
     }
@@ -550,8 +548,6 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
       { /* Function declaration with explicit return type */
         if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() ||
             tok.is<qPuncSemi>()) {
-          fndecl->set_end_pos(tok.start);
-
           return fndecl;
         }
       }
@@ -567,18 +563,17 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
       fnbody = recurse_block(S, rd, false, true);
 
       if (!ftype->get_return_ty()) {
-        ftype->set_return_ty(VoidTy::get());
+        ftype->set_return_ty(make<VoidTy>());
       }
 
       while ((tok = peek()).is<qPuncSemi>()) {
         next();
       }
 
-      FnDef *fndef = FnDef::get(fndecl, fnbody, nullptr, nullptr, captures);
+      fndecl->set_body(fnbody);
+      fndecl->set_captures(captures);
 
-      fndef->set_end_pos(fnbody->get_end_pos());
-
-      return fndef;
+      return fndecl;
     }
   }
 
@@ -591,26 +586,27 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
     tok = peek();
 
     if (!recurse_constraints(tok, rd, S, req_in, req_out)) {
-      return mock_stmt(QAST_NODE_FN);
+      return mock_stmt(QAST_FUNCTION);
     }
 
     if (!ftype->get_return_ty()) {
-      ftype->set_return_ty(VoidTy::get());
+      ftype->set_return_ty(make<VoidTy>());
     }
 
-    FnDef *fndef = FnDef::get(fndecl, fnbody, req_in, req_out, captures);
+    fndecl->set_body(fnbody);
+    fndecl->set_precond(req_in);
+    fndecl->set_postcond(req_out);
+    fndecl->set_captures(captures);
 
-    fndef->set_end_pos(tok.end);
-
-    return fndef;
+    return fndecl;
   }
 
   if (ret_type) {
     diagnostic << tok << "Expected '{', '=>', or ';' in function declaration";
-    return mock_stmt(QAST_NODE_FN);
+    return mock_stmt(QAST_FUNCTION);
   }
 
   diagnostic << tok
              << "Expected ':', '{', '=>', or ';' in function declaration";
-  return mock_stmt(QAST_NODE_FN);
+  return mock_stmt(QAST_FUNCTION);
 }

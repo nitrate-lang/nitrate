@@ -31,9 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-parser/Node.h>
-
 #include <descent/Recurse.hh>
+#include <nitrate-parser/AST.hh>
 
 npar::Stmt *npar::recurse_typedef(npar_t &S, qlex_t &rd) {
   /**
@@ -48,10 +47,7 @@ npar::Stmt *npar::recurse_typedef(npar_t &S, qlex_t &rd) {
       let type = recurse_type(S, rd);
 
       if (next_if(qPuncSemi)) {
-        let type_def = TypedefStmt::get(name, type);
-        type_def->set_end_pos(current().end);
-
-        return type_def;
+        return make<TypedefStmt>(SaveString(name), type);
       } else {
         diagnostic << current() << "Expected ';' in typedef declaration";
       }
@@ -62,5 +58,5 @@ npar::Stmt *npar::recurse_typedef(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Expected name in typedef declaration";
   }
 
-  return mock_stmt(QAST_NODE_TYPEDEF);
+  return mock_stmt(QAST_TYPEDEF);
 }

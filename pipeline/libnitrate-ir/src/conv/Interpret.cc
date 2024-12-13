@@ -77,8 +77,7 @@ namespace comptime {
 }  // namespace comptime
 
 std::optional<nr::Expr *> nr::comptime_impl(
-    nr::Expr *x,
-    std::optional<std::function<void(std::string_view)>> eprintn) noexcept {
+    nr::Expr *x, std::optional<std::function<void(std::string_view)>> eprintn) {
   comptime::Program P(eprintn.value_or([](std::string_view) {}));
 
   /**

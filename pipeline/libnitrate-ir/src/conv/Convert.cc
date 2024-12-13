@@ -34,7 +34,6 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-ir/IR.h>
-#include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
 
 #include <boost/multiprecision/cpp_dec_float.hpp>
@@ -48,6 +47,7 @@
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/Report.hh>
+#include <nitrate-parser/AST.hh>
 #include <stack>
 #include <string>
 #include <string_view>
@@ -63,7 +63,7 @@ private:
 public:
   bool inside_function = false;
   std::string ns_prefix;
-  std::stack<npar::String> composite_expanse;
+  std::stack<std::string_view> composite_expanse;
   nr::AbiTag abi_mode = nr::AbiTag::Internal;
   size_t anon_fn_ctr = 0;
 
@@ -509,27 +509,26 @@ static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &,
 static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
                              npar::BinExpr *n) {
   if (n->get_lhs() && n->get_rhs() && n->get_op() == qOpAs &&
-      n->get_rhs()->is(QAST_NODE_TYPE_EXPR)) {
+      n->get_rhs()->is(QAST_TEXPR)) {
     npar::Type *type = n->get_rhs()->as<npar::TypeExpr>()->get_type();
 
     bool is_integer_ty = type->is_integral();
-    bool is_integer_lit = n->get_lhs()->getKind() == QAST_NODE_INT;
+    bool is_integer_lit = n->get_lhs()->getKind() == QAST_INT;
 
     bool is_float_ty = type->is_floating_point();
-    bool is_float_lit = n->get_lhs()->getKind() == QAST_NODE_FLOAT;
+    bool is_float_lit = n->get_lhs()->getKind() == QAST_FLOAT;
 
     if ((is_integer_lit && is_integer_ty) || (is_float_lit && is_float_ty)) {
       if (is_integer_lit) {
         static const std::unordered_map<npar_ty_t, uint8_t>
             integer_lit_suffixes = {
-                {QAST_NODE_U1_TY, 1},   {QAST_NODE_U8_TY, 8},
-                {QAST_NODE_U16_TY, 16}, {QAST_NODE_U32_TY, 32},
-                {QAST_NODE_U64_TY, 64}, {QAST_NODE_U128_TY, 128},
+                {QAST_U1, 1},   {QAST_U8, 8},   {QAST_U16, 16},
+                {QAST_U32, 32}, {QAST_U64, 64}, {QAST_U128, 128},
 
                 /* Signeness is not expressed in the NR_NODE_INT */
-                // {QAST_NODE_I8_TY, 8},     {QAST_NODE_I16_TY, 16},
-                // {QAST_NODE_I32_TY, 32},   {QAST_NODE_I64_TY, 64},
-                // {QAST_NODE_I128_TY, 128},
+                // {QAST_I8, 8},     {QAST_I16, 16},
+                // {QAST_I32, 32},   {QAST_I64, 64},
+                // {QAST_I128, 128},
             };
 
         auto it = integer_lit_suffixes.find(type->getKind());
@@ -537,16 +536,16 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
           npar::ConstInt *N = n->get_lhs()->as<npar::ConstInt>();
 
           return b.createFixedInteger(
-              boost::multiprecision::cpp_int(N->get_value().view()),
+              boost::multiprecision::cpp_int(N->get_value()->c_str()),
               it->second);
         }
       } else {
         static const std::unordered_map<npar_ty_t, FloatSize>
             float_lit_suffixes = {{
-                {QAST_NODE_F16_TY, FloatSize::F16},
-                {QAST_NODE_F32_TY, FloatSize::F32},
-                {QAST_NODE_F64_TY, FloatSize::F64},
-                {QAST_NODE_F128_TY, FloatSize::F128},
+                {QAST_F16, FloatSize::F16},
+                {QAST_F32, FloatSize::F32},
+                {QAST_F64, FloatSize::F64},
+                {QAST_F128, FloatSize::F128},
             }};
 
         auto it = float_lit_suffixes.find(type->getKind());
@@ -554,7 +553,7 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
           npar::ConstFloat *N = n->get_lhs()->as<npar::ConstFloat>();
 
           return b.createFixedFloat(
-              boost::multiprecision::cpp_dec_float_100(N->get_value().view()),
+              boost::multiprecision::cpp_dec_float_100(N->get_value()->c_str()),
               it->second);
         }
       }
@@ -659,7 +658,7 @@ static EResult nrgen_int(NRBuilder &b, PState &, IReport *G,
    *  u128: [9223372036854775808 - 340282366920938463463374607431768211455]
    *  error: [340282366920938463463374607431768211456 - ...]
    */
-  boost::multiprecision::cpp_int num(std::string_view(n->get_value()));
+  boost::multiprecision::cpp_int num(std::string_view(*n->get_value()));
 
   if (num < 0) {
     G->report(CompilerError, IC::Error,
@@ -683,13 +682,13 @@ static EResult nrgen_int(NRBuilder &b, PState &, IReport *G,
 
 static EResult nrgen_float(NRBuilder &b, PState &, IReport *,
                            npar::ConstFloat *n) {
-  boost::multiprecision::cpp_dec_float_100 num(n->get_value().view());
+  boost::multiprecision::cpp_dec_float_100 num(*n->get_value());
   return b.createFixedFloat(num, FloatSize::F64);
 }
 
 static EResult nrgen_string(NRBuilder &b, PState &, IReport *,
                             npar::ConstString *n) {
-  return b.createStringDataArray(n->get_value());
+  return b.createStringDataArray(*n->get_value());
 }
 
 static EResult nrgen_char(NRBuilder &b, PState &, IReport *,
@@ -734,7 +733,7 @@ static EResult nrgen_call(NRBuilder &b, PState &s, IReport *G, npar::Call *n) {
       return std::nullopt;
     }
 
-    arguments[i] = {b.intern(args[i].first), arg.value()};
+    arguments[i] = {b.intern(*args[i].first), arg.value()};
   }
 
   return b.createCall(target.value(), arguments);
@@ -788,7 +787,7 @@ static EResult nrgen_field(NRBuilder &b, PState &s, IReport *G,
 
   /// TODO: Support for named composite field indexing
 
-  Expr *field = b.createStringDataArray(n->get_field());
+  Expr *field = b.createStringDataArray(*n->get_field());
   return create<Index>(base.value(), field);
 }
 
@@ -852,8 +851,8 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   if (n->get_items().size() == 1) {
     auto val = n->get_items().front();
 
-    if (std::holds_alternative<npar::String>(val)) {
-      return b.createStringDataArray(std::get<npar::String>(val));
+    if (std::holds_alternative<npar::SmallString>(val)) {
+      return b.createStringDataArray(*std::get<npar::SmallString>(val));
     } else if (std::holds_alternative<npar::Expr *>(val)) {
       auto expr = next_one(std::get<npar::Expr *>(val));
 
@@ -873,8 +872,8 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   Expr *concated = b.createStringDataArray("");
 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    if (std::holds_alternative<npar::String>(*it)) {
-      auto val = std::get<npar::String>(*it);
+    if (std::holds_alternative<npar::SmallString>(*it)) {
+      auto val = *std::get<npar::SmallString>(*it);
 
       concated =
           create<BinExpr>(concated, b.createStringDataArray(val), Op::Plus);
@@ -899,7 +898,7 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_ident(NRBuilder &b, PState &s, IReport *, npar::Ident *n) {
-  return create<Ident>(b.intern(s.scope_name(n->get_name())), nullptr);
+  return create<Ident>(b.intern(s.scope_name(*n->get_name())), nullptr);
 }
 
 static EResult nrgen_seq_point(NRBuilder &b, PState &s, IReport *G,
@@ -1031,7 +1030,7 @@ static EResult nrgen_ptr_ty(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_opaque_ty(NRBuilder &b, PState &, IReport *,
                                npar::OpaqueTy *n) {
-  return b.getOpaqueTy(n->get_name());
+  return b.getOpaqueTy(*n->get_name());
 }
 
 static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G,
@@ -1145,7 +1144,7 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *,
                               npar::NamedTy *n) {
-  return b.getUnknownNamedTy(b.intern(s.scope_name(n->get_name())));
+  return b.getUnknownNamedTy(b.intern(s.scope_name(*n->get_name())));
 }
 
 static EResult nrgen_infer_ty(NRBuilder &b, PState &, IReport *,
@@ -1171,7 +1170,7 @@ static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
   }
 
   b.createNamedTypeAlias(type.value()->asType(),
-                         b.intern(s.join_scope(n->get_name())));
+                         b.intern(s.join_scope(*n->get_name())));
 
   return std::vector<Expr *>();
 }
@@ -1192,11 +1191,11 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
       n->get_fields().size());
 
   std::string old_ns = s.ns_prefix;
-  s.ns_prefix = s.join_scope(n->get_name());
+  s.ns_prefix = s.join_scope(*n->get_name());
 
   for (size_t i = 0; i < n->get_fields().size(); i++) {
     auto field_raw = n->get_fields()[i];
-    if (!field_raw->is(QAST_NODE_STRUCT_FIELD)) {
+    if (!field_raw->is(QAST_STRUCT_FIELD)) {
       return std::nullopt;
     }
     npar::StructField *field = field_raw->as<npar::StructField>();
@@ -1209,7 +1208,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
       return std::nullopt;
     }
 
-    auto field_name = b.intern(field->get_name());
+    auto field_name = b.intern(*field->get_name());
 
     Expr *field_default = nullptr;
     if (field->get_value() == nullptr) {
@@ -1239,7 +1238,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
 
   std::swap(s.ns_prefix, old_ns);
   b.createNamedTypeAlias(b.getStructTy(fields),
-                         b.intern(s.join_scope(n->get_name())));
+                         b.intern(s.join_scope(*n->get_name())));
   std::swap(s.ns_prefix, old_ns);
 
   BResult R;
@@ -1300,7 +1299,7 @@ static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
       }
     }
 
-    auto field_name = b.intern(it->first);
+    auto field_name = b.intern(*it->first);
 
     if (values.contains(field_name)) [[unlikely]] {
       G->report(CompilerError, IC::Error,
@@ -1310,7 +1309,7 @@ static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
     }
   }
 
-  auto name = b.intern(s.join_scope(n->get_name()));
+  auto name = b.intern(s.join_scope(*n->get_name()));
   b.createNamedConstantDefinition(name, values);
 
   /* FIXME: Allow for first class enum types */
@@ -1319,72 +1318,11 @@ static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
   return std::vector<Expr *>();
 }
 
-static EResult nrgen_fndecl(NRBuilder &b, PState &s, IReport *G,
-                            npar::FnDecl *n) {
-  npar::FuncTy *func_ty = n->get_type();
-  const npar::FuncParams &params = func_ty->get_params();
-
-  std::vector<NRBuilder::FnParam> parameters(params.size());
-
-  for (size_t i = 0; i < params.size(); i++) {
-    const auto &param = params[i];
-    NRBuilder::FnParam p;
-
-    { /* Set function parameter name */
-      std::get<0>(p) = b.intern(std::get<0>(param));
-    }
-
-    { /* Set function parameter type */
-      auto tmp = next_one(std::get<1>(param));
-      if (!tmp.has_value()) {
-        G->report(CompilerError, nr::IC::Error,
-                  "Failed to convert function declaration parameter type");
-        return std::nullopt;
-      }
-
-      std::get<1>(p) = tmp.value()->asType();
-    }
-
-    { /* Set function parameter default value if it exists */
-      if (std::get<2>(param) != nullptr) {
-        auto val = next_one(std::get<2>(param));
-        if (!val.has_value()) {
-          G->report(
-              CompilerError, nr::IC::Error,
-              "Failed to convert function declaration parameter default value");
-          return std::nullopt;
-        }
-
-        std::get<2>(p) = val.value();
-      }
-    }
-
-    parameters[i] = std::move(p);
-  }
-
-  auto ret_type = next_one(func_ty->get_return_ty());
-  if (!ret_type.has_value()) {
-    G->report(CompilerError, nr::IC::Error,
-              "Failed to convert function declaration return type");
-    return std::nullopt;
-  }
-
-  auto props = convert_purity(func_ty->get_purity());
-
-  Fn *fndecl = b.createFunctionDeclaration(
-      b.intern(s.join_scope(n->get_name())), parameters,
-      ret_type.value()->asType(), func_ty->is_variadic(), Vis::Pub, props.first,
-      props.second, func_ty->is_foreign());
-
-  fndecl->setAbiTag(s.abi_mode);
-
-  return fndecl;
-}
-
 static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G, npar::Block *n,
                            bool insert_scope_id);
 
-static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
+static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
+                                         npar::FnDef *n) {
   bool failed = false;
 
   {
@@ -1423,7 +1361,7 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
       NRBuilder::FnParam p;
 
       { /* Set function parameter name */
-        std::get<0>(p) = b.intern(std::get<0>(param));
+        std::get<0>(p) = b.intern(*std::get<0>(param));
       }
 
       { /* Set function parameter type */
@@ -1468,10 +1406,10 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
 
     std::string_view name;
 
-    if (n->get_name().empty()) {
+    if (n->get_name()->empty()) {
       name = b.intern(s.join_scope("_A$" + std::to_string(s.anon_fn_ctr++)));
     } else {
-      name = b.intern(s.join_scope(n->get_name()));
+      name = b.intern(s.join_scope(*n->get_name()));
     }
 
     Fn *fndef = b.createFunctionDefintion(
@@ -1482,14 +1420,15 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
 
     { /* Function body */
 
-      if (!n->get_body()->is(QAST_NODE_BLOCK)) {
+      if (!n->get_body().value()->is(QAST_BLOCK)) {
         return std::nullopt;
       }
 
       std::string old_ns = s.ns_prefix;
       s.ns_prefix = name;
 
-      auto body = nrgen_block(b, s, G, n->get_body()->as<npar::Block>(), false);
+      auto body =
+          nrgen_block(b, s, G, n->get_body().value()->as<npar::Block>(), false);
       if (!body.has_value()) {
         G->report(CompilerError, nr::IC::Error,
                   "Failed to convert function body", n->get_pos());
@@ -1505,14 +1444,88 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
   }
 }
 
+static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
+                                          npar::FnDef *n) {
+  npar::FuncTy *func_ty = n->get_type();
+  const npar::FuncParams &params = func_ty->get_params();
+
+  std::vector<NRBuilder::FnParam> parameters(params.size());
+
+  for (size_t i = 0; i < params.size(); i++) {
+    const auto &param = params[i];
+    NRBuilder::FnParam p;
+
+    { /* Set function parameter name */
+      std::get<0>(p) = b.intern(*std::get<0>(param));
+    }
+
+    { /* Set function parameter type */
+      auto tmp = next_one(std::get<1>(param));
+      if (!tmp.has_value()) {
+        G->report(CompilerError, nr::IC::Error,
+                  "Failed to convert function declaration parameter type");
+        return std::nullopt;
+      }
+
+      std::get<1>(p) = tmp.value()->asType();
+    }
+
+    { /* Set function parameter default value if it exists */
+      if (std::get<2>(param) != nullptr) {
+        auto val = next_one(std::get<2>(param));
+        if (!val.has_value()) {
+          G->report(
+              CompilerError, nr::IC::Error,
+              "Failed to convert function declaration parameter default value");
+          return std::nullopt;
+        }
+
+        std::get<2>(p) = val.value();
+      }
+    }
+
+    parameters[i] = std::move(p);
+  }
+
+  auto ret_type = next_one(func_ty->get_return_ty());
+  if (!ret_type.has_value()) {
+    G->report(CompilerError, nr::IC::Error,
+              "Failed to convert function declaration return type");
+    return std::nullopt;
+  }
+
+  auto props = convert_purity(func_ty->get_purity());
+
+  Fn *fndecl = b.createFunctionDeclaration(
+      b.intern(s.join_scope(*n->get_name())), parameters,
+      ret_type.value()->asType(), func_ty->is_variadic(), Vis::Pub, props.first,
+      props.second, func_ty->is_foreign());
+
+  fndecl->setAbiTag(s.abi_mode);
+
+  return fndecl;
+}
+
+static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
+  if (n->is_decl()) {
+    return nrgen_function_declaration(b, s, G, n);
+  } else if (n->is_def()) {
+    return nrgen_function_definition(b, s, G, n);
+  } else {
+    G->report(CompilerError, IC::Error, "Failed to lower function",
+              n->get_pos());
+    return std::nullopt;
+  }
+}
+
 static BResult nrgen_scope(NRBuilder &b, PState &s, IReport *G,
                            npar::ScopeStmt *n) {
-  if (!n->get_body()->is(QAST_NODE_BLOCK)) {
+  if (!n->get_body()->is(QAST_BLOCK)) {
     return std::nullopt;
   }
 
   std::string old_ns = s.ns_prefix;
-  s.ns_prefix = s.join_scope(n->get_name());
+  s.ns_prefix = s.join_scope(*n->get_name());
 
   auto body = nrgen_block(b, s, G, n->get_body()->as<npar::Block>(), false);
   if (!body.has_value()) {
@@ -1548,16 +1561,16 @@ static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
     return std::nullopt;
   }
 
-  auto it = abi_name_map.find(n->get_abi_name());
+  auto it = abi_name_map.find(*n->get_abi_name());
   if (it == abi_name_map.end()) {
     G->report(
         CompilerError, IC::Error,
-        "The requested ABI name '" + n->get_abi_name() + "' is not supported",
+        {"The requested ABI name '", *n->get_abi_name(), "' is not supported"},
         n->get_pos());
     return std::nullopt;
   }
 
-  if (!n->get_body()->is(QAST_NODE_BLOCK)) {
+  if (!n->get_body()->is(QAST_BLOCK)) {
     return std::nullopt;
   }
 
@@ -1611,7 +1624,7 @@ static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G, npar::Block *n,
       return std::nullopt;
     }
 
-    if ((*it)->getKind() == QAST_NODE_BLOCK) {
+    if ((*it)->getKind() == QAST_BLOCK) {
       /* Reduce unneeded nesting in the IR */
       qcore_assert(item->size() == 1);
       Seq *inner = item->at(0)->as<Seq>();
@@ -1659,7 +1672,7 @@ static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G,
   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
   Local *local =
-      b.createVariable(b.intern(s.join_scope(n->get_name())),
+      b.createVariable(b.intern(s.join_scope(*n->get_name())),
                        type.value()->asType(), visibility, storage, false);
 
   local->setValue(init.value());
@@ -1806,13 +1819,13 @@ static EResult nrgen_foreach(NRBuilder &, PState &, IReport *,
   // auto iter = nrgen_one(b, s,X, n->get_expr());
   // if (!iter) {
   //   G->report(CompilerError, IC::Error, "npar::ForeachStmt::get_expr() ==
-  //   std::nullopt",n->get_start_pos(),n->get_pos()); return std::nullopt;
+  //   std::nullopt",n->get_offset(),n->get_pos()); return std::nullopt;
   // }
 
   // auto body = nrgen_one(b, s,X, n->get_body());
   // if (!body) {
   //   G->report(CompilerError, IC::Error, "npar::ForeachStmt::get_body() ==
-  //   std::nullopt",n->get_start_pos(),n->get_pos()); return std::nullopt;
+  //   std::nullopt",n->get_offset(),n->get_pos()); return std::nullopt;
   // }
 
   // return create<Foreach>(idx_name, val_name, iter,
@@ -1883,267 +1896,263 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
   std::optional<nr::Expr *> out;
 
   switch (n->getKind()) {
-    case QAST_NODE_NODE: {
+    case QAST_BASE: {
       break;
     }
 
-    case QAST_NODE_BINEXPR:
+    case QAST_BINEXPR:
       out = nrgen_binexpr(b, s, G, n->as<npar::BinExpr>());
       break;
 
-    case QAST_NODE_UNEXPR:
+    case QAST_UNEXPR:
       out = nrgen_unexpr(b, s, G, n->as<npar::UnaryExpr>());
       break;
 
-    case QAST_NODE_TEREXPR:
+    case QAST_TEREXPR:
       out = nrgen_terexpr(b, s, G, n->as<npar::TernaryExpr>());
       break;
 
-    case QAST_NODE_INT:
+    case QAST_INT:
       out = nrgen_int(b, s, G, n->as<npar::ConstInt>());
       break;
 
-    case QAST_NODE_FLOAT:
+    case QAST_FLOAT:
       out = nrgen_float(b, s, G, n->as<npar::ConstFloat>());
       break;
 
-    case QAST_NODE_STRING:
+    case QAST_STRING:
       out = nrgen_string(b, s, G, n->as<npar::ConstString>());
       break;
 
-    case QAST_NODE_CHAR:
+    case QAST_CHAR:
       out = nrgen_char(b, s, G, n->as<npar::ConstChar>());
       break;
 
-    case QAST_NODE_BOOL:
+    case QAST_BOOL:
       out = nrgen_bool(b, s, G, n->as<npar::ConstBool>());
       break;
 
-    case QAST_NODE_NULL:
+    case QAST_NULL:
       out = nrgen_null(b, s, G, n->as<npar::ConstNull>());
       break;
 
-    case QAST_NODE_UNDEF:
+    case QAST_UNDEF:
       out = nrgen_undef(b, s, G, n->as<npar::ConstUndef>());
       break;
 
-    case QAST_NODE_CALL:
+    case QAST_CALL:
       out = nrgen_call(b, s, G, n->as<npar::Call>());
       break;
 
-    case QAST_NODE_LIST:
+    case QAST_LIST:
       out = nrgen_list(b, s, G, n->as<npar::List>());
       break;
 
-    case QAST_NODE_ASSOC:
+    case QAST_ASSOC:
       out = nrgen_assoc(b, s, G, n->as<npar::Assoc>());
       break;
 
-    case QAST_NODE_FIELD:
+    case QAST_FIELD:
       out = nrgen_field(b, s, G, n->as<npar::Field>());
       break;
 
-    case QAST_NODE_INDEX:
+    case QAST_INDEX:
       out = nrgen_index(b, s, G, n->as<npar::Index>());
       break;
 
-    case QAST_NODE_SLICE:
+    case QAST_SLICE:
       out = nrgen_slice(b, s, G, n->as<npar::Slice>());
       break;
 
-    case QAST_NODE_FSTRING:
+    case QAST_FSTRING:
       out = nrgen_fstring(b, s, G, n->as<npar::FString>());
       break;
 
-    case QAST_NODE_IDENT:
+    case QAST_IDENT:
       out = nrgen_ident(b, s, G, n->as<npar::Ident>());
       break;
 
-    case QAST_NODE_SEQ:
+    case QAST_SEQ:
       out = nrgen_seq_point(b, s, G, n->as<npar::SeqPoint>());
       break;
 
-    case QAST_NODE_POST_UNEXPR:
+    case QAST_POST_UNEXPR:
       out = nrgen_post_unexpr(b, s, G, n->as<npar::PostUnaryExpr>());
       break;
 
-    case QAST_NODE_STMT_EXPR:
+    case QAST_SEXPR:
       out = nrgen_stmt_expr(b, s, G, n->as<npar::StmtExpr>());
       break;
 
-    case QAST_NODE_TYPE_EXPR:
+    case QAST_TEXPR:
       out = nrgen_type_expr(b, s, G, n->as<npar::TypeExpr>());
       break;
 
-    case QAST_NODE_TEMPL_CALL:
+    case QAST_TEMPL_CALL:
       out = nrgen_templ_call(b, s, G, n->as<npar::TemplCall>());
       break;
 
-    case QAST_NODE_REF_TY:
+    case QAST_REF:
       out = nrgen_ref_ty(b, s, G, n->as<npar::RefTy>());
       break;
 
-    case QAST_NODE_U1_TY:
+    case QAST_U1:
       out = nrgen_u1_ty(b, s, G, n->as<npar::U1>());
       break;
 
-    case QAST_NODE_U8_TY:
+    case QAST_U8:
       out = nrgen_u8_ty(b, s, G, n->as<npar::U8>());
       break;
 
-    case QAST_NODE_U16_TY:
+    case QAST_U16:
       out = nrgen_u16_ty(b, s, G, n->as<npar::U16>());
       break;
 
-    case QAST_NODE_U32_TY:
+    case QAST_U32:
       out = nrgen_u32_ty(b, s, G, n->as<npar::U32>());
       break;
 
-    case QAST_NODE_U64_TY:
+    case QAST_U64:
       out = nrgen_u64_ty(b, s, G, n->as<npar::U64>());
       break;
 
-    case QAST_NODE_U128_TY:
+    case QAST_U128:
       out = nrgen_u128_ty(b, s, G, n->as<npar::U128>());
       break;
 
-    case QAST_NODE_I8_TY:
+    case QAST_I8:
       out = nrgen_i8_ty(b, s, G, n->as<npar::I8>());
       break;
 
-    case QAST_NODE_I16_TY:
+    case QAST_I16:
       out = nrgen_i16_ty(b, s, G, n->as<npar::I16>());
       break;
 
-    case QAST_NODE_I32_TY:
+    case QAST_I32:
       out = nrgen_i32_ty(b, s, G, n->as<npar::I32>());
       break;
 
-    case QAST_NODE_I64_TY:
+    case QAST_I64:
       out = nrgen_i64_ty(b, s, G, n->as<npar::I64>());
       break;
 
-    case QAST_NODE_I128_TY:
+    case QAST_I128:
       out = nrgen_i128_ty(b, s, G, n->as<npar::I128>());
       break;
 
-    case QAST_NODE_F16_TY:
+    case QAST_F16:
       out = nrgen_f16_ty(b, s, G, n->as<npar::F16>());
       break;
 
-    case QAST_NODE_F32_TY:
+    case QAST_F32:
       out = nrgen_f32_ty(b, s, G, n->as<npar::F32>());
       break;
 
-    case QAST_NODE_F64_TY:
+    case QAST_F64:
       out = nrgen_f64_ty(b, s, G, n->as<npar::F64>());
       break;
 
-    case QAST_NODE_F128_TY:
+    case QAST_F128:
       out = nrgen_f128_ty(b, s, G, n->as<npar::F128>());
       break;
 
-    case QAST_NODE_VOID_TY:
+    case QAST_VOID:
       out = nrgen_void_ty(b, s, G, n->as<npar::VoidTy>());
       break;
 
-    case QAST_NODE_PTR_TY:
+    case QAST_PTR:
       out = nrgen_ptr_ty(b, s, G, n->as<npar::PtrTy>());
       break;
 
-    case QAST_NODE_OPAQUE_TY:
+    case QAST_OPAQUE:
       out = nrgen_opaque_ty(b, s, G, n->as<npar::OpaqueTy>());
       break;
 
-    case QAST_NODE_ARRAY_TY:
+    case QAST_ARRAY:
       out = nrgen_array_ty(b, s, G, n->as<npar::ArrayTy>());
       break;
 
-    case QAST_NODE_TUPLE_TY:
+    case QAST_TUPLE:
       out = nrgen_tuple_ty(b, s, G, n->as<npar::TupleTy>());
       break;
 
-    case QAST_NODE_FN_TY:
+    case QAST_FUNCTOR:
       out = nrgen_fn_ty(b, s, G, n->as<npar::FuncTy>());
       break;
 
-    case QAST_NODE_UNRES_TY:
+    case QAST_NAMED:
       out = nrgen_unres_ty(b, s, G, n->as<npar::NamedTy>());
       break;
 
-    case QAST_NODE_INFER_TY:
+    case QAST_INFER:
       out = nrgen_infer_ty(b, s, G, n->as<npar::InferTy>());
       break;
 
-    case QAST_NODE_TEMPL_TY:
+    case QAST_TEMPLATE:
       out = nrgen_templ_ty(b, s, G, n->as<npar::TemplType>());
       break;
 
-    case QAST_NODE_FNDECL:
-      out = nrgen_fndecl(b, s, G, n->as<npar::FnDecl>());
-      break;
-
-    case QAST_NODE_FN:
+    case QAST_FUNCTION:
       out = nrgen_fn(b, s, G, n->as<npar::FnDef>());
       break;
 
-    case QAST_NODE_STRUCT_FIELD:
+    case QAST_STRUCT_FIELD:
       out = nrgen_composite_field(b, s, G, n->as<npar::StructField>());
       break;
 
-    case QAST_NODE_BLOCK:
+    case QAST_BLOCK:
       out = nrgen_block(b, s, G, n->as<npar::Block>(), true);
       break;
 
-    case QAST_NODE_VAR:
+    case QAST_VAR:
       out = nrgen_var(b, s, G, n->as<npar::VarDecl>());
       break;
 
-    case QAST_NODE_INLINE_ASM:
+    case QAST_INLINE_ASM:
       out = nrgen_inline_asm(b, s, G, n->as<npar::InlineAsm>());
       break;
 
-    case QAST_NODE_RETURN:
+    case QAST_RETURN:
       out = nrgen_return(b, s, G, n->as<npar::ReturnStmt>());
       break;
 
-    case QAST_NODE_RETIF:
+    case QAST_RETIF:
       out = nrgen_retif(b, s, G, n->as<npar::ReturnIfStmt>());
       break;
 
-    case QAST_NODE_BREAK:
+    case QAST_BREAK:
       out = nrgen_break(b, s, G, n->as<npar::BreakStmt>());
       break;
 
-    case QAST_NODE_CONTINUE:
+    case QAST_CONTINUE:
       out = nrgen_continue(b, s, G, n->as<npar::ContinueStmt>());
       break;
 
-    case QAST_NODE_IF:
+    case QAST_IF:
       out = nrgen_if(b, s, G, n->as<npar::IfStmt>());
       break;
 
-    case QAST_NODE_WHILE:
+    case QAST_WHILE:
       out = nrgen_while(b, s, G, n->as<npar::WhileStmt>());
       break;
 
-    case QAST_NODE_FOR:
+    case QAST_FOR:
       out = nrgen_for(b, s, G, n->as<npar::ForStmt>());
       break;
 
-    case QAST_NODE_FOREACH:
+    case QAST_FOREACH:
       out = nrgen_foreach(b, s, G, n->as<npar::ForeachStmt>());
       break;
 
-    case QAST_NODE_CASE:
+    case QAST_CASE:
       out = nrgen_case(b, s, G, n->as<npar::CaseStmt>());
       break;
 
-    case QAST_NODE_SWITCH:
+    case QAST_SWITCH:
       out = nrgen_switch(b, s, G, n->as<npar::SwitchStmt>());
       break;
 
-    case QAST_NODE_EXPR_STMT:
+    case QAST_ESTMT:
       out = nrgen_expr_stmt(b, s, G, n->as<npar::ExprStmt>());
       break;
 
@@ -2165,23 +2174,23 @@ static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
   BResult out;
 
   switch (n->getKind()) {
-    case QAST_NODE_TYPEDEF:
+    case QAST_TYPEDEF:
       out = nrgen_typedef(b, s, G, n->as<npar::TypedefStmt>());
       break;
 
-    case QAST_NODE_ENUM:
+    case QAST_ENUM:
       out = nrgen_enum(b, s, G, n->as<npar::EnumDef>());
       break;
 
-    case QAST_NODE_STRUCT:
+    case QAST_STRUCT:
       out = nrgen_struct(b, s, G, n->as<npar::StructDef>());
       break;
 
-    case QAST_NODE_SCOPE:
+    case QAST_SCOPE:
       out = nrgen_scope(b, s, G, n->as<npar::ScopeStmt>());
       break;
 
-    case QAST_NODE_EXPORT:
+    case QAST_EXPORT:
       out = nrgen_export(b, s, G, n->as<npar::ExportStmt>());
       break;
 

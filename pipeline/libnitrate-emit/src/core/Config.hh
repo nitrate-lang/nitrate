@@ -95,7 +95,7 @@ public:
     m_data.shrink_to_fit();
   }
 
-  bool has(qcode_key_t option, qcode_val_t value) const noexcept;
+  bool has(qcode_key_t option, qcode_val_t value) const;
 };
 
 #endif  // __NITRATE_CODEGEN_CORE_CONFIG_H__

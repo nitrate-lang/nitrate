@@ -45,10 +45,10 @@ if os.system('docker build -t nitrate-debug:latest -f tools/Debug.Dockerfile .')
     sys.exit(1)
 
 
-def regenerate_runner():
-    if os.system('docker build -t wesleyjones256/no3-dist:latest -f tools/no3-dist-container.Dockerfile .') != 0:
-        print("Container build failed.")
-        sys.exit(1)
+# def regenerate_runner():
+#     if os.system('docker build -t wesleyjones256/no3-dist:latest -f tools/no3-dist-container.Dockerfile .') != 0:
+#         print("Container build failed.")
+#         sys.exit(1)
 
 
 # Build the release env container
@@ -75,7 +75,7 @@ if '--release' in sys.argv:
                 sys.exit(1)
 
     print("UPX'd release binaries.")
-    regenerate_runner()
+    # regenerate_runner()
     print("Release build complete.")
     sys.exit(0)
 
@@ -90,5 +90,5 @@ if '--debug' in sys.argv:
         print("Stripped debug binaries.")
     print("Debug build complete.")
 
-    regenerate_runner()
+    # regenerate_runner()
     sys.exit(0)

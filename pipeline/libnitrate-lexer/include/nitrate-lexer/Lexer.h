@@ -182,7 +182,7 @@ const char *qlex_filename(qlex_t *lexer);
  * @param lexer Lexer context.
  * @param loc Location.
  *
- * @return Line number or UINT32_MAX on error.
+ * @return Line number or QLEX_EOFF on error.
  * @note This function is thread-safe.
  */
 uint32_t qlex_line(qlex_t *lexer, uint32_t loc);
@@ -193,7 +193,7 @@ uint32_t qlex_line(qlex_t *lexer, uint32_t loc);
  * @param lexer Lexer context.
  * @param loc Location.
  *
- * @return Column number or UINT32_MAX on error.
+ * @return Column number or QLEX_EOFF on error.
  * @note This function is thread-safe.
  */
 uint32_t qlex_col(qlex_t *lexer, uint32_t loc);
@@ -222,10 +222,10 @@ uint32_t qlex_offset(qlex_t *lexer, uint32_t base, uint32_t offset);
  * span.
  * @param userdata Userdata to pass to the callback.
  *
- * @return Number of bytes between the two locations or UINT32_MAX on error.
+ * @return Number of bytes between the two locations or QLEX_EOFF on error.
  * @note This function is thread-safe.
  * @note If the callback is ever called this function is guaranteed to not
- * return UINT32_MAX. Otherwise, the return value is UINT32_MAX.
+ * return QLEX_EOFF. Otherwise, the return value is QLEX_EOFF.
  */
 uint32_t qlex_spanx(qlex_t *lexer, uint32_t start, uint32_t end,
                     void (*callback)(const char *, uint32_t, uintptr_t),

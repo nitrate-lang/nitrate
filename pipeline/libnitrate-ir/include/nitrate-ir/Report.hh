@@ -35,6 +35,7 @@
 #define __NITRATE_NR_REPORT_H__
 
 #include <nitrate-ir/IR.h>
+#include <nitrate-lexer/Token.h>
 
 #include <boost/bimap.hpp>
 #include <cstdarg>
@@ -94,14 +95,13 @@ namespace nr {
 
     virtual ~IReport() = default;
 
-    virtual void report(
-        IssueCode code, IC level, std::vector<std::string_view> params = {},
-        std::tuple<uint32_t, uint32_t, std::string_view> location = {
-            UINT32_MAX, UINT32_MAX, ""}) = 0;
+    virtual void report(IssueCode code, IC level,
+                        std::vector<std::string_view> params = {},
+                        std::tuple<uint32_t, uint32_t> location = {
+                            QLEX_EOFF, QLEX_NOFILE}) = 0;
 
     void report(IssueCode code, IC level, std::string_view message,
-                std::tuple<uint32_t, uint32_t, std::string_view> loc = {
-                    UINT32_MAX, UINT32_MAX, ""}) {
+                std::tuple<uint32_t, uint32_t> loc = {QLEX_EOFF, QLEX_NOFILE}) {
       report(code, level, std::vector<std::string_view>({message}), loc);
     };
 
@@ -115,9 +115,11 @@ namespace nr {
     virtual ~ISourceView() = default;
 
     virtual std::optional<std::pair<uint32_t, uint32_t>> off2rc(
-        uint32_t offset) noexcept = 0;
-    virtual std::optional<std::vector<std::string_view>> rect(
-        uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) noexcept = 0;
+        uint32_t offset) = 0;
+    virtual std::optional<std::vector<std::string_view>> rect(uint32_t x0,
+                                                              uint32_t y0,
+                                                              uint32_t x1,
+                                                              uint32_t y1) = 0;
   };
 };  // namespace nr
 

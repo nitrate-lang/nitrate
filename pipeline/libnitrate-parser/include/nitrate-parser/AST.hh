@@ -31,59 +31,31 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_IR_CLASSES_H__
-#define __NITRATE_IR_CLASSES_H__
+#ifndef __NITRATE_PARSER_AST_H__
+#define __NITRATE_PARSER_AST_H__
 
 #ifndef __cplusplus
-#error "This header is for C++ only."
+#error "This code requires c++"
 #endif
 
-#include <nitrate-core/Error.h>
-#include <nitrate-ir/Config.h>
-#include <nitrate-ir/IR.h>
+#include <nitrate-parser/ASTBase.hh>
+#include <nitrate-parser/ASTExpr.hh>
+#include <nitrate-parser/ASTStmt.hh>
+#include <nitrate-parser/ASTType.hh>
 
-#include <nitrate-ir/IRGraph.hh>
-#include <optional>
-#include <string>
+namespace npar {
+  template <typename T, typename... Args>
+  static inline T *make(Args &&...args) {
+    T *new_obj = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
 
-class nr_conf final {
-  nr_conf_t *m_conf;
+    //  /// TODO: Cache nodes
 
-public:
-  nr_conf(bool use_default = true) {
-    if ((m_conf = nr_conf_new(use_default)) == nullptr) {
-      qcore_panic("nr_conf_new failed");
-    }
-  }
-  ~nr_conf() { nr_conf_free(m_conf); }
-
-  nr_conf_t *get() const { return m_conf; }
-};
-
-class qmodule final {
-  qmodule_t *m_module;
-
-public:
-  qmodule() { m_module = nullptr; }
-  ~qmodule() {
-    if (m_module) {
-      nr_free(m_module);
-    }
+    return new_obj;
   }
 
-  qmodule_t *&get() { return m_module; }
-};
+  Stmt *mock_stmt(npar_ty_t expected);
+  Expr *mock_expr(npar_ty_t expected);
+  Type *mock_type();
+}  // namespace npar
 
-namespace nr {
-  class SymbolEncoding final {
-  public:
-    SymbolEncoding() = default;
-
-    std::optional<std::string> mangle_name(const nr::Expr *symbol,
-                                           AbiTag abi) const;
-
-    std::optional<std::string> demangle_name(std::string_view symbol) const;
-  };
-}  // namespace nr
-
-#endif  // __NITRATE_IR_CLASSES_H__
+#endif

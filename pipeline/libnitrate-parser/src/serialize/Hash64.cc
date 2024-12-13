@@ -31,59 +31,81 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_IR_CLASSES_H__
-#define __NITRATE_IR_CLASSES_H__
-
-#ifndef __cplusplus
-#error "This header is for C++ only."
-#endif
-
 #include <nitrate-core/Error.h>
-#include <nitrate-ir/Config.h>
-#include <nitrate-ir/IR.h>
+#include <nitrate-core/Macro.h>
 
-#include <nitrate-ir/IRGraph.hh>
-#include <optional>
-#include <string>
+#include <core/Hash.hh>
 
-class nr_conf final {
-  nr_conf_t *m_conf;
+using namespace npar;
 
-public:
-  nr_conf(bool use_default = true) {
-    if ((m_conf = nr_conf_new(use_default)) == nullptr) {
-      qcore_panic("nr_conf_new failed");
-    }
+void AST_Hash64::str_impl(std::string_view str) {
+  qcore_assert(!m_state.empty());
+  m_state.top().second++;
+
+  bool hash_name =
+      m_state.top().first == true || (m_state.top().second & 1) != 0;
+
+  if (hash_name) {
+    m_sum += std::hash<std::string_view>{}(str);
   }
-  ~nr_conf() { nr_conf_free(m_conf); }
+}
 
-  nr_conf_t *get() const { return m_conf; }
-};
+void AST_Hash64::uint_impl(uint64_t val) {
+  qcore_assert(!m_state.empty());
+  m_state.top().second++;
 
-class qmodule final {
-  qmodule_t *m_module;
+  m_sum += val;
+}
 
-public:
-  qmodule() { m_module = nullptr; }
-  ~qmodule() {
-    if (m_module) {
-      nr_free(m_module);
-    }
-  }
+void AST_Hash64::double_impl(double val) {
+  qcore_assert(!m_state.empty());
+  m_state.top().second++;
 
-  qmodule_t *&get() { return m_module; }
-};
+  m_sum += std::hash<double>{}(val);
+}
 
-namespace nr {
-  class SymbolEncoding final {
-  public:
-    SymbolEncoding() = default;
+void AST_Hash64::bool_impl(bool val) {
+  qcore_assert(!m_state.empty());
+  m_state.top().second++;
 
-    std::optional<std::string> mangle_name(const nr::Expr *symbol,
-                                           AbiTag abi) const;
+  m_sum += std::hash<bool>{}(val);
+}
 
-    std::optional<std::string> demangle_name(std::string_view symbol) const;
-  };
-}  // namespace nr
+void AST_Hash64::null_impl() {
+  qcore_assert(!m_state.empty());
+  m_state.top().second++;
 
-#endif  // __NITRATE_IR_CLASSES_H__
+  m_sum += std::hash<std::nullptr_t>{}(nullptr);
+}
+
+void AST_Hash64::begin_obj_impl(size_t) {
+  qcore_assert(!m_state.empty());
+  m_state.top().second++;
+
+  m_sum++;
+
+  m_state.push({false, 0});
+}
+
+void AST_Hash64::end_obj_impl() {
+  qcore_assert(!m_state.empty());
+  m_state.pop();
+
+  m_sum++;
+}
+
+void AST_Hash64::begin_arr_impl(size_t size) {
+  qcore_assert(!m_state.empty());
+  m_state.top().second++;
+
+  m_sum += size;
+
+  m_state.push({true, 0});
+}
+
+void AST_Hash64::end_arr_impl() {
+  qcore_assert(!m_state.empty());
+  m_state.pop();
+
+  m_sum++;
+}

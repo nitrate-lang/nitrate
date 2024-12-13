@@ -88,16 +88,13 @@ npar::Stmt *npar::recurse_pub(npar_t &S, qlex_t &rd) {
   if (let attrs = recurse_export_attributes(S, rd)) {
     let export_block = recurse_export_body(S, rd);
 
-    let export_stmt =
-        ExportStmt::get(export_block, abi_id, Vis::PUBLIC, attrs.value());
-    export_stmt->set_end_pos(export_block->get_end_pos());
-
-    return export_stmt;
+    return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Pub,
+                            attrs.value());
   } else {
     diagnostic << current() << "Malformed export attributes";
   }
 
-  return mock_stmt(QAST_NODE_EXPORT);
+  return mock_stmt(QAST_EXPORT);
 }
 
 npar::Stmt *npar::recurse_sec(npar_t &S, qlex_t &rd) {
@@ -106,16 +103,13 @@ npar::Stmt *npar::recurse_sec(npar_t &S, qlex_t &rd) {
   if (let attrs = recurse_export_attributes(S, rd)) {
     let export_block = recurse_export_body(S, rd);
 
-    let export_stmt =
-        ExportStmt::get(export_block, abi_id, Vis::PRIVATE, attrs.value());
-    export_stmt->set_end_pos(export_block->get_end_pos());
-
-    return export_stmt;
+    return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Sec,
+                            attrs.value());
   } else {
     diagnostic << current() << "Malformed export attributes";
   }
 
-  return mock_stmt(QAST_NODE_EXPORT);
+  return mock_stmt(QAST_EXPORT);
 }
 
 npar::Stmt *npar::recurse_pro(npar_t &S, qlex_t &rd) {
@@ -124,14 +118,11 @@ npar::Stmt *npar::recurse_pro(npar_t &S, qlex_t &rd) {
   if (let attrs = recurse_export_attributes(S, rd)) {
     let export_block = recurse_export_body(S, rd);
 
-    let export_stmt =
-        ExportStmt::get(export_block, abi_id, Vis::PROTECTED, attrs.value());
-    export_stmt->set_end_pos(export_block->get_end_pos());
-
-    return export_stmt;
+    return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Pro,
+                            attrs.value());
   } else {
     diagnostic << current() << "Malformed export attributes";
   }
 
-  return mock_stmt(QAST_NODE_EXPORT);
+  return mock_stmt(QAST_EXPORT);
 }

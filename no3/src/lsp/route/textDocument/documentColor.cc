@@ -129,8 +129,8 @@ void do_documentColor(const lsp::RequestMessage& req,
     uint32_t end_line = qlex_line(lexer.get(), tok.end);
     uint32_t end_col = qlex_col(lexer.get(), tok.end);
 
-    if (start_line == UINT32_MAX || start_col == UINT32_MAX ||
-        end_line == UINT32_MAX || end_col == UINT32_MAX) {
+    if (start_line == QLEX_EOFF || start_col == QLEX_EOFF ||
+        end_line == QLEX_EOFF || end_col == QLEX_EOFF) {
       LOG(WARNING) << "Failed to get source location";
       continue;
     }

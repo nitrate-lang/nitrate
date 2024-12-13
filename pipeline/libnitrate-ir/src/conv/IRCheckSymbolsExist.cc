@@ -40,7 +40,7 @@
 
 using namespace nr;
 
-bool NRBuilder::check_symbols_exist(Seq *, IReport *I) noexcept {
+bool NRBuilder::check_symbols_exist(Seq *, IReport *I) {
   I->report(CompilerError, IC::Debug,
             "NRBuilder::check_symbols_exist() not implemented");
 

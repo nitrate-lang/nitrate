@@ -33,7 +33,6 @@
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
-#include <nitrate-parser/Node.h>
 #include <nitrate-parser/Parser.h>
 
 #include <atomic>
@@ -41,8 +40,9 @@
 #include <cstring>
 #include <descent/Recurse.hh>
 #include <nitrate-core/Classes.hh>
-#include <nitrate-parser/Reader.hh>
-#include <nitrate-parser/Writer.hh>
+#include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTReader.hh>
+#include <nitrate-parser/ASTWriter.hh>
 #include <sstream>
 
 using namespace npar;
@@ -51,7 +51,8 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
                           bool single_stmt) {
   qlex_tok_t tok;
 
-  Block* block = Block::get();
+  Block* block = make<Block>();
+  block->set_offset(current().start);
 
   if (expect_braces) {
     tok = next();
@@ -81,14 +82,14 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
     if (!tok.is(qKeyW)) {
       if (tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() || tok.is<qPuncRPar>()) {
         diagnostic << tok << "Unexpected closing brace";
-        return mock_stmt(QAST_NODE_BLOCK);
+        return mock_stmt(QAST_BLOCK);
       }
 
       Expr* expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
 
       if (!expr) {
         diagnostic << tok << "Expected valid expression";
-        return mock_stmt(QAST_NODE_BLOCK);
+        return mock_stmt(QAST_BLOCK);
       }
 
       tok = next();
@@ -96,9 +97,8 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
         diagnostic << tok << "Expected ';'";
       }
 
-      ExprStmt* stmt = ExprStmt::get(expr);
-      stmt->set_start_pos(std::get<0>(expr->get_pos()));
-      stmt->set_end_pos(tok.end);
+      ExprStmt* stmt = make<ExprStmt>(expr);
+      stmt->set_offset(std::get<0>(expr->get_pos()));
 
       block->get_items().push_back(stmt);
       continue;
@@ -203,12 +203,12 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKBreak: {
-        node = BreakStmt::get();
+        node = make<BreakStmt>();
         break;
       }
 
       case qKContinue: {
-        node = ContinueStmt::get();
+        node = make<ContinueStmt>();
         break;
       }
 
@@ -243,12 +243,12 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKTrue: {
-        node = ExprStmt::get(ConstBool::get(true));
+        node = make<ExprStmt>(make<ConstBool>(true));
         break;
       }
 
       case qKFalse: {
-        node = ExprStmt::get(ConstBool::get(false));
+        node = make<ExprStmt>(make<ConstBool>(false));
         break;
       }
 
@@ -260,7 +260,7 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
           node = recurse_block(S, rd, false, true);
         }
 
-        if (node->is(QAST_NODE_BLOCK)) {
+        if (node->is(QAST_BLOCK)) {
           node->as<Block>()->set_safety(SafetyMode::Unsafe);
         }
 
@@ -275,7 +275,7 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
           node = recurse_block(S, rd, false, true);
         }
 
-        if (node->is(QAST_NODE_BLOCK)) {
+        if (node->is(QAST_BLOCK)) {
           node->as<Block>()->set_safety(SafetyMode::Safe);
         }
 
@@ -288,7 +288,7 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
     }
 
     if (node) {
-      node->set_start_pos(loc_start);
+      node->set_offset(loc_start);
       /* End position is supplied by producer */
       block->get_items().push_back(node);
     }

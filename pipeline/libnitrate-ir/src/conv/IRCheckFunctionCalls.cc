@@ -40,7 +40,7 @@
 
 using namespace nr;
 
-bool NRBuilder::check_function_calls(Seq *root, IReport *I) noexcept {
+bool NRBuilder::check_function_calls(Seq *root, IReport *I) {
   bool failed = false;
 
   std::for_each<Call>(root, [&](const Call *x) {
