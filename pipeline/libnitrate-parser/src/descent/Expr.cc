@@ -410,7 +410,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
             return stack.top();
           }
           case qPuncLCur: {
-            ListData elements;
+            ExpressionList elements;
             while (true) {
               tok = peek();
               if (tok.is<qPuncRCur>()) {
@@ -451,7 +451,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
           }
           case qPuncLBrk: {
             if (stack.empty()) {
-              ListData elements;
+              ExpressionList elements;
               while (true) {
                 tok = peek();
                 if (tok.is<qPuncRBrk>()) {

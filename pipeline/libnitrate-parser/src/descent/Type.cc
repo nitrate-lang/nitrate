@@ -98,7 +98,7 @@ static Type *recurse_type_metadata(npar_t &S, qlex_t &rd, Type *base) {
   if (next_if(qOpTernary)) {
     let opt_type =
         make<TemplType>(make<NamedTy>(SaveString("__builtin_result")),
-                        TemplTypeArgs{make<TypeExpr>(base)});
+                        ExpressionList{make<TypeExpr>(base)});
     opt_type->set_offset(current().start);
 
     base = opt_type;
@@ -202,7 +202,7 @@ static Type *recurse_array_or_vector(npar_t &S, qlex_t &rd) {
 
   if (next_if(qPuncRBrk)) {
     let vector = make<TemplType>(make<NamedTy>(SaveString("__builtin_vec")),
-                                 TemplTypeArgs{make<TypeExpr>(first)});
+                                 ExpressionList{make<TypeExpr>(first)});
 
     vector->set_offset(start);
 
@@ -237,7 +237,7 @@ static Type *recurse_set_type(npar_t &S, qlex_t &rd) {
   }
 
   let set = make<TemplType>(make<NamedTy>(SaveString("__builtin_uset")),
-                            TemplTypeArgs{make<TypeExpr>(set_type)});
+                            ExpressionList{make<TypeExpr>(set_type)});
 
   set->set_offset(start);
 
