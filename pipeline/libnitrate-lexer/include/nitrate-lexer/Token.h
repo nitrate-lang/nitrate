@@ -196,10 +196,9 @@ const char *qlex_str(struct qlex_t *lexer, const struct qlex_tok_t *tok,
 #endif
 
 typedef struct qlex_tok_t {
-  /* Token type */
-  qlex_ty_t ty : 4;
-
   uint32_t start, end;
+
+  qlex_ty_t ty : 4;
 
   /* Token data */
   union {
@@ -213,23 +212,23 @@ typedef struct qlex_tok_t {
 
 #if defined(__cplusplus) && defined(__NITRATE_LEXER_CPP__)
 
-  constexpr qlex_tok_t() : ty(qEofF), start(0), end(0), v{.str_idx = 0} {}
+  constexpr qlex_tok_t() : start(0), end(0), ty(qEofF), v{.str_idx = 0} {}
 
   constexpr qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, uint32_t loc_beg = 0,
                        uint32_t loc_end = 0)
-      : ty(ty), start(loc_beg), end(loc_end), v{.punc = punc} {}
+      : start(loc_beg), end(loc_end), ty(ty), v{.punc = punc} {}
 
   constexpr qlex_tok_t(qlex_ty_t ty, qlex_op_t op, uint32_t loc_beg = 0,
                        uint32_t loc_end = 0)
-      : ty(ty), start(loc_beg), end(loc_end), v{.op = op} {}
+      : start(loc_beg), end(loc_end), ty(ty), v{.op = op} {}
 
   constexpr qlex_tok_t(qlex_ty_t ty, qlex_key_t key, uint32_t loc_beg = 0,
                        uint32_t loc_end = 0)
-      : ty(ty), start(loc_beg), end(loc_end), v{.key = key} {}
+      : start(loc_beg), end(loc_end), ty(ty), v{.key = key} {}
 
   constexpr qlex_tok_t(qlex_ty_t ty, uint32_t str_idx, uint32_t loc_beg = 0,
                        uint32_t loc_end = 0)
-      : ty(ty), start(loc_beg), end(loc_end), v{.str_idx = str_idx} {}
+      : start(loc_beg), end(loc_end), ty(ty), v{.str_idx = str_idx} {}
 
   constexpr static qlex_tok_t eof(uint32_t loc_start, uint32_t loc_end) {
     return qlex_tok_t(qEofF, 0, loc_start, loc_end);

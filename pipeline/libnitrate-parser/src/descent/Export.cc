@@ -43,9 +43,9 @@ static std::string_view recurse_abi_name(qlex_t &rd) {
   }
 }
 
-static std::optional<SymbolAttributes> recurse_export_attributes(npar_t &S,
-                                                                 qlex_t &rd) {
-  SymbolAttributes attributes;
+static std::optional<ExpressionList> recurse_export_attributes(npar_t &S,
+                                                               qlex_t &rd) {
+  ExpressionList attributes;
 
   if (!next_if(qPuncLBrk)) {
     return attributes;
@@ -62,7 +62,7 @@ static std::optional<SymbolAttributes> recurse_export_attributes(npar_t &S,
       let attribute = recurse_expr(
           S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRBrk)});
 
-      attributes.insert(attribute);
+      attributes.push_back(attribute);
 
       next_if(qPuncComa);
     } else {

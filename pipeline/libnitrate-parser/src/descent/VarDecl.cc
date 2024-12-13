@@ -36,9 +36,9 @@
 
 using namespace npar;
 
-static std::optional<VarDeclAttributes> recurse_variable_attributes(
-    npar_t &S, qlex_t &rd) {
-  VarDeclAttributes attributes;
+static std::optional<ExpressionList> recurse_variable_attributes(npar_t &S,
+                                                                 qlex_t &rd) {
+  ExpressionList attributes;
 
   if (!next_if(qPuncLBrk)) {
     return attributes;
@@ -55,7 +55,7 @@ static std::optional<VarDeclAttributes> recurse_variable_attributes(
       let attribute = recurse_expr(
           S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRBrk)});
 
-      attributes.insert(attribute);
+      attributes.push_back(attribute);
 
       next_if(qPuncComa);
     } else {

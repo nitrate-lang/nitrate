@@ -69,7 +69,7 @@ namespace npar {
   };
 
   class VarDecl : public Stmt {
-    VarDeclAttributes m_attributes;
+    ExpressionList m_attributes;
     SmallString m_name;
     Type *m_type;
     Expr *m_value;
@@ -77,7 +77,7 @@ namespace npar {
 
   public:
     VarDecl(SmallString name, Type *type, Expr *value, VarDeclType decl_type,
-            VarDeclAttributes attributes)
+            ExpressionList attributes)
         : Stmt(QAST_VAR),
           m_attributes(attributes),
           m_name(name),
@@ -233,14 +233,14 @@ namespace npar {
   };
 
   class ExportStmt : public Stmt {
-    SymbolAttributes m_attrs;
+    ExpressionList m_attrs;
     SmallString m_abi_name;
     Stmt *m_body;
     Vis m_vis;
 
   public:
     ExportStmt(Stmt *content, SmallString abi_name, Vis vis,
-               SymbolAttributes attrs)
+               ExpressionList attrs)
         : Stmt(QAST_EXPORT),
           m_attrs(attrs),
           m_abi_name(abi_name),

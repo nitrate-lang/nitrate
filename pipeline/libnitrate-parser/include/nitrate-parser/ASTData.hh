@@ -117,10 +117,7 @@ namespace npar {
   using ScopeDeps =
       std::set<SmallString, std::less<SmallString>, Arena<SmallString>>;
 
-  using VarDeclAttributes = std::set<Expr *, std::less<Expr *>, Arena<Expr *>>;
-
   using SwitchCases = std::vector<CaseStmt *, Arena<CaseStmt *>>;
-  using SymbolAttributes = std::set<Expr *, std::less<Expr *>, Arena<Expr *>>;
   using EnumItem = std::pair<SmallString, Expr *>;
   using EnumDefItems = std::vector<EnumItem, Arena<EnumItem>>;
 
