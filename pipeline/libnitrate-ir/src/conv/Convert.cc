@@ -1218,7 +1218,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
 
       field_default = val.value();
     } else {
-      auto val = next_one(field.get_value());
+      auto val = next_one(field.get_value().value_or(nullptr));
       if (!val.has_value()) {
         G->report(nr::CompilerError, IC::Error,
                   "Failed to lower struct field default value", n->get_pos());
@@ -1241,7 +1241,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
   R = std::vector<Expr *>();
 
   for (const auto &method : n->get_methods()) {
-    auto val = next_one(method);
+    auto val = next_one(method.func);
     if (!val.has_value()) {
       G->report(nr::CompilerError, IC::Error, "Failed to lower struct method",
                 n->get_pos());
@@ -1253,7 +1253,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
   }
 
   for (const auto &method : n->get_static_methods()) {
-    auto val = next_one(method);
+    auto val = next_one(method.func);
     if (!val.has_value()) {
       G->report(nr::CompilerError, IC::Error,
                 "Failed to lower struct static method", n->get_pos());

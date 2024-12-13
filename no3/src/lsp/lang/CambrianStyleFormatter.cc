@@ -28,6 +28,27 @@ CambrianFormatter::LineStreamWritter::operator<<(qlex_op_t op) {
   return *this;
 }
 
+CambrianFormatter::LineStreamWritter&
+CambrianFormatter::LineStreamWritter::operator<<(npar::Vis v) {
+  switch (v) {
+    case Vis::Sec: {
+      m_line_buffer << "sec";
+      break;
+    }
+
+    case Vis::Pro: {
+      m_line_buffer << "pro";
+      break;
+    }
+
+    case Vis::Pub: {
+      m_line_buffer << "pub";
+      break;
+    }
+  }
+  return *this;
+}
+
 std::string CambrianFormatter::escape_char_literal(char ch) const {
   if (!std::isspace(ch) && !std::isprint(ch)) {
     const char* tab = "0123456789abcdef";
@@ -1184,29 +1205,14 @@ void CambrianFormatter::visit(StructDef const& n) {
   }
 
   std::for_each(n.get_fields().begin(), n.get_fields().end(), [&](let field) {
-    switch (field.get_vis()) {
-      case Vis::Pub: {
-        line << "pub ";
-        break;
-      }
-
-      case Vis::Sec: {
-        line << "sec ";
-        break;
-      }
-
-      case Vis::Pro: {
-        line << "pro ";
-        break;
-      }
-    }
+    line << field.get_vis() << " ";
 
     line << field.get_name() << ": ";
     field.get_type()->accept(*this);
 
-    if (field.get_value()) {
+    if (field.get_value().has_value()) {
       line << " = ";
-      field.get_value()->accept(*this);
+      field.get_value().value()->accept(*this);
     }
 
     line << "," << std::endl;
@@ -1214,13 +1220,15 @@ void CambrianFormatter::visit(StructDef const& n) {
 
   std::for_each(n.get_methods().begin(), n.get_methods().end(),
                 [&](let method) {
-                  method->accept(*this);
+                  line << method.vis << " ";
+                  method.func->accept(*this);
                   line << std::endl;
                 });
 
   std::for_each(n.get_static_methods().begin(), n.get_static_methods().end(),
                 [&](let method) {
-                  method->accept(*this);
+                  line << method.vis << " ";
+                  method.func->accept(*this);
                   line << std::endl;
                 });
 }
@@ -1263,22 +1271,7 @@ void CambrianFormatter::visit(ScopeStmt const& n) {
 }
 
 void CambrianFormatter::visit(ExportStmt const& n) {
-  switch (n.get_vis()) {
-    case Vis::Pub: {
-      line << "pub ";
-      break;
-    }
-
-    case Vis::Sec: {
-      line << "sec ";
-      break;
-    }
-
-    case Vis::Pro: {
-      line << "pro ";
-      break;
-    }
-  }
+  line << n.get_vis() << " ";
 
   escape_string_literal(*n.get_abi_name());
 

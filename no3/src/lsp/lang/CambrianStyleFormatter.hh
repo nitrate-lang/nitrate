@@ -25,6 +25,7 @@ namespace lsp::fmt {
         return *this;
       }
       LineStreamWritter& operator<<(qlex_op_t op);
+      LineStreamWritter& operator<<(npar::Vis op);
 
       LineStreamWritter& operator<<(std::ostream& (*func)(std::ostream&));
 

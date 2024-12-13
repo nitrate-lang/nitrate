@@ -75,6 +75,17 @@ void AST_Writer::write_type_metadata(Type const& n) {
   n.get_range().second ? n.get_range().second->accept(*this) : null();
 }
 
+std::string_view AST_Writer::vis_str(Vis vis) const {
+  switch (vis) {
+    case Vis::Sec:
+      return "sec";
+    case Vis::Pro:
+      return "pro";
+    case Vis::Pub:
+      return "pub";
+  }
+}
+
 void AST_Writer::visit(npar_node_t const& n) {
   begin_obj(2);
 
@@ -1471,25 +1482,11 @@ void AST_Writer::visit(StructDef const& n) {
       field.get_type()->accept(*this);
 
       string("default");
-      field.get_value() ? field.get_value()->accept(*this) : null();
+      field.get_value().has_value() ? field.get_value().value()->accept(*this)
+                                    : null();
 
       string("vis");
-      switch (field.get_vis()) {
-        case Vis::Pub: {
-          string("pub");
-          break;
-        }
-
-        case Vis::Sec: {
-          string("sec");
-          break;
-        }
-
-        case Vis::Pro: {
-          string("pro");
-          break;
-        }
-      }
+      string(vis_str(field.get_vis()));
 
       end_obj();
     });
@@ -1501,8 +1498,17 @@ void AST_Writer::visit(StructDef const& n) {
 
     let methods = n.get_methods();
     begin_arr(methods.size());
-    std::for_each(methods.begin(), methods.end(),
-                  [&](let method) { method->accept(*this); });
+    std::for_each(methods.begin(), methods.end(), [&](let method) {
+      begin_obj(2);
+
+      string("vis");
+      string(vis_str(method.vis));
+
+      string("method");
+      method.func->accept(*this);
+
+      end_obj();
+    });
     end_arr();
   }
 
@@ -1511,8 +1517,17 @@ void AST_Writer::visit(StructDef const& n) {
 
     let statics = n.get_static_methods();
     begin_arr(statics.size());
-    std::for_each(statics.begin(), statics.end(),
-                  [&](let method) { method->accept(*this); });
+    std::for_each(statics.begin(), statics.end(), [&](let method) {
+      begin_obj(2);
+
+      string("vis");
+      string(vis_str(method.vis));
+
+      string("method");
+      method.func->accept(*this);
+
+      end_obj();
+    });
     end_arr();
   }
 
@@ -1593,22 +1608,7 @@ void AST_Writer::visit(ExportStmt const& n) {
   string(*n.get_abi_name());
 
   string("vis");
-  switch (n.get_vis()) {
-    case Vis::Pub: {
-      string("pub");
-      break;
-    }
-
-    case Vis::Sec: {
-      string("sec");
-      break;
-    }
-
-    case Vis::Pro: {
-      string("pro");
-      break;
-    }
-  }
+  string(vis_str(n.get_vis()));
 
   { /* Write attributes */
     string("attrs");

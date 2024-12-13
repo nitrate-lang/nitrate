@@ -72,6 +72,8 @@ namespace npar {
     void write_source_location(npar_node_t const& n) const;
     void write_type_metadata(Type const& n);
 
+    std::string_view vis_str(Vis vis) const;
+
   public:
     AST_Writer(InsertString str_impl, InsertUInt64 uint_impl,
                InsertDouble dbl_impl, InsertBool bool_impl,

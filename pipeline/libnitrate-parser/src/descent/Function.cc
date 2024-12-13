@@ -529,7 +529,7 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
 
   { /* Function declaration with implicit return type of void */
     if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() ||
-        tok.is<qPuncSemi>()) {
+        tok.is<qPuncSemi>() || tok.is<qPuncComa>()) {
       ftype->set_return_ty(make<VoidTy>());
 
       return fndecl;
@@ -547,7 +547,7 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
 
       { /* Function declaration with explicit return type */
         if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() ||
-            tok.is<qPuncSemi>()) {
+            tok.is<qPuncSemi>() || tok.is<qPuncComa>()) {
           return fndecl;
         }
       }

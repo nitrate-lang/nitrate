@@ -122,23 +122,37 @@ namespace npar {
   using EnumDefItems = std::vector<EnumItem, Arena<EnumItem>>;
 
   class StructField {
-    Vis m_vis;
     SmallString m_name;
+    std::optional<Expr *> m_value;
     Type *m_type;
-    Expr *m_value;
+    Vis m_vis;
+    bool m_is_static;
 
   public:
-    StructField(Vis vis, SmallString name, Type *type, Expr *value)
-        : m_vis(vis), m_name(name), m_type(type), m_value(value) {}
+    StructField(Vis vis, bool is_static, SmallString name, Type *type,
+                std::optional<Expr *> value)
+        : m_name(std::move(name)),
+          m_value(std::move(value)),
+          m_type(type),
+          m_vis(vis),
+          m_is_static(is_static) {}
 
     let get_vis() const { return m_vis; }
+    let is_static() const { return m_is_static; }
     let get_name() const { return m_name; }
     let get_type() const { return m_type; }
     let get_value() const { return m_value; }
   };
+
+  struct StructFunction {
+    Vis vis;
+    Stmt *func;
+  };
+
   using StructDefFields = std::vector<StructField, Arena<StructField>>;
-  using StructDefMethods = std::vector<FnDef *, Arena<FnDef *>>;
-  using StructDefStaticMethods = std::vector<FnDef *, Arena<FnDef *>>;
+  using StructDefMethods = std::vector<StructFunction, Arena<StructFunction>>;
+  using StructDefStaticMethods =
+      std::vector<StructFunction, Arena<StructFunction>>;
   using StructDefNames = std::vector<SmallString, Arena<SmallString>>;
 
   using FuncParam = std::tuple<SmallString, Type *, Expr *>;

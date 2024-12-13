@@ -31,13 +31,20 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: Cleanup this code; it's a mess from refactoring.
-
 #include <nitrate-lexer/Lexer.h>
 
 #include <descent/Recurse.hh>
 
 using namespace npar;
+
+struct StructContent {
+  StructDefFields fields;
+  StructDefMethods methods;
+  StructDefStaticMethods static_methods;
+};
+
+extern bool recurse_template_parameters(
+    npar_t &S, qlex_t &rd, std::optional<TemplateParameters> &template_params);
 
 static ExpressionList recurse_struct_attributes(npar_t &S, qlex_t &rd) {
   ExpressionList attributes;
@@ -95,20 +102,97 @@ static StructDefNames recurse_struct_terms(qlex_t &rd) {
   }
 }
 
-static std::tuple<StructDefFields, StructDefMethods, StructDefStaticMethods>
-recurse_struct_body(npar_t &S, qlex_t &rd) {
-  /// TODO: Implement
-  // qcore_implement();
-
-  return {{}, {}, {}};
+static std::optional<Expr *> recurse_struct_field_default_value(npar_t &S,
+                                                                qlex_t &rd) {
+  if (next_if(qOpSet)) {
+    return recurse_expr(
+        S, rd,
+        {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
+         qlex_tok_t(qPunc, qPuncRCur)});
+  } else {
+    return std::nullopt;
+  }
 }
 
-extern bool recurse_template_parameters(
-    npar_t &S, qlex_t &rd, std::optional<TemplateParameters> &template_params);
+static void recurse_struct_field(npar_t &S, qlex_t &rd, Vis vis, bool is_static,
+                                 StructDefFields &fields) {
+  /* Must consume token to avoid infinite loop on error */
+  if (let name = next(); name.is(qName)) {
+    let field_name = name.as_string(&rd);
+
+    if (next_if(qPuncColn)) {
+      let field_type = recurse_type(S, rd);
+      let default_value = recurse_struct_field_default_value(S, rd);
+
+      let field = StructField(vis, is_static, SaveString(field_name),
+                              field_type, std::move(default_value));
+
+      fields.push_back(std::move(field));
+    } else {
+      diagnostic << current() << "Expected ':' after field name in struct";
+    }
+  } else {
+    diagnostic << current() << "Expected field name in struct";
+  }
+}
+
+static void recurse_struct_method_or_field(npar_t &S, qlex_t &rd,
+                                           StructContent &body) {
+  Vis vis = Vis::Sec;
+
+  /* Parse visibility of member */
+  if (next_if(qKSec)) {
+    vis = Vis::Sec;
+  } else if (next_if(qKPro)) {
+    vis = Vis::Pro;
+  } else if (next_if(qKPub)) {
+    vis = Vis::Pub;
+  }
+
+  /* Is the member static? */
+  bool is_static = next_if(qKStatic).has_value();
+
+  if (next_if(qKFn)) { /* Parse method */
+    let method = recurse_function(S, rd);
+
+    if (is_static) {
+      body.static_methods.push_back({vis, method});
+    } else {
+      body.methods.push_back({vis, method});
+    }
+  } else { /* Parse field */
+    recurse_struct_field(S, rd, vis, is_static, body.fields);
+  }
+
+  next_if(qPuncComa) || next_if(qPuncSemi);
+}
+
+static StructContent recurse_struct_body(npar_t &S, qlex_t &rd) {
+  StructContent body;
+
+  if (!next_if(qPuncLCur)) {
+    diagnostic << current() << "Expected '{' to start struct body";
+    return body;
+  }
+
+  while (true) {
+    if (next_if(qPuncRCur)) {
+      break;
+    }
+
+    if (peek().is(qEofF)) {
+      diagnostic << current() << "Encountered EOF while parsing struct body";
+      break;
+    }
+
+    recurse_struct_method_or_field(S, rd, body);
+  }
+
+  return body;
+}
 
 npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
   let start_pos = current().start;
-
   let attributes = recurse_struct_attributes(S, rd);
   let name = recurse_struct_name(rd);
 
@@ -118,13 +202,13 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
   }
 
   let terms = recurse_struct_terms(rd);
-
   let[fields, methods, static_methods] = recurse_struct_body(S, rd);
 
   let struct_defintion = make<StructDef>(
       type, std::move(attributes), SaveString(name), std::move(template_params),
       std::move(terms), std::move(fields), std::move(methods),
       std::move(static_methods));
+
   struct_defintion->set_offset(start_pos);
 
   return struct_defintion;
