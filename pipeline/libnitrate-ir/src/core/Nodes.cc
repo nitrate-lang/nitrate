@@ -150,9 +150,6 @@ CPP_EXPORT void nr::Expr::dump(std::ostream &os, bool isForDebug) const {
 CPP_EXPORT boost::uuids::uuid nr::Expr::hash() {
   std::array<uint8_t, 20> hash;
 
-  // if (EVP_DigestInit(ctx, md) != 1) {
-  //   qcore_panic("Failed to initialize EVP_MD_CTX");
-  // }
   SHA_CTX ctx;
   SHA1_Init(&ctx);
 

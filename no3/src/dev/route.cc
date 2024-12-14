@@ -294,6 +294,11 @@ static int do_codegen(std::string source, std::string output, std::string opts,
 
   FILE *out = use_tmpfile ? tmpfile() : fopen(output.c_str(), "wb");
 
+  if (!out) {
+    LOG(ERROR) << "Failed to open output file: " << output;
+    return 1;
+  }
+
   qcode_conf codegen_conf;
   if (target == "ir") {
     ok = qcode_ir(mod.get(), codegen_conf.get(), stderr, out);

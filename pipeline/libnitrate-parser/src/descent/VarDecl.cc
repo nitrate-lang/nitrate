@@ -32,7 +32,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <descent/Recurse.hh>
-#include <nitrate-parser/AST.hh>
 
 using namespace npar;
 
@@ -111,7 +110,7 @@ std::vector<Stmt *> npar::recurse_variable(npar_t &S, qlex_t &rd,
   std::vector<Stmt *> variables;
 
   while (true) {
-    if (peek().is(qEofF)) {
+    if (next_if(qEofF)) {
       diagnostic << current() << "Unexpected EOF in variable declaration";
       break;
     }

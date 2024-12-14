@@ -32,7 +32,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <descent/Recurse.hh>
-#include <nitrate-parser/AST.hh>
 
 using namespace npar;
 
@@ -88,7 +87,7 @@ constexpr static std::optional<EnumDefItems> recurse_enum_items(npar_t &S,
 
   if (next_if(qPuncLCur)) {
     while (true) {
-      if (peek().is(qEofF)) {
+      if (next_if(qEofF)) {
         diagnostic << current()
                    << "Unexpected EOF encountered while parsing enum fields.";
         break;

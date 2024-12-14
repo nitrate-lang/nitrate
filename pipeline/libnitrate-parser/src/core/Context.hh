@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_CONTEXT_H__
-#define __NITRATE_PARSER_CONTEXT_H__
+#ifndef __NITRATE_AST_CONTEXT_H__
+#define __NITRATE_AST_CONTEXT_H__
 
 #include <nitrate-core/Env.h>
 #include <nitrate-core/Memory.h>

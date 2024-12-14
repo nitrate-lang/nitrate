@@ -31,13 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_LIB_H__
-#define __NITRATE_PARSER_LIB_H__
+#ifndef __NITRATE_AST_LIB_H__
+#define __NITRATE_AST_LIB_H__
 
 #include <nitrate-parser/Parser.h>
 #include <stdbool.h>
-
-#include <nitrate-parser/AST.hh>
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,4 +77,4 @@ const char* npar_lib_version();
 }
 #endif
 
-#endif  // __NITRATE_PARSER_LIB_H__
+#endif  // __NITRATE_AST_LIB_H__

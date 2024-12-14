@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_VISTOR_H__
-#define __NITRATE_PARSER_VISTOR_H__
+#ifndef __NITRATE_AST_VISTOR_H__
+#define __NITRATE_AST_VISTOR_H__
 
 #include <cassert>
 #include <nitrate-parser/ASTCommon.hh>
@@ -114,4 +114,4 @@ namespace npar {
   };
 }  // namespace npar
 
-#endif  // __NITRATE_PARSER_VISTOR_H__
+#endif  // __NITRATE_AST_VISTOR_H__

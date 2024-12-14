@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-lexer/Lexer.h>
-
 #include <descent/Recurse.hh>
 
 using namespace npar;
@@ -180,7 +178,7 @@ static StructContent recurse_struct_body(npar_t &S, qlex_t &rd) {
       break;
     }
 
-    if (peek().is(qEofF)) {
+    if (next_if(qEofF)) {
       diagnostic << current() << "Encountered EOF while parsing struct body";
       break;
     }

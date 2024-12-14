@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_WRITER_H__
-#define __NITRATE_PARSER_WRITER_H__
+#ifndef __NITRATE_AST_WRITER_H__
+#define __NITRATE_AST_WRITER_H__
 
 #include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Token.h>

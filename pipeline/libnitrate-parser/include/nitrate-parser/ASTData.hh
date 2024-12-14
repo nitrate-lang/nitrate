@@ -31,12 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_ASTDATA_H__
-#define __NITRATE_PARSER_ASTDATA_H__
-
-#ifndef __cplusplus
-#error "This code requires c++"
-#endif
+#ifndef __NITRATE_AST_ASTDATA_H__
+#define __NITRATE_AST_ASTDATA_H__
 
 #include <nitrate-core/Macro.h>
 

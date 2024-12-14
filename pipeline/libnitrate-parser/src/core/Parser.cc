@@ -43,7 +43,6 @@
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTReader.hh>
 #include <nitrate-parser/ASTWriter.hh>
-#include <sstream>
 
 using namespace npar;
 

@@ -31,12 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_ASTCOMMON_H__
-#define __NITRATE_PARSER_ASTCOMMON_H__
-
-#ifndef __cplusplus
-#error "This code requires c++"
-#endif
+#ifndef __NITRATE_AST_ASTCOMMON_H__
+#define __NITRATE_AST_ASTCOMMON_H__
 
 #include <boost/flyweight.hpp>
 #include <string>

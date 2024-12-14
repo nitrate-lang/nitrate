@@ -48,15 +48,15 @@ boost::bimap<L, R> make_bimap(
   return boost::bimap<L, R>(list.begin(), list.end());
 }
 
-static const boost::bimap<nr_key_t, std::string_view> options_bimap =
-    make_bimap<nr_key_t, std::string_view>({
+static const boost::bimap<nr_key_t, std::string> options_bimap =
+    make_bimap<nr_key_t, std::string>({
         {QQK_UNKNOWN, "QQK_UNKNOWN"},
         {QQK_CRASHGUARD, "-fcrashguard"},
         {QQV_FASTERROR, "-ffasterror"},
     });
 
-static const boost::bimap<nr_val_t, std::string_view> values_bimap =
-    make_bimap<nr_val_t, std::string_view>({
+static const boost::bimap<nr_val_t, std::string> values_bimap =
+    make_bimap<nr_val_t, std::string>({
         {QQV_UNKNOWN, "QQV_UNKNOWN"},
         {QQV_TRUE, "true"},
         {QQV_FALSE, "false"},
@@ -132,44 +132,6 @@ C_EXPORT nr_setting_t *nr_conf_getopts(nr_conf_t *conf, size_t *count) {
 }
 
 C_EXPORT void nr_conf_clear(nr_conf_t *conf) { conf->ClearNoVerify(); }
-
-C_EXPORT size_t nr_conf_dump(nr_conf_t *conf, FILE *stream,
-                             const char *field_delim, const char *line_delim) {
-  if (!stream) {
-    qcore_panic(
-        "nr_conf_dump: Contract violation: 'stream' parameter cannot be NULL.");
-  }
-
-  if (!field_delim) {
-    field_delim = "=";
-  }
-
-  if (!line_delim) {
-    line_delim = "\n";
-  }
-
-  const nr_setting_t *settings = nullptr;
-  size_t count = 0, bytes = 0;
-
-  settings = nr_conf_getopts(conf, &count);
-
-  for (size_t i = 0; i < count; ++i) {
-    if (options_bimap.left.find(settings[i].key) == options_bimap.left.end()) {
-      qcore_panic("nr_conf_dump: Unhandled nr_key_t value.");
-    }
-
-    if (values_bimap.left.find(settings[i].value) == values_bimap.left.end()) {
-      qcore_panic("nr_conf_dump: Unhandled nr_val_t value.");
-    }
-
-    bytes +=
-        fprintf(stream, "%s%s%s%s",
-                options_bimap.left.at(settings[i].key).data(), field_delim,
-                values_bimap.left.at(settings[i].value).data(), line_delim);
-  }
-
-  return bytes;
-}
 
 bool nr_conf_t::has(nr_key_t option, nr_val_t value) const {
   for (const auto &dat : m_data) {

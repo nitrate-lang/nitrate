@@ -31,12 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_AST_H__
-#define __NITRATE_PARSER_AST_H__
-
-#ifndef __cplusplus
-#error "This code requires c++"
-#endif
+#ifndef __NITRATE_AST_AST_H__
+#define __NITRATE_AST_AST_H__
 
 #include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/ASTExpr.hh>

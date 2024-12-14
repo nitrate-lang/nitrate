@@ -31,13 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-lexer/Lexer.h>
-#include <nitrate-lexer/Token.h>
-
 #include <descent/Recurse.hh>
-#include <nitrate-parser/AST.hh>
-
-#include "nitrate-parser/ASTData.hh"
 
 using namespace npar;
 
@@ -287,7 +281,7 @@ static Type *recurse_tuple_type(npar_t &S, qlex_t &rd) {
   let start = current().start;
 
   while (true) {
-    if (peek().is(qEofF)) {
+    if (next_if(qEofF)) {
       diagnostic << current() << "Unexpected EOF in tuple type";
       return mock_type();
     }

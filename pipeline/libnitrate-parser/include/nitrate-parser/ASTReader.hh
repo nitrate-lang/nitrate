@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_READER_H__
-#define __NITRATE_PARSER_READER_H__
+#ifndef __NITRATE_AST_READER_H__
+#define __NITRATE_AST_READER_H__
 
 #include <nitrate-core/Macro.h>
 

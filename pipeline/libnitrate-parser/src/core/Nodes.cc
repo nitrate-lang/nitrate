@@ -42,8 +42,6 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <sstream>
 
-#include "nitrate-parser/ASTBase.hh"
-
 using namespace npar;
 
 boost::flyweight<std::string> npar::SaveString(std::string_view str) {
