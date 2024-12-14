@@ -1060,7 +1060,7 @@ void CambrianFormatter::visit(TypedefStmt const& n) {
   line << ";";
 }
 
-void CambrianFormatter::visit(FnDef const& n) {
+void CambrianFormatter::visit(Function const& n) {
   line << "fn";
 
   switch (n.get_purity()) {

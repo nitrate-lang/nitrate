@@ -722,7 +722,7 @@ void recurse(npar_node_t* C) {
           {FuncPurity::QUASI, " quasi"},
           {FuncPurity::RETRO, " retro"}};
 
-      FnDef* N = C->as<FnDef>();
+      Function* N = C->as<Function>();
       FuncTy* F = N->get_type();
       if (!F) {
         break;

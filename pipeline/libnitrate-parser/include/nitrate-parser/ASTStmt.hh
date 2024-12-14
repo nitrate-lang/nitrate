@@ -293,7 +293,7 @@ namespace npar {
     let get_type() const { return m_type; }
   };
 
-  class FnDef : public Stmt {
+  class Function : public Stmt {
     ExpressionList m_attributes;
     FuncPurity m_purity;
     FnCaptures m_captures;
@@ -305,11 +305,11 @@ namespace npar {
     std::optional<Stmt *> m_body;
 
   public:
-    FnDef(ExpressionList attributes, FuncPurity purity, FnCaptures captures,
-          SmallString name, std::optional<TemplateParameters> params,
-          FuncParams fn_params, Type *return_type,
-          std::optional<Expr *> precond, std::optional<Expr *> postcond,
-          std::optional<Stmt *> body)
+    Function(ExpressionList attributes, FuncPurity purity, FnCaptures captures,
+             SmallString name, std::optional<TemplateParameters> params,
+             FuncParams fn_params, Type *return_type,
+             std::optional<Expr *> precond, std::optional<Expr *> postcond,
+             std::optional<Stmt *> body)
         : Stmt(QAST_FUNCTION),
           m_attributes(attributes),
           m_purity(purity),

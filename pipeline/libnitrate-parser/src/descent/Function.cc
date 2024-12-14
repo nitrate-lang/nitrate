@@ -204,9 +204,9 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
   /// TODO: Implement function contract pre and post conditions
 
   let function =
-      make<FnDef>(attributes, purity, captures, SaveString(function_name),
-                  template_parameters, parameters, return_type, std::nullopt,
-                  std::nullopt, body);
+      make<Function>(attributes, purity, captures, SaveString(function_name),
+                     template_parameters, parameters, return_type, std::nullopt,
+                     std::nullopt, body);
   function->set_offset(start_pos);
 
   return function;

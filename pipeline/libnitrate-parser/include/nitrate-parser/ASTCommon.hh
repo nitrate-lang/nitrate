@@ -215,7 +215,7 @@ namespace npar {
   class CaseStmt;
   class SwitchStmt;
   class TypedefStmt;
-  class FnDef;
+  class Function;
   class StructDef;
   class EnumDef;
   class ScopeStmt;

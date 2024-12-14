@@ -139,13 +139,13 @@ static Type *recurse_type_suffix(npar_t &S, qlex_t &rd, Type *base) {
 static Type *recurse_function_type(npar_t &S, qlex_t &rd) {
   let fn = recurse_function(S, rd);
 
-  if (!fn->is<FnDef>() || !fn->as<FnDef>()->is_decl()) {
+  if (!fn->is<Function>() || !fn->as<Function>()->is_decl()) {
     diagnostic << current()
                << "Expected a function declaration but got something else";
     return mock_type();
   }
 
-  FnDef *fn_def = fn->as<FnDef>();
+  Function *fn_def = fn->as<Function>();
 
   let func_ty = make<FuncTy>(fn_def->get_return(), fn_def->get_params(),
                              fn_def->get_purity(), fn_def->get_attributes());

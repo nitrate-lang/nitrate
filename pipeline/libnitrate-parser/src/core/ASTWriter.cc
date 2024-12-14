@@ -571,6 +571,7 @@ void AST_Writer::visit(FuncTy const& n) {
   { /* Write parameters */
     string("input");
     begin_obj(2);
+
     let params = n.get_params();
 
     string("variadic");
@@ -1327,7 +1328,7 @@ void AST_Writer::visit(TypedefStmt const& n) {
   end_obj();
 }
 
-void AST_Writer::visit(FnDef const& n) {
+void AST_Writer::visit(Function const& n) {
   begin_obj(13);
 
   string("kind");
@@ -1442,12 +1443,12 @@ void AST_Writer::visit(FnDef const& n) {
   }
 
   { /* Write parameters */
-    string("parameters");
-    let params = n.get_params();
-
+    string("input");
     begin_obj(2);
 
-    string("input");
+    let params = n.get_params();
+
+    string("variadic");
     boolean(params.is_variadic);
 
     string("params");

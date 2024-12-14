@@ -106,7 +106,7 @@ namespace npar {
     virtual void visit(CaseStmt const &n) = 0;
     virtual void visit(SwitchStmt const &n) = 0;
     virtual void visit(TypedefStmt const &n) = 0;
-    virtual void visit(FnDef const &n) = 0;
+    virtual void visit(Function const &n) = 0;
     virtual void visit(StructDef const &n) = 0;
     virtual void visit(EnumDef const &n) = 0;
     virtual void visit(ScopeStmt const &n) = 0;

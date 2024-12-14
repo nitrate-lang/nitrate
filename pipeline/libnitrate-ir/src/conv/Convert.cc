@@ -1328,7 +1328,7 @@ static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G, npar::Block *n,
                            bool insert_scope_id);
 
 static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
-                                         npar::FnDef *n) {
+                                         npar::Function *n) {
   bool failed = false;
 
   {
@@ -1451,7 +1451,7 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
-                                          npar::FnDef *n) {
+                                          npar::Function *n) {
   bool failed = false;
 
   {
@@ -1551,7 +1551,8 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
   }
 }
 
-static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
+static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G,
+                        npar::Function *n) {
   if (n->is_decl()) {
     return nrgen_function_declaration(b, s, G, n);
   } else if (n->is_def()) {
@@ -2133,7 +2134,7 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
       break;
 
     case QAST_FUNCTION:
-      out = nrgen_fn(b, s, G, n->as<npar::FnDef>());
+      out = nrgen_fn(b, s, G, n->as<npar::Function>());
       break;
 
     case QAST_BLOCK:

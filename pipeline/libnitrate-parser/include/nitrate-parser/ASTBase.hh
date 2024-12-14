@@ -273,7 +273,7 @@ public:
         break;
       }
       case QAST_FUNCTION: {
-        v.visit(*as<FnDef>());
+        v.visit(*as<Function>());
         break;
       }
       case QAST_SCOPE: {
@@ -461,7 +461,7 @@ public:
       return QAST_STRUCT;
     } else if constexpr (std::is_same_v<T, EnumDef>) {
       return QAST_ENUM;
-    } else if constexpr (std::is_same_v<T, FnDef>) {
+    } else if constexpr (std::is_same_v<T, Function>) {
       return QAST_FUNCTION;
     } else if constexpr (std::is_same_v<T, ScopeStmt>) {
       return QAST_SCOPE;
@@ -645,7 +645,7 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) {
     R[QAST_TYPEDEF] = "Typedef";
     R[QAST_STRUCT] = "Struct";
     R[QAST_ENUM] = "Enum";
-    R[QAST_FUNCTION] = "FnDef";
+    R[QAST_FUNCTION] = "Function";
     R[QAST_SCOPE] = "Scope";
     R[QAST_EXPORT] = "Export";
     R[QAST_BLOCK] = "Block";
