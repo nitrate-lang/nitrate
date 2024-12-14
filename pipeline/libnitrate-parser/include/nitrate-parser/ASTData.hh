@@ -140,6 +140,8 @@ namespace npar {
   struct StructFunction {
     Vis vis;
     Stmt *func;
+
+    StructFunction(Vis vis, Stmt *func) : vis(vis), func(func) {}
   };
 
   using StructDefFields = std::vector<StructField, Arena<StructField>>;
@@ -152,6 +154,8 @@ namespace npar {
   struct FuncParams {
     std::vector<FuncParam, Arena<FuncParam>> params;
     bool is_variadic;
+
+    FuncParams() : is_variadic(false) {}
   };
   using FnCaptures = std::vector<std::pair<SmallString, bool>,
                                  Arena<std::pair<SmallString, bool>>>;
