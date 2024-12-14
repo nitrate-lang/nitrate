@@ -101,7 +101,7 @@ std::optional<TemplateParameters> recurse_template_parameters(npar_t &S,
 
       next_if(qPuncComa);
     } else {
-      diagnostic << current() << "Expected a template parameter";
+      diagnostic << next() << "Expected a template parameter";
     }
   }
 
@@ -143,7 +143,7 @@ static FuncParams recurse_function_parameters(npar_t &S, qlex_t &rd) {
 
       next_if(qPuncComa);
     } else {
-      diagnostic << current() << "Expected a function parameter";
+      diagnostic << next() << "Expected a function parameter";
     }
   }
 
@@ -178,6 +178,23 @@ static FuncPurity get_purity_specifier(qlex_tok_t &start_pos,
   }
 }
 
+static std::optional<std::pair<SmallString, bool>> recurse_function_capture(
+    qlex_t &rd) {
+  bool is_ref = false;
+
+  if (next_if(qOpBitAnd)) {
+    is_ref = true;
+  }
+
+  if (let name = next_if(qName)) {
+    return {{SaveString(name->as_string(&rd)), is_ref}};
+  } else {
+    diagnostic << next() << "Expected a capture name";
+  }
+
+  return std::nullopt;
+}
+
 static void recurse_function_ambigouis(npar_t &S, qlex_t &rd,
                                        ExpressionList &attributes,
                                        FnCaptures &captures, FuncPurity &purity,
@@ -191,6 +208,7 @@ static void recurse_function_ambigouis(npar_t &S, qlex_t &rd,
 
   bool is_thread_safe = false, is_pure = false, is_impure = false,
        is_quasi = false, is_retro = false;
+  bool parsed_attributes = false, parsed_captures = false;
   qlex_tok_t start_pos = current();
 
   while (state != State::End) {
@@ -225,21 +243,84 @@ static void recurse_function_ambigouis(npar_t &S, qlex_t &rd,
             state = State::End;
           }
         } else if (next_if(qPuncLBrk)) {
-          /// TODO: Change state
+          if (parsed_attributes && parsed_captures) {
+            diagnostic
+                << current()
+                << "Unexpected '[' after function attributes and captures";
+          } else if (parsed_attributes && !parsed_captures) {
+            state = State::CaptureSection;
+          } else if (!parsed_attributes && parsed_captures) {
+            state = State::AttributesSection;
+          } else {
+            qcore_assert(!parsed_attributes && !parsed_captures);
+
+            let tok = peek();
+
+            /* No attribute expression may begin with '&' */
+            if (tok.is<qOpBitAnd>()) {
+              state = State::CaptureSection;
+            } else if (!tok.is(qName)) {
+              state = State::AttributesSection;
+            } else { /* Ambiguous edge case */
+              state = State::CaptureSection;
+            }
+          }
         } else if (let tok = peek(); tok.is<qPuncLPar>() || tok.is<qOpLT>()) {
           state = State::End; /* Begin parsing parameters or template options */
+        } else {
+          diagnostic << next() << "Unexpected token in function declaration";
         }
 
         break;
       }
 
       case State::AttributesSection: {
-        /// TODO: Parse function attributes
+        parsed_attributes = true;
+
+        while (true) {
+          if (next_if(qEofF)) {
+            diagnostic << current() << "Unexpected EOF in function attributes";
+            break;
+          }
+
+          if (next_if(qPuncRBrk)) {
+            state = State::Main;
+            break;
+          }
+
+          let attribute = recurse_expr(
+              S, rd,
+              {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRBrk)});
+
+          attributes.push_back(attribute);
+
+          next_if(qPuncComa);
+        }
+
         break;
       }
 
       case State::CaptureSection: {
-        /// TODO: Parse function captures
+        parsed_captures = true;
+
+        while (true) {
+          if (next_if(qEofF)) {
+            diagnostic << current() << "Unexpected EOF in function captures";
+            break;
+          }
+
+          if (next_if(qPuncRBrk)) {
+            state = State::Main;
+            break;
+          }
+
+          if (let capture = recurse_function_capture(rd)) {
+            captures.push_back(*capture);
+          }
+
+          next_if(qPuncComa);
+        }
+
         break;
       }
 

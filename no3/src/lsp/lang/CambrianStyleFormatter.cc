@@ -1062,6 +1062,15 @@ void CambrianFormatter::visit(TypedefStmt const& n) {
 void CambrianFormatter::visit(Function const& n) {
   line << "fn";
 
+  if (!n.get_attributes().empty()) {
+    line << " [";
+    iterate_except_last(
+        n.get_attributes().begin(), n.get_attributes().end(),
+        [&](let attr, size_t) { attr->accept(*this); },
+        [&](let) { line << ", "; });
+    line << "]";
+  }
+
   switch (n.get_purity()) {
     case FuncPurity::IMPURE_THREAD_UNSAFE: {
       break;
@@ -1086,6 +1095,20 @@ void CambrianFormatter::visit(Function const& n) {
       line << " retro";
       break;
     }
+  }
+
+  if (!n.get_captures().empty()) {
+    line << " [";
+    iterate_except_last(
+        n.get_captures().begin(), n.get_captures().end(),
+        [&](let cap, size_t) {
+          if (cap.second) {
+            line << "&";
+          }
+          line << cap.first;
+        },
+        [&](let) { line << ", "; });
+    line << "]";
   }
 
   line << " " << n.get_name();
