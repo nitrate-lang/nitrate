@@ -5,4 +5,4 @@ scope libhistory::constitution {
                        "re, and secure the Blessings of Liberty to ourselves and our" \
                        " Posterity, do ordain and establish this Constitution for th" \
                        "e United States of America.";
-};
+}
