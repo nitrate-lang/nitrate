@@ -497,12 +497,11 @@ void CambrianFormatter::visit(FuncTy const& n) {
 
   switch (n.get_purity()) {
     case FuncPurity::IMPURE_THREAD_UNSAFE: {
-      line << " impure";
       break;
     }
 
     case FuncPurity::IMPURE_THREAD_SAFE: {
-      line << " impure tsafe";
+      line << " tsafe";
       break;
     }
 
@@ -1065,12 +1064,11 @@ void CambrianFormatter::visit(Function const& n) {
 
   switch (n.get_purity()) {
     case FuncPurity::IMPURE_THREAD_UNSAFE: {
-      line << " impure";
       break;
     }
 
     case FuncPurity::IMPURE_THREAD_SAFE: {
-      line << " impure tsafe";
+      line << " tsafe";
       break;
     }
 
