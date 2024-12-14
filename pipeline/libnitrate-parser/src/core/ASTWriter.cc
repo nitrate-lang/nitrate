@@ -184,7 +184,17 @@ void AST_Writer::visit(TemplType const& n) {
   string("args");
   let args = n.get_args();
   begin_arr(args.size());
-  std::for_each(args.begin(), args.end(), [&](let arg) { arg->accept(*this); });
+  std::for_each(args.begin(), args.end(), [&](let arg) {
+    begin_obj(2);
+
+    string("name");
+    string(*std::get<0>(arg));
+
+    string("value");
+    std::get<1>(arg)->accept(*this);
+
+    end_obj();
+  });
   end_arr();
 
   end_obj();

@@ -57,10 +57,10 @@ namespace npar {
 
   class TemplType : public Type {
     Type *m_template;
-    ExpressionList m_args;
+    CallArgs m_args;
 
   public:
-    TemplType(Type *templ, const ExpressionList &args)
+    TemplType(Type *templ, const CallArgs &args)
         : Type(QAST_TEMPLATE), m_template(templ), m_args(args) {}
 
     let get_template() const { return m_template; }

@@ -37,6 +37,8 @@
 #include <descent/Recurse.hh>
 #include <nitrate-parser/AST.hh>
 
+#include "nitrate-parser/ASTData.hh"
+
 using namespace npar;
 
 static std::optional<Expr *> recurse_type_range_start(npar_t &S, qlex_t &rd) {
@@ -67,13 +69,39 @@ static std::optional<Expr *> recurse_type_range_end(npar_t &S, qlex_t &rd) {
   return max_val;
 }
 
-static Type *recurse_type_metadata(npar_t &S, qlex_t &rd, Type *base) {
+extern CallArgs recurse_caller_arguments(npar_t &S, qlex_t &rd,
+                                         qlex_tok_t terminator, size_t depth);
+
+std::optional<CallArgs> recurse_type_template_arguments(npar_t &S, qlex_t &rd) {
+  if (!next_if(qOpLT)) {
+    return std::nullopt;
+  }
+
+  auto args = recurse_caller_arguments(S, rd, qlex_tok_t(qOper, qOpGT), 0);
+
+  if (!next_if(qOpGT)) {
+    diagnostic << current() << "Expected '>' after template arguments";
+  }
+
+  return args;
+}
+
+static Type *recurse_type_suffix(npar_t &S, qlex_t &rd, Type *base) {
   static let bit_width_terminaters = {
       qlex_tok_t(qPunc, qPuncRPar), qlex_tok_t(qPunc, qPuncRBrk),
       qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qPunc, qPuncRCur),
       qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncColn),
       qlex_tok_t(qPunc, qPuncSemi), qlex_tok_t(qOper, qOpSet),
       qlex_tok_t(qOper, qOpMinus),  qlex_tok_t(qOper, qOpGT)};
+
+  let template_arguments = recurse_type_template_arguments(S, rd);
+
+  if (template_arguments.has_value()) {
+    let templ = make<TemplType>(base, template_arguments.value());
+    templ->set_offset(base->get_offset());
+
+    base = templ;
+  }
 
   std::pair<std::optional<Expr *>, std::optional<Expr *>> range;
   std::optional<Expr *> width;
@@ -96,9 +124,10 @@ static Type *recurse_type_metadata(npar_t &S, qlex_t &rd, Type *base) {
   base->set_width(width.value_or(nullptr));
 
   if (next_if(qOpTernary)) {
+    let args = CallArgs{{SaveString("0"), make<TypeExpr>(base)}};
     let opt_type =
-        make<TemplType>(make<NamedTy>(SaveString("__builtin_result")),
-                        ExpressionList{make<TypeExpr>(base)});
+        make<TemplType>(make<NamedTy>(SaveString("__builtin_result")), args);
+
     opt_type->set_offset(current().start);
 
     base = opt_type;
@@ -201,8 +230,9 @@ static Type *recurse_array_or_vector(npar_t &S, qlex_t &rd) {
   let first = recurse_type(S, rd);
 
   if (next_if(qPuncRBrk)) {
-    let vector = make<TemplType>(make<NamedTy>(SaveString("__builtin_vec")),
-                                 ExpressionList{make<TypeExpr>(first)});
+    let args = CallArgs{{SaveString("0"), make<TypeExpr>(first)}};
+    let vector =
+        make<TemplType>(make<NamedTy>(SaveString("__builtin_vec")), args);
 
     vector->set_offset(start);
 
@@ -236,8 +266,8 @@ static Type *recurse_set_type(npar_t &S, qlex_t &rd) {
     diagnostic << current() << "Expected '}' after set type";
   }
 
-  let set = make<TemplType>(make<NamedTy>(SaveString("__builtin_uset")),
-                            ExpressionList{make<TypeExpr>(set_type)});
+  let args = CallArgs{{SaveString("0"), make<TypeExpr>(set_type)}};
+  let set = make<TemplType>(make<NamedTy>(SaveString("__builtin_uset")), args);
 
   set->set_offset(start);
 
@@ -348,25 +378,25 @@ Type *npar::recurse_type(npar_t &S, qlex_t &rd) {
     case qKeyW: {
       let type = recurse_type_by_keyword(S, rd, tok.v.key);
 
-      return recurse_type_metadata(S, rd, type);
+      return recurse_type_suffix(S, rd, type);
     }
 
     case qOper: {
       let type = recurse_type_by_operator(S, rd, tok.v.op);
 
-      return recurse_type_metadata(S, rd, type);
+      return recurse_type_suffix(S, rd, type);
     }
 
     case qPunc: {
       let type = recurse_type_by_punctuation(S, rd, tok.v.punc);
 
-      return recurse_type_metadata(S, rd, type);
+      return recurse_type_suffix(S, rd, type);
     }
 
     case qName: {
       let type = recurse_type_by_name(rd, tok.as_string(&rd));
 
-      return recurse_type_metadata(S, rd, type);
+      return recurse_type_suffix(S, rd, type);
     }
 
     default: {
@@ -374,7 +404,7 @@ Type *npar::recurse_type(npar_t &S, qlex_t &rd) {
 
       let type = mock_type();
 
-      return recurse_type_metadata(S, rd, type);
+      return recurse_type_suffix(S, rd, type);
     }
   }
 }

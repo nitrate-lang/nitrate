@@ -308,21 +308,21 @@ void CambrianFormatter::visit(TemplType const& n) {
 
   size_t argc = n.get_args().size();
   if (is_optional && argc == 1) {
-    n.get_args().front()->accept(*this);
+    n.get_args().front().second->accept(*this);
     line << "?";
   } else if (is_vector && argc == 1) {
     line << "[";
-    n.get_args().front()->accept(*this);
+    n.get_args().front().second->accept(*this);
     line << "]";
   } else if (is_map && argc == 2) {
     line << "[";
-    n.get_args().front()->accept(*this);
+    n.get_args().front().second->accept(*this);
     line << "->";
-    n.get_args().back()->accept(*this);
+    n.get_args().back().second->accept(*this);
     line << "]";
   } else if (is_set && argc == 1) {
     line << "{";
-    n.get_args().front()->accept(*this);
+    n.get_args().front().second->accept(*this);
     line << "}";
   } else {
     n.get_template()->accept(*this);
@@ -330,7 +330,12 @@ void CambrianFormatter::visit(TemplType const& n) {
     line << "<";
     iterate_except_last(
         n.get_args().begin(), n.get_args().end(),
-        [&](let arg, size_t) { arg->accept(*this); },
+        [&](let arg, size_t) {
+          if (!std::isdigit(arg.first->at(0))) {
+            line << arg.first << ": ";
+          }
+          arg.second->accept(*this);
+        },
         [&](let) { line << ", "; });
     line << ">";
   }
@@ -1144,27 +1149,27 @@ void CambrianFormatter::visit(FnDef const& n) {
 void CambrianFormatter::visit(StructDef const& n) {
   switch (n.get_composite_type()) {
     case CompositeType::Region: {
-      line << "region";
+      line << "region ";
       break;
     }
 
     case CompositeType::Struct: {
-      line << "struct";
+      line << "struct ";
       break;
     }
 
     case CompositeType::Group: {
-      line << "group";
+      line << "group ";
       break;
     }
 
     case CompositeType::Class: {
-      line << "class";
+      line << "class ";
       break;
     }
 
     case CompositeType::Union: {
-      line << "union";
+      line << "union ";
       break;
     }
   }
@@ -1178,7 +1183,7 @@ void CambrianFormatter::visit(StructDef const& n) {
     line << "] ";
   }
 
-  line << " " << n.get_name();
+  line << n.get_name();
   if (n.get_template_params().has_value()) {
     line << "<";
     iterate_except_last(
@@ -1204,8 +1209,19 @@ void CambrianFormatter::visit(StructDef const& n) {
         [&](let name, size_t) { line << name; }, [&](let) { line << ", "; });
   }
 
+  bool is_empty = n.get_fields().empty() && n.get_methods().empty() &&
+                  n.get_static_methods().empty();
+
+  if (is_empty) {
+    line << " {}";
+    return;
+  }
+
+  line << " {" << std::endl;
+  indent += tabSize;
+
   std::for_each(n.get_fields().begin(), n.get_fields().end(), [&](let field) {
-    line << field.get_vis() << " ";
+    line << get_indent() << field.get_vis() << " ";
 
     line << field.get_name() << ": ";
     field.get_type()->accept(*this);
@@ -1220,17 +1236,20 @@ void CambrianFormatter::visit(StructDef const& n) {
 
   std::for_each(n.get_methods().begin(), n.get_methods().end(),
                 [&](let method) {
-                  line << method.vis << " ";
+                  line << get_indent() << method.vis << " ";
                   method.func->accept(*this);
                   line << std::endl;
                 });
 
   std::for_each(n.get_static_methods().begin(), n.get_static_methods().end(),
                 [&](let method) {
-                  line << method.vis << " ";
+                  line << get_indent() << method.vis << " ";
                   method.func->accept(*this);
                   line << std::endl;
                 });
+
+  indent -= tabSize;
+  line << "}";
 }
 
 void CambrianFormatter::visit(EnumDef const& n) {

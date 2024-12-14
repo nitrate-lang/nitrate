@@ -40,7 +40,6 @@
 
 #include <nitrate-core/Macro.h>
 
-#include <map>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <set>
@@ -107,8 +106,6 @@ namespace npar {
   using FStringItems = std::vector<std::variant<SmallString, Expr *>,
                                    Arena<std::variant<SmallString, Expr *>>>;
 
-  using TemplateArgs = std::map<SmallString, Expr *, std::less<SmallString>,
-                                Arena<std::pair<const SmallString, Expr *>>>;
   using TemplateParameter = std::tuple<SmallString, Type *, Expr *>;
   using TemplateParameters =
       std::vector<TemplateParameter, Arena<TemplateParameter>>;

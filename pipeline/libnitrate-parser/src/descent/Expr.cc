@@ -46,42 +46,25 @@
 
 using namespace npar;
 
-static Call *recurse_function_call(npar_t &S, Expr *callee, qlex_t &rd,
-                                   size_t depth) {
-  /**
-   * @brief
-   */
-
+CallArgs recurse_caller_arguments(npar_t &S, qlex_t &rd, qlex_tok_t terminator,
+                                  size_t depth) {
   qlex_tok_t tok, ident;
   CallArgs call_args;
   size_t pos_arg_count = 0;
 
   while (true) {
-    /**
-     * @brief
-     */
-
     tok = peek();
 
     if (tok.is(qEofF)) {
       diagnostic << tok << "Unexpected end of file while parsing function call";
-      return nullptr;
+      return call_args;
     }
 
-    if (tok.is<qPuncRPar>()) {
-      /**
-       * @brief
-       */
-
-      next();
+    if (tok == terminator) {
       break;
     }
 
     if (!tok.is(qName)) {
-      /**
-       * @brief
-       */
-
       goto parse_pos_arg;
     }
 
@@ -91,10 +74,6 @@ static Call *recurse_function_call(npar_t &S, Expr *callee, qlex_t &rd,
       tok = peek();
 
       if (!tok.is<qPuncColn>()) {
-        /**
-         * @brief
-         */
-
         qlex_insert(&rd, tok);
         qlex_insert(&rd, ident);
         goto parse_pos_arg;
@@ -103,17 +82,15 @@ static Call *recurse_function_call(npar_t &S, Expr *callee, qlex_t &rd,
       next();
 
       Expr *arg = recurse_expr(
-          S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
-          depth + 1);
+          S, rd, {qlex_tok_t(qPunc, qPuncComa), terminator}, depth + 1);
 
       call_args.push_back({SaveString(ident.as_string(&rd)), arg});
       goto comma;
     }
 
   parse_pos_arg: {
-    Expr *arg = recurse_expr(
-        S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
-        depth + 1);
+    Expr *arg = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncComa), terminator},
+                             depth + 1);
 
     call_args.push_back({SaveString(std::to_string(pos_arg_count++)), arg});
 
@@ -129,7 +106,18 @@ static Call *recurse_function_call(npar_t &S, Expr *callee, qlex_t &rd,
   }
   }
 
-  return make<Call>(callee, call_args);
+  return call_args;
+}
+
+static Call *recurse_function_call(npar_t &S, Expr *callee, qlex_t &rd,
+                                   size_t depth) {
+  auto args =
+      recurse_caller_arguments(S, rd, qlex_tok_t(qPunc, qPuncRPar), depth);
+  if (!next_if(qPuncRPar)) {
+    diagnostic << current() << "Expected ')' to close the function call";
+    return nullptr;
+  }
+  return make<Call>(callee, args);
 }
 
 static bool recurse_fstring(npar_t &S, FString **node, qlex_t &rd,

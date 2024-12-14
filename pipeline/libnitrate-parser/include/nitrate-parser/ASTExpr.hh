@@ -179,12 +179,12 @@ namespace npar {
   };
 
   class TemplCall : public Expr {
-    TemplateArgs m_template_args;
+    CallArgs m_template_args;
     Expr *m_func;
     CallArgs m_args;
 
   public:
-    TemplCall(Expr *func, CallArgs args = {}, TemplateArgs template_args = {})
+    TemplCall(Expr *func, CallArgs args = {}, CallArgs template_args = {})
         : Expr(QAST_TEMPL_CALL),
           m_template_args(template_args),
           m_func(func),
