@@ -1306,16 +1306,20 @@ void CambrianFormatter::visit(ScopeStmt const& n) {
     line << "]";
   }
 
+  line << " ";
   n.get_body()->accept(*this);
 }
 
 void CambrianFormatter::visit(ExportStmt const& n) {
-  line << n.get_vis() << " ";
+  line << n.get_vis();
 
-  escape_string_literal(*n.get_abi_name());
+  if (!n.get_abi_name()->empty()) {
+    line << " ";
+    escape_string_literal(*n.get_abi_name());
+  }
 
   if (!n.get_attrs().empty()) {
-    line << "[";
+    line << " [";
     iterate_except_last(
         n.get_attrs().begin(), n.get_attrs().end(),
         [&](let attr, size_t) { attr->accept(*this); },
@@ -1323,5 +1327,6 @@ void CambrianFormatter::visit(ExportStmt const& n) {
     line << "]";
   }
 
+  line << " ";
   n.get_body()->accept(*this);
 }
