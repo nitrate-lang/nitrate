@@ -32,7 +32,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <descent/Recurse.hh>
-#include <nitrate-parser/AST.hh>
 
 npar::Stmt *npar::recurse_typedef(npar_t &S, qlex_t &rd) {
   /**

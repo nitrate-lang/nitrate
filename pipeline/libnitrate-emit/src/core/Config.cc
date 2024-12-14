@@ -49,15 +49,15 @@ boost::bimap<L, R> make_bimap(
   return boost::bimap<L, R>(list.begin(), list.end());
 }
 
-static const boost::bimap<qcode_key_t, std::string_view> options_bimap =
-    make_bimap<qcode_key_t, std::string_view>({
+static const boost::bimap<qcode_key_t, std::string> options_bimap =
+    make_bimap<qcode_key_t, std::string>({
         {QCK_UNKNOWN, "QCK_UNKNOWN"},
         {QCK_CRASHGUARD, "-fcrashguard"},
         {QCV_FASTERROR, "-ffasterror"},
     });
 
-static const boost::bimap<qcode_val_t, std::string_view> values_bimap =
-    make_bimap<qcode_val_t, std::string_view>({
+static const boost::bimap<qcode_val_t, std::string> values_bimap =
+    make_bimap<qcode_val_t, std::string>({
         {QCV_UNKNOWN, "QCV_UNKNOWN"},
         {QCV_TRUE, "true"},
         {QCV_FALSE, "false"},
@@ -147,46 +147,6 @@ C_EXPORT qcode_setting_t *qcode_conf_getopts(qcode_conf_t *conf,
 }
 
 C_EXPORT void qcode_conf_clear(qcode_conf_t *conf) { conf->ClearNoVerify(); }
-
-C_EXPORT size_t qcode_conf_dump(qcode_conf_t *conf, FILE *stream,
-                                const char *field_delim,
-                                const char *line_delim) {
-  if (!stream) {
-    qcore_panic(
-        "qcode_conf_dump: Contract violation: 'stream' parameter cannot be "
-        "NULL.");
-  }
-
-  if (!field_delim) {
-    field_delim = "=";
-  }
-
-  if (!line_delim) {
-    line_delim = "\n";
-  }
-
-  const qcode_setting_t *settings = nullptr;
-  size_t count = 0, bytes = 0;
-
-  settings = qcode_conf_getopts(conf, &count);
-
-  for (size_t i = 0; i < count; ++i) {
-    if (options_bimap.left.find(settings[i].key) == options_bimap.left.end()) {
-      qcore_panic("qcode_conf_dump: Unhandled qcode_key_t value.");
-    }
-
-    if (values_bimap.left.find(settings[i].value) == values_bimap.left.end()) {
-      qcore_panic("qcode_conf_dump: Unhandled qcode_val_t value.");
-    }
-
-    bytes +=
-        fprintf(stream, "%s%s%s%s",
-                options_bimap.left.at(settings[i].key).data(), field_delim,
-                values_bimap.left.at(settings[i].value).data(), line_delim);
-  }
-
-  return bytes;
-}
 
 bool qcode_conf_t::has(qcode_key_t option, qcode_val_t value) const {
   for (const auto &dat : m_data) {

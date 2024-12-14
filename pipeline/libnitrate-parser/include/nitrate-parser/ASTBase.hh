@@ -31,12 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_ASTBASE_H__
-#define __NITRATE_PARSER_ASTBASE_H__
-
-#ifndef __cplusplus
-#error "This code requires c++"
-#endif
+#ifndef __NITRATE_AST_ASTBASE_H__
+#define __NITRATE_AST_ASTBASE_H__
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
@@ -46,7 +42,6 @@
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTData.hh>
 #include <nitrate-parser/ASTVisitor.hh>
-#include <sstream>
 
 struct npar_node_t {
 private:
@@ -274,7 +269,7 @@ public:
         break;
       }
       case QAST_FUNCTION: {
-        v.visit(*as<FnDef>());
+        v.visit(*as<Function>());
         break;
       }
       case QAST_SCOPE: {
@@ -283,10 +278,6 @@ public:
       }
       case QAST_EXPORT: {
         v.visit(*as<ExportStmt>());
-        break;
-      }
-      case QAST_STRUCT_FIELD: {
-        v.visit(*as<StructField>());
         break;
       }
       case QAST_BLOCK: {
@@ -466,14 +457,12 @@ public:
       return QAST_STRUCT;
     } else if constexpr (std::is_same_v<T, EnumDef>) {
       return QAST_ENUM;
-    } else if constexpr (std::is_same_v<T, FnDef>) {
+    } else if constexpr (std::is_same_v<T, Function>) {
       return QAST_FUNCTION;
     } else if constexpr (std::is_same_v<T, ScopeStmt>) {
       return QAST_SCOPE;
     } else if constexpr (std::is_same_v<T, ExportStmt>) {
       return QAST_EXPORT;
-    } else if constexpr (std::is_same_v<T, StructField>) {
-      return QAST_STRUCT_FIELD;
     } else if constexpr (std::is_same_v<T, Block>) {
       return QAST_BLOCK;
     } else if constexpr (std::is_same_v<T, VarDecl>) {
@@ -574,23 +563,7 @@ public:
 
   constexpr bool is(npar_ty_t type) const { return type == getKind(); }
 
-  bool isSame(const npar_node_t *o) const {
-    if (this == o) {
-      return true;
-    }
-
-    if (getKind() != o->getKind()) {
-      return false;
-    }
-
-    /// FIXME: Write a more performant comparison
-
-    std::stringstream ss1, ss2;
-    dump(ss1);
-    o->dump(ss2);
-
-    return ss1.str() == ss2.str();
-  }
+  bool isSame(const npar_node_t *o) const;
 
   uint64_t hash64() const;
 
@@ -668,10 +641,9 @@ constexpr std::string_view npar_node_t::getKindName(npar_ty_t type) {
     R[QAST_TYPEDEF] = "Typedef";
     R[QAST_STRUCT] = "Struct";
     R[QAST_ENUM] = "Enum";
-    R[QAST_FUNCTION] = "FnDef";
+    R[QAST_FUNCTION] = "Function";
     R[QAST_SCOPE] = "Scope";
     R[QAST_EXPORT] = "Export";
-    R[QAST_STRUCT_FIELD] = "StructField";
     R[QAST_BLOCK] = "Block";
     R[QAST_VAR] = "Let";
     R[QAST_INLINE_ASM] = "InlineAsm";

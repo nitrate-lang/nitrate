@@ -67,59 +67,24 @@ namespace qlex {
     return boost::bimap<L, R>(list.begin(), list.end());
   }
 
-  static const boost::bimap<std::string_view, qlex_key_t> keywords =
-      make_bimap<std::string_view, qlex_key_t>({
-          {"scope", qKScope},
-          {"import", qKImport},
-          {"pub", qKPub},
-          {"sec", qKSec},
-          {"pro", qKPro},
-          {"type", qKType},
-          {"let", qKLet},
-          {"var", qKVar},
-          {"const", qKConst},
-          {"static", qKStatic},
-          {"struct", qKStruct},
-          {"region", qKRegion},
-          {"group", qKGroup},
-          {"class", qKClass},
-          {"union", qKUnion},
-          {"opaque", qKOpaque},
-          {"enum", qKEnum},
-          {"__fstring", qK__FString},
-          {"fn", qKFn},
-          {"foreign", qKForeign},
-          {"impure", qKImpure},
-          {"tsafe", qKTsafe},
-          {"pure", qKPure},
-          {"quasipure", qKQuasipure},
-          {"retropure", qKRetropure},
-          {"inline", qKInline},
-          {"unsafe", qKUnsafe},
-          {"safe", qKSafe},
-          {"promise", qKPromise},
-          {"if", qKIf},
-          {"else", qKElse},
-          {"for", qKFor},
-          {"while", qKWhile},
-          {"do", qKDo},
-          {"switch", qKSwitch},
-          {"break", qKBreak},
-          {"continue", qKContinue},
-          {"ret", qKReturn},
-          {"retif", qKRetif},
-          {"foreach", qKForeach},
-          {"try", qKTry},
-          {"catch", qKCatch},
-          {"throw", qKThrow},
-          {"async", qKAsync},
-          {"await", qKAwait},
-          {"__asm__", qK__Asm__},
-          {"undef", qKUndef},
-          {"null", qKNull},
-          {"true", qKTrue},
-          {"false", qKFalse},
-      });
+  static const boost::bimap<std::string_view, qlex_key_t> keywords = make_bimap<
+      std::string_view, qlex_key_t>({
+      {"scope", qKScope},     {"import", qKImport}, {"pub", qKPub},
+      {"sec", qKSec},         {"pro", qKPro},       {"type", qKType},
+      {"let", qKLet},         {"var", qKVar},       {"const", qKConst},
+      {"static", qKStatic},   {"struct", qKStruct}, {"region", qKRegion},
+      {"group", qKGroup},     {"class", qKClass},   {"union", qKUnion},
+      {"opaque", qKOpaque},   {"enum", qKEnum},     {"__fstring", qK__FString},
+      {"fn", qKFn},           {"unsafe", qKUnsafe}, {"safe", qKSafe},
+      {"promise", qKPromise}, {"if", qKIf},         {"else", qKElse},
+      {"for", qKFor},         {"while", qKWhile},   {"do", qKDo},
+      {"switch", qKSwitch},   {"break", qKBreak},   {"continue", qKContinue},
+      {"ret", qKReturn},      {"retif", qKRetif},   {"foreach", qKForeach},
+      {"try", qKTry},         {"catch", qKCatch},   {"throw", qKThrow},
+      {"async", qKAsync},     {"await", qKAwait},   {"__asm__", qK__Asm__},
+      {"undef", qKUndef},     {"null", qKNull},     {"true", qKTrue},
+      {"false", qKFalse},
+  });
 
   static const boost::bimap<std::string_view, qlex_op_t> operators =
       make_bimap<std::string_view, qlex_op_t>({
@@ -246,14 +211,6 @@ namespace qlex {
   }();
   /// END:   LEXER LOOKUP TABLES
   ///============================================================================///
-
-  ///============================================================================///
-  /// BEGIN: LEXER INTERNAL TYPES
-  typedef std::string ident_buf_t;
-  typedef std::string num_buf_t;
-  /// END:   LEXER INTERNAL TYPES
-  ///============================================================================///
-
 }  // namespace qlex
 
 static bool lex_is_space(char c) {
@@ -269,9 +226,8 @@ enum class NumType {
   Floating,
 };
 
-static thread_local boost::unordered_map<qlex::num_buf_t, NumType> num_cache;
-static thread_local boost::unordered_map<qlex::num_buf_t, qlex::num_buf_t>
-    can_cache;
+static thread_local boost::unordered_map<std::string, NumType> num_cache;
+static thread_local boost::unordered_map<std::string, std::string> can_cache;
 
 ///============================================================================///
 
@@ -353,7 +309,7 @@ static bool canonicalize_float(std::string_view input, std::string &norm) {
   return true;
 }
 
-static bool canonicalize_number(qlex::num_buf_t &number, std::string &norm,
+static bool canonicalize_number(std::string &number, std::string &norm,
                                 NumType type) {
   if (can_cache.size() > 4096) {
     can_cache = {};

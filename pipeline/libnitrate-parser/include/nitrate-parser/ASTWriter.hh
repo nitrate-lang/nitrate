@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_WRITER_H__
-#define __NITRATE_PARSER_WRITER_H__
+#ifndef __NITRATE_AST_WRITER_H__
+#define __NITRATE_AST_WRITER_H__
 
 #include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Token.h>
@@ -71,6 +71,8 @@ namespace npar {
 
     void write_source_location(npar_node_t const& n) const;
     void write_type_metadata(Type const& n);
+
+    std::string_view vis_str(Vis vis) const;
 
   public:
     AST_Writer(InsertString str_impl, InsertUInt64 uint_impl,
@@ -154,8 +156,7 @@ namespace npar {
     void visit(CaseStmt const& n) override;
     void visit(SwitchStmt const& n) override;
     void visit(TypedefStmt const& n) override;
-    void visit(FnDef const& n) override;
-    void visit(StructField const& n) override;
+    void visit(Function const& n) override;
     void visit(StructDef const& n) override;
     void visit(EnumDef const& n) override;
     void visit(ScopeStmt const& n) override;
@@ -180,7 +181,7 @@ namespace npar {
     void end_arr_impl();
 
   public:
-    AST_JsonWriter(std::ostream& os)
+    AST_JsonWriter(std::ostream& os, bool include_source_location = true)
         : AST_Writer(
               std::bind(&AST_JsonWriter::str_impl, this, std::placeholders::_1),
               std::bind(&AST_JsonWriter::uint_impl, this,
@@ -195,7 +196,8 @@ namespace npar {
               std::bind(&AST_JsonWriter::end_obj_impl, this),
               std::bind(&AST_JsonWriter::begin_arr_impl, this,
                         std::placeholders::_1),
-              std::bind(&AST_JsonWriter::end_arr_impl, this)),
+              std::bind(&AST_JsonWriter::end_arr_impl, this),
+              include_source_location),
           m_os(os) {
       m_comma.push(false);
       m_count.push(0);
@@ -217,7 +219,7 @@ namespace npar {
     void end_arr_impl();
 
   public:
-    AST_MsgPackWriter(std::ostream& os)
+    AST_MsgPackWriter(std::ostream& os, bool include_source_location = true)
         : AST_Writer(std::bind(&AST_MsgPackWriter::str_impl, this,
                                std::placeholders::_1),
                      std::bind(&AST_MsgPackWriter::uint_impl, this,
@@ -232,7 +234,8 @@ namespace npar {
                      std::bind(&AST_MsgPackWriter::end_obj_impl, this),
                      std::bind(&AST_MsgPackWriter::begin_arr_impl, this,
                                std::placeholders::_1),
-                     std::bind(&AST_MsgPackWriter::end_arr_impl, this)),
+                     std::bind(&AST_MsgPackWriter::end_arr_impl, this),
+                     include_source_location),
           m_os(os) {}
     virtual ~AST_MsgPackWriter() = default;
   };

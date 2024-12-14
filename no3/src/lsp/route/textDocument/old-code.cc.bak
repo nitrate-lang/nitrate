@@ -536,8 +536,8 @@ void recurse(npar_node_t* C) {
           {FuncPurity::IMPURE_THREAD_UNSAFE, ""},
           {FuncPurity::IMPURE_THREAD_SAFE, " tsafe"},
           {FuncPurity::PURE, " pure"},
-          {FuncPurity::QUASIPURE, " quasipure"},
-          {FuncPurity::RETROPURE, " retropure"}};
+          {FuncPurity::QUASI, " quasi"},
+          {FuncPurity::RETRO, " retro"}};
 
       FuncTy* N = C->as<FuncTy>();
 
@@ -546,10 +546,6 @@ void recurse(npar_node_t* C) {
 
       if (N->is_()) {
         props += " ";
-      }
-
-      if (N->is_foreign()) {
-        props += " foreign";
       }
 
       line << "fn";
@@ -583,10 +579,10 @@ void recurse(npar_node_t* C) {
 
       line << ")";
 
-      if (N->get_return_ty() &&
-          N->get_return_ty()->getKind() != QAST_VOID) {
+      if (N->get_return() &&
+          N->get_return()->getKind() != QAST_VOID) {
         line << ": ";
-        recurse(N->get_return_ty());
+        recurse(N->get_return());
       }
 
       put_type_metadata(C->as<npar::Type>());
@@ -723,10 +719,10 @@ void recurse(npar_node_t* C) {
           {FuncPurity::IMPURE_THREAD_UNSAFE, ""},
           {FuncPurity::IMPURE_THREAD_SAFE, " tsafe"},
           {FuncPurity::PURE, " pure"},
-          {FuncPurity::QUASIPURE, " quasipure"},
-          {FuncPurity::RETROPURE, " retropure"}};
+          {FuncPurity::QUASI, " quasi"},
+          {FuncPurity::RETRO, " retro"}};
 
-      FnDef* N = C->as<FnDef>();
+      Function* N = C->as<Function>();
       FuncTy* F = N->get_type();
       if (!F) {
         break;
@@ -737,10 +733,6 @@ void recurse(npar_node_t* C) {
 
       if (F->is_()) {
         props += " ";
-      }
-
-      if (F->is_foreign()) {
-        props += " foreign";
       }
 
       if (!N->get_name().empty()) {
@@ -782,10 +774,10 @@ void recurse(npar_node_t* C) {
 
       line << ")";
 
-      if (F->get_return_ty() &&
-          F->get_return_ty()->getKind() != QAST_VOID) {
+      if (F->get_return() &&
+          F->get_return()->getKind() != QAST_VOID) {
         line << ": ";
-        recurse(F->get_return_ty());
+        recurse(F->get_return());
       }
       line << " ";
 
@@ -934,22 +926,6 @@ void recurse(npar_node_t* C) {
 
       //   line << "}";
       // }
-
-      break;
-    }
-
-    case QAST_STRUCT_FIELD: {
-      StructField* N = C->as<StructField>();
-
-      line << N->get_name() << ": ";
-      recurse(N->get_type());
-
-      if (N->get_value()) {
-        line << " = ";
-        recurse(N->get_value());
-      }
-
-      line << ",";
 
       break;
     }

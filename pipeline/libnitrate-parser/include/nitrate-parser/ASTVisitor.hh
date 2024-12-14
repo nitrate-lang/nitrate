@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_VISTOR_H__
-#define __NITRATE_PARSER_VISTOR_H__
+#ifndef __NITRATE_AST_VISTOR_H__
+#define __NITRATE_AST_VISTOR_H__
 
 #include <cassert>
 #include <nitrate-parser/ASTCommon.hh>
@@ -106,8 +106,7 @@ namespace npar {
     virtual void visit(CaseStmt const &n) = 0;
     virtual void visit(SwitchStmt const &n) = 0;
     virtual void visit(TypedefStmt const &n) = 0;
-    virtual void visit(FnDef const &n) = 0;
-    virtual void visit(StructField const &n) = 0;
+    virtual void visit(Function const &n) = 0;
     virtual void visit(StructDef const &n) = 0;
     virtual void visit(EnumDef const &n) = 0;
     virtual void visit(ScopeStmt const &n) = 0;
@@ -115,4 +114,4 @@ namespace npar {
   };
 }  // namespace npar
 
-#endif  // __NITRATE_PARSER_VISTOR_H__
+#endif  // __NITRATE_AST_VISTOR_H__

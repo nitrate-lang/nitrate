@@ -1,9 +1,9 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Lexer.h>
-#include <nitrate-parser/AST.hh>
 
 #include <lsp/lang/CambrianStyleFormatter.hh>
+#include <nitrate-parser/AST.hh>
 #include <sstream>
 #include <unordered_set>
 
@@ -25,6 +25,27 @@ CambrianFormatter::LineStreamWritter::operator<<(
 CambrianFormatter::LineStreamWritter&
 CambrianFormatter::LineStreamWritter::operator<<(qlex_op_t op) {
   m_line_buffer << qlex_opstr(op);
+  return *this;
+}
+
+CambrianFormatter::LineStreamWritter&
+CambrianFormatter::LineStreamWritter::operator<<(npar::Vis v) {
+  switch (v) {
+    case Vis::Sec: {
+      m_line_buffer << "sec";
+      break;
+    }
+
+    case Vis::Pro: {
+      m_line_buffer << "pro";
+      break;
+    }
+
+    case Vis::Pub: {
+      m_line_buffer << "pub";
+      break;
+    }
+  }
   return *this;
 }
 
@@ -287,21 +308,21 @@ void CambrianFormatter::visit(TemplType const& n) {
 
   size_t argc = n.get_args().size();
   if (is_optional && argc == 1) {
-    n.get_args().front()->accept(*this);
+    n.get_args().front().second->accept(*this);
     line << "?";
   } else if (is_vector && argc == 1) {
     line << "[";
-    n.get_args().front()->accept(*this);
+    n.get_args().front().second->accept(*this);
     line << "]";
   } else if (is_map && argc == 2) {
     line << "[";
-    n.get_args().front()->accept(*this);
+    n.get_args().front().second->accept(*this);
     line << "->";
-    n.get_args().back()->accept(*this);
+    n.get_args().back().second->accept(*this);
     line << "]";
   } else if (is_set && argc == 1) {
     line << "{";
-    n.get_args().front()->accept(*this);
+    n.get_args().front().second->accept(*this);
     line << "}";
   } else {
     n.get_template()->accept(*this);
@@ -309,7 +330,12 @@ void CambrianFormatter::visit(TemplType const& n) {
     line << "<";
     iterate_except_last(
         n.get_args().begin(), n.get_args().end(),
-        [&](let arg, size_t) { arg->accept(*this); },
+        [&](let arg, size_t) {
+          if (!std::isdigit(arg.first->at(0))) {
+            line << arg.first << ": ";
+          }
+          arg.second->accept(*this);
+        },
         [&](let) { line << ", "; });
     line << ">";
   }
@@ -460,14 +486,22 @@ void CambrianFormatter::visit(RefTy const& n) {
 void CambrianFormatter::visit(FuncTy const& n) {
   line << "fn";
 
+  if (!n.get_attributes().empty()) {
+    line << "[";
+    iterate_except_last(
+        n.get_attributes().begin(), n.get_attributes().end(),
+        [&](let attr, size_t) { attr->accept(*this); },
+        [&](let) { line << ", "; });
+    line << "] ";
+  }
+
   switch (n.get_purity()) {
     case FuncPurity::IMPURE_THREAD_UNSAFE: {
-      line << " impure";
       break;
     }
 
     case FuncPurity::IMPURE_THREAD_SAFE: {
-      line << " impure tsafe";
+      line << " tsafe";
       break;
     }
 
@@ -476,24 +510,20 @@ void CambrianFormatter::visit(FuncTy const& n) {
       break;
     }
 
-    case FuncPurity::QUASIPURE: {
-      line << " quasipure";
+    case FuncPurity::QUASI: {
+      line << " quasi";
       break;
     }
 
-    case FuncPurity::RETROPURE: {
-      line << " retropure";
+    case FuncPurity::RETRO: {
+      line << " retro";
       break;
     }
-  }
-
-  if (n.is_foreign()) {
-    line << " foreign";
   }
 
   line << "(";
   iterate_except_last(
-      n.get_params().begin(), n.get_params().end(),
+      n.get_params().params.begin(), n.get_params().params.end(),
       [&](let param, size_t) {
         let name = std::get<0>(param);
         let type = std::get<1>(param);
@@ -512,20 +542,16 @@ void CambrianFormatter::visit(FuncTy const& n) {
         }
       },
       [&](let) { line << ", "; });
-  if (n.is_variadic()) {
-    if (!n.get_params().empty()) {
+  if (n.get_params().is_variadic) {
+    if (!n.get_params().params.empty()) {
       line << ", ";
     }
     line << "...";
   }
   line << ")";
 
-  if (n.is_noreturn()) {
-    line << ": null";
-  } else {
-    line << ": ";
-    n.get_return_ty()->accept(*this);
-  }
+  line << ": ";
+  n.get_return()->accept(*this);
 }
 
 void CambrianFormatter::visit(UnaryExpr const& n) {
@@ -1033,17 +1059,25 @@ void CambrianFormatter::visit(TypedefStmt const& n) {
   line << ";";
 }
 
-void CambrianFormatter::visit(FnDef const& n) {
+void CambrianFormatter::visit(Function const& n) {
   line << "fn";
 
-  switch (n.get_type()->get_purity()) {
+  if (!n.get_attributes().empty()) {
+    line << " [";
+    iterate_except_last(
+        n.get_attributes().begin(), n.get_attributes().end(),
+        [&](let attr, size_t) { attr->accept(*this); },
+        [&](let) { line << ", "; });
+    line << "]";
+  }
+
+  switch (n.get_purity()) {
     case FuncPurity::IMPURE_THREAD_UNSAFE: {
-      line << " impure";
       break;
     }
 
     case FuncPurity::IMPURE_THREAD_SAFE: {
-      line << " impure tsafe";
+      line << " tsafe";
       break;
     }
 
@@ -1052,19 +1086,29 @@ void CambrianFormatter::visit(FnDef const& n) {
       break;
     }
 
-    case FuncPurity::QUASIPURE: {
-      line << " quasipure";
+    case FuncPurity::QUASI: {
+      line << " quasi";
       break;
     }
 
-    case FuncPurity::RETROPURE: {
-      line << " retropure";
+    case FuncPurity::RETRO: {
+      line << " retro";
       break;
     }
   }
 
-  if (n.get_type()->is_foreign()) {
-    line << " foreign";
+  if (!n.get_captures().empty()) {
+    line << " [";
+    iterate_except_last(
+        n.get_captures().begin(), n.get_captures().end(),
+        [&](let cap, size_t) {
+          if (cap.second) {
+            line << "&";
+          }
+          line << cap.first;
+        },
+        [&](let) { line << ", "; });
+    line << "]";
   }
 
   line << " " << n.get_name();
@@ -1089,7 +1133,7 @@ void CambrianFormatter::visit(FnDef const& n) {
 
   line << "(";
   iterate_except_last(
-      n.get_type()->get_params().begin(), n.get_type()->get_params().end(),
+      n.get_params().params.begin(), n.get_params().params.end(),
       [&](let param, size_t) {
         let name = std::get<0>(param);
         let type = std::get<1>(param);
@@ -1105,11 +1149,13 @@ void CambrianFormatter::visit(FnDef const& n) {
       [&](let) { line << ", "; });
   line << ")";
 
-  if (n.get_type()->is_noreturn()) {
-    line << ": null";
-  } else {
-    line << ": ";
-    n.get_type()->get_return_ty()->accept(*this);
+  { /* Return type */
+    let return_type = n.get_return();
+
+    if (!return_type->is(QAST_INFER)) {
+      line << ": ";
+      return_type->accept(*this);
+    }
   }
 
   if (n.is_decl()) {
@@ -1120,44 +1166,44 @@ void CambrianFormatter::visit(FnDef const& n) {
   }
 }
 
-void CambrianFormatter::visit(StructField const& n) {
-  line << n.get_name() << ": ";
-  n.get_type()->accept(*this);
-  if (n.get_value()) {
-    line << " = ";
-    n.get_value()->accept(*this);
-  }
-}
-
 void CambrianFormatter::visit(StructDef const& n) {
   switch (n.get_composite_type()) {
     case CompositeType::Region: {
-      line << "region";
+      line << "region ";
       break;
     }
 
     case CompositeType::Struct: {
-      line << "struct";
+      line << "struct ";
       break;
     }
 
     case CompositeType::Group: {
-      line << "group";
+      line << "group ";
       break;
     }
 
     case CompositeType::Class: {
-      line << "class";
+      line << "class ";
       break;
     }
 
     case CompositeType::Union: {
-      line << "union";
+      line << "union ";
       break;
     }
   }
 
-  line << " " << n.get_name();
+  if (!n.get_attributes().empty()) {
+    line << "[";
+    iterate_except_last(
+        n.get_attributes().begin(), n.get_attributes().end(),
+        [&](let attr, size_t) { attr->accept(*this); },
+        [&](let) { line << ", "; });
+    line << "] ";
+  }
+
+  line << n.get_name();
   if (n.get_template_params().has_value()) {
     line << "<";
     iterate_except_last(
@@ -1176,22 +1222,54 @@ void CambrianFormatter::visit(StructDef const& n) {
     line << ">";
   }
 
+  if (!n.get_names().empty()) {
+    line << ": ";
+    iterate_except_last(
+        n.get_names().begin(), n.get_names().end(),
+        [&](let name, size_t) { line << name; }, [&](let) { line << ", "; });
+  }
+
+  bool is_empty = n.get_fields().empty() && n.get_methods().empty() &&
+                  n.get_static_methods().empty();
+
+  if (is_empty) {
+    line << " {}";
+    return;
+  }
+
+  line << " {" << std::endl;
+  indent += tabSize;
+
   std::for_each(n.get_fields().begin(), n.get_fields().end(), [&](let field) {
-    field->accept(*this);
+    line << get_indent() << field.get_vis() << " ";
+
+    line << field.get_name() << ": ";
+    field.get_type()->accept(*this);
+
+    if (field.get_value().has_value()) {
+      line << " = ";
+      field.get_value().value()->accept(*this);
+    }
+
     line << "," << std::endl;
   });
 
   std::for_each(n.get_methods().begin(), n.get_methods().end(),
                 [&](let method) {
-                  method->accept(*this);
+                  line << get_indent() << method.vis << " ";
+                  method.func->accept(*this);
                   line << std::endl;
                 });
 
   std::for_each(n.get_static_methods().begin(), n.get_static_methods().end(),
                 [&](let method) {
-                  method->accept(*this);
+                  line << get_indent() << method.vis << " ";
+                  method.func->accept(*this);
                   line << std::endl;
                 });
+
+  indent -= tabSize;
+  line << "}";
 }
 
 void CambrianFormatter::visit(EnumDef const& n) {
@@ -1228,31 +1306,20 @@ void CambrianFormatter::visit(ScopeStmt const& n) {
     line << "]";
   }
 
+  line << " ";
   n.get_body()->accept(*this);
 }
 
 void CambrianFormatter::visit(ExportStmt const& n) {
-  switch (n.get_vis()) {
-    case Vis::Pub: {
-      line << "pub ";
-      break;
-    }
+  line << n.get_vis();
 
-    case Vis::Sec: {
-      line << "sec ";
-      break;
-    }
-
-    case Vis::Pro: {
-      line << "pro ";
-      break;
-    }
+  if (!n.get_abi_name()->empty()) {
+    line << " ";
+    escape_string_literal(*n.get_abi_name());
   }
 
-  escape_string_literal(*n.get_abi_name());
-
   if (!n.get_attrs().empty()) {
-    line << "[";
+    line << " [";
     iterate_except_last(
         n.get_attrs().begin(), n.get_attrs().end(),
         [&](let attr, size_t) { attr->accept(*this); },
@@ -1260,5 +1327,6 @@ void CambrianFormatter::visit(ExportStmt const& n) {
     line << "]";
   }
 
+  line << " ";
   n.get_body()->accept(*this);
 }

@@ -31,274 +31,178 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: Source location
-
-/// TODO: Cleanup this code; it's a mess from refactoring.
-
-#include <nitrate-lexer/Lexer.h>
-
 #include <descent/Recurse.hh>
-#include <nitrate-parser/AST.hh>
 
-bool npar::recurse_attributes(npar_t &S, qlex_t &rd,
-                              std::set<Expr *> &attributes) {
-  qlex_tok_t tok = next();
+using namespace npar;
 
-  { /* The implementation list should be enclosed in square brackets ex: [abc,
-       hello] */
-    if (!tok.is<qPuncLBrk>()) {
-      diagnostic << tok << "Expected '[' after 'impl' in definition";
-    }
-  }
-
-  /* Parse an arbitrary number of attributes */
-  while (true) {
-    /* Check for termination */
-    tok = peek();
-    if (tok.is(qEofF)) {
-      diagnostic << tok << "Unexpected end of file in definition";
-      return false;
-    }
-
-    if (tok.is<qPuncRBrk>()) {
-      next();
-      break;
-    }
-
-    Expr *impl = recurse_expr(
-        S, rd, {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncComa)});
-
-    attributes.insert(impl);
-
-    /* Check for a comma */
-    tok = peek();
-    if (tok.is<qPuncComa>()) {
-      next();
-    }
-  }
-
-  return true;
-}
-
-npar::Stmt *npar::recurse_composite_field(npar_t &S, qlex_t &rd) {
-  /*
-   * Format: "name: type [= expr],"
-   */
-
-  std::string name;
-  qlex_tok_t tok;
-  Type *type = nullptr;
-  Expr *value = nullptr;
-
-  { /*First token is the field name */
-    tok = next();
-    if (!tok.is(qName)) {
-      diagnostic << tok << "Expected field name in composite definition";
-      return mock_stmt(QAST_STRUCT_FIELD);
-    }
-    name = tok.as_string(&rd);
-  }
-
-  { /* Next token should be a colon */
-    tok = next();
-    if (!tok.is<qPuncColn>()) {
-      diagnostic << tok
-                 << "Expected colon after field name in composite definition";
-      return mock_stmt(QAST_STRUCT_FIELD);
-    }
-  }
-
-  { /* Next section should be the field type */
-    type = recurse_type(S, rd);
-  }
-
-  /* Check for a default value */
-  tok = peek();
-  if (tok.is<qPuncComa>() || tok.is<qPuncSemi>() || tok.is<qPuncRCur>()) {
-    if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
-      next();
-    }
-    auto R = make<StructField>(SaveString(name), type, nullptr, Vis::Sec);
-
-    return R;
-  }
-
-  { /* Optional default value */
-    if (!tok.is<qOpSet>()) {
-      diagnostic
-          << tok
-          << "Expected '=' or ',' after field type in composite definition";
-      return mock_stmt(QAST_STRUCT_FIELD);
-    }
-    next();
-
-    /* Parse the default value */
-    value = recurse_expr(
-        S, rd,
-        {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
-         qlex_tok_t(qPunc, qPuncRCur)});
-  }
-
-  auto R = make<StructField>(SaveString(name), type, value, Vis::Sec);
-
-  return R;
-}
-
-bool recurse_template_parameters(
-    npar_t &S, qlex_t &rd,
-    std::optional<npar::TemplateParameters> &template_params);
-
-npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
-  qlex_tok_t tok;
-  std::string name;
+struct StructContent {
   StructDefFields fields;
   StructDefMethods methods;
   StructDefStaticMethods static_methods;
-  Stmt *method = nullptr;
-  FnDef *fdecl = nullptr;
-  FuncTy *ft = nullptr;
-  Stmt *field = nullptr;
-  StructDef *sdef = make<StructDef>(SaveString(""));
+};
 
-  sdef->set_composite_type(type);
+extern std::optional<TemplateParameters> recurse_template_parameters(
+    npar_t &S, qlex_t &rd);
 
-  { /* First token should be the name of the definition */
-    tok = next();
-    if (tok.is(qName)) {
-      name = tok.as_string(&rd);
-    } else {
-      diagnostic << tok << "Expected struct name in struct definition";
-      return mock_stmt(QAST_STRUCT);
-    }
+static ExpressionList recurse_struct_attributes(npar_t &S, qlex_t &rd) {
+  ExpressionList attributes;
+
+  if (!next_if(qPuncLBrk)) {
+    return attributes;
   }
 
-  {
-    if (!recurse_template_parameters(S, rd, sdef->get_template_params())) {
-      return mock_stmt(QAST_STRUCT);
-    }
-  }
-
-  { /* Next token should be an open curly bracket */
-    tok = next();
-    if (!tok.is<qPuncLCur>()) {
-      diagnostic << tok
-                 << "Expected '{' after struct name in struct definition";
-      return mock_stmt(QAST_STRUCT);
-    }
-  }
-
-  /* Parse the fields and methods */
   while (true) {
-    { /* Check for the end of the content */
-      tok = peek();
-      if (tok.is(qEofF)) {
-        diagnostic << tok << "Unexpected end of file in struct definition";
-        return mock_stmt(QAST_STRUCT);
-      }
-      if (tok.is<qPuncRCur>()) {
-        next();
-        break;
-      }
+    if (next_if(qEofF)) {
+      diagnostic
+          << current()
+          << "Encountered EOF while parsing composite definition attributes";
+      break;
     }
 
-    { /* Ignore free semicolons */
-      if (tok.is<qPuncSemi>()) {
-        next();
-        continue;
-      }
+    if (next_if(qPuncRBrk)) {
+      break;
     }
 
-    Vis vis = Vis::Sec;
+    let attribute = recurse_expr(
+        S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRBrk)});
 
-    { /* Check for visibility qualifiers */
-      if (tok.is<qKPub>()) {
-        vis = Vis::Pub;
-        next();
-        tok = peek();
-      } else if (tok.is<qKSec>()) {
-        vis = Vis::Sec;
-        next();
-        tok = peek();
-      } else if (tok.is<qKPro>()) {
-        vis = Vis::Pro;
-        next();
-        tok = peek();
-      }
-    }
+    attributes.push_back(attribute);
 
-    /* Check for a function definition */
-    if (tok.is<qKFn>()) {
-      next();
+    next_if(qPuncComa);
+  }
 
-      /* Parse the function definition */
-      method = recurse_function(S, rd);
+  return attributes;
+}
 
-      { /* Add the 'this' parameter to the method */
-        FuncParam fn_this{SaveString("this"),
-                          make<RefTy>(make<NamedTy>(SaveString(name))),
-                          nullptr};
+static std::string_view recurse_struct_name(qlex_t &rd) {
+  if (let tok = next_if(qName)) {
+    return tok->as_string(&rd);
+  } else {
+    return "";
+  }
+}
 
-        if (method->is<FnDef>()) {
-          fdecl = static_cast<FnDef *>(method);
-          ft = fdecl->get_type();
-          ft->get_params().insert(ft->get_params().begin(), fn_this);
-          fdecl->set_type(ft);
-        } else {
-          fdecl = static_cast<FnDef *>(method);
-          ft = fdecl->get_type();
-          ft->get_params().insert(ft->get_params().begin(), fn_this);
-          fdecl->set_type(ft);
-        }
-      }
+static StructDefNames recurse_struct_terms(qlex_t &rd) {
+  StructDefNames names;
 
-      /* Add the method to the list */
-      methods.push_back(static_cast<FnDef *>(method));
-    } else if (tok.is<qKStatic>()) {
-      next();
-      tok = next();
+  if (!next_if(qPuncColn)) {
+    return names;
+  }
 
-      /* Static fields are not currently supported */
-      if (!tok.is<qKFn>()) {
-        diagnostic << tok
-                   << "Expected function definition after 'static' in struct "
-                      "definition";
-        return mock_stmt(QAST_STRUCT);
-      }
+  while (true) {
+    if (let tok = next_if(qName)) {
+      names.push_back(SaveString(tok->as_string(&rd)));
 
-      /* Parse the function definition */
-      method = recurse_function(S, rd);
-
-      /* Add the method to the list */
-      static_methods.push_back(static_cast<FnDef *>(method));
+      next_if(qPuncComa);
     } else {
-      /* Parse a normal field */
-      field = recurse_composite_field(S, rd);
-
-      tok = peek();
-      if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
-        next();
-      }
-
-      /* Assign the visibility to the field */
-      if (field->is(QAST_STRUCT_FIELD)) {
-        static_cast<StructField *>(field)->set_visibility(vis);
-      }
-
-      fields.push_back(field);
+      return names;
     }
   }
+}
 
-  { /* Ignore optional semicolon */
-    tok = peek();
-    if (tok.is<qPuncSemi>()) {
-      next();
+static std::optional<Expr *> recurse_struct_field_default_value(npar_t &S,
+                                                                qlex_t &rd) {
+  if (next_if(qOpSet)) {
+    return recurse_expr(
+        S, rd,
+        {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
+         qlex_tok_t(qPunc, qPuncRCur)});
+  } else {
+    return std::nullopt;
+  }
+}
+
+static void recurse_struct_field(npar_t &S, qlex_t &rd, Vis vis, bool is_static,
+                                 StructDefFields &fields) {
+  /* Must consume token to avoid infinite loop on error */
+  if (let name = next(); name.is(qName)) {
+    let field_name = name.as_string(&rd);
+
+    if (next_if(qPuncColn)) {
+      let field_type = recurse_type(S, rd);
+      let default_value = recurse_struct_field_default_value(S, rd);
+
+      let field = StructField(vis, is_static, SaveString(field_name),
+                              field_type, std::move(default_value));
+
+      fields.push_back(std::move(field));
+    } else {
+      diagnostic << current() << "Expected ':' after field name in struct";
     }
+  } else {
+    diagnostic << current() << "Expected field name in struct";
+  }
+}
+
+static void recurse_struct_method_or_field(npar_t &S, qlex_t &rd,
+                                           StructContent &body) {
+  Vis vis = Vis::Sec;
+
+  /* Parse visibility of member */
+  if (next_if(qKSec)) {
+    vis = Vis::Sec;
+  } else if (next_if(qKPro)) {
+    vis = Vis::Pro;
+  } else if (next_if(qKPub)) {
+    vis = Vis::Pub;
   }
 
-  sdef->set_name(SaveString(name));
-  sdef->get_fields() = std::move(fields);
-  sdef->get_methods() = std::move(methods);
-  sdef->get_static_methods() = std::move(static_methods);
+  /* Is the member static? */
+  bool is_static = next_if(qKStatic).has_value();
 
-  return sdef;
+  if (next_if(qKFn)) { /* Parse method */
+    let method = recurse_function(S, rd, false);
+
+    if (is_static) {
+      body.static_methods.push_back({vis, method});
+    } else {
+      body.methods.push_back({vis, method});
+    }
+  } else { /* Parse field */
+    recurse_struct_field(S, rd, vis, is_static, body.fields);
+  }
+
+  next_if(qPuncComa) || next_if(qPuncSemi);
+}
+
+static StructContent recurse_struct_body(npar_t &S, qlex_t &rd) {
+  StructContent body;
+
+  if (!next_if(qPuncLCur)) {
+    diagnostic << current() << "Expected '{' to start struct body";
+    return body;
+  }
+
+  while (true) {
+    if (next_if(qPuncRCur)) {
+      break;
+    }
+
+    if (next_if(qEofF)) {
+      diagnostic << current() << "Encountered EOF while parsing struct body";
+      break;
+    }
+
+    recurse_struct_method_or_field(S, rd, body);
+  }
+
+  return body;
+}
+
+npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
+  let start_pos = current().start;
+  let attributes = recurse_struct_attributes(S, rd);
+  let name = recurse_struct_name(rd);
+  let template_params = recurse_template_parameters(S, rd);
+  let terms = recurse_struct_terms(rd);
+  let[fields, methods, static_methods] = recurse_struct_body(S, rd);
+
+  let struct_defintion = make<StructDef>(
+      type, std::move(attributes), SaveString(name), std::move(template_params),
+      std::move(terms), std::move(fields), std::move(methods),
+      std::move(static_methods));
+
+  struct_defintion->set_offset(start_pos);
+
+  return struct_defintion;
 }

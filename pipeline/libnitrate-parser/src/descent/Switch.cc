@@ -32,7 +32,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <descent/Recurse.hh>
-#include <nitrate-parser/AST.hh>
 
 using namespace npar;
 
@@ -66,7 +65,7 @@ recurse_switch_body(npar_t &S, qlex_t &rd) {
   std::optional<CaseStmt *> default_;
 
   while (true) {
-    if (peek().is(qEofF)) {
+    if (next_if(qEofF)) {
       diagnostic << current() << "Unexpected EOF in switch statement.";
       break;
     }

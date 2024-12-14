@@ -109,3 +109,11 @@ void AST_JsonReader::parse_stream(std::istream& is) {
     handle_value(doc);
   }
 }
+
+///===========================================================================///
+
+void AST_MsgPackReader::parse_stream(std::istream& is) {
+  (void)is;
+  /// TODO: Implement MsgPack parsing
+  qcore_implement();
+}

@@ -31,12 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_ASTSTMT_H__
-#define __NITRATE_PARSER_ASTSTMT_H__
-
-#ifndef __cplusplus
-#error "This code requires c++"
-#endif
+#ifndef __NITRATE_AST_ASTSTMT_H__
+#define __NITRATE_AST_ASTSTMT_H__
 
 #include <nitrate-parser/ASTBase.hh>
 
@@ -66,7 +62,7 @@ namespace npar {
   };
 
   class VarDecl : public Stmt {
-    VarDeclAttributes m_attributes;
+    ExpressionList m_attributes;
     SmallString m_name;
     Type *m_type;
     Expr *m_value;
@@ -74,7 +70,7 @@ namespace npar {
 
   public:
     VarDecl(SmallString name, Type *type, Expr *value, VarDeclType decl_type,
-            VarDeclAttributes attributes)
+            ExpressionList attributes)
         : Stmt(QAST_VAR),
           m_attributes(attributes),
           m_name(name),
@@ -230,14 +226,14 @@ namespace npar {
   };
 
   class ExportStmt : public Stmt {
-    SymbolAttributes m_attrs;
+    ExpressionList m_attrs;
     SmallString m_abi_name;
     Stmt *m_body;
     Vis m_vis;
 
   public:
     ExportStmt(Stmt *content, SmallString abi_name, Vis vis,
-               SymbolAttributes attrs)
+               ExpressionList attrs)
         : Stmt(QAST_EXPORT),
           m_attrs(attrs),
           m_abi_name(abi_name),
@@ -276,28 +272,6 @@ namespace npar {
     let get_type() const { return m_type; }
   };
 
-  class StructField : public Stmt {
-    SmallString m_name;
-    Type *m_type;
-    Expr *m_value;
-    Vis m_visibility;
-
-  public:
-    StructField(SmallString name, Type *type, Expr *value, Vis visibility)
-        : Stmt(QAST_STRUCT_FIELD),
-          m_name(name),
-          m_type(type),
-          m_value(value),
-          m_visibility(visibility) {}
-
-    let get_name() const { return m_name; }
-    let get_type() const { return m_type; }
-    let get_value() const { return m_value; }
-    let get_visibility() const { return m_visibility; }
-
-    void set_visibility(Vis visibility) { m_visibility = visibility; }
-  };
-
   class EnumDef : public Stmt {
     EnumDefItems m_items;
     SmallString m_name;
@@ -312,87 +286,84 @@ namespace npar {
     let get_type() const { return m_type; }
   };
 
-  class FnDef : public Stmt {
+  class Function : public Stmt {
+    ExpressionList m_attributes;
+    FuncPurity m_purity;
     FnCaptures m_captures;
     SmallString m_name;
     std::optional<TemplateParameters> m_template_parameters;
-    FuncTy *m_type;
-    Expr *m_precond;
-    Expr *m_postcond;
+    FuncParams m_params;
+    Type *m_return;
+    std::optional<Expr *> m_precond, m_postcond;
     std::optional<Stmt *> m_body;
 
   public:
-    FnDef(SmallString name, FuncTy *type, const FnCaptures &captures = {},
-          std::optional<TemplateParameters> params = std::nullopt,
-          Expr *precond = nullptr, Expr *postcond = nullptr,
-          std::optional<Stmt *> body = std::nullopt)
+    Function(ExpressionList attributes, FuncPurity purity, FnCaptures captures,
+             SmallString name, std::optional<TemplateParameters> params,
+             FuncParams fn_params, Type *return_type,
+             std::optional<Expr *> precond, std::optional<Expr *> postcond,
+             std::optional<Stmt *> body)
         : Stmt(QAST_FUNCTION),
+          m_attributes(attributes),
+          m_purity(purity),
           m_captures(captures),
           m_name(name),
           m_template_parameters(params),
-          m_type(type),
+          m_params(fn_params),
+          m_return(return_type),
           m_precond(precond),
           m_postcond(postcond),
           m_body(body) {}
 
+    let get_attributes() const { return m_attributes; }
+    let get_purity() const { return m_purity; }
     let get_captures() const { return m_captures; }
     let get_name() const { return m_name; }
-    let get_body() const { return m_body; }
+    let get_template_params() const { return m_template_parameters; }
+    let get_params() const { return m_params; }
+    let get_return() const { return m_return; }
     let get_precond() const { return m_precond; }
     let get_postcond() const { return m_postcond; }
-    let get_type() const { return m_type; }
-    let get_template_params() const { return m_template_parameters; }
+    let get_body() const { return m_body; }
 
     bool is_decl() const { return !m_body.has_value(); }
     bool is_def() const { return m_body.has_value(); }
-
-    void set_body(std::optional<Stmt *> body) { m_body = body; }
-    void set_precond(Expr *precond) { m_precond = precond; }
-    void set_postcond(Expr *postcond) { m_postcond = postcond; }
-    void set_name(SmallString name) { m_name = name; }
-    void set_type(FuncTy *type) { m_type = type; }
-    void set_captures(FnCaptures captures) { m_captures = captures; }
-
-    std::optional<TemplateParameters> &get_template_params() {
-      return m_template_parameters;
-    }
   };
 
   class StructDef : public Stmt {
+    CompositeType m_comp_type;
+    ExpressionList m_attributes;
+    SmallString m_name;
+    std::optional<TemplateParameters> m_template_parameters;
+    StructDefNames m_names;
+    StructDefFields m_fields;
     StructDefMethods m_methods;
     StructDefStaticMethods m_static_methods;
-    StructDefFields m_fields;
-    std::optional<TemplateParameters> m_template_parameters;
-    CompositeType m_comp_type;
-    SmallString m_name;
 
   public:
-    StructDef(SmallString name, const StructDefFields &fields = {},
-              const StructDefMethods &methods = {},
-              const StructDefStaticMethods &static_methods = {},
-              std::optional<TemplateParameters> params = std::nullopt,
-              CompositeType t = CompositeType::Struct)
+    StructDef(CompositeType comp_type, ExpressionList attributes,
+              SmallString name, std::optional<TemplateParameters> params,
+              const StructDefNames &names, const StructDefFields &fields,
+              const StructDefMethods &methods,
+              const StructDefStaticMethods &static_methods)
         : Stmt(QAST_STRUCT),
-          m_methods(methods),
-          m_static_methods(static_methods),
-          m_fields(fields),
+          m_comp_type(comp_type),
+          m_attributes(attributes),
+          m_name(name),
           m_template_parameters(params),
-          m_comp_type(t),
-          m_name(name) {}
+          m_names(names),
+          m_fields(fields),
+          m_methods(methods),
+          m_static_methods(static_methods) {}
 
+    let get_composite_type() const { return m_comp_type; }
+    let get_attributes() const { return m_attributes; }
     let get_name() const { return m_name; }
+    let get_template_params() const { return m_template_parameters; }
+    let get_names() const { return m_names; }
+    let get_fields() const { return m_fields; }
     let get_methods() const { return m_methods; }
     let get_static_methods() const { return m_static_methods; }
-    let get_fields() const { return m_fields; }
-    let get_composite_type() const { return m_comp_type; }
-    let get_template_params() const { return m_template_parameters; }
-
-    void set_name(SmallString name) { m_name = name; }
-    void set_composite_type(CompositeType t) { m_comp_type = t; }
-    auto &get_methods() { return m_methods; }
-    auto &get_static_methods() { return m_static_methods; }
-    auto &get_fields() { return m_fields; }
-    auto &get_template_params() { return m_template_parameters; }
   };
 
   constexpr bool Stmt::is_expr_stmt(npar_ty_t type) const {

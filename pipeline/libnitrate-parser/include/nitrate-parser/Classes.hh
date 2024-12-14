@@ -31,15 +31,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_CLASSES_H__
-#define __NITRATE_PARSER_CLASSES_H__
-
-#ifndef __cplusplus
-#error "This header is for C++ only."
-#endif
+#ifndef __NITRATE_AST_CLASSES_H__
+#define __NITRATE_AST_CLASSES_H__
 
 #include <nitrate-core/Error.h>
 #include <nitrate-parser/Parser.h>
+
+#include <nitrate-parser/AST.hh>
 
 class nr_syn final {
   npar_t *m_parser;
@@ -55,4 +53,4 @@ public:
   npar_t *get() const { return m_parser; }
 };
 
-#endif  // __NITRATE_PARSER_CLASSES_H__
+#endif  // __NITRATE_AST_CLASSES_H__

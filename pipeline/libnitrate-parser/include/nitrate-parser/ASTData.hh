@@ -31,14 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_ASTDATA_H__
-#define __NITRATE_PARSER_ASTDATA_H__
+#ifndef __NITRATE_AST_ASTDATA_H__
+#define __NITRATE_AST_ASTDATA_H__
 
-#ifndef __cplusplus
-#error "This code requires c++"
-#endif
+#include <nitrate-core/Macro.h>
 
-#include <map>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <set>
@@ -105,8 +102,6 @@ namespace npar {
   using FStringItems = std::vector<std::variant<SmallString, Expr *>,
                                    Arena<std::variant<SmallString, Expr *>>>;
 
-  using TemplateArgs = std::map<SmallString, Expr *, std::less<SmallString>,
-                                Arena<std::pair<const SmallString, Expr *>>>;
   using TemplateParameter = std::tuple<SmallString, Type *, Expr *>;
   using TemplateParameters =
       std::vector<TemplateParameter, Arena<TemplateParameter>>;
@@ -115,21 +110,53 @@ namespace npar {
   using ScopeDeps =
       std::set<SmallString, std::less<SmallString>, Arena<SmallString>>;
 
-  using VarDeclAttributes = std::set<Expr *, std::less<Expr *>, Arena<Expr *>>;
-
   using SwitchCases = std::vector<CaseStmt *, Arena<CaseStmt *>>;
-  using SymbolAttributes = std::set<Expr *, std::less<Expr *>, Arena<Expr *>>;
   using EnumItem = std::pair<SmallString, Expr *>;
   using EnumDefItems = std::vector<EnumItem, Arena<EnumItem>>;
 
-  using StructItem = std::pair<SmallString, Type *>;
-  using StructItems = std::vector<StructItem, Arena<StructItem>>;
-  using StructDefFields = std::vector<Stmt *, Arena<Stmt *>>;
-  using StructDefMethods = std::vector<FnDef *, Arena<FnDef *>>;
-  using StructDefStaticMethods = std::vector<FnDef *, Arena<FnDef *>>;
+  class StructField {
+    SmallString m_name;
+    std::optional<Expr *> m_value;
+    Type *m_type;
+    Vis m_vis;
+    bool m_is_static;
+
+  public:
+    StructField(Vis vis, bool is_static, SmallString name, Type *type,
+                std::optional<Expr *> value)
+        : m_name(std::move(name)),
+          m_value(std::move(value)),
+          m_type(type),
+          m_vis(vis),
+          m_is_static(is_static) {}
+
+    let get_vis() const { return m_vis; }
+    let is_static() const { return m_is_static; }
+    let get_name() const { return m_name; }
+    let get_type() const { return m_type; }
+    let get_value() const { return m_value; }
+  };
+
+  struct StructFunction {
+    Vis vis;
+    Stmt *func;
+
+    StructFunction(Vis vis, Stmt *func) : vis(vis), func(func) {}
+  };
+
+  using StructDefFields = std::vector<StructField, Arena<StructField>>;
+  using StructDefMethods = std::vector<StructFunction, Arena<StructFunction>>;
+  using StructDefStaticMethods =
+      std::vector<StructFunction, Arena<StructFunction>>;
+  using StructDefNames = std::vector<SmallString, Arena<SmallString>>;
 
   using FuncParam = std::tuple<SmallString, Type *, Expr *>;
-  using FuncParams = std::vector<FuncParam, Arena<FuncParam>>;
+  struct FuncParams {
+    std::vector<FuncParam, Arena<FuncParam>> params;
+    bool is_variadic;
+
+    FuncParams() : is_variadic(false) {}
+  };
   using FnCaptures = std::vector<std::pair<SmallString, bool>,
                                  Arena<std::pair<SmallString, bool>>>;
 }  // namespace npar

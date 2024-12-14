@@ -186,23 +186,6 @@ qcode_setting_t *qcode_conf_getopts(qcode_conf_t *conf, size_t *count);
  */
 void qcode_conf_clear(qcode_conf_t *conf);
 
-/**
- * @brief Dump the configuration options to a stream.
- *
- * @param conf Pointer to configuration context.
- * @param stream File stream to write the configuration options to.
- * @param field_delim Delimiter to separate the key and value of each
- * configuration option, or NULL to use the default delimiter.
- * @param line_delim Delimiter to separate each configuration option, or NULL to
- * use the default delimiter.
- *
- * @return The number of bytes written to the stream on success OR 0 on failure.
- *
- * @note This function is thread-safe.
- */
-size_t qcode_conf_dump(qcode_conf_t *conf, FILE *stream,
-                       const char *field_delim, const char *line_delim);
-
 #ifdef __cplusplus
 }
 #endif

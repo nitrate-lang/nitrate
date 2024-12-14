@@ -31,20 +31,19 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_PARSER_H__
-#define __NITRATE_PARSER_PARSER_H__
+#ifndef __NITRATE_AST_PARSER_H__
+#define __NITRATE_AST_PARSER_H__
 
 #include <nitrate-core/Env.h>
 #include <nitrate-lexer/Lexer.h>
 #include <stdbool.h>
-
-#include <nitrate-parser/AST.hh>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct npar_t npar_t;
+typedef struct npar_node_t npar_node_t;
 
 /**
  * @brief Create a new parser instance from non-owning references to a lexer and
@@ -139,4 +138,4 @@ void npar_dumps(npar_t *parser, bool no_ansi, npar_dump_cb cb, uintptr_t data);
 }
 #endif
 
-#endif  // __NITRATE_PARSER_PARSER_H__
+#endif  // __NITRATE_AST_PARSER_H__

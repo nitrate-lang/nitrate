@@ -38,11 +38,9 @@
 #include <nitrate-lexer/Token.h>
 #include <nitrate-parser/Parser.h>
 
-#include <core/ParseReport.hh>
-#include <core/ParserStruct.hh>
+#include <core/Context.hh>
 #include <nitrate-parser/AST.hh>
 #include <set>
-#include <unordered_set>
 
 namespace npar {
   Stmt *recurse_pub(npar_t &S, qlex_t &rd);
@@ -52,7 +50,7 @@ namespace npar {
   Stmt *recurse_enum(npar_t &S, qlex_t &rd);
   Stmt *recurse_struct(npar_t &S, qlex_t &rd, CompositeType type);
   Stmt *recurse_scope(npar_t &S, qlex_t &rd);
-  Stmt *recurse_function(npar_t &S, qlex_t &rd);
+  Stmt *recurse_function(npar_t &S, qlex_t &rd, bool restrict_decl_only);
   Type *recurse_type(npar_t &S, qlex_t &rd);
   Stmt *recurse_typedef(npar_t &S, qlex_t &rd);
   Stmt *recurse_return(npar_t &S, qlex_t &rd);
@@ -63,9 +61,6 @@ namespace npar {
   Stmt *recurse_foreach(npar_t &S, qlex_t &rd);
   Stmt *recurse_switch(npar_t &S, qlex_t &rd);
   Stmt *recurse_inline_asm(npar_t &S, qlex_t &rd);
-  Stmt *recurse_composite_field(npar_t &S, qlex_t &rd);
-
-  bool recurse_attributes(npar_t &S, qlex_t &rd, std::set<Expr *> &attributes);
 
   Stmt *recurse_block(npar_t &S, qlex_t &rd, bool expect_braces = true,
                       bool single_stmt = false);

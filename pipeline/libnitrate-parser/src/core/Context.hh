@@ -31,14 +31,19 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_REPORT_H__
-#define __NITRATE_PARSER_REPORT_H__
+#ifndef __NITRATE_AST_CONTEXT_H__
+#define __NITRATE_AST_CONTEXT_H__
 
+#include <nitrate-core/Env.h>
+#include <nitrate-core/Memory.h>
+#include <nitrate-lexer/Lexer.h>
 #include <nitrate-lexer/Token.h>
 #include <nitrate-parser/Parser.h>
+#include <stdbool.h>
 
 #include <cstdarg>
 #include <functional>
+#include <nitrate-parser/AST.hh>
 #include <sstream>
 
 namespace npar {
@@ -125,4 +130,13 @@ namespace npar {
 
 };  // namespace npar
 
-#endif  // __NITRATE_PARSER_REPORT_H__
+struct npar_t {
+  qcore_env_t env; /* The Environment */
+  uint64_t id; /* Process unique instance identifier. Never reused. Never 0. */
+  qcore_arena arena;            /* The Main allocator */
+  npar::DiagnosticManager diag; /* The Diagnostic Manager */
+  qlex_t *lexer;                /* Polymporphic lexer */
+  bool failed; /* Whether the parser failed (ie syntax errors) */
+};
+
+#endif

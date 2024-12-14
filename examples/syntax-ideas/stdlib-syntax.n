@@ -58,7 +58,7 @@ scope std {
     ret sum;
   }
 
-  fn quasipure fetch() {
+  fn quasi fetch() {
 
   }
 }

@@ -25,6 +25,7 @@ namespace lsp::fmt {
         return *this;
       }
       LineStreamWritter& operator<<(qlex_op_t op);
+      LineStreamWritter& operator<<(npar::Vis op);
 
       LineStreamWritter& operator<<(std::ostream& (*func)(std::ostream&));
 
@@ -144,8 +145,7 @@ namespace lsp::fmt {
     void visit(npar::CaseStmt const& n) override;
     void visit(npar::SwitchStmt const& n) override;
     void visit(npar::TypedefStmt const& n) override;
-    void visit(npar::FnDef const& n) override;
-    void visit(npar::StructField const& n) override;
+    void visit(npar::Function const& n) override;
     void visit(npar::StructDef const& n) override;
     void visit(npar::EnumDef const& n) override;
     void visit(npar::ScopeStmt const& n) override;

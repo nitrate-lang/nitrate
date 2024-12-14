@@ -31,582 +31,357 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: Source location
-
-/// TODO: Cleanup this code; it's a mess from refactoring.
-
-#include <nitrate-lexer/Lexer.h>
-
 #include <descent/Recurse.hh>
-#include <nitrate-parser/AST.hh>
+#include <unordered_set>
 
 using namespace npar;
 
-struct GetPropState {
-  size_t foreign_ctr = 0;
-  size_t impure_ctr = 0;
-  size_t tsafe_ctr = 0;
-  size_t pure_ctr = 0;
-  size_t quasipure_ctr = 0;
-  size_t retropure_ctr = 0;
-  size_t inline_ctr = 0;
-};
-
-static bool fn_get_property(qlex_t &rd, GetPropState &state) {
-  qlex_tok_t tok = peek();
-
-  if (tok.is(qEofF)) {
-    diagnostic << tok << "Expected a function property but found EOF";
-    return false;
-  }
-
-  if (tok.is<qKForeign>()) {
-    next();
-    state.foreign_ctr++;
-    return true;
-  }
-
-  if (tok.is<qKImpure>()) {
-    next();
-    state.impure_ctr++;
-    return true;
-  }
-
-  if (tok.is<qKTsafe>()) {
-    next();
-    state.tsafe_ctr++;
-    return true;
-  }
-
-  if (tok.is<qKPure>()) {
-    next();
-    state.pure_ctr++;
-    return true;
-  }
-
-  if (tok.is<qKQuasipure>()) {
-    next();
-    state.quasipure_ctr++;
-    return true;
-  }
-
-  if (tok.is<qKRetropure>()) {
-    next();
-    state.retropure_ctr++;
-    return true;
-  }
-
-  if (tok.is<qKInline>()) {
-    next();
-    state.inline_ctr++;
-    return true;
-  }
-
-  return false;
-}
-
-static bool recurse_fn_parameter(npar_t &S, qlex_t &rd, FuncParam &param) {
-  auto tok = next();
-
-  std::string name;
-  Type *type = nullptr;
-
-  if (!tok.is(qName)) {
-    diagnostic << tok << "Expected a parameter name before ':'";
-  }
-
-  name = tok.as_string(&rd);
-  tok = peek();
-
-  if (tok.is<qPuncColn>()) {
-    next();
-
-    type = recurse_type(S, rd);
-
-    tok = peek();
+static Type *recurse_function_parameter_type(npar_t &S, qlex_t &rd) {
+  if (next_if(qPuncColn)) {
+    return recurse_type(S, rd);
   } else {
-    type = make<InferTy>();
+    let type = make<InferTy>();
+    type->set_offset(current().start);
+    return type;
   }
+}
 
-  if (tok.is<qOpSet>()) {
-    next();
-    tok = peek();
-
-    Expr *value =
-        recurse_expr(S, rd,
-                     {qlex_tok_t(qPunc, qPuncComa),
-                      qlex_tok_t(qPunc, qPuncRPar), qlex_tok_t(qOper, qOpGT)});
-
-    param = {SaveString(name), type, value};
+static std::optional<Expr *> recurse_function_parameter_value(npar_t &S,
+                                                              qlex_t &rd) {
+  if (next_if(qOpSet)) {
+    return recurse_expr(
+        S, rd,
+        {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar),
+         qlex_tok_t(qOper, qOpGT)});
   } else {
-    param = {SaveString(name), type, nullptr};
+    return std::nullopt;
   }
-
-  return true;
 }
 
-enum class Purity { Pure, QuasiPure, RetroPure, Impure };
+static std::optional<FuncParam> recurse_function_parameter(npar_t &S,
+                                                           qlex_t &rd) {
+  if (let name = next_if(qName)) {
+    let param_name = name->as_string(&rd);
+    let param_type = recurse_function_parameter_type(S, rd);
+    let param_value = recurse_function_parameter_value(S, rd);
 
-struct FunctionProperties {
-  bool _foreign = false;
-  bool _tsafe = false;
-  Purity _purity = Purity::Impure;
-};
-
-static FunctionProperties read_function_properties(qlex_t &rd) {
-  GetPropState state;
-
-  qlex_tok_t tok = peek();
-
-  while (fn_get_property(rd, state));
-
-  if (state.foreign_ctr > 1) {
-    diagnostic << tok << "Multiple 'foreign' specifiers";
-    return FunctionProperties();
-  }
-
-  if (state.impure_ctr > 1) {
-    diagnostic << tok << "Multiple 'impure' specifiers";
-    return FunctionProperties();
-  }
-
-  if (state.tsafe_ctr > 1) {
-    diagnostic << tok << "Multiple 'tsafe' specifiers";
-    return FunctionProperties();
-  }
-
-  if (state.pure_ctr > 1) {
-    diagnostic << tok << "Multiple 'pure' specifiers";
-    return FunctionProperties();
-  }
-
-  if (state.quasipure_ctr > 1) {
-    diagnostic << tok << "Multiple 'quasipure' specifiers";
-    return FunctionProperties();
-  }
-
-  if (state.retropure_ctr > 1) {
-    diagnostic << tok << "Multiple 'retropure' specifiers";
-    return FunctionProperties();
-  }
-
-  if (state.inline_ctr > 1) {
-    diagnostic << tok << "Multiple 'inline' specifiers";
-    return FunctionProperties();
-  }
-
-  bool partial_pure =
-      state.pure_ctr || state.quasipure_ctr || state.retropure_ctr;
-
-  if (partial_pure && state.impure_ctr) {
-    diagnostic << tok
-               << "Cannot mix 'pure', 'quasipure', 'retropure' with 'impure'";
-    return FunctionProperties();
-  }
-
-  if (partial_pure &&
-      (state.pure_ctr + state.quasipure_ctr + state.retropure_ctr) != 1) {
-    diagnostic << tok << "Multiple purity specifiers; Illegal combination";
-    return FunctionProperties();
-  }
-
-  if (partial_pure) {
-    state.tsafe_ctr = 1;
-  }
-
-  FunctionProperties props;
-
-  props._foreign = state.foreign_ctr;
-  props._tsafe = state.tsafe_ctr;
-
-  if (state.pure_ctr) {
-    props._purity = Purity::Pure;
-  } else if (state.quasipure_ctr) {
-    props._purity = Purity::QuasiPure;
-  } else if (state.retropure_ctr) {
-    props._purity = Purity::RetroPure;
+    return FuncParam{SaveString(param_name), param_type,
+                     param_value.value_or(nullptr)};
   } else {
-    props._purity = Purity::Impure;
+    diagnostic << current() << "Expected a parameter name before ':'";
   }
 
-  return props;
+  return std::nullopt;
 }
 
-static bool recurse_captures_and_name(qlex_t &rd, FnDef *fndecl,
-                                      FnCaptures &captures) {
-  qlex_tok_t c = peek();
-
-  if (c.is<qPuncLBrk>()) {
-    next();
-
-    while (!c.is(qEofF)) {
-      c = next();
-
-      if (c.is<qPuncRBrk>()) {
-        break;
-      }
-
-      bool is_mut = false;
-
-      if (c.is<qOpBitAnd>()) {
-        is_mut = true;
-        c = next();
-      }
-
-      if (!c.is(qName)) {
-        diagnostic << c << "Expected a capture name";
-        return false;
-      }
-
-      captures.push_back({SaveString(c.as_string(&rd)), is_mut});
-      c = peek();
-
-      if (c.is<qPuncComa>()) {
-        next();
-      }
-    }
-
-    c = peek();
+std::optional<TemplateParameters> recurse_template_parameters(npar_t &S,
+                                                              qlex_t &rd) {
+  if (!next_if(qOpLT)) {
+    return std::nullopt;
   }
-
-  if (c.is(qName)) {
-    next();
-    fndecl->set_name(SaveString(c.as_string(&rd)));
-  }
-
-  return true;
-}
-
-bool recurse_template_parameters(
-    npar_t &S, qlex_t &rd, std::optional<TemplateParameters> &template_params) {
-  template_params = std::nullopt;
-
-  qlex_tok_t c = peek();
-
-  if (!c.is<qOpLT>()) {
-    return true;
-  }
-
-  next();
 
   TemplateParameters params;
 
-  while (1) {
-    c = peek();
-    if (c.is(qEofF)) {
-      diagnostic << c << "Unexpected EOF in signature";
-      return false;
+  while (true) {
+    if (next_if(qEofF)) {
+      diagnostic << current() << "Unexpected EOF in template parameters";
+      return params;
     }
 
-    if (c.is<qOpGT>()) {
-      next();
+    if (next_if(qOpGT)) {
       break;
     }
 
-    FuncParam param;
-    if (!recurse_fn_parameter(S, rd, param)) {
-      diagnostic << c << "Expected a parameter";
-      return false;
-    }
+    if (let param_opt = recurse_function_parameter(S, rd)) {
+      let param = *param_opt;
+      let tparam = TemplateParameter{std::get<0>(param), std::get<1>(param),
+                                     std::get<2>(param)};
 
-    params.push_back(
-        {std::get<0>(param), std::get<1>(param), std::get<2>(param)});
+      params.push_back(std::move(tparam));
 
-    c = peek();
-    if (c.is<qPuncComa>()) {
-      next();
-      continue;
+      next_if(qPuncComa);
+    } else {
+      diagnostic << next() << "Expected a template parameter";
     }
   }
 
-  c = peek();
-
-  template_params = std::move(params);
-
-  return true;
+  return params;
 }
 
-static bool recurse_parameters(npar_t &S, qlex_t &rd, FuncTy *ftype,
-                               bool &is_variadic) {
-  qlex_tok_t c = peek();
+static FuncParams recurse_function_parameters(npar_t &S, qlex_t &rd) {
+  FuncParams parameters;
 
-  if (!c.is<qPuncLPar>()) {
-    diagnostic << c << "Expected '(' after function name";
-    return false;
+  if (!next_if(qPuncLPar)) {
+    diagnostic << current() << "Expected '(' after function name";
+    return parameters;
   }
 
-  next();
-
-  is_variadic = false;
-
-  while (1) {
-    c = peek();
-    if (c.is(qEofF)) {
-      diagnostic << c << "Unexpected EOF in function signature";
-      return false;
+  while (true) {
+    if (next_if(qEofF)) {
+      diagnostic << current() << "Unexpected EOF in function parameters";
+      return parameters;
     }
 
-    if (c.is<qPuncRPar>()) {
-      next();
+    if (next_if(qPuncRPar)) {
       break;
     }
 
-    if (c.is<qOpEllipsis>()) {
-      is_variadic = true;
-
-      next();
-      c = next();
-      if (!c.is<qPuncRPar>()) {
-        diagnostic << c << "Expected ')' after '...'";
+    if (next_if(qOpEllipsis)) {
+      parameters.is_variadic = true;
+      if (!next_if(qPuncRPar)) {
+        diagnostic << current() << "Expected ')' after variadic parameter";
       }
-
       break;
     }
 
-    FuncParam param;
-    if (!recurse_fn_parameter(S, rd, param)) {
-      diagnostic << c << "Expected a parameter";
-      return false;
-    }
+    if (let param_opt = recurse_function_parameter(S, rd)) {
+      let param = *param_opt;
+      let tparam =
+          FuncParam{std::get<0>(param), std::get<1>(param), std::get<2>(param)};
 
-    ftype->get_params().push_back(
-        {std::get<0>(param), std::get<1>(param), std::get<2>(param)});
+      parameters.params.push_back(std::move(tparam));
 
-    c = peek();
-    if (c.is<qPuncComa>()) {
-      next();
-      continue;
+      next_if(qPuncComa);
+    } else {
+      diagnostic << next() << "Expected a function parameter";
     }
   }
 
-  c = peek();
-
-  return true;
+  return parameters;
 }
 
-static bool translate_purity(FunctionProperties prop, FuncTy *ftype) {
-  switch (prop._purity) {
-    case Purity::Pure:
-      ftype->set_purity(FuncPurity::PURE);
-      break;
-    case Purity::QuasiPure:
-      ftype->set_purity(FuncPurity::QUASIPURE);
-      break;
-    case Purity::RetroPure:
-      ftype->set_purity(FuncPurity::RETROPURE);
-      break;
-    case Purity::Impure:
-      if (prop._tsafe) {
-        ftype->set_purity(FuncPurity::IMPURE_THREAD_SAFE);
-      } else {
-        ftype->set_purity(FuncPurity::IMPURE_THREAD_UNSAFE);
-      }
-      break;
+static FuncPurity get_purity_specifier(qlex_tok_t &start_pos,
+                                       bool is_thread_safe, bool is_pure,
+                                       bool is_impure, bool is_quasi,
+                                       bool is_retro) {
+  /** Thread safety does not conflict with purity.
+   *  Purity implies thread safety.
+   */
+  (void)is_thread_safe;
+
+  /* Ensure that there is no duplication of purity specifiers */
+  if ((is_impure + is_pure + is_quasi + is_retro) > 1) {
+    diagnostic << start_pos << "Conflicting purity specifiers";
+    return FuncPurity::IMPURE_THREAD_UNSAFE;
   }
 
-  return true;
+  if (is_pure) {
+    return FuncPurity::PURE;
+  } else if (is_quasi) {
+    return FuncPurity::QUASI;
+  } else if (is_retro) {
+    return FuncPurity::RETRO;
+  } else if (is_thread_safe) {
+    return FuncPurity::IMPURE_THREAD_SAFE;
+  } else {
+    return FuncPurity::IMPURE_THREAD_UNSAFE;
+  }
 }
 
-static bool recurse_constraints(qlex_tok_t &c, qlex_t &rd, npar_t &S,
-                                Expr *&req_in, Expr *&req_out) {
-  if (c.is<qKPromise>()) {
-    /* Parse constraint block */
-    next();
+static std::optional<std::pair<SmallString, bool>> recurse_function_capture(
+    qlex_t &rd) {
+  bool is_ref = false;
 
-    c = next();
-    if (!c.is<qPuncLCur>()) {
-      diagnostic << c << "Expected '{' after 'req'";
+  if (next_if(qOpBitAnd)) {
+    is_ref = true;
+  }
+
+  if (let name = next_if(qName)) {
+    return {{SaveString(name->as_string(&rd)), is_ref}};
+  } else {
+    diagnostic << next() << "Expected a capture name";
+  }
+
+  return std::nullopt;
+}
+
+static void recurse_function_ambigouis(npar_t &S, qlex_t &rd,
+                                       ExpressionList &attributes,
+                                       FnCaptures &captures, FuncPurity &purity,
+                                       std::string_view &function_name) {
+  enum class State {
+    Main,
+    AttributesSection,
+    CaptureSection,
+    End,
+  } state = State::Main;
+
+  bool is_thread_safe = false, is_pure = false, is_impure = false,
+       is_quasi = false, is_retro = false;
+  bool parsed_attributes = false, parsed_captures = false;
+  qlex_tok_t start_pos = current();
+
+  while (state != State::End) {
+    if (next_if(qEofF)) {
+      diagnostic << current() << "Unexpected EOF in function attributes";
+      break;
     }
 
-    while (true) {
-      c = peek();
-      if (c.is(qEofF)) {
-        diagnostic << c << "Unexpected EOF in 'req' block";
-        return false;
-      }
+    switch (state) {
+      case State::Main: {
+        if (let identifier = next_if(qName)) {
+          static const std::unordered_set<std::string_view> reserved_words = {
+              "foreign", "inline"};
 
-      if (c.is<qPuncRCur>()) {
-        next();
+          let name = identifier->as_string(&rd);
+
+          if (name == "pure") {
+            is_pure = true;
+          } else if (name == "impure") {
+            is_impure = true;
+          } else if (name == "tsafe") {
+            is_thread_safe = true;
+          } else if (name == "quasi") {
+            is_quasi = true;
+          } else if (name == "retro") {
+            is_retro = true;
+          } else if (reserved_words.contains(name)) {
+            attributes.push_back(make<Ident>(SaveString(name)));
+          } else {
+            function_name = name;
+
+            state = State::End;
+          }
+        } else if (next_if(qPuncLBrk)) {
+          if (parsed_attributes && parsed_captures) {
+            diagnostic
+                << current()
+                << "Unexpected '[' after function attributes and captures";
+          } else if (parsed_attributes && !parsed_captures) {
+            state = State::CaptureSection;
+          } else if (!parsed_attributes && parsed_captures) {
+            state = State::AttributesSection;
+          } else {
+            qcore_assert(!parsed_attributes && !parsed_captures);
+
+            let tok = peek();
+
+            /* No attribute expression may begin with '&' */
+            if (tok.is<qOpBitAnd>()) {
+              state = State::CaptureSection;
+            } else if (!tok.is(qName)) {
+              state = State::AttributesSection;
+            } else { /* Ambiguous edge case */
+              state = State::CaptureSection;
+            }
+          }
+        } else if (let tok = peek(); tok.is<qPuncLPar>() || tok.is<qOpLT>()) {
+          state = State::End; /* Begin parsing parameters or template options */
+        } else {
+          diagnostic << next() << "Unexpected token in function declaration";
+        }
+
         break;
       }
 
-      next();
-      if (c.is<qOpIn>()) {
-        Expr *expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+      case State::AttributesSection: {
+        parsed_attributes = true;
 
-        c = next();
-        if (!c.is<qPuncSemi>()) {
-          diagnostic << c << "Expected ';' after expression";
-          return false;
+        while (true) {
+          if (next_if(qEofF)) {
+            diagnostic << current() << "Unexpected EOF in function attributes";
+            break;
+          }
+
+          if (next_if(qPuncRBrk)) {
+            state = State::Main;
+            break;
+          }
+
+          let attribute = recurse_expr(
+              S, rd,
+              {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRBrk)});
+
+          attributes.push_back(attribute);
+
+          next_if(qPuncComa);
         }
 
-        if (req_in) {
-          req_in = make<BinExpr>(req_in, qOpLogicAnd, expr);
-        } else {
-          req_in = expr;
-        }
-      } else if (c.is<qOpOut>()) {
-        Expr *expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+        break;
+      }
 
-        c = next();
-        if (!c.is<qPuncSemi>()) {
-          diagnostic << c << "Expected ';' after expression";
-          return false;
+      case State::CaptureSection: {
+        parsed_captures = true;
+
+        while (true) {
+          if (next_if(qEofF)) {
+            diagnostic << current() << "Unexpected EOF in function captures";
+            break;
+          }
+
+          if (next_if(qPuncRBrk)) {
+            state = State::Main;
+            break;
+          }
+
+          if (let capture = recurse_function_capture(rd)) {
+            captures.push_back(*capture);
+          }
+
+          next_if(qPuncComa);
         }
 
-        if (req_out) {
-          req_out = make<BinExpr>(req_out, qOpLogicAnd, expr);
-        } else {
-          req_out = expr;
-        }
-      } else {
-        diagnostic << c << "Expected 'in' or 'out' after 'req'";
-        return false;
+        break;
+      }
+
+      case State::End: {
+        break;
       }
     }
-
-    c = peek();
   }
 
-  return true;
+  purity = get_purity_specifier(start_pos, is_thread_safe, is_pure, is_impure,
+                                is_quasi, is_retro);
 }
 
-Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
-  FnDef *fndecl = make<FnDef>(SaveString(""), nullptr);
-  FuncTy *ftype = make<FuncTy>();
-  Type *ret_type = nullptr;
+static Type *recurse_function_return_type(npar_t &S, qlex_t &rd) {
+  if (next_if(qPuncColn)) {
+    return recurse_type(S, rd);
+  } else {
+    let type = make<InferTy>();
+    type->set_offset(current().start);
+
+    return type;
+  }
+}
+
+static std::optional<Stmt *> recurse_function_body(npar_t &S, qlex_t &rd,
+                                                   bool restrict_decl_only) {
+  if (restrict_decl_only || next_if(qPuncSemi)) {
+    return std::nullopt;
+  } else if (next_if(qOpArrow)) {
+    return recurse_block(S, rd, false, true);
+  } else {
+    return recurse_block(S, rd, true, false);
+  }
+}
+
+Stmt *npar::recurse_function(npar_t &S, qlex_t &rd, bool restrict_decl_only) {
+  /* fn <attributes>? <modifiers>? <capture_list>?
+   * <name><template_parameters>?(<parameters>?)<: return_type>? <body>? */
+
+  let start_pos = current().start;
+
+  ExpressionList attributes;
   FnCaptures captures;
-  qlex_tok_t tok{};
-  FunctionProperties prop;
-  bool is_variadic = false;
-  std::optional<TemplateParameters> params;
+  FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE;
+  std::string_view function_name;
 
-  prop = read_function_properties(rd);
+  recurse_function_ambigouis(S, rd, attributes, captures, purity,
+                             function_name);
 
-  { /* Parse function name or anonymous function capture list */
-    tok = peek();
+  let template_parameters = recurse_template_parameters(S, rd);
+  let parameters = recurse_function_parameters(S, rd);
+  let return_type = recurse_function_return_type(S, rd);
+  let body = recurse_function_body(S, rd, restrict_decl_only);
 
-    if (!recurse_captures_and_name(rd, fndecl, captures)) {
-      diagnostic << tok << "Expected a function name or capture list";
-      return mock_stmt(QAST_FUNCTION);
-    }
-  }
+  /// TODO: Implement function contract pre and post conditions
 
-  { /* Parse possible template parameters */
-    tok = peek();
+  let function =
+      make<Function>(attributes, purity, captures, SaveString(function_name),
+                     template_parameters, parameters, return_type, std::nullopt,
+                     std::nullopt, body);
+  function->set_offset(start_pos);
 
-    if (!recurse_template_parameters(S, rd, fndecl->get_template_params())) {
-      diagnostic << tok << "Failed to parse template parameters";
-      return mock_stmt(QAST_FUNCTION);
-    }
-  }
-
-  { /* Parse function parameters */
-    tok = peek();
-
-    if (!recurse_parameters(S, rd, ftype, is_variadic)) {
-      diagnostic << tok << "Failed to parse function parameters";
-      return mock_stmt(QAST_FUNCTION);
-    }
-  }
-
-  { /* Convert function properties */
-    tok = peek();
-
-    if (!translate_purity(prop, ftype)) {
-      diagnostic << tok << "Failed to translate purity";
-      return mock_stmt(QAST_FUNCTION);
-    }
-  }
-
-  tok = peek();
-
-  { /* Set function type and assign to function declaration */
-    ftype->set_variadic(is_variadic);
-    ftype->set_foreign(prop._foreign);
-    fndecl->set_type(ftype);
-  }
-
-  { /* Function declaration with implicit return type of void */
-    if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() ||
-        tok.is<qPuncSemi>()) {
-      ftype->set_return_ty(make<VoidTy>());
-
-      return fndecl;
-    }
-  }
-
-  { /* Function with explicit return type */
-    if (tok.is<qPuncColn>()) {
-      next();
-
-      ret_type = recurse_type(S, rd);
-
-      ftype->set_return_ty(ret_type);
-      tok = peek();
-
-      { /* Function declaration with explicit return type */
-        if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() ||
-            tok.is<qPuncSemi>()) {
-          return fndecl;
-        }
-      }
-    }
-  }
-
-  { /* Function definition with arrow syntax */
-    if (tok.is<qOpArrow>()) {
-      next();
-
-      Stmt *fnbody = nullptr;
-
-      fnbody = recurse_block(S, rd, false, true);
-
-      if (!ftype->get_return_ty()) {
-        ftype->set_return_ty(make<VoidTy>());
-      }
-
-      while ((tok = peek()).is<qPuncSemi>()) {
-        next();
-      }
-
-      fndecl->set_body(fnbody);
-      fndecl->set_captures(captures);
-
-      return fndecl;
-    }
-  }
-
-  if (tok.is<qPuncLCur>()) {
-    Stmt *fnbody = nullptr;
-    Expr *req_in = nullptr, *req_out = nullptr;
-
-    fnbody = recurse_block(S, rd);
-
-    tok = peek();
-
-    if (!recurse_constraints(tok, rd, S, req_in, req_out)) {
-      return mock_stmt(QAST_FUNCTION);
-    }
-
-    if (!ftype->get_return_ty()) {
-      ftype->set_return_ty(make<VoidTy>());
-    }
-
-    fndecl->set_body(fnbody);
-    fndecl->set_precond(req_in);
-    fndecl->set_postcond(req_out);
-    fndecl->set_captures(captures);
-
-    return fndecl;
-  }
-
-  if (ret_type) {
-    diagnostic << tok << "Expected '{', '=>', or ';' in function declaration";
-    return mock_stmt(QAST_FUNCTION);
-  }
-
-  diagnostic << tok
-             << "Expected ':', '{', '=>', or ';' in function declaration";
-  return mock_stmt(QAST_FUNCTION);
+  return function;
 }

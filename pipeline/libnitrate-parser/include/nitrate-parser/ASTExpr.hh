@@ -31,12 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_ASTEXPR_H__
-#define __NITRATE_PARSER_ASTEXPR_H__
-
-#ifndef __cplusplus
-#error "This code requires c++"
-#endif
+#ifndef __NITRATE_AST_ASTEXPR_H__
+#define __NITRATE_AST_ASTEXPR_H__
 
 #include <nitrate-parser/ASTBase.hh>
 
@@ -179,12 +175,12 @@ namespace npar {
   };
 
   class TemplCall : public Expr {
-    TemplateArgs m_template_args;
+    CallArgs m_template_args;
     Expr *m_func;
     CallArgs m_args;
 
   public:
-    TemplCall(Expr *func, CallArgs args = {}, TemplateArgs template_args = {})
+    TemplCall(Expr *func, CallArgs args = {}, CallArgs template_args = {})
         : Expr(QAST_TEMPL_CALL),
           m_template_args(template_args),
           m_func(func),

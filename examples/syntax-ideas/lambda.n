@@ -76,10 +76,10 @@ scope linux::kern::DRM: [linux::kern::drm::util, linux::kern::vbuf_api] {
     /* ================= VIDEO BUFFER API V1 ================= */
     pub fn impure noexcept vbuf_lfb_create(): kcode;
     pub fn impure noexcept vbuf_lfb_destroy(): kcode;
-    pub fn quasipure noexcept vbuf_lfb_get(): VBufLFB?;
+    pub fn quasi noexcept vbuf_lfb_get(): VBufLFB?;
 
     /* ================== VIDEO MODE API V1 ================== */
     pub fn impure noexcept vmode_set(mode: VModeName): kcode;
-    pub fn quasipure noexcept vmode_get(): VModeName;
+    pub fn quasi noexcept vmode_get(): VModeName;
   } with [interface];
 }

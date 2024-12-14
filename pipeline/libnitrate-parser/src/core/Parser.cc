@@ -36,14 +36,13 @@
 #include <nitrate-parser/Parser.h>
 
 #include <atomic>
-#include <core/ParserStruct.hh>
+#include <core/Context.hh>
 #include <cstring>
 #include <descent/Recurse.hh>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTReader.hh>
 #include <nitrate-parser/ASTWriter.hh>
-#include <sstream>
 
 using namespace npar;
 
@@ -172,7 +171,7 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKFn: {
-        node = recurse_function(S, rd);
+        node = recurse_function(S, rd, false);
         break;
       }
 

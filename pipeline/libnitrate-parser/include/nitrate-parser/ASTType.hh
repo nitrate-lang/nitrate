@@ -31,12 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_ASTTYPE_H__
-#define __NITRATE_PARSER_ASTTYPE_H__
-
-#ifndef __cplusplus
-#error "This code requires c++"
-#endif
+#ifndef __NITRATE_AST_ASTTYPE_H__
+#define __NITRATE_AST_ASTTYPE_H__
 
 #include <nitrate-parser/ASTBase.hh>
 
@@ -57,10 +53,10 @@ namespace npar {
 
   class TemplType : public Type {
     Type *m_template;
-    ExpressionList m_args;
+    CallArgs m_args;
 
   public:
-    TemplType(Type *templ, const ExpressionList &args)
+    TemplType(Type *templ, const CallArgs &args)
         : Type(QAST_TEMPLATE), m_template(templ), m_args(args) {}
 
     let get_template() const { return m_template; }
@@ -199,66 +195,24 @@ namespace npar {
   };
 
   class FuncTy : public Type {
+    ExpressionList m_attributes;
     FuncParams m_params;
     Type *m_return;
     FuncPurity m_purity;
-    bool m_variadic;
-    bool m_is_foreign;
-    bool m_noreturn;
 
   public:
-    FuncTy()
+    FuncTy(Type *return_type, FuncParams parameters, FuncPurity purity,
+           ExpressionList attributes)
         : Type(QAST_FUNCTOR),
-          m_return(nullptr),
-          m_purity(FuncPurity::IMPURE_THREAD_UNSAFE),
-          m_variadic(false),
-          m_is_foreign(false),
-          m_noreturn(false) {}
-
-    FuncTy(Type *return_type, FuncParams parameters, bool variadic = false,
-           FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE,
-           bool is_foreign = false, bool noreturn = false)
-        : Type(QAST_FUNCTOR),
+          m_attributes(attributes),
           m_params(parameters),
           m_return(return_type),
-          m_purity(purity),
-          m_variadic(variadic),
-          m_is_foreign(is_foreign),
-          m_noreturn(noreturn) {
-      assert(!noreturn || (purity == FuncPurity::IMPURE_THREAD_UNSAFE ||
-                           purity == FuncPurity::IMPURE_THREAD_SAFE));
-    }
-    FuncTy(Type *return_type, std::vector<Type *, Arena<Type *>> parameters,
-           bool variadic = false,
-           FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE,
-           bool is_foreign = false, bool noreturn = false)
-        : Type(QAST_FUNCTOR),
-          m_return(return_type),
-          m_purity(purity),
-          m_variadic(variadic),
-          m_is_foreign(is_foreign),
-          m_noreturn(noreturn) {
-      assert(!noreturn || (purity == FuncPurity::IMPURE_THREAD_UNSAFE ||
-                           purity == FuncPurity::IMPURE_THREAD_SAFE));
+          m_purity(purity) {}
 
-      for (size_t i = 0; i < parameters.size(); i++) {
-        m_params.push_back(
-            FuncParam("_" + std::to_string(i), parameters[i], nullptr));
-      }
-    }
-
-    let is_noreturn() const { return m_noreturn; }
-    let get_return_ty() const { return m_return; }
+    let get_return() const { return m_return; }
     let get_params() const { return m_params; }
     let get_purity() const { return m_purity; }
-    let is_variadic() const { return m_variadic; }
-    let is_foreign() const { return m_is_foreign; }
-
-    void set_return_ty(Type *return_ty) { m_return = return_ty; }
-    void set_purity(FuncPurity purity) { m_purity = purity; }
-    void set_variadic(bool variadic) { m_variadic = variadic; }
-    void set_foreign(bool is_foreign) { m_is_foreign = is_foreign; }
-    auto &get_params() { return m_params; }
+    let get_attributes() const { return m_attributes; }
   };
 }  // namespace npar
 

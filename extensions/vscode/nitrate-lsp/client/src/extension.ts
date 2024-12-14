@@ -1,5 +1,6 @@
-import * as path from 'path';
 import { workspace, ExtensionContext } from 'vscode';
+const fs = require('fs');
+const path = require('path');
 
 import {
 	LanguageClient,
@@ -10,13 +11,36 @@ import {
 
 let client: LanguageClient;
 
+function findExecutablePath(executableName: string): string | undefined {
+	const envPath = process.env.PATH;
+	const pathDirs = envPath.split(path.delimiter);
+
+	for (let i = 0; i < pathDirs.length; i++) {
+		const fullPath = path.join(pathDirs[i], executableName);
+
+		try {
+			const stats = fs.statSync(fullPath);
+			if (stats.isFile() && (stats.mode & 0o111) !== 0) {
+				return fullPath;
+			}
+		} catch (err) {
+			continue;
+		}
+	}
+
+	return undefined;
+}
+
 export function activate(context: ExtensionContext) {
 	const homeDir = require('os').homedir();
-
 	const lspLogPath = path.join(homeDir, 'nitrated-lsp.log');
+	const lspBinaryPath = findExecutablePath('nitrate');
+	if (!lspBinaryPath) {
+		throw new Error('Could not find nitrate binary in PATH');
+	}
 
 	const serverOptions: ServerOptions = {
-		command: "no3",
+		command: lspBinaryPath,
 		args: ['lsp', "--log", lspLogPath],
 		options: { env: { "NO_COLOR": "1" } },
 		transport: TransportKind.stdio

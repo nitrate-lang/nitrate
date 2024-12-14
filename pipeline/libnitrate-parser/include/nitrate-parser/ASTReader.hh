@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSER_READER_H__
-#define __NITRATE_PARSER_READER_H__
+#ifndef __NITRATE_AST_READER_H__
+#define __NITRATE_AST_READER_H__
 
 #include <nitrate-core/Macro.h>
 
@@ -53,8 +53,6 @@ namespace npar {
     std::stack<npar_node_t*> m_parse;
 
     void handle_state();
-
-    /// TODO: Implement state
 
   protected:
     void str(std::string_view str);
