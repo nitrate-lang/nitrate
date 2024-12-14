@@ -569,12 +569,14 @@ void AST_Writer::visit(FuncTy const& n) {
   }
 
   { /* Write parameters */
-    string("parameters");
+    string("input");
     begin_obj(2);
+    let params = n.get_params();
+
+    string("variadic");
+    boolean(params.is_variadic);
 
     string("params");
-
-    let params = n.get_params();
     begin_arr(params.params.size());
     std::for_each(params.params.begin(), params.params.end(), [&](let param) {
       begin_obj(3);
@@ -590,9 +592,6 @@ void AST_Writer::visit(FuncTy const& n) {
       end_obj();
     });
     end_arr();
-
-    string("variadic");
-    boolean(params.is_variadic);
 
     end_obj();
   }
@@ -1448,9 +1447,10 @@ void AST_Writer::visit(FnDef const& n) {
 
     begin_obj(2);
 
-    string("variadic");
+    string("input");
     boolean(params.is_variadic);
 
+    string("params");
     begin_arr(params.params.size());
     std::for_each(params.params.begin(), params.params.end(), [&](let param) {
       begin_obj(3);

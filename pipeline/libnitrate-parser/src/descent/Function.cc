@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: Cleanup this code; it's a mess from refactoring.
-
 #include <descent/Recurse.hh>
 
 using namespace npar;
@@ -109,18 +107,107 @@ std::optional<TemplateParameters> recurse_template_parameters(npar_t &S,
   return params;
 }
 
-// static std::optional<FunctionAttributes> recurse_function_attributes(
-//     npar_t &S, qlex_t &rd) {
-//   /// TODO: Implement function attributes
-//   qcore_implement();
-// }
+static FuncParams recurse_function_parameters(npar_t &S, qlex_t &rd) {
+  FuncParams parameters;
+
+  if (!next_if(qPuncLPar)) {
+    diagnostic << current() << "Expected '(' after function name";
+    return parameters;
+  }
+
+  while (true) {
+    if (next_if(qEofF)) {
+      diagnostic << current() << "Unexpected EOF in function parameters";
+      return parameters;
+    }
+
+    if (next_if(qPuncRPar)) {
+      break;
+    }
+
+    if (next_if(qOpEllipsis)) {
+      parameters.is_variadic = true;
+      if (!next_if(qPuncRPar)) {
+        diagnostic << current() << "Expected ')' after variadic parameter";
+      }
+      break;
+    }
+
+    if (let param_opt = recurse_function_parameter(S, rd)) {
+      let param = *param_opt;
+      let tparam =
+          FuncParam{std::get<0>(param), std::get<1>(param), std::get<2>(param)};
+
+      parameters.params.push_back(std::move(tparam));
+
+      next_if(qPuncComa);
+    } else {
+      diagnostic << current() << "Expected a function parameter";
+    }
+  }
+
+  return parameters;
+}
+
+static void recurse_function_ambigouis(npar_t &S, qlex_t &rd,
+                                       ExpressionList &attrs,
+                                       FnCaptures &captures,
+                                       FuncPurity &purity) {
+  return;
+  /// TODO: Implement function attributes
+  qcore_implement();
+}
+
+static std::string_view recurse_function_name(qlex_t &rd) {
+  if (let name = next_if(qName)) {
+    return name->as_string(&rd);
+  } else {
+    return "";
+  }
+}
+
+static Type *recurse_function_return_type(npar_t &S, qlex_t &rd) {
+  if (next_if(qPuncColn)) {
+    return recurse_type(S, rd);
+  } else {
+    let type = make<InferTy>();
+    type->set_offset(current().start);
+
+    return type;
+  }
+}
+
+static std::optional<Stmt *> recurse_function_body(npar_t &S, qlex_t &rd) {
+  return std::nullopt;
+  /// TODO: Implement function body
+  qcore_implement();
+}
 
 Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
   /* fn <attributes>? <modifiers>? <capture_list>?
    * <name><template_parameters>?(<parameters>?)<: return_type>? <body>? */
 
-  /// TODO: Implement function parsing
-  qcore_implement();
-  (void)S;
-  (void)rd;
+  let start_pos = current().start;
+
+  ExpressionList attributes;
+  FnCaptures captures;
+  FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE;
+
+  recurse_function_ambigouis(S, rd, attributes, captures, purity);
+
+  let function_name = recurse_function_name(rd);
+  let template_parameters = recurse_template_parameters(S, rd);
+  let parameters = recurse_function_parameters(S, rd);
+  let return_type = recurse_function_return_type(S, rd);
+  let body = recurse_function_body(S, rd);
+
+  /// TODO: Implement function contract pre and post conditions
+
+  let function =
+      make<FnDef>(attributes, purity, captures, SaveString(function_name),
+                  template_parameters, parameters, return_type, std::nullopt,
+                  std::nullopt, body);
+  function->set_offset(start_pos);
+
+  return function;
 }
