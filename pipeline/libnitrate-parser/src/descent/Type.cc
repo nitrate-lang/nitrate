@@ -137,7 +137,7 @@ static Type *recurse_type_suffix(npar_t &S, qlex_t &rd, Type *base) {
 }
 
 static Type *recurse_function_type(npar_t &S, qlex_t &rd) {
-  let fn = recurse_function(S, rd);
+  let fn = recurse_function(S, rd, true);
 
   if (!fn->is<Function>() || !fn->as<Function>()->is_decl()) {
     diagnostic << current()

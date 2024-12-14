@@ -50,7 +50,7 @@ namespace npar {
   Stmt *recurse_enum(npar_t &S, qlex_t &rd);
   Stmt *recurse_struct(npar_t &S, qlex_t &rd, CompositeType type);
   Stmt *recurse_scope(npar_t &S, qlex_t &rd);
-  Stmt *recurse_function(npar_t &S, qlex_t &rd);
+  Stmt *recurse_function(npar_t &S, qlex_t &rd, bool restrict_decl_only);
   Type *recurse_type(npar_t &S, qlex_t &rd);
   Stmt *recurse_typedef(npar_t &S, qlex_t &rd);
   Stmt *recurse_return(npar_t &S, qlex_t &rd);

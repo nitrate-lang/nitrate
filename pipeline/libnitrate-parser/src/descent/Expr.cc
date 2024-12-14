@@ -321,7 +321,7 @@ Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
             continue;
           }
           case qKFn: {
-            Stmt *f = recurse_function(S, rd);
+            Stmt *f = recurse_function(S, rd, false);
             StmtExpr *adapter = make<StmtExpr>(f);
 
             if (peek().is<qPuncLPar>()) {

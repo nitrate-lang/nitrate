@@ -172,7 +172,7 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKFn: {
-        node = recurse_function(S, rd);
+        node = recurse_function(S, rd, false);
         break;
       }
 

@@ -177,13 +177,18 @@ static Type *recurse_function_return_type(npar_t &S, qlex_t &rd) {
   }
 }
 
-static std::optional<Stmt *> recurse_function_body(npar_t &S, qlex_t &rd) {
-  return std::nullopt;
-  /// TODO: Implement function body
-  qcore_implement();
+static std::optional<Stmt *> recurse_function_body(npar_t &S, qlex_t &rd,
+                                                   bool restrict_decl_only) {
+  if (restrict_decl_only || next_if(qPuncSemi)) {
+    return std::nullopt;
+  } else if (next_if(qOpArrow)) {
+    return recurse_block(S, rd, false, true);
+  } else {
+    return recurse_block(S, rd, true, false);
+  }
 }
 
-Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
+Stmt *npar::recurse_function(npar_t &S, qlex_t &rd, bool restrict_decl_only) {
   /* fn <attributes>? <modifiers>? <capture_list>?
    * <name><template_parameters>?(<parameters>?)<: return_type>? <body>? */
 
@@ -199,7 +204,7 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
   let template_parameters = recurse_template_parameters(S, rd);
   let parameters = recurse_function_parameters(S, rd);
   let return_type = recurse_function_return_type(S, rd);
-  let body = recurse_function_body(S, rd);
+  let body = recurse_function_body(S, rd, restrict_decl_only);
 
   /// TODO: Implement function contract pre and post conditions
 

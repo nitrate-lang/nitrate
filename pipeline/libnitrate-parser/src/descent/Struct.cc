@@ -153,7 +153,7 @@ static void recurse_struct_method_or_field(npar_t &S, qlex_t &rd,
   bool is_static = next_if(qKStatic).has_value();
 
   if (next_if(qKFn)) { /* Parse method */
-    let method = recurse_function(S, rd);
+    let method = recurse_function(S, rd, false);
 
     if (is_static) {
       body.static_methods.push_back({vis, method});
