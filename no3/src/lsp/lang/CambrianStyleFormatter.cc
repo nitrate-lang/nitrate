@@ -497,13 +497,13 @@ void CambrianFormatter::visit(FuncTy const& n) {
       break;
     }
 
-    case FuncPurity::QUASIPURE: {
-      line << " quasipure";
+    case FuncPurity::QUASI: {
+      line << " quasi";
       break;
     }
 
-    case FuncPurity::RETROPURE: {
-      line << " retropure";
+    case FuncPurity::RETRO: {
+      line << " retro";
       break;
     }
   }
@@ -1073,13 +1073,13 @@ void CambrianFormatter::visit(FnDef const& n) {
       break;
     }
 
-    case FuncPurity::QUASIPURE: {
-      line << " quasipure";
+    case FuncPurity::QUASI: {
+      line << " quasi";
       break;
     }
 
-    case FuncPurity::RETROPURE: {
-      line << " retropure";
+    case FuncPurity::RETRO: {
+      line << " retro";
       break;
     }
   }

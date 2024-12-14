@@ -121,8 +121,8 @@ namespace nr {
   enum class Purity {
     Impure = 0,
     Pure = 1,
-    Quasipure = 2,
-    Retropure = 3,
+    Quasi = 2,
+    Retro = 3,
   };
 
   enum class Vis {

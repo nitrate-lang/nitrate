@@ -237,8 +237,8 @@ namespace npar {
     IMPURE_THREAD_UNSAFE,
     IMPURE_THREAD_SAFE,
     PURE,
-    QUASIPURE,
-    RETROPURE,
+    QUASI,
+    RETRO,
   };
 
   enum class SafetyMode {

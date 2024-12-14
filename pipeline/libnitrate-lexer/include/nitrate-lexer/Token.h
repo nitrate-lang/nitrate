@@ -149,8 +149,8 @@ typedef enum qlex_key_t {
   qKImpure,    /* 'impure' */
   qKTsafe,     /* 'tsafe' */
   qKPure,      /* 'pure' */
-  qKQuasipure, /* 'quasipure' */
-  qKRetropure, /* 'retropure' */
+  qKQuasi,     /* 'quasi' */
+  qKRetro,     /* 'retro' */
   qKInline,    /* 'inline' */
   qKUnsafe,    /* 'unsafe' */
   qKSafe,      /* 'safe' */

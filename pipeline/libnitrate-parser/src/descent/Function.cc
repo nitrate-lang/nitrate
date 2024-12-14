@@ -110,6 +110,9 @@ std::optional<TemplateParameters> recurse_template_parameters(npar_t &S,
 }
 
 Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
+  /* fn <attributes>? <modifiers>? <capture_list>? <name>?(<parameters>?)<:
+   * return_type>? <body>? */
+
   /// TODO: Implement function parsing
   qcore_implement();
   (void)S;

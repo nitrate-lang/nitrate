@@ -1106,10 +1106,10 @@ static std::pair<Purity, IsThreadSafe> convert_purity(npar::FuncPurity x) {
       return {Purity::Impure, true};
     case npar::FuncPurity::PURE:
       return {Purity::Pure, true};
-    case npar::FuncPurity::QUASIPURE:
-      return {Purity::Quasipure, true};
-    case npar::FuncPurity::RETROPURE:
-      return {Purity::Retropure, true};
+    case npar::FuncPurity::QUASI:
+      return {Purity::Quasi, true};
+    case npar::FuncPurity::RETRO:
+      return {Purity::Retro, true};
   }
 }
 

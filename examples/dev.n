@@ -1,1 +1,3 @@
-scope @(return "name" .. "123");
+fn [noreturn] impure ihdl_80(S: CPU) {
+
+}

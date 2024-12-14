@@ -263,11 +263,11 @@ scope orbit::core::net::socket {
         /// @brief Create a new socket.
         /// @param stack The OSI stack to use.
         /// @return A new socket, or error.
-        static fn quasipure noexcept new(stack: SocketStack): Socket?;
+        static fn quasi noexcept new(stack: SocketStack): Socket?;
 
         /// @brief Close the socket.
         /// @return Void or error.
-        fn retropure noexcept close(mode: CloseMode = CloseMode::Both): void?;
+        fn retro noexcept close(mode: CloseMode = CloseMode::Both): void?;
 
         /// @brief Send data over the socket.
         /// @param data The data to send.

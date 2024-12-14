@@ -538,21 +538,21 @@ void AST_Writer::visit(FuncTy const& n) {
       break;
     }
 
-    case FuncPurity::QUASIPURE: {
+    case FuncPurity::QUASI: {
       string("thread_safe");
       boolean(true);
 
       string("purity");
-      string("quasipure");
+      string("quasi");
       break;
     }
 
-    case FuncPurity::RETROPURE: {
+    case FuncPurity::RETRO: {
       string("thread_safe");
       boolean(true);
 
       string("purity");
-      string("retropure");
+      string("retro");
       break;
     }
   }

@@ -20,7 +20,7 @@ group datum_t {
   pub annual_income_dollar: u32,
 }
 
-fn quasipure get_data(): std::vecfs<datum_t>? {
+fn quasi get_data(): std::vecfs<datum_t>? {
   const src_uri = @std::env_param("SOURCE_URI");
   
   var conn = sysio::open(src_uri, "r") catch (e) {
