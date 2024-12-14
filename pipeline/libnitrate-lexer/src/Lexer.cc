@@ -211,14 +211,6 @@ namespace qlex {
   }();
   /// END:   LEXER LOOKUP TABLES
   ///============================================================================///
-
-  ///============================================================================///
-  /// BEGIN: LEXER INTERNAL TYPES
-  typedef std::string ident_buf_t;
-  typedef std::string num_buf_t;
-  /// END:   LEXER INTERNAL TYPES
-  ///============================================================================///
-
 }  // namespace qlex
 
 static bool lex_is_space(char c) {
@@ -234,9 +226,8 @@ enum class NumType {
   Floating,
 };
 
-static thread_local boost::unordered_map<qlex::num_buf_t, NumType> num_cache;
-static thread_local boost::unordered_map<qlex::num_buf_t, qlex::num_buf_t>
-    can_cache;
+static thread_local boost::unordered_map<std::string, NumType> num_cache;
+static thread_local boost::unordered_map<std::string, std::string> can_cache;
 
 ///============================================================================///
 
@@ -318,7 +309,7 @@ static bool canonicalize_float(std::string_view input, std::string &norm) {
   return true;
 }
 
-static bool canonicalize_number(qlex::num_buf_t &number, std::string &norm,
+static bool canonicalize_number(std::string &number, std::string &norm,
                                 NumType type) {
   if (can_cache.size() > 4096) {
     can_cache = {};
