@@ -43,8 +43,8 @@ struct StructContent {
   StructDefStaticMethods static_methods;
 };
 
-extern bool recurse_template_parameters(
-    npar_t &S, qlex_t &rd, std::optional<TemplateParameters> &template_params);
+extern std::optional<TemplateParameters> recurse_template_parameters(
+    npar_t &S, qlex_t &rd);
 
 static ExpressionList recurse_struct_attributes(npar_t &S, qlex_t &rd) {
   ExpressionList attributes;
@@ -195,12 +195,7 @@ npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
   let start_pos = current().start;
   let attributes = recurse_struct_attributes(S, rd);
   let name = recurse_struct_name(rd);
-
-  std::optional<TemplateParameters> template_params;
-  if (!recurse_template_parameters(S, rd, template_params)) {
-    diagnostic << current() << "Failed to parse template parameters";
-  }
-
+  let template_params = recurse_template_parameters(S, rd);
   let terms = recurse_struct_terms(rd);
   let[fields, methods, static_methods] = recurse_struct_body(S, rd);
 
