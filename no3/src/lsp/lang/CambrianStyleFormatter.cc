@@ -1126,8 +1126,14 @@ void CambrianFormatter::visit(Function const& n) {
       [&](let) { line << ", "; });
   line << ")";
 
-  line << ": ";
-  n.get_return()->accept(*this);
+  { /* Return type */
+    let return_type = n.get_return();
+
+    if (!return_type->is(QAST_INFER)) {
+      line << ": ";
+      return_type->accept(*this);
+    }
+  }
 
   if (n.is_decl()) {
     line << ";";

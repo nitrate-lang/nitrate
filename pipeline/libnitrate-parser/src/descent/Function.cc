@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <descent/Recurse.hh>
+#include <unordered_set>
 
 using namespace npar;
 
@@ -149,21 +150,107 @@ static FuncParams recurse_function_parameters(npar_t &S, qlex_t &rd) {
   return parameters;
 }
 
-static void recurse_function_ambigouis(npar_t &S, qlex_t &rd,
-                                       ExpressionList &attrs,
-                                       FnCaptures &captures,
-                                       FuncPurity &purity) {
-  return;
-  /// TODO: Implement function attributes
-  qcore_implement();
+static FuncPurity get_purity_specifier(qlex_tok_t &start_pos,
+                                       bool is_thread_safe, bool is_pure,
+                                       bool is_impure, bool is_quasi,
+                                       bool is_retro) {
+  /** Thread safety does not conflict with purity.
+   *  Purity implies thread safety.
+   */
+  (void)is_thread_safe;
+
+  /* Ensure that there is no duplication of purity specifiers */
+  if ((is_impure + is_pure + is_quasi + is_retro) > 1) {
+    diagnostic << start_pos << "Conflicting purity specifiers";
+    return FuncPurity::IMPURE_THREAD_UNSAFE;
+  }
+
+  if (is_pure) {
+    return FuncPurity::PURE;
+  } else if (is_quasi) {
+    return FuncPurity::QUASI;
+  } else if (is_retro) {
+    return FuncPurity::RETRO;
+  } else if (is_thread_safe) {
+    return FuncPurity::IMPURE_THREAD_SAFE;
+  } else {
+    return FuncPurity::IMPURE_THREAD_UNSAFE;
+  }
 }
 
-static std::string_view recurse_function_name(qlex_t &rd) {
-  if (let name = next_if(qName)) {
-    return name->as_string(&rd);
-  } else {
-    return "";
+static void recurse_function_ambigouis(npar_t &S, qlex_t &rd,
+                                       ExpressionList &attributes,
+                                       FnCaptures &captures, FuncPurity &purity,
+                                       std::string_view &function_name) {
+  enum class State {
+    Main,
+    AttributesSection,
+    CaptureSection,
+    End,
+  } state = State::Main;
+
+  bool is_thread_safe = false, is_pure = false, is_impure = false,
+       is_quasi = false, is_retro = false;
+  qlex_tok_t start_pos = current();
+
+  while (state != State::End) {
+    if (next_if(qEofF)) {
+      diagnostic << current() << "Unexpected EOF in function attributes";
+      break;
+    }
+
+    switch (state) {
+      case State::Main: {
+        if (let identifier = next_if(qName)) {
+          static const std::unordered_set<std::string_view> reserved_words = {
+              "foreign", "inline"};
+
+          let name = identifier->as_string(&rd);
+
+          if (name == "pure") {
+            is_pure = true;
+          } else if (name == "impure") {
+            is_impure = true;
+          } else if (name == "tsafe") {
+            is_thread_safe = true;
+          } else if (name == "quasi") {
+            is_quasi = true;
+          } else if (name == "retro") {
+            is_retro = true;
+          } else if (reserved_words.contains(name)) {
+            attributes.push_back(make<Ident>(SaveString(name)));
+          } else {
+            function_name = name;
+
+            state = State::End;
+          }
+        } else if (next_if(qPuncLBrk)) {
+          /// TODO: Change state
+        } else if (let tok = peek(); tok.is<qPuncLPar>() || tok.is<qOpLT>()) {
+          state = State::End; /* Begin parsing parameters or template options */
+        }
+
+        break;
+      }
+
+      case State::AttributesSection: {
+        /// TODO: Parse function attributes
+        break;
+      }
+
+      case State::CaptureSection: {
+        /// TODO: Parse function captures
+        break;
+      }
+
+      case State::End: {
+        break;
+      }
+    }
   }
+
+  purity = get_purity_specifier(start_pos, is_thread_safe, is_pure, is_impure,
+                                is_quasi, is_retro);
 }
 
 static Type *recurse_function_return_type(npar_t &S, qlex_t &rd) {
@@ -197,10 +284,11 @@ Stmt *npar::recurse_function(npar_t &S, qlex_t &rd, bool restrict_decl_only) {
   ExpressionList attributes;
   FnCaptures captures;
   FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE;
+  std::string_view function_name;
 
-  recurse_function_ambigouis(S, rd, attributes, captures, purity);
+  recurse_function_ambigouis(S, rd, attributes, captures, purity,
+                             function_name);
 
-  let function_name = recurse_function_name(rd);
   let template_parameters = recurse_template_parameters(S, rd);
   let parameters = recurse_function_parameters(S, rd);
   let return_type = recurse_function_return_type(S, rd);
