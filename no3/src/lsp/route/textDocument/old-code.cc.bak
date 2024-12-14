@@ -548,10 +548,6 @@ void recurse(npar_node_t* C) {
         props += " ";
       }
 
-      if (N->is_foreign()) {
-        props += " foreign";
-      }
-
       line << "fn";
       if (!props.empty()) {
         line << std::move(props);
@@ -583,10 +579,10 @@ void recurse(npar_node_t* C) {
 
       line << ")";
 
-      if (N->get_return_ty() &&
-          N->get_return_ty()->getKind() != QAST_VOID) {
+      if (N->get_return() &&
+          N->get_return()->getKind() != QAST_VOID) {
         line << ": ";
-        recurse(N->get_return_ty());
+        recurse(N->get_return());
       }
 
       put_type_metadata(C->as<npar::Type>());
@@ -739,10 +735,6 @@ void recurse(npar_node_t* C) {
         props += " ";
       }
 
-      if (F->is_foreign()) {
-        props += " foreign";
-      }
-
       if (!N->get_name().empty()) {
         props += " " + N->get_name();
       }
@@ -782,10 +774,10 @@ void recurse(npar_node_t* C) {
 
       line << ")";
 
-      if (F->get_return_ty() &&
-          F->get_return_ty()->getKind() != QAST_VOID) {
+      if (F->get_return() &&
+          F->get_return()->getKind() != QAST_VOID) {
         line << ": ";
-        recurse(F->get_return_ty());
+        recurse(F->get_return());
       }
       line << " ";
 

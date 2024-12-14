@@ -145,7 +145,14 @@ static Type *recurse_function_type(npar_t &S, qlex_t &rd) {
     return mock_type();
   }
 
-  return fn->as<FnDef>()->get_type();
+  FnDef *fn_def = fn->as<FnDef>();
+
+  let func_ty = make<FuncTy>(fn_def->get_return(), fn_def->get_params(),
+                             fn_def->get_purity(), fn_def->get_attributes());
+
+  func_ty->set_offset(fn->get_offset());
+
+  return func_ty;
 }
 
 static Type *recurse_opaque_type(qlex_t &rd) {

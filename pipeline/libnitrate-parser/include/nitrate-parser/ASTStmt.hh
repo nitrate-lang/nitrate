@@ -294,49 +294,47 @@ namespace npar {
   };
 
   class FnDef : public Stmt {
+    ExpressionList m_attributes;
+    FuncPurity m_purity;
     FnCaptures m_captures;
     SmallString m_name;
     std::optional<TemplateParameters> m_template_parameters;
-    FuncTy *m_type;
-    Expr *m_precond;
-    Expr *m_postcond;
+    FuncParams m_params;
+    Type *m_return;
+    std::optional<Expr *> m_precond, m_postcond;
     std::optional<Stmt *> m_body;
 
   public:
-    FnDef(SmallString name, FuncTy *type, const FnCaptures &captures = {},
-          std::optional<TemplateParameters> params = std::nullopt,
-          Expr *precond = nullptr, Expr *postcond = nullptr,
-          std::optional<Stmt *> body = std::nullopt)
+    FnDef(ExpressionList attributes, FuncPurity purity, FnCaptures captures,
+          SmallString name, std::optional<TemplateParameters> params,
+          FuncParams fn_params, Type *return_type,
+          std::optional<Expr *> precond, std::optional<Expr *> postcond,
+          std::optional<Stmt *> body)
         : Stmt(QAST_FUNCTION),
+          m_attributes(attributes),
+          m_purity(purity),
           m_captures(captures),
           m_name(name),
           m_template_parameters(params),
-          m_type(type),
+          m_params(fn_params),
+          m_return(return_type),
           m_precond(precond),
           m_postcond(postcond),
           m_body(body) {}
 
+    let get_attributes() const { return m_attributes; }
+    let get_purity() const { return m_purity; }
     let get_captures() const { return m_captures; }
     let get_name() const { return m_name; }
-    let get_body() const { return m_body; }
+    let get_template_params() const { return m_template_parameters; }
+    let get_params() const { return m_params; }
+    let get_return() const { return m_return; }
     let get_precond() const { return m_precond; }
     let get_postcond() const { return m_postcond; }
-    let get_type() const { return m_type; }
-    let get_template_params() const { return m_template_parameters; }
+    let get_body() const { return m_body; }
 
     bool is_decl() const { return !m_body.has_value(); }
     bool is_def() const { return m_body.has_value(); }
-
-    void set_body(std::optional<Stmt *> body) { m_body = body; }
-    void set_precond(Expr *precond) { m_precond = precond; }
-    void set_postcond(Expr *postcond) { m_postcond = postcond; }
-    void set_name(SmallString name) { m_name = name; }
-    void set_type(FuncTy *type) { m_type = type; }
-    void set_captures(FnCaptures captures) { m_captures = captures; }
-
-    std::optional<TemplateParameters> &get_template_params() {
-      return m_template_parameters;
-    }
   };
 
   class StructDef : public Stmt {

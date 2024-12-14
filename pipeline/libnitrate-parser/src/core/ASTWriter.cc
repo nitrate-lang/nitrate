@@ -499,7 +499,7 @@ void AST_Writer::visit(RefTy const& n) {
 }
 
 void AST_Writer::visit(FuncTy const& n) {
-  begin_obj(12);
+  begin_obj(10);
 
   string("kind");
   string(n.getKindName());
@@ -508,17 +508,18 @@ void AST_Writer::visit(FuncTy const& n) {
 
   write_type_metadata(n);
 
+  { /* Write attributes */
+    string("attributes");
+
+    let attrs = n.get_attributes();
+    begin_arr(attrs.size());
+    std::for_each(attrs.begin(), attrs.end(),
+                  [&](let attr) { attr->accept(*this); });
+    end_arr();
+  }
+
   string("return");
-  n.get_return_ty()->accept(*this);
-
-  string("variadic");
-  boolean(n.is_variadic());
-
-  string("foreign");
-  boolean(n.is_foreign());
-
-  string("noreturn");
-  boolean(n.is_noreturn());
+  n.get_return()->accept(*this);
 
   switch (n.get_purity()) {
     case FuncPurity::IMPURE_THREAD_UNSAFE: {
@@ -568,11 +569,14 @@ void AST_Writer::visit(FuncTy const& n) {
   }
 
   { /* Write parameters */
+    string("parameters");
+    begin_obj(2);
+
     string("params");
 
     let params = n.get_params();
-    begin_arr(params.size());
-    std::for_each(params.begin(), params.end(), [&](let param) {
+    begin_arr(params.params.size());
+    std::for_each(params.params.begin(), params.params.end(), [&](let param) {
       begin_obj(3);
       string("name");
       string(*std::get<0>(param));
@@ -586,6 +590,11 @@ void AST_Writer::visit(FuncTy const& n) {
       end_obj();
     });
     end_arr();
+
+    string("variadic");
+    boolean(params.is_variadic);
+
+    end_obj();
   }
 
   end_obj();
@@ -1320,21 +1329,74 @@ void AST_Writer::visit(TypedefStmt const& n) {
 }
 
 void AST_Writer::visit(FnDef const& n) {
-  begin_obj(9);
+  begin_obj(13);
 
   string("kind");
   string(n.getKindName());
 
   write_source_location(n);
 
-  string("name");
-  string(*n.get_name());
+  { /* Write attributes */
+    string("attrs");
 
-  string("type");
-  n.get_type()->accept(*this);
+    let attrs = n.get_attributes();
+    begin_arr(attrs.size());
+    std::for_each(attrs.begin(), attrs.end(),
+                  [&](let attr) { attr->accept(*this); });
+    end_arr();
+  }
 
-  { /* Write capture group */
-    string("capture");
+  { /* Purity */
+    switch (n.get_purity()) {
+      case FuncPurity::IMPURE_THREAD_UNSAFE: {
+        string("thread_safe");
+        boolean(false);
+
+        string("purity");
+        string("impure");
+        break;
+      }
+
+      case FuncPurity::IMPURE_THREAD_SAFE: {
+        string("thread_safe");
+        boolean(true);
+
+        string("purity");
+        string("impure");
+        break;
+      }
+
+      case FuncPurity::PURE: {
+        string("thread_safe");
+        boolean(true);
+
+        string("purity");
+        string("pure");
+        break;
+      }
+
+      case FuncPurity::QUASI: {
+        string("thread_safe");
+        boolean(true);
+
+        string("purity");
+        string("quasi");
+        break;
+      }
+
+      case FuncPurity::RETRO: {
+        string("thread_safe");
+        boolean(true);
+
+        string("purity");
+        string("retro");
+        break;
+      }
+    }
+  }
+
+  { /* Write capture list */
+    string("captures");
 
     let captures = n.get_captures();
     begin_arr(captures.size());
@@ -1351,6 +1413,9 @@ void AST_Writer::visit(FnDef const& n) {
     });
     end_arr();
   }
+
+  string("name");
+  string(*n.get_name());
 
   { /* Write template parameters */
     string("template");
@@ -1377,11 +1442,55 @@ void AST_Writer::visit(FnDef const& n) {
     }
   }
 
-  string("precond");
-  n.get_precond() ? n.get_precond()->accept(*this) : null();
+  { /* Write parameters */
+    string("parameters");
+    let params = n.get_params();
 
-  string("postcond");
-  n.get_postcond() ? n.get_postcond()->accept(*this) : null();
+    begin_obj(2);
+
+    string("variadic");
+    boolean(params.is_variadic);
+
+    begin_arr(params.params.size());
+    std::for_each(params.params.begin(), params.params.end(), [&](let param) {
+      begin_obj(3);
+
+      string("name");
+      string(*std::get<0>(param));
+
+      string("type");
+      std::get<1>(param)->accept(*this);
+
+      string("default");
+      std::get<2>(param) ? std::get<2>(param)->accept(*this) : null();
+
+      end_obj();
+    });
+    end_arr();
+
+    end_obj();
+  }
+
+  string("return");
+  n.get_return()->accept(*this);
+
+  { /* Write pre conditions */
+    string("precond");
+    if (n.get_precond().has_value()) {
+      n.get_precond().value()->accept(*this);
+    } else {
+      null();
+    }
+  }
+
+  { /* Write post conditions */
+    string("postcond");
+    if (n.get_postcond().has_value()) {
+      n.get_postcond().value()->accept(*this);
+    } else {
+      null();
+    }
+  }
 
   string("body");
   if (n.get_body().has_value()) {

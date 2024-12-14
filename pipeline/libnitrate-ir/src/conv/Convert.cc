@@ -53,6 +53,8 @@
 #include <string_view>
 #include <unordered_map>
 
+#include "nitrate-parser/ASTData.hh"
+
 using namespace nr;
 
 struct PState {
@@ -156,6 +158,13 @@ C_EXPORT bool nr_lower(qmodule_t **mod, npar_node_t *base, const char *name,
 }
 
 ///=============================================================================
+
+static bool check_is_foreign_function(const npar::ExpressionList &n) {
+  return std::any_of(n.begin(), n.end(), [](npar::Expr *attr) {
+    return attr->is(QAST_IDENT) &&
+           attr->as<npar::Ident>()->get_name() == "foreign";
+  });
+}
 
 static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
                                                      IReport *, nr::Expr *lhs,
@@ -720,7 +729,7 @@ static EResult nrgen_call(NRBuilder &b, PState &s, IReport *G, npar::Call *n) {
     return std::nullopt;
   }
 
-  const auto &args = n->get_args();
+  let args = n->get_args();
 
   std::vector<std::pair<std::string_view, Expr *>> arguments;
   arguments.resize(args.size());
@@ -1079,7 +1088,7 @@ static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_tuple_ty(NRBuilder &b, PState &s, IReport *G,
                               npar::TupleTy *n) {
-  const auto &items = n->get_items();
+  let items = n->get_items();
   StructFields fields(items.size());
 
   for (size_t i = 0; i < items.size(); i++) {
@@ -1115,11 +1124,11 @@ static std::pair<Purity, IsThreadSafe> convert_purity(npar::FuncPurity x) {
 
 static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
                            npar::FuncTy *n) {
-  const auto &items = n->get_params();
-  FnParams params(items.size());
+  let items = n->get_params();
+  FnParams params(items.params.size());
 
-  for (size_t i = 0; i < items.size(); i++) {
-    auto type = next_one(std::get<1>(items[i]));
+  for (size_t i = 0; i < items.params.size(); i++) {
+    auto type = next_one(std::get<1>(items.params[i]));
     if (!type.has_value()) {
       G->report(CompilerError, IC::Error, "Failed to lower function parameter",
                 n->get_pos());
@@ -1129,7 +1138,7 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
     params[i] = type.value()->asType();
   }
 
-  auto ret = next_one(n->get_return_ty());
+  auto ret = next_one(n->get_return());
   if (!ret.has_value()) {
     G->report(CompilerError, IC::Error, "Failed to lower function return type",
               n->get_pos());
@@ -1138,8 +1147,9 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
 
   auto props = convert_purity(n->get_purity());
 
-  return b.getFnTy(params, ret.value()->asType(), n->is_variadic(), props.first,
-                   props.second, n->is_foreign());
+  return b.getFnTy(params, ret.value()->asType(), n->get_params().is_variadic,
+                   props.first, props.second,
+                   check_is_foreign_function(n->get_attributes()));
 }
 
 static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *,
@@ -1240,7 +1250,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
   BResult R;
   R = std::vector<Expr *>();
 
-  for (const auto &method : n->get_methods()) {
+  for (let method : n->get_methods()) {
     auto val = next_one(method.func);
     if (!val.has_value()) {
       G->report(nr::CompilerError, IC::Error, "Failed to lower struct method",
@@ -1252,7 +1262,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
     R->push_back(val.value());
   }
 
-  for (const auto &method : n->get_static_methods()) {
+  for (let method : n->get_static_methods()) {
     auto val = next_one(method.func);
     if (!val.has_value()) {
       G->report(nr::CompilerError, IC::Error,
@@ -1346,14 +1356,13 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
   }
 
   {
-    npar::FuncTy *func_ty = n->get_type();
-    const npar::FuncParams &params = func_ty->get_params();
+    let params = n->get_params();
 
     std::vector<NRBuilder::FnParam> parameters;
-    parameters.resize(params.size());
+    parameters.resize(params.params.size());
 
-    for (size_t i = 0; i < params.size(); i++) {
-      const auto &param = params[i];
+    for (size_t i = 0; i < params.params.size(); i++) {
+      let param = params.params[i];
       NRBuilder::FnParam p;
 
       { /* Set function parameter name */
@@ -1390,7 +1399,7 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
       parameters[i] = std::move(p);
     }
 
-    auto ret_type = next_one(func_ty->get_return_ty());
+    auto ret_type = next_one(n->get_return());
     if (!ret_type.has_value()) {
       G->report(CompilerError, nr::IC::Error,
                 "Failed to convert function declaration return type",
@@ -1398,7 +1407,7 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
       return std::nullopt;
     }
 
-    auto props = convert_purity(func_ty->get_purity());
+    auto props = convert_purity(n->get_purity());
 
     std::string_view name;
 
@@ -1409,8 +1418,9 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
     }
 
     Fn *fndef = b.createFunctionDefintion(
-        name, parameters, ret_type.value()->asType(), func_ty->is_variadic(),
-        Vis::Pub, props.first, props.second, func_ty->is_foreign());
+        name, parameters, ret_type.value()->asType(),
+        n->get_params().is_variadic, Vis::Pub, props.first, props.second,
+        check_is_foreign_function(n->get_attributes()));
 
     fndef->setAbiTag(s.abi_mode);
 
@@ -1442,64 +1452,103 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
                                           npar::FnDef *n) {
-  npar::FuncTy *func_ty = n->get_type();
-  const npar::FuncParams &params = func_ty->get_params();
+  bool failed = false;
 
-  std::vector<NRBuilder::FnParam> parameters(params.size());
-
-  for (size_t i = 0; i < params.size(); i++) {
-    const auto &param = params[i];
-    NRBuilder::FnParam p;
-
-    { /* Set function parameter name */
-      std::get<0>(p) = b.intern(*std::get<0>(param));
+  {
+    if (!n->get_captures().empty()) {
+      G->report(nr::CompilerError, IC::Error,
+                "Function capture groups are not currently supported");
+      failed = true;
     }
 
-    { /* Set function parameter type */
-      auto tmp = next_one(std::get<1>(param));
-      if (!tmp.has_value()) {
-        G->report(CompilerError, nr::IC::Error,
-                  "Failed to convert function declaration parameter type");
-        return std::nullopt;
+    if (n->get_precond() != nullptr) {
+      G->report(nr::CompilerError, IC::Error,
+                "Function pre-conditions are not currently supported");
+      failed = true;
+    }
+
+    if (n->get_postcond() != nullptr) {
+      G->report(nr::CompilerError, IC::Error,
+                "Function post-conditions are not currently supported");
+      failed = true;
+    }
+
+    if (failed) {
+      return std::nullopt;
+    }
+  }
+
+  {
+    let params = n->get_params();
+
+    std::vector<NRBuilder::FnParam> parameters;
+    parameters.resize(params.params.size());
+
+    for (size_t i = 0; i < params.params.size(); i++) {
+      let param = params.params[i];
+      NRBuilder::FnParam p;
+
+      { /* Set function parameter name */
+        std::get<0>(p) = b.intern(*std::get<0>(param));
       }
 
-      std::get<1>(p) = tmp.value()->asType();
-    }
-
-    { /* Set function parameter default value if it exists */
-      if (std::get<2>(param) != nullptr) {
-        auto val = next_one(std::get<2>(param));
-        if (!val.has_value()) {
-          G->report(
-              CompilerError, nr::IC::Error,
-              "Failed to convert function declaration parameter default value");
+      { /* Set function parameter type */
+        auto tmp = next_one(std::get<1>(param));
+        if (!tmp.has_value()) {
+          G->report(CompilerError, nr::IC::Error,
+                    "Failed to convert function declaration parameter type",
+                    n->get_pos());
           return std::nullopt;
         }
 
-        std::get<2>(p) = val.value();
+        std::get<1>(p) = tmp.value()->asType();
       }
+
+      { /* Set function parameter default value if it exists */
+        if (std::get<2>(param) != nullptr) {
+          auto val = next_one(std::get<2>(param));
+          if (!val.has_value()) {
+            G->report(CompilerError, nr::IC::Error,
+                      "Failed to convert function declaration parameter "
+                      "default value",
+                      n->get_pos());
+            return std::nullopt;
+          }
+
+          std::get<2>(p) = val.value();
+        }
+      }
+
+      parameters[i] = std::move(p);
     }
 
-    parameters[i] = std::move(p);
+    auto ret_type = next_one(n->get_return());
+    if (!ret_type.has_value()) {
+      G->report(CompilerError, nr::IC::Error,
+                "Failed to convert function declaration return type",
+                n->get_pos());
+      return std::nullopt;
+    }
+
+    auto props = convert_purity(n->get_purity());
+
+    std::string_view name;
+
+    if (n->get_name()->empty()) {
+      name = b.intern(s.join_scope("_A$" + std::to_string(s.anon_fn_ctr++)));
+    } else {
+      name = b.intern(s.join_scope(*n->get_name()));
+    }
+
+    Fn *decl = b.createFunctionDeclaration(
+        name, parameters, ret_type.value()->asType(),
+        n->get_params().is_variadic, Vis::Pub, props.first, props.second,
+        check_is_foreign_function(n->get_attributes()));
+
+    decl->setAbiTag(s.abi_mode);
+
+    return decl;
   }
-
-  auto ret_type = next_one(func_ty->get_return_ty());
-  if (!ret_type.has_value()) {
-    G->report(CompilerError, nr::IC::Error,
-              "Failed to convert function declaration return type");
-    return std::nullopt;
-  }
-
-  auto props = convert_purity(func_ty->get_purity());
-
-  Fn *fndecl = b.createFunctionDeclaration(
-      b.intern(s.join_scope(*n->get_name())), parameters,
-      ret_type.value()->asType(), func_ty->is_variadic(), Vis::Pub, props.first,
-      props.second, func_ty->is_foreign());
-
-  fndecl->setAbiTag(s.abi_mode);
-
-  return fndecl;
 }
 
 static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G, npar::FnDef *n) {
@@ -1573,7 +1622,7 @@ static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
   AbiTag old = s.abi_mode;
   s.abi_mode = it->second.second;
 
-  const auto &body = n->get_body()->as<npar::Block>()->get_items();
+  let body = n->get_body()->as<npar::Block>()->get_items();
   std::vector<nr::Expr *> items;
 
   for (size_t i = 0; i < body.size(); i++) {

@@ -109,9 +109,15 @@ std::optional<TemplateParameters> recurse_template_parameters(npar_t &S,
   return params;
 }
 
+// static std::optional<FunctionAttributes> recurse_function_attributes(
+//     npar_t &S, qlex_t &rd) {
+//   /// TODO: Implement function attributes
+//   qcore_implement();
+// }
+
 Stmt *npar::recurse_function(npar_t &S, qlex_t &rd) {
-  /* fn <attributes>? <modifiers>? <capture_list>? <name>?(<parameters>?)<:
-   * return_type>? <body>? */
+  /* fn <attributes>? <modifiers>? <capture_list>?
+   * <name><template_parameters>?(<parameters>?)<: return_type>? <body>? */
 
   /// TODO: Implement function parsing
   qcore_implement();

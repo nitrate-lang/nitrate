@@ -486,6 +486,15 @@ void CambrianFormatter::visit(RefTy const& n) {
 void CambrianFormatter::visit(FuncTy const& n) {
   line << "fn";
 
+  if (!n.get_attributes().empty()) {
+    line << "[";
+    iterate_except_last(
+        n.get_attributes().begin(), n.get_attributes().end(),
+        [&](let attr, size_t) { attr->accept(*this); },
+        [&](let) { line << ", "; });
+    line << "] ";
+  }
+
   switch (n.get_purity()) {
     case FuncPurity::IMPURE_THREAD_UNSAFE: {
       line << " impure";
@@ -513,13 +522,9 @@ void CambrianFormatter::visit(FuncTy const& n) {
     }
   }
 
-  if (n.is_foreign()) {
-    line << " foreign";
-  }
-
   line << "(";
   iterate_except_last(
-      n.get_params().begin(), n.get_params().end(),
+      n.get_params().params.begin(), n.get_params().params.end(),
       [&](let param, size_t) {
         let name = std::get<0>(param);
         let type = std::get<1>(param);
@@ -538,20 +543,16 @@ void CambrianFormatter::visit(FuncTy const& n) {
         }
       },
       [&](let) { line << ", "; });
-  if (n.is_variadic()) {
-    if (!n.get_params().empty()) {
+  if (n.get_params().is_variadic) {
+    if (!n.get_params().params.empty()) {
       line << ", ";
     }
     line << "...";
   }
   line << ")";
 
-  if (n.is_noreturn()) {
-    line << ": null";
-  } else {
-    line << ": ";
-    n.get_return_ty()->accept(*this);
-  }
+  line << ": ";
+  n.get_return()->accept(*this);
 }
 
 void CambrianFormatter::visit(UnaryExpr const& n) {
@@ -1062,7 +1063,7 @@ void CambrianFormatter::visit(TypedefStmt const& n) {
 void CambrianFormatter::visit(FnDef const& n) {
   line << "fn";
 
-  switch (n.get_type()->get_purity()) {
+  switch (n.get_purity()) {
     case FuncPurity::IMPURE_THREAD_UNSAFE: {
       line << " impure";
       break;
@@ -1089,10 +1090,6 @@ void CambrianFormatter::visit(FnDef const& n) {
     }
   }
 
-  if (n.get_type()->is_foreign()) {
-    line << " foreign";
-  }
-
   line << " " << n.get_name();
 
   if (n.get_template_params().has_value()) {
@@ -1115,7 +1112,7 @@ void CambrianFormatter::visit(FnDef const& n) {
 
   line << "(";
   iterate_except_last(
-      n.get_type()->get_params().begin(), n.get_type()->get_params().end(),
+      n.get_params().params.begin(), n.get_params().params.end(),
       [&](let param, size_t) {
         let name = std::get<0>(param);
         let type = std::get<1>(param);
@@ -1131,12 +1128,8 @@ void CambrianFormatter::visit(FnDef const& n) {
       [&](let) { line << ", "; });
   line << ")";
 
-  if (n.get_type()->is_noreturn()) {
-    line << ": null";
-  } else {
-    line << ": ";
-    n.get_type()->get_return_ty()->accept(*this);
-  }
+  line << ": ";
+  n.get_return()->accept(*this);
 
   if (n.is_decl()) {
     line << ";";

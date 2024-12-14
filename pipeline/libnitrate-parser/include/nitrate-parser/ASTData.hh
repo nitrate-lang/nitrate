@@ -153,7 +153,10 @@ namespace npar {
   using StructDefNames = std::vector<SmallString, Arena<SmallString>>;
 
   using FuncParam = std::tuple<SmallString, Type *, Expr *>;
-  using FuncParams = std::vector<FuncParam, Arena<FuncParam>>;
+  struct FuncParams {
+    std::vector<FuncParam, Arena<FuncParam>> params;
+    bool is_variadic;
+  };
   using FnCaptures = std::vector<std::pair<SmallString, bool>,
                                  Arena<std::pair<SmallString, bool>>>;
 }  // namespace npar
