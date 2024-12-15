@@ -295,7 +295,8 @@ CPP_EXPORT std::future<bool> nitrate::pipeline(
 }
 
 CPP_EXPORT std::future<bool> nitrate::pipeline(
-    Stream in, std::string &out, const std::vector<std::string> &options,
+    Stream in, std::vector<uint8_t> &out,
+    const std::vector<std::string> &options,
     std::optional<DiagnosticFunc> diag) {
   return std::async(std::launch::async, [&out, In = std::move(in), options,
                                          Diag = std::move(diag)]() {

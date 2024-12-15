@@ -137,12 +137,28 @@ namespace nitrate {
       });
 
   std::future<bool> pipeline(
-      Stream in, std::string &out, const std::vector<std::string> &options,
+      Stream in, std::vector<uint8_t> &out,
+      const std::vector<std::string> &options,
       std::optional<DiagnosticFunc> diag = [](std::string_view message,
                                               std::string_view) {
         std::cerr << message;
         std::cerr.flush();
       });
+
+  static inline std::future<bool> pipeline(
+      Stream in, std::string &out, const std::vector<std::string> &options,
+      std::optional<DiagnosticFunc> diag = [](std::string_view message,
+                                              std::string_view) {
+        std::cerr << message;
+        std::cerr.flush();
+      }) {
+    std::vector<uint8_t> buffer;
+    auto future = pipeline(std::move(in), buffer, options, diag);
+    future.wait();
+
+    out = std::string(buffer.begin(), buffer.end());
+    return future;
+  }
 
 }  // namespace nitrate
 
