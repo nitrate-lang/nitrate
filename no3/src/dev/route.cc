@@ -143,7 +143,9 @@ static int do_parse(std::string source, std::string output) {
 
   npar_dumps(
       parser.get(), !ansi::IsUsingColors(),
-      [](const char *msg, size_t len, uintptr_t) { std::cerr.write(msg, len); },
+      [](const char *msg, size_t len, uintptr_t) {
+        std::cerr << std::string_view((const char *)msg, len) << std::endl;
+      },
       0);
 
   if (!ok) {
@@ -193,7 +195,9 @@ static int do_nr(std::string source, std::string output, std::string opts,
 
   npar_dumps(
       parser.get(), !ansi::IsUsingColors(),
-      [](const char *msg, size_t len, uintptr_t) { std::cerr.write(msg, len); },
+      [](const char *msg, size_t len, uintptr_t) {
+        std::cerr << std::string_view((const char *)msg, len) << std::endl;
+      },
       0);
 
   if (!ok) {
@@ -208,7 +212,7 @@ static int do_nr(std::string source, std::string output, std::string opts,
       mod.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
       [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
         if (verbose || lvl != NR_LEVEL_DEBUG) {
-          std::cerr.write((const char *)msg, len);
+          std::cerr << std::string_view((const char *)msg, len) << std::endl;
         }
       },
       verbose);
@@ -263,7 +267,9 @@ static int do_codegen(std::string source, std::string output, std::string opts,
 
   npar_dumps(
       parser.get(), !ansi::IsUsingColors(),
-      [](const char *msg, size_t len, uintptr_t) { std::cerr.write(msg, len); },
+      [](const char *msg, size_t len, uintptr_t) {
+        std::cerr << std::string_view((const char *)msg, len) << std::endl;
+      },
       0);
 
   if (!ok) {
@@ -281,7 +287,7 @@ static int do_codegen(std::string source, std::string output, std::string opts,
           return;
         }
 
-        std::cerr.write((const char *)msg, len);
+        std::cerr << std::string_view((const char *)msg, len) << std::endl;
       },
       verbose);
 

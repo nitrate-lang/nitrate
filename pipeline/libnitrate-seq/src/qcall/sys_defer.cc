@@ -111,7 +111,7 @@ int qcall::sys_defer(lua_State* L) {
         }
 
         if (!lua_isboolean(L, -1)) {
-          qcore_print(
+          qcore_logf(
               QCORE_ERROR,
               "sys_defer: expected boolean return value or nil, got %s\n",
               luaL_typename(L, -1));
@@ -122,22 +122,22 @@ int qcall::sys_defer(lua_State* L) {
         break;
       }
       case LUA_ERRRUN: {
-        qcore_print(QCORE_ERROR, "sys_defer: lua: %s\n", lua_tostring(L, -1));
+        qcore_logf(QCORE_ERROR, "sys_defer: lua: %s\n", lua_tostring(L, -1));
         R = DeferOp::EmitToken;
         break;
       }
       case LUA_ERRMEM: {
-        qcore_print(QCORE_ERROR, "sys_defer: memory allocation error\n");
+        qcore_logf(QCORE_ERROR, "sys_defer: memory allocation error\n");
         R = DeferOp::EmitToken;
         break;
       }
       case LUA_ERRERR: {
-        qcore_print(QCORE_ERROR, "sys_defer: error in error handler\n");
+        qcore_logf(QCORE_ERROR, "sys_defer: error in error handler\n");
         R = DeferOp::EmitToken;
         break;
       }
       default: {
-        qcore_print(QCORE_ERROR, "sys_defer: unexpected error %d\n", err);
+        qcore_logf(QCORE_ERROR, "sys_defer: unexpected error %d\n", err);
         R = DeferOp::EmitToken;
         break;
       }

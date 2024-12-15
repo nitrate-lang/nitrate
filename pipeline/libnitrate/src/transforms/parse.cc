@@ -256,27 +256,19 @@ public:
 };
 
 using ArgCallback = std::function<void(const char *)>;
-static std::optional<npar_node_t *> parse_tokens(npar_t *L,
-                                                 ArgCallback diag_cb) {
+static std::optional<npar_node_t *> parse_tokens(npar_t *L) {
   npar_node_t *root = nullptr;
   bool ok = npar_do(L, &root);
 
-  ///============================================================================///
-  /// Some dangerous code here, be careful! ///
   npar_dumps(
       L, false,
-      [](const char *msg, size_t, uintptr_t dat) {
-        let stack_tmp = *(ArgCallback *)dat;
-        stack_tmp(msg);
-      },
-      (uintptr_t)&diag_cb);
-  ///============================================================================///
+      [](const char *msg, size_t, uintptr_t) { qcore_print(QCORE_ERROR, msg); },
+      0);
 
   return ok ? std::make_optional(root) : std::nullopt;
 }
 
 bool nit::parse(std::istream &source, std::ostream &output,
-                std::function<void(const char *)> diag_cb,
                 const std::unordered_set<std::string_view> &opts) {
   enum class OutMode {
     JSON,
@@ -284,7 +276,7 @@ bool nit::parse(std::istream &source, std::ostream &output,
   } out_mode = OutMode::JSON;
 
   if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
+    qcore_logf(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
     return false;
   }
 
@@ -295,7 +287,7 @@ bool nit::parse(std::istream &source, std::ostream &output,
   DeserializerAdapterLexer lex(source, nullptr, qcore_env_current());
   nr_syn par(&lex, qcore_env_current());
 
-  if (let root = parse_tokens(par.get(), diag_cb)) {
+  if (let root = parse_tokens(par.get())) {
     switch (out_mode) {
       case OutMode::JSON: {
         auto writter = npar::AST_JsonWriter(output);

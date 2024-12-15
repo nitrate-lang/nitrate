@@ -43,8 +43,7 @@ extern "C" {
 #endif
 
 /// @brief Diagnostic callback function prototype.
-typedef void (*nit_diag_func)(const char *message, const char *by,
-                              void *opaque);
+typedef void (*nit_diag_func)(const char *message, void *opaque);
 
 /******************************************************************************
  * @brief Generic Nitrate Toolchain tranformation function.                   *

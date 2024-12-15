@@ -118,8 +118,8 @@ std::optional<std::string> qprep_impl_t::run_lua_code(const std::string &s) {
 
   int error = luaL_dostring(m_core->L, std::string(s.data(), s.size()).c_str());
   if (error) {
-    qcore_print(QCORE_ERROR, "Failed to run Lua code: %s\n",
-                lua_tostring(m_core->L, -1));
+    qcore_logf(QCORE_ERROR, "Failed to run Lua code: %s\n",
+               lua_tostring(m_core->L, -1));
     return std::nullopt;
   }
 
@@ -187,7 +187,7 @@ func_entry:  // do tail call optimization manually
   try {
     RecursiveGuard guard(m_depth);
     if (guard.should_stop()) {
-      qcore_print(QCORE_FATAL, "Maximum macro recursion depth reached\n");
+      qcore_logf(QCORE_FATAL, "Maximum macro recursion depth reached\n");
       throw StopException();
     }
 
@@ -229,8 +229,8 @@ func_entry:  // do tail call optimization manually
           std::string_view block = ltrim(get_string(x.v.str_idx));
           if (!block.starts_with("fn ")) {
             if (!run_and_expand(std::string(block))) {
-              qcore_print(QCORE_ERROR, "Failed to expand macro block: %s\n",
-                          block.data());
+              qcore_logf(QCORE_ERROR, "Failed to expand macro block: %s\n",
+                         block.data());
               x.ty = qEofF;
               goto emit_token;
             }
@@ -238,9 +238,8 @@ func_entry:  // do tail call optimization manually
             block = ltrim(block.substr(3));
             size_t pos = block.find_first_of("(");
             if (pos == std::string_view::npos) {
-              qcore_print(QCORE_ERROR,
-                          "Invalid macro function definition: %s\n",
-                          block.data());
+              qcore_logf(QCORE_ERROR, "Invalid macro function definition: %s\n",
+                         block.data());
               x.ty = qEofF;
               goto emit_token;
             }
@@ -252,9 +251,9 @@ func_entry:  // do tail call optimization manually
             { /* Remove the opening brace */
               pos = code.find_first_of("{");
               if (pos == std::string::npos) {
-                qcore_print(QCORE_ERROR,
-                            "Invalid macro function definition: %s\n",
-                            block.data());
+                qcore_logf(QCORE_ERROR,
+                           "Invalid macro function definition: %s\n",
+                           block.data());
                 x.ty = qEofF;
                 goto emit_token;
               }
@@ -264,9 +263,9 @@ func_entry:  // do tail call optimization manually
             { /* Remove the closing brace */
               pos = code.find_last_of("}");
               if (pos == std::string::npos) {
-                qcore_print(QCORE_ERROR,
-                            "Invalid macro function definition: %s\n",
-                            block.data());
+                qcore_logf(QCORE_ERROR,
+                           "Invalid macro function definition: %s\n",
+                           block.data());
                 x.ty = qEofF;
                 goto emit_token;
               }
@@ -275,8 +274,8 @@ func_entry:  // do tail call optimization manually
             }
 
             if (!run_and_expand(code)) {
-              qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n",
-                          name.data());
+              qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
+                         name.data());
               x.ty = qEofF;
               goto emit_token;
             }
@@ -291,8 +290,8 @@ func_entry:  // do tail call optimization manually
           size_t pos = body.find_first_of("(");
           if (pos != std::string_view::npos) {
             if (!run_and_expand("return " + std::string(body))) {
-              qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n",
-                          body.data());
+              qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
+                         body.data());
               x.ty = qEofF;
               goto emit_token;
             }
@@ -300,8 +299,8 @@ func_entry:  // do tail call optimization manually
             goto func_entry;
           } else {
             if (!run_and_expand("return " + std::string(body) + "()")) {
-              qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n",
-                          body.data());
+              qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
+                         body.data());
               x.ty = qEofF;
               goto emit_token;
             }

@@ -52,8 +52,13 @@ static std::unordered_map<qcore_env_t, Environment> g_envs;
 static std::mutex g_envs_mutex;
 static thread_local qcore_env_t g_current_env = 0;
 extern "C" {
-__attribute__((visibility("default"))) bool qcore_fuzzing = true;
+__attribute__((visibility("default"))) bool qcore_fuzzing = false;
 }
+
+static void qcore_default_logger(qcore_log_t, const char *, size_t, void *) {}
+
+static thread_local qcore_logger_t g_current_logger = qcore_default_logger;
+static thread_local void *g_current_logger_data = nullptr;
 
 C_EXPORT qcore_env_t qcore_env_create(qcore_env_t env) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
@@ -111,6 +116,13 @@ C_EXPORT const char *qcore_env_get(const char *key) {
   }
 }
 
+C_EXPORT void qcore_bind_logger(qcore_logger_t logger, void *data) {
+  std::lock_guard<std::mutex> lock(g_envs_mutex);
+
+  g_current_logger = logger ? logger : qcore_default_logger;
+  g_current_logger_data = data;
+}
+
 C_EXPORT void qcore_begin(qcore_log_t level) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
@@ -121,48 +133,60 @@ C_EXPORT void qcore_begin(qcore_log_t level) {
   g_envs[g_current_env].log_level = level;
 }
 
-#include <iostream>
-
 C_EXPORT void qcore_end() {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
   qcore_assert(g_envs.count(g_current_env),
                "Current environment does not exist.");
 
-  if (!qcore_fuzzing) {
+  if (qcore_fuzzing) {
     return;
   }
 
-  if (g_envs[g_current_env].env.contains("this.noprint")) {
-    return;
+  let current = g_envs.at(g_current_env);
+  std::string message = current.log_buffer.str();
+
+  while (message.ends_with("\n")) {
+    message.pop_back();
   }
 
-  std::string message = g_envs[g_current_env].log_buffer.str();
-  std::ostream &ss = std::cerr;
+  static const std::unordered_map<qcore_log_t, const char *> level_names = {
+      {QCORE_DEBUG, "DEBUG"}, {QCORE_INFO, "INFO"},   {QCORE_WARN, "WARN"},
+      {QCORE_ERROR, "ERROR"}, {QCORE_FATAL, "FATAL"},
+  };
 
-  switch (g_envs[g_current_env].log_level) {
-    case QCORE_DEBUG:
-      if (g_envs[g_current_env].env.contains("log_enable_debug")) {
-        ss << "[DEBUG] " << message << std::endl;
-      }
-      break;
+  std::stringstream log_message;
 
-    case QCORE_INFO:
-      ss << "[INFO] " << message << std::endl;
+  switch (current.log_level) {
+    case QCORE_DEBUG: {
+      log_message << "\x1b[1mdebug:\x1b[0m " << message << "\x1b[0m";
       break;
+    }
 
-    case QCORE_WARN:
-      ss << "[WARN] " << message << std::endl;
+    case QCORE_INFO: {
+      log_message << "\x1b[37;1minfo:\x1b[0m " << message << "\x1b[0m";
       break;
+    }
 
-    case QCORE_ERROR:
-      ss << "[ERROR] " << message << std::endl;
+    case QCORE_WARN: {
+      log_message << "\x1b[35;1mwarning:\x1b[0m " << message << "\x1b[0m";
       break;
+    }
 
-    case QCORE_FATAL:
-      ss << "[FATAL] " << message << std::endl;
+    case QCORE_ERROR: {
+      log_message << "\x1b[31;1merror:\x1b[0m " << message << "\x1b[0m";
       break;
+    }
+
+    case QCORE_FATAL: {
+      log_message << "\x1b[31;1;4mfatal error:\x1b[0m " << message << "\x1b[0m";
+      break;
+    }
   }
+
+  message = log_message.str();
+  g_current_logger(current.log_level, message.c_str(), message.size(),
+                   g_current_logger_data);
 }
 
 C_EXPORT int qcore_vwritef(const char *fmt, va_list args) {

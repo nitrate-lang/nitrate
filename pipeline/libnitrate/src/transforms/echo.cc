@@ -34,9 +34,7 @@
 #include <core/Transformer.hh>
 
 bool nit::echo(std::istream &source, std::ostream &output,
-               std::function<void(const char *)> diag_cb,
                const std::unordered_set<std::string_view> &opts) {
-  (void)diag_cb;
   (void)opts;
 
   output << source.rdbuf();

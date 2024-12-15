@@ -34,14 +34,14 @@
 #ifndef __NITRATE_CORE_LIB_H__
 #define __NITRATE_CORE_LIB_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <nitrate-core/Cache.h>
 #include <nitrate-core/Env.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Memory.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Initialize the library.

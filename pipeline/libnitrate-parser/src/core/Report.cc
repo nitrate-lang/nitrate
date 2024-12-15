@@ -66,7 +66,7 @@ std::string DiagnosticManager::mint_plain_message(
 
   ss << "SyntaxError";
 
-  ss << "]\n";
+  ss << "]";
 
   uint32_t offset;
   char *snippet = qlex_snippet(m_parser->lexer, msg.tok, &offset);
@@ -74,11 +74,11 @@ std::string DiagnosticManager::mint_plain_message(
     return ss.str();
   }
 
-  ss << snippet << "\n";
+  ss << "\n" << snippet << "\n";
   for (uint32_t i = 0; i < offset; i++) {
     ss << " ";
   }
-  ss << "^\n";
+  ss << "^";
   free(snippet);
 
   return ss.str();
@@ -107,7 +107,7 @@ std::string DiagnosticManager::mint_clang16_message(
 
   ss << "SyntaxError";
 
-  ss << "]\x1b[0m\n";
+  ss << "]\x1b[0m";
 
   uint32_t offset;
   char *snippet = qlex_snippet(m_parser->lexer, msg.tok, &offset);
@@ -115,11 +115,11 @@ std::string DiagnosticManager::mint_clang16_message(
     return ss.str();
   }
 
-  ss << snippet << "\n";
+  ss << "\n" << snippet << "\n";
   for (uint32_t i = 0; i < offset; i++) {
     ss << " ";
   }
-  ss << "\x1b[32;1m^\x1b[0m\n";
+  ss << "\x1b[32;1m^\x1b[0m";
   free(snippet);
 
   return ss.str();

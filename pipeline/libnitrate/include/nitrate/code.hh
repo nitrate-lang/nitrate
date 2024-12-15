@@ -116,41 +116,32 @@ namespace nitrate {
     nit_stream_t *get() const { return m_stream; }
   };
 
-  using DiagnosticFunc =
-      std::function<void(std::string_view message, std::string_view by)>;
+  using DiagnosticFunc = std::function<void(std::string_view message)>;
 
   std::future<bool> pipeline(
       std::shared_ptr<Stream> in, std::shared_ptr<Stream> out,
       const std::vector<std::string> &options,
-      std::optional<DiagnosticFunc> diag = [](std::string_view message,
-                                              std::string_view) {
-        std::cerr << message;
-        std::cerr.flush();
+      std::optional<DiagnosticFunc> diag = [](std::string_view message) {
+        std::cerr << message << std::endl;
       });
 
   std::future<bool> pipeline(
       Stream in, Stream out, const std::vector<std::string> &options,
-      std::optional<DiagnosticFunc> diag = [](std::string_view message,
-                                              std::string_view) {
-        std::cerr << message;
-        std::cerr.flush();
+      std::optional<DiagnosticFunc> diag = [](std::string_view message) {
+        std::cerr << message << std::endl;
       });
 
   std::future<bool> pipeline(
       Stream in, std::vector<uint8_t> &out,
       const std::vector<std::string> &options,
-      std::optional<DiagnosticFunc> diag = [](std::string_view message,
-                                              std::string_view) {
-        std::cerr << message;
-        std::cerr.flush();
+      std::optional<DiagnosticFunc> diag = [](std::string_view message) {
+        std::cerr << message << std::endl;
       });
 
   static inline std::future<bool> pipeline(
       Stream in, std::string &out, const std::vector<std::string> &options,
-      std::optional<DiagnosticFunc> diag = [](std::string_view message,
-                                              std::string_view) {
-        std::cerr << message;
-        std::cerr.flush();
+      std::optional<DiagnosticFunc> diag = [](std::string_view message) {
+        std::cerr << message << std::endl;
       }) {
     std::vector<uint8_t> buffer;
     auto future = pipeline(std::move(in), buffer, options, diag);

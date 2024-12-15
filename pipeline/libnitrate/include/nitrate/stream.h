@@ -73,10 +73,10 @@ static inline nit_stream_t *NIT_OPEM_STREAM(char **buf_ptr, size_t *buf_size) {
 }
 
 /// @brief Predefined diagnostic callback that writes to `stdout`.
-void nit_diag_stdout(const char *, const char *, void *);
+void nit_diag_stdout(const char *, void *);
 
 /// @brief Predefined diagnostic callback that writes to `stderr`.
-void nit_diag_stderr(const char *, const char *, void *);
+void nit_diag_stderr(const char *, void *);
 
 #ifdef __cplusplus
 }

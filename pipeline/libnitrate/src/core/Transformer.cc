@@ -49,6 +49,7 @@
 #include <cstdlib>
 #include <functional>
 #include <nitrate/code.hh>
+#include <sstream>
 #include <streambuf>
 #include <string_view>
 #include <unordered_map>
@@ -57,7 +58,7 @@
 
 static const char *empty_options[] = {NULL};
 
-static std::optional<std::vector<std::string_view>> parse_options(
+static std::optional<std::vector<std::string>> parse_options(
     const char *const options[]) {
   constexpr size_t max_options = 100000;
 
@@ -65,12 +66,12 @@ static std::optional<std::vector<std::string_view>> parse_options(
     return std::nullopt;
   }
 
-  std::vector<std::string_view> opts;
+  std::vector<std::string> opts;
 
   for (size_t i = 0; options[i]; i++) {
     if (i >= max_options) {
-      qcore_print(QCORE_ERROR, "Too many options provided, max is %zu",
-                  max_options);
+      qcore_logf(QCORE_ERROR, "Too many options provided, max is %zu",
+                 max_options);
       return std::nullopt;
     }
 
@@ -80,24 +81,22 @@ static std::optional<std::vector<std::string_view>> parse_options(
   return opts;
 }
 
-static void diag_nop(const char *, const char *, void *) {}
+static void diag_nop(const char *, void *) {}
 
-C_EXPORT void nit_diag_stdout(const char *message, const char *, void *) {
+C_EXPORT void nit_diag_stdout(const char *message, void *) {
   fprintf(stdout, "%s", message);
 }
 
-C_EXPORT void nit_diag_stderr(const char *message, const char *, void *) {
+C_EXPORT void nit_diag_stderr(const char *message, void *) {
   fprintf(stderr, "%s", message);
 }
 
 ///============================================================================///
 
 bool nit::codegen(std::istream &source, std::ostream &output,
-                  std::function<void(const char *)> diag_cb,
                   const std::unordered_set<std::string_view> &opts) {
   (void)source;
   (void)output;
-  (void)diag_cb;
   (void)opts;
 
   /// TODO: Implement codegen wrapper
@@ -168,29 +167,30 @@ public:
   bool is_initialized() const { return ok; }
 };
 
-class null_ostream_t : public std::streambuf {
-public:
-  null_ostream_t() : std::streambuf() {}
-
-  int underflow() override { return EOF; }
-  std::streamsize xsputn(const char *, std::streamsize n) override { return n; }
-};
-
 C_EXPORT bool nit_pipeline(nit_stream_t *in, nit_stream_t *out,
                            nit_diag_func diag_cb, void *opaque,
-                           const char *const options[]) {
-  static null_ostream_t null_ostream;
-
+                           const char *const c_options[]) {
   errno = 0;
 
-  if (!in) return false;
+  if (!in) { /* No input stream */
+    return false;
+  }
 
+  /***************************************************************************/
+  /* Rectify input arguments                                                 */
+  /***************************************************************************/
+
+  std::stringstream null_ostream;
   std::streambuf *the_output =
       out ? static_cast<std::streambuf *>(out)
-          : static_cast<std::streambuf *>(&null_ostream);
+          : static_cast<std::streambuf *>(null_ostream.rdbuf());
 
-  options = options ? options : empty_options;
+  c_options = c_options ? c_options : empty_options;
   diag_cb = diag_cb ? diag_cb : diag_nop;
+
+  /***************************************************************************/
+  /* Auto initialization                                                     */
+  /***************************************************************************/
 
   LibraryInitRAII init_manager;
 
@@ -198,49 +198,75 @@ C_EXPORT bool nit_pipeline(nit_stream_t *in, nit_stream_t *out,
     return false;
   }
 
+  /***************************************************************************/
+  /* Setup thread-local shared environment                                   */
+  /***************************************************************************/
+
   qcore_env env; /* Don't remove me */
 
-  if (let options_opt = parse_options(options)) {
-    let opts = options_opt.value();
+  struct LoggerCtx {
+    nit_diag_func diag_cb;
+    void *opaque;
+  } logger_ctx = {diag_cb, opaque};
 
-    if (!opts.empty()) {
-      if (dispatch_funcs.contains(opts.at(0))) {
-        let subsystem = dispatch_funcs.at(opts.at(0));
+  qcore_bind_logger(
+      [](qcore_log_t, const char *msg, size_t, void *opaque) {
+        let logger_ctx = *reinterpret_cast<LoggerCtx *>(opaque);
+        logger_ctx.diag_cb(msg, logger_ctx.opaque);
+      },
+      &logger_ctx);
 
-        std::unordered_set<std::string_view> opts_set(opts.begin() + 1,
-                                                      opts.end());
+  /***************************************************************************/
+  /* Parse options */
+  /***************************************************************************/
 
-        let input_stream = std::make_shared<std::istream>(in);
-        let output_stream = std::make_shared<std::ostream>(the_output);
-
-        let is_success = subsystem(
-            *input_stream, *output_stream,
-            [&](let msg) {
-              /* string_views's in opts are null terminated */
-              diag_cb(msg, opts[0].data(), opaque);
-            },
-            opts_set);
-
-        output_stream->flush();
-
-        return is_success;
-      } else { /* Unknown subsystem */
-        qcore_print(QCORE_ERROR, "Unknown subsystem name in options: %s",
-                    opts[0].data());
-        return false;
-      }
-    } else { /* Nothing to do */
-      return true;
-    }
-  } else { /* Options parse error */
+  let options_opt = parse_options(c_options);
+  if (!options_opt.has_value()) { /* Options parse error */
     return false;
   }
+
+  let options = options_opt.value();
+
+  if (options.empty()) { /* Nothing to do */
+    return true;
+  }
+
+  /***************************************************************************/
+  /* Prepare input/output streams                                            */
+  /***************************************************************************/
+
+  std::unordered_set<std::string_view> opts_set(options.begin() + 1,
+                                                options.end());
+
+  let input_stream = std::make_shared<std::istream>(in);
+  let output_stream = std::make_shared<std::ostream>(the_output);
+
+  /***************************************************************************/
+  /* Dynamic dispatch                                                        */
+  /***************************************************************************/
+
+  if (!dispatch_funcs.contains(options.at(0))) {
+    qcore_logf(QCORE_ERROR, "Unknown subsystem name in options: %s",
+               options[0].c_str());
+    return false;
+  }
+
+  let subsystem_func = dispatch_funcs.at(options.at(0));
+  let is_success = subsystem_func(*input_stream, *output_stream, opts_set);
+
+  /***************************************************************************/
+  /* Flush buffers                                                           */
+  /***************************************************************************/
+
+  output_stream->flush();
+
+  return is_success;
 }
 
-static void nit_diag_functor(const char *message, const char *by, void *ctx) {
+static void nit_diag_functor(const char *message, void *ctx) {
   const auto &callback = *reinterpret_cast<nitrate::DiagnosticFunc *>(ctx);
 
-  callback(message, by);
+  callback(message);
 }
 
 CPP_EXPORT std::future<bool> nitrate::pipeline(

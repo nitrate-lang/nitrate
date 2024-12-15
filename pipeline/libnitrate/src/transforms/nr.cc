@@ -36,7 +36,6 @@
 
 #include <core/SerialUtil.hh>
 #include <core/Transformer.hh>
-#include <functional>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/Writer.hh>
@@ -44,8 +43,9 @@
 #include <string_view>
 #include <unordered_set>
 
+#include "nitrate-core/Env.h"
+
 bool nit::nr(std::istream &source, std::ostream &output,
-             std::function<void(const char *)> diag_cb,
              const std::unordered_set<std::string_view> &opts) {
   enum class OutMode {
     JSON,
@@ -53,7 +53,7 @@ bool nit::nr(std::istream &source, std::ostream &output,
   } out_mode = OutMode::JSON;
 
   if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
+    qcore_logf(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
     return false;
   } else if (opts.contains("-fuse-msgpack")) {
     out_mode = OutMode::MsgPack;
@@ -68,16 +68,15 @@ bool nit::nr(std::istream &source, std::ostream &output,
   }
 
   if (!root.has_value()) {
-    qcore_print(QCORE_ERROR, "Failed to parse input.");
+    qcore_logf(QCORE_ERROR, "Failed to parse input.");
     return false;
   }
 
   qmodule ir_module;
 
-  bool ok =
-      nr_lower(&ir_module.get(), root.value(), nullptr, diag_cb != nullptr);
+  bool ok = nr_lower(&ir_module.get(), root.value(), nullptr, true);
   if (!ok) {
-    diag_cb("Failed to lower IR module.\n");
+    qcore_print(QCORE_ERROR, "Failed to lower IR module.\n");
     return false;
   }
 

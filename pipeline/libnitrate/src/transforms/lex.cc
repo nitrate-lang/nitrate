@@ -36,7 +36,6 @@
 
 #include <core/SerialUtil.hh>
 #include <core/Transformer.hh>
-#include <functional>
 #include <nitrate-lexer/Classes.hh>
 #include <string_view>
 #include <unordered_set>
@@ -277,10 +276,7 @@ bool impl_use_msgpack(qlex_t *L, std::ostream &O) {
 }
 
 bool nit::lex(std::istream &source, std::ostream &output,
-              std::function<void(const char *)> diag_cb,
               const std::unordered_set<std::string_view> &opts) {
-  (void)diag_cb;
-
   qlex lexer(source, nullptr, qcore_env_current());
 
   enum class OutMode {
@@ -289,7 +285,7 @@ bool nit::lex(std::istream &source, std::ostream &output,
   } out_mode = OutMode::JSON;
 
   if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
+    qcore_logf(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
     return false;
   } else if (opts.contains("-fuse-msgpack")) {
     out_mode = OutMode::MsgPack;

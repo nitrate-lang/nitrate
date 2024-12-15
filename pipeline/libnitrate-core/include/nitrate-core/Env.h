@@ -35,6 +35,7 @@
 #define __NITRATE_CORE_ENV_H__
 
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -100,6 +101,11 @@ void qcore_begin(qcore_log_t level);
 int qcore_vwritef(const char *fmt, va_list args);
 void qcore_end();
 
+typedef void (*qcore_logger_t)(qcore_log_t level, const char *msg, size_t len,
+                               void *);
+
+void qcore_bind_logger(qcore_logger_t logger, void *data);
+
 static inline int qcore_writef(const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
@@ -114,11 +120,18 @@ static inline int qcore_write(const char *msg) {
   return qcore_writef("%s", msg);
 }
 
-#define qcore_print(_lvl, ...) \
+#define qcore_logf(_lvl, ...)  \
   do {                         \
     qcore_begin(_lvl);         \
     qcore_writef(__VA_ARGS__); \
     qcore_end();               \
+  } while (0)
+
+#define qcore_print(_lvl, _msg) \
+  do {                          \
+    qcore_begin(_lvl);          \
+    qcore_writef("%s", _msg);   \
+    qcore_end();                \
   } while (0)
 
 #ifdef __cplusplus

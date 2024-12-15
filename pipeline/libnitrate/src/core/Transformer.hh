@@ -33,7 +33,6 @@
 
 #pragma once
 
-#include <functional>
 #include <iostream>
 #include <string_view>
 #include <unordered_set>
@@ -41,32 +40,25 @@
 namespace nit {
   typedef bool (*subsystem_func)(
       std::istream &source, std::ostream &output,
-      std::function<void(const char *)> diag_cb,
       const std::unordered_set<std::string_view> &opts);
 
   bool lex(std::istream &source, std::ostream &output,
-           std::function<void(const char *)> diag_cb,
            const std::unordered_set<std::string_view> &opts);
 
   bool seq(std::istream &source, std::ostream &output,
-           std::function<void(const char *)> diag_cb,
            const std::unordered_set<std::string_view> &opts);
 
   bool parse(std::istream &source, std::ostream &output,
-             std::function<void(const char *)> diag_cb,
              const std::unordered_set<std::string_view> &opts);
 
   bool nr(std::istream &source, std::ostream &output,
-          std::function<void(const char *)> diag_cb,
           const std::unordered_set<std::string_view> &opts);
 
   bool codegen(std::istream &source, std::ostream &output,
-               std::function<void(const char *)> diag_cb,
                const std::unordered_set<std::string_view> &opts);
 
   /* Helper routes */
 
   bool echo(std::istream &source, std::ostream &output,
-            std::function<void(const char *)> diag_cb,
             const std::unordered_set<std::string_view> &opts);
 }  // namespace nit
