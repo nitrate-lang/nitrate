@@ -65,9 +65,9 @@ std::string nr::mint_plain_message(const IReport::ReportData &R,
     /// FIXME: Render filename
     ss << "??" << ":";
 
-    auto default_if = std::pair<uint32_t, uint32_t>({QLEX_EOFF, QLEX_NOFILE});
+    auto default_if = std::pair<uint32_t, uint32_t>({QLEX_EOFF, QLEX_EOFF});
     auto beg = B->off2rc(R.start_offset).value_or(default_if);
-    auto end = B->off2rc(R.end_offset).value_or(default_if);
+    auto end = default_if;
 
     sl = beg.first;
     sc = beg.second;
@@ -137,9 +137,9 @@ std::string nr::mint_clang16_message(const IReport::ReportData &R,
   {  // Print the filename and location information
     ss << "\x1b[39;1m" << "??" << ":";
 
-    auto default_if = std::pair<uint32_t, uint32_t>({QLEX_EOFF, QLEX_NOFILE});
+    auto default_if = std::pair<uint32_t, uint32_t>({QLEX_EOFF, QLEX_EOFF});
     auto beg = B->off2rc(R.start_offset).value_or(default_if);
-    auto end = B->off2rc(R.end_offset).value_or(default_if);
+    auto end = default_if;
 
     sl = beg.first;
     sc = beg.second;
@@ -238,7 +238,7 @@ uint64_t DiagDatum::hash() const {
     IC level : 3;
     IssueCode code : 10;
     uint64_t param_trunc : 7;
-    uint64_t m_end_trunc : 20;
+    uint32_t m_fileid : 20;
     uint64_t m_start : 24;
   } __attribute__((packed)) bp;
 
@@ -246,7 +246,7 @@ uint64_t DiagDatum::hash() const {
   bp.code = code;
   bp.param_trunc = std::hash<std::string_view>{}(param);
   bp.m_start = start_offset;
-  bp.m_end_trunc = end_offset;
+  bp.m_fileid = fileid;
 
   return std::bit_cast<uint64_t>(bp);
 }
@@ -280,7 +280,7 @@ void DiagnosticManager::stream_reports(
     datum.level = item.level;
     datum.param = item.param;
     datum.start_offset = item.start_offset;
-    datum.end_offset = item.end_offset;
+    datum.fileid = item.fileid;
 
     cb(datum);
   }

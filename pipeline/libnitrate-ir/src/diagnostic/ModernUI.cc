@@ -321,9 +321,9 @@ std::string nr::mint_modern_message(const IReport::ReportData &R,
     /// FIXME: Render filename
     ss << "\x1b[37;1m" << "??" << ":";
 
-    auto default_if = std::pair<uint32_t, uint32_t>(QLEX_EOFF, QLEX_NOFILE);
+    auto default_if = std::pair<uint32_t, uint32_t>(QLEX_EOFF, QLEX_EOFF);
     auto beg = B->off2rc(R.start_offset).value_or(default_if);
-    auto end = B->off2rc(R.end_offset).value_or(default_if);
+    auto end = default_if;
 
     sl = beg.first;
     sc = beg.second;

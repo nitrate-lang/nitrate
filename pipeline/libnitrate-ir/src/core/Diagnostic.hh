@@ -65,15 +65,15 @@ namespace nr {
     IC level;
     std::string param;
     uint32_t start_offset;
-    uint32_t end_offset;
+    uint32_t fileid;
 
     DiagDatum(IssueCode _code, IC _level, std::string _param,
-              uint32_t _start_offset, uint32_t _end_offset)
+              uint32_t _start_offset, uint32_t fileid)
         : code(_code),
           level(_level),
           param(std::move(_param)),
           start_offset(_start_offset),
-          end_offset(_end_offset) {}
+          fileid(fileid) {}
 
     uint64_t hash() const;
   };
