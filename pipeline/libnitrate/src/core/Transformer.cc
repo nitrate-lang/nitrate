@@ -45,6 +45,7 @@
 #include <core/Transformer.hh>
 #include <cstdarg>
 #include <cstddef>
+#include <cstdio>
 #include <cstdlib>
 #include <functional>
 #include <nitrate/code.hh>
@@ -291,4 +292,57 @@ CPP_EXPORT std::future<bool> nitrate::pipeline(
                             functor_ctx ? nit_diag_functor : nullptr,
                             functor_ctx, options_c_str.data());
       });
+}
+
+CPP_EXPORT std::future<bool> nitrate::pipeline(
+    Stream in, std::string &out, const std::vector<std::string> &options,
+    std::optional<DiagnosticFunc> diag) {
+  return std::async(std::launch::async, [&out, In = std::move(in), options,
+                                         Diag = std::move(diag)]() {
+    /* Convert options to C strings */
+    std::vector<const char *> options_c_str(options.size() + 1);
+    for (size_t i = 0; i < options.size(); i++) {
+      options_c_str[i] = options[i].c_str();
+    }
+    options_c_str[options.size()] = nullptr;
+
+    void *functor_ctx = nullptr;
+    DiagnosticFunc callback = Diag.value_or(nullptr);
+
+    if (callback != nullptr) {
+      functor_ctx = reinterpret_cast<void *>(&callback);
+    }
+
+    FILE *out_file = tmpfile();
+    if (!out_file) {
+      return false;
+    }
+
+    bool status = nit_pipeline(In.get(), Stream(out_file).get(),
+                               functor_ctx ? nit_diag_functor : nullptr,
+                               functor_ctx, options_c_str.data());
+
+    if (fseek(out_file, 0, SEEK_END) != 0) {
+      fclose(out_file);
+      return false;
+    }
+
+    auto out_size = ftell(out_file);
+    if (out_size == -1) {
+      fclose(out_file);
+      return false;
+    }
+
+    rewind(out_file);
+
+    out.resize(out_size);
+    if (fread(out.data(), 1, out_size, out_file) != (size_t)out_size) {
+      fclose(out_file);
+      return false;
+    }
+
+    fclose(out_file);
+
+    return status;
+  });
 }
