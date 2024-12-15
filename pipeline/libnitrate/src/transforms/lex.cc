@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBNITRATE_INTERNAL
-
 #include <nitrate-core/Lib.h>
 #include <nitrate/code.h>
 
@@ -278,9 +276,9 @@ bool impl_use_msgpack(qlex_t *L, std::ostream &O) {
   return true;
 }
 
-bool nit::basic_lexer(std::istream &source, std::ostream &output,
-                      std::function<void(const char *)> diag_cb,
-                      const std::unordered_set<std::string_view> &opts) {
+bool nit::lex(std::istream &source, std::ostream &output,
+              std::function<void(const char *)> diag_cb,
+              const std::unordered_set<std::string_view> &opts) {
   (void)diag_cb;
 
   qlex lexer(source, nullptr, qcore_env_current());

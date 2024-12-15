@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBNITRATE_INTERNAL
-
 #include <nitrate-core/Lib.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-emit/Lib.h>

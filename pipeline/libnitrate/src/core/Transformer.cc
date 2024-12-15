@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBNITRATE_INTERNAL
-
 #include <nitrate-core/Env.h>
 #include <nitrate-core/Lib.h>
 #include <nitrate-core/Macro.h>
@@ -143,11 +141,14 @@ C_EXPORT nit_stream_t *nit_njoin(bool auto_close, size_t num,
 ///============================================================================///
 
 static const std::unordered_map<std::string_view, nit::subsystem_func>
-    dispatch_funcs = {
-        {"lex", nit::basic_lexer}, {"meta", nit::meta},
-        {"parse", nit::parser},    {"ir", nit::nr},
-        {"codegen", nit::codegen},
-};
+    dispatch_funcs = {{"lex", nit::lex},
+                      {"seq", nit::seq},
+                      {"parse", nit::parse},
+                      {"ir", nit::nr},
+                      {"codegen", nit::codegen},
+
+                      /* Helper routes */
+                      {"echo", nit::echo}};
 
 extern bool nit_lib_init();
 extern void nit_deinit();
