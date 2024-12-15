@@ -1,3 +1,0 @@
-fn [noreturn] impure ihdl_80(S: CPU) {
-
-}

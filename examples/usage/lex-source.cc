@@ -1,3 +1,6 @@
+// Transform source code into a JSON encoded array of tokens.
+// No preprocessing is performed.
+
 #include <nitrate/code.hh>
 
 int main() {
