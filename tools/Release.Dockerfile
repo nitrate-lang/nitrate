@@ -8,9 +8,8 @@ RUN apt clean
 RUN apt update --fix-missing && apt upgrade -y
 RUN apt install -y  libboost-all-dev libssl-dev libgoogle-glog-dev   \
                     libyaml-cpp-dev rapidjson-dev libreadline-dev    \
-                    libzstd-dev
+                    libzstd-dev libpolly-18-dev llvm-18
 RUN apt install -y cmake make clang
-RUN apt install -y libpolly-18-dev llvm-18
 
 ############################ Install clang #############################
 RUN update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
