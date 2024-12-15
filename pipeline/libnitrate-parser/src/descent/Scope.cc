@@ -78,11 +78,11 @@ static std::optional<ScopeDeps> recurse_scope_deps(qlex_t &rd) {
 
 static Stmt *recurse_scope_block(npar_t &S, qlex_t &rd) {
   if (next_if(qPuncSemi)) {
-    return make<Block>();
+    return make<Block>(BlockItems(), SafetyMode::Unknown);
   } else if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true);
+    return recurse_block(S, rd, false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true, false);
+    return recurse_block(S, rd, true, false, SafetyMode::Unknown);
   }
 }
 

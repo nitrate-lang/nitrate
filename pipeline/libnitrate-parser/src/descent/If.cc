@@ -37,20 +37,20 @@ using namespace npar;
 
 static Stmt *recurse_if_then(npar_t &S, qlex_t &rd) {
   if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true);
+    return recurse_block(S, rd, false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true);
+    return recurse_block(S, rd, true, false, SafetyMode::Unknown);
   }
 }
 
 static std::optional<Stmt *> recurse_if_else(npar_t &S, qlex_t &rd) {
   if (next_if(qKElse)) {
     if (next_if(qOpArrow)) {
-      return recurse_block(S, rd, false, true);
+      return recurse_block(S, rd, false, true, SafetyMode::Unknown);
     } else if (next_if(qKIf)) {
       return recurse_if(S, rd);
     } else {
-      return recurse_block(S, rd, true);
+      return recurse_block(S, rd, true, false, SafetyMode::Unknown);
     }
   } else {
     return std::nullopt;

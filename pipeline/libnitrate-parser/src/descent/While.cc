@@ -48,9 +48,9 @@ static Expr *recurse_while_cond(npar_t &S, qlex_t &rd) {
 
 static Stmt *recurse_while_body(npar_t &S, qlex_t &rd) {
   if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true);
+    return recurse_block(S, rd, false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true);
+    return recurse_block(S, rd, true, false, SafetyMode::Unknown);
   }
 }
 

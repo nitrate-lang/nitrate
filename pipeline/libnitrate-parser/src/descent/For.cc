@@ -40,7 +40,7 @@ static std::optional<Stmt *> recurse_for_init_expr(npar_t &S, qlex_t &rd) {
     return std::nullopt;
   }
 
-  return recurse_block(S, rd, false, true);
+  return recurse_block(S, rd, false, true, SafetyMode::Unknown);
 }
 
 static std::optional<Expr *> recurse_for_cond_expr(npar_t &S, qlex_t &rd) {
@@ -77,9 +77,9 @@ static std::optional<Expr *> recurse_for_step_expr(npar_t &S, qlex_t &rd,
 
 static Stmt *recurse_for_body(npar_t &S, qlex_t &rd) {
   if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true);
+    return recurse_block(S, rd, false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true, false);
+    return recurse_block(S, rd, true, false, SafetyMode::Unknown);
   }
 }
 

@@ -47,85 +47,72 @@
 using namespace npar;
 
 Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
-                          bool single_stmt) {
-  qlex_tok_t tok;
-
-  Block* block = make<Block>();
-  block->set_offset(current().start);
-
-  if (expect_braces) {
-    tok = next();
-    if (!tok.is<qPuncLCur>()) {
-      diagnostic << tok << "Expected '{'";
-    }
+                          bool single_stmt, SafetyMode safety) {
+  if (expect_braces && !next().is<qPuncLCur>()) {
+    diagnostic << current() << "Expected '{'";
   }
 
-  while ((tok = peek()).ty != qEofF) {
-    if (single_stmt && block->get_items().size() > 0) {
+  let block_start = current().start;
+  BlockItems items;
+
+  while (true) {
+    qlex_tok_t tok = peek();
+
+    if (expect_braces && next_if(qPuncRCur)) {
+      let block = make<Block>(items, safety);
+      block->set_offset(tok.start);
+
+      return block;
+    }
+
+    if (single_stmt && items.size() == 1) {
       break;
     }
 
-    if (expect_braces) {
-      if (tok.is<qPuncRCur>()) {
-        next();
-        return block;
-      }
+    if (next_if(qEofF)) {
+      break;
     }
 
-    if (tok.is<qPuncSemi>()) /* Skip excessive semicolons */
-    {
-      next();
+    /* Ignore extra semicolons */
+    if (next_if(qPuncSemi)) {
       continue;
     }
 
     if (!tok.is(qKeyW)) {
-      if (tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() || tok.is<qPuncRPar>()) {
-        diagnostic << tok << "Unexpected closing brace";
-        return mock_stmt(QAST_BLOCK);
+      let expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+
+      if (!next_if(qPuncSemi)) {
+        diagnostic << tok << "Expected ';' after expression";
       }
 
-      Expr* expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+      let stmt = make<ExprStmt>(expr);
+      stmt->set_offset(expr->get_offset());
 
-      if (!expr) {
-        diagnostic << tok << "Expected valid expression";
-        return mock_stmt(QAST_BLOCK);
-      }
-
-      tok = next();
-      if (!tok.is<qPuncSemi>()) {
-        diagnostic << tok << "Expected ';'";
-      }
-
-      ExprStmt* stmt = make<ExprStmt>(expr);
-      stmt->set_offset(std::get<0>(expr->get_pos()));
-
-      block->get_items().push_back(stmt);
+      items.push_back(stmt);
       continue;
     }
 
-    next();
-
+    let loc_start = tok.start;
     Stmt* node = nullptr;
 
-    uint32_t loc_start = tok.start;
-    switch (tok.as<qlex_key_t>()) {
+    switch (next(), tok.as<qlex_key_t>()) {
       case qKVar: {
-        for (auto decl : recurse_variable(S, rd, VarDeclType::Var)) {
-          block->get_items().push_back(decl);
+        for (let decl : recurse_variable(S, rd, VarDeclType::Var)) {
+          items.push_back(decl);
         }
         break;
       }
 
       case qKLet: {
-        for (auto decl : recurse_variable(S, rd, VarDeclType::Let)) {
-          block->get_items().push_back(decl);
+        for (let decl : recurse_variable(S, rd, VarDeclType::Let)) {
+          items.push_back(decl);
         }
         break;
       }
 
       case qKConst: {
-        for (auto decl : recurse_variable(S, rd, VarDeclType::Const)) {
-          block->get_items().push_back(decl);
+        for (let decl : recurse_variable(S, rd, VarDeclType::Const)) {
+          items.push_back(decl);
         }
         break;
       }
@@ -252,50 +239,41 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKUnsafe: {
-        tok = peek();
-        if (tok.is<qPuncLCur>()) {
-          node = recurse_block(S, rd);
+        if (peek().is<qPuncLCur>()) {
+          node = recurse_block(S, rd, true, false, SafetyMode::Unsafe);
         } else {
-          node = recurse_block(S, rd, false, true);
-        }
-
-        if (node->is(QAST_BLOCK)) {
-          node->as<Block>()->set_safety(SafetyMode::Unsafe);
+          node = recurse_block(S, rd, false, true, SafetyMode::Unsafe);
         }
 
         break;
       }
 
       case qKSafe: {
-        tok = peek();
-        if (tok.is<qPuncLCur>()) {
-          node = recurse_block(S, rd);
+        if (peek().is<qPuncLCur>()) {
+          node = recurse_block(S, rd, true, false, SafetyMode::Safe);
         } else {
-          node = recurse_block(S, rd, false, true);
-        }
-
-        if (node->is(QAST_BLOCK)) {
-          node->as<Block>()->set_safety(SafetyMode::Safe);
+          node = recurse_block(S, rd, false, true, SafetyMode::Safe);
         }
 
         break;
       }
 
-      default:
+      default: {
         diagnostic << tok << "Unexpected keyword";
         break;
+      }
     }
 
-    if (node) {
-      node->set_offset(loc_start);
-      /* End position is supplied by producer */
-      block->get_items().push_back(node);
-    }
+    node->set_offset(loc_start);
+    items.push_back(node);
   }
 
   if (expect_braces) {
-    diagnostic << tok << "Expected '}'";
+    diagnostic << current() << "Expected '}'";
   }
+
+  let block = make<Block>(items, safety);
+  block->set_offset(block_start);
 
   return block;
 }
@@ -344,7 +322,7 @@ C_EXPORT bool npar_do(npar_t* L, npar_node_t** out) {
   npar::install_reference(L);
 
   parser_ctx = L;
-  *out = npar::recurse_block(*L, *L->lexer, false, false);
+  *out = npar::recurse_block(*L, *L->lexer, false, false, SafetyMode::Unknown);
   parser_ctx = nullptr;
 
   /*== Uninstall thread-local references to the parser ==*/
@@ -376,7 +354,7 @@ C_EXPORT void npar_dumps(npar_t* parser, bool no_ansi, npar_dump_cb cb,
     return;
   }
 
-  auto adapter = [&](const char* msg) { cb(msg, std::strlen(msg), data); };
+  let adapter = [&](const char* msg) { cb(msg, std::strlen(msg), data); };
 
   if (no_ansi) {
     parser->diag.render(adapter, npar::FormatStyle::ClangPlain);

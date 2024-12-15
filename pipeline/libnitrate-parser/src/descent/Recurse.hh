@@ -42,6 +42,8 @@
 #include <nitrate-parser/AST.hh>
 #include <set>
 
+#include "nitrate-parser/ASTCommon.hh"
+
 namespace npar {
   Stmt *recurse_pub(npar_t &S, qlex_t &rd);
   Stmt *recurse_sec(npar_t &S, qlex_t &rd);
@@ -62,8 +64,8 @@ namespace npar {
   Stmt *recurse_switch(npar_t &S, qlex_t &rd);
   Stmt *recurse_inline_asm(npar_t &S, qlex_t &rd);
 
-  Stmt *recurse_block(npar_t &S, qlex_t &rd, bool expect_braces = true,
-                      bool single_stmt = false);
+  Stmt *recurse_block(npar_t &S, qlex_t &rd, bool expect_braces,
+                      bool single_stmt, SafetyMode safety);
 
   Expr *recurse_expr(npar_t &S, qlex_t &rd, std::set<qlex_tok_t> terminators,
                      size_t depth = 0);

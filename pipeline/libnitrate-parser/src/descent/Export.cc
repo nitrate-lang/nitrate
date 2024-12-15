@@ -76,9 +76,9 @@ static std::optional<ExpressionList> recurse_export_attributes(npar_t &S,
 
 static Stmt *recurse_export_body(npar_t &S, qlex_t &rd) {
   if (peek().is<qPuncLCur>()) {
-    return recurse_block(S, rd, true);
+    return recurse_block(S, rd, true, false, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, false, true);
+    return recurse_block(S, rd, false, true, SafetyMode::Unknown);
   }
 }
 

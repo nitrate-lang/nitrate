@@ -51,14 +51,11 @@ namespace npar {
     SafetyMode m_safety;
 
   public:
-    Block(const BlockItems &items = {}, SafetyMode safety = SafetyMode::Unknown)
+    Block(const BlockItems &items, SafetyMode safety)
         : Stmt(QAST_BLOCK), m_items(items), m_safety(safety) {}
 
     let get_items() const { return m_items; }
     let get_safety() const { return m_safety; }
-
-    void set_safety(SafetyMode safety) { m_safety = safety; }
-    auto &get_items() { return m_items; }
   };
 
   class VarDecl : public Stmt {

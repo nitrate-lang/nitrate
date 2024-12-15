@@ -37,9 +37,9 @@ using namespace npar;
 
 static Stmt *recurse_switch_case_body(npar_t &S, qlex_t &rd) {
   if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true);
+    return recurse_block(S, rd, false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true, false);
+    return recurse_block(S, rd, true, false, SafetyMode::Unknown);
   }
 }
 

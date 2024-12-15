@@ -68,9 +68,9 @@ static Expr *recurse_foreach_expr(npar_t &S, qlex_t &rd, bool has_paren) {
 
 static Stmt *recurse_foreach_body(npar_t &S, qlex_t &rd) {
   if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true);
+    return recurse_block(S, rd, false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true, false);
+    return recurse_block(S, rd, true, false, SafetyMode::Unknown);
   }
 }
 

@@ -350,9 +350,9 @@ static std::optional<Stmt *> recurse_function_body(npar_t &S, qlex_t &rd,
   if (restrict_decl_only || next_if(qPuncSemi)) {
     return std::nullopt;
   } else if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true);
+    return recurse_block(S, rd, false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true, false);
+    return recurse_block(S, rd, true, false, SafetyMode::Unknown);
   }
 }
 
