@@ -35,119 +35,37 @@
 #define __LIBNITRATE_CODE_HH__
 
 #include <nitrate/code.h>
-#include <nitrate/stream.h>
 
 #include <cstdbool>
 #include <cstring>
 #include <functional>
 #include <future>
 #include <iostream>
-#include <memory>
 #include <optional>
-#include <span>
+#include <sstream>
 #include <string_view>
 
 namespace nitrate {
-  class Stream final {
-    nit_stream_t *m_stream;
-
-    Stream(const Stream &) = delete;
-    Stream &operator=(const Stream &) = delete;
-
-  public:
-    Stream(FILE *file, bool auto_close = false)
-        : m_stream(nit_from(file, auto_close)) {}
-
-    Stream(const std::vector<FILE *> &merge_files, bool auto_close = false)
-        : m_stream(
-              nit_njoin(auto_close, merge_files.size(), merge_files.data())) {}
-
-    Stream(std::span<FILE *> merge_files, bool auto_close = false)
-        : m_stream(
-              nit_njoin(auto_close, merge_files.size(), merge_files.data())) {}
-
-    ///=================================================================///
-
-    Stream(std::string_view content)
-        : m_stream(nit_from(
-              fmemopen((void *)content.data(), content.size(), "r"), true)) {}
-
-    Stream(const char *content)
-        : m_stream(nit_from(fmemopen((void *)content, strlen(content), "r"),
-                            true)) {}
-
-    Stream(const std::vector<uint8_t> &content)
-        : m_stream(nit_from(
-              fmemopen((void *)content.data(), content.size(), "r"), true)) {}
-
-    Stream(const std::string &content)
-        : m_stream(nit_from(
-              fmemopen((void *)content.c_str(), content.size(), "r"), true)) {}
-
-    Stream(const uint8_t *content, size_t size)
-        : m_stream(nit_from(fmemopen((void *)content, size, "r"), true)) {}
-
-    template <class T>
-    Stream(std::span<T> merge_content) {
-      std::vector<FILE *> files;
-      for (const auto &content : merge_content) {
-        files.push_back(fmemopen((void *)content.data(), content.size(), "r"));
-      }
-      m_stream = nit_njoin(true, files.size(), files.data());
-    }
-
-    ///=================================================================///
-
-    Stream(Stream &&other) {
-      this->m_stream = other.m_stream;
-      other.m_stream = nullptr;
-    }
-
-    ///=================================================================///
-
-    ~Stream() {
-      if (m_stream) {
-        nit_fclose(m_stream);
-      }
-    };
-
-    bool is_open() const { return m_stream != nullptr; }
-
-    nit_stream_t *get() const { return m_stream; }
-  };
-
   using DiagnosticFunc = std::function<void(std::string_view message)>;
 
   std::future<bool> pipeline(
-      std::shared_ptr<Stream> in, std::shared_ptr<Stream> out,
+      std::istream &in, std::ostream &out,
       const std::vector<std::string> &options,
       std::optional<DiagnosticFunc> diag = [](std::string_view message) {
         std::cerr << message << std::endl;
       });
 
-  std::future<bool> pipeline(
-      Stream in, Stream out, const std::vector<std::string> &options,
-      std::optional<DiagnosticFunc> diag = [](std::string_view message) {
-        std::cerr << message << std::endl;
-      });
-
-  std::future<bool> pipeline(
-      Stream in, std::vector<uint8_t> &out,
-      const std::vector<std::string> &options,
-      std::optional<DiagnosticFunc> diag = [](std::string_view message) {
-        std::cerr << message << std::endl;
-      });
-
+  template <typename T>
   static inline std::future<bool> pipeline(
-      Stream in, std::string &out, const std::vector<std::string> &options,
+      const T &in, std::string &out, const std::vector<std::string> &options,
       std::optional<DiagnosticFunc> diag = [](std::string_view message) {
         std::cerr << message << std::endl;
       }) {
-    std::vector<uint8_t> buffer;
-    auto future = pipeline(std::move(in), buffer, options, diag);
+    std::stringstream out_stream, in_stream(in);
+    auto future = pipeline(in_stream, out_stream, options, diag);
     future.wait();
 
-    out = std::string(buffer.begin(), buffer.end());
+    out = out_stream.str();
     return future;
   }
 

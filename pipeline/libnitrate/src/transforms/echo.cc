@@ -31,10 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Transformer.hh>
+#include <core/Transform.hh>
 
-bool nit::echo(std::istream &source, std::ostream &output,
-               const std::unordered_set<std::string_view> &opts) {
+CREATE_TRANSFORM(nit::echo) {
   (void)opts;
 
   output << source.rdbuf();

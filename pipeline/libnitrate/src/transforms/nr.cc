@@ -35,18 +35,14 @@
 #include <nitrate/code.h>
 
 #include <core/SerialUtil.hh>
-#include <core/Transformer.hh>
+#include <core/Transform.hh>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/Writer.hh>
 #include <nitrate-parser/ASTReader.hh>
-#include <string_view>
 #include <unordered_set>
 
-#include "nitrate-core/Env.h"
-
-bool nit::nr(std::istream &source, std::ostream &output,
-             const std::unordered_set<std::string_view> &opts) {
+CREATE_TRANSFORM(nit::nr) {
   enum class OutMode {
     JSON,
     MsgPack,

@@ -36,16 +36,14 @@
 #include <nitrate/code.h>
 
 #include <core/SerialUtil.hh>
-#include <core/Transformer.hh>
+#include <core/Transform.hh>
 #include <nitrate-seq/Classes.hh>
-#include <string_view>
 #include <unordered_set>
 
 extern bool impl_use_msgpack(qlex_t *L, std::ostream &O);
 extern bool impl_use_json(qlex_t *L, std::ostream &O);
 
-bool nit::seq(std::istream &source, std::ostream &output,
-              const std::unordered_set<std::string_view> &opts) {
+CREATE_TRANSFORM(nit::seq) {
   qprep lexer(source, nullptr, qcore_env_current());
 
   enum class OutMode {

@@ -36,7 +36,7 @@
 #include <nitrate/code.h>
 
 #include <core/SerialUtil.hh>
-#include <core/Transformer.hh>
+#include <core/Transform.hh>
 #include <cstdint>
 #include <functional>
 #include <nitrate-core/Classes.hh>
@@ -44,7 +44,6 @@
 #include <nitrate-lexer/Classes.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Classes.hh>
-#include <string_view>
 #include <unordered_set>
 
 static inline qlex_tok_t eof_tok() {
@@ -268,8 +267,7 @@ static std::optional<npar_node_t *> parse_tokens(npar_t *L) {
   return ok ? std::make_optional(root) : std::nullopt;
 }
 
-bool nit::parse(std::istream &source, std::ostream &output,
-                const std::unordered_set<std::string_view> &opts) {
+CREATE_TRANSFORM(nit::parse) {
   enum class OutMode {
     JSON,
     MsgPack,

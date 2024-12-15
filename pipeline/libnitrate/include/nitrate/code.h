@@ -34,9 +34,9 @@
 #ifndef __LIBNITRATE_CODE_H__
 #define __LIBNITRATE_CODE_H__
 
-#include <nitrate/stream.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,8 +50,8 @@ typedef void (*nit_diag_func)(const char *message, void *opaque);
  *                                                                            *
  ******************************************************************************
  *                                                                            *
- * @param in      Transform input, or `NULL` to indicate no input             *
- * @param out     Transform output, or `NULL` to discard output               *
+ * @param in      Transform input                                             *
+ * @param out     Transform output                                            *
  * @param diag    Diagnostic callback function, or `NULL` to discard          *
  * @param opaque  Context to pass to the diagnostic callback                  *
  * @param options NULL-terminated array of options, or `NULL` for empty       *
@@ -61,8 +61,8 @@ typedef void (*nit_diag_func)(const char *message, void *opaque);
  ******************************************************************************
  *                                                                            *
  * @note The input and output streams are not closed by this function. It is  *
- * the caller's responsibility to close the streams. The input and output     *
- * streams cannot be the same.                                                *
+ * the caller's responsibility to close the streams. If either the input or   *
+ * output stream is `NULL`, the function will return `false`.                 *
  *                                                                            *
  * @warning Some internal validation is performed on the `options` parameter. *
  * However, there is no guarantee that all permutations of options are        *
@@ -70,7 +70,7 @@ typedef void (*nit_diag_func)(const char *message, void *opaque);
  * option is not recognized, the transformer will fail. See the documentation *
  * for more information on available options and their respective usage.      *
  *                                                                            *
- * @note Dependency initialization and deinitialization are handled           *
+ * @note Dependency initialization and deinitialization is handled            *
  * automatically. To increase performance for multiple calls, consider        *
  * manually initializing/deinitializing this library's dependencies.          *
  *                                                                            *
@@ -82,8 +82,18 @@ typedef void (*nit_diag_func)(const char *message, void *opaque);
  ******************************************************************************
  * @note This function is an ideal target for fuzz based testing              *
  *****************************************************************************/
-bool nit_pipeline(nit_stream_t *in, nit_stream_t *out, nit_diag_func diag,
-                  void *opaque, const char *const options[]);
+bool nit_pipeline(FILE *in, FILE *out, nit_diag_func diag, void *opaque,
+                  const char *const options[]);
+
+/******************************************************************************/
+
+static inline void nit_diag_stdout(const char *message, void *) {
+  fprintf(stdout, "%s", message);
+}
+
+static inline void nit_diag_stderr(const char *message, void *) {
+  fprintf(stderr, "%s", message);
+}
 
 #ifdef __cplusplus
 }
