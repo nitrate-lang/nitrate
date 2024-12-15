@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBNITRATE_INTERNAL
-
 #include <nitrate-core/Env.h>
 #include <nitrate-core/Lib.h>
 #include <nitrate-core/Macro.h>
@@ -47,6 +45,7 @@
 #include <core/Transformer.hh>
 #include <cstdarg>
 #include <cstddef>
+#include <cstdio>
 #include <cstdlib>
 #include <functional>
 #include <nitrate/code.hh>
@@ -143,11 +142,14 @@ C_EXPORT nit_stream_t *nit_njoin(bool auto_close, size_t num,
 ///============================================================================///
 
 static const std::unordered_map<std::string_view, nit::subsystem_func>
-    dispatch_funcs = {
-        {"lex", nit::basic_lexer}, {"meta", nit::meta},
-        {"parse", nit::parser},    {"ir", nit::nr},
-        {"codegen", nit::codegen},
-};
+    dispatch_funcs = {{"lex", nit::lex},
+                      {"seq", nit::seq},
+                      {"parse", nit::parse},
+                      {"ir", nit::nr},
+                      {"codegen", nit::codegen},
+
+                      /* Helper routes */
+                      {"echo", nit::echo}};
 
 extern bool nit_lib_init();
 extern void nit_deinit();
@@ -196,6 +198,8 @@ C_EXPORT bool nit_pipeline(nit_stream_t *in, nit_stream_t *out,
     return false;
   }
 
+  qcore_env env; /* Don't remove me */
+
   if (let options_opt = parse_options(options)) {
     let opts = options_opt.value();
 
@@ -205,8 +209,6 @@ C_EXPORT bool nit_pipeline(nit_stream_t *in, nit_stream_t *out,
 
         std::unordered_set<std::string_view> opts_set(opts.begin() + 1,
                                                       opts.end());
-
-        qcore_env env; /* Don't remove me */
 
         let input_stream = std::make_shared<std::istream>(in);
         let output_stream = std::make_shared<std::ostream>(the_output);
@@ -290,4 +292,57 @@ CPP_EXPORT std::future<bool> nitrate::pipeline(
                             functor_ctx ? nit_diag_functor : nullptr,
                             functor_ctx, options_c_str.data());
       });
+}
+
+CPP_EXPORT std::future<bool> nitrate::pipeline(
+    Stream in, std::string &out, const std::vector<std::string> &options,
+    std::optional<DiagnosticFunc> diag) {
+  return std::async(std::launch::async, [&out, In = std::move(in), options,
+                                         Diag = std::move(diag)]() {
+    /* Convert options to C strings */
+    std::vector<const char *> options_c_str(options.size() + 1);
+    for (size_t i = 0; i < options.size(); i++) {
+      options_c_str[i] = options[i].c_str();
+    }
+    options_c_str[options.size()] = nullptr;
+
+    void *functor_ctx = nullptr;
+    DiagnosticFunc callback = Diag.value_or(nullptr);
+
+    if (callback != nullptr) {
+      functor_ctx = reinterpret_cast<void *>(&callback);
+    }
+
+    FILE *out_file = tmpfile();
+    if (!out_file) {
+      return false;
+    }
+
+    bool status = nit_pipeline(In.get(), Stream(out_file).get(),
+                               functor_ctx ? nit_diag_functor : nullptr,
+                               functor_ctx, options_c_str.data());
+
+    if (fseek(out_file, 0, SEEK_END) != 0) {
+      fclose(out_file);
+      return false;
+    }
+
+    auto out_size = ftell(out_file);
+    if (out_size == -1) {
+      fclose(out_file);
+      return false;
+    }
+
+    rewind(out_file);
+
+    out.resize(out_size);
+    if (fread(out.data(), 1, out_size, out_file) != (size_t)out_size) {
+      fclose(out_file);
+      return false;
+    }
+
+    fclose(out_file);
+
+    return status;
+  });
 }

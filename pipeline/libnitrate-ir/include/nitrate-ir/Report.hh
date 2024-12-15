@@ -89,8 +89,7 @@ namespace nr {
       IC level;
       std::string_view param;
       uint32_t start_offset;
-      uint32_t end_offset;
-      std::string_view filename;
+      uint32_t fileid;
     };
 
     virtual ~IReport() = default;

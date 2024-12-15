@@ -38,6 +38,7 @@
 #include <nitrate/stream.h>
 
 #include <cstdbool>
+#include <cstring>
 #include <functional>
 #include <future>
 #include <iostream>
@@ -54,22 +55,55 @@ namespace nitrate {
     Stream &operator=(const Stream &) = delete;
 
   public:
-    Stream(FILE *file, bool auto_close = false) {
-      m_stream = nit_from(file, auto_close);
+    Stream(FILE *file, bool auto_close = false)
+        : m_stream(nit_from(file, auto_close)) {}
+
+    Stream(const std::vector<FILE *> &merge_files, bool auto_close = false)
+        : m_stream(
+              nit_njoin(auto_close, merge_files.size(), merge_files.data())) {}
+
+    Stream(std::span<FILE *> merge_files, bool auto_close = false)
+        : m_stream(
+              nit_njoin(auto_close, merge_files.size(), merge_files.data())) {}
+
+    ///=================================================================///
+
+    Stream(std::string_view content)
+        : m_stream(nit_from(
+              fmemopen((void *)content.data(), content.size(), "r"), true)) {}
+
+    Stream(const char *content)
+        : m_stream(nit_from(fmemopen((void *)content, strlen(content), "r"),
+                            true)) {}
+
+    Stream(const std::vector<uint8_t> &content)
+        : m_stream(nit_from(
+              fmemopen((void *)content.data(), content.size(), "r"), true)) {}
+
+    Stream(const std::string &content)
+        : m_stream(nit_from(
+              fmemopen((void *)content.c_str(), content.size(), "r"), true)) {}
+
+    Stream(const uint8_t *content, size_t size)
+        : m_stream(nit_from(fmemopen((void *)content, size, "r"), true)) {}
+
+    template <class T>
+    Stream(std::span<T> merge_content) {
+      std::vector<FILE *> files;
+      for (const auto &content : merge_content) {
+        files.push_back(fmemopen((void *)content.data(), content.size(), "r"));
+      }
+      m_stream = nit_njoin(true, files.size(), files.data());
     }
 
-    Stream(const std::vector<FILE *> &merge_files, bool auto_close = false) {
-      m_stream = nit_njoin(auto_close, merge_files.size(), merge_files.data());
-    }
-
-    Stream(std::span<FILE *> merge_files, bool auto_close = false) {
-      m_stream = nit_njoin(auto_close, merge_files.size(), merge_files.data());
-    }
+    ///=================================================================///
 
     Stream(Stream &&other) {
       this->m_stream = other.m_stream;
       other.m_stream = nullptr;
     }
+
+    ///=================================================================///
 
     ~Stream() {
       if (m_stream) {
@@ -101,6 +135,15 @@ namespace nitrate {
         std::cerr << message;
         std::cerr.flush();
       });
+
+  std::future<bool> pipeline(
+      Stream in, std::string &out, const std::vector<std::string> &options,
+      std::optional<DiagnosticFunc> diag = [](std::string_view message,
+                                              std::string_view) {
+        std::cerr << message;
+        std::cerr.flush();
+      });
+
 }  // namespace nitrate
 
 #endif  // __LIBNITRATE_CODE_HH__

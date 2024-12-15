@@ -44,17 +44,17 @@ namespace nit {
       std::function<void(const char *)> diag_cb,
       const std::unordered_set<std::string_view> &opts);
 
-  bool basic_lexer(std::istream &source, std::ostream &output,
-                   std::function<void(const char *)> diag_cb,
-                   const std::unordered_set<std::string_view> &opts);
+  bool lex(std::istream &source, std::ostream &output,
+           std::function<void(const char *)> diag_cb,
+           const std::unordered_set<std::string_view> &opts);
 
-  bool meta(std::istream &source, std::ostream &output,
-            std::function<void(const char *)> diag_cb,
-            const std::unordered_set<std::string_view> &opts);
+  bool seq(std::istream &source, std::ostream &output,
+           std::function<void(const char *)> diag_cb,
+           const std::unordered_set<std::string_view> &opts);
 
-  bool parser(std::istream &source, std::ostream &output,
-              std::function<void(const char *)> diag_cb,
-              const std::unordered_set<std::string_view> &opts);
+  bool parse(std::istream &source, std::ostream &output,
+             std::function<void(const char *)> diag_cb,
+             const std::unordered_set<std::string_view> &opts);
 
   bool nr(std::istream &source, std::ostream &output,
           std::function<void(const char *)> diag_cb,
@@ -63,4 +63,10 @@ namespace nit {
   bool codegen(std::istream &source, std::ostream &output,
                std::function<void(const char *)> diag_cb,
                const std::unordered_set<std::string_view> &opts);
+
+  /* Helper routes */
+
+  bool echo(std::istream &source, std::ostream &output,
+            std::function<void(const char *)> diag_cb,
+            const std::unordered_set<std::string_view> &opts);
 }  // namespace nit

@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBNITRATE_INTERNAL
-
 #include <nitrate-core/Error.h>
 
 #include <core/SerialUtil.hh>

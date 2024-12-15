@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LIBNITRATE_INTERNAL
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Lib.h>
 #include <nitrate/code.h>
@@ -276,9 +275,9 @@ static std::optional<npar_node_t *> parse_tokens(npar_t *L,
   return ok ? std::make_optional(root) : std::nullopt;
 }
 
-bool nit::parser(std::istream &source, std::ostream &output,
-                 std::function<void(const char *)> diag_cb,
-                 const std::unordered_set<std::string_view> &opts) {
+bool nit::parse(std::istream &source, std::ostream &output,
+                std::function<void(const char *)> diag_cb,
+                const std::unordered_set<std::string_view> &opts) {
   enum class OutMode {
     JSON,
     MsgPack,
