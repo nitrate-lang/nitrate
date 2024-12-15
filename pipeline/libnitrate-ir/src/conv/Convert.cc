@@ -1461,13 +1461,13 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
       failed = true;
     }
 
-    if (n->get_precond() != nullptr) {
+    if (n->get_precond().has_value()) {
       G->report(nr::CompilerError, IC::Error,
                 "Function pre-conditions are not currently supported");
       failed = true;
     }
 
-    if (n->get_postcond() != nullptr) {
+    if (n->get_postcond().has_value()) {
       G->report(nr::CompilerError, IC::Error,
                 "Function post-conditions are not currently supported");
       failed = true;
