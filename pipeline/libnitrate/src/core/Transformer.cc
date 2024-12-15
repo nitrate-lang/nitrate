@@ -197,6 +197,8 @@ C_EXPORT bool nit_pipeline(nit_stream_t *in, nit_stream_t *out,
     return false;
   }
 
+  qcore_env env; /* Don't remove me */
+
   if (let options_opt = parse_options(options)) {
     let opts = options_opt.value();
 
@@ -206,8 +208,6 @@ C_EXPORT bool nit_pipeline(nit_stream_t *in, nit_stream_t *out,
 
         std::unordered_set<std::string_view> opts_set(opts.begin() + 1,
                                                       opts.end());
-
-        qcore_env env; /* Don't remove me */
 
         let input_stream = std::make_shared<std::istream>(in);
         let output_stream = std::make_shared<std::ostream>(the_output);
