@@ -37,9 +37,10 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo apt install -y cmake make clang llvm-18
+        sudo apt install -y cmake make clang
         sudo apt install -y libboost-all-dev libssl-dev libgoogle-glog-dev   \
-                            libyaml-cpp-dev rapidjson-dev libreadline-dev
+                            libyaml-cpp-dev rapidjson-dev libreadline-dev    \
+                            libzstd-dev libpolly-18-dev llvm-18
       shell: bash
 
     - name: Set reusable strings
