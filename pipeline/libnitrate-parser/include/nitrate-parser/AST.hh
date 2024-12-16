@@ -61,7 +61,6 @@ namespace npar {
     bfs_pre,
     bfs_post,
     children,
-    inorder,
   };
 
   enum class IterOp {
@@ -79,7 +78,6 @@ namespace npar {
     void bfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs);
     void bfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs);
     void iter_children(Expr **base, IterCallback cb, ChildSelect cs);
-    void inorder_impl(Expr **base, IterCallback cb, ChildSelect cs);
   }  // namespace detail
 
   template <IterMode mode, typename T>
@@ -94,8 +92,6 @@ namespace npar {
       return detail::bfs_post_impl((Expr **)&base, cb, cs);
     } else if constexpr (mode == children) {
       return detail::iter_children((Expr **)&base, cb, cs);
-    } else if constexpr (mode == inorder) {
-      return detail::inorder_impl((Expr **)&base, cb, cs);
     } else {
       static_assert(mode != mode, "Invalid iteration mode.");
     }

@@ -502,5 +502,4 @@ namespace nr::detail {
 
     syncfn(base, cb, cs);
   }
-
 }  // namespace nr::detail
