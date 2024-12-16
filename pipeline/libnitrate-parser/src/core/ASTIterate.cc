@@ -31,83 +31,48 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define IRBUILDER_IMPL
-
 #include <nitrate-core/Error.h>
+#include <nitrate-core/Macro.h>
+#include <nitrate-lexer/Lexer.h>
 
-#include <nitrate-ir/IRBuilder.hh>
-#include <nitrate-ir/IRGraph.hh>
+#include <algorithm>
+#include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTWriter.hh>
 
-using namespace nr;
+using namespace npar;
 
-bool NRBuilder::check_function_calls(Seq *root, IReport *I) {
-  bool failed = false;
+CPP_EXPORT void detail::dfs_pre_impl(Expr **base, IterCallback cb,
+                                     ChildSelect cs) {
+  /// TODO: Implement iterator
+  qcore_implement();
+}
 
-  nr::for_each<Call>(root, [&](const Call *x) {
-    Expr *target = x->getTarget();
+CPP_EXPORT void detail::dfs_post_impl(Expr **base, IterCallback cb,
+                                      ChildSelect cs) {
+  /// TODO: Implement iterator
+  qcore_implement();
+}
 
-    if (auto target_type = target->getType()) {
-      if (target_type.value()->is_function()) {
-        FnTy *fn_ty = target_type.value()->as<FnTy>();
+CPP_EXPORT void detail::bfs_pre_impl(Expr **base, IterCallback cb,
+                                     ChildSelect cs) {
+  /// TODO: Implement iterator
+  qcore_implement();
+}
 
-        const auto &arguments = x->getArgs();
+CPP_EXPORT void detail::bfs_post_impl(Expr **base, IterCallback cb,
+                                      ChildSelect cs) {
+  /// TODO: Implement iterator
+  qcore_implement();
+}
 
-        bool variadic_two_few =
-            fn_ty->isVariadic() && arguments.size() < fn_ty->getParams().size();
-        bool two_few = arguments.size() < fn_ty->getParams().size();
-        bool two_many = arguments.size() > fn_ty->getParams().size();
+CPP_EXPORT void detail::iter_children(Expr **base, IterCallback cb,
+                                      ChildSelect cs) {
+  /// TODO: Implement iterator
+  qcore_implement();
+}
 
-        if (variadic_two_few) {
-          I->report(VariadicNotEnoughArguments, IC::Error, target->getName(),
-                    x->getLoc());
-        } else if (two_few) {
-          I->report(TwoFewArguments, IC::Error, target->getName(), x->getLoc());
-        } else if (two_many) {
-          I->report(TwoManyArguments, IC::Error, target->getName(),
-                    x->getLoc());
-        }
-
-        if (!two_few && !two_many && !variadic_two_few) {
-          for (size_t i = 0; i < fn_ty->getParams().size(); ++i) {
-            auto param_type = fn_ty->getParams()[i]->getType();
-
-            if (!param_type.has_value()) {
-              I->report(TypeInference, IC::Error,
-                        "Unable to deduce function parameter type");
-              failed = true;
-              continue;
-            }
-
-            auto arg_type = arguments[i]->getType();
-            if (!arg_type.has_value()) {
-              I->report(TypeInference, IC::Error,
-                        "Unable to deduce function argument type");
-              failed = true;
-              continue;
-            }
-
-            if (!param_type.value()->isSame(arg_type.value())) {
-              I->report(BadCast, IC::Error,
-                        {"Bad call argument cast from '",
-                         arg_type.value()->toString(), "' to '",
-                         param_type.value()->toString(), "'"});
-              failed = true;
-              continue;
-            }
-
-            /// TODO: Handle implicit conversions
-
-            // The argument is valid
-          }
-
-          return;
-        }
-      }
-    }
-
-    /* Fallthough to error flag */
-    failed = true;
-  });
-
-  return !failed;
+CPP_EXPORT void detail::inorder_impl(Expr **base, IterCallback cb,
+                                     ChildSelect cs) {
+  /// TODO: Implement iterator
+  qcore_implement();
 }

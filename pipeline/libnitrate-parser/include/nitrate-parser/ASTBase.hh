@@ -574,6 +574,7 @@ public:
 
   constexpr uint32_t get_offset() const { return m_offset; }
   constexpr uint32_t get_fileid() const { return m_fileid; }
+  constexpr bool is_mock() const { return m_mock; }
 
   constexpr std::tuple<uint32_t, uint32_t> get_pos() const {
     return {m_offset, m_fileid};

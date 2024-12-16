@@ -54,4 +54,75 @@ namespace npar {
   Type *mock_type();
 }  // namespace npar
 
+namespace npar {
+  enum IterMode {
+    dfs_pre,
+    dfs_post,
+    bfs_pre,
+    bfs_post,
+    children,
+    inorder,
+  };
+
+  enum class IterOp {
+    Proceed,
+    Abort,
+    SkipChildren,
+  };
+
+  typedef std::function<IterOp(Expr *p, Expr **c)> IterCallback;
+  typedef std::function<bool(Expr **a, Expr **b)> ChildSelect;
+
+  namespace detail {
+    void dfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs);
+    void dfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs);
+    void bfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs);
+    void bfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs);
+    void iter_children(Expr **base, IterCallback cb, ChildSelect cs);
+    void inorder_impl(Expr **base, IterCallback cb, ChildSelect cs);
+  }  // namespace detail
+
+  template <IterMode mode, typename T>
+  void iterate(T *&base, IterCallback cb, ChildSelect cs = nullptr) {
+    if constexpr (mode == dfs_pre) {
+      return detail::dfs_pre_impl((Expr **)&base, cb, cs);
+    } else if constexpr (mode == dfs_post) {
+      return detail::dfs_post_impl((Expr **)&base, cb, cs);
+    } else if constexpr (mode == bfs_pre) {
+      return detail::bfs_pre_impl((Expr **)&base, cb, cs);
+    } else if constexpr (mode == bfs_post) {
+      return detail::bfs_post_impl((Expr **)&base, cb, cs);
+    } else if constexpr (mode == children) {
+      return detail::iter_children((Expr **)&base, cb, cs);
+    } else if constexpr (mode == inorder) {
+      return detail::inorder_impl((Expr **)&base, cb, cs);
+    } else {
+      static_assert(mode != mode, "Invalid iteration mode.");
+    }
+  }
+
+  template <auto mode = dfs_pre>
+  void for_each(const npar_node_t *const v,
+                std::function<void(npar_ty_t, const npar_node_t *const)> f) {
+    iterate<mode>(v, [&](auto, auto c) -> IterOp {
+      f((*c)->getKind(), *c);
+
+      return IterOp::Abort;
+    });
+  }
+
+  template <typename T, auto mode = dfs_pre>
+  void for_each(const npar_node_t *const v, std::function<void(const T *)> f) {
+    iterate<mode>(v, [&](auto, const npar_node_t *const *const c) -> IterOp {
+      if ((*c)->getKind() != npar_node_t::getTypeCode<T>()) {
+        return IterOp::Proceed;
+      }
+
+      f((*c)->as<T>());
+
+      return IterOp::Proceed;
+    });
+  }
+}  // namespace npar
+
 #endif

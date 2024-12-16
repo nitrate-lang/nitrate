@@ -2642,7 +2642,7 @@ namespace nr {
   }
 }  // namespace nr
 
-namespace std {
+namespace nr {
   template <auto mode = nr::dfs_pre>
   void for_each(const nr::Expr *const v,
                 std::function<void(nr_ty_t, const nr::Expr *const)> f) {
@@ -2685,7 +2685,6 @@ namespace std {
                                           : nr::IterOp::Abort;
     });
   }
-
-}  // namespace std
+}  // namespace nr
 
 #endif

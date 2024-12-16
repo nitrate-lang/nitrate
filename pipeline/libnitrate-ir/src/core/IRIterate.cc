@@ -299,11 +299,6 @@ namespace nr::detail {
     return;
   }
 
-  class IterAbort {
-  public:
-    IterAbort() = default;
-  };
-
   CPP_EXPORT void dfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs) {
     qcore_assert(base != nullptr && cb != nullptr,
                  "dfs_pre_impl: base and cb must not be null");

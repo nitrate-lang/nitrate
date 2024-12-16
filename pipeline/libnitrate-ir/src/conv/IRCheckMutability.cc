@@ -43,7 +43,7 @@ using namespace nr;
 bool NRBuilder::check_mutability(Seq *root, IReport *I) {
   bool failed = false;
 
-  std::for_each<BinExpr>(root, [&](const BinExpr *x) {
+  nr::for_each<BinExpr>(root, [&](const BinExpr *x) {
     if (x->getOp() != Op::Set) {
       return;
     }

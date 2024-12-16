@@ -35,7 +35,6 @@
 #include <nitrate-core/Macro.h>
 #include <nitrate-parser/Parser.h>
 
-#include <atomic>
 #include <core/Context.hh>
 #include <cstring>
 #include <descent/Recurse.hh>
@@ -362,12 +361,10 @@ C_EXPORT npar_t* npar_new(qlex_t* lexer, qcore_env_t env) {
   if (!lexer) {
     return nullptr;
   }
-  static std::atomic<uint64_t> job_id = 1;  // 0 is reserved for invalid job
 
   npar_t* parser = new npar_t();
 
   parser->env = env;
-  parser->id = job_id++;
   parser->lexer = lexer;
   parser->failed = false;
   parser->diag.set_ctx(parser);
@@ -416,16 +413,22 @@ C_EXPORT bool npar_do(npar_t* L, npar_node_t** out) {
 }
 
 C_EXPORT bool npar_check(npar_t* parser, const npar_node_t* base) {
-  if (!parser || !base) {
+  if (!base) {
     return false;
   }
 
-  if (parser->failed) {
+  if (parser && parser->failed) {
     return false;
   }
 
-  /* TODO: Implement checks */
-  return true;
+  bool failed = false;
+  npar::iterate<dfs_pre>(base, [&](auto, auto c) {
+    failed |= !c || !*c || (*c)->is_mock();
+
+    return failed ? IterOp::Abort : IterOp::Proceed;
+  });
+
+  return !failed;
 }
 
 C_EXPORT void npar_dumps(npar_t* parser, bool no_ansi, npar_dump_cb cb,

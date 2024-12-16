@@ -95,15 +95,12 @@ bool npar_do(npar_t *parser, npar_node_t **out);
 /**
  * @brief Check if the parse tree is valid.
  *
- * @param parser The parser instance to use for parsing.
+ * @param parser The parser instance to use for parsing or NULL.
  * @param base The base node of the parse tree to check.
  *
- * @return Returns true if the parse tree is valid, false otherwise. A value of
- * true, however, does not indicate that the parse tree is free of semantic
- * errors. This just ensures it doesn't contain NULL nodes and other illegal
- * constructs (basic checks).
+ * @return True if the AST is valid, false otherwise.
  *
- * @note If `!parser`, `!base` false is returned.
+ * @note If base is NULL, false is returned.
  *
  * @note This function is thread safe.
  */

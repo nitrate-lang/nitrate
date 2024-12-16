@@ -44,7 +44,7 @@ using namespace nr;
 bool NRBuilder::check_returns(Seq *root, IReport *I) {
   bool failed = false;
 
-  std::for_each<Fn>(root, [&](const Fn *x) {
+  nr::for_each<Fn>(root, [&](const Fn *x) {
     /* Skip function declarations */
     if (!x->getBody()) {
       return;
@@ -64,7 +64,7 @@ bool NRBuilder::check_returns(Seq *root, IReport *I) {
 
     bool found_ret = false;
 
-    std::for_each<Ret>(x->getBody().value(), [&](const Ret *y) {
+    nr::for_each<Ret>(x->getBody().value(), [&](const Ret *y) {
       found_ret = true;
 
       auto ret_expr_ty_opt = y->getExpr()->getType();
