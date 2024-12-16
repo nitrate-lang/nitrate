@@ -36,7 +36,7 @@
 CREATE_TRANSFORM(nit::echo) {
   (void)opts;
 
-  output << source.rdbuf();
+  output << source.rdbuf() << std::endl;
 
   return true;
 }

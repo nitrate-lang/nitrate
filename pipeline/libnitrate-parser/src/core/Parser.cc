@@ -264,8 +264,10 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
     }
 
-    node->set_offset(loc_start);
-    items.push_back(node);
+    if (node) {
+      node->set_offset(loc_start);
+      items.push_back(node);
+    }
   }
 
   if (expect_braces) {

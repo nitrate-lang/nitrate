@@ -48,6 +48,7 @@
 #include <cstdlib>
 #include <functional>
 #include <nitrate/code.hh>
+#include <sstream>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
@@ -168,35 +169,67 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
   }
 }
 
-CPP_EXPORT std::future<bool> nitrate::pipeline(
-    std::istream &in, std::ostream &out,
-    const std::vector<std::string> &options,
+CPP_EXPORT nitrate::LazyResult<bool> nitrate::pipeline(
+    std::istream &in, std::ostream &out, std::vector<std::string> options,
     std::optional<DiagnosticFunc> diag) {
-  return std::async(std::launch::async, [&in, &out, options, diag]() {
-    /* Convert options to C strings */
-    std::vector<const char *> options_c_str(options.size() + 1);
-    for (size_t i = 0; i < options.size(); i++) {
-      options_c_str[i] = options[i].c_str();
-    }
-    options_c_str[options.size()] = nullptr;
+  return nitrate::LazyResult<bool>(
+      [&in, &out, Options = std::move(options), diag]() -> bool {
+        /* Convert options to C strings */
+        std::vector<const char *> options_c_str(Options.size() + 1);
+        for (size_t i = 0; i < Options.size(); i++) {
+          options_c_str[i] = Options[i].c_str();
+        }
+        options_c_str[Options.size()] = nullptr;
 
-    void *functor_ctx = nullptr;
-    DiagnosticFunc callback = diag.value_or(nullptr);
+        void *functor_ctx = nullptr;
+        DiagnosticFunc callback = diag.value_or(nullptr);
 
-    if (callback != nullptr) {
-      functor_ctx = reinterpret_cast<void *>(&callback);
-    }
+        if (callback != nullptr) {
+          functor_ctx = reinterpret_cast<void *>(&callback);
+        }
 
-    static let diag_nop = [](const char *, void *) {};
-    static let nit_diag_functor = [](const char *message, void *ctx) {
-      let callback = *reinterpret_cast<nitrate::DiagnosticFunc *>(ctx);
-      callback(message);
-    };
+        static let diag_nop = [](const char *, void *) {};
+        static let nit_diag_functor = [](const char *message, void *ctx) {
+          let callback = *reinterpret_cast<nitrate::DiagnosticFunc *>(ctx);
+          callback(message);
+        };
 
-    return nit_pipeline_stream(in, out,
-                               functor_ctx ? nit_diag_functor : diag_nop,
-                               functor_ctx, options_c_str.data());
-  });
+        return nit_pipeline_stream(in, out,
+                                   functor_ctx ? nit_diag_functor : diag_nop,
+                                   functor_ctx, options_c_str.data());
+      });
+}
+
+CPP_EXPORT nitrate::LazyResult<bool> nitrate::chain(
+    std::istream &in, std::ostream &out, ChainOptions operations,
+    std::optional<DiagnosticFunc> diag) {
+  return nitrate::LazyResult<bool>(
+      [&in, &out, Operations = std::move(operations), diag]() -> bool {
+        if (Operations.empty()) {
+          return true;
+        }
+
+        if (Operations.size() == 1) {
+          return nitrate::pipeline(in, out, Operations[0], diag).get();
+        } else {
+          std::stringstream s0, s1;
+          if (!nitrate::pipeline(in, s0, Operations[0], diag).get()) {
+            return false;
+          }
+
+          for (size_t i = 1; i < Operations.size() - 1; i++) {
+            if (!nitrate::pipeline(s0, s1, Operations[i], diag).get()) {
+              return false;
+            }
+
+            s0.str("");
+            s0.clear();
+            s0.swap(s1);
+          }
+
+          return nitrate::pipeline(s0, out, Operations.back(), diag).get();
+        }
+      });
 }
 
 ///============================================================================///
