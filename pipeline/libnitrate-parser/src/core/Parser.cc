@@ -93,7 +93,6 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
     }
 
     let loc_start = tok.start;
-    Stmt* node = nullptr;
 
     switch (next(), tok.as<qlex_key_t>()) {
       case qKVar: {
@@ -118,131 +117,209 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKEnum: {
-        node = recurse_enum(S, rd);
+        let node = recurse_enum(S, rd);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKStruct: {
-        node = recurse_struct(S, rd, CompositeType::Struct);
+        let node = recurse_struct(S, rd, CompositeType::Struct);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKRegion: {
-        node = recurse_struct(S, rd, CompositeType::Region);
+        let node = recurse_struct(S, rd, CompositeType::Region);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKGroup: {
-        node = recurse_struct(S, rd, CompositeType::Group);
+        let node = recurse_struct(S, rd, CompositeType::Group);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKClass: {
-        node = recurse_struct(S, rd, CompositeType::Class);
+        let node = recurse_struct(S, rd, CompositeType::Class);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKUnion: {
-        node = recurse_struct(S, rd, CompositeType::Union);
+        let node = recurse_struct(S, rd, CompositeType::Union);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKType: {
-        node = recurse_typedef(S, rd);
+        let node = recurse_typedef(S, rd);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKScope: {
-        node = recurse_scope(S, rd);
+        let node = recurse_scope(S, rd);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKFn: {
-        node = recurse_function(S, rd, false);
+        let node = recurse_function(S, rd, false);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKPub:
       case qKImport: {  // they both declare external functions
-        node = recurse_pub(S, rd);
+        let node = recurse_pub(S, rd);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKSec: {
-        node = recurse_sec(S, rd);
+        let node = recurse_sec(S, rd);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKPro: {
-        node = recurse_pro(S, rd);
+        let node = recurse_pro(S, rd);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKReturn: {
-        node = recurse_return(S, rd);
+        let node = recurse_return(S, rd);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKRetif: {
-        node = recurse_retif(S, rd);
+        let node = recurse_retif(S, rd);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKBreak: {
-        node = make<BreakStmt>();
+        let node = make<BreakStmt>();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKContinue: {
-        node = make<ContinueStmt>();
+        let node = make<ContinueStmt>();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKIf: {
-        node = recurse_if(S, rd);
+        let node = recurse_if(S, rd);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKWhile: {
-        node = recurse_while(S, rd);
+        let node = recurse_while(S, rd);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKFor: {
-        node = recurse_for(S, rd);
+        let node = recurse_for(S, rd);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKForeach: {
-        node = recurse_foreach(S, rd);
+        let node = recurse_foreach(S, rd);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKSwitch: {
-        node = recurse_switch(S, rd);
+        let node = recurse_switch(S, rd);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qK__Asm__: {
-        node = recurse_inline_asm(S, rd);
+        let node = recurse_inline_asm(S, rd);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKTrue: {
-        node = make<ExprStmt>(make<ConstBool>(true));
+        let node = make<ExprStmt>(make<ConstBool>(true));
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKFalse: {
-        node = make<ExprStmt>(make<ConstBool>(false));
+        let node = make<ExprStmt>(make<ConstBool>(false));
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKUnsafe: {
         if (peek().is<qPuncLCur>()) {
-          node = recurse_block(S, rd, true, false, SafetyMode::Unsafe);
+          let node = recurse_block(S, rd, true, false, SafetyMode::Unsafe);
+          node->set_offset(loc_start);
+
+          items.push_back(node);
         } else {
-          node = recurse_block(S, rd, false, true, SafetyMode::Unsafe);
+          let node = recurse_block(S, rd, false, true, SafetyMode::Unsafe);
+          node->set_offset(loc_start);
+
+          items.push_back(node);
         }
 
         break;
@@ -250,9 +327,15 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
 
       case qKSafe: {
         if (peek().is<qPuncLCur>()) {
-          node = recurse_block(S, rd, true, false, SafetyMode::Safe);
+          let node = recurse_block(S, rd, true, false, SafetyMode::Safe);
+          node->set_offset(loc_start);
+
+          items.push_back(node);
         } else {
-          node = recurse_block(S, rd, false, true, SafetyMode::Safe);
+          let node = recurse_block(S, rd, false, true, SafetyMode::Safe);
+          node->set_offset(loc_start);
+
+          items.push_back(node);
         }
 
         break;
@@ -262,11 +345,6 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
         diagnostic << tok << "Unexpected keyword";
         break;
       }
-    }
-
-    if (node) {
-      node->set_offset(loc_start);
-      items.push_back(node);
     }
   }
 
