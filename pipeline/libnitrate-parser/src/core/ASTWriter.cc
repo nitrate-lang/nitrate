@@ -683,7 +683,7 @@ void AST_Writer::visit(ConstInt const& n) {
   write_source_location(n);
 
   string("value");
-  string(*n.get_value());
+  string(n.get_value());
 
   end_obj();
 }
@@ -697,7 +697,7 @@ void AST_Writer::visit(ConstFloat const& n) {
   write_source_location(n);
 
   string("value");
-  string(*n.get_value());
+  string(n.get_value());
 
   end_obj();
 }
@@ -725,7 +725,7 @@ void AST_Writer::visit(ConstString const& n) {
   write_source_location(n);
 
   string("value");
-  string(*n.get_value());
+  string(n.get_value());
 
   end_obj();
 }
@@ -891,7 +891,7 @@ void AST_Writer::visit(Field const& n) {
   write_source_location(n);
 
   string("field");
-  string(*n.get_field());
+  string(n.get_field());
 
   string("base");
   n.get_base()->accept(*this);
@@ -950,7 +950,7 @@ void AST_Writer::visit(FString const& n) {
     let items = n.get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(), [&](let item) {
-      if (std::holds_alternative<SmallString>(item)) {
+      if (std::holds_alternative<npar::ASTString>(item)) {
         begin_obj(2);
 
         string("kind");
@@ -959,7 +959,7 @@ void AST_Writer::visit(FString const& n) {
         string(kind_name);
 
         string("value");
-        string(*std::get<SmallString>(item));
+        string(*std::get<npar::ASTString>(item));
 
         end_obj();
       } else {
@@ -981,7 +981,7 @@ void AST_Writer::visit(Ident const& n) {
   write_source_location(n);
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   end_obj();
 }

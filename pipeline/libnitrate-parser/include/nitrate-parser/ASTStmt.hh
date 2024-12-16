@@ -60,13 +60,13 @@ namespace npar {
 
   class VarDecl : public Stmt {
     ExpressionList m_attributes;
-    SmallString m_name;
+    ASTString m_name;
     Type *m_type;
     Expr *m_value;
     VarDeclType m_decl_type;
 
   public:
-    VarDecl(SmallString name, Type *type, Expr *value, VarDeclType decl_type,
+    VarDecl(ASTString name, Type *type, Expr *value, VarDeclType decl_type,
             ExpressionList attributes)
         : Stmt(QAST_VAR),
           m_attributes(attributes),
@@ -83,11 +83,11 @@ namespace npar {
   };
 
   class InlineAsm : public Stmt {
-    SmallString m_code;
+    ASTString m_code;
     ExpressionList m_args;
 
   public:
-    InlineAsm(SmallString code, const ExpressionList &args)
+    InlineAsm(ASTString code, const ExpressionList &args)
         : Stmt(QAST_INLINE_ASM), m_code(code), m_args(args) {}
 
     let get_code() const { return m_code; }
@@ -141,13 +141,13 @@ namespace npar {
   };
 
   class ForeachStmt : public Stmt {
-    SmallString m_idx_ident;
-    SmallString m_val_ident;
+    ASTString m_idx_ident;
+    ASTString m_val_ident;
     Expr *m_expr;
     Stmt *m_body;
 
   public:
-    ForeachStmt(SmallString idx_ident, SmallString val_ident, Expr *expr,
+    ForeachStmt(ASTString idx_ident, ASTString val_ident, Expr *expr,
                 Stmt *body)
         : Stmt(QAST_FOREACH),
           m_idx_ident(idx_ident),
@@ -224,13 +224,12 @@ namespace npar {
 
   class ExportStmt : public Stmt {
     ExpressionList m_attrs;
-    SmallString m_abi_name;
+    ASTString m_abi_name;
     Stmt *m_body;
     Vis m_vis;
 
   public:
-    ExportStmt(Stmt *content, SmallString abi_name, Vis vis,
-               ExpressionList attrs)
+    ExportStmt(Stmt *content, ASTString abi_name, Vis vis, ExpressionList attrs)
         : Stmt(QAST_EXPORT),
           m_attrs(attrs),
           m_abi_name(abi_name),
@@ -245,11 +244,11 @@ namespace npar {
 
   class ScopeStmt : public Stmt {
     ScopeDeps m_deps;
-    SmallString m_name;
+    ASTString m_name;
     Stmt *m_body;
 
   public:
-    ScopeStmt(SmallString name, Stmt *body, ScopeDeps deps = {})
+    ScopeStmt(ASTString name, Stmt *body, ScopeDeps deps = {})
         : Stmt(QAST_SCOPE), m_deps(deps), m_name(name), m_body(body) {}
 
     let get_name() const { return m_name; }
@@ -258,11 +257,11 @@ namespace npar {
   };
 
   class TypedefStmt : public Stmt {
-    SmallString m_name;
+    ASTString m_name;
     Type *m_type;
 
   public:
-    TypedefStmt(SmallString name, Type *type)
+    TypedefStmt(ASTString name, Type *type)
         : Stmt(QAST_TYPEDEF), m_name(name), m_type(type) {}
 
     let get_name() const { return m_name; }
@@ -271,11 +270,11 @@ namespace npar {
 
   class EnumDef : public Stmt {
     EnumDefItems m_items;
-    SmallString m_name;
+    ASTString m_name;
     Type *m_type;
 
   public:
-    EnumDef(SmallString name, Type *type, const EnumDefItems &items)
+    EnumDef(ASTString name, Type *type, const EnumDefItems &items)
         : Stmt(QAST_ENUM), m_items(items), m_name(name), m_type(type) {}
 
     let get_items() const { return m_items; }
@@ -287,7 +286,7 @@ namespace npar {
     ExpressionList m_attributes;
     FuncPurity m_purity;
     FnCaptures m_captures;
-    SmallString m_name;
+    ASTString m_name;
     std::optional<TemplateParameters> m_template_parameters;
     FuncParams m_params;
     Type *m_return;
@@ -296,7 +295,7 @@ namespace npar {
 
   public:
     Function(ExpressionList attributes, FuncPurity purity, FnCaptures captures,
-             SmallString name, std::optional<TemplateParameters> params,
+             ASTString name, std::optional<TemplateParameters> params,
              FuncParams fn_params, Type *return_type,
              std::optional<Expr *> precond, std::optional<Expr *> postcond,
              std::optional<Stmt *> body)
@@ -330,7 +329,7 @@ namespace npar {
   class StructDef : public Stmt {
     CompositeType m_comp_type;
     ExpressionList m_attributes;
-    SmallString m_name;
+    ASTString m_name;
     std::optional<TemplateParameters> m_template_parameters;
     StructDefNames m_names;
     StructDefFields m_fields;
@@ -339,7 +338,7 @@ namespace npar {
 
   public:
     StructDef(CompositeType comp_type, ExpressionList attributes,
-              SmallString name, std::optional<TemplateParameters> params,
+              ASTString name, std::optional<TemplateParameters> params,
               const StructDefNames &names, const StructDefFields &fields,
               const StructDefMethods &methods,
               const StructDefStaticMethods &static_methods)

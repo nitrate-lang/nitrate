@@ -545,7 +545,7 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
           npar::ConstInt *N = n->get_lhs()->as<npar::ConstInt>();
 
           return b.createFixedInteger(
-              boost::multiprecision::cpp_int(N->get_value()->c_str()),
+              boost::multiprecision::cpp_int(N->get_value().c_str()),
               it->second);
         }
       } else {
@@ -562,7 +562,7 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
           npar::ConstFloat *N = n->get_lhs()->as<npar::ConstFloat>();
 
           return b.createFixedFloat(
-              boost::multiprecision::cpp_dec_float_100(N->get_value()->c_str()),
+              boost::multiprecision::cpp_dec_float_100(N->get_value().c_str()),
               it->second);
         }
       }
@@ -667,7 +667,7 @@ static EResult nrgen_int(NRBuilder &b, PState &, IReport *G,
    *  u128: [9223372036854775808 - 340282366920938463463374607431768211455]
    *  error: [340282366920938463463374607431768211456 - ...]
    */
-  boost::multiprecision::cpp_int num(std::string_view(*n->get_value()));
+  boost::multiprecision::cpp_int num(n->get_value());
 
   if (num < 0) {
     G->report(CompilerError, IC::Error,
@@ -691,13 +691,13 @@ static EResult nrgen_int(NRBuilder &b, PState &, IReport *G,
 
 static EResult nrgen_float(NRBuilder &b, PState &, IReport *,
                            npar::ConstFloat *n) {
-  boost::multiprecision::cpp_dec_float_100 num(*n->get_value());
+  boost::multiprecision::cpp_dec_float_100 num(n->get_value());
   return b.createFixedFloat(num, FloatSize::F64);
 }
 
 static EResult nrgen_string(NRBuilder &b, PState &, IReport *,
                             npar::ConstString *n) {
-  return b.createStringDataArray(*n->get_value());
+  return b.createStringDataArray(n->get_value());
 }
 
 static EResult nrgen_char(NRBuilder &b, PState &, IReport *,
@@ -796,7 +796,7 @@ static EResult nrgen_field(NRBuilder &b, PState &s, IReport *G,
 
   /// TODO: Support for named composite field indexing
 
-  Expr *field = b.createStringDataArray(*n->get_field());
+  Expr *field = b.createStringDataArray(n->get_field());
   return create<Index>(base.value(), field);
 }
 
@@ -860,8 +860,8 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   if (n->get_items().size() == 1) {
     auto val = n->get_items().front();
 
-    if (std::holds_alternative<npar::SmallString>(val)) {
-      return b.createStringDataArray(*std::get<npar::SmallString>(val));
+    if (std::holds_alternative<npar::ASTString>(val)) {
+      return b.createStringDataArray(*std::get<npar::ASTString>(val));
     } else if (std::holds_alternative<npar::Expr *>(val)) {
       auto expr = next_one(std::get<npar::Expr *>(val));
 
@@ -881,8 +881,8 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   Expr *concated = b.createStringDataArray("");
 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    if (std::holds_alternative<npar::SmallString>(*it)) {
-      auto val = *std::get<npar::SmallString>(*it);
+    if (std::holds_alternative<npar::ASTString>(*it)) {
+      auto val = *std::get<npar::ASTString>(*it);
 
       concated =
           create<BinExpr>(concated, b.createStringDataArray(val), Op::Plus);
@@ -907,7 +907,7 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_ident(NRBuilder &b, PState &s, IReport *, npar::Ident *n) {
-  return create<Ident>(b.intern(s.scope_name(*n->get_name())), nullptr);
+  return create<Ident>(b.intern(s.scope_name(n->get_name())), nullptr);
 }
 
 static EResult nrgen_seq_point(NRBuilder &b, PState &s, IReport *G,

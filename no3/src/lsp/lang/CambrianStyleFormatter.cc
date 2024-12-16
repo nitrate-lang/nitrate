@@ -587,7 +587,7 @@ void CambrianFormatter::visit(TernaryExpr const& n) {
 void CambrianFormatter::visit(ConstInt const& n) { line << n.get_value(); }
 
 void CambrianFormatter::visit(ConstFloat const& n) {
-  write_float_literal(*n.get_value());
+  write_float_literal(n.get_value());
 }
 
 void CambrianFormatter::visit(ConstBool const& n) {
@@ -599,7 +599,7 @@ void CambrianFormatter::visit(ConstBool const& n) {
 }
 
 void CambrianFormatter::visit(ConstString const& n) {
-  escape_string_literal(*n.get_value());
+  escape_string_literal(n.get_value());
 }
 
 void CambrianFormatter::visit(ConstChar const& n) {
@@ -801,8 +801,8 @@ void CambrianFormatter::visit(Slice const& n) {
 void CambrianFormatter::visit(FString const& n) {
   line << "f\"";
   for (let part : n.get_items()) {
-    if (std::holds_alternative<SmallString>(part)) {
-      escape_string_literal(*std::get<SmallString>(part), false);
+    if (std::holds_alternative<npar::ASTString>(part)) {
+      escape_string_literal(*std::get<npar::ASTString>(part), false);
     } else {
       line << "{";
       std::get<Expr*>(part)->accept(*this);

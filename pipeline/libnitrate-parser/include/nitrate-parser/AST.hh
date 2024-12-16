@@ -69,29 +69,29 @@ namespace npar {
     SkipChildren,
   };
 
-  typedef std::function<IterOp(Expr *p, Expr **c)> IterCallback;
-  typedef std::function<bool(Expr **a, Expr **b)> ChildSelect;
+  typedef std::function<IterOp(npar_node_t *p, npar_node_t **c)> IterCallback;
+  typedef std::function<bool(npar_node_t **a, npar_node_t **b)> ChildSelect;
 
   namespace detail {
-    void dfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs);
-    void dfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs);
-    void bfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs);
-    void bfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs);
-    void iter_children(Expr **base, IterCallback cb, ChildSelect cs);
+    void dfs_pre_impl(npar_node_t **base, IterCallback cb, ChildSelect cs);
+    void dfs_post_impl(npar_node_t **base, IterCallback cb, ChildSelect cs);
+    void bfs_pre_impl(npar_node_t **base, IterCallback cb, ChildSelect cs);
+    void bfs_post_impl(npar_node_t **base, IterCallback cb, ChildSelect cs);
+    void iter_children(npar_node_t **base, IterCallback cb, ChildSelect cs);
   }  // namespace detail
 
   template <IterMode mode, typename T>
   void iterate(T *&base, IterCallback cb, ChildSelect cs = nullptr) {
     if constexpr (mode == dfs_pre) {
-      return detail::dfs_pre_impl((Expr **)&base, cb, cs);
+      return detail::dfs_pre_impl((npar_node_t **)&base, cb, cs);
     } else if constexpr (mode == dfs_post) {
-      return detail::dfs_post_impl((Expr **)&base, cb, cs);
+      return detail::dfs_post_impl((npar_node_t **)&base, cb, cs);
     } else if constexpr (mode == bfs_pre) {
-      return detail::bfs_pre_impl((Expr **)&base, cb, cs);
+      return detail::bfs_pre_impl((npar_node_t **)&base, cb, cs);
     } else if constexpr (mode == bfs_post) {
-      return detail::bfs_post_impl((Expr **)&base, cb, cs);
+      return detail::bfs_post_impl((npar_node_t **)&base, cb, cs);
     } else if constexpr (mode == children) {
-      return detail::iter_children((Expr **)&base, cb, cs);
+      return detail::iter_children((npar_node_t **)&base, cb, cs);
     } else {
       static_assert(mode != mode, "Invalid iteration mode.");
     }

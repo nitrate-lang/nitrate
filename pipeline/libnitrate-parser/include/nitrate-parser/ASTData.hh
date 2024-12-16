@@ -88,7 +88,7 @@ namespace npar {
     return false;
   }
 
-  SmallString SaveString(std::string_view str);
+  ASTString SaveString(std::string_view str);
 };  // namespace npar
 
 namespace npar {
@@ -96,33 +96,32 @@ namespace npar {
 
   using TupleTyItems = std::vector<Type *, Arena<Type *>>;
 
-  using CallArg = std::pair<SmallString, Expr *>;
+  using CallArg = std::pair<ASTString, Expr *>;
   using CallArgs = std::vector<CallArg, Arena<CallArg>>;
 
-  using FStringItems = std::vector<std::variant<SmallString, Expr *>,
-                                   Arena<std::variant<SmallString, Expr *>>>;
+  using FStringItems = std::vector<std::variant<ASTString, Expr *>,
+                                   Arena<std::variant<ASTString, Expr *>>>;
 
-  using TemplateParameter = std::tuple<SmallString, Type *, Expr *>;
+  using TemplateParameter = std::tuple<ASTString, Type *, Expr *>;
   using TemplateParameters =
       std::vector<TemplateParameter, Arena<TemplateParameter>>;
 
   using BlockItems = std::vector<Stmt *, Arena<Stmt *>>;
-  using ScopeDeps =
-      std::set<SmallString, std::less<SmallString>, Arena<SmallString>>;
+  using ScopeDeps = std::set<ASTString, std::less<ASTString>, Arena<ASTString>>;
 
   using SwitchCases = std::vector<CaseStmt *, Arena<CaseStmt *>>;
-  using EnumItem = std::pair<SmallString, Expr *>;
+  using EnumItem = std::pair<ASTString, Expr *>;
   using EnumDefItems = std::vector<EnumItem, Arena<EnumItem>>;
 
   class StructField {
-    SmallString m_name;
+    ASTString m_name;
     std::optional<Expr *> m_value;
     Type *m_type;
     Vis m_vis;
     bool m_is_static;
 
   public:
-    StructField(Vis vis, bool is_static, SmallString name, Type *type,
+    StructField(Vis vis, bool is_static, ASTString name, Type *type,
                 std::optional<Expr *> value)
         : m_name(std::move(name)),
           m_value(std::move(value)),
@@ -148,17 +147,17 @@ namespace npar {
   using StructDefMethods = std::vector<StructFunction, Arena<StructFunction>>;
   using StructDefStaticMethods =
       std::vector<StructFunction, Arena<StructFunction>>;
-  using StructDefNames = std::vector<SmallString, Arena<SmallString>>;
+  using StructDefNames = std::vector<ASTString, Arena<ASTString>>;
 
-  using FuncParam = std::tuple<SmallString, Type *, Expr *>;
+  using FuncParam = std::tuple<ASTString, Type *, Expr *>;
   struct FuncParams {
     std::vector<FuncParam, Arena<FuncParam>> params;
     bool is_variadic;
 
     FuncParams() : is_variadic(false) {}
   };
-  using FnCaptures = std::vector<std::pair<SmallString, bool>,
-                                 Arena<std::pair<SmallString, bool>>>;
+  using FnCaptures = std::vector<std::pair<ASTString, bool>,
+                                 Arena<std::pair<ASTString, bool>>>;
 }  // namespace npar
 
 #endif

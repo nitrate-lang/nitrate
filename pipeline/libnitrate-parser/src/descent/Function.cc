@@ -34,6 +34,8 @@
 #include <descent/Recurse.hh>
 #include <unordered_set>
 
+#include "nitrate-parser/ASTData.hh"
+
 using namespace npar;
 
 static Type *recurse_function_parameter_type(npar_t &S, qlex_t &rd) {
@@ -178,8 +180,8 @@ static FuncPurity get_purity_specifier(qlex_tok_t &start_pos,
   }
 }
 
-static std::optional<std::pair<SmallString, bool>> recurse_function_capture(
-    qlex_t &rd) {
+static std::optional<std::pair<std::string_view, bool>>
+recurse_function_capture(qlex_t &rd) {
   bool is_ref = false;
 
   if (next_if(qOpBitAnd)) {
@@ -187,7 +189,7 @@ static std::optional<std::pair<SmallString, bool>> recurse_function_capture(
   }
 
   if (let name = next_if(qName)) {
-    return {{SaveString(name->as_string(&rd)), is_ref}};
+    return {{name->as_string(&rd), is_ref}};
   } else {
     diagnostic << next() << "Expected a capture name";
   }
@@ -315,7 +317,7 @@ static void recurse_function_ambigouis(npar_t &S, qlex_t &rd,
           }
 
           if (let capture = recurse_function_capture(rd)) {
-            captures.push_back(*capture);
+            captures.push_back({SaveString(capture->first), capture->second});
           }
 
           next_if(qPuncComa);

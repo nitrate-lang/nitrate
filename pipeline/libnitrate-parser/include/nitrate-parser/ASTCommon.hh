@@ -243,7 +243,9 @@ namespace npar {
     Unsafe = 2,
   };
 
-  using SmallString = boost::flyweight<std::string>;
+  using ASTString = boost::flyweight<std::string>;
+
+#define npar_pack __attribute__((packed))
 }  // namespace npar
 
 #endif

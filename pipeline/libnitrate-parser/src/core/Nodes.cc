@@ -44,8 +44,8 @@
 
 using namespace npar;
 
-boost::flyweight<std::string> npar::SaveString(std::string_view str) {
-  boost::flyweight<std::string> flyweight(str.data(), str.size());
+ASTString npar::SaveString(std::string_view str) {
+  ASTString flyweight(str.data(), str.size());
 
   return flyweight;
 };

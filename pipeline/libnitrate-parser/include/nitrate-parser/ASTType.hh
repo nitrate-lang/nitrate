@@ -38,10 +38,10 @@
 
 namespace npar {
   class NamedTy : public Type {
-    SmallString m_name;
+    ASTString m_name;
 
   public:
-    NamedTy(SmallString name) : Type(QAST_NAMED), m_name(name) {}
+    NamedTy(ASTString name) : Type(QAST_NAMED), m_name(name) {}
 
     let get_name() const { return m_name; }
   };
@@ -156,10 +156,10 @@ namespace npar {
   };
 
   class OpaqueTy : public Type {
-    SmallString m_name;
+    ASTString m_name;
 
   public:
-    OpaqueTy(SmallString name) : Type(QAST_OPAQUE), m_name(name) {}
+    OpaqueTy(ASTString name) : Type(QAST_OPAQUE), m_name(name) {}
 
     let get_name() const { return m_name; }
   };

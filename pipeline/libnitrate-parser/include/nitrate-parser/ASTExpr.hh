@@ -37,25 +37,25 @@
 #include <nitrate-parser/ASTBase.hh>
 
 namespace npar {
-  class StmtExpr : public Expr {
+  class npar_pack StmtExpr final : public Expr {
     Stmt *m_stmt;
 
   public:
     constexpr StmtExpr(Stmt *stmt) : Expr(QAST_SEXPR), m_stmt(stmt) {}
 
-    let get_stmt() const { return m_stmt; }
+    auto get_stmt() const { return m_stmt; }
   };
 
-  class TypeExpr : public Expr {
+  class npar_pack TypeExpr final : public Expr {
     Type *m_type;
 
   public:
     constexpr TypeExpr(Type *type) : Expr(QAST_TEXPR), m_type(type) {}
 
-    let get_type() const { return m_type; }
+    auto get_type() const { return m_type; }
   };
 
-  class UnaryExpr : public Expr {
+  class npar_pack UnaryExpr final : public Expr {
     Expr *m_rhs;
     qlex_op_t m_op;
 
@@ -63,25 +63,24 @@ namespace npar {
     constexpr UnaryExpr(qlex_op_t op, Expr *rhs)
         : Expr(QAST_UNEXPR), m_rhs(rhs), m_op(op) {}
 
-    let get_rhs() const { return m_rhs; }
-    qlex_op_t get_op() const { return m_op; }
+    auto get_rhs() const { return m_rhs; }
+    auto get_op() const { return m_op; }
   };
 
-  class BinExpr : public Expr {
-    Expr *m_lhs;
-    Expr *m_rhs;
+  class npar_pack BinExpr final : public Expr {
+    Expr *m_lhs, *m_rhs;
     qlex_op_t m_op;
 
   public:
     constexpr BinExpr(Expr *lhs, qlex_op_t op, Expr *rhs)
         : Expr(QAST_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
-    let get_lhs() const { return m_lhs; }
-    let get_rhs() const { return m_rhs; }
-    qlex_op_t get_op() const { return m_op; }
+    auto get_lhs() const { return m_lhs; }
+    auto get_rhs() const { return m_rhs; }
+    auto get_op() const { return m_op; }
   };
 
-  class PostUnaryExpr : public Expr {
+  class npar_pack PostUnaryExpr final : public Expr {
     Expr *m_lhs;
     qlex_op_t m_op;
 
@@ -89,80 +88,78 @@ namespace npar {
     constexpr PostUnaryExpr(Expr *lhs, qlex_op_t op = qOpTernary)
         : Expr(QAST_POST_UNEXPR), m_lhs(lhs), m_op(op) {}
 
-    let get_lhs() const { return m_lhs; }
-    let get_op() const { return m_op; }
+    auto get_lhs() const { return m_lhs; }
+    auto get_op() const { return m_op; }
   };
 
-  class TernaryExpr : public Expr {
-    Expr *m_cond;
-    Expr *m_lhs;
-    Expr *m_rhs;
+  class npar_pack TernaryExpr final : public Expr {
+    Expr *m_cond, *m_lhs, *m_rhs;
 
   public:
     constexpr TernaryExpr(Expr *cond, Expr *lhs, Expr *rhs)
         : Expr(QAST_TEREXPR), m_cond(cond), m_lhs(lhs), m_rhs(rhs) {}
 
-    let get_cond() const { return m_cond; }
-    let get_lhs() const { return m_lhs; }
-    let get_rhs() const { return m_rhs; }
+    auto get_cond() const { return m_cond; }
+    auto get_lhs() const { return m_lhs; }
+    auto get_rhs() const { return m_rhs; }
   };
 
-  class ConstInt : public Expr {
-    SmallString m_value;
+  class ConstInt final : public Expr {
+    ASTString m_value;
 
   public:
-    ConstInt(SmallString value) : Expr(QAST_INT), m_value(value) {}
+    ConstInt(ASTString value) : Expr(QAST_INT), m_value(value) {}
 
-    let get_value() const { return m_value; }
+    let get_value() const { return m_value.get(); }
   };
 
-  class ConstFloat : public Expr {
-    SmallString m_value;
+  class ConstFloat final : public Expr {
+    ASTString m_value;
 
   public:
-    ConstFloat(SmallString value) : Expr(QAST_FLOAT), m_value(value) {}
+    ConstFloat(ASTString value) : Expr(QAST_FLOAT), m_value(value) {}
 
-    let get_value() const { return m_value; }
+    let get_value() const { return m_value.get(); }
   };
 
-  class ConstBool : public Expr {
+  class npar_pack ConstBool final : public Expr {
     bool m_value;
 
   public:
     constexpr ConstBool(bool value = false) : Expr(QAST_BOOL), m_value(value) {}
 
-    bool get_value() const { return m_value; }
+    auto get_value() const { return m_value; }
   };
 
-  class ConstString : public Expr {
-    SmallString m_value;
+  class ConstString final : public Expr {
+    ASTString m_value;
 
   public:
-    ConstString(SmallString value) : Expr(QAST_STRING), m_value(value) {}
+    ConstString(ASTString value) : Expr(QAST_STRING), m_value(value) {}
 
-    let get_value() const { return m_value; }
+    let get_value() const { return m_value.get(); }
   };
 
-  class ConstChar : public Expr {
+  class npar_pack ConstChar final : public Expr {
     uint8_t m_value;
 
   public:
     constexpr ConstChar(uint8_t value = 0) : Expr(QAST_CHAR), m_value(value) {}
 
-    uint8_t get_value() const { return m_value; }
+    auto get_value() const { return m_value; }
   };
 
-  class ConstNull : public Expr {
+  class npar_pack ConstNull final : public Expr {
   public:
     constexpr ConstNull() : Expr(QAST_NULL) {}
   };
 
-  class ConstUndef : public Expr {
+  class npar_pack ConstUndef final : public Expr {
   public:
     constexpr ConstUndef() : Expr(QAST_UNDEF) {}
   };
 
-  class Call : public Expr {
+  class Call final : public Expr {
     Expr *m_func;
     CallArgs m_args;
 
@@ -170,28 +167,27 @@ namespace npar {
     Call(Expr *func, CallArgs args = {})
         : Expr(QAST_CALL), m_func(func), m_args(args) {}
 
-    let get_func() const { return m_func; }
+    auto get_func() const { return m_func; }
     let get_args() const { return m_args; }
   };
 
-  class TemplCall : public Expr {
-    CallArgs m_template_args;
+  class TemplCall final : public Expr {
     Expr *m_func;
-    CallArgs m_args;
+    CallArgs m_template_args, m_args;
 
   public:
     TemplCall(Expr *func, CallArgs args = {}, CallArgs template_args = {})
         : Expr(QAST_TEMPL_CALL),
-          m_template_args(template_args),
           m_func(func),
+          m_template_args(template_args),
           m_args(args) {}
 
-    let get_func() const { return m_func; }
+    auto get_func() const { return m_func; }
     let get_template_args() const { return m_template_args; }
     let get_args() const { return m_args; }
   };
 
-  class List : public Expr {
+  class List final : public Expr {
     ExpressionList m_items;
 
   public:
@@ -200,57 +196,53 @@ namespace npar {
     let get_items() const { return m_items; }
   };
 
-  class Assoc : public Expr {
-    Expr *m_key;
-    Expr *m_value;
+  class npar_pack Assoc final : public Expr {
+    Expr *m_key, *m_value;
 
   public:
     constexpr Assoc(Expr *key, Expr *value)
         : Expr(QAST_ASSOC), m_key(key), m_value(value) {}
 
-    let get_key() const { return m_key; }
-    let get_value() const { return m_value; }
+    auto get_key() const { return m_key; }
+    auto get_value() const { return m_value; }
   };
 
-  class Field : public Expr {
+  class Field final : public Expr {
     Expr *m_base;
-    SmallString m_field;
+    ASTString m_field;
 
   public:
-    Field(Expr *base, SmallString field)
+    Field(Expr *base, ASTString field)
         : Expr(QAST_FIELD), m_base(base), m_field(field) {}
 
-    let get_base() const { return m_base; }
-    let get_field() const { return m_field; }
+    auto get_base() const { return m_base; }
+    let get_field() const { return m_field.get(); }
   };
 
-  class Index : public Expr {
-    Expr *m_base;
-    Expr *m_index;
+  class npar_pack Index final : public Expr {
+    Expr *m_base, *m_index;
 
   public:
     constexpr Index(Expr *base, Expr *index)
         : Expr(QAST_INDEX), m_base(base), m_index(index) {}
 
-    let get_base() const { return m_base; }
-    let get_index() const { return m_index; }
+    auto get_base() const { return m_base; }
+    auto get_index() const { return m_index; }
   };
 
-  class Slice : public Expr {
-    Expr *m_base;
-    Expr *m_start;
-    Expr *m_end;
+  class npar_pack Slice final : public Expr {
+    Expr *m_base, *m_start, *m_end;
 
   public:
     constexpr Slice(Expr *base, Expr *start, Expr *end)
         : Expr(QAST_SLICE), m_base(base), m_start(start), m_end(end) {}
 
-    let get_base() const { return m_base; }
-    let get_start() const { return m_start; }
-    let get_end() const { return m_end; }
+    auto get_base() const { return m_base; }
+    auto get_start() const { return m_start; }
+    auto get_end() const { return m_end; }
   };
 
-  class FString : public Expr {
+  class FString final : public Expr {
     FStringItems m_items;
 
   public:
@@ -259,16 +251,16 @@ namespace npar {
     let get_items() const { return m_items; }
   };
 
-  class Ident : public Expr {
-    SmallString m_name;
+  class Ident final : public Expr {
+    ASTString m_name;
 
   public:
-    Ident(SmallString name) : Expr(QAST_IDENT), m_name(name) {}
+    Ident(ASTString name) : Expr(QAST_IDENT), m_name(name) {}
 
-    let get_name() const { return m_name; }
+    let get_name() const { return m_name.get(); }
   };
 
-  class SeqPoint : public Expr {
+  class SeqPoint final : public Expr {
     ExpressionList m_items;
 
   public:
