@@ -142,7 +142,7 @@ private:
                                      process during its lifetime */
   bool m_diagnostics_enabled{};
 
-  qcore_arena m_node_arena{};
+  ncc::core::dyn_arena m_node_arena{};
 
 public:
   qmodule_t(nr::ModuleId id, const std::string &name = "?");
@@ -174,7 +174,7 @@ public:
   auto &getStructFields() { return m_composite_fields; }
   auto &getNamedConstants() { return m_named_constants; }
 
-  qcore_arena_t &getNodeArena() { return *m_node_arena.get(); }
+  ncc::core::dyn_arena &getNodeArena() { return m_node_arena; }
 
   std::unique_ptr<nr::IReport> &getDiag() { return m_diagnostics; }
   std::unique_ptr<nr::ISourceView> &getOffsetResolver() {

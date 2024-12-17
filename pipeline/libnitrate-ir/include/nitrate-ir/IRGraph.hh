@@ -63,19 +63,7 @@
 namespace nr {
   using boost::multiprecision::uint128_t;
 
-  class ArenaAllocatorImpl {
-    qcore_arena m_arena;
-
-  public:
-    ArenaAllocatorImpl() = default;
-
-    void *allocate(std::size_t bytes);
-    void deallocate(void *ptr);
-
-    qcore_arena_t &get() { return *m_arena.get(); }
-  };
-
-  extern "C" thread_local ArenaAllocatorImpl nr_arena;
+  extern "C" thread_local ncc::core::dyn_arena nr_arena;
 
   template <class T>
   struct Arena {
@@ -87,7 +75,7 @@ namespace nr {
     constexpr Arena(const Arena<U> &) {}
 
     [[nodiscard]] T *allocate(std::size_t n) {
-      return static_cast<T *>(nr_arena.allocate(sizeof(T) * n));
+      return static_cast<T *>(nr_arena.alloc(sizeof(T) * n));
     }
 
     void deallocate(T *p, std::size_t n) {

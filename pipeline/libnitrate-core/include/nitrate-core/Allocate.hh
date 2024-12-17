@@ -130,13 +130,44 @@ public:
     }
   }
 
-  qcore_arena(qcore_arena &&o) : m_arena(std::move(o.m_arena)) {}
+  qcore_arena(qcore_arena &&o) : m_arena(std::move(o.m_arena)) {
+    o.m_arena.reset();
+  }
   qcore_arena &operator=(qcore_arena &&o) {
     m_arena = std::move(o.m_arena);
+    o.m_arena.reset();
     return *this;
   }
 
   qcore_arena_t *get() { return &m_arena.value(); }
 };
+
+namespace ncc::core {
+  class IMemory {
+  public:
+    virtual ~IMemory() = default;
+
+    virtual void *alloc(size_t size, size_t align = DEFAULT_ALIGNMENT) = 0;
+
+    static constexpr size_t DEFAULT_ALIGNMENT = 16;
+  };
+
+  class dyn_arena final : public IMemory {
+    qcore_arena m_arena;
+
+    dyn_arena(const dyn_arena &) = delete;
+
+  public:
+    dyn_arena();
+    virtual ~dyn_arena() override;
+    dyn_arena(dyn_arena &&o) : m_arena(std::move(o.m_arena)) {}
+    dyn_arena &operator=(dyn_arena &&o) {
+      m_arena = std::move(o.m_arena);
+      return *this;
+    }
+
+    void *alloc(size_t size, size_t align = QCORE_ALLOC_ALIGN_DEFAULT) override;
+  };
+}  // namespace ncc::core
 
 #endif

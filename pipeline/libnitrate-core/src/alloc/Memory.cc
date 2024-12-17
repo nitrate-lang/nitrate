@@ -102,3 +102,13 @@ CPP_EXPORT void qcore_arena_close(qcore_arena_t *A) {
 
   delete X;
 }
+
+///=============================================================================
+
+ncc::core::dyn_arena::dyn_arena() {}
+
+ncc::core::dyn_arena::~dyn_arena() {}
+
+void *ncc::core::dyn_arena::alloc(size_t size, size_t align) {
+  return qcore_arena_alloc_ex(m_arena.get(), size, align);
+}

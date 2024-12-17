@@ -392,7 +392,8 @@ C_EXPORT bool npar_do(npar_t* L, npar_node_t** out) {
   *out = nullptr;
 
   /*=============== Swap in their arena  ===============*/
-  npar::npar_arena.swap(*L->arena.get());
+  // npar::npar_arena.swap(*L->arena.get());
+  std::swap(npar::npar_arena, L->arena);
 
   /*== Install thread-local references to the parser ==*/
   npar::install_reference(L);
@@ -405,7 +406,7 @@ C_EXPORT bool npar_do(npar_t* L, npar_node_t** out) {
   npar::install_reference(nullptr);
 
   /*=============== Swap out their arena ===============*/
-  npar::npar_arena.swap(*L->arena.get());
+  std::swap(npar::npar_arena, L->arena);
 
   /*==================== Return status ====================*/
   return !L->failed;

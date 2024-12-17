@@ -35,7 +35,6 @@
 #include <nitrate-parser/Parser.h>
 
 #include <core/Hash.hh>
-#include <cstddef>
 #include <cstring>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-parser/AST.hh>
@@ -44,21 +43,7 @@
 
 using namespace npar;
 
-///=============================================================================
-namespace npar {
-  void ArenaAllocatorImpl::swap(qcore_arena_t &arena) {
-    std::swap(*m_arena.get(), arena);
-  }
-
-  CPP_EXPORT thread_local ArenaAllocatorImpl npar_arena;
-}  // namespace npar
-
-C_EXPORT void *ArenaAllocatorImpl::allocate(std::size_t size) {
-  const std::size_t alignment = 16;
-  return qcore_arena_alloc_ex(m_arena.get(), size, alignment);
-}
-
-C_EXPORT void ArenaAllocatorImpl::deallocate(void *ptr) { (void)ptr; }
+CPP_EXPORT thread_local ncc::core::dyn_arena npar::npar_arena;
 
 ///=============================================================================
 

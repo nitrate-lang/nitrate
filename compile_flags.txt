@@ -1,4 +1,5 @@
 -I./pipeline/libnitrate-core/include
+-I./pipeline/libnitrate-core/src
 -I./pipeline/libnitrate-lexer/include
 -I./pipeline/libnitrate-seq/include
 -I./pipeline/libnitrate-seq/src

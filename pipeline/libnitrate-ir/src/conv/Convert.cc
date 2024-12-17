@@ -41,6 +41,7 @@
 #include <core/PassManager.hh>
 #include <cstdint>
 #include <cstring>
+#include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/IRBuilder.hh>
@@ -115,8 +116,8 @@ C_EXPORT bool nr_lower(qmodule_t **mod, npar_node_t *base, const char *name,
     name = "module";
   }
 
-  qcore_arena scratch_arena;
-  std::swap(nr::nr_arena.get(), *scratch_arena.get());
+  ncc::core::dyn_arena scratch_arena;
+  std::swap(nr::nr_arena, scratch_arena);
 
   /// TODO: Get the target platform infoformation
   TargetInfo target_info;
@@ -150,7 +151,7 @@ C_EXPORT bool nr_lower(qmodule_t **mod, npar_node_t *base, const char *name,
 
   R->getDiag() = std::move(G);
 
-  std::swap(nr::nr_arena.get(), *scratch_arena.get());
+  std::swap(nr::nr_arena, scratch_arena);
   *mod = R;
 
   return success;

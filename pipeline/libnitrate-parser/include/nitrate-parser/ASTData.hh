@@ -45,21 +45,7 @@
 #include <vector>
 
 namespace npar {
-  class ArenaAllocatorImpl {
-    qcore_arena m_arena;
-
-  public:
-    ArenaAllocatorImpl() = default;
-
-    void *allocate(std::size_t bytes);
-    void deallocate(void *ptr);
-
-    void swap(qcore_arena_t &arena);
-
-    qcore_arena_t &get() { return *m_arena.get(); }
-  };
-
-  extern thread_local ArenaAllocatorImpl npar_arena;
+  extern thread_local ncc::core::dyn_arena npar_arena;
 
   template <class T>
   struct Arena {
@@ -71,7 +57,7 @@ namespace npar {
     constexpr Arena(const Arena<U> &) {}
 
     [[nodiscard]] T *allocate(std::size_t n) {
-      return static_cast<T *>(npar_arena.allocate(sizeof(T) * n));
+      return static_cast<T *>(npar_arena.alloc(sizeof(T) * n));
     }
 
     void deallocate(T *p, std::size_t n) {
