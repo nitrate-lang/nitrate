@@ -545,8 +545,7 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
           npar::ConstInt *N = n->get_lhs()->as<npar::ConstInt>();
 
           return b.createFixedInteger(
-              boost::multiprecision::cpp_int(N->get_value().c_str()),
-              it->second);
+              boost::multiprecision::cpp_int(N->get_value()), it->second);
         }
       } else {
         static const std::unordered_map<npar_ty_t, FloatSize>
@@ -562,7 +561,7 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
           npar::ConstFloat *N = n->get_lhs()->as<npar::ConstFloat>();
 
           return b.createFixedFloat(
-              boost::multiprecision::cpp_dec_float_100(N->get_value().c_str()),
+              boost::multiprecision::cpp_dec_float_100(N->get_value()),
               it->second);
         }
       }
@@ -1039,7 +1038,7 @@ static EResult nrgen_ptr_ty(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_opaque_ty(NRBuilder &b, PState &, IReport *,
                                npar::OpaqueTy *n) {
-  return b.getOpaqueTy(*n->get_name());
+  return b.getOpaqueTy(n->get_name());
 }
 
 static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G,
@@ -1154,7 +1153,7 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *,
                               npar::NamedTy *n) {
-  return b.getUnknownNamedTy(b.intern(s.scope_name(*n->get_name())));
+  return b.getUnknownNamedTy(b.intern(s.scope_name(n->get_name())));
 }
 
 static EResult nrgen_infer_ty(NRBuilder &b, PState &, IReport *,
@@ -1180,7 +1179,7 @@ static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
   }
 
   b.createNamedTypeAlias(type.value()->asType(),
-                         b.intern(s.join_scope(*n->get_name())));
+                         b.intern(s.join_scope(n->get_name())));
 
   return std::vector<Expr *>();
 }
@@ -1201,7 +1200,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
       n->get_fields().size());
 
   std::string old_ns = s.ns_prefix;
-  s.ns_prefix = s.join_scope(*n->get_name());
+  s.ns_prefix = s.join_scope(n->get_name());
 
   for (size_t i = 0; i < n->get_fields().size(); i++) {
     let field = n->get_fields()[i];
@@ -1244,7 +1243,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
 
   std::swap(s.ns_prefix, old_ns);
   b.createNamedTypeAlias(b.getStructTy(fields),
-                         b.intern(s.join_scope(*n->get_name())));
+                         b.intern(s.join_scope(n->get_name())));
   std::swap(s.ns_prefix, old_ns);
 
   BResult R;
@@ -1315,7 +1314,7 @@ static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
     }
   }
 
-  auto name = b.intern(s.join_scope(*n->get_name()));
+  auto name = b.intern(s.join_scope(n->get_name()));
   b.createNamedConstantDefinition(name, values);
 
   /* FIXME: Allow for first class enum types */
@@ -1411,10 +1410,10 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
 
     std::string_view name;
 
-    if (n->get_name()->empty()) {
+    if (n->get_name().empty()) {
       name = b.intern(s.join_scope("_A$" + std::to_string(s.anon_fn_ctr++)));
     } else {
-      name = b.intern(s.join_scope(*n->get_name()));
+      name = b.intern(s.join_scope(n->get_name()));
     }
 
     Fn *fndef = b.createFunctionDefintion(
@@ -1534,10 +1533,10 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
 
     std::string_view name;
 
-    if (n->get_name()->empty()) {
+    if (n->get_name().empty()) {
       name = b.intern(s.join_scope("_A$" + std::to_string(s.anon_fn_ctr++)));
     } else {
-      name = b.intern(s.join_scope(*n->get_name()));
+      name = b.intern(s.join_scope(n->get_name()));
     }
 
     Fn *decl = b.createFunctionDeclaration(
@@ -1571,7 +1570,7 @@ static BResult nrgen_scope(NRBuilder &b, PState &s, IReport *G,
   }
 
   std::string old_ns = s.ns_prefix;
-  s.ns_prefix = s.join_scope(*n->get_name());
+  s.ns_prefix = s.join_scope(n->get_name());
 
   auto body = nrgen_block(b, s, G, n->get_body()->as<npar::Block>(), false);
   if (!body.has_value()) {
@@ -1607,11 +1606,11 @@ static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
     return std::nullopt;
   }
 
-  auto it = abi_name_map.find(*n->get_abi_name());
+  auto it = abi_name_map.find(n->get_abi_name());
   if (it == abi_name_map.end()) {
     G->report(
         CompilerError, IC::Error,
-        {"The requested ABI name '", *n->get_abi_name(), "' is not supported"},
+        {"The requested ABI name '", n->get_abi_name(), "' is not supported"},
         n->get_pos());
     return std::nullopt;
   }
@@ -1713,7 +1712,7 @@ static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G,
   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
   Local *local =
-      b.createVariable(b.intern(s.join_scope(*n->get_name())),
+      b.createVariable(b.intern(s.join_scope(n->get_name())),
                        type.value()->asType(), visibility, storage, false);
 
   local->setValue(init.value());

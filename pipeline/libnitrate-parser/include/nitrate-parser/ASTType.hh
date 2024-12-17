@@ -43,7 +43,7 @@ namespace npar {
   public:
     NamedTy(ASTString name) : Type(QAST_NAMED), m_name(name) {}
 
-    let get_name() const { return m_name; }
+    let get_name() const { return m_name.get(); }
   };
 
   class InferTy : public Type {
@@ -161,7 +161,7 @@ namespace npar {
   public:
     OpaqueTy(ASTString name) : Type(QAST_OPAQUE), m_name(name) {}
 
-    let get_name() const { return m_name; }
+    let get_name() const { return m_name.get(); }
   };
 
   class TupleTy : public Type {

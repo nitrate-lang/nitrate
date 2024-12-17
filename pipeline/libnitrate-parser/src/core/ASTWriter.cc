@@ -150,7 +150,7 @@ void AST_Writer::visit(NamedTy const& n) {
   write_type_metadata(n);
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   end_obj();
 }
@@ -435,7 +435,7 @@ void AST_Writer::visit(OpaqueTy const& n) {
   write_type_metadata(n);
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   end_obj();
 }
@@ -1066,7 +1066,7 @@ void AST_Writer::visit(VarDecl const& n) {
   }
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   string("type");
   n.get_type() ? n.get_type()->accept(*this) : null();
@@ -1096,7 +1096,7 @@ void AST_Writer::visit(InlineAsm const& n) {
   write_source_location(n);
 
   string("code");
-  string(*n.get_code());
+  string(n.get_code());
 
   { /* Write arguments */
     string("params");
@@ -1196,10 +1196,10 @@ void AST_Writer::visit(ForeachStmt const& n) {
   write_source_location(n);
 
   string("idx");
-  string(*n.get_idx_ident());
+  string(n.get_idx_ident());
 
   string("val");
-  string(*n.get_val_ident());
+  string(n.get_val_ident());
 
   string("expr");
   n.get_expr()->accept(*this);
@@ -1320,7 +1320,7 @@ void AST_Writer::visit(TypedefStmt const& n) {
   write_source_location(n);
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   string("type");
   n.get_type()->accept(*this);
@@ -1415,7 +1415,7 @@ void AST_Writer::visit(Function const& n) {
   }
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   { /* Write template parameters */
     string("template");
@@ -1552,7 +1552,7 @@ void AST_Writer::visit(StructDef const& n) {
   }
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   { /* Write template parameters */
     string("template");
@@ -1663,7 +1663,7 @@ void AST_Writer::visit(EnumDef const& n) {
   write_source_location(n);
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   string("type");
   n.get_type() ? n.get_type()->accept(*this) : null();
@@ -1699,7 +1699,7 @@ void AST_Writer::visit(ScopeStmt const& n) {
   write_source_location(n);
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   { /* Write implicit dependencies */
     string("depends");
@@ -1725,7 +1725,7 @@ void AST_Writer::visit(ExportStmt const& n) {
   write_source_location(n);
 
   string("abi");
-  string(*n.get_abi_name());
+  string(n.get_abi_name());
 
   string("vis");
   string(vis_str(n.get_vis()));

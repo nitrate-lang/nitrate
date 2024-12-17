@@ -35,6 +35,7 @@
 #define __NITRATE_AST_ASTCOMMON_H__
 
 #include <boost/flyweight.hpp>
+#include <boost/flyweight/no_tracking.hpp>
 #include <string>
 
 typedef enum npar_ty_t {
@@ -243,9 +244,24 @@ namespace npar {
     Unsafe = 2,
   };
 
-  using ASTString = boost::flyweight<std::string>;
+  using ASTString =
+      boost::flyweight<std::string, boost::flyweights::no_tracking>;
 
 #define npar_pack __attribute__((packed))
+
+  struct npar_pack str_ref {
+    const char* data;
+    uint32_t size;
+
+    static str_ref get(std::string_view sv) {
+      assert(sv.size() <= UINT32_MAX);
+
+      return {sv.data(), static_cast<uint32_t>(sv.size())};
+    }
+
+    operator std::string_view() const { return {data, size}; }
+  };
+
 }  // namespace npar
 
 #endif

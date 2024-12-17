@@ -995,7 +995,7 @@ void CambrianFormatter::visit(ForStmt const& n) {
 
 void CambrianFormatter::visit(ForeachStmt const& n) {
   line << "foreach (";
-  if (n.get_idx_ident()->empty()) {
+  if (n.get_idx_ident().empty()) {
     line << n.get_val_ident();
   } else {
     line << n.get_idx_ident() << ", " << n.get_val_ident();
@@ -1294,7 +1294,7 @@ void CambrianFormatter::visit(EnumDef const& n) {
 void CambrianFormatter::visit(ScopeStmt const& n) {
   line << "scope";
 
-  if (!n.get_name()->empty()) {
+  if (!n.get_name().empty()) {
     line << " " << n.get_name();
   }
 
@@ -1313,9 +1313,9 @@ void CambrianFormatter::visit(ScopeStmt const& n) {
 void CambrianFormatter::visit(ExportStmt const& n) {
   line << n.get_vis();
 
-  if (!n.get_abi_name()->empty()) {
+  if (!n.get_abi_name().empty()) {
     line << " ";
-    escape_string_literal(*n.get_abi_name());
+    escape_string_literal(n.get_abi_name());
   }
 
   if (!n.get_attrs().empty()) {
