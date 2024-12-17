@@ -37,7 +37,6 @@
 #ifndef __cplusplus
 #error "This header is C++ only."
 #endif
-#include <nitrate-core/Error.h>
 #include <nitrate-ir/TypeDecl.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
@@ -49,6 +48,7 @@
 #include <iostream>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Classes.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/Visitor.hh>
 #include <nitrate-lexer/Token.hh>

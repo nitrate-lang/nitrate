@@ -38,10 +38,9 @@
 #error "This header is for C++ only."
 #endif
 
-#include <nitrate-core/Error.h>
-
 #include <istream>
 #include <memory>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Base.hh>
 
 class qlex final {

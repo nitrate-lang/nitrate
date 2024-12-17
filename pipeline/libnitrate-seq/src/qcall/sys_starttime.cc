@@ -31,10 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-
 #include <exception>
 #include <nitrate-core/Environment.hh>
+#include <nitrate-core/Logger.hh>
 #include <qcall/List.hh>
 #include <string>
 

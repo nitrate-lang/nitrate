@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-ir/IR.h>
 #include <nitrate-parser/Parser.h>
@@ -42,6 +41,7 @@
 #include <core/PassManager.hh>
 #include <cstdint>
 #include <cstring>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>

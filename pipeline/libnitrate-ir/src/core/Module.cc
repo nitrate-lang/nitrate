@@ -31,12 +31,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 
 #include <core/Diagnostic.hh>
 #include <memory>
 #include <mutex>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 

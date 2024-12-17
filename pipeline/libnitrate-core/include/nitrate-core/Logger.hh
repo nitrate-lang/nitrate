@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_CORE_ERROR_H__
-#define __NITRATE_CORE_ERROR_H__
+#ifndef __NITRATE_CORE_LOGGER_H__
+#define __NITRATE_CORE_LOGGER_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -109,8 +109,53 @@ void qcore_vdebugf_(const char *fmt, va_list args);
 
 #define qcore_implement() qcore_panicf("%s is not implemented.", __func__)
 
+typedef enum {
+  QCORE_DEBUG,
+  QCORE_INFO,
+  QCORE_WARN,
+  QCORE_ERROR,
+  QCORE_FATAL,
+} qcore_log_t;
+
+void qcore_begin(qcore_log_t level);
+int qcore_vwritef(const char *fmt, va_list args);
+void qcore_end();
+
+typedef void (*qcore_logger_t)(qcore_log_t level, const char *msg, size_t len,
+                               void *);
+
+void qcore_bind_logger(qcore_logger_t logger, void *data);
+
+static inline int qcore_writef(const char *fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  int ret = qcore_vwritef(fmt, args);
+  va_end(args);
+  return ret;
+}
+
+extern bool qcore_fuzzing;
+
+static inline int qcore_write(const char *msg) {
+  return qcore_writef("%s", msg);
+}
+
+#define qcore_logf(_lvl, ...)  \
+  do {                         \
+    qcore_begin(_lvl);         \
+    qcore_writef(__VA_ARGS__); \
+    qcore_end();               \
+  } while (0)
+
+#define qcore_print(_lvl, _msg) \
+  do {                          \
+    qcore_begin(_lvl);          \
+    qcore_writef("%s", _msg);   \
+    qcore_end();                \
+  } while (0)
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // __NITRATE_CORE_ERROR_H__
+#endif  // __NITRATE_CORE_LOGGER_H__

@@ -31,13 +31,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
 
 #include <functional>
 #include <iostream>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-parser/ASTReader.hh>
 
 using namespace npar;

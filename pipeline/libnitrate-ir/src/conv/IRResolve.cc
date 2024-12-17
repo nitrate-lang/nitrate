@@ -33,11 +33,11 @@
 
 #define IRBUILDER_IMPL
 
-#include <nitrate-core/Error.h>
 #include <nitrate-ir/TypeDecl.h>
 
 #include <algorithm>
 #include <cctype>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <string>

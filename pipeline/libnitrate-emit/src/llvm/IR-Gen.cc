@@ -63,7 +63,6 @@
 #include <llvm-18/llvm/TargetParser/Host.h>
 #include <llvm-18/llvm/Transforms/IPO.h>
 #include <llvm-18/llvm/Transforms/InstCombine/InstCombine.h>
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Config.h>
@@ -73,6 +72,7 @@
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <optional>

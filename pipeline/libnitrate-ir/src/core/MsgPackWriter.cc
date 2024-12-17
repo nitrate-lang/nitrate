@@ -31,9 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-
 #include <bit>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-ir/Writer.hh>
 
 using namespace nr;

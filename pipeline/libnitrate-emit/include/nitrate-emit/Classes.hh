@@ -38,9 +38,9 @@
 #error "This header is for C++ only."
 #endif
 
-#include <nitrate-core/Error.h>
 #include <nitrate-emit/Config.h>
 
+#include <nitrate-core/Logger.hh>
 #include <stdexcept>
 
 class qcode_conf final {

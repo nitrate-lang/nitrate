@@ -34,9 +34,9 @@
 #ifndef __NITRATE_AST_CLASSES_H__
 #define __NITRATE_AST_CLASSES_H__
 
-#include <nitrate-core/Error.h>
 #include <nitrate-parser/Parser.h>
 
+#include <nitrate-core/Logger.hh>
 #include <nitrate-parser/AST.hh>
 
 class nr_syn final {

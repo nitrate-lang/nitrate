@@ -31,13 +31,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-ir/IR.h>
 #include <nitrate-ir/TypeDecl.h>
 
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRGraph.hh>
 
 using namespace nr;

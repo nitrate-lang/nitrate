@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 
 #include <boost/bimap.hpp>
@@ -39,6 +38,7 @@
 #include <core/Diagnostic.hh>
 #include <cstdint>
 #include <iomanip>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/Report.hh>

@@ -33,13 +33,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-ir/IR.h>
 #include <nitrate-parser/Parser.h>
 
 #include <core/Config.hh>
 #include <cstring>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <unordered_map>
 #include <unordered_set>

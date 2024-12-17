@@ -31,9 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 
+#include <nitrate-core/Logger.hh>
 #include <nitrate-core/String.hh>
 
 using namespace qcore;

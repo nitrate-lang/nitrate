@@ -31,13 +31,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <threads.h>
 
 #include <cstdio>
 #include <mutex>
 #include <nitrate-core/Environment.hh>
+#include <nitrate-core/Logger.hh>
 #include <sstream>
 #include <string>
 #include <unordered_map>

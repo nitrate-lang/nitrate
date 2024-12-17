@@ -34,8 +34,7 @@
 #include <limits>
 #define IRBUILDER_IMPL
 
-#include <nitrate-core/Error.h>
-
+#include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 

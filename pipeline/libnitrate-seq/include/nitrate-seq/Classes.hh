@@ -38,8 +38,7 @@
 #error "This header is for C++ only."
 #endif
 
-#include <nitrate-core/Error.h>
-
+#include <nitrate-core/Logger.hh>
 #include <nitrate-seq/Preprocess.hh>
 
 class qprep final {

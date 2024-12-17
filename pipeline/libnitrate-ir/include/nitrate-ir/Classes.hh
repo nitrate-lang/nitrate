@@ -38,10 +38,10 @@
 #error "This header is for C++ only."
 #endif
 
-#include <nitrate-core/Error.h>
 #include <nitrate-ir/Config.h>
 #include <nitrate-ir/IR.h>
 
+#include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <optional>
 #include <string>

@@ -34,10 +34,10 @@
 #ifndef __NITRATE_AST_ASTBASE_H__
 #define __NITRATE_AST_ASTBASE_H__
 
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 
 #include <iostream>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTData.hh>

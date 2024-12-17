@@ -31,9 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 
+#include <nitrate-core/Logger.hh>
 #include <nitrate-parser/ASTWriter.hh>
 
 using namespace npar;

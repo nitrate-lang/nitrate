@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <string.h>
 
@@ -44,6 +43,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <ios>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <utility>

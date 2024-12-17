@@ -31,10 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 
 #include <core/Config.hh>
+#include <nitrate-core/Logger.hh>
 #include <transcode/Targets.hh>
 
 bool codegen::for_c11(qmodule_t *module, std::ostream &err, std::ostream &out) {

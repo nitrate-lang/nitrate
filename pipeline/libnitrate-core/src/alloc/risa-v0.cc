@@ -31,12 +31,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 #include <alloc/Collection.hh>
 #include <cstring>
+#include <nitrate-core/Logger.hh>
 #include <vector>
 
 #define REGION_SIZE (1024 * 16)

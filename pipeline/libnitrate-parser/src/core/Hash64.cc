@@ -31,10 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 
 #include <core/Hash.hh>
+#include <nitrate-core/Logger.hh>
 
 using namespace npar;
 

@@ -31,11 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 
 #include <mutex>
 #include <nitrate-core/Cache.hh>
+#include <nitrate-core/Logger.hh>
 
 #define PROJECT_REPO_URL "https://github.com/Kracken256/nitrate"
 

@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
 #include <nitrate-core/Lib.h>
 #include <nitrate/code.h>
 
@@ -40,6 +39,7 @@
 #include <cstdint>
 #include <functional>
 #include <nitrate-core/Classes.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Classes.hh>
 #include <nitrate-parser/ASTWriter.hh>
