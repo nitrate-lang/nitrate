@@ -155,11 +155,9 @@ static bool recurse_fstring(npar_t &S, FString **node, qlex_t &rd,
 
       std::istringstream ss(sub);
 
-      qlex_t *subrd = qlex_new(ss, "fstring", S.env);
+      qlex_t subrd = qlex_t(ss, "fstring", S.env);
 
-      expr = recurse_expr(S, *subrd, {qlex_tok_t(qPunc, qPuncRCur)}, depth + 1);
-
-      qlex_free(subrd);
+      expr = recurse_expr(S, subrd, {qlex_tok_t(qPunc, qPuncRCur)}, depth + 1);
 
       if (!tmp.empty()) {
         items.push_back(SaveString(std::move(tmp)));

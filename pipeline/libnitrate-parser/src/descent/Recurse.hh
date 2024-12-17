@@ -38,7 +38,7 @@
 #include <nitrate-parser/Parser.h>
 
 #include <core/Context.hh>
-#include <nitrate-lexer/Token.hh>
+#include <nitrate-lexer/Base.hh>
 #include <nitrate-parser/AST.hh>
 #include <set>
 
@@ -70,9 +70,9 @@ namespace npar {
   Expr *recurse_expr(npar_t &S, qlex_t &rd, std::set<qlex_tok_t> terminators,
                      size_t depth = 0);
 
-#define next() qlex_next(&rd)
-#define peek() qlex_peek(&rd)
-#define current() qlex_current(&rd)
+#define next() rd.next()
+#define peek() rd.peek()
+#define current() rd.current()
 
   template <auto tok>
   static std::optional<qlex_tok_t> next_if_(qlex_t &rd) {

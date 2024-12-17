@@ -39,7 +39,6 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include <istream>
 #include <nitrate-lexer/Token.hh>
 
 typedef struct qlex_t qlex_t;
@@ -49,62 +48,8 @@ typedef struct qlex_t qlex_t;
 
 typedef uint32_t qlex_flags_t;
 
-/**
- * @brief Create a new lexer context.
- *
- * @param file A seekable file stream.
- * @param filename Name of the file or NULL for default.
- * @param env Parent environment.
- *
- * @return New lexer context or NULL if an error occurred.
- * @note The lifetime of the file stream and environment must exceed the
- * lifetime of the lexer.
- * @note This function is thread-safe.
- */
-qlex_t *qlex_new(std::istream &file, const char *filename, qcore_env_t env);
-
-/**
- * @brief Destroy a lexer context.
- *
- * @param lexer Lexer context or NULL.
- * @note It is safe to pass NULL to this function.
- * @note This function is thread-safe.
- */
-void qlex_free(qlex_t *lexer);
-
 void qlex_set_flags(qlex_t *lexer, qlex_flags_t flags);
 qlex_flags_t qlex_get_flags(qlex_t *lexer);
-
-/**
- * @brief Lex the next token.
- *
- * @param lexer Lexer context.
- *
- * @return The next token.
- * @note This function is thread-safe.
- */
-qlex_tok_t qlex_next(qlex_t *lexer);
-
-/**
- * @brief Peek at the next token.
- *
- * @param lexer Lexer context.
- *
- * @return The next token.
- * @note This function is thread-safe.
- * @note Will not consume the token.
- */
-qlex_tok_t qlex_peek(qlex_t *lexer);
-
-/**
- * @brief Get the current token.
- *
- * @param lexer Lexer context.
- *
- * @return The current token.
- * @note This function is thread-safe.
- */
-qlex_tok_t qlex_current(qlex_t *lexer);
 
 /**
  * @brief Push token into the lexer.

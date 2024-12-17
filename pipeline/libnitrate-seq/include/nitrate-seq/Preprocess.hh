@@ -85,7 +85,7 @@ struct __attribute__((visibility("default"))) qprep_impl_t final
   bool run_and_expand(const std::string &code);
   void expand_raw(std::string_view code);
   void install_lua_api();
-  qlex_t *weak_clone(std::istream &file, const char *filename);
+  std::unique_ptr<qlex_t> weak_clone(std::istream &file, const char *filename);
 
 public:
   qprep_impl_t(std::istream &file, const char *filename, qcore_env_t env);

@@ -79,20 +79,15 @@ private:
 
   boost::bimap<uint32_t, std::pair<uint32_t, uint32_t>> m_off2rc;
 
-  size_t m_locctr;
+public:
+  std::string m_filename;
+  std::istream &m_file;
+  qlex_flags_t m_flags;
+  qcore_env_t m_env;
 
-private:
   qlex_tok_t step_buffer();
   void reset_automata();
   char getc();
-
-public:
-  qcore_env_t m_env;
-
-  qlex_flags_t m_flags;
-
-  const char *m_filename;
-  std::istream &m_file;
 
   ///============================================================================///
 
@@ -121,16 +116,15 @@ public:
         m_col(0),
         m_offset(std::numeric_limits<uint32_t>::max()),
         m_last_ch(0),
-        m_locctr(1),
-        m_env(env),
+        m_filename(filename ? filename : "<unknown>"),
+        m_file(file),
         m_flags(0),
-        m_filename(filename),
-        m_file(file) {
-    if (!m_filename) {
-      m_filename = "<unknown>";
-    }
-  }
+        m_env(env) {}
   virtual ~qlex_t() {}
+
+  const std::string &filename() const { return m_filename; }
+  qlex_flags_t flags() const { return m_flags; }
+  qcore_env_t env() const { return m_env; }
 };
 
 #endif  // __NITRATE_LEXER_BASE_H__

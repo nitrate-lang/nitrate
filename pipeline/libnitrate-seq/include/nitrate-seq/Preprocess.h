@@ -39,26 +39,6 @@
 #include <nitrate-lexer/Lexer.hh>
 
 #ifdef __cplusplus
-
-#include <istream>
-
-/**
- * @brief Create a new preprocessor context.
- *
- * @param file A seekable file stream.
- * @param filename Name of the file or NULL for default.
- * @param env Parent environment.
- *
- * @return New preprocessor context or NULL if an error occurred.
- * @note The lifetime of the file stream and environment must exceed the
- * lifetime of the lexer.
- * @note This function is thread-safe.
- */
-qlex_t *qprep_new(std::istream &file, const char *filename, qcore_env_t env);
-
-#endif
-
-#ifdef __cplusplus
 extern "C" {
 #endif
 

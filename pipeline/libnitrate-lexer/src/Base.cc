@@ -48,19 +48,11 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <utility>
 
-CPP_EXPORT void qlex_free(qlex_t *obj) {
-  try {
-    delete obj;
-  } catch (...) {
-    qcore_panic("qlex_free: failed to free lexer");
-  }
-}
-
 CPP_EXPORT void qlex_set_flags(qlex_t *obj, qlex_flags_t flags) {
   obj->m_flags = flags;
 }
 
-CPP_EXPORT qlex_flags_t qlex_get_flags(qlex_t *obj) { return obj->m_flags; }
+CPP_EXPORT qlex_flags_t qlex_get_flags(qlex_t *obj) { return obj->flags(); }
 
 CPP_EXPORT void qlex_insert(qlex_t *obj, qlex_tok_t tok) {
   obj->push_impl(&tok);
@@ -71,7 +63,9 @@ CPP_EXPORT uint32_t qlex_end(qlex_t *L, qlex_tok_t tok) {
   return UINT32_MAX;
 }
 
-CPP_EXPORT const char *qlex_filename(qlex_t *obj) { return obj->m_filename; }
+CPP_EXPORT const char *qlex_filename(qlex_t *obj) {
+  return obj->filename().c_str();
+}
 
 CPP_EXPORT uint32_t qlex_line(qlex_t *obj, uint32_t loc) {
   try {
@@ -211,44 +205,6 @@ CPP_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, uint32_t *offset) {
     return nullptr;
   } catch (...) {
     qcore_panic("qlex_snippet: failed to get snippet");
-  }
-}
-
-CPP_EXPORT qlex_tok_t qlex_next(qlex_t *self) {
-  try {
-    qcore_env_t old = qcore_env_current();
-    qcore_env_set_current(self->m_env);
-
-    qlex_tok_t tok = self->next();
-
-    qcore_env_set_current(old);
-
-    return tok;
-  } catch (...) {
-    qcore_panic("qlex_next: failed to get next token");
-  }
-}
-
-CPP_EXPORT qlex_tok_t qlex_peek(qlex_t *self) {
-  try {
-    qcore_env_t old = qcore_env_current();
-    qcore_env_set_current(self->m_env);
-
-    qlex_tok_t tok = self->peek();
-
-    qcore_env_set_current(old);
-
-    return tok;
-  } catch (...) {
-    qcore_panic("qlex_peek: failed to peek next token");
-  }
-}
-
-CPP_EXPORT qlex_tok_t qlex_current(qlex_t *lexer) {
-  try {
-    return lexer->current();
-  } catch (...) {
-    qcore_panic("qlex_current: failed to get current token");
   }
 }
 

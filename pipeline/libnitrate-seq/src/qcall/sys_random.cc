@@ -33,8 +33,8 @@
 
 #include <nitrate-core/Env.h>
 
-#include <core/Preprocess.hh>
 #include <cstdio>
+#include <nitrate-seq/Preprocess.hh>
 #include <qcall/List.hh>
 #include <random>
 

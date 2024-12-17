@@ -232,19 +232,6 @@ static thread_local boost::unordered_map<std::string, std::string> can_cache;
 
 ///============================================================================///
 
-CPP_EXPORT qlex_t *qlex_new(std::istream &file, const char *filename,
-                            qcore_env_t env) {
-  try {
-    return new qlex_t(file, filename, env);
-  } catch (std::bad_alloc &) {
-    return nullptr;
-  } catch (...) {
-    qcore_panic("qlex_new: failed to create lexer");
-  }
-}
-
-///============================================================================///
-
 static bool validate_identifier(std::string_view id) {
   /*
    * This state machine checks if the identifier looks

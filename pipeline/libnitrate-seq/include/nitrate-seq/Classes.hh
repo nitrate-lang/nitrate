@@ -39,24 +39,21 @@
 #endif
 
 #include <nitrate-core/Error.h>
-#include <nitrate-seq/Preprocess.h>
 
-#include <stdexcept>
+#include <nitrate-seq/Preprocess.hh>
 
 class qprep final {
-  qlex_t *m_lex;
+  std::unique_ptr<qprep_impl_t> m_lex;
 
 public:
   qprep(std::istream &fp, const char *filename, qcore_env_t env) {
-    if ((m_lex = qprep_new(fp, filename, env)) == nullptr) {
-      throw std::runtime_error("qlex_new failed");
-    }
+    m_lex = std::make_unique<qprep_impl_t>(fp, filename, env);
   }
-  ~qprep() { qlex_free(m_lex); }
+  ~qprep() = default;
 
   qlex_t *get() {
     qcore_assert(m_lex != nullptr);
-    return m_lex;
+    return m_lex.get();
   }
 };
 

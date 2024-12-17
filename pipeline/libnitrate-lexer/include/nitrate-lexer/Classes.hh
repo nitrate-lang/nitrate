@@ -41,22 +41,21 @@
 #include <nitrate-core/Error.h>
 
 #include <istream>
-#include <nitrate-lexer/Lexer.hh>
+#include <memory>
+#include <nitrate-lexer/Base.hh>
 
 class qlex final {
-  qlex_t *m_lex;
+  std::unique_ptr<qlex_t> m_lex;
 
 public:
   qlex(std::istream &fp, const char *filename, qcore_env_t env) {
-    if ((m_lex = qlex_new(fp, filename, env)) == nullptr) {
-      qcore_panic("qlex_new failed");
-    }
+    m_lex = std::make_unique<qlex_t>(fp, filename, env);
   }
-  ~qlex() { qlex_free(m_lex); }
+  ~qlex() = default;
 
   qlex_t *get() {
     qcore_assert(m_lex != nullptr);
-    return m_lex;
+    return m_lex.get();
   }
 };
 

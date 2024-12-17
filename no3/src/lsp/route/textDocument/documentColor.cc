@@ -4,6 +4,7 @@
 #include <lsp/core/server.hh>
 #include <lsp/route/RoutesList.hh>
 #include <nitrate-core/Classes.hh>
+#include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Classes.hh>
 #include <regex>
 #include <sstream>
@@ -119,7 +120,7 @@ void do_documentColor(const lsp::RequestMessage& req,
   qlex_tok_t tok;
   std::vector<ColorInformation> colors;
 
-  while ((tok = qlex_next(lexer.get())).ty != qEofF) {
+  while ((tok = (lexer.get()->next())).ty != qEofF) {
     if (tok.ty != qMacr) {
       continue;
     }

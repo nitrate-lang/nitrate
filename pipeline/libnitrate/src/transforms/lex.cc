@@ -36,6 +36,7 @@
 
 #include <core/SerialUtil.hh>
 #include <core/Transform.hh>
+#include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Classes.hh>
 #include <string_view>
 #include <unordered_set>
@@ -44,7 +45,7 @@ bool impl_use_json(qlex_t *L, std::ostream &O) {
   O << "[";
 
   qlex_tok_t tok;
-  while ((tok = qlex_next(L)).ty != qEofF) {
+  while ((tok = (L->next())).ty != qEofF) {
     uint32_t sl = qlex_line(L, tok.start);
     uint32_t sc = qlex_col(L, tok.start);
     uint32_t el = qlex_line(L, qlex_end(L, tok));
@@ -175,7 +176,7 @@ bool impl_use_msgpack(qlex_t *L, std::ostream &O) {
   O.put(0);
 
   qlex_tok_t tok;
-  while ((tok = qlex_next(L)).ty != qEofF) {
+  while ((tok = (L->next())).ty != qEofF) {
     uint32_t sl = qlex_line(L, tok.start);
     uint32_t sc = qlex_col(L, tok.start);
     uint32_t el = qlex_line(L, qlex_end(L, tok));

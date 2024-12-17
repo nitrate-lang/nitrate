@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Preprocess.hh>
 #include <nitrate-lexer/Lexer.hh>
+#include <nitrate-seq/Preprocess.hh>
 #include <qcall/List.hh>
 
 extern "C" {
@@ -58,7 +58,7 @@ int qcall::sys_peek(lua_State* L) {
     obj->m_do_expanse = false;
     qlex_set_flags(obj, flags & ~(QLEX_NO_COMMENTS));
 
-    tok = qlex_peek(obj);
+    tok = obj->peek();
 
     qlex_set_flags(obj, flags);
     obj->m_do_expanse = old;

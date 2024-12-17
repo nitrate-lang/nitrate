@@ -36,13 +36,13 @@
 #include <nitrate-lexer/Lib.h>
 #include <nitrate-seq/Lib.h>
 
-#include <core/Preprocess.hh>
 #include <cstddef>
 #include <memory>
 #include <new>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
+#include <nitrate-seq/Preprocess.hh>
 #include <optional>
 #include <qcall/List.hh>
 #include <sstream>
@@ -142,15 +142,15 @@ void qprep_impl_t::expand_raw(std::string_view code) {
   std::istringstream ss(std::string(code.data(), code.size()));
 
   {
-    qlex_t *clone = weak_clone(ss, m_filename);
+    auto clone = weak_clone(ss, m_filename.c_str());
 
     qlex_tok_t tok;
     std::vector<qlex_tok_t> tokens;
-    while ((tok = qlex_next(clone)).ty != qEofF) {
+    while ((tok = (clone->next())).ty != qEofF) {
       tokens.push_back(tok);
     }
 
-    qlex_free(clone);
+    clone.reset();
 
     for (auto it = tokens.rbegin(); it != tokens.rend(); it++) {
       m_core->buffer.push_front(*it);
@@ -335,8 +335,9 @@ void qprep_impl_t::install_lua_api() {
   lua_setglobal(m_core->L, "n");
 }
 
-qlex_t *qprep_impl_t::weak_clone(std::istream &file, const char *filename) {
-  qprep_impl_t *clone = new qprep_impl_t(file, filename, m_env);
+std::unique_ptr<qlex_t> qprep_impl_t::weak_clone(std::istream &file,
+                                                 const char *filename) {
+  auto clone = std::make_unique<qprep_impl_t>(file, filename, m_env);
 
   clone->m_core = m_core;
   clone->m_flags = m_flags;
