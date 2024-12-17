@@ -34,124 +34,82 @@
 #ifndef __NITRATE_CORE_CACHE_H__
 #define __NITRATE_CORE_CACHE_H__
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <array>
+#include <cstdint>
+#include <functional>
+#include <mutex>
+#include <string>
 
-typedef struct {
-  uint8_t key[20];
-} __attribute__((packed)) qcore_cache_key_t;
+namespace ncc::core {
+  using ResourceKey = std::array<uint8_t, 20>;
 
-/**
- * @brief Cache check signature
- *
- * @param key The cache key
- *
- * @return The payload_size of the cached object in bytes, or -1 if the object
- * is not cached.
- */
-typedef int64_t (*qcore_cache_has_t)(const qcore_cache_key_t *key);
+  template <typename Value>
+  class IResourceCache {
+  public:
+    virtual ~IResourceCache() = default;
 
-/**
- * @brief Cache read signature
- *
- * @param key The cache key
- * @param payload The buffer to read the cached object into
- * @param payload_size The maximum number of bytes to read
- *
- * @note The data consumer is not required to read the entire object.
- * @note The provider is required to be able to provide the entire object
- *       (if sufficient space is provided) in a single call.
- * @note Data integrity is the responsibility of the cache provider.
- *
- * @return true if the object was read successfully, false otherwise.
- */
-typedef bool (*qcore_cache_read_t)(const qcore_cache_key_t *key, void *payload,
-                                   size_t payload_size);
+    virtual bool has(const ResourceKey &key) = 0;
+    virtual bool read(const ResourceKey &key, Value &value) = 0;
+    virtual bool write(const ResourceKey &key, const Value &value) = 0;
+  };
 
-/**
- * @brief Cache write signature
- *
- * @param key The cache key
- * @param payload The data to write to the cache
- * @param payload_size The length of the data to write
- *
- * @note The writer must write the entire object in a single call.
- * @note Data integrity is the responsibility of the cache provider.
- *
- * @return true if the object was written successfully, false otherwise.
- */
-typedef bool (*qcore_cache_write_t)(const qcore_cache_key_t *key,
-                                    const void *payload, size_t payload_size);
+  template <typename Value>
+  class ExternalResourceCache final : public IResourceCache<Value> {
+    using has_t = std::function<bool(const ResourceKey &)>;
+    using read_t = std::function<bool(const ResourceKey &, Value &)>;
+    using write_t = std::function<bool(const ResourceKey &, Value)>;
 
-/**
- * @brief Bind a cache provider.
- *
- * @param has The cache check function.
- * @param read The cache read function.
- * @param write The cache write function.
- *
- * @return true if the provider was bound successfully. false otherwise.
- *
- * @note This function is thread-safe.
- * @note This function will return false if a provider is already bound.
- */
-bool qcore_cache_bind(qcore_cache_has_t has, qcore_cache_read_t read,
-                      qcore_cache_write_t write);
+  public:
+    ExternalResourceCache() {
+      m_has = [](const ResourceKey &) { return false; };
+      m_read = [](const ResourceKey &, Value &) { return false; };
+      m_write = [](const ResourceKey &, Value) { return false; };
+    }
 
-/**
- * @brief Unbind the current cache provider.
- *
- * @note This function is thread-safe.
- */
-void qcore_cache_unbind();
+    bool has(const ResourceKey &key) override {
+      std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
-/**
- * @brief Check if an object is currently cached.
- *
- * @param key The cache key.
- *
- * @return The payload_size of the cached object in bytes, or -1 if the object
- * is not cached.
- *
- * @note This function is thread-safe.
- * @warning This function does not guarantee that the object will be available
- *          when read. Ensure to protect against race conditions.
- */
-int64_t qcore_cache_has(const qcore_cache_key_t *key);
+      return m_has(key);
+    }
 
-/**
- * @brief Read a cached object into a buffer.
- *
- * @param key The cache key.
- * @param payload The buffer to read the cached object into.
- * @param payload_size The maximum number of bytes to read.
- *
- * @return true if the object was read successfully, false otherwise.
- *
- * @note This function is thread-safe.
- * @note The data consumer is not required to read the entire object.
- * @note The provider is required to be able to provide the entire object
- *       (if sufficient space is provided) in a single call.
- * @note Data integrity is the responsibility of the cache provider.
- */
-bool qcore_cache_read(const qcore_cache_key_t *key, void *payload,
-                      size_t payload_size);
+    bool read(const ResourceKey &key, Value &value) override {
+      std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
-/**
- * @brief Write an object to the cache.
- *
- * @param key The cache key.
- * @param payload The data to write to the cache.
- * @param payload_size The length of the data to write.
- *
- * @return true if the object was written successfully, false otherwise.
- *
- * @note This function is thread-safe.
- * @note The writer must write the entire object in a single call.
- * @note Data integrity is the responsibility of the cache provider.
- */
-bool qcore_cache_write(const qcore_cache_key_t *key, const void *payload,
-                       size_t payload_size);
+      return m_read(key, value);
+    }
+
+    bool write(const ResourceKey &key, const Value &value) override {
+      std::lock_guard<std::recursive_mutex> lock(m_mutex);
+
+      return m_write(key, value);
+    }
+
+    void bind(has_t has, read_t read, write_t write) {
+      std::lock_guard<std::recursive_mutex> lock(m_mutex);
+
+      m_has = std::move(has);
+      m_read = std::move(read);
+      m_write = std::move(write);
+    }
+
+  private:
+    has_t m_has;
+    read_t m_read;
+    write_t m_write;
+    std::recursive_mutex m_mutex;
+  };
+
+  template <typename Value>
+  class MockArtifactCache final : public IResourceCache<Value> {
+  public:
+    bool has(const ResourceKey &) const override { return false; }
+    bool read(const ResourceKey &, Value &) const override { return false; }
+    bool write(const ResourceKey &, const Value &) override { return false; }
+  };
+
+  using TheCache = ExternalResourceCache<std::string>;
+
+  TheCache &get_cache();
+}  // namespace ncc::core
 
 #endif  // __NITRATE_CORE_CACHE_H__
