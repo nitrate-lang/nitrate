@@ -61,7 +61,9 @@ str_alias StringMemory::get(std::string_view str) {
   return str_alias::get(new_id);
 }
 
-CPP_EXPORT void StringMemory::save(std::string_view str) { (void)get(str); }
+CPP_EXPORT std::string_view StringMemory::save(std::string_view str) {
+  return get(str).get();
+}
 
 std::string_view StringMemory::from_id(uint64_t id) {
   std::lock_guard lock(m_storage.m_mutex);

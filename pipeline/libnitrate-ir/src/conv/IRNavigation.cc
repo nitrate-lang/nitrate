@@ -35,6 +35,7 @@
 
 #include <nitrate-core/Error.h>
 
+#include <nitrate-core/StringIntern.hh>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <string_view>
@@ -139,5 +140,5 @@ std::optional<std::pair<Expr *, std::string_view>> NRBuilder::resolve_name(
     return std::nullopt;
   }
 
-  return {{R->first, intern(R->second)}};
+  return {{R->first, qcore::intern(R->second)}};
 }

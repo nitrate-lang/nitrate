@@ -31,16 +31,16 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <algorithm>
-#include <unordered_map>
-
-#include "nitrate-ir/Report.hh"
 #define IRBUILDER_IMPL
 
 #include <nitrate-core/Error.h>
 
+#include <algorithm>
+#include <nitrate-core/StringIntern.hh>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
+#include <nitrate-ir/Report.hh>
+#include <unordered_map>
 
 using namespace nr;
 
@@ -106,8 +106,8 @@ bool NRBuilder::check_duplicates(Seq *, IReport *I) {
         m_named_constant_group.begin(), m_named_constant_group.end(),
         [&](auto x) {
           std::for_each(x.second.begin(), x.second.end(), [&](auto y) {
-            auto joined =
-                intern(std::string(x.first) + "::" + std::string(y.first));
+            auto joined = qcore::intern(std::string(x.first) +
+                                        "::" + std::string(y.first));
             names_map[joined] = {Kind::ScopedEnum, y.second};
           });
         });
@@ -142,8 +142,8 @@ bool NRBuilder::check_duplicates(Seq *, IReport *I) {
         m_named_constant_group.begin(), m_named_constant_group.end(),
         [&](auto x) {
           std::for_each(x.second.begin(), x.second.end(), [&](auto y) {
-            auto named_constant =
-                intern(std::string(x.first) + "::" + std::string(y.first));
+            auto named_constant = qcore::intern(std::string(x.first) +
+                                                "::" + std::string(y.first));
 
             auto it = names_map.find(named_constant);
             if (it != names_map.end() && it->second.first != Kind::ScopedEnum) {

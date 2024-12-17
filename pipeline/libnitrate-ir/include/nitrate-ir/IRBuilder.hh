@@ -100,7 +100,6 @@ namespace nr {
     std::optional<qmodule_t *> m_result;
     Seq *m_root;
 
-    std::unordered_map<std::string_view, std::string> m_interned_strings;
     std::unordered_map<std::string_view, Type *> m_named_types;
     std::unordered_map<std::string_view,
                        std::unordered_map<std::string_view, Expr *>>
@@ -363,10 +362,6 @@ namespace nr {
     void createNamedTypeAlias(Type *type,
                               std::string_view name SOURCE_LOCATION_PARAM);
 
-    ///**************************************************************************///
-    // Other stuff
-
-    std::string_view intern(std::string_view str);
     ///**************************************************************************///
 
 #undef SOURCE_LOCATION_PARAM

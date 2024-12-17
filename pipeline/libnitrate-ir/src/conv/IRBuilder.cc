@@ -168,21 +168,6 @@ void NRBuilder::contract_enforce_(
 #endif
 }
 
-std::string_view NRBuilder::intern(std::string_view in) {
-  auto it = m_interned_strings.find(in);
-
-  if (it == m_interned_strings.end()) {
-    it = m_interned_strings.emplace(in, std::string(in)).first;
-
-    const std::string_view *dirty_hack =
-        reinterpret_cast<const std::string_view *>(&it->first);
-    std::string_view *mut = const_cast<std::string_view *>(dirty_hack);
-    return *mut = std::string_view(it->second);
-  } else {
-    return it->first;
-  }
-}
-
 NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const {
   contract_enforce(
       m_state == SelfState::Constructed || m_state == SelfState::Finished ||
@@ -328,7 +313,6 @@ qmodule_t *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) {
     contract_enforce(m_result == std::nullopt);
 
     qmodule_t *new_mod = createModule(m_module_name);
-    new_mod->m_strings = std::move(m_interned_strings);
 
     { /* Clone the IRGraph into the module */
       std::swap(nr::nr_arena.get(), new_mod->getNodeArena());

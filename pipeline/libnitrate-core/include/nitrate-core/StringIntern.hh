@@ -88,10 +88,14 @@ namespace qcore {
 
   public:
     static str_alias get(std::string_view str);
-    static void save(std::string_view str);
+    static std::string_view save(std::string_view str);
 
     static std::string_view from_id(uint64_t id);
   };
+
+  static inline std::string_view intern(std::string_view str) {
+    return StringMemory::save(str);
+  }
 
 }  // namespace qcore
 
