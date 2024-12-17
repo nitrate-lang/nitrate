@@ -32,9 +32,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <descent/Recurse.hh>
+#include <nitrate-parser/ASTData.hh>
 #include <unordered_set>
-
-#include "nitrate-parser/ASTData.hh"
 
 using namespace npar;
 

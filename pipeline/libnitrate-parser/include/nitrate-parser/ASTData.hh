@@ -37,7 +37,7 @@
 #include <nitrate-core/Macro.h>
 
 #include <nitrate-core/Classes.hh>
-#include <nitrate-core/StringIntern.hh>
+#include <nitrate-core/String.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <set>
 #include <tuple>

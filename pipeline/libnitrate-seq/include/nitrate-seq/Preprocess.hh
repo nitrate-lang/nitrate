@@ -31,11 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Env.h>
 #include <nitrate-seq/Preprocess.h>
 
 #include <memory>
 #include <mutex>
+#include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Token.hh>
 #include <optional>

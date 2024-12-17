@@ -31,12 +31,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "nitrate-core/StringIntern.hh"
 #define IRBUILDER_IMPL
 
 #include <nitrate-core/Error.h>
 
 #include <cctype>
+#include <nitrate-core/String.hh>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 

@@ -31,10 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Env.h>
 #include <nitrate-core/Error.h>
 
 #include <exception>
+#include <nitrate-core/Environment.hh>
 #include <qcall/List.hh>
 #include <string>
 

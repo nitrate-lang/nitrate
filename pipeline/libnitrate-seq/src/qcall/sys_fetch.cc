@@ -31,9 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Env.h>
-
 #include <cstddef>
+#include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Preprocess.hh>
 #include <qcall/List.hh>
 

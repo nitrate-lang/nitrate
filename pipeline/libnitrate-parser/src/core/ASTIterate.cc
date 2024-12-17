@@ -36,11 +36,10 @@
 
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <queue>
-
-#include "nitrate-parser/ASTBase.hh"
 
 using namespace npar;
 

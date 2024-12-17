@@ -34,13 +34,13 @@
 #ifndef __NITRATE_AST_CONTEXT_H__
 #define __NITRATE_AST_CONTEXT_H__
 
-#include <nitrate-core/Env.h>
-#include <nitrate-core/Memory.h>
 #include <nitrate-parser/Parser.h>
 #include <stdbool.h>
 
 #include <cstdarg>
 #include <functional>
+#include <nitrate-core/Allocate.hh>
+#include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/AST.hh>

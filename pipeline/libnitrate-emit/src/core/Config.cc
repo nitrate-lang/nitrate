@@ -31,12 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "Config.hh"
-
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-emit/Config.h>
 
+#include <Config.hh>
 #include <boost/bimap.hpp>
 
 namespace codegen::conf {

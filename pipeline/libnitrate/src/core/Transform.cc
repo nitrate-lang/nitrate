@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Env.h>
 #include <nitrate-core/Lib.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-emit/Lib.h>
@@ -47,6 +46,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <functional>
+#include <nitrate-core/Environment.hh>
 #include <nitrate/code.hh>
 #include <sstream>
 #include <string_view>

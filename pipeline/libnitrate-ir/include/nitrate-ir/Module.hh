@@ -34,7 +34,6 @@
 #ifndef __NITRATE_NR_MODULE_H__
 #define __NITRATE_NR_MODULE_H__
 
-#include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>
 
 #include <boost/bimap.hpp>
@@ -42,6 +41,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-ir/Report.hh>
 #include <nitrate-ir/Visitor.hh>

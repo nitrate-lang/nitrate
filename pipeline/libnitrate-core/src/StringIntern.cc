@@ -34,7 +34,7 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 
-#include <nitrate-core/StringIntern.hh>
+#include <nitrate-core/String.hh>
 
 using namespace qcore;
 

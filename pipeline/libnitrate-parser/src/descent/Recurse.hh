@@ -40,9 +40,8 @@
 #include <core/Context.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTCommon.hh>
 #include <set>
-
-#include "nitrate-parser/ASTCommon.hh"
 
 namespace npar {
   Stmt *recurse_pub(npar_t &S, qlex_t &rd);

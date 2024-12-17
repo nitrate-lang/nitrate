@@ -38,13 +38,12 @@
 #error "This header is for C++ only."
 #endif
 
-#include <nitrate-core/Env.h>
-#include <nitrate-core/Memory.h>
-
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
+#include <nitrate-core/Allocate.hh>
+#include <nitrate-core/Environment.hh>
 #include <random>
 
 class qcore_arena final {

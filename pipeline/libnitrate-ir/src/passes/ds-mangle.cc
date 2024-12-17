@@ -34,7 +34,7 @@
 #include <nitrate-ir/IR.h>
 
 #include <boost/bimap.hpp>
-#include <nitrate-core/StringIntern.hh>
+#include <nitrate-core/String.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Report.hh>

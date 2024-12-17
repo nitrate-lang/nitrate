@@ -34,11 +34,11 @@
 #ifndef __NITRATE_LEXER_LEX_HH__
 #define __NITRATE_LEXER_LEX_HH__
 
-#include <nitrate-core/Env.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 
+#include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Token.hh>
 
 typedef struct qlex_t qlex_t;

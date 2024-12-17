@@ -39,10 +39,9 @@
 #include <cstdint>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
+#include <nitrate-ir/Report.hh>
 #include <nitrate-parser/AST.hh>
 #include <sstream>
-
-#include "nitrate-ir/Report.hh"
 
 using namespace nr;
 

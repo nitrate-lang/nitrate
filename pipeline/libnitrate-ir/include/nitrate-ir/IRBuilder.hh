@@ -40,7 +40,6 @@
 #endif
 
 #include <nitrate-core/Error.h>
-#include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>
 
 #include <boost/multiprecision/cpp_dec_float.hpp>
@@ -49,6 +48,7 @@
 #include <cassert>
 #include <cmath>
 #include <experimental/source_location>
+#include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>

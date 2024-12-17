@@ -31,9 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Env.h>
-
 #include <cstdio>
+#include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Preprocess.hh>
 #include <qcall/List.hh>
 #include <random>

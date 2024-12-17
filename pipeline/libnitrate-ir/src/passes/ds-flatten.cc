@@ -35,7 +35,7 @@
 
 #include <atomic>
 #include <boost/bimap.hpp>
-#include <nitrate-core/StringIntern.hh>
+#include <nitrate-core/String.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <passes/PassList.hh>
 #include <unordered_set>

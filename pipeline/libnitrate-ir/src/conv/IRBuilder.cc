@@ -31,9 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <string_view>
-
-#include "nitrate-ir/Report.hh"
 #define IRBUILDER_IMPL
 
 #include <nitrate-core/Error.h>
@@ -41,6 +38,8 @@
 #include <cstddef>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
+#include <nitrate-ir/Report.hh>
+#include <string_view>
 #include <unordered_set>
 
 using namespace nr;

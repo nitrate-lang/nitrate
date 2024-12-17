@@ -34,10 +34,11 @@
 #ifndef __NITRATE_CORE_LIB_H__
 #define __NITRATE_CORE_LIB_H__
 
-#include <nitrate-core/Cache.h>
-#include <nitrate-core/Env.h>
 #include <nitrate-core/Error.h>
-#include <nitrate-core/Memory.h>
+
+#include <nitrate-core/Allocate.hh>
+#include <nitrate-core/Cache.hh>
+#include <nitrate-core/Environment.hh>
 
 #ifdef __cplusplus
 extern "C" {

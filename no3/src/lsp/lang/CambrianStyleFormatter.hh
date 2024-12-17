@@ -1,7 +1,7 @@
 #pragma once
 
 #include <lsp/lang/FmtInterface.hh>
-#include <nitrate-core/StringIntern.hh>
+#include <nitrate-core/String.hh>
 #include <sstream>
 #include <stack>
 

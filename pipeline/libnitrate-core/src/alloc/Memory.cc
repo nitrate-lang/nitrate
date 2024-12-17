@@ -35,9 +35,9 @@
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
-#include <nitrate-core/Memory.h>
 
 #include <alloc/Collection.hh>
+#include <nitrate-core/Allocate.hh>
 
 C_EXPORT qcore_arena_t *qcore_arena_open_ex(qcore_arena_t *A,
                                             qcore_alloc_mode_t mode,

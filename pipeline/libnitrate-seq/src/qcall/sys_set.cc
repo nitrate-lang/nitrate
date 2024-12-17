@@ -31,8 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Env.h>
-
+#include <nitrate-core/Environment.hh>
 #include <qcall/List.hh>
 
 extern "C" {

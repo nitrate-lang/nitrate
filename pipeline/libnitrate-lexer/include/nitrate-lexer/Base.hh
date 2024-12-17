@@ -34,7 +34,6 @@
 #ifndef __NITRATE_LEXER_BASE_H__
 #define __NITRATE_LEXER_BASE_H__
 
-#include <nitrate-core/Env.h>
 #include <nitrate-core/Error.h>
 
 #include <array>
@@ -42,6 +41,7 @@
 #include <boost/unordered_map.hpp>
 #include <deque>
 #include <limits>
+#include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
 #include <optional>

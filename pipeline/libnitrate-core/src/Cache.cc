@@ -31,11 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Cache.h>
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
 
 #include <mutex>
+#include <nitrate-core/Cache.hh>
 
 #define PROJECT_REPO_URL "https://github.com/Kracken256/nitrate"
 
@@ -46,8 +46,8 @@ static struct {
   qcore_cache_write_t m_write;
 } g_cache_provider{};
 
-C_EXPORT bool qcore_cache_bind(qcore_cache_has_t has, qcore_cache_read_t read,
-                               qcore_cache_write_t write) {
+CPP_EXPORT bool qcore_cache_bind(qcore_cache_has_t has, qcore_cache_read_t read,
+                                 qcore_cache_write_t write) {
   if (!has || !read || !write) {
     return false;
   }
@@ -66,7 +66,7 @@ C_EXPORT bool qcore_cache_bind(qcore_cache_has_t has, qcore_cache_read_t read,
   return true;
 }
 
-C_EXPORT void qcore_cache_unbind() {
+CPP_EXPORT void qcore_cache_unbind() {
   std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
 
   g_cache_provider.m_has = nullptr;
@@ -74,7 +74,7 @@ C_EXPORT void qcore_cache_unbind() {
   g_cache_provider.m_write = nullptr;
 }
 
-C_EXPORT int64_t qcore_cache_has(const qcore_cache_key_t *key) {
+CPP_EXPORT int64_t qcore_cache_has(const qcore_cache_key_t *key) {
   std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
 
   qcore_assert(key, "qcore_cache_has: key is null");
@@ -84,8 +84,8 @@ C_EXPORT int64_t qcore_cache_has(const qcore_cache_key_t *key) {
   return g_cache_provider.m_has(key);
 }
 
-C_EXPORT bool qcore_cache_read(const qcore_cache_key_t *key, void *data,
-                               size_t datalen) {
+CPP_EXPORT bool qcore_cache_read(const qcore_cache_key_t *key, void *data,
+                                 size_t datalen) {
   std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
 
   qcore_assert(key && data, "qcore_cache_read: key or data is null");
@@ -95,8 +95,8 @@ C_EXPORT bool qcore_cache_read(const qcore_cache_key_t *key, void *data,
   return g_cache_provider.m_read(key, data, datalen);
 }
 
-C_EXPORT bool qcore_cache_write(const qcore_cache_key_t *key, const void *data,
-                                size_t datalen) {
+CPP_EXPORT bool qcore_cache_write(const qcore_cache_key_t *key,
+                                  const void *data, size_t datalen) {
   std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
 
   qcore_assert(key && data, "qcore_cache_write: key or data is null");

@@ -35,7 +35,7 @@
 
 #include <nitrate-core/Error.h>
 
-#include <nitrate-core/StringIntern.hh>
+#include <nitrate-core/String.hh>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <string_view>

@@ -38,7 +38,6 @@
 #error "This header is C++ only."
 #endif
 #include <nitrate-core/Error.h>
-#include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
@@ -48,6 +47,7 @@
 #include <cstdint>
 #include <functional>
 #include <iostream>
+#include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Classes.hh>
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/Visitor.hh>

@@ -34,7 +34,7 @@
 #ifndef __NITRATE_AST_ASTCOMMON_H__
 #define __NITRATE_AST_ASTCOMMON_H__
 
-#include <nitrate-core/StringIntern.hh>
+#include <nitrate-core/String.hh>
 
 typedef enum npar_ty_t {
   /*****************************************************************************

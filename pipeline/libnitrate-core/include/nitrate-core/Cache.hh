@@ -34,10 +34,6 @@
 #ifndef __NITRATE_CORE_CACHE_H__
 #define __NITRATE_CORE_CACHE_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -157,9 +153,5 @@ bool qcore_cache_read(const qcore_cache_key_t *key, void *payload,
  */
 bool qcore_cache_write(const qcore_cache_key_t *key, const void *payload,
                        size_t payload_size);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  // __NITRATE_CORE_CACHE_H__

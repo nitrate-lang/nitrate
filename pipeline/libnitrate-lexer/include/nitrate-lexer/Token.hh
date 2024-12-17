@@ -36,7 +36,7 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <nitrate-core/StringIntern.hh>
+#include <nitrate-core/String.hh>
 #include <string_view>
 #include <type_traits>
 

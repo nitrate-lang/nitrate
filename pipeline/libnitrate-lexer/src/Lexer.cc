@@ -45,7 +45,7 @@
 #include <cstdio>
 #include <deque>
 #include <iomanip>
-#include <nitrate-core/StringIntern.hh>
+#include <nitrate-core/String.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <string>
