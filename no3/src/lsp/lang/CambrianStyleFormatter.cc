@@ -618,8 +618,8 @@ void CambrianFormatter::visit(Call const& n) {
   size_t argc = n.get_args().size();
 
   bool any_named =
-      std::any_of(n.get_args().begin(), n.get_args().end(), [](let arg) {
-        let name = std::get<0>(arg);
+      std::any_of(n.get_args().begin(), n.get_args().end(), [](CallArg arg) {
+        let name = arg.first;
         return !std::isdigit(name->at(0));
       });
 
@@ -801,8 +801,8 @@ void CambrianFormatter::visit(Slice const& n) {
 void CambrianFormatter::visit(FString const& n) {
   line << "f\"";
   for (let part : n.get_items()) {
-    if (std::holds_alternative<npar::ASTString>(part)) {
-      escape_string_literal(*std::get<npar::ASTString>(part), false);
+    if (std::holds_alternative<qcore::str_alias>(part)) {
+      escape_string_literal(*std::get<qcore::str_alias>(part), false);
     } else {
       line << "{";
       std::get<Expr*>(part)->accept(*this);

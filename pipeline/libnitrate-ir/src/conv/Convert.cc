@@ -859,8 +859,8 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   if (n->get_items().size() == 1) {
     auto val = n->get_items().front();
 
-    if (std::holds_alternative<npar::ASTString>(val)) {
-      return b.createStringDataArray(*std::get<npar::ASTString>(val));
+    if (std::holds_alternative<qcore::str_alias>(val)) {
+      return b.createStringDataArray(*std::get<qcore::str_alias>(val));
     } else if (std::holds_alternative<npar::Expr *>(val)) {
       auto expr = next_one(std::get<npar::Expr *>(val));
 
@@ -880,8 +880,8 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   Expr *concated = b.createStringDataArray("");
 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    if (std::holds_alternative<npar::ASTString>(*it)) {
-      auto val = *std::get<npar::ASTString>(*it);
+    if (std::holds_alternative<qcore::str_alias>(*it)) {
+      auto val = *std::get<qcore::str_alias>(*it);
 
       concated =
           create<BinExpr>(concated, b.createStringDataArray(val), Op::Plus);

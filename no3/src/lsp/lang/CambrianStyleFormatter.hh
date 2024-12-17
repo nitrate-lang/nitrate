@@ -1,6 +1,7 @@
 #pragma once
 
 #include <lsp/lang/FmtInterface.hh>
+#include <nitrate-core/StringIntern.hh>
 #include <sstream>
 #include <stack>
 
@@ -26,6 +27,10 @@ namespace lsp::fmt {
       }
       LineStreamWritter& operator<<(qlex_op_t op);
       LineStreamWritter& operator<<(npar::Vis op);
+      LineStreamWritter& operator<<(qcore::str_alias str) {
+        m_line_buffer << str.get();
+        return *this;
+      }
 
       LineStreamWritter& operator<<(std::ostream& (*func)(std::ostream&));
 

@@ -66,8 +66,8 @@ namespace npar {
     VarDeclType m_decl_type;
 
   public:
-    VarDecl(ASTString name, Type *type, Expr *value, VarDeclType decl_type,
-            ExpressionList attributes)
+    VarDecl(qcore::str_alias name, Type *type, Expr *value,
+            VarDeclType decl_type, ExpressionList attributes)
         : Stmt(QAST_VAR),
           m_attributes(attributes),
           m_name(name.get()),
@@ -87,7 +87,7 @@ namespace npar {
     ExpressionList m_args;
 
   public:
-    InlineAsm(ASTString code, const ExpressionList &args)
+    InlineAsm(qcore::str_alias code, const ExpressionList &args)
         : Stmt(QAST_INLINE_ASM), m_code(code.get()), m_args(args) {}
 
     let get_code() const { return m_code; }
@@ -146,8 +146,8 @@ namespace npar {
     Stmt *m_body;
 
   public:
-    ForeachStmt(ASTString idx_ident, ASTString val_ident, Expr *expr,
-                Stmt *body)
+    ForeachStmt(qcore::str_alias idx_ident, qcore::str_alias val_ident,
+                Expr *expr, Stmt *body)
         : Stmt(QAST_FOREACH),
           m_idx_ident(idx_ident.get()),
           m_val_ident(val_ident.get()),
@@ -228,7 +228,8 @@ namespace npar {
     Vis m_vis;
 
   public:
-    ExportStmt(Stmt *content, ASTString abi_name, Vis vis, ExpressionList attrs)
+    ExportStmt(Stmt *content, qcore::str_alias abi_name, Vis vis,
+               ExpressionList attrs)
         : Stmt(QAST_EXPORT),
           m_attrs(attrs),
           m_abi_name(abi_name.get()),
@@ -247,7 +248,7 @@ namespace npar {
     Stmt *m_body;
 
   public:
-    ScopeStmt(ASTString name, Stmt *body, ScopeDeps deps = {})
+    ScopeStmt(qcore::str_alias name, Stmt *body, ScopeDeps deps = {})
         : Stmt(QAST_SCOPE), m_deps(deps), m_name(name.get()), m_body(body) {}
 
     let get_name() const { return m_name; }
@@ -260,7 +261,7 @@ namespace npar {
     Type *m_type;
 
   public:
-    TypedefStmt(ASTString name, Type *type)
+    TypedefStmt(qcore::str_alias name, Type *type)
         : Stmt(QAST_TYPEDEF), m_name(name.get()), m_type(type) {}
 
     let get_name() const { return m_name; }
@@ -273,7 +274,7 @@ namespace npar {
     Type *m_type;
 
   public:
-    EnumDef(ASTString name, Type *type, const EnumDefItems &items)
+    EnumDef(qcore::str_alias name, Type *type, const EnumDefItems &items)
         : Stmt(QAST_ENUM), m_items(items), m_name(name.get()), m_type(type) {}
 
     let get_items() const { return m_items; }
@@ -294,7 +295,7 @@ namespace npar {
 
   public:
     Function(ExpressionList attributes, FuncPurity purity, FnCaptures captures,
-             ASTString name, std::optional<TemplateParameters> params,
+             qcore::str_alias name, std::optional<TemplateParameters> params,
              FuncParams fn_params, Type *return_type,
              std::optional<Expr *> precond, std::optional<Expr *> postcond,
              std::optional<Stmt *> body)
@@ -337,7 +338,7 @@ namespace npar {
 
   public:
     StructDef(CompositeType comp_type, ExpressionList attributes,
-              ASTString name, std::optional<TemplateParameters> params,
+              qcore::str_alias name, std::optional<TemplateParameters> params,
               const StructDefNames &names, const StructDefFields &fields,
               const StructDefMethods &methods,
               const StructDefStaticMethods &static_methods)

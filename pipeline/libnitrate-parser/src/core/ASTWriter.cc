@@ -950,7 +950,7 @@ void AST_Writer::visit(FString const& n) {
     let items = n.get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(), [&](let item) {
-      if (std::holds_alternative<npar::ASTString>(item)) {
+      if (std::holds_alternative<qcore::str_alias>(item)) {
         begin_obj(2);
 
         string("kind");
@@ -959,7 +959,7 @@ void AST_Writer::visit(FString const& n) {
         string(kind_name);
 
         string("value");
-        string(*std::get<npar::ASTString>(item));
+        string(*std::get<qcore::str_alias>(item));
 
         end_obj();
       } else {

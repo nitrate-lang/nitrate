@@ -37,6 +37,7 @@
 #include <nitrate-core/Macro.h>
 
 #include <nitrate-core/Classes.hh>
+#include <nitrate-core/StringIntern.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <set>
 #include <tuple>
@@ -88,7 +89,9 @@ namespace npar {
     return false;
   }
 
-  ASTString SaveString(std::string_view str);
+  static inline qcore::str_alias SaveString(std::string_view str) {
+    return qcore::StringMemory::get(str);
+  }
 };  // namespace npar
 
 namespace npar {
@@ -96,32 +99,34 @@ namespace npar {
 
   using TupleTyItems = std::vector<Type *, Arena<Type *>>;
 
-  using CallArg = std::pair<ASTString, Expr *>;
+  using CallArg = std::pair<qcore::str_alias, Expr *>;
   using CallArgs = std::vector<CallArg, Arena<CallArg>>;
 
-  using FStringItems = std::vector<std::variant<ASTString, Expr *>,
-                                   Arena<std::variant<ASTString, Expr *>>>;
+  using FStringItems =
+      std::vector<std::variant<qcore::str_alias, Expr *>,
+                  Arena<std::variant<qcore::str_alias, Expr *>>>;
 
-  using TemplateParameter = std::tuple<ASTString, Type *, Expr *>;
+  using TemplateParameter = std::tuple<qcore::str_alias, Type *, Expr *>;
   using TemplateParameters =
       std::vector<TemplateParameter, Arena<TemplateParameter>>;
 
   using BlockItems = std::vector<Stmt *, Arena<Stmt *>>;
-  using ScopeDeps = std::set<ASTString, std::less<ASTString>, Arena<ASTString>>;
+  using ScopeDeps = std::set<qcore::str_alias, std::less<qcore::str_alias>,
+                             Arena<qcore::str_alias>>;
 
   using SwitchCases = std::vector<CaseStmt *, Arena<CaseStmt *>>;
-  using EnumItem = std::pair<ASTString, Expr *>;
+  using EnumItem = std::pair<qcore::str_alias, Expr *>;
   using EnumDefItems = std::vector<EnumItem, Arena<EnumItem>>;
 
   class StructField {
-    ASTString m_name;
+    qcore::str_alias m_name;
     std::optional<Expr *> m_value;
     Type *m_type;
     Vis m_vis;
     bool m_is_static;
 
   public:
-    StructField(Vis vis, bool is_static, ASTString name, Type *type,
+    StructField(Vis vis, bool is_static, qcore::str_alias name, Type *type,
                 std::optional<Expr *> value)
         : m_name(std::move(name)),
           m_value(std::move(value)),
@@ -147,17 +152,17 @@ namespace npar {
   using StructDefMethods = std::vector<StructFunction, Arena<StructFunction>>;
   using StructDefStaticMethods =
       std::vector<StructFunction, Arena<StructFunction>>;
-  using StructDefNames = std::vector<ASTString, Arena<ASTString>>;
+  using StructDefNames = std::vector<qcore::str_alias, Arena<qcore::str_alias>>;
 
-  using FuncParam = std::tuple<ASTString, Type *, Expr *>;
+  using FuncParam = std::tuple<qcore::str_alias, Type *, Expr *>;
   struct FuncParams {
     std::vector<FuncParam, Arena<FuncParam>> params;
     bool is_variadic;
 
     FuncParams() : is_variadic(false) {}
   };
-  using FnCaptures = std::vector<std::pair<ASTString, bool>,
-                                 Arena<std::pair<ASTString, bool>>>;
+  using FnCaptures = std::vector<std::pair<qcore::str_alias, bool>,
+                                 Arena<std::pair<qcore::str_alias, bool>>>;
 }  // namespace npar
 
 #endif

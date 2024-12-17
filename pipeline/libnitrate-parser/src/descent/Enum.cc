@@ -69,7 +69,7 @@ constexpr static std::optional<EnumItem> recurse_enum_item(npar_t &S,
   if (let name = next_if(qName)) {
     let value = recurse_enum_item_value(S, rd);
 
-    return EnumItem(name->as_string(&rd), value.value_or(nullptr));
+    return EnumItem(SaveString(name->as_string(&rd)), value.value_or(nullptr));
   } else {
     diagnostic << current() << "Enum field is missing a name.";
   }

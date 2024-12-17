@@ -107,23 +107,23 @@ namespace npar {
   };
 
   class npar_pack ConstInt final : public Expr {
-    str_ref m_value;
+    qcore::str_alias m_value;
 
   public:
-    ConstInt(ASTString value)
-        : Expr(QAST_INT), m_value(str_ref::get(value.get())) {}
+    constexpr ConstInt(qcore::str_alias value)
+        : Expr(QAST_INT), m_value(value) {}
 
-    constexpr auto get_value() const { return std::string_view(m_value); }
+    constexpr auto get_value() const { return m_value.get(); }
   };
 
   class npar_pack ConstFloat final : public Expr {
-    str_ref m_value;
+    qcore::str_alias m_value;
 
   public:
-    ConstFloat(ASTString value)
-        : Expr(QAST_FLOAT), m_value(str_ref::get(value.get())) {}
+    constexpr ConstFloat(qcore::str_alias value)
+        : Expr(QAST_FLOAT), m_value(value) {}
 
-    constexpr auto get_value() const { return std::string_view(m_value); }
+    constexpr auto get_value() const { return m_value.get(); }
   };
 
   class npar_pack ConstBool final : public Expr {
@@ -136,13 +136,13 @@ namespace npar {
   };
 
   class npar_pack ConstString final : public Expr {
-    str_ref m_value;
+    qcore::str_alias m_value;
 
   public:
-    ConstString(ASTString value)
-        : Expr(QAST_STRING), m_value(str_ref::get(value.get())) {}
+    constexpr ConstString(qcore::str_alias value)
+        : Expr(QAST_STRING), m_value(value) {}
 
-    constexpr auto get_value() const { return std::string_view(m_value); }
+    constexpr auto get_value() const { return m_value.get(); }
   };
 
   class npar_pack ConstChar final : public Expr {
@@ -214,14 +214,14 @@ namespace npar {
 
   class npar_pack Field final : public Expr {
     Expr *m_base;
-    str_ref m_field;
+    qcore::str_alias m_field;
 
   public:
-    Field(Expr *base, ASTString field)
-        : Expr(QAST_FIELD), m_base(base), m_field(str_ref::get(field.get())) {}
+    constexpr Field(Expr *base, qcore::str_alias field)
+        : Expr(QAST_FIELD), m_base(base), m_field(field) {}
 
     constexpr auto get_base() const { return m_base; }
-    constexpr auto get_field() const { return std::string_view(m_field); }
+    constexpr auto get_field() const { return m_field.get(); }
   };
 
   class npar_pack Index final : public Expr {
@@ -248,7 +248,7 @@ namespace npar {
   };
 
   class FString final : public Expr {
-    std::span<std::variant<ASTString, Expr *>> m_items;
+    std::span<std::variant<qcore::str_alias, Expr *>> m_items;
 
   public:
     FString(FStringItems items) : Expr(QAST_FSTRING), m_items(items) {}
@@ -257,13 +257,12 @@ namespace npar {
   };
 
   class npar_pack Ident final : public Expr {
-    str_ref m_name;
+    qcore::str_alias m_name;
 
   public:
-    Ident(ASTString name)
-        : Expr(QAST_IDENT), m_name(str_ref::get(name.get())) {}
+    constexpr Ident(qcore::str_alias name) : Expr(QAST_IDENT), m_name(name) {}
 
-    constexpr auto get_name() const { return std::string_view(m_name); }
+    constexpr auto get_name() const { return m_name.get(); }
   };
 
   class SeqPoint final : public Expr {

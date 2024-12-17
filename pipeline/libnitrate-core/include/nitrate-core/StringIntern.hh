@@ -31,100 +31,68 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
-#include <nitrate-parser/Parser.h>
+#ifndef __NITRATE_CORE_STRING_FACTORY_H__
+#define __NITRATE_CORE_STRING_FACTORY_H__
 
-#include <core/Hash.hh>
-#include <cstddef>
-#include <cstring>
-#include <nitrate-parser/AST.hh>
-#include <nitrate-parser/ASTWriter.hh>
-#include <sstream>
+#include <boost/bimap.hpp>
+#include <cstdint>
+#include <mutex>
+#include <nitrate-core/Classes.hh>
+#include <string>
+#include <string_view>
+#include <unordered_set>
 
-using namespace npar;
+namespace qcore {
+  class StringMemory;
 
-///=============================================================================
-namespace npar {
-  void ArenaAllocatorImpl::swap(qcore_arena_t &arena) {
-    std::swap(*m_arena.get(), arena);
-  }
+  class __attribute__((packed)) str_alias {
+    friend class StringMemory;
 
-  CPP_EXPORT thread_local ArenaAllocatorImpl npar_arena;
-}  // namespace npar
+    uint64_t m_id : 40;
 
-C_EXPORT void *ArenaAllocatorImpl::allocate(std::size_t size) {
-  const std::size_t alignment = 16;
-  return qcore_arena_alloc_ex(m_arena.get(), size, alignment);
-}
+    static constexpr str_alias get(uint64_t id) {
+      str_alias alias;
+      alias.m_id = id;
+      return alias;
+    }
 
-C_EXPORT void ArenaAllocatorImpl::deallocate(void *ptr) { (void)ptr; }
+  public:
+    std::string_view get() const;
 
-///=============================================================================
+    constexpr bool operator==(const str_alias &other) const {
+      return m_id == other.m_id;
+    }
 
-CPP_EXPORT std::ostream &npar_node_t::dump(std::ostream &os,
-                                           bool isForDebug) const {
-  (void)isForDebug;
+    std::string_view operator*() const { return get(); }
 
-  AST_JsonWriter writer(os);
-  const_cast<npar_node_t *>(this)->accept(writer);
+    inline const std::string_view *operator->() const {
+      static thread_local std::string_view sv;
+      sv = get();
+      return &sv;
+    }
 
-  return os;
-}
+    bool operator<(const str_alias &other) const { return m_id < other.m_id; }
+  };
 
-CPP_EXPORT bool npar_node_t::isSame(const npar_node_t *o) const {
-  if (this == o) {
-    return true;
-  }
+  class StringMemory {
+    struct Storage {
+      std::unordered_set<std::string> m_strings;
+      boost::bimap<uint64_t, std::string_view> m_bimap;
+      uint64_t m_next_id = 0;
+      std::mutex m_mutex;
+    };
 
-  if (getKind() != o->getKind()) {
-    return false;
-  }
+    static Storage m_storage;
 
-  std::stringstream ss1, ss2;
-  AST_MsgPackWriter writer1(ss1, false), writer2(ss2, false);
+    StringMemory() = delete;
 
-  return ss1.str() == ss2.str();
-}
+  public:
+    static str_alias get(std::string_view str);
+    static void save(std::string_view str);
 
-CPP_EXPORT uint64_t npar_node_t::hash64() const {
-  AST_Hash64 visitor;
+    static std::string_view from_id(uint64_t id);
+  };
 
-  const_cast<npar_node_t *>(this)->accept(visitor);
+}  // namespace qcore
 
-  return visitor.get();
-}
-
-///=============================================================================
-
-CPP_EXPORT bool Type::is_ptr_to(Type *type) const {
-  if (!is_pointer()) {
-    return false;
-  }
-
-  Type *item = as<PtrTy>()->get_item();
-  while (item->is<RefTy>()) {
-    item = item->as<RefTy>()->get_item();
-  }
-
-  return item->is(type->getKind());
-}
-
-Stmt *npar::mock_stmt(npar_ty_t expected) {
-  (void)expected;
-
-  static Stmt node(QAST_BASE);
-  return &node;
-}
-
-Expr *npar::mock_expr(npar_ty_t expected) {
-  (void)expected;
-
-  static Expr node(QAST_BASE);
-  return &node;
-}
-
-Type *npar::mock_type() {
-  static Type node(QAST_BASE);
-  return &node;
-}
+#endif
