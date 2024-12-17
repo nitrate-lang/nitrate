@@ -35,10 +35,10 @@
 #define __NITRATE_PARSE_H__
 
 #include <nitrate-core/Macro.h>
-#include <nitrate-lexer/Token.h>
 #include <nitrate-parser/Parser.h>
 
 #include <core/Context.hh>
+#include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/AST.hh>
 #include <set>
 

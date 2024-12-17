@@ -72,7 +72,6 @@ public:
 
 qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
   m_applied.clear();
-  m_strings.clear();
 
   m_offset_resolver = std::make_unique<LexerSourceResolver>();
   m_diagnostics = std::make_unique<DiagnosticManager>();
@@ -89,15 +88,6 @@ qmodule_t::~qmodule_t() { m_root = nullptr; }
 
 void qmodule_t::enableDiagnostics(bool is_enabled) {
   m_diagnostics_enabled = is_enabled;
-}
-
-std::string_view qmodule_t::internString(std::string_view sv) {
-  auto it = m_strings.find(sv);
-  if (it == m_strings.end()) {
-    return m_strings.emplace(sv, std::string(sv)).first->second;
-  } else {
-    return it->second;
-  }
 }
 
 CPP_EXPORT void qmodule_t::accept(nr::NRVisitor &visitor) {

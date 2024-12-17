@@ -111,5 +111,3 @@ C_EXPORT const char* qlex_lib_version() {
 
   return version_string;
 }
-
-C_EXPORT const char* qlex_strerror() { return ""; }

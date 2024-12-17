@@ -32,12 +32,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Env.h>
-#include <nitrate-lexer/Token.h>
 #include <nitrate-seq/Preprocess.h>
 
 #include <memory>
 #include <mutex>
 #include <nitrate-lexer/Base.hh>
+#include <nitrate-lexer/Token.hh>
 #include <optional>
 #include <random>
 #include <string_view>

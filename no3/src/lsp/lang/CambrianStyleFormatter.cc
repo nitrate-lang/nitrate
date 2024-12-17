@@ -1,8 +1,8 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
-#include <nitrate-lexer/Lexer.h>
 
 #include <lsp/lang/CambrianStyleFormatter.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
 #include <sstream>
 #include <unordered_set>

@@ -33,9 +33,7 @@
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
-#include <nitrate-lexer/Lexer.h>
 #include <nitrate-lexer/Lib.h>
-#include <nitrate-lexer/Token.h>
 #include <nitrate-seq/Lib.h>
 
 #include <core/Preprocess.hh>
@@ -43,6 +41,8 @@
 #include <memory>
 #include <new>
 #include <nitrate-lexer/Base.hh>
+#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Token.hh>
 #include <optional>
 #include <qcall/List.hh>
 #include <sstream>
@@ -214,7 +214,7 @@ func_entry:  // do tail call optimization manually
         }
 
         case qName: { /* Handle the expansion of defines */
-          std::string key = "def." + std::string(get_string(x.v.str_idx));
+          std::string key = "def." + std::string(x.v.str_idx.get());
 
           const char *value = qcore_env_get(key.c_str());
           if (value == nullptr) {
@@ -226,7 +226,7 @@ func_entry:  // do tail call optimization manually
         }
 
         case qMacB: {
-          std::string_view block = ltrim(get_string(x.v.str_idx));
+          std::string_view block = ltrim(x.v.str_idx.get());
           if (!block.starts_with("fn ")) {
             if (!run_and_expand(std::string(block))) {
               qcore_logf(QCORE_ERROR, "Failed to expand macro block: %s\n",
@@ -285,7 +285,7 @@ func_entry:  // do tail call optimization manually
         }
 
         case qMacr: {
-          std::string_view body = get_string(x.v.str_idx);
+          std::string_view body = x.v.str_idx.get();
 
           size_t pos = body.find_first_of("(");
           if (pos != std::string_view::npos) {
@@ -339,7 +339,6 @@ qlex_t *qprep_impl_t::weak_clone(std::istream &file, const char *filename) {
   qprep_impl_t *clone = new qprep_impl_t(file, filename, m_env);
 
   clone->m_core = m_core;
-  clone->replace_interner(m_strings);
   clone->m_flags = m_flags;
   clone->m_depth = m_depth + 1;
 

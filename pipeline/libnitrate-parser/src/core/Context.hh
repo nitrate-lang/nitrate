@@ -36,13 +36,13 @@
 
 #include <nitrate-core/Env.h>
 #include <nitrate-core/Memory.h>
-#include <nitrate-lexer/Lexer.h>
-#include <nitrate-lexer/Token.h>
 #include <nitrate-parser/Parser.h>
 #include <stdbool.h>
 
 #include <cstdarg>
 #include <functional>
+#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/AST.hh>
 #include <sstream>
 

@@ -140,5 +140,5 @@ std::optional<std::pair<Expr *, std::string_view>> NRBuilder::resolve_name(
     return std::nullopt;
   }
 
-  return {{R->first, qcore::intern(R->second)}};
+  return {{R->first, qcore::save(R->second)}};
 }

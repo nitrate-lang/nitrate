@@ -40,7 +40,6 @@
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>
-#include <nitrate-lexer/Token.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -52,6 +51,7 @@
 #include <nitrate-core/Classes.hh>
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/Visitor.hh>
+#include <nitrate-lexer/Token.hh>
 #include <optional>
 #include <ostream>
 #include <string>

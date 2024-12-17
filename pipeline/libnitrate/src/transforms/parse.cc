@@ -133,7 +133,6 @@ class DeserializerAdapterLexer final : public qlex_t {
       qlex_tok_fromstr(this, static_cast<qlex_ty_t>(ty), str, &T);
 
       T.start = save_loc(a, b, 0);
-      T.end = save_loc(c, d, 0);
 
       free(str);
       return T;
@@ -185,7 +184,6 @@ class DeserializerAdapterLexer final : public qlex_t {
       qlex_tok_fromstr(this, static_cast<qlex_ty_t>(ty), str, &T);
 
       T.start = save_loc(a, b, 0);
-      T.end = save_loc(c, d, 0);
 
       free(str);
       return T;

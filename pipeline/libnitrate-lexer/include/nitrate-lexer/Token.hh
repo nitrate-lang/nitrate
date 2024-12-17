@@ -31,15 +31,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_LEXER_TOKEN_H__
-#define __NITRATE_LEXER_TOKEN_H__
+#ifndef __NITRATE_LEXER_TOKEN_HH__
+#define __NITRATE_LEXER_TOKEN_HH__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
+#include <nitrate-core/StringIntern.hh>
+#include <string_view>
+#include <type_traits>
 
 typedef enum qlex_ty_t {
   qEofF = 1, /* End of file */
@@ -177,54 +176,36 @@ struct qlex_tok_t;
 const char *qlex_str(struct qlex_t *lexer, const struct qlex_tok_t *tok,
                      size_t *len);
 
-#ifdef __cplusplus
-}
-#endif
-
-#if defined(__cplusplus) && defined(__NITRATE_LEXER_CPP__)
-
-#include <string_view>
-#include <type_traits>
-
-#endif
-
-typedef struct qlex_tok_t {
-  uint32_t start, end;
+typedef struct __attribute__((packed)) qlex_tok_t {
+  uint32_t start;
 
   qlex_ty_t ty : 4;
+  uint64_t pad : 4;
 
-  /* Token data */
   union {
     qlex_punc_t punc;
     qlex_op_t op;
     qlex_key_t key;
-    uint32_t str_idx;
+    qcore::str_alias str_idx;
   } __attribute__((packed)) v;
 
-  uint64_t pad : 4;
+  constexpr qlex_tok_t() : start(0), ty(qEofF), v{.op = qOpPlus} {}
 
-#if defined(__cplusplus) && defined(__NITRATE_LEXER_CPP__)
+  constexpr qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, uint32_t loc_beg = 0)
+      : start(loc_beg), ty(ty), v{.punc = punc} {}
 
-  constexpr qlex_tok_t() : start(0), end(0), ty(qEofF), v{.str_idx = 0} {}
+  constexpr qlex_tok_t(qlex_ty_t ty, qlex_op_t op, uint32_t loc_beg = 0)
+      : start(loc_beg), ty(ty), v{.op = op} {}
 
-  constexpr qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, uint32_t loc_beg = 0,
-                       uint32_t loc_end = 0)
-      : start(loc_beg), end(loc_end), ty(ty), v{.punc = punc} {}
+  constexpr qlex_tok_t(qlex_ty_t ty, qlex_key_t key, uint32_t loc_beg = 0)
+      : start(loc_beg), ty(ty), v{.key = key} {}
 
-  constexpr qlex_tok_t(qlex_ty_t ty, qlex_op_t op, uint32_t loc_beg = 0,
-                       uint32_t loc_end = 0)
-      : start(loc_beg), end(loc_end), ty(ty), v{.op = op} {}
+  constexpr qlex_tok_t(qlex_ty_t ty, qcore::str_alias str_idx,
+                       uint32_t loc_beg = 0)
+      : start(loc_beg), ty(ty), v{.str_idx = str_idx} {}
 
-  constexpr qlex_tok_t(qlex_ty_t ty, qlex_key_t key, uint32_t loc_beg = 0,
-                       uint32_t loc_end = 0)
-      : start(loc_beg), end(loc_end), ty(ty), v{.key = key} {}
-
-  constexpr qlex_tok_t(qlex_ty_t ty, uint32_t str_idx, uint32_t loc_beg = 0,
-                       uint32_t loc_end = 0)
-      : start(loc_beg), end(loc_end), ty(ty), v{.str_idx = str_idx} {}
-
-  constexpr static qlex_tok_t eof(uint32_t loc_start, uint32_t loc_end) {
-    return qlex_tok_t(qEofF, 0, loc_start, loc_end);
+  constexpr static qlex_tok_t eof(uint32_t loc_start) {
+    return qlex_tok_t(qEofF, qOpPlus, loc_start);
   }
 
   template <typename T>
@@ -304,8 +285,7 @@ typedef struct qlex_tok_t {
     }
   }
 
-#endif
-} __attribute__((packed)) qlex_tok_t;
+} qlex_tok_t;
 
 #define QLEX_TOK_SIZE (sizeof(qlex_tok_t))
 

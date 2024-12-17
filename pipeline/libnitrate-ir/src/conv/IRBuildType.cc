@@ -191,7 +191,7 @@ OpaqueTy *NRBuilder::getOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM) {
       !name.empty() && (std::isalnum(name[0]) || name[0] == '_') &&
       "Non alphanumeric starter characters are reserved internally");
 
-  OpaqueTy *opaque_ty = create<OpaqueTy>(qcore::intern(name));
+  OpaqueTy *opaque_ty = create<OpaqueTy>(qcore::save(name));
 
   return compiler_trace(debug_info(opaque_ty, DEBUG_INFO));
 }

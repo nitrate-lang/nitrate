@@ -36,37 +36,26 @@
 
 #include <nitrate-core/Env.h>
 #include <nitrate-core/Error.h>
-#include <nitrate-lexer/Lexer.h>
-#include <nitrate-lexer/Token.h>
 
 #include <array>
 #include <boost/bimap.hpp>
 #include <boost/unordered_map.hpp>
 #include <deque>
 #include <limits>
-#include <memory>
+#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Token.hh>
 #include <optional>
-#include <string>
-#include <string_view>
-
-#if MEMORY_OVER_SPEED == 1
-#include <unordered_map>
-#endif
 
 struct __attribute__((visibility("default"))) qlex_t {
 private:
-  ///============================================================================///
-  /// BEGIN: PERFORMANCE HYPER PARAMETERS
-  static constexpr uint32_t GETC_BUFFER_SIZE = 4096;
-  /// END:   PERFORMANCE HYPER PARAMETERS
-  ///============================================================================///
+  static constexpr uint32_t GETC_BUFFER_SIZE = 256;
 
-  struct clever_me_t {
+  struct srcloc_t {
     uint32_t rc_fmt : 1; /* Holds the row-column format? */
     uint32_t col : 10;   /* Column number (max 1024) */
     uint32_t row : 21;   /* Row number (max 2097152) */
 
-    bool operator<(const clever_me_t &other) const {
+    bool operator<(const srcloc_t &other) const {
       if (row != other.row) {
         return row < other.row;
       } else {
@@ -88,16 +77,6 @@ private:
   uint32_t m_offset;
   char m_last_ch;
 
-#if MEMORY_OVER_SPEED == 1
-  typedef std::shared_ptr<
-      std::pair<boost::bimap<uint32_t, std::string>, uint32_t>>
-      StringInterner;
-#else
-  typedef std::shared_ptr<
-      std::pair<std::unordered_map<uint32_t, std::string>, uint32_t>>
-      StringInterner;
-#endif
-
   boost::bimap<uint32_t, std::pair<uint32_t, uint32_t>> m_off2rc;
 
   size_t m_locctr;
@@ -108,7 +87,6 @@ private:
   char getc();
 
 public:
-  StringInterner m_strings;
   qcore_env_t m_env;
 
   qlex_flags_t m_flags;
@@ -120,23 +98,18 @@ public:
 
   virtual qlex_tok_t next_impl();
 
-  virtual std::optional<std::pair<uint32_t, uint32_t>> loc2rowcol(uint32_t loc);
+  virtual std::optional<std::pair<uint32_t, uint32_t>> loc2rowcol(
+      uint32_t offset);
   virtual uint32_t save_loc(uint32_t row, uint32_t col, uint32_t offset);
   uint32_t cur_loc();
 
   ///============================================================================///
-
-  std::string_view get_string(uint32_t idx);
-  uint32_t put_string(std::string_view str);
-  void release_string(uint32_t idx);
-  virtual void replace_interner(StringInterner new_interner);
 
   qlex_tok_t next();
   qlex_tok_t peek();
   qlex_tok_t current();
 
   void push_impl(const qlex_tok_t *tok);
-  void collect_impl(const qlex_tok_t *tok);
 
   ///============================================================================///
 
@@ -149,7 +122,6 @@ public:
         m_offset(std::numeric_limits<uint32_t>::max()),
         m_last_ch(0),
         m_locctr(1),
-        m_strings(std::make_shared<decltype(m_strings)::element_type>()),
         m_env(env),
         m_flags(0),
         m_filename(filename),

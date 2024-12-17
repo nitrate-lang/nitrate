@@ -47,8 +47,8 @@ bool impl_use_json(qlex_t *L, std::ostream &O) {
   while ((tok = qlex_next(L)).ty != qEofF) {
     uint32_t sl = qlex_line(L, tok.start);
     uint32_t sc = qlex_col(L, tok.start);
-    uint32_t el = qlex_line(L, tok.end);
-    uint32_t ec = qlex_col(L, tok.end);
+    uint32_t el = qlex_line(L, qlex_end(L, tok));
+    uint32_t ec = qlex_col(L, qlex_end(L, tok));
 
     switch (tok.ty) {
       case qEofF: { /* End of file */
@@ -178,8 +178,8 @@ bool impl_use_msgpack(qlex_t *L, std::ostream &O) {
   while ((tok = qlex_next(L)).ty != qEofF) {
     uint32_t sl = qlex_line(L, tok.start);
     uint32_t sc = qlex_col(L, tok.start);
-    uint32_t el = qlex_line(L, tok.end);
-    uint32_t ec = qlex_col(L, tok.end);
+    uint32_t el = qlex_line(L, qlex_end(L, tok));
+    uint32_t ec = qlex_col(L, qlex_end(L, tok));
 
     switch (tok.ty) {
       case qEofF: { /* End of file */

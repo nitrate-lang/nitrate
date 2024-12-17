@@ -93,8 +93,12 @@ namespace qcore {
     static std::string_view from_id(uint64_t id);
   };
 
-  static inline std::string_view intern(std::string_view str) {
+  static inline std::string_view save(std::string_view str) {
     return StringMemory::save(str);
+  }
+
+  static inline str_alias intern(std::string_view str) {
+    return StringMemory::get(str);
   }
 
 }  // namespace qcore

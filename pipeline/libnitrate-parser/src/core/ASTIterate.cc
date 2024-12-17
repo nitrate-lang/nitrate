@@ -33,8 +33,8 @@
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
-#include <nitrate-lexer/Lexer.h>
 
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 #include <nitrate-parser/ASTWriter.hh>

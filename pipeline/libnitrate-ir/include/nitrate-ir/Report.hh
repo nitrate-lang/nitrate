@@ -35,10 +35,10 @@
 #define __NITRATE_NR_REPORT_H__
 
 #include <nitrate-ir/IR.h>
-#include <nitrate-lexer/Token.h>
 
 #include <boost/bimap.hpp>
 #include <cstdarg>
+#include <nitrate-lexer/Token.hh>
 #include <string_view>
 
 struct npar_node_t;

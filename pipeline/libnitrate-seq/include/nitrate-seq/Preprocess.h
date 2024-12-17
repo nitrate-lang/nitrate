@@ -34,8 +34,9 @@
 #ifndef __NITRATE_PREP_PROCESS_H__
 #define __NITRATE_PREP_PROCESS_H__
 
-#include <nitrate-lexer/Lexer.h>
 #include <stdio.h>
+
+#include <nitrate-lexer/Lexer.hh>
 
 #ifdef __cplusplus
 

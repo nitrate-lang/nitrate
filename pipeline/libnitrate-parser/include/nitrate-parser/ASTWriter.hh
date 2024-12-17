@@ -35,11 +35,11 @@
 #define __NITRATE_AST_WRITER_H__
 
 #include <nitrate-core/Macro.h>
-#include <nitrate-lexer/Token.h>
 
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 #include <ostream>
 #include <stack>

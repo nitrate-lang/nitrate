@@ -53,9 +53,6 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "nitrate-core/StringIntern.hh"
-#include "nitrate-parser/ASTData.hh"
-
 using namespace nr;
 using namespace qcore;
 
@@ -447,8 +444,7 @@ static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
 
       std::array<std::pair<std::string_view, Expr *>, 1> args;
       args[0] = {"_0", arg};
-      R = b.createCall(nr::create<nr::Ident>(intern("std::ceil"), nullptr),
-                       args);
+      R = b.createCall(nr::create<nr::Ident>(save("std::ceil"), nullptr), args);
 
       break;
     }
@@ -743,7 +739,7 @@ static EResult nrgen_call(NRBuilder &b, PState &s, IReport *G, npar::Call *n) {
       return std::nullopt;
     }
 
-    arguments[i] = {intern(*args[i].first), arg.value()};
+    arguments[i] = {save(*args[i].first), arg.value()};
   }
 
   return b.createCall(target.value(), arguments);
@@ -908,7 +904,7 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_ident(NRBuilder &, PState &s, IReport *, npar::Ident *n) {
-  return create<Ident>(intern(s.scope_name(n->get_name())), nullptr);
+  return create<Ident>(save(s.scope_name(n->get_name())), nullptr);
 }
 
 static EResult nrgen_seq_point(NRBuilder &b, PState &s, IReport *G,
@@ -1155,7 +1151,7 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *,
                               npar::NamedTy *n) {
-  return b.getUnknownNamedTy(intern(s.scope_name(n->get_name())));
+  return b.getUnknownNamedTy(save(s.scope_name(n->get_name())));
 }
 
 static EResult nrgen_infer_ty(NRBuilder &b, PState &, IReport *,
@@ -1181,7 +1177,7 @@ static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
   }
 
   b.createNamedTypeAlias(type.value()->asType(),
-                         intern(s.join_scope(n->get_name())));
+                         save(s.join_scope(n->get_name())));
 
   return std::vector<Expr *>();
 }
@@ -1215,7 +1211,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
       return std::nullopt;
     }
 
-    auto field_name = intern(*field.get_name());
+    auto field_name = save(*field.get_name());
 
     Expr *field_default = nullptr;
     if (field.get_value() == nullptr) {
@@ -1245,7 +1241,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
 
   std::swap(s.ns_prefix, old_ns);
   b.createNamedTypeAlias(b.getStructTy(fields),
-                         intern(s.join_scope(n->get_name())));
+                         save(s.join_scope(n->get_name())));
   std::swap(s.ns_prefix, old_ns);
 
   BResult R;
@@ -1306,7 +1302,7 @@ static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
       }
     }
 
-    auto field_name = intern(*it->first);
+    auto field_name = save(*it->first);
 
     if (values.contains(field_name)) [[unlikely]] {
       G->report(CompilerError, IC::Error,
@@ -1316,7 +1312,7 @@ static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
     }
   }
 
-  auto name = intern(s.join_scope(n->get_name()));
+  auto name = save(s.join_scope(n->get_name()));
   b.createNamedConstantDefinition(name, values);
 
   /* FIXME: Allow for first class enum types */
@@ -1367,7 +1363,7 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
       NRBuilder::FnParam p;
 
       { /* Set function parameter name */
-        std::get<0>(p) = intern(*std::get<0>(param));
+        std::get<0>(p) = save(*std::get<0>(param));
       }
 
       { /* Set function parameter type */
@@ -1413,9 +1409,9 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
     std::string_view name;
 
     if (n->get_name().empty()) {
-      name = intern(s.join_scope("_A$" + std::to_string(s.anon_fn_ctr++)));
+      name = save(s.join_scope("_A$" + std::to_string(s.anon_fn_ctr++)));
     } else {
-      name = intern(s.join_scope(n->get_name()));
+      name = save(s.join_scope(n->get_name()));
     }
 
     Fn *fndef = b.createFunctionDefintion(
@@ -1490,7 +1486,7 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
       NRBuilder::FnParam p;
 
       { /* Set function parameter name */
-        std::get<0>(p) = intern(*std::get<0>(param));
+        std::get<0>(p) = save(*std::get<0>(param));
       }
 
       { /* Set function parameter type */
@@ -1536,9 +1532,9 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
     std::string_view name;
 
     if (n->get_name().empty()) {
-      name = intern(s.join_scope("_A$" + std::to_string(s.anon_fn_ctr++)));
+      name = save(s.join_scope("_A$" + std::to_string(s.anon_fn_ctr++)));
     } else {
-      name = intern(s.join_scope(n->get_name()));
+      name = save(s.join_scope(n->get_name()));
     }
 
     Fn *decl = b.createFunctionDeclaration(
@@ -1714,7 +1710,7 @@ static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G,
   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
   Local *local =
-      b.createVariable(intern(s.join_scope(n->get_name())),
+      b.createVariable(save(s.join_scope(n->get_name())),
                        type.value()->asType(), visibility, storage, false);
 
   local->setValue(init.value());
@@ -1855,8 +1851,8 @@ static EResult nrgen_foreach(NRBuilder &, PState &, IReport *,
    * @details This is a 1-to-1 conversion of the foreach loop.
    */
 
-  // auto idx_name = intern(n->get_idx_ident());
-  // auto val_name = intern(n->get_val_ident());
+  // auto idx_name = save(n->get_idx_ident());
+  // auto val_name = save(n->get_val_ident());
 
   // auto iter = nrgen_one(b, s,X, n->get_expr());
   // if (!iter) {

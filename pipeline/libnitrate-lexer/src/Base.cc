@@ -33,7 +33,6 @@
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
-#include <nitrate-lexer/Lexer.h>
 #include <string.h>
 
 #include <boost/bimap.hpp>
@@ -46,14 +45,10 @@
 #include <cstdio>
 #include <ios>
 #include <nitrate-lexer/Base.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <utility>
 
-#include "nitrate-core/Env.h"
-#include "nitrate-lexer/Token.h"
-
-///============================================================================///
-
-C_EXPORT void qlex_free(qlex_t *obj) {
+CPP_EXPORT void qlex_free(qlex_t *obj) {
   try {
     delete obj;
   } catch (...) {
@@ -61,19 +56,24 @@ C_EXPORT void qlex_free(qlex_t *obj) {
   }
 }
 
-C_EXPORT void qlex_set_flags(qlex_t *obj, qlex_flags_t flags) {
+CPP_EXPORT void qlex_set_flags(qlex_t *obj, qlex_flags_t flags) {
   obj->m_flags = flags;
 }
-C_EXPORT qlex_flags_t qlex_get_flags(qlex_t *obj) { return obj->m_flags; }
 
-C_EXPORT void qlex_collect(qlex_t *obj, const qlex_tok_t *tok) {
-  obj->collect_impl(tok);
+CPP_EXPORT qlex_flags_t qlex_get_flags(qlex_t *obj) { return obj->m_flags; }
+
+CPP_EXPORT void qlex_insert(qlex_t *obj, qlex_tok_t tok) {
+  obj->push_impl(&tok);
 }
 
-C_EXPORT void qlex_insert(qlex_t *obj, qlex_tok_t tok) { obj->push_impl(&tok); }
-C_EXPORT const char *qlex_filename(qlex_t *obj) { return obj->m_filename; }
+CPP_EXPORT uint32_t qlex_end(qlex_t *L, qlex_tok_t tok) {
+  /// TODO: Implement this function
+  return UINT32_MAX;
+}
 
-C_EXPORT uint32_t qlex_line(qlex_t *obj, uint32_t loc) {
+CPP_EXPORT const char *qlex_filename(qlex_t *obj) { return obj->m_filename; }
+
+CPP_EXPORT uint32_t qlex_line(qlex_t *obj, uint32_t loc) {
   try {
     auto r = obj->loc2rowcol(loc);
     if (!r) {
@@ -86,7 +86,7 @@ C_EXPORT uint32_t qlex_line(qlex_t *obj, uint32_t loc) {
   }
 }
 
-C_EXPORT uint32_t qlex_col(qlex_t *obj, uint32_t loc) {
+CPP_EXPORT uint32_t qlex_col(qlex_t *obj, uint32_t loc) {
   try {
     auto r = obj->loc2rowcol(loc);
     if (!r) {
@@ -99,129 +99,8 @@ C_EXPORT uint32_t qlex_col(qlex_t *obj, uint32_t loc) {
   }
 }
 
-C_EXPORT uint32_t qlex_offset(qlex_t *obj, uint32_t base, uint32_t offset) {
-  try {
-    long curpos = 0;
-    std::optional<uint32_t> seek_base_pos;
-    uint8_t *buf = nullptr;
-    std::streamsize bufsz = 0;
-    uint32_t res = 0;
-
-    if (!(seek_base_pos = base)) {
-      return res;
-    }
-
-    if ((curpos = obj->m_file.tellg()) == -1) {
-      return res;
-    }
-
-    obj->m_file.seekg(*seek_base_pos + offset, std::ios_base::beg);
-
-    bufsz = offset;
-
-    if ((buf = (uint8_t *)malloc(bufsz + 1)) == nullptr) {
-      obj->m_file.seekg(curpos, std::ios_base::beg);
-      return res;
-    }
-
-    if (!obj->m_file.read((char *)buf, bufsz)) {
-      free(buf);
-      obj->m_file.seekg(curpos, std::ios_base::beg);
-
-      return res;
-    }
-
-    buf[bufsz] = '\0';
-    obj->m_file.seekg(curpos, std::ios_base::beg);
-
-    //===== AUTOMATA TO CALCULATE THE NEW ROW AND COLUMN =====//
-    uint32_t row, col;
-
-    if ((row = qlex_line(obj, base)) == QLEX_EOFF) {
-      free(buf);
-      return res;
-    }
-
-    if ((col = qlex_col(obj, base)) == QLEX_EOFF) {
-      free(buf);
-      return res;
-    }
-
-    for (std::streamsize i = 0; i < bufsz; i++) {
-      if (buf[i] == '\n') {
-        row++;
-        col = 1;
-      } else {
-        col++;
-      }
-    }
-
-    free(buf);
-
-    return obj->save_loc(row, col, *seek_base_pos + offset);
-  } catch (...) {
-    qcore_panic("qlex_offset: failed to calculate offset");
-  }
-}
-
-C_EXPORT uint32_t qlex_spanx(qlex_t *obj, uint32_t start, uint32_t end,
-                             void (*callback)(const char *, uint32_t,
-                                              uintptr_t),
-                             uintptr_t userdata) {
-  try {
-    std::optional<uint32_t> begoff, endoff;
-
-    if (!(begoff = start)) {
-      return QLEX_EOFF;
-    }
-
-    if (!(endoff = end)) {
-      return QLEX_EOFF;
-    }
-
-    if (*endoff < *begoff) {
-      return QLEX_EOFF;
-    }
-
-    uint32_t span = *endoff - *begoff;
-
-    long curpos = 0;
-    uint8_t *buf = nullptr;
-    std::streamsize bufsz = 0;
-
-    if ((curpos = obj->m_file.tellg()) == -1) {
-      return QLEX_EOFF;
-    }
-
-    obj->m_file.seekg(*begoff, std::ios_base::beg);
-
-    bufsz = span;
-
-    if ((buf = (uint8_t *)malloc(bufsz + 1)) == nullptr) {
-      obj->m_file.seekg(curpos, std::ios_base::beg);
-      return QLEX_EOFF;
-    }
-
-    if (!obj->m_file.read((char *)buf, bufsz)) {
-      free(buf);
-      obj->m_file.seekg(curpos, std::ios_base::beg);
-      return QLEX_EOFF;
-    }
-
-    buf[bufsz] = '\0';
-    obj->m_file.seekg(curpos, std::ios_base::beg);
-
-    callback((const char *)buf, bufsz, userdata);
-
-    free(buf);
-    return span;
-  } catch (...) {
-    qcore_panic("qlex_spanx: failed to calculate span");
-  }
-}
-
-C_EXPORT void qlex_rect(qlex_t *obj, uint32_t x_0, uint32_t y_0, uint32_t x_1,
-                        uint32_t y_1, char *out, size_t max_size, char fill) {
+CPP_EXPORT void qlex_rect(qlex_t *obj, uint32_t x_0, uint32_t y_0, uint32_t x_1,
+                          uint32_t y_1, char *out, size_t max_size, char fill) {
   try {
     // Bounds check rectangle
     if (x_0 > x_1 || y_0 > y_1) [[unlikely]] {
@@ -247,18 +126,16 @@ C_EXPORT void qlex_rect(qlex_t *obj, uint32_t x_0, uint32_t y_0, uint32_t x_1,
       uint32_t start = obj->save_loc(y_0 + i, x_0, start_off);
       uint32_t end = obj->save_loc(y_0 + i, x_1, end_off);
 
-      qlex_spanx(
-          obj, start, end,
-          [](const char *str, uint32_t len, uintptr_t ptr) {
-            memcpy((void *)ptr, str, len);
-          },
-          (uintptr_t)(out + i * width));
+      /// TODO: Implement qlex_rect
+      qcore_implement();
+      (void)start;
+      (void)end;
     }
   } catch (...) {
   }
 }
 
-C_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, uint32_t *offset) {
+CPP_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, uint32_t *offset) {
   try {
 #define SNIPPET_SIZE 100
 
@@ -337,7 +214,7 @@ C_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, uint32_t *offset) {
   }
 }
 
-C_EXPORT qlex_tok_t qlex_next(qlex_t *self) {
+CPP_EXPORT qlex_tok_t qlex_next(qlex_t *self) {
   try {
     qcore_env_t old = qcore_env_current();
     qcore_env_set_current(self->m_env);
@@ -352,7 +229,7 @@ C_EXPORT qlex_tok_t qlex_next(qlex_t *self) {
   }
 }
 
-C_EXPORT qlex_tok_t qlex_peek(qlex_t *self) {
+CPP_EXPORT qlex_tok_t qlex_peek(qlex_t *self) {
   try {
     qcore_env_t old = qcore_env_current();
     qcore_env_set_current(self->m_env);
@@ -367,7 +244,7 @@ C_EXPORT qlex_tok_t qlex_peek(qlex_t *self) {
   }
 }
 
-C_EXPORT qlex_tok_t qlex_current(qlex_t *lexer) {
+CPP_EXPORT qlex_tok_t qlex_current(qlex_t *lexer) {
   try {
     return lexer->current();
   } catch (...) {
@@ -394,58 +271,6 @@ CPP_EXPORT uint32_t qlex_t::save_loc(uint32_t row, uint32_t col,
 
 CPP_EXPORT uint32_t qlex_t::cur_loc() {
   return save_loc(m_row, m_col, m_offset);
-}
-
-///============================================================================///
-
-CPP_EXPORT std::string_view qlex_t::get_string(uint32_t idx) {
-#if MEMORY_OVER_SPEED == 1
-  if (auto it = m_strings->first.left.find(idx);
-      it != m_strings->first.left.end()) [[likely]] {
-    return it->second;
-  }
-#else
-  if (auto it = m_strings->first.find(idx); it != m_strings->first.end())
-      [[likely]] {
-    return it->second;
-  }
-#endif
-
-  return "";
-}
-
-CPP_EXPORT uint32_t qlex_t::put_string(std::string_view str) {
-#if MEMORY_OVER_SPEED == 1
-  if (auto it = m_strings->first.right.find(str);
-      it != m_strings->first.right.end()) {
-    return it->second;
-  }
-
-  m_strings->first.insert({m_strings->second, std::string(str)});
-  return m_strings->second++;
-#else
-  if (str.empty()) [[unlikely]] {
-    return QLEX_EOFF;
-  }
-
-  (*m_strings).first[m_strings->second] = std::string(str);
-  return m_strings->second++;
-#endif
-}
-
-CPP_EXPORT void qlex_t::release_string(uint32_t idx) {
-#if MEMORY_OVER_SPEED == 1
-
-#else
-  if (auto it = m_strings->first.find(idx); it != m_strings->first.end())
-      [[likely]] {
-    m_strings->first.erase(it);
-  }
-#endif
-}
-
-CPP_EXPORT void qlex_t::replace_interner(StringInterner new_interner) {
-  m_strings = new_interner;
 }
 
 ///============================================================================///
@@ -532,24 +357,4 @@ CPP_EXPORT qlex_tok_t qlex_t::current() {
 CPP_EXPORT void qlex_t::push_impl(const qlex_tok_t *tok) {
   m_tok_buf.push_front(*tok);
   m_next_tok.reset();
-}
-
-CPP_EXPORT void qlex_t::collect_impl(const qlex_tok_t *tok) {
-  switch (tok->ty) {
-    case qEofF:
-    case qKeyW:
-    case qOper:
-    case qPunc:
-      break;
-    case qName:
-    case qIntL:
-    case qNumL:
-    case qText:
-    case qChar:
-    case qMacB:
-    case qMacr:
-    case qNote:
-      release_string(tok->v.str_idx);
-      break;
-  }
 }

@@ -93,7 +93,7 @@ int qcall::sys_defer(lua_State* L) {
         case qMacB:
         case qMacr:
         case qNote: {
-          lua_pushstring(L, obj->get_string(tok.v.str_idx).data());
+          lua_pushstring(L, tok.v.str_idx.get().data());
           break;
         }
       }

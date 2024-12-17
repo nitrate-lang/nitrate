@@ -31,14 +31,16 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_LEXER_LEX_H__
-#define __NITRATE_LEXER_LEX_H__
+#ifndef __NITRATE_LEXER_LEX_HH__
+#define __NITRATE_LEXER_LEX_HH__
 
 #include <nitrate-core/Env.h>
-#include <nitrate-lexer/Token.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+
+#include <istream>
+#include <nitrate-lexer/Token.hh>
 
 typedef struct qlex_t qlex_t;
 
@@ -46,10 +48,6 @@ typedef struct qlex_t qlex_t;
 #define QLEX_NO_COMMENTS 0x01
 
 typedef uint32_t qlex_flags_t;
-
-#ifdef __cplusplus
-
-#include <istream>
 
 /**
  * @brief Create a new lexer context.
@@ -65,12 +63,6 @@ typedef uint32_t qlex_flags_t;
  */
 qlex_t *qlex_new(std::istream &file, const char *filename, qcore_env_t env);
 
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * @brief Destroy a lexer context.
  *
@@ -82,46 +74,6 @@ void qlex_free(qlex_t *lexer);
 
 void qlex_set_flags(qlex_t *lexer, qlex_flags_t flags);
 qlex_flags_t qlex_get_flags(qlex_t *lexer);
-
-/**
- * @brief Calculate the size of a token.
- *
- * @param lexer Lexer context.
- * @param tok Token to calculate the size of.
- *
- * @return Size of the token in bytes. Returns 0 if the token is invalid.
- * @note This function is thread-safe.
- */
-uint32_t qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok);
-
-/**
- * @brief Write a token to a buffer.
- *
- * @param lexer Lexer context.
- * @param tok Token to write.
- * @param buf Buffer to write the token to.
- * @param size Size of the buffer.
- *
- * @return Number of bytes written. Rerturns 0 if the buffer is too small or the
- * token is invalid.
- * @note This function is thread-safe.
- * @warning Buffer WILL NOT be null-terminated.
- */
-uint32_t qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *buf,
-                        uint32_t size);
-
-/**
- * @brief Send a signal to the lexer that the resources for the token will never
- * be needed by the client.
- *
- * @param lexer Lexer context.
- * @param tok Token to suggest for deallocation.
- *
- * @note This function is thread-safe.
- * @note This function merely suggests that the token can be deallocated. The
- * lexer may choose to ignore this suggestion.
- */
-void qlex_collect(qlex_t *lexer, const qlex_tok_t *tok);
 
 /**
  * @brief Lex the next token.
@@ -165,7 +117,7 @@ qlex_tok_t qlex_current(qlex_t *lexer);
 void qlex_insert(qlex_t *lexer, qlex_tok_t tok);
 
 static inline uint32_t qlex_begin(const qlex_tok_t *tok) { return tok->start; }
-static inline uint32_t qlex_end(const qlex_tok_t *tok) { return tok->end; }
+uint32_t qlex_end(qlex_t *L, qlex_tok_t tok);
 
 /**
  * @brief Return non-owning pointer to the filename associated with the lexer.
@@ -199,37 +151,6 @@ uint32_t qlex_line(qlex_t *lexer, uint32_t loc);
 uint32_t qlex_col(qlex_t *lexer, uint32_t loc);
 
 char *qlex_snippet(qlex_t *lexer, qlex_tok_t loc, uint32_t *offset);
-
-/**
- * @brief Calculate offset in source file from location structure.
- *
- * @param lexer Lexer context.
- * @param base Base location.
- * @param offset Offset in bytes. Negative values are allowed.
- *
- * @return New location structure. Tag member will be 0 on error.
- * @note This function is thread-safe.
- */
-uint32_t qlex_offset(qlex_t *lexer, uint32_t base, uint32_t offset);
-
-/**
- * @brief Get the number of bytes between two locations.
- *
- * @param lexer Lexer context.
- * @param start Start location.
- * @param end End location.
- * @param callback Callback function to call with the slice of the source in the
- * span.
- * @param userdata Userdata to pass to the callback.
- *
- * @return Number of bytes between the two locations or QLEX_EOFF on error.
- * @note This function is thread-safe.
- * @note If the callback is ever called this function is guaranteed to not
- * return QLEX_EOFF. Otherwise, the return value is QLEX_EOFF.
- */
-uint32_t qlex_spanx(qlex_t *lexer, uint32_t start, uint32_t end,
-                    void (*callback)(const char *, uint32_t, uintptr_t),
-                    uintptr_t userdata);
 
 void qlex_rect(qlex_t *lexer, uint32_t x_0, uint32_t y_0, uint32_t x_1,
                uint32_t y_1, char *out, size_t max_size, char fill);
@@ -296,8 +217,4 @@ const char *qlex_punctstr(qlex_punc_t punct);
 void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str,
                       qlex_tok_t *out);
 
-#ifdef __cplusplus
-}
 #endif
-
-#endif  // __NITRATE_LEXER_LEX_H__

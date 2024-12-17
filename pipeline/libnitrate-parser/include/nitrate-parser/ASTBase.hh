@@ -36,9 +36,9 @@
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
-#include <nitrate-lexer/Token.h>
 
 #include <iostream>
+#include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTData.hh>
 #include <nitrate-parser/ASTVisitor.hh>

@@ -39,9 +39,9 @@
 #endif
 
 #include <nitrate-core/Error.h>
-#include <nitrate-lexer/Lexer.h>
 
 #include <istream>
+#include <nitrate-lexer/Lexer.hh>
 
 class qlex final {
   qlex_t *m_lex;

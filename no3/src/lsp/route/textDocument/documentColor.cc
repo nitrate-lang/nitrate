@@ -126,8 +126,8 @@ void do_documentColor(const lsp::RequestMessage& req,
 
     uint32_t start_line = qlex_line(lexer.get(), tok.start);
     uint32_t start_col = qlex_col(lexer.get(), tok.start);
-    uint32_t end_line = qlex_line(lexer.get(), tok.end);
-    uint32_t end_col = qlex_col(lexer.get(), tok.end);
+    uint32_t end_line = qlex_line(lexer.get(), qlex_end(lexer.get(), tok));
+    uint32_t end_col = qlex_col(lexer.get(), qlex_end(lexer.get(), tok));
 
     if (start_line == QLEX_EOFF || start_col == QLEX_EOFF ||
         end_line == QLEX_EOFF || end_col == QLEX_EOFF) {

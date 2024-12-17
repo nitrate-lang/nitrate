@@ -35,8 +35,9 @@
 #define __NITRATE_AST_PARSER_H__
 
 #include <nitrate-core/Env.h>
-#include <nitrate-lexer/Lexer.h>
 #include <stdbool.h>
+
+#include <nitrate-lexer/Lexer.hh>
 
 #ifdef __cplusplus
 extern "C" {

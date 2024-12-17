@@ -33,10 +33,10 @@
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Macro.h>
-#include <nitrate-lexer/Lexer.h>
 
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Writer.hh>
+#include <nitrate-lexer/Lexer.hh>
 
 using namespace nr;
 
