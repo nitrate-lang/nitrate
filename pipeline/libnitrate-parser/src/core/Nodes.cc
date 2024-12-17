@@ -43,7 +43,8 @@
 
 using namespace npar;
 
-CPP_EXPORT thread_local ncc::core::dyn_arena npar::npar_arena;
+CPP_EXPORT thread_local std::unique_ptr<ncc::core::IMemory>
+    npar::npar_allocator;
 
 ///=============================================================================
 

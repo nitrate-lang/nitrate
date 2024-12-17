@@ -142,7 +142,8 @@ private:
                                      process during its lifetime */
   bool m_diagnostics_enabled{};
 
-  ncc::core::dyn_arena m_node_arena{};
+  std::unique_ptr<ncc::core::IMemory> m_node_arena =
+      std::make_unique<ncc::core::dyn_arena>();
 
 public:
   qmodule_t(nr::ModuleId id, const std::string &name = "?");
@@ -174,7 +175,7 @@ public:
   auto &getStructFields() { return m_composite_fields; }
   auto &getNamedConstants() { return m_named_constants; }
 
-  ncc::core::dyn_arena &getNodeArena() { return m_node_arena; }
+  auto &getNodeArena() { return m_node_arena; }
 
   std::unique_ptr<nr::IReport> &getDiag() { return m_diagnostics; }
   std::unique_ptr<nr::ISourceView> &getOffsetResolver() {

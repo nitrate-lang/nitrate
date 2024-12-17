@@ -313,9 +313,9 @@ qmodule_t *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) {
     qmodule_t *new_mod = createModule(m_module_name);
 
     { /* Clone the IRGraph into the module */
-      std::swap(nr::nr_arena, new_mod->getNodeArena());
+      std::swap(nr::nr_allocator, new_mod->getNodeArena());
       new_mod->setRoot(static_cast<Seq *>(nr_clone(m_root)));
-      std::swap(nr::nr_arena, new_mod->getNodeArena());
+      std::swap(nr::nr_allocator, new_mod->getNodeArena());
     }
 
     m_result = new_mod;

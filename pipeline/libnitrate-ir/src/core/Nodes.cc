@@ -55,7 +55,7 @@ using namespace nr;
 
 ///=============================================================================
 namespace nr {
-  thread_local ncc::core::dyn_arena nr_arena;
+  thread_local std::unique_ptr<ncc::core::IMemory> nr_allocator;
 
   namespace mem {
     Brk static_NR_NODE_BRK;

@@ -37,6 +37,7 @@
 #ifndef __cplusplus
 #error "This header is C++ only."
 #endif
+
 #include <nitrate-ir/TypeDecl.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
@@ -48,6 +49,7 @@
 #include <cstdint>
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/Module.hh>
@@ -63,7 +65,7 @@
 namespace nr {
   using boost::multiprecision::uint128_t;
 
-  extern "C" thread_local ncc::core::dyn_arena nr_arena;
+  extern "C" thread_local std::unique_ptr<ncc::core::IMemory> nr_allocator;
 
   template <class T>
   struct Arena {
@@ -75,7 +77,7 @@ namespace nr {
     constexpr Arena(const Arena<U> &) {}
 
     [[nodiscard]] T *allocate(std::size_t n) {
-      return static_cast<T *>(nr_arena.alloc(sizeof(T) * n));
+      return static_cast<T *>(nr_allocator->alloc(sizeof(T) * n));
     }
 
     void deallocate(T *p, std::size_t n) {

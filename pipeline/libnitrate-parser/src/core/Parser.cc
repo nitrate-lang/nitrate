@@ -363,6 +363,7 @@ C_EXPORT npar_t* npar_new(qlex_t* lexer, qcore_env_t env) {
 
   npar_t* parser = new npar_t();
 
+  parser->allocator = std::make_unique<ncc::core::dyn_arena>();
   parser->env = env;
   parser->lexer = lexer;
   parser->failed = false;
@@ -392,8 +393,7 @@ C_EXPORT bool npar_do(npar_t* L, npar_node_t** out) {
   *out = nullptr;
 
   /*=============== Swap in their arena  ===============*/
-  // npar::npar_arena.swap(*L->arena.get());
-  std::swap(npar::npar_arena, L->arena);
+  std::swap(npar::npar_allocator, L->allocator);
 
   /*== Install thread-local references to the parser ==*/
   npar::install_reference(L);
@@ -406,7 +406,7 @@ C_EXPORT bool npar_do(npar_t* L, npar_node_t** out) {
   npar::install_reference(nullptr);
 
   /*=============== Swap out their arena ===============*/
-  std::swap(npar::npar_arena, L->arena);
+  std::swap(npar::npar_allocator, L->allocator);
 
   /*==================== Return status ====================*/
   return !L->failed;

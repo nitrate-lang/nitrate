@@ -41,6 +41,7 @@
 #include <core/PassManager.hh>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/Classes.hh>
@@ -56,6 +57,7 @@
 
 using namespace nr;
 using namespace qcore;
+using namespace ncc::core;
 
 struct PState {
 private:
@@ -116,8 +118,8 @@ C_EXPORT bool nr_lower(qmodule_t **mod, npar_node_t *base, const char *name,
     name = "module";
   }
 
-  ncc::core::dyn_arena scratch_arena;
-  std::swap(nr::nr_arena, scratch_arena);
+  std::unique_ptr<IMemory> scratch_arena = std::make_unique<dyn_arena>();
+  std::swap(nr::nr_allocator, scratch_arena);
 
   /// TODO: Get the target platform infoformation
   TargetInfo target_info;
@@ -151,7 +153,7 @@ C_EXPORT bool nr_lower(qmodule_t **mod, npar_node_t *base, const char *name,
 
   R->getDiag() = std::move(G);
 
-  std::swap(nr::nr_arena, scratch_arena);
+  std::swap(nr::nr_allocator, scratch_arena);
   *mod = R;
 
   return success;

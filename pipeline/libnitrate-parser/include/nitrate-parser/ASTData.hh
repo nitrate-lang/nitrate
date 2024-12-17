@@ -45,7 +45,7 @@
 #include <vector>
 
 namespace npar {
-  extern thread_local ncc::core::dyn_arena npar_arena;
+  extern thread_local std::unique_ptr<ncc::core::IMemory> npar_allocator;
 
   template <class T>
   struct Arena {
@@ -57,7 +57,7 @@ namespace npar {
     constexpr Arena(const Arena<U> &) {}
 
     [[nodiscard]] T *allocate(std::size_t n) {
-      return static_cast<T *>(npar_arena.alloc(sizeof(T) * n));
+      return static_cast<T *>(npar_allocator->alloc(sizeof(T) * n));
     }
 
     void deallocate(T *p, std::size_t n) {
