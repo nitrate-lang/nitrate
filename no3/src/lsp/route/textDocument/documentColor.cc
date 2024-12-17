@@ -3,7 +3,6 @@
 #include <lsp/core/SyncFS.hh>
 #include <lsp/core/server.hh>
 #include <lsp/route/RoutesList.hh>
-#include <nitrate-core/Classes.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Classes.hh>
 #include <regex>

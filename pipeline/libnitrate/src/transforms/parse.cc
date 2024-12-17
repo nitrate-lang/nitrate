@@ -38,7 +38,6 @@
 #include <core/Transform.hh>
 #include <cstdint>
 #include <functional>
-#include <nitrate-core/Classes.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Classes.hh>

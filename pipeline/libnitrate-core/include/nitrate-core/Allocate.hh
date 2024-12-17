@@ -34,12 +34,10 @@
 #ifndef __NITRATE_CORE_MEMORY_H__
 #define __NITRATE_CORE_MEMORY_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stddef.h>
 #include <stdint.h>
+
+#include <optional>
 
 #define QCORE_ALLOC_ALIGN_DEFAULT 16
 
@@ -115,8 +113,30 @@ static inline void *qcore_arena_alloc(qcore_arena_t *A, size_t size) {
   return qcore_arena_alloc_ex(A, size, QCORE_ALLOC_ALIGN_DEFAULT);
 }
 
-#ifdef __cplusplus
-}
-#endif
+class qcore_arena final {
+  std::optional<qcore_arena_t> m_arena;
+
+  qcore_arena(const qcore_arena &) = delete;
+
+public:
+  qcore_arena() {
+    m_arena = 0;
+    qcore_arena_open(&m_arena.value());
+  }
+
+  ~qcore_arena() {
+    if (m_arena.has_value()) {
+      qcore_arena_close(&m_arena.value());
+    }
+  }
+
+  qcore_arena(qcore_arena &&o) : m_arena(std::move(o.m_arena)) {}
+  qcore_arena &operator=(qcore_arena &&o) {
+    m_arena = std::move(o.m_arena);
+    return *this;
+  }
+
+  qcore_arena_t *get() { return &m_arena.value(); }
+};
 
 #endif

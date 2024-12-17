@@ -60,7 +60,7 @@ static void qcore_default_logger(qcore_log_t, const char *, size_t, void *) {}
 static thread_local qcore_logger_t g_current_logger = qcore_default_logger;
 static thread_local void *g_current_logger_data = nullptr;
 
-C_EXPORT qcore_env_t qcore_env_create(qcore_env_t env) {
+CPP_EXPORT qcore_env_t qcore_env_create(qcore_env_t env) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
   if (!g_envs.count(env)) {
@@ -70,16 +70,16 @@ C_EXPORT qcore_env_t qcore_env_create(qcore_env_t env) {
   return env;
 }
 
-C_EXPORT void qcore_env_destroy(qcore_env_t env) {
+CPP_EXPORT void qcore_env_destroy(qcore_env_t env) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
   qcore_assert(g_envs.count(env), "Environment does not exist.");
   g_envs.erase(env);
 }
 
-C_EXPORT qcore_env_t qcore_env_current() { return g_current_env; }
+CPP_EXPORT qcore_env_t qcore_env_current() { return g_current_env; }
 
-C_EXPORT void qcore_env_set_current(qcore_env_t env) {
+CPP_EXPORT void qcore_env_set_current(qcore_env_t env) {
   if (env == 0) {
     return;
   }
@@ -90,7 +90,7 @@ C_EXPORT void qcore_env_set_current(qcore_env_t env) {
   g_current_env = env;
 }
 
-C_EXPORT void qcore_env_set(const char *key, const char *value) {
+CPP_EXPORT void qcore_env_set(const char *key, const char *value) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
   qcore_assert(g_envs.count(g_current_env),
@@ -103,7 +103,7 @@ C_EXPORT void qcore_env_set(const char *key, const char *value) {
   }
 }
 
-C_EXPORT const char *qcore_env_get(const char *key) {
+CPP_EXPORT const char *qcore_env_get(const char *key) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
   qcore_assert(g_envs.count(g_current_env),

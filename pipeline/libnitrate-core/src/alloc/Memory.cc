@@ -39,9 +39,9 @@
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Logger.hh>
 
-C_EXPORT qcore_arena_t *qcore_arena_open_ex(qcore_arena_t *A,
-                                            qcore_alloc_mode_t mode,
-                                            bool is_thread_safe) {
+CPP_EXPORT qcore_arena_t *qcore_arena_open_ex(qcore_arena_t *A,
+                                              qcore_alloc_mode_t mode,
+                                              bool is_thread_safe) {
   qcore_assert(A != nullptr, "qcore_arena_open_ex: invalid arena");
 
   mem::qcore_arena_t *X;
@@ -77,8 +77,8 @@ C_EXPORT qcore_arena_t *qcore_arena_open_ex(qcore_arena_t *A,
   return A;
 }
 
-C_EXPORT void *qcore_arena_alloc_ex(qcore_arena_t *A, size_t size,
-                                    size_t align) {
+CPP_EXPORT void *qcore_arena_alloc_ex(qcore_arena_t *A, size_t size,
+                                      size_t align) {
   void *ptr;
 
   qcore_assert(A != nullptr, "qcore_arena_alloc_ex: invalid arena");
@@ -91,7 +91,7 @@ C_EXPORT void *qcore_arena_alloc_ex(qcore_arena_t *A, size_t size,
   return ptr;
 }
 
-C_EXPORT void qcore_arena_close(qcore_arena_t *A) {
+CPP_EXPORT void qcore_arena_close(qcore_arena_t *A) {
   qcore_assert(A != nullptr, "qcore_arena_close: invalid arena");
 
   mem::qcore_arena_t *X = reinterpret_cast<mem::qcore_arena_t *>(*A);

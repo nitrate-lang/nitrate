@@ -51,7 +51,6 @@
 #include <init/Package.hh>
 #include <install/Install.hh>
 #include <iostream>
-#include <nitrate-core/Classes.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>

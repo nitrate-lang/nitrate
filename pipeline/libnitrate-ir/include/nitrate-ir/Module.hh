@@ -42,7 +42,6 @@
 #include <limits>
 #include <memory>
 #include <nitrate-core/Allocate.hh>
-#include <nitrate-core/Classes.hh>
 #include <nitrate-ir/Report.hh>
 #include <nitrate-ir/Visitor.hh>
 #include <string>

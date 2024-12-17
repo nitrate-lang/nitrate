@@ -34,7 +34,6 @@
 #ifndef __NITRATE_NR_IRBUILDER_H__
 #define __NITRATE_NR_IRBUILDER_H__
 
-#include <string>
 #ifndef __cplusplus
 #error "This header is C++ only."
 #endif
@@ -48,12 +47,13 @@
 #include <cmath>
 #include <experimental/source_location>
 #include <nitrate-core/Allocate.hh>
-#include <nitrate-core/Classes.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/Report.hh>
 #include <optional>
+#include <span>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 

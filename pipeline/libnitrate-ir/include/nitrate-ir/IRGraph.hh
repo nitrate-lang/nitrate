@@ -41,13 +41,14 @@
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <functional>
 #include <iostream>
 #include <nitrate-core/Allocate.hh>
-#include <nitrate-core/Classes.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/Visitor.hh>

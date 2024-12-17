@@ -6,7 +6,6 @@
 #include <lsp/core/server.hh>
 #include <lsp/lang/Format.hh>
 #include <lsp/route/RoutesList.hh>
-#include <nitrate-core/Classes.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Classes.hh>
 #include <nitrate-parser/AST.hh>

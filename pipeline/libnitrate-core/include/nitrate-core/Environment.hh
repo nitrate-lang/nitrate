@@ -38,9 +38,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <chrono>
+#include <nitrate-core/Allocate.hh>
+#include <random>
 
 typedef uintptr_t qcore_env_t;
 
@@ -89,8 +92,36 @@ void qcore_env_set(const char *key, const char *value);
  */
 const char *qcore_env_get(const char *key);
 
-#ifdef __cplusplus
-}
-#endif
+class qcore_env final {
+  qcore_env_t m_env;
+
+public:
+  qcore_env() {
+    std::random_device rd;
+    std::uniform_int_distribution<uintptr_t> gen;
+    m_env = qcore_env_create(gen(rd));
+    qcore_env_set_current(m_env);
+
+    {  // Set a random job ID
+      boost::uuids::random_generator gen;
+      boost::uuids::uuid uuid = gen();
+      std::string uuid_str = boost::uuids::to_string(uuid);
+      qcore_env_set("this.job", uuid_str.c_str());
+    }
+
+    {  // Set the compiler start time
+      std::chrono::system_clock::time_point now =
+          std::chrono::system_clock::now();
+      std::chrono::milliseconds ms =
+          std::chrono::duration_cast<std::chrono::milliseconds>(
+              now.time_since_epoch());
+
+      qcore_env_set("this.created_at", std::to_string(ms.count()).c_str());
+    }
+  }
+  ~qcore_env() { qcore_env_destroy(m_env); }
+
+  qcore_env_t &get() { return m_env; }
+};
 
 #endif  // __NITRATE_CORE_ENV_H__

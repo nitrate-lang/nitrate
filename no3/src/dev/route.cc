@@ -50,7 +50,6 @@
 #include <core/Logger.hh>
 #include <fstream>
 #include <iostream>
-#include <nitrate-core/Classes.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>

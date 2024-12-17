@@ -36,7 +36,6 @@
 
 #include <core/SerialUtil.hh>
 #include <core/Transform.hh>
-#include <nitrate-core/Classes.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/Writer.hh>
 #include <nitrate-parser/ASTReader.hh>

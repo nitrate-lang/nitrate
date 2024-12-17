@@ -37,7 +37,6 @@
 #include <boost/bimap.hpp>
 #include <cstdint>
 #include <mutex>
-#include <nitrate-core/Classes.hh>
 #include <string>
 #include <string_view>
 #include <unordered_set>

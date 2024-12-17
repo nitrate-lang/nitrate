@@ -36,6 +36,7 @@
 
 #include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/ASTCommon.hh>
+#include <span>
 
 namespace npar {
   class npar_pack StmtExpr final : public Expr {
