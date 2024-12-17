@@ -48,13 +48,29 @@
 #include <random>
 
 class qcore_arena final {
-  qcore_arena_t m_arena;
+  std::optional<qcore_arena_t> m_arena;
+
+  qcore_arena(const qcore_arena &) = delete;
 
 public:
-  qcore_arena() { qcore_arena_open(&m_arena); }
-  ~qcore_arena() { qcore_arena_close(&m_arena); }
+  qcore_arena() {
+    m_arena = 0;
+    qcore_arena_open(&m_arena.value());
+  }
 
-  qcore_arena_t *get() { return &m_arena; }
+  ~qcore_arena() {
+    if (m_arena.has_value()) {
+      qcore_arena_close(&m_arena.value());
+    }
+  }
+
+  qcore_arena(qcore_arena &&o) : m_arena(std::move(o.m_arena)) {}
+  qcore_arena &operator=(qcore_arena &&o) {
+    m_arena = std::move(o.m_arena);
+    return *this;
+  }
+
+  qcore_arena_t *get() { return &m_arena.value(); }
 };
 
 class qcore_env final {
