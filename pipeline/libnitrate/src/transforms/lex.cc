@@ -281,7 +281,7 @@ bool impl_use_msgpack(qlex_t *L, std::ostream &O) {
 }
 
 CREATE_TRANSFORM(nit::lex) {
-  qlex lexer(source, nullptr, qcore_env_current());
+  qlex lexer(source, nullptr, env);
 
   enum class OutMode {
     JSON,

@@ -44,7 +44,7 @@ extern bool impl_use_msgpack(qlex_t *L, std::ostream &O);
 extern bool impl_use_json(qlex_t *L, std::ostream &O);
 
 CREATE_TRANSFORM(nit::seq) {
-  qprep lexer(source, nullptr, qcore_env_current());
+  qprep lexer(source, nullptr, env);
 
   enum class OutMode {
     JSON,

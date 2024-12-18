@@ -32,10 +32,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Macro.h>
-#include <nitrate-parser/Parser.h>
 
 #include <core/Context.hh>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-parser/Parser.hh>
 #include <sstream>
 
 using namespace npar;

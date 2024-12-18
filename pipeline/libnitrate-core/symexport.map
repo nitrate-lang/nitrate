@@ -1,6 +1,0 @@
-{
-    global:
-        qcore_*;
-    local:
-        *;
-};

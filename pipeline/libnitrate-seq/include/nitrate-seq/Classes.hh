@@ -45,7 +45,8 @@ class qprep final {
   std::unique_ptr<qprep_impl_t> m_lex;
 
 public:
-  qprep(std::istream &fp, const char *filename, qcore_env_t env) {
+  qprep(std::istream &fp, const char *filename,
+        std::shared_ptr<ncc::core::Environment> env) {
     m_lex = std::make_unique<qprep_impl_t>(fp, filename, env);
   }
   ~qprep() = default;

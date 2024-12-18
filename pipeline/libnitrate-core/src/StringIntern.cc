@@ -44,7 +44,7 @@ CPP_EXPORT std::string_view str_alias::get() const {
   return StringMemory::from_id(m_id);
 }
 
-str_alias StringMemory::get(std::string_view str) {
+CPP_EXPORT str_alias StringMemory::get(std::string_view str) {
   std::lock_guard lock(m_storage.m_mutex);
 
   if (auto it = m_storage.m_bimap.right.find(str);
@@ -65,7 +65,7 @@ CPP_EXPORT std::string_view StringMemory::save(std::string_view str) {
   return get(str).get();
 }
 
-std::string_view StringMemory::from_id(uint64_t id) {
+CPP_EXPORT std::string_view StringMemory::from_id(uint64_t id) {
   std::lock_guard lock(m_storage.m_mutex);
 
   auto it = m_storage.m_bimap.left.find(id);

@@ -347,14 +347,15 @@ std::unique_ptr<qlex_t> qprep_impl_t::weak_clone(std::istream &file,
 }
 
 qprep_impl_t::qprep_impl_t(std::istream &file, const char *filename,
-                           qcore_env_t env)
+                           std::shared_ptr<ncc::core::Environment> env)
     : qlex_t(file, filename, env) {
   m_core = std::make_shared<Core>();
   m_do_expanse = true;
   m_depth = 0;
 }
 
-qprep_impl_t::qprep_impl_t(std::istream &file, qcore_env_t env,
+qprep_impl_t::qprep_impl_t(std::istream &file,
+                           std::shared_ptr<ncc::core::Environment> env,
                            const char *filename)
     : qlex_t(file, filename, env) {
   m_core = std::make_shared<Core>();
@@ -400,7 +401,7 @@ CPP_EXPORT qprep_impl_t::~qprep_impl_t() {}
 ///=============================================================================
 
 CPP_EXPORT qlex_t *qprep_new(std::istream &file, const char *filename,
-                             qcore_env_t env) {
+                             std::shared_ptr<ncc::core::Environment> env) {
   try {
     return new qprep_impl_t(file, env, filename);
   } catch (std::bad_alloc &) {

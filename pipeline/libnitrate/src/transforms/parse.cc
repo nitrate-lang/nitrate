@@ -38,12 +38,15 @@
 #include <core/Transform.hh>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Classes.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Classes.hh>
 #include <unordered_set>
+
+#include "nitrate-core/Environment.hh"
 
 static inline qlex_tok_t eof_tok() {
   qlex_tok_t tok{};
@@ -208,7 +211,7 @@ class DeserializerAdapterLexer final : public qlex_t {
 
 public:
   DeserializerAdapterLexer(std::istream &file, const char *filename,
-                           qcore_env_t env)
+                           std::shared_ptr<ncc::core::Environment> env)
       : qlex_t(file, filename, env) {
     int ch = file.get();
 
@@ -279,8 +282,8 @@ CREATE_TRANSFORM(nit::parse) {
     out_mode = OutMode::MsgPack;
   }
 
-  DeserializerAdapterLexer lex(source, nullptr, qcore_env_current());
-  nr_syn par(&lex, qcore_env_current());
+  DeserializerAdapterLexer lex(source, nullptr, env);
+  nr_syn par(&lex, env);
 
   if (let root = parse_tokens(par.get())) {
     switch (out_mode) {

@@ -34,16 +34,16 @@
 #ifndef __NITRATE_AST_CLASSES_H__
 #define __NITRATE_AST_CLASSES_H__
 
-#include <nitrate-parser/Parser.h>
-
+#include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/Parser.hh>
 
 class nr_syn final {
   npar_t *m_parser;
 
 public:
-  nr_syn(qlex_t *scanner, qcore_env_t env) {
+  nr_syn(qlex_t *scanner, std::shared_ptr<ncc::core::Environment> env) {
     if ((m_parser = npar_new(scanner, env)) == nullptr) {
       qcore_panic("npar_new failed");
     }

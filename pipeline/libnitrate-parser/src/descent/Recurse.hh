@@ -35,12 +35,12 @@
 #define __NITRATE_PARSE_H__
 
 #include <nitrate-core/Macro.h>
-#include <nitrate-parser/Parser.h>
 
 #include <core/Context.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTCommon.hh>
+#include <nitrate-parser/Parser.hh>
 #include <set>
 
 namespace npar {

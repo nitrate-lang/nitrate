@@ -47,7 +47,8 @@ class qlex final {
   std::unique_ptr<qlex_t> m_lex;
 
 public:
-  qlex(std::istream &fp, const char *filename, qcore_env_t env) {
+  qlex(std::istream &fp, const char *filename,
+       std::shared_ptr<ncc::core::Environment> env) {
     m_lex = std::make_unique<qlex_t>(fp, filename, env);
   }
   ~qlex() = default;

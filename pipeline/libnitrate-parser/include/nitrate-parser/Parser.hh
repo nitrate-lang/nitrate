@@ -36,12 +36,9 @@
 
 #include <stdbool.h>
 
+#include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Lexer.hh>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct npar_t npar_t;
 typedef struct npar_node_t npar_node_t;
@@ -61,7 +58,7 @@ typedef struct npar_node_t npar_node_t;
  *
  * @note This function is thread safe.
  */
-npar_t *npar_new(qlex_t *lexer, qcore_env_t env);
+npar_t *npar_new(qlex_t *lexer, std::shared_ptr<ncc::core::Environment> env);
 
 /**
  * @brief Free a parser instance.
@@ -131,9 +128,5 @@ typedef void (*npar_dump_cb)(const char *msg, size_t len, uintptr_t data);
  * @note This function is thread safe.
  */
 void npar_dumps(npar_t *parser, bool no_ansi, npar_dump_cb cb, uintptr_t data);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  // __NITRATE_AST_PARSER_H__

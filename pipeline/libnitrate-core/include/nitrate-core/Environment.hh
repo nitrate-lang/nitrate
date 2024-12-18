@@ -42,8 +42,11 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
+#include <mutex>
 #include <nitrate-core/Allocate.hh>
+#include <nitrate-core/Logger.hh>
 #include <random>
+#include <unordered_map>
 
 typedef uintptr_t qcore_env_t;
 
@@ -123,5 +126,83 @@ public:
 
   qcore_env_t &get() { return m_env; }
 };
+
+namespace ncc::core {
+  class IEnvironment {
+  public:
+    virtual ~IEnvironment() = default;
+
+    virtual bool contains(const std::string &key) = 0;
+    virtual std::optional<std::string> get(const std::string &key) = 0;
+    virtual void set(std::string key, std::optional<std::string> value,
+                     bool privset = false) = 0;
+  };
+
+  class MockEnvironment final : public IEnvironment {
+    std::unordered_map<std::string, std::string> m_data;
+    std::mutex m_mutex;
+
+  public:
+    MockEnvironment() = default;
+    virtual ~MockEnvironment() = default;
+
+    bool contains(const std::string &key) override {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      return m_data.contains(key);
+    }
+
+    std::optional<std::string> get(const std::string &key) override {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      if (auto it = m_data.find(key); it != m_data.end()) {
+        return it->second;
+      }
+      return std::nullopt;
+    }
+
+    void set(std::string key, std::optional<std::string> val,
+             bool = false) override {
+      std::lock_guard<std::mutex> lock(m_mutex);
+
+      if (val.has_value()) {
+        m_data[std::move(key)] = std::move(val.value());
+      } else {
+        m_data.erase(key);
+      }
+    }
+  };
+
+  class Environment {
+    std::unordered_map<std::string, std::string> m_data;
+    std::mutex m_mutex;
+
+  public:
+    Environment() = default;
+    virtual ~Environment() = default;
+
+    bool contains(const std::string &key) {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      return m_data.contains(key);
+    }
+
+    std::optional<std::string> get(const std::string &key) {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      if (auto it = m_data.find(key); it != m_data.end()) {
+        return it->second;
+      }
+      return std::nullopt;
+    }
+
+    void set(std::string key, std::optional<std::string> value, bool = false) {
+      std::lock_guard<std::mutex> lock(m_mutex);
+
+      if (value.has_value()) {
+        m_data[std::move(key)] = std::move(value.value());
+      } else {
+        m_data.erase(key);
+      }
+    }
+  };
+
+}  // namespace ncc::core
 
 #endif  // __NITRATE_CORE_ENV_H__

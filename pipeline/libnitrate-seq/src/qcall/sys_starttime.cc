@@ -34,6 +34,7 @@
 #include <exception>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-seq/Preprocess.hh>
 #include <qcall/List.hh>
 #include <string>
 

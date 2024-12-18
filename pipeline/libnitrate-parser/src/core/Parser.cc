@@ -32,15 +32,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Macro.h>
-#include <nitrate-parser/Parser.h>
 
 #include <core/Context.hh>
 #include <cstring>
 #include <descent/Recurse.hh>
+#include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTReader.hh>
 #include <nitrate-parser/ASTWriter.hh>
+#include <nitrate-parser/Parser.hh>
+
+#include "nitrate-core/Environment.hh"
 
 using namespace npar;
 
@@ -356,7 +359,8 @@ Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
   return block;
 }
 
-C_EXPORT npar_t* npar_new(qlex_t* lexer, qcore_env_t env) {
+CPP_EXPORT npar_t* npar_new(qlex_t* lexer,
+                            std::shared_ptr<ncc::core::Environment> env) {
   if (!lexer) {
     return nullptr;
   }
@@ -374,7 +378,7 @@ C_EXPORT npar_t* npar_new(qlex_t* lexer, qcore_env_t env) {
   return parser;
 }
 
-C_EXPORT void npar_free(npar_t* parser) {
+CPP_EXPORT void npar_free(npar_t* parser) {
   if (!parser) {
     return;
   }
@@ -386,7 +390,7 @@ C_EXPORT void npar_free(npar_t* parser) {
 
 static thread_local npar_t* parser_ctx;
 
-C_EXPORT bool npar_do(npar_t* L, npar_node_t** out) {
+CPP_EXPORT bool npar_do(npar_t* L, npar_node_t** out) {
   if (!L || !out) {
     return false;
   }
@@ -412,7 +416,7 @@ C_EXPORT bool npar_do(npar_t* L, npar_node_t** out) {
   return !L->failed;
 }
 
-C_EXPORT bool npar_check(npar_t* parser, const npar_node_t* base) {
+CPP_EXPORT bool npar_check(npar_t* parser, const npar_node_t* base) {
   if (!base) {
     return false;
   }
@@ -431,8 +435,8 @@ C_EXPORT bool npar_check(npar_t* parser, const npar_node_t* base) {
   return !failed;
 }
 
-C_EXPORT void npar_dumps(npar_t* parser, bool no_ansi, npar_dump_cb cb,
-                         uintptr_t data) {
+CPP_EXPORT void npar_dumps(npar_t* parser, bool no_ansi, npar_dump_cb cb,
+                           uintptr_t data) {
   if (!parser || !cb) {
     return;
   }

@@ -88,8 +88,10 @@ struct __attribute__((visibility("default"))) qprep_impl_t final
   std::unique_ptr<qlex_t> weak_clone(std::istream &file, const char *filename);
 
 public:
-  qprep_impl_t(std::istream &file, const char *filename, qcore_env_t env);
-  qprep_impl_t(std::istream &file, qcore_env_t env, const char *filename);
+  qprep_impl_t(std::istream &file, const char *filename,
+               std::shared_ptr<ncc::core::Environment> env);
+  qprep_impl_t(std::istream &file, std::shared_ptr<ncc::core::Environment> env,
+               const char *filename);
   virtual ~qprep_impl_t() override;
 };
 

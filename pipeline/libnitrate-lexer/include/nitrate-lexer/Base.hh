@@ -82,7 +82,7 @@ public:
   std::string m_filename;
   std::istream &m_file;
   qlex_flags_t m_flags;
-  qcore_env_t m_env;
+  std::shared_ptr<ncc::core::Environment> m_env;
 
   qlex_tok_t step_buffer();
   void reset_automata();
@@ -107,7 +107,8 @@ public:
 
   ///============================================================================///
 
-  qlex_t(std::istream &file, const char *filename, qcore_env_t env)
+  qlex_t(std::istream &file, const char *filename,
+         std::shared_ptr<ncc::core::Environment> env)
       : m_getc_pos(GETC_BUFFER_SIZE),
         m_next_tok({}),
         m_current_tok({}),
@@ -123,7 +124,7 @@ public:
 
   const std::string &filename() const { return m_filename; }
   qlex_flags_t flags() const { return m_flags; }
-  qcore_env_t env() const { return m_env; }
+  std::shared_ptr<ncc::core::Environment> env() const { return m_env; }
 };
 
 #endif  // __NITRATE_LEXER_BASE_H__

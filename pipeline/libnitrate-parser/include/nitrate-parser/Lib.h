@@ -34,8 +34,9 @@
 #ifndef __NITRATE_AST_LIB_H__
 #define __NITRATE_AST_LIB_H__
 
-#include <nitrate-parser/Parser.h>
 #include <stdbool.h>
+
+#include <nitrate-parser/Parser.hh>
 
 #ifdef __cplusplus
 extern "C" {

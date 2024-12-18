@@ -6,12 +6,15 @@
 #include <lsp/core/server.hh>
 #include <lsp/lang/Format.hh>
 #include <lsp/route/RoutesList.hh>
+#include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Classes.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/Classes.hh>
 #include <sstream>
 #include <string>
+
+#include "nitrate-core/Environment.hh"
 
 using namespace rapidjson;
 
@@ -103,9 +106,9 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
 
   std::stringstream ss(*file->content());
 
-  qcore_env env;
-  qlex lexer(ss, uri.c_str(), env.get());
-  nr_syn parser(lexer.get(), env.get());
+  auto env = std::make_shared<ncc::core::Environment>();
+  qlex lexer(ss, uri.c_str(), env);
+  nr_syn parser(lexer.get(), env);
 
   npar_node_t* root = nullptr;
   if (!npar_do(parser.get(), &root)) {

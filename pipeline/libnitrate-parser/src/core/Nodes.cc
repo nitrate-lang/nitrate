@@ -32,13 +32,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Macro.h>
-#include <nitrate-parser/Parser.h>
 
 #include <core/Hash.hh>
 #include <cstring>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTWriter.hh>
+#include <nitrate-parser/Parser.hh>
 #include <sstream>
 
 using namespace npar;

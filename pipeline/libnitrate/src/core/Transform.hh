@@ -34,16 +34,20 @@
 #pragma once
 
 #include <iostream>
+#include <memory>
+#include <nitrate-core/Environment.hh>
 #include <string>
 #include <unordered_set>
 
 namespace nit {
   typedef bool (*transform_func)(std::istream &source, std::ostream &output,
-                                 const std::unordered_set<std::string> &opts);
+                                 const std::unordered_set<std::string> &opts,
+                                 std::shared_ptr<ncc::core::Environment> &env);
 
-#define CREATE_TRANSFORM(name)                          \
-  bool name(std::istream &source, std::ostream &output, \
-            const std::unordered_set<std::string> &opts)
+#define CREATE_TRANSFORM(name)                           \
+  bool name(std::istream &source, std::ostream &output,  \
+            const std::unordered_set<std::string> &opts, \
+            std::shared_ptr<ncc::core::Environment> &env)
 
   CREATE_TRANSFORM(echo);
   CREATE_TRANSFORM(lex);

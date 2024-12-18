@@ -34,16 +34,17 @@
 #ifndef __NITRATE_AST_CONTEXT_H__
 #define __NITRATE_AST_CONTEXT_H__
 
-#include <nitrate-parser/Parser.h>
 #include <stdbool.h>
 
 #include <cstdarg>
 #include <functional>
+#include <memory>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/Parser.hh>
 #include <sstream>
 
 namespace npar {
@@ -131,7 +132,7 @@ namespace npar {
 };  // namespace npar
 
 struct npar_t {
-  qcore_env_t env; /* The Environment */
+  std::shared_ptr<ncc::core::Environment> env;
   uint64_t id; /* Process unique instance identifier. Never reused. Never 0. */
   std::unique_ptr<ncc::core::IMemory> allocator; /* The Main allocator */
   npar::DiagnosticManager diag;                  /* The Diagnostic Manager */

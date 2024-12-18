@@ -41,7 +41,6 @@
 #include <nitrate-ir/Lib.h>
 #include <nitrate-lexer/Lib.h>
 #include <nitrate-parser/Lib.h>
-#include <nitrate-parser/Parser.h>
 #include <nitrate-seq/Lib.h>
 
 #include <clean/Cleanup.hh>
@@ -55,6 +54,7 @@
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Classes.hh>
+#include <nitrate-parser/Parser.hh>
 #include <nitrate-seq/Classes.hh>
 #include <string_view>
 #include <unordered_map>
@@ -125,7 +125,7 @@ namespace no3::benchmark {
 }  // namespace no3::benchmark
 
 static int do_parse(std::string source, std::string output) {
-  qcore_env env;
+  auto env = std::make_shared<ncc::core::Environment>();
 
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
@@ -133,8 +133,8 @@ static int do_parse(std::string source, std::string output) {
     return 1;
   }
 
-  qprep lexer(file, "in", env.get());
-  nr_syn parser(lexer.get(), env.get());
+  qprep lexer(file, "in", env);
+  nr_syn parser(lexer.get(), env);
 
   npar_node_t *tree = nullptr;
 
@@ -177,7 +177,7 @@ static int do_nr(std::string source, std::string output, std::string opts,
     LOG(ERROR) << "Options are not implemented yet";
   }
 
-  qcore_env env;
+  auto env = std::make_shared<ncc::core::Environment>();
 
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
@@ -185,8 +185,8 @@ static int do_nr(std::string source, std::string output, std::string opts,
     return 1;
   }
 
-  qprep lexer(file, "in", env.get());
-  nr_syn parser(lexer.get(), env.get());
+  qprep lexer(file, "in", env);
+  nr_syn parser(lexer.get(), env);
 
   npar_node_t *tree = nullptr;
 
@@ -249,7 +249,7 @@ static int do_codegen(std::string source, std::string output, std::string opts,
     LOG(ERROR) << "Options are not implemented yet";
   }
 
-  qcore_env env;
+  auto env = std::make_shared<ncc::core::Environment>();
 
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
@@ -257,8 +257,8 @@ static int do_codegen(std::string source, std::string output, std::string opts,
     return 1;
   }
 
-  qprep lexer(file, "in", env.get());
-  nr_syn parser(lexer.get(), env.get());
+  qprep lexer(file, "in", env);
+  nr_syn parser(lexer.get(), env);
 
   npar_node_t *tree = nullptr;
 
