@@ -216,13 +216,12 @@ func_entry:  // do tail call optimization manually
         case qName: { /* Handle the expansion of defines */
           std::string key = "def." + std::string(x.v.str_idx.get());
 
-          const char *value = qcore_env_get(key.c_str());
-          if (value == nullptr) {
+          if (let value = m_env->get(key.c_str())) {
+            expand_raw(value.value());
+            goto func_entry;
+          } else {
             goto emit_token;
           }
-
-          expand_raw(value);
-          goto func_entry;
         }
 
         case qMacB: {

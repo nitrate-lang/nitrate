@@ -33,53 +33,88 @@
 
 #include <nitrate-core/Macro.h>
 
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <nitrate-core/Environment.hh>
+#include <cstdio>
+#include <nitrate-core/Logger.hh>
+#include <sstream>
+#include <string>
+#include <unordered_map>
 
-using namespace ncc::core;
+static thread_local struct LoggerState {
+  std::stringstream log_buffer;
+  qcore_log_t log_level;
+} g_log;
 
-void Environment::setup_default_env() {
-  { /* Generate unique ID for this compilation unit */
-    boost::uuids::random_generator gen;
-    boost::uuids::uuid uuid = gen();
-    std::string uuid_str = boost::uuids::to_string(uuid);
-    set("this.job", uuid_str.c_str());
-  }
+static void qcore_default_logger(qcore_log_t, const char *, size_t, void *) {}
 
-  { /* Set the compiler start time */
-    let now = std::chrono::system_clock::now();
-    let ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-        now.time_since_epoch());
+static thread_local qcore_logger_t g_current_logger = qcore_default_logger;
+static thread_local void *g_current_logger_data = nullptr;
 
-    set("this.created_at", std::to_string(ms.count()).c_str());
-  }
+C_EXPORT void qcore_bind_logger(qcore_logger_t logger, void *data) {
+  g_current_logger = logger ? logger : qcore_default_logger;
+  g_current_logger_data = data;
 }
 
-CPP_EXPORT Environment::Environment() { setup_default_env(); }
-
-CPP_EXPORT bool Environment::contains(std::string_view key) {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  return m_data.contains(key);
+C_EXPORT void qcore_begin(qcore_log_t level) {
+  g_log.log_buffer.str("");
+  g_log.log_level = level;
 }
 
-CPP_EXPORT std::optional<std::string_view> Environment::get(
-    std::string_view key) {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  if (auto it = m_data.find(key); it != m_data.end()) {
-    return it->second;
+C_EXPORT void qcore_end() {
+  std::string message = g_log.log_buffer.str();
+
+  while (message.ends_with("\n")) {
+    message.pop_back();
   }
-  return std::nullopt;
+
+  static const std::unordered_map<qcore_log_t, const char *> level_names = {
+      {QCORE_DEBUG, "DEBUG"}, {QCORE_INFO, "INFO"},   {QCORE_WARN, "WARN"},
+      {QCORE_ERROR, "ERROR"}, {QCORE_FATAL, "FATAL"},
+  };
+
+  std::stringstream log_message;
+
+  switch (g_log.log_level) {
+    case QCORE_DEBUG: {
+      log_message << "\x1b[1mdebug:\x1b[0m " << message << "\x1b[0m";
+      break;
+    }
+
+    case QCORE_INFO: {
+      log_message << "\x1b[37;1minfo:\x1b[0m " << message << "\x1b[0m";
+      break;
+    }
+
+    case QCORE_WARN: {
+      log_message << "\x1b[35;1mwarning:\x1b[0m " << message << "\x1b[0m";
+      break;
+    }
+
+    case QCORE_ERROR: {
+      log_message << "\x1b[31;1merror:\x1b[0m " << message << "\x1b[0m";
+      break;
+    }
+
+    case QCORE_FATAL: {
+      log_message << "\x1b[31;1;4mfatal error:\x1b[0m " << message << "\x1b[0m";
+      break;
+    }
+  }
+
+  message = log_message.str();
+  g_current_logger(g_log.log_level, message.c_str(), message.size(),
+                   g_current_logger_data);
 }
 
-CPP_EXPORT void Environment::set(std::string_view key,
-                                 std::optional<std::string_view> value, bool) {
-  std::lock_guard<std::mutex> lock(m_mutex);
-
-  if (value.has_value()) {
-    m_data[qcore::save(key)] = qcore::save(*value);
-  } else {
-    m_data.erase(key);
+C_EXPORT int qcore_vwritef(const char *fmt, va_list args) {
+  char *buffer = NULL;
+  int size = vasprintf(&buffer, fmt, args);
+  if (size < 0) {
+    qcore_panic("Failed to allocate memory for log message.");
   }
+
+  { g_log.log_buffer << std::string_view(buffer, size); }
+
+  free(buffer);
+
+  return size;
 }

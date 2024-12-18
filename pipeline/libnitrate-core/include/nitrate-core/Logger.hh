@@ -34,15 +34,15 @@
 #ifndef __NITRATE_CORE_LOGGER_H__
 #define __NITRATE_CORE_LOGGER_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <errno.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Print debug into and abort.
@@ -133,8 +133,6 @@ static inline int qcore_writef(const char *fmt, ...) {
   va_end(args);
   return ret;
 }
-
-extern bool qcore_fuzzing;
 
 static inline int qcore_write(const char *msg) {
   return qcore_writef("%s", msg);
