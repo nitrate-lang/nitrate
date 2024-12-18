@@ -44,7 +44,7 @@
 #include <unordered_set>
 
 namespace ncc::parse {
-  struct Base;
+  class Base;
 
 }
 

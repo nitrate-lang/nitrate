@@ -138,16 +138,7 @@ static int do_parse(std::string source, std::string output) {
 
   ncc::parse::Base *tree = nullptr;
 
-  bool ok = npar_do(parser.get(), &tree);
-
-  npar_dumps(
-      parser.get(), !ansi::IsUsingColors(),
-      [](const char *msg, size_t len, uintptr_t) {
-        std::cerr << std::string_view((const char *)msg, len) << std::endl;
-      },
-      0);
-
-  if (!ok) {
+  if (!npar_do(parser.get(), &tree)) {
     LOG(ERROR) << "Failed to parse source file: " << source;
     return 1;
   }
@@ -191,13 +182,6 @@ static int do_nr(std::string source, std::string output, std::string opts,
   ncc::parse::Base *tree = nullptr;
 
   bool ok = npar_do(parser.get(), &tree);
-
-  npar_dumps(
-      parser.get(), !ansi::IsUsingColors(),
-      [](const char *msg, size_t len, uintptr_t) {
-        std::cerr << std::string_view((const char *)msg, len) << std::endl;
-      },
-      0);
 
   if (!ok) {
     LOG(ERROR) << "Failed to parse source file: " << source;
@@ -263,13 +247,6 @@ static int do_codegen(std::string source, std::string output, std::string opts,
   ncc::parse::Base *tree = nullptr;
 
   bool ok = npar_do(parser.get(), &tree);
-
-  npar_dumps(
-      parser.get(), !ansi::IsUsingColors(),
-      [](const char *msg, size_t len, uintptr_t) {
-        std::cerr << std::string_view((const char *)msg, len) << std::endl;
-      },
-      0);
 
   if (!ok) {
     LOG(ERROR) << "Failed to parse source file: " << source;
@@ -347,6 +324,10 @@ namespace no3::router {
       const ArgumentParser &parser,
       const std::unordered_map<std::string_view,
                                std::unique_ptr<ArgumentParser>> &subparsers) {
+    qcore_bind_logger([](qcore_log_t, const char *msg, size_t,
+                         void *) { std::cerr << msg << std::endl; },
+                      nullptr);
+
     if (parser.is_subcommand_used("bench")) {
       using namespace no3::benchmark;
 

@@ -257,14 +257,8 @@ public:
 using ArgCallback = std::function<void(const char *)>;
 static std::optional<ncc::parse::Base *> parse_tokens(npar_t *L) {
   ncc::parse::Base *root = nullptr;
-  bool ok = npar_do(L, &root);
 
-  npar_dumps(
-      L, false,
-      [](const char *msg, size_t, uintptr_t) { qcore_print(QCORE_ERROR, msg); },
-      0);
-
-  return ok ? std::make_optional(root) : std::nullopt;
+  return npar_do(L, &root) ? std::make_optional(root) : std::nullopt;
 }
 
 CREATE_TRANSFORM(nit::parse) {

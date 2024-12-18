@@ -142,7 +142,7 @@ typedef enum npar_ty_t {
 #define QAST_COUNT (QAST__LAST - QAST__FIRST + 1)
 
 namespace ncc::parse {
-  struct Base;
+  class Base;
   class Stmt;
   class Type;
   class Expr;

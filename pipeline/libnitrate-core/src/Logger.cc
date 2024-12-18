@@ -38,7 +38,6 @@
 #include <queue>
 #include <sstream>
 #include <string>
-#include <unordered_map>
 
 static thread_local struct LoggerState {
   std::stringstream log_buffer;
@@ -74,11 +73,6 @@ C_EXPORT void qcore_end() {
   while (message.ends_with("\n")) {
     message.pop_back();
   }
-
-  static const std::unordered_map<qcore_log_t, const char *> level_names = {
-      {QCORE_DEBUG, "DEBUG"}, {QCORE_INFO, "INFO"},   {QCORE_WARN, "WARN"},
-      {QCORE_ERROR, "ERROR"}, {QCORE_FATAL, "FATAL"},
-  };
 
   std::stringstream log_message;
 

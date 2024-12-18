@@ -434,18 +434,3 @@ CPP_EXPORT bool npar_check(npar_t* parser, const Base* base) {
 
   return !failed;
 }
-
-CPP_EXPORT void npar_dumps(npar_t* parser, bool no_ansi, npar_dump_cb cb,
-                           uintptr_t data) {
-  if (!parser || !cb) {
-    return;
-  }
-
-  let adapter = [&](const char* msg) { cb(msg, std::strlen(msg), data); };
-
-  if (no_ansi) {
-    parser->diag.render(adapter, ncc::parse::FormatStyle::ClangPlain);
-  } else {
-    parser->diag.render(adapter, ncc::parse::FormatStyle::Clang16Color);
-  }
-}

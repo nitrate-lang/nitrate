@@ -43,7 +43,7 @@
 #include <nitrate-parser/ASTVisitor.hh>
 
 namespace ncc::parse {
-  struct Base {
+  class Base {
   private:
     npar_ty_t m_node_type : 7;
     uint32_t m_fileid : 24;

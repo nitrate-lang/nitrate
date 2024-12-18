@@ -41,8 +41,43 @@
 typedef struct npar_t npar_t;
 
 namespace ncc::parse {
-  struct Base;
-}
+  class Base;
+  class Parser;
+
+  class ASTRoot final {
+    std::shared_ptr<Parser> m_ref;
+    Base *m_base;
+
+  public:
+    ASTRoot(std::shared_ptr<Parser> ref, ncc::parse::Base *base)
+        : m_ref(ref), m_base(base) {}
+
+    Base *get() const { return m_base; }
+
+    bool check() const;
+  };
+
+  class DiagnosticManager;
+
+  class Parser final {
+    std::shared_ptr<ncc::core::Environment> m_env;
+
+  public:
+    Parser(std::shared_ptr<ncc::core::Environment> env);
+    ~Parser();
+
+    ASTRoot parse(qlex_t *lexer);
+
+    static ASTRoot FromLexer(qlex_t *lexer,
+                             std::shared_ptr<ncc::core::Environment> env);
+
+    static ASTRoot FromString(std::string_view str,
+                              std::shared_ptr<ncc::core::Environment> env);
+
+    static ASTRoot FromStream(std::istream &stream,
+                              std::shared_ptr<ncc::core::Environment> env);
+  };
+}  // namespace ncc::parse
 
 /**
  * @brief Create a new parser instance from non-owning references to a lexer and
@@ -104,38 +139,5 @@ bool npar_do(npar_t *parser, ncc::parse::Base **out);
  * @note This function is thread safe.
  */
 bool npar_check(npar_t *parser, const ncc::parse::Base *base);
-
-/**
- * @brief A callback function to facilitate the communication reports generated
- * by the parser.
- *
- * @param msg The message to report.
- * @param len The length of the message.
- * @param data The user data to pass to the callback.
- *
- * @note This function is thread safe.
- */
-typedef void (*npar_dump_cb)(const char *msg, size_t len, uintptr_t data);
-
-/**
- * @brief Dump the parser's reports to a callback function.
- *
- * @param parser The parser instance to dump reports from.
- * @param cb The callback function to pass reports to.
- * @param data An arbitrary pointer to pass to every callback function.
- *
- * @note If `!parser` or `!cb`, this function is a no-op.
- *
- * @note This function is thread safe.
- */
-void npar_dumps(npar_t *parser, bool no_ansi, npar_dump_cb cb, uintptr_t data);
-
-namespace ncc::parse {
-  class Parser final {
-  public:
-    Parser(std::shared_ptr<ncc::core::Environment> env);
-    ~Parser();
-  };
-}  // namespace ncc::parse
 
 #endif  // __NITRATE_AST_PARSER_H__

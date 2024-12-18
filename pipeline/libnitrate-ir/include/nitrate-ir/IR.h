@@ -41,7 +41,7 @@
 #include <stdio.h>
 
 namespace ncc::parse {
-  struct Base;
+  class Base;
 }
 
 #ifdef __cplusplus

@@ -54,8 +54,6 @@ namespace ncc::parse {
     Default = Clang16Color,
   };
 
-  typedef std::function<void(const char *)> DiagnosticMessageHandler;
-
   struct DiagMessage {
     std::string msg;
     qlex_tok_t tok;
@@ -66,11 +64,9 @@ namespace ncc::parse {
     std::vector<DiagMessage> m_msgs;
 
     std::string mint_clang16_message(const DiagMessage &msg) const;
-    std::string mint_plain_message(const DiagMessage &msg) const;
 
   public:
     void push(DiagMessage &&msg);
-    size_t render(DiagnosticMessageHandler handler, FormatStyle style) const;
 
     void set_ctx(npar_t *parser) { m_parser = parser; }
   };
@@ -133,7 +129,6 @@ namespace ncc::parse {
 
 struct npar_t {
   std::shared_ptr<ncc::core::Environment> env;
-  uint64_t id; /* Process unique instance identifier. Never reused. Never 0. */
   std::unique_ptr<ncc::core::IMemory> allocator; /* The Main allocator */
   ncc::parse::DiagnosticManager diag;            /* The Diagnostic Manager */
   qlex_t *lexer;                                 /* Polymporphic lexer */
