@@ -40,7 +40,7 @@
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTReader.hh>
 #include <nitrate-parser/ASTWriter.hh>
-#include <nitrate-parser/Parser.hh>
+#include <nitrate-parser/Context.hh>
 
 #include "nitrate-core/Environment.hh"
 
@@ -389,7 +389,7 @@ CPP_EXPORT void npar_free(npar_t* parser) {
 
 static thread_local npar_t* parser_ctx;
 
-CPP_EXPORT bool npar_do(npar_t* L, npar_node_t** out) {
+CPP_EXPORT bool npar_do(npar_t* L, Base** out) {
   if (!L || !out) {
     return false;
   }
@@ -415,7 +415,7 @@ CPP_EXPORT bool npar_do(npar_t* L, npar_node_t** out) {
   return !L->failed;
 }
 
-CPP_EXPORT bool npar_check(npar_t* parser, const npar_node_t* base) {
+CPP_EXPORT bool npar_check(npar_t* parser, const Base* base) {
   if (!base) {
     return false;
   }

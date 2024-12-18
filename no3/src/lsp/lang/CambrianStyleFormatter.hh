@@ -86,7 +86,7 @@ namespace lsp::fmt {
       }
     }
 
-    void visit(npar_node_t const& n) override;
+    void visit(npar::Base const& n) override;
     void visit(npar::ExprStmt const& n) override;
     void visit(npar::StmtExpr const& n) override;
     void visit(npar::TypeExpr const& n) override;
@@ -164,7 +164,7 @@ namespace lsp::fmt {
     }
     virtual ~CambrianFormatter() = default;
 
-    bool format(npar_node_t* root) override {
+    bool format(npar::Base* root) override {
       root->accept(*this);
       bool ok = !failed;
       reset_state();

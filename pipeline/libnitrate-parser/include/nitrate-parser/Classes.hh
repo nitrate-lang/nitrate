@@ -37,7 +37,7 @@
 #include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-parser/AST.hh>
-#include <nitrate-parser/Parser.hh>
+#include <nitrate-parser/Context.hh>
 
 class nr_syn final {
   npar_t *m_parser;

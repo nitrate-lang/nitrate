@@ -255,8 +255,8 @@ public:
 };
 
 using ArgCallback = std::function<void(const char *)>;
-static std::optional<npar_node_t *> parse_tokens(npar_t *L) {
-  npar_node_t *root = nullptr;
+static std::optional<npar::Base *> parse_tokens(npar_t *L) {
+  npar::Base *root = nullptr;
   bool ok = npar_do(L, &root);
 
   npar_dumps(

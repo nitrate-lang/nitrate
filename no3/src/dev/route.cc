@@ -53,8 +53,8 @@
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Classes.hh>
+#include <nitrate-parser/Context.hh>
 #include <nitrate-parser/Init.hh>
-#include <nitrate-parser/Parser.hh>
 #include <nitrate-seq/Classes.hh>
 #include <string_view>
 #include <unordered_map>
@@ -136,7 +136,7 @@ static int do_parse(std::string source, std::string output) {
   qprep lexer(file, "in", env);
   nr_syn parser(lexer.get(), env);
 
-  npar_node_t *tree = nullptr;
+  npar::Base *tree = nullptr;
 
   bool ok = npar_do(parser.get(), &tree);
 
@@ -188,7 +188,7 @@ static int do_nr(std::string source, std::string output, std::string opts,
   qprep lexer(file, "in", env);
   nr_syn parser(lexer.get(), env);
 
-  npar_node_t *tree = nullptr;
+  npar::Base *tree = nullptr;
 
   bool ok = npar_do(parser.get(), &tree);
 
@@ -260,7 +260,7 @@ static int do_codegen(std::string source, std::string output, std::string opts,
   qprep lexer(file, "in", env);
   nr_syn parser(lexer.get(), env);
 
-  npar_node_t *tree = nullptr;
+  npar::Base *tree = nullptr;
 
   bool ok = npar_do(parser.get(), &tree);
 

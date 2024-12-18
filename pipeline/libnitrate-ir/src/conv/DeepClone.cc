@@ -40,7 +40,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IRGraph.hh>
-#include <nitrate-parser/Parser.hh>
+#include <nitrate-parser/Context.hh>
 #include <unordered_map>
 #include <unordered_set>
 

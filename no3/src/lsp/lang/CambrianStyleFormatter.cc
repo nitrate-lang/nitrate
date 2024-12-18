@@ -261,7 +261,7 @@ void CambrianFormatter::format_type_metadata(Type const& n) {
   }
 }
 
-void CambrianFormatter::visit(npar_node_t const&) {
+void CambrianFormatter::visit(Base const&) {
   /** This node symbolizes a placeholder value in the event of an error. */
   failed = true;
 

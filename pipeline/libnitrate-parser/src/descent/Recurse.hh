@@ -39,7 +39,7 @@
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTCommon.hh>
-#include <nitrate-parser/Parser.hh>
+#include <nitrate-parser/Context.hh>
 #include <set>
 
 namespace npar {

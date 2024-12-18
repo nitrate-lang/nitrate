@@ -39,9 +39,8 @@
 #include <boost/bimap.hpp>
 #include <cstdarg>
 #include <nitrate-lexer/Token.hh>
+#include <nitrate-parser/ASTBase.hh>
 #include <string_view>
-
-struct npar_node_t;
 
 namespace nr {
   enum class IC {

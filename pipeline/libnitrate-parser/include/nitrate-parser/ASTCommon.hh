@@ -141,9 +141,8 @@ typedef enum npar_ty_t {
 
 #define QAST_COUNT (QAST__LAST - QAST__FIRST + 1)
 
-struct npar_node_t;
-
 namespace npar {
+  struct Base;
   class Stmt;
   class Type;
   class Expr;

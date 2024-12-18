@@ -54,7 +54,7 @@ CREATE_TRANSFORM(nit::nr) {
     out_mode = OutMode::MsgPack;
   }
 
-  std::optional<npar_node_t *> root;
+  std::optional<npar::Base *> root;
 
   if (source.peek() == '{') {
     root = npar::AST_JsonReader(source).get();

@@ -49,7 +49,7 @@
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/Report.hh>
 #include <nitrate-parser/AST.hh>
-#include <nitrate-parser/Parser.hh>
+#include <nitrate-parser/Context.hh>
 #include <stack>
 #include <string>
 #include <string_view>
@@ -101,14 +101,13 @@ using EResult = std::optional<Expr *>;
 using BResult = std::optional<std::vector<nr::Expr *>>;
 
 static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, IReport *G,
-                                           npar_node_t *node);
-static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G,
-                         npar_node_t *node);
+                                           npar::Base *node);
+static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar::Base *node);
 
 #define next_one(n) nrgen_one(b, s, G, n)
 #define next_any(n) nrgen_any(b, s, G, n)
 
-C_EXPORT bool nr_lower(qmodule_t **mod, npar_node_t *base, const char *name,
+C_EXPORT bool nr_lower(qmodule_t **mod, npar::Base *base, const char *name,
                        bool diagnostics) {
   if (!mod || !base) {
     return false;
@@ -1926,7 +1925,7 @@ static EResult nrgen_expr_stmt(NRBuilder &b, PState &s, IReport *G,
   return next_one(n->get_expr());
 }
 
-static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
+static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar::Base *n) {
   using namespace nr;
 
   if (!n) {
@@ -2200,7 +2199,7 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
   return out;
 }
 
-static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
+static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar::Base *n) {
   using namespace nr;
 
   if (!n) {

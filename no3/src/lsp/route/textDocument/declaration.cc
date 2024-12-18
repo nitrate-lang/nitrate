@@ -93,7 +93,7 @@ void do_declaration(const lsp::RequestMessage& req,
   /// post-processed locations. We want static (unprocessed) locations herenow.
   /// How do i get that? My whole codebase is not legacy...
 
-  // tree->root()->iterate([&](const npar_node_t* node) {
+  // tree->root()->iterate([&](const Base* node) {
   //   if (!node->is_decl() || node->as<npar::Decl>()->get_name().view() !=
   //   current_word)
   //       [[likely]] {

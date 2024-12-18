@@ -43,7 +43,10 @@
 #include <string_view>
 #include <unordered_set>
 
-struct npar_node_t;
+namespace npar {
+  struct Base;
+
+}
 
 namespace nr {
   struct IssueInfo {

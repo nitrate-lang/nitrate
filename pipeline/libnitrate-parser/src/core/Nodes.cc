@@ -37,7 +37,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTWriter.hh>
-#include <nitrate-parser/Parser.hh>
+#include <nitrate-parser/Context.hh>
 #include <sstream>
 
 using namespace npar;
@@ -47,17 +47,16 @@ CPP_EXPORT thread_local std::unique_ptr<ncc::core::IMemory>
 
 ///=============================================================================
 
-CPP_EXPORT std::ostream &npar_node_t::dump(std::ostream &os,
-                                           bool isForDebug) const {
+CPP_EXPORT std::ostream &Base::dump(std::ostream &os, bool isForDebug) const {
   (void)isForDebug;
 
   AST_JsonWriter writer(os);
-  const_cast<npar_node_t *>(this)->accept(writer);
+  const_cast<Base *>(this)->accept(writer);
 
   return os;
 }
 
-CPP_EXPORT bool npar_node_t::isSame(const npar_node_t *o) const {
+CPP_EXPORT bool Base::isSame(const Base *o) const {
   if (this == o) {
     return true;
   }
@@ -72,10 +71,10 @@ CPP_EXPORT bool npar_node_t::isSame(const npar_node_t *o) const {
   return ss1.str() == ss2.str();
 }
 
-CPP_EXPORT uint64_t npar_node_t::hash64() const {
+CPP_EXPORT uint64_t Base::hash64() const {
   AST_Hash64 visitor;
 
-  const_cast<npar_node_t *>(this)->accept(visitor);
+  const_cast<Base *>(this)->accept(visitor);
 
   return visitor.get();
 }

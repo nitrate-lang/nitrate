@@ -42,7 +42,7 @@ namespace npar {
   public:
     virtual ~ASTVisitor() = default;
 
-    virtual void visit(npar_node_t const &n) = 0;
+    virtual void visit(Base const &n) = 0;
     virtual void visit(ExprStmt const &n) = 0;
     virtual void visit(StmtExpr const &n) = 0;
     virtual void visit(TypeExpr const &n) = 0;

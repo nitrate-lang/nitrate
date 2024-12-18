@@ -68,7 +68,7 @@ namespace npar {
 
     bool m_include_source_location;
 
-    void write_source_location(npar_node_t const& n) const;
+    void write_source_location(Base const& n) const;
     void write_type_metadata(Type const& n);
 
     std::string_view vis_str(Vis vis) const;
@@ -91,7 +91,7 @@ namespace npar {
           m_include_source_location(include_source_location) {}
     virtual ~AST_Writer() = default;
 
-    void visit(npar_node_t const& n) override;
+    void visit(Base const& n) override;
     void visit(ExprStmt const& n) override;
     void visit(StmtExpr const& n) override;
     void visit(TypeExpr const& n) override;

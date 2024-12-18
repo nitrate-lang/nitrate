@@ -43,14 +43,14 @@
 using namespace npar;
 
 class IterVisitor : public ASTVisitor {
-  std::vector<npar_node_t**>& sub;
+  std::vector<Base**>& sub;
 
-  void visit(npar_node_t const& n) override {}
+  void visit(Base const& n) override {}
 
   void visit(ExprStmt const& n) override {
     /// TODO: Implement IterVisitor
     qcore_implement();
-    // sub.push_back(reinterpret_cast<npar_node_t**>(&n.get_expr()));
+    // sub.push_back(reinterpret_cast<Base**>(&n.get_expr()));
     (void)sub;
   }
 
@@ -390,13 +390,13 @@ class IterVisitor : public ASTVisitor {
   }
 
 public:
-  IterVisitor(std::vector<npar_node_t**>& children) : sub(children) {}
+  IterVisitor(std::vector<Base**>& children) : sub(children) {}
 };
 
 #define FORCE_INLINE __attribute__((always_inline)) inline
 
-static FORCE_INLINE void get_children_sorted(
-    npar_node_t* base, ChildSelect cs, std::vector<npar_node_t**>& children) {
+static FORCE_INLINE void get_children_sorted(Base* base, ChildSelect cs,
+                                             std::vector<Base**>& children) {
   children.clear();
 
   if (!base) [[unlikely]] {
@@ -411,21 +411,19 @@ static FORCE_INLINE void get_children_sorted(
   return;
 }
 
-CPP_EXPORT void detail::dfs_pre_impl(npar_node_t** base, IterCallback cb,
+CPP_EXPORT void detail::dfs_pre_impl(Base** base, IterCallback cb,
                                      ChildSelect cs) {
   qcore_assert(base != nullptr && cb != nullptr,
                "dfs_pre_impl: base and cb must not be null");
 
   if (!cs) { /* Iterate in the order the children are stored in the classes */
-    cs = [](npar_node_t** a, npar_node_t** b) -> bool {
-      return (uintptr_t)a < (uintptr_t)b;
-    };
+    cs = [](Base** a, Base** b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
   }
 
-  const auto syncfn = [](npar_node_t** n, const IterCallback& cb,
+  const auto syncfn = [](Base** n, const IterCallback& cb,
                          const ChildSelect& cs) {
-    std::stack<std::pair<npar_node_t*, npar_node_t**>> s;
-    std::vector<npar_node_t**> children;
+    std::stack<std::pair<Base*, Base**>> s;
+    std::vector<Base**> children;
 
     s.push({nullptr, n});
 
@@ -461,21 +459,19 @@ CPP_EXPORT void detail::dfs_pre_impl(npar_node_t** base, IterCallback cb,
   syncfn(base, cb, cs);
 }
 
-CPP_EXPORT void detail::dfs_post_impl(npar_node_t** base, IterCallback cb,
+CPP_EXPORT void detail::dfs_post_impl(Base** base, IterCallback cb,
                                       ChildSelect cs) {
   qcore_assert(base != nullptr && cb != nullptr,
                "dfs_post_impl: base and cb must not be null");
 
   if (!cs) { /* Iterate in the order the children are stored in the classes */
-    cs = [](npar_node_t** a, npar_node_t** b) -> bool {
-      return (uintptr_t)a < (uintptr_t)b;
-    };
+    cs = [](Base** a, Base** b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
   }
 
-  const auto syncfn = [](npar_node_t** n, const IterCallback& cb,
+  const auto syncfn = [](Base** n, const IterCallback& cb,
                          const ChildSelect& cs) {
-    std::stack<std::pair<npar_node_t*, npar_node_t**>> s;
-    std::vector<npar_node_t**> children;
+    std::stack<std::pair<Base*, Base**>> s;
+    std::vector<Base**> children;
 
     s.push({nullptr, n});
 
@@ -508,21 +504,19 @@ CPP_EXPORT void detail::dfs_post_impl(npar_node_t** base, IterCallback cb,
   cb(nullptr, base);
 }
 
-CPP_EXPORT void detail::bfs_pre_impl(npar_node_t** base, IterCallback cb,
+CPP_EXPORT void detail::bfs_pre_impl(Base** base, IterCallback cb,
                                      ChildSelect cs) {
   qcore_assert(base != nullptr && cb != nullptr,
                "bfs_pre_impl: base and cb must not be null");
 
   if (!cs) { /* Iterate in the order the children are stored in the classes */
-    cs = [](npar_node_t** a, npar_node_t** b) -> bool {
-      return (uintptr_t)a < (uintptr_t)b;
-    };
+    cs = [](Base** a, Base** b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
   }
 
-  const auto syncfn = [](npar_node_t** n, const IterCallback& cb,
+  const auto syncfn = [](Base** n, const IterCallback& cb,
                          const ChildSelect& cs) {
-    std::queue<std::pair<npar_node_t*, npar_node_t**>> s;
-    std::vector<npar_node_t**> children;
+    std::queue<std::pair<Base*, Base**>> s;
+    std::vector<Base**> children;
 
     s.push({nullptr, n});
 
@@ -558,21 +552,19 @@ CPP_EXPORT void detail::bfs_pre_impl(npar_node_t** base, IterCallback cb,
   syncfn(base, cb, cs);
 }
 
-CPP_EXPORT void detail::bfs_post_impl(npar_node_t** base, IterCallback cb,
+CPP_EXPORT void detail::bfs_post_impl(Base** base, IterCallback cb,
                                       ChildSelect cs) {
   qcore_assert(base != nullptr && cb != nullptr,
                "bfs_post_impl: base and cb must not be null");
 
   if (!cs) { /* Iterate in the order the children are stored in the classes */
-    cs = [](npar_node_t** a, npar_node_t** b) -> bool {
-      return (uintptr_t)a < (uintptr_t)b;
-    };
+    cs = [](Base** a, Base** b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
   }
 
-  const auto syncfn = [](npar_node_t** n, const IterCallback& cb,
+  const auto syncfn = [](Base** n, const IterCallback& cb,
                          const ChildSelect& cs) {
-    std::queue<std::pair<npar_node_t*, npar_node_t**>> s;
-    std::vector<npar_node_t**> children;
+    std::queue<std::pair<Base*, Base**>> s;
+    std::vector<Base**> children;
 
     s.push({nullptr, n});
 
@@ -605,23 +597,21 @@ CPP_EXPORT void detail::bfs_post_impl(npar_node_t** base, IterCallback cb,
   syncfn(base, cb, cs);
 }
 
-CPP_EXPORT void detail::iter_children(npar_node_t** base, IterCallback cb,
+CPP_EXPORT void detail::iter_children(Base** base, IterCallback cb,
                                       ChildSelect cs) {
   qcore_assert(base != nullptr && cb != nullptr,
                "iter_children: base and cb must not be null");
 
   if (!cs) { /* Iterate in the order the children are stored in the classes */
-    cs = [](npar_node_t** a, npar_node_t** b) -> bool {
-      return (uintptr_t)a < (uintptr_t)b;
-    };
+    cs = [](Base** a, Base** b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
   }
 
-  const auto syncfn = [](npar_node_t** n, const IterCallback& cb,
+  const auto syncfn = [](Base** n, const IterCallback& cb,
                          const ChildSelect& cs) {
-    std::vector<npar_node_t**> children;
+    std::vector<Base**> children;
     get_children_sorted(*n, cs, children);
 
-    for (npar_node_t** child : children) {
+    for (Base** child : children) {
       switch (cb(*n, child)) {
         case IterOp::Proceed: {
           break;

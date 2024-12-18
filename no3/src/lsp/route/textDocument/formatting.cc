@@ -7,14 +7,13 @@
 #include <lsp/lang/Format.hh>
 #include <lsp/route/RoutesList.hh>
 #include <memory>
+#include <nitrate-core/Environment.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Classes.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/Classes.hh>
 #include <sstream>
 #include <string>
-
-#include "nitrate-core/Environment.hh"
 
 using namespace rapidjson;
 
@@ -110,7 +109,7 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   qlex lexer(ss, uri.c_str(), env);
   nr_syn parser(lexer.get(), env);
 
-  npar_node_t* root = nullptr;
+  npar::Base* root = nullptr;
   if (!npar_do(parser.get(), &root)) {
     return;
   }

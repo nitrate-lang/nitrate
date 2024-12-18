@@ -34,7 +34,7 @@
 #include <core/Context.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-parser/Parser.hh>
+#include <nitrate-parser/Context.hh>
 #include <sstream>
 
 using namespace npar;

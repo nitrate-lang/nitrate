@@ -1,5 +1,5 @@
 
-void recurse(npar_node_t* C) {
+void recurse(Base* C) {
   /**
    * TODO: Resolve the following issues:
    * - Parentheses are currently lost and the order of sub-expressions is not

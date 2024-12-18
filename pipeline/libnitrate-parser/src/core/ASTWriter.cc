@@ -41,7 +41,7 @@
 using namespace npar;
 using namespace ncc::core;
 
-void AST_Writer::write_source_location(npar_node_t const& n) const {
+void AST_Writer::write_source_location(Base const& n) const {
   if (m_include_source_location) {
     string("loc");
     begin_obj(2);
@@ -86,7 +86,7 @@ std::string_view AST_Writer::vis_str(Vis vis) const {
   }
 }
 
-void AST_Writer::visit(npar_node_t const& n) {
+void AST_Writer::visit(Base const& n) {
   begin_obj(2);
 
   string("kind");
@@ -954,8 +954,7 @@ void AST_Writer::visit(FString const& n) {
         begin_obj(2);
 
         string("kind");
-        let kind_name =
-            npar_node_t::getKindName(npar_node_t::getTypeCode<ConstString>());
+        let kind_name = Base::getKindName(Base::getTypeCode<ConstString>());
         string(kind_name);
 
         string("value");

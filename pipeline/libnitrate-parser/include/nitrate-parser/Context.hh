@@ -34,14 +34,15 @@
 #ifndef __NITRATE_AST_PARSER_H__
 #define __NITRATE_AST_PARSER_H__
 
-#include <stdbool.h>
-
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Lexer.hh>
 
 typedef struct npar_t npar_t;
-typedef struct npar_node_t npar_node_t;
+
+namespace npar {
+  struct Base;
+}
 
 /**
  * @brief Create a new parser instance from non-owning references to a lexer and
@@ -88,7 +89,7 @@ void npar_free(npar_t *parser);
  *
  * @note This function is thread safe.
  */
-bool npar_do(npar_t *parser, npar_node_t **out);
+bool npar_do(npar_t *parser, npar::Base **out);
 
 /**
  * @brief Check if the parse tree is valid.
@@ -102,7 +103,7 @@ bool npar_do(npar_t *parser, npar_node_t **out);
  *
  * @note This function is thread safe.
  */
-bool npar_check(npar_t *parser, const npar_node_t *base);
+bool npar_check(npar_t *parser, const npar::Base *base);
 
 /**
  * @brief A callback function to facilitate the communication reports generated
@@ -128,5 +129,13 @@ typedef void (*npar_dump_cb)(const char *msg, size_t len, uintptr_t data);
  * @note This function is thread safe.
  */
 void npar_dumps(npar_t *parser, bool no_ansi, npar_dump_cb cb, uintptr_t data);
+
+namespace ncc::parse {
+  class Parser final {
+  public:
+    Parser(std::shared_ptr<ncc::core::Environment> env);
+    ~Parser();
+  };
+}  // namespace ncc::parse
 
 #endif  // __NITRATE_AST_PARSER_H__

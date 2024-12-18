@@ -49,7 +49,7 @@ namespace npar {
     };
 
     std::stack<State> m_state;
-    std::stack<npar_node_t*> m_parse;
+    std::stack<Base*> m_parse;
 
     void handle_state();
 
@@ -68,7 +68,7 @@ namespace npar {
     AST_Reader() { m_state.push(State::ObjStart); }
     virtual ~AST_Reader() = default;
 
-    std::optional<npar_node_t*> get() {
+    std::optional<Base*> get() {
       if (m_parse.empty() || m_parse.top() == nullptr) {
         return std::nullopt;
       }
