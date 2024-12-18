@@ -36,37 +36,123 @@
 
 #include <mutex>
 #include <optional>
+#include <string>
 #include <string_view>
 
 namespace ncc::core {
-  class Library;
+  template <typename Impl>
+  class LibraryRC;
 
-  class CoreLibraryAutoClose final {
-    friend class Library;
+  template <typename Impl>
+  class LibraryRCAutoClose final {
+    friend class LibraryRC<Impl>;
 
-    CoreLibraryAutoClose() = default;
-
-  public:
-    ~CoreLibraryAutoClose();
-  };
-
-  class Library final {
-    Library() = delete;
-
-    static size_t ref_count;
-    static std::mutex ref_count_mutex;
-
-    static bool init_library();
-    static void deinit_library();
+    LibraryRCAutoClose() = default;
 
   public:
-    static bool InitRC();
-    static void DeinitRC();
-    static bool IsInitialized();
-    static std::string_view GetVersion();
-
-    static std::optional<CoreLibraryAutoClose> GetRC();
+    ~LibraryRCAutoClose() { Impl::DeinitRC(); }
   };
+
+  template <typename Impl>
+  class LibraryRC final {
+    LibraryRC() = delete;
+
+    inline static size_t ref_count;
+    inline static std::mutex ref_count_mutex;
+
+  public:
+    static bool InitRC() {
+      std::lock_guard<std::mutex> lock(ref_count_mutex);
+
+      if (ref_count == 0) {
+        if (!Impl::Init()) {
+          return false;
+        }
+      }
+
+      ++ref_count;
+
+      return true;
+    }
+
+    static void DeinitRC() {
+      std::lock_guard<std::mutex> lock(ref_count_mutex);
+
+      if (ref_count > 0 && --ref_count == 0) {
+        Impl::Deinit();
+      }
+    }
+
+    static bool IsInitialized() {
+      std::lock_guard<std::mutex> lock(ref_count_mutex);
+
+      return ref_count > 0;
+    }
+
+    static std::string_view GetVersion() {
+      static std::string version_string =
+
+          std::string("[") + std::string(Impl::GetVersionId()) +
+          std::string(
+              "] ["
+
+#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
+    defined(_M_X64) || defined(_M_AMD64)
+              "x86_64-"
+#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
+              "x86-"
+#elif defined(__aarch64__)
+              "aarch64-"
+#elif defined(__arm__)
+              "arm-"
+#else
+              "unknown-"
+#endif
+
+#if defined(__linux__)
+              "linux-"
+#elif defined(__APPLE__)
+              "macos-"
+#elif defined(_WIN32)
+              "win32-"
+#else
+              "unknown-"
+#endif
+
+#if defined(__clang__)
+              "clang] "
+#elif defined(__GNUC__)
+              "gnu] "
+#else
+              "unknown] "
+#endif
+
+#if NDEBUG
+              "[release]"
+#else
+              "[debug]"
+#endif
+          );
+
+      return version_string;
+    }
+
+    static std::optional<LibraryRCAutoClose<Impl>> GetRC() {
+      if (!InitRC()) {
+        return std::nullopt;
+      }
+
+      return LibraryRCAutoClose<Impl>();
+    }
+  };
+
+  struct CoreLibrarySetup final {
+    static bool Init();
+    static void Deinit();
+    static std::string_view GetVersionId();
+  };
+
+  using CoreLibrary = LibraryRC<CoreLibrarySetup>;
 
 }  // namespace ncc::core
 

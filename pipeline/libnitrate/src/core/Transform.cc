@@ -156,18 +156,20 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
   /* Transform                                                               */
   /***************************************************************************/
 
+  bool status = false;
+
   if (let options = parse_options(c_options)) {
     if (!options->empty()) {
       std::unordered_set opts_set(options->begin() + 1, options->end());
       let name = options->at(0).c_str();
 
-      return nit_dispatch_request(in, out, name, opts_set, env);
-    } else { /* No options provided */
-      return true;
-    }
-  } else { /* Failed to parse options */
-    return false;
-  }
+      status = nit_dispatch_request(in, out, name, opts_set, env);
+    } /* No options provided */
+  } /* Failed to parse options */
+
+  qcore_bind_logger(nullptr, nullptr);
+
+  return status;
 }
 
 CPP_EXPORT nitrate::LazyResult<bool> nitrate::pipeline(

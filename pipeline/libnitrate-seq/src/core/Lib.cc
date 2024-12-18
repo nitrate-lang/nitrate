@@ -49,7 +49,7 @@ C_EXPORT bool qprep_lib_init() {
     return true;
   }
 
-  if (!ncc::core::Library::InitRC()) {
+  if (!ncc::core::CoreLibrary::InitRC()) {
     return false;
   }
 
@@ -68,7 +68,7 @@ C_EXPORT void qprep_lib_deinit() {
   do_deinit();
 
   qlex_lib_deinit();
-  ncc::core::Library::DeinitRC();
+  ncc::core::CoreLibrary::DeinitRC();
 
   return;
 }

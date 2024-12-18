@@ -34,48 +34,16 @@
 #ifndef __NITRATE_AST_LIB_H__
 #define __NITRATE_AST_LIB_H__
 
-#include <stdbool.h>
+#include <nitrate-core/Init.hh>
 
-#include <nitrate-parser/Parser.hh>
+namespace ncc::parse {
+  struct ParseLibrarySetup {
+    static bool Init();
+    static void Deinit();
+    static std::string_view GetVersionId();
+  };
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @brief Initialize the library.
- *
- * @return true if the library was initialized successfully.
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not reinitialize the library, but will
- * increment the reference count.
- */
-bool npar_lib_init();
-
-/**
- * @brief Deinitialize the library.
- *
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not deinitialize the library, but when
- * the reference count reaches zero, the library will be deinitialized.
- */
-void npar_lib_deinit();
-
-/**
- * @brief Get the version of the library.
- *
- * @return The version string of the library.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after
- * deinitialization.
- */
-const char* npar_lib_version();
-
-#ifdef __cplusplus
-}
-#endif
+  using ParseLibrary = core::LibraryRC<ParseLibrarySetup>;
+}  // namespace ncc::parse
 
 #endif  // __NITRATE_AST_LIB_H__

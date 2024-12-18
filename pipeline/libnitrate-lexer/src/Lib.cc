@@ -46,7 +46,7 @@ C_EXPORT bool qlex_lib_init() {
 
   // Initialize the library here.
 
-  if (!ncc::core::Library::InitRC()) {
+  if (!ncc::core::CoreLibrary::InitRC()) {
     return false;
   }
 
@@ -60,7 +60,7 @@ C_EXPORT void qlex_lib_deinit() {
 
   // Deinitialize the library here.
 
-  ncc::core::Library::DeinitRC();
+  ncc::core::CoreLibrary::DeinitRC();
   return;
 }
 

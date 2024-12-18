@@ -35,106 +35,25 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/String.hh>
 
+#include "nitrate-core/Logger.hh"
+
 using namespace ncc::core;
 
-size_t Library::ref_count;
-std::mutex Library::ref_count_mutex;
-
-CPP_EXPORT CoreLibraryAutoClose::~CoreLibraryAutoClose() {
-  Library::DeinitRC();
-}
-
-bool Library::init_library() {
+CPP_EXPORT bool CoreLibrarySetup::Init() {
   // Nothing to do here for now.
+
+  qcore_print(QCORE_DEBUG, "Initialized Nitrate Core Library");
 
   return true;
 }
 
-void Library::deinit_library() {
+CPP_EXPORT void CoreLibrarySetup::Deinit() {
+  qcore_print(QCORE_DEBUG, "Deinitialing Nitrate Core Library...");
+
   /* After nitrate-core is deinitialized, all str_aliases are invalid. */
   StringMemory::Clear();
 }
 
-CPP_EXPORT bool Library::InitRC() {
-  std::lock_guard<std::mutex> lock(ref_count_mutex);
-
-  if (ref_count == 0) {
-    if (!init_library()) {
-      return false;
-    }
-  }
-
-  ++ref_count;
-
-  return true;
-}
-
-CPP_EXPORT void Library::DeinitRC() {
-  std::lock_guard<std::mutex> lock(ref_count_mutex);
-
-  if (ref_count > 0 && --ref_count == 0) {
-    deinit_library();
-  }
-}
-
-CPP_EXPORT bool Library::IsInitialized() {
-  std::lock_guard<std::mutex> lock(ref_count_mutex);
-
-  return ref_count > 0;
-}
-
-CPP_EXPORT std::string_view Library::GetVersion() {
-  static std::string_view version_string =
-
-      "[" __TARGET_VERSION
-      "] ["
-
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
-    defined(_M_X64) || defined(_M_AMD64)
-      "x86_64-"
-#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
-      "x86-"
-#elif defined(__aarch64__)
-      "aarch64-"
-#elif defined(__arm__)
-      "arm-"
-#else
-      "unknown-"
-#endif
-
-#if defined(__linux__)
-      "linux-"
-#elif defined(__APPLE__)
-      "macos-"
-#elif defined(_WIN32)
-      "win32-"
-#else
-      "unknown-"
-#endif
-
-#if defined(__clang__)
-      "clang] "
-#elif defined(__GNUC__)
-      "gnu] "
-#else
-      "unknown] "
-#endif
-
-#if NDEBUG
-      "[release]"
-#else
-      "[debug]"
-#endif
-
-      ;
-
-  return version_string;
-}
-
-CPP_EXPORT std::optional<CoreLibraryAutoClose> Library::GetRC() {
-  if (!InitRC()) {
-    return std::nullopt;
-  }
-
-  return CoreLibraryAutoClose();
+CPP_EXPORT std::string_view CoreLibrarySetup::GetVersionId() {
+  return __TARGET_VERSION;
 }

@@ -329,7 +329,7 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
   }
 
   { /* Initialize libraries */
-    if (!ncc::core::Library::InitRC()) {
+    if (!ncc::core::CoreLibrary::InitRC()) {
       LOG(ERROR) << "Failed to initialize NITRATE-CORE library" << std::endl;
       return false;
     }
@@ -344,7 +344,7 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
       return false;
     }
 
-    if (!npar_lib_init()) {
+    if (!ncc::parse::ParseLibrary::InitRC()) {
       LOG(ERROR) << "Failed to initialize NITRATE-PARSE library" << std::endl;
       return false;
     }

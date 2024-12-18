@@ -32,8 +32,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <cstdio>
+#include <mutex>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <queue>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -43,7 +45,15 @@ static thread_local struct LoggerState {
   qcore_log_t log_level;
 } g_log;
 
-static void qcore_default_logger(qcore_log_t, const char *, size_t, void *) {}
+static std::queue<std::pair<qcore_log_t, std::string>> g_log_orphaned;
+static std::recursive_mutex g_log_orphaned_mutex;
+
+static void qcore_default_logger(qcore_log_t level, const char *msg, size_t len,
+                                 void *) {
+  std::lock_guard<std::recursive_mutex> lock(g_log_orphaned_mutex);
+
+  g_log_orphaned.push({level, std::string(msg, len)});
+}
 
 static thread_local qcore_logger_t g_current_logger = qcore_default_logger;
 static thread_local void *g_current_logger_data = nullptr;
@@ -96,6 +106,18 @@ C_EXPORT void qcore_end() {
     case QCORE_FATAL: {
       log_message << "\x1b[31;1;4mfatal error:\x1b[0m " << message << "\x1b[0m";
       break;
+    }
+  }
+
+  // If the logger is not the default logger, we need to flush the log queue
+  // before calling the custom logger.
+  if (g_current_logger != qcore_default_logger) {
+    std::lock_guard<std::recursive_mutex> lock(g_log_orphaned_mutex);
+
+    while (!g_log_orphaned.empty()) {
+      auto [level, msg] = g_log_orphaned.front();
+      g_current_logger(level, msg.c_str(), msg.size(), g_current_logger_data);
+      g_log_orphaned.pop();
     }
   }
 
