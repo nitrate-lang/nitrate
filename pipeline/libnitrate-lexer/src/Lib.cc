@@ -31,11 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Lib.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Lib.h>
 
 #include <atomic>
+#include <nitrate-core/Init.hh>
 
 static std::atomic<size_t> qlex_lib_ref_count = 0;
 
@@ -46,7 +46,7 @@ C_EXPORT bool qlex_lib_init() {
 
   // Initialize the library here.
 
-  if (!qcore_lib_init()) {
+  if (!ncc::core::Library::InitRC()) {
     return false;
   }
 
@@ -60,7 +60,7 @@ C_EXPORT void qlex_lib_deinit() {
 
   // Deinitialize the library here.
 
-  qcore_lib_deinit();
+  ncc::core::Library::DeinitRC();
   return;
 }
 

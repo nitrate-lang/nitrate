@@ -34,32 +34,15 @@
 #include <llvm-18/llvm/MC/TargetRegistry.h>
 #include <llvm-18/llvm/Support/ManagedStatic.h>
 #include <llvm-18/llvm/Support/TargetSelect.h>
-#include <nitrate-core/Lib.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-emit/Lib.h>
 #include <sys/resource.h>
 
 #include <atomic>
 #include <iostream>
+#include <nitrate-core/Init.hh>
 
 static std::atomic<size_t> qcode_lib_ref_count = 0;
-
-static void increase_stack_size() {
-  const rlim_t kStackSize = 64 * 1024 * 1024;  // min stack size = 64 MB
-  struct rlimit rl;
-  int result;
-
-  result = getrlimit(RLIMIT_STACK, &rl);
-  if (result == 0) {
-    if (rl.rlim_cur < kStackSize) {
-      rl.rlim_cur = kStackSize;
-      result = setrlimit(RLIMIT_STACK, &rl);
-      if (result != 0) {
-        qcore_panicf("setrlimit returned result = %d\n", result);
-      }
-    }
-  }
-}
 
 static bool InitializeLLVM() {
 #ifdef LLVM_SUUPORT_ALL_TARGETS
@@ -84,7 +67,6 @@ static bool InitializeLLVM() {
 static void DoinitializeLLVM() { llvm::llvm_shutdown(); }
 
 static bool do_init() {
-  increase_stack_size();
   if (!InitializeLLVM()) {
     return false;
   }
@@ -99,7 +81,7 @@ C_EXPORT bool qcode_lib_init() {
     return true;
   }
 
-  if (!qcore_lib_init()) {
+  if (!ncc::core::Library::InitRC()) {
     return false;
   }
 
@@ -113,7 +95,7 @@ C_EXPORT void qcode_lib_deinit() {
 
   do_deinit();
 
-  qcore_lib_deinit();
+  ncc::core::Library::DeinitRC();
 }
 
 C_EXPORT const char* qcode_lib_version() {

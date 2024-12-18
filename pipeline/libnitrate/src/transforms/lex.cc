@@ -31,11 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Lib.h>
 #include <nitrate/code.h>
 
 #include <core/SerialUtil.hh>
 #include <core/Transform.hh>
+#include <nitrate-core/Init.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Classes.hh>
 #include <string_view>

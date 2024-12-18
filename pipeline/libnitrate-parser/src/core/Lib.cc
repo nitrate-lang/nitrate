@@ -31,38 +31,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Lib.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Lib.h>
 #include <nitrate-parser/Lib.h>
 #include <sys/resource.h>
 
 #include <atomic>
+#include <nitrate-core/Init.hh>
 
 static std::atomic<size_t> npar_lib_ref_count = 0;
 
-static void increase_stack_size() {
-  const rlim_t kStackSize = 64 * 1024 * 1024;  // min stack size = 64 MB
-  struct rlimit rl;
-  int result;
-
-  result = getrlimit(RLIMIT_STACK, &rl);
-  if (result == 0) {
-    if (rl.rlim_cur < kStackSize) {
-      rl.rlim_cur = kStackSize;
-      result = setrlimit(RLIMIT_STACK, &rl);
-      if (result != 0) {
-        qcore_panicf("setrlimit returned result = %d\n", result);
-      }
-    }
-  }
-}
-
-static bool do_init() {
-  increase_stack_size();
-
-  return true;
-}
+static bool do_init() { return true; }
 
 static void do_deinit() {}
 
@@ -71,7 +50,7 @@ C_EXPORT bool npar_lib_init() {
     return true;
   }
 
-  if (!qcore_lib_init()) {
+  if (!ncc::core::Library::InitRC()) {
     return false;
   }
 
@@ -88,7 +67,7 @@ C_EXPORT void npar_lib_deinit() {
   }
 
   qlex_lib_deinit();
-  qcore_lib_deinit();
+  ncc::core::Library::DeinitRC();
 
   return do_deinit();
 }

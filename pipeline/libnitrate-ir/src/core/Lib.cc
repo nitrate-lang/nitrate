@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Lib.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-ir/Lib.h>
 #include <nitrate-parser/Lib.h>
@@ -40,6 +39,7 @@
 #include <atomic>
 #include <boost/assert/source_location.hpp>
 #include <core/PassManager.hh>
+#include <nitrate-core/Init.hh>
 
 namespace boost {
   void throw_exception(std::exception const& m, boost::source_location const&) {
@@ -55,26 +55,7 @@ namespace boost {
 
 static std::atomic<size_t> nr_lib_ref_count = 0;
 
-static void increase_stack_size() {
-  const rlim_t kStackSize = 64 * 1024 * 1024;  // min stack size = 64 MB
-  struct rlimit rl;
-  int result;
-
-  result = getrlimit(RLIMIT_STACK, &rl);
-  if (result == 0) {
-    if (rl.rlim_cur < kStackSize) {
-      rl.rlim_cur = kStackSize;
-      result = setrlimit(RLIMIT_STACK, &rl);
-      if (result != 0) {
-        qcore_panicf("setrlimit returned result = %d\n", result);
-      }
-    }
-  }
-}
-
 static bool do_init() {
-  increase_stack_size();
-
   nr::pass::PassGroupRegistry::RegisterBuiltinGroups();
 
   return true;
@@ -87,7 +68,7 @@ C_EXPORT bool nr_lib_init() {
     return true;
   }
 
-  if (!qcore_lib_init()) {
+  if (!ncc::core::Library::InitRC()) {
     return false;
   }
 
@@ -104,7 +85,7 @@ C_EXPORT void nr_lib_deinit() {
   }
 
   npar_lib_deinit();
-  qcore_lib_deinit();
+  ncc::core::Library::DeinitRC();
 
   return do_deinit();
 }

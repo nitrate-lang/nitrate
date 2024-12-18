@@ -86,18 +86,20 @@ namespace ncc::core {
     StringMemory() = delete;
 
   public:
-    static str_alias get(std::string_view str);
-    static std::string_view save(std::string_view str);
+    static str_alias Get(std::string_view str);
+    static std::string_view Save(std::string_view str);
 
-    static std::string_view from_id(uint64_t id);
+    static std::string_view FromID(uint64_t id);
+
+    static void Clear();
   };
 
   static inline std::string_view save(std::string_view str) {
-    return StringMemory::save(str);
+    return StringMemory::Save(str);
   }
 
   static inline str_alias intern(std::string_view str) {
-    return StringMemory::get(str);
+    return StringMemory::Get(str);
   }
 
 }  // namespace ncc::core

@@ -31,31 +31,62 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Lib.h>
 #include <nitrate-core/Macro.h>
 
-#include <atomic>
+#include <nitrate-core/Init.hh>
 
-static std::atomic<size_t> qcore_lib_ref_count = 0;
+#include "nitrate-core/String.hh"
 
-C_EXPORT bool qcore_lib_init() {
-  qcore_lib_ref_count++;
+using namespace ncc::core;
+
+size_t Library::ref_count;
+std::mutex Library::ref_count_mutex;
+
+CPP_EXPORT CoreLibraryAutoClose::~CoreLibraryAutoClose() {
+  Library::DeinitRC();
+}
+
+bool Library::init_library() {
+  // Nothing to do here for now.
+
   return true;
 }
 
-C_EXPORT void qcore_lib_deinit() {
-  qcore_lib_ref_count--;
-
-  if (qcore_lib_ref_count > 0) {
-    return;
-  }
-
-  // Deinitialize the library here.
-  // Nothing to do for now.
+void Library::deinit_library() {
+  /* After nitrate-core is deinitialized, all str_aliases are invalid. */
+  StringMemory::Clear();
 }
 
-C_EXPORT const char* qcore_lib_version() {
-  static const char* version_string =
+CPP_EXPORT bool Library::InitRC() {
+  std::lock_guard<std::mutex> lock(ref_count_mutex);
+
+  if (ref_count == 0) {
+    if (!init_library()) {
+      return false;
+    }
+  }
+
+  ++ref_count;
+
+  return true;
+}
+
+CPP_EXPORT void Library::DeinitRC() {
+  std::lock_guard<std::mutex> lock(ref_count_mutex);
+
+  if (ref_count > 0 && --ref_count == 0) {
+    deinit_library();
+  }
+}
+
+CPP_EXPORT bool Library::IsInitialized() {
+  std::lock_guard<std::mutex> lock(ref_count_mutex);
+
+  return ref_count > 0;
+}
+
+CPP_EXPORT std::string_view Library::GetVersion() {
+  static std::string_view version_string =
 
       "[" __TARGET_VERSION
       "] ["
@@ -100,4 +131,12 @@ C_EXPORT const char* qcore_lib_version() {
       ;
 
   return version_string;
+}
+
+CPP_EXPORT std::optional<CoreLibraryAutoClose> Library::GetRC() {
+  if (!InitRC()) {
+    return std::nullopt;
+  }
+
+  return CoreLibraryAutoClose();
 }

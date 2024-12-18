@@ -34,7 +34,6 @@
 #include <argparse.h>
 #include <glog/logging.h>
 #include <lsp/nitrated.h>
-#include <nitrate-core/Lib.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
 #include <nitrate-ir/Lib.h>
@@ -51,6 +50,7 @@
 #include <init/Package.hh>
 #include <install/Install.hh>
 #include <iostream>
+#include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>
@@ -329,7 +329,7 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
   }
 
   { /* Initialize libraries */
-    if (!qcore_lib_init()) {
+    if (!ncc::core::Library::InitRC()) {
       LOG(ERROR) << "Failed to initialize NITRATE-CORE library" << std::endl;
       return false;
     }

@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Lib.h>
 #include <nitrate-core/Macro.h>
 #include <nitrate-emit/Lib.h>
 #include <nitrate-ir/Lib.h>
@@ -41,6 +40,7 @@
 #include <nitrate/code.h>
 
 #include <atomic>
+#include <nitrate-core/Init.hh>
 
 static std::atomic<size_t> nit_lib_ref_count = 0;
 
@@ -49,7 +49,7 @@ bool nit_lib_init() {
     return true;
   }
 
-  if (!qcore_lib_init()) {
+  if (!ncc::core::Library::InitRC()) {
     return false;
   }
 
@@ -86,5 +86,5 @@ void nit_deinit() {
   npar_lib_deinit();
   qprep_lib_deinit();
   qlex_lib_deinit();
-  qcore_lib_deinit();
+  ncc::core::Library::DeinitRC();
 }

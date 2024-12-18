@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Lib.h>
 #include <nitrate/code.h>
 
 #include <core/SerialUtil.hh>
@@ -39,6 +38,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Classes.hh>

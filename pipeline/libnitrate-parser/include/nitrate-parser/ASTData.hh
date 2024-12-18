@@ -76,7 +76,7 @@ namespace npar {
   }
 
   static inline ncc::core::str_alias SaveString(std::string_view str) {
-    return ncc::core::StringMemory::get(str);
+    return ncc::core::StringMemory::Get(str);
   }
 };  // namespace npar
 

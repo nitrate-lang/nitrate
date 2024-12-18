@@ -34,7 +34,6 @@
 #include <argparse.h>
 #include <glog/logging.h>
 #include <lsp/nitrated.h>
-#include <nitrate-core/Lib.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
 #include <nitrate-ir/IR.h>
@@ -49,6 +48,7 @@
 #include <core/Logger.hh>
 #include <fstream>
 #include <iostream>
+#include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>

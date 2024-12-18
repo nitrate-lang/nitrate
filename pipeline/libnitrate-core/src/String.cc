@@ -41,10 +41,10 @@ using namespace ncc::core;
 CPP_EXPORT StringMemory::Storage StringMemory::StringMemory::m_storage;
 
 CPP_EXPORT std::string_view str_alias::get() const {
-  return StringMemory::from_id(m_id);
+  return StringMemory::FromID(m_id);
 }
 
-CPP_EXPORT str_alias StringMemory::get(std::string_view str) {
+CPP_EXPORT str_alias StringMemory::Get(std::string_view str) {
   std::lock_guard lock(m_storage.m_mutex);
 
   if (auto it = m_storage.m_bimap.right.find(str);
@@ -61,11 +61,11 @@ CPP_EXPORT str_alias StringMemory::get(std::string_view str) {
   return str_alias::get(new_id);
 }
 
-CPP_EXPORT std::string_view StringMemory::save(std::string_view str) {
-  return get(str).get();
+CPP_EXPORT std::string_view StringMemory::Save(std::string_view str) {
+  return Get(str).get();
 }
 
-CPP_EXPORT std::string_view StringMemory::from_id(uint64_t id) {
+CPP_EXPORT std::string_view StringMemory::FromID(uint64_t id) {
   std::lock_guard lock(m_storage.m_mutex);
 
   auto it = m_storage.m_bimap.left.find(id);
@@ -75,4 +75,12 @@ CPP_EXPORT std::string_view StringMemory::from_id(uint64_t id) {
   }
 
   return it->second;
+}
+
+CPP_EXPORT void StringMemory::Clear() {
+  std::lock_guard lock(m_storage.m_mutex);
+
+  m_storage.m_strings.clear();
+  m_storage.m_bimap.clear();
+  m_storage.m_next_id = 0;
 }

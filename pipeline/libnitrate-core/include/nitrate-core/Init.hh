@@ -34,49 +34,39 @@
 #ifndef __NITRATE_CORE_LIB_H__
 #define __NITRATE_CORE_LIB_H__
 
-#include <nitrate-core/Allocate.hh>
-#include <nitrate-core/Cache.hh>
-#include <nitrate-core/Environment.hh>
-#include <nitrate-core/Logger.hh>
+#include <mutex>
+#include <optional>
+#include <string_view>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace ncc::core {
+  class Library;
 
-/**
- * @brief Initialize the library.
- *
- * @return true if the library was initialized successfully.
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not reinitialize the library, but will
- * increment the reference count.
- */
-bool qcore_lib_init();
+  class CoreLibraryAutoClose final {
+    friend class Library;
 
-/**
- * @brief Deinitialize the library.
- *
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not deinitialize the library, but when
- * the reference count reaches zero, the library will be deinitialized.
- */
-void qcore_lib_deinit();
+    CoreLibraryAutoClose() = default;
 
-/**
- * @brief Get the version of the library.
- *
- * @return The version string of the library.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is also safe to call before initialization and after
- * deinitialization.
- */
-const char *qcore_lib_version();
+  public:
+    ~CoreLibraryAutoClose();
+  };
 
-#ifdef __cplusplus
-}
-#endif
+  class Library final {
+    Library() = delete;
+
+    static size_t ref_count;
+    static std::mutex ref_count_mutex;
+
+    static bool init_library();
+    static void deinit_library();
+
+  public:
+    static bool InitRC();
+    static void DeinitRC();
+    static bool IsInitialized();
+    static std::string_view GetVersion();
+
+    static std::optional<CoreLibraryAutoClose> GetRC();
+  };
+}  // namespace ncc::core
 
 #endif  // __NITRATE_CORE_LIB_H__
