@@ -36,7 +36,7 @@
 using namespace ncc::parse;
 
 std::optional<std::pair<std::string_view, std::string_view>>
-recurse_foreach_names(qlex_t &rd) {
+recurse_foreach_names() {
   if (let ident1 = next_if(qName)) {
     let ident1_value = ident1->as_string(&rd);
 
@@ -57,24 +57,24 @@ recurse_foreach_names(qlex_t &rd) {
   return std::nullopt;
 }
 
-static Expr *recurse_foreach_expr(npar_t &S, qlex_t &rd, bool has_paren) {
+Expr *Parser::recurse_foreach_expr(bool has_paren) {
   if (has_paren) {
-    return recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)});
+    return recurse_expr({qlex_tok_t(qPunc, qPuncRPar)});
   } else {
     return recurse_expr(
-        S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
+        {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
   }
 }
 
-static Stmt *recurse_foreach_body(npar_t &S, qlex_t &rd) {
+Stmt *Parser::recurse_foreach_body() {
   if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true, SafetyMode::Unknown);
+    return recurse_block(false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true, false, SafetyMode::Unknown);
+    return recurse_block(true, false, SafetyMode::Unknown);
   }
 }
 
-Stmt *ncc::parse::recurse_foreach(npar_t &S, qlex_t &rd) {
+Stmt *Parser::recurse_foreach() {
   /**
    * Syntax examples:
    *   `foreach (i, v in arr) { }`, `foreach (v in arr) { }`
@@ -87,7 +87,7 @@ Stmt *ncc::parse::recurse_foreach(npar_t &S, qlex_t &rd) {
     let[index_name, value_name] = ident_pair_opt.value();
 
     if (next_if(qOpIn)) {
-      let iter_expr = recurse_foreach_expr(S, rd, has_paren);
+      let iter_expr = recurse_foreach_expr(has_paren);
       if (has_paren) {
         if (!next_if(qPuncRPar)) {
           diagnostic << current() << "Expected ')' in foreach statement";

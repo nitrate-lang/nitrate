@@ -35,26 +35,26 @@
 
 using namespace ncc::parse;
 
-static Expr *recurse_while_cond(npar_t &S, qlex_t &rd) {
+static Expr *recurse_while_cond() {
   let cur = peek();
 
   if (cur.is<qOpArrow>() || cur.is<qPuncLCur>()) {
     return make<ConstBool>(true);
   } else {
     return recurse_expr(
-        S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
+        {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
   }
 }
 
-static Stmt *recurse_while_body(npar_t &S, qlex_t &rd) {
+static Stmt *recurse_while_body() {
   if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true, SafetyMode::Unknown);
+    return recurse_block(false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true, false, SafetyMode::Unknown);
+    return recurse_block(true, false, SafetyMode::Unknown);
   }
 }
 
-Stmt *ncc::parse::recurse_while(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::Parser::recurse_while() {
   /**
    * Example syntax:
    *  `while {}`,                 `while => call();`

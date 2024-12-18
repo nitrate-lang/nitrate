@@ -35,12 +35,12 @@
 
 using namespace ncc::parse;
 
-static std::optional<Expr *> recurse_type_range_start(npar_t &S, qlex_t &rd) {
+static std::optional<Expr *> recurse_type_range_start() {
   if (next_if(qPuncColn)) {
     return std::nullopt;
   }
 
-  let min_value = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncColn)});
+  let min_value = recurse_expr({qlex_tok_t(qPunc, qPuncColn)});
 
   if (!next_if(qPuncColn)) {
     diagnostic << current() << "Expected ':' after range start";
@@ -49,12 +49,12 @@ static std::optional<Expr *> recurse_type_range_start(npar_t &S, qlex_t &rd) {
   return min_value;
 }
 
-static std::optional<Expr *> recurse_type_range_end(npar_t &S, qlex_t &rd) {
+static std::optional<Expr *> recurse_type_range_end() {
   if (next_if(qPuncRBrk)) {
     return std::nullopt;
   }
 
-  let max_val = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)});
+  let max_val = recurse_expr({qlex_tok_t(qPunc, qPuncRBrk)});
 
   if (!next_if(qPuncRBrk)) {
     diagnostic << current() << "Expected ']' after range";
@@ -63,15 +63,14 @@ static std::optional<Expr *> recurse_type_range_end(npar_t &S, qlex_t &rd) {
   return max_val;
 }
 
-extern CallArgs recurse_caller_arguments(npar_t &S, qlex_t &rd,
-                                         qlex_tok_t terminator, size_t depth);
+extern CallArgs recurse_caller_arguments(, qlex_tok_t terminator, size_t depth);
 
-std::optional<CallArgs> recurse_type_template_arguments(npar_t &S, qlex_t &rd) {
+std::optional<CallArgs> recurse_type_template_arguments() {
   if (!next_if(qOpLT)) {
     return std::nullopt;
   }
 
-  auto args = recurse_caller_arguments(S, rd, qlex_tok_t(qOper, qOpGT), 0);
+  auto args = recurse_caller_arguments(qlex_tok_t(qOper, qOpGT), 0);
 
   if (!next_if(qOpGT)) {
     diagnostic << current() << "Expected '>' after template arguments";
@@ -80,7 +79,7 @@ std::optional<CallArgs> recurse_type_template_arguments(npar_t &S, qlex_t &rd) {
   return args;
 }
 
-static Type *recurse_type_suffix(npar_t &S, qlex_t &rd, Type *base) {
+static Type *recurse_type_suffix(, Type *base) {
   static let bit_width_terminaters = {
       qlex_tok_t(qPunc, qPuncRPar), qlex_tok_t(qPunc, qPuncRBrk),
       qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qPunc, qPuncRCur),
@@ -106,10 +105,10 @@ static Type *recurse_type_suffix(npar_t &S, qlex_t &rd, Type *base) {
       range.second = recurse_type_range_end(S, rd);
 
       if (next_if(qPuncColn)) {
-        width = recurse_expr(S, rd, bit_width_terminaters);
+        width = recurse_expr(bit_width_terminaters);
       }
     } else {
-      width = recurse_expr(S, rd, bit_width_terminaters);
+      width = recurse_expr(bit_width_terminaters);
     }
   }
 
@@ -130,8 +129,8 @@ static Type *recurse_type_suffix(npar_t &S, qlex_t &rd, Type *base) {
   return base;
 }
 
-static Type *recurse_function_type(npar_t &S, qlex_t &rd) {
-  let fn = recurse_function(S, rd, true);
+static Type *recurse_function_type() {
+  let fn = recurse_function(true);
 
   if (!fn->is<Function>() || !fn->as<Function>()->is_decl()) {
     diagnostic << current()
@@ -149,7 +148,7 @@ static Type *recurse_function_type(npar_t &S, qlex_t &rd) {
   return func_ty;
 }
 
-static Type *recurse_opaque_type(qlex_t &rd) {
+static Type *recurse_opaque_type() {
   if (!next_if(qPuncLPar)) {
     diagnostic << current() << "Expected '(' after 'opaque'";
     return mock_type();
@@ -171,7 +170,7 @@ static Type *recurse_opaque_type(qlex_t &rd) {
   return mock_type();
 }
 
-static Type *recurse_type_by_keyword(npar_t &S, qlex_t &rd, qlex_key_t key) {
+static Type *recurse_type_by_keyword(, qlex_key_t key) {
   switch (key) {
     case qKFn: {
       return recurse_function_type(S, rd);
@@ -188,7 +187,7 @@ static Type *recurse_type_by_keyword(npar_t &S, qlex_t &rd, qlex_key_t key) {
   }
 }
 
-static Type *recurse_type_by_operator(npar_t &S, qlex_t &rd, qlex_op_t op) {
+static Type *recurse_type_by_operator(, qlex_op_t op) {
   switch (op) {
     case qOpTimes: {
       let start = current().start;
@@ -225,7 +224,7 @@ static Type *recurse_type_by_operator(npar_t &S, qlex_t &rd, qlex_op_t op) {
   }
 }
 
-static Type *recurse_array_or_vector(npar_t &S, qlex_t &rd) {
+static Type *recurse_array_or_vector() {
   let start = current().start;
 
   let first = recurse_type(S, rd);
@@ -245,7 +244,7 @@ static Type *recurse_array_or_vector(npar_t &S, qlex_t &rd) {
                << "Expected ';' separator in array type before size";
   }
 
-  let size = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)});
+  let size = recurse_expr({qlex_tok_t(qPunc, qPuncRBrk)});
 
   if (!next_if(qPuncRBrk)) {
     diagnostic << current() << "Expected ']' after array size";
@@ -258,7 +257,7 @@ static Type *recurse_array_or_vector(npar_t &S, qlex_t &rd) {
   return array;
 }
 
-static Type *recurse_set_type(npar_t &S, qlex_t &rd) {
+static Type *recurse_set_type() {
   let start = current().start;
 
   let set_type = recurse_type(S, rd);
@@ -275,7 +274,7 @@ static Type *recurse_set_type(npar_t &S, qlex_t &rd) {
   return set;
 }
 
-static Type *recurse_tuple_type(npar_t &S, qlex_t &rd) {
+static Type *recurse_tuple_type() {
   TupleTyItems items;
 
   let start = current().start;
@@ -303,8 +302,7 @@ static Type *recurse_tuple_type(npar_t &S, qlex_t &rd) {
   return tuple;
 }
 
-static Type *recurse_type_by_punctuation(npar_t &S, qlex_t &rd,
-                                         qlex_punc_t punc) {
+static Type *recurse_type_by_punctuation(, qlex_punc_t punc) {
   switch (punc) {
     case qPuncLBrk: {
       return recurse_array_or_vector(S, rd);
@@ -325,7 +323,7 @@ static Type *recurse_type_by_punctuation(npar_t &S, qlex_t &rd,
   }
 }
 
-static Type *recurse_type_by_name(qlex_t &rd, std::string_view name) {
+static Type *recurse_type_by_name(, std::string_view name) {
   std::optional<Type *> type;
 
   if (name == "u1") {
@@ -374,30 +372,30 @@ static Type *recurse_type_by_name(qlex_t &rd, std::string_view name) {
   return type.value();
 }
 
-Type *ncc::parse::recurse_type(npar_t &S, qlex_t &rd) {
+Type *ncc::parse::Parser::recurse_type() {
   switch (let tok = next(); tok.ty) {
     case qKeyW: {
-      let type = recurse_type_by_keyword(S, rd, tok.v.key);
+      let type = recurse_type_by_keyword(tok.v.key);
 
-      return recurse_type_suffix(S, rd, type);
+      return recurse_type_suffix(type);
     }
 
     case qOper: {
-      let type = recurse_type_by_operator(S, rd, tok.v.op);
+      let type = recurse_type_by_operator(tok.v.op);
 
-      return recurse_type_suffix(S, rd, type);
+      return recurse_type_suffix(type);
     }
 
     case qPunc: {
-      let type = recurse_type_by_punctuation(S, rd, tok.v.punc);
+      let type = recurse_type_by_punctuation(tok.v.punc);
 
-      return recurse_type_suffix(S, rd, type);
+      return recurse_type_suffix(type);
     }
 
     case qName: {
       let type = recurse_type_by_name(rd, tok.as_string(&rd));
 
-      return recurse_type_suffix(S, rd, type);
+      return recurse_type_suffix(type);
     }
 
     default: {
@@ -405,7 +403,7 @@ Type *ncc::parse::recurse_type(npar_t &S, qlex_t &rd) {
 
       let type = mock_type();
 
-      return recurse_type_suffix(S, rd, type);
+      return recurse_type_suffix(type);
     }
   }
 }

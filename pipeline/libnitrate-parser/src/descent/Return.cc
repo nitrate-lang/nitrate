@@ -35,7 +35,7 @@
 
 using namespace ncc::parse;
 
-Stmt *ncc::parse::recurse_return(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::Parser::recurse_return() {
   /**
    * Syntax examples:
    *   `ret 0;`, `ret;`, `ret 0, 1;`, `ret call();`
@@ -45,7 +45,7 @@ Stmt *ncc::parse::recurse_return(npar_t &S, qlex_t &rd) {
     return make<ReturnStmt>(std::nullopt);
   }
 
-  let expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+  let expr = recurse_expr({qlex_tok_t(qPunc, qPuncSemi)});
 
   if (next_if(qPuncSemi)) {
     return make<ReturnStmt>(expr);
@@ -56,16 +56,16 @@ Stmt *ncc::parse::recurse_return(npar_t &S, qlex_t &rd) {
   return mock_stmt(QAST_RETURN);
 }
 
-Stmt *ncc::parse::recurse_retif(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::Parser::recurse_retif() {
   /**
    * Syntax examples:
    *   `retif cond(), 1;`, `retif failed, -1;`
    */
 
-  let condition = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncComa)});
+  let condition = recurse_expr({qlex_tok_t(qPunc, qPuncComa)});
 
   if (next_if(qPuncComa)) {
-    let return_val = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+    let return_val = recurse_expr({qlex_tok_t(qPunc, qPuncSemi)});
 
     if (next_if(qPuncSemi)) {
       return make<ReturnIfStmt>(condition, return_val);

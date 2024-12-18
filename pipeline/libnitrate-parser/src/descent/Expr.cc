@@ -46,8 +46,7 @@
 
 using namespace ncc::parse;
 
-CallArgs recurse_caller_arguments(npar_t &S, qlex_t &rd, qlex_tok_t terminator,
-                                  size_t depth) {
+CallArgs recurse_caller_arguments(, qlex_tok_t terminator, size_t depth) {
   qlex_tok_t tok, ident;
   CallArgs call_args;
   size_t pos_arg_count = 0;
@@ -81,16 +80,16 @@ CallArgs recurse_caller_arguments(npar_t &S, qlex_t &rd, qlex_tok_t terminator,
 
       next();
 
-      Expr *arg = recurse_expr(
-          S, rd, {qlex_tok_t(qPunc, qPuncComa), terminator}, depth + 1);
+      Expr *arg =
+          recurse_expr({qlex_tok_t(qPunc, qPuncComa), terminator}, depth + 1);
 
       call_args.push_back({SaveString(ident.as_string(&rd)), arg});
       goto comma;
     }
 
   parse_pos_arg: {
-    Expr *arg = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncComa), terminator},
-                             depth + 1);
+    Expr *arg =
+        recurse_expr({qlex_tok_t(qPunc, qPuncComa), terminator}, depth + 1);
 
     call_args.push_back({SaveString(std::to_string(pos_arg_count++)), arg});
 
@@ -109,10 +108,8 @@ CallArgs recurse_caller_arguments(npar_t &S, qlex_t &rd, qlex_tok_t terminator,
   return call_args;
 }
 
-static Call *recurse_function_call(npar_t &S, Expr *callee, qlex_t &rd,
-                                   size_t depth) {
-  auto args =
-      recurse_caller_arguments(S, rd, qlex_tok_t(qPunc, qPuncRPar), depth);
+static Call *recurse_function_call(Expr *callee, , size_t depth) {
+  auto args = recurse_caller_arguments(qlex_tok_t(qPunc, qPuncRPar), depth);
   if (!next_if(qPuncRPar)) {
     diagnostic << current() << "Expected ')' to close the function call";
     return nullptr;
@@ -120,8 +117,7 @@ static Call *recurse_function_call(npar_t &S, Expr *callee, qlex_t &rd,
   return make<Call>(callee, args);
 }
 
-static bool recurse_fstring(npar_t &S, FString **node, qlex_t &rd,
-                            size_t depth) {
+static bool recurse_fstring(FString **node, , size_t depth) {
   /**
    * @brief Parse an F-string expression
    * @return true if it is okay to proceed, false otherwise
@@ -193,8 +189,8 @@ static bool recurse_fstring(npar_t &S, FString **node, qlex_t &rd,
 /// TODO: qlex_op_t precedence
 /// TODO: qlex_op_t associativity
 
-Expr *ncc::parse::recurse_expr(npar_t &S, qlex_t &rd,
-                               std::set<qlex_tok_t> terminators, size_t depth) {
+Expr *ncc::parse::recurse_expr(, std::set<qlex_tok_t> terminators,
+                               size_t depth) {
   if (depth > MAX_EXPR_DEPTH) {
     diagnostic
         << peek()
@@ -319,7 +315,7 @@ Expr *ncc::parse::recurse_expr(npar_t &S, qlex_t &rd,
             continue;
           }
           case qKFn: {
-            Stmt *f = recurse_function(S, rd, false);
+            Stmt *f = recurse_function(false);
             StmtExpr *adapter = make<StmtExpr>(f);
 
             if (peek().is<qPuncLPar>()) {
@@ -376,7 +372,7 @@ Expr *ncc::parse::recurse_expr(npar_t &S, qlex_t &rd,
             Expr *expr = nullptr;
             auto terminators_copy = terminators;
             terminators_copy.insert(qlex_tok_t(qPunc, qPuncRPar));
-            expr = recurse_expr(S, rd, terminators_copy, depth + 1);
+            expr = recurse_expr(terminators_copy, depth + 1);
 
             if (!next().is<qPuncRPar>()) {
               diagnostic << tok << "Expected ')' to close the parentheses";
@@ -404,8 +400,7 @@ Expr *ncc::parse::recurse_expr(npar_t &S, qlex_t &rd,
               }
 
               Expr *key = nullptr, *value = nullptr;
-              key = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncColn)},
-                                 depth + 1);
+              key = recurse_expr({qlex_tok_t(qPunc, qPuncColn)}, depth + 1);
 
               tok = next();
               if (!tok.is<qPuncColn>()) {
@@ -414,7 +409,7 @@ Expr *ncc::parse::recurse_expr(npar_t &S, qlex_t &rd,
               }
 
               value = recurse_expr(
-                  S, rd,
+
                   {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},
                   depth + 1);
 
@@ -446,7 +441,7 @@ Expr *ncc::parse::recurse_expr(npar_t &S, qlex_t &rd,
                 }
 
                 Expr *element = recurse_expr(
-                    S, rd,
+
                     {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
                      qlex_tok_t(qPunc, qPuncRBrk)},
                     depth + 1);
@@ -455,8 +450,7 @@ Expr *ncc::parse::recurse_expr(npar_t &S, qlex_t &rd,
                 if (tok.is<qPuncSemi>()) {
                   next();
 
-                  Expr *count = recurse_expr(S, rd,
-                                             {qlex_tok_t(qPunc, qPuncRBrk),
+                  Expr *count = recurse_expr({qlex_tok_t(qPunc, qPuncRBrk),
                                               qlex_tok_t(qPunc, qPuncComa)},
                                              depth + 1);
 
@@ -502,14 +496,14 @@ Expr *ncc::parse::recurse_expr(npar_t &S, qlex_t &rd,
             stack.pop();
 
             index = recurse_expr(
-                S, rd,
+
                 {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncColn)},
                 depth + 1);
 
             tok = next();
             if (tok.is<qPuncColn>()) {
-              Expr *end = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRBrk)},
-                                       depth + 1);
+              Expr *end =
+                  recurse_expr({qlex_tok_t(qPunc, qPuncRBrk)}, depth + 1);
 
               tok = next();
               if (!tok.is<qPuncRBrk>()) {
@@ -553,7 +547,7 @@ Expr *ncc::parse::recurse_expr(npar_t &S, qlex_t &rd,
             Expr *right = nullptr, *left = stack.top();
             stack.pop();
 
-            right = recurse_expr(S, rd, terminators, depth + 1);
+            right = recurse_expr(terminators, depth + 1);
 
             stack.push(make<SeqPoint>(SeqPoint({left, right})));
             continue;
@@ -630,7 +624,7 @@ Expr *ncc::parse::recurse_expr(npar_t &S, qlex_t &rd,
           continue;
         }
 
-        expr = recurse_expr(S, rd, terminators, depth + 1);
+        expr = recurse_expr(terminators, depth + 1);
 
         if (stack.empty()) {
           stack.push(make<UnaryExpr>((qlex_op_t)op, expr));

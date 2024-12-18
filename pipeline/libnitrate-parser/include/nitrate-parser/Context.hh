@@ -34,22 +34,22 @@
 #ifndef __NITRATE_AST_PARSER_H__
 #define __NITRATE_AST_PARSER_H__
 
+#include <boost/enable_shared_from_this.hpp>
+#include <boost/shared_ptr.hpp>
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
 
-typedef struct npar_t npar_t;
-
 namespace ncc::parse {
   class Parser;
 
   class ASTRoot final {
-    std::shared_ptr<Parser> m_ref;
+    boost::shared_ptr<Parser> m_ref;
     Base *m_base;
 
   public:
-    ASTRoot(std::shared_ptr<Parser> ref, ncc::parse::Base *base)
+    ASTRoot(boost::shared_ptr<Parser> ref, ncc::parse::Base *base)
         : m_ref(ref), m_base(base) {}
 
     Base *get() const { return m_base; }
@@ -57,11 +57,16 @@ namespace ncc::parse {
     bool check() const;
   };
 
-  class Parser final {
+  class Parser final : public boost::enable_shared_from_this<Parser> {
     std::shared_ptr<ncc::core::Environment> m_env;
     std::unique_ptr<ncc::core::IMemory> m_allocator; /* The Main allocator */
-    qlex_t *rd;                                      /* Polymporphic lexer */
+    qlex_t &rd;                                      /* Polymporphic lexer */
     bool m_failed; /* Whether the parser failed (ie syntax errors) */
+
+    /****************************************************************************
+     * @brief
+     *  Primary language constructs
+     ****************************************************************************/
 
     Stmt *recurse_pub();
     Stmt *recurse_sec();
@@ -85,11 +90,16 @@ namespace ncc::parse {
                         SafetyMode safety);
     Expr *recurse_expr(std::set<qlex_tok_t> terminators, size_t depth = 0);
 
+    /****************************************************************************
+     * @brief
+     *  Helper functions
+     ****************************************************************************/
+
   public:
-    Parser(std::shared_ptr<ncc::core::Environment> env);
+    Parser(qlex_t *lexer, std::shared_ptr<ncc::core::Environment> env);
     ~Parser();
 
-    ASTRoot parse(qlex_t *lexer);
+    ASTRoot parse();
 
     static ASTRoot FromLexer(qlex_t *lexer,
                              std::shared_ptr<ncc::core::Environment> env);
@@ -101,19 +111,5 @@ namespace ncc::parse {
                               std::shared_ptr<ncc::core::Environment> env);
   };
 }  // namespace ncc::parse
-
-/**
- * @brief Check if the parse tree is valid.
- *
- * @param parser The parser instance to use for parsing or NULL.
- * @param base The base node of the parse tree to check.
- *
- * @return True if the AST is valid, false otherwise.
- *
- * @note If base is NULL, false is returned.
- *
- * @note This function is thread safe.
- */
-bool npar_check(npar_t *parser, const ncc::parse::Base *base);
 
 #endif  // __NITRATE_AST_PARSER_H__

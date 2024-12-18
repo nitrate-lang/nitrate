@@ -35,7 +35,7 @@
 
 using namespace ncc::parse;
 
-Stmt *ncc::parse::recurse_typedef(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::Parser::recurse_typedef() {
   /**
    * Syntax examples:
    *   `type name = type;`

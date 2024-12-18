@@ -46,8 +46,8 @@
 
 using namespace ncc::parse;
 
-Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
-                                bool single_stmt, SafetyMode safety) {
+Stmt* ncc::parse::Parser::recurse_block(bool expect_braces, bool single_stmt,
+                                        SafetyMode safety) {
   if (expect_braces && !next().is<qPuncLCur>()) {
     diagnostic << current() << "Expected '{'";
   }
@@ -79,7 +79,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
     }
 
     if (!tok.is(qKeyW)) {
-      let expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+      let expr = recurse_expr({qlex_tok_t(qPunc, qPuncSemi)});
 
       if (!next_if(qPuncSemi)) {
         diagnostic << tok << "Expected ';' after expression";
@@ -96,28 +96,28 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
 
     switch (next(), tok.as<qlex_key_t>()) {
       case qKVar: {
-        for (let decl : recurse_variable(S, rd, VarDeclType::Var)) {
+        for (let decl : recurse_variable(VarDeclType::Var)) {
           items.push_back(decl);
         }
         break;
       }
 
       case qKLet: {
-        for (let decl : recurse_variable(S, rd, VarDeclType::Let)) {
+        for (let decl : recurse_variable(VarDeclType::Let)) {
           items.push_back(decl);
         }
         break;
       }
 
       case qKConst: {
-        for (let decl : recurse_variable(S, rd, VarDeclType::Const)) {
+        for (let decl : recurse_variable(VarDeclType::Const)) {
           items.push_back(decl);
         }
         break;
       }
 
       case qKEnum: {
-        let node = recurse_enum(S, rd);
+        let node = recurse_enum();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -125,7 +125,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKStruct: {
-        let node = recurse_struct(S, rd, CompositeType::Struct);
+        let node = recurse_struct(CompositeType::Struct);
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -133,7 +133,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKRegion: {
-        let node = recurse_struct(S, rd, CompositeType::Region);
+        let node = recurse_struct(CompositeType::Region);
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -141,7 +141,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKGroup: {
-        let node = recurse_struct(S, rd, CompositeType::Group);
+        let node = recurse_struct(CompositeType::Group);
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -149,7 +149,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKClass: {
-        let node = recurse_struct(S, rd, CompositeType::Class);
+        let node = recurse_struct(CompositeType::Class);
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -157,7 +157,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKUnion: {
-        let node = recurse_struct(S, rd, CompositeType::Union);
+        let node = recurse_struct(CompositeType::Union);
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -165,7 +165,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKType: {
-        let node = recurse_typedef(S, rd);
+        let node = recurse_typedef();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -173,7 +173,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKScope: {
-        let node = recurse_scope(S, rd);
+        let node = recurse_scope();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -181,7 +181,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKFn: {
-        let node = recurse_function(S, rd, false);
+        let node = recurse_function(false);
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -190,7 +190,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
 
       case qKPub:
       case qKImport: {  // they both declare external functions
-        let node = recurse_pub(S, rd);
+        let node = recurse_pub();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -198,7 +198,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKSec: {
-        let node = recurse_sec(S, rd);
+        let node = recurse_sec();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -206,7 +206,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKPro: {
-        let node = recurse_pro(S, rd);
+        let node = recurse_pro();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -214,7 +214,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKReturn: {
-        let node = recurse_return(S, rd);
+        let node = recurse_return();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -222,7 +222,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKRetif: {
-        let node = recurse_retif(S, rd);
+        let node = recurse_retif();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -246,7 +246,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKIf: {
-        let node = recurse_if(S, rd);
+        let node = recurse_if();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -254,7 +254,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKWhile: {
-        let node = recurse_while(S, rd);
+        let node = recurse_while();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -262,7 +262,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKFor: {
-        let node = recurse_for(S, rd);
+        let node = recurse_for();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -270,7 +270,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKForeach: {
-        let node = recurse_foreach(S, rd);
+        let node = recurse_foreach();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -278,7 +278,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qKSwitch: {
-        let node = recurse_switch(S, rd);
+        let node = recurse_switch();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -286,7 +286,7 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
       }
 
       case qK__Asm__: {
-        let node = recurse_inline_asm(S, rd);
+        let node = recurse_inline_asm();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -311,12 +311,12 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
 
       case qKUnsafe: {
         if (peek().is<qPuncLCur>()) {
-          let node = recurse_block(S, rd, true, false, SafetyMode::Unsafe);
+          let node = recurse_block(true, false, SafetyMode::Unsafe);
           node->set_offset(loc_start);
 
           items.push_back(node);
         } else {
-          let node = recurse_block(S, rd, false, true, SafetyMode::Unsafe);
+          let node = recurse_block(false, true, SafetyMode::Unsafe);
           node->set_offset(loc_start);
 
           items.push_back(node);
@@ -327,12 +327,12 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
 
       case qKSafe: {
         if (peek().is<qPuncLCur>()) {
-          let node = recurse_block(S, rd, true, false, SafetyMode::Safe);
+          let node = recurse_block(true, false, SafetyMode::Safe);
           node->set_offset(loc_start);
 
           items.push_back(node);
         } else {
-          let node = recurse_block(S, rd, false, true, SafetyMode::Safe);
+          let node = recurse_block(false, true, SafetyMode::Safe);
           node->set_offset(loc_start);
 
           items.push_back(node);
@@ -378,17 +378,25 @@ CPP_EXPORT npar_t* npar_new(qlex_t* lexer,
   return parser;
 }
 
-CPP_EXPORT ASTRoot Parser::parse(qlex_t* L) {
-  qcore_assert(L != nullptr);
-  rd = L;
+CPP_EXPORT Parser::Parser(qlex_t* lexer,
+                          std::shared_ptr<ncc::core::Environment> env)
+    : rd(*lexer) {
+  m_env = env;
+  m_allocator = std::make_unique<ncc::core::dyn_arena>();
+  m_failed = false;
+}
 
+CPP_EXPORT Parser::~Parser() {}
+
+CPP_EXPORT ASTRoot Parser::parse() {
   /*=============== Swap in their arena  ===============*/
   std::swap(ncc::parse::npar_allocator, m_allocator);
 
   /*== Install thread-local references to the parser ==*/
   ncc::parse::diagnostic = this;
 
-  ASTRoot ast = ncc::parse::recurse_block(false, false, SafetyMode::Unknown);
+  auto node = recurse_block(false, false, SafetyMode::Unknown);
+  ASTRoot ast(shared_from_this(), node);
 
   /*== Uninstall thread-local references to the parser ==*/
   ncc::parse::diagnostic = nullptr;

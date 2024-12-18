@@ -35,7 +35,7 @@
 
 using namespace ncc::parse;
 
-static std::string_view recurse_abi_name(qlex_t &rd) {
+static std::string_view recurse_abi_name() {
   if (let tok = next_if(qText)) {
     return tok->as_string(&rd);
   } else {
@@ -43,8 +43,7 @@ static std::string_view recurse_abi_name(qlex_t &rd) {
   }
 }
 
-static std::optional<ExpressionList> recurse_export_attributes(npar_t &S,
-                                                               qlex_t &rd) {
+static std::optional<ExpressionList> recurse_export_attributes() {
   ExpressionList attributes;
 
   if (!next_if(qPuncLBrk)) {
@@ -60,7 +59,7 @@ static std::optional<ExpressionList> recurse_export_attributes(npar_t &S,
       }
 
       let attribute = recurse_expr(
-          S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRBrk)});
+          {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRBrk)});
 
       attributes.push_back(attribute);
 
@@ -74,15 +73,15 @@ static std::optional<ExpressionList> recurse_export_attributes(npar_t &S,
   return std::nullopt;
 }
 
-static Stmt *recurse_export_body(npar_t &S, qlex_t &rd) {
+static Stmt *Parser::recurse_export_body() {
   if (peek().is<qPuncLCur>()) {
-    return recurse_block(S, rd, true, false, SafetyMode::Unknown);
+    return recurse_block(true, false, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, false, true, SafetyMode::Unknown);
+    return recurse_block(false, true, SafetyMode::Unknown);
   }
 }
 
-Stmt *ncc::parse::recurse_pub(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::Parser::recurse_pub() {
   let abi_id = recurse_abi_name(rd);
 
   if (let attrs = recurse_export_attributes(S, rd)) {
@@ -97,7 +96,7 @@ Stmt *ncc::parse::recurse_pub(npar_t &S, qlex_t &rd) {
   return mock_stmt(QAST_EXPORT);
 }
 
-Stmt *ncc::parse::recurse_sec(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::Parser::recurse_sec() {
   let abi_id = recurse_abi_name(rd);
 
   if (let attrs = recurse_export_attributes(S, rd)) {
@@ -112,7 +111,7 @@ Stmt *ncc::parse::recurse_sec(npar_t &S, qlex_t &rd) {
   return mock_stmt(QAST_EXPORT);
 }
 
-Stmt *ncc::parse::recurse_pro(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::Parser::recurse_pro() {
   let abi_id = recurse_abi_name(rd);
 
   if (let attrs = recurse_export_attributes(S, rd)) {

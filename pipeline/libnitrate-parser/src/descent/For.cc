@@ -35,20 +35,20 @@
 
 using namespace ncc::parse;
 
-static std::optional<Stmt *> recurse_for_init_expr(npar_t &S, qlex_t &rd) {
+static std::optional<Stmt *> Parser::recurse_for_init_expr() {
   if (next_if(qPuncSemi)) {
     return std::nullopt;
   }
 
-  return recurse_block(S, rd, false, true, SafetyMode::Unknown);
+  return recurse_block(false, true, SafetyMode::Unknown);
 }
 
-static std::optional<Expr *> recurse_for_cond_expr(npar_t &S, qlex_t &rd) {
+static std::optional<Expr *> Parser::recurse_for_cond_expr() {
   if (next_if(qPuncSemi)) {
     return std::nullopt;
   }
 
-  let cond_expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+  let cond_expr = recurse_expr({qlex_tok_t(qPunc, qPuncSemi)});
 
   if (!next_if(qPuncSemi)) {
     diagnostic << current() << "Expected semicolon after condition expression";
@@ -57,38 +57,37 @@ static std::optional<Expr *> recurse_for_cond_expr(npar_t &S, qlex_t &rd) {
   return cond_expr;
 }
 
-static std::optional<Expr *> recurse_for_step_expr(npar_t &S, qlex_t &rd,
-                                                   bool has_paren) {
+static std::optional<Expr *> recurse_for_step_expr(, bool has_paren) {
   if (has_paren) {
     if (peek().is<qPuncRPar>()) {
       return std::nullopt;
     } else {
-      return recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)});
+      return recurse_expr({qlex_tok_t(qPunc, qPuncRPar)});
     }
   } else {
     if (peek().is<qOpArrow>() || peek().is<qPuncLCur>()) {
       return std::nullopt;
     } else {
       return recurse_expr(
-          S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
+          {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
     }
   }
 }
 
-static Stmt *recurse_for_body(npar_t &S, qlex_t &rd) {
+static Stmt *Parser::recurse_for_body() {
   if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true, SafetyMode::Unknown);
+    return recurse_block(false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true, false, SafetyMode::Unknown);
+    return recurse_block(true, false, SafetyMode::Unknown);
   }
 }
 
-Stmt *ncc::parse::recurse_for(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::Parser::recurse_for() {
   bool has_paren = next_if(qPuncLPar).has_value();
 
   let init = recurse_for_init_expr(S, rd);
   let cond = recurse_for_cond_expr(S, rd);
-  let step = recurse_for_step_expr(S, rd, has_paren);
+  let step = recurse_for_step_expr(has_paren);
 
   if (has_paren) {
     if (!next_if(qPuncRPar)) {
