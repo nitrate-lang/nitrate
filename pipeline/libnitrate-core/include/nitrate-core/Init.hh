@@ -67,6 +67,7 @@ namespace ncc::core {
 
     static std::optional<CoreLibraryAutoClose> GetRC();
   };
+
 }  // namespace ncc::core
 
 #endif  // __NITRATE_CORE_LIB_H__

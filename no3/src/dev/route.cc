@@ -39,7 +39,6 @@
 #include <nitrate-ir/IR.h>
 #include <nitrate-ir/Lib.h>
 #include <nitrate-lexer/Lib.h>
-#include <nitrate-parser/Lib.h>
 #include <nitrate-seq/Lib.h>
 
 #include <clean/Cleanup.hh>
@@ -54,6 +53,7 @@
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Classes.hh>
+#include <nitrate-parser/Init.hh>
 #include <nitrate-parser/Parser.hh>
 #include <nitrate-seq/Classes.hh>
 #include <string_view>

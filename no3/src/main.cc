@@ -38,7 +38,6 @@
 #include <nitrate-emit/Lib.h>
 #include <nitrate-ir/Lib.h>
 #include <nitrate-lexer/Lib.h>
-#include <nitrate-parser/Lib.h>
 #include <nitrate-seq/Lib.h>
 
 #include <atomic>
@@ -55,6 +54,7 @@
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-parser/Classes.hh>
+#include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Classes.hh>
 #include <string>
 #include <string_view>

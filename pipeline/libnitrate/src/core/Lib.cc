@@ -34,13 +34,13 @@
 #include <nitrate-emit/Lib.h>
 #include <nitrate-ir/Lib.h>
 #include <nitrate-lexer/Lib.h>
-#include <nitrate-parser/Lib.h>
 #include <nitrate-seq/Lib.h>
 #include <nitrate/code.h>
 
 #include <atomic>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-parser/Init.hh>
 
 static std::atomic<size_t> nit_lib_ref_count = 0;
 
