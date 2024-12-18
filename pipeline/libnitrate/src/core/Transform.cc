@@ -205,7 +205,7 @@ CPP_EXPORT nitrate::LazyResult<bool> nitrate::pipeline(
 
 CPP_EXPORT nitrate::LazyResult<bool> nitrate::chain(
     std::istream &in, std::ostream &out, ChainOptions operations,
-    std::optional<DiagnosticFunc> diag) {
+    std::optional<DiagnosticFunc> diag, bool) {
   return nitrate::LazyResult<bool>(
       [&in, &out, Operations = std::move(operations), diag]() -> bool {
         if (Operations.empty()) {

@@ -57,10 +57,11 @@ namespace ncc::parse {
     bool check() const;
   };
 
-  class DiagnosticManager;
-
   class Parser final {
     std::shared_ptr<ncc::core::Environment> m_env;
+    std::unique_ptr<ncc::core::IMemory> m_allocator; /* The Main allocator */
+    qlex_t *m_lexer;                                 /* Polymporphic lexer */
+    bool m_failed; /* Whether the parser failed (ie syntax errors) */
 
   public:
     Parser(std::shared_ptr<ncc::core::Environment> env);

@@ -92,18 +92,18 @@ namespace nitrate {
 
   LazyResult<bool> chain(
       std::istream &in, std::ostream &out, ChainOptions operations,
-      std::optional<DiagnosticFunc> diag = [](std::string_view message) {
-        std::cerr << message << std::endl;
-      });
+      std::optional<DiagnosticFunc> diag =
+          [](std::string_view message) { std::cerr << message << std::endl; },
+      bool select = false);
 
-  template <typename T>
   static inline LazyResult<bool> chain(
-      const T &in, std::string &out, ChainOptions operations,
+      const auto &in, std::string &out, ChainOptions operations,
       std::optional<DiagnosticFunc> diag = [](std::string_view message) {
         std::cerr << message << std::endl;
       }) {
     std::stringstream out_stream, in_stream(in);
-    auto unit = chain(in_stream, out_stream, std::move(operations), diag);
+    auto unit =
+        chain(in_stream, out_stream, std::move(operations), diag, false);
     unit.wait();
 
     out.assign(out_stream.str());

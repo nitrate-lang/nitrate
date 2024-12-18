@@ -32,10 +32,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Init.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/String.hh>
-
-#include "nitrate-core/Logger.hh"
 
 using namespace ncc::core;
 
@@ -57,3 +56,22 @@ CPP_EXPORT void CoreLibrarySetup::Deinit() {
 CPP_EXPORT std::string_view CoreLibrarySetup::GetVersionId() {
   return __TARGET_VERSION;
 }
+
+#if NITRATE_SHARED == 1
+#define BOOST_NO_EXCEPTIONS
+#include <boost/throw_exception.hpp>
+#include <iostream>
+
+namespace boost {
+  CPP_EXPORT void throw_exception(std::exception const& m,
+                                  boost::source_location const&) {
+    std::cerr << "boost::throw_exception: " << m.what();
+    std::terminate();
+  }
+
+  CPP_EXPORT void throw_exception(std::exception const& m) {
+    std::cerr << "boost::throw_exception: " << m.what();
+    std::terminate();
+  }
+}  // namespace boost
+#endif

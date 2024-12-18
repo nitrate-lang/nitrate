@@ -47,6 +47,13 @@
 #include <nitrate-parser/Context.hh>
 #include <sstream>
 
+struct npar_t {
+  std::shared_ptr<ncc::core::Environment> env;
+  std::unique_ptr<ncc::core::IMemory> allocator; /* The Main allocator */
+  qlex_t *lexer;                                 /* Polymporphic lexer */
+  bool failed; /* Whether the parser failed (ie syntax errors) */
+};
+
 namespace ncc::parse {
   enum class FormatStyle {
     Clang16Color, /* Clang-like 16 color diagnostic format */
@@ -59,20 +66,7 @@ namespace ncc::parse {
     qlex_tok_t tok;
   };
 
-  class DiagnosticManager {
-    npar_t *m_parser;
-    std::vector<DiagMessage> m_msgs;
-
-    std::string mint_clang16_message(const DiagMessage &msg) const;
-
-  public:
-    void push(DiagMessage &&msg);
-
-    void set_ctx(npar_t *parser) { m_parser = parser; }
-  };
-
-  /* Set reference to the current parser */
-  void install_reference(npar_t *parser);
+  std::string mint_clang16_message(const DiagMessage &msg);
 
   class MessageBuffer {
     std::stringstream m_buffer;
@@ -107,9 +101,10 @@ namespace ncc::parse {
   };
 
   template <typename T>
-  MessageBuffer operator<<(DiagnosticManager *log, const T &value) {
+  MessageBuffer operator<<(npar_t *log, const T &value) {
     MessageBuffer buf([log](std::string msg, qlex_tok_t start_loc) {
-      log->push({msg, start_loc});
+      log->failed = true;
+      qcore_print(QCORE_ERROR, mint_clang16_message({msg, start_loc}).c_str());
     });
 
     buf.write(value);
@@ -123,16 +118,7 @@ namespace ncc::parse {
     return std::move(buf);
   };
 
-  extern thread_local DiagnosticManager *diagnostic;
-
+  inline thread_local npar_t *diagnostic;
 };  // namespace ncc::parse
-
-struct npar_t {
-  std::shared_ptr<ncc::core::Environment> env;
-  std::unique_ptr<ncc::core::IMemory> allocator; /* The Main allocator */
-  ncc::parse::DiagnosticManager diag;            /* The Diagnostic Manager */
-  qlex_t *lexer;                                 /* Polymporphic lexer */
-  bool failed; /* Whether the parser failed (ie syntax errors) */
-};
 
 #endif

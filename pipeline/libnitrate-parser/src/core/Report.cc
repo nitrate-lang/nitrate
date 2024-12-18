@@ -39,16 +39,11 @@
 
 using namespace ncc::parse;
 
-CPP_EXPORT thread_local DiagnosticManager *ncc::parse::diagnostic;
-
-///============================================================================///
-
-std::string DiagnosticManager::mint_clang16_message(
-    const DiagMessage &msg) const {
+std::string ncc::parse::mint_clang16_message(const DiagMessage &msg) {
   std::stringstream ss;
-  ss << "\x1b[37;1m" << qlex_filename(m_parser->lexer) << ":";
-  uint32_t line = qlex_line(m_parser->lexer, qlex_begin(&msg.tok));
-  uint32_t col = qlex_col(m_parser->lexer, qlex_begin(&msg.tok));
+  ss << "\x1b[37;1m" << qlex_filename(diagnostic->lexer) << ":";
+  uint32_t line = qlex_line(diagnostic->lexer, qlex_begin(&msg.tok));
+  uint32_t col = qlex_col(diagnostic->lexer, qlex_begin(&msg.tok));
 
   if (line != QLEX_EOFF) {
     ss << line << ":";
@@ -69,7 +64,7 @@ std::string DiagnosticManager::mint_clang16_message(
   ss << "]\x1b[0m";
 
   uint32_t offset;
-  char *snippet = qlex_snippet(m_parser->lexer, msg.tok, &offset);
+  char *snippet = qlex_snippet(diagnostic->lexer, msg.tok, &offset);
   if (!snippet) {
     return ss.str();
   }
@@ -82,17 +77,4 @@ std::string DiagnosticManager::mint_clang16_message(
   free(snippet);
 
   return ss.str();
-}
-
-///============================================================================///
-
-void DiagnosticManager::push(DiagMessage &&msg) {
-  m_msgs.push_back(std::move(msg));
-  m_parser->failed = true;
-
-  qcore_print(QCORE_ERROR, mint_clang16_message(msg).c_str());
-}
-
-void ncc::parse::install_reference(npar_t *parser) {
-  diagnostic = parser ? &parser->diag : nullptr;
 }

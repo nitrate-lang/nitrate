@@ -370,7 +370,6 @@ CPP_EXPORT npar_t* npar_new(qlex_t* lexer,
   parser->env = env;
   parser->lexer = lexer;
   parser->failed = false;
-  parser->diag.set_ctx(parser);
 
   qlex_set_flags(lexer, qlex_get_flags(lexer) | QLEX_NO_COMMENTS);
 
@@ -387,8 +386,6 @@ CPP_EXPORT void npar_free(npar_t* parser) {
   delete parser;
 }
 
-static thread_local npar_t* parser_ctx;
-
 CPP_EXPORT bool npar_do(npar_t* L, Base** out) {
   if (!L || !out) {
     return false;
@@ -399,15 +396,13 @@ CPP_EXPORT bool npar_do(npar_t* L, Base** out) {
   std::swap(ncc::parse::npar_allocator, L->allocator);
 
   /*== Install thread-local references to the parser ==*/
-  ncc::parse::install_reference(L);
+  ncc::parse::diagnostic = L;
 
-  parser_ctx = L;
   *out = ncc::parse::recurse_block(*L, *L->lexer, false, false,
                                    SafetyMode::Unknown);
-  parser_ctx = nullptr;
 
   /*== Uninstall thread-local references to the parser ==*/
-  ncc::parse::install_reference(nullptr);
+  ncc::parse::diagnostic = nullptr;
 
   /*=============== Swap out their arena ===============*/
   std::swap(ncc::parse::npar_allocator, L->allocator);
