@@ -46,7 +46,7 @@
 
 using namespace ncc::parse;
 
-CallArgs recurse_caller_arguments(, qlex_tok_t terminator, size_t depth) {
+CallArgs Parser::recurse_caller_arguments(qlex_tok_t terminator, size_t depth) {
   qlex_tok_t tok, ident;
   CallArgs call_args;
   size_t pos_arg_count = 0;
@@ -108,7 +108,7 @@ CallArgs recurse_caller_arguments(, qlex_tok_t terminator, size_t depth) {
   return call_args;
 }
 
-static Call *recurse_function_call(Expr *callee, , size_t depth) {
+Call *Parser::recurse_function_call(Expr *callee, , size_t depth) {
   auto args = recurse_caller_arguments(qlex_tok_t(qPunc, qPuncRPar), depth);
   if (!next_if(qPuncRPar)) {
     diagnostic << current() << "Expected ')' to close the function call";
@@ -117,7 +117,7 @@ static Call *recurse_function_call(Expr *callee, , size_t depth) {
   return make<Call>(callee, args);
 }
 
-static bool recurse_fstring(FString **node, , size_t depth) {
+bool Parser::recurse_fstring(FString **node, , size_t depth) {
   /**
    * @brief Parse an F-string expression
    * @return true if it is okay to proceed, false otherwise
@@ -189,8 +189,7 @@ static bool recurse_fstring(FString **node, , size_t depth) {
 /// TODO: qlex_op_t precedence
 /// TODO: qlex_op_t associativity
 
-Expr *ncc::parse::recurse_expr(, std::set<qlex_tok_t> terminators,
-                               size_t depth) {
+Expr *Parser::recurse_expr(std::set<qlex_tok_t> terminators, size_t depth) {
   if (depth > MAX_EXPR_DEPTH) {
     diagnostic
         << peek()
@@ -235,7 +234,7 @@ Expr *ncc::parse::recurse_expr(, std::set<qlex_tok_t> terminators,
 
         tok = peek();
         if (tok.is(qName)) {
-          Type *suffix = recurse_type(S, rd);
+          Type *suffix = recurse_type();
 
           Expr *integer = stack.top();
           stack.pop();
@@ -252,7 +251,7 @@ Expr *ncc::parse::recurse_expr(, std::set<qlex_tok_t> terminators,
 
         tok = peek();
         if (tok.is(qName)) {
-          Type *suffix = recurse_type(S, rd);
+          Type *suffix = recurse_type();
 
           Expr *num = stack.top();
           stack.pop();
@@ -269,7 +268,7 @@ Expr *ncc::parse::recurse_expr(, std::set<qlex_tok_t> terminators,
 
         tok = peek();
         if (tok.is(qName)) {
-          Type *suffix = recurse_type(S, rd);
+          Type *suffix = recurse_type();
 
           Expr *num = stack.top();
           stack.pop();
@@ -288,7 +287,7 @@ Expr *ncc::parse::recurse_expr(, std::set<qlex_tok_t> terminators,
 
         tok = peek();
         if (tok.is(qName)) {
-          Type *suffix = recurse_type(S, rd);
+          Type *suffix = recurse_type();
 
           Expr *num = stack.top();
           stack.pop();
@@ -602,7 +601,7 @@ Expr *ncc::parse::recurse_expr(, std::set<qlex_tok_t> terminators,
             return mock_expr(QAST_VOID);
           }
 
-          Type *type = recurse_type(S, rd);
+          Type *type = recurse_type();
 
           Expr *left = stack.top();
           stack.pop();
@@ -616,7 +615,7 @@ Expr *ncc::parse::recurse_expr(, std::set<qlex_tok_t> terminators,
             return mock_expr(QAST_VOID);
           }
 
-          Type *type = recurse_type(S, rd);
+          Type *type = recurse_type();
 
           Expr *left = stack.top();
           stack.pop();

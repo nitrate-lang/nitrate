@@ -35,7 +35,7 @@
 
 using namespace ncc::parse;
 
-static Stmt *Parser::recurse_switch_case_body() {
+Stmt *Parser::recurse_switch_case_body() {
   if (next_if(qOpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
@@ -43,11 +43,11 @@ static Stmt *Parser::recurse_switch_case_body() {
   }
 }
 
-static std::pair<CaseStmt *, bool> Parser::recurse_switch_case() {
+std::pair<CaseStmt *, bool> Parser::recurse_switch_case() {
   let cond =
       recurse_expr({qlex_tok_t(qOper, qOpArrow), qlex_tok_t(qPunc, qPuncLCur)});
 
-  let body = recurse_switch_case_body(S, rd);
+  let body = recurse_switch_case_body();
 
   let is_default_case =
       cond->is(QAST_IDENT) && cond->as<Ident>()->get_name() == "_";
@@ -59,7 +59,7 @@ static std::pair<CaseStmt *, bool> Parser::recurse_switch_case() {
   }
 }
 
-static std::optional<std::pair<SwitchCases, std::optional<CaseStmt *>>>
+std::optional<std::pair<SwitchCases, std::optional<CaseStmt *>>>
 Parser::recurse_switch_body() {
   SwitchCases cases;
   std::optional<CaseStmt *> default_;
@@ -74,7 +74,7 @@ Parser::recurse_switch_body() {
       return {{cases, default_}};
     }
 
-    let[field, is_default] = recurse_switch_case(S, rd);
+    let[field, is_default] = recurse_switch_case();
 
     if (is_default) {
       if (default_) {
@@ -90,11 +90,11 @@ Parser::recurse_switch_body() {
   return std::nullopt;
 }
 
-Stmt *ncc::parse::Parser::recurse_switch() {
+Stmt *Parser::recurse_switch() {
   let switch_cond = recurse_expr({qlex_tok_t(qPunc, qPuncLCur)});
 
   if (next_if(qPuncLCur)) {
-    if (auto body_opt = recurse_switch_body(S, rd)) {
+    if (auto body_opt = recurse_switch_body()) {
       let[switch_cases, switch_default_opt] = body_opt.value();
 
       return make<SwitchStmt>(switch_cond, std::move(switch_cases),

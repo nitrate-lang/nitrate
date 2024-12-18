@@ -35,7 +35,7 @@
 
 using namespace ncc::parse;
 
-static std::string_view recurse_abi_name() {
+std::string_view Parser::recurse_abi_name() {
   if (let tok = next_if(qText)) {
     return tok->as_string(&rd);
   } else {
@@ -43,7 +43,7 @@ static std::string_view recurse_abi_name() {
   }
 }
 
-static std::optional<ExpressionList> recurse_export_attributes() {
+std::optional<ExpressionList> Parser::recurse_export_attributes() {
   ExpressionList attributes;
 
   if (!next_if(qPuncLBrk)) {
@@ -73,7 +73,7 @@ static std::optional<ExpressionList> recurse_export_attributes() {
   return std::nullopt;
 }
 
-static Stmt *Parser::recurse_export_body() {
+Stmt *Parser::recurse_export_body() {
   if (peek().is<qPuncLCur>()) {
     return recurse_block(true, false, SafetyMode::Unknown);
   } else {
@@ -81,11 +81,11 @@ static Stmt *Parser::recurse_export_body() {
   }
 }
 
-Stmt *ncc::parse::Parser::recurse_pub() {
+Stmt *Parser::recurse_pub() {
   let abi_id = recurse_abi_name(rd);
 
-  if (let attrs = recurse_export_attributes(S, rd)) {
-    let export_block = recurse_export_body(S, rd);
+  if (let attrs = recurse_export_attributes()) {
+    let export_block = recurse_export_body();
 
     return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Pub,
                             attrs.value());
@@ -96,11 +96,11 @@ Stmt *ncc::parse::Parser::recurse_pub() {
   return mock_stmt(QAST_EXPORT);
 }
 
-Stmt *ncc::parse::Parser::recurse_sec() {
+Stmt *Parser::recurse_sec() {
   let abi_id = recurse_abi_name(rd);
 
-  if (let attrs = recurse_export_attributes(S, rd)) {
-    let export_block = recurse_export_body(S, rd);
+  if (let attrs = recurse_export_attributes()) {
+    let export_block = recurse_export_body();
 
     return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Sec,
                             attrs.value());
@@ -111,11 +111,11 @@ Stmt *ncc::parse::Parser::recurse_sec() {
   return mock_stmt(QAST_EXPORT);
 }
 
-Stmt *ncc::parse::Parser::recurse_pro() {
+Stmt *Parser::recurse_pro() {
   let abi_id = recurse_abi_name(rd);
 
-  if (let attrs = recurse_export_attributes(S, rd)) {
-    let export_block = recurse_export_body(S, rd);
+  if (let attrs = recurse_export_attributes()) {
+    let export_block = recurse_export_body();
 
     return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Pro,
                             attrs.value());

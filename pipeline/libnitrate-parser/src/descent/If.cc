@@ -35,7 +35,7 @@
 
 using namespace ncc::parse;
 
-static Stmt *Parser::recurse_if_then() {
+Stmt *Parser::recurse_if_then() {
   if (next_if(qOpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
@@ -43,12 +43,12 @@ static Stmt *Parser::recurse_if_then() {
   }
 }
 
-static std::optional<Stmt *> Parser::recurse_if_else() {
+std::optional<Stmt *> Parser::recurse_if_else() {
   if (next_if(qKElse)) {
     if (next_if(qOpArrow)) {
       return recurse_block(false, true, SafetyMode::Unknown);
     } else if (next_if(qKIf)) {
-      return recurse_if(S, rd);
+      return recurse_if();
     } else {
       return recurse_block(true, false, SafetyMode::Unknown);
     }
@@ -57,12 +57,12 @@ static std::optional<Stmt *> Parser::recurse_if_else() {
   }
 }
 
-Stmt *ncc::parse::Parser::recurse_if() {
+Stmt *Parser::recurse_if() {
   let cond =
       recurse_expr({qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
 
-  let then = recurse_if_then(S, rd);
-  let ele = recurse_if_else(S, rd);
+  let then = recurse_if_then();
+  let ele = recurse_if_else();
 
   return make<IfStmt>(cond, then, ele.value_or(nullptr));
 }

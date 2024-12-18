@@ -95,6 +95,16 @@ namespace ncc::parse {
      *  Helper functions
      ****************************************************************************/
 
+    std::string_view recurse_enum_name();
+    std::optional<Type *> recurse_enum_type();
+    std::optional<Expr *> recurse_enum_item_value();
+    std::optional<EnumItem> recurse_enum_item();
+    std::optional<EnumDefItems> recurse_enum_items();
+
+    std::string_view recurse_abi_name();
+    std::optional<ExpressionList> recurse_export_attributes();
+    Stmt *recurse_export_body();
+
   public:
     Parser(qlex_t *lexer, std::shared_ptr<ncc::core::Environment> env);
     ~Parser();

@@ -35,7 +35,7 @@
 
 using namespace ncc::parse;
 
-Stmt *ncc::parse::Parser::recurse_return() {
+Stmt *Parser::recurse_return() {
   /**
    * Syntax examples:
    *   `ret 0;`, `ret;`, `ret 0, 1;`, `ret call();`
@@ -56,7 +56,7 @@ Stmt *ncc::parse::Parser::recurse_return() {
   return mock_stmt(QAST_RETURN);
 }
 
-Stmt *ncc::parse::Parser::recurse_retif() {
+Stmt *Parser::recurse_retif() {
   /**
    * Syntax examples:
    *   `retif cond(), 1;`, `retif failed, -1;`

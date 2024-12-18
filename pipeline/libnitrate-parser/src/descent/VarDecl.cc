@@ -35,7 +35,7 @@
 
 using namespace ncc::parse;
 
-static std::optional<ExpressionList> recurse_variable_attributes() {
+std::optional<ExpressionList> Parser::recurse_variable_attributes() {
   ExpressionList attributes;
 
   if (!next_if(qPuncLBrk)) {
@@ -65,15 +65,15 @@ static std::optional<ExpressionList> recurse_variable_attributes() {
   return std::nullopt;
 }
 
-static std::optional<Type *> Parser::recurse_variable_type() {
+std::optional<Type *> Parser::recurse_variable_type() {
   if (next_if(qPuncColn)) {
-    return recurse_type(S, rd);
+    return recurse_type();
   } else {
     return std::nullopt;
   }
 }
 
-static std::optional<Expr *> Parser::recurse_variable_value() {
+std::optional<Expr *> Parser::recurse_variable_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
         {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi)});
@@ -82,13 +82,12 @@ static std::optional<Expr *> Parser::recurse_variable_value() {
   }
 }
 
-static std::optional<Stmt *> recurse_variable_instance(,
-                                                       VarDeclType decl_type) {
-  if (let attributes = recurse_variable_attributes(S, rd)) {
+std::optional<Stmt *> Parser::recurse_variable_instance(VarDeclType decl_type) {
+  if (let attributes = recurse_variable_attributes()) {
     if (let tok = next_if(qName)) {
       let name = tok->as_string(&rd);
-      let type = recurse_variable_type(S, rd);
-      let value = recurse_variable_value(S, rd);
+      let type = recurse_variable_type();
+      let value = recurse_variable_value();
 
       return make<VarDecl>(SaveString(name), type.value_or(nullptr),
                            value.value_or(nullptr), decl_type,
@@ -104,8 +103,7 @@ static std::optional<Stmt *> recurse_variable_instance(,
   return mock_stmt(QAST_VAR);
 }
 
-std::vector<Stmt *> ncc::parse::Parser::recurse_variable(
-    VarDeclType decl_type) {
+std::vector<Stmt *> Parser::recurse_variable(VarDeclType decl_type) {
   std::vector<Stmt *> variables;
 
   while (true) {

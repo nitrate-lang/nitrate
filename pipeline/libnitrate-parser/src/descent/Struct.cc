@@ -41,9 +41,9 @@ struct StructContent {
   StructDefStaticMethods static_methods;
 };
 
-extern std::optional<TemplateParameters> recurse_template_parameters();
+extern std::optional<TemplateParameters> Parser::recurse_template_parameters();
 
-static ExpressionList Parser::recurse_struct_attributes() {
+ExpressionList Parser::recurse_struct_attributes() {
   ExpressionList attributes;
 
   if (!next_if(qPuncLBrk)) {
@@ -73,7 +73,7 @@ static ExpressionList Parser::recurse_struct_attributes() {
   return attributes;
 }
 
-static std::string_view recurse_struct_name() {
+std::string_view Parser::recurse_struct_name() {
   if (let tok = next_if(qName)) {
     return tok->as_string(&rd);
   } else {
@@ -81,7 +81,7 @@ static std::string_view recurse_struct_name() {
   }
 }
 
-static StructDefNames recurse_struct_terms() {
+StructDefNames Parser::recurse_struct_terms() {
   StructDefNames names;
 
   if (!next_if(qPuncColn)) {
@@ -99,7 +99,7 @@ static StructDefNames recurse_struct_terms() {
   }
 }
 
-static std::optional<Expr *> recurse_struct_field_default_value() {
+std::optional<Expr *> Parser::recurse_struct_field_default_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
 
@@ -110,15 +110,15 @@ static std::optional<Expr *> recurse_struct_field_default_value() {
   }
 }
 
-static void recurse_struct_field(, Vis vis, bool is_static,
-                                 StructDefFields &fields) {
+void Parser::recurse_struct_field(Vis vis, bool is_static,
+                                  StructDefFields &fields) {
   /* Must consume token to avoid infinite loop on error */
   if (let name = next(); name.is(qName)) {
     let field_name = name.as_string(&rd);
 
     if (next_if(qPuncColn)) {
-      let field_type = recurse_type(S, rd);
-      let default_value = recurse_struct_field_default_value(S, rd);
+      let field_type = recurse_type();
+      let default_value = recurse_struct_field_default_value();
 
       let field = StructField(vis, is_static, SaveString(field_name),
                               field_type, std::move(default_value));
@@ -132,7 +132,7 @@ static void recurse_struct_field(, Vis vis, bool is_static,
   }
 }
 
-static void recurse_struct_method_or_field(, StructContent &body) {
+void Parser::recurse_struct_method_or_field(StructContent &body) {
   Vis vis = Vis::Sec;
 
   /* Parse visibility of member */
@@ -145,7 +145,7 @@ static void recurse_struct_method_or_field(, StructContent &body) {
   }
 
   /* Is the member static? */
-  bool is_static = next_if(qKStatic).has_value();
+  bool is_ = next_if(qKStatic).has_value();
 
   if (next_if(qKFn)) { /* Parse method */
     let method = recurse_function(false);
@@ -162,7 +162,7 @@ static void recurse_struct_method_or_field(, StructContent &body) {
   next_if(qPuncComa) || next_if(qPuncSemi);
 }
 
-static StructContent Parser::recurse_struct_body() {
+StructContent Parser::recurse_struct_body() {
   StructContent body;
 
   if (!next_if(qPuncLCur)) {
@@ -186,13 +186,13 @@ static StructContent Parser::recurse_struct_body() {
   return body;
 }
 
-Stmt *ncc::parse::Parser::recurse_struct(CompositeType type) {
+Stmt *Parser::recurse_struct(CompositeType type) {
   let start_pos = current().start;
-  let attributes = recurse_struct_attributes(S, rd);
+  let attributes = recurse_struct_attributes();
   let name = recurse_struct_name(rd);
-  let template_params = recurse_template_parameters(S, rd);
+  let template_params = recurse_template_parameters();
   let terms = recurse_struct_terms(rd);
-  let[fields, methods, static_methods] = recurse_struct_body(S, rd);
+  let[fields, methods, static_methods] = recurse_struct_body();
 
   let struct_defintion = make<StructDef>(
       type, std::move(attributes), SaveString(name), std::move(template_params),

@@ -36,7 +36,7 @@
 using namespace ncc::parse;
 
 std::optional<std::pair<std::string_view, std::string_view>>
-recurse_foreach_names() {
+Parser::recurse_foreach_names() {
   if (let ident1 = next_if(qName)) {
     let ident1_value = ident1->as_string(&rd);
 
@@ -94,7 +94,7 @@ Stmt *Parser::recurse_foreach() {
         }
       }
 
-      let body = recurse_foreach_body(S, rd);
+      let body = recurse_foreach_body();
 
       return make<ForeachStmt>(SaveString(index_name), SaveString(value_name),
                                iter_expr, body);

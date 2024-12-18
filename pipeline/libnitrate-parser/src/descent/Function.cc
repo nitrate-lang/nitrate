@@ -37,9 +37,9 @@
 
 using namespace ncc::parse;
 
-static Type *Parser::recurse_function_parameter_type() {
+Type *Parser::recurse_function_parameter_type() {
   if (next_if(qPuncColn)) {
-    return recurse_type(S, rd);
+    return recurse_type();
   } else {
     let type = make<InferTy>();
     type->set_offset(current().start);
@@ -47,7 +47,7 @@ static Type *Parser::recurse_function_parameter_type() {
   }
 }
 
-static std::optional<Expr *> recurse_function_parameter_value() {
+std::optional<Expr *> Parser::recurse_function_parameter_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
 
@@ -58,11 +58,11 @@ static std::optional<Expr *> recurse_function_parameter_value() {
   }
 }
 
-static std::optional<FuncParam> recurse_function_parameter() {
+std::optional<FuncParam> Parser::recurse_function_parameter() {
   if (let name = next_if(qName)) {
     let param_name = name->as_string(&rd);
-    let param_type = recurse_function_parameter_type(S, rd);
-    let param_value = recurse_function_parameter_value(S, rd);
+    let param_type = recurse_function_parameter_type();
+    let param_value = recurse_function_parameter_value();
 
     return FuncParam{SaveString(param_name), param_type,
                      param_value.value_or(nullptr)};
@@ -73,7 +73,7 @@ static std::optional<FuncParam> recurse_function_parameter() {
   return std::nullopt;
 }
 
-std::optional<TemplateParameters> recurse_template_parameters() {
+std::optional<TemplateParameters> Parser::recurse_template_parameters() {
   if (!next_if(qOpLT)) {
     return std::nullopt;
   }
@@ -90,7 +90,7 @@ std::optional<TemplateParameters> recurse_template_parameters() {
       break;
     }
 
-    if (let param_opt = recurse_function_parameter(S, rd)) {
+    if (let param_opt = recurse_function_parameter()) {
       let param = *param_opt;
       let tparam = TemplateParameter{std::get<0>(param), std::get<1>(param),
                                      std::get<2>(param)};
@@ -106,7 +106,7 @@ std::optional<TemplateParameters> recurse_template_parameters() {
   return params;
 }
 
-static FuncParams Parser::recurse_function_parameters() {
+FuncParams Parser::recurse_function_parameters() {
   FuncParams parameters;
 
   if (!next_if(qPuncLPar)) {
@@ -132,7 +132,7 @@ static FuncParams Parser::recurse_function_parameters() {
       break;
     }
 
-    if (let param_opt = recurse_function_parameter(S, rd)) {
+    if (let param_opt = recurse_function_parameter()) {
       let param = *param_opt;
       let tparam =
           FuncParam{std::get<0>(param), std::get<1>(param), std::get<2>(param)};
@@ -148,10 +148,10 @@ static FuncParams Parser::recurse_function_parameters() {
   return parameters;
 }
 
-static FuncPurity get_purity_specifier(qlex_tok_t &start_pos,
-                                       bool is_thread_safe, bool is_pure,
-                                       bool is_impure, bool is_quasi,
-                                       bool is_retro) {
+FuncPurity Parser::get_purity_specifier(qlex_tok_t &start_pos,
+                                        bool is_thread_safe, bool is_pure,
+                                        bool is_impure, bool is_quasi,
+                                        bool is_retro) {
   /** Thread safety does not conflict with purity.
    *  Purity implies thread safety.
    */
@@ -176,8 +176,8 @@ static FuncPurity get_purity_specifier(qlex_tok_t &start_pos,
   }
 }
 
-static std::optional<std::pair<std::string_view, bool>>
-recurse_function_capture() {
+std::optional<std::pair<std::string_view, bool>>
+Parser::recurse_function_capture() {
   bool is_ref = false;
 
   if (next_if(qOpBitAnd)) {
@@ -193,9 +193,10 @@ recurse_function_capture() {
   return std::nullopt;
 }
 
-static void recurse_function_ambigouis(, ExpressionList &attributes,
-                                       FnCaptures &captures, FuncPurity &purity,
-                                       std::string_view &function_name) {
+void Parser::recurse_function_ambigouis(ExpressionList &attributes,
+                                        FnCaptures &captures,
+                                        FuncPurity &purity,
+                                        std::string_view &function_name) {
   enum class State {
     Main,
     AttributesSection,
@@ -331,9 +332,9 @@ static void recurse_function_ambigouis(, ExpressionList &attributes,
                                 is_quasi, is_retro);
 }
 
-static Type *Parser::recurse_function_return_type() {
+Type *Parser::Parser::recurse_function_return_type() {
   if (next_if(qPuncColn)) {
-    return recurse_type(S, rd);
+    return recurse_type();
   } else {
     let type = make<InferTy>();
     type->set_offset(current().start);
@@ -342,7 +343,7 @@ static Type *Parser::recurse_function_return_type() {
   }
 }
 
-static std::optional<Stmt *> recurse_function_body(, bool restrict_decl_only) {
+std::optional<Stmt *> Parser::recurse_function_body(bool restrict_decl_only) {
   if (restrict_decl_only || next_if(qPuncSemi)) {
     return std::nullopt;
   } else if (next_if(qOpArrow)) {
@@ -352,7 +353,7 @@ static std::optional<Stmt *> recurse_function_body(, bool restrict_decl_only) {
   }
 }
 
-Stmt *ncc::parse::recurse_function(, bool restrict_decl_only) {
+Stmt *ncc::parse::recurse_function(bool restrict_decl_only) {
   /* fn <attributes>? <modifiers>? <capture_list>?
    * <name><template_parameters>?(<parameters>?)<: return_type>? <body>? */
 
@@ -365,9 +366,9 @@ Stmt *ncc::parse::recurse_function(, bool restrict_decl_only) {
 
   recurse_function_ambigouis(attributes, captures, purity, function_name);
 
-  let template_parameters = recurse_template_parameters(S, rd);
-  let parameters = recurse_function_parameters(S, rd);
-  let return_type = recurse_function_return_type(S, rd);
+  let template_parameters = recurse_template_parameters();
+  let parameters = recurse_function_parameters();
+  let return_type = recurse_function_return_type();
   let body = recurse_function_body(restrict_decl_only);
 
   /// TODO: Implement function contract pre and post conditions

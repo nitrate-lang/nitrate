@@ -35,7 +35,7 @@
 
 using namespace ncc::parse;
 
-static std::optional<Stmt *> Parser::recurse_for_init_expr() {
+std::optional<Stmt *> Parser::recurse_for_init_expr() {
   if (next_if(qPuncSemi)) {
     return std::nullopt;
   }
@@ -43,7 +43,7 @@ static std::optional<Stmt *> Parser::recurse_for_init_expr() {
   return recurse_block(false, true, SafetyMode::Unknown);
 }
 
-static std::optional<Expr *> Parser::recurse_for_cond_expr() {
+std::optional<Expr *> Parser::recurse_for_cond_expr() {
   if (next_if(qPuncSemi)) {
     return std::nullopt;
   }
@@ -57,7 +57,7 @@ static std::optional<Expr *> Parser::recurse_for_cond_expr() {
   return cond_expr;
 }
 
-static std::optional<Expr *> recurse_for_step_expr(, bool has_paren) {
+std::optional<Expr *> Parser::recurse_for_step_expr(bool has_paren) {
   if (has_paren) {
     if (peek().is<qPuncRPar>()) {
       return std::nullopt;
@@ -74,7 +74,7 @@ static std::optional<Expr *> recurse_for_step_expr(, bool has_paren) {
   }
 }
 
-static Stmt *Parser::recurse_for_body() {
+Stmt *Parser::recurse_for_body() {
   if (next_if(qOpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
@@ -82,11 +82,11 @@ static Stmt *Parser::recurse_for_body() {
   }
 }
 
-Stmt *ncc::parse::Parser::recurse_for() {
+Stmt *Parser::recurse_for() {
   bool has_paren = next_if(qPuncLPar).has_value();
 
-  let init = recurse_for_init_expr(S, rd);
-  let cond = recurse_for_cond_expr(S, rd);
+  let init = recurse_for_init_expr();
+  let cond = recurse_for_cond_expr();
   let step = recurse_for_step_expr(has_paren);
 
   if (has_paren) {
@@ -96,7 +96,7 @@ Stmt *ncc::parse::Parser::recurse_for() {
     }
   }
 
-  let body = recurse_for_body(S, rd);
+  let body = recurse_for_body();
 
   return make<ForStmt>(init, cond, step, body);
 }

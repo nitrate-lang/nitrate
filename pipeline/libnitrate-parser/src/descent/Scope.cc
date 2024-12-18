@@ -35,7 +35,7 @@
 
 using namespace ncc::parse;
 
-static std::string_view recurse_scope_name() {
+std::string_view Parser::recurse_scope_name() {
   if (let tok = next_if(qName)) {
     return tok->as_string(&rd);
   } else {
@@ -43,7 +43,7 @@ static std::string_view recurse_scope_name() {
   }
 }
 
-static std::optional<ScopeDeps> recurse_scope_deps() {
+std::optional<ScopeDeps> Parser::recurse_scope_deps() {
   ScopeDeps dependencies;
 
   if (!next_if(qPuncColn)) {
@@ -76,7 +76,7 @@ static std::optional<ScopeDeps> recurse_scope_deps() {
   return std::nullopt;
 }
 
-static Stmt *Parser::recurse_scope_block() {
+Stmt *Parser::recurse_scope_block() {
   if (next_if(qPuncSemi)) {
     return make<Block>(BlockItems(), SafetyMode::Unknown);
   } else if (next_if(qOpArrow)) {
@@ -86,11 +86,11 @@ static Stmt *Parser::recurse_scope_block() {
   }
 }
 
-Stmt *ncc::parse::Parser::recurse_scope() {
+Stmt *Parser::recurse_scope() {
   let scope_name = recurse_scope_name(rd);
 
   if (let implicit_dependencies = recurse_scope_deps(rd)) {
-    let scope_block = recurse_scope_block(S, rd);
+    let scope_block = recurse_scope_block();
 
     return make<ScopeStmt>(SaveString(scope_name), scope_block,
                            std::move(implicit_dependencies.value()));

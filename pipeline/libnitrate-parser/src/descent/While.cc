@@ -35,7 +35,7 @@
 
 using namespace ncc::parse;
 
-static Expr *recurse_while_cond() {
+Expr *Parser::recurse_while_cond() {
   let cur = peek();
 
   if (cur.is<qOpArrow>() || cur.is<qPuncLCur>()) {
@@ -46,7 +46,7 @@ static Expr *recurse_while_cond() {
   }
 }
 
-static Stmt *recurse_while_body() {
+Stmt *Parser::recurse_while_body() {
   if (next_if(qOpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
@@ -54,7 +54,7 @@ static Stmt *recurse_while_body() {
   }
 }
 
-Stmt *ncc::parse::Parser::recurse_while() {
+Stmt *Parser::recurse_while() {
   /**
    * Example syntax:
    *  `while {}`,                 `while => call();`
@@ -63,10 +63,10 @@ Stmt *ncc::parse::Parser::recurse_while() {
    */
 
   /* The condition expression is optional */
-  let cond = recurse_while_cond(S, rd);
+  let cond = recurse_while_cond();
 
   /* Support for single statement implicit block */
-  let body = recurse_while_body(S, rd);
+  let body = recurse_while_body();
 
   return make<WhileStmt>(cond, body);
 }

@@ -46,8 +46,8 @@
 
 using namespace ncc::parse;
 
-Stmt* ncc::parse::Parser::recurse_block(bool expect_braces, bool single_stmt,
-                                        SafetyMode safety) {
+Stmt* Parser::recurse_block(bool expect_braces, bool single_stmt,
+                            SafetyMode safety) {
   if (expect_braces && !next().is<qPuncLCur>()) {
     diagnostic << current() << "Expected '{'";
   }

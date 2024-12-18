@@ -35,7 +35,7 @@
 
 using namespace ncc::parse;
 
-Stmt *ncc::parse::Parser::recurse_typedef() {
+Stmt *Parser::recurse_typedef() {
   /**
    * Syntax examples:
    *   `type name = type;`
@@ -45,7 +45,7 @@ Stmt *ncc::parse::Parser::recurse_typedef() {
     let name = tok->as_string(&rd);
 
     if (next_if(qOpSet)) {
-      let type = recurse_type(S, rd);
+      let type = recurse_type();
 
       if (next_if(qPuncSemi)) {
         return make<TypedefStmt>(SaveString(name), type);
