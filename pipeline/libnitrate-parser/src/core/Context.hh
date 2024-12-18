@@ -47,7 +47,7 @@
 #include <nitrate-parser/Context.hh>
 #include <sstream>
 
-namespace npar {
+namespace ncc::parse {
   enum class FormatStyle {
     Clang16Color, /* Clang-like 16 color diagnostic format */
     ClangPlain,   /* Clang-like plain text diagnostic format */
@@ -129,13 +129,13 @@ namespace npar {
 
   extern thread_local DiagnosticManager *diagnostic;
 
-};  // namespace npar
+};  // namespace ncc::parse
 
 struct npar_t {
   std::shared_ptr<ncc::core::Environment> env;
   uint64_t id; /* Process unique instance identifier. Never reused. Never 0. */
   std::unique_ptr<ncc::core::IMemory> allocator; /* The Main allocator */
-  npar::DiagnosticManager diag;                  /* The Diagnostic Manager */
+  ncc::parse::DiagnosticManager diag;            /* The Diagnostic Manager */
   qlex_t *lexer;                                 /* Polymporphic lexer */
   bool failed; /* Whether the parser failed (ie syntax errors) */
 };

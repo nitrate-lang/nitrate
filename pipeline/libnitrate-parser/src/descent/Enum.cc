@@ -33,7 +33,7 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
 constexpr static std::string_view recurse_enum_name(qlex_t &rd) {
   if (let tok = next_if(qName)) {
@@ -115,7 +115,7 @@ constexpr static std::optional<EnumDefItems> recurse_enum_items(npar_t &S,
   return std::nullopt;
 }
 
-npar::Stmt *npar::recurse_enum(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::recurse_enum(npar_t &S, qlex_t &rd) {
   let name = recurse_enum_name(rd);
   let type = recurse_enum_type(S, rd);
 

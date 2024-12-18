@@ -33,7 +33,7 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
 static Expr *recurse_while_cond(npar_t &S, qlex_t &rd) {
   let cur = peek();
@@ -54,7 +54,7 @@ static Stmt *recurse_while_body(npar_t &S, qlex_t &rd) {
   }
 }
 
-npar::Stmt *npar::recurse_while(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::recurse_while(npar_t &S, qlex_t &rd) {
   /**
    * Example syntax:
    *  `while {}`,                 `while => call();`

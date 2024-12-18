@@ -33,7 +33,7 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
 struct StructContent {
   StructDefFields fields;
@@ -189,7 +189,7 @@ static StructContent recurse_struct_body(npar_t &S, qlex_t &rd) {
   return body;
 }
 
-npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
+Stmt *ncc::parse::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
   let start_pos = current().start;
   let attributes = recurse_struct_attributes(S, rd);
   let name = recurse_struct_name(rd);

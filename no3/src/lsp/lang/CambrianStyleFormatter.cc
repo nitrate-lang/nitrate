@@ -7,7 +7,7 @@
 #include <unordered_set>
 
 using namespace lsp::fmt;
-using namespace npar;
+using namespace ncc::parse;
 using namespace ncc::core;
 
 CambrianFormatter::LineStreamWritter&
@@ -29,7 +29,7 @@ CambrianFormatter::LineStreamWritter::operator<<(qlex_op_t op) {
 }
 
 CambrianFormatter::LineStreamWritter&
-CambrianFormatter::LineStreamWritter::operator<<(npar::Vis v) {
+CambrianFormatter::LineStreamWritter::operator<<(ncc::parse::Vis v) {
   switch (v) {
     case Vis::Sec: {
       m_line_buffer << "sec";

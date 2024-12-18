@@ -40,7 +40,7 @@
 #include "nitrate-core/String.hh"
 #include "nitrate-parser/ASTData.hh"
 
-namespace npar {
+namespace ncc::parse {
   class npar_pack ExprStmt final : public Stmt {
     Expr *m_expr;
 
@@ -367,8 +367,8 @@ namespace npar {
   };
 
   constexpr bool Stmt::is_expr_stmt(npar_ty_t type) const {
-    return is(QAST_ESTMT) && as<npar::ExprStmt>()->get_expr()->is(type);
+    return is(QAST_ESTMT) && as<ExprStmt>()->get_expr()->is(type);
   }
-}  // namespace npar
+}  // namespace ncc::parse
 
 #endif

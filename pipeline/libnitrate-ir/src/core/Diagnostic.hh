@@ -43,7 +43,7 @@
 #include <string_view>
 #include <unordered_set>
 
-namespace npar {
+namespace ncc::parse {
   struct Base;
 
 }

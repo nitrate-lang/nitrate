@@ -38,7 +38,7 @@
 #include <nitrate-parser/ASTCommon.hh>
 #include <span>
 
-namespace npar {
+namespace ncc::parse {
   class npar_pack StmtExpr final : public Expr {
     Stmt *m_stmt;
 
@@ -276,8 +276,8 @@ namespace npar {
   };
 
   constexpr bool Expr::is_stmt_expr(npar_ty_t type) const {
-    return is(QAST_SEXPR) && as<npar::StmtExpr>()->get_stmt()->is(type);
+    return is(QAST_SEXPR) && as<StmtExpr>()->get_stmt()->is(type);
   }
-}  // namespace npar
+}  // namespace ncc::parse
 
 #endif

@@ -94,13 +94,13 @@ void do_declaration(const lsp::RequestMessage& req,
   /// How do i get that? My whole codebase is not legacy...
 
   // tree->root()->iterate([&](const Base* node) {
-  //   if (!node->is_decl() || node->as<npar::Decl>()->get_name().view() !=
-  //   current_word)
+  //   if (!node->is_decl() || node->as<ncc::parse::Decl>()->get_name().view()
+  //   != current_word)
   //       [[likely]] {
   //     return true;
   //   }
 
-  //   const npar::Decl* decl = node->as<npar::Decl>();
+  //   const ncc::parse::Decl* decl = node->as<ncc::parse::Decl>();
 
   //   auto start_pos = decl->get_offset();
 

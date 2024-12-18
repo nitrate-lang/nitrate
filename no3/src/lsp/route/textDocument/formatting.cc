@@ -109,7 +109,7 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   qlex lexer(ss, uri.c_str(), env);
   nr_syn parser(lexer.get(), env);
 
-  npar::Base* root = nullptr;
+  ncc::parse::Base* root = nullptr;
   if (!npar_do(parser.get(), &root)) {
     return;
   }

@@ -33,7 +33,7 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
 std::optional<std::pair<std::string_view, std::string_view>>
 recurse_foreach_names(qlex_t &rd) {
@@ -74,7 +74,7 @@ static Stmt *recurse_foreach_body(npar_t &S, qlex_t &rd) {
   }
 }
 
-npar::Stmt *npar::recurse_foreach(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::recurse_foreach(npar_t &S, qlex_t &rd) {
   /**
    * Syntax examples:
    *   `foreach (i, v in arr) { }`, `foreach (v in arr) { }`

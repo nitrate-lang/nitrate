@@ -33,7 +33,7 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
 static std::optional<Expr *> recurse_type_range_start(npar_t &S, qlex_t &rd) {
   if (next_if(qPuncColn)) {
@@ -374,7 +374,7 @@ static Type *recurse_type_by_name(qlex_t &rd, std::string_view name) {
   return type.value();
 }
 
-Type *npar::recurse_type(npar_t &S, qlex_t &rd) {
+Type *ncc::parse::recurse_type(npar_t &S, qlex_t &rd) {
   switch (let tok = next(); tok.ty) {
     case qKeyW: {
       let type = recurse_type_by_keyword(S, rd, tok.v.key);

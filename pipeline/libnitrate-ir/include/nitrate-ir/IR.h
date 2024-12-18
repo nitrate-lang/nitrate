@@ -40,7 +40,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-namespace npar {
+namespace ncc::parse {
   struct Base;
 }
 
@@ -116,7 +116,7 @@ bool nr_read(qmodule_t *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
  *
  * @note This function is thread safe.
  */
-bool nr_lower(qmodule_t **mod, npar::Base *base, const char *name,
+bool nr_lower(qmodule_t **mod, ncc::parse::Base *base, const char *name,
               bool diagnostics);
 
 typedef void (*nr_node_cb)(nr_node_t *cur, uintptr_t userdata);

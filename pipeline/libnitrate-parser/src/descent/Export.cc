@@ -33,7 +33,7 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
 static std::string_view recurse_abi_name(qlex_t &rd) {
   if (let tok = next_if(qText)) {
@@ -82,7 +82,7 @@ static Stmt *recurse_export_body(npar_t &S, qlex_t &rd) {
   }
 }
 
-npar::Stmt *npar::recurse_pub(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::recurse_pub(npar_t &S, qlex_t &rd) {
   let abi_id = recurse_abi_name(rd);
 
   if (let attrs = recurse_export_attributes(S, rd)) {
@@ -97,7 +97,7 @@ npar::Stmt *npar::recurse_pub(npar_t &S, qlex_t &rd) {
   return mock_stmt(QAST_EXPORT);
 }
 
-npar::Stmt *npar::recurse_sec(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::recurse_sec(npar_t &S, qlex_t &rd) {
   let abi_id = recurse_abi_name(rd);
 
   if (let attrs = recurse_export_attributes(S, rd)) {
@@ -112,7 +112,7 @@ npar::Stmt *npar::recurse_sec(npar_t &S, qlex_t &rd) {
   return mock_stmt(QAST_EXPORT);
 }
 
-npar::Stmt *npar::recurse_pro(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::recurse_pro(npar_t &S, qlex_t &rd) {
   let abi_id = recurse_abi_name(rd);
 
   if (let attrs = recurse_export_attributes(S, rd)) {

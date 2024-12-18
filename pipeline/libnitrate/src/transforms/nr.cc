@@ -54,12 +54,12 @@ CREATE_TRANSFORM(nit::nr) {
     out_mode = OutMode::MsgPack;
   }
 
-  std::optional<npar::Base *> root;
+  std::optional<ncc::parse::Base *> root;
 
   if (source.peek() == '{') {
-    root = npar::AST_JsonReader(source).get();
+    root = ncc::parse::AST_JsonReader(source).get();
   } else {
-    root = npar::AST_MsgPackReader(source).get();
+    root = ncc::parse::AST_MsgPackReader(source).get();
   }
 
   if (!root.has_value()) {

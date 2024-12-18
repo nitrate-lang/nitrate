@@ -33,7 +33,7 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
 static std::string_view recurse_scope_name(qlex_t &rd) {
   if (let tok = next_if(qName)) {
@@ -86,7 +86,7 @@ static Stmt *recurse_scope_block(npar_t &S, qlex_t &rd) {
   }
 }
 
-npar::Stmt *npar::recurse_scope(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::recurse_scope(npar_t &S, qlex_t &rd) {
   let scope_name = recurse_scope_name(rd);
 
   if (let implicit_dependencies = recurse_scope_deps(rd)) {

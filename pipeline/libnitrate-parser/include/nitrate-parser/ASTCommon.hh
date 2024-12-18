@@ -141,7 +141,7 @@ typedef enum npar_ty_t {
 
 #define QAST_COUNT (QAST__LAST - QAST__FIRST + 1)
 
-namespace npar {
+namespace ncc::parse {
   struct Base;
   class Stmt;
   class Type;
@@ -214,9 +214,9 @@ namespace npar {
   class EnumDef;
   class ScopeStmt;
   class ExportStmt;
-}  // namespace npar
+}  // namespace ncc::parse
 
-namespace npar {
+namespace ncc::parse {
   enum class Vis {
     Pub = 0,
     Sec = 1,
@@ -243,6 +243,6 @@ namespace npar {
 
 #define npar_pack __attribute__((packed))
 
-}  // namespace npar
+}  // namespace ncc::parse
 
 #endif

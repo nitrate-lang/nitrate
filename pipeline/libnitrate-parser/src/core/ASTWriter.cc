@@ -38,7 +38,7 @@
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTWriter.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 using namespace ncc::core;
 
 void AST_Writer::write_source_location(Base const& n) const {

@@ -44,10 +44,10 @@
 
 #include "nitrate-core/Environment.hh"
 
-using namespace npar;
+using namespace ncc::parse;
 
-Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
-                          bool single_stmt, SafetyMode safety) {
+Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
+                                bool single_stmt, SafetyMode safety) {
   if (expect_braces && !next().is<qPuncLCur>()) {
     diagnostic << current() << "Expected '{'";
   }
@@ -396,20 +396,21 @@ CPP_EXPORT bool npar_do(npar_t* L, Base** out) {
   *out = nullptr;
 
   /*=============== Swap in their arena  ===============*/
-  std::swap(npar::npar_allocator, L->allocator);
+  std::swap(ncc::parse::npar_allocator, L->allocator);
 
   /*== Install thread-local references to the parser ==*/
-  npar::install_reference(L);
+  ncc::parse::install_reference(L);
 
   parser_ctx = L;
-  *out = npar::recurse_block(*L, *L->lexer, false, false, SafetyMode::Unknown);
+  *out = ncc::parse::recurse_block(*L, *L->lexer, false, false,
+                                   SafetyMode::Unknown);
   parser_ctx = nullptr;
 
   /*== Uninstall thread-local references to the parser ==*/
-  npar::install_reference(nullptr);
+  ncc::parse::install_reference(nullptr);
 
   /*=============== Swap out their arena ===============*/
-  std::swap(npar::npar_allocator, L->allocator);
+  std::swap(ncc::parse::npar_allocator, L->allocator);
 
   /*==================== Return status ====================*/
   return !L->failed;
@@ -425,7 +426,7 @@ CPP_EXPORT bool npar_check(npar_t* parser, const Base* base) {
   }
 
   bool failed = false;
-  npar::iterate<dfs_pre>(base, [&](auto, auto c) {
+  ncc::parse::iterate<dfs_pre>(base, [&](auto, auto c) {
     failed |= !c || !*c || (*c)->is_mock();
 
     return failed ? IterOp::Abort : IterOp::Proceed;
@@ -443,8 +444,8 @@ CPP_EXPORT void npar_dumps(npar_t* parser, bool no_ansi, npar_dump_cb cb,
   let adapter = [&](const char* msg) { cb(msg, std::strlen(msg), data); };
 
   if (no_ansi) {
-    parser->diag.render(adapter, npar::FormatStyle::ClangPlain);
+    parser->diag.render(adapter, ncc::parse::FormatStyle::ClangPlain);
   } else {
-    parser->diag.render(adapter, npar::FormatStyle::Clang16Color);
+    parser->diag.render(adapter, ncc::parse::FormatStyle::Clang16Color);
   }
 }

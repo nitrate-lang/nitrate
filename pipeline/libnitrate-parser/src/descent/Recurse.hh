@@ -42,7 +42,7 @@
 #include <nitrate-parser/Context.hh>
 #include <set>
 
-namespace npar {
+namespace ncc::parse {
   Stmt *recurse_pub(npar_t &S, qlex_t &rd);
   Stmt *recurse_sec(npar_t &S, qlex_t &rd);
   Stmt *recurse_pro(npar_t &S, qlex_t &rd);
@@ -92,6 +92,6 @@ namespace npar {
 
 #define next_if(tok) next_if_<tok>(rd)
 
-};  // namespace npar
+};  // namespace ncc::parse
 
 #endif  // __NITRATE_PARSE_H__

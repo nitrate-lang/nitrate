@@ -35,7 +35,7 @@
 #include <nitrate-parser/ASTData.hh>
 #include <unordered_set>
 
-using namespace npar;
+using namespace ncc::parse;
 
 static Type *recurse_function_parameter_type(npar_t &S, qlex_t &rd) {
   if (next_if(qPuncColn)) {
@@ -357,7 +357,8 @@ static std::optional<Stmt *> recurse_function_body(npar_t &S, qlex_t &rd,
   }
 }
 
-Stmt *npar::recurse_function(npar_t &S, qlex_t &rd, bool restrict_decl_only) {
+Stmt *ncc::parse::recurse_function(npar_t &S, qlex_t &rd,
+                                   bool restrict_decl_only) {
   /* fn <attributes>? <modifiers>? <capture_list>?
    * <name><template_parameters>?(<parameters>?)<: return_type>? <body>? */
 

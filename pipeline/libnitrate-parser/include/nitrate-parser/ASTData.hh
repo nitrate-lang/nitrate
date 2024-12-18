@@ -43,7 +43,7 @@
 #include <variant>
 #include <vector>
 
-namespace npar {
+namespace ncc::parse {
   extern thread_local std::unique_ptr<ncc::core::IMemory> npar_allocator;
 
   template <class T>
@@ -77,9 +77,9 @@ namespace npar {
   static inline ncc::core::str_alias SaveString(std::string_view str) {
     return ncc::core::StringMemory::Get(str);
   }
-};  // namespace npar
+};  // namespace ncc::parse
 
-namespace npar {
+namespace ncc::parse {
   using ExpressionList = std::vector<Expr *, Arena<Expr *>>;
 
   using TupleTyItems = std::vector<Type *, Arena<Type *>>;
@@ -150,6 +150,6 @@ namespace npar {
   };
   using FnCaptures = std::vector<std::pair<ncc::core::str_alias, bool>,
                                  Arena<std::pair<ncc::core::str_alias, bool>>>;
-}  // namespace npar
+}  // namespace ncc::parse
 
 #endif

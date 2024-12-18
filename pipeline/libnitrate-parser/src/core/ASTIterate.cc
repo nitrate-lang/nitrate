@@ -40,7 +40,7 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <queue>
 
-using namespace npar;
+using namespace ncc::parse;
 
 class IterVisitor : public ASTVisitor {
   std::vector<Base**>& sub;

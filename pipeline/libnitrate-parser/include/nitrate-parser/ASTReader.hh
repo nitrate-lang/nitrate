@@ -41,7 +41,7 @@
 #include <optional>
 #include <stack>
 
-namespace npar {
+namespace ncc::parse {
   class CPP_EXPORT AST_Reader {
     enum class State {
       ObjStart,
@@ -92,6 +92,6 @@ namespace npar {
     AST_MsgPackReader(std::istream& is) { parse_stream(is); }
     virtual ~AST_MsgPackReader() = default;
   };
-}  // namespace npar
+}  // namespace ncc::parse
 
 #endif

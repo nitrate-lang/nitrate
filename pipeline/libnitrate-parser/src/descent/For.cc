@@ -33,7 +33,7 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
 static std::optional<Stmt *> recurse_for_init_expr(npar_t &S, qlex_t &rd) {
   if (next_if(qPuncSemi)) {
@@ -83,7 +83,7 @@ static Stmt *recurse_for_body(npar_t &S, qlex_t &rd) {
   }
 }
 
-npar::Stmt *npar::recurse_for(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::recurse_for(npar_t &S, qlex_t &rd) {
   bool has_paren = next_if(qPuncLPar).has_value();
 
   let init = recurse_for_init_expr(S, rd);

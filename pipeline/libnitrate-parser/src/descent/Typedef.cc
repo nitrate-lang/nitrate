@@ -33,7 +33,9 @@
 
 #include <descent/Recurse.hh>
 
-npar::Stmt *npar::recurse_typedef(npar_t &S, qlex_t &rd) {
+using namespace ncc::parse;
+
+Stmt *ncc::parse::recurse_typedef(npar_t &S, qlex_t &rd) {
   /**
    * Syntax examples:
    *   `type name = type;`

@@ -33,9 +33,9 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
-Stmt *npar::recurse_return(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::recurse_return(npar_t &S, qlex_t &rd) {
   /**
    * Syntax examples:
    *   `ret 0;`, `ret;`, `ret 0, 1;`, `ret call();`
@@ -56,7 +56,7 @@ Stmt *npar::recurse_return(npar_t &S, qlex_t &rd) {
   return mock_stmt(QAST_RETURN);
 }
 
-Stmt *npar::recurse_retif(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::recurse_retif(npar_t &S, qlex_t &rd) {
   /**
    * Syntax examples:
    *   `retif cond(), 1;`, `retif failed, -1;`

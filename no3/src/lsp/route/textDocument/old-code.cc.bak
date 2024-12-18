@@ -10,7 +10,7 @@ void recurse(Base* C) {
    * - Maximum line width is not supported at all (might me okay)
    */
 
-  using namespace npar;
+  using namespace ncc::parse;
 
   if (!C) {
     return;
@@ -391,103 +391,103 @@ void recurse(Base* C) {
     case QAST_REF: {
       line << "&";
       recurse(C->as<RefTy>()->get_item());
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_U1: {
       line << "u1";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_U8: {
       line << "u8";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_U16: {
       line << "u16";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_U32: {
       line << "u32";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_U64: {
       line << "u64";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_U128: {
       line << "u128";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_I8: {
       line << "i8";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_I16: {
       line << "i16";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_I32: {
       line << "i32";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_I64: {
       line << "i64";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_I128: {
       line << "i128";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_F16: {
       line << "f16";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_F32: {
       line << "f32";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_F64: {
       line << "f64";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_F128: {
       line << "f128";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_VOID: {
       line << "void";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
@@ -499,7 +499,7 @@ void recurse(Base* C) {
 
     case QAST_OPAQUE: {
       line << "opaque(" << C->as<OpaqueTy>()->get_name() << ")";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
@@ -510,7 +510,7 @@ void recurse(Base* C) {
       line << "; ";
       recurse(N->get_size());
       line << "]";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
@@ -527,7 +527,7 @@ void recurse(Base* C) {
       }
       line << ")";
 
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
@@ -585,19 +585,19 @@ void recurse(Base* C) {
         recurse(N->get_return());
       }
 
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_NAMED: {
       line << C->as<NamedTy>()->get_name();
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
     case QAST_INFER: {
       line << "?";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 
@@ -612,7 +612,7 @@ void recurse(Base* C) {
           recurse(N->get_args().front());
           line << "?";
 
-          put_type_metadata(C->as<npar::Type>());
+          put_type_metadata(C->as<ncc::parse::Type>());
           break;
         } else if (name == "__builtin_vec") {
           qcore_assert(N->get_args().size() == 1);
@@ -621,7 +621,7 @@ void recurse(Base* C) {
           recurse(N->get_args().front());
           line << "]";
 
-          put_type_metadata(C->as<npar::Type>());
+          put_type_metadata(C->as<ncc::parse::Type>());
           break;
         } else if (name == "__builtin_uset") {
           qcore_assert(N->get_args().size() == 1);
@@ -630,7 +630,7 @@ void recurse(Base* C) {
           recurse(N->get_args().front());
           line << "}";
 
-          put_type_metadata(C->as<npar::Type>());
+          put_type_metadata(C->as<ncc::parse::Type>());
           break;
         } else if (name == "__builtin_umap") {
           qcore_assert(N->get_args().size() == 2);
@@ -641,7 +641,7 @@ void recurse(Base* C) {
           recurse(N->get_args()[1]);
           line << "]";
 
-          put_type_metadata(C->as<npar::Type>());
+          put_type_metadata(C->as<ncc::parse::Type>());
           break;
         }
       }
@@ -656,7 +656,7 @@ void recurse(Base* C) {
         }
       }
       line << ">";
-      put_type_metadata(C->as<npar::Type>());
+      put_type_metadata(C->as<ncc::parse::Type>());
       break;
     }
 

@@ -40,10 +40,10 @@
 #include <nitrate-parser/Context.hh>
 #include <sstream>
 
-using namespace npar;
+using namespace ncc::parse;
 
 CPP_EXPORT thread_local std::unique_ptr<ncc::core::IMemory>
-    npar::npar_allocator;
+    ncc::parse::npar_allocator;
 
 ///=============================================================================
 
@@ -94,21 +94,21 @@ CPP_EXPORT bool Type::is_ptr_to(Type *type) const {
   return item->is(type->getKind());
 }
 
-Stmt *npar::mock_stmt(npar_ty_t expected) {
+Stmt *ncc::parse::mock_stmt(npar_ty_t expected) {
   (void)expected;
 
   static Stmt node(QAST_BASE);
   return &node;
 }
 
-Expr *npar::mock_expr(npar_ty_t expected) {
+Expr *ncc::parse::mock_expr(npar_ty_t expected) {
   (void)expected;
 
   static Expr node(QAST_BASE);
   return &node;
 }
 
-Type *npar::mock_type() {
+Type *ncc::parse::mock_type() {
   static Type node(QAST_BASE);
   return &node;
 }

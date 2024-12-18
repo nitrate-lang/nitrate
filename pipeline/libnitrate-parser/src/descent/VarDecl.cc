@@ -33,7 +33,7 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
 static std::optional<ExpressionList> recurse_variable_attributes(npar_t &S,
                                                                  qlex_t &rd) {
@@ -105,8 +105,8 @@ static std::optional<Stmt *> recurse_variable_instance(npar_t &S, qlex_t &rd,
   return mock_stmt(QAST_VAR);
 }
 
-std::vector<Stmt *> npar::recurse_variable(npar_t &S, qlex_t &rd,
-                                           VarDeclType decl_type) {
+std::vector<Stmt *> ncc::parse::recurse_variable(npar_t &S, qlex_t &rd,
+                                                 VarDeclType decl_type) {
   std::vector<Stmt *> variables;
 
   while (true) {

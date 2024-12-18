@@ -44,7 +44,7 @@
 #define MAX_EXPR_DEPTH (10000)
 #define MAX_LIST_DUP (10000)
 
-using namespace npar;
+using namespace ncc::parse;
 
 CallArgs recurse_caller_arguments(npar_t &S, qlex_t &rd, qlex_tok_t terminator,
                                   size_t depth) {
@@ -193,8 +193,8 @@ static bool recurse_fstring(npar_t &S, FString **node, qlex_t &rd,
 /// TODO: qlex_op_t precedence
 /// TODO: qlex_op_t associativity
 
-Expr *npar::recurse_expr(npar_t &S, qlex_t &rd,
-                         std::set<qlex_tok_t> terminators, size_t depth) {
+Expr *ncc::parse::recurse_expr(npar_t &S, qlex_t &rd,
+                               std::set<qlex_tok_t> terminators, size_t depth) {
   if (depth > MAX_EXPR_DEPTH) {
     diagnostic
         << peek()

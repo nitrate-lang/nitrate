@@ -33,7 +33,7 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
 static Stmt *recurse_switch_case_body(npar_t &S, qlex_t &rd) {
   if (next_if(qOpArrow)) {
@@ -90,7 +90,7 @@ recurse_switch_body(npar_t &S, qlex_t &rd) {
   return std::nullopt;
 }
 
-npar::Stmt *npar::recurse_switch(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::recurse_switch(npar_t &S, qlex_t &rd) {
   let switch_cond = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncLCur)});
 
   if (next_if(qPuncLCur)) {

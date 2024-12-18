@@ -255,8 +255,8 @@ public:
 };
 
 using ArgCallback = std::function<void(const char *)>;
-static std::optional<npar::Base *> parse_tokens(npar_t *L) {
-  npar::Base *root = nullptr;
+static std::optional<ncc::parse::Base *> parse_tokens(npar_t *L) {
+  ncc::parse::Base *root = nullptr;
   bool ok = npar_do(L, &root);
 
   npar_dumps(
@@ -288,12 +288,12 @@ CREATE_TRANSFORM(nit::parse) {
   if (let root = parse_tokens(par.get())) {
     switch (out_mode) {
       case OutMode::JSON: {
-        auto writter = npar::AST_JsonWriter(output);
+        auto writter = ncc::parse::AST_JsonWriter(output);
         root.value()->accept(writter);
         return true;
       }
       case OutMode::MsgPack: {
-        auto writter = npar::AST_MsgPackWriter(output);
+        auto writter = ncc::parse::AST_MsgPackWriter(output);
         root.value()->accept(writter);
         return true;
       }

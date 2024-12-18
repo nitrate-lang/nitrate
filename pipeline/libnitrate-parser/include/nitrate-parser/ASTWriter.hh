@@ -44,7 +44,7 @@
 #include <stack>
 #include <string_view>
 
-namespace npar {
+namespace ncc::parse {
   class CPP_EXPORT AST_Writer : public ASTVisitor {
     using InsertString = std::function<void(std::string_view)>;
     using InsertUInt64 = std::function<void(uint64_t)>;
@@ -238,6 +238,6 @@ namespace npar {
           m_os(os) {}
     virtual ~AST_MsgPackWriter() = default;
   };
-}  // namespace npar
+}  // namespace ncc::parse
 
 #endif

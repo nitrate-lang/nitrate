@@ -37,7 +37,7 @@
 #include <cassert>
 #include <nitrate-parser/ASTCommon.hh>
 
-namespace npar {
+namespace ncc::parse {
   class ASTVisitor {
   public:
     virtual ~ASTVisitor() = default;
@@ -112,6 +112,6 @@ namespace npar {
     virtual void visit(ScopeStmt const &n) = 0;
     virtual void visit(ExportStmt const &n) = 0;
   };
-}  // namespace npar
+}  // namespace ncc::parse
 
 #endif  // __NITRATE_AST_VISTOR_H__

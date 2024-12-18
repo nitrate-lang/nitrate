@@ -33,7 +33,7 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
 static Stmt *recurse_if_then(npar_t &S, qlex_t &rd) {
   if (next_if(qOpArrow)) {
@@ -57,7 +57,7 @@ static std::optional<Stmt *> recurse_if_else(npar_t &S, qlex_t &rd) {
   }
 }
 
-npar::Stmt *npar::recurse_if(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::recurse_if(npar_t &S, qlex_t &rd) {
   let cond = recurse_expr(
       S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
 

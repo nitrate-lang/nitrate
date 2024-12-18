@@ -39,7 +39,7 @@
 #include <nitrate-parser/ASTStmt.hh>
 #include <nitrate-parser/ASTType.hh>
 
-namespace npar {
+namespace ncc::parse {
   template <typename T, typename... Args>
   static inline T *make(Args &&...args) {
     T *new_obj = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
@@ -52,9 +52,9 @@ namespace npar {
   Stmt *mock_stmt(npar_ty_t expected);
   Expr *mock_expr(npar_ty_t expected);
   Type *mock_type();
-}  // namespace npar
+}  // namespace ncc::parse
 
-namespace npar {
+namespace ncc::parse {
   enum IterMode {
     dfs_pre,
     dfs_post,
@@ -119,6 +119,6 @@ namespace npar {
       return IterOp::Proceed;
     });
   }
-}  // namespace npar
+}  // namespace ncc::parse
 
 #endif

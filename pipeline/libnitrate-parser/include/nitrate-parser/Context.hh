@@ -40,7 +40,7 @@
 
 typedef struct npar_t npar_t;
 
-namespace npar {
+namespace ncc::parse {
   struct Base;
 }
 
@@ -89,7 +89,7 @@ void npar_free(npar_t *parser);
  *
  * @note This function is thread safe.
  */
-bool npar_do(npar_t *parser, npar::Base **out);
+bool npar_do(npar_t *parser, ncc::parse::Base **out);
 
 /**
  * @brief Check if the parse tree is valid.
@@ -103,7 +103,7 @@ bool npar_do(npar_t *parser, npar::Base **out);
  *
  * @note This function is thread safe.
  */
-bool npar_check(npar_t *parser, const npar::Base *base);
+bool npar_check(npar_t *parser, const ncc::parse::Base *base);
 
 /**
  * @brief A callback function to facilitate the communication reports generated

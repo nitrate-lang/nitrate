@@ -37,9 +37,9 @@
 #include <nitrate-parser/Context.hh>
 #include <sstream>
 
-using namespace npar;
+using namespace ncc::parse;
 
-CPP_EXPORT thread_local DiagnosticManager *npar::diagnostic;
+CPP_EXPORT thread_local DiagnosticManager *ncc::parse::diagnostic;
 
 ///============================================================================///
 
@@ -152,6 +152,6 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler,
   return m_msgs.size();
 }
 
-void npar::install_reference(npar_t *parser) {
+void ncc::parse::install_reference(npar_t *parser) {
   diagnostic = parser ? &parser->diag : nullptr;
 }

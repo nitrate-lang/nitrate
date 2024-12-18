@@ -37,7 +37,7 @@
 #include <nitrate-parser/ASTBase.hh>
 #include <span>
 
-namespace npar {
+namespace ncc::parse {
   class NamedTy : public Type {
     ncc::core::str_alias m_name;
 
@@ -216,6 +216,6 @@ namespace npar {
     constexpr let get_params() const { return m_params; }
     constexpr auto get_attributes() const { return m_attributes; }
   };
-}  // namespace npar
+}  // namespace ncc::parse
 
 #endif

@@ -42,7 +42,7 @@
 #include <nitrate-parser/ASTData.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 
-namespace npar {
+namespace ncc::parse {
   struct Base {
   private:
     npar_ty_t m_node_type : 7;
@@ -55,8 +55,8 @@ namespace npar {
                    uint32_t fileid = QLEX_NOFILE, uint32_t offset = QLEX_EOFF)
         : m_node_type(ty), m_fileid(fileid), m_offset(offset), m_mock(mock){};
 
-    constexpr void accept(npar::ASTVisitor &v) const {
-      using namespace npar;
+    constexpr void accept(ASTVisitor &v) const {
+      using namespace ncc::parse;
 
       switch (getKind()) {
         case QAST_BASE: {
@@ -346,7 +346,7 @@ namespace npar {
 
     template <typename T>
     static constexpr npar_ty_t getTypeCode() {
-      using namespace npar;
+      using namespace ncc::parse;
 
       if constexpr (std::is_same_v<T, Base>) {
         return QAST_BASE;
@@ -741,6 +741,6 @@ namespace npar {
 
     constexpr bool is_stmt_expr(npar_ty_t type) const;
   };
-}  // namespace npar
+}  // namespace ncc::parse
 
 #endif
