@@ -37,11 +37,11 @@
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Lexer.hh>
+#include <nitrate-parser/AST.hh>
 
 typedef struct npar_t npar_t;
 
 namespace ncc::parse {
-  class Base;
   class Parser;
 
   class ASTRoot final {
@@ -62,6 +62,28 @@ namespace ncc::parse {
     std::unique_ptr<ncc::core::IMemory> m_allocator; /* The Main allocator */
     qlex_t *m_lexer;                                 /* Polymporphic lexer */
     bool m_failed; /* Whether the parser failed (ie syntax errors) */
+
+    Stmt *recurse_pub();
+    Stmt *recurse_sec();
+    Stmt *recurse_pro();
+    std::vector<Stmt *> recurse_variable(VarDeclType type);
+    Stmt *recurse_enum();
+    Stmt *recurse_struct(CompositeType type);
+    Stmt *recurse_scope();
+    Stmt *recurse_function(bool restrict_decl_only);
+    Type *recurse_type();
+    Stmt *recurse_typedef();
+    Stmt *recurse_return();
+    Stmt *recurse_retif();
+    Stmt *recurse_if();
+    Stmt *recurse_while();
+    Stmt *recurse_for();
+    Stmt *recurse_foreach();
+    Stmt *recurse_switch();
+    Stmt *recurse_inline_asm();
+    Stmt *recurse_block(bool expect_braces, bool single_stmt,
+                        SafetyMode safety);
+    Expr *recurse_expr(std::set<qlex_tok_t> terminators, size_t depth = 0);
 
   public:
     Parser(std::shared_ptr<ncc::core::Environment> env);
