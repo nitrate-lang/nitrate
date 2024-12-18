@@ -31,10 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Macro.h>
-
 #include <nitrate-core/Cache.hh>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 
 CPP_EXPORT ncc::core::TheCache &ncc::core::get_cache() {
   static TheCache cache;

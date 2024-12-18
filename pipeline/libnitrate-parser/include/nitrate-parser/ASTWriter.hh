@@ -34,11 +34,10 @@
 #ifndef __NITRATE_AST_WRITER_H__
 #define __NITRATE_AST_WRITER_H__
 
-#include <nitrate-core/Macro.h>
-
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 #include <ostream>

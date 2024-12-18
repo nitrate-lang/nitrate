@@ -31,9 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Macro.h>
-
 #include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Writer.hh>
 #include <nitrate-lexer/Lexer.hh>

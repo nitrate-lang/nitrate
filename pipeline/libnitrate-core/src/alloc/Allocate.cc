@@ -31,11 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Macro.h>
-
 #include <alloc/Collection.hh>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 
 using namespace ncc::core;
 

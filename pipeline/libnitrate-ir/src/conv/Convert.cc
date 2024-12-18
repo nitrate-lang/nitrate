@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Macro.h>
 #include <nitrate-ir/IR.h>
 
 #include <boost/multiprecision/cpp_dec_float.hpp>
@@ -43,6 +42,7 @@
 #include <memory>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>

@@ -34,10 +34,9 @@
 #ifndef __NITRATE_NR_READER_H__
 #define __NITRATE_NR_READER_H__
 
-#include <nitrate-core/Macro.h>
-
 #include <cstdint>
 #include <istream>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-ir/Visitor.hh>
 #include <optional>
 #include <stack>

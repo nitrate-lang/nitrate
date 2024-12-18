@@ -31,11 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Lib.h>
 
 #include <atomic>
 #include <nitrate-core/Init.hh>
+#include <nitrate-core/Macro.hh>
 
 static std::atomic<size_t> qlex_lib_ref_count = 0;
 

@@ -31,10 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Macro.h>
-
 #include <cstdio>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <sstream>
 #include <string>
 #include <unordered_map>

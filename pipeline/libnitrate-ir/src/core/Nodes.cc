@@ -33,7 +33,6 @@
 
 #define __NR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
-#include <nitrate-core/Macro.h>
 #include <nitrate-ir/IR.h>
 #include <openssl/sha.h>
 
@@ -44,6 +43,7 @@
 #include <cstring>
 #include <limits>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <set>

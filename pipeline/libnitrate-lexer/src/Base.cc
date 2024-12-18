@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Macro.h>
 #include <string.h>
 
 #include <boost/bimap.hpp>
@@ -44,6 +43,7 @@
 #include <cstdio>
 #include <ios>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <utility>

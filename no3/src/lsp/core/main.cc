@@ -1,6 +1,5 @@
 #include <argparse.h>
 #include <glog/logging.h>
-#include <nitrate-core/Macro.h>
 
 #include <boost/assert/source_location.hpp>
 #include <boost/throw_exception.hpp>
@@ -9,6 +8,7 @@
 #include <lsp/core/license-data.hh>
 #include <lsp/core/server.hh>
 #include <memory>
+#include <nitrate-core/Macro.hh>
 #include <optional>
 
 static constexpr void create_parser(argparse::ArgumentParser& parser) {

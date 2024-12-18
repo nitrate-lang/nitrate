@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Macro.h>
 #include <nitrate-ir/Lib.h>
 #include <nitrate-parser/Lib.h>
 #include <sys/resource.h>
@@ -40,6 +39,7 @@
 #include <boost/assert/source_location.hpp>
 #include <core/PassManager.hh>
 #include <nitrate-core/Init.hh>
+#include <nitrate-core/Macro.hh>
 
 namespace boost {
   void throw_exception(std::exception const& m, boost::source_location const&) {

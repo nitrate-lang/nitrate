@@ -31,13 +31,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Macro.h>
 #include <nitrate-lexer/Lib.h>
 #include <nitrate-parser/Lib.h>
 #include <sys/resource.h>
 
 #include <atomic>
 #include <nitrate-core/Init.hh>
+#include <nitrate-core/Macro.hh>
 
 static std::atomic<size_t> npar_lib_ref_count = 0;
 

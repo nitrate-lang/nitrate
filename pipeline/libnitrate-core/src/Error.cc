@@ -32,12 +32,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <cxxabi.h>
-#include <nitrate-core/Macro.h>
 
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <vector>
 
 #define UNW_LOCAL_ONLY

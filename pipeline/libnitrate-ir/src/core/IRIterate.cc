@@ -42,9 +42,8 @@
 
 #define __NR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
-#include <nitrate-core/Macro.h>
-
 #include <algorithm>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <queue>
 #include <stack>

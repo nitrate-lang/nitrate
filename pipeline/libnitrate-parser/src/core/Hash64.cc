@@ -31,10 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Macro.h>
-
 #include <core/Hash.hh>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 
 using namespace npar;
 

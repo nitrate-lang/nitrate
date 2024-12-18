@@ -31,11 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Macro.h>
 #include <nitrate-ir/IR.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <cstdint>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IRGraph.hh>
 
 /// TODO: Test this code

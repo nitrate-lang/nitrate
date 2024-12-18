@@ -34,13 +34,13 @@
 #include <llvm-18/llvm/MC/TargetRegistry.h>
 #include <llvm-18/llvm/Support/ManagedStatic.h>
 #include <llvm-18/llvm/Support/TargetSelect.h>
-#include <nitrate-core/Macro.h>
 #include <nitrate-emit/Lib.h>
 #include <sys/resource.h>
 
 #include <atomic>
 #include <iostream>
 #include <nitrate-core/Init.hh>
+#include <nitrate-core/Macro.hh>
 
 static std::atomic<size_t> qcode_lib_ref_count = 0;
 

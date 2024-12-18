@@ -31,12 +31,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Macro.h>
 #include <nitrate-ir/Config.h>
 
 #include <boost/bimap.hpp>
 #include <core/Config.hh>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 
 namespace nr::conf {
   extern std::vector<nr_setting_t> default_settings;
