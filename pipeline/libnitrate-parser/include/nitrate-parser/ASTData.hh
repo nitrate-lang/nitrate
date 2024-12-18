@@ -75,8 +75,8 @@ namespace npar {
     return false;
   }
 
-  static inline qcore::str_alias SaveString(std::string_view str) {
-    return qcore::StringMemory::get(str);
+  static inline ncc::core::str_alias SaveString(std::string_view str) {
+    return ncc::core::StringMemory::get(str);
   }
 };  // namespace npar
 
@@ -85,34 +85,35 @@ namespace npar {
 
   using TupleTyItems = std::vector<Type *, Arena<Type *>>;
 
-  using CallArg = std::pair<qcore::str_alias, Expr *>;
+  using CallArg = std::pair<ncc::core::str_alias, Expr *>;
   using CallArgs = std::vector<CallArg, Arena<CallArg>>;
 
   using FStringItems =
-      std::vector<std::variant<qcore::str_alias, Expr *>,
-                  Arena<std::variant<qcore::str_alias, Expr *>>>;
+      std::vector<std::variant<ncc::core::str_alias, Expr *>,
+                  Arena<std::variant<ncc::core::str_alias, Expr *>>>;
 
-  using TemplateParameter = std::tuple<qcore::str_alias, Type *, Expr *>;
+  using TemplateParameter = std::tuple<ncc::core::str_alias, Type *, Expr *>;
   using TemplateParameters =
       std::vector<TemplateParameter, Arena<TemplateParameter>>;
 
   using BlockItems = std::vector<Stmt *, Arena<Stmt *>>;
-  using ScopeDeps = std::set<qcore::str_alias, std::less<qcore::str_alias>,
-                             Arena<qcore::str_alias>>;
+  using ScopeDeps =
+      std::set<ncc::core::str_alias, std::less<ncc::core::str_alias>,
+               Arena<ncc::core::str_alias>>;
 
   using SwitchCases = std::vector<CaseStmt *, Arena<CaseStmt *>>;
-  using EnumItem = std::pair<qcore::str_alias, Expr *>;
+  using EnumItem = std::pair<ncc::core::str_alias, Expr *>;
   using EnumDefItems = std::vector<EnumItem, Arena<EnumItem>>;
 
   class StructField {
-    qcore::str_alias m_name;
+    ncc::core::str_alias m_name;
     std::optional<Expr *> m_value;
     Type *m_type;
     Vis m_vis;
     bool m_is_static;
 
   public:
-    StructField(Vis vis, bool is_static, qcore::str_alias name, Type *type,
+    StructField(Vis vis, bool is_static, ncc::core::str_alias name, Type *type,
                 std::optional<Expr *> value)
         : m_name(std::move(name)),
           m_value(std::move(value)),
@@ -122,7 +123,7 @@ namespace npar {
 
     let get_vis() const { return m_vis; }
     let is_static() const { return m_is_static; }
-    let get_name() const { return m_name; }
+    auto get_name() const { return m_name.get(); }
     let get_type() const { return m_type; }
     let get_value() const { return m_value; }
   };
@@ -138,17 +139,18 @@ namespace npar {
   using StructDefMethods = std::vector<StructFunction, Arena<StructFunction>>;
   using StructDefStaticMethods =
       std::vector<StructFunction, Arena<StructFunction>>;
-  using StructDefNames = std::vector<qcore::str_alias, Arena<qcore::str_alias>>;
+  using StructDefNames =
+      std::vector<ncc::core::str_alias, Arena<ncc::core::str_alias>>;
 
-  using FuncParam = std::tuple<qcore::str_alias, Type *, Expr *>;
+  using FuncParam = std::tuple<ncc::core::str_alias, Type *, Expr *>;
   struct FuncParams {
     std::vector<FuncParam, Arena<FuncParam>> params;
     bool is_variadic;
 
     FuncParams() : is_variadic(false) {}
   };
-  using FnCaptures = std::vector<std::pair<qcore::str_alias, bool>,
-                                 Arena<std::pair<qcore::str_alias, bool>>>;
+  using FnCaptures = std::vector<std::pair<ncc::core::str_alias, bool>,
+                                 Arena<std::pair<ncc::core::str_alias, bool>>>;
 }  // namespace npar
 
 #endif

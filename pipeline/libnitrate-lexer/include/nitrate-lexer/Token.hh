@@ -186,7 +186,7 @@ typedef struct __attribute__((packed)) qlex_tok_t {
     qlex_punc_t punc;
     qlex_op_t op;
     qlex_key_t key;
-    qcore::str_alias str_idx;
+    ncc::core::str_alias str_idx;
   } __attribute__((packed)) v;
 
   constexpr qlex_tok_t() : start(0), ty(qEofF), v{.op = qOpPlus} {}
@@ -200,7 +200,7 @@ typedef struct __attribute__((packed)) qlex_tok_t {
   constexpr qlex_tok_t(qlex_ty_t ty, qlex_key_t key, uint32_t loc_beg = 0)
       : start(loc_beg), ty(ty), v{.key = key} {}
 
-  constexpr qlex_tok_t(qlex_ty_t ty, qcore::str_alias str_idx,
+  constexpr qlex_tok_t(qlex_ty_t ty, ncc::core::str_alias str_idx,
                        uint32_t loc_beg = 0)
       : start(loc_beg), ty(ty), v{.str_idx = str_idx} {}
 

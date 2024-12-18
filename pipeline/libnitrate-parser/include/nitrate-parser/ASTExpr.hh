@@ -107,20 +107,20 @@ namespace npar {
   };
 
   class npar_pack ConstInt final : public Expr {
-    qcore::str_alias m_value;
+    ncc::core::str_alias m_value;
 
   public:
-    constexpr ConstInt(qcore::str_alias value)
+    constexpr ConstInt(ncc::core::str_alias value)
         : Expr(QAST_INT), m_value(value) {}
 
     constexpr auto get_value() const { return m_value.get(); }
   };
 
   class npar_pack ConstFloat final : public Expr {
-    qcore::str_alias m_value;
+    ncc::core::str_alias m_value;
 
   public:
-    constexpr ConstFloat(qcore::str_alias value)
+    constexpr ConstFloat(ncc::core::str_alias value)
         : Expr(QAST_FLOAT), m_value(value) {}
 
     constexpr auto get_value() const { return m_value.get(); }
@@ -136,10 +136,10 @@ namespace npar {
   };
 
   class npar_pack ConstString final : public Expr {
-    qcore::str_alias m_value;
+    ncc::core::str_alias m_value;
 
   public:
-    constexpr ConstString(qcore::str_alias value)
+    constexpr ConstString(ncc::core::str_alias value)
         : Expr(QAST_STRING), m_value(value) {}
 
     constexpr auto get_value() const { return m_value.get(); }
@@ -214,10 +214,10 @@ namespace npar {
 
   class npar_pack Field final : public Expr {
     Expr *m_base;
-    qcore::str_alias m_field;
+    ncc::core::str_alias m_field;
 
   public:
-    constexpr Field(Expr *base, qcore::str_alias field)
+    constexpr Field(Expr *base, ncc::core::str_alias field)
         : Expr(QAST_FIELD), m_base(base), m_field(field) {}
 
     constexpr auto get_base() const { return m_base; }
@@ -248,19 +248,20 @@ namespace npar {
   };
 
   class FString final : public Expr {
-    std::span<std::variant<qcore::str_alias, Expr *>> m_items;
+    std::span<std::variant<ncc::core::str_alias, Expr *>> m_items;
 
   public:
     FString(FStringItems items) : Expr(QAST_FSTRING), m_items(items) {}
 
-    constexpr let get_items() const { return m_items; }
+    constexpr auto get_items() const { return m_items; }
   };
 
   class npar_pack Ident final : public Expr {
-    qcore::str_alias m_name;
+    ncc::core::str_alias m_name;
 
   public:
-    constexpr Ident(qcore::str_alias name) : Expr(QAST_IDENT), m_name(name) {}
+    constexpr Ident(ncc::core::str_alias name)
+        : Expr(QAST_IDENT), m_name(name) {}
 
     constexpr auto get_name() const { return m_name.get(); }
   };
@@ -271,7 +272,7 @@ namespace npar {
   public:
     SeqPoint(ExpressionList items) : Expr(QAST_SEQ), m_items(items) {}
 
-    constexpr let get_items() const { return m_items; }
+    constexpr auto get_items() const { return m_items; }
   };
 
   constexpr bool Expr::is_stmt_expr(npar_ty_t type) const {

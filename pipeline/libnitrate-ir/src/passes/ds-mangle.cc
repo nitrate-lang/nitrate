@@ -48,6 +48,7 @@
  */
 
 using namespace nr;
+using namespace ncc::core;
 
 bool nr::pass::ds_mangle(qmodule_t *mod, IReport *log) {
   SymbolEncoding se;
@@ -58,7 +59,7 @@ bool nr::pass::ds_mangle(qmodule_t *mod, IReport *log) {
       Fn *fn = (*cur)->as<Fn>();
       auto name = se.mangle_name(fn, fn->getAbiTag());
       if (name) [[likely]] {
-        fn->setName(qcore::save(*name));
+        fn->setName(save(*name));
       } else {
         failed = true;
         log->report(NameManglingTypeInfer, IC::Error, fn->getName(),
@@ -69,7 +70,7 @@ bool nr::pass::ds_mangle(qmodule_t *mod, IReport *log) {
       auto name = se.mangle_name(local, local->getAbiTag());
       if (name) [[likely]] {
         qcore_assert(!name->empty());
-        local->setName(qcore::save(*name));
+        local->setName(save(*name));
       } else {
         failed = true;
         log->report(NameManglingTypeInfer, IC::Error, local->getName(),

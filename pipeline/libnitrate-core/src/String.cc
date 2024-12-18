@@ -36,7 +36,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/String.hh>
 
-using namespace qcore;
+using namespace ncc::core;
 
 CPP_EXPORT StringMemory::Storage StringMemory::StringMemory::m_storage;
 

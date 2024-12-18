@@ -56,7 +56,6 @@
 #include <unordered_map>
 
 using namespace nr;
-using namespace qcore;
 using namespace ncc::core;
 
 struct PState {
@@ -161,7 +160,7 @@ C_EXPORT bool nr_lower(qmodule_t **mod, npar_node_t *base, const char *name,
 
 ///=============================================================================
 
-static bool check_is_foreign_function(const npar::ExpressionList &n) {
+static bool check_is_foreign_function(auto n) {
   return std::any_of(n.begin(), n.end(), [](npar::Expr *attr) {
     return attr->is(QAST_IDENT) &&
            attr->as<npar::Ident>()->get_name() == "foreign";
@@ -860,8 +859,8 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   if (n->get_items().size() == 1) {
     auto val = n->get_items().front();
 
-    if (std::holds_alternative<qcore::str_alias>(val)) {
-      return b.createStringDataArray(*std::get<qcore::str_alias>(val));
+    if (std::holds_alternative<str_alias>(val)) {
+      return b.createStringDataArray(*std::get<str_alias>(val));
     } else if (std::holds_alternative<npar::Expr *>(val)) {
       auto expr = next_one(std::get<npar::Expr *>(val));
 
@@ -881,8 +880,8 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   Expr *concated = b.createStringDataArray("");
 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    if (std::holds_alternative<qcore::str_alias>(*it)) {
-      auto val = *std::get<qcore::str_alias>(*it);
+    if (std::holds_alternative<str_alias>(*it)) {
+      auto val = *std::get<str_alias>(*it);
 
       concated =
           create<BinExpr>(concated, b.createStringDataArray(val), Op::Plus);
@@ -1214,7 +1213,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
       return std::nullopt;
     }
 
-    auto field_name = save(*field.get_name());
+    auto field_name = save(field.get_name());
 
     Expr *field_default = nullptr;
     if (field.get_value() == nullptr) {

@@ -78,7 +78,7 @@ CPP_EXPORT void Environment::set(std::string_view key,
   std::lock_guard<std::mutex> lock(m_mutex);
 
   if (value.has_value()) {
-    m_data[qcore::save(key)] = qcore::save(*value);
+    m_data[save(key)] = save(*value);
   } else {
     m_data.erase(key);
   }

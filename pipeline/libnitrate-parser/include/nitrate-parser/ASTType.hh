@@ -35,13 +35,15 @@
 #define __NITRATE_AST_ASTTYPE_H__
 
 #include <nitrate-parser/ASTBase.hh>
+#include <span>
 
 namespace npar {
   class NamedTy : public Type {
-    qcore::str_alias m_name;
+    ncc::core::str_alias m_name;
 
   public:
-    constexpr NamedTy(qcore::str_alias name) : Type(QAST_NAMED), m_name(name) {}
+    constexpr NamedTy(ncc::core::str_alias name)
+        : Type(QAST_NAMED), m_name(name) {}
 
     constexpr auto get_name() const { return m_name.get(); }
   };
@@ -156,10 +158,10 @@ namespace npar {
   };
 
   class OpaqueTy : public Type {
-    qcore::str_alias m_name;
+    ncc::core::str_alias m_name;
 
   public:
-    OpaqueTy(qcore::str_alias name) : Type(QAST_OPAQUE), m_name(name) {}
+    OpaqueTy(ncc::core::str_alias name) : Type(QAST_OPAQUE), m_name(name) {}
 
     constexpr auto get_name() const { return m_name.get(); }
   };
@@ -195,14 +197,14 @@ namespace npar {
   };
 
   class FuncTy : public Type {
-    ExpressionList m_attributes;
+    std::span<Expr *> m_attributes;
     FuncParams m_params;
     Type *m_return;
     FuncPurity m_purity;
 
   public:
     FuncTy(Type *return_type, FuncParams parameters, FuncPurity purity,
-           ExpressionList attributes)
+           std::span<Expr *> attributes)
         : Type(QAST_FUNCTOR),
           m_attributes(attributes),
           m_params(parameters),
@@ -212,7 +214,7 @@ namespace npar {
     constexpr auto get_return() const { return m_return; }
     constexpr auto get_purity() const { return m_purity; }
     constexpr let get_params() const { return m_params; }
-    constexpr let get_attributes() const { return m_attributes; }
+    constexpr auto get_attributes() const { return m_attributes; }
   };
 }  // namespace npar
 

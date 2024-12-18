@@ -35,6 +35,10 @@
 #define __NITRATE_AST_ASTSTMT_H__
 
 #include <nitrate-parser/ASTBase.hh>
+#include <span>
+
+#include "nitrate-core/String.hh"
+#include "nitrate-parser/ASTData.hh"
 
 namespace npar {
   class npar_pack ExprStmt final : public Stmt {
@@ -47,26 +51,26 @@ namespace npar {
   };
 
   class Block final : public Stmt {
-    BlockItems m_items;
+    std::span<Stmt *> m_items;
     SafetyMode m_safety;
 
   public:
-    Block(const BlockItems &items, SafetyMode safety)
+    Block(BlockItems items, SafetyMode safety)
         : Stmt(QAST_BLOCK), m_items(items), m_safety(safety) {}
 
-    let get_items() const { return m_items; }
+    auto get_items() const { return m_items; }
     auto get_safety() const { return m_safety; }
   };
 
   class VarDecl final : public Stmt {
-    ExpressionList m_attributes;
+    std::span<Expr *> m_attributes;
     std::string_view m_name;
     Type *m_type;
     Expr *m_value;
     VarDeclType m_decl_type;
 
   public:
-    VarDecl(qcore::str_alias name, Type *type, Expr *value,
+    VarDecl(ncc::core::str_alias name, Type *type, Expr *value,
             VarDeclType decl_type, ExpressionList attributes)
         : Stmt(QAST_VAR),
           m_attributes(attributes),
@@ -75,23 +79,23 @@ namespace npar {
           m_value(value),
           m_decl_type(decl_type) {}
 
-    let get_name() const { return m_name; }
+    auto get_name() const { return m_name; }
     auto get_type() const { return m_type; }
     auto get_value() const { return m_value; }
     auto get_decl_type() const { return m_decl_type; }
-    let get_attributes() const { return m_attributes; }
+    auto get_attributes() const { return m_attributes; }
   };
 
   class InlineAsm final : public Stmt {
     std::string_view m_code;
-    ExpressionList m_args;
+    std::span<Expr *> m_args;
 
   public:
-    InlineAsm(qcore::str_alias code, const ExpressionList &args)
+    InlineAsm(ncc::core::str_alias code, ExpressionList args)
         : Stmt(QAST_INLINE_ASM), m_code(code.get()), m_args(args) {}
 
-    let get_code() const { return m_code; }
-    let get_args() const { return m_args; }
+    auto get_code() const { return m_code; }
+    auto get_args() const { return m_args; }
   };
 
   class npar_pack IfStmt final : public Stmt {
@@ -146,7 +150,7 @@ namespace npar {
     Stmt *m_body;
 
   public:
-    ForeachStmt(qcore::str_alias idx_ident, qcore::str_alias val_ident,
+    ForeachStmt(ncc::core::str_alias idx_ident, ncc::core::str_alias val_ident,
                 Expr *expr, Stmt *body)
         : Stmt(QAST_FOREACH),
           m_idx_ident(idx_ident.get()),
@@ -154,8 +158,8 @@ namespace npar {
           m_expr(expr),
           m_body(body) {}
 
-    let get_idx_ident() const { return m_idx_ident; }
-    let get_val_ident() const { return m_val_ident; }
+    auto get_idx_ident() const { return m_idx_ident; }
+    auto get_val_ident() const { return m_val_ident; }
     auto get_expr() const { return m_expr; }
     auto get_body() const { return m_body; }
   };
@@ -206,29 +210,29 @@ namespace npar {
 
   class SwitchStmt final : public Stmt {
     Expr *m_cond;
-    SwitchCases m_cases;
+    std::span<CaseStmt *> m_cases;
     Stmt *m_default;
 
   public:
-    SwitchStmt(Expr *cond, const SwitchCases &cases, Stmt *default_)
+    SwitchStmt(Expr *cond, SwitchCases cases, Stmt *default_)
         : Stmt(QAST_SWITCH),
           m_cond(cond),
           m_cases(cases),
           m_default(default_) {}
 
     auto get_cond() const { return m_cond; }
-    let get_cases() const { return m_cases; }
+    auto get_cases() const { return m_cases; }
     auto get_default() const { return m_default; }
   };
 
   class ExportStmt final : public Stmt {
-    ExpressionList m_attrs;
+    std::span<Expr *> m_attrs;
     std::string_view m_abi_name;
     Stmt *m_body;
     Vis m_vis;
 
   public:
-    ExportStmt(Stmt *content, qcore::str_alias abi_name, Vis vis,
+    ExportStmt(Stmt *content, ncc::core::str_alias abi_name, Vis vis,
                ExpressionList attrs)
         : Stmt(QAST_EXPORT),
           m_attrs(attrs),
@@ -237,9 +241,9 @@ namespace npar {
           m_vis(vis) {}
 
     auto get_body() const { return m_body; }
-    let get_abi_name() const { return m_abi_name; }
+    auto get_abi_name() const { return m_abi_name; }
     auto get_vis() const { return m_vis; }
-    let get_attrs() const { return m_attrs; }
+    auto get_attrs() const { return m_attrs; }
   };
 
   class ScopeStmt final : public Stmt {
@@ -248,10 +252,10 @@ namespace npar {
     Stmt *m_body;
 
   public:
-    ScopeStmt(qcore::str_alias name, Stmt *body, ScopeDeps deps = {})
+    ScopeStmt(ncc::core::str_alias name, Stmt *body, ScopeDeps deps = {})
         : Stmt(QAST_SCOPE), m_deps(deps), m_name(name.get()), m_body(body) {}
 
-    let get_name() const { return m_name; }
+    auto get_name() const { return m_name; }
     auto get_body() const { return m_body; }
     let get_deps() const { return m_deps; }
   };
@@ -261,31 +265,31 @@ namespace npar {
     Type *m_type;
 
   public:
-    TypedefStmt(qcore::str_alias name, Type *type)
+    TypedefStmt(ncc::core::str_alias name, Type *type)
         : Stmt(QAST_TYPEDEF), m_name(name.get()), m_type(type) {}
 
-    let get_name() const { return m_name; }
+    auto get_name() const { return m_name; }
     auto get_type() const { return m_type; }
   };
 
   class EnumDef final : public Stmt {
-    EnumDefItems m_items;
+    std::span<EnumItem> m_items;
     std::string_view m_name;
     Type *m_type;
 
   public:
-    EnumDef(qcore::str_alias name, Type *type, const EnumDefItems &items)
+    EnumDef(ncc::core::str_alias name, Type *type, EnumDefItems items)
         : Stmt(QAST_ENUM), m_items(items), m_name(name.get()), m_type(type) {}
 
-    let get_items() const { return m_items; }
-    let get_name() const { return m_name; }
+    auto get_items() const { return m_items; }
+    auto get_name() const { return m_name; }
     auto get_type() const { return m_type; }
   };
 
   class Function final : public Stmt {
-    ExpressionList m_attributes;
+    std::span<Expr *> m_attributes;
     FuncPurity m_purity;
-    FnCaptures m_captures;
+    std::span<std::pair<ncc::core::str_alias, bool>> m_captures;
     std::string_view m_name;
     std::optional<TemplateParameters> m_template_parameters;
     FuncParams m_params;
@@ -295,10 +299,10 @@ namespace npar {
 
   public:
     Function(ExpressionList attributes, FuncPurity purity, FnCaptures captures,
-             qcore::str_alias name, std::optional<TemplateParameters> params,
-             FuncParams fn_params, Type *return_type,
-             std::optional<Expr *> precond, std::optional<Expr *> postcond,
-             std::optional<Stmt *> body)
+             ncc::core::str_alias name,
+             std::optional<TemplateParameters> params, FuncParams fn_params,
+             Type *return_type, std::optional<Expr *> precond,
+             std::optional<Expr *> postcond, std::optional<Stmt *> body)
         : Stmt(QAST_FUNCTION),
           m_attributes(attributes),
           m_purity(purity),
@@ -311,10 +315,10 @@ namespace npar {
           m_postcond(postcond),
           m_body(body) {}
 
-    let get_attributes() const { return m_attributes; }
+    auto get_attributes() const { return m_attributes; }
     auto get_purity() const { return m_purity; }
-    let get_captures() const { return m_captures; }
-    let get_name() const { return m_name; }
+    auto get_captures() const { return m_captures; }
+    auto get_name() const { return m_name; }
     let get_template_params() const { return m_template_parameters; }
     let get_params() const { return m_params; }
     auto get_return() const { return m_return; }
@@ -328,20 +332,20 @@ namespace npar {
 
   class StructDef final : public Stmt {
     CompositeType m_comp_type;
-    ExpressionList m_attributes;
+    std::span<Expr *> m_attributes;
     std::string_view m_name;
     std::optional<TemplateParameters> m_template_parameters;
-    StructDefNames m_names;
-    StructDefFields m_fields;
-    StructDefMethods m_methods;
-    StructDefStaticMethods m_static_methods;
+    std::span<ncc::core::str_alias> m_names;
+    std::span<StructField> m_fields;
+    std::span<StructFunction> m_methods;
+    std::span<StructFunction> m_static_methods;
 
   public:
     StructDef(CompositeType comp_type, ExpressionList attributes,
-              qcore::str_alias name, std::optional<TemplateParameters> params,
-              const StructDefNames &names, const StructDefFields &fields,
-              const StructDefMethods &methods,
-              const StructDefStaticMethods &static_methods)
+              ncc::core::str_alias name,
+              std::optional<TemplateParameters> params, StructDefNames names,
+              StructDefFields fields, StructDefMethods methods,
+              StructDefStaticMethods static_methods)
         : Stmt(QAST_STRUCT),
           m_comp_type(comp_type),
           m_attributes(attributes),
@@ -353,13 +357,13 @@ namespace npar {
           m_static_methods(static_methods) {}
 
     auto get_composite_type() const { return m_comp_type; }
-    let get_attributes() const { return m_attributes; }
-    let get_name() const { return m_name; }
+    auto get_attributes() const { return m_attributes; }
+    auto get_name() const { return m_name; }
     let get_template_params() const { return m_template_parameters; }
-    let get_names() const { return m_names; }
-    let get_fields() const { return m_fields; }
-    let get_methods() const { return m_methods; }
-    let get_static_methods() const { return m_static_methods; }
+    auto get_names() const { return m_names; }
+    auto get_fields() const { return m_fields; }
+    auto get_methods() const { return m_methods; }
+    auto get_static_methods() const { return m_static_methods; }
   };
 
   constexpr bool Stmt::is_expr_stmt(npar_ty_t type) const {

@@ -48,6 +48,7 @@
  */
 
 using namespace nr;
+using namespace ncc::core;
 
 static void flatten_externs(qmodule_t *mod) {
   /**
@@ -105,7 +106,7 @@ static void flatten_functions_recurse(qmodule_t *mod, Expr *&base,
     std::string new_scope =
         cur_scope.empty() ? orig_name : cur_scope + "::" + orig_name;
 
-    (*cur)->as<Fn>()->setName(qcore::save(new_scope));
+    (*cur)->as<Fn>()->setName(save(new_scope));
 
     if (!is_extern) { /* Handle name change */
       functions.insert(cur);

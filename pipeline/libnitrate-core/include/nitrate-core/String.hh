@@ -41,7 +41,7 @@
 #include <string_view>
 #include <unordered_set>
 
-namespace qcore {
+namespace ncc::core {
   class StringMemory;
 
   class __attribute__((packed)) str_alias {
@@ -100,6 +100,6 @@ namespace qcore {
     return StringMemory::get(str);
   }
 
-}  // namespace qcore
+}  // namespace ncc::core
 
 #endif

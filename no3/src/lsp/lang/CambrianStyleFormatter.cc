@@ -9,6 +9,7 @@
 
 using namespace lsp::fmt;
 using namespace npar;
+using namespace ncc::core;
 
 CambrianFormatter::LineStreamWritter&
 CambrianFormatter::LineStreamWritter::operator<<(
@@ -801,8 +802,8 @@ void CambrianFormatter::visit(Slice const& n) {
 void CambrianFormatter::visit(FString const& n) {
   line << "f\"";
   for (let part : n.get_items()) {
-    if (std::holds_alternative<qcore::str_alias>(part)) {
-      escape_string_literal(*std::get<qcore::str_alias>(part), false);
+    if (std::holds_alternative<str_alias>(part)) {
+      escape_string_literal(*std::get<str_alias>(part), false);
     } else {
       line << "{";
       std::get<Expr*>(part)->accept(*this);

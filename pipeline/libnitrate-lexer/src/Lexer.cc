@@ -53,6 +53,8 @@
 #include <utility>
 #include <vector>
 
+using namespace ncc::core;
+
 ///============================================================================///
 /// BEGIN: LEXICAL GRAMMAR CONSTRAINTS
 #define FLOATING_POINT_PRECISION 100
@@ -559,7 +561,7 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
           }
 
           /* Return the identifier */
-          return qlex_tok_t(qName, qcore::intern(buf), start_pos);
+          return qlex_tok_t(qName, intern(buf), start_pos);
         }
         case LexState::Integer: {
           NumType type = NumType::Decimal;
@@ -738,11 +740,10 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
           std::string norm;
           if (type == NumType::Floating) {
             if (canonicalize_float(buf, norm)) {
-              return qlex_tok_t(qNumL, qcore::intern(std::move(norm)),
-                                start_pos);
+              return qlex_tok_t(qNumL, intern(std::move(norm)), start_pos);
             }
           } else if (canonicalize_number(buf, norm, type)) {
-            return qlex_tok_t(qIntL, qcore::intern(std::move(norm)), start_pos);
+            return qlex_tok_t(qIntL, intern(std::move(norm)), start_pos);
           }
 
           /* Invalid number */
@@ -766,7 +767,7 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
             c = getc();
           }
 
-          return qlex_tok_t(qNote, qcore::intern(std::move(buf)), start_pos);
+          return qlex_tok_t(qNote, intern(std::move(buf)), start_pos);
         }
         case LexState::CommentMultiLine: {
           size_t level = 1;
@@ -788,8 +789,7 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
               if (tmp == '/') {
                 level--;
                 if (level == 0) {
-                  return qlex_tok_t(qNote, qcore::intern(std::move(buf)),
-                                    start_pos);
+                  return qlex_tok_t(qNote, intern(std::move(buf)), start_pos);
                 } else {
                   buf += "*";
                   buf += tmp;
@@ -970,11 +970,10 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
               m_pushback.push_back(c);
               /* Character or string */
               if (buf.front() == '\'' && buf.size() == 2) {
-                return qlex_tok_t(qChar, qcore::intern(std::string(1, buf[1])),
+                return qlex_tok_t(qChar, intern(std::string(1, buf[1])),
                                   start_pos);
               } else {
-                return qlex_tok_t(qText,
-                                  qcore::intern(buf.substr(1, buf.size() - 1)),
+                return qlex_tok_t(qText, intern(buf.substr(1, buf.size() - 1)),
                                   start_pos);
               }
             }
@@ -1009,7 +1008,7 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
 
           m_pushback.push_back(c);
 
-          return qlex_tok_t(qMacr, qcore::intern(std::move(buf)), start_pos);
+          return qlex_tok_t(qMacr, intern(std::move(buf)), start_pos);
         }
         case LexState::BlockMacro: {
           while (true) {
@@ -1020,8 +1019,7 @@ CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
             }
 
             if (state_parens == 0) {
-              return qlex_tok_t(qMacB, qcore::intern(std::move(buf)),
-                                start_pos);
+              return qlex_tok_t(qMacB, intern(std::move(buf)), start_pos);
             }
 
             buf += c;
@@ -1299,42 +1297,42 @@ CPP_EXPORT void qlex_tok_fromstr(qlex_t *, qlex_ty_t ty, const char *str,
       }
 
       case qName: {
-        out->v.str_idx = qcore::intern(str);
+        out->v.str_idx = intern(str);
         break;
       }
 
       case qIntL: {
-        out->v.str_idx = qcore::intern(str);
+        out->v.str_idx = intern(str);
         break;
       }
 
       case qNumL: {
-        out->v.str_idx = qcore::intern(str);
+        out->v.str_idx = intern(str);
         break;
       }
 
       case qText: {
-        out->v.str_idx = qcore::intern(str);
+        out->v.str_idx = intern(str);
         break;
       }
 
       case qChar: {
-        out->v.str_idx = qcore::intern(str);
+        out->v.str_idx = intern(str);
         break;
       }
 
       case qMacB: {
-        out->v.str_idx = qcore::intern(str);
+        out->v.str_idx = intern(str);
         break;
       }
 
       case qMacr: {
-        out->v.str_idx = qcore::intern(str);
+        out->v.str_idx = intern(str);
         break;
       }
 
       case qNote: {
-        out->v.str_idx = qcore::intern(str);
+        out->v.str_idx = intern(str);
         break;
       }
     }

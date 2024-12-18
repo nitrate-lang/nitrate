@@ -40,6 +40,7 @@
 #include <nitrate-parser/ASTWriter.hh>
 
 using namespace npar;
+using namespace ncc::core;
 
 void AST_Writer::write_source_location(npar_node_t const& n) const {
   if (m_include_source_location) {
@@ -950,7 +951,7 @@ void AST_Writer::visit(FString const& n) {
     let items = n.get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(), [&](let item) {
-      if (std::holds_alternative<qcore::str_alias>(item)) {
+      if (std::holds_alternative<str_alias>(item)) {
         begin_obj(2);
 
         string("kind");
@@ -959,7 +960,7 @@ void AST_Writer::visit(FString const& n) {
         string(kind_name);
 
         string("value");
-        string(*std::get<qcore::str_alias>(item));
+        string(*std::get<str_alias>(item));
 
         end_obj();
       } else {
@@ -1596,7 +1597,7 @@ void AST_Writer::visit(StructDef const& n) {
       begin_obj(4);
 
       string("name");
-      string(*field.get_name());
+      string(field.get_name());
 
       string("type");
       field.get_type()->accept(*this);
