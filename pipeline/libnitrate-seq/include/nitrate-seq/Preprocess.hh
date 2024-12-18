@@ -31,10 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-seq/Preprocess.h>
-
 #include <memory>
-#include <mutex>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Token.hh>
@@ -66,16 +63,14 @@ struct __attribute__((visibility("default"))) qprep_impl_t final
     lua_State *L = nullptr;
     std::vector<DeferCallback> defer_callbacks;
     std::deque<qlex_tok_t> buffer;
+    std::mt19937 m_qsys_random_engine;
+    bool m_do_expanse = true;
+    size_t m_depth = 0;
 
     ~Core();
   };
 
   std::shared_ptr<Core> m_core;
-  std::pair<qprep_fetch_module_t, uintptr_t> m_fetch_module;
-  std::mutex m_mutex;
-  bool m_do_expanse = true;
-  size_t m_depth = 0;
-  std::mt19937 m_qsys_random_engine;
 
   virtual qlex_tok_t next_impl() override;
 
@@ -85,13 +80,10 @@ struct __attribute__((visibility("default"))) qprep_impl_t final
   bool run_and_expand(const std::string &code);
   void expand_raw(std::string_view code);
   void install_lua_api();
-  std::unique_ptr<qlex_t> weak_clone(std::istream &file, const char *filename);
 
 public:
-  qprep_impl_t(std::istream &file, const char *filename,
-               std::shared_ptr<ncc::core::Environment> env);
   qprep_impl_t(std::istream &file, std::shared_ptr<ncc::core::Environment> env,
-               const char *filename);
+               const char *filename, bool is_root = true);
   virtual ~qprep_impl_t() override;
 };
 

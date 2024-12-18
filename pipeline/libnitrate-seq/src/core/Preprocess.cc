@@ -37,7 +37,6 @@
 
 #include <cstddef>
 #include <memory>
-#include <new>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Lexer.hh>
@@ -142,7 +141,11 @@ void qprep_impl_t::expand_raw(std::string_view code) {
   std::istringstream ss(std::string(code.data(), code.size()));
 
   {
-    auto clone = weak_clone(ss, m_filename.c_str());
+    auto clone =
+        std::make_unique<qprep_impl_t>(ss, m_env, m_filename.c_str(), false);
+    clone->m_core = m_core;
+    clone->m_core->m_depth = m_core->m_depth + 1;
+    clone->m_flags = m_flags;
 
     qlex_tok_t tok;
     std::vector<qlex_tok_t> tokens;
@@ -150,7 +153,7 @@ void qprep_impl_t::expand_raw(std::string_view code) {
       tokens.push_back(tok);
     }
 
-    clone.reset();
+    clone = nullptr;
 
     for (auto it = tokens.rbegin(); it != tokens.rend(); it++) {
       m_core->buffer.push_front(*it);
@@ -185,7 +188,7 @@ func_entry:  // do tail call optimization manually
   qlex_tok_t x{};
 
   try {
-    RecursiveGuard guard(m_depth);
+    RecursiveGuard guard(m_core->m_depth);
     if (guard.should_stop()) {
       qcore_logf(QCORE_FATAL, "Maximum macro recursion depth reached\n");
       throw StopException();
@@ -198,7 +201,7 @@ func_entry:  // do tail call optimization manually
       x = qlex_t::next_impl();
     }
 
-    if (m_do_expanse) {
+    if (m_core->m_do_expanse) {
       switch (x.ty) {
         case qEofF:
           return x;
@@ -311,7 +314,7 @@ func_entry:  // do tail call optimization manually
     }
 
   emit_token:
-    if (!m_do_expanse || run_defer_callbacks(x)) { /* Emit the token */
+    if (!m_core->m_do_expanse || run_defer_callbacks(x)) { /* Emit the token */
       return x;
     } else { /* Skip the token */
       goto func_entry;
@@ -334,65 +337,46 @@ void qprep_impl_t::install_lua_api() {
   lua_setglobal(m_core->L, "n");
 }
 
-std::unique_ptr<qlex_t> qprep_impl_t::weak_clone(std::istream &file,
-                                                 const char *filename) {
-  auto clone = std::make_unique<qprep_impl_t>(file, filename, m_env);
-
-  clone->m_core = m_core;
-  clone->m_flags = m_flags;
-  clone->m_depth = m_depth + 1;
-
-  return clone;
-}
-
-qprep_impl_t::qprep_impl_t(std::istream &file, const char *filename,
-                           std::shared_ptr<ncc::core::Environment> env)
-    : qlex_t(file, filename, env) {
-  m_core = std::make_shared<Core>();
-  m_do_expanse = true;
-  m_depth = 0;
-}
-
 qprep_impl_t::qprep_impl_t(std::istream &file,
                            std::shared_ptr<ncc::core::Environment> env,
-                           const char *filename)
+                           const char *filename, bool is_root)
     : qlex_t(file, filename, env) {
   m_core = std::make_shared<Core>();
-  m_do_expanse = true;
-  m_depth = 0;
 
-  { /* Create the Lua state */
-    m_core->L = luaL_newstate();
+  if (is_root) {
+    { /* Create the Lua state */
+      m_core->L = luaL_newstate();
 
-    { /* Load the special selection of standard libraries */
-      static const luaL_Reg loadedlibs[] = {
-          {LUA_GNAME, luaopen_base},
-          // {LUA_LOADLIBNAME, luaopen_package},
-          // {LUA_COLIBNAME, luaopen_coroutine},
-          {LUA_TABLIBNAME, luaopen_table},
-          {LUA_IOLIBNAME, luaopen_io},
-          // {LUA_OSLIBNAME, luaopen_os},
-          {LUA_STRLIBNAME, luaopen_string},
-          {LUA_MATHLIBNAME, luaopen_math},
-          {LUA_UTF8LIBNAME, luaopen_utf8},
-          {LUA_DBLIBNAME, luaopen_debug},
-          {NULL, NULL}};
+      { /* Load the special selection of standard libraries */
+        static const luaL_Reg loadedlibs[] = {
+            {LUA_GNAME, luaopen_base},
+            // {LUA_LOADLIBNAME, luaopen_package},
+            // {LUA_COLIBNAME, luaopen_coroutine},
+            {LUA_TABLIBNAME, luaopen_table},
+            {LUA_IOLIBNAME, luaopen_io},
+            // {LUA_OSLIBNAME, luaopen_os},
+            {LUA_STRLIBNAME, luaopen_string},
+            {LUA_MATHLIBNAME, luaopen_math},
+            {LUA_UTF8LIBNAME, luaopen_utf8},
+            {LUA_DBLIBNAME, luaopen_debug},
+            {NULL, NULL}};
 
-      const luaL_Reg *lib;
-      /* "require" functions from 'loadedlibs' and set results to global table
-       */
-      for (lib = loadedlibs; lib->func; lib++) {
-        luaL_requiref(m_core->L, lib->name, lib->func, 1);
-        lua_pop(m_core->L, 1); /* remove lib */
+        const luaL_Reg *lib;
+        /* "require" functions from 'loadedlibs' and set results to global table
+         */
+        for (lib = loadedlibs; lib->func; lib++) {
+          luaL_requiref(m_core->L, lib->name, lib->func, 1);
+          lua_pop(m_core->L, 1); /* remove lib */
+        }
       }
+
+      /* Install the Nitrate API */
+      install_lua_api();
     }
 
-    /* Install the Nitrate API */
-    install_lua_api();
+    // Run the standard language prefix
+    expand_raw(nit_code_prefix);
   }
-
-  // Run the standard language prefix
-  expand_raw(nit_code_prefix);
 }
 
 CPP_EXPORT qprep_impl_t::~qprep_impl_t() {}
@@ -401,19 +385,5 @@ CPP_EXPORT qprep_impl_t::~qprep_impl_t() {}
 
 CPP_EXPORT qlex_t *qprep_new(std::istream &file, const char *filename,
                              std::shared_ptr<ncc::core::Environment> env) {
-  try {
-    return new qprep_impl_t(file, env, filename);
-  } catch (std::bad_alloc &) {
-    return nullptr;
-  } catch (...) {
-    qcore_panic("qprep_new: failed to create lexer");
-  }
-}
-
-C_EXPORT void qprep_set_fetch_module(qlex_t *ctx, qprep_fetch_module_t fetch_fn,
-                                     uintptr_t any) {
-  qprep_impl_t *obj = reinterpret_cast<qprep_impl_t *>(ctx);
-  std::lock_guard<std::mutex> lock(obj->m_mutex);
-
-  obj->m_fetch_module = {fetch_fn, any};
+  return new qprep_impl_t(file, env, filename);
 }

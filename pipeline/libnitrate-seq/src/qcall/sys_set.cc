@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Environment.hh>
+#include <nitrate-seq/Preprocess.hh>
 #include <qcall/List.hh>
 
 extern "C" {
@@ -55,6 +56,8 @@ int qcall::sys_set(lua_State* L) {
                       lua_typename(L, lua_type(L, 1)));
   }
 
+  qprep_impl_t* obj = get_engine();
+
   std::string_view key = lua_tostring(L, 1);
 
   if (key.empty()) {
@@ -68,9 +71,9 @@ int qcall::sys_set(lua_State* L) {
   }
 
   if (lua_isnil(L, 2)) {
-    qcore_env_set(key.data(), nullptr);
+    obj->env()->set(key, std::nullopt);
   } else if (lua_isstring(L, 2)) {
-    qcore_env_set(key.data(), lua_tostring(L, 2));
+    obj->env()->set(key, lua_tostring(L, 2));
   } else {
     return luaL_error(L, "expected string or nil, got %s",
                       lua_typename(L, lua_type(L, 2)));

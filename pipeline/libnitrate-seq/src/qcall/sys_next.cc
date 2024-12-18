@@ -40,29 +40,7 @@ extern "C" {
 }
 
 int qcall::sys_next(lua_State* L) {
-  /**
-   *   @brief Next token.
-   */
-
-  qprep_impl_t* obj = get_engine();
-
-  qlex_tok_t tok;
-
-  { /* Get token */
-    qlex_flags_t flags;
-    bool old;
-
-    old = obj->m_do_expanse;
-    flags = qlex_get_flags(obj);
-
-    obj->m_do_expanse = false;
-    qlex_set_flags(obj, flags & ~(QLEX_NO_COMMENTS));
-
-    tok = obj->next();
-
-    qlex_set_flags(obj, flags);
-    obj->m_do_expanse = old;
-  }
+  qlex_tok_t tok = get_engine()->next();
 
   lua_newtable(L);
 

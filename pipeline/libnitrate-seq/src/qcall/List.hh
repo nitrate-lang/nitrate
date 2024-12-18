@@ -57,8 +57,6 @@ namespace qcall {
     qsyscall_t getFunc() const { return m_func; }
   };
 
-  extern const std::vector<QSysCall> qsyscalls;
-
   ///////////// BEGIN QCALL FUNCTIONS /////////////
 
   /* ==== Source processing ==== */
@@ -90,6 +88,30 @@ namespace qcall {
   int sys_time(lua_State* L);
 
   ////////////// END QCALL FUNCTIONS //////////////
+
+  inline const std::vector<QSysCall> qsyscalls = {
+      {"next", 0x0010, sys_next}, /* Get the next token from the lexer */
+      {"peek", 0x0011, sys_peek}, /* Peek at the next token from the lexer */
+      {"emit", 0x0012, sys_emit}, /* Emit data subject to recursive expansion */
+      {"defer", 0x0013, sys_defer}, /* Callback after every token is emitted */
+
+      {"debug", 0x0051, sys_debug}, /* Print a debug message */
+      {"info", 0x0052, sys_info},   /* Print an informational message */
+      {"warn", 0x0053, sys_warn},   /* Print a warning message */
+      {"error", 0x0054, sys_error}, /* Print an error message */
+      {"abort", 0x0055, sys_abort}, /* Print an error and halt */
+      {"fatal", 0x0056, sys_fatal}, /* Print a fatal error and halt */
+
+      {"get", 0x0080, sys_get}, /* Get a value from the environment */
+      {"set", 0x0081, sys_set}, /* Set a value in the environment */
+
+      {"fetch", 0x0082, sys_fetch}, /* Import module */
+
+      {"random", 0x00A0, sys_random}, /* Get a random number */
+
+      {"starttime", 0x00A1, sys_starttime}, /* Get the start time in UNIX ms */
+      {"time", 0x00A2, sys_time}, /* Get the current UNIX time in ms */
+  };
 
 };  // namespace qcall
 

@@ -31,7 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <nitrate-core/Macro.h>
+
 #include <nitrate-core/Environment.hh>
+#include <nitrate-seq/Preprocess.hh>
 #include <qcall/List.hh>
 
 extern "C" {
@@ -48,16 +51,17 @@ int qcall::sys_get(lua_State* L) {
     return luaL_error(L, "expected 1 argument, got %d", nargs);
   }
 
+  qprep_impl_t* obj = get_engine();
+
   if (!lua_isstring(L, 1)) {
     return luaL_error(L, "expected string, got %s",
                       lua_typename(L, lua_type(L, 1)));
   }
 
-  const char* value = qcore_env_get(lua_tostring(L, 1));
-  if (value == NULL) {
-    lua_pushnil(L);
+  if (let value = obj->env()->get(lua_tostring(L, 1))) {
+    lua_pushstring(L, std::string(*value).c_str());
   } else {
-    lua_pushstring(L, value);
+    lua_pushnil(L);
   }
 
   return 1;

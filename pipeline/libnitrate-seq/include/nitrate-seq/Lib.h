@@ -34,7 +34,6 @@
 #ifndef __NITRATE_PREP_LIB_H__
 #define __NITRATE_PREP_LIB_H__
 
-#include <nitrate-seq/Preprocess.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus

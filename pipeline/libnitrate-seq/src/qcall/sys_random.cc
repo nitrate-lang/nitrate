@@ -84,9 +84,9 @@ int qcall::sys_random(lua_State* L) {
 
   auto engine = get_engine();
 
-  static_assert(sizeof(engine->m_qsys_random_engine()) == 8);
+  static_assert(sizeof(engine->m_core->m_qsys_random_engine()) == 8);
 
-  uint64_t num = engine->m_qsys_random_engine();
+  uint64_t num = engine->m_core->m_qsys_random_engine();
   num = (num % (max - min + 1)) + min;
 
   lua_pushinteger(L, num);

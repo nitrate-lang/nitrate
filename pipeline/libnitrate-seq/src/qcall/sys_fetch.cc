@@ -65,23 +65,27 @@ static void canonicalize_import_name(std::string &name) {
 
 static std::optional<std::string> fetch_module_data(qprep_impl_t *obj,
                                                     const char *name) {
-  if (!obj->m_fetch_module.first) {
-    return std::nullopt;
-  }
+  // if (!obj->m_fetch_module.first) {
+  //   return std::nullopt;
+  // }
 
-  char *module_data = NULL;
-  size_t module_size = 0;
+  // char *module_data = NULL;
+  // size_t module_size = 0;
 
-  // Always put off to tomorrow what can be done today.
-  if (!obj->m_fetch_module.first(obj, name, &module_data, &module_size,
-                                 obj->m_fetch_module.second)) {
-    return std::nullopt;
-  }
+  // // Always put off to tomorrow what can be done today.
+  // if (!obj->m_fetch_module.first(obj, name, &module_data, &module_size,
+  //                                obj->m_fetch_module.second)) {
+  //   return std::nullopt;
+  // }
 
-  std::string data(module_data, module_size);
-  free(module_data);
+  // std::string data(module_data, module_size);
+  // free(module_data);
 
-  return data;
+  // return data;
+  (void)obj;
+  (void)name;
+  /// TODO: Implement this function.
+  return std::nullopt;
 }
 
 int qcall::sys_fetch(lua_State *L) {
