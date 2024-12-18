@@ -43,7 +43,7 @@
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Classes.hh>
 #include <nitrate-parser/ASTWriter.hh>
-#include <nitrate-parser/Classes.hh>
+#include <nitrate-parser/Context.hh>
 #include <unordered_set>
 
 #include "nitrate-core/Environment.hh"
@@ -254,13 +254,6 @@ public:
   virtual ~DeserializerAdapterLexer() override = default;
 };
 
-using ArgCallback = std::function<void(const char *)>;
-static std::optional<ncc::parse::Base *> parse_tokens(npar_t *L) {
-  ncc::parse::Base *root = nullptr;
-
-  return npar_do(L, &root) ? std::make_optional(root) : std::nullopt;
-}
-
 CREATE_TRANSFORM(nit::parse) {
   enum class OutMode {
     JSON,
@@ -277,25 +270,23 @@ CREATE_TRANSFORM(nit::parse) {
   }
 
   DeserializerAdapterLexer lex(source, nullptr, env);
-  nr_syn par(&lex, env);
+  ncc::parse::Parser par(env);
 
-  if (let root = parse_tokens(par.get())) {
-    switch (out_mode) {
-      case OutMode::JSON: {
-        auto writter = ncc::parse::AST_JsonWriter(output);
-        root.value()->accept(writter);
-        return true;
-      }
-      case OutMode::MsgPack: {
-        auto writter = ncc::parse::AST_MsgPackWriter(output);
-        root.value()->accept(writter);
-        return true;
-      }
-      default: {
-        return false;
-      }
+  let root = par.parse(&lex);
+
+  switch (out_mode) {
+    case OutMode::JSON: {
+      auto writter = ncc::parse::AST_JsonWriter(output);
+      root.get()->accept(writter);
+      return true;
     }
-  } else {
-    return false;
+    case OutMode::MsgPack: {
+      auto writter = ncc::parse::AST_MsgPackWriter(output);
+      root.get()->accept(writter);
+      return true;
+    }
+    default: {
+      return false;
+    }
   }
 }

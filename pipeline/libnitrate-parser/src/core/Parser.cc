@@ -360,6 +360,8 @@ Stmt* ncc::parse::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
 
 CPP_EXPORT npar_t* npar_new(qlex_t* lexer,
                             std::shared_ptr<ncc::core::Environment> env) {
+  /// TODO: audit
+
   if (!lexer) {
     return nullptr;
   }
@@ -376,52 +378,30 @@ CPP_EXPORT npar_t* npar_new(qlex_t* lexer,
   return parser;
 }
 
-CPP_EXPORT void npar_free(npar_t* parser) {
-  if (!parser) {
-    return;
-  }
-
-  parser->lexer = nullptr;
-
-  delete parser;
-}
-
-CPP_EXPORT bool npar_do(npar_t* L, Base** out) {
-  if (!L || !out) {
-    return false;
-  }
-  *out = nullptr;
+CPP_EXPORT ASTRoot Parser::parse(qlex_t* L) {
+  qcore_assert(L != nullptr);
+  rd = L;
 
   /*=============== Swap in their arena  ===============*/
-  std::swap(ncc::parse::npar_allocator, L->allocator);
+  std::swap(ncc::parse::npar_allocator, m_allocator);
 
   /*== Install thread-local references to the parser ==*/
-  ncc::parse::diagnostic = L;
+  ncc::parse::diagnostic = this;
 
-  *out = ncc::parse::recurse_block(*L, *L->lexer, false, false,
-                                   SafetyMode::Unknown);
+  ASTRoot ast = ncc::parse::recurse_block(false, false, SafetyMode::Unknown);
 
   /*== Uninstall thread-local references to the parser ==*/
   ncc::parse::diagnostic = nullptr;
 
   /*=============== Swap out their arena ===============*/
-  std::swap(ncc::parse::npar_allocator, L->allocator);
+  std::swap(ncc::parse::npar_allocator, m_allocator);
 
-  /*==================== Return status ====================*/
-  return !L->failed;
+  return ast;
 }
 
-CPP_EXPORT bool npar_check(npar_t* parser, const Base* base) {
-  if (!base) {
-    return false;
-  }
-
-  if (parser && parser->failed) {
-    return false;
-  }
-
+CPP_EXPORT bool ASTRoot::check() const {
   bool failed = false;
-  ncc::parse::iterate<dfs_pre>(base, [&](auto, auto c) {
+  ncc::parse::iterate<dfs_pre>(const_cast<Base*&>(m_base), [&](auto, auto c) {
     failed |= !c || !*c || (*c)->is_mock();
 
     return failed ? IterOp::Abort : IterOp::Proceed;

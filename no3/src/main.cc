@@ -53,7 +53,6 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>
-#include <nitrate-parser/Classes.hh>
 #include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Classes.hh>
 #include <string>

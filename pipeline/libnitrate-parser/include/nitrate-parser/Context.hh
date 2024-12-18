@@ -60,7 +60,7 @@ namespace ncc::parse {
   class Parser final {
     std::shared_ptr<ncc::core::Environment> m_env;
     std::unique_ptr<ncc::core::IMemory> m_allocator; /* The Main allocator */
-    qlex_t *m_lexer;                                 /* Polymporphic lexer */
+    qlex_t *rd;                                      /* Polymporphic lexer */
     bool m_failed; /* Whether the parser failed (ie syntax errors) */
 
     Stmt *recurse_pub();
@@ -101,53 +101,6 @@ namespace ncc::parse {
                               std::shared_ptr<ncc::core::Environment> env);
   };
 }  // namespace ncc::parse
-
-/**
- * @brief Create a new parser instance from non-owning references to a lexer and
- * parser configuration.
- *
- * @param lexer Lexer stream object.
- * @param env The environment.
- *
- * @return A new parser instance or NULL if an error occurred.
- *
- * @note If `!lexer` NULL is returned.
- * @note The returned object must be freed with `npar_free`.
- * @note The returned instance does not contain internal locks.
- *
- * @note This function is thread safe.
- */
-npar_t *npar_new(qlex_t *lexer, std::shared_ptr<ncc::core::Environment> env);
-
-/**
- * @brief Free a parser instance.
- *
- * @param parser The parser instance to free (may be NULL).
- *
- * @note If `!parser`, this function is a no-op.
- *
- * @note This function will not free the lexer or configuration associated with
- * the it. The caller is responsible for freeing the lexer and configuration
- * separately.
- * @note This function is thread safe.
- */
-void npar_free(npar_t *parser);
-
-/**
- * @brief Parse Nitrate code into a parse tree.
- *
- * @param parser The parser instance to use for parsing.
- * @param out The output parse tree.
- *
- * @return Returns true if no non-fatal parsing errors occurred, false
- * otherwise. A value of true, however, does not guarantee that the parse tree
- * is valid.
- *
- * @note If `!parser` or `!out`, false is returned.
- *
- * @note This function is thread safe.
- */
-bool npar_do(npar_t *parser, ncc::parse::Base **out);
 
 /**
  * @brief Check if the parse tree is valid.

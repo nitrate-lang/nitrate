@@ -115,7 +115,7 @@ constexpr static std::optional<EnumDefItems> recurse_enum_items(npar_t &S,
   return std::nullopt;
 }
 
-Stmt *ncc::parse::recurse_enum(npar_t &S, qlex_t &rd) {
+Stmt *ncc::parse::Parser::recurse_enum() {
   let name = recurse_enum_name(rd);
   let type = recurse_enum_type(S, rd);
 

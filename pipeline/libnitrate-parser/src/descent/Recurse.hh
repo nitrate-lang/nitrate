@@ -40,34 +40,8 @@
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/Context.hh>
-#include <set>
 
 namespace ncc::parse {
-  Stmt *recurse_pub(npar_t &S, qlex_t &rd);
-  Stmt *recurse_sec(npar_t &S, qlex_t &rd);
-  Stmt *recurse_pro(npar_t &S, qlex_t &rd);
-  std::vector<Stmt *> recurse_variable(npar_t &S, qlex_t &rd, VarDeclType type);
-  Stmt *recurse_enum(npar_t &S, qlex_t &rd);
-  Stmt *recurse_struct(npar_t &S, qlex_t &rd, CompositeType type);
-  Stmt *recurse_scope(npar_t &S, qlex_t &rd);
-  Stmt *recurse_function(npar_t &S, qlex_t &rd, bool restrict_decl_only);
-  Type *recurse_type(npar_t &S, qlex_t &rd);
-  Stmt *recurse_typedef(npar_t &S, qlex_t &rd);
-  Stmt *recurse_return(npar_t &S, qlex_t &rd);
-  Stmt *recurse_retif(npar_t &S, qlex_t &rd);
-  Stmt *recurse_if(npar_t &S, qlex_t &rd);
-  Stmt *recurse_while(npar_t &S, qlex_t &rd);
-  Stmt *recurse_for(npar_t &S, qlex_t &rd);
-  Stmt *recurse_foreach(npar_t &S, qlex_t &rd);
-  Stmt *recurse_switch(npar_t &S, qlex_t &rd);
-  Stmt *recurse_inline_asm(npar_t &S, qlex_t &rd);
-
-  Stmt *recurse_block(npar_t &S, qlex_t &rd, bool expect_braces,
-                      bool single_stmt, SafetyMode safety);
-
-  Expr *recurse_expr(npar_t &S, qlex_t &rd, std::set<qlex_tok_t> terminators,
-                     size_t depth = 0);
-
 #define next() rd.next()
 #define peek() rd.peek()
 #define current() rd.current()

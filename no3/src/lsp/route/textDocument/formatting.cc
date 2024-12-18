@@ -11,7 +11,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Classes.hh>
 #include <nitrate-parser/AST.hh>
-#include <nitrate-parser/Classes.hh>
+#include <nitrate-parser/Context.hh>
 #include <sstream>
 #include <string>
 
@@ -107,14 +107,11 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
 
   auto env = std::make_shared<ncc::core::Environment>();
   qlex lexer(ss, uri.c_str(), env);
-  nr_syn parser(lexer.get(), env);
+  ncc::parse::Parser parser(env);
 
-  ncc::parse::Base* root = nullptr;
-  if (!npar_do(parser.get(), &root)) {
-    return;
-  }
+  auto ast = parser.parse(lexer.get());
 
-  if (!npar_check(parser.get(), root)) {
+  if (!ast.check()) {
     return;
   }
 
@@ -123,7 +120,7 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   std::stringstream formatted_ss;
   if (!lsp::fmt::FormatterFactory::create(lsp::fmt::Styleguide::Cambrian,
                                           formatted_ss)
-           ->format(root)) {
+           ->format(ast.get())) {
     resp.error(lsp::ErrorCodes::InternalError, "Failed to format document");
     return;
   }

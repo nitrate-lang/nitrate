@@ -52,7 +52,6 @@
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-parser/ASTWriter.hh>
-#include <nitrate-parser/Classes.hh>
 #include <nitrate-parser/Context.hh>
 #include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Classes.hh>
@@ -134,14 +133,9 @@ static int do_parse(std::string source, std::string output) {
   }
 
   qprep lexer(file, "in", env);
-  nr_syn parser(lexer.get(), env);
+  ncc::parse::Parser parser(env);
 
-  ncc::parse::Base *tree = nullptr;
-
-  if (!npar_do(parser.get(), &tree)) {
-    LOG(ERROR) << "Failed to parse source file: " << source;
-    return 1;
-  }
+  auto ast = parser.parse(lexer.get());
 
   { /* Write output */
     std::ostream *out = nullptr;
@@ -155,7 +149,7 @@ static int do_parse(std::string source, std::string output) {
     }
 
     ncc::parse::AST_JsonWriter writer(*out);
-    tree->accept(writer);
+    ast.get()->accept(writer);
     *out << std::endl;
   }
 
@@ -177,19 +171,12 @@ static int do_nr(std::string source, std::string output, std::string opts,
   }
 
   qprep lexer(file, "in", env);
-  nr_syn parser(lexer.get(), env);
+  ncc::parse::Parser parser(env);
 
-  ncc::parse::Base *tree = nullptr;
-
-  bool ok = npar_do(parser.get(), &tree);
-
-  if (!ok) {
-    LOG(ERROR) << "Failed to parse source file: " << source;
-    return 1;
-  }
+  auto ast = parser.parse(lexer.get());
 
   qmodule mod;
-  ok = nr_lower(&mod.get(), tree, "module", true);
+  bool ok = nr_lower(&mod.get(), ast.get(), "module", true);
 
   nr_diag_read(
       mod.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
@@ -242,19 +229,12 @@ static int do_codegen(std::string source, std::string output, std::string opts,
   }
 
   qprep lexer(file, "in", env);
-  nr_syn parser(lexer.get(), env);
+  ncc::parse::Parser parser(env);
 
-  ncc::parse::Base *tree = nullptr;
-
-  bool ok = npar_do(parser.get(), &tree);
-
-  if (!ok) {
-    LOG(ERROR) << "Failed to parse source file: " << source;
-    return 1;
-  }
+  auto ast = parser.parse(lexer.get());
 
   qmodule mod;
-  ok = nr_lower(&mod.get(), tree, "module", true);
+  bool ok = nr_lower(&mod.get(), ast.get(), "module", true);
 
   nr_diag_read(
       mod.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
