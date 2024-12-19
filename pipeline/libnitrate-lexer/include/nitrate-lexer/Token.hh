@@ -170,7 +170,6 @@ typedef enum qlex_key_t {
   qKFalse,     /* 'false' */
 } __attribute__((packed)) qlex_key_t;
 
-struct NCCLexer;
 struct NCCToken;
 
 typedef struct __attribute__((packed)) NCCToken {
@@ -253,76 +252,7 @@ typedef struct __attribute__((packed)) NCCToken {
     }
   }
 
-  inline std::string_view as_string() const {
-    qcore_assert(ty == qText || ty == qName || ty == qChar || ty == qMacB ||
-                 ty == qMacr || ty == qNote);
-    /// TODO: Handle all token types
-    return v.str_idx.get();
-
-    /*
-switch (ty) {
-    case qEofF: {
-      /// TODO:
-      break;
-    }
-
-    case qKeyW: {
-      /// TODO:
-      break;
-    }
-
-    case qOper: {
-      /// TODO:
-      break;
-    }
-
-    case qPunc: {
-      /// TODO:
-      break;
-    }
-
-    case qName: {
-      /// TODO:
-      break;
-    }
-
-    case qIntL: {
-      /// TODO:
-      break;
-    }
-
-    case qNumL: {
-      /// TODO:
-      break;
-    }
-
-    case qText: {
-      /// TODO:
-      break;
-    }
-
-    case qChar: {
-      /// TODO:
-      break;
-    }
-
-    case qMacB: {
-      /// TODO:
-      break;
-    }
-
-    case qMacr: {
-      /// TODO:
-      break;
-    }
-
-    case qNote: {
-      /// TODO:
-      break;
-    }
-  }
-*/
-  }
+  std::string_view as_string() const;
 
   constexpr bool operator<(const NCCToken &rhs) const {
     if (ty != rhs.ty) return ty < rhs.ty;

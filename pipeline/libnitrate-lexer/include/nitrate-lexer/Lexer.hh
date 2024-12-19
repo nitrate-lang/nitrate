@@ -43,8 +43,6 @@
 
 ///============================================================================///
 
-typedef struct NCCLexer NCCLexer;
-
 #define QLEX_FLAG_NONE 0
 #define QLEX_NO_COMMENTS 0x01
 
@@ -94,11 +92,11 @@ namespace ncc::lex {
     constexpr uint32_t GetCurrentOffset() const { return m_offset; }
     constexpr bool IsEof() const { return m_current.is(qEofF); }
 
-    std::string_view Filename(NCCToken) { return "?"; }
-    uint32_t StartLine(NCCToken) { return UINT32_MAX; }
-    uint32_t StartColumn(NCCToken) { return UINT32_MAX; }
-    uint32_t EndLine(NCCToken) { return UINT32_MAX; }
-    uint32_t EndColumn(NCCToken) { return UINT32_MAX; }
+    std::string_view Filename(NCCToken t);
+    uint32_t StartLine(NCCToken t);
+    uint32_t StartColumn(NCCToken t);
+    uint32_t EndLine(NCCToken t);
+    uint32_t EndColumn(NCCToken t);
   };
 
   class Tokenizer final : public IScanner {

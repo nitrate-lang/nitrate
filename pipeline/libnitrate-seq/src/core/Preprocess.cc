@@ -37,7 +37,6 @@
 #include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>

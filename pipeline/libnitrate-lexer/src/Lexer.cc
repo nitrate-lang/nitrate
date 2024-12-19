@@ -46,7 +46,6 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/String.hh>
-#include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <string>
 #include <string_view>
@@ -173,7 +172,6 @@ namespace qlex {
           {";", qPuncSemi},
       });
 
-  // Precomputed lookup table for hex char to byte conversion
   static constexpr std::array<uint8_t, 256> hextable = []() {
     std::array<uint8_t, 256> hextable = {};
     hextable['0'] = 0;
@@ -200,7 +198,8 @@ namespace qlex {
     hextable['f'] = 15;
     return hextable;
   }();
-  static constexpr std::array<uint8_t, 256> ws_chars = []() {
+
+  static constexpr std::array<uint8_t, 256> whitespace_table = []() {
     std::array<uint8_t, 256> tab = {};
     tab[' '] = 1;
     tab['\f'] = 1;
@@ -218,7 +217,7 @@ namespace qlex {
 }  // namespace qlex
 
 static bool lex_is_space(uint8_t c) {
-  return qlex::ws_chars[static_cast<uint8_t>(c)];
+  return qlex::whitespace_table[static_cast<uint8_t>(c)];
 }
 
 enum class NumType {
@@ -230,7 +229,6 @@ enum class NumType {
   Floating,
 };
 
-static thread_local boost::unordered_map<std::string, NumType> num_cache;
 static thread_local boost::unordered_map<std::string, std::string> can_cache;
 
 ///============================================================================///
@@ -1108,7 +1106,7 @@ CPP_EXPORT NCCToken Tokenizer::GetNext() {
     }
     goto error_0;
   } catch (std::exception &e) { /* This should never happen */
-    qcore_panicf("NCCLexer::do_automata: %s. The lexer has a bug.", e.what());
+    qcore_panicf("The lexer has a bug: %s", e.what());
   }
 
 error_0: { /* Reset the lexer and return error token */

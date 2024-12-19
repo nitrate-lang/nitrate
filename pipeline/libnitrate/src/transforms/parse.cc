@@ -39,7 +39,6 @@
 #include <memory>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
-#include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>

@@ -34,7 +34,77 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
 
+#include "nitrate-core/Logger.hh"
+
 using namespace ncc::lex;
+
+CPP_EXPORT std::string_view NCCToken::as_string() const {
+  std::string_view R;
+
+  switch (ty) {
+    case qEofF: {
+      R = "";
+      break;
+    }
+
+    case qKeyW: {
+      R = ncc::lex::kw_repr(v.key);
+      break;
+    }
+
+    case qOper: {
+      R = ncc::lex::op_repr(v.op);
+      break;
+    }
+
+    case qPunc: {
+      R = ncc::lex::punct_repr(v.punc);
+      break;
+    }
+
+    case qName: {
+      R = v.str_idx.get();
+      break;
+    }
+
+    case qIntL: {
+      R = v.str_idx.get();
+      break;
+    }
+
+    case qNumL: {
+      R = v.str_idx.get();
+      break;
+    }
+
+    case qText: {
+      R = v.str_idx.get();
+      break;
+    }
+
+    case qChar: {
+      R = v.str_idx.get();
+      break;
+    }
+
+    case qMacB: {
+      R = v.str_idx.get();
+      break;
+    }
+
+    case qMacr: {
+      R = v.str_idx.get();
+      break;
+    }
+
+    case qNote: {
+      R = v.str_idx.get();
+      break;
+    }
+  }
+
+  return R;
+}
 
 void IScanner::FillTokenBuffer() {
   for (size_t i = 0; i < TOKEN_BUFFER_SIZE; i++) {
@@ -81,4 +151,29 @@ CPP_EXPORT NCCToken IScanner::Peek() {
 CPP_EXPORT void IScanner::Undo() {
   m_ready.push_front(m_last);
   SyncState(m_last);
+}
+
+CPP_EXPORT std::string_view Filename(NCCToken t) {
+  /// TODO:
+  qcore_implement();
+}
+
+CPP_EXPORT uint32_t StartLine(NCCToken t) {
+  /// TODO:
+  qcore_implement();
+}
+
+CPP_EXPORT uint32_t StartColumn(NCCToken t) {
+  /// TODO:
+  qcore_implement();
+}
+
+CPP_EXPORT uint32_t EndLine(NCCToken t) {
+  /// TODO:
+  qcore_implement();
+}
+
+CPP_EXPORT uint32_t EndColumn(NCCToken t) {
+  /// TODO:
+  qcore_implement();
 }

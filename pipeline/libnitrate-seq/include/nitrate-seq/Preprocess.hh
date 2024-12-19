@@ -33,7 +33,7 @@
 
 #include <memory>
 #include <nitrate-core/Environment.hh>
-#include <nitrate-lexer/Base.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
 #include <optional>
 #include <random>

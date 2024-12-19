@@ -36,7 +36,7 @@
 
 #include <core/Context.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Base.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/Context.hh>

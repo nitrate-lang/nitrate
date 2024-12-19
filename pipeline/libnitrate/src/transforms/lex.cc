@@ -37,7 +37,6 @@
 #include <core/Transform.hh>
 #include <cstdint>
 #include <nitrate-core/Init.hh>
-#include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <string_view>
 #include <unordered_set>
