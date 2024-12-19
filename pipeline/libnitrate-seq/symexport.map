@@ -1,7 +1,0 @@
-{
-    global:
-        qprep_*;
-        *qprep_new*;
-    local:
-        *;
-};

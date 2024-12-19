@@ -45,15 +45,13 @@
 #include <nitrate-parser/Context.hh>
 #include <unordered_set>
 
-#include "nitrate-core/Environment.hh"
-
 static inline NCCToken eof_tok() {
   NCCToken tok{};
   tok.ty = qEofF;
   return tok;
 }
 
-class DeserializerAdapterLexer final : public NCCLexer {
+class DeserializerAdapterLexer final : public ncc::lex::IScanner {
   static constexpr std::array<uint8_t, 256> valid_ty_id_tab = []() {
     std::array<uint8_t, 256> tab = {};
     tab.fill(0);
@@ -82,6 +80,7 @@ class DeserializerAdapterLexer final : public NCCLexer {
 
   uint64_t m_ele_count;
   bool m_eof_bit;
+  std::istream &m_file;
 
   NCCToken next_impl_json() {
     if (m_eof_bit) [[unlikely]] {
@@ -133,7 +132,9 @@ class DeserializerAdapterLexer final : public NCCLexer {
 
       qlex_tok_fromstr(this, static_cast<qlex_ty_t>(ty), str, &T);
 
-      T.start = save_loc(a, b, 0);
+      // T.start = save_loc(a, b, 0);
+      /// FIXME: Implement the location saving
+      T.start = UINT32_MAX;
 
       free(str);
       return T;
@@ -184,7 +185,9 @@ class DeserializerAdapterLexer final : public NCCLexer {
 
       qlex_tok_fromstr(this, static_cast<qlex_ty_t>(ty), str, &T);
 
-      T.start = save_loc(a, b, 0);
+      // T.start = save_loc(a, b, 0);
+      /// FIXME: Implement the location saving
+      T.start = UINT32_MAX;
 
       free(str);
       return T;
@@ -194,7 +197,7 @@ class DeserializerAdapterLexer final : public NCCLexer {
     return eof_tok();
   }
 
-  virtual NCCToken next_impl() override {
+  virtual NCCToken Next() override {
     switch (m_mode) {
       case InMode::JSON: {
         return next_impl_json();
@@ -211,7 +214,10 @@ class DeserializerAdapterLexer final : public NCCLexer {
 public:
   DeserializerAdapterLexer(std::istream &file, const char *filename,
                            std::shared_ptr<ncc::core::Environment> env)
-      : NCCLexer(file, filename, env) {
+      : m_mode(InMode::BadCodec),
+        m_ele_count(0),
+        m_eof_bit(false),
+        m_file(file) {
     int ch = file.get();
 
     m_mode = InMode::BadCodec;
@@ -269,8 +275,7 @@ CREATE_TRANSFORM(nit::parse) {
   }
 
   DeserializerAdapterLexer lexer(source, nullptr, env);
-  auto wrap = ncc::lex::RefactorWrapper(&lexer);
-  auto parser = ncc::parse::Parser::Create(wrap, env);
+  auto parser = ncc::parse::Parser::Create(lexer, env);
 
   let root = parser->parse();
 

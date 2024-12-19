@@ -40,7 +40,7 @@ extern "C" {
 }
 
 int qcall::sys_peek(lua_State* L) {
-  NCCToken tok = get_engine()->peek();
+  NCCToken tok = get_engine()->Peek();
 
   lua_newtable(L);
 

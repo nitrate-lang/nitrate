@@ -148,7 +148,7 @@ void qprep_impl_t::expand_raw(std::string_view code) {
 
     NCCToken tok;
     std::vector<NCCToken> tokens;
-    while ((tok = (clone->next())).ty != qEofF) {
+    while ((tok = (clone->Next())).ty != qEofF) {
       tokens.push_back(tok);
     }
 
@@ -181,7 +181,7 @@ public:
   bool should_stop() { return m_depth >= MAX_RECURSION_DEPTH; }
 };
 
-CPP_EXPORT NCCToken qprep_impl_t::next_impl() {
+CPP_EXPORT NCCToken qprep_impl_t::Next() {
 func_entry:  // do tail call optimization manually
 
   NCCToken x{};
@@ -197,7 +197,9 @@ func_entry:  // do tail call optimization manually
       x = m_core->buffer.front();
       m_core->buffer.pop_front();
     } else {
-      x = NCCLexer::next_impl();
+      // x = IScanner::Next();
+      /// FIXME: Implement
+      qcore_implement();
     }
 
     if (m_core->m_do_expanse) {
@@ -339,7 +341,7 @@ void qprep_impl_t::install_lua_api() {
 qprep_impl_t::qprep_impl_t(std::istream &file,
                            std::shared_ptr<ncc::core::Environment> env,
                            const char *filename, bool is_root)
-    : NCCLexer(file, filename, env) {
+    : m_file(file), m_env(env), m_filename(filename) {
   m_core = std::make_shared<Core>();
 
   if (is_root) {
@@ -379,10 +381,3 @@ qprep_impl_t::qprep_impl_t(std::istream &file,
 }
 
 CPP_EXPORT qprep_impl_t::~qprep_impl_t() {}
-
-///=============================================================================
-
-CPP_EXPORT NCCLexer *qprep_new(std::istream &file, const char *filename,
-                               std::shared_ptr<ncc::core::Environment> env) {
-  return new qprep_impl_t(file, env, filename);
-}

@@ -40,7 +40,7 @@ extern "C" {
 }
 
 int qcall::sys_next(lua_State* L) {
-  NCCToken tok = get_engine()->next();
+  NCCToken tok = get_engine()->Next();
 
   lua_newtable(L);
 

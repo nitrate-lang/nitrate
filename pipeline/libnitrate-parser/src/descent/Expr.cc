@@ -142,7 +142,6 @@ bool Parser::recurse_fstring(FString **node, size_t depth) {
 
   FStringItems items;
   size_t state = 0, w_beg = 0, w_end = 0;
-  Expr *expr = nullptr;
 
   for (size_t i = 0; i < fstr.size(); i++) {
     char c = fstr[i];
@@ -158,13 +157,10 @@ bool Parser::recurse_fstring(FString **node, size_t depth) {
 
       std::istringstream ss(sub);
 
+      /// TODO: Fstring is broken
       qcore_implement();
 
-      // auto subrd = NCCLexer(ss, "fstring", m_env);
-
-      /// TODO: Fstring is broken
-
-      expr = recurse_expr({NCCToken(qPunc, qPuncRCur)}, depth + 1);
+      let expr = recurse_expr({NCCToken(qPunc, qPuncRCur)}, depth + 1);
 
       if (!tmp.empty()) {
         items.push_back(SaveString(std::move(tmp)));

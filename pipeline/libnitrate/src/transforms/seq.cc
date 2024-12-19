@@ -47,7 +47,6 @@ extern bool impl_use_json(IScanner *L, std::ostream &O);
 
 CREATE_TRANSFORM(nit::seq) {
   qprep lexer(source, nullptr, env);
-  RefactorWrapper rw(lexer.get());
 
   enum class OutMode {
     JSON,
@@ -63,8 +62,8 @@ CREATE_TRANSFORM(nit::seq) {
 
   switch (out_mode) {
     case OutMode::JSON:
-      return impl_use_json(&rw, output);
+      return impl_use_json(lexer.get(), output);
     case OutMode::MsgPack:
-      return impl_use_msgpack(&rw, output);
+      return impl_use_msgpack(lexer.get(), output);
   }
 }

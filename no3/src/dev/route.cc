@@ -133,8 +133,7 @@ static int do_parse(std::string source, std::string output) {
   }
 
   qprep lexer(file, "in", env);
-  auto wrap = ncc::lex::RefactorWrapper(lexer.get());
-  auto parser = ncc::parse::Parser::Create(wrap, env);
+  auto parser = ncc::parse::Parser::Create(*lexer.get(), env);
 
   auto ast = parser->parse();
 
@@ -172,8 +171,7 @@ static int do_nr(std::string source, std::string output, std::string opts,
   }
 
   qprep lexer(file, "in", env);
-  auto wrap = ncc::lex::RefactorWrapper(lexer.get());
-  auto parser = ncc::parse::Parser::Create(wrap, env);
+  auto parser = ncc::parse::Parser::Create(*lexer.get(), env);
 
   auto ast = parser->parse();
 
@@ -231,8 +229,7 @@ static int do_codegen(std::string source, std::string output, std::string opts,
   }
 
   qprep lexer(file, "in", env);
-  auto wrap = ncc::lex::RefactorWrapper(lexer.get());
-  auto parser = ncc::parse::Parser::Create(wrap, env);
+  auto parser = ncc::parse::Parser::Create(*lexer.get(), env);
 
   auto ast = parser->parse();
 

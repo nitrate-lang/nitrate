@@ -45,6 +45,8 @@
 #include <ostream>
 #include <queue>
 
+#include "nitrate-core/Logger.hh"
+
 ///============================================================================///
 
 typedef struct NCCLexer NCCLexer;
@@ -84,8 +86,6 @@ const char *qlex_str(NCCLexer *lexer, const NCCToken *tok, size_t *len);
 const char *qlex_opstr(qlex_op_t op);
 const char *qlex_kwstr(qlex_key_t kw);
 const char *qlex_punctstr(qlex_punc_t punct);
-void qlex_tok_fromstr(NCCLexer *lexer, qlex_ty_t ty, const char *str,
-                      NCCToken *out);
 
 namespace ncc::lex {
   class ISourceFile {
@@ -117,8 +117,16 @@ namespace ncc::lex {
     virtual ~IScanner() = default;
 
     virtual NCCToken Next() = 0;
-    virtual NCCToken Peek() = 0;
-    virtual void Undo() = 0;
+
+    NCCToken Peek() {
+      /// TODO: Implement
+      qcore_implement();
+    }
+
+    void Undo() {
+      /// TODO: Implement
+      qcore_implement();
+    }
 
     constexpr NCCToken Current() const { return m_current; }
 
@@ -150,8 +158,6 @@ namespace ncc::lex {
     virtual ~Tokenizer() override;
 
     NCCToken Next() override;
-    NCCToken Peek() override;
-    void Undo() override;
   };
 
   class RefactorWrapper final : public IScanner {
@@ -162,8 +168,6 @@ namespace ncc::lex {
     virtual ~RefactorWrapper() override {}
 
     NCCToken Next() override;
-    NCCToken Peek() override;
-    void Undo() override;
   };
 
   std::ostream &operator<<(std::ostream &os, qlex_ty_t ty);
@@ -172,5 +176,8 @@ namespace ncc::lex {
   std::ostream &operator<<(std::ostream &os, qlex_key_t kw);
   std::ostream &operator<<(std::ostream &os, qlex_punc_t punct);
 }  // namespace ncc::lex
+
+void qlex_tok_fromstr(ncc::lex::IScanner *lexer, qlex_ty_t ty, const char *str,
+                      NCCToken *out);
 
 #endif

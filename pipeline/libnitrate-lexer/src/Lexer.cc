@@ -1192,8 +1192,8 @@ CPP_EXPORT const char *qlex_punctstr(qlex_punc_t punct) {
   }
 }
 
-CPP_EXPORT void qlex_tok_fromstr(NCCLexer *, qlex_ty_t ty, const char *str,
-                                 NCCToken *out) {
+CPP_EXPORT void qlex_tok_fromstr(ncc::lex::IScanner *, qlex_ty_t ty,
+                                 const char *str, NCCToken *out) {
   try {
     out->ty = ty;
     out->start = 0;
