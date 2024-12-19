@@ -42,7 +42,7 @@ Stmt *Parser::recurse_typedef() {
    */
 
   if (let tok = next_if(qName)) {
-    let name = tok->as_string(&rd);
+    let name = tok->as_string();
 
     if (next_if(qOpSet)) {
       let type = recurse_type();

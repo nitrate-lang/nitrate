@@ -85,7 +85,7 @@ std::optional<Expr *> Parser::recurse_variable_value() {
 std::optional<Stmt *> Parser::recurse_variable_instance(VarDeclType decl_type) {
   if (let attributes = recurse_variable_attributes()) {
     if (let tok = next_if(qName)) {
-      let name = tok->as_string(&rd);
+      let name = tok->as_string();
       let type = recurse_variable_type();
       let value = recurse_variable_value();
 

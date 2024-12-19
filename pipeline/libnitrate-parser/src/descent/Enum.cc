@@ -37,7 +37,7 @@ using namespace ncc::parse;
 
 std::string_view Parser::recurse_enum_name() {
   if (let tok = next_if(qName)) {
-    return tok->as_string(&rd);
+    return tok->as_string();
   } else {
     return "";
   }
@@ -66,7 +66,7 @@ std::optional<EnumItem> Parser::recurse_enum_item() {
   if (let name = next_if(qName)) {
     let value = recurse_enum_item_value();
 
-    return EnumItem(SaveString(name->as_string(&rd)), value.value_or(nullptr));
+    return EnumItem(SaveString(name->as_string()), value.value_or(nullptr));
   } else {
     diagnostic << current() << "Enum field is missing a name.";
   }

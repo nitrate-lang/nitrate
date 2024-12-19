@@ -60,7 +60,7 @@ std::optional<Expr *> Parser::recurse_function_parameter_value() {
 
 std::optional<FuncParam> Parser::recurse_function_parameter() {
   if (let name = next_if(qName)) {
-    let param_name = name->as_string(&rd);
+    let param_name = name->as_string();
     let param_type = recurse_function_parameter_type();
     let param_value = recurse_function_parameter_value();
 
@@ -185,7 +185,7 @@ Parser::recurse_function_capture() {
   }
 
   if (let name = next_if(qName)) {
-    return {{name->as_string(&rd), is_ref}};
+    return {{name->as_string(), is_ref}};
   } else {
     diagnostic << next() << "Expected a capture name";
   }
@@ -221,7 +221,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
           static const std::unordered_set<std::string_view> reserved_words = {
               "foreign", "inline"};
 
-          let name = identifier->as_string(&rd);
+          let name = identifier->as_string();
 
           if (name == "pure") {
             is_pure = true;

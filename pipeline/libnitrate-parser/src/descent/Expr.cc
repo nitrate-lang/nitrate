@@ -41,6 +41,8 @@
 #include <sstream>
 #include <stack>
 
+#include "nitrate-core/Logger.hh"
+
 #define MAX_EXPR_DEPTH (10000)
 #define MAX_LIST_DUP (10000)
 
@@ -73,8 +75,13 @@ CallArgs Parser::recurse_caller_arguments(NCCToken terminator, size_t depth) {
       tok = peek();
 
       if (!tok.is<qPuncColn>()) {
-        qlex_insert(&rd, tok);
-        qlex_insert(&rd, ident);
+        rd.Undo();
+        rd.Undo();
+
+        /// TODO: Verify fix
+
+        // qlex_insert(&rd, tok);
+        // qlex_insert(&rd, ident);
         goto parse_pos_arg;
       }
 
@@ -83,7 +90,7 @@ CallArgs Parser::recurse_caller_arguments(NCCToken terminator, size_t depth) {
       Expr *arg =
           recurse_expr({NCCToken(qPunc, qPuncComa), terminator}, depth + 1);
 
-      call_args.push_back({SaveString(ident.as_string(&rd)), arg});
+      call_args.push_back({SaveString(ident.as_string()), arg});
       goto comma;
     }
 
@@ -128,7 +135,7 @@ bool Parser::recurse_fstring(FString **node, size_t depth) {
     diagnostic << tok << "Expected a string literal in F-string expression";
   }
 
-  auto fstr = tok.as_string(&rd);
+  auto fstr = tok.as_string();
 
   std::string tmp;
   tmp.reserve(fstr.size());
@@ -151,7 +158,9 @@ bool Parser::recurse_fstring(FString **node, size_t depth) {
 
       std::istringstream ss(sub);
 
-      NCCLexer subrd = NCCLexer(ss, "fstring", m_env);
+      qcore_implement();
+
+      // auto subrd = NCCLexer(ss, "fstring", m_env);
 
       /// TODO: Fstring is broken
 
@@ -232,7 +241,7 @@ Expr *Parser::recurse_expr(std::set<NCCToken> terminators, size_t depth) {
          * @brief Parse integer literal with type suffix
          */
 
-        stack.push(make<ConstInt>(SaveString(tok.as_string(&rd))));
+        stack.push(make<ConstInt>(SaveString(tok.as_string())));
 
         tok = peek();
         if (tok.is(qName)) {
@@ -249,7 +258,7 @@ Expr *Parser::recurse_expr(std::set<NCCToken> terminators, size_t depth) {
          * @brief Parse floating-point literal with type suffix
          */
 
-        stack.push(make<ConstFloat>(SaveString(tok.as_string(&rd))));
+        stack.push(make<ConstFloat>(SaveString(tok.as_string())));
 
         tok = peek();
         if (tok.is(qName)) {
@@ -266,7 +275,7 @@ Expr *Parser::recurse_expr(std::set<NCCToken> terminators, size_t depth) {
          * @brief Parse string literal with type suffix
          */
 
-        stack.push(make<ConstString>(SaveString(tok.as_string(&rd))));
+        stack.push(make<ConstString>(SaveString(tok.as_string())));
 
         tok = peek();
         if (tok.is(qName)) {
@@ -282,7 +291,7 @@ Expr *Parser::recurse_expr(std::set<NCCToken> terminators, size_t depth) {
         /**
          * @brief
          */
-        auto str = tok.as_string(&rd);
+        auto str = tok.as_string();
         qcore_assert(str.size() == 1);
 
         stack.push(make<ConstChar>(str.at(0)));
@@ -575,7 +584,7 @@ Expr *Parser::recurse_expr(std::set<NCCToken> terminators, size_t depth) {
             return mock_expr(QAST_VOID);
           }
 
-          let ident = tok.as_string(&rd);
+          let ident = tok.as_string();
           tok = peek();
           if (tok.is<qOpInc>()) {
             PostUnaryExpr *p = make<PostUnaryExpr>(
@@ -641,7 +650,7 @@ Expr *Parser::recurse_expr(std::set<NCCToken> terminators, size_t depth) {
         break;
       }
       case qName: {
-        let ident = tok.as_string(&rd);
+        let ident = tok.as_string();
         if (peek().ty == qPunc && (peek()).as<qlex_punc_t>() == qPuncLPar) {
           next();
 

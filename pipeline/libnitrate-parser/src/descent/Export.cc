@@ -37,7 +37,7 @@ using namespace ncc::parse;
 
 std::string_view Parser::recurse_abi_name() {
   if (let tok = next_if(qText)) {
-    return tok->as_string(&rd);
+    return tok->as_string();
   } else {
     return "";
   }

@@ -41,6 +41,8 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
 
+#include "nitrate-core/Logger.hh"
+
 namespace ncc::parse {
   class Parser;
 
@@ -59,9 +61,9 @@ namespace ncc::parse {
 
   class Parser final : public boost::enable_shared_from_this<Parser> {
     std::shared_ptr<ncc::core::Environment> m_env;
-    std::unique_ptr<ncc::core::IMemory> m_allocator; /* The Main allocator */
-    NCCLexer &rd;                                    /* Polymporphic lexer */
-    bool m_failed; /* Whether the parser failed (ie syntax errors) */
+    std::unique_ptr<ncc::core::IMemory> m_allocator;
+    ncc::lex::IScanner &rd;
+    bool m_failed;
 
     /****************************************************************************
      * @brief
@@ -181,12 +183,20 @@ namespace ncc::parse {
     Expr *recurse_while_cond();
     Stmt *recurse_while_body();
 
-    Parser(NCCLexer *lexer, std::shared_ptr<ncc::core::Environment> env);
+    Parser(ncc::lex::IScanner &lexer,
+           std::shared_ptr<ncc::core::Environment> env);
 
   public:
     static boost::shared_ptr<Parser> Create(
-        NCCLexer *lexer, std::shared_ptr<ncc::core::Environment> env) {
+        ncc::lex::IScanner &lexer,
+        std::shared_ptr<ncc::core::Environment> env) {
       return boost::shared_ptr<Parser>(new Parser(lexer, env));
+    }
+
+    static boost::shared_ptr<Parser> Create(
+        NCCLexer *, std::shared_ptr<ncc::core::Environment>) {
+      /// TODO: Remove me
+      qcore_implement();
     }
 
     ~Parser();
@@ -194,9 +204,9 @@ namespace ncc::parse {
     ASTRoot parse();
 
     void SetFailBit() { m_failed = true; }
-    NCCLexer &GetLexer() { return rd; }
+    ncc::lex::IScanner &GetLexer() { return rd; }
 
-    static ASTRoot FromLexer(NCCLexer *lexer,
+    static ASTRoot FromLexer(ncc::lex::IScanner &lexer,
                              std::shared_ptr<ncc::core::Environment> env);
 
     static ASTRoot FromString(std::string_view str,

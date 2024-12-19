@@ -358,14 +358,14 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
   return block;
 }
 
-CPP_EXPORT Parser::Parser(NCCLexer *lexer,
+CPP_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
                           std::shared_ptr<ncc::core::Environment> env)
-    : rd(*lexer) {
+    : rd(lexer) {
   m_env = env;
   m_allocator = std::make_unique<ncc::core::dyn_arena>();
   m_failed = false;
 
-  qlex_set_flags(lexer, qlex_get_flags(lexer) | QLEX_NO_COMMENTS);
+  env->set("this.lexer.emit_comments", "false", true);
 }
 
 CPP_EXPORT Parser::~Parser() {}
@@ -400,43 +400,46 @@ CPP_EXPORT bool ASTRoot::check() const {
   return !failed;
 }
 
-std::string ncc::parse::mint_clang16_message(NCCLexer &rd,
+std::string ncc::parse::mint_clang16_message(ncc::lex::IScanner &rd,
                                              const DiagMessage &msg) {
-  std::stringstream ss;
-  ss << "\x1b[37;1m" << qlex_filename(&rd) << ":";
-  uint32_t line = qlex_line(&rd, qlex_begin(&msg.tok));
-  uint32_t col = qlex_col(&rd, qlex_begin(&msg.tok));
+  /// TODO: Implement this
+  qcore_implement();
 
-  if (line != QLEX_EOFF) {
-    ss << line << ":";
-  } else {
-    ss << "?:";
-  }
+  // std::stringstream ss;
+  // ss << "\x1b[37;1m" << qlex_filename(&rd) << ":";
+  // uint32_t line = qlex_line(&rd, qlex_begin(&msg.tok));
+  // uint32_t col = qlex_col(&rd, qlex_begin(&msg.tok));
 
-  if (col != QLEX_EOFF) {
-    ss << col << ":\x1b[0m ";
-  } else {
-    ss << "?:\x1b[0m ";
-  }
+  // if (line != QLEX_EOFF) {
+  //   ss << line << ":";
+  // } else {
+  //   ss << "?:";
+  // }
 
-  ss << "\x1b[37;1m" << msg.msg << " [";
+  // if (col != QLEX_EOFF) {
+  //   ss << col << ":\x1b[0m ";
+  // } else {
+  //   ss << "?:\x1b[0m ";
+  // }
 
-  ss << "SyntaxError";
+  // ss << "\x1b[37;1m" << msg.msg << " [";
 
-  ss << "]\x1b[0m";
+  // ss << "SyntaxError";
 
-  uint32_t offset;
-  char *snippet = qlex_snippet(&rd, msg.tok, &offset);
-  if (!snippet) {
-    return ss.str();
-  }
+  // ss << "]\x1b[0m";
 
-  ss << "\n" << snippet << "\n";
-  for (uint32_t i = 0; i < offset; i++) {
-    ss << " ";
-  }
-  ss << "\x1b[32;1m^\x1b[0m";
-  free(snippet);
+  // uint32_t offset;
+  // char *snippet = qlex_snippet(&rd, msg.tok, &offset);
+  // if (!snippet) {
+  //   return ss.str();
+  // }
 
-  return ss.str();
+  // ss << "\n" << snippet << "\n";
+  // for (uint32_t i = 0; i < offset; i++) {
+  //   ss << " ";
+  // }
+  // ss << "\x1b[32;1m^\x1b[0m";
+  // free(snippet);
+
+  // return ss.str();
 }

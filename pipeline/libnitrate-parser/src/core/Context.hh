@@ -58,7 +58,8 @@ namespace ncc::parse {
     NCCToken tok;
   };
 
-  std::string mint_clang16_message(NCCLexer &lexer, const DiagMessage &msg);
+  std::string mint_clang16_message(ncc::lex::IScanner &lexer,
+                                   const DiagMessage &msg);
 
   class MessageBuffer {
     std::stringstream m_buffer;

@@ -154,7 +154,7 @@ Type *Parser::recurse_opaque_type() {
 
   if (let name = next_if(qName)) {
     if (next_if(qPuncRPar)) {
-      let opaque = make<OpaqueTy>(SaveString(name->as_string(&rd)));
+      let opaque = make<OpaqueTy>(SaveString(name->as_string()));
       opaque->set_offset(current().start);
 
       return opaque;
@@ -391,7 +391,7 @@ Type *Parser::recurse_type() {
     }
 
     case qName: {
-      let type = recurse_type_by_name(tok.as_string(&rd));
+      let type = recurse_type_by_name(tok.as_string());
 
       return recurse_type_suffix(type);
     }

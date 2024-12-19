@@ -67,7 +67,7 @@ ExpressionList Parser::recurse_struct_attributes() {
 
 std::string_view Parser::recurse_struct_name() {
   if (let tok = next_if(qName)) {
-    return tok->as_string(&rd);
+    return tok->as_string();
   } else {
     return "";
   }
@@ -82,7 +82,7 @@ StructDefNames Parser::recurse_struct_terms() {
 
   while (true) {
     if (let tok = next_if(qName)) {
-      names.push_back(SaveString(tok->as_string(&rd)));
+      names.push_back(SaveString(tok->as_string()));
 
       next_if(qPuncComa);
     } else {
@@ -106,7 +106,7 @@ void Parser::recurse_struct_field(Vis vis, bool is_static,
                                   StructDefFields &fields) {
   /* Must consume token to avoid infinite loop on error */
   if (let name = next(); name.is(qName)) {
-    let field_name = name.as_string(&rd);
+    let field_name = name.as_string();
 
     if (next_if(qPuncColn)) {
       let field_type = recurse_type();

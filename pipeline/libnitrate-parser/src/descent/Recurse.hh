@@ -42,12 +42,12 @@
 #include <nitrate-parser/Context.hh>
 
 namespace ncc::parse {
-#define next() rd.next()
-#define peek() rd.peek()
-#define current() rd.current()
+#define next() rd.Next()
+#define peek() rd.Peek()
+#define current() rd.Current()
 
   template <auto tok>
-  static std::optional<NCCToken> next_if_(NCCLexer &rd) {
+  static std::optional<NCCToken> next_if_(ncc::lex::IScanner &rd) {
     let t = peek();
     if constexpr (std::is_same_v<decltype(tok), qlex_ty_t>) {
       if (t.is(tok)) {

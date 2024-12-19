@@ -256,12 +256,7 @@ typedef struct __attribute__((packed)) NCCToken {
     }
   }
 
-  inline std::string_view as_string(NCCLexer *lexer) const {
-    size_t len;
-    const char *s = qlex_str(lexer, this, &len);
-
-    return std::string_view(s, len);
-  }
+  inline std::string_view as_string() const { return v.str_idx.get(); }
 
   constexpr bool operator<(const NCCToken &rhs) const {
     if (ty != rhs.ty) return ty < rhs.ty;

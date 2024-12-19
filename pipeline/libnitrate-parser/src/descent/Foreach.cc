@@ -38,11 +38,11 @@ using namespace ncc::parse;
 std::optional<std::pair<std::string_view, std::string_view>>
 Parser::recurse_foreach_names() {
   if (let ident1 = next_if(qName)) {
-    let ident1_value = ident1->as_string(&rd);
+    let ident1_value = ident1->as_string();
 
     if (next_if(qPuncComa)) {
       if (let ident2 = next_if(qName)) {
-        let ident2_value = ident2->as_string(&rd);
+        let ident2_value = ident2->as_string();
         return std::make_pair(ident1_value, ident2_value);
       } else {
         diagnostic << current() << "Expected identifier in foreach statement";

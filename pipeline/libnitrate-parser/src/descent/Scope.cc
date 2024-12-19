@@ -37,7 +37,7 @@ using namespace ncc::parse;
 
 std::string_view Parser::recurse_scope_name() {
   if (let tok = next_if(qName)) {
-    return tok->as_string(&rd);
+    return tok->as_string();
   } else {
     return "";
   }
@@ -59,7 +59,7 @@ std::optional<ScopeDeps> Parser::recurse_scope_deps() {
       }
 
       if (tok.is(qName)) {
-        let dependency_name = tok.as_string(&rd);
+        let dependency_name = tok.as_string();
 
         dependencies.insert(SaveString(dependency_name));
 
