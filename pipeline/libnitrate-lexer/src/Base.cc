@@ -278,3 +278,14 @@ CPP_EXPORT void NCCLexer::push_impl(const NCCToken *tok) {
   m_tok_buf.push_front(*tok);
   m_next_tok.reset();
 }
+
+CPP_EXPORT NCCToken ncc::lex::RefactorWrapper::Next() {
+  return m_lexer->next();
+}
+CPP_EXPORT NCCToken ncc::lex::RefactorWrapper::Peek() {
+  return m_lexer->peek();
+}
+CPP_EXPORT void ncc::lex::RefactorWrapper::Undo() {
+  /// TODO: Implement this function
+  qcore_implement();
+}

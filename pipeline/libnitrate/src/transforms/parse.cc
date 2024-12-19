@@ -268,10 +268,11 @@ CREATE_TRANSFORM(nit::parse) {
     out_mode = OutMode::MsgPack;
   }
 
-  DeserializerAdapterLexer lex(source, nullptr, env);
-  auto par = ncc::parse::Parser::Create(&lex, env);
+  DeserializerAdapterLexer lexer(source, nullptr, env);
+  auto wrap = ncc::lex::RefactorWrapper(&lexer);
+  auto parser = ncc::parse::Parser::Create(wrap, env);
 
-  let root = par->parse();
+  let root = parser->parse();
 
   switch (out_mode) {
     case OutMode::JSON: {

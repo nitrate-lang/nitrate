@@ -44,6 +44,53 @@
 #include <ostream>
 #include <queue>
 
+///============================================================================///
+
+typedef struct NCCLexer NCCLexer;
+
+#define QLEX_FLAG_NONE 0
+#define QLEX_NO_COMMENTS 0x01
+
+typedef uint32_t qlex_flags_t;
+
+void qlex_set_flags(NCCLexer *lexer, qlex_flags_t flags);
+qlex_flags_t qlex_get_flags(NCCLexer *lexer);
+
+void qlex_insert(NCCLexer *lexer, NCCToken tok);
+
+static inline uint32_t qlex_begin(const NCCToken *tok) { return tok->start; }
+uint32_t qlex_end(NCCLexer *L, NCCToken tok);
+
+const char *qlex_filename(NCCLexer *lexer);
+uint32_t qlex_line(NCCLexer *lexer, uint32_t loc);
+uint32_t qlex_col(NCCLexer *lexer, uint32_t loc);
+
+char *qlex_snippet(NCCLexer *lexer, NCCToken loc, uint32_t *offset);
+
+const char *qlex_ty_str(qlex_ty_t ty);
+
+/**
+ * @brief Get the internal string value for a token.
+ *
+ * @param lexer Lexer context.
+ * @param tok Token.
+ * @param len Pointer to store the length of the string.
+ *
+ * @return The internal string value for the token or empty string if this
+ * operation is applicable for this token type.
+ * @note This function is thread-safe.
+ * @warning The lifetime shall exist for the duration of the lexer context.
+ * @warning DO NOT MODIFY THE RETURNED STRING.
+ * @warning The returned string is NULL-terminated, however, it may contain any
+ * bytes within the data including NULL bytes.
+ */
+const char *qlex_str(NCCLexer *lexer, const NCCToken *tok, size_t *len);
+const char *qlex_opstr(qlex_op_t op);
+const char *qlex_kwstr(qlex_key_t kw);
+const char *qlex_punctstr(qlex_punc_t punct);
+void qlex_tok_fromstr(NCCLexer *lexer, qlex_ty_t ty, const char *str,
+                      NCCToken *out);
+
 namespace ncc::lex {
   class ISourceFile {
   protected:
@@ -105,58 +152,23 @@ namespace ncc::lex {
     void Undo() override;
   };
 
+  class RefactorWrapper final : public IScanner {
+    NCCLexer *m_lexer;
+
+  public:
+    RefactorWrapper(NCCLexer *lexer) : m_lexer(lexer) {}
+    virtual ~RefactorWrapper() override {}
+
+    NCCToken Next() override;
+    NCCToken Peek() override;
+    void Undo() override;
+  };
+
   std::ostream &operator<<(std::ostream &os, qlex_ty_t ty);
   std::ostream &operator<<(std::ostream &os, NCCToken tok);
   std::ostream &operator<<(std::ostream &os, qlex_op_t op);
   std::ostream &operator<<(std::ostream &os, qlex_key_t kw);
   std::ostream &operator<<(std::ostream &os, qlex_punc_t punct);
 }  // namespace ncc::lex
-
-///============================================================================///
-
-typedef struct NCCLexer NCCLexer;
-
-#define QLEX_FLAG_NONE 0
-#define QLEX_NO_COMMENTS 0x01
-
-typedef uint32_t qlex_flags_t;
-
-void qlex_set_flags(NCCLexer *lexer, qlex_flags_t flags);
-qlex_flags_t qlex_get_flags(NCCLexer *lexer);
-
-void qlex_insert(NCCLexer *lexer, NCCToken tok);
-
-static inline uint32_t qlex_begin(const NCCToken *tok) { return tok->start; }
-uint32_t qlex_end(NCCLexer *L, NCCToken tok);
-
-const char *qlex_filename(NCCLexer *lexer);
-uint32_t qlex_line(NCCLexer *lexer, uint32_t loc);
-uint32_t qlex_col(NCCLexer *lexer, uint32_t loc);
-
-char *qlex_snippet(NCCLexer *lexer, NCCToken loc, uint32_t *offset);
-
-const char *qlex_ty_str(qlex_ty_t ty);
-
-/**
- * @brief Get the internal string value for a token.
- *
- * @param lexer Lexer context.
- * @param tok Token.
- * @param len Pointer to store the length of the string.
- *
- * @return The internal string value for the token or empty string if this
- * operation is applicable for this token type.
- * @note This function is thread-safe.
- * @warning The lifetime shall exist for the duration of the lexer context.
- * @warning DO NOT MODIFY THE RETURNED STRING.
- * @warning The returned string is NULL-terminated, however, it may contain any
- * bytes within the data including NULL bytes.
- */
-const char *qlex_str(NCCLexer *lexer, const NCCToken *tok, size_t *len);
-const char *qlex_opstr(qlex_op_t op);
-const char *qlex_kwstr(qlex_key_t kw);
-const char *qlex_punctstr(qlex_punc_t punct);
-void qlex_tok_fromstr(NCCLexer *lexer, qlex_ty_t ty, const char *str,
-                      NCCToken *out);
 
 #endif

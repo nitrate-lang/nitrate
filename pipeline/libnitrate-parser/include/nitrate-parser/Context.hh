@@ -193,12 +193,6 @@ namespace ncc::parse {
       return boost::shared_ptr<Parser>(new Parser(lexer, env));
     }
 
-    static boost::shared_ptr<Parser> Create(
-        NCCLexer *, std::shared_ptr<ncc::core::Environment>) {
-      /// TODO: Remove me
-      qcore_implement();
-    }
-
     ~Parser();
 
     ASTRoot parse();
