@@ -203,24 +203,25 @@ namespace ncc::lex {
 
   template <class LocationTracker>
   class TokenBase {
-  public:
-    LocationTracker start = 0;
-    qlex_ty_t ty : 4;
+    LocationTracker m_start = 0;
     uint64_t pad : 4 = 0;
+    qlex_ty_t m_type : 4;
+
+  public:
     TokenData v;
 
     template <class T = qlex_op_t>
     constexpr TokenBase(qlex_ty_t ty = qEofF, T val = qOpPlus,
                         LocationTracker _start = LocationTracker())
-        : start(_start), ty(ty), v{val} {}
+        : m_start(_start), m_type(ty), v{val} {}
 
     constexpr static TokenBase EndOfFile() { return TokenBase(); }
 
-    constexpr bool is(qlex_ty_t val) const { return ty == val; }
+    constexpr bool is(qlex_ty_t val) const { return m_type == val; }
 
     constexpr bool operator==(const TokenBase &rhs) const {
-      if (ty != rhs.ty) return false;
-      switch (ty) {
+      if (m_type != rhs.m_type) return false;
+      switch (m_type) {
         case qEofF:
         case qPunc:
           return v.punc == rhs.v.punc;
@@ -243,28 +244,30 @@ namespace ncc::lex {
     template <auto V>
     constexpr bool is() const {
       if constexpr (std::is_same_v<decltype(V), qlex_key_t>) {
-        return ty == qKeyW && v.key == V;
+        return m_type == qKeyW && v.key == V;
       } else if constexpr (std::is_same_v<decltype(V), qlex_punc_t>) {
-        return ty == qPunc && v.punc == V;
+        return m_type == qPunc && v.punc == V;
       } else if constexpr (std::is_same_v<decltype(V), qlex_op_t>) {
-        return ty == qOper && v.op == V;
+        return m_type == qOper && v.op == V;
       }
     }
 
-    std::string_view as_string() const { return to_string(ty, v); }
+    std::string_view as_string() const { return to_string(m_type, v); }
 
     qlex_key_t as_key() const { return v.key; }
     qlex_op_t as_op() const { return v.op; }
     qlex_punc_t as_punc() const { return v.punc; }
 
-    LocationTracker get_start() const { return start; }
+    LocationTracker get_start() const { return m_start; }
+
+    qlex_ty_t get_type() const { return m_type; }
 
     constexpr bool operator<(const TokenBase &rhs) const {
-      if (ty != rhs.ty) {
-        return ty < rhs.ty;
+      if (m_type != rhs.m_type) {
+        return m_type < rhs.m_type;
       }
 
-      switch (ty) {
+      switch (m_type) {
         case qEofF:
           return false;
         case qPunc:

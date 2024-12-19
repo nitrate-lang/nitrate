@@ -149,7 +149,7 @@ void qprep_impl_t::expand_raw(std::string_view code) {
       clone.m_core->m_depth = m_core->m_depth + 1;
 
       Token tok;
-      while ((tok = (clone.Next())).ty != qEofF) {
+      while ((tok = (clone.Next())).get_type() != qEofF) {
         tokens.push_back(tok);
       }
     }
@@ -201,7 +201,7 @@ func_entry:  // do tail call optimization manually
     }
 
     if (m_core->m_do_expanse) {
-      switch (x.ty) {
+      switch (x.get_type()) {
         case qEofF:
           return x;
         case qKeyW:
@@ -232,7 +232,7 @@ func_entry:  // do tail call optimization manually
             if (!run_and_expand(std::string(block))) {
               qcore_logf(QCORE_ERROR, "Failed to expand macro block: %s\n",
                          block.data());
-              x.ty = qEofF;
+              x = Token::EndOfFile();
               goto emit_token;
             }
           } else {
@@ -241,7 +241,7 @@ func_entry:  // do tail call optimization manually
             if (pos == std::string_view::npos) {
               qcore_logf(QCORE_ERROR, "Invalid macro function definition: %s\n",
                          block.data());
-              x.ty = qEofF;
+              x = Token::EndOfFile();
               goto emit_token;
             }
 
@@ -255,7 +255,7 @@ func_entry:  // do tail call optimization manually
                 qcore_logf(QCORE_ERROR,
                            "Invalid macro function definition: %s\n",
                            block.data());
-                x.ty = qEofF;
+                x = Token::EndOfFile();
                 goto emit_token;
               }
               code.erase(pos, 1);
@@ -267,7 +267,7 @@ func_entry:  // do tail call optimization manually
                 qcore_logf(QCORE_ERROR,
                            "Invalid macro function definition: %s\n",
                            block.data());
-                x.ty = qEofF;
+                x = Token::EndOfFile();
                 goto emit_token;
               }
               code.erase(pos, 1);
@@ -277,7 +277,7 @@ func_entry:  // do tail call optimization manually
             if (!run_and_expand(code)) {
               qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
                          name.data());
-              x.ty = qEofF;
+              x = Token::EndOfFile();
               goto emit_token;
             }
           }
@@ -293,7 +293,7 @@ func_entry:  // do tail call optimization manually
             if (!run_and_expand("return " + std::string(body))) {
               qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
                          body.data());
-              x.ty = qEofF;
+              x = Token::EndOfFile();
               goto emit_token;
             }
 
@@ -302,7 +302,7 @@ func_entry:  // do tail call optimization manually
             if (!run_and_expand("return " + std::string(body) + "()")) {
               qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
                          body.data());
-              x.ty = qEofF;
+              x = Token::EndOfFile();
               goto emit_token;
             }
 
@@ -319,7 +319,7 @@ func_entry:  // do tail call optimization manually
       goto func_entry;
     }
   } catch (StopException &) {
-    x.ty = qEofF;
+    x = Token::EndOfFile();
     return x;
   }
 }

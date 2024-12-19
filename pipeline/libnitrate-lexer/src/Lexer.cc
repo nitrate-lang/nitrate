@@ -1148,93 +1148,95 @@ CPP_EXPORT const char *ncc::lex::qlex_ty_str(qlex_ty_t ty) {
   qcore_panic("unreachable");
 }
 
-CPP_EXPORT void ncc::lex::qlex_tok_fromstr(ncc::lex::IScanner *, qlex_ty_t ty,
-                                           const char *str, Token *out) {
-  try {
-    out->ty = ty;
-    out->start = 0;
+CPP_EXPORT void ncc::lex::qlex_tok_fromstr(ncc::lex::IScanner *, qlex_ty_t,
+                                           const char *, Token *) {
+  qcore_implement();
+  /// TODO: Implement this function
 
-    switch (ty) {
-      case qEofF: {
-        break;
-      }
+  // try {
+  //   out->ty = ty;
 
-      case qKeyW: {
-        auto find = qlex::keywords.left.find(str);
-        if (find == qlex::keywords.left.end()) [[unlikely]] {
-          out->ty = qEofF;
-        } else {
-          out->v.key = find->second;
-        }
-        break;
-      }
+  //   switch (ty) {
+  //     case qEofF: {
+  //       break;
+  //     }
 
-      case qOper: {
-        auto find = qlex::operators.left.find(str);
-        if (find == qlex::operators.left.end()) [[unlikely]] {
-          out->ty = qEofF;
-        } else {
-          out->v.op = find->second;
-        }
-        break;
-      }
+  //     case qKeyW: {
+  //       auto find = qlex::keywords.left.find(str);
+  //       if (find == qlex::keywords.left.end()) [[unlikely]] {
+  //         *out = Token::EndOfFile();
+  //       } else {
+  //         out->v.key = find->second;
+  //       }
+  //       break;
+  //     }
 
-      case qPunc: {
-        auto find = qlex::punctuation.left.find(str);
-        if (find == qlex::punctuation.left.end()) [[unlikely]] {
-          out->ty = qEofF;
-        } else {
-          out->v.punc = find->second;
-        }
-        break;
-      }
+  //     case qOper: {
+  //       auto find = qlex::operators.left.find(str);
+  //       if (find == qlex::operators.left.end()) [[unlikely]] {
+  //         *out = Token::EndOfFile();
+  //       } else {
+  //         out->v.op = find->second;
+  //       }
+  //       break;
+  //     }
 
-      case qName: {
-        out->v.str = intern(str);
-        break;
-      }
+  //     case qPunc: {
+  //       auto find = qlex::punctuation.left.find(str);
+  //       if (find == qlex::punctuation.left.end()) [[unlikely]] {
+  //         *out = Token::EndOfFile();
+  //       } else {
+  //         out->v.punc = find->second;
+  //       }
+  //       break;
+  //     }
 
-      case qIntL: {
-        out->v.str = intern(str);
-        break;
-      }
+  //     case qName: {
+  //       out->v.str = intern(str);
+  //       break;
+  //     }
 
-      case qNumL: {
-        out->v.str = intern(str);
-        break;
-      }
+  //     case qIntL: {
+  //       out->v.str = intern(str);
+  //       break;
+  //     }
 
-      case qText: {
-        out->v.str = intern(str);
-        break;
-      }
+  //     case qNumL: {
+  //       out->v.str = intern(str);
+  //       break;
+  //     }
 
-      case qChar: {
-        out->v.str = intern(str);
-        break;
-      }
+  //     case qText: {
+  //       out->v.str = intern(str);
+  //       break;
+  //     }
 
-      case qMacB: {
-        out->v.str = intern(str);
-        break;
-      }
+  //     case qChar: {
+  //       out->v.str = intern(str);
+  //       break;
+  //     }
 
-      case qMacr: {
-        out->v.str = intern(str);
-        break;
-      }
+  //     case qMacB: {
+  //       out->v.str = intern(str);
+  //       break;
+  //     }
 
-      case qNote: {
-        out->v.str = intern(str);
-        break;
-      }
-    }
+  //     case qMacr: {
+  //       out->v.str = intern(str);
+  //       break;
+  //     }
 
-  } catch (std::bad_alloc &) {
-    qcore_panic("qlex_tok_fromstr: failed to create token: out of memory");
-  } catch (...) {
-    qcore_panic("qlex_tok_fromstr: failed to create token");
-  }
+  //     case qNote: {
+  //       out->v.str = intern(str);
+  //       break;
+  //     }
+  //   }
+
+  // } catch (std::bad_alloc &) {
+  //   qcore_panic("qlex_tok_fromstr: failed to create token: out of memory");
+  // } catch (...) {
+  //   qcore_panic("qlex_tok_fromstr: failed to create token");
+  // }
 }
 
 CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, qlex_ty_t ty) {

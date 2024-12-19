@@ -230,7 +230,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
 
     next();
 
-    switch (tok.ty) {
+    switch (tok.get_type()) {
       case qIntL: {
         /**
          * @brief Parse integer literal with type suffix
@@ -645,7 +645,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
       }
       case qName: {
         let ident = tok.as_string();
-        if (peek().ty == qPunc && peek().is<qPuncLPar>()) {
+        if (peek().is<qPuncLPar>()) {
           next();
 
           Call *fcall =
@@ -671,7 +671,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
           continue;
         } else {
           Ident *id = make<Ident>(SaveString(ident));
-          id->set_offset(tok.start);
+          id->set_offset(tok.get_start());
 
           stack.push(id);
           continue;

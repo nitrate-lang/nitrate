@@ -119,7 +119,7 @@ Type *Parser::recurse_type_suffix(Type *base) {
     let opt_type =
         make<TemplType>(make<NamedTy>(SaveString("__builtin_result")), args);
 
-    opt_type->set_offset(current().start);
+    opt_type->set_offset(current().get_start());
 
     base = opt_type;
   }
@@ -155,7 +155,7 @@ Type *Parser::recurse_opaque_type() {
   if (let name = next_if(qName)) {
     if (next_if(qPuncRPar)) {
       let opaque = make<OpaqueTy>(SaveString(name->as_string()));
-      opaque->set_offset(current().start);
+      opaque->set_offset(current().get_start());
 
       return opaque;
     } else {
@@ -188,7 +188,7 @@ Type *Parser::recurse_type_by_keyword(qlex_key_t key) {
 Type *Parser::recurse_type_by_operator(qlex_op_t op) {
   switch (op) {
     case qOpTimes: {
-      let start = current().start;
+      let start = current().get_start();
       let pointee = recurse_type();
       let ptr_ty = make<PtrTy>(pointee);
 
@@ -198,7 +198,7 @@ Type *Parser::recurse_type_by_operator(qlex_op_t op) {
     }
 
     case qOpBitAnd: {
-      let start = current().start;
+      let start = current().get_start();
       let refee = recurse_type();
       let ref_ty = make<RefTy>(refee);
 
@@ -210,7 +210,7 @@ Type *Parser::recurse_type_by_operator(qlex_op_t op) {
     case qOpTernary: {
       let infer = make<InferTy>();
 
-      infer->set_offset(current().start);
+      infer->set_offset(current().get_start());
 
       return infer;
     }
@@ -223,7 +223,7 @@ Type *Parser::recurse_type_by_operator(qlex_op_t op) {
 }
 
 Type *Parser::recurse_array_or_vector() {
-  let start = current().start;
+  let start = current().get_start();
 
   let first = recurse_type();
 
@@ -256,7 +256,7 @@ Type *Parser::recurse_array_or_vector() {
 }
 
 Type *Parser::recurse_set_type() {
-  let start = current().start;
+  let start = current().get_start();
 
   let set_type = recurse_type();
 
@@ -275,7 +275,7 @@ Type *Parser::recurse_set_type() {
 Type *Parser::recurse_tuple_type() {
   TupleTyItems items;
 
-  let start = current().start;
+  let start = current().get_start();
 
   while (true) {
     if (next_if(qEofF)) {
@@ -365,13 +365,13 @@ Type *Parser::recurse_type_by_name(std::string_view name) {
     return mock_type();
   }
 
-  type.value()->set_offset(current().start);
+  type.value()->set_offset(current().get_start());
 
   return type.value();
 }
 
 Type *Parser::recurse_type() {
-  switch (let tok = next(); tok.ty) {
+  switch (let tok = next(); tok.get_type()) {
     case qKeyW: {
       let type = recurse_type_by_keyword(tok.as_key());
 

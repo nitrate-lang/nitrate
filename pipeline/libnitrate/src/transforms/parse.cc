@@ -46,11 +46,7 @@
 
 using namespace ncc::lex;
 
-static inline Token eof_tok() {
-  Token tok{};
-  tok.ty = qEofF;
-  return tok;
-}
+static inline Token eof_tok() { return Token::EndOfFile(); }
 
 class DeserializerAdapterLexer final : public ncc::lex::IScanner {
   static constexpr std::array<uint8_t, 256> valid_ty_id_tab = []() {
@@ -135,7 +131,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
 
       // T.start = save_loc(a, b, 0);
       /// FIXME: Implement the location saving
-      T.start = UINT32_MAX;
+      // T.start = UINT32_MAX;
 
       free(str);
       return T;
@@ -188,7 +184,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
 
       // T.start = save_loc(a, b, 0);
       /// FIXME: Implement the location saving
-      T.start = UINT32_MAX;
+      // T.start = UINT32_MAX;
 
       free(str);
       return T;

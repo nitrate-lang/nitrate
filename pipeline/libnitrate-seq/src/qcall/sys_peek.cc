@@ -47,11 +47,11 @@ int qcall::sys_peek(lua_State* L) {
   lua_newtable(L);
 
   lua_pushstring(L, "ty");
-  lua_pushstring(L, qlex_ty_str(tok.ty));
+  lua_pushstring(L, qlex_ty_str(tok.get_type()));
   lua_settable(L, -3);
 
   lua_pushstring(L, "v");
-  switch (tok.ty) {
+  switch (tok.get_type()) {
     case qEofF:
     case qKeyW: {
       lua_pushstring(L, kw_repr(tok.as_key()));

@@ -52,7 +52,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
     diagnostic << current() << "Expected '{'";
   }
 
-  let block_start = current().start;
+  let block_start = current().get_start();
   BlockItems items;
 
   while (true) {
@@ -60,7 +60,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
 
     if (expect_braces && next_if(qPuncRCur)) {
       let block = make<Block>(items, safety);
-      block->set_offset(tok.start);
+      block->set_offset(tok.get_start());
 
       return block;
     }
@@ -92,7 +92,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
       continue;
     }
 
-    let loc_start = tok.start;
+    let loc_start = tok.get_start();
 
     switch (next(), tok.as_key()) {
       case qKVar: {

@@ -47,11 +47,11 @@ bool impl_use_json(IScanner *L, std::ostream &O) {
   O << "[";
 
   Token tok;
-  while ((tok = (L->Next())).ty != qEofF) {
+  while ((tok = (L->Next())).get_type() != qEofF) {
     uint32_t sl = L->StartLine(tok), sc = L->StartColumn(tok);
     uint32_t el = L->EndLine(tok), ec = L->EndColumn(tok);
 
-    switch (tok.ty) {
+    switch (tok.get_type()) {
       case qEofF: { /* End of file */
         break;
       }
@@ -170,11 +170,11 @@ bool impl_use_msgpack(IScanner *L, std::ostream &O) {
   O.put(0);
 
   Token tok;
-  while ((tok = (L->Next())).ty != qEofF) {
+  while ((tok = (L->Next())).get_type() != qEofF) {
     uint32_t sl = L->StartLine(tok), sc = L->StartColumn(tok);
     uint32_t el = L->EndLine(tok), ec = L->EndColumn(tok);
 
-    switch (tok.ty) {
+    switch (tok.get_type()) {
       case qEofF: { /* End of file */
         break;
       }

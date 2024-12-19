@@ -119,8 +119,8 @@ void do_documentColor(const lsp::RequestMessage& req,
   Token tok;
   std::vector<ColorInformation> colors;
 
-  while ((tok = (L.Next())).ty != qEofF) {
-    if (tok.ty != qMacr) {
+  while ((tok = (L.Next())).get_type() != qEofF) {
+    if (tok.get_type() != qMacr) {
       continue;
     }
 

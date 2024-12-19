@@ -180,7 +180,7 @@ Parser::StructContent Parser::recurse_struct_body() {
 }
 
 Stmt *Parser::recurse_struct(CompositeType type) {
-  let start_pos = current().start;
+  let start_pos = current().get_start();
   let attributes = recurse_struct_attributes();
   let name = recurse_struct_name();
   let template_params = recurse_template_parameters();

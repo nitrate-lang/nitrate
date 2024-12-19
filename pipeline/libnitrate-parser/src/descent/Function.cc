@@ -43,7 +43,7 @@ Type *Parser::recurse_function_parameter_type() {
     return recurse_type();
   } else {
     let type = make<InferTy>();
-    type->set_offset(current().start);
+    type->set_offset(current().get_start());
     return type;
   }
 }
@@ -337,7 +337,7 @@ Type *Parser::Parser::recurse_function_return_type() {
     return recurse_type();
   } else {
     let type = make<InferTy>();
-    type->set_offset(current().start);
+    type->set_offset(current().get_start());
 
     return type;
   }
@@ -357,7 +357,7 @@ Stmt *Parser::recurse_function(bool restrict_decl_only) {
   /* fn <attributes>? <modifiers>? <capture_list>?
    * <name><template_parameters>?(<parameters>?)<: return_type>? <body>? */
 
-  let start_pos = current().start;
+  let start_pos = current().get_start();
 
   ExpressionList attributes;
   FnCaptures captures;
