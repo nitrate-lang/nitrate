@@ -16,6 +16,7 @@
 #include <string>
 
 using namespace rapidjson;
+using namespace ncc::lex;
 
 void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   struct Position {
@@ -106,9 +107,8 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   std::stringstream ss(*file->content());
 
   auto env = std::make_shared<ncc::core::Environment>();
-  qlex lexer(ss, uri.c_str(), env);
-  auto wrap = ncc::lex::RefactorWrapper(lexer.get());
-  auto parser = ncc::parse::Parser::Create(wrap, env);
+  auto L = Tokenizer(SourceFileFromSeekableStream(ss, uri), env);
+  auto parser = ncc::parse::Parser::Create(L, env);
 
   auto ast = parser->parse();
 

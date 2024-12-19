@@ -48,6 +48,8 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <utility>
 
+#include "nitrate-lexer/Token.hh"
+
 CPP_EXPORT void qlex_insert(NCCLexer *obj, NCCToken tok) {
   obj->push_impl(&tok);
 }
@@ -277,6 +279,16 @@ CPP_EXPORT void NCCLexer::push_impl(const NCCToken *tok) {
   m_next_tok.reset();
 }
 
-CPP_EXPORT NCCToken ncc::lex::RefactorWrapper::Next() {
-  return m_lexer->next();
+using namespace ncc::lex;
+
+CPP_EXPORT
+std::unique_ptr<ncc::lex::ISourceFile> ncc::lex::SourceFileFromSeekableStream(
+    std::istream &stream, std::string_view filename, size_t begin_offset) {
+  /// TODO: Implement this function
+  qcore_implement();
+}
+
+CPP_EXPORT NCCToken Tokenizer::Next() {
+  /// TODO:
+  qcore_implement();
 }

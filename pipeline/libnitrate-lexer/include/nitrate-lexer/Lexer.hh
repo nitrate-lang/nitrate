@@ -105,7 +105,7 @@ namespace ncc::lex {
   };
 
   std::unique_ptr<ISourceFile> SourceFileFromSeekableStream(
-      std::istream &stream, size_t begin_offset = 0);
+      std::istream &stream, std::string_view filename, size_t begin_offset = 0);
 
   class IScanner {
   protected:
@@ -154,18 +154,9 @@ namespace ncc::lex {
 
   public:
     Tokenizer(std::shared_ptr<ISourceFile> source_file,
-              std::shared_ptr<core::Environment> env);
-    virtual ~Tokenizer() override;
-
-    NCCToken Next() override;
-  };
-
-  class RefactorWrapper final : public IScanner {
-    NCCLexer *m_lexer;
-
-  public:
-    RefactorWrapper(NCCLexer *lexer) : m_lexer(lexer) {}
-    virtual ~RefactorWrapper() override {}
+              std::shared_ptr<core::Environment> env)
+        : m_source_file(source_file), m_env(env) {}
+    virtual ~Tokenizer() override {}
 
     NCCToken Next() override;
   };

@@ -268,8 +268,7 @@ bool impl_use_msgpack(IScanner *L, std::ostream &O) {
 }
 
 CREATE_TRANSFORM(nit::lex) {
-  qlex lexer(source, nullptr, env);
-  RefactorWrapper rw(lexer.get());
+  auto L = Tokenizer(SourceFileFromSeekableStream(source, "<in>"), env);
 
   enum class OutMode {
     JSON,
@@ -285,8 +284,8 @@ CREATE_TRANSFORM(nit::lex) {
 
   switch (out_mode) {
     case OutMode::JSON:
-      return impl_use_json(&rw, output);
+      return impl_use_json(&L, output);
     case OutMode::MsgPack:
-      return impl_use_msgpack(&rw, output);
+      return impl_use_msgpack(&L, output);
   }
 }
