@@ -309,6 +309,14 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
         break;
       }
 
+      case qK__FString: {
+        let node = make<ExprStmt>(recurse_fstring(0));
+        node->set_offset(loc_start);
+
+        items.push_back(node);
+        break;
+      }
+
       case qKUnsafe: {
         if (peek().is<qPuncLCur>()) {
           let node = recurse_block(true, false, SafetyMode::Unsafe);
@@ -359,8 +367,9 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
 }
 
 CPP_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
-                          std::shared_ptr<ncc::core::Environment> env)
-    : rd(lexer) {
+                          std::shared_ptr<ncc::core::Environment> env,
+                          std::shared_ptr<void> lifetime)
+    : rd(lexer), m_lifetime(lifetime) {
   m_env = env;
   m_allocator = std::make_unique<ncc::core::dyn_arena>();
   m_failed = false;
@@ -368,23 +377,20 @@ CPP_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
   env->set("this.lexer.emit_comments", "false", true);
 }
 
-CPP_EXPORT Parser::~Parser() {}
-
 CPP_EXPORT ASTRoot Parser::parse() {
-  /*=============== Swap in their arena  ===============*/
-  std::swap(ncc::parse::npar_allocator, m_allocator);
-
   /*== Install thread-local references to the parser ==*/
+  auto old = ncc::parse::diagnostic;
   ncc::parse::diagnostic = this;
 
+  std::swap(ncc::parse::npar_allocator, m_allocator);
   auto node = recurse_block(false, false, SafetyMode::Unknown);
-  ASTRoot ast(shared_from_this(), node);
+  std::swap(ncc::parse::npar_allocator, m_allocator);
+
+  ASTRoot ast(node, std::move(m_allocator));
+  m_allocator = std::make_unique<ncc::core::dyn_arena>();
 
   /*== Uninstall thread-local references to the parser ==*/
-  ncc::parse::diagnostic = nullptr;
-
-  /*=============== Swap out their arena ===============*/
-  std::swap(ncc::parse::npar_allocator, m_allocator);
+  ncc::parse::diagnostic = old;
 
   return ast;
 }

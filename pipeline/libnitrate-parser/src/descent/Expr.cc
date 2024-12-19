@@ -33,15 +33,10 @@
 
 /// TODO: Cleanup this code; it's a mess from refactoring.
 
-/// TODO: Source location
-
 #include <cstddef>
 #include <descent/Recurse.hh>
 #include <nitrate-parser/AST.hh>
-#include <sstream>
 #include <stack>
-
-#include "nitrate-core/Logger.hh"
 
 #define MAX_EXPR_DEPTH (10000)
 #define MAX_LIST_DUP (10000)
@@ -77,11 +72,6 @@ CallArgs Parser::recurse_caller_arguments(Token terminator, size_t depth) {
 
       if (!tok.is<qPuncColn>()) {
         rd.Undo();
-
-        /// TODO: Verify fix
-
-        // qlex_insert(&rd, tok);
-        // qlex_insert(&rd, ident);
         goto parse_pos_arg;
       }
 
@@ -123,12 +113,7 @@ Call *Parser::recurse_function_call(Expr *callee, size_t depth) {
   return make<Call>(callee, args);
 }
 
-bool Parser::recurse_fstring(FString **node, size_t depth) {
-  /**
-   * @brief Parse an F-string expression
-   * @return true if it is okay to proceed, false otherwise
-   */
-
+Expr *Parser::recurse_fstring(size_t depth) {
   Token tok = next();
   if (!tok.is(qText)) {
     diagnostic << tok << "Expected a string literal in F-string expression";
@@ -152,21 +137,18 @@ bool Parser::recurse_fstring(FString **node, size_t depth) {
       w_end = i + 1;
       state = 0;
 
-      std::string sub(fstr.substr(w_beg, w_end - w_beg));
-
-      std::istringstream ss(sub);
-
-      /// TODO: Fstring is broken
-      qcore_implement();
-
-      let expr = recurse_expr({Token(qPunc, qPuncRCur)}, depth + 1);
-
       if (!tmp.empty()) {
         items.push_back(SaveString(std::move(tmp)));
         tmp.clear();
       }
 
-      items.push_back(expr);
+      std::string sub(fstr.substr(w_beg, w_end - w_beg));
+      auto sub_parser = FromString(sub + "\n", m_env);
+
+      let subnode =
+          sub_parser->recurse_expr({Token(qPunc, qPuncRCur)}, depth + 1);
+      items.push_back(subnode);
+
     } else if (c == '{') {
       tmp += c;
       state = 0;
@@ -187,9 +169,7 @@ bool Parser::recurse_fstring(FString **node, size_t depth) {
     diagnostic << tok << "F-string expression is not properly closed with '}'";
   }
 
-  *node = make<FString>(std::move(items));
-
-  return true;
+  return make<FString>(std::move(items));
 }
 
 /// TODO: Operator precedence
@@ -342,11 +322,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
             continue;
           }
           case qK__FString: {
-            FString *f = nullptr;
-            if (!recurse_fstring(&f, depth)) {
-              diagnostic << tok << "Expected an F-string in expression";
-              return mock_expr(QAST_VOID);
-            }
+            Expr *f = recurse_fstring(depth);
             stack.push(f);
             continue;
           }

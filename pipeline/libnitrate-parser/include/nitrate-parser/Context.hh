@@ -41,28 +41,30 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
+#include <sstream>
 
 namespace ncc::parse {
   class Parser;
 
   class ASTRoot final {
-    boost::shared_ptr<Parser> m_ref;
     Base *m_base;
+    std::shared_ptr<void> m_allocator;
 
   public:
-    ASTRoot(boost::shared_ptr<Parser> ref, ncc::parse::Base *base)
-        : m_ref(ref), m_base(base) {}
+    ASTRoot(ncc::parse::Base *base, std::shared_ptr<void> allocator)
+        : m_base(base), m_allocator(allocator) {}
 
     Base *get() const { return m_base; }
 
     bool check() const;
   };
 
-  class Parser final : public boost::enable_shared_from_this<Parser> {
+  class Parser final {
     std::shared_ptr<ncc::core::Environment> m_env;
     std::unique_ptr<ncc::core::IMemory> m_allocator;
     ncc::lex::IScanner &rd;
     bool m_failed;
+    std::shared_ptr<void> m_lifetime;
 
     /****************************************************************************
      * @brief
@@ -108,7 +110,7 @@ namespace ncc::parse {
 
     CallArgs recurse_caller_arguments(ncc::lex::Token terminator, size_t depth);
     Call *recurse_function_call(Expr *callee, size_t depth);
-    bool recurse_fstring(FString **node, size_t depth);
+    Expr *recurse_fstring(size_t depth);
 
     std::optional<Stmt *> recurse_for_init_expr();
     std::optional<Expr *> recurse_for_cond_expr();
@@ -184,30 +186,40 @@ namespace ncc::parse {
     Stmt *recurse_while_body();
 
     Parser(ncc::lex::IScanner &lexer,
-           std::shared_ptr<ncc::core::Environment> env);
+           std::shared_ptr<ncc::core::Environment> env,
+           std::shared_ptr<void> lifetime);
 
   public:
     static boost::shared_ptr<Parser> Create(
-        ncc::lex::IScanner &lexer,
-        std::shared_ptr<ncc::core::Environment> env) {
-      return boost::shared_ptr<Parser>(new Parser(lexer, env));
+        ncc::lex::IScanner &lexer, std::shared_ptr<ncc::core::Environment> env,
+        std::shared_ptr<void> lifetime = nullptr) {
+      return boost::shared_ptr<Parser>(new Parser(lexer, env, lifetime));
     }
 
-    ~Parser();
+    ~Parser() = default;
 
     ASTRoot parse();
 
     void SetFailBit() { m_failed = true; }
     ncc::lex::IScanner &GetLexer() { return rd; }
 
-    static ASTRoot FromLexer(ncc::lex::IScanner &lexer,
-                             std::shared_ptr<ncc::core::Environment> env);
+    template <typename Scanner = ncc::lex::Tokenizer>
+    static boost::shared_ptr<Parser> FromString(
+        std::string_view str, std::shared_ptr<ncc::core::Environment> env) {
+      auto state = std::make_shared<
+          std::pair<std::stringstream, std::unique_ptr<Scanner>>>(
+          std::stringstream(std::string(str)), nullptr);
+      state->second = std::make_unique<Scanner>(state->first, env);
 
-    static ASTRoot FromString(std::string_view str,
-                              std::shared_ptr<ncc::core::Environment> env);
+      return Create(*state->second, env, state);
+    }
 
-    static ASTRoot FromStream(std::istream &stream,
-                              std::shared_ptr<ncc::core::Environment> env);
+    template <typename Scanner = lex::Tokenizer>
+    static boost::shared_ptr<Parser> FromStream(
+        std::istream &stream, std::shared_ptr<ncc::core::Environment> env) {
+      auto lexer = std::make_shared<Scanner>(stream, env);
+      return Create(lexer, env, lexer);
+    }
   };
 }  // namespace ncc::parse
 

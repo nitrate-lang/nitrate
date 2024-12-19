@@ -556,6 +556,11 @@ namespace ncc::parse {
       return safeCastAs<T>(const_cast<Base *>(this));
     }
 
+    Expr *as_expr() {
+      qcore_assert(is_expr());
+      return reinterpret_cast<Expr *>(this);
+    }
+
     template <typename T>
     constexpr bool is() const {
       return Base::getTypeCode<T>() == getKind();
