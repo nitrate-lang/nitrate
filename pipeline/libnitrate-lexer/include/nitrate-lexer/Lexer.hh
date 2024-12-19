@@ -113,6 +113,8 @@ namespace ncc::lex {
     Tokenizer(std::istream &source_file, std::shared_ptr<core::Environment> env)
         : m_file(source_file), m_env(env) {}
     virtual ~Tokenizer() override {}
+
+    std::shared_ptr<core::Environment> GetEnvironment() const { return m_env; }
   };
 
   const char *op_repr(qlex_op_t op);

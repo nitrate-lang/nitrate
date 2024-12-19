@@ -52,7 +52,7 @@ int qcall::sys_starttime(lua_State* L) {
     return luaL_error(L, "Expected 0 arguments, got %d", nargs);
   }
 
-  if (let starttime = get_engine()->env()->get("this.created_at")) {
+  if (let starttime = get_engine()->GetEnvironment()->get("this.created_at")) {
     lua_pushinteger(L, std::stoll(std::string(*starttime)));
   } else {
     qcore_panic("Failed to get the start time of the compiler");

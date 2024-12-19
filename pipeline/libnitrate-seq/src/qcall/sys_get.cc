@@ -57,7 +57,7 @@ int qcall::sys_get(lua_State* L) {
                       lua_typename(L, lua_type(L, 1)));
   }
 
-  if (let value = obj->env()->get(lua_tostring(L, 1))) {
+  if (let value = obj->GetEnvironment()->get(lua_tostring(L, 1))) {
     lua_pushstring(L, std::string(*value).c_str());
   } else {
     lua_pushnil(L);

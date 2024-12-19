@@ -59,8 +59,7 @@ typedef std::function<DeferOp(qprep_impl_t *obj, ncc::lex::NCCToken last)>
 
 extern std::string_view nit_code_prefix;
 
-struct __attribute__((visibility("default"))) qprep_impl_t final
-    : public ncc::lex::IScanner {
+struct qprep_impl_t final : public ncc::lex::IScanner {
   struct Core {
     lua_State *L = nullptr;
     std::vector<DeferCallback> defer_callbacks;
@@ -73,9 +72,8 @@ struct __attribute__((visibility("default"))) qprep_impl_t final
   };
 
   std::shared_ptr<Core> m_core;
-  std::istream &m_file;
+  std::unique_ptr<ncc::lex::Tokenizer> m_scanner;
   std::shared_ptr<ncc::core::Environment> m_env;
-  std::string m_filename;
 
   virtual ncc::lex::NCCToken GetNext() override;
 
@@ -91,7 +89,9 @@ public:
                const char *filename, bool is_root = true);
   virtual ~qprep_impl_t() override;
 
-  std::shared_ptr<ncc::core::Environment> env() const { return m_env; }
+  std::shared_ptr<ncc::core::Environment> GetEnvironment() const {
+    return m_env;
+  }
 };
 
 class StopException {};

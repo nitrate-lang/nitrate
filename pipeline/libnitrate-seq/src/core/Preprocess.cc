@@ -141,18 +141,18 @@ void qprep_impl_t::expand_raw(std::string_view code) {
   std::istringstream ss(std::string(code.data(), code.size()));
 
   {
-    auto clone =
-        std::make_unique<qprep_impl_t>(ss, m_env, m_filename.c_str(), false);
-    clone->m_core = m_core;
-    clone->m_core->m_depth = m_core->m_depth + 1;
-
-    NCCToken tok;
     std::vector<NCCToken> tokens;
-    while ((tok = (clone->Next())).ty != qEofF) {
-      tokens.push_back(tok);
-    }
 
-    clone = nullptr;
+    {
+      qprep_impl_t clone(ss, m_env, "?", false);
+      clone.m_core = m_core;
+      clone.m_core->m_depth = m_core->m_depth + 1;
+
+      NCCToken tok;
+      while ((tok = (clone.Next())).ty != qEofF) {
+        tokens.push_back(tok);
+      }
+    }
 
     for (auto it = tokens.rbegin(); it != tokens.rend(); it++) {
       m_core->buffer.push_front(*it);
@@ -197,9 +197,7 @@ func_entry:  // do tail call optimization manually
       x = m_core->buffer.front();
       m_core->buffer.pop_front();
     } else {
-      // x = IScanner::Next();
-      /// FIXME: Implement
-      qcore_implement();
+      x = m_scanner->Next();
     }
 
     if (m_core->m_do_expanse) {
@@ -338,11 +336,14 @@ void qprep_impl_t::install_lua_api() {
   lua_setglobal(m_core->L, "n");
 }
 
-qprep_impl_t::qprep_impl_t(std::istream &file,
-                           std::shared_ptr<ncc::core::Environment> env,
-                           const char *filename, bool is_root)
-    : m_file(file), m_env(env), m_filename(filename) {
+CPP_EXPORT qprep_impl_t::qprep_impl_t(
+    std::istream &file, std::shared_ptr<ncc::core::Environment> env,
+    const char *filename, bool is_root)
+    : m_env(env) {
   m_core = std::make_shared<Core>();
+  m_scanner = std::make_unique<Tokenizer>(file, env);
+
+  (void)filename;
 
   if (is_root) {
     { /* Create the Lua state */
