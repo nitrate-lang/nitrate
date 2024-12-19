@@ -2,14 +2,13 @@
 
 #include <lsp/core/SyncFS.hh>
 #include <memory>
-#include <nitrate-lexer/Classes.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/Context.hh>
 #include <optional>
 #include <unordered_map>
 
 namespace lang {
   class ParseTreeWrapper {
-    qlex m_lexer;
     const ncc::parse::Base* m_root;
 
   public:

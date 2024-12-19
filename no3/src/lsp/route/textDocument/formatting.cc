@@ -9,7 +9,7 @@
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Logger.hh>
-#include <nitrate-lexer/Classes.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/Context.hh>
 #include <sstream>
