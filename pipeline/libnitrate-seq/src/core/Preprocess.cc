@@ -145,7 +145,6 @@ void qprep_impl_t::expand_raw(std::string_view code) {
         std::make_unique<qprep_impl_t>(ss, m_env, m_filename.c_str(), false);
     clone->m_core = m_core;
     clone->m_core->m_depth = m_core->m_depth + 1;
-    clone->m_flags = m_flags;
 
     NCCToken tok;
     std::vector<NCCToken> tokens;

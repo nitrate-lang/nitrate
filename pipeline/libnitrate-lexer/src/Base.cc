@@ -48,12 +48,6 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <utility>
 
-CPP_EXPORT void qlex_set_flags(NCCLexer *obj, qlex_flags_t flags) {
-  obj->m_flags = flags;
-}
-
-CPP_EXPORT qlex_flags_t qlex_get_flags(NCCLexer *obj) { return obj->flags(); }
-
 CPP_EXPORT void qlex_insert(NCCLexer *obj, NCCToken tok) {
   obj->push_impl(&tok);
 }
@@ -248,10 +242,14 @@ CPP_EXPORT NCCToken NCCLexer::next() {
     tok = m_next_tok.value();
     m_next_tok.reset();
   } else {
+    /// TODO: Handle no_comments configuration
+    bool no_comments = true;
+
     do {
       m_next_tok.reset();
       tok = step_buffer();
-    } while (m_flags & QLEX_NO_COMMENTS && tok.ty == qNote);
+
+    } while (no_comments && tok.ty == qNote);
   }
 
   m_current_tok = tok;

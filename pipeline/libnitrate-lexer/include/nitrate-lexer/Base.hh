@@ -81,7 +81,6 @@ private:
 public:
   std::string m_filename;
   std::istream &m_file;
-  qlex_flags_t m_flags;
   std::shared_ptr<ncc::core::Environment> m_env;
 
   NCCToken step_buffer();
@@ -118,12 +117,10 @@ public:
         m_last_ch(0),
         m_filename(filename ? filename : "<unknown>"),
         m_file(file),
-        m_flags(0),
         m_env(env) {}
   virtual ~NCCLexer() {}
 
   const std::string &filename() const { return m_filename; }
-  qlex_flags_t flags() const { return m_flags; }
   std::shared_ptr<ncc::core::Environment> env() const { return m_env; }
 };
 

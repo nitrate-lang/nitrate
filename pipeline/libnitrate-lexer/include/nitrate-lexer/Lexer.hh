@@ -38,6 +38,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include <cstdint>
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Token.hh>
@@ -50,11 +51,6 @@ typedef struct NCCLexer NCCLexer;
 
 #define QLEX_FLAG_NONE 0
 #define QLEX_NO_COMMENTS 0x01
-
-typedef uint32_t qlex_flags_t;
-
-void qlex_set_flags(NCCLexer *lexer, qlex_flags_t flags);
-qlex_flags_t qlex_get_flags(NCCLexer *lexer);
 
 void qlex_insert(NCCLexer *lexer, NCCToken tok);
 
@@ -132,6 +128,12 @@ namespace ncc::lex {
     constexpr uint32_t GetCurrentOffset() const { return m_offset; }
 
     constexpr bool IsEof() const { return m_current.is(qEofF); }
+
+    std::string_view Filename(NCCToken) { return "?"; }
+    uint32_t StartLine(NCCToken) { return UINT32_MAX; }
+    uint32_t StartColumn(NCCToken) { return UINT32_MAX; }
+    uint32_t EndLine(NCCToken) { return UINT32_MAX; }
+    uint32_t EndColumn(NCCToken) { return UINT32_MAX; }
   };
 
   class Tokenizer final : public IScanner {

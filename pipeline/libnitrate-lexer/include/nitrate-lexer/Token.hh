@@ -36,6 +36,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-core/String.hh>
 #include <string_view>
 #include <type_traits>
@@ -256,7 +257,12 @@ typedef struct __attribute__((packed)) NCCToken {
     }
   }
 
-  inline std::string_view as_string() const { return v.str_idx.get(); }
+  inline std::string_view as_string() const {
+    qcore_assert(ty == qText || ty == qName || ty == qChar || ty == qMacB ||
+                 ty == qMacr || ty == qNote);
+    /// TODO: Handle all token types
+    return v.str_idx.get();
+  }
 
   constexpr bool operator<(const NCCToken &rhs) const {
     if (ty != rhs.ty) return ty < rhs.ty;

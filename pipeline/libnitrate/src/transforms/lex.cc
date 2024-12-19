@@ -35,21 +35,22 @@
 
 #include <core/SerialUtil.hh>
 #include <core/Transform.hh>
+#include <cstdint>
 #include <nitrate-core/Init.hh>
 #include <nitrate-lexer/Base.hh>
 #include <nitrate-lexer/Classes.hh>
 #include <string_view>
 #include <unordered_set>
 
-bool impl_use_json(NCCLexer *L, std::ostream &O) {
+using namespace ncc::lex;
+
+bool impl_use_json(IScanner *L, std::ostream &O) {
   O << "[";
 
   NCCToken tok;
-  while ((tok = (L->next())).ty != qEofF) {
-    uint32_t sl = qlex_line(L, tok.start);
-    uint32_t sc = qlex_col(L, tok.start);
-    uint32_t el = qlex_line(L, qlex_end(L, tok));
-    uint32_t ec = qlex_col(L, qlex_end(L, tok));
+  while ((tok = (L->Next())).ty != qEofF) {
+    uint32_t sl = L->StartLine(tok), sc = L->StartColumn(tok);
+    uint32_t el = L->EndLine(tok), ec = L->EndColumn(tok);
 
     switch (tok.ty) {
       case qEofF: { /* End of file */
@@ -75,29 +76,27 @@ bool impl_use_json(NCCLexer *L, std::ostream &O) {
       }
 
       case qName: { /* Identifier */
-        O << "[5,\"" << qlex_str(L, &tok, nullptr) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[5,\"" << tok.as_string() << "\"," << sl << "," << sc << "," << el
+          << "," << ec << "],";
         break;
       }
 
       case qIntL: { /* Integer literal */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[6,\"" << qlex_str(L, &tok, nullptr) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[6,\"" << tok.as_string() << "\"," << sl << "," << sc << "," << el
+          << "," << ec << "],";
         break;
       }
 
       case qNumL: { /* Floating-point literal */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[7,\"" << qlex_str(L, &tok, nullptr) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[7,\"" << tok.as_string() << "\"," << sl << "," << sc << "," << el
+          << "," << ec << "],";
         break;
       }
 
       case qText: { /* String literal */
-        size_t S;
-        const char *str = qlex_str(L, &tok, &S);
-        std::string_view sv(str, S);
+        std::string_view sv = tok.as_string();
 
         O << "[8,\"" << create_json_string(sv) << "\"," << sl << "," << sc
           << "," << el << "," << ec << "],";
@@ -105,9 +104,7 @@ bool impl_use_json(NCCLexer *L, std::ostream &O) {
       }
 
       case qChar: { /* Character literal */
-        size_t S;
-        const char *str = qlex_str(L, &tok, &S);
-        std::string_view sv(str, S);
+        std::string_view sv = tok.as_string();
 
         O << "[9,\"" << create_json_string(sv) << "\"," << sl << "," << sc
           << "," << el << "," << ec << "],";
@@ -116,22 +113,20 @@ bool impl_use_json(NCCLexer *L, std::ostream &O) {
 
       case qMacB: { /* Macro block */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[10,\"" << qlex_str(L, &tok, nullptr) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[10,\"" << tok.as_string() << "\"," << sl << "," << sc << ","
+          << el << "," << ec << "],";
         break;
       }
 
       case qMacr: { /* Macro call */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[11,\"" << qlex_str(L, &tok, nullptr) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[11,\"" << tok.as_string() << "\"," << sl << "," << sc << ","
+          << el << "," << ec << "],";
         break;
       }
 
       case qNote: { /* Comment */
-        size_t S;
-        const char *str = qlex_str(L, &tok, &S);
-        std::string_view sv(str, S);
+        std::string_view sv = tok.as_string();
 
         O << "[12,\"" << create_json_string(sv) << "\"," << sl << "," << sc
           << "," << el << "," << ec << "],";
@@ -160,7 +155,7 @@ static void msgpack_write_tok(std::ostream &O, uint8_t type,
   msgpack_write_uint(O, ec);
 }
 
-bool impl_use_msgpack(NCCLexer *L, std::ostream &O) {
+bool impl_use_msgpack(IScanner *L, std::ostream &O) {
   size_t num_entries = 0;
 
   O.put(0xdd);
@@ -176,11 +171,9 @@ bool impl_use_msgpack(NCCLexer *L, std::ostream &O) {
   O.put(0);
 
   NCCToken tok;
-  while ((tok = (L->next())).ty != qEofF) {
-    uint32_t sl = qlex_line(L, tok.start);
-    uint32_t sc = qlex_col(L, tok.start);
-    uint32_t el = qlex_line(L, qlex_end(L, tok));
-    uint32_t ec = qlex_col(L, qlex_end(L, tok));
+  while ((tok = (L->Next())).ty != qEofF) {
+    uint32_t sl = L->StartLine(tok), sc = L->StartColumn(tok);
+    uint32_t el = L->EndLine(tok), ec = L->EndColumn(tok);
 
     switch (tok.ty) {
       case qEofF: { /* End of file */
@@ -203,52 +196,46 @@ bool impl_use_msgpack(NCCLexer *L, std::ostream &O) {
       }
 
       case qName: { /* Identifier */
-        msgpack_write_tok(O, 6, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        msgpack_write_tok(O, 6, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qIntL: { /* Integer literal */
-        msgpack_write_tok(O, 7, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        msgpack_write_tok(O, 7, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qNumL: { /* Floating-point literal */
-        msgpack_write_tok(O, 8, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        msgpack_write_tok(O, 8, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qText: { /* String literal */
-        size_t S;
-        const char *str = qlex_str(L, &tok, &S);
-        std::string_view sv(str, S);
+        std::string_view sv = tok.as_string();
 
         msgpack_write_tok(O, 9, sv, sl, sc, el, ec);
         break;
       }
 
       case qChar: { /* Character literal */
-        size_t S;
-        const char *str = qlex_str(L, &tok, &S);
-        std::string_view sv(str, S);
+        std::string_view sv = tok.as_string();
 
         msgpack_write_tok(O, 10, sv, sl, sc, el, ec);
         break;
       }
 
       case qMacB: { /* Macro block */
-        msgpack_write_tok(O, 11, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        msgpack_write_tok(O, 11, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qMacr: { /* Macro call */
-        msgpack_write_tok(O, 12, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        msgpack_write_tok(O, 12, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qNote: { /* Comment */
-        size_t S;
-        const char *str = qlex_str(L, &tok, &S);
-        std::string_view sv(str, S);
+        std::string_view sv = tok.as_string();
 
         msgpack_write_tok(O, 13, sv, sl, sc, el, ec);
         break;
@@ -282,6 +269,7 @@ bool impl_use_msgpack(NCCLexer *L, std::ostream &O) {
 
 CREATE_TRANSFORM(nit::lex) {
   qlex lexer(source, nullptr, env);
+  RefactorWrapper rw(lexer.get());
 
   enum class OutMode {
     JSON,
@@ -297,8 +285,8 @@ CREATE_TRANSFORM(nit::lex) {
 
   switch (out_mode) {
     case OutMode::JSON:
-      return impl_use_json(lexer.get(), output);
+      return impl_use_json(&rw, output);
     case OutMode::MsgPack:
-      return impl_use_msgpack(lexer.get(), output);
+      return impl_use_msgpack(&rw, output);
   }
 }
