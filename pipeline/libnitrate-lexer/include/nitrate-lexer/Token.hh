@@ -258,6 +258,70 @@ typedef struct __attribute__((packed)) NCCToken {
                  ty == qMacr || ty == qNote);
     /// TODO: Handle all token types
     return v.str_idx.get();
+
+    /*
+switch (ty) {
+    case qEofF: {
+      /// TODO:
+      break;
+    }
+
+    case qKeyW: {
+      /// TODO:
+      break;
+    }
+
+    case qOper: {
+      /// TODO:
+      break;
+    }
+
+    case qPunc: {
+      /// TODO:
+      break;
+    }
+
+    case qName: {
+      /// TODO:
+      break;
+    }
+
+    case qIntL: {
+      /// TODO:
+      break;
+    }
+
+    case qNumL: {
+      /// TODO:
+      break;
+    }
+
+    case qText: {
+      /// TODO:
+      break;
+    }
+
+    case qChar: {
+      /// TODO:
+      break;
+    }
+
+    case qMacB: {
+      /// TODO:
+      break;
+    }
+
+    case qMacr: {
+      /// TODO:
+      break;
+    }
+
+    case qNote: {
+      /// TODO:
+      break;
+    }
+  }
+*/
   }
 
   constexpr bool operator<(const NCCToken &rhs) const {

@@ -181,7 +181,7 @@ public:
   bool should_stop() { return m_depth >= MAX_RECURSION_DEPTH; }
 };
 
-CPP_EXPORT NCCToken qprep_impl_t::Next() {
+CPP_EXPORT NCCToken qprep_impl_t::GetNext() {
 func_entry:  // do tail call optimization manually
 
   NCCToken x{};

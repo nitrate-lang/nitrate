@@ -31,66 +31,54 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <memory>
-#include <nitrate-core/Environment.hh>
-#include <nitrate-lexer/Base.hh>
-#include <nitrate-lexer/Token.hh>
-#include <optional>
-#include <random>
-#include <string_view>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Lexer.hh>
 
-#include "nitrate-lexer/Lexer.hh"
+using namespace ncc::lex;
 
-#define get_engine() \
-  ((qprep_impl_t *)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1)))
+void IScanner::FillTokenBuffer() {
+  for (size_t i = 0; i < TOKEN_BUFFER_SIZE; i++) {
+    try {
+      m_ready.push_back(GetNext());
+    } catch (ScannerEOF &) {
+      if (i == 0) {
+        m_ready.push_back(NCCToken::eof(GetCurrentOffset()));
+      }
+      break;
+    }
+  }
+}
 
-struct lua_State;
+void IScanner::SyncState(NCCToken tok) {
+  /// TODO:
+  m_current = tok;
+}
 
-enum class DeferOp {
-  EmitToken,
-  SkipToken,
-  UninstallHandler,
-};
+CPP_EXPORT NCCToken IScanner::Next() {
+  if (m_ready.empty()) [[unlikely]] {
+    FillTokenBuffer();
+  }
 
-struct qprep_impl_t;
+  NCCToken tok = m_ready.front();
+  m_ready.pop_front();
+  SyncState(tok);
+  m_last = m_current;
 
-typedef std::function<DeferOp(qprep_impl_t *obj, NCCToken last)> DeferCallback;
+  return tok;
+}
 
-extern std::string_view nit_code_prefix;
+CPP_EXPORT NCCToken IScanner::Peek() {
+  if (m_ready.empty()) [[unlikely]] {
+    FillTokenBuffer();
+  }
 
-struct __attribute__((visibility("default"))) qprep_impl_t final
-    : public ncc::lex::IScanner {
-  struct Core {
-    lua_State *L = nullptr;
-    std::vector<DeferCallback> defer_callbacks;
-    std::deque<NCCToken> buffer;
-    std::mt19937 m_qsys_random_engine;
-    bool m_do_expanse = true;
-    size_t m_depth = 0;
+  NCCToken tok = m_ready.front();
+  SyncState(tok);
 
-    ~Core();
-  };
+  return tok;
+}
 
-  std::shared_ptr<Core> m_core;
-  std::istream &m_file;
-  std::shared_ptr<ncc::core::Environment> m_env;
-  std::string m_filename;
-
-  virtual NCCToken GetNext() override;
-
-  bool run_defer_callbacks(NCCToken last);
-
-  std::optional<std::string> run_lua_code(const std::string &s);
-  bool run_and_expand(const std::string &code);
-  void expand_raw(std::string_view code);
-  void install_lua_api();
-
-public:
-  qprep_impl_t(std::istream &file, std::shared_ptr<ncc::core::Environment> env,
-               const char *filename, bool is_root = true);
-  virtual ~qprep_impl_t() override;
-
-  std::shared_ptr<ncc::core::Environment> env() const { return m_env; }
-};
-
-class StopException {};
+CPP_EXPORT void IScanner::Undo() {
+  m_ready.push_front(m_last);
+  SyncState(m_last);
+}

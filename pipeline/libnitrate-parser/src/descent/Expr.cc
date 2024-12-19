@@ -76,7 +76,6 @@ CallArgs Parser::recurse_caller_arguments(NCCToken terminator, size_t depth) {
 
       if (!tok.is<qPuncColn>()) {
         rd.Undo();
-        rd.Undo();
 
         /// TODO: Verify fix
 

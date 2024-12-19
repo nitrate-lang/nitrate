@@ -54,6 +54,7 @@
 #include <vector>
 
 using namespace ncc::core;
+using namespace ncc::lex;
 
 ///============================================================================///
 /// BEGIN: LEXICAL GRAMMAR CONSTRAINTS
@@ -216,7 +217,7 @@ namespace qlex {
   ///============================================================================///
 }  // namespace qlex
 
-static bool lex_is_space(char c) {
+static bool lex_is_space(uint8_t c) {
   return qlex::ws_chars[static_cast<uint8_t>(c)];
 }
 
@@ -411,9 +412,33 @@ static bool canonicalize_number(std::string &number, std::string &norm,
   return can_cache[number] = (norm = s), true;
 }
 
-void NCCLexer::reset_automata() { m_pushback.clear(); }
+void Tokenizer::reset_state() { m_pushback.clear(); }
 
-CPP_EXPORT NCCToken NCCLexer::next_impl() {
+char Tokenizer::nextc() {
+  auto c = m_file.get();
+
+  if (m_file.eof()) {
+    throw ScannerEOF();
+  }
+
+  uint32_t line = GetCurrentLine(), col = GetCurrentColumn(),
+           offset = GetCurrentOffset();
+
+  if (c == '\n') {
+    line++;
+    col = 1;
+  } else {
+    col++;
+  }
+
+  offset++;
+
+  UpdateLocation(line, col, offset, GetCurrentFilename());
+
+  return c;
+}
+
+CPP_EXPORT NCCToken Tokenizer::GetNext() {
   /**
    * **WARNING**: Do not just start editing this function without
    * having a holistic understanding of all code that depends on the lexer
@@ -442,7 +467,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
 
   LexState state = LexState::Start;
   uint32_t state_parens = 0;
-  char c;
+  char c = 0;
   bool eof_is_error = true;
   uint32_t start_pos{};
 
@@ -451,7 +476,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
       { /* If the Lexer over-consumed, we will return the saved character */
         if (m_pushback.empty()) {
           eof_is_error = false;
-          c = getc();
+          c = nextc();
           eof_is_error = true;
           (void)eof_is_error;
         } else {
@@ -460,38 +485,33 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
         }
       }
 
-      if (c == EOF) {
-        return NCCToken::eof(cur_loc());
-      }
-
       switch (state) {
         case LexState::Start: {
           if (lex_is_space(c)) {
             continue;
-          } else if (std::isalpha(c) || c == '_') {
+          }
+
+          start_pos = GetCurrentOffset();
+
+          if (std::isalpha(c) || c == '_') {
             /* Identifier or keyword or operator */
-            start_pos = cur_loc();
+
             buf += c, state = LexState::Identifier;
             continue;
           } else if (c == '/') {
-            start_pos = cur_loc();
             state = LexState::CommentStart; /* Comment or operator */
             continue;
           } else if (std::isdigit(c)) {
-            start_pos = cur_loc();
             buf += c, state = LexState::Integer;
             continue;
           } else if (c == '"' || c == '\'') {
-            start_pos = cur_loc();
             buf += c, state = LexState::String;
             continue;
           } else if (c == '@') {
-            start_pos = cur_loc();
             state = LexState::MacroStart;
             continue;
           } else {
             /* Operator or punctor or invalid */
-            start_pos = cur_loc();
             buf += c;
             state = LexState::Other;
             continue;
@@ -515,7 +535,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
               }
 
               buf += c;
-              c = getc();
+              c = nextc();
             }
           }
 
@@ -573,25 +593,25 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
               case 'X':
                 type = NumType::Hexadecimal;
                 buf += c;
-                c = getc();
+                c = nextc();
                 break;
               case 'b':
               case 'B':
                 type = NumType::Binary;
                 buf += c;
-                c = getc();
+                c = nextc();
                 break;
               case 'o':
               case 'O':
                 type = NumType::Octal;
                 buf += c;
-                c = getc();
+                c = nextc();
                 break;
               case 'd':
               case 'D':
                 type = NumType::DecimalExplicit;
                 buf += c;
-                c = getc();
+                c = nextc();
                 break;
             }
           }
@@ -608,7 +628,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
             /* Skip over the integer syntax formatting */
             if (c == '_') {
               while (lex_is_space(c) || c == '_' || c == '\\') {
-                c = getc();
+                c = nextc();
               }
             } else if (lex_is_space(c)) {
               is_lexing = false;
@@ -733,7 +753,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
             }
 
             if (is_lexing) {
-              c = getc();
+              c = nextc();
             }
           }
 
@@ -764,7 +784,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
         case LexState::CommentSingleLine: {
           while (c != '\n') {
             buf += c;
-            c = getc();
+            c = nextc();
           }
 
           return NCCToken(qNote, intern(std::move(buf)), start_pos);
@@ -774,7 +794,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
 
           while (true) {
             if (c == '/') {
-              char tmp = getc();
+              char tmp = nextc();
               if (tmp == '*') {
                 level++;
                 buf += "/*";
@@ -783,9 +803,9 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
                 buf += tmp;
               }
 
-              c = getc();
+              c = nextc();
             } else if (c == '*') {
-              char tmp = getc();
+              char tmp = nextc();
               if (tmp == '/') {
                 level--;
                 if (level == 0) {
@@ -798,10 +818,10 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
                 buf += c;
                 buf += tmp;
               }
-              c = getc();
+              c = nextc();
             } else {
               buf += c;
-              c = getc();
+              c = nextc();
             }
           }
 
@@ -816,7 +836,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
             }
 
             /* String escape sequences */
-            c = getc();
+            c = nextc();
             switch (c) {
               case 'n':
                 buf += '\n';
@@ -840,7 +860,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
                 buf += '\"';
                 break;
               case 'x': {
-                char hex[2] = {getc(), getc()};
+                char hex[2] = {nextc(), nextc()};
                 if (!std::isxdigit(hex[0]) || !std::isxdigit(hex[1])) {
                   goto error_0;
                 }
@@ -849,7 +869,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
                 break;
               }
               case 'u': {
-                c = getc();
+                c = nextc();
                 if (c != '{') {
                   goto error_0;
                 }
@@ -857,7 +877,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
                 std::string hex;
 
                 while (true) {
-                  c = getc();
+                  c = nextc();
                   if (c == '}') {
                     break;
                   }
@@ -897,7 +917,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
                 break;
               }
               case 'o': {
-                char oct[4] = {getc(), getc(), getc(), 0};
+                char oct[4] = {nextc(), nextc(), nextc(), 0};
                 try {
                   buf += std::stoi(oct, nullptr, 8);
                   break;
@@ -906,7 +926,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
                 }
               }
               case 'b': {
-                c = getc();
+                c = nextc();
                 if (c != '{') {
                   goto error_0;
                 }
@@ -914,7 +934,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
                 std::string bin;
 
                 while (true) {
-                  c = getc();
+                  c = nextc();
                   if (c == '}') {
                     break;
                   }
@@ -961,7 +981,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
             continue;
           } else {
             do {
-              c = getc();
+              c = nextc();
             } while (lex_is_space(c) || c == '\\');
 
             if (c == buf[0]) {
@@ -1003,7 +1023,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
 
           while (std::isalnum(c) || c == '_' || c == ':') {
             buf += c;
-            c = getc();
+            c = nextc();
           }
 
           m_pushback.push_back(c);
@@ -1024,7 +1044,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
 
             buf += c;
 
-            c = getc();
+            c = nextc();
           }
           continue;
         }
@@ -1068,7 +1088,7 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
               if (buf.size() > 4) { /* Handle infinite error case */
                 goto error_0;
               }
-              c = getc();
+              c = nextc();
             } else {
               break;
             }
@@ -1092,9 +1112,9 @@ CPP_EXPORT NCCToken NCCLexer::next_impl() {
   }
 
 error_0: { /* Reset the lexer and return error token */
-  reset_automata();
+  reset_state();
 
-  return NCCToken::eof(cur_loc());
+  return NCCToken::eof(start_pos);
 }
 }
 
@@ -1218,4 +1238,87 @@ CPP_EXPORT void qlex_tok_fromstr(ncc::lex::IScanner *, qlex_ty_t ty,
   } catch (...) {
     qcore_panic("qlex_tok_fromstr: failed to create token");
   }
+}
+
+CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, qlex_ty_t ty) {
+  switch (ty) {
+    case qEofF: {
+      os << "qEofF";
+      break;
+    }
+
+    case qKeyW: {
+      os << "qKeyW";
+      break;
+    }
+
+    case qOper: {
+      os << "qOper";
+      break;
+    }
+
+    case qPunc: {
+      os << "qPunc";
+      break;
+    }
+
+    case qName: {
+      os << "qName";
+      break;
+    }
+
+    case qIntL: {
+      os << "qIntL";
+      break;
+    }
+
+    case qNumL: {
+      os << "qNumL";
+      break;
+    }
+
+    case qText: {
+      os << "qText";
+      break;
+    }
+
+    case qChar: {
+      os << "qChar";
+      break;
+    }
+
+    case qMacB: {
+      os << "qMacB";
+      break;
+    }
+
+    case qMacr: {
+      os << "qMacr";
+      break;
+    }
+
+    case qNote: {
+      os << "qNote";
+      break;
+    }
+  }
+
+  return os;
+}
+
+CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, NCCToken tok) {
+  os << tok.as_string();
+  return os;
+}
+
+CPP_EXPORT const char *ncc::lex::op_repr(qlex_op_t op) {
+  return qlex::operators.right.at(op).data();
+}
+
+CPP_EXPORT const char *ncc::lex::kw_repr(qlex_key_t kw) {
+  return qlex::keywords.right.at(kw).data();
+}
+
+CPP_EXPORT const char *ncc::lex::punct_repr(qlex_punc_t punct) {
+  return qlex::punctuation.right.at(punct).data();
 }

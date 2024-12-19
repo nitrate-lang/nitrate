@@ -116,7 +116,7 @@ void do_documentColor(const lsp::RequestMessage& req,
   std::stringstream ss(*file->content());
 
   auto env = std::make_shared<ncc::core::Environment>();
-  auto L = Tokenizer(SourceFileFromSeekableStream(ss, uri), env);
+  auto L = Tokenizer(ss, env);
   NCCToken tok;
   std::vector<ColorInformation> colors;
 

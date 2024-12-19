@@ -34,18 +34,12 @@
 #ifndef __NITRATE_LEXER_LEX_HH__
 #define __NITRATE_LEXER_LEX_HH__
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdio.h>
-
 #include <cstdint>
+#include <deque>
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Token.hh>
 #include <ostream>
-#include <queue>
-
-#include "nitrate-core/Logger.hh"
 
 ///============================================================================///
 
@@ -58,52 +52,46 @@ const char *qlex_ty_str(qlex_ty_t ty);
 
 namespace ncc::lex {
   class ISourceFile {
-  protected:
-    std::string m_filename = "<unknown>";
-
   public:
     virtual ~ISourceFile() = default;
-
-    virtual std::istream &GetStream() = 0;
-    constexpr std::string_view GetFilename() const { return m_filename; }
-
-    void Seek(size_t offset) {
-      auto &stream = GetStream();
-      stream.seekg(offset);
-    }
   };
 
-  std::unique_ptr<ISourceFile> SourceFileFromSeekableStream(
-      std::istream &stream, std::string_view filename, size_t begin_offset = 0);
+  struct ScannerEOF final {};
 
   class IScanner {
+    NCCToken m_current{}, m_last{};
+    std::string_view m_filename = "?";
+    uint32_t m_line{}, m_column{}, m_offset{};
+    std::deque<NCCToken> m_ready;
+    static constexpr size_t TOKEN_BUFFER_SIZE = 256;
+
+    void FillTokenBuffer();
+    void SyncState(NCCToken tok);
+
   protected:
-    NCCToken m_current;
-    std::string_view m_filename;
-    uint32_t m_line, m_column, m_offset;
+    void UpdateLocation(uint32_t line, uint32_t column, uint32_t offset,
+                        std::string_view filename) {
+      m_line = line;
+      m_column = column;
+      m_offset = offset;
+      m_filename = filename;
+    }
+
+    virtual NCCToken GetNext() = 0;
 
   public:
     virtual ~IScanner() = default;
 
-    virtual NCCToken Next() = 0;
+    NCCToken Next();
+    NCCToken Peek();
+    void Undo();
 
-    NCCToken Peek() {
-      /// TODO: Implement
-      qcore_implement();
-    }
-
-    void Undo() {
-      /// TODO: Implement
-      qcore_implement();
-    }
-
-    constexpr NCCToken Current() const { return m_current; }
+    NCCToken Current() { return m_current; }
 
     constexpr std::string_view GetCurrentFilename() const { return m_filename; }
     constexpr uint32_t GetCurrentLine() const { return m_line; }
     constexpr uint32_t GetCurrentColumn() const { return m_column; }
     constexpr uint32_t GetCurrentOffset() const { return m_offset; }
-
     constexpr bool IsEof() const { return m_current.is(qEofF); }
 
     std::string_view Filename(NCCToken) { return "?"; }
@@ -114,31 +102,42 @@ namespace ncc::lex {
   };
 
   class Tokenizer final : public IScanner {
-    std::shared_ptr<ISourceFile> m_source_file;
+    std::istream &m_file;
     std::shared_ptr<core::Environment> m_env;
+    std::deque<char> m_pushback;
 
-    std::queue<NCCToken> m_token_buffer;
+    char nextc();
+    void reset_state();
 
-    void refill_buffer();
+    NCCToken GetNext() override;
 
   public:
-    Tokenizer(std::shared_ptr<ISourceFile> source_file,
-              std::shared_ptr<core::Environment> env)
-        : m_source_file(source_file), m_env(env) {}
+    Tokenizer(std::istream &source_file, std::shared_ptr<core::Environment> env)
+        : m_file(source_file), m_env(env) {}
     virtual ~Tokenizer() override {}
-
-    NCCToken Next() override;
   };
-
-  std::ostream &operator<<(std::ostream &os, qlex_ty_t ty);
-  std::ostream &operator<<(std::ostream &os, NCCToken tok);
-  std::ostream &operator<<(std::ostream &os, qlex_op_t op);
-  std::ostream &operator<<(std::ostream &os, qlex_key_t kw);
-  std::ostream &operator<<(std::ostream &os, qlex_punc_t punct);
 
   const char *op_repr(qlex_op_t op);
   const char *kw_repr(qlex_key_t kw);
   const char *punct_repr(qlex_punc_t punct);
+
+  std::ostream &operator<<(std::ostream &os, qlex_ty_t ty);
+  std::ostream &operator<<(std::ostream &os, NCCToken tok);
+
+  inline std::ostream &operator<<(std::ostream &os, qlex_op_t op) {
+    os << op_repr(op);
+    return os;
+  }
+
+  inline std::ostream &operator<<(std::ostream &os, qlex_key_t kw) {
+    os << kw_repr(kw);
+    return os;
+  }
+
+  inline std::ostream &operator<<(std::ostream &os, qlex_punc_t punct) {
+    os << punct_repr(punct);
+    return os;
+  }
 }  // namespace ncc::lex
 
 void qlex_tok_fromstr(ncc::lex::IScanner *lexer, qlex_ty_t ty, const char *str,

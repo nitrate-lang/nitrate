@@ -262,7 +262,7 @@ bool impl_use_msgpack(IScanner *L, std::ostream &O) {
 }
 
 CREATE_TRANSFORM(nit::lex) {
-  auto L = Tokenizer(SourceFileFromSeekableStream(source, "<in>"), env);
+  auto L = Tokenizer(source, env);
 
   enum class OutMode {
     JSON,

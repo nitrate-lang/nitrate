@@ -107,7 +107,7 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   std::stringstream ss(*file->content());
 
   auto env = std::make_shared<ncc::core::Environment>();
-  auto L = Tokenizer(SourceFileFromSeekableStream(ss, uri), env);
+  auto L = Tokenizer(ss, env);
   auto parser = ncc::parse::Parser::Create(L, env);
 
   auto ast = parser->parse();

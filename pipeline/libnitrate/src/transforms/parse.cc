@@ -197,7 +197,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
     return eof_tok();
   }
 
-  virtual NCCToken Next() override {
+  virtual NCCToken GetNext() override {
     switch (m_mode) {
       case InMode::JSON: {
         return next_impl_json();

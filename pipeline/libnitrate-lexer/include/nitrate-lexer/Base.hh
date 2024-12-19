@@ -83,7 +83,6 @@ public:
   std::istream &m_file;
   std::shared_ptr<ncc::core::Environment> m_env;
 
-  NCCToken step_buffer();
   void reset_automata();
   char getc();
 
@@ -91,9 +90,6 @@ public:
 
   virtual NCCToken next_impl();
 
-  virtual std::optional<std::pair<uint32_t, uint32_t>> loc2rowcol(
-      uint32_t offset);
-  virtual uint32_t save_loc(uint32_t row, uint32_t col, uint32_t offset);
   uint32_t cur_loc();
 
   ///============================================================================///
