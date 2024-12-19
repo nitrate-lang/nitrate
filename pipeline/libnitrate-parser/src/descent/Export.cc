@@ -82,7 +82,7 @@ Stmt *Parser::recurse_export_body() {
 }
 
 Stmt *Parser::recurse_pub() {
-  let abi_id = recurse_abi_name(rd);
+  let abi_id = recurse_abi_name();
 
   if (let attrs = recurse_export_attributes()) {
     let export_block = recurse_export_body();
@@ -97,7 +97,7 @@ Stmt *Parser::recurse_pub() {
 }
 
 Stmt *Parser::recurse_sec() {
-  let abi_id = recurse_abi_name(rd);
+  let abi_id = recurse_abi_name();
 
   if (let attrs = recurse_export_attributes()) {
     let export_block = recurse_export_body();
@@ -112,7 +112,7 @@ Stmt *Parser::recurse_sec() {
 }
 
 Stmt *Parser::recurse_pro() {
-  let abi_id = recurse_abi_name(rd);
+  let abi_id = recurse_abi_name();
 
   if (let attrs = recurse_export_attributes()) {
     let export_block = recurse_export_body();

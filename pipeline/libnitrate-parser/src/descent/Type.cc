@@ -63,9 +63,6 @@ std::optional<Expr *> Parser::recurse_type_range_end() {
   return max_val;
 }
 
-extern CallArgs Parser::recurse_caller_arguments(qlex_tok_t terminator,
-                                                 size_t depth);
-
 std::optional<CallArgs> Parser::recurse_type_template_arguments() {
   if (!next_if(qOpLT)) {
     return std::nullopt;
@@ -178,7 +175,7 @@ Type *Parser::recurse_type_by_keyword(qlex_key_t key) {
     }
 
     case qKOpaque: {
-      return recurse_opaque_type(rd);
+      return recurse_opaque_type();
     }
 
     default: {
@@ -394,7 +391,7 @@ Type *Parser::recurse_type() {
     }
 
     case qName: {
-      let type = recurse_type_by_name(rd, tok.as_string(&rd));
+      let type = recurse_type_by_name(tok.as_string(&rd));
 
       return recurse_type_suffix(type);
     }

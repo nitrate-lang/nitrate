@@ -312,7 +312,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
             break;
           }
 
-          if (let capture = recurse_function_capture(rd)) {
+          if (let capture = recurse_function_capture()) {
             captures.push_back({SaveString(capture->first), capture->second});
           }
 
@@ -353,7 +353,7 @@ std::optional<Stmt *> Parser::recurse_function_body(bool restrict_decl_only) {
   }
 }
 
-Stmt *ncc::parse::recurse_function(bool restrict_decl_only) {
+Stmt *Parser::recurse_function(bool restrict_decl_only) {
   /* fn <attributes>? <modifiers>? <capture_list>?
    * <name><template_parameters>?(<parameters>?)<: return_type>? <body>? */
 

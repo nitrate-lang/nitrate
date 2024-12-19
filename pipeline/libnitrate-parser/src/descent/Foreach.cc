@@ -83,7 +83,7 @@ Stmt *Parser::recurse_foreach() {
 
   bool has_paren = next_if(qPuncLPar).has_value();
 
-  if (let ident_pair_opt = recurse_foreach_names(rd)) {
+  if (let ident_pair_opt = recurse_foreach_names()) {
     let[index_name, value_name] = ident_pair_opt.value();
 
     if (next_if(qOpIn)) {

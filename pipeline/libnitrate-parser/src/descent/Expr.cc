@@ -108,7 +108,7 @@ CallArgs Parser::recurse_caller_arguments(qlex_tok_t terminator, size_t depth) {
   return call_args;
 }
 
-Call *Parser::recurse_function_call(Expr *callee, , size_t depth) {
+Call *Parser::recurse_function_call(Expr *callee, size_t depth) {
   auto args = recurse_caller_arguments(qlex_tok_t(qPunc, qPuncRPar), depth);
   if (!next_if(qPuncRPar)) {
     diagnostic << current() << "Expected ')' to close the function call";
@@ -117,7 +117,7 @@ Call *Parser::recurse_function_call(Expr *callee, , size_t depth) {
   return make<Call>(callee, args);
 }
 
-bool Parser::recurse_fstring(FString **node, , size_t depth) {
+bool Parser::recurse_fstring(FString **node, size_t depth) {
   /**
    * @brief Parse an F-string expression
    * @return true if it is okay to proceed, false otherwise
@@ -151,9 +151,11 @@ bool Parser::recurse_fstring(FString **node, , size_t depth) {
 
       std::istringstream ss(sub);
 
-      qlex_t subrd = qlex_t(ss, "fstring", S.env);
+      qlex_t subrd = qlex_t(ss, "fstring", m_env);
 
-      expr = recurse_expr(S, subrd, {qlex_tok_t(qPunc, qPuncRCur)}, depth + 1);
+      /// TODO: Fstring is broken
+
+      expr = recurse_expr({qlex_tok_t(qPunc, qPuncRCur)}, depth + 1);
 
       if (!tmp.empty()) {
         items.push_back(SaveString(std::move(tmp)));
@@ -319,7 +321,7 @@ Expr *Parser::recurse_expr(std::set<qlex_tok_t> terminators, size_t depth) {
 
             if (peek().is<qPuncLPar>()) {
               next();
-              Call *fcall = recurse_function_call(S, adapter, rd, depth);
+              Call *fcall = recurse_function_call(adapter, depth);
 
               if (fcall == nullptr) {
                 diagnostic
@@ -337,7 +339,7 @@ Expr *Parser::recurse_expr(std::set<qlex_tok_t> terminators, size_t depth) {
           }
           case qK__FString: {
             FString *f = nullptr;
-            if (!recurse_fstring(S, &f, rd, depth)) {
+            if (!recurse_fstring(&f, depth)) {
               diagnostic << tok << "Expected an F-string in expression";
               return mock_expr(QAST_VOID);
             }
@@ -356,7 +358,7 @@ Expr *Parser::recurse_expr(std::set<qlex_tok_t> terminators, size_t depth) {
         switch (tok.as<qlex_punc_t>()) {
           case qPuncLPar: {
             if (!stack.empty() && stack.top()->is<Field>()) {
-              Call *fcall = recurse_function_call(S, stack.top(), rd, depth);
+              Call *fcall = recurse_function_call(stack.top(), depth);
 
               if (fcall == nullptr) {
                 diagnostic << tok << "Expected a function call in expression";
@@ -644,8 +646,8 @@ Expr *Parser::recurse_expr(std::set<qlex_tok_t> terminators, size_t depth) {
         if (peek().ty == qPunc && (peek()).as<qlex_punc_t>() == qPuncLPar) {
           next();
 
-          Call *fcall = recurse_function_call(S, make<Ident>(SaveString(ident)),
-                                              rd, depth);
+          Call *fcall =
+              recurse_function_call(make<Ident>(SaveString(ident)), depth);
           if (fcall == nullptr) {
             diagnostic << tok << "Expected a function call in expression";
             return mock_expr(QAST_VOID);

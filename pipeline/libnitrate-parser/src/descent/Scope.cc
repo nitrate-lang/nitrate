@@ -87,9 +87,9 @@ Stmt *Parser::recurse_scope_block() {
 }
 
 Stmt *Parser::recurse_scope() {
-  let scope_name = recurse_scope_name(rd);
+  let scope_name = recurse_scope_name();
 
-  if (let implicit_dependencies = recurse_scope_deps(rd)) {
+  if (let implicit_dependencies = recurse_scope_deps()) {
     let scope_block = recurse_scope_block();
 
     return make<ScopeStmt>(SaveString(scope_name), scope_block,

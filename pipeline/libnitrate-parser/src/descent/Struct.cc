@@ -35,14 +35,6 @@
 
 using namespace ncc::parse;
 
-struct StructContent {
-  StructDefFields fields;
-  StructDefMethods methods;
-  StructDefStaticMethods static_methods;
-};
-
-extern std::optional<TemplateParameters> Parser::recurse_template_parameters();
-
 ExpressionList Parser::recurse_struct_attributes() {
   ExpressionList attributes;
 
@@ -145,7 +137,7 @@ void Parser::recurse_struct_method_or_field(StructContent &body) {
   }
 
   /* Is the member static? */
-  bool is_ = next_if(qKStatic).has_value();
+  bool is_static = next_if(qKStatic).has_value();
 
   if (next_if(qKFn)) { /* Parse method */
     let method = recurse_function(false);
@@ -162,7 +154,7 @@ void Parser::recurse_struct_method_or_field(StructContent &body) {
   next_if(qPuncComa) || next_if(qPuncSemi);
 }
 
-StructContent Parser::recurse_struct_body() {
+Parser::StructContent Parser::recurse_struct_body() {
   StructContent body;
 
   if (!next_if(qPuncLCur)) {
@@ -189,9 +181,9 @@ StructContent Parser::recurse_struct_body() {
 Stmt *Parser::recurse_struct(CompositeType type) {
   let start_pos = current().start;
   let attributes = recurse_struct_attributes();
-  let name = recurse_struct_name(rd);
+  let name = recurse_struct_name();
   let template_params = recurse_template_parameters();
-  let terms = recurse_struct_terms(rd);
+  let terms = recurse_struct_terms();
   let[fields, methods, static_methods] = recurse_struct_body();
 
   let struct_defintion = make<StructDef>(

@@ -41,6 +41,8 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
 
+#include "nitrate-parser/ASTData.hh"
+
 namespace ncc::parse {
   class Parser;
 
@@ -104,6 +106,82 @@ namespace ncc::parse {
     std::string_view recurse_abi_name();
     std::optional<ExpressionList> recurse_export_attributes();
     Stmt *recurse_export_body();
+
+    CallArgs recurse_caller_arguments(qlex_tok_t terminator, size_t depth);
+    Call *recurse_function_call(Expr *callee, size_t depth);
+    bool recurse_fstring(FString **node, size_t depth);
+
+    std::optional<Stmt *> recurse_for_init_expr();
+    std::optional<Expr *> recurse_for_cond_expr();
+    std::optional<Expr *> recurse_for_step_expr(bool has_paren);
+    Stmt *recurse_for_body();
+
+    std::optional<std::pair<std::string_view, std::string_view>>
+    recurse_foreach_names();
+    Expr *recurse_foreach_expr(bool has_paren);
+    Stmt *recurse_foreach_body();
+
+    Type *recurse_function_parameter_type();
+    std::optional<Expr *> recurse_function_parameter_value();
+    std::optional<FuncParam> recurse_function_parameter();
+    std::optional<TemplateParameters> recurse_template_parameters();
+    FuncParams recurse_function_parameters();
+    std::optional<Stmt *> recurse_function_body(bool restrict_decl_only);
+    Type *recurse_function_return_type();
+    FuncPurity get_purity_specifier(qlex_tok_t &start_pos, bool is_thread_safe,
+                                    bool is_pure, bool is_impure, bool is_quasi,
+                                    bool is_retro);
+    std::optional<std::pair<std::string_view, bool>> recurse_function_capture();
+    void recurse_function_ambigouis(ExpressionList &attributes,
+                                    FnCaptures &captures, FuncPurity &purity,
+                                    std::string_view &function_name);
+
+    Stmt *recurse_if_then();
+    std::optional<Stmt *> recurse_if_else();
+
+    std::string_view recurse_scope_name();
+    std::optional<ScopeDeps> recurse_scope_deps();
+    Stmt *recurse_scope_block();
+
+    struct StructContent {
+      StructDefFields fields;
+      StructDefMethods methods;
+      StructDefStaticMethods static_methods;
+    };
+    ExpressionList recurse_struct_attributes();
+    std::string_view recurse_struct_name();
+    StructDefNames recurse_struct_terms();
+    std::optional<Expr *> recurse_struct_field_default_value();
+    void recurse_struct_field(Vis vis, bool is_static, StructDefFields &fields);
+    void recurse_struct_method_or_field(StructContent &body);
+    StructContent recurse_struct_body();
+
+    Stmt *recurse_switch_case_body();
+    std::pair<CaseStmt *, bool> recurse_switch_case();
+    std::optional<std::pair<SwitchCases, std::optional<CaseStmt *>>>
+    recurse_switch_body();
+
+    std::optional<Expr *> recurse_type_range_start();
+    std::optional<Expr *> recurse_type_range_end();
+    std::optional<CallArgs> recurse_type_template_arguments();
+    Type *recurse_type_suffix(Type *base);
+    Type *recurse_function_type();
+    Type *recurse_opaque_type();
+    Type *recurse_type_by_keyword(qlex_key_t key);
+    Type *recurse_type_by_operator(qlex_op_t op);
+    Type *recurse_array_or_vector();
+    Type *recurse_set_type();
+    Type *recurse_tuple_type();
+    Type *recurse_type_by_punctuation(qlex_punc_t punc);
+    Type *recurse_type_by_name(std::string_view name);
+
+    std::optional<ExpressionList> recurse_variable_attributes();
+    std::optional<Type *> recurse_variable_type();
+    std::optional<Expr *> recurse_variable_value();
+    std::optional<Stmt *> recurse_variable_instance(VarDeclType decl_type);
+
+    Expr *recurse_while_cond();
+    Stmt *recurse_while_body();
 
   public:
     Parser(qlex_t *lexer, std::shared_ptr<ncc::core::Environment> env);
