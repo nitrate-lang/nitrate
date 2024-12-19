@@ -52,7 +52,8 @@ namespace ncc::parse {
 
   public:
     constexpr Base(npar_ty_t ty, bool mock = false,
-                   uint32_t fileid = QLEX_NOFILE, uint32_t offset = QLEX_EOFF)
+                   uint32_t fileid = ncc::lex::QLEX_NOFILE,
+                   uint32_t offset = ncc::lex::QLEX_EOFF)
         : m_node_type(ty), m_fileid(fileid), m_offset(offset), m_mock(mock){};
 
     constexpr void accept(ASTVisitor &v) const {

@@ -147,8 +147,8 @@ namespace nr {
     Expr &operator=(const Expr &) = delete;
 
   public:
-    constexpr Expr(nr_ty_t ty, uint32_t offset = QLEX_EOFF,
-                   uint32_t fileid = QLEX_NOFILE)
+    constexpr Expr(nr_ty_t ty, uint32_t offset = ncc::lex::QLEX_EOFF,
+                   uint32_t fileid = ncc::lex::QLEX_NOFILE)
         : m_node_type(ty), m_offset(offset), m_fileid(fileid) {}
 
     static constexpr uint32_t getKindSize(nr_ty_t kind);

@@ -45,6 +45,7 @@
 #include <sstream>
 
 using namespace nr;
+using namespace ncc::lex;
 
 template <typename L, typename R>
 boost::bimap<L, R> make_bimap(

@@ -43,6 +43,7 @@
 #include <sstream>
 
 using namespace nr;
+using namespace ncc::lex;
 
 ///============================================================================///
 

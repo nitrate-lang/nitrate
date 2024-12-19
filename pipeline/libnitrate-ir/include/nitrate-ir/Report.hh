@@ -96,10 +96,11 @@ namespace nr {
     virtual void report(IssueCode code, IC level,
                         std::vector<std::string_view> params = {},
                         std::tuple<uint32_t, uint32_t> location = {
-                            QLEX_EOFF, QLEX_NOFILE}) = 0;
+                            ncc::lex::QLEX_EOFF, ncc::lex::QLEX_NOFILE}) = 0;
 
     void report(IssueCode code, IC level, std::string_view message,
-                std::tuple<uint32_t, uint32_t> loc = {QLEX_EOFF, QLEX_NOFILE}) {
+                std::tuple<uint32_t, uint32_t> loc = {ncc::lex::QLEX_EOFF,
+                                                      ncc::lex::QLEX_NOFILE}) {
       report(code, level, std::vector<std::string_view>({message}), loc);
     };
 
