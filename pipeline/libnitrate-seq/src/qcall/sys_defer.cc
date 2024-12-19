@@ -38,6 +38,8 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
+using namespace ncc::lex;
+
 int qcall::sys_defer(lua_State* L) {
   /**
    *   @brief Defer token callback.
@@ -60,7 +62,7 @@ int qcall::sys_defer(lua_State* L) {
     return luaL_error(L, "sys_defer: failed to store callback in registry");
   }
 
-  DeferCallback cb = [L, id](qprep_impl_t* obj, NCCToken tok) -> DeferOp {
+  DeferCallback cb = [L, id](qprep_impl_t*, NCCToken tok) -> DeferOp {
     lua_rawgeti(L, LUA_REGISTRYINDEX, id); /* Get the function */
 
     { /* Push the function arguments */
@@ -74,15 +76,15 @@ int qcall::sys_defer(lua_State* L) {
       switch (tok.ty) {
         case qEofF:
         case qKeyW: {
-          lua_pushstring(L, qlex_kwstr(tok.v.key));
+          lua_pushstring(L, kw_repr(tok.v.key));
           break;
         }
         case qOper: {
-          lua_pushstring(L, qlex_opstr(tok.v.op));
+          lua_pushstring(L, op_repr(tok.v.op));
           break;
         }
         case qPunc: {
-          lua_pushstring(L, qlex_punctstr(tok.v.punc));
+          lua_pushstring(L, punct_repr(tok.v.punc));
           break;
         }
         case qIntL:

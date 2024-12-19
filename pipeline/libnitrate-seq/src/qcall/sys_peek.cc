@@ -39,6 +39,8 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
+using namespace ncc::lex;
+
 int qcall::sys_peek(lua_State* L) {
   NCCToken tok = get_engine()->Peek();
 
@@ -52,15 +54,15 @@ int qcall::sys_peek(lua_State* L) {
   switch (tok.ty) {
     case qEofF:
     case qKeyW: {
-      lua_pushstring(L, qlex_kwstr(tok.v.key));
+      lua_pushstring(L, kw_repr(tok.v.key));
       break;
     }
     case qOper: {
-      lua_pushstring(L, qlex_opstr(tok.v.op));
+      lua_pushstring(L, op_repr(tok.v.op));
       break;
     }
     case qPunc: {
-      lua_pushstring(L, qlex_punctstr(tok.v.punc));
+      lua_pushstring(L, punct_repr(tok.v.punc));
       break;
     }
     case qIntL:

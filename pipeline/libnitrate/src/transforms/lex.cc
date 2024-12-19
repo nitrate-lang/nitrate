@@ -58,40 +58,40 @@ bool impl_use_json(IScanner *L, std::ostream &O) {
       }
 
       case qKeyW: { /* Keyword */
-        O << "[2,\"" << qlex_kwstr(tok.v.key) << "\"," << sl << "," << sc << ","
-          << el << "," << ec << "],";
+        O << "[2,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
+          << ec << "],";
         break;
       }
 
       case qOper: { /* Operator */
-        O << "[3,\"" << qlex_opstr(tok.v.op) << "\"," << sl << "," << sc << ","
-          << el << "," << ec << "],";
+        O << "[3,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
+          << ec << "],";
         break;
       }
 
       case qPunc: { /* Punctuation */
-        O << "[4,\"" << qlex_punctstr(tok.v.punc) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[4,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
+          << ec << "],";
         break;
       }
 
       case qName: { /* Identifier */
-        O << "[5,\"" << tok.as_string() << "\"," << sl << "," << sc << "," << el
-          << "," << ec << "],";
+        O << "[5,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
+          << ec << "],";
         break;
       }
 
       case qIntL: { /* Integer literal */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[6,\"" << tok.as_string() << "\"," << sl << "," << sc << "," << el
-          << "," << ec << "],";
+        O << "[6,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
+          << ec << "],";
         break;
       }
 
       case qNumL: { /* Floating-point literal */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[7,\"" << tok.as_string() << "\"," << sl << "," << sc << "," << el
-          << "," << ec << "],";
+        O << "[7,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
+          << ec << "],";
         break;
       }
 
@@ -181,17 +181,17 @@ bool impl_use_msgpack(IScanner *L, std::ostream &O) {
       }
 
       case qKeyW: { /* Keyword */
-        msgpack_write_tok(O, 3, qlex_kwstr(tok.v.key), sl, sc, el, ec);
+        msgpack_write_tok(O, 3, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qOper: { /* Operator */
-        msgpack_write_tok(O, 4, qlex_opstr(tok.v.op), sl, sc, el, ec);
+        msgpack_write_tok(O, 4, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qPunc: { /* Punctuation */
-        msgpack_write_tok(O, 5, qlex_punctstr(tok.v.punc), sl, sc, el, ec);
+        msgpack_write_tok(O, 5, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
@@ -211,16 +211,12 @@ bool impl_use_msgpack(IScanner *L, std::ostream &O) {
       }
 
       case qText: { /* String literal */
-        std::string_view sv = tok.as_string();
-
-        msgpack_write_tok(O, 9, sv, sl, sc, el, ec);
+        msgpack_write_tok(O, 9, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qChar: { /* Character literal */
-        std::string_view sv = tok.as_string();
-
-        msgpack_write_tok(O, 10, sv, sl, sc, el, ec);
+        msgpack_write_tok(O, 10, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
@@ -235,9 +231,7 @@ bool impl_use_msgpack(IScanner *L, std::ostream &O) {
       }
 
       case qNote: { /* Comment */
-        std::string_view sv = tok.as_string();
-
-        msgpack_write_tok(O, 13, sv, sl, sc, el, ec);
+        msgpack_write_tok(O, 13, tok.as_string(), sl, sc, el, ec);
         break;
       }
     }

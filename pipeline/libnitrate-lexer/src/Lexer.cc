@@ -1131,67 +1131,6 @@ CPP_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
   qcore_panic("unreachable");
 }
 
-CPP_EXPORT const char *qlex_str(NCCLexer *, const NCCToken *tok, size_t *len) {
-  size_t _len;
-  if (!len) len = &_len;
-
-  switch (tok->ty) {
-    case qEofF:
-    case qKeyW: {
-      std::string_view kw = qlex::keywords.right.at(tok->v.key);
-      *len = kw.size();
-      return kw.data();
-    }
-    case qOper: {
-      std::string_view op = qlex::operators.right.at(tok->v.op);
-      *len = op.size();
-      return op.data();
-    }
-    case qPunc: {
-      std::string_view punc = qlex::punctuation.right.at(tok->v.punc);
-      *len = punc.size();
-      return punc.data();
-    }
-    case qName:
-    case qIntL:
-    case qNumL:
-    case qText:
-    case qChar:
-    case qMacB:
-    case qMacr:
-    case qNote:
-      auto x = tok->v.str_idx.get();
-      *len = x.size();
-      return x.data();
-  }
-
-  qcore_panic("unreachable");
-}
-
-CPP_EXPORT const char *qlex_opstr(qlex_op_t op) {
-  try {
-    return qlex::operators.right.at(op).data();
-  } catch (...) {
-    qcore_panic("qlex_opstr: invalid operator");
-  }
-}
-
-CPP_EXPORT const char *qlex_kwstr(qlex_key_t kw) {
-  try {
-    return qlex::keywords.right.at(kw).data();
-  } catch (...) {
-    qcore_panic("qlex_kwstr: invalid keyword");
-  }
-}
-
-CPP_EXPORT const char *qlex_punctstr(qlex_punc_t punct) {
-  try {
-    return qlex::punctuation.right.at(punct).data();
-  } catch (...) {
-    qcore_panic("qlex_punctstr: invalid punctuation");
-  }
-}
-
 CPP_EXPORT void qlex_tok_fromstr(ncc::lex::IScanner *, qlex_ty_t ty,
                                  const char *str, NCCToken *out) {
   try {

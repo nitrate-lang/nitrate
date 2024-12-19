@@ -9,6 +9,7 @@
 using namespace lsp::fmt;
 using namespace ncc::parse;
 using namespace ncc::core;
+using namespace ncc::lex;
 
 CambrianFormatter::LineStreamWritter&
 CambrianFormatter::LineStreamWritter::operator<<(
@@ -24,7 +25,7 @@ CambrianFormatter::LineStreamWritter::operator<<(
 
 CambrianFormatter::LineStreamWritter&
 CambrianFormatter::LineStreamWritter::operator<<(qlex_op_t op) {
-  m_line_buffer << qlex_opstr(op);
+  m_line_buffer << op;
   return *this;
 }
 

@@ -56,26 +56,6 @@ typedef struct NCCLexer NCCLexer;
 
 const char *qlex_ty_str(qlex_ty_t ty);
 
-/**
- * @brief Get the internal string value for a token.
- *
- * @param lexer Lexer context.
- * @param tok Token.
- * @param len Pointer to store the length of the string.
- *
- * @return The internal string value for the token or empty string if this
- * operation is applicable for this token type.
- * @note This function is thread-safe.
- * @warning The lifetime shall exist for the duration of the lexer context.
- * @warning DO NOT MODIFY THE RETURNED STRING.
- * @warning The returned string is NULL-terminated, however, it may contain any
- * bytes within the data including NULL bytes.
- */
-const char *qlex_str(NCCLexer *lexer, const NCCToken *tok, size_t *len);
-const char *qlex_opstr(qlex_op_t op);
-const char *qlex_kwstr(qlex_key_t kw);
-const char *qlex_punctstr(qlex_punc_t punct);
-
 namespace ncc::lex {
   class ISourceFile {
   protected:
@@ -155,6 +135,10 @@ namespace ncc::lex {
   std::ostream &operator<<(std::ostream &os, qlex_op_t op);
   std::ostream &operator<<(std::ostream &os, qlex_key_t kw);
   std::ostream &operator<<(std::ostream &os, qlex_punc_t punct);
+
+  const char *op_repr(qlex_op_t op);
+  const char *kw_repr(qlex_key_t kw);
+  const char *punct_repr(qlex_punc_t punct);
 }  // namespace ncc::lex
 
 void qlex_tok_fromstr(ncc::lex::IScanner *lexer, qlex_ty_t ty, const char *str,

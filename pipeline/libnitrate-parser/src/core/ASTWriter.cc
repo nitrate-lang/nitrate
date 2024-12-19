@@ -40,6 +40,7 @@
 
 using namespace ncc::parse;
 using namespace ncc::core;
+using namespace ncc::lex;
 
 void AST_Writer::write_source_location(Base const& n) const {
   if (m_include_source_location) {
@@ -609,7 +610,7 @@ void AST_Writer::visit(UnaryExpr const& n) {
   write_source_location(n);
 
   string("op");
-  string(qlex_opstr(n.get_op()));
+  string(op_repr(n.get_op()));
 
   string("rhs");
   n.get_rhs()->accept(*this);
@@ -626,7 +627,7 @@ void AST_Writer::visit(BinExpr const& n) {
   write_source_location(n);
 
   string("op");
-  string(qlex_opstr(n.get_op()));
+  string(op_repr(n.get_op()));
 
   string("lhs");
   n.get_lhs()->accept(*this);
@@ -646,7 +647,7 @@ void AST_Writer::visit(PostUnaryExpr const& n) {
   write_source_location(n);
 
   string("op");
-  string(qlex_opstr(n.get_op()));
+  string(op_repr(n.get_op()));
 
   string("lhs");
   n.get_lhs()->accept(*this);

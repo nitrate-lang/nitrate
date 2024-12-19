@@ -34,7 +34,6 @@
 #ifndef __NITRATE_LEXER_TOKEN_HH__
 #define __NITRATE_LEXER_TOKEN_HH__
 
-#include <cstddef>
 #include <cstdint>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/String.hh>
@@ -173,9 +172,6 @@ typedef enum qlex_key_t {
 
 struct NCCLexer;
 struct NCCToken;
-
-const char *qlex_str(struct NCCLexer *lexer, const struct NCCToken *tok,
-                     size_t *len);
 
 typedef struct __attribute__((packed)) NCCToken {
   uint32_t start;
