@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-lexer/Lib.h>
 #include <nitrate-seq/Lib.h>
 
 #include <cstddef>
@@ -39,6 +38,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Base.hh>
+#include <nitrate-lexer/Init.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-seq/Preprocess.hh>

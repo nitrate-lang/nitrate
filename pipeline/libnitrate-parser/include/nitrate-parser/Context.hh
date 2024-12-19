@@ -41,8 +41,6 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
 
-#include "nitrate-parser/ASTData.hh"
-
 namespace ncc::parse {
   class Parser;
 

@@ -46,7 +46,7 @@
 
 using namespace ncc::parse;
 
-Stmt* Parser::recurse_block(bool expect_braces, bool single_stmt,
+Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
                             SafetyMode safety) {
   if (expect_braces && !next().is<qPuncLCur>()) {
     diagnostic << current() << "Expected '{'";
@@ -358,7 +358,7 @@ Stmt* Parser::recurse_block(bool expect_braces, bool single_stmt,
   return block;
 }
 
-CPP_EXPORT Parser::Parser(qlex_t* lexer,
+CPP_EXPORT Parser::Parser(qlex_t *lexer,
                           std::shared_ptr<ncc::core::Environment> env)
     : rd(*lexer) {
   m_env = env;
@@ -391,11 +391,52 @@ CPP_EXPORT ASTRoot Parser::parse() {
 
 CPP_EXPORT bool ASTRoot::check() const {
   bool failed = false;
-  ncc::parse::iterate<dfs_pre>(const_cast<Base*&>(m_base), [&](auto, auto c) {
+  ncc::parse::iterate<dfs_pre>(const_cast<Base *&>(m_base), [&](auto, auto c) {
     failed |= !c || !*c || (*c)->is_mock();
 
     return failed ? IterOp::Abort : IterOp::Proceed;
   });
 
   return !failed;
+}
+
+std::string ncc::parse::mint_clang16_message(qlex_t &rd,
+                                             const DiagMessage &msg) {
+  std::stringstream ss;
+  ss << "\x1b[37;1m" << qlex_filename(&rd) << ":";
+  uint32_t line = qlex_line(&rd, qlex_begin(&msg.tok));
+  uint32_t col = qlex_col(&rd, qlex_begin(&msg.tok));
+
+  if (line != QLEX_EOFF) {
+    ss << line << ":";
+  } else {
+    ss << "?:";
+  }
+
+  if (col != QLEX_EOFF) {
+    ss << col << ":\x1b[0m ";
+  } else {
+    ss << "?:\x1b[0m ";
+  }
+
+  ss << "\x1b[37;1m" << msg.msg << " [";
+
+  ss << "SyntaxError";
+
+  ss << "]\x1b[0m";
+
+  uint32_t offset;
+  char *snippet = qlex_snippet(&rd, msg.tok, &offset);
+  if (!snippet) {
+    return ss.str();
+  }
+
+  ss << "\n" << snippet << "\n";
+  for (uint32_t i = 0; i < offset; i++) {
+    ss << " ";
+  }
+  ss << "\x1b[32;1m^\x1b[0m";
+  free(snippet);
+
+  return ss.str();
 }

@@ -37,7 +37,6 @@
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
 #include <nitrate-ir/Lib.h>
-#include <nitrate-lexer/Lib.h>
 #include <nitrate-seq/Lib.h>
 
 #include <atomic>
@@ -53,6 +52,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>
+#include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Classes.hh>
 #include <string>
@@ -333,7 +333,7 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
       return false;
     }
 
-    if (!qlex_lib_init()) {
+    if (!ncc::lex::LexerLibrary::InitRC()) {
       LOG(ERROR) << "Failed to initialize NITRATE-LEX library" << std::endl;
       return false;
     }

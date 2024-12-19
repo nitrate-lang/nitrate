@@ -93,42 +93,6 @@ CPP_EXPORT uint32_t qlex_col(qlex_t *obj, uint32_t loc) {
   }
 }
 
-CPP_EXPORT void qlex_rect(qlex_t *obj, uint32_t x_0, uint32_t y_0, uint32_t x_1,
-                          uint32_t y_1, char *out, size_t max_size, char fill) {
-  try {
-    // Bounds check rectangle
-    if (x_0 > x_1 || y_0 > y_1) [[unlikely]] {
-      qcore_panic("qlex_rect: invalid rectangle bounds");
-    }
-
-    // Calculate the size of the rectangle
-    size_t width = x_1 - x_0;
-    size_t height = y_1 - y_0;
-    size_t buf_size = width * height;
-
-    // Includes null terminator
-    if (buf_size + 1 > max_size) [[unlikely]] {
-      qcore_panic("qlex_rect: buffer too small");
-    }
-
-    memset(out, fill, buf_size);
-    out[buf_size] = '\0';
-
-    for (size_t i = 0; i < height; i++) {
-      uint32_t start_off = 0, end_off = 10;
-
-      uint32_t start = obj->save_loc(y_0 + i, x_0, start_off);
-      uint32_t end = obj->save_loc(y_0 + i, x_1, end_off);
-
-      /// TODO: Implement qlex_rect
-      qcore_implement();
-      (void)start;
-      (void)end;
-    }
-  } catch (...) {
-  }
-}
-
 CPP_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, uint32_t *offset) {
   try {
 #define SNIPPET_SIZE 100

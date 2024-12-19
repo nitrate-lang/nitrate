@@ -1131,69 +1131,6 @@ CPP_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
   qcore_panic("unreachable");
 }
 
-CPP_EXPORT bool qlex_eq(qlex_t *, const qlex_tok_t *a, const qlex_tok_t *b) {
-  try {
-    if (a->ty != b->ty) return false;
-
-    switch (a->ty) {
-      case qEofF:
-      case qKeyW:
-        return a->v.key == b->v.key;
-      case qOper:
-        return a->v.op == b->v.op;
-      case qPunc:
-        return a->v.punc == b->v.punc;
-      case qName:
-      case qIntL:
-      case qNumL:
-      case qText:
-      case qChar:
-      case qMacB:
-      case qMacr:
-      case qNote: {
-        return a->v.str_idx == b->v.str_idx;
-      }
-    }
-  } catch (std::out_of_range &) {
-    return false;
-  } catch (...) {
-    qcore_panic("qlex_eq: invalid token");
-  }
-
-  qcore_panic("unreachable");
-}
-
-CPP_EXPORT bool qlex_lt(qlex_t *, const qlex_tok_t *a, const qlex_tok_t *b) {
-  try {
-    if (a->ty != b->ty) return a->ty < b->ty;
-
-    switch (a->ty) {
-      case qEofF:
-      case qKeyW:
-        return a->v.key < b->v.key;
-      case qOper:
-        return a->v.op < b->v.op;
-      case qPunc:
-        return a->v.punc < b->v.punc;
-      case qName:
-      case qIntL:
-      case qNumL:
-      case qText:
-      case qChar:
-      case qMacB:
-      case qMacr:
-      case qNote:
-        return a->v.str_idx < b->v.str_idx;
-    }
-  } catch (std::out_of_range &) {
-    return false;
-  } catch (...) {
-    qcore_panic("qlex_lt: invalid token");
-  }
-
-  qcore_panic("unreachable");
-}
-
 CPP_EXPORT const char *qlex_str(qlex_t *, const qlex_tok_t *tok, size_t *len) {
   size_t _len;
   if (!len) len = &_len;

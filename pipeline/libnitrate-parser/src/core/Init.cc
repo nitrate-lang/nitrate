@@ -31,11 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-lexer/Lib.h>
-
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
 
 using namespace ncc::parse;
@@ -47,7 +46,7 @@ CPP_EXPORT bool ParseLibrarySetup::Init() {
     return false;
   }
 
-  if (!qlex_lib_init()) {
+  if (!ncc::lex::LexerLibrary::InitRC()) {
     return false;
   }
 
@@ -59,7 +58,7 @@ CPP_EXPORT bool ParseLibrarySetup::Init() {
 CPP_EXPORT void ParseLibrarySetup::Deinit() {
   qcore_print(QCORE_DEBUG, "Deinitializing Nitrate Parser Library");
 
-  qlex_lib_deinit();
+  ncc::lex::LexerLibrary::DeinitRC();
   ncc::core::CoreLibrary::DeinitRC();
 
   qcore_print(QCORE_DEBUG, "Nitrate Parser Library Deinitialized");

@@ -31,83 +31,20 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-lexer/Lib.h>
+#ifndef __NITRATE_LEXER_LIB_H__
+#define __NITRATE_LEXER_LIB_H__
 
-#include <atomic>
 #include <nitrate-core/Init.hh>
-#include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Lexer.hh>
 
-static std::atomic<size_t> qlex_lib_ref_count = 0;
+namespace ncc::lex {
+  struct LexerLibrarySetup {
+    static bool Init();
+    static void Deinit();
+    static std::string_view GetVersionId();
+  };
 
-C_EXPORT bool qlex_lib_init() {
-  if (qlex_lib_ref_count++ > 1) {
-    return true;
-  }
+  using LexerLibrary = core::LibraryRC<LexerLibrarySetup>;
+}  // namespace ncc::lex
 
-  // Initialize the library here.
-
-  if (!ncc::core::CoreLibrary::InitRC()) {
-    return false;
-  }
-
-  return true;
-}
-
-C_EXPORT void qlex_lib_deinit() {
-  if (--qlex_lib_ref_count > 0) {
-    return;
-  }
-
-  // Deinitialize the library here.
-
-  ncc::core::CoreLibrary::DeinitRC();
-  return;
-}
-
-C_EXPORT const char* qlex_lib_version() {
-  static const char* version_string =
-
-      "[" __TARGET_VERSION
-      "] ["
-
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
-    defined(_M_X64) || defined(_M_AMD64)
-      "x86_64-"
-#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
-      "x86-"
-#elif defined(__aarch64__)
-      "aarch64-"
-#elif defined(__arm__)
-      "arm-"
-#else
-      "unknown-"
-#endif
-
-#if defined(__linux__)
-      "linux-"
-#elif defined(__APPLE__)
-      "macos-"
-#elif defined(_WIN32)
-      "win32-"
-#else
-      "unknown-"
-#endif
-
-#if defined(__clang__)
-      "clang] "
-#elif defined(__GNUC__)
-      "gnu] "
-#else
-      "unknown] "
-#endif
-
-#if NDEBUG
-      "[release]"
-#else
-      "[debug]"
-#endif
-
-      ;
-
-  return version_string;
-}
+#endif  // __NITRATE_LEXER_LIB_H__

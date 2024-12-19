@@ -31,51 +31,33 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Context.hh>
+#include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-parser/Context.hh>
-#include <sstream>
+#include <nitrate-lexer/Init.hh>
 
-using namespace ncc::parse;
+using namespace ncc::lex;
 
-std::string ncc::parse::mint_clang16_message(qlex_t &rd,
-                                             const DiagMessage &msg) {
-  std::stringstream ss;
-  ss << "\x1b[37;1m" << qlex_filename(&rd) << ":";
-  uint32_t line = qlex_line(&rd, qlex_begin(&msg.tok));
-  uint32_t col = qlex_col(&rd, qlex_begin(&msg.tok));
+CPP_EXPORT bool LexerLibrarySetup::Init() {
+  qcore_print(QCORE_DEBUG, "Initializing Nitrate Lexer Library");
 
-  if (line != QLEX_EOFF) {
-    ss << line << ":";
-  } else {
-    ss << "?:";
+  if (!ncc::core::CoreLibrary::InitRC()) {
+    return false;
   }
 
-  if (col != QLEX_EOFF) {
-    ss << col << ":\x1b[0m ";
-  } else {
-    ss << "?:\x1b[0m ";
-  }
+  qcore_print(QCORE_DEBUG, "Nitrate Lexer Library initialized");
 
-  ss << "\x1b[37;1m" << msg.msg << " [";
+  return true;
+}
 
-  ss << "SyntaxError";
+CPP_EXPORT void LexerLibrarySetup::Deinit() {
+  qcore_print(QCORE_DEBUG, "Deinitializing Nitrate Lexer Library");
 
-  ss << "]\x1b[0m";
+  ncc::core::CoreLibrary::DeinitRC();
 
-  uint32_t offset;
-  char *snippet = qlex_snippet(&rd, msg.tok, &offset);
-  if (!snippet) {
-    return ss.str();
-  }
+  qcore_print(QCORE_DEBUG, "Nitrate Lexer Library deinitialized");
+}
 
-  ss << "\n" << snippet << "\n";
-  for (uint32_t i = 0; i < offset; i++) {
-    ss << " ";
-  }
-  ss << "\x1b[32;1m^\x1b[0m";
-  free(snippet);
-
-  return ss.str();
+CPP_EXPORT std::string_view LexerLibrarySetup::GetVersionId() {
+  return __TARGET_VERSION;
 }
