@@ -328,12 +328,12 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
   }
 
   { /* Initialize libraries */
-    if (!ncc::core::CoreLibrary::InitRC()) {
+    if (!ncc::core::CoreLibrary.InitRC()) {
       LOG(ERROR) << "Failed to initialize NITRATE-CORE library" << std::endl;
       return false;
     }
 
-    if (!ncc::lex::LexerLibrary::InitRC()) {
+    if (!ncc::lex::LexerLibrary.InitRC()) {
       LOG(ERROR) << "Failed to initialize NITRATE-LEX library" << std::endl;
       return false;
     }
@@ -343,7 +343,7 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
       return false;
     }
 
-    if (!ncc::parse::ParseLibrary::InitRC()) {
+    if (!ncc::parse::ParseLibrary.InitRC()) {
       LOG(ERROR) << "Failed to initialize NITRATE-PARSE library" << std::endl;
       return false;
     }

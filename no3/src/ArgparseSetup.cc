@@ -693,10 +693,10 @@ namespace no3::argparse_setup {
     std::stringstream ss;
 
     std::array<std::string_view, 6> NO3_DEPS = {
-        ncc::core::CoreLibrary::GetVersion(),
-        ncc::lex::LexerLibrarySetup::GetVersionId(),
+        ncc::core::CoreLibrary.GetVersion(),
+        ncc::lex::LexerLibrary.GetVersion(),
         qprep_lib_version(),
-        ncc::parse::ParseLibrary::GetVersion(),
+        ncc::parse::ParseLibrary.GetVersion(),
         nr_lib_version(),
         qcode_lib_version()};
 

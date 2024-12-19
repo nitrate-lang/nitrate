@@ -49,11 +49,11 @@ bool nit_lib_init() {
     return true;
   }
 
-  if (!ncc::core::CoreLibrary::InitRC()) {
+  if (!ncc::core::CoreLibrary.InitRC()) {
     return false;
   }
 
-  if (!ncc::lex::LexerLibrary::InitRC()) {
+  if (!ncc::lex::LexerLibrary.InitRC()) {
     return false;
   }
 
@@ -61,7 +61,7 @@ bool nit_lib_init() {
     return false;
   }
 
-  if (!ncc::parse::ParseLibrary::InitRC()) {
+  if (!ncc::parse::ParseLibrary.InitRC()) {
     return false;
   }
 
@@ -83,8 +83,8 @@ void nit_deinit() {
 
   qcode_lib_deinit();
   nr_lib_deinit();
-  ncc::parse::ParseLibrary::DeinitRC();
+  ncc::parse::ParseLibrary.DeinitRC();
   qprep_lib_deinit();
-  ncc::lex::LexerLibrary::DeinitRC();
-  ncc::core::CoreLibrary::DeinitRC();
+  ncc::lex::LexerLibrary.DeinitRC();
+  ncc::core::CoreLibrary.DeinitRC();
 }

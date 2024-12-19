@@ -44,7 +44,7 @@ namespace ncc::lex {
     static std::string_view GetVersionId();
   };
 
-  using LexerLibrary = core::LibraryRC<LexerLibrarySetup>;
+  extern core::LibraryRC<LexerLibrarySetup> LexerLibrary;
 }  // namespace ncc::lex
 
 #endif  // __NITRATE_LEXER_LIB_H__

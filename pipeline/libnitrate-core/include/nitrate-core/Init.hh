@@ -55,41 +55,40 @@ namespace ncc::core {
 
   template <typename Impl>
   class LibraryRC final {
-    LibraryRC() = delete;
-
-    inline static size_t ref_count;
-    inline static std::mutex ref_count_mutex;
+    size_t ref_count{};
+    std::recursive_mutex ref_count_mutex;
 
   public:
-    static bool InitRC() {
-      std::lock_guard<std::mutex> lock(ref_count_mutex);
+    LibraryRC() = default;
 
-      if (ref_count == 0) {
+    bool InitRC() {
+      std::lock_guard<std::recursive_mutex> lock(ref_count_mutex);
+
+      if (ref_count++ == 0) {
         if (!Impl::Init()) {
+          ref_count = 0;
           return false;
         }
       }
 
-      ++ref_count;
-
       return true;
     }
 
-    static void DeinitRC() {
-      std::lock_guard<std::mutex> lock(ref_count_mutex);
+    void DeinitRC() {
+      std::lock_guard<std::recursive_mutex> lock(ref_count_mutex);
 
       if (ref_count > 0 && --ref_count == 0) {
         Impl::Deinit();
       }
     }
 
-    static bool IsInitialized() {
-      std::lock_guard<std::mutex> lock(ref_count_mutex);
+    bool IsInitialized() {
+      std::lock_guard<std::recursive_mutex> lock(ref_count_mutex);
 
       return ref_count > 0;
     }
 
-    static std::string_view GetVersion() {
+    std::string_view GetVersion() {
       static std::string version_string =
 
           std::string("[") + std::string(Impl::GetVersionId()) +
@@ -137,7 +136,7 @@ namespace ncc::core {
       return version_string;
     }
 
-    static std::optional<LibraryRCAutoClose<Impl>> GetRC() {
+    std::optional<LibraryRCAutoClose<Impl>> GetRC() {
       if (!InitRC()) {
         return std::nullopt;
       }
@@ -152,8 +151,7 @@ namespace ncc::core {
     static std::string_view GetVersionId();
   };
 
-  using CoreLibrary = LibraryRC<CoreLibrarySetup>;
-
+  extern LibraryRC<CoreLibrarySetup> CoreLibrary;
 }  // namespace ncc::core
 
 #endif  // __NITRATE_CORE_LIB_H__

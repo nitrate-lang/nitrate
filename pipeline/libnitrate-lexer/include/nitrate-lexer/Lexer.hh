@@ -38,6 +38,7 @@
 #include <deque>
 #include <memory>
 #include <nitrate-core/Environment.hh>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Token.hh>
 #include <ostream>
 
@@ -99,7 +100,7 @@ namespace ncc::lex {
     uint32_t EndColumn(NCCToken t);
   };
 
-  class Tokenizer final : public IScanner {
+  class CPP_EXPORT Tokenizer final : public IScanner {
     std::istream &m_file;
     std::shared_ptr<core::Environment> m_env;
     std::deque<char> m_pushback;

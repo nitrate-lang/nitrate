@@ -38,6 +38,8 @@
 
 using namespace ncc::core;
 
+CPP_EXPORT LibraryRC<CoreLibrarySetup> ncc::core::CoreLibrary;
+
 CPP_EXPORT bool CoreLibrarySetup::Init() {
   // Nothing to do here for now.
 

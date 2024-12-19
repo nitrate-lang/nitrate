@@ -49,11 +49,11 @@ C_EXPORT bool qprep_lib_init() {
     return true;
   }
 
-  if (!ncc::core::CoreLibrary::InitRC()) {
+  if (!ncc::core::CoreLibrary.InitRC()) {
     return false;
   }
 
-  if (!ncc::lex::LexerLibrary::InitRC()) {
+  if (!ncc::lex::LexerLibrary.InitRC()) {
     return false;
   }
 
@@ -67,8 +67,8 @@ C_EXPORT void qprep_lib_deinit() {
 
   do_deinit();
 
-  ncc::lex::LexerLibrary::DeinitRC();
-  ncc::core::CoreLibrary::DeinitRC();
+  ncc::lex::LexerLibrary.DeinitRC();
+  ncc::core::CoreLibrary.DeinitRC();
 
   return;
 }

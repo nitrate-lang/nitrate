@@ -35,6 +35,8 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
 
+#include "nitrate-lexer/Token.hh"
+
 using namespace ncc::lex;
 
 CPP_EXPORT std::string_view NCCToken::as_string() const {
@@ -105,7 +107,7 @@ CPP_EXPORT std::string_view NCCToken::as_string() const {
   return R;
 }
 
-void IScanner::FillTokenBuffer() {
+CPP_EXPORT void IScanner::FillTokenBuffer() {
   for (size_t i = 0; i < TOKEN_BUFFER_SIZE; i++) {
     try {
       m_ready.push_back(GetNext());
@@ -118,7 +120,7 @@ void IScanner::FillTokenBuffer() {
   }
 }
 
-void IScanner::SyncState(NCCToken tok) {
+CPP_EXPORT void IScanner::SyncState(NCCToken tok) {
   /// TODO:
   m_current = tok;
 }
@@ -154,25 +156,25 @@ CPP_EXPORT void IScanner::Undo() {
 
 CPP_EXPORT std::string_view IScanner::Filename(NCCToken t) {
   /// TODO:
-  qcore_implement();
+  return "?";
 }
 
 CPP_EXPORT uint32_t IScanner::StartLine(NCCToken t) {
   /// TODO:
-  qcore_implement();
+  return QLEX_EOFF;
 }
 
 CPP_EXPORT uint32_t IScanner::StartColumn(NCCToken t) {
   /// TODO:
-  qcore_implement();
+  return QLEX_EOFF;
 }
 
 CPP_EXPORT uint32_t IScanner::EndLine(NCCToken t) {
   /// TODO:
-  qcore_implement();
+  return QLEX_EOFF;
 }
 
 CPP_EXPORT uint32_t IScanner::EndColumn(NCCToken t) {
   /// TODO:
-  qcore_implement();
+  return QLEX_EOFF;
 }
