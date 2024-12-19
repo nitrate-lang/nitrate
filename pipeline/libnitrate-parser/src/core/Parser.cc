@@ -56,7 +56,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
   BlockItems items;
 
   while (true) {
-    NCCToken tok = peek();
+    Token tok = peek();
 
     if (expect_braces && next_if(qPuncRCur)) {
       let block = make<Block>(items, safety);
@@ -79,7 +79,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
     }
 
     if (!tok.is(qKeyW)) {
-      let expr = recurse_expr({NCCToken(qPunc, qPuncSemi)});
+      let expr = recurse_expr({Token(qPunc, qPuncSemi)});
 
       if (!next_if(qPuncSemi)) {
         diagnostic << tok << "Expected ';' after expression";

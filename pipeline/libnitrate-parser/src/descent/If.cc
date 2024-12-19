@@ -59,8 +59,7 @@ std::optional<Stmt *> Parser::recurse_if_else() {
 }
 
 Stmt *Parser::recurse_if() {
-  let cond =
-      recurse_expr({NCCToken(qPunc, qPuncLCur), NCCToken(qOper, qOpArrow)});
+  let cond = recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
 
   let then = recurse_if_then();
   let ele = recurse_if_else();

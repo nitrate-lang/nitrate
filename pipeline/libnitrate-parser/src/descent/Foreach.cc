@@ -60,10 +60,9 @@ Parser::recurse_foreach_names() {
 
 Expr *Parser::recurse_foreach_expr(bool has_paren) {
   if (has_paren) {
-    return recurse_expr({NCCToken(qPunc, qPuncRPar)});
+    return recurse_expr({Token(qPunc, qPuncRPar)});
   } else {
-    return recurse_expr(
-        {NCCToken(qPunc, qPuncLCur), NCCToken(qOper, qOpArrow)});
+    return recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
   }
 }
 

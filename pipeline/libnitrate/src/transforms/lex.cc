@@ -46,7 +46,7 @@ using namespace ncc::lex;
 bool impl_use_json(IScanner *L, std::ostream &O) {
   O << "[";
 
-  NCCToken tok;
+  Token tok;
   while ((tok = (L->Next())).ty != qEofF) {
     uint32_t sl = L->StartLine(tok), sc = L->StartColumn(tok);
     uint32_t el = L->EndLine(tok), ec = L->EndColumn(tok);
@@ -169,7 +169,7 @@ bool impl_use_msgpack(IScanner *L, std::ostream &O) {
   O.put(0);
   O.put(0);
 
-  NCCToken tok;
+  Token tok;
   while ((tok = (L->Next())).ty != qEofF) {
     uint32_t sl = L->StartLine(tok), sc = L->StartColumn(tok);
     uint32_t el = L->EndLine(tok), ec = L->EndColumn(tok);

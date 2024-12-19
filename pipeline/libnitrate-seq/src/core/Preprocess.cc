@@ -76,7 +76,7 @@ static std::string_view rtrim(std::string_view s) {
   return s;
 }
 
-bool qprep_impl_t::run_defer_callbacks(NCCToken last) {
+bool qprep_impl_t::run_defer_callbacks(Token last) {
   /**
    * @brief We do it this way because the callback could potentially modify the
    * `defer_callbacks` vector, which would invalidate the iterator.
@@ -141,14 +141,14 @@ void qprep_impl_t::expand_raw(std::string_view code) {
   std::istringstream ss(std::string(code.data(), code.size()));
 
   {
-    std::vector<NCCToken> tokens;
+    std::vector<Token> tokens;
 
     {
       qprep_impl_t clone(ss, m_env, "?", false);
       clone.m_core = m_core;
       clone.m_core->m_depth = m_core->m_depth + 1;
 
-      NCCToken tok;
+      Token tok;
       while ((tok = (clone.Next())).ty != qEofF) {
         tokens.push_back(tok);
       }
@@ -181,10 +181,10 @@ public:
   bool should_stop() { return m_depth >= MAX_RECURSION_DEPTH; }
 };
 
-CPP_EXPORT NCCToken qprep_impl_t::GetNext() {
+CPP_EXPORT Token qprep_impl_t::GetNext() {
 func_entry:  // do tail call optimization manually
 
-  NCCToken x{};
+  Token x{};
 
   try {
     RecursiveGuard guard(m_core->m_depth);

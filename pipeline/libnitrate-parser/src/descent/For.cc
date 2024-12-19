@@ -49,7 +49,7 @@ std::optional<Expr *> Parser::recurse_for_cond_expr() {
     return std::nullopt;
   }
 
-  let cond_expr = recurse_expr({NCCToken(qPunc, qPuncSemi)});
+  let cond_expr = recurse_expr({Token(qPunc, qPuncSemi)});
 
   if (!next_if(qPuncSemi)) {
     diagnostic << current() << "Expected semicolon after condition expression";
@@ -63,14 +63,13 @@ std::optional<Expr *> Parser::recurse_for_step_expr(bool has_paren) {
     if (peek().is<qPuncRPar>()) {
       return std::nullopt;
     } else {
-      return recurse_expr({NCCToken(qPunc, qPuncRPar)});
+      return recurse_expr({Token(qPunc, qPuncRPar)});
     }
   } else {
     if (peek().is<qOpArrow>() || peek().is<qPuncLCur>()) {
       return std::nullopt;
     } else {
-      return recurse_expr(
-          {NCCToken(qPunc, qPuncLCur), NCCToken(qOper, qOpArrow)});
+      return recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
     }
   }
 }

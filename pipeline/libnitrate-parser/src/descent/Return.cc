@@ -46,7 +46,7 @@ Stmt *Parser::recurse_return() {
     return make<ReturnStmt>(std::nullopt);
   }
 
-  let expr = recurse_expr({NCCToken(qPunc, qPuncSemi)});
+  let expr = recurse_expr({Token(qPunc, qPuncSemi)});
 
   if (next_if(qPuncSemi)) {
     return make<ReturnStmt>(expr);
@@ -63,10 +63,10 @@ Stmt *Parser::recurse_retif() {
    *   `retif cond(), 1;`, `retif failed, -1;`
    */
 
-  let condition = recurse_expr({NCCToken(qPunc, qPuncComa)});
+  let condition = recurse_expr({Token(qPunc, qPuncComa)});
 
   if (next_if(qPuncComa)) {
-    let return_val = recurse_expr({NCCToken(qPunc, qPuncSemi)});
+    let return_val = recurse_expr({Token(qPunc, qPuncSemi)});
 
     if (next_if(qPuncSemi)) {
       return make<ReturnIfStmt>(condition, return_val);

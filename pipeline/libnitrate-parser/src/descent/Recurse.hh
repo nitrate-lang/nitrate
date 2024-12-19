@@ -47,7 +47,7 @@ namespace ncc::parse {
 #define current() rd.Current()
 
   template <auto tok>
-  static std::optional<ncc::lex::NCCToken> next_if_(ncc::lex::IScanner &rd) {
+  static std::optional<ncc::lex::Token> next_if_(ncc::lex::IScanner &rd) {
     let t = peek();
     if constexpr (std::is_same_v<decltype(tok), ncc::lex::qlex_ty_t>) {
       if (t.is(tok)) {

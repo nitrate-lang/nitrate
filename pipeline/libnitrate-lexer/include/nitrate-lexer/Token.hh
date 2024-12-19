@@ -171,9 +171,9 @@ namespace ncc::lex {
     qKFalse,     /* 'false' */
   } __attribute__((packed)) qlex_key_t;
 
-  struct NCCToken;
+  struct Token;
 
-  typedef struct __attribute__((packed)) NCCToken {
+  struct __attribute__((packed)) Token {
     uint32_t start;
 
     qlex_ty_t ty : 4;
@@ -186,23 +186,23 @@ namespace ncc::lex {
       ncc::core::str_alias str_idx;
     } __attribute__((packed)) v;
 
-    constexpr NCCToken() : start(0), ty(qEofF), v{.op = qOpPlus} {}
+    constexpr Token() : start(0), ty(qEofF), v{.op = qOpPlus} {}
 
-    constexpr NCCToken(qlex_ty_t ty, qlex_punc_t punc, uint32_t loc_beg = 0)
+    constexpr Token(qlex_ty_t ty, qlex_punc_t punc, uint32_t loc_beg = 0)
         : start(loc_beg), ty(ty), v{.punc = punc} {}
 
-    constexpr NCCToken(qlex_ty_t ty, qlex_op_t op, uint32_t loc_beg = 0)
+    constexpr Token(qlex_ty_t ty, qlex_op_t op, uint32_t loc_beg = 0)
         : start(loc_beg), ty(ty), v{.op = op} {}
 
-    constexpr NCCToken(qlex_ty_t ty, qlex_key_t key, uint32_t loc_beg = 0)
+    constexpr Token(qlex_ty_t ty, qlex_key_t key, uint32_t loc_beg = 0)
         : start(loc_beg), ty(ty), v{.key = key} {}
 
-    constexpr NCCToken(qlex_ty_t ty, ncc::core::str_alias str_idx,
-                       uint32_t loc_beg = 0)
+    constexpr Token(qlex_ty_t ty, ncc::core::str_alias str_idx,
+                    uint32_t loc_beg = 0)
         : start(loc_beg), ty(ty), v{.str_idx = str_idx} {}
 
-    constexpr static NCCToken eof(uint32_t loc_start) {
-      return NCCToken(qEofF, qOpPlus, loc_start);
+    constexpr static Token eof(uint32_t loc_start) {
+      return Token(qEofF, qOpPlus, loc_start);
     }
 
     template <typename T>
@@ -220,7 +220,7 @@ namespace ncc::lex {
 
     constexpr bool is(qlex_ty_t val) const { return ty == val; }
 
-    constexpr bool operator==(const NCCToken &rhs) const {
+    constexpr bool operator==(const Token &rhs) const {
       if (ty != rhs.ty) return false;
       switch (ty) {
         case qEofF:
@@ -255,7 +255,7 @@ namespace ncc::lex {
 
     std::string_view as_string() const;
 
-    constexpr bool operator<(const NCCToken &rhs) const {
+    constexpr bool operator<(const Token &rhs) const {
       if (ty != rhs.ty) return ty < rhs.ty;
       switch (ty) {
         case qEofF:
@@ -276,10 +276,9 @@ namespace ncc::lex {
           return v.str_idx < rhs.v.str_idx;
       }
     }
+  };
 
-  } NCCToken;
-
-#define QLEX_TOK_SIZE (sizeof(NCCToken))
+#define QLEX_TOK_SIZE (sizeof(Token))
 
 #define QLEX_EOFF (UINT32_MAX)
 #define QLEX_NOFILE (16777215)

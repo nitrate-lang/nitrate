@@ -42,8 +42,7 @@ Expr *Parser::recurse_while_cond() {
   if (cur.is<qOpArrow>() || cur.is<qPuncLCur>()) {
     return make<ConstBool>(true);
   } else {
-    return recurse_expr(
-        {NCCToken(qPunc, qPuncLCur), NCCToken(qOper, qOpArrow)});
+    return recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
   }
 }
 

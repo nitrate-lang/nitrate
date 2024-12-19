@@ -51,8 +51,8 @@ std::optional<ExpressionList> Parser::recurse_variable_attributes() {
         return attributes;
       }
 
-      let attribute = recurse_expr(
-          {NCCToken(qPunc, qPuncComa), NCCToken(qPunc, qPuncRBrk)});
+      let attribute =
+          recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk)});
 
       attributes.push_back(attribute);
 
@@ -76,8 +76,7 @@ std::optional<Type *> Parser::recurse_variable_type() {
 
 std::optional<Expr *> Parser::recurse_variable_value() {
   if (next_if(qOpSet)) {
-    return recurse_expr(
-        {NCCToken(qPunc, qPuncComa), NCCToken(qPunc, qPuncSemi)});
+    return recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncSemi)});
   } else {
     return std::nullopt;
   }

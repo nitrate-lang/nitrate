@@ -34,12 +34,11 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
-
-#include "nitrate-lexer/Token.hh"
+#include <nitrate-lexer/Token.hh>
 
 using namespace ncc::lex;
 
-CPP_EXPORT std::string_view NCCToken::as_string() const {
+CPP_EXPORT std::string_view Token::as_string() const {
   std::string_view R;
 
   switch (ty) {
@@ -113,24 +112,24 @@ CPP_EXPORT void IScanner::FillTokenBuffer() {
       m_ready.push_back(GetNext());
     } catch (ScannerEOF &) {
       if (i == 0) {
-        m_ready.push_back(NCCToken::eof(GetCurrentOffset()));
+        m_ready.push_back(Token::eof(GetCurrentOffset()));
       }
       break;
     }
   }
 }
 
-CPP_EXPORT void IScanner::SyncState(NCCToken tok) {
+CPP_EXPORT void IScanner::SyncState(Token tok) {
   /// TODO:
   m_current = tok;
 }
 
-CPP_EXPORT NCCToken IScanner::Next() {
+CPP_EXPORT Token IScanner::Next() {
   if (m_ready.empty()) [[unlikely]] {
     FillTokenBuffer();
   }
 
-  NCCToken tok = m_ready.front();
+  Token tok = m_ready.front();
   m_ready.pop_front();
   SyncState(tok);
   m_last = m_current;
@@ -138,12 +137,12 @@ CPP_EXPORT NCCToken IScanner::Next() {
   return tok;
 }
 
-CPP_EXPORT NCCToken IScanner::Peek() {
+CPP_EXPORT Token IScanner::Peek() {
   if (m_ready.empty()) [[unlikely]] {
     FillTokenBuffer();
   }
 
-  NCCToken tok = m_ready.front();
+  Token tok = m_ready.front();
   SyncState(tok);
 
   return tok;
@@ -154,27 +153,27 @@ CPP_EXPORT void IScanner::Undo() {
   SyncState(m_last);
 }
 
-CPP_EXPORT std::string_view IScanner::Filename(NCCToken t) {
+CPP_EXPORT std::string_view IScanner::Filename(Token t) {
   /// TODO:
   return "?";
 }
 
-CPP_EXPORT uint32_t IScanner::StartLine(NCCToken t) {
+CPP_EXPORT uint32_t IScanner::StartLine(Token t) {
   /// TODO:
   return QLEX_EOFF;
 }
 
-CPP_EXPORT uint32_t IScanner::StartColumn(NCCToken t) {
+CPP_EXPORT uint32_t IScanner::StartColumn(Token t) {
   /// TODO:
   return QLEX_EOFF;
 }
 
-CPP_EXPORT uint32_t IScanner::EndLine(NCCToken t) {
+CPP_EXPORT uint32_t IScanner::EndLine(Token t) {
   /// TODO:
   return QLEX_EOFF;
 }
 
-CPP_EXPORT uint32_t IScanner::EndColumn(NCCToken t) {
+CPP_EXPORT uint32_t IScanner::EndColumn(Token t) {
   /// TODO:
   return QLEX_EOFF;
 }

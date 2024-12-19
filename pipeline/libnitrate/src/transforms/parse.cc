@@ -46,8 +46,8 @@
 
 using namespace ncc::lex;
 
-static inline NCCToken eof_tok() {
-  NCCToken tok{};
+static inline Token eof_tok() {
+  Token tok{};
   tok.ty = qEofF;
   return tok;
 }
@@ -83,7 +83,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
   bool m_eof_bit;
   std::istream &m_file;
 
-  NCCToken next_impl_json() {
+  Token next_impl_json() {
     if (m_eof_bit) [[unlikely]] {
       return eof_tok();
     }
@@ -129,7 +129,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
 
     /* Validate the token type */
     if (valid_ty_id_tab[ty]) [[likely]] {
-      NCCToken T;
+      Token T;
 
       qlex_tok_fromstr(this, static_cast<qlex_ty_t>(ty), str, &T);
 
@@ -145,7 +145,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
     return eof_tok();
   }
 
-  NCCToken next_impl_msgpack() {
+  Token next_impl_msgpack() {
     if (m_eof_bit || !m_ele_count) [[unlikely]] {
       return eof_tok();
     }
@@ -182,7 +182,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
 
     /* Validate the token type */
     if (valid_ty_id_tab[ty]) [[likely]] {
-      NCCToken T;
+      Token T;
 
       qlex_tok_fromstr(this, static_cast<qlex_ty_t>(ty), str, &T);
 
@@ -198,7 +198,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
     return eof_tok();
   }
 
-  virtual NCCToken GetNext() override {
+  virtual Token GetNext() override {
     switch (m_mode) {
       case InMode::JSON: {
         return next_impl_json();

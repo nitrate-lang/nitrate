@@ -41,7 +41,7 @@ std::optional<Expr *> Parser::recurse_type_range_start() {
     return std::nullopt;
   }
 
-  let min_value = recurse_expr({NCCToken(qPunc, qPuncColn)});
+  let min_value = recurse_expr({Token(qPunc, qPuncColn)});
 
   if (!next_if(qPuncColn)) {
     diagnostic << current() << "Expected ':' after range start";
@@ -55,7 +55,7 @@ std::optional<Expr *> Parser::recurse_type_range_end() {
     return std::nullopt;
   }
 
-  let max_val = recurse_expr({NCCToken(qPunc, qPuncRBrk)});
+  let max_val = recurse_expr({Token(qPunc, qPuncRBrk)});
 
   if (!next_if(qPuncRBrk)) {
     diagnostic << current() << "Expected ']' after range";
@@ -69,7 +69,7 @@ std::optional<CallArgs> Parser::recurse_type_template_arguments() {
     return std::nullopt;
   }
 
-  auto args = recurse_caller_arguments(NCCToken(qOper, qOpGT), 0);
+  auto args = recurse_caller_arguments(Token(qOper, qOpGT), 0);
 
   if (!next_if(qOpGT)) {
     diagnostic << current() << "Expected '>' after template arguments";
@@ -80,11 +80,10 @@ std::optional<CallArgs> Parser::recurse_type_template_arguments() {
 
 Type *Parser::recurse_type_suffix(Type *base) {
   static let bit_width_terminaters = {
-      NCCToken(qPunc, qPuncRPar), NCCToken(qPunc, qPuncRBrk),
-      NCCToken(qPunc, qPuncLCur), NCCToken(qPunc, qPuncRCur),
-      NCCToken(qPunc, qPuncComa), NCCToken(qPunc, qPuncColn),
-      NCCToken(qPunc, qPuncSemi), NCCToken(qOper, qOpSet),
-      NCCToken(qOper, qOpMinus),  NCCToken(qOper, qOpGT)};
+      Token(qPunc, qPuncRPar), Token(qPunc, qPuncRBrk), Token(qPunc, qPuncLCur),
+      Token(qPunc, qPuncRCur), Token(qPunc, qPuncComa), Token(qPunc, qPuncColn),
+      Token(qPunc, qPuncSemi), Token(qOper, qOpSet),    Token(qOper, qOpMinus),
+      Token(qOper, qOpGT)};
 
   let template_arguments = recurse_type_template_arguments();
 
@@ -243,7 +242,7 @@ Type *Parser::recurse_array_or_vector() {
                << "Expected ';' separator in array type before size";
   }
 
-  let size = recurse_expr({NCCToken(qPunc, qPuncRBrk)});
+  let size = recurse_expr({Token(qPunc, qPuncRBrk)});
 
   if (!next_if(qPuncRBrk)) {
     diagnostic << current() << "Expected ']' after array size";

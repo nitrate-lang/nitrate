@@ -56,8 +56,8 @@ std::optional<Expr *> Parser::recurse_enum_item_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
 
-        {NCCToken(qPunc, qPuncSemi), NCCToken(qPunc, qPuncComa),
-         NCCToken(qPunc, qPuncRCur)});
+        {Token(qPunc, qPuncSemi), Token(qPunc, qPuncComa),
+         Token(qPunc, qPuncRCur)});
   } else {
     return std::nullopt;
   }

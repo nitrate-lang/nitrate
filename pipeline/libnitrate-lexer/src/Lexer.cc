@@ -436,7 +436,7 @@ char Tokenizer::nextc() {
   return c;
 }
 
-CPP_EXPORT NCCToken Tokenizer::GetNext() {
+CPP_EXPORT Token Tokenizer::GetNext() {
   /**
    * **WARNING**: Do not just start editing this function without
    * having a holistic understanding of all code that depends on the lexer
@@ -540,7 +540,7 @@ CPP_EXPORT NCCToken Tokenizer::GetNext() {
           /* Check for f-string */
           if (buf == "f" && c == '"') {
             m_pushback.push_back(c);
-            return NCCToken(qKeyW, qK__FString, start_pos);
+            return Token(qKeyW, qK__FString, start_pos);
           }
 
           /* We overshot; this must be a punctor ':' */
@@ -554,14 +554,14 @@ CPP_EXPORT NCCToken Tokenizer::GetNext() {
           { /* Determine if it's a keyword or an identifier */
             auto it = qlex::keywords.left.find(buf);
             if (it != qlex::keywords.left.end()) {
-              return NCCToken(qKeyW, it->second, start_pos);
+              return Token(qKeyW, it->second, start_pos);
             }
           }
 
           { /* Check if it's an operator */
             auto it = qlex::word_operators.left.find(buf);
             if (it != qlex::word_operators.left.end()) {
-              return NCCToken(qOper, it->second, start_pos);
+              return Token(qOper, it->second, start_pos);
             }
           }
 
@@ -575,11 +575,11 @@ CPP_EXPORT NCCToken Tokenizer::GetNext() {
                        "The source code invoked a compiler panic API.");
 
           if (buf == "__builtin_lexer_abort") {
-            return NCCToken::eof(start_pos);
+            return Token::eof(start_pos);
           }
 
           /* Return the identifier */
-          return NCCToken(qName, intern(buf), start_pos);
+          return Token(qName, intern(buf), start_pos);
         }
         case LexState::Integer: {
           NumType type = NumType::Decimal;
@@ -758,10 +758,10 @@ CPP_EXPORT NCCToken Tokenizer::GetNext() {
           std::string norm;
           if (type == NumType::Floating) {
             if (canonicalize_float(buf, norm)) {
-              return NCCToken(qNumL, intern(std::move(norm)), start_pos);
+              return Token(qNumL, intern(std::move(norm)), start_pos);
             }
           } else if (canonicalize_number(buf, norm, type)) {
-            return NCCToken(qIntL, intern(std::move(norm)), start_pos);
+            return Token(qIntL, intern(std::move(norm)), start_pos);
           }
 
           /* Invalid number */
@@ -776,7 +776,7 @@ CPP_EXPORT NCCToken Tokenizer::GetNext() {
             continue;
           } else { /* Divide operator */
             m_pushback.push_back(c);
-            return NCCToken(qOper, qOpSlash, start_pos);
+            return Token(qOper, qOpSlash, start_pos);
           }
         }
         case LexState::CommentSingleLine: {
@@ -785,7 +785,7 @@ CPP_EXPORT NCCToken Tokenizer::GetNext() {
             c = nextc();
           }
 
-          return NCCToken(qNote, intern(std::move(buf)), start_pos);
+          return Token(qNote, intern(std::move(buf)), start_pos);
         }
         case LexState::CommentMultiLine: {
           size_t level = 1;
@@ -807,7 +807,7 @@ CPP_EXPORT NCCToken Tokenizer::GetNext() {
               if (tmp == '/') {
                 level--;
                 if (level == 0) {
-                  return NCCToken(qNote, intern(std::move(buf)), start_pos);
+                  return Token(qNote, intern(std::move(buf)), start_pos);
                 } else {
                   buf += "*";
                   buf += tmp;
@@ -988,11 +988,10 @@ CPP_EXPORT NCCToken Tokenizer::GetNext() {
               m_pushback.push_back(c);
               /* Character or string */
               if (buf.front() == '\'' && buf.size() == 2) {
-                return NCCToken(qChar, intern(std::string(1, buf[1])),
-                                start_pos);
+                return Token(qChar, intern(std::string(1, buf[1])), start_pos);
               } else {
-                return NCCToken(qText, intern(buf.substr(1, buf.size() - 1)),
-                                start_pos);
+                return Token(qText, intern(buf.substr(1, buf.size() - 1)),
+                             start_pos);
               }
             }
           }
@@ -1026,7 +1025,7 @@ CPP_EXPORT NCCToken Tokenizer::GetNext() {
 
           m_pushback.push_back(c);
 
-          return NCCToken(qMacr, intern(std::move(buf)), start_pos);
+          return Token(qMacr, intern(std::move(buf)), start_pos);
         }
         case LexState::BlockMacro: {
           while (true) {
@@ -1037,7 +1036,7 @@ CPP_EXPORT NCCToken Tokenizer::GetNext() {
             }
 
             if (state_parens == 0) {
-              return NCCToken(qMacB, intern(std::move(buf)), start_pos);
+              return Token(qMacB, intern(std::move(buf)), start_pos);
             }
 
             buf += c;
@@ -1052,7 +1051,7 @@ CPP_EXPORT NCCToken Tokenizer::GetNext() {
             auto it = qlex::punctuation.left.find(buf);
             if (it != qlex::punctuation.left.end()) {
               m_pushback.push_back(c);
-              return NCCToken(qPunc, it->second, start_pos);
+              return Token(qPunc, it->second, start_pos);
             }
           }
 
@@ -1098,9 +1097,9 @@ CPP_EXPORT NCCToken Tokenizer::GetNext() {
 
           m_pushback.push_back(buf.back());
           m_pushback.push_back(c);
-          return NCCToken(
-              qOper, qlex::operators.left.at(buf.substr(0, buf.size() - 1)),
-              start_pos);
+          return Token(qOper,
+                       qlex::operators.left.at(buf.substr(0, buf.size() - 1)),
+                       start_pos);
         }
       }
     }
@@ -1112,7 +1111,7 @@ CPP_EXPORT NCCToken Tokenizer::GetNext() {
 error_0: { /* Reset the lexer and return error token */
   reset_state();
 
-  return NCCToken::eof(start_pos);
+  return Token::eof(start_pos);
 }
 }
 
@@ -1150,7 +1149,7 @@ CPP_EXPORT const char *ncc::lex::qlex_ty_str(qlex_ty_t ty) {
 }
 
 CPP_EXPORT void ncc::lex::qlex_tok_fromstr(ncc::lex::IScanner *, qlex_ty_t ty,
-                                           const char *str, NCCToken *out) {
+                                           const char *str, Token *out) {
   try {
     out->ty = ty;
     out->start = 0;
@@ -1304,7 +1303,7 @@ CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, qlex_ty_t ty) {
   return os;
 }
 
-CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, NCCToken tok) {
+CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, Token tok) {
   os << tok.as_string();
   return os;
 }

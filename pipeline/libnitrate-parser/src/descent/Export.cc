@@ -59,8 +59,8 @@ std::optional<ExpressionList> Parser::recurse_export_attributes() {
         return attributes;
       }
 
-      let attribute = recurse_expr(
-          {NCCToken(qPunc, qPuncComa), NCCToken(qPunc, qPuncRBrk)});
+      let attribute =
+          recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk)});
 
       attributes.push_back(attribute);
 

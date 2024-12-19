@@ -116,7 +116,7 @@ void do_documentColor(const lsp::RequestMessage& req,
 
   auto env = std::make_shared<ncc::core::Environment>();
   auto L = Tokenizer(ss, env);
-  NCCToken tok;
+  Token tok;
   std::vector<ColorInformation> colors;
 
   while ((tok = (L.Next())).ty != qEofF) {

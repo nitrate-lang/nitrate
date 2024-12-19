@@ -42,7 +42,7 @@ extern "C" {
 using namespace ncc::lex;
 
 int qcall::sys_next(lua_State* L) {
-  NCCToken tok = get_engine()->Next();
+  Token tok = get_engine()->Next();
 
   lua_newtable(L);
 

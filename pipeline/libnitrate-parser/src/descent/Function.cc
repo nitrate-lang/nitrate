@@ -52,8 +52,8 @@ std::optional<Expr *> Parser::recurse_function_parameter_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
 
-        {NCCToken(qPunc, qPuncComa), NCCToken(qPunc, qPuncRPar),
-         NCCToken(qOper, qOpGT)});
+        {Token(qPunc, qPuncComa), Token(qPunc, qPuncRPar),
+         Token(qOper, qOpGT)});
   } else {
     return std::nullopt;
   }
@@ -149,10 +149,9 @@ FuncParams Parser::recurse_function_parameters() {
   return parameters;
 }
 
-FuncPurity Parser::get_purity_specifier(NCCToken &start_pos,
-                                        bool is_thread_safe, bool is_pure,
-                                        bool is_impure, bool is_quasi,
-                                        bool is_retro) {
+FuncPurity Parser::get_purity_specifier(Token &start_pos, bool is_thread_safe,
+                                        bool is_pure, bool is_impure,
+                                        bool is_quasi, bool is_retro) {
   /** Thread safety does not conflict with purity.
    *  Purity implies thread safety.
    */
@@ -208,7 +207,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
   bool is_thread_safe = false, is_pure = false, is_impure = false,
        is_quasi = false, is_retro = false;
   bool parsed_attributes = false, parsed_captures = false;
-  NCCToken start_pos = current();
+  Token start_pos = current();
 
   while (state != State::End) {
     if (next_if(qEofF)) {
@@ -289,7 +288,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
 
           let attribute = recurse_expr(
 
-              {NCCToken(qPunc, qPuncComa), NCCToken(qPunc, qPuncRBrk)});
+              {Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk)});
 
           attributes.push_back(attribute);
 
