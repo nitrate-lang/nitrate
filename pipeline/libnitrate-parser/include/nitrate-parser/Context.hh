@@ -183,11 +183,20 @@ namespace ncc::parse {
     Expr *recurse_while_cond();
     Stmt *recurse_while_body();
 
-  public:
     Parser(qlex_t *lexer, std::shared_ptr<ncc::core::Environment> env);
+
+  public:
+    static boost::shared_ptr<Parser> Create(
+        qlex_t *lexer, std::shared_ptr<ncc::core::Environment> env) {
+      return boost::shared_ptr<Parser>(new Parser(lexer, env));
+    }
+
     ~Parser();
 
     ASTRoot parse();
+
+    void SetFailBit() { m_failed = true; }
+    qlex_t &GetLexer() { return rd; }
 
     static ASTRoot FromLexer(qlex_t *lexer,
                              std::shared_ptr<ncc::core::Environment> env);

@@ -133,9 +133,9 @@ static int do_parse(std::string source, std::string output) {
   }
 
   qprep lexer(file, "in", env);
-  ncc::parse::Parser parser(env);
+  auto parser = ncc::parse::Parser::Create(lexer.get(), env);
 
-  auto ast = parser.parse(lexer.get());
+  auto ast = parser->parse();
 
   { /* Write output */
     std::ostream *out = nullptr;
@@ -171,9 +171,9 @@ static int do_nr(std::string source, std::string output, std::string opts,
   }
 
   qprep lexer(file, "in", env);
-  ncc::parse::Parser parser(env);
+  auto parser = ncc::parse::Parser::Create(lexer.get(), env);
 
-  auto ast = parser.parse(lexer.get());
+  auto ast = parser->parse();
 
   qmodule mod;
   bool ok = nr_lower(&mod.get(), ast.get(), "module", true);
@@ -229,9 +229,9 @@ static int do_codegen(std::string source, std::string output, std::string opts,
   }
 
   qprep lexer(file, "in", env);
-  ncc::parse::Parser parser(env);
+  auto parser = ncc::parse::Parser::Create(lexer.get(), env);
 
-  auto ast = parser.parse(lexer.get());
+  auto ast = parser->parse();
 
   qmodule mod;
   bool ok = nr_lower(&mod.get(), ast.get(), "module", true);

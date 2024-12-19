@@ -39,11 +39,12 @@
 
 using namespace ncc::parse;
 
-std::string ncc::parse::mint_clang16_message(const DiagMessage &msg) {
+std::string ncc::parse::mint_clang16_message(qlex_t &rd,
+                                             const DiagMessage &msg) {
   std::stringstream ss;
-  ss << "\x1b[37;1m" << qlex_filename(diagnostic->lexer) << ":";
-  uint32_t line = qlex_line(diagnostic->lexer, qlex_begin(&msg.tok));
-  uint32_t col = qlex_col(diagnostic->lexer, qlex_begin(&msg.tok));
+  ss << "\x1b[37;1m" << qlex_filename(&rd) << ":";
+  uint32_t line = qlex_line(&rd, qlex_begin(&msg.tok));
+  uint32_t col = qlex_col(&rd, qlex_begin(&msg.tok));
 
   if (line != QLEX_EOFF) {
     ss << line << ":";
@@ -64,7 +65,7 @@ std::string ncc::parse::mint_clang16_message(const DiagMessage &msg) {
   ss << "]\x1b[0m";
 
   uint32_t offset;
-  char *snippet = qlex_snippet(diagnostic->lexer, msg.tok, &offset);
+  char *snippet = qlex_snippet(&rd, msg.tok, &offset);
   if (!snippet) {
     return ss.str();
   }

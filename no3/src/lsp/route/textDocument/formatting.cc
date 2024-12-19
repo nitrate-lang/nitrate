@@ -107,9 +107,9 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
 
   auto env = std::make_shared<ncc::core::Environment>();
   qlex lexer(ss, uri.c_str(), env);
-  ncc::parse::Parser parser(env);
+  auto parser = ncc::parse::Parser::Create(lexer.get(), env);
 
-  auto ast = parser.parse(lexer.get());
+  auto ast = parser->parse();
 
   if (!ast.check()) {
     return;

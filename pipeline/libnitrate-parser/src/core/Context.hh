@@ -38,7 +38,6 @@
 
 #include <cstdarg>
 #include <functional>
-#include <memory>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Lexer.hh>
@@ -46,13 +45,6 @@
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/Context.hh>
 #include <sstream>
-
-struct npar_t {
-  std::shared_ptr<ncc::core::Environment> env;
-  std::unique_ptr<ncc::core::IMemory> allocator; /* The Main allocator */
-  qlex_t *lexer;                                 /* Polymporphic lexer */
-  bool failed; /* Whether the parser failed (ie syntax errors) */
-};
 
 namespace ncc::parse {
   enum class FormatStyle {
@@ -66,7 +58,7 @@ namespace ncc::parse {
     qlex_tok_t tok;
   };
 
-  std::string mint_clang16_message(const DiagMessage &msg);
+  std::string mint_clang16_message(qlex_t &lexer, const DiagMessage &msg);
 
   class MessageBuffer {
     std::stringstream m_buffer;
@@ -101,10 +93,12 @@ namespace ncc::parse {
   };
 
   template <typename T>
-  MessageBuffer operator<<(npar_t *log, const T &value) {
+  MessageBuffer operator<<(Parser *log, const T &value) {
     MessageBuffer buf([log](std::string msg, qlex_tok_t start_loc) {
-      log->failed = true;
-      qcore_print(QCORE_ERROR, mint_clang16_message({msg, start_loc}).c_str());
+      log->SetFailBit();
+      qcore_print(
+          QCORE_ERROR,
+          mint_clang16_message(log->GetLexer(), {msg, start_loc}).c_str());
     });
 
     buf.write(value);
@@ -118,7 +112,7 @@ namespace ncc::parse {
     return std::move(buf);
   };
 
-  inline thread_local npar_t *diagnostic;
+  inline thread_local Parser *diagnostic;
 };  // namespace ncc::parse
 
 #endif

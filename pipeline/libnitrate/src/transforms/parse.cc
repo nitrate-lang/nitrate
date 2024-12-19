@@ -36,7 +36,6 @@
 #include <core/SerialUtil.hh>
 #include <core/Transform.hh>
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
@@ -270,9 +269,9 @@ CREATE_TRANSFORM(nit::parse) {
   }
 
   DeserializerAdapterLexer lex(source, nullptr, env);
-  ncc::parse::Parser par(env);
+  auto par = ncc::parse::Parser::Create(&lex, env);
 
-  let root = par.parse(&lex);
+  let root = par->parse();
 
   switch (out_mode) {
     case OutMode::JSON: {

@@ -358,32 +358,14 @@ Stmt* Parser::recurse_block(bool expect_braces, bool single_stmt,
   return block;
 }
 
-CPP_EXPORT npar_t* npar_new(qlex_t* lexer,
-                            std::shared_ptr<ncc::core::Environment> env) {
-  /// TODO: audit
-
-  if (!lexer) {
-    return nullptr;
-  }
-
-  npar_t* parser = new npar_t();
-
-  parser->allocator = std::make_unique<ncc::core::dyn_arena>();
-  parser->env = env;
-  parser->lexer = lexer;
-  parser->failed = false;
-
-  qlex_set_flags(lexer, qlex_get_flags(lexer) | QLEX_NO_COMMENTS);
-
-  return parser;
-}
-
 CPP_EXPORT Parser::Parser(qlex_t* lexer,
                           std::shared_ptr<ncc::core::Environment> env)
     : rd(*lexer) {
   m_env = env;
   m_allocator = std::make_unique<ncc::core::dyn_arena>();
   m_failed = false;
+
+  qlex_set_flags(lexer, qlex_get_flags(lexer) | QLEX_NO_COMMENTS);
 }
 
 CPP_EXPORT Parser::~Parser() {}
