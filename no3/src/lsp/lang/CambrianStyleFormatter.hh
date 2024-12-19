@@ -25,7 +25,7 @@ namespace lsp::fmt {
         m_line_buffer << val;
         return *this;
       }
-      LineStreamWritter& operator<<(ncc::lex::qlex_op_t op);
+      LineStreamWritter& operator<<(ncc::lex::Operator op);
       LineStreamWritter& operator<<(ncc::parse::Vis op);
       LineStreamWritter& operator<<(ncc::core::str_alias str) {
         m_line_buffer << str.get();

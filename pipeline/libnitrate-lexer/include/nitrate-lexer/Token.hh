@@ -41,7 +41,7 @@
 #include <type_traits>
 
 namespace ncc::lex {
-  typedef enum qlex_ty_t {
+  typedef enum TokenType {
     qEofF = 1, /* End of file */
     qKeyW,     /* Keyword */
     qOper,     /* Operator */
@@ -54,9 +54,9 @@ namespace ncc::lex {
     qMacB,     /* Macro block */
     qMacr,     /* Macro call */
     qNote,     /* Comment */
-  } __attribute__((packed)) qlex_ty_t;
+  } __attribute__((packed)) TokenType;
 
-  typedef enum qlex_punc_t {
+  typedef enum Punctor {
     qPuncLPar, /* Left parenthesis */
     qPuncRPar, /* Right parenthesis */
     qPuncLBrk, /* Left bracket */
@@ -66,9 +66,9 @@ namespace ncc::lex {
     qPuncComa, /* Comma */
     qPuncColn, /* Colon */
     qPuncSemi, /* Semicolon */
-  } __attribute__((packed)) qlex_punc_t;
+  } __attribute__((packed)) Punctor;
 
-  typedef enum qlex_op_t {
+  typedef enum Operator {
     qOpPlus,        /* '+':    Addition operator */
     qOpMinus,       /* '-':    Subtraction operator */
     qOpTimes,       /* '*':    Multiplication operator */
@@ -123,9 +123,9 @@ namespace ncc::lex {
     qOpEllipsis,    /* '...':        Ellipsis operator */
     qOpArrow,       /* '=>':         Arrow operator */
     qOpTernary,     /* '?':          Ternary operator */
-  } __attribute__((packed)) qlex_op_t;
+  } __attribute__((packed)) Operator;
 
-  typedef enum qlex_key_t {
+  typedef enum Keyword {
     qKScope,     /* 'scope' */
     qKImport,    /* 'import' */
     qKPub,       /* 'pub' */
@@ -169,7 +169,7 @@ namespace ncc::lex {
     qKNull,      /* 'null' */
     qKTrue,      /* 'true' */
     qKFalse,     /* 'false' */
-  } __attribute__((packed)) qlex_key_t;
+  } __attribute__((packed)) Keyword;
 
   constexpr size_t QLEX_EOFF = UINT32_MAX;
   constexpr size_t QLEX_NOFILE = 16777215;
@@ -188,36 +188,36 @@ namespace ncc::lex {
   } __attribute__((packed));
 
   union TokenData {
-    qlex_punc_t punc;
-    qlex_op_t op;
-    qlex_key_t key;
+    Punctor punc;
+    Operator op;
+    Keyword key;
     ncc::core::str_alias str;
 
-    constexpr TokenData(qlex_punc_t punc) : punc(punc) {}
-    constexpr TokenData(qlex_op_t op) : op(op) {}
-    constexpr TokenData(qlex_key_t key) : key(key) {}
+    constexpr TokenData(Punctor punc) : punc(punc) {}
+    constexpr TokenData(Operator op) : op(op) {}
+    constexpr TokenData(Keyword key) : key(key) {}
     constexpr TokenData(ncc::core::str_alias str) : str(str) {}
   } __attribute__((packed));
 
-  std::string_view to_string(qlex_ty_t, TokenData);
+  std::string_view to_string(TokenType, TokenData);
 
   template <class LocationTracker>
   class TokenBase {
     LocationTracker m_start = 0;
     uint64_t pad : 4 = 0;
-    qlex_ty_t m_type : 4;
+    TokenType m_type : 4;
 
   public:
     TokenData v;
 
-    template <class T = qlex_op_t>
-    constexpr TokenBase(qlex_ty_t ty = qEofF, T val = qOpPlus,
+    template <class T = Operator>
+    constexpr TokenBase(TokenType ty = qEofF, T val = qOpPlus,
                         LocationTracker _start = LocationTracker())
         : m_start(_start), m_type(ty), v{val} {}
 
     constexpr static TokenBase EndOfFile() { return TokenBase(); }
 
-    constexpr bool is(qlex_ty_t val) const { return m_type == val; }
+    constexpr bool is(TokenType val) const { return m_type == val; }
 
     constexpr bool operator==(const TokenBase &rhs) const {
       if (m_type != rhs.m_type) return false;
@@ -243,24 +243,24 @@ namespace ncc::lex {
 
     template <auto V>
     constexpr bool is() const {
-      if constexpr (std::is_same_v<decltype(V), qlex_key_t>) {
+      if constexpr (std::is_same_v<decltype(V), Keyword>) {
         return m_type == qKeyW && v.key == V;
-      } else if constexpr (std::is_same_v<decltype(V), qlex_punc_t>) {
+      } else if constexpr (std::is_same_v<decltype(V), Punctor>) {
         return m_type == qPunc && v.punc == V;
-      } else if constexpr (std::is_same_v<decltype(V), qlex_op_t>) {
+      } else if constexpr (std::is_same_v<decltype(V), Operator>) {
         return m_type == qOper && v.op == V;
       }
     }
 
     std::string_view as_string() const { return to_string(m_type, v); }
 
-    qlex_key_t as_key() const { return v.key; }
-    qlex_op_t as_op() const { return v.op; }
-    qlex_punc_t as_punc() const { return v.punc; }
+    Keyword as_key() const { return v.key; }
+    Operator as_op() const { return v.op; }
+    Punctor as_punc() const { return v.punc; }
 
     LocationTracker get_start() const { return m_start; }
 
-    qlex_ty_t get_type() const { return m_type; }
+    TokenType get_type() const { return m_type; }
 
     constexpr bool operator<(const TokenBase &rhs) const {
       if (m_type != rhs.m_type) {

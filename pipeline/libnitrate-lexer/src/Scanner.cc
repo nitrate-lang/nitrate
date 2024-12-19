@@ -38,7 +38,7 @@
 
 using namespace ncc::lex;
 
-CPP_EXPORT std::string_view ncc::lex::to_string(qlex_ty_t ty, TokenData v) {
+CPP_EXPORT std::string_view ncc::lex::to_string(TokenType ty, TokenData v) {
   std::string_view R;
 
   switch (ty) {

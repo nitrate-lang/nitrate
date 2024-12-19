@@ -192,8 +192,8 @@ bool Parser::recurse_fstring(FString **node, size_t depth) {
   return true;
 }
 
-/// TODO: qlex_op_t precedence
-/// TODO: qlex_op_t associativity
+/// TODO: Operator precedence
+/// TODO: Operator associativity
 
 Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
   if (depth > MAX_EXPR_DEPTH) {
@@ -562,7 +562,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
         }
       }
       case qOper: {
-        qlex_op_t op = tok.as_op();
+        Operator op = tok.as_op();
         if (op == qOpDot) {
           if (stack.size() != 1) {
             diagnostic << tok << "Expected a single expression on the stack";
@@ -630,12 +630,12 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
         expr = recurse_expr(terminators, depth + 1);
 
         if (stack.empty()) {
-          stack.push(make<UnaryExpr>((qlex_op_t)op, expr));
+          stack.push(make<UnaryExpr>((Operator)op, expr));
           continue;
         } else if (stack.size() == 1) {
           Expr *left = stack.top();
           stack.pop();
-          stack.push(make<BinExpr>(left, (qlex_op_t)op, expr));
+          stack.push(make<BinExpr>(left, (Operator)op, expr));
           continue;
         } else {
           diagnostic << tok << "Unexpected operator in expression";

@@ -171,7 +171,7 @@ static bool check_is_foreign_function(auto n) {
 static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
                                                      IReport *, nr::Expr *lhs,
                                                      nr::Expr *rhs,
-                                                     qlex_op_t op) {
+                                                     Operator op) {
 #define STD_BINOP(op) nr::create<nr::BinExpr>(lhs, rhs, nr::Op::op)
 #define ASSIGN_BINOP(op)                                                   \
   nr::create<nr::BinExpr>(                                                 \
@@ -389,7 +389,7 @@ static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
 
 static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
                                                     IReport *G, nr::Expr *rhs,
-                                                    qlex_op_t op) {
+                                                    Operator op) {
 #define STD_UNOP(op) nr::create<nr::UnExpr>(rhs, nr::Op::op)
 
   EResult R;
@@ -491,7 +491,7 @@ static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
 static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &,
                                                          IReport *G,
                                                          nr::Expr *lhs,
-                                                         qlex_op_t op) {
+                                                         Operator op) {
 #define STD_POST_OP(op) nr::create<nr::PostUnExpr>(lhs, nr::Op::op)
 
   EResult R;

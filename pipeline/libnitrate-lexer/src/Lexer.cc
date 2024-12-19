@@ -70,8 +70,8 @@ namespace qlex {
     return boost::bimap<L, R>(list.begin(), list.end());
   }
 
-  static const boost::bimap<std::string_view, qlex_key_t> keywords = make_bimap<
-      std::string_view, qlex_key_t>({
+  static const boost::bimap<std::string_view, Keyword> keywords = make_bimap<
+      std::string_view, Keyword>({
       {"scope", qKScope},     {"import", qKImport}, {"pub", qKPub},
       {"sec", qKSec},         {"pro", qKPro},       {"type", qKType},
       {"let", qKLet},         {"var", qKVar},       {"const", qKConst},
@@ -89,8 +89,8 @@ namespace qlex {
       {"false", qKFalse},
   });
 
-  static const boost::bimap<std::string_view, qlex_op_t> operators =
-      make_bimap<std::string_view, qlex_op_t>({
+  static const boost::bimap<std::string_view, Operator> operators =
+      make_bimap<std::string_view, Operator>({
           {"+", qOpPlus},
           {"-", qOpMinus},
           {"*", qOpTimes},
@@ -147,8 +147,8 @@ namespace qlex {
           {"?", qOpTernary},
       });
 
-  static const boost::bimap<std::string_view, qlex_op_t> word_operators =
-      make_bimap<std::string_view, qlex_op_t>({
+  static const boost::bimap<std::string_view, Operator> word_operators =
+      make_bimap<std::string_view, Operator>({
           {"as", qOpAs},
           {"in", qOpIn},
           {"sizeof", qOpSizeof},
@@ -159,8 +159,8 @@ namespace qlex {
           {"out", qOpOut},
       });
 
-  static const boost::bimap<std::string_view, qlex_punc_t> punctuation =
-      make_bimap<std::string_view, qlex_punc_t>({
+  static const boost::bimap<std::string_view, Punctor> punctuation =
+      make_bimap<std::string_view, Punctor>({
           {"(", qPuncLPar},
           {")", qPuncRPar},
           {"[", qPuncLBrk},
@@ -1117,7 +1117,7 @@ error_0: { /* Reset the lexer and return error token */
 
 ///============================================================================///
 
-CPP_EXPORT const char *ncc::lex::qlex_ty_str(qlex_ty_t ty) {
+CPP_EXPORT const char *ncc::lex::qlex_ty_str(TokenType ty) {
   switch (ty) {
     case qEofF:
       return "eof";
@@ -1148,7 +1148,7 @@ CPP_EXPORT const char *ncc::lex::qlex_ty_str(qlex_ty_t ty) {
   qcore_panic("unreachable");
 }
 
-CPP_EXPORT void ncc::lex::qlex_tok_fromstr(ncc::lex::IScanner *, qlex_ty_t,
+CPP_EXPORT void ncc::lex::qlex_tok_fromstr(ncc::lex::IScanner *, TokenType,
                                            const char *, Token *) {
   qcore_implement();
   /// TODO: Implement this function
@@ -1239,7 +1239,7 @@ CPP_EXPORT void ncc::lex::qlex_tok_fromstr(ncc::lex::IScanner *, qlex_ty_t,
   // }
 }
 
-CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, qlex_ty_t ty) {
+CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, TokenType ty) {
   switch (ty) {
     case qEofF: {
       os << "qEofF";
@@ -1310,14 +1310,14 @@ CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, Token tok) {
   return os;
 }
 
-CPP_EXPORT const char *ncc::lex::op_repr(qlex_op_t op) {
+CPP_EXPORT const char *ncc::lex::op_repr(Operator op) {
   return qlex::operators.right.at(op).data();
 }
 
-CPP_EXPORT const char *ncc::lex::kw_repr(qlex_key_t kw) {
+CPP_EXPORT const char *ncc::lex::kw_repr(Keyword kw) {
   return qlex::keywords.right.at(kw).data();
 }
 
-CPP_EXPORT const char *ncc::lex::punct_repr(qlex_punc_t punct) {
+CPP_EXPORT const char *ncc::lex::punct_repr(Punctor punct) {
   return qlex::punctuation.right.at(punct).data();
 }

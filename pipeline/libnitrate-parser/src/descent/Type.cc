@@ -168,7 +168,7 @@ Type *Parser::recurse_opaque_type() {
   return mock_type();
 }
 
-Type *Parser::recurse_type_by_keyword(qlex_key_t key) {
+Type *Parser::recurse_type_by_keyword(Keyword key) {
   switch (key) {
     case qKFn: {
       return recurse_function_type();
@@ -185,7 +185,7 @@ Type *Parser::recurse_type_by_keyword(qlex_key_t key) {
   }
 }
 
-Type *Parser::recurse_type_by_operator(qlex_op_t op) {
+Type *Parser::recurse_type_by_operator(Operator op) {
   switch (op) {
     case qOpTimes: {
       let start = current().get_start();
@@ -300,7 +300,7 @@ Type *Parser::recurse_tuple_type() {
   return tuple;
 }
 
-Type *Parser::recurse_type_by_punctuation(qlex_punc_t punc) {
+Type *Parser::recurse_type_by_punctuation(Punctor punc) {
   switch (punc) {
     case qPuncLBrk: {
       return recurse_array_or_vector();

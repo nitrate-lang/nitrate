@@ -127,7 +127,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
     if (valid_ty_id_tab[ty]) [[likely]] {
       Token T;
 
-      qlex_tok_fromstr(this, static_cast<qlex_ty_t>(ty), str, &T);
+      qlex_tok_fromstr(this, static_cast<TokenType>(ty), str, &T);
 
       // T.start = save_loc(a, b, 0);
       /// FIXME: Implement the location saving
@@ -180,7 +180,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
     if (valid_ty_id_tab[ty]) [[likely]] {
       Token T;
 
-      qlex_tok_fromstr(this, static_cast<qlex_ty_t>(ty), str, &T);
+      qlex_tok_fromstr(this, static_cast<TokenType>(ty), str, &T);
 
       // T.start = save_loc(a, b, 0);
       /// FIXME: Implement the location saving

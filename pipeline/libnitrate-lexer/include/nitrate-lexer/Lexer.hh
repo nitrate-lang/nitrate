@@ -48,7 +48,7 @@
 #define QLEX_NO_COMMENTS 0x01
 
 namespace ncc::lex {
-  const char *qlex_ty_str(qlex_ty_t ty);
+  const char *qlex_ty_str(TokenType ty);
 
   class ISourceFile {
   public:
@@ -118,29 +118,29 @@ namespace ncc::lex {
     std::shared_ptr<core::Environment> GetEnvironment() const { return m_env; }
   };
 
-  const char *op_repr(qlex_op_t op);
-  const char *kw_repr(qlex_key_t kw);
-  const char *punct_repr(qlex_punc_t punct);
+  const char *op_repr(Operator op);
+  const char *kw_repr(Keyword kw);
+  const char *punct_repr(Punctor punct);
 
-  std::ostream &operator<<(std::ostream &os, qlex_ty_t ty);
+  std::ostream &operator<<(std::ostream &os, TokenType ty);
   std::ostream &operator<<(std::ostream &os, Token tok);
 
-  inline std::ostream &operator<<(std::ostream &os, qlex_op_t op) {
+  inline std::ostream &operator<<(std::ostream &os, Operator op) {
     os << op_repr(op);
     return os;
   }
 
-  inline std::ostream &operator<<(std::ostream &os, qlex_key_t kw) {
+  inline std::ostream &operator<<(std::ostream &os, Keyword kw) {
     os << kw_repr(kw);
     return os;
   }
 
-  inline std::ostream &operator<<(std::ostream &os, qlex_punc_t punct) {
+  inline std::ostream &operator<<(std::ostream &os, Punctor punct) {
     os << punct_repr(punct);
     return os;
   }
 
-  void qlex_tok_fromstr(IScanner *lexer, qlex_ty_t ty, const char *str,
+  void qlex_tok_fromstr(IScanner *lexer, TokenType ty, const char *str,
                         Token *out);
 }  // namespace ncc::lex
 

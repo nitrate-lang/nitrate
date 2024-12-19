@@ -167,12 +167,12 @@ namespace ncc::parse {
     Type *recurse_type_suffix(Type *base);
     Type *recurse_function_type();
     Type *recurse_opaque_type();
-    Type *recurse_type_by_keyword(ncc::lex::qlex_key_t key);
-    Type *recurse_type_by_operator(ncc::lex::qlex_op_t op);
+    Type *recurse_type_by_keyword(ncc::lex::Keyword key);
+    Type *recurse_type_by_operator(ncc::lex::Operator op);
     Type *recurse_array_or_vector();
     Type *recurse_set_type();
     Type *recurse_tuple_type();
-    Type *recurse_type_by_punctuation(ncc::lex::qlex_punc_t punc);
+    Type *recurse_type_by_punctuation(ncc::lex::Punctor punc);
     Type *recurse_type_by_name(std::string_view name);
 
     std::optional<ExpressionList> recurse_variable_attributes();

@@ -24,7 +24,7 @@ CambrianFormatter::LineStreamWritter::operator<<(
 }
 
 CambrianFormatter::LineStreamWritter&
-CambrianFormatter::LineStreamWritter::operator<<(qlex_op_t op) {
+CambrianFormatter::LineStreamWritter::operator<<(Operator op) {
   m_line_buffer << op;
   return *this;
 }

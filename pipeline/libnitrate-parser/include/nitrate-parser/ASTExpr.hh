@@ -59,10 +59,10 @@ namespace ncc::parse {
 
   class npar_pack UnaryExpr final : public Expr {
     Expr *m_rhs;
-    ncc::lex::qlex_op_t m_op;
+    ncc::lex::Operator m_op;
 
   public:
-    constexpr UnaryExpr(ncc::lex::qlex_op_t op, Expr *rhs)
+    constexpr UnaryExpr(ncc::lex::Operator op, Expr *rhs)
         : Expr(QAST_UNEXPR), m_rhs(rhs), m_op(op) {}
 
     constexpr auto get_rhs() const { return m_rhs; }
@@ -71,10 +71,10 @@ namespace ncc::parse {
 
   class npar_pack BinExpr final : public Expr {
     Expr *m_lhs, *m_rhs;
-    ncc::lex::qlex_op_t m_op;
+    ncc::lex::Operator m_op;
 
   public:
-    constexpr BinExpr(Expr *lhs, ncc::lex::qlex_op_t op, Expr *rhs)
+    constexpr BinExpr(Expr *lhs, ncc::lex::Operator op, Expr *rhs)
         : Expr(QAST_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
     constexpr auto get_lhs() const { return m_lhs; }
@@ -84,10 +84,10 @@ namespace ncc::parse {
 
   class npar_pack PostUnaryExpr final : public Expr {
     Expr *m_lhs;
-    ncc::lex::qlex_op_t m_op;
+    ncc::lex::Operator m_op;
 
   public:
-    constexpr PostUnaryExpr(Expr *lhs, ncc::lex::qlex_op_t op)
+    constexpr PostUnaryExpr(Expr *lhs, ncc::lex::Operator op)
         : Expr(QAST_POST_UNEXPR), m_lhs(lhs), m_op(op) {}
 
     constexpr auto get_lhs() const { return m_lhs; }
