@@ -92,23 +92,4 @@ void do_declaration(const lsp::RequestMessage& req,
   /// TODO: Its like there are two types of locations, static locations and
   /// post-processed locations. We want static (unprocessed) locations herenow.
   /// How do i get that? My whole codebase is not legacy...
-
-  // tree->root()->iterate([&](const Base* node) {
-  //   if (!node->is_decl() || node->as<ncc::parse::Decl>()->get_name().view()
-  //   != current_word)
-  //       [[likely]] {
-  //     return true;
-  //   }
-
-  //   const ncc::parse::Decl* decl = node->as<ncc::parse::Decl>();
-
-  //   auto start_pos = decl->get_offset();
-
-  //   resp->SetObject();
-  //   resp->AddMember("line", qlex_line(tree->lexer(), start_pos),
-  //   resp->GetAllocator()); resp->AddMember("character",
-  //   qlex_col(tree->lexer(), start_pos), resp->GetAllocator());
-
-  //   return false;
-  // });
 }

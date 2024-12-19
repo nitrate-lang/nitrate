@@ -1,7 +1,0 @@
-{
-    global:
-        npar_*;
-        _Z*;
-    local:
-        *;
-};

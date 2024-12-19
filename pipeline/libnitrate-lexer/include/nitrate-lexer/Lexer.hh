@@ -54,17 +54,6 @@ typedef struct NCCLexer NCCLexer;
 #define QLEX_FLAG_NONE 0
 #define QLEX_NO_COMMENTS 0x01
 
-void qlex_insert(NCCLexer *lexer, NCCToken tok);
-
-static inline uint32_t qlex_begin(const NCCToken *tok) { return tok->start; }
-uint32_t qlex_end(NCCLexer *L, NCCToken tok);
-
-const char *qlex_filename(NCCLexer *lexer);
-uint32_t qlex_line(NCCLexer *lexer, uint32_t loc);
-uint32_t qlex_col(NCCLexer *lexer, uint32_t loc);
-
-char *qlex_snippet(NCCLexer *lexer, NCCToken loc, uint32_t *offset);
-
 const char *qlex_ty_str(qlex_ty_t ty);
 
 /**

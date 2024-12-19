@@ -44,7 +44,7 @@ namespace ncc::parse {
   static inline T *make(Args &&...args) {
     T *new_obj = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
 
-    //  /// TODO: Cache nodes
+    /// TODO: Cache nodes
 
     return new_obj;
   }

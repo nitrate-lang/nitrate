@@ -48,128 +48,6 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <utility>
 
-#include "nitrate-lexer/Token.hh"
-
-CPP_EXPORT void qlex_insert(NCCLexer *obj, NCCToken tok) {
-  obj->push_impl(&tok);
-}
-
-CPP_EXPORT uint32_t qlex_end(NCCLexer *L, NCCToken tok) {
-  /// TODO: Implement this function
-  return UINT32_MAX;
-}
-
-CPP_EXPORT const char *qlex_filename(NCCLexer *obj) {
-  return obj->filename().c_str();
-}
-
-CPP_EXPORT uint32_t qlex_line(NCCLexer *obj, uint32_t loc) {
-  try {
-    auto r = obj->loc2rowcol(loc);
-    if (!r) {
-      return QLEX_EOFF;
-    }
-
-    return r->first;
-  } catch (...) {
-    qcore_panic("qlex_line: failed to get line number");
-  }
-}
-
-CPP_EXPORT uint32_t qlex_col(NCCLexer *obj, uint32_t loc) {
-  try {
-    auto r = obj->loc2rowcol(loc);
-    if (!r) {
-      return QLEX_EOFF;
-    }
-
-    return r->second;
-  } catch (...) {
-    qcore_panic("qlex_col: failed to get column number");
-  }
-}
-
-CPP_EXPORT char *qlex_snippet(NCCLexer *obj, NCCToken tok, uint32_t *offset) {
-  try {
-#define SNIPPET_SIZE 100
-
-    uint32_t tok_beg_offset;
-    char snippet_buf[SNIPPET_SIZE];
-    size_t curpos, seek_base_pos, read;
-
-    { /* Convert the location to an offset into the source */
-      auto src_offset_opt = tok.start;
-      if (!src_offset_opt) {
-        return nullptr; /* Return early if translation failed */
-      }
-
-      tok_beg_offset = src_offset_opt - 1;
-    }
-
-    { /* Calculate offsets and seek to the correct position */
-      curpos = obj->m_file.tellg();
-      if ((long)curpos == -1) {
-        return nullptr;
-      }
-      seek_base_pos = tok_beg_offset < SNIPPET_SIZE / 2
-                          ? 0
-                          : tok_beg_offset - SNIPPET_SIZE / 2;
-
-      obj->m_file.seekg(seek_base_pos, std::ios_base::beg);
-    }
-
-    { /* Read the snippet and calculate token offset */
-      obj->m_file.read(snippet_buf, SNIPPET_SIZE);
-      read = obj->m_file.gcount();
-      memset(snippet_buf + read, 0, SNIPPET_SIZE - read);
-
-      if (tok_beg_offset < SNIPPET_SIZE / 2) {
-        *offset = tok_beg_offset;
-      } else {
-        *offset = SNIPPET_SIZE / 2;
-      }
-    }
-
-    // Extract the line that contains the token
-    uint32_t slice_start = 0;
-
-    for (size_t i = 0; i < read; i++) {
-      if (snippet_buf[i] == '\n') {
-        slice_start = i + 1;
-      } else if (i == *offset) { /* Danger ?? */
-        size_t slice_end;
-        for (slice_end = i; slice_end < read; slice_end++) {
-          char ch = snippet_buf[slice_end];
-          if (ch == '\n' || ch == 0) {
-            break;
-          }
-        }
-
-        uint32_t slice_size = slice_end - slice_start;
-        char *output = (char *)malloc(slice_size + 1);
-        if (!output) {
-          qcore_panic("qlex_snippet: failed to allocate memory");
-        }
-        memcpy(output, snippet_buf + slice_start, slice_size);
-        output[slice_size] = '\0';
-        *offset -= slice_start;
-        obj->m_file.seekg(curpos, std::ios_base::beg);
-        return output;
-      }
-    }
-
-    obj->m_file.seekg(curpos, std::ios_base::beg);
-
-    return nullptr;
-  } catch (std::bad_alloc &) {
-    return nullptr;
-  } catch (...) {
-    qcore_panic("qlex_snippet: failed to get snippet");
-  }
-}
-
-///============================================================================///
-
 CPP_EXPORT std::optional<std::pair<uint32_t, uint32_t>> NCCLexer::loc2rowcol(
     uint32_t loc) {
   if (m_off2rc.left.find(loc) == m_off2rc.left.end()) [[unlikely]] {
@@ -289,6 +167,6 @@ std::unique_ptr<ncc::lex::ISourceFile> ncc::lex::SourceFileFromSeekableStream(
 }
 
 CPP_EXPORT NCCToken Tokenizer::Next() {
-  /// TODO:
+  /// TODO: Implement this function
   qcore_implement();
 }

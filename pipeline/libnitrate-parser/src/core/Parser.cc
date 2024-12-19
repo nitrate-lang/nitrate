@@ -402,44 +402,42 @@ CPP_EXPORT bool ASTRoot::check() const {
 
 std::string ncc::parse::mint_clang16_message(ncc::lex::IScanner &rd,
                                              const DiagMessage &msg) {
-  /// TODO: Implement this
-  qcore_implement();
+  std::stringstream ss;
+  ss << "\x1b[37;1m" << rd.Filename(msg.tok) << ":";
+  uint32_t line = rd.StartLine(msg.tok), col = rd.StartColumn(msg.tok);
 
-  // std::stringstream ss;
-  // ss << "\x1b[37;1m" << qlex_filename(&rd) << ":";
-  // uint32_t line = qlex_line(&rd, qlex_begin(&msg.tok));
-  // uint32_t col = qlex_col(&rd, qlex_begin(&msg.tok));
+  if (line != QLEX_EOFF) {
+    ss << line << ":";
+  } else {
+    ss << "?:";
+  }
 
-  // if (line != QLEX_EOFF) {
-  //   ss << line << ":";
-  // } else {
-  //   ss << "?:";
-  // }
+  if (col != QLEX_EOFF) {
+    ss << col << ":\x1b[0m ";
+  } else {
+    ss << "?:\x1b[0m ";
+  }
 
-  // if (col != QLEX_EOFF) {
-  //   ss << col << ":\x1b[0m ";
-  // } else {
-  //   ss << "?:\x1b[0m ";
-  // }
+  ss << "\x1b[37;1m" << msg.msg << " [";
 
-  // ss << "\x1b[37;1m" << msg.msg << " [";
+  ss << "SyntaxError";
 
-  // ss << "SyntaxError";
+  ss << "]\x1b[0m";
 
-  // ss << "]\x1b[0m";
-
-  // uint32_t offset;
+  uint32_t offset = 0;
+  /// TODO: Implement source snippet
   // char *snippet = qlex_snippet(&rd, msg.tok, &offset);
-  // if (!snippet) {
-  //   return ss.str();
-  // }
+  char *snippet = nullptr;
+  if (!snippet) {
+    return ss.str();
+  }
 
-  // ss << "\n" << snippet << "\n";
-  // for (uint32_t i = 0; i < offset; i++) {
-  //   ss << " ";
-  // }
-  // ss << "\x1b[32;1m^\x1b[0m";
-  // free(snippet);
+  ss << "\n" << snippet << "\n";
+  for (uint32_t i = 0; i < offset; i++) {
+    ss << " ";
+  }
+  ss << "\x1b[32;1m^\x1b[0m";
+  free(snippet);
 
-  // return ss.str();
+  return ss.str();
 }
