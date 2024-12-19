@@ -33,6 +33,7 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc::lex;
 using namespace ncc::parse;
 
 std::optional<ExpressionList> Parser::recurse_variable_attributes() {

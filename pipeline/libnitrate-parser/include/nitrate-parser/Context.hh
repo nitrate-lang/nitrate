@@ -38,10 +38,9 @@
 #include <boost/shared_ptr.hpp>
 #include <memory>
 #include <nitrate-core/Environment.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
-
-#include "nitrate-core/Logger.hh"
 
 namespace ncc::parse {
   class Parser;
@@ -90,7 +89,8 @@ namespace ncc::parse {
     Stmt *recurse_inline_asm();
     Stmt *recurse_block(bool expect_braces, bool single_stmt,
                         SafetyMode safety);
-    Expr *recurse_expr(std::set<NCCToken> terminators, size_t depth = 0);
+    Expr *recurse_expr(std::set<ncc::lex::NCCToken> terminators,
+                       size_t depth = 0);
 
     /****************************************************************************
      * @brief
@@ -107,7 +107,8 @@ namespace ncc::parse {
     std::optional<ExpressionList> recurse_export_attributes();
     Stmt *recurse_export_body();
 
-    CallArgs recurse_caller_arguments(NCCToken terminator, size_t depth);
+    CallArgs recurse_caller_arguments(ncc::lex::NCCToken terminator,
+                                      size_t depth);
     Call *recurse_function_call(Expr *callee, size_t depth);
     bool recurse_fstring(FString **node, size_t depth);
 
@@ -128,8 +129,9 @@ namespace ncc::parse {
     FuncParams recurse_function_parameters();
     std::optional<Stmt *> recurse_function_body(bool restrict_decl_only);
     Type *recurse_function_return_type();
-    FuncPurity get_purity_specifier(NCCToken &start_pos, bool is_thread_safe,
-                                    bool is_pure, bool is_impure, bool is_quasi,
+    FuncPurity get_purity_specifier(ncc::lex::NCCToken &start_pos,
+                                    bool is_thread_safe, bool is_pure,
+                                    bool is_impure, bool is_quasi,
                                     bool is_retro);
     std::optional<std::pair<std::string_view, bool>> recurse_function_capture();
     void recurse_function_ambigouis(ExpressionList &attributes,
@@ -167,12 +169,12 @@ namespace ncc::parse {
     Type *recurse_type_suffix(Type *base);
     Type *recurse_function_type();
     Type *recurse_opaque_type();
-    Type *recurse_type_by_keyword(qlex_key_t key);
-    Type *recurse_type_by_operator(qlex_op_t op);
+    Type *recurse_type_by_keyword(ncc::lex::qlex_key_t key);
+    Type *recurse_type_by_operator(ncc::lex::qlex_op_t op);
     Type *recurse_array_or_vector();
     Type *recurse_set_type();
     Type *recurse_tuple_type();
-    Type *recurse_type_by_punctuation(qlex_punc_t punc);
+    Type *recurse_type_by_punctuation(ncc::lex::qlex_punc_t punc);
     Type *recurse_type_by_name(std::string_view name);
 
     std::optional<ExpressionList> recurse_variable_attributes();

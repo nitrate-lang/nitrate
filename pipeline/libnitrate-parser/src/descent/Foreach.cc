@@ -33,6 +33,7 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc::lex;
 using namespace ncc::parse;
 
 std::optional<std::pair<std::string_view, std::string_view>>

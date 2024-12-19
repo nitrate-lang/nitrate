@@ -52,6 +52,7 @@ extern "C" {
 #include <lua/lualib.h>
 }
 
+using namespace ncc::lex;
 using namespace qcall;
 
 #define MAX_RECURSION_DEPTH 10000

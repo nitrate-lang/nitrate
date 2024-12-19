@@ -46,9 +46,9 @@
 #define QLEX_FLAG_NONE 0
 #define QLEX_NO_COMMENTS 0x01
 
-const char *qlex_ty_str(qlex_ty_t ty);
-
 namespace ncc::lex {
+  const char *qlex_ty_str(qlex_ty_t ty);
+
   class ISourceFile {
   public:
     virtual ~ISourceFile() = default;
@@ -136,9 +136,9 @@ namespace ncc::lex {
     os << punct_repr(punct);
     return os;
   }
-}  // namespace ncc::lex
 
-void qlex_tok_fromstr(ncc::lex::IScanner *lexer, qlex_ty_t ty, const char *str,
-                      NCCToken *out);
+  void qlex_tok_fromstr(IScanner *lexer, qlex_ty_t ty, const char *str,
+                        NCCToken *out);
+}  // namespace ncc::lex
 
 #endif

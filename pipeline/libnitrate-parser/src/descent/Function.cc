@@ -35,6 +35,7 @@
 #include <nitrate-parser/ASTData.hh>
 #include <unordered_set>
 
+using namespace ncc::lex;
 using namespace ncc::parse;
 
 Type *Parser::recurse_function_parameter_type() {

@@ -1118,7 +1118,7 @@ error_0: { /* Reset the lexer and return error token */
 
 ///============================================================================///
 
-CPP_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
+CPP_EXPORT const char *ncc::lex::qlex_ty_str(qlex_ty_t ty) {
   switch (ty) {
     case qEofF:
       return "eof";
@@ -1149,8 +1149,8 @@ CPP_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
   qcore_panic("unreachable");
 }
 
-CPP_EXPORT void qlex_tok_fromstr(ncc::lex::IScanner *, qlex_ty_t ty,
-                                 const char *str, NCCToken *out) {
+CPP_EXPORT void ncc::lex::qlex_tok_fromstr(ncc::lex::IScanner *, qlex_ty_t ty,
+                                           const char *str, NCCToken *out) {
   try {
     out->ty = ty;
     out->start = 0;

@@ -33,6 +33,7 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc::lex;
 using namespace ncc::parse;
 
 std::string_view Parser::recurse_abi_name() {

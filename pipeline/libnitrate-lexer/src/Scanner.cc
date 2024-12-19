@@ -31,10 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
-
-#include "nitrate-core/Logger.hh"
 
 using namespace ncc::lex;
 
@@ -153,27 +152,27 @@ CPP_EXPORT void IScanner::Undo() {
   SyncState(m_last);
 }
 
-CPP_EXPORT std::string_view Filename(NCCToken t) {
+CPP_EXPORT std::string_view IScanner::Filename(NCCToken t) {
   /// TODO:
   qcore_implement();
 }
 
-CPP_EXPORT uint32_t StartLine(NCCToken t) {
+CPP_EXPORT uint32_t IScanner::StartLine(NCCToken t) {
   /// TODO:
   qcore_implement();
 }
 
-CPP_EXPORT uint32_t StartColumn(NCCToken t) {
+CPP_EXPORT uint32_t IScanner::StartColumn(NCCToken t) {
   /// TODO:
   qcore_implement();
 }
 
-CPP_EXPORT uint32_t EndLine(NCCToken t) {
+CPP_EXPORT uint32_t IScanner::EndLine(NCCToken t) {
   /// TODO:
   qcore_implement();
 }
 
-CPP_EXPORT uint32_t EndColumn(NCCToken t) {
+CPP_EXPORT uint32_t IScanner::EndColumn(NCCToken t) {
   /// TODO:
   qcore_implement();
 }

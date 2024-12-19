@@ -33,6 +33,7 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc::lex;
 using namespace ncc::parse;
 
 Stmt *Parser::recurse_return() {

@@ -55,7 +55,7 @@ namespace ncc::parse {
 
   struct DiagMessage {
     std::string msg;
-    NCCToken tok;
+    ncc::lex::NCCToken tok;
   };
 
   std::string mint_clang16_message(ncc::lex::IScanner &lexer,
@@ -63,11 +63,12 @@ namespace ncc::parse {
 
   class MessageBuffer {
     std::stringstream m_buffer;
-    std::function<void(std::string, NCCToken)> m_publisher;
-    NCCToken m_start_loc;
+    std::function<void(std::string, ncc::lex::NCCToken)> m_publisher;
+    ncc::lex::NCCToken m_start_loc;
 
   public:
-    MessageBuffer(std::function<void(std::string, NCCToken)> publisher)
+    MessageBuffer(
+        std::function<void(std::string, ncc::lex::NCCToken)> publisher)
         : m_publisher(publisher), m_start_loc({}) {}
 
     MessageBuffer(MessageBuffer &&O) {
@@ -85,7 +86,7 @@ namespace ncc::parse {
 
     template <typename T>
     void write(const T &value) {
-      if constexpr (std::is_same_v<T, NCCToken>) {
+      if constexpr (std::is_same_v<T, ncc::lex::NCCToken>) {
         m_start_loc = value;
       } else {
         m_buffer << value;
@@ -95,7 +96,7 @@ namespace ncc::parse {
 
   template <typename T>
   MessageBuffer operator<<(Parser *log, const T &value) {
-    MessageBuffer buf([log](std::string msg, NCCToken start_loc) {
+    MessageBuffer buf([log](std::string msg, ncc::lex::NCCToken start_loc) {
       log->SetFailBit();
       qcore_print(
           QCORE_ERROR,

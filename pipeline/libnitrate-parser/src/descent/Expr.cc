@@ -46,6 +46,7 @@
 #define MAX_EXPR_DEPTH (10000)
 #define MAX_LIST_DUP (10000)
 
+using namespace ncc::lex;
 using namespace ncc::parse;
 
 CallArgs Parser::recurse_caller_arguments(NCCToken terminator, size_t depth) {

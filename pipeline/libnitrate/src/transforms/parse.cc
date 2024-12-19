@@ -44,6 +44,8 @@
 #include <nitrate-parser/Context.hh>
 #include <unordered_set>
 
+using namespace ncc::lex;
+
 static inline NCCToken eof_tok() {
   NCCToken tok{};
   tok.ty = qEofF;

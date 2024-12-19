@@ -57,6 +57,7 @@
 
 using namespace nr;
 using namespace ncc::core;
+using namespace ncc::lex;
 
 struct PState {
 private:

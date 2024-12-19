@@ -35,6 +35,7 @@
 #include <cstring>
 #include <descent/Recurse.hh>
 #include <memory>
+#include <nitrate-core/Environment.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
@@ -42,9 +43,8 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 
-#include "nitrate-core/Environment.hh"
-
 using namespace ncc::parse;
+using namespace ncc::lex;
 
 Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
                             SafetyMode safety) {

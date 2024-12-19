@@ -54,7 +54,8 @@ enum class DeferOp {
 
 struct qprep_impl_t;
 
-typedef std::function<DeferOp(qprep_impl_t *obj, NCCToken last)> DeferCallback;
+typedef std::function<DeferOp(qprep_impl_t *obj, ncc::lex::NCCToken last)>
+    DeferCallback;
 
 extern std::string_view nit_code_prefix;
 
@@ -63,7 +64,7 @@ struct __attribute__((visibility("default"))) qprep_impl_t final
   struct Core {
     lua_State *L = nullptr;
     std::vector<DeferCallback> defer_callbacks;
-    std::deque<NCCToken> buffer;
+    std::deque<ncc::lex::NCCToken> buffer;
     std::mt19937 m_qsys_random_engine;
     bool m_do_expanse = true;
     size_t m_depth = 0;
@@ -76,9 +77,9 @@ struct __attribute__((visibility("default"))) qprep_impl_t final
   std::shared_ptr<ncc::core::Environment> m_env;
   std::string m_filename;
 
-  virtual NCCToken GetNext() override;
+  virtual ncc::lex::NCCToken GetNext() override;
 
-  bool run_defer_callbacks(NCCToken last);
+  bool run_defer_callbacks(ncc::lex::NCCToken last);
 
   std::optional<std::string> run_lua_code(const std::string &s);
   bool run_and_expand(const std::string &code);
