@@ -373,19 +373,19 @@ Type *Parser::recurse_type_by_name(std::string_view name) {
 Type *Parser::recurse_type() {
   switch (let tok = next(); tok.ty) {
     case qKeyW: {
-      let type = recurse_type_by_keyword(tok.v.key);
+      let type = recurse_type_by_keyword(tok.as_key());
 
       return recurse_type_suffix(type);
     }
 
     case qOper: {
-      let type = recurse_type_by_operator(tok.v.op);
+      let type = recurse_type_by_operator(tok.as_op());
 
       return recurse_type_suffix(type);
     }
 
     case qPunc: {
-      let type = recurse_type_by_punctuation(tok.v.punc);
+      let type = recurse_type_by_punctuation(tok.as_punc());
 
       return recurse_type_suffix(type);
     }

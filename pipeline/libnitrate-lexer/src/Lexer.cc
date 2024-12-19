@@ -575,7 +575,7 @@ CPP_EXPORT Token Tokenizer::GetNext() {
                        "The source code invoked a compiler panic API.");
 
           if (buf == "__builtin_lexer_abort") {
-            return Token::eof(start_pos);
+            return Token::EndOfFile();
           }
 
           /* Return the identifier */
@@ -1111,7 +1111,7 @@ CPP_EXPORT Token Tokenizer::GetNext() {
 error_0: { /* Reset the lexer and return error token */
   reset_state();
 
-  return Token::eof(start_pos);
+  return Token::EndOfFile();
 }
 }
 
@@ -1190,42 +1190,42 @@ CPP_EXPORT void ncc::lex::qlex_tok_fromstr(ncc::lex::IScanner *, qlex_ty_t ty,
       }
 
       case qName: {
-        out->v.str_idx = intern(str);
+        out->v.str = intern(str);
         break;
       }
 
       case qIntL: {
-        out->v.str_idx = intern(str);
+        out->v.str = intern(str);
         break;
       }
 
       case qNumL: {
-        out->v.str_idx = intern(str);
+        out->v.str = intern(str);
         break;
       }
 
       case qText: {
-        out->v.str_idx = intern(str);
+        out->v.str = intern(str);
         break;
       }
 
       case qChar: {
-        out->v.str_idx = intern(str);
+        out->v.str = intern(str);
         break;
       }
 
       case qMacB: {
-        out->v.str_idx = intern(str);
+        out->v.str = intern(str);
         break;
       }
 
       case qMacr: {
-        out->v.str_idx = intern(str);
+        out->v.str = intern(str);
         break;
       }
 
       case qNote: {
-        out->v.str_idx = intern(str);
+        out->v.str = intern(str);
         break;
       }
     }

@@ -302,7 +302,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
         continue;
       }
       case qKeyW: {
-        switch (tok.v.key) {
+        switch (tok.as_key()) {
           case qKTrue: {
             stack.push(make<ConstBool>(true));
             continue;
@@ -359,7 +359,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
         break;
       }
       case qPunc: {
-        switch (tok.v.punc) {
+        switch (tok.as_punc()) {
           case qPuncLPar: {
             if (!stack.empty() && stack.top()->is<Field>()) {
               Call *fcall = recurse_function_call(stack.top(), depth);
@@ -562,7 +562,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
         }
       }
       case qOper: {
-        qlex_op_t op = tok.v.op;
+        qlex_op_t op = tok.as_op();
         if (op == qOpDot) {
           if (stack.size() != 1) {
             diagnostic << tok << "Expected a single expression on the stack";

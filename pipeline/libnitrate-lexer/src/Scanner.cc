@@ -63,42 +63,42 @@ CPP_EXPORT std::string_view ncc::lex::to_string(qlex_ty_t ty, TokenData v) {
     }
 
     case qName: {
-      R = v.str_idx.get();
+      R = v.str.get();
       break;
     }
 
     case qIntL: {
-      R = v.str_idx.get();
+      R = v.str.get();
       break;
     }
 
     case qNumL: {
-      R = v.str_idx.get();
+      R = v.str.get();
       break;
     }
 
     case qText: {
-      R = v.str_idx.get();
+      R = v.str.get();
       break;
     }
 
     case qChar: {
-      R = v.str_idx.get();
+      R = v.str.get();
       break;
     }
 
     case qMacB: {
-      R = v.str_idx.get();
+      R = v.str.get();
       break;
     }
 
     case qMacr: {
-      R = v.str_idx.get();
+      R = v.str.get();
       break;
     }
 
     case qNote: {
-      R = v.str_idx.get();
+      R = v.str.get();
       break;
     }
   }
@@ -112,7 +112,7 @@ CPP_EXPORT void IScanner::FillTokenBuffer() {
       m_ready.push_back(GetNext());
     } catch (ScannerEOF &) {
       if (i == 0) {
-        m_ready.push_back(Token::eof(GetCurrentOffset()));
+        m_ready.push_back(Token::EndOfFile());
       }
       break;
     }

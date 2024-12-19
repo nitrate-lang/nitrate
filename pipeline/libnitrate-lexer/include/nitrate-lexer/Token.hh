@@ -191,7 +191,12 @@ namespace ncc::lex {
     qlex_punc_t punc;
     qlex_op_t op;
     qlex_key_t key;
-    ncc::core::str_alias str_idx;
+    ncc::core::str_alias str;
+
+    constexpr TokenData(qlex_punc_t punc) : punc(punc) {}
+    constexpr TokenData(qlex_op_t op) : op(op) {}
+    constexpr TokenData(qlex_key_t key) : key(key) {}
+    constexpr TokenData(ncc::core::str_alias str) : str(str) {}
   } __attribute__((packed));
 
   std::string_view to_string(qlex_ty_t, TokenData);
@@ -200,33 +205,16 @@ namespace ncc::lex {
   class TokenBase {
   public:
     LocationTracker start = 0;
-    qlex_ty_t ty : 4 = qEofF;
+    qlex_ty_t ty : 4;
     uint64_t pad : 4 = 0;
-
     TokenData v;
 
-    constexpr TokenBase()
-        : start(LocationTracker()), ty(qEofF), v{.op = qOpPlus} {}
-
-    constexpr TokenBase(qlex_ty_t ty, qlex_punc_t punc,
+    template <class T = qlex_op_t>
+    constexpr TokenBase(qlex_ty_t ty = qEofF, T val = qOpPlus,
                         LocationTracker _start = LocationTracker())
-        : start(_start), ty(ty), v{.punc = punc} {}
+        : start(_start), ty(ty), v{val} {}
 
-    constexpr TokenBase(qlex_ty_t ty, qlex_op_t op,
-                        LocationTracker _start = LocationTracker())
-        : start(_start), ty(ty), v{.op = op} {}
-
-    constexpr TokenBase(qlex_ty_t ty, qlex_key_t key,
-                        LocationTracker _start = LocationTracker())
-        : start(_start), ty(ty), v{.key = key} {}
-
-    constexpr TokenBase(qlex_ty_t ty, ncc::core::str_alias str_idx,
-                        LocationTracker _start = LocationTracker())
-        : start(_start), ty(ty), v{.str_idx = str_idx} {}
-
-    constexpr static TokenBase eof(LocationTracker _start) {
-      return TokenBase(qEofF, qOpPlus, _start);
-    }
+    constexpr static TokenBase EndOfFile() { return TokenBase(); }
 
     constexpr bool is(qlex_ty_t val) const { return ty == val; }
 
@@ -248,7 +236,7 @@ namespace ncc::lex {
         case qMacB:
         case qMacr:
         case qNote:
-          return v.str_idx == rhs.v.str_idx;
+          return v.str == rhs.v.str;
       }
     }
 
@@ -265,10 +253,20 @@ namespace ncc::lex {
 
     std::string_view as_string() const { return to_string(ty, v); }
 
+    qlex_key_t as_key() const { return v.key; }
+    qlex_op_t as_op() const { return v.op; }
+    qlex_punc_t as_punc() const { return v.punc; }
+
+    LocationTracker get_start() const { return start; }
+
     constexpr bool operator<(const TokenBase &rhs) const {
-      if (ty != rhs.ty) return ty < rhs.ty;
+      if (ty != rhs.ty) {
+        return ty < rhs.ty;
+      }
+
       switch (ty) {
         case qEofF:
+          return false;
         case qPunc:
           return v.punc < rhs.v.punc;
         case qOper:
@@ -283,7 +281,7 @@ namespace ncc::lex {
         case qMacB:
         case qMacr:
         case qNote:
-          return v.str_idx < rhs.v.str_idx;
+          return v.str < rhs.v.str;
       }
     }
   } __attribute__((packed));

@@ -54,15 +54,15 @@ int qcall::sys_next(lua_State* L) {
   switch (tok.ty) {
     case qEofF:
     case qKeyW: {
-      lua_pushstring(L, kw_repr(tok.v.key));
+      lua_pushstring(L, kw_repr(tok.as_key()));
       break;
     }
     case qOper: {
-      lua_pushstring(L, op_repr(tok.v.op));
+      lua_pushstring(L, op_repr(tok.as_op()));
       break;
     }
     case qPunc: {
-      lua_pushstring(L, punct_repr(tok.v.punc));
+      lua_pushstring(L, punct_repr(tok.as_punc()));
       break;
     }
     case qIntL:
@@ -73,7 +73,7 @@ int qcall::sys_next(lua_State* L) {
     case qMacB:
     case qMacr:
     case qNote: {
-      lua_pushstring(L, tok.v.str_idx.get().data());
+      lua_pushstring(L, std::string(tok.as_string()).c_str());
       break;
     }
   }

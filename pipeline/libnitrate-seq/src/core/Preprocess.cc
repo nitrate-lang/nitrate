@@ -216,7 +216,7 @@ func_entry:  // do tail call optimization manually
         }
 
         case qName: { /* Handle the expansion of defines */
-          std::string key = "def." + std::string(x.v.str_idx.get());
+          std::string key = "def." + std::string(x.as_string());
 
           if (let value = m_env->get(key.c_str())) {
             expand_raw(value.value());
@@ -227,7 +227,7 @@ func_entry:  // do tail call optimization manually
         }
 
         case qMacB: {
-          std::string_view block = ltrim(x.v.str_idx.get());
+          std::string_view block = ltrim(x.as_string());
           if (!block.starts_with("fn ")) {
             if (!run_and_expand(std::string(block))) {
               qcore_logf(QCORE_ERROR, "Failed to expand macro block: %s\n",
@@ -286,7 +286,7 @@ func_entry:  // do tail call optimization manually
         }
 
         case qMacr: {
-          std::string_view body = x.v.str_idx.get();
+          std::string_view body = x.as_string();
 
           size_t pos = body.find_first_of("(");
           if (pos != std::string_view::npos) {
