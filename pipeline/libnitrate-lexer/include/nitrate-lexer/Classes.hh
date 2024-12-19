@@ -44,16 +44,16 @@
 #include <nitrate-lexer/Base.hh>
 
 class qlex final {
-  std::unique_ptr<qlex_t> m_lex;
+  std::unique_ptr<NCCLexer> m_lex;
 
 public:
   qlex(std::istream &fp, const char *filename,
        std::shared_ptr<ncc::core::Environment> env) {
-    m_lex = std::make_unique<qlex_t>(fp, filename, env);
+    m_lex = std::make_unique<NCCLexer>(fp, filename, env);
   }
   ~qlex() = default;
 
-  qlex_t *get() {
+  NCCLexer *get() {
     qcore_assert(m_lex != nullptr);
     return m_lex.get();
   }

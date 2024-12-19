@@ -76,7 +76,7 @@ static std::string_view rtrim(std::string_view s) {
   return s;
 }
 
-bool qprep_impl_t::run_defer_callbacks(qlex_tok_t last) {
+bool qprep_impl_t::run_defer_callbacks(NCCToken last) {
   /**
    * @brief We do it this way because the callback could potentially modify the
    * `defer_callbacks` vector, which would invalidate the iterator.
@@ -147,8 +147,8 @@ void qprep_impl_t::expand_raw(std::string_view code) {
     clone->m_core->m_depth = m_core->m_depth + 1;
     clone->m_flags = m_flags;
 
-    qlex_tok_t tok;
-    std::vector<qlex_tok_t> tokens;
+    NCCToken tok;
+    std::vector<NCCToken> tokens;
     while ((tok = (clone->next())).ty != qEofF) {
       tokens.push_back(tok);
     }
@@ -182,10 +182,10 @@ public:
   bool should_stop() { return m_depth >= MAX_RECURSION_DEPTH; }
 };
 
-CPP_EXPORT qlex_tok_t qprep_impl_t::next_impl() {
+CPP_EXPORT NCCToken qprep_impl_t::next_impl() {
 func_entry:  // do tail call optimization manually
 
-  qlex_tok_t x{};
+  NCCToken x{};
 
   try {
     RecursiveGuard guard(m_core->m_depth);
@@ -198,7 +198,7 @@ func_entry:  // do tail call optimization manually
       x = m_core->buffer.front();
       m_core->buffer.pop_front();
     } else {
-      x = qlex_t::next_impl();
+      x = NCCLexer::next_impl();
     }
 
     if (m_core->m_do_expanse) {
@@ -340,7 +340,7 @@ void qprep_impl_t::install_lua_api() {
 qprep_impl_t::qprep_impl_t(std::istream &file,
                            std::shared_ptr<ncc::core::Environment> env,
                            const char *filename, bool is_root)
-    : qlex_t(file, filename, env) {
+    : NCCLexer(file, filename, env) {
   m_core = std::make_shared<Core>();
 
   if (is_root) {
@@ -383,7 +383,7 @@ CPP_EXPORT qprep_impl_t::~qprep_impl_t() {}
 
 ///=============================================================================
 
-CPP_EXPORT qlex_t *qprep_new(std::istream &file, const char *filename,
-                             std::shared_ptr<ncc::core::Environment> env) {
+CPP_EXPORT NCCLexer *qprep_new(std::istream &file, const char *filename,
+                               std::shared_ptr<ncc::core::Environment> env) {
   return new qprep_impl_t(file, env, filename);
 }

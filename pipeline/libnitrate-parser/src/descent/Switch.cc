@@ -45,7 +45,7 @@ Stmt *Parser::recurse_switch_case_body() {
 
 std::pair<CaseStmt *, bool> Parser::recurse_switch_case() {
   let cond =
-      recurse_expr({qlex_tok_t(qOper, qOpArrow), qlex_tok_t(qPunc, qPuncLCur)});
+      recurse_expr({NCCToken(qOper, qOpArrow), NCCToken(qPunc, qPuncLCur)});
 
   let body = recurse_switch_case_body();
 
@@ -91,7 +91,7 @@ Parser::recurse_switch_body() {
 }
 
 Stmt *Parser::recurse_switch() {
-  let switch_cond = recurse_expr({qlex_tok_t(qPunc, qPuncLCur)});
+  let switch_cond = recurse_expr({NCCToken(qPunc, qPuncLCur)});
 
   if (next_if(qPuncLCur)) {
     if (auto body_opt = recurse_switch_body()) {

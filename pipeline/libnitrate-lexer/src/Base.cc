@@ -48,26 +48,26 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <utility>
 
-CPP_EXPORT void qlex_set_flags(qlex_t *obj, qlex_flags_t flags) {
+CPP_EXPORT void qlex_set_flags(NCCLexer *obj, qlex_flags_t flags) {
   obj->m_flags = flags;
 }
 
-CPP_EXPORT qlex_flags_t qlex_get_flags(qlex_t *obj) { return obj->flags(); }
+CPP_EXPORT qlex_flags_t qlex_get_flags(NCCLexer *obj) { return obj->flags(); }
 
-CPP_EXPORT void qlex_insert(qlex_t *obj, qlex_tok_t tok) {
+CPP_EXPORT void qlex_insert(NCCLexer *obj, NCCToken tok) {
   obj->push_impl(&tok);
 }
 
-CPP_EXPORT uint32_t qlex_end(qlex_t *L, qlex_tok_t tok) {
+CPP_EXPORT uint32_t qlex_end(NCCLexer *L, NCCToken tok) {
   /// TODO: Implement this function
   return UINT32_MAX;
 }
 
-CPP_EXPORT const char *qlex_filename(qlex_t *obj) {
+CPP_EXPORT const char *qlex_filename(NCCLexer *obj) {
   return obj->filename().c_str();
 }
 
-CPP_EXPORT uint32_t qlex_line(qlex_t *obj, uint32_t loc) {
+CPP_EXPORT uint32_t qlex_line(NCCLexer *obj, uint32_t loc) {
   try {
     auto r = obj->loc2rowcol(loc);
     if (!r) {
@@ -80,7 +80,7 @@ CPP_EXPORT uint32_t qlex_line(qlex_t *obj, uint32_t loc) {
   }
 }
 
-CPP_EXPORT uint32_t qlex_col(qlex_t *obj, uint32_t loc) {
+CPP_EXPORT uint32_t qlex_col(NCCLexer *obj, uint32_t loc) {
   try {
     auto r = obj->loc2rowcol(loc);
     if (!r) {
@@ -93,7 +93,7 @@ CPP_EXPORT uint32_t qlex_col(qlex_t *obj, uint32_t loc) {
   }
 }
 
-CPP_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, uint32_t *offset) {
+CPP_EXPORT char *qlex_snippet(NCCLexer *obj, NCCToken tok, uint32_t *offset) {
   try {
 #define SNIPPET_SIZE 100
 
@@ -174,7 +174,7 @@ CPP_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, uint32_t *offset) {
 
 ///============================================================================///
 
-CPP_EXPORT std::optional<std::pair<uint32_t, uint32_t>> qlex_t::loc2rowcol(
+CPP_EXPORT std::optional<std::pair<uint32_t, uint32_t>> NCCLexer::loc2rowcol(
     uint32_t loc) {
   if (m_off2rc.left.find(loc) == m_off2rc.left.end()) [[unlikely]] {
     return std::nullopt;
@@ -183,13 +183,13 @@ CPP_EXPORT std::optional<std::pair<uint32_t, uint32_t>> qlex_t::loc2rowcol(
   return m_off2rc.left.at(loc);
 }
 
-CPP_EXPORT uint32_t qlex_t::save_loc(uint32_t row, uint32_t col,
-                                     uint32_t offset) {
+CPP_EXPORT uint32_t NCCLexer::save_loc(uint32_t row, uint32_t col,
+                                       uint32_t offset) {
   m_off2rc.insert({offset, {row, col}});
   return offset;
 }
 
-CPP_EXPORT uint32_t qlex_t::cur_loc() {
+CPP_EXPORT uint32_t NCCLexer::cur_loc() {
   return save_loc(m_row, m_col, m_offset);
 }
 
@@ -197,7 +197,7 @@ CPP_EXPORT uint32_t qlex_t::cur_loc() {
 
 class GetCExcept {};
 
-char qlex_t::getc() {
+char NCCLexer::getc() {
   /* Refill the buffer if necessary */
   if (m_getc_pos == GETC_BUFFER_SIZE) [[unlikely]] {
     m_file.read(m_getc_buf.data(), GETC_BUFFER_SIZE);
@@ -225,8 +225,8 @@ char qlex_t::getc() {
   return m_last_ch = m_getc_buf[m_getc_pos++];
 }
 
-qlex_tok_t qlex_t::step_buffer() {
-  qlex_tok_t tok;
+NCCToken NCCLexer::step_buffer() {
+  NCCToken tok;
 
   if (m_tok_buf.empty()) {
     try {
@@ -241,8 +241,8 @@ qlex_tok_t qlex_t::step_buffer() {
   return tok;
 }
 
-CPP_EXPORT qlex_tok_t qlex_t::next() {
-  qlex_tok_t tok;
+CPP_EXPORT NCCToken NCCLexer::next() {
+  NCCToken tok;
 
   if (m_next_tok.has_value()) {
     tok = m_next_tok.value();
@@ -258,7 +258,7 @@ CPP_EXPORT qlex_tok_t qlex_t::next() {
   return tok;
 }
 
-CPP_EXPORT qlex_tok_t qlex_t::peek() {
+CPP_EXPORT NCCToken NCCLexer::peek() {
   if (m_next_tok.has_value()) {
     m_current_tok = m_next_tok;
     return m_next_tok.value();
@@ -268,13 +268,13 @@ CPP_EXPORT qlex_tok_t qlex_t::peek() {
   return m_current_tok.value();
 }
 
-CPP_EXPORT qlex_tok_t qlex_t::current() {
-  return m_current_tok.value_or(qlex_tok_t());
+CPP_EXPORT NCCToken NCCLexer::current() {
+  return m_current_tok.value_or(NCCToken());
 }
 
 ///============================================================================///
 
-CPP_EXPORT void qlex_t::push_impl(const qlex_tok_t *tok) {
+CPP_EXPORT void NCCLexer::push_impl(const NCCToken *tok) {
   m_tok_buf.push_front(*tok);
   m_next_tok.reset();
 }

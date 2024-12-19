@@ -116,7 +116,7 @@ void do_documentColor(const lsp::RequestMessage& req,
 
   auto env = std::make_shared<ncc::core::Environment>();
   qlex lexer(ss, uri.c_str(), env);
-  qlex_tok_t tok;
+  NCCToken tok;
   std::vector<ColorInformation> colors;
 
   while ((tok = (lexer.get()->next())).ty != qEofF) {

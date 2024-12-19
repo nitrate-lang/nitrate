@@ -42,7 +42,7 @@ Expr *Parser::recurse_while_cond() {
     return make<ConstBool>(true);
   } else {
     return recurse_expr(
-        {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
+        {NCCToken(qPunc, qPuncLCur), NCCToken(qOper, qOpArrow)});
   }
 }
 

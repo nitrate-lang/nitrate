@@ -40,8 +40,8 @@
 #include <nitrate-seq/Classes.hh>
 #include <unordered_set>
 
-extern bool impl_use_msgpack(qlex_t *L, std::ostream &O);
-extern bool impl_use_json(qlex_t *L, std::ostream &O);
+extern bool impl_use_msgpack(NCCLexer *L, std::ostream &O);
+extern bool impl_use_json(NCCLexer *L, std::ostream &O);
 
 CREATE_TRANSFORM(nit::seq) {
   qprep lexer(source, nullptr, env);

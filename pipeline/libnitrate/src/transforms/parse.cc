@@ -47,13 +47,13 @@
 
 #include "nitrate-core/Environment.hh"
 
-static inline qlex_tok_t eof_tok() {
-  qlex_tok_t tok{};
+static inline NCCToken eof_tok() {
+  NCCToken tok{};
   tok.ty = qEofF;
   return tok;
 }
 
-class DeserializerAdapterLexer final : public qlex_t {
+class DeserializerAdapterLexer final : public NCCLexer {
   static constexpr std::array<uint8_t, 256> valid_ty_id_tab = []() {
     std::array<uint8_t, 256> tab = {};
     tab.fill(0);
@@ -83,7 +83,7 @@ class DeserializerAdapterLexer final : public qlex_t {
   uint64_t m_ele_count;
   bool m_eof_bit;
 
-  qlex_tok_t next_impl_json() {
+  NCCToken next_impl_json() {
     if (m_eof_bit) [[unlikely]] {
       return eof_tok();
     }
@@ -129,7 +129,7 @@ class DeserializerAdapterLexer final : public qlex_t {
 
     /* Validate the token type */
     if (valid_ty_id_tab[ty]) [[likely]] {
-      qlex_tok_t T;
+      NCCToken T;
 
       qlex_tok_fromstr(this, static_cast<qlex_ty_t>(ty), str, &T);
 
@@ -143,7 +143,7 @@ class DeserializerAdapterLexer final : public qlex_t {
     return eof_tok();
   }
 
-  qlex_tok_t next_impl_msgpack() {
+  NCCToken next_impl_msgpack() {
     if (m_eof_bit || !m_ele_count) [[unlikely]] {
       return eof_tok();
     }
@@ -180,7 +180,7 @@ class DeserializerAdapterLexer final : public qlex_t {
 
     /* Validate the token type */
     if (valid_ty_id_tab[ty]) [[likely]] {
-      qlex_tok_t T;
+      NCCToken T;
 
       qlex_tok_fromstr(this, static_cast<qlex_ty_t>(ty), str, &T);
 
@@ -194,7 +194,7 @@ class DeserializerAdapterLexer final : public qlex_t {
     return eof_tok();
   }
 
-  virtual qlex_tok_t next_impl() override {
+  virtual NCCToken next_impl() override {
     switch (m_mode) {
       case InMode::JSON: {
         return next_impl_json();
@@ -211,7 +211,7 @@ class DeserializerAdapterLexer final : public qlex_t {
 public:
   DeserializerAdapterLexer(std::istream &file, const char *filename,
                            std::shared_ptr<ncc::core::Environment> env)
-      : qlex_t(file, filename, env) {
+      : NCCLexer(file, filename, env) {
     int ch = file.get();
 
     m_mode = InMode::BadCodec;

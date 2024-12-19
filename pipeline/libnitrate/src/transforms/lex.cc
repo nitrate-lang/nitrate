@@ -41,10 +41,10 @@
 #include <string_view>
 #include <unordered_set>
 
-bool impl_use_json(qlex_t *L, std::ostream &O) {
+bool impl_use_json(NCCLexer *L, std::ostream &O) {
   O << "[";
 
-  qlex_tok_t tok;
+  NCCToken tok;
   while ((tok = (L->next())).ty != qEofF) {
     uint32_t sl = qlex_line(L, tok.start);
     uint32_t sc = qlex_col(L, tok.start);
@@ -160,7 +160,7 @@ static void msgpack_write_tok(std::ostream &O, uint8_t type,
   msgpack_write_uint(O, ec);
 }
 
-bool impl_use_msgpack(qlex_t *L, std::ostream &O) {
+bool impl_use_msgpack(NCCLexer *L, std::ostream &O) {
   size_t num_entries = 0;
 
   O.put(0xdd);
@@ -175,7 +175,7 @@ bool impl_use_msgpack(qlex_t *L, std::ostream &O) {
   O.put(0);
   O.put(0);
 
-  qlex_tok_t tok;
+  NCCToken tok;
   while ((tok = (L->next())).ty != qEofF) {
     uint32_t sl = qlex_line(L, tok.start);
     uint32_t sc = qlex_col(L, tok.start);

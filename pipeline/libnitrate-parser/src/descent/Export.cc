@@ -59,7 +59,7 @@ std::optional<ExpressionList> Parser::recurse_export_attributes() {
       }
 
       let attribute = recurse_expr(
-          {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRBrk)});
+          {NCCToken(qPunc, qPuncComa), NCCToken(qPunc, qPuncRBrk)});
 
       attributes.push_back(attribute);
 

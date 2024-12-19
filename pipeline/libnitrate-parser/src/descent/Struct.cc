@@ -54,8 +54,8 @@ ExpressionList Parser::recurse_struct_attributes() {
       break;
     }
 
-    let attribute = recurse_expr(
-        {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRBrk)});
+    let attribute =
+        recurse_expr({NCCToken(qPunc, qPuncComa), NCCToken(qPunc, qPuncRBrk)});
 
     attributes.push_back(attribute);
 
@@ -95,8 +95,8 @@ std::optional<Expr *> Parser::recurse_struct_field_default_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
 
-        {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
-         qlex_tok_t(qPunc, qPuncRCur)});
+        {NCCToken(qPunc, qPuncComa), NCCToken(qPunc, qPuncSemi),
+         NCCToken(qPunc, qPuncRCur)});
   } else {
     return std::nullopt;
   }

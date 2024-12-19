@@ -60,7 +60,7 @@ int qcall::sys_defer(lua_State* L) {
     return luaL_error(L, "sys_defer: failed to store callback in registry");
   }
 
-  DeferCallback cb = [L, id](qprep_impl_t* obj, qlex_tok_t tok) -> DeferOp {
+  DeferCallback cb = [L, id](qprep_impl_t* obj, NCCToken tok) -> DeferOp {
     lua_rawgeti(L, LUA_REGISTRYINDEX, id); /* Get the function */
 
     { /* Push the function arguments */

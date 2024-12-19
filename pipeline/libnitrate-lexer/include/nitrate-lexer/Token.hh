@@ -170,13 +170,13 @@ typedef enum qlex_key_t {
   qKFalse,     /* 'false' */
 } __attribute__((packed)) qlex_key_t;
 
-struct qlex_t;
-struct qlex_tok_t;
+struct NCCLexer;
+struct NCCToken;
 
-const char *qlex_str(struct qlex_t *lexer, const struct qlex_tok_t *tok,
+const char *qlex_str(struct NCCLexer *lexer, const struct NCCToken *tok,
                      size_t *len);
 
-typedef struct __attribute__((packed)) qlex_tok_t {
+typedef struct __attribute__((packed)) NCCToken {
   uint32_t start;
 
   qlex_ty_t ty : 4;
@@ -189,23 +189,23 @@ typedef struct __attribute__((packed)) qlex_tok_t {
     ncc::core::str_alias str_idx;
   } __attribute__((packed)) v;
 
-  constexpr qlex_tok_t() : start(0), ty(qEofF), v{.op = qOpPlus} {}
+  constexpr NCCToken() : start(0), ty(qEofF), v{.op = qOpPlus} {}
 
-  constexpr qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, uint32_t loc_beg = 0)
+  constexpr NCCToken(qlex_ty_t ty, qlex_punc_t punc, uint32_t loc_beg = 0)
       : start(loc_beg), ty(ty), v{.punc = punc} {}
 
-  constexpr qlex_tok_t(qlex_ty_t ty, qlex_op_t op, uint32_t loc_beg = 0)
+  constexpr NCCToken(qlex_ty_t ty, qlex_op_t op, uint32_t loc_beg = 0)
       : start(loc_beg), ty(ty), v{.op = op} {}
 
-  constexpr qlex_tok_t(qlex_ty_t ty, qlex_key_t key, uint32_t loc_beg = 0)
+  constexpr NCCToken(qlex_ty_t ty, qlex_key_t key, uint32_t loc_beg = 0)
       : start(loc_beg), ty(ty), v{.key = key} {}
 
-  constexpr qlex_tok_t(qlex_ty_t ty, ncc::core::str_alias str_idx,
-                       uint32_t loc_beg = 0)
+  constexpr NCCToken(qlex_ty_t ty, ncc::core::str_alias str_idx,
+                     uint32_t loc_beg = 0)
       : start(loc_beg), ty(ty), v{.str_idx = str_idx} {}
 
-  constexpr static qlex_tok_t eof(uint32_t loc_start) {
-    return qlex_tok_t(qEofF, qOpPlus, loc_start);
+  constexpr static NCCToken eof(uint32_t loc_start) {
+    return NCCToken(qEofF, qOpPlus, loc_start);
   }
 
   template <typename T>
@@ -223,7 +223,7 @@ typedef struct __attribute__((packed)) qlex_tok_t {
 
   constexpr bool is(qlex_ty_t val) const { return ty == val; }
 
-  constexpr bool operator==(const qlex_tok_t &rhs) const {
+  constexpr bool operator==(const NCCToken &rhs) const {
     if (ty != rhs.ty) return false;
     switch (ty) {
       case qEofF:
@@ -256,14 +256,14 @@ typedef struct __attribute__((packed)) qlex_tok_t {
     }
   }
 
-  inline std::string_view as_string(qlex_t *lexer) const {
+  inline std::string_view as_string(NCCLexer *lexer) const {
     size_t len;
     const char *s = qlex_str(lexer, this, &len);
 
     return std::string_view(s, len);
   }
 
-  constexpr bool operator<(const qlex_tok_t &rhs) const {
+  constexpr bool operator<(const NCCToken &rhs) const {
     if (ty != rhs.ty) return ty < rhs.ty;
     switch (ty) {
       case qEofF:
@@ -285,9 +285,9 @@ typedef struct __attribute__((packed)) qlex_tok_t {
     }
   }
 
-} qlex_tok_t;
+} NCCToken;
 
-#define QLEX_TOK_SIZE (sizeof(qlex_tok_t))
+#define QLEX_TOK_SIZE (sizeof(NCCToken))
 
 #define QLEX_EOFF (UINT32_MAX)
 #define QLEX_NOFILE (16777215)

@@ -46,8 +46,8 @@
 
 using namespace ncc::parse;
 
-CallArgs Parser::recurse_caller_arguments(qlex_tok_t terminator, size_t depth) {
-  qlex_tok_t tok, ident;
+CallArgs Parser::recurse_caller_arguments(NCCToken terminator, size_t depth) {
+  NCCToken tok, ident;
   CallArgs call_args;
   size_t pos_arg_count = 0;
 
@@ -81,7 +81,7 @@ CallArgs Parser::recurse_caller_arguments(qlex_tok_t terminator, size_t depth) {
       next();
 
       Expr *arg =
-          recurse_expr({qlex_tok_t(qPunc, qPuncComa), terminator}, depth + 1);
+          recurse_expr({NCCToken(qPunc, qPuncComa), terminator}, depth + 1);
 
       call_args.push_back({SaveString(ident.as_string(&rd)), arg});
       goto comma;
@@ -89,7 +89,7 @@ CallArgs Parser::recurse_caller_arguments(qlex_tok_t terminator, size_t depth) {
 
   parse_pos_arg: {
     Expr *arg =
-        recurse_expr({qlex_tok_t(qPunc, qPuncComa), terminator}, depth + 1);
+        recurse_expr({NCCToken(qPunc, qPuncComa), terminator}, depth + 1);
 
     call_args.push_back({SaveString(std::to_string(pos_arg_count++)), arg});
 
@@ -109,7 +109,7 @@ CallArgs Parser::recurse_caller_arguments(qlex_tok_t terminator, size_t depth) {
 }
 
 Call *Parser::recurse_function_call(Expr *callee, size_t depth) {
-  auto args = recurse_caller_arguments(qlex_tok_t(qPunc, qPuncRPar), depth);
+  auto args = recurse_caller_arguments(NCCToken(qPunc, qPuncRPar), depth);
   if (!next_if(qPuncRPar)) {
     diagnostic << current() << "Expected ')' to close the function call";
     return nullptr;
@@ -123,7 +123,7 @@ bool Parser::recurse_fstring(FString **node, size_t depth) {
    * @return true if it is okay to proceed, false otherwise
    */
 
-  qlex_tok_t tok = next();
+  NCCToken tok = next();
   if (!tok.is(qText)) {
     diagnostic << tok << "Expected a string literal in F-string expression";
   }
@@ -151,11 +151,11 @@ bool Parser::recurse_fstring(FString **node, size_t depth) {
 
       std::istringstream ss(sub);
 
-      qlex_t subrd = qlex_t(ss, "fstring", m_env);
+      NCCLexer subrd = NCCLexer(ss, "fstring", m_env);
 
       /// TODO: Fstring is broken
 
-      expr = recurse_expr({qlex_tok_t(qPunc, qPuncRCur)}, depth + 1);
+      expr = recurse_expr({NCCToken(qPunc, qPuncRCur)}, depth + 1);
 
       if (!tmp.empty()) {
         items.push_back(SaveString(std::move(tmp)));
@@ -191,7 +191,7 @@ bool Parser::recurse_fstring(FString **node, size_t depth) {
 /// TODO: qlex_op_t precedence
 /// TODO: qlex_op_t associativity
 
-Expr *Parser::recurse_expr(std::set<qlex_tok_t> terminators, size_t depth) {
+Expr *Parser::recurse_expr(std::set<NCCToken> terminators, size_t depth) {
   if (depth > MAX_EXPR_DEPTH) {
     diagnostic
         << peek()
@@ -204,7 +204,7 @@ Expr *Parser::recurse_expr(std::set<qlex_tok_t> terminators, size_t depth) {
   std::stack<Expr *> stack;
 
   while (true) {
-    qlex_tok_t tok = peek();
+    NCCToken tok = peek();
 
     if (tok.is(qEofF)) {
       // diagnostic << tok << "Unexpected end of file while parsing expression";
@@ -372,7 +372,7 @@ Expr *Parser::recurse_expr(std::set<qlex_tok_t> terminators, size_t depth) {
 
             Expr *expr = nullptr;
             auto terminators_copy = terminators;
-            terminators_copy.insert(qlex_tok_t(qPunc, qPuncRPar));
+            terminators_copy.insert(NCCToken(qPunc, qPuncRPar));
             expr = recurse_expr(terminators_copy, depth + 1);
 
             if (!next().is<qPuncRPar>()) {
@@ -401,7 +401,7 @@ Expr *Parser::recurse_expr(std::set<qlex_tok_t> terminators, size_t depth) {
               }
 
               Expr *key = nullptr, *value = nullptr;
-              key = recurse_expr({qlex_tok_t(qPunc, qPuncColn)}, depth + 1);
+              key = recurse_expr({NCCToken(qPunc, qPuncColn)}, depth + 1);
 
               tok = next();
               if (!tok.is<qPuncColn>()) {
@@ -411,7 +411,7 @@ Expr *Parser::recurse_expr(std::set<qlex_tok_t> terminators, size_t depth) {
 
               value = recurse_expr(
 
-                  {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},
+                  {NCCToken(qPunc, qPuncComa), NCCToken(qPunc, qPuncRCur)},
                   depth + 1);
 
               elements.push_back(make<Assoc>(key, value));
@@ -443,17 +443,17 @@ Expr *Parser::recurse_expr(std::set<qlex_tok_t> terminators, size_t depth) {
 
                 Expr *element = recurse_expr(
 
-                    {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
-                     qlex_tok_t(qPunc, qPuncRBrk)},
+                    {NCCToken(qPunc, qPuncComa), NCCToken(qPunc, qPuncSemi),
+                     NCCToken(qPunc, qPuncRBrk)},
                     depth + 1);
 
                 tok = peek();
                 if (tok.is<qPuncSemi>()) {
                   next();
 
-                  Expr *count = recurse_expr({qlex_tok_t(qPunc, qPuncRBrk),
-                                              qlex_tok_t(qPunc, qPuncComa)},
-                                             depth + 1);
+                  Expr *count = recurse_expr(
+                      {NCCToken(qPunc, qPuncRBrk), NCCToken(qPunc, qPuncComa)},
+                      depth + 1);
 
                   if (!count->is<ConstInt>()) {
                     diagnostic << tok
@@ -498,13 +498,12 @@ Expr *Parser::recurse_expr(std::set<qlex_tok_t> terminators, size_t depth) {
 
             index = recurse_expr(
 
-                {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncColn)},
+                {NCCToken(qPunc, qPuncRBrk), NCCToken(qPunc, qPuncColn)},
                 depth + 1);
 
             tok = next();
             if (tok.is<qPuncColn>()) {
-              Expr *end =
-                  recurse_expr({qlex_tok_t(qPunc, qPuncRBrk)}, depth + 1);
+              Expr *end = recurse_expr({NCCToken(qPunc, qPuncRBrk)}, depth + 1);
 
               tok = next();
               if (!tok.is<qPuncRBrk>()) {

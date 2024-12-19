@@ -45,7 +45,7 @@
 #include <nitrate-lexer/Token.hh>
 #include <optional>
 
-struct __attribute__((visibility("default"))) qlex_t {
+struct __attribute__((visibility("default"))) NCCLexer {
 private:
   static constexpr uint32_t GETC_BUFFER_SIZE = 256;
 
@@ -66,10 +66,10 @@ private:
   uint32_t m_getc_pos;
   std::array<char, GETC_BUFFER_SIZE> m_getc_buf;
 
-  std::deque<qlex_tok_t> m_tok_buf;
+  std::deque<NCCToken> m_tok_buf;
   std::deque<char> m_pushback;
 
-  std::optional<qlex_tok_t> m_next_tok, m_current_tok;
+  std::optional<NCCToken> m_next_tok, m_current_tok;
 
   uint32_t m_row;
   uint32_t m_col;
@@ -84,13 +84,13 @@ public:
   qlex_flags_t m_flags;
   std::shared_ptr<ncc::core::Environment> m_env;
 
-  qlex_tok_t step_buffer();
+  NCCToken step_buffer();
   void reset_automata();
   char getc();
 
   ///============================================================================///
 
-  virtual qlex_tok_t next_impl();
+  virtual NCCToken next_impl();
 
   virtual std::optional<std::pair<uint32_t, uint32_t>> loc2rowcol(
       uint32_t offset);
@@ -99,16 +99,16 @@ public:
 
   ///============================================================================///
 
-  qlex_tok_t next();
-  qlex_tok_t peek();
-  qlex_tok_t current();
+  NCCToken next();
+  NCCToken peek();
+  NCCToken current();
 
-  void push_impl(const qlex_tok_t *tok);
+  void push_impl(const NCCToken *tok);
 
   ///============================================================================///
 
-  qlex_t(std::istream &file, const char *filename,
-         std::shared_ptr<ncc::core::Environment> env)
+  NCCLexer(std::istream &file, const char *filename,
+           std::shared_ptr<ncc::core::Environment> env)
       : m_getc_pos(GETC_BUFFER_SIZE),
         m_next_tok({}),
         m_current_tok({}),
@@ -120,7 +120,7 @@ public:
         m_file(file),
         m_flags(0),
         m_env(env) {}
-  virtual ~qlex_t() {}
+  virtual ~NCCLexer() {}
 
   const std::string &filename() const { return m_filename; }
   qlex_flags_t flags() const { return m_flags; }

@@ -51,7 +51,7 @@ public:
   }
   ~qprep() = default;
 
-  qlex_t *get() {
+  NCCLexer *get() {
     qcore_assert(m_lex != nullptr);
     return m_lex.get();
   }

@@ -60,7 +60,7 @@ namespace ncc::parse {
   class Parser final : public boost::enable_shared_from_this<Parser> {
     std::shared_ptr<ncc::core::Environment> m_env;
     std::unique_ptr<ncc::core::IMemory> m_allocator; /* The Main allocator */
-    qlex_t &rd;                                      /* Polymporphic lexer */
+    NCCLexer &rd;                                    /* Polymporphic lexer */
     bool m_failed; /* Whether the parser failed (ie syntax errors) */
 
     /****************************************************************************
@@ -88,7 +88,7 @@ namespace ncc::parse {
     Stmt *recurse_inline_asm();
     Stmt *recurse_block(bool expect_braces, bool single_stmt,
                         SafetyMode safety);
-    Expr *recurse_expr(std::set<qlex_tok_t> terminators, size_t depth = 0);
+    Expr *recurse_expr(std::set<NCCToken> terminators, size_t depth = 0);
 
     /****************************************************************************
      * @brief
@@ -105,7 +105,7 @@ namespace ncc::parse {
     std::optional<ExpressionList> recurse_export_attributes();
     Stmt *recurse_export_body();
 
-    CallArgs recurse_caller_arguments(qlex_tok_t terminator, size_t depth);
+    CallArgs recurse_caller_arguments(NCCToken terminator, size_t depth);
     Call *recurse_function_call(Expr *callee, size_t depth);
     bool recurse_fstring(FString **node, size_t depth);
 
@@ -126,7 +126,7 @@ namespace ncc::parse {
     FuncParams recurse_function_parameters();
     std::optional<Stmt *> recurse_function_body(bool restrict_decl_only);
     Type *recurse_function_return_type();
-    FuncPurity get_purity_specifier(qlex_tok_t &start_pos, bool is_thread_safe,
+    FuncPurity get_purity_specifier(NCCToken &start_pos, bool is_thread_safe,
                                     bool is_pure, bool is_impure, bool is_quasi,
                                     bool is_retro);
     std::optional<std::pair<std::string_view, bool>> recurse_function_capture();
@@ -181,11 +181,11 @@ namespace ncc::parse {
     Expr *recurse_while_cond();
     Stmt *recurse_while_body();
 
-    Parser(qlex_t *lexer, std::shared_ptr<ncc::core::Environment> env);
+    Parser(NCCLexer *lexer, std::shared_ptr<ncc::core::Environment> env);
 
   public:
     static boost::shared_ptr<Parser> Create(
-        qlex_t *lexer, std::shared_ptr<ncc::core::Environment> env) {
+        NCCLexer *lexer, std::shared_ptr<ncc::core::Environment> env) {
       return boost::shared_ptr<Parser>(new Parser(lexer, env));
     }
 
@@ -194,9 +194,9 @@ namespace ncc::parse {
     ASTRoot parse();
 
     void SetFailBit() { m_failed = true; }
-    qlex_t &GetLexer() { return rd; }
+    NCCLexer &GetLexer() { return rd; }
 
-    static ASTRoot FromLexer(qlex_t *lexer,
+    static ASTRoot FromLexer(NCCLexer *lexer,
                              std::shared_ptr<ncc::core::Environment> env);
 
     static ASTRoot FromString(std::string_view str,

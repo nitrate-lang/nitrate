@@ -56,7 +56,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
   BlockItems items;
 
   while (true) {
-    qlex_tok_t tok = peek();
+    NCCToken tok = peek();
 
     if (expect_braces && next_if(qPuncRCur)) {
       let block = make<Block>(items, safety);
@@ -79,7 +79,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
     }
 
     if (!tok.is(qKeyW)) {
-      let expr = recurse_expr({qlex_tok_t(qPunc, qPuncSemi)});
+      let expr = recurse_expr({NCCToken(qPunc, qPuncSemi)});
 
       if (!next_if(qPuncSemi)) {
         diagnostic << tok << "Expected ';' after expression";
@@ -358,7 +358,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
   return block;
 }
 
-CPP_EXPORT Parser::Parser(qlex_t *lexer,
+CPP_EXPORT Parser::Parser(NCCLexer *lexer,
                           std::shared_ptr<ncc::core::Environment> env)
     : rd(*lexer) {
   m_env = env;
@@ -400,7 +400,7 @@ CPP_EXPORT bool ASTRoot::check() const {
   return !failed;
 }
 
-std::string ncc::parse::mint_clang16_message(qlex_t &rd,
+std::string ncc::parse::mint_clang16_message(NCCLexer &rd,
                                              const DiagMessage &msg) {
   std::stringstream ss;
   ss << "\x1b[37;1m" << qlex_filename(&rd) << ":";

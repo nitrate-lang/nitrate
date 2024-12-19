@@ -66,18 +66,18 @@ namespace ncc::lex {
 
   class IScanner {
   protected:
-    qlex_tok_t m_current;
+    NCCToken m_current;
     std::string_view m_filename;
     uint32_t m_line, m_column, m_offset;
 
   public:
     virtual ~IScanner() = default;
 
-    virtual qlex_tok_t Next() = 0;
-    virtual qlex_tok_t Peek() = 0;
+    virtual NCCToken Next() = 0;
+    virtual NCCToken Peek() = 0;
     virtual void Undo() = 0;
 
-    constexpr qlex_tok_t Current() const { return m_current; }
+    constexpr NCCToken Current() const { return m_current; }
 
     constexpr std::string_view GetCurrentFilename() const { return m_filename; }
     constexpr uint32_t GetCurrentLine() const { return m_line; }
@@ -91,7 +91,7 @@ namespace ncc::lex {
     std::shared_ptr<ISourceFile> m_source_file;
     std::shared_ptr<core::Environment> m_env;
 
-    std::queue<qlex_tok_t> m_token_buffer;
+    std::queue<NCCToken> m_token_buffer;
 
     void refill_buffer();
 
@@ -100,13 +100,13 @@ namespace ncc::lex {
               std::shared_ptr<core::Environment> env);
     virtual ~Tokenizer() override;
 
-    qlex_tok_t Next() override;
-    qlex_tok_t Peek() override;
+    NCCToken Next() override;
+    NCCToken Peek() override;
     void Undo() override;
   };
 
   std::ostream &operator<<(std::ostream &os, qlex_ty_t ty);
-  std::ostream &operator<<(std::ostream &os, qlex_tok_t tok);
+  std::ostream &operator<<(std::ostream &os, NCCToken tok);
   std::ostream &operator<<(std::ostream &os, qlex_op_t op);
   std::ostream &operator<<(std::ostream &os, qlex_key_t kw);
   std::ostream &operator<<(std::ostream &os, qlex_punc_t punct);
@@ -114,26 +114,26 @@ namespace ncc::lex {
 
 ///============================================================================///
 
-typedef struct qlex_t qlex_t;
+typedef struct NCCLexer NCCLexer;
 
 #define QLEX_FLAG_NONE 0
 #define QLEX_NO_COMMENTS 0x01
 
 typedef uint32_t qlex_flags_t;
 
-void qlex_set_flags(qlex_t *lexer, qlex_flags_t flags);
-qlex_flags_t qlex_get_flags(qlex_t *lexer);
+void qlex_set_flags(NCCLexer *lexer, qlex_flags_t flags);
+qlex_flags_t qlex_get_flags(NCCLexer *lexer);
 
-void qlex_insert(qlex_t *lexer, qlex_tok_t tok);
+void qlex_insert(NCCLexer *lexer, NCCToken tok);
 
-static inline uint32_t qlex_begin(const qlex_tok_t *tok) { return tok->start; }
-uint32_t qlex_end(qlex_t *L, qlex_tok_t tok);
+static inline uint32_t qlex_begin(const NCCToken *tok) { return tok->start; }
+uint32_t qlex_end(NCCLexer *L, NCCToken tok);
 
-const char *qlex_filename(qlex_t *lexer);
-uint32_t qlex_line(qlex_t *lexer, uint32_t loc);
-uint32_t qlex_col(qlex_t *lexer, uint32_t loc);
+const char *qlex_filename(NCCLexer *lexer);
+uint32_t qlex_line(NCCLexer *lexer, uint32_t loc);
+uint32_t qlex_col(NCCLexer *lexer, uint32_t loc);
 
-char *qlex_snippet(qlex_t *lexer, qlex_tok_t loc, uint32_t *offset);
+char *qlex_snippet(NCCLexer *lexer, NCCToken loc, uint32_t *offset);
 
 const char *qlex_ty_str(qlex_ty_t ty);
 
@@ -152,11 +152,11 @@ const char *qlex_ty_str(qlex_ty_t ty);
  * @warning The returned string is NULL-terminated, however, it may contain any
  * bytes within the data including NULL bytes.
  */
-const char *qlex_str(qlex_t *lexer, const qlex_tok_t *tok, size_t *len);
+const char *qlex_str(NCCLexer *lexer, const NCCToken *tok, size_t *len);
 const char *qlex_opstr(qlex_op_t op);
 const char *qlex_kwstr(qlex_key_t kw);
 const char *qlex_punctstr(qlex_punc_t punct);
-void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str,
-                      qlex_tok_t *out);
+void qlex_tok_fromstr(NCCLexer *lexer, qlex_ty_t ty, const char *str,
+                      NCCToken *out);
 
 #endif

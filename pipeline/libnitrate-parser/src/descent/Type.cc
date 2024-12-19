@@ -40,7 +40,7 @@ std::optional<Expr *> Parser::recurse_type_range_start() {
     return std::nullopt;
   }
 
-  let min_value = recurse_expr({qlex_tok_t(qPunc, qPuncColn)});
+  let min_value = recurse_expr({NCCToken(qPunc, qPuncColn)});
 
   if (!next_if(qPuncColn)) {
     diagnostic << current() << "Expected ':' after range start";
@@ -54,7 +54,7 @@ std::optional<Expr *> Parser::recurse_type_range_end() {
     return std::nullopt;
   }
 
-  let max_val = recurse_expr({qlex_tok_t(qPunc, qPuncRBrk)});
+  let max_val = recurse_expr({NCCToken(qPunc, qPuncRBrk)});
 
   if (!next_if(qPuncRBrk)) {
     diagnostic << current() << "Expected ']' after range";
@@ -68,7 +68,7 @@ std::optional<CallArgs> Parser::recurse_type_template_arguments() {
     return std::nullopt;
   }
 
-  auto args = recurse_caller_arguments(qlex_tok_t(qOper, qOpGT), 0);
+  auto args = recurse_caller_arguments(NCCToken(qOper, qOpGT), 0);
 
   if (!next_if(qOpGT)) {
     diagnostic << current() << "Expected '>' after template arguments";
@@ -79,11 +79,11 @@ std::optional<CallArgs> Parser::recurse_type_template_arguments() {
 
 Type *Parser::recurse_type_suffix(Type *base) {
   static let bit_width_terminaters = {
-      qlex_tok_t(qPunc, qPuncRPar), qlex_tok_t(qPunc, qPuncRBrk),
-      qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qPunc, qPuncRCur),
-      qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncColn),
-      qlex_tok_t(qPunc, qPuncSemi), qlex_tok_t(qOper, qOpSet),
-      qlex_tok_t(qOper, qOpMinus),  qlex_tok_t(qOper, qOpGT)};
+      NCCToken(qPunc, qPuncRPar), NCCToken(qPunc, qPuncRBrk),
+      NCCToken(qPunc, qPuncLCur), NCCToken(qPunc, qPuncRCur),
+      NCCToken(qPunc, qPuncComa), NCCToken(qPunc, qPuncColn),
+      NCCToken(qPunc, qPuncSemi), NCCToken(qOper, qOpSet),
+      NCCToken(qOper, qOpMinus),  NCCToken(qOper, qOpGT)};
 
   let template_arguments = recurse_type_template_arguments();
 
@@ -242,7 +242,7 @@ Type *Parser::recurse_array_or_vector() {
                << "Expected ';' separator in array type before size";
   }
 
-  let size = recurse_expr({qlex_tok_t(qPunc, qPuncRBrk)});
+  let size = recurse_expr({NCCToken(qPunc, qPuncRBrk)});
 
   if (!next_if(qPuncRBrk)) {
     diagnostic << current() << "Expected ']' after array size";

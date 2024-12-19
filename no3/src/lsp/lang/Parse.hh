@@ -20,7 +20,7 @@ namespace lang {
     bool from_syncfs(const std::string& uri);
 
     const ncc::parse::Base* root() const { return m_root; }
-    qlex_t* lexer() { return m_lexer.get(); }
+    NCCLexer* lexer() { return m_lexer.get(); }
   };
   using ParseTree = std::shared_ptr<ParseTreeWrapper>;
 
