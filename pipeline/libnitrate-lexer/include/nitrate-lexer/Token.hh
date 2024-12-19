@@ -228,19 +228,6 @@ namespace ncc::lex {
       return TokenBase(qEofF, qOpPlus, _start);
     }
 
-    template <typename T>
-    constexpr T as() const {
-      if constexpr (std::is_same_v<T, qlex_punc_t>) {
-        return v.punc;
-      } else if constexpr (std::is_same_v<T, qlex_key_t>) {
-        return v.key;
-      } else if constexpr (std::is_same_v<T, qlex_op_t>) {
-        return v.op;
-      }
-
-      static_assert(std::is_same_v<T, T>, "Invalid type");
-    }
-
     constexpr bool is(qlex_ty_t val) const { return ty == val; }
 
     constexpr bool operator==(const TokenBase &rhs) const {
@@ -268,11 +255,11 @@ namespace ncc::lex {
     template <auto V>
     constexpr bool is() const {
       if constexpr (std::is_same_v<decltype(V), qlex_key_t>) {
-        return ty == qKeyW && as<qlex_key_t>() == V;
+        return ty == qKeyW && v.key == V;
       } else if constexpr (std::is_same_v<decltype(V), qlex_punc_t>) {
-        return ty == qPunc && as<qlex_punc_t>() == V;
+        return ty == qPunc && v.punc == V;
       } else if constexpr (std::is_same_v<decltype(V), qlex_op_t>) {
-        return ty == qOper && as<qlex_op_t>() == V;
+        return ty == qOper && v.op == V;
       }
     }
 

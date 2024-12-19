@@ -94,7 +94,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
 
     let loc_start = tok.start;
 
-    switch (next(), tok.as<qlex_key_t>()) {
+    switch (next(), tok.v.key) {
       case qKVar: {
         for (let decl : recurse_variable(VarDeclType::Var)) {
           items.push_back(decl);
