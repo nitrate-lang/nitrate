@@ -34,6 +34,7 @@
 #ifndef __NITRATE_LEXER_LEX_HH__
 #define __NITRATE_LEXER_LEX_HH__
 
+#include <boost/bimap.hpp>
 #include <cstdint>
 #include <deque>
 #include <memory>
@@ -62,8 +63,6 @@ namespace ncc::lex {
 
   class IScanner {
     std::optional<Token> m_current, m_last{};
-    std::string_view m_filename = "?";
-    uint32_t m_line{}, m_column{}, m_offset{};
     std::deque<Token> m_ready;
     static constexpr size_t TOKEN_BUFFER_SIZE = 256;
 
@@ -71,12 +70,15 @@ namespace ncc::lex {
     void SyncState(Token tok);
 
   protected:
+    uint32_t m_line{}, m_column{}, m_offset{};
+    std::string_view m_current_filename = "?";
+
     void UpdateLocation(uint32_t line, uint32_t column, uint32_t offset,
                         std::string_view filename) {
       m_line = line;
       m_column = column;
       m_offset = offset;
-      m_filename = filename;
+      m_current_filename = filename;
     }
 
     virtual Token GetNext() = 0;
@@ -90,7 +92,9 @@ namespace ncc::lex {
 
     std::optional<Token> Current() { return m_current; }
 
-    constexpr std::string_view GetCurrentFilename() const { return m_filename; }
+    constexpr std::string_view GetCurrentFilename() const {
+      return m_current_filename;
+    }
     constexpr uint32_t GetCurrentLine() const { return m_line; }
     constexpr uint32_t GetCurrentColumn() const { return m_column; }
     constexpr uint32_t GetCurrentOffset() const { return m_offset; }

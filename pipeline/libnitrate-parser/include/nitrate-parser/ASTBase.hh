@@ -34,6 +34,7 @@
 #ifndef __NITRATE_AST_ASTBASE_H__
 #define __NITRATE_AST_ASTBASE_H__
 
+#include <array>
 #include <iostream>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>

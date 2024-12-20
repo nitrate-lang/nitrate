@@ -47,6 +47,7 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -145,6 +146,15 @@ namespace ncc::lex {
           {"=>", qOpArrow},
           {"?", qOpTernary},
       });
+
+  static const std::unordered_set<std::string_view> operator_set = []() {
+    std::unordered_set<std::string_view> set;
+    set.reserve(operators.left.size());
+    for (const auto &op : operators.left) {
+      set.insert(op.first);
+    }
+    return set;
+  }();
 
   static const boost::bimap<std::string_view, Operator> word_operators =
       make_bimap<std::string_view, Operator>({
@@ -404,16 +414,16 @@ static bool canonicalize_number(std::string &number, std::string &norm,
 void Tokenizer::reset_state() { m_pushback.clear(); }
 
 char Tokenizer::nextc() {
-  if (m_getc_buffer_pos == GETC_BUFFER_SIZE) [[unlikely]] {
+  if (m_getc_buffer_pos == GETC_BUFFER_SIZE) {
     m_file.read(m_getc_buffer.data(), GETC_BUFFER_SIZE);
     auto gcount = m_file.gcount();
 
     // Fill extra buffer with '#' with is a comment character
-    memset(m_getc_buffer.data() + gcount, '#', GETC_BUFFER_SIZE - gcount);
+    memset(m_getc_buffer.data() + gcount, '\n', GETC_BUFFER_SIZE - gcount);
     m_getc_buffer_pos = 0;
 
     if (gcount == 0) [[unlikely]] {
-      if (m_eof) {
+      if (m_eof) [[unlikely]] {
         // Benchmarks show that this is the fastest way to signal EOF
         // for large files.
         throw ScannerEOF();
@@ -424,18 +434,14 @@ char Tokenizer::nextc() {
 
   auto c = m_getc_buffer[m_getc_buffer_pos++];
 
-  auto line = GetCurrentLine(), col = GetCurrentColumn(),
-       offset = GetCurrentOffset();
-  offset += 1;
+  m_offset++;
 
   if (c == '\n') {
-    line++;
-    col = 1;
+    m_line++;
+    m_column = 1;
   } else {
-    col++;
+    m_column++;
   }
-
-  UpdateLocation(line, col, offset, GetCurrentFilename());
 
   return c;
 }
@@ -1071,8 +1077,7 @@ CPP_EXPORT Token Tokenizer::GetNext() {
         bool found = false;
         while (true) {
           bool contains = false;
-          if (std::any_of(operators.begin(), operators.end(),
-                          [&](const auto &pair) { return pair.left == buf; })) {
+          if (operator_set.contains(buf)) {
             contains = true;
             found = true;
           }
