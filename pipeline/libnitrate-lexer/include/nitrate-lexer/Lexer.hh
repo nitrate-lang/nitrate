@@ -101,9 +101,15 @@ namespace ncc::lex {
   };
 
   class CPP_EXPORT Tokenizer final : public IScanner {
+    static constexpr size_t GETC_BUFFER_SIZE = 512;
+
     std::istream &m_file;
     std::shared_ptr<core::Environment> m_env;
     std::deque<char> m_pushback;
+
+    std::array<char, GETC_BUFFER_SIZE> m_getc_buffer;
+    size_t m_getc_buffer_pos = GETC_BUFFER_SIZE;
+    bool m_eof = false;
 
     char nextc();
     void reset_state();
@@ -139,9 +145,6 @@ namespace ncc::lex {
     os << punct_repr(punct);
     return os;
   }
-
-  void qlex_tok_fromstr(IScanner *lexer, TokenType ty, const char *str,
-                        Token *out);
 }  // namespace ncc::lex
 
 #endif

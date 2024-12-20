@@ -143,7 +143,7 @@ Expr *Parser::recurse_fstring(size_t depth) {
       }
 
       std::string sub(fstr.substr(w_beg, w_end - w_beg));
-      auto sub_parser = FromString(sub + "\n", m_env);
+      auto sub_parser = FromString(sub, m_env);
 
       let subnode =
           sub_parser->recurse_expr({Token(qPunc, qPuncRCur)}, depth + 1);

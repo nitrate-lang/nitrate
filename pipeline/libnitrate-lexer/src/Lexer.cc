@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <string.h>
-
 #include <array>
 #include <boost/bimap.hpp>
 #include <boost/unordered_map.hpp>
@@ -55,15 +53,9 @@
 using namespace ncc::core;
 using namespace ncc::lex;
 
-///============================================================================///
-/// BEGIN: LEXICAL GRAMMAR CONSTRAINTS
-#define FLOATING_POINT_PRECISION 100
-/// END:   LEXICAL GRAMMAR CONSTRAINTS
-///============================================================================///
+constexpr size_t FLOATING_POINT_PRECISION = 100;
 
-namespace qlex {
-  ///============================================================================///
-  /// BEGIN: LEXER LOOKUP TABLES
+namespace ncc::lex {
   template <typename L, typename R>
   boost::bimap<L, R> make_bimap(
       std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
@@ -212,13 +204,11 @@ namespace qlex {
 
     return tab;
   }();
-  /// END:   LEXER LOOKUP TABLES
-  ///============================================================================///
-}  // namespace qlex
 
-static bool lex_is_space(uint8_t c) {
-  return qlex::whitespace_table[static_cast<uint8_t>(c)];
-}
+  static bool lex_is_space(uint8_t c) {
+    return whitespace_table[static_cast<uint8_t>(c)];
+  }
+}  // namespace ncc::lex
 
 enum class NumType {
   Decimal,
@@ -228,8 +218,6 @@ enum class NumType {
   Octal,
   Floating,
 };
-
-static thread_local boost::unordered_map<std::string, std::string> can_cache;
 
 ///============================================================================///
 
@@ -300,12 +288,6 @@ static bool canonicalize_float(std::string_view input, std::string &norm) {
 
 static bool canonicalize_number(std::string &number, std::string &norm,
                                 NumType type) {
-  if (can_cache.size() > 4096) {
-    can_cache = {};
-  } else if (can_cache.find(number) != can_cache.end()) {
-    return norm = can_cache[number], true;
-  }
-
   typedef unsigned int uint128_t __attribute__((mode(TI)));
 
   uint128_t x = 0, i = 0;
@@ -407,20 +389,37 @@ static bool canonicalize_number(std::string &number, std::string &norm,
   std::string s = ss.str();
   std::reverse(s.begin(), s.end());
 
-  return can_cache[number] = (norm = s), true;
+  norm = s;
+
+  return true;
 }
 
 void Tokenizer::reset_state() { m_pushback.clear(); }
 
 char Tokenizer::nextc() {
-  auto c = m_file.get();
+  if (m_getc_buffer_pos == GETC_BUFFER_SIZE) [[unlikely]] {
+    m_file.read(m_getc_buffer.data(), GETC_BUFFER_SIZE);
+    auto gcount = m_file.gcount();
 
-  if (m_file.eof()) {
-    throw ScannerEOF();
+    // Fill extra buffer with '#' with is a comment character
+    memset(m_getc_buffer.data() + gcount, '#', GETC_BUFFER_SIZE - gcount);
+    m_getc_buffer_pos = 0;
+
+    if (gcount == 0) [[unlikely]] {
+      if (m_eof) {
+        // Benchmarks show that this is the fastest way to signal EOF
+        // for large files.
+        throw ScannerEOF();
+      }
+      m_eof = true;
+    }
   }
 
-  uint32_t line = GetCurrentLine(), col = GetCurrentColumn(),
-           offset = GetCurrentOffset();
+  auto c = m_getc_buffer[m_getc_buffer_pos++];
+
+  auto line = GetCurrentLine(), col = GetCurrentColumn(),
+       offset = GetCurrentOffset();
+  offset += 1;
 
   if (c == '\n') {
     line++;
@@ -428,8 +427,6 @@ char Tokenizer::nextc() {
   } else {
     col++;
   }
-
-  offset++;
 
   UpdateLocation(line, col, offset, GetCurrentFilename());
 
@@ -464,648 +461,636 @@ CPP_EXPORT Token Tokenizer::GetNext() {
   std::string buf;
 
   LexState state = LexState::Start;
-  uint32_t state_parens = 0;
+  uint32_t state_parens = 0, start_pos = 0;
   char c = 0;
-  bool eof_is_error = true;
-  uint32_t start_pos{};
 
-  try {
-    while (true) {
-      { /* If the Lexer over-consumed, we will return the saved character */
-        if (m_pushback.empty()) {
-          eof_is_error = false;
-          c = nextc();
-          eof_is_error = true;
-          (void)eof_is_error;
-        } else {
-          c = m_pushback.front();
-          m_pushback.pop_front();
-        }
-      }
-
-      switch (state) {
-        case LexState::Start: {
-          if (lex_is_space(c)) {
-            continue;
-          }
-
-          start_pos = GetCurrentOffset();
-
-          if (std::isalpha(c) || c == '_') {
-            /* Identifier or keyword or operator */
-
-            buf += c, state = LexState::Identifier;
-            continue;
-          } else if (c == '/') {
-            state = LexState::CommentStart; /* Comment or operator */
-            continue;
-          } else if (std::isdigit(c)) {
-            buf += c, state = LexState::Integer;
-            continue;
-          } else if (c == '"' || c == '\'') {
-            buf += c, state = LexState::String;
-            continue;
-          } else if (c == '@') {
-            state = LexState::MacroStart;
-            continue;
-          } else {
-            /* Operator or punctor or invalid */
-            buf += c;
-            state = LexState::Other;
-            continue;
-          }
-        }
-        case LexState::Identifier: {
-          { /* Read in what is hopefully an identifier */
-            int colon_state = 0;
-
-            while (std::isalnum(c) || c == '_' || c == ':') {
-              if (c != ':' && colon_state == 1) {
-                if (!buf.ends_with("::")) {
-                  char tc = buf.back();
-                  buf.pop_back();
-                  m_pushback.push_back(tc);
-                  break;
-                }
-                colon_state = 0;
-              } else if (c == ':') {
-                colon_state = 1;
-              }
-
-              buf += c;
-              c = nextc();
-            }
-          }
-
-          /* Check for f-string */
-          if (buf == "f" && c == '"') {
-            m_pushback.push_back(c);
-            return Token(qKeyW, qK__FString, start_pos);
-          }
-
-          /* We overshot; this must be a punctor ':' */
-          if (buf.size() > 0 && buf.back() == ':') {
-            char tc = buf.back();
-            buf.pop_back();
-            m_pushback.push_back(tc);
-          }
-          m_pushback.push_back(c);
-
-          { /* Determine if it's a keyword or an identifier */
-            auto it = qlex::keywords.left.find(buf);
-            if (it != qlex::keywords.left.end()) {
-              return Token(qKeyW, it->second, start_pos);
-            }
-          }
-
-          { /* Check if it's an operator */
-            auto it = qlex::word_operators.left.find(buf);
-            if (it != qlex::word_operators.left.end()) {
-              return Token(qOper, it->second, start_pos);
-            }
-          }
-
-          /* Ensure it's a valid identifier */
-          if (!validate_identifier(buf)) {
-            goto error_0;
-          }
-
-          /* For compiler internal debugging */
-          qcore_assert(buf != "__builtin_lexer_crash",
-                       "The source code invoked a compiler panic API.");
-
-          if (buf == "__builtin_lexer_abort") {
-            return Token::EndOfFile();
-          }
-
-          /* Return the identifier */
-          return Token(qName, intern(buf), start_pos);
-        }
-        case LexState::Integer: {
-          NumType type = NumType::Decimal;
-
-          /* [0x, 0X, 0d, 0D, 0b, 0B, 0o, 0O] */
-          if (buf.size() == 1 && buf[0] == '0') {
-            switch (c) {
-              case 'x':
-              case 'X':
-                type = NumType::Hexadecimal;
-                buf += c;
-                c = nextc();
-                break;
-              case 'b':
-              case 'B':
-                type = NumType::Binary;
-                buf += c;
-                c = nextc();
-                break;
-              case 'o':
-              case 'O':
-                type = NumType::Octal;
-                buf += c;
-                c = nextc();
-                break;
-              case 'd':
-              case 'D':
-                type = NumType::DecimalExplicit;
-                buf += c;
-                c = nextc();
-                break;
-            }
-          }
-
-          enum class FloatPart {
-            MantissaPost,
-            ExponentSign,
-            ExponentPre,
-            ExponentPost,
-          } float_lit_state = FloatPart::MantissaPost;
-
-          bool is_lexing = true;
-          while (is_lexing) {
-            /* Skip over the integer syntax formatting */
-            if (c == '_') {
-              while (lex_is_space(c) || c == '_' || c == '\\') {
-                c = nextc();
-              }
-            } else if (lex_is_space(c)) {
-              is_lexing = false;
-              break;
-            }
-
-            switch (type) {
-              case NumType::Decimal: {
-                if (std::isdigit(c)) {
-                  buf += c;
-                } else if (c == '.') {
-                  buf += c;
-                  type = NumType::Floating;
-                  float_lit_state = FloatPart::MantissaPost;
-                } else if (c == 'e' || c == 'E') {
-                  buf += 'e';
-                  type = NumType::Floating;
-                  float_lit_state = FloatPart::ExponentSign;
-                } else {
-                  m_pushback.push_back(c);
-                  is_lexing = false;
-                }
-                break;
-              }
-
-              case NumType::DecimalExplicit: {
-                if (std::isdigit(c)) {
-                  buf += c;
-                } else {
-                  m_pushback.push_back(c);
-                  is_lexing = false;
-                }
-                break;
-              }
-
-              case NumType::Hexadecimal: {
-                if (std::isxdigit(c)) {
-                  buf += c;
-                } else {
-                  m_pushback.push_back(c);
-                  is_lexing = false;
-                }
-                break;
-              }
-
-              case NumType::Binary: {
-                if (c == '0' || c == '1') {
-                  buf += c;
-                } else {
-                  m_pushback.push_back(c);
-                  is_lexing = false;
-                }
-                break;
-              }
-
-              case NumType::Octal: {
-                if (c >= '0' && c <= '7') {
-                  buf += c;
-                } else {
-                  m_pushback.push_back(c);
-                  is_lexing = false;
-                }
-                break;
-              }
-
-              case NumType::Floating: {
-                switch (float_lit_state) {
-                  case FloatPart::MantissaPost: {
-                    if (std::isdigit(c)) {
-                      buf += c;
-                    } else if (c == 'e' || c == 'E') {
-                      buf += 'e';
-                      float_lit_state = FloatPart::ExponentSign;
-                    } else {
-                      m_pushback.push_back(c);
-                      is_lexing = false;
-                    }
-                    break;
-                  }
-
-                  case FloatPart::ExponentSign: {
-                    if (c == '-') {
-                      buf += c;
-                    } else if (c == '+') {
-                      float_lit_state = FloatPart::ExponentPre;
-                    } else if (std::isdigit(c)) {
-                      buf += c;
-                      float_lit_state = FloatPart::ExponentPre;
-                    } else {
-                      m_pushback.push_back(c);
-                      is_lexing = false;
-                    }
-                    break;
-                  }
-
-                  case FloatPart::ExponentPre: {
-                    if (std::isdigit(c)) {
-                      buf += c;
-                    } else if (c == '.') {
-                      buf += c;
-                      float_lit_state = FloatPart::ExponentPost;
-                    } else {
-                      m_pushback.push_back(c);
-                      is_lexing = false;
-                    }
-                    break;
-                  }
-
-                  case FloatPart::ExponentPost: {
-                    if (std::isdigit(c)) {
-                      buf += c;
-                    } else {
-                      m_pushback.push_back(c);
-                      is_lexing = false;
-                    }
-                    break;
-                  }
-                }
-
-                break;
-              }
-            }
-
-            if (is_lexing) {
-              c = nextc();
-            }
-          }
-
-          std::string norm;
-          if (type == NumType::Floating) {
-            if (canonicalize_float(buf, norm)) {
-              return Token(qNumL, intern(std::move(norm)), start_pos);
-            }
-          } else if (canonicalize_number(buf, norm, type)) {
-            return Token(qIntL, intern(std::move(norm)), start_pos);
-          }
-
-          /* Invalid number */
-          goto error_0;
-        }
-        case LexState::CommentStart: {
-          if (c == '/') { /* Single line comment */
-            state = LexState::CommentSingleLine;
-            continue;
-          } else if (c == '*') { /* Multi-line comment */
-            state = LexState::CommentMultiLine;
-            continue;
-          } else { /* Divide operator */
-            m_pushback.push_back(c);
-            return Token(qOper, qOpSlash, start_pos);
-          }
-        }
-        case LexState::CommentSingleLine: {
-          while (c != '\n') {
-            buf += c;
-            c = nextc();
-          }
-
-          return Token(qNote, intern(std::move(buf)), start_pos);
-        }
-        case LexState::CommentMultiLine: {
-          size_t level = 1;
-
-          while (true) {
-            if (c == '/') {
-              char tmp = nextc();
-              if (tmp == '*') {
-                level++;
-                buf += "/*";
-              } else {
-                buf += c;
-                buf += tmp;
-              }
-
-              c = nextc();
-            } else if (c == '*') {
-              char tmp = nextc();
-              if (tmp == '/') {
-                level--;
-                if (level == 0) {
-                  return Token(qNote, intern(std::move(buf)), start_pos);
-                } else {
-                  buf += "*";
-                  buf += tmp;
-                }
-              } else {
-                buf += c;
-                buf += tmp;
-              }
-              c = nextc();
-            } else {
-              buf += c;
-              c = nextc();
-            }
-          }
-
-          continue;
-        }
-        case LexState::String: {
-          if (c != buf[0]) {
-            /* Normal character */
-            if (c != '\\') {
-              buf += c;
-              continue;
-            }
-
-            /* String escape sequences */
-            c = nextc();
-            switch (c) {
-              case 'n':
-                buf += '\n';
-                break;
-              case 't':
-                buf += '\t';
-                break;
-              case 'r':
-                buf += '\r';
-                break;
-              case '0':
-                buf += '\0';
-                break;
-              case '\\':
-                buf += '\\';
-                break;
-              case '\'':
-                buf += '\'';
-                break;
-              case '\"':
-                buf += '\"';
-                break;
-              case 'x': {
-                char hex[2] = {nextc(), nextc()};
-                if (!std::isxdigit(hex[0]) || !std::isxdigit(hex[1])) {
-                  goto error_0;
-                }
-                buf += (qlex::hextable[(uint8_t)hex[0]] << 4) |
-                       qlex::hextable[(uint8_t)hex[1]];
-                break;
-              }
-              case 'u': {
-                c = nextc();
-                if (c != '{') {
-                  goto error_0;
-                }
-
-                std::string hex;
-
-                while (true) {
-                  c = nextc();
-                  if (c == '}') {
-                    break;
-                  }
-
-                  if (!std::isxdigit(c)) {
-                    goto error_0;
-                  }
-
-                  hex += c;
-                }
-
-                uint32_t codepoint;
-                try {
-                  codepoint = std::stoi(hex, nullptr, 16);
-                } catch (...) {
-                  goto error_0;
-                }
-
-                if (codepoint < 0x80) {
-                  buf += (char)codepoint;
-                } else if (codepoint < 0x800) {
-                  buf += (char)(0xC0 | (codepoint >> 6));
-                  buf += (char)(0x80 | (codepoint & 0x3F));
-                } else if (codepoint < 0x10000) {
-                  buf += (char)(0xE0 | (codepoint >> 12));
-                  buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
-                  buf += (char)(0x80 | (codepoint & 0x3F));
-                } else if (codepoint < 0x110000) {
-                  buf += (char)(0xF0 | (codepoint >> 18));
-                  buf += (char)(0x80 | ((codepoint >> 12) & 0x3F));
-                  buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
-                  buf += (char)(0x80 | (codepoint & 0x3F));
-                } else {
-                  goto error_0;
-                }
-
-                break;
-              }
-              case 'o': {
-                char oct[4] = {nextc(), nextc(), nextc(), 0};
-                try {
-                  buf += std::stoi(oct, nullptr, 8);
-                  break;
-                } catch (...) {
-                  goto error_0;
-                }
-              }
-              case 'b': {
-                c = nextc();
-                if (c != '{') {
-                  goto error_0;
-                }
-
-                std::string bin;
-
-                while (true) {
-                  c = nextc();
-                  if (c == '}') {
-                    break;
-                  }
-
-                  if ((c != '0' && c != '1') || bin.size() >= 64) {
-                    goto error_0;
-                  }
-
-                  bin += c;
-                }
-
-                uint64_t codepoint = 0;
-                for (size_t i = 0; i < bin.size(); i++) {
-                  codepoint = (codepoint << 1) | (bin[i] - '0');
-                }
-
-                if (codepoint > 0xFFFFFFFF) {
-                  buf += (char)(codepoint >> 56);
-                  buf += (char)(codepoint >> 48);
-                  buf += (char)(codepoint >> 40);
-                  buf += (char)(codepoint >> 32);
-                  buf += (char)(codepoint >> 24);
-                  buf += (char)(codepoint >> 16);
-                  buf += (char)(codepoint >> 8);
-                  buf += (char)(codepoint);
-                } else if (codepoint > 0xFFFF) {
-                  buf += (char)(codepoint >> 24);
-                  buf += (char)(codepoint >> 16);
-                  buf += (char)(codepoint >> 8);
-                  buf += (char)(codepoint);
-                } else if (codepoint > 0xFF) {
-                  buf += (char)(codepoint >> 8);
-                  buf += (char)(codepoint);
-                } else {
-                  buf += (char)(codepoint);
-                }
-
-                break;
-              }
-              default:
-                buf += c;
-                break;
-            }
-            continue;
-          } else {
-            do {
-              c = nextc();
-            } while (lex_is_space(c) || c == '\\');
-
-            if (c == buf[0]) {
-              continue;
-            } else {
-              m_pushback.push_back(c);
-              /* Character or string */
-              if (buf.front() == '\'' && buf.size() == 2) {
-                return Token(qChar, intern(std::string(1, buf[1])), start_pos);
-              } else {
-                return Token(qText, intern(buf.substr(1, buf.size() - 1)),
-                             start_pos);
-              }
-            }
-          }
-        }
-        case LexState::MacroStart: {
-          /*
-           * Macros start with '@' and can be either single-line or block
-           * macros. Block macros are enclosed in parentheses. Single-line
-           * macros end with a newline character or a special cases
-           */
-          if (c == '(') {
-            state = LexState::BlockMacro, state_parens = 1;
-            continue;
-          } else {
-            state = LexState::SingleLineMacro, state_parens = 0;
-            buf += c;
-            continue;
-          }
-          break;
-        }
-        case LexState::SingleLineMacro: {
-          /*
-          Format:
-              ... @macro_name  ...
-          */
-
-          while (std::isalnum(c) || c == '_' || c == ':') {
-            buf += c;
-            c = nextc();
-          }
-
-          m_pushback.push_back(c);
-
-          return Token(qMacr, intern(std::move(buf)), start_pos);
-        }
-        case LexState::BlockMacro: {
-          while (true) {
-            if (c == '(') {
-              state_parens++;
-            } else if (c == ')') {
-              state_parens--;
-            }
-
-            if (state_parens == 0) {
-              return Token(qMacB, intern(std::move(buf)), start_pos);
-            }
-
-            buf += c;
-
-            c = nextc();
-          }
-          continue;
-        }
-        case LexState::Other: {
-          /* Check if it's a punctor */
-          if (buf.size() == 1) {
-            auto it = qlex::punctuation.left.find(buf);
-            if (it != qlex::punctuation.left.end()) {
-              m_pushback.push_back(c);
-              return Token(qPunc, it->second, start_pos);
-            }
-          }
-
-          /* Special case for a comment */
-          if ((buf[0] == '~' && c == '>')) {
-            buf.clear();
-            state = LexState::CommentSingleLine;
-            continue;
-          }
-
-          /* Special case for a comment */
-          if (buf[0] == '#') {
-            buf.clear();
-            m_pushback.push_back(c);
-            state = LexState::CommentSingleLine;
-            continue;
-          }
-
-          bool found = false;
-          while (true) {
-            bool contains = false;
-            if (std::any_of(
-                    qlex::operators.begin(), qlex::operators.end(),
-                    [&](const auto &pair) { return pair.left == buf; })) {
-              contains = true;
-              found = true;
-            }
-
-            if (contains) {
-              buf += c;
-              if (buf.size() > 4) { /* Handle infinite error case */
-                goto error_0;
-              }
-              c = nextc();
-            } else {
-              break;
-            }
-          }
-
-          if (!found) {
-            goto error_0;
-          }
-
-          m_pushback.push_back(buf.back());
-          m_pushback.push_back(c);
-          return Token(qOper,
-                       qlex::operators.left.at(buf.substr(0, buf.size() - 1)),
-                       start_pos);
-        }
+  while (true) {
+    { /* If the Lexer over-consumed, we will return the saved character */
+      if (m_pushback.empty()) {
+        c = nextc();
+      } else {
+        c = m_pushback.front();
+        m_pushback.pop_front();
       }
     }
-    goto error_0;
-  } catch (std::exception &e) { /* This should never happen */
-    qcore_panicf("The lexer has a bug: %s", e.what());
+
+    switch (state) {
+      case LexState::Start: {
+        if (lex_is_space(c)) {
+          continue;
+        }
+
+        start_pos = GetCurrentOffset();
+
+        if (std::isalpha(c) || c == '_') {
+          /* Identifier or keyword or operator */
+
+          buf += c, state = LexState::Identifier;
+          continue;
+        } else if (c == '/') {
+          state = LexState::CommentStart; /* Comment or operator */
+          continue;
+        } else if (std::isdigit(c)) {
+          buf += c, state = LexState::Integer;
+          continue;
+        } else if (c == '"' || c == '\'') {
+          buf += c, state = LexState::String;
+          continue;
+        } else if (c == '@') {
+          state = LexState::MacroStart;
+          continue;
+        } else {
+          /* Operator or punctor or invalid */
+          buf += c;
+          state = LexState::Other;
+          continue;
+        }
+      }
+      case LexState::Identifier: {
+        { /* Read in what is hopefully an identifier */
+          int colon_state = 0;
+
+          while (std::isalnum(c) || c == '_' || c == ':') {
+            if (c != ':' && colon_state == 1) {
+              if (!buf.ends_with("::")) {
+                char tc = buf.back();
+                buf.pop_back();
+                m_pushback.push_back(tc);
+                break;
+              }
+              colon_state = 0;
+            } else if (c == ':') {
+              colon_state = 1;
+            }
+
+            buf += c;
+            c = nextc();
+          }
+        }
+
+        /* Check for f-string */
+        if (buf == "f" && c == '"') {
+          m_pushback.push_back(c);
+          return Token(qKeyW, qK__FString, start_pos);
+        }
+
+        /* We overshot; this must be a punctor ':' */
+        if (buf.size() > 0 && buf.back() == ':') {
+          char tc = buf.back();
+          buf.pop_back();
+          m_pushback.push_back(tc);
+        }
+        m_pushback.push_back(c);
+
+        { /* Determine if it's a keyword or an identifier */
+          auto it = keywords.left.find(buf);
+          if (it != keywords.left.end()) {
+            return Token(qKeyW, it->second, start_pos);
+          }
+        }
+
+        { /* Check if it's an operator */
+          auto it = word_operators.left.find(buf);
+          if (it != word_operators.left.end()) {
+            return Token(qOper, it->second, start_pos);
+          }
+        }
+
+        /* Ensure it's a valid identifier */
+        if (!validate_identifier(buf)) {
+          goto error_0;
+        }
+
+        /* For compiler internal debugging */
+        qcore_assert(buf != "__builtin_lexer_crash",
+                     "The source code invoked a compiler panic API.");
+
+        if (buf == "__builtin_lexer_abort") {
+          return Token::EndOfFile();
+        }
+
+        /* Return the identifier */
+        return Token(qName, intern(buf), start_pos);
+      }
+      case LexState::Integer: {
+        NumType type = NumType::Decimal;
+
+        /* [0x, 0X, 0d, 0D, 0b, 0B, 0o, 0O] */
+        if (buf.size() == 1 && buf[0] == '0') {
+          switch (c) {
+            case 'x':
+            case 'X':
+              type = NumType::Hexadecimal;
+              buf += c;
+              c = nextc();
+              break;
+            case 'b':
+            case 'B':
+              type = NumType::Binary;
+              buf += c;
+              c = nextc();
+              break;
+            case 'o':
+            case 'O':
+              type = NumType::Octal;
+              buf += c;
+              c = nextc();
+              break;
+            case 'd':
+            case 'D':
+              type = NumType::DecimalExplicit;
+              buf += c;
+              c = nextc();
+              break;
+          }
+        }
+
+        enum class FloatPart {
+          MantissaPost,
+          ExponentSign,
+          ExponentPre,
+          ExponentPost,
+        } float_lit_state = FloatPart::MantissaPost;
+
+        bool is_lexing = true;
+        while (is_lexing) {
+          /* Skip over the integer syntax formatting */
+          if (c == '_') {
+            while (lex_is_space(c) || c == '_' || c == '\\') {
+              c = nextc();
+            }
+          } else if (lex_is_space(c)) {
+            is_lexing = false;
+            break;
+          }
+
+          switch (type) {
+            case NumType::Decimal: {
+              if (std::isdigit(c)) {
+                buf += c;
+              } else if (c == '.') {
+                buf += c;
+                type = NumType::Floating;
+                float_lit_state = FloatPart::MantissaPost;
+              } else if (c == 'e' || c == 'E') {
+                buf += 'e';
+                type = NumType::Floating;
+                float_lit_state = FloatPart::ExponentSign;
+              } else {
+                m_pushback.push_back(c);
+                is_lexing = false;
+              }
+              break;
+            }
+
+            case NumType::DecimalExplicit: {
+              if (std::isdigit(c)) {
+                buf += c;
+              } else {
+                m_pushback.push_back(c);
+                is_lexing = false;
+              }
+              break;
+            }
+
+            case NumType::Hexadecimal: {
+              if (std::isxdigit(c)) {
+                buf += c;
+              } else {
+                m_pushback.push_back(c);
+                is_lexing = false;
+              }
+              break;
+            }
+
+            case NumType::Binary: {
+              if (c == '0' || c == '1') {
+                buf += c;
+              } else {
+                m_pushback.push_back(c);
+                is_lexing = false;
+              }
+              break;
+            }
+
+            case NumType::Octal: {
+              if (c >= '0' && c <= '7') {
+                buf += c;
+              } else {
+                m_pushback.push_back(c);
+                is_lexing = false;
+              }
+              break;
+            }
+
+            case NumType::Floating: {
+              switch (float_lit_state) {
+                case FloatPart::MantissaPost: {
+                  if (std::isdigit(c)) {
+                    buf += c;
+                  } else if (c == 'e' || c == 'E') {
+                    buf += 'e';
+                    float_lit_state = FloatPart::ExponentSign;
+                  } else {
+                    m_pushback.push_back(c);
+                    is_lexing = false;
+                  }
+                  break;
+                }
+
+                case FloatPart::ExponentSign: {
+                  if (c == '-') {
+                    buf += c;
+                  } else if (c == '+') {
+                    float_lit_state = FloatPart::ExponentPre;
+                  } else if (std::isdigit(c)) {
+                    buf += c;
+                    float_lit_state = FloatPart::ExponentPre;
+                  } else {
+                    m_pushback.push_back(c);
+                    is_lexing = false;
+                  }
+                  break;
+                }
+
+                case FloatPart::ExponentPre: {
+                  if (std::isdigit(c)) {
+                    buf += c;
+                  } else if (c == '.') {
+                    buf += c;
+                    float_lit_state = FloatPart::ExponentPost;
+                  } else {
+                    m_pushback.push_back(c);
+                    is_lexing = false;
+                  }
+                  break;
+                }
+
+                case FloatPart::ExponentPost: {
+                  if (std::isdigit(c)) {
+                    buf += c;
+                  } else {
+                    m_pushback.push_back(c);
+                    is_lexing = false;
+                  }
+                  break;
+                }
+              }
+
+              break;
+            }
+          }
+
+          if (is_lexing) {
+            c = nextc();
+          }
+        }
+
+        std::string norm;
+        if (type == NumType::Floating) {
+          if (canonicalize_float(buf, norm)) {
+            return Token(qNumL, intern(std::move(norm)), start_pos);
+          }
+        } else if (canonicalize_number(buf, norm, type)) {
+          return Token(qIntL, intern(std::move(norm)), start_pos);
+        }
+
+        /* Invalid number */
+        goto error_0;
+      }
+      case LexState::CommentStart: {
+        if (c == '/') { /* Single line comment */
+          state = LexState::CommentSingleLine;
+          continue;
+        } else if (c == '*') { /* Multi-line comment */
+          state = LexState::CommentMultiLine;
+          continue;
+        } else { /* Divide operator */
+          m_pushback.push_back(c);
+          return Token(qOper, qOpSlash, start_pos);
+        }
+      }
+      case LexState::CommentSingleLine: {
+        while (c != '\n') {
+          buf += c;
+          c = nextc();
+        }
+
+        return Token(qNote, intern(std::move(buf)), start_pos);
+      }
+      case LexState::CommentMultiLine: {
+        size_t level = 1;
+
+        while (true) {
+          if (c == '/') {
+            char tmp = nextc();
+            if (tmp == '*') {
+              level++;
+              buf += "/*";
+            } else {
+              buf += c;
+              buf += tmp;
+            }
+
+            c = nextc();
+          } else if (c == '*') {
+            char tmp = nextc();
+            if (tmp == '/') {
+              level--;
+              if (level == 0) {
+                return Token(qNote, intern(std::move(buf)), start_pos);
+              } else {
+                buf += "*";
+                buf += tmp;
+              }
+            } else {
+              buf += c;
+              buf += tmp;
+            }
+            c = nextc();
+          } else {
+            buf += c;
+            c = nextc();
+          }
+        }
+
+        continue;
+      }
+      case LexState::String: {
+        if (c != buf[0]) {
+          /* Normal character */
+          if (c != '\\') {
+            buf += c;
+            continue;
+          }
+
+          /* String escape sequences */
+          c = nextc();
+          switch (c) {
+            case 'n':
+              buf += '\n';
+              break;
+            case 't':
+              buf += '\t';
+              break;
+            case 'r':
+              buf += '\r';
+              break;
+            case '0':
+              buf += '\0';
+              break;
+            case '\\':
+              buf += '\\';
+              break;
+            case '\'':
+              buf += '\'';
+              break;
+            case '\"':
+              buf += '\"';
+              break;
+            case 'x': {
+              char hex[2] = {nextc(), nextc()};
+              if (!std::isxdigit(hex[0]) || !std::isxdigit(hex[1])) {
+                goto error_0;
+              }
+              buf +=
+                  (hextable[(uint8_t)hex[0]] << 4) | hextable[(uint8_t)hex[1]];
+              break;
+            }
+            case 'u': {
+              c = nextc();
+              if (c != '{') {
+                goto error_0;
+              }
+
+              std::string hex;
+
+              while (true) {
+                c = nextc();
+                if (c == '}') {
+                  break;
+                }
+
+                if (!std::isxdigit(c)) {
+                  goto error_0;
+                }
+
+                hex += c;
+              }
+
+              uint32_t codepoint;
+              try {
+                codepoint = std::stoi(hex, nullptr, 16);
+              } catch (...) {
+                goto error_0;
+              }
+
+              if (codepoint < 0x80) {
+                buf += (char)codepoint;
+              } else if (codepoint < 0x800) {
+                buf += (char)(0xC0 | (codepoint >> 6));
+                buf += (char)(0x80 | (codepoint & 0x3F));
+              } else if (codepoint < 0x10000) {
+                buf += (char)(0xE0 | (codepoint >> 12));
+                buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
+                buf += (char)(0x80 | (codepoint & 0x3F));
+              } else if (codepoint < 0x110000) {
+                buf += (char)(0xF0 | (codepoint >> 18));
+                buf += (char)(0x80 | ((codepoint >> 12) & 0x3F));
+                buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
+                buf += (char)(0x80 | (codepoint & 0x3F));
+              } else {
+                goto error_0;
+              }
+
+              break;
+            }
+            case 'o': {
+              char oct[4] = {nextc(), nextc(), nextc(), 0};
+              try {
+                buf += std::stoi(oct, nullptr, 8);
+                break;
+              } catch (...) {
+                goto error_0;
+              }
+            }
+            case 'b': {
+              c = nextc();
+              if (c != '{') {
+                goto error_0;
+              }
+
+              std::string bin;
+
+              while (true) {
+                c = nextc();
+                if (c == '}') {
+                  break;
+                }
+
+                if ((c != '0' && c != '1') || bin.size() >= 64) {
+                  goto error_0;
+                }
+
+                bin += c;
+              }
+
+              uint64_t codepoint = 0;
+              for (size_t i = 0; i < bin.size(); i++) {
+                codepoint = (codepoint << 1) | (bin[i] - '0');
+              }
+
+              if (codepoint > 0xFFFFFFFF) {
+                buf += (char)(codepoint >> 56);
+                buf += (char)(codepoint >> 48);
+                buf += (char)(codepoint >> 40);
+                buf += (char)(codepoint >> 32);
+                buf += (char)(codepoint >> 24);
+                buf += (char)(codepoint >> 16);
+                buf += (char)(codepoint >> 8);
+                buf += (char)(codepoint);
+              } else if (codepoint > 0xFFFF) {
+                buf += (char)(codepoint >> 24);
+                buf += (char)(codepoint >> 16);
+                buf += (char)(codepoint >> 8);
+                buf += (char)(codepoint);
+              } else if (codepoint > 0xFF) {
+                buf += (char)(codepoint >> 8);
+                buf += (char)(codepoint);
+              } else {
+                buf += (char)(codepoint);
+              }
+
+              break;
+            }
+            default:
+              buf += c;
+              break;
+          }
+          continue;
+        } else {
+          do {
+            c = nextc();
+          } while (lex_is_space(c) || c == '\\');
+
+          if (c == buf[0]) {
+            continue;
+          } else {
+            m_pushback.push_back(c);
+            /* Character or string */
+            if (buf.front() == '\'' && buf.size() == 2) {
+              return Token(qChar, intern(std::string(1, buf[1])), start_pos);
+            } else {
+              return Token(qText, intern(buf.substr(1, buf.size() - 1)),
+                           start_pos);
+            }
+          }
+        }
+      }
+      case LexState::MacroStart: {
+        /*
+         * Macros start with '@' and can be either single-line or block
+         * macros. Block macros are enclosed in parentheses. Single-line
+         * macros end with a newline character or a special cases
+         */
+        if (c == '(') {
+          state = LexState::BlockMacro, state_parens = 1;
+          continue;
+        } else {
+          state = LexState::SingleLineMacro, state_parens = 0;
+          buf += c;
+          continue;
+        }
+        break;
+      }
+      case LexState::SingleLineMacro: {
+        /*
+        Format:
+            ... @macro_name  ...
+        */
+
+        while (std::isalnum(c) || c == '_' || c == ':') {
+          buf += c;
+          c = nextc();
+        }
+
+        m_pushback.push_back(c);
+
+        return Token(qMacr, intern(std::move(buf)), start_pos);
+      }
+      case LexState::BlockMacro: {
+        while (true) {
+          if (c == '(') {
+            state_parens++;
+          } else if (c == ')') {
+            state_parens--;
+          }
+
+          if (state_parens == 0) {
+            return Token(qMacB, intern(std::move(buf)), start_pos);
+          }
+
+          buf += c;
+
+          c = nextc();
+        }
+        continue;
+      }
+      case LexState::Other: {
+        /* Check if it's a punctor */
+        if (buf.size() == 1) {
+          auto it = punctuation.left.find(buf);
+          if (it != punctuation.left.end()) {
+            m_pushback.push_back(c);
+            return Token(qPunc, it->second, start_pos);
+          }
+        }
+
+        /* Special case for a comment */
+        if ((buf[0] == '~' && c == '>')) {
+          buf.clear();
+          state = LexState::CommentSingleLine;
+          continue;
+        }
+
+        /* Special case for a comment */
+        if (buf[0] == '#') {
+          buf.clear();
+          m_pushback.push_back(c);
+          state = LexState::CommentSingleLine;
+          continue;
+        }
+
+        bool found = false;
+        while (true) {
+          bool contains = false;
+          if (std::any_of(operators.begin(), operators.end(),
+                          [&](const auto &pair) { return pair.left == buf; })) {
+            contains = true;
+            found = true;
+          }
+
+          if (contains) {
+            buf += c;
+            if (buf.size() > 4) { /* Handle infinite error case */
+              goto error_0;
+            }
+            c = nextc();
+          } else {
+            break;
+          }
+        }
+
+        if (!found) {
+          goto error_0;
+        }
+
+        m_pushback.push_back(buf.back());
+        m_pushback.push_back(c);
+        return Token(qOper, operators.left.at(buf.substr(0, buf.size() - 1)),
+                     start_pos);
+      }
+    }
   }
 
 error_0: { /* Reset the lexer and return error token */
@@ -1146,97 +1131,6 @@ CPP_EXPORT const char *ncc::lex::qlex_ty_str(TokenType ty) {
   }
 
   qcore_panic("unreachable");
-}
-
-CPP_EXPORT void ncc::lex::qlex_tok_fromstr(ncc::lex::IScanner *, TokenType,
-                                           const char *, Token *) {
-  qcore_implement();
-  /// TODO: Implement this function
-
-  // try {
-  //   out->ty = ty;
-
-  //   switch (ty) {
-  //     case qEofF: {
-  //       break;
-  //     }
-
-  //     case qKeyW: {
-  //       auto find = qlex::keywords.left.find(str);
-  //       if (find == qlex::keywords.left.end()) [[unlikely]] {
-  //         *out = Token::EndOfFile();
-  //       } else {
-  //         out->v.key = find->second;
-  //       }
-  //       break;
-  //     }
-
-  //     case qOper: {
-  //       auto find = qlex::operators.left.find(str);
-  //       if (find == qlex::operators.left.end()) [[unlikely]] {
-  //         *out = Token::EndOfFile();
-  //       } else {
-  //         out->v.op = find->second;
-  //       }
-  //       break;
-  //     }
-
-  //     case qPunc: {
-  //       auto find = qlex::punctuation.left.find(str);
-  //       if (find == qlex::punctuation.left.end()) [[unlikely]] {
-  //         *out = Token::EndOfFile();
-  //       } else {
-  //         out->v.punc = find->second;
-  //       }
-  //       break;
-  //     }
-
-  //     case qName: {
-  //       out->v.str = intern(str);
-  //       break;
-  //     }
-
-  //     case qIntL: {
-  //       out->v.str = intern(str);
-  //       break;
-  //     }
-
-  //     case qNumL: {
-  //       out->v.str = intern(str);
-  //       break;
-  //     }
-
-  //     case qText: {
-  //       out->v.str = intern(str);
-  //       break;
-  //     }
-
-  //     case qChar: {
-  //       out->v.str = intern(str);
-  //       break;
-  //     }
-
-  //     case qMacB: {
-  //       out->v.str = intern(str);
-  //       break;
-  //     }
-
-  //     case qMacr: {
-  //       out->v.str = intern(str);
-  //       break;
-  //     }
-
-  //     case qNote: {
-  //       out->v.str = intern(str);
-  //       break;
-  //     }
-  //   }
-
-  // } catch (std::bad_alloc &) {
-  //   qcore_panic("qlex_tok_fromstr: failed to create token: out of memory");
-  // } catch (...) {
-  //   qcore_panic("qlex_tok_fromstr: failed to create token");
-  // }
 }
 
 CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, TokenType ty) {
@@ -1311,13 +1205,13 @@ CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, Token tok) {
 }
 
 CPP_EXPORT const char *ncc::lex::op_repr(Operator op) {
-  return qlex::operators.right.at(op).data();
+  return operators.right.at(op).data();
 }
 
 CPP_EXPORT const char *ncc::lex::kw_repr(Keyword kw) {
-  return qlex::keywords.right.at(kw).data();
+  return keywords.right.at(kw).data();
 }
 
 CPP_EXPORT const char *ncc::lex::punct_repr(Punctor punct) {
-  return qlex::punctuation.right.at(punct).data();
+  return punctuation.right.at(punct).data();
 }
