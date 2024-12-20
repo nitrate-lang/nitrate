@@ -34,6 +34,7 @@
 #ifndef __NITRATE_AST_AST_H__
 #define __NITRATE_AST_AST_H__
 
+#include <functional>
 #include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/ASTExpr.hh>
 #include <nitrate-parser/ASTStmt.hh>
