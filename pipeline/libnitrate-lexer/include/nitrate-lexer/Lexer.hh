@@ -126,7 +126,9 @@ namespace ncc::lex {
     size_t m_getc_buffer_pos = GETC_BUFFER_SIZE;
     bool m_eof = false;
 
-    char nextc();
+    class StaticImpl;
+    friend class StaticImpl;
+
     void reset_state();
 
     Token GetNext() override;
