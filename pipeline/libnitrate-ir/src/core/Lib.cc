@@ -32,7 +32,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-ir/Lib.h>
-#include <sys/resource.h>
 
 #include <atomic>
 #include <boost/assert/source_location.hpp>

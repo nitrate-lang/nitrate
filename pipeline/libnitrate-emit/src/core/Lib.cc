@@ -35,7 +35,6 @@
 #include <llvm-18/llvm/Support/ManagedStatic.h>
 #include <llvm-18/llvm/Support/TargetSelect.h>
 #include <nitrate-emit/Lib.h>
-#include <sys/resource.h>
 
 #include <atomic>
 #include <iostream>
