@@ -264,8 +264,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
   }
 
 public:
-  DeserializerAdapterLexer(std::istream &file, const char *filename,
-                           std::shared_ptr<ncc::core::Environment> env)
+  DeserializerAdapterLexer(std::istream &file)
       : m_mode(InMode::BadCodec),
         m_ele_count(0),
         m_eof_bit(false),
@@ -326,7 +325,7 @@ CREATE_TRANSFORM(nit::parse) {
     out_mode = OutMode::MsgPack;
   }
 
-  DeserializerAdapterLexer lexer(source, nullptr, env);
+  DeserializerAdapterLexer lexer(source);
   auto parser = ncc::parse::Parser::Create(lexer, env);
 
   let root = parser->parse();

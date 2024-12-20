@@ -66,7 +66,6 @@
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Config.h>
 #include <nitrate-ir/TypeDecl.h>
-#include <sys/types.h>
 
 #include <cstdint>
 #include <iostream>

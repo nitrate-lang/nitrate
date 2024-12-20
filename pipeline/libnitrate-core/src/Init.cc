@@ -59,7 +59,6 @@ CPP_EXPORT std::string_view CoreLibrarySetup::GetVersionId() {
   return __TARGET_VERSION;
 }
 
-#if NITRATE_SHARED == 1
 #define BOOST_NO_EXCEPTIONS
 #include <boost/throw_exception.hpp>
 #include <iostream>
@@ -76,4 +75,3 @@ namespace boost {
     std::terminate();
   }
 }  // namespace boost
-#endif

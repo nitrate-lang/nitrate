@@ -42,6 +42,8 @@
 #include <unordered_set>
 
 CREATE_TRANSFORM(nit::nr) {
+  (void)env;
+
   enum class OutMode {
     JSON,
     MsgPack,
