@@ -34,12 +34,11 @@
 #ifndef __NITRATE_CORE_STRING_FACTORY_H__
 #define __NITRATE_CORE_STRING_FACTORY_H__
 
-#include <boost/bimap.hpp>
 #include <cstdint>
 #include <mutex>
 #include <string>
 #include <string_view>
-#include <unordered_set>
+#include <unordered_map>
 
 namespace ncc::core {
   class StringMemory;
@@ -75,8 +74,8 @@ namespace ncc::core {
 
   class StringMemory {
     struct Storage {
-      std::unordered_set<std::string> m_strings;
-      boost::bimap<uint64_t, std::string_view> m_bimap;
+      std::unordered_map<uint64_t, std::string> m_map_a;
+      std::unordered_map<std::string_view, uint64_t> m_map_b;
       uint64_t m_next_id = 0;
       std::mutex m_mutex;
     };
