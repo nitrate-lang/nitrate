@@ -86,7 +86,9 @@ namespace ncc::core {
 
   public:
     static str_alias Get(std::string_view str);
+    static str_alias Get(std::string &&str);
     static std::string_view Save(std::string_view str);
+    static std::string_view Save(std::string &&str);
 
     static std::string_view FromID(uint64_t id);
 
@@ -97,10 +99,25 @@ namespace ncc::core {
     return StringMemory::Save(str);
   }
 
+  static inline std::string_view save(std::string &&str) {
+    return StringMemory::Save(str);
+  }
+
+  static inline std::string_view save(const char *str) {
+    return StringMemory::Save(std::string_view(str));
+  }
+
   static inline str_alias intern(std::string_view str) {
     return StringMemory::Get(str);
   }
 
+  static inline str_alias intern(std::string &&str) {
+    return StringMemory::Get(str);
+  }
+
+  static inline str_alias intern(const char *str) {
+    return StringMemory::Get(std::string_view(str));
+  }
 }  // namespace ncc::core
 
 #endif

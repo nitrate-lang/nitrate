@@ -60,8 +60,29 @@ CPP_EXPORT str_alias StringMemory::Get(std::string_view str) {
   return str_alias::get(new_id);
 }
 
+CPP_EXPORT str_alias StringMemory::Get(std::string&& str) {
+  std::lock_guard lock(m_storage.m_mutex);
+
+  if (auto it = m_storage.m_map_b.find(str); it != m_storage.m_map_b.end()) {
+    return str_alias::get(it->second);
+  }
+
+  auto new_id = m_storage.m_next_id++;
+
+  const auto& ref_str =
+      m_storage.m_map_a.insert({new_id, std::move(str)}).first->second;
+
+  m_storage.m_map_b.insert({ref_str, new_id});
+
+  return str_alias::get(new_id);
+}
+
 CPP_EXPORT std::string_view StringMemory::Save(std::string_view str) {
   return Get(str).get();
+}
+
+CPP_EXPORT std::string_view StringMemory::Save(std::string&& str) {
+  return Get(std::move(str)).get();
 }
 
 CPP_EXPORT std::string_view StringMemory::FromID(uint64_t id) {
