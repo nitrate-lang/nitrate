@@ -120,21 +120,28 @@ CPP_EXPORT void IScanner::FillTokenBuffer() {
 }
 
 CPP_EXPORT void IScanner::SyncState(Token tok) {
-  /// TODO:
+  /// TODO: Implement this function
   m_current = tok;
 }
 
 CPP_EXPORT Token IScanner::Next() {
-  if (m_ready.empty()) [[unlikely]] {
-    FillTokenBuffer();
+  while (true) {
+    if (m_ready.empty()) {
+      FillTokenBuffer();
+    }
+
+    Token tok = m_ready.front();
+    m_ready.pop_front();
+
+    if (GetSkipCommentsState() && tok.is(qNote)) {
+      continue;
+    }
+
+    SyncState(tok);
+    m_last = m_current;
+
+    return tok;
   }
-
-  Token tok = m_ready.front();
-  m_ready.pop_front();
-  SyncState(tok);
-  m_last = m_current;
-
-  return tok;
 }
 
 CPP_EXPORT Token IScanner::Peek() {

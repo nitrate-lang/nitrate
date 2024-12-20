@@ -35,21 +35,24 @@
 #include <boost/bimap.hpp>
 #include <boost/unordered_map.hpp>
 #include <cctype>
+#include <charconv>
 #include <cmath>
 #include <csetjmp>
 #include <cstdint>
 #include <cstdio>
 #include <deque>
-#include <iomanip>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/String.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include "nitrate-lexer/Token.hh"
 
 using namespace ncc::core;
 using namespace ncc::lex;
@@ -62,6 +65,10 @@ namespace ncc::lex {
       std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
     return boost::bimap<L, R>(list.begin(), list.end());
   }
+
+  ///=======================================================================///
+  /// BEGIN: Lexical language definitions                                   ///
+  ///=======================================================================///
 
   CPP_EXPORT const boost::bimap<std::string_view, Keyword> keywords =
       make_bimap<std::string_view, Keyword>({
@@ -147,27 +154,6 @@ namespace ncc::lex {
           {"?", qOpTernary},
       });
 
-  static const std::unordered_set<std::string_view> operator_set = []() {
-    std::unordered_set<std::string_view> set;
-    set.reserve(operators.left.size());
-    for (const auto &op : operators.left) {
-      set.insert(op.first);
-    }
-    return set;
-  }();
-
-  static const boost::bimap<std::string_view, Operator> word_operators =
-      make_bimap<std::string_view, Operator>({
-          {"as", qOpAs},
-          {"in", qOpIn},
-          {"sizeof", qOpSizeof},
-          {"alignof", qOpAlignof},
-          {"typeof", qOpTypeof},
-          {"bitcast_as", qOpBitcastAs},
-          {"bitsizeof", qOpBitsizeof},
-          {"out", qOpOut},
-      });
-
   CPP_EXPORT const boost::bimap<std::string_view, Punctor> punctuation =
       make_bimap<std::string_view, Punctor>({
           {"(", qPuncLPar},
@@ -181,7 +167,37 @@ namespace ncc::lex {
           {";", qPuncSemi},
       });
 
-  static constexpr std::array<uint8_t, 256> hextable = []() {
+  ///=======================================================================///
+  /// END: Lexical language definitions                                     ///
+  ///=======================================================================///
+}  // namespace ncc::lex
+
+namespace ncc::lex {
+  static const auto operator_set = []() {
+    std::unordered_set<std::string_view> set;
+    set.reserve(operators.left.size());
+    for (const auto &op : operators.left) {
+      set.insert(op.first);
+    }
+    return set;
+  }();
+
+  static const auto word_operators = []() {
+    std::unordered_map<std::string_view, Operator> set;
+    for (const auto &op : operators.left) {
+      bool is_word = std::all_of(op.first.begin(), op.first.end(), [](auto c) {
+        return std::isalnum(c) || c == '_';
+      });
+
+      if (is_word) {
+        set[op.first] = op.second;
+      }
+    }
+
+    return set;
+  }();
+
+  static constexpr auto hextable = []() {
     std::array<uint8_t, 256> hextable = {};
     hextable['0'] = 0;
     hextable['1'] = 1;
@@ -236,8 +252,6 @@ enum class NumType {
   Floating,
 };
 
-///============================================================================///
-
 static bool validate_identifier(std::string_view id) {
   /*
    * This state machine checks if the identifier looks
@@ -268,25 +282,37 @@ static bool validate_identifier(std::string_view id) {
 }
 
 static bool canonicalize_float(std::string_view input, std::string &norm) {
-  long double mantissa = 0, exponent = 0, x = 0;
-  size_t e_pos = 0;
-
-  if ((e_pos = input.find('e')) == std::string::npos) {
-    norm = input.data();
+  size_t e_pos = e_pos = input.find('e');
+  if (e_pos == std::string::npos) [[likely]] {
+    norm = input;
     return true;
   }
 
-  try {
-    mantissa = std::stod(std::string(input.substr(0, e_pos)));
-    exponent = std::stod(input.substr(e_pos + 1).data());
-    x = mantissa * std::pow(10.0, exponent);
-  } catch (...) {
+  long double mantissa = 0;
+  if (std::from_chars(input.data(), input.data() + e_pos, mantissa).ec !=
+      std::errc()) [[unlikely]] {
     return false;
   }
 
-  std::stringstream ss;
-  ss << std::fixed << std::setprecision(FLOATING_POINT_PRECISION) << x;
-  std::string str = ss.str();
+  long double exponent = 0;
+  if (std::from_chars(input.data() + e_pos + 1, input.data() + input.size(),
+                      exponent)
+          .ec != std::errc()) [[unlikely]] {
+    return false;
+  }
+
+  long double x = mantissa * std::pow(10.0, exponent);
+
+  std::array<char, FLOATING_POINT_PRECISION> buffer;
+  static_assert(FLOATING_POINT_PRECISION >= 10,
+                "Floating point precision must be at least 10");
+
+  if (std::snprintf(buffer.data(), buffer.size(), "%.*Lf",
+                    (int)(FLOATING_POINT_PRECISION - 1), x) < 0) [[unlikely]] {
+    return false;
+  }
+
+  std::string str(buffer.data());
 
   if (str.find('.') != std::string::npos) {
     while (!str.empty() && str.back() == '0') {
@@ -446,6 +472,20 @@ char Tokenizer::nextc() {
   return c;
 }
 
+enum class LexState {
+  Start,
+  Identifier,
+  String,
+  Integer,
+  CommentStart,
+  CommentSingleLine,
+  CommentMultiLine,
+  MacroStart,
+  SingleLineMacro,
+  BlockMacro,
+  Other,
+};
+
 CPP_EXPORT Token Tokenizer::GetNext() {
   /**
    * **WARNING**: Do not just start editing this function without
@@ -457,25 +497,19 @@ CPP_EXPORT Token Tokenizer::GetNext() {
    * undefined behavior.
    * */
 
-  enum class LexState {
-    Start,
-    Identifier,
-    String,
-    Integer,
-    CommentStart,
-    CommentSingleLine,
-    CommentMultiLine,
-    MacroStart,
-    SingleLineMacro,
-    BlockMacro,
-    Other,
-  };
-
   std::string buf;
-
   LexState state = LexState::Start;
   uint32_t state_parens = 0, start_pos = 0;
   char c = 0;
+
+  const auto ParseCommentSingleLine = [&]() -> Token {
+    while (c != '\n') {
+      buf += c;
+      c = nextc();
+    }
+
+    return Token(qNote, intern(std::move(buf)), start_pos);
+  };
 
   while (true) {
     { /* If the Lexer over-consumed, we will return the saved character */
@@ -563,8 +597,8 @@ CPP_EXPORT Token Tokenizer::GetNext() {
         }
 
         { /* Check if it's an operator */
-          auto it = word_operators.left.find(buf);
-          if (it != word_operators.left.end()) {
+          auto it = word_operators.find(buf);
+          if (it != word_operators.end()) {
             return Token(qOper, it->second, start_pos);
           }
         }
@@ -784,12 +818,7 @@ CPP_EXPORT Token Tokenizer::GetNext() {
         }
       }
       case LexState::CommentSingleLine: {
-        while (c != '\n') {
-          buf += c;
-          c = nextc();
-        }
-
-        return Token(qNote, intern(std::move(buf)), start_pos);
+        return ParseCommentSingleLine();
       }
       case LexState::CommentMultiLine: {
         size_t level = 1;
@@ -892,9 +921,9 @@ CPP_EXPORT Token Tokenizer::GetNext() {
               }
 
               uint32_t codepoint;
-              try {
-                codepoint = std::stoi(hex, nullptr, 16);
-              } catch (...) {
+              if (std::from_chars(hex.data(), hex.data() + hex.size(),
+                                  codepoint, 16)
+                      .ec != std::errc()) {
                 goto error_0;
               }
 
@@ -919,13 +948,14 @@ CPP_EXPORT Token Tokenizer::GetNext() {
               break;
             }
             case 'o': {
-              char oct[4] = {nextc(), nextc(), nextc(), 0};
-              try {
-                buf += std::stoi(oct, nullptr, 8);
-                break;
-              } catch (...) {
+              char oct[3] = {nextc(), nextc(), nextc()};
+              int val;
+              if (std::from_chars(oct, oct + 3, val, 8).ec != std::errc()) {
                 goto error_0;
               }
+
+              buf += val;
+              break;
             }
             case 'b': {
               c = nextc();
@@ -1001,11 +1031,6 @@ CPP_EXPORT Token Tokenizer::GetNext() {
         }
       }
       case LexState::MacroStart: {
-        /*
-         * Macros start with '@' and can be either single-line or block
-         * macros. Block macros are enclosed in parentheses. Single-line
-         * macros end with a newline character or a special cases
-         */
         if (c == '(') {
           state = LexState::BlockMacro, state_parens = 1;
           continue;

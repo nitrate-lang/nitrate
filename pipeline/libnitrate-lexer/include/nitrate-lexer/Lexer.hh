@@ -62,9 +62,11 @@ namespace ncc::lex {
   struct ScannerEOF final {};
 
   class IScanner {
-    std::optional<Token> m_current, m_last{};
-    std::deque<Token> m_ready;
     static constexpr size_t TOKEN_BUFFER_SIZE = 256;
+
+    std::optional<Token> m_current, m_last;
+    std::deque<Token> m_ready;
+    bool m_skip_comments = false;
 
     void FillTokenBuffer();
     void SyncState(Token tok);
@@ -84,6 +86,7 @@ namespace ncc::lex {
     virtual Token GetNext() = 0;
 
   public:
+    IScanner() = default;
     virtual ~IScanner() = default;
 
     Token Next();
@@ -107,6 +110,9 @@ namespace ncc::lex {
     uint32_t StartColumn(Token t);
     uint32_t EndLine(Token t);
     uint32_t EndColumn(Token t);
+
+    virtual void SkipCommentsState(bool skip) { m_skip_comments = skip; }
+    bool GetSkipCommentsState() const { return m_skip_comments; }
   };
 
   class CPP_EXPORT Tokenizer final : public IScanner {
@@ -127,7 +133,7 @@ namespace ncc::lex {
 
   public:
     Tokenizer(std::istream &source_file, std::shared_ptr<core::Environment> env)
-        : m_file(source_file), m_env(env) {}
+        : IScanner(), m_file(source_file), m_env(env) {}
     virtual ~Tokenizer() override {}
 
     std::shared_ptr<core::Environment> GetEnvironment() const { return m_env; }

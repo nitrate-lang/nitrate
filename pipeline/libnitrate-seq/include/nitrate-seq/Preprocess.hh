@@ -92,6 +92,11 @@ public:
   std::shared_ptr<ncc::core::Environment> GetEnvironment() const {
     return m_env;
   }
+
+  void SkipCommentsState(bool skip) override {
+    IScanner::SkipCommentsState(skip);
+    m_scanner->SkipCommentsState(skip);
+  }
 };
 
 class StopException {};

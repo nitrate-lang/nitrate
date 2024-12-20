@@ -373,11 +373,12 @@ CPP_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
   m_env = env;
   m_allocator = std::make_unique<ncc::core::dyn_arena>();
   m_failed = false;
-
-  env->set("this.lexer.emit_comments", "false", true);
 }
 
 CPP_EXPORT ASTRoot Parser::parse() {
+  auto old_state = rd.GetSkipCommentsState();
+  rd.SkipCommentsState(true);
+
   /*== Install thread-local references to the parser ==*/
   auto old = ncc::parse::diagnostic;
   ncc::parse::diagnostic = this;
@@ -391,6 +392,8 @@ CPP_EXPORT ASTRoot Parser::parse() {
 
   /*== Uninstall thread-local references to the parser ==*/
   ncc::parse::diagnostic = old;
+
+  rd.SkipCommentsState(old_state);
 
   return ast;
 }
