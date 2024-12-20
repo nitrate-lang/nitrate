@@ -79,6 +79,74 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
   bool m_eof_bit;
   std::istream &m_file;
 
+  Token decode(TokenType t, std::string_view data) {
+    Token R;
+
+    switch (t) {
+      case TokenType::qEofF: {
+        R = Token::EndOfFile();
+        break;
+      }
+
+      case TokenType::qKeyW: {
+        R = Token(t, ncc::lex::keywords.left.at(data));
+        break;
+      }
+
+      case TokenType::qOper: {
+        R = Token(t, ncc::lex::operators.left.at(data));
+        break;
+      }
+
+      case TokenType::qPunc: {
+        R = Token(t, ncc::lex::punctuation.left.at(data));
+        break;
+      }
+
+      case TokenType::qName: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+
+      case TokenType::qIntL: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+
+      case TokenType::qNumL: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+
+      case TokenType::qText: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+
+      case TokenType::qChar: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+
+      case TokenType::qMacB: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+
+      case TokenType::qMacr: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+
+      case TokenType::qNote: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+    }
+
+    return R;
+  }
+
   Token next_impl_json() {
     if (m_eof_bit) [[unlikely]] {
       return eof_tok();
@@ -125,12 +193,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
 
     /* Validate the token type */
     if (valid_ty_id_tab[ty]) [[likely]] {
-      Token T;
-
-      /// TODO: Decode the value
-      /// FIXME: Implement the location saving
-
-      // qlex_tok_fromstr(this, static_cast<TokenType>(ty), str, &T);
+      Token T = decode(static_cast<TokenType>(ty), str);
 
       free(str);
       return T;
@@ -177,12 +240,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
 
     /* Validate the token type */
     if (valid_ty_id_tab[ty]) [[likely]] {
-      Token T;
-
-      /// TODO: Decode the value
-      /// FIXME: Implement the location saving
-      // qlex_tok_fromstr(this, static_cast<TokenType>(ty), str, &T);
-
+      Token T = decode(static_cast<TokenType>(ty), str);
       free(str);
       return T;
     }

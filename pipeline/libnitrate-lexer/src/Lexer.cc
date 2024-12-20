@@ -62,26 +62,33 @@ namespace ncc::lex {
     return boost::bimap<L, R>(list.begin(), list.end());
   }
 
-  static const boost::bimap<std::string_view, Keyword> keywords = make_bimap<
-      std::string_view, Keyword>({
-      {"scope", qKScope},     {"import", qKImport}, {"pub", qKPub},
-      {"sec", qKSec},         {"pro", qKPro},       {"type", qKType},
-      {"let", qKLet},         {"var", qKVar},       {"const", qKConst},
-      {"static", qKStatic},   {"struct", qKStruct}, {"region", qKRegion},
-      {"group", qKGroup},     {"class", qKClass},   {"union", qKUnion},
-      {"opaque", qKOpaque},   {"enum", qKEnum},     {"__fstring", qK__FString},
-      {"fn", qKFn},           {"unsafe", qKUnsafe}, {"safe", qKSafe},
-      {"promise", qKPromise}, {"if", qKIf},         {"else", qKElse},
-      {"for", qKFor},         {"while", qKWhile},   {"do", qKDo},
-      {"switch", qKSwitch},   {"break", qKBreak},   {"continue", qKContinue},
-      {"ret", qKReturn},      {"retif", qKRetif},   {"foreach", qKForeach},
-      {"try", qKTry},         {"catch", qKCatch},   {"throw", qKThrow},
-      {"async", qKAsync},     {"await", qKAwait},   {"__asm__", qK__Asm__},
-      {"undef", qKUndef},     {"null", qKNull},     {"true", qKTrue},
-      {"false", qKFalse},
-  });
+  CPP_EXPORT const boost::bimap<std::string_view, Keyword> keywords =
+      make_bimap<std::string_view, Keyword>({
+          {"scope", qKScope},     {"import", qKImport},
+          {"pub", qKPub},         {"sec", qKSec},
+          {"pro", qKPro},         {"type", qKType},
+          {"let", qKLet},         {"var", qKVar},
+          {"const", qKConst},     {"static", qKStatic},
+          {"struct", qKStruct},   {"region", qKRegion},
+          {"group", qKGroup},     {"class", qKClass},
+          {"union", qKUnion},     {"opaque", qKOpaque},
+          {"enum", qKEnum},       {"__fstring", qK__FString},
+          {"fn", qKFn},           {"unsafe", qKUnsafe},
+          {"safe", qKSafe},       {"promise", qKPromise},
+          {"if", qKIf},           {"else", qKElse},
+          {"for", qKFor},         {"while", qKWhile},
+          {"do", qKDo},           {"switch", qKSwitch},
+          {"break", qKBreak},     {"continue", qKContinue},
+          {"ret", qKReturn},      {"retif", qKRetif},
+          {"foreach", qKForeach}, {"try", qKTry},
+          {"catch", qKCatch},     {"throw", qKThrow},
+          {"async", qKAsync},     {"await", qKAwait},
+          {"__asm__", qK__Asm__}, {"undef", qKUndef},
+          {"null", qKNull},       {"true", qKTrue},
+          {"false", qKFalse},
+      });
 
-  static const boost::bimap<std::string_view, Operator> operators =
+  CPP_EXPORT const boost::bimap<std::string_view, Operator> operators =
       make_bimap<std::string_view, Operator>({
           {"+", qOpPlus},
           {"-", qOpMinus},
@@ -151,7 +158,7 @@ namespace ncc::lex {
           {"out", qOpOut},
       });
 
-  static const boost::bimap<std::string_view, Punctor> punctuation =
+  CPP_EXPORT const boost::bimap<std::string_view, Punctor> punctuation =
       make_bimap<std::string_view, Punctor>({
           {"(", qPuncLPar},
           {")", qPuncRPar},

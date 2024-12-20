@@ -49,6 +49,9 @@
 
 namespace ncc::lex {
   const char *qlex_ty_str(TokenType ty);
+  extern const boost::bimap<std::string_view, Keyword> keywords;
+  extern const boost::bimap<std::string_view, Operator> operators;
+  extern const boost::bimap<std::string_view, Punctor> punctuation;
 
   class ISourceFile {
   public:
