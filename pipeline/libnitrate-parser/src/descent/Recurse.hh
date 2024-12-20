@@ -44,7 +44,7 @@
 namespace ncc::parse {
 #define next() rd.Next()
 #define peek() rd.Peek()
-#define current() rd.Current()
+#define current() rd.Current().value_or(Token())
 
   template <auto tok>
   static std::optional<ncc::lex::Token> next_if_(ncc::lex::IScanner &rd) {

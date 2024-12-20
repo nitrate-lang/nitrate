@@ -149,8 +149,12 @@ CPP_EXPORT Token IScanner::Peek() {
 }
 
 CPP_EXPORT void IScanner::Undo() {
-  m_ready.push_front(m_last);
-  SyncState(m_last);
+  if (!m_last.has_value()) {
+    return;
+  }
+
+  m_ready.push_front(m_last.value());
+  SyncState(m_last.value());
 }
 
 CPP_EXPORT std::string_view IScanner::Filename(Token t) {

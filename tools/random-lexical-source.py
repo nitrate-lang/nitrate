@@ -3,7 +3,7 @@
 import sys
 import random
 
-FILE_SIZE = 1024*1024  # 4MB
+FILE_SIZE = 512*1024
 
 
 def random_name() -> str:

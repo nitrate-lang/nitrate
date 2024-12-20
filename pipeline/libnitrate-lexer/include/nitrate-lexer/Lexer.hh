@@ -58,7 +58,7 @@ namespace ncc::lex {
   struct ScannerEOF final {};
 
   class IScanner {
-    Token m_current{}, m_last{};
+    std::optional<Token> m_current, m_last{};
     std::string_view m_filename = "?";
     uint32_t m_line{}, m_column{}, m_offset{};
     std::deque<Token> m_ready;
@@ -85,13 +85,15 @@ namespace ncc::lex {
     Token Peek();
     void Undo();
 
-    Token Current() { return m_current; }
+    std::optional<Token> Current() { return m_current; }
 
     constexpr std::string_view GetCurrentFilename() const { return m_filename; }
     constexpr uint32_t GetCurrentLine() const { return m_line; }
     constexpr uint32_t GetCurrentColumn() const { return m_column; }
     constexpr uint32_t GetCurrentOffset() const { return m_offset; }
-    constexpr bool IsEof() const { return m_current.is(qEofF); }
+    constexpr bool IsEof() const {
+      return m_current.has_value() && m_current->is(qEofF);
+    }
 
     std::string_view Filename(Token t);
     uint32_t StartLine(Token t);

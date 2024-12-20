@@ -22,5 +22,6 @@
 -Wno-missing-field-initializers
 -Wno-unused-parameter
 -Wno-error=unused-parameter
+-Wno-overlength-strings
 -D__TARGET_VERSION="?"
 -fno-rtti

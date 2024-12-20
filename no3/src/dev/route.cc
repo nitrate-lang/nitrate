@@ -46,11 +46,13 @@
 #include <core/Logger.hh>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-lexer/Init.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 #include <nitrate-parser/Init.hh>
@@ -62,11 +64,126 @@ using namespace argparse;
 using namespace no3;
 
 namespace no3::benchmark {
+  extern std::string lexical_benchmark_source;
+
+  template <typename T>
+  struct Statistic {
+    T mean;
+    T variance;
+    T stddev;
+  };
+
+  template <typename T>
+  static Statistic<T> calculate_statistic(const std::vector<T> &data) {
+    T mean = 0.0;
+    for (const auto &value : data) {
+      mean += value;
+    }
+    mean /= data.size();
+
+    T variance = 0.0;
+    for (const auto &value : data) {
+      variance += std::pow(value - mean, 2);
+    }
+    variance /= data.size();
+
+    return {mean, variance, std::sqrt(variance)};
+  }
+
+  static size_t lexer_benchmark_round(
+      std::shared_ptr<ncc::core::Environment> &env) {
+    std::stringstream source(lexical_benchmark_source);
+    ncc::lex::Tokenizer tokenizer(source, env);
+
+    size_t tokens = 0;
+    while (!tokenizer.IsEof()) {
+      tokenizer.Next();
+      tokens++;
+    }
+
+    return tokens;
+  }
+
+  static int lexer_benchmark() {
+    size_t rounds = 128, total_tokens = 0;
+    std::vector<double> times;
+
+    auto env = std::make_shared<ncc::core::Environment>();
+
+    LOG(INFO) << "Starting lexer benchmark" << std::endl;
+    LOG(INFO) << "  Rounds: " << rounds << std::endl;
+
+    for (size_t i = 0; i < rounds; i++) {
+      auto start = std::chrono::high_resolution_clock::now();
+      total_tokens += lexer_benchmark_round(env);
+      auto end = std::chrono::high_resolution_clock::now();
+
+      double nanoseconds =
+          std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
+              .count();
+      times.push_back(nanoseconds);
+
+      LOG(INFO) << "Round " << i << ": " << nanoseconds << "ns";
+    }
+
+    LOG(INFO) << "Lexer benchmark completed" << std::endl;
+
+    double total_time = 0.0;
+    for (auto time : times) {
+      total_time += time;
+    }
+
+    LOG(INFO) << "Lexer benchmark results:" << std::endl;
+    LOG(INFO) << "  Total tokens: " << total_tokens << std::endl;
+    LOG(INFO) << "  Tokens per round: " << (total_tokens / rounds) << std::endl;
+    LOG(INFO) << "  Rounds: " << rounds << std::endl;
+    LOG(INFO) << "  Total time: " << total_time << "ns" << std::endl;
+
+    if (total_tokens > 0) {
+      auto stats = calculate_statistic(times);
+      LOG(INFO) << "  Round time mean: " << stats.mean << "ns" << std::endl;
+      LOG(INFO) << "  Round time variance: " << stats.variance << "ns"
+                << std::endl;
+      LOG(INFO) << "  Round time standard deviation: " << stats.stddev << "ns"
+                << std::endl;
+
+      std::vector<double> time_per_token;
+      for (auto time : times) {
+        time_per_token.push_back(time / (total_tokens / rounds));
+      }
+
+      stats = calculate_statistic(time_per_token);
+      LOG(INFO) << "  Per-token time mean: " << stats.mean << "ns" << std::endl;
+      LOG(INFO) << "  Per-token time variance: " << stats.variance << "ns"
+                << std::endl;
+      LOG(INFO) << "  Per-token time standard deviation: " << stats.stddev
+                << "ns" << std::endl;
+
+      const double input_size_mbit =
+          (lexical_benchmark_source.size() / 1000'000.0) * 8;
+
+      std::vector<double> round_throughputs;
+      for (auto time : times) {
+        double throughput_mbps = input_size_mbit / (time / 1000000000.0);
+        round_throughputs.push_back(throughput_mbps);
+      }
+
+      stats = calculate_statistic(round_throughputs);
+
+      LOG(INFO) << "  Throughput mean: " << stats.mean << " mbps" << std::endl;
+      LOG(INFO) << "  Throughput variance: " << stats.variance << " mbps"
+                << std::endl;
+      LOG(INFO) << "  Throughput standard deviation: " << stats.stddev
+                << " mbps" << std::endl;
+    }
+
+    return 0;
+  }
 
   enum class Benchmark {
     LEXER,
     PARSER,
-    Q_IR,
+    NITRATE_IR,
     DELTA_IR,
     LLVM_IR,
     LLVM_CODEGEN,
@@ -79,7 +196,7 @@ namespace no3::benchmark {
 
     switch (bench_type) {
       case Benchmark::LEXER: {
-        /// TODO: Implement benchmark
+        R = lexer_benchmark();
         break;
       }
 
@@ -88,7 +205,7 @@ namespace no3::benchmark {
         break;
       }
 
-      case Benchmark::Q_IR: {
+      case Benchmark::NITRATE_IR: {
         /// TODO: Implement benchmark
         break;
       }
@@ -338,7 +455,7 @@ namespace no3::router {
       static const std::unordered_map<std::string, Benchmark> name_map = {
           {"lexer", Benchmark::LEXER},
           {"parser", Benchmark::PARSER},
-          {"nitrate-ir", Benchmark::Q_IR},
+          {"nitrate-ir", Benchmark::NITRATE_IR},
           {"delta-ir", Benchmark::DELTA_IR},
           {"llvm-ir", Benchmark::LLVM_IR},
           {"llvm-codegen", Benchmark::LLVM_CODEGEN},
