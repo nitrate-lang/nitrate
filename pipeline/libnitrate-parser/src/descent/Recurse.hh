@@ -34,48 +34,22 @@
 #ifndef __NITRATE_PARSE_H__
 #define __NITRATE_PARSE_H__
 
-#include <nitrate-core/Macro.h>
-#include <nitrate-lexer/Token.h>
-#include <nitrate-parser/Parser.h>
-
 #include <core/Context.hh>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
-#include <set>
+#include <nitrate-parser/ASTCommon.hh>
+#include <nitrate-parser/Context.hh>
 
-namespace npar {
-  Stmt *recurse_pub(npar_t &S, qlex_t &rd);
-  Stmt *recurse_sec(npar_t &S, qlex_t &rd);
-  Stmt *recurse_pro(npar_t &S, qlex_t &rd);
-  std::vector<Stmt *> recurse_variable(npar_t &S, qlex_t &rd, VarDeclType type);
-  Stmt *recurse_enum(npar_t &S, qlex_t &rd);
-  Stmt *recurse_struct(npar_t &S, qlex_t &rd, CompositeType type);
-  Stmt *recurse_scope(npar_t &S, qlex_t &rd);
-  Stmt *recurse_function(npar_t &S, qlex_t &rd, bool restrict_decl_only);
-  Type *recurse_type(npar_t &S, qlex_t &rd);
-  Stmt *recurse_typedef(npar_t &S, qlex_t &rd);
-  Stmt *recurse_return(npar_t &S, qlex_t &rd);
-  Stmt *recurse_retif(npar_t &S, qlex_t &rd);
-  Stmt *recurse_if(npar_t &S, qlex_t &rd);
-  Stmt *recurse_while(npar_t &S, qlex_t &rd);
-  Stmt *recurse_for(npar_t &S, qlex_t &rd);
-  Stmt *recurse_foreach(npar_t &S, qlex_t &rd);
-  Stmt *recurse_switch(npar_t &S, qlex_t &rd);
-  Stmt *recurse_inline_asm(npar_t &S, qlex_t &rd);
-
-  Stmt *recurse_block(npar_t &S, qlex_t &rd, bool expect_braces = true,
-                      bool single_stmt = false);
-
-  Expr *recurse_expr(npar_t &S, qlex_t &rd, std::set<qlex_tok_t> terminators,
-                     size_t depth = 0);
-
-#define next() qlex_next(&rd)
-#define peek() qlex_peek(&rd)
-#define current() qlex_current(&rd)
+namespace ncc::parse {
+#define next() rd.Next()
+#define peek() rd.Peek()
+#define current() rd.Current().value_or(Token())
 
   template <auto tok>
-  static std::optional<qlex_tok_t> next_if_(qlex_t &rd) {
+  static std::optional<ncc::lex::Token> next_if_(ncc::lex::IScanner &rd) {
     let t = peek();
-    if constexpr (std::is_same_v<decltype(tok), qlex_ty_t>) {
+    if constexpr (std::is_same_v<decltype(tok), ncc::lex::TokenType>) {
       if (t.is(tok)) {
         next();
         return t;
@@ -92,6 +66,6 @@ namespace npar {
 
 #define next_if(tok) next_if_<tok>(rd)
 
-};  // namespace npar
+};  // namespace ncc::parse
 
 #endif  // __NITRATE_PARSE_H__

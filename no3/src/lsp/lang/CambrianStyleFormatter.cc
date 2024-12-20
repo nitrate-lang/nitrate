@@ -1,14 +1,15 @@
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
-#include <nitrate-lexer/Lexer.h>
-
 #include <lsp/lang/CambrianStyleFormatter.hh>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
 #include <sstream>
 #include <unordered_set>
 
 using namespace lsp::fmt;
-using namespace npar;
+using namespace ncc::parse;
+using namespace ncc::core;
+using namespace ncc::lex;
 
 CambrianFormatter::LineStreamWritter&
 CambrianFormatter::LineStreamWritter::operator<<(
@@ -23,13 +24,13 @@ CambrianFormatter::LineStreamWritter::operator<<(
 }
 
 CambrianFormatter::LineStreamWritter&
-CambrianFormatter::LineStreamWritter::operator<<(qlex_op_t op) {
-  m_line_buffer << qlex_opstr(op);
+CambrianFormatter::LineStreamWritter::operator<<(Operator op) {
+  m_line_buffer << op;
   return *this;
 }
 
 CambrianFormatter::LineStreamWritter&
-CambrianFormatter::LineStreamWritter::operator<<(npar::Vis v) {
+CambrianFormatter::LineStreamWritter::operator<<(ncc::parse::Vis v) {
   switch (v) {
     case Vis::Sec: {
       m_line_buffer << "sec";
@@ -261,7 +262,7 @@ void CambrianFormatter::format_type_metadata(Type const& n) {
   }
 }
 
-void CambrianFormatter::visit(npar_node_t const&) {
+void CambrianFormatter::visit(Base const&) {
   /** This node symbolizes a placeholder value in the event of an error. */
   failed = true;
 
@@ -587,7 +588,7 @@ void CambrianFormatter::visit(TernaryExpr const& n) {
 void CambrianFormatter::visit(ConstInt const& n) { line << n.get_value(); }
 
 void CambrianFormatter::visit(ConstFloat const& n) {
-  write_float_literal(*n.get_value());
+  write_float_literal(n.get_value());
 }
 
 void CambrianFormatter::visit(ConstBool const& n) {
@@ -599,7 +600,7 @@ void CambrianFormatter::visit(ConstBool const& n) {
 }
 
 void CambrianFormatter::visit(ConstString const& n) {
-  escape_string_literal(*n.get_value());
+  escape_string_literal(n.get_value());
 }
 
 void CambrianFormatter::visit(ConstChar const& n) {
@@ -618,8 +619,8 @@ void CambrianFormatter::visit(Call const& n) {
   size_t argc = n.get_args().size();
 
   bool any_named =
-      std::any_of(n.get_args().begin(), n.get_args().end(), [](let arg) {
-        let name = std::get<0>(arg);
+      std::any_of(n.get_args().begin(), n.get_args().end(), [](CallArg arg) {
+        let name = arg.first;
         return !std::isdigit(name->at(0));
       });
 
@@ -801,8 +802,8 @@ void CambrianFormatter::visit(Slice const& n) {
 void CambrianFormatter::visit(FString const& n) {
   line << "f\"";
   for (let part : n.get_items()) {
-    if (std::holds_alternative<SmallString>(part)) {
-      escape_string_literal(*std::get<SmallString>(part), false);
+    if (std::holds_alternative<str_alias>(part)) {
+      escape_string_literal(*std::get<str_alias>(part), false);
     } else {
       line << "{";
       std::get<Expr*>(part)->accept(*this);
@@ -995,7 +996,7 @@ void CambrianFormatter::visit(ForStmt const& n) {
 
 void CambrianFormatter::visit(ForeachStmt const& n) {
   line << "foreach (";
-  if (n.get_idx_ident()->empty()) {
+  if (n.get_idx_ident().empty()) {
     line << n.get_val_ident();
   } else {
     line << n.get_idx_ident() << ", " << n.get_val_ident();
@@ -1294,7 +1295,7 @@ void CambrianFormatter::visit(EnumDef const& n) {
 void CambrianFormatter::visit(ScopeStmt const& n) {
   line << "scope";
 
-  if (!n.get_name()->empty()) {
+  if (!n.get_name().empty()) {
     line << " " << n.get_name();
   }
 
@@ -1313,9 +1314,9 @@ void CambrianFormatter::visit(ScopeStmt const& n) {
 void CambrianFormatter::visit(ExportStmt const& n) {
   line << n.get_vis();
 
-  if (!n.get_abi_name()->empty()) {
+  if (!n.get_abi_name().empty()) {
     line << " ";
-    escape_string_literal(*n.get_abi_name());
+    escape_string_literal(n.get_abi_name());
   }
 
   if (!n.get_attrs().empty()) {

@@ -32,38 +32,38 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <descent/Recurse.hh>
+#include <nitrate-parser/ASTData.hh>
 #include <unordered_set>
 
-using namespace npar;
+using namespace ncc::lex;
+using namespace ncc::parse;
 
-static Type *recurse_function_parameter_type(npar_t &S, qlex_t &rd) {
+Type *Parser::recurse_function_parameter_type() {
   if (next_if(qPuncColn)) {
-    return recurse_type(S, rd);
+    return recurse_type();
   } else {
     let type = make<InferTy>();
-    type->set_offset(current().start);
+    type->set_offset(current().get_start());
     return type;
   }
 }
 
-static std::optional<Expr *> recurse_function_parameter_value(npar_t &S,
-                                                              qlex_t &rd) {
+std::optional<Expr *> Parser::recurse_function_parameter_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
-        S, rd,
-        {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar),
-         qlex_tok_t(qOper, qOpGT)});
+
+        {Token(qPunc, qPuncComa), Token(qPunc, qPuncRPar),
+         Token(qOper, qOpGT)});
   } else {
     return std::nullopt;
   }
 }
 
-static std::optional<FuncParam> recurse_function_parameter(npar_t &S,
-                                                           qlex_t &rd) {
+std::optional<FuncParam> Parser::recurse_function_parameter() {
   if (let name = next_if(qName)) {
-    let param_name = name->as_string(&rd);
-    let param_type = recurse_function_parameter_type(S, rd);
-    let param_value = recurse_function_parameter_value(S, rd);
+    let param_name = name->as_string();
+    let param_type = recurse_function_parameter_type();
+    let param_value = recurse_function_parameter_value();
 
     return FuncParam{SaveString(param_name), param_type,
                      param_value.value_or(nullptr)};
@@ -74,8 +74,7 @@ static std::optional<FuncParam> recurse_function_parameter(npar_t &S,
   return std::nullopt;
 }
 
-std::optional<TemplateParameters> recurse_template_parameters(npar_t &S,
-                                                              qlex_t &rd) {
+std::optional<TemplateParameters> Parser::recurse_template_parameters() {
   if (!next_if(qOpLT)) {
     return std::nullopt;
   }
@@ -92,7 +91,7 @@ std::optional<TemplateParameters> recurse_template_parameters(npar_t &S,
       break;
     }
 
-    if (let param_opt = recurse_function_parameter(S, rd)) {
+    if (let param_opt = recurse_function_parameter()) {
       let param = *param_opt;
       let tparam = TemplateParameter{std::get<0>(param), std::get<1>(param),
                                      std::get<2>(param)};
@@ -108,7 +107,7 @@ std::optional<TemplateParameters> recurse_template_parameters(npar_t &S,
   return params;
 }
 
-static FuncParams recurse_function_parameters(npar_t &S, qlex_t &rd) {
+FuncParams Parser::recurse_function_parameters() {
   FuncParams parameters;
 
   if (!next_if(qPuncLPar)) {
@@ -134,7 +133,7 @@ static FuncParams recurse_function_parameters(npar_t &S, qlex_t &rd) {
       break;
     }
 
-    if (let param_opt = recurse_function_parameter(S, rd)) {
+    if (let param_opt = recurse_function_parameter()) {
       let param = *param_opt;
       let tparam =
           FuncParam{std::get<0>(param), std::get<1>(param), std::get<2>(param)};
@@ -150,10 +149,9 @@ static FuncParams recurse_function_parameters(npar_t &S, qlex_t &rd) {
   return parameters;
 }
 
-static FuncPurity get_purity_specifier(qlex_tok_t &start_pos,
-                                       bool is_thread_safe, bool is_pure,
-                                       bool is_impure, bool is_quasi,
-                                       bool is_retro) {
+FuncPurity Parser::get_purity_specifier(Token &start_pos, bool is_thread_safe,
+                                        bool is_pure, bool is_impure,
+                                        bool is_quasi, bool is_retro) {
   /** Thread safety does not conflict with purity.
    *  Purity implies thread safety.
    */
@@ -178,8 +176,8 @@ static FuncPurity get_purity_specifier(qlex_tok_t &start_pos,
   }
 }
 
-static std::optional<std::pair<SmallString, bool>> recurse_function_capture(
-    qlex_t &rd) {
+std::optional<std::pair<std::string_view, bool>>
+Parser::recurse_function_capture() {
   bool is_ref = false;
 
   if (next_if(qOpBitAnd)) {
@@ -187,7 +185,7 @@ static std::optional<std::pair<SmallString, bool>> recurse_function_capture(
   }
 
   if (let name = next_if(qName)) {
-    return {{SaveString(name->as_string(&rd)), is_ref}};
+    return {{name->as_string(), is_ref}};
   } else {
     diagnostic << next() << "Expected a capture name";
   }
@@ -195,10 +193,10 @@ static std::optional<std::pair<SmallString, bool>> recurse_function_capture(
   return std::nullopt;
 }
 
-static void recurse_function_ambigouis(npar_t &S, qlex_t &rd,
-                                       ExpressionList &attributes,
-                                       FnCaptures &captures, FuncPurity &purity,
-                                       std::string_view &function_name) {
+void Parser::recurse_function_ambigouis(ExpressionList &attributes,
+                                        FnCaptures &captures,
+                                        FuncPurity &purity,
+                                        std::string_view &function_name) {
   enum class State {
     Main,
     AttributesSection,
@@ -209,7 +207,7 @@ static void recurse_function_ambigouis(npar_t &S, qlex_t &rd,
   bool is_thread_safe = false, is_pure = false, is_impure = false,
        is_quasi = false, is_retro = false;
   bool parsed_attributes = false, parsed_captures = false;
-  qlex_tok_t start_pos = current();
+  Token start_pos = current();
 
   while (state != State::End) {
     if (next_if(qEofF)) {
@@ -223,7 +221,7 @@ static void recurse_function_ambigouis(npar_t &S, qlex_t &rd,
           static const std::unordered_set<std::string_view> reserved_words = {
               "foreign", "inline"};
 
-          let name = identifier->as_string(&rd);
+          let name = identifier->as_string();
 
           if (name == "pure") {
             is_pure = true;
@@ -289,8 +287,8 @@ static void recurse_function_ambigouis(npar_t &S, qlex_t &rd,
           }
 
           let attribute = recurse_expr(
-              S, rd,
-              {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRBrk)});
+
+              {Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk)});
 
           attributes.push_back(attribute);
 
@@ -314,8 +312,8 @@ static void recurse_function_ambigouis(npar_t &S, qlex_t &rd,
             break;
           }
 
-          if (let capture = recurse_function_capture(rd)) {
-            captures.push_back(*capture);
+          if (let capture = recurse_function_capture()) {
+            captures.push_back({SaveString(capture->first), capture->second});
           }
 
           next_if(qPuncComa);
@@ -334,46 +332,44 @@ static void recurse_function_ambigouis(npar_t &S, qlex_t &rd,
                                 is_quasi, is_retro);
 }
 
-static Type *recurse_function_return_type(npar_t &S, qlex_t &rd) {
+Type *Parser::Parser::recurse_function_return_type() {
   if (next_if(qPuncColn)) {
-    return recurse_type(S, rd);
+    return recurse_type();
   } else {
     let type = make<InferTy>();
-    type->set_offset(current().start);
+    type->set_offset(current().get_start());
 
     return type;
   }
 }
 
-static std::optional<Stmt *> recurse_function_body(npar_t &S, qlex_t &rd,
-                                                   bool restrict_decl_only) {
+std::optional<Stmt *> Parser::recurse_function_body(bool restrict_decl_only) {
   if (restrict_decl_only || next_if(qPuncSemi)) {
     return std::nullopt;
   } else if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true);
+    return recurse_block(false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true, false);
+    return recurse_block(true, false, SafetyMode::Unknown);
   }
 }
 
-Stmt *npar::recurse_function(npar_t &S, qlex_t &rd, bool restrict_decl_only) {
+Stmt *Parser::recurse_function(bool restrict_decl_only) {
   /* fn <attributes>? <modifiers>? <capture_list>?
    * <name><template_parameters>?(<parameters>?)<: return_type>? <body>? */
 
-  let start_pos = current().start;
+  let start_pos = current().get_start();
 
   ExpressionList attributes;
   FnCaptures captures;
   FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE;
   std::string_view function_name;
 
-  recurse_function_ambigouis(S, rd, attributes, captures, purity,
-                             function_name);
+  recurse_function_ambigouis(attributes, captures, purity, function_name);
 
-  let template_parameters = recurse_template_parameters(S, rd);
-  let parameters = recurse_function_parameters(S, rd);
-  let return_type = recurse_function_return_type(S, rd);
-  let body = recurse_function_body(S, rd, restrict_decl_only);
+  let template_parameters = recurse_template_parameters();
+  let parameters = recurse_function_parameters();
+  let return_type = recurse_function_return_type();
+  let body = recurse_function_body(restrict_decl_only);
 
   /// TODO: Implement function contract pre and post conditions
 

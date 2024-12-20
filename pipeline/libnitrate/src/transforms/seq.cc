@@ -31,26 +31,22 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Env.h>
-#include <nitrate-core/Lib.h>
 #include <nitrate/code.h>
 
 #include <core/SerialUtil.hh>
-#include <core/Transformer.hh>
-#include <functional>
+#include <core/Transform.hh>
+#include <nitrate-core/Environment.hh>
+#include <nitrate-core/Init.hh>
 #include <nitrate-seq/Classes.hh>
-#include <string_view>
 #include <unordered_set>
 
-extern bool impl_use_msgpack(qlex_t *L, std::ostream &O);
-extern bool impl_use_json(qlex_t *L, std::ostream &O);
+using namespace ncc::lex;
 
-bool nit::seq(std::istream &source, std::ostream &output,
-              std::function<void(const char *)> diag_cb,
-              const std::unordered_set<std::string_view> &opts) {
-  (void)diag_cb;
+extern bool impl_use_msgpack(IScanner *L, std::ostream &O);
+extern bool impl_use_json(IScanner *L, std::ostream &O);
 
-  qprep lexer(source, nullptr, qcore_env_current());
+CREATE_TRANSFORM(nit::seq) {
+  qprep lexer(source, nullptr, env);
 
   enum class OutMode {
     JSON,
@@ -58,7 +54,7 @@ bool nit::seq(std::istream &source, std::ostream &output,
   } out_mode = OutMode::JSON;
 
   if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
+    qcore_logf(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
     return false;
   } else if (opts.contains("-fuse-msgpack")) {
     out_mode = OutMode::MsgPack;

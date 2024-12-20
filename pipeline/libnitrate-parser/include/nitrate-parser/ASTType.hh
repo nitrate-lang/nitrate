@@ -35,15 +35,17 @@
 #define __NITRATE_AST_ASTTYPE_H__
 
 #include <nitrate-parser/ASTBase.hh>
+#include <span>
 
-namespace npar {
+namespace ncc::parse {
   class NamedTy : public Type {
-    SmallString m_name;
+    ncc::core::str_alias m_name;
 
   public:
-    NamedTy(SmallString name) : Type(QAST_NAMED), m_name(name) {}
+    constexpr NamedTy(ncc::core::str_alias name)
+        : Type(QAST_NAMED), m_name(name) {}
 
-    let get_name() const { return m_name; }
+    constexpr auto get_name() const { return m_name.get(); }
   };
 
   class InferTy : public Type {
@@ -59,8 +61,8 @@ namespace npar {
     TemplType(Type *templ, const CallArgs &args)
         : Type(QAST_TEMPLATE), m_template(templ), m_args(args) {}
 
-    let get_template() const { return m_template; }
-    let get_args() const { return m_args; }
+    constexpr auto get_template() const { return m_template; }
+    constexpr let get_args() const { return m_args; }
   };
 
   class U1 : public Type {
@@ -151,17 +153,17 @@ namespace npar {
     constexpr PtrTy(Type *item, bool is_volatile = false)
         : Type(QAST_PTR), m_item(item), m_is_volatile(is_volatile) {}
 
-    let get_item() const { return m_item; }
-    bool is_volatile() const { return m_is_volatile; }
+    constexpr auto get_item() const { return m_item; }
+    constexpr bool is_volatile() const { return m_is_volatile; }
   };
 
   class OpaqueTy : public Type {
-    SmallString m_name;
+    ncc::core::str_alias m_name;
 
   public:
-    OpaqueTy(SmallString name) : Type(QAST_OPAQUE), m_name(name) {}
+    OpaqueTy(ncc::core::str_alias name) : Type(QAST_OPAQUE), m_name(name) {}
 
-    let get_name() const { return m_name; }
+    constexpr auto get_name() const { return m_name.get(); }
   };
 
   class TupleTy : public Type {
@@ -170,7 +172,7 @@ namespace npar {
   public:
     TupleTy(const TupleTyItems &items) : Type(QAST_TUPLE), m_items(items) {}
 
-    let get_items() const { return m_items; }
+    constexpr let get_items() const { return m_items; }
   };
 
   class ArrayTy : public Type {
@@ -181,8 +183,8 @@ namespace npar {
     constexpr ArrayTy(Type *item, Expr *size)
         : Type(QAST_ARRAY), m_item(item), m_size(size) {}
 
-    let get_item() const { return m_item; }
-    let get_size() const { return m_size; }
+    constexpr auto get_item() const { return m_item; }
+    constexpr auto get_size() const { return m_size; }
   };
 
   class RefTy : public Type {
@@ -191,29 +193,29 @@ namespace npar {
   public:
     constexpr RefTy(Type *item) : Type(QAST_REF), m_item(item) {}
 
-    let get_item() const { return m_item; }
+    constexpr auto get_item() const { return m_item; }
   };
 
   class FuncTy : public Type {
-    ExpressionList m_attributes;
+    std::span<Expr *> m_attributes;
     FuncParams m_params;
     Type *m_return;
     FuncPurity m_purity;
 
   public:
     FuncTy(Type *return_type, FuncParams parameters, FuncPurity purity,
-           ExpressionList attributes)
+           std::span<Expr *> attributes)
         : Type(QAST_FUNCTOR),
           m_attributes(attributes),
           m_params(parameters),
           m_return(return_type),
           m_purity(purity) {}
 
-    let get_return() const { return m_return; }
-    let get_params() const { return m_params; }
-    let get_purity() const { return m_purity; }
-    let get_attributes() const { return m_attributes; }
+    constexpr auto get_return() const { return m_return; }
+    constexpr auto get_purity() const { return m_purity; }
+    constexpr let get_params() const { return m_params; }
+    constexpr auto get_attributes() const { return m_attributes; }
   };
-}  // namespace npar
+}  // namespace ncc::parse
 
 #endif

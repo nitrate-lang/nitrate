@@ -33,16 +33,17 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::lex;
+using namespace ncc::parse;
 
 std::optional<std::pair<std::string_view, std::string_view>>
-recurse_foreach_names(qlex_t &rd) {
+Parser::recurse_foreach_names() {
   if (let ident1 = next_if(qName)) {
-    let ident1_value = ident1->as_string(&rd);
+    let ident1_value = ident1->as_string();
 
     if (next_if(qPuncComa)) {
       if (let ident2 = next_if(qName)) {
-        let ident2_value = ident2->as_string(&rd);
+        let ident2_value = ident2->as_string();
         return std::make_pair(ident1_value, ident2_value);
       } else {
         diagnostic << current() << "Expected identifier in foreach statement";
@@ -57,24 +58,23 @@ recurse_foreach_names(qlex_t &rd) {
   return std::nullopt;
 }
 
-static Expr *recurse_foreach_expr(npar_t &S, qlex_t &rd, bool has_paren) {
+Expr *Parser::recurse_foreach_expr(bool has_paren) {
   if (has_paren) {
-    return recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncRPar)});
+    return recurse_expr({Token(qPunc, qPuncRPar)});
   } else {
-    return recurse_expr(
-        S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
+    return recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
   }
 }
 
-static Stmt *recurse_foreach_body(npar_t &S, qlex_t &rd) {
+Stmt *Parser::recurse_foreach_body() {
   if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true);
+    return recurse_block(false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true, false);
+    return recurse_block(true, false, SafetyMode::Unknown);
   }
 }
 
-npar::Stmt *npar::recurse_foreach(npar_t &S, qlex_t &rd) {
+Stmt *Parser::recurse_foreach() {
   /**
    * Syntax examples:
    *   `foreach (i, v in arr) { }`, `foreach (v in arr) { }`
@@ -83,18 +83,18 @@ npar::Stmt *npar::recurse_foreach(npar_t &S, qlex_t &rd) {
 
   bool has_paren = next_if(qPuncLPar).has_value();
 
-  if (let ident_pair_opt = recurse_foreach_names(rd)) {
+  if (let ident_pair_opt = recurse_foreach_names()) {
     let[index_name, value_name] = ident_pair_opt.value();
 
     if (next_if(qOpIn)) {
-      let iter_expr = recurse_foreach_expr(S, rd, has_paren);
+      let iter_expr = recurse_foreach_expr(has_paren);
       if (has_paren) {
         if (!next_if(qPuncRPar)) {
           diagnostic << current() << "Expected ')' in foreach statement";
         }
       }
 
-      let body = recurse_foreach_body(S, rd);
+      let body = recurse_foreach_body();
 
       return make<ForeachStmt>(SaveString(index_name), SaveString(value_name),
                                iter_expr, body);

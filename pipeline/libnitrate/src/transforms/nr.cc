@@ -31,53 +31,47 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Lib.h>
 #include <nitrate/code.h>
 
 #include <core/SerialUtil.hh>
-#include <core/Transformer.hh>
-#include <functional>
-#include <nitrate-core/Classes.hh>
+#include <core/Transform.hh>
+#include <nitrate-core/Init.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/Writer.hh>
 #include <nitrate-parser/ASTReader.hh>
-#include <string_view>
 #include <unordered_set>
 
-bool nit::nr(std::istream &source, std::ostream &output,
-             std::function<void(const char *)> diag_cb,
-             const std::unordered_set<std::string_view> &opts) {
+CREATE_TRANSFORM(nit::nr) {
   enum class OutMode {
     JSON,
     MsgPack,
   } out_mode = OutMode::JSON;
 
   if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
+    qcore_logf(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
     return false;
   } else if (opts.contains("-fuse-msgpack")) {
     out_mode = OutMode::MsgPack;
   }
 
-  std::optional<npar_node_t *> root;
+  std::optional<ncc::parse::Base *> root;
 
   if (source.peek() == '{') {
-    root = npar::AST_JsonReader(source).get();
+    root = ncc::parse::AST_JsonReader(source).get();
   } else {
-    root = npar::AST_MsgPackReader(source).get();
+    root = ncc::parse::AST_MsgPackReader(source).get();
   }
 
   if (!root.has_value()) {
-    qcore_print(QCORE_ERROR, "Failed to parse input.");
+    qcore_logf(QCORE_ERROR, "Failed to parse input.");
     return false;
   }
 
   qmodule ir_module;
 
-  bool ok =
-      nr_lower(&ir_module.get(), root.value(), nullptr, diag_cb != nullptr);
+  bool ok = nr_lower(&ir_module.get(), root.value(), nullptr, true);
   if (!ok) {
-    diag_cb("Failed to lower IR module.\n");
+    qcore_print(QCORE_ERROR, "Failed to lower IR module.\n");
     return false;
   }
 

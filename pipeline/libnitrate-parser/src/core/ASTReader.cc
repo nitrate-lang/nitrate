@@ -31,12 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
-
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-parser/ASTReader.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
 void AST_Reader::str(std::string_view str) {
   /// TODO: Implement generic deserializer

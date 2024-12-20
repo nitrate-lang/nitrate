@@ -35,115 +35,78 @@
 #define __LIBNITRATE_CODE_HH__
 
 #include <nitrate/code.h>
-#include <nitrate/stream.h>
 
 #include <cstdbool>
 #include <cstring>
 #include <functional>
-#include <future>
 #include <iostream>
-#include <memory>
 #include <optional>
-#include <span>
+#include <sstream>
 #include <string_view>
 
 namespace nitrate {
-  class Stream final {
-    nit_stream_t *m_stream;
+  using DiagnosticFunc = std::function<void(std::string_view message)>;
 
-    Stream(const Stream &) = delete;
-    Stream &operator=(const Stream &) = delete;
+  template <typename T>
+  class LazyResult {
+    std::function<T()> m_func;
+    std::optional<T> m_value;
 
   public:
-    Stream(FILE *file, bool auto_close = false)
-        : m_stream(nit_from(file, auto_close)) {}
+    LazyResult(std::function<T()> func) : m_func(func) {}
 
-    Stream(const std::vector<FILE *> &merge_files, bool auto_close = false)
-        : m_stream(
-              nit_njoin(auto_close, merge_files.size(), merge_files.data())) {}
-
-    Stream(std::span<FILE *> merge_files, bool auto_close = false)
-        : m_stream(
-              nit_njoin(auto_close, merge_files.size(), merge_files.data())) {}
-
-    ///=================================================================///
-
-    Stream(std::string_view content)
-        : m_stream(nit_from(
-              fmemopen((void *)content.data(), content.size(), "r"), true)) {}
-
-    Stream(const char *content)
-        : m_stream(nit_from(fmemopen((void *)content, strlen(content), "r"),
-                            true)) {}
-
-    Stream(const std::vector<uint8_t> &content)
-        : m_stream(nit_from(
-              fmemopen((void *)content.data(), content.size(), "r"), true)) {}
-
-    Stream(const std::string &content)
-        : m_stream(nit_from(
-              fmemopen((void *)content.c_str(), content.size(), "r"), true)) {}
-
-    Stream(const uint8_t *content, size_t size)
-        : m_stream(nit_from(fmemopen((void *)content, size, "r"), true)) {}
-
-    template <class T>
-    Stream(std::span<T> merge_content) {
-      std::vector<FILE *> files;
-      for (const auto &content : merge_content) {
-        files.push_back(fmemopen((void *)content.data(), content.size(), "r"));
+    T get() {
+      if (!m_value.has_value()) {
+        m_value = m_func();
       }
-      m_stream = nit_njoin(true, files.size(), files.data());
+
+      return m_value.value();
     }
 
-    ///=================================================================///
+    void wait() { get(); }
 
-    Stream(Stream &&other) {
-      this->m_stream = other.m_stream;
-      other.m_stream = nullptr;
-    }
-
-    ///=================================================================///
-
-    ~Stream() {
-      if (m_stream) {
-        nit_fclose(m_stream);
-      }
-    };
-
-    bool is_open() const { return m_stream != nullptr; }
-
-    nit_stream_t *get() const { return m_stream; }
+    std::function<T()> _get_functor() { return m_func; }
   };
 
-  using DiagnosticFunc =
-      std::function<void(std::string_view message, std::string_view by)>;
+  static inline void default_diagnostic(std::string_view message) {
+    std::cerr << message << std::endl;
+  }
 
-  std::future<bool> pipeline(
-      std::shared_ptr<Stream> in, std::shared_ptr<Stream> out,
-      const std::vector<std::string> &options,
-      std::optional<DiagnosticFunc> diag = [](std::string_view message,
-                                              std::string_view) {
-        std::cerr << message;
-        std::cerr.flush();
-      });
+  LazyResult<bool> pipeline(
+      std::istream &in, std::ostream &out, std::vector<std::string> options,
+      std::optional<DiagnosticFunc> diag = default_diagnostic);
 
-  std::future<bool> pipeline(
-      Stream in, Stream out, const std::vector<std::string> &options,
-      std::optional<DiagnosticFunc> diag = [](std::string_view message,
-                                              std::string_view) {
-        std::cerr << message;
-        std::cerr.flush();
-      });
+  template <typename T>
+  static inline LazyResult<bool> pipeline(
+      const T &in, std::string &out, std::vector<std::string> options,
+      std::optional<DiagnosticFunc> diag = default_diagnostic) {
+    std::stringstream out_stream, in_stream(in);
+    auto unit = pipeline(in_stream, out_stream, std::move(options), diag);
+    unit.wait();
+    out.assign(out_stream.str());
 
-  std::future<bool> pipeline(
-      Stream in, std::string &out, const std::vector<std::string> &options,
-      std::optional<DiagnosticFunc> diag = [](std::string_view message,
-                                              std::string_view) {
-        std::cerr << message;
-        std::cerr.flush();
-      });
+    return unit;
+  }
 
+  using ChainOptions = std::vector<std::vector<std::string>>;
+
+  LazyResult<bool> chain(
+      std::istream &in, std::ostream &out, ChainOptions operations,
+      std::optional<DiagnosticFunc> diag = default_diagnostic,
+      bool select = false);
+
+  static inline LazyResult<bool> chain(
+      const auto &in, std::string &out, ChainOptions operations,
+      std::optional<DiagnosticFunc> diag = default_diagnostic) {
+    std::stringstream out_stream, in_stream(in);
+    auto unit =
+        chain(in_stream, out_stream, std::move(operations), diag, false);
+    unit.wait();
+
+    out.assign(out_stream.str());
+
+    return unit;
+  }
 }  // namespace nitrate
 
 #endif  // __LIBNITRATE_CODE_HH__

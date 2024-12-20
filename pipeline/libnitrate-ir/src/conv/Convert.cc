@@ -31,10 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
 #include <nitrate-ir/IR.h>
-#include <nitrate-parser/Parser.h>
 
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <core/Config.hh>
@@ -42,20 +39,25 @@
 #include <core/PassManager.hh>
 #include <cstdint>
 #include <cstring>
+#include <memory>
+#include <nitrate-core/Allocate.hh>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/Report.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/Context.hh>
 #include <stack>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 
-#include "nitrate-parser/ASTData.hh"
-
 using namespace nr;
+using namespace ncc::core;
+using namespace ncc::lex;
 
 struct PState {
 private:
@@ -100,15 +102,15 @@ using EResult = std::optional<Expr *>;
 using BResult = std::optional<std::vector<nr::Expr *>>;
 
 static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, IReport *G,
-                                           npar_node_t *node);
+                                           ncc::parse::Base *node);
 static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G,
-                         npar_node_t *node);
+                         ncc::parse::Base *node);
 
 #define next_one(n) nrgen_one(b, s, G, n)
 #define next_any(n) nrgen_any(b, s, G, n)
 
-C_EXPORT bool nr_lower(qmodule_t **mod, npar_node_t *base, const char *name,
-                       bool diagnostics) {
+C_EXPORT bool nr_lower(qmodule_t **mod, ncc::parse::Base *base,
+                       const char *name, bool diagnostics) {
   if (!mod || !base) {
     return false;
   }
@@ -116,8 +118,8 @@ C_EXPORT bool nr_lower(qmodule_t **mod, npar_node_t *base, const char *name,
     name = "module";
   }
 
-  qcore_arena scratch_arena;
-  std::swap(nr::nr_arena.get(), *scratch_arena.get());
+  std::unique_ptr<IMemory> scratch_arena = std::make_unique<dyn_arena>();
+  std::swap(nr::nr_allocator, scratch_arena);
 
   /// TODO: Get the target platform infoformation
   TargetInfo target_info;
@@ -151,7 +153,7 @@ C_EXPORT bool nr_lower(qmodule_t **mod, npar_node_t *base, const char *name,
 
   R->getDiag() = std::move(G);
 
-  std::swap(nr::nr_arena.get(), *scratch_arena.get());
+  std::swap(nr::nr_allocator, scratch_arena);
   *mod = R;
 
   return success;
@@ -159,17 +161,17 @@ C_EXPORT bool nr_lower(qmodule_t **mod, npar_node_t *base, const char *name,
 
 ///=============================================================================
 
-static bool check_is_foreign_function(const npar::ExpressionList &n) {
-  return std::any_of(n.begin(), n.end(), [](npar::Expr *attr) {
+static bool check_is_foreign_function(auto n) {
+  return std::any_of(n.begin(), n.end(), [](ncc::parse::Expr *attr) {
     return attr->is(QAST_IDENT) &&
-           attr->as<npar::Ident>()->get_name() == "foreign";
+           attr->as<ncc::parse::Ident>()->get_name() == "foreign";
   });
 }
 
 static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
                                                      IReport *, nr::Expr *lhs,
                                                      nr::Expr *rhs,
-                                                     qlex_op_t op) {
+                                                     Operator op) {
 #define STD_BINOP(op) nr::create<nr::BinExpr>(lhs, rhs, nr::Op::op)
 #define ASSIGN_BINOP(op)                                                   \
   nr::create<nr::BinExpr>(                                                 \
@@ -387,7 +389,7 @@ static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
 
 static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
                                                     IReport *G, nr::Expr *rhs,
-                                                    qlex_op_t op) {
+                                                    Operator op) {
 #define STD_UNOP(op) nr::create<nr::UnExpr>(rhs, nr::Op::op)
 
   EResult R;
@@ -445,8 +447,7 @@ static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
 
       std::array<std::pair<std::string_view, Expr *>, 1> args;
       args[0] = {"_0", arg};
-      R = b.createCall(nr::create<nr::Ident>(b.intern("std::ceil"), nullptr),
-                       args);
+      R = b.createCall(nr::create<nr::Ident>(save("std::ceil"), nullptr), args);
 
       break;
     }
@@ -490,7 +491,7 @@ static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
 static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &,
                                                          IReport *G,
                                                          nr::Expr *lhs,
-                                                         qlex_op_t op) {
+                                                         Operator op) {
 #define STD_POST_OP(op) nr::create<nr::PostUnExpr>(lhs, nr::Op::op)
 
   EResult R;
@@ -516,10 +517,11 @@ static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &,
 }
 
 static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
-                             npar::BinExpr *n) {
+                             ncc::parse::BinExpr *n) {
   if (n->get_lhs() && n->get_rhs() && n->get_op() == qOpAs &&
       n->get_rhs()->is(QAST_TEXPR)) {
-    npar::Type *type = n->get_rhs()->as<npar::TypeExpr>()->get_type();
+    ncc::parse::Type *type =
+        n->get_rhs()->as<ncc::parse::TypeExpr>()->get_type();
 
     bool is_integer_ty = type->is_integral();
     bool is_integer_lit = n->get_lhs()->getKind() == QAST_INT;
@@ -542,11 +544,10 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
 
         auto it = integer_lit_suffixes.find(type->getKind());
         if (it != integer_lit_suffixes.end()) {
-          npar::ConstInt *N = n->get_lhs()->as<npar::ConstInt>();
+          ncc::parse::ConstInt *N = n->get_lhs()->as<ncc::parse::ConstInt>();
 
           return b.createFixedInteger(
-              boost::multiprecision::cpp_int(N->get_value()->c_str()),
-              it->second);
+              boost::multiprecision::cpp_int(N->get_value()), it->second);
         }
       } else {
         static const std::unordered_map<npar_ty_t, FloatSize>
@@ -559,10 +560,11 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
 
         auto it = float_lit_suffixes.find(type->getKind());
         if (it != float_lit_suffixes.end()) {
-          npar::ConstFloat *N = n->get_lhs()->as<npar::ConstFloat>();
+          ncc::parse::ConstFloat *N =
+              n->get_lhs()->as<ncc::parse::ConstFloat>();
 
           return b.createFixedFloat(
-              boost::multiprecision::cpp_dec_float_100(N->get_value()->c_str()),
+              boost::multiprecision::cpp_dec_float_100(N->get_value()),
               it->second);
         }
       }
@@ -594,7 +596,7 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_unexpr(NRBuilder &b, PState &s, IReport *G,
-                            npar::UnaryExpr *n) {
+                            ncc::parse::UnaryExpr *n) {
   auto rhs = next_one(n->get_rhs());
   if (!rhs.has_value()) {
     G->report(CompilerError, IC::Error,
@@ -613,7 +615,7 @@ static EResult nrgen_unexpr(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_post_unexpr(NRBuilder &b, PState &s, IReport *G,
-                                 npar::PostUnaryExpr *n) {
+                                 ncc::parse::PostUnaryExpr *n) {
   auto lhs = next_one(n->get_lhs());
   if (!lhs.has_value()) {
     G->report(CompilerError, IC::Error,
@@ -633,7 +635,7 @@ static EResult nrgen_post_unexpr(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_terexpr(NRBuilder &b, PState &s, IReport *G,
-                             npar::TernaryExpr *n) {
+                             ncc::parse::TernaryExpr *n) {
   auto cond = next_one(n->get_cond());
   if (!cond.has_value()) {
     G->report(CompilerError, IC::Error,
@@ -659,7 +661,7 @@ static EResult nrgen_terexpr(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_int(NRBuilder &b, PState &, IReport *G,
-                         npar::ConstInt *n) {
+                         ncc::parse::ConstInt *n) {
   /**
    * Integer types:
    *  i32:  [0 - 2147483647]
@@ -667,7 +669,7 @@ static EResult nrgen_int(NRBuilder &b, PState &, IReport *G,
    *  u128: [9223372036854775808 - 340282366920938463463374607431768211455]
    *  error: [340282366920938463463374607431768211456 - ...]
    */
-  boost::multiprecision::cpp_int num(std::string_view(*n->get_value()));
+  boost::multiprecision::cpp_int num(n->get_value());
 
   if (num < 0) {
     G->report(CompilerError, IC::Error,
@@ -690,38 +692,39 @@ static EResult nrgen_int(NRBuilder &b, PState &, IReport *G,
 }
 
 static EResult nrgen_float(NRBuilder &b, PState &, IReport *,
-                           npar::ConstFloat *n) {
-  boost::multiprecision::cpp_dec_float_100 num(*n->get_value());
+                           ncc::parse::ConstFloat *n) {
+  boost::multiprecision::cpp_dec_float_100 num(n->get_value());
   return b.createFixedFloat(num, FloatSize::F64);
 }
 
 static EResult nrgen_string(NRBuilder &b, PState &, IReport *,
-                            npar::ConstString *n) {
-  return b.createStringDataArray(*n->get_value());
+                            ncc::parse::ConstString *n) {
+  return b.createStringDataArray(n->get_value());
 }
 
 static EResult nrgen_char(NRBuilder &b, PState &, IReport *,
-                          npar::ConstChar *n) {
+                          ncc::parse::ConstChar *n) {
   return b.createFixedInteger(n->get_value(), 8);
 }
 
 static EResult nrgen_bool(NRBuilder &b, PState &, IReport *,
-                          npar::ConstBool *n) {
+                          ncc::parse::ConstBool *n) {
   return b.createBool(n->get_value());
 }
 
 static EResult nrgen_null(NRBuilder &b, PState &, IReport *,
-                          npar::ConstNull *) {
+                          ncc::parse::ConstNull *) {
   return b.getUnknownNamedTy("__builtin_null");
 }
 
 static EResult nrgen_undef(NRBuilder &, PState &, IReport *G,
-                           npar::ConstUndef *n) {
+                           ncc::parse::ConstUndef *n) {
   G->report(UnexpectedUndefLiteral, IC::Error, "", n->get_pos());
   return std::nullopt;
 }
 
-static EResult nrgen_call(NRBuilder &b, PState &s, IReport *G, npar::Call *n) {
+static EResult nrgen_call(NRBuilder &b, PState &s, IReport *G,
+                          ncc::parse::Call *n) {
   auto target = next_one(n->get_func());
   if (!target.has_value()) {
     G->report(nr::CompilerError, IC::Error, "Failed to lower function target",
@@ -742,13 +745,14 @@ static EResult nrgen_call(NRBuilder &b, PState &s, IReport *G, npar::Call *n) {
       return std::nullopt;
     }
 
-    arguments[i] = {b.intern(*args[i].first), arg.value()};
+    arguments[i] = {save(*args[i].first), arg.value()};
   }
 
   return b.createCall(target.value(), arguments);
 }
 
-static EResult nrgen_list(NRBuilder &b, PState &s, IReport *G, npar::List *n) {
+static EResult nrgen_list(NRBuilder &b, PState &s, IReport *G,
+                          ncc::parse::List *n) {
   ListItems items;
 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
@@ -766,7 +770,7 @@ static EResult nrgen_list(NRBuilder &b, PState &s, IReport *G, npar::List *n) {
 }
 
 static EResult nrgen_assoc(NRBuilder &b, PState &s, IReport *G,
-                           npar::Assoc *n) {
+                           ncc::parse::Assoc *n) {
   auto key = next_one(n->get_key());
   if (!key.has_value()) {
     G->report(nr::CompilerError, IC::Error, "Failed to lower associative key",
@@ -786,7 +790,7 @@ static EResult nrgen_assoc(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_field(NRBuilder &b, PState &s, IReport *G,
-                           npar::Field *n) {
+                           ncc::parse::Field *n) {
   auto base = next_one(n->get_base());
   if (!base.has_value()) {
     G->report(nr::CompilerError, IC::Error,
@@ -796,12 +800,12 @@ static EResult nrgen_field(NRBuilder &b, PState &s, IReport *G,
 
   /// TODO: Support for named composite field indexing
 
-  Expr *field = b.createStringDataArray(*n->get_field());
+  Expr *field = b.createStringDataArray(n->get_field());
   return create<Index>(base.value(), field);
 }
 
 static EResult nrgen_index(NRBuilder &b, PState &s, IReport *G,
-                           npar::Index *n) {
+                           ncc::parse::Index *n) {
   auto base = next_one(n->get_base());
   if (!base.has_value()) {
     G->report(nr::CompilerError, IC::Error,
@@ -820,7 +824,7 @@ static EResult nrgen_index(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_slice(NRBuilder &b, PState &s, IReport *G,
-                           npar::Slice *n) {
+                           ncc::parse::Slice *n) {
   auto base = next_one(n->get_base());
   if (!base.has_value()) {
     G->report(nr::CompilerError, IC::Error,
@@ -850,7 +854,7 @@ static EResult nrgen_slice(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
-                             npar::FString *n) {
+                             ncc::parse::FString *n) {
   /// TODO: Cleanup the fstring implementation
 
   if (n->get_items().empty()) {
@@ -860,15 +864,16 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   if (n->get_items().size() == 1) {
     auto val = n->get_items().front();
 
-    if (std::holds_alternative<npar::SmallString>(val)) {
-      return b.createStringDataArray(*std::get<npar::SmallString>(val));
-    } else if (std::holds_alternative<npar::Expr *>(val)) {
-      auto expr = next_one(std::get<npar::Expr *>(val));
+    if (std::holds_alternative<str_alias>(val)) {
+      return b.createStringDataArray(*std::get<str_alias>(val));
+    } else if (std::holds_alternative<ncc::parse::Expr *>(val)) {
+      auto expr = next_one(std::get<ncc::parse::Expr *>(val));
 
       if (!expr.has_value()) {
-        G->report(CompilerError, IC::Error,
-                  "npar::FString::get_items() vector contains std::nullopt",
-                  n->get_pos());
+        G->report(
+            CompilerError, IC::Error,
+            "ncc::parse::FString::get_items() vector contains std::nullopt",
+            n->get_pos());
         return std::nullopt;
       }
 
@@ -881,19 +886,20 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   Expr *concated = b.createStringDataArray("");
 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    if (std::holds_alternative<npar::SmallString>(*it)) {
-      auto val = *std::get<npar::SmallString>(*it);
+    if (std::holds_alternative<str_alias>(*it)) {
+      auto val = *std::get<str_alias>(*it);
 
       concated =
           create<BinExpr>(concated, b.createStringDataArray(val), Op::Plus);
-    } else if (std::holds_alternative<npar::Expr *>(*it)) {
-      auto val = std::get<npar::Expr *>(*it);
+    } else if (std::holds_alternative<ncc::parse::Expr *>(*it)) {
+      auto val = std::get<ncc::parse::Expr *>(*it);
       auto expr = next_one(val);
 
       if (!expr.has_value()) {
-        G->report(CompilerError, IC::Error,
-                  "npar::FString::get_items() vector contains std::nullopt",
-                  n->get_pos());
+        G->report(
+            CompilerError, IC::Error,
+            "ncc::parse::FString::get_items() vector contains std::nullopt",
+            n->get_pos());
         return std::nullopt;
       }
 
@@ -906,20 +912,22 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   return concated;
 }
 
-static EResult nrgen_ident(NRBuilder &b, PState &s, IReport *, npar::Ident *n) {
-  return create<Ident>(b.intern(s.scope_name(*n->get_name())), nullptr);
+static EResult nrgen_ident(NRBuilder &, PState &s, IReport *,
+                           ncc::parse::Ident *n) {
+  return create<Ident>(save(s.scope_name(n->get_name())), nullptr);
 }
 
 static EResult nrgen_seq_point(NRBuilder &b, PState &s, IReport *G,
-                               npar::SeqPoint *n) {
+                               ncc::parse::SeqPoint *n) {
   SeqItems items(n->get_items().size());
 
   for (size_t i = 0; i < n->get_items().size(); i++) {
     auto item = next_one(n->get_items()[i]);
     if (!item.has_value()) [[unlikely]] {
-      G->report(CompilerError, IC::Error,
-                "npar::SeqPoint::get_items() vector contains std::nullopt",
-                n->get_pos());
+      G->report(
+          CompilerError, IC::Error,
+          "ncc::parse::SeqPoint::get_items() vector contains std::nullopt",
+          n->get_pos());
       return std::nullopt;
     }
 
@@ -930,7 +938,7 @@ static EResult nrgen_seq_point(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_stmt_expr(NRBuilder &b, PState &s, IReport *G,
-                               npar::StmtExpr *n) {
+                               ncc::parse::StmtExpr *n) {
   auto stmt = next_one(n->get_stmt());
   if (!stmt.has_value()) {
     G->report(CompilerError, IC::Error, "Failed to lower statement expression",
@@ -942,7 +950,7 @@ static EResult nrgen_stmt_expr(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_type_expr(NRBuilder &b, PState &s, IReport *G,
-                               npar::TypeExpr *n) {
+                               ncc::parse::TypeExpr *n) {
   auto type = next_one(n->get_type());
   if (!type.has_value()) {
     G->report(CompilerError, IC::Error, "Failed to lower type expression",
@@ -954,7 +962,7 @@ static EResult nrgen_type_expr(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_templ_call(NRBuilder &, PState &, IReport *G,
-                                npar::TemplCall *n) {
+                                ncc::parse::TemplCall *n) {
   G->report(CompilerError, IC::FatalError,
             "Attempted to lower an unexpected "
             "template function call",
@@ -964,7 +972,7 @@ static EResult nrgen_templ_call(NRBuilder &, PState &, IReport *G,
 }
 
 static EResult nrgen_ref_ty(NRBuilder &b, PState &s, IReport *G,
-                            npar::RefTy *n) {
+                            ncc::parse::RefTy *n) {
   auto pointee = next_one(n->get_item());
   if (!pointee.has_value()) {
     G->report(CompilerError, IC::Error, "Failed to lower reference type",
@@ -975,58 +983,73 @@ static EResult nrgen_ref_ty(NRBuilder &b, PState &s, IReport *G,
   return b.getPtrTy(pointee.value()->asType());
 }
 
-static EResult nrgen_u1_ty(NRBuilder &b, PState &, IReport *, npar::U1 *) {
+static EResult nrgen_u1_ty(NRBuilder &b, PState &, IReport *,
+                           ncc::parse::U1 *) {
   return b.getU1Ty();
 }
-static EResult nrgen_u8_ty(NRBuilder &b, PState &, IReport *, npar::U8 *) {
+static EResult nrgen_u8_ty(NRBuilder &b, PState &, IReport *,
+                           ncc::parse::U8 *) {
   return b.getU8Ty();
 }
-static EResult nrgen_u16_ty(NRBuilder &b, PState &, IReport *, npar::U16 *) {
+static EResult nrgen_u16_ty(NRBuilder &b, PState &, IReport *,
+                            ncc::parse::U16 *) {
   return b.getU16Ty();
 }
-static EResult nrgen_u32_ty(NRBuilder &b, PState &, IReport *, npar::U32 *) {
+static EResult nrgen_u32_ty(NRBuilder &b, PState &, IReport *,
+                            ncc::parse::U32 *) {
   return b.getU32Ty();
 }
-static EResult nrgen_u64_ty(NRBuilder &b, PState &, IReport *, npar::U64 *) {
+static EResult nrgen_u64_ty(NRBuilder &b, PState &, IReport *,
+                            ncc::parse::U64 *) {
   return b.getU64Ty();
 }
-static EResult nrgen_u128_ty(NRBuilder &b, PState &, IReport *, npar::U128 *) {
+static EResult nrgen_u128_ty(NRBuilder &b, PState &, IReport *,
+                             ncc::parse::U128 *) {
   return b.getU128Ty();
 }
-static EResult nrgen_i8_ty(NRBuilder &b, PState &, IReport *, npar::I8 *) {
+static EResult nrgen_i8_ty(NRBuilder &b, PState &, IReport *,
+                           ncc::parse::I8 *) {
   return b.getI8Ty();
 }
-static EResult nrgen_i16_ty(NRBuilder &b, PState &, IReport *, npar::I16 *) {
+static EResult nrgen_i16_ty(NRBuilder &b, PState &, IReport *,
+                            ncc::parse::I16 *) {
   return b.getI16Ty();
 }
-static EResult nrgen_i32_ty(NRBuilder &b, PState &, IReport *, npar::I32 *) {
+static EResult nrgen_i32_ty(NRBuilder &b, PState &, IReport *,
+                            ncc::parse::I32 *) {
   return b.getI32Ty();
 }
-static EResult nrgen_i64_ty(NRBuilder &b, PState &, IReport *, npar::I64 *) {
+static EResult nrgen_i64_ty(NRBuilder &b, PState &, IReport *,
+                            ncc::parse::I64 *) {
   return b.getI64Ty();
 }
-static EResult nrgen_i128_ty(NRBuilder &b, PState &, IReport *, npar::I128 *) {
+static EResult nrgen_i128_ty(NRBuilder &b, PState &, IReport *,
+                             ncc::parse::I128 *) {
   return b.getI128Ty();
 }
-static EResult nrgen_f16_ty(NRBuilder &b, PState &, IReport *, npar::F16 *) {
+static EResult nrgen_f16_ty(NRBuilder &b, PState &, IReport *,
+                            ncc::parse::F16 *) {
   return b.getF16Ty();
 }
-static EResult nrgen_f32_ty(NRBuilder &b, PState &, IReport *, npar::F32 *) {
+static EResult nrgen_f32_ty(NRBuilder &b, PState &, IReport *,
+                            ncc::parse::F32 *) {
   return b.getF32Ty();
 }
-static EResult nrgen_f64_ty(NRBuilder &b, PState &, IReport *, npar::F64 *) {
+static EResult nrgen_f64_ty(NRBuilder &b, PState &, IReport *,
+                            ncc::parse::F64 *) {
   return b.getF64Ty();
 }
-static EResult nrgen_f128_ty(NRBuilder &b, PState &, IReport *, npar::F128 *) {
+static EResult nrgen_f128_ty(NRBuilder &b, PState &, IReport *,
+                             ncc::parse::F128 *) {
   return b.getF128Ty();
 }
 static EResult nrgen_void_ty(NRBuilder &b, PState &, IReport *,
-                             npar::VoidTy *) {
+                             ncc::parse::VoidTy *) {
   return b.getVoidTy();
 }
 
 static EResult nrgen_ptr_ty(NRBuilder &b, PState &s, IReport *G,
-                            npar::PtrTy *n) {
+                            ncc::parse::PtrTy *n) {
   auto pointee = next_one(n->get_item());
   if (!pointee.has_value()) {
     G->report(CompilerError, IC::Error, "Failed to lower pointer type",
@@ -1038,12 +1061,12 @@ static EResult nrgen_ptr_ty(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_opaque_ty(NRBuilder &b, PState &, IReport *,
-                               npar::OpaqueTy *n) {
-  return b.getOpaqueTy(*n->get_name());
+                               ncc::parse::OpaqueTy *n) {
+  return b.getOpaqueTy(n->get_name());
 }
 
 static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G,
-                              npar::ArrayTy *n) {
+                              ncc::parse::ArrayTy *n) {
   auto item = next_one(n->get_item());
   if (!item.has_value()) {
     G->report(CompilerError, IC::Error, "Failed to lower array item type",
@@ -1087,7 +1110,7 @@ static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_tuple_ty(NRBuilder &b, PState &s, IReport *G,
-                              npar::TupleTy *n) {
+                              ncc::parse::TupleTy *n) {
   let items = n->get_items();
   StructFields fields(items.size());
 
@@ -1107,23 +1130,24 @@ static EResult nrgen_tuple_ty(NRBuilder &b, PState &s, IReport *G,
 
 using IsThreadSafe = bool;
 
-static std::pair<Purity, IsThreadSafe> convert_purity(npar::FuncPurity x) {
+static std::pair<Purity, IsThreadSafe> convert_purity(
+    ncc::parse::FuncPurity x) {
   switch (x) {
-    case npar::FuncPurity::IMPURE_THREAD_UNSAFE:
+    case ncc::parse::FuncPurity::IMPURE_THREAD_UNSAFE:
       return {Purity::Impure, false};
-    case npar::FuncPurity::IMPURE_THREAD_SAFE:
+    case ncc::parse::FuncPurity::IMPURE_THREAD_SAFE:
       return {Purity::Impure, true};
-    case npar::FuncPurity::PURE:
+    case ncc::parse::FuncPurity::PURE:
       return {Purity::Pure, true};
-    case npar::FuncPurity::QUASI:
+    case ncc::parse::FuncPurity::QUASI:
       return {Purity::Quasi, true};
-    case npar::FuncPurity::RETRO:
+    case ncc::parse::FuncPurity::RETRO:
       return {Purity::Retro, true};
   }
 }
 
 static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
-                           npar::FuncTy *n) {
+                           ncc::parse::FuncTy *n) {
   let items = n->get_params();
   FnParams params(items.params.size());
 
@@ -1153,25 +1177,25 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *,
-                              npar::NamedTy *n) {
-  return b.getUnknownNamedTy(b.intern(s.scope_name(*n->get_name())));
+                              ncc::parse::NamedTy *n) {
+  return b.getUnknownNamedTy(save(s.scope_name(n->get_name())));
 }
 
 static EResult nrgen_infer_ty(NRBuilder &b, PState &, IReport *,
-                              npar::InferTy *) {
+                              ncc::parse::InferTy *) {
   return b.getUnknownTy();
 }
 
 static EResult nrgen_templ_ty(NRBuilder &, PState &, IReport *G,
-                              npar::TemplType *n) {
+                              ncc::parse::TemplType *n) {
   G->report(nr::CompilerError, IC::FatalError,
-            "Attempted to lower an unexpected npar::TemplType node",
+            "Attempted to lower an unexpected ncc::parse::TemplType node",
             n->get_pos());
   return std::nullopt;
 }
 
 static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
-                             npar::TypedefStmt *n) {
+                             ncc::parse::TypedefStmt *n) {
   auto type = next_one(n->get_type());
   if (!type.has_value()) {
     G->report(nr::CompilerError, IC::Error,
@@ -1180,7 +1204,7 @@ static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
   }
 
   b.createNamedTypeAlias(type.value()->asType(),
-                         b.intern(s.join_scope(*n->get_name())));
+                         save(s.join_scope(n->get_name())));
 
   return std::vector<Expr *>();
 }
@@ -1188,7 +1212,7 @@ static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
 #define align(x, a) (((x) + (a) - 1) & ~((a) - 1))
 
 static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
-                            npar::StructDef *n) {
+                            ncc::parse::StructDef *n) {
   bool is_template = n->get_template_params().has_value();
   if (is_template) {
     G->report(nr::CompilerError, IC::FatalError,
@@ -1201,7 +1225,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
       n->get_fields().size());
 
   std::string old_ns = s.ns_prefix;
-  s.ns_prefix = s.join_scope(*n->get_name());
+  s.ns_prefix = s.join_scope(n->get_name());
 
   for (size_t i = 0; i < n->get_fields().size(); i++) {
     let field = n->get_fields()[i];
@@ -1214,7 +1238,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
       return std::nullopt;
     }
 
-    auto field_name = b.intern(*field.get_name());
+    auto field_name = save(field.get_name());
 
     Expr *field_default = nullptr;
     if (field.get_value() == nullptr) {
@@ -1244,7 +1268,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
 
   std::swap(s.ns_prefix, old_ns);
   b.createNamedTypeAlias(b.getStructTy(fields),
-                         b.intern(s.join_scope(*n->get_name())));
+                         save(s.join_scope(n->get_name())));
   std::swap(s.ns_prefix, old_ns);
 
   BResult R;
@@ -1280,7 +1304,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
 }
 
 static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
-                          npar::EnumDef *n) {
+                          ncc::parse::EnumDef *n) {
   std::unordered_map<std::string_view, Expr *> values;
 
   std::optional<Expr *> last;
@@ -1305,7 +1329,7 @@ static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
       }
     }
 
-    auto field_name = b.intern(*it->first);
+    auto field_name = save(*it->first);
 
     if (values.contains(field_name)) [[unlikely]] {
       G->report(CompilerError, IC::Error,
@@ -1315,7 +1339,7 @@ static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
     }
   }
 
-  auto name = b.intern(s.join_scope(*n->get_name()));
+  auto name = save(s.join_scope(n->get_name()));
   b.createNamedConstantDefinition(name, values);
 
   /* FIXME: Allow for first class enum types */
@@ -1324,11 +1348,11 @@ static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
   return std::vector<Expr *>();
 }
 
-static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G, npar::Block *n,
-                           bool insert_scope_id);
+static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G,
+                           ncc::parse::Block *n, bool insert_scope_id);
 
 static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
-                                         npar::Function *n) {
+                                         ncc::parse::Function *n) {
   bool failed = false;
 
   {
@@ -1366,7 +1390,7 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
       NRBuilder::FnParam p;
 
       { /* Set function parameter name */
-        std::get<0>(p) = b.intern(*std::get<0>(param));
+        std::get<0>(p) = save(*std::get<0>(param));
       }
 
       { /* Set function parameter type */
@@ -1411,10 +1435,10 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
 
     std::string_view name;
 
-    if (n->get_name()->empty()) {
-      name = b.intern(s.join_scope("_A$" + std::to_string(s.anon_fn_ctr++)));
+    if (n->get_name().empty()) {
+      name = save(s.join_scope("_A$" + std::to_string(s.anon_fn_ctr++)));
     } else {
-      name = b.intern(s.join_scope(*n->get_name()));
+      name = save(s.join_scope(n->get_name()));
     }
 
     Fn *fndef = b.createFunctionDefintion(
@@ -1433,8 +1457,8 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
       std::string old_ns = s.ns_prefix;
       s.ns_prefix = name;
 
-      auto body =
-          nrgen_block(b, s, G, n->get_body().value()->as<npar::Block>(), false);
+      auto body = nrgen_block(
+          b, s, G, n->get_body().value()->as<ncc::parse::Block>(), false);
       if (!body.has_value()) {
         G->report(CompilerError, nr::IC::Error,
                   "Failed to convert function body", n->get_pos());
@@ -1451,7 +1475,7 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
-                                          npar::Function *n) {
+                                          ncc::parse::Function *n) {
   bool failed = false;
 
   {
@@ -1489,7 +1513,7 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
       NRBuilder::FnParam p;
 
       { /* Set function parameter name */
-        std::get<0>(p) = b.intern(*std::get<0>(param));
+        std::get<0>(p) = save(*std::get<0>(param));
       }
 
       { /* Set function parameter type */
@@ -1534,10 +1558,10 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
 
     std::string_view name;
 
-    if (n->get_name()->empty()) {
-      name = b.intern(s.join_scope("_A$" + std::to_string(s.anon_fn_ctr++)));
+    if (n->get_name().empty()) {
+      name = save(s.join_scope("_A$" + std::to_string(s.anon_fn_ctr++)));
     } else {
-      name = b.intern(s.join_scope(*n->get_name()));
+      name = save(s.join_scope(n->get_name()));
     }
 
     Fn *decl = b.createFunctionDeclaration(
@@ -1552,7 +1576,7 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G,
-                        npar::Function *n) {
+                        ncc::parse::Function *n) {
   if (n->is_decl()) {
     return nrgen_function_declaration(b, s, G, n);
   } else if (n->is_def()) {
@@ -1565,15 +1589,16 @@ static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G,
 }
 
 static BResult nrgen_scope(NRBuilder &b, PState &s, IReport *G,
-                           npar::ScopeStmt *n) {
+                           ncc::parse::ScopeStmt *n) {
   if (!n->get_body()->is(QAST_BLOCK)) {
     return std::nullopt;
   }
 
   std::string old_ns = s.ns_prefix;
-  s.ns_prefix = s.join_scope(*n->get_name());
+  s.ns_prefix = s.join_scope(n->get_name());
 
-  auto body = nrgen_block(b, s, G, n->get_body()->as<npar::Block>(), false);
+  auto body =
+      nrgen_block(b, s, G, n->get_body()->as<ncc::parse::Block>(), false);
   if (!body.has_value()) {
     G->report(nr::CompilerError, IC::Error, "Failed to lower scope body",
               n->get_pos());
@@ -1586,7 +1611,7 @@ static BResult nrgen_scope(NRBuilder &b, PState &s, IReport *G,
 }
 
 static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
-                            npar::ExportStmt *n) {
+                            ncc::parse::ExportStmt *n) {
   static const std::unordered_map<std::string_view,
                                   std::pair<std::string_view, AbiTag>>
       abi_name_map = {
@@ -1607,11 +1632,11 @@ static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
     return std::nullopt;
   }
 
-  auto it = abi_name_map.find(*n->get_abi_name());
+  auto it = abi_name_map.find(n->get_abi_name());
   if (it == abi_name_map.end()) {
     G->report(
         CompilerError, IC::Error,
-        {"The requested ABI name '", *n->get_abi_name(), "' is not supported"},
+        {"The requested ABI name '", n->get_abi_name(), "' is not supported"},
         n->get_pos());
     return std::nullopt;
   }
@@ -1623,7 +1648,7 @@ static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
   AbiTag old = s.abi_mode;
   s.abi_mode = it->second.second;
 
-  let body = n->get_body()->as<npar::Block>()->get_items();
+  let body = n->get_body()->as<ncc::parse::Block>()->get_items();
   std::vector<nr::Expr *> items;
 
   for (size_t i = 0; i < body.size(); i++) {
@@ -1646,8 +1671,8 @@ static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
   return items;
 }
 
-static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G, npar::Block *n,
-                           bool insert_scope_id) {
+static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G,
+                           ncc::parse::Block *n, bool insert_scope_id) {
   SeqItems items;
   items.reserve(n->get_items().size());
 
@@ -1685,7 +1710,7 @@ static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G, npar::Block *n,
 }
 
 static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G,
-                         npar::VarDecl *n) {
+                         ncc::parse::VarDecl *n) {
   auto init = next_one(n->get_value());
   auto type = next_one(n->get_type());
 
@@ -1713,7 +1738,7 @@ static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G,
   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
   Local *local =
-      b.createVariable(b.intern(s.join_scope(*n->get_name())),
+      b.createVariable(save(s.join_scope(n->get_name())),
                        type.value()->asType(), visibility, storage, false);
 
   local->setValue(init.value());
@@ -1723,7 +1748,7 @@ static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_inline_asm(NRBuilder &, PState &, IReport *G,
-                                npar::InlineAsm *) {
+                                ncc::parse::InlineAsm *) {
   /// TODO: Decide whether or not to support inline assembly
   G->report(nr::CompilerError, IC::Error,
             "Inline assembly is not currently supported");
@@ -1731,7 +1756,7 @@ static EResult nrgen_inline_asm(NRBuilder &, PState &, IReport *G,
 }
 
 static EResult nrgen_return(NRBuilder &b, PState &s, IReport *G,
-                            npar::ReturnStmt *n) {
+                            ncc::parse::ReturnStmt *n) {
   if (n->get_value()) {
     auto val = next_one(n->get_value().value_or(nullptr));
     if (!val.has_value()) {
@@ -1748,7 +1773,7 @@ static EResult nrgen_return(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_retif(NRBuilder &b, PState &s, IReport *G,
-                           npar::ReturnIfStmt *n) {
+                           ncc::parse::ReturnIfStmt *n) {
   auto cond = next_one(n->get_cond());
   if (!cond.has_value()) {
     return std::nullopt;
@@ -1765,16 +1790,17 @@ static EResult nrgen_retif(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_break(NRBuilder &, PState &, IReport *,
-                           npar::BreakStmt *) {
+                           ncc::parse::BreakStmt *) {
   return create<Brk>();
 }
 
 static EResult nrgen_continue(NRBuilder &, PState &, IReport *,
-                              npar::ContinueStmt *) {
+                              ncc::parse::ContinueStmt *) {
   return create<Cont>();
 }
 
-static EResult nrgen_if(NRBuilder &b, PState &s, IReport *G, npar::IfStmt *n) {
+static EResult nrgen_if(NRBuilder &b, PState &s, IReport *G,
+                        ncc::parse::IfStmt *n) {
   auto cond = next_one(n->get_cond());
   auto then = next_one(n->get_then());
   auto els = next_one(n->get_else());
@@ -1797,7 +1823,7 @@ static EResult nrgen_if(NRBuilder &b, PState &s, IReport *G, npar::IfStmt *n) {
 }
 
 static EResult nrgen_while(NRBuilder &b, PState &s, IReport *G,
-                           npar::WhileStmt *n) {
+                           ncc::parse::WhileStmt *n) {
   auto cond = next_one(n->get_cond());
   auto body = next_one(n->get_body());
 
@@ -1817,7 +1843,7 @@ static EResult nrgen_while(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G,
-                         npar::ForStmt *n) {
+                         ncc::parse::ForStmt *n) {
   s.inc_scope();
 
   auto init = next_one(n->get_init().value_or(nullptr));
@@ -1848,25 +1874,25 @@ static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_foreach(NRBuilder &, PState &, IReport *,
-                             npar::ForeachStmt *) {
+                             ncc::parse::ForeachStmt *) {
   /**
    * @brief Convert a foreach loop to a nr expression.
    * @details This is a 1-to-1 conversion of the foreach loop.
    */
 
-  // auto idx_name = b.intern(n->get_idx_ident());
-  // auto val_name = b.intern(n->get_val_ident());
+  // auto idx_name = save(n->get_idx_ident());
+  // auto val_name = save(n->get_val_ident());
 
   // auto iter = nrgen_one(b, s,X, n->get_expr());
   // if (!iter) {
-  //   G->report(CompilerError, IC::Error, "npar::ForeachStmt::get_expr() ==
-  //   std::nullopt",n->get_offset(),n->get_pos()); return std::nullopt;
+  //   G->report(CompilerError, IC::Error, "ncc::parse::ForeachStmt::get_expr()
+  //   == std::nullopt",n->get_offset(),n->get_pos()); return std::nullopt;
   // }
 
   // auto body = nrgen_one(b, s,X, n->get_body());
   // if (!body) {
-  //   G->report(CompilerError, IC::Error, "npar::ForeachStmt::get_body() ==
-  //   std::nullopt",n->get_offset(),n->get_pos()); return std::nullopt;
+  //   G->report(CompilerError, IC::Error, "ncc::parse::ForeachStmt::get_body()
+  //   == std::nullopt",n->get_offset(),n->get_pos()); return std::nullopt;
   // }
 
   // return create<Foreach>(idx_name, val_name, iter,
@@ -1875,7 +1901,7 @@ static EResult nrgen_foreach(NRBuilder &, PState &, IReport *,
 }
 
 static EResult nrgen_case(NRBuilder &b, PState &s, IReport *G,
-                          npar::CaseStmt *n) {
+                          ncc::parse::CaseStmt *n) {
   auto cond = next_one(n->get_cond());
   if (!cond.has_value()) {
     return std::nullopt;
@@ -1890,7 +1916,7 @@ static EResult nrgen_case(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_switch(NRBuilder &b, PState &s, IReport *G,
-                            npar::SwitchStmt *n) {
+                            ncc::parse::SwitchStmt *n) {
   auto cond = next_one(n->get_cond());
   if (!cond.has_value()) {
     return std::nullopt;
@@ -1900,9 +1926,10 @@ static EResult nrgen_switch(NRBuilder &b, PState &s, IReport *G,
   for (auto it = n->get_cases().begin(); it != n->get_cases().end(); ++it) {
     auto item = next_one(*it);
     if (!item.has_value()) {
-      G->report(CompilerError, IC::Error,
-                "npar::SwitchStmt::get_cases() vector contains std::nullopt",
-                n->get_pos());
+      G->report(
+          CompilerError, IC::Error,
+          "ncc::parse::SwitchStmt::get_cases() vector contains std::nullopt",
+          n->get_pos());
       return std::nullopt;
     }
 
@@ -1923,11 +1950,12 @@ static EResult nrgen_switch(NRBuilder &b, PState &s, IReport *G,
 }
 
 static EResult nrgen_expr_stmt(NRBuilder &b, PState &s, IReport *G,
-                               npar::ExprStmt *n) {
+                               ncc::parse::ExprStmt *n) {
   return next_one(n->get_expr());
 }
 
-static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
+static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G,
+                         ncc::parse::Base *n) {
   using namespace nr;
 
   if (!n) {
@@ -1942,255 +1970,255 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
     }
 
     case QAST_BINEXPR:
-      out = nrgen_binexpr(b, s, G, n->as<npar::BinExpr>());
+      out = nrgen_binexpr(b, s, G, n->as<ncc::parse::BinExpr>());
       break;
 
     case QAST_UNEXPR:
-      out = nrgen_unexpr(b, s, G, n->as<npar::UnaryExpr>());
+      out = nrgen_unexpr(b, s, G, n->as<ncc::parse::UnaryExpr>());
       break;
 
     case QAST_TEREXPR:
-      out = nrgen_terexpr(b, s, G, n->as<npar::TernaryExpr>());
+      out = nrgen_terexpr(b, s, G, n->as<ncc::parse::TernaryExpr>());
       break;
 
     case QAST_INT:
-      out = nrgen_int(b, s, G, n->as<npar::ConstInt>());
+      out = nrgen_int(b, s, G, n->as<ncc::parse::ConstInt>());
       break;
 
     case QAST_FLOAT:
-      out = nrgen_float(b, s, G, n->as<npar::ConstFloat>());
+      out = nrgen_float(b, s, G, n->as<ncc::parse::ConstFloat>());
       break;
 
     case QAST_STRING:
-      out = nrgen_string(b, s, G, n->as<npar::ConstString>());
+      out = nrgen_string(b, s, G, n->as<ncc::parse::ConstString>());
       break;
 
     case QAST_CHAR:
-      out = nrgen_char(b, s, G, n->as<npar::ConstChar>());
+      out = nrgen_char(b, s, G, n->as<ncc::parse::ConstChar>());
       break;
 
     case QAST_BOOL:
-      out = nrgen_bool(b, s, G, n->as<npar::ConstBool>());
+      out = nrgen_bool(b, s, G, n->as<ncc::parse::ConstBool>());
       break;
 
     case QAST_NULL:
-      out = nrgen_null(b, s, G, n->as<npar::ConstNull>());
+      out = nrgen_null(b, s, G, n->as<ncc::parse::ConstNull>());
       break;
 
     case QAST_UNDEF:
-      out = nrgen_undef(b, s, G, n->as<npar::ConstUndef>());
+      out = nrgen_undef(b, s, G, n->as<ncc::parse::ConstUndef>());
       break;
 
     case QAST_CALL:
-      out = nrgen_call(b, s, G, n->as<npar::Call>());
+      out = nrgen_call(b, s, G, n->as<ncc::parse::Call>());
       break;
 
     case QAST_LIST:
-      out = nrgen_list(b, s, G, n->as<npar::List>());
+      out = nrgen_list(b, s, G, n->as<ncc::parse::List>());
       break;
 
     case QAST_ASSOC:
-      out = nrgen_assoc(b, s, G, n->as<npar::Assoc>());
+      out = nrgen_assoc(b, s, G, n->as<ncc::parse::Assoc>());
       break;
 
     case QAST_FIELD:
-      out = nrgen_field(b, s, G, n->as<npar::Field>());
+      out = nrgen_field(b, s, G, n->as<ncc::parse::Field>());
       break;
 
     case QAST_INDEX:
-      out = nrgen_index(b, s, G, n->as<npar::Index>());
+      out = nrgen_index(b, s, G, n->as<ncc::parse::Index>());
       break;
 
     case QAST_SLICE:
-      out = nrgen_slice(b, s, G, n->as<npar::Slice>());
+      out = nrgen_slice(b, s, G, n->as<ncc::parse::Slice>());
       break;
 
     case QAST_FSTRING:
-      out = nrgen_fstring(b, s, G, n->as<npar::FString>());
+      out = nrgen_fstring(b, s, G, n->as<ncc::parse::FString>());
       break;
 
     case QAST_IDENT:
-      out = nrgen_ident(b, s, G, n->as<npar::Ident>());
+      out = nrgen_ident(b, s, G, n->as<ncc::parse::Ident>());
       break;
 
     case QAST_SEQ:
-      out = nrgen_seq_point(b, s, G, n->as<npar::SeqPoint>());
+      out = nrgen_seq_point(b, s, G, n->as<ncc::parse::SeqPoint>());
       break;
 
     case QAST_POST_UNEXPR:
-      out = nrgen_post_unexpr(b, s, G, n->as<npar::PostUnaryExpr>());
+      out = nrgen_post_unexpr(b, s, G, n->as<ncc::parse::PostUnaryExpr>());
       break;
 
     case QAST_SEXPR:
-      out = nrgen_stmt_expr(b, s, G, n->as<npar::StmtExpr>());
+      out = nrgen_stmt_expr(b, s, G, n->as<ncc::parse::StmtExpr>());
       break;
 
     case QAST_TEXPR:
-      out = nrgen_type_expr(b, s, G, n->as<npar::TypeExpr>());
+      out = nrgen_type_expr(b, s, G, n->as<ncc::parse::TypeExpr>());
       break;
 
     case QAST_TEMPL_CALL:
-      out = nrgen_templ_call(b, s, G, n->as<npar::TemplCall>());
+      out = nrgen_templ_call(b, s, G, n->as<ncc::parse::TemplCall>());
       break;
 
     case QAST_REF:
-      out = nrgen_ref_ty(b, s, G, n->as<npar::RefTy>());
+      out = nrgen_ref_ty(b, s, G, n->as<ncc::parse::RefTy>());
       break;
 
     case QAST_U1:
-      out = nrgen_u1_ty(b, s, G, n->as<npar::U1>());
+      out = nrgen_u1_ty(b, s, G, n->as<ncc::parse::U1>());
       break;
 
     case QAST_U8:
-      out = nrgen_u8_ty(b, s, G, n->as<npar::U8>());
+      out = nrgen_u8_ty(b, s, G, n->as<ncc::parse::U8>());
       break;
 
     case QAST_U16:
-      out = nrgen_u16_ty(b, s, G, n->as<npar::U16>());
+      out = nrgen_u16_ty(b, s, G, n->as<ncc::parse::U16>());
       break;
 
     case QAST_U32:
-      out = nrgen_u32_ty(b, s, G, n->as<npar::U32>());
+      out = nrgen_u32_ty(b, s, G, n->as<ncc::parse::U32>());
       break;
 
     case QAST_U64:
-      out = nrgen_u64_ty(b, s, G, n->as<npar::U64>());
+      out = nrgen_u64_ty(b, s, G, n->as<ncc::parse::U64>());
       break;
 
     case QAST_U128:
-      out = nrgen_u128_ty(b, s, G, n->as<npar::U128>());
+      out = nrgen_u128_ty(b, s, G, n->as<ncc::parse::U128>());
       break;
 
     case QAST_I8:
-      out = nrgen_i8_ty(b, s, G, n->as<npar::I8>());
+      out = nrgen_i8_ty(b, s, G, n->as<ncc::parse::I8>());
       break;
 
     case QAST_I16:
-      out = nrgen_i16_ty(b, s, G, n->as<npar::I16>());
+      out = nrgen_i16_ty(b, s, G, n->as<ncc::parse::I16>());
       break;
 
     case QAST_I32:
-      out = nrgen_i32_ty(b, s, G, n->as<npar::I32>());
+      out = nrgen_i32_ty(b, s, G, n->as<ncc::parse::I32>());
       break;
 
     case QAST_I64:
-      out = nrgen_i64_ty(b, s, G, n->as<npar::I64>());
+      out = nrgen_i64_ty(b, s, G, n->as<ncc::parse::I64>());
       break;
 
     case QAST_I128:
-      out = nrgen_i128_ty(b, s, G, n->as<npar::I128>());
+      out = nrgen_i128_ty(b, s, G, n->as<ncc::parse::I128>());
       break;
 
     case QAST_F16:
-      out = nrgen_f16_ty(b, s, G, n->as<npar::F16>());
+      out = nrgen_f16_ty(b, s, G, n->as<ncc::parse::F16>());
       break;
 
     case QAST_F32:
-      out = nrgen_f32_ty(b, s, G, n->as<npar::F32>());
+      out = nrgen_f32_ty(b, s, G, n->as<ncc::parse::F32>());
       break;
 
     case QAST_F64:
-      out = nrgen_f64_ty(b, s, G, n->as<npar::F64>());
+      out = nrgen_f64_ty(b, s, G, n->as<ncc::parse::F64>());
       break;
 
     case QAST_F128:
-      out = nrgen_f128_ty(b, s, G, n->as<npar::F128>());
+      out = nrgen_f128_ty(b, s, G, n->as<ncc::parse::F128>());
       break;
 
     case QAST_VOID:
-      out = nrgen_void_ty(b, s, G, n->as<npar::VoidTy>());
+      out = nrgen_void_ty(b, s, G, n->as<ncc::parse::VoidTy>());
       break;
 
     case QAST_PTR:
-      out = nrgen_ptr_ty(b, s, G, n->as<npar::PtrTy>());
+      out = nrgen_ptr_ty(b, s, G, n->as<ncc::parse::PtrTy>());
       break;
 
     case QAST_OPAQUE:
-      out = nrgen_opaque_ty(b, s, G, n->as<npar::OpaqueTy>());
+      out = nrgen_opaque_ty(b, s, G, n->as<ncc::parse::OpaqueTy>());
       break;
 
     case QAST_ARRAY:
-      out = nrgen_array_ty(b, s, G, n->as<npar::ArrayTy>());
+      out = nrgen_array_ty(b, s, G, n->as<ncc::parse::ArrayTy>());
       break;
 
     case QAST_TUPLE:
-      out = nrgen_tuple_ty(b, s, G, n->as<npar::TupleTy>());
+      out = nrgen_tuple_ty(b, s, G, n->as<ncc::parse::TupleTy>());
       break;
 
     case QAST_FUNCTOR:
-      out = nrgen_fn_ty(b, s, G, n->as<npar::FuncTy>());
+      out = nrgen_fn_ty(b, s, G, n->as<ncc::parse::FuncTy>());
       break;
 
     case QAST_NAMED:
-      out = nrgen_unres_ty(b, s, G, n->as<npar::NamedTy>());
+      out = nrgen_unres_ty(b, s, G, n->as<ncc::parse::NamedTy>());
       break;
 
     case QAST_INFER:
-      out = nrgen_infer_ty(b, s, G, n->as<npar::InferTy>());
+      out = nrgen_infer_ty(b, s, G, n->as<ncc::parse::InferTy>());
       break;
 
     case QAST_TEMPLATE:
-      out = nrgen_templ_ty(b, s, G, n->as<npar::TemplType>());
+      out = nrgen_templ_ty(b, s, G, n->as<ncc::parse::TemplType>());
       break;
 
     case QAST_FUNCTION:
-      out = nrgen_fn(b, s, G, n->as<npar::Function>());
+      out = nrgen_fn(b, s, G, n->as<ncc::parse::Function>());
       break;
 
     case QAST_BLOCK:
-      out = nrgen_block(b, s, G, n->as<npar::Block>(), true);
+      out = nrgen_block(b, s, G, n->as<ncc::parse::Block>(), true);
       break;
 
     case QAST_VAR:
-      out = nrgen_var(b, s, G, n->as<npar::VarDecl>());
+      out = nrgen_var(b, s, G, n->as<ncc::parse::VarDecl>());
       break;
 
     case QAST_INLINE_ASM:
-      out = nrgen_inline_asm(b, s, G, n->as<npar::InlineAsm>());
+      out = nrgen_inline_asm(b, s, G, n->as<ncc::parse::InlineAsm>());
       break;
 
     case QAST_RETURN:
-      out = nrgen_return(b, s, G, n->as<npar::ReturnStmt>());
+      out = nrgen_return(b, s, G, n->as<ncc::parse::ReturnStmt>());
       break;
 
     case QAST_RETIF:
-      out = nrgen_retif(b, s, G, n->as<npar::ReturnIfStmt>());
+      out = nrgen_retif(b, s, G, n->as<ncc::parse::ReturnIfStmt>());
       break;
 
     case QAST_BREAK:
-      out = nrgen_break(b, s, G, n->as<npar::BreakStmt>());
+      out = nrgen_break(b, s, G, n->as<ncc::parse::BreakStmt>());
       break;
 
     case QAST_CONTINUE:
-      out = nrgen_continue(b, s, G, n->as<npar::ContinueStmt>());
+      out = nrgen_continue(b, s, G, n->as<ncc::parse::ContinueStmt>());
       break;
 
     case QAST_IF:
-      out = nrgen_if(b, s, G, n->as<npar::IfStmt>());
+      out = nrgen_if(b, s, G, n->as<ncc::parse::IfStmt>());
       break;
 
     case QAST_WHILE:
-      out = nrgen_while(b, s, G, n->as<npar::WhileStmt>());
+      out = nrgen_while(b, s, G, n->as<ncc::parse::WhileStmt>());
       break;
 
     case QAST_FOR:
-      out = nrgen_for(b, s, G, n->as<npar::ForStmt>());
+      out = nrgen_for(b, s, G, n->as<ncc::parse::ForStmt>());
       break;
 
     case QAST_FOREACH:
-      out = nrgen_foreach(b, s, G, n->as<npar::ForeachStmt>());
+      out = nrgen_foreach(b, s, G, n->as<ncc::parse::ForeachStmt>());
       break;
 
     case QAST_CASE:
-      out = nrgen_case(b, s, G, n->as<npar::CaseStmt>());
+      out = nrgen_case(b, s, G, n->as<ncc::parse::CaseStmt>());
       break;
 
     case QAST_SWITCH:
-      out = nrgen_switch(b, s, G, n->as<npar::SwitchStmt>());
+      out = nrgen_switch(b, s, G, n->as<ncc::parse::SwitchStmt>());
       break;
 
     case QAST_ESTMT:
-      out = nrgen_expr_stmt(b, s, G, n->as<npar::ExprStmt>());
+      out = nrgen_expr_stmt(b, s, G, n->as<ncc::parse::ExprStmt>());
       break;
 
     default: {
@@ -2201,7 +2229,8 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
   return out;
 }
 
-static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
+static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G,
+                         ncc::parse::Base *n) {
   using namespace nr;
 
   if (!n) {
@@ -2212,23 +2241,23 @@ static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G, npar_node_t *n) {
 
   switch (n->getKind()) {
     case QAST_TYPEDEF:
-      out = nrgen_typedef(b, s, G, n->as<npar::TypedefStmt>());
+      out = nrgen_typedef(b, s, G, n->as<ncc::parse::TypedefStmt>());
       break;
 
     case QAST_ENUM:
-      out = nrgen_enum(b, s, G, n->as<npar::EnumDef>());
+      out = nrgen_enum(b, s, G, n->as<ncc::parse::EnumDef>());
       break;
 
     case QAST_STRUCT:
-      out = nrgen_struct(b, s, G, n->as<npar::StructDef>());
+      out = nrgen_struct(b, s, G, n->as<ncc::parse::StructDef>());
       break;
 
     case QAST_SCOPE:
-      out = nrgen_scope(b, s, G, n->as<npar::ScopeStmt>());
+      out = nrgen_scope(b, s, G, n->as<ncc::parse::ScopeStmt>());
       break;
 
     case QAST_EXPORT:
-      out = nrgen_export(b, s, G, n->as<npar::ExportStmt>());
+      out = nrgen_export(b, s, G, n->as<ncc::parse::ExportStmt>());
       break;
 
     default: {

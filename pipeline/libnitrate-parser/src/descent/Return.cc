@@ -33,9 +33,10 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::lex;
+using namespace ncc::parse;
 
-Stmt *npar::recurse_return(npar_t &S, qlex_t &rd) {
+Stmt *Parser::recurse_return() {
   /**
    * Syntax examples:
    *   `ret 0;`, `ret;`, `ret 0, 1;`, `ret call();`
@@ -45,7 +46,7 @@ Stmt *npar::recurse_return(npar_t &S, qlex_t &rd) {
     return make<ReturnStmt>(std::nullopt);
   }
 
-  let expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+  let expr = recurse_expr({Token(qPunc, qPuncSemi)});
 
   if (next_if(qPuncSemi)) {
     return make<ReturnStmt>(expr);
@@ -56,16 +57,16 @@ Stmt *npar::recurse_return(npar_t &S, qlex_t &rd) {
   return mock_stmt(QAST_RETURN);
 }
 
-Stmt *npar::recurse_retif(npar_t &S, qlex_t &rd) {
+Stmt *Parser::recurse_retif() {
   /**
    * Syntax examples:
    *   `retif cond(), 1;`, `retif failed, -1;`
    */
 
-  let condition = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncComa)});
+  let condition = recurse_expr({Token(qPunc, qPuncComa)});
 
   if (next_if(qPuncComa)) {
-    let return_val = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+    let return_val = recurse_expr({Token(qPunc, qPuncSemi)});
 
     if (next_if(qPuncSemi)) {
       return make<ReturnIfStmt>(condition, return_val);

@@ -34,23 +34,8 @@
 #ifndef __NITRATE_AST_CLASSES_H__
 #define __NITRATE_AST_CLASSES_H__
 
-#include <nitrate-core/Error.h>
-#include <nitrate-parser/Parser.h>
-
+#include <nitrate-core/Logger.hh>
 #include <nitrate-parser/AST.hh>
-
-class nr_syn final {
-  npar_t *m_parser;
-
-public:
-  nr_syn(qlex_t *scanner, qcore_env_t env) {
-    if ((m_parser = npar_new(scanner, env)) == nullptr) {
-      qcore_panic("npar_new failed");
-    }
-  }
-  ~nr_syn() { npar_free(m_parser); }
-
-  npar_t *get() const { return m_parser; }
-};
+#include <nitrate-parser/Context.hh>
 
 #endif  // __NITRATE_AST_CLASSES_H__

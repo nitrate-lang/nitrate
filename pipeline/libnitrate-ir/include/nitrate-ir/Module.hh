@@ -34,7 +34,6 @@
 #ifndef __NITRATE_NR_MODULE_H__
 #define __NITRATE_NR_MODULE_H__
 
-#include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>
 
 #include <boost/bimap.hpp>
@@ -42,7 +41,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
-#include <nitrate-core/Classes.hh>
+#include <nitrate-core/Allocate.hh>
 #include <nitrate-ir/Report.hh>
 #include <nitrate-ir/Visitor.hh>
 #include <string>
@@ -136,8 +135,6 @@ private:
 
   std::unique_ptr<nr::IReport> m_diagnostics;
   std::unique_ptr<nr::ISourceView> m_offset_resolver;
-  std::unordered_map<std::string_view, std::string>
-      m_strings{};                /* Interned strings */
   ModulePasses m_applied{};       /* Module pass tracking */
   nr::TargetInfo m_target_info{}; /* Build target information */
   std::string m_module_name{};    /* Not nessesarily unique module name */
@@ -145,7 +142,8 @@ private:
                                      process during its lifetime */
   bool m_diagnostics_enabled{};
 
-  qcore_arena m_node_arena{};
+  std::unique_ptr<ncc::core::IMemory> m_node_arena =
+      std::make_unique<ncc::core::dyn_arena>();
 
 public:
   qmodule_t(nr::ModuleId id, const std::string &name = "?");
@@ -177,9 +175,7 @@ public:
   auto &getStructFields() { return m_composite_fields; }
   auto &getNamedConstants() { return m_named_constants; }
 
-  std::string_view internString(std::string_view sv);
-
-  qcore_arena_t &getNodeArena() { return *m_node_arena.get(); }
+  auto &getNodeArena() { return m_node_arena; }
 
   std::unique_ptr<nr::IReport> &getDiag() { return m_diagnostics; }
   std::unique_ptr<nr::ISourceView> &getOffsetResolver() {

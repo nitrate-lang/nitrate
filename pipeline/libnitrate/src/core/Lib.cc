@@ -31,16 +31,16 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Lib.h>
-#include <nitrate-core/Macro.h>
 #include <nitrate-emit/Lib.h>
 #include <nitrate-ir/Lib.h>
-#include <nitrate-lexer/Lib.h>
-#include <nitrate-parser/Lib.h>
 #include <nitrate-seq/Lib.h>
 #include <nitrate/code.h>
 
 #include <atomic>
+#include <nitrate-core/Init.hh>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Init.hh>
+#include <nitrate-parser/Init.hh>
 
 static std::atomic<size_t> nit_lib_ref_count = 0;
 
@@ -49,11 +49,11 @@ bool nit_lib_init() {
     return true;
   }
 
-  if (!qcore_lib_init()) {
+  if (!ncc::core::CoreLibrary.InitRC()) {
     return false;
   }
 
-  if (!qlex_lib_init()) {
+  if (!ncc::lex::LexerLibrary.InitRC()) {
     return false;
   }
 
@@ -61,7 +61,7 @@ bool nit_lib_init() {
     return false;
   }
 
-  if (!npar_lib_init()) {
+  if (!ncc::parse::ParseLibrary.InitRC()) {
     return false;
   }
 
@@ -83,8 +83,8 @@ void nit_deinit() {
 
   qcode_lib_deinit();
   nr_lib_deinit();
-  npar_lib_deinit();
+  ncc::parse::ParseLibrary.DeinitRC();
   qprep_lib_deinit();
-  qlex_lib_deinit();
-  qcore_lib_deinit();
+  ncc::lex::LexerLibrary.DeinitRC();
+  ncc::core::CoreLibrary.DeinitRC();
 }

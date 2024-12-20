@@ -31,29 +31,24 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Lib.h>
 #include <nitrate/code.h>
 
 #include <core/SerialUtil.hh>
-#include <core/Transformer.hh>
+#include <core/Transform.hh>
 #include <cstdint>
-#include <functional>
-#include <nitrate-core/Classes.hh>
-#include <nitrate-lexer/Base.hh>
-#include <nitrate-lexer/Classes.hh>
+#include <memory>
+#include <nitrate-core/Init.hh>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/ASTWriter.hh>
-#include <nitrate-parser/Classes.hh>
-#include <string_view>
+#include <nitrate-parser/Context.hh>
 #include <unordered_set>
 
-static inline qlex_tok_t eof_tok() {
-  qlex_tok_t tok{};
-  tok.ty = qEofF;
-  return tok;
-}
+using namespace ncc::lex;
 
-class DeserializerAdapterLexer final : public qlex_t {
+static inline Token eof_tok() { return Token::EndOfFile(); }
+
+class DeserializerAdapterLexer final : public ncc::lex::IScanner {
   static constexpr std::array<uint8_t, 256> valid_ty_id_tab = []() {
     std::array<uint8_t, 256> tab = {};
     tab.fill(0);
@@ -82,8 +77,77 @@ class DeserializerAdapterLexer final : public qlex_t {
 
   uint64_t m_ele_count;
   bool m_eof_bit;
+  std::istream &m_file;
 
-  qlex_tok_t next_impl_json() {
+  Token decode(TokenType t, std::string_view data) {
+    Token R;
+
+    switch (t) {
+      case TokenType::qEofF: {
+        R = Token::EndOfFile();
+        break;
+      }
+
+      case TokenType::qKeyW: {
+        R = Token(t, ncc::lex::keywords.left.at(data));
+        break;
+      }
+
+      case TokenType::qOper: {
+        R = Token(t, ncc::lex::operators.left.at(data));
+        break;
+      }
+
+      case TokenType::qPunc: {
+        R = Token(t, ncc::lex::punctuation.left.at(data));
+        break;
+      }
+
+      case TokenType::qName: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+
+      case TokenType::qIntL: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+
+      case TokenType::qNumL: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+
+      case TokenType::qText: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+
+      case TokenType::qChar: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+
+      case TokenType::qMacB: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+
+      case TokenType::qMacr: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+
+      case TokenType::qNote: {
+        R = Token(t, ncc::core::intern(data));
+        break;
+      }
+    }
+
+    return R;
+  }
+
+  Token next_impl_json() {
     if (m_eof_bit) [[unlikely]] {
       return eof_tok();
     }
@@ -129,12 +193,7 @@ class DeserializerAdapterLexer final : public qlex_t {
 
     /* Validate the token type */
     if (valid_ty_id_tab[ty]) [[likely]] {
-      qlex_tok_t T;
-
-      qlex_tok_fromstr(this, static_cast<qlex_ty_t>(ty), str, &T);
-
-      T.start = save_loc(a, b, 0);
-      T.end = save_loc(c, d, 0);
+      Token T = decode(static_cast<TokenType>(ty), str);
 
       free(str);
       return T;
@@ -144,7 +203,7 @@ class DeserializerAdapterLexer final : public qlex_t {
     return eof_tok();
   }
 
-  qlex_tok_t next_impl_msgpack() {
+  Token next_impl_msgpack() {
     if (m_eof_bit || !m_ele_count) [[unlikely]] {
       return eof_tok();
     }
@@ -181,13 +240,7 @@ class DeserializerAdapterLexer final : public qlex_t {
 
     /* Validate the token type */
     if (valid_ty_id_tab[ty]) [[likely]] {
-      qlex_tok_t T;
-
-      qlex_tok_fromstr(this, static_cast<qlex_ty_t>(ty), str, &T);
-
-      T.start = save_loc(a, b, 0);
-      T.end = save_loc(c, d, 0);
-
+      Token T = decode(static_cast<TokenType>(ty), str);
       free(str);
       return T;
     }
@@ -196,7 +249,7 @@ class DeserializerAdapterLexer final : public qlex_t {
     return eof_tok();
   }
 
-  virtual qlex_tok_t next_impl() override {
+  virtual Token GetNext() override {
     switch (m_mode) {
       case InMode::JSON: {
         return next_impl_json();
@@ -212,8 +265,11 @@ class DeserializerAdapterLexer final : public qlex_t {
 
 public:
   DeserializerAdapterLexer(std::istream &file, const char *filename,
-                           qcore_env_t env)
-      : qlex_t(file, filename, env) {
+                           std::shared_ptr<ncc::core::Environment> env)
+      : m_mode(InMode::BadCodec),
+        m_ele_count(0),
+        m_eof_bit(false),
+        m_file(file) {
     int ch = file.get();
 
     m_mode = InMode::BadCodec;
@@ -255,36 +311,14 @@ public:
   virtual ~DeserializerAdapterLexer() override = default;
 };
 
-using ArgCallback = std::function<void(const char *)>;
-static std::optional<npar_node_t *> parse_tokens(npar_t *L,
-                                                 ArgCallback diag_cb) {
-  npar_node_t *root = nullptr;
-  bool ok = npar_do(L, &root);
-
-  ///============================================================================///
-  /// Some dangerous code here, be careful! ///
-  npar_dumps(
-      L, false,
-      [](const char *msg, size_t, uintptr_t dat) {
-        let stack_tmp = *(ArgCallback *)dat;
-        stack_tmp(msg);
-      },
-      (uintptr_t)&diag_cb);
-  ///============================================================================///
-
-  return ok ? std::make_optional(root) : std::nullopt;
-}
-
-bool nit::parse(std::istream &source, std::ostream &output,
-                std::function<void(const char *)> diag_cb,
-                const std::unordered_set<std::string_view> &opts) {
+CREATE_TRANSFORM(nit::parse) {
   enum class OutMode {
     JSON,
     MsgPack,
   } out_mode = OutMode::JSON;
 
   if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
+    qcore_logf(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
     return false;
   }
 
@@ -292,26 +326,24 @@ bool nit::parse(std::istream &source, std::ostream &output,
     out_mode = OutMode::MsgPack;
   }
 
-  DeserializerAdapterLexer lex(source, nullptr, qcore_env_current());
-  nr_syn par(&lex, qcore_env_current());
+  DeserializerAdapterLexer lexer(source, nullptr, env);
+  auto parser = ncc::parse::Parser::Create(lexer, env);
 
-  if (let root = parse_tokens(par.get(), diag_cb)) {
-    switch (out_mode) {
-      case OutMode::JSON: {
-        auto writter = npar::AST_JsonWriter(output);
-        root.value()->accept(writter);
-        return true;
-      }
-      case OutMode::MsgPack: {
-        auto writter = npar::AST_MsgPackWriter(output);
-        root.value()->accept(writter);
-        return true;
-      }
-      default: {
-        return false;
-      }
+  let root = parser->parse();
+
+  switch (out_mode) {
+    case OutMode::JSON: {
+      auto writter = ncc::parse::AST_JsonWriter(output);
+      root.get()->accept(writter);
+      return true;
     }
-  } else {
-    return false;
+    case OutMode::MsgPack: {
+      auto writter = ncc::parse::AST_MsgPackWriter(output);
+      root.get()->accept(writter);
+      return true;
+    }
+    default: {
+      return false;
+    }
   }
 }

@@ -31,13 +31,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
 #include <nitrate-emit/Code.h>
 
 #include <core/Config.hh>
 #include <functional>
 #include <memory>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <streambuf>
 #include <transcode/Targets.hh>
 #include <unordered_map>

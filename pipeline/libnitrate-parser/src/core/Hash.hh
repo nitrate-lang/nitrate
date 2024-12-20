@@ -38,7 +38,7 @@
 #include <cstdint>
 #include <nitrate-parser/ASTWriter.hh>
 
-namespace npar {
+namespace ncc::parse {
   class CPP_EXPORT AST_Hash64 : public AST_Writer {
     std::stack<std::pair<bool, size_t>> m_state;
     uint64_t m_sum;
@@ -74,6 +74,6 @@ namespace npar {
 
     uint64_t get() const { return m_sum; }
   };
-}  // namespace npar
+}  // namespace ncc::parse
 
 #endif

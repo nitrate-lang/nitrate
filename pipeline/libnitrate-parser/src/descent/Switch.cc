@@ -33,21 +33,21 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::lex;
+using namespace ncc::parse;
 
-static Stmt *recurse_switch_case_body(npar_t &S, qlex_t &rd) {
+Stmt *Parser::recurse_switch_case_body() {
   if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true);
+    return recurse_block(false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true, false);
+    return recurse_block(true, false, SafetyMode::Unknown);
   }
 }
 
-static std::pair<CaseStmt *, bool> recurse_switch_case(npar_t &S, qlex_t &rd) {
-  let cond = recurse_expr(
-      S, rd, {qlex_tok_t(qOper, qOpArrow), qlex_tok_t(qPunc, qPuncLCur)});
+std::pair<CaseStmt *, bool> Parser::recurse_switch_case() {
+  let cond = recurse_expr({Token(qOper, qOpArrow), Token(qPunc, qPuncLCur)});
 
-  let body = recurse_switch_case_body(S, rd);
+  let body = recurse_switch_case_body();
 
   let is_default_case =
       cond->is(QAST_IDENT) && cond->as<Ident>()->get_name() == "_";
@@ -59,8 +59,8 @@ static std::pair<CaseStmt *, bool> recurse_switch_case(npar_t &S, qlex_t &rd) {
   }
 }
 
-static std::optional<std::pair<SwitchCases, std::optional<CaseStmt *>>>
-recurse_switch_body(npar_t &S, qlex_t &rd) {
+std::optional<std::pair<SwitchCases, std::optional<CaseStmt *>>>
+Parser::recurse_switch_body() {
   SwitchCases cases;
   std::optional<CaseStmt *> default_;
 
@@ -74,7 +74,7 @@ recurse_switch_body(npar_t &S, qlex_t &rd) {
       return {{cases, default_}};
     }
 
-    let[field, is_default] = recurse_switch_case(S, rd);
+    let[field, is_default] = recurse_switch_case();
 
     if (is_default) {
       if (default_) {
@@ -90,11 +90,11 @@ recurse_switch_body(npar_t &S, qlex_t &rd) {
   return std::nullopt;
 }
 
-npar::Stmt *npar::recurse_switch(npar_t &S, qlex_t &rd) {
-  let switch_cond = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncLCur)});
+Stmt *Parser::recurse_switch() {
+  let switch_cond = recurse_expr({Token(qPunc, qPuncLCur)});
 
   if (next_if(qPuncLCur)) {
-    if (auto body_opt = recurse_switch_body(S, rd)) {
+    if (auto body_opt = recurse_switch_body()) {
       let[switch_cases, switch_default_opt] = body_opt.value();
 
       return make<SwitchStmt>(switch_cond, std::move(switch_cases),

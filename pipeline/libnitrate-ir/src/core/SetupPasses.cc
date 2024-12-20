@@ -31,9 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-
 #include <core/PassManager.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-ir/Module.hh>
 #include <passes/PassList.hh>
 

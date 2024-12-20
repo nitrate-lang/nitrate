@@ -31,73 +31,71 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Lib.h>
 #include <nitrate/code.h>
 
 #include <core/SerialUtil.hh>
-#include <core/Transformer.hh>
-#include <functional>
-#include <nitrate-lexer/Classes.hh>
+#include <core/Transform.hh>
+#include <cstdint>
+#include <nitrate-core/Init.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <string_view>
 #include <unordered_set>
 
-bool impl_use_json(qlex_t *L, std::ostream &O) {
+using namespace ncc::lex;
+
+bool impl_use_json(IScanner *L, std::ostream &O) {
   O << "[";
 
-  qlex_tok_t tok;
-  while ((tok = qlex_next(L)).ty != qEofF) {
-    uint32_t sl = qlex_line(L, tok.start);
-    uint32_t sc = qlex_col(L, tok.start);
-    uint32_t el = qlex_line(L, tok.end);
-    uint32_t ec = qlex_col(L, tok.end);
+  Token tok;
+  while ((tok = (L->Next())).get_type() != qEofF) {
+    uint32_t sl = L->StartLine(tok), sc = L->StartColumn(tok);
+    uint32_t el = L->EndLine(tok), ec = L->EndColumn(tok);
 
-    switch (tok.ty) {
+    switch (tok.get_type()) {
       case qEofF: { /* End of file */
         break;
       }
 
       case qKeyW: { /* Keyword */
-        O << "[2,\"" << qlex_kwstr(tok.v.key) << "\"," << sl << "," << sc << ","
-          << el << "," << ec << "],";
+        O << "[2,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
+          << ec << "],";
         break;
       }
 
       case qOper: { /* Operator */
-        O << "[3,\"" << qlex_opstr(tok.v.op) << "\"," << sl << "," << sc << ","
-          << el << "," << ec << "],";
+        O << "[3,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
+          << ec << "],";
         break;
       }
 
       case qPunc: { /* Punctuation */
-        O << "[4,\"" << qlex_punctstr(tok.v.punc) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[4,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
+          << ec << "],";
         break;
       }
 
       case qName: { /* Identifier */
-        O << "[5,\"" << qlex_str(L, &tok, nullptr) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[5,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
+          << ec << "],";
         break;
       }
 
       case qIntL: { /* Integer literal */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[6,\"" << qlex_str(L, &tok, nullptr) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[6,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
+          << ec << "],";
         break;
       }
 
       case qNumL: { /* Floating-point literal */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[7,\"" << qlex_str(L, &tok, nullptr) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[7,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
+          << ec << "],";
         break;
       }
 
       case qText: { /* String literal */
-        size_t S;
-        const char *str = qlex_str(L, &tok, &S);
-        std::string_view sv(str, S);
+        std::string_view sv = tok.as_string();
 
         O << "[8,\"" << create_json_string(sv) << "\"," << sl << "," << sc
           << "," << el << "," << ec << "],";
@@ -105,9 +103,7 @@ bool impl_use_json(qlex_t *L, std::ostream &O) {
       }
 
       case qChar: { /* Character literal */
-        size_t S;
-        const char *str = qlex_str(L, &tok, &S);
-        std::string_view sv(str, S);
+        std::string_view sv = tok.as_string();
 
         O << "[9,\"" << create_json_string(sv) << "\"," << sl << "," << sc
           << "," << el << "," << ec << "],";
@@ -116,28 +112,28 @@ bool impl_use_json(qlex_t *L, std::ostream &O) {
 
       case qMacB: { /* Macro block */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[10,\"" << qlex_str(L, &tok, nullptr) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[10,\"" << tok.as_string() << "\"," << sl << "," << sc << ","
+          << el << "," << ec << "],";
         break;
       }
 
       case qMacr: { /* Macro call */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[11,\"" << qlex_str(L, &tok, nullptr) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[11,\"" << tok.as_string() << "\"," << sl << "," << sc << ","
+          << el << "," << ec << "],";
         break;
       }
 
       case qNote: { /* Comment */
-        size_t S;
-        const char *str = qlex_str(L, &tok, &S);
-        std::string_view sv(str, S);
+        std::string_view sv = tok.as_string();
 
         O << "[12,\"" << create_json_string(sv) << "\"," << sl << "," << sc
           << "," << el << "," << ec << "],";
         break;
       }
     }
+
+    O.flush();
   }
 
   O << "[1,\"\",0,0,0,0]]";
@@ -158,7 +154,7 @@ static void msgpack_write_tok(std::ostream &O, uint8_t type,
   msgpack_write_uint(O, ec);
 }
 
-bool impl_use_msgpack(qlex_t *L, std::ostream &O) {
+bool impl_use_msgpack(IScanner *L, std::ostream &O) {
   size_t num_entries = 0;
 
   O.put(0xdd);
@@ -173,85 +169,73 @@ bool impl_use_msgpack(qlex_t *L, std::ostream &O) {
   O.put(0);
   O.put(0);
 
-  qlex_tok_t tok;
-  while ((tok = qlex_next(L)).ty != qEofF) {
-    uint32_t sl = qlex_line(L, tok.start);
-    uint32_t sc = qlex_col(L, tok.start);
-    uint32_t el = qlex_line(L, tok.end);
-    uint32_t ec = qlex_col(L, tok.end);
+  Token tok;
+  while ((tok = (L->Next())).get_type() != qEofF) {
+    uint32_t sl = L->StartLine(tok), sc = L->StartColumn(tok);
+    uint32_t el = L->EndLine(tok), ec = L->EndColumn(tok);
 
-    switch (tok.ty) {
+    switch (tok.get_type()) {
       case qEofF: { /* End of file */
         break;
       }
 
       case qKeyW: { /* Keyword */
-        msgpack_write_tok(O, 3, qlex_kwstr(tok.v.key), sl, sc, el, ec);
+        msgpack_write_tok(O, 3, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qOper: { /* Operator */
-        msgpack_write_tok(O, 4, qlex_opstr(tok.v.op), sl, sc, el, ec);
+        msgpack_write_tok(O, 4, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qPunc: { /* Punctuation */
-        msgpack_write_tok(O, 5, qlex_punctstr(tok.v.punc), sl, sc, el, ec);
+        msgpack_write_tok(O, 5, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qName: { /* Identifier */
-        msgpack_write_tok(O, 6, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        msgpack_write_tok(O, 6, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qIntL: { /* Integer literal */
-        msgpack_write_tok(O, 7, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        msgpack_write_tok(O, 7, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qNumL: { /* Floating-point literal */
-        msgpack_write_tok(O, 8, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        msgpack_write_tok(O, 8, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qText: { /* String literal */
-        size_t S;
-        const char *str = qlex_str(L, &tok, &S);
-        std::string_view sv(str, S);
-
-        msgpack_write_tok(O, 9, sv, sl, sc, el, ec);
+        msgpack_write_tok(O, 9, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qChar: { /* Character literal */
-        size_t S;
-        const char *str = qlex_str(L, &tok, &S);
-        std::string_view sv(str, S);
-
-        msgpack_write_tok(O, 10, sv, sl, sc, el, ec);
+        msgpack_write_tok(O, 10, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qMacB: { /* Macro block */
-        msgpack_write_tok(O, 11, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        msgpack_write_tok(O, 11, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qMacr: { /* Macro call */
-        msgpack_write_tok(O, 12, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        msgpack_write_tok(O, 12, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
       case qNote: { /* Comment */
-        size_t S;
-        const char *str = qlex_str(L, &tok, &S);
-        std::string_view sv(str, S);
-
-        msgpack_write_tok(O, 13, sv, sl, sc, el, ec);
+        msgpack_write_tok(O, 13, tok.as_string(), sl, sc, el, ec);
         break;
       }
     }
+
+    O.flush();
 
     num_entries++;
   }
@@ -276,12 +260,8 @@ bool impl_use_msgpack(qlex_t *L, std::ostream &O) {
   return true;
 }
 
-bool nit::lex(std::istream &source, std::ostream &output,
-              std::function<void(const char *)> diag_cb,
-              const std::unordered_set<std::string_view> &opts) {
-  (void)diag_cb;
-
-  qlex lexer(source, nullptr, qcore_env_current());
+CREATE_TRANSFORM(nit::lex) {
+  auto L = Tokenizer(source, env);
 
   enum class OutMode {
     JSON,
@@ -289,7 +269,7 @@ bool nit::lex(std::istream &source, std::ostream &output,
   } out_mode = OutMode::JSON;
 
   if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_print(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
+    qcore_logf(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
     return false;
   } else if (opts.contains("-fuse-msgpack")) {
     out_mode = OutMode::MsgPack;
@@ -297,8 +277,8 @@ bool nit::lex(std::istream &source, std::ostream &output,
 
   switch (out_mode) {
     case OutMode::JSON:
-      return impl_use_json(lexer.get(), output);
+      return impl_use_json(&L, output);
     case OutMode::MsgPack:
-      return impl_use_msgpack(lexer.get(), output);
+      return impl_use_msgpack(&L, output);
   }
 }

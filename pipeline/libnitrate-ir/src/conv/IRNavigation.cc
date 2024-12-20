@@ -33,14 +33,15 @@
 
 #define IRBUILDER_IMPL
 
-#include <nitrate-core/Error.h>
-
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/String.hh>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <string_view>
 #include <unordered_map>
 
 using namespace nr;
+using namespace ncc::core;
 
 static std::string join_name_segment(const std::string &a,
                                      const std::string &b) {
@@ -139,5 +140,5 @@ std::optional<std::pair<Expr *, std::string_view>> NRBuilder::resolve_name(
     return std::nullopt;
   }
 
-  return {{R->first, intern(R->second)}};
+  return {{R->first, save(R->second)}};
 }

@@ -33,36 +33,36 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::lex;
+using namespace ncc::parse;
 
-static Stmt *recurse_if_then(npar_t &S, qlex_t &rd) {
+Stmt *Parser::recurse_if_then() {
   if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true);
+    return recurse_block(false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true);
+    return recurse_block(true, false, SafetyMode::Unknown);
   }
 }
 
-static std::optional<Stmt *> recurse_if_else(npar_t &S, qlex_t &rd) {
+std::optional<Stmt *> Parser::recurse_if_else() {
   if (next_if(qKElse)) {
     if (next_if(qOpArrow)) {
-      return recurse_block(S, rd, false, true);
+      return recurse_block(false, true, SafetyMode::Unknown);
     } else if (next_if(qKIf)) {
-      return recurse_if(S, rd);
+      return recurse_if();
     } else {
-      return recurse_block(S, rd, true);
+      return recurse_block(true, false, SafetyMode::Unknown);
     }
   } else {
     return std::nullopt;
   }
 }
 
-npar::Stmt *npar::recurse_if(npar_t &S, qlex_t &rd) {
-  let cond = recurse_expr(
-      S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
+Stmt *Parser::recurse_if() {
+  let cond = recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
 
-  let then = recurse_if_then(S, rd);
-  let ele = recurse_if_else(S, rd);
+  let then = recurse_if_then();
+  let ele = recurse_if_else();
 
   return make<IfStmt>(cond, then, ele.value_or(nullptr));
 }

@@ -36,18 +36,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <mutex>
+#include <nitrate-core/Allocate.hh>
 #include <vector>
 
-namespace mem {
-  class qcore_arena_t {
-  public:
-    virtual ~qcore_arena_t() = default;
-    virtual void open(bool thread_safe) = 0;
-    virtual void *alloc(size_t size, size_t align) = 0;
-    virtual size_t close() = 0;
-  };
-
-  class gba_v0_t final : public qcore_arena_t {
+namespace ncc::core {
+  class dyn_arena::PImpl {
     struct region_t {
       uintptr_t base = 0;
       uintptr_t offset = 0;
@@ -55,7 +48,6 @@ namespace mem {
     };
     std::vector<region_t> m_bases;
     std::mutex m_mutex;
-    bool m_thread_safe;
 
     void alloc_region(size_t size) {
       uintptr_t base = (uintptr_t) new uint8_t[size];
@@ -63,31 +55,53 @@ namespace mem {
     }
 
   public:
-    virtual ~gba_v0_t() = default;
-    void open(bool thread_safe) override;
-    void *alloc(size_t size, size_t align) override;
-    size_t close() override;
+    PImpl();
+    ~PImpl();
+
+    void *alloc(size_t size, size_t align);
   };
+}  // namespace ncc::core
 
-  class riba_v0_t final : public qcore_arena_t {
-    struct region_t {
-      uintptr_t base = 0;
-      uintptr_t offset = 0;
-      size_t size = 0;
-    };
-    std::vector<region_t> m_bases;
-    std::mutex m_mutex;
-    bool m_thread_safe;
+// class gba_v0_t final : public qcore_arena_t {
+//   struct region_t {
+//     uintptr_t base = 0;
+//     uintptr_t offset = 0;
+//     size_t size = 0;
+//   };
+//   std::vector<region_t> m_bases;
+//   std::mutex m_mutex;
+//   bool m_thread_safe;
 
-    void alloc_region(size_t size) {
-      uintptr_t base = (uintptr_t) new uint8_t[size];
-      m_bases.push_back({base, base, size});
-    }
+//   void alloc_region(size_t size) {
+//     uintptr_t base = (uintptr_t) new uint8_t[size];
+//     m_bases.push_back({base, base, size});
+//   }
 
-  public:
-    virtual ~riba_v0_t() = default;
-    void open(bool thread_safe) override;
-    void *alloc(size_t size, size_t align) override;
-    size_t close() override;
-  };
-}  // namespace mem
+// public:
+//   virtual ~gba_v0_t() = default;
+//   void open(bool thread_safe) override;
+//   void *alloc(size_t size, size_t align) override;
+//   size_t close() override;
+// };
+
+// class riba_v0_t final : public qcore_arena_t {
+//   struct region_t {
+//     uintptr_t base = 0;
+//     uintptr_t offset = 0;
+//     size_t size = 0;
+//   };
+//   std::vector<region_t> m_bases;
+//   std::mutex m_mutex;
+//   bool m_thread_safe;
+
+//   void alloc_region(size_t size) {
+//     uintptr_t base = (uintptr_t) new uint8_t[size];
+//     m_bases.push_back({base, base, size});
+//   }
+
+// public:
+//   virtual ~riba_v0_t() = default;
+//   void open(bool thread_safe) override;
+//   void *alloc(size_t size, size_t align) override;
+//   size_t close() override;
+// };

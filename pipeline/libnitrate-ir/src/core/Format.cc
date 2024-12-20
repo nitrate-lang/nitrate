@@ -31,10 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
-
 #include <cstddef>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <sstream>

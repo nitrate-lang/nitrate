@@ -43,7 +43,10 @@
 #include <string_view>
 #include <unordered_set>
 
-struct npar_node_t;
+namespace ncc::parse {
+  class Base;
+
+}
 
 namespace nr {
   struct IssueInfo {
@@ -93,7 +96,8 @@ namespace nr {
     virtual void report(IssueCode code, IC level,
                         std::vector<std::string_view> params = {},
                         std::tuple<uint32_t, uint32_t> loc = {
-                            QLEX_EOFF, QLEX_NOFILE}) override;
+                            ncc::lex::QLEX_EOFF,
+                            ncc::lex::QLEX_NOFILE}) override;
 
     virtual void stream_reports(
         std::function<void(const ReportData &)> cb) override;

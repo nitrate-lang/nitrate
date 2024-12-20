@@ -3,13 +3,13 @@
 #include <lsp/core/SyncFS.hh>
 #include <lsp/core/server.hh>
 #include <lsp/route/RoutesList.hh>
-#include <nitrate-core/Classes.hh>
-#include <nitrate-lexer/Classes.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <regex>
 #include <sstream>
 #include <string>
 
 using namespace rapidjson;
+using namespace ncc::lex;
 
 struct Position {
   size_t line = 0;
@@ -114,20 +114,18 @@ void do_documentColor(const lsp::RequestMessage& req,
 
   std::stringstream ss(*file->content());
 
-  qcore_env env;
-  qlex lexer(ss, uri.c_str(), env.get());
-  qlex_tok_t tok;
+  auto env = std::make_shared<ncc::core::Environment>();
+  auto L = Tokenizer(ss, env);
+  Token tok;
   std::vector<ColorInformation> colors;
 
-  while ((tok = qlex_next(lexer.get())).ty != qEofF) {
-    if (tok.ty != qMacr) {
+  while ((tok = (L.Next())).get_type() != qEofF) {
+    if (tok.get_type() != qMacr) {
       continue;
     }
 
-    uint32_t start_line = qlex_line(lexer.get(), tok.start);
-    uint32_t start_col = qlex_col(lexer.get(), tok.start);
-    uint32_t end_line = qlex_line(lexer.get(), tok.end);
-    uint32_t end_col = qlex_col(lexer.get(), tok.end);
+    uint32_t start_line = L.StartLine(tok), start_col = L.StartColumn(tok);
+    uint32_t end_line = L.EndLine(tok), end_col = L.EndColumn(tok);
 
     if (start_line == QLEX_EOFF || start_col == QLEX_EOFF ||
         end_line == QLEX_EOFF || end_col == QLEX_EOFF) {
@@ -135,9 +133,7 @@ void do_documentColor(const lsp::RequestMessage& req,
       continue;
     }
 
-    size_t size;
-    const char* ptr = qlex_str(lexer.get(), &tok, &size);
-    std::string_view value(ptr, size);
+    std::string_view value = tok.as_string();
 
     if (value.starts_with("rgba(") && value.ends_with(")")) {
       value.remove_prefix(5);

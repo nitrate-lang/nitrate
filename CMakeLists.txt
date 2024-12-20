@@ -72,6 +72,7 @@ endif()
 
 add_subdirectory(pipeline)
 add_subdirectory(no3)
+add_subdirectory(examples)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   foreach(lib nitrate-core

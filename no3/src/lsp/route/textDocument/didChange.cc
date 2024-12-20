@@ -1,10 +1,10 @@
-#include <nitrate-core/Macro.h>
 #include <rapidjson/allocators.h>
 #include <rapidjson/document.h>
 
 #include <lsp/core/SyncFS.hh>
 #include <lsp/core/server.hh>
 #include <lsp/route/RoutesList.hh>
+#include <nitrate-core/Macro.hh>
 #include <string>
 
 typedef int64_t DocVersion;

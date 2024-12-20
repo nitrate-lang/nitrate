@@ -33,43 +33,41 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::lex;
+using namespace ncc::parse;
 
-constexpr static std::string_view recurse_enum_name(qlex_t &rd) {
+std::string_view Parser::recurse_enum_name() {
   if (let tok = next_if(qName)) {
-    return tok->as_string(&rd);
+    return tok->as_string();
   } else {
     return "";
   }
 }
 
-constexpr static std::optional<Type *> recurse_enum_type(npar_t &S,
-                                                         qlex_t &rd) {
+std::optional<Type *> Parser::recurse_enum_type() {
   if (next_if(qPuncColn)) {
-    return recurse_type(S, rd);
+    return recurse_type();
   } else {
     return std::nullopt;
   }
 }
 
-constexpr static std::optional<Expr *> recurse_enum_item_value(npar_t &S,
-                                                               qlex_t &rd) {
+std::optional<Expr *> Parser::recurse_enum_item_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
-        S, rd,
-        {qlex_tok_t(qPunc, qPuncSemi), qlex_tok_t(qPunc, qPuncComa),
-         qlex_tok_t(qPunc, qPuncRCur)});
+
+        {Token(qPunc, qPuncSemi), Token(qPunc, qPuncComa),
+         Token(qPunc, qPuncRCur)});
   } else {
     return std::nullopt;
   }
 }
 
-constexpr static std::optional<EnumItem> recurse_enum_item(npar_t &S,
-                                                           qlex_t &rd) {
+std::optional<EnumItem> Parser::recurse_enum_item() {
   if (let name = next_if(qName)) {
-    let value = recurse_enum_item_value(S, rd);
+    let value = recurse_enum_item_value();
 
-    return EnumItem(name->as_string(&rd), value.value_or(nullptr));
+    return EnumItem(SaveString(name->as_string()), value.value_or(nullptr));
   } else {
     diagnostic << current() << "Enum field is missing a name.";
   }
@@ -77,8 +75,7 @@ constexpr static std::optional<EnumItem> recurse_enum_item(npar_t &S,
   return std::nullopt;
 }
 
-constexpr static std::optional<EnumDefItems> recurse_enum_items(npar_t &S,
-                                                                qlex_t &rd) {
+std::optional<EnumDefItems> Parser::recurse_enum_items() {
   EnumDefItems items;
 
   if (next_if(qPuncSemi)) {
@@ -97,7 +94,7 @@ constexpr static std::optional<EnumDefItems> recurse_enum_items(npar_t &S,
         return items;
       }
 
-      if (let item = recurse_enum_item(S, rd)) {
+      if (let item = recurse_enum_item()) {
         items.push_back(item.value());
       } else {
         break;
@@ -106,7 +103,7 @@ constexpr static std::optional<EnumDefItems> recurse_enum_items(npar_t &S,
       next_if(qPuncComa) || next_if(qPuncSemi);
     }
   } else if (next_if(qOpArrow)) {
-    if (let item = recurse_enum_item(S, rd)) {
+    if (let item = recurse_enum_item()) {
       items.push_back(item.value());
       return items;
     }
@@ -115,11 +112,11 @@ constexpr static std::optional<EnumDefItems> recurse_enum_items(npar_t &S,
   return std::nullopt;
 }
 
-npar::Stmt *npar::recurse_enum(npar_t &S, qlex_t &rd) {
-  let name = recurse_enum_name(rd);
-  let type = recurse_enum_type(S, rd);
+Stmt *Parser::recurse_enum() {
+  let name = recurse_enum_name();
+  let type = recurse_enum_type();
 
-  if (let items = recurse_enum_items(S, rd)) {
+  if (let items = recurse_enum_items()) {
     return make<EnumDef>(SaveString(name), type.value_or(nullptr),
                          std::move(items.value()));
   }

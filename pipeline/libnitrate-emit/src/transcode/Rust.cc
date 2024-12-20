@@ -31,10 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
-
 #include <core/Config.hh>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <transcode/Targets.hh>
 
 bool codegen::for_rust(qmodule_t *module, std::ostream &err,

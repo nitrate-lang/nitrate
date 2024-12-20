@@ -1,11 +1,12 @@
 #pragma once
 
 #include <lsp/lang/FmtInterface.hh>
+#include <nitrate-core/String.hh>
 #include <sstream>
 #include <stack>
 
 namespace lsp::fmt {
-  class CambrianFormatter final : public npar::ASTVisitor,
+  class CambrianFormatter final : public ncc::parse::ASTVisitor,
                                   public ICodeFormatter {
     class LineStreamWritter {
       std::stringstream m_line_buffer;
@@ -24,8 +25,12 @@ namespace lsp::fmt {
         m_line_buffer << val;
         return *this;
       }
-      LineStreamWritter& operator<<(qlex_op_t op);
-      LineStreamWritter& operator<<(npar::Vis op);
+      LineStreamWritter& operator<<(ncc::lex::Operator op);
+      LineStreamWritter& operator<<(ncc::parse::Vis op);
+      LineStreamWritter& operator<<(ncc::core::str_alias str) {
+        m_line_buffer << str.get();
+        return *this;
+      }
 
       LineStreamWritter& operator<<(std::ostream& (*func)(std::ostream&));
 
@@ -59,7 +64,7 @@ namespace lsp::fmt {
     void write_float_literal_chunk(std::string_view float_str);
     void write_float_literal(std::string_view float_str);
 
-    void format_type_metadata(npar::Type const& n);
+    void format_type_metadata(ncc::parse::Type const& n);
 
     template <typename IterBegin, typename IterEnd>
     void iterate_except_last(IterBegin beg, IterEnd end, auto body,
@@ -81,75 +86,75 @@ namespace lsp::fmt {
       }
     }
 
-    void visit(npar_node_t const& n) override;
-    void visit(npar::ExprStmt const& n) override;
-    void visit(npar::StmtExpr const& n) override;
-    void visit(npar::TypeExpr const& n) override;
-    void visit(npar::NamedTy const& n) override;
-    void visit(npar::InferTy const& n) override;
-    void visit(npar::TemplType const& n) override;
-    void visit(npar::U1 const& n) override;
-    void visit(npar::U8 const& n) override;
-    void visit(npar::U16 const& n) override;
-    void visit(npar::U32 const& n) override;
-    void visit(npar::U64 const& n) override;
-    void visit(npar::U128 const& n) override;
-    void visit(npar::I8 const& n) override;
-    void visit(npar::I16 const& n) override;
-    void visit(npar::I32 const& n) override;
-    void visit(npar::I64 const& n) override;
-    void visit(npar::I128 const& n) override;
-    void visit(npar::F16 const& n) override;
-    void visit(npar::F32 const& n) override;
-    void visit(npar::F64 const& n) override;
-    void visit(npar::F128 const& n) override;
-    void visit(npar::VoidTy const& n) override;
-    void visit(npar::PtrTy const& n) override;
-    void visit(npar::OpaqueTy const& n) override;
-    void visit(npar::TupleTy const& n) override;
-    void visit(npar::ArrayTy const& n) override;
-    void visit(npar::RefTy const& n) override;
-    void visit(npar::FuncTy const& n) override;
-    void visit(npar::UnaryExpr const& n) override;
-    void visit(npar::BinExpr const& n) override;
-    void visit(npar::PostUnaryExpr const& n) override;
-    void visit(npar::TernaryExpr const& n) override;
-    void visit(npar::ConstInt const& n) override;
-    void visit(npar::ConstFloat const& n) override;
-    void visit(npar::ConstBool const& n) override;
-    void visit(npar::ConstString const& n) override;
-    void visit(npar::ConstChar const& n) override;
-    void visit(npar::ConstNull const& n) override;
-    void visit(npar::ConstUndef const& n) override;
-    void visit(npar::Call const& n) override;
-    void visit(npar::TemplCall const& n) override;
-    void visit(npar::List const& n) override;
-    void visit(npar::Assoc const& n) override;
-    void visit(npar::Field const& n) override;
-    void visit(npar::Index const& n) override;
-    void visit(npar::Slice const& n) override;
-    void visit(npar::FString const& n) override;
-    void visit(npar::Ident const& n) override;
-    void visit(npar::SeqPoint const& n) override;
-    void visit(npar::Block const& n) override;
-    void visit(npar::VarDecl const& n) override;
-    void visit(npar::InlineAsm const& n) override;
-    void visit(npar::IfStmt const& n) override;
-    void visit(npar::WhileStmt const& n) override;
-    void visit(npar::ForStmt const& n) override;
-    void visit(npar::ForeachStmt const& n) override;
-    void visit(npar::BreakStmt const& n) override;
-    void visit(npar::ContinueStmt const& n) override;
-    void visit(npar::ReturnStmt const& n) override;
-    void visit(npar::ReturnIfStmt const& n) override;
-    void visit(npar::CaseStmt const& n) override;
-    void visit(npar::SwitchStmt const& n) override;
-    void visit(npar::TypedefStmt const& n) override;
-    void visit(npar::Function const& n) override;
-    void visit(npar::StructDef const& n) override;
-    void visit(npar::EnumDef const& n) override;
-    void visit(npar::ScopeStmt const& n) override;
-    void visit(npar::ExportStmt const& n) override;
+    void visit(ncc::parse::Base const& n) override;
+    void visit(ncc::parse::ExprStmt const& n) override;
+    void visit(ncc::parse::StmtExpr const& n) override;
+    void visit(ncc::parse::TypeExpr const& n) override;
+    void visit(ncc::parse::NamedTy const& n) override;
+    void visit(ncc::parse::InferTy const& n) override;
+    void visit(ncc::parse::TemplType const& n) override;
+    void visit(ncc::parse::U1 const& n) override;
+    void visit(ncc::parse::U8 const& n) override;
+    void visit(ncc::parse::U16 const& n) override;
+    void visit(ncc::parse::U32 const& n) override;
+    void visit(ncc::parse::U64 const& n) override;
+    void visit(ncc::parse::U128 const& n) override;
+    void visit(ncc::parse::I8 const& n) override;
+    void visit(ncc::parse::I16 const& n) override;
+    void visit(ncc::parse::I32 const& n) override;
+    void visit(ncc::parse::I64 const& n) override;
+    void visit(ncc::parse::I128 const& n) override;
+    void visit(ncc::parse::F16 const& n) override;
+    void visit(ncc::parse::F32 const& n) override;
+    void visit(ncc::parse::F64 const& n) override;
+    void visit(ncc::parse::F128 const& n) override;
+    void visit(ncc::parse::VoidTy const& n) override;
+    void visit(ncc::parse::PtrTy const& n) override;
+    void visit(ncc::parse::OpaqueTy const& n) override;
+    void visit(ncc::parse::TupleTy const& n) override;
+    void visit(ncc::parse::ArrayTy const& n) override;
+    void visit(ncc::parse::RefTy const& n) override;
+    void visit(ncc::parse::FuncTy const& n) override;
+    void visit(ncc::parse::UnaryExpr const& n) override;
+    void visit(ncc::parse::BinExpr const& n) override;
+    void visit(ncc::parse::PostUnaryExpr const& n) override;
+    void visit(ncc::parse::TernaryExpr const& n) override;
+    void visit(ncc::parse::ConstInt const& n) override;
+    void visit(ncc::parse::ConstFloat const& n) override;
+    void visit(ncc::parse::ConstBool const& n) override;
+    void visit(ncc::parse::ConstString const& n) override;
+    void visit(ncc::parse::ConstChar const& n) override;
+    void visit(ncc::parse::ConstNull const& n) override;
+    void visit(ncc::parse::ConstUndef const& n) override;
+    void visit(ncc::parse::Call const& n) override;
+    void visit(ncc::parse::TemplCall const& n) override;
+    void visit(ncc::parse::List const& n) override;
+    void visit(ncc::parse::Assoc const& n) override;
+    void visit(ncc::parse::Field const& n) override;
+    void visit(ncc::parse::Index const& n) override;
+    void visit(ncc::parse::Slice const& n) override;
+    void visit(ncc::parse::FString const& n) override;
+    void visit(ncc::parse::Ident const& n) override;
+    void visit(ncc::parse::SeqPoint const& n) override;
+    void visit(ncc::parse::Block const& n) override;
+    void visit(ncc::parse::VarDecl const& n) override;
+    void visit(ncc::parse::InlineAsm const& n) override;
+    void visit(ncc::parse::IfStmt const& n) override;
+    void visit(ncc::parse::WhileStmt const& n) override;
+    void visit(ncc::parse::ForStmt const& n) override;
+    void visit(ncc::parse::ForeachStmt const& n) override;
+    void visit(ncc::parse::BreakStmt const& n) override;
+    void visit(ncc::parse::ContinueStmt const& n) override;
+    void visit(ncc::parse::ReturnStmt const& n) override;
+    void visit(ncc::parse::ReturnIfStmt const& n) override;
+    void visit(ncc::parse::CaseStmt const& n) override;
+    void visit(ncc::parse::SwitchStmt const& n) override;
+    void visit(ncc::parse::TypedefStmt const& n) override;
+    void visit(ncc::parse::Function const& n) override;
+    void visit(ncc::parse::StructDef const& n) override;
+    void visit(ncc::parse::EnumDef const& n) override;
+    void visit(ncc::parse::ScopeStmt const& n) override;
+    void visit(ncc::parse::ExportStmt const& n) override;
 
   public:
     CambrianFormatter(std::ostream& out, size_t theTabSize = 2)
@@ -159,7 +164,7 @@ namespace lsp::fmt {
     }
     virtual ~CambrianFormatter() = default;
 
-    bool format(npar_node_t* root) override {
+    bool format(ncc::parse::Base* root) override {
       root->accept(*this);
       bool ok = !failed;
       reset_state();

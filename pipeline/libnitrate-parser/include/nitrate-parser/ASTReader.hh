@@ -34,15 +34,14 @@
 #ifndef __NITRATE_AST_READER_H__
 #define __NITRATE_AST_READER_H__
 
-#include <nitrate-core/Macro.h>
-
 #include <cstdint>
 #include <istream>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 #include <optional>
 #include <stack>
 
-namespace npar {
+namespace ncc::parse {
   class CPP_EXPORT AST_Reader {
     enum class State {
       ObjStart,
@@ -50,7 +49,7 @@ namespace npar {
     };
 
     std::stack<State> m_state;
-    std::stack<npar_node_t*> m_parse;
+    std::stack<Base*> m_parse;
 
     void handle_state();
 
@@ -69,7 +68,7 @@ namespace npar {
     AST_Reader() { m_state.push(State::ObjStart); }
     virtual ~AST_Reader() = default;
 
-    std::optional<npar_node_t*> get() {
+    std::optional<Base*> get() {
       if (m_parse.empty() || m_parse.top() == nullptr) {
         return std::nullopt;
       }
@@ -93,6 +92,6 @@ namespace npar {
     AST_MsgPackReader(std::istream& is) { parse_stream(is); }
     virtual ~AST_MsgPackReader() = default;
   };
-}  // namespace npar
+}  // namespace ncc::parse
 
 #endif

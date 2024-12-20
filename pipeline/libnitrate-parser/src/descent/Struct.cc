@@ -33,18 +33,10 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::lex;
+using namespace ncc::parse;
 
-struct StructContent {
-  StructDefFields fields;
-  StructDefMethods methods;
-  StructDefStaticMethods static_methods;
-};
-
-extern std::optional<TemplateParameters> recurse_template_parameters(
-    npar_t &S, qlex_t &rd);
-
-static ExpressionList recurse_struct_attributes(npar_t &S, qlex_t &rd) {
+ExpressionList Parser::recurse_struct_attributes() {
   ExpressionList attributes;
 
   if (!next_if(qPuncLBrk)) {
@@ -63,8 +55,8 @@ static ExpressionList recurse_struct_attributes(npar_t &S, qlex_t &rd) {
       break;
     }
 
-    let attribute = recurse_expr(
-        S, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRBrk)});
+    let attribute =
+        recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk)});
 
     attributes.push_back(attribute);
 
@@ -74,15 +66,15 @@ static ExpressionList recurse_struct_attributes(npar_t &S, qlex_t &rd) {
   return attributes;
 }
 
-static std::string_view recurse_struct_name(qlex_t &rd) {
+std::string_view Parser::recurse_struct_name() {
   if (let tok = next_if(qName)) {
-    return tok->as_string(&rd);
+    return tok->as_string();
   } else {
     return "";
   }
 }
 
-static StructDefNames recurse_struct_terms(qlex_t &rd) {
+StructDefNames Parser::recurse_struct_terms() {
   StructDefNames names;
 
   if (!next_if(qPuncColn)) {
@@ -91,7 +83,7 @@ static StructDefNames recurse_struct_terms(qlex_t &rd) {
 
   while (true) {
     if (let tok = next_if(qName)) {
-      names.push_back(SaveString(tok->as_string(&rd)));
+      names.push_back(SaveString(tok->as_string()));
 
       next_if(qPuncComa);
     } else {
@@ -100,27 +92,26 @@ static StructDefNames recurse_struct_terms(qlex_t &rd) {
   }
 }
 
-static std::optional<Expr *> recurse_struct_field_default_value(npar_t &S,
-                                                                qlex_t &rd) {
+std::optional<Expr *> Parser::recurse_struct_field_default_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
-        S, rd,
-        {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
-         qlex_tok_t(qPunc, qPuncRCur)});
+
+        {Token(qPunc, qPuncComa), Token(qPunc, qPuncSemi),
+         Token(qPunc, qPuncRCur)});
   } else {
     return std::nullopt;
   }
 }
 
-static void recurse_struct_field(npar_t &S, qlex_t &rd, Vis vis, bool is_static,
-                                 StructDefFields &fields) {
+void Parser::recurse_struct_field(Vis vis, bool is_static,
+                                  StructDefFields &fields) {
   /* Must consume token to avoid infinite loop on error */
   if (let name = next(); name.is(qName)) {
-    let field_name = name.as_string(&rd);
+    let field_name = name.as_string();
 
     if (next_if(qPuncColn)) {
-      let field_type = recurse_type(S, rd);
-      let default_value = recurse_struct_field_default_value(S, rd);
+      let field_type = recurse_type();
+      let default_value = recurse_struct_field_default_value();
 
       let field = StructField(vis, is_static, SaveString(field_name),
                               field_type, std::move(default_value));
@@ -134,8 +125,7 @@ static void recurse_struct_field(npar_t &S, qlex_t &rd, Vis vis, bool is_static,
   }
 }
 
-static void recurse_struct_method_or_field(npar_t &S, qlex_t &rd,
-                                           StructContent &body) {
+void Parser::recurse_struct_method_or_field(StructContent &body) {
   Vis vis = Vis::Sec;
 
   /* Parse visibility of member */
@@ -151,7 +141,7 @@ static void recurse_struct_method_or_field(npar_t &S, qlex_t &rd,
   bool is_static = next_if(qKStatic).has_value();
 
   if (next_if(qKFn)) { /* Parse method */
-    let method = recurse_function(S, rd, false);
+    let method = recurse_function(false);
 
     if (is_static) {
       body.static_methods.push_back({vis, method});
@@ -159,13 +149,13 @@ static void recurse_struct_method_or_field(npar_t &S, qlex_t &rd,
       body.methods.push_back({vis, method});
     }
   } else { /* Parse field */
-    recurse_struct_field(S, rd, vis, is_static, body.fields);
+    recurse_struct_field(vis, is_static, body.fields);
   }
 
   next_if(qPuncComa) || next_if(qPuncSemi);
 }
 
-static StructContent recurse_struct_body(npar_t &S, qlex_t &rd) {
+Parser::StructContent Parser::recurse_struct_body() {
   StructContent body;
 
   if (!next_if(qPuncLCur)) {
@@ -183,19 +173,19 @@ static StructContent recurse_struct_body(npar_t &S, qlex_t &rd) {
       break;
     }
 
-    recurse_struct_method_or_field(S, rd, body);
+    recurse_struct_method_or_field(body);
   }
 
   return body;
 }
 
-npar::Stmt *npar::recurse_struct(npar_t &S, qlex_t &rd, CompositeType type) {
-  let start_pos = current().start;
-  let attributes = recurse_struct_attributes(S, rd);
-  let name = recurse_struct_name(rd);
-  let template_params = recurse_template_parameters(S, rd);
-  let terms = recurse_struct_terms(rd);
-  let[fields, methods, static_methods] = recurse_struct_body(S, rd);
+Stmt *Parser::recurse_struct(CompositeType type) {
+  let start_pos = current().get_start();
+  let attributes = recurse_struct_attributes();
+  let name = recurse_struct_name();
+  let template_params = recurse_template_parameters();
+  let terms = recurse_struct_terms();
+  let[fields, methods, static_methods] = recurse_struct_body();
 
   let struct_defintion = make<StructDef>(
       type, std::move(attributes), SaveString(name), std::move(template_params),

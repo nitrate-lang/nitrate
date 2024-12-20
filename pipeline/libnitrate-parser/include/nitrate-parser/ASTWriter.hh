@@ -34,18 +34,17 @@
 #ifndef __NITRATE_AST_WRITER_H__
 #define __NITRATE_AST_WRITER_H__
 
-#include <nitrate-core/Macro.h>
-#include <nitrate-lexer/Token.h>
-
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 #include <ostream>
 #include <stack>
 #include <string_view>
 
-namespace npar {
+namespace ncc::parse {
   class CPP_EXPORT AST_Writer : public ASTVisitor {
     using InsertString = std::function<void(std::string_view)>;
     using InsertUInt64 = std::function<void(uint64_t)>;
@@ -69,7 +68,7 @@ namespace npar {
 
     bool m_include_source_location;
 
-    void write_source_location(npar_node_t const& n) const;
+    void write_source_location(Base const& n) const;
     void write_type_metadata(Type const& n);
 
     std::string_view vis_str(Vis vis) const;
@@ -92,7 +91,7 @@ namespace npar {
           m_include_source_location(include_source_location) {}
     virtual ~AST_Writer() = default;
 
-    void visit(npar_node_t const& n) override;
+    void visit(Base const& n) override;
     void visit(ExprStmt const& n) override;
     void visit(StmtExpr const& n) override;
     void visit(TypeExpr const& n) override;
@@ -239,6 +238,6 @@ namespace npar {
           m_os(os) {}
     virtual ~AST_MsgPackWriter() = default;
   };
-}  // namespace npar
+}  // namespace ncc::parse
 
 #endif

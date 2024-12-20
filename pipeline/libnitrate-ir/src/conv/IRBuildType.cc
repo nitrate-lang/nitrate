@@ -33,13 +33,14 @@
 
 #define IRBUILDER_IMPL
 
-#include <nitrate-core/Error.h>
-
 #include <cctype>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/String.hh>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 
 using namespace nr;
+using namespace ncc::core;
 
 U1Ty *NRBuilder::getU1Ty(SOURCE_LOCATION_PARAM_ONCE) {
   contract_enforce(m_state == SelfState::Constructed);
@@ -190,7 +191,7 @@ OpaqueTy *NRBuilder::getOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM) {
       !name.empty() && (std::isalnum(name[0]) || name[0] == '_') &&
       "Non alphanumeric starter characters are reserved internally");
 
-  OpaqueTy *opaque_ty = create<OpaqueTy>(intern(name));
+  OpaqueTy *opaque_ty = create<OpaqueTy>(save(name));
 
   return compiler_trace(debug_info(opaque_ty, DEBUG_INFO));
 }

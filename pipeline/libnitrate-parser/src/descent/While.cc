@@ -33,28 +33,28 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::lex;
+using namespace ncc::parse;
 
-static Expr *recurse_while_cond(npar_t &S, qlex_t &rd) {
+Expr *Parser::recurse_while_cond() {
   let cur = peek();
 
   if (cur.is<qOpArrow>() || cur.is<qPuncLCur>()) {
     return make<ConstBool>(true);
   } else {
-    return recurse_expr(
-        S, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)});
+    return recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
   }
 }
 
-static Stmt *recurse_while_body(npar_t &S, qlex_t &rd) {
+Stmt *Parser::recurse_while_body() {
   if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true);
+    return recurse_block(false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true);
+    return recurse_block(true, false, SafetyMode::Unknown);
   }
 }
 
-npar::Stmt *npar::recurse_while(npar_t &S, qlex_t &rd) {
+Stmt *Parser::recurse_while() {
   /**
    * Example syntax:
    *  `while {}`,                 `while => call();`
@@ -63,10 +63,10 @@ npar::Stmt *npar::recurse_while(npar_t &S, qlex_t &rd) {
    */
 
   /* The condition expression is optional */
-  let cond = recurse_while_cond(S, rd);
+  let cond = recurse_while_cond();
 
   /* Support for single statement implicit block */
-  let body = recurse_while_body(S, rd);
+  let body = recurse_while_body();
 
   return make<WhileStmt>(cond, body);
 }

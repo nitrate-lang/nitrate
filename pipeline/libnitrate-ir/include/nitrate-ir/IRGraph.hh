@@ -37,21 +37,24 @@
 #ifndef __cplusplus
 #error "This header is C++ only."
 #endif
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Memory.h>
+
 #include <nitrate-ir/TypeDecl.h>
-#include <nitrate-lexer/Token.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <functional>
 #include <iostream>
-#include <nitrate-core/Classes.hh>
+#include <memory>
+#include <nitrate-core/Allocate.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/Visitor.hh>
+#include <nitrate-lexer/Token.hh>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -62,19 +65,7 @@
 namespace nr {
   using boost::multiprecision::uint128_t;
 
-  class ArenaAllocatorImpl {
-    qcore_arena m_arena;
-
-  public:
-    ArenaAllocatorImpl() = default;
-
-    void *allocate(std::size_t bytes);
-    void deallocate(void *ptr);
-
-    qcore_arena_t &get() { return *m_arena.get(); }
-  };
-
-  extern "C" thread_local ArenaAllocatorImpl nr_arena;
+  extern "C" thread_local std::unique_ptr<ncc::core::IMemory> nr_allocator;
 
   template <class T>
   struct Arena {
@@ -86,7 +77,7 @@ namespace nr {
     constexpr Arena(const Arena<U> &) {}
 
     [[nodiscard]] T *allocate(std::size_t n) {
-      return static_cast<T *>(nr_arena.allocate(sizeof(T) * n));
+      return static_cast<T *>(nr_allocator->alloc(sizeof(T) * n));
     }
 
     void deallocate(T *p, std::size_t n) {
@@ -156,8 +147,8 @@ namespace nr {
     Expr &operator=(const Expr &) = delete;
 
   public:
-    constexpr Expr(nr_ty_t ty, uint32_t offset = QLEX_EOFF,
-                   uint32_t fileid = QLEX_NOFILE)
+    constexpr Expr(nr_ty_t ty, uint32_t offset = ncc::lex::QLEX_EOFF,
+                   uint32_t fileid = ncc::lex::QLEX_NOFILE)
         : m_node_type(ty), m_offset(offset), m_fileid(fileid) {}
 
     static constexpr uint32_t getKindSize(nr_ty_t kind);
@@ -2642,7 +2633,7 @@ namespace nr {
   }
 }  // namespace nr
 
-namespace std {
+namespace nr {
   template <auto mode = nr::dfs_pre>
   void for_each(const nr::Expr *const v,
                 std::function<void(nr_ty_t, const nr::Expr *const)> f) {
@@ -2685,7 +2676,6 @@ namespace std {
                                           : nr::IterOp::Abort;
     });
   }
-
-}  // namespace std
+}  // namespace nr
 
 #endif

@@ -34,15 +34,10 @@
 #include <argparse.h>
 #include <glog/logging.h>
 #include <lsp/nitrated.h>
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Lib.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
 #include <nitrate-ir/IR.h>
 #include <nitrate-ir/Lib.h>
-#include <nitrate-lexer/Lib.h>
-#include <nitrate-parser/Lib.h>
-#include <nitrate-parser/Parser.h>
 #include <nitrate-seq/Lib.h>
 
 #include <clean/Cleanup.hh>
@@ -51,11 +46,16 @@
 #include <core/Logger.hh>
 #include <fstream>
 #include <iostream>
-#include <nitrate-core/Classes.hh>
+#include <memory>
+#include <nitrate-core/Init.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>
+#include <nitrate-lexer/Init.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/ASTWriter.hh>
-#include <nitrate-parser/Classes.hh>
+#include <nitrate-parser/Context.hh>
+#include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Classes.hh>
 #include <string_view>
 #include <unordered_map>
@@ -64,11 +64,126 @@ using namespace argparse;
 using namespace no3;
 
 namespace no3::benchmark {
+  extern std::string lexical_benchmark_source;
+
+  template <typename T>
+  struct Statistic {
+    T mean;
+    T variance;
+    T stddev;
+  };
+
+  template <typename T>
+  static Statistic<T> calculate_statistic(const std::vector<T> &data) {
+    T mean = 0.0;
+    for (const auto &value : data) {
+      mean += value;
+    }
+    mean /= data.size();
+
+    T variance = 0.0;
+    for (const auto &value : data) {
+      variance += std::pow(value - mean, 2);
+    }
+    variance /= data.size();
+
+    return {mean, variance, std::sqrt(variance)};
+  }
+
+  static size_t lexer_benchmark_round(
+      std::shared_ptr<ncc::core::Environment> &env) {
+    std::stringstream source(lexical_benchmark_source);
+    ncc::lex::Tokenizer tokenizer(source, env);
+
+    size_t tokens = 0;
+    while (!tokenizer.IsEof()) {
+      tokenizer.Next();
+      tokens++;
+    }
+
+    return tokens;
+  }
+
+  static int lexer_benchmark() {
+    size_t rounds = 128, total_tokens = 0;
+    std::vector<double> times;
+
+    auto env = std::make_shared<ncc::core::Environment>();
+
+    LOG(INFO) << "Starting lexer benchmark" << std::endl;
+    LOG(INFO) << "  Rounds: " << rounds << std::endl;
+
+    for (size_t i = 0; i < rounds; i++) {
+      auto start = std::chrono::high_resolution_clock::now();
+      total_tokens += lexer_benchmark_round(env);
+      auto end = std::chrono::high_resolution_clock::now();
+
+      double nanoseconds =
+          std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
+              .count();
+      times.push_back(nanoseconds);
+
+      LOG(INFO) << "Round " << i << ": " << nanoseconds << "ns";
+    }
+
+    LOG(INFO) << "Lexer benchmark completed" << std::endl;
+
+    double total_time = 0.0;
+    for (auto time : times) {
+      total_time += time;
+    }
+
+    LOG(INFO) << "Lexer benchmark results:" << std::endl;
+    LOG(INFO) << "  Total tokens: " << total_tokens << std::endl;
+    LOG(INFO) << "  Tokens per round: " << (total_tokens / rounds) << std::endl;
+    LOG(INFO) << "  Rounds: " << rounds << std::endl;
+    LOG(INFO) << "  Total time: " << total_time << "ns" << std::endl;
+
+    if (total_tokens > 0) {
+      auto stats = calculate_statistic(times);
+      LOG(INFO) << "  Round time mean: " << stats.mean << "ns" << std::endl;
+      LOG(INFO) << "  Round time variance: " << stats.variance << "ns"
+                << std::endl;
+      LOG(INFO) << "  Round time standard deviation: " << stats.stddev << "ns"
+                << std::endl;
+
+      std::vector<double> time_per_token;
+      for (auto time : times) {
+        time_per_token.push_back(time / (total_tokens / rounds));
+      }
+
+      stats = calculate_statistic(time_per_token);
+      LOG(INFO) << "  Per-token time mean: " << stats.mean << "ns" << std::endl;
+      LOG(INFO) << "  Per-token time variance: " << stats.variance << "ns"
+                << std::endl;
+      LOG(INFO) << "  Per-token time standard deviation: " << stats.stddev
+                << "ns" << std::endl;
+
+      const double input_size_mbit =
+          (lexical_benchmark_source.size() / 1000'000.0) * 8;
+
+      std::vector<double> round_throughputs;
+      for (auto time : times) {
+        double throughput_mbps = input_size_mbit / (time / 1000000000.0);
+        round_throughputs.push_back(throughput_mbps);
+      }
+
+      stats = calculate_statistic(round_throughputs);
+
+      LOG(INFO) << "  Throughput mean: " << stats.mean << " mbps" << std::endl;
+      LOG(INFO) << "  Throughput variance: " << stats.variance << " mbps"
+                << std::endl;
+      LOG(INFO) << "  Throughput standard deviation: " << stats.stddev
+                << " mbps" << std::endl;
+    }
+
+    return 0;
+  }
 
   enum class Benchmark {
     LEXER,
     PARSER,
-    Q_IR,
+    NITRATE_IR,
     DELTA_IR,
     LLVM_IR,
     LLVM_CODEGEN,
@@ -81,7 +196,7 @@ namespace no3::benchmark {
 
     switch (bench_type) {
       case Benchmark::LEXER: {
-        /// TODO: Implement benchmark
+        R = lexer_benchmark();
         break;
       }
 
@@ -90,7 +205,7 @@ namespace no3::benchmark {
         break;
       }
 
-      case Benchmark::Q_IR: {
+      case Benchmark::NITRATE_IR: {
         /// TODO: Implement benchmark
         break;
       }
@@ -126,7 +241,7 @@ namespace no3::benchmark {
 }  // namespace no3::benchmark
 
 static int do_parse(std::string source, std::string output) {
-  qcore_env env;
+  auto env = std::make_shared<ncc::core::Environment>();
 
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
@@ -134,22 +249,10 @@ static int do_parse(std::string source, std::string output) {
     return 1;
   }
 
-  qprep lexer(file, "in", env.get());
-  nr_syn parser(lexer.get(), env.get());
+  qprep lexer(file, "in", env);
+  auto parser = ncc::parse::Parser::Create(*lexer.get(), env);
 
-  npar_node_t *tree = nullptr;
-
-  bool ok = npar_do(parser.get(), &tree);
-
-  npar_dumps(
-      parser.get(), !ansi::IsUsingColors(),
-      [](const char *msg, size_t len, uintptr_t) { std::cerr.write(msg, len); },
-      0);
-
-  if (!ok) {
-    LOG(ERROR) << "Failed to parse source file: " << source;
-    return 1;
-  }
+  auto ast = parser->parse();
 
   { /* Write output */
     std::ostream *out = nullptr;
@@ -162,8 +265,8 @@ static int do_parse(std::string source, std::string output) {
       out = out_ptr.get();
     }
 
-    npar::AST_JsonWriter writer(*out);
-    tree->accept(writer);
+    ncc::parse::AST_JsonWriter writer(*out);
+    ast.get()->accept(writer);
     *out << std::endl;
   }
 
@@ -176,7 +279,7 @@ static int do_nr(std::string source, std::string output, std::string opts,
     LOG(ERROR) << "Options are not implemented yet";
   }
 
-  qcore_env env;
+  auto env = std::make_shared<ncc::core::Environment>();
 
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
@@ -184,31 +287,19 @@ static int do_nr(std::string source, std::string output, std::string opts,
     return 1;
   }
 
-  qprep lexer(file, "in", env.get());
-  nr_syn parser(lexer.get(), env.get());
+  qprep lexer(file, "in", env);
+  auto parser = ncc::parse::Parser::Create(*lexer.get(), env);
 
-  npar_node_t *tree = nullptr;
-
-  bool ok = npar_do(parser.get(), &tree);
-
-  npar_dumps(
-      parser.get(), !ansi::IsUsingColors(),
-      [](const char *msg, size_t len, uintptr_t) { std::cerr.write(msg, len); },
-      0);
-
-  if (!ok) {
-    LOG(ERROR) << "Failed to parse source file: " << source;
-    return 1;
-  }
+  auto ast = parser->parse();
 
   qmodule mod;
-  ok = nr_lower(&mod.get(), tree, "module", true);
+  bool ok = nr_lower(&mod.get(), ast.get(), "module", true);
 
   nr_diag_read(
       mod.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
       [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
         if (verbose || lvl != NR_LEVEL_DEBUG) {
-          std::cerr.write((const char *)msg, len);
+          std::cerr << std::string_view((const char *)msg, len) << std::endl;
         }
       },
       verbose);
@@ -246,7 +337,7 @@ static int do_codegen(std::string source, std::string output, std::string opts,
     LOG(ERROR) << "Options are not implemented yet";
   }
 
-  qcore_env env;
+  auto env = std::make_shared<ncc::core::Environment>();
 
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
@@ -254,25 +345,13 @@ static int do_codegen(std::string source, std::string output, std::string opts,
     return 1;
   }
 
-  qprep lexer(file, "in", env.get());
-  nr_syn parser(lexer.get(), env.get());
+  qprep lexer(file, "in", env);
+  auto parser = ncc::parse::Parser::Create(*lexer.get(), env);
 
-  npar_node_t *tree = nullptr;
-
-  bool ok = npar_do(parser.get(), &tree);
-
-  npar_dumps(
-      parser.get(), !ansi::IsUsingColors(),
-      [](const char *msg, size_t len, uintptr_t) { std::cerr.write(msg, len); },
-      0);
-
-  if (!ok) {
-    LOG(ERROR) << "Failed to parse source file: " << source;
-    return 1;
-  }
+  auto ast = parser->parse();
 
   qmodule mod;
-  ok = nr_lower(&mod.get(), tree, "module", true);
+  bool ok = nr_lower(&mod.get(), ast.get(), "module", true);
 
   nr_diag_read(
       mod.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
@@ -281,7 +360,7 @@ static int do_codegen(std::string source, std::string output, std::string opts,
           return;
         }
 
-        std::cerr.write((const char *)msg, len);
+        std::cerr << std::string_view((const char *)msg, len) << std::endl;
       },
       verbose);
 
@@ -342,6 +421,10 @@ namespace no3::router {
       const ArgumentParser &parser,
       const std::unordered_map<std::string_view,
                                std::unique_ptr<ArgumentParser>> &subparsers) {
+    qcore_bind_logger([](qcore_log_t, const char *msg, size_t,
+                         void *) { std::cerr << msg << std::endl; },
+                      nullptr);
+
     if (parser.is_subcommand_used("bench")) {
       using namespace no3::benchmark;
 
@@ -372,7 +455,7 @@ namespace no3::router {
       static const std::unordered_map<std::string, Benchmark> name_map = {
           {"lexer", Benchmark::LEXER},
           {"parser", Benchmark::PARSER},
-          {"nitrate-ir", Benchmark::Q_IR},
+          {"nitrate-ir", Benchmark::NITRATE_IR},
           {"delta-ir", Benchmark::DELTA_IR},
           {"llvm-ir", Benchmark::LLVM_IR},
           {"llvm-codegen", Benchmark::LLVM_CODEGEN},

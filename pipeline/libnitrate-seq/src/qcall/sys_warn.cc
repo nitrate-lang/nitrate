@@ -31,10 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Env.h>
-
-#include <core/Preprocess.hh>
 #include <cstdio>
+#include <nitrate-core/Environment.hh>
+#include <nitrate-seq/Preprocess.hh>
 #include <qcall/List.hh>
 
 extern "C" {

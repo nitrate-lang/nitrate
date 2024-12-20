@@ -34,6 +34,7 @@
 #include <nitrate-ir/IR.h>
 
 #include <boost/bimap.hpp>
+#include <nitrate-core/String.hh>
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Report.hh>
@@ -47,6 +48,7 @@
  */
 
 using namespace nr;
+using namespace ncc::core;
 
 bool nr::pass::ds_mangle(qmodule_t *mod, IReport *log) {
   SymbolEncoding se;
@@ -57,7 +59,7 @@ bool nr::pass::ds_mangle(qmodule_t *mod, IReport *log) {
       Fn *fn = (*cur)->as<Fn>();
       auto name = se.mangle_name(fn, fn->getAbiTag());
       if (name) [[likely]] {
-        fn->setName(mod->internString(*name));
+        fn->setName(save(*name));
       } else {
         failed = true;
         log->report(NameManglingTypeInfer, IC::Error, fn->getName(),
@@ -68,7 +70,7 @@ bool nr::pass::ds_mangle(qmodule_t *mod, IReport *log) {
       auto name = se.mangle_name(local, local->getAbiTag());
       if (name) [[likely]] {
         qcore_assert(!name->empty());
-        local->setName(mod->internString(*name));
+        local->setName(save(*name));
       } else {
         failed = true;
         log->report(NameManglingTypeInfer, IC::Error, local->getName(),

@@ -31,20 +31,19 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
-
 #include <core/Config.hh>
 #include <core/Diagnostic.hh>
 #include <cstdint>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
+#include <nitrate-ir/Report.hh>
 #include <nitrate-parser/AST.hh>
 #include <sstream>
 
-#include "nitrate-ir/Report.hh"
-
 using namespace nr;
+using namespace ncc::lex;
 
 ///============================================================================///
 
@@ -111,17 +110,8 @@ std::string nr::mint_plain_message(const IReport::ReportData &R,
     ss << " [-Werror=" << issue_info.left.at(R.code).flagname << "]";
   }
 
-  uint32_t res = QLEX_EOFF; /*qlex_spanx(
-       lx, R.start_offset, R.end_offset,
-       [](const char *str, uint32_t len, uintptr_t x) {
-         if (len > 100) {
-           len = 100;
-         }
-
-         std::stringstream &ss = *reinterpret_cast<std::stringstream *>(x);
-         ss << '\n' << std::string_view(str, len);
-       },
-       reinterpret_cast<uintptr_t>(&ss));*/
+  uint32_t res = QLEX_EOFF;
+  /// TODO: Implement item
   if (res == QLEX_EOFF) {
     ss << "\n# [failed to extract source code snippet]\n";
   }

@@ -2,16 +2,14 @@
 
 #include <lsp/core/SyncFS.hh>
 #include <memory>
-#include <nitrate-lexer/Classes.hh>
-#include <nitrate-parser/Classes.hh>
+#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-parser/Context.hh>
 #include <optional>
 #include <unordered_map>
 
 namespace lang {
   class ParseTreeWrapper {
-    qlex m_lexer;
-    nr_syn context;
-    const npar_node_t* m_root;
+    const ncc::parse::Base* m_root;
 
   public:
     ParseTreeWrapper();
@@ -20,8 +18,7 @@ namespace lang {
     bool is_okay() const { return m_root != nullptr; }
     bool from_syncfs(const std::string& uri);
 
-    const npar_node_t* root() const { return m_root; }
-    qlex_t* lexer() { return m_lexer.get(); }
+    const ncc::parse::Base* root() const { return m_root; }
   };
   using ParseTree = std::shared_ptr<ParseTreeWrapper>;
 

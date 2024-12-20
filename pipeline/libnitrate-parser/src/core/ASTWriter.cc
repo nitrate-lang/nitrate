@@ -31,17 +31,18 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
-#include <nitrate-lexer/Lexer.h>
-
 #include <algorithm>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTWriter.hh>
 
-using namespace npar;
+using namespace ncc::parse;
+using namespace ncc::core;
+using namespace ncc::lex;
 
-void AST_Writer::write_source_location(npar_node_t const& n) const {
+void AST_Writer::write_source_location(Base const& n) const {
   if (m_include_source_location) {
     string("loc");
     begin_obj(2);
@@ -86,7 +87,7 @@ std::string_view AST_Writer::vis_str(Vis vis) const {
   }
 }
 
-void AST_Writer::visit(npar_node_t const& n) {
+void AST_Writer::visit(Base const& n) {
   begin_obj(2);
 
   string("kind");
@@ -150,7 +151,7 @@ void AST_Writer::visit(NamedTy const& n) {
   write_type_metadata(n);
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   end_obj();
 }
@@ -435,7 +436,7 @@ void AST_Writer::visit(OpaqueTy const& n) {
   write_type_metadata(n);
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   end_obj();
 }
@@ -609,7 +610,7 @@ void AST_Writer::visit(UnaryExpr const& n) {
   write_source_location(n);
 
   string("op");
-  string(qlex_opstr(n.get_op()));
+  string(op_repr(n.get_op()));
 
   string("rhs");
   n.get_rhs()->accept(*this);
@@ -626,7 +627,7 @@ void AST_Writer::visit(BinExpr const& n) {
   write_source_location(n);
 
   string("op");
-  string(qlex_opstr(n.get_op()));
+  string(op_repr(n.get_op()));
 
   string("lhs");
   n.get_lhs()->accept(*this);
@@ -646,7 +647,7 @@ void AST_Writer::visit(PostUnaryExpr const& n) {
   write_source_location(n);
 
   string("op");
-  string(qlex_opstr(n.get_op()));
+  string(op_repr(n.get_op()));
 
   string("lhs");
   n.get_lhs()->accept(*this);
@@ -683,7 +684,7 @@ void AST_Writer::visit(ConstInt const& n) {
   write_source_location(n);
 
   string("value");
-  string(*n.get_value());
+  string(n.get_value());
 
   end_obj();
 }
@@ -697,7 +698,7 @@ void AST_Writer::visit(ConstFloat const& n) {
   write_source_location(n);
 
   string("value");
-  string(*n.get_value());
+  string(n.get_value());
 
   end_obj();
 }
@@ -725,7 +726,7 @@ void AST_Writer::visit(ConstString const& n) {
   write_source_location(n);
 
   string("value");
-  string(*n.get_value());
+  string(n.get_value());
 
   end_obj();
 }
@@ -891,7 +892,7 @@ void AST_Writer::visit(Field const& n) {
   write_source_location(n);
 
   string("field");
-  string(*n.get_field());
+  string(n.get_field());
 
   string("base");
   n.get_base()->accept(*this);
@@ -950,16 +951,15 @@ void AST_Writer::visit(FString const& n) {
     let items = n.get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(), [&](let item) {
-      if (std::holds_alternative<SmallString>(item)) {
+      if (std::holds_alternative<str_alias>(item)) {
         begin_obj(2);
 
         string("kind");
-        let kind_name =
-            npar_node_t::getKindName(npar_node_t::getTypeCode<ConstString>());
+        let kind_name = Base::getKindName(Base::getTypeCode<ConstString>());
         string(kind_name);
 
         string("value");
-        string(*std::get<SmallString>(item));
+        string(*std::get<str_alias>(item));
 
         end_obj();
       } else {
@@ -981,7 +981,7 @@ void AST_Writer::visit(Ident const& n) {
   write_source_location(n);
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   end_obj();
 }
@@ -1066,7 +1066,7 @@ void AST_Writer::visit(VarDecl const& n) {
   }
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   string("type");
   n.get_type() ? n.get_type()->accept(*this) : null();
@@ -1096,7 +1096,7 @@ void AST_Writer::visit(InlineAsm const& n) {
   write_source_location(n);
 
   string("code");
-  string(*n.get_code());
+  string(n.get_code());
 
   { /* Write arguments */
     string("params");
@@ -1196,10 +1196,10 @@ void AST_Writer::visit(ForeachStmt const& n) {
   write_source_location(n);
 
   string("idx");
-  string(*n.get_idx_ident());
+  string(n.get_idx_ident());
 
   string("val");
-  string(*n.get_val_ident());
+  string(n.get_val_ident());
 
   string("expr");
   n.get_expr()->accept(*this);
@@ -1320,7 +1320,7 @@ void AST_Writer::visit(TypedefStmt const& n) {
   write_source_location(n);
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   string("type");
   n.get_type()->accept(*this);
@@ -1415,7 +1415,7 @@ void AST_Writer::visit(Function const& n) {
   }
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   { /* Write template parameters */
     string("template");
@@ -1552,7 +1552,7 @@ void AST_Writer::visit(StructDef const& n) {
   }
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   { /* Write template parameters */
     string("template");
@@ -1596,7 +1596,7 @@ void AST_Writer::visit(StructDef const& n) {
       begin_obj(4);
 
       string("name");
-      string(*field.get_name());
+      string(field.get_name());
 
       string("type");
       field.get_type()->accept(*this);
@@ -1663,7 +1663,7 @@ void AST_Writer::visit(EnumDef const& n) {
   write_source_location(n);
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   string("type");
   n.get_type() ? n.get_type()->accept(*this) : null();
@@ -1699,7 +1699,7 @@ void AST_Writer::visit(ScopeStmt const& n) {
   write_source_location(n);
 
   string("name");
-  string(*n.get_name());
+  string(n.get_name());
 
   { /* Write implicit dependencies */
     string("depends");
@@ -1725,7 +1725,7 @@ void AST_Writer::visit(ExportStmt const& n) {
   write_source_location(n);
 
   string("abi");
-  string(*n.get_abi_name());
+  string(n.get_abi_name());
 
   string("vis");
   string(vis_str(n.get_vis()));

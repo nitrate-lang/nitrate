@@ -33,17 +33,20 @@
 
 #include <descent/Recurse.hh>
 
-npar::Stmt *npar::recurse_typedef(npar_t &S, qlex_t &rd) {
+using namespace ncc::lex;
+using namespace ncc::parse;
+
+Stmt *Parser::recurse_typedef() {
   /**
    * Syntax examples:
    *   `type name = type;`
    */
 
   if (let tok = next_if(qName)) {
-    let name = tok->as_string(&rd);
+    let name = tok->as_string();
 
     if (next_if(qOpSet)) {
-      let type = recurse_type(S, rd);
+      let type = recurse_type();
 
       if (next_if(qPuncSemi)) {
         return make<TypedefStmt>(SaveString(name), type);

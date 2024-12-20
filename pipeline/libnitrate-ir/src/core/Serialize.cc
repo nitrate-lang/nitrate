@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
 #include <nitrate-ir/Lib.h>
 #include <nitrate-ir/TypeDecl.h>
 
@@ -41,6 +39,8 @@
 #include <cstdint>
 #include <cstring>
 #include <iomanip>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-ir/Module.hh>
 #include <sstream>
 #include <unordered_set>

@@ -35,251 +35,249 @@
 #define __NITRATE_AST_ASTEXPR_H__
 
 #include <nitrate-parser/ASTBase.hh>
+#include <nitrate-parser/ASTCommon.hh>
+#include <span>
 
-namespace npar {
-  class StmtExpr : public Expr {
+namespace ncc::parse {
+  class npar_pack StmtExpr final : public Expr {
     Stmt *m_stmt;
 
   public:
     constexpr StmtExpr(Stmt *stmt) : Expr(QAST_SEXPR), m_stmt(stmt) {}
 
-    let get_stmt() const { return m_stmt; }
+    constexpr auto get_stmt() const { return m_stmt; }
   };
 
-  class TypeExpr : public Expr {
+  class npar_pack TypeExpr final : public Expr {
     Type *m_type;
 
   public:
     constexpr TypeExpr(Type *type) : Expr(QAST_TEXPR), m_type(type) {}
 
-    let get_type() const { return m_type; }
+    constexpr auto get_type() const { return m_type; }
   };
 
-  class UnaryExpr : public Expr {
+  class npar_pack UnaryExpr final : public Expr {
     Expr *m_rhs;
-    qlex_op_t m_op;
+    ncc::lex::Operator m_op;
 
   public:
-    constexpr UnaryExpr(qlex_op_t op, Expr *rhs)
+    constexpr UnaryExpr(ncc::lex::Operator op, Expr *rhs)
         : Expr(QAST_UNEXPR), m_rhs(rhs), m_op(op) {}
 
-    let get_rhs() const { return m_rhs; }
-    qlex_op_t get_op() const { return m_op; }
+    constexpr auto get_rhs() const { return m_rhs; }
+    constexpr auto get_op() const { return m_op; }
   };
 
-  class BinExpr : public Expr {
-    Expr *m_lhs;
-    Expr *m_rhs;
-    qlex_op_t m_op;
+  class npar_pack BinExpr final : public Expr {
+    Expr *m_lhs, *m_rhs;
+    ncc::lex::Operator m_op;
 
   public:
-    constexpr BinExpr(Expr *lhs, qlex_op_t op, Expr *rhs)
+    constexpr BinExpr(Expr *lhs, ncc::lex::Operator op, Expr *rhs)
         : Expr(QAST_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
-    let get_lhs() const { return m_lhs; }
-    let get_rhs() const { return m_rhs; }
-    qlex_op_t get_op() const { return m_op; }
+    constexpr auto get_lhs() const { return m_lhs; }
+    constexpr auto get_rhs() const { return m_rhs; }
+    constexpr auto get_op() const { return m_op; }
   };
 
-  class PostUnaryExpr : public Expr {
+  class npar_pack PostUnaryExpr final : public Expr {
     Expr *m_lhs;
-    qlex_op_t m_op;
+    ncc::lex::Operator m_op;
 
   public:
-    constexpr PostUnaryExpr(Expr *lhs, qlex_op_t op = qOpTernary)
+    constexpr PostUnaryExpr(Expr *lhs, ncc::lex::Operator op)
         : Expr(QAST_POST_UNEXPR), m_lhs(lhs), m_op(op) {}
 
-    let get_lhs() const { return m_lhs; }
-    let get_op() const { return m_op; }
+    constexpr auto get_lhs() const { return m_lhs; }
+    constexpr auto get_op() const { return m_op; }
   };
 
-  class TernaryExpr : public Expr {
-    Expr *m_cond;
-    Expr *m_lhs;
-    Expr *m_rhs;
+  class npar_pack TernaryExpr final : public Expr {
+    Expr *m_cond, *m_lhs, *m_rhs;
 
   public:
     constexpr TernaryExpr(Expr *cond, Expr *lhs, Expr *rhs)
         : Expr(QAST_TEREXPR), m_cond(cond), m_lhs(lhs), m_rhs(rhs) {}
 
-    let get_cond() const { return m_cond; }
-    let get_lhs() const { return m_lhs; }
-    let get_rhs() const { return m_rhs; }
+    constexpr auto get_cond() const { return m_cond; }
+    constexpr auto get_lhs() const { return m_lhs; }
+    constexpr auto get_rhs() const { return m_rhs; }
   };
 
-  class ConstInt : public Expr {
-    SmallString m_value;
+  class npar_pack ConstInt final : public Expr {
+    ncc::core::str_alias m_value;
 
   public:
-    ConstInt(SmallString value) : Expr(QAST_INT), m_value(value) {}
+    constexpr ConstInt(ncc::core::str_alias value)
+        : Expr(QAST_INT), m_value(value) {}
 
-    let get_value() const { return m_value; }
+    constexpr auto get_value() const { return m_value.get(); }
   };
 
-  class ConstFloat : public Expr {
-    SmallString m_value;
+  class npar_pack ConstFloat final : public Expr {
+    ncc::core::str_alias m_value;
 
   public:
-    ConstFloat(SmallString value) : Expr(QAST_FLOAT), m_value(value) {}
+    constexpr ConstFloat(ncc::core::str_alias value)
+        : Expr(QAST_FLOAT), m_value(value) {}
 
-    let get_value() const { return m_value; }
+    constexpr auto get_value() const { return m_value.get(); }
   };
 
-  class ConstBool : public Expr {
+  class npar_pack ConstBool final : public Expr {
     bool m_value;
 
   public:
-    constexpr ConstBool(bool value = false) : Expr(QAST_BOOL), m_value(value) {}
+    constexpr ConstBool(bool value) : Expr(QAST_BOOL), m_value(value) {}
 
-    bool get_value() const { return m_value; }
+    constexpr auto get_value() const { return m_value; }
   };
 
-  class ConstString : public Expr {
-    SmallString m_value;
+  class npar_pack ConstString final : public Expr {
+    ncc::core::str_alias m_value;
 
   public:
-    ConstString(SmallString value) : Expr(QAST_STRING), m_value(value) {}
+    constexpr ConstString(ncc::core::str_alias value)
+        : Expr(QAST_STRING), m_value(value) {}
 
-    let get_value() const { return m_value; }
+    constexpr auto get_value() const { return m_value.get(); }
   };
 
-  class ConstChar : public Expr {
+  class npar_pack ConstChar final : public Expr {
     uint8_t m_value;
 
   public:
-    constexpr ConstChar(uint8_t value = 0) : Expr(QAST_CHAR), m_value(value) {}
+    constexpr ConstChar(uint8_t value) : Expr(QAST_CHAR), m_value(value) {}
 
-    uint8_t get_value() const { return m_value; }
+    constexpr auto get_value() const { return m_value; }
   };
 
-  class ConstNull : public Expr {
+  class npar_pack ConstNull final : public Expr {
   public:
     constexpr ConstNull() : Expr(QAST_NULL) {}
   };
 
-  class ConstUndef : public Expr {
+  class npar_pack ConstUndef final : public Expr {
   public:
     constexpr ConstUndef() : Expr(QAST_UNDEF) {}
   };
 
-  class Call : public Expr {
+  class Call final : public Expr {
     Expr *m_func;
-    CallArgs m_args;
+    std::span<CallArg> m_args;
 
   public:
-    Call(Expr *func, CallArgs args = {})
+    Call(Expr *func, CallArgs args)
         : Expr(QAST_CALL), m_func(func), m_args(args) {}
 
-    let get_func() const { return m_func; }
-    let get_args() const { return m_args; }
+    constexpr auto get_func() const { return m_func; }
+    constexpr auto get_args() const { return m_args; }
   };
 
-  class TemplCall : public Expr {
-    CallArgs m_template_args;
+  class TemplCall final : public Expr {
     Expr *m_func;
-    CallArgs m_args;
+    std::span<CallArg> m_template_args, m_args;
 
   public:
-    TemplCall(Expr *func, CallArgs args = {}, CallArgs template_args = {})
+    TemplCall(Expr *func, CallArgs args, CallArgs template_args)
         : Expr(QAST_TEMPL_CALL),
-          m_template_args(template_args),
           m_func(func),
+          m_template_args(template_args),
           m_args(args) {}
 
-    let get_func() const { return m_func; }
-    let get_template_args() const { return m_template_args; }
-    let get_args() const { return m_args; }
+    constexpr auto get_func() const { return m_func; }
+    constexpr auto get_template_args() const { return m_template_args; }
+    constexpr auto get_args() const { return m_args; }
   };
 
-  class List : public Expr {
-    ExpressionList m_items;
+  class List final : public Expr {
+    std::span<Expr *> m_items;
 
   public:
-    List(const ExpressionList &items) : Expr(QAST_LIST), m_items(items) {}
+    List(ExpressionList items) : Expr(QAST_LIST), m_items(items) {}
 
-    let get_items() const { return m_items; }
+    constexpr auto get_items() const { return m_items; }
   };
 
-  class Assoc : public Expr {
-    Expr *m_key;
-    Expr *m_value;
+  class npar_pack Assoc final : public Expr {
+    Expr *m_key, *m_value;
 
   public:
     constexpr Assoc(Expr *key, Expr *value)
         : Expr(QAST_ASSOC), m_key(key), m_value(value) {}
 
-    let get_key() const { return m_key; }
-    let get_value() const { return m_value; }
+    constexpr auto get_key() const { return m_key; }
+    constexpr auto get_value() const { return m_value; }
   };
 
-  class Field : public Expr {
+  class npar_pack Field final : public Expr {
     Expr *m_base;
-    SmallString m_field;
+    ncc::core::str_alias m_field;
 
   public:
-    Field(Expr *base, SmallString field)
+    constexpr Field(Expr *base, ncc::core::str_alias field)
         : Expr(QAST_FIELD), m_base(base), m_field(field) {}
 
-    let get_base() const { return m_base; }
-    let get_field() const { return m_field; }
+    constexpr auto get_base() const { return m_base; }
+    constexpr auto get_field() const { return m_field.get(); }
   };
 
-  class Index : public Expr {
-    Expr *m_base;
-    Expr *m_index;
+  class npar_pack Index final : public Expr {
+    Expr *m_base, *m_index;
 
   public:
     constexpr Index(Expr *base, Expr *index)
         : Expr(QAST_INDEX), m_base(base), m_index(index) {}
 
-    let get_base() const { return m_base; }
-    let get_index() const { return m_index; }
+    constexpr auto get_base() const { return m_base; }
+    constexpr auto get_index() const { return m_index; }
   };
 
-  class Slice : public Expr {
-    Expr *m_base;
-    Expr *m_start;
-    Expr *m_end;
+  class npar_pack Slice final : public Expr {
+    Expr *m_base, *m_start, *m_end;
 
   public:
     constexpr Slice(Expr *base, Expr *start, Expr *end)
         : Expr(QAST_SLICE), m_base(base), m_start(start), m_end(end) {}
 
-    let get_base() const { return m_base; }
-    let get_start() const { return m_start; }
-    let get_end() const { return m_end; }
+    constexpr auto get_base() const { return m_base; }
+    constexpr auto get_start() const { return m_start; }
+    constexpr auto get_end() const { return m_end; }
   };
 
-  class FString : public Expr {
-    FStringItems m_items;
+  class FString final : public Expr {
+    std::span<std::variant<ncc::core::str_alias, Expr *>> m_items;
 
   public:
-    FString(FStringItems items = {}) : Expr(QAST_FSTRING), m_items(items) {}
+    FString(FStringItems items) : Expr(QAST_FSTRING), m_items(items) {}
 
-    let get_items() const { return m_items; }
+    constexpr auto get_items() const { return m_items; }
   };
 
-  class Ident : public Expr {
-    SmallString m_name;
+  class npar_pack Ident final : public Expr {
+    ncc::core::str_alias m_name;
 
   public:
-    Ident(SmallString name) : Expr(QAST_IDENT), m_name(name) {}
+    constexpr Ident(ncc::core::str_alias name)
+        : Expr(QAST_IDENT), m_name(name) {}
 
-    let get_name() const { return m_name; }
+    constexpr auto get_name() const { return m_name.get(); }
   };
 
-  class SeqPoint : public Expr {
-    ExpressionList m_items;
+  class SeqPoint final : public Expr {
+    std::span<Expr *> m_items;
 
   public:
-    SeqPoint(const ExpressionList &items) : Expr(QAST_SEQ), m_items(items) {}
+    SeqPoint(ExpressionList items) : Expr(QAST_SEQ), m_items(items) {}
 
-    let get_items() const { return m_items; }
+    constexpr auto get_items() const { return m_items; }
   };
 
   constexpr bool Expr::is_stmt_expr(npar_ty_t type) const {
-    return is(QAST_SEXPR) && as<npar::StmtExpr>()->get_stmt()->is(type);
+    return is(QAST_SEXPR) && as<StmtExpr>()->get_stmt()->is(type);
   }
-}  // namespace npar
+}  // namespace ncc::parse
 
 #endif

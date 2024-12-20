@@ -31,12 +31,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Preprocess.hh>
+#include <nitrate-seq/Preprocess.hh>
 #include <qcall/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
+
+using namespace ncc::lex;
 
 int qcall::sys_defer(lua_State* L) {
   /**
@@ -60,29 +62,29 @@ int qcall::sys_defer(lua_State* L) {
     return luaL_error(L, "sys_defer: failed to store callback in registry");
   }
 
-  DeferCallback cb = [L, id](qprep_impl_t* obj, qlex_tok_t tok) -> DeferOp {
+  DeferCallback cb = [L, id](qprep_impl_t*, Token tok) -> DeferOp {
     lua_rawgeti(L, LUA_REGISTRYINDEX, id); /* Get the function */
 
     { /* Push the function arguments */
       lua_newtable(L);
 
       lua_pushstring(L, "ty");
-      lua_pushstring(L, qlex_ty_str(tok.ty));
+      lua_pushstring(L, qlex_ty_str(tok.get_type()));
       lua_settable(L, -3);
 
       lua_pushstring(L, "v");
-      switch (tok.ty) {
+      switch (tok.get_type()) {
         case qEofF:
         case qKeyW: {
-          lua_pushstring(L, qlex_kwstr(tok.v.key));
+          lua_pushstring(L, kw_repr(tok.as_key()));
           break;
         }
         case qOper: {
-          lua_pushstring(L, qlex_opstr(tok.v.op));
+          lua_pushstring(L, op_repr(tok.as_op()));
           break;
         }
         case qPunc: {
-          lua_pushstring(L, qlex_punctstr(tok.v.punc));
+          lua_pushstring(L, punct_repr(tok.as_punc()));
           break;
         }
         case qIntL:
@@ -93,7 +95,7 @@ int qcall::sys_defer(lua_State* L) {
         case qMacB:
         case qMacr:
         case qNote: {
-          lua_pushstring(L, obj->get_string(tok.v.str_idx).data());
+          lua_pushstring(L, std::string(tok.as_string()).c_str());
           break;
         }
       }
@@ -111,7 +113,7 @@ int qcall::sys_defer(lua_State* L) {
         }
 
         if (!lua_isboolean(L, -1)) {
-          qcore_print(
+          qcore_logf(
               QCORE_ERROR,
               "sys_defer: expected boolean return value or nil, got %s\n",
               luaL_typename(L, -1));
@@ -122,22 +124,22 @@ int qcall::sys_defer(lua_State* L) {
         break;
       }
       case LUA_ERRRUN: {
-        qcore_print(QCORE_ERROR, "sys_defer: lua: %s\n", lua_tostring(L, -1));
+        qcore_logf(QCORE_ERROR, "sys_defer: lua: %s\n", lua_tostring(L, -1));
         R = DeferOp::EmitToken;
         break;
       }
       case LUA_ERRMEM: {
-        qcore_print(QCORE_ERROR, "sys_defer: memory allocation error\n");
+        qcore_logf(QCORE_ERROR, "sys_defer: memory allocation error\n");
         R = DeferOp::EmitToken;
         break;
       }
       case LUA_ERRERR: {
-        qcore_print(QCORE_ERROR, "sys_defer: error in error handler\n");
+        qcore_logf(QCORE_ERROR, "sys_defer: error in error handler\n");
         R = DeferOp::EmitToken;
         break;
       }
       default: {
-        qcore_print(QCORE_ERROR, "sys_defer: unexpected error %d\n", err);
+        qcore_logf(QCORE_ERROR, "sys_defer: unexpected error %d\n", err);
         R = DeferOp::EmitToken;
         break;
       }

@@ -31,12 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
-
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-parser/ASTWriter.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
 static void escape_string(std::ostream &os, const std::string_view &input) {
   os << "\"";

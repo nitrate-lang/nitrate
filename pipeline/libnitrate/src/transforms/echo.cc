@@ -31,15 +31,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Transformer.hh>
+#include <core/Transform.hh>
 
-bool nit::echo(std::istream &source, std::ostream &output,
-               std::function<void(const char *)> diag_cb,
-               const std::unordered_set<std::string_view> &opts) {
-  (void)diag_cb;
+CREATE_TRANSFORM(nit::echo) {
   (void)opts;
 
-  output << source.rdbuf();
+  output << source.rdbuf() << std::endl;
 
   return true;
 }

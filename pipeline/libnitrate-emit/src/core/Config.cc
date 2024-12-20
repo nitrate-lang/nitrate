@@ -31,13 +31,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "Config.hh"
-
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
 #include <nitrate-emit/Config.h>
 
 #include <boost/bimap.hpp>
+#include <core/Config.hh>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 
 namespace codegen::conf {
   extern std::vector<qcode_setting_t> default_settings;

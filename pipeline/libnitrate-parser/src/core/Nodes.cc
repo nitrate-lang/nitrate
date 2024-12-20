@@ -31,54 +31,32 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
-#include <nitrate-parser/Parser.h>
-
 #include <core/Hash.hh>
-#include <cstddef>
 #include <cstring>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTWriter.hh>
+#include <nitrate-parser/Context.hh>
 #include <sstream>
 
-using namespace npar;
+using namespace ncc::parse;
 
-boost::flyweight<std::string> npar::SaveString(std::string_view str) {
-  boost::flyweight<std::string> flyweight(str.data(), str.size());
-
-  return flyweight;
-};
-
-///=============================================================================
-namespace npar {
-  void ArenaAllocatorImpl::swap(qcore_arena_t &arena) {
-    std::swap(*m_arena.get(), arena);
-  }
-
-  CPP_EXPORT thread_local ArenaAllocatorImpl npar_arena;
-}  // namespace npar
-
-C_EXPORT void *ArenaAllocatorImpl::allocate(std::size_t size) {
-  const std::size_t alignment = 16;
-  return qcore_arena_alloc_ex(m_arena.get(), size, alignment);
-}
-
-C_EXPORT void ArenaAllocatorImpl::deallocate(void *ptr) { (void)ptr; }
+CPP_EXPORT thread_local std::unique_ptr<ncc::core::IMemory>
+    ncc::parse::npar_allocator;
 
 ///=============================================================================
 
-CPP_EXPORT std::ostream &npar_node_t::dump(std::ostream &os,
-                                           bool isForDebug) const {
+CPP_EXPORT std::ostream &Base::dump(std::ostream &os, bool isForDebug) const {
   (void)isForDebug;
 
   AST_JsonWriter writer(os);
-  const_cast<npar_node_t *>(this)->accept(writer);
+  const_cast<Base *>(this)->accept(writer);
 
   return os;
 }
 
-CPP_EXPORT bool npar_node_t::isSame(const npar_node_t *o) const {
+CPP_EXPORT bool Base::isSame(const Base *o) const {
   if (this == o) {
     return true;
   }
@@ -93,10 +71,10 @@ CPP_EXPORT bool npar_node_t::isSame(const npar_node_t *o) const {
   return ss1.str() == ss2.str();
 }
 
-CPP_EXPORT uint64_t npar_node_t::hash64() const {
+CPP_EXPORT uint64_t Base::hash64() const {
   AST_Hash64 visitor;
 
-  const_cast<npar_node_t *>(this)->accept(visitor);
+  const_cast<Base *>(this)->accept(visitor);
 
   return visitor.get();
 }
@@ -116,21 +94,21 @@ CPP_EXPORT bool Type::is_ptr_to(Type *type) const {
   return item->is(type->getKind());
 }
 
-Stmt *npar::mock_stmt(npar_ty_t expected) {
+Stmt *ncc::parse::mock_stmt(npar_ty_t expected) {
   (void)expected;
 
   static Stmt node(QAST_BASE);
   return &node;
 }
 
-Expr *npar::mock_expr(npar_ty_t expected) {
+Expr *ncc::parse::mock_expr(npar_ty_t expected) {
   (void)expected;
 
   static Expr node(QAST_BASE);
   return &node;
 }
 
-Type *npar::mock_type() {
+Type *ncc::parse::mock_type() {
   static Type node(QAST_BASE);
   return &node;
 }

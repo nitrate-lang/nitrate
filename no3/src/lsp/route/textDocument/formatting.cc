@@ -1,4 +1,3 @@
-#include <nitrate-core/Error.h>
 #include <rapidjson/document.h>
 
 #include <cctype>
@@ -7,14 +6,17 @@
 #include <lsp/core/server.hh>
 #include <lsp/lang/Format.hh>
 #include <lsp/route/RoutesList.hh>
-#include <nitrate-core/Classes.hh>
-#include <nitrate-lexer/Classes.hh>
+#include <memory>
+#include <nitrate-core/Environment.hh>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
-#include <nitrate-parser/Classes.hh>
+#include <nitrate-parser/Context.hh>
 #include <sstream>
 #include <string>
 
 using namespace rapidjson;
+using namespace ncc::lex;
 
 void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   struct Position {
@@ -104,16 +106,13 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
 
   std::stringstream ss(*file->content());
 
-  qcore_env env;
-  qlex lexer(ss, uri.c_str(), env.get());
-  nr_syn parser(lexer.get(), env.get());
+  auto env = std::make_shared<ncc::core::Environment>();
+  auto L = Tokenizer(ss, env);
+  auto parser = ncc::parse::Parser::Create(L, env);
 
-  npar_node_t* root = nullptr;
-  if (!npar_do(parser.get(), &root)) {
-    return;
-  }
+  auto ast = parser->parse();
 
-  if (!npar_check(parser.get(), root)) {
+  if (!ast.check()) {
     return;
   }
 
@@ -122,7 +121,7 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   std::stringstream formatted_ss;
   if (!lsp::fmt::FormatterFactory::create(lsp::fmt::Styleguide::Cambrian,
                                           formatted_ss)
-           ->format(root)) {
+           ->format(ast.get())) {
     resp.error(lsp::ErrorCodes::InternalError, "Failed to format document");
     return;
   }

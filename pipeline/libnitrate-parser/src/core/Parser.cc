@@ -31,356 +31,419 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
-#include <nitrate-parser/Parser.h>
-
-#include <atomic>
 #include <core/Context.hh>
 #include <cstring>
 #include <descent/Recurse.hh>
-#include <nitrate-core/Classes.hh>
+#include <memory>
+#include <nitrate-core/Environment.hh>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTReader.hh>
 #include <nitrate-parser/ASTWriter.hh>
+#include <nitrate-parser/Context.hh>
 
-using namespace npar;
+using namespace ncc::parse;
+using namespace ncc::lex;
 
-Stmt* npar::recurse_block(npar_t& S, qlex_t& rd, bool expect_braces,
-                          bool single_stmt) {
-  qlex_tok_t tok;
-
-  Block* block = make<Block>();
-  block->set_offset(current().start);
-
-  if (expect_braces) {
-    tok = next();
-    if (!tok.is<qPuncLCur>()) {
-      diagnostic << tok << "Expected '{'";
-    }
+Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
+                            SafetyMode safety) {
+  if (expect_braces && !next().is<qPuncLCur>()) {
+    diagnostic << current() << "Expected '{'";
   }
 
-  while ((tok = peek()).ty != qEofF) {
-    if (single_stmt && block->get_items().size() > 0) {
+  let block_start = current().get_start();
+  BlockItems items;
+
+  while (true) {
+    Token tok = peek();
+
+    if (expect_braces && next_if(qPuncRCur)) {
+      let block = make<Block>(items, safety);
+      block->set_offset(tok.get_start());
+
+      return block;
+    }
+
+    if (single_stmt && items.size() == 1) {
       break;
     }
 
-    if (expect_braces) {
-      if (tok.is<qPuncRCur>()) {
-        next();
-        return block;
-      }
+    if (next_if(qEofF)) {
+      break;
     }
 
-    if (tok.is<qPuncSemi>()) /* Skip excessive semicolons */
-    {
-      next();
+    /* Ignore extra semicolons */
+    if (next_if(qPuncSemi)) {
       continue;
     }
 
     if (!tok.is(qKeyW)) {
-      if (tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() || tok.is<qPuncRPar>()) {
-        diagnostic << tok << "Unexpected closing brace";
-        return mock_stmt(QAST_BLOCK);
+      let expr = recurse_expr({Token(qPunc, qPuncSemi)});
+
+      if (!next_if(qPuncSemi)) {
+        diagnostic << tok << "Expected ';' after expression";
       }
 
-      Expr* expr = recurse_expr(S, rd, {qlex_tok_t(qPunc, qPuncSemi)});
+      let stmt = make<ExprStmt>(expr);
+      stmt->set_offset(expr->get_offset());
 
-      if (!expr) {
-        diagnostic << tok << "Expected valid expression";
-        return mock_stmt(QAST_BLOCK);
-      }
-
-      tok = next();
-      if (!tok.is<qPuncSemi>()) {
-        diagnostic << tok << "Expected ';'";
-      }
-
-      ExprStmt* stmt = make<ExprStmt>(expr);
-      stmt->set_offset(std::get<0>(expr->get_pos()));
-
-      block->get_items().push_back(stmt);
+      items.push_back(stmt);
       continue;
     }
 
-    next();
+    let loc_start = tok.get_start();
 
-    Stmt* node = nullptr;
-
-    uint32_t loc_start = tok.start;
-    switch (tok.as<qlex_key_t>()) {
+    switch (next(), tok.as_key()) {
       case qKVar: {
-        for (auto decl : recurse_variable(S, rd, VarDeclType::Var)) {
-          block->get_items().push_back(decl);
+        for (let decl : recurse_variable(VarDeclType::Var)) {
+          items.push_back(decl);
         }
         break;
       }
 
       case qKLet: {
-        for (auto decl : recurse_variable(S, rd, VarDeclType::Let)) {
-          block->get_items().push_back(decl);
+        for (let decl : recurse_variable(VarDeclType::Let)) {
+          items.push_back(decl);
         }
         break;
       }
 
       case qKConst: {
-        for (auto decl : recurse_variable(S, rd, VarDeclType::Const)) {
-          block->get_items().push_back(decl);
+        for (let decl : recurse_variable(VarDeclType::Const)) {
+          items.push_back(decl);
         }
         break;
       }
 
       case qKEnum: {
-        node = recurse_enum(S, rd);
+        let node = recurse_enum();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKStruct: {
-        node = recurse_struct(S, rd, CompositeType::Struct);
+        let node = recurse_struct(CompositeType::Struct);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKRegion: {
-        node = recurse_struct(S, rd, CompositeType::Region);
+        let node = recurse_struct(CompositeType::Region);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKGroup: {
-        node = recurse_struct(S, rd, CompositeType::Group);
+        let node = recurse_struct(CompositeType::Group);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKClass: {
-        node = recurse_struct(S, rd, CompositeType::Class);
+        let node = recurse_struct(CompositeType::Class);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKUnion: {
-        node = recurse_struct(S, rd, CompositeType::Union);
+        let node = recurse_struct(CompositeType::Union);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKType: {
-        node = recurse_typedef(S, rd);
+        let node = recurse_typedef();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKScope: {
-        node = recurse_scope(S, rd);
+        let node = recurse_scope();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKFn: {
-        node = recurse_function(S, rd, false);
+        let node = recurse_function(false);
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKPub:
       case qKImport: {  // they both declare external functions
-        node = recurse_pub(S, rd);
+        let node = recurse_pub();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKSec: {
-        node = recurse_sec(S, rd);
+        let node = recurse_sec();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKPro: {
-        node = recurse_pro(S, rd);
+        let node = recurse_pro();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKReturn: {
-        node = recurse_return(S, rd);
+        let node = recurse_return();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKRetif: {
-        node = recurse_retif(S, rd);
+        let node = recurse_retif();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKBreak: {
-        node = make<BreakStmt>();
+        let node = make<BreakStmt>();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKContinue: {
-        node = make<ContinueStmt>();
+        let node = make<ContinueStmt>();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKIf: {
-        node = recurse_if(S, rd);
+        let node = recurse_if();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKWhile: {
-        node = recurse_while(S, rd);
+        let node = recurse_while();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKFor: {
-        node = recurse_for(S, rd);
+        let node = recurse_for();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKForeach: {
-        node = recurse_foreach(S, rd);
+        let node = recurse_foreach();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKSwitch: {
-        node = recurse_switch(S, rd);
+        let node = recurse_switch();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qK__Asm__: {
-        node = recurse_inline_asm(S, rd);
+        let node = recurse_inline_asm();
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKTrue: {
-        node = make<ExprStmt>(make<ConstBool>(true));
+        let node = make<ExprStmt>(make<ConstBool>(true));
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKFalse: {
-        node = make<ExprStmt>(make<ConstBool>(false));
+        let node = make<ExprStmt>(make<ConstBool>(false));
+        node->set_offset(loc_start);
+
+        items.push_back(node);
+        break;
+      }
+
+      case qK__FString: {
+        let node = make<ExprStmt>(recurse_fstring(0));
+        node->set_offset(loc_start);
+
+        items.push_back(node);
         break;
       }
 
       case qKUnsafe: {
-        tok = peek();
-        if (tok.is<qPuncLCur>()) {
-          node = recurse_block(S, rd);
-        } else {
-          node = recurse_block(S, rd, false, true);
-        }
+        if (peek().is<qPuncLCur>()) {
+          let node = recurse_block(true, false, SafetyMode::Unsafe);
+          node->set_offset(loc_start);
 
-        if (node->is(QAST_BLOCK)) {
-          node->as<Block>()->set_safety(SafetyMode::Unsafe);
+          items.push_back(node);
+        } else {
+          let node = recurse_block(false, true, SafetyMode::Unsafe);
+          node->set_offset(loc_start);
+
+          items.push_back(node);
         }
 
         break;
       }
 
       case qKSafe: {
-        tok = peek();
-        if (tok.is<qPuncLCur>()) {
-          node = recurse_block(S, rd);
-        } else {
-          node = recurse_block(S, rd, false, true);
-        }
+        if (peek().is<qPuncLCur>()) {
+          let node = recurse_block(true, false, SafetyMode::Safe);
+          node->set_offset(loc_start);
 
-        if (node->is(QAST_BLOCK)) {
-          node->as<Block>()->set_safety(SafetyMode::Safe);
+          items.push_back(node);
+        } else {
+          let node = recurse_block(false, true, SafetyMode::Safe);
+          node->set_offset(loc_start);
+
+          items.push_back(node);
         }
 
         break;
       }
 
-      default:
+      default: {
         diagnostic << tok << "Unexpected keyword";
         break;
-    }
-
-    if (node) {
-      node->set_offset(loc_start);
-      /* End position is supplied by producer */
-      block->get_items().push_back(node);
+      }
     }
   }
 
   if (expect_braces) {
-    diagnostic << tok << "Expected '}'";
+    diagnostic << current() << "Expected '}'";
   }
+
+  let block = make<Block>(items, safety);
+  block->set_offset(block_start);
 
   return block;
 }
 
-C_EXPORT npar_t* npar_new(qlex_t* lexer, qcore_env_t env) {
-  if (!lexer) {
-    return nullptr;
-  }
-  static std::atomic<uint64_t> job_id = 1;  // 0 is reserved for invalid job
+CPP_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
+                          std::shared_ptr<ncc::core::Environment> env,
+                          std::shared_ptr<void> lifetime)
+    : rd(lexer), m_lifetime(lifetime) {
+  m_env = env;
+  m_allocator = std::make_unique<ncc::core::dyn_arena>();
+  m_failed = false;
 
-  npar_t* parser = new npar_t();
-
-  parser->env = env;
-  parser->id = job_id++;
-  parser->lexer = lexer;
-  parser->failed = false;
-  parser->diag.set_ctx(parser);
-
-  qlex_set_flags(lexer, qlex_get_flags(lexer) | QLEX_NO_COMMENTS);
-
-  return parser;
+  env->set("this.lexer.emit_comments", "false", true);
 }
 
-C_EXPORT void npar_free(npar_t* parser) {
-  if (!parser) {
-    return;
-  }
-
-  parser->lexer = nullptr;
-
-  delete parser;
-}
-
-static thread_local npar_t* parser_ctx;
-
-C_EXPORT bool npar_do(npar_t* L, npar_node_t** out) {
-  if (!L || !out) {
-    return false;
-  }
-  *out = nullptr;
-
-  /*=============== Swap in their arena  ===============*/
-  npar::npar_arena.swap(*L->arena.get());
-
+CPP_EXPORT ASTRoot Parser::parse() {
   /*== Install thread-local references to the parser ==*/
-  npar::install_reference(L);
+  auto old = ncc::parse::diagnostic;
+  ncc::parse::diagnostic = this;
 
-  parser_ctx = L;
-  *out = npar::recurse_block(*L, *L->lexer, false, false);
-  parser_ctx = nullptr;
+  std::swap(ncc::parse::npar_allocator, m_allocator);
+  auto node = recurse_block(false, false, SafetyMode::Unknown);
+  std::swap(ncc::parse::npar_allocator, m_allocator);
+
+  ASTRoot ast(node, std::move(m_allocator));
+  m_allocator = std::make_unique<ncc::core::dyn_arena>();
 
   /*== Uninstall thread-local references to the parser ==*/
-  npar::install_reference(nullptr);
+  ncc::parse::diagnostic = old;
 
-  /*=============== Swap out their arena ===============*/
-  npar::npar_arena.swap(*L->arena.get());
-
-  /*==================== Return status ====================*/
-  return !L->failed;
+  return ast;
 }
 
-C_EXPORT bool npar_check(npar_t* parser, const npar_node_t* base) {
-  if (!parser || !base) {
-    return false;
-  }
+CPP_EXPORT bool ASTRoot::check() const {
+  bool failed = false;
+  ncc::parse::iterate<dfs_pre>(const_cast<Base *&>(m_base), [&](auto, auto c) {
+    failed |= !c || !*c || (*c)->is_mock();
 
-  if (parser->failed) {
-    return false;
-  }
+    return failed ? IterOp::Abort : IterOp::Proceed;
+  });
 
-  /* TODO: Implement checks */
-  return true;
+  return !failed;
 }
 
-C_EXPORT void npar_dumps(npar_t* parser, bool no_ansi, npar_dump_cb cb,
-                         uintptr_t data) {
-  if (!parser || !cb) {
-    return;
-  }
+std::string ncc::parse::mint_clang16_message(ncc::lex::IScanner &rd,
+                                             const DiagMessage &msg) {
+  std::stringstream ss;
+  ss << "\x1b[37;1m" << rd.Filename(msg.tok) << ":";
+  uint32_t line = rd.StartLine(msg.tok), col = rd.StartColumn(msg.tok);
 
-  auto adapter = [&](const char* msg) { cb(msg, std::strlen(msg), data); };
-
-  if (no_ansi) {
-    parser->diag.render(adapter, npar::FormatStyle::ClangPlain);
+  if (line != QLEX_EOFF) {
+    ss << line << ":";
   } else {
-    parser->diag.render(adapter, npar::FormatStyle::Clang16Color);
+    ss << "?:";
   }
+
+  if (col != QLEX_EOFF) {
+    ss << col << ":\x1b[0m ";
+  } else {
+    ss << "?:\x1b[0m ";
+  }
+
+  ss << "\x1b[37;1m" << msg.msg << " [";
+
+  ss << "SyntaxError";
+
+  ss << "]\x1b[0m";
+
+  uint32_t offset = 0;
+  /// TODO: Implement source snippet
+  // char *snippet = qlex_snippet(&rd, msg.tok, &offset);
+  char *snippet = nullptr;
+  if (!snippet) {
+    return ss.str();
+  }
+
+  ss << "\n" << snippet << "\n";
+  for (uint32_t i = 0; i < offset; i++) {
+    ss << " ";
+  }
+  ss << "\x1b[32;1m^\x1b[0m";
+  free(snippet);
+
+  return ss.str();
 }

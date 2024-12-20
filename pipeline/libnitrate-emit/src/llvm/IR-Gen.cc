@@ -63,8 +63,6 @@
 #include <llvm-18/llvm/TargetParser/Host.h>
 #include <llvm-18/llvm/Transforms/IPO.h>
 #include <llvm-18/llvm/Transforms/InstCombine/InstCombine.h>
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Config.h>
 #include <nitrate-ir/TypeDecl.h>
@@ -73,18 +71,14 @@
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <optional>
 #include <stack>
 #include <streambuf>
 #include <unordered_map>
-
-#if NITRATE_SHARED == 1
-#define BOOST_NO_EXCEPTIONS
-#include <boost/throw_exception.hpp>
-void boost::throw_exception(std::exception const &e) { qcore_panic(e.what()); }
-#endif
 
 /// TODO: Find way to remove the 's.branch_early' edge case
 

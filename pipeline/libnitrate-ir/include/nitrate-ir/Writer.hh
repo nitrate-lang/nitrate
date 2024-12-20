@@ -34,13 +34,12 @@
 #ifndef __NITRATE_NR_WRITER_H__
 #define __NITRATE_NR_WRITER_H__
 
-#include <nitrate-core/Macro.h>
-#include <nitrate-lexer/Token.h>
-
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-ir/Visitor.hh>
+#include <nitrate-lexer/Token.hh>
 #include <ostream>
 #include <stack>
 #include <string_view>

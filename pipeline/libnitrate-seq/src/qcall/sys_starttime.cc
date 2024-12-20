@@ -31,10 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Env.h>
-#include <nitrate-core/Error.h>
-
-#include <exception>
+#include <nitrate-core/Environment.hh>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-seq/Preprocess.hh>
 #include <qcall/List.hh>
 #include <string>
 
@@ -52,21 +52,11 @@ int qcall::sys_starttime(lua_State* L) {
     return luaL_error(L, "Expected 0 arguments, got %d", nargs);
   }
 
-  const char* starttime = qcore_env_get("this.created_at");
-
-  if (starttime == nullptr) {
+  if (let starttime = get_engine()->GetEnvironment()->get("this.created_at")) {
+    lua_pushinteger(L, std::stoll(std::string(*starttime)));
+  } else {
     qcore_panic("Failed to get the start time of the compiler");
   }
-
-  int64_t start_time;
-  try {
-    start_time = std::stoll(starttime);
-  } catch (const std::exception& e) {
-    qcore_panicf("Failed to convert the start time to an integer: %s",
-                 e.what());
-  }
-
-  lua_pushinteger(L, start_time);
 
   return 1;
 }

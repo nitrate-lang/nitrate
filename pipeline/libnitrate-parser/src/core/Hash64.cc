@@ -31,12 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
-
 #include <core/Hash.hh>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
 void AST_Hash64::str_impl(std::string_view str) {
   qcore_assert(!m_state.empty());

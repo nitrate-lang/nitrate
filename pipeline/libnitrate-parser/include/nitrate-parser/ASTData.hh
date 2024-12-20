@@ -34,31 +34,17 @@
 #ifndef __NITRATE_AST_ASTDATA_H__
 #define __NITRATE_AST_ASTDATA_H__
 
-#include <nitrate-core/Macro.h>
-
-#include <nitrate-core/Classes.hh>
+#include <nitrate-core/Allocate.hh>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-core/String.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <set>
 #include <tuple>
 #include <variant>
 #include <vector>
 
-namespace npar {
-  class ArenaAllocatorImpl {
-    qcore_arena m_arena;
-
-  public:
-    ArenaAllocatorImpl() = default;
-
-    void *allocate(std::size_t bytes);
-    void deallocate(void *ptr);
-
-    void swap(qcore_arena_t &arena);
-
-    qcore_arena_t &get() { return *m_arena.get(); }
-  };
-
-  extern thread_local ArenaAllocatorImpl npar_arena;
+namespace ncc::parse {
+  extern thread_local std::unique_ptr<ncc::core::IMemory> npar_allocator;
 
   template <class T>
   struct Arena {
@@ -70,7 +56,7 @@ namespace npar {
     constexpr Arena(const Arena<U> &) {}
 
     [[nodiscard]] T *allocate(std::size_t n) {
-      return static_cast<T *>(npar_arena.allocate(sizeof(T) * n));
+      return static_cast<T *>(npar_allocator->alloc(sizeof(T) * n));
     }
 
     void deallocate(T *p, std::size_t n) {
@@ -88,41 +74,45 @@ namespace npar {
     return false;
   }
 
-  SmallString SaveString(std::string_view str);
-};  // namespace npar
+  static inline ncc::core::str_alias SaveString(std::string_view str) {
+    return ncc::core::StringMemory::Get(str);
+  }
+};  // namespace ncc::parse
 
-namespace npar {
+namespace ncc::parse {
   using ExpressionList = std::vector<Expr *, Arena<Expr *>>;
 
   using TupleTyItems = std::vector<Type *, Arena<Type *>>;
 
-  using CallArg = std::pair<SmallString, Expr *>;
+  using CallArg = std::pair<ncc::core::str_alias, Expr *>;
   using CallArgs = std::vector<CallArg, Arena<CallArg>>;
 
-  using FStringItems = std::vector<std::variant<SmallString, Expr *>,
-                                   Arena<std::variant<SmallString, Expr *>>>;
+  using FStringItems =
+      std::vector<std::variant<ncc::core::str_alias, Expr *>,
+                  Arena<std::variant<ncc::core::str_alias, Expr *>>>;
 
-  using TemplateParameter = std::tuple<SmallString, Type *, Expr *>;
+  using TemplateParameter = std::tuple<ncc::core::str_alias, Type *, Expr *>;
   using TemplateParameters =
       std::vector<TemplateParameter, Arena<TemplateParameter>>;
 
   using BlockItems = std::vector<Stmt *, Arena<Stmt *>>;
   using ScopeDeps =
-      std::set<SmallString, std::less<SmallString>, Arena<SmallString>>;
+      std::set<ncc::core::str_alias, std::less<ncc::core::str_alias>,
+               Arena<ncc::core::str_alias>>;
 
   using SwitchCases = std::vector<CaseStmt *, Arena<CaseStmt *>>;
-  using EnumItem = std::pair<SmallString, Expr *>;
+  using EnumItem = std::pair<ncc::core::str_alias, Expr *>;
   using EnumDefItems = std::vector<EnumItem, Arena<EnumItem>>;
 
   class StructField {
-    SmallString m_name;
+    ncc::core::str_alias m_name;
     std::optional<Expr *> m_value;
     Type *m_type;
     Vis m_vis;
     bool m_is_static;
 
   public:
-    StructField(Vis vis, bool is_static, SmallString name, Type *type,
+    StructField(Vis vis, bool is_static, ncc::core::str_alias name, Type *type,
                 std::optional<Expr *> value)
         : m_name(std::move(name)),
           m_value(std::move(value)),
@@ -132,7 +122,7 @@ namespace npar {
 
     let get_vis() const { return m_vis; }
     let is_static() const { return m_is_static; }
-    let get_name() const { return m_name; }
+    auto get_name() const { return m_name.get(); }
     let get_type() const { return m_type; }
     let get_value() const { return m_value; }
   };
@@ -148,17 +138,18 @@ namespace npar {
   using StructDefMethods = std::vector<StructFunction, Arena<StructFunction>>;
   using StructDefStaticMethods =
       std::vector<StructFunction, Arena<StructFunction>>;
-  using StructDefNames = std::vector<SmallString, Arena<SmallString>>;
+  using StructDefNames =
+      std::vector<ncc::core::str_alias, Arena<ncc::core::str_alias>>;
 
-  using FuncParam = std::tuple<SmallString, Type *, Expr *>;
+  using FuncParam = std::tuple<ncc::core::str_alias, Type *, Expr *>;
   struct FuncParams {
     std::vector<FuncParam, Arena<FuncParam>> params;
     bool is_variadic;
 
     FuncParams() : is_variadic(false) {}
   };
-  using FnCaptures = std::vector<std::pair<SmallString, bool>,
-                                 Arena<std::pair<SmallString, bool>>>;
-}  // namespace npar
+  using FnCaptures = std::vector<std::pair<ncc::core::str_alias, bool>,
+                                 Arena<std::pair<ncc::core::str_alias, bool>>>;
+}  // namespace ncc::parse
 
 #endif

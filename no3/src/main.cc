@@ -34,13 +34,9 @@
 #include <argparse.h>
 #include <glog/logging.h>
 #include <lsp/nitrated.h>
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Lib.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
 #include <nitrate-ir/Lib.h>
-#include <nitrate-lexer/Lib.h>
-#include <nitrate-parser/Lib.h>
 #include <nitrate-seq/Lib.h>
 
 #include <atomic>
@@ -52,10 +48,12 @@
 #include <init/Package.hh>
 #include <install/Install.hh>
 #include <iostream>
-#include <nitrate-core/Classes.hh>
+#include <nitrate-core/Init.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>
-#include <nitrate-parser/Classes.hh>
+#include <nitrate-lexer/Init.hh>
+#include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Classes.hh>
 #include <string>
 #include <string_view>
@@ -330,12 +328,12 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
   }
 
   { /* Initialize libraries */
-    if (!qcore_lib_init()) {
+    if (!ncc::core::CoreLibrary.InitRC()) {
       LOG(ERROR) << "Failed to initialize NITRATE-CORE library" << std::endl;
       return false;
     }
 
-    if (!qlex_lib_init()) {
+    if (!ncc::lex::LexerLibrary.InitRC()) {
       LOG(ERROR) << "Failed to initialize NITRATE-LEX library" << std::endl;
       return false;
     }
@@ -345,7 +343,7 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
       return false;
     }
 
-    if (!npar_lib_init()) {
+    if (!ncc::parse::ParseLibrary.InitRC()) {
       LOG(ERROR) << "Failed to initialize NITRATE-PARSE library" << std::endl;
       return false;
     }

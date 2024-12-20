@@ -34,13 +34,10 @@
 #ifndef __NITRATE_NR_IRBUILDER_H__
 #define __NITRATE_NR_IRBUILDER_H__
 
-#include <string>
 #ifndef __cplusplus
 #error "This header is C++ only."
 #endif
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Memory.h>
 #include <nitrate-ir/TypeDecl.h>
 
 #include <boost/multiprecision/cpp_dec_float.hpp>
@@ -49,11 +46,14 @@
 #include <cassert>
 #include <cmath>
 #include <experimental/source_location>
-#include <nitrate-core/Classes.hh>
+#include <nitrate-core/Allocate.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/Report.hh>
 #include <optional>
+#include <span>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 
@@ -100,7 +100,6 @@ namespace nr {
     std::optional<qmodule_t *> m_result;
     Seq *m_root;
 
-    std::unordered_map<std::string_view, std::string> m_interned_strings;
     std::unordered_map<std::string_view, Type *> m_named_types;
     std::unordered_map<std::string_view,
                        std::unordered_map<std::string_view, Expr *>>
@@ -363,10 +362,6 @@ namespace nr {
     void createNamedTypeAlias(Type *type,
                               std::string_view name SOURCE_LOCATION_PARAM);
 
-    ///**************************************************************************///
-    // Other stuff
-
-    std::string_view intern(std::string_view str);
     ///**************************************************************************///
 
 #undef SOURCE_LOCATION_PARAM

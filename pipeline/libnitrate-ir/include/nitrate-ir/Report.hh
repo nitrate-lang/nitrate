@@ -35,13 +35,12 @@
 #define __NITRATE_NR_REPORT_H__
 
 #include <nitrate-ir/IR.h>
-#include <nitrate-lexer/Token.h>
 
 #include <boost/bimap.hpp>
 #include <cstdarg>
+#include <nitrate-lexer/Token.hh>
+#include <nitrate-parser/ASTBase.hh>
 #include <string_view>
-
-struct npar_node_t;
 
 namespace nr {
   enum class IC {
@@ -97,10 +96,11 @@ namespace nr {
     virtual void report(IssueCode code, IC level,
                         std::vector<std::string_view> params = {},
                         std::tuple<uint32_t, uint32_t> location = {
-                            QLEX_EOFF, QLEX_NOFILE}) = 0;
+                            ncc::lex::QLEX_EOFF, ncc::lex::QLEX_NOFILE}) = 0;
 
     void report(IssueCode code, IC level, std::string_view message,
-                std::tuple<uint32_t, uint32_t> loc = {QLEX_EOFF, QLEX_NOFILE}) {
+                std::tuple<uint32_t, uint32_t> loc = {ncc::lex::QLEX_EOFF,
+                                                      ncc::lex::QLEX_NOFILE}) {
       report(code, level, std::vector<std::string_view>({message}), loc);
     };
 

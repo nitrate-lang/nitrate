@@ -34,8 +34,7 @@
 #ifndef __NITRATE_AST_ASTCOMMON_H__
 #define __NITRATE_AST_ASTCOMMON_H__
 
-#include <boost/flyweight.hpp>
-#include <string>
+#include <nitrate-core/String.hh>
 
 typedef enum npar_ty_t {
   /*****************************************************************************
@@ -142,9 +141,8 @@ typedef enum npar_ty_t {
 
 #define QAST_COUNT (QAST__LAST - QAST__FIRST + 1)
 
-struct npar_node_t;
-
-namespace npar {
+namespace ncc::parse {
+  class Base;
   class Stmt;
   class Type;
   class Expr;
@@ -216,9 +214,9 @@ namespace npar {
   class EnumDef;
   class ScopeStmt;
   class ExportStmt;
-}  // namespace npar
+}  // namespace ncc::parse
 
-namespace npar {
+namespace ncc::parse {
   enum class Vis {
     Pub = 0,
     Sec = 1,
@@ -243,7 +241,8 @@ namespace npar {
     Unsafe = 2,
   };
 
-  using SmallString = boost::flyweight<std::string>;
-}  // namespace npar
+#define npar_pack __attribute__((packed))
+
+}  // namespace ncc::parse
 
 #endif

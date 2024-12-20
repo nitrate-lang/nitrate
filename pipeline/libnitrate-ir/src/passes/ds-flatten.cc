@@ -35,6 +35,7 @@
 
 #include <atomic>
 #include <boost/bimap.hpp>
+#include <nitrate-core/String.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <passes/PassList.hh>
 #include <unordered_set>
@@ -47,6 +48,7 @@
  */
 
 using namespace nr;
+using namespace ncc::core;
 
 static void flatten_externs(qmodule_t *mod) {
   /**
@@ -104,7 +106,7 @@ static void flatten_functions_recurse(qmodule_t *mod, Expr *&base,
     std::string new_scope =
         cur_scope.empty() ? orig_name : cur_scope + "::" + orig_name;
 
-    (*cur)->as<Fn>()->setName(mod->internString(new_scope));
+    (*cur)->as<Fn>()->setName(save(new_scope));
 
     if (!is_extern) { /* Handle name change */
       functions.insert(cur);

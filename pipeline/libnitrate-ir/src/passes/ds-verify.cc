@@ -31,10 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <nitrate-ir/TypeDecl.h>
+
 #include <nitrate-ir/IRGraph.hh>
 #include <passes/PassList.hh>
-
-#include "nitrate-ir/TypeDecl.h"
 
 /**
  * @brief Ensure that the module IR data structure does not have any Tmp nodes.

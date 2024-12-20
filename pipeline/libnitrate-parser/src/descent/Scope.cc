@@ -33,17 +33,18 @@
 
 #include <descent/Recurse.hh>
 
-using namespace npar;
+using namespace ncc::lex;
+using namespace ncc::parse;
 
-static std::string_view recurse_scope_name(qlex_t &rd) {
+std::string_view Parser::recurse_scope_name() {
   if (let tok = next_if(qName)) {
-    return tok->as_string(&rd);
+    return tok->as_string();
   } else {
     return "";
   }
 }
 
-static std::optional<ScopeDeps> recurse_scope_deps(qlex_t &rd) {
+std::optional<ScopeDeps> Parser::recurse_scope_deps() {
   ScopeDeps dependencies;
 
   if (!next_if(qPuncColn)) {
@@ -59,7 +60,7 @@ static std::optional<ScopeDeps> recurse_scope_deps(qlex_t &rd) {
       }
 
       if (tok.is(qName)) {
-        let dependency_name = tok.as_string(&rd);
+        let dependency_name = tok.as_string();
 
         dependencies.insert(SaveString(dependency_name));
 
@@ -76,21 +77,21 @@ static std::optional<ScopeDeps> recurse_scope_deps(qlex_t &rd) {
   return std::nullopt;
 }
 
-static Stmt *recurse_scope_block(npar_t &S, qlex_t &rd) {
+Stmt *Parser::recurse_scope_block() {
   if (next_if(qPuncSemi)) {
-    return make<Block>();
+    return make<Block>(BlockItems(), SafetyMode::Unknown);
   } else if (next_if(qOpArrow)) {
-    return recurse_block(S, rd, false, true);
+    return recurse_block(false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(S, rd, true, false);
+    return recurse_block(true, false, SafetyMode::Unknown);
   }
 }
 
-npar::Stmt *npar::recurse_scope(npar_t &S, qlex_t &rd) {
-  let scope_name = recurse_scope_name(rd);
+Stmt *Parser::recurse_scope() {
+  let scope_name = recurse_scope_name();
 
-  if (let implicit_dependencies = recurse_scope_deps(rd)) {
-    let scope_block = recurse_scope_block(S, rd);
+  if (let implicit_dependencies = recurse_scope_deps()) {
+    let scope_block = recurse_scope_block();
 
     return make<ScopeStmt>(SaveString(scope_name), scope_block,
                            std::move(implicit_dependencies.value()));

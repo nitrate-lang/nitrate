@@ -31,16 +31,16 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Error.h>
-#include <nitrate-core/Macro.h>
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
 
 #include <functional>
 #include <iostream>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <nitrate-parser/ASTReader.hh>
 
-using namespace npar;
+using namespace ncc::parse;
 
 void AST_JsonReader::parse_stream(std::istream& is) {
   rapidjson::Document doc;

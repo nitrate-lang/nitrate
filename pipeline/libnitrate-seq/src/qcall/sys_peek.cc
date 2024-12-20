@@ -31,59 +31,38 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-lexer/Lexer.h>
-
-#include <core/Preprocess.hh>
+#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-seq/Preprocess.hh>
 #include <qcall/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
+using namespace ncc::lex;
+
 int qcall::sys_peek(lua_State* L) {
-  /**
-   *   @brief Next token.
-   */
-
-  qprep_impl_t* obj = get_engine();
-
-  qlex_tok_t tok;
-
-  { /* Get token */
-    qlex_flags_t flags;
-    bool old;
-
-    old = obj->m_do_expanse;
-    flags = qlex_get_flags(obj);
-
-    obj->m_do_expanse = false;
-    qlex_set_flags(obj, flags & ~(QLEX_NO_COMMENTS));
-
-    tok = qlex_peek(obj);
-
-    qlex_set_flags(obj, flags);
-    obj->m_do_expanse = old;
-  }
+  Token tok = get_engine()->Peek();
 
   lua_newtable(L);
 
   lua_pushstring(L, "ty");
-  lua_pushstring(L, qlex_ty_str(tok.ty));
+  lua_pushstring(L, qlex_ty_str(tok.get_type()));
   lua_settable(L, -3);
 
   lua_pushstring(L, "v");
-  switch (tok.ty) {
+  switch (tok.get_type()) {
     case qEofF:
     case qKeyW: {
-      lua_pushstring(L, qlex_kwstr(tok.v.key));
+      lua_pushstring(L, kw_repr(tok.as_key()));
       break;
     }
     case qOper: {
-      lua_pushstring(L, qlex_opstr(tok.v.op));
+      lua_pushstring(L, op_repr(tok.as_op()));
       break;
     }
     case qPunc: {
-      lua_pushstring(L, qlex_punctstr(tok.v.punc));
+      lua_pushstring(L, punct_repr(tok.as_punc()));
       break;
     }
     case qIntL:
@@ -94,7 +73,7 @@ int qcall::sys_peek(lua_State* L) {
     case qMacB:
     case qMacr:
     case qNote: {
-      lua_pushstring(L, obj->get_string(tok.v.str_idx).data());
+      lua_pushstring(L, std::string(tok.as_string()).c_str());
       break;
     }
   }
