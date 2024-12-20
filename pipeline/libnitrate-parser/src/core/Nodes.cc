@@ -43,7 +43,7 @@
 using namespace ncc::parse;
 
 CPP_EXPORT thread_local std::unique_ptr<ncc::core::IMemory>
-    ncc::parse::npar_allocator;
+    ncc::parse::npar_allocator = std::make_unique<ncc::core::dyn_arena>();
 
 ///=============================================================================
 

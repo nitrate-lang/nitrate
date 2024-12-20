@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "nitrate-core/Allocate.hh"
 #define __NR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
 #include <nitrate-ir/IR.h>
@@ -55,7 +56,8 @@ using namespace nr;
 
 ///=============================================================================
 namespace nr {
-  thread_local std::unique_ptr<ncc::core::IMemory> nr_allocator;
+  thread_local std::unique_ptr<ncc::core::IMemory> nr_allocator =
+      std::make_unique<ncc::core::dyn_arena>();
 
   namespace mem {
     Brk static_NR_NODE_BRK;
