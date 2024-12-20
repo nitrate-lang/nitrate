@@ -326,3 +326,56 @@ void NRBuilder::connect_nodes(Seq *root) {
 
   flatten_symbols(root);
 }
+
+void NRBuilder::remove_garbage(Seq *root) {
+  iterate<dfs_post>(root, [](Expr *, Expr **C) -> IterOp {
+    if ((*C)->is(NR_NODE_SEQ)) {
+      static const std::unordered_set<nr_ty_t> non_functional_nodes = {
+          NR_NODE_INT,       /* Integer literal */
+          NR_NODE_FLOAT,     /* Floating-point literal */
+          NR_NODE_IDENT,     /* Identifier */
+          NR_NODE_IGN,       /* No-op */
+          NR_NODE_U1_TY,     /* 1-bit unsigned integer (boolean) */
+          NR_NODE_U8_TY,     /* 8-bit unsigned integer */
+          NR_NODE_U16_TY,    /* 16-bit unsigned integer */
+          NR_NODE_U32_TY,    /* 32-bit unsigned integer */
+          NR_NODE_U64_TY,    /* 64-bit unsigned integer */
+          NR_NODE_U128_TY,   /* 128-bit unsigned integer */
+          NR_NODE_I8_TY,     /* 8-bit signed integer */
+          NR_NODE_I16_TY,    /* 16-bit signed integer */
+          NR_NODE_I32_TY,    /* 32-bit signed integer */
+          NR_NODE_I64_TY,    /* 64-bit signed integer */
+          NR_NODE_I128_TY,   /* 128-bit signed integer */
+          NR_NODE_F16_TY,    /* 16-bit floating-point */
+          NR_NODE_F32_TY,    /* 32-bit floating-point */
+          NR_NODE_F64_TY,    /* 64-bit floating-point */
+          NR_NODE_F128_TY,   /* 128-bit floating-point */
+          NR_NODE_VOID_TY,   /* Void type */
+          NR_NODE_PTR_TY,    /* Pointer type */
+          NR_NODE_OPAQUE_TY, /* Opaque type */
+          NR_NODE_STRUCT_TY, /* Struct type */
+          NR_NODE_UNION_TY,  /* Union type */
+          NR_NODE_ARRAY_TY,  /* Array type */
+          NR_NODE_FN_TY,     /* Function type */
+          NR_NODE_CONST_TY,  /* Constant wrapper type */
+      };
+
+      Seq *S = (*C)->as<Seq>();
+
+      size_t node_count = 0;
+      for (auto &I : S->getItems()) {
+        if (non_functional_nodes.contains(I->getKind())) {
+          I = createIgn();
+        } else {
+          node_count++;
+        }
+      }
+
+      if (node_count == 0) {
+        *C = createIgn();
+      }
+    }
+
+    return IterOp::Proceed;
+  });
+}

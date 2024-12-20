@@ -238,6 +238,7 @@ void NRBuilder::finish(SOURCE_LOCATION_PARAM_ONCE) {
   contract_enforce(m_root != nullptr);
 
   connect_nodes(m_root);
+  remove_garbage(m_root);
 
   m_state = SelfState::Finished;
 }

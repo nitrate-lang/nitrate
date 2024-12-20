@@ -127,6 +127,7 @@ namespace nr {
     void try_transform_gamma(Expr *root);
     void connect_nodes(Seq *root);
     void flatten_symbols(Seq *root);
+    void remove_garbage(Seq *root);
 
     bool check_acyclic(Seq *root, IReport *I);
     bool check_duplicates(Seq *root, IReport *I);
