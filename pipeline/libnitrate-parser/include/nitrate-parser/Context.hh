@@ -91,7 +91,8 @@ namespace ncc::parse {
     Stmt *recurse_inline_asm();
     Stmt *recurse_block(bool expect_braces, bool single_stmt,
                         SafetyMode safety);
-    Expr *recurse_expr(std::set<ncc::lex::Token> terminators, size_t depth = 0);
+    Expr *recurse_expr(const std::set<ncc::lex::Token> &terminators,
+                       size_t depth = 0);
 
     /****************************************************************************
      * @brief
@@ -108,8 +109,8 @@ namespace ncc::parse {
     std::optional<ExpressionList> recurse_export_attributes();
     Stmt *recurse_export_body();
 
-    CallArgs recurse_caller_arguments(ncc::lex::Token terminator, size_t depth);
-    Call *recurse_function_call(Expr *callee, size_t depth);
+    CallArgs recurse_call_arguments(ncc::lex::Token terminator, size_t depth);
+    Expr *recurse_function_call(Expr *callee, size_t depth);
     Expr *recurse_fstring(size_t depth);
 
     std::optional<Stmt *> recurse_for_init_expr();

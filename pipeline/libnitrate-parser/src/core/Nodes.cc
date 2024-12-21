@@ -97,14 +97,14 @@ CPP_EXPORT bool Type::is_ptr_to(Type *type) const {
   return item->is(type->getKind());
 }
 
-Stmt *ncc::parse::mock_stmt(npar_ty_t expected) {
+Stmt *ncc::parse::mock_stmt(std::optional<npar_ty_t> expected) {
   (void)expected;
 
   static Stmt node(QAST_BASE);
   return &node;
 }
 
-Expr *ncc::parse::mock_expr(npar_ty_t expected) {
+Expr *ncc::parse::mock_expr(std::optional<npar_ty_t> expected) {
   (void)expected;
 
   static Expr node(QAST_BASE);

@@ -38,97 +38,98 @@
 #include <nitrate-parser/AST.hh>
 #include <stack>
 
-#define MAX_EXPR_DEPTH (10000)
+#define MAX_RECURSION_DEPTH 4096
 #define MAX_LIST_DUP (10000)
 
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-CallArgs Parser::recurse_caller_arguments(Token terminator, size_t depth) {
-  Token tok, ident;
+CallArgs Parser::recurse_call_arguments(Token terminator, size_t depth) {
+  Token ident;
   CallArgs call_args;
   size_t pos_arg_count = 0;
 
   while (true) {
-    tok = peek();
-
-    if (tok.is(qEofF)) {
-      diagnostic << tok << "Unexpected end of file while parsing function call";
+    if (peek() == terminator) {
+      break;
+    } else if (next_if(qEofF)) {
+      diagnostic << current()
+                 << "Unexpected end of file while parsing call expression";
       return call_args;
     }
 
-    if (tok == terminator) {
-      break;
-    }
+    enum class State {
+      ParseNamedArg,
+      ParsePosArg,
+    } state = State::ParseNamedArg;
 
-    if (!tok.is(qName)) {
-      goto parse_pos_arg;
-    }
+    if (peek().is(qName)) {
+      ident = next();
 
-    { /* Parse named argument */
-      ident = tok;
-      next();
-      tok = peek();
-
-      if (!tok.is<qPuncColn>()) {
+      if (next_if(qPuncColn)) {
+        state = State::ParseNamedArg;
+      } else {
         rd.Undo();
-        goto parse_pos_arg;
+        state = State::ParsePosArg;
+      }
+    } else {
+      state = State::ParsePosArg;
+    }
+
+    switch (state) {
+      case State::ParseNamedArg: {
+        let name = SaveString(ident.as_string());
+        let value =
+            recurse_expr({Token(qPunc, qPuncComa), terminator}, depth + 1);
+
+        call_args.push_back({name, value});
+        break;
       }
 
-      next();
+      case State::ParsePosArg: {
+        let name = SaveString(std::to_string(pos_arg_count++));
+        let value =
+            recurse_expr({Token(qPunc, qPuncComa), terminator}, depth + 1);
 
-      Expr *arg =
-          recurse_expr({Token(qPunc, qPuncComa), terminator}, depth + 1);
-
-      call_args.push_back({SaveString(ident.as_string()), arg});
-      goto comma;
+        call_args.push_back({name, value});
+        break;
+      }
     }
 
-  parse_pos_arg: {
-    Expr *arg = recurse_expr({Token(qPunc, qPuncComa), terminator}, depth + 1);
-
-    call_args.push_back({SaveString(std::to_string(pos_arg_count++)), arg});
-
-    goto comma;
-  }
-
-  comma: {
-    tok = peek();
-    if (tok.is<qPuncComa>()) {
-      next();
-    }
-    continue;
-  }
+    next_if(qPuncComa);
   }
 
   return call_args;
 }
 
-Call *Parser::recurse_function_call(Expr *callee, size_t depth) {
-  auto args = recurse_caller_arguments(Token(qPunc, qPuncRPar), depth);
+Expr *Parser::recurse_function_call(Expr *callee, size_t depth) {
+  let args = recurse_call_arguments(Token(qPunc, qPuncRPar), depth);
   if (!next_if(qPuncRPar)) {
     diagnostic << current() << "Expected ')' to close the function call";
-    return nullptr;
+    return mock_expr(QAST_CALL);
   }
+
   return make<Call>(callee, args);
 }
 
 Expr *Parser::recurse_fstring(size_t depth) {
   Token tok = next();
   if (!tok.is(qText)) {
-    diagnostic << tok << "Expected a string literal in F-string expression";
+    diagnostic << tok
+               << "Expected a string literal token for F-string expression";
+    return mock_expr(QAST_FSTRING);
   }
 
-  auto fstr = tok.as_string();
+  let fstr = tok.as_string();
 
-  std::string tmp;
-  tmp.reserve(fstr.size());
+  std::string buf;
+  buf.reserve(fstr.size());
 
   FStringItems items;
   size_t state = 0, w_beg = 0, w_end = 0;
 
   for (size_t i = 0; i < fstr.size(); i++) {
-    char c = fstr[i];
+    let c = fstr[i];
 
     if (c == '{' && state == 0) {
       w_beg = i + 1;
@@ -137,36 +138,33 @@ Expr *Parser::recurse_fstring(size_t depth) {
       w_end = i + 1;
       state = 0;
 
-      if (!tmp.empty()) {
-        items.push_back(SaveString(std::move(tmp)));
-        tmp.clear();
+      if (!buf.empty()) {
+        items.push_back(SaveString(std::move(buf)));
+        buf.clear();
       }
 
-      std::string sub(fstr.substr(w_beg, w_end - w_beg));
-      auto sub_parser = FromString(sub, m_env);
+      let subnode = FromString(fstr.substr(w_beg, w_end - w_beg), m_env)
+                        ->recurse_expr({Token(qPunc, qPuncRCur)}, depth + 1);
 
-      let subnode =
-          sub_parser->recurse_expr({Token(qPunc, qPuncRCur)}, depth + 1);
       items.push_back(subnode);
-
     } else if (c == '{') {
-      tmp += c;
+      buf += c;
       state = 0;
     } else if (c == '}') {
-      tmp += c;
+      buf += c;
       state = 0;
     } else if (state == 0) {
-      tmp += c;
+      buf += c;
     }
   }
 
-  if (!tmp.empty()) {
-    items.push_back(SaveString(std::move(tmp)));
-    tmp.clear();
+  if (!buf.empty()) {
+    items.push_back(SaveString(std::move(buf)));
+    buf.clear();
   }
 
   if (state != 0) {
-    diagnostic << tok << "F-string expression is not properly closed with '}'";
+    diagnostic << tok << "F-string expression has mismatched braces";
   }
 
   return make<FString>(std::move(items));
@@ -175,14 +173,14 @@ Expr *Parser::recurse_fstring(size_t depth) {
 /// TODO: Operator precedence
 /// TODO: Operator associativity
 
-Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
-  if (depth > MAX_EXPR_DEPTH) {
+Expr *Parser::recurse_expr(const std::set<Token> &terminators, size_t depth) {
+  if (depth > MAX_RECURSION_DEPTH) {
     diagnostic
-        << peek()
-        << "Expression depth exceeded; Expressions can not be nested more than "
-        << MAX_EXPR_DEPTH << " times";
+        << current()
+        << "The expression parser has reached the maximum recursion depth of: "
+        << MAX_RECURSION_DEPTH;
 
-    return mock_expr(QAST_VOID);
+    return mock_expr();
   }
 
   std::stack<Expr *> stack;
@@ -192,17 +190,17 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
 
     if (tok.is(qEofF)) {
       // diagnostic << tok << "Unexpected end of file while parsing expression";
-      return mock_expr(QAST_VOID);
+      return mock_expr();
     }
 
     if (terminators.contains(tok)) {
       if (stack.empty()) {
-        return mock_expr(QAST_VOID);
+        return mock_expr();
       }
 
       if (stack.size() != 1) {
         diagnostic << tok << "Expected a single expression on the stack";
-        return mock_expr(QAST_VOID);
+        return mock_expr();
       }
 
       return stack.top();
@@ -305,15 +303,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
 
             if (peek().is<qPuncLPar>()) {
               next();
-              Call *fcall = recurse_function_call(adapter, depth);
-
-              if (fcall == nullptr) {
-                diagnostic
-                    << tok
-                    << "Expected a function call after function definition "
-                       "expression";
-                return mock_expr(QAST_VOID);
-              }
+              let fcall = recurse_function_call(adapter, depth);
 
               stack.push(fcall);
               continue;
@@ -329,7 +319,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
 
           default: {
             diagnostic << tok << "Unexpected keyword in expression";
-            return mock_expr(QAST_VOID);
+            return mock_expr();
           }
         }
         break;
@@ -338,12 +328,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
         switch (tok.as_punc()) {
           case qPuncLPar: {
             if (!stack.empty() && stack.top()->is<Field>()) {
-              Call *fcall = recurse_function_call(stack.top(), depth);
-
-              if (fcall == nullptr) {
-                diagnostic << tok << "Expected a function call in expression";
-                return mock_expr(QAST_VOID);
-              }
+              let fcall = recurse_function_call(stack.top(), depth);
 
               stack.pop();
               stack.push(fcall);
@@ -357,7 +342,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
 
             if (!next().is<qPuncRPar>()) {
               diagnostic << tok << "Expected ')' to close the parentheses";
-              return mock_expr(QAST_VOID);
+              return mock_expr();
             }
 
             stack.push(expr);
@@ -366,7 +351,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
           case qPuncRPar: {
             if (stack.size() != 1) {
               diagnostic << tok << "Expected a single expression on the stack";
-              return mock_expr(QAST_VOID);
+              return mock_expr();
             }
 
             return stack.top();
@@ -386,7 +371,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
               tok = next();
               if (!tok.is<qPuncColn>()) {
                 diagnostic << tok << "Expected ':' in list element";
-                return mock_expr(QAST_VOID);
+                return mock_expr();
               }
 
               value = recurse_expr(
@@ -438,7 +423,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
                   if (!count->is<ConstInt>()) {
                     diagnostic << tok
                                << "Expected a constant integer in list element";
-                    return mock_expr(QAST_VOID);
+                    return mock_expr();
                   }
 
                   size_t count_val = std::stoi(
@@ -448,7 +433,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
                     diagnostic << tok
                                << "List element duplication count exceeds the "
                                   "maximum limit";
-                    return mock_expr(QAST_VOID);
+                    return mock_expr();
                   }
 
                   for (size_t i = 0; i < count_val; i++) {
@@ -470,7 +455,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
 
             if (stack.size() != 1) {
               diagnostic << tok << "Expected a single expression on the stack";
-              return mock_expr(QAST_VOID);
+              return mock_expr();
             }
 
             Expr *index = nullptr, *left = stack.top();
@@ -487,7 +472,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
               tok = next();
               if (!tok.is<qPuncRBrk>()) {
                 diagnostic << tok << "Expected ']' to close the list index";
-                return mock_expr(QAST_VOID);
+                return mock_expr();
               }
 
               stack.push(make<Slice>(left, index, end));
@@ -496,7 +481,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
 
             if (!tok.is<qPuncRBrk>()) {
               diagnostic << tok << "Expected ']' to close the list index";
-              return mock_expr(QAST_VOID);
+              return mock_expr();
             }
 
             tok = peek();
@@ -520,7 +505,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
           case qPuncComa: {
             if (stack.size() != 1) {
               diagnostic << tok << "Expected a single expression on the stack";
-              return mock_expr(QAST_VOID);
+              return mock_expr();
             }
 
             Expr *right = nullptr, *left = stack.top();
@@ -533,7 +518,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
           }
           default: {
             diagnostic << tok << "Unexpected punctuation in expression";
-            return mock_expr(QAST_VOID);
+            return mock_expr();
           } break;
         }
       }
@@ -542,7 +527,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
         if (op == qOpDot) {
           if (stack.size() != 1) {
             diagnostic << tok << "Expected a single expression on the stack";
-            return mock_expr(QAST_VOID);
+            return mock_expr();
           }
 
           Expr *left = stack.top();
@@ -551,7 +536,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
           tok = next();
           if (!tok.is(qName)) {
             diagnostic << tok << "Expected an identifier after '.'";
-            return mock_expr(QAST_VOID);
+            return mock_expr();
           }
 
           let ident = tok.as_string();
@@ -578,7 +563,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
         if (op == qOpAs) {
           if (stack.size() != 1) {
             diagnostic << tok << "Expected a single expression on the stack";
-            return mock_expr(QAST_VOID);
+            return mock_expr();
           }
 
           Type *type = recurse_type();
@@ -592,7 +577,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
         if (op == qOpBitcastAs) {
           if (stack.size() != 1) {
             diagnostic << tok << "Expected a single expression on the stack";
-            return mock_expr(QAST_VOID);
+            return mock_expr();
           }
 
           Type *type = recurse_type();
@@ -615,7 +600,7 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
           continue;
         } else {
           diagnostic << tok << "Unexpected operator in expression";
-          return mock_expr(QAST_VOID);
+          return mock_expr();
         }
         break;
       }
@@ -624,12 +609,8 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
         if (peek().is<qPuncLPar>()) {
           next();
 
-          Call *fcall =
+          let fcall =
               recurse_function_call(make<Ident>(SaveString(ident)), depth);
-          if (fcall == nullptr) {
-            diagnostic << tok << "Expected a function call in expression";
-            return mock_expr(QAST_VOID);
-          }
 
           stack.push(fcall);
           continue;
@@ -655,11 +636,11 @@ Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
       }
       default: {
         diagnostic << tok << "Unexpected token in expression";
-        return mock_expr(QAST_VOID);
+        return mock_expr();
       }
     }
   }
 
   diagnostic << peek() << "Unexpected end of expression";
-  return mock_expr(QAST_VOID);
+  return mock_expr();
 }

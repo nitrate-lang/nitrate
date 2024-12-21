@@ -50,8 +50,8 @@ namespace ncc::parse {
     return new_obj;
   }
 
-  Stmt *mock_stmt(npar_ty_t expected);
-  Expr *mock_expr(npar_ty_t expected);
+  Stmt *mock_stmt(std::optional<npar_ty_t> expected = std::nullopt);
+  Expr *mock_expr(std::optional<npar_ty_t> expected = std::nullopt);
   Type *mock_type();
 }  // namespace ncc::parse
 

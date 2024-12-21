@@ -69,7 +69,7 @@ std::optional<CallArgs> Parser::recurse_type_template_arguments() {
     return std::nullopt;
   }
 
-  auto args = recurse_caller_arguments(Token(qOper, qOpGT), 0);
+  auto args = recurse_call_arguments(Token(qOper, qOpGT), 0);
 
   if (!next_if(qOpGT)) {
     diagnostic << current() << "Expected '>' after template arguments";
