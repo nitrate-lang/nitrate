@@ -38,11 +38,73 @@
 
 using namespace ncc::lex;
 
+/*
+qOpPlus
+qOpMinus
+qOpTimes
+qOpSlash
+qOpPercent
+qOpBitAnd
+qOpBitOr
+qOpBitXor
+qOpBitNot
+qOpLShift
+qOpRShift
+qOpROTL
+qOpROTR
+qOpLogicAnd
+qOpLogicOr
+qOpLogicXor
+qOpLogicNot
+qOpLT
+qOpGT
+qOpLE
+qOpGE
+qOpEq
+qOpNE
+qOpSet
+qOpPlusSet
+qOpMinusSet
+qOpTimesSet
+qOpSlashSet
+qOpPercentSet
+qOpBitAndSet
+qOpBitOrSet
+qOpBitXorSet
+qOpLogicAndSet
+qOpLogicOrSet
+qOpLogicXorSet
+qOpLShiftSet
+qOpRShiftSet
+qOpROTLSet
+qOpROTRSet
+qOpInc
+qOpDec
+qOpAs
+qOpBitcastAs
+qOpIn
+qOpOut
+qOpSizeof
+qOpBitsizeof
+qOpAlignof
+qOpTypeof
+qOpDot
+qOpRange
+qOpEllipsis
+qOpArrow
+qOpTernary
+*/
+
 /// FIXME: Verify and test this operator precedence table's semantics
 
 // Lower index means higher precedence
 static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
     precedence_groups = {
+        {
+            {qOpAs, OpMode::Binary, OpAssoc::Left},
+            {qOpBitcastAs, OpMode::Binary, OpAssoc::Left},
+        },
+
         {
             {qOpInc, OpMode::PostUnary, OpAssoc::Left},
             {qOpDec, OpMode::PostUnary, OpAssoc::Left},
@@ -50,20 +112,61 @@ static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
         },
 
         {
-            {qOpInc, OpMode::PreUnary, OpAssoc::Right},
-            {qOpDec, OpMode::PreUnary, OpAssoc::Right},
+            /* Yee, we have enough overloadable operators to last a lifetime */
             {qOpPlus, OpMode::PreUnary, OpAssoc::Right},
             {qOpMinus, OpMode::PreUnary, OpAssoc::Right},
-            {qOpLogicNot, OpMode::PreUnary, OpAssoc::Right},
-            {qOpBitNot, OpMode::PreUnary, OpAssoc::Right},
             {qOpTimes, OpMode::PreUnary, OpAssoc::Right},
+            {qOpSlash, OpMode::PreUnary, OpAssoc::Right},
+            {qOpPercent, OpMode::PreUnary, OpAssoc::Right},
             {qOpBitAnd, OpMode::PreUnary, OpAssoc::Right},
+            {qOpBitOr, OpMode::PreUnary, OpAssoc::Right},
+            {qOpBitXor, OpMode::PreUnary, OpAssoc::Right},
+            {qOpBitNot, OpMode::PreUnary, OpAssoc::Right},
+            {qOpLShift, OpMode::PreUnary, OpAssoc::Right},
+            {qOpRShift, OpMode::PreUnary, OpAssoc::Right},
+            {qOpROTL, OpMode::PreUnary, OpAssoc::Right},
+            {qOpROTR, OpMode::PreUnary, OpAssoc::Right},
+            {qOpLogicAnd, OpMode::PreUnary, OpAssoc::Right},
+            {qOpLogicOr, OpMode::PreUnary, OpAssoc::Right},
+            {qOpLogicXor, OpMode::PreUnary, OpAssoc::Right},
+            {qOpLogicNot, OpMode::PreUnary, OpAssoc::Right},
+            {qOpLT, OpMode::PreUnary, OpAssoc::Right},
+            {qOpGT, OpMode::PreUnary, OpAssoc::Right},
+            {qOpLE, OpMode::PreUnary, OpAssoc::Right},
+            {qOpGE, OpMode::PreUnary, OpAssoc::Right},
+            {qOpEq, OpMode::PreUnary, OpAssoc::Right},
+            {qOpNE, OpMode::PreUnary, OpAssoc::Right},
+            {qOpSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpPlusSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpMinusSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpTimesSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpSlashSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpPercentSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpBitAndSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpBitOrSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpBitXorSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpLogicAndSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpLogicOrSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpLogicXorSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpLShiftSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpRShiftSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpROTLSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpROTRSet, OpMode::PreUnary, OpAssoc::Right},
+            {qOpInc, OpMode::PreUnary, OpAssoc::Right},
+            {qOpDec, OpMode::PreUnary, OpAssoc::Right},
+            {qOpAs, OpMode::PreUnary, OpAssoc::Right},
+            {qOpBitcastAs, OpMode::PreUnary, OpAssoc::Right},
+            {qOpIn, OpMode::PreUnary, OpAssoc::Right},
+            {qOpOut, OpMode::PreUnary, OpAssoc::Right},
             {qOpSizeof, OpMode::PreUnary, OpAssoc::Right},
             {qOpBitsizeof, OpMode::PreUnary, OpAssoc::Right},
             {qOpAlignof, OpMode::PreUnary, OpAssoc::Right},
             {qOpTypeof, OpMode::PreUnary, OpAssoc::Right},
-            {qOpAs, OpMode::Binary, OpAssoc::Right},
-            {qOpBitcastAs, OpMode::Binary, OpAssoc::Right},
+            {qOpDot, OpMode::PreUnary, OpAssoc::Right},
+            {qOpRange, OpMode::PreUnary, OpAssoc::Right},
+            {qOpEllipsis, OpMode::PreUnary, OpAssoc::Right},
+            {qOpArrow, OpMode::PreUnary, OpAssoc::Right},
+            {qOpTernary, OpMode::PreUnary, OpAssoc::Right},
         },
 
         {

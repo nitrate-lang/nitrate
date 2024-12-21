@@ -177,12 +177,6 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators,
   return recurse_expr_impl(terminators, minPrecedence, 0).value_or(mock_expr());
 }
 
-static bool IsPreUnaryOperator(Operator) {
-  // Parse everything and analyze the semantics later
-
-  return true;
-}
-
 static bool IsPostUnaryOperator(Operator O) {
   return O == qOpInc || O == qOpDec;
 }
@@ -192,10 +186,30 @@ std::optional<Expr *> Parser::recurse_expr_impl(
   /* Make the fuzzer happy by not crashing */
   if (depth > MAX_RECURSION_DEPTH) {
     diagnostic << current() << "Recursion depth limit exceeded";
+
     return std::nullopt;
   }
 
   let start_pos = peek().get_start();
+
+  /****************************************
+   * Parse pre-unary operators
+   ****************************************/
+  if (let oper_tok = next_if(qOper)) {
+    let op = oper_tok->as_op();
+
+    if (let expr_opt = recurse_expr_impl(terminators, 0, depth + 1)) {
+      let expr = expr_opt.value();
+      let unary = make<UnaryExpr>(op, expr);
+      unary->set_offset(start_pos);
+
+      return unary;
+    } else {
+      diagnostic << current() << "Expected an expression after unary operator";
+
+      return std::nullopt;
+    }
+  }
 
   /****************************************
    * Parse the primary expression
@@ -203,6 +217,7 @@ std::optional<Expr *> Parser::recurse_expr_impl(
   let left_opt = recurse_expr_primary();
   if (!left_opt) {
     diagnostic << current() << "Expected an expression";
+
     return std::nullopt;
   }
   auto left = left_opt.value();
@@ -253,6 +268,7 @@ std::optional<Expr *> Parser::recurse_expr_impl(
         if (!right_opt) {
           diagnostic << current()
                      << "RHS expression expected for binary operator";
+
           return std::nullopt;
         }
 
@@ -645,25 +661,7 @@ std::optional<Expr *> Parser::recurse_expr_primary_punctor(lex::Punctor punc) {
 std::optional<Expr *> Parser::recurse_expr_primary() {
   let start_pos = peek().get_start();
 
-  /****************************************
-   * Parse pre-unary operators
-   ****************************************/
-  std::vector<Token> preUnaryOps;
-  while (true) {
-    let oper_tok = peek();
-
-    if (!oper_tok.is(qOper) || !IsPreUnaryOperator(oper_tok.as_op())) {
-      break;
-    }
-
-    /* Consume the operator token */
-    next();
-
-    preUnaryOps.push_back(oper_tok);
-  }
-
   std::optional<Expr *> E;
-
   switch (let tok = next(); tok.get_type()) {
     case qEofF: {
       diagnostic << tok << "Unexpected end of file while parsing expression";
@@ -794,14 +792,6 @@ std::optional<Expr *> Parser::recurse_expr_primary() {
       } else {
         break;
       }
-    }
-
-    /****************************************
-     * Process the pre-unary operators
-     ****************************************/
-    for (auto it = preUnaryOps.rbegin(); it != preUnaryOps.rend(); ++it) {
-      E = make<UnaryExpr>(it->as_op(), E.value());
-      E.value()->set_offset(start_pos);
     }
   }
 
