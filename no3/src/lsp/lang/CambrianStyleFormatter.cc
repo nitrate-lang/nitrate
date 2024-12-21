@@ -875,11 +875,6 @@ void CambrianFormatter::visit(Assoc const& node) {
   format(node, true);
 }
 
-void CambrianFormatter::visit(Field const& n) {
-  n.get_base()->accept(*this);
-  line << "." << n.get_field();
-}
-
 void CambrianFormatter::visit(Index const& n) {
   n.get_base()->accept(*this);
   line << "[";

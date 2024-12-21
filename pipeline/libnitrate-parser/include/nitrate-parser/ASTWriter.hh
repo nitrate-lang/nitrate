@@ -135,7 +135,6 @@ namespace ncc::parse {
     void visit(TemplCall const& n) override;
     void visit(List const& n) override;
     void visit(Assoc const& n) override;
-    void visit(Field const& n) override;
     void visit(Index const& n) override;
     void visit(Slice const& n) override;
     void visit(FString const& n) override;

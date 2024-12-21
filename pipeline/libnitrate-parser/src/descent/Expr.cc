@@ -38,6 +38,7 @@
 #include <nitrate-parser/AST.hh>
 #include <stack>
 
+#include "nitrate-lexer/Token.hh"
 #include "nitrate-parser/ASTData.hh"
 
 #define MAX_RECURSION_DEPTH 4096
@@ -552,9 +553,11 @@ std::optional<Expr *> Parser::recurse_expr_primary_punctor(lex::Punctor punc) {
           break;
         }
 
-        let expr =
-            recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk),
-                          Token(qPunc, qPuncSemi)});
+        let expr = recurse_expr({
+            Token(qPunc, qPuncComa),
+            Token(qPunc, qPuncRBrk),
+            Token(qPunc, qPuncSemi),
+        });
 
         if (next_if(qPuncSemi)) {
           if (let count_tok = next_if(qIntL)) {
@@ -710,14 +713,11 @@ std::optional<Expr *> Parser::recurse_expr_primary() {
     }
 
     case qName: {
-      let name = tok.as_string();
-
-      /// FIXME: Handle suffix calls, slices, etc.
-
-      let identifier = make<Ident>(intern(name));
+      let identifier = make<Ident>(intern(tok.as_string()));
       identifier->set_offset(start_pos);
 
       E = identifier;
+
       break;
     }
 
@@ -776,6 +776,41 @@ std::optional<Expr *> Parser::recurse_expr_primary() {
   }
 
   if (E.has_value()) {
+    /****************************************
+     * Process syntax sugar
+     ****************************************/
+    if (next_if(qPuncLPar)) {
+      /// FIXME: Handle function calls and template calls
+    } else if (next_if(qPuncLBrk)) {
+      let first = recurse_expr({
+          Token(qPunc, qPuncRBrk),
+          Token(qPunc, qPuncColn),
+      });
+
+      if (next_if(qPuncColn)) {
+        let second = recurse_expr({Token(qPunc, qPuncRBrk)});
+        if (!next_if(qPuncRBrk)) {
+          diagnostic << current() << "Expected ']' to close the slice";
+          return std::nullopt;
+        }
+
+        let slice = make<Slice>(E.value(), first, second);
+        slice->set_offset(start_pos);
+
+        E = slice;
+      } else {
+        if (!next_if(qPuncRBrk)) {
+          diagnostic << current() << "Expected ']' to close the index access";
+          return std::nullopt;
+        }
+
+        let index = make<Index>(E.value(), first);
+        index->set_offset(start_pos);
+
+        E = index;
+      }
+    }
+
     /****************************************
      * Process the pre-unary operators
      ****************************************/

@@ -61,7 +61,6 @@ typedef enum npar_ty_t {
   QAST_CALL = 12,       /* Function call */
   QAST_LIST = 13,       /* List expression */
   QAST_ASSOC = 14,      /* Associative pair */
-  QAST_FIELD = 15,      /* Field access */
   QAST_INDEX = 16,      /* Index access */
   QAST_SLICE = 17,      /* Slice access */
   QAST_FSTRING = 18,    /* Formatted string */

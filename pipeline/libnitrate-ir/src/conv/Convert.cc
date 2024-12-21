@@ -789,21 +789,6 @@ static EResult nrgen_assoc(NRBuilder &b, PState &s, IReport *G,
   return b.createList(kv, false);
 }
 
-static EResult nrgen_field(NRBuilder &b, PState &s, IReport *G,
-                           ncc::parse::Field *n) {
-  auto base = next_one(n->get_base());
-  if (!base.has_value()) {
-    G->report(nr::CompilerError, IC::Error,
-              "Failed to lower field-access base expression", n->get_pos());
-    return std::nullopt;
-  }
-
-  /// TODO: Support for named composite field indexing
-
-  Expr *field = b.createStringDataArray(n->get_field());
-  return create<Index>(base.value(), field);
-}
-
 static EResult nrgen_index(NRBuilder &b, PState &s, IReport *G,
                            ncc::parse::Index *n) {
   auto base = next_one(n->get_base());
@@ -2019,10 +2004,6 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G,
 
     case QAST_ASSOC:
       out = nrgen_assoc(b, s, G, n->as<ncc::parse::Assoc>());
-      break;
-
-    case QAST_FIELD:
-      out = nrgen_field(b, s, G, n->as<ncc::parse::Field>());
       break;
 
     case QAST_INDEX:

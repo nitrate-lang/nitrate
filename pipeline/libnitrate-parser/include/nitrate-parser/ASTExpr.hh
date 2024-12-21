@@ -212,18 +212,6 @@ namespace ncc::parse {
     constexpr auto get_value() const { return m_value; }
   };
 
-  class npar_pack Field final : public Expr {
-    Expr *m_base;
-    ncc::core::str_alias m_field;
-
-  public:
-    constexpr Field(Expr *base, ncc::core::str_alias field)
-        : Expr(QAST_FIELD), m_base(base), m_field(field) {}
-
-    constexpr auto get_base() const { return m_base; }
-    constexpr auto get_field() const { return m_field.get(); }
-  };
-
   class npar_pack Index final : public Expr {
     Expr *m_base, *m_index;
 

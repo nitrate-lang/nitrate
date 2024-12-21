@@ -86,7 +86,6 @@ namespace ncc::parse {
     virtual void visit(TemplCall const &n) = 0;
     virtual void visit(List const &n) = 0;
     virtual void visit(Assoc const &n) = 0;
-    virtual void visit(Field const &n) = 0;
     virtual void visit(Index const &n) = 0;
     virtual void visit(Slice const &n) = 0;
     virtual void visit(FString const &n) = 0;

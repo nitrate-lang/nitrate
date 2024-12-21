@@ -130,7 +130,6 @@ namespace lsp::fmt {
     void visit(ncc::parse::TemplCall const& n) override;
     void visit(ncc::parse::List const& n) override;
     void visit(ncc::parse::Assoc const& n) override;
-    void visit(ncc::parse::Field const& n) override;
     void visit(ncc::parse::Index const& n) override;
     void visit(ncc::parse::Slice const& n) override;
     void visit(ncc::parse::FString const& n) override;

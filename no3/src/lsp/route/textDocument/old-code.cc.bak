@@ -239,33 +239,6 @@ void recurse(Base* C) {
       break;
     }
 
-    case QAST_FIELD: {
-      Field* N = C->as<Field>();
-      bool break_chain_call = false;
-
-      if (N->get_base()->getKind() == QAST_CALL) {
-        break_chain_call = true;
-      }
-
-      recurse(N->get_base());
-
-      if (break_chain_call) {
-        line << "\n";
-        flush_line();
-        qcore_assert(field_indent_stack.top() > 0);
-        line << std::string((indent * tabSize) + field_indent_stack.top(), ' ');
-      } else {
-        line.seekg(0, std::ios::end);
-        size_t line_width = line.tellg();
-
-        field_indent_stack.top() = line_width;
-      }
-
-      line << "." << N->get_field();
-
-      break;
-    }
-
     case QAST_INDEX: {
       Index* N = C->as<Index>();
       recurse(N->get_base());

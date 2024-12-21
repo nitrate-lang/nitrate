@@ -883,23 +883,6 @@ void AST_Writer::visit(Assoc const& n) {
   end_obj();
 }
 
-void AST_Writer::visit(Field const& n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n.getKindName());
-
-  write_source_location(n);
-
-  string("field");
-  string(n.get_field());
-
-  string("base");
-  n.get_base()->accept(*this);
-
-  end_obj();
-}
-
 void AST_Writer::visit(Index const& n) {
   begin_obj(4);
 

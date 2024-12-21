@@ -264,11 +264,6 @@ class IterVisitor : public ASTVisitor {
     qcore_implement();
   }
 
-  void visit(Field const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
   void visit(Index const& n) override {
     /// TODO: Implement IterVisitor
     qcore_implement();

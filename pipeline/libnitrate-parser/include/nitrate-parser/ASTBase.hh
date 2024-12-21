@@ -117,10 +117,6 @@ namespace ncc::parse {
           v.visit(*as<Assoc>());
           break;
         }
-        case QAST_FIELD: {
-          v.visit(*as<Field>());
-          break;
-        }
         case QAST_INDEX: {
           v.visit(*as<Index>());
           break;
@@ -382,8 +378,6 @@ namespace ncc::parse {
         return QAST_LIST;
       } else if constexpr (std::is_same_v<T, Assoc>) {
         return QAST_ASSOC;
-      } else if constexpr (std::is_same_v<T, Field>) {
-        return QAST_FIELD;
       } else if constexpr (std::is_same_v<T, Index>) {
         return QAST_INDEX;
       } else if constexpr (std::is_same_v<T, Slice>) {
@@ -610,7 +604,6 @@ namespace ncc::parse {
       R[QAST_CALL] = "Call";
       R[QAST_LIST] = "List";
       R[QAST_ASSOC] = "Assoc";
-      R[QAST_FIELD] = "Field";
       R[QAST_INDEX] = "Index";
       R[QAST_SLICE] = "Slice";
       R[QAST_FSTRING] = "Fstring";
