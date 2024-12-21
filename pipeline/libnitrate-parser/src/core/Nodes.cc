@@ -68,6 +68,9 @@ CPP_EXPORT bool Base::isSame(const Base *o) const {
   std::stringstream ss1, ss2;
   AST_MsgPackWriter writer1(ss1, false), writer2(ss2, false);
 
+  this->accept(writer1);
+  o->accept(writer2);
+
   return ss1.str() == ss2.str();
 }
 
