@@ -31,13 +31,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <charconv>
 #include <cstddef>
 #include <descent/Recurse.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-parser/AST.hh>
 #include <stack>
 
+#include "nitrate-parser/ASTData.hh"
+
 #define MAX_RECURSION_DEPTH 4096
+#define MAX_LIST_REPEAT_COUNT 256
 
 using namespace ncc::lex;
 using namespace ncc::parse;
@@ -312,8 +316,11 @@ std::optional<Expr *> Parser::recurse_expr_primary_keyword(lex::Keyword key) {
     }
 
     case qKType: {
-      diagnostic << current() << "Type declaration is not valid here";
-      return std::nullopt;
+      let start_pos = current().get_start();
+      let type = recurse_type();
+      type->set_offset(start_pos);
+
+      return make<TypeExpr>(type);
     }
 
     case qKLet: {
@@ -372,23 +379,38 @@ std::optional<Expr *> Parser::recurse_expr_primary_keyword(lex::Keyword key) {
     }
 
     case qK__FString: {
-      /// TODO: Implement this case
-      qcore_implement();
+      return recurse_fstring();
     }
 
     case qKFn: {
-      /// TODO: Implement this case
-      qcore_implement();
+      let start_pos = current().get_start();
+
+      let function = recurse_function(false);
+      function->set_offset(start_pos);
+
+      Expr *expr = make<StmtExpr>(function);
+
+      if (next_if(qPuncLPar)) {
+        let args = recurse_call_arguments(Token(qPunc, qPuncRPar));
+        if (!next_if(qPuncRPar)) {
+          diagnostic << current() << "Expected ')' to close the function call";
+          return mock_expr(QAST_CALL);
+        }
+
+        expr = make<Call>(expr, args);
+      }
+
+      return expr;
     }
 
     case qKUnsafe: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Unsafe keyword is not valid here";
+      return std::nullopt;
     }
 
     case qKSafe: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Safe keyword is not valid here";
+      return std::nullopt;
     }
 
     case qKPromise: {
@@ -397,13 +419,13 @@ std::optional<Expr *> Parser::recurse_expr_primary_keyword(lex::Keyword key) {
     }
 
     case qKIf: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "If statement is not valid here";
+      return std::nullopt;
     }
 
     case qKElse: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Else statement is not valid here";
+      return std::nullopt;
     }
 
     case qKFor: {
@@ -482,31 +504,19 @@ std::optional<Expr *> Parser::recurse_expr_primary_keyword(lex::Keyword key) {
     }
 
     case qKUndef: {
-      let undef = make<ConstUndef>();
-      undef->set_offset(current().get_start());
-
-      return undef;
+      return make<ConstUndef>();
     }
 
     case qKNull: {
-      let null = make<ConstNull>();
-      null->set_offset(current().get_start());
-
-      return null;
+      return make<ConstNull>();
     }
 
     case qKTrue: {
-      let boolean = make<ConstBool>(true);
-      boolean->set_offset(current().get_start());
-
-      return boolean;
+      return make<ConstBool>(true);
     }
 
     case qKFalse: {
-      let boolean = make<ConstBool>(false);
-      boolean->set_offset(current().get_start());
-
-      return boolean;
+      return make<ConstBool>(false);
     }
   }
 }
@@ -529,23 +539,109 @@ std::optional<Expr *> Parser::recurse_expr_primary_punctor(lex::Punctor punc) {
     }
 
     case qPuncLBrk: {
-      /// TODO: Implement this case
-      qcore_implement();
+      ExpressionList items;
+
+      while (true) {
+        if (next_if(qEofF)) {
+          diagnostic << current()
+                     << "Unexpected end of file while parsing expression";
+          return std::nullopt;
+        }
+
+        if (next_if(qPuncRBrk)) {
+          break;
+        }
+
+        let expr =
+            recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk),
+                          Token(qPunc, qPuncSemi)});
+
+        if (next_if(qPuncSemi)) {
+          if (let count_tok = next_if(qIntL)) {
+            let count_str = current().as_string();
+            size_t count;
+            if (std::from_chars(count_str.data(),
+                                count_str.data() + count_str.size(), count)
+                    .ec == std::errc()) {
+              if (count > MAX_LIST_REPEAT_COUNT) {
+                diagnostic << current()
+                           << "List element repeat count exceeds maximum limit";
+                return std::nullopt;
+              } else {
+                for (size_t i = 0; i < count; i++) {
+                  items.push_back(expr);
+                }
+              }
+
+            } else {
+              diagnostic
+                  << current()
+                  << "Expected a valid integer literal for the list element "
+                     "repeat count";
+              return std::nullopt;
+            }
+          } else {
+            diagnostic << current()
+                       << "Expected an integer literal for the list element "
+                          "repeat count";
+            return std::nullopt;
+          }
+        } else {
+          items.push_back(expr);
+        }
+
+        next_if(qPuncComa);
+      }
+
+      return make<List>(std::move(items));
     }
 
     case qPuncRBrk: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Unexpected right bracket in expression";
+      return std::nullopt;
     }
 
     case qPuncLCur: {
-      /// TODO: Implement this case
-      qcore_implement();
+      ExpressionList items;
+
+      while (true) {
+        if (next_if(qEofF)) {
+          diagnostic << current()
+                     << "Unexpected end of file while parsing dictionary";
+          return std::nullopt;
+        }
+
+        if (next_if(qPuncRCur)) {
+          break;
+        }
+
+        let start_pos = peek().get_start();
+
+        let key = recurse_expr({Token(qPunc, qPuncColn)});
+        if (!next_if(qPuncColn)) {
+          diagnostic << current() << "Expected colon after key in dictionary";
+          return std::nullopt;
+        }
+
+        let value = recurse_expr({
+            Token(qPunc, qPuncRCur),
+            Token(qPunc, qPuncComa),
+        });
+
+        next_if(qPuncComa);
+
+        let assoc = make<Assoc>(key, value);
+        assoc->set_offset(start_pos);
+
+        items.push_back(assoc);
+      }
+
+      return make<List>(std::move(items));
     }
 
     case qPuncRCur: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Unexpected right curly brace in expression";
+      return std::nullopt;
     }
 
     case qPuncComa: {
@@ -594,7 +690,10 @@ std::optional<Expr *> Parser::recurse_expr_primary() {
     }
 
     case qKeyW: {
-      E = recurse_expr_primary_keyword(tok.as_key());
+      if ((E = recurse_expr_primary_keyword(tok.as_key())).has_value()) {
+        E.value()->set_offset(start_pos);
+      }
+
       break;
     }
 
@@ -604,12 +703,18 @@ std::optional<Expr *> Parser::recurse_expr_primary() {
     }
 
     case qPunc: {
-      E = recurse_expr_primary_punctor(tok.as_punc());
+      if ((E = recurse_expr_primary_punctor(tok.as_punc())).has_value()) {
+        E.value()->set_offset(start_pos);
+      }
       break;
     }
 
     case qName: {
-      let identifier = make<Ident>(intern(tok.as_string()));
+      let name = tok.as_string();
+
+      /// FIXME: Handle suffix calls, slices, etc.
+
+      let identifier = make<Ident>(intern(name));
       identifier->set_offset(start_pos);
 
       E = identifier;
