@@ -566,6 +566,8 @@ std::optional<Expr *> Parser::recurse_expr_primary_punctor(lex::Punctor punc) {
 }
 
 std::optional<Expr *> Parser::recurse_expr_primary() {
+  let start_pos = peek().get_start();
+
   /****************************************
    * Parse pre-unary operators
    ****************************************/
@@ -583,11 +585,9 @@ std::optional<Expr *> Parser::recurse_expr_primary() {
     preUnaryOps.push_back(oper_tok);
   }
 
-  let tok = next();
-  let start_pos = tok.get_start();
   std::optional<Expr *> E;
 
-  switch (tok.get_type()) {
+  switch (let tok = next(); tok.get_type()) {
     case qEofF: {
       diagnostic << tok << "Unexpected end of file while parsing expression";
       break;

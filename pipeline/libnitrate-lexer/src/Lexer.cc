@@ -834,7 +834,7 @@ CPP_EXPORT Token Tokenizer::GetNext() {
           continue;
         }
 
-        start_pos = GetCurrentOffset();
+        start_pos = GetCurrentOffset() - 1;
 
         if (std::isalpha(c) || c == '_') {
           /* Identifier or keyword or operator */
