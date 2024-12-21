@@ -55,127 +55,15 @@
 
 using namespace ncc::core;
 using namespace ncc::lex;
+using namespace ncc::lex::detail;
 
 constexpr size_t FLOATING_POINT_PRECISION = 100;
 
 namespace ncc::lex {
-  template <typename L, typename R>
-  boost::bimap<L, R> make_bimap(
-      std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
-    return boost::bimap<L, R>(list.begin(), list.end());
-  }
-
-  ///=======================================================================///
-  /// BEGIN: Lexical language definitions                                   ///
-  ///=======================================================================///
-
-  CPP_EXPORT const boost::bimap<std::string_view, Keyword> keywords =
-      make_bimap<std::string_view, Keyword>({
-          {"scope", qKScope},     {"import", qKImport},
-          {"pub", qKPub},         {"sec", qKSec},
-          {"pro", qKPro},         {"type", qKType},
-          {"let", qKLet},         {"var", qKVar},
-          {"const", qKConst},     {"static", qKStatic},
-          {"struct", qKStruct},   {"region", qKRegion},
-          {"group", qKGroup},     {"class", qKClass},
-          {"union", qKUnion},     {"opaque", qKOpaque},
-          {"enum", qKEnum},       {"__fstring", qK__FString},
-          {"fn", qKFn},           {"unsafe", qKUnsafe},
-          {"safe", qKSafe},       {"promise", qKPromise},
-          {"if", qKIf},           {"else", qKElse},
-          {"for", qKFor},         {"while", qKWhile},
-          {"do", qKDo},           {"switch", qKSwitch},
-          {"break", qKBreak},     {"continue", qKContinue},
-          {"ret", qKReturn},      {"retif", qKRetif},
-          {"foreach", qKForeach}, {"try", qKTry},
-          {"catch", qKCatch},     {"throw", qKThrow},
-          {"async", qKAsync},     {"await", qKAwait},
-          {"__asm__", qK__Asm__}, {"undef", qKUndef},
-          {"null", qKNull},       {"true", qKTrue},
-          {"false", qKFalse},
-      });
-
-  CPP_EXPORT const boost::bimap<std::string_view, Operator> operators =
-      make_bimap<std::string_view, Operator>({
-          {"+", qOpPlus},
-          {"-", qOpMinus},
-          {"*", qOpTimes},
-          {"/", qOpSlash},
-          {"%", qOpPercent},
-          {"&", qOpBitAnd},
-          {"|", qOpBitOr},
-          {"^", qOpBitXor},
-          {"~", qOpBitNot},
-          {"<<", qOpLShift},
-          {">>", qOpRShift},
-          {"<<<", qOpROTL},
-          {">>>", qOpROTR},
-          {"&&", qOpLogicAnd},
-          {"||", qOpLogicOr},
-          {"^^", qOpLogicXor},
-          {"!", qOpLogicNot},
-          {"<", qOpLT},
-          {">", qOpGT},
-          {"<=", qOpLE},
-          {">=", qOpGE},
-          {"==", qOpEq},
-          {"!=", qOpNE},
-          {"=", qOpSet},
-          {"+=", qOpPlusSet},
-          {"-=", qOpMinusSet},
-          {"*=", qOpTimesSet},
-          {"/=", qOpSlashSet},
-          {"%=", qOpPercentSet},
-          {"&=", qOpBitAndSet},
-          {"|=", qOpBitOrSet},
-          {"^=", qOpBitXorSet},
-          {"&&=", qOpLogicAndSet},
-          {"||=", qOpLogicOrSet},
-          {"^^=", qOpLogicXorSet},
-          {"<<=", qOpLShiftSet},
-          {">>=", qOpRShiftSet},
-          {"<<<=", qOpROTLSet},
-          {">>>=", qOpROTRSet},
-          {"++", qOpInc},
-          {"--", qOpDec},
-          {"as", qOpAs},
-          {"bitcast_as", qOpBitcastAs},
-          {"in", qOpIn},
-          {"out", qOpOut},
-          {"sizeof", qOpSizeof},
-          {"bitsizeof", qOpBitsizeof},
-          {"alignof", qOpAlignof},
-          {"typeof", qOpTypeof},
-          {".", qOpDot},
-          {"..", qOpRange},
-          {"...", qOpEllipsis},
-          {"=>", qOpArrow},
-          {"?", qOpTernary},
-      });
-
-  CPP_EXPORT const boost::bimap<std::string_view, Punctor> punctuation =
-      make_bimap<std::string_view, Punctor>({
-          {"(", qPuncLPar},
-          {")", qPuncRPar},
-          {"[", qPuncLBrk},
-          {"]", qPuncRBrk},
-          {"{", qPuncLCur},
-          {"}", qPuncRCur},
-          {",", qPuncComa},
-          {":", qPuncColn},
-          {";", qPuncSemi},
-      });
-
-  ///=======================================================================///
-  /// END: Lexical language definitions                                     ///
-  ///=======================================================================///
-}  // namespace ncc::lex
-
-namespace ncc::lex {
   static const auto operator_set = []() {
     std::unordered_set<std::string_view> set;
-    set.reserve(operators.left.size());
-    for (const auto &op : operators.left) {
+    set.reserve(LexicalOperators.left.size());
+    for (const auto &op : LexicalOperators.left) {
       set.insert(op.first);
     }
     return set;
@@ -183,7 +71,7 @@ namespace ncc::lex {
 
   static const auto word_operators = []() {
     std::unordered_map<std::string_view, Operator> set;
-    for (const auto &op : operators.left) {
+    for (const auto &op : LexicalOperators.left) {
       bool is_word = std::all_of(op.first.begin(), op.first.end(), [](auto c) {
         return std::isalnum(c) || c == '_';
       });
@@ -532,8 +420,8 @@ public:
     L.m_pushback.push_back(c);
 
     { /* Determine if it's a keyword or an identifier */
-      auto it = keywords.left.find(buf);
-      if (it != keywords.left.end()) {
+      auto it = LexicalKeywords.left.find(buf);
+      if (it != LexicalKeywords.left.end()) {
         return Token(qKeyW, it->second, start_pos);
       }
     }
@@ -856,8 +744,8 @@ public:
                                       Token &token) {
     /* Check if it's a punctor */
     if (buf.size() == 1) {
-      auto it = punctuation.left.find(buf);
-      if (it != punctuation.left.end()) {
+      auto it = LexicalPunctors.left.find(buf);
+      if (it != LexicalPunctors.left.end()) {
         L.m_pushback.push_back(c);
         token = Token(qPunc, it->second, start_pos);
         return true;
@@ -906,8 +794,9 @@ public:
 
     L.m_pushback.push_back(buf.back());
     L.m_pushback.push_back(c);
-    token = Token(qOper, operators.left.at(buf.substr(0, buf.size() - 1)),
-                  start_pos);
+    token =
+        Token(qOper, LexicalOperators.left.at(buf.substr(0, buf.size() - 1)),
+              start_pos);
 
     return true;
   }
@@ -1312,13 +1201,13 @@ CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, Token tok) {
 }
 
 CPP_EXPORT const char *ncc::lex::op_repr(Operator op) {
-  return operators.right.at(op).data();
+  return LexicalOperators.right.at(op).data();
 }
 
 CPP_EXPORT const char *ncc::lex::kw_repr(Keyword kw) {
-  return keywords.right.at(kw).data();
+  return LexicalKeywords.right.at(kw).data();
 }
 
 CPP_EXPORT const char *ncc::lex::punct_repr(Punctor punct) {
-  return punctuation.right.at(punct).data();
+  return LexicalPunctors.right.at(punct).data();
 }
