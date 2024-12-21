@@ -172,13 +172,15 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators,
   return recurse_expr_impl(terminators, minPrecedence).value_or(mock_expr());
 }
 
-static bool IsPreUnaryOperator(Operator op) {
-  /// TODO: Implement this function
+static bool IsPreUnaryOperator(Operator) {
+  // Parse everything and analyze the semantics later
+
   return true;
 }
 
-static bool IsPostUnaryOperator(Operator op) {
-  /// TODO: Implement this function
+static bool IsPostUnaryOperator(Operator) {
+  // Parse everything and analyze the semantics later
+
   return true;
 }
 
@@ -285,88 +287,88 @@ std::optional<Expr *> Parser::recurse_expr_impl(
 std::optional<Expr *> Parser::recurse_expr_primary_keyword(lex::Keyword key) {
   switch (key) {
     case qKScope: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Namespace declaration is not valid here";
+      return std::nullopt;
     }
 
     case qKImport: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Import statement is not valid here";
+      return std::nullopt;
     }
 
     case qKPub: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Public access modifier is not valid here";
+      return std::nullopt;
     }
 
     case qKSec: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Private access modifier is not valid here";
+      return std::nullopt;
     }
 
     case qKPro: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Protected access modifier is not valid here";
+      return std::nullopt;
     }
 
     case qKType: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Type declaration is not valid here";
+      return std::nullopt;
     }
 
     case qKLet: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Let declaration is not valid here";
+      return std::nullopt;
     }
 
     case qKVar: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Var declaration is not valid here";
+      return std::nullopt;
     }
 
     case qKConst: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Const declaration is not valid here";
+      return std::nullopt;
     }
 
     case qKStatic: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Static modifier is not valid here";
+      return std::nullopt;
     }
 
     case qKStruct: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Struct declaration is not valid here";
+      return std::nullopt;
     }
 
     case qKRegion: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Region declaration is not valid here";
+      return std::nullopt;
     }
 
     case qKGroup: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Group declaration is not valid here";
+      return std::nullopt;
     }
 
     case qKClass: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Class declaration is not valid here";
+      return std::nullopt;
     }
 
     case qKUnion: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Union declaration is not valid here";
+      return std::nullopt;
     }
 
     case qKOpaque: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Opaque type is not valid here";
+      return std::nullopt;
     }
 
     case qKEnum: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Enum declaration is not valid here";
+      return std::nullopt;
     }
 
     case qK__FString: {
@@ -390,8 +392,8 @@ std::optional<Expr *> Parser::recurse_expr_primary_keyword(lex::Keyword key) {
     }
 
     case qKPromise: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Promise keyword is not valid here";
+      return std::nullopt;
     }
 
     case qKIf: {
@@ -405,98 +407,106 @@ std::optional<Expr *> Parser::recurse_expr_primary_keyword(lex::Keyword key) {
     }
 
     case qKFor: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "For loop is not valid here";
+      return std::nullopt;
     }
 
     case qKWhile: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "While loop is not valid here";
+      return std::nullopt;
     }
 
     case qKDo: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Do statement is not valid here";
+      return std::nullopt;
     }
 
     case qKSwitch: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Switch statement is not valid here";
+      return std::nullopt;
     }
 
     case qKBreak: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Break statement is not valid here";
+      return std::nullopt;
     }
 
     case qKContinue: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Continue statement is not valid here";
+      return std::nullopt;
     }
 
     case qKReturn: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Return statement is not valid here";
+      return std::nullopt;
     }
 
     case qKRetif: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Retif statement is not valid here";
+      return std::nullopt;
     }
 
     case qKForeach: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Foreach loop is not valid here";
+      return std::nullopt;
     }
 
     case qKTry: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Try statement is not valid here";
+      return std::nullopt;
     }
 
     case qKCatch: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Catch statement is not valid here";
+      return std::nullopt;
     }
 
     case qKThrow: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Throw statement is not valid here";
+      return std::nullopt;
     }
 
     case qKAsync: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Async statement is not valid here";
+      return std::nullopt;
     }
 
     case qKAwait: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Await statement is not valid here";
+      return std::nullopt;
     }
 
     case qK__Asm__: {
-      /// TODO: Implement this case
-      qcore_implement();
+      diagnostic << current() << "Inline assembly is not valid here";
+      return std::nullopt;
     }
 
     case qKUndef: {
-      /// TODO: Implement this case
-      qcore_implement();
+      let undef = make<ConstUndef>();
+      undef->set_offset(current().get_start());
+
+      return undef;
     }
 
     case qKNull: {
-      /// TODO: Implement this case
-      qcore_implement();
+      let null = make<ConstNull>();
+      null->set_offset(current().get_start());
+
+      return null;
     }
 
     case qKTrue: {
-      /// TODO: Implement this case
-      qcore_implement();
+      let boolean = make<ConstBool>(true);
+      boolean->set_offset(current().get_start());
+
+      return boolean;
     }
 
     case qKFalse: {
-      /// TODO: Implement this case
-      qcore_implement();
+      let boolean = make<ConstBool>(false);
+      boolean->set_offset(current().get_start());
+
+      return boolean;
     }
   }
 }
