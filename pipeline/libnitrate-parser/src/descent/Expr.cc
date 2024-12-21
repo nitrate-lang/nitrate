@@ -183,10 +183,8 @@ static bool IsPreUnaryOperator(Operator) {
   return true;
 }
 
-static bool IsPostUnaryOperator(Operator) {
-  // Parse everything and analyze the semantics later
-
-  return true;
+static bool IsPostUnaryOperator(Operator O) {
+  return O == qOpInc || O == qOpDec;
 }
 
 std::optional<Expr *> Parser::recurse_expr_impl(
@@ -222,16 +220,21 @@ std::optional<Expr *> Parser::recurse_expr_impl(
          * Handle post-unary operators
          ****************************************/
         if (IsPostUnaryOperator(op)) {
-          let precedence = GetOperatorPrecedence(op, OpMode::PostUnary);
-          if (precedence >= minPrecedence) {
-            left = make<PostUnaryExpr>(left, op);
+          /* Consume the operator token */
+          next();
+
+          while (!stack.empty()) {
+            auto frame = stack.top();
+            stack.pop();
+            left = make<BinExpr>(frame.left, frame.oper_tok.as_op(), left);
             left->set_offset(start_pos);
-
-            /* Consume the operator token */
-            next();
-
-            continue;
           }
+
+          left = make<PostUnaryExpr>(left, op);
+          left->set_offset(start_pos);
+          minPrecedence = GetOperatorPrecedence(op, OpMode::PostUnary);
+
+          continue;
         }
 
         /****************************************************************

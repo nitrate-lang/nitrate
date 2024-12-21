@@ -38,6 +38,115 @@
 
 using namespace ncc::lex;
 
+/// FIXME: Verify and test this operator precedence table's semantics
+
+// Lower index means higher precedence
+static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
+    precedence_groups = {
+        {
+            {qOpInc, OpMode::PostUnary, OpAssoc::Left},
+            {qOpDec, OpMode::PostUnary, OpAssoc::Left},
+            {qOpDot, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {},
+
+        {
+            {qOpInc, OpMode::PreUnary, OpAssoc::Right},
+            {qOpDec, OpMode::PreUnary, OpAssoc::Right},
+            {qOpPlus, OpMode::PreUnary, OpAssoc::Right},
+            {qOpMinus, OpMode::PreUnary, OpAssoc::Right},
+            {qOpLogicNot, OpMode::PreUnary, OpAssoc::Right},
+            {qOpBitNot, OpMode::PreUnary, OpAssoc::Right},
+            {qOpTimes, OpMode::PreUnary, OpAssoc::Right},
+            {qOpBitAnd, OpMode::PreUnary, OpAssoc::Right},
+            {qOpSizeof, OpMode::PreUnary, OpAssoc::Right},
+            {qOpBitsizeof, OpMode::PreUnary, OpAssoc::Right},
+            {qOpAlignof, OpMode::PreUnary, OpAssoc::Right},
+            {qOpTypeof, OpMode::PreUnary, OpAssoc::Right},
+            {qOpAs, OpMode::Binary, OpAssoc::Right},
+            {qOpBitcastAs, OpMode::Binary, OpAssoc::Right},
+        },
+
+        {
+            {qOpTimes, OpMode::Binary, OpAssoc::Left},
+            {qOpSlash, OpMode::Binary, OpAssoc::Left},
+            {qOpPercent, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {
+            {qOpPlus, OpMode::Binary, OpAssoc::Left},
+            {qOpMinus, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {
+            {qOpLShift, OpMode::Binary, OpAssoc::Left},
+            {qOpRShift, OpMode::Binary, OpAssoc::Left},
+            {qOpROTL, OpMode::Binary, OpAssoc::Left},
+            {qOpROTR, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {
+            {qOpLT, OpMode::Binary, OpAssoc::Left},
+            {qOpGT, OpMode::Binary, OpAssoc::Left},
+            {qOpLE, OpMode::Binary, OpAssoc::Left},
+            {qOpGE, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {
+            {qOpEq, OpMode::Binary, OpAssoc::Left},
+            {qOpNE, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {
+            {qOpBitAnd, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {
+            {qOpBitXor, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {
+            {qOpBitOr, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {
+            {qOpLogicAnd, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {
+            {qOpLogicOr, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {
+            {qOpLogicXor, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {
+            {qOpTernary, OpMode::Ternary, OpAssoc::Right},
+            {qOpSet, OpMode::Binary, OpAssoc::Right},
+            {qOpPlusSet, OpMode::Binary, OpAssoc::Right},
+            {qOpMinusSet, OpMode::Binary, OpAssoc::Right},
+            {qOpTimesSet, OpMode::Binary, OpAssoc::Right},
+            {qOpSlashSet, OpMode::Binary, OpAssoc::Right},
+            {qOpPercentSet, OpMode::Binary, OpAssoc::Right},
+            {qOpBitAndSet, OpMode::Binary, OpAssoc::Right},
+            {qOpBitOrSet, OpMode::Binary, OpAssoc::Right},
+            {qOpBitXorSet, OpMode::Binary, OpAssoc::Right},
+            {qOpLogicAndSet, OpMode::Binary, OpAssoc::Right},
+            {qOpLogicOrSet, OpMode::Binary, OpAssoc::Right},
+            {qOpLogicXorSet, OpMode::Binary, OpAssoc::Right},
+            {qOpLShiftSet, OpMode::Binary, OpAssoc::Right},
+            {qOpRShiftSet, OpMode::Binary, OpAssoc::Right},
+            {qOpROTLSet, OpMode::Binary, OpAssoc::Right},
+            {qOpROTRSet, OpMode::Binary, OpAssoc::Right},
+        },
+
+        {
+            {qOpEllipsis, OpMode::PreUnary, OpAssoc::Right},
+        },
+};
+
 CPP_EXPORT int ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
   using Key = std::pair<Operator, OpMode>;
 
@@ -47,81 +156,21 @@ CPP_EXPORT int ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
     }
   };
 
-  /// TODO: Write this table
+  static const std::unordered_map<std::pair<Operator, OpMode>, int, KeyHash>
+      precedence = [] {
+        std::unordered_map<std::pair<Operator, OpMode>, int, KeyHash>
+            precedence;
 
-  static const std::unordered_map<Key, int, KeyHash> precedence = {
-      {{qOpInc, OpMode::PostUnary}, 17},
-      {{qOpDec, OpMode::PostUnary}, 17},
-      {{qOpDot, OpMode::Binary}, 17},
+        for (size_t i = 0; i < precedence_groups.size(); i++) {
+          for (let[op, mode, _] : precedence_groups[i]) {
+            precedence[{op, mode}] = (precedence_groups.size() - i) * 10;
+          }
+        }
 
-      {{qOpInc, OpMode::PreUnary}, 16},
-      {{qOpDec, OpMode::PreUnary}, 16},
-      {{qOpPlus, OpMode::PreUnary}, 16},
-      {{qOpMinus, OpMode::PreUnary}, 16},
-      {{qOpLogicNot, OpMode::PreUnary}, 16},
-      {{qOpBitNot, OpMode::PreUnary}, 16},
-      {{qOpTimes, OpMode::PreUnary}, 16},
-      {{qOpBitAnd, OpMode::PreUnary}, 16},
-      {{qOpSizeof, OpMode::PreUnary}, 16},
-      {{qOpBitsizeof, OpMode::PreUnary}, 16},
-      {{qOpAlignof, OpMode::PreUnary}, 16},
-      {{qOpTypeof, OpMode::PreUnary}, 16},
+        return precedence;
+      }();
 
-      {{qOpPlus, OpMode::Binary}, 5},
-      {{qOpMinus, OpMode::Binary}, 2},
-      {{qOpTimes, OpMode::Binary}, 7},
-      {{qOpSlash, OpMode::Binary}, 2},
-      {{qOpPercent, OpMode::Binary}, 2},
-      {{qOpBitAnd, OpMode::Binary}, 2},
-      {{qOpBitOr, OpMode::Binary}, 2},
-      {{qOpBitXor, OpMode::Binary}, 2},
-      {{qOpBitNot, OpMode::PreUnary}, 2},
-      {{qOpLShift, OpMode::Binary}, 2},
-      {{qOpRShift, OpMode::Binary}, 2},
-      {{qOpROTL, OpMode::Binary}, 2},
-      {{qOpROTR, OpMode::Binary}, 2},
-      {{qOpLogicAnd, OpMode::Binary}, 2},
-      {{qOpLogicOr, OpMode::Binary}, 2},
-      {{qOpLogicXor, OpMode::Binary}, 2},
-      {{qOpLogicNot, OpMode::PreUnary}, 2},
-      {{qOpLT, OpMode::Binary}, 2},
-      {{qOpGT, OpMode::Binary}, 2},
-      {{qOpLE, OpMode::Binary}, 2},
-      {{qOpGE, OpMode::Binary}, 2},
-      {{qOpEq, OpMode::Binary}, 2},
-      {{qOpNE, OpMode::Binary}, 2},
-      {{qOpSet, OpMode::Binary}, 2},
-      {{qOpPlusSet, OpMode::Binary}, 2},
-      {{qOpMinusSet, OpMode::Binary}, 2},
-      {{qOpTimesSet, OpMode::Binary}, 2},
-      {{qOpSlashSet, OpMode::Binary}, 2},
-      {{qOpPercentSet, OpMode::Binary}, 2},
-      {{qOpBitAndSet, OpMode::Binary}, 2},
-      {{qOpBitOrSet, OpMode::Binary}, 2},
-      {{qOpBitXorSet, OpMode::Binary}, 2},
-      {{qOpLogicAndSet, OpMode::Binary}, 2},
-      {{qOpLogicOrSet, OpMode::Binary}, 2},
-      {{qOpLogicXorSet, OpMode::Binary}, 2},
-      {{qOpLShiftSet, OpMode::Binary}, 2},
-      {{qOpRShiftSet, OpMode::Binary}, 2},
-      {{qOpROTLSet, OpMode::Binary}, 2},
-      {{qOpROTRSet, OpMode::Binary}, 2},
-      {{qOpAs, OpMode::Binary}, 2},
-      {{qOpBitcastAs, OpMode::Binary}, 2},
-      {{qOpIn, OpMode::Binary}, 2},
-      {{qOpOut, OpMode::Binary}, 2},
-      {{qOpSizeof, OpMode::PreUnary}, 2},
-      {{qOpBitsizeof, OpMode::PreUnary}, 2},
-      {{qOpAlignof, OpMode::PreUnary}, 2},
-      {{qOpTypeof, OpMode::PreUnary}, 2},
-      {{qOpDot, OpMode::Binary}, 2},
-      {{qOpRange, OpMode::Binary}, 2},
-      {{qOpEllipsis, OpMode::PreUnary}, 2},
-      {{qOpArrow, OpMode::Binary}, 2},
-      {{qOpTernary, OpMode::Ternary}, 2},
-  };
-
-  auto it = precedence.find(Key(op, type));
+  auto it = precedence.find({op, type});
   if (it != precedence.end()) [[likely]] {
     return it->second;
   }
@@ -131,9 +180,32 @@ CPP_EXPORT int ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
 
 CPP_EXPORT OpAssoc ncc::lex::GetOperatorAssociativity(Operator op,
                                                       OpMode type) {
+  using Key = std::pair<Operator, OpMode>;
+
+  struct KeyHash {
+    size_t operator()(const Key &k) const {
+      return std::hash<Operator>()(k.first) ^ std::hash<OpMode>()(k.second);
+    }
+  };
+
+  static const std::unordered_map<Key, OpAssoc, KeyHash> associativity = [] {
+    std::unordered_map<Key, OpAssoc, KeyHash> associativity;
+
+    for (size_t i = 0; i < precedence_groups.size(); i++) {
+      for (let[op, mode, assoc] : precedence_groups[i]) {
+        associativity[{op, mode}] = assoc;
+      }
+    }
+
+    return associativity;
+  }();
+
+  auto it = associativity.find({op, type});
+  if (it != associativity.end()) [[likely]] {
+    return it->second;
+  }
+
   return OpAssoc::Left;
-  /// TODO: Implement this function
-  qcore_implement();
 }
 
 CPP_EXPORT std::string_view ncc::lex::to_string(TokenType ty, TokenData v) {
