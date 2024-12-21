@@ -779,35 +779,42 @@ std::optional<Expr *> Parser::recurse_expr_primary() {
     /****************************************
      * Process syntax sugar
      ****************************************/
-    if (next_if(qPuncLPar)) {
-      /// FIXME: Handle function calls and template calls
-    } else if (next_if(qPuncLBrk)) {
-      let first = recurse_expr({
-          Token(qPunc, qPuncRBrk),
-          Token(qPunc, qPuncColn),
-      });
 
-      if (next_if(qPuncColn)) {
-        let second = recurse_expr({Token(qPunc, qPuncRBrk)});
-        if (!next_if(qPuncRBrk)) {
-          diagnostic << current() << "Expected ']' to close the slice";
-          return std::nullopt;
+    while (true) {
+      if (next_if(qPuncLPar)) {
+        E = recurse_function_call(E.value());
+
+        /// TODO: Add support template'd function calls
+      } else if (next_if(qPuncLBrk)) {
+        let first = recurse_expr({
+            Token(qPunc, qPuncRBrk),
+            Token(qPunc, qPuncColn),
+        });
+
+        if (next_if(qPuncColn)) {
+          let second = recurse_expr({Token(qPunc, qPuncRBrk)});
+          if (!next_if(qPuncRBrk)) {
+            diagnostic << current() << "Expected ']' to close the slice";
+            return std::nullopt;
+          }
+
+          let slice = make<Slice>(E.value(), first, second);
+          slice->set_offset(start_pos);
+
+          E = slice;
+        } else {
+          if (!next_if(qPuncRBrk)) {
+            diagnostic << current() << "Expected ']' to close the index access";
+            return std::nullopt;
+          }
+
+          let index = make<Index>(E.value(), first);
+          index->set_offset(start_pos);
+
+          E = index;
         }
-
-        let slice = make<Slice>(E.value(), first, second);
-        slice->set_offset(start_pos);
-
-        E = slice;
       } else {
-        if (!next_if(qPuncRBrk)) {
-          diagnostic << current() << "Expected ']' to close the index access";
-          return std::nullopt;
-        }
-
-        let index = make<Index>(E.value(), first);
-        index->set_offset(start_pos);
-
-        E = index;
+        break;
       }
     }
 
