@@ -50,9 +50,9 @@ CPP_EXPORT int ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
   /// TODO: Write this table
 
   static const std::unordered_map<Key, int, KeyHash> precedence = {
-      {{qOpPlus, OpMode::Binary}, 2},
+      {{qOpPlus, OpMode::Binary}, 5},
       {{qOpMinus, OpMode::Binary}, 2},
-      {{qOpTimes, OpMode::Binary}, 1},
+      {{qOpTimes, OpMode::Binary}, 7},
       {{qOpSlash, OpMode::Binary}, 2},
       {{qOpPercent, OpMode::Binary}, 2},
       {{qOpBitAnd, OpMode::Binary}, 2},

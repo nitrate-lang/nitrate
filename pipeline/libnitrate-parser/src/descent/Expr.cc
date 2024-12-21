@@ -31,12 +31,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: Cleanup this code; it's a mess from refactoring.
-
 #include <cstddef>
 #include <descent/Recurse.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-parser/AST.hh>
+#include <stack>
+
+#define MAX_RECURSION_DEPTH 4096
 
 using namespace ncc::lex;
 using namespace ncc::parse;
@@ -175,7 +176,7 @@ std::optional<Expr *> Parser::recurse_expr_impl(
     const std::set<Token> &terminators, int minPrecedence) {
   let start_pos = peek().get_start();
 
-  /// TODO: Handle pre-unary, post-unary, and ternary operators
+  /// TODO: Handle pre-unary, post-unary, and ternary operators in the future
   let opmode = OpMode::Binary;
 
   let left_opt = recurse_expr_primary();
@@ -186,49 +187,432 @@ std::optional<Expr *> Parser::recurse_expr_impl(
 
   auto left = left_opt.value();
 
+  struct Frame {
+    Expr *left;
+    Token oper_tok;
+    int nextMinPrecedence;
+  };
+
+  std::stack<Frame> stack;
+
   while (true) {
     if (terminators.contains(peek())) {
+      // Process the stack to combine binary expressions
+      while (!stack.empty()) {
+        auto frame = stack.top();
+        stack.pop();
+        left = make<BinExpr>(frame.left, frame.oper_tok.as_op(), left);
+        left->set_offset(start_pos);
+      }
       return left;
     }
 
     if (let oper_tok = peek(); oper_tok.is(qOper)) {
       let op = oper_tok.as_op();
-
       let precedence = GetOperatorPrecedence(op, opmode);
 
       if (precedence < minPrecedence) {
+        // Process the stack to combine binary expressions
+        while (!stack.empty()) {
+          let frame = stack.top();
+          stack.pop();
+          left = make<BinExpr>(frame.left, frame.oper_tok.as_op(), left);
+          left->set_offset(start_pos);
+        }
+
         return left;
       } else {
-        next();
+        next();  // Consume the operator token
       }
 
       let isLeftAssoc = GetOperatorAssociativity(op, opmode) == OpAssoc::Left;
-
       let nextMinPrecedence = isLeftAssoc ? precedence + 1 : precedence;
-      if (let right = recurse_expr_impl(terminators, nextMinPrecedence)) {
-        left = make<BinExpr>(left, op, right.value());
-        left->set_offset(start_pos);
-      } else {
+
+      let right_opt = recurse_expr_primary();  // Parse the right-hand operand
+      if (!right_opt) {
         diagnostic << current()
                    << "Failed to parse right-hand side of binary expression";
+
         return std::nullopt;
       }
 
+      if (stack.size() > MAX_RECURSION_DEPTH) {
+        diagnostic
+            << current()
+            << "Maximum recursion depth reached while parsing expression";
+
+        return std::nullopt;
+      }
+
+      // Push the current state to the stack
+      stack.push({left, oper_tok, nextMinPrecedence});
+      left = right_opt.value();
     } else {
       break;
     }
   }
 
+  // Process remaining stack
+  while (!stack.empty()) {
+    let frame = stack.top();
+    stack.pop();
+    left = make<BinExpr>(frame.left, frame.oper_tok.as_op(), left);
+    left->set_offset(start_pos);
+  }
+
   return left;
 }
 
-std::optional<Expr *> Parser::recurse_expr_primary() {
-  if (let tok = next_if(qIntL)) {
-    return make<ConstInt>(intern(tok->as_string()));
-  } else {
-    diagnostic << next() << "Expected an integer literal";
-    return std::nullopt;
-  }
+std::optional<Expr *> Parser::recurse_expr_primary_keyword(lex::Keyword key) {
+  switch (key) {
+    case qKScope: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
 
-  /// TODO: Implement this function
+    case qKImport: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKPub: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKSec: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKPro: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKType: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKLet: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKVar: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKConst: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKStatic: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKStruct: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKRegion: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKGroup: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKClass: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKUnion: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKOpaque: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKEnum: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qK__FString: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKFn: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKUnsafe: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKSafe: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKPromise: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKIf: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKElse: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKFor: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKWhile: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKDo: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKSwitch: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKBreak: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKContinue: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKReturn: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKRetif: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKForeach: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKTry: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKCatch: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKThrow: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKAsync: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKAwait: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qK__Asm__: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKUndef: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKNull: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKTrue: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qKFalse: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+  }
+}
+
+std::optional<Expr *> Parser::recurse_expr_primary_punctor(lex::Punctor punc) {
+  switch (punc) {
+    case qPuncLPar: {
+      let expr = recurse_expr({Token(qPunc, qPuncRPar)});
+      if (!next_if(qPuncRPar)) {
+        diagnostic << current() << "Expected ')' to close the expression";
+        return std::nullopt;
+      }
+
+      return expr;
+    }
+
+    case qPuncRPar: {
+      diagnostic << current() << "Unexpected right parenthesis in expression";
+      return std::nullopt;
+    }
+
+    case qPuncLBrk: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qPuncRBrk: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qPuncLCur: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qPuncRCur: {
+      /// TODO: Implement this case
+      qcore_implement();
+    }
+
+    case qPuncComa: {
+      diagnostic << current() << "Comma is not valid in this context";
+      return std::nullopt;
+    }
+
+    case qPuncColn: {
+      diagnostic << current() << "Colon is not valid in this context";
+      return std::nullopt;
+    }
+
+    case qPuncSemi: {
+      diagnostic << current() << "Semicolon is not valid in this context";
+      return std::nullopt;
+    }
+  }
+}
+
+std::optional<Expr *> Parser::recurse_expr_primary() {
+  let tok = next();
+  let start_pos = tok.get_start();
+
+  switch (tok.get_type()) {
+    case qEofF: {
+      diagnostic << tok << "Unexpected end of file while parsing expression";
+      return std::nullopt;
+    }
+
+    case qKeyW: {
+      return recurse_expr_primary_keyword(tok.as_key());
+    }
+
+    case qOper: {
+      diagnostic << tok << "Unexpected operator in expression";
+      return std::nullopt;
+    }
+
+    case qPunc: {
+      return recurse_expr_primary_punctor(tok.as_punc());
+    }
+
+    case qName: {
+      let identifier = make<Ident>(intern(tok.as_string()));
+      identifier->set_offset(start_pos);
+
+      return identifier;
+    }
+
+    case qIntL: {
+      let integer = make<ConstInt>(intern(tok.as_string()));
+      integer->set_offset(start_pos);
+
+      return integer;
+    }
+
+    case qNumL: {
+      let decimal = make<ConstFloat>(intern(tok.as_string()));
+      decimal->set_offset(start_pos);
+
+      return decimal;
+    }
+
+    case qText: {
+      let string = make<ConstString>(intern(tok.as_string()));
+      string->set_offset(start_pos);
+
+      return string;
+    }
+
+    case qChar: {
+      let str_data = tok.as_string();
+      if (str_data.size() != 1) [[unlikely]] {
+        diagnostic << tok << "Expected a single byte in character literal";
+        return std::nullopt;
+      }
+
+      let character = make<ConstChar>(str_data[0]);
+      character->set_offset(start_pos);
+
+      return character;
+    }
+
+    case qMacB: {
+      diagnostic << tok << "Unexpected macro block in expression";
+      return std::nullopt;
+    }
+
+    case qMacr: {
+      diagnostic << tok << "Unexpected macro call in expression";
+      return std::nullopt;
+    }
+
+    case qNote: {
+      diagnostic << tok << "Unexpected comment in expression";
+      return std::nullopt;
+    }
+  }
 }
