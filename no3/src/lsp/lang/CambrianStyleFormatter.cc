@@ -6,6 +6,8 @@
 #include <sstream>
 #include <unordered_set>
 
+#include "nitrate-parser/ASTCommon.hh"
+
 using namespace lsp::fmt;
 using namespace ncc::parse;
 using namespace ncc::core;
@@ -731,47 +733,146 @@ void CambrianFormatter::visit(List const& n) {
     n.get_items().front()->accept(*this);
     line << "; " << argc << "]";
   } else {
-    let break_at = argc <= wrap_threshold
-                       ? wrap_threshold
-                       : static_cast<size_t>(std::ceil(std::sqrt(argc)));
+    static const std::unordered_set<npar_ty_t> extra_seperation = {
+        QAST_TEREXPR, QAST_CALL, QAST_LIST,
+        QAST_ASSOC,   QAST_SEQ,  QAST_TEMPL_CALL,
+    };
 
-    line << "[";
+    bool special_case =
+        std::any_of(n.get_items().begin(), n.get_items().end(), [&](let x) {
+          return extra_seperation.contains(x->getKind()) ||
+                 x->is_stmt_expr(QAST_FUNCTION);
+        });
 
-    { /* Write list items */
-      size_t line_size = line.length();
-      std::swap(indent, line_size);
+    size_t break_at{};
 
-      for (size_t i = 0; i < n.get_items().size(); i++) {
-        let item = n.get_items()[i];
-        item->accept(*this);
-
-        bool is_last = i == n.get_items().size() - 1;
-        if (!is_last) {
-          line << ",";
-        }
-
-        bool is_break = !is_last && i != 0 && (i + 1) % break_at == 0;
-
-        if (is_break) {
-          line << std::endl << get_indent();
-        } else if (!is_last) {
-          line << " ";
-        }
-      }
-
-      std::swap(indent, line_size);
+    if (special_case) {
+      break_at = 1;
+    } else {
+      break_at = argc <= wrap_threshold
+                     ? wrap_threshold
+                     : static_cast<size_t>(std::ceil(std::sqrt(argc)));
     }
 
-    line << "]";
+    bool is_assoc_map = std::all_of(n.get_items().begin(), n.get_items().end(),
+                                    [](let x) { return x->is(QAST_ASSOC); });
+
+    if (break_at == 1) {
+      line << "[";
+
+      line << std::endl;
+
+      { /* Write list items */
+        size_t the_indent = is_assoc_map ? indent + tabSize : line.length() + 1;
+        std::swap(indent, the_indent);
+
+        for (size_t i = 0; i < n.get_items().size(); i++) {
+          line << get_indent();
+          let item = n.get_items()[i];
+          item->accept(*this);
+
+          bool is_last = i == n.get_items().size() - 1;
+          if (!is_last) {
+            line << ",";
+          }
+
+          line << std::endl;
+        }
+
+        std::swap(indent, the_indent);
+      }
+
+      line << "]";
+    } else {
+      line << "[";
+
+      { /* Write list items */
+        size_t the_indent = is_assoc_map ? indent + tabSize : line.length();
+        std::swap(indent, the_indent);
+
+        for (size_t i = 0; i < n.get_items().size(); i++) {
+          let item = n.get_items()[i];
+          item->accept(*this);
+
+          bool is_last = i == n.get_items().size() - 1;
+          if (!is_last) {
+            line << ",";
+          }
+
+          bool is_break = !is_last && i != 0 && (i + 1) % break_at == 0;
+
+          if (is_break) {
+            line << std::endl << get_indent();
+          } else if (!is_last) {
+            line << " ";
+          }
+        }
+
+        std::swap(indent, the_indent);
+      }
+
+      line << "]";
+    }
   }
 }
 
-void CambrianFormatter::visit(Assoc const& n) {
-  line << "{";
-  n.get_key()->accept(*this);
-  line << ": ";
-  n.get_value()->accept(*this);
-  line << "}";
+void CambrianFormatter::visit(Assoc const& node) {
+  const std::function<void(Assoc const&, bool)> format = [&](Assoc const& n,
+                                                             bool use_braces) {
+    bool is_value_map = false;
+    if (n.get_value()->is(QAST_LIST)) {
+      let list = n.get_value()->as<List>();
+      is_value_map =
+          list->get_items().empty() ||
+          std::all_of(list->get_items().begin(), list->get_items().end(),
+                      [](let x) { return x->is(QAST_ASSOC); });
+    }
+
+    if (use_braces) {
+      line << "{" << std::endl;
+      indent += tabSize;
+      line << get_indent();
+    }
+
+    n.get_key()->accept(*this);
+    line << ": ";
+
+    if (is_value_map) {
+      let list = n.get_value()->as<List>();
+
+      if (list->get_items().empty()) {
+        line << "{}";
+      } else {
+        line << "{" << std::endl;
+        indent += tabSize;
+
+        for (auto it = list->get_items().begin(); it != list->get_items().end();
+             ++it) {
+          line << get_indent();
+
+          format(*(*it)->as<Assoc>(), false);
+
+          if (it != list->get_items().end() - 1) {
+            line << ",";
+          }
+
+          line << std::endl;
+        }
+
+        indent -= tabSize;
+        line << get_indent() << "}";
+      }
+    } else {
+      n.get_value()->accept(*this);
+    }
+
+    if (use_braces) {
+      indent -= tabSize;
+      line << std::endl << get_indent() << "}";
+    }
+  };
+
+  format(node, true);
 }
 
 void CambrianFormatter::visit(Field const& n) {
