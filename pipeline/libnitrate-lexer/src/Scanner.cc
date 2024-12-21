@@ -50,6 +50,23 @@ CPP_EXPORT int ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
   /// TODO: Write this table
 
   static const std::unordered_map<Key, int, KeyHash> precedence = {
+      {{qOpInc, OpMode::PostUnary}, 17},
+      {{qOpDec, OpMode::PostUnary}, 17},
+      {{qOpDot, OpMode::Binary}, 17},
+
+      {{qOpInc, OpMode::PreUnary}, 16},
+      {{qOpDec, OpMode::PreUnary}, 16},
+      {{qOpPlus, OpMode::PreUnary}, 16},
+      {{qOpMinus, OpMode::PreUnary}, 16},
+      {{qOpLogicNot, OpMode::PreUnary}, 16},
+      {{qOpBitNot, OpMode::PreUnary}, 16},
+      {{qOpTimes, OpMode::PreUnary}, 16},
+      {{qOpBitAnd, OpMode::PreUnary}, 16},
+      {{qOpSizeof, OpMode::PreUnary}, 16},
+      {{qOpBitsizeof, OpMode::PreUnary}, 16},
+      {{qOpAlignof, OpMode::PreUnary}, 16},
+      {{qOpTypeof, OpMode::PreUnary}, 16},
+
       {{qOpPlus, OpMode::Binary}, 5},
       {{qOpMinus, OpMode::Binary}, 2},
       {{qOpTimes, OpMode::Binary}, 7},
@@ -89,8 +106,6 @@ CPP_EXPORT int ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
       {{qOpRShiftSet, OpMode::Binary}, 2},
       {{qOpROTLSet, OpMode::Binary}, 2},
       {{qOpROTRSet, OpMode::Binary}, 2},
-      {{qOpInc, OpMode::PreUnary}, 2},
-      {{qOpDec, OpMode::PreUnary}, 2},
       {{qOpAs, OpMode::Binary}, 2},
       {{qOpBitcastAs, OpMode::Binary}, 2},
       {{qOpIn, OpMode::Binary}, 2},

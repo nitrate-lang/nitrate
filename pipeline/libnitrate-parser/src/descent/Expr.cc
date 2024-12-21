@@ -172,20 +172,19 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators,
   return recurse_expr_impl(terminators, minPrecedence).value_or(mock_expr());
 }
 
+static bool IsPreUnaryOperator(Operator op) {
+  /// TODO: Implement this function
+  return true;
+}
+
+static bool IsPostUnaryOperator(Operator op) {
+  /// TODO: Implement this function
+  return true;
+}
+
 std::optional<Expr *> Parser::recurse_expr_impl(
     const std::set<Token> &terminators, int minPrecedence) {
   let start_pos = peek().get_start();
-
-  /// TODO: Handle pre-unary, post-unary, and ternary operators in the future
-  let opmode = OpMode::Binary;
-
-  let left_opt = recurse_expr_primary();
-  if (!left_opt) {
-    diagnostic << current() << "Expected an expression";
-    return std::nullopt;
-  }
-
-  auto left = left_opt.value();
 
   struct Frame {
     Expr *left;
@@ -193,68 +192,88 @@ std::optional<Expr *> Parser::recurse_expr_impl(
     int nextMinPrecedence;
   };
 
+  /****************************************
+   * Parse the primary expression
+   ****************************************/
+  let left_opt = recurse_expr_primary();
+  if (!left_opt) {
+    diagnostic << current() << "Expected an expression";
+
+    return std::nullopt;
+  }
+  auto left = left_opt.value();
+
+  /* Parse expressions non-recursively */
   std::stack<Frame> stack;
 
   while (true) {
-    if (terminators.contains(peek())) {
-      // Process the stack to combine binary expressions
-      while (!stack.empty()) {
-        auto frame = stack.top();
-        stack.pop();
-        left = make<BinExpr>(frame.left, frame.oper_tok.as_op(), left);
-        left->set_offset(start_pos);
-      }
-      return left;
-    }
+    if (!terminators.contains(peek())) {
+      if (let oper_tok = peek(); oper_tok.is(qOper)) {
+        let op = oper_tok.as_op();
 
-    if (let oper_tok = peek(); oper_tok.is(qOper)) {
-      let op = oper_tok.as_op();
-      let precedence = GetOperatorPrecedence(op, opmode);
+        /****************************************
+         * Handle post-unary operators
+         ****************************************/
+        if (IsPostUnaryOperator(op)) {
+          let precedence = GetOperatorPrecedence(op, OpMode::PostUnary);
+          if (precedence >= minPrecedence) {
+            left = make<PostUnaryExpr>(left, op);
+            left->set_offset(start_pos);
 
-      if (precedence < minPrecedence) {
-        // Process the stack to combine binary expressions
-        while (!stack.empty()) {
-          let frame = stack.top();
-          stack.pop();
-          left = make<BinExpr>(frame.left, frame.oper_tok.as_op(), left);
-          left->set_offset(start_pos);
+            /* Consume the operator token */
+            next();
+
+            continue;
+          }
         }
 
-        return left;
+        /****************************************************************
+         * Handle binary operators
+         ****************************************************************/
+        let precedence = GetOperatorPrecedence(op, OpMode::Binary);
+        if (precedence < minPrecedence) {
+          /* Process the stack to combine binary expressions */
+          while (!stack.empty()) {
+            auto frame = stack.top();
+            stack.pop();
+            left = make<BinExpr>(frame.left, frame.oper_tok.as_op(), left);
+            left->set_offset(start_pos);
+          }
+
+          return left;
+        } else {
+          /* Consume the operator token */
+          next();
+        }
+
+        let isLeftAssoc =
+            GetOperatorAssociativity(op, OpMode::Binary) == OpAssoc::Left;
+        let nextMinPrecedence = isLeftAssoc ? precedence + 1 : precedence;
+
+        /****************************************************************
+         * Parse the right-hand operand
+         ****************************************************************/
+        let right_opt = recurse_expr_primary();
+        if (!right_opt) {
+          diagnostic << current()
+                     << "Failed to parse right-hand side of binary expression";
+
+          return std::nullopt;
+        }
+
+        stack.push({left, oper_tok, nextMinPrecedence});
+        left = right_opt.value();
       } else {
-        next();  // Consume the operator token
+        break;
       }
-
-      let isLeftAssoc = GetOperatorAssociativity(op, opmode) == OpAssoc::Left;
-      let nextMinPrecedence = isLeftAssoc ? precedence + 1 : precedence;
-
-      let right_opt = recurse_expr_primary();  // Parse the right-hand operand
-      if (!right_opt) {
-        diagnostic << current()
-                   << "Failed to parse right-hand side of binary expression";
-
-        return std::nullopt;
-      }
-
-      if (stack.size() > MAX_RECURSION_DEPTH) {
-        diagnostic
-            << current()
-            << "Maximum recursion depth reached while parsing expression";
-
-        return std::nullopt;
-      }
-
-      // Push the current state to the stack
-      stack.push({left, oper_tok, nextMinPrecedence});
-      left = right_opt.value();
-    } else {
+    } else { /* Terminator break */
       break;
     }
   }
 
-  // Process remaining stack
+  /* Process the stack to combine binary expressions */
   while (!stack.empty()) {
-    let frame = stack.top();
+    auto frame = stack.top();
     stack.pop();
     left = make<BinExpr>(frame.left, frame.oper_tok.as_op(), left);
     left->set_offset(start_pos);
@@ -537,82 +556,119 @@ std::optional<Expr *> Parser::recurse_expr_primary_punctor(lex::Punctor punc) {
 }
 
 std::optional<Expr *> Parser::recurse_expr_primary() {
+  /****************************************
+   * Parse pre-unary operators
+   ****************************************/
+  std::vector<Token> preUnaryOps;
+  while (true) {
+    let oper_tok = peek();
+
+    if (!oper_tok.is(qOper) || !IsPreUnaryOperator(oper_tok.as_op())) {
+      break;
+    }
+
+    /* Consume the operator token */
+    next();
+
+    preUnaryOps.push_back(oper_tok);
+  }
+
   let tok = next();
   let start_pos = tok.get_start();
+  std::optional<Expr *> E;
 
   switch (tok.get_type()) {
     case qEofF: {
       diagnostic << tok << "Unexpected end of file while parsing expression";
-      return std::nullopt;
+      break;
     }
 
     case qKeyW: {
-      return recurse_expr_primary_keyword(tok.as_key());
+      E = recurse_expr_primary_keyword(tok.as_key());
+      break;
     }
 
     case qOper: {
       diagnostic << tok << "Unexpected operator in expression";
-      return std::nullopt;
+      break;
     }
 
     case qPunc: {
-      return recurse_expr_primary_punctor(tok.as_punc());
+      E = recurse_expr_primary_punctor(tok.as_punc());
+      break;
     }
 
     case qName: {
       let identifier = make<Ident>(intern(tok.as_string()));
       identifier->set_offset(start_pos);
 
-      return identifier;
+      E = identifier;
+      break;
     }
 
     case qIntL: {
       let integer = make<ConstInt>(intern(tok.as_string()));
       integer->set_offset(start_pos);
 
-      return integer;
+      E = integer;
+      break;
     }
 
     case qNumL: {
       let decimal = make<ConstFloat>(intern(tok.as_string()));
       decimal->set_offset(start_pos);
 
-      return decimal;
+      E = decimal;
+      break;
     }
 
     case qText: {
       let string = make<ConstString>(intern(tok.as_string()));
       string->set_offset(start_pos);
 
-      return string;
+      E = string;
+      break;
     }
 
     case qChar: {
       let str_data = tok.as_string();
       if (str_data.size() != 1) [[unlikely]] {
         diagnostic << tok << "Expected a single byte in character literal";
-        return std::nullopt;
+        break;
       }
 
       let character = make<ConstChar>(str_data[0]);
       character->set_offset(start_pos);
 
-      return character;
+      E = character;
+      break;
     }
 
     case qMacB: {
       diagnostic << tok << "Unexpected macro block in expression";
-      return std::nullopt;
+      break;
     }
 
     case qMacr: {
       diagnostic << tok << "Unexpected macro call in expression";
-      return std::nullopt;
+      break;
     }
 
     case qNote: {
       diagnostic << tok << "Unexpected comment in expression";
-      return std::nullopt;
+      break;
     }
   }
+
+  if (E.has_value()) {
+    /****************************************
+     * Process the pre-unary operators
+     ****************************************/
+    for (auto it = preUnaryOps.rbegin(); it != preUnaryOps.rend(); ++it) {
+      E = make<UnaryExpr>(it->as_op(), E.value());
+      E.value()->set_offset(start_pos);
+    }
+  }
+
+  return E;
 }
