@@ -310,7 +310,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qK__FString: {
-        let node = make<ExprStmt>(recurse_fstring(0));
+        let node = make<ExprStmt>(recurse_fstring());
         node->set_offset(loc_start);
 
         items.push_back(node);

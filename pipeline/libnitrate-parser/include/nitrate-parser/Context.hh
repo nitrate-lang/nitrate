@@ -92,7 +92,10 @@ namespace ncc::parse {
     Stmt *recurse_block(bool expect_braces, bool single_stmt,
                         SafetyMode safety);
     Expr *recurse_expr(const std::set<ncc::lex::Token> &terminators,
-                       size_t depth = 0);
+                       int minPrecedence = 0);
+    std::optional<Expr *> recurse_expr_impl(
+        const std::set<ncc::lex::Token> &terminators, int minPrecedence = 0);
+    std::optional<Expr *> recurse_expr_primary();
 
     /****************************************************************************
      * @brief
@@ -109,9 +112,9 @@ namespace ncc::parse {
     std::optional<ExpressionList> recurse_export_attributes();
     Stmt *recurse_export_body();
 
-    CallArgs recurse_call_arguments(ncc::lex::Token terminator, size_t depth);
-    Expr *recurse_function_call(Expr *callee, size_t depth);
-    Expr *recurse_fstring(size_t depth);
+    CallArgs recurse_call_arguments(ncc::lex::Token terminator);
+    Expr *recurse_function_call(Expr *callee);
+    Expr *recurse_fstring();
 
     std::optional<Stmt *> recurse_for_init_expr();
     std::optional<Expr *> recurse_for_cond_expr();

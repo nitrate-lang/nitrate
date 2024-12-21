@@ -55,183 +55,183 @@ namespace ncc::lex {
         std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
       return boost::bimap<L, R>(list.begin(), list.end());
     }
-
-    enum class OpType { Both, Unary, Binary, Ternary };
-    enum class OpMode { Binary, PreUnary, PostUnary, Ternary };
-    enum class OpAssoc { Left, Right };
-
-    struct OpConfig {
-      OpType type;
-      bool overloadable;
-
-      OpConfig(OpType t, bool o) : type(t), overloadable(o) {}
-
-      bool operator<(const OpConfig &rhs) const {
-        if (type != rhs.type) {
-          return type < rhs.type;
-        }
-        return overloadable < rhs.overloadable;
-      }
-    };
-
-    inline static const boost::bimap<std::string_view, Keyword>
-        LexicalKeywords = make_bimap<std::string_view, Keyword>({
-            {"scope", qKScope},     {"import", qKImport},
-            {"pub", qKPub},         {"sec", qKSec},
-            {"pro", qKPro},         {"type", qKType},
-            {"let", qKLet},         {"var", qKVar},
-            {"const", qKConst},     {"static", qKStatic},
-            {"struct", qKStruct},   {"region", qKRegion},
-            {"group", qKGroup},     {"class", qKClass},
-            {"union", qKUnion},     {"opaque", qKOpaque},
-            {"enum", qKEnum},       {"__fstring", qK__FString},
-            {"fn", qKFn},           {"unsafe", qKUnsafe},
-            {"safe", qKSafe},       {"promise", qKPromise},
-            {"if", qKIf},           {"else", qKElse},
-            {"for", qKFor},         {"while", qKWhile},
-            {"do", qKDo},           {"switch", qKSwitch},
-            {"break", qKBreak},     {"continue", qKContinue},
-            {"ret", qKReturn},      {"retif", qKRetif},
-            {"foreach", qKForeach}, {"try", qKTry},
-            {"catch", qKCatch},     {"throw", qKThrow},
-            {"async", qKAsync},     {"await", qKAwait},
-            {"__asm__", qK__Asm__}, {"undef", qKUndef},
-            {"null", qKNull},       {"true", qKTrue},
-            {"false", qKFalse},
-        });
-
-    inline static const boost::bimap<std::string_view, Operator>
-        LexicalOperators = make_bimap<std::string_view, Operator>({
-            {"+", qOpPlus},
-            {"-", qOpMinus},
-            {"*", qOpTimes},
-            {"/", qOpSlash},
-            {"%", qOpPercent},
-            {"&", qOpBitAnd},
-            {"|", qOpBitOr},
-            {"^", qOpBitXor},
-            {"~", qOpBitNot},
-            {"<<", qOpLShift},
-            {">>", qOpRShift},
-            {"<<<", qOpROTL},
-            {">>>", qOpROTR},
-            {"&&", qOpLogicAnd},
-            {"||", qOpLogicOr},
-            {"^^", qOpLogicXor},
-            {"!", qOpLogicNot},
-            {"<", qOpLT},
-            {">", qOpGT},
-            {"<=", qOpLE},
-            {">=", qOpGE},
-            {"==", qOpEq},
-            {"!=", qOpNE},
-            {"=", qOpSet},
-            {"+=", qOpPlusSet},
-            {"-=", qOpMinusSet},
-            {"*=", qOpTimesSet},
-            {"/=", qOpSlashSet},
-            {"%=", qOpPercentSet},
-            {"&=", qOpBitAndSet},
-            {"|=", qOpBitOrSet},
-            {"^=", qOpBitXorSet},
-            {"&&=", qOpLogicAndSet},
-            {"||=", qOpLogicOrSet},
-            {"^^=", qOpLogicXorSet},
-            {"<<=", qOpLShiftSet},
-            {">>=", qOpRShiftSet},
-            {"<<<=", qOpROTLSet},
-            {">>>=", qOpROTRSet},
-            {"++", qOpInc},
-            {"--", qOpDec},
-            {"as", qOpAs},
-            {"bitcast_as", qOpBitcastAs},
-            {"in", qOpIn},
-            {"out", qOpOut},
-            {"sizeof", qOpSizeof},
-            {"bitsizeof", qOpBitsizeof},
-            {"alignof", qOpAlignof},
-            {"typeof", qOpTypeof},
-            {".", qOpDot},
-            {"..", qOpRange},
-            {"...", qOpEllipsis},
-            {"=>", qOpArrow},
-            {"?", qOpTernary},
-        });
-
-    inline static const boost::bimap<Operator, OpConfig>
-        LexicalOperatorsConfig = make_bimap<Operator, OpConfig>({
-            {qOpPlus, {OpType::Both, true}},
-            {qOpMinus, {OpType::Both, true}},
-            {qOpTimes, {OpType::Both, true}},
-            {qOpSlash, {OpType::Binary, true}},
-            {qOpPercent, {OpType::Binary, true}},
-            {qOpBitAnd, {OpType::Both, true}},
-            {qOpBitOr, {OpType::Binary, true}},
-            {qOpBitXor, {OpType::Binary, true}},
-            {qOpBitNot, {OpType::Unary, true}},
-            {qOpLShift, {OpType::Binary, true}},
-            {qOpRShift, {OpType::Binary, true}},
-            {qOpROTL, {OpType::Binary, true}},
-            {qOpROTR, {OpType::Binary, true}},
-            {qOpLogicAnd, {OpType::Binary, true}},
-            {qOpLogicOr, {OpType::Binary, true}},
-            {qOpLogicXor, {OpType::Binary, true}},
-            {qOpLogicNot, {OpType::Unary, true}},
-            {qOpLT, {OpType::Binary, true}},
-            {qOpGT, {OpType::Binary, true}},
-            {qOpLE, {OpType::Binary, true}},
-            {qOpGE, {OpType::Binary, true}},
-            {qOpEq, {OpType::Binary, true}},
-            {qOpNE, {OpType::Binary, true}},
-            {qOpSet, {OpType::Binary, true}},
-            {qOpPlusSet, {OpType::Binary, true}},
-            {qOpMinusSet, {OpType::Binary, true}},
-            {qOpTimesSet, {OpType::Binary, true}},
-            {qOpSlashSet, {OpType::Binary, true}},
-            {qOpPercentSet, {OpType::Binary, true}},
-            {qOpBitAndSet, {OpType::Binary, true}},
-            {qOpBitOrSet, {OpType::Binary, true}},
-            {qOpBitXorSet, {OpType::Binary, true}},
-            {qOpLogicAndSet, {OpType::Binary, true}},
-            {qOpLogicOrSet, {OpType::Binary, true}},
-            {qOpLogicXorSet, {OpType::Binary, true}},
-            {qOpLShiftSet, {OpType::Binary, true}},
-            {qOpRShiftSet, {OpType::Binary, true}},
-            {qOpROTLSet, {OpType::Binary, true}},
-            {qOpROTRSet, {OpType::Binary, true}},
-            {qOpInc, {OpType::Unary, true}},
-            {qOpDec, {OpType::Unary, true}},
-            {qOpAs, {OpType::Binary, true}},
-            {qOpBitcastAs, {OpType::Binary, false}},
-            {qOpIn, {OpType::Both, false}},
-            {qOpOut, {OpType::Both, false}},
-            {qOpSizeof, {OpType::Unary, false}},
-            {qOpBitsizeof, {OpType::Unary, false}},
-            {qOpAlignof, {OpType::Unary, false}},
-            {qOpTypeof, {OpType::Unary, false}},
-            {qOpDot, {OpType::Binary, false}},
-            {qOpRange, {OpType::Binary, true}},
-            {qOpEllipsis, {OpType::Unary, false}},
-            {qOpArrow, {OpType::Binary, false}},
-            {qOpTernary, {OpType::Ternary, false}},
-        });
-
-    int GetOperatorPrecedence(Operator op, OpMode type);
-    OpAssoc GetOperatorAssociativity(Operator op);
-
-    inline static const boost::bimap<std::string_view, Punctor>
-        LexicalPunctors = make_bimap<std::string_view, Punctor>({
-            {"(", qPuncLPar},
-            {")", qPuncRPar},
-            {"[", qPuncLBrk},
-            {"]", qPuncRBrk},
-            {"{", qPuncLCur},
-            {"}", qPuncRCur},
-            {",", qPuncComa},
-            {":", qPuncColn},
-            {";", qPuncSemi},
-        });
   }  // namespace detail
+
+  enum class OpType { Both, Unary, Binary, Ternary };
+  enum class OpMode { Binary, PreUnary, PostUnary, Ternary };
+  enum class OpAssoc { Left, Right };
+
+  struct OpConfig {
+    OpType type;
+    bool overloadable;
+
+    OpConfig(OpType t, bool o) : type(t), overloadable(o) {}
+
+    bool operator<(const OpConfig &rhs) const {
+      if (type != rhs.type) {
+        return type < rhs.type;
+      }
+      return overloadable < rhs.overloadable;
+    }
+  };
+
+  inline static const boost::bimap<std::string_view, Keyword> LexicalKeywords =
+      detail::make_bimap<std::string_view, Keyword>({
+          {"scope", qKScope},     {"import", qKImport},
+          {"pub", qKPub},         {"sec", qKSec},
+          {"pro", qKPro},         {"type", qKType},
+          {"let", qKLet},         {"var", qKVar},
+          {"const", qKConst},     {"static", qKStatic},
+          {"struct", qKStruct},   {"region", qKRegion},
+          {"group", qKGroup},     {"class", qKClass},
+          {"union", qKUnion},     {"opaque", qKOpaque},
+          {"enum", qKEnum},       {"__fstring", qK__FString},
+          {"fn", qKFn},           {"unsafe", qKUnsafe},
+          {"safe", qKSafe},       {"promise", qKPromise},
+          {"if", qKIf},           {"else", qKElse},
+          {"for", qKFor},         {"while", qKWhile},
+          {"do", qKDo},           {"switch", qKSwitch},
+          {"break", qKBreak},     {"continue", qKContinue},
+          {"ret", qKReturn},      {"retif", qKRetif},
+          {"foreach", qKForeach}, {"try", qKTry},
+          {"catch", qKCatch},     {"throw", qKThrow},
+          {"async", qKAsync},     {"await", qKAwait},
+          {"__asm__", qK__Asm__}, {"undef", qKUndef},
+          {"null", qKNull},       {"true", qKTrue},
+          {"false", qKFalse},
+      });
+
+  inline static const boost::bimap<std::string_view, Operator>
+      LexicalOperators = detail::make_bimap<std::string_view, Operator>({
+          {"+", qOpPlus},
+          {"-", qOpMinus},
+          {"*", qOpTimes},
+          {"/", qOpSlash},
+          {"%", qOpPercent},
+          {"&", qOpBitAnd},
+          {"|", qOpBitOr},
+          {"^", qOpBitXor},
+          {"~", qOpBitNot},
+          {"<<", qOpLShift},
+          {">>", qOpRShift},
+          {"<<<", qOpROTL},
+          {">>>", qOpROTR},
+          {"&&", qOpLogicAnd},
+          {"||", qOpLogicOr},
+          {"^^", qOpLogicXor},
+          {"!", qOpLogicNot},
+          {"<", qOpLT},
+          {">", qOpGT},
+          {"<=", qOpLE},
+          {">=", qOpGE},
+          {"==", qOpEq},
+          {"!=", qOpNE},
+          {"=", qOpSet},
+          {"+=", qOpPlusSet},
+          {"-=", qOpMinusSet},
+          {"*=", qOpTimesSet},
+          {"/=", qOpSlashSet},
+          {"%=", qOpPercentSet},
+          {"&=", qOpBitAndSet},
+          {"|=", qOpBitOrSet},
+          {"^=", qOpBitXorSet},
+          {"&&=", qOpLogicAndSet},
+          {"||=", qOpLogicOrSet},
+          {"^^=", qOpLogicXorSet},
+          {"<<=", qOpLShiftSet},
+          {">>=", qOpRShiftSet},
+          {"<<<=", qOpROTLSet},
+          {">>>=", qOpROTRSet},
+          {"++", qOpInc},
+          {"--", qOpDec},
+          {"as", qOpAs},
+          {"bitcast_as", qOpBitcastAs},
+          {"in", qOpIn},
+          {"out", qOpOut},
+          {"sizeof", qOpSizeof},
+          {"bitsizeof", qOpBitsizeof},
+          {"alignof", qOpAlignof},
+          {"typeof", qOpTypeof},
+          {".", qOpDot},
+          {"..", qOpRange},
+          {"...", qOpEllipsis},
+          {"=>", qOpArrow},
+          {"?", qOpTernary},
+      });
+
+  inline static const boost::bimap<Operator, OpConfig> LexicalOperatorsConfig =
+      detail::make_bimap<Operator, OpConfig>({
+          {qOpPlus, {OpType::Both, true}},
+          {qOpMinus, {OpType::Both, true}},
+          {qOpTimes, {OpType::Both, true}},
+          {qOpSlash, {OpType::Binary, true}},
+          {qOpPercent, {OpType::Binary, true}},
+          {qOpBitAnd, {OpType::Both, true}},
+          {qOpBitOr, {OpType::Binary, true}},
+          {qOpBitXor, {OpType::Binary, true}},
+          {qOpBitNot, {OpType::Unary, true}},
+          {qOpLShift, {OpType::Binary, true}},
+          {qOpRShift, {OpType::Binary, true}},
+          {qOpROTL, {OpType::Binary, true}},
+          {qOpROTR, {OpType::Binary, true}},
+          {qOpLogicAnd, {OpType::Binary, true}},
+          {qOpLogicOr, {OpType::Binary, true}},
+          {qOpLogicXor, {OpType::Binary, true}},
+          {qOpLogicNot, {OpType::Unary, true}},
+          {qOpLT, {OpType::Binary, true}},
+          {qOpGT, {OpType::Binary, true}},
+          {qOpLE, {OpType::Binary, true}},
+          {qOpGE, {OpType::Binary, true}},
+          {qOpEq, {OpType::Binary, true}},
+          {qOpNE, {OpType::Binary, true}},
+          {qOpSet, {OpType::Binary, true}},
+          {qOpPlusSet, {OpType::Binary, true}},
+          {qOpMinusSet, {OpType::Binary, true}},
+          {qOpTimesSet, {OpType::Binary, true}},
+          {qOpSlashSet, {OpType::Binary, true}},
+          {qOpPercentSet, {OpType::Binary, true}},
+          {qOpBitAndSet, {OpType::Binary, true}},
+          {qOpBitOrSet, {OpType::Binary, true}},
+          {qOpBitXorSet, {OpType::Binary, true}},
+          {qOpLogicAndSet, {OpType::Binary, true}},
+          {qOpLogicOrSet, {OpType::Binary, true}},
+          {qOpLogicXorSet, {OpType::Binary, true}},
+          {qOpLShiftSet, {OpType::Binary, true}},
+          {qOpRShiftSet, {OpType::Binary, true}},
+          {qOpROTLSet, {OpType::Binary, true}},
+          {qOpROTRSet, {OpType::Binary, true}},
+          {qOpInc, {OpType::Unary, true}},
+          {qOpDec, {OpType::Unary, true}},
+          {qOpAs, {OpType::Binary, true}},
+          {qOpBitcastAs, {OpType::Binary, false}},
+          {qOpIn, {OpType::Both, false}},
+          {qOpOut, {OpType::Both, false}},
+          {qOpSizeof, {OpType::Unary, false}},
+          {qOpBitsizeof, {OpType::Unary, false}},
+          {qOpAlignof, {OpType::Unary, false}},
+          {qOpTypeof, {OpType::Unary, false}},
+          {qOpDot, {OpType::Binary, false}},
+          {qOpRange, {OpType::Binary, true}},
+          {qOpEllipsis, {OpType::Unary, false}},
+          {qOpArrow, {OpType::Binary, false}},
+          {qOpTernary, {OpType::Ternary, false}},
+      });
+
+  inline static const boost::bimap<std::string_view, Punctor> LexicalPunctors =
+      detail::make_bimap<std::string_view, Punctor>({
+          {"(", qPuncLPar},
+          {")", qPuncRPar},
+          {"[", qPuncLBrk},
+          {"]", qPuncRBrk},
+          {"{", qPuncLCur},
+          {"}", qPuncRCur},
+          {",", qPuncComa},
+          {":", qPuncColn},
+          {";", qPuncSemi},
+      });
+
+  int GetOperatorPrecedence(Operator op, OpMode type);
+  OpAssoc GetOperatorAssociativity(Operator op, OpMode type);
 
   const char *qlex_ty_str(TokenType ty);
 

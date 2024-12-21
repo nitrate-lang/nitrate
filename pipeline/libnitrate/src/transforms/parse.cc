@@ -89,17 +89,17 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
       }
 
       case TokenType::qKeyW: {
-        R = Token(t, ncc::lex::detail::LexicalKeywords.left.at(data));
+        R = Token(t, ncc::lex::LexicalKeywords.left.at(data));
         break;
       }
 
       case TokenType::qOper: {
-        R = Token(t, ncc::lex::detail::LexicalOperators.left.at(data));
+        R = Token(t, ncc::lex::LexicalOperators.left.at(data));
         break;
       }
 
       case TokenType::qPunc: {
-        R = Token(t, ncc::lex::detail::LexicalPunctors.left.at(data));
+        R = Token(t, ncc::lex::LexicalPunctors.left.at(data));
         break;
       }
 
