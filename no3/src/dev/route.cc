@@ -265,7 +265,7 @@ static int do_parse(std::string source, std::string output) {
       out = out_ptr.get();
     }
 
-    ncc::parse::AST_JsonWriter writer(*out);
+    ncc::parse::AST_JsonWriter writer(*out, false);
     ast.get()->accept(writer);
     *out << std::endl;
   }
