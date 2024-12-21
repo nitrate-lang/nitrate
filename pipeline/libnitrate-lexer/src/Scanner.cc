@@ -49,8 +49,6 @@ static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
             {qOpDot, OpMode::Binary, OpAssoc::Left},
         },
 
-        {},
-
         {
             {qOpInc, OpMode::PreUnary, OpAssoc::Right},
             {qOpDec, OpMode::PreUnary, OpAssoc::Right},

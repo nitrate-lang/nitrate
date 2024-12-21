@@ -94,7 +94,8 @@ namespace ncc::parse {
     Expr *recurse_expr(const std::set<ncc::lex::Token> &terminators,
                        int minPrecedence = 0);
     std::optional<Expr *> recurse_expr_impl(
-        const std::set<ncc::lex::Token> &terminators, int minPrecedence = 0);
+        const std::set<ncc::lex::Token> &terminators, int minPrecedence,
+        size_t depth);
     std::optional<Expr *> recurse_expr_primary();
     std::optional<Expr *> recurse_expr_primary_keyword(lex::Keyword key);
     std::optional<Expr *> recurse_expr_primary_punctor(lex::Punctor punc);
