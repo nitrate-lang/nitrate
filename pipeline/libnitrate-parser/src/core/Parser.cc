@@ -403,9 +403,6 @@ CPP_EXPORT bool ASTRoot::check() const {
     return false;
   }
 
-  /// FIXME: remove shortcut
-  return true;
-
   bool failed = false;
   ncc::parse::iterate<dfs_pre>(const_cast<Base *&>(m_base), [&](auto, auto c) {
     failed |= !c || !*c || (*c)->is_mock();

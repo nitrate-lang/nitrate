@@ -45,343 +45,304 @@ using namespace ncc::parse;
 class IterVisitor : public ASTVisitor {
   std::vector<Base**>& sub;
 
-  void visit(Base const& n) override {}
+  template <class T>
+  void add(T const& n) {
+    using NoPtr = std::remove_pointer_t<T>;
+    static_assert(std::is_base_of_v<Base, NoPtr>,
+                  "T must be derived from Base");
 
-  void visit(ExprStmt const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-    // sub.push_back(reinterpret_cast<Base**>(&n.get_expr()));
-    (void)sub;
+    if (n == nullptr) {
+      return;
+    }
+
+    // Hopefully this isn't UB
+    let ptr = reinterpret_cast<const Base* const*>(&n);
+    sub.push_back(const_cast<Base**>(ptr));
   }
 
-  void visit(StmtExpr const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+  void add_typesuffix(Type const& n) {
+    add(n.get_width());
+    add(n.get_range().first);
+    add(n.get_range().second);
   }
 
-  void visit(TypeExpr const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(NamedTy const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(InferTy const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
+  void visit(Base const&) override {}
+  void visit(ExprStmt const& n) override { add(n.get_expr()); }
+  void visit(StmtExpr const& n) override { add(n.get_stmt()); }
+  void visit(TypeExpr const& n) override { add(n.get_type()); }
+  void visit(NamedTy const& n) override { add_typesuffix(n); }
+  void visit(InferTy const& n) override { add_typesuffix(n); }
 
   void visit(TemplType const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_template());
+    std::for_each(n.get_args().begin(), n.get_args().end(),
+                  [&](let arg) { add(arg.second); });
+
+    add_typesuffix(n);
   }
 
-  void visit(U1 const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(U8 const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(U16 const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(U32 const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(U64 const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(U128 const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(I8 const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(I16 const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(I32 const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(I64 const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(I128 const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(F16 const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(F32 const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(F64 const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(F128 const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(VoidTy const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
+  void visit(U1 const& n) override { add_typesuffix(n); }
+  void visit(U8 const& n) override { add_typesuffix(n); }
+  void visit(U16 const& n) override { add_typesuffix(n); }
+  void visit(U32 const& n) override { add_typesuffix(n); }
+  void visit(U64 const& n) override { add_typesuffix(n); }
+  void visit(U128 const& n) override { add_typesuffix(n); }
+  void visit(I8 const& n) override { add_typesuffix(n); }
+  void visit(I16 const& n) override { add_typesuffix(n); }
+  void visit(I32 const& n) override { add_typesuffix(n); }
+  void visit(I64 const& n) override { add_typesuffix(n); }
+  void visit(I128 const& n) override { add_typesuffix(n); }
+  void visit(F16 const& n) override { add_typesuffix(n); }
+  void visit(F32 const& n) override { add_typesuffix(n); }
+  void visit(F64 const& n) override { add_typesuffix(n); }
+  void visit(F128 const& n) override { add_typesuffix(n); }
+  void visit(VoidTy const& n) override { add_typesuffix(n); }
 
   void visit(PtrTy const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_item());
+    add_typesuffix(n);
   }
 
-  void visit(OpaqueTy const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
+  void visit(OpaqueTy const& n) override { add_typesuffix(n); }
 
   void visit(TupleTy const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    std::for_each(n.get_items().begin(), n.get_items().end(),
+                  [&](let item) { add(item); });
+
+    add_typesuffix(n);
   }
 
   void visit(ArrayTy const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_item());
+    add(n.get_size());
+    add_typesuffix(n);
   }
 
   void visit(RefTy const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_item());
+    add_typesuffix(n);
   }
 
   void visit(FuncTy const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    std::for_each(n.get_attributes().begin(), n.get_attributes().end(),
+                  [&](let attr) { add(attr); });
+
+    std::for_each(n.get_params().params.begin(), n.get_params().params.end(),
+                  [&](let param) {
+                    add(std::get<1>(param));
+                    std::get<2>(param);
+                  });
+
+    add(n.get_return());
+
+    add_typesuffix(n);
   }
 
-  void visit(UnaryExpr const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
+  void visit(UnaryExpr const& n) override { add(n.get_rhs()); }
 
   void visit(BinExpr const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_lhs());
+    add(n.get_rhs());
   }
 
-  void visit(PostUnaryExpr const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
+  void visit(PostUnaryExpr const& n) override { add(n.get_lhs()); }
 
   void visit(TernaryExpr const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_cond());
+    add(n.get_lhs());
+    add(n.get_rhs());
   }
 
-  void visit(ConstInt const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(ConstFloat const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(ConstBool const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(ConstString const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(ConstChar const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(ConstNull const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(ConstUndef const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
+  void visit(ConstInt const&) override {}
+  void visit(ConstFloat const&) override {}
+  void visit(ConstBool const&) override {}
+  void visit(ConstString const&) override {}
+  void visit(ConstChar const&) override {}
+  void visit(ConstNull const&) override {}
+  void visit(ConstUndef const&) override {}
 
   void visit(Call const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_func());
+    std::for_each(n.get_args().begin(), n.get_args().end(),
+                  [&](let arg) { add(arg.second); });
   }
 
   void visit(TemplCall const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_func());
+    std::for_each(n.get_template_args().begin(), n.get_template_args().end(),
+                  [&](let arg) { add(arg.second); });
+
+    std::for_each(n.get_args().begin(), n.get_args().end(),
+                  [&](let arg) { add(arg.second); });
   }
 
   void visit(List const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    std::for_each(n.get_items().begin(), n.get_items().end(),
+                  [&](let item) { add(item); });
   }
 
   void visit(Assoc const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_key());
+    add(n.get_value());
   }
 
   void visit(Index const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_base());
+    add(n.get_index());
   }
 
   void visit(Slice const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_base());
+    add(n.get_start());
+    add(n.get_end());
   }
 
   void visit(FString const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    std::for_each(n.get_items().begin(), n.get_items().end(), [&](let arg) {
+      if (std::holds_alternative<Expr*>(arg)) {
+        add(std::get<Expr*>(arg));
+      } else if (std::holds_alternative<ncc::core::str_alias>(arg)) {
+      } else {
+        qcore_implement();
+      }
+    });
   }
 
-  void visit(Ident const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
+  void visit(Ident const&) override {}
 
   void visit(SeqPoint const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    std::for_each(n.get_items().begin(), n.get_items().end(),
+                  [&](let item) { add(item); });
   }
 
   void visit(Block const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    std::for_each(n.get_items().begin(), n.get_items().end(),
+                  [&](let item) { add(item); });
   }
 
   void visit(VarDecl const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    std::for_each(n.get_attributes().begin(), n.get_attributes().end(),
+                  [&](let attr) { add(attr); });
+
+    add(n.get_type());
+    add(n.get_value());
   }
 
   void visit(InlineAsm const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    std::for_each(n.get_args().begin(), n.get_args().end(),
+                  [&](let arg) { add(arg); });
   }
 
   void visit(IfStmt const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_cond());
+    add(n.get_then());
+    add(n.get_else());
   }
 
   void visit(WhileStmt const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_cond());
+    add(n.get_body());
   }
 
   void visit(ForStmt const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_init().value_or(nullptr));
+    add(n.get_cond().value_or(nullptr));
+    add(n.get_step().value_or(nullptr));
+    add(n.get_body());
   }
 
   void visit(ForeachStmt const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_expr());
+    add(n.get_body());
   }
 
-  void visit(BreakStmt const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
-  void visit(ContinueStmt const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
-
+  void visit(BreakStmt const&) override {}
+  void visit(ContinueStmt const&) override {}
   void visit(ReturnStmt const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_value().value_or(nullptr));
   }
 
   void visit(ReturnIfStmt const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_cond());
+    add(n.get_value());
   }
 
   void visit(CaseStmt const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_cond());
+    add(n.get_body());
   }
 
   void visit(SwitchStmt const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_cond());
+    std::for_each(n.get_cases().begin(), n.get_cases().end(),
+                  [&](let c) { add(c); });
+    add(n.get_default());
   }
 
-  void visit(TypedefStmt const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
+  void visit(TypedefStmt const& n) override { add(n.get_type()); }
 
   void visit(Function const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    std::for_each(n.get_attributes().begin(), n.get_attributes().end(),
+                  [&](let attr) { add(attr); });
+
+    if (n.get_template_params()) {
+      std::for_each(n.get_template_params()->begin(),
+                    n.get_template_params()->end(), [&](let param) {
+                      add(std::get<1>(param));
+                      add(std::get<2>(param));
+                    });
+    }
+
+    std::for_each(n.get_params().params.begin(), n.get_params().params.end(),
+                  [&](let param) {
+                    add(std::get<1>(param));
+                    std::get<2>(param);
+                  });
+
+    add(n.get_return());
+    add(n.get_precond().value_or(nullptr));
+    add(n.get_postcond().value_or(nullptr));
+    add(n.get_body().value_or(nullptr));
   }
 
   void visit(StructDef const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    std::for_each(n.get_attributes().begin(), n.get_attributes().end(),
+                  [&](let attr) { add(attr); });
+
+    if (n.get_template_params()) {
+      std::for_each(n.get_template_params()->begin(),
+                    n.get_template_params()->end(), [&](let param) {
+                      add(std::get<1>(param));
+                      add(std::get<2>(param));
+                    });
+    }
+
+    std::for_each(n.get_fields().begin(), n.get_fields().end(), [&](let field) {
+      add(field.get_type());
+      add(field.get_value().value_or(nullptr));
+    });
+
+    std::for_each(n.get_methods().begin(), n.get_methods().end(),
+                  [&](let method) { add(method.func); });
+
+    std::for_each(n.get_static_methods().begin(), n.get_static_methods().end(),
+                  [&](let method) { add(method.func); });
   }
 
   void visit(EnumDef const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    add(n.get_type());
+
+    std::for_each(n.get_items().begin(), n.get_items().end(),
+                  [&](let item) { add(item.second); });
   }
 
-  void visit(ScopeStmt const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
-  }
+  void visit(ScopeStmt const& n) override { add(n.get_body()); }
 
   void visit(ExportStmt const& n) override {
-    /// TODO: Implement IterVisitor
-    qcore_implement();
+    std::for_each(n.get_attrs().begin(), n.get_attrs().end(),
+                  [&](let attr) { add(attr); });
+
+    add(n.get_body());
   }
 
 public:
