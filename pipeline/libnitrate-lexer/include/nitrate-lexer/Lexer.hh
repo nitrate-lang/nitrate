@@ -247,7 +247,7 @@ namespace ncc::lex {
 
     std::optional<Token> m_current, m_last;
     std::deque<Token> m_ready;
-    bool m_skip_comments = false;
+    bool m_skip_comments = false, m_ebit = false;
 
     void FillTokenBuffer();
     void SyncState(Token tok);
@@ -263,6 +263,8 @@ namespace ncc::lex {
       m_offset = offset;
       m_current_filename = filename;
     }
+
+    void SetFailBit() { m_ebit = true; }
 
     virtual Token GetNext() = 0;
 
@@ -285,6 +287,8 @@ namespace ncc::lex {
     constexpr bool IsEof() const {
       return m_current.has_value() && m_current->is(qEofF);
     }
+
+    constexpr bool HasError() const { return m_ebit; }
 
     std::string_view Filename(Token t);
     uint32_t StartLine(Token t);
