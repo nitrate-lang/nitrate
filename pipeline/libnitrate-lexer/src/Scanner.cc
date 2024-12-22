@@ -335,28 +335,32 @@ CPP_EXPORT std::string_view ncc::lex::to_string(TokenType ty, TokenData v) {
   return R;
 }
 
-CPP_EXPORT void IScanner::FillTokenBuffer() {
-  for (size_t i = 0; i < TOKEN_BUFFER_SIZE; i++) {
-    try {
-      m_ready.push_back(GetNext());
-    } catch (ScannerEOF &) {
-      if (i == 0) {
-        m_ready.push_back(Token::EndOfFile());
+class IScanner::StaticImpl {
+public:
+  static FORCE_INLINE void FillTokenBuffer(IScanner &L) {
+    for (size_t i = 0; i < TOKEN_BUFFER_SIZE; i++) {
+      try {
+        L.m_ready.push_back(L.GetNext());
+      } catch (ScannerEOF &) {
+        if (i == 0) {
+          L.m_ready.push_back(Token::EndOfFile());
+        }
+        break;
       }
-      break;
     }
   }
-}
 
-CPP_EXPORT void IScanner::SyncState(Token tok) {
-  /// TODO: Implement this function
-  m_current = tok;
-}
+  static FORCE_INLINE void SyncState(IScanner &L, Token tok) {
+    L.m_current = tok;
+
+    // L.m_line_cache[tok.get_start()] = {L.m_line, L.m_column};
+  }
+};
 
 CPP_EXPORT Token IScanner::Next() {
   while (true) {
     if (m_ready.empty()) {
-      FillTokenBuffer();
+      StaticImpl::FillTokenBuffer(*this);
     }
 
     Token tok = m_ready.front();
@@ -366,7 +370,7 @@ CPP_EXPORT Token IScanner::Next() {
       continue;
     }
 
-    SyncState(tok);
+    StaticImpl::SyncState(*this, tok);
     m_last = m_current;
 
     return tok;
@@ -375,11 +379,11 @@ CPP_EXPORT Token IScanner::Next() {
 
 CPP_EXPORT Token IScanner::Peek() {
   if (m_ready.empty()) [[unlikely]] {
-    FillTokenBuffer();
+    StaticImpl::FillTokenBuffer(*this);
   }
 
   Token tok = m_ready.front();
-  SyncState(tok);
+  StaticImpl::SyncState(*this, tok);
 
   return tok;
 }
@@ -390,7 +394,7 @@ CPP_EXPORT void IScanner::Undo() {
   }
 
   m_ready.push_front(m_last.value());
-  SyncState(m_last.value());
+  StaticImpl::SyncState(*this, m_last.value());
 }
 
 CPP_EXPORT std::string_view IScanner::Filename(Token t) {
@@ -399,12 +403,22 @@ CPP_EXPORT std::string_view IScanner::Filename(Token t) {
 }
 
 CPP_EXPORT uint32_t IScanner::StartLine(Token t) {
-  /// TODO:
+  auto it = m_line_cache.find(t.get_start());
+  if (it != m_line_cache.end()) {
+    return it->second.first;
+  }
+
+  /// TODO: Implement this
   return QLEX_EOFF;
 }
 
 CPP_EXPORT uint32_t IScanner::StartColumn(Token t) {
-  /// TODO:
+  auto it = m_line_cache.find(t.get_start());
+  if (it != m_line_cache.end()) {
+    return it->second.second;
+  }
+
+  /// TODO: Implement this
   return QLEX_EOFF;
 }
 
@@ -419,11 +433,25 @@ CPP_EXPORT uint32_t IScanner::EndColumn(Token t) {
 }
 
 CPP_EXPORT uint32_t IScanner::GetRow(uint32_t off) {
-  /// TODO:
+  auto it = m_line_cache.find(off);
+  if (it != m_line_cache.end()) {
+    return it->second.first;
+  }
+
+  /// TODO: Implement this
+  qcore_print(QCORE_WARN, "GetRow: not implemented");
+
   return QLEX_EOFF;
 }
 
 CPP_EXPORT uint32_t IScanner::GetColumn(uint32_t off) {
-  /// TODO:
+  auto it = m_line_cache.find(off);
+  if (it != m_line_cache.end()) {
+    return it->second.second;
+  }
+
+  /// TODO: Implement this
+  qcore_print(QCORE_WARN, "GetColumn: not implemented");
+
   return QLEX_EOFF;
 }

@@ -349,8 +349,6 @@ public:
   IterVisitor(std::vector<Base**>& children) : sub(children) {}
 };
 
-#define FORCE_INLINE __attribute__((always_inline)) inline
-
 static FORCE_INLINE void get_children_sorted(Base* base, ChildSelect cs,
                                              std::vector<Base**>& children) {
   children.clear();

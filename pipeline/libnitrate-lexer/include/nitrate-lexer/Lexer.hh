@@ -42,6 +42,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Token.hh>
 #include <ostream>
+#include <unordered_map>
 
 ///============================================================================///
 
@@ -245,16 +246,17 @@ namespace ncc::lex {
   class IScanner {
     static constexpr size_t TOKEN_BUFFER_SIZE = 256;
 
-    std::optional<Token> m_current, m_last;
     std::deque<Token> m_ready;
+    std::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> m_line_cache;
+    std::optional<Token> m_current, m_last;
     bool m_skip_comments = false, m_ebit = false;
 
-    void FillTokenBuffer();
-    void SyncState(Token tok);
+    class StaticImpl;
+    friend class StaticImpl;
 
   protected:
-    uint32_t m_line{}, m_column{}, m_offset{};
     std::string_view m_current_filename = "?";
+    uint32_t m_line{}, m_column{}, m_offset{};
 
     void UpdateLocation(uint32_t line, uint32_t column, uint32_t offset,
                         std::string_view filename) {
@@ -304,7 +306,7 @@ namespace ncc::lex {
   };
 
   class CPP_EXPORT Tokenizer final : public IScanner {
-    static constexpr size_t GETC_BUFFER_SIZE = 512;
+    static constexpr size_t GETC_BUFFER_SIZE = 256;
 
     std::istream &m_file;
     std::shared_ptr<core::Environment> m_env;

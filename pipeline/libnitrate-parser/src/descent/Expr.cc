@@ -44,8 +44,6 @@
 #define MAX_RECURSION_DEPTH 4096
 #define MAX_LIST_REPEAT_COUNT 4096
 
-#define FORCE_INLINE inline __attribute__((always_inline))
-
 using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace ncc::core;
@@ -351,6 +349,7 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
             }
 
             LeftSide = make<Call>(LeftSide, std::move(Arguments));
+            LeftSide->set_offset(SourceOffset);
           } else if (next_if(qPuncLBrk)) {
             let first = recurse_expr({
                 Token(qPunc, qPuncRBrk),

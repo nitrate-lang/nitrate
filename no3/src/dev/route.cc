@@ -240,7 +240,7 @@ namespace no3::benchmark {
   }
 }  // namespace no3::benchmark
 
-static int do_parse(std::string source, std::string output) {
+static int do_parse(std::string source, std::string output, bool verbose) {
   auto env = std::make_shared<ncc::core::Environment>();
 
   std::fstream file(source, std::ios::in);
@@ -265,7 +265,7 @@ static int do_parse(std::string source, std::string output) {
       out = out_ptr.get();
     }
 
-    ncc::parse::AST_JsonWriter writer(*out, false);
+    ncc::parse::AST_JsonWriter writer(*out, verbose);
     ast.get()->accept(writer);
     *out << std::endl;
   }
@@ -476,12 +476,13 @@ namespace no3::router {
       return do_dev_test();
     } else if (parser.is_subcommand_used("parse")) {
       auto &parse_parser = *subparsers.at("parse");
-      core::SetDebugMode(parse_parser["--verbose"] == true);
+      bool verbose = parse_parser["--verbose"] == true;
+      core::SetDebugMode(verbose);
 
       std::string source = parse_parser.get<std::string>("source");
       std::string output = parse_parser.get<std::string>("--output");
 
-      return do_parse(source, output);
+      return do_parse(source, output, verbose);
     } else if (parser.is_subcommand_used("nr")) {
       auto &nr_parser = *subparsers.at("nr");
 

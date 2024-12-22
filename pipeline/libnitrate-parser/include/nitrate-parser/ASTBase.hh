@@ -47,15 +47,15 @@ namespace ncc::parse {
   class Base {
   private:
     npar_ty_t m_node_type : 7;
+    bool m_mock : 1;
     uint32_t m_fileid : 24;
     uint32_t m_offset : 32;
-    bool m_mock : 1;
 
   public:
     constexpr Base(npar_ty_t ty, bool mock = false,
                    uint32_t fileid = ncc::lex::QLEX_NOFILE,
                    uint32_t offset = ncc::lex::QLEX_EOFF)
-        : m_node_type(ty), m_fileid(fileid), m_offset(offset), m_mock(mock){};
+        : m_node_type(ty), m_mock(mock), m_fileid(fileid), m_offset(offset){};
 
     constexpr void accept(ASTVisitor &v) const {
       using namespace ncc::parse;

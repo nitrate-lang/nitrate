@@ -139,7 +139,7 @@ enum class NumType {
   Floating,
 };
 
-static bool validate_identifier(std::string_view id) {
+static FORCE_INLINE bool validate_identifier(std::string_view id) {
   /*
    * This state machine checks if the identifier looks
    * like 'a::b::c::d_::e::f'.
@@ -167,8 +167,6 @@ static bool validate_identifier(std::string_view id) {
 
   return state == 0;
 }
-
-#define FORCE_INLINE inline __attribute__((always_inline))
 
 static FORCE_INLINE bool canonicalize_float(std::string_view input,
                                             std::string &norm) {
@@ -344,11 +342,10 @@ enum class LexState {
 };
 
 // We use this layer of indirection to ensure that the compiler can have full
-// optimization capabilities as if the functions were static (local to the
-// file).
+// optimization capabilities as if the functions has static linkage.
 class Tokenizer::StaticImpl {
 public:
-  static char nextc(Tokenizer &L) {
+  static FORCE_INLINE char nextc(Tokenizer &L) {
     if (L.m_getc_buffer_pos == GETC_BUFFER_SIZE) {
       L.m_file.read(L.m_getc_buffer.data(), GETC_BUFFER_SIZE);
       auto gcount = L.m_file.gcount();
@@ -453,12 +450,188 @@ public:
 
   static FORCE_INLINE Token ParseString(Tokenizer &L, char c, std::string &buf,
                                         uint32_t start_pos) {
-    /// TOOD:
-    qcore_implement();
-    (void)L;
-    (void)c;
-    (void)buf;
-    (void)start_pos;
+    while (true) {
+      while (c != buf[0]) {
+        /* Normal character */
+        if (c != '\\') {
+          buf += c;
+        } else {
+          /* String escape sequences */
+          c = nextc(L);
+          switch (c) {
+            case 'n':
+              buf += '\n';
+              break;
+            case 't':
+              buf += '\t';
+              break;
+            case 'r':
+              buf += '\r';
+              break;
+            case '0':
+              buf += '\0';
+              break;
+            case '\\':
+              buf += '\\';
+              break;
+            case '\'':
+              buf += '\'';
+              break;
+            case '\"':
+              buf += '\"';
+              break;
+            case 'x': {
+              char hex[2] = {nextc(L), nextc(L)};
+              if (!std::isxdigit(hex[0]) || !std::isxdigit(hex[1])) {
+                L.reset_state();
+                return Token::EndOfFile();
+              }
+              buf +=
+                  (hextable[(uint8_t)hex[0]] << 4) | hextable[(uint8_t)hex[1]];
+              break;
+            }
+            case 'u': {
+              c = nextc(L);
+              if (c != '{') {
+                L.reset_state();
+                return Token::EndOfFile();
+              }
+
+              std::string hex;
+
+              while (true) {
+                c = nextc(L);
+                if (c == '}') {
+                  break;
+                }
+
+                if (!std::isxdigit(c)) {
+                  L.reset_state();
+                  return Token::EndOfFile();
+                }
+
+                hex += c;
+              }
+
+              uint32_t codepoint;
+              if (std::from_chars(hex.data(), hex.data() + hex.size(),
+                                  codepoint, 16)
+                      .ec != std::errc()) {
+                L.reset_state();
+                return Token::EndOfFile();
+              }
+
+              if (codepoint < 0x80) {
+                buf += (char)codepoint;
+              } else if (codepoint < 0x800) {
+                buf += (char)(0xC0 | (codepoint >> 6));
+                buf += (char)(0x80 | (codepoint & 0x3F));
+              } else if (codepoint < 0x10000) {
+                buf += (char)(0xE0 | (codepoint >> 12));
+                buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
+                buf += (char)(0x80 | (codepoint & 0x3F));
+              } else if (codepoint < 0x110000) {
+                buf += (char)(0xF0 | (codepoint >> 18));
+                buf += (char)(0x80 | ((codepoint >> 12) & 0x3F));
+                buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
+                buf += (char)(0x80 | (codepoint & 0x3F));
+              } else {
+                L.reset_state();
+                return Token::EndOfFile();
+              }
+
+              break;
+            }
+            case 'o': {
+              char oct[3] = {nextc(L), nextc(L), nextc(L)};
+              int val;
+              if (std::from_chars(oct, oct + 3, val, 8).ec != std::errc()) {
+                L.reset_state();
+                return Token::EndOfFile();
+              }
+
+              buf += val;
+              break;
+            }
+            case 'b': {
+              c = nextc(L);
+              if (c != '{') {
+                L.reset_state();
+                return Token::EndOfFile();
+              }
+
+              std::string bin;
+
+              while (true) {
+                c = nextc(L);
+                if (c == '}') {
+                  break;
+                }
+
+                if ((c != '0' && c != '1') || bin.size() >= 64) {
+                  L.reset_state();
+                  return Token::EndOfFile();
+                }
+
+                bin += c;
+              }
+
+              uint64_t codepoint = 0;
+              for (size_t i = 0; i < bin.size(); i++) {
+                codepoint = (codepoint << 1) | (bin[i] - '0');
+              }
+
+              if (codepoint > 0xFFFFFFFF) {
+                buf += (char)(codepoint >> 56);
+                buf += (char)(codepoint >> 48);
+                buf += (char)(codepoint >> 40);
+                buf += (char)(codepoint >> 32);
+                buf += (char)(codepoint >> 24);
+                buf += (char)(codepoint >> 16);
+                buf += (char)(codepoint >> 8);
+                buf += (char)(codepoint);
+              } else if (codepoint > 0xFFFF) {
+                buf += (char)(codepoint >> 24);
+                buf += (char)(codepoint >> 16);
+                buf += (char)(codepoint >> 8);
+                buf += (char)(codepoint);
+              } else if (codepoint > 0xFF) {
+                buf += (char)(codepoint >> 8);
+                buf += (char)(codepoint);
+              } else {
+                buf += (char)(codepoint);
+              }
+
+              break;
+            }
+            default:
+              buf += c;
+              break;
+          }
+        }
+
+        c = nextc(L);
+      }
+
+      /* Skip over characters permitted in between multi-part strings */
+      do {
+        c = nextc(L);
+      } while (lex_is_space(c) || c == '\\');
+
+      /* Check for a multi-part string */
+      if (c == buf[0]) {
+        c = nextc(L);
+        continue;
+      }
+
+      L.m_pushback.push_back(c);
+      /* Character or string */
+      if (buf.front() == '\'' && buf.size() == 2) {
+        return Token(qChar, intern(std::string(1, buf[1])), start_pos);
+      } else {
+        return Token(qText, intern(buf.substr(1, buf.size() - 1)), start_pos);
+      }
+    }
   }
 
   static FORCE_INLINE Token ParseInteger(Tokenizer &L, char c, std::string &buf,
@@ -864,188 +1037,7 @@ CPP_EXPORT Token Tokenizer::GetNext() {
         return StaticImpl::ParseIdentifier(*this, c, buf, start_pos);
       }
       case LexState::String: {
-        /// FIXME: Move this into StaticImpl
-
-        if (c != buf[0]) {
-          /* Normal character */
-          if (c != '\\') {
-            buf += c;
-            continue;
-          }
-
-          /* String escape sequences */
-          c = StaticImpl::nextc(*this);
-          switch (c) {
-            case 'n':
-              buf += '\n';
-              break;
-            case 't':
-              buf += '\t';
-              break;
-            case 'r':
-              buf += '\r';
-              break;
-            case '0':
-              buf += '\0';
-              break;
-            case '\\':
-              buf += '\\';
-              break;
-            case '\'':
-              buf += '\'';
-              break;
-            case '\"':
-              buf += '\"';
-              break;
-            case 'x': {
-              char hex[2] = {StaticImpl::nextc(*this),
-                             StaticImpl::nextc(*this)};
-              if (!std::isxdigit(hex[0]) || !std::isxdigit(hex[1])) {
-                reset_state();
-                return Token::EndOfFile();
-              }
-              buf +=
-                  (hextable[(uint8_t)hex[0]] << 4) | hextable[(uint8_t)hex[1]];
-              break;
-            }
-            case 'u': {
-              c = StaticImpl::nextc(*this);
-              if (c != '{') {
-                reset_state();
-                return Token::EndOfFile();
-              }
-
-              std::string hex;
-
-              while (true) {
-                c = StaticImpl::nextc(*this);
-                if (c == '}') {
-                  break;
-                }
-
-                if (!std::isxdigit(c)) {
-                  reset_state();
-                  return Token::EndOfFile();
-                }
-
-                hex += c;
-              }
-
-              uint32_t codepoint;
-              if (std::from_chars(hex.data(), hex.data() + hex.size(),
-                                  codepoint, 16)
-                      .ec != std::errc()) {
-                reset_state();
-                return Token::EndOfFile();
-              }
-
-              if (codepoint < 0x80) {
-                buf += (char)codepoint;
-              } else if (codepoint < 0x800) {
-                buf += (char)(0xC0 | (codepoint >> 6));
-                buf += (char)(0x80 | (codepoint & 0x3F));
-              } else if (codepoint < 0x10000) {
-                buf += (char)(0xE0 | (codepoint >> 12));
-                buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
-                buf += (char)(0x80 | (codepoint & 0x3F));
-              } else if (codepoint < 0x110000) {
-                buf += (char)(0xF0 | (codepoint >> 18));
-                buf += (char)(0x80 | ((codepoint >> 12) & 0x3F));
-                buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
-                buf += (char)(0x80 | (codepoint & 0x3F));
-              } else {
-                reset_state();
-                return Token::EndOfFile();
-              }
-
-              break;
-            }
-            case 'o': {
-              char oct[3] = {StaticImpl::nextc(*this), StaticImpl::nextc(*this),
-                             StaticImpl::nextc(*this)};
-              int val;
-              if (std::from_chars(oct, oct + 3, val, 8).ec != std::errc()) {
-                reset_state();
-                return Token::EndOfFile();
-              }
-
-              buf += val;
-              break;
-            }
-            case 'b': {
-              c = StaticImpl::nextc(*this);
-              if (c != '{') {
-                reset_state();
-                return Token::EndOfFile();
-              }
-
-              std::string bin;
-
-              while (true) {
-                c = StaticImpl::nextc(*this);
-                if (c == '}') {
-                  break;
-                }
-
-                if ((c != '0' && c != '1') || bin.size() >= 64) {
-                  reset_state();
-                  return Token::EndOfFile();
-                }
-
-                bin += c;
-              }
-
-              uint64_t codepoint = 0;
-              for (size_t i = 0; i < bin.size(); i++) {
-                codepoint = (codepoint << 1) | (bin[i] - '0');
-              }
-
-              if (codepoint > 0xFFFFFFFF) {
-                buf += (char)(codepoint >> 56);
-                buf += (char)(codepoint >> 48);
-                buf += (char)(codepoint >> 40);
-                buf += (char)(codepoint >> 32);
-                buf += (char)(codepoint >> 24);
-                buf += (char)(codepoint >> 16);
-                buf += (char)(codepoint >> 8);
-                buf += (char)(codepoint);
-              } else if (codepoint > 0xFFFF) {
-                buf += (char)(codepoint >> 24);
-                buf += (char)(codepoint >> 16);
-                buf += (char)(codepoint >> 8);
-                buf += (char)(codepoint);
-              } else if (codepoint > 0xFF) {
-                buf += (char)(codepoint >> 8);
-                buf += (char)(codepoint);
-              } else {
-                buf += (char)(codepoint);
-              }
-
-              break;
-            }
-            default:
-              buf += c;
-              break;
-          }
-          continue;
-        } else {
-          do {
-            c = StaticImpl::nextc(*this);
-          } while (lex_is_space(c) || c == '\\');
-
-          if (c == buf[0]) {
-            continue;
-          } else {
-            m_pushback.push_back(c);
-            /* Character or string */
-            if (buf.front() == '\'' && buf.size() == 2) {
-              return Token(qChar, intern(std::string(1, buf[1])), start_pos);
-            } else {
-              return Token(qText, intern(buf.substr(1, buf.size() - 1)),
-                           start_pos);
-            }
-          }
-        }
+        return StaticImpl::ParseString(*this, c, buf, start_pos);
       }
       case LexState::Integer: {
         return StaticImpl::ParseInteger(*this, c, buf, start_pos);
