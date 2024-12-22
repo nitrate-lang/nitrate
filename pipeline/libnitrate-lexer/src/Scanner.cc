@@ -38,77 +38,16 @@
 
 using namespace ncc::lex;
 
-/*
-qOpPlus
-qOpMinus
-qOpTimes
-qOpSlash
-qOpPercent
-qOpBitAnd
-qOpBitOr
-qOpBitXor
-qOpBitNot
-qOpLShift
-qOpRShift
-qOpROTL
-qOpROTR
-qOpLogicAnd
-qOpLogicOr
-qOpLogicXor
-qOpLogicNot
-qOpLT
-qOpGT
-qOpLE
-qOpGE
-qOpEq
-qOpNE
-qOpSet
-qOpPlusSet
-qOpMinusSet
-qOpTimesSet
-qOpSlashSet
-qOpPercentSet
-qOpBitAndSet
-qOpBitOrSet
-qOpBitXorSet
-qOpLogicAndSet
-qOpLogicOrSet
-qOpLogicXorSet
-qOpLShiftSet
-qOpRShiftSet
-qOpROTLSet
-qOpROTRSet
-qOpInc
-qOpDec
-qOpAs
-qOpBitcastAs
-qOpIn
-qOpOut
-qOpSizeof
-qOpBitsizeof
-qOpAlignof
-qOpTypeof
-qOpDot
-qOpRange
-qOpEllipsis
-qOpArrow
-qOpTernary
-*/
-
-/// FIXME: Verify and test this operator precedence table's semantics
-
 // Lower index means higher precedence
 static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
     precedence_groups = {
         {
-            {qOpAs, OpMode::Binary, OpAssoc::Left},
-            {qOpBitcastAs, OpMode::Binary, OpAssoc::Left},
+            {qOpDot, OpMode::Binary, OpAssoc::Left},
         },
 
         {
             {qOpInc, OpMode::PostUnary, OpAssoc::Left},
             {qOpDec, OpMode::PostUnary, OpAssoc::Left},
-            {qOpDot, OpMode::Binary, OpAssoc::Left},
         },
 
         {
@@ -170,6 +109,11 @@ static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
         },
 
         {
+            {qOpAs, OpMode::Binary, OpAssoc::Left},
+            {qOpBitcastAs, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {
             {qOpTimes, OpMode::Binary, OpAssoc::Left},
             {qOpSlash, OpMode::Binary, OpAssoc::Left},
             {qOpPercent, OpMode::Binary, OpAssoc::Left},
@@ -188,18 +132,6 @@ static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
         },
 
         {
-            {qOpLT, OpMode::Binary, OpAssoc::Left},
-            {qOpGT, OpMode::Binary, OpAssoc::Left},
-            {qOpLE, OpMode::Binary, OpAssoc::Left},
-            {qOpGE, OpMode::Binary, OpAssoc::Left},
-        },
-
-        {
-            {qOpEq, OpMode::Binary, OpAssoc::Left},
-            {qOpNE, OpMode::Binary, OpAssoc::Left},
-        },
-
-        {
             {qOpBitAnd, OpMode::Binary, OpAssoc::Left},
         },
 
@@ -209,6 +141,23 @@ static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
 
         {
             {qOpBitOr, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {
+            /*
+              Add soup of new operators like '$>', '~?', etc. Maybe like 90 of
+              them? This way we can have a lot of fun with overloading and
+              creating basically custom syntax that is meme worthy.
+             */
+        },
+
+        {
+            {qOpEq, OpMode::Binary, OpAssoc::Left},
+            {qOpNE, OpMode::Binary, OpAssoc::Left},
+            {qOpLT, OpMode::Binary, OpAssoc::Left},
+            {qOpGT, OpMode::Binary, OpAssoc::Left},
+            {qOpLE, OpMode::Binary, OpAssoc::Left},
+            {qOpGE, OpMode::Binary, OpAssoc::Left},
         },
 
         {
@@ -225,6 +174,19 @@ static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
 
         {
             {qOpTernary, OpMode::Ternary, OpAssoc::Right},
+        },
+
+        {
+            {qOpIn, OpMode::Binary, OpAssoc::Left},
+            {qOpOut, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {
+            {qOpRange, OpMode::Binary, OpAssoc::Left},
+            {qOpArrow, OpMode::Binary, OpAssoc::Left},
+        },
+
+        {
             {qOpSet, OpMode::Binary, OpAssoc::Right},
             {qOpPlusSet, OpMode::Binary, OpAssoc::Right},
             {qOpMinusSet, OpMode::Binary, OpAssoc::Right},
@@ -241,10 +203,6 @@ static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
             {qOpRShiftSet, OpMode::Binary, OpAssoc::Right},
             {qOpROTLSet, OpMode::Binary, OpAssoc::Right},
             {qOpROTRSet, OpMode::Binary, OpAssoc::Right},
-        },
-
-        {
-            {qOpEllipsis, OpMode::PreUnary, OpAssoc::Right},
         },
 };
 

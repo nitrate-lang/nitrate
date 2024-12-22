@@ -285,20 +285,21 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
                 GetOperatorAssociativity(Op, OpType) == OpAssoc::Left;
             let NextMinPrecedence =
                 IsLeftAssoc ? OpPrecedence + 1 : OpPrecedence;
+            bool IsType = Op == qOpAs || Op == qOpBitcastAs;
 
-            /****************************************
-             * Parse pre-unary operators
-             ****************************************/
-            while (let Tok = next_if(qOper)) {
-              PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
+            if (!IsType) {
+              /****************************************
+               * Parse pre-unary operators
+               ****************************************/
+              while (let Tok = next_if(qOper)) {
+                PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
+              }
             }
-
-            bool isType = Op == qOpAs || Op == qOpBitcastAs;
 
             /****************************************
              * Handle binary operators
              ****************************************/
-            if (auto RightSide = recurse_expr_primary(isType)) {
+            if (auto RightSide = recurse_expr_primary(IsType)) {
               /****************************************
                * Combine pre-unary operators
                ****************************************/
