@@ -39,7 +39,7 @@
 #include <stack>
 
 #define MAX_RECURSION_DEPTH 4096
-#define MAX_LIST_REPEAT_COUNT 256
+#define MAX_LIST_REPEAT_COUNT 4096
 
 #define FORCE_INLINE inline __attribute__((always_inline))
 
@@ -101,16 +101,6 @@ CallArgs Parser::recurse_call_arguments(Token terminator) {
   }
 
   return call_args;
-}
-
-Expr *Parser::recurse_function_call(Expr *callee) {
-  let args = recurse_call_arguments(Token(qPunc, qPuncRPar));
-  if (!next_if(qPuncRPar)) {
-    diagnostic << current() << "Expected ')' to close the function call";
-    return mock_expr(QAST_CALL);
-  }
-
-  return make<Call>(callee, args);
 }
 
 Expr *Parser::recurse_fstring() {
@@ -243,7 +233,7 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
     PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
   }
 
-  if (let LeftSideOpt = recurse_expr_primary()) {
+  if (let LeftSideOpt = recurse_expr_primary(false)) {
     auto LeftSide = LeftSideOpt.value();
     bool Spinning = true;
 
@@ -296,10 +286,12 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
               PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
             }
 
+            bool isType = Op == qOpAs || Op == qOpBitcastAs;
+
             /****************************************
              * Handle binary operators
              ****************************************/
-            if (auto RightSide = recurse_expr_primary()) {
+            if (auto RightSide = recurse_expr_primary(isType)) {
               /****************************************
                * Combine pre-unary operators
                ****************************************/
@@ -313,6 +305,12 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
                 RightSide = PreUnaryExpr;
               }
 
+              if (Stack.size() + 1 > MAX_RECURSION_DEPTH) {
+                diagnostic << current()
+                           << "Recursion depth exceeds maximum limit";
+                return mock_expr();
+              }
+
               Stack.push(Frame(LeftSide, SourceOffset, NextMinPrecedence,
                                FrameType::Binary, Op));
               LeftSide = RightSide.value();
@@ -320,8 +318,6 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
               diagnostic
                   << current()
                   << "Failed to parse right-hand side of binary expression";
-
-              return mock_expr();
             }
           } else {
             LeftSide = UnwindStack(Stack, LeftSide);
@@ -333,9 +329,45 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
         }
 
         case qPunc: {
-          /// TODO: Implement this case
+          LeftSide = UnwindStack(Stack, LeftSide);
 
-          Spinning = false;
+          if (next_if(qPuncLPar)) {
+            let Arguments = recurse_call_arguments(Token(qPunc, qPuncRPar));
+            if (!next_if(qPuncRPar)) {
+              diagnostic << current()
+                         << "Expected ')' to close the function call";
+            }
+
+            LeftSide = make<Call>(LeftSide, std::move(Arguments));
+
+            /// TODO: Add support template'd function calls
+          } else if (next_if(qPuncLBrk)) {
+            let first = recurse_expr({
+                Token(qPunc, qPuncRBrk),
+                Token(qPunc, qPuncColn),
+            });
+
+            if (next_if(qPuncColn)) {
+              let second = recurse_expr({Token(qPunc, qPuncRBrk)});
+              if (!next_if(qPuncRBrk)) {
+                diagnostic << current() << "Expected ']' to close the slice";
+              }
+
+              LeftSide = make<Slice>(LeftSide, first, second);
+              LeftSide->set_offset(SourceOffset);
+            } else {
+              if (!next_if(qPuncRBrk)) {
+                diagnostic << current()
+                           << "Expected ']' to close the index expression";
+              }
+
+              LeftSide = make<Index>(LeftSide, first);
+              LeftSide->set_offset(SourceOffset);
+            }
+          } else {  // Not part of the expression
+            Spinning = false;
+          }
+
           break;
         }
 
@@ -363,31 +395,33 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
   }
 }
 
-std::optional<Expr *> Parser::recurse_expr_primary_keyword(lex::Keyword key) {
+std::optional<Expr *> Parser::recurse_expr_keyword(lex::Keyword key) {
+  std::optional<Expr *> E;
+
   switch (key) {
     case qKScope: {
       diagnostic << current() << "Namespace declaration is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKImport: {
       diagnostic << current() << "Import statement is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKPub: {
       diagnostic << current() << "Public access modifier is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKSec: {
       diagnostic << current() << "Private access modifier is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKPro: {
       diagnostic << current() << "Protected access modifier is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKType: {
@@ -395,66 +429,68 @@ std::optional<Expr *> Parser::recurse_expr_primary_keyword(lex::Keyword key) {
       let type = recurse_type();
       type->set_offset(start_pos);
 
-      return make<TypeExpr>(type);
+      E = make<TypeExpr>(type);
+      break;
     }
 
     case qKLet: {
       diagnostic << current() << "Let declaration is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKVar: {
       diagnostic << current() << "Var declaration is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKConst: {
       diagnostic << current() << "Const declaration is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKStatic: {
       diagnostic << current() << "Static modifier is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKStruct: {
       diagnostic << current() << "Struct declaration is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKRegion: {
       diagnostic << current() << "Region declaration is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKGroup: {
       diagnostic << current() << "Group declaration is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKClass: {
       diagnostic << current() << "Class declaration is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKUnion: {
       diagnostic << current() << "Union declaration is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKOpaque: {
       diagnostic << current() << "Opaque type is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKEnum: {
       diagnostic << current() << "Enum declaration is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qK__FString: {
-      return recurse_fstring();
+      E = recurse_fstring();
+      break;
     }
 
     case qKFn: {
@@ -467,150 +503,157 @@ std::optional<Expr *> Parser::recurse_expr_primary_keyword(lex::Keyword key) {
 
       if (next_if(qPuncLPar)) {
         let args = recurse_call_arguments(Token(qPunc, qPuncRPar));
-        if (!next_if(qPuncRPar)) {
+        if (next_if(qPuncRPar)) {
+          E = make<Call>(expr, args);
+        } else {
           diagnostic << current() << "Expected ')' to close the function call";
-          return mock_expr(QAST_CALL);
+          E = mock_expr(QAST_CALL);
         }
-
-        expr = make<Call>(expr, args);
       }
 
-      return expr;
+      break;
     }
 
     case qKUnsafe: {
       diagnostic << current() << "Unsafe keyword is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKSafe: {
       diagnostic << current() << "Safe keyword is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKPromise: {
       diagnostic << current() << "Promise keyword is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKIf: {
       diagnostic << current() << "If statement is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKElse: {
       diagnostic << current() << "Else statement is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKFor: {
       diagnostic << current() << "For loop is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKWhile: {
       diagnostic << current() << "While loop is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKDo: {
       diagnostic << current() << "Do statement is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKSwitch: {
       diagnostic << current() << "Switch statement is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKBreak: {
       diagnostic << current() << "Break statement is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKContinue: {
       diagnostic << current() << "Continue statement is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKReturn: {
       diagnostic << current() << "Return statement is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKRetif: {
       diagnostic << current() << "Retif statement is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKForeach: {
       diagnostic << current() << "Foreach loop is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKTry: {
       diagnostic << current() << "Try statement is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKCatch: {
       diagnostic << current() << "Catch statement is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKThrow: {
       diagnostic << current() << "Throw statement is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKAsync: {
       diagnostic << current() << "Async statement is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKAwait: {
       diagnostic << current() << "Await statement is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qK__Asm__: {
       diagnostic << current() << "Inline assembly is not valid here";
-      return std::nullopt;
+      break;
     }
 
     case qKUndef: {
-      return make<ConstUndef>();
+      E = make<ConstUndef>();
+      break;
     }
 
     case qKNull: {
-      return make<ConstNull>();
+      E = make<ConstNull>();
+      break;
     }
 
     case qKTrue: {
-      return make<ConstBool>(true);
+      E = make<ConstBool>(true);
+      break;
     }
 
     case qKFalse: {
-      return make<ConstBool>(false);
+      E = make<ConstBool>(false);
+      break;
     }
   }
+
+  return E;
 }
 
-std::optional<Expr *> Parser::recurse_expr_primary_punctor(lex::Punctor punc) {
+std::optional<Expr *> Parser::recurse_expr_punctor(lex::Punctor punc) {
+  std::optional<Expr *> E;
+
   switch (punc) {
     case qPuncLPar: {
-      let expr = recurse_expr({Token(qPunc, qPuncRPar)});
+      E = recurse_expr({Token(qPunc, qPuncRPar)});
       if (!next_if(qPuncRPar)) {
         diagnostic << current() << "Expected ')' to close the expression";
-        return std::nullopt;
       }
 
-      return expr;
+      break;
     }
 
     case qPuncRPar: {
       diagnostic << current() << "Unexpected right parenthesis in expression";
-      return std::nullopt;
+      break;
     }
 
     case qPuncLBrk: {
@@ -620,7 +663,7 @@ std::optional<Expr *> Parser::recurse_expr_primary_punctor(lex::Punctor punc) {
         if (next_if(qEofF)) {
           diagnostic << current()
                      << "Unexpected end of file while parsing expression";
-          return std::nullopt;
+          break;
         }
 
         if (next_if(qPuncRBrk)) {
@@ -636,32 +679,28 @@ std::optional<Expr *> Parser::recurse_expr_primary_punctor(lex::Punctor punc) {
         if (next_if(qPuncSemi)) {
           if (let count_tok = next_if(qIntL)) {
             let count_str = current().as_string();
-            size_t count;
+            size_t count{};
             if (std::from_chars(count_str.data(),
                                 count_str.data() + count_str.size(), count)
                     .ec == std::errc()) {
-              if (count > MAX_LIST_REPEAT_COUNT) {
-                diagnostic << current()
-                           << "List element repeat count exceeds maximum limit";
-                return std::nullopt;
-              } else {
+              if (count <= MAX_LIST_REPEAT_COUNT) {
                 for (size_t i = 0; i < count; i++) {
                   items.push_back(expr);
                 }
+              } else {
+                diagnostic << current()
+                           << "Compressed list size exceeds maximum limit";
               }
 
             } else {
-              diagnostic
-                  << current()
-                  << "Expected a valid integer literal for the list element "
-                     "repeat count";
-              return std::nullopt;
+              diagnostic << current()
+                         << "Expected an integer literal for the compressed "
+                            "list size";
             }
           } else {
             diagnostic << current()
-                       << "Expected an integer literal for the list element "
-                          "repeat count";
-            return std::nullopt;
+                       << "Expected an integer literal for the compressed list "
+                          "size";
           }
         } else {
           items.push_back(expr);
@@ -670,12 +709,13 @@ std::optional<Expr *> Parser::recurse_expr_primary_punctor(lex::Punctor punc) {
         next_if(qPuncComa);
       }
 
-      return make<List>(std::move(items));
+      E = make<List>(std::move(items));
+      break;
     }
 
     case qPuncRBrk: {
       diagnostic << current() << "Unexpected right bracket in expression";
-      return std::nullopt;
+      break;
     }
 
     case qPuncLCur: {
@@ -685,7 +725,7 @@ std::optional<Expr *> Parser::recurse_expr_primary_punctor(lex::Punctor punc) {
         if (next_if(qEofF)) {
           diagnostic << current()
                      << "Unexpected end of file while parsing dictionary";
-          return std::nullopt;
+          break;
         }
 
         if (next_if(qPuncRCur)) {
@@ -697,7 +737,7 @@ std::optional<Expr *> Parser::recurse_expr_primary_punctor(lex::Punctor punc) {
         let key = recurse_expr({Token(qPunc, qPuncColn)});
         if (!next_if(qPuncColn)) {
           diagnostic << current() << "Expected colon after key in dictionary";
-          return std::nullopt;
+          break;
         }
 
         let value = recurse_expr({
@@ -713,32 +753,35 @@ std::optional<Expr *> Parser::recurse_expr_primary_punctor(lex::Punctor punc) {
         items.push_back(assoc);
       }
 
-      return make<List>(std::move(items));
+      E = make<List>(std::move(items));
+      break;
     }
 
     case qPuncRCur: {
       diagnostic << current() << "Unexpected right curly brace in expression";
-      return std::nullopt;
+      break;
     }
 
     case qPuncComa: {
       diagnostic << current() << "Comma is not valid in this context";
-      return std::nullopt;
+      break;
     }
 
     case qPuncColn: {
       diagnostic << current() << "Colon is not valid in this context";
-      return std::nullopt;
+      break;
     }
 
     case qPuncSemi: {
       diagnostic << current() << "Semicolon is not valid in this context";
-      return std::nullopt;
+      break;
     }
   }
+
+  return E;
 }
 
-Expr *Parser::recurse_expr_primary_type_suffix(Expr *base) {
+Expr *Parser::recurse_expr_type_suffix(Expr *base) {
   let tok = current();
 
   let suffix = recurse_type();
@@ -750,169 +793,134 @@ Expr *Parser::recurse_expr_primary_type_suffix(Expr *base) {
   return make<BinExpr>(base, qOpAs, texpr);
 }
 
-std::optional<Expr *> Parser::recurse_expr_primary() {
+std::optional<Expr *> Parser::recurse_expr_primary(bool isType) {
   let start_pos = peek().get_start();
-
   std::optional<Expr *> E;
-  switch (let tok = next(); tok.get_type()) {
-    case qEofF: {
-      diagnostic << tok << "Unexpected end of file while parsing expression";
-      break;
-    }
 
-    case qKeyW: {
-      if ((E = recurse_expr_primary_keyword(tok.as_key())).has_value()) {
-        E.value()->set_offset(start_pos);
-      }
+  if (isType) {
+    let type = recurse_type();
+    type->set_offset(start_pos);
 
-      break;
-    }
+    let texpr = make<TypeExpr>(type);
+    texpr->set_offset(start_pos);
 
-    case qOper: {
-      diagnostic << tok << "Unexpected operator in expression";
-      break;
-    }
-
-    case qPunc: {
-      if ((E = recurse_expr_primary_punctor(tok.as_punc())).has_value()) {
-        E.value()->set_offset(start_pos);
-      }
-      break;
-    }
-
-    case qName: {
-      let identifier = make<Ident>(intern(tok.as_string()));
-      identifier->set_offset(start_pos);
-
-      E = identifier;
-      break;
-    }
-
-    case qIntL: {
-      let integer = make<ConstInt>(intern(tok.as_string()));
-      integer->set_offset(start_pos);
-
-      if (let tok = peek(); tok.is(qName)) {
-        let casted = recurse_expr_primary_type_suffix(integer);
-        casted->set_offset(start_pos);
-
-        E = casted;
-      } else {
-        E = integer;
-      }
-
-      break;
-    }
-
-    case qNumL: {
-      let decimal = make<ConstFloat>(intern(tok.as_string()));
-      decimal->set_offset(start_pos);
-
-      if (let tok = peek(); tok.is(qName)) {
-        let casted = recurse_expr_primary_type_suffix(decimal);
-        casted->set_offset(start_pos);
-
-        E = casted;
-      } else {
-        E = decimal;
-      }
-
-      break;
-    }
-
-    case qText: {
-      let string = make<ConstString>(intern(tok.as_string()));
-      string->set_offset(start_pos);
-
-      if (let tok = peek(); tok.is(qName)) {
-        let casted = recurse_expr_primary_type_suffix(string);
-        casted->set_offset(start_pos);
-
-        E = casted;
-      } else {
-        E = string;
-      }
-
-      break;
-    }
-
-    case qChar: {
-      let str_data = tok.as_string();
-      if (str_data.size() != 1) [[unlikely]] {
-        diagnostic << tok << "Expected a single byte in character literal";
+    E = texpr;
+  } else {
+    switch (let tok = next(); tok.get_type()) {
+      case qEofF: {
         break;
       }
 
-      let character = make<ConstChar>(str_data[0]);
-      character->set_offset(start_pos);
+      case qKeyW: {
+        if ((E = recurse_expr_keyword(tok.as_key())).has_value()) {
+          E.value()->set_offset(start_pos);
+        }
 
-      if (let tok = peek(); tok.is(qName)) {
-        let casted = recurse_expr_primary_type_suffix(character);
-        casted->set_offset(start_pos);
-
-        E = casted;
-      } else {
-        E = character;
+        break;
       }
 
-      break;
-    }
+      case qOper: {
+        diagnostic << tok << "Unexpected operator in expression";
+        break;
+      }
 
-    case qMacB: {
-      diagnostic << tok << "Unexpected macro block in expression";
-      break;
-    }
-
-    case qMacr: {
-      diagnostic << tok << "Unexpected macro call in expression";
-      break;
-    }
-
-    case qNote: {
-      diagnostic << tok << "Unexpected comment in expression";
-      break;
-    }
-  }
-
-  if (E.has_value()) {
-    /****************************************
-     * Process syntax sugar
-     ****************************************/
-
-    while (true) {
-      if (next_if(qPuncLPar)) {
-        E = recurse_function_call(E.value());
-
-        /// TODO: Add support template'd function calls
-      } else if (next_if(qPuncLBrk)) {
-        let first = recurse_expr({
-            Token(qPunc, qPuncRBrk),
-            Token(qPunc, qPuncColn),
-        });
-
-        if (next_if(qPuncColn)) {
-          let second = recurse_expr({Token(qPunc, qPuncRBrk)});
-          if (!next_if(qPuncRBrk)) {
-            diagnostic << current() << "Expected ']' to close the slice";
-            return std::nullopt;
-          }
-
-          let slice = make<Slice>(E.value(), first, second);
-          slice->set_offset(start_pos);
-
-          E = slice;
-        } else {
-          if (!next_if(qPuncRBrk)) {
-            diagnostic << current() << "Expected ']' to close the index access";
-            return std::nullopt;
-          }
-
-          let index = make<Index>(E.value(), first);
-          index->set_offset(start_pos);
-
-          E = index;
+      case qPunc: {
+        if ((E = recurse_expr_punctor(tok.as_punc())).has_value()) {
+          E.value()->set_offset(start_pos);
         }
-      } else {
+        break;
+      }
+
+      case qName: {
+        let identifier = make<Ident>(intern(tok.as_string()));
+        identifier->set_offset(start_pos);
+
+        E = identifier;
+        break;
+      }
+
+      case qIntL: {
+        let integer = make<ConstInt>(intern(tok.as_string()));
+        integer->set_offset(start_pos);
+
+        if (let tok = peek(); tok.is(qName)) {
+          let casted = recurse_expr_type_suffix(integer);
+          casted->set_offset(start_pos);
+
+          E = casted;
+        } else {
+          E = integer;
+        }
+
+        break;
+      }
+
+      case qNumL: {
+        let decimal = make<ConstFloat>(intern(tok.as_string()));
+        decimal->set_offset(start_pos);
+
+        if (let tok = peek(); tok.is(qName)) {
+          let casted = recurse_expr_type_suffix(decimal);
+          casted->set_offset(start_pos);
+
+          E = casted;
+        } else {
+          E = decimal;
+        }
+
+        break;
+      }
+
+      case qText: {
+        let string = make<ConstString>(intern(tok.as_string()));
+        string->set_offset(start_pos);
+
+        if (let tok = peek(); tok.is(qName)) {
+          let casted = recurse_expr_type_suffix(string);
+          casted->set_offset(start_pos);
+
+          E = casted;
+        } else {
+          E = string;
+        }
+
+        break;
+      }
+
+      case qChar: {
+        let str_data = tok.as_string();
+        if (str_data.size() != 1) [[unlikely]] {
+          diagnostic << tok << "Expected a single byte in character literal";
+          break;
+        }
+
+        let character = make<ConstChar>(str_data[0]);
+        character->set_offset(start_pos);
+
+        if (let tok = peek(); tok.is(qName)) {
+          let casted = recurse_expr_type_suffix(character);
+          casted->set_offset(start_pos);
+
+          E = casted;
+        } else {
+          E = character;
+        }
+
+        break;
+      }
+
+      case qMacB: {
+        diagnostic << tok << "Unexpected macro block in expression";
+        break;
+      }
+
+      case qMacr: {
+        diagnostic << tok << "Unexpected macro call in expression";
+        break;
+      }
+
+      case qNote: {
+        diagnostic << tok << "Unexpected comment in expression";
         break;
       }
     }
