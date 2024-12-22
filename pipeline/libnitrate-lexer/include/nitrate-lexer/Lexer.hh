@@ -296,6 +296,9 @@ namespace ncc::lex {
     uint32_t EndLine(Token t);
     uint32_t EndColumn(Token t);
 
+    uint32_t GetRow(uint32_t off);
+    uint32_t GetColumn(uint32_t off);
+
     virtual void SkipCommentsState(bool skip) { m_skip_comments = skip; }
     bool GetSkipCommentsState() const { return m_skip_comments; }
   };

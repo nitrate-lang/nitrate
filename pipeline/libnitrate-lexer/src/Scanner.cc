@@ -417,3 +417,13 @@ CPP_EXPORT uint32_t IScanner::EndColumn(Token t) {
   /// TODO:
   return QLEX_EOFF;
 }
+
+CPP_EXPORT uint32_t IScanner::GetRow(uint32_t off) {
+  /// TODO:
+  return QLEX_EOFF;
+}
+
+CPP_EXPORT uint32_t IScanner::GetColumn(uint32_t off) {
+  /// TODO:
+  return QLEX_EOFF;
+}
