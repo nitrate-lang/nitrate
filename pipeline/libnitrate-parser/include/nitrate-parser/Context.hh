@@ -49,10 +49,12 @@ namespace ncc::parse {
   class ASTRoot final {
     Base *m_base;
     std::shared_ptr<void> m_allocator;
+    bool m_failed;
 
   public:
-    ASTRoot(ncc::parse::Base *base, std::shared_ptr<void> allocator)
-        : m_base(base), m_allocator(allocator) {}
+    ASTRoot(ncc::parse::Base *base, std::shared_ptr<void> allocator,
+            bool failed)
+        : m_base(base), m_allocator(allocator), m_failed(failed) {}
 
     Base *get() const { return m_base; }
 

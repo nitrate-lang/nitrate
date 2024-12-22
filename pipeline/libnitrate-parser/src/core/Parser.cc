@@ -387,7 +387,7 @@ CPP_EXPORT ASTRoot Parser::parse() {
   auto node = recurse_block(false, false, SafetyMode::Unknown);
   std::swap(ncc::parse::npar_allocator, m_allocator);
 
-  ASTRoot ast(node, std::move(m_allocator));
+  ASTRoot ast(node, std::move(m_allocator), m_failed);
   m_allocator = std::make_unique<ncc::core::dyn_arena>();
 
   /*== Uninstall thread-local references to the parser ==*/
@@ -399,6 +399,10 @@ CPP_EXPORT ASTRoot Parser::parse() {
 }
 
 CPP_EXPORT bool ASTRoot::check() const {
+  if (m_failed) {
+    return false;
+  }
+
   /// FIXME: remove shortcut
   return true;
 
