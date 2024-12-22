@@ -61,7 +61,7 @@ namespace ncc::parse {
     TemplType(Type *templ, const CallArgs &args)
         : Type(QAST_TEMPLATE), m_template(templ), m_args(args) {}
 
-    constexpr auto get_template() const { return m_template; }
+    constexpr let get_template() const { return m_template; }
     constexpr let get_args() const { return m_args; }
   };
 
@@ -153,7 +153,7 @@ namespace ncc::parse {
     constexpr PtrTy(Type *item, bool is_volatile = false)
         : Type(QAST_PTR), m_item(item), m_is_volatile(is_volatile) {}
 
-    constexpr auto get_item() const { return m_item; }
+    constexpr let get_item() const { return m_item; }
     constexpr bool is_volatile() const { return m_is_volatile; }
   };
 
@@ -183,8 +183,8 @@ namespace ncc::parse {
     constexpr ArrayTy(Type *item, Expr *size)
         : Type(QAST_ARRAY), m_item(item), m_size(size) {}
 
-    constexpr auto get_item() const { return m_item; }
-    constexpr auto get_size() const { return m_size; }
+    constexpr let get_item() const { return m_item; }
+    constexpr let get_size() const { return m_size; }
   };
 
   class RefTy : public Type {
@@ -193,7 +193,7 @@ namespace ncc::parse {
   public:
     constexpr RefTy(Type *item) : Type(QAST_REF), m_item(item) {}
 
-    constexpr auto get_item() const { return m_item; }
+    constexpr let get_item() const { return m_item; }
   };
 
   class FuncTy : public Type {
@@ -211,10 +211,10 @@ namespace ncc::parse {
           m_return(return_type),
           m_purity(purity) {}
 
-    constexpr auto get_return() const { return m_return; }
-    constexpr auto get_purity() const { return m_purity; }
+    constexpr let get_return() const { return m_return; }
+    constexpr let get_purity() const { return m_purity; }
     constexpr let get_params() const { return m_params; }
-    constexpr auto get_attributes() const { return m_attributes; }
+    constexpr let get_attributes() const { return m_attributes; }
   };
 }  // namespace ncc::parse
 

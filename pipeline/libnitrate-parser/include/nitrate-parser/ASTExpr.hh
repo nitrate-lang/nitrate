@@ -45,7 +45,7 @@ namespace ncc::parse {
   public:
     constexpr StmtExpr(Stmt *stmt) : Expr(QAST_SEXPR), m_stmt(stmt) {}
 
-    constexpr auto get_stmt() const { return m_stmt; }
+    constexpr let get_stmt() const { return m_stmt; }
   };
 
   class npar_pack TypeExpr final : public Expr {
@@ -54,7 +54,7 @@ namespace ncc::parse {
   public:
     constexpr TypeExpr(Type *type) : Expr(QAST_TEXPR), m_type(type) {}
 
-    constexpr auto get_type() const { return m_type; }
+    constexpr let get_type() const { return m_type; }
   };
 
   class npar_pack UnaryExpr final : public Expr {
@@ -65,7 +65,7 @@ namespace ncc::parse {
     constexpr UnaryExpr(ncc::lex::Operator op, Expr *rhs)
         : Expr(QAST_UNEXPR), m_rhs(rhs), m_op(op) {}
 
-    constexpr auto get_rhs() const { return m_rhs; }
+    constexpr let get_rhs() const { return m_rhs; }
     constexpr auto get_op() const { return m_op; }
   };
 
@@ -77,8 +77,8 @@ namespace ncc::parse {
     constexpr BinExpr(Expr *lhs, ncc::lex::Operator op, Expr *rhs)
         : Expr(QAST_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
-    constexpr auto get_lhs() const { return m_lhs; }
-    constexpr auto get_rhs() const { return m_rhs; }
+    constexpr let get_lhs() const { return m_lhs; }
+    constexpr let get_rhs() const { return m_rhs; }
     constexpr auto get_op() const { return m_op; }
   };
 
@@ -90,7 +90,7 @@ namespace ncc::parse {
     constexpr PostUnaryExpr(Expr *lhs, ncc::lex::Operator op)
         : Expr(QAST_POST_UNEXPR), m_lhs(lhs), m_op(op) {}
 
-    constexpr auto get_lhs() const { return m_lhs; }
+    constexpr let get_lhs() const { return m_lhs; }
     constexpr auto get_op() const { return m_op; }
   };
 
@@ -101,9 +101,9 @@ namespace ncc::parse {
     constexpr TernaryExpr(Expr *cond, Expr *lhs, Expr *rhs)
         : Expr(QAST_TEREXPR), m_cond(cond), m_lhs(lhs), m_rhs(rhs) {}
 
-    constexpr auto get_cond() const { return m_cond; }
-    constexpr auto get_lhs() const { return m_lhs; }
-    constexpr auto get_rhs() const { return m_rhs; }
+    constexpr let get_cond() const { return m_cond; }
+    constexpr let get_lhs() const { return m_lhs; }
+    constexpr let get_rhs() const { return m_rhs; }
   };
 
   class npar_pack ConstInt final : public Expr {
@@ -172,8 +172,8 @@ namespace ncc::parse {
     Call(Expr *func, CallArgs args)
         : Expr(QAST_CALL), m_func(func), m_args(args) {}
 
-    constexpr auto get_func() const { return m_func; }
-    constexpr auto get_args() const { return m_args; }
+    constexpr let get_func() const { return m_func; }
+    constexpr let get_args() const { return m_args; }
   };
 
   class TemplCall final : public Expr {
@@ -187,9 +187,9 @@ namespace ncc::parse {
           m_template_args(template_args),
           m_args(args) {}
 
-    constexpr auto get_func() const { return m_func; }
-    constexpr auto get_template_args() const { return m_template_args; }
-    constexpr auto get_args() const { return m_args; }
+    constexpr let get_func() const { return m_func; }
+    constexpr let get_template_args() const { return m_template_args; }
+    constexpr let get_args() const { return m_args; }
   };
 
   class List final : public Expr {
@@ -198,7 +198,7 @@ namespace ncc::parse {
   public:
     List(ExpressionList items) : Expr(QAST_LIST), m_items(items) {}
 
-    constexpr auto get_items() const { return m_items; }
+    constexpr let get_items() const { return m_items; }
   };
 
   class npar_pack Assoc final : public Expr {
@@ -208,8 +208,8 @@ namespace ncc::parse {
     constexpr Assoc(Expr *key, Expr *value)
         : Expr(QAST_ASSOC), m_key(key), m_value(value) {}
 
-    constexpr auto get_key() const { return m_key; }
-    constexpr auto get_value() const { return m_value; }
+    constexpr let get_key() const { return m_key; }
+    constexpr let get_value() const { return m_value; }
   };
 
   class npar_pack Index final : public Expr {
@@ -219,8 +219,8 @@ namespace ncc::parse {
     constexpr Index(Expr *base, Expr *index)
         : Expr(QAST_INDEX), m_base(base), m_index(index) {}
 
-    constexpr auto get_base() const { return m_base; }
-    constexpr auto get_index() const { return m_index; }
+    constexpr let get_base() const { return m_base; }
+    constexpr let get_index() const { return m_index; }
   };
 
   class npar_pack Slice final : public Expr {
@@ -230,9 +230,9 @@ namespace ncc::parse {
     constexpr Slice(Expr *base, Expr *start, Expr *end)
         : Expr(QAST_SLICE), m_base(base), m_start(start), m_end(end) {}
 
-    constexpr auto get_base() const { return m_base; }
-    constexpr auto get_start() const { return m_start; }
-    constexpr auto get_end() const { return m_end; }
+    constexpr let get_base() const { return m_base; }
+    constexpr let get_start() const { return m_start; }
+    constexpr let get_end() const { return m_end; }
   };
 
   class FString final : public Expr {
@@ -241,7 +241,7 @@ namespace ncc::parse {
   public:
     FString(FStringItems items) : Expr(QAST_FSTRING), m_items(items) {}
 
-    constexpr auto get_items() const { return m_items; }
+    constexpr let get_items() const { return m_items; }
   };
 
   class npar_pack Ident final : public Expr {
@@ -260,7 +260,7 @@ namespace ncc::parse {
   public:
     SeqPoint(ExpressionList items) : Expr(QAST_SEQ), m_items(items) {}
 
-    constexpr auto get_items() const { return m_items; }
+    constexpr let get_items() const { return m_items; }
   };
 
   constexpr bool Expr::is_stmt_expr(npar_ty_t type) const {

@@ -110,7 +110,9 @@ namespace ncc::parse {
 
   template <typename T, auto mode = dfs_pre>
   void for_each(const Base *const v, std::function<void(const T *)> f) {
-    iterate<mode>(v, [&](auto, const Base *const *const c) -> IterOp {
+    Base *base = const_cast<Base *>(v);
+
+    iterate<mode>(base, [&](auto, const Base *const *const c) -> IterOp {
       if ((*c)->getKind() != Base::getTypeCode<T>()) {
         return IterOp::Proceed;
       }
