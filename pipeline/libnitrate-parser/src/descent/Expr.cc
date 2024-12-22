@@ -38,6 +38,9 @@
 #include <nitrate-parser/AST.hh>
 #include <stack>
 
+#include "nitrate-lexer/Lexer.hh"
+#include "nitrate-lexer/Token.hh"
+
 #define MAX_RECURSION_DEPTH 4096
 #define MAX_LIST_REPEAT_COUNT 4096
 
@@ -186,9 +189,14 @@ struct Frame {
         op(op) {}
 };
 
-static FORCE_INLINE Expr *UnwindStack(std::stack<Frame> &stack, Expr *base) {
+static FORCE_INLINE Expr *UnwindStack(std::stack<Frame> &stack, Expr *base,
+                                      short minPrecedence) {
   while (!stack.empty()) {
     auto frame = stack.top();
+
+    if (frame.minPrecedence < minPrecedence) {
+      break;
+    }
 
     switch (frame.type) {
       case FrameType::Start: {
@@ -212,7 +220,6 @@ static FORCE_INLINE Expr *UnwindStack(std::stack<Frame> &stack, Expr *base) {
     }
 
     base->set_offset(frame.start_pos);
-
     stack.pop();
   }
 
@@ -320,7 +327,7 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
                   << "Failed to parse right-hand side of binary expression";
             }
           } else {
-            LeftSide = UnwindStack(Stack, LeftSide);
+            LeftSide = UnwindStack(Stack, LeftSide, 0);
 
             continue;
           }
@@ -329,7 +336,11 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
         }
 
         case qPunc: {
-          LeftSide = UnwindStack(Stack, LeftSide);
+          // Based on the assumption that function calls have the same
+          // precedence as the dot operator (member access)
+          static let SuffixOPPrecedence =
+              GetOperatorPrecedence(qOpDot, OpMode::Binary);
+          LeftSide = UnwindStack(Stack, LeftSide, SuffixOPPrecedence);
 
           if (next_if(qPuncLPar)) {
             let Arguments = recurse_call_arguments(Token(qPunc, qPuncRPar));
@@ -339,8 +350,6 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
             }
 
             LeftSide = make<Call>(LeftSide, std::move(Arguments));
-
-            /// TODO: Add support template'd function calls
           } else if (next_if(qPuncLBrk)) {
             let first = recurse_expr({
                 Token(qPunc, qPuncRBrk),
@@ -387,7 +396,7 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
       }
     }
 
-    return UnwindStack(Stack, LeftSide);
+    return UnwindStack(Stack, LeftSide, 0);
   } else {
     diagnostic << current() << "Expected an expression";
 
