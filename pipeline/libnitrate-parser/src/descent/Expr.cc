@@ -232,44 +232,55 @@ static FORCE_INLINE Expr *UnwindStack(std::stack<Frame> &stack, Expr *base) {
 Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
   let SourceOffset = peek().get_start();
 
-  /****************************************
-   * Parse pre-unary operators
-   ****************************************/
-  if (let OperTok = next_if(qOper)) {
-    let Op = OperTok->as_op();
-    let Expr = recurse_expr(terminators);
-    let PreUnaryExpr = make<UnaryExpr>(Op, Expr);
-
-    PreUnaryExpr->set_offset(SourceOffset);
-
-    return PreUnaryExpr;
-  }
-
   std::stack<Frame> Stack;
   Stack.push({nullptr, SourceOffset, 0, FrameType::Start, qOpPlus});
 
-  if (let lhsExprOpt = recurse_expr_primary()) {
-    auto LeftSide = lhsExprOpt.value();
+  /****************************************
+   * Parse pre-unary operators
+   ****************************************/
+  std::stack<std::pair<Operator, uint32_t>> PreUnaryOps;
+  while (let Tok = next_if(qOper)) {
+    PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
+  }
+
+  if (let LeftSideOpt = recurse_expr_primary()) {
+    auto LeftSide = LeftSideOpt.value();
     bool Spinning = true;
 
+    /****************************************
+     * Combine pre-unary operators
+     ****************************************/
+    while (!PreUnaryOps.empty()) {
+      let[Op, Offset] = PreUnaryOps.top();
+      PreUnaryOps.pop();
+
+      LeftSide = make<UnaryExpr>(Op, LeftSide);
+      LeftSide->set_offset(Offset);
+    }
+
     while (!Stack.empty() && Spinning) {
-      if (terminators.contains(peek())) {
+      let Tok = peek();
+
+      if (terminators.contains(Tok)) {
         break;
       }
 
-      let OperTok = peek();
-      switch (OperTok.get_type()) {
+      switch (Tok.get_type()) {
         case qOper: {
-          let Op = OperTok.as_op();
+          let Op = Tok.as_op();
           let OpType = IsPostUnaryOp(Op) ? OpMode::PostUnary : OpMode::Binary;
           let OpPrecedence = GetOperatorPrecedence(Op, OpType);
 
           if (OpPrecedence >= Stack.top().minPrecedence) {
             next();
 
+            /****************************************
+             * Handle post-unary operators
+             ****************************************/
             if (OpType == OpMode::PostUnary) {
-              Stack.push(Frame(LeftSide, SourceOffset, OpPrecedence,
-                               FrameType::PostUnary, Op));
+              LeftSide = make<PostUnaryExpr>(LeftSide, Op);
+              LeftSide->set_offset(SourceOffset);
+
               continue;
             }
 
@@ -278,7 +289,30 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
             let NextMinPrecedence =
                 IsLeftAssoc ? OpPrecedence + 1 : OpPrecedence;
 
-            if (let RightSide = recurse_expr_primary()) {
+            /****************************************
+             * Parse pre-unary operators
+             ****************************************/
+            while (let Tok = next_if(qOper)) {
+              PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
+            }
+
+            /****************************************
+             * Handle binary operators
+             ****************************************/
+            if (auto RightSide = recurse_expr_primary()) {
+              /****************************************
+               * Combine pre-unary operators
+               ****************************************/
+              while (!PreUnaryOps.empty()) {
+                let[Op, Offset] = PreUnaryOps.top();
+                PreUnaryOps.pop();
+
+                let PreUnaryExpr = make<UnaryExpr>(Op, RightSide.value());
+                PreUnaryExpr->set_offset(Offset);
+
+                RightSide = PreUnaryExpr;
+              }
+
               Stack.push(Frame(LeftSide, SourceOffset, NextMinPrecedence,
                                FrameType::Binary, Op));
               LeftSide = RightSide.value();
@@ -294,6 +328,8 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
 
             continue;
           }
+
+          break;
         }
 
         case qPunc: {
@@ -326,109 +362,6 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
     return mock_expr();
   }
 }
-
-// std::optional<Expr *> Parser::recurse_expr_impl(
-//     const std::set<Token> &terminators, int minPrecedence, size_t depth) {
-//   /* Make the fuzzer happy by not crashing */
-//   if (depth > MAX_RECURSION_DEPTH) {
-//     diagnostic << current() << "Recursion depth limit exceeded";
-
-//     return std::nullopt;
-//   }
-
-//   let start_pos = peek().get_start();
-
-//   /****************************************
-//    * Parse pre-unary operators
-//    ****************************************/
-//   if (let oper_tok = next_if(qOper)) {
-//     let op = oper_tok->as_op();
-
-//     if (let expr_opt = recurse_expr_impl(terminators, 0, depth + 1)) {
-//       let expr = expr_opt.value();
-//       let unary = make<UnaryExpr>(op, expr);
-//       unary->set_offset(start_pos);
-
-//       return unary;
-//     } else {
-//       diagnostic << current() << "Expected an expression after unary
-//       operator";
-
-//       return std::nullopt;
-//     }
-//   }
-
-//   /****************************************
-//    * Parse the primary expression
-//    ****************************************/
-//   let left_opt = recurse_expr_primary();
-//   if (!left_opt) {
-//     diagnostic << current() << "Expected an expression";
-
-//     return std::nullopt;
-//   }
-//   auto left = left_opt.value();
-
-//   /****************************************
-//    * Recursive processing for operators
-//    ****************************************/
-//   while (true) {
-//     if (terminators.contains(peek())) {
-//       return left;
-//     }
-
-//     if (let oper_tok = peek(); oper_tok.is(qOper)) {
-//       let op = oper_tok.as_op();
-
-//       // Assumes no overlap between post-unary and binary operators
-//       // Ternary operators are handled separately
-//       let op_type =
-//           IsPostUnaryOp(op) ? OpMode::PostUnary : OpMode::Binary;
-
-//       /****************************************
-//        * Handle binary operators
-//        ****************************************/
-//       let precedence = GetOpPrecedence(op, op_type);
-//       if (precedence < minPrecedence) {
-//         return left;  // Precedence too low, return current left expression
-//       } else {
-//         /* Consume the operator token */
-//         next();
-
-//         /****************************************
-//          * Handle post-unary operators
-//          ****************************************/
-//         if (op_type == OpMode::PostUnary) {
-//           left = make<PostUnaryExpr>(left, op);
-//           left->set_offset(start_pos);
-
-//           continue;
-//         }
-
-//         let isLeftAssoc =
-//             GetOperatorAssociativity(op, OpMode::Binary) == OpAssoc::Left;
-//         let nextMinPrecedence = isLeftAssoc ? precedence + 1 : precedence;
-
-//         // Parse the right-hand side with increased precedence
-//         let right_opt =
-//             recurse_expr_impl(terminators, nextMinPrecedence, depth + 1);
-//         if (!right_opt) {
-//           diagnostic << current()
-//                      << "RHS expression expected for binary operator";
-
-//           return std::nullopt;
-//         }
-
-//         left = make<BinExpr>(left, op, right_opt.value());
-//         left->set_offset(start_pos);
-//       }
-//     } else {
-//       break;
-//     }
-//   }
-
-//   return left;
-// }
 
 std::optional<Expr *> Parser::recurse_expr_primary_keyword(lex::Keyword key) {
   switch (key) {
@@ -805,6 +738,18 @@ std::optional<Expr *> Parser::recurse_expr_primary_punctor(lex::Punctor punc) {
   }
 }
 
+Expr *Parser::recurse_expr_primary_type_suffix(Expr *base) {
+  let tok = current();
+
+  let suffix = recurse_type();
+  suffix->set_offset(tok.get_start());
+
+  let texpr = make<TypeExpr>(suffix);
+  texpr->set_offset(tok.get_start());
+
+  return make<BinExpr>(base, qOpAs, texpr);
+}
+
 std::optional<Expr *> Parser::recurse_expr_primary() {
   let start_pos = peek().get_start();
 
@@ -840,7 +785,6 @@ std::optional<Expr *> Parser::recurse_expr_primary() {
       identifier->set_offset(start_pos);
 
       E = identifier;
-
       break;
     }
 
@@ -848,7 +792,15 @@ std::optional<Expr *> Parser::recurse_expr_primary() {
       let integer = make<ConstInt>(intern(tok.as_string()));
       integer->set_offset(start_pos);
 
-      E = integer;
+      if (let tok = peek(); tok.is(qName)) {
+        let casted = recurse_expr_primary_type_suffix(integer);
+        casted->set_offset(start_pos);
+
+        E = casted;
+      } else {
+        E = integer;
+      }
+
       break;
     }
 
@@ -856,7 +808,15 @@ std::optional<Expr *> Parser::recurse_expr_primary() {
       let decimal = make<ConstFloat>(intern(tok.as_string()));
       decimal->set_offset(start_pos);
 
-      E = decimal;
+      if (let tok = peek(); tok.is(qName)) {
+        let casted = recurse_expr_primary_type_suffix(decimal);
+        casted->set_offset(start_pos);
+
+        E = casted;
+      } else {
+        E = decimal;
+      }
+
       break;
     }
 
@@ -864,7 +824,15 @@ std::optional<Expr *> Parser::recurse_expr_primary() {
       let string = make<ConstString>(intern(tok.as_string()));
       string->set_offset(start_pos);
 
-      E = string;
+      if (let tok = peek(); tok.is(qName)) {
+        let casted = recurse_expr_primary_type_suffix(string);
+        casted->set_offset(start_pos);
+
+        E = casted;
+      } else {
+        E = string;
+      }
+
       break;
     }
 
@@ -878,7 +846,15 @@ std::optional<Expr *> Parser::recurse_expr_primary() {
       let character = make<ConstChar>(str_data[0]);
       character->set_offset(start_pos);
 
-      E = character;
+      if (let tok = peek(); tok.is(qName)) {
+        let casted = recurse_expr_primary_type_suffix(character);
+        casted->set_offset(start_pos);
+
+        E = casted;
+      } else {
+        E = character;
+      }
+
       break;
     }
 
