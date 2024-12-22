@@ -230,7 +230,7 @@ namespace ncc::lex {
           {";", qPuncSemi},
       });
 
-  int GetOperatorPrecedence(Operator op, OpMode type);
+  short GetOperatorPrecedence(Operator op, OpMode type);
   OpAssoc GetOperatorAssociativity(Operator op, OpMode type);
 
   const char *qlex_ty_str(TokenType ty);

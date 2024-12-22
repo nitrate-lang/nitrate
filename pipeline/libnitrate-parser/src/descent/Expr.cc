@@ -38,11 +38,10 @@
 #include <nitrate-parser/AST.hh>
 #include <stack>
 
-#include "nitrate-lexer/Token.hh"
-#include "nitrate-parser/ASTData.hh"
-
 #define MAX_RECURSION_DEPTH 4096
 #define MAX_LIST_REPEAT_COUNT 256
+
+#define FORCE_INLINE inline __attribute__((always_inline))
 
 using namespace ncc::lex;
 using namespace ncc::parse;
@@ -172,116 +171,264 @@ Expr *Parser::recurse_fstring() {
   return make<FString>(std::move(items));
 }
 
-Expr *Parser::recurse_expr(const std::set<Token> &terminators,
-                           int minPrecedence) {
-  return recurse_expr_impl(terminators, minPrecedence, 0).value_or(mock_expr());
-}
+static bool IsPostUnaryOp(Operator O) { return O == qOpInc || O == qOpDec; }
 
-static bool IsPostUnaryOperator(Operator O) {
-  return O == qOpInc || O == qOpDec;
-}
+enum class FrameType : uint8_t {
+  Start,
+  PreUnary,
+  PostUnary,
+  Binary,
+};
 
-std::optional<Expr *> Parser::recurse_expr_impl(
-    const std::set<Token> &terminators, int minPrecedence, size_t depth) {
-  /* Make the fuzzer happy by not crashing */
-  if (depth > MAX_RECURSION_DEPTH) {
-    diagnostic << current() << "Recursion depth limit exceeded";
+struct Frame {
+  Expr *base;
+  uint32_t start_pos;
+  short minPrecedence;
+  FrameType type;
+  Operator op;
 
-    return std::nullopt;
+  Frame(Expr *base, uint32_t start_pos, short minPrecedence, FrameType type,
+        Operator op)
+      : base(base),
+        start_pos(start_pos),
+        minPrecedence(minPrecedence),
+        type(type),
+        op(op) {}
+};
+
+static FORCE_INLINE Expr *UnwindStack(std::stack<Frame> &stack, Expr *base) {
+  while (!stack.empty()) {
+    auto frame = stack.top();
+
+    switch (frame.type) {
+      case FrameType::Start: {
+        return base;
+      }
+
+      case FrameType::PreUnary: {
+        base = make<UnaryExpr>(frame.op, base);
+        break;
+      }
+
+      case FrameType::PostUnary: {
+        base = make<PostUnaryExpr>(base, frame.op);
+        break;
+      }
+
+      case FrameType::Binary: {
+        base = make<BinExpr>(frame.base, frame.op, base);
+        break;
+      }
+    }
+
+    base->set_offset(frame.start_pos);
+
+    stack.pop();
   }
 
-  let start_pos = peek().get_start();
+  return base;
+}
+
+Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
+  let SourceOffset = peek().get_start();
 
   /****************************************
    * Parse pre-unary operators
    ****************************************/
-  if (let oper_tok = next_if(qOper)) {
-    let op = oper_tok->as_op();
+  if (let OperTok = next_if(qOper)) {
+    let Op = OperTok->as_op();
+    let Expr = recurse_expr(terminators);
+    let PreUnaryExpr = make<UnaryExpr>(Op, Expr);
 
-    if (let expr_opt = recurse_expr_impl(terminators, 0, depth + 1)) {
-      let expr = expr_opt.value();
-      let unary = make<UnaryExpr>(op, expr);
-      unary->set_offset(start_pos);
+    PreUnaryExpr->set_offset(SourceOffset);
 
-      return unary;
-    } else {
-      diagnostic << current() << "Expected an expression after unary operator";
-
-      return std::nullopt;
-    }
+    return PreUnaryExpr;
   }
 
-  /****************************************
-   * Parse the primary expression
-   ****************************************/
-  let left_opt = recurse_expr_primary();
-  if (!left_opt) {
+  std::stack<Frame> Stack;
+  Stack.push({nullptr, SourceOffset, 0, FrameType::Start, qOpPlus});
+
+  if (let lhsExprOpt = recurse_expr_primary()) {
+    auto LeftSide = lhsExprOpt.value();
+    bool Spinning = true;
+
+    while (!Stack.empty() && Spinning) {
+      if (terminators.contains(peek())) {
+        break;
+      }
+
+      let OperTok = peek();
+      switch (OperTok.get_type()) {
+        case qOper: {
+          let Op = OperTok.as_op();
+          let OpType = IsPostUnaryOp(Op) ? OpMode::PostUnary : OpMode::Binary;
+          let OpPrecedence = GetOperatorPrecedence(Op, OpType);
+
+          if (OpPrecedence >= Stack.top().minPrecedence) {
+            next();
+
+            if (OpType == OpMode::PostUnary) {
+              Stack.push(Frame(LeftSide, SourceOffset, OpPrecedence,
+                               FrameType::PostUnary, Op));
+              continue;
+            }
+
+            let IsLeftAssoc =
+                GetOperatorAssociativity(Op, OpType) == OpAssoc::Left;
+            let NextMinPrecedence =
+                IsLeftAssoc ? OpPrecedence + 1 : OpPrecedence;
+
+            if (let RightSide = recurse_expr_primary()) {
+              Stack.push(Frame(LeftSide, SourceOffset, NextMinPrecedence,
+                               FrameType::Binary, Op));
+              LeftSide = RightSide.value();
+            } else {
+              diagnostic
+                  << current()
+                  << "Failed to parse right-hand side of binary expression";
+
+              return mock_expr();
+            }
+          } else {
+            LeftSide = UnwindStack(Stack, LeftSide);
+
+            continue;
+          }
+        }
+
+        case qPunc: {
+          /// TODO: Implement this case
+
+          Spinning = false;
+          break;
+        }
+
+        case qEofF:
+        case qKeyW:
+        case qName:
+        case qIntL:
+        case qNumL:
+        case qText:
+        case qChar:
+        case qMacB:
+        case qMacr:
+        case qNote: {
+          Spinning = false;
+          break;
+        }
+      }
+    }
+
+    return UnwindStack(Stack, LeftSide);
+  } else {
     diagnostic << current() << "Expected an expression";
 
-    return std::nullopt;
+    return mock_expr();
   }
-  auto left = left_opt.value();
-
-  /****************************************
-   * Recursive processing for operators
-   ****************************************/
-  while (true) {
-    if (terminators.contains(peek())) {
-      return left;
-    }
-
-    if (let oper_tok = peek(); oper_tok.is(qOper)) {
-      let op = oper_tok.as_op();
-
-      // Assumes no overlap between post-unary and binary operators
-      // Ternary operators are handled separately
-      let op_type =
-          IsPostUnaryOperator(op) ? OpMode::PostUnary : OpMode::Binary;
-
-      /****************************************
-       * Handle binary operators
-       ****************************************/
-      let precedence = GetOperatorPrecedence(op, op_type);
-      if (precedence < minPrecedence) {
-        return left;  // Precedence too low, return current left expression
-      } else {
-        /* Consume the operator token */
-        next();
-
-        /****************************************
-         * Handle post-unary operators
-         ****************************************/
-        if (op_type == OpMode::PostUnary) {
-          left = make<PostUnaryExpr>(left, op);
-          left->set_offset(start_pos);
-
-          continue;
-        }
-
-        let isLeftAssoc =
-            GetOperatorAssociativity(op, OpMode::Binary) == OpAssoc::Left;
-        let nextMinPrecedence = isLeftAssoc ? precedence + 1 : precedence;
-
-        // Parse the right-hand side with increased precedence
-        let right_opt =
-            recurse_expr_impl(terminators, nextMinPrecedence, depth + 1);
-        if (!right_opt) {
-          diagnostic << current()
-                     << "RHS expression expected for binary operator";
-
-          return std::nullopt;
-        }
-
-        left = make<BinExpr>(left, op, right_opt.value());
-        left->set_offset(start_pos);
-      }
-    } else {
-      break;
-    }
-  }
-
-  return left;
 }
+
+// std::optional<Expr *> Parser::recurse_expr_impl(
+//     const std::set<Token> &terminators, int minPrecedence, size_t depth) {
+//   /* Make the fuzzer happy by not crashing */
+//   if (depth > MAX_RECURSION_DEPTH) {
+//     diagnostic << current() << "Recursion depth limit exceeded";
+
+//     return std::nullopt;
+//   }
+
+//   let start_pos = peek().get_start();
+
+//   /****************************************
+//    * Parse pre-unary operators
+//    ****************************************/
+//   if (let oper_tok = next_if(qOper)) {
+//     let op = oper_tok->as_op();
+
+//     if (let expr_opt = recurse_expr_impl(terminators, 0, depth + 1)) {
+//       let expr = expr_opt.value();
+//       let unary = make<UnaryExpr>(op, expr);
+//       unary->set_offset(start_pos);
+
+//       return unary;
+//     } else {
+//       diagnostic << current() << "Expected an expression after unary
+//       operator";
+
+//       return std::nullopt;
+//     }
+//   }
+
+//   /****************************************
+//    * Parse the primary expression
+//    ****************************************/
+//   let left_opt = recurse_expr_primary();
+//   if (!left_opt) {
+//     diagnostic << current() << "Expected an expression";
+
+//     return std::nullopt;
+//   }
+//   auto left = left_opt.value();
+
+//   /****************************************
+//    * Recursive processing for operators
+//    ****************************************/
+//   while (true) {
+//     if (terminators.contains(peek())) {
+//       return left;
+//     }
+
+//     if (let oper_tok = peek(); oper_tok.is(qOper)) {
+//       let op = oper_tok.as_op();
+
+//       // Assumes no overlap between post-unary and binary operators
+//       // Ternary operators are handled separately
+//       let op_type =
+//           IsPostUnaryOp(op) ? OpMode::PostUnary : OpMode::Binary;
+
+//       /****************************************
+//        * Handle binary operators
+//        ****************************************/
+//       let precedence = GetOpPrecedence(op, op_type);
+//       if (precedence < minPrecedence) {
+//         return left;  // Precedence too low, return current left expression
+//       } else {
+//         /* Consume the operator token */
+//         next();
+
+//         /****************************************
+//          * Handle post-unary operators
+//          ****************************************/
+//         if (op_type == OpMode::PostUnary) {
+//           left = make<PostUnaryExpr>(left, op);
+//           left->set_offset(start_pos);
+
+//           continue;
+//         }
+
+//         let isLeftAssoc =
+//             GetOperatorAssociativity(op, OpMode::Binary) == OpAssoc::Left;
+//         let nextMinPrecedence = isLeftAssoc ? precedence + 1 : precedence;
+
+//         // Parse the right-hand side with increased precedence
+//         let right_opt =
+//             recurse_expr_impl(terminators, nextMinPrecedence, depth + 1);
+//         if (!right_opt) {
+//           diagnostic << current()
+//                      << "RHS expression expected for binary operator";
+
+//           return std::nullopt;
+//         }
+
+//         left = make<BinExpr>(left, op, right_opt.value());
+//         left->set_offset(start_pos);
+//       }
+//     } else {
+//       break;
+//     }
+//   }
+
+//   return left;
+// }
 
 std::optional<Expr *> Parser::recurse_expr_primary_keyword(lex::Keyword key) {
   switch (key) {

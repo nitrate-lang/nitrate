@@ -91,14 +91,11 @@ namespace ncc::parse {
     Stmt *recurse_inline_asm();
     Stmt *recurse_block(bool expect_braces, bool single_stmt,
                         SafetyMode safety);
-    Expr *recurse_expr(const std::set<ncc::lex::Token> &terminators,
-                       int minPrecedence = 0);
-    std::optional<Expr *> recurse_expr_impl(
-        const std::set<ncc::lex::Token> &terminators, int minPrecedence,
-        size_t depth);
+    Expr *recurse_expr(const std::set<ncc::lex::Token> &terminators);
     std::optional<Expr *> recurse_expr_primary();
     std::optional<Expr *> recurse_expr_primary_keyword(lex::Keyword key);
     std::optional<Expr *> recurse_expr_primary_punctor(lex::Punctor punc);
+    Expr *recurse_expr_primary_type_suffix(Expr *base);
 
     /****************************************************************************
      * @brief

@@ -248,7 +248,7 @@ static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
         },
 };
 
-CPP_EXPORT int ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
+CPP_EXPORT short ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
   using Key = std::pair<Operator, OpMode>;
 
   struct KeyHash {
@@ -257,9 +257,9 @@ CPP_EXPORT int ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
     }
   };
 
-  static const std::unordered_map<std::pair<Operator, OpMode>, int, KeyHash>
+  static const std::unordered_map<std::pair<Operator, OpMode>, short, KeyHash>
       precedence = [] {
-        std::unordered_map<std::pair<Operator, OpMode>, int, KeyHash>
+        std::unordered_map<std::pair<Operator, OpMode>, short, KeyHash>
             precedence;
 
         for (size_t i = 0; i < precedence_groups.size(); i++) {
