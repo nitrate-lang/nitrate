@@ -333,12 +333,12 @@ CREATE_TRANSFORM(nit::parse) {
   switch (out_mode) {
     case OutMode::JSON: {
       auto writter = ncc::parse::AST_JsonWriter(output);
-      root.get()->accept(writter);
+      root.get().accept(writter);
       return true;
     }
     case OutMode::MsgPack: {
       auto writter = ncc::parse::AST_MsgPackWriter(output);
-      root.get()->accept(writter);
+      root.get().accept(writter);
       return true;
     }
     default: {

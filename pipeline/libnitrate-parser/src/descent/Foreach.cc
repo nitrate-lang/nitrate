@@ -58,7 +58,7 @@ Parser::recurse_foreach_names() {
   return std::nullopt;
 }
 
-Expr *Parser::recurse_foreach_expr(bool has_paren) {
+RefNode<Expr> Parser::recurse_foreach_expr(bool has_paren) {
   if (has_paren) {
     return recurse_expr({Token(qPunc, qPuncRPar)});
   } else {
@@ -66,7 +66,7 @@ Expr *Parser::recurse_foreach_expr(bool has_paren) {
   }
 }
 
-Stmt *Parser::recurse_foreach_body() {
+RefNode<Stmt> Parser::recurse_foreach_body() {
   if (next_if(qOpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
@@ -74,7 +74,7 @@ Stmt *Parser::recurse_foreach_body() {
   }
 }
 
-Stmt *Parser::recurse_foreach() {
+RefNode<Stmt> Parser::recurse_foreach() {
   /**
    * Syntax examples:
    *   `foreach (i, v in arr) { }`, `foreach (v in arr) { }`
@@ -97,7 +97,7 @@ Stmt *Parser::recurse_foreach() {
       let body = recurse_foreach_body();
 
       return make<ForeachStmt>(SaveString(index_name), SaveString(value_name),
-                               iter_expr, body);
+                               iter_expr, body)();
     } else {
       diagnostic << current() << "Expected 'in' keyword in foreach statement";
     }

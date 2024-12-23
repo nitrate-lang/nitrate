@@ -36,20 +36,20 @@
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-Stmt *Parser::recurse_return() {
+RefNode<Stmt> Parser::recurse_return() {
   /**
    * Syntax examples:
    *   `ret 0;`, `ret;`, `ret 0, 1;`, `ret call();`
    */
 
   if (let tok = next_if(qPuncSemi)) {
-    return make<ReturnStmt>(std::nullopt);
+    return make<ReturnStmt>(std::nullopt)();
   }
 
   let expr = recurse_expr({Token(qPunc, qPuncSemi)});
 
   if (next_if(qPuncSemi)) {
-    return make<ReturnStmt>(expr);
+    return make<ReturnStmt>(expr)();
   } else {
     diagnostic << current() << "Expected ';' after the return statement.";
   }
@@ -57,7 +57,7 @@ Stmt *Parser::recurse_return() {
   return mock_stmt(QAST_RETURN);
 }
 
-Stmt *Parser::recurse_retif() {
+RefNode<Stmt> Parser::recurse_retif() {
   /**
    * Syntax examples:
    *   `retif cond(), 1;`, `retif failed, -1;`
@@ -69,7 +69,7 @@ Stmt *Parser::recurse_retif() {
     let return_val = recurse_expr({Token(qPunc, qPuncSemi)});
 
     if (next_if(qPuncSemi)) {
-      return make<ReturnIfStmt>(condition, return_val);
+      return make<ReturnIfStmt>(condition, return_val)();
     } else {
       diagnostic << current() << "Expected ';' after the retif value.";
     }

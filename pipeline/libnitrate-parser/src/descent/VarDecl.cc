@@ -66,7 +66,7 @@ std::optional<ExpressionList> Parser::recurse_variable_attributes() {
   return std::nullopt;
 }
 
-std::optional<Type *> Parser::recurse_variable_type() {
+std::optional<RefNode<Type> > Parser::recurse_variable_type() {
   if (next_if(qPuncColn)) {
     return recurse_type();
   } else {
@@ -74,7 +74,7 @@ std::optional<Type *> Parser::recurse_variable_type() {
   }
 }
 
-std::optional<Expr *> Parser::recurse_variable_value() {
+std::optional<RefNode<Expr> > Parser::recurse_variable_value() {
   if (next_if(qOpSet)) {
     return recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncSemi)});
   } else {
@@ -82,7 +82,8 @@ std::optional<Expr *> Parser::recurse_variable_value() {
   }
 }
 
-std::optional<Stmt *> Parser::recurse_variable_instance(VarDeclType decl_type) {
+std::optional<RefNode<Stmt> > Parser::recurse_variable_instance(
+    VarDeclType decl_type) {
   if (let attributes = recurse_variable_attributes()) {
     if (let tok = next_if(qName)) {
       let name = tok->as_string();
@@ -91,7 +92,7 @@ std::optional<Stmt *> Parser::recurse_variable_instance(VarDeclType decl_type) {
 
       return make<VarDecl>(SaveString(name), type.value_or(nullptr),
                            value.value_or(nullptr), decl_type,
-                           std::move(attributes.value()));
+                           std::move(attributes.value()))();
     } else {
       diagnostic << current() << "Expected variable name";
       return std::nullopt;
@@ -103,8 +104,8 @@ std::optional<Stmt *> Parser::recurse_variable_instance(VarDeclType decl_type) {
   return mock_stmt(QAST_VAR);
 }
 
-std::vector<Stmt *> Parser::recurse_variable(VarDeclType decl_type) {
-  std::vector<Stmt *> variables;
+std::vector<RefNode<Stmt> > Parser::recurse_variable(VarDeclType decl_type) {
+  std::vector<RefNode<Stmt> > variables;
 
   while (true) {
     if (next_if(qEofF)) {

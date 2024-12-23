@@ -44,7 +44,7 @@ using namespace ncc;
 using namespace ncc::parse;
 
 class IterVisitor : public ASTVisitor {
-  std::vector<Base**>& sub;
+  std::vector<RefNode<const Base>*>& sub;
 
   template <class T>
   void add(RefNode<T> const& n) {
@@ -52,148 +52,150 @@ class IterVisitor : public ASTVisitor {
       return;
     }
 
-    sub.push_back(const_cast<Base**>(&n->as_base()));
+    RefNode<const T> base = reinterpret_cast<RefNode<const T> const&>(n);
+
+    sub.push_back(reinterpret_cast<RefNode<const Base>*>(&base));
   }
 
-  void add_typesuffix(Type const& n) {
-    add(n.get_width());
-    add(n.get_range().first);
-    add(n.get_range().second);
+  void add_typesuffix(RefNode<const Type> n) {
+    add(n->get_width());
+    add(n->get_range().first);
+    add(n->get_range().second);
   }
 
-  void visit(Base const&) override {}
-  void visit(ExprStmt const& n) override { add(n.get_expr()); }
-  void visit(StmtExpr const& n) override { add(n.get_stmt()); }
-  void visit(TypeExpr const& n) override { add(n.get_type()); }
-  void visit(NamedTy const& n) override { add_typesuffix(n); }
-  void visit(InferTy const& n) override { add_typesuffix(n); }
+  void visit(RefNode<const Base>) override {}
+  void visit(RefNode<const ExprStmt> n) override { add(n->get_expr()); }
+  void visit(RefNode<const StmtExpr> n) override { add(n->get_stmt()); }
+  void visit(RefNode<const TypeExpr> n) override { add(n->get_type()); }
+  void visit(RefNode<const NamedTy> n) override { add_typesuffix(n); }
+  void visit(RefNode<const InferTy> n) override { add_typesuffix(n); }
 
-  void visit(TemplType const& n) override {
-    add(n.get_template());
-    std::for_each(n.get_args().begin(), n.get_args().end(),
+  void visit(RefNode<const TemplType> n) override {
+    add(n->get_template());
+    std::for_each(n->get_args().begin(), n->get_args().end(),
                   [&](let arg) { add(arg.second); });
 
     add_typesuffix(n);
   }
 
-  void visit(U1 const& n) override { add_typesuffix(n); }
-  void visit(U8 const& n) override { add_typesuffix(n); }
-  void visit(U16 const& n) override { add_typesuffix(n); }
-  void visit(U32 const& n) override { add_typesuffix(n); }
-  void visit(U64 const& n) override { add_typesuffix(n); }
-  void visit(U128 const& n) override { add_typesuffix(n); }
-  void visit(I8 const& n) override { add_typesuffix(n); }
-  void visit(I16 const& n) override { add_typesuffix(n); }
-  void visit(I32 const& n) override { add_typesuffix(n); }
-  void visit(I64 const& n) override { add_typesuffix(n); }
-  void visit(I128 const& n) override { add_typesuffix(n); }
-  void visit(F16 const& n) override { add_typesuffix(n); }
-  void visit(F32 const& n) override { add_typesuffix(n); }
-  void visit(F64 const& n) override { add_typesuffix(n); }
-  void visit(F128 const& n) override { add_typesuffix(n); }
-  void visit(VoidTy const& n) override { add_typesuffix(n); }
+  void visit(RefNode<const U1> n) override { add_typesuffix(n); }
+  void visit(RefNode<const U8> n) override { add_typesuffix(n); }
+  void visit(RefNode<const U16> n) override { add_typesuffix(n); }
+  void visit(RefNode<const U32> n) override { add_typesuffix(n); }
+  void visit(RefNode<const U64> n) override { add_typesuffix(n); }
+  void visit(RefNode<const U128> n) override { add_typesuffix(n); }
+  void visit(RefNode<const I8> n) override { add_typesuffix(n); }
+  void visit(RefNode<const I16> n) override { add_typesuffix(n); }
+  void visit(RefNode<const I32> n) override { add_typesuffix(n); }
+  void visit(RefNode<const I64> n) override { add_typesuffix(n); }
+  void visit(RefNode<const I128> n) override { add_typesuffix(n); }
+  void visit(RefNode<const F16> n) override { add_typesuffix(n); }
+  void visit(RefNode<const F32> n) override { add_typesuffix(n); }
+  void visit(RefNode<const F64> n) override { add_typesuffix(n); }
+  void visit(RefNode<const F128> n) override { add_typesuffix(n); }
+  void visit(RefNode<const VoidTy> n) override { add_typesuffix(n); }
 
-  void visit(PtrTy const& n) override {
-    add(n.get_item());
+  void visit(RefNode<const PtrTy> n) override {
+    add(n->get_item());
     add_typesuffix(n);
   }
 
-  void visit(OpaqueTy const& n) override { add_typesuffix(n); }
+  void visit(RefNode<const OpaqueTy> n) override { add_typesuffix(n); }
 
-  void visit(TupleTy const& n) override {
-    std::for_each(n.get_items().begin(), n.get_items().end(),
+  void visit(RefNode<const TupleTy> n) override {
+    std::for_each(n->get_items().begin(), n->get_items().end(),
                   [&](let item) { add(item); });
 
     add_typesuffix(n);
   }
 
-  void visit(ArrayTy const& n) override {
-    add(n.get_item());
-    add(n.get_size());
+  void visit(RefNode<const ArrayTy> n) override {
+    add(n->get_item());
+    add(n->get_size());
     add_typesuffix(n);
   }
 
-  void visit(RefTy const& n) override {
-    add(n.get_item());
+  void visit(RefNode<const RefTy> n) override {
+    add(n->get_item());
     add_typesuffix(n);
   }
 
-  void visit(FuncTy const& n) override {
-    std::for_each(n.get_attributes().begin(), n.get_attributes().end(),
+  void visit(RefNode<const FuncTy> n) override {
+    std::for_each(n->get_attributes().begin(), n->get_attributes().end(),
                   [&](let attr) { add(attr); });
 
-    std::for_each(n.get_params().params.begin(), n.get_params().params.end(),
+    std::for_each(n->get_params().params.begin(), n->get_params().params.end(),
                   [&](let param) {
                     add(std::get<1>(param));
                     std::get<2>(param);
                   });
 
-    add(n.get_return());
+    add(n->get_return());
 
     add_typesuffix(n);
   }
 
-  void visit(UnaryExpr const& n) override { add(n.get_rhs()); }
+  void visit(RefNode<const UnaryExpr> n) override { add(n->get_rhs()); }
 
-  void visit(BinExpr const& n) override {
-    add(n.get_lhs());
-    add(n.get_rhs());
+  void visit(RefNode<const BinExpr> n) override {
+    add(n->get_lhs());
+    add(n->get_rhs());
   }
 
-  void visit(PostUnaryExpr const& n) override { add(n.get_lhs()); }
+  void visit(RefNode<const PostUnaryExpr> n) override { add(n->get_lhs()); }
 
-  void visit(TernaryExpr const& n) override {
-    add(n.get_cond());
-    add(n.get_lhs());
-    add(n.get_rhs());
+  void visit(RefNode<const TernaryExpr> n) override {
+    add(n->get_cond());
+    add(n->get_lhs());
+    add(n->get_rhs());
   }
 
-  void visit(ConstInt const&) override {}
-  void visit(ConstFloat const&) override {}
-  void visit(ConstBool const&) override {}
-  void visit(ConstString const&) override {}
-  void visit(ConstChar const&) override {}
-  void visit(ConstNull const&) override {}
-  void visit(ConstUndef const&) override {}
+  void visit(RefNode<const ConstInt>) override {}
+  void visit(RefNode<const ConstFloat>) override {}
+  void visit(RefNode<const ConstBool>) override {}
+  void visit(RefNode<const ConstString>) override {}
+  void visit(RefNode<const ConstChar>) override {}
+  void visit(RefNode<const ConstNull>) override {}
+  void visit(RefNode<const ConstUndef>) override {}
 
-  void visit(Call const& n) override {
-    add(n.get_func());
-    std::for_each(n.get_args().begin(), n.get_args().end(),
+  void visit(RefNode<const Call> n) override {
+    add(n->get_func());
+    std::for_each(n->get_args().begin(), n->get_args().end(),
                   [&](let arg) { add(arg.second); });
   }
 
-  void visit(TemplCall const& n) override {
-    add(n.get_func());
-    std::for_each(n.get_template_args().begin(), n.get_template_args().end(),
+  void visit(RefNode<const TemplCall> n) override {
+    add(n->get_func());
+    std::for_each(n->get_template_args().begin(), n->get_template_args().end(),
                   [&](let arg) { add(arg.second); });
 
-    std::for_each(n.get_args().begin(), n.get_args().end(),
+    std::for_each(n->get_args().begin(), n->get_args().end(),
                   [&](let arg) { add(arg.second); });
   }
 
-  void visit(List const& n) override {
-    std::for_each(n.get_items().begin(), n.get_items().end(),
+  void visit(RefNode<const List> n) override {
+    std::for_each(n->get_items().begin(), n->get_items().end(),
                   [&](let item) { add(item); });
   }
 
-  void visit(Assoc const& n) override {
-    add(n.get_key());
-    add(n.get_value());
+  void visit(RefNode<const Assoc> n) override {
+    add(n->get_key());
+    add(n->get_value());
   }
 
-  void visit(Index const& n) override {
-    add(n.get_base());
-    add(n.get_index());
+  void visit(RefNode<const Index> n) override {
+    add(n->get_base());
+    add(n->get_index());
   }
 
-  void visit(Slice const& n) override {
-    add(n.get_base());
-    add(n.get_start());
-    add(n.get_end());
+  void visit(RefNode<const Slice> n) override {
+    add(n->get_base());
+    add(n->get_start());
+    add(n->get_end());
   }
 
-  void visit(FString const& n) override {
-    std::for_each(n.get_items().begin(), n.get_items().end(), [&](let arg) {
+  void visit(RefNode<const FString> n) override {
+    std::for_each(n->get_items().begin(), n->get_items().end(), [&](let arg) {
       if (std::holds_alternative<RefNode<Expr>>(arg)) {
         add(std::get<RefNode<Expr>>(arg));
       } else if (std::holds_alternative<string>(arg)) {
@@ -203,149 +205,152 @@ class IterVisitor : public ASTVisitor {
     });
   }
 
-  void visit(Ident const&) override {}
+  void visit(RefNode<const Ident>) override {}
 
-  void visit(SeqPoint const& n) override {
-    std::for_each(n.get_items().begin(), n.get_items().end(),
+  void visit(RefNode<const SeqPoint> n) override {
+    std::for_each(n->get_items().begin(), n->get_items().end(),
                   [&](let item) { add(item); });
   }
 
-  void visit(Block const& n) override {
-    std::for_each(n.get_items().begin(), n.get_items().end(),
+  void visit(RefNode<const Block> n) override {
+    std::for_each(n->get_items().begin(), n->get_items().end(),
                   [&](let item) { add(item); });
   }
 
-  void visit(VarDecl const& n) override {
-    std::for_each(n.get_attributes().begin(), n.get_attributes().end(),
+  void visit(RefNode<const VarDecl> n) override {
+    std::for_each(n->get_attributes().begin(), n->get_attributes().end(),
                   [&](let attr) { add(attr); });
 
-    add(n.get_type());
-    add(n.get_value());
+    add(n->get_type());
+    add(n->get_value());
   }
 
-  void visit(InlineAsm const& n) override {
-    std::for_each(n.get_args().begin(), n.get_args().end(),
+  void visit(RefNode<const InlineAsm> n) override {
+    std::for_each(n->get_args().begin(), n->get_args().end(),
                   [&](let arg) { add(arg); });
   }
 
-  void visit(IfStmt const& n) override {
-    add(n.get_cond());
-    add(n.get_then());
-    add(n.get_else());
+  void visit(RefNode<const IfStmt> n) override {
+    add(n->get_cond());
+    add(n->get_then());
+    add(n->get_else());
   }
 
-  void visit(WhileStmt const& n) override {
-    add(n.get_cond());
-    add(n.get_body());
+  void visit(RefNode<const WhileStmt> n) override {
+    add(n->get_cond());
+    add(n->get_body());
   }
 
-  void visit(ForStmt const& n) override {
-    add(n.get_init().value_or(nullptr));
-    add(n.get_cond().value_or(nullptr));
-    add(n.get_step().value_or(nullptr));
-    add(n.get_body());
+  void visit(RefNode<const ForStmt> n) override {
+    add(n->get_init().value_or(nullptr));
+    add(n->get_cond().value_or(nullptr));
+    add(n->get_step().value_or(nullptr));
+    add(n->get_body());
   }
 
-  void visit(ForeachStmt const& n) override {
-    add(n.get_expr());
-    add(n.get_body());
+  void visit(RefNode<const ForeachStmt> n) override {
+    add(n->get_expr());
+    add(n->get_body());
   }
 
-  void visit(BreakStmt const&) override {}
-  void visit(ContinueStmt const&) override {}
-  void visit(ReturnStmt const& n) override {
-    add(n.get_value().value_or(nullptr));
+  void visit(RefNode<const BreakStmt>) override {}
+  void visit(RefNode<const ContinueStmt>) override {}
+  void visit(RefNode<const ReturnStmt> n) override {
+    add(n->get_value().value_or(nullptr));
   }
 
-  void visit(ReturnIfStmt const& n) override {
-    add(n.get_cond());
-    add(n.get_value());
+  void visit(RefNode<const ReturnIfStmt> n) override {
+    add(n->get_cond());
+    add(n->get_value());
   }
 
-  void visit(CaseStmt const& n) override {
-    add(n.get_cond());
-    add(n.get_body());
+  void visit(RefNode<const CaseStmt> n) override {
+    add(n->get_cond());
+    add(n->get_body());
   }
 
-  void visit(SwitchStmt const& n) override {
-    add(n.get_cond());
-    std::for_each(n.get_cases().begin(), n.get_cases().end(),
+  void visit(RefNode<const SwitchStmt> n) override {
+    add(n->get_cond());
+    std::for_each(n->get_cases().begin(), n->get_cases().end(),
                   [&](let c) { add(c); });
-    add(n.get_default());
+    add(n->get_default());
   }
 
-  void visit(TypedefStmt const& n) override { add(n.get_type()); }
+  void visit(RefNode<const TypedefStmt> n) override { add(n->get_type()); }
 
-  void visit(Function const& n) override {
-    std::for_each(n.get_attributes().begin(), n.get_attributes().end(),
+  void visit(RefNode<const Function> n) override {
+    std::for_each(n->get_attributes().begin(), n->get_attributes().end(),
                   [&](let attr) { add(attr); });
 
-    if (n.get_template_params()) {
-      std::for_each(n.get_template_params()->begin(),
-                    n.get_template_params()->end(), [&](let param) {
+    if (n->get_template_params()) {
+      std::for_each(n->get_template_params()->begin(),
+                    n->get_template_params()->end(), [&](let param) {
                       add(std::get<1>(param));
                       add(std::get<2>(param));
                     });
     }
 
-    std::for_each(n.get_params().params.begin(), n.get_params().params.end(),
+    std::for_each(n->get_params().params.begin(), n->get_params().params.end(),
                   [&](let param) {
                     add(std::get<1>(param));
                     std::get<2>(param);
                   });
 
-    add(n.get_return());
-    add(n.get_precond().value_or(nullptr));
-    add(n.get_postcond().value_or(nullptr));
-    add(n.get_body().value_or(nullptr));
+    add(n->get_return());
+    add(n->get_precond().value_or(nullptr));
+    add(n->get_postcond().value_or(nullptr));
+    add(n->get_body().value_or(nullptr));
   }
 
-  void visit(StructDef const& n) override {
-    std::for_each(n.get_attributes().begin(), n.get_attributes().end(),
+  void visit(RefNode<const StructDef> n) override {
+    std::for_each(n->get_attributes().begin(), n->get_attributes().end(),
                   [&](let attr) { add(attr); });
 
-    if (n.get_template_params()) {
-      std::for_each(n.get_template_params()->begin(),
-                    n.get_template_params()->end(), [&](let param) {
+    if (n->get_template_params()) {
+      std::for_each(n->get_template_params()->begin(),
+                    n->get_template_params()->end(), [&](let param) {
                       add(std::get<1>(param));
                       add(std::get<2>(param));
                     });
     }
 
-    std::for_each(n.get_fields().begin(), n.get_fields().end(), [&](let field) {
-      add(field.get_type());
-      add(field.get_value().value_or(nullptr));
-    });
+    std::for_each(n->get_fields().begin(), n->get_fields().end(),
+                  [&](let field) {
+                    add(field.get_type());
+                    add(field.get_value().value_or(nullptr));
+                  });
 
-    std::for_each(n.get_methods().begin(), n.get_methods().end(),
+    std::for_each(n->get_methods().begin(), n->get_methods().end(),
                   [&](let method) { add(method.func); });
 
-    std::for_each(n.get_static_methods().begin(), n.get_static_methods().end(),
+    std::for_each(n->get_static_methods().begin(),
+                  n->get_static_methods().end(),
                   [&](let method) { add(method.func); });
   }
 
-  void visit(EnumDef const& n) override {
-    add(n.get_type());
+  void visit(RefNode<const EnumDef> n) override {
+    add(n->get_type());
 
-    std::for_each(n.get_items().begin(), n.get_items().end(),
+    std::for_each(n->get_items().begin(), n->get_items().end(),
                   [&](let item) { add(item.second); });
   }
 
-  void visit(ScopeStmt const& n) override { add(n.get_body()); }
+  void visit(RefNode<const ScopeStmt> n) override { add(n->get_body()); }
 
-  void visit(ExportStmt const& n) override {
-    std::for_each(n.get_attrs().begin(), n.get_attrs().end(),
+  void visit(RefNode<const ExportStmt> n) override {
+    std::for_each(n->get_attrs().begin(), n->get_attrs().end(),
                   [&](let attr) { add(attr); });
 
-    add(n.get_body());
+    add(n->get_body());
   }
 
 public:
-  IterVisitor(std::vector<Base**>& children) : sub(children) {}
+  IterVisitor(std::vector<RefNode<const Base>*>& children) : sub(children) {}
 };
 
-static FORCE_INLINE void get_children_sorted(Base* base, ChildSelect cs,
-                                             std::vector<Base**>& children) {
+static FORCE_INLINE void get_children_sorted(
+    RefNode<const Base> base, ChildSelect cs,
+    std::vector<RefNode<const Base>*>& children) {
   children.clear();
 
   if (!base) [[unlikely]] {
@@ -353,26 +358,28 @@ static FORCE_INLINE void get_children_sorted(Base* base, ChildSelect cs,
   }
 
   IterVisitor v(children);
-  base->accept(v);
+  base.accept(v);
 
   std::sort(children.begin(), children.end(), cs);
 
   return;
 }
 
-CPP_EXPORT void detail::dfs_pre_impl(Base** base, IterCallback cb,
+CPP_EXPORT void detail::dfs_pre_impl(RefNode<const Base>* base, IterCallback cb,
                                      ChildSelect cs) {
   qcore_assert(base != nullptr && cb != nullptr,
                "dfs_pre_impl: base and cb must not be null");
 
   if (!cs) { /* Iterate in the order the children are stored in the classes */
-    cs = [](Base** a, Base** b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
+    cs = [](RefNode<const Base>* a, RefNode<const Base>* b) -> bool {
+      return (uintptr_t)a < (uintptr_t)b;
+    };
   }
 
-  const auto syncfn = [](Base** n, const IterCallback& cb,
+  const auto syncfn = [](RefNode<const Base>* n, const IterCallback& cb,
                          const ChildSelect& cs) {
-    std::stack<std::pair<Base*, Base**>> s;
-    std::vector<Base**> children;
+    std::stack<std::pair<RefNode<const Base>, RefNode<const Base>*>> s;
+    std::vector<RefNode<const Base>*> children;
 
     s.push({nullptr, n});
 
@@ -408,19 +415,21 @@ CPP_EXPORT void detail::dfs_pre_impl(Base** base, IterCallback cb,
   syncfn(base, cb, cs);
 }
 
-CPP_EXPORT void detail::dfs_post_impl(Base** base, IterCallback cb,
-                                      ChildSelect cs) {
+CPP_EXPORT void detail::dfs_post_impl(RefNode<const Base>* base,
+                                      IterCallback cb, ChildSelect cs) {
   qcore_assert(base != nullptr && cb != nullptr,
                "dfs_post_impl: base and cb must not be null");
 
   if (!cs) { /* Iterate in the order the children are stored in the classes */
-    cs = [](Base** a, Base** b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
+    cs = [](RefNode<const Base>* a, RefNode<const Base>* b) -> bool {
+      return (uintptr_t)a < (uintptr_t)b;
+    };
   }
 
-  const auto syncfn = [](Base** n, const IterCallback& cb,
+  const auto syncfn = [](RefNode<const Base>* n, const IterCallback& cb,
                          const ChildSelect& cs) {
-    std::stack<std::pair<Base*, Base**>> s;
-    std::vector<Base**> children;
+    std::stack<std::pair<RefNode<const Base>, RefNode<const Base>*>> s;
+    std::vector<RefNode<const Base>*> children;
 
     s.push({nullptr, n});
 
@@ -453,19 +462,21 @@ CPP_EXPORT void detail::dfs_post_impl(Base** base, IterCallback cb,
   cb(nullptr, base);
 }
 
-CPP_EXPORT void detail::bfs_pre_impl(Base** base, IterCallback cb,
+CPP_EXPORT void detail::bfs_pre_impl(RefNode<const Base>* base, IterCallback cb,
                                      ChildSelect cs) {
   qcore_assert(base != nullptr && cb != nullptr,
                "bfs_pre_impl: base and cb must not be null");
 
   if (!cs) { /* Iterate in the order the children are stored in the classes */
-    cs = [](Base** a, Base** b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
+    cs = [](RefNode<const Base>* a, RefNode<const Base>* b) -> bool {
+      return (uintptr_t)a < (uintptr_t)b;
+    };
   }
 
-  const auto syncfn = [](Base** n, const IterCallback& cb,
+  const auto syncfn = [](RefNode<const Base>* n, const IterCallback& cb,
                          const ChildSelect& cs) {
-    std::queue<std::pair<Base*, Base**>> s;
-    std::vector<Base**> children;
+    std::queue<std::pair<RefNode<const Base>, RefNode<const Base>*>> s;
+    std::vector<RefNode<const Base>*> children;
 
     s.push({nullptr, n});
 
@@ -501,19 +512,21 @@ CPP_EXPORT void detail::bfs_pre_impl(Base** base, IterCallback cb,
   syncfn(base, cb, cs);
 }
 
-CPP_EXPORT void detail::bfs_post_impl(Base** base, IterCallback cb,
-                                      ChildSelect cs) {
+CPP_EXPORT void detail::bfs_post_impl(RefNode<const Base>* base,
+                                      IterCallback cb, ChildSelect cs) {
   qcore_assert(base != nullptr && cb != nullptr,
                "bfs_post_impl: base and cb must not be null");
 
   if (!cs) { /* Iterate in the order the children are stored in the classes */
-    cs = [](Base** a, Base** b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
+    cs = [](RefNode<const Base>* a, RefNode<const Base>* b) -> bool {
+      return (uintptr_t)a < (uintptr_t)b;
+    };
   }
 
-  const auto syncfn = [](Base** n, const IterCallback& cb,
+  const auto syncfn = [](RefNode<const Base>* n, const IterCallback& cb,
                          const ChildSelect& cs) {
-    std::queue<std::pair<Base*, Base**>> s;
-    std::vector<Base**> children;
+    std::queue<std::pair<RefNode<const Base>, RefNode<const Base>*>> s;
+    std::vector<RefNode<const Base>*> children;
 
     s.push({nullptr, n});
 
@@ -546,21 +559,23 @@ CPP_EXPORT void detail::bfs_post_impl(Base** base, IterCallback cb,
   syncfn(base, cb, cs);
 }
 
-CPP_EXPORT void detail::iter_children(Base** base, IterCallback cb,
-                                      ChildSelect cs) {
+CPP_EXPORT void detail::iter_children(RefNode<const Base>* base,
+                                      IterCallback cb, ChildSelect cs) {
   qcore_assert(base != nullptr && cb != nullptr,
                "iter_children: base and cb must not be null");
 
   if (!cs) { /* Iterate in the order the children are stored in the classes */
-    cs = [](Base** a, Base** b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
+    cs = [](RefNode<const Base>* a, RefNode<const Base>* b) -> bool {
+      return (uintptr_t)a < (uintptr_t)b;
+    };
   }
 
-  const auto syncfn = [](Base** n, const IterCallback& cb,
+  const auto syncfn = [](RefNode<const Base>* n, const IterCallback& cb,
                          const ChildSelect& cs) {
-    std::vector<Base**> children;
+    std::vector<RefNode<const Base>*> children;
     get_children_sorted(*n, cs, children);
 
-    for (Base** child : children) {
+    for (RefNode<const Base>* child : children) {
       switch (cb(*n, child)) {
         case IterOp::Proceed: {
           break;

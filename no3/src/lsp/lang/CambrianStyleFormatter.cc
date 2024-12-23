@@ -247,97 +247,99 @@ void CambrianFormatter::write_float_literal(std::string_view float_str) {
   }
 }
 
-void CambrianFormatter::format_type_metadata(Type const& n) {
-  let range = n.get_range();
+void CambrianFormatter::format_type_metadata(RefNode<const Type> n) {
+  let range = n->get_range();
 
   if (range.first || range.second) {
     line << ": [";
-    if (range.first) range.first->accept(*this);
+    if (range.first) range.first.accept(*this);
     line << ":";
-    if (range.second) range.second->accept(*this);
+    if (range.second) range.second.accept(*this);
     line << "]";
   }
 
-  if (n.get_width()) {
+  if (n->get_width()) {
     line << ": ";
-    n.get_width()->accept(*this);
+    n->get_width().accept(*this);
   }
 }
 
-void CambrianFormatter::visit(Base const&) {
+void CambrianFormatter::visit(RefNode<const Base>) {
   /** This node symbolizes a placeholder value in the event of an error. */
   failed = true;
 
   line << "/* !!! */";
 }
 
-void CambrianFormatter::visit(ExprStmt const& n) {
-  n.get_expr()->accept(*this);
+void CambrianFormatter::visit(RefNode<const ExprStmt> n) {
+  n->get_expr().accept(*this);
   line << ";";
 }
 
-void CambrianFormatter::visit(StmtExpr const& n) {
-  n.get_stmt()->accept(*this);
+void CambrianFormatter::visit(RefNode<const StmtExpr> n) {
+  n->get_stmt().accept(*this);
 }
 
-void CambrianFormatter::visit(TypeExpr const& n) {
-  n.get_type()->accept(*this);
+void CambrianFormatter::visit(RefNode<const TypeExpr> n) {
+  n->get_type().accept(*this);
 }
 
-void CambrianFormatter::visit(NamedTy const& n) {
-  line << n.get_name();
+void CambrianFormatter::visit(RefNode<const NamedTy> n) {
+  line << n->get_name();
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(InferTy const& n) {
+void CambrianFormatter::visit(RefNode<const InferTy> n) {
   line << "?";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(TemplType const& n) {
+void CambrianFormatter::visit(RefNode<const TemplType> n) {
   bool is_optional =
-      n.get_template()->getKind() == QAST_NAMED &&
-      n.get_template()->as<NamedTy>()->get_name() == "__builtin_result";
+      n->get_template()->getKind() == QAST_NAMED &&
+      n->get_template()->as<NamedTy>()->get_name() == "__builtin_result";
 
   bool is_vector =
-      n.get_template()->getKind() == QAST_NAMED &&
-      n.get_template()->as<NamedTy>()->get_name() == "__builtin_vec";
+      n->get_template()->getKind() == QAST_NAMED &&
+      n->get_template()->as<NamedTy>()->get_name() == "__builtin_vec";
 
-  bool is_map = n.get_template()->getKind() == QAST_NAMED &&
-                n.get_template()->as<NamedTy>()->get_name() == "__builtin_umap";
+  bool is_map =
+      n->get_template()->getKind() == QAST_NAMED &&
+      n->get_template()->as<NamedTy>()->get_name() == "__builtin_umap";
 
-  bool is_set = n.get_template()->getKind() == QAST_NAMED &&
-                n.get_template()->as<NamedTy>()->get_name() == "__builtin_uset";
+  bool is_set =
+      n->get_template()->getKind() == QAST_NAMED &&
+      n->get_template()->as<NamedTy>()->get_name() == "__builtin_uset";
 
-  size_t argc = n.get_args().size();
+  size_t argc = n->get_args().size();
   if (is_optional && argc == 1) {
-    n.get_args().front().second->accept(*this);
+    n->get_args().front().second.accept(*this);
     line << "?";
   } else if (is_vector && argc == 1) {
     line << "[";
-    n.get_args().front().second->accept(*this);
+    n->get_args().front().second.accept(*this);
     line << "]";
   } else if (is_map && argc == 2) {
     line << "[";
-    n.get_args().front().second->accept(*this);
+    n->get_args().front().second.accept(*this);
     line << "->";
-    n.get_args().back().second->accept(*this);
+    n->get_args().back().second.accept(*this);
     line << "]";
   } else if (is_set && argc == 1) {
     line << "{";
-    n.get_args().front().second->accept(*this);
+    n->get_args().front().second.accept(*this);
     line << "}";
   } else {
-    n.get_template()->accept(*this);
+    n->get_template().accept(*this);
 
     line << "<";
     iterate_except_last(
-        n.get_args().begin(), n.get_args().end(),
+        n->get_args().begin(), n->get_args().end(),
         [&](let arg, size_t) {
           if (!std::isdigit(arg.first->at(0))) {
             line << arg.first << ": ";
           }
-          arg.second->accept(*this);
+          arg.second.accept(*this);
         },
         [&](let) { line << ", "; });
     line << ">";
@@ -346,99 +348,99 @@ void CambrianFormatter::visit(TemplType const& n) {
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(U1 const& n) {
+void CambrianFormatter::visit(RefNode<const U1> n) {
   line << "u1";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(U8 const& n) {
+void CambrianFormatter::visit(RefNode<const U8> n) {
   line << "u8";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(U16 const& n) {
+void CambrianFormatter::visit(RefNode<const U16> n) {
   line << "u16";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(U32 const& n) {
+void CambrianFormatter::visit(RefNode<const U32> n) {
   line << "u32";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(U64 const& n) {
+void CambrianFormatter::visit(RefNode<const U64> n) {
   line << "u64";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(U128 const& n) {
+void CambrianFormatter::visit(RefNode<const U128> n) {
   line << "u128";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(I8 const& n) {
+void CambrianFormatter::visit(RefNode<const I8> n) {
   line << "i8";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(I16 const& n) {
+void CambrianFormatter::visit(RefNode<const I16> n) {
   line << "i16";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(I32 const& n) {
+void CambrianFormatter::visit(RefNode<const I32> n) {
   line << "i32";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(I64 const& n) {
+void CambrianFormatter::visit(RefNode<const I64> n) {
   line << "i64";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(I128 const& n) {
+void CambrianFormatter::visit(RefNode<const I128> n) {
   line << "i128";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(F16 const& n) {
+void CambrianFormatter::visit(RefNode<const F16> n) {
   line << "f16";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(F32 const& n) {
+void CambrianFormatter::visit(RefNode<const F32> n) {
   line << "f32";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(F64 const& n) {
+void CambrianFormatter::visit(RefNode<const F64> n) {
   line << "f64";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(F128 const& n) {
+void CambrianFormatter::visit(RefNode<const F128> n) {
   line << "f128";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(VoidTy const& n) {
+void CambrianFormatter::visit(RefNode<const VoidTy> n) {
   line << "void";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(PtrTy const& n) {
+void CambrianFormatter::visit(RefNode<const PtrTy> n) {
   line << "*";
-  n.get_item()->accept(*this);
+  n->get_item().accept(*this);
 
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(OpaqueTy const& n) {
-  line << "opaque(" << n.get_name() << ")";
+void CambrianFormatter::visit(RefNode<const OpaqueTy> n) {
+  line << "opaque(" << n->get_name() << ")";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(TupleTy const& n) {
+void CambrianFormatter::visit(RefNode<const TupleTy> n) {
   /* If the number of fields exceeds the threshold, arange fields into a
    * matrix of row size ceil(sqrt(n)). */
 
@@ -446,7 +448,7 @@ void CambrianFormatter::visit(TupleTy const& n) {
 
   line << "(";
 
-  let items = n.get_items();
+  let items = n->get_items();
   let line_size = line.length();
   let break_at = items.size() <= wrap_threshold
                      ? wrap_threshold
@@ -458,7 +460,7 @@ void CambrianFormatter::visit(TupleTy const& n) {
     }
 
     let item = items[i];
-    item->accept(*this);
+    item.accept(*this);
 
     if (i != items.size() - 1) {
       line << ", ";
@@ -469,36 +471,36 @@ void CambrianFormatter::visit(TupleTy const& n) {
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(ArrayTy const& n) {
+void CambrianFormatter::visit(RefNode<const ArrayTy> n) {
   line << "[";
-  n.get_item()->accept(*this);
+  n->get_item().accept(*this);
   line << "; ";
-  n.get_size()->accept(*this);
+  n->get_size().accept(*this);
   line << "]";
 
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefTy const& n) {
+void CambrianFormatter::visit(RefNode<const RefTy> n) {
   line << "&";
-  n.get_item()->accept(*this);
+  n->get_item().accept(*this);
 
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(FuncTy const& n) {
+void CambrianFormatter::visit(RefNode<const FuncTy> n) {
   line << "fn";
 
-  if (!n.get_attributes().empty()) {
+  if (!n->get_attributes().empty()) {
     line << "[";
     iterate_except_last(
-        n.get_attributes().begin(), n.get_attributes().end(),
-        [&](let attr, size_t) { attr->accept(*this); },
+        n->get_attributes().begin(), n->get_attributes().end(),
+        [&](let attr, size_t) { attr.accept(*this); },
         [&](let) { line << ", "; });
     line << "] ";
   }
 
-  switch (n.get_purity()) {
+  switch (n->get_purity()) {
     case FuncPurity::IMPURE_THREAD_UNSAFE: {
       break;
     }
@@ -526,7 +528,7 @@ void CambrianFormatter::visit(FuncTy const& n) {
 
   line << "(";
   iterate_except_last(
-      n.get_params().params.begin(), n.get_params().params.end(),
+      n->get_params().params.begin(), n->get_params().params.end(),
       [&](let param, size_t) {
         let name = std::get<0>(param);
         let type = std::get<1>(param);
@@ -536,17 +538,17 @@ void CambrianFormatter::visit(FuncTy const& n) {
 
         if (type->getKind() != QAST_INFER) {
           line << ": ";
-          type->accept(*this);
+          type.accept(*this);
         }
 
         if (def) {
           line << " = ";
-          def->accept(*this);
+          def.accept(*this);
         }
       },
       [&](let) { line << ", "; });
-  if (n.get_params().is_variadic) {
-    if (!n.get_params().params.empty()) {
+  if (n->get_params().is_variadic) {
+    if (!n->get_params().params.empty()) {
       line << ", ";
     }
     line << "...";
@@ -554,80 +556,82 @@ void CambrianFormatter::visit(FuncTy const& n) {
   line << ")";
 
   line << ": ";
-  n.get_return()->accept(*this);
+  n->get_return().accept(*this);
 }
 
-void CambrianFormatter::visit(UnaryExpr const& n) {
-  line << "(" << n.get_op();
-  n.get_rhs()->accept(*this);
+void CambrianFormatter::visit(RefNode<const UnaryExpr> n) {
+  line << "(" << n->get_op();
+  n->get_rhs().accept(*this);
   line << ")";
 }
 
-void CambrianFormatter::visit(BinExpr const& n) {
+void CambrianFormatter::visit(RefNode<const BinExpr> n) {
   line << "(";
-  n.get_lhs()->accept(*this);
-  line << " " << n.get_op() << " ";
-  n.get_rhs()->accept(*this);
+  n->get_lhs().accept(*this);
+  line << " " << n->get_op() << " ";
+  n->get_rhs().accept(*this);
   line << ")";
 }
 
-void CambrianFormatter::visit(PostUnaryExpr const& n) {
+void CambrianFormatter::visit(RefNode<const PostUnaryExpr> n) {
   line << "(";
-  n.get_lhs()->accept(*this);
-  line << n.get_op() << ")";
+  n->get_lhs().accept(*this);
+  line << n->get_op() << ")";
 }
 
-void CambrianFormatter::visit(TernaryExpr const& n) {
+void CambrianFormatter::visit(RefNode<const TernaryExpr> n) {
   line << "(";
-  n.get_cond()->accept(*this);
+  n->get_cond().accept(*this);
   line << " ? ";
-  n.get_lhs()->accept(*this);
+  n->get_lhs().accept(*this);
   line << " : ";
-  n.get_rhs()->accept(*this);
+  n->get_rhs().accept(*this);
   line << ")";
 }
 
-void CambrianFormatter::visit(ConstInt const& n) { line << n.get_value(); }
-
-void CambrianFormatter::visit(ConstFloat const& n) {
-  write_float_literal(n.get_value());
+void CambrianFormatter::visit(RefNode<const ConstInt> n) {
+  line << n->get_value();
 }
 
-void CambrianFormatter::visit(ConstBool const& n) {
-  if (n.get_value()) {
+void CambrianFormatter::visit(RefNode<const ConstFloat> n) {
+  write_float_literal(n->get_value());
+}
+
+void CambrianFormatter::visit(RefNode<const ConstBool> n) {
+  if (n->get_value()) {
     line << "true";
   } else {
     line << "false";
   }
 }
 
-void CambrianFormatter::visit(ConstString const& n) {
-  escape_string_literal(n.get_value());
+void CambrianFormatter::visit(RefNode<const ConstString> n) {
+  escape_string_literal(n->get_value());
 }
 
-void CambrianFormatter::visit(ConstChar const& n) {
-  line << escape_char_literal(n.get_value());
+void CambrianFormatter::visit(RefNode<const ConstChar> n) {
+  line << escape_char_literal(n->get_value());
 }
 
-void CambrianFormatter::visit(ConstNull const&) { line << "null"; }
+void CambrianFormatter::visit(RefNode<const ConstNull>) { line << "null"; }
 
-void CambrianFormatter::visit(ConstUndef const&) { line << "undef"; }
+void CambrianFormatter::visit(RefNode<const ConstUndef>) { line << "undef"; }
 
-void CambrianFormatter::visit(Call const& n) {
+void CambrianFormatter::visit(RefNode<const Call> n) {
   let wrap_threshold = 8ULL;
 
-  n.get_func()->accept(*this);
+  n->get_func().accept(*this);
 
-  size_t argc = n.get_args().size();
+  size_t argc = n->get_args().size();
 
   bool any_named =
-      std::any_of(n.get_args().begin(), n.get_args().end(), [](CallArg arg) {
+      std::any_of(n->get_args().begin(), n->get_args().end(), [](CallArg arg) {
         let name = arg.first;
         return !std::isdigit(name->at(0));
       });
 
   bool any_lambdas = std::any_of(
-      n.get_args().begin(), n.get_args().end(),
+      n->get_args().begin(), n->get_args().end(),
       [](let arg) { return std::get<1>(arg)->is_stmt_expr(QAST_FUNCTION); });
 
   bool is_wrapping = argc >= wrap_threshold || any_named || any_lambdas;
@@ -637,7 +641,7 @@ void CambrianFormatter::visit(Call const& n) {
     size_t line_size = line.length();
     std::swap(indent, line_size);
 
-    for (auto it = n.get_args().begin(); it != n.get_args().end(); ++it) {
+    for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
       let arg = *it;
       let name = std::get<0>(arg);
       let value = std::get<1>(arg);
@@ -646,13 +650,13 @@ void CambrianFormatter::visit(Call const& n) {
         line << name << ": ";
       }
 
-      value->accept(*this);
+      value.accept(*this);
 
-      if (it != n.get_args().end() - 1) {
+      if (it != n->get_args().end() - 1) {
         line << ", ";
       }
 
-      if (it != n.get_args().end() - 1) {
+      if (it != n->get_args().end() - 1) {
         line << std::endl << get_indent();
       }
     }
@@ -662,7 +666,7 @@ void CambrianFormatter::visit(Call const& n) {
   } else {
     line << "(";
     iterate_except_last(
-        n.get_args().begin(), n.get_args().end(),
+        n->get_args().begin(), n->get_args().end(),
         [&](let arg, size_t) {
           let name = std::get<0>(arg);
           let value = std::get<1>(arg);
@@ -671,19 +675,19 @@ void CambrianFormatter::visit(Call const& n) {
             line << name << ": ";
           }
 
-          value->accept(*this);
+          value.accept(*this);
         },
         [&](let) { line << ", "; });
     line << ")";
   }
 }
 
-void CambrianFormatter::visit(TemplCall const& n) {
-  n.get_func()->accept(*this);
+void CambrianFormatter::visit(RefNode<const TemplCall> n) {
+  n->get_func().accept(*this);
 
   line << "<";
   iterate_except_last(
-      n.get_template_args().begin(), n.get_template_args().end(),
+      n->get_template_args().begin(), n->get_template_args().end(),
       [&](let arg, size_t) {
         let name = std::get<0>(arg);
         let value = std::get<1>(arg);
@@ -692,14 +696,14 @@ void CambrianFormatter::visit(TemplCall const& n) {
           line << name << ": ";
         }
 
-        value->accept(*this);
+        value.accept(*this);
       },
       [&](let) { line << ", "; });
   line << ">";
 
   line << "(";
   iterate_except_last(
-      n.get_args().begin(), n.get_args().end(),
+      n->get_args().begin(), n->get_args().end(),
       [&](let arg, size_t) {
         let name = std::get<0>(arg);
         let value = std::get<1>(arg);
@@ -708,29 +712,29 @@ void CambrianFormatter::visit(TemplCall const& n) {
           line << name << ": ";
         }
 
-        value->accept(*this);
+        value.accept(*this);
       },
       [&](let) { line << ", "; });
   line << ")";
 }
 
-void CambrianFormatter::visit(List const& n) {
+void CambrianFormatter::visit(RefNode<const List> n) {
   let wrap_threshold = 8ULL;
 
-  if (n.get_items().empty()) {
+  if (n->get_items().empty()) {
     line << "[]";
     return;
   }
 
-  let argc = n.get_items().size();
+  let argc = n->get_items().size();
   bool is_compressing =
       argc >= wrap_threshold &&
-      std::all_of(n.get_items().begin(), n.get_items().end(),
-                  [&](let x) { return x->isSame(n.get_items().front()); });
+      std::all_of(n->get_items().begin(), n->get_items().end(),
+                  [&](let x) { return x->isSame(n->get_items().front()); });
 
   if (is_compressing) {
     line << "[";
-    n.get_items().front()->accept(*this);
+    n->get_items().front().accept(*this);
     line << "; " << argc << "]";
   } else {
     static const std::unordered_set<npar_ty_t> extra_seperation = {
@@ -739,7 +743,7 @@ void CambrianFormatter::visit(List const& n) {
     };
 
     bool special_case =
-        std::any_of(n.get_items().begin(), n.get_items().end(), [&](let x) {
+        std::any_of(n->get_items().begin(), n->get_items().end(), [&](let x) {
           return extra_seperation.contains(x->getKind()) ||
                  x->is_stmt_expr(QAST_FUNCTION);
         });
@@ -754,8 +758,9 @@ void CambrianFormatter::visit(List const& n) {
                      : static_cast<size_t>(std::ceil(std::sqrt(argc)));
     }
 
-    bool is_assoc_map = std::all_of(n.get_items().begin(), n.get_items().end(),
-                                    [](let x) { return x->is(QAST_ASSOC); });
+    bool is_assoc_map =
+        std::all_of(n->get_items().begin(), n->get_items().end(),
+                    [](let x) { return x->is(QAST_ASSOC); });
 
     if (break_at == 1) {
       line << "[";
@@ -766,12 +771,12 @@ void CambrianFormatter::visit(List const& n) {
         size_t the_indent = is_assoc_map ? indent + tabSize : line.length() + 1;
         std::swap(indent, the_indent);
 
-        for (size_t i = 0; i < n.get_items().size(); i++) {
+        for (size_t i = 0; i < n->get_items().size(); i++) {
           line << get_indent();
-          let item = n.get_items()[i];
-          item->accept(*this);
+          let item = n->get_items()[i];
+          item.accept(*this);
 
-          bool is_last = i == n.get_items().size() - 1;
+          bool is_last = i == n->get_items().size() - 1;
           if (!is_last) {
             line << ",";
           }
@@ -790,11 +795,11 @@ void CambrianFormatter::visit(List const& n) {
         size_t the_indent = is_assoc_map ? indent + tabSize : line.length();
         std::swap(indent, the_indent);
 
-        for (size_t i = 0; i < n.get_items().size(); i++) {
-          let item = n.get_items()[i];
-          item->accept(*this);
+        for (size_t i = 0; i < n->get_items().size(); i++) {
+          let item = n->get_items()[i];
+          item.accept(*this);
 
-          bool is_last = i == n.get_items().size() - 1;
+          bool is_last = i == n->get_items().size() - 1;
           if (!is_last) {
             line << ",";
           }
@@ -816,115 +821,115 @@ void CambrianFormatter::visit(List const& n) {
   }
 }
 
-void CambrianFormatter::visit(Assoc const& node) {
-  const std::function<void(Assoc const&, bool)> format = [&](Assoc const& n,
-                                                             bool use_braces) {
-    bool is_value_map = false;
-    if (n.get_value()->is(QAST_LIST)) {
-      let list = n.get_value()->as<List>();
-      is_value_map =
-          list->get_items().empty() ||
-          std::all_of(list->get_items().begin(), list->get_items().end(),
-                      [](let x) { return x->is(QAST_ASSOC); });
-    }
-
-    if (use_braces) {
-      line << "{" << std::endl;
-      indent += tabSize;
-      line << get_indent();
-    }
-
-    n.get_key()->accept(*this);
-    line << ": ";
-
-    if (is_value_map) {
-      let list = n.get_value()->as<List>();
-
-      if (list->get_items().empty()) {
-        line << "{}";
-      } else {
-        line << "{" << std::endl;
-        indent += tabSize;
-
-        for (auto it = list->get_items().begin(); it != list->get_items().end();
-             ++it) {
-          line << get_indent();
-
-          format(*(*it)->as<Assoc>(), false);
-
-          if (it != list->get_items().end() - 1) {
-            line << ",";
-          }
-
-          line << std::endl;
+void CambrianFormatter::visit(RefNode<const Assoc> node) {
+  const std::function<void(RefNode<const Assoc>, bool)> format =
+      [&](RefNode<const Assoc> n, bool use_braces) {
+        bool is_value_map = false;
+        if (n->get_value()->is(QAST_LIST)) {
+          let list = n->get_value()->as<List>();
+          is_value_map =
+              list->get_items().empty() ||
+              std::all_of(list->get_items().begin(), list->get_items().end(),
+                          [](let x) { return x->is(QAST_ASSOC); });
         }
 
-        indent -= tabSize;
-        line << get_indent() << "}";
-      }
-    } else {
-      n.get_value()->accept(*this);
-    }
+        if (use_braces) {
+          line << "{" << std::endl;
+          indent += tabSize;
+          line << get_indent();
+        }
 
-    if (use_braces) {
-      indent -= tabSize;
-      line << std::endl << get_indent() << "}";
-    }
-  };
+        n->get_key().accept(*this);
+        line << ": ";
+
+        if (is_value_map) {
+          let list = n->get_value()->as<List>();
+
+          if (list->get_items().empty()) {
+            line << "{}";
+          } else {
+            line << "{" << std::endl;
+            indent += tabSize;
+
+            for (auto it = list->get_items().begin();
+                 it != list->get_items().end(); ++it) {
+              line << get_indent();
+
+              format(*it, false);
+
+              if (it != list->get_items().end() - 1) {
+                line << ",";
+              }
+
+              line << std::endl;
+            }
+
+            indent -= tabSize;
+            line << get_indent() << "}";
+          }
+        } else {
+          n->get_value().accept(*this);
+        }
+
+        if (use_braces) {
+          indent -= tabSize;
+          line << std::endl << get_indent() << "}";
+        }
+      };
 
   format(node, true);
 }
 
-void CambrianFormatter::visit(Index const& n) {
-  n.get_base()->accept(*this);
+void CambrianFormatter::visit(RefNode<const Index> n) {
+  n->get_base().accept(*this);
   line << "[";
-  n.get_index()->accept(*this);
+  n->get_index().accept(*this);
   line << "]";
 }
 
-void CambrianFormatter::visit(Slice const& n) {
-  n.get_base()->accept(*this);
+void CambrianFormatter::visit(RefNode<const Slice> n) {
+  n->get_base().accept(*this);
   line << "[";
-  if (n.get_start()) {
-    n.get_start()->accept(*this);
+  if (n->get_start()) {
+    n->get_start().accept(*this);
   }
   line << ":";
-  if (n.get_end()) {
-    n.get_end()->accept(*this);
+  if (n->get_end()) {
+    n->get_end().accept(*this);
   }
   line << "]";
 }
 
-void CambrianFormatter::visit(FString const& n) {
+void CambrianFormatter::visit(RefNode<const FString> n) {
   line << "f\"";
-  for (let part : n.get_items()) {
+  for (let part : n->get_items()) {
     if (std::holds_alternative<ncc::string>(part)) {
       escape_string_literal(*std::get<ncc::string>(part), false);
     } else {
       line << "{";
-      std::get<RefNode<Expr>>(part)->accept(*this);
+      std::get<RefNode<Expr>>(part).accept(*this);
       line << "}";
     }
   }
   line << "\"";
 }
 
-void CambrianFormatter::visit(Ident const& n) { line << n.get_name(); }
+void CambrianFormatter::visit(RefNode<const Ident> n) { line << n->get_name(); }
 
-void CambrianFormatter::visit(SeqPoint const& n) {
+void CambrianFormatter::visit(RefNode<const SeqPoint> n) {
   line << "(";
   iterate_except_last(
-      n.get_items().begin(), n.get_items().end(),
-      [&](let item, size_t) { item->accept(*this); },
+      n->get_items().begin(), n->get_items().end(),
+      [&](let item, size_t) { item.accept(*this); },
       [&](let) { line << ", "; });
   line << ")";
 }
 
-void CambrianFormatter::visit(Block const& n) {
+void CambrianFormatter::visit(RefNode<const Block> n) {
   bool isRootBlock = !did_root;
   did_root = true;
 
-  switch (n.get_safety()) {
+  switch (n->get_safety()) {
     case SafetyMode::Safe: {
       line << "safe ";
       break;
@@ -948,7 +953,7 @@ void CambrianFormatter::visit(Block const& n) {
       QAST_FOR,        QAST_FOREACH, QAST_SWITCH,
   };
 
-  if (!isRootBlock && n.get_items().empty()) {
+  if (!isRootBlock && n->get_items().empty()) {
     line << "{}";
     return;
   }
@@ -958,13 +963,13 @@ void CambrianFormatter::visit(Block const& n) {
     indent += tabSize;
   }
 
-  let items = n.get_items();
+  let items = n->get_items();
 
   for (auto it = items.begin(); it != items.end(); ++it) {
     let item = *it;
 
     line << get_indent();
-    item->accept(*this);
+    item.accept(*this);
     line << std::endl;
 
     bool is_last_item = it == items.end() - 1;
@@ -988,8 +993,8 @@ void CambrianFormatter::visit(Block const& n) {
   }
 }
 
-void CambrianFormatter::visit(VarDecl const& n) {
-  switch (n.get_decl_type()) {
+void CambrianFormatter::visit(RefNode<const VarDecl> n) {
+  switch (n->get_decl_type()) {
     case VarDeclType::Let: {
       line << "let ";
       break;
@@ -1006,31 +1011,31 @@ void CambrianFormatter::visit(VarDecl const& n) {
     }
   }
 
-  if (!n.get_attributes().empty()) {
+  if (!n->get_attributes().empty()) {
     line << "[";
     iterate_except_last(
-        n.get_attributes().begin(), n.get_attributes().end(),
-        [&](let attr, size_t) { attr->accept(*this); },
+        n->get_attributes().begin(), n->get_attributes().end(),
+        [&](let attr, size_t) { attr.accept(*this); },
         [&](let) { line << ", "; });
     line << "] ";
   }
 
-  line << n.get_name();
+  line << n->get_name();
 
-  if (n.get_type()) {
+  if (n->get_type()) {
     line << ": ";
-    n.get_type()->accept(*this);
+    n->get_type().accept(*this);
   }
 
-  if (n.get_value()) {
+  if (n->get_value()) {
     line << " = ";
-    n.get_value()->accept(*this);
+    n->get_value().accept(*this);
   }
 
   line << ";";
 }
 
-void CambrianFormatter::visit(InlineAsm const&) {
+void CambrianFormatter::visit(RefNode<const InlineAsm>) {
   /* Support for inline assembly is not avaliable yet */
 
   failed = true;
@@ -1038,137 +1043,139 @@ void CambrianFormatter::visit(InlineAsm const&) {
   line << "/* !!! */";
 }
 
-void CambrianFormatter::visit(IfStmt const& n) {
+void CambrianFormatter::visit(RefNode<const IfStmt> n) {
   line << "if ";
-  n.get_cond()->accept(*this);
+  n->get_cond().accept(*this);
   line << " ";
-  n.get_then()->accept(*this);
+  n->get_then().accept(*this);
 
-  if (n.get_else()) {
+  if (n->get_else()) {
     line << " else ";
-    n.get_else()->accept(*this);
+    n->get_else().accept(*this);
   }
 
   line << ";";
 }
 
-void CambrianFormatter::visit(WhileStmt const& n) {
+void CambrianFormatter::visit(RefNode<const WhileStmt> n) {
   line << "while ";
-  n.get_cond()->accept(*this);
+  n->get_cond().accept(*this);
   line << " ";
-  n.get_body()->accept(*this);
+  n->get_body().accept(*this);
 
   line << ";";
 }
 
-void CambrianFormatter::visit(ForStmt const& n) {
+void CambrianFormatter::visit(RefNode<const ForStmt> n) {
   line << "for (";
 
-  if (n.get_init().has_value()) {
-    n.get_init().value()->accept(*this);
-    if (!n.get_init().value()->is_stmt()) {
+  if (n->get_init().has_value()) {
+    n->get_init().value().accept(*this);
+    if (!n->get_init().value()->is_stmt()) {
       line << ";";
     }
   } else {
     line << ";";
   }
 
-  if (n.get_cond().has_value()) {
+  if (n->get_cond().has_value()) {
     line << " ";
-    n.get_cond().value()->accept(*this);
+    n->get_cond().value().accept(*this);
   }
   line << ";";
 
-  if (n.get_step().has_value()) {
+  if (n->get_step().has_value()) {
     line << " ";
-    n.get_step().value()->accept(*this);
+    n->get_step().value().accept(*this);
   }
 
   line << ") ";
-  n.get_body()->accept(*this);
+  n->get_body().accept(*this);
 
   line << ";";
 }
 
-void CambrianFormatter::visit(ForeachStmt const& n) {
+void CambrianFormatter::visit(RefNode<const ForeachStmt> n) {
   line << "foreach (";
-  if (n.get_idx_ident().empty()) {
-    line << n.get_val_ident();
+  if (n->get_idx_ident().empty()) {
+    line << n->get_val_ident();
   } else {
-    line << n.get_idx_ident() << ", " << n.get_val_ident();
+    line << n->get_idx_ident() << ", " << n->get_val_ident();
   }
 
   line << " in ";
-  n.get_expr()->accept(*this);
+  n->get_expr().accept(*this);
   line << ") ";
 
-  n.get_body()->accept(*this);
+  n->get_body().accept(*this);
 
   line << ";";
 }
 
-void CambrianFormatter::visit(BreakStmt const&) { line << "break;"; }
+void CambrianFormatter::visit(RefNode<const BreakStmt>) { line << "break;"; }
 
-void CambrianFormatter::visit(ContinueStmt const&) { line << "continue;"; }
+void CambrianFormatter::visit(RefNode<const ContinueStmt>) {
+  line << "continue;";
+}
 
-void CambrianFormatter::visit(ReturnStmt const& n) {
-  if (n.get_value().has_value()) {
+void CambrianFormatter::visit(RefNode<const ReturnStmt> n) {
+  if (n->get_value().has_value()) {
     line << "ret ";
-    n.get_value().value()->accept(*this);
+    n->get_value().value().accept(*this);
     line << ";";
   } else {
     line << "ret;";
   }
 }
 
-void CambrianFormatter::visit(ReturnIfStmt const& n) {
+void CambrianFormatter::visit(RefNode<const ReturnIfStmt> n) {
   line << "retif ";
-  n.get_cond()->accept(*this);
+  n->get_cond().accept(*this);
   line << ", ";
-  n.get_value()->accept(*this);
+  n->get_value().accept(*this);
   line << ";";
 }
 
-void CambrianFormatter::visit(CaseStmt const& n) {
-  n.get_cond()->accept(*this);
+void CambrianFormatter::visit(RefNode<const CaseStmt> n) {
+  n->get_cond().accept(*this);
   line << " {";
-  n.get_body()->accept(*this);
+  n->get_body().accept(*this);
   line << "};";
 }
 
-void CambrianFormatter::visit(SwitchStmt const& n) {
+void CambrianFormatter::visit(RefNode<const SwitchStmt> n) {
   line << "switch ";
-  n.get_cond()->accept(*this);
+  n->get_cond().accept(*this);
   line << " {";
-  for (let c : n.get_cases()) {
-    c->accept(*this);
+  for (let c : n->get_cases()) {
+    c.accept(*this);
   }
-  if (n.get_default()) {
-    n.get_default()->accept(*this);
+  if (n->get_default()) {
+    n->get_default().accept(*this);
   }
 
   line << "};";
 }
 
-void CambrianFormatter::visit(TypedefStmt const& n) {
-  line << "type " << n.get_name() << " = ";
-  n.get_type()->accept(*this);
+void CambrianFormatter::visit(RefNode<const TypedefStmt> n) {
+  line << "type " << n->get_name() << " = ";
+  n->get_type().accept(*this);
   line << ";";
 }
 
-void CambrianFormatter::visit(Function const& n) {
+void CambrianFormatter::visit(RefNode<const Function> n) {
   line << "fn";
 
-  if (!n.get_attributes().empty()) {
+  if (!n->get_attributes().empty()) {
     line << " [";
     iterate_except_last(
-        n.get_attributes().begin(), n.get_attributes().end(),
-        [&](let attr, size_t) { attr->accept(*this); },
+        n->get_attributes().begin(), n->get_attributes().end(),
+        [&](let attr, size_t) { attr.accept(*this); },
         [&](let) { line << ", "; });
     line << "]";
   }
 
-  switch (n.get_purity()) {
+  switch (n->get_purity()) {
     case FuncPurity::IMPURE_THREAD_UNSAFE: {
       break;
     }
@@ -1194,10 +1201,10 @@ void CambrianFormatter::visit(Function const& n) {
     }
   }
 
-  if (!n.get_captures().empty()) {
+  if (!n->get_captures().empty()) {
     line << " [";
     iterate_except_last(
-        n.get_captures().begin(), n.get_captures().end(),
+        n->get_captures().begin(), n->get_captures().end(),
         [&](let cap, size_t) {
           if (cap.second) {
             line << "&";
@@ -1208,20 +1215,20 @@ void CambrianFormatter::visit(Function const& n) {
     line << "]";
   }
 
-  line << " " << n.get_name();
+  line << " " << n->get_name();
 
-  if (n.get_template_params().has_value()) {
+  if (n->get_template_params().has_value()) {
     line << "<";
     iterate_except_last(
-        n.get_template_params().value().begin(),
-        n.get_template_params().value().end(),
+        n->get_template_params().value().begin(),
+        n->get_template_params().value().end(),
         [&](let param, size_t) {
           line << std::get<0>(param) << ": ";
-          std::get<1>(param)->accept(*this);
+          std::get<1>(param).accept(*this);
           let val = std::get<2>(param);
           if (val) {
             line << " = ";
-            val->accept(*this);
+            val.accept(*this);
           }
         },
         [&](let) { line << ", "; });
@@ -1230,41 +1237,41 @@ void CambrianFormatter::visit(Function const& n) {
 
   line << "(";
   iterate_except_last(
-      n.get_params().params.begin(), n.get_params().params.end(),
+      n->get_params().params.begin(), n->get_params().params.end(),
       [&](let param, size_t) {
         let name = std::get<0>(param);
         let type = std::get<1>(param);
         let def = std::get<2>(param);
 
         line << name << ": ";
-        type->accept(*this);
+        type.accept(*this);
         if (def) {
           line << " = ";
-          def->accept(*this);
+          def.accept(*this);
         }
       },
       [&](let) { line << ", "; });
   line << ")";
 
   { /* Return type */
-    let return_type = n.get_return();
+    let return_type = n->get_return();
 
     if (!return_type->is(QAST_INFER)) {
       line << ": ";
-      return_type->accept(*this);
+      return_type.accept(*this);
     }
   }
 
-  if (n.is_decl()) {
+  if (n->is_decl()) {
     line << ";";
   } else {
     line << " ";
-    n.get_body().value()->accept(*this);
+    n->get_body().value().accept(*this);
   }
 }
 
-void CambrianFormatter::visit(StructDef const& n) {
-  switch (n.get_composite_type()) {
+void CambrianFormatter::visit(RefNode<const StructDef> n) {
+  switch (n->get_composite_type()) {
     case CompositeType::Region: {
       line << "region ";
       break;
@@ -1291,43 +1298,43 @@ void CambrianFormatter::visit(StructDef const& n) {
     }
   }
 
-  if (!n.get_attributes().empty()) {
+  if (!n->get_attributes().empty()) {
     line << "[";
     iterate_except_last(
-        n.get_attributes().begin(), n.get_attributes().end(),
-        [&](let attr, size_t) { attr->accept(*this); },
+        n->get_attributes().begin(), n->get_attributes().end(),
+        [&](let attr, size_t) { attr.accept(*this); },
         [&](let) { line << ", "; });
     line << "] ";
   }
 
-  line << n.get_name();
-  if (n.get_template_params().has_value()) {
+  line << n->get_name();
+  if (n->get_template_params().has_value()) {
     line << "<";
     iterate_except_last(
-        n.get_template_params().value().begin(),
-        n.get_template_params().value().end(),
+        n->get_template_params().value().begin(),
+        n->get_template_params().value().end(),
         [&](let param, size_t) {
           line << std::get<0>(param) << ": ";
-          std::get<1>(param)->accept(*this);
+          std::get<1>(param).accept(*this);
           let val = std::get<2>(param);
           if (val) {
             line << " = ";
-            val->accept(*this);
+            val.accept(*this);
           }
         },
         [&](let) { line << ", "; });
     line << ">";
   }
 
-  if (!n.get_names().empty()) {
+  if (!n->get_names().empty()) {
     line << ": ";
     iterate_except_last(
-        n.get_names().begin(), n.get_names().end(),
+        n->get_names().begin(), n->get_names().end(),
         [&](let name, size_t) { line << name; }, [&](let) { line << ", "; });
   }
 
-  bool is_empty = n.get_fields().empty() && n.get_methods().empty() &&
-                  n.get_static_methods().empty();
+  bool is_empty = n->get_fields().empty() && n->get_methods().empty() &&
+                  n->get_static_methods().empty();
 
   if (is_empty) {
     line << " {}";
@@ -1337,31 +1344,31 @@ void CambrianFormatter::visit(StructDef const& n) {
   line << " {" << std::endl;
   indent += tabSize;
 
-  std::for_each(n.get_fields().begin(), n.get_fields().end(), [&](let field) {
+  std::for_each(n->get_fields().begin(), n->get_fields().end(), [&](let field) {
     line << get_indent() << field.get_vis() << " ";
 
     line << field.get_name() << ": ";
-    field.get_type()->accept(*this);
+    field.get_type().accept(*this);
 
     if (field.get_value().has_value()) {
       line << " = ";
-      field.get_value().value()->accept(*this);
+      field.get_value().value().accept(*this);
     }
 
     line << "," << std::endl;
   });
 
-  std::for_each(n.get_methods().begin(), n.get_methods().end(),
+  std::for_each(n->get_methods().begin(), n->get_methods().end(),
                 [&](let method) {
                   line << get_indent() << method.vis << " ";
-                  method.func->accept(*this);
+                  method.func.accept(*this);
                   line << std::endl;
                 });
 
-  std::for_each(n.get_static_methods().begin(), n.get_static_methods().end(),
+  std::for_each(n->get_static_methods().begin(), n->get_static_methods().end(),
                 [&](let method) {
                   line << get_indent() << method.vis << " ";
-                  method.func->accept(*this);
+                  method.func.accept(*this);
                   line << std::endl;
                 });
 
@@ -1369,61 +1376,61 @@ void CambrianFormatter::visit(StructDef const& n) {
   line << "}";
 }
 
-void CambrianFormatter::visit(EnumDef const& n) {
-  line << "enum " << n.get_name();
-  if (n.get_type()) {
+void CambrianFormatter::visit(RefNode<const EnumDef> n) {
+  line << "enum " << n->get_name();
+  if (n->get_type()) {
     line << ": ";
-    n.get_type()->accept(*this);
+    n->get_type().accept(*this);
   }
 
   line << " {";
-  std::for_each(n.get_items().begin(), n.get_items().end(), [&](let item) {
+  std::for_each(n->get_items().begin(), n->get_items().end(), [&](let item) {
     line << item.first;
     if (item.second) {
       line << " = ";
-      item.second->accept(*this);
+      item.second.accept(*this);
     }
     line << "," << std::endl;
   });
   line << "};";
 }
 
-void CambrianFormatter::visit(ScopeStmt const& n) {
+void CambrianFormatter::visit(RefNode<const ScopeStmt> n) {
   line << "scope";
 
-  if (!n.get_name().empty()) {
-    line << " " << n.get_name();
+  if (!n->get_name().empty()) {
+    line << " " << n->get_name();
   }
 
-  if (!n.get_deps().empty()) {
+  if (!n->get_deps().empty()) {
     line << " [";
     iterate_except_last(
-        n.get_deps().begin(), n.get_deps().end(),
+        n->get_deps().begin(), n->get_deps().end(),
         [&](let dep, size_t) { line << dep; }, [&](let) { line << ", "; });
     line << "]";
   }
 
   line << " ";
-  n.get_body()->accept(*this);
+  n->get_body().accept(*this);
 }
 
-void CambrianFormatter::visit(ExportStmt const& n) {
-  line << n.get_vis();
+void CambrianFormatter::visit(RefNode<const ExportStmt> n) {
+  line << n->get_vis();
 
-  if (!n.get_abi_name().empty()) {
+  if (!n->get_abi_name().empty()) {
     line << " ";
-    escape_string_literal(n.get_abi_name());
+    escape_string_literal(n->get_abi_name());
   }
 
-  if (!n.get_attrs().empty()) {
+  if (!n->get_attrs().empty()) {
     line << " [";
     iterate_except_last(
-        n.get_attrs().begin(), n.get_attrs().end(),
-        [&](let attr, size_t) { attr->accept(*this); },
+        n->get_attrs().begin(), n->get_attrs().end(),
+        [&](let attr, size_t) { attr.accept(*this); },
         [&](let) { line << ", "; });
     line << "]";
   }
 
   line << " ";
-  n.get_body()->accept(*this);
+  n->get_body().accept(*this);
 }

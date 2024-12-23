@@ -74,7 +74,7 @@ std::optional<ExpressionList> Parser::recurse_export_attributes() {
   return std::nullopt;
 }
 
-Stmt *Parser::recurse_export_body() {
+RefNode<Stmt> Parser::recurse_export_body() {
   if (peek().is<qPuncLCur>()) {
     return recurse_block(true, false, SafetyMode::Unknown);
   } else {
@@ -82,14 +82,14 @@ Stmt *Parser::recurse_export_body() {
   }
 }
 
-Stmt *Parser::recurse_pub() {
+RefNode<Stmt> Parser::recurse_pub() {
   let abi_id = recurse_abi_name();
 
   if (let attrs = recurse_export_attributes()) {
     let export_block = recurse_export_body();
 
     return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Pub,
-                            attrs.value());
+                            attrs.value())();
   } else {
     diagnostic << current() << "Malformed export attributes";
   }
@@ -97,14 +97,14 @@ Stmt *Parser::recurse_pub() {
   return mock_stmt(QAST_EXPORT);
 }
 
-Stmt *Parser::recurse_sec() {
+RefNode<Stmt> Parser::recurse_sec() {
   let abi_id = recurse_abi_name();
 
   if (let attrs = recurse_export_attributes()) {
     let export_block = recurse_export_body();
 
     return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Sec,
-                            attrs.value());
+                            attrs.value())();
   } else {
     diagnostic << current() << "Malformed export attributes";
   }
@@ -112,14 +112,14 @@ Stmt *Parser::recurse_sec() {
   return mock_stmt(QAST_EXPORT);
 }
 
-Stmt *Parser::recurse_pro() {
+RefNode<Stmt> Parser::recurse_pro() {
   let abi_id = recurse_abi_name();
 
   if (let attrs = recurse_export_attributes()) {
     let export_block = recurse_export_body();
 
     return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Pro,
-                            attrs.value());
+                            attrs.value())();
   } else {
     diagnostic << current() << "Malformed export attributes";
   }

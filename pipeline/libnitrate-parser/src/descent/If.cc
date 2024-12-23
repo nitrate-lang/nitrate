@@ -36,7 +36,7 @@
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-Stmt *Parser::recurse_if_then() {
+RefNode<Stmt> Parser::recurse_if_then() {
   if (next_if(qOpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
@@ -44,7 +44,7 @@ Stmt *Parser::recurse_if_then() {
   }
 }
 
-std::optional<Stmt *> Parser::recurse_if_else() {
+std::optional<RefNode<Stmt> > Parser::recurse_if_else() {
   if (next_if(qKElse)) {
     if (next_if(qOpArrow)) {
       return recurse_block(false, true, SafetyMode::Unknown);
@@ -58,11 +58,11 @@ std::optional<Stmt *> Parser::recurse_if_else() {
   }
 }
 
-Stmt *Parser::recurse_if() {
+RefNode<Stmt> Parser::recurse_if() {
   let cond = recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
 
   let then = recurse_if_then();
   let ele = recurse_if_else();
 
-  return make<IfStmt>(cond, then, ele.value_or(nullptr));
+  return make<IfStmt>(cond, then, ele.value_or(nullptr))();
 }

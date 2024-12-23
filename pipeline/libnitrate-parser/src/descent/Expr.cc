@@ -104,7 +104,7 @@ CallArgs Parser::recurse_call_arguments(Token terminator) {
   return call_args;
 }
 
-Expr *Parser::recurse_fstring() {
+RefNode<Expr> Parser::recurse_fstring() {
   Token tok = next();
   if (!tok.is(qText)) {
     diagnostic << tok
@@ -159,7 +159,7 @@ Expr *Parser::recurse_fstring() {
     diagnostic << tok << "F-string expression has mismatched braces";
   }
 
-  return make<FString>(std::move(items));
+  return make<FString>(std::move(items))();
 }
 
 static bool IsPostUnaryOp(Operator O) { return O == qOpInc || O == qOpDec; }
@@ -172,14 +172,14 @@ enum class FrameType : uint8_t {
 };
 
 struct Frame {
-  Expr *base;
+  RefNode<Expr> base;
   LocationID start_pos;
   short minPrecedence;
   FrameType type;
   Operator op;
 
-  Frame(Expr *base, LocationID start_pos, short minPrecedence, FrameType type,
-        Operator op)
+  Frame(RefNode<Expr> base, LocationID start_pos, short minPrecedence,
+        FrameType type, Operator op)
       : base(base),
         start_pos(start_pos),
         minPrecedence(minPrecedence),
@@ -187,8 +187,9 @@ struct Frame {
         op(op) {}
 };
 
-static FORCE_INLINE Expr *UnwindStack(std::stack<Frame> &stack, Expr *base,
-                                      short minPrecedence) {
+static FORCE_INLINE RefNode<Expr> UnwindStack(std::stack<Frame> &stack,
+                                              RefNode<Expr> base,
+                                              short minPrecedence) {
   while (!stack.empty()) {
     auto frame = stack.top();
 
@@ -202,17 +203,17 @@ static FORCE_INLINE Expr *UnwindStack(std::stack<Frame> &stack, Expr *base,
       }
 
       case FrameType::PreUnary: {
-        base = make<UnaryExpr>(frame.op, base);
+        base = make<UnaryExpr>(frame.op, base)();
         break;
       }
 
       case FrameType::PostUnary: {
-        base = make<PostUnaryExpr>(base, frame.op);
+        base = make<PostUnaryExpr>(base, frame.op)();
         break;
       }
 
       case FrameType::Binary: {
-        base = make<BinExpr>(frame.base, frame.op, base);
+        base = make<BinExpr>(frame.base, frame.op, base)();
         break;
       }
     }
@@ -224,7 +225,7 @@ static FORCE_INLINE Expr *UnwindStack(std::stack<Frame> &stack, Expr *base,
   return base;
 }
 
-Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
+RefNode<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
   let SourceOffset = peek().get_start();
 
   std::stack<Frame> Stack;
@@ -249,7 +250,7 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
       let[Op, Offset] = PreUnaryOps.top();
       PreUnaryOps.pop();
 
-      LeftSide = make<UnaryExpr>(Op, LeftSide);
+      LeftSide = make<UnaryExpr>(Op, LeftSide)();
       LeftSide->set_offset(Offset);
     }
 
@@ -273,7 +274,7 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
              * Handle post-unary operators
              ****************************************/
             if (OpType == OpMode::PostUnary) {
-              LeftSide = make<PostUnaryExpr>(LeftSide, Op);
+              LeftSide = make<PostUnaryExpr>(LeftSide, Op)();
               LeftSide->set_offset(SourceOffset);
 
               continue;
@@ -305,7 +306,7 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
                 let[Op, Offset] = PreUnaryOps.top();
                 PreUnaryOps.pop();
 
-                let PreUnaryExpr = make<UnaryExpr>(Op, RightSide.value());
+                let PreUnaryExpr = make<UnaryExpr>(Op, RightSide.value())();
                 PreUnaryExpr->set_offset(Offset);
 
                 RightSide = PreUnaryExpr;
@@ -348,7 +349,7 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
                          << "Expected ')' to close the function call";
             }
 
-            LeftSide = make<Call>(LeftSide, std::move(Arguments));
+            LeftSide = make<Call>(LeftSide, std::move(Arguments))();
             LeftSide->set_offset(SourceOffset);
           } else if (next_if(qPuncLBrk)) {
             let first = recurse_expr({
@@ -362,7 +363,7 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
                 diagnostic << current() << "Expected ']' to close the slice";
               }
 
-              LeftSide = make<Slice>(LeftSide, first, second);
+              LeftSide = make<Slice>(LeftSide, first, second)();
               LeftSide->set_offset(SourceOffset);
             } else {
               if (!next_if(qPuncRBrk)) {
@@ -370,7 +371,7 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
                            << "Expected ']' to close the index expression";
               }
 
-              LeftSide = make<Index>(LeftSide, first);
+              LeftSide = make<Index>(LeftSide, first)();
               LeftSide->set_offset(SourceOffset);
             }
           } else {  // Not part of the expression
@@ -404,8 +405,8 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
   }
 }
 
-std::optional<Expr *> Parser::recurse_expr_keyword(lex::Keyword key) {
-  std::optional<Expr *> E;
+std::optional<RefNode<Expr>> Parser::recurse_expr_keyword(lex::Keyword key) {
+  std::optional<RefNode<Expr>> E;
 
   switch (key) {
     case qKScope: {
@@ -438,7 +439,7 @@ std::optional<Expr *> Parser::recurse_expr_keyword(lex::Keyword key) {
       let type = recurse_type();
       type->set_offset(start_pos);
 
-      E = make<TypeExpr>(type);
+      E = make<TypeExpr>(type)();
       break;
     }
 
@@ -508,12 +509,12 @@ std::optional<Expr *> Parser::recurse_expr_keyword(lex::Keyword key) {
       let function = recurse_function(false);
       function->set_offset(start_pos);
 
-      Expr *expr = make<StmtExpr>(function);
+      RefNode<Expr> expr = make<StmtExpr>(function)();
 
       if (next_if(qPuncLPar)) {
         let args = recurse_call_arguments(Token(qPunc, qPuncRPar));
         if (next_if(qPuncRPar)) {
-          E = make<Call>(expr, args);
+          E = make<Call>(expr, args)();
         } else {
           diagnostic << current() << "Expected ')' to close the function call";
           E = mock_expr(QAST_CALL);
@@ -624,22 +625,22 @@ std::optional<Expr *> Parser::recurse_expr_keyword(lex::Keyword key) {
     }
 
     case qKUndef: {
-      E = make<ConstUndef>();
+      E = make<ConstUndef>()();
       break;
     }
 
     case qKNull: {
-      E = make<ConstNull>();
+      E = make<ConstNull>()();
       break;
     }
 
     case qKTrue: {
-      E = make<ConstBool>(true);
+      E = make<ConstBool>(true)();
       break;
     }
 
     case qKFalse: {
-      E = make<ConstBool>(false);
+      E = make<ConstBool>(false)();
       break;
     }
   }
@@ -647,8 +648,8 @@ std::optional<Expr *> Parser::recurse_expr_keyword(lex::Keyword key) {
   return E;
 }
 
-std::optional<Expr *> Parser::recurse_expr_punctor(lex::Punctor punc) {
-  std::optional<Expr *> E;
+std::optional<RefNode<Expr>> Parser::recurse_expr_punctor(lex::Punctor punc) {
+  std::optional<RefNode<Expr>> E;
 
   switch (punc) {
     case qPuncLPar: {
@@ -718,7 +719,7 @@ std::optional<Expr *> Parser::recurse_expr_punctor(lex::Punctor punc) {
         next_if(qPuncComa);
       }
 
-      E = make<List>(std::move(items));
+      E = make<List>(std::move(items))();
       break;
     }
 
@@ -756,13 +757,13 @@ std::optional<Expr *> Parser::recurse_expr_punctor(lex::Punctor punc) {
 
         next_if(qPuncComa);
 
-        let assoc = make<Assoc>(key, value);
+        let assoc = make<Assoc>(key, value)();
         assoc->set_offset(start_pos);
 
         items.push_back(assoc);
       }
 
-      E = make<List>(std::move(items));
+      E = make<List>(std::move(items))();
       break;
     }
 
@@ -790,27 +791,27 @@ std::optional<Expr *> Parser::recurse_expr_punctor(lex::Punctor punc) {
   return E;
 }
 
-Expr *Parser::recurse_expr_type_suffix(Expr *base) {
+RefNode<Expr> Parser::recurse_expr_type_suffix(RefNode<Expr> base) {
   let tok = current();
 
   let suffix = recurse_type();
   suffix->set_offset(tok.get_start());
 
-  let texpr = make<TypeExpr>(suffix);
+  let texpr = make<TypeExpr>(suffix)();
   texpr->set_offset(tok.get_start());
 
-  return make<BinExpr>(base, qOpAs, texpr);
+  return make<BinExpr>(base, qOpAs, texpr)();
 }
 
-std::optional<Expr *> Parser::recurse_expr_primary(bool isType) {
+std::optional<RefNode<Expr>> Parser::recurse_expr_primary(bool isType) {
   let start_pos = peek().get_start();
-  std::optional<Expr *> E;
+  std::optional<RefNode<Expr>> E;
 
   if (isType) {
     let type = recurse_type();
     type->set_offset(start_pos);
 
-    let texpr = make<TypeExpr>(type);
+    let texpr = make<TypeExpr>(type)();
     texpr->set_offset(start_pos);
 
     E = texpr;
@@ -841,7 +842,7 @@ std::optional<Expr *> Parser::recurse_expr_primary(bool isType) {
       }
 
       case qName: {
-        let identifier = make<Ident>(intern(tok.as_string()));
+        let identifier = make<Ident>(intern(tok.as_string()))();
         identifier->set_offset(start_pos);
 
         E = identifier;
@@ -849,7 +850,7 @@ std::optional<Expr *> Parser::recurse_expr_primary(bool isType) {
       }
 
       case qIntL: {
-        let integer = make<ConstInt>(intern(tok.as_string()));
+        let integer = make<ConstInt>(intern(tok.as_string()))();
         integer->set_offset(start_pos);
 
         if (let tok = peek(); tok.is(qName)) {
@@ -865,7 +866,7 @@ std::optional<Expr *> Parser::recurse_expr_primary(bool isType) {
       }
 
       case qNumL: {
-        let decimal = make<ConstFloat>(intern(tok.as_string()));
+        let decimal = make<ConstFloat>(intern(tok.as_string()))();
         decimal->set_offset(start_pos);
 
         if (let tok = peek(); tok.is(qName)) {
@@ -881,7 +882,7 @@ std::optional<Expr *> Parser::recurse_expr_primary(bool isType) {
       }
 
       case qText: {
-        let string = make<ConstString>(intern(tok.as_string()));
+        let string = make<ConstString>(intern(tok.as_string()))();
         string->set_offset(start_pos);
 
         if (let tok = peek(); tok.is(qName)) {
@@ -903,7 +904,7 @@ std::optional<Expr *> Parser::recurse_expr_primary(bool isType) {
           break;
         }
 
-        let character = make<ConstChar>(str_data[0]);
+        let character = make<ConstChar>(str_data[0])();
         character->set_offset(start_pos);
 
         if (let tok = peek(); tok.is(qName)) {

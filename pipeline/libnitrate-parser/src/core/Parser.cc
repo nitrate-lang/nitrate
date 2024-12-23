@@ -46,8 +46,8 @@
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
-                            SafetyMode safety) {
+RefNode<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
+                                    SafetyMode safety) {
   if (expect_braces && !next().is<qPuncLCur>()) {
     diagnostic << current() << "Expected '{'";
   }
@@ -59,7 +59,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
     Token tok = peek();
 
     if (expect_braces && next_if(qPuncRCur)) {
-      let block = make<Block>(items, safety);
+      let block = make<Block>(items, safety)();
       block->set_offset(tok.get_start());
 
       return block;
@@ -85,7 +85,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
         diagnostic << tok << "Expected ';' after expression";
       }
 
-      let stmt = make<ExprStmt>(expr);
+      let stmt = make<ExprStmt>(expr)();
       stmt->set_offset(expr->begin());
 
       items.push_back(stmt);
@@ -230,7 +230,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKBreak: {
-        let node = make<BreakStmt>();
+        let node = make<BreakStmt>()();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -238,7 +238,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKContinue: {
-        let node = make<ContinueStmt>();
+        let node = make<ContinueStmt>()();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -294,7 +294,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKTrue: {
-        let node = make<ExprStmt>(make<ConstBool>(true));
+        let node = make<ExprStmt>(make<ConstBool>(true)())();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -302,7 +302,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKFalse: {
-        let node = make<ExprStmt>(make<ConstBool>(false));
+        let node = make<ExprStmt>(make<ConstBool>(false)())();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -310,7 +310,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qK__FString: {
-        let node = make<ExprStmt>(recurse_fstring());
+        let node = make<ExprStmt>(recurse_fstring())();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -360,7 +360,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
     diagnostic << current() << "Expected '}'";
   }
 
-  let block = make<Block>(items, safety);
+  let block = make<Block>(items, safety)();
   block->set_offset(block_start);
 
   return block;
@@ -404,7 +404,7 @@ CPP_EXPORT bool ASTRoot::check() const {
   }
 
   bool failed = false;
-  ncc::parse::iterate<dfs_pre>(const_cast<Base *&>(m_base), [&](auto, auto c) {
+  ncc::parse::iterate<dfs_pre>(m_base, [&](auto, auto c) {
     failed |= !c || !*c || (*c)->is_mock();
 
     return failed ? IterOp::Abort : IterOp::Proceed;

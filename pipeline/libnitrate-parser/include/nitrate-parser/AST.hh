@@ -41,18 +41,34 @@
 #include <nitrate-parser/ASTType.hh>
 
 namespace ncc::parse {
+  /* This function takes template variadic arguments and forwards them into
+   * the constructor of type T. If compiled with debugging, the source location
+   * of the original call site is saved for the purposes of data-flow analysis
+   * and AST debugging.
+   */
   template <typename T, typename... Args>
-  static inline T *make(Args &&...args) {
-    T *new_obj = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+  constexpr static inline auto make(Args &&...args) {
+    return [&](
+#if NITRATE_AST_TRACKING
+               std::source_location origin = std::source_location::current()
+#endif
+           ) {
+      RefNode<T> new_obj =
+          new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
 
-    /// TODO: Cache nodes
+      /// TODO: Implement node cache
 
-    return new_obj;
+#if NITRATE_AST_TRACKING
+      new_obj.set_origin(origin);
+#endif
+
+      return new_obj;
+    };
   }
 
-  Stmt *mock_stmt(std::optional<npar_ty_t> expected = std::nullopt);
-  Expr *mock_expr(std::optional<npar_ty_t> expected = std::nullopt);
-  Type *mock_type();
+  RefNode<Stmt> mock_stmt(std::optional<npar_ty_t> expected = std::nullopt);
+  RefNode<Expr> mock_expr(std::optional<npar_ty_t> expected = std::nullopt);
+  RefNode<Type> mock_type();
 }  // namespace ncc::parse
 
 namespace ncc::parse {
@@ -70,38 +86,48 @@ namespace ncc::parse {
     SkipChildren,
   };
 
-  typedef std::function<IterOp(Base *p, Base **c)> IterCallback;
-  typedef std::function<bool(Base **a, Base **b)> ChildSelect;
+  typedef std::function<IterOp(RefNode<const Base> p, RefNode<const Base> *c)>
+      IterCallback;
+  typedef std::function<bool(RefNode<const Base> *a, RefNode<const Base> *b)>
+      ChildSelect;
 
   namespace detail {
-    void dfs_pre_impl(Base **base, IterCallback cb, ChildSelect cs);
-    void dfs_post_impl(Base **base, IterCallback cb, ChildSelect cs);
-    void bfs_pre_impl(Base **base, IterCallback cb, ChildSelect cs);
-    void bfs_post_impl(Base **base, IterCallback cb, ChildSelect cs);
-    void iter_children(Base **base, IterCallback cb, ChildSelect cs);
+    void dfs_pre_impl(RefNode<const Base> *base, IterCallback cb,
+                      ChildSelect cs);
+    void dfs_post_impl(RefNode<const Base> *base, IterCallback cb,
+                       ChildSelect cs);
+    void bfs_pre_impl(RefNode<const Base> *base, IterCallback cb,
+                      ChildSelect cs);
+    void bfs_post_impl(RefNode<const Base> *base, IterCallback cb,
+                       ChildSelect cs);
+    void iter_children(RefNode<const Base> *base, IterCallback cb,
+                       ChildSelect cs);
   }  // namespace detail
 
   template <IterMode mode, typename T>
-  void iterate(T *&base, IterCallback cb, ChildSelect cs = nullptr) {
+  void iterate(const RefNode<T> &base, IterCallback cb,
+               ChildSelect cs = nullptr) {
+    let root = (RefNode<const Base> *)&base;
+
     if constexpr (mode == dfs_pre) {
-      return detail::dfs_pre_impl((Base **)&base, cb, cs);
+      return detail::dfs_pre_impl(root, cb, cs);
     } else if constexpr (mode == dfs_post) {
-      return detail::dfs_post_impl((Base **)&base, cb, cs);
+      return detail::dfs_post_impl(root, cb, cs);
     } else if constexpr (mode == bfs_pre) {
-      return detail::bfs_pre_impl((Base **)&base, cb, cs);
+      return detail::bfs_pre_impl(root, cb, cs);
     } else if constexpr (mode == bfs_post) {
-      return detail::bfs_post_impl((Base **)&base, cb, cs);
+      return detail::bfs_post_impl(root, cb, cs);
     } else if constexpr (mode == children) {
-      return detail::iter_children((Base **)&base, cb, cs);
+      return detail::iter_children(root, cb, cs);
     } else {
       static_assert(mode != mode, "Invalid iteration mode.");
     }
   }
 
   template <auto mode = dfs_pre>
-  void for_each(const Base *const v,
-                std::function<void(npar_ty_t, const Base *const)> f) {
-    iterate<mode>(v, [&](auto, auto c) -> IterOp {
+  void for_each(RefNode<const Base> v,
+                std::function<void(npar_ty_t, RefNode<const Base>)> f) {
+    iterate<mode>(v, [&](auto, RefNode<const Base> *c) -> IterOp {
       f((*c)->getKind(), *c);
 
       return IterOp::Abort;
@@ -109,10 +135,9 @@ namespace ncc::parse {
   }
 
   template <typename T, auto mode = dfs_pre>
-  void for_each(const Base *const v, std::function<void(const T *)> f) {
-    Base *base = const_cast<Base *>(v);
-
-    iterate<mode>(base, [&](auto, const Base *const *const c) -> IterOp {
+  void for_each(RefNode<const Base> v,
+                std::function<void(RefNode<const T>)> f) {
+    iterate<mode>(v, [&](auto, RefNode<const Base> *c) -> IterOp {
       if ((*c)->getKind() != Base::getTypeCode<T>()) {
         return IterOp::Proceed;
       }

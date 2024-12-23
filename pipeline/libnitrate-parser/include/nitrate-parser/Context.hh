@@ -47,16 +47,15 @@ namespace ncc::parse {
   class Parser;
 
   class ASTRoot final {
-    Base *m_base;
+    RefNode<Base> m_base;
     std::shared_ptr<void> m_allocator;
     bool m_failed;
 
   public:
-    ASTRoot(ncc::parse::Base *base, std::shared_ptr<void> allocator,
-            bool failed)
+    ASTRoot(RefNode<Base> base, std::shared_ptr<void> allocator, bool failed)
         : m_base(base), m_allocator(allocator), m_failed(failed) {}
 
-    Base *get() const { return m_base; }
+    RefNode<Base> get() const { return m_base; }
 
     bool check() const;
   };
@@ -73,31 +72,31 @@ namespace ncc::parse {
      *  Primary language constructs
      ****************************************************************************/
 
-    Stmt *recurse_pub();
-    Stmt *recurse_sec();
-    Stmt *recurse_pro();
-    std::vector<Stmt *> recurse_variable(VarDeclType type);
-    Stmt *recurse_enum();
-    Stmt *recurse_struct(CompositeType type);
-    Stmt *recurse_scope();
-    Stmt *recurse_function(bool restrict_decl_only);
-    Type *recurse_type();
-    Stmt *recurse_typedef();
-    Stmt *recurse_return();
-    Stmt *recurse_retif();
-    Stmt *recurse_if();
-    Stmt *recurse_while();
-    Stmt *recurse_for();
-    Stmt *recurse_foreach();
-    Stmt *recurse_switch();
-    Stmt *recurse_inline_asm();
-    Stmt *recurse_block(bool expect_braces, bool single_stmt,
-                        SafetyMode safety);
-    Expr *recurse_expr(const std::set<ncc::lex::Token> &terminators);
-    std::optional<Expr *> recurse_expr_primary(bool isType);
-    std::optional<Expr *> recurse_expr_keyword(lex::Keyword key);
-    std::optional<Expr *> recurse_expr_punctor(lex::Punctor punc);
-    Expr *recurse_expr_type_suffix(Expr *base);
+    RefNode<Stmt> recurse_pub();
+    RefNode<Stmt> recurse_sec();
+    RefNode<Stmt> recurse_pro();
+    std::vector<RefNode<Stmt>> recurse_variable(VarDeclType type);
+    RefNode<Stmt> recurse_enum();
+    RefNode<Stmt> recurse_struct(CompositeType type);
+    RefNode<Stmt> recurse_scope();
+    RefNode<Stmt> recurse_function(bool restrict_decl_only);
+    RefNode<Type> recurse_type();
+    RefNode<Stmt> recurse_typedef();
+    RefNode<Stmt> recurse_return();
+    RefNode<Stmt> recurse_retif();
+    RefNode<Stmt> recurse_if();
+    RefNode<Stmt> recurse_while();
+    RefNode<Stmt> recurse_for();
+    RefNode<Stmt> recurse_foreach();
+    RefNode<Stmt> recurse_switch();
+    RefNode<Stmt> recurse_inline_asm();
+    RefNode<Stmt> recurse_block(bool expect_braces, bool single_stmt,
+                                SafetyMode safety);
+    RefNode<Expr> recurse_expr(const std::set<ncc::lex::Token> &terminators);
+    std::optional<RefNode<Expr>> recurse_expr_primary(bool isType);
+    std::optional<RefNode<Expr>> recurse_expr_keyword(lex::Keyword key);
+    std::optional<RefNode<Expr>> recurse_expr_punctor(lex::Punctor punc);
+    RefNode<Expr> recurse_expr_type_suffix(RefNode<Expr> base);
 
     /****************************************************************************
      * @brief
@@ -105,35 +104,35 @@ namespace ncc::parse {
      ****************************************************************************/
 
     std::string_view recurse_enum_name();
-    std::optional<Type *> recurse_enum_type();
-    std::optional<Expr *> recurse_enum_item_value();
+    std::optional<RefNode<Type>> recurse_enum_type();
+    std::optional<RefNode<Expr>> recurse_enum_item_value();
     std::optional<EnumItem> recurse_enum_item();
     std::optional<EnumDefItems> recurse_enum_items();
 
     std::string_view recurse_abi_name();
     std::optional<ExpressionList> recurse_export_attributes();
-    Stmt *recurse_export_body();
+    RefNode<Stmt> recurse_export_body();
 
     CallArgs recurse_call_arguments(ncc::lex::Token terminator);
-    Expr *recurse_fstring();
+    RefNode<Expr> recurse_fstring();
 
-    std::optional<Stmt *> recurse_for_init_expr();
-    std::optional<Expr *> recurse_for_cond_expr();
-    std::optional<Expr *> recurse_for_step_expr(bool has_paren);
-    Stmt *recurse_for_body();
+    std::optional<RefNode<Stmt>> recurse_for_init_expr();
+    std::optional<RefNode<Expr>> recurse_for_cond_expr();
+    std::optional<RefNode<Expr>> recurse_for_step_expr(bool has_paren);
+    RefNode<Stmt> recurse_for_body();
 
     std::optional<std::pair<std::string_view, std::string_view>>
     recurse_foreach_names();
-    Expr *recurse_foreach_expr(bool has_paren);
-    Stmt *recurse_foreach_body();
+    RefNode<Expr> recurse_foreach_expr(bool has_paren);
+    RefNode<Stmt> recurse_foreach_body();
 
-    Type *recurse_function_parameter_type();
-    std::optional<Expr *> recurse_function_parameter_value();
+    RefNode<Type> recurse_function_parameter_type();
+    std::optional<RefNode<Expr>> recurse_function_parameter_value();
     std::optional<FuncParam> recurse_function_parameter();
     std::optional<TemplateParameters> recurse_template_parameters();
     FuncParams recurse_function_parameters();
-    std::optional<Stmt *> recurse_function_body(bool restrict_decl_only);
-    Type *recurse_function_return_type();
+    std::optional<RefNode<Stmt>> recurse_function_body(bool restrict_decl_only);
+    RefNode<Type> recurse_function_return_type();
     FuncPurity get_purity_specifier(ncc::lex::Token &start_pos,
                                     bool is_thread_safe, bool is_pure,
                                     bool is_impure, bool is_quasi,
@@ -143,12 +142,12 @@ namespace ncc::parse {
                                     FnCaptures &captures, FuncPurity &purity,
                                     std::string_view &function_name);
 
-    Stmt *recurse_if_then();
-    std::optional<Stmt *> recurse_if_else();
+    RefNode<Stmt> recurse_if_then();
+    std::optional<RefNode<Stmt>> recurse_if_else();
 
     std::string_view recurse_scope_name();
     std::optional<ScopeDeps> recurse_scope_deps();
-    Stmt *recurse_scope_block();
+    RefNode<Stmt> recurse_scope_block();
 
     struct StructContent {
       StructDefFields fields;
@@ -158,37 +157,38 @@ namespace ncc::parse {
     ExpressionList recurse_struct_attributes();
     std::string_view recurse_struct_name();
     StructDefNames recurse_struct_terms();
-    std::optional<Expr *> recurse_struct_field_default_value();
+    std::optional<RefNode<Expr>> recurse_struct_field_default_value();
     void recurse_struct_field(Vis vis, bool is_static, StructDefFields &fields);
     void recurse_struct_method_or_field(StructContent &body);
     StructContent recurse_struct_body();
 
-    Stmt *recurse_switch_case_body();
-    std::pair<CaseStmt *, bool> recurse_switch_case();
-    std::optional<std::pair<SwitchCases, std::optional<CaseStmt *>>>
+    RefNode<Stmt> recurse_switch_case_body();
+    std::pair<RefNode<CaseStmt>, bool> recurse_switch_case();
+    std::optional<std::pair<SwitchCases, std::optional<RefNode<CaseStmt>>>>
     recurse_switch_body();
 
-    std::optional<Expr *> recurse_type_range_start();
-    std::optional<Expr *> recurse_type_range_end();
+    std::optional<RefNode<Expr>> recurse_type_range_start();
+    std::optional<RefNode<Expr>> recurse_type_range_end();
     std::optional<CallArgs> recurse_type_template_arguments();
-    Type *recurse_type_suffix(Type *base);
-    Type *recurse_function_type();
-    Type *recurse_opaque_type();
-    Type *recurse_type_by_keyword(ncc::lex::Keyword key);
-    Type *recurse_type_by_operator(ncc::lex::Operator op);
-    Type *recurse_array_or_vector();
-    Type *recurse_set_type();
-    Type *recurse_tuple_type();
-    Type *recurse_type_by_punctuation(ncc::lex::Punctor punc);
-    Type *recurse_type_by_name(std::string_view name);
+    RefNode<Type> recurse_type_suffix(RefNode<Type> base);
+    RefNode<Type> recurse_function_type();
+    RefNode<Type> recurse_opaque_type();
+    RefNode<Type> recurse_type_by_keyword(ncc::lex::Keyword key);
+    RefNode<Type> recurse_type_by_operator(ncc::lex::Operator op);
+    RefNode<Type> recurse_array_or_vector();
+    RefNode<Type> recurse_set_type();
+    RefNode<Type> recurse_tuple_type();
+    RefNode<Type> recurse_type_by_punctuation(ncc::lex::Punctor punc);
+    RefNode<Type> recurse_type_by_name(std::string_view name);
 
     std::optional<ExpressionList> recurse_variable_attributes();
-    std::optional<Type *> recurse_variable_type();
-    std::optional<Expr *> recurse_variable_value();
-    std::optional<Stmt *> recurse_variable_instance(VarDeclType decl_type);
+    std::optional<RefNode<Type>> recurse_variable_type();
+    std::optional<RefNode<Expr>> recurse_variable_value();
+    std::optional<RefNode<Stmt>> recurse_variable_instance(
+        VarDeclType decl_type);
 
-    Expr *recurse_while_cond();
-    Stmt *recurse_while_body();
+    RefNode<Expr> recurse_while_cond();
+    RefNode<Stmt> recurse_while_body();
 
     Parser(ncc::lex::IScanner &lexer,
            std::shared_ptr<ncc::core::Environment> env,

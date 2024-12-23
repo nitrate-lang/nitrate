@@ -271,7 +271,7 @@ static int do_parse(std::string source, std::string output, bool verbose) {
         verbose ? WriterSourceProvider(*lexer.get()) : std::nullopt;
 
     AST_JsonWriter writer(*out, rd);
-    ast.get()->accept(writer);
+    ast.get().accept(writer);
     *out << std::endl;
   }
 
