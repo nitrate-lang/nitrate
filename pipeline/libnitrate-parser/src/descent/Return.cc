@@ -33,10 +33,11 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-RefNode<Stmt> Parser::recurse_return() {
+FlowPtr<Stmt> Parser::recurse_return() {
   /**
    * Syntax examples:
    *   `ret 0;`, `ret;`, `ret 0, 1;`, `ret call();`
@@ -57,7 +58,7 @@ RefNode<Stmt> Parser::recurse_return() {
   return mock_stmt(QAST_RETURN);
 }
 
-RefNode<Stmt> Parser::recurse_retif() {
+FlowPtr<Stmt> Parser::recurse_retif() {
   /**
    * Syntax examples:
    *   `retif cond(), 1;`, `retif failed, -1;`

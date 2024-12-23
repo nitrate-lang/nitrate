@@ -53,11 +53,11 @@ namespace ncc::parse {
   };
 
   class TemplType : public Type {
-    RefNode<Type> m_template;
+    FlowPtr<Type> m_template;
     std::span<CallArg> m_args;
 
   public:
-    TemplType(RefNode<Type> templ, CallArgs args)
+    TemplType(FlowPtr<Type> templ, CallArgs args)
         : Type(QAST_TEMPLATE), m_template(templ), m_args(args) {}
 
     constexpr let get_template() const { return m_template; }
@@ -145,11 +145,11 @@ namespace ncc::parse {
   };
 
   class npar_pack PtrTy : public Type {
-    RefNode<Type> m_item;
+    FlowPtr<Type> m_item;
     bool m_is_volatile;
 
   public:
-    constexpr PtrTy(RefNode<Type> item, bool is_volatile = false)
+    constexpr PtrTy(FlowPtr<Type> item, bool is_volatile = false)
         : Type(QAST_PTR), m_item(item), m_is_volatile(is_volatile) {}
 
     constexpr let get_item() const { return m_item; }
@@ -166,7 +166,7 @@ namespace ncc::parse {
   };
 
   class TupleTy : public Type {
-    std::span<RefNode<Type> > m_items;
+    std::span<FlowPtr<Type> > m_items;
 
   public:
     TupleTy(TupleTyItems items) : Type(QAST_TUPLE), m_items(items) {}
@@ -175,11 +175,11 @@ namespace ncc::parse {
   };
 
   class npar_pack ArrayTy : public Type {
-    RefNode<Type> m_item;
-    RefNode<Expr> m_size;
+    FlowPtr<Type> m_item;
+    FlowPtr<Expr> m_size;
 
   public:
-    constexpr ArrayTy(RefNode<Type> item, RefNode<Expr> size)
+    constexpr ArrayTy(FlowPtr<Type> item, FlowPtr<Expr> size)
         : Type(QAST_ARRAY), m_item(item), m_size(size) {}
 
     constexpr let get_item() const { return m_item; }
@@ -187,23 +187,23 @@ namespace ncc::parse {
   };
 
   class npar_pack RefTy : public Type {
-    RefNode<Type> m_item;
+    FlowPtr<Type> m_item;
 
   public:
-    constexpr RefTy(RefNode<Type> item) : Type(QAST_REF), m_item(item) {}
+    constexpr RefTy(FlowPtr<Type> item) : Type(QAST_REF), m_item(item) {}
 
     constexpr let get_item() const { return m_item; }
   };
 
   class FuncTy : public Type {
-    std::span<RefNode<Expr> > m_attributes;
+    std::span<FlowPtr<Expr> > m_attributes;
     FuncParams m_params;
-    RefNode<Type> m_return;
+    FlowPtr<Type> m_return;
     FuncPurity m_purity;
 
   public:
-    FuncTy(RefNode<Type> return_type, FuncParams parameters, FuncPurity purity,
-           std::span<RefNode<Expr> > attributes)
+    FuncTy(FlowPtr<Type> return_type, FuncParams parameters, FuncPurity purity,
+           std::span<FlowPtr<Expr> > attributes)
         : Type(QAST_FUNCTOR),
           m_attributes(attributes),
           m_params(parameters),

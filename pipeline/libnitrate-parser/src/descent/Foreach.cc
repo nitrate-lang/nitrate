@@ -33,6 +33,7 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
@@ -58,7 +59,7 @@ Parser::recurse_foreach_names() {
   return std::nullopt;
 }
 
-RefNode<Expr> Parser::recurse_foreach_expr(bool has_paren) {
+FlowPtr<Expr> Parser::recurse_foreach_expr(bool has_paren) {
   if (has_paren) {
     return recurse_expr({Token(qPunc, qPuncRPar)});
   } else {
@@ -66,7 +67,7 @@ RefNode<Expr> Parser::recurse_foreach_expr(bool has_paren) {
   }
 }
 
-RefNode<Stmt> Parser::recurse_foreach_body() {
+FlowPtr<Stmt> Parser::recurse_foreach_body() {
   if (next_if(qOpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
@@ -74,7 +75,7 @@ RefNode<Stmt> Parser::recurse_foreach_body() {
   }
 }
 
-RefNode<Stmt> Parser::recurse_foreach() {
+FlowPtr<Stmt> Parser::recurse_foreach() {
   /**
    * Syntax examples:
    *   `foreach (i, v in arr) { }`, `foreach (v in arr) { }`

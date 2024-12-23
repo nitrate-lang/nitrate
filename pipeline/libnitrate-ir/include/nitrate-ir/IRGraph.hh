@@ -65,7 +65,7 @@
 namespace nr {
   using boost::multiprecision::uint128_t;
 
-  extern "C" thread_local std::unique_ptr<ncc::core::IMemory> nr_allocator;
+  extern "C" thread_local std::unique_ptr<ncc::IMemory> nr_allocator;
 
   template <class T>
   struct Arena {

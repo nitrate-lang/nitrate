@@ -48,7 +48,7 @@
  */
 
 using namespace nr;
-using namespace ncc::core;
+using namespace ncc;
 
 bool nr::pass::ds_mangle(qmodule_t *mod, IReport *log) {
   SymbolEncoding se;

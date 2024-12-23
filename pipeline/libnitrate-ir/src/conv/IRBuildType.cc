@@ -40,7 +40,7 @@
 #include <nitrate-ir/IRGraph.hh>
 
 using namespace nr;
-using namespace ncc::core;
+using namespace ncc;
 
 U1Ty *NRBuilder::getU1Ty(SOURCE_LOCATION_PARAM_ONCE) {
   contract_enforce(m_state == SelfState::Constructed);

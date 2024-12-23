@@ -39,7 +39,7 @@
 #include <nitrate-core/Allocate.hh>
 #include <vector>
 
-namespace ncc::core {
+namespace ncc {
   class dyn_arena::PImpl {
     struct region_t {
       uintptr_t base = 0;
@@ -60,7 +60,7 @@ namespace ncc::core {
 
     void *alloc(size_t size, size_t align);
   };
-}  // namespace ncc::core
+}  // namespace ncc
 
 // class gba_v0_t final : public qcore_arena_t {
 //   struct region_t {

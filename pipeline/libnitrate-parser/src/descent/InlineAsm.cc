@@ -33,10 +33,11 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-RefNode<Stmt> Parser::recurse_inline_asm() {
+FlowPtr<Stmt> Parser::recurse_inline_asm() {
   diagnostic << current() << "Inline assembly is not yet implemented";
 
   return mock_stmt(QAST_INLINE_ASM);

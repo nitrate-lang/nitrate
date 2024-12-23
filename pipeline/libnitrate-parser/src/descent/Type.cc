@@ -33,10 +33,11 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::optional<RefNode<Expr>> Parser::recurse_type_range_start() {
+std::optional<FlowPtr<Expr>> Parser::recurse_type_range_start() {
   if (next_if(qPuncColn)) {
     return std::nullopt;
   }
@@ -50,7 +51,7 @@ std::optional<RefNode<Expr>> Parser::recurse_type_range_start() {
   return min_value;
 }
 
-std::optional<RefNode<Expr>> Parser::recurse_type_range_end() {
+std::optional<FlowPtr<Expr>> Parser::recurse_type_range_end() {
   if (next_if(qPuncRBrk)) {
     return std::nullopt;
   }
@@ -78,7 +79,7 @@ std::optional<CallArgs> Parser::recurse_type_template_arguments() {
   return args;
 }
 
-RefNode<Type> Parser::recurse_type_suffix(RefNode<Type> base) {
+FlowPtr<Type> Parser::recurse_type_suffix(FlowPtr<Type> base) {
   static let bit_width_terminaters = {
       Token(qPunc, qPuncRPar), Token(qPunc, qPuncRBrk), Token(qPunc, qPuncLCur),
       Token(qPunc, qPuncRCur), Token(qPunc, qPuncComa), Token(qPunc, qPuncColn),
@@ -94,8 +95,8 @@ RefNode<Type> Parser::recurse_type_suffix(RefNode<Type> base) {
     base = templ;
   }
 
-  std::pair<std::optional<RefNode<Expr>>, std::optional<RefNode<Expr>>> range;
-  std::optional<RefNode<Expr>> width;
+  std::pair<std::optional<FlowPtr<Expr>>, std::optional<FlowPtr<Expr>>> range;
+  std::optional<FlowPtr<Expr>> width;
 
   if (next_if(qPuncColn)) {
     if (next_if(qPuncLBrk)) {
@@ -110,9 +111,9 @@ RefNode<Type> Parser::recurse_type_suffix(RefNode<Type> base) {
     }
   }
 
-  base->set_range(range.first.value_or(nullptr),
-                  range.second.value_or(nullptr));
-  base->set_width(width.value_or(nullptr));
+  base->set_range_begin(range.first);
+  base->set_range_end(range.second);
+  base->set_width(width);
 
   if (next_if(qOpTernary)) {
     let args = CallArgs{{SaveString("0"), make<TypeExpr>(base)()}};
@@ -127,7 +128,7 @@ RefNode<Type> Parser::recurse_type_suffix(RefNode<Type> base) {
   return base;
 }
 
-RefNode<Type> Parser::recurse_function_type() {
+FlowPtr<Type> Parser::recurse_function_type() {
   let fn = recurse_function(true);
 
   if (!fn->is<Function>() || !fn->as<Function>()->is_decl()) {
@@ -136,7 +137,7 @@ RefNode<Type> Parser::recurse_function_type() {
     return mock_type();
   }
 
-  RefNode<Function> fn_def = fn->as<Function>();
+  FlowPtr<Function> fn_def = fn.as<Function>();
 
   let func_ty = make<FuncTy>(fn_def->get_return(), fn_def->get_params(),
                              fn_def->get_purity(), fn_def->get_attributes())();
@@ -146,7 +147,7 @@ RefNode<Type> Parser::recurse_function_type() {
   return func_ty;
 }
 
-RefNode<Type> Parser::recurse_opaque_type() {
+FlowPtr<Type> Parser::recurse_opaque_type() {
   if (!next_if(qPuncLPar)) {
     diagnostic << current() << "Expected '(' after 'opaque'";
     return mock_type();
@@ -168,7 +169,7 @@ RefNode<Type> Parser::recurse_opaque_type() {
   return mock_type();
 }
 
-RefNode<Type> Parser::recurse_type_by_keyword(Keyword key) {
+FlowPtr<Type> Parser::recurse_type_by_keyword(Keyword key) {
   switch (key) {
     case qKFn: {
       return recurse_function_type();
@@ -185,7 +186,7 @@ RefNode<Type> Parser::recurse_type_by_keyword(Keyword key) {
   }
 }
 
-RefNode<Type> Parser::recurse_type_by_operator(Operator op) {
+FlowPtr<Type> Parser::recurse_type_by_operator(Operator op) {
   switch (op) {
     case qOpTimes: {
       let start = current().get_start();
@@ -222,7 +223,7 @@ RefNode<Type> Parser::recurse_type_by_operator(Operator op) {
   }
 }
 
-RefNode<Type> Parser::recurse_array_or_vector() {
+FlowPtr<Type> Parser::recurse_array_or_vector() {
   let start = current().get_start();
 
   let first = recurse_type();
@@ -255,7 +256,7 @@ RefNode<Type> Parser::recurse_array_or_vector() {
   return array;
 }
 
-RefNode<Type> Parser::recurse_set_type() {
+FlowPtr<Type> Parser::recurse_set_type() {
   let start = current().get_start();
 
   let set_type = recurse_type();
@@ -273,7 +274,7 @@ RefNode<Type> Parser::recurse_set_type() {
   return set;
 }
 
-RefNode<Type> Parser::recurse_tuple_type() {
+FlowPtr<Type> Parser::recurse_tuple_type() {
   TupleTyItems items;
 
   let start = current().get_start();
@@ -301,7 +302,7 @@ RefNode<Type> Parser::recurse_tuple_type() {
   return tuple;
 }
 
-RefNode<Type> Parser::recurse_type_by_punctuation(Punctor punc) {
+FlowPtr<Type> Parser::recurse_type_by_punctuation(Punctor punc) {
   switch (punc) {
     case qPuncLBrk: {
       return recurse_array_or_vector();
@@ -322,8 +323,8 @@ RefNode<Type> Parser::recurse_type_by_punctuation(Punctor punc) {
   }
 }
 
-RefNode<Type> Parser::recurse_type_by_name(std::string_view name) {
-  std::optional<RefNode<Type>> type;
+FlowPtr<Type> Parser::recurse_type_by_name(std::string_view name) {
+  std::optional<FlowPtr<Type>> type;
 
   if (name == "u1") {
     type = make<U1>()();
@@ -371,7 +372,7 @@ RefNode<Type> Parser::recurse_type_by_name(std::string_view name) {
   return type.value();
 }
 
-RefNode<Type> Parser::recurse_type() {
+FlowPtr<Type> Parser::recurse_type() {
   switch (let tok = next(); tok.get_type()) {
     case qKeyW: {
       let type = recurse_type_by_keyword(tok.as_key());

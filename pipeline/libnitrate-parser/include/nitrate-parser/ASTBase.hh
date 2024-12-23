@@ -43,6 +43,7 @@
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTData.hh>
 #include <nitrate-parser/ASTWriter.hh>
+#include <type_traits>
 
 namespace ncc::parse {
   class npar_pack Base {
@@ -241,6 +242,13 @@ namespace ncc::parse {
     uint64_t hash64() const;
 
     ///======================================================================
+    /// Visitation
+
+    constexpr void accept(ASTVisitor &v) const {
+      v.dispatch(MakeFlowPtr(const_cast<Base *>(this)));
+    }
+
+    ///======================================================================
     /// Debug-mode checked type casting
 
     template <typename T>
@@ -396,11 +404,10 @@ namespace ncc::parse {
   };
 
   class npar_pack Type : public Base {
-    std::pair<RefNode<Expr>, RefNode<Expr>> m_range;
-    RefNode<Expr> m_width;
+    std::optional<FlowPtr<Expr>> m_range_begin, m_range_end, m_width;
 
   public:
-    constexpr Type(npar_ty_t ty) : Base(ty), m_range(), m_width() {}
+    constexpr Type(npar_ty_t ty) : Base(ty) {}
 
     constexpr bool is_primitive() const {
       switch (getKind()) {
@@ -451,11 +458,20 @@ namespace ncc::parse {
     bool is_ptr_to(Type *type) const;
 
     constexpr let get_width() const { return m_width; }
-    constexpr let get_range() const { return m_range; }
+    constexpr let get_range_begin() const { return m_range_begin; }
+    constexpr let get_range_end() const { return m_range_end; }
 
-    constexpr void set_range(Expr *start, Expr *end) { m_range = {start, end}; }
+    constexpr void set_range_begin(std::optional<FlowPtr<Expr>> start) {
+      m_range_begin = start;
+    }
 
-    constexpr void set_width(Expr *width) { m_width = width; }
+    constexpr void set_range_end(std::optional<FlowPtr<Expr>> end) {
+      m_range_end = end;
+    }
+
+    constexpr void set_width(std::optional<FlowPtr<Expr>> width) {
+      m_width = width;
+    }
   };
 
   class Expr : public Base {

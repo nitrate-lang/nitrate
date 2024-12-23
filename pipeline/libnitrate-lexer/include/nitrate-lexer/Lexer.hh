@@ -316,7 +316,7 @@ namespace ncc::lex {
     size_t m_getc_buffer_pos = GETC_BUFFER_SIZE;
     bool m_eof = false;
 
-    std::shared_ptr<core::Environment> m_env;
+    std::shared_ptr<Environment> m_env;
 
     class StaticImpl;
     friend class StaticImpl;
@@ -326,11 +326,11 @@ namespace ncc::lex {
     Token GetNext() override;
 
   public:
-    Tokenizer(std::istream &source_file, std::shared_ptr<core::Environment> env)
+    Tokenizer(std::istream &source_file, std::shared_ptr<Environment> env)
         : IScanner(), m_file(source_file), m_env(env) {}
     virtual ~Tokenizer() override {}
 
-    std::shared_ptr<core::Environment> GetEnvironment() const { return m_env; }
+    std::shared_ptr<Environment> GetEnvironment() const { return m_env; }
   };
 
   const char *op_repr(Operator op);

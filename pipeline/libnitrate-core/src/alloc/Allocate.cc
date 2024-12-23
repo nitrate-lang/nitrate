@@ -36,7 +36,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 
-using namespace ncc::core;
+using namespace ncc;
 
 CPP_EXPORT dyn_arena::dyn_arena() {
   m_arena = new PImpl();

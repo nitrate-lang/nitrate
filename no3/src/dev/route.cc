@@ -62,7 +62,7 @@
 
 using namespace argparse;
 using namespace no3;
-using namespace ncc::core;
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 

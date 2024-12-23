@@ -39,16 +39,16 @@
 
 namespace ncc::parse {
   class npar_pack ExprStmt final : public Stmt {
-    RefNode<Expr> m_expr;
+    FlowPtr<Expr> m_expr;
 
   public:
-    constexpr ExprStmt(RefNode<Expr> expr) : Stmt(QAST_ESTMT), m_expr(expr) {}
+    constexpr ExprStmt(FlowPtr<Expr> expr) : Stmt(QAST_ESTMT), m_expr(expr) {}
 
     constexpr let get_expr() const { return m_expr; }
   };
 
   class Block final : public Stmt {
-    std::span<RefNode<Stmt>> m_items;
+    std::span<FlowPtr<Stmt>> m_items;
     SafetyMode m_safety;
 
   public:
@@ -60,15 +60,16 @@ namespace ncc::parse {
   };
 
   class VarDecl final : public Stmt {
-    std::span<RefNode<Expr>> m_attributes;
+    std::span<FlowPtr<Expr>> m_attributes;
     string m_name;
-    RefNode<Type> m_type;
-    RefNode<Expr> m_value;
+    std::optional<FlowPtr<Type>> m_type;
+    std::optional<FlowPtr<Expr>> m_value;
     VarDeclType m_decl_type;
 
   public:
-    VarDecl(string name, RefNode<Type> type, RefNode<Expr> value,
-            VarDeclType decl_type, ExpressionList attributes)
+    VarDecl(string name, std::optional<FlowPtr<Type>> type,
+            std::optional<FlowPtr<Expr>> value, VarDeclType decl_type,
+            ExpressionList attributes)
         : Stmt(QAST_VAR),
           m_attributes(attributes),
           m_name(name),
@@ -86,7 +87,7 @@ namespace ncc::parse {
 
   class InlineAsm final : public Stmt {
     string m_code;
-    std::span<RefNode<Expr>> m_args;
+    std::span<FlowPtr<Expr>> m_args;
 
   public:
     InlineAsm(string code, ExpressionList args)
@@ -98,12 +99,13 @@ namespace ncc::parse {
   };
 
   class npar_pack IfStmt final : public Stmt {
-    RefNode<Expr> m_cond;
-    RefNode<Stmt> m_then, m_else;
+    FlowPtr<Expr> m_cond;
+    FlowPtr<Stmt> m_then;
+    std::optional<FlowPtr<Stmt>> m_else;
 
   public:
-    constexpr IfStmt(RefNode<Expr> cond, RefNode<Stmt> then,
-                     RefNode<Stmt> else_)
+    constexpr IfStmt(FlowPtr<Expr> cond, FlowPtr<Stmt> then,
+                     std::optional<FlowPtr<Stmt>> else_)
         : Stmt(QAST_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
     constexpr let get_cond() const { return m_cond; }
@@ -112,11 +114,11 @@ namespace ncc::parse {
   };
 
   class WhileStmt final : public Stmt {
-    RefNode<Expr> m_cond;
-    RefNode<Stmt> m_body;
+    FlowPtr<Expr> m_cond;
+    FlowPtr<Stmt> m_body;
 
   public:
-    constexpr WhileStmt(RefNode<Expr> cond, RefNode<Stmt> body)
+    constexpr WhileStmt(FlowPtr<Expr> cond, FlowPtr<Stmt> body)
         : Stmt(QAST_WHILE), m_cond(cond), m_body(body) {}
 
     constexpr let get_cond() const { return m_cond; }
@@ -124,14 +126,14 @@ namespace ncc::parse {
   };
 
   class ForStmt final : public Stmt {
-    std::optional<RefNode<Stmt>> m_init;
-    std::optional<RefNode<Expr>> m_cond, m_step;
-    RefNode<Stmt> m_body;
+    std::optional<FlowPtr<Stmt>> m_init;
+    std::optional<FlowPtr<Expr>> m_cond, m_step;
+    FlowPtr<Stmt> m_body;
 
   public:
-    constexpr ForStmt(std::optional<RefNode<Stmt>> init,
-                      std::optional<RefNode<Expr>> cond,
-                      std::optional<RefNode<Expr>> step, RefNode<Stmt> body)
+    constexpr ForStmt(std::optional<FlowPtr<Stmt>> init,
+                      std::optional<FlowPtr<Expr>> cond,
+                      std::optional<FlowPtr<Expr>> step, FlowPtr<Stmt> body)
         : Stmt(QAST_FOR),
           m_init(init),
           m_cond(cond),
@@ -147,12 +149,12 @@ namespace ncc::parse {
   class ForeachStmt final : public Stmt {
     string m_idx_ident;
     string m_val_ident;
-    RefNode<Expr> m_expr;
-    RefNode<Stmt> m_body;
+    FlowPtr<Expr> m_expr;
+    FlowPtr<Stmt> m_body;
 
   public:
-    ForeachStmt(string idx_ident, string val_ident, RefNode<Expr> expr,
-                RefNode<Stmt> body)
+    ForeachStmt(string idx_ident, string val_ident, FlowPtr<Expr> expr,
+                FlowPtr<Stmt> body)
         : Stmt(QAST_FOREACH),
           m_idx_ident(idx_ident),
           m_val_ident(val_ident),
@@ -177,21 +179,21 @@ namespace ncc::parse {
   };
 
   class ReturnStmt final : public Stmt {
-    std::optional<RefNode<Expr>> m_value;
+    std::optional<FlowPtr<Expr>> m_value;
 
   public:
-    constexpr ReturnStmt(std::optional<RefNode<Expr>> value)
+    constexpr ReturnStmt(std::optional<FlowPtr<Expr>> value)
         : Stmt(QAST_RETURN), m_value(value) {}
 
     constexpr let get_value() const { return m_value; }
   };
 
   class ReturnIfStmt final : public Stmt {
-    RefNode<Expr> m_cond;
-    RefNode<Expr> m_value;
+    FlowPtr<Expr> m_cond;
+    FlowPtr<Expr> m_value;
 
   public:
-    constexpr ReturnIfStmt(RefNode<Expr> cond, RefNode<Expr> value)
+    constexpr ReturnIfStmt(FlowPtr<Expr> cond, FlowPtr<Expr> value)
         : Stmt(QAST_RETIF), m_cond(cond), m_value(value) {}
 
     constexpr let get_cond() const { return m_cond; }
@@ -199,11 +201,11 @@ namespace ncc::parse {
   };
 
   class CaseStmt final : public Stmt {
-    RefNode<Expr> m_cond;
-    RefNode<Stmt> m_body;
+    FlowPtr<Expr> m_cond;
+    FlowPtr<Stmt> m_body;
 
   public:
-    constexpr CaseStmt(RefNode<Expr> cond, RefNode<Stmt> body)
+    constexpr CaseStmt(FlowPtr<Expr> cond, FlowPtr<Stmt> body)
         : Stmt(QAST_CASE), m_cond(cond), m_body(body) {}
 
     constexpr let get_cond() const { return m_cond; }
@@ -211,12 +213,13 @@ namespace ncc::parse {
   };
 
   class SwitchStmt final : public Stmt {
-    RefNode<Expr> m_cond;
-    std::span<RefNode<CaseStmt>> m_cases;
-    RefNode<Stmt> m_default;
+    FlowPtr<Expr> m_cond;
+    std::span<FlowPtr<CaseStmt>> m_cases;
+    std::optional<FlowPtr<Stmt>> m_default;
 
   public:
-    SwitchStmt(RefNode<Expr> cond, SwitchCases cases, RefNode<Stmt> default_)
+    SwitchStmt(FlowPtr<Expr> cond, SwitchCases cases,
+               std::optional<FlowPtr<Stmt>> default_)
         : Stmt(QAST_SWITCH),
           m_cond(cond),
           m_cases(cases),
@@ -228,13 +231,13 @@ namespace ncc::parse {
   };
 
   class ExportStmt final : public Stmt {
-    std::span<RefNode<Expr>> m_attrs;
+    std::span<FlowPtr<Expr>> m_attrs;
     string m_abi_name;
-    RefNode<Stmt> m_body;
+    FlowPtr<Stmt> m_body;
     Vis m_vis;
 
   public:
-    ExportStmt(RefNode<Stmt> content, string abi_name, Vis vis,
+    ExportStmt(FlowPtr<Stmt> content, string abi_name, Vis vis,
                ExpressionList attrs)
         : Stmt(QAST_EXPORT),
           m_attrs(attrs),
@@ -252,10 +255,10 @@ namespace ncc::parse {
   class ScopeStmt final : public Stmt {
     ScopeDeps m_deps;
     string m_name;
-    RefNode<Stmt> m_body;
+    FlowPtr<Stmt> m_body;
 
   public:
-    ScopeStmt(string name, RefNode<Stmt> body, ScopeDeps deps = {})
+    ScopeStmt(string name, FlowPtr<Stmt> body, ScopeDeps deps = {})
         : Stmt(QAST_SCOPE), m_deps(deps), m_name(name), m_body(body) {}
 
     constexpr auto get_name() const { return m_name.get(); }
@@ -266,10 +269,10 @@ namespace ncc::parse {
 
   class TypedefStmt final : public Stmt {
     string m_name;
-    RefNode<Type> m_type;
+    FlowPtr<Type> m_type;
 
   public:
-    TypedefStmt(string name, RefNode<Type> type)
+    TypedefStmt(string name, FlowPtr<Type> type)
         : Stmt(QAST_TYPEDEF), m_name(name), m_type(type) {}
 
     constexpr auto get_name() const { return m_name.get(); }
@@ -280,10 +283,10 @@ namespace ncc::parse {
   class EnumDef final : public Stmt {
     std::span<EnumItem> m_items;
     string m_name;
-    RefNode<Type> m_type;
+    std::optional<FlowPtr<Type>> m_type;
 
   public:
-    EnumDef(string name, RefNode<Type> type, EnumDefItems items)
+    EnumDef(string name, std::optional<FlowPtr<Type>> type, EnumDefItems items)
         : Stmt(QAST_ENUM), m_items(items), m_name(name), m_type(type) {}
 
     constexpr auto get_name() const { return m_name.get(); }
@@ -293,23 +296,23 @@ namespace ncc::parse {
   };
 
   class Function final : public Stmt {
-    std::span<RefNode<Expr>> m_attributes;
+    std::span<FlowPtr<Expr>> m_attributes;
     FuncPurity m_purity;
     std::span<std::pair<string, bool>> m_captures;
     string m_name;
     std::optional<TemplateParameters> m_template_parameters;
     FuncParams m_params;
-    RefNode<Type> m_return;
-    std::optional<RefNode<Expr>> m_precond, m_postcond;
-    std::optional<RefNode<Stmt>> m_body;
+    FlowPtr<Type> m_return;
+    std::optional<FlowPtr<Expr>> m_precond, m_postcond;
+    std::optional<FlowPtr<Stmt>> m_body;
 
   public:
     Function(ExpressionList attributes, FuncPurity purity, FnCaptures captures,
              string name, std::optional<TemplateParameters> params,
-             FuncParams fn_params, RefNode<Type> return_type,
-             std::optional<RefNode<Expr>> precond,
-             std::optional<RefNode<Expr>> postcond,
-             std::optional<RefNode<Stmt>> body)
+             FuncParams fn_params, FlowPtr<Type> return_type,
+             std::optional<FlowPtr<Expr>> precond,
+             std::optional<FlowPtr<Expr>> postcond,
+             std::optional<FlowPtr<Stmt>> body)
         : Stmt(QAST_FUNCTION),
           m_attributes(attributes),
           m_purity(purity),
@@ -340,7 +343,7 @@ namespace ncc::parse {
 
   class StructDef final : public Stmt {
     CompositeType m_comp_type;
-    std::span<RefNode<Expr>> m_attributes;
+    std::span<FlowPtr<Expr>> m_attributes;
     string m_name;
     std::optional<TemplateParameters> m_template_parameters;
     std::span<string> m_names;

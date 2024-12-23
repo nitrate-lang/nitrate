@@ -40,7 +40,7 @@
 #include <optional>
 #include <unordered_map>
 
-namespace ncc::core {
+namespace ncc {
   class IEnvironment {
   public:
     virtual ~IEnvironment() = default;
@@ -73,6 +73,6 @@ namespace ncc::core {
              bool privset = false);
   };
 
-}  // namespace ncc::core
+}  // namespace ncc
 
 #endif  // __NITRATE_CORE_ENV_H__

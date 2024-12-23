@@ -43,10 +43,11 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 
+using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-RefNode<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
+FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
                                     SafetyMode safety) {
   if (expect_braces && !next().is<qPuncLCur>()) {
     diagnostic << current() << "Expected '{'";
@@ -367,11 +368,11 @@ RefNode<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
 }
 
 CPP_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
-                          std::shared_ptr<ncc::core::Environment> env,
+                          std::shared_ptr<ncc::Environment> env,
                           std::shared_ptr<void> lifetime)
     : rd(lexer), m_lifetime(lifetime) {
   m_env = env;
-  m_allocator = std::make_unique<ncc::core::dyn_arena>();
+  m_allocator = std::make_unique<ncc::dyn_arena>();
   m_failed = false;
 }
 
@@ -388,7 +389,7 @@ CPP_EXPORT ASTRoot Parser::parse() {
   std::swap(ncc::parse::npar_allocator, m_allocator);
 
   ASTRoot ast(node, std::move(m_allocator), m_failed);
-  m_allocator = std::make_unique<ncc::core::dyn_arena>();
+  m_allocator = std::make_unique<ncc::dyn_arena>();
 
   /*== Uninstall thread-local references to the parser ==*/
   ncc::parse::diagnostic = old;

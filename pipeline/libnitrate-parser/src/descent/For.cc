@@ -33,10 +33,11 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::optional<RefNode<Stmt> > Parser::recurse_for_init_expr() {
+std::optional<FlowPtr<Stmt> > Parser::recurse_for_init_expr() {
   if (next_if(qPuncSemi)) {
     return std::nullopt;
   }
@@ -44,7 +45,7 @@ std::optional<RefNode<Stmt> > Parser::recurse_for_init_expr() {
   return recurse_block(false, true, SafetyMode::Unknown);
 }
 
-std::optional<RefNode<Expr> > Parser::recurse_for_cond_expr() {
+std::optional<FlowPtr<Expr> > Parser::recurse_for_cond_expr() {
   if (next_if(qPuncSemi)) {
     return std::nullopt;
   }
@@ -58,7 +59,7 @@ std::optional<RefNode<Expr> > Parser::recurse_for_cond_expr() {
   return cond_expr;
 }
 
-std::optional<RefNode<Expr> > Parser::recurse_for_step_expr(bool has_paren) {
+std::optional<FlowPtr<Expr> > Parser::recurse_for_step_expr(bool has_paren) {
   if (has_paren) {
     if (peek().is<qPuncRPar>()) {
       return std::nullopt;
@@ -74,7 +75,7 @@ std::optional<RefNode<Expr> > Parser::recurse_for_step_expr(bool has_paren) {
   }
 }
 
-RefNode<Stmt> Parser::recurse_for_body() {
+FlowPtr<Stmt> Parser::recurse_for_body() {
   if (next_if(qOpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
@@ -82,7 +83,7 @@ RefNode<Stmt> Parser::recurse_for_body() {
   }
 }
 
-RefNode<Stmt> Parser::recurse_for() {
+FlowPtr<Stmt> Parser::recurse_for() {
   bool has_paren = next_if(qPuncLPar).has_value();
 
   let init = recurse_for_init_expr();

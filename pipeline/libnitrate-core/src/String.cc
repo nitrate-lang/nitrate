@@ -35,7 +35,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/String.hh>
 
-using namespace ncc::core;
+using namespace ncc;
 
 CPP_EXPORT StringMemory::Storage StringMemory::StringMemory::m_storage;
 

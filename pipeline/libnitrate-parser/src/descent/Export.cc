@@ -33,6 +33,7 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
@@ -74,7 +75,7 @@ std::optional<ExpressionList> Parser::recurse_export_attributes() {
   return std::nullopt;
 }
 
-RefNode<Stmt> Parser::recurse_export_body() {
+FlowPtr<Stmt> Parser::recurse_export_body() {
   if (peek().is<qPuncLCur>()) {
     return recurse_block(true, false, SafetyMode::Unknown);
   } else {
@@ -82,7 +83,7 @@ RefNode<Stmt> Parser::recurse_export_body() {
   }
 }
 
-RefNode<Stmt> Parser::recurse_pub() {
+FlowPtr<Stmt> Parser::recurse_pub() {
   let abi_id = recurse_abi_name();
 
   if (let attrs = recurse_export_attributes()) {
@@ -97,7 +98,7 @@ RefNode<Stmt> Parser::recurse_pub() {
   return mock_stmt(QAST_EXPORT);
 }
 
-RefNode<Stmt> Parser::recurse_sec() {
+FlowPtr<Stmt> Parser::recurse_sec() {
   let abi_id = recurse_abi_name();
 
   if (let attrs = recurse_export_attributes()) {
@@ -112,7 +113,7 @@ RefNode<Stmt> Parser::recurse_sec() {
   return mock_stmt(QAST_EXPORT);
 }
 
-RefNode<Stmt> Parser::recurse_pro() {
+FlowPtr<Stmt> Parser::recurse_pro() {
   let abi_id = recurse_abi_name();
 
   if (let attrs = recurse_export_attributes()) {

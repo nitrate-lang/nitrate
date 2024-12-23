@@ -43,7 +43,7 @@ namespace ncc::parse {
     static std::string_view GetVersionId();
   };
 
-  extern core::LibraryRC<ParseLibrarySetup> ParseLibrary;
+  extern LibraryRC<ParseLibrarySetup> ParseLibrary;
 }  // namespace ncc::parse
 
 #endif  // __NITRATE_AST_LIB_H__

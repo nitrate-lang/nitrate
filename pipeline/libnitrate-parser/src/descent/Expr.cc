@@ -44,9 +44,10 @@
 #define MAX_RECURSION_DEPTH 4096
 #define MAX_LIST_REPEAT_COUNT 4096
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
-using namespace ncc::core;
+using namespace ncc;
 
 CallArgs Parser::recurse_call_arguments(Token terminator) {
   Token ident;
@@ -104,7 +105,7 @@ CallArgs Parser::recurse_call_arguments(Token terminator) {
   return call_args;
 }
 
-RefNode<Expr> Parser::recurse_fstring() {
+FlowPtr<Expr> Parser::recurse_fstring() {
   Token tok = next();
   if (!tok.is(qText)) {
     diagnostic << tok
@@ -172,13 +173,13 @@ enum class FrameType : uint8_t {
 };
 
 struct Frame {
-  RefNode<Expr> base;
+  FlowPtr<Expr> base;
   LocationID start_pos;
   short minPrecedence;
   FrameType type;
   Operator op;
 
-  Frame(RefNode<Expr> base, LocationID start_pos, short minPrecedence,
+  Frame(FlowPtr<Expr> base, LocationID start_pos, short minPrecedence,
         FrameType type, Operator op)
       : base(base),
         start_pos(start_pos),
@@ -187,8 +188,8 @@ struct Frame {
         op(op) {}
 };
 
-static FORCE_INLINE RefNode<Expr> UnwindStack(std::stack<Frame> &stack,
-                                              RefNode<Expr> base,
+static FORCE_INLINE FlowPtr<Expr> UnwindStack(std::stack<Frame> &stack,
+                                              FlowPtr<Expr> base,
                                               short minPrecedence) {
   while (!stack.empty()) {
     auto frame = stack.top();
@@ -225,7 +226,7 @@ static FORCE_INLINE RefNode<Expr> UnwindStack(std::stack<Frame> &stack,
   return base;
 }
 
-RefNode<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
+FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
   let SourceOffset = peek().get_start();
 
   std::stack<Frame> Stack;
@@ -405,8 +406,8 @@ RefNode<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
   }
 }
 
-std::optional<RefNode<Expr>> Parser::recurse_expr_keyword(lex::Keyword key) {
-  std::optional<RefNode<Expr>> E;
+std::optional<FlowPtr<Expr>> Parser::recurse_expr_keyword(lex::Keyword key) {
+  std::optional<FlowPtr<Expr>> E;
 
   switch (key) {
     case qKScope: {
@@ -509,7 +510,7 @@ std::optional<RefNode<Expr>> Parser::recurse_expr_keyword(lex::Keyword key) {
       let function = recurse_function(false);
       function->set_offset(start_pos);
 
-      RefNode<Expr> expr = make<StmtExpr>(function)();
+      FlowPtr<Expr> expr = make<StmtExpr>(function)();
 
       if (next_if(qPuncLPar)) {
         let args = recurse_call_arguments(Token(qPunc, qPuncRPar));
@@ -648,8 +649,8 @@ std::optional<RefNode<Expr>> Parser::recurse_expr_keyword(lex::Keyword key) {
   return E;
 }
 
-std::optional<RefNode<Expr>> Parser::recurse_expr_punctor(lex::Punctor punc) {
-  std::optional<RefNode<Expr>> E;
+std::optional<FlowPtr<Expr>> Parser::recurse_expr_punctor(lex::Punctor punc) {
+  std::optional<FlowPtr<Expr>> E;
 
   switch (punc) {
     case qPuncLPar: {
@@ -791,7 +792,7 @@ std::optional<RefNode<Expr>> Parser::recurse_expr_punctor(lex::Punctor punc) {
   return E;
 }
 
-RefNode<Expr> Parser::recurse_expr_type_suffix(RefNode<Expr> base) {
+FlowPtr<Expr> Parser::recurse_expr_type_suffix(FlowPtr<Expr> base) {
   let tok = current();
 
   let suffix = recurse_type();
@@ -803,9 +804,9 @@ RefNode<Expr> Parser::recurse_expr_type_suffix(RefNode<Expr> base) {
   return make<BinExpr>(base, qOpAs, texpr)();
 }
 
-std::optional<RefNode<Expr>> Parser::recurse_expr_primary(bool isType) {
+std::optional<FlowPtr<Expr>> Parser::recurse_expr_primary(bool isType) {
   let start_pos = peek().get_start();
-  std::optional<RefNode<Expr>> E;
+  std::optional<FlowPtr<Expr>> E;
 
   if (isType) {
     let type = recurse_type();

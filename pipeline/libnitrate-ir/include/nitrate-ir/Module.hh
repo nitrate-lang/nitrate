@@ -142,8 +142,8 @@ private:
                                      process during its lifetime */
   bool m_diagnostics_enabled{};
 
-  std::unique_ptr<ncc::core::IMemory> m_node_arena =
-      std::make_unique<ncc::core::dyn_arena>();
+  std::unique_ptr<ncc::IMemory> m_node_arena =
+      std::make_unique<ncc::dyn_arena>();
 
 public:
   qmodule_t(nr::ModuleId id, const std::string &name = "?");

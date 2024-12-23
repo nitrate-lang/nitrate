@@ -33,10 +33,11 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-RefNode<Stmt> Parser::recurse_typedef() {
+FlowPtr<Stmt> Parser::recurse_typedef() {
   /**
    * Syntax examples:
    *   `type name = type;`

@@ -105,7 +105,7 @@ static std::optional<std::vector<std::string>> parse_options(
 
 static bool nit_dispatch_request(std::istream &in, std::ostream &out,
                                  const char *transform, let opts_set,
-                                 std::shared_ptr<ncc::core::Environment> env) {
+                                 std::shared_ptr<ncc::Environment> env) {
   if (!dispatch_funcs.contains(transform)) {
     qcore_logf(QCORE_ERROR, "Unknown transform name in options: %s", transform);
     return false;
@@ -138,7 +138,7 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
   /* Setup thread-local shared environment                                   */
   /***************************************************************************/
 
-  auto env = std::make_shared<ncc::core::Environment>();
+  auto env = std::make_shared<ncc::Environment>();
 
   struct LoggerCtx {
     nit_diag_func diag_cb;

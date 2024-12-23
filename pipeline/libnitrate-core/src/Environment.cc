@@ -37,7 +37,7 @@
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Macro.hh>
 
-using namespace ncc::core;
+using namespace ncc;
 
 void Environment::setup_default_env() {
   { /* Generate unique ID for this compilation unit */

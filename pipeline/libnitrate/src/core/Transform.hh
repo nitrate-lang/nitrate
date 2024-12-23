@@ -42,12 +42,12 @@
 namespace nit {
   typedef bool (*transform_func)(std::istream &source, std::ostream &output,
                                  const std::unordered_set<std::string> &opts,
-                                 std::shared_ptr<ncc::core::Environment> &env);
+                                 std::shared_ptr<ncc::Environment> &env);
 
 #define CREATE_TRANSFORM(name)                           \
   bool name(std::istream &source, std::ostream &output,  \
             const std::unordered_set<std::string> &opts, \
-            std::shared_ptr<ncc::core::Environment> &env)
+            std::shared_ptr<ncc::Environment> &env)
 
   CREATE_TRANSFORM(echo);
   CREATE_TRANSFORM(lex);

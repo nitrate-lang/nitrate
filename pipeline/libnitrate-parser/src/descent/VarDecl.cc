@@ -33,6 +33,7 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
@@ -66,7 +67,7 @@ std::optional<ExpressionList> Parser::recurse_variable_attributes() {
   return std::nullopt;
 }
 
-std::optional<RefNode<Type> > Parser::recurse_variable_type() {
+std::optional<FlowPtr<Type> > Parser::recurse_variable_type() {
   if (next_if(qPuncColn)) {
     return recurse_type();
   } else {
@@ -74,7 +75,7 @@ std::optional<RefNode<Type> > Parser::recurse_variable_type() {
   }
 }
 
-std::optional<RefNode<Expr> > Parser::recurse_variable_value() {
+std::optional<FlowPtr<Expr> > Parser::recurse_variable_value() {
   if (next_if(qOpSet)) {
     return recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncSemi)});
   } else {
@@ -82,7 +83,7 @@ std::optional<RefNode<Expr> > Parser::recurse_variable_value() {
   }
 }
 
-std::optional<RefNode<Stmt> > Parser::recurse_variable_instance(
+std::optional<FlowPtr<Stmt> > Parser::recurse_variable_instance(
     VarDeclType decl_type) {
   if (let attributes = recurse_variable_attributes()) {
     if (let tok = next_if(qName)) {
@@ -90,8 +91,7 @@ std::optional<RefNode<Stmt> > Parser::recurse_variable_instance(
       let type = recurse_variable_type();
       let value = recurse_variable_value();
 
-      return make<VarDecl>(SaveString(name), type.value_or(nullptr),
-                           value.value_or(nullptr), decl_type,
+      return make<VarDecl>(SaveString(name), type, value, decl_type,
                            std::move(attributes.value()))();
     } else {
       diagnostic << current() << "Expected variable name";
@@ -104,8 +104,8 @@ std::optional<RefNode<Stmt> > Parser::recurse_variable_instance(
   return mock_stmt(QAST_VAR);
 }
 
-std::vector<RefNode<Stmt> > Parser::recurse_variable(VarDeclType decl_type) {
-  std::vector<RefNode<Stmt> > variables;
+std::vector<FlowPtr<Stmt> > Parser::recurse_variable(VarDeclType decl_type) {
+  std::vector<FlowPtr<Stmt> > variables;
 
   while (true) {
     if (next_if(qEofF)) {

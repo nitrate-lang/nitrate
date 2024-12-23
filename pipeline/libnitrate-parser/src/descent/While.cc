@@ -33,10 +33,11 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-RefNode<Expr> Parser::recurse_while_cond() {
+FlowPtr<Expr> Parser::recurse_while_cond() {
   let cur = peek();
 
   if (cur.is<qOpArrow>() || cur.is<qPuncLCur>()) {
@@ -46,7 +47,7 @@ RefNode<Expr> Parser::recurse_while_cond() {
   }
 }
 
-RefNode<Stmt> Parser::recurse_while_body() {
+FlowPtr<Stmt> Parser::recurse_while_body() {
   if (next_if(qOpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
@@ -54,7 +55,7 @@ RefNode<Stmt> Parser::recurse_while_body() {
   }
 }
 
-RefNode<Stmt> Parser::recurse_while() {
+FlowPtr<Stmt> Parser::recurse_while() {
   /**
    * Example syntax:
    *  `while {}`,                 `while => call();`

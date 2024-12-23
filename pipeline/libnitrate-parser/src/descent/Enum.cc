@@ -33,6 +33,7 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
@@ -44,7 +45,7 @@ std::string_view Parser::recurse_enum_name() {
   }
 }
 
-std::optional<RefNode<Type> > Parser::recurse_enum_type() {
+std::optional<FlowPtr<Type> > Parser::recurse_enum_type() {
   if (next_if(qPuncColn)) {
     return recurse_type();
   } else {
@@ -52,7 +53,7 @@ std::optional<RefNode<Type> > Parser::recurse_enum_type() {
   }
 }
 
-std::optional<RefNode<Expr> > Parser::recurse_enum_item_value() {
+std::optional<FlowPtr<Expr> > Parser::recurse_enum_item_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
 
@@ -67,7 +68,7 @@ std::optional<EnumItem> Parser::recurse_enum_item() {
   if (let name = next_if(qName)) {
     let value = recurse_enum_item_value();
 
-    return EnumItem(SaveString(name->as_string()), value.value_or(nullptr));
+    return EnumItem(SaveString(name->as_string()), value);
   } else {
     diagnostic << current() << "Enum field is missing a name.";
   }
@@ -112,13 +113,12 @@ std::optional<EnumDefItems> Parser::recurse_enum_items() {
   return std::nullopt;
 }
 
-RefNode<Stmt> Parser::recurse_enum() {
+FlowPtr<Stmt> Parser::recurse_enum() {
   let name = recurse_enum_name();
   let type = recurse_enum_type();
 
   if (let items = recurse_enum_items()) {
-    return make<EnumDef>(SaveString(name), type.value_or(nullptr),
-                         std::move(items.value()))();
+    return make<EnumDef>(SaveString(name), type, std::move(items.value()))();
   }
 
   return mock_stmt(QAST_ENUM);

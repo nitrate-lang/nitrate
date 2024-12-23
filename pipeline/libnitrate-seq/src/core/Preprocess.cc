@@ -350,9 +350,9 @@ void qprep_impl_t::install_lua_api() {
   lua_setglobal(m_core->L, "n");
 }
 
-CPP_EXPORT qprep_impl_t::qprep_impl_t(
-    std::istream &file, std::shared_ptr<ncc::core::Environment> env,
-    const char *filename, bool is_root)
+CPP_EXPORT qprep_impl_t::qprep_impl_t(std::istream &file,
+                                      std::shared_ptr<ncc::Environment> env,
+                                      const char *filename, bool is_root)
     : m_env(env) {
   m_core = std::make_shared<Core>();
   m_scanner = std::make_unique<Tokenizer>(file, env);

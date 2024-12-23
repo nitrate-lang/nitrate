@@ -33,6 +33,7 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
@@ -77,7 +78,7 @@ std::optional<ScopeDeps> Parser::recurse_scope_deps() {
   return std::nullopt;
 }
 
-RefNode<Stmt> Parser::recurse_scope_block() {
+FlowPtr<Stmt> Parser::recurse_scope_block() {
   if (next_if(qPuncSemi)) {
     return make<Block>(BlockItems(), SafetyMode::Unknown)();
   } else if (next_if(qOpArrow)) {
@@ -87,7 +88,7 @@ RefNode<Stmt> Parser::recurse_scope_block() {
   }
 }
 
-RefNode<Stmt> Parser::recurse_scope() {
+FlowPtr<Stmt> Parser::recurse_scope() {
   let scope_name = recurse_scope_name();
 
   if (let implicit_dependencies = recurse_scope_deps()) {

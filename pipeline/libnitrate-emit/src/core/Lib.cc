@@ -80,7 +80,7 @@ C_EXPORT bool qcode_lib_init() {
     return true;
   }
 
-  if (!ncc::core::CoreLibrary.InitRC()) {
+  if (!ncc::CoreLibrary.InitRC()) {
     return false;
   }
 
@@ -94,7 +94,7 @@ C_EXPORT void qcode_lib_deinit() {
 
   do_deinit();
 
-  ncc::core::CoreLibrary.DeinitRC();
+  ncc::CoreLibrary.DeinitRC();
 }
 
 C_EXPORT const char* qcode_lib_version() {

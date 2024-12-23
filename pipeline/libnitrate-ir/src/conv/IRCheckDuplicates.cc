@@ -42,7 +42,7 @@
 #include <unordered_map>
 
 using namespace nr;
-using namespace ncc::core;
+using namespace ncc;
 
 ///=============================================================================
 

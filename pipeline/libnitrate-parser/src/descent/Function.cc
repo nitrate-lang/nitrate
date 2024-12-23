@@ -35,10 +35,11 @@
 #include <nitrate-parser/ASTData.hh>
 #include <unordered_set>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-RefNode<Type> Parser::recurse_function_parameter_type() {
+FlowPtr<Type> Parser::recurse_function_parameter_type() {
   if (next_if(qPuncColn)) {
     return recurse_type();
   } else {
@@ -48,7 +49,7 @@ RefNode<Type> Parser::recurse_function_parameter_type() {
   }
 }
 
-std::optional<RefNode<Expr>> Parser::recurse_function_parameter_value() {
+std::optional<FlowPtr<Expr>> Parser::recurse_function_parameter_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
 
@@ -65,8 +66,7 @@ std::optional<FuncParam> Parser::recurse_function_parameter() {
     let param_type = recurse_function_parameter_type();
     let param_value = recurse_function_parameter_value();
 
-    return FuncParam{SaveString(param_name), param_type,
-                     param_value.value_or(nullptr)};
+    return FuncParam{SaveString(param_name), param_type, param_value};
   } else {
     diagnostic << current() << "Expected a parameter name before ':'";
   }
@@ -332,7 +332,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
                                 is_quasi, is_retro);
 }
 
-RefNode<Type> Parser::Parser::recurse_function_return_type() {
+FlowPtr<Type> Parser::Parser::recurse_function_return_type() {
   if (next_if(qPuncColn)) {
     return recurse_type();
   } else {
@@ -343,7 +343,7 @@ RefNode<Type> Parser::Parser::recurse_function_return_type() {
   }
 }
 
-std::optional<RefNode<Stmt>> Parser::recurse_function_body(
+std::optional<FlowPtr<Stmt>> Parser::recurse_function_body(
     bool restrict_decl_only) {
   if (restrict_decl_only || next_if(qPuncSemi)) {
     return std::nullopt;
@@ -354,7 +354,7 @@ std::optional<RefNode<Stmt>> Parser::recurse_function_body(
   }
 }
 
-RefNode<Stmt> Parser::recurse_function(bool restrict_decl_only) {
+FlowPtr<Stmt> Parser::recurse_function(bool restrict_decl_only) {
   /* fn <attributes>? <modifiers>? <capture_list>?
    * <name><template_parameters>?(<parameters>?)<: return_type>? <body>? */
 

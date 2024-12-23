@@ -39,7 +39,7 @@
 #include <nitrate-core/Logger.hh>
 #include <vector>
 
-using namespace ncc::core;
+using namespace ncc;
 
 #define REGION_SIZE (1024 * 16)
 

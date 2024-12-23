@@ -328,7 +328,7 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
   }
 
   { /* Initialize libraries */
-    if (!ncc::core::CoreLibrary.InitRC()) {
+    if (!ncc::CoreLibrary.InitRC()) {
       LOG(ERROR) << "Failed to initialize NITRATE-CORE library" << std::endl;
       return false;
     }

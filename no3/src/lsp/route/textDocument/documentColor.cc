@@ -194,7 +194,7 @@ void do_documentColor(const lsp::RequestMessage& req,
   }
   let file = file_opt.value();
 
-  auto env = std::make_shared<ncc::core::Environment>();
+  auto env = std::make_shared<ncc::Environment>();
   auto ss = std::stringstream(*file->content());
   auto L = Tokenizer(ss, env);
   let parser = ncc::parse::Parser::Create(L, env);
@@ -206,9 +206,9 @@ void do_documentColor(const lsp::RequestMessage& req,
 
   std::vector<ColorInformation> colors;
 
-  for_each<Call>(ast.get(), [&](const Call* N) {
+  for_each<Call>(ast.get(), [&](let N) {
     if (N->get_func()->is(QAST_IDENT)) {
-      let name = N->get_func()->as<Ident>()->get_name();
+      let name = N->get_func()->template as<Ident>()->get_name();
       let args = N->get_args();
 
       std::optional<ColorInformation> element;

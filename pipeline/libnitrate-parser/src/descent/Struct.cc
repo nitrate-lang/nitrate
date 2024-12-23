@@ -33,6 +33,7 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
@@ -92,7 +93,7 @@ StructDefNames Parser::recurse_struct_terms() {
   }
 }
 
-std::optional<RefNode<Expr> > Parser::recurse_struct_field_default_value() {
+std::optional<FlowPtr<Expr> > Parser::recurse_struct_field_default_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
 
@@ -179,7 +180,7 @@ Parser::StructContent Parser::recurse_struct_body() {
   return body;
 }
 
-RefNode<Stmt> Parser::recurse_struct(CompositeType type) {
+FlowPtr<Stmt> Parser::recurse_struct(CompositeType type) {
   let start_pos = current().get_start();
   let attributes = recurse_struct_attributes();
   let name = recurse_struct_name();

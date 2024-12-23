@@ -55,7 +55,7 @@ C_EXPORT bool nr_lib_init() {
     return true;
   }
 
-  if (!ncc::core::CoreLibrary.InitRC()) {
+  if (!ncc::CoreLibrary.InitRC()) {
     return false;
   }
 
@@ -72,7 +72,7 @@ C_EXPORT void nr_lib_deinit() {
   }
 
   ncc::parse::ParseLibrary.DeinitRC();
-  ncc::core::CoreLibrary.DeinitRC();
+  ncc::CoreLibrary.DeinitRC();
 
   return do_deinit();
 }

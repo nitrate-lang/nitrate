@@ -247,54 +247,55 @@ void CambrianFormatter::write_float_literal(std::string_view float_str) {
   }
 }
 
-void CambrianFormatter::format_type_metadata(RefNode<const Type> n) {
-  let range = n->get_range();
+void CambrianFormatter::format_type_metadata(FlowPtr<Type> n) {
+  let range_start = n->get_range_begin();
+  let range_end = n->get_range_end();
 
-  if (range.first || range.second) {
+  if (range_start || range_end) {
     line << ": [";
-    if (range.first) range.first.accept(*this);
+    if (range_start) range_start->accept(*this);
     line << ":";
-    if (range.second) range.second.accept(*this);
+    if (range_end) range_end->accept(*this);
     line << "]";
   }
 
   if (n->get_width()) {
     line << ": ";
-    n->get_width().accept(*this);
+    n->get_width()->accept(*this);
   }
 }
 
-void CambrianFormatter::visit(RefNode<const Base>) {
+void CambrianFormatter::visit(FlowPtr<Base>) {
   /** This node symbolizes a placeholder value in the event of an error. */
   failed = true;
 
   line << "/* !!! */";
 }
 
-void CambrianFormatter::visit(RefNode<const ExprStmt> n) {
+void CambrianFormatter::visit(FlowPtr<ExprStmt> n) {
   n->get_expr().accept(*this);
   line << ";";
 }
 
-void CambrianFormatter::visit(RefNode<const StmtExpr> n) {
+void CambrianFormatter::visit(FlowPtr<StmtExpr> n) {
   n->get_stmt().accept(*this);
 }
 
-void CambrianFormatter::visit(RefNode<const TypeExpr> n) {
+void CambrianFormatter::visit(FlowPtr<TypeExpr> n) {
   n->get_type().accept(*this);
 }
 
-void CambrianFormatter::visit(RefNode<const NamedTy> n) {
+void CambrianFormatter::visit(FlowPtr<NamedTy> n) {
   line << n->get_name();
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const InferTy> n) {
+void CambrianFormatter::visit(FlowPtr<InferTy> n) {
   line << "?";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const TemplType> n) {
+void CambrianFormatter::visit(FlowPtr<TemplType> n) {
   bool is_optional =
       n->get_template()->getKind() == QAST_NAMED &&
       n->get_template()->as<NamedTy>()->get_name() == "__builtin_result";
@@ -348,99 +349,99 @@ void CambrianFormatter::visit(RefNode<const TemplType> n) {
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const U1> n) {
+void CambrianFormatter::visit(FlowPtr<U1> n) {
   line << "u1";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const U8> n) {
+void CambrianFormatter::visit(FlowPtr<U8> n) {
   line << "u8";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const U16> n) {
+void CambrianFormatter::visit(FlowPtr<U16> n) {
   line << "u16";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const U32> n) {
+void CambrianFormatter::visit(FlowPtr<U32> n) {
   line << "u32";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const U64> n) {
+void CambrianFormatter::visit(FlowPtr<U64> n) {
   line << "u64";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const U128> n) {
+void CambrianFormatter::visit(FlowPtr<U128> n) {
   line << "u128";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const I8> n) {
+void CambrianFormatter::visit(FlowPtr<I8> n) {
   line << "i8";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const I16> n) {
+void CambrianFormatter::visit(FlowPtr<I16> n) {
   line << "i16";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const I32> n) {
+void CambrianFormatter::visit(FlowPtr<I32> n) {
   line << "i32";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const I64> n) {
+void CambrianFormatter::visit(FlowPtr<I64> n) {
   line << "i64";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const I128> n) {
+void CambrianFormatter::visit(FlowPtr<I128> n) {
   line << "i128";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const F16> n) {
+void CambrianFormatter::visit(FlowPtr<F16> n) {
   line << "f16";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const F32> n) {
+void CambrianFormatter::visit(FlowPtr<F32> n) {
   line << "f32";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const F64> n) {
+void CambrianFormatter::visit(FlowPtr<F64> n) {
   line << "f64";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const F128> n) {
+void CambrianFormatter::visit(FlowPtr<F128> n) {
   line << "f128";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const VoidTy> n) {
+void CambrianFormatter::visit(FlowPtr<VoidTy> n) {
   line << "void";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const PtrTy> n) {
+void CambrianFormatter::visit(FlowPtr<PtrTy> n) {
   line << "*";
   n->get_item().accept(*this);
 
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const OpaqueTy> n) {
+void CambrianFormatter::visit(FlowPtr<OpaqueTy> n) {
   line << "opaque(" << n->get_name() << ")";
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const TupleTy> n) {
+void CambrianFormatter::visit(FlowPtr<TupleTy> n) {
   /* If the number of fields exceeds the threshold, arange fields into a
    * matrix of row size ceil(sqrt(n)). */
 
@@ -471,7 +472,7 @@ void CambrianFormatter::visit(RefNode<const TupleTy> n) {
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const ArrayTy> n) {
+void CambrianFormatter::visit(FlowPtr<ArrayTy> n) {
   line << "[";
   n->get_item().accept(*this);
   line << "; ";
@@ -481,14 +482,14 @@ void CambrianFormatter::visit(RefNode<const ArrayTy> n) {
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const RefTy> n) {
+void CambrianFormatter::visit(FlowPtr<RefTy> n) {
   line << "&";
   n->get_item().accept(*this);
 
   format_type_metadata(n);
 }
 
-void CambrianFormatter::visit(RefNode<const FuncTy> n) {
+void CambrianFormatter::visit(FlowPtr<FuncTy> n) {
   line << "fn";
 
   if (!n->get_attributes().empty()) {
@@ -543,7 +544,7 @@ void CambrianFormatter::visit(RefNode<const FuncTy> n) {
 
         if (def) {
           line << " = ";
-          def.accept(*this);
+          def->accept(*this);
         }
       },
       [&](let) { line << ", "; });
@@ -559,13 +560,13 @@ void CambrianFormatter::visit(RefNode<const FuncTy> n) {
   n->get_return().accept(*this);
 }
 
-void CambrianFormatter::visit(RefNode<const UnaryExpr> n) {
+void CambrianFormatter::visit(FlowPtr<UnaryExpr> n) {
   line << "(" << n->get_op();
   n->get_rhs().accept(*this);
   line << ")";
 }
 
-void CambrianFormatter::visit(RefNode<const BinExpr> n) {
+void CambrianFormatter::visit(FlowPtr<BinExpr> n) {
   line << "(";
   n->get_lhs().accept(*this);
   line << " " << n->get_op() << " ";
@@ -573,13 +574,13 @@ void CambrianFormatter::visit(RefNode<const BinExpr> n) {
   line << ")";
 }
 
-void CambrianFormatter::visit(RefNode<const PostUnaryExpr> n) {
+void CambrianFormatter::visit(FlowPtr<PostUnaryExpr> n) {
   line << "(";
   n->get_lhs().accept(*this);
   line << n->get_op() << ")";
 }
 
-void CambrianFormatter::visit(RefNode<const TernaryExpr> n) {
+void CambrianFormatter::visit(FlowPtr<TernaryExpr> n) {
   line << "(";
   n->get_cond().accept(*this);
   line << " ? ";
@@ -589,15 +590,13 @@ void CambrianFormatter::visit(RefNode<const TernaryExpr> n) {
   line << ")";
 }
 
-void CambrianFormatter::visit(RefNode<const ConstInt> n) {
-  line << n->get_value();
-}
+void CambrianFormatter::visit(FlowPtr<ConstInt> n) { line << n->get_value(); }
 
-void CambrianFormatter::visit(RefNode<const ConstFloat> n) {
+void CambrianFormatter::visit(FlowPtr<ConstFloat> n) {
   write_float_literal(n->get_value());
 }
 
-void CambrianFormatter::visit(RefNode<const ConstBool> n) {
+void CambrianFormatter::visit(FlowPtr<ConstBool> n) {
   if (n->get_value()) {
     line << "true";
   } else {
@@ -605,19 +604,19 @@ void CambrianFormatter::visit(RefNode<const ConstBool> n) {
   }
 }
 
-void CambrianFormatter::visit(RefNode<const ConstString> n) {
+void CambrianFormatter::visit(FlowPtr<ConstString> n) {
   escape_string_literal(n->get_value());
 }
 
-void CambrianFormatter::visit(RefNode<const ConstChar> n) {
+void CambrianFormatter::visit(FlowPtr<ConstChar> n) {
   line << escape_char_literal(n->get_value());
 }
 
-void CambrianFormatter::visit(RefNode<const ConstNull>) { line << "null"; }
+void CambrianFormatter::visit(FlowPtr<ConstNull>) { line << "null"; }
 
-void CambrianFormatter::visit(RefNode<const ConstUndef>) { line << "undef"; }
+void CambrianFormatter::visit(FlowPtr<ConstUndef>) { line << "undef"; }
 
-void CambrianFormatter::visit(RefNode<const Call> n) {
+void CambrianFormatter::visit(FlowPtr<Call> n) {
   let wrap_threshold = 8ULL;
 
   n->get_func().accept(*this);
@@ -682,7 +681,7 @@ void CambrianFormatter::visit(RefNode<const Call> n) {
   }
 }
 
-void CambrianFormatter::visit(RefNode<const TemplCall> n) {
+void CambrianFormatter::visit(FlowPtr<TemplCall> n) {
   n->get_func().accept(*this);
 
   line << "<";
@@ -718,7 +717,7 @@ void CambrianFormatter::visit(RefNode<const TemplCall> n) {
   line << ")";
 }
 
-void CambrianFormatter::visit(RefNode<const List> n) {
+void CambrianFormatter::visit(FlowPtr<List> n) {
   let wrap_threshold = 8ULL;
 
   if (n->get_items().empty()) {
@@ -821,9 +820,9 @@ void CambrianFormatter::visit(RefNode<const List> n) {
   }
 }
 
-void CambrianFormatter::visit(RefNode<const Assoc> node) {
-  const std::function<void(RefNode<const Assoc>, bool)> format =
-      [&](RefNode<const Assoc> n, bool use_braces) {
+void CambrianFormatter::visit(FlowPtr<Assoc> node) {
+  const std::function<void(FlowPtr<Assoc>, bool)> format =
+      [&](FlowPtr<Assoc> n, bool use_braces) {
         bool is_value_map = false;
         if (n->get_value()->is(QAST_LIST)) {
           let list = n->get_value()->as<List>();
@@ -880,14 +879,14 @@ void CambrianFormatter::visit(RefNode<const Assoc> node) {
   format(node, true);
 }
 
-void CambrianFormatter::visit(RefNode<const Index> n) {
+void CambrianFormatter::visit(FlowPtr<Index> n) {
   n->get_base().accept(*this);
   line << "[";
   n->get_index().accept(*this);
   line << "]";
 }
 
-void CambrianFormatter::visit(RefNode<const Slice> n) {
+void CambrianFormatter::visit(FlowPtr<Slice> n) {
   n->get_base().accept(*this);
   line << "[";
   if (n->get_start()) {
@@ -900,23 +899,23 @@ void CambrianFormatter::visit(RefNode<const Slice> n) {
   line << "]";
 }
 
-void CambrianFormatter::visit(RefNode<const FString> n) {
+void CambrianFormatter::visit(FlowPtr<FString> n) {
   line << "f\"";
   for (let part : n->get_items()) {
     if (std::holds_alternative<ncc::string>(part)) {
       escape_string_literal(*std::get<ncc::string>(part), false);
     } else {
       line << "{";
-      std::get<RefNode<Expr>>(part).accept(*this);
+      std::get<FlowPtr<Expr>>(part).accept(*this);
       line << "}";
     }
   }
   line << "\"";
 }
 
-void CambrianFormatter::visit(RefNode<const Ident> n) { line << n->get_name(); }
+void CambrianFormatter::visit(FlowPtr<Ident> n) { line << n->get_name(); }
 
-void CambrianFormatter::visit(RefNode<const SeqPoint> n) {
+void CambrianFormatter::visit(FlowPtr<SeqPoint> n) {
   line << "(";
   iterate_except_last(
       n->get_items().begin(), n->get_items().end(),
@@ -925,7 +924,7 @@ void CambrianFormatter::visit(RefNode<const SeqPoint> n) {
   line << ")";
 }
 
-void CambrianFormatter::visit(RefNode<const Block> n) {
+void CambrianFormatter::visit(FlowPtr<Block> n) {
   bool isRootBlock = !did_root;
   did_root = true;
 
@@ -993,7 +992,7 @@ void CambrianFormatter::visit(RefNode<const Block> n) {
   }
 }
 
-void CambrianFormatter::visit(RefNode<const VarDecl> n) {
+void CambrianFormatter::visit(FlowPtr<VarDecl> n) {
   switch (n->get_decl_type()) {
     case VarDeclType::Let: {
       line << "let ";
@@ -1024,18 +1023,18 @@ void CambrianFormatter::visit(RefNode<const VarDecl> n) {
 
   if (n->get_type()) {
     line << ": ";
-    n->get_type().accept(*this);
+    n->get_type()->accept(*this);
   }
 
   if (n->get_value()) {
     line << " = ";
-    n->get_value().accept(*this);
+    n->get_value()->accept(*this);
   }
 
   line << ";";
 }
 
-void CambrianFormatter::visit(RefNode<const InlineAsm>) {
+void CambrianFormatter::visit(FlowPtr<InlineAsm>) {
   /* Support for inline assembly is not avaliable yet */
 
   failed = true;
@@ -1043,7 +1042,7 @@ void CambrianFormatter::visit(RefNode<const InlineAsm>) {
   line << "/* !!! */";
 }
 
-void CambrianFormatter::visit(RefNode<const IfStmt> n) {
+void CambrianFormatter::visit(FlowPtr<IfStmt> n) {
   line << "if ";
   n->get_cond().accept(*this);
   line << " ";
@@ -1051,13 +1050,13 @@ void CambrianFormatter::visit(RefNode<const IfStmt> n) {
 
   if (n->get_else()) {
     line << " else ";
-    n->get_else().accept(*this);
+    n->get_else()->accept(*this);
   }
 
   line << ";";
 }
 
-void CambrianFormatter::visit(RefNode<const WhileStmt> n) {
+void CambrianFormatter::visit(FlowPtr<WhileStmt> n) {
   line << "while ";
   n->get_cond().accept(*this);
   line << " ";
@@ -1066,7 +1065,7 @@ void CambrianFormatter::visit(RefNode<const WhileStmt> n) {
   line << ";";
 }
 
-void CambrianFormatter::visit(RefNode<const ForStmt> n) {
+void CambrianFormatter::visit(FlowPtr<ForStmt> n) {
   line << "for (";
 
   if (n->get_init().has_value()) {
@@ -1095,7 +1094,7 @@ void CambrianFormatter::visit(RefNode<const ForStmt> n) {
   line << ";";
 }
 
-void CambrianFormatter::visit(RefNode<const ForeachStmt> n) {
+void CambrianFormatter::visit(FlowPtr<ForeachStmt> n) {
   line << "foreach (";
   if (n->get_idx_ident().empty()) {
     line << n->get_val_ident();
@@ -1112,13 +1111,11 @@ void CambrianFormatter::visit(RefNode<const ForeachStmt> n) {
   line << ";";
 }
 
-void CambrianFormatter::visit(RefNode<const BreakStmt>) { line << "break;"; }
+void CambrianFormatter::visit(FlowPtr<BreakStmt>) { line << "break;"; }
 
-void CambrianFormatter::visit(RefNode<const ContinueStmt>) {
-  line << "continue;";
-}
+void CambrianFormatter::visit(FlowPtr<ContinueStmt>) { line << "continue;"; }
 
-void CambrianFormatter::visit(RefNode<const ReturnStmt> n) {
+void CambrianFormatter::visit(FlowPtr<ReturnStmt> n) {
   if (n->get_value().has_value()) {
     line << "ret ";
     n->get_value().value().accept(*this);
@@ -1128,7 +1125,7 @@ void CambrianFormatter::visit(RefNode<const ReturnStmt> n) {
   }
 }
 
-void CambrianFormatter::visit(RefNode<const ReturnIfStmt> n) {
+void CambrianFormatter::visit(FlowPtr<ReturnIfStmt> n) {
   line << "retif ";
   n->get_cond().accept(*this);
   line << ", ";
@@ -1136,14 +1133,14 @@ void CambrianFormatter::visit(RefNode<const ReturnIfStmt> n) {
   line << ";";
 }
 
-void CambrianFormatter::visit(RefNode<const CaseStmt> n) {
+void CambrianFormatter::visit(FlowPtr<CaseStmt> n) {
   n->get_cond().accept(*this);
   line << " {";
   n->get_body().accept(*this);
   line << "};";
 }
 
-void CambrianFormatter::visit(RefNode<const SwitchStmt> n) {
+void CambrianFormatter::visit(FlowPtr<SwitchStmt> n) {
   line << "switch ";
   n->get_cond().accept(*this);
   line << " {";
@@ -1151,19 +1148,19 @@ void CambrianFormatter::visit(RefNode<const SwitchStmt> n) {
     c.accept(*this);
   }
   if (n->get_default()) {
-    n->get_default().accept(*this);
+    n->get_default()->accept(*this);
   }
 
   line << "};";
 }
 
-void CambrianFormatter::visit(RefNode<const TypedefStmt> n) {
+void CambrianFormatter::visit(FlowPtr<TypedefStmt> n) {
   line << "type " << n->get_name() << " = ";
   n->get_type().accept(*this);
   line << ";";
 }
 
-void CambrianFormatter::visit(RefNode<const Function> n) {
+void CambrianFormatter::visit(FlowPtr<Function> n) {
   line << "fn";
 
   if (!n->get_attributes().empty()) {
@@ -1228,7 +1225,7 @@ void CambrianFormatter::visit(RefNode<const Function> n) {
           let val = std::get<2>(param);
           if (val) {
             line << " = ";
-            val.accept(*this);
+            val->accept(*this);
           }
         },
         [&](let) { line << ", "; });
@@ -1247,7 +1244,7 @@ void CambrianFormatter::visit(RefNode<const Function> n) {
         type.accept(*this);
         if (def) {
           line << " = ";
-          def.accept(*this);
+          def->accept(*this);
         }
       },
       [&](let) { line << ", "; });
@@ -1270,7 +1267,7 @@ void CambrianFormatter::visit(RefNode<const Function> n) {
   }
 }
 
-void CambrianFormatter::visit(RefNode<const StructDef> n) {
+void CambrianFormatter::visit(FlowPtr<StructDef> n) {
   switch (n->get_composite_type()) {
     case CompositeType::Region: {
       line << "region ";
@@ -1319,7 +1316,7 @@ void CambrianFormatter::visit(RefNode<const StructDef> n) {
           let val = std::get<2>(param);
           if (val) {
             line << " = ";
-            val.accept(*this);
+            val->accept(*this);
           }
         },
         [&](let) { line << ", "; });
@@ -1376,11 +1373,11 @@ void CambrianFormatter::visit(RefNode<const StructDef> n) {
   line << "}";
 }
 
-void CambrianFormatter::visit(RefNode<const EnumDef> n) {
+void CambrianFormatter::visit(FlowPtr<EnumDef> n) {
   line << "enum " << n->get_name();
   if (n->get_type()) {
     line << ": ";
-    n->get_type().accept(*this);
+    n->get_type()->accept(*this);
   }
 
   line << " {";
@@ -1388,14 +1385,14 @@ void CambrianFormatter::visit(RefNode<const EnumDef> n) {
     line << item.first;
     if (item.second) {
       line << " = ";
-      item.second.accept(*this);
+      item.second->accept(*this);
     }
     line << "," << std::endl;
   });
   line << "};";
 }
 
-void CambrianFormatter::visit(RefNode<const ScopeStmt> n) {
+void CambrianFormatter::visit(FlowPtr<ScopeStmt> n) {
   line << "scope";
 
   if (!n->get_name().empty()) {
@@ -1414,7 +1411,7 @@ void CambrianFormatter::visit(RefNode<const ScopeStmt> n) {
   n->get_body().accept(*this);
 }
 
-void CambrianFormatter::visit(RefNode<const ExportStmt> n) {
+void CambrianFormatter::visit(FlowPtr<ExportStmt> n) {
   line << n->get_vis();
 
   if (!n->get_abi_name().empty()) {

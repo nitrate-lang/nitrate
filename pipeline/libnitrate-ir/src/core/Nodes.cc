@@ -56,8 +56,8 @@ using namespace nr;
 
 ///=============================================================================
 namespace nr {
-  thread_local std::unique_ptr<ncc::core::IMemory> nr_allocator =
-      std::make_unique<ncc::core::dyn_arena>();
+  thread_local std::unique_ptr<ncc::IMemory> nr_allocator =
+      std::make_unique<ncc::dyn_arena>();
 
   namespace mem {
     Brk static_NR_NODE_BRK;
@@ -80,7 +80,7 @@ static bool isCyclicUtil(const nr::Expr *const base,
     visited.insert(base);
     recStack.insert(base);
 
-    // Recur for all the vertices adjacent
+    // Recurse for all the vertices adjacent
     // to this vertex
     iterate<IterMode::children>(
         base,

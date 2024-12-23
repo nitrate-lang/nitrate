@@ -39,12 +39,12 @@
 
 using namespace ncc::parse;
 
-CPP_EXPORT ncc::core::LibraryRC<ParseLibrarySetup> ncc::parse::ParseLibrary;
+CPP_EXPORT ncc::LibraryRC<ParseLibrarySetup> ncc::parse::ParseLibrary;
 
 CPP_EXPORT bool ParseLibrarySetup::Init() {
   qcore_print(QCORE_DEBUG, "Initializing Nitrate Parser Library");
 
-  if (!ncc::core::CoreLibrary.InitRC()) {
+  if (!ncc::CoreLibrary.InitRC()) {
     return false;
   }
 
@@ -61,7 +61,7 @@ CPP_EXPORT void ParseLibrarySetup::Deinit() {
   qcore_print(QCORE_DEBUG, "Deinitializing Nitrate Parser Library");
 
   ncc::lex::LexerLibrary.DeinitRC();
-  ncc::core::CoreLibrary.DeinitRC();
+  ncc::CoreLibrary.DeinitRC();
 
   qcore_print(QCORE_DEBUG, "Nitrate Parser Library Deinitialized");
 }

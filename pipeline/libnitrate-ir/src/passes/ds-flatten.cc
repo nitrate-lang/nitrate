@@ -48,7 +48,7 @@
  */
 
 using namespace nr;
-using namespace ncc::core;
+using namespace ncc;
 
 static void flatten_externs(qmodule_t *mod) {
   /**

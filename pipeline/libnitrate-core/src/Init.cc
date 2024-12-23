@@ -36,9 +36,9 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/String.hh>
 
-using namespace ncc::core;
+using namespace ncc;
 
-CPP_EXPORT LibraryRC<CoreLibrarySetup> ncc::core::CoreLibrary;
+CPP_EXPORT LibraryRC<CoreLibrarySetup> ncc::CoreLibrary;
 
 CPP_EXPORT bool CoreLibrarySetup::Init() {
   // Nothing to do here for now.

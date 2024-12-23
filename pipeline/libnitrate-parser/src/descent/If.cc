@@ -33,10 +33,11 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-RefNode<Stmt> Parser::recurse_if_then() {
+FlowPtr<Stmt> Parser::recurse_if_then() {
   if (next_if(qOpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
@@ -44,7 +45,7 @@ RefNode<Stmt> Parser::recurse_if_then() {
   }
 }
 
-std::optional<RefNode<Stmt> > Parser::recurse_if_else() {
+std::optional<FlowPtr<Stmt> > Parser::recurse_if_else() {
   if (next_if(qKElse)) {
     if (next_if(qOpArrow)) {
       return recurse_block(false, true, SafetyMode::Unknown);
@@ -58,11 +59,11 @@ std::optional<RefNode<Stmt> > Parser::recurse_if_else() {
   }
 }
 
-RefNode<Stmt> Parser::recurse_if() {
+FlowPtr<Stmt> Parser::recurse_if() {
   let cond = recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
 
   let then = recurse_if_then();
   let ele = recurse_if_else();
 
-  return make<IfStmt>(cond, then, ele.value_or(nullptr))();
+  return make<IfStmt>(cond, then, ele)();
 }

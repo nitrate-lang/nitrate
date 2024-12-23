@@ -58,7 +58,7 @@
 using namespace nr;
 
 using namespace ncc;
-using namespace ncc::core;
+using namespace ncc;
 using namespace ncc::lex;
 
 struct PState {
@@ -853,10 +853,8 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
 
     if (std::holds_alternative<string>(val)) {
       return b.createStringDataArray(*std::get<string>(val));
-    } else if (std::holds_alternative<ncc::parse::RefNode<ncc::parse::Expr>>(
-                   val)) {
-      auto expr =
-          next_one(std::get<ncc::parse::RefNode<ncc::parse::Expr>>(val));
+    } else if (std::holds_alternative<FlowPtr<ncc::parse::Expr>>(val)) {
+      auto expr = next_one(std::get<FlowPtr<ncc::parse::Expr>>(val));
 
       if (!expr.has_value()) {
         G->report(
@@ -880,9 +878,8 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
 
       concated =
           create<BinExpr>(concated, b.createStringDataArray(val), Op::Plus);
-    } else if (std::holds_alternative<ncc::parse::RefNode<ncc::parse::Expr>>(
-                   *it)) {
-      auto val = std::get<ncc::parse::RefNode<ncc::parse::Expr>>(*it);
+    } else if (std::holds_alternative<FlowPtr<ncc::parse::Expr>>(*it)) {
+      auto val = std::get<FlowPtr<ncc::parse::Expr>>(*it);
       auto expr = next_one(val);
 
       if (!expr.has_value()) {
@@ -1302,8 +1299,8 @@ static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
     Expr *field_value = nullptr;
 
-    if (it->second != nullptr) {
-      auto val = next_one(it->second);
+    if (it->second.has_value()) {
+      auto val = next_one(it->second.value());
       if (!val.has_value()) {
         G->report(nr::CompilerError, IC::Error, "Failed to lower enum field",
                   n->get_pos());
@@ -1396,8 +1393,8 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
       }
 
       { /* Set function parameter default value if it exists */
-        if (std::get<2>(param) != nullptr) {
-          auto val = next_one(std::get<2>(param));
+        if (std::get<2>(param)) {
+          auto val = next_one(std::get<2>(param).value());
           if (!val.has_value()) {
             G->report(CompilerError, nr::IC::Error,
                       "Failed to convert function declaration parameter "
@@ -1519,8 +1516,8 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
       }
 
       { /* Set function parameter default value if it exists */
-        if (std::get<2>(param) != nullptr) {
-          auto val = next_one(std::get<2>(param));
+        if (std::get<2>(param)) {
+          auto val = next_one(std::get<2>(param).value());
           if (!val.has_value()) {
             G->report(CompilerError, nr::IC::Error,
                       "Failed to convert function declaration parameter "
@@ -1701,8 +1698,8 @@ static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G,
                          ncc::parse::VarDecl *n) {
-  auto init = next_one(n->get_value());
-  auto type = next_one(n->get_type());
+  auto init = next_one(n->get_value().value_or(nullptr));
+  auto type = next_one(n->get_type().value_or(nullptr));
 
   if (init.has_value() && type.has_value()) { /* Do implicit cast */
     init = create<BinExpr>(init.value(), type.value(), Op::CastAs);
@@ -1793,7 +1790,7 @@ static EResult nrgen_if(NRBuilder &b, PState &s, IReport *G,
                         ncc::parse::IfStmt *n) {
   auto cond = next_one(n->get_cond());
   auto then = next_one(n->get_then());
-  auto els = next_one(n->get_else());
+  auto els = next_one(n->get_else().value_or(nullptr));
 
   if (!cond.has_value()) {
     return std::nullopt;
@@ -1928,7 +1925,7 @@ static EResult nrgen_switch(NRBuilder &b, PState &s, IReport *G,
 
   EResult def;
   if (n->get_default()) {
-    def = next_one(n->get_default());
+    def = next_one(n->get_default().value());
     if (!def.has_value()) {
       return std::nullopt;
     }

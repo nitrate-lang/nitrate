@@ -40,10 +40,11 @@
 #include <nitrate-parser/Context.hh>
 #include <sstream>
 
+using namespace ncc;
 using namespace ncc::parse;
 
-CPP_EXPORT thread_local std::unique_ptr<ncc::core::IMemory>
-    ncc::parse::npar_allocator = std::make_unique<ncc::core::dyn_arena>();
+CPP_EXPORT thread_local std::unique_ptr<ncc::IMemory>
+    ncc::parse::npar_allocator = std::make_unique<ncc::dyn_arena>();
 
 ///=============================================================================
 
@@ -59,8 +60,8 @@ CPP_EXPORT bool Base::isSame(const Base *o) const {
   std::stringstream ss1, ss2;
   AST_MsgPackWriter writer1(ss1), writer2(ss2);
 
-  RefNode<const Base>(this).accept(writer1);
-  RefNode<const Base>(o).accept(writer2);
+  this->accept(writer1);
+  o->accept(writer2);
 
   return ss1.str() == ss2.str();
 }
@@ -68,7 +69,7 @@ CPP_EXPORT bool Base::isSame(const Base *o) const {
 CPP_EXPORT uint64_t Base::hash64() const {
   AST_Hash64 visitor;
 
-  RefNode<const Base>(this).accept(visitor);
+  this->accept(visitor);
 
   return visitor.get();
 }
@@ -88,21 +89,24 @@ CPP_EXPORT bool Type::is_ptr_to(Type *type) const {
   return item->is(type->getKind());
 }
 
-RefNode<Stmt> ncc::parse::mock_stmt(std::optional<npar_ty_t> expected) {
+FlowPtr<Stmt> ncc::parse::mock_stmt(std::optional<npar_ty_t> expected) {
   (void)expected;
 
   static Stmt node(QAST_BASE);
-  return &node;
+  static FlowPtr<Stmt> ptr(&node);
+  return ptr;
 }
 
-RefNode<Expr> ncc::parse::mock_expr(std::optional<npar_ty_t> expected) {
+FlowPtr<Expr> ncc::parse::mock_expr(std::optional<npar_ty_t> expected) {
   (void)expected;
 
   static Expr node(QAST_BASE);
-  return &node;
+  static FlowPtr<Expr> ptr(&node);
+  return ptr;
 }
 
-RefNode<Type> ncc::parse::mock_type() {
+FlowPtr<Type> ncc::parse::mock_type() {
   static Type node(QAST_BASE);
-  return &node;
+  static FlowPtr<Type> ptr(&node);
+  return ptr;
 }

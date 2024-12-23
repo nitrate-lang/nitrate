@@ -40,7 +40,7 @@
 #include <string_view>
 #include <unordered_map>
 
-namespace ncc::core {
+namespace ncc {
   class str_alias;
 
   class StringMemory {
@@ -126,10 +126,8 @@ namespace ncc::core {
   static inline str_alias intern(std::string &&str) { return str_alias(str); }
 
   static inline str_alias intern(const char *str) { return str_alias(str); }
-}  // namespace ncc::core
 
-namespace ncc {
-  using string = core::str_alias;
-}
+  using string = str_alias;
+}  // namespace ncc
 
 #endif

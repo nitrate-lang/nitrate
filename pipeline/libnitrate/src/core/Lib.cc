@@ -49,7 +49,7 @@ bool nit_lib_init() {
     return true;
   }
 
-  if (!ncc::core::CoreLibrary.InitRC()) {
+  if (!ncc::CoreLibrary.InitRC()) {
     return false;
   }
 
@@ -86,5 +86,5 @@ void nit_deinit() {
   ncc::parse::ParseLibrary.DeinitRC();
   qprep_lib_deinit();
   ncc::lex::LexerLibrary.DeinitRC();
-  ncc::core::CoreLibrary.DeinitRC();
+  ncc::CoreLibrary.DeinitRC();
 }

@@ -40,29 +40,29 @@
 
 namespace ncc::parse {
   class npar_pack StmtExpr final : public Expr {
-    RefNode<Stmt> m_stmt;
+    FlowPtr<Stmt> m_stmt;
 
   public:
-    constexpr StmtExpr(RefNode<Stmt> stmt) : Expr(QAST_SEXPR), m_stmt(stmt) {}
+    constexpr StmtExpr(FlowPtr<Stmt> stmt) : Expr(QAST_SEXPR), m_stmt(stmt) {}
 
     constexpr let get_stmt() const { return m_stmt; }
   };
 
   class npar_pack TypeExpr final : public Expr {
-    RefNode<Type> m_type;
+    FlowPtr<Type> m_type;
 
   public:
-    constexpr TypeExpr(RefNode<Type> type) : Expr(QAST_TEXPR), m_type(type) {}
+    constexpr TypeExpr(FlowPtr<Type> type) : Expr(QAST_TEXPR), m_type(type) {}
 
     constexpr let get_type() const { return m_type; }
   };
 
   class npar_pack UnaryExpr final : public Expr {
-    RefNode<Expr> m_rhs;
+    FlowPtr<Expr> m_rhs;
     lex::Operator m_op;
 
   public:
-    constexpr UnaryExpr(lex::Operator op, RefNode<Expr> rhs)
+    constexpr UnaryExpr(lex::Operator op, FlowPtr<Expr> rhs)
         : Expr(QAST_UNEXPR), m_rhs(rhs), m_op(op) {}
 
     constexpr let get_rhs() const { return m_rhs; }
@@ -70,11 +70,11 @@ namespace ncc::parse {
   };
 
   class npar_pack BinExpr final : public Expr {
-    RefNode<Expr> m_lhs, m_rhs;
+    FlowPtr<Expr> m_lhs, m_rhs;
     lex::Operator m_op;
 
   public:
-    constexpr BinExpr(RefNode<Expr> lhs, lex::Operator op, RefNode<Expr> rhs)
+    constexpr BinExpr(FlowPtr<Expr> lhs, lex::Operator op, FlowPtr<Expr> rhs)
         : Expr(QAST_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
     constexpr let get_lhs() const { return m_lhs; }
@@ -83,11 +83,11 @@ namespace ncc::parse {
   };
 
   class npar_pack PostUnaryExpr final : public Expr {
-    RefNode<Expr> m_lhs;
+    FlowPtr<Expr> m_lhs;
     lex::Operator m_op;
 
   public:
-    constexpr PostUnaryExpr(RefNode<Expr> lhs, lex::Operator op)
+    constexpr PostUnaryExpr(FlowPtr<Expr> lhs, lex::Operator op)
         : Expr(QAST_POST_UNEXPR), m_lhs(lhs), m_op(op) {}
 
     constexpr let get_lhs() const { return m_lhs; }
@@ -95,11 +95,11 @@ namespace ncc::parse {
   };
 
   class npar_pack TernaryExpr final : public Expr {
-    RefNode<Expr> m_cond, m_lhs, m_rhs;
+    FlowPtr<Expr> m_cond, m_lhs, m_rhs;
 
   public:
-    constexpr TernaryExpr(RefNode<Expr> cond, RefNode<Expr> lhs,
-                          RefNode<Expr> rhs)
+    constexpr TernaryExpr(FlowPtr<Expr> cond, FlowPtr<Expr> lhs,
+                          FlowPtr<Expr> rhs)
         : Expr(QAST_TEREXPR), m_cond(cond), m_lhs(lhs), m_rhs(rhs) {}
 
     constexpr let get_cond() const { return m_cond; }
@@ -163,11 +163,11 @@ namespace ncc::parse {
   };
 
   class Call final : public Expr {
-    RefNode<Expr> m_func;
+    FlowPtr<Expr> m_func;
     std::span<CallArg> m_args;
 
   public:
-    Call(RefNode<Expr> func, CallArgs args)
+    Call(FlowPtr<Expr> func, CallArgs args)
         : Expr(QAST_CALL), m_func(func), m_args(args) {}
 
     constexpr let get_func() const { return m_func; }
@@ -175,11 +175,11 @@ namespace ncc::parse {
   };
 
   class TemplCall final : public Expr {
-    RefNode<Expr> m_func;
+    FlowPtr<Expr> m_func;
     std::span<CallArg> m_template_args, m_args;
 
   public:
-    TemplCall(RefNode<Expr> func, CallArgs args, CallArgs template_args)
+    TemplCall(FlowPtr<Expr> func, CallArgs args, CallArgs template_args)
         : Expr(QAST_TEMPL_CALL),
           m_func(func),
           m_template_args(template_args),
@@ -191,7 +191,7 @@ namespace ncc::parse {
   };
 
   class List final : public Expr {
-    std::span<RefNode<Expr>> m_items;
+    std::span<FlowPtr<Expr>> m_items;
 
   public:
     List(ExpressionList items) : Expr(QAST_LIST), m_items(items) {}
@@ -200,10 +200,10 @@ namespace ncc::parse {
   };
 
   class npar_pack Assoc final : public Expr {
-    RefNode<Expr> m_key, m_value;
+    FlowPtr<Expr> m_key, m_value;
 
   public:
-    constexpr Assoc(RefNode<Expr> key, RefNode<Expr> value)
+    constexpr Assoc(FlowPtr<Expr> key, FlowPtr<Expr> value)
         : Expr(QAST_ASSOC), m_key(key), m_value(value) {}
 
     constexpr let get_key() const { return m_key; }
@@ -211,10 +211,10 @@ namespace ncc::parse {
   };
 
   class npar_pack Index final : public Expr {
-    RefNode<Expr> m_base, m_index;
+    FlowPtr<Expr> m_base, m_index;
 
   public:
-    constexpr Index(RefNode<Expr> base, RefNode<Expr> index)
+    constexpr Index(FlowPtr<Expr> base, FlowPtr<Expr> index)
         : Expr(QAST_INDEX), m_base(base), m_index(index) {}
 
     constexpr let get_base() const { return m_base; }
@@ -222,10 +222,10 @@ namespace ncc::parse {
   };
 
   class npar_pack Slice final : public Expr {
-    RefNode<Expr> m_base, m_start, m_end;
+    FlowPtr<Expr> m_base, m_start, m_end;
 
   public:
-    constexpr Slice(RefNode<Expr> base, RefNode<Expr> start, RefNode<Expr> end)
+    constexpr Slice(FlowPtr<Expr> base, FlowPtr<Expr> start, FlowPtr<Expr> end)
         : Expr(QAST_SLICE), m_base(base), m_start(start), m_end(end) {}
 
     constexpr let get_base() const { return m_base; }
@@ -234,7 +234,7 @@ namespace ncc::parse {
   };
 
   class FString final : public Expr {
-    std::span<std::variant<string, RefNode<Expr>>> m_items;
+    std::span<std::variant<string, FlowPtr<Expr>>> m_items;
 
   public:
     FString(FStringItems items) : Expr(QAST_FSTRING), m_items(items) {}
@@ -252,7 +252,7 @@ namespace ncc::parse {
   };
 
   class SeqPoint final : public Expr {
-    std::span<RefNode<Expr>> m_items;
+    std::span<FlowPtr<Expr>> m_items;
 
   public:
     SeqPoint(ExpressionList items) : Expr(QAST_SEQ), m_items(items) {}

@@ -42,7 +42,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-void AST_Writer::write_source_location(RefNode<const Base> n) const {
+void AST_Writer::write_source_location(FlowPtr<Base> n) const {
   string("loc");
 
   if (m_rd.has_value()) {
@@ -123,15 +123,17 @@ void AST_Writer::write_source_location(RefNode<const Base> n) const {
   }
 }
 
-void AST_Writer::write_type_metadata(RefNode<const Type> n) {
+void AST_Writer::write_type_metadata(FlowPtr<Type> n) {
   string("width");
-  n->get_width() ? n->get_width().accept(*this) : null();
+  n->get_width() ? n->get_width()->accept(*this) : null();
 
   string("min");
-  n->get_range().first ? n->get_range().first.accept(*this) : null();
+  let min = n->get_range_begin();
+  min.has_value() ? min.value().accept(*this) : null();
 
   string("max");
-  n->get_range().second ? n->get_range().second.accept(*this) : null();
+  let max = n->get_range_end();
+  max.has_value() ? max.value().accept(*this) : null();
 }
 
 std::string_view AST_Writer::vis_str(Vis vis) const {
@@ -145,7 +147,7 @@ std::string_view AST_Writer::vis_str(Vis vis) const {
   }
 }
 
-void AST_Writer::visit(RefNode<const Base> n) {
+void AST_Writer::visit(FlowPtr<Base> n) {
   begin_obj(2);
 
   string("kind");
@@ -156,7 +158,7 @@ void AST_Writer::visit(RefNode<const Base> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ExprStmt> n) {
+void AST_Writer::visit(FlowPtr<ExprStmt> n) {
   begin_obj(3);
 
   string("kind");
@@ -170,7 +172,7 @@ void AST_Writer::visit(RefNode<const ExprStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const StmtExpr> n) {
+void AST_Writer::visit(FlowPtr<StmtExpr> n) {
   begin_obj(3);
 
   string("kind");
@@ -184,7 +186,7 @@ void AST_Writer::visit(RefNode<const StmtExpr> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const TypeExpr> n) {
+void AST_Writer::visit(FlowPtr<TypeExpr> n) {
   begin_obj(3);
 
   string("kind");
@@ -198,7 +200,7 @@ void AST_Writer::visit(RefNode<const TypeExpr> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const NamedTy> n) {
+void AST_Writer::visit(FlowPtr<NamedTy> n) {
   begin_obj(6);
 
   string("kind");
@@ -214,7 +216,7 @@ void AST_Writer::visit(RefNode<const NamedTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const InferTy> n) {
+void AST_Writer::visit(FlowPtr<InferTy> n) {
   begin_obj(5);
 
   string("kind");
@@ -227,7 +229,7 @@ void AST_Writer::visit(RefNode<const InferTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const TemplType> n) {
+void AST_Writer::visit(FlowPtr<TemplType> n) {
   begin_obj(7);
 
   string("kind");
@@ -259,7 +261,7 @@ void AST_Writer::visit(RefNode<const TemplType> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const U1> n) {
+void AST_Writer::visit(FlowPtr<U1> n) {
   begin_obj(5);
 
   string("kind");
@@ -272,7 +274,7 @@ void AST_Writer::visit(RefNode<const U1> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const U8> n) {
+void AST_Writer::visit(FlowPtr<U8> n) {
   begin_obj(5);
 
   string("kind");
@@ -285,7 +287,7 @@ void AST_Writer::visit(RefNode<const U8> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const U16> n) {
+void AST_Writer::visit(FlowPtr<U16> n) {
   begin_obj(5);
 
   string("kind");
@@ -298,7 +300,7 @@ void AST_Writer::visit(RefNode<const U16> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const U32> n) {
+void AST_Writer::visit(FlowPtr<U32> n) {
   begin_obj(5);
 
   string("kind");
@@ -311,7 +313,7 @@ void AST_Writer::visit(RefNode<const U32> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const U64> n) {
+void AST_Writer::visit(FlowPtr<U64> n) {
   begin_obj(5);
 
   string("kind");
@@ -324,7 +326,7 @@ void AST_Writer::visit(RefNode<const U64> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const U128> n) {
+void AST_Writer::visit(FlowPtr<U128> n) {
   begin_obj(5);
 
   string("kind");
@@ -337,7 +339,7 @@ void AST_Writer::visit(RefNode<const U128> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const I8> n) {
+void AST_Writer::visit(FlowPtr<I8> n) {
   begin_obj(5);
 
   string("kind");
@@ -350,7 +352,7 @@ void AST_Writer::visit(RefNode<const I8> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const I16> n) {
+void AST_Writer::visit(FlowPtr<I16> n) {
   begin_obj(5);
 
   string("kind");
@@ -363,7 +365,7 @@ void AST_Writer::visit(RefNode<const I16> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const I32> n) {
+void AST_Writer::visit(FlowPtr<I32> n) {
   begin_obj(5);
 
   string("kind");
@@ -376,7 +378,7 @@ void AST_Writer::visit(RefNode<const I32> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const I64> n) {
+void AST_Writer::visit(FlowPtr<I64> n) {
   begin_obj(5);
 
   string("kind");
@@ -389,7 +391,7 @@ void AST_Writer::visit(RefNode<const I64> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const I128> n) {
+void AST_Writer::visit(FlowPtr<I128> n) {
   begin_obj(5);
 
   string("kind");
@@ -402,7 +404,7 @@ void AST_Writer::visit(RefNode<const I128> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const F16> n) {
+void AST_Writer::visit(FlowPtr<F16> n) {
   begin_obj(5);
 
   string("kind");
@@ -415,7 +417,7 @@ void AST_Writer::visit(RefNode<const F16> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const F32> n) {
+void AST_Writer::visit(FlowPtr<F32> n) {
   begin_obj(5);
 
   string("kind");
@@ -428,7 +430,7 @@ void AST_Writer::visit(RefNode<const F32> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const F64> n) {
+void AST_Writer::visit(FlowPtr<F64> n) {
   begin_obj(5);
 
   string("kind");
@@ -441,7 +443,7 @@ void AST_Writer::visit(RefNode<const F64> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const F128> n) {
+void AST_Writer::visit(FlowPtr<F128> n) {
   begin_obj(5);
 
   string("kind");
@@ -454,7 +456,7 @@ void AST_Writer::visit(RefNode<const F128> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const VoidTy> n) {
+void AST_Writer::visit(FlowPtr<VoidTy> n) {
   begin_obj(5);
 
   string("kind");
@@ -467,7 +469,7 @@ void AST_Writer::visit(RefNode<const VoidTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const PtrTy> n) {
+void AST_Writer::visit(FlowPtr<PtrTy> n) {
   begin_obj(6);
 
   string("kind");
@@ -483,7 +485,7 @@ void AST_Writer::visit(RefNode<const PtrTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const OpaqueTy> n) {
+void AST_Writer::visit(FlowPtr<OpaqueTy> n) {
   begin_obj(6);
 
   string("kind");
@@ -499,7 +501,7 @@ void AST_Writer::visit(RefNode<const OpaqueTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const TupleTy> n) {
+void AST_Writer::visit(FlowPtr<TupleTy> n) {
   begin_obj(6);
 
   string("kind");
@@ -522,7 +524,7 @@ void AST_Writer::visit(RefNode<const TupleTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ArrayTy> n) {
+void AST_Writer::visit(FlowPtr<ArrayTy> n) {
   begin_obj(7);
 
   string("kind");
@@ -541,7 +543,7 @@ void AST_Writer::visit(RefNode<const ArrayTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const RefTy> n) {
+void AST_Writer::visit(FlowPtr<RefTy> n) {
   begin_obj(6);
 
   string("kind");
@@ -557,7 +559,7 @@ void AST_Writer::visit(RefNode<const RefTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const FuncTy> n) {
+void AST_Writer::visit(FlowPtr<FuncTy> n) {
   begin_obj(10);
 
   string("kind");
@@ -647,7 +649,7 @@ void AST_Writer::visit(RefNode<const FuncTy> n) {
       std::get<1>(param).accept(*this);
 
       string("default");
-      std::get<2>(param) ? std::get<2>(param).accept(*this) : null();
+      std::get<2>(param) ? std::get<2>(param)->accept(*this) : null();
 
       end_obj();
     });
@@ -659,7 +661,7 @@ void AST_Writer::visit(RefNode<const FuncTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const UnaryExpr> n) {
+void AST_Writer::visit(FlowPtr<UnaryExpr> n) {
   begin_obj(4);
 
   string("kind");
@@ -676,7 +678,7 @@ void AST_Writer::visit(RefNode<const UnaryExpr> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const BinExpr> n) {
+void AST_Writer::visit(FlowPtr<BinExpr> n) {
   begin_obj(5);
 
   string("kind");
@@ -696,7 +698,7 @@ void AST_Writer::visit(RefNode<const BinExpr> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const PostUnaryExpr> n) {
+void AST_Writer::visit(FlowPtr<PostUnaryExpr> n) {
   begin_obj(4);
 
   string("kind");
@@ -713,7 +715,7 @@ void AST_Writer::visit(RefNode<const PostUnaryExpr> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const TernaryExpr> n) {
+void AST_Writer::visit(FlowPtr<TernaryExpr> n) {
   begin_obj(5);
 
   string("kind");
@@ -733,7 +735,7 @@ void AST_Writer::visit(RefNode<const TernaryExpr> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ConstInt> n) {
+void AST_Writer::visit(FlowPtr<ConstInt> n) {
   begin_obj(3);
 
   string("kind");
@@ -747,7 +749,7 @@ void AST_Writer::visit(RefNode<const ConstInt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ConstFloat> n) {
+void AST_Writer::visit(FlowPtr<ConstFloat> n) {
   begin_obj(3);
 
   string("kind");
@@ -761,7 +763,7 @@ void AST_Writer::visit(RefNode<const ConstFloat> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ConstBool> n) {
+void AST_Writer::visit(FlowPtr<ConstBool> n) {
   begin_obj(3);
 
   string("kind");
@@ -775,7 +777,7 @@ void AST_Writer::visit(RefNode<const ConstBool> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ConstString> n) {
+void AST_Writer::visit(FlowPtr<ConstString> n) {
   begin_obj(3);
 
   string("kind");
@@ -789,7 +791,7 @@ void AST_Writer::visit(RefNode<const ConstString> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ConstChar> n) {
+void AST_Writer::visit(FlowPtr<ConstChar> n) {
   begin_obj(3);
 
   string("kind");
@@ -803,7 +805,7 @@ void AST_Writer::visit(RefNode<const ConstChar> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ConstNull> n) {
+void AST_Writer::visit(FlowPtr<ConstNull> n) {
   begin_obj(2);
 
   string("kind");
@@ -814,7 +816,7 @@ void AST_Writer::visit(RefNode<const ConstNull> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ConstUndef> n) {
+void AST_Writer::visit(FlowPtr<ConstUndef> n) {
   begin_obj(2);
 
   string("kind");
@@ -825,7 +827,7 @@ void AST_Writer::visit(RefNode<const ConstUndef> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const Call> n) {
+void AST_Writer::visit(FlowPtr<Call> n) {
   begin_obj(4);
 
   string("kind");
@@ -858,7 +860,7 @@ void AST_Writer::visit(RefNode<const Call> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const TemplCall> n) {
+void AST_Writer::visit(FlowPtr<TemplCall> n) {
   begin_obj(5);
 
   string("kind");
@@ -903,7 +905,7 @@ void AST_Writer::visit(RefNode<const TemplCall> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const List> n) {
+void AST_Writer::visit(FlowPtr<List> n) {
   begin_obj(3);
 
   string("kind");
@@ -924,7 +926,7 @@ void AST_Writer::visit(RefNode<const List> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const Assoc> n) {
+void AST_Writer::visit(FlowPtr<Assoc> n) {
   begin_obj(4);
 
   string("kind");
@@ -941,7 +943,7 @@ void AST_Writer::visit(RefNode<const Assoc> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const Index> n) {
+void AST_Writer::visit(FlowPtr<Index> n) {
   begin_obj(4);
 
   string("kind");
@@ -958,7 +960,7 @@ void AST_Writer::visit(RefNode<const Index> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const Slice> n) {
+void AST_Writer::visit(FlowPtr<Slice> n) {
   begin_obj(5);
 
   string("kind");
@@ -978,7 +980,7 @@ void AST_Writer::visit(RefNode<const Slice> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const FString> n) {
+void AST_Writer::visit(FlowPtr<FString> n) {
   begin_obj(3);
 
   string("kind");
@@ -1004,7 +1006,7 @@ void AST_Writer::visit(RefNode<const FString> n) {
 
         end_obj();
       } else {
-        std::get<RefNode<Expr>>(item).accept(*this);
+        std::get<FlowPtr<Expr>>(item).accept(*this);
       }
     });
     end_arr();
@@ -1013,7 +1015,7 @@ void AST_Writer::visit(RefNode<const FString> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const Ident> n) {
+void AST_Writer::visit(FlowPtr<Ident> n) {
   begin_obj(3);
 
   string("kind");
@@ -1027,7 +1029,7 @@ void AST_Writer::visit(RefNode<const Ident> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const SeqPoint> n) {
+void AST_Writer::visit(FlowPtr<SeqPoint> n) {
   begin_obj(3);
 
   string("kind");
@@ -1048,7 +1050,7 @@ void AST_Writer::visit(RefNode<const SeqPoint> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const Block> n) {
+void AST_Writer::visit(FlowPtr<Block> n) {
   begin_obj(4);
 
   string("kind");
@@ -1085,7 +1087,7 @@ void AST_Writer::visit(RefNode<const Block> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const VarDecl> n) {
+void AST_Writer::visit(FlowPtr<VarDecl> n) {
   begin_obj(7);
 
   string("kind");
@@ -1110,10 +1112,10 @@ void AST_Writer::visit(RefNode<const VarDecl> n) {
   string(n->get_name());
 
   string("type");
-  n->get_type() ? n->get_type().accept(*this) : null();
+  n->get_type() ? n->get_type()->accept(*this) : null();
 
   string("value");
-  n->get_value() ? n->get_value().accept(*this) : null();
+  n->get_value() ? n->get_value()->accept(*this) : null();
 
   { /* Write attributes */
     string("attributes");
@@ -1128,7 +1130,7 @@ void AST_Writer::visit(RefNode<const VarDecl> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const InlineAsm> n) {
+void AST_Writer::visit(FlowPtr<InlineAsm> n) {
   begin_obj(4);
 
   string("kind");
@@ -1152,7 +1154,7 @@ void AST_Writer::visit(RefNode<const InlineAsm> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const IfStmt> n) {
+void AST_Writer::visit(FlowPtr<IfStmt> n) {
   begin_obj(5);
 
   string("kind");
@@ -1168,7 +1170,7 @@ void AST_Writer::visit(RefNode<const IfStmt> n) {
 
   string("else");
   if (n->get_else()) {
-    n->get_else().accept(*this);
+    n->get_else()->accept(*this);
   } else {
     null();
   }
@@ -1176,7 +1178,7 @@ void AST_Writer::visit(RefNode<const IfStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const WhileStmt> n) {
+void AST_Writer::visit(FlowPtr<WhileStmt> n) {
   begin_obj(4);
 
   string("kind");
@@ -1193,7 +1195,7 @@ void AST_Writer::visit(RefNode<const WhileStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ForStmt> n) {
+void AST_Writer::visit(FlowPtr<ForStmt> n) {
   begin_obj(6);
 
   string("kind");
@@ -1228,7 +1230,7 @@ void AST_Writer::visit(RefNode<const ForStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ForeachStmt> n) {
+void AST_Writer::visit(FlowPtr<ForeachStmt> n) {
   begin_obj(6);
 
   string("kind");
@@ -1251,7 +1253,7 @@ void AST_Writer::visit(RefNode<const ForeachStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const BreakStmt> n) {
+void AST_Writer::visit(FlowPtr<BreakStmt> n) {
   begin_obj(2);
 
   string("kind");
@@ -1262,7 +1264,7 @@ void AST_Writer::visit(RefNode<const BreakStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ContinueStmt> n) {
+void AST_Writer::visit(FlowPtr<ContinueStmt> n) {
   begin_obj(2);
 
   string("kind");
@@ -1273,7 +1275,7 @@ void AST_Writer::visit(RefNode<const ContinueStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ReturnStmt> n) {
+void AST_Writer::visit(FlowPtr<ReturnStmt> n) {
   begin_obj(3);
 
   string("kind");
@@ -1291,7 +1293,7 @@ void AST_Writer::visit(RefNode<const ReturnStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ReturnIfStmt> n) {
+void AST_Writer::visit(FlowPtr<ReturnIfStmt> n) {
   begin_obj(4);
 
   string("kind");
@@ -1308,7 +1310,7 @@ void AST_Writer::visit(RefNode<const ReturnIfStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const CaseStmt> n) {
+void AST_Writer::visit(FlowPtr<CaseStmt> n) {
   begin_obj(4);
 
   string("kind");
@@ -1325,7 +1327,7 @@ void AST_Writer::visit(RefNode<const CaseStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const SwitchStmt> n) {
+void AST_Writer::visit(FlowPtr<SwitchStmt> n) {
   begin_obj(5);
 
   string("kind");
@@ -1347,12 +1349,12 @@ void AST_Writer::visit(RefNode<const SwitchStmt> n) {
   }
 
   string("default");
-  n->get_default() ? n->get_default().accept(*this) : null();
+  n->get_default() ? n->get_default()->accept(*this) : null();
 
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const TypedefStmt> n) {
+void AST_Writer::visit(FlowPtr<TypedefStmt> n) {
   begin_obj(4);
 
   string("kind");
@@ -1369,7 +1371,7 @@ void AST_Writer::visit(RefNode<const TypedefStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const Function> n) {
+void AST_Writer::visit(FlowPtr<Function> n) {
   begin_obj(13);
 
   string("kind");
@@ -1473,7 +1475,7 @@ void AST_Writer::visit(RefNode<const Function> n) {
         std::get<1>(param).accept(*this);
 
         string("default");
-        std::get<2>(param) ? std::get<2>(param).accept(*this) : null();
+        std::get<2>(param) ? std::get<2>(param)->accept(*this) : null();
 
         end_obj();
       });
@@ -1504,7 +1506,7 @@ void AST_Writer::visit(RefNode<const Function> n) {
       std::get<1>(param).accept(*this);
 
       string("default");
-      std::get<2>(param) ? std::get<2>(param).accept(*this) : null();
+      std::get<2>(param) ? std::get<2>(param)->accept(*this) : null();
 
       end_obj();
     });
@@ -1544,7 +1546,7 @@ void AST_Writer::visit(RefNode<const Function> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const StructDef> n) {
+void AST_Writer::visit(FlowPtr<StructDef> n) {
   begin_obj(10);
 
   string("kind");
@@ -1610,7 +1612,7 @@ void AST_Writer::visit(RefNode<const StructDef> n) {
         std::get<1>(param).accept(*this);
 
         string("default");
-        std::get<2>(param) ? std::get<2>(param).accept(*this) : null();
+        std::get<2>(param) ? std::get<2>(param)->accept(*this) : null();
 
         end_obj();
       });
@@ -1695,7 +1697,7 @@ void AST_Writer::visit(RefNode<const StructDef> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const EnumDef> n) {
+void AST_Writer::visit(FlowPtr<EnumDef> n) {
   begin_obj(5);
 
   string("kind");
@@ -1707,7 +1709,7 @@ void AST_Writer::visit(RefNode<const EnumDef> n) {
   string(n->get_name());
 
   string("type");
-  n->get_type() ? n->get_type().accept(*this) : null();
+  n->get_type() ? n->get_type()->accept(*this) : null();
 
   { /* Write items */
     string("fields");
@@ -1721,7 +1723,7 @@ void AST_Writer::visit(RefNode<const EnumDef> n) {
       string(*item.first);
 
       string("value");
-      item.second ? item.second.accept(*this) : null();
+      item.second ? item.second->accept(*this) : null();
 
       end_obj();
     });
@@ -1731,7 +1733,7 @@ void AST_Writer::visit(RefNode<const EnumDef> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ScopeStmt> n) {
+void AST_Writer::visit(FlowPtr<ScopeStmt> n) {
   begin_obj(5);
 
   string("kind");
@@ -1757,7 +1759,7 @@ void AST_Writer::visit(RefNode<const ScopeStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ExportStmt> n) {
+void AST_Writer::visit(FlowPtr<ExportStmt> n) {
   begin_obj(6);
 
   string("kind");

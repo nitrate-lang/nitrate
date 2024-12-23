@@ -53,7 +53,7 @@
 #include <utility>
 #include <vector>
 
-using namespace ncc::core;
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::lex::detail;
 
