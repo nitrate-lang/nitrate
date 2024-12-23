@@ -92,12 +92,12 @@ void AST_Writer::write_source_location(FlowPtr<Base> n) const {
     }
 
     {
-      string("genesis");
+      string("trace");
 
 #if NITRATE_AST_TRACKING
       begin_obj(4);
 
-      let origin = n.origin();
+      let origin = n.trace();
 
       string("src");
       string(origin.file_name());
@@ -160,6 +160,9 @@ void AST_Writer::visit(FlowPtr<Base> n) {
 
 void AST_Writer::visit(FlowPtr<ExprStmt> n) {
   begin_obj(3);
+
+  auto x = n < n;
+  (void)x;
 
   string("kind");
   string(n->getKindName());

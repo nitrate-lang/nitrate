@@ -59,7 +59,7 @@ namespace ncc::parse {
       /// TODO: Implement node cache
 
 #if NITRATE_AST_TRACKING
-      new_obj.set_origin(origin);
+      new_obj.set_tracking(origin);
 #endif
 
       return new_obj;
