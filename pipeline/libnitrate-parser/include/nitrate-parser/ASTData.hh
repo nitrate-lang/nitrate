@@ -144,8 +144,8 @@ namespace ncc::parse {
       return *this;
     }
 
-    constexpr let operator->() const { return m_ref.m_tptr; }
-    constexpr let get() const { return m_ref.m_tptr; }
+    constexpr T *operator->() const { return m_ref.m_tptr; }
+    constexpr T *get() const { return m_ref.m_tptr; }
     constexpr operator bool() const { return m_ref.m_ptr != 0; }
     constexpr operator T *() const { return m_ref.m_tptr; }
 

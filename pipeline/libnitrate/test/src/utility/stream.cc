@@ -30,7 +30,7 @@ TEST(Stream, ChainLexParse) {
 
   ASSERT_EQ(
       output,
-      R"({"kind":"Block","loc":{"beg":0,"fileid":null},"safe":null,"body":[{"kind":"Let","loc":{"beg":null,"fileid":null},"mode":"let","name":"x","type":null,"value":{"kind":"Int","loc":{"beg":null,"fileid":null},"value":"0"},"attributes":[]}]})");
+      R"({"kind":"Block","loc":null,"safe":null,"body":[{"kind":"Let","loc":null,"mode":"let","name":"x","type":null,"value":{"kind":"Int","loc":null,"value":"0"},"attributes":[]}]})");
 }
 
 TEST(Stream, ChainOperations) {
@@ -44,7 +44,7 @@ TEST(Stream, ChainOperations) {
 
   ASSERT_EQ(
       output,
-      R"({"kind":"Block","loc":{"beg":0,"fileid":null},"safe":null,"body":[{"kind":"Let","loc":{"beg":null,"fileid":null},"mode":"let","name":"x","type":null,"value":{"kind":"Int","loc":{"beg":null,"fileid":null},"value":"0"},"attributes":[]}]}
+      R"({"kind":"Block","loc":null,"safe":null,"body":[{"kind":"Let","loc":null,"mode":"let","name":"x","type":null,"value":{"kind":"Int","loc":null,"value":"0"},"attributes":[]}]}
 
 )");
 }
@@ -59,7 +59,7 @@ TEST(Stream, ChainOperations2) {
 
   ASSERT_EQ(
       output,
-      R"({"kind":"Block","loc":{"beg":0,"fileid":null},"safe":null,"body":[{"kind":"Let","loc":{"beg":null,"fileid":null},"mode":"let","name":"x","type":null,"value":{"kind":"Int","loc":{"beg":null,"fileid":null},"value":"0"},"attributes":[]}]}
+      R"({"kind":"Block","loc":null,"safe":null,"body":[{"kind":"Let","loc":null,"mode":"let","name":"x","type":null,"value":{"kind":"Int","loc":null,"value":"0"},"attributes":[]}]}
 
 )");
 }
