@@ -250,17 +250,16 @@ namespace ncc::lex {
     std::optional<Token> m_current, m_last;
     bool m_skip_comments = false, m_ebit = false;
 
-    std::unordered_map<LocationID, Location> m_location_interned;
     // 0 is reserved for invalid location
     LocationID::Counter m_location_id = 1;
-    std::vector<std::pair<LocationID, Location>> m_location_interned_buffer;
+    std::vector<Location> m_location_interned;
 
     class StaticImpl;
     friend class StaticImpl;
 
   protected:
     inline LocationID InternLocation(Location loc) {
-      m_location_interned_buffer.push_back({m_location_id, loc});
+      m_location_interned.push_back(loc);
       return m_location_id++;
     }
 
@@ -277,7 +276,7 @@ namespace ncc::lex {
     };
 
   public:
-    IScanner() { m_location_interned_buffer.reserve(0xffff); }
+    IScanner() { m_location_interned.reserve(0xffff); }
     virtual ~IScanner() = default;
 
     Token Next();

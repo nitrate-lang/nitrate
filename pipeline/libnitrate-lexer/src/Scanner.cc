@@ -349,13 +349,6 @@ public:
       }
     }
   }
-
-  static FORCE_INLINE void FlushInternedBuffering(IScanner &L) {
-    L.m_location_interned.insert(L.m_location_interned_buffer.begin(),
-                                 L.m_location_interned_buffer.end());
-
-    L.m_location_interned_buffer.clear();
-  }
 };
 
 CPP_EXPORT Token IScanner::Next() {
@@ -403,27 +396,22 @@ CPP_EXPORT Location LocationID::Get(IScanner &L) const {
 }
 
 CPP_EXPORT Location IScanner::GetLocation(LocationID id) {
-  IScanner::StaticImpl::FlushInternedBuffering(*this);
-
-  auto it = m_location_interned.find(id);
-  if (it != m_location_interned.end()) {
-    return it->second;
+  if (id == 0) {
+    return Location::EndOfFile();
+  } else if (id < m_location_interned.size()) {
+    return m_location_interned[id.GetId()];
+  } else {
+    return GetLocationFallback(id).value_or(Location::EndOfFile());
   }
-
-  return GetLocationFallback(id).value_or(Location::EndOfFile());
 }
 
 CPP_EXPORT Location IScanner::Start(Token t) {
-  IScanner::StaticImpl::FlushInternedBuffering(*this);
-
   return t.get_start().Get(*this);
 }
 
-CPP_EXPORT Location IScanner::End(Token t) {
-  IScanner::StaticImpl::FlushInternedBuffering(*this);
-  (void)t;
+CPP_EXPORT Location IScanner::End(Token) {
+  /// TODO: Support relexing to get the end location
 
-  /// TODO: Implement this
   return Location::EndOfFile();
 }
 
