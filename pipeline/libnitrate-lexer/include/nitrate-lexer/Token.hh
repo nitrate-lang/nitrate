@@ -190,9 +190,7 @@ namespace ncc::lex {
           m_column(column),
           m_filename(filename) {}
 
-    static constexpr Location EndOfFile() {
-      return Location(QLEX_EOFF, QLEX_EOFF, QLEX_EOFF, "");
-    }
+    static constexpr Location EndOfFile() { return Location(0, 0, 0, ""); }
 
     constexpr uint32_t GetOffset() const { return m_offset; }
     constexpr uint32_t GetRow() const { return m_line; }
@@ -206,8 +204,6 @@ namespace ncc::lex {
 
     constexpr LocationID(Counter id = 0) : m_id(id) {}
 
-    static constexpr LocationID EndOfFile() { return LocationID(QLEX_EOFF); }
-
     Location Get(IScanner &L) const;
     constexpr Counter GetId() const { return m_id; }
 
@@ -220,7 +216,7 @@ namespace ncc::lex {
     }
 
   private:
-    Counter m_id = 0;
+    Counter m_id;
   } __attribute__((packed));
 
   union TokenData {

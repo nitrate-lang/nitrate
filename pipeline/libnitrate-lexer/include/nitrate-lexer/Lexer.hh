@@ -251,7 +251,8 @@ namespace ncc::lex {
     bool m_skip_comments = false, m_ebit = false;
 
     std::unordered_map<LocationID, Location> m_location_interned;
-    LocationID::Counter m_location_id = 0;
+    // 0 is reserved for invalid location
+    LocationID::Counter m_location_id = 1;
     std::vector<std::pair<LocationID, Location>> m_location_interned_buffer;
 
     class StaticImpl;

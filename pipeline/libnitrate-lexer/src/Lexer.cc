@@ -370,7 +370,7 @@ public:
 
     if (c == '\n') {
       L.m_line++;
-      L.m_column = 1;
+      L.m_column = 0;
     } else {
       L.m_column++;
     }
@@ -1007,7 +1007,8 @@ CPP_EXPORT Token Tokenizer::GetNext() {
           continue;
         }
 
-        start_pos = InternLocation(Location(m_offset, m_line, m_column, ""));
+        start_pos =
+            InternLocation(Location(m_offset - 1, m_line, m_column, ""));
 
         if (std::isalpha(c) || c == '_') {
           /* Identifier or keyword or operator */

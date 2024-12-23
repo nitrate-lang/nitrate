@@ -54,8 +54,8 @@ namespace ncc::parse {
 
   public:
     constexpr Base(npar_ty_t ty, bool mock = false,
-                   lex::LocationID begin = lex::LocationID::EndOfFile(),
-                   lex::LocationID end = lex::LocationID::EndOfFile())
+                   lex::LocationID begin = lex::LocationID(),
+                   lex::LocationID end = lex::LocationID())
         : m_node_type(ty), m_mock(mock), m_begin(begin), m_end(end) {}
 
     constexpr void accept(ASTVisitor &v) const {
