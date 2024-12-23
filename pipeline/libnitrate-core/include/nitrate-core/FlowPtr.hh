@@ -34,11 +34,11 @@
 #ifndef __NITRATE_CORE_FLOWPTR_H__
 #define __NITRATE_CORE_FLOWPTR_H__
 
-#include <boost/flyweight.hpp>
-#include <boost/flyweight/no_tracking.hpp>
-#include <nitrate-core/String.hh>
+#include <cstdarg>
+#include <cstdint>
 #include <source_location>
 #include <type_traits>
+#include <utility>
 
 namespace ncc {
 #ifdef NDEBUG
@@ -47,13 +47,45 @@ namespace ncc {
 #define NITRATE_AST_TRACKING 1
 #endif
 
-  namespace dataflow {
-    class GenesisTrace {
+  namespace trace {
+    enum class DataFlowEvent {
+      Construct_FromPtr,
+      Construct_FromNull,
+      Construct_Copy,
+      Construct_Move,
+
+      Assign_Copy,
+      Assign_Move,
+
+      Cast_ToRaw,
+      Cast_ToBool,
+      Cast_Static,
+      Cast_Reinterpret,
+
+      Compare_Equal,
+      Compare_NotEqual,
+      Compare_Less,
+      Compare_LessEqual,
+      Compare_Greater,
+      Compare_GreaterEqual,
+
+      Access_Arrow,
+      Access_Get,
+
+      Visitor_Accept,
+
+      Reflection_GetKind,
+
+      Tracking_Get,
+      Tracking_Set,
+    };
+
+    class genesis {
       const char *m_file_name, *m_function_name;
       unsigned m_line, m_column;
 
     public:
-      constexpr GenesisTrace(
+      constexpr genesis(
           std::source_location loc = std::source_location::current())
           : m_file_name(loc.file_name()),
             m_function_name(loc.function_name()),
@@ -65,49 +97,50 @@ namespace ncc {
       constexpr auto line() const { return m_line; }
       constexpr auto column() const { return m_column; }
 
-      constexpr bool operator==(const GenesisTrace &other) const {
+      constexpr bool operator==(const genesis &other) const {
         return m_file_name == other.m_file_name &&
                m_function_name == other.m_function_name &&
                m_line == other.m_line && m_column == other.m_column;
       }
+
+      genesis dispatch(DataFlowEvent, va_list) const {
+        /// This tracking method does not track events
+        return *this;
+      }
     } __attribute__((packed));
 
-    class VerboseTrace {
+    class verbose {
     public:
-      constexpr VerboseTrace() {}
+      constexpr verbose() {}
+      constexpr verbose(const verbose &) = default;
 
-      constexpr bool operator==(const VerboseTrace &) const { return true; }
+      constexpr bool operator==(const verbose &) const { return true; }
+
+      verbose dispatch(DataFlowEvent e, va_list va) const {
+        (void)e;
+        (void)va;
+        /// TODO: Implement event tracking
+
+        return *this;
+      }
     } __attribute__((packed));
 
-    class NoTrace {
+    class none {
     public:
-      constexpr NoTrace() {}
+      constexpr none() {}
 
-      constexpr bool operator==(const NoTrace &) const { return true; }
+      constexpr bool operator==(const none &) const { return true; }
+
+      none dispatch(DataFlowEvent, va_list) const { return *this; }
     } __attribute__((packed));
 
-    static constexpr inline std::size_t hash_value(const GenesisTrace &trace) {
-      return std::hash<const char *>()(trace.file_name()) ^
-             std::hash<const char *>()(trace.function_name()) ^
-             std::hash<unsigned>()(trace.line()) ^
-             std::hash<unsigned>()(trace.column());
-    }
-
-    static constexpr inline std::size_t hash_value(const VerboseTrace &) {
-      return 0;
-    }
-
-    static constexpr inline std::size_t hash_value(const NoTrace &) {
-      return 0;
-    }
-
-    static inline dataflow::NoTrace g_notrace_instance;
-  }  // namespace dataflow
+    static inline trace::none g_notrace_instance;
+  }  // namespace trace
 
 #if NITRATE_AST_TRACKING
-  using DefaultTracking = dataflow::GenesisTrace;
+  using DefaultTracking = trace::genesis;
 #else
-  using DefaultTracking = dataflow::NoTrace;
+  using DefaultTracking = trace::none;
 #endif
 
   template <class Pointee, class Tracking = DefaultTracking>
@@ -118,28 +151,17 @@ namespace ncc {
         uintptr_t m_ptr;
       } m_ref;
 
-      FlowPtr<const Tracking, dataflow::NoTrace> m_tracking;
+      Tracking m_tracking;
 
       ///=========================================================================
 
-      constexpr static inline FlowPtr<const Tracking, dataflow::NoTrace>
-      FlyweightFromValue(Tracking tracking) {
-        // Basically use boost::flyweight as a generic object interner
-        // Don't deallocate the object when the last reference is gone
-        // just leak it. It will be cleaned up when the program exits.
-        // This is meant to be used in debug mode, so this is an acceptable
-        // method.
-
-        return FlowPtr<const Tracking, dataflow::NoTrace>(
-            &boost::flyweight<Tracking, boost::flyweights::no_tracking>(
-                 std::move(tracking))
-                 .get());
-      }
-
       constexpr WithTracking() : m_ref(nullptr), m_tracking() {}
       constexpr WithTracking(Pointee *ptr, Tracking tracking)
-          : m_ref(ptr),
-            m_tracking(WithTracking::FlyweightFromValue(std::move(tracking))) {}
+          : m_ref(ptr), m_tracking(std::move(tracking)) {}
+
+      constexpr void dispatch(trace::DataFlowEvent e, va_list va) {
+        m_tracking = m_tracking.dispatch(e, va);
+      }
     } __attribute__((packed));
 
     struct WithoutTracking {
@@ -150,13 +172,23 @@ namespace ncc {
 
       constexpr WithoutTracking() : m_ref(nullptr) {}
       constexpr WithoutTracking(Pointee *ptr, Tracking) : m_ref(ptr) {}
+
+      constexpr void dispatch(trace::DataFlowEvent, va_list) {}
     } __attribute__((packed));
 
-    using Kernel =
-        std::conditional_t<std::is_same_v<Tracking, dataflow::NoTrace>,
-                           WithoutTracking, WithTracking>;
+    using Kernel = std::conditional_t<std::is_same_v<Tracking, trace::none>,
+                                      WithoutTracking, WithTracking>;
 
     Kernel m_s;
+
+    constexpr void dispatch(trace::DataFlowEvent e, ...) const {
+      va_list va;
+      va_start(va, e);
+
+      const_cast<FlowPtr *>(this)->m_s.dispatch(e, va);
+
+      va_end(va);
+    }
 
   public:
     using value_type = Pointee;
@@ -166,7 +198,9 @@ namespace ncc {
 
     constexpr explicit FlowPtr(Pointee *ptr = nullptr,
                                Tracking tracking = Tracking())
-        : m_s(ptr, std::move(tracking)) {}
+        : m_s(ptr, std::move(tracking)) {
+      dispatch(trace::DataFlowEvent::Construct_FromPtr);
+    }
 
     constexpr FlowPtr(std::nullptr_t, Tracking tracking = Tracking())
         : m_s(nullptr, std::move(tracking)) {}
@@ -225,15 +259,15 @@ namespace ncc {
 
     constexpr const Tracking &trace() const {
       if constexpr (std::is_same_v<Kernel, WithTracking>) {
-        return *m_s.m_tracking.get();
+        return m_s.m_tracking;
       } else {
-        return dataflow::g_notrace_instance;
+        return trace::g_notrace_instance;
       }
     }
 
     constexpr void set_tracking(Tracking tracking) {
       if constexpr (std::is_same_v<Kernel, WithTracking>) {
-        m_s.m_tracking = WithTracking::FlyweightFromValue(std::move(tracking));
+        m_s.m_tracking = std::move(tracking);
       }
     }
 
@@ -250,13 +284,13 @@ namespace ncc {
     constexpr auto getKind() const { return get()->getKind(); }
   } __attribute__((packed));
 
-  constexpr size_t FlowPtrStructSize = sizeof(FlowPtr<int>);
+  constexpr auto FlowPtrStructSize = sizeof(FlowPtr<int>);
 
   template <class Pointee, class Tracking = DefaultTracking>
-  constexpr FlowPtr<Pointee> MakeFlowPtr(Pointee *ptr,
-                                         Tracking tracking = Tracking()) {
-    return FlowPtr<Pointee>(ptr, std::move(tracking));
+  constexpr FlowPtr<Pointee, Tracking> MakeFlowPtr(
+      Pointee *ptr, Tracking tracking = Tracking()) {
+    return FlowPtr<Pointee, Tracking>(ptr, std::move(tracking));
   }
 }  // namespace ncc
 
-#endif  // __NITRATE_CORE_CACHE_H__
+#endif
