@@ -86,63 +86,51 @@ namespace ncc::parse {
     SkipChildren,
   };
 
-  typedef std::function<IterOp(RefNode<const Base> p, RefNode<const Base> *c)>
-      IterCallback;
-  typedef std::function<bool(RefNode<const Base> *a, RefNode<const Base> *b)>
-      ChildSelect;
+  typedef std::function<IterOp(RefNode<Base> p, RefNode<Base> c)> IterCallback;
 
   namespace detail {
-    void dfs_pre_impl(RefNode<const Base> *base, IterCallback cb,
-                      ChildSelect cs);
-    void dfs_post_impl(RefNode<const Base> *base, IterCallback cb,
-                       ChildSelect cs);
-    void bfs_pre_impl(RefNode<const Base> *base, IterCallback cb,
-                      ChildSelect cs);
-    void bfs_post_impl(RefNode<const Base> *base, IterCallback cb,
-                       ChildSelect cs);
-    void iter_children(RefNode<const Base> *base, IterCallback cb,
-                       ChildSelect cs);
+    void dfs_pre_impl(RefNode<Base> base, IterCallback cb);
+    void dfs_post_impl(RefNode<Base> base, IterCallback cb);
+    void bfs_pre_impl(RefNode<Base> base, IterCallback cb);
+    void bfs_post_impl(RefNode<Base> base, IterCallback cb);
+    void iter_children(RefNode<Base> base, IterCallback cb);
   }  // namespace detail
 
   template <IterMode mode, typename T>
-  void iterate(const RefNode<T> &base, IterCallback cb,
-               ChildSelect cs = nullptr) {
-    let root = (RefNode<const Base> *)&base;
-
+  void iterate(RefNode<T> root, IterCallback cb) {
     if constexpr (mode == dfs_pre) {
-      return detail::dfs_pre_impl(root, cb, cs);
+      return detail::dfs_pre_impl(root, cb);
     } else if constexpr (mode == dfs_post) {
-      return detail::dfs_post_impl(root, cb, cs);
+      return detail::dfs_post_impl(root, cb);
     } else if constexpr (mode == bfs_pre) {
-      return detail::bfs_pre_impl(root, cb, cs);
+      return detail::bfs_pre_impl(root, cb);
     } else if constexpr (mode == bfs_post) {
-      return detail::bfs_post_impl(root, cb, cs);
+      return detail::bfs_post_impl(root, cb);
     } else if constexpr (mode == children) {
-      return detail::iter_children(root, cb, cs);
+      return detail::iter_children(root, cb);
     } else {
       static_assert(mode != mode, "Invalid iteration mode.");
     }
   }
 
   template <auto mode = dfs_pre>
-  void for_each(RefNode<const Base> v,
-                std::function<void(npar_ty_t, RefNode<const Base>)> f) {
-    iterate<mode>(v, [&](auto, RefNode<const Base> *c) -> IterOp {
-      f((*c)->getKind(), *c);
+  void for_each(RefNode<Base> v,
+                std::function<void(npar_ty_t, RefNode<Base>)> f) {
+    iterate<mode>(v, [&](auto, RefNode<Base> c) -> IterOp {
+      f(c->getKind(), c);
 
       return IterOp::Abort;
     });
   }
 
   template <typename T, auto mode = dfs_pre>
-  void for_each(RefNode<const Base> v,
-                std::function<void(RefNode<const T>)> f) {
-    iterate<mode>(v, [&](auto, RefNode<const Base> *c) -> IterOp {
-      if ((*c)->getKind() != Base::getTypeCode<T>()) {
+  void for_each(RefNode<Base> v, std::function<void(RefNode<T>)> f) {
+    iterate<mode>(v, [&](auto, RefNode<Base> c) -> IterOp {
+      if (c->getKind() != Base::getTypeCode<T>()) {
         return IterOp::Proceed;
       }
 
-      f((*c)->as<T>());
+      f(c->as<T>());
 
       return IterOp::Proceed;
     });

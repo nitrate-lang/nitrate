@@ -405,7 +405,7 @@ CPP_EXPORT bool ASTRoot::check() const {
 
   bool failed = false;
   ncc::parse::iterate<dfs_pre>(m_base, [&](auto, auto c) {
-    failed |= !c || !*c || (*c)->is_mock();
+    failed |= !c || c->is_mock();
 
     return failed ? IterOp::Abort : IterOp::Proceed;
   });

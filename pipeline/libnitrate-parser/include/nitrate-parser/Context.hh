@@ -55,6 +55,7 @@ namespace ncc::parse {
     ASTRoot(RefNode<Base> base, std::shared_ptr<void> allocator, bool failed)
         : m_base(base), m_allocator(allocator), m_failed(failed) {}
 
+    RefNode<Base> &get() { return m_base; }
     RefNode<Base> get() const { return m_base; }
 
     bool check() const;

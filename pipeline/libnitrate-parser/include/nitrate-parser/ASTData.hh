@@ -91,7 +91,10 @@ namespace ncc::parse {
 
   template <class T>
   class RefNode {
-    uintptr_t m_ptr = 0;
+    union Ptr {
+      T *m_tptr;
+      uintptr_t m_ptr;
+    } m_ref;
 
 #if NITRATE_AST_TRACKING
     const char *m_origin_file_name, *m_origin_function_name;
@@ -110,7 +113,7 @@ namespace ncc::parse {
         boost::source_location origin = std::source_location::current()
 #endif
             )
-        : m_ptr(reinterpret_cast<uintptr_t>(ptr)) {
+        : m_ref(ptr) {
 #if NITRATE_AST_TRACKING
       m_origin_file_name = origin.file_name();
       m_origin_function_name = origin.function_name();
@@ -120,7 +123,7 @@ namespace ncc::parse {
     }
 
     constexpr RefNode(const RefNode &other) {
-      m_ptr = other.m_ptr;
+      m_ref = other.m_ref;
 #if NITRATE_AST_TRACKING
       m_origin_file_name = other.m_origin_file_name;
       m_origin_function_name = other.m_origin_function_name;
@@ -130,7 +133,7 @@ namespace ncc::parse {
     }
 
     constexpr RefNode &operator=(const RefNode &other) {
-      m_ptr = other.m_ptr;
+      m_ref = other.m_ref;
 #if NITRATE_AST_TRACKING
       m_origin_file_name = other.m_origin_file_name;
       m_origin_function_name = other.m_origin_function_name;
@@ -141,12 +144,10 @@ namespace ncc::parse {
       return *this;
     }
 
-    constexpr T *operator->() const { return reinterpret_cast<T *>(m_ptr); }
-    constexpr T &operator*() const { return *reinterpret_cast<T *>(m_ptr); }
-    constexpr T *get() const { return reinterpret_cast<T *>(m_ptr); }
-
-    constexpr operator bool() const { return m_ptr != 0; }
-    constexpr operator T *() const { return reinterpret_cast<T *>(m_ptr); }
+    constexpr let operator->() const { return m_ref.m_tptr; }
+    constexpr let get() const { return m_ref.m_tptr; }
+    constexpr operator bool() const { return m_ref.m_ptr != 0; }
+    constexpr operator T *() const { return m_ref.m_tptr; }
 
     template <class U>
     constexpr operator RefNode<U>() const {

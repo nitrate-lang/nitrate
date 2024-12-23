@@ -44,7 +44,7 @@ using namespace ncc;
 using namespace ncc::parse;
 
 class IterVisitor : public ASTVisitor {
-  std::vector<RefNode<const Base>*>& sub;
+  std::vector<RefNode<Base>>& sub;
 
   template <class T>
   void add(RefNode<T> const& n) {
@@ -52,9 +52,7 @@ class IterVisitor : public ASTVisitor {
       return;
     }
 
-    RefNode<const T> base = reinterpret_cast<RefNode<const T> const&>(n);
-
-    sub.push_back(reinterpret_cast<RefNode<const Base>*>(&base));
+    sub.push_back(n);
   }
 
   void add_typesuffix(RefNode<const Type> n) {
@@ -345,12 +343,11 @@ class IterVisitor : public ASTVisitor {
   }
 
 public:
-  IterVisitor(std::vector<RefNode<const Base>*>& children) : sub(children) {}
+  IterVisitor(std::vector<RefNode<Base>>& children) : sub(children) {}
 };
 
 static FORCE_INLINE void get_children_sorted(
-    RefNode<const Base> base, ChildSelect cs,
-    std::vector<RefNode<const Base>*>& children) {
+    RefNode<Base> base, std::vector<RefNode<Base>>& children) {
   children.clear();
 
   if (!base) [[unlikely]] {
@@ -360,26 +357,16 @@ static FORCE_INLINE void get_children_sorted(
   IterVisitor v(children);
   base.accept(v);
 
-  std::sort(children.begin(), children.end(), cs);
-
   return;
 }
 
-CPP_EXPORT void detail::dfs_pre_impl(RefNode<const Base>* base, IterCallback cb,
-                                     ChildSelect cs) {
+CPP_EXPORT void detail::dfs_pre_impl(RefNode<Base> base, IterCallback cb) {
   qcore_assert(base != nullptr && cb != nullptr,
                "dfs_pre_impl: base and cb must not be null");
 
-  if (!cs) { /* Iterate in the order the children are stored in the classes */
-    cs = [](RefNode<const Base>* a, RefNode<const Base>* b) -> bool {
-      return (uintptr_t)a < (uintptr_t)b;
-    };
-  }
-
-  const auto syncfn = [](RefNode<const Base>* n, const IterCallback& cb,
-                         const ChildSelect& cs) {
-    std::stack<std::pair<RefNode<const Base>, RefNode<const Base>*>> s;
-    std::vector<RefNode<const Base>*> children;
+  auto syncfn = [](RefNode<Base> n, IterCallback& cb) {
+    std::stack<std::pair<RefNode<Base>, RefNode<Base>>> s;
+    std::vector<RefNode<Base>> children;
 
     s.push({nullptr, n});
 
@@ -404,32 +391,24 @@ CPP_EXPORT void detail::dfs_pre_impl(RefNode<const Base>* base, IterCallback cb,
       }
 
       if (!skip) [[likely]] {
-        get_children_sorted(*cur.second, cs, children);
+        get_children_sorted(cur.second, children);
         for (auto it = children.rbegin(); it != children.rend(); ++it) {
-          s.push({*cur.second, *it});
+          s.push({cur.second, *it});
         }
       }
     }
   };
 
-  syncfn(base, cb, cs);
+  syncfn(base, cb);
 }
 
-CPP_EXPORT void detail::dfs_post_impl(RefNode<const Base>* base,
-                                      IterCallback cb, ChildSelect cs) {
+CPP_EXPORT void detail::dfs_post_impl(RefNode<Base> base, IterCallback cb) {
   qcore_assert(base != nullptr && cb != nullptr,
                "dfs_post_impl: base and cb must not be null");
 
-  if (!cs) { /* Iterate in the order the children are stored in the classes */
-    cs = [](RefNode<const Base>* a, RefNode<const Base>* b) -> bool {
-      return (uintptr_t)a < (uintptr_t)b;
-    };
-  }
-
-  const auto syncfn = [](RefNode<const Base>* n, const IterCallback& cb,
-                         const ChildSelect& cs) {
-    std::stack<std::pair<RefNode<const Base>, RefNode<const Base>*>> s;
-    std::vector<RefNode<const Base>*> children;
+  auto syncfn = [](RefNode<Base> n, IterCallback& cb) {
+    std::stack<std::pair<RefNode<Base>, RefNode<Base>>> s;
+    std::vector<RefNode<Base>> children;
 
     s.push({nullptr, n});
 
@@ -437,9 +416,9 @@ CPP_EXPORT void detail::dfs_post_impl(RefNode<const Base>* base,
       auto cur = s.top();
       s.pop();
 
-      get_children_sorted(*cur.second, cs, children);
+      get_children_sorted(cur.second, children);
       for (auto it = children.rbegin(); it != children.rend(); ++it) {
-        s.push({*cur.second, *it});
+        s.push({cur.second, *it});
       }
 
       switch (cb(cur.first, cur.second)) {
@@ -458,25 +437,17 @@ CPP_EXPORT void detail::dfs_post_impl(RefNode<const Base>* base,
     }
   };
 
-  syncfn(base, cb, cs);
+  syncfn(base, cb);
   cb(nullptr, base);
 }
 
-CPP_EXPORT void detail::bfs_pre_impl(RefNode<const Base>* base, IterCallback cb,
-                                     ChildSelect cs) {
+CPP_EXPORT void detail::bfs_pre_impl(RefNode<Base> base, IterCallback cb) {
   qcore_assert(base != nullptr && cb != nullptr,
                "bfs_pre_impl: base and cb must not be null");
 
-  if (!cs) { /* Iterate in the order the children are stored in the classes */
-    cs = [](RefNode<const Base>* a, RefNode<const Base>* b) -> bool {
-      return (uintptr_t)a < (uintptr_t)b;
-    };
-  }
-
-  const auto syncfn = [](RefNode<const Base>* n, const IterCallback& cb,
-                         const ChildSelect& cs) {
-    std::queue<std::pair<RefNode<const Base>, RefNode<const Base>*>> s;
-    std::vector<RefNode<const Base>*> children;
+  auto syncfn = [](RefNode<Base> n, IterCallback& cb) {
+    std::queue<std::pair<RefNode<Base>, RefNode<Base>>> s;
+    std::vector<RefNode<Base>> children;
 
     s.push({nullptr, n});
 
@@ -501,32 +472,24 @@ CPP_EXPORT void detail::bfs_pre_impl(RefNode<const Base>* base, IterCallback cb,
       }
 
       if (!skip) [[likely]] {
-        get_children_sorted(*cur.second, cs, children);
+        get_children_sorted(cur.second, children);
         for (auto it = children.rbegin(); it != children.rend(); ++it) {
-          s.push({*cur.second, *it});
+          s.push({cur.second, *it});
         }
       }
     }
   };
 
-  syncfn(base, cb, cs);
+  syncfn(base, cb);
 }
 
-CPP_EXPORT void detail::bfs_post_impl(RefNode<const Base>* base,
-                                      IterCallback cb, ChildSelect cs) {
+CPP_EXPORT void detail::bfs_post_impl(RefNode<Base> base, IterCallback cb) {
   qcore_assert(base != nullptr && cb != nullptr,
                "bfs_post_impl: base and cb must not be null");
 
-  if (!cs) { /* Iterate in the order the children are stored in the classes */
-    cs = [](RefNode<const Base>* a, RefNode<const Base>* b) -> bool {
-      return (uintptr_t)a < (uintptr_t)b;
-    };
-  }
-
-  const auto syncfn = [](RefNode<const Base>* n, const IterCallback& cb,
-                         const ChildSelect& cs) {
-    std::queue<std::pair<RefNode<const Base>, RefNode<const Base>*>> s;
-    std::vector<RefNode<const Base>*> children;
+  auto syncfn = [](RefNode<Base> n, IterCallback& cb) {
+    std::queue<std::pair<RefNode<Base>, RefNode<Base>>> s;
+    std::vector<RefNode<Base>> children;
 
     s.push({nullptr, n});
 
@@ -534,9 +497,9 @@ CPP_EXPORT void detail::bfs_post_impl(RefNode<const Base>* base,
       auto cur = s.front();
       s.pop();
 
-      get_children_sorted(*cur.second, cs, children);
+      get_children_sorted(cur.second, children);
       for (auto it = children.rbegin(); it != children.rend(); ++it) {
-        s.push({*cur.second, *it});
+        s.push({cur.second, *it});
       }
 
       switch (cb(cur.first, cur.second)) {
@@ -556,27 +519,19 @@ CPP_EXPORT void detail::bfs_post_impl(RefNode<const Base>* base,
     }
   };
 
-  syncfn(base, cb, cs);
+  syncfn(base, cb);
 }
 
-CPP_EXPORT void detail::iter_children(RefNode<const Base>* base,
-                                      IterCallback cb, ChildSelect cs) {
+CPP_EXPORT void detail::iter_children(RefNode<Base> base, IterCallback cb) {
   qcore_assert(base != nullptr && cb != nullptr,
                "iter_children: base and cb must not be null");
 
-  if (!cs) { /* Iterate in the order the children are stored in the classes */
-    cs = [](RefNode<const Base>* a, RefNode<const Base>* b) -> bool {
-      return (uintptr_t)a < (uintptr_t)b;
-    };
-  }
+  auto syncfn = [](RefNode<Base> n, IterCallback& cb) {
+    std::vector<RefNode<Base>> children;
+    get_children_sorted(n, children);
 
-  const auto syncfn = [](RefNode<const Base>* n, const IterCallback& cb,
-                         const ChildSelect& cs) {
-    std::vector<RefNode<const Base>*> children;
-    get_children_sorted(*n, cs, children);
-
-    for (RefNode<const Base>* child : children) {
-      switch (cb(*n, child)) {
+    for (RefNode<Base> child : children) {
+      switch (cb(n, child)) {
         case IterOp::Proceed: {
           break;
         }
@@ -592,5 +547,5 @@ CPP_EXPORT void detail::iter_children(RefNode<const Base>* base,
     }
   };
 
-  syncfn(base, cb, cs);
+  syncfn(base, cb);
 }
