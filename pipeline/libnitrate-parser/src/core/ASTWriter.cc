@@ -38,8 +38,8 @@
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTWriter.hh>
 
+using namespace ncc;
 using namespace ncc::parse;
-using namespace ncc::core;
 using namespace ncc::lex;
 
 void AST_Writer::write_source_location(Base const& n) const {
@@ -963,7 +963,7 @@ void AST_Writer::visit(FString const& n) {
     let items = n.get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(), [&](let item) {
-      if (std::holds_alternative<str_alias>(item)) {
+      if (std::holds_alternative<ncc::string>(item)) {
         begin_obj(2);
 
         string("kind");
@@ -971,7 +971,7 @@ void AST_Writer::visit(FString const& n) {
         string(kind_name);
 
         string("value");
-        string(*std::get<str_alias>(item));
+        string(*std::get<ncc::string>(item));
 
         end_obj();
       } else {

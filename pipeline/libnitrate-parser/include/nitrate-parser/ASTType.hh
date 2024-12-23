@@ -39,10 +39,10 @@
 
 namespace ncc::parse {
   class npar_pack NamedTy : public Type {
-    core::str_alias m_name;
+    string m_name;
 
   public:
-    constexpr NamedTy(core::str_alias name) : Type(QAST_NAMED), m_name(name) {}
+    constexpr NamedTy(string name) : Type(QAST_NAMED), m_name(name) {}
 
     constexpr auto get_name() const { return m_name.get(); }
   };
@@ -157,10 +157,10 @@ namespace ncc::parse {
   };
 
   class npar_pack OpaqueTy : public Type {
-    core::str_alias m_name;
+    string m_name;
 
   public:
-    OpaqueTy(core::str_alias name) : Type(QAST_OPAQUE), m_name(name) {}
+    OpaqueTy(string name) : Type(QAST_OPAQUE), m_name(name) {}
 
     constexpr auto get_name() const { return m_name.get(); }
   };

@@ -76,9 +76,7 @@ namespace ncc::parse {
     return false;
   }
 
-  static inline ncc::core::str_alias SaveString(std::string_view str) {
-    return str;
-  }
+  static inline ncc::string SaveString(std::string_view str) { return str; }
 };  // namespace ncc::parse
 
 namespace ncc::parse {
@@ -104,35 +102,34 @@ namespace ncc::parse {
 
   using ExpressionList = std::vector<RefNode<Expr>, Arena<RefNode<Expr>>>;
   using TupleTyItems = std::vector<RefNode<Type>, Arena<RefNode<Type>>>;
-  using CallArg = std::pair<ncc::core::str_alias, RefNode<Expr>>;
+  using CallArg = std::pair<ncc::string, RefNode<Expr>>;
   using CallArgs = std::vector<CallArg, Arena<CallArg>>;
-  using FStringItem = std::variant<ncc::core::str_alias, RefNode<Expr>>;
+  using FStringItem = std::variant<string, RefNode<Expr>>;
   using FStringItems = std::vector<FStringItem, Arena<FStringItem>>;
 
   using TemplateParameter =
-      std::tuple<ncc::core::str_alias, RefNode<Type>, RefNode<Expr>>;
+      std::tuple<ncc::string, RefNode<Type>, RefNode<Expr>>;
   using TemplateParameters =
       std::vector<TemplateParameter, Arena<TemplateParameter>>;
 
   using BlockItems = std::vector<RefNode<Stmt>, Arena<RefNode<Stmt>>>;
   using ScopeDeps =
-      std::set<ncc::core::str_alias, std::less<ncc::core::str_alias>,
-               Arena<ncc::core::str_alias>>;
+      std::set<ncc::string, std::less<ncc::string>, Arena<ncc::string>>;
 
   using SwitchCases = std::vector<RefNode<CaseStmt>, Arena<RefNode<CaseStmt>>>;
-  using EnumItem = std::pair<ncc::core::str_alias, RefNode<Expr>>;
+  using EnumItem = std::pair<ncc::string, RefNode<Expr>>;
   using EnumDefItems = std::vector<EnumItem, Arena<EnumItem>>;
 
   class StructField {
-    ncc::core::str_alias m_name;
+    ncc::string m_name;
     std::optional<RefNode<Expr>> m_value;
     RefNode<Type> m_type;
     Vis m_vis;
     bool m_is_static;
 
   public:
-    StructField(Vis vis, bool is_static, ncc::core::str_alias name,
-                RefNode<Type> type, std::optional<RefNode<Expr>> value)
+    StructField(Vis vis, bool is_static, ncc::string name, RefNode<Type> type,
+                std::optional<RefNode<Expr>> value)
         : m_name(std::move(name)),
           m_value(std::move(value)),
           m_type(type),
@@ -157,19 +154,17 @@ namespace ncc::parse {
   using StructDefMethods = std::vector<StructFunction, Arena<StructFunction>>;
   using StructDefStaticMethods =
       std::vector<StructFunction, Arena<StructFunction>>;
-  using StructDefNames =
-      std::vector<ncc::core::str_alias, Arena<ncc::core::str_alias>>;
+  using StructDefNames = std::vector<ncc::string, Arena<ncc::string>>;
 
-  using FuncParam =
-      std::tuple<ncc::core::str_alias, RefNode<Type>, RefNode<Expr>>;
+  using FuncParam = std::tuple<ncc::string, RefNode<Type>, RefNode<Expr>>;
   struct FuncParams {
     std::vector<FuncParam, Arena<FuncParam>> params;
     bool is_variadic;
 
     FuncParams() : is_variadic(false) {}
   };
-  using FnCaptures = std::vector<std::pair<ncc::core::str_alias, bool>,
-                                 Arena<std::pair<ncc::core::str_alias, bool>>>;
+  using FnCaptures = std::vector<std::pair<ncc::string, bool>,
+                                 Arena<std::pair<ncc::string, bool>>>;
 }  // namespace ncc::parse
 
 #endif

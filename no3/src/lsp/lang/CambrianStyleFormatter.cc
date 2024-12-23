@@ -3,14 +3,14 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTCommon.hh>
 #include <sstream>
 #include <unordered_set>
 
-#include "nitrate-parser/ASTCommon.hh"
-
 using namespace lsp::fmt;
+
+using namespace ncc;
 using namespace ncc::parse;
-using namespace ncc::core;
 using namespace ncc::lex;
 
 CambrianFormatter::LineStreamWritter&
@@ -898,8 +898,8 @@ void CambrianFormatter::visit(Slice const& n) {
 void CambrianFormatter::visit(FString const& n) {
   line << "f\"";
   for (let part : n.get_items()) {
-    if (std::holds_alternative<str_alias>(part)) {
-      escape_string_literal(*std::get<str_alias>(part), false);
+    if (std::holds_alternative<ncc::string>(part)) {
+      escape_string_literal(*std::get<ncc::string>(part), false);
     } else {
       line << "{";
       std::get<RefNode<Expr>>(part)->accept(*this);

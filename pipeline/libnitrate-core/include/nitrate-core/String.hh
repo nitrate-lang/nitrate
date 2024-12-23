@@ -128,4 +128,8 @@ namespace ncc::core {
   static inline str_alias intern(const char *str) { return str_alias(str); }
 }  // namespace ncc::core
 
+namespace ncc {
+  using string = core::str_alias;
+}
+
 #endif

@@ -108,21 +108,19 @@ namespace ncc::parse {
   };
 
   class npar_pack ConstInt final : public Expr {
-    core::str_alias m_value;
+    string m_value;
 
   public:
-    constexpr ConstInt(core::str_alias value)
-        : Expr(QAST_INT), m_value(value) {}
+    constexpr ConstInt(string value) : Expr(QAST_INT), m_value(value) {}
 
     constexpr auto get_value() const { return m_value.get(); }
   };
 
   class npar_pack ConstFloat final : public Expr {
-    core::str_alias m_value;
+    string m_value;
 
   public:
-    constexpr ConstFloat(core::str_alias value)
-        : Expr(QAST_FLOAT), m_value(value) {}
+    constexpr ConstFloat(string value) : Expr(QAST_FLOAT), m_value(value) {}
 
     constexpr auto get_value() const { return m_value.get(); }
   };
@@ -137,11 +135,10 @@ namespace ncc::parse {
   };
 
   class npar_pack ConstString final : public Expr {
-    core::str_alias m_value;
+    string m_value;
 
   public:
-    constexpr ConstString(core::str_alias value)
-        : Expr(QAST_STRING), m_value(value) {}
+    constexpr ConstString(string value) : Expr(QAST_STRING), m_value(value) {}
 
     constexpr auto get_value() const { return m_value.get(); }
   };
@@ -237,7 +234,7 @@ namespace ncc::parse {
   };
 
   class FString final : public Expr {
-    std::span<std::variant<core::str_alias, RefNode<Expr>>> m_items;
+    std::span<std::variant<string, RefNode<Expr>>> m_items;
 
   public:
     FString(FStringItems items) : Expr(QAST_FSTRING), m_items(items) {}
@@ -246,10 +243,10 @@ namespace ncc::parse {
   };
 
   class npar_pack Ident final : public Expr {
-    core::str_alias m_name;
+    string m_name;
 
   public:
-    constexpr Ident(core::str_alias name) : Expr(QAST_IDENT), m_name(name) {}
+    constexpr Ident(string name) : Expr(QAST_IDENT), m_name(name) {}
 
     constexpr auto get_name() const { return m_name.get(); }
   };

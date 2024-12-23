@@ -40,6 +40,7 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <queue>
 
+using namespace ncc;
 using namespace ncc::parse;
 
 class IterVisitor : public ASTVisitor {
@@ -195,7 +196,7 @@ class IterVisitor : public ASTVisitor {
     std::for_each(n.get_items().begin(), n.get_items().end(), [&](let arg) {
       if (std::holds_alternative<RefNode<Expr>>(arg)) {
         add(std::get<RefNode<Expr>>(arg));
-      } else if (std::holds_alternative<ncc::core::str_alias>(arg)) {
+      } else if (std::holds_alternative<string>(arg)) {
       } else {
         qcore_implement();
       }

@@ -56,6 +56,8 @@
 #include <unordered_map>
 
 using namespace nr;
+
+using namespace ncc;
 using namespace ncc::core;
 using namespace ncc::lex;
 
@@ -849,8 +851,8 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   if (n->get_items().size() == 1) {
     auto val = n->get_items().front();
 
-    if (std::holds_alternative<str_alias>(val)) {
-      return b.createStringDataArray(*std::get<str_alias>(val));
+    if (std::holds_alternative<string>(val)) {
+      return b.createStringDataArray(*std::get<string>(val));
     } else if (std::holds_alternative<ncc::parse::RefNode<ncc::parse::Expr>>(
                    val)) {
       auto expr =
@@ -873,8 +875,8 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   Expr *concated = b.createStringDataArray("");
 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    if (std::holds_alternative<str_alias>(*it)) {
-      auto val = *std::get<str_alias>(*it);
+    if (std::holds_alternative<string>(*it)) {
+      auto val = *std::get<string>(*it);
 
       concated =
           create<BinExpr>(concated, b.createStringDataArray(val), Op::Plus);

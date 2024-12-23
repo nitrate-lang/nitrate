@@ -178,13 +178,13 @@ namespace ncc::lex {
 
   class Location {
     uint32_t m_offset = 0, m_line = 0, m_column = 0;
-    core::str_alias m_filename;
+    string m_filename;
 
   public:
     constexpr Location() {}
 
     constexpr Location(uint32_t offset, uint32_t line, uint32_t column,
-                       core::str_alias filename)
+                       string filename)
         : m_offset(offset),
           m_line(line),
           m_column(column),
@@ -227,12 +227,12 @@ namespace ncc::lex {
     Punctor punc;
     Operator op;
     Keyword key;
-    ncc::core::str_alias str;
+    string str;
 
     constexpr TokenData(Punctor punc) : punc(punc) {}
     constexpr TokenData(Operator op) : op(op) {}
     constexpr TokenData(Keyword key) : key(key) {}
-    constexpr TokenData(ncc::core::str_alias str) : str(str) {}
+    constexpr TokenData(string str) : str(str) {}
   } __attribute__((packed));
 
   std::string_view to_string(TokenType, TokenData);
