@@ -173,12 +173,12 @@ enum class FrameType : uint8_t {
 
 struct Frame {
   Expr *base;
-  uint32_t start_pos;
+  LocationID start_pos;
   short minPrecedence;
   FrameType type;
   Operator op;
 
-  Frame(Expr *base, uint32_t start_pos, short minPrecedence, FrameType type,
+  Frame(Expr *base, LocationID start_pos, short minPrecedence, FrameType type,
         Operator op)
       : base(base),
         start_pos(start_pos),
@@ -233,7 +233,7 @@ Expr *Parser::recurse_expr(const std::set<Token> &terminators) {
   /****************************************
    * Parse pre-unary operators
    ****************************************/
-  std::stack<std::pair<Operator, uint32_t>> PreUnaryOps;
+  std::stack<std::pair<Operator, LocationID>> PreUnaryOps;
   while (let Tok = next_if(qOper)) {
     PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
   }

@@ -380,7 +380,7 @@ public:
 
   static FORCE_INLINE Token ParseIdentifier(Tokenizer &L, char c,
                                             std::string &buf,
-                                            uint32_t start_pos) {
+                                            LocationID start_pos) {
     { /* Read in what is hopefully an identifier */
       int colon_state = 0;
 
@@ -449,7 +449,7 @@ public:
   };
 
   static FORCE_INLINE Token ParseString(Tokenizer &L, char c, std::string &buf,
-                                        uint32_t start_pos) {
+                                        LocationID start_pos) {
     while (true) {
       while (c != buf[0]) {
         /* Normal character */
@@ -635,7 +635,7 @@ public:
   }
 
   static FORCE_INLINE Token ParseInteger(Tokenizer &L, char c, std::string &buf,
-                                         uint32_t start_pos) {
+                                         LocationID start_pos) {
     NumType type = NumType::Decimal;
 
     /* [0x, 0X, 0d, 0D, 0b, 0B, 0o, 0O] */
@@ -824,7 +824,7 @@ public:
 
   static FORCE_INLINE Token ParseCommentSingleLine(Tokenizer &L, char c,
                                                    std::string &buf,
-                                                   uint32_t start_pos) {
+                                                   LocationID start_pos) {
     while (c != '\n') {
       buf += c;
       c = nextc(L);
@@ -835,7 +835,7 @@ public:
 
   static FORCE_INLINE Token ParseCommentMultiLine(Tokenizer &L, char c,
                                                   std::string &buf,
-                                                  uint32_t start_pos) {
+                                                  LocationID start_pos) {
     size_t level = 1;
 
     while (true) {
@@ -874,7 +874,7 @@ public:
 
   static FORCE_INLINE Token ParseSingleLineMacro(Tokenizer &L, char c,
                                                  std::string &buf,
-                                                 uint32_t start_pos) {
+                                                 LocationID start_pos) {
     /*
       Format:
           ... @macro_name  ...
@@ -892,7 +892,7 @@ public:
 
   static FORCE_INLINE Token ParseBlockMacro(Tokenizer &L, char c,
                                             std::string &buf,
-                                            uint32_t start_pos) {
+                                            LocationID start_pos) {
     uint32_t state_parens = 1;
 
     while (true) {
@@ -913,7 +913,7 @@ public:
   }
 
   static FORCE_INLINE bool ParseOther(Tokenizer &L, char c, std::string &buf,
-                                      uint32_t start_pos, LexState &state,
+                                      LocationID start_pos, LexState &state,
                                       Token &token) {
     /* Check if it's a punctor */
     if (buf.size() == 1) {
@@ -987,7 +987,7 @@ CPP_EXPORT Token Tokenizer::GetNext() {
    * */
 
   std::string buf;
-  uint32_t start_pos = 0;
+  LocationID start_pos = 0;
   LexState state = LexState::Start;
   char c = 0;
 
@@ -1007,7 +1007,7 @@ CPP_EXPORT Token Tokenizer::GetNext() {
           continue;
         }
 
-        start_pos = GetCurrentOffset() - 1;
+        start_pos = InternLocation(Location(m_offset, m_line, m_column, ""));
 
         if (std::isalpha(c) || c == '_') {
           /* Identifier or keyword or operator */

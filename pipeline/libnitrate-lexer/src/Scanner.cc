@@ -349,12 +349,6 @@ public:
       }
     }
   }
-
-  static FORCE_INLINE void SyncState(IScanner &L, Token tok) {
-    L.m_current = tok;
-
-    // L.m_line_cache[tok.get_start()] = {L.m_line, L.m_column};
-  }
 };
 
 CPP_EXPORT Token IScanner::Next() {
@@ -370,7 +364,7 @@ CPP_EXPORT Token IScanner::Next() {
       continue;
     }
 
-    StaticImpl::SyncState(*this, tok);
+    m_current = tok;
     m_last = m_current;
 
     return tok;
@@ -383,7 +377,7 @@ CPP_EXPORT Token IScanner::Peek() {
   }
 
   Token tok = m_ready.front();
-  StaticImpl::SyncState(*this, tok);
+  m_current = tok;
 
   return tok;
 }
@@ -394,64 +388,32 @@ CPP_EXPORT void IScanner::Undo() {
   }
 
   m_ready.push_front(m_last.value());
-  StaticImpl::SyncState(*this, m_last.value());
+  m_current = m_last;
 }
 
-CPP_EXPORT std::string_view IScanner::Filename(Token t) {
-  /// TODO:
-  return "?";
-}
-
-CPP_EXPORT uint32_t IScanner::StartLine(Token t) {
-  auto it = m_line_cache.find(t.get_start());
-  if (it != m_line_cache.end()) {
-    return it->second.first;
+CPP_EXPORT Location LocationID::Get(IScanner &L) const {
+  try {
+    return L.m_location_interned.at(m_id);
+  } catch (std::out_of_range &) {
+    return Location::EndOfFile();
   }
+}
 
+CPP_EXPORT LocationID IScanner::InternLocation(Location loc) {
+  m_location_interned.emplace(m_location_id, loc);
+  return m_location_id++;
+}
+
+CPP_EXPORT Location IScanner::Start(Token t) {
+  return t.get_start().Get(*this);
+}
+
+CPP_EXPORT Location IScanner::End(Token t) {
   /// TODO: Implement this
-  return QLEX_EOFF;
+  return Location::EndOfFile();
 }
 
-CPP_EXPORT uint32_t IScanner::StartColumn(Token t) {
-  auto it = m_line_cache.find(t.get_start());
-  if (it != m_line_cache.end()) {
-    return it->second.second;
-  }
-
-  /// TODO: Implement this
-  return QLEX_EOFF;
-}
-
-CPP_EXPORT uint32_t IScanner::EndLine(Token t) {
-  /// TODO:
-  return QLEX_EOFF;
-}
-
-CPP_EXPORT uint32_t IScanner::EndColumn(Token t) {
-  /// TODO:
-  return QLEX_EOFF;
-}
-
-CPP_EXPORT uint32_t IScanner::GetRow(uint32_t off) {
-  auto it = m_line_cache.find(off);
-  if (it != m_line_cache.end()) {
-    return it->second.first;
-  }
-
-  /// TODO: Implement this
-  qcore_print(QCORE_WARN, "GetRow: not implemented");
-
-  return QLEX_EOFF;
-}
-
-CPP_EXPORT uint32_t IScanner::GetColumn(uint32_t off) {
-  auto it = m_line_cache.find(off);
-  if (it != m_line_cache.end()) {
-    return it->second.second;
-  }
-
-  /// TODO: Implement this
-  qcore_print(QCORE_WARN, "GetColumn: not implemented");
-
-  return QLEX_EOFF;
-}
+CPP_EXPORT uint32_t IScanner::StartLine(Token t) { return Start(t).GetRow(); }
+CPP_EXPORT uint32_t IScanner::StartColumn(Token t) { return Start(t).GetCol(); }
+CPP_EXPORT uint32_t IScanner::EndLine(Token t) { return End(t).GetRow(); }
+CPP_EXPORT uint32_t IScanner::EndColumn(Token t) { return End(t).GetCol(); }

@@ -121,38 +121,43 @@ static std::optional<ColorInformation> parse_color_function(const Call* N,
     }
   }
 
-  let start_offset = N->get_pos();
+  /// TODO: Fix source location tracking
+  (void)hslaToRgba;
 
-  let start_line = L.GetRow(std::get<0>(start_offset)),
-      start_column = L.GetColumn(std::get<0>(start_offset));
+  return std::nullopt;
 
-  let end_line = L.GetRow(std::get<1>(start_offset)),
-      end_column = L.GetColumn(std::get<1>(start_offset));
+  // let start_offset = N->get_();
 
-  if (mode == ColorMode::RGBA) {
-    return ColorInformation{
-        .range = {.start = {.line = start_line, .character = start_column},
-                  .end = {.line = end_line, .character = end_column}},
-        .red = values[0],
-        .green = values[1],
-        .blue = values[2],
-        .alpha = Argc == 4 ? values[3] : 1.0f,
-    };
-  } else if (mode == ColorMode::HSLA) {
-    let rgba = hslaToRgba(values[0], values[1], values[2],
-                          Argc == 4 ? values[3] : 1.0f);
+  // let start_line = L.GetRow(std::get<0>(start_offset)),
+  //     start_column = L.GetCol(std::get<0>(start_offset));
 
-    return ColorInformation{
-        .range = {.start = {.line = start_line, .character = start_column},
-                  .end = {.line = end_line, .character = end_column}},
-        .red = rgba.r,
-        .green = rgba.g,
-        .blue = rgba.b,
-        .alpha = rgba.a,
-    };
-  } else {
-    return std::nullopt;
-  }
+  // let end_line = L.GetRow(std::get<1>(start_offset)),
+  //     end_column = L.GetCol(std::get<1>(start_offset));
+
+  // if (mode == ColorMode::RGBA) {
+  //   return ColorInformation{
+  //       .range = {.start = {.line = start_line, .character = start_column},
+  //                 .end = {.line = end_line, .character = end_column}},
+  //       .red = values[0],
+  //       .green = values[1],
+  //       .blue = values[2],
+  //       .alpha = Argc == 4 ? values[3] : 1.0f,
+  //   };
+  // } else if (mode == ColorMode::HSLA) {
+  //   let rgba = hslaToRgba(values[0], values[1], values[2],
+  //                         Argc == 4 ? values[3] : 1.0f);
+
+  //   return ColorInformation{
+  //       .range = {.start = {.line = start_line, .character = start_column},
+  //                 .end = {.line = end_line, .character = end_column}},
+  //       .red = rgba.r,
+  //       .green = rgba.g,
+  //       .blue = rgba.b,
+  //       .alpha = rgba.a,
+  //   };
+  // } else {
+  //   return std::nullopt;
+  // }
 }
 
 void do_documentColor(const lsp::RequestMessage& req,

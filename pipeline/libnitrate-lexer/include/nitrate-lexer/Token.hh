@@ -174,17 +174,53 @@ namespace ncc::lex {
   constexpr size_t QLEX_EOFF = UINT32_MAX;
   constexpr size_t QLEX_NOFILE = 16777215;
 
+  class IScanner;
+
   class Location {
-    uint32_t m_offset : 32 = 0;
-    uint32_t m_fileid : 24 = 0;
+    uint32_t m_offset = 0, m_line = 0, m_column = 0;
+    core::str_alias m_filename;
 
   public:
-    constexpr Location(uint32_t offset = QLEX_EOFF,
-                       uint32_t fileid = QLEX_NOFILE)
-        : m_offset(offset), m_fileid(fileid) {}
+    constexpr Location() {}
+
+    constexpr Location(uint32_t offset, uint32_t line, uint32_t column,
+                       core::str_alias filename)
+        : m_offset(offset),
+          m_line(line),
+          m_column(column),
+          m_filename(filename) {}
+
+    static constexpr Location EndOfFile() {
+      return Location(QLEX_EOFF, QLEX_EOFF, QLEX_EOFF, "");
+    }
 
     constexpr uint32_t GetOffset() const { return m_offset; }
-    constexpr uint32_t GetFileId() const { return m_fileid; }
+    constexpr uint32_t GetRow() const { return m_line; }
+    constexpr uint32_t GetCol() const { return m_column; }
+    constexpr std::string_view GetFilename() const { return m_filename.get(); }
+  } __attribute__((packed));
+
+  class LocationID {
+  public:
+    using Counter = uint32_t;
+
+    constexpr LocationID(Counter id = 0) : m_id(id) {}
+
+    static constexpr LocationID EndOfFile() { return LocationID(QLEX_EOFF); }
+
+    Location Get(IScanner &L) const;
+    constexpr Counter GetId() const { return m_id; }
+
+    constexpr bool operator==(const LocationID &rhs) const {
+      return m_id == rhs.m_id;
+    }
+
+    constexpr bool operator<(const LocationID &rhs) const {
+      return m_id < rhs.m_id;
+    }
+
+  private:
+    Counter m_id = 0;
   } __attribute__((packed));
 
   union TokenData {
@@ -201,19 +237,20 @@ namespace ncc::lex {
 
   std::string_view to_string(TokenType, TokenData);
 
-  template <class LocationTracker>
   class TokenBase {
-    LocationTracker m_start = 0;
-    uint64_t pad : 4 = 0;
+    LocationID m_location_id = 0;
     TokenType m_type : 4;
+    uint64_t pad : 4 = 0;
 
   public:
     TokenData v;
 
     template <class T = Operator>
     constexpr TokenBase(TokenType ty = qEofF, T val = qOpPlus,
-                        LocationTracker _start = LocationTracker())
-        : m_start(_start), m_type(ty), v{val} {}
+                        LocationID _start = LocationID())
+        : m_location_id(_start), m_type(ty), v{val} {
+      (void)pad;
+    }
 
     constexpr static TokenBase EndOfFile() { return TokenBase(); }
 
@@ -258,7 +295,7 @@ namespace ncc::lex {
     Operator as_op() const { return v.op; }
     Punctor as_punc() const { return v.punc; }
 
-    LocationTracker get_start() const { return m_start; }
+    LocationID get_start() const { return m_location_id; }
 
     TokenType get_type() const { return m_type; }
 
@@ -289,9 +326,19 @@ namespace ncc::lex {
     }
   } __attribute__((packed));
 
-  using Token = TokenBase<uint32_t>;
+  using Token = TokenBase;
 
   constexpr auto QLEX_TOK_SIZE = sizeof(Token);
 }  // namespace ncc::lex
+
+namespace std {
+  template <>
+  struct hash<ncc::lex::LocationID> {
+    size_t operator()(const ncc::lex::LocationID &loc) const {
+      return loc.GetId();
+    }
+  };
+
+}  // namespace std
 
 #endif  // __NITRATE_LEXER_TOKEN_H__

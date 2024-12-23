@@ -415,9 +415,13 @@ CPP_EXPORT bool ASTRoot::check() const {
 
 std::string ncc::parse::mint_clang16_message(ncc::lex::IScanner &rd,
                                              const DiagMessage &msg) {
+  let start = msg.tok.get_start().Get(rd);
+
+  let filename = start.GetFilename();
+  let line = start.GetRow(), col = start.GetCol();
+
   std::stringstream ss;
-  ss << "\x1b[37;1m" << rd.Filename(msg.tok) << ":";
-  uint32_t line = rd.StartLine(msg.tok), col = rd.StartColumn(msg.tok);
+  ss << "\x1b[37;1m" << filename << ":";
 
   if (line != QLEX_EOFF) {
     ss << line << ":";

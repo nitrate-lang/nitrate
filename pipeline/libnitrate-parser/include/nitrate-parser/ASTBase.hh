@@ -48,14 +48,12 @@ namespace ncc::parse {
   private:
     npar_ty_t m_node_type : 7;
     bool m_mock : 1;
-    uint32_t m_fileid : 24;
-    uint32_t m_offset : 32;
+    lex::LocationID m_offset;
 
   public:
     constexpr Base(npar_ty_t ty, bool mock = false,
-                   uint32_t fileid = ncc::lex::QLEX_NOFILE,
-                   uint32_t offset = ncc::lex::QLEX_EOFF)
-        : m_node_type(ty), m_mock(mock), m_fileid(fileid), m_offset(offset){};
+                   lex::LocationID offset = lex::LocationID::EndOfFile())
+        : m_node_type(ty), m_mock(mock), m_offset(offset){};
 
     constexpr void accept(ASTVisitor &v) const {
       using namespace ncc::parse;
@@ -570,18 +568,25 @@ namespace ncc::parse {
     std::ostream &dump(std::ostream &os = std::cerr,
                        bool isForDebug = false) const;
 
-    constexpr void set_offset(uint32_t pos) { m_offset = pos; }
+    constexpr void set_offset(lex::LocationID pos) { m_offset = pos; }
 
-    constexpr uint32_t get_offset() const { return m_offset; }
-    constexpr uint32_t get_fileid() const { return m_fileid; }
+    constexpr uint32_t get_offset() const {
+      /// TODO: Implement this
+      return lex::QLEX_EOFF;
+    }
+    constexpr uint32_t get_fileid() const {
+      /// TODO: Implement this
+      return lex::QLEX_NOFILE;
+    }
     constexpr bool is_mock() const { return m_mock; }
 
     constexpr std::tuple<uint32_t, uint32_t> get_pos() const {
-      return {m_offset, m_fileid};
+      /// TODO: Implement this
+      return {lex::QLEX_EOFF, lex::QLEX_NOFILE};
     }
   } __attribute__((packed));
 
-  static_assert(sizeof(Base) == 8);
+  static_assert(sizeof(Base) == 5);
 
   ///======================================================================
 

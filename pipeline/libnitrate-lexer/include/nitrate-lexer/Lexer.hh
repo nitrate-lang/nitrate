@@ -244,30 +244,23 @@ namespace ncc::lex {
   struct ScannerEOF final {};
 
   class IScanner {
+    friend class LocationID;
+
     static constexpr size_t TOKEN_BUFFER_SIZE = 256;
 
     std::deque<Token> m_ready;
-    std::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> m_line_cache;
+    std::unordered_map<LocationID, Location> m_location_interned;
     std::optional<Token> m_current, m_last;
+    LocationID::Counter m_location_id = 0;
     bool m_skip_comments = false, m_ebit = false;
 
     class StaticImpl;
     friend class StaticImpl;
 
   protected:
-    std::string_view m_current_filename = "?";
-    uint32_t m_line{}, m_column{}, m_offset{};
-
-    void UpdateLocation(uint32_t line, uint32_t column, uint32_t offset,
-                        std::string_view filename) {
-      m_line = line;
-      m_column = column;
-      m_offset = offset;
-      m_current_filename = filename;
-    }
+    LocationID InternLocation(Location loc);
 
     void SetFailBit() { m_ebit = true; }
-
     virtual Token GetNext() = 0;
 
   public:
@@ -280,26 +273,19 @@ namespace ncc::lex {
 
     std::optional<Token> Current() { return m_current; }
 
-    constexpr std::string_view GetCurrentFilename() const {
-      return m_current_filename;
-    }
-    constexpr uint32_t GetCurrentLine() const { return m_line; }
-    constexpr uint32_t GetCurrentColumn() const { return m_column; }
-    constexpr uint32_t GetCurrentOffset() const { return m_offset; }
     constexpr bool IsEof() const {
       return m_current.has_value() && m_current->is(qEofF);
     }
 
     constexpr bool HasError() const { return m_ebit; }
 
-    std::string_view Filename(Token t);
+    Location Start(Token t);
+    Location End(Token t);
+
     uint32_t StartLine(Token t);
     uint32_t StartColumn(Token t);
     uint32_t EndLine(Token t);
     uint32_t EndColumn(Token t);
-
-    uint32_t GetRow(uint32_t off);
-    uint32_t GetColumn(uint32_t off);
 
     virtual void SkipCommentsState(bool skip) { m_skip_comments = skip; }
     bool GetSkipCommentsState() const { return m_skip_comments; }
@@ -307,14 +293,16 @@ namespace ncc::lex {
 
   class CPP_EXPORT Tokenizer final : public IScanner {
     static constexpr size_t GETC_BUFFER_SIZE = 256;
+    uint32_t m_offset = 0, m_line = 0, m_column = 0;
 
     std::istream &m_file;
-    std::shared_ptr<core::Environment> m_env;
     std::deque<char> m_pushback;
 
     std::array<char, GETC_BUFFER_SIZE> m_getc_buffer;
     size_t m_getc_buffer_pos = GETC_BUFFER_SIZE;
     bool m_eof = false;
+
+    std::shared_ptr<core::Environment> m_env;
 
     class StaticImpl;
     friend class StaticImpl;
