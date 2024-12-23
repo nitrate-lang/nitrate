@@ -37,6 +37,7 @@
 #include <boost/bimap.hpp>
 #include <cstdint>
 #include <deque>
+#include <map>
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Macro.hh>
@@ -249,22 +250,27 @@ namespace ncc::lex {
     static constexpr size_t TOKEN_BUFFER_SIZE = 256;
 
     std::deque<Token> m_ready;
-    std::unordered_map<LocationID, Location> m_location_interned;
     std::optional<Token> m_current, m_last;
-    LocationID::Counter m_location_id = 0;
     bool m_skip_comments = false, m_ebit = false;
+
+    std::unordered_map<LocationID, Location> m_location_interned;
+    LocationID::Counter m_location_id = 0;
+    std::vector<std::pair<LocationID, Location>> m_location_interned_buffer;
 
     class StaticImpl;
     friend class StaticImpl;
 
   protected:
-    LocationID InternLocation(Location loc);
+    inline LocationID InternLocation(Location loc) {
+      m_location_interned_buffer.push_back({m_location_id, loc});
+      return m_location_id++;
+    }
 
     void SetFailBit() { m_ebit = true; }
     virtual Token GetNext() = 0;
 
   public:
-    IScanner() = default;
+    IScanner() { m_location_interned_buffer.reserve(0xffff); }
     virtual ~IScanner() = default;
 
     Token Next();

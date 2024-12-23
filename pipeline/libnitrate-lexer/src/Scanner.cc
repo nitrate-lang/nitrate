@@ -349,6 +349,13 @@ public:
       }
     }
   }
+
+  static FORCE_INLINE void FlushInternedBuffering(IScanner &L) {
+    L.m_location_interned.insert(L.m_location_interned_buffer.begin(),
+                                 L.m_location_interned_buffer.end());
+
+    L.m_location_interned_buffer.clear();
+  }
 };
 
 CPP_EXPORT Token IScanner::Next() {
@@ -392,23 +399,21 @@ CPP_EXPORT void IScanner::Undo() {
 }
 
 CPP_EXPORT Location LocationID::Get(IScanner &L) const {
-  try {
-    return L.m_location_interned.at(m_id);
-  } catch (std::out_of_range &) {
-    return Location::EndOfFile();
-  }
-}
+  IScanner::StaticImpl::FlushInternedBuffering(L);
 
-CPP_EXPORT LocationID IScanner::InternLocation(Location loc) {
-  m_location_interned.emplace(m_location_id, loc);
-  return m_location_id++;
+  return L.m_location_interned.at(m_id);
 }
 
 CPP_EXPORT Location IScanner::Start(Token t) {
+  IScanner::StaticImpl::FlushInternedBuffering(*this);
+
   return t.get_start().Get(*this);
 }
 
 CPP_EXPORT Location IScanner::End(Token t) {
+  IScanner::StaticImpl::FlushInternedBuffering(*this);
+  (void)t;
+
   /// TODO: Implement this
   return Location::EndOfFile();
 }
