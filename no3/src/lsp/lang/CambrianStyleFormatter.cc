@@ -902,7 +902,7 @@ void CambrianFormatter::visit(FString const& n) {
       escape_string_literal(*std::get<str_alias>(part), false);
     } else {
       line << "{";
-      std::get<Expr*>(part)->accept(*this);
+      std::get<RefNode<Expr>>(part)->accept(*this);
       line << "}";
     }
   }

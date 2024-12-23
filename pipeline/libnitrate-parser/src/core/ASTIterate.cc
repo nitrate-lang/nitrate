@@ -46,18 +46,12 @@ class IterVisitor : public ASTVisitor {
   std::vector<Base**>& sub;
 
   template <class T>
-  void add(T const& n) {
-    using NoPtr = std::remove_pointer_t<T>;
-    static_assert(std::is_base_of_v<Base, NoPtr>,
-                  "T must be derived from Base");
-
+  void add(RefNode<T> const& n) {
     if (n == nullptr) {
       return;
     }
 
-    // Hopefully this isn't UB
-    let ptr = reinterpret_cast<const Base* const*>(&n);
-    sub.push_back(const_cast<Base**>(ptr));
+    sub.push_back(const_cast<Base**>(&n->as_base()));
   }
 
   void add_typesuffix(Type const& n) {
@@ -199,8 +193,8 @@ class IterVisitor : public ASTVisitor {
 
   void visit(FString const& n) override {
     std::for_each(n.get_items().begin(), n.get_items().end(), [&](let arg) {
-      if (std::holds_alternative<Expr*>(arg)) {
-        add(std::get<Expr*>(arg));
+      if (std::holds_alternative<RefNode<Expr>>(arg)) {
+        add(std::get<RefNode<Expr>>(arg));
       } else if (std::holds_alternative<ncc::core::str_alias>(arg)) {
       } else {
         qcore_implement();

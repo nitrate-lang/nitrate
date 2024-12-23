@@ -975,7 +975,7 @@ void AST_Writer::visit(FString const& n) {
 
         end_obj();
       } else {
-        std::get<Expr*>(item)->accept(*this);
+        std::get<RefNode<Expr>>(item)->accept(*this);
       }
     });
     end_arr();

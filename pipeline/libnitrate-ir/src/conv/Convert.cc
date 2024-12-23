@@ -851,8 +851,10 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
 
     if (std::holds_alternative<str_alias>(val)) {
       return b.createStringDataArray(*std::get<str_alias>(val));
-    } else if (std::holds_alternative<ncc::parse::Expr *>(val)) {
-      auto expr = next_one(std::get<ncc::parse::Expr *>(val));
+    } else if (std::holds_alternative<ncc::parse::RefNode<ncc::parse::Expr>>(
+                   val)) {
+      auto expr =
+          next_one(std::get<ncc::parse::RefNode<ncc::parse::Expr>>(val));
 
       if (!expr.has_value()) {
         G->report(
@@ -876,8 +878,9 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
 
       concated =
           create<BinExpr>(concated, b.createStringDataArray(val), Op::Plus);
-    } else if (std::holds_alternative<ncc::parse::Expr *>(*it)) {
-      auto val = std::get<ncc::parse::Expr *>(*it);
+    } else if (std::holds_alternative<ncc::parse::RefNode<ncc::parse::Expr>>(
+                   *it)) {
+      auto val = std::get<ncc::parse::RefNode<ncc::parse::Expr>>(*it);
       auto expr = next_one(val);
 
       if (!expr.has_value()) {

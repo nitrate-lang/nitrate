@@ -37,21 +37,18 @@
 #include <nitrate-parser/ASTBase.hh>
 #include <span>
 
-#include "nitrate-core/String.hh"
-#include "nitrate-parser/ASTData.hh"
-
 namespace ncc::parse {
   class npar_pack ExprStmt final : public Stmt {
-    Expr *m_expr;
+    RefNode<Expr> m_expr;
 
   public:
-    constexpr ExprStmt(Expr *expr) : Stmt(QAST_ESTMT), m_expr(expr) {}
+    constexpr ExprStmt(RefNode<Expr> expr) : Stmt(QAST_ESTMT), m_expr(expr) {}
 
     constexpr let get_expr() const { return m_expr; }
   };
 
   class Block final : public Stmt {
-    std::span<Stmt *> m_items;
+    std::span<RefNode<Stmt>> m_items;
     SafetyMode m_safety;
 
   public:
@@ -63,14 +60,14 @@ namespace ncc::parse {
   };
 
   class VarDecl final : public Stmt {
-    std::span<Expr *> m_attributes;
-    ncc::core::str_alias m_name;
-    Type *m_type;
-    Expr *m_value;
+    std::span<RefNode<Expr>> m_attributes;
+    core::str_alias m_name;
+    RefNode<Type> m_type;
+    RefNode<Expr> m_value;
     VarDeclType m_decl_type;
 
   public:
-    VarDecl(ncc::core::str_alias name, Type *type, Expr *value,
+    VarDecl(core::str_alias name, RefNode<Type> type, RefNode<Expr> value,
             VarDeclType decl_type, ExpressionList attributes)
         : Stmt(QAST_VAR),
           m_attributes(attributes),
@@ -88,11 +85,11 @@ namespace ncc::parse {
   };
 
   class InlineAsm final : public Stmt {
-    ncc::core::str_alias m_code;
-    std::span<Expr *> m_args;
+    core::str_alias m_code;
+    std::span<RefNode<Expr>> m_args;
 
   public:
-    InlineAsm(ncc::core::str_alias code, ExpressionList args)
+    InlineAsm(core::str_alias code, ExpressionList args)
         : Stmt(QAST_INLINE_ASM), m_code(code), m_args(args) {}
 
     constexpr auto get_code() const { return m_code.get(); }
@@ -101,11 +98,12 @@ namespace ncc::parse {
   };
 
   class npar_pack IfStmt final : public Stmt {
-    Expr *m_cond;
-    Stmt *m_then, *m_else;
+    RefNode<Expr> m_cond;
+    RefNode<Stmt> m_then, m_else;
 
   public:
-    constexpr IfStmt(Expr *cond, Stmt *then, Stmt *else_)
+    constexpr IfStmt(RefNode<Expr> cond, RefNode<Stmt> then,
+                     RefNode<Stmt> else_)
         : Stmt(QAST_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
     constexpr let get_cond() const { return m_cond; }
@@ -114,11 +112,11 @@ namespace ncc::parse {
   };
 
   class WhileStmt final : public Stmt {
-    Expr *m_cond;
-    Stmt *m_body;
+    RefNode<Expr> m_cond;
+    RefNode<Stmt> m_body;
 
   public:
-    constexpr WhileStmt(Expr *cond, Stmt *body)
+    constexpr WhileStmt(RefNode<Expr> cond, RefNode<Stmt> body)
         : Stmt(QAST_WHILE), m_cond(cond), m_body(body) {}
 
     constexpr let get_cond() const { return m_cond; }
@@ -126,13 +124,14 @@ namespace ncc::parse {
   };
 
   class ForStmt final : public Stmt {
-    std::optional<Stmt *> m_init;
-    std::optional<Expr *> m_cond, m_step;
-    Stmt *m_body;
+    std::optional<RefNode<Stmt>> m_init;
+    std::optional<RefNode<Expr>> m_cond, m_step;
+    RefNode<Stmt> m_body;
 
   public:
-    constexpr ForStmt(std::optional<Stmt *> init, std::optional<Expr *> cond,
-                      std::optional<Expr *> step, Stmt *body)
+    constexpr ForStmt(std::optional<RefNode<Stmt>> init,
+                      std::optional<RefNode<Expr>> cond,
+                      std::optional<RefNode<Expr>> step, RefNode<Stmt> body)
         : Stmt(QAST_FOR),
           m_init(init),
           m_cond(cond),
@@ -146,14 +145,14 @@ namespace ncc::parse {
   };
 
   class ForeachStmt final : public Stmt {
-    ncc::core::str_alias m_idx_ident;
-    ncc::core::str_alias m_val_ident;
-    Expr *m_expr;
-    Stmt *m_body;
+    core::str_alias m_idx_ident;
+    core::str_alias m_val_ident;
+    RefNode<Expr> m_expr;
+    RefNode<Stmt> m_body;
 
   public:
-    ForeachStmt(ncc::core::str_alias idx_ident, ncc::core::str_alias val_ident,
-                Expr *expr, Stmt *body)
+    ForeachStmt(core::str_alias idx_ident, core::str_alias val_ident,
+                RefNode<Expr> expr, RefNode<Stmt> body)
         : Stmt(QAST_FOREACH),
           m_idx_ident(idx_ident),
           m_val_ident(val_ident),
@@ -178,21 +177,21 @@ namespace ncc::parse {
   };
 
   class ReturnStmt final : public Stmt {
-    std::optional<Expr *> m_value;
+    std::optional<RefNode<Expr>> m_value;
 
   public:
-    constexpr ReturnStmt(std::optional<Expr *> value)
+    constexpr ReturnStmt(std::optional<RefNode<Expr>> value)
         : Stmt(QAST_RETURN), m_value(value) {}
 
     constexpr let get_value() const { return m_value; }
   };
 
   class ReturnIfStmt final : public Stmt {
-    Expr *m_cond;
-    Expr *m_value;
+    RefNode<Expr> m_cond;
+    RefNode<Expr> m_value;
 
   public:
-    constexpr ReturnIfStmt(Expr *cond, Expr *value)
+    constexpr ReturnIfStmt(RefNode<Expr> cond, RefNode<Expr> value)
         : Stmt(QAST_RETIF), m_cond(cond), m_value(value) {}
 
     constexpr let get_cond() const { return m_cond; }
@@ -200,11 +199,11 @@ namespace ncc::parse {
   };
 
   class CaseStmt final : public Stmt {
-    Expr *m_cond;
-    Stmt *m_body;
+    RefNode<Expr> m_cond;
+    RefNode<Stmt> m_body;
 
   public:
-    constexpr CaseStmt(Expr *cond, Stmt *body)
+    constexpr CaseStmt(RefNode<Expr> cond, RefNode<Stmt> body)
         : Stmt(QAST_CASE), m_cond(cond), m_body(body) {}
 
     constexpr let get_cond() const { return m_cond; }
@@ -212,12 +211,12 @@ namespace ncc::parse {
   };
 
   class SwitchStmt final : public Stmt {
-    Expr *m_cond;
-    std::span<CaseStmt *> m_cases;
-    Stmt *m_default;
+    RefNode<Expr> m_cond;
+    std::span<RefNode<CaseStmt>> m_cases;
+    RefNode<Stmt> m_default;
 
   public:
-    SwitchStmt(Expr *cond, SwitchCases cases, Stmt *default_)
+    SwitchStmt(RefNode<Expr> cond, SwitchCases cases, RefNode<Stmt> default_)
         : Stmt(QAST_SWITCH),
           m_cond(cond),
           m_cases(cases),
@@ -229,13 +228,13 @@ namespace ncc::parse {
   };
 
   class ExportStmt final : public Stmt {
-    std::span<Expr *> m_attrs;
-    ncc::core::str_alias m_abi_name;
-    Stmt *m_body;
+    std::span<RefNode<Expr>> m_attrs;
+    core::str_alias m_abi_name;
+    RefNode<Stmt> m_body;
     Vis m_vis;
 
   public:
-    ExportStmt(Stmt *content, ncc::core::str_alias abi_name, Vis vis,
+    ExportStmt(RefNode<Stmt> content, core::str_alias abi_name, Vis vis,
                ExpressionList attrs)
         : Stmt(QAST_EXPORT),
           m_attrs(attrs),
@@ -252,11 +251,11 @@ namespace ncc::parse {
 
   class ScopeStmt final : public Stmt {
     ScopeDeps m_deps;
-    ncc::core::str_alias m_name;
-    Stmt *m_body;
+    core::str_alias m_name;
+    RefNode<Stmt> m_body;
 
   public:
-    ScopeStmt(ncc::core::str_alias name, Stmt *body, ScopeDeps deps = {})
+    ScopeStmt(core::str_alias name, RefNode<Stmt> body, ScopeDeps deps = {})
         : Stmt(QAST_SCOPE), m_deps(deps), m_name(name), m_body(body) {}
 
     constexpr auto get_name() const { return m_name.get(); }
@@ -266,11 +265,11 @@ namespace ncc::parse {
   };
 
   class TypedefStmt final : public Stmt {
-    ncc::core::str_alias m_name;
-    Type *m_type;
+    core::str_alias m_name;
+    RefNode<Type> m_type;
 
   public:
-    TypedefStmt(ncc::core::str_alias name, Type *type)
+    TypedefStmt(core::str_alias name, RefNode<Type> type)
         : Stmt(QAST_TYPEDEF), m_name(name), m_type(type) {}
 
     constexpr auto get_name() const { return m_name.get(); }
@@ -280,11 +279,11 @@ namespace ncc::parse {
 
   class EnumDef final : public Stmt {
     std::span<EnumItem> m_items;
-    ncc::core::str_alias m_name;
-    Type *m_type;
+    core::str_alias m_name;
+    RefNode<Type> m_type;
 
   public:
-    EnumDef(ncc::core::str_alias name, Type *type, EnumDefItems items)
+    EnumDef(core::str_alias name, RefNode<Type> type, EnumDefItems items)
         : Stmt(QAST_ENUM), m_items(items), m_name(name), m_type(type) {}
 
     constexpr auto get_name() const { return m_name.get(); }
@@ -294,22 +293,23 @@ namespace ncc::parse {
   };
 
   class Function final : public Stmt {
-    std::span<Expr *> m_attributes;
+    std::span<RefNode<Expr>> m_attributes;
     FuncPurity m_purity;
-    std::span<std::pair<ncc::core::str_alias, bool>> m_captures;
-    ncc::core::str_alias m_name;
+    std::span<std::pair<core::str_alias, bool>> m_captures;
+    core::str_alias m_name;
     std::optional<TemplateParameters> m_template_parameters;
     FuncParams m_params;
-    Type *m_return;
-    std::optional<Expr *> m_precond, m_postcond;
-    std::optional<Stmt *> m_body;
+    RefNode<Type> m_return;
+    std::optional<RefNode<Expr>> m_precond, m_postcond;
+    std::optional<RefNode<Stmt>> m_body;
 
   public:
     Function(ExpressionList attributes, FuncPurity purity, FnCaptures captures,
-             ncc::core::str_alias name,
-             std::optional<TemplateParameters> params, FuncParams fn_params,
-             Type *return_type, std::optional<Expr *> precond,
-             std::optional<Expr *> postcond, std::optional<Stmt *> body)
+             core::str_alias name, std::optional<TemplateParameters> params,
+             FuncParams fn_params, RefNode<Type> return_type,
+             std::optional<RefNode<Expr>> precond,
+             std::optional<RefNode<Expr>> postcond,
+             std::optional<RefNode<Stmt>> body)
         : Stmt(QAST_FUNCTION),
           m_attributes(attributes),
           m_purity(purity),
@@ -340,20 +340,19 @@ namespace ncc::parse {
 
   class StructDef final : public Stmt {
     CompositeType m_comp_type;
-    std::span<Expr *> m_attributes;
-    ncc::core::str_alias m_name;
+    std::span<RefNode<Expr>> m_attributes;
+    core::str_alias m_name;
     std::optional<TemplateParameters> m_template_parameters;
-    std::span<ncc::core::str_alias> m_names;
+    std::span<core::str_alias> m_names;
     std::span<StructField> m_fields;
     std::span<StructFunction> m_methods;
     std::span<StructFunction> m_static_methods;
 
   public:
     StructDef(CompositeType comp_type, ExpressionList attributes,
-              ncc::core::str_alias name,
-              std::optional<TemplateParameters> params, StructDefNames names,
-              StructDefFields fields, StructDefMethods methods,
-              StructDefStaticMethods static_methods)
+              core::str_alias name, std::optional<TemplateParameters> params,
+              StructDefNames names, StructDefFields fields,
+              StructDefMethods methods, StructDefStaticMethods static_methods)
         : Stmt(QAST_STRUCT),
           m_comp_type(comp_type),
           m_attributes(attributes),

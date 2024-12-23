@@ -406,11 +406,11 @@ CPP_EXPORT Location IScanner::GetLocation(LocationID id) {
   IScanner::StaticImpl::FlushInternedBuffering(*this);
 
   auto it = m_location_interned.find(id);
-  if (it == m_location_interned.end()) [[unlikely]] {
-    return Location::EndOfFile();
+  if (it != m_location_interned.end()) {
+    return it->second;
   }
 
-  return it->second;
+  return GetLocationFallback(id).value_or(Location::EndOfFile());
 }
 
 CPP_EXPORT Location IScanner::Start(Token t) {

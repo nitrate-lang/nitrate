@@ -35,17 +35,15 @@
 #define __NITRATE_AST_ASTBASE_H__
 
 #include <array>
-#include <functional>
 #include <iostream>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTData.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 #include <nitrate-parser/ASTWriter.hh>
-
-#include "nitrate-lexer/Lexer.hh"
 
 namespace ncc::parse {
   class npar_pack Base {
@@ -551,6 +549,8 @@ namespace ncc::parse {
       return safeCastAs<T>(const_cast<Base *>(this));
     }
 
+    Base *&as_base() { return *reinterpret_cast<Base **>(this); }
+
     ///======================================================================
     /// Debugging
 
@@ -680,13 +680,12 @@ namespace ncc::parse {
     constexpr bool is_expr_stmt(npar_ty_t type) const;
   };
 
-  class Type : public Base {
-    std::pair<Expr *, Expr *> m_range;
-    Expr *m_width;
+  class npar_pack Type : public Base {
+    std::pair<RefNode<Expr>, RefNode<Expr>> m_range;
+    RefNode<Expr> m_width;
 
   public:
-    constexpr Type(npar_ty_t ty)
-        : Base(ty), m_range({nullptr, nullptr}), m_width(nullptr) {}
+    constexpr Type(npar_ty_t ty) : Base(ty), m_range(), m_width() {}
 
     constexpr bool is_primitive() const {
       switch (getKind()) {
@@ -740,6 +739,7 @@ namespace ncc::parse {
     constexpr let get_range() const { return m_range; }
 
     constexpr void set_range(Expr *start, Expr *end) { m_range = {start, end}; }
+
     constexpr void set_width(Expr *width) { m_width = width; }
   };
 

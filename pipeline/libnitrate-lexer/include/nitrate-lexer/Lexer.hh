@@ -37,7 +37,6 @@
 #include <boost/bimap.hpp>
 #include <cstdint>
 #include <deque>
-#include <map>
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Macro.hh>
@@ -267,6 +266,15 @@ namespace ncc::lex {
     void SetFailBit() { m_ebit = true; }
     virtual Token GetNext() = 0;
 
+    /**
+     * @brief Provide fallback resolution for location IDs.
+     * @note The internal map is checked first, it the ID is not found, this
+     *       method is called.
+     */
+    virtual std::optional<Location> GetLocationFallback(LocationID) {
+      return std::nullopt;
+    };
+
   public:
     IScanner() { m_location_interned_buffer.reserve(0xffff); }
     virtual ~IScanner() = default;
@@ -294,7 +302,7 @@ namespace ncc::lex {
     virtual void SkipCommentsState(bool skip) { m_skip_comments = skip; }
     bool GetSkipCommentsState() const { return m_skip_comments; }
 
-    virtual Location GetLocation(LocationID id);
+    Location GetLocation(LocationID id);
   };
 
   class CPP_EXPORT Tokenizer final : public IScanner {
