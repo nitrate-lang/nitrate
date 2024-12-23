@@ -43,18 +43,9 @@
 using namespace ncc::parse;
 
 CPP_EXPORT thread_local std::unique_ptr<ncc::core::IMemory>
-    ncc::parse::npar_allocator;
+    ncc::parse::npar_allocator = std::make_unique<ncc::core::dyn_arena>();
 
 ///=============================================================================
-
-CPP_EXPORT std::ostream &Base::dump(std::ostream &os, bool isForDebug) const {
-  (void)isForDebug;
-
-  AST_JsonWriter writer(os);
-  const_cast<Base *>(this)->accept(writer);
-
-  return os;
-}
 
 CPP_EXPORT bool Base::isSame(const Base *o) const {
   if (this == o) {
@@ -66,7 +57,10 @@ CPP_EXPORT bool Base::isSame(const Base *o) const {
   }
 
   std::stringstream ss1, ss2;
-  AST_MsgPackWriter writer1(ss1, false), writer2(ss2, false);
+  AST_MsgPackWriter writer1(ss1), writer2(ss2);
+
+  RefNode<const Base>(this).accept(writer1);
+  RefNode<const Base>(o).accept(writer2);
 
   return ss1.str() == ss2.str();
 }
@@ -74,7 +68,7 @@ CPP_EXPORT bool Base::isSame(const Base *o) const {
 CPP_EXPORT uint64_t Base::hash64() const {
   AST_Hash64 visitor;
 
-  const_cast<Base *>(this)->accept(visitor);
+  RefNode<const Base>(this).accept(visitor);
 
   return visitor.get();
 }
@@ -94,21 +88,21 @@ CPP_EXPORT bool Type::is_ptr_to(Type *type) const {
   return item->is(type->getKind());
 }
 
-Stmt *ncc::parse::mock_stmt(npar_ty_t expected) {
+RefNode<Stmt> ncc::parse::mock_stmt(std::optional<npar_ty_t> expected) {
   (void)expected;
 
   static Stmt node(QAST_BASE);
   return &node;
 }
 
-Expr *ncc::parse::mock_expr(npar_ty_t expected) {
+RefNode<Expr> ncc::parse::mock_expr(std::optional<npar_ty_t> expected) {
   (void)expected;
 
   static Expr node(QAST_BASE);
   return &node;
 }
 
-Type *ncc::parse::mock_type() {
+RefNode<Type> ncc::parse::mock_type() {
   static Type node(QAST_BASE);
   return &node;
 }

@@ -89,17 +89,17 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
       }
 
       case TokenType::qKeyW: {
-        R = Token(t, ncc::lex::keywords.left.at(data));
+        R = Token(t, ncc::lex::LexicalKeywords.left.at(data));
         break;
       }
 
       case TokenType::qOper: {
-        R = Token(t, ncc::lex::operators.left.at(data));
+        R = Token(t, ncc::lex::LexicalOperators.left.at(data));
         break;
       }
 
       case TokenType::qPunc: {
-        R = Token(t, ncc::lex::punctuation.left.at(data));
+        R = Token(t, ncc::lex::LexicalPunctors.left.at(data));
         break;
       }
 
@@ -333,12 +333,12 @@ CREATE_TRANSFORM(nit::parse) {
   switch (out_mode) {
     case OutMode::JSON: {
       auto writter = ncc::parse::AST_JsonWriter(output);
-      root.get()->accept(writter);
+      root.get().accept(writter);
       return true;
     }
     case OutMode::MsgPack: {
       auto writter = ncc::parse::AST_MsgPackWriter(output);
-      root.get()->accept(writter);
+      root.get().accept(writter);
       return true;
     }
     default: {

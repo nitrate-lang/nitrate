@@ -375,16 +375,6 @@ namespace no3::argparse_setup {
         .help("print verbose output")
         .default_value(false)
         .implicit_value(true);
-
-    parser.add_argument("-r", "--recursive")
-        .help("reformat all dependencies")
-        .default_value(false)
-        .implicit_value(true);
-
-    parser.add_argument("-d", "--depth")
-        .help("maximum depth of dependency tree to reformat")
-        .default_value(1)
-        .nargs(1);
   }
 
   static void setup_argparse_list(ArgumentParser &parser) {

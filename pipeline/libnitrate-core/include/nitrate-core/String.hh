@@ -34,74 +34,102 @@
 #ifndef __NITRATE_CORE_STRING_FACTORY_H__
 #define __NITRATE_CORE_STRING_FACTORY_H__
 
-#include <boost/bimap.hpp>
 #include <cstdint>
 #include <mutex>
 #include <string>
 #include <string_view>
-#include <unordered_set>
+#include <unordered_map>
 
 namespace ncc::core {
-  class StringMemory;
-
-  class __attribute__((packed)) str_alias {
-    friend class StringMemory;
-
-    uint64_t m_id : 40;
-
-    static constexpr str_alias get(uint64_t id) {
-      str_alias alias;
-      alias.m_id = id;
-      return alias;
-    }
-
-  public:
-    std::string_view get() const;
-
-    constexpr bool operator==(const str_alias &other) const {
-      return m_id == other.m_id;
-    }
-
-    std::string_view operator*() const { return get(); }
-
-    inline const std::string_view *operator->() const {
-      static thread_local std::string_view sv;
-      sv = get();
-      return &sv;
-    }
-
-    bool operator<(const str_alias &other) const { return m_id < other.m_id; }
-  };
+  class str_alias;
 
   class StringMemory {
+    friend class str_alias;
+
     struct Storage {
-      std::unordered_set<std::string> m_strings;
-      boost::bimap<uint64_t, std::string_view> m_bimap;
+      std::unordered_map<uint64_t, std::string> m_map_a;
+      std::unordered_map<std::string_view, uint64_t> m_map_b;
       uint64_t m_next_id = 0;
       std::mutex m_mutex;
+
+      Storage() {
+        m_map_a[0] = "";
+        m_map_b[""] = 0;
+        m_next_id = 1;
+      }
     };
 
     static Storage m_storage;
 
     StringMemory() = delete;
 
-  public:
-    static str_alias Get(std::string_view str);
-    static std::string_view Save(std::string_view str);
-
     static std::string_view FromID(uint64_t id);
+    static uint64_t FromString(std::string_view str);
+    static uint64_t FromString(std::string &&str);
 
+  public:
     static void Clear();
   };
 
+  class __attribute__((packed)) str_alias {
+    uint64_t m_id : 40;
+
+  public:
+    constexpr str_alias(std::string_view str = "") {
+      m_id = str.empty() ? 0 : StringMemory::FromString(str);
+    }
+    constexpr str_alias(std::string &&str) {
+      m_id = str.empty() ? 0 : StringMemory::FromString(std::move(str));
+    }
+    constexpr str_alias(const char *str) {
+      if (str[0] == '\0') {
+        m_id = 0;
+      } else {
+        m_id = StringMemory::FromString(std::string_view(str));
+      }
+    }
+
+    std::string_view get() const;
+
+    constexpr bool operator==(const str_alias &O) const {
+      return m_id == O.m_id;
+    }
+
+    constexpr inline auto operator*() const { return get(); }
+    inline const auto *operator->() const {
+      static thread_local std::string_view sv;
+      sv = get();
+      return &sv;
+    }
+
+    constexpr inline bool operator<(const str_alias &O) const {
+      return m_id < O.m_id;
+    }
+  };
+
   static inline std::string_view save(std::string_view str) {
-    return StringMemory::Save(str);
+    return str_alias(str).get();
+  }
+
+  static inline std::string_view save(std::string &&str) {
+    return str_alias(str).get();
+  }
+
+  static inline std::string_view save(const char *str) {
+    return str_alias(str).get();
   }
 
   static inline str_alias intern(std::string_view str) {
-    return StringMemory::Get(str);
+    return str_alias(str);
   }
 
+  static inline str_alias intern(std::string &&str) { return str_alias(str); }
+
+  static inline str_alias intern(const char *str) { return str_alias(str); }
 }  // namespace ncc::core
+
+namespace ncc {
+  using string = core::str_alias;
+}
 
 #endif

@@ -36,17 +36,17 @@
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-Expr *Parser::recurse_while_cond() {
+RefNode<Expr> Parser::recurse_while_cond() {
   let cur = peek();
 
   if (cur.is<qOpArrow>() || cur.is<qPuncLCur>()) {
-    return make<ConstBool>(true);
+    return make<ConstBool>(true)();
   } else {
     return recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
   }
 }
 
-Stmt *Parser::recurse_while_body() {
+RefNode<Stmt> Parser::recurse_while_body() {
   if (next_if(qOpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
@@ -54,7 +54,7 @@ Stmt *Parser::recurse_while_body() {
   }
 }
 
-Stmt *Parser::recurse_while() {
+RefNode<Stmt> Parser::recurse_while() {
   /**
    * Example syntax:
    *  `while {}`,                 `while => call();`
@@ -68,5 +68,5 @@ Stmt *Parser::recurse_while() {
   /* Support for single statement implicit block */
   let body = recurse_while_body();
 
-  return make<WhileStmt>(cond, body);
+  return make<WhileStmt>(cond, body)();
 }

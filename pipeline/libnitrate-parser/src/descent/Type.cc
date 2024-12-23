@@ -36,7 +36,7 @@
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::optional<Expr *> Parser::recurse_type_range_start() {
+std::optional<RefNode<Expr>> Parser::recurse_type_range_start() {
   if (next_if(qPuncColn)) {
     return std::nullopt;
   }
@@ -50,7 +50,7 @@ std::optional<Expr *> Parser::recurse_type_range_start() {
   return min_value;
 }
 
-std::optional<Expr *> Parser::recurse_type_range_end() {
+std::optional<RefNode<Expr>> Parser::recurse_type_range_end() {
   if (next_if(qPuncRBrk)) {
     return std::nullopt;
   }
@@ -69,7 +69,7 @@ std::optional<CallArgs> Parser::recurse_type_template_arguments() {
     return std::nullopt;
   }
 
-  auto args = recurse_caller_arguments(Token(qOper, qOpGT), 0);
+  auto args = recurse_call_arguments(Token(qOper, qOpGT));
 
   if (!next_if(qOpGT)) {
     diagnostic << current() << "Expected '>' after template arguments";
@@ -78,7 +78,7 @@ std::optional<CallArgs> Parser::recurse_type_template_arguments() {
   return args;
 }
 
-Type *Parser::recurse_type_suffix(Type *base) {
+RefNode<Type> Parser::recurse_type_suffix(RefNode<Type> base) {
   static let bit_width_terminaters = {
       Token(qPunc, qPuncRPar), Token(qPunc, qPuncRBrk), Token(qPunc, qPuncLCur),
       Token(qPunc, qPuncRCur), Token(qPunc, qPuncComa), Token(qPunc, qPuncColn),
@@ -88,14 +88,14 @@ Type *Parser::recurse_type_suffix(Type *base) {
   let template_arguments = recurse_type_template_arguments();
 
   if (template_arguments.has_value()) {
-    let templ = make<TemplType>(base, template_arguments.value());
-    templ->set_offset(base->get_offset());
+    let templ = make<TemplType>(base, template_arguments.value())();
+    templ->set_offset(base->begin());
 
     base = templ;
   }
 
-  std::pair<std::optional<Expr *>, std::optional<Expr *>> range;
-  std::optional<Expr *> width;
+  std::pair<std::optional<RefNode<Expr>>, std::optional<RefNode<Expr>>> range;
+  std::optional<RefNode<Expr>> width;
 
   if (next_if(qPuncColn)) {
     if (next_if(qPuncLBrk)) {
@@ -115,9 +115,9 @@ Type *Parser::recurse_type_suffix(Type *base) {
   base->set_width(width.value_or(nullptr));
 
   if (next_if(qOpTernary)) {
-    let args = CallArgs{{SaveString("0"), make<TypeExpr>(base)}};
-    let opt_type =
-        make<TemplType>(make<NamedTy>(SaveString("__builtin_result")), args);
+    let args = CallArgs{{SaveString("0"), make<TypeExpr>(base)()}};
+    let opt_type = make<TemplType>(
+        make<NamedTy>(SaveString("__builtin_result"))(), args)();
 
     opt_type->set_offset(current().get_start());
 
@@ -127,7 +127,7 @@ Type *Parser::recurse_type_suffix(Type *base) {
   return base;
 }
 
-Type *Parser::recurse_function_type() {
+RefNode<Type> Parser::recurse_function_type() {
   let fn = recurse_function(true);
 
   if (!fn->is<Function>() || !fn->as<Function>()->is_decl()) {
@@ -136,17 +136,17 @@ Type *Parser::recurse_function_type() {
     return mock_type();
   }
 
-  Function *fn_def = fn->as<Function>();
+  RefNode<Function> fn_def = fn->as<Function>();
 
   let func_ty = make<FuncTy>(fn_def->get_return(), fn_def->get_params(),
-                             fn_def->get_purity(), fn_def->get_attributes());
+                             fn_def->get_purity(), fn_def->get_attributes())();
 
-  func_ty->set_offset(fn->get_offset());
+  func_ty->set_offset(fn->begin());
 
   return func_ty;
 }
 
-Type *Parser::recurse_opaque_type() {
+RefNode<Type> Parser::recurse_opaque_type() {
   if (!next_if(qPuncLPar)) {
     diagnostic << current() << "Expected '(' after 'opaque'";
     return mock_type();
@@ -154,7 +154,7 @@ Type *Parser::recurse_opaque_type() {
 
   if (let name = next_if(qName)) {
     if (next_if(qPuncRPar)) {
-      let opaque = make<OpaqueTy>(SaveString(name->as_string()));
+      let opaque = make<OpaqueTy>(SaveString(name->as_string()))();
       opaque->set_offset(current().get_start());
 
       return opaque;
@@ -168,7 +168,7 @@ Type *Parser::recurse_opaque_type() {
   return mock_type();
 }
 
-Type *Parser::recurse_type_by_keyword(Keyword key) {
+RefNode<Type> Parser::recurse_type_by_keyword(Keyword key) {
   switch (key) {
     case qKFn: {
       return recurse_function_type();
@@ -185,12 +185,12 @@ Type *Parser::recurse_type_by_keyword(Keyword key) {
   }
 }
 
-Type *Parser::recurse_type_by_operator(Operator op) {
+RefNode<Type> Parser::recurse_type_by_operator(Operator op) {
   switch (op) {
     case qOpTimes: {
       let start = current().get_start();
       let pointee = recurse_type();
-      let ptr_ty = make<PtrTy>(pointee);
+      let ptr_ty = make<PtrTy>(pointee)();
 
       ptr_ty->set_offset(start);
 
@@ -200,7 +200,7 @@ Type *Parser::recurse_type_by_operator(Operator op) {
     case qOpBitAnd: {
       let start = current().get_start();
       let refee = recurse_type();
-      let ref_ty = make<RefTy>(refee);
+      let ref_ty = make<RefTy>(refee)();
 
       ref_ty->set_offset(start);
 
@@ -208,7 +208,7 @@ Type *Parser::recurse_type_by_operator(Operator op) {
     }
 
     case qOpTernary: {
-      let infer = make<InferTy>();
+      let infer = make<InferTy>()();
 
       infer->set_offset(current().get_start());
 
@@ -222,15 +222,15 @@ Type *Parser::recurse_type_by_operator(Operator op) {
   }
 }
 
-Type *Parser::recurse_array_or_vector() {
+RefNode<Type> Parser::recurse_array_or_vector() {
   let start = current().get_start();
 
   let first = recurse_type();
 
   if (next_if(qPuncRBrk)) {
-    let args = CallArgs{{SaveString("0"), make<TypeExpr>(first)}};
+    let args = CallArgs{{SaveString("0"), make<TypeExpr>(first)()}};
     let vector =
-        make<TemplType>(make<NamedTy>(SaveString("__builtin_vec")), args);
+        make<TemplType>(make<NamedTy>(SaveString("__builtin_vec"))(), args)();
 
     vector->set_offset(start);
 
@@ -248,14 +248,14 @@ Type *Parser::recurse_array_or_vector() {
     diagnostic << current() << "Expected ']' after array size";
   }
 
-  let array = make<ArrayTy>(first, size);
+  let array = make<ArrayTy>(first, size)();
 
   array->set_offset(start);
 
   return array;
 }
 
-Type *Parser::recurse_set_type() {
+RefNode<Type> Parser::recurse_set_type() {
   let start = current().get_start();
 
   let set_type = recurse_type();
@@ -264,15 +264,16 @@ Type *Parser::recurse_set_type() {
     diagnostic << current() << "Expected '}' after set type";
   }
 
-  let args = CallArgs{{SaveString("0"), make<TypeExpr>(set_type)}};
-  let set = make<TemplType>(make<NamedTy>(SaveString("__builtin_uset")), args);
+  let args = CallArgs{{SaveString("0"), make<TypeExpr>(set_type)()}};
+  let set =
+      make<TemplType>(make<NamedTy>(SaveString("__builtin_uset"))(), args)();
 
   set->set_offset(start);
 
   return set;
 }
 
-Type *Parser::recurse_tuple_type() {
+RefNode<Type> Parser::recurse_tuple_type() {
   TupleTyItems items;
 
   let start = current().get_start();
@@ -293,14 +294,14 @@ Type *Parser::recurse_tuple_type() {
     next_if(qPuncComa);
   }
 
-  let tuple = make<TupleTy>(std::move(items));
+  let tuple = make<TupleTy>(std::move(items))();
 
   tuple->set_offset(start);
 
   return tuple;
 }
 
-Type *Parser::recurse_type_by_punctuation(Punctor punc) {
+RefNode<Type> Parser::recurse_type_by_punctuation(Punctor punc) {
   switch (punc) {
     case qPuncLBrk: {
       return recurse_array_or_vector();
@@ -321,43 +322,43 @@ Type *Parser::recurse_type_by_punctuation(Punctor punc) {
   }
 }
 
-Type *Parser::recurse_type_by_name(std::string_view name) {
-  std::optional<Type *> type;
+RefNode<Type> Parser::recurse_type_by_name(std::string_view name) {
+  std::optional<RefNode<Type>> type;
 
   if (name == "u1") {
-    type = make<U1>();
+    type = make<U1>()();
   } else if (name == "u8") {
-    type = make<U8>();
+    type = make<U8>()();
   } else if (name == "u16") {
-    type = make<U16>();
+    type = make<U16>()();
   } else if (name == "u32") {
-    type = make<U32>();
+    type = make<U32>()();
   } else if (name == "u64") {
-    type = make<U64>();
+    type = make<U64>()();
   } else if (name == "u128") {
-    type = make<U128>();
+    type = make<U128>()();
   } else if (name == "i8") {
-    type = make<I8>();
+    type = make<I8>()();
   } else if (name == "i16") {
-    type = make<I16>();
+    type = make<I16>()();
   } else if (name == "i32") {
-    type = make<I32>();
+    type = make<I32>()();
   } else if (name == "i64") {
-    type = make<I64>();
+    type = make<I64>()();
   } else if (name == "i128") {
-    type = make<I128>();
+    type = make<I128>()();
   } else if (name == "f16") {
-    type = make<F16>();
+    type = make<F16>()();
   } else if (name == "f32") {
-    type = make<F32>();
+    type = make<F32>()();
   } else if (name == "f64") {
-    type = make<F64>();
+    type = make<F64>()();
   } else if (name == "f128") {
-    type = make<F128>();
+    type = make<F128>()();
   } else if (name == "void") {
-    type = make<VoidTy>();
+    type = make<VoidTy>()();
   } else {
-    type = make<NamedTy>(SaveString(name));
+    type = make<NamedTy>(SaveString(name))();
   }
 
   if (!type.has_value()) {
@@ -370,7 +371,7 @@ Type *Parser::recurse_type_by_name(std::string_view name) {
   return type.value();
 }
 
-Type *Parser::recurse_type() {
+RefNode<Type> Parser::recurse_type() {
   switch (let tok = next(); tok.get_type()) {
     case qKeyW: {
       let type = recurse_type_by_keyword(tok.as_key());

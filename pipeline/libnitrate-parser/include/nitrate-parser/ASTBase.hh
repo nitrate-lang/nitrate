@@ -34,313 +34,31 @@
 #ifndef __NITRATE_AST_ASTBASE_H__
 #define __NITRATE_AST_ASTBASE_H__
 
+#include <array>
 #include <iostream>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTData.hh>
-#include <nitrate-parser/ASTVisitor.hh>
+#include <nitrate-parser/ASTWriter.hh>
 
 namespace ncc::parse {
-  class Base {
+  class npar_pack Base {
   private:
     npar_ty_t m_node_type : 7;
-    uint32_t m_fileid : 24;
-    uint32_t m_offset : 32;
     bool m_mock : 1;
+    lex::LocationID m_begin, m_end;
 
   public:
     constexpr Base(npar_ty_t ty, bool mock = false,
-                   uint32_t fileid = ncc::lex::QLEX_NOFILE,
-                   uint32_t offset = ncc::lex::QLEX_EOFF)
-        : m_node_type(ty), m_fileid(fileid), m_offset(offset), m_mock(mock){};
-
-    constexpr void accept(ASTVisitor &v) const {
-      using namespace ncc::parse;
-
-      switch (getKind()) {
-        case QAST_BASE: {
-          v.visit(*as<Base>());
-          break;
-        }
-        case QAST_BINEXPR: {
-          v.visit(*as<BinExpr>());
-          break;
-        }
-        case QAST_UNEXPR: {
-          v.visit(*as<UnaryExpr>());
-          break;
-        }
-        case QAST_TEREXPR: {
-          v.visit(*as<TernaryExpr>());
-          break;
-        }
-        case QAST_INT: {
-          v.visit(*as<ConstInt>());
-          break;
-        }
-        case QAST_FLOAT: {
-          v.visit(*as<ConstFloat>());
-          break;
-        }
-        case QAST_STRING: {
-          v.visit(*as<ConstString>());
-          break;
-        }
-        case QAST_CHAR: {
-          v.visit(*as<ConstChar>());
-          break;
-        }
-        case QAST_BOOL: {
-          v.visit(*as<ConstBool>());
-          break;
-        }
-        case QAST_NULL: {
-          v.visit(*as<ConstNull>());
-          break;
-        }
-        case QAST_UNDEF: {
-          v.visit(*as<ConstUndef>());
-          break;
-        }
-        case QAST_CALL: {
-          v.visit(*as<Call>());
-          break;
-        }
-        case QAST_LIST: {
-          v.visit(*as<List>());
-          break;
-        }
-        case QAST_ASSOC: {
-          v.visit(*as<Assoc>());
-          break;
-        }
-        case QAST_FIELD: {
-          v.visit(*as<Field>());
-          break;
-        }
-        case QAST_INDEX: {
-          v.visit(*as<Index>());
-          break;
-        }
-        case QAST_SLICE: {
-          v.visit(*as<Slice>());
-          break;
-        }
-        case QAST_FSTRING: {
-          v.visit(*as<FString>());
-          break;
-        }
-        case QAST_IDENT: {
-          v.visit(*as<Ident>());
-          break;
-        }
-        case QAST_SEQ: {
-          v.visit(*as<SeqPoint>());
-          break;
-        }
-        case QAST_POST_UNEXPR: {
-          v.visit(*as<PostUnaryExpr>());
-          break;
-        }
-        case QAST_SEXPR: {
-          v.visit(*as<StmtExpr>());
-          break;
-        }
-        case QAST_TEXPR: {
-          v.visit(*as<TypeExpr>());
-          break;
-        }
-        case QAST_TEMPL_CALL: {
-          v.visit(*as<TemplCall>());
-          break;
-        }
-        case QAST_REF: {
-          v.visit(*as<RefTy>());
-          break;
-        }
-        case QAST_U1: {
-          v.visit(*as<U1>());
-          break;
-        }
-        case QAST_U8: {
-          v.visit(*as<U8>());
-          break;
-        }
-        case QAST_U16: {
-          v.visit(*as<U16>());
-          break;
-        }
-        case QAST_U32: {
-          v.visit(*as<U32>());
-          break;
-        }
-        case QAST_U64: {
-          v.visit(*as<U64>());
-          break;
-        }
-        case QAST_U128: {
-          v.visit(*as<U128>());
-          break;
-        }
-        case QAST_I8: {
-          v.visit(*as<I8>());
-          break;
-        }
-        case QAST_I16: {
-          v.visit(*as<I16>());
-          break;
-        }
-        case QAST_I32: {
-          v.visit(*as<I32>());
-          break;
-        }
-        case QAST_I64: {
-          v.visit(*as<I64>());
-          break;
-        }
-        case QAST_I128: {
-          v.visit(*as<I128>());
-          break;
-        }
-        case QAST_F16: {
-          v.visit(*as<F16>());
-          break;
-        }
-        case QAST_F32: {
-          v.visit(*as<F32>());
-          break;
-        }
-        case QAST_F64: {
-          v.visit(*as<F64>());
-          break;
-        }
-        case QAST_F128: {
-          v.visit(*as<F128>());
-          break;
-        }
-        case QAST_VOID: {
-          v.visit(*as<VoidTy>());
-          break;
-        }
-        case QAST_PTR: {
-          v.visit(*as<PtrTy>());
-          break;
-        }
-        case QAST_OPAQUE: {
-          v.visit(*as<OpaqueTy>());
-          break;
-        }
-        case QAST_ARRAY: {
-          v.visit(*as<ArrayTy>());
-          break;
-        }
-        case QAST_TUPLE: {
-          v.visit(*as<TupleTy>());
-          break;
-        }
-        case QAST_FUNCTOR: {
-          v.visit(*as<FuncTy>());
-          break;
-        }
-        case QAST_NAMED: {
-          v.visit(*as<NamedTy>());
-          break;
-        }
-        case QAST_INFER: {
-          v.visit(*as<InferTy>());
-          break;
-        }
-        case QAST_TEMPLATE: {
-          v.visit(*as<TemplType>());
-          break;
-        }
-        case QAST_TYPEDEF: {
-          v.visit(*as<TypedefStmt>());
-          break;
-        }
-        case QAST_STRUCT: {
-          v.visit(*as<StructDef>());
-          break;
-        }
-        case QAST_ENUM: {
-          v.visit(*as<EnumDef>());
-          break;
-        }
-        case QAST_FUNCTION: {
-          v.visit(*as<Function>());
-          break;
-        }
-        case QAST_SCOPE: {
-          v.visit(*as<ScopeStmt>());
-          break;
-        }
-        case QAST_EXPORT: {
-          v.visit(*as<ExportStmt>());
-          break;
-        }
-        case QAST_BLOCK: {
-          v.visit(*as<Block>());
-          break;
-        }
-        case QAST_VAR: {
-          v.visit(*as<VarDecl>());
-          break;
-        }
-        case QAST_INLINE_ASM: {
-          v.visit(*as<InlineAsm>());
-          break;
-        }
-        case QAST_RETURN: {
-          v.visit(*as<ReturnStmt>());
-          break;
-        }
-        case QAST_RETIF: {
-          v.visit(*as<ReturnIfStmt>());
-          break;
-        }
-        case QAST_BREAK: {
-          v.visit(*as<BreakStmt>());
-          break;
-        }
-        case QAST_CONTINUE: {
-          v.visit(*as<ContinueStmt>());
-          break;
-        }
-        case QAST_IF: {
-          v.visit(*as<IfStmt>());
-          break;
-        }
-        case QAST_WHILE: {
-          v.visit(*as<WhileStmt>());
-          break;
-        }
-        case QAST_FOR: {
-          v.visit(*as<ForStmt>());
-          break;
-        }
-        case QAST_FOREACH: {
-          v.visit(*as<ForeachStmt>());
-          break;
-        }
-        case QAST_CASE: {
-          v.visit(*as<CaseStmt>());
-          break;
-        }
-        case QAST_SWITCH: {
-          v.visit(*as<SwitchStmt>());
-          break;
-        }
-        case QAST_ESTMT: {
-          v.visit(*as<ExprStmt>());
-          break;
-        }
-      }
-    };
+                   lex::LocationID begin = lex::LocationID(),
+                   lex::LocationID end = lex::LocationID())
+        : m_node_type(ty), m_mock(mock), m_begin(begin), m_end(end) {}
 
     ///======================================================================
-    /* Efficient LLVM reflection */
+    /// Efficient LLVM-Style reflection
 
     static constexpr uint32_t getKindSize(npar_ty_t kind);
     static constexpr std::string_view getKindName(npar_ty_t kind);
@@ -381,8 +99,6 @@ namespace ncc::parse {
         return QAST_LIST;
       } else if constexpr (std::is_same_v<T, Assoc>) {
         return QAST_ASSOC;
-      } else if constexpr (std::is_same_v<T, Field>) {
-        return QAST_FIELD;
       } else if constexpr (std::is_same_v<T, Index>) {
         return QAST_INDEX;
       } else if constexpr (std::is_same_v<T, Slice>) {
@@ -497,8 +213,6 @@ namespace ncc::parse {
     constexpr npar_ty_t getKind() const { return m_node_type; }
     constexpr auto getKindName() const { return getKindName(m_node_type); }
 
-    ///======================================================================
-
     constexpr bool is_type() const {
       auto kind = getKind();
       return kind >= QAST__TYPE_FIRST && kind <= QAST__TYPE_LAST;
@@ -513,6 +227,21 @@ namespace ncc::parse {
       auto kind = getKind();
       return kind >= QAST__EXPR_FIRST && kind <= QAST__EXPR_LAST;
     }
+
+    template <typename T>
+    constexpr bool is() const {
+      return Base::getTypeCode<T>() == getKind();
+    }
+
+    constexpr bool is(npar_ty_t type) const { return type == getKind(); }
+    constexpr bool is_mock() const { return m_mock; }
+
+    bool isSame(const Base *o) const;
+
+    uint64_t hash64() const;
+
+    ///======================================================================
+    /// Debug-mode checked type casting
 
     template <typename T>
     static constexpr T *safeCastAs(Base *ptr) {
@@ -530,63 +259,52 @@ namespace ncc::parse {
       return reinterpret_cast<T *>(ptr);
     }
 
-    /**
-     * @brief Type-safe cast (type check only in debug mode).
-     *
-     * @tparam T The type to cast to.
-     * @return T* The casted pointer. It may be nullptr if the source pointer is
-     * nullptr.
-     * @warning This function will panic if the cast is invalid.
-     */
     template <typename T>
     constexpr T *as() {
       return safeCastAs<T>(this);
     }
 
-    /**
-     * @brief Type-safe cast (type check only in debug mode).
-     *
-     * @tparam T The type to cast to.
-     * @return const T* The casted pointer. It may be nullptr if the source
-     * pointer is nullptr.
-     * @warning This function will panic if the cast is invalid.
-     */
     template <typename T>
     constexpr const T *as() const {
       return safeCastAs<T>(const_cast<Base *>(this));
     }
 
-    Expr *as_expr() {
-      qcore_assert(is_expr());
-      return reinterpret_cast<Expr *>(this);
-    }
+    Base *&as_base() { return *reinterpret_cast<Base **>(this); }
 
-    template <typename T>
-    constexpr bool is() const {
-      return Base::getTypeCode<T>() == getKind();
-    }
-
-    constexpr bool is(npar_ty_t type) const { return type == getKind(); }
-
-    bool isSame(const Base *o) const;
-
-    uint64_t hash64() const;
+    ///======================================================================
+    /// Debugging
 
     std::ostream &dump(std::ostream &os = std::cerr,
-                       bool isForDebug = false) const;
+                       WriterSourceProvider rd = std::nullopt) const;
 
-    constexpr void set_offset(uint32_t pos) { m_offset = pos; }
+    ///======================================================================
+    /// Source location information
 
-    constexpr uint32_t get_offset() const { return m_offset; }
-    constexpr uint32_t get_fileid() const { return m_fileid; }
-    constexpr bool is_mock() const { return m_mock; }
+    constexpr lex::LocationID begin() const { return m_begin; }
+    constexpr lex::Location begin(lex::IScanner &rd) const {
+      return m_begin.Get(rd);
+    }
+
+    constexpr lex::LocationID end() const { return m_end; }
+    constexpr lex::Location end(lex::IScanner &rd) const {
+      return m_end.Get(rd);
+    }
 
     constexpr std::tuple<uint32_t, uint32_t> get_pos() const {
-      return {m_offset, m_fileid};
+      /// TODO: Implement this
+      return {lex::QLEX_EOFF, lex::QLEX_NOFILE};
     }
+
+    ///======================================================================
+    /// Setters
+
+    /**
+     * @warning This function modifies the object's state.
+     */
+    constexpr void set_offset(lex::LocationID pos) { m_begin = pos; }
   } __attribute__((packed));
 
-  static_assert(sizeof(Base) == 8);
+  static_assert(sizeof(Base) == 9);
 
   ///======================================================================
 
@@ -609,7 +327,6 @@ namespace ncc::parse {
       R[QAST_CALL] = "Call";
       R[QAST_LIST] = "List";
       R[QAST_ASSOC] = "Assoc";
-      R[QAST_FIELD] = "Field";
       R[QAST_INDEX] = "Index";
       R[QAST_SLICE] = "Slice";
       R[QAST_FSTRING] = "Fstring";
@@ -678,13 +395,12 @@ namespace ncc::parse {
     constexpr bool is_expr_stmt(npar_ty_t type) const;
   };
 
-  class Type : public Base {
-    std::pair<Expr *, Expr *> m_range;
-    Expr *m_width;
+  class npar_pack Type : public Base {
+    std::pair<RefNode<Expr>, RefNode<Expr>> m_range;
+    RefNode<Expr> m_width;
 
   public:
-    constexpr Type(npar_ty_t ty)
-        : Base(ty), m_range({nullptr, nullptr}), m_width(nullptr) {}
+    constexpr Type(npar_ty_t ty) : Base(ty), m_range(), m_width() {}
 
     constexpr bool is_primitive() const {
       switch (getKind()) {
@@ -738,6 +454,7 @@ namespace ncc::parse {
     constexpr let get_range() const { return m_range; }
 
     constexpr void set_range(Expr *start, Expr *end) { m_range = {start, end}; }
+
     constexpr void set_width(Expr *width) { m_width = width; }
   };
 

@@ -20,7 +20,7 @@ public:
     std::lock_guard<std::mutex> lock(m_mutex);
 
     if (length < 0) {  // negative length starts from the end
-      length = m_content->size() - offset + length;
+      length = m_content->size() - offset + length + 1;
     }
 
     if (offset + length > m_content->size()) {

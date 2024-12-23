@@ -12,6 +12,7 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/Context.hh>
+#include <nitrate-seq/Classes.hh>
 #include <sstream>
 #include <string>
 
@@ -107,12 +108,11 @@ void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   std::stringstream ss(*file->content());
 
   auto env = std::make_shared<ncc::core::Environment>();
-  auto L = Tokenizer(ss, env);
-  auto parser = ncc::parse::Parser::Create(L, env);
-
+  auto L = qprep(ss, "", env);
+  auto parser = ncc::parse::Parser::Create(*L.get(), env);
   auto ast = parser->parse();
 
-  if (!ast.check()) {
+  if (L.get()->HasError() || !ast.check()) {
     return;
   }
 

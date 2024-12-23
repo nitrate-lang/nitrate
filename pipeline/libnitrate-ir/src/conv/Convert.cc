@@ -56,6 +56,8 @@
 #include <unordered_map>
 
 using namespace nr;
+
+using namespace ncc;
 using namespace ncc::core;
 using namespace ncc::lex;
 
@@ -789,21 +791,6 @@ static EResult nrgen_assoc(NRBuilder &b, PState &s, IReport *G,
   return b.createList(kv, false);
 }
 
-static EResult nrgen_field(NRBuilder &b, PState &s, IReport *G,
-                           ncc::parse::Field *n) {
-  auto base = next_one(n->get_base());
-  if (!base.has_value()) {
-    G->report(nr::CompilerError, IC::Error,
-              "Failed to lower field-access base expression", n->get_pos());
-    return std::nullopt;
-  }
-
-  /// TODO: Support for named composite field indexing
-
-  Expr *field = b.createStringDataArray(n->get_field());
-  return create<Index>(base.value(), field);
-}
-
 static EResult nrgen_index(NRBuilder &b, PState &s, IReport *G,
                            ncc::parse::Index *n) {
   auto base = next_one(n->get_base());
@@ -864,10 +851,12 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   if (n->get_items().size() == 1) {
     auto val = n->get_items().front();
 
-    if (std::holds_alternative<str_alias>(val)) {
-      return b.createStringDataArray(*std::get<str_alias>(val));
-    } else if (std::holds_alternative<ncc::parse::Expr *>(val)) {
-      auto expr = next_one(std::get<ncc::parse::Expr *>(val));
+    if (std::holds_alternative<string>(val)) {
+      return b.createStringDataArray(*std::get<string>(val));
+    } else if (std::holds_alternative<ncc::parse::RefNode<ncc::parse::Expr>>(
+                   val)) {
+      auto expr =
+          next_one(std::get<ncc::parse::RefNode<ncc::parse::Expr>>(val));
 
       if (!expr.has_value()) {
         G->report(
@@ -886,13 +875,14 @@ static EResult nrgen_fstring(NRBuilder &b, PState &s, IReport *G,
   Expr *concated = b.createStringDataArray("");
 
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    if (std::holds_alternative<str_alias>(*it)) {
-      auto val = *std::get<str_alias>(*it);
+    if (std::holds_alternative<string>(*it)) {
+      auto val = *std::get<string>(*it);
 
       concated =
           create<BinExpr>(concated, b.createStringDataArray(val), Op::Plus);
-    } else if (std::holds_alternative<ncc::parse::Expr *>(*it)) {
-      auto val = std::get<ncc::parse::Expr *>(*it);
+    } else if (std::holds_alternative<ncc::parse::RefNode<ncc::parse::Expr>>(
+                   *it)) {
+      auto val = std::get<ncc::parse::RefNode<ncc::parse::Expr>>(*it);
       auto expr = next_one(val);
 
       if (!expr.has_value()) {
@@ -1886,13 +1876,13 @@ static EResult nrgen_foreach(NRBuilder &, PState &, IReport *,
   // auto iter = nrgen_one(b, s,X, n->get_expr());
   // if (!iter) {
   //   G->report(CompilerError, IC::Error, "ncc::parse::ForeachStmt::get_expr()
-  //   == std::nullopt",n->get_offset(),n->get_pos()); return std::nullopt;
+  //   == std::nullopt",n->begin(),n->get_pos()); return std::nullopt;
   // }
 
   // auto body = nrgen_one(b, s,X, n->get_body());
   // if (!body) {
   //   G->report(CompilerError, IC::Error, "ncc::parse::ForeachStmt::get_body()
-  //   == std::nullopt",n->get_offset(),n->get_pos()); return std::nullopt;
+  //   == std::nullopt",n->begin(),n->get_pos()); return std::nullopt;
   // }
 
   // return create<Foreach>(idx_name, val_name, iter,
@@ -2019,10 +2009,6 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G,
 
     case QAST_ASSOC:
       out = nrgen_assoc(b, s, G, n->as<ncc::parse::Assoc>());
-      break;
-
-    case QAST_FIELD:
-      out = nrgen_field(b, s, G, n->as<ncc::parse::Field>());
       break;
 
     case QAST_INDEX:

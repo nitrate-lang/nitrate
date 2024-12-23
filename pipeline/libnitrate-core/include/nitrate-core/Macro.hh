@@ -38,6 +38,7 @@
 
 #define C_EXPORT extern "C" __attribute__((visibility("default")))
 #define CPP_EXPORT __attribute__((visibility("default")))
+#define FORCE_INLINE inline __attribute__((always_inline))
 
 #define let const auto&
 

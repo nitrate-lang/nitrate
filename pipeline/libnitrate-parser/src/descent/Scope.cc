@@ -77,9 +77,9 @@ std::optional<ScopeDeps> Parser::recurse_scope_deps() {
   return std::nullopt;
 }
 
-Stmt *Parser::recurse_scope_block() {
+RefNode<Stmt> Parser::recurse_scope_block() {
   if (next_if(qPuncSemi)) {
-    return make<Block>(BlockItems(), SafetyMode::Unknown);
+    return make<Block>(BlockItems(), SafetyMode::Unknown)();
   } else if (next_if(qOpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
@@ -87,14 +87,14 @@ Stmt *Parser::recurse_scope_block() {
   }
 }
 
-Stmt *Parser::recurse_scope() {
+RefNode<Stmt> Parser::recurse_scope() {
   let scope_name = recurse_scope_name();
 
   if (let implicit_dependencies = recurse_scope_deps()) {
     let scope_block = recurse_scope_block();
 
     return make<ScopeStmt>(SaveString(scope_name), scope_block,
-                           std::move(implicit_dependencies.value()));
+                           std::move(implicit_dependencies.value()))();
   } else {
     diagnostic << current() << "Expected scope dependencies";
   }

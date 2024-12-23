@@ -31,104 +31,97 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: Cleanup this code; it's a mess from refactoring.
-
+#include <charconv>
 #include <cstddef>
 #include <descent/Recurse.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-parser/AST.hh>
 #include <stack>
 
-#define MAX_EXPR_DEPTH (10000)
-#define MAX_LIST_DUP (10000)
+#include "nitrate-lexer/Lexer.hh"
+#include "nitrate-lexer/Token.hh"
+
+#define MAX_RECURSION_DEPTH 4096
+#define MAX_LIST_REPEAT_COUNT 4096
 
 using namespace ncc::lex;
 using namespace ncc::parse;
+using namespace ncc::core;
 
-CallArgs Parser::recurse_caller_arguments(Token terminator, size_t depth) {
-  Token tok, ident;
+CallArgs Parser::recurse_call_arguments(Token terminator) {
+  Token ident;
   CallArgs call_args;
   size_t pos_arg_count = 0;
 
   while (true) {
-    tok = peek();
-
-    if (tok.is(qEofF)) {
-      diagnostic << tok << "Unexpected end of file while parsing function call";
+    if (peek() == terminator) {
+      break;
+    } else if (next_if(qEofF)) {
+      diagnostic << current()
+                 << "Unexpected end of file while parsing call expression";
       return call_args;
     }
 
-    if (tok == terminator) {
-      break;
-    }
+    enum class State {
+      ParseNamedArg,
+      ParsePosArg,
+    } state = State::ParseNamedArg;
 
-    if (!tok.is(qName)) {
-      goto parse_pos_arg;
-    }
+    if (peek().is(qName)) {
+      ident = next();
 
-    { /* Parse named argument */
-      ident = tok;
-      next();
-      tok = peek();
-
-      if (!tok.is<qPuncColn>()) {
+      if (next_if(qPuncColn)) {
+        state = State::ParseNamedArg;
+      } else {
         rd.Undo();
-        goto parse_pos_arg;
+        state = State::ParsePosArg;
+      }
+    } else {
+      state = State::ParsePosArg;
+    }
+
+    switch (state) {
+      case State::ParseNamedArg: {
+        let name = SaveString(ident.as_string());
+        let value = recurse_expr({Token(qPunc, qPuncComa), terminator});
+
+        call_args.push_back({name, value});
+        break;
       }
 
-      next();
+      case State::ParsePosArg: {
+        let name = SaveString(std::to_string(pos_arg_count++));
+        let value = recurse_expr({Token(qPunc, qPuncComa), terminator});
 
-      Expr *arg =
-          recurse_expr({Token(qPunc, qPuncComa), terminator}, depth + 1);
-
-      call_args.push_back({SaveString(ident.as_string()), arg});
-      goto comma;
+        call_args.push_back({name, value});
+        break;
+      }
     }
 
-  parse_pos_arg: {
-    Expr *arg = recurse_expr({Token(qPunc, qPuncComa), terminator}, depth + 1);
-
-    call_args.push_back({SaveString(std::to_string(pos_arg_count++)), arg});
-
-    goto comma;
-  }
-
-  comma: {
-    tok = peek();
-    if (tok.is<qPuncComa>()) {
-      next();
-    }
-    continue;
-  }
+    next_if(qPuncComa);
   }
 
   return call_args;
 }
 
-Call *Parser::recurse_function_call(Expr *callee, size_t depth) {
-  auto args = recurse_caller_arguments(Token(qPunc, qPuncRPar), depth);
-  if (!next_if(qPuncRPar)) {
-    diagnostic << current() << "Expected ')' to close the function call";
-    return nullptr;
-  }
-  return make<Call>(callee, args);
-}
-
-Expr *Parser::recurse_fstring(size_t depth) {
+RefNode<Expr> Parser::recurse_fstring() {
   Token tok = next();
   if (!tok.is(qText)) {
-    diagnostic << tok << "Expected a string literal in F-string expression";
+    diagnostic << tok
+               << "Expected a string literal token for F-string expression";
+    return mock_expr(QAST_FSTRING);
   }
 
-  auto fstr = tok.as_string();
+  let fstr = tok.as_string();
 
-  std::string tmp;
-  tmp.reserve(fstr.size());
+  std::string buf;
+  buf.reserve(fstr.size());
 
   FStringItems items;
   size_t state = 0, w_beg = 0, w_end = 0;
 
   for (size_t i = 0; i < fstr.size(); i++) {
-    char c = fstr[i];
+    let c = fstr[i];
 
     if (c == '{' && state == 0) {
       w_beg = i + 1;
@@ -137,529 +130,811 @@ Expr *Parser::recurse_fstring(size_t depth) {
       w_end = i + 1;
       state = 0;
 
-      if (!tmp.empty()) {
-        items.push_back(SaveString(std::move(tmp)));
-        tmp.clear();
+      if (!buf.empty()) {
+        items.push_back(SaveString(std::move(buf)));
+        buf.clear();
       }
 
-      std::string sub(fstr.substr(w_beg, w_end - w_beg));
-      auto sub_parser = FromString(sub, m_env);
+      let subnode = FromString(fstr.substr(w_beg, w_end - w_beg), m_env)
+                        ->recurse_expr({Token(qPunc, qPuncRCur)});
 
-      let subnode =
-          sub_parser->recurse_expr({Token(qPunc, qPuncRCur)}, depth + 1);
       items.push_back(subnode);
-
     } else if (c == '{') {
-      tmp += c;
+      buf += c;
       state = 0;
     } else if (c == '}') {
-      tmp += c;
+      buf += c;
       state = 0;
     } else if (state == 0) {
-      tmp += c;
+      buf += c;
     }
   }
 
-  if (!tmp.empty()) {
-    items.push_back(SaveString(std::move(tmp)));
-    tmp.clear();
+  if (!buf.empty()) {
+    items.push_back(SaveString(std::move(buf)));
+    buf.clear();
   }
 
   if (state != 0) {
-    diagnostic << tok << "F-string expression is not properly closed with '}'";
+    diagnostic << tok << "F-string expression has mismatched braces";
   }
 
-  return make<FString>(std::move(items));
+  return make<FString>(std::move(items))();
 }
 
-/// TODO: Operator precedence
-/// TODO: Operator associativity
+static bool IsPostUnaryOp(Operator O) { return O == qOpInc || O == qOpDec; }
 
-Expr *Parser::recurse_expr(std::set<Token> terminators, size_t depth) {
-  if (depth > MAX_EXPR_DEPTH) {
-    diagnostic
-        << peek()
-        << "Expression depth exceeded; Expressions can not be nested more than "
-        << MAX_EXPR_DEPTH << " times";
+enum class FrameType : uint8_t {
+  Start,
+  PreUnary,
+  PostUnary,
+  Binary,
+};
 
-    return mock_expr(QAST_VOID);
-  }
+struct Frame {
+  RefNode<Expr> base;
+  LocationID start_pos;
+  short minPrecedence;
+  FrameType type;
+  Operator op;
 
-  std::stack<Expr *> stack;
+  Frame(RefNode<Expr> base, LocationID start_pos, short minPrecedence,
+        FrameType type, Operator op)
+      : base(base),
+        start_pos(start_pos),
+        minPrecedence(minPrecedence),
+        type(type),
+        op(op) {}
+};
 
-  while (true) {
-    Token tok = peek();
+static FORCE_INLINE RefNode<Expr> UnwindStack(std::stack<Frame> &stack,
+                                              RefNode<Expr> base,
+                                              short minPrecedence) {
+  while (!stack.empty()) {
+    auto frame = stack.top();
 
-    if (tok.is(qEofF)) {
-      // diagnostic << tok << "Unexpected end of file while parsing expression";
-      return mock_expr(QAST_VOID);
+    if (frame.minPrecedence < minPrecedence) {
+      break;
     }
 
-    if (terminators.contains(tok)) {
-      if (stack.empty()) {
-        return mock_expr(QAST_VOID);
+    switch (frame.type) {
+      case FrameType::Start: {
+        return base;
       }
 
-      if (stack.size() != 1) {
-        diagnostic << tok << "Expected a single expression on the stack";
-        return mock_expr(QAST_VOID);
-      }
-
-      return stack.top();
-    }
-
-    next();
-
-    switch (tok.get_type()) {
-      case qIntL: {
-        /**
-         * @brief Parse integer literal with type suffix
-         */
-
-        stack.push(make<ConstInt>(SaveString(tok.as_string())));
-
-        tok = peek();
-        if (tok.is(qName)) {
-          Type *suffix = recurse_type();
-
-          Expr *integer = stack.top();
-          stack.pop();
-          stack.push(make<BinExpr>(integer, qOpAs, make<TypeExpr>(suffix)));
-        }
-        continue;
-      }
-      case qNumL: {
-        /**
-         * @brief Parse floating-point literal with type suffix
-         */
-
-        stack.push(make<ConstFloat>(SaveString(tok.as_string())));
-
-        tok = peek();
-        if (tok.is(qName)) {
-          Type *suffix = recurse_type();
-
-          Expr *num = stack.top();
-          stack.pop();
-          stack.push(make<BinExpr>(num, qOpAs, make<TypeExpr>(suffix)));
-        }
-        continue;
-      }
-      case qText: {
-        /**
-         * @brief Parse string literal with type suffix
-         */
-
-        stack.push(make<ConstString>(SaveString(tok.as_string())));
-
-        tok = peek();
-        if (tok.is(qName)) {
-          Type *suffix = recurse_type();
-
-          Expr *num = stack.top();
-          stack.pop();
-          stack.push(make<BinExpr>(num, qOpAs, make<TypeExpr>(suffix)));
-        }
-        continue;
-      }
-      case qChar: {
-        /**
-         * @brief
-         */
-        auto str = tok.as_string();
-        qcore_assert(str.size() == 1);
-
-        stack.push(make<ConstChar>(str.at(0)));
-
-        tok = peek();
-        if (tok.is(qName)) {
-          Type *suffix = recurse_type();
-
-          Expr *num = stack.top();
-          stack.pop();
-          stack.push(make<BinExpr>(num, qOpAs, make<TypeExpr>(suffix)));
-        }
-        continue;
-      }
-      case qKeyW: {
-        switch (tok.as_key()) {
-          case qKTrue: {
-            stack.push(make<ConstBool>(true));
-            continue;
-          }
-          case qKFalse: {
-            stack.push(make<ConstBool>(false));
-            continue;
-          }
-          case qKNull: {
-            stack.push(make<ConstNull>());
-            continue;
-          }
-          case qKUndef: {
-            stack.push(make<ConstUndef>());
-            continue;
-          }
-          case qKFn: {
-            Stmt *f = recurse_function(false);
-            StmtExpr *adapter = make<StmtExpr>(f);
-
-            if (peek().is<qPuncLPar>()) {
-              next();
-              Call *fcall = recurse_function_call(adapter, depth);
-
-              if (fcall == nullptr) {
-                diagnostic
-                    << tok
-                    << "Expected a function call after function definition "
-                       "expression";
-                return mock_expr(QAST_VOID);
-              }
-
-              stack.push(fcall);
-              continue;
-            }
-            stack.push(adapter);
-            continue;
-          }
-          case qK__FString: {
-            Expr *f = recurse_fstring(depth);
-            stack.push(f);
-            continue;
-          }
-
-          default: {
-            diagnostic << tok << "Unexpected keyword in expression";
-            return mock_expr(QAST_VOID);
-          }
-        }
+      case FrameType::PreUnary: {
+        base = make<UnaryExpr>(frame.op, base)();
         break;
       }
-      case qPunc: {
-        switch (tok.as_punc()) {
-          case qPuncLPar: {
-            if (!stack.empty() && stack.top()->is<Field>()) {
-              Call *fcall = recurse_function_call(stack.top(), depth);
 
-              if (fcall == nullptr) {
-                diagnostic << tok << "Expected a function call in expression";
-                return mock_expr(QAST_VOID);
-              }
+      case FrameType::PostUnary: {
+        base = make<PostUnaryExpr>(base, frame.op)();
+        break;
+      }
 
-              stack.pop();
-              stack.push(fcall);
+      case FrameType::Binary: {
+        base = make<BinExpr>(frame.base, frame.op, base)();
+        break;
+      }
+    }
+
+    base->set_offset(frame.start_pos);
+    stack.pop();
+  }
+
+  return base;
+}
+
+RefNode<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
+  let SourceOffset = peek().get_start();
+
+  std::stack<Frame> Stack;
+  Stack.push({nullptr, SourceOffset, 0, FrameType::Start, qOpPlus});
+
+  /****************************************
+   * Parse pre-unary operators
+   ****************************************/
+  std::stack<std::pair<Operator, LocationID>> PreUnaryOps;
+  while (let Tok = next_if(qOper)) {
+    PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
+  }
+
+  if (let LeftSideOpt = recurse_expr_primary(false)) {
+    auto LeftSide = LeftSideOpt.value();
+    bool Spinning = true;
+
+    /****************************************
+     * Combine pre-unary operators
+     ****************************************/
+    while (!PreUnaryOps.empty()) {
+      let[Op, Offset] = PreUnaryOps.top();
+      PreUnaryOps.pop();
+
+      LeftSide = make<UnaryExpr>(Op, LeftSide)();
+      LeftSide->set_offset(Offset);
+    }
+
+    while (!Stack.empty() && Spinning) {
+      let Tok = peek();
+
+      if (terminators.contains(Tok)) {
+        break;
+      }
+
+      switch (Tok.get_type()) {
+        case qOper: {
+          let Op = Tok.as_op();
+          let OpType = IsPostUnaryOp(Op) ? OpMode::PostUnary : OpMode::Binary;
+          let OpPrecedence = GetOperatorPrecedence(Op, OpType);
+
+          if (OpPrecedence >= Stack.top().minPrecedence) {
+            next();
+
+            /****************************************
+             * Handle post-unary operators
+             ****************************************/
+            if (OpType == OpMode::PostUnary) {
+              LeftSide = make<PostUnaryExpr>(LeftSide, Op)();
+              LeftSide->set_offset(SourceOffset);
+
               continue;
             }
 
-            Expr *expr = nullptr;
-            auto terminators_copy = terminators;
-            terminators_copy.insert(Token(qPunc, qPuncRPar));
-            expr = recurse_expr(terminators_copy, depth + 1);
+            let IsLeftAssoc =
+                GetOperatorAssociativity(Op, OpType) == OpAssoc::Left;
+            let NextMinPrecedence =
+                IsLeftAssoc ? OpPrecedence + 1 : OpPrecedence;
+            bool IsType = Op == qOpAs || Op == qOpBitcastAs;
 
-            if (!next().is<qPuncRPar>()) {
-              diagnostic << tok << "Expected ')' to close the parentheses";
-              return mock_expr(QAST_VOID);
-            }
-
-            stack.push(expr);
-            continue;
-          }
-          case qPuncRPar: {
-            if (stack.size() != 1) {
-              diagnostic << tok << "Expected a single expression on the stack";
-              return mock_expr(QAST_VOID);
-            }
-
-            return stack.top();
-          }
-          case qPuncLCur: {
-            ExpressionList elements;
-            while (true) {
-              tok = peek();
-              if (tok.is<qPuncRCur>()) {
-                next();
-                break;
-              }
-
-              Expr *key = nullptr, *value = nullptr;
-              key = recurse_expr({Token(qPunc, qPuncColn)}, depth + 1);
-
-              tok = next();
-              if (!tok.is<qPuncColn>()) {
-                diagnostic << tok << "Expected ':' in list element";
-                return mock_expr(QAST_VOID);
-              }
-
-              value = recurse_expr(
-
-                  {Token(qPunc, qPuncComa), Token(qPunc, qPuncRCur)},
-                  depth + 1);
-
-              elements.push_back(make<Assoc>(key, value));
-
-              tok = peek();
-              if (tok.is<qPuncComa>()) {
-                next();
+            if (!IsType) {
+              /****************************************
+               * Parse pre-unary operators
+               ****************************************/
+              while (let Tok = next_if(qOper)) {
+                PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
               }
             }
 
-            if (elements.size() == 1) {
-              stack.push(elements[0]);
+            /****************************************
+             * Handle binary operators
+             ****************************************/
+            if (auto RightSide = recurse_expr_primary(IsType)) {
+              /****************************************
+               * Combine pre-unary operators
+               ****************************************/
+              while (!PreUnaryOps.empty()) {
+                let[Op, Offset] = PreUnaryOps.top();
+                PreUnaryOps.pop();
+
+                let PreUnaryExpr = make<UnaryExpr>(Op, RightSide.value())();
+                PreUnaryExpr->set_offset(Offset);
+
+                RightSide = PreUnaryExpr;
+              }
+
+              if (Stack.size() + 1 > MAX_RECURSION_DEPTH) {
+                diagnostic << current()
+                           << "Recursion depth exceeds maximum limit";
+                return mock_expr();
+              }
+
+              Stack.push(Frame(LeftSide, SourceOffset, NextMinPrecedence,
+                               FrameType::Binary, Op));
+              LeftSide = RightSide.value();
             } else {
-              stack.push(make<List>(elements));
+              diagnostic
+                  << current()
+                  << "Failed to parse right-hand side of binary expression";
             }
+          } else {
+            LeftSide = UnwindStack(Stack, LeftSide, 0);
 
             continue;
           }
-          case qPuncLBrk: {
-            if (stack.empty()) {
-              ExpressionList elements;
-              while (true) {
-                tok = peek();
-                if (tok.is<qPuncRBrk>()) {
-                  next();
-                  stack.push(make<List>(elements));
-                  break;
-                }
 
-                Expr *element = recurse_expr(
+          break;
+        }
 
-                    {Token(qPunc, qPuncComa), Token(qPunc, qPuncSemi),
-                     Token(qPunc, qPuncRBrk)},
-                    depth + 1);
+        case qPunc: {
+          // Based on the assumption that function calls have the same
+          // precedence as the dot operator (member access)
+          static let SuffixOPPrecedence =
+              GetOperatorPrecedence(qOpDot, OpMode::Binary);
+          LeftSide = UnwindStack(Stack, LeftSide, SuffixOPPrecedence);
 
-                tok = peek();
-                if (tok.is<qPuncSemi>()) {
-                  next();
+          if (next_if(qPuncLPar)) {
+            let Arguments = recurse_call_arguments(Token(qPunc, qPuncRPar));
+            if (!next_if(qPuncRPar)) {
+              diagnostic << current()
+                         << "Expected ')' to close the function call";
+            }
 
-                  Expr *count = recurse_expr(
-                      {Token(qPunc, qPuncRBrk), Token(qPunc, qPuncComa)},
-                      depth + 1);
+            LeftSide = make<Call>(LeftSide, std::move(Arguments))();
+            LeftSide->set_offset(SourceOffset);
+          } else if (next_if(qPuncLBrk)) {
+            let first = recurse_expr({
+                Token(qPunc, qPuncRBrk),
+                Token(qPunc, qPuncColn),
+            });
 
-                  if (!count->is<ConstInt>()) {
-                    diagnostic << tok
-                               << "Expected a constant integer in list element";
-                    return mock_expr(QAST_VOID);
-                  }
-
-                  size_t count_val = std::stoi(
-                      std::string(count->as<ConstInt>()->get_value()));
-
-                  if (count_val > MAX_LIST_DUP) {
-                    diagnostic << tok
-                               << "List element duplication count exceeds the "
-                                  "maximum limit";
-                    return mock_expr(QAST_VOID);
-                  }
-
-                  for (size_t i = 0; i < count_val; i++) {
-                    elements.push_back(element);
-                  }
-
-                  tok = peek();
-                } else if (element) {
-                  elements.push_back(element);
-                }
-
-                if (tok.is<qPuncComa>()) {
-                  next();
-                }
+            if (next_if(qPuncColn)) {
+              let second = recurse_expr({Token(qPunc, qPuncRBrk)});
+              if (!next_if(qPuncRBrk)) {
+                diagnostic << current() << "Expected ']' to close the slice";
               }
 
-              continue;
-            }
-
-            if (stack.size() != 1) {
-              diagnostic << tok << "Expected a single expression on the stack";
-              return mock_expr(QAST_VOID);
-            }
-
-            Expr *index = nullptr, *left = stack.top();
-            stack.pop();
-
-            index = recurse_expr(
-
-                {Token(qPunc, qPuncRBrk), Token(qPunc, qPuncColn)}, depth + 1);
-
-            tok = next();
-            if (tok.is<qPuncColn>()) {
-              Expr *end = recurse_expr({Token(qPunc, qPuncRBrk)}, depth + 1);
-
-              tok = next();
-              if (!tok.is<qPuncRBrk>()) {
-                diagnostic << tok << "Expected ']' to close the list index";
-                return mock_expr(QAST_VOID);
+              LeftSide = make<Slice>(LeftSide, first, second)();
+              LeftSide->set_offset(SourceOffset);
+            } else {
+              if (!next_if(qPuncRBrk)) {
+                diagnostic << current()
+                           << "Expected ']' to close the index expression";
               }
 
-              stack.push(make<Slice>(left, index, end));
-              continue;
+              LeftSide = make<Index>(LeftSide, first)();
+              LeftSide->set_offset(SourceOffset);
             }
-
-            if (!tok.is<qPuncRBrk>()) {
-              diagnostic << tok << "Expected ']' to close the list index";
-              return mock_expr(QAST_VOID);
-            }
-
-            tok = peek();
-            if (tok.is<qOpInc>()) {
-              PostUnaryExpr *p =
-                  make<PostUnaryExpr>(make<Index>(left, index), qOpInc);
-              stack.push(p);
-              next();
-              continue;
-            } else if (tok.is<qOpDec>()) {
-              PostUnaryExpr *p =
-                  make<PostUnaryExpr>(make<Index>(left, index), qOpDec);
-              stack.push(p);
-              next();
-              continue;
-            }
-
-            stack.push(make<Index>(left, index));
-            continue;
+          } else {  // Not part of the expression
+            Spinning = false;
           }
-          case qPuncComa: {
-            if (stack.size() != 1) {
-              diagnostic << tok << "Expected a single expression on the stack";
-              return mock_expr(QAST_VOID);
-            }
 
-            Expr *right = nullptr, *left = stack.top();
-            stack.pop();
+          break;
+        }
 
-            right = recurse_expr(terminators, depth + 1);
-
-            stack.push(make<SeqPoint>(SeqPoint({left, right})));
-            continue;
-          }
-          default: {
-            diagnostic << tok << "Unexpected punctuation in expression";
-            return mock_expr(QAST_VOID);
-          } break;
+        case qEofF:
+        case qKeyW:
+        case qName:
+        case qIntL:
+        case qNumL:
+        case qText:
+        case qChar:
+        case qMacB:
+        case qMacr:
+        case qNote: {
+          Spinning = false;
+          break;
         }
       }
-      case qOper: {
-        Operator op = tok.as_op();
-        if (op == qOpDot) {
-          if (stack.size() != 1) {
-            diagnostic << tok << "Expected a single expression on the stack";
-            return mock_expr(QAST_VOID);
-          }
+    }
 
-          Expr *left = stack.top();
-          stack.pop();
+    return UnwindStack(Stack, LeftSide, 0);
+  } else {
+    diagnostic << current() << "Expected an expression";
 
-          tok = next();
-          if (!tok.is(qName)) {
-            diagnostic << tok << "Expected an identifier after '.'";
-            return mock_expr(QAST_VOID);
-          }
+    return mock_expr();
+  }
+}
 
-          let ident = tok.as_string();
-          tok = peek();
-          if (tok.is<qOpInc>()) {
-            PostUnaryExpr *p = make<PostUnaryExpr>(
-                make<Field>(left, SaveString(ident)), qOpInc);
-            stack.push(p);
-            next();
-            continue;
-          } else if (tok.is<qOpDec>()) {
-            PostUnaryExpr *p = make<PostUnaryExpr>(
-                make<Field>(left, SaveString(ident)), qOpDec);
-            stack.push(p);
-            next();
-            continue;
-          }
+std::optional<RefNode<Expr>> Parser::recurse_expr_keyword(lex::Keyword key) {
+  std::optional<RefNode<Expr>> E;
 
-          stack.push(make<Field>(left, SaveString(ident)));
-          continue;
-        }
-        Expr *expr = nullptr;
+  switch (key) {
+    case qKScope: {
+      diagnostic << current() << "Namespace declaration is not valid here";
+      break;
+    }
 
-        if (op == qOpAs) {
-          if (stack.size() != 1) {
-            diagnostic << tok << "Expected a single expression on the stack";
-            return mock_expr(QAST_VOID);
-          }
+    case qKImport: {
+      diagnostic << current() << "Import statement is not valid here";
+      break;
+    }
 
-          Type *type = recurse_type();
+    case qKPub: {
+      diagnostic << current() << "Public access modifier is not valid here";
+      break;
+    }
 
-          Expr *left = stack.top();
-          stack.pop();
-          stack.push(make<BinExpr>(left, qOpAs, make<TypeExpr>(type)));
-          continue;
-        }
+    case qKSec: {
+      diagnostic << current() << "Private access modifier is not valid here";
+      break;
+    }
 
-        if (op == qOpBitcastAs) {
-          if (stack.size() != 1) {
-            diagnostic << tok << "Expected a single expression on the stack";
-            return mock_expr(QAST_VOID);
-          }
+    case qKPro: {
+      diagnostic << current() << "Protected access modifier is not valid here";
+      break;
+    }
 
-          Type *type = recurse_type();
+    case qKType: {
+      let start_pos = current().get_start();
+      let type = recurse_type();
+      type->set_offset(start_pos);
 
-          Expr *left = stack.top();
-          stack.pop();
-          stack.push(make<BinExpr>(left, qOpBitcastAs, make<TypeExpr>(type)));
-          continue;
-        }
+      E = make<TypeExpr>(type)();
+      break;
+    }
 
-        expr = recurse_expr(terminators, depth + 1);
+    case qKLet: {
+      diagnostic << current() << "Let declaration is not valid here";
+      break;
+    }
 
-        if (stack.empty()) {
-          stack.push(make<UnaryExpr>((Operator)op, expr));
-          continue;
-        } else if (stack.size() == 1) {
-          Expr *left = stack.top();
-          stack.pop();
-          stack.push(make<BinExpr>(left, (Operator)op, expr));
-          continue;
+    case qKVar: {
+      diagnostic << current() << "Var declaration is not valid here";
+      break;
+    }
+
+    case qKConst: {
+      diagnostic << current() << "Const declaration is not valid here";
+      break;
+    }
+
+    case qKStatic: {
+      diagnostic << current() << "Static modifier is not valid here";
+      break;
+    }
+
+    case qKStruct: {
+      diagnostic << current() << "Struct declaration is not valid here";
+      break;
+    }
+
+    case qKRegion: {
+      diagnostic << current() << "Region declaration is not valid here";
+      break;
+    }
+
+    case qKGroup: {
+      diagnostic << current() << "Group declaration is not valid here";
+      break;
+    }
+
+    case qKClass: {
+      diagnostic << current() << "Class declaration is not valid here";
+      break;
+    }
+
+    case qKUnion: {
+      diagnostic << current() << "Union declaration is not valid here";
+      break;
+    }
+
+    case qKOpaque: {
+      diagnostic << current() << "Opaque type is not valid here";
+      break;
+    }
+
+    case qKEnum: {
+      diagnostic << current() << "Enum declaration is not valid here";
+      break;
+    }
+
+    case qK__FString: {
+      E = recurse_fstring();
+      break;
+    }
+
+    case qKFn: {
+      let start_pos = current().get_start();
+
+      let function = recurse_function(false);
+      function->set_offset(start_pos);
+
+      RefNode<Expr> expr = make<StmtExpr>(function)();
+
+      if (next_if(qPuncLPar)) {
+        let args = recurse_call_arguments(Token(qPunc, qPuncRPar));
+        if (next_if(qPuncRPar)) {
+          E = make<Call>(expr, args)();
         } else {
-          diagnostic << tok << "Unexpected operator in expression";
-          return mock_expr(QAST_VOID);
+          diagnostic << current() << "Expected ')' to close the function call";
+          E = mock_expr(QAST_CALL);
+        }
+      }
+
+      break;
+    }
+
+    case qKUnsafe: {
+      diagnostic << current() << "Unsafe keyword is not valid here";
+      break;
+    }
+
+    case qKSafe: {
+      diagnostic << current() << "Safe keyword is not valid here";
+      break;
+    }
+
+    case qKPromise: {
+      diagnostic << current() << "Promise keyword is not valid here";
+      break;
+    }
+
+    case qKIf: {
+      diagnostic << current() << "If statement is not valid here";
+      break;
+    }
+
+    case qKElse: {
+      diagnostic << current() << "Else statement is not valid here";
+      break;
+    }
+
+    case qKFor: {
+      diagnostic << current() << "For loop is not valid here";
+      break;
+    }
+
+    case qKWhile: {
+      diagnostic << current() << "While loop is not valid here";
+      break;
+    }
+
+    case qKDo: {
+      diagnostic << current() << "Do statement is not valid here";
+      break;
+    }
+
+    case qKSwitch: {
+      diagnostic << current() << "Switch statement is not valid here";
+      break;
+    }
+
+    case qKBreak: {
+      diagnostic << current() << "Break statement is not valid here";
+      break;
+    }
+
+    case qKContinue: {
+      diagnostic << current() << "Continue statement is not valid here";
+      break;
+    }
+
+    case qKReturn: {
+      diagnostic << current() << "Return statement is not valid here";
+      break;
+    }
+
+    case qKRetif: {
+      diagnostic << current() << "Retif statement is not valid here";
+      break;
+    }
+
+    case qKForeach: {
+      diagnostic << current() << "Foreach loop is not valid here";
+      break;
+    }
+
+    case qKTry: {
+      diagnostic << current() << "Try statement is not valid here";
+      break;
+    }
+
+    case qKCatch: {
+      diagnostic << current() << "Catch statement is not valid here";
+      break;
+    }
+
+    case qKThrow: {
+      diagnostic << current() << "Throw statement is not valid here";
+      break;
+    }
+
+    case qKAsync: {
+      diagnostic << current() << "Async statement is not valid here";
+      break;
+    }
+
+    case qKAwait: {
+      diagnostic << current() << "Await statement is not valid here";
+      break;
+    }
+
+    case qK__Asm__: {
+      diagnostic << current() << "Inline assembly is not valid here";
+      break;
+    }
+
+    case qKUndef: {
+      E = make<ConstUndef>()();
+      break;
+    }
+
+    case qKNull: {
+      E = make<ConstNull>()();
+      break;
+    }
+
+    case qKTrue: {
+      E = make<ConstBool>(true)();
+      break;
+    }
+
+    case qKFalse: {
+      E = make<ConstBool>(false)();
+      break;
+    }
+  }
+
+  return E;
+}
+
+std::optional<RefNode<Expr>> Parser::recurse_expr_punctor(lex::Punctor punc) {
+  std::optional<RefNode<Expr>> E;
+
+  switch (punc) {
+    case qPuncLPar: {
+      E = recurse_expr({Token(qPunc, qPuncRPar)});
+      if (!next_if(qPuncRPar)) {
+        diagnostic << current() << "Expected ')' to close the expression";
+      }
+
+      break;
+    }
+
+    case qPuncRPar: {
+      diagnostic << current() << "Unexpected right parenthesis in expression";
+      break;
+    }
+
+    case qPuncLBrk: {
+      ExpressionList items;
+
+      while (true) {
+        if (next_if(qEofF)) {
+          diagnostic << current()
+                     << "Unexpected end of file while parsing expression";
+          break;
+        }
+
+        if (next_if(qPuncRBrk)) {
+          break;
+        }
+
+        let expr = recurse_expr({
+            Token(qPunc, qPuncComa),
+            Token(qPunc, qPuncRBrk),
+            Token(qPunc, qPuncSemi),
+        });
+
+        if (next_if(qPuncSemi)) {
+          if (let count_tok = next_if(qIntL)) {
+            let count_str = current().as_string();
+            size_t count{};
+            if (std::from_chars(count_str.data(),
+                                count_str.data() + count_str.size(), count)
+                    .ec == std::errc()) {
+              if (count <= MAX_LIST_REPEAT_COUNT) {
+                for (size_t i = 0; i < count; i++) {
+                  items.push_back(expr);
+                }
+              } else {
+                diagnostic << current()
+                           << "Compressed list size exceeds maximum limit";
+              }
+
+            } else {
+              diagnostic << current()
+                         << "Expected an integer literal for the compressed "
+                            "list size";
+            }
+          } else {
+            diagnostic << current()
+                       << "Expected an integer literal for the compressed list "
+                          "size";
+          }
+        } else {
+          items.push_back(expr);
+        }
+
+        next_if(qPuncComa);
+      }
+
+      E = make<List>(std::move(items))();
+      break;
+    }
+
+    case qPuncRBrk: {
+      diagnostic << current() << "Unexpected right bracket in expression";
+      break;
+    }
+
+    case qPuncLCur: {
+      ExpressionList items;
+
+      while (true) {
+        if (next_if(qEofF)) {
+          diagnostic << current()
+                     << "Unexpected end of file while parsing dictionary";
+          break;
+        }
+
+        if (next_if(qPuncRCur)) {
+          break;
+        }
+
+        let start_pos = peek().get_start();
+
+        let key = recurse_expr({Token(qPunc, qPuncColn)});
+        if (!next_if(qPuncColn)) {
+          diagnostic << current() << "Expected colon after key in dictionary";
+          break;
+        }
+
+        let value = recurse_expr({
+            Token(qPunc, qPuncRCur),
+            Token(qPunc, qPuncComa),
+        });
+
+        next_if(qPuncComa);
+
+        let assoc = make<Assoc>(key, value)();
+        assoc->set_offset(start_pos);
+
+        items.push_back(assoc);
+      }
+
+      E = make<List>(std::move(items))();
+      break;
+    }
+
+    case qPuncRCur: {
+      diagnostic << current() << "Unexpected right curly brace in expression";
+      break;
+    }
+
+    case qPuncComa: {
+      diagnostic << current() << "Comma is not valid in this context";
+      break;
+    }
+
+    case qPuncColn: {
+      diagnostic << current() << "Colon is not valid in this context";
+      break;
+    }
+
+    case qPuncSemi: {
+      diagnostic << current() << "Semicolon is not valid in this context";
+      break;
+    }
+  }
+
+  return E;
+}
+
+RefNode<Expr> Parser::recurse_expr_type_suffix(RefNode<Expr> base) {
+  let tok = current();
+
+  let suffix = recurse_type();
+  suffix->set_offset(tok.get_start());
+
+  let texpr = make<TypeExpr>(suffix)();
+  texpr->set_offset(tok.get_start());
+
+  return make<BinExpr>(base, qOpAs, texpr)();
+}
+
+std::optional<RefNode<Expr>> Parser::recurse_expr_primary(bool isType) {
+  let start_pos = peek().get_start();
+  std::optional<RefNode<Expr>> E;
+
+  if (isType) {
+    let type = recurse_type();
+    type->set_offset(start_pos);
+
+    let texpr = make<TypeExpr>(type)();
+    texpr->set_offset(start_pos);
+
+    E = texpr;
+  } else {
+    switch (let tok = next(); tok.get_type()) {
+      case qEofF: {
+        break;
+      }
+
+      case qKeyW: {
+        if ((E = recurse_expr_keyword(tok.as_key())).has_value()) {
+          E.value()->set_offset(start_pos);
+        }
+
+        break;
+      }
+
+      case qOper: {
+        diagnostic << tok << "Unexpected operator in expression";
+        break;
+      }
+
+      case qPunc: {
+        if ((E = recurse_expr_punctor(tok.as_punc())).has_value()) {
+          E.value()->set_offset(start_pos);
         }
         break;
       }
+
       case qName: {
-        let ident = tok.as_string();
-        if (peek().is<qPuncLPar>()) {
-          next();
+        let identifier = make<Ident>(intern(tok.as_string()))();
+        identifier->set_offset(start_pos);
 
-          Call *fcall =
-              recurse_function_call(make<Ident>(SaveString(ident)), depth);
-          if (fcall == nullptr) {
-            diagnostic << tok << "Expected a function call in expression";
-            return mock_expr(QAST_VOID);
-          }
-
-          stack.push(fcall);
-          continue;
-        } else if (peek().is<qOpInc>()) {
-          PostUnaryExpr *p =
-              make<PostUnaryExpr>(make<Ident>(SaveString(ident)), qOpInc);
-          stack.push(p);
-          next();
-          continue;
-        } else if (peek().is<qOpDec>()) {
-          PostUnaryExpr *p =
-              make<PostUnaryExpr>(make<Ident>(SaveString(ident)), qOpDec);
-          stack.push(p);
-          next();
-          continue;
-        } else {
-          Ident *id = make<Ident>(SaveString(ident));
-          id->set_offset(tok.get_start());
-
-          stack.push(id);
-          continue;
-        }
+        E = identifier;
+        break;
       }
-      default: {
-        diagnostic << tok << "Unexpected token in expression";
-        return mock_expr(QAST_VOID);
+
+      case qIntL: {
+        let integer = make<ConstInt>(intern(tok.as_string()))();
+        integer->set_offset(start_pos);
+
+        if (let tok = peek(); tok.is(qName)) {
+          let casted = recurse_expr_type_suffix(integer);
+          casted->set_offset(start_pos);
+
+          E = casted;
+        } else {
+          E = integer;
+        }
+
+        break;
+      }
+
+      case qNumL: {
+        let decimal = make<ConstFloat>(intern(tok.as_string()))();
+        decimal->set_offset(start_pos);
+
+        if (let tok = peek(); tok.is(qName)) {
+          let casted = recurse_expr_type_suffix(decimal);
+          casted->set_offset(start_pos);
+
+          E = casted;
+        } else {
+          E = decimal;
+        }
+
+        break;
+      }
+
+      case qText: {
+        let string = make<ConstString>(intern(tok.as_string()))();
+        string->set_offset(start_pos);
+
+        if (let tok = peek(); tok.is(qName)) {
+          let casted = recurse_expr_type_suffix(string);
+          casted->set_offset(start_pos);
+
+          E = casted;
+        } else {
+          E = string;
+        }
+
+        break;
+      }
+
+      case qChar: {
+        let str_data = tok.as_string();
+        if (str_data.size() != 1) [[unlikely]] {
+          diagnostic << tok << "Expected a single byte in character literal";
+          break;
+        }
+
+        let character = make<ConstChar>(str_data[0])();
+        character->set_offset(start_pos);
+
+        if (let tok = peek(); tok.is(qName)) {
+          let casted = recurse_expr_type_suffix(character);
+          casted->set_offset(start_pos);
+
+          E = casted;
+        } else {
+          E = character;
+        }
+
+        break;
+      }
+
+      case qMacB: {
+        diagnostic << tok << "Unexpected macro block in expression";
+        break;
+      }
+
+      case qMacr: {
+        diagnostic << tok << "Unexpected macro call in expression";
+        break;
+      }
+
+      case qNote: {
+        diagnostic << tok << "Unexpected comment in expression";
+        break;
       }
     }
   }
 
-  diagnostic << peek() << "Unexpected end of expression";
-  return mock_expr(QAST_VOID);
+  return E;
 }

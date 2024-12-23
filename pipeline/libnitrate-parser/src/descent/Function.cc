@@ -38,17 +38,17 @@
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-Type *Parser::recurse_function_parameter_type() {
+RefNode<Type> Parser::recurse_function_parameter_type() {
   if (next_if(qPuncColn)) {
     return recurse_type();
   } else {
-    let type = make<InferTy>();
+    let type = make<InferTy>()();
     type->set_offset(current().get_start());
     return type;
   }
 }
 
-std::optional<Expr *> Parser::recurse_function_parameter_value() {
+std::optional<RefNode<Expr>> Parser::recurse_function_parameter_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
 
@@ -234,7 +234,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
           } else if (name == "retro") {
             is_retro = true;
           } else if (reserved_words.contains(name)) {
-            attributes.push_back(make<Ident>(SaveString(name)));
+            attributes.push_back(make<Ident>(SaveString(name))());
           } else {
             function_name = name;
 
@@ -332,18 +332,19 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
                                 is_quasi, is_retro);
 }
 
-Type *Parser::Parser::recurse_function_return_type() {
+RefNode<Type> Parser::Parser::recurse_function_return_type() {
   if (next_if(qPuncColn)) {
     return recurse_type();
   } else {
-    let type = make<InferTy>();
+    let type = make<InferTy>()();
     type->set_offset(current().get_start());
 
     return type;
   }
 }
 
-std::optional<Stmt *> Parser::recurse_function_body(bool restrict_decl_only) {
+std::optional<RefNode<Stmt>> Parser::recurse_function_body(
+    bool restrict_decl_only) {
   if (restrict_decl_only || next_if(qPuncSemi)) {
     return std::nullopt;
   } else if (next_if(qOpArrow)) {
@@ -353,7 +354,7 @@ std::optional<Stmt *> Parser::recurse_function_body(bool restrict_decl_only) {
   }
 }
 
-Stmt *Parser::recurse_function(bool restrict_decl_only) {
+RefNode<Stmt> Parser::recurse_function(bool restrict_decl_only) {
   /* fn <attributes>? <modifiers>? <capture_list>?
    * <name><template_parameters>?(<parameters>?)<: return_type>? <body>? */
 
@@ -376,7 +377,7 @@ Stmt *Parser::recurse_function(bool restrict_decl_only) {
   let function =
       make<Function>(attributes, purity, captures, SaveString(function_name),
                      template_parameters, parameters, return_type, std::nullopt,
-                     std::nullopt, body);
+                     std::nullopt, body)();
   function->set_offset(start_pos);
 
   return function;

@@ -36,7 +36,7 @@
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-Stmt *Parser::recurse_inline_asm() {
+RefNode<Stmt> Parser::recurse_inline_asm() {
   diagnostic << current() << "Inline assembly is not yet implemented";
 
   return mock_stmt(QAST_INLINE_ASM);

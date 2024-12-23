@@ -92,7 +92,7 @@ StructDefNames Parser::recurse_struct_terms() {
   }
 }
 
-std::optional<Expr *> Parser::recurse_struct_field_default_value() {
+std::optional<RefNode<Expr> > Parser::recurse_struct_field_default_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
 
@@ -179,7 +179,7 @@ Parser::StructContent Parser::recurse_struct_body() {
   return body;
 }
 
-Stmt *Parser::recurse_struct(CompositeType type) {
+RefNode<Stmt> Parser::recurse_struct(CompositeType type) {
   let start_pos = current().get_start();
   let attributes = recurse_struct_attributes();
   let name = recurse_struct_name();
@@ -190,7 +190,7 @@ Stmt *Parser::recurse_struct(CompositeType type) {
   let struct_defintion = make<StructDef>(
       type, std::move(attributes), SaveString(name), std::move(template_params),
       std::move(terms), std::move(fields), std::move(methods),
-      std::move(static_methods));
+      std::move(static_methods))();
 
   struct_defintion->set_offset(start_pos);
 

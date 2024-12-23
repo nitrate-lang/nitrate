@@ -233,6 +233,8 @@ func_entry:  // do tail call optimization manually
               qcore_logf(QCORE_ERROR, "Failed to expand macro block: %s\n",
                          block.data());
               x = Token::EndOfFile();
+              SetFailBit();
+
               goto emit_token;
             }
           } else {
@@ -242,6 +244,8 @@ func_entry:  // do tail call optimization manually
               qcore_logf(QCORE_ERROR, "Invalid macro function definition: %s\n",
                          block.data());
               x = Token::EndOfFile();
+              SetFailBit();
+
               goto emit_token;
             }
 
@@ -256,6 +260,8 @@ func_entry:  // do tail call optimization manually
                            "Invalid macro function definition: %s\n",
                            block.data());
                 x = Token::EndOfFile();
+                SetFailBit();
+
                 goto emit_token;
               }
               code.erase(pos, 1);
@@ -268,6 +274,8 @@ func_entry:  // do tail call optimization manually
                            "Invalid macro function definition: %s\n",
                            block.data());
                 x = Token::EndOfFile();
+                SetFailBit();
+
                 goto emit_token;
               }
               code.erase(pos, 1);
@@ -278,6 +286,8 @@ func_entry:  // do tail call optimization manually
               qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
                          name.data());
               x = Token::EndOfFile();
+              SetFailBit();
+
               goto emit_token;
             }
           }
@@ -294,6 +304,8 @@ func_entry:  // do tail call optimization manually
               qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
                          body.data());
               x = Token::EndOfFile();
+              SetFailBit();
+
               goto emit_token;
             }
 
@@ -303,6 +315,8 @@ func_entry:  // do tail call optimization manually
               qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
                          body.data());
               x = Token::EndOfFile();
+              SetFailBit();
+
               goto emit_token;
             }
 

@@ -36,7 +36,7 @@
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-Stmt *Parser::recurse_typedef() {
+RefNode<Stmt> Parser::recurse_typedef() {
   /**
    * Syntax examples:
    *   `type name = type;`
@@ -49,7 +49,7 @@ Stmt *Parser::recurse_typedef() {
       let type = recurse_type();
 
       if (next_if(qPuncSemi)) {
-        return make<TypedefStmt>(SaveString(name), type);
+        return make<TypedefStmt>(SaveString(name), type)();
       } else {
         diagnostic << current() << "Expected ';' in typedef declaration";
       }

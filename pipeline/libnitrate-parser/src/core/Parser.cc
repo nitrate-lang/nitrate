@@ -46,8 +46,8 @@
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
-                            SafetyMode safety) {
+RefNode<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
+                                    SafetyMode safety) {
   if (expect_braces && !next().is<qPuncLCur>()) {
     diagnostic << current() << "Expected '{'";
   }
@@ -59,7 +59,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
     Token tok = peek();
 
     if (expect_braces && next_if(qPuncRCur)) {
-      let block = make<Block>(items, safety);
+      let block = make<Block>(items, safety)();
       block->set_offset(tok.get_start());
 
       return block;
@@ -85,8 +85,8 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
         diagnostic << tok << "Expected ';' after expression";
       }
 
-      let stmt = make<ExprStmt>(expr);
-      stmt->set_offset(expr->get_offset());
+      let stmt = make<ExprStmt>(expr)();
+      stmt->set_offset(expr->begin());
 
       items.push_back(stmt);
       continue;
@@ -230,7 +230,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKBreak: {
-        let node = make<BreakStmt>();
+        let node = make<BreakStmt>()();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -238,7 +238,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKContinue: {
-        let node = make<ContinueStmt>();
+        let node = make<ContinueStmt>()();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -294,7 +294,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKTrue: {
-        let node = make<ExprStmt>(make<ConstBool>(true));
+        let node = make<ExprStmt>(make<ConstBool>(true)())();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -302,7 +302,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKFalse: {
-        let node = make<ExprStmt>(make<ConstBool>(false));
+        let node = make<ExprStmt>(make<ConstBool>(false)())();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -310,7 +310,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qK__FString: {
-        let node = make<ExprStmt>(recurse_fstring(0));
+        let node = make<ExprStmt>(recurse_fstring())();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -360,7 +360,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
     diagnostic << current() << "Expected '}'";
   }
 
-  let block = make<Block>(items, safety);
+  let block = make<Block>(items, safety)();
   block->set_offset(block_start);
 
   return block;
@@ -373,11 +373,12 @@ CPP_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
   m_env = env;
   m_allocator = std::make_unique<ncc::core::dyn_arena>();
   m_failed = false;
-
-  env->set("this.lexer.emit_comments", "false", true);
 }
 
 CPP_EXPORT ASTRoot Parser::parse() {
+  auto old_state = rd.GetSkipCommentsState();
+  rd.SkipCommentsState(true);
+
   /*== Install thread-local references to the parser ==*/
   auto old = ncc::parse::diagnostic;
   ncc::parse::diagnostic = this;
@@ -386,19 +387,25 @@ CPP_EXPORT ASTRoot Parser::parse() {
   auto node = recurse_block(false, false, SafetyMode::Unknown);
   std::swap(ncc::parse::npar_allocator, m_allocator);
 
-  ASTRoot ast(node, std::move(m_allocator));
+  ASTRoot ast(node, std::move(m_allocator), m_failed);
   m_allocator = std::make_unique<ncc::core::dyn_arena>();
 
   /*== Uninstall thread-local references to the parser ==*/
   ncc::parse::diagnostic = old;
 
+  rd.SkipCommentsState(old_state);
+
   return ast;
 }
 
 CPP_EXPORT bool ASTRoot::check() const {
+  if (m_failed) {
+    return false;
+  }
+
   bool failed = false;
-  ncc::parse::iterate<dfs_pre>(const_cast<Base *&>(m_base), [&](auto, auto c) {
-    failed |= !c || !*c || (*c)->is_mock();
+  ncc::parse::iterate<dfs_pre>(m_base, [&](auto, auto c) {
+    failed |= !c || c->is_mock();
 
     return failed ? IterOp::Abort : IterOp::Proceed;
   });
@@ -408,9 +415,13 @@ CPP_EXPORT bool ASTRoot::check() const {
 
 std::string ncc::parse::mint_clang16_message(ncc::lex::IScanner &rd,
                                              const DiagMessage &msg) {
+  let start = msg.tok.get_start().Get(rd);
+
+  let filename = start.GetFilename();
+  let line = start.GetRow(), col = start.GetCol();
+
   std::stringstream ss;
-  ss << "\x1b[37;1m" << rd.Filename(msg.tok) << ":";
-  uint32_t line = rd.StartLine(msg.tok), col = rd.StartColumn(msg.tok);
+  ss << "\x1b[37;1m" << filename << ":";
 
   if (line != QLEX_EOFF) {
     ss << line << ":";

@@ -1,15 +1,17 @@
 #include <rapidjson/document.h>
 
+#include <charconv>
 #include <lsp/core/SyncFS.hh>
 #include <lsp/core/server.hh>
 #include <lsp/route/RoutesList.hh>
 #include <nitrate-lexer/Lexer.hh>
-#include <regex>
+#include <nitrate-parser/Context.hh>
 #include <sstream>
 #include <string>
 
 using namespace rapidjson;
 using namespace ncc::lex;
+using namespace ncc::parse;
 
 struct Position {
   size_t line = 0;
@@ -29,6 +31,11 @@ struct ColorInformation {
 
 struct RGBA {
   float r, g, b, a;
+};
+
+enum class ColorMode {
+  RGBA,
+  HSLA,
 };
 
 static RGBA hslaToRgba(float h, float s, float l, float a) {
@@ -78,6 +85,81 @@ static RGBA hslaToRgba(float h, float s, float l, float a) {
   return RGBA{(r + m) * 255, (g + m) * 255, (b + m) * 255, a * 255};
 }
 
+template <size_t Argc>
+static std::optional<ColorInformation> parse_color_function(const Call* N,
+                                                            ColorMode mode,
+                                                            IScanner& L) {
+  static_assert(Argc == 3 || Argc == 4,
+                "Invalid number of arguments. Indexs will be out-of-range.");
+
+  let args = N->get_args();
+
+  if (args.size() != Argc) {
+    return std::nullopt;
+  }
+
+  float values[Argc];
+  for (size_t i = 0; i < Argc; i++) {
+    let arg_expr = args[i].second;
+
+    std::string_view value;
+
+    if (arg_expr->is(QAST_FLOAT)) {
+      value = arg_expr->as<ConstFloat>()->get_value();
+    } else if (arg_expr->is(QAST_INT)) {
+      value = arg_expr->as<ConstInt>()->get_value();
+    } else {
+      return std::nullopt;
+    }
+
+    float x;
+    if (std::from_chars(value.data(), value.data() + value.size(), x).ec ==
+        std::errc()) {
+      values[i] = x;
+    } else {
+      return std::nullopt;
+    }
+  }
+
+  /// TODO: Fix source location tracking
+  (void)hslaToRgba;
+
+  return std::nullopt;
+
+  // let start_offset = N->get_();
+
+  // let start_line = L.GetRow(std::get<0>(start_offset)),
+  //     start_column = L.GetCol(std::get<0>(start_offset));
+
+  // let end_line = L.GetRow(std::get<1>(start_offset)),
+  //     end_column = L.GetCol(std::get<1>(start_offset));
+
+  // if (mode == ColorMode::RGBA) {
+  //   return ColorInformation{
+  //       .range = {.start = {.line = start_line, .character = start_column},
+  //                 .end = {.line = end_line, .character = end_column}},
+  //       .red = values[0],
+  //       .green = values[1],
+  //       .blue = values[2],
+  //       .alpha = Argc == 4 ? values[3] : 1.0f,
+  //   };
+  // } else if (mode == ColorMode::HSLA) {
+  //   let rgba = hslaToRgba(values[0], values[1], values[2],
+  //                         Argc == 4 ? values[3] : 1.0f);
+
+  //   return ColorInformation{
+  //       .range = {.start = {.line = start_line, .character = start_column},
+  //                 .end = {.line = end_line, .character = end_column}},
+  //       .red = rgba.r,
+  //       .green = rgba.g,
+  //       .blue = rgba.b,
+  //       .alpha = rgba.a,
+  //   };
+  // } else {
+  //   return std::nullopt;
+  // }
+}
+
 void do_documentColor(const lsp::RequestMessage& req,
                       lsp::ResponseMessage& resp) {
   if (!req.params().HasMember("textDocument")) {
@@ -101,164 +183,52 @@ void do_documentColor(const lsp::RequestMessage& req,
     return;
   }
 
-  std::string uri = req.params()["textDocument"]["uri"].GetString();
+  let uri = req.params()["textDocument"]["uri"].GetString();
 
   LOG(INFO) << "Requested document color box";
 
-  auto file_opt = SyncFS::the().open(uri);
+  let file_opt = SyncFS::the().open(uri);
   if (!file_opt.has_value()) {
     resp.error(lsp::ErrorCodes::InternalError, "Failed to open file");
     return;
   }
-  auto file = file_opt.value();
-
-  std::stringstream ss(*file->content());
+  let file = file_opt.value();
 
   auto env = std::make_shared<ncc::core::Environment>();
+  auto ss = std::stringstream(*file->content());
   auto L = Tokenizer(ss, env);
-  Token tok;
+  let parser = ncc::parse::Parser::Create(L, env);
+  let ast = parser->parse();
+
+  if (L.HasError() || !ast.check()) {
+    return;
+  }
+
   std::vector<ColorInformation> colors;
 
-  while ((tok = (L.Next())).get_type() != qEofF) {
-    if (tok.get_type() != qMacr) {
-      continue;
+  for_each<Call>(ast.get(), [&](const Call* N) {
+    if (N->get_func()->is(QAST_IDENT)) {
+      let name = N->get_func()->as<Ident>()->get_name();
+      let args = N->get_args();
+
+      std::optional<ColorInformation> element;
+      if (name == "rgba" && args.size() == 4) {
+        element = parse_color_function<4>(N, ColorMode::RGBA, L);
+      } else if (name == "hsla" && args.size() == 4) {
+        element = parse_color_function<4>(N, ColorMode::HSLA, L);
+      } else if (name == "rgb" && args.size() == 3) {
+        element = parse_color_function<3>(N, ColorMode::RGBA, L);
+      } else if (name == "hsl" && args.size() == 3) {
+        element = parse_color_function<3>(N, ColorMode::HSLA, L);
+      }
+
+      if (element.has_value()) {
+        colors.push_back(element.value());
+      } else {
+        LOG(INFO) << "Failed to parse color function";
+      }
     }
-
-    uint32_t start_line = L.StartLine(tok), start_col = L.StartColumn(tok);
-    uint32_t end_line = L.EndLine(tok), end_col = L.EndColumn(tok);
-
-    if (start_line == QLEX_EOFF || start_col == QLEX_EOFF ||
-        end_line == QLEX_EOFF || end_col == QLEX_EOFF) {
-      LOG(WARNING) << "Failed to get source location";
-      continue;
-    }
-
-    std::string_view value = tok.as_string();
-
-    if (value.starts_with("rgba(") && value.ends_with(")")) {
-      value.remove_prefix(5);
-      value.remove_suffix(1);
-
-      std::regex rgx(R"((\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+))");
-      std::cmatch match;
-      if (!std::regex_search(value.begin(), value.end(), match, rgx) ||
-          match.size() != 5) {
-        continue;
-      }
-
-      uint32_t r = 0, g = 0, b = 0, a = 0;
-      if (std::sscanf(match[1].str().c_str(), "%u", &r) != 1 ||
-          std::sscanf(match[2].str().c_str(), "%u", &g) != 1 ||
-          std::sscanf(match[3].str().c_str(), "%u", &b) != 1 ||
-          std::sscanf(match[4].str().c_str(), "%u", &a) != 1) {
-        continue;
-      }
-
-      ColorInformation color;
-      color.range.start.line = start_line - 1;
-      color.range.start.character = start_col - 1;
-      color.range.end.line = end_line - 1;
-      color.range.end.character = end_col - 1;
-      color.red = r >= 255 ? 1.0 : r / 255.0;
-      color.green = g >= 255 ? 1.0 : g / 255.0;
-      color.blue = b >= 255 ? 1.0 : b / 255.0;
-      color.alpha = a >= 255 ? 1.0 : a / 255.0;
-
-      colors.push_back(color);
-    } else if (value.starts_with("rgb(")) {
-      value.remove_prefix(4);
-      value.remove_suffix(1);
-
-      std::regex rgx(R"((\d+)\s*,\s*(\d+)\s*,\s*(\d+))");
-      std::cmatch match;
-      if (!std::regex_search(value.begin(), value.end(), match, rgx) ||
-          match.size() != 4) {
-        continue;
-      }
-
-      uint32_t r = 0, g = 0, b = 0;
-      if (std::sscanf(match[1].str().c_str(), "%u", &r) != 1 ||
-          std::sscanf(match[2].str().c_str(), "%u", &g) != 1 ||
-          std::sscanf(match[3].str().c_str(), "%u", &b) != 1) {
-        continue;
-      }
-
-      ColorInformation color;
-      color.range.start.line = start_line - 1;
-      color.range.start.character = start_col - 1;
-      color.range.end.line = end_line - 1;
-      color.range.end.character = end_col - 1;
-      color.red = r >= 255 ? 1.0 : r / 255.0;
-      color.green = g >= 255 ? 1.0 : g / 255.0;
-      color.blue = b >= 255 ? 1.0 : b / 255.0;
-      color.alpha = 1.0;
-
-      colors.push_back(color);
-    } else if (value.starts_with("hsla(")) {
-      value.remove_prefix(5);
-      value.remove_suffix(1);
-
-      std::regex rgx(R"((\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?\s*,\s*(\d+)%?)");
-      std::cmatch match;
-      if (!std::regex_search(value.begin(), value.end(), match, rgx) ||
-          match.size() != 5) {
-        continue;
-      }
-
-      uint32_t h = 0, s = 0, l = 0, a = 0;
-      if (std::sscanf(match[1].str().c_str(), "%u", &h) != 1 ||
-          std::sscanf(match[2].str().c_str(), "%u", &s) != 1 ||
-          std::sscanf(match[3].str().c_str(), "%u", &l) != 1 ||
-          std::sscanf(match[4].str().c_str(), "%u", &a) != 1) {
-        continue;
-      }
-
-      RGBA rgba = hslaToRgba(h, s, l, a / 100.0);
-
-      ColorInformation color;
-      color.range.start.line = start_line - 1;
-      color.range.start.character = start_col - 1;
-      color.range.end.line = end_line - 1;
-      color.range.end.character = end_col - 1;
-      color.red = rgba.r / 255.0;
-      color.green = rgba.g / 255.0;
-      color.blue = rgba.b / 255.0;
-      color.alpha = rgba.a / 255.0;
-
-      colors.push_back(color);
-    } else if (value.starts_with("hsl(")) {
-      value.remove_prefix(4);
-      value.remove_suffix(1);
-
-      std::regex rgx(R"((\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?)");
-      std::cmatch match;
-      if (!std::regex_search(value.begin(), value.end(), match, rgx) ||
-          match.size() != 4) {
-        continue;
-      }
-
-      uint32_t h = 0, s = 0, l = 0;
-      if (std::sscanf(match[1].str().c_str(), "%u", &h) != 1 ||
-          std::sscanf(match[2].str().c_str(), "%u", &s) != 1 ||
-          std::sscanf(match[3].str().c_str(), "%u", &l) != 1) {
-        continue;
-      }
-
-      RGBA rgba = hslaToRgba(h, s, l, 1.0);
-
-      ColorInformation color;
-      color.range.start.line = start_line - 1;
-      color.range.start.character = start_col - 1;
-      color.range.end.line = end_line - 1;
-      color.range.end.character = end_col - 1;
-      color.red = rgba.r / 255.0;
-      color.green = rgba.g / 255.0;
-      color.blue = rgba.b / 255.0;
-      color.alpha = 1.0;
-
-      colors.push_back(color);
-    }
-  }
+  });
 
   resp->SetArray();
   resp->Reserve(colors.size(), resp->GetAllocator());

@@ -39,8 +39,6 @@
 #include <random>
 #include <string_view>
 
-#include "nitrate-lexer/Lexer.hh"
-
 #define get_engine() \
   ((qprep_impl_t *)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1)))
 
@@ -76,6 +74,10 @@ struct qprep_impl_t final : public ncc::lex::IScanner {
   std::shared_ptr<ncc::core::Environment> m_env;
 
   virtual ncc::lex::Token GetNext() override;
+  virtual std::optional<ncc::lex::Location> GetLocationFallback(
+      ncc::lex::LocationID id) override {
+    return m_scanner->GetLocation(id);
+  }
 
   bool run_defer_callbacks(ncc::lex::Token last);
 
@@ -91,6 +93,11 @@ public:
 
   std::shared_ptr<ncc::core::Environment> GetEnvironment() const {
     return m_env;
+  }
+
+  void SkipCommentsState(bool skip) override {
+    IScanner::SkipCommentsState(skip);
+    m_scanner->SkipCommentsState(skip);
   }
 };
 

@@ -44,7 +44,7 @@ std::string_view Parser::recurse_enum_name() {
   }
 }
 
-std::optional<Type *> Parser::recurse_enum_type() {
+std::optional<RefNode<Type> > Parser::recurse_enum_type() {
   if (next_if(qPuncColn)) {
     return recurse_type();
   } else {
@@ -52,7 +52,7 @@ std::optional<Type *> Parser::recurse_enum_type() {
   }
 }
 
-std::optional<Expr *> Parser::recurse_enum_item_value() {
+std::optional<RefNode<Expr> > Parser::recurse_enum_item_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
 
@@ -112,13 +112,13 @@ std::optional<EnumDefItems> Parser::recurse_enum_items() {
   return std::nullopt;
 }
 
-Stmt *Parser::recurse_enum() {
+RefNode<Stmt> Parser::recurse_enum() {
   let name = recurse_enum_name();
   let type = recurse_enum_type();
 
   if (let items = recurse_enum_items()) {
     return make<EnumDef>(SaveString(name), type.value_or(nullptr),
-                         std::move(items.value()));
+                         std::move(items.value()))();
   }
 
   return mock_stmt(QAST_ENUM);
