@@ -89,7 +89,7 @@ Type *Parser::recurse_type_suffix(Type *base) {
 
   if (template_arguments.has_value()) {
     let templ = make<TemplType>(base, template_arguments.value());
-    templ->set_offset(base->get_offset());
+    templ->set_offset(base->begin());
 
     base = templ;
   }
@@ -141,7 +141,7 @@ Type *Parser::recurse_function_type() {
   let func_ty = make<FuncTy>(fn_def->get_return(), fn_def->get_params(),
                              fn_def->get_purity(), fn_def->get_attributes());
 
-  func_ty->set_offset(fn->get_offset());
+  func_ty->set_offset(fn->begin());
 
   return func_ty;
 }

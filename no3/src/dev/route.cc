@@ -62,6 +62,9 @@
 
 using namespace argparse;
 using namespace no3;
+using namespace ncc::core;
+using namespace ncc::lex;
+using namespace ncc::parse;
 
 namespace no3::benchmark {
   extern std::string lexical_benchmark_source;
@@ -90,10 +93,9 @@ namespace no3::benchmark {
     return {mean, variance, std::sqrt(variance)};
   }
 
-  static size_t lexer_benchmark_round(
-      std::shared_ptr<ncc::core::Environment> &env) {
+  static size_t lexer_benchmark_round(std::shared_ptr<Environment> &env) {
     std::stringstream source(lexical_benchmark_source);
-    ncc::lex::Tokenizer tokenizer(source, env);
+    Tokenizer tokenizer(source, env);
 
     size_t tokens = 0;
     while (!tokenizer.IsEof()) {
@@ -108,7 +110,7 @@ namespace no3::benchmark {
     size_t rounds = 128, total_tokens = 0;
     std::vector<double> times;
 
-    auto env = std::make_shared<ncc::core::Environment>();
+    auto env = std::make_shared<Environment>();
 
     LOG(INFO) << "Starting lexer benchmark" << std::endl;
     LOG(INFO) << "  Rounds: " << rounds << std::endl;
@@ -241,7 +243,7 @@ namespace no3::benchmark {
 }  // namespace no3::benchmark
 
 static int do_parse(std::string source, std::string output, bool verbose) {
-  auto env = std::make_shared<ncc::core::Environment>();
+  auto env = std::make_shared<Environment>();
 
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
@@ -250,7 +252,7 @@ static int do_parse(std::string source, std::string output, bool verbose) {
   }
 
   qprep lexer(file, "in", env);
-  auto parser = ncc::parse::Parser::Create(*lexer.get(), env);
+  auto parser = Parser::Create(*lexer.get(), env);
 
   auto ast = parser->parse();
 
@@ -265,7 +267,10 @@ static int do_parse(std::string source, std::string output, bool verbose) {
       out = out_ptr.get();
     }
 
-    ncc::parse::AST_JsonWriter writer(*out, verbose);
+    WriterSourceProvider rd =
+        verbose ? WriterSourceProvider(*lexer.get()) : std::nullopt;
+
+    AST_JsonWriter writer(*out, rd);
     ast.get()->accept(writer);
     *out << std::endl;
   }
@@ -279,7 +284,7 @@ static int do_nr(std::string source, std::string output, std::string opts,
     LOG(ERROR) << "Options are not implemented yet";
   }
 
-  auto env = std::make_shared<ncc::core::Environment>();
+  auto env = std::make_shared<Environment>();
 
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
@@ -288,7 +293,7 @@ static int do_nr(std::string source, std::string output, std::string opts,
   }
 
   qprep lexer(file, "in", env);
-  auto parser = ncc::parse::Parser::Create(*lexer.get(), env);
+  auto parser = Parser::Create(*lexer.get(), env);
 
   auto ast = parser->parse();
 
@@ -337,7 +342,7 @@ static int do_codegen(std::string source, std::string output, std::string opts,
     LOG(ERROR) << "Options are not implemented yet";
   }
 
-  auto env = std::make_shared<ncc::core::Environment>();
+  auto env = std::make_shared<Environment>();
 
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
@@ -346,7 +351,7 @@ static int do_codegen(std::string source, std::string output, std::string opts,
   }
 
   qprep lexer(file, "in", env);
-  auto parser = ncc::parse::Parser::Create(*lexer.get(), env);
+  auto parser = Parser::Create(*lexer.get(), env);
 
   auto ast = parser->parse();
 

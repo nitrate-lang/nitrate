@@ -399,9 +399,18 @@ CPP_EXPORT void IScanner::Undo() {
 }
 
 CPP_EXPORT Location LocationID::Get(IScanner &L) const {
-  IScanner::StaticImpl::FlushInternedBuffering(L);
+  return L.GetLocation(m_id);
+}
 
-  return L.m_location_interned.at(m_id);
+CPP_EXPORT Location IScanner::GetLocation(LocationID id) {
+  IScanner::StaticImpl::FlushInternedBuffering(*this);
+
+  auto it = m_location_interned.find(id);
+  if (it == m_location_interned.end()) [[unlikely]] {
+    return Location::EndOfFile();
+  }
+
+  return it->second;
 }
 
 CPP_EXPORT Location IScanner::Start(Token t) {

@@ -86,7 +86,7 @@ Stmt *Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       let stmt = make<ExprStmt>(expr);
-      stmt->set_offset(expr->get_offset());
+      stmt->set_offset(expr->begin());
 
       items.push_back(stmt);
       continue;

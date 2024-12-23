@@ -1871,13 +1871,13 @@ static EResult nrgen_foreach(NRBuilder &, PState &, IReport *,
   // auto iter = nrgen_one(b, s,X, n->get_expr());
   // if (!iter) {
   //   G->report(CompilerError, IC::Error, "ncc::parse::ForeachStmt::get_expr()
-  //   == std::nullopt",n->get_offset(),n->get_pos()); return std::nullopt;
+  //   == std::nullopt",n->begin(),n->get_pos()); return std::nullopt;
   // }
 
   // auto body = nrgen_one(b, s,X, n->get_body());
   // if (!body) {
   //   G->report(CompilerError, IC::Error, "ncc::parse::ForeachStmt::get_body()
-  //   == std::nullopt",n->get_offset(),n->get_pos()); return std::nullopt;
+  //   == std::nullopt",n->begin(),n->get_pos()); return std::nullopt;
   // }
 
   // return create<Foreach>(idx_name, val_name, iter,

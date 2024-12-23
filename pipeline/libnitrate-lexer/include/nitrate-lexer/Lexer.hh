@@ -245,8 +245,6 @@ namespace ncc::lex {
   struct ScannerEOF final {};
 
   class IScanner {
-    friend class LocationID;
-
     static constexpr size_t TOKEN_BUFFER_SIZE = 256;
 
     std::deque<Token> m_ready;
@@ -295,6 +293,8 @@ namespace ncc::lex {
 
     virtual void SkipCommentsState(bool skip) { m_skip_comments = skip; }
     bool GetSkipCommentsState() const { return m_skip_comments; }
+
+    virtual Location GetLocation(LocationID id);
   };
 
   class CPP_EXPORT Tokenizer final : public IScanner {

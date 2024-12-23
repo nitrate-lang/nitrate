@@ -35,6 +35,7 @@
 #define __NITRATE_AST_ASTBASE_H__
 
 #include <array>
+#include <functional>
 #include <iostream>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
@@ -42,18 +43,22 @@
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTData.hh>
 #include <nitrate-parser/ASTVisitor.hh>
+#include <nitrate-parser/ASTWriter.hh>
+
+#include "nitrate-lexer/Lexer.hh"
 
 namespace ncc::parse {
-  class Base {
+  class npar_pack Base {
   private:
     npar_ty_t m_node_type : 7;
     bool m_mock : 1;
-    lex::LocationID m_offset;
+    lex::LocationID m_begin, m_end;
 
   public:
     constexpr Base(npar_ty_t ty, bool mock = false,
-                   lex::LocationID offset = lex::LocationID::EndOfFile())
-        : m_node_type(ty), m_mock(mock), m_offset(offset){};
+                   lex::LocationID begin = lex::LocationID::EndOfFile(),
+                   lex::LocationID end = lex::LocationID::EndOfFile())
+        : m_node_type(ty), m_mock(mock), m_begin(begin), m_end(end) {}
 
     constexpr void accept(ASTVisitor &v) const {
       using namespace ncc::parse;
@@ -335,7 +340,7 @@ namespace ncc::parse {
     };
 
     ///======================================================================
-    /* Efficient LLVM reflection */
+    /// Efficient LLVM-Style reflection
 
     static constexpr uint32_t getKindSize(npar_ty_t kind);
     static constexpr std::string_view getKindName(npar_ty_t kind);
@@ -490,8 +495,6 @@ namespace ncc::parse {
     constexpr npar_ty_t getKind() const { return m_node_type; }
     constexpr auto getKindName() const { return getKindName(m_node_type); }
 
-    ///======================================================================
-
     constexpr bool is_type() const {
       auto kind = getKind();
       return kind >= QAST__TYPE_FIRST && kind <= QAST__TYPE_LAST;
@@ -506,6 +509,21 @@ namespace ncc::parse {
       auto kind = getKind();
       return kind >= QAST__EXPR_FIRST && kind <= QAST__EXPR_LAST;
     }
+
+    template <typename T>
+    constexpr bool is() const {
+      return Base::getTypeCode<T>() == getKind();
+    }
+
+    constexpr bool is(npar_ty_t type) const { return type == getKind(); }
+    constexpr bool is_mock() const { return m_mock; }
+
+    bool isSame(const Base *o) const;
+
+    uint64_t hash64() const;
+
+    ///======================================================================
+    /// Debug-mode checked type casting
 
     template <typename T>
     static constexpr T *safeCastAs(Base *ptr) {
@@ -523,70 +541,55 @@ namespace ncc::parse {
       return reinterpret_cast<T *>(ptr);
     }
 
-    /**
-     * @brief Type-safe cast (type check only in debug mode).
-     *
-     * @tparam T The type to cast to.
-     * @return T* The casted pointer. It may be nullptr if the source pointer is
-     * nullptr.
-     * @warning This function will panic if the cast is invalid.
-     */
     template <typename T>
     constexpr T *as() {
       return safeCastAs<T>(this);
     }
 
-    /**
-     * @brief Type-safe cast (type check only in debug mode).
-     *
-     * @tparam T The type to cast to.
-     * @return const T* The casted pointer. It may be nullptr if the source
-     * pointer is nullptr.
-     * @warning This function will panic if the cast is invalid.
-     */
     template <typename T>
     constexpr const T *as() const {
       return safeCastAs<T>(const_cast<Base *>(this));
     }
 
-    Expr *as_expr() {
-      qcore_assert(is_expr());
-      return reinterpret_cast<Expr *>(this);
+    ///======================================================================
+    /// Debugging
+
+    inline std::ostream &dump(std::ostream &os = std::cerr,
+                              WriterSourceProvider rd = std::nullopt) const {
+      AST_JsonWriter writer(os, rd);
+      const_cast<Base *>(this)->accept(writer);
+
+      return os;
     }
 
-    template <typename T>
-    constexpr bool is() const {
-      return Base::getTypeCode<T>() == getKind();
+    ///======================================================================
+    /// Source location information
+
+    constexpr lex::LocationID begin() const { return m_begin; }
+    constexpr lex::Location begin(lex::IScanner &rd) const {
+      return m_begin.Get(rd);
     }
 
-    constexpr bool is(npar_ty_t type) const { return type == getKind(); }
-
-    bool isSame(const Base *o) const;
-
-    uint64_t hash64() const;
-
-    std::ostream &dump(std::ostream &os = std::cerr,
-                       bool isForDebug = false) const;
-
-    constexpr void set_offset(lex::LocationID pos) { m_offset = pos; }
-
-    constexpr uint32_t get_offset() const {
-      /// TODO: Implement this
-      return lex::QLEX_EOFF;
+    constexpr lex::LocationID end() const { return m_end; }
+    constexpr lex::Location end(lex::IScanner &rd) const {
+      return m_end.Get(rd);
     }
-    constexpr uint32_t get_fileid() const {
-      /// TODO: Implement this
-      return lex::QLEX_NOFILE;
-    }
-    constexpr bool is_mock() const { return m_mock; }
 
     constexpr std::tuple<uint32_t, uint32_t> get_pos() const {
       /// TODO: Implement this
       return {lex::QLEX_EOFF, lex::QLEX_NOFILE};
     }
+
+    ///======================================================================
+    /// Setters
+
+    /**
+     * @warning This function modifies the object's state.
+     */
+    constexpr void set_offset(lex::LocationID pos) { m_begin = pos; }
   } __attribute__((packed));
 
-  static_assert(sizeof(Base) == 5);
+  static_assert(sizeof(Base) == 9);
 
   ///======================================================================
 

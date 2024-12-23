@@ -43,22 +43,51 @@ using namespace ncc::core;
 using namespace ncc::lex;
 
 void AST_Writer::write_source_location(Base const& n) const {
-  if (m_include_source_location) {
+  if (m_rd.has_value()) {
+    IScanner& rd = m_rd->get();
+
     string("loc");
     begin_obj(2);
 
-    string("beg");
-    if (n.get_offset() == QLEX_EOFF) {
-      null();
-    } else {
-      uint64(n.get_offset());
+    let begin = n.begin(rd);
+    let end = n.end(rd);
+
+    {
+      string("begin");
+      begin_obj(4);
+
+      string("off");
+      uint64(begin.GetOffset());
+
+      string("row");
+      uint64(begin.GetRow());
+
+      string("col");
+      uint64(begin.GetCol());
+
+      string("src");
+      string(begin.GetFilename());
+
+      end_obj();
     }
 
-    string("fileid");
-    if (n.get_fileid() == QLEX_NOFILE) {
-      null();
-    } else {
-      uint64(n.get_fileid());
+    {
+      string("end");
+      begin_obj(4);
+
+      string("off");
+      uint64(end.GetOffset());
+
+      string("row");
+      uint64(end.GetRow());
+
+      string("col");
+      uint64(end.GetCol());
+
+      string("src");
+      string(end.GetFilename());
+
+      end_obj();
     }
 
     end_obj();

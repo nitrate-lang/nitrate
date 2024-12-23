@@ -38,6 +38,7 @@
 #include <cstdint>
 #include <functional>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 #include <ostream>
@@ -45,6 +46,9 @@
 #include <string_view>
 
 namespace ncc::parse {
+  using WriterSourceProvider =
+      std::optional<std::reference_wrapper<lex::IScanner>>;
+
   class CPP_EXPORT AST_Writer : public ASTVisitor {
     using InsertString = std::function<void(std::string_view)>;
     using InsertUInt64 = std::function<void(uint64_t)>;
@@ -65,8 +69,7 @@ namespace ncc::parse {
     EndObject end_obj;
     BeginArray begin_arr;
     EndArray end_arr;
-
-    bool m_include_source_location;
+    WriterSourceProvider m_rd;
 
     void write_source_location(Base const& n) const;
     void write_type_metadata(Type const& n);
@@ -78,7 +81,7 @@ namespace ncc::parse {
                InsertDouble dbl_impl, InsertBool bool_impl,
                InsertNull null_impl, BeginObject begin_obj_impl,
                EndObject end_obj_impl, BeginArray begin_arr_impl,
-               EndArray end_arr_impl, bool include_source_location = true)
+               EndArray end_arr_impl, WriterSourceProvider rd = std::nullopt)
         : string(str_impl),
           uint64(uint_impl),
           dbl(dbl_impl),
@@ -88,7 +91,7 @@ namespace ncc::parse {
           end_obj(end_obj_impl),
           begin_arr(begin_arr_impl),
           end_arr(end_arr_impl),
-          m_include_source_location(include_source_location) {}
+          m_rd(rd) {}
     virtual ~AST_Writer() = default;
 
     void visit(Base const& n) override;
@@ -179,7 +182,7 @@ namespace ncc::parse {
     void end_arr_impl();
 
   public:
-    AST_JsonWriter(std::ostream& os, bool include_source_location = true)
+    AST_JsonWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
         : AST_Writer(
               std::bind(&AST_JsonWriter::str_impl, this, std::placeholders::_1),
               std::bind(&AST_JsonWriter::uint_impl, this,
@@ -194,8 +197,7 @@ namespace ncc::parse {
               std::bind(&AST_JsonWriter::end_obj_impl, this),
               std::bind(&AST_JsonWriter::begin_arr_impl, this,
                         std::placeholders::_1),
-              std::bind(&AST_JsonWriter::end_arr_impl, this),
-              include_source_location),
+              std::bind(&AST_JsonWriter::end_arr_impl, this), rd),
           m_os(os) {
       m_comma.push(false);
       m_count.push(0);
@@ -217,7 +219,7 @@ namespace ncc::parse {
     void end_arr_impl();
 
   public:
-    AST_MsgPackWriter(std::ostream& os, bool include_source_location = true)
+    AST_MsgPackWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
         : AST_Writer(std::bind(&AST_MsgPackWriter::str_impl, this,
                                std::placeholders::_1),
                      std::bind(&AST_MsgPackWriter::uint_impl, this,
@@ -232,8 +234,7 @@ namespace ncc::parse {
                      std::bind(&AST_MsgPackWriter::end_obj_impl, this),
                      std::bind(&AST_MsgPackWriter::begin_arr_impl, this,
                                std::placeholders::_1),
-                     std::bind(&AST_MsgPackWriter::end_arr_impl, this),
-                     include_source_location),
+                     std::bind(&AST_MsgPackWriter::end_arr_impl, this), rd),
           m_os(os) {}
     virtual ~AST_MsgPackWriter() = default;
   };

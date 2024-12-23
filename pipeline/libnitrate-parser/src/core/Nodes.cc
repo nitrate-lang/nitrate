@@ -47,15 +47,6 @@ CPP_EXPORT thread_local std::unique_ptr<ncc::core::IMemory>
 
 ///=============================================================================
 
-CPP_EXPORT std::ostream &Base::dump(std::ostream &os, bool isForDebug) const {
-  (void)isForDebug;
-
-  AST_JsonWriter writer(os);
-  const_cast<Base *>(this)->accept(writer);
-
-  return os;
-}
-
 CPP_EXPORT bool Base::isSame(const Base *o) const {
   if (this == o) {
     return true;
@@ -66,7 +57,7 @@ CPP_EXPORT bool Base::isSame(const Base *o) const {
   }
 
   std::stringstream ss1, ss2;
-  AST_MsgPackWriter writer1(ss1, false), writer2(ss2, false);
+  AST_MsgPackWriter writer1(ss1), writer2(ss2);
 
   this->accept(writer1);
   o->accept(writer2);
