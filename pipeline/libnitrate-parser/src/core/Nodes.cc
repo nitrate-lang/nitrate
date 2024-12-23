@@ -81,7 +81,7 @@ CPP_EXPORT bool Type::is_ptr_to(Type *type) const {
     return false;
   }
 
-  Type *item = as<PtrTy>()->get_item();
+  auto item = as<PtrTy>()->get_item();
   while (item->is<RefTy>()) {
     item = item->as<RefTy>()->get_item();
   }
