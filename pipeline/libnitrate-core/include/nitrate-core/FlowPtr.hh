@@ -34,11 +34,14 @@
 #ifndef __NITRATE_CORE_FLOWPTR_H__
 #define __NITRATE_CORE_FLOWPTR_H__
 
+#include <boost/flyweight.hpp>
 #include <cstdint>
+#include <nitrate-core/Macro.hh>
 #include <source_location>
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace ncc {
 #ifdef NDEBUG
@@ -52,10 +55,7 @@ namespace ncc {
       Construct_FromNull,
 
       Cast_ToRaw,
-      Cast_Static,
       Cast_Reinterpret,
-
-      Access_Ptr,
 
       Visitor_Accept,
 
@@ -94,11 +94,30 @@ namespace ncc {
         /// This tracking method does not track events
         return *this;
       }
-    } __attribute__((packed));
+    };
+
+    static inline bool operator==(const std::source_location &a,
+                                  const std::source_location &b) {
+      return a.file_name() == b.file_name() &&
+             a.function_name() == b.function_name() && a.line() == b.line() &&
+             a.column() == b.column();
+    }
+
+    struct Event {
+      DataFlowEvent m_event;
+      std::source_location m_loc;
+
+      constexpr bool operator==(const Event &other) const {
+        return m_event == other.m_event && m_loc == other.m_loc;
+      }
+    };
+
+    using EventList = std::vector<Event>;
 
     class verbose {
       const char *m_file_name, *m_function_name;
       unsigned m_line, m_column;
+      EventList m_events;
 
     public:
       constexpr verbose(
@@ -113,22 +132,23 @@ namespace ncc {
       constexpr auto line() const { return m_line; }
       constexpr auto column() const { return m_column; }
 
-      constexpr bool operator==(const verbose &other) const {
+      constexpr let events() const { return m_events; }
+
+      bool operator==(const verbose &other) const {
         std::string_view a(m_file_name), b(other.m_file_name);
         std::string_view c(m_function_name), d(other.m_function_name);
 
         return m_line == other.m_line && m_column == other.m_column && a == b &&
-               c == d;
+               c == d && m_events == other.m_events;
+
+        return true;
       }
 
       verbose dispatch(DataFlowEvent e, std::source_location loc) const {
-        (void)e;
-        (void)loc;
-        /// TODO: Implement event tracking
-
+        const_cast<verbose *>(this)->m_events.push_back({e, loc});
         return *this;
       }
-    } __attribute__((packed));
+    };
 
     class none {
     public:
@@ -137,7 +157,7 @@ namespace ncc {
       constexpr bool operator==(const none &) const { return true; }
 
       none dispatch(DataFlowEvent, std::source_location) const { return *this; }
-    } __attribute__((packed));
+    };
 
     static inline trace::none g_notrace_instance;
   }  // namespace trace
@@ -168,7 +188,7 @@ namespace ncc {
                               std::source_location loc) {
         m_tracking = m_tracking.dispatch(e, loc);
       }
-    } __attribute__((packed));
+    };
 
     struct WithoutTracking {
       union Ptr {
@@ -180,7 +200,7 @@ namespace ncc {
       constexpr WithoutTracking(Pointee *ptr, Tracking) : m_ref(ptr) {}
 
       constexpr void dispatch(trace::DataFlowEvent, std::source_location) {}
-    } __attribute__((packed));
+    };
 
     using Kernel = std::conditional_t<std::is_same_v<Tracking, trace::none>,
                                       WithoutTracking, WithTracking>;
@@ -243,13 +263,7 @@ namespace ncc {
     ///=========================================================================
     /// Accessors
 
-    constexpr auto operator->() const {
-      /// FIXME: Get source location using a proxy object maybe?
-
-      publish(trace::DataFlowEvent::Visitor_Accept, std::source_location());
-
-      return m_s.m_ref.m_tptr;
-    }
+    constexpr auto operator->() const { return m_s.m_ref.m_tptr; }
 
     constexpr auto get(
         std::source_location loc = std::source_location::current()) const {
@@ -265,10 +279,6 @@ namespace ncc {
 
     template <class U>
     constexpr operator FlowPtr<U>() const {
-      /// FIXME: Get source location using a proxy object maybe?
-
-      publish(trace::DataFlowEvent::Cast_Static, std::source_location());
-
       return FlowPtr<U>(static_cast<U *>(get()), trace());
     }
 
@@ -324,7 +334,7 @@ namespace ncc {
 
       return get()->getKind();
     }
-  } __attribute__((packed));
+  };
 
   constexpr auto FlowPtrStructSize = sizeof(FlowPtr<int>);
 

@@ -63,7 +63,7 @@ std::optional<ScopeDeps> Parser::recurse_scope_deps() {
       if (tok.is(qName)) {
         let dependency_name = tok.as_string();
 
-        dependencies.insert(SaveString(dependency_name));
+        dependencies.push_back(SaveString(dependency_name));
 
         next_if(qPuncComa);
       } else {

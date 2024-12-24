@@ -46,7 +46,7 @@
 #include <type_traits>
 
 namespace ncc::parse {
-  class npar_pack Base {
+  class Base {
   private:
     npar_ty_t m_node_type : 7;
     bool m_mock : 1;
@@ -401,7 +401,7 @@ namespace ncc::parse {
     constexpr bool is_expr_stmt(npar_ty_t type) const;
   };
 
-  class npar_pack Type : public Base {
+  class Type : public Base {
     std::optional<FlowPtr<Expr>> m_range_begin, m_range_end, m_width;
 
   public:

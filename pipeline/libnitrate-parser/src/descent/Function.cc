@@ -107,8 +107,8 @@ std::optional<TemplateParameters> Parser::recurse_template_parameters() {
   return params;
 }
 
-FuncParams Parser::recurse_function_parameters() {
-  FuncParams parameters;
+std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
+  std::pair<FuncParams, bool> parameters;
 
   if (!next_if(qPuncLPar)) {
     diagnostic << current() << "Expected '(' after function name";
@@ -126,7 +126,7 @@ FuncParams Parser::recurse_function_parameters() {
     }
 
     if (next_if(qOpEllipsis)) {
-      parameters.is_variadic = true;
+      parameters.second = true;
       if (!next_if(qPuncRPar)) {
         diagnostic << current() << "Expected ')' after variadic parameter";
       }
@@ -138,7 +138,7 @@ FuncParams Parser::recurse_function_parameters() {
       let tparam =
           FuncParam{std::get<0>(param), std::get<1>(param), std::get<2>(param)};
 
-      parameters.params.push_back(std::move(tparam));
+      parameters.first.push_back(std::move(tparam));
 
       next_if(qPuncComa);
     } else {
@@ -376,8 +376,8 @@ FlowPtr<Stmt> Parser::recurse_function(bool restrict_decl_only) {
 
   let function =
       make<Function>(attributes, purity, captures, SaveString(function_name),
-                     template_parameters, parameters, return_type, std::nullopt,
-                     std::nullopt, body)();
+                     template_parameters, parameters.first, parameters.second,
+                     return_type, std::nullopt, std::nullopt, body)();
   function->set_offset(start_pos);
 
   return function;

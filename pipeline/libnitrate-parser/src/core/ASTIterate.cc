@@ -131,7 +131,7 @@ class IterVisitor : public ASTVisitor {
     std::for_each(n->get_attributes().begin(), n->get_attributes().end(),
                   [&](let attr) { add(attr); });
 
-    std::for_each(n->get_params().params.begin(), n->get_params().params.end(),
+    std::for_each(n->get_params().begin(), n->get_params().end(),
                   [&](let param) {
                     add(std::get<1>(param));
                     std::get<2>(param);
@@ -295,7 +295,7 @@ class IterVisitor : public ASTVisitor {
                     });
     }
 
-    std::for_each(n->get_params().params.begin(), n->get_params().params.end(),
+    std::for_each(n->get_params().begin(), n->get_params().end(),
                   [&](let param) {
                     add(std::get<1>(param));
                     std::get<2>(param);

@@ -239,9 +239,6 @@ namespace ncc::parse {
     Safe = 1,
     Unsafe = 2,
   };
-
-#define npar_pack __attribute__((packed))
-
 }  // namespace ncc::parse
 
 #endif

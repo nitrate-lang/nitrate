@@ -529,7 +529,7 @@ void CambrianFormatter::visit(FlowPtr<FuncTy> n) {
 
   line << "(";
   iterate_except_last(
-      n->get_params().params.begin(), n->get_params().params.end(),
+      n->get_params().begin(), n->get_params().end(),
       [&](let param, size_t) {
         let name = std::get<0>(param);
         let type = std::get<1>(param);
@@ -548,8 +548,8 @@ void CambrianFormatter::visit(FlowPtr<FuncTy> n) {
         }
       },
       [&](let) { line << ", "; });
-  if (n->get_params().is_variadic) {
-    if (!n->get_params().params.empty()) {
+  if (n->get_variadic()) {
+    if (!n->get_params().empty()) {
       line << ", ";
     }
     line << "...";
@@ -1234,7 +1234,7 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
 
   line << "(";
   iterate_except_last(
-      n->get_params().params.begin(), n->get_params().params.end(),
+      n->get_params().begin(), n->get_params().end(),
       [&](let param, size_t) {
         let name = std::get<0>(param);
         let type = std::get<1>(param);
@@ -1248,6 +1248,13 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
         }
       },
       [&](let) { line << ", "; });
+
+  if (n->get_variadic()) {
+    if (!n->get_params().empty()) {
+      line << ", ";
+    }
+    line << "...";
+  }
   line << ")";
 
   { /* Return type */

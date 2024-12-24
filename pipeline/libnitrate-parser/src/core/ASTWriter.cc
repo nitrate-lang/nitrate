@@ -636,14 +636,13 @@ void AST_Writer::visit(FlowPtr<FuncTy> n) {
     string("input");
     begin_obj(2);
 
-    let params = n->get_params();
-
     string("variadic");
-    boolean(params.is_variadic);
+    boolean(n->get_variadic());
 
+    let params = n->get_params();
     string("params");
-    begin_arr(params.params.size());
-    std::for_each(params.params.begin(), params.params.end(), [&](let param) {
+    begin_arr(params.size());
+    std::for_each(params.begin(), params.end(), [&](let param) {
       begin_obj(3);
       string("name");
       string(*std::get<0>(param));
@@ -1492,14 +1491,13 @@ void AST_Writer::visit(FlowPtr<Function> n) {
     string("input");
     begin_obj(2);
 
-    let params = n->get_params();
-
     string("variadic");
-    boolean(params.is_variadic);
+    boolean(n->get_variadic());
 
+    let params = n->get_params();
     string("params");
-    begin_arr(params.params.size());
-    std::for_each(params.params.begin(), params.params.end(), [&](let param) {
+    begin_arr(params.size());
+    std::for_each(params.begin(), params.end(), [&](let param) {
       begin_obj(3);
 
       string("name");

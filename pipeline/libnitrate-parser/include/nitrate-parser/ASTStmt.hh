@@ -38,13 +38,13 @@
 #include <span>
 
 namespace ncc::parse {
-  class npar_pack ExprStmt final : public Stmt {
+  class ExprStmt final : public Stmt {
     FlowPtr<Expr> m_expr;
 
   public:
     constexpr ExprStmt(FlowPtr<Expr> expr) : Stmt(QAST_ESTMT), m_expr(expr) {}
 
-    constexpr let get_expr() const { return m_expr; }
+    constexpr auto get_expr() const { return m_expr; }
   };
 
   class Block final : public Stmt {
@@ -55,8 +55,8 @@ namespace ncc::parse {
     Block(BlockItems items, SafetyMode safety)
         : Stmt(QAST_BLOCK), m_items(items), m_safety(safety) {}
 
-    constexpr let get_items() const { return m_items; }
-    constexpr let get_safety() const { return m_safety; }
+    constexpr auto get_items() const { return m_items; }
+    constexpr auto get_safety() const { return m_safety; }
   };
 
   class VarDecl final : public Stmt {
@@ -79,10 +79,10 @@ namespace ncc::parse {
 
     constexpr auto get_name() const { return m_name.get(); }
 
-    constexpr let get_type() const { return m_type; }
-    constexpr let get_value() const { return m_value; }
-    constexpr let get_decl_type() const { return m_decl_type; }
-    constexpr let get_attributes() const { return m_attributes; }
+    constexpr auto get_type() const { return m_type; }
+    constexpr auto get_value() const { return m_value; }
+    constexpr auto get_decl_type() const { return m_decl_type; }
+    constexpr auto get_attributes() const { return m_attributes; }
   };
 
   class InlineAsm final : public Stmt {
@@ -95,10 +95,10 @@ namespace ncc::parse {
 
     constexpr auto get_code() const { return m_code.get(); }
 
-    constexpr let get_args() const { return m_args; }
+    constexpr auto get_args() const { return m_args; }
   };
 
-  class npar_pack IfStmt final : public Stmt {
+  class IfStmt final : public Stmt {
     FlowPtr<Expr> m_cond;
     FlowPtr<Stmt> m_then;
     std::optional<FlowPtr<Stmt>> m_else;
@@ -108,9 +108,9 @@ namespace ncc::parse {
                      std::optional<FlowPtr<Stmt>> else_)
         : Stmt(QAST_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
-    constexpr let get_cond() const { return m_cond; }
-    constexpr let get_then() const { return m_then; }
-    constexpr let get_else() const { return m_else; }
+    constexpr auto get_cond() const { return m_cond; }
+    constexpr auto get_then() const { return m_then; }
+    constexpr auto get_else() const { return m_else; }
   };
 
   class WhileStmt final : public Stmt {
@@ -121,8 +121,8 @@ namespace ncc::parse {
     constexpr WhileStmt(FlowPtr<Expr> cond, FlowPtr<Stmt> body)
         : Stmt(QAST_WHILE), m_cond(cond), m_body(body) {}
 
-    constexpr let get_cond() const { return m_cond; }
-    constexpr let get_body() const { return m_body; }
+    constexpr auto get_cond() const { return m_cond; }
+    constexpr auto get_body() const { return m_body; }
   };
 
   class ForStmt final : public Stmt {
@@ -140,10 +140,10 @@ namespace ncc::parse {
           m_step(step),
           m_body(body) {}
 
-    constexpr let get_init() const { return m_init; }
-    constexpr let get_cond() const { return m_cond; }
-    constexpr let get_step() const { return m_step; }
-    constexpr let get_body() const { return m_body; }
+    constexpr auto get_init() const { return m_init; }
+    constexpr auto get_cond() const { return m_cond; }
+    constexpr auto get_step() const { return m_step; }
+    constexpr auto get_body() const { return m_body; }
   };
 
   class ForeachStmt final : public Stmt {
@@ -164,8 +164,8 @@ namespace ncc::parse {
     constexpr auto get_idx_ident() const { return m_idx_ident.get(); }
     constexpr auto get_val_ident() const { return m_val_ident.get(); }
 
-    constexpr let get_expr() const { return m_expr; }
-    constexpr let get_body() const { return m_body; }
+    constexpr auto get_expr() const { return m_expr; }
+    constexpr auto get_body() const { return m_body; }
   };
 
   class BreakStmt final : public Stmt {
@@ -185,7 +185,7 @@ namespace ncc::parse {
     constexpr ReturnStmt(std::optional<FlowPtr<Expr>> value)
         : Stmt(QAST_RETURN), m_value(value) {}
 
-    constexpr let get_value() const { return m_value; }
+    constexpr auto get_value() const { return m_value; }
   };
 
   class ReturnIfStmt final : public Stmt {
@@ -196,8 +196,8 @@ namespace ncc::parse {
     constexpr ReturnIfStmt(FlowPtr<Expr> cond, FlowPtr<Expr> value)
         : Stmt(QAST_RETIF), m_cond(cond), m_value(value) {}
 
-    constexpr let get_cond() const { return m_cond; }
-    constexpr let get_value() const { return m_value; }
+    constexpr auto get_cond() const { return m_cond; }
+    constexpr auto get_value() const { return m_value; }
   };
 
   class CaseStmt final : public Stmt {
@@ -208,8 +208,8 @@ namespace ncc::parse {
     constexpr CaseStmt(FlowPtr<Expr> cond, FlowPtr<Stmt> body)
         : Stmt(QAST_CASE), m_cond(cond), m_body(body) {}
 
-    constexpr let get_cond() const { return m_cond; }
-    constexpr let get_body() const { return m_body; }
+    constexpr auto get_cond() const { return m_cond; }
+    constexpr auto get_body() const { return m_body; }
   };
 
   class SwitchStmt final : public Stmt {
@@ -225,9 +225,9 @@ namespace ncc::parse {
           m_cases(cases),
           m_default(default_) {}
 
-    constexpr let get_cond() const { return m_cond; }
-    constexpr let get_cases() const { return m_cases; }
-    constexpr let get_default() const { return m_default; }
+    constexpr auto get_cond() const { return m_cond; }
+    constexpr auto get_cases() const { return m_cases; }
+    constexpr auto get_default() const { return m_default; }
   };
 
   class ExportStmt final : public Stmt {
@@ -246,14 +246,13 @@ namespace ncc::parse {
           m_vis(vis) {}
 
     constexpr auto get_abi_name() const { return m_abi_name.get(); }
-
-    constexpr let get_body() const { return m_body; }
-    constexpr let get_vis() const { return m_vis; }
-    constexpr let get_attrs() const { return m_attrs; }
+    constexpr auto get_body() const { return m_body; }
+    constexpr auto get_vis() const { return m_vis; }
+    constexpr auto get_attrs() const { return m_attrs; }
   };
 
   class ScopeStmt final : public Stmt {
-    ScopeDeps m_deps;
+    std::span<string> m_deps;
     string m_name;
     FlowPtr<Stmt> m_body;
 
@@ -262,9 +261,8 @@ namespace ncc::parse {
         : Stmt(QAST_SCOPE), m_deps(deps), m_name(name), m_body(body) {}
 
     constexpr auto get_name() const { return m_name.get(); }
-
-    constexpr let get_body() const { return m_body; }
-    constexpr let get_deps() const { return m_deps; }
+    constexpr auto get_body() const { return m_body; }
+    constexpr auto get_deps() const { return m_deps; }
   };
 
   class TypedefStmt final : public Stmt {
@@ -276,8 +274,7 @@ namespace ncc::parse {
         : Stmt(QAST_TYPEDEF), m_name(name), m_type(type) {}
 
     constexpr auto get_name() const { return m_name.get(); }
-
-    constexpr let get_type() const { return m_type; }
+    constexpr auto get_type() const { return m_type; }
   };
 
   class EnumDef final : public Stmt {
@@ -290,9 +287,8 @@ namespace ncc::parse {
         : Stmt(QAST_ENUM), m_items(items), m_name(name), m_type(type) {}
 
     constexpr auto get_name() const { return m_name.get(); }
-
-    constexpr let get_items() const { return m_items; }
-    constexpr let get_type() const { return m_type; }
+    constexpr auto get_items() const { return m_items; }
+    constexpr auto get_type() const { return m_type; }
   };
 
   class Function final : public Stmt {
@@ -301,15 +297,16 @@ namespace ncc::parse {
     std::span<std::pair<string, bool>> m_captures;
     string m_name;
     std::optional<TemplateParameters> m_template_parameters;
-    FuncParams m_params;
+    std::span<FuncParam> m_params;
     FlowPtr<Type> m_return;
     std::optional<FlowPtr<Expr>> m_precond, m_postcond;
     std::optional<FlowPtr<Stmt>> m_body;
+    bool m_variadic;
 
   public:
     Function(ExpressionList attributes, FuncPurity purity, FnCaptures captures,
              string name, std::optional<TemplateParameters> params,
-             FuncParams fn_params, FlowPtr<Type> return_type,
+             FuncParams fn_params, bool variadic, FlowPtr<Type> return_type,
              std::optional<FlowPtr<Expr>> precond,
              std::optional<FlowPtr<Expr>> postcond,
              std::optional<FlowPtr<Stmt>> body)
@@ -323,19 +320,20 @@ namespace ncc::parse {
           m_return(return_type),
           m_precond(precond),
           m_postcond(postcond),
-          m_body(body) {}
+          m_body(body),
+          m_variadic(variadic) {}
 
     constexpr auto get_name() const { return m_name.get(); }
-
-    constexpr let get_attributes() const { return m_attributes; }
-    constexpr let get_purity() const { return m_purity; }
-    constexpr let get_captures() const { return m_captures; }
-    constexpr let get_template_params() const { return m_template_parameters; }
-    constexpr let get_params() const { return m_params; }
-    constexpr let get_return() const { return m_return; }
-    constexpr let get_precond() const { return m_precond; }
-    constexpr let get_postcond() const { return m_postcond; }
-    constexpr let get_body() const { return m_body; }
+    constexpr auto get_attributes() const { return m_attributes; }
+    constexpr auto get_purity() const { return m_purity; }
+    constexpr auto get_captures() const { return m_captures; }
+    constexpr auto get_template_params() const { return m_template_parameters; }
+    constexpr auto get_params() const { return m_params; }
+    constexpr auto get_variadic() const { return m_variadic; }
+    constexpr auto get_return() const { return m_return; }
+    constexpr auto get_precond() const { return m_precond; }
+    constexpr auto get_postcond() const { return m_postcond; }
+    constexpr auto get_body() const { return m_body; }
 
     bool is_decl() const { return !m_body.has_value(); }
     bool is_def() const { return m_body.has_value(); }
@@ -367,14 +365,13 @@ namespace ncc::parse {
           m_static_methods(static_methods) {}
 
     constexpr auto get_name() const { return m_name.get(); }
-
-    constexpr let get_composite_type() const { return m_comp_type; }
-    constexpr let get_attributes() const { return m_attributes; }
-    constexpr let get_template_params() const { return m_template_parameters; }
-    constexpr let get_names() const { return m_names; }
-    constexpr let get_fields() const { return m_fields; }
-    constexpr let get_methods() const { return m_methods; }
-    constexpr let get_static_methods() const { return m_static_methods; }
+    constexpr auto get_composite_type() const { return m_comp_type; }
+    constexpr auto get_attributes() const { return m_attributes; }
+    constexpr auto get_template_params() const { return m_template_parameters; }
+    constexpr auto get_names() const { return m_names; }
+    constexpr auto get_fields() const { return m_fields; }
+    constexpr auto get_methods() const { return m_methods; }
+    constexpr auto get_static_methods() const { return m_static_methods; }
   };
 
   constexpr bool Stmt::is_expr_stmt(npar_ty_t type) const {

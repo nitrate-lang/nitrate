@@ -140,7 +140,8 @@ FlowPtr<Type> Parser::recurse_function_type() {
   FlowPtr<Function> fn_def = fn.as<Function>();
 
   let func_ty = make<FuncTy>(fn_def->get_return(), fn_def->get_params(),
-                             fn_def->get_purity(), fn_def->get_attributes())();
+                             fn_def->get_variadic(), fn_def->get_purity(),
+                             fn_def->get_attributes())();
 
   func_ty->set_offset(fn->begin());
 

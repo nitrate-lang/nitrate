@@ -94,8 +94,7 @@ namespace ncc::parse {
       std::vector<TemplateParameter, Arena<TemplateParameter>>;
 
   using BlockItems = std::vector<FlowPtr<Stmt>, Arena<FlowPtr<Stmt>>>;
-  using ScopeDeps =
-      std::set<ncc::string, std::less<ncc::string>, Arena<ncc::string>>;
+  using ScopeDeps = std::vector<ncc::string, Arena<ncc::string>>;
 
   using SwitchCases = std::vector<FlowPtr<CaseStmt>, Arena<FlowPtr<CaseStmt>>>;
   using EnumItem = std::pair<ncc::string, std::optional<FlowPtr<Expr>>>;
@@ -139,12 +138,8 @@ namespace ncc::parse {
 
   using FuncParam =
       std::tuple<ncc::string, FlowPtr<Type>, std::optional<FlowPtr<Expr>>>;
-  struct FuncParams {
-    std::vector<FuncParam, Arena<FuncParam>> params;
-    bool is_variadic;
+  using FuncParams = std::vector<FuncParam, Arena<FuncParam>>;
 
-    FuncParams() : is_variadic(false) {}
-  };
   using FnCaptures = std::vector<std::pair<ncc::string, bool>,
                                  Arena<std::pair<ncc::string, bool>>>;
 }  // namespace ncc::parse

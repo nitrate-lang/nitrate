@@ -1137,10 +1137,10 @@ static std::pair<Purity, IsThreadSafe> convert_purity(
 static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
                            FlowPtr<ncc::parse::FuncTy> n) {
   let items = n->get_params();
-  FnParams params(items.params.size());
+  FnParams params(items.size());
 
-  for (size_t i = 0; i < items.params.size(); i++) {
-    auto type = next_one(std::get<1>(items.params[i]));
+  for (size_t i = 0; i < items.size(); i++) {
+    auto type = next_one(std::get<1>(items[i]));
     if (!type.has_value()) {
       G->report(CompilerError, IC::Error, "Failed to lower function parameter",
                 n->get_pos());
@@ -1159,7 +1159,7 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
 
   auto props = convert_purity(n->get_purity());
 
-  return b.getFnTy(params, ret.value()->asType(), n->get_params().is_variadic,
+  return b.getFnTy(params, ret.value()->asType(), n->get_variadic(),
                    props.first, props.second,
                    check_is_foreign_function(n->get_attributes()));
 }
@@ -1371,10 +1371,10 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
     let params = n->get_params();
 
     std::vector<NRBuilder::FnParam> parameters;
-    parameters.resize(params.params.size());
+    parameters.resize(params.size());
 
-    for (size_t i = 0; i < params.params.size(); i++) {
-      let param = params.params[i];
+    for (size_t i = 0; i < params.size(); i++) {
+      let param = params[i];
       NRBuilder::FnParam p;
 
       { /* Set function parameter name */
@@ -1430,8 +1430,8 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
     }
 
     Fn *fndef = b.createFunctionDefintion(
-        name, parameters, ret_type.value()->asType(),
-        n->get_params().is_variadic, Vis::Pub, props.first, props.second,
+        name, parameters, ret_type.value()->asType(), n->get_variadic(),
+        Vis::Pub, props.first, props.second,
         check_is_foreign_function(n->get_attributes()));
 
     fndef->setAbiTag(s.abi_mode);
@@ -1494,10 +1494,10 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
     let params = n->get_params();
 
     std::vector<NRBuilder::FnParam> parameters;
-    parameters.resize(params.params.size());
+    parameters.resize(params.size());
 
-    for (size_t i = 0; i < params.params.size(); i++) {
-      let param = params.params[i];
+    for (size_t i = 0; i < params.size(); i++) {
+      let param = params[i];
       NRBuilder::FnParam p;
 
       { /* Set function parameter name */
@@ -1553,8 +1553,8 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
     }
 
     Fn *decl = b.createFunctionDeclaration(
-        name, parameters, ret_type.value()->asType(),
-        n->get_params().is_variadic, Vis::Pub, props.first, props.second,
+        name, parameters, ret_type.value()->asType(), n->get_variadic(),
+        Vis::Pub, props.first, props.second,
         check_is_foreign_function(n->get_attributes()));
 
     decl->setAbiTag(s.abi_mode);

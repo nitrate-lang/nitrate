@@ -37,8 +37,10 @@
 #include <nitrate-parser/ASTBase.hh>
 #include <span>
 
+#include "nitrate-parser/ASTData.hh"
+
 namespace ncc::parse {
-  class npar_pack NamedTy : public Type {
+  class NamedTy : public Type {
     string m_name;
 
   public:
@@ -47,7 +49,7 @@ namespace ncc::parse {
     constexpr auto get_name() const { return m_name.get(); }
   };
 
-  class npar_pack InferTy : public Type {
+  class InferTy : public Type {
   public:
     constexpr InferTy() : Type(QAST_INFER) {}
   };
@@ -60,91 +62,91 @@ namespace ncc::parse {
     TemplType(FlowPtr<Type> templ, CallArgs args)
         : Type(QAST_TEMPLATE), m_template(templ), m_args(args) {}
 
-    constexpr let get_template() const { return m_template; }
-    constexpr let get_args() const { return m_args; }
+    constexpr auto get_template() const { return m_template; }
+    constexpr auto get_args() const { return m_args; }
   };
 
-  class npar_pack U1 : public Type {
+  class U1 : public Type {
   public:
     constexpr U1() : Type(QAST_U1){};
   };
 
-  class npar_pack U8 : public Type {
+  class U8 : public Type {
   public:
     constexpr U8() : Type(QAST_U8){};
   };
 
-  class npar_pack U16 : public Type {
+  class U16 : public Type {
   public:
     constexpr U16() : Type(QAST_U16){};
   };
 
-  class npar_pack U32 : public Type {
+  class U32 : public Type {
   public:
     constexpr U32() : Type(QAST_U32){};
   };
 
-  class npar_pack U64 : public Type {
+  class U64 : public Type {
   public:
     constexpr U64() : Type(QAST_U64){};
   };
 
-  class npar_pack U128 : public Type {
+  class U128 : public Type {
   public:
     constexpr U128() : Type(QAST_U128){};
   };
 
-  class npar_pack I8 : public Type {
+  class I8 : public Type {
   public:
     constexpr I8() : Type(QAST_I8){};
   };
 
-  class npar_pack I16 : public Type {
+  class I16 : public Type {
   public:
     constexpr I16() : Type(QAST_I16){};
   };
 
-  class npar_pack I32 : public Type {
+  class I32 : public Type {
   public:
     constexpr I32() : Type(QAST_I32){};
   };
 
-  class npar_pack I64 : public Type {
+  class I64 : public Type {
   public:
     constexpr I64() : Type(QAST_I64){};
   };
 
-  class npar_pack I128 : public Type {
+  class I128 : public Type {
   public:
     constexpr I128() : Type(QAST_I128){};
   };
 
-  class npar_pack F16 : public Type {
+  class F16 : public Type {
   public:
     constexpr F16() : Type(QAST_F16){};
   };
 
-  class npar_pack F32 : public Type {
+  class F32 : public Type {
   public:
     constexpr F32() : Type(QAST_F32){};
   };
 
-  class npar_pack F64 : public Type {
+  class F64 : public Type {
   public:
     constexpr F64() : Type(QAST_F64){};
   };
 
-  class npar_pack F128 : public Type {
+  class F128 : public Type {
   public:
     constexpr F128() : Type(QAST_F128){};
   };
 
-  class npar_pack VoidTy : public Type {
+  class VoidTy : public Type {
   public:
     constexpr VoidTy() : Type(QAST_VOID) {}
   };
 
-  class npar_pack PtrTy : public Type {
+  class PtrTy : public Type {
     FlowPtr<Type> m_item;
     bool m_is_volatile;
 
@@ -152,11 +154,11 @@ namespace ncc::parse {
     constexpr PtrTy(FlowPtr<Type> item, bool is_volatile = false)
         : Type(QAST_PTR), m_item(item), m_is_volatile(is_volatile) {}
 
-    constexpr let get_item() const { return m_item; }
+    constexpr auto get_item() const { return m_item; }
     constexpr bool is_volatile() const { return m_is_volatile; }
   };
 
-  class npar_pack OpaqueTy : public Type {
+  class OpaqueTy : public Type {
     string m_name;
 
   public:
@@ -166,15 +168,15 @@ namespace ncc::parse {
   };
 
   class TupleTy : public Type {
-    std::span<FlowPtr<Type> > m_items;
+    std::span<FlowPtr<Type>> m_items;
 
   public:
     TupleTy(TupleTyItems items) : Type(QAST_TUPLE), m_items(items) {}
 
-    constexpr let get_items() const { return m_items; }
+    constexpr auto get_items() const { return m_items; }
   };
 
-  class npar_pack ArrayTy : public Type {
+  class ArrayTy : public Type {
     FlowPtr<Type> m_item;
     FlowPtr<Expr> m_size;
 
@@ -182,38 +184,42 @@ namespace ncc::parse {
     constexpr ArrayTy(FlowPtr<Type> item, FlowPtr<Expr> size)
         : Type(QAST_ARRAY), m_item(item), m_size(size) {}
 
-    constexpr let get_item() const { return m_item; }
-    constexpr let get_size() const { return m_size; }
+    constexpr auto get_item() const { return m_item; }
+    constexpr auto get_size() const { return m_size; }
   };
 
-  class npar_pack RefTy : public Type {
+  class RefTy : public Type {
     FlowPtr<Type> m_item;
 
   public:
     constexpr RefTy(FlowPtr<Type> item) : Type(QAST_REF), m_item(item) {}
 
-    constexpr let get_item() const { return m_item; }
+    constexpr auto get_item() const { return m_item; }
   };
 
   class FuncTy : public Type {
-    std::span<FlowPtr<Expr> > m_attributes;
-    FuncParams m_params;
+    std::span<FlowPtr<Expr>> m_attributes;
+    std::span<FuncParam> m_params;
     FlowPtr<Type> m_return;
     FuncPurity m_purity;
+    bool m_variadic;
 
   public:
-    FuncTy(FlowPtr<Type> return_type, FuncParams parameters, FuncPurity purity,
-           std::span<FlowPtr<Expr> > attributes)
+    FuncTy(FlowPtr<Type> return_type, std::span<FuncParam> parameters,
+           bool variadic, FuncPurity purity,
+           std::span<FlowPtr<Expr>> attributes)
         : Type(QAST_FUNCTOR),
           m_attributes(attributes),
           m_params(parameters),
           m_return(return_type),
-          m_purity(purity) {}
+          m_purity(purity),
+          m_variadic(variadic) {}
 
-    constexpr let get_return() const { return m_return; }
-    constexpr let get_purity() const { return m_purity; }
-    constexpr let get_params() const { return m_params; }
-    constexpr let get_attributes() const { return m_attributes; }
+    constexpr auto get_return() const { return m_return; }
+    constexpr auto get_purity() const { return m_purity; }
+    constexpr auto get_params() const { return m_params; }
+    constexpr auto get_variadic() const { return m_variadic; }
+    constexpr auto get_attributes() const { return m_attributes; }
   };
 }  // namespace ncc::parse
 
