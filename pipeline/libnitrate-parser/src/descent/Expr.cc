@@ -350,7 +350,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
                          << "Expected ')' to close the function call";
             }
 
-            LeftSide = make<Call>(LeftSide, std::move(Arguments))();
+            LeftSide = make<Call>(LeftSide, Arguments)();
             LeftSide->set_offset(SourceOffset);
           } else if (next_if(PuncLBrk)) {
             auto first = recurse_expr({
@@ -720,7 +720,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
         next_if(PuncComa);
       }
 
-      E = make<List>(std::move(items))();
+      E = make<List>(items)();
       break;
     }
 
@@ -764,7 +764,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
         items.push_back(assoc);
       }
 
-      E = make<List>(std::move(items))();
+      E = make<List>(items)();
       break;
     }
 

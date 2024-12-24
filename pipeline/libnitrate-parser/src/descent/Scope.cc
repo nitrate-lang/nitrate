@@ -52,7 +52,7 @@ std::optional<ScopeDeps> Parser::recurse_scope_deps() {
     return dependencies;
   }
 
-  if (next_if(PuncLBrk)) {
+  if (next_if(PuncLBrk)) [[likely]] {
     while (true) {
       if (next_if(EofF)) [[unlikely]] {
         diagnostic << current() << "Unexpected EOF in scope dependencies";
@@ -92,11 +92,10 @@ FlowPtr<Stmt> Parser::recurse_scope_block() {
 FlowPtr<Stmt> Parser::recurse_scope() {
   auto scope_name = recurse_scope_name();
 
-  if (auto implicit_dependencies = recurse_scope_deps()) {
+  if (auto dependencies = recurse_scope_deps()) [[likely]] {
     auto scope_block = recurse_scope_block();
 
-    return make<ScopeStmt>(scope_name, scope_block,
-                           std::move(implicit_dependencies.value()))();
+    return make<ScopeStmt>(scope_name, scope_block, dependencies.value())();
   } else {
     diagnostic << current() << "Expected scope dependencies";
   }

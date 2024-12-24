@@ -95,8 +95,7 @@ NullableFlowPtr<Stmt> Parser::recurse_variable_instance(VarDeclType decl_type) {
       auto variable_initial = recurse_variable_value();
 
       return make<VarDecl>(variable_name, variable_type, variable_initial,
-                           decl_type,
-                           std::move(symbol_attributes_opt.value()))();
+                           decl_type, symbol_attributes_opt.value())();
     } else {
       diagnostic << current() << "Expected variable name";
       return std::nullopt;

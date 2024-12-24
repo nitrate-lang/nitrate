@@ -112,8 +112,8 @@ void Parser::recurse_struct_field(Vis vis, bool is_static,
       auto field_type = recurse_type();
       auto default_value = recurse_struct_field_default_value();
 
-      auto field = StructField(vis, is_static, field_name, field_type,
-                               std::move(default_value));
+      auto field =
+          StructField(vis, is_static, field_name, field_type, default_value);
 
       fields.push_back(std::move(field));
     } else {
@@ -186,10 +186,9 @@ FlowPtr<Stmt> Parser::recurse_struct(CompositeType type) {
   auto terms = recurse_struct_terms();
   auto [fields, methods, static_methods] = recurse_struct_body();
 
-  auto struct_defintion = make<StructDef>(
-      type, std::move(attributes), name, std::move(template_params),
-      std::move(terms), std::move(fields), std::move(methods),
-      std::move(static_methods))();
+  auto struct_defintion =
+      make<StructDef>(type, attributes, name, template_params, terms, fields,
+                      methods, static_methods)();
 
   struct_defintion->set_offset(start_pos);
 

@@ -38,38 +38,33 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 FlowPtr<Stmt> Parser::recurse_return() {
-  /**
-   * Syntax examples:
-   *   `ret 0;`, `ret;`, `ret 0, 1;`, `ret call();`
-   */
-
   if (auto tok = next_if(PuncSemi)) {
     return make<ReturnStmt>(std::nullopt)();
-  }
-
-  auto expr = recurse_expr({Token(Punc, PuncSemi)});
-
-  if (next_if(PuncSemi)) {
-    return make<ReturnStmt>(expr)();
   } else {
-    diagnostic << current() << "Expected ';' after the return statement.";
-  }
+    auto expr = recurse_expr({
+        Token(Punc, PuncSemi),
+    });
 
-  return mock_stmt(QAST_RETURN);
+    if (next_if(PuncSemi)) [[likely]] {
+      return make<ReturnStmt>(expr)();
+    } else {
+      diagnostic << current() << "Expected ';' after the return statement.";
+      return mock_stmt(QAST_RETURN);
+    }
+  }
 }
 
 FlowPtr<Stmt> Parser::recurse_retif() {
-  /**
-   * Syntax examples:
-   *   `retif cond(), 1;`, `retif failed, -1;`
-   */
+  auto condition = recurse_expr({
+      Token(Punc, PuncComa),
+  });
 
-  auto condition = recurse_expr({Token(Punc, PuncComa)});
+  if (next_if(PuncComa)) [[likely]] {
+    auto return_val = recurse_expr({
+        Token(Punc, PuncSemi),
+    });
 
-  if (next_if(PuncComa)) {
-    auto return_val = recurse_expr({Token(Punc, PuncSemi)});
-
-    if (next_if(PuncSemi)) {
+    if (next_if(PuncSemi)) [[likely]] {
       return make<ReturnIfStmt>(condition, return_val)();
     } else {
       diagnostic << current() << "Expected ';' after the retif value.";

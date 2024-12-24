@@ -100,8 +100,7 @@ FlowPtr<Stmt> Parser::recurse_switch() {
     if (auto switch_body_opt = recurse_switch_body()) [[likely]] {
       auto [switch_cases, switch_default_opt] = switch_body_opt.value();
 
-      return make<SwitchStmt>(switch_cond, std::move(switch_cases),
-                              switch_default_opt)();
+      return make<SwitchStmt>(switch_cond, switch_cases, switch_default_opt)();
     } else {
       diagnostic << current() << "Switch statement body is malformed.";
     }

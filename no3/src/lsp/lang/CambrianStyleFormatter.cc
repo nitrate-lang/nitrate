@@ -1401,14 +1401,14 @@ void CambrianFormatter::visit(FlowPtr<EnumDef> n) {
 }
 
 void CambrianFormatter::visit(FlowPtr<ScopeStmt> n) {
-  line << "scope";
+  line << "scope ";
 
   if (!n->get_name().empty()) {
-    line << " " << n->get_name();
+    line << n->get_name();
   }
 
   if (!n->get_deps().empty()) {
-    line << " [";
+    line << ": [";
     iterate_except_last(
         n->get_deps().begin(), n->get_deps().end(),
         [&](auto dep, size_t) { line << dep; }, [&](let) { line << ", "; });

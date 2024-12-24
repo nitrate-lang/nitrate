@@ -293,7 +293,7 @@ FlowPtr<parse::Type> Parser::recurse_tuple_type() {
     next_if(PuncComa);
   }
 
-  auto tuple = make<TupleTy>(std::move(items))();
+  auto tuple = make<TupleTy>(items)();
   tuple->set_offset(start);
 
   return tuple;
