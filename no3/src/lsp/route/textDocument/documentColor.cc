@@ -86,9 +86,8 @@ static RGBA hslaToRgba(float h, float s, float l, float a) {
 }
 
 template <size_t Argc>
-static std::optional<ColorInformation> parse_color_function(const Call* N,
-                                                            ColorMode mode,
-                                                            IScanner& L) {
+static std::optional<ColorInformation> parse_color_function(
+    ncc::FlowPtr<Call> N, ColorMode mode, IScanner& L) {
   static_assert(Argc == 3 || Argc == 4,
                 "Invalid number of arguments. Indexs will be out-of-range.");
 

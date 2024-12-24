@@ -298,7 +298,7 @@ static int do_nr(std::string source, std::string output, std::string opts,
   auto ast = parser->parse();
 
   qmodule mod;
-  bool ok = nr_lower(&mod.get(), ast.get(), "module", true);
+  bool ok = nr_lower(&mod.get(), ast.get().get(), "module", true);
 
   nr_diag_read(
       mod.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
@@ -356,7 +356,7 @@ static int do_codegen(std::string source, std::string output, std::string opts,
   auto ast = parser->parse();
 
   qmodule mod;
-  bool ok = nr_lower(&mod.get(), ast.get(), "module", true);
+  bool ok = nr_lower(&mod.get(), ast.get().get(), "module", true);
 
   nr_diag_read(
       mod.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,

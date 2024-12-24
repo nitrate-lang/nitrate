@@ -49,10 +49,7 @@ namespace ncc {
 
   namespace trace {
     enum class DataFlowEvent {
-      Construct_FromPtr,
       Construct_FromNull,
-      Construct_Copy,
-      Construct_Move,
 
       Cast_ToRaw,
       Cast_Static,
@@ -93,7 +90,7 @@ namespace ncc {
                c == d;
       }
 
-      genesis dispatch(DataFlowEvent) const {
+      genesis dispatch(DataFlowEvent, std::source_location) const {
         /// This tracking method does not track events
         return *this;
       }
@@ -124,8 +121,9 @@ namespace ncc {
                c == d;
       }
 
-      verbose dispatch(DataFlowEvent e) const {
+      verbose dispatch(DataFlowEvent e, std::source_location loc) const {
         (void)e;
+        (void)loc;
         /// TODO: Implement event tracking
 
         return *this;
@@ -138,7 +136,7 @@ namespace ncc {
 
       constexpr bool operator==(const none &) const { return true; }
 
-      none dispatch(DataFlowEvent) const { return *this; }
+      none dispatch(DataFlowEvent, std::source_location) const { return *this; }
     } __attribute__((packed));
 
     static inline trace::none g_notrace_instance;
@@ -166,8 +164,9 @@ namespace ncc {
       constexpr WithTracking(Pointee *ptr, Tracking tracking)
           : m_ref(ptr), m_tracking(std::move(tracking)) {}
 
-      constexpr void dispatch(trace::DataFlowEvent e) {
-        m_tracking = m_tracking.dispatch(e);
+      constexpr void dispatch(trace::DataFlowEvent e,
+                              std::source_location loc) {
+        m_tracking = m_tracking.dispatch(e, loc);
       }
     } __attribute__((packed));
 
@@ -180,7 +179,7 @@ namespace ncc {
       constexpr WithoutTracking() : m_ref(nullptr) {}
       constexpr WithoutTracking(Pointee *ptr, Tracking) : m_ref(ptr) {}
 
-      constexpr void dispatch(trace::DataFlowEvent) {}
+      constexpr void dispatch(trace::DataFlowEvent, std::source_location) {}
     } __attribute__((packed));
 
     using Kernel = std::conditional_t<std::is_same_v<Tracking, trace::none>,
@@ -188,13 +187,9 @@ namespace ncc {
 
     Kernel m_s;
 
-    constexpr void dispatch(
-        trace::DataFlowEvent e,
-        std::source_location loc = std::source_location()) const {
-      /// FIXME: Do something with the location
-      (void)loc;
-
-      const_cast<FlowPtr *>(this)->m_s.dispatch(e);
+    constexpr void publish(trace::DataFlowEvent e,
+                           std::source_location loc) const {
+      const_cast<FlowPtr *>(this)->m_s.dispatch(e, loc);
     }
 
   public:
@@ -205,24 +200,18 @@ namespace ncc {
 
     constexpr explicit FlowPtr(Pointee *ptr = nullptr,
                                Tracking tracking = Tracking())
-        : m_s(ptr, std::move(tracking)) {
-      dispatch(trace::DataFlowEvent::Construct_FromPtr);
-    }
+        : m_s(ptr, std::move(tracking)) {}
 
-    constexpr FlowPtr(std::nullptr_t, Tracking tracking = Tracking())
+    constexpr FlowPtr(
+        std::nullptr_t, Tracking tracking = Tracking(),
+        std::source_location loc = std::source_location::current())
         : m_s(nullptr, std::move(tracking)) {
-      dispatch(trace::DataFlowEvent::Construct_FromNull);
+      publish(trace::DataFlowEvent::Construct_FromNull, loc);
     }
 
-    constexpr FlowPtr(const FlowPtr &other) {
-      m_s = std::move(other.m_s);
-      dispatch(trace::DataFlowEvent::Construct_Copy);
-    }
+    constexpr FlowPtr(const FlowPtr &other) { m_s = std::move(other.m_s); }
 
-    constexpr FlowPtr(FlowPtr &&other) {
-      m_s = other.m_s;
-      dispatch(trace::DataFlowEvent::Construct_Move);
-    }
+    constexpr FlowPtr(FlowPtr &&other) { m_s = other.m_s; }
 
     constexpr FlowPtr &operator=(const FlowPtr &other) {
       m_s = other.m_s;
@@ -255,36 +244,39 @@ namespace ncc {
     /// Accessors
 
     constexpr auto operator->() const {
-      dispatch(trace::DataFlowEvent::Visitor_Accept);
+      /// FIXME: Get source location using a proxy object maybe?
+
+      publish(trace::DataFlowEvent::Visitor_Accept, std::source_location());
+
       return m_s.m_ref.m_tptr;
     }
 
     constexpr auto get(
         std::source_location loc = std::source_location::current()) const {
-      dispatch(trace::DataFlowEvent::Visitor_Accept, loc);
+      publish(trace::DataFlowEvent::Visitor_Accept, loc);
+
       return m_s.m_ref.m_tptr;
     }
 
     constexpr operator bool() const { return m_s.m_ref.m_ptr != 0; }
-
-    // constexpr operator auto() const {
-    //   dispatch(trace::DataFlowEvent::Cast_ToRaw);
-    //   return m_s.m_ref.m_tptr;
-    // }
 
     ///=========================================================================
     /// Casting
 
     template <class U>
     constexpr operator FlowPtr<U>() const {
-      dispatch(trace::DataFlowEvent::Cast_Static);
+      /// FIXME: Get source location using a proxy object maybe?
+
+      publish(trace::DataFlowEvent::Cast_Static, std::source_location());
+
       return FlowPtr<U>(static_cast<U *>(get()), trace());
     }
 
     template <class U>
     constexpr FlowPtr<U> as(
         std::source_location loc = std::source_location::current()) const {
-      dispatch(trace::DataFlowEvent::Cast_Reinterpret, loc);
+      publish(trace::DataFlowEvent::Cast_Reinterpret, loc);
+
       return FlowPtr<U>(reinterpret_cast<U *>(get()), trace());
     }
 
@@ -293,7 +285,8 @@ namespace ncc {
 
     constexpr const Tracking &trace(
         std::source_location loc = std::source_location::current()) const {
-      dispatch(trace::DataFlowEvent::Tracking_Get, loc);
+      publish(trace::DataFlowEvent::Tracking_Get, loc);
+
       if constexpr (std::is_same_v<Kernel, WithTracking>) {
         return m_s.m_tracking;
       } else {
@@ -304,7 +297,8 @@ namespace ncc {
     constexpr void set_tracking(
         Tracking tracking,
         std::source_location loc = std::source_location::current()) {
-      dispatch(trace::DataFlowEvent::Tracking_Set, loc);
+      publish(trace::DataFlowEvent::Tracking_Set, loc);
+
       if constexpr (std::is_same_v<Kernel, WithTracking>) {
         m_s.m_tracking = std::move(tracking);
       }
@@ -317,7 +311,8 @@ namespace ncc {
     constexpr void accept(
         Vistor &v,
         std::source_location loc = std::source_location::current()) const {
-      dispatch(trace::DataFlowEvent::Visitor_Accept, loc);
+      publish(trace::DataFlowEvent::Visitor_Accept, loc);
+
       v.dispatch(*this);
     }
 
@@ -325,7 +320,8 @@ namespace ncc {
     /// Reflection pass-through
     constexpr auto getKind(
         std::source_location loc = std::source_location::current()) const {
-      dispatch(trace::DataFlowEvent::Reflection_GetKind, loc);
+      publish(trace::DataFlowEvent::Reflection_GetKind, loc);
+
       return get()->getKind();
     }
   } __attribute__((packed));

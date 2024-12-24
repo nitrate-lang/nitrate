@@ -48,8 +48,8 @@ CPP_EXPORT thread_local std::unique_ptr<ncc::IMemory>
 
 ///=============================================================================
 
-CPP_EXPORT bool Base::isSame(const Base *o) const {
-  if (this == o) {
+CPP_EXPORT bool Base::isSame(FlowPtr<Base> o) const {
+  if (this == o.get()) {
     return true;
   }
 

@@ -237,7 +237,7 @@ namespace ncc::parse {
     constexpr bool is(npar_ty_t type) const { return type == getKind(); }
     constexpr bool is_mock() const { return m_mock; }
 
-    bool isSame(const Base *o) const;
+    bool isSame(FlowPtr<Base> o) const;
 
     uint64_t hash64() const;
 
@@ -276,8 +276,6 @@ namespace ncc::parse {
     constexpr const T *as() const {
       return safeCastAs<T>(const_cast<Base *>(this));
     }
-
-    Base *&as_base() { return *reinterpret_cast<Base **>(this); }
 
     ///======================================================================
     /// Debugging
