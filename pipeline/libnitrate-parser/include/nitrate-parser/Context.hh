@@ -103,6 +103,10 @@ namespace ncc::parse {
      *  Helper functions
      ****************************************************************************/
 
+    FlowPtr<Stmt> mock_stmt(std::optional<npar_ty_t> expected = std::nullopt);
+    FlowPtr<Expr> mock_expr(std::optional<npar_ty_t> expected = std::nullopt);
+    FlowPtr<Type> mock_type();
+
     std::string_view recurse_enum_name();
     NullableFlowPtr<Type> recurse_enum_type();
     NullableFlowPtr<Expr> recurse_enum_item_value();

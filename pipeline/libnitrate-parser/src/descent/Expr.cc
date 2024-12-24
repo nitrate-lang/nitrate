@@ -83,16 +83,16 @@ CallArgs Parser::recurse_call_arguments(Token terminator) {
 
     switch (state) {
       case State::ParseNamedArg: {
-        let name = SaveString(ident.as_string());
-        let value = recurse_expr({Token(qPunc, qPuncComa), terminator});
+        auto name = SaveString(ident.as_string());
+        auto value = recurse_expr({Token(qPunc, qPuncComa), terminator});
 
         call_args.push_back({name, value});
         break;
       }
 
       case State::ParsePosArg: {
-        let name = SaveString(std::to_string(pos_arg_count++));
-        let value = recurse_expr({Token(qPunc, qPuncComa), terminator});
+        auto name = SaveString(std::to_string(pos_arg_count++));
+        auto value = recurse_expr({Token(qPunc, qPuncComa), terminator});
 
         call_args.push_back({name, value});
         break;
@@ -113,7 +113,7 @@ FlowPtr<Expr> Parser::recurse_fstring() {
     return mock_expr(QAST_FSTRING);
   }
 
-  let fstr = tok.as_string();
+  auto fstr = tok.as_string();
 
   std::string buf;
   buf.reserve(fstr.size());
@@ -122,7 +122,7 @@ FlowPtr<Expr> Parser::recurse_fstring() {
   size_t state = 0, w_beg = 0, w_end = 0;
 
   for (size_t i = 0; i < fstr.size(); i++) {
-    let c = fstr[i];
+    auto c = fstr[i];
 
     if (c == '{' && state == 0) {
       w_beg = i + 1;
@@ -136,8 +136,8 @@ FlowPtr<Expr> Parser::recurse_fstring() {
         buf.clear();
       }
 
-      let subnode = FromString(fstr.substr(w_beg, w_end - w_beg), m_env)
-                        ->recurse_expr({Token(qPunc, qPuncRCur)});
+      auto subnode = FromString(fstr.substr(w_beg, w_end - w_beg), m_env)
+                         ->recurse_expr({Token(qPunc, qPuncRCur)});
 
       items.push_back(subnode);
     } else if (c == '{') {
@@ -227,7 +227,7 @@ static FORCE_INLINE FlowPtr<Expr> UnwindStack(std::stack<Frame> &stack,
 }
 
 FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
-  let SourceOffset = peek().get_start();
+  auto SourceOffset = peek().get_start();
 
   std::stack<Frame> Stack;
   Stack.push({nullptr, SourceOffset, 0, FrameType::Start, qOpPlus});
@@ -236,11 +236,11 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
    * Parse pre-unary operators
    ****************************************/
   std::stack<std::pair<Operator, LocationID>> PreUnaryOps;
-  while (let Tok = next_if(qOper)) {
+  while (auto Tok = next_if(qOper)) {
     PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
   }
 
-  if (let LeftSideOpt = recurse_expr_primary(false)) {
+  if (auto LeftSideOpt = recurse_expr_primary(false)) {
     auto LeftSide = LeftSideOpt.value();
     bool Spinning = true;
 
@@ -256,7 +256,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
     }
 
     while (!Stack.empty() && Spinning) {
-      let Tok = peek();
+      auto Tok = peek();
 
       if (terminators.contains(Tok)) {
         break;
@@ -264,9 +264,9 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
 
       switch (Tok.get_type()) {
         case qOper: {
-          let Op = Tok.as_op();
-          let OpType = IsPostUnaryOp(Op) ? OpMode::PostUnary : OpMode::Binary;
-          let OpPrecedence = GetOperatorPrecedence(Op, OpType);
+          auto Op = Tok.as_op();
+          auto OpType = IsPostUnaryOp(Op) ? OpMode::PostUnary : OpMode::Binary;
+          auto OpPrecedence = GetOperatorPrecedence(Op, OpType);
 
           if (OpPrecedence >= Stack.top().minPrecedence) {
             next();
@@ -281,9 +281,9 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
               continue;
             }
 
-            let IsLeftAssoc =
+            auto IsLeftAssoc =
                 GetOperatorAssociativity(Op, OpType) == OpAssoc::Left;
-            let NextMinPrecedence =
+            auto NextMinPrecedence =
                 IsLeftAssoc ? OpPrecedence + 1 : OpPrecedence;
             bool IsType = Op == qOpAs || Op == qOpBitcastAs;
 
@@ -291,7 +291,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
               /****************************************
                * Parse pre-unary operators
                ****************************************/
-              while (let Tok = next_if(qOper)) {
+              while (auto Tok = next_if(qOper)) {
                 PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
               }
             }
@@ -339,12 +339,12 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
         case qPunc: {
           // Based on the assumption that function calls have the same
           // precedence as the dot operator (member access)
-          static let SuffixOPPrecedence =
+          static auto SuffixOPPrecedence =
               GetOperatorPrecedence(qOpDot, OpMode::Binary);
           LeftSide = UnwindStack(Stack, LeftSide, SuffixOPPrecedence);
 
           if (next_if(qPuncLPar)) {
-            let Arguments = recurse_call_arguments(Token(qPunc, qPuncRPar));
+            auto Arguments = recurse_call_arguments(Token(qPunc, qPuncRPar));
             if (!next_if(qPuncRPar)) {
               diagnostic << current()
                          << "Expected ')' to close the function call";
@@ -353,13 +353,13 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
             LeftSide = make<Call>(LeftSide, std::move(Arguments))();
             LeftSide->set_offset(SourceOffset);
           } else if (next_if(qPuncLBrk)) {
-            let first = recurse_expr({
+            auto first = recurse_expr({
                 Token(qPunc, qPuncRBrk),
                 Token(qPunc, qPuncColn),
             });
 
             if (next_if(qPuncColn)) {
-              let second = recurse_expr({Token(qPunc, qPuncRBrk)});
+              auto second = recurse_expr({Token(qPunc, qPuncRBrk)});
               if (!next_if(qPuncRBrk)) {
                 diagnostic << current() << "Expected ']' to close the slice";
               }
@@ -436,8 +436,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
     }
 
     case qKType: {
-      let start_pos = current().get_start();
-      let type = recurse_type();
+      auto start_pos = current().get_start();
+      auto type = recurse_type();
       type->set_offset(start_pos);
 
       E = make<TypeExpr>(type)();
@@ -505,15 +505,15 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
     }
 
     case qKFn: {
-      let start_pos = current().get_start();
+      auto start_pos = current().get_start();
 
-      let function = recurse_function(false);
+      auto function = recurse_function(false);
       function->set_offset(start_pos);
 
       FlowPtr<Expr> expr = make<StmtExpr>(function)();
 
       if (next_if(qPuncLPar)) {
-        let args = recurse_call_arguments(Token(qPunc, qPuncRPar));
+        auto args = recurse_call_arguments(Token(qPunc, qPuncRPar));
         if (next_if(qPuncRPar)) {
           E = make<Call>(expr, args)();
         } else {
@@ -681,15 +681,15 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
           break;
         }
 
-        let expr = recurse_expr({
+        auto expr = recurse_expr({
             Token(qPunc, qPuncComa),
             Token(qPunc, qPuncRBrk),
             Token(qPunc, qPuncSemi),
         });
 
         if (next_if(qPuncSemi)) {
-          if (let count_tok = next_if(qIntL)) {
-            let count_str = current().as_string();
+          if (auto count_tok = next_if(qIntL)) {
+            auto count_str = current().as_string();
             size_t count{};
             if (std::from_chars(count_str.data(),
                                 count_str.data() + count_str.size(), count)
@@ -743,15 +743,15 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
           break;
         }
 
-        let start_pos = peek().get_start();
+        auto start_pos = peek().get_start();
 
-        let key = recurse_expr({Token(qPunc, qPuncColn)});
+        auto key = recurse_expr({Token(qPunc, qPuncColn)});
         if (!next_if(qPuncColn)) {
           diagnostic << current() << "Expected colon after key in dictionary";
           break;
         }
 
-        let value = recurse_expr({
+        auto value = recurse_expr({
             Token(qPunc, qPuncRCur),
             Token(qPunc, qPuncComa),
         });
@@ -793,9 +793,9 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
 }
 
 FlowPtr<Expr> Parser::recurse_expr_type_suffix(FlowPtr<Expr> base) {
-  let tok = current();
+  auto tok = current();
 
-  let suffix = recurse_type();
+  auto suffix = recurse_type();
   suffix->set_offset(tok.get_start());
 
   auto texpr = make<TypeExpr>(suffix)();
@@ -805,11 +805,11 @@ FlowPtr<Expr> Parser::recurse_expr_type_suffix(FlowPtr<Expr> base) {
 }
 
 NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
-  let start_pos = peek().get_start();
+  auto start_pos = peek().get_start();
   NullableFlowPtr<Expr> E;
 
   if (isType) {
-    let type = recurse_type();
+    auto type = recurse_type();
     type->set_offset(start_pos);
 
     auto texpr = make<TypeExpr>(type)();
@@ -817,7 +817,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
 
     E = texpr;
   } else {
-    switch (let tok = next(); tok.get_type()) {
+    switch (auto tok = next(); tok.get_type()) {
       case qEofF: {
         break;
       }
@@ -854,8 +854,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
         auto integer = make<ConstInt>(intern(tok.as_string()))();
         integer->set_offset(start_pos);
 
-        if (let tok = peek(); tok.is(qName)) {
-          let casted = recurse_expr_type_suffix(integer);
+        if (auto tok = peek(); tok.is(qName)) {
+          auto casted = recurse_expr_type_suffix(integer);
           casted->set_offset(start_pos);
 
           E = casted;
@@ -870,8 +870,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
         auto decimal = make<ConstFloat>(intern(tok.as_string()))();
         decimal->set_offset(start_pos);
 
-        if (let tok = peek(); tok.is(qName)) {
-          let casted = recurse_expr_type_suffix(decimal);
+        if (auto tok = peek(); tok.is(qName)) {
+          auto casted = recurse_expr_type_suffix(decimal);
           casted->set_offset(start_pos);
 
           E = casted;
@@ -886,8 +886,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
         auto string = make<ConstString>(intern(tok.as_string()))();
         string->set_offset(start_pos);
 
-        if (let tok = peek(); tok.is(qName)) {
-          let casted = recurse_expr_type_suffix(string);
+        if (auto tok = peek(); tok.is(qName)) {
+          auto casted = recurse_expr_type_suffix(string);
           casted->set_offset(start_pos);
 
           E = casted;
@@ -899,7 +899,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
       }
 
       case qChar: {
-        let str_data = tok.as_string();
+        auto str_data = tok.as_string();
         if (str_data.size() != 1) [[unlikely]] {
           diagnostic << tok << "Expected a single byte in character literal";
           break;
@@ -908,8 +908,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
         auto character = make<ConstChar>(str_data[0])();
         character->set_offset(start_pos);
 
-        if (let tok = peek(); tok.is(qName)) {
-          let casted = recurse_expr_type_suffix(character);
+        if (auto tok = peek(); tok.is(qName)) {
+          auto casted = recurse_expr_type_suffix(character);
           casted->set_offset(start_pos);
 
           E = casted;

@@ -106,24 +106,23 @@ CPP_EXPORT bool Type::is_ptr_to(Type *type) const {
   return item->is(type->getKind());
 }
 
-FlowPtr<Stmt> ncc::parse::mock_stmt(std::optional<npar_ty_t> expected) {
-  (void)expected;
+FlowPtr<Stmt> Parser::mock_stmt(std::optional<npar_ty_t>) {
+  auto node = make<Stmt>(QAST_BASE)();
+  node->set_offset(rd.Current()->get_start());
 
-  static Stmt node(QAST_BASE);
-  static FlowPtr<Stmt> ptr(&node);
-  return ptr;
+  return node;
 }
 
-FlowPtr<Expr> ncc::parse::mock_expr(std::optional<npar_ty_t> expected) {
-  (void)expected;
+FlowPtr<Expr> Parser::mock_expr(std::optional<npar_ty_t>) {
+  auto node = make<Expr>(QAST_BASE)();
+  node->set_offset(rd.Current()->get_start());
 
-  static Expr node(QAST_BASE);
-  static FlowPtr<Expr> ptr(&node);
-  return ptr;
+  return node;
 }
 
-FlowPtr<Type> ncc::parse::mock_type() {
-  static Type node(QAST_BASE);
-  static FlowPtr<Type> ptr(&node);
-  return ptr;
+FlowPtr<Type> Parser::mock_type() {
+  auto node = make<Type>(QAST_BASE)();
+  node->set_offset(rd.Current()->get_start());
+
+  return node;
 }

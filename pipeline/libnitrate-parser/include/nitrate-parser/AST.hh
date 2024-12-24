@@ -65,10 +65,6 @@ namespace ncc::parse {
       return new_obj;
     };
   }
-
-  FlowPtr<Stmt> mock_stmt(std::optional<npar_ty_t> expected = std::nullopt);
-  FlowPtr<Expr> mock_expr(std::optional<npar_ty_t> expected = std::nullopt);
-  FlowPtr<Type> mock_type();
 }  // namespace ncc::parse
 
 namespace ncc::parse {
