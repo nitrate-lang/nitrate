@@ -46,7 +46,7 @@ FlowPtr<Stmt> Parser::recurse_switch_case_body() {
 }
 
 std::variant<FlowPtr<CaseStmt>, FlowPtr<Stmt>> Parser::recurse_switch_case() {
-  auto cond = recurse_expr({Token(Oper, OpArrow), Token(qPunc, qPuncLCur)});
+  auto cond = recurse_expr({Token(Oper, OpArrow), Token(Punc, PuncLCur)});
 
   auto body = recurse_switch_case_body();
 
@@ -66,12 +66,12 @@ Parser::recurse_switch_body() {
   NullableFlowPtr<Stmt> default_;
 
   while (true) {
-    if (next_if(qEofF)) {
+    if (next_if(EofF)) {
       diagnostic << current() << "Unexpected EOF in switch statement.";
       break;
     }
 
-    if (next_if(qPuncRCur)) {
+    if (next_if(PuncRCur)) {
       return {{cases, default_}};
     }
 
@@ -93,9 +93,9 @@ Parser::recurse_switch_body() {
 }
 
 FlowPtr<Stmt> Parser::recurse_switch() {
-  auto switch_cond = recurse_expr({Token(qPunc, qPuncLCur)});
+  auto switch_cond = recurse_expr({Token(Punc, PuncLCur)});
 
-  if (next_if(qPuncLCur)) {
+  if (next_if(PuncLCur)) {
     if (auto body_opt = recurse_switch_body()) {
       auto [switch_cases, switch_default_opt] = body_opt.value();
 

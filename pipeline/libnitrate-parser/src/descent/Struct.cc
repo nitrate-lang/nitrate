@@ -40,35 +40,35 @@ using namespace ncc::parse;
 ExpressionList Parser::recurse_struct_attributes() {
   ExpressionList attributes;
 
-  if (!next_if(qPuncLBrk)) {
+  if (!next_if(PuncLBrk)) {
     return attributes;
   }
 
   while (true) {
-    if (next_if(qEofF)) {
+    if (next_if(EofF)) {
       diagnostic
           << current()
           << "Encountered EOF while parsing composite definition attributes";
       break;
     }
 
-    if (next_if(qPuncRBrk)) {
+    if (next_if(PuncRBrk)) {
       break;
     }
 
     auto attribute =
-        recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk)});
+        recurse_expr({Token(Punc, PuncComa), Token(Punc, PuncRBrk)});
 
     attributes.push_back(attribute);
 
-    next_if(qPuncComa);
+    next_if(PuncComa);
   }
 
   return attributes;
 }
 
 std::string_view Parser::recurse_struct_name() {
-  if (auto tok = next_if(qName)) {
+  if (auto tok = next_if(Name)) {
     return tok->as_string();
   } else {
     return "";
@@ -78,15 +78,15 @@ std::string_view Parser::recurse_struct_name() {
 StructDefNames Parser::recurse_struct_terms() {
   StructDefNames names;
 
-  if (!next_if(qPuncColn)) {
+  if (!next_if(PuncColn)) {
     return names;
   }
 
   while (true) {
-    if (auto tok = next_if(qName)) {
+    if (auto tok = next_if(Name)) {
       names.push_back(SaveString(tok->as_string()));
 
-      next_if(qPuncComa);
+      next_if(PuncComa);
     } else {
       return names;
     }
@@ -95,8 +95,8 @@ StructDefNames Parser::recurse_struct_terms() {
 
 NullableFlowPtr<Expr> Parser::recurse_struct_field_default_value() {
   if (next_if(OpSet)) {
-    return recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncSemi),
-                         Token(qPunc, qPuncRCur)});
+    return recurse_expr(
+        {Token(Punc, PuncComa), Token(Punc, PuncSemi), Token(Punc, PuncRCur)});
   } else {
     return std::nullopt;
   }
@@ -105,10 +105,10 @@ NullableFlowPtr<Expr> Parser::recurse_struct_field_default_value() {
 void Parser::recurse_struct_field(Vis vis, bool is_static,
                                   StructDefFields &fields) {
   /* Must consume token to avoid infinite loop on error */
-  if (auto name = next(); name.is(qName)) {
+  if (auto name = next(); name.is(Name)) {
     auto field_name = name.as_string();
 
-    if (next_if(qPuncColn)) {
+    if (next_if(PuncColn)) {
       auto field_type = recurse_type();
       auto default_value = recurse_struct_field_default_value();
 
@@ -151,23 +151,23 @@ void Parser::recurse_struct_method_or_field(StructContent &body) {
     recurse_struct_field(vis, is_static, body.fields);
   }
 
-  next_if(qPuncComa) || next_if(qPuncSemi);
+  next_if(PuncComa) || next_if(PuncSemi);
 }
 
 Parser::StructContent Parser::recurse_struct_body() {
   StructContent body;
 
-  if (!next_if(qPuncLCur)) {
+  if (!next_if(PuncLCur)) {
     diagnostic << current() << "Expected '{' to start struct body";
     return body;
   }
 
   while (true) {
-    if (next_if(qPuncRCur)) {
+    if (next_if(PuncRCur)) {
       break;
     }
 
-    if (next_if(qEofF)) {
+    if (next_if(EofF)) {
       diagnostic << current() << "Encountered EOF while parsing struct body";
       break;
     }

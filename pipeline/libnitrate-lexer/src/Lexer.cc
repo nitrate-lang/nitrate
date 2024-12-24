@@ -405,7 +405,7 @@ public:
     /* Check for f-string */
     if (buf == "f" && c == '"') {
       L.m_pushback.push_back(c);
-      return Token(qKeyW, qK__FString, start_pos);
+      return Token(KeyW, qK__FString, start_pos);
     }
 
     /* We overshot; this must be a punctor ':' */
@@ -419,7 +419,7 @@ public:
     { /* Determine if it's a keyword or an identifier */
       auto it = LexicalKeywords.left.find(buf);
       if (it != LexicalKeywords.left.end()) {
-        return Token(qKeyW, it->second, start_pos);
+        return Token(KeyW, it->second, start_pos);
       }
     }
 
@@ -445,7 +445,7 @@ public:
     }
 
     /* Return the identifier */
-    return Token(qName, intern(buf), start_pos);
+    return Token(Name, intern(buf), start_pos);
   };
 
   static FORCE_INLINE Token ParseString(Tokenizer &L, char c, std::string &buf,
@@ -627,9 +627,9 @@ public:
       L.m_pushback.push_back(c);
       /* Character or string */
       if (buf.front() == '\'' && buf.size() == 2) {
-        return Token(qChar, intern(std::string(1, buf[1])), start_pos);
+        return Token(Char, intern(std::string(1, buf[1])), start_pos);
       } else {
-        return Token(qText, intern(buf.substr(1, buf.size() - 1)), start_pos);
+        return Token(Text, intern(buf.substr(1, buf.size() - 1)), start_pos);
       }
     }
   }
@@ -812,10 +812,10 @@ public:
     std::string norm;
     if (type == NumType::Floating) {
       if (canonicalize_float(buf, norm)) {
-        return Token(qNumL, intern(std::move(norm)), start_pos);
+        return Token(NumL, intern(std::move(norm)), start_pos);
       }
     } else if (canonicalize_number(buf, norm, type)) {
-      return Token(qIntL, intern(std::move(norm)), start_pos);
+      return Token(IntL, intern(std::move(norm)), start_pos);
     }
 
     L.reset_state();
@@ -830,7 +830,7 @@ public:
       c = nextc(L);
     }
 
-    return Token(qNote, intern(std::move(buf)), start_pos);
+    return Token(Note, intern(std::move(buf)), start_pos);
   };
 
   static FORCE_INLINE Token ParseCommentMultiLine(Tokenizer &L, char c,
@@ -855,7 +855,7 @@ public:
         if (tmp == '/') {
           level--;
           if (level == 0) {
-            return Token(qNote, intern(std::move(buf)), start_pos);
+            return Token(Note, intern(std::move(buf)), start_pos);
           } else {
             buf += "*";
             buf += tmp;
@@ -887,7 +887,7 @@ public:
 
     L.m_pushback.push_back(c);
 
-    return Token(qMacr, intern(std::move(buf)), start_pos);
+    return Token(Macr, intern(std::move(buf)), start_pos);
   }
 
   static FORCE_INLINE Token ParseBlockMacro(Tokenizer &L, char c,
@@ -903,7 +903,7 @@ public:
       }
 
       if (state_parens == 0) {
-        return Token(qMacB, intern(std::move(buf)), start_pos);
+        return Token(MacB, intern(std::move(buf)), start_pos);
       }
 
       buf += c;
@@ -920,7 +920,7 @@ public:
       auto it = LexicalPunctors.left.find(buf);
       if (it != LexicalPunctors.left.end()) {
         L.m_pushback.push_back(c);
-        token = Token(qPunc, it->second, start_pos);
+        token = Token(Punc, it->second, start_pos);
         return true;
       }
     }
@@ -1092,29 +1092,29 @@ CPP_EXPORT Token Tokenizer::GetNext() {
 
 CPP_EXPORT const char *ncc::lex::qlex_ty_str(TokenType ty) {
   switch (ty) {
-    case qEofF:
+    case EofF:
       return "eof";
-    case qKeyW:
+    case KeyW:
       return "key";
     case Oper:
       return "op";
-    case qPunc:
+    case Punc:
       return "sym";
-    case qName:
+    case Name:
       return "name";
-    case qIntL:
+    case IntL:
       return "int";
-    case qNumL:
+    case NumL:
       return "num";
-    case qText:
+    case Text:
       return "str";
-    case qChar:
+    case Char:
       return "char";
-    case qMacB:
+    case MacB:
       return "macb";
-    case qMacr:
+    case Macr:
       return "macr";
-    case qNote:
+    case Note:
       return "note";
   }
 
@@ -1123,13 +1123,13 @@ CPP_EXPORT const char *ncc::lex::qlex_ty_str(TokenType ty) {
 
 CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, TokenType ty) {
   switch (ty) {
-    case qEofF: {
-      os << "qEofF";
+    case EofF: {
+      os << "EofF";
       break;
     }
 
-    case qKeyW: {
-      os << "qKeyW";
+    case KeyW: {
+      os << "KeyW";
       break;
     }
 
@@ -1138,48 +1138,48 @@ CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, TokenType ty) {
       break;
     }
 
-    case qPunc: {
-      os << "qPunc";
+    case Punc: {
+      os << "Punc";
       break;
     }
 
-    case qName: {
-      os << "qName";
+    case Name: {
+      os << "Name";
       break;
     }
 
-    case qIntL: {
-      os << "qIntL";
+    case IntL: {
+      os << "IntL";
       break;
     }
 
-    case qNumL: {
-      os << "qNumL";
+    case NumL: {
+      os << "NumL";
       break;
     }
 
-    case qText: {
-      os << "qText";
+    case Text: {
+      os << "Text";
       break;
     }
 
-    case qChar: {
-      os << "qChar";
+    case Char: {
+      os << "Char";
       break;
     }
 
-    case qMacB: {
-      os << "qMacB";
+    case MacB: {
+      os << "MacB";
       break;
     }
 
-    case qMacr: {
-      os << "qMacr";
+    case Macr: {
+      os << "Macr";
       break;
     }
 
-    case qNote: {
-      os << "qNote";
+    case Note: {
+      os << "Note";
       break;
     }
   }

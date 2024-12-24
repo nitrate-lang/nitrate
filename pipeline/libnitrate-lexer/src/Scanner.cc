@@ -271,12 +271,12 @@ CPP_EXPORT std::string_view ncc::lex::to_string(TokenType ty, TokenData v) {
   std::string_view R;
 
   switch (ty) {
-    case qEofF: {
+    case EofF: {
       R = "";
       break;
     }
 
-    case qKeyW: {
+    case KeyW: {
       R = ncc::lex::kw_repr(v.key);
       break;
     }
@@ -286,47 +286,47 @@ CPP_EXPORT std::string_view ncc::lex::to_string(TokenType ty, TokenData v) {
       break;
     }
 
-    case qPunc: {
+    case Punc: {
       R = ncc::lex::punct_repr(v.punc);
       break;
     }
 
-    case qName: {
+    case Name: {
       R = v.str.get();
       break;
     }
 
-    case qIntL: {
+    case IntL: {
       R = v.str.get();
       break;
     }
 
-    case qNumL: {
+    case NumL: {
       R = v.str.get();
       break;
     }
 
-    case qText: {
+    case Text: {
       R = v.str.get();
       break;
     }
 
-    case qChar: {
+    case Char: {
       R = v.str.get();
       break;
     }
 
-    case qMacB: {
+    case MacB: {
       R = v.str.get();
       break;
     }
 
-    case qMacr: {
+    case Macr: {
       R = v.str.get();
       break;
     }
 
-    case qNote: {
+    case Note: {
       R = v.str.get();
       break;
     }
@@ -360,7 +360,7 @@ CPP_EXPORT Token IScanner::Next() {
     Token tok = m_ready.front();
     m_ready.pop_front();
 
-    if (GetSkipCommentsState() && tok.is(qNote)) {
+    if (GetSkipCommentsState() && tok.is(Note)) {
       continue;
     }
 

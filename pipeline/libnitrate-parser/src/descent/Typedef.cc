@@ -43,13 +43,13 @@ FlowPtr<Stmt> Parser::recurse_typedef() {
    *   `type name = type;`
    */
 
-  if (auto tok = next_if(qName)) {
+  if (auto tok = next_if(Name)) {
     auto name = tok->as_string();
 
     if (next_if(OpSet)) {
       auto type = recurse_type();
 
-      if (next_if(qPuncSemi)) {
+      if (next_if(PuncSemi)) {
         return make<TypedefStmt>(SaveString(name), type)();
       } else {
         diagnostic << current() << "Expected ';' in typedef declaration";

@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 NullableFlowPtr<Stmt> Parser::recurse_for_init_expr() {
-  if (next_if(qPuncSemi)) {
+  if (next_if(PuncSemi)) {
     return std::nullopt;
   }
 
@@ -46,13 +46,13 @@ NullableFlowPtr<Stmt> Parser::recurse_for_init_expr() {
 }
 
 NullableFlowPtr<Expr> Parser::recurse_for_cond_expr() {
-  if (next_if(qPuncSemi)) {
+  if (next_if(PuncSemi)) {
     return std::nullopt;
   }
 
-  auto cond_expr = recurse_expr({Token(qPunc, qPuncSemi)});
+  auto cond_expr = recurse_expr({Token(Punc, PuncSemi)});
 
-  if (!next_if(qPuncSemi)) {
+  if (!next_if(PuncSemi)) {
     diagnostic << current() << "Expected semicolon after condition expression";
   }
 
@@ -61,16 +61,16 @@ NullableFlowPtr<Expr> Parser::recurse_for_cond_expr() {
 
 NullableFlowPtr<Expr> Parser::recurse_for_step_expr(bool has_paren) {
   if (has_paren) {
-    if (peek().is<qPuncRPar>()) {
+    if (peek().is<PuncRPar>()) {
       return std::nullopt;
     } else {
-      return recurse_expr({Token(qPunc, qPuncRPar)});
+      return recurse_expr({Token(Punc, PuncRPar)});
     }
   } else {
-    if (peek().is<OpArrow>() || peek().is<qPuncLCur>()) {
+    if (peek().is<OpArrow>() || peek().is<PuncLCur>()) {
       return std::nullopt;
     } else {
-      return recurse_expr({Token(qPunc, qPuncLCur), Token(Oper, OpArrow)});
+      return recurse_expr({Token(Punc, PuncLCur), Token(Oper, OpArrow)});
     }
   }
 }
@@ -84,14 +84,14 @@ FlowPtr<Stmt> Parser::recurse_for_body() {
 }
 
 FlowPtr<Stmt> Parser::recurse_for() {
-  bool has_paren = next_if(qPuncLPar).has_value();
+  bool has_paren = next_if(PuncLPar).has_value();
 
   auto init = recurse_for_init_expr();
   auto cond = recurse_for_cond_expr();
   auto step = recurse_for_step_expr(has_paren);
 
   if (has_paren) {
-    if (!next_if(qPuncRPar)) {
+    if (!next_if(PuncRPar)) {
       diagnostic << current()
                  << "Expected closing parenthesis in for statement";
     }

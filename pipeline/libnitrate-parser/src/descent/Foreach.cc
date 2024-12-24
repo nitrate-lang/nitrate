@@ -39,11 +39,11 @@ using namespace ncc::parse;
 
 std::optional<std::pair<std::string_view, std::string_view>>
 Parser::recurse_foreach_names() {
-  if (auto ident1 = next_if(qName)) {
+  if (auto ident1 = next_if(Name)) {
     auto ident1_value = ident1->as_string();
 
-    if (next_if(qPuncComa)) {
-      if (auto ident2 = next_if(qName)) {
+    if (next_if(PuncComa)) {
+      if (auto ident2 = next_if(Name)) {
         auto ident2_value = ident2->as_string();
         return std::make_pair(ident1_value, ident2_value);
       } else {
@@ -61,9 +61,9 @@ Parser::recurse_foreach_names() {
 
 FlowPtr<Expr> Parser::recurse_foreach_expr(bool has_paren) {
   if (has_paren) {
-    return recurse_expr({Token(qPunc, qPuncRPar)});
+    return recurse_expr({Token(Punc, PuncRPar)});
   } else {
-    return recurse_expr({Token(qPunc, qPuncLCur), Token(Oper, OpArrow)});
+    return recurse_expr({Token(Punc, PuncLCur), Token(Oper, OpArrow)});
   }
 }
 
@@ -82,7 +82,7 @@ FlowPtr<Stmt> Parser::recurse_foreach() {
    *   `foreach (i, v in arr) => v.put(i);`, `foreach (v in arr) => v.put();`
    */
 
-  bool has_paren = next_if(qPuncLPar).has_value();
+  bool has_paren = next_if(PuncLPar).has_value();
 
   if (auto ident_pair_opt = recurse_foreach_names()) {
     auto [index_name, value_name] = ident_pair_opt.value();
@@ -90,7 +90,7 @@ FlowPtr<Stmt> Parser::recurse_foreach() {
     if (next_if(OpIn)) {
       auto iter_expr = recurse_foreach_expr(has_paren);
       if (has_paren) {
-        if (!next_if(qPuncRPar)) {
+        if (!next_if(PuncRPar)) {
           diagnostic << current() << "Expected ')' in foreach statement";
         }
       }

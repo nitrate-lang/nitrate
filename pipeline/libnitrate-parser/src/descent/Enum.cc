@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 std::string_view Parser::recurse_enum_name() {
-  if (auto tok = next_if(qName)) {
+  if (auto tok = next_if(Name)) {
     return tok->as_string();
   } else {
     return "";
@@ -46,7 +46,7 @@ std::string_view Parser::recurse_enum_name() {
 }
 
 NullableFlowPtr<Type> Parser::recurse_enum_type() {
-  if (next_if(qPuncColn)) {
+  if (next_if(PuncColn)) {
     return recurse_type();
   } else {
     return std::nullopt;
@@ -57,15 +57,14 @@ NullableFlowPtr<Expr> Parser::recurse_enum_item_value() {
   if (next_if(OpSet)) {
     return recurse_expr(
 
-        {Token(qPunc, qPuncSemi), Token(qPunc, qPuncComa),
-         Token(qPunc, qPuncRCur)});
+        {Token(Punc, PuncSemi), Token(Punc, PuncComa), Token(Punc, PuncRCur)});
   } else {
     return std::nullopt;
   }
 }
 
 std::optional<EnumItem> Parser::recurse_enum_item() {
-  if (auto name = next_if(qName)) {
+  if (auto name = next_if(Name)) {
     auto value = recurse_enum_item_value();
 
     return EnumItem(SaveString(name->as_string()), value);
@@ -79,19 +78,19 @@ std::optional<EnumItem> Parser::recurse_enum_item() {
 std::optional<EnumDefItems> Parser::recurse_enum_items() {
   EnumDefItems items;
 
-  if (next_if(qPuncSemi)) {
+  if (next_if(PuncSemi)) {
     return items;
   }
 
-  if (next_if(qPuncLCur)) {
+  if (next_if(PuncLCur)) {
     while (true) {
-      if (next_if(qEofF)) {
+      if (next_if(EofF)) {
         diagnostic << current()
                    << "Unexpected EOF encountered while parsing enum fields.";
         break;
       }
 
-      if (next_if(qPuncRCur)) {
+      if (next_if(PuncRCur)) {
         return items;
       }
 
@@ -101,7 +100,7 @@ std::optional<EnumDefItems> Parser::recurse_enum_items() {
         break;
       }
 
-      next_if(qPuncComa) || next_if(qPuncSemi);
+      next_if(PuncComa) || next_if(PuncSemi);
     }
   } else if (next_if(OpArrow)) {
     if (auto item = recurse_enum_item()) {

@@ -40,24 +40,24 @@ using namespace ncc::parse;
 std::optional<ExpressionList> Parser::recurse_variable_attributes() {
   ExpressionList attributes;
 
-  if (!next_if(qPuncLBrk)) {
+  if (!next_if(PuncLBrk)) {
     return attributes;
   }
 
   while (true) {
     auto tok = peek();
 
-    if (!tok.is(qEofF)) {
-      if (next_if(qPuncRBrk)) {
+    if (!tok.is(EofF)) {
+      if (next_if(PuncRBrk)) {
         return attributes;
       }
 
       auto attribute =
-          recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk)});
+          recurse_expr({Token(Punc, PuncComa), Token(Punc, PuncRBrk)});
 
       attributes.push_back(attribute);
 
-      next_if(qPuncComa);
+      next_if(PuncComa);
     } else {
       diagnostic << tok << "Encountered EOF while parsing variable attributes";
       break;
@@ -68,7 +68,7 @@ std::optional<ExpressionList> Parser::recurse_variable_attributes() {
 }
 
 NullableFlowPtr<Type> Parser::recurse_variable_type() {
-  if (next_if(qPuncColn)) {
+  if (next_if(PuncColn)) {
     return recurse_type();
   } else {
     return std::nullopt;
@@ -77,7 +77,7 @@ NullableFlowPtr<Type> Parser::recurse_variable_type() {
 
 NullableFlowPtr<Expr> Parser::recurse_variable_value() {
   if (next_if(OpSet)) {
-    return recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncSemi)});
+    return recurse_expr({Token(Punc, PuncComa), Token(Punc, PuncSemi)});
   } else {
     return std::nullopt;
   }
@@ -85,7 +85,7 @@ NullableFlowPtr<Expr> Parser::recurse_variable_value() {
 
 NullableFlowPtr<Stmt> Parser::recurse_variable_instance(VarDeclType decl_type) {
   if (auto attributes = recurse_variable_attributes()) {
-    if (auto tok = next_if(qName)) {
+    if (auto tok = next_if(Name)) {
       auto name = tok->as_string();
       auto type = recurse_variable_type();
       auto value = recurse_variable_value();
@@ -107,12 +107,12 @@ std::vector<FlowPtr<Stmt> > Parser::recurse_variable(VarDeclType decl_type) {
   std::vector<FlowPtr<Stmt> > variables;
 
   while (true) {
-    if (next_if(qEofF)) {
+    if (next_if(EofF)) {
       diagnostic << current() << "Unexpected EOF in variable declaration";
       break;
     }
 
-    if (next_if(qPuncSemi)) {
+    if (next_if(PuncSemi)) {
       return variables;
     }
 
@@ -123,7 +123,7 @@ std::vector<FlowPtr<Stmt> > Parser::recurse_variable(VarDeclType decl_type) {
       break;
     }
 
-    next_if(qPuncComa);
+    next_if(PuncComa);
   }
 
   return {mock_stmt(QAST_VAR)};

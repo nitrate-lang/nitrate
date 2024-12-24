@@ -42,30 +42,30 @@
 
 namespace ncc::lex {
   typedef enum TokenType {
-    qEofF = 1, /* End of file */
-    qKeyW,     /* Keyword */
-    Oper,      /* Operator */
-    qPunc,     /* Punctuation */
-    qName,     /* Identifier */
-    qIntL,     /* Integer literal */
-    qNumL,     /* Floating-point literal */
-    qText,     /* String literal */
-    qChar,     /* Character literal */
-    qMacB,     /* Macro block */
-    qMacr,     /* Macro call */
-    qNote,     /* Comment */
+    EofF = 1, /* End of file */
+    KeyW,     /* Keyword */
+    Oper,     /* Operator */
+    Punc,     /* Punctuation */
+    Name,     /* Identifier */
+    IntL,     /* Integer literal */
+    NumL,     /* Floating-point literal */
+    Text,     /* String literal */
+    Char,     /* Character literal */
+    MacB,     /* Macro block */
+    Macr,     /* Macro call */
+    Note,     /* Comment */
   } __attribute__((packed)) TokenType;
 
   typedef enum Punctor {
-    qPuncLPar, /* Left parenthesis */
-    qPuncRPar, /* Right parenthesis */
-    qPuncLBrk, /* Left bracket */
-    qPuncRBrk, /* Right bracket */
-    qPuncLCur, /* Left curly brace */
-    qPuncRCur, /* Right curly brace */
-    qPuncComa, /* Comma */
-    qPuncColn, /* Colon */
-    qPuncSemi, /* Semicolon */
+    PuncLPar, /* Left parenthesis */
+    PuncRPar, /* Right parenthesis */
+    PuncLBrk, /* Left bracket */
+    PuncRBrk, /* Right bracket */
+    PuncLCur, /* Left curly brace */
+    PuncRCur, /* Right curly brace */
+    PuncComa, /* Comma */
+    PuncColn, /* Colon */
+    PuncSemi, /* Semicolon */
   } __attribute__((packed)) Punctor;
 
   typedef enum Operator {
@@ -242,7 +242,7 @@ namespace ncc::lex {
     TokenData v;
 
     template <class T = Operator>
-    constexpr TokenBase(TokenType ty = qEofF, T val = OpPlus,
+    constexpr TokenBase(TokenType ty = EofF, T val = OpPlus,
                         LocationID _start = LocationID())
         : m_location_id(_start), m_type(ty), v{val} {
       (void)pad;
@@ -255,21 +255,21 @@ namespace ncc::lex {
     constexpr bool operator==(const TokenBase &rhs) const {
       if (m_type != rhs.m_type) return false;
       switch (m_type) {
-        case qEofF:
-        case qPunc:
+        case EofF:
+        case Punc:
           return v.punc == rhs.v.punc;
         case Oper:
           return v.op == rhs.v.op;
-        case qKeyW:
+        case KeyW:
           return v.key == rhs.v.key;
-        case qIntL:
-        case qNumL:
-        case qText:
-        case qName:
-        case qChar:
-        case qMacB:
-        case qMacr:
-        case qNote:
+        case IntL:
+        case NumL:
+        case Text:
+        case Name:
+        case Char:
+        case MacB:
+        case Macr:
+        case Note:
           return v.str == rhs.v.str;
       }
     }
@@ -277,9 +277,9 @@ namespace ncc::lex {
     template <auto V>
     constexpr bool is() const {
       if constexpr (std::is_same_v<decltype(V), Keyword>) {
-        return m_type == qKeyW && v.key == V;
+        return m_type == KeyW && v.key == V;
       } else if constexpr (std::is_same_v<decltype(V), Punctor>) {
-        return m_type == qPunc && v.punc == V;
+        return m_type == Punc && v.punc == V;
       } else if constexpr (std::is_same_v<decltype(V), Operator>) {
         return m_type == Oper && v.op == V;
       }
@@ -301,22 +301,22 @@ namespace ncc::lex {
       }
 
       switch (m_type) {
-        case qEofF:
+        case EofF:
           return false;
-        case qPunc:
+        case Punc:
           return v.punc < rhs.v.punc;
         case Oper:
           return v.op < rhs.v.op;
-        case qKeyW:
+        case KeyW:
           return v.key < rhs.v.key;
-        case qIntL:
-        case qNumL:
-        case qText:
-        case qName:
-        case qChar:
-        case qMacB:
-        case qMacr:
-        case qNote:
+        case IntL:
+        case NumL:
+        case Text:
+        case Name:
+        case Char:
+        case MacB:
+        case Macr:
+        case Note:
           return v.str < rhs.v.str;
       }
     }

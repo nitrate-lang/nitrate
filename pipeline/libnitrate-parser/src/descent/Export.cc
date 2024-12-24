@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 std::string_view Parser::recurse_abi_name() {
-  if (auto tok = next_if(qText)) {
+  if (auto tok = next_if(Text)) {
     return tok->as_string();
   } else {
     return "";
@@ -48,24 +48,24 @@ std::string_view Parser::recurse_abi_name() {
 std::optional<ExpressionList> Parser::recurse_export_attributes() {
   ExpressionList attributes;
 
-  if (!next_if(qPuncLBrk)) {
+  if (!next_if(PuncLBrk)) {
     return attributes;
   }
 
   while (true) {
     auto tok = peek();
 
-    if (!tok.is(qEofF)) {
-      if (next_if(qPuncRBrk)) {
+    if (!tok.is(EofF)) {
+      if (next_if(PuncRBrk)) {
         return attributes;
       }
 
       auto attribute =
-          recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk)});
+          recurse_expr({Token(Punc, PuncComa), Token(Punc, PuncRBrk)});
 
       attributes.push_back(attribute);
 
-      next_if(qPuncComa);
+      next_if(PuncComa);
     } else {
       diagnostic << tok << "Encountered EOF while parsing export attributes";
       break;
@@ -76,7 +76,7 @@ std::optional<ExpressionList> Parser::recurse_export_attributes() {
 }
 
 FlowPtr<Stmt> Parser::recurse_export_body() {
-  if (peek().is<qPuncLCur>()) {
+  if (peek().is<PuncLCur>()) {
     return recurse_block(true, false, SafetyMode::Unknown);
   } else {
     return recurse_block(false, true, SafetyMode::Unknown);

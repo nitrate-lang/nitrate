@@ -49,7 +49,7 @@ using namespace ncc::lex;
 
 FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
                                     SafetyMode safety) {
-  if (expect_braces && !next().is<qPuncLCur>()) {
+  if (expect_braces && !next().is<PuncLCur>()) {
     diagnostic << current() << "Expected '{'";
   }
 
@@ -59,7 +59,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
   while (true) {
     Token tok = peek();
 
-    if (expect_braces && next_if(qPuncRCur)) {
+    if (expect_braces && next_if(PuncRCur)) {
       auto block = make<Block>(items, safety)();
       block->set_offset(tok.get_start());
 
@@ -70,19 +70,19 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       break;
     }
 
-    if (next_if(qEofF)) {
+    if (next_if(EofF)) {
       break;
     }
 
     /* Ignore extra semicolons */
-    if (next_if(qPuncSemi)) {
+    if (next_if(PuncSemi)) {
       continue;
     }
 
-    if (!tok.is(qKeyW)) {
-      auto expr = recurse_expr({Token(qPunc, qPuncSemi)});
+    if (!tok.is(KeyW)) {
+      auto expr = recurse_expr({Token(Punc, PuncSemi)});
 
-      if (!next_if(qPuncSemi)) {
+      if (!next_if(PuncSemi)) {
         diagnostic << tok << "Expected ';' after expression";
       }
 
@@ -319,7 +319,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKUnsafe: {
-        if (peek().is<qPuncLCur>()) {
+        if (peek().is<PuncLCur>()) {
           auto node = recurse_block(true, false, SafetyMode::Unsafe);
           node->set_offset(loc_start);
 
@@ -335,7 +335,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKSafe: {
-        if (peek().is<qPuncLCur>()) {
+        if (peek().is<PuncLCur>()) {
           auto node = recurse_block(true, false, SafetyMode::Safe);
           node->set_offset(loc_start);
 

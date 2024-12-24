@@ -60,7 +60,7 @@ NullableFlowPtr<Stmt> Parser::recurse_if_else() {
 }
 
 FlowPtr<Stmt> Parser::recurse_if() {
-  auto cond = recurse_expr({Token(qPunc, qPuncLCur), Token(Oper, OpArrow)});
+  auto cond = recurse_expr({Token(Punc, PuncLCur), Token(Oper, OpArrow)});
   auto then = recurse_if_then();
   auto ele = recurse_if_else();
 

@@ -220,15 +220,15 @@ namespace ncc::lex {
 
   inline static const boost::bimap<std::string_view, Punctor> LexicalPunctors =
       detail::make_bimap<std::string_view, Punctor>({
-          {"(", qPuncLPar},
-          {")", qPuncRPar},
-          {"[", qPuncLBrk},
-          {"]", qPuncRBrk},
-          {"{", qPuncLCur},
-          {"}", qPuncRCur},
-          {",", qPuncComa},
-          {":", qPuncColn},
-          {";", qPuncSemi},
+          {"(", PuncLPar},
+          {")", PuncRPar},
+          {"[", PuncLBrk},
+          {"]", PuncRBrk},
+          {"{", PuncLCur},
+          {"}", PuncRCur},
+          {",", PuncComa},
+          {":", PuncColn},
+          {";", PuncSemi},
       });
 
   short GetOperatorPrecedence(Operator op, OpMode type);
@@ -286,7 +286,7 @@ namespace ncc::lex {
     std::optional<Token> Current() { return m_current; }
 
     constexpr bool IsEof() const {
-      return m_current.has_value() && m_current->is(qEofF);
+      return m_current.has_value() && m_current->is(EofF);
     }
 
     constexpr bool HasError() const { return m_ebit; }

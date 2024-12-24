@@ -149,7 +149,7 @@ void qprep_impl_t::expand_raw(std::string_view code) {
       clone.m_core->m_depth = m_core->m_depth + 1;
 
       Token tok;
-      while ((tok = (clone.Next())).get_type() != qEofF) {
+      while ((tok = (clone.Next())).get_type() != EofF) {
         tokens.push_back(tok);
       }
     }
@@ -202,20 +202,20 @@ func_entry:  // do tail call optimization manually
 
     if (m_core->m_do_expanse) {
       switch (x.get_type()) {
-        case qEofF:
+        case EofF:
           return x;
-        case qKeyW:
-        case qIntL:
-        case qText:
-        case qChar:
-        case qNumL:
+        case KeyW:
+        case IntL:
+        case Text:
+        case Char:
+        case NumL:
         case Oper:
-        case qPunc:
-        case qNote: {
+        case Punc:
+        case Note: {
           goto emit_token;
         }
 
-        case qName: { /* Handle the expansion of defines */
+        case Name: { /* Handle the expansion of defines */
           std::string key = "def." + std::string(x.as_string());
 
           if (let value = m_env->get(key.c_str())) {
@@ -226,7 +226,7 @@ func_entry:  // do tail call optimization manually
           }
         }
 
-        case qMacB: {
+        case MacB: {
           std::string_view block = ltrim(x.as_string());
           if (!block.starts_with("fn ")) {
             if (!run_and_expand(std::string(block))) {
@@ -295,7 +295,7 @@ func_entry:  // do tail call optimization manually
           goto func_entry;
         }
 
-        case qMacr: {
+        case Macr: {
           std::string_view body = x.as_string();
 
           size_t pos = body.find_first_of("(");

@@ -40,7 +40,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 FlowPtr<Type> Parser::recurse_function_parameter_type() {
-  if (next_if(qPuncColn)) {
+  if (next_if(PuncColn)) {
     return recurse_type();
   } else {
     auto type = make<InferTy>()();
@@ -53,14 +53,14 @@ NullableFlowPtr<Expr> Parser::recurse_function_parameter_value() {
   if (next_if(OpSet)) {
     return recurse_expr(
 
-        {Token(qPunc, qPuncComa), Token(qPunc, qPuncRPar), Token(Oper, OpGT)});
+        {Token(Punc, PuncComa), Token(Punc, PuncRPar), Token(Oper, OpGT)});
   } else {
     return std::nullopt;
   }
 }
 
 std::optional<FuncParam> Parser::recurse_function_parameter() {
-  if (auto name = next_if(qName)) {
+  if (auto name = next_if(Name)) {
     auto param_name = name->as_string();
     auto param_type = recurse_function_parameter_type();
     auto param_value = recurse_function_parameter_value();
@@ -81,7 +81,7 @@ std::optional<TemplateParameters> Parser::recurse_template_parameters() {
   TemplateParameters params;
 
   while (true) {
-    if (next_if(qEofF)) {
+    if (next_if(EofF)) {
       diagnostic << current() << "Unexpected EOF in template parameters";
       return params;
     }
@@ -97,7 +97,7 @@ std::optional<TemplateParameters> Parser::recurse_template_parameters() {
 
       params.push_back(std::move(tparam));
 
-      next_if(qPuncComa);
+      next_if(PuncComa);
     } else {
       diagnostic << next() << "Expected a template parameter";
     }
@@ -109,24 +109,24 @@ std::optional<TemplateParameters> Parser::recurse_template_parameters() {
 std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
   std::pair<FuncParams, bool> parameters;
 
-  if (!next_if(qPuncLPar)) {
+  if (!next_if(PuncLPar)) {
     diagnostic << current() << "Expected '(' after function name";
     return parameters;
   }
 
   while (true) {
-    if (next_if(qEofF)) {
+    if (next_if(EofF)) {
       diagnostic << current() << "Unexpected EOF in function parameters";
       return parameters;
     }
 
-    if (next_if(qPuncRPar)) {
+    if (next_if(PuncRPar)) {
       break;
     }
 
     if (next_if(OpEllipsis)) {
       parameters.second = true;
-      if (!next_if(qPuncRPar)) {
+      if (!next_if(PuncRPar)) {
         diagnostic << current() << "Expected ')' after variadic parameter";
       }
       break;
@@ -139,7 +139,7 @@ std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
 
       parameters.first.push_back(std::move(tparam));
 
-      next_if(qPuncComa);
+      next_if(PuncComa);
     } else {
       diagnostic << next() << "Expected a function parameter";
     }
@@ -183,7 +183,7 @@ Parser::recurse_function_capture() {
     is_ref = true;
   }
 
-  if (auto name = next_if(qName)) {
+  if (auto name = next_if(Name)) {
     return {{name->as_string(), is_ref}};
   } else {
     diagnostic << next() << "Expected a capture name";
@@ -209,14 +209,14 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
   Token start_pos = current();
 
   while (state != State::End) {
-    if (next_if(qEofF)) {
+    if (next_if(EofF)) {
       diagnostic << current() << "Unexpected EOF in function attributes";
       break;
     }
 
     switch (state) {
       case State::Main: {
-        if (auto identifier = next_if(qName)) {
+        if (auto identifier = next_if(Name)) {
           static const std::unordered_set<std::string_view> reserved_words = {
               "foreign", "inline"};
 
@@ -239,7 +239,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
 
             state = State::End;
           }
-        } else if (next_if(qPuncLBrk)) {
+        } else if (next_if(PuncLBrk)) {
           if (parsed_attributes && parsed_captures) {
             diagnostic
                 << current()
@@ -256,13 +256,13 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
             /* No attribute expression may begin with '&' */
             if (tok.is<OpBitAnd>()) {
               state = State::CaptureSection;
-            } else if (!tok.is(qName)) {
+            } else if (!tok.is(Name)) {
               state = State::AttributesSection;
             } else { /* Ambiguous edge case */
               state = State::CaptureSection;
             }
           }
-        } else if (auto tok = peek(); tok.is<qPuncLPar>() || tok.is<OpLT>()) {
+        } else if (auto tok = peek(); tok.is<PuncLPar>() || tok.is<OpLT>()) {
           state = State::End; /* Begin parsing parameters or template options */
         } else {
           diagnostic << next() << "Unexpected token in function declaration";
@@ -275,23 +275,23 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
         parsed_attributes = true;
 
         while (true) {
-          if (next_if(qEofF)) {
+          if (next_if(EofF)) {
             diagnostic << current() << "Unexpected EOF in function attributes";
             break;
           }
 
-          if (next_if(qPuncRBrk)) {
+          if (next_if(PuncRBrk)) {
             state = State::Main;
             break;
           }
 
           auto attribute = recurse_expr(
 
-              {Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk)});
+              {Token(Punc, PuncComa), Token(Punc, PuncRBrk)});
 
           attributes.push_back(attribute);
 
-          next_if(qPuncComa);
+          next_if(PuncComa);
         }
 
         break;
@@ -301,12 +301,12 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
         parsed_captures = true;
 
         while (true) {
-          if (next_if(qEofF)) {
+          if (next_if(EofF)) {
             diagnostic << current() << "Unexpected EOF in function captures";
             break;
           }
 
-          if (next_if(qPuncRBrk)) {
+          if (next_if(PuncRBrk)) {
             state = State::Main;
             break;
           }
@@ -315,7 +315,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
             captures.push_back({SaveString(capture->first), capture->second});
           }
 
-          next_if(qPuncComa);
+          next_if(PuncComa);
         }
 
         break;
@@ -332,7 +332,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
 }
 
 FlowPtr<Type> Parser::Parser::recurse_function_return_type() {
-  if (next_if(qPuncColn)) {
+  if (next_if(PuncColn)) {
     return recurse_type();
   } else {
     auto type = make<InferTy>()();
@@ -343,7 +343,7 @@ FlowPtr<Type> Parser::Parser::recurse_function_return_type() {
 }
 
 NullableFlowPtr<Stmt> Parser::recurse_function_body(bool restrict_decl_only) {
-  if (restrict_decl_only || next_if(qPuncSemi)) {
+  if (restrict_decl_only || next_if(PuncSemi)) {
     return std::nullopt;
   } else if (next_if(OpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
