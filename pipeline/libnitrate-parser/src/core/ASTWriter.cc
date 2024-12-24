@@ -50,8 +50,8 @@ void AST_Writer::write_source_location(FlowPtr<Base> n) const {
 
     begin_obj(3);
 
-    let begin = n->begin(rd);
-    let end = n->end(rd);
+    auto begin = n->begin(rd);
+    auto end = n->end(rd);
 
     {
       string("begin");
@@ -125,14 +125,14 @@ void AST_Writer::write_source_location(FlowPtr<Base> n) const {
 
 void AST_Writer::write_type_metadata(FlowPtr<Type> n) {
   string("width");
-  n->get_width() ? n->get_width()->accept(*this) : null();
+  n->get_width() ? n->get_width().value()->accept(*this) : null();
 
   string("min");
-  let min = n->get_range_begin();
+  auto min = n->get_range_begin();
   min.has_value() ? min.value().accept(*this) : null();
 
   string("max");
-  let max = n->get_range_end();
+  auto max = n->get_range_end();
   max.has_value() ? max.value().accept(*this) : null();
 }
 
@@ -246,9 +246,9 @@ void AST_Writer::visit(FlowPtr<TemplType> n) {
   n->get_template().accept(*this);
 
   string("args");
-  let args = n->get_args();
+  auto args = n->get_args();
   begin_arr(args.size());
-  std::for_each(args.begin(), args.end(), [&](let arg) {
+  std::for_each(args.begin(), args.end(), [&](auto arg) {
     begin_obj(2);
 
     string("name");
@@ -517,10 +517,10 @@ void AST_Writer::visit(FlowPtr<TupleTy> n) {
   { /* Write sub fields */
     string("fields");
 
-    let fields = n->get_items();
+    auto fields = n->get_items();
     begin_arr(fields.size());
     std::for_each(fields.begin(), fields.end(),
-                  [&](let field) { field.accept(*this); });
+                  [&](auto field) { field.accept(*this); });
     end_arr();
   }
 
@@ -575,10 +575,10 @@ void AST_Writer::visit(FlowPtr<FuncTy> n) {
   { /* Write attributes */
     string("attributes");
 
-    let attrs = n->get_attributes();
+    auto attrs = n->get_attributes();
     begin_arr(attrs.size());
     std::for_each(attrs.begin(), attrs.end(),
-                  [&](let attr) { attr.accept(*this); });
+                  [&](auto attr) { attr.accept(*this); });
     end_arr();
   }
 
@@ -639,10 +639,10 @@ void AST_Writer::visit(FlowPtr<FuncTy> n) {
     string("variadic");
     boolean(n->get_variadic());
 
-    let params = n->get_params();
+    auto params = n->get_params();
     string("params");
     begin_arr(params.size());
-    std::for_each(params.begin(), params.end(), [&](let param) {
+    std::for_each(params.begin(), params.end(), [&](auto param) {
       begin_obj(3);
       string("name");
       string(*std::get<0>(param));
@@ -651,7 +651,7 @@ void AST_Writer::visit(FlowPtr<FuncTy> n) {
       std::get<1>(param).accept(*this);
 
       string("default");
-      std::get<2>(param) ? std::get<2>(param)->accept(*this) : null();
+      std::get<2>(param) ? std::get<2>(param).value()->accept(*this) : null();
 
       end_obj();
     });
@@ -843,9 +843,9 @@ void AST_Writer::visit(FlowPtr<Call> n) {
   { /* Write arguments */
     string("args");
 
-    let args = n->get_args();
+    auto args = n->get_args();
     begin_arr(args.size());
-    std::for_each(args.begin(), args.end(), [&](let arg) {
+    std::for_each(args.begin(), args.end(), [&](auto arg) {
       begin_obj(2);
 
       string("name");
@@ -876,9 +876,9 @@ void AST_Writer::visit(FlowPtr<TemplCall> n) {
   { /* Write template arguments */
     string("template");
 
-    let args = n->get_template_args();
+    auto args = n->get_template_args();
     begin_obj(args.size());
-    std::for_each(args.begin(), args.end(), [&](let arg) {
+    std::for_each(args.begin(), args.end(), [&](auto arg) {
       string(*arg.first);
       arg.second.accept(*this);
     });
@@ -888,9 +888,9 @@ void AST_Writer::visit(FlowPtr<TemplCall> n) {
   { /* Write arguments */
     string("args");
 
-    let args = n->get_args();
+    auto args = n->get_args();
     begin_arr(args.size());
-    std::for_each(args.begin(), args.end(), [&](let arg) {
+    std::for_each(args.begin(), args.end(), [&](auto arg) {
       begin_obj(2);
 
       string("name");
@@ -918,10 +918,10 @@ void AST_Writer::visit(FlowPtr<List> n) {
   { /* Write elements */
     string("elements");
 
-    let items = n->get_items();
+    auto items = n->get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(),
-                  [&](let item) { item.accept(*this); });
+                  [&](auto item) { item.accept(*this); });
     end_arr();
   }
 
@@ -993,14 +993,14 @@ void AST_Writer::visit(FlowPtr<FString> n) {
   { /* Write items */
     string("terms");
 
-    let items = n->get_items();
+    auto items = n->get_items();
     begin_arr(items.size());
-    std::for_each(items.begin(), items.end(), [&](let item) {
+    std::for_each(items.begin(), items.end(), [&](auto item) {
       if (std::holds_alternative<ncc::string>(item)) {
         begin_obj(2);
 
         string("kind");
-        let kind_name = Base::getKindName(Base::getTypeCode<ConstString>());
+        auto kind_name = Base::getKindName(Base::getTypeCode<ConstString>());
         string(kind_name);
 
         string("value");
@@ -1042,10 +1042,10 @@ void AST_Writer::visit(FlowPtr<SeqPoint> n) {
   { /* Write items */
     string("terms");
 
-    let items = n->get_items();
+    auto items = n->get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(),
-                  [&](let item) { item.accept(*this); });
+                  [&](auto item) { item.accept(*this); });
     end_arr();
   }
 
@@ -1079,10 +1079,10 @@ void AST_Writer::visit(FlowPtr<Block> n) {
   { /* Write body */
     string("body");
 
-    let items = n->get_items();
+    auto items = n->get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(),
-                  [&](let item) { item.accept(*this); });
+                  [&](auto item) { item.accept(*this); });
     end_arr();
   }
 
@@ -1114,18 +1114,18 @@ void AST_Writer::visit(FlowPtr<VarDecl> n) {
   string(n->get_name());
 
   string("type");
-  n->get_type() ? n->get_type()->accept(*this) : null();
+  n->get_type() ? n->get_type().value()->accept(*this) : null();
 
   string("value");
-  n->get_value() ? n->get_value()->accept(*this) : null();
+  n->get_value() ? n->get_value().value()->accept(*this) : null();
 
   { /* Write attributes */
     string("attributes");
 
-    let attrs = n->get_attributes();
+    auto attrs = n->get_attributes();
     begin_arr(attrs.size());
     std::for_each(attrs.begin(), attrs.end(),
-                  [&](let attr) { attr.accept(*this); });
+                  [&](auto attr) { attr.accept(*this); });
     end_arr();
   }
 
@@ -1146,10 +1146,10 @@ void AST_Writer::visit(FlowPtr<InlineAsm> n) {
   { /* Write arguments */
     string("params");
 
-    let args = n->get_args();
+    auto args = n->get_args();
     begin_arr(args.size());
     std::for_each(args.begin(), args.end(),
-                  [&](let arg) { arg.accept(*this); });
+                  [&](auto arg) { arg.accept(*this); });
     end_arr();
   }
 
@@ -1172,7 +1172,7 @@ void AST_Writer::visit(FlowPtr<IfStmt> n) {
 
   string("else");
   if (n->get_else()) {
-    n->get_else()->accept(*this);
+    n->get_else().value()->accept(*this);
   } else {
     null();
   }
@@ -1343,15 +1343,15 @@ void AST_Writer::visit(FlowPtr<SwitchStmt> n) {
   { /* Write cases */
     string("cases");
 
-    let cases = n->get_cases();
+    auto cases = n->get_cases();
     begin_arr(cases.size());
     std::for_each(cases.begin(), cases.end(),
-                  [&](let item) { item.accept(*this); });
+                  [&](auto item) { item.accept(*this); });
     end_arr();
   }
 
   string("default");
-  n->get_default() ? n->get_default()->accept(*this) : null();
+  n->get_default() ? n->get_default().value()->accept(*this) : null();
 
   end_obj();
 }
@@ -1384,10 +1384,10 @@ void AST_Writer::visit(FlowPtr<Function> n) {
   { /* Write attributes */
     string("attrs");
 
-    let attrs = n->get_attributes();
+    auto attrs = n->get_attributes();
     begin_arr(attrs.size());
     std::for_each(attrs.begin(), attrs.end(),
-                  [&](let attr) { attr.accept(*this); });
+                  [&](auto attr) { attr.accept(*this); });
     end_arr();
   }
 
@@ -1443,9 +1443,9 @@ void AST_Writer::visit(FlowPtr<Function> n) {
   { /* Write capture list */
     string("captures");
 
-    let captures = n->get_captures();
+    auto captures = n->get_captures();
     begin_arr(captures.size());
-    std::for_each(captures.begin(), captures.end(), [&](let cap) {
+    std::for_each(captures.begin(), captures.end(), [&](auto cap) {
       begin_obj(2);
 
       string("name");
@@ -1465,9 +1465,9 @@ void AST_Writer::visit(FlowPtr<Function> n) {
   { /* Write template parameters */
     string("template");
 
-    if (let params = n->get_template_params()) {
+    if (auto params = n->get_template_params()) {
       begin_arr(params->size());
-      std::for_each(params->begin(), params->end(), [&](let param) {
+      std::for_each(params->begin(), params->end(), [&](auto param) {
         begin_obj(3);
 
         string("name");
@@ -1477,7 +1477,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
         std::get<1>(param).accept(*this);
 
         string("default");
-        std::get<2>(param) ? std::get<2>(param)->accept(*this) : null();
+        std::get<2>(param) ? std::get<2>(param).value()->accept(*this) : null();
 
         end_obj();
       });
@@ -1494,10 +1494,10 @@ void AST_Writer::visit(FlowPtr<Function> n) {
     string("variadic");
     boolean(n->get_variadic());
 
-    let params = n->get_params();
+    auto params = n->get_params();
     string("params");
     begin_arr(params.size());
-    std::for_each(params.begin(), params.end(), [&](let param) {
+    std::for_each(params.begin(), params.end(), [&](auto param) {
       begin_obj(3);
 
       string("name");
@@ -1507,7 +1507,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
       std::get<1>(param).accept(*this);
 
       string("default");
-      std::get<2>(param) ? std::get<2>(param)->accept(*this) : null();
+      std::get<2>(param) ? std::get<2>(param).value()->accept(*this) : null();
 
       end_obj();
     });
@@ -1587,11 +1587,11 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
 
   { /* Write attributes */
     string("attrs");
-    let attrs = n->get_attributes();
+    auto attrs = n->get_attributes();
 
     begin_arr(attrs.size());
     std::for_each(attrs.begin(), attrs.end(),
-                  [&](let attr) { attr.accept(*this); });
+                  [&](auto attr) { attr.accept(*this); });
     end_arr();
   }
 
@@ -1601,9 +1601,9 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
   { /* Write template parameters */
     string("template");
 
-    if (let params = n->get_template_params()) {
+    if (auto params = n->get_template_params()) {
       begin_arr(params->size());
-      std::for_each(params->begin(), params->end(), [&](let param) {
+      std::for_each(params->begin(), params->end(), [&](auto param) {
         begin_obj(3);
 
         string("name");
@@ -1613,7 +1613,7 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
         std::get<1>(param).accept(*this);
 
         string("default");
-        std::get<2>(param) ? std::get<2>(param)->accept(*this) : null();
+        std::get<2>(param) ? std::get<2>(param).value()->accept(*this) : null();
 
         end_obj();
       });
@@ -1625,18 +1625,19 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
 
   { /* Write names */
     string("names");
-    let names = n->get_names();
+    auto names = n->get_names();
     begin_arr(names.size());
-    std::for_each(names.begin(), names.end(), [&](let name) { string(*name); });
+    std::for_each(names.begin(), names.end(),
+                  [&](auto name) { string(*name); });
     end_arr();
   }
 
   { /* Write fields */
     string("fields");
 
-    let fields = n->get_fields();
+    auto fields = n->get_fields();
     begin_arr(fields.size());
-    std::for_each(fields.begin(), fields.end(), [&](let field) {
+    std::for_each(fields.begin(), fields.end(), [&](auto field) {
       begin_obj(4);
 
       string("name");
@@ -1660,9 +1661,9 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
   { /* Write methods */
     string("methods");
 
-    let methods = n->get_methods();
+    auto methods = n->get_methods();
     begin_arr(methods.size());
-    std::for_each(methods.begin(), methods.end(), [&](let method) {
+    std::for_each(methods.begin(), methods.end(), [&](auto method) {
       begin_obj(2);
 
       string("vis");
@@ -1679,9 +1680,9 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
   { /* Write static methods */
     string("statics");
 
-    let statics = n->get_static_methods();
+    auto statics = n->get_static_methods();
     begin_arr(statics.size());
-    std::for_each(statics.begin(), statics.end(), [&](let method) {
+    std::for_each(statics.begin(), statics.end(), [&](auto method) {
       begin_obj(2);
 
       string("vis");
@@ -1710,21 +1711,21 @@ void AST_Writer::visit(FlowPtr<EnumDef> n) {
   string(n->get_name());
 
   string("type");
-  n->get_type() ? n->get_type()->accept(*this) : null();
+  n->get_type() ? n->get_type().value()->accept(*this) : null();
 
   { /* Write items */
     string("fields");
 
-    let items = n->get_items();
+    auto items = n->get_items();
     begin_arr(items.size());
-    std::for_each(items.begin(), items.end(), [&](let item) {
+    std::for_each(items.begin(), items.end(), [&](auto item) {
       begin_obj(2);
 
       string("name");
       string(*item.first);
 
       string("value");
-      item.second ? item.second->accept(*this) : null();
+      item.second ? item.second.value()->accept(*this) : null();
 
       end_obj();
     });
@@ -1748,9 +1749,9 @@ void AST_Writer::visit(FlowPtr<ScopeStmt> n) {
   { /* Write implicit dependencies */
     string("depends");
 
-    let deps = n->get_deps();
+    auto deps = n->get_deps();
     begin_arr(deps.size());
-    std::for_each(deps.begin(), deps.end(), [&](let dep) { string(*dep); });
+    std::for_each(deps.begin(), deps.end(), [&](auto dep) { string(*dep); });
     end_arr();
   }
 
@@ -1777,10 +1778,10 @@ void AST_Writer::visit(FlowPtr<ExportStmt> n) {
   { /* Write attributes */
     string("attrs");
 
-    let attrs = n->get_attrs();
+    auto attrs = n->get_attrs();
     begin_arr(attrs.size());
     std::for_each(attrs.begin(), attrs.end(),
-                  [&](let attr) { attr.accept(*this); });
+                  [&](auto attr) { attr.accept(*this); });
     end_arr();
   }
 

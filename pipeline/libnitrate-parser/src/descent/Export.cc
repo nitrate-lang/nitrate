@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 std::string_view Parser::recurse_abi_name() {
-  if (let tok = next_if(qText)) {
+  if (auto tok = next_if(qText)) {
     return tok->as_string();
   } else {
     return "";
@@ -53,14 +53,14 @@ std::optional<ExpressionList> Parser::recurse_export_attributes() {
   }
 
   while (true) {
-    let tok = peek();
+    auto tok = peek();
 
     if (!tok.is(qEofF)) {
       if (next_if(qPuncRBrk)) {
         return attributes;
       }
 
-      let attribute =
+      auto attribute =
           recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk)});
 
       attributes.push_back(attribute);
@@ -84,10 +84,10 @@ FlowPtr<Stmt> Parser::recurse_export_body() {
 }
 
 FlowPtr<Stmt> Parser::recurse_pub() {
-  let abi_id = recurse_abi_name();
+  auto abi_id = recurse_abi_name();
 
-  if (let attrs = recurse_export_attributes()) {
-    let export_block = recurse_export_body();
+  if (auto attrs = recurse_export_attributes()) {
+    auto export_block = recurse_export_body();
 
     return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Pub,
                             attrs.value())();
@@ -99,10 +99,10 @@ FlowPtr<Stmt> Parser::recurse_pub() {
 }
 
 FlowPtr<Stmt> Parser::recurse_sec() {
-  let abi_id = recurse_abi_name();
+  auto abi_id = recurse_abi_name();
 
-  if (let attrs = recurse_export_attributes()) {
-    let export_block = recurse_export_body();
+  if (auto attrs = recurse_export_attributes()) {
+    auto export_block = recurse_export_body();
 
     return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Sec,
                             attrs.value())();
@@ -114,10 +114,10 @@ FlowPtr<Stmt> Parser::recurse_sec() {
 }
 
 FlowPtr<Stmt> Parser::recurse_pro() {
-  let abi_id = recurse_abi_name();
+  auto abi_id = recurse_abi_name();
 
-  if (let attrs = recurse_export_attributes()) {
-    let export_block = recurse_export_body();
+  if (auto attrs = recurse_export_attributes()) {
+    auto export_block = recurse_export_body();
 
     return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Pro,
                             attrs.value())();

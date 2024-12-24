@@ -244,6 +244,7 @@ namespace ncc::parse {
     ///======================================================================
     /// Visitation
 
+    constexpr void accept(ASTVisitor &v) { v.dispatch(MakeFlowPtr(this)); }
     constexpr void accept(ASTVisitor &v) const {
       v.dispatch(MakeFlowPtr(const_cast<Base *>(this)));
     }
@@ -402,7 +403,7 @@ namespace ncc::parse {
   };
 
   class Type : public Base {
-    std::optional<FlowPtr<Expr>> m_range_begin, m_range_end, m_width;
+    NullableFlowPtr<Expr> m_range_begin, m_range_end, m_width;
 
   public:
     constexpr Type(npar_ty_t ty) : Base(ty) {}
@@ -455,21 +456,19 @@ namespace ncc::parse {
     constexpr bool is_ref() const { return getKind() == QAST_REF; }
     bool is_ptr_to(Type *type) const;
 
-    constexpr let get_width() const { return m_width; }
-    constexpr let get_range_begin() const { return m_range_begin; }
-    constexpr let get_range_end() const { return m_range_end; }
+    constexpr auto get_width() const { return m_width; }
+    constexpr auto get_range_begin() const { return m_range_begin; }
+    constexpr auto get_range_end() const { return m_range_end; }
 
-    constexpr void set_range_begin(std::optional<FlowPtr<Expr>> start) {
+    constexpr void set_range_begin(NullableFlowPtr<Expr> start) {
       m_range_begin = start;
     }
 
-    constexpr void set_range_end(std::optional<FlowPtr<Expr>> end) {
+    constexpr void set_range_end(NullableFlowPtr<Expr> end) {
       m_range_end = end;
     }
 
-    constexpr void set_width(std::optional<FlowPtr<Expr>> width) {
-      m_width = width;
-    }
+    constexpr void set_width(NullableFlowPtr<Expr> width) { m_width = width; }
   };
 
   class Expr : public Base {

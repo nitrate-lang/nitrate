@@ -45,14 +45,14 @@ std::optional<ExpressionList> Parser::recurse_variable_attributes() {
   }
 
   while (true) {
-    let tok = peek();
+    auto tok = peek();
 
     if (!tok.is(qEofF)) {
       if (next_if(qPuncRBrk)) {
         return attributes;
       }
 
-      let attribute =
+      auto attribute =
           recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk)});
 
       attributes.push_back(attribute);
@@ -67,7 +67,7 @@ std::optional<ExpressionList> Parser::recurse_variable_attributes() {
   return std::nullopt;
 }
 
-std::optional<FlowPtr<Type> > Parser::recurse_variable_type() {
+NullableFlowPtr<Type> Parser::recurse_variable_type() {
   if (next_if(qPuncColn)) {
     return recurse_type();
   } else {
@@ -75,7 +75,7 @@ std::optional<FlowPtr<Type> > Parser::recurse_variable_type() {
   }
 }
 
-std::optional<FlowPtr<Expr> > Parser::recurse_variable_value() {
+NullableFlowPtr<Expr> Parser::recurse_variable_value() {
   if (next_if(qOpSet)) {
     return recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncSemi)});
   } else {
@@ -83,13 +83,12 @@ std::optional<FlowPtr<Expr> > Parser::recurse_variable_value() {
   }
 }
 
-std::optional<FlowPtr<Stmt> > Parser::recurse_variable_instance(
-    VarDeclType decl_type) {
-  if (let attributes = recurse_variable_attributes()) {
-    if (let tok = next_if(qName)) {
-      let name = tok->as_string();
-      let type = recurse_variable_type();
-      let value = recurse_variable_value();
+NullableFlowPtr<Stmt> Parser::recurse_variable_instance(VarDeclType decl_type) {
+  if (auto attributes = recurse_variable_attributes()) {
+    if (auto tok = next_if(qName)) {
+      auto name = tok->as_string();
+      auto type = recurse_variable_type();
+      auto value = recurse_variable_value();
 
       return make<VarDecl>(SaveString(name), type, value, decl_type,
                            std::move(attributes.value()))();
@@ -117,7 +116,7 @@ std::vector<FlowPtr<Stmt> > Parser::recurse_variable(VarDeclType decl_type) {
       return variables;
     }
 
-    if (let var_opt = recurse_variable_instance(decl_type)) {
+    if (auto var_opt = recurse_variable_instance(decl_type)) {
       variables.push_back(var_opt.value());
     } else {
       diagnostic << current() << "Failed to parse variable declaration";

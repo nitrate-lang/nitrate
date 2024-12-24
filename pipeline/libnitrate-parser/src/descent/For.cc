@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::optional<FlowPtr<Stmt> > Parser::recurse_for_init_expr() {
+NullableFlowPtr<Stmt> Parser::recurse_for_init_expr() {
   if (next_if(qPuncSemi)) {
     return std::nullopt;
   }
@@ -45,12 +45,12 @@ std::optional<FlowPtr<Stmt> > Parser::recurse_for_init_expr() {
   return recurse_block(false, true, SafetyMode::Unknown);
 }
 
-std::optional<FlowPtr<Expr> > Parser::recurse_for_cond_expr() {
+NullableFlowPtr<Expr> Parser::recurse_for_cond_expr() {
   if (next_if(qPuncSemi)) {
     return std::nullopt;
   }
 
-  let cond_expr = recurse_expr({Token(qPunc, qPuncSemi)});
+  auto cond_expr = recurse_expr({Token(qPunc, qPuncSemi)});
 
   if (!next_if(qPuncSemi)) {
     diagnostic << current() << "Expected semicolon after condition expression";
@@ -59,7 +59,7 @@ std::optional<FlowPtr<Expr> > Parser::recurse_for_cond_expr() {
   return cond_expr;
 }
 
-std::optional<FlowPtr<Expr> > Parser::recurse_for_step_expr(bool has_paren) {
+NullableFlowPtr<Expr> Parser::recurse_for_step_expr(bool has_paren) {
   if (has_paren) {
     if (peek().is<qPuncRPar>()) {
       return std::nullopt;
@@ -86,9 +86,9 @@ FlowPtr<Stmt> Parser::recurse_for_body() {
 FlowPtr<Stmt> Parser::recurse_for() {
   bool has_paren = next_if(qPuncLPar).has_value();
 
-  let init = recurse_for_init_expr();
-  let cond = recurse_for_cond_expr();
-  let step = recurse_for_step_expr(has_paren);
+  auto init = recurse_for_init_expr();
+  auto cond = recurse_for_cond_expr();
+  auto step = recurse_for_step_expr(has_paren);
 
   if (has_paren) {
     if (!next_if(qPuncRPar)) {
@@ -97,7 +97,7 @@ FlowPtr<Stmt> Parser::recurse_for() {
     }
   }
 
-  let body = recurse_for_body();
+  auto body = recurse_for_body();
 
   return make<ForStmt>(init, cond, step, body)();
 }

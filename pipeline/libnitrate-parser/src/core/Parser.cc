@@ -53,14 +53,14 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
     diagnostic << current() << "Expected '{'";
   }
 
-  let block_start = current().get_start();
+  auto block_start = current().get_start();
   BlockItems items;
 
   while (true) {
     Token tok = peek();
 
     if (expect_braces && next_if(qPuncRCur)) {
-      let block = make<Block>(items, safety)();
+      auto block = make<Block>(items, safety)();
       block->set_offset(tok.get_start());
 
       return block;
@@ -80,45 +80,45 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
     }
 
     if (!tok.is(qKeyW)) {
-      let expr = recurse_expr({Token(qPunc, qPuncSemi)});
+      auto expr = recurse_expr({Token(qPunc, qPuncSemi)});
 
       if (!next_if(qPuncSemi)) {
         diagnostic << tok << "Expected ';' after expression";
       }
 
-      let stmt = make<ExprStmt>(expr)();
+      auto stmt = make<ExprStmt>(expr)();
       stmt->set_offset(expr->begin());
 
       items.push_back(stmt);
       continue;
     }
 
-    let loc_start = tok.get_start();
+    auto loc_start = tok.get_start();
 
     switch (next(), tok.as_key()) {
       case qKVar: {
-        for (let decl : recurse_variable(VarDeclType::Var)) {
+        for (auto decl : recurse_variable(VarDeclType::Var)) {
           items.push_back(decl);
         }
         break;
       }
 
       case qKLet: {
-        for (let decl : recurse_variable(VarDeclType::Let)) {
+        for (auto decl : recurse_variable(VarDeclType::Let)) {
           items.push_back(decl);
         }
         break;
       }
 
       case qKConst: {
-        for (let decl : recurse_variable(VarDeclType::Const)) {
+        for (auto decl : recurse_variable(VarDeclType::Const)) {
           items.push_back(decl);
         }
         break;
       }
 
       case qKEnum: {
-        let node = recurse_enum();
+        auto node = recurse_enum();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -126,7 +126,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKStruct: {
-        let node = recurse_struct(CompositeType::Struct);
+        auto node = recurse_struct(CompositeType::Struct);
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -134,7 +134,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKRegion: {
-        let node = recurse_struct(CompositeType::Region);
+        auto node = recurse_struct(CompositeType::Region);
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -142,7 +142,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKGroup: {
-        let node = recurse_struct(CompositeType::Group);
+        auto node = recurse_struct(CompositeType::Group);
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -150,7 +150,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKClass: {
-        let node = recurse_struct(CompositeType::Class);
+        auto node = recurse_struct(CompositeType::Class);
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -158,7 +158,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKUnion: {
-        let node = recurse_struct(CompositeType::Union);
+        auto node = recurse_struct(CompositeType::Union);
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -166,7 +166,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKType: {
-        let node = recurse_typedef();
+        auto node = recurse_typedef();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -174,7 +174,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKScope: {
-        let node = recurse_scope();
+        auto node = recurse_scope();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -182,7 +182,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKFn: {
-        let node = recurse_function(false);
+        auto node = recurse_function(false);
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -191,7 +191,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
 
       case qKPub:
       case qKImport: {  // they both declare external functions
-        let node = recurse_pub();
+        auto node = recurse_pub();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -199,7 +199,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKSec: {
-        let node = recurse_sec();
+        auto node = recurse_sec();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -207,7 +207,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKPro: {
-        let node = recurse_pro();
+        auto node = recurse_pro();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -215,7 +215,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKReturn: {
-        let node = recurse_return();
+        auto node = recurse_return();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -223,7 +223,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKRetif: {
-        let node = recurse_retif();
+        auto node = recurse_retif();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -231,7 +231,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKBreak: {
-        let node = make<BreakStmt>()();
+        auto node = make<BreakStmt>()();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -239,7 +239,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKContinue: {
-        let node = make<ContinueStmt>()();
+        auto node = make<ContinueStmt>()();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -247,7 +247,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKIf: {
-        let node = recurse_if();
+        auto node = recurse_if();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -255,7 +255,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKWhile: {
-        let node = recurse_while();
+        auto node = recurse_while();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -263,7 +263,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKFor: {
-        let node = recurse_for();
+        auto node = recurse_for();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -271,7 +271,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKForeach: {
-        let node = recurse_foreach();
+        auto node = recurse_foreach();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -279,7 +279,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKSwitch: {
-        let node = recurse_switch();
+        auto node = recurse_switch();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -287,7 +287,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qK__Asm__: {
-        let node = recurse_inline_asm();
+        auto node = recurse_inline_asm();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -295,7 +295,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKTrue: {
-        let node = make<ExprStmt>(make<ConstBool>(true)())();
+        auto node = make<ExprStmt>(make<ConstBool>(true)())();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -303,7 +303,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qKFalse: {
-        let node = make<ExprStmt>(make<ConstBool>(false)())();
+        auto node = make<ExprStmt>(make<ConstBool>(false)())();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -311,7 +311,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case qK__FString: {
-        let node = make<ExprStmt>(recurse_fstring())();
+        auto node = make<ExprStmt>(recurse_fstring())();
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -320,12 +320,12 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
 
       case qKUnsafe: {
         if (peek().is<qPuncLCur>()) {
-          let node = recurse_block(true, false, SafetyMode::Unsafe);
+          auto node = recurse_block(true, false, SafetyMode::Unsafe);
           node->set_offset(loc_start);
 
           items.push_back(node);
         } else {
-          let node = recurse_block(false, true, SafetyMode::Unsafe);
+          auto node = recurse_block(false, true, SafetyMode::Unsafe);
           node->set_offset(loc_start);
 
           items.push_back(node);
@@ -336,12 +336,12 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
 
       case qKSafe: {
         if (peek().is<qPuncLCur>()) {
-          let node = recurse_block(true, false, SafetyMode::Safe);
+          auto node = recurse_block(true, false, SafetyMode::Safe);
           node->set_offset(loc_start);
 
           items.push_back(node);
         } else {
-          let node = recurse_block(false, true, SafetyMode::Safe);
+          auto node = recurse_block(false, true, SafetyMode::Safe);
           node->set_offset(loc_start);
 
           items.push_back(node);
@@ -361,7 +361,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
     diagnostic << current() << "Expected '}'";
   }
 
-  let block = make<Block>(items, safety)();
+  auto block = make<Block>(items, safety)();
   block->set_offset(block_start);
 
   return block;
@@ -416,10 +416,10 @@ CPP_EXPORT bool ASTRoot::check() const {
 
 std::string ncc::parse::mint_clang16_message(ncc::lex::IScanner &rd,
                                              const DiagMessage &msg) {
-  let start = msg.tok.get_start().Get(rd);
+  auto start = msg.tok.get_start().Get(rd);
 
-  let filename = start.GetFilename();
-  let line = start.GetRow(), col = start.GetCol();
+  auto filename = start.GetFilename();
+  auto line = start.GetRow(), col = start.GetCol();
 
   std::stringstream ss;
   ss << "\x1b[37;1m" << filename << ":";

@@ -47,7 +47,7 @@ class IterVisitor : public ASTVisitor {
   std::vector<FlowPtr<Base>>& sub;
 
   template <class T>
-  constexpr void add(FlowPtr<T> const& n) {
+  constexpr void add(FlowPtr<T> n) {
     if (n == nullptr) {
       return;
     }
@@ -56,7 +56,7 @@ class IterVisitor : public ASTVisitor {
   }
 
   template <class T>
-  constexpr void add(std::optional<FlowPtr<T>> const& n) {
+  constexpr void add(NullableFlowPtr<T> n) {
     if (!n.has_value() || n == nullptr) {
       return;
     }
@@ -80,7 +80,7 @@ class IterVisitor : public ASTVisitor {
   void visit(FlowPtr<TemplType> n) override {
     add(n->get_template());
     std::for_each(n->get_args().begin(), n->get_args().end(),
-                  [&](let arg) { add(arg.second); });
+                  [&](auto arg) { add(arg.second); });
 
     add_typesuffix(n);
   }
@@ -111,7 +111,7 @@ class IterVisitor : public ASTVisitor {
 
   void visit(FlowPtr<TupleTy> n) override {
     std::for_each(n->get_items().begin(), n->get_items().end(),
-                  [&](let item) { add(item); });
+                  [&](auto item) { add(item); });
 
     add_typesuffix(n);
   }
@@ -129,10 +129,10 @@ class IterVisitor : public ASTVisitor {
 
   void visit(FlowPtr<FuncTy> n) override {
     std::for_each(n->get_attributes().begin(), n->get_attributes().end(),
-                  [&](let attr) { add(attr); });
+                  [&](auto attr) { add(attr); });
 
     std::for_each(n->get_params().begin(), n->get_params().end(),
-                  [&](let param) {
+                  [&](auto param) {
                     add(std::get<1>(param));
                     std::get<2>(param);
                   });
@@ -168,21 +168,21 @@ class IterVisitor : public ASTVisitor {
   void visit(FlowPtr<Call> n) override {
     add(n->get_func());
     std::for_each(n->get_args().begin(), n->get_args().end(),
-                  [&](let arg) { add(arg.second); });
+                  [&](auto arg) { add(arg.second); });
   }
 
   void visit(FlowPtr<TemplCall> n) override {
     add(n->get_func());
     std::for_each(n->get_template_args().begin(), n->get_template_args().end(),
-                  [&](let arg) { add(arg.second); });
+                  [&](auto arg) { add(arg.second); });
 
     std::for_each(n->get_args().begin(), n->get_args().end(),
-                  [&](let arg) { add(arg.second); });
+                  [&](auto arg) { add(arg.second); });
   }
 
   void visit(FlowPtr<List> n) override {
     std::for_each(n->get_items().begin(), n->get_items().end(),
-                  [&](let item) { add(item); });
+                  [&](auto item) { add(item); });
   }
 
   void visit(FlowPtr<Assoc> n) override {
@@ -202,7 +202,7 @@ class IterVisitor : public ASTVisitor {
   }
 
   void visit(FlowPtr<FString> n) override {
-    std::for_each(n->get_items().begin(), n->get_items().end(), [&](let arg) {
+    std::for_each(n->get_items().begin(), n->get_items().end(), [&](auto arg) {
       if (std::holds_alternative<FlowPtr<Expr>>(arg)) {
         add(std::get<FlowPtr<Expr>>(arg));
       } else if (std::holds_alternative<string>(arg)) {
@@ -216,17 +216,17 @@ class IterVisitor : public ASTVisitor {
 
   void visit(FlowPtr<SeqPoint> n) override {
     std::for_each(n->get_items().begin(), n->get_items().end(),
-                  [&](let item) { add(item); });
+                  [&](auto item) { add(item); });
   }
 
   void visit(FlowPtr<Block> n) override {
     std::for_each(n->get_items().begin(), n->get_items().end(),
-                  [&](let item) { add(item); });
+                  [&](auto item) { add(item); });
   }
 
   void visit(FlowPtr<VarDecl> n) override {
     std::for_each(n->get_attributes().begin(), n->get_attributes().end(),
-                  [&](let attr) { add(attr); });
+                  [&](auto attr) { add(attr); });
 
     add(n->get_type());
     add(n->get_value());
@@ -234,7 +234,7 @@ class IterVisitor : public ASTVisitor {
 
   void visit(FlowPtr<InlineAsm> n) override {
     std::for_each(n->get_args().begin(), n->get_args().end(),
-                  [&](let arg) { add(arg); });
+                  [&](auto arg) { add(arg); });
   }
 
   void visit(FlowPtr<IfStmt> n) override {
@@ -277,7 +277,7 @@ class IterVisitor : public ASTVisitor {
   void visit(FlowPtr<SwitchStmt> n) override {
     add(n->get_cond());
     std::for_each(n->get_cases().begin(), n->get_cases().end(),
-                  [&](let c) { add(c); });
+                  [&](auto c) { add(c); });
     add(n->get_default());
   }
 
@@ -285,18 +285,18 @@ class IterVisitor : public ASTVisitor {
 
   void visit(FlowPtr<Function> n) override {
     std::for_each(n->get_attributes().begin(), n->get_attributes().end(),
-                  [&](let attr) { add(attr); });
+                  [&](auto attr) { add(attr); });
 
     if (n->get_template_params()) {
       std::for_each(n->get_template_params()->begin(),
-                    n->get_template_params()->end(), [&](let param) {
+                    n->get_template_params()->end(), [&](auto param) {
                       add(std::get<1>(param));
                       add(std::get<2>(param));
                     });
     }
 
     std::for_each(n->get_params().begin(), n->get_params().end(),
-                  [&](let param) {
+                  [&](auto param) {
                     add(std::get<1>(param));
                     std::get<2>(param);
                   });
@@ -309,42 +309,42 @@ class IterVisitor : public ASTVisitor {
 
   void visit(FlowPtr<StructDef> n) override {
     std::for_each(n->get_attributes().begin(), n->get_attributes().end(),
-                  [&](let attr) { add(attr); });
+                  [&](auto attr) { add(attr); });
 
     if (n->get_template_params()) {
       std::for_each(n->get_template_params()->begin(),
-                    n->get_template_params()->end(), [&](let param) {
+                    n->get_template_params()->end(), [&](auto param) {
                       add(std::get<1>(param));
                       add(std::get<2>(param));
                     });
     }
 
     std::for_each(n->get_fields().begin(), n->get_fields().end(),
-                  [&](let field) {
+                  [&](auto field) {
                     add(field.get_type());
                     add(field.get_value());
                   });
 
     std::for_each(n->get_methods().begin(), n->get_methods().end(),
-                  [&](let method) { add(method.func); });
+                  [&](auto method) { add(method.func); });
 
     std::for_each(n->get_static_methods().begin(),
                   n->get_static_methods().end(),
-                  [&](let method) { add(method.func); });
+                  [&](auto method) { add(method.func); });
   }
 
   void visit(FlowPtr<EnumDef> n) override {
     add(n->get_type());
 
     std::for_each(n->get_items().begin(), n->get_items().end(),
-                  [&](let item) { add(item.second); });
+                  [&](auto item) { add(item.second); });
   }
 
   void visit(FlowPtr<ScopeStmt> n) override { add(n->get_body()); }
 
   void visit(FlowPtr<ExportStmt> n) override {
     std::for_each(n->get_attrs().begin(), n->get_attrs().end(),
-                  [&](let attr) { add(attr); });
+                  [&](auto attr) { add(attr); });
 
     add(n->get_body());
   }

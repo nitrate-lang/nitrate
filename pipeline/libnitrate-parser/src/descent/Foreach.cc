@@ -39,12 +39,12 @@ using namespace ncc::parse;
 
 std::optional<std::pair<std::string_view, std::string_view>>
 Parser::recurse_foreach_names() {
-  if (let ident1 = next_if(qName)) {
-    let ident1_value = ident1->as_string();
+  if (auto ident1 = next_if(qName)) {
+    auto ident1_value = ident1->as_string();
 
     if (next_if(qPuncComa)) {
-      if (let ident2 = next_if(qName)) {
-        let ident2_value = ident2->as_string();
+      if (auto ident2 = next_if(qName)) {
+        auto ident2_value = ident2->as_string();
         return std::make_pair(ident1_value, ident2_value);
       } else {
         diagnostic << current() << "Expected identifier in foreach statement";
@@ -84,18 +84,18 @@ FlowPtr<Stmt> Parser::recurse_foreach() {
 
   bool has_paren = next_if(qPuncLPar).has_value();
 
-  if (let ident_pair_opt = recurse_foreach_names()) {
-    let[index_name, value_name] = ident_pair_opt.value();
+  if (auto ident_pair_opt = recurse_foreach_names()) {
+    auto [index_name, value_name] = ident_pair_opt.value();
 
     if (next_if(qOpIn)) {
-      let iter_expr = recurse_foreach_expr(has_paren);
+      auto iter_expr = recurse_foreach_expr(has_paren);
       if (has_paren) {
         if (!next_if(qPuncRPar)) {
           diagnostic << current() << "Expected ')' in foreach statement";
         }
       }
 
-      let body = recurse_foreach_body();
+      auto body = recurse_foreach_body();
 
       return make<ForeachStmt>(SaveString(index_name), SaveString(value_name),
                                iter_expr, body)();

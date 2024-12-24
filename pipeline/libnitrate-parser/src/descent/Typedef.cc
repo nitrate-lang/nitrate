@@ -43,11 +43,11 @@ FlowPtr<Stmt> Parser::recurse_typedef() {
    *   `type name = type;`
    */
 
-  if (let tok = next_if(qName)) {
-    let name = tok->as_string();
+  if (auto tok = next_if(qName)) {
+    auto name = tok->as_string();
 
     if (next_if(qOpSet)) {
-      let type = recurse_type();
+      auto type = recurse_type();
 
       if (next_if(qPuncSemi)) {
         return make<TypedefStmt>(SaveString(name), type)();

@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 FlowPtr<Expr> Parser::recurse_while_cond() {
-  let cur = peek();
+  auto cur = peek();
 
   if (cur.is<qOpArrow>() || cur.is<qPuncLCur>()) {
     return make<ConstBool>(true)();
@@ -63,11 +63,8 @@ FlowPtr<Stmt> Parser::recurse_while() {
    *  `while (cond) { call(); }`, `while cond { call(); }`
    */
 
-  /* The condition expression is optional */
-  let cond = recurse_while_cond();
-
-  /* Support for single statement implicit block */
-  let body = recurse_while_body();
+  auto cond = recurse_while_cond();
+  auto body = recurse_while_body();
 
   return make<WhileStmt>(cond, body)();
 }

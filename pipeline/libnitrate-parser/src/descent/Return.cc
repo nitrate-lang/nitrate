@@ -43,11 +43,11 @@ FlowPtr<Stmt> Parser::recurse_return() {
    *   `ret 0;`, `ret;`, `ret 0, 1;`, `ret call();`
    */
 
-  if (let tok = next_if(qPuncSemi)) {
+  if (auto tok = next_if(qPuncSemi)) {
     return make<ReturnStmt>(std::nullopt)();
   }
 
-  let expr = recurse_expr({Token(qPunc, qPuncSemi)});
+  auto expr = recurse_expr({Token(qPunc, qPuncSemi)});
 
   if (next_if(qPuncSemi)) {
     return make<ReturnStmt>(expr)();
@@ -64,10 +64,10 @@ FlowPtr<Stmt> Parser::recurse_retif() {
    *   `retif cond(), 1;`, `retif failed, -1;`
    */
 
-  let condition = recurse_expr({Token(qPunc, qPuncComa)});
+  auto condition = recurse_expr({Token(qPunc, qPuncComa)});
 
   if (next_if(qPuncComa)) {
-    let return_val = recurse_expr({Token(qPunc, qPuncSemi)});
+    auto return_val = recurse_expr({Token(qPunc, qPuncSemi)});
 
     if (next_if(qPuncSemi)) {
       return make<ReturnIfStmt>(condition, return_val)();

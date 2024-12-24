@@ -43,13 +43,13 @@ FlowPtr<Type> Parser::recurse_function_parameter_type() {
   if (next_if(qPuncColn)) {
     return recurse_type();
   } else {
-    let type = make<InferTy>()();
+    auto type = make<InferTy>()();
     type->set_offset(current().get_start());
     return type;
   }
 }
 
-std::optional<FlowPtr<Expr>> Parser::recurse_function_parameter_value() {
+NullableFlowPtr<Expr> Parser::recurse_function_parameter_value() {
   if (next_if(qOpSet)) {
     return recurse_expr(
 
@@ -61,10 +61,10 @@ std::optional<FlowPtr<Expr>> Parser::recurse_function_parameter_value() {
 }
 
 std::optional<FuncParam> Parser::recurse_function_parameter() {
-  if (let name = next_if(qName)) {
-    let param_name = name->as_string();
-    let param_type = recurse_function_parameter_type();
-    let param_value = recurse_function_parameter_value();
+  if (auto name = next_if(qName)) {
+    auto param_name = name->as_string();
+    auto param_type = recurse_function_parameter_type();
+    auto param_value = recurse_function_parameter_value();
 
     return FuncParam{SaveString(param_name), param_type, param_value};
   } else {
@@ -91,10 +91,10 @@ std::optional<TemplateParameters> Parser::recurse_template_parameters() {
       break;
     }
 
-    if (let param_opt = recurse_function_parameter()) {
-      let param = *param_opt;
-      let tparam = TemplateParameter{std::get<0>(param), std::get<1>(param),
-                                     std::get<2>(param)};
+    if (auto param_opt = recurse_function_parameter()) {
+      auto param = *param_opt;
+      auto tparam = TemplateParameter{std::get<0>(param), std::get<1>(param),
+                                      std::get<2>(param)};
 
       params.push_back(std::move(tparam));
 
@@ -133,9 +133,9 @@ std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
       break;
     }
 
-    if (let param_opt = recurse_function_parameter()) {
-      let param = *param_opt;
-      let tparam =
+    if (auto param_opt = recurse_function_parameter()) {
+      auto param = *param_opt;
+      auto tparam =
           FuncParam{std::get<0>(param), std::get<1>(param), std::get<2>(param)};
 
       parameters.first.push_back(std::move(tparam));
@@ -184,7 +184,7 @@ Parser::recurse_function_capture() {
     is_ref = true;
   }
 
-  if (let name = next_if(qName)) {
+  if (auto name = next_if(qName)) {
     return {{name->as_string(), is_ref}};
   } else {
     diagnostic << next() << "Expected a capture name";
@@ -217,11 +217,11 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
 
     switch (state) {
       case State::Main: {
-        if (let identifier = next_if(qName)) {
+        if (auto identifier = next_if(qName)) {
           static const std::unordered_set<std::string_view> reserved_words = {
               "foreign", "inline"};
 
-          let name = identifier->as_string();
+          auto name = identifier->as_string();
 
           if (name == "pure") {
             is_pure = true;
@@ -252,7 +252,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
           } else {
             qcore_assert(!parsed_attributes && !parsed_captures);
 
-            let tok = peek();
+            auto tok = peek();
 
             /* No attribute expression may begin with '&' */
             if (tok.is<qOpBitAnd>()) {
@@ -263,7 +263,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
               state = State::CaptureSection;
             }
           }
-        } else if (let tok = peek(); tok.is<qPuncLPar>() || tok.is<qOpLT>()) {
+        } else if (auto tok = peek(); tok.is<qPuncLPar>() || tok.is<qOpLT>()) {
           state = State::End; /* Begin parsing parameters or template options */
         } else {
           diagnostic << next() << "Unexpected token in function declaration";
@@ -286,7 +286,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
             break;
           }
 
-          let attribute = recurse_expr(
+          auto attribute = recurse_expr(
 
               {Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk)});
 
@@ -312,7 +312,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
             break;
           }
 
-          if (let capture = recurse_function_capture()) {
+          if (auto capture = recurse_function_capture()) {
             captures.push_back({SaveString(capture->first), capture->second});
           }
 
@@ -336,15 +336,14 @@ FlowPtr<Type> Parser::Parser::recurse_function_return_type() {
   if (next_if(qPuncColn)) {
     return recurse_type();
   } else {
-    let type = make<InferTy>()();
+    auto type = make<InferTy>()();
     type->set_offset(current().get_start());
 
     return type;
   }
 }
 
-std::optional<FlowPtr<Stmt>> Parser::recurse_function_body(
-    bool restrict_decl_only) {
+NullableFlowPtr<Stmt> Parser::recurse_function_body(bool restrict_decl_only) {
   if (restrict_decl_only || next_if(qPuncSemi)) {
     return std::nullopt;
   } else if (next_if(qOpArrow)) {
@@ -358,7 +357,7 @@ FlowPtr<Stmt> Parser::recurse_function(bool restrict_decl_only) {
   /* fn <attributes>? <modifiers>? <capture_list>?
    * <name><template_parameters>?(<parameters>?)<: return_type>? <body>? */
 
-  let start_pos = current().get_start();
+  auto start_pos = current().get_start();
 
   ExpressionList attributes;
   FnCaptures captures;
@@ -367,14 +366,14 @@ FlowPtr<Stmt> Parser::recurse_function(bool restrict_decl_only) {
 
   recurse_function_ambigouis(attributes, captures, purity, function_name);
 
-  let template_parameters = recurse_template_parameters();
-  let parameters = recurse_function_parameters();
-  let return_type = recurse_function_return_type();
-  let body = recurse_function_body(restrict_decl_only);
+  auto template_parameters = recurse_template_parameters();
+  auto parameters = recurse_function_parameters();
+  auto return_type = recurse_function_return_type();
+  auto body = recurse_function_body(restrict_decl_only);
 
   /// TODO: Implement function contract pre and post conditions
 
-  let function =
+  auto function =
       make<Function>(attributes, purity, captures, SaveString(function_name),
                      template_parameters, parameters.first, parameters.second,
                      return_type, std::nullopt, std::nullopt, body)();

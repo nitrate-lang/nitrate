@@ -45,7 +45,7 @@ FlowPtr<Stmt> Parser::recurse_if_then() {
   }
 }
 
-std::optional<FlowPtr<Stmt> > Parser::recurse_if_else() {
+NullableFlowPtr<Stmt> Parser::recurse_if_else() {
   if (next_if(qKElse)) {
     if (next_if(qOpArrow)) {
       return recurse_block(false, true, SafetyMode::Unknown);
@@ -60,10 +60,9 @@ std::optional<FlowPtr<Stmt> > Parser::recurse_if_else() {
 }
 
 FlowPtr<Stmt> Parser::recurse_if() {
-  let cond = recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
-
-  let then = recurse_if_then();
-  let ele = recurse_if_else();
+  auto cond = recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
+  auto then = recurse_if_then();
+  auto ele = recurse_if_else();
 
   return make<IfStmt>(cond, then, ele)();
 }

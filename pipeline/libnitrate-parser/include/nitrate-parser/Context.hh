@@ -34,7 +34,6 @@
 #ifndef __NITRATE_AST_PARSER_H__
 #define __NITRATE_AST_PARSER_H__
 
-#include <boost/enable_shared_from_this.hpp>
 #include <boost/shared_ptr.hpp>
 #include <memory>
 #include <nitrate-core/Environment.hh>
@@ -94,9 +93,9 @@ namespace ncc::parse {
     FlowPtr<Stmt> recurse_block(bool expect_braces, bool single_stmt,
                                 SafetyMode safety);
     FlowPtr<Expr> recurse_expr(const std::set<ncc::lex::Token> &terminators);
-    std::optional<FlowPtr<Expr>> recurse_expr_primary(bool isType);
-    std::optional<FlowPtr<Expr>> recurse_expr_keyword(lex::Keyword key);
-    std::optional<FlowPtr<Expr>> recurse_expr_punctor(lex::Punctor punc);
+    NullableFlowPtr<Expr> recurse_expr_primary(bool isType);
+    NullableFlowPtr<Expr> recurse_expr_keyword(lex::Keyword key);
+    NullableFlowPtr<Expr> recurse_expr_punctor(lex::Punctor punc);
     FlowPtr<Expr> recurse_expr_type_suffix(FlowPtr<Expr> base);
 
     /****************************************************************************
@@ -105,8 +104,8 @@ namespace ncc::parse {
      ****************************************************************************/
 
     std::string_view recurse_enum_name();
-    std::optional<FlowPtr<Type>> recurse_enum_type();
-    std::optional<FlowPtr<Expr>> recurse_enum_item_value();
+    NullableFlowPtr<Type> recurse_enum_type();
+    NullableFlowPtr<Expr> recurse_enum_item_value();
     std::optional<EnumItem> recurse_enum_item();
     std::optional<EnumDefItems> recurse_enum_items();
 
@@ -117,9 +116,9 @@ namespace ncc::parse {
     CallArgs recurse_call_arguments(ncc::lex::Token terminator);
     FlowPtr<Expr> recurse_fstring();
 
-    std::optional<FlowPtr<Stmt>> recurse_for_init_expr();
-    std::optional<FlowPtr<Expr>> recurse_for_cond_expr();
-    std::optional<FlowPtr<Expr>> recurse_for_step_expr(bool has_paren);
+    NullableFlowPtr<Stmt> recurse_for_init_expr();
+    NullableFlowPtr<Expr> recurse_for_cond_expr();
+    NullableFlowPtr<Expr> recurse_for_step_expr(bool has_paren);
     FlowPtr<Stmt> recurse_for_body();
 
     std::optional<std::pair<std::string_view, std::string_view>>
@@ -128,11 +127,11 @@ namespace ncc::parse {
     FlowPtr<Stmt> recurse_foreach_body();
 
     FlowPtr<Type> recurse_function_parameter_type();
-    std::optional<FlowPtr<Expr>> recurse_function_parameter_value();
+    NullableFlowPtr<Expr> recurse_function_parameter_value();
     std::optional<FuncParam> recurse_function_parameter();
     std::optional<TemplateParameters> recurse_template_parameters();
     std::pair<FuncParams, bool> recurse_function_parameters();
-    std::optional<FlowPtr<Stmt>> recurse_function_body(bool restrict_decl_only);
+    NullableFlowPtr<Stmt> recurse_function_body(bool restrict_decl_only);
     FlowPtr<Type> recurse_function_return_type();
     FuncPurity get_purity_specifier(ncc::lex::Token &start_pos,
                                     bool is_thread_safe, bool is_pure,
@@ -144,7 +143,7 @@ namespace ncc::parse {
                                     std::string_view &function_name);
 
     FlowPtr<Stmt> recurse_if_then();
-    std::optional<FlowPtr<Stmt>> recurse_if_else();
+    NullableFlowPtr<Stmt> recurse_if_else();
 
     std::string_view recurse_scope_name();
     std::optional<ScopeDeps> recurse_scope_deps();
@@ -158,18 +157,18 @@ namespace ncc::parse {
     ExpressionList recurse_struct_attributes();
     std::string_view recurse_struct_name();
     StructDefNames recurse_struct_terms();
-    std::optional<FlowPtr<Expr>> recurse_struct_field_default_value();
+    NullableFlowPtr<Expr> recurse_struct_field_default_value();
     void recurse_struct_field(Vis vis, bool is_static, StructDefFields &fields);
     void recurse_struct_method_or_field(StructContent &body);
     StructContent recurse_struct_body();
 
     FlowPtr<Stmt> recurse_switch_case_body();
     std::variant<FlowPtr<CaseStmt>, FlowPtr<Stmt>> recurse_switch_case();
-    std::optional<std::pair<SwitchCases, std::optional<FlowPtr<CaseStmt>>>>
+    std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>>
     recurse_switch_body();
 
-    std::optional<FlowPtr<Expr>> recurse_type_range_start();
-    std::optional<FlowPtr<Expr>> recurse_type_range_end();
+    NullableFlowPtr<Expr> recurse_type_range_start();
+    NullableFlowPtr<Expr> recurse_type_range_end();
     std::optional<CallArgs> recurse_type_template_arguments();
     FlowPtr<Type> recurse_type_suffix(FlowPtr<Type> base);
     FlowPtr<Type> recurse_function_type();
@@ -183,10 +182,9 @@ namespace ncc::parse {
     FlowPtr<Type> recurse_type_by_name(std::string_view name);
 
     std::optional<ExpressionList> recurse_variable_attributes();
-    std::optional<FlowPtr<Type>> recurse_variable_type();
-    std::optional<FlowPtr<Expr>> recurse_variable_value();
-    std::optional<FlowPtr<Stmt>> recurse_variable_instance(
-        VarDeclType decl_type);
+    NullableFlowPtr<Type> recurse_variable_type();
+    NullableFlowPtr<Expr> recurse_variable_value();
+    NullableFlowPtr<Stmt> recurse_variable_instance(VarDeclType decl_type);
 
     FlowPtr<Expr> recurse_while_cond();
     FlowPtr<Stmt> recurse_while_body();

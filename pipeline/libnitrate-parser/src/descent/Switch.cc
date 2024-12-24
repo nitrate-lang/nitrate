@@ -46,11 +46,11 @@ FlowPtr<Stmt> Parser::recurse_switch_case_body() {
 }
 
 std::variant<FlowPtr<CaseStmt>, FlowPtr<Stmt>> Parser::recurse_switch_case() {
-  let cond = recurse_expr({Token(qOper, qOpArrow), Token(qPunc, qPuncLCur)});
+  auto cond = recurse_expr({Token(qOper, qOpArrow), Token(qPunc, qPuncLCur)});
 
-  let body = recurse_switch_case_body();
+  auto body = recurse_switch_case_body();
 
-  let is_default_case =
+  auto is_default_case =
       cond->is(QAST_IDENT) && cond->as<Ident>()->get_name() == "_";
 
   if (is_default_case) {
@@ -60,10 +60,10 @@ std::variant<FlowPtr<CaseStmt>, FlowPtr<Stmt>> Parser::recurse_switch_case() {
   }
 }
 
-std::optional<std::pair<SwitchCases, std::optional<FlowPtr<CaseStmt>>>>
+std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>>
 Parser::recurse_switch_body() {
   SwitchCases cases;
-  std::optional<FlowPtr<CaseStmt>> default_;
+  NullableFlowPtr<Stmt> default_;
 
   while (true) {
     if (next_if(qEofF)) {
@@ -75,7 +75,7 @@ Parser::recurse_switch_body() {
       return {{cases, default_}};
     }
 
-    let case_stmt = recurse_switch_case();
+    auto case_stmt = recurse_switch_case();
     if (std::holds_alternative<FlowPtr<Stmt>>(case_stmt)) {
       if (default_) {
         diagnostic << current() << "Duplicate default case in switch.";
@@ -83,7 +83,7 @@ Parser::recurse_switch_body() {
 
       default_ = std::get<FlowPtr<Stmt>>(case_stmt);
     } else {
-      let _case = std::get<FlowPtr<CaseStmt>>(case_stmt);
+      auto _case = std::get<FlowPtr<CaseStmt>>(case_stmt);
 
       cases.push_back(_case);
     }
@@ -93,11 +93,11 @@ Parser::recurse_switch_body() {
 }
 
 FlowPtr<Stmt> Parser::recurse_switch() {
-  let switch_cond = recurse_expr({Token(qPunc, qPuncLCur)});
+  auto switch_cond = recurse_expr({Token(qPunc, qPuncLCur)});
 
   if (next_if(qPuncLCur)) {
     if (auto body_opt = recurse_switch_body()) {
-      let[switch_cases, switch_default_opt] = body_opt.value();
+      auto [switch_cases, switch_default_opt] = body_opt.value();
 
       return make<SwitchStmt>(switch_cond, std::move(switch_cases),
                               switch_default_opt)();

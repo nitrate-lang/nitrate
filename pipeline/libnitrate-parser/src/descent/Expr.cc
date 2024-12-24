@@ -307,7 +307,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
                 let[Op, Offset] = PreUnaryOps.top();
                 PreUnaryOps.pop();
 
-                let PreUnaryExpr = make<UnaryExpr>(Op, RightSide.value())();
+                auto PreUnaryExpr = make<UnaryExpr>(Op, RightSide.value())();
                 PreUnaryExpr->set_offset(Offset);
 
                 RightSide = PreUnaryExpr;
@@ -406,8 +406,8 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
   }
 }
 
-std::optional<FlowPtr<Expr>> Parser::recurse_expr_keyword(lex::Keyword key) {
-  std::optional<FlowPtr<Expr>> E;
+NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
+  NullableFlowPtr<Expr> E;
 
   switch (key) {
     case qKScope: {
@@ -649,8 +649,8 @@ std::optional<FlowPtr<Expr>> Parser::recurse_expr_keyword(lex::Keyword key) {
   return E;
 }
 
-std::optional<FlowPtr<Expr>> Parser::recurse_expr_punctor(lex::Punctor punc) {
-  std::optional<FlowPtr<Expr>> E;
+NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
+  NullableFlowPtr<Expr> E;
 
   switch (punc) {
     case qPuncLPar: {
@@ -758,7 +758,7 @@ std::optional<FlowPtr<Expr>> Parser::recurse_expr_punctor(lex::Punctor punc) {
 
         next_if(qPuncComa);
 
-        let assoc = make<Assoc>(key, value)();
+        auto assoc = make<Assoc>(key, value)();
         assoc->set_offset(start_pos);
 
         items.push_back(assoc);
@@ -798,21 +798,21 @@ FlowPtr<Expr> Parser::recurse_expr_type_suffix(FlowPtr<Expr> base) {
   let suffix = recurse_type();
   suffix->set_offset(tok.get_start());
 
-  let texpr = make<TypeExpr>(suffix)();
+  auto texpr = make<TypeExpr>(suffix)();
   texpr->set_offset(tok.get_start());
 
   return make<BinExpr>(base, qOpAs, texpr)();
 }
 
-std::optional<FlowPtr<Expr>> Parser::recurse_expr_primary(bool isType) {
+NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
   let start_pos = peek().get_start();
-  std::optional<FlowPtr<Expr>> E;
+  NullableFlowPtr<Expr> E;
 
   if (isType) {
     let type = recurse_type();
     type->set_offset(start_pos);
 
-    let texpr = make<TypeExpr>(type)();
+    auto texpr = make<TypeExpr>(type)();
     texpr->set_offset(start_pos);
 
     E = texpr;
@@ -843,7 +843,7 @@ std::optional<FlowPtr<Expr>> Parser::recurse_expr_primary(bool isType) {
       }
 
       case qName: {
-        let identifier = make<Ident>(intern(tok.as_string()))();
+        auto identifier = make<Ident>(intern(tok.as_string()))();
         identifier->set_offset(start_pos);
 
         E = identifier;
@@ -851,7 +851,7 @@ std::optional<FlowPtr<Expr>> Parser::recurse_expr_primary(bool isType) {
       }
 
       case qIntL: {
-        let integer = make<ConstInt>(intern(tok.as_string()))();
+        auto integer = make<ConstInt>(intern(tok.as_string()))();
         integer->set_offset(start_pos);
 
         if (let tok = peek(); tok.is(qName)) {
@@ -867,7 +867,7 @@ std::optional<FlowPtr<Expr>> Parser::recurse_expr_primary(bool isType) {
       }
 
       case qNumL: {
-        let decimal = make<ConstFloat>(intern(tok.as_string()))();
+        auto decimal = make<ConstFloat>(intern(tok.as_string()))();
         decimal->set_offset(start_pos);
 
         if (let tok = peek(); tok.is(qName)) {
@@ -883,7 +883,7 @@ std::optional<FlowPtr<Expr>> Parser::recurse_expr_primary(bool isType) {
       }
 
       case qText: {
-        let string = make<ConstString>(intern(tok.as_string()))();
+        auto string = make<ConstString>(intern(tok.as_string()))();
         string->set_offset(start_pos);
 
         if (let tok = peek(); tok.is(qName)) {
@@ -905,7 +905,7 @@ std::optional<FlowPtr<Expr>> Parser::recurse_expr_primary(bool isType) {
           break;
         }
 
-        let character = make<ConstChar>(str_data[0])();
+        auto character = make<ConstChar>(str_data[0])();
         character->set_offset(start_pos);
 
         if (let tok = peek(); tok.is(qName)) {

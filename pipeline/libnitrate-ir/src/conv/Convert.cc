@@ -735,7 +735,7 @@ static EResult nrgen_call(NRBuilder &b, PState &s, IReport *G,
     return std::nullopt;
   }
 
-  let args = n->get_args();
+  auto args = n->get_args();
 
   std::vector<std::pair<std::string_view, Expr *>> arguments;
   arguments.resize(args.size());
@@ -1099,7 +1099,7 @@ static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_tuple_ty(NRBuilder &b, PState &s, IReport *G,
                               FlowPtr<ncc::parse::TupleTy> n) {
-  let items = n->get_items();
+  auto items = n->get_items();
   StructFields fields(items.size());
 
   for (size_t i = 0; i < items.size(); i++) {
@@ -1136,7 +1136,7 @@ static std::pair<Purity, IsThreadSafe> convert_purity(
 
 static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
                            FlowPtr<ncc::parse::FuncTy> n) {
-  let items = n->get_params();
+  auto items = n->get_params();
   FnParams params(items.size());
 
   for (size_t i = 0; i < items.size(); i++) {
@@ -1216,7 +1216,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
   s.ns_prefix = s.join_scope(n->get_name());
 
   for (size_t i = 0; i < n->get_fields().size(); i++) {
-    let field = n->get_fields()[i];
+    auto field = n->get_fields()[i];
 
     auto field_type = next_one(field.get_type());
     if (!field_type.has_value()) {
@@ -1262,7 +1262,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
   BResult R;
   R = std::vector<Expr *>();
 
-  for (let method : n->get_methods()) {
+  for (auto method : n->get_methods()) {
     auto val = next_one(method.func);
     if (!val.has_value()) {
       G->report(nr::CompilerError, IC::Error, "Failed to lower struct method",
@@ -1274,7 +1274,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
     R->push_back(val.value());
   }
 
-  for (let method : n->get_static_methods()) {
+  for (auto method : n->get_static_methods()) {
     auto val = next_one(method.func);
     if (!val.has_value()) {
       G->report(nr::CompilerError, IC::Error,
@@ -1368,13 +1368,13 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
   }
 
   {
-    let params = n->get_params();
+    auto params = n->get_params();
 
     std::vector<NRBuilder::FnParam> parameters;
     parameters.resize(params.size());
 
     for (size_t i = 0; i < params.size(); i++) {
-      let param = params[i];
+      auto param = params[i];
       NRBuilder::FnParam p;
 
       { /* Set function parameter name */
@@ -1491,13 +1491,13 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
   }
 
   {
-    let params = n->get_params();
+    auto params = n->get_params();
 
     std::vector<NRBuilder::FnParam> parameters;
     parameters.resize(params.size());
 
     for (size_t i = 0; i < params.size(); i++) {
-      let param = params[i];
+      auto param = params[i];
       NRBuilder::FnParam p;
 
       { /* Set function parameter name */
@@ -1636,7 +1636,7 @@ static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
   AbiTag old = s.abi_mode;
   s.abi_mode = it->second.second;
 
-  let body = n->get_body()->as<ncc::parse::Block>()->get_items();
+  auto body = n->get_body()->as<ncc::parse::Block>()->get_items();
   std::vector<nr::Expr *> items;
 
   for (size_t i = 0; i < body.size(); i++) {

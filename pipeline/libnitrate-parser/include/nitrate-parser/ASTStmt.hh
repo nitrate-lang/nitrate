@@ -62,13 +62,13 @@ namespace ncc::parse {
   class VarDecl final : public Stmt {
     std::span<FlowPtr<Expr>> m_attributes;
     string m_name;
-    std::optional<FlowPtr<Type>> m_type;
-    std::optional<FlowPtr<Expr>> m_value;
+    NullableFlowPtr<Type> m_type;
+    NullableFlowPtr<Expr> m_value;
     VarDeclType m_decl_type;
 
   public:
-    VarDecl(string name, std::optional<FlowPtr<Type>> type,
-            std::optional<FlowPtr<Expr>> value, VarDeclType decl_type,
+    VarDecl(string name, NullableFlowPtr<Type> type,
+            NullableFlowPtr<Expr> value, VarDeclType decl_type,
             ExpressionList attributes)
         : Stmt(QAST_VAR),
           m_attributes(attributes),
@@ -101,11 +101,11 @@ namespace ncc::parse {
   class IfStmt final : public Stmt {
     FlowPtr<Expr> m_cond;
     FlowPtr<Stmt> m_then;
-    std::optional<FlowPtr<Stmt>> m_else;
+    NullableFlowPtr<Stmt> m_else;
 
   public:
     constexpr IfStmt(FlowPtr<Expr> cond, FlowPtr<Stmt> then,
-                     std::optional<FlowPtr<Stmt>> else_)
+                     NullableFlowPtr<Stmt> else_)
         : Stmt(QAST_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
     constexpr auto get_cond() const { return m_cond; }
@@ -126,14 +126,13 @@ namespace ncc::parse {
   };
 
   class ForStmt final : public Stmt {
-    std::optional<FlowPtr<Stmt>> m_init;
-    std::optional<FlowPtr<Expr>> m_cond, m_step;
+    NullableFlowPtr<Stmt> m_init;
+    NullableFlowPtr<Expr> m_cond, m_step;
     FlowPtr<Stmt> m_body;
 
   public:
-    constexpr ForStmt(std::optional<FlowPtr<Stmt>> init,
-                      std::optional<FlowPtr<Expr>> cond,
-                      std::optional<FlowPtr<Expr>> step, FlowPtr<Stmt> body)
+    constexpr ForStmt(NullableFlowPtr<Stmt> init, NullableFlowPtr<Expr> cond,
+                      NullableFlowPtr<Expr> step, FlowPtr<Stmt> body)
         : Stmt(QAST_FOR),
           m_init(init),
           m_cond(cond),
@@ -179,10 +178,10 @@ namespace ncc::parse {
   };
 
   class ReturnStmt final : public Stmt {
-    std::optional<FlowPtr<Expr>> m_value;
+    NullableFlowPtr<Expr> m_value;
 
   public:
-    constexpr ReturnStmt(std::optional<FlowPtr<Expr>> value)
+    constexpr ReturnStmt(NullableFlowPtr<Expr> value)
         : Stmt(QAST_RETURN), m_value(value) {}
 
     constexpr auto get_value() const { return m_value; }
@@ -215,11 +214,11 @@ namespace ncc::parse {
   class SwitchStmt final : public Stmt {
     FlowPtr<Expr> m_cond;
     std::span<FlowPtr<CaseStmt>> m_cases;
-    std::optional<FlowPtr<Stmt>> m_default;
+    NullableFlowPtr<Stmt> m_default;
 
   public:
     SwitchStmt(FlowPtr<Expr> cond, SwitchCases cases,
-               std::optional<FlowPtr<Stmt>> default_)
+               NullableFlowPtr<Stmt> default_)
         : Stmt(QAST_SWITCH),
           m_cond(cond),
           m_cases(cases),
@@ -280,10 +279,10 @@ namespace ncc::parse {
   class EnumDef final : public Stmt {
     std::span<EnumItem> m_items;
     string m_name;
-    std::optional<FlowPtr<Type>> m_type;
+    NullableFlowPtr<Type> m_type;
 
   public:
-    EnumDef(string name, std::optional<FlowPtr<Type>> type, EnumDefItems items)
+    EnumDef(string name, NullableFlowPtr<Type> type, EnumDefItems items)
         : Stmt(QAST_ENUM), m_items(items), m_name(name), m_type(type) {}
 
     constexpr auto get_name() const { return m_name.get(); }
@@ -299,17 +298,16 @@ namespace ncc::parse {
     std::optional<TemplateParameters> m_template_parameters;
     std::span<FuncParam> m_params;
     FlowPtr<Type> m_return;
-    std::optional<FlowPtr<Expr>> m_precond, m_postcond;
-    std::optional<FlowPtr<Stmt>> m_body;
+    NullableFlowPtr<Expr> m_precond, m_postcond;
+    NullableFlowPtr<Stmt> m_body;
     bool m_variadic;
 
   public:
     Function(ExpressionList attributes, FuncPurity purity, FnCaptures captures,
              string name, std::optional<TemplateParameters> params,
              FuncParams fn_params, bool variadic, FlowPtr<Type> return_type,
-             std::optional<FlowPtr<Expr>> precond,
-             std::optional<FlowPtr<Expr>> postcond,
-             std::optional<FlowPtr<Stmt>> body)
+             NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,
+             NullableFlowPtr<Stmt> body)
         : Stmt(QAST_FUNCTION),
           m_attributes(attributes),
           m_purity(purity),

@@ -89,7 +89,7 @@ namespace ncc::parse {
   using FStringItems = std::vector<FStringItem, Arena<FStringItem>>;
 
   using TemplateParameter =
-      std::tuple<ncc::string, FlowPtr<Type>, std::optional<FlowPtr<Expr>>>;
+      std::tuple<ncc::string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
   using TemplateParameters =
       std::vector<TemplateParameter, Arena<TemplateParameter>>;
 
@@ -97,30 +97,30 @@ namespace ncc::parse {
   using ScopeDeps = std::vector<ncc::string, Arena<ncc::string>>;
 
   using SwitchCases = std::vector<FlowPtr<CaseStmt>, Arena<FlowPtr<CaseStmt>>>;
-  using EnumItem = std::pair<ncc::string, std::optional<FlowPtr<Expr>>>;
+  using EnumItem = std::pair<ncc::string, NullableFlowPtr<Expr>>;
   using EnumDefItems = std::vector<EnumItem, Arena<EnumItem>>;
 
   class StructField {
     ncc::string m_name;
-    std::optional<FlowPtr<Expr>> m_value;
+    NullableFlowPtr<Expr> m_value;
     FlowPtr<Type> m_type;
     Vis m_vis;
     bool m_is_static;
 
   public:
     StructField(Vis vis, bool is_static, ncc::string name, FlowPtr<Type> type,
-                std::optional<FlowPtr<Expr>> value)
+                NullableFlowPtr<Expr> value)
         : m_name(std::move(name)),
           m_value(std::move(value)),
           m_type(type),
           m_vis(vis),
           m_is_static(is_static) {}
 
-    let get_vis() const { return m_vis; }
-    let is_static() const { return m_is_static; }
+    auto get_vis() const { return m_vis; }
+    auto is_static() const { return m_is_static; }
     auto get_name() const { return m_name.get(); }
-    let get_type() const { return m_type; }
-    let get_value() const { return m_value; }
+    auto get_type() const { return m_type; }
+    auto get_value() const { return m_value; }
   };
 
   struct StructFunction {
@@ -137,7 +137,7 @@ namespace ncc::parse {
   using StructDefNames = std::vector<ncc::string, Arena<ncc::string>>;
 
   using FuncParam =
-      std::tuple<ncc::string, FlowPtr<Type>, std::optional<FlowPtr<Expr>>>;
+      std::tuple<ncc::string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
   using FuncParams = std::vector<FuncParam, Arena<FuncParam>>;
 
   using FnCaptures = std::vector<std::pair<ncc::string, bool>,
