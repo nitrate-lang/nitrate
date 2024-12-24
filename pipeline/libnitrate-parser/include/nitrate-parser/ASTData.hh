@@ -74,8 +74,6 @@ namespace ncc::parse {
   bool operator!=(const Arena<T> &, const Arena<U> &) {
     return false;
   }
-
-  static inline string SaveString(std::string_view str) { return str; }
 };  // namespace ncc::parse
 
 namespace ncc::parse {

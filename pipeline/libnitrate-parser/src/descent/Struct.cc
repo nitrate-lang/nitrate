@@ -67,7 +67,7 @@ ExpressionList Parser::recurse_struct_attributes() {
   return attributes;
 }
 
-std::string_view Parser::recurse_struct_name() {
+string Parser::recurse_struct_name() {
   if (auto tok = next_if(Name)) {
     return tok->as_string();
   } else {
@@ -84,7 +84,7 @@ StructDefNames Parser::recurse_struct_terms() {
 
   while (true) {
     if (auto tok = next_if(Name)) {
-      names.push_back(SaveString(tok->as_string()));
+      names.push_back(tok->as_string());
 
       next_if(PuncComa);
     } else {
@@ -112,8 +112,8 @@ void Parser::recurse_struct_field(Vis vis, bool is_static,
       auto field_type = recurse_type();
       auto default_value = recurse_struct_field_default_value();
 
-      auto field = StructField(vis, is_static, SaveString(field_name),
-                               field_type, std::move(default_value));
+      auto field = StructField(vis, is_static, field_name, field_type,
+                               std::move(default_value));
 
       fields.push_back(std::move(field));
     } else {
@@ -187,7 +187,7 @@ FlowPtr<Stmt> Parser::recurse_struct(CompositeType type) {
   auto [fields, methods, static_methods] = recurse_struct_body();
 
   auto struct_defintion = make<StructDef>(
-      type, std::move(attributes), SaveString(name), std::move(template_params),
+      type, std::move(attributes), name, std::move(template_params),
       std::move(terms), std::move(fields), std::move(methods),
       std::move(static_methods))();
 

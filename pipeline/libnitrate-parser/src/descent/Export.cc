@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::string_view Parser::recurse_abi_name() {
+string Parser::recurse_abi_name() {
   if (auto tok = next_if(Text)) {
     return tok->as_string();
   } else {
@@ -89,8 +89,7 @@ FlowPtr<Stmt> Parser::recurse_pub() {
   if (auto attrs = recurse_export_attributes()) {
     auto export_block = recurse_export_body();
 
-    return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Pub,
-                            attrs.value())();
+    return make<ExportStmt>(export_block, abi_id, Vis::Pub, attrs.value())();
   } else {
     diagnostic << current() << "Malformed export attributes";
   }
@@ -104,8 +103,7 @@ FlowPtr<Stmt> Parser::recurse_sec() {
   if (auto attrs = recurse_export_attributes()) {
     auto export_block = recurse_export_body();
 
-    return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Sec,
-                            attrs.value())();
+    return make<ExportStmt>(export_block, abi_id, Vis::Sec, attrs.value())();
   } else {
     diagnostic << current() << "Malformed export attributes";
   }
@@ -119,8 +117,7 @@ FlowPtr<Stmt> Parser::recurse_pro() {
   if (auto attrs = recurse_export_attributes()) {
     auto export_block = recurse_export_body();
 
-    return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Pro,
-                            attrs.value())();
+    return make<ExportStmt>(export_block, abi_id, Vis::Pro, attrs.value())();
   } else {
     diagnostic << current() << "Malformed export attributes";
   }

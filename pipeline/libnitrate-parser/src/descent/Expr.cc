@@ -83,7 +83,7 @@ CallArgs Parser::recurse_call_arguments(Token terminator) {
 
     switch (state) {
       case State::ParseNamedArg: {
-        auto name = SaveString(ident.as_string());
+        auto name = ident.as_string();
         auto value = recurse_expr({Token(Punc, PuncComa), terminator});
 
         call_args.push_back({name, value});
@@ -91,7 +91,7 @@ CallArgs Parser::recurse_call_arguments(Token terminator) {
       }
 
       case State::ParsePosArg: {
-        auto name = SaveString(std::to_string(pos_arg_count++));
+        auto name = intern(std::to_string(pos_arg_count++));
         auto value = recurse_expr({Token(Punc, PuncComa), terminator});
 
         call_args.push_back({name, value});
@@ -132,7 +132,7 @@ FlowPtr<Expr> Parser::recurse_fstring() {
       state = 0;
 
       if (!buf.empty()) {
-        items.push_back(SaveString(std::move(buf)));
+        items.push_back(intern(std::move(buf)));
         buf.clear();
       }
 
@@ -152,7 +152,7 @@ FlowPtr<Expr> Parser::recurse_fstring() {
   }
 
   if (!buf.empty()) {
-    items.push_back(SaveString(std::move(buf)));
+    items.push_back(intern(std::move(buf)));
     buf.clear();
   }
 

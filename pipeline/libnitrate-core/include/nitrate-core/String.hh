@@ -128,6 +128,11 @@ namespace ncc {
   static inline str_alias intern(const char *str) { return str_alias(str); }
 
   using string = str_alias;
+
+  static inline std::ostream &operator<<(std::ostream &os,
+                                         const str_alias &str) {
+    return os << str.get();
+  }
 }  // namespace ncc
 
 #endif

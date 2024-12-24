@@ -1569,9 +1569,9 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_fn(NRBuilder &b, PState &s, IReport *G,
                         FlowPtr<ncc::parse::Function> n) {
-  if (n->is_decl()) {
+  if (n->is_declaration()) {
     return nrgen_function_declaration(b, s, G, n);
-  } else if (n->is_def()) {
+  } else if (n->is_definition()) {
     return nrgen_function_definition(b, s, G, n);
   } else {
     G->report(CompilerError, IC::Error, "Failed to lower function",

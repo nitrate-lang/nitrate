@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::string_view Parser::recurse_enum_name() {
+string Parser::recurse_enum_name() {
   if (auto tok = next_if(Name)) {
     return tok->as_string();
   } else {
@@ -67,7 +67,7 @@ std::optional<EnumItem> Parser::recurse_enum_item() {
   if (auto name = next_if(Name)) {
     auto value = recurse_enum_item_value();
 
-    return EnumItem(SaveString(name->as_string()), value);
+    return EnumItem(name->as_string(), value);
   } else {
     diagnostic << current() << "Enum field is missing a name.";
   }
@@ -117,7 +117,7 @@ FlowPtr<Stmt> Parser::recurse_enum() {
   auto type = recurse_enum_type();
 
   if (auto items = recurse_enum_items()) {
-    return make<EnumDef>(SaveString(name), type, std::move(items.value()))();
+    return make<EnumDef>(name, type, std::move(items.value()))();
   } else {
     return mock_stmt(QAST_ENUM);
   }

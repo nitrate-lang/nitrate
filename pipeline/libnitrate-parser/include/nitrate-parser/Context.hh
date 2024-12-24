@@ -108,13 +108,13 @@ namespace ncc::parse {
     FlowPtr<Expr> mock_expr(std::optional<npar_ty_t> expected = std::nullopt);
     FlowPtr<Type> mock_type();
 
-    std::string_view recurse_enum_name();
+    string recurse_enum_name();
     NullableFlowPtr<Type> recurse_enum_type();
     NullableFlowPtr<Expr> recurse_enum_item_value();
     std::optional<EnumItem> recurse_enum_item();
     std::optional<EnumDefItems> recurse_enum_items();
 
-    std::string_view recurse_abi_name();
+    string recurse_abi_name();
     std::optional<ExpressionList> recurse_export_attributes();
     FlowPtr<Stmt> recurse_export_body();
 
@@ -126,8 +126,7 @@ namespace ncc::parse {
     NullableFlowPtr<Expr> recurse_for_step_expr(bool has_paren);
     FlowPtr<Stmt> recurse_for_body();
 
-    std::optional<std::pair<std::string_view, std::string_view>>
-    recurse_foreach_names();
+    std::optional<std::pair<string, string>> recurse_foreach_names();
     FlowPtr<Expr> recurse_foreach_expr(bool has_paren);
     FlowPtr<Stmt> recurse_foreach_body();
 
@@ -142,15 +141,15 @@ namespace ncc::parse {
                                     bool is_thread_safe, bool is_pure,
                                     bool is_impure, bool is_quasi,
                                     bool is_retro);
-    std::optional<std::pair<std::string_view, bool>> recurse_function_capture();
+    std::optional<std::pair<string, bool>> recurse_function_capture();
     void recurse_function_ambigouis(ExpressionList &attributes,
                                     FnCaptures &captures, FuncPurity &purity,
-                                    std::string_view &function_name);
+                                    string &function_name);
 
     FlowPtr<Stmt> recurse_if_then();
     NullableFlowPtr<Stmt> recurse_if_else();
 
-    std::string_view recurse_scope_name();
+    string recurse_scope_name();
     std::optional<ScopeDeps> recurse_scope_deps();
     FlowPtr<Stmt> recurse_scope_block();
 
@@ -160,7 +159,7 @@ namespace ncc::parse {
       StructDefStaticMethods static_methods;
     };
     ExpressionList recurse_struct_attributes();
-    std::string_view recurse_struct_name();
+    string recurse_struct_name();
     StructDefNames recurse_struct_terms();
     NullableFlowPtr<Expr> recurse_struct_field_default_value();
     void recurse_struct_field(Vis vis, bool is_static, StructDefFields &fields);
@@ -184,7 +183,7 @@ namespace ncc::parse {
     FlowPtr<Type> recurse_set_type();
     FlowPtr<Type> recurse_tuple_type();
     FlowPtr<Type> recurse_type_by_punctuation(ncc::lex::Punctor punc);
-    FlowPtr<Type> recurse_type_by_name(std::string_view name);
+    FlowPtr<Type> recurse_type_by_name(string name);
 
     std::optional<ExpressionList> recurse_variable_attributes();
     NullableFlowPtr<Type> recurse_variable_type();

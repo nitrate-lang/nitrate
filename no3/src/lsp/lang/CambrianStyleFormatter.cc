@@ -1266,7 +1266,7 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
     }
   }
 
-  if (n->is_decl()) {
+  if (n->is_declaration()) {
     line << ";";
   } else {
     line << " ";

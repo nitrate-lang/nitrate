@@ -37,8 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::optional<std::pair<std::string_view, std::string_view>>
-Parser::recurse_foreach_names() {
+std::optional<std::pair<string, string>> Parser::recurse_foreach_names() {
   if (auto ident1 = next_if(Name)) {
     auto ident1_value = ident1->as_string();
 
@@ -97,8 +96,7 @@ FlowPtr<Stmt> Parser::recurse_foreach() {
 
       auto body = recurse_foreach_body();
 
-      return make<ForeachStmt>(SaveString(index_name), SaveString(value_name),
-                               iter_expr, body)();
+      return make<ForeachStmt>(index_name, value_name, iter_expr, body)();
     } else {
       diagnostic << current() << "Expected 'in' keyword in foreach statement";
     }

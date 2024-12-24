@@ -65,7 +65,7 @@ std::optional<FuncParam> Parser::recurse_function_parameter() {
     auto param_type = recurse_function_parameter_type();
     auto param_value = recurse_function_parameter_value();
 
-    return FuncParam{SaveString(param_name), param_type, param_value};
+    return FuncParam{param_name, param_type, param_value};
   } else {
     diagnostic << current() << "Expected a parameter name before ':'";
   }
@@ -175,8 +175,7 @@ FuncPurity Parser::get_purity_specifier(Token &start_pos, bool is_thread_safe,
   }
 }
 
-std::optional<std::pair<std::string_view, bool>>
-Parser::recurse_function_capture() {
+std::optional<std::pair<string, bool>> Parser::recurse_function_capture() {
   bool is_ref = false;
 
   if (next_if(OpBitAnd)) {
@@ -195,7 +194,7 @@ Parser::recurse_function_capture() {
 void Parser::recurse_function_ambigouis(ExpressionList &attributes,
                                         FnCaptures &captures,
                                         FuncPurity &purity,
-                                        std::string_view &function_name) {
+                                        string &function_name) {
   enum class State {
     Main,
     AttributesSection,
@@ -233,7 +232,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
           } else if (name == "retro") {
             is_retro = true;
           } else if (reserved_words.contains(name)) {
-            attributes.push_back(make<Ident>(SaveString(name))());
+            attributes.push_back(make<Ident>(name)());
           } else {
             function_name = name;
 
@@ -312,7 +311,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
           }
 
           if (auto capture = recurse_function_capture()) {
-            captures.push_back({SaveString(capture->first), capture->second});
+            captures.push_back({capture->first, capture->second});
           }
 
           next_if(PuncComa);
@@ -361,7 +360,7 @@ FlowPtr<Stmt> Parser::recurse_function(bool restrict_decl_only) {
   ExpressionList attributes;
   FnCaptures captures;
   FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE;
-  std::string_view function_name;
+  string function_name;
 
   recurse_function_ambigouis(attributes, captures, purity, function_name);
 
@@ -373,7 +372,7 @@ FlowPtr<Stmt> Parser::recurse_function(bool restrict_decl_only) {
   /// TODO: Implement function contract pre and post conditions
 
   auto function =
-      make<Function>(attributes, purity, captures, SaveString(function_name),
+      make<Function>(attributes, purity, captures, function_name,
                      template_parameters, parameters.first, parameters.second,
                      return_type, std::nullopt, std::nullopt, body)();
   function->set_offset(start_pos);

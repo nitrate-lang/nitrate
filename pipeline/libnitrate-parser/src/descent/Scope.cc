@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::string_view Parser::recurse_scope_name() {
+string Parser::recurse_scope_name() {
   if (auto tok = next_if(Name)) {
     return tok->as_string();
   } else {
@@ -63,7 +63,7 @@ std::optional<ScopeDeps> Parser::recurse_scope_deps() {
       if (tok.is(Name)) {
         auto dependency_name = tok.as_string();
 
-        dependencies.push_back(SaveString(dependency_name));
+        dependencies.push_back(dependency_name);
 
         next_if(PuncComa);
       } else {
@@ -94,7 +94,7 @@ FlowPtr<Stmt> Parser::recurse_scope() {
   if (auto implicit_dependencies = recurse_scope_deps()) {
     auto scope_block = recurse_scope_block();
 
-    return make<ScopeStmt>(SaveString(scope_name), scope_block,
+    return make<ScopeStmt>(scope_name, scope_block,
                            std::move(implicit_dependencies.value()))();
   } else {
     diagnostic << current() << "Expected scope dependencies";

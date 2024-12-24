@@ -116,9 +116,9 @@ FlowPtr<parse::Type> Parser::recurse_type_suffix(FlowPtr<Type> base) {
   base->set_width(width);
 
   if (next_if(OpTernary)) {
-    auto args = CallArgs{{SaveString("0"), make<TypeExpr>(base)()}};
-    auto opt_type = make<TemplType>(
-        make<NamedTy>(SaveString("__builtin_result"))(), args)();
+    auto args = CallArgs{{"0", make<TypeExpr>(base)()}};
+    auto opt_type =
+        make<TemplType>(make<NamedTy>("__builtin_result")(), args)();
 
     opt_type->set_offset(current().get_start());
 
@@ -131,7 +131,7 @@ FlowPtr<parse::Type> Parser::recurse_type_suffix(FlowPtr<Type> base) {
 FlowPtr<parse::Type> Parser::recurse_function_type() {
   auto fn = recurse_function(true);
 
-  if (!fn->is<Function>() || !fn->as<Function>()->is_decl()) {
+  if (!fn->is<Function>() || !fn->as<Function>()->is_declaration()) {
     diagnostic << current()
                << "Expected a function declaration but got something else";
     return mock_type();
@@ -156,7 +156,7 @@ FlowPtr<parse::Type> Parser::recurse_opaque_type() {
 
   if (auto name = next_if(Name)) {
     if (next_if(PuncRPar)) {
-      auto opaque = make<OpaqueTy>(SaveString(name->as_string()))();
+      auto opaque = make<OpaqueTy>(name->as_string())();
       opaque->set_offset(current().get_start());
 
       return opaque;
@@ -230,9 +230,8 @@ FlowPtr<parse::Type> Parser::recurse_array_or_vector() {
   auto first = recurse_type();
 
   if (next_if(PuncRBrk)) {
-    auto args = CallArgs{{SaveString("0"), make<TypeExpr>(first)()}};
-    auto vector =
-        make<TemplType>(make<NamedTy>(SaveString("__builtin_vec"))(), args)();
+    auto args = CallArgs{{"0", make<TypeExpr>(first)()}};
+    auto vector = make<TemplType>(make<NamedTy>("__builtin_vec")(), args)();
 
     vector->set_offset(start);
 
@@ -265,9 +264,8 @@ FlowPtr<parse::Type> Parser::recurse_set_type() {
     diagnostic << current() << "Expected '}' after set type";
   }
 
-  auto args = CallArgs{{SaveString("0"), make<TypeExpr>(set_type)()}};
-  auto set =
-      make<TemplType>(make<NamedTy>(SaveString("__builtin_uset"))(), args)();
+  auto args = CallArgs{{"0", make<TypeExpr>(set_type)()}};
+  auto set = make<TemplType>(make<NamedTy>("__builtin_uset")(), args)();
 
   set->set_offset(start);
 
@@ -322,7 +320,7 @@ FlowPtr<parse::Type> Parser::recurse_type_by_punctuation(Punctor punc) {
   }
 }
 
-FlowPtr<parse::Type> Parser::recurse_type_by_name(std::string_view name) {
+FlowPtr<parse::Type> Parser::recurse_type_by_name(string name) {
   NullableFlowPtr<Type> type;
 
   if (name == "u1") {
@@ -358,7 +356,7 @@ FlowPtr<parse::Type> Parser::recurse_type_by_name(std::string_view name) {
   } else if (name == "void") {
     type = make<VoidTy>()();
   } else {
-    type = make<NamedTy>(SaveString(name))();
+    type = make<NamedTy>(name)();
   }
 
   if (!type.has_value()) {
