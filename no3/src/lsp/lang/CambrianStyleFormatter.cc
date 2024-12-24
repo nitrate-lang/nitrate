@@ -247,7 +247,7 @@ void CambrianFormatter::write_float_literal(std::string_view float_str) {
   }
 }
 
-void CambrianFormatter::format_type_metadata(FlowPtr<Type> n) {
+void CambrianFormatter::format_type_metadata(FlowPtr<parse::Type> n) {
   auto range_start = n->get_range_begin();
   auto range_end = n->get_range_end();
 

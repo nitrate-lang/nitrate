@@ -79,7 +79,7 @@ std::optional<CallArgs> Parser::recurse_type_template_arguments() {
   return args;
 }
 
-FlowPtr<Type> Parser::recurse_type_suffix(FlowPtr<Type> base) {
+FlowPtr<parse::Type> Parser::recurse_type_suffix(FlowPtr<Type> base) {
   static auto bit_width_terminaters = {
       Token(Punc, PuncRPar), Token(Punc, PuncRBrk), Token(Punc, PuncLCur),
       Token(Punc, PuncRCur), Token(Punc, PuncComa), Token(Punc, PuncColn),
@@ -128,7 +128,7 @@ FlowPtr<Type> Parser::recurse_type_suffix(FlowPtr<Type> base) {
   return base;
 }
 
-FlowPtr<Type> Parser::recurse_function_type() {
+FlowPtr<parse::Type> Parser::recurse_function_type() {
   auto fn = recurse_function(true);
 
   if (!fn->is<Function>() || !fn->as<Function>()->is_decl()) {
@@ -148,7 +148,7 @@ FlowPtr<Type> Parser::recurse_function_type() {
   return func_ty;
 }
 
-FlowPtr<Type> Parser::recurse_opaque_type() {
+FlowPtr<parse::Type> Parser::recurse_opaque_type() {
   if (!next_if(PuncLPar)) {
     diagnostic << current() << "Expected '(' after 'opaque'";
     return mock_type();
@@ -170,13 +170,13 @@ FlowPtr<Type> Parser::recurse_opaque_type() {
   return mock_type();
 }
 
-FlowPtr<Type> Parser::recurse_type_by_keyword(Keyword key) {
+FlowPtr<parse::Type> Parser::recurse_type_by_keyword(Keyword key) {
   switch (key) {
-    case qKFn: {
+    case Fn: {
       return recurse_function_type();
     }
 
-    case qKOpaque: {
+    case Opaque: {
       return recurse_opaque_type();
     }
 
@@ -187,7 +187,7 @@ FlowPtr<Type> Parser::recurse_type_by_keyword(Keyword key) {
   }
 }
 
-FlowPtr<Type> Parser::recurse_type_by_operator(Operator op) {
+FlowPtr<parse::Type> Parser::recurse_type_by_operator(Operator op) {
   switch (op) {
     case OpTimes: {
       auto start = current().get_start();
@@ -224,7 +224,7 @@ FlowPtr<Type> Parser::recurse_type_by_operator(Operator op) {
   }
 }
 
-FlowPtr<Type> Parser::recurse_array_or_vector() {
+FlowPtr<parse::Type> Parser::recurse_array_or_vector() {
   auto start = current().get_start();
 
   auto first = recurse_type();
@@ -256,7 +256,7 @@ FlowPtr<Type> Parser::recurse_array_or_vector() {
   return array;
 }
 
-FlowPtr<Type> Parser::recurse_set_type() {
+FlowPtr<parse::Type> Parser::recurse_set_type() {
   auto start = current().get_start();
 
   auto set_type = recurse_type();
@@ -274,7 +274,7 @@ FlowPtr<Type> Parser::recurse_set_type() {
   return set;
 }
 
-FlowPtr<Type> Parser::recurse_tuple_type() {
+FlowPtr<parse::Type> Parser::recurse_tuple_type() {
   TupleTyItems items;
 
   auto start = current().get_start();
@@ -301,7 +301,7 @@ FlowPtr<Type> Parser::recurse_tuple_type() {
   return tuple;
 }
 
-FlowPtr<Type> Parser::recurse_type_by_punctuation(Punctor punc) {
+FlowPtr<parse::Type> Parser::recurse_type_by_punctuation(Punctor punc) {
   switch (punc) {
     case PuncLBrk: {
       return recurse_array_or_vector();
@@ -322,7 +322,7 @@ FlowPtr<Type> Parser::recurse_type_by_punctuation(Punctor punc) {
   }
 }
 
-FlowPtr<Type> Parser::recurse_type_by_name(std::string_view name) {
+FlowPtr<parse::Type> Parser::recurse_type_by_name(std::string_view name) {
   NullableFlowPtr<Type> type;
 
   if (name == "u1") {
@@ -371,7 +371,7 @@ FlowPtr<Type> Parser::recurse_type_by_name(std::string_view name) {
   return type.value();
 }
 
-FlowPtr<Type> Parser::recurse_type() {
+FlowPtr<parse::Type> Parser::recurse_type() {
   switch (auto tok = next(); tok.get_type()) {
     case KeyW: {
       auto type = recurse_type_by_keyword(tok.as_key());

@@ -405,7 +405,7 @@ public:
     /* Check for f-string */
     if (buf == "f" && c == '"') {
       L.m_pushback.push_back(c);
-      return Token(KeyW, qK__FString, start_pos);
+      return Token(KeyW, __FString, start_pos);
     }
 
     /* We overshot; this must be a punctor ':' */

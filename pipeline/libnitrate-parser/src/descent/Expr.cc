@@ -410,32 +410,32 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
   NullableFlowPtr<Expr> E;
 
   switch (key) {
-    case qKScope: {
+    case Scope: {
       diagnostic << current() << "Namespace declaration is not valid here";
       break;
     }
 
-    case qKImport: {
+    case Import: {
       diagnostic << current() << "Import statement is not valid here";
       break;
     }
 
-    case qKPub: {
+    case Pub: {
       diagnostic << current() << "Public access modifier is not valid here";
       break;
     }
 
-    case qKSec: {
+    case Sec: {
       diagnostic << current() << "Private access modifier is not valid here";
       break;
     }
 
-    case qKPro: {
+    case Pro: {
       diagnostic << current() << "Protected access modifier is not valid here";
       break;
     }
 
-    case qKType: {
+    case Keyword::Type: {
       auto start_pos = current().get_start();
       auto type = recurse_type();
       type->set_offset(start_pos);
@@ -444,67 +444,67 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
       break;
     }
 
-    case qKLet: {
+    case Let: {
       diagnostic << current() << "Let declaration is not valid here";
       break;
     }
 
-    case qKVar: {
+    case Var: {
       diagnostic << current() << "Var declaration is not valid here";
       break;
     }
 
-    case qKConst: {
+    case Const: {
       diagnostic << current() << "Const declaration is not valid here";
       break;
     }
 
-    case qKStatic: {
+    case Static: {
       diagnostic << current() << "Static modifier is not valid here";
       break;
     }
 
-    case qKStruct: {
+    case Struct: {
       diagnostic << current() << "Struct declaration is not valid here";
       break;
     }
 
-    case qKRegion: {
+    case Region: {
       diagnostic << current() << "Region declaration is not valid here";
       break;
     }
 
-    case qKGroup: {
+    case Group: {
       diagnostic << current() << "Group declaration is not valid here";
       break;
     }
 
-    case qKClass: {
+    case Class: {
       diagnostic << current() << "Class declaration is not valid here";
       break;
     }
 
-    case qKUnion: {
+    case Union: {
       diagnostic << current() << "Union declaration is not valid here";
       break;
     }
 
-    case qKOpaque: {
+    case Opaque: {
       diagnostic << current() << "Opaque type is not valid here";
       break;
     }
 
-    case qKEnum: {
+    case Enum: {
       diagnostic << current() << "Enum declaration is not valid here";
       break;
     }
 
-    case qK__FString: {
+    case __FString: {
       E = recurse_fstring();
       break;
     }
 
-    case qKFn: {
+    case Fn: {
       auto start_pos = current().get_start();
 
       auto function = recurse_function(false);
@@ -525,122 +525,122 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
       break;
     }
 
-    case qKUnsafe: {
+    case Unsafe: {
       diagnostic << current() << "Unsafe keyword is not valid here";
       break;
     }
 
-    case qKSafe: {
+    case Safe: {
       diagnostic << current() << "Safe keyword is not valid here";
       break;
     }
 
-    case qKPromise: {
+    case Promise: {
       diagnostic << current() << "Promise keyword is not valid here";
       break;
     }
 
-    case qKIf: {
+    case If: {
       diagnostic << current() << "If statement is not valid here";
       break;
     }
 
-    case qKElse: {
+    case Else: {
       diagnostic << current() << "Else statement is not valid here";
       break;
     }
 
-    case qKFor: {
+    case For: {
       diagnostic << current() << "For loop is not valid here";
       break;
     }
 
-    case qKWhile: {
+    case While: {
       diagnostic << current() << "While loop is not valid here";
       break;
     }
 
-    case qKDo: {
+    case Do: {
       diagnostic << current() << "Do statement is not valid here";
       break;
     }
 
-    case qKSwitch: {
+    case Switch: {
       diagnostic << current() << "Switch statement is not valid here";
       break;
     }
 
-    case qKBreak: {
+    case Break: {
       diagnostic << current() << "Break statement is not valid here";
       break;
     }
 
-    case qKContinue: {
+    case Continue: {
       diagnostic << current() << "Continue statement is not valid here";
       break;
     }
 
-    case qKReturn: {
+    case Return: {
       diagnostic << current() << "Return statement is not valid here";
       break;
     }
 
-    case qKRetif: {
+    case Retif: {
       diagnostic << current() << "Retif statement is not valid here";
       break;
     }
 
-    case qKForeach: {
+    case Foreach: {
       diagnostic << current() << "Foreach loop is not valid here";
       break;
     }
 
-    case qKTry: {
+    case Try: {
       diagnostic << current() << "Try statement is not valid here";
       break;
     }
 
-    case qKCatch: {
+    case Catch: {
       diagnostic << current() << "Catch statement is not valid here";
       break;
     }
 
-    case qKThrow: {
+    case Throw: {
       diagnostic << current() << "Throw statement is not valid here";
       break;
     }
 
-    case qKAsync: {
+    case Async: {
       diagnostic << current() << "Async statement is not valid here";
       break;
     }
 
-    case qKAwait: {
+    case Await: {
       diagnostic << current() << "Await statement is not valid here";
       break;
     }
 
-    case qK__Asm__: {
+    case __Asm__: {
       diagnostic << current() << "Inline assembly is not valid here";
       break;
     }
 
-    case qKUndef: {
+    case Undef: {
       E = make<ConstUndef>()();
       break;
     }
 
-    case qKNull: {
+    case Null: {
       E = make<ConstNull>()();
       break;
     }
 
-    case qKTrue: {
+    case True: {
       E = make<ConstBool>(true)();
       break;
     }
 
-    case qKFalse: {
+    case False: {
       E = make<ConstBool>(false)();
       break;
     }

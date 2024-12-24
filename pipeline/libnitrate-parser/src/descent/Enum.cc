@@ -45,7 +45,7 @@ std::string_view Parser::recurse_enum_name() {
   }
 }
 
-NullableFlowPtr<Type> Parser::recurse_enum_type() {
+NullableFlowPtr<parse::Type> Parser::recurse_enum_type() {
   if (next_if(PuncColn)) {
     return recurse_type();
   } else {

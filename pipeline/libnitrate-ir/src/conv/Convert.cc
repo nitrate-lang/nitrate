@@ -58,8 +58,6 @@
 using namespace nr;
 
 using namespace ncc;
-using namespace ncc;
-using namespace ncc::lex;
 
 struct PState {
 private:
@@ -173,7 +171,9 @@ static bool check_is_foreign_function(auto n) {
 static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
                                                      IReport *, nr::Expr *lhs,
                                                      nr::Expr *rhs,
-                                                     Operator op) {
+                                                     lex::Operator op) {
+  using namespace ncc::lex;
+
 #define STD_BINOP(op) nr::create<nr::BinExpr>(lhs, rhs, nr::Op::op)
 #define ASSIGN_BINOP(op)                                                   \
   nr::create<nr::BinExpr>(                                                 \
@@ -391,7 +391,9 @@ static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
 
 static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
                                                     IReport *G, nr::Expr *rhs,
-                                                    Operator op) {
+                                                    lex::Operator op) {
+  using namespace ncc::lex;
+
 #define STD_UNOP(op) nr::create<nr::UnExpr>(rhs, nr::Op::op)
 
   EResult R;
@@ -493,7 +495,9 @@ static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
 static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &,
                                                          IReport *G,
                                                          nr::Expr *lhs,
-                                                         Operator op) {
+                                                         lex::Operator op) {
+  using namespace ncc::lex;
+
 #define STD_POST_OP(op) nr::create<nr::PostUnExpr>(lhs, nr::Op::op)
 
   EResult R;
@@ -520,7 +524,7 @@ static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &,
 
 static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
                              FlowPtr<ncc::parse::BinExpr> n) {
-  if (n->get_lhs() && n->get_rhs() && n->get_op() == OpAs &&
+  if (n->get_lhs() && n->get_rhs() && n->get_op() == lex::OpAs &&
       n->get_rhs()->is(QAST_TEXPR)) {
     FlowPtr<ncc::parse::Type> type =
         n->get_rhs()->as<ncc::parse::TypeExpr>()->get_type();

@@ -46,10 +46,10 @@ FlowPtr<Stmt> Parser::recurse_if_then() {
 }
 
 NullableFlowPtr<Stmt> Parser::recurse_if_else() {
-  if (next_if(qKElse)) {
+  if (next_if(Else)) {
     if (next_if(OpArrow)) {
       return recurse_block(false, true, SafetyMode::Unknown);
-    } else if (next_if(qKIf)) {
+    } else if (next_if(If)) {
       return recurse_if();
     } else {
       return recurse_block(true, false, SafetyMode::Unknown);

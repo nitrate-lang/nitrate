@@ -128,18 +128,18 @@ void Parser::recurse_struct_method_or_field(StructContent &body) {
   Vis vis = Vis::Sec;
 
   /* Parse visibility of member */
-  if (next_if(qKSec)) {
+  if (next_if(Sec)) {
     vis = Vis::Sec;
-  } else if (next_if(qKPro)) {
+  } else if (next_if(Pro)) {
     vis = Vis::Pro;
-  } else if (next_if(qKPub)) {
+  } else if (next_if(Pub)) {
     vis = Vis::Pub;
   }
 
   /* Is the member static? */
-  bool is_static = next_if(qKStatic).has_value();
+  bool is_static = next_if(Static).has_value();
 
-  if (next_if(qKFn)) { /* Parse method */
+  if (next_if(Fn)) { /* Parse method */
     auto method = recurse_function(false);
 
     if (is_static) {

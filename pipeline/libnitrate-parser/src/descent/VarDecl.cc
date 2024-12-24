@@ -67,7 +67,7 @@ std::optional<ExpressionList> Parser::recurse_variable_attributes() {
   return std::nullopt;
 }
 
-NullableFlowPtr<Type> Parser::recurse_variable_type() {
+NullableFlowPtr<parse::Type> Parser::recurse_variable_type() {
   if (next_if(PuncColn)) {
     return recurse_type();
   } else {

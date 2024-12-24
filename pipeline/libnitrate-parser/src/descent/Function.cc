@@ -39,7 +39,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<Type> Parser::recurse_function_parameter_type() {
+FlowPtr<parse::Type> Parser::recurse_function_parameter_type() {
   if (next_if(PuncColn)) {
     return recurse_type();
   } else {
@@ -331,7 +331,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
                                 is_quasi, is_retro);
 }
 
-FlowPtr<Type> Parser::Parser::recurse_function_return_type() {
+FlowPtr<parse::Type> Parser::Parser::recurse_function_return_type() {
   if (next_if(PuncColn)) {
     return recurse_type();
   } else {
