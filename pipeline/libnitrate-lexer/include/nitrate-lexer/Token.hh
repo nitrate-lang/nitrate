@@ -37,7 +37,6 @@
 #include <cstdint>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/String.hh>
-#include <string_view>
 #include <type_traits>
 
 namespace ncc::lex {
@@ -195,7 +194,7 @@ namespace ncc::lex {
     constexpr uint32_t GetOffset() const { return m_offset; }
     constexpr uint32_t GetRow() const { return m_line; }
     constexpr uint32_t GetCol() const { return m_column; }
-    constexpr std::string_view GetFilename() const { return m_filename.get(); }
+    constexpr string GetFilename() const { return m_filename.get(); }
   } __attribute__((packed));
 
   class LocationID {
@@ -231,7 +230,7 @@ namespace ncc::lex {
     constexpr TokenData(string str) : str(str) {}
   } __attribute__((packed));
 
-  std::string_view to_string(TokenType, TokenData);
+  string to_string(TokenType, TokenData);
 
   class TokenBase {
     LocationID m_location_id = 0;
@@ -285,7 +284,7 @@ namespace ncc::lex {
       }
     }
 
-    std::string_view as_string() const { return to_string(m_type, v); }
+    string as_string() const { return to_string(m_type, v); }
 
     Keyword as_key() const { return v.key; }
     Operator as_op() const { return v.op; }

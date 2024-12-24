@@ -55,9 +55,11 @@ NullableFlowPtr<parse::Type> Parser::recurse_enum_type() {
 
 NullableFlowPtr<Expr> Parser::recurse_enum_item_value() {
   if (next_if(OpSet)) {
-    return recurse_expr(
-
-        {Token(Punc, PuncSemi), Token(Punc, PuncComa), Token(Punc, PuncRCur)});
+    return recurse_expr({
+        Token(Punc, PuncSemi),
+        Token(Punc, PuncComa),
+        Token(Punc, PuncRCur),
+    });
   } else {
     return std::nullopt;
   }

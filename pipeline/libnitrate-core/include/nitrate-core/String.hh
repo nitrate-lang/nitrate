@@ -105,6 +105,8 @@ namespace ncc {
     constexpr inline bool operator<(const str_alias &O) const {
       return m_id < O.m_id;
     }
+
+    constexpr operator std::string_view() const { return get(); }
   };
 
   static inline std::string_view save(std::string_view str) {

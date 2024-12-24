@@ -113,7 +113,7 @@ FlowPtr<Expr> Parser::recurse_fstring() {
     return mock_expr(QAST_FSTRING);
   }
 
-  auto fstr = tok.as_string();
+  std::string_view fstr = tok.as_string().get();
 
   std::string buf;
   buf.reserve(fstr.size());
@@ -691,8 +691,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
           if (auto count_tok = next_if(IntL)) {
             auto count_str = current().as_string();
             size_t count{};
-            if (std::from_chars(count_str.data(),
-                                count_str.data() + count_str.size(), count)
+            if (std::from_chars(count_str->data(),
+                                count_str->data() + count_str->size(), count)
                     .ec == std::errc()) {
               if (count <= MAX_LIST_REPEAT_COUNT) {
                 for (size_t i = 0; i < count; i++) {
@@ -843,7 +843,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
       }
 
       case Name: {
-        auto identifier = make<Ident>(intern(tok.as_string()))();
+        auto identifier = make<Ident>(tok.as_string())();
         identifier->set_offset(start_pos);
 
         E = identifier;
@@ -851,7 +851,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
       }
 
       case IntL: {
-        auto integer = make<ConstInt>(intern(tok.as_string()))();
+        auto integer = make<ConstInt>(tok.as_string())();
         integer->set_offset(start_pos);
 
         if (auto tok = peek(); tok.is(Name)) {
@@ -867,7 +867,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
       }
 
       case NumL: {
-        auto decimal = make<ConstFloat>(intern(tok.as_string()))();
+        auto decimal = make<ConstFloat>(tok.as_string())();
         decimal->set_offset(start_pos);
 
         if (auto tok = peek(); tok.is(Name)) {
@@ -883,7 +883,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
       }
 
       case Text: {
-        auto string = make<ConstString>(intern(tok.as_string()))();
+        auto string = make<ConstString>(tok.as_string())();
         string->set_offset(start_pos);
 
         if (auto tok = peek(); tok.is(Name)) {
@@ -900,12 +900,12 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
 
       case Char: {
         auto str_data = tok.as_string();
-        if (str_data.size() != 1) [[unlikely]] {
+        if (str_data->size() != 1) [[unlikely]] {
           diagnostic << tok << "Expected a single byte in character literal";
           break;
         }
 
-        auto character = make<ConstChar>(str_data[0])();
+        auto character = make<ConstChar>(str_data->at(0))();
         character->set_offset(start_pos);
 
         if (auto tok = peek(); tok.is(Name)) {

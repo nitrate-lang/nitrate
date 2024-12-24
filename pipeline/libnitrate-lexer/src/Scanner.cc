@@ -267,8 +267,8 @@ CPP_EXPORT OpAssoc ncc::lex::GetOperatorAssociativity(Operator op,
   return OpAssoc::Left;
 }
 
-CPP_EXPORT std::string_view ncc::lex::to_string(TokenType ty, TokenData v) {
-  std::string_view R;
+CPP_EXPORT ncc::string ncc::lex::to_string(TokenType ty, TokenData v) {
+  string R;
 
   switch (ty) {
     case EofF: {
