@@ -352,11 +352,8 @@ namespace ncc {
 
     constexpr NullableFlowPtr() : m_ptr(nullptr) {}
 
-    constexpr explicit NullableFlowPtr(FlowPtr<Pointee, Tracking> O,
-                                       Tracking tracking = Tracking())
-        : m_ptr(O) {
-      m_ptr.set_tracking(tracking);
-    }
+    constexpr explicit NullableFlowPtr(FlowPtr<Pointee, Tracking> O)
+        : m_ptr(O) {}
 
     constexpr NullableFlowPtr(
         std::nullopt_t, Tracking tracking = Tracking(),
@@ -369,25 +366,15 @@ namespace ncc {
         : m_ptr(nullptr, std::move(tracking), loc) {}
 
     template <class U = Pointee>
-    constexpr NullableFlowPtr(FlowPtr<U, Tracking> O,
-                              Tracking tracking = Tracking())
-        : m_ptr(O) {
-      m_ptr.set_tracking(tracking);
-    }
+    constexpr NullableFlowPtr(FlowPtr<U, Tracking> O) : m_ptr(O) {}
 
     template <class U>
-    constexpr NullableFlowPtr(const NullableFlowPtr<U, Tracking> &O,
-                              Tracking tracking = Tracking())
-        : m_ptr(O) {
-      m_ptr.set_tracking(tracking);
-    }
+    constexpr NullableFlowPtr(const NullableFlowPtr<U, Tracking> &O)
+        : m_ptr(O) {}
 
     template <class U>
-    constexpr NullableFlowPtr(NullableFlowPtr<U, Tracking> &&O,
-                              Tracking tracking = Tracking())
-        : m_ptr(std::move(O)) {
-      m_ptr.set_tracking(tracking);
-    }
+    constexpr NullableFlowPtr(NullableFlowPtr<U, Tracking> &&O)
+        : m_ptr(std::move(O)) {}
 
     template <class U>
     constexpr NullableFlowPtr &operator=(
@@ -441,12 +428,6 @@ namespace ncc {
   constexpr auto NullableFlowPtrStructSize = sizeof(NullableFlowPtr<int>);
 
   static_assert(sizeof(FlowPtr<int>) == sizeof(NullableFlowPtr<int>));
-
-  template <class Pointee, class Tracking = DefaultTracking>
-  constexpr NullableFlowPtr<Pointee, Tracking> MakeNullableFlowPtr(
-      Pointee *ptr, Tracking tracking = Tracking()) {
-    return NullableFlowPtr<Pointee, Tracking>(ptr, std::move(tracking));
-  }
 }  // namespace ncc
 
 #endif

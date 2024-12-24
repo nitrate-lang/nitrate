@@ -125,7 +125,7 @@ void AST_Writer::write_source_location(FlowPtr<Base> n) const {
 
 void AST_Writer::write_type_metadata(FlowPtr<Type> n) {
   string("width");
-  n->get_width() ? n->get_width().value()->accept(*this) : null();
+  n->get_width() ? n->get_width().value().accept(*this) : null();
 
   string("min");
   auto min = n->get_range_begin();
@@ -651,7 +651,7 @@ void AST_Writer::visit(FlowPtr<FuncTy> n) {
       std::get<1>(param).accept(*this);
 
       string("default");
-      std::get<2>(param) ? std::get<2>(param).value()->accept(*this) : null();
+      std::get<2>(param) ? std::get<2>(param).value().accept(*this) : null();
 
       end_obj();
     });
@@ -1114,10 +1114,10 @@ void AST_Writer::visit(FlowPtr<VarDecl> n) {
   string(n->get_name());
 
   string("type");
-  n->get_type() ? n->get_type().value()->accept(*this) : null();
+  n->get_type() ? n->get_type().value().accept(*this) : null();
 
   string("value");
-  n->get_value() ? n->get_value().value()->accept(*this) : null();
+  n->get_value() ? n->get_value().value().accept(*this) : null();
 
   { /* Write attributes */
     string("attributes");
@@ -1172,7 +1172,7 @@ void AST_Writer::visit(FlowPtr<IfStmt> n) {
 
   string("else");
   if (n->get_else()) {
-    n->get_else().value()->accept(*this);
+    n->get_else().value().accept(*this);
   } else {
     null();
   }
@@ -1351,7 +1351,7 @@ void AST_Writer::visit(FlowPtr<SwitchStmt> n) {
   }
 
   string("default");
-  n->get_default() ? n->get_default().value()->accept(*this) : null();
+  n->get_default() ? n->get_default().value().accept(*this) : null();
 
   end_obj();
 }
@@ -1477,7 +1477,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
         std::get<1>(param).accept(*this);
 
         string("default");
-        std::get<2>(param) ? std::get<2>(param).value()->accept(*this) : null();
+        std::get<2>(param) ? std::get<2>(param).value().accept(*this) : null();
 
         end_obj();
       });
@@ -1507,7 +1507,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
       std::get<1>(param).accept(*this);
 
       string("default");
-      std::get<2>(param) ? std::get<2>(param).value()->accept(*this) : null();
+      std::get<2>(param) ? std::get<2>(param).value().accept(*this) : null();
 
       end_obj();
     });
@@ -1613,7 +1613,7 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
         std::get<1>(param).accept(*this);
 
         string("default");
-        std::get<2>(param) ? std::get<2>(param).value()->accept(*this) : null();
+        std::get<2>(param) ? std::get<2>(param).value().accept(*this) : null();
 
         end_obj();
       });
@@ -1711,7 +1711,7 @@ void AST_Writer::visit(FlowPtr<EnumDef> n) {
   string(n->get_name());
 
   string("type");
-  n->get_type() ? n->get_type().value()->accept(*this) : null();
+  n->get_type() ? n->get_type().value().accept(*this) : null();
 
   { /* Write items */
     string("fields");
@@ -1725,7 +1725,7 @@ void AST_Writer::visit(FlowPtr<EnumDef> n) {
       string(*item.first);
 
       string("value");
-      item.second ? item.second.value()->accept(*this) : null();
+      item.second ? item.second.value().accept(*this) : null();
 
       end_obj();
     });

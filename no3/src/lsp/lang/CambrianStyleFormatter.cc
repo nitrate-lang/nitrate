@@ -253,15 +253,15 @@ void CambrianFormatter::format_type_metadata(FlowPtr<Type> n) {
 
   if (range_start || range_end) {
     line << ": [";
-    if (range_start) range_start.value()->accept(*this);
+    if (range_start) range_start.value().accept(*this);
     line << ":";
-    if (range_end) range_end.value()->accept(*this);
+    if (range_end) range_end.value().accept(*this);
     line << "]";
   }
 
   if (n->get_width()) {
     line << ": ";
-    n->get_width().value()->accept(*this);
+    n->get_width().value().accept(*this);
   }
 }
 
@@ -544,7 +544,7 @@ void CambrianFormatter::visit(FlowPtr<FuncTy> n) {
 
         if (def) {
           line << " = ";
-          def.value()->accept(*this);
+          def.value().accept(*this);
         }
       },
       [&](let) { line << ", "; });
@@ -1023,12 +1023,12 @@ void CambrianFormatter::visit(FlowPtr<VarDecl> n) {
 
   if (n->get_type()) {
     line << ": ";
-    n->get_type().value()->accept(*this);
+    n->get_type().value().accept(*this);
   }
 
   if (n->get_value()) {
     line << " = ";
-    n->get_value().value()->accept(*this);
+    n->get_value().value().accept(*this);
   }
 
   line << ";";
@@ -1050,7 +1050,7 @@ void CambrianFormatter::visit(FlowPtr<IfStmt> n) {
 
   if (n->get_else()) {
     line << " else ";
-    n->get_else().value()->accept(*this);
+    n->get_else().value().accept(*this);
   }
 
   line << ";";
@@ -1148,7 +1148,7 @@ void CambrianFormatter::visit(FlowPtr<SwitchStmt> n) {
     c.accept(*this);
   }
   if (n->get_default()) {
-    n->get_default().value()->accept(*this);
+    n->get_default().value().accept(*this);
   }
 
   line << "};";
@@ -1225,7 +1225,7 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
           auto val = std::get<2>(param);
           if (val) {
             line << " = ";
-            val.value()->accept(*this);
+            val.value().accept(*this);
           }
         },
         [&](let) { line << ", "; });
@@ -1244,7 +1244,7 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
         type.accept(*this);
         if (def) {
           line << " = ";
-          def.value()->accept(*this);
+          def.value().accept(*this);
         }
       },
       [&](let) { line << ", "; });
@@ -1323,7 +1323,7 @@ void CambrianFormatter::visit(FlowPtr<StructDef> n) {
           auto val = std::get<2>(param);
           if (val) {
             line << " = ";
-            val.value()->accept(*this);
+            val.value().accept(*this);
           }
         },
         [&](let) { line << ", "; });
@@ -1385,7 +1385,7 @@ void CambrianFormatter::visit(FlowPtr<EnumDef> n) {
   line << "enum " << n->get_name();
   if (n->get_type()) {
     line << ": ";
-    n->get_type().value()->accept(*this);
+    n->get_type().value().accept(*this);
   }
 
   line << " {";
@@ -1393,7 +1393,7 @@ void CambrianFormatter::visit(FlowPtr<EnumDef> n) {
     line << item.first;
     if (item.second) {
       line << " = ";
-      item.second.value()->accept(*this);
+      item.second.value().accept(*this);
     }
     line << "," << std::endl;
   });

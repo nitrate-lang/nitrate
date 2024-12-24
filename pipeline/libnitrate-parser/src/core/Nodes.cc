@@ -78,7 +78,7 @@ CPP_EXPORT bool Base::isSame(FlowPtr<Base> o) const {
   AST_MsgPackWriter writer1(ss1), writer2(ss2);
 
   this->accept(writer1);
-  o->accept(writer2);
+  o.accept(writer2);
 
   return ss1.str() == ss2.str();
 }
