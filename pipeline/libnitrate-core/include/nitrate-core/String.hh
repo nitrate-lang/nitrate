@@ -41,10 +41,10 @@
 #include <unordered_map>
 
 namespace ncc {
-  class str_alias;
+  class auto_intern;
 
   class StringMemory {
-    friend class str_alias;
+    friend class auto_intern;
 
     struct Storage {
       std::unordered_map<uint64_t, std::string> m_map_a;
@@ -68,20 +68,20 @@ namespace ncc {
     static uint64_t FromString(std::string &&str);
 
   public:
-    static void Clear();
+    static void Reset();
   };
 
-  class __attribute__((packed)) str_alias {
+  class __attribute__((packed)) auto_intern {
     uint64_t m_id : 40;
 
   public:
-    constexpr str_alias(std::string_view str = "") {
+    constexpr auto_intern(std::string_view str = "") {
       m_id = str.empty() ? 0 : StringMemory::FromString(str);
     }
-    constexpr str_alias(std::string &&str) {
+    constexpr auto_intern(std::string &&str) {
       m_id = str.empty() ? 0 : StringMemory::FromString(std::move(str));
     }
-    constexpr str_alias(const char *str) {
+    constexpr auto_intern(const char *str) {
       if (str[0] == '\0') {
         m_id = 0;
       } else {
@@ -91,7 +91,7 @@ namespace ncc {
 
     std::string_view get() const;
 
-    constexpr bool operator==(const str_alias &O) const {
+    constexpr bool operator==(const auto_intern &O) const {
       return m_id == O.m_id;
     }
 
@@ -102,7 +102,7 @@ namespace ncc {
       return &sv;
     }
 
-    constexpr inline bool operator<(const str_alias &O) const {
+    constexpr inline bool operator<(const auto_intern &O) const {
       return m_id < O.m_id;
     }
 
@@ -110,29 +110,31 @@ namespace ncc {
   };
 
   static inline std::string_view save(std::string_view str) {
-    return str_alias(str).get();
+    return auto_intern(str).get();
   }
 
   static inline std::string_view save(std::string &&str) {
-    return str_alias(str).get();
+    return auto_intern(str).get();
   }
 
   static inline std::string_view save(const char *str) {
-    return str_alias(str).get();
+    return auto_intern(str).get();
   }
 
-  static inline str_alias intern(std::string_view str) {
-    return str_alias(str);
+  static inline auto_intern intern(std::string_view str) {
+    return auto_intern(str);
   }
 
-  static inline str_alias intern(std::string &&str) { return str_alias(str); }
+  static inline auto_intern intern(std::string &&str) {
+    return auto_intern(str);
+  }
 
-  static inline str_alias intern(const char *str) { return str_alias(str); }
+  static inline auto_intern intern(const char *str) { return auto_intern(str); }
 
-  using string = str_alias;
+  using string = auto_intern;
 
   static inline std::ostream &operator<<(std::ostream &os,
-                                         const str_alias &str) {
+                                         const auto_intern &str) {
     return os << str.get();
   }
 }  // namespace ncc

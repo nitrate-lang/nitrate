@@ -54,22 +54,23 @@ std::optional<ScopeDeps> Parser::recurse_scope_deps() {
 
   if (next_if(PuncLBrk)) {
     while (true) {
-      auto tok = next();
+      if (next_if(EofF)) [[unlikely]] {
+        diagnostic << current() << "Unexpected EOF in scope dependencies";
+        break;
+      }
 
-      if (tok.is<PuncRBrk>()) {
+      if (next_if(PuncRBrk)) {
         return dependencies;
       }
 
-      if (tok.is(Name)) {
-        auto dependency_name = tok.as_string();
-
+      if (auto tok = next_if(Name)) {
+        auto dependency_name = tok->as_string();
         dependencies.push_back(dependency_name);
-
-        next_if(PuncComa);
       } else {
-        diagnostic << tok << "Expected dependency name";
-        break;
+        diagnostic << next() << "Expected dependency name";
       }
+
+      next_if(PuncComa);
     }
   } else {
     diagnostic << current() << "Expected '[' at start of scope dependencies";

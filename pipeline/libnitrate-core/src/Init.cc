@@ -51,8 +51,9 @@ CPP_EXPORT bool CoreLibrarySetup::Init() {
 CPP_EXPORT void CoreLibrarySetup::Deinit() {
   qcore_print(QCORE_DEBUG, "Deinitialing Nitrate Core Library...");
 
-  /* After nitrate-core is deinitialized, all str_aliases are invalid. */
-  StringMemory::Clear();
+  /* After nitrate-core is deinitialized, all auto_intern objects are invalid.
+   */
+  StringMemory::Reset();
 }
 
 CPP_EXPORT std::string_view CoreLibrarySetup::GetVersionId() {

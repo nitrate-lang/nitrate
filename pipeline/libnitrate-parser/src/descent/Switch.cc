@@ -65,7 +65,7 @@ std::variant<FlowPtr<CaseStmt>, FlowPtr<Stmt>> Parser::recurse_switch_case() {
 std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>>
 Parser::recurse_switch_body() {
   SwitchCases cases;
-  NullableFlowPtr<Stmt> default_;
+  NullableFlowPtr<Stmt> default_case;
 
   while (true) {
     if (next_if(EofF)) [[unlikely]] {
@@ -74,20 +74,19 @@ Parser::recurse_switch_body() {
     }
 
     if (next_if(PuncRCur)) {
-      return {{cases, default_}};
+      return {{cases, default_case}};
     }
 
-    auto case_stmt = recurse_switch_case();
-    if (std::holds_alternative<FlowPtr<Stmt>>(case_stmt)) {
-      if (default_) {
+    auto case_or_default = recurse_switch_case();
+    if (std::holds_alternative<FlowPtr<Stmt>>(case_or_default)) {
+      if (default_case) [[unlikely]] {
         diagnostic << current() << "Duplicate default case in switch.";
+      } else {
+        default_case = std::get<FlowPtr<Stmt>>(case_or_default);
       }
-
-      default_ = std::get<FlowPtr<Stmt>>(case_stmt);
     } else {
-      auto _case = std::get<FlowPtr<CaseStmt>>(case_stmt);
-
-      cases.push_back(_case);
+      auto case_stmt = std::get<FlowPtr<CaseStmt>>(case_or_default);
+      cases.push_back(case_stmt);
     }
   }
 
@@ -97,9 +96,9 @@ Parser::recurse_switch_body() {
 FlowPtr<Stmt> Parser::recurse_switch() {
   auto switch_cond = recurse_expr({Token(Punc, PuncLCur)});
 
-  if (next_if(PuncLCur)) {
-    if (auto body_opt = recurse_switch_body()) {
-      auto [switch_cases, switch_default_opt] = body_opt.value();
+  if (next_if(PuncLCur)) [[likely]] {
+    if (auto switch_body_opt = recurse_switch_body()) [[likely]] {
+      auto [switch_cases, switch_default_opt] = switch_body_opt.value();
 
       return make<SwitchStmt>(switch_cond, std::move(switch_cases),
                               switch_default_opt)();

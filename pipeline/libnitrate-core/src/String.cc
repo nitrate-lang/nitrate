@@ -39,7 +39,7 @@ using namespace ncc;
 
 CPP_EXPORT StringMemory::Storage StringMemory::StringMemory::m_storage;
 
-CPP_EXPORT std::string_view str_alias::get() const {
+CPP_EXPORT std::string_view auto_intern::get() const {
   return m_id == 0 ? "" : StringMemory::FromID(m_id);
 }
 
@@ -88,7 +88,7 @@ CPP_EXPORT std::string_view StringMemory::FromID(uint64_t id) {
   }
 }
 
-CPP_EXPORT void StringMemory::Clear() {
+CPP_EXPORT void StringMemory::Reset() {
   std::lock_guard lock(m_storage.m_mutex);
 
   m_storage.m_map_a.clear();
