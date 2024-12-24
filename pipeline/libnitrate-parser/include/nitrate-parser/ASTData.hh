@@ -41,8 +41,6 @@
 #include <nitrate-core/String.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTVisitor.hh>
-#include <optional>
-#include <set>
 #include <variant>
 #include <vector>
 
@@ -77,38 +75,38 @@ namespace ncc::parse {
     return false;
   }
 
-  static inline ncc::string SaveString(std::string_view str) { return str; }
+  static inline string SaveString(std::string_view str) { return str; }
 };  // namespace ncc::parse
 
 namespace ncc::parse {
   using ExpressionList = std::vector<FlowPtr<Expr>, Arena<FlowPtr<Expr>>>;
   using TupleTyItems = std::vector<FlowPtr<Type>, Arena<FlowPtr<Type>>>;
-  using CallArg = std::pair<ncc::string, FlowPtr<Expr>>;
+  using CallArg = std::pair<string, FlowPtr<Expr>>;
   using CallArgs = std::vector<CallArg, Arena<CallArg>>;
   using FStringItem = std::variant<string, FlowPtr<Expr>>;
   using FStringItems = std::vector<FStringItem, Arena<FStringItem>>;
 
   using TemplateParameter =
-      std::tuple<ncc::string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
+      std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
   using TemplateParameters =
       std::vector<TemplateParameter, Arena<TemplateParameter>>;
 
   using BlockItems = std::vector<FlowPtr<Stmt>, Arena<FlowPtr<Stmt>>>;
-  using ScopeDeps = std::vector<ncc::string, Arena<ncc::string>>;
+  using ScopeDeps = std::vector<string, Arena<string>>;
 
   using SwitchCases = std::vector<FlowPtr<CaseStmt>, Arena<FlowPtr<CaseStmt>>>;
-  using EnumItem = std::pair<ncc::string, NullableFlowPtr<Expr>>;
+  using EnumItem = std::pair<string, NullableFlowPtr<Expr>>;
   using EnumDefItems = std::vector<EnumItem, Arena<EnumItem>>;
 
   class StructField {
-    ncc::string m_name;
+    string m_name;
     NullableFlowPtr<Expr> m_value;
     FlowPtr<Type> m_type;
     Vis m_vis;
     bool m_is_static;
 
   public:
-    StructField(Vis vis, bool is_static, ncc::string name, FlowPtr<Type> type,
+    StructField(Vis vis, bool is_static, string name, FlowPtr<Type> type,
                 NullableFlowPtr<Expr> value)
         : m_name(std::move(name)),
           m_value(std::move(value)),
@@ -134,14 +132,13 @@ namespace ncc::parse {
   using StructDefMethods = std::vector<StructFunction, Arena<StructFunction>>;
   using StructDefStaticMethods =
       std::vector<StructFunction, Arena<StructFunction>>;
-  using StructDefNames = std::vector<ncc::string, Arena<ncc::string>>;
+  using StructDefNames = std::vector<string, Arena<string>>;
 
-  using FuncParam =
-      std::tuple<ncc::string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
+  using FuncParam = std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
   using FuncParams = std::vector<FuncParam, Arena<FuncParam>>;
 
-  using FnCaptures = std::vector<std::pair<ncc::string, bool>,
-                                 Arena<std::pair<ncc::string, bool>>>;
+  using FnCaptures =
+      std::vector<std::pair<string, bool>, Arena<std::pair<string, bool>>>;
 }  // namespace ncc::parse
 
 #endif

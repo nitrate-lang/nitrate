@@ -548,7 +548,7 @@ void CambrianFormatter::visit(FlowPtr<FuncTy> n) {
         }
       },
       [&](let) { line << ", "; });
-  if (n->get_variadic()) {
+  if (n->is_variadic()) {
     if (!n->get_params().empty()) {
       line << ", ";
     }
@@ -1214,7 +1214,7 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
 
   line << " " << n->get_name();
 
-  if (n->get_template_params().has_value()) {
+  if (n->get_template_params()) {
     line << "<";
     iterate_except_last(
         n->get_template_params().value().begin(),
@@ -1249,7 +1249,7 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
       },
       [&](let) { line << ", "; });
 
-  if (n->get_variadic()) {
+  if (n->is_variadic()) {
     if (!n->get_params().empty()) {
       line << ", ";
     }

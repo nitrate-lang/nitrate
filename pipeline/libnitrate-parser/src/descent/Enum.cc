@@ -118,7 +118,7 @@ FlowPtr<Stmt> Parser::recurse_enum() {
 
   if (auto items = recurse_enum_items()) {
     return make<EnumDef>(SaveString(name), type, std::move(items.value()))();
+  } else {
+    return mock_stmt(QAST_ENUM);
   }
-
-  return mock_stmt(QAST_ENUM);
 }

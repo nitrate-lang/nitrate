@@ -218,7 +218,7 @@ namespace ncc::parse {
     constexpr auto get_return() const { return m_return; }
     constexpr auto get_purity() const { return m_purity; }
     constexpr auto get_params() const { return m_params; }
-    constexpr auto get_variadic() const { return m_variadic; }
+    constexpr auto is_variadic() const { return m_variadic; }
     constexpr auto get_attributes() const { return m_attributes; }
   };
 }  // namespace ncc::parse

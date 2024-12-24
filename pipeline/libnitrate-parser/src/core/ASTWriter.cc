@@ -637,7 +637,7 @@ void AST_Writer::visit(FlowPtr<FuncTy> n) {
     begin_obj(2);
 
     string("variadic");
-    boolean(n->get_variadic());
+    boolean(n->is_variadic());
 
     auto params = n->get_params();
     string("params");
@@ -1492,7 +1492,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
     begin_obj(2);
 
     string("variadic");
-    boolean(n->get_variadic());
+    boolean(n->is_variadic());
 
     auto params = n->get_params();
     string("params");

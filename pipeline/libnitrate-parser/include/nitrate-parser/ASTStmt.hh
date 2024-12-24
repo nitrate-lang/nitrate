@@ -61,10 +61,10 @@ namespace ncc::parse {
 
   class VarDecl final : public Stmt {
     std::span<FlowPtr<Expr>> m_attributes;
-    string m_name;
     NullableFlowPtr<Type> m_type;
     NullableFlowPtr<Expr> m_value;
     VarDeclType m_decl_type;
+    string m_name;
 
   public:
     VarDecl(string name, NullableFlowPtr<Type> type,
@@ -72,13 +72,12 @@ namespace ncc::parse {
             ExpressionList attributes)
         : Stmt(QAST_VAR),
           m_attributes(attributes),
-          m_name(name),
           m_type(type),
           m_value(value),
-          m_decl_type(decl_type) {}
+          m_decl_type(decl_type),
+          m_name(name) {}
 
     constexpr auto get_name() const { return m_name.get(); }
-
     constexpr auto get_type() const { return m_type; }
     constexpr auto get_value() const { return m_value; }
     constexpr auto get_decl_type() const { return m_decl_type; }
@@ -86,15 +85,14 @@ namespace ncc::parse {
   };
 
   class InlineAsm final : public Stmt {
-    string m_code;
     std::span<FlowPtr<Expr>> m_args;
+    string m_code;
 
   public:
     InlineAsm(string code, ExpressionList args)
-        : Stmt(QAST_INLINE_ASM), m_code(code), m_args(args) {}
+        : Stmt(QAST_INLINE_ASM), m_args(args), m_code(code) {}
 
     constexpr auto get_code() const { return m_code.get(); }
-
     constexpr auto get_args() const { return m_args; }
   };
 
@@ -146,23 +144,21 @@ namespace ncc::parse {
   };
 
   class ForeachStmt final : public Stmt {
-    string m_idx_ident;
-    string m_val_ident;
     FlowPtr<Expr> m_expr;
     FlowPtr<Stmt> m_body;
+    string m_idx_ident, m_val_ident;
 
   public:
     ForeachStmt(string idx_ident, string val_ident, FlowPtr<Expr> expr,
                 FlowPtr<Stmt> body)
         : Stmt(QAST_FOREACH),
-          m_idx_ident(idx_ident),
-          m_val_ident(val_ident),
           m_expr(expr),
-          m_body(body) {}
+          m_body(body),
+          m_idx_ident(idx_ident),
+          m_val_ident(val_ident) {}
 
     constexpr auto get_idx_ident() const { return m_idx_ident.get(); }
     constexpr auto get_val_ident() const { return m_val_ident.get(); }
-
     constexpr auto get_expr() const { return m_expr; }
     constexpr auto get_body() const { return m_body; }
   };
@@ -188,8 +184,7 @@ namespace ncc::parse {
   };
 
   class ReturnIfStmt final : public Stmt {
-    FlowPtr<Expr> m_cond;
-    FlowPtr<Expr> m_value;
+    FlowPtr<Expr> m_cond, m_value;
 
   public:
     constexpr ReturnIfStmt(FlowPtr<Expr> cond, FlowPtr<Expr> value)
@@ -212,16 +207,16 @@ namespace ncc::parse {
   };
 
   class SwitchStmt final : public Stmt {
-    FlowPtr<Expr> m_cond;
     std::span<FlowPtr<CaseStmt>> m_cases;
+    FlowPtr<Expr> m_cond;
     NullableFlowPtr<Stmt> m_default;
 
   public:
     SwitchStmt(FlowPtr<Expr> cond, SwitchCases cases,
                NullableFlowPtr<Stmt> default_)
         : Stmt(QAST_SWITCH),
-          m_cond(cond),
           m_cases(cases),
+          m_cond(cond),
           m_default(default_) {}
 
     constexpr auto get_cond() const { return m_cond; }
@@ -231,8 +226,8 @@ namespace ncc::parse {
 
   class ExportStmt final : public Stmt {
     std::span<FlowPtr<Expr>> m_attrs;
-    string m_abi_name;
     FlowPtr<Stmt> m_body;
+    string m_abi_name;
     Vis m_vis;
 
   public:
@@ -240,8 +235,8 @@ namespace ncc::parse {
                ExpressionList attrs)
         : Stmt(QAST_EXPORT),
           m_attrs(attrs),
-          m_abi_name(abi_name),
           m_body(content),
+          m_abi_name(abi_name),
           m_vis(vis) {}
 
     constexpr auto get_abi_name() const { return m_abi_name.get(); }
@@ -252,12 +247,12 @@ namespace ncc::parse {
 
   class ScopeStmt final : public Stmt {
     std::span<string> m_deps;
-    string m_name;
     FlowPtr<Stmt> m_body;
+    string m_name;
 
   public:
     ScopeStmt(string name, FlowPtr<Stmt> body, ScopeDeps deps = {})
-        : Stmt(QAST_SCOPE), m_deps(deps), m_name(name), m_body(body) {}
+        : Stmt(QAST_SCOPE), m_deps(deps), m_body(body), m_name(name) {}
 
     constexpr auto get_name() const { return m_name.get(); }
     constexpr auto get_body() const { return m_body; }
@@ -265,12 +260,12 @@ namespace ncc::parse {
   };
 
   class TypedefStmt final : public Stmt {
-    string m_name;
     FlowPtr<Type> m_type;
+    string m_name;
 
   public:
     TypedefStmt(string name, FlowPtr<Type> type)
-        : Stmt(QAST_TYPEDEF), m_name(name), m_type(type) {}
+        : Stmt(QAST_TYPEDEF), m_type(type), m_name(name) {}
 
     constexpr auto get_name() const { return m_name.get(); }
     constexpr auto get_type() const { return m_type; }
@@ -278,12 +273,12 @@ namespace ncc::parse {
 
   class EnumDef final : public Stmt {
     std::span<EnumItem> m_items;
-    string m_name;
     NullableFlowPtr<Type> m_type;
+    string m_name;
 
   public:
     EnumDef(string name, NullableFlowPtr<Type> type, EnumDefItems items)
-        : Stmt(QAST_ENUM), m_items(items), m_name(name), m_type(type) {}
+        : Stmt(QAST_ENUM), m_items(items), m_type(type), m_name(name) {}
 
     constexpr auto get_name() const { return m_name.get(); }
     constexpr auto get_items() const { return m_items; }
@@ -291,15 +286,15 @@ namespace ncc::parse {
   };
 
   class Function final : public Stmt {
+    std::optional<std::span<TemplateParameter>> m_template_parameters;
     std::span<FlowPtr<Expr>> m_attributes;
-    FuncPurity m_purity;
     std::span<std::pair<string, bool>> m_captures;
-    string m_name;
-    std::optional<TemplateParameters> m_template_parameters;
     std::span<FuncParam> m_params;
     FlowPtr<Type> m_return;
     NullableFlowPtr<Expr> m_precond, m_postcond;
     NullableFlowPtr<Stmt> m_body;
+    string m_name;
+    FuncPurity m_purity;
     bool m_variadic;
 
   public:
@@ -310,16 +305,19 @@ namespace ncc::parse {
              NullableFlowPtr<Stmt> body)
         : Stmt(QAST_FUNCTION),
           m_attributes(attributes),
-          m_purity(purity),
           m_captures(captures),
-          m_name(name),
-          m_template_parameters(params),
           m_params(fn_params),
           m_return(return_type),
           m_precond(precond),
           m_postcond(postcond),
           m_body(body),
-          m_variadic(variadic) {}
+          m_name(name),
+          m_purity(purity),
+          m_variadic(variadic) {
+      if (params.has_value()) {
+        m_template_parameters = params.value();
+      }
+    }
 
     constexpr auto get_name() const { return m_name.get(); }
     constexpr auto get_attributes() const { return m_attributes; }
@@ -327,25 +325,29 @@ namespace ncc::parse {
     constexpr auto get_captures() const { return m_captures; }
     constexpr auto get_template_params() const { return m_template_parameters; }
     constexpr auto get_params() const { return m_params; }
-    constexpr auto get_variadic() const { return m_variadic; }
     constexpr auto get_return() const { return m_return; }
     constexpr auto get_precond() const { return m_precond; }
     constexpr auto get_postcond() const { return m_postcond; }
     constexpr auto get_body() const { return m_body; }
 
-    bool is_decl() const { return !m_body.has_value(); }
-    bool is_def() const { return m_body.has_value(); }
+    constexpr auto is_variadic() const { return m_variadic; }
+    constexpr bool is_declaration() const { return !m_body.has_value(); }
+    constexpr bool is_definition() const { return m_body.has_value(); }
+
+    constexpr bool has_contract() const {
+      return m_precond.has_value() || m_postcond.has_value();
+    }
   };
 
   class StructDef final : public Stmt {
-    CompositeType m_comp_type;
     std::span<FlowPtr<Expr>> m_attributes;
-    string m_name;
-    std::optional<TemplateParameters> m_template_parameters;
+    std::optional<std::span<TemplateParameter>> m_template_parameters;
     std::span<string> m_names;
     std::span<StructField> m_fields;
     std::span<StructFunction> m_methods;
     std::span<StructFunction> m_static_methods;
+    CompositeType m_comp_type;
+    string m_name;
 
   public:
     StructDef(CompositeType comp_type, ExpressionList attributes, string name,
@@ -353,14 +355,17 @@ namespace ncc::parse {
               StructDefFields fields, StructDefMethods methods,
               StructDefStaticMethods static_methods)
         : Stmt(QAST_STRUCT),
-          m_comp_type(comp_type),
           m_attributes(attributes),
-          m_name(name),
-          m_template_parameters(params),
           m_names(names),
           m_fields(fields),
           m_methods(methods),
-          m_static_methods(static_methods) {}
+          m_static_methods(static_methods),
+          m_comp_type(comp_type),
+          m_name(name) {
+      if (params.has_value()) {
+        m_template_parameters = params.value();
+      }
+    }
 
     constexpr auto get_name() const { return m_name.get(); }
     constexpr auto get_composite_type() const { return m_comp_type; }

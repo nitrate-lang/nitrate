@@ -1163,8 +1163,8 @@ static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
 
   auto props = convert_purity(n->get_purity());
 
-  return b.getFnTy(params, ret.value()->asType(), n->get_variadic(),
-                   props.first, props.second,
+  return b.getFnTy(params, ret.value()->asType(), n->is_variadic(), props.first,
+                   props.second,
                    check_is_foreign_function(n->get_attributes()));
 }
 
@@ -1434,7 +1434,7 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
     }
 
     Fn *fndef = b.createFunctionDefintion(
-        name, parameters, ret_type.value()->asType(), n->get_variadic(),
+        name, parameters, ret_type.value()->asType(), n->is_variadic(),
         Vis::Pub, props.first, props.second,
         check_is_foreign_function(n->get_attributes()));
 
@@ -1557,7 +1557,7 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
     }
 
     Fn *decl = b.createFunctionDeclaration(
-        name, parameters, ret_type.value()->asType(), n->get_variadic(),
+        name, parameters, ret_type.value()->asType(), n->is_variadic(),
         Vis::Pub, props.first, props.second,
         check_is_foreign_function(n->get_attributes()));
 

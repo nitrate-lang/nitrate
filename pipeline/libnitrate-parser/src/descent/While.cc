@@ -38,9 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 FlowPtr<Expr> Parser::recurse_while_cond() {
-  auto cur = peek();
-
-  if (cur.is<OpArrow>() || cur.is<PuncLCur>()) {
+  if (auto cur = peek(); cur.is<OpArrow>() || cur.is<PuncLCur>()) {
     return make<ConstBool>(true)();
   } else {
     return recurse_expr({Token(Punc, PuncLCur), Token(Oper, OpArrow)});
@@ -56,13 +54,6 @@ FlowPtr<Stmt> Parser::recurse_while_body() {
 }
 
 FlowPtr<Stmt> Parser::recurse_while() {
-  /**
-   * Example syntax:
-   *  `while {}`,                 `while => call();`
-   *  `while (cond) => call();`,  `while cond => call();`
-   *  `while (cond) { call(); }`, `while cond { call(); }`
-   */
-
   auto cond = recurse_while_cond();
   auto body = recurse_while_body();
 

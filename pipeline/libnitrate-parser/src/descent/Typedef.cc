@@ -38,19 +38,14 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 FlowPtr<Stmt> Parser::recurse_typedef() {
-  /**
-   * Syntax examples:
-   *   `type name = type;`
-   */
+  if (auto tok = next_if(Name)) [[likely]] {
+    auto type_name = tok->as_string();
 
-  if (auto tok = next_if(Name)) {
-    auto name = tok->as_string();
+    if (next_if(OpSet)) [[likely]] {
+      auto the_type = recurse_type();
 
-    if (next_if(OpSet)) {
-      auto type = recurse_type();
-
-      if (next_if(PuncSemi)) {
-        return make<TypedefStmt>(SaveString(name), type)();
+      if (next_if(PuncSemi)) [[likely]] {
+        return make<TypedefStmt>(type_name, the_type)();
       } else {
         diagnostic << current() << "Expected ';' in typedef declaration";
       }
