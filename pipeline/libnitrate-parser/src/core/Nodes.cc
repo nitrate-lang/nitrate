@@ -40,11 +40,28 @@
 #include <nitrate-parser/Context.hh>
 #include <sstream>
 
+#include "nitrate-parser/ASTBase.hh"
+
 using namespace ncc;
 using namespace ncc::parse;
 
 CPP_EXPORT thread_local std::unique_ptr<ncc::IMemory>
     ncc::parse::npar_allocator = std::make_unique<ncc::dyn_arena>();
+
+CPP_EXPORT LocationPairAlias ncc::parse::g_location_pairs;
+
+uint64_t LocationPairAlias::Add(lex::LocationID begin, lex::LocationID end) {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  m_pairs.emplace_back(begin, end);
+
+  return m_pairs.size() - 1;
+}
+
+std::pair<lex::LocationID, lex::LocationID> LocationPairAlias::Get(
+    uint64_t loc) {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  return m_pairs.at(loc);
+}
 
 ///=============================================================================
 

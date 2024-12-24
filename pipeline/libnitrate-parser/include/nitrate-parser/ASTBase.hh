@@ -46,17 +46,38 @@
 #include <type_traits>
 
 namespace ncc::parse {
+  class LocationPairAlias {
+    std::vector<std::pair<lex::LocationID, lex::LocationID>> m_pairs;
+    std::mutex m_mutex;
+
+  public:
+    LocationPairAlias() { m_pairs.reserve(4096); }
+
+    void Reset() {
+      m_pairs.clear();
+      m_pairs.shrink_to_fit();
+      m_pairs.reserve(4096);
+    }
+
+    uint64_t Add(lex::LocationID begin, lex::LocationID end);
+    std::pair<lex::LocationID, lex::LocationID> Get(uint64_t loc);
+  };
+
+  extern LocationPairAlias g_location_pairs;
+
   class Base {
   private:
     npar_ty_t m_node_type : 7;
     bool m_mock : 1;
-    lex::LocationID m_begin, m_end;
+    uint64_t m_loc : 56;
 
   public:
     constexpr Base(npar_ty_t ty, bool mock = false,
                    lex::LocationID begin = lex::LocationID(),
                    lex::LocationID end = lex::LocationID())
-        : m_node_type(ty), m_mock(mock), m_begin(begin), m_end(end) {}
+        : m_node_type(ty), m_mock(mock) {
+      m_loc = g_location_pairs.Add(begin, end);
+    }
 
     ///======================================================================
     /// Efficient LLVM-Style reflection
@@ -287,14 +308,18 @@ namespace ncc::parse {
     ///======================================================================
     /// Source location information
 
-    constexpr lex::LocationID begin() const { return m_begin; }
+    constexpr lex::LocationID begin() const {
+      return g_location_pairs.Get(m_loc).first;
+    }
     constexpr lex::Location begin(lex::IScanner &rd) const {
-      return m_begin.Get(rd);
+      return begin().Get(rd);
     }
 
-    constexpr lex::LocationID end() const { return m_end; }
+    constexpr lex::LocationID end() const {
+      return g_location_pairs.Get(m_loc).second;
+    }
     constexpr lex::Location end(lex::IScanner &rd) const {
-      return m_end.Get(rd);
+      return end().Get(rd);
     }
 
     constexpr std::tuple<uint32_t, uint32_t> get_pos() const {
@@ -308,10 +333,13 @@ namespace ncc::parse {
     /**
      * @warning This function modifies the object's state.
      */
-    constexpr void set_offset(lex::LocationID pos) { m_begin = pos; }
+    constexpr void set_offset(lex::LocationID pos) {
+      auto [_, end] = g_location_pairs.Get(m_loc);
+      m_loc = g_location_pairs.Add(pos, end);
+    }
   } __attribute__((packed));
 
-  static_assert(sizeof(Base) == 9);
+  static_assert(sizeof(Base) == 8);
 
   ///======================================================================
 

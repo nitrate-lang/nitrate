@@ -15,7 +15,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=gnu-zero-variadic-macro-arguments \
                                           -Wno-gnu-zero-variadic-macro-arguments       \
                                           -Wno-error=unused-command-line-argument      \
-                                          -Wno-unused-command-line-argument"  )
+                                          -Wno-unused-command-line-argument")
 else()
   message(FATAL_ERROR "Unsupported compiler pair: '${CMAKE_CXX_COMPILER}' and '${CMAKE_C_COMPILER}'")
 endif()
@@ -57,10 +57,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   # Fix issue with ASAN and private aliases
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mllvm -asan-use-private-alias=1")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fsanitize=undefined")
+
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNITRATE_FLOWPTR_TRACE=1")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNDEBUG -fvisibility=hidden -fvisibility-inlines-hidden")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
+
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNITRATE_FLOWPTR_TRACE=0")
 else()
   message(FATAL_ERROR "Invalid build type: ${CMAKE_BUILD_TYPE}")
 endif()

@@ -47,12 +47,6 @@
 #include <vector>
 
 namespace ncc {
-#ifdef NDEBUG
-#define NITRATE_AST_TRACKING 0
-#else
-#define NITRATE_AST_TRACKING 1
-#endif
-
   namespace trace {
     enum class DataFlowEvent {
       Construct_FromNull,
@@ -168,7 +162,7 @@ namespace ncc {
     static inline trace::none g_notrace_instance;
   }  // namespace trace
 
-#if NITRATE_AST_TRACKING
+#if NITRATE_FLOWPTR_TRACE
   using DefaultTracking = trace::genesis;
 #else
   using DefaultTracking = trace::none;

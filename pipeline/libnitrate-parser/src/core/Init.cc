@@ -35,6 +35,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Init.hh>
+#include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/Init.hh>
 
 using namespace ncc::parse;
@@ -59,6 +60,8 @@ CPP_EXPORT bool ParseLibrarySetup::Init() {
 
 CPP_EXPORT void ParseLibrarySetup::Deinit() {
   qcore_print(QCORE_DEBUG, "Deinitializing Nitrate Parser Library");
+
+  g_location_pairs.Reset();
 
   ncc::lex::LexerLibrary.DeinitRC();
   ncc::CoreLibrary.DeinitRC();

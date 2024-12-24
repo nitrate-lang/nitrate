@@ -94,7 +94,7 @@ void AST_Writer::write_source_location(FlowPtr<Base> n) const {
     {
       string("trace");
 
-#if NITRATE_AST_TRACKING
+#if NITRATE_FLOWPTR_TRACE
       begin_obj(4);
 
       let origin = n.trace();
