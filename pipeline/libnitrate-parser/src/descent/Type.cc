@@ -66,13 +66,13 @@ NullableFlowPtr<Expr> Parser::recurse_type_range_end() {
 }
 
 std::optional<CallArgs> Parser::recurse_type_template_arguments() {
-  if (!next_if(qOpLT)) {
+  if (!next_if(OpLT)) {
     return std::nullopt;
   }
 
-  auto args = recurse_call_arguments(Token(qOper, qOpGT));
+  auto args = recurse_call_arguments(Token(Oper, OpGT));
 
-  if (!next_if(qOpGT)) {
+  if (!next_if(OpGT)) {
     diagnostic << current() << "Expected '>' after template arguments";
   }
 
@@ -83,8 +83,8 @@ FlowPtr<Type> Parser::recurse_type_suffix(FlowPtr<Type> base) {
   static auto bit_width_terminaters = {
       Token(qPunc, qPuncRPar), Token(qPunc, qPuncRBrk), Token(qPunc, qPuncLCur),
       Token(qPunc, qPuncRCur), Token(qPunc, qPuncComa), Token(qPunc, qPuncColn),
-      Token(qPunc, qPuncSemi), Token(qOper, qOpSet),    Token(qOper, qOpMinus),
-      Token(qOper, qOpGT)};
+      Token(qPunc, qPuncSemi), Token(Oper, OpSet),      Token(Oper, OpMinus),
+      Token(Oper, OpGT)};
 
   auto template_arguments = recurse_type_template_arguments();
 
@@ -115,7 +115,7 @@ FlowPtr<Type> Parser::recurse_type_suffix(FlowPtr<Type> base) {
   base->set_range_end(range.second);
   base->set_width(width);
 
-  if (next_if(qOpTernary)) {
+  if (next_if(OpTernary)) {
     auto args = CallArgs{{SaveString("0"), make<TypeExpr>(base)()}};
     auto opt_type = make<TemplType>(
         make<NamedTy>(SaveString("__builtin_result"))(), args)();
@@ -189,7 +189,7 @@ FlowPtr<Type> Parser::recurse_type_by_keyword(Keyword key) {
 
 FlowPtr<Type> Parser::recurse_type_by_operator(Operator op) {
   switch (op) {
-    case qOpTimes: {
+    case OpTimes: {
       auto start = current().get_start();
       auto pointee = recurse_type();
       auto ptr_ty = make<PtrTy>(pointee)();
@@ -199,7 +199,7 @@ FlowPtr<Type> Parser::recurse_type_by_operator(Operator op) {
       return ptr_ty;
     }
 
-    case qOpBitAnd: {
+    case OpBitAnd: {
       auto start = current().get_start();
       auto refee = recurse_type();
       auto ref_ty = make<RefTy>(refee)();
@@ -209,7 +209,7 @@ FlowPtr<Type> Parser::recurse_type_by_operator(Operator op) {
       return ref_ty;
     }
 
-    case qOpTernary: {
+    case OpTernary: {
       auto infer = make<InferTy>()();
 
       infer->set_offset(current().get_start());
@@ -379,7 +379,7 @@ FlowPtr<Type> Parser::recurse_type() {
       return recurse_type_suffix(type);
     }
 
-    case qOper: {
+    case Oper: {
       auto type = recurse_type_by_operator(tok.as_op());
 
       return recurse_type_suffix(type);

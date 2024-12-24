@@ -50,11 +50,10 @@ FlowPtr<Type> Parser::recurse_function_parameter_type() {
 }
 
 NullableFlowPtr<Expr> Parser::recurse_function_parameter_value() {
-  if (next_if(qOpSet)) {
+  if (next_if(OpSet)) {
     return recurse_expr(
 
-        {Token(qPunc, qPuncComa), Token(qPunc, qPuncRPar),
-         Token(qOper, qOpGT)});
+        {Token(qPunc, qPuncComa), Token(qPunc, qPuncRPar), Token(Oper, OpGT)});
   } else {
     return std::nullopt;
   }
@@ -75,7 +74,7 @@ std::optional<FuncParam> Parser::recurse_function_parameter() {
 }
 
 std::optional<TemplateParameters> Parser::recurse_template_parameters() {
-  if (!next_if(qOpLT)) {
+  if (!next_if(OpLT)) {
     return std::nullopt;
   }
 
@@ -87,7 +86,7 @@ std::optional<TemplateParameters> Parser::recurse_template_parameters() {
       return params;
     }
 
-    if (next_if(qOpGT)) {
+    if (next_if(OpGT)) {
       break;
     }
 
@@ -125,7 +124,7 @@ std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
       break;
     }
 
-    if (next_if(qOpEllipsis)) {
+    if (next_if(OpEllipsis)) {
       parameters.second = true;
       if (!next_if(qPuncRPar)) {
         diagnostic << current() << "Expected ')' after variadic parameter";
@@ -180,7 +179,7 @@ std::optional<std::pair<std::string_view, bool>>
 Parser::recurse_function_capture() {
   bool is_ref = false;
 
-  if (next_if(qOpBitAnd)) {
+  if (next_if(OpBitAnd)) {
     is_ref = true;
   }
 
@@ -255,7 +254,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
             auto tok = peek();
 
             /* No attribute expression may begin with '&' */
-            if (tok.is<qOpBitAnd>()) {
+            if (tok.is<OpBitAnd>()) {
               state = State::CaptureSection;
             } else if (!tok.is(qName)) {
               state = State::AttributesSection;
@@ -263,7 +262,7 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
               state = State::CaptureSection;
             }
           }
-        } else if (auto tok = peek(); tok.is<qPuncLPar>() || tok.is<qOpLT>()) {
+        } else if (auto tok = peek(); tok.is<qPuncLPar>() || tok.is<OpLT>()) {
           state = State::End; /* Begin parsing parameters or template options */
         } else {
           diagnostic << next() << "Unexpected token in function declaration";
@@ -346,7 +345,7 @@ FlowPtr<Type> Parser::Parser::recurse_function_return_type() {
 NullableFlowPtr<Stmt> Parser::recurse_function_body(bool restrict_decl_only) {
   if (restrict_decl_only || next_if(qPuncSemi)) {
     return std::nullopt;
-  } else if (next_if(qOpArrow)) {
+  } else if (next_if(OpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
     return recurse_block(true, false, SafetyMode::Unknown);

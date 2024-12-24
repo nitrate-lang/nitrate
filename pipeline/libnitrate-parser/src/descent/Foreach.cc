@@ -63,12 +63,12 @@ FlowPtr<Expr> Parser::recurse_foreach_expr(bool has_paren) {
   if (has_paren) {
     return recurse_expr({Token(qPunc, qPuncRPar)});
   } else {
-    return recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
+    return recurse_expr({Token(qPunc, qPuncLCur), Token(Oper, OpArrow)});
   }
 }
 
 FlowPtr<Stmt> Parser::recurse_foreach_body() {
-  if (next_if(qOpArrow)) {
+  if (next_if(OpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
     return recurse_block(true, false, SafetyMode::Unknown);
@@ -87,7 +87,7 @@ FlowPtr<Stmt> Parser::recurse_foreach() {
   if (auto ident_pair_opt = recurse_foreach_names()) {
     auto [index_name, value_name] = ident_pair_opt.value();
 
-    if (next_if(qOpIn)) {
+    if (next_if(OpIn)) {
       auto iter_expr = recurse_foreach_expr(has_paren);
       if (has_paren) {
         if (!next_if(qPuncRPar)) {

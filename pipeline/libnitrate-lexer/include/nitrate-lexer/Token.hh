@@ -44,7 +44,7 @@ namespace ncc::lex {
   typedef enum TokenType {
     qEofF = 1, /* End of file */
     qKeyW,     /* Keyword */
-    qOper,     /* Operator */
+    Oper,      /* Operator */
     qPunc,     /* Punctuation */
     qName,     /* Identifier */
     qIntL,     /* Integer literal */
@@ -69,60 +69,60 @@ namespace ncc::lex {
   } __attribute__((packed)) Punctor;
 
   typedef enum Operator {
-    qOpPlus,        /* '+':    Addition operator */
-    qOpMinus,       /* '-':    Subtraction operator */
-    qOpTimes,       /* '*':    Multiplication operator */
-    qOpSlash,       /* '/':    Division operator */
-    qOpPercent,     /* '%':    Modulus operator */
-    qOpBitAnd,      /* '&':    Bitwise AND operator */
-    qOpBitOr,       /* '|':    Bitwise OR operator */
-    qOpBitXor,      /* '^':    Bitwise XOR operator */
-    qOpBitNot,      /* '~':    Bitwise NOT operator */
-    qOpLShift,      /* '<<':   Left shift operator */
-    qOpRShift,      /* '>>':   Right shift operator */
-    qOpROTL,        /* '<<<':  Rotate left operator */
-    qOpROTR,        /* '>>>':  Rotate right operator */
-    qOpLogicAnd,    /* '&&':   Logical AND operator */
-    qOpLogicOr,     /* '||':   Logical OR operator */
-    qOpLogicXor,    /* '^^':   Logical XOR operator */
-    qOpLogicNot,    /* '!':    Logical NOT operator */
-    qOpLT,          /* '<':    Less than operator */
-    qOpGT,          /* '>':    Greater than operator */
-    qOpLE,          /* '<=':   Less than or equal to operator */
-    qOpGE,          /* '>=':   Greater than or equal to operator */
-    qOpEq,          /* '==':   Equal to operator */
-    qOpNE,          /* '!=':   Not equal to operator */
-    qOpSet,         /* '=':    Assignment operator */
-    qOpPlusSet,     /* '+=':   Addition assignment operator */
-    qOpMinusSet,    /* '-=':   Subtraction assignment operator */
-    qOpTimesSet,    /* '*=':   Multiplication assignment operator */
-    qOpSlashSet,    /* '/=':   Division assignment operator */
-    qOpPercentSet,  /* '%=':   Modulus assignment operator */
-    qOpBitAndSet,   /* '&=':   Bitwise AND assignment operator */
-    qOpBitOrSet,    /* '|=':   Bitwise OR assignment operator */
-    qOpBitXorSet,   /* '^=':   Bitwise XOR assignment operator */
-    qOpLogicAndSet, /* '&&=':  Logical AND assignment operator */
-    qOpLogicOrSet,  /* '||=':  Logical OR assignment operator */
-    qOpLogicXorSet, /* '^^=':  Logical XOR assignment operator */
-    qOpLShiftSet,   /* '<<=':  Left shift assignment operator */
-    qOpRShiftSet,   /* '>>=':  Right shift assignment operator */
-    qOpROTLSet,     /* '<<<=': Rotate left assignment operator */
-    qOpROTRSet,     /* '>>>=': Rotate right assignment operator */
-    qOpInc,         /* '++':   Increment operator */
-    qOpDec,         /* '--':   Decrement operator */
-    qOpAs,          /* 'as':   Type cast operator */
-    qOpBitcastAs,   /* 'bitcast_as': Bitcast operator */
-    qOpIn,          /* 'in':         Generic membership operator */
-    qOpOut,         /* 'out':        Output operator */
-    qOpSizeof,      /* 'sizeof':     Size of operator */
-    qOpBitsizeof,   /* 'bitsizeof':  Bit size of operator */
-    qOpAlignof,     /* 'alignof':    Alignment of operator */
-    qOpTypeof,      /* 'typeof':     Type of operator */
-    qOpDot,         /* '.':          Dot operator */
-    qOpRange,       /* '..':         Range operator */
-    qOpEllipsis,    /* '...':        Ellipsis operator */
-    qOpArrow,       /* '=>':         Arrow operator */
-    qOpTernary,     /* '?':          Ternary operator */
+    OpPlus,        /* '+':    Addition operator */
+    OpMinus,       /* '-':    Subtraction operator */
+    OpTimes,       /* '*':    Multiplication operator */
+    OpSlash,       /* '/':    Division operator */
+    OpPercent,     /* '%':    Modulus operator */
+    OpBitAnd,      /* '&':    Bitwise AND operator */
+    OpBitOr,       /* '|':    Bitwise OR operator */
+    OpBitXor,      /* '^':    Bitwise XOR operator */
+    OpBitNot,      /* '~':    Bitwise NOT operator */
+    OpLShift,      /* '<<':   Left shift operator */
+    OpRShift,      /* '>>':   Right shift operator */
+    OpROTL,        /* '<<<':  Rotate left operator */
+    OpROTR,        /* '>>>':  Rotate right operator */
+    OpLogicAnd,    /* '&&':   Logical AND operator */
+    OpLogicOr,     /* '||':   Logical OR operator */
+    OpLogicXor,    /* '^^':   Logical XOR operator */
+    OpLogicNot,    /* '!':    Logical NOT operator */
+    OpLT,          /* '<':    Less than operator */
+    OpGT,          /* '>':    Greater than operator */
+    OpLE,          /* '<=':   Less than or equal to operator */
+    OpGE,          /* '>=':   Greater than or equal to operator */
+    OpEq,          /* '==':   Equal to operator */
+    OpNE,          /* '!=':   Not equal to operator */
+    OpSet,         /* '=':    Assignment operator */
+    OpPlusSet,     /* '+=':   Addition assignment operator */
+    OpMinusSet,    /* '-=':   Subtraction assignment operator */
+    OpTimesSet,    /* '*=':   Multiplication assignment operator */
+    OpSlashSet,    /* '/=':   Division assignment operator */
+    OpPercentSet,  /* '%=':   Modulus assignment operator */
+    OpBitAndSet,   /* '&=':   Bitwise AND assignment operator */
+    OpBitOrSet,    /* '|=':   Bitwise OR assignment operator */
+    OpBitXorSet,   /* '^=':   Bitwise XOR assignment operator */
+    OpLogicAndSet, /* '&&=':  Logical AND assignment operator */
+    OpLogicOrSet,  /* '||=':  Logical OR assignment operator */
+    OpLogicXorSet, /* '^^=':  Logical XOR assignment operator */
+    OpLShiftSet,   /* '<<=':  Left shift assignment operator */
+    OpRShiftSet,   /* '>>=':  Right shift assignment operator */
+    OpROTLSet,     /* '<<<=': Rotate left assignment operator */
+    OpROTRSet,     /* '>>>=': Rotate right assignment operator */
+    OpInc,         /* '++':   Increment operator */
+    OpDec,         /* '--':   Decrement operator */
+    OpAs,          /* 'as':   Type cast operator */
+    OpBitcastAs,   /* 'bitcast_as': Bitcast operator */
+    OpIn,          /* 'in':         Generic membership operator */
+    OpOut,         /* 'out':        Output operator */
+    OpSizeof,      /* 'sizeof':     Size of operator */
+    OpBitsizeof,   /* 'bitsizeof':  Bit size of operator */
+    OpAlignof,     /* 'alignof':    Alignment of operator */
+    OpTypeof,      /* 'typeof':     Type of operator */
+    OpDot,         /* '.':          Dot operator */
+    OpRange,       /* '..':         Range operator */
+    OpEllipsis,    /* '...':        Ellipsis operator */
+    OpArrow,       /* '=>':         Arrow operator */
+    OpTernary,     /* '?':          Ternary operator */
   } __attribute__((packed)) Operator;
 
   typedef enum Keyword {
@@ -242,7 +242,7 @@ namespace ncc::lex {
     TokenData v;
 
     template <class T = Operator>
-    constexpr TokenBase(TokenType ty = qEofF, T val = qOpPlus,
+    constexpr TokenBase(TokenType ty = qEofF, T val = OpPlus,
                         LocationID _start = LocationID())
         : m_location_id(_start), m_type(ty), v{val} {
       (void)pad;
@@ -258,7 +258,7 @@ namespace ncc::lex {
         case qEofF:
         case qPunc:
           return v.punc == rhs.v.punc;
-        case qOper:
+        case Oper:
           return v.op == rhs.v.op;
         case qKeyW:
           return v.key == rhs.v.key;
@@ -281,7 +281,7 @@ namespace ncc::lex {
       } else if constexpr (std::is_same_v<decltype(V), Punctor>) {
         return m_type == qPunc && v.punc == V;
       } else if constexpr (std::is_same_v<decltype(V), Operator>) {
-        return m_type == qOper && v.op == V;
+        return m_type == Oper && v.op == V;
       }
     }
 
@@ -305,7 +305,7 @@ namespace ncc::lex {
           return false;
         case qPunc:
           return v.punc < rhs.v.punc;
-        case qOper:
+        case Oper:
           return v.op < rhs.v.op;
         case qKeyW:
           return v.key < rhs.v.key;

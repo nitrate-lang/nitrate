@@ -36,10 +36,10 @@ void recurse(Base* C) {
       line << "(";
       line << N->get_op();
       switch (N->get_op()) {
-        case qOpSizeof:
-        case qOpBitsizeof:
-        case qOpAlignof:
-        case qOpTypeof:
+        case OpSizeof:
+        case OpBitsizeof:
+        case OpAlignof:
+        case OpTypeof:
           line << "(";
           recurse(N->get_rhs());
           line << ")";

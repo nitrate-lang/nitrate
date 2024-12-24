@@ -426,7 +426,7 @@ public:
     { /* Check if it's an operator */
       auto it = word_operators.find(buf);
       if (it != word_operators.end()) {
-        return Token(qOper, it->second, start_pos);
+        return Token(Oper, it->second, start_pos);
       }
     }
 
@@ -967,9 +967,8 @@ public:
 
     L.m_pushback.push_back(buf.back());
     L.m_pushback.push_back(c);
-    token =
-        Token(qOper, LexicalOperators.left.at(buf.substr(0, buf.size() - 1)),
-              start_pos);
+    token = Token(Oper, LexicalOperators.left.at(buf.substr(0, buf.size() - 1)),
+                  start_pos);
 
     return true;
   }
@@ -1052,7 +1051,7 @@ CPP_EXPORT Token Tokenizer::GetNext() {
           continue;
         } else { /* Divide operator */
           m_pushback.push_back(c);
-          return Token(qOper, qOpSlash, start_pos);
+          return Token(Oper, OpSlash, start_pos);
         }
       }
       case LexState::CommentSingleLine: {
@@ -1097,7 +1096,7 @@ CPP_EXPORT const char *ncc::lex::qlex_ty_str(TokenType ty) {
       return "eof";
     case qKeyW:
       return "key";
-    case qOper:
+    case Oper:
       return "op";
     case qPunc:
       return "sym";
@@ -1134,8 +1133,8 @@ CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, TokenType ty) {
       break;
     }
 
-    case qOper: {
-      os << "qOper";
+    case Oper: {
+      os << "Oper";
       break;
     }
 

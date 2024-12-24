@@ -55,7 +55,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
 
     tab[qEofF] = 1;
     tab[qKeyW] = 1;
-    tab[qOper] = 1;
+    tab[Oper] = 1;
     tab[qPunc] = 1;
     tab[qName] = 1;
     tab[qIntL] = 1;
@@ -93,7 +93,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
         break;
       }
 
-      case TokenType::qOper: {
+      case TokenType::Oper: {
         R = Token(t, ncc::lex::LexicalOperators.left.at(data));
         break;
       }

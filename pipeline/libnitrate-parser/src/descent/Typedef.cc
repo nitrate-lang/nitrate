@@ -46,7 +46,7 @@ FlowPtr<Stmt> Parser::recurse_typedef() {
   if (auto tok = next_if(qName)) {
     auto name = tok->as_string();
 
-    if (next_if(qOpSet)) {
+    if (next_if(OpSet)) {
       auto type = recurse_type();
 
       if (next_if(qPuncSemi)) {

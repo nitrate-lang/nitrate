@@ -81,7 +81,7 @@ std::optional<ScopeDeps> Parser::recurse_scope_deps() {
 FlowPtr<Stmt> Parser::recurse_scope_block() {
   if (next_if(qPuncSemi)) {
     return make<Block>(BlockItems(), SafetyMode::Unknown)();
-  } else if (next_if(qOpArrow)) {
+  } else if (next_if(OpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
     return recurse_block(true, false, SafetyMode::Unknown);

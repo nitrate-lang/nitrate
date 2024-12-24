@@ -185,51 +185,51 @@ static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
   std::optional<nr::Expr *> R;
 
   switch (op) {
-    case qOpPlus: {
+    case OpPlus: {
       R = STD_BINOP(Plus);
       break;
     }
-    case qOpMinus: {
+    case OpMinus: {
       R = STD_BINOP(Minus);
       break;
     }
-    case qOpTimes: {
+    case OpTimes: {
       R = STD_BINOP(Times);
       break;
     }
-    case qOpSlash: {
+    case OpSlash: {
       R = STD_BINOP(Slash);
       break;
     }
-    case qOpPercent: {
+    case OpPercent: {
       R = STD_BINOP(Percent);
       break;
     }
-    case qOpBitAnd: {
+    case OpBitAnd: {
       R = STD_BINOP(BitAnd);
       break;
     }
-    case qOpBitOr: {
+    case OpBitOr: {
       R = STD_BINOP(BitOr);
       break;
     }
-    case qOpBitXor: {
+    case OpBitXor: {
       R = STD_BINOP(BitXor);
       break;
     }
-    case qOpBitNot: {
+    case OpBitNot: {
       R = STD_BINOP(BitNot);
       break;
     }
-    case qOpLogicAnd: {
+    case OpLogicAnd: {
       R = STD_BINOP(LogicAnd);
       break;
     }
-    case qOpLogicOr: {
+    case OpLogicOr: {
       R = STD_BINOP(LogicOr);
       break;
     }
-    case qOpLogicXor: {
+    case OpLogicXor: {
       // A ^^ B == (A || B) && !(A && B)
       auto a = nr::create<nr::BinExpr>(lhs, rhs, nr::Op::LogicOr);
       auto b = nr::create<nr::BinExpr>(lhs, rhs, nr::Op::LogicAnd);
@@ -237,81 +237,81 @@ static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
       R = nr::create<nr::BinExpr>(a, not_b, nr::Op::LogicAnd);
       break;
     }
-    case qOpLogicNot: {
+    case OpLogicNot: {
       R = STD_BINOP(LogicNot);
       break;
     }
-    case qOpLShift: {
+    case OpLShift: {
       R = STD_BINOP(LShift);
       break;
     }
-    case qOpRShift: {
+    case OpRShift: {
       R = STD_BINOP(RShift);
       break;
     }
-    case qOpROTR: {
+    case OpROTR: {
       /* TODO: Implement '>>>' operator */
       qcore_implement();
       break;
     }
-    case qOpROTL: {
+    case OpROTL: {
       /* TODO: Implement '<<<' operator */
       qcore_implement();
       break;
     }
-    case qOpInc: {
+    case OpInc: {
       R = STD_BINOP(Inc);
       break;
     }
-    case qOpDec: {
+    case OpDec: {
       R = STD_BINOP(Dec);
       break;
     }
-    case qOpSet: {
+    case OpSet: {
       R = STD_BINOP(Set);
       break;
     }
-    case qOpPlusSet: {
+    case OpPlusSet: {
       R = ASSIGN_BINOP(Plus);
       break;
     }
-    case qOpMinusSet: {
+    case OpMinusSet: {
       R = ASSIGN_BINOP(Minus);
       break;
     }
-    case qOpTimesSet: {
+    case OpTimesSet: {
       R = ASSIGN_BINOP(Times);
       break;
     }
-    case qOpSlashSet: {
+    case OpSlashSet: {
       R = ASSIGN_BINOP(Slash);
       break;
     }
-    case qOpPercentSet: {
+    case OpPercentSet: {
       R = ASSIGN_BINOP(Percent);
       break;
     }
-    case qOpBitAndSet: {
+    case OpBitAndSet: {
       R = ASSIGN_BINOP(BitAnd);
       break;
     }
-    case qOpBitOrSet: {
+    case OpBitOrSet: {
       R = ASSIGN_BINOP(BitOr);
       break;
     }
-    case qOpBitXorSet: {
+    case OpBitXorSet: {
       R = ASSIGN_BINOP(BitXor);
       break;
     }
-    case qOpLogicAndSet: {
+    case OpLogicAndSet: {
       R = ASSIGN_BINOP(LogicAnd);
       break;
     }
-    case qOpLogicOrSet: {
+    case OpLogicOrSet: {
       R = ASSIGN_BINOP(LogicOr);
       break;
     }
-    case qOpLogicXorSet: {
+    case OpLogicXorSet: {
       // a ^^= b == a = (a || b) && !(a && b)
 
       auto a = nr::create<nr::BinExpr>(lhs, rhs, nr::Op::LogicOr);
@@ -321,63 +321,63 @@ static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
           lhs, nr::create<nr::BinExpr>(a, not_b, nr::Op::LogicAnd),
           nr::Op::Set);
     }
-    case qOpLShiftSet: {
+    case OpLShiftSet: {
       R = ASSIGN_BINOP(LShift);
       break;
     }
-    case qOpRShiftSet: {
+    case OpRShiftSet: {
       R = ASSIGN_BINOP(RShift);
       break;
     }
-    case qOpROTRSet: {
+    case OpROTRSet: {
       /* TODO: Implement '>>>=' operator */
       qcore_implement();
       break;
     }
-    case qOpROTLSet: {
+    case OpROTLSet: {
       /* TODO: Implement '<<<=' operator */
       qcore_implement();
       break;
     }
-    case qOpLT: {
+    case OpLT: {
       R = STD_BINOP(LT);
       break;
     }
-    case qOpGT: {
+    case OpGT: {
       R = STD_BINOP(GT);
       break;
     }
-    case qOpLE: {
+    case OpLE: {
       R = STD_BINOP(LE);
       break;
     }
-    case qOpGE: {
+    case OpGE: {
       R = STD_BINOP(GE);
       break;
     }
-    case qOpEq: {
+    case OpEq: {
       R = STD_BINOP(Eq);
       break;
     }
-    case qOpNE: {
+    case OpNE: {
       R = STD_BINOP(NE);
       break;
     }
-    case qOpAs: {
+    case OpAs: {
       R = STD_BINOP(CastAs);
       break;
     }
-    case qOpIn: {
+    case OpIn: {
       auto methname = b.createStringDataArray("has");
       auto method = nr::create<nr::Index>(rhs, methname);
       R = nr::create<nr::Call>(method, nr::CallArgs({lhs}));
       break;
     }
-    case qOpRange: {
+    case OpRange: {
       /// TODO: Implement range operator
       break;
     }
-    case qOpBitcastAs: {
+    case OpBitcastAs: {
       R = STD_BINOP(BitcastAs);
       break;
     }
@@ -397,52 +397,52 @@ static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
   EResult R;
 
   switch (op) {
-    case qOpPlus: {
+    case OpPlus: {
       R = STD_UNOP(Plus);
       break;
     }
 
-    case qOpMinus: {
+    case OpMinus: {
       R = STD_UNOP(Minus);
       break;
     }
 
-    case qOpTimes: {
+    case OpTimes: {
       R = STD_UNOP(Times);
       break;
     }
 
-    case qOpBitAnd: {
+    case OpBitAnd: {
       R = STD_UNOP(BitAnd);
       break;
     }
 
-    case qOpBitXor: {
+    case OpBitXor: {
       R = STD_UNOP(BitXor);
       break;
     }
 
-    case qOpBitNot: {
+    case OpBitNot: {
       R = STD_UNOP(BitNot);
       break;
     }
 
-    case qOpLogicNot: {
+    case OpLogicNot: {
       R = STD_UNOP(LogicNot);
       break;
     }
 
-    case qOpInc: {
+    case OpInc: {
       R = STD_UNOP(Inc);
       break;
     }
 
-    case qOpDec: {
+    case OpDec: {
       R = STD_UNOP(Dec);
       break;
     }
 
-    case qOpSizeof: {
+    case OpSizeof: {
       auto bits = nr::create<nr::UnExpr>(rhs, nr::Op::Bitsizeof);
       auto arg = nr::create<nr::BinExpr>(
           bits, nr::create<nr::Float>(8, nr::FloatSize::F64), nr::Op::Slash);
@@ -454,12 +454,12 @@ static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
       break;
     }
 
-    case qOpAlignof: {
+    case OpAlignof: {
       R = STD_UNOP(Alignof);
       break;
     }
 
-    case qOpTypeof: {
+    case OpTypeof: {
       auto inferred = rhs->getType();
       if (!inferred.has_value()) {
         break;
@@ -477,7 +477,7 @@ static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
       break;
     }
 
-    case qOpBitsizeof: {
+    case OpBitsizeof: {
       R = STD_UNOP(Bitsizeof);
       break;
     }
@@ -499,11 +499,11 @@ static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &,
   EResult R;
 
   switch (op) {
-    case qOpInc: {
+    case OpInc: {
       R = STD_POST_OP(Inc);
       break;
     }
-    case qOpDec: {
+    case OpDec: {
       R = STD_POST_OP(Dec);
       break;
     }
@@ -520,7 +520,7 @@ static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &,
 
 static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
                              FlowPtr<ncc::parse::BinExpr> n) {
-  if (n->get_lhs() && n->get_rhs() && n->get_op() == qOpAs &&
+  if (n->get_lhs() && n->get_rhs() && n->get_op() == OpAs &&
       n->get_rhs()->is(QAST_TEXPR)) {
     FlowPtr<ncc::parse::Type> type =
         n->get_rhs()->as<ncc::parse::TypeExpr>()->get_type();

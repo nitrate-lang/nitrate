@@ -163,7 +163,7 @@ FlowPtr<Expr> Parser::recurse_fstring() {
   return make<FString>(std::move(items))();
 }
 
-static bool IsPostUnaryOp(Operator O) { return O == qOpInc || O == qOpDec; }
+static bool IsPostUnaryOp(Operator O) { return O == OpInc || O == OpDec; }
 
 enum class FrameType : uint8_t {
   Start,
@@ -230,13 +230,13 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
   auto SourceOffset = peek().get_start();
 
   std::stack<Frame> Stack;
-  Stack.push({nullptr, SourceOffset, 0, FrameType::Start, qOpPlus});
+  Stack.push({nullptr, SourceOffset, 0, FrameType::Start, OpPlus});
 
   /****************************************
    * Parse pre-unary operators
    ****************************************/
   std::stack<std::pair<Operator, LocationID>> PreUnaryOps;
-  while (auto Tok = next_if(qOper)) {
+  while (auto Tok = next_if(Oper)) {
     PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
   }
 
@@ -263,7 +263,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
       }
 
       switch (Tok.get_type()) {
-        case qOper: {
+        case Oper: {
           auto Op = Tok.as_op();
           auto OpType = IsPostUnaryOp(Op) ? OpMode::PostUnary : OpMode::Binary;
           auto OpPrecedence = GetOperatorPrecedence(Op, OpType);
@@ -285,13 +285,13 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
                 GetOperatorAssociativity(Op, OpType) == OpAssoc::Left;
             auto NextMinPrecedence =
                 IsLeftAssoc ? OpPrecedence + 1 : OpPrecedence;
-            bool IsType = Op == qOpAs || Op == qOpBitcastAs;
+            bool IsType = Op == OpAs || Op == OpBitcastAs;
 
             if (!IsType) {
               /****************************************
                * Parse pre-unary operators
                ****************************************/
-              while (auto Tok = next_if(qOper)) {
+              while (auto Tok = next_if(Oper)) {
                 PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
               }
             }
@@ -340,7 +340,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
           // Based on the assumption that function calls have the same
           // precedence as the dot operator (member access)
           static auto SuffixOPPrecedence =
-              GetOperatorPrecedence(qOpDot, OpMode::Binary);
+              GetOperatorPrecedence(OpDot, OpMode::Binary);
           LeftSide = UnwindStack(Stack, LeftSide, SuffixOPPrecedence);
 
           if (next_if(qPuncLPar)) {
@@ -801,7 +801,7 @@ FlowPtr<Expr> Parser::recurse_expr_type_suffix(FlowPtr<Expr> base) {
   auto texpr = make<TypeExpr>(suffix)();
   texpr->set_offset(tok.get_start());
 
-  return make<BinExpr>(base, qOpAs, texpr)();
+  return make<BinExpr>(base, OpAs, texpr)();
 }
 
 NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
@@ -830,7 +830,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
         break;
       }
 
-      case qOper: {
+      case Oper: {
         diagnostic << tok << "Unexpected operator in expression";
         break;
       }

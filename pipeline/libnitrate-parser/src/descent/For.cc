@@ -67,16 +67,16 @@ NullableFlowPtr<Expr> Parser::recurse_for_step_expr(bool has_paren) {
       return recurse_expr({Token(qPunc, qPuncRPar)});
     }
   } else {
-    if (peek().is<qOpArrow>() || peek().is<qPuncLCur>()) {
+    if (peek().is<OpArrow>() || peek().is<qPuncLCur>()) {
       return std::nullopt;
     } else {
-      return recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
+      return recurse_expr({Token(qPunc, qPuncLCur), Token(Oper, OpArrow)});
     }
   }
 }
 
 FlowPtr<Stmt> Parser::recurse_for_body() {
-  if (next_if(qOpArrow)) {
+  if (next_if(OpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
     return recurse_block(true, false, SafetyMode::Unknown);

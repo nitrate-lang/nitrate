@@ -57,7 +57,7 @@ int qcall::sys_next(lua_State* L) {
       lua_pushstring(L, kw_repr(tok.as_key()));
       break;
     }
-    case qOper: {
+    case Oper: {
       lua_pushstring(L, op_repr(tok.as_op()));
       break;
     }

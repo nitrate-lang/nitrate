@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 FlowPtr<Stmt> Parser::recurse_switch_case_body() {
-  if (next_if(qOpArrow)) {
+  if (next_if(OpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
     return recurse_block(true, false, SafetyMode::Unknown);
@@ -46,7 +46,7 @@ FlowPtr<Stmt> Parser::recurse_switch_case_body() {
 }
 
 std::variant<FlowPtr<CaseStmt>, FlowPtr<Stmt>> Parser::recurse_switch_case() {
-  auto cond = recurse_expr({Token(qOper, qOpArrow), Token(qPunc, qPuncLCur)});
+  auto cond = recurse_expr({Token(Oper, OpArrow), Token(qPunc, qPuncLCur)});
 
   auto body = recurse_switch_case_body();
 

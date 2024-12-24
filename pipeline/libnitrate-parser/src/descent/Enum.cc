@@ -54,7 +54,7 @@ NullableFlowPtr<Type> Parser::recurse_enum_type() {
 }
 
 NullableFlowPtr<Expr> Parser::recurse_enum_item_value() {
-  if (next_if(qOpSet)) {
+  if (next_if(OpSet)) {
     return recurse_expr(
 
         {Token(qPunc, qPuncSemi), Token(qPunc, qPuncComa),
@@ -103,7 +103,7 @@ std::optional<EnumDefItems> Parser::recurse_enum_items() {
 
       next_if(qPuncComa) || next_if(qPuncSemi);
     }
-  } else if (next_if(qOpArrow)) {
+  } else if (next_if(OpArrow)) {
     if (auto item = recurse_enum_item()) {
       items.push_back(item.value());
       return items;

@@ -62,7 +62,7 @@ bool impl_use_json(IScanner *L, std::ostream &O) {
         break;
       }
 
-      case qOper: { /* Operator */
+      case Oper: { /* Operator */
         O << "[3,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
           << ec << "],";
         break;
@@ -184,7 +184,7 @@ bool impl_use_msgpack(IScanner *L, std::ostream &O) {
         break;
       }
 
-      case qOper: { /* Operator */
+      case Oper: { /* Operator */
         msgpack_write_tok(O, 4, tok.as_string(), sl, sc, el, ec);
         break;
       }

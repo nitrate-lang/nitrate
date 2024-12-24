@@ -40,15 +40,15 @@ using namespace ncc::parse;
 FlowPtr<Expr> Parser::recurse_while_cond() {
   auto cur = peek();
 
-  if (cur.is<qOpArrow>() || cur.is<qPuncLCur>()) {
+  if (cur.is<OpArrow>() || cur.is<qPuncLCur>()) {
     return make<ConstBool>(true)();
   } else {
-    return recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
+    return recurse_expr({Token(qPunc, qPuncLCur), Token(Oper, OpArrow)});
   }
 }
 
 FlowPtr<Stmt> Parser::recurse_while_body() {
-  if (next_if(qOpArrow)) {
+  if (next_if(OpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
     return recurse_block(true, false, SafetyMode::Unknown);

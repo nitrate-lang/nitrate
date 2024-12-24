@@ -94,7 +94,7 @@ StructDefNames Parser::recurse_struct_terms() {
 }
 
 NullableFlowPtr<Expr> Parser::recurse_struct_field_default_value() {
-  if (next_if(qOpSet)) {
+  if (next_if(OpSet)) {
     return recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncSemi),
                          Token(qPunc, qPuncRCur)});
   } else {

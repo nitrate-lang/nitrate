@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 FlowPtr<Stmt> Parser::recurse_if_then() {
-  if (next_if(qOpArrow)) {
+  if (next_if(OpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
     return recurse_block(true, false, SafetyMode::Unknown);
@@ -47,7 +47,7 @@ FlowPtr<Stmt> Parser::recurse_if_then() {
 
 NullableFlowPtr<Stmt> Parser::recurse_if_else() {
   if (next_if(qKElse)) {
-    if (next_if(qOpArrow)) {
+    if (next_if(OpArrow)) {
       return recurse_block(false, true, SafetyMode::Unknown);
     } else if (next_if(qKIf)) {
       return recurse_if();
@@ -60,7 +60,7 @@ NullableFlowPtr<Stmt> Parser::recurse_if_else() {
 }
 
 FlowPtr<Stmt> Parser::recurse_if() {
-  auto cond = recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
+  auto cond = recurse_expr({Token(qPunc, qPuncLCur), Token(Oper, OpArrow)});
   auto then = recurse_if_then();
   auto ele = recurse_if_else();
 

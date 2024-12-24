@@ -76,7 +76,7 @@ NullableFlowPtr<Type> Parser::recurse_variable_type() {
 }
 
 NullableFlowPtr<Expr> Parser::recurse_variable_value() {
-  if (next_if(qOpSet)) {
+  if (next_if(OpSet)) {
     return recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncSemi)});
   } else {
     return std::nullopt;

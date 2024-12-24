@@ -209,7 +209,7 @@ func_entry:  // do tail call optimization manually
         case qText:
         case qChar:
         case qNumL:
-        case qOper:
+        case Oper:
         case qPunc:
         case qNote: {
           goto emit_token;
