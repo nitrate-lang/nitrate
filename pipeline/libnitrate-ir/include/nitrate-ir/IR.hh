@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_IR_NR_H__
-#define __NITRATE_IR_NR_H__
+#ifndef __NITRATE_IR_IR_H__
+#define __NITRATE_IR_IR_H__
 
 #include <cstddef>
 #include <cstdint>
@@ -46,7 +46,7 @@ namespace ncc::parse {
 
 namespace ncc::ir {
   typedef enum nr_serial_t {
-    NR_SERIAL_CODE = 0, /* Human readable ASCII text */
+    IR_SERIAL_CODE = 0, /* Human readable ASCII text */
   } nr_serial_t;
 
   /**
@@ -74,13 +74,13 @@ namespace ncc::ir {
   typedef void (*nr_node_cb)(Expr *cur, uintptr_t userdata);
 
   typedef enum {
-    NR_LEVEL_DEBUG = 0,
-    NR_LEVEL_INFO = 1,
-    NR_LEVEL_WARN = 2,
-    NR_LEVEL_ERROR = 3,
-    NR_LEVEL_FATAL = 4,
-    NR_LEVEL_MAX = 5,
-    NR_LEVEL_DEFAULT = NR_LEVEL_WARN,
+    IR_LEVEL_DEBUG = 0,
+    IR_LEVEL_INFO = 1,
+    IR_LEVEL_WARN = 2,
+    IR_LEVEL_ERROR = 3,
+    IR_LEVEL_FATAL = 4,
+    IR_LEVEL_MAX = 5,
+    IR_LEVEL_DEFAULT = IR_LEVEL_WARN,
   } nr_level_t;
 
   /**
@@ -105,7 +105,7 @@ namespace ncc::ir {
      * @example `801802`
      * @format <code>
      */
-    NR_DIAG_ASCII_ECODE,
+    IR_DIAG_ASCII_ECODE,
 
     /**
      * @brief Code decimal serialization of the error code and source location.
@@ -114,7 +114,7 @@ namespace ncc::ir {
      *
      * @note UTF-8 characters in the path are preserved.
      */
-    NR_DIAG_UTF8_ECODE_LOC,
+    IR_DIAG_UTF8_ECODE_LOC,
 
     /**
      * @brief Code decimal serialization of the error code and UTF-8 error
@@ -122,7 +122,7 @@ namespace ncc::ir {
      * @example `801802:This is an UTF-8 error message.`
      * @format <code>:<utf8_message>
      */
-    NR_DIAG_UTF8_ECODE_ETEXT,
+    IR_DIAG_UTF8_ECODE_ETEXT,
 
     /**
      * @brief Unspecified format.
@@ -133,28 +133,28 @@ namespace ncc::ir {
      * @note Basically, everything you expect from a mainstream compiler (except
      * without color).
      */
-    NR_DIAG_NOSTD_TTY_UTF8,
+    IR_DIAG_NOSTD_TTY_UTF8,
 
     /**
      * @brief Unspecified format.
-     * @note Similar to `NR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+     * @note Similar to `IR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
      * differences.
      */
-    NR_DIAG_NONSTD_ANSI16_UTF8_FULL,
+    IR_DIAG_NONSTD_ANSI16_UTF8_FULL,
 
     /**
      * @brief Unspecified format.
-     * @note Similar to `NR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+     * @note Similar to `IR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
      * differences.
      */
-    NR_DIAG_NONSTD_ANSI256_UTF8_FULL,
+    IR_DIAG_NONSTD_ANSI256_UTF8_FULL,
 
     /**
      * @brief Unspecified format.
-     * @note Similar to `NR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+     * @note Similar to `IR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
      * differences.
      */
-    NR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
+    IR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
 
     /**
      * @brief Display in a modern terminal emulator with UTF-8, RGB colors,
@@ -162,14 +162,14 @@ namespace ncc::ir {
      * @note Includes everything the user would expect from a mainstream
      * compiler.
      */
-    NR_DIAG_COLOR = NR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
+    IR_DIAG_COLOR = IR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
 
     /**
      * @brief Display in a modern terminal emulator with UTF-8 and no colors.
      * @note Includes everything the user would expect from a mainstream
      * compiler.
      */
-    NR_DIAG_NOCOLOR = NR_DIAG_NOSTD_TTY_UTF8,
+    IR_DIAG_NOCOLOR = IR_DIAG_NOSTD_TTY_UTF8,
   } nr_diag_format_t;
 
   /**
@@ -198,4 +198,4 @@ namespace ncc::ir {
                     uintptr_t data);
 }  // namespace ncc::ir
 
-#endif  // __NITRATE_IR_NR_H__
+#endif  // __NITRATE_IR_IR_H__

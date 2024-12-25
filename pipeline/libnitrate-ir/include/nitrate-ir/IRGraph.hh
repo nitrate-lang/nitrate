@@ -296,14 +296,6 @@ namespace ncc::ir {
 
     std::optional<Type *> getType() const;
 
-    template <class T = Expr>
-    constexpr T *clone() const {
-      qcore_assert(getTypeCode<T>() == getKind(),
-                   "Attempted to clone into a different type.");
-
-      return static_cast<T *>(cloneImpl());
-    }
-
     template <typename T>
     static constexpr T *safeCastAs(Expr *ptr) {
       if (!ptr) {
@@ -311,9 +303,16 @@ namespace ncc::ir {
       }
 
 #ifndef NDEBUG
-      if (getTypeCode<T>() != ptr->getKind()) [[unlikely]] {
-        qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(),
-                     getKindName(getTypeCode<T>()));
+      if constexpr (std::is_same_v<Type, T>) {
+        if (!ptr->isType()) [[unlikely]] {
+          qcore_panicf("Invalid cast from non-type %s to type",
+                       ptr->getKindName());
+        }
+      } else if constexpr (!std::is_same_v<Expr, T>) {
+        if (getTypeCode<T>() != ptr->getKind()) [[unlikely]] {
+          qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(),
+                       getKindName(getTypeCode<T>()));
+        }
       }
 #endif
 
@@ -344,6 +343,11 @@ namespace ncc::ir {
     template <typename T>
     constexpr const T *as() const {
       return safeCastAs<T>(const_cast<Expr *>(this));
+    }
+
+    template <class T = Expr>
+    constexpr T *clone() const {
+      return cloneImpl()->as<T>();
     }
 
     constexpr Expr *asExpr() { return this; }

@@ -42,7 +42,7 @@
 #include <stack>
 
 namespace ncc::ir {
-  class CPP_EXPORT NR_Reader {
+  class CPP_EXPORT IR_Reader {
     enum class State {
       ObjStart,
       ObjEnd,
@@ -67,8 +67,8 @@ namespace ncc::ir {
     void end_arr();
 
   public:
-    NR_Reader() { m_state.push(State::ObjStart); }
-    virtual ~NR_Reader() = default;
+    IR_Reader() { m_state.push(State::ObjStart); }
+    virtual ~IR_Reader() = default;
 
     std::optional<Expr*> get() {
       if (m_parse.empty() || m_parse.top() == nullptr) {
@@ -79,20 +79,20 @@ namespace ncc::ir {
     }
   };
 
-  class CPP_EXPORT NR_JsonReader final : public NR_Reader {
+  class CPP_EXPORT IR_JsonReader final : public IR_Reader {
     void parse_stream(std::istream& is);
 
   public:
-    NR_JsonReader(std::istream& is) { parse_stream(is); }
-    virtual ~NR_JsonReader() = default;
+    IR_JsonReader(std::istream& is) { parse_stream(is); }
+    virtual ~IR_JsonReader() = default;
   };
 
-  class CPP_EXPORT NR_MsgPackReader final : public NR_Reader {
+  class CPP_EXPORT IR_MsgPackReader final : public IR_Reader {
     void parse_stream(std::istream& is);
 
   public:
-    NR_MsgPackReader(std::istream& is) { parse_stream(is); }
-    virtual ~NR_MsgPackReader() = default;
+    IR_MsgPackReader(std::istream& is) { parse_stream(is); }
+    virtual ~IR_MsgPackReader() = default;
   };
 }  // namespace ncc::ir
 

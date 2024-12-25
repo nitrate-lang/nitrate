@@ -128,7 +128,7 @@ CPP_EXPORT void Expr::dump(std::ostream &os, bool isForDebug) const {
   size_t len = 0;
 
   FILE *fmembuf = open_memstream(&cstr, &len);
-  if (!nr_write(nullptr, this, NR_SERIAL_CODE, fmembuf, nullptr, 0)) {
+  if (!nr_write(nullptr, this, IR_SERIAL_CODE, fmembuf, nullptr, 0)) {
     qcore_panic("Failed to dump expression");
   }
   fflush(fmembuf);

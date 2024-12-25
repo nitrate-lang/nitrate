@@ -37,7 +37,7 @@
 
 using namespace ncc::ir;
 
-void NR_MsgPackWriter::str_impl(std::string_view str) {
+void IR_MsgPackWriter::str_impl(std::string_view str) {
   size_t sz = str.size();
 
   if (sz <= 31) {
@@ -60,7 +60,7 @@ void NR_MsgPackWriter::str_impl(std::string_view str) {
   m_os.write(str.data(), sz);
 }
 
-void NR_MsgPackWriter::uint_impl(uint64_t x) {
+void IR_MsgPackWriter::uint_impl(uint64_t x) {
   if (x <= INT8_MAX) {
     m_os.put(x & 0x7f);
   } else if (x <= UINT8_MAX) {
@@ -89,7 +89,7 @@ void NR_MsgPackWriter::uint_impl(uint64_t x) {
   }
 }
 
-void NR_MsgPackWriter::double_impl(double val) {
+void IR_MsgPackWriter::double_impl(double val) {
   uint64_t raw = std::bit_cast<uint64_t>(val);
 
   m_os.put(0xcb);
@@ -103,11 +103,11 @@ void NR_MsgPackWriter::double_impl(double val) {
   m_os.put(raw & 0xff);
 }
 
-void NR_MsgPackWriter::bool_impl(bool val) { m_os.put(val ? 0xc3 : 0xc2); }
+void IR_MsgPackWriter::bool_impl(bool val) { m_os.put(val ? 0xc3 : 0xc2); }
 
-void NR_MsgPackWriter::null_impl() { m_os.put(0xc0); }
+void IR_MsgPackWriter::null_impl() { m_os.put(0xc0); }
 
-void NR_MsgPackWriter::begin_obj_impl(size_t pair_count) {
+void IR_MsgPackWriter::begin_obj_impl(size_t pair_count) {
   if (pair_count <= 15) {
     m_os.put(0x80 | pair_count);
   } else if (pair_count <= UINT16_MAX) {
@@ -123,9 +123,9 @@ void NR_MsgPackWriter::begin_obj_impl(size_t pair_count) {
   }
 }
 
-void NR_MsgPackWriter::end_obj_impl() {}
+void IR_MsgPackWriter::end_obj_impl() {}
 
-void NR_MsgPackWriter::begin_arr_impl(size_t size) {
+void IR_MsgPackWriter::begin_arr_impl(size_t size) {
   if (size <= 15) {
     m_os.put(0x90 | size);
   } else if (size <= UINT16_MAX) {
@@ -141,4 +141,4 @@ void NR_MsgPackWriter::begin_arr_impl(size_t size) {
   }
 }
 
-void NR_MsgPackWriter::end_arr_impl() {}
+void IR_MsgPackWriter::end_arr_impl() {}

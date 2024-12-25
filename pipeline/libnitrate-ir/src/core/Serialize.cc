@@ -761,7 +761,7 @@ CPP_EXPORT bool ir::nr_write(IRModule *mod, const Expr *_node, nr_serial_t mode,
   }
 
   switch (mode) {
-    case NR_SERIAL_CODE: {
+    case IR_SERIAL_CODE: {
       if (mod) {
         status = to_codeform(mod, node, false, 2, *out);
 

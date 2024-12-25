@@ -301,9 +301,9 @@ static int do_nr(std::string source, std::string output, std::string opts,
 
   if (auto module = nr_lower(ast.get().get(), "module", true)) {
     nr_diag_read(
-        module.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
+        module.get(), ansi::IsUsingColors() ? IR_DIAG_COLOR : IR_DIAG_NOCOLOR,
         [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
-          if (verbose || lvl != NR_LEVEL_DEBUG) {
+          if (verbose || lvl != IR_LEVEL_DEBUG) {
             std::cerr << std::string_view((const char *)msg, len) << std::endl;
           }
         },
@@ -318,7 +318,7 @@ static int do_nr(std::string source, std::string output, std::string opts,
       }
 
       bool ok =
-          nr_write(module.get(), nullptr, NR_SERIAL_CODE, out, nullptr, 0);
+          nr_write(module.get(), nullptr, IR_SERIAL_CODE, out, nullptr, 0);
       if (out != stdout) {
         fclose(out);
       }
@@ -357,9 +357,9 @@ static int do_codegen(std::string source, std::string output, std::string opts,
 
   if (auto module = nr_lower(ast.get().get(), "module", true)) {
     nr_diag_read(
-        module.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
+        module.get(), ansi::IsUsingColors() ? IR_DIAG_COLOR : IR_DIAG_NOCOLOR,
         [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
-          if (!verbose && lvl == NR_LEVEL_DEBUG) {
+          if (!verbose && lvl == IR_LEVEL_DEBUG) {
             return;
           }
 

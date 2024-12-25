@@ -81,7 +81,7 @@ static void escape_string(std::ostream &os, const std::string_view &input) {
   os << "\"";
 }
 
-void NR_JsonWriter::delim() {
+void IR_JsonWriter::delim() {
   qcore_assert(!m_count.empty() && !m_comma.empty());
 
   if (m_count.top()++ > 0) {
@@ -91,37 +91,37 @@ void NR_JsonWriter::delim() {
   }
 }
 
-void NR_JsonWriter::str_impl(std::string_view str) {
+void IR_JsonWriter::str_impl(std::string_view str) {
   delim();
 
   escape_string(m_os, str);
 }
 
-void NR_JsonWriter::uint_impl(uint64_t val) {
+void IR_JsonWriter::uint_impl(uint64_t val) {
   delim();
 
   m_os << val;
 }
 
-void NR_JsonWriter::double_impl(double val) {
+void IR_JsonWriter::double_impl(double val) {
   delim();
 
   m_os << val;
 }
 
-void NR_JsonWriter::bool_impl(bool val) {
+void IR_JsonWriter::bool_impl(bool val) {
   delim();
 
   m_os << (val ? "true" : "false");
 }
 
-void NR_JsonWriter::null_impl() {
+void IR_JsonWriter::null_impl() {
   delim();
 
   m_os << "null";
 }
 
-void NR_JsonWriter::begin_obj_impl(size_t) {
+void IR_JsonWriter::begin_obj_impl(size_t) {
   delim();
 
   m_comma.push(false);
@@ -129,7 +129,7 @@ void NR_JsonWriter::begin_obj_impl(size_t) {
   m_os << "{";
 }
 
-void NR_JsonWriter::end_obj_impl() {
+void IR_JsonWriter::end_obj_impl() {
   qcore_assert(!m_count.empty() && !m_comma.empty());
 
   m_os << "}";
@@ -137,7 +137,7 @@ void NR_JsonWriter::end_obj_impl() {
   m_comma.pop();
 }
 
-void NR_JsonWriter::begin_arr_impl(size_t) {
+void IR_JsonWriter::begin_arr_impl(size_t) {
   delim();
 
   m_comma.push(true);
@@ -145,7 +145,7 @@ void NR_JsonWriter::begin_arr_impl(size_t) {
   m_os << "[";
 }
 
-void NR_JsonWriter::end_arr_impl() {
+void IR_JsonWriter::end_arr_impl() {
   qcore_assert(!m_count.empty() && !m_comma.empty());
 
   m_os << "]";

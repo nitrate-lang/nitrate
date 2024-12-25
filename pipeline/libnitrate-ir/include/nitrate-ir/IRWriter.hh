@@ -45,7 +45,7 @@
 #include <string_view>
 
 namespace ncc::ir {
-  class CPP_EXPORT NR_Writer : public IRVisitor {
+  class CPP_EXPORT IR_Writer : public IRVisitor {
     using InsertString = std::function<void(std::string_view)>;
     using InsertUInt64 = std::function<void(uint64_t)>;
     using InsertDouble = std::function<void(double)>;
@@ -69,7 +69,7 @@ namespace ncc::ir {
     bool m_include_source_location;
 
   public:
-    NR_Writer(InsertString str_impl, InsertUInt64 uint_impl,
+    IR_Writer(InsertString str_impl, InsertUInt64 uint_impl,
               InsertDouble dbl_impl, InsertBool bool_impl, InsertNull null_impl,
               BeginObject begin_obj_impl, EndObject end_obj_impl,
               BeginArray begin_arr_impl, EndArray end_arr_impl,
@@ -84,7 +84,7 @@ namespace ncc::ir {
           begin_arr(begin_arr_impl),
           end_arr(end_arr_impl),
           m_include_source_location(include_source_location) {}
-    virtual ~NR_Writer() = default;
+    virtual ~IR_Writer() = default;
 
     void visit(Expr& n) override;
     void visit(Type& n) override;
@@ -135,7 +135,7 @@ namespace ncc::ir {
     void visit(Tmp& n) override;
   };
 
-  class CPP_EXPORT NR_JsonWriter : public NR_Writer {
+  class CPP_EXPORT IR_JsonWriter : public IR_Writer {
     std::ostream& m_os;
     std::stack<bool> m_comma;
     std::stack<size_t> m_count;
@@ -153,28 +153,28 @@ namespace ncc::ir {
     void end_arr_impl();
 
   public:
-    NR_JsonWriter(std::ostream& os)
-        : NR_Writer(
-              std::bind(&NR_JsonWriter::str_impl, this, std::placeholders::_1),
-              std::bind(&NR_JsonWriter::uint_impl, this, std::placeholders::_1),
-              std::bind(&NR_JsonWriter::double_impl, this,
+    IR_JsonWriter(std::ostream& os)
+        : IR_Writer(
+              std::bind(&IR_JsonWriter::str_impl, this, std::placeholders::_1),
+              std::bind(&IR_JsonWriter::uint_impl, this, std::placeholders::_1),
+              std::bind(&IR_JsonWriter::double_impl, this,
                         std::placeholders::_1),
-              std::bind(&NR_JsonWriter::bool_impl, this, std::placeholders::_1),
-              std::bind(&NR_JsonWriter::null_impl, this),
-              std::bind(&NR_JsonWriter::begin_obj_impl, this,
+              std::bind(&IR_JsonWriter::bool_impl, this, std::placeholders::_1),
+              std::bind(&IR_JsonWriter::null_impl, this),
+              std::bind(&IR_JsonWriter::begin_obj_impl, this,
                         std::placeholders::_1),
-              std::bind(&NR_JsonWriter::end_obj_impl, this),
-              std::bind(&NR_JsonWriter::begin_arr_impl, this,
+              std::bind(&IR_JsonWriter::end_obj_impl, this),
+              std::bind(&IR_JsonWriter::begin_arr_impl, this,
                         std::placeholders::_1),
-              std::bind(&NR_JsonWriter::end_arr_impl, this)),
+              std::bind(&IR_JsonWriter::end_arr_impl, this)),
           m_os(os) {
       m_comma.push(false);
       m_count.push(0);
     }
-    virtual ~NR_JsonWriter() = default;
+    virtual ~IR_JsonWriter() = default;
   };
 
-  class CPP_EXPORT NR_MsgPackWriter : public NR_Writer {
+  class CPP_EXPORT IR_MsgPackWriter : public IR_Writer {
     std::ostream& m_os;
 
     void str_impl(std::string_view str);
@@ -188,24 +188,24 @@ namespace ncc::ir {
     void end_arr_impl();
 
   public:
-    NR_MsgPackWriter(std::ostream& os)
-        : NR_Writer(std::bind(&NR_MsgPackWriter::str_impl, this,
+    IR_MsgPackWriter(std::ostream& os)
+        : IR_Writer(std::bind(&IR_MsgPackWriter::str_impl, this,
                               std::placeholders::_1),
-                    std::bind(&NR_MsgPackWriter::uint_impl, this,
+                    std::bind(&IR_MsgPackWriter::uint_impl, this,
                               std::placeholders::_1),
-                    std::bind(&NR_MsgPackWriter::double_impl, this,
+                    std::bind(&IR_MsgPackWriter::double_impl, this,
                               std::placeholders::_1),
-                    std::bind(&NR_MsgPackWriter::bool_impl, this,
+                    std::bind(&IR_MsgPackWriter::bool_impl, this,
                               std::placeholders::_1),
-                    std::bind(&NR_MsgPackWriter::null_impl, this),
-                    std::bind(&NR_MsgPackWriter::begin_obj_impl, this,
+                    std::bind(&IR_MsgPackWriter::null_impl, this),
+                    std::bind(&IR_MsgPackWriter::begin_obj_impl, this,
                               std::placeholders::_1),
-                    std::bind(&NR_MsgPackWriter::end_obj_impl, this),
-                    std::bind(&NR_MsgPackWriter::begin_arr_impl, this,
+                    std::bind(&IR_MsgPackWriter::end_obj_impl, this),
+                    std::bind(&IR_MsgPackWriter::begin_arr_impl, this,
                               std::placeholders::_1),
-                    std::bind(&NR_MsgPackWriter::end_arr_impl, this)),
+                    std::bind(&IR_MsgPackWriter::end_arr_impl, this)),
           m_os(os) {}
-    virtual ~NR_MsgPackWriter() = default;
+    virtual ~IR_MsgPackWriter() = default;
   };
 }  // namespace ncc::ir
 

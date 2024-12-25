@@ -277,9 +277,9 @@ void DiagnosticManager::stream_reports(
 }
 
 static const std::unordered_map<IC, nr_level_t> issue_class_map = {
-    {IC::Debug, NR_LEVEL_DEBUG},      {IC::Info, NR_LEVEL_INFO},
-    {IC::Warn, NR_LEVEL_WARN},        {IC::Error, NR_LEVEL_ERROR},
-    {IC::FatalError, NR_LEVEL_FATAL},
+    {IC::Debug, IR_LEVEL_DEBUG},      {IC::Info, IR_LEVEL_INFO},
+    {IC::Warn, IR_LEVEL_WARN},        {IC::Error, IR_LEVEL_ERROR},
+    {IC::FatalError, IR_LEVEL_FATAL},
 };
 
 CPP_EXPORT void ir::nr_diag_read(IRModule *nr, nr_diag_format_t format,
@@ -299,7 +299,7 @@ CPP_EXPORT void ir::nr_diag_read(IRModule *nr, nr_diag_format_t format,
        * @example `801802`
        * @format <code>
        */
-      case NR_DIAG_ASCII_ECODE: {
+      case IR_DIAG_ASCII_ECODE: {
         ss << std::to_string(static_cast<uint64_t>(R.code));
         break;
       }
@@ -312,7 +312,7 @@ CPP_EXPORT void ir::nr_diag_read(IRModule *nr, nr_diag_format_t format,
        *
        * @note UTF-8 characters in the path are preserved.
        */
-      case NR_DIAG_UTF8_ECODE_LOC: {
+      case IR_DIAG_UTF8_ECODE_LOC: {
         ss << std::to_string(static_cast<uint64_t>(R.code)) << ":";
         auto beg = B->off2rc(R.start_offset);
 
@@ -329,7 +329,7 @@ CPP_EXPORT void ir::nr_diag_read(IRModule *nr, nr_diag_format_t format,
        * @example `801802:This is an UTF-8 error message.`
        * @format <code>:<utf8_message>
        */
-      case NR_DIAG_UTF8_ECODE_ETEXT: {
+      case IR_DIAG_UTF8_ECODE_ETEXT: {
         ss << std::to_string(static_cast<uint64_t>(R.code)) << ":";
         ss << R.param;
 
@@ -345,37 +345,37 @@ CPP_EXPORT void ir::nr_diag_read(IRModule *nr, nr_diag_format_t format,
        * @note Basically, everything you expect from a mainstream compiler
        * (except without color).
        */
-      case NR_DIAG_NOSTD_TTY_UTF8: {
+      case IR_DIAG_NOSTD_TTY_UTF8: {
         ss << ir::mint_plain_message(R, B);
         break;
       }
 
       /**
        * @brief Unspecified format.
-       * @note Similar to `NR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+       * @note Similar to `IR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
        * differences.
        */
-      case NR_DIAG_NONSTD_ANSI16_UTF8_FULL: {
+      case IR_DIAG_NONSTD_ANSI16_UTF8_FULL: {
         ss << ir::mint_clang16_message(R, B);
         break;
       }
 
       /**
        * @brief Unspecified format.
-       * @note Similar to `NR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+       * @note Similar to `IR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
        * differences.
        */
-      case NR_DIAG_NONSTD_ANSI256_UTF8_FULL: {
+      case IR_DIAG_NONSTD_ANSI256_UTF8_FULL: {
         ss << ir::mint_clang16_message(R, B);
         break;
       }
 
       /**
        * @brief Unspecified format.
-       * @note Similar to `NR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
+       * @note Similar to `IR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
        * differences.
        */
-      case NR_DIAG_NONSTD_ANSIRGB_UTF8_FULL: {
+      case IR_DIAG_NONSTD_ANSIRGB_UTF8_FULL: {
         ss << ir::mint_modern_message(R, B);
         break;
       }

@@ -39,7 +39,7 @@
 
 using namespace ncc::ir;
 
-void NR_Writer::visit(Expr& n) {
+void IR_Writer::visit(Expr& n) {
   begin_obj(1);
 
   string("kind");
@@ -52,7 +52,7 @@ void NR_Writer::visit(Expr& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Type& n) {
+void IR_Writer::visit(Type& n) {
   begin_obj(1);
 
   string("kind");
@@ -63,7 +63,7 @@ void NR_Writer::visit(Type& n) {
   end_obj();
 }
 
-void NR_Writer::visit(BinExpr& n) {
+void IR_Writer::visit(BinExpr& n) {
   begin_obj(1);
 
   string("kind");
@@ -74,7 +74,7 @@ void NR_Writer::visit(BinExpr& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Unary& n) {
+void IR_Writer::visit(Unary& n) {
   begin_obj(1);
 
   string("kind");
@@ -85,7 +85,7 @@ void NR_Writer::visit(Unary& n) {
   end_obj();
 }
 
-void NR_Writer::visit(U1Ty& n) {
+void IR_Writer::visit(U1Ty& n) {
   begin_obj(1);
 
   string("kind");
@@ -96,7 +96,7 @@ void NR_Writer::visit(U1Ty& n) {
   end_obj();
 }
 
-void NR_Writer::visit(U8Ty& n) {
+void IR_Writer::visit(U8Ty& n) {
   begin_obj(1);
 
   string("kind");
@@ -107,7 +107,7 @@ void NR_Writer::visit(U8Ty& n) {
   end_obj();
 }
 
-void NR_Writer::visit(U16Ty& n) {
+void IR_Writer::visit(U16Ty& n) {
   begin_obj(1);
 
   string("kind");
@@ -118,7 +118,7 @@ void NR_Writer::visit(U16Ty& n) {
   end_obj();
 }
 
-void NR_Writer::visit(U32Ty& n) {
+void IR_Writer::visit(U32Ty& n) {
   begin_obj(1);
 
   string("kind");
@@ -129,7 +129,7 @@ void NR_Writer::visit(U32Ty& n) {
   end_obj();
 }
 
-void NR_Writer::visit(U64Ty& n) {
+void IR_Writer::visit(U64Ty& n) {
   begin_obj(1);
 
   string("kind");
@@ -140,7 +140,7 @@ void NR_Writer::visit(U64Ty& n) {
   end_obj();
 }
 
-void NR_Writer::visit(U128Ty& n) {
+void IR_Writer::visit(U128Ty& n) {
   begin_obj(1);
 
   string("kind");
@@ -151,7 +151,7 @@ void NR_Writer::visit(U128Ty& n) {
   end_obj();
 }
 
-void NR_Writer::visit(I8Ty& n) {
+void IR_Writer::visit(I8Ty& n) {
   begin_obj(1);
 
   string("kind");
@@ -162,7 +162,7 @@ void NR_Writer::visit(I8Ty& n) {
   end_obj();
 }
 
-void NR_Writer::visit(I16Ty& n) {
+void IR_Writer::visit(I16Ty& n) {
   begin_obj(1);
 
   string("kind");
@@ -173,7 +173,7 @@ void NR_Writer::visit(I16Ty& n) {
   end_obj();
 }
 
-void NR_Writer::visit(I32Ty& n) {
+void IR_Writer::visit(I32Ty& n) {
   begin_obj(1);
 
   string("kind");
@@ -184,7 +184,7 @@ void NR_Writer::visit(I32Ty& n) {
   end_obj();
 }
 
-void NR_Writer::visit(I64Ty& n) {
+void IR_Writer::visit(I64Ty& n) {
   begin_obj(1);
 
   string("kind");
@@ -195,7 +195,7 @@ void NR_Writer::visit(I64Ty& n) {
   end_obj();
 }
 
-void NR_Writer::visit(I128Ty& n) {
+void IR_Writer::visit(I128Ty& n) {
   begin_obj(1);
 
   string("kind");
@@ -206,7 +206,7 @@ void NR_Writer::visit(I128Ty& n) {
   end_obj();
 }
 
-void NR_Writer::visit(F16Ty& n) {
+void IR_Writer::visit(F16Ty& n) {
   begin_obj(1);
 
   string("kind");
@@ -217,7 +217,7 @@ void NR_Writer::visit(F16Ty& n) {
   end_obj();
 }
 
-void NR_Writer::visit(F32Ty& n) {
+void IR_Writer::visit(F32Ty& n) {
   begin_obj(1);
 
   string("kind");
@@ -228,7 +228,7 @@ void NR_Writer::visit(F32Ty& n) {
   end_obj();
 }
 
-void NR_Writer::visit(F64Ty& n) {
+void IR_Writer::visit(F64Ty& n) {
   begin_obj(1);
 
   string("kind");
@@ -239,7 +239,7 @@ void NR_Writer::visit(F64Ty& n) {
   end_obj();
 }
 
-void NR_Writer::visit(F128Ty& n) {
+void IR_Writer::visit(F128Ty& n) {
   begin_obj(1);
 
   string("kind");
@@ -250,7 +250,7 @@ void NR_Writer::visit(F128Ty& n) {
   end_obj();
 }
 
-void NR_Writer::visit(VoidTy& n) {
+void IR_Writer::visit(VoidTy& n) {
   begin_obj(1);
 
   string("kind");
@@ -261,7 +261,7 @@ void NR_Writer::visit(VoidTy& n) {
   end_obj();
 }
 
-void NR_Writer::visit(PtrTy& n) {
+void IR_Writer::visit(PtrTy& n) {
   begin_obj(1);
 
   string("kind");
@@ -272,7 +272,7 @@ void NR_Writer::visit(PtrTy& n) {
   end_obj();
 }
 
-void NR_Writer::visit(ConstTy& n) {
+void IR_Writer::visit(ConstTy& n) {
   begin_obj(1);
 
   string("kind");
@@ -283,7 +283,7 @@ void NR_Writer::visit(ConstTy& n) {
   end_obj();
 }
 
-void NR_Writer::visit(OpaqueTy& n) {
+void IR_Writer::visit(OpaqueTy& n) {
   begin_obj(1);
 
   string("kind");
@@ -294,7 +294,7 @@ void NR_Writer::visit(OpaqueTy& n) {
   end_obj();
 }
 
-void NR_Writer::visit(StructTy& n) {
+void IR_Writer::visit(StructTy& n) {
   begin_obj(1);
 
   string("kind");
@@ -305,7 +305,7 @@ void NR_Writer::visit(StructTy& n) {
   end_obj();
 }
 
-void NR_Writer::visit(UnionTy& n) {
+void IR_Writer::visit(UnionTy& n) {
   begin_obj(1);
 
   string("kind");
@@ -316,7 +316,7 @@ void NR_Writer::visit(UnionTy& n) {
   end_obj();
 }
 
-void NR_Writer::visit(ArrayTy& n) {
+void IR_Writer::visit(ArrayTy& n) {
   begin_obj(1);
 
   string("kind");
@@ -327,7 +327,7 @@ void NR_Writer::visit(ArrayTy& n) {
   end_obj();
 }
 
-void NR_Writer::visit(FnTy& n) {
+void IR_Writer::visit(FnTy& n) {
   begin_obj(1);
 
   string("kind");
@@ -338,7 +338,7 @@ void NR_Writer::visit(FnTy& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Int& n) {
+void IR_Writer::visit(Int& n) {
   begin_obj(1);
 
   string("kind");
@@ -349,7 +349,7 @@ void NR_Writer::visit(Int& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Float& n) {
+void IR_Writer::visit(Float& n) {
   begin_obj(1);
 
   string("kind");
@@ -360,7 +360,7 @@ void NR_Writer::visit(Float& n) {
   end_obj();
 }
 
-void NR_Writer::visit(List& n) {
+void IR_Writer::visit(List& n) {
   begin_obj(1);
 
   string("kind");
@@ -371,7 +371,7 @@ void NR_Writer::visit(List& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Call& n) {
+void IR_Writer::visit(Call& n) {
   begin_obj(1);
 
   string("kind");
@@ -382,7 +382,7 @@ void NR_Writer::visit(Call& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Seq& n) {
+void IR_Writer::visit(Seq& n) {
   begin_obj(1);
 
   string("kind");
@@ -393,7 +393,7 @@ void NR_Writer::visit(Seq& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Index& n) {
+void IR_Writer::visit(Index& n) {
   begin_obj(1);
 
   string("kind");
@@ -404,7 +404,7 @@ void NR_Writer::visit(Index& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Ident& n) {
+void IR_Writer::visit(Ident& n) {
   begin_obj(1);
 
   string("kind");
@@ -415,7 +415,7 @@ void NR_Writer::visit(Ident& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Extern& n) {
+void IR_Writer::visit(Extern& n) {
   begin_obj(1);
 
   string("kind");
@@ -426,7 +426,7 @@ void NR_Writer::visit(Extern& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Local& n) {
+void IR_Writer::visit(Local& n) {
   begin_obj(1);
 
   string("kind");
@@ -437,7 +437,7 @@ void NR_Writer::visit(Local& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Ret& n) {
+void IR_Writer::visit(Ret& n) {
   begin_obj(1);
 
   string("kind");
@@ -448,7 +448,7 @@ void NR_Writer::visit(Ret& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Brk& n) {
+void IR_Writer::visit(Brk& n) {
   begin_obj(1);
 
   string("kind");
@@ -459,7 +459,7 @@ void NR_Writer::visit(Brk& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Cont& n) {
+void IR_Writer::visit(Cont& n) {
   begin_obj(1);
 
   string("kind");
@@ -470,7 +470,7 @@ void NR_Writer::visit(Cont& n) {
   end_obj();
 }
 
-void NR_Writer::visit(If& n) {
+void IR_Writer::visit(If& n) {
   begin_obj(1);
 
   string("kind");
@@ -481,7 +481,7 @@ void NR_Writer::visit(If& n) {
   end_obj();
 }
 
-void NR_Writer::visit(While& n) {
+void IR_Writer::visit(While& n) {
   begin_obj(1);
 
   string("kind");
@@ -492,7 +492,7 @@ void NR_Writer::visit(While& n) {
   end_obj();
 }
 
-void NR_Writer::visit(For& n) {
+void IR_Writer::visit(For& n) {
   begin_obj(1);
 
   string("kind");
@@ -503,7 +503,7 @@ void NR_Writer::visit(For& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Case& n) {
+void IR_Writer::visit(Case& n) {
   begin_obj(1);
 
   string("kind");
@@ -514,7 +514,7 @@ void NR_Writer::visit(Case& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Switch& n) {
+void IR_Writer::visit(Switch& n) {
   begin_obj(1);
 
   string("kind");
@@ -525,7 +525,7 @@ void NR_Writer::visit(Switch& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Fn& n) {
+void IR_Writer::visit(Fn& n) {
   begin_obj(1);
 
   string("kind");
@@ -536,7 +536,7 @@ void NR_Writer::visit(Fn& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Asm& n) {
+void IR_Writer::visit(Asm& n) {
   begin_obj(1);
 
   string("kind");
@@ -547,7 +547,7 @@ void NR_Writer::visit(Asm& n) {
   end_obj();
 }
 
-void NR_Writer::visit(Tmp& n) {
+void IR_Writer::visit(Tmp& n) {
   begin_obj(1);
 
   string("kind");
