@@ -51,9 +51,11 @@ FlowPtr<parse::Type> Parser::recurse_function_parameter_type() {
 
 NullableFlowPtr<Expr> Parser::recurse_function_parameter_value() {
   if (next_if(OpSet)) {
-    return recurse_expr(
-
-        {Token(Punc, PuncComa), Token(Punc, PuncRPar), Token(Oper, OpGT)});
+    return recurse_expr({
+        Token(Punc, PuncComa),
+        Token(Punc, PuncRPar),
+        Token(Oper, OpGT),
+    });
   } else {
     return std::nullopt;
   }
@@ -284,9 +286,10 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
             break;
           }
 
-          auto attribute = recurse_expr(
-
-              {Token(Punc, PuncComa), Token(Punc, PuncRBrk)});
+          auto attribute = recurse_expr({
+              Token(Punc, PuncComa),
+              Token(Punc, PuncRBrk),
+          });
 
           attributes.push_back(attribute);
 

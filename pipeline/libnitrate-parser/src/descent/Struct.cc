@@ -56,8 +56,10 @@ ExpressionList Parser::recurse_struct_attributes() {
       break;
     }
 
-    auto attribute =
-        recurse_expr({Token(Punc, PuncComa), Token(Punc, PuncRBrk)});
+    auto attribute = recurse_expr({
+        Token(Punc, PuncComa),
+        Token(Punc, PuncRBrk),
+    });
 
     attributes.push_back(attribute);
 
@@ -95,8 +97,11 @@ StructDefNames Parser::recurse_struct_terms() {
 
 NullableFlowPtr<Expr> Parser::recurse_struct_field_default_value() {
   if (next_if(OpSet)) {
-    return recurse_expr(
-        {Token(Punc, PuncComa), Token(Punc, PuncSemi), Token(Punc, PuncRCur)});
+    return recurse_expr({
+        Token(Punc, PuncComa),
+        Token(Punc, PuncSemi),
+        Token(Punc, PuncRCur),
+    });
   } else {
     return std::nullopt;
   }

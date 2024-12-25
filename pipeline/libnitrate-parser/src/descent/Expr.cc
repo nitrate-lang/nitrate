@@ -84,7 +84,10 @@ CallArgs Parser::recurse_call_arguments(Token terminator) {
     switch (state) {
       case State::ParseNamedArg: {
         auto name = ident.as_string();
-        auto value = recurse_expr({Token(Punc, PuncComa), terminator});
+        auto value = recurse_expr({
+            Token(Punc, PuncComa),
+            terminator,
+        });
 
         call_args.push_back({name, value});
         break;
@@ -92,7 +95,10 @@ CallArgs Parser::recurse_call_arguments(Token terminator) {
 
       case State::ParsePosArg: {
         auto name = intern(std::to_string(pos_arg_count++));
-        auto value = recurse_expr({Token(Punc, PuncComa), terminator});
+        auto value = recurse_expr({
+            Token(Punc, PuncComa),
+            terminator,
+        });
 
         call_args.push_back({name, value});
         break;
@@ -137,7 +143,9 @@ FlowPtr<Expr> Parser::recurse_fstring() {
       }
 
       auto subnode = FromString(fstr.substr(w_beg, w_end - w_beg), m_env)
-                         ->recurse_expr({Token(Punc, PuncRCur)});
+                         ->recurse_expr({
+                             Token(Punc, PuncRCur),
+                         });
 
       items.push_back(subnode);
     } else if (c == '{') {
@@ -654,7 +662,9 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
 
   switch (punc) {
     case PuncLPar: {
-      E = recurse_expr({Token(Punc, PuncRPar)});
+      E = recurse_expr({
+          Token(Punc, PuncRPar),
+      });
       if (!next_if(PuncRPar)) {
         diagnostic << current() << "Expected ')' to close the expression";
       }
@@ -745,7 +755,9 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
 
         auto start_pos = peek().get_start();
 
-        auto key = recurse_expr({Token(Punc, PuncColn)});
+        auto key = recurse_expr({
+            Token(Punc, PuncColn),
+        });
         if (!next_if(PuncColn)) {
           diagnostic << current() << "Expected colon after key in dictionary";
           break;

@@ -42,7 +42,9 @@ NullableFlowPtr<Expr> Parser::recurse_type_range_start() {
     return std::nullopt;
   }
 
-  auto min_value = recurse_expr({Token(Punc, PuncColn)});
+  auto min_value = recurse_expr({
+      Token(Punc, PuncColn),
+  });
 
   if (!next_if(PuncColn)) {
     diagnostic << current() << "Expected ':' after range start";
@@ -56,7 +58,9 @@ NullableFlowPtr<Expr> Parser::recurse_type_range_end() {
     return std::nullopt;
   }
 
-  auto max_val = recurse_expr({Token(Punc, PuncRBrk)});
+  auto max_val = recurse_expr({
+      Token(Punc, PuncRBrk),
+  });
 
   if (!next_if(PuncRBrk)) {
     diagnostic << current() << "Expected ']' after range";
@@ -243,7 +247,9 @@ FlowPtr<parse::Type> Parser::recurse_array_or_vector() {
                << "Expected ';' separator in array type before size";
   }
 
-  auto size = recurse_expr({Token(Punc, PuncRBrk)});
+  auto size = recurse_expr({
+      Token(Punc, PuncRBrk),
+  });
 
   if (!next_if(PuncRBrk)) {
     diagnostic << current() << "Expected ']' after array size";

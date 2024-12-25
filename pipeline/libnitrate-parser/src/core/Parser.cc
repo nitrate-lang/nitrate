@@ -80,7 +80,9 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
     }
 
     if (!tok.is(KeyW)) {
-      auto expr = recurse_expr({Token(Punc, PuncSemi)});
+      auto expr = recurse_expr({
+          Token(Punc, PuncSemi),
+      });
 
       if (!next_if(PuncSemi)) {
         diagnostic << tok << "Expected ';' after expression";

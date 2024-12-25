@@ -41,12 +41,12 @@ FlowPtr<Stmt> Parser::recurse_return() {
   if (auto tok = next_if(PuncSemi)) {
     return make<ReturnStmt>(std::nullopt)();
   } else {
-    auto expr = recurse_expr({
+    auto return_value = recurse_expr({
         Token(Punc, PuncSemi),
     });
 
     if (next_if(PuncSemi)) [[likely]] {
-      return make<ReturnStmt>(expr)();
+      return make<ReturnStmt>(return_value)();
     } else {
       diagnostic << current() << "Expected ';' after the return statement.";
       return mock_stmt(QAST_RETURN);
@@ -60,12 +60,12 @@ FlowPtr<Stmt> Parser::recurse_retif() {
   });
 
   if (next_if(PuncComa)) [[likely]] {
-    auto return_val = recurse_expr({
+    auto return_value = recurse_expr({
         Token(Punc, PuncSemi),
     });
 
     if (next_if(PuncSemi)) [[likely]] {
-      return make<ReturnIfStmt>(condition, return_val)();
+      return make<ReturnIfStmt>(condition, return_value)();
     } else {
       diagnostic << current() << "Expected ';' after the retif value.";
     }

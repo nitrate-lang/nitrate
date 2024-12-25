@@ -41,7 +41,10 @@ FlowPtr<Expr> Parser::recurse_while_cond() {
   if (auto cur = peek(); cur.is<OpArrow>() || cur.is<PuncLCur>()) {
     return make<ConstBool>(true)();
   } else {
-    return recurse_expr({Token(Punc, PuncLCur), Token(Oper, OpArrow)});
+    return recurse_expr({
+        Token(Punc, PuncLCur),
+        Token(Oper, OpArrow),
+    });
   }
 }
 

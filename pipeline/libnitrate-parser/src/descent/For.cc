@@ -50,7 +50,9 @@ NullableFlowPtr<Expr> Parser::recurse_for_cond_expr() {
     return std::nullopt;
   }
 
-  auto cond_expr = recurse_expr({Token(Punc, PuncSemi)});
+  auto cond_expr = recurse_expr({
+      Token(Punc, PuncSemi),
+  });
 
   if (!next_if(PuncSemi)) {
     diagnostic << current() << "Expected semicolon after condition expression";
@@ -64,13 +66,18 @@ NullableFlowPtr<Expr> Parser::recurse_for_step_expr(bool has_paren) {
     if (peek().is<PuncRPar>()) {
       return std::nullopt;
     } else {
-      return recurse_expr({Token(Punc, PuncRPar)});
+      return recurse_expr({
+          Token(Punc, PuncRPar),
+      });
     }
   } else {
     if (peek().is<OpArrow>() || peek().is<PuncLCur>()) {
       return std::nullopt;
     } else {
-      return recurse_expr({Token(Punc, PuncLCur), Token(Oper, OpArrow)});
+      return recurse_expr({
+          Token(Punc, PuncLCur),
+          Token(Oper, OpArrow),
+      });
     }
   }
 }

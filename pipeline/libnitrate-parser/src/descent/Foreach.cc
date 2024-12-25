@@ -60,9 +60,14 @@ std::optional<std::pair<string, string>> Parser::recurse_foreach_names() {
 
 FlowPtr<Expr> Parser::recurse_foreach_expr(bool has_paren) {
   if (has_paren) {
-    return recurse_expr({Token(Punc, PuncRPar)});
+    return recurse_expr({
+        Token(Punc, PuncRPar),
+    });
   } else {
-    return recurse_expr({Token(Punc, PuncLCur), Token(Oper, OpArrow)});
+    return recurse_expr({
+        Token(Punc, PuncLCur),
+        Token(Oper, OpArrow),
+    });
   }
 }
 

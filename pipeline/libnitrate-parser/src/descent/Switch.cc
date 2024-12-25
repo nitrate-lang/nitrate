@@ -94,7 +94,9 @@ Parser::recurse_switch_body() {
 }
 
 FlowPtr<Stmt> Parser::recurse_switch() {
-  auto switch_cond = recurse_expr({Token(Punc, PuncLCur)});
+  auto switch_cond = recurse_expr({
+      Token(Punc, PuncLCur),
+  });
 
   if (next_if(PuncLCur)) [[likely]] {
     if (auto switch_body_opt = recurse_switch_body()) [[likely]] {

@@ -60,8 +60,10 @@ std::optional<ExpressionList> Parser::recurse_export_attributes() {
         return attributes;
       }
 
-      auto attribute =
-          recurse_expr({Token(Punc, PuncComa), Token(Punc, PuncRBrk)});
+      auto attribute = recurse_expr({
+          Token(Punc, PuncComa),
+          Token(Punc, PuncRBrk),
+      });
 
       attributes.push_back(attribute);
 
