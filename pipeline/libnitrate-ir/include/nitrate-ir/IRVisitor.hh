@@ -34,59 +34,7 @@
 #ifndef __NITRATE_IR_VISITOR_H__
 #define __NITRATE_IR_VISITOR_H__
 
-#include <nitrate-ir/TypeDecl.hh>
-
-namespace ncc::ir {
-  class Expr;
-  class Type;
-  class BinExpr;
-  class UnExpr;
-  class PostUnExpr;
-  class U1Ty;
-  class U8Ty;
-  class U16Ty;
-  class U32Ty;
-  class U64Ty;
-  class U128Ty;
-  class I8Ty;
-  class I16Ty;
-  class I32Ty;
-  class I64Ty;
-  class I128Ty;
-  class F16Ty;
-  class F32Ty;
-  class F64Ty;
-  class F128Ty;
-  class VoidTy;
-  class PtrTy;
-  class ConstTy;
-  class OpaqueTy;
-  class StructTy;
-  class UnionTy;
-  class ArrayTy;
-  class FnTy;
-  class Int;
-  class Float;
-  class List;
-  class Call;
-  class Seq;
-  class Index;
-  class Ident;
-  class Extern;
-  class Local;
-  class Ret;
-  class Brk;
-  class Cont;
-  class If;
-  class While;
-  class For;
-  class Case;
-  class Switch;
-  class Fn;
-  class Asm;
-  class Tmp;
-
-}  // namespace ncc::ir
+#include <nitrate-ir/IRFwd.hh>
 
 namespace ncc::ir {
   class NRVisitor {

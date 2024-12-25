@@ -37,7 +37,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
-#include <nitrate-ir/TypeDecl.hh>
+#include <nitrate-ir/IRFwd.hh>
 
 namespace ncc::parse {
   class Base;

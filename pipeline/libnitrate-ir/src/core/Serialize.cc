@@ -39,10 +39,10 @@
 #include <iomanip>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-ir/IRFwd.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Init.hh>
 #include <nitrate-ir/Module.hh>
-#include <nitrate-ir/TypeDecl.hh>
 #include <sstream>
 #include <unordered_set>
 

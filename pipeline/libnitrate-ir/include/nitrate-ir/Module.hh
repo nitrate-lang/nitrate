@@ -40,9 +40,9 @@
 #include <limits>
 #include <memory>
 #include <nitrate-core/Allocate.hh>
+#include <nitrate-ir/IRFwd.hh>
 #include <nitrate-ir/IRVisitor.hh>
 #include <nitrate-ir/Report.hh>
-#include <nitrate-ir/TypeDecl.hh>
 #include <string>
 #include <vector>
 

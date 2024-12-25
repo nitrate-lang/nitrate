@@ -36,8 +36,8 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IR.hh>
+#include <nitrate-ir/IRFwd.hh>
 #include <nitrate-ir/IRGraph.hh>
-#include <nitrate-ir/TypeDecl.hh>
 
 using namespace ncc::ir;
 

@@ -46,9 +46,9 @@
 #include <memory>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-ir/IRFwd.hh>
 #include <nitrate-ir/IRVisitor.hh>
 #include <nitrate-ir/Module.hh>
-#include <nitrate-ir/TypeDecl.hh>
 #include <nitrate-lexer/Token.hh>
 #include <optional>
 #include <ostream>
