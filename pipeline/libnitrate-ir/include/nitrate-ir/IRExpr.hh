@@ -45,52 +45,11 @@
 #include <vector>
 
 namespace ncc::ir {
-  ///=============================================================================
-  /// BEGIN: EXPRESSIONS CATEGORIES
-  ///=============================================================================
-
-  enum class Op {
-    Plus,      /* '+': Addition operator */
-    Minus,     /* '-': Subtraction operator */
-    Times,     /* '*': Multiplication operator */
-    Slash,     /* '/': Division operator */
-    Percent,   /* '%': Modulus operator */
-    BitAnd,    /* '&': Bitwise AND operator */
-    BitOr,     /* '|': Bitwise OR operator */
-    BitXor,    /* '^': Bitwise XOR operator */
-    BitNot,    /* '~': Bitwise NOT operator */
-    LogicAnd,  /* '&&': Logical AND operator */
-    LogicOr,   /* '||': Logical OR operator */
-    LogicNot,  /* '!': Logical NOT operator */
-    LShift,    /* '<<': Left shift operator */
-    RShift,    /* '>>': Right shift operator */
-    Inc,       /* '++': Increment operator */
-    Dec,       /* '--': Decrement operator */
-    Set,       /* '=': Assignment operator */
-    LT,        /* '<': Less than operator */
-    GT,        /* '>': Greater than operator */
-    LE,        /* '<=': Less than or equal to operator */
-    GE,        /* '>=': Greater than or equal to operator */
-    Eq,        /* '==': Equal to operator */
-    NE,        /* '!=': Not equal to operator */
-    Alignof,   /* 'alignof': Alignment of operator */
-    BitcastAs, /* 'bitcast_as': Bitcast operator */
-    CastAs,    /* 'cast_as': Common operator */
-    Bitsizeof, /* 'bitsizeof': Bit size of operator */
-  };
-
-  enum class AbiTag {
-    C,
-    Nitrate,
-    Internal,
-    Default = Nitrate,
-  };
-
   std::ostream &operator<<(std::ostream &os, Op op);
 
   template <class A>
   class IR_Vertex_BinExpr final : public IR_Vertex_Expr<A> {
-    IR_Vertex_Expr<A> *m_lhs, *m_rhs;
+    FlowPtr<IR_Vertex_Expr<A>> m_lhs, m_rhs;
     Op m_op;
 
   public:
@@ -108,7 +67,7 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Unary final : public IR_Vertex_Expr<A> {
-    IR_Vertex_Expr<A> *m_expr;
+    FlowPtr<IR_Vertex_Expr<A>> m_expr;
     Op m_op;
     bool m_postfix;
 
@@ -123,18 +82,10 @@ namespace ncc::ir {
     constexpr auto getOp() const { return m_op; }
     constexpr auto isPostfix() const { return m_postfix; }
 
-    constexpr void setExpr(IR_Vertex_Expr<A> *expr) { m_expr = expr; }
+    constexpr void setExpr(FlowPtr<IR_Vertex_Expr<A>> expr) { m_expr = expr; }
     constexpr void setOp(Op op) { m_op = op; }
     constexpr void setPostfix(bool is_postfix) { m_postfix = is_postfix; }
   };
-
-  ///=============================================================================
-  /// END: EXPRESSIONS CATEGORIES
-  ///=============================================================================
-
-  ///=============================================================================
-  /// BEGIN: LITERALS
-  ///=============================================================================
 
   template <class A>
   class IR_Vertex_Int final : public IR_Vertex_Expr<A> {
@@ -210,55 +161,43 @@ namespace ncc::ir {
   } __attribute__((packed));
 
   template <class A>
-  using IR_Vertex_ListItems =
-      std::vector<IR_Vertex_Expr<A> *, Arena<IR_Vertex_Expr<A> *>>;
-
-  template <class A>
   class IR_Vertex_List final : public IR_Vertex_Expr<A> {
-    /// FIXME: Implement run-length compression
-
-    IR_Vertex_ListItems<A> m_items;
+    std::span<FlowPtr<IR_Vertex_Expr<A>>> m_items;
     bool m_is_homogenous;
 
   public:
-    IR_Vertex_List(const IR_Vertex_ListItems<A> &items, bool is_homogenous)
+    constexpr IR_Vertex_List(auto items, bool is_homogenous)
         : IR_Vertex_Expr<A>(IR_eLIST),
           m_items(items),
           m_is_homogenous(is_homogenous) {}
 
     auto begin() const { return m_items.begin(); }
     auto end() const { return m_items.end(); }
-    size_t size() const { return m_items.size(); }
+    auto size() const { return m_items.size(); }
 
-    IR_Vertex_Expr<A> *operator[](size_t idx) const { return m_items[idx]; }
-    IR_Vertex_Expr<A> *at(size_t idx) const { return m_items.at(idx); }
+    auto operator[](size_t idx) const { return m_items[idx]; }
+    auto at(size_t idx) const { return m_items[idx]; }
 
     bool isHomogenous() const { return m_is_homogenous; }
   };
 
-  ///=============================================================================
-  /// END: LITERALS
-  ///=============================================================================
-
-  ///=============================================================================
-  /// BEGIN: EXPRESSIONS
-  ///=============================================================================
-
   template <class A>
-  using IR_Vertex_CallArgs =
-      std::vector<IR_Vertex_Expr<A> *, Arena<IR_Vertex_Expr<A> *>>;
+  using IR_Vertex_CallArgs = std::vector<FlowPtr<IR_Vertex_Expr<A>>,
+                                         Arena<FlowPtr<IR_Vertex_Expr<A>>>>;
 
   template <class A>
   class IR_Vertex_Call final : public IR_Vertex_Expr<A> {
-    IR_Vertex_Expr<A> *m_iref; /* Possibly cyclic reference to the target. */
+    FlowPtr<IR_Vertex_Expr<A>>
+        m_iref; /* Possibly cyclic reference to the target. */
     IR_Vertex_CallArgs<A> m_args;
 
   public:
-    IR_Vertex_Call(IR_Vertex_Expr<A> *ref, const IR_Vertex_CallArgs<A> &args)
+    IR_Vertex_Call(FlowPtr<IR_Vertex_Expr<A>> ref,
+                   const IR_Vertex_CallArgs<A> &args)
         : IR_Vertex_Expr<A>(IR_eCALL), m_iref(ref), m_args(args) {}
 
     auto getTarget() const { return m_iref; }
-    void setTarget(IR_Vertex_Expr<A> *ref) { m_iref = ref; }
+    void setTarget(FlowPtr<IR_Vertex_Expr<A>> ref) { m_iref = ref; }
 
     const IR_Vertex_CallArgs<A> &getArgs() const { return m_args; }
     IR_Vertex_CallArgs<A> &getArgs() { return m_args; }
@@ -268,8 +207,8 @@ namespace ncc::ir {
   };
 
   template <class A>
-  using IR_Vertex_SeqItems =
-      std::vector<IR_Vertex_Expr<A> *, Arena<IR_Vertex_Expr<A> *>>;
+  using IR_Vertex_SeqItems = std::vector<FlowPtr<IR_Vertex_Expr<A>>,
+                                         Arena<FlowPtr<IR_Vertex_Expr<A>>>>;
 
   template <class A>
   class IR_Vertex_Seq final : public IR_Vertex_Expr<A> {
@@ -286,43 +225,45 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Index final : public IR_Vertex_Expr<A> {
-    IR_Vertex_Expr<A> *m_expr;
-    IR_Vertex_Expr<A> *m_index;
+    FlowPtr<IR_Vertex_Expr<A>> m_expr;
+    FlowPtr<IR_Vertex_Expr<A>> m_index;
 
   public:
-    IR_Vertex_Index(IR_Vertex_Expr<A> *expr, IR_Vertex_Expr<A> *index)
+    IR_Vertex_Index(FlowPtr<IR_Vertex_Expr<A>> expr,
+                    FlowPtr<IR_Vertex_Expr<A>> index)
         : IR_Vertex_Expr<A>(IR_eINDEX), m_expr(expr), m_index(index) {}
 
     auto getExpr() const { return m_expr; }
-    void setExpr(IR_Vertex_Expr<A> *expr) { m_expr = expr; }
+    void setExpr(FlowPtr<IR_Vertex_Expr<A>> expr) { m_expr = expr; }
 
     auto getIndex() const { return m_index; }
-    void setIndex(IR_Vertex_Expr<A> *index) { m_index = index; }
+    void setIndex(FlowPtr<IR_Vertex_Expr<A>> index) { m_index = index; }
   };
 
   template <class A>
   class IR_Vertex_Ident final : public IR_Vertex_Expr<A> {
     std::string_view m_name;
-    IR_Vertex_Expr<A> *m_what;
+    FlowPtr<IR_Vertex_Expr<A>> m_what;
 
   public:
-    IR_Vertex_Ident(std::string_view name, IR_Vertex_Expr<A> *what)
+    IR_Vertex_Ident(std::string_view name, FlowPtr<IR_Vertex_Expr<A>> what)
         : IR_Vertex_Expr<A>(IR_eIDENT), m_name(name), m_what(what) {}
 
     auto getWhat() const { return m_what; }
     auto getName() const { return m_name; }
 
-    void setWhat(IR_Vertex_Expr<A> *what) { m_what = what; }
+    void setWhat(FlowPtr<IR_Vertex_Expr<A>> what) { m_what = what; }
     void setName(std::string_view name) { m_name = name; }
   };
 
   template <class A>
   class IR_Vertex_Extern final : public IR_Vertex_Expr<A> {
     std::string_view m_abi_name;
-    IR_Vertex_Expr<A> *m_value;
+    FlowPtr<IR_Vertex_Expr<A>> m_value;
 
   public:
-    IR_Vertex_Extern(IR_Vertex_Expr<A> *value, std::string_view abi_name)
+    IR_Vertex_Extern(FlowPtr<IR_Vertex_Expr<A>> value,
+                     std::string_view abi_name)
         : IR_Vertex_Expr<A>(IR_eEXTERN), m_abi_name(abi_name), m_value(value) {}
 
     std::string_view getAbiName() const { return m_abi_name; }
@@ -331,19 +272,19 @@ namespace ncc::ir {
     }
 
     auto getValue() const { return m_value; }
-    void setValue(IR_Vertex_Expr<A> *value) { m_value = value; }
+    void setValue(FlowPtr<IR_Vertex_Expr<A>> value) { m_value = value; }
   };
 
   template <class A>
   class IR_Vertex_Local final : public IR_Vertex_Expr<A> {
     std::string_view m_name;
-    IR_Vertex_Expr<A> *m_value;
+    FlowPtr<IR_Vertex_Expr<A>> m_value;
     AbiTag m_abi_tag;
     StorageClass m_storage;
     bool m_readonly;
 
   public:
-    IR_Vertex_Local(std::string_view name, IR_Vertex_Expr<A> *value,
+    IR_Vertex_Local(std::string_view name, FlowPtr<IR_Vertex_Expr<A>> value,
                     AbiTag abi_tag, bool readonly = false,
                     StorageClass storage_class = StorageClass::LLVM_StackAlloa)
         : IR_Vertex_Expr<A>(IR_eLOCAL),
@@ -360,7 +301,7 @@ namespace ncc::ir {
     bool isReadonly() const { return m_readonly; }
 
     void setAbiTag(AbiTag abi_tag) { m_abi_tag = abi_tag; }
-    void setValue(IR_Vertex_Expr<A> *value) { m_value = value; }
+    void setValue(FlowPtr<IR_Vertex_Expr<A>> value) { m_value = value; }
     void setName(std::string_view name) { m_name = name; }
     void setStorageClass(StorageClass storage) { m_storage = storage; }
     void setReadonly(bool readonly) { m_readonly = readonly; }
@@ -368,14 +309,14 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Ret final : public IR_Vertex_Expr<A> {
-    IR_Vertex_Expr<A> *m_expr;
+    FlowPtr<IR_Vertex_Expr<A>> m_expr;
 
   public:
-    IR_Vertex_Ret(IR_Vertex_Expr<A> *expr)
+    IR_Vertex_Ret(FlowPtr<IR_Vertex_Expr<A>> expr)
         : IR_Vertex_Expr<A>(IR_eRET), m_expr(expr) {}
 
     auto getExpr() const { return m_expr; }
-    void setExpr(IR_Vertex_Expr<A> *expr) { m_expr = expr; }
+    void setExpr(FlowPtr<IR_Vertex_Expr<A>> expr) { m_expr = expr; }
   };
 
   template <class A>
@@ -392,54 +333,58 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_If final : public IR_Vertex_Expr<A> {
-    IR_Vertex_Expr<A> *m_cond;
-    IR_Vertex_Expr<A> *m_then;
-    IR_Vertex_Expr<A> *m_else;
+    FlowPtr<IR_Vertex_Expr<A>> m_cond;
+    FlowPtr<IR_Vertex_Expr<A>> m_then;
+    FlowPtr<IR_Vertex_Expr<A>> m_else;
 
   public:
-    IR_Vertex_If(IR_Vertex_Expr<A> *cond, IR_Vertex_Expr<A> *then,
-                 IR_Vertex_Expr<A> *else_)
+    IR_Vertex_If(FlowPtr<IR_Vertex_Expr<A>> cond,
+                 FlowPtr<IR_Vertex_Expr<A>> then,
+                 FlowPtr<IR_Vertex_Expr<A>> else_)
         : IR_Vertex_Expr<A>(IR_eIF),
           m_cond(cond),
           m_then(then),
           m_else(else_) {}
 
     auto getCond() const { return m_cond; }
-    void setCond(IR_Vertex_Expr<A> *cond) { m_cond = cond; }
+    void setCond(FlowPtr<IR_Vertex_Expr<A>> cond) { m_cond = cond; }
 
     auto getThen() const { return m_then; }
-    void setThen(IR_Vertex_Expr<A> *then) { m_then = then; }
+    void setThen(FlowPtr<IR_Vertex_Expr<A>> then) { m_then = then; }
 
     auto getElse() const { return m_else; }
-    void setElse(IR_Vertex_Expr<A> *else_) { m_else = else_; }
+    void setElse(FlowPtr<IR_Vertex_Expr<A>> else_) { m_else = else_; }
   };
 
   template <class A>
   class IR_Vertex_While final : public IR_Vertex_Expr<A> {
-    IR_Vertex_Expr<A> *m_cond;
-    IR_Vertex_Seq<A> *m_body;
+    FlowPtr<IR_Vertex_Expr<A>> m_cond;
+    FlowPtr<IR_Vertex_Seq<A>> m_body;
 
   public:
-    IR_Vertex_While(IR_Vertex_Expr<A> *cond, IR_Vertex_Seq<A> *body)
+    IR_Vertex_While(FlowPtr<IR_Vertex_Expr<A>> cond,
+                    FlowPtr<IR_Vertex_Seq<A>> body)
         : IR_Vertex_Expr<A>(IR_eWHILE), m_cond(cond), m_body(body) {}
 
     auto getCond() const { return m_cond; }
-    void setCond(IR_Vertex_Expr<A> *cond) { m_cond = cond; }
+    void setCond(FlowPtr<IR_Vertex_Expr<A>> cond) { m_cond = cond; }
 
-    auto getBody() const { return m_body; }
-    IR_Vertex_Seq<A> *setBody(IR_Vertex_Seq<A> *body) { m_body = body; }
+    constexpr auto getBody() const { return m_body; }
+    constexpr void setBody(IR_Vertex_Seq<A> *body) { m_body = body; }
   };
 
   template <class A>
   class IR_Vertex_For final : public IR_Vertex_Expr<A> {
-    IR_Vertex_Expr<A> *m_init;
-    IR_Vertex_Expr<A> *m_cond;
-    IR_Vertex_Expr<A> *m_step;
-    IR_Vertex_Expr<A> *m_body;
+    FlowPtr<IR_Vertex_Expr<A>> m_init;
+    FlowPtr<IR_Vertex_Expr<A>> m_cond;
+    FlowPtr<IR_Vertex_Expr<A>> m_step;
+    FlowPtr<IR_Vertex_Expr<A>> m_body;
 
   public:
-    IR_Vertex_For(IR_Vertex_Expr<A> *init, IR_Vertex_Expr<A> *cond,
-                  IR_Vertex_Expr<A> *step, IR_Vertex_Expr<A> *body)
+    IR_Vertex_For(FlowPtr<IR_Vertex_Expr<A>> init,
+                  FlowPtr<IR_Vertex_Expr<A>> cond,
+                  FlowPtr<IR_Vertex_Expr<A>> step,
+                  FlowPtr<IR_Vertex_Expr<A>> body)
         : IR_Vertex_Expr<A>(IR_eFOR),
           m_init(init),
           m_cond(cond),
@@ -447,32 +392,33 @@ namespace ncc::ir {
           m_body(body) {}
 
     auto getInit() const { return m_init; }
-    void setInit(IR_Vertex_Expr<A> *init) { m_init = init; }
+    void setInit(FlowPtr<IR_Vertex_Expr<A>> init) { m_init = init; }
 
     auto getCond() const { return m_cond; }
-    void setCond(IR_Vertex_Expr<A> *cond) { m_cond = cond; }
+    void setCond(FlowPtr<IR_Vertex_Expr<A>> cond) { m_cond = cond; }
 
     auto getStep() const { return m_step; }
-    void setStep(IR_Vertex_Expr<A> *step) { m_step = step; }
+    void setStep(FlowPtr<IR_Vertex_Expr<A>> step) { m_step = step; }
 
     auto getBody() const { return m_body; }
-    void setBody(IR_Vertex_Expr<A> *body) { m_body = body; }
+    void setBody(FlowPtr<IR_Vertex_Expr<A>> body) { m_body = body; }
   };
 
   template <class A>
   class IR_Vertex_Case final : public IR_Vertex_Expr<A> {
-    IR_Vertex_Expr<A> *m_cond;
-    IR_Vertex_Expr<A> *m_body;
+    FlowPtr<IR_Vertex_Expr<A>> m_cond;
+    FlowPtr<IR_Vertex_Expr<A>> m_body;
 
   public:
-    IR_Vertex_Case(IR_Vertex_Expr<A> *cond, IR_Vertex_Expr<A> *body)
+    IR_Vertex_Case(FlowPtr<IR_Vertex_Expr<A>> cond,
+                   FlowPtr<IR_Vertex_Expr<A>> body)
         : IR_Vertex_Expr<A>(IR_eCASE), m_cond(cond), m_body(body) {}
 
     auto getCond() { return m_cond; }
-    void setCond(IR_Vertex_Expr<A> *cond) { m_cond = cond; }
+    void setCond(FlowPtr<IR_Vertex_Expr<A>> cond) { m_cond = cond; }
 
     auto getBody() { return m_body; }
-    void setBody(IR_Vertex_Expr<A> *body) { m_body = body; }
+    void setBody(FlowPtr<IR_Vertex_Expr<A>> body) { m_body = body; }
   };
 
   template <class A>
@@ -481,23 +427,26 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Switch final : public IR_Vertex_Expr<A> {
-    IR_Vertex_Expr<A> *m_cond;
-    IR_Vertex_Expr<A> *m_default;
+    FlowPtr<IR_Vertex_Expr<A>> m_cond;
+    FlowPtr<IR_Vertex_Expr<A>> m_default;
     SwitchCases<A> m_cases;
 
   public:
-    IR_Vertex_Switch(IR_Vertex_Expr<A> *cond, const SwitchCases<A> &cases,
-                     IR_Vertex_Expr<A> *default_)
+    IR_Vertex_Switch(FlowPtr<IR_Vertex_Expr<A>> cond,
+                     const SwitchCases<A> &cases,
+                     FlowPtr<IR_Vertex_Expr<A>> default_)
         : IR_Vertex_Expr<A>(IR_eSWITCH),
           m_cond(cond),
           m_default(default_),
           m_cases(cases) {}
 
     auto getCond() const { return m_cond; }
-    void setCond(IR_Vertex_Expr<A> *cond) { m_cond = cond; }
+    void setCond(FlowPtr<IR_Vertex_Expr<A>> cond) { m_cond = cond; }
 
     auto getDefault() const { return m_default; }
-    void setDefault(IR_Vertex_Expr<A> *default_) { m_default = default_; }
+    void setDefault(FlowPtr<IR_Vertex_Expr<A>> default_) {
+      m_default = default_;
+    }
 
     const SwitchCases<A> &getCases() const { return m_cases; }
     SwitchCases<A> &getCases() { return m_cases; }
@@ -514,7 +463,7 @@ namespace ncc::ir {
   class IR_Vertex_Fn final : public IR_Vertex_Expr<A> {
     std::string_view m_name;
     Params<A> m_params;
-    IR_Vertex_Type<A> *m_return;
+    FlowPtr<IR_Vertex_Type<A>> m_return;
     std::optional<IR_Vertex_Seq<A> *> m_body;
     bool m_variadic;
     AbiTag m_abi_tag;
@@ -539,9 +488,7 @@ namespace ncc::ir {
     void setParams(const Params<A> &params) { m_params = params; }
 
     auto getReturn() const { return m_return; }
-    IR_Vertex_Type<A> *setReturn(IR_Vertex_Type<A> *ret_ty) {
-      m_return = ret_ty;
-    }
+    void setReturn(IR_Vertex_Type<A> *ret_ty) { m_return = ret_ty; }
 
     std::optional<IR_Vertex_Seq<A> *> getBody() const { return m_body; }
     std::optional<IR_Vertex_Seq<A> *> setBody(
@@ -561,10 +508,6 @@ namespace ncc::ir {
   public:
     IR_Vertex_Asm() : IR_Vertex_Expr<A>(IR_eASM) { qcore_implement(); }
   };
-
-  ///=============================================================================
-  /// END: EXPRESSIONS
-  ///=============================================================================
 
 }  // namespace ncc::ir
 

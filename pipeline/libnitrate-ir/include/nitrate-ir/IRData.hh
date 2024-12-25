@@ -40,6 +40,7 @@
 #include <cstdint>
 #include <memory>
 #include <nitrate-core/Allocate.hh>
+#include <nitrate-core/FlowPtr.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRFwd.hh>
 #include <nitrate-lexer/Token.hh>
@@ -109,6 +110,76 @@ namespace ncc::ir {
 
     /* Dynamic allocation */
     Managed,
+  };
+
+  template <class A>
+  using CallArguments =
+      std::vector<std::pair<string, FlowPtr<IR_Vertex_Expr<A>>>,
+                  Arena<std::pair<string, FlowPtr<IR_Vertex_Expr<A>>>>>;
+
+  template <class A>
+  using FnParams = std::vector<FlowPtr<IR_Vertex_Type<A>>,
+                               Arena<FlowPtr<IR_Vertex_Type<A>>>>;
+
+  enum class TmpType {
+    CALL,
+    NAMED_TYPE,
+    DEFAULT_VALUE,
+  };
+
+  template <class A>
+  struct IR_Vertex_CallArgsTmpNodeCradle {
+    FlowPtr<IR_Vertex_Expr<A>> base;
+    std::span<std::pair<string, FlowPtr<IR_Vertex_Expr<A>>>> args;
+
+    bool operator==(const IR_Vertex_CallArgsTmpNodeCradle<A> &rhs) const {
+      return base == rhs.base && args == rhs.args;
+    }
+  };
+
+  template <class A>
+  using TmpNodeCradle =
+      std::variant<IR_Vertex_CallArgsTmpNodeCradle<A>, string>;
+
+  template <class A>
+  using IR_Vertex_ListItems = std::vector<FlowPtr<IR_Vertex_Expr<A>>,
+                                          Arena<FlowPtr<IR_Vertex_Expr<A>>>>;
+
+  enum class Op {
+    Plus,      /* '+': Addition operator */
+    Minus,     /* '-': Subtraction operator */
+    Times,     /* '*': Multiplication operator */
+    Slash,     /* '/': Division operator */
+    Percent,   /* '%': Modulus operator */
+    BitAnd,    /* '&': Bitwise AND operator */
+    BitOr,     /* '|': Bitwise OR operator */
+    BitXor,    /* '^': Bitwise XOR operator */
+    BitNot,    /* '~': Bitwise NOT operator */
+    LogicAnd,  /* '&&': Logical AND operator */
+    LogicOr,   /* '||': Logical OR operator */
+    LogicNot,  /* '!': Logical NOT operator */
+    LShift,    /* '<<': Left shift operator */
+    RShift,    /* '>>': Right shift operator */
+    Inc,       /* '++': Increment operator */
+    Dec,       /* '--': Decrement operator */
+    Set,       /* '=': Assignment operator */
+    LT,        /* '<': Less than operator */
+    GT,        /* '>': Greater than operator */
+    LE,        /* '<=': Less than or equal to operator */
+    GE,        /* '>=': Greater than or equal to operator */
+    Eq,        /* '==': Equal to operator */
+    NE,        /* '!=': Not equal to operator */
+    Alignof,   /* 'alignof': Alignment of operator */
+    BitcastAs, /* 'bitcast_as': Bitcast operator */
+    CastAs,    /* 'cast_as': Common operator */
+    Bitsizeof, /* 'bitsizeof': Bit size of operator */
+  };
+
+  enum class AbiTag {
+    C,
+    Nitrate,
+    Internal,
+    Default = Nitrate,
   };
 
 }  // namespace ncc::ir

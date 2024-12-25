@@ -206,10 +206,6 @@ namespace ncc::ir {
   };
 
   template <class A>
-  using FnParams = std::vector<FlowPtr<IR_Vertex_Type<A>>,
-                               Arena<FlowPtr<IR_Vertex_Type<A>>>>;
-
-  template <class A>
   class IR_Vertex_FnTy final : public IR_Vertex_Type<A> {
     std::span<FlowPtr<IR_Vertex_Type<A>>> m_params;
     FlowPtr<IR_Vertex_Type<A>> m_return;
@@ -230,31 +226,6 @@ namespace ncc::ir {
     constexpr auto isVariadic() const { return m_variadic; }
     constexpr auto getNativeSize() const { return m_native_size; }
   };
-
-  enum class TmpType {
-    CALL,
-    NAMED_TYPE,
-    DEFAULT_VALUE,
-  };
-
-  template <class A>
-  using CallArguments = std::vector<
-      std::pair<std::string_view, FlowPtr<IR_Vertex_Expr<A>>>,
-      Arena<std::pair<std::string_view, FlowPtr<IR_Vertex_Expr<A>>>>>;
-
-  template <class A>
-  struct IR_Vertex_CallArgsTmpNodeCradle {
-    FlowPtr<IR_Vertex_Expr<A>> base;
-    std::span<std::pair<std::string_view, FlowPtr<IR_Vertex_Expr<A>>>> args;
-
-    bool operator==(const IR_Vertex_CallArgsTmpNodeCradle<A> &rhs) const {
-      return base == rhs.base && args == rhs.args;
-    }
-  };
-
-  template <class A>
-  using TmpNodeCradle =
-      std::variant<IR_Vertex_CallArgsTmpNodeCradle<A>, std::string_view>;
 
   template <class A>
   class IR_Vertex_Tmp final : public IR_Vertex_Type<A> {

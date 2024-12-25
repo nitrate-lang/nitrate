@@ -43,7 +43,7 @@ bool NRBuilder::check_function_calls(Seq *root, IReport *I) {
   bool failed = false;
 
   for_each<Call>(root, [&](const Call *x) {
-    Expr *target = x->getTarget();
+    auto target = x->getTarget();
 
     if (auto target_type = target->getType()) {
       if (target_type.value()->is_function()) {
