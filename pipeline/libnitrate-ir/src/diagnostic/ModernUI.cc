@@ -32,7 +32,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <boost/bimap.hpp>
-#include <core/Config.hh>
 #include <core/Diagnostic.hh>
 #include <cstdint>
 #include <iomanip>

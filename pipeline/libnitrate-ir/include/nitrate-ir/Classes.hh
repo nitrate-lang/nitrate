@@ -34,31 +34,12 @@
 #ifndef __NITRATE_IR_CLASSES_H__
 #define __NITRATE_IR_CLASSES_H__
 
-#ifndef __cplusplus
-#error "This header is for C++ only."
-#endif
-
-#include <nitrate-ir/Config.h>
 #include <nitrate-ir/IR.h>
 
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <optional>
 #include <string>
-
-class nr_conf final {
-  nr_conf_t *m_conf;
-
-public:
-  nr_conf(bool use_default = true) {
-    if ((m_conf = nr_conf_new(use_default)) == nullptr) {
-      qcore_panic("nr_conf_new failed");
-    }
-  }
-  ~nr_conf() { nr_conf_free(m_conf); }
-
-  nr_conf_t *get() const { return m_conf; }
-};
 
 class qmodule final {
   qmodule_t *m_module;

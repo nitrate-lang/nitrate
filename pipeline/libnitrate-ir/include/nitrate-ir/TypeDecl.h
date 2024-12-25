@@ -110,8 +110,6 @@ typedef enum nr_ty_t {
 
 #define NR_NODE_COUNT (NR_NODE_LAST - NR_NODE_FIRST + 1)
 
-typedef struct nr_conf_t nr_conf_t;
-
 typedef enum nr_key_t {
   QQK_UNKNOWN = 0,
   QQK_CRASHGUARD,

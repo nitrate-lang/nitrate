@@ -34,7 +34,6 @@
 #include <nitrate-ir/IR.h>
 
 #include <boost/multiprecision/cpp_dec_float.hpp>
-#include <core/Config.hh>
 #include <core/Diagnostic.hh>
 #include <core/PassManager.hh>
 #include <cstdint>

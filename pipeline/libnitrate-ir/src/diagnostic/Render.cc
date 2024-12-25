@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Config.hh>
 #include <core/Diagnostic.hh>
 #include <cstdint>
 #include <nitrate-core/Logger.hh>

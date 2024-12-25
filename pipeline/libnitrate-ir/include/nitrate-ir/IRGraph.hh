@@ -34,10 +34,6 @@
 #ifndef __NITRATE_NR_NODE_H__
 #define __NITRATE_NR_NODE_H__
 
-#ifndef __cplusplus
-#error "This header is C++ only."
-#endif
-
 #include <nitrate-ir/TypeDecl.h>
 
 #include <boost/multiprecision/cpp_int.hpp>

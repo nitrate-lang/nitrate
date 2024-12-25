@@ -34,7 +34,6 @@
 #ifndef __NITRATE_NR_LIB_H__
 #define __NITRATE_NR_LIB_H__
 
-#include <nitrate-ir/Config.h>
 #include <nitrate-ir/IR.h>
 
 #ifdef __cplusplus

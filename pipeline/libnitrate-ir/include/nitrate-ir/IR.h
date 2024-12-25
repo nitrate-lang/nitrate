@@ -311,7 +311,6 @@ nr_node_t *nr_infer(const nr_node_t *node, void *res);
 nr_node_t *nr_clone(const nr_node_t *node);
 
 nr_node_t *nr_base(qmodule_t *mod);
-nr_conf_t *nr_get_conf(qmodule_t *mod);
 
 #ifdef __cplusplus
 }
