@@ -48,14 +48,14 @@ using namespace ncc;
 
 struct Conflict {
   std::string_view name;
-  Expr *us;
+  FlowPtr<Expr> us;
   Kind us_kind;
 
-  std::optional<Expr *> them;
+  std::optional<FlowPtr<Expr>> them;
   Kind them_kind;
 
-  Conflict(std::string_view name, Kind us_kind, Expr *us, Kind them_kind,
-           std::optional<Expr *> them)
+  Conflict(std::string_view name, Kind us_kind, FlowPtr<Expr> us,
+           Kind them_kind, std::optional<FlowPtr<Expr>> them)
       : name(name),
         us(us),
         us_kind(us_kind),

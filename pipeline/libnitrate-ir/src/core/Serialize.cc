@@ -747,7 +747,7 @@ CPP_EXPORT bool ir::nr_write(IRModule *mod, const Expr *_node, nr_serial_t mode,
   (void)argcnt;
 
   bool status;
-  Expr *node;
+  FlowPtr<Expr> node;
   long start, end;
 
   if (_node) {

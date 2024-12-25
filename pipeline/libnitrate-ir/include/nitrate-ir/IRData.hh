@@ -182,6 +182,32 @@ namespace ncc::ir {
     Default = Nitrate,
   };
 
+  std::ostream &operator<<(std::ostream &os, Op op);
+
+  enum class FloatSize : uint8_t {
+    F16,
+    F32,
+    F64,
+    F128,
+  };
+
+  template <class A>
+  using IR_Vertex_CallArgs = std::vector<FlowPtr<IR_Vertex_Expr<A>>,
+                                         Arena<FlowPtr<IR_Vertex_Expr<A>>>>;
+
+  template <class A>
+  using IR_Vertex_SeqItems = std::vector<FlowPtr<IR_Vertex_Expr<A>>,
+                                         Arena<FlowPtr<IR_Vertex_Expr<A>>>>;
+
+  template <class A>
+  using Params =
+      std::vector<std::pair<IR_Vertex_Type<A> *, std::string_view>,
+                  Arena<std::pair<IR_Vertex_Type<A> *, std::string_view>>>;
+
+  template <class A>
+  using SwitchCases =
+      std::vector<IR_Vertex_Case<A> *, Arena<IR_Vertex_Case<A> *>>;
+
 }  // namespace ncc::ir
 
 #endif

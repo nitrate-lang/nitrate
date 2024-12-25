@@ -42,7 +42,7 @@ using namespace ncc::ir;
 bool NRBuilder::check_mutability(Seq *root, IReport *I) {
   bool failed = false;
 
-  for_each<BinExpr>(root, [&](const BinExpr *x) {
+  for_each<BinExpr>(root, [&](auto x) {
     if (x->getOp() != Op::Set) {
       return;
     }

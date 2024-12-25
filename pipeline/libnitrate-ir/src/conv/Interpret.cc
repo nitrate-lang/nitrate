@@ -75,20 +75,20 @@ namespace comptime {
   };
 }  // namespace comptime
 
-std::optional<Expr *> ncc::ir::comptime_impl(
-    Expr *x, std::optional<std::function<void(std::string_view)>> eprintn) {
-  comptime::Program P(eprintn.value_or([](std::string_view) {}));
+// std::optional<Expr *> ncc::ir::comptime_impl(
+//     Expr *x, std::optional<std::function<void(std::string_view)>> eprintn) {
+//   comptime::Program P(eprintn.value_or([](std::string_view) {}));
 
-  /**
-   * 1. Treat the expression as seperate compilation unit
-   * 2. Run semantic checks on it and its dependencies.
-   * 3. Lower to LLVM-IR
-   * 4. Emulate using LLVM
-   * 5. Get result
-   * 6. Convert the real data back into IRGraph node(s)
-   */
+//   /**
+//    * 1. Treat the expression as seperate compilation unit
+//    * 2. Run semantic checks on it and its dependencies.
+//    * 3. Lower to LLVM-IR
+//    * 4. Emulate using LLVM
+//    * 5. Get result
+//    * 6. Convert the real data back into IRGraph node(s)
+//    */
 
-  P.prepare(x);
-  P.emulate();
-  return P.get_result();
-}
+//   P.prepare(x);
+//   P.emulate();
+//   return P.get_result();
+// }

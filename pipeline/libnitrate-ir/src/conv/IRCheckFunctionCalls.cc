@@ -42,12 +42,12 @@ using namespace ncc::ir;
 bool NRBuilder::check_function_calls(Seq *root, IReport *I) {
   bool failed = false;
 
-  for_each<Call>(root, [&](const Call *x) {
+  for_each<Call>(root, [&](auto x) {
     auto target = x->getTarget();
 
     if (auto target_type = target->getType()) {
       if (target_type.value()->is_function()) {
-        FnTy *fn_ty = target_type.value()->as<FnTy>();
+        FnTy *fn_ty = target_type.value()->template as<FnTy>();
 
         const auto &arguments = x->getArgs();
 

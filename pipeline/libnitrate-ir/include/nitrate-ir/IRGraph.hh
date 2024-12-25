@@ -39,7 +39,7 @@
 #include <nitrate-ir/IRType.hh>
 
 namespace ncc::ir {
-  Expr *createIgn();
+  FlowPtr<Expr> createIgn();
 
   namespace mem {
     extern Brk static_IR_eBRK;
@@ -126,75 +126,39 @@ namespace ncc::ir {
     SkipChildren,
   };
 
-  typedef std::function<IterOp(Expr *p, Expr **c)> IterCallback;
-  typedef std::function<bool(Expr **a, Expr **b)> ChildSelect;
-
-  typedef std::function<IterOp(const Expr *const p, const Expr *const *const c)>
-      ConstIterCallback;
-  typedef std::function<bool(const Expr *const *const a,
-                             const Expr *const *const b)>
-      ConstChildSelect;
+  typedef std::function<IterOp(FlowPtr<Expr> p, FlowPtr<Expr> *c)> IterCallback;
+  typedef std::function<bool(FlowPtr<Expr> *a, FlowPtr<Expr> *b)> ChildSelect;
 
   namespace detail {
-    void dfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs);
-    void dfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs);
-    void bfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs);
-    void bfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs);
-    void iter_children(Expr **base, IterCallback cb, ChildSelect cs);
+    void dfs_pre_impl(FlowPtr<Expr> *base, IterCallback cb, ChildSelect cs);
+    void dfs_post_impl(FlowPtr<Expr> *base, IterCallback cb, ChildSelect cs);
+    void bfs_pre_impl(FlowPtr<Expr> *base, IterCallback cb, ChildSelect cs);
+    void bfs_post_impl(FlowPtr<Expr> *base, IterCallback cb, ChildSelect cs);
+    void iter_children(FlowPtr<Expr> *base, IterCallback cb, ChildSelect cs);
   }  // namespace detail
 
   template <IterMode mode, typename T>
-  void iterate(T *&base, IterCallback cb, ChildSelect cs = nullptr) {
+  void iterate(FlowPtr<T> &base, IterCallback cb, ChildSelect cs = nullptr) {
     if constexpr (mode == dfs_pre) {
-      return detail::dfs_pre_impl((Expr **)&base, cb, cs);
+      return detail::dfs_pre_impl((FlowPtr<Expr> *)&base, cb, cs);
     } else if constexpr (mode == dfs_post) {
-      return detail::dfs_post_impl((Expr **)&base, cb, cs);
+      return detail::dfs_post_impl((FlowPtr<Expr> *)&base, cb, cs);
     } else if constexpr (mode == bfs_pre) {
-      return detail::bfs_pre_impl((Expr **)&base, cb, cs);
+      return detail::bfs_pre_impl((FlowPtr<Expr> *)&base, cb, cs);
     } else if constexpr (mode == bfs_post) {
-      return detail::bfs_post_impl((Expr **)&base, cb, cs);
+      return detail::bfs_post_impl((FlowPtr<Expr> *)&base, cb, cs);
     } else if constexpr (mode == children) {
-      return detail::iter_children((Expr **)&base, cb, cs);
+      return detail::iter_children((FlowPtr<Expr> *)&base, cb, cs);
     } else {
       static_assert(mode != mode, "Invalid iteration mode.");
     }
   }
 
-  template <IterMode mode, typename T>
-  void iterate(const T *base, ConstIterCallback cb,
-               ConstChildSelect cs = nullptr) {
-    T *ref = const_cast<T *>(base);
+  // std::optional<FlowPtr<Expr>> comptime_impl(
+  //     FlowPtr<Expr> x,
+  //     std::optional<std::function<void(std::string_view)>> eprintn =
+  //         std::nullopt);
 
-    const auto const_cb = cb != nullptr ? [&](Expr *p, Expr **c) -> IterOp {
-      return cb(static_cast<const Expr *const>(p),
-                const_cast<const Expr *const *const>(c));
-    }
-    : IterCallback(nullptr);
-
-    const auto const_cs = cs != nullptr ? [&](Expr **a, Expr **b) -> bool {
-      return cs(const_cast<const Expr *const *const>(a),
-                const_cast<const Expr *const *const>(b));
-    }
-    : ChildSelect(nullptr);
-
-    if constexpr (mode == dfs_pre) {
-      return detail::dfs_pre_impl((Expr **)&ref, const_cb, const_cs);
-    } else if constexpr (mode == dfs_post) {
-      return detail::dfs_post_impl((Expr **)&ref, const_cb, const_cs);
-    } else if constexpr (mode == bfs_pre) {
-      return detail::bfs_pre_impl((Expr **)&ref, const_cb, const_cs);
-    } else if constexpr (mode == bfs_post) {
-      return detail::bfs_pre_impl((Expr **)&ref, const_cb, const_cs);
-    } else if constexpr (mode == children) {
-      return detail::iter_children((Expr **)&ref, const_cb, const_cs);
-    } else {
-      static_assert(mode != mode, "Invalid iteration mode.");
-    }
-  }
-
-  std::optional<Expr *> comptime_impl(
-      Expr *x, std::optional<std::function<void(std::string_view)>> eprintn =
-                   std::nullopt);
   /** Add source debugging information to an IR node */
   template <typename T>
   static inline T *debug_info(T *N, uint32_t line, uint32_t col) {
@@ -206,8 +170,8 @@ namespace ncc::ir {
   }
 
   template <auto mode = dfs_pre>
-  void for_each(const Expr *const v,
-                std::function<void(nr_ty_t, const Expr *const)> f) {
+  void for_each(FlowPtr<Expr> v,
+                std::function<void(nr_ty_t, FlowPtr<Expr>)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
       f((*c)->getKind(), *c);
 
@@ -216,33 +180,35 @@ namespace ncc::ir {
   }
 
   template <auto mode = dfs_pre>
-  void transform(Expr *v, std::function<bool(nr_ty_t, Expr **)> f) {
+  void transform(FlowPtr<Expr> v,
+                 std::function<bool(nr_ty_t, FlowPtr<Expr> *)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
       return f((*c)->getKind(), c) ? IterOp::Proceed : IterOp::Abort;
     });
   }
 
   template <typename T, auto mode = dfs_pre>
-  void for_each(const Expr *const v, std::function<void(const T *)> f) {
-    iterate<mode>(v, [&](auto, const Expr *const *const c) -> IterOp {
+  void for_each(FlowPtr<Expr> v, std::function<void(FlowPtr<T>)> f) {
+    iterate<mode>(v, [&](auto, auto c) -> IterOp {
       if ((*c)->getKind() != Expr::getTypeCode<T>()) {
         return IterOp::Proceed;
       }
 
-      f((*c)->as<T>());
+      f((*c)->template as<T>());
 
       return IterOp::Proceed;
     });
   }
 
   template <typename T, auto mode = dfs_pre>
-  void transform(Expr *v, std::function<bool(T **)> f) {
+  void transform(FlowPtr<Expr> v, std::function<bool(FlowPtr<T> *)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
       if ((*c)->getKind() != Expr::getTypeCode<T>()) {
         return IterOp::Proceed;
       }
 
-      return f(reinterpret_cast<T **>(c)) ? IterOp::Proceed : IterOp::Abort;
+      return f(reinterpret_cast<FlowPtr<T> *>(c)) ? IterOp::Proceed
+                                                  : IterOp::Abort;
     });
   }
 }  // namespace ncc::ir

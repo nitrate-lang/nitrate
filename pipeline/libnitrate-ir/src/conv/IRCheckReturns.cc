@@ -43,7 +43,7 @@ using namespace ncc::ir;
 bool NRBuilder::check_returns(Seq *root, IReport *I) {
   bool failed = false;
 
-  for_each<Fn>(root, [&](const Fn *x) {
+  for_each<Fn>(root, [&](auto x) {
     /* Skip function declarations */
     if (!x->getBody()) {
       return;
@@ -58,12 +58,12 @@ bool NRBuilder::check_returns(Seq *root, IReport *I) {
       return;
     }
 
-    const auto fn_ty = fn_ty_opt.value()->as<FnTy>();
+    const auto fn_ty = fn_ty_opt.value()->template as<FnTy>();
     const auto return_ty = fn_ty->getReturn();
 
     bool found_ret = false;
 
-    for_each<Ret>(x->getBody().value(), [&](const Ret *y) {
+    for_each<Ret>(x->getBody().value(), [&](auto y) {
       found_ret = true;
 
       auto ret_expr_ty_opt = y->getExpr()->getType();

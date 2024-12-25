@@ -74,7 +74,7 @@ namespace ncc::ir {
     using ModulePasses = std::vector<std::pair<std::string, ModulePassType>>;
 
     ///=============================================================================
-    Expr *m_root{}; /* Root node of the module */
+    FlowPtr<Expr> m_root; /* Root node of the module */
     std::unordered_map<uint64_t, uint64_t>
         m_key_map{}; /* Place for IRGraph key-value pairs */
     uint64_t m_extension_data_ctr = 1;
@@ -114,9 +114,9 @@ namespace ncc::ir {
     IRModule(const std::string &name = "?");
     ~IRModule();
 
-    void setRoot(Expr *root) { m_root = root; }
-    Expr *&getRoot() { return m_root; }
-    Expr *getRoot() const { return m_root; }
+    void setRoot(auto root) { m_root = root; }
+    auto &getRoot() { return m_root; }
+    auto getRoot() const { return m_root; }
 
     std::unordered_map<uint64_t, uint64_t> &getKeyMap() { return m_key_map; }
 

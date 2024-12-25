@@ -397,12 +397,12 @@ static void make_forward_declaration(ctx_t &m, craft_t &b, State &,
   debug("Forward declared function: " << N->getName());
 }
 
-static optional<unique_ptr<Module>> fabricate_llvmir(const IRModule *src,
+static optional<unique_ptr<Module>> fabricate_llvmir(IRModule *src,
                                                      qcode_conf_t *, ostream &e,
                                                      raw_ostream &) {
   static thread_local unique_ptr<LLVMContext> context;
 
-  let root = src->getRoot();
+  auto root = src->getRoot();
   if (!root) {
     e << "error: missing root node" << endl;
     return nullopt;
@@ -420,18 +420,19 @@ static optional<unique_ptr<Module>> fabricate_llvmir(const IRModule *src,
   State s;
 
   // Forward declare all functions
-  iterate<dfs_pre>(
-      root, [&](const Expr *, const Expr *const *const N) -> IterOp {
-        if ((*N)->getKind() == IR_eSEQ || (*N)->getKind() == IR_eEXTERN) {
-          return IterOp::Proceed;
-        } else if ((*N)->getKind() != IR_eFUNCTION) {
-          return IterOp::SkipChildren;
-        }
+  iterate<dfs_pre>(root, [&](auto, auto N) -> IterOp {
+    if ((*N)->getKind() == IR_eSEQ || (*N)->getKind() == IR_eEXTERN) {
+      return IterOp::Proceed;
+    } else if ((*N)->getKind() != IR_eFUNCTION) {
+      return IterOp::SkipChildren;
+    }
 
-        make_forward_declaration(*m, *b, s, (*N)->as<Fn>());
+    make_forward_declaration(*m, *b, s, (*N)->template as<Fn>());
 
-        return IterOp::Proceed;
-      });
+    return IterOp::Proceed;
+  });
+
+  (void)make_forward_declaration;
 
   const Seq *seq = root->as<Seq>();
 
@@ -1880,7 +1881,7 @@ static bool qcode_adapter(IRModule *module, qcode_conf_t *conf, FILE *err,
   return true;
 }
 
-static optional<unique_ptr<Module>> fabricate_llvmir(const IRModule *module,
+static optional<unique_ptr<Module>> fabricate_llvmir(IRModule *module,
                                                      qcode_conf_t *conf,
                                                      ostream &err,
                                                      raw_ostream &out);
