@@ -51,6 +51,7 @@
 #include <nitrate-ir/Classes.hh>
 #include <nitrate-ir/IR.hh>
 #include <nitrate-ir/Init.hh>
+#include <nitrate-ir/Module.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/ASTWriter.hh>
@@ -515,7 +516,7 @@ namespace no3::router {
         mangled_name.erase(0);
       }
 
-      ir::SymbolEncoding codec;
+      SymbolEncoding codec;
       auto demangled_name = codec.demangle_name(mangled_name);
       if (!demangled_name) {
         LOG(ERROR) << "Failed to demangle symbol" << std::endl;

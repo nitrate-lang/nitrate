@@ -58,9 +58,9 @@
 #include <vector>
 
 namespace ncc::ir {
-  using boost::multiprecision::uint128_t;
+  using uint128_t = boost::multiprecision::uint128_t;
 
-  extern "C" thread_local std::unique_ptr<ncc::IMemory> nr_allocator;
+  extern thread_local std::unique_ptr<ncc::IMemory> nr_allocator;
 
   template <class T>
   struct Arena {
@@ -92,20 +92,20 @@ namespace ncc::ir {
 };  // namespace ncc::ir
 
 namespace ncc::ir {
-  enum class Purity {
+  enum class Purity : uint8_t {
     Impure = 0,
     Pure = 1,
     Quasi = 2,
     Retro = 3,
   };
 
-  enum class Vis {
+  enum class Vis : uint8_t {
     Sec = 0,
     Pub = 1,
     Pro = 2,
   };
 
-  enum class StorageClass {
+  enum class StorageClass : uint8_t {
     /* Automatic storeage duration */
     LLVM_StackAlloa,
 
@@ -470,232 +470,232 @@ namespace ncc::ir {
     constexpr void accept(IRVisitor &v) {
       switch (getKind()) {
         case IR_eBIN: {
-          v.visit(*as<IR_Vertex_BinExpr>());
+          v.visit(*as<IR_Vertex_BinExpr<A>>());
           break;
         }
 
         case IR_eUNARY: {
-          v.visit(*as<IR_Vertex_Unary>());
+          v.visit(*as<IR_Vertex_Unary<A>>());
           break;
         }
 
         case IR_eINT: {
-          v.visit(*as<IR_Vertex_Int>());
+          v.visit(*as<IR_Vertex_Int<A>>());
           break;
         }
 
         case IR_eFLOAT: {
-          v.visit(*as<IR_Vertex_Float>());
+          v.visit(*as<IR_Vertex_Float<A>>());
           break;
         }
 
         case IR_eLIST: {
-          v.visit(*as<IR_Vertex_List>());
+          v.visit(*as<IR_Vertex_List<A>>());
           break;
         }
 
         case IR_eCALL: {
-          v.visit(*as<IR_Vertex_Call>());
+          v.visit(*as<IR_Vertex_Call<A>>());
           break;
         }
 
         case IR_eSEQ: {
-          v.visit(*as<IR_Vertex_Seq>());
+          v.visit(*as<IR_Vertex_Seq<A>>());
           break;
         }
 
         case IR_eINDEX: {
-          v.visit(*as<IR_Vertex_Index>());
+          v.visit(*as<IR_Vertex_Index<A>>());
           break;
         }
 
         case IR_eIDENT: {
-          v.visit(*as<IR_Vertex_Ident>());
+          v.visit(*as<IR_Vertex_Ident<A>>());
           break;
         }
 
         case IR_eEXTERN: {
-          v.visit(*as<IR_Vertex_Extern>());
+          v.visit(*as<IR_Vertex_Extern<A>>());
           break;
         }
 
         case IR_eLOCAL: {
-          v.visit(*as<IR_Vertex_Local>());
+          v.visit(*as<IR_Vertex_Local<A>>());
           break;
         }
 
         case IR_eRET: {
-          v.visit(*as<IR_Vertex_Ret>());
+          v.visit(*as<IR_Vertex_Ret<A>>());
           break;
         }
 
         case IR_eBRK: {
-          v.visit(*as<IR_Vertex_Brk>());
+          v.visit(*as<IR_Vertex_Brk<A>>());
           break;
         }
 
         case IR_eSKIP: {
-          v.visit(*as<IR_Vertex_Cont>());
+          v.visit(*as<IR_Vertex_Cont<A>>());
           break;
         }
 
         case IR_eIF: {
-          v.visit(*as<IR_Vertex_If>());
+          v.visit(*as<IR_Vertex_If<A>>());
           break;
         }
 
         case IR_eWHILE: {
-          v.visit(*as<IR_Vertex_While>());
+          v.visit(*as<IR_Vertex_While<A>>());
           break;
         }
 
         case IR_eFOR: {
-          v.visit(*as<IR_Vertex_For>());
+          v.visit(*as<IR_Vertex_For<A>>());
           break;
         }
 
         case IR_eCASE: {
-          v.visit(*as<IR_Vertex_Case>());
+          v.visit(*as<IR_Vertex_Case<A>>());
           break;
         }
 
         case IR_eSWITCH: {
-          v.visit(*as<IR_Vertex_Switch>());
+          v.visit(*as<IR_Vertex_Switch<A>>());
           break;
         }
 
         case IR_eFUNCTION: {
-          v.visit(*as<IR_Vertex_Fn>());
+          v.visit(*as<IR_Vertex_Fn<A>>());
           break;
         }
 
         case IR_eASM: {
-          v.visit(*as<IR_Vertex_Asm>());
+          v.visit(*as<IR_Vertex_Asm<A>>());
           break;
         }
 
         case IR_eIGN: {
-          v.visit(*as<IR_Vertex_Expr>());
+          v.visit(*as<IR_Vertex_Expr<A>>());
           break;
         }
 
         case IR_tU1: {
-          v.visit(*as<IR_Vertex_U1Ty>());
+          v.visit(*as<IR_Vertex_U1Ty<A>>());
           break;
         }
 
         case IR_tU8: {
-          v.visit(*as<IR_Vertex_U8Ty>());
+          v.visit(*as<IR_Vertex_U8Ty<A>>());
           break;
         }
 
         case IR_tU16: {
-          v.visit(*as<IR_Vertex_U16Ty>());
+          v.visit(*as<IR_Vertex_U16Ty<A>>());
           break;
         }
 
         case IR_tU32: {
-          v.visit(*as<IR_Vertex_U32Ty>());
+          v.visit(*as<IR_Vertex_U32Ty<A>>());
           break;
         }
 
         case IR_tU64: {
-          v.visit(*as<IR_Vertex_U64Ty>());
+          v.visit(*as<IR_Vertex_U64Ty<A>>());
           break;
         }
 
         case IR_tU128: {
-          v.visit(*as<IR_Vertex_U128Ty>());
+          v.visit(*as<IR_Vertex_U128Ty<A>>());
           break;
         }
 
         case IR_tI8: {
-          v.visit(*as<IR_Vertex_I8Ty>());
+          v.visit(*as<IR_Vertex_I8Ty<A>>());
           break;
         }
 
         case IR_tI16: {
-          v.visit(*as<IR_Vertex_I16Ty>());
+          v.visit(*as<IR_Vertex_I16Ty<A>>());
           break;
         }
 
         case IR_tI32: {
-          v.visit(*as<IR_Vertex_I32Ty>());
+          v.visit(*as<IR_Vertex_I32Ty<A>>());
           break;
         }
 
         case IR_tI64: {
-          v.visit(*as<IR_Vertex_I64Ty>());
+          v.visit(*as<IR_Vertex_I64Ty<A>>());
           break;
         }
 
         case IR_tI128: {
-          v.visit(*as<IR_Vertex_I128Ty>());
+          v.visit(*as<IR_Vertex_I128Ty<A>>());
           break;
         }
 
         case IR_tF16_TY: {
-          v.visit(*as<IR_Vertex_F16Ty>());
+          v.visit(*as<IR_Vertex_F16Ty<A>>());
           break;
         }
 
         case IR_tF32_TY: {
-          v.visit(*as<IR_Vertex_F32Ty>());
+          v.visit(*as<IR_Vertex_F32Ty<A>>());
           break;
         }
 
         case IR_tF64_TY: {
-          v.visit(*as<IR_Vertex_F64Ty>());
+          v.visit(*as<IR_Vertex_F64Ty<A>>());
           break;
         }
 
         case IR_tF128_TY: {
-          v.visit(*as<IR_Vertex_F128Ty>());
+          v.visit(*as<IR_Vertex_F128Ty<A>>());
           break;
         }
 
         case IR_tVOID: {
-          v.visit(*as<IR_Vertex_VoidTy>());
+          v.visit(*as<IR_Vertex_VoidTy<A>>());
           break;
         }
 
         case IR_tPTR: {
-          v.visit(*as<IR_Vertex_PtrTy>());
+          v.visit(*as<IR_Vertex_PtrTy<A>>());
           break;
         }
 
         case IR_tCONST: {
-          v.visit(*as<IR_Vertex_ConstTy>());
+          v.visit(*as<IR_Vertex_ConstTy<A>>());
           break;
         }
 
         case IR_tOPAQUE: {
-          v.visit(*as<IR_Vertex_OpaqueTy>());
+          v.visit(*as<IR_Vertex_OpaqueTy<A>>());
           break;
         }
 
         case IR_tSTRUCT: {
-          v.visit(*as<IR_Vertex_StructTy>());
+          v.visit(*as<IR_Vertex_StructTy<A>>());
           break;
         }
 
         case IR_tUNION: {
-          v.visit(*as<IR_Vertex_UnionTy>());
+          v.visit(*as<IR_Vertex_UnionTy<A>>());
           break;
         }
 
         case IR_tARRAY: {
-          v.visit(*as<IR_Vertex_ArrayTy>());
+          v.visit(*as<IR_Vertex_ArrayTy<A>>());
           break;
         }
 
         case IR_tFUNC: {
-          v.visit(*as<IR_Vertex_FnTy>());
+          v.visit(*as<IR_Vertex_FnTy<A>>());
           break;
         }
 
         case IR_tTMP: {
-          v.visit(*as<IR_Vertex_Tmp>());
+          v.visit(*as<IR_Vertex_Tmp<A>>());
           break;
         }
       }
@@ -1133,33 +1133,25 @@ namespace ncc::ir {
   };
 
   template <class A>
-  using StructFields =
-      std::vector<IR_Vertex_Type<A> *, Arena<IR_Vertex_Type<A> *>>;
-
-  template <class A>
   class IR_Vertex_StructTy final : public IR_Vertex_Type<A> {
-    std::span<IR_Vertex_Type<A>> m_fields;
+    std::span<IR_Vertex_Type<A> *> m_fields;
 
   public:
-    IR_Vertex_StructTy(auto fields)
+    constexpr IR_Vertex_StructTy(auto fields)
         : IR_Vertex_Type<A>(IR_tSTRUCT), m_fields(fields) {}
 
     constexpr auto getFields() const { return m_fields; }
   };
 
   template <class A>
-  using UnionFields =
-      std::vector<IR_Vertex_Type<A> *, Arena<IR_Vertex_Type<A> *>>;
-
-  template <class A>
   class IR_Vertex_UnionTy final : public IR_Vertex_Type<A> {
-    UnionFields<A> m_fields;
+    std::span<IR_Vertex_Type<A> *> m_fields;
 
   public:
-    IR_Vertex_UnionTy(const UnionFields<A> &fields)
+    constexpr IR_Vertex_UnionTy(auto fields)
         : IR_Vertex_Type<A>(IR_tUNION), m_fields(fields) {}
 
-    const UnionFields<A> &getFields() const { return m_fields; }
+    constexpr auto getFields() const { return m_fields; }
   };
 
   template <class A>
@@ -1168,11 +1160,11 @@ namespace ncc::ir {
     size_t m_size;
 
   public:
-    IR_Vertex_ArrayTy(IR_Vertex_Type<A> *element, size_t size)
+    constexpr IR_Vertex_ArrayTy(auto element, auto size)
         : IR_Vertex_Type<A>(IR_tARRAY), m_element(element), m_size(size) {}
 
-    auto getElement() const { return m_element; }
-    size_t getCount() const { return m_size; }
+    constexpr auto getElement() const { return m_element; }
+    constexpr auto getCount() const { return m_size; }
   };
 
   enum class FnAttr {
@@ -1188,29 +1180,27 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_FnTy final : public IR_Vertex_Type<A> {
-    FnParams<A> m_params;
+    std::span<IR_Vertex_Type<A> *> m_params;
     FnAttrs m_attrs;
     IR_Vertex_Type<A> *m_return;
-    uint8_t m_platform_ptr_size_bytes;
+    uint8_t m_native_size;
 
   public:
-    IR_Vertex_FnTy(const FnParams<A> &params, IR_Vertex_Type<A> *ret,
-                   const FnAttrs &attrs, uint8_t platform_ptr_size_bytes = 8)
+    IR_Vertex_FnTy(auto params, auto ret, auto attrs,
+                   auto platform_ptr_size_bytes = 8)
         : IR_Vertex_Type<A>(IR_tFUNC),
           m_params(params),
           m_attrs(attrs),
           m_return(ret),
-          m_platform_ptr_size_bytes(platform_ptr_size_bytes) {}
+          m_native_size(platform_ptr_size_bytes) {}
 
-    const FnParams<A> &getParams() const { return m_params; }
+    auto getParams() const { return m_params; }
     auto getReturn() const { return m_return; }
-    const FnAttrs &getAttrs() const { return m_attrs; }
+    auto getAttrs() const { return m_attrs; }
 
     bool isVariadic() const { return m_attrs.contains(FnAttr::Variadic); }
 
-    uint8_t getPlatformPointerSizeBytes() const {
-      return m_platform_ptr_size_bytes;
-    }
+    auto getPlatformPointerSizeBytes() const { return m_native_size; }
   };
 
   ///=============================================================================
@@ -1395,9 +1385,10 @@ namespace ncc::ir {
         : IR_Vertex_Expr<A>(IR_eIDENT), m_name(name), m_what(what) {}
 
     auto getWhat() const { return m_what; }
-    void setWhat(IR_Vertex_Expr<A> *what) { m_what = what; }
+    auto getName() const { return m_name; }
 
-    std::string_view setName(std::string_view name) { m_name = name; }
+    void setWhat(IR_Vertex_Expr<A> *what) { m_what = what; }
+    void setName(std::string_view name) { m_name = name; }
   };
 
   template <class A>
@@ -1423,7 +1414,7 @@ namespace ncc::ir {
     std::string_view m_name;
     IR_Vertex_Expr<A> *m_value;
     AbiTag m_abi_tag;
-    StorageClass m_storage_class;
+    StorageClass m_storage;
     bool m_readonly;
 
   public:
@@ -1434,23 +1425,19 @@ namespace ncc::ir {
           m_name(name),
           m_value(value),
           m_abi_tag(abi_tag),
-          m_storage_class(storage_class),
+          m_storage(storage_class),
           m_readonly(readonly) {}
 
-    std::string_view setName(std::string_view name) { m_name = name; }
-
+    std::string_view getName() const { return m_name; }
     auto getValue() const { return m_value; }
-    void setValue(IR_Vertex_Expr<A> *value) { m_value = value; }
-
     AbiTag getAbiTag() const { return m_abi_tag; }
-    void setAbiTag(AbiTag abi_tag) { m_abi_tag = abi_tag; }
-
-    StorageClass getStorageClass() const { return m_storage_class; }
-    void setStorageClass(StorageClass storage_class) {
-      m_storage_class = storage_class;
-    }
-
+    StorageClass getStorageClass() const { return m_storage; }
     bool isReadonly() const { return m_readonly; }
+
+    void setAbiTag(AbiTag abi_tag) { m_abi_tag = abi_tag; }
+    void setValue(IR_Vertex_Expr<A> *value) { m_value = value; }
+    void setName(std::string_view name) { m_name = name; }
+    void setStorageClass(StorageClass storage) { m_storage = storage; }
     void setReadonly(bool readonly) { m_readonly = readonly; }
   };
 
@@ -1744,7 +1731,7 @@ namespace ncc::ir {
       }
 
       case IR_eIDENT: {
-        R = as<IR_Vertex_Ident<A>>()->m_name;
+        R = as<IR_Vertex_Ident<A>>()->getName();
         break;
       }
 
@@ -1753,7 +1740,7 @@ namespace ncc::ir {
       }
 
       case IR_eLOCAL: {
-        R = as<IR_Vertex_Local<A>>()->m_name;
+        R = as<IR_Vertex_Local<A>>()->getName();
         break;
       }
 
@@ -1794,7 +1781,7 @@ namespace ncc::ir {
       }
 
       case IR_eFUNCTION: {
-        R = as<IR_Vertex_Fn<A>>()->m_name;
+        R = as<IR_Vertex_Fn<A>>()->getName();
         break;
       }
 
@@ -1872,12 +1859,12 @@ namespace ncc::ir {
       }
 
       case IR_tCONST: {
-        R = as<IR_Vertex_ConstTy<A>>()->m_item->getName();
+        R = as<IR_Vertex_ConstTy<A>>()->getItem()->getName();
         break;
       }
 
       case IR_tOPAQUE: {
-        R = as<IR_Vertex_OpaqueTy<A>>()->m_name;
+        R = as<IR_Vertex_OpaqueTy<A>>()->getName();
         break;
       }
 
@@ -2209,39 +2196,6 @@ namespace ncc::ir {
   std::optional<Expr *> comptime_impl(
       Expr *x, std::optional<std::function<void(std::string_view)>> eprintn =
                    std::nullopt);
-
-  //   template <typename T>
-  //   std::optional<T> uint_as(const Expr *x) {
-  // #define IS_T(x) std::is_same_v<T, Expr>
-
-  //     qcore_assert(x != nullptr, "evaluate_as(): x is nullptr.");
-
-  //     static_assert(IS_T(std::string) || IS_T(uint64_t),
-  //                   "evaluate_as(): T must be either std::string or
-  //                   uint64_t.");
-
-  //     Expr *r = comptime_impl(const_cast<Expr *>(x));
-  //     if (r == nullptr) {
-  //       return std::nullopt;
-  //     }
-
-  //     nr_ty_t ty = r->getKind();
-
-  //     if (ty != IR_eINT) {
-  //       return std::nullopt;
-  //     }
-
-  //     if constexpr (IS_T(std::string)) {
-  //       return r->as<Int>()->getValue();
-  //     } else if constexpr (IS_T(uint64_t)) {
-  //       return r->as<Int>()->getValue();
-  //     }
-
-  //     return std::nullopt;
-
-  // #undef IS_T
-  //   }
-
   /** Add source debugging information to an IR node */
   template <typename T>
   static inline T *debug_info(T *N, uint32_t line, uint32_t col) {
