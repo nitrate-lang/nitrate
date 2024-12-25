@@ -45,63 +45,63 @@ namespace ncc::ir {
 
   /** @brief Nitrate abstract syntax tree node type */
   typedef enum nr_ty_t {
-    NR_NODE_BINEXPR,     /* Binary expression */
-    NR_NODE_UNEXPR,      /* Unary expression */
-    NR_NODE_POST_UNEXPR, /* Postfix unary expression */
+    IR_BINEXPR,     /* Binary expression */
+    IR_UNEXPR,      /* Unary expression */
+    IR_POST_UNEXPR, /* Postfix unary expression */
 
-    NR_NODE_INT,   /* Integer literal */
-    NR_NODE_FLOAT, /* Floating-point literal */
-    NR_NODE_LIST,  /* List literal */
+    IR_INT,   /* Integer literal */
+    IR_FLOAT, /* Floating-point literal */
+    IR_LIST,  /* List literal */
 
-    NR_NODE_CALL,   /* Function call */
-    NR_NODE_SEQ,    /* Sequence */
-    NR_NODE_INDEX,  /* Index / member access */
-    NR_NODE_IDENT,  /* Identifier */
-    NR_NODE_EXTERN, /* Linker visibility modifier */
-    NR_NODE_LOCAL,  /* Variable declaration */
-    NR_NODE_RET,    /* Return statement */
-    NR_NODE_BRK,    /* Break statement */
-    NR_NODE_CONT,   /* Continue statement */
-    NR_NODE_IF,     /* If statement */
-    NR_NODE_WHILE,  /* While loop */
-    NR_NODE_FOR,    /* For loop */
-    NR_NODE_CASE,   /* Case statement */
-    NR_NODE_SWITCH, /* Switch statement */
-    NR_NODE_FN,     /* Function definition */
-    NR_NODE_ASM,    /* Inline assembly */
-    NR_NODE_IGN,    /* No-op */
+    IR_CALL,   /* Function call */
+    IR_SEQ,    /* Sequence */
+    IR_INDEX,  /* Index / member access */
+    IR_IDENT,  /* Identifier */
+    IR_EXTERN, /* Linker visibility modifier */
+    IR_LOCAL,  /* Variable declaration */
+    IR_RET,    /* Return statement */
+    IR_BRK,    /* Break statement */
+    IR_CONT,   /* Continue statement */
+    IR_IF,     /* If statement */
+    IR_WHILE,  /* While loop */
+    IR_FOR,    /* For loop */
+    IR_CASE,   /* Case statement */
+    IR_SWITCH, /* Switch statement */
+    IR_FN,     /* Function definition */
+    IR_ASM,    /* Inline assembly */
+    IR_IGN,    /* No-op */
 
-    NR_NODE_U1_TY,     /* 1-bit unsigned integer (boolean) */
-    NR_NODE_U8_TY,     /* 8-bit unsigned integer */
-    NR_NODE_U16_TY,    /* 16-bit unsigned integer */
-    NR_NODE_U32_TY,    /* 32-bit unsigned integer */
-    NR_NODE_U64_TY,    /* 64-bit unsigned integer */
-    NR_NODE_U128_TY,   /* 128-bit unsigned integer */
-    NR_NODE_I8_TY,     /* 8-bit signed integer */
-    NR_NODE_I16_TY,    /* 16-bit signed integer */
-    NR_NODE_I32_TY,    /* 32-bit signed integer */
-    NR_NODE_I64_TY,    /* 64-bit signed integer */
-    NR_NODE_I128_TY,   /* 128-bit signed integer */
-    NR_NODE_F16_TY,    /* 16-bit floating-point */
-    NR_NODE_F32_TY,    /* 32-bit floating-point */
-    NR_NODE_F64_TY,    /* 64-bit floating-point */
-    NR_NODE_F128_TY,   /* 128-bit floating-point */
-    NR_NODE_VOID_TY,   /* Void type */
-    NR_NODE_PTR_TY,    /* Pointer type */
-    NR_NODE_OPAQUE_TY, /* Opaque type */
-    NR_NODE_STRUCT_TY, /* Struct type */
-    NR_NODE_UNION_TY,  /* Union type */
-    NR_NODE_ARRAY_TY,  /* Array type */
-    NR_NODE_FN_TY,     /* Function type */
-    NR_NODE_CONST_TY,  /* Constant wrapper type */
+    IR_U1_TY,     /* 1-bit unsigned integer (boolean) */
+    IR_U8_TY,     /* 8-bit unsigned integer */
+    IR_U16_TY,    /* 16-bit unsigned integer */
+    IR_U32_TY,    /* 32-bit unsigned integer */
+    IR_U64_TY,    /* 64-bit unsigned integer */
+    IR_U128_TY,   /* 128-bit unsigned integer */
+    IR_I8_TY,     /* 8-bit signed integer */
+    IR_I16_TY,    /* 16-bit signed integer */
+    IR_I32_TY,    /* 32-bit signed integer */
+    IR_I64_TY,    /* 64-bit signed integer */
+    IR_I128_TY,   /* 128-bit signed integer */
+    IR_F16_TY,    /* 16-bit floating-point */
+    IR_F32_TY,    /* 32-bit floating-point */
+    IR_F64_TY,    /* 64-bit floating-point */
+    IR_F128_TY,   /* 128-bit floating-point */
+    IR_VOID_TY,   /* Void type */
+    IR_PTR_TY,    /* Pointer type */
+    IR_OPAQUE_TY, /* Opaque type */
+    IR_STRUCT_TY, /* Struct type */
+    IR_UNION_TY,  /* Union type */
+    IR_ARRAY_TY,  /* Array type */
+    IR_FN_TY,     /* Function type */
+    IR_CONST_TY,  /* Constant wrapper type */
 
-    NR_NODE_TMP, /* Temp node; must be resolved with more information */
+    IR_TMP, /* Temp node; must be resolved with more information */
 
-    NR_NODE_FIRST = NR_NODE_BINEXPR,
-    NR_NODE_LAST = NR_NODE_TMP,
+    IR_FIRST = IR_BINEXPR,
+    IR_LAST = IR_TMP,
   } nr_ty_t;
 
-  constexpr size_t NR_NODE_COUNT = (NR_NODE_LAST - NR_NODE_FIRST + 1);
+  constexpr size_t IR_COUNT = (IR_LAST - IR_FIRST + 1);
 }  // namespace ncc::ir
 
 namespace ncc::ir {

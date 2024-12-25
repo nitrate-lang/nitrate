@@ -208,106 +208,106 @@ static void mangle_type(const Type *n, std::ostream &ss) {
    */
 
   switch (n->getKind()) {
-    case NR_NODE_U1_TY: {
+    case IR_U1_TY: {
       ss << 'b';
       break;
     }
 
-    case NR_NODE_U8_TY: {
+    case IR_U8_TY: {
       ss << 'h';
       break;
     }
 
-    case NR_NODE_U16_TY: {
+    case IR_U16_TY: {
       ss << 't';
       break;
     }
 
-    case NR_NODE_U32_TY: {
+    case IR_U32_TY: {
       ss << 'j';
       break;
     }
 
-    case NR_NODE_U64_TY: {
+    case IR_U64_TY: {
       ss << 'm';
       break;
     }
 
-    case NR_NODE_U128_TY: {
+    case IR_U128_TY: {
       ss << 'o';
       break;
     }
 
-    case NR_NODE_I8_TY: {
+    case IR_I8_TY: {
       ss << 'a';
       break;
     }
 
-    case NR_NODE_I16_TY: {
+    case IR_I16_TY: {
       ss << 's';
       break;
     }
 
-    case NR_NODE_I32_TY: {
+    case IR_I32_TY: {
       ss << 'i';
       break;
     }
 
-    case NR_NODE_I64_TY: {
+    case IR_I64_TY: {
       ss << 'l';
       break;
     }
 
-    case NR_NODE_I128_TY: {
+    case IR_I128_TY: {
       ss << 'n';
       break;
     }
 
-    case NR_NODE_F16_TY: {
+    case IR_F16_TY: {
       ss << "Dh";
       break;
     }
 
-    case NR_NODE_F32_TY: {
+    case IR_F32_TY: {
       ss << "Df";
       break;
     }
 
-    case NR_NODE_F64_TY: {
+    case IR_F64_TY: {
       ss << "Dd";
       break;
     }
 
-    case NR_NODE_F128_TY: {
+    case IR_F128_TY: {
       ss << "De";
       break;
     }
 
-    case NR_NODE_VOID_TY: {
+    case IR_VOID_TY: {
       ss << 'v';
       break;
     }
 
-    case NR_NODE_PTR_TY: {
+    case IR_PTR_TY: {
       ss << 'P';
       mangle_type(n->as<PtrTy>()->getPointee(), ss);
       break;
     }
 
-    case NR_NODE_CONST_TY: {
+    case IR_CONST_TY: {
       ss << 'K';
       mangle_type(n->as<ConstTy>()->getItem(), ss);
       break;
     }
 
-    case NR_NODE_OPAQUE_TY: {
+    case IR_OPAQUE_TY: {
       ss << 'N';
       encode_ns_size_value(n->as<OpaqueTy>()->getName(), ss);
       ss << 'E';
       break;
     }
 
-    case NR_NODE_STRUCT_TY: {
+    case IR_STRUCT_TY: {
       /**
        * @brief Unlike C++, Nitrate encodes field types into the name.
        * Making any changes to a struct will break ABI compatibility
@@ -322,7 +322,7 @@ static void mangle_type(const Type *n, std::ostream &ss) {
       break;
     }
 
-    case NR_NODE_UNION_TY: {
+    case IR_UNION_TY: {
       /**
        * @brief Unlike C++, Nitrate encodes field types into the name.
        * Making any changes to a union will break ABI compatibility
@@ -337,7 +337,7 @@ static void mangle_type(const Type *n, std::ostream &ss) {
       break;
     }
 
-    case NR_NODE_ARRAY_TY: {
+    case IR_ARRAY_TY: {
       ss << 'A';
       ss << n->as<ArrayTy>()->getCount();
       ss << '_';
@@ -345,7 +345,7 @@ static void mangle_type(const Type *n, std::ostream &ss) {
       break;
     }
 
-    case NR_NODE_FN_TY: {
+    case IR_FN_TY: {
       /**
        * @brief Unlike C++, Nitrate also encodes the parameter types
        * into the name. This is to avoid runtime UB when calling
@@ -677,8 +677,8 @@ CPP_EXPORT std::optional<std::string> SymbolEncoding::mangle_name(
   }
 
   static std::unordered_set<nr_ty_t> valid = {
-      NR_NODE_FN,
-      NR_NODE_LOCAL,
+      IR_FN,
+      IR_LOCAL,
   };
 
   nr_ty_t kind = symbol->getKind();

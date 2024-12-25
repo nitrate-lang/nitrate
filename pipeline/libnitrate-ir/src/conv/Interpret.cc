@@ -52,7 +52,7 @@ namespace comptime {
     void eprintn(std::string_view message) { m_eprintn_cb(message); }
 
     void prepare(Expr *E) {
-      if (E->is(NR_NODE_INT) || E->is(NR_NODE_FLOAT)) {
+      if (E->is(IR_INT) || E->is(IR_FLOAT)) {
         m_result = E;
         return;
       }

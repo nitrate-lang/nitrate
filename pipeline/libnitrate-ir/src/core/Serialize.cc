@@ -206,7 +206,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
 #endif
 
   switch (n->getKind()) {
-    case NR_NODE_BINEXPR: {
+    case IR_BINEXPR: {
       ss << "(";
       recurse(n->as<BinExpr>()->getLHS());
       ss << " ";
@@ -216,7 +216,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << ")";
       break;
     }
-    case NR_NODE_UNEXPR: {
+    case IR_UNEXPR: {
       ss << "(";
       ss << n->as<UnExpr>()->getOp();
       ss << "(";
@@ -224,24 +224,24 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "))";
       break;
     }
-    case NR_NODE_POST_UNEXPR: {
+    case IR_POST_UNEXPR: {
       ss << "(";
       recurse(n->as<PostUnExpr>()->getExpr());
       ss << n->as<PostUnExpr>()->getOp();
       ss << ")";
       break;
     }
-    case NR_NODE_INT: {
+    case IR_INT: {
       recurse(n->as<Int>()->getType().value_or(nullptr));
       ss << " " << n->as<Int>()->getValueString();
       break;
     }
-    case NR_NODE_FLOAT: {
+    case IR_FLOAT: {
       recurse(n->as<Float>()->getType().value_or(nullptr));
       ss << " " << n->as<Float>()->getValue();
       break;
     }
-    case NR_NODE_LIST: {
+    case IR_LIST: {
       // Check if it matches the string literal pattern
       List *L = n->as<List>();
 
@@ -251,7 +251,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       bool is_cstring = false;
       std::string c_string;
       for (size_t i = 0; i < L->size(); i++) {
-        if (!L->at(i)->is(NR_NODE_INT)) {
+        if (!L->at(i)->is(IR_INT)) {
           break;
         }
 
@@ -286,11 +286,11 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       }
       break;
     }
-    case NR_NODE_CALL: {
+    case IR_CALL: {
       auto tkind = n->as<Call>()->getTarget()->getKind();
-      if (tkind == NR_NODE_LOCAL) {
+      if (tkind == IR_LOCAL) {
         ss << n->as<Call>()->getTarget()->as<Local>()->getName();
-      } else if (tkind == NR_NODE_FN) {
+      } else if (tkind == IR_FN) {
         ss << n->as<Call>()->getTarget()->as<Fn>()->getName();
       } else {
         recurse(n->as<Call>()->getTarget());
@@ -306,13 +306,13 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << ")";
       break;
     }
-    case NR_NODE_SEQ: {
+    case IR_SEQ: {
       ss << "seq {";
       state.indent++;
       indent(ss, state);
       for (auto it = n->as<Seq>()->getItems().begin();
            it != n->as<Seq>()->getItems().end(); ++it) {
-        if ((*it)->getKind() == NR_NODE_IGN) {
+        if ((*it)->getKind() == IR_IGN) {
           continue;
         }
 
@@ -328,26 +328,26 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "}";
       break;
     }
-    case NR_NODE_INDEX: {
+    case IR_INDEX: {
       recurse(n->as<Index>()->getExpr());
       ss << "[";
       recurse(n->as<Index>()->getIndex());
       ss << "]";
       break;
     }
-    case NR_NODE_IDENT: {
+    case IR_IDENT: {
       recurse(n->as<Ident>()->getType().value_or(nullptr));
       ss << " " << n->as<Ident>()->getName();
       break;
     }
-    case NR_NODE_EXTERN: {
+    case IR_EXTERN: {
       ss << "extern ";
       escape_string(ss, n->as<Extern>()->getAbiName());
       ss << " ";
       recurse(n->as<Extern>()->getValue());
       break;
     }
-    case NR_NODE_LOCAL: {
+    case IR_LOCAL: {
       ss << "local ";
       ss << n->as<Local>()->getName();
       if (auto ty = n->as<Local>()->getValue()->getType()) {
@@ -359,21 +359,21 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       recurse(n->as<Local>()->getValue());
       break;
     }
-    case NR_NODE_RET: {
+    case IR_RET: {
       ss << "ret ";
       recurse(n->as<Ret>()->getExpr());
       break;
     }
-    case NR_NODE_BRK: {
+    case IR_BRK: {
       ss << "brk";
       break;
     }
-    case NR_NODE_CONT: {
+    case IR_CONT: {
       ss << "cont";
       break;
     }
 
-    case NR_NODE_IF: {
+    case IR_IF: {
       ss << "if (";
       recurse(n->as<If>()->getCond());
       ss << ") then ";
@@ -382,14 +382,14 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       recurse(n->as<If>()->getElse());
       break;
     }
-    case NR_NODE_WHILE: {
+    case IR_WHILE: {
       ss << "while (";
       recurse(n->as<While>()->getCond());
       ss << ") ";
       recurse(n->as<While>()->getBody());
       break;
     }
-    case NR_NODE_FOR: {
+    case IR_FOR: {
       ss << "for (";
       recurse(n->as<For>()->getInit());
       ss << "; ";
@@ -400,14 +400,14 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       recurse(n->as<For>()->getBody());
       break;
     }
-    case NR_NODE_CASE: {
+    case IR_CASE: {
       ss << "case ";
       recurse(n->as<Case>()->getCond());
       ss << ": ";
       recurse(n->as<Case>()->getBody());
       break;
     }
-    case NR_NODE_SWITCH: {
+    case IR_SWITCH: {
       ss << "switch (";
       recurse(n->as<Switch>()->getCond());
       ss << ") {";
@@ -426,7 +426,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "}";
       break;
     }
-    case NR_NODE_FN: {
+    case IR_FN: {
       ss << "fn ";
       ss << n->as<Fn>()->getName();
       ss << "(";
@@ -451,93 +451,93 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       }
       break;
     }
-    case NR_NODE_ASM: {
+    case IR_ASM: {
       qcore_implement();
     }
-    case NR_NODE_IGN: {
+    case IR_IGN: {
       break;
     }
-    case NR_NODE_U1_TY: {
+    case IR_U1_TY: {
       ss << "u1";
       break;
     }
-    case NR_NODE_U8_TY: {
+    case IR_U8_TY: {
       ss << "u8";
       break;
     }
-    case NR_NODE_U16_TY: {
+    case IR_U16_TY: {
       ss << "u16";
       break;
     }
-    case NR_NODE_U32_TY: {
+    case IR_U32_TY: {
       ss << "u32";
       break;
     }
-    case NR_NODE_U64_TY: {
+    case IR_U64_TY: {
       ss << "u64";
       break;
     }
-    case NR_NODE_U128_TY: {
+    case IR_U128_TY: {
       ss << "u128";
       break;
     }
-    case NR_NODE_I8_TY: {
+    case IR_I8_TY: {
       ss << "i8";
       break;
     }
-    case NR_NODE_I16_TY: {
+    case IR_I16_TY: {
       ss << "i16";
       break;
     }
-    case NR_NODE_I32_TY: {
+    case IR_I32_TY: {
       ss << "i32";
       break;
     }
-    case NR_NODE_I64_TY: {
+    case IR_I64_TY: {
       ss << "i64";
       break;
     }
-    case NR_NODE_I128_TY: {
+    case IR_I128_TY: {
       ss << "i128";
       break;
     }
-    case NR_NODE_F16_TY: {
+    case IR_F16_TY: {
       ss << "f16";
       break;
     }
-    case NR_NODE_F32_TY: {
+    case IR_F32_TY: {
       ss << "f32";
       break;
     }
-    case NR_NODE_F64_TY: {
+    case IR_F64_TY: {
       ss << "f64";
       break;
     }
-    case NR_NODE_F128_TY: {
+    case IR_F128_TY: {
       ss << "f128";
       break;
     }
-    case NR_NODE_VOID_TY: {
+    case IR_VOID_TY: {
       ss << "void";
       break;
     }
-    case NR_NODE_PTR_TY: {
+    case IR_PTR_TY: {
       recurse(n->as<PtrTy>()->getPointee());
       ss << "*";
       break;
     }
-    case NR_NODE_CONST_TY: {
+    case IR_CONST_TY: {
       ss << "const<";
       recurse(n->as<ConstTy>()->getItem());
       ss << ">";
       break;
     }
-    case NR_NODE_OPAQUE_TY: {
+    case IR_OPAQUE_TY: {
       ss << "opaque ";
       ss << n->as<OpaqueTy>()->getName();
       break;
     }
-    case NR_NODE_STRUCT_TY: {
+    case IR_STRUCT_TY: {
       uint64_t type_id = n->as<StructTy>()->getUniqId();
       if (!state.types.contains(type_id)) {
         typedefs << "%" << type_id << " = struct {";
@@ -545,8 +545,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
         indent(typedefs, state);
         for (auto it = n->as<StructTy>()->getFields().begin();
              it != n->as<StructTy>()->getFields().end(); ++it) {
-          if ((*it)->getKind() == NR_NODE_STRUCT_TY ||
-              (*it)->getKind() == NR_NODE_UNION_TY) {
+          if ((*it)->getKind() == IR_STRUCT_TY ||
+              (*it)->getKind() == IR_UNION_TY) {
             typedefs << "%" << (*it)->as<StructTy>()->getUniqId();
           } else {
             recurse_ex(*it, typedefs);
@@ -566,7 +566,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "%" << type_id;
       break;
     }
-    case NR_NODE_UNION_TY: {
+    case IR_UNION_TY: {
       uint64_t type_id = n->as<UnionTy>()->getUniqId();
       if (!state.types.contains(type_id)) {
         typedefs << "%" << type_id << " = union {";
@@ -574,8 +574,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
         indent(typedefs, state);
         for (auto it = n->as<UnionTy>()->getFields().begin();
              it != n->as<UnionTy>()->getFields().end(); ++it) {
-          if ((*it)->getKind() == NR_NODE_STRUCT_TY ||
-              (*it)->getKind() == NR_NODE_UNION_TY) {
+          if ((*it)->getKind() == IR_STRUCT_TY ||
+              (*it)->getKind() == IR_UNION_TY) {
             typedefs << "%" << (*it)->as<StructTy>()->getUniqId();
           } else {
             recurse_ex(*it, typedefs);
@@ -595,14 +595,14 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "%" << type_id;
       break;
     }
-    case NR_NODE_ARRAY_TY: {
+    case IR_ARRAY_TY: {
       ss << "[";
       recurse(n->as<ArrayTy>()->getElement());
       ss << "; " << n->as<ArrayTy>()->getCount();
       ss << "]";
       break;
     }
-    case NR_NODE_FN_TY: {
+    case IR_FN_TY: {
       ss << "fn (";
       bool variadic = n->as<FnTy>()->getAttrs().contains(FnAttr::Variadic);
       for (auto it = n->as<FnTy>()->getParams().begin();
@@ -619,7 +619,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       recurse(n->as<FnTy>()->getReturn());
       break;
     }
-    case NR_NODE_TMP: {
+    case IR_TMP: {
       ss << "`" << static_cast<uint64_t>(n->as<Tmp>()->getTmpType());
       ss << ";" << n->as<Tmp>()->getData().index() << "`";
       break;

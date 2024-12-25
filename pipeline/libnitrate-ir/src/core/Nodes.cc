@@ -61,9 +61,9 @@ namespace ncc::ir {
       std::make_unique<ncc::dyn_arena>();
 
   namespace mem {
-    Brk static_NR_NODE_BRK;
-    Cont static_NR_NODE_CONT;
-    Expr static_NR_NODE_IGN(NR_NODE_IGN);
+    Brk static_IR_BRK;
+    Cont static_IR_CONT;
+    Expr static_IR_IGN(IR_IGN);
 
   }  // namespace mem
 }  // namespace ncc::ir
@@ -161,157 +161,157 @@ CPP_EXPORT boost::uuids::uuid Expr::hash() {
 #define MIXIN_STRING(x) SHA1_Update(&ctx, x.data(), x.size())
 
     switch (kind) {
-      case NR_NODE_BINEXPR: {
+      case IR_BINEXPR: {
         MIXIN_PRIMITIVE(cur->as<BinExpr>()->m_op);
         break;
       }
-      case NR_NODE_UNEXPR: {
+      case IR_UNEXPR: {
         MIXIN_PRIMITIVE(cur->as<UnExpr>()->m_op);
         break;
       }
-      case NR_NODE_POST_UNEXPR: {
+      case IR_POST_UNEXPR: {
         MIXIN_PRIMITIVE(cur->as<PostUnExpr>()->m_op);
         break;
       }
-      case NR_NODE_INT: {
+      case IR_INT: {
         uint128_t x = cur->as<Int>()->getValue();
         MIXIN_PRIMITIVE(x);
         break;
       }
-      case NR_NODE_FLOAT: {
+      case IR_FLOAT: {
         double v = cur->as<Float>()->getValue();
         FloatSize s = cur->as<Float>()->getSize();
         MIXIN_PRIMITIVE(v);
         MIXIN_PRIMITIVE(s);
         break;
       }
-      case NR_NODE_LIST: {
+      case IR_LIST: {
         break;
       }
-      case NR_NODE_CALL: {
+      case IR_CALL: {
         break;
       }
-      case NR_NODE_SEQ: {
+      case IR_SEQ: {
         break;
       }
-      case NR_NODE_INDEX: {
+      case IR_INDEX: {
         break;
       }
-      case NR_NODE_IDENT: {
+      case IR_IDENT: {
         MIXIN_STRING(cur->as<Ident>()->m_name);
         break;
       }
-      case NR_NODE_EXTERN: {
+      case IR_EXTERN: {
         MIXIN_STRING(cur->as<Extern>()->m_abi_name);
         break;
       }
-      case NR_NODE_LOCAL: {
+      case IR_LOCAL: {
         MIXIN_STRING(cur->as<Local>()->m_name);
         break;
       }
-      case NR_NODE_RET: {
+      case IR_RET: {
         break;
       }
-      case NR_NODE_BRK: {
+      case IR_BRK: {
         break;
       }
-      case NR_NODE_CONT: {
+      case IR_CONT: {
         break;
       }
-      case NR_NODE_IF: {
+      case IR_IF: {
         break;
       }
-      case NR_NODE_WHILE: {
+      case IR_WHILE: {
         break;
       }
-      case NR_NODE_FOR: {
+      case IR_FOR: {
         break;
       }
-      case NR_NODE_CASE: {
+      case IR_CASE: {
         break;
       }
-      case NR_NODE_SWITCH: {
+      case IR_SWITCH: {
         break;
       }
-      case NR_NODE_IGN: {
+      case IR_IGN: {
         break;
       }
-      case NR_NODE_FN: {
+      case IR_FN: {
         MIXIN_STRING(cur->as<Fn>()->m_name);
         break;
       }
-      case NR_NODE_ASM: {
+      case IR_ASM: {
         qcore_implement();
         break;
       }
-      case NR_NODE_U1_TY: {
+      case IR_U1_TY: {
         break;
       }
-      case NR_NODE_U8_TY: {
+      case IR_U8_TY: {
         break;
       }
-      case NR_NODE_U16_TY: {
+      case IR_U16_TY: {
         break;
       }
-      case NR_NODE_U32_TY: {
+      case IR_U32_TY: {
         break;
       }
-      case NR_NODE_U64_TY: {
+      case IR_U64_TY: {
         break;
       }
-      case NR_NODE_U128_TY: {
+      case IR_U128_TY: {
         break;
       }
-      case NR_NODE_I8_TY: {
+      case IR_I8_TY: {
         break;
       }
-      case NR_NODE_I16_TY: {
+      case IR_I16_TY: {
         break;
       }
-      case NR_NODE_I32_TY: {
+      case IR_I32_TY: {
         break;
       }
-      case NR_NODE_I64_TY: {
+      case IR_I64_TY: {
         break;
       }
-      case NR_NODE_I128_TY: {
+      case IR_I128_TY: {
         break;
       }
-      case NR_NODE_F16_TY: {
+      case IR_F16_TY: {
         break;
       }
-      case NR_NODE_F32_TY: {
+      case IR_F32_TY: {
         break;
       }
-      case NR_NODE_F64_TY: {
+      case IR_F64_TY: {
         break;
       }
-      case NR_NODE_F128_TY: {
+      case IR_F128_TY: {
         break;
       }
-      case NR_NODE_VOID_TY: {
+      case IR_VOID_TY: {
         break;
       }
-      case NR_NODE_PTR_TY: {
+      case IR_PTR_TY: {
         break;
       }
-      case NR_NODE_CONST_TY: {
+      case IR_CONST_TY: {
         break;
       }
-      case NR_NODE_OPAQUE_TY: {
+      case IR_OPAQUE_TY: {
         MIXIN_STRING(cur->as<OpaqueTy>()->m_name);
         break;
       }
-      case NR_NODE_STRUCT_TY: {
+      case IR_STRUCT_TY: {
         break;
       }
-      case NR_NODE_UNION_TY: {
+      case IR_UNION_TY: {
         break;
       }
-      case NR_NODE_ARRAY_TY: {
+      case IR_ARRAY_TY: {
         break;
       }
-      case NR_NODE_FN_TY: {
+      case IR_FN_TY: {
         std::set<FnAttr> tags;
         for (auto &tag : cur->as<FnTy>()->m_attrs) {
           tags.insert(tag);
@@ -321,7 +321,7 @@ CPP_EXPORT boost::uuids::uuid Expr::hash() {
         }
         break;
       }
-      case NR_NODE_TMP: {
+      case IR_TMP: {
         MIXIN_PRIMITIVE(cur->as<Tmp>()->m_type);
 
         if (std::holds_alternative<CallArgsTmpNodeCradle>(
@@ -425,6 +425,4 @@ CPP_EXPORT Int *Int::get(uint128_t val, uint8_t size) {
 
 ///=============================================================================
 
-Expr *ir::createIgn() {
-  return new (Arena<Expr>().allocate(1)) Expr(NR_NODE_IGN);
-}
+Expr *ir::createIgn() { return new (Arena<Expr>().allocate(1)) Expr(IR_IGN); }

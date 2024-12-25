@@ -66,32 +66,32 @@ nr_node_t *nr_clone_impl(
   out = nullptr;
 
   switch (in->getKind()) {
-    case NR_NODE_BINEXPR: {
+    case IR_BINEXPR: {
       BinExpr *n = static_cast<BinExpr *>(in);
       out = create<BinExpr>(clone(n->getLHS()), clone(n->getRHS()), n->getOp());
       break;
     }
-    case NR_NODE_UNEXPR: {
+    case IR_UNEXPR: {
       UnExpr *n = static_cast<UnExpr *>(in);
       out = create<UnExpr>(clone(n->getExpr()), n->getOp());
       break;
     }
-    case NR_NODE_POST_UNEXPR: {
+    case IR_POST_UNEXPR: {
       PostUnExpr *n = static_cast<PostUnExpr *>(in);
       out = create<PostUnExpr>(clone(n->getExpr()), n->getOp());
       break;
     }
-    case NR_NODE_INT: {
+    case IR_INT: {
       Int *n = static_cast<Int *>(in);
       out = create<Int>(n->getValue(), n->getSize());
       break;
     }
-    case NR_NODE_FLOAT: {
+    case IR_FLOAT: {
       Float *n = static_cast<Float *>(in);
       out = create<Float>(n->getValue(), n->getSize());
       break;
     }
-    case NR_NODE_LIST: {
+    case IR_LIST: {
       List *n = static_cast<List *>(in);
       ListItems items;
       items.reserve(n->size());
@@ -101,7 +101,7 @@ nr_node_t *nr_clone_impl(
       out = create<List>(std::move(items), n->isHomogenous());
       break;
     }
-    case NR_NODE_CALL: {
+    case IR_CALL: {
       Call *n = static_cast<Call *>(in);
       CallArgs args;
       for (auto arg : n->getArgs()) {
@@ -110,7 +110,7 @@ nr_node_t *nr_clone_impl(
       out = create<Call>(clone(n->getTarget()), std::move(args));
       break;
     }
-    case NR_NODE_SEQ: {
+    case IR_SEQ: {
       SeqItems items;
       items.reserve(static_cast<Seq *>(in)->getItems().size());
       for (auto item : static_cast<Seq *>(in)->getItems()) {
@@ -119,61 +119,61 @@ nr_node_t *nr_clone_impl(
       out = create<Seq>(std::move(items));
       break;
     }
-    case NR_NODE_INDEX: {
+    case IR_INDEX: {
       Index *n = static_cast<Index *>(in);
       out = create<Index>(clone(n->getExpr()), clone(n->getIndex()));
       break;
     }
-    case NR_NODE_IDENT: {
+    case IR_IDENT: {
       Expr *bad_tmp_ref = static_cast<Ident *>(in)->getWhat();
       out = create<Ident>(static_cast<Ident *>(in)->getName(), bad_tmp_ref);
       break;
     }
-    case NR_NODE_EXTERN: {
+    case IR_EXTERN: {
       Extern *n = static_cast<Extern *>(in);
       out = create<Extern>(clone(n->getValue()), n->getAbiName());
       break;
     }
-    case NR_NODE_LOCAL: {
+    case IR_LOCAL: {
       Local *n = static_cast<Local *>(in);
       out = create<Local>(n->getName(), clone(n->getValue()), n->getAbiTag());
       break;
     }
-    case NR_NODE_RET: {
+    case IR_RET: {
       out = create<Ret>(clone(static_cast<Ret *>(in)->getExpr()));
       break;
     }
-    case NR_NODE_BRK: {
+    case IR_BRK: {
       out = create<Brk>();
       break;
     }
-    case NR_NODE_CONT: {
+    case IR_CONT: {
       out = create<Cont>();
       break;
     }
-    case NR_NODE_IF: {
+    case IR_IF: {
       If *n = static_cast<If *>(in);
       out = create<If>(clone(n->getCond()), clone(n->getThen()),
                        clone(n->getElse()));
       break;
     }
-    case NR_NODE_WHILE: {
+    case IR_WHILE: {
       While *n = static_cast<While *>(in);
       out = create<While>(clone(n->getCond()), clone(n->getBody())->as<Seq>());
       break;
     }
-    case NR_NODE_FOR: {
+    case IR_FOR: {
       For *n = static_cast<For *>(in);
       out = create<For>(clone(n->getInit()), clone(n->getCond()),
                         clone(n->getStep()), clone(n->getBody()));
       break;
     }
-    case NR_NODE_CASE: {
+    case IR_CASE: {
       Case *n = static_cast<Case *>(in);
       out = create<Case>(clone(n->getCond()), clone(n->getBody()));
       break;
     }
-    case NR_NODE_SWITCH: {
+    case IR_SWITCH: {
       Switch *n = static_cast<Switch *>(in);
       SwitchCases cases;
       cases.reserve(n->getCases().size());
@@ -184,7 +184,7 @@ nr_node_t *nr_clone_impl(
                            clone(n->getDefault()));
       break;
     }
-    case NR_NODE_FN: {
+    case IR_FN: {
       Fn *n = static_cast<Fn *>(in);
       Params params;
       params.reserve(n->getParams().size());
@@ -202,94 +202,94 @@ nr_node_t *nr_clone_impl(
                        n->getAbiTag());
       break;
     }
-    case NR_NODE_ASM: {
+    case IR_ASM: {
       out = create<Asm>();
       break;
     }
-    case NR_NODE_IGN: {
+    case IR_IGN: {
       out = createIgn();
       break;
     }
-    case NR_NODE_U1_TY: {
+    case IR_U1_TY: {
       out = create<U1Ty>();
       break;
     }
-    case NR_NODE_U8_TY: {
+    case IR_U8_TY: {
       out = create<U8Ty>();
       break;
     }
-    case NR_NODE_U16_TY: {
+    case IR_U16_TY: {
       out = create<U16Ty>();
       break;
     }
-    case NR_NODE_U32_TY: {
+    case IR_U32_TY: {
       out = create<U32Ty>();
       break;
     }
-    case NR_NODE_U64_TY: {
+    case IR_U64_TY: {
       out = create<U64Ty>();
       break;
     }
-    case NR_NODE_U128_TY: {
+    case IR_U128_TY: {
       out = create<U128Ty>();
       break;
     }
-    case NR_NODE_I8_TY: {
+    case IR_I8_TY: {
       out = create<I8Ty>();
       break;
     }
-    case NR_NODE_I16_TY: {
+    case IR_I16_TY: {
       out = create<I16Ty>();
       break;
     }
-    case NR_NODE_I32_TY: {
+    case IR_I32_TY: {
       out = create<I32Ty>();
       break;
     }
-    case NR_NODE_I64_TY: {
+    case IR_I64_TY: {
       out = create<I64Ty>();
       break;
     }
-    case NR_NODE_I128_TY: {
+    case IR_I128_TY: {
       out = create<I128Ty>();
       break;
     }
-    case NR_NODE_F16_TY: {
+    case IR_F16_TY: {
       out = create<F16Ty>();
       break;
     }
-    case NR_NODE_F32_TY: {
+    case IR_F32_TY: {
       out = create<F32Ty>();
       break;
     }
-    case NR_NODE_F64_TY: {
+    case IR_F64_TY: {
       out = create<F64Ty>();
       break;
     }
-    case NR_NODE_F128_TY: {
+    case IR_F128_TY: {
       out = create<F128Ty>();
       break;
     }
-    case NR_NODE_VOID_TY: {
+    case IR_VOID_TY: {
       out = create<VoidTy>();
       break;
     }
-    case NR_NODE_PTR_TY: {
+    case IR_PTR_TY: {
       PtrTy *n = static_cast<PtrTy *>(in);
       out = create<PtrTy>(clone(n->getPointee())->asType());
       break;
     }
-    case NR_NODE_CONST_TY: {
+    case IR_CONST_TY: {
       ConstTy *n = static_cast<ConstTy *>(in);
       out = create<ConstTy>(clone(n->getItem())->asType());
       break;
     }
-    case NR_NODE_OPAQUE_TY: {
+    case IR_OPAQUE_TY: {
       OpaqueTy *n = static_cast<OpaqueTy *>(in);
       out = create<OpaqueTy>(n->getName());
       break;
     }
-    case NR_NODE_STRUCT_TY: {
+    case IR_STRUCT_TY: {
       StructFields fields;
       fields.reserve(static_cast<StructTy *>(in)->getFields().size());
       for (auto field : static_cast<StructTy *>(in)->getFields()) {
@@ -298,7 +298,7 @@ nr_node_t *nr_clone_impl(
       out = create<StructTy>(std::move(fields));
       break;
     }
-    case NR_NODE_UNION_TY: {
+    case IR_UNION_TY: {
       UnionFields fields;
       fields.reserve(static_cast<UnionTy *>(in)->getFields().size());
       for (auto field : static_cast<UnionTy *>(in)->getFields()) {
@@ -307,12 +307,12 @@ nr_node_t *nr_clone_impl(
       out = create<UnionTy>(std::move(fields));
       break;
     }
-    case NR_NODE_ARRAY_TY: {
+    case IR_ARRAY_TY: {
       ArrayTy *n = static_cast<ArrayTy *>(in);
       out = create<ArrayTy>(clone(n->getElement())->asType(), n->getCount());
       break;
     }
-    case NR_NODE_FN_TY: {
+    case IR_FN_TY: {
       FnTy *n = static_cast<FnTy *>(in);
       FnParams params;
       params.reserve(n->getParams().size());
@@ -323,7 +323,7 @@ nr_node_t *nr_clone_impl(
                          n->getAttrs());
       break;
     }
-    case NR_NODE_TMP: {
+    case IR_TMP: {
       Tmp *n = static_cast<Tmp *>(in);
       switch (n->getTmpType()) {
         case TmpType::NAMED_TYPE: {
@@ -383,12 +383,12 @@ CPP_EXPORT nr_node_t *ir::nr_clone(const nr_node_t *node) {
         *_cur = static_cast<Expr *>(map[cur]);
       }
 
-      if (cur->is(NR_NODE_CALL)) [[unlikely]] {
+      if (cur->is(IR_CALL)) [[unlikely]] {
         Call *n = cur->as<Call>();
         if (in_visited.contains(n->getTarget())) {
           n->setTarget(static_cast<Expr *>(map[n->getTarget()]));
         }
-      } else if (cur->is(NR_NODE_IDENT)) [[unlikely]] {
+      } else if (cur->is(IR_IDENT)) [[unlikely]] {
         Ident *n = cur->as<Ident>();
         if (in_visited.contains(n->getWhat())) {
           n->setWhat(static_cast<Expr *>(map[n->getWhat()]));

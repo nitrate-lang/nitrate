@@ -44,15 +44,15 @@ using namespace ncc::ir;
 
 static Type *signed_complement(nr_ty_t ty) {
   switch (ty) {
-    case NR_NODE_I8_TY:
+    case IR_I8_TY:
       return create<U8Ty>();
-    case NR_NODE_I16_TY:
+    case IR_I16_TY:
       return create<U16Ty>();
-    case NR_NODE_I32_TY:
+    case IR_I32_TY:
       return create<U32Ty>();
-    case NR_NODE_I64_TY:
+    case IR_I64_TY:
       return create<U64Ty>();
-    case NR_NODE_I128_TY:
+    case IR_I128_TY:
       return create<U128Ty>();
     default:
       return nullptr;
@@ -88,23 +88,23 @@ static std::optional<Type *> promote(std::optional<Type *> lhs,
   if (L->is_numeric() && R->is_numeric()) {
     ///===========================================================================
     /// NOTE: Floating point always takes precedence over integers.
-    if (L->is(NR_NODE_VOID_TY) || R->is(NR_NODE_VOID_TY)) {
+    if (L->is(IR_VOID_TY) || R->is(IR_VOID_TY)) {
       return std::nullopt;
     }
 
-    if (L->is(NR_NODE_F128_TY) || R->is(NR_NODE_F128_TY)) {
+    if (L->is(IR_F128_TY) || R->is(IR_F128_TY)) {
       return create<F128Ty>();
     }
 
-    if (L->is(NR_NODE_F64_TY) || R->is(NR_NODE_F64_TY)) {
+    if (L->is(IR_F64_TY) || R->is(IR_F64_TY)) {
       return create<F64Ty>();
     }
 
-    if (L->is(NR_NODE_F32_TY) || R->is(NR_NODE_F32_TY)) {
+    if (L->is(IR_F32_TY) || R->is(IR_F32_TY)) {
       return create<F32Ty>();
     }
 
-    if (L->is(NR_NODE_F16_TY) || R->is(NR_NODE_F16_TY)) {
+    if (L->is(IR_F16_TY) || R->is(IR_F16_TY)) {
       return create<F16Ty>();
     }
     ///===========================================================================
@@ -175,7 +175,7 @@ static std::optional<Type *> nr_infer_impl(
   std::optional<Type *> R;
 
   switch (E->getKind()) {
-    case NR_NODE_BINEXPR: {
+    case IR_BINEXPR: {
       switch (const BinExpr *B = E->as<BinExpr>(); B->getOp()) {
         case Op::Plus: {
           R = promote(B->getLHS()->getType(), B->getRHS()->getType());
@@ -288,7 +288,7 @@ static std::optional<Type *> nr_infer_impl(
       }
       break;
     }
-    case NR_NODE_UNEXPR: {
+    case IR_UNEXPR: {
       switch (const UnExpr *U = E->as<UnExpr>(); E->as<UnExpr>()->getOp()) {
         case Op::Plus: {
           R = U->getExpr()->getType();
@@ -301,7 +301,7 @@ static std::optional<Type *> nr_infer_impl(
         case Op::Times: {
           if (auto x = U->getExpr()->getType()) {
             /* Operator '*' is only valid on pointers */
-            if (x.value()->is(NR_NODE_PTR_TY)) {
+            if (x.value()->is(IR_PTR_TY)) {
               R = x.value()->as<PtrTy>()->getPointee();
             }
           }
@@ -361,7 +361,7 @@ static std::optional<Type *> nr_infer_impl(
       }
       break;
     }
-    case NR_NODE_POST_UNEXPR: {
+    case IR_POST_UNEXPR: {
       switch (const PostUnExpr *P = E->as<PostUnExpr>();
               E->as<PostUnExpr>()->getOp()) {
         case Op::Inc: {
@@ -403,7 +403,7 @@ static std::optional<Type *> nr_infer_impl(
       }
       break;
     }
-    case NR_NODE_INT: {
+    case IR_INT: {
       auto size = E->as<Int>()->getSize();
 
       if (size == 1) {
@@ -422,7 +422,7 @@ static std::optional<Type *> nr_infer_impl(
 
       break;
     }
-    case NR_NODE_FLOAT: {
+    case IR_FLOAT: {
       switch (E->as<Float>()->getSize()) {
         case FloatSize::F16:
           R = create<F16Ty>();
@@ -440,7 +440,7 @@ static std::optional<Type *> nr_infer_impl(
 
       break;
     }
-    case NR_NODE_LIST: {
+    case IR_LIST: {
       if (E->as<List>()->size() == 0) {
         R = create<StructTy>(StructFields());
       } else {
@@ -465,7 +465,7 @@ static std::optional<Type *> nr_infer_impl(
       }
       break;
     }
-    case NR_NODE_CALL: {
+    case IR_CALL: {
       if (auto x = E->as<Call>()->getTarget()->getType()) {
         if (x.value()->is_function()) {
           R = x.value()->as<FnTy>()->getReturn();
@@ -473,7 +473,7 @@ static std::optional<Type *> nr_infer_impl(
       }
       break;
     }
-    case NR_NODE_SEQ: {
+    case IR_SEQ: {
       if (E->as<Seq>()->getItems().empty()) {
         R = create<VoidTy>();
       } else {
@@ -481,18 +481,18 @@ static std::optional<Type *> nr_infer_impl(
       }
       break;
     }
-    case NR_NODE_INDEX: {
+    case IR_INDEX: {
       if (auto B_ = E->as<Index>()->getExpr()->getType();
           auto B = B_.value_or(nullptr)) {
         Expr *V = E->as<Index>()->getIndex();
 
-        if (B->is(NR_NODE_PTR_TY)) {  // *X -> X
+        if (B->is(IR_PTR_TY)) {  // *X -> X
           R = B->as<PtrTy>()->getPointee();
-        } else if (B->is(NR_NODE_ARRAY_TY)) {  // [X; N] -> X
+        } else if (B->is(IR_ARRAY_TY)) {  // [X; N] -> X
           R = B->as<ArrayTy>()->getElement();
-        } else if (B->is(NR_NODE_STRUCT_TY)) {  // struct { a, b, c } -> a | b
-                                                // | c
-          if (!V->is(NR_NODE_INT)) {
+        } else if (B->is(IR_STRUCT_TY)) {  // struct { a, b, c } -> a | b
+                                           // | c
+          if (!V->is(IR_INT)) {
             R = std::nullopt;  // Invalid must be of type int to index into a
                                // struct
           } else {
@@ -503,8 +503,8 @@ static std::optional<Type *> nr_infer_impl(
               R = std::nullopt;  // Invalid out of bounds
             }
           }
-        } else if (B->is(NR_NODE_UNION_TY)) {
-          if (!V->is(NR_NODE_INT)) {
+        } else if (B->is(IR_UNION_TY)) {
+          if (!V->is(IR_INT)) {
             R = std::nullopt;  // Invalid must be of type int to index into a
                                // union
           } else {
@@ -520,7 +520,7 @@ static std::optional<Type *> nr_infer_impl(
       }
       break;
     }
-    case NR_NODE_IDENT: {
+    case IR_IDENT: {
       Expr *what = E->as<Ident>()->getWhat();
       if (!visited.contains(what)) [[likely]] {
         if (what != nullptr) {
@@ -529,11 +529,11 @@ static std::optional<Type *> nr_infer_impl(
       }
       break;
     }
-    case NR_NODE_EXTERN: {
+    case IR_EXTERN: {
       R = create<VoidTy>();
       break;
     }
-    case NR_NODE_LOCAL: {
+    case IR_LOCAL: {
       const Local *local = E->as<Local>();
       R = local->getValue()->getType();
       if (R.has_value() && local->isReadonly()) {
@@ -541,39 +541,39 @@ static std::optional<Type *> nr_infer_impl(
       }
       break;
     }
-    case NR_NODE_RET: {
+    case IR_RET: {
       R = E->as<Ret>()->getExpr()->getType();
       break;
     }
-    case NR_NODE_BRK: {
+    case IR_BRK: {
       R = create<VoidTy>();
       break;
     }
-    case NR_NODE_CONT: {
+    case IR_CONT: {
       R = create<VoidTy>();
       break;
     }
-    case NR_NODE_IF: {
+    case IR_IF: {
       R = create<VoidTy>();
       break;
     }
-    case NR_NODE_WHILE: {
+    case IR_WHILE: {
       R = create<VoidTy>();
       break;
     }
-    case NR_NODE_FOR: {
+    case IR_FOR: {
       R = create<VoidTy>();
       break;
     }
-    case NR_NODE_CASE: {
+    case IR_CASE: {
       R = create<VoidTy>();
       break;
     }
-    case NR_NODE_SWITCH: {
+    case IR_SWITCH: {
       R = create<VoidTy>();
       break;
     }
-    case NR_NODE_FN: {
+    case IR_FN: {
       bool failed = false;
       const auto &params = E->as<Fn>()->getParams();
       FnParams param_types(params.size());
@@ -599,42 +599,42 @@ static std::optional<Type *> nr_infer_impl(
 
       break;
     }
-    case NR_NODE_ASM: {
+    case IR_ASM: {
       R = create<VoidTy>();
       break;
     }
-    case NR_NODE_IGN: {
+    case IR_IGN: {
       R = create<VoidTy>();
       break;
     }
-    case NR_NODE_TMP: {
+    case IR_TMP: {
       R = std::nullopt;
       break;
     }
 
-    case NR_NODE_U1_TY:
-    case NR_NODE_U8_TY:
-    case NR_NODE_U16_TY:
-    case NR_NODE_U32_TY:
-    case NR_NODE_U64_TY:
-    case NR_NODE_U128_TY:
-    case NR_NODE_I8_TY:
-    case NR_NODE_I16_TY:
-    case NR_NODE_I32_TY:
-    case NR_NODE_I64_TY:
-    case NR_NODE_I128_TY:
-    case NR_NODE_F16_TY:
-    case NR_NODE_F32_TY:
-    case NR_NODE_F64_TY:
-    case NR_NODE_F128_TY:
-    case NR_NODE_VOID_TY:
-    case NR_NODE_PTR_TY:
-    case NR_NODE_CONST_TY:
-    case NR_NODE_OPAQUE_TY:
-    case NR_NODE_STRUCT_TY:
-    case NR_NODE_UNION_TY:
-    case NR_NODE_ARRAY_TY:
-    case NR_NODE_FN_TY: {
+    case IR_U1_TY:
+    case IR_U8_TY:
+    case IR_U16_TY:
+    case IR_U32_TY:
+    case IR_U64_TY:
+    case IR_U128_TY:
+    case IR_I8_TY:
+    case IR_I16_TY:
+    case IR_I32_TY:
+    case IR_I64_TY:
+    case IR_I128_TY:
+    case IR_F16_TY:
+    case IR_F32_TY:
+    case IR_F64_TY:
+    case IR_F128_TY:
+    case IR_VOID_TY:
+    case IR_PTR_TY:
+    case IR_CONST_TY:
+    case IR_OPAQUE_TY:
+    case IR_STRUCT_TY:
+    case IR_UNION_TY:
+    case IR_ARRAY_TY:
+    case IR_FN_TY: {
       R = const_cast<Type *>(E->asType());
       break;
     }
@@ -664,61 +664,61 @@ CPP_EXPORT nr_node_t *ir::nr_infer(const nr_node_t *_node, void *) {
 
 CPP_EXPORT std::optional<uint64_t> Type::getSizeBits() const {
   switch (this->getKind()) {
-    case NR_NODE_U1_TY: {
+    case IR_U1_TY: {
       return 8;
     }
-    case NR_NODE_U8_TY: {
+    case IR_U8_TY: {
       return 8;
     }
-    case NR_NODE_U16_TY: {
+    case IR_U16_TY: {
       return 16;
     }
-    case NR_NODE_U32_TY: {
+    case IR_U32_TY: {
       return 32;
     }
-    case NR_NODE_U64_TY: {
+    case IR_U64_TY: {
       return 64;
     }
-    case NR_NODE_U128_TY: {
+    case IR_U128_TY: {
       return 128;
     }
-    case NR_NODE_I8_TY: {
+    case IR_I8_TY: {
       return 8;
     }
-    case NR_NODE_I16_TY: {
+    case IR_I16_TY: {
       return 16;
     }
-    case NR_NODE_I32_TY: {
+    case IR_I32_TY: {
       return 32;
     }
-    case NR_NODE_I64_TY: {
+    case IR_I64_TY: {
       return 64;
     }
-    case NR_NODE_I128_TY: {
+    case IR_I128_TY: {
       return 128;
     }
-    case NR_NODE_F16_TY: {
+    case IR_F16_TY: {
       return 16;
     }
-    case NR_NODE_F32_TY: {
+    case IR_F32_TY: {
       return 32;
     }
-    case NR_NODE_F64_TY: {
+    case IR_F64_TY: {
       return 64;
     }
-    case NR_NODE_F128_TY: {
+    case IR_F128_TY: {
       return 128;
     }
-    case NR_NODE_VOID_TY: {
+    case IR_VOID_TY: {
       return 0;
     }
-    case NR_NODE_PTR_TY: {
+    case IR_PTR_TY: {
       return this->as<PtrTy>()->getPlatformPointerSizeBytes() * 8;
     }
-    case NR_NODE_CONST_TY: {
+    case IR_CONST_TY: {
       return this->as<ConstTy>()->getItem()->getSizeBits();
     }
-    case NR_NODE_STRUCT_TY: {
+    case IR_STRUCT_TY: {
       size_t sum = 0;
       for (auto field : this->as<StructTy>()->getFields()) {
         if (auto field_size = field->getSizeBits()) {
@@ -729,7 +729,7 @@ CPP_EXPORT std::optional<uint64_t> Type::getSizeBits() const {
       }
       return sum;
     }
-    case NR_NODE_UNION_TY: {
+    case IR_UNION_TY: {
       size_t max = 0;
       for (auto field : this->as<UnionTy>()->getFields()) {
         if (auto field_size = field->getSizeBits()) {
@@ -740,7 +740,7 @@ CPP_EXPORT std::optional<uint64_t> Type::getSizeBits() const {
       }
       return max;
     }
-    case NR_NODE_ARRAY_TY: {
+    case IR_ARRAY_TY: {
       if (auto element_size =
               this->as<ArrayTy>()->getElement()->getSizeBits()) {
         return element_size.value() * this->as<ArrayTy>()->getCount();
@@ -749,10 +749,10 @@ CPP_EXPORT std::optional<uint64_t> Type::getSizeBits() const {
       }
       break;
     }
-    case NR_NODE_FN_TY: {
+    case IR_FN_TY: {
       return this->as<FnTy>()->getPlatformPointerSizeBytes() * 8;
     }
-    case NR_NODE_OPAQUE_TY: {
+    case IR_OPAQUE_TY: {
       return std::nullopt;
     }
     default: {
@@ -763,61 +763,61 @@ CPP_EXPORT std::optional<uint64_t> Type::getSizeBits() const {
 
 CPP_EXPORT std::optional<uint64_t> Type::getAlignBits() const {
   switch (this->getKind()) {
-    case NR_NODE_U1_TY: {
+    case IR_U1_TY: {
       return 8;
     }
-    case NR_NODE_U8_TY: {
+    case IR_U8_TY: {
       return 8;
     }
-    case NR_NODE_U16_TY: {
+    case IR_U16_TY: {
       return 16;
     }
-    case NR_NODE_U32_TY: {
+    case IR_U32_TY: {
       return 32;
     }
-    case NR_NODE_U64_TY: {
+    case IR_U64_TY: {
       return 64;
     }
-    case NR_NODE_U128_TY: {
+    case IR_U128_TY: {
       return 128;
     }
-    case NR_NODE_I8_TY: {
+    case IR_I8_TY: {
       return 8;
     }
-    case NR_NODE_I16_TY: {
+    case IR_I16_TY: {
       return 16;
     }
-    case NR_NODE_I32_TY: {
+    case IR_I32_TY: {
       return 32;
     }
-    case NR_NODE_I64_TY: {
+    case IR_I64_TY: {
       return 64;
     }
-    case NR_NODE_I128_TY: {
+    case IR_I128_TY: {
       return 128;
     }
-    case NR_NODE_F16_TY: {
+    case IR_F16_TY: {
       return 16;
     }
-    case NR_NODE_F32_TY: {
+    case IR_F32_TY: {
       return 32;
     }
-    case NR_NODE_F64_TY: {
+    case IR_F64_TY: {
       return 64;
     }
-    case NR_NODE_F128_TY: {
+    case IR_F128_TY: {
       return 128;
     }
-    case NR_NODE_VOID_TY: {
+    case IR_VOID_TY: {
       return 0;
     }
-    case NR_NODE_PTR_TY: {
+    case IR_PTR_TY: {
       return this->as<PtrTy>()->getPlatformPointerSizeBytes() * 8;
     }
-    case NR_NODE_CONST_TY: {
+    case IR_CONST_TY: {
       return this->as<ConstTy>()->getItem()->getAlignBits();
     }
-    case NR_NODE_STRUCT_TY: {
+    case IR_STRUCT_TY: {
       size_t max_align = 0;
       for (auto field : this->as<StructTy>()->getFields()) {
         if (auto field_align = field->getAlignBits()) {
@@ -828,7 +828,7 @@ CPP_EXPORT std::optional<uint64_t> Type::getAlignBits() const {
       }
       return max_align;
     }
-    case NR_NODE_UNION_TY: {
+    case IR_UNION_TY: {
       size_t max_align = 0;
       for (auto field : this->as<UnionTy>()->getFields()) {
         if (auto field_align = field->getAlignBits()) {
@@ -839,13 +839,13 @@ CPP_EXPORT std::optional<uint64_t> Type::getAlignBits() const {
       }
       return max_align;
     }
-    case NR_NODE_ARRAY_TY: {
+    case IR_ARRAY_TY: {
       return this->as<ArrayTy>()->getElement()->getAlignBits();
     }
-    case NR_NODE_FN_TY: {
+    case IR_FN_TY: {
       return this->as<FnTy>()->getPlatformPointerSizeBytes() * 8;
     }
-    case NR_NODE_OPAQUE_TY: {
+    case IR_OPAQUE_TY: {
       return std::nullopt;
     }
     default: {

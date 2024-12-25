@@ -366,92 +366,92 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
   std::optional<Expr *> E;
 
   switch (_for->getKind()) {
-    case NR_NODE_U1_TY: {
+    case IR_U1_TY: {
       E = createBool(false);
       break;
     }
 
-    case NR_NODE_U8_TY: {
+    case IR_U8_TY: {
       E = createFixedInteger(0, 8);
       break;
     }
 
-    case NR_NODE_U16_TY: {
+    case IR_U16_TY: {
       E = createFixedInteger(0, 16);
       break;
     }
 
-    case NR_NODE_U32_TY: {
+    case IR_U32_TY: {
       E = createFixedInteger(0, 32);
       break;
     }
 
-    case NR_NODE_U64_TY: {
+    case IR_U64_TY: {
       E = createFixedInteger(0, 64);
       break;
     }
 
-    case NR_NODE_U128_TY: {
+    case IR_U128_TY: {
       E = createFixedInteger(0, 128);
       break;
     }
 
-    case NR_NODE_I8_TY: {
+    case IR_I8_TY: {
       E = createFixedInteger(0, 8);
       break;
     }
 
-    case NR_NODE_I16_TY: {
+    case IR_I16_TY: {
       E = createFixedInteger(0, 16);
       break;
     }
 
-    case NR_NODE_I32_TY: {
+    case IR_I32_TY: {
       E = createFixedInteger(0, 32);
       break;
     }
 
-    case NR_NODE_I64_TY: {
+    case IR_I64_TY: {
       E = createFixedInteger(0, 64);
       break;
     }
 
-    case NR_NODE_I128_TY: {
+    case IR_I128_TY: {
       E = createFixedInteger(0, 128);
       break;
     }
 
-    case NR_NODE_F16_TY: {
+    case IR_F16_TY: {
       E = createFixedFloat(0.0f, FloatSize::F16);
       break;
     }
 
-    case NR_NODE_F32_TY: {
+    case IR_F32_TY: {
       E = createFixedFloat(0.0f, FloatSize::F32);
       break;
     }
 
-    case NR_NODE_F64_TY: {
+    case IR_F64_TY: {
       E = createFixedFloat(0.0f, FloatSize::F64);
       break;
     }
 
-    case NR_NODE_F128_TY: {
+    case IR_F128_TY: {
       E = createFixedFloat(0.0f, FloatSize::F128);
       break;
     }
 
-    case NR_NODE_VOID_TY: {
+    case IR_VOID_TY: {
       E = create<VoidTy>();
       break;
     }
 
-    case NR_NODE_PTR_TY: {
+    case IR_PTR_TY: {
       E = create<BinExpr>(createFixedInteger(0, 64), _for, Op::BitcastAs);
       break;
     }
 
-    case NR_NODE_CONST_TY: {
+    case IR_CONST_TY: {
       ConstTy *const_ty = _for->as<ConstTy>();
       auto e = getDefaultValue(const_ty->getItem());
       if (e) {
@@ -460,12 +460,12 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
       break;
     }
 
-    case NR_NODE_OPAQUE_TY: {
+    case IR_OPAQUE_TY: {
       E = std::nullopt;
       break;
     }
 
-    case NR_NODE_STRUCT_TY: {
+    case IR_STRUCT_TY: {
       StructTy *struct_ty = _for->as<StructTy>();
 
       std::vector<Expr *> fields(struct_ty->getFields().size());
@@ -484,7 +484,7 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
       break;
     }
 
-    case NR_NODE_UNION_TY: {
+    case IR_UNION_TY: {
       UnionTy *union_ty = _for->as<UnionTy>();
 
       if (union_ty->getFields().empty()) {
@@ -496,7 +496,7 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
       break;
     }
 
-    case NR_NODE_ARRAY_TY: {
+    case IR_ARRAY_TY: {
       auto array_ty = _for->as<ArrayTy>();
 
       /// FIXME: This is horribly inefficient in terms of memory, especially for
@@ -518,13 +518,13 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
       break;
     }
 
-    case NR_NODE_FN_TY: {
+    case IR_FN_TY: {
       FnTy *fn_ty = _for->as<FnTy>();
       E = create<BinExpr>(createFixedInteger(0, 64), fn_ty, Op::BitcastAs);
       break;
     }
 
-    case NR_NODE_TMP: {
+    case IR_TMP: {
       Tmp *tmp = _for->as<Tmp>();
       if (tmp->getTmpType() == TmpType::NAMED_TYPE) {
         std::string_view name = std::get<std::string_view>(tmp->getData());
