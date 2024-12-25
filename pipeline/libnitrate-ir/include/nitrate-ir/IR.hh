@@ -65,7 +65,7 @@ namespace ncc::ir {
    *
    * @note This function is thread safe.
    */
-  bool nr_write(qmodule_t *mod, const nr_node_t *node, nr_serial_t mode,
+  bool nr_write(IRModule *mod, const nr_node_t *node, nr_serial_t mode,
                 FILE *out, size_t *outlen, uint32_t argcnt, ...);
 
   /**
@@ -83,10 +83,10 @@ namespace ncc::ir {
    *
    * @note This function is thread safe.
    */
-  bool nr_read(qmodule_t *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
+  bool nr_read(IRModule *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
 
-  std::unique_ptr<qmodule_t> nr_lower(ncc::parse::Base *base, const char *name,
-                                      bool diagnostics);
+  std::unique_ptr<IRModule> nr_lower(ncc::parse::Base *base, const char *name,
+                                     bool diagnostics);
 
   typedef void (*nr_node_cb)(nr_node_t *cur, uintptr_t userdata);
 
@@ -116,7 +116,7 @@ namespace ncc::ir {
    *
    * @note This function is thread safe.
    */
-  bool nr_audit(qmodule_t *nr, nr_audit_t level);
+  bool nr_audit(IRModule *nr, nr_audit_t level);
 
   typedef enum {
     NR_LEVEL_DEBUG = 0,
@@ -239,7 +239,7 @@ namespace ncc::ir {
    *
    * @note This function is thread safe.
    */
-  void nr_diag_read(qmodule_t *nr, nr_diag_format_t format, nr_report_cb cb,
+  void nr_diag_read(IRModule *nr, nr_diag_format_t format, nr_report_cb cb,
                     uintptr_t data);
 
   /**
@@ -247,7 +247,7 @@ namespace ncc::ir {
    * subsystem.
    * @param nr QModule instance to clear diagnostics from.
    */
-  void nr_diag_clear(qmodule_t *nr);
+  void nr_diag_clear(IRModule *nr);
 
   /**
    * @brief Performs type inference on a NR node.

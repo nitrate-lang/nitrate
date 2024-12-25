@@ -37,9 +37,9 @@
 #include <nitrate-ir/IRFwd.hh>
 
 namespace ncc::ir {
-  class NRVisitor {
+  class IRVisitor {
   public:
-    virtual ~NRVisitor() = default;
+    virtual ~IRVisitor() = default;
 
     virtual void visit(Expr& n) = 0;
     virtual void visit(Type& n) = 0;

@@ -365,7 +365,7 @@ namespace ncc::ir {
      */
     constexpr bool isSame(const Expr *other) const;
 
-    constexpr void accept(NRVisitor &v) {
+    constexpr void accept(IRVisitor &v) {
       switch (getKind()) {
         case IR_eBIN: {
           v.visit(*as<BinExpr>());

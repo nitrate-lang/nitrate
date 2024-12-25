@@ -37,13 +37,13 @@
 #include <nitrate-ir/Report.hh>
 
 namespace ncc::ir {
-  class qmodule_t;
+  class IRModule;
 }
 
 namespace ncc::ir::pass {
-#define SEMANTIC_PASS(name) bool name(qmodule_t *mod, IReport *log);
-#define TRANSFORM_PASS(name) bool name(qmodule_t *mod, IReport *log)
-#define OPTIMIZE_PASS(name) bool name(qmodule_t *mod, IReport *log)
+#define SEMANTIC_PASS(name) bool name(IRModule *mod, IReport *log);
+#define TRANSFORM_PASS(name) bool name(IRModule *mod, IReport *log)
+#define OPTIMIZE_PASS(name) bool name(IRModule *mod, IReport *log)
 
 #undef OPTIMIZE_PASS
 #undef TRANSFORM_PASS

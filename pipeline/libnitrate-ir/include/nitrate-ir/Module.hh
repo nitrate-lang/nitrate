@@ -58,7 +58,7 @@ namespace ncc::ir {
 
   class NRBuilder;
 
-  class qmodule_t final {
+  class IRModule final {
     friend class Expr;
     friend class NRBuilder;
 
@@ -111,8 +111,8 @@ namespace ncc::ir {
         std::make_unique<ncc::dyn_arena>();
 
   public:
-    qmodule_t(const std::string &name = "?");
-    ~qmodule_t();
+    IRModule(const std::string &name = "?");
+    ~IRModule();
 
     void setRoot(Expr *root) { m_root = root; }
     Expr *&getRoot() { return m_root; }
@@ -147,12 +147,12 @@ namespace ncc::ir {
 
     const TargetInfo &getTargetInfo() const { return m_target_info; }
 
-    void accept(NRVisitor &visitor);
+    void accept(IRVisitor &visitor);
   };
 
-  constexpr size_t QMODULE_SIZE = sizeof(qmodule_t);
+  constexpr size_t QMODULE_SIZE = sizeof(IRModule);
 
-  qmodule_t *createModule(std::string name = "?");
+  IRModule *createModule(std::string name = "?");
 }  // namespace ncc::ir
 
 #endif

@@ -42,11 +42,11 @@
 #include <vector>
 
 namespace ncc::ir {
-  class qmodule_t;
+  class IRModule;
 }
 
 namespace ncc::ir::pass {
-  typedef std::function<bool(qmodule_t*, IReport*)> pass_func_t;
+  typedef std::function<bool(IRModule*, IReport*)> pass_func_t;
 
   class ModulePass {
     std::string_view name;
@@ -56,9 +56,7 @@ namespace ncc::ir::pass {
     ModulePass(std::string_view name, pass_func_t func)
         : name(name), func(func) {}
 
-    bool run(qmodule_t* module, IReport* log) const {
-      return func(module, log);
-    }
+    bool run(IRModule* module, IReport* log) const { return func(module, log); }
 
     std::string_view getName() const { return name; }
     pass_func_t getFunc() const { return func; }
@@ -93,7 +91,7 @@ namespace ncc::ir::pass {
     PassGroup(std::string_view name, std::span<ModulePass> passes)
         : m_name(name), m_sequence(passes) {}
 
-    bool run(qmodule_t* module,
+    bool run(IRModule* module,
              std::function<void(std::string_view name)> on_success = nullptr);
 
     std::string_view getName() const { return m_name; }

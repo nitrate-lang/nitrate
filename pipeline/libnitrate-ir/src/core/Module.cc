@@ -67,7 +67,7 @@ public:
   virtual ~LexerSourceResolver() = default;
 };
 
-qmodule_t::qmodule_t(const std::string &name) {
+IRModule::IRModule(const std::string &name) {
   m_applied.clear();
 
   m_offset_resolver = std::make_unique<LexerSourceResolver>();
@@ -79,16 +79,16 @@ qmodule_t::qmodule_t(const std::string &name) {
   m_diagnostics_enabled = true;
 }
 
-qmodule_t::~qmodule_t() { m_root = nullptr; }
+IRModule::~IRModule() { m_root = nullptr; }
 
-void qmodule_t::enableDiagnostics(bool is_enabled) {
+void IRModule::enableDiagnostics(bool is_enabled) {
   m_diagnostics_enabled = is_enabled;
 }
 
-CPP_EXPORT void qmodule_t::accept(ir::NRVisitor &visitor) {
+CPP_EXPORT void IRModule::accept(ir::IRVisitor &visitor) {
   m_root->accept(visitor);
 }
 
 ///=============================================================================
 
-qmodule_t *ir::createModule(std::string name) { return new qmodule_t(name); }
+IRModule *ir::createModule(std::string name) { return new IRModule(name); }

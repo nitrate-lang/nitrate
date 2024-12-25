@@ -107,9 +107,9 @@ static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G,
 #define next_one(n) nrgen_one(b, s, G, n)
 #define next_any(n) nrgen_any(b, s, G, n)
 
-CPP_EXPORT std::unique_ptr<qmodule_t> ir::nr_lower(ncc::parse::Base *base,
-                                                   const char *name,
-                                                   bool diagnostics) {
+CPP_EXPORT std::unique_ptr<IRModule> ir::nr_lower(ncc::parse::Base *base,
+                                                  const char *name,
+                                                  bool diagnostics) {
   if (!base) {
     return nullptr;
   }
@@ -129,7 +129,7 @@ CPP_EXPORT std::unique_ptr<qmodule_t> ir::nr_lower(ncc::parse::Base *base,
   PState s;
   NRBuilder builder(name, target_info);
 
-  qmodule_t *R = nullptr;
+  IRModule *R = nullptr;
   bool success = false;
 
   if (auto root = nrgen_one(builder, s, G.get(), MakeFlowPtr(base))) {
@@ -155,7 +155,7 @@ CPP_EXPORT std::unique_ptr<qmodule_t> ir::nr_lower(ncc::parse::Base *base,
 
   std::swap(ir::nr_allocator, scratch_arena);
 
-  return success ? std::unique_ptr<qmodule_t>(R) : nullptr;
+  return success ? std::unique_ptr<IRModule>(R) : nullptr;
 }
 
 ///=============================================================================

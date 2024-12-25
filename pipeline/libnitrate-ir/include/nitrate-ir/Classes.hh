@@ -42,13 +42,13 @@
 
 namespace ncc::ir {
   class qmodule final {
-    qmodule_t *m_module;
+    IRModule *m_module;
 
   public:
     qmodule() : m_module(nullptr) {}
     ~qmodule() { delete m_module; }
 
-    qmodule_t *&get() { return m_module; }
+    IRModule *&get() { return m_module; }
   };
 
   class SymbolEncoding final {

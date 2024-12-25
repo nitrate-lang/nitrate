@@ -620,7 +620,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
   return true;
 }
 
-static bool to_codeform(std::optional<qmodule_t *> mod, Expr *node, bool minify,
+static bool to_codeform(std::optional<IRModule *> mod, Expr *node, bool minify,
                         size_t indent_size, FILE &ss) {
   ConvState state(indent_size, minify);
 
@@ -740,7 +740,7 @@ static bool to_codeform(std::optional<qmodule_t *> mod, Expr *node, bool minify,
   return true;
 }
 
-CPP_EXPORT bool ir::nr_write(qmodule_t *mod, const nr_node_t *_node,
+CPP_EXPORT bool ir::nr_write(IRModule *mod, const nr_node_t *_node,
                              nr_serial_t mode, FILE *out, size_t *outlen,
                              uint32_t argcnt, ...) {
   (void)argcnt;

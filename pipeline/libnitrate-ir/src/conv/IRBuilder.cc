@@ -301,7 +301,7 @@ bool NRBuilder::verify(std::optional<IReport *> the_log SOURCE_LOCATION_PARAM) {
   return true;
 }
 
-qmodule_t *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) {
+IRModule *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) {
   contract_enforce(m_state == SelfState::Verified ||
                    m_state == SelfState::Emitted);
   contract_enforce(m_root != nullptr);
@@ -312,7 +312,7 @@ qmodule_t *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) {
   } else {
     contract_enforce(m_result == std::nullopt);
 
-    qmodule_t *new_mod = createModule(m_module_name);
+    IRModule *new_mod = createModule(m_module_name);
 
     { /* Clone the IRGraph into the module */
       std::swap(nr_allocator, new_mod->getNodeArena());

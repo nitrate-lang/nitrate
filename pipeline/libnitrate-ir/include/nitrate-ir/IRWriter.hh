@@ -45,7 +45,7 @@
 #include <string_view>
 
 namespace ncc::ir {
-  class CPP_EXPORT NR_Writer : public NRVisitor {
+  class CPP_EXPORT NR_Writer : public IRVisitor {
     using InsertString = std::function<void(std::string_view)>;
     using InsertUInt64 = std::function<void(uint64_t)>;
     using InsertDouble = std::function<void(double)>;

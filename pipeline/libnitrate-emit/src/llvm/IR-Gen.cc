@@ -98,7 +98,7 @@ using namespace ncc::ir;
 #define debug(...)
 #endif
 
-typedef function<bool(qmodule_t *, qcode_conf_t *, ostream &err,
+typedef function<bool(IRModule *, qcode_conf_t *, ostream &err,
                       raw_pwrite_stream &out)>
     qcode_adapter_fn;
 
@@ -396,7 +396,7 @@ static void make_forward_declaration(ctx_t &m, craft_t &b, State &,
   debug("Forward declared function: " << N->getName());
 }
 
-static optional<unique_ptr<Module>> fabricate_llvmir(const qmodule_t *src,
+static optional<unique_ptr<Module>> fabricate_llvmir(const IRModule *src,
                                                      qcode_conf_t *, ostream &e,
                                                      raw_ostream &) {
   static thread_local unique_ptr<LLVMContext> context;
@@ -1835,7 +1835,7 @@ static auto T_gen(craft_t &b, const Expr *N) -> ty_t {
   return dispatch[N->getKind()](b, N);
 }
 
-static bool qcode_adapter(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+static bool qcode_adapter(IRModule *module, qcode_conf_t *conf, FILE *err,
                           FILE *out, qcode_adapter_fn impl) {
   unique_ptr<streambuf> err_stream_buf, out_stream_buf;
 
@@ -1879,15 +1879,15 @@ static bool qcode_adapter(qmodule_t *module, qcode_conf_t *conf, FILE *err,
   return true;
 }
 
-static optional<unique_ptr<Module>> fabricate_llvmir(const qmodule_t *module,
+static optional<unique_ptr<Module>> fabricate_llvmir(const IRModule *module,
                                                      qcode_conf_t *conf,
                                                      ostream &err,
                                                      raw_ostream &out);
 
-CPP_EXPORT bool qcode_ir(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+CPP_EXPORT bool qcode_ir(IRModule *module, qcode_conf_t *conf, FILE *err,
                          FILE *out) {
   return qcode_adapter(module, conf, err, out,
-                       [](qmodule_t *m, qcode_conf_t *c, ostream &e,
+                       [](IRModule *m, qcode_conf_t *c, ostream &e,
                           raw_pwrite_stream &o) -> bool {
                          auto module = fabricate_llvmir(m, c, e, o);
                          if (!module) {
@@ -1903,11 +1903,11 @@ CPP_EXPORT bool qcode_ir(qmodule_t *module, qcode_conf_t *conf, FILE *err,
                        });
 }
 
-CPP_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+CPP_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
                           FILE *out) {
   return qcode_adapter(
       module, conf, err, out,
-      [](qmodule_t *m, qcode_conf_t *c, ostream &e,
+      [](IRModule *m, qcode_conf_t *c, ostream &e,
          raw_pwrite_stream &o) -> bool {
         auto module_opt = fabricate_llvmir(m, c, e, o);
         if (!module_opt) {
@@ -1989,11 +1989,11 @@ CPP_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err,
       });
 }
 
-CPP_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+CPP_EXPORT bool qcode_obj(IRModule *module, qcode_conf_t *conf, FILE *err,
                           FILE *out) {
   return qcode_adapter(
       module, conf, err, out,
-      [](qmodule_t *m, qcode_conf_t *c, ostream &e,
+      [](IRModule *m, qcode_conf_t *c, ostream &e,
          raw_pwrite_stream &o) -> bool {
         auto module_opt = fabricate_llvmir(m, c, e, o);
         if (!module_opt) {

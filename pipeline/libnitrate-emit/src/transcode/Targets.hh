@@ -38,14 +38,14 @@
 #include <ostream>
 
 namespace codegen {
-  using qmodule_t = ncc::ir::qmodule_t;
+  using IRModule = ncc::ir::IRModule;
 
-  bool for_c11(qmodule_t* module, std::ostream& err, std::ostream& out);
-  bool for_cxx11(qmodule_t* module, std::ostream& err, std::ostream& out);
-  bool for_ts(qmodule_t* module, std::ostream& err, std::ostream& out);
-  bool for_rust(qmodule_t* module, std::ostream& err, std::ostream& out);
-  bool for_python(qmodule_t* module, std::ostream& err, std::ostream& out);
-  bool for_csharp(qmodule_t* module, std::ostream& err, std::ostream& out);
+  bool for_c11(IRModule* module, std::ostream& err, std::ostream& out);
+  bool for_cxx11(IRModule* module, std::ostream& err, std::ostream& out);
+  bool for_ts(IRModule* module, std::ostream& err, std::ostream& out);
+  bool for_rust(IRModule* module, std::ostream& err, std::ostream& out);
+  bool for_python(IRModule* module, std::ostream& err, std::ostream& out);
+  bool for_csharp(IRModule* module, std::ostream& err, std::ostream& out);
 }  // namespace codegen
 
 #endif  // __NITRATE_TARGET_HH__

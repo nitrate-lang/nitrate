@@ -92,7 +92,7 @@ namespace ncc::ir {
     };
 
     SelfState m_state;
-    std::optional<qmodule_t *> m_result;
+    std::optional<IRModule *> m_result;
     Seq *m_root;
 
     std::unordered_map<std::string_view, Type *> m_named_types;
@@ -230,7 +230,7 @@ namespace ncc::ir {
      * @brief Return the build module.
      * @note `verify()` must be called first.
      */
-    qmodule_t *get_module(SOURCE_LOCATION_PARAM_ONCE);
+    IRModule *get_module(SOURCE_LOCATION_PARAM_ONCE);
 
     void appendToRoot(Expr *node SOURCE_LOCATION_PARAM);
 

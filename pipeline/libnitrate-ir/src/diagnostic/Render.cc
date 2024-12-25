@@ -282,7 +282,7 @@ static const std::unordered_map<IC, nr_level_t> issue_class_map = {
     {IC::FatalError, NR_LEVEL_FATAL},
 };
 
-CPP_EXPORT void ir::nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
+CPP_EXPORT void ir::nr_diag_read(IRModule *nr, nr_diag_format_t format,
                                  nr_report_cb cb, uintptr_t data) {
   if (!cb) {
     return;
@@ -389,6 +389,6 @@ CPP_EXPORT void ir::nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
   });
 }
 
-CPP_EXPORT void ir::nr_diag_clear(qmodule_t *nr) {
+CPP_EXPORT void ir::nr_diag_clear(IRModule *nr) {
   nr->getDiag()->erase_reports();
 }
