@@ -31,9 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-ir/Lib.h>
 #include <nitrate-ir/TypeDecl.h>
 
+#include <boost/bind.hpp>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -41,11 +41,14 @@
 #include <iomanip>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-ir/IRGraph.hh>
+#include <nitrate-ir/Init.hh>
 #include <nitrate-ir/Module.hh>
 #include <sstream>
 #include <unordered_set>
 
 using namespace nr;
+using namespace ncc::ir;
 
 struct ConvState {
   int32_t indent;
@@ -698,7 +701,7 @@ static bool to_codeform(std::optional<qmodule_t *> mod, Expr *node, bool minify,
       std::string datestamp = tmp_ss.str();
 
       ss << "; Timestamp: " << datestamp << "\n";
-      ss << "; Compiler: " << nr_lib_version() << "\n";
+      ss << "; Compiler: " << IRLibrary.GetVersion() << "\n";
       ss << "; Compiler invented by Wesley Jones\n\n";
     }
   }

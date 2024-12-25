@@ -32,7 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "nitrate-core/Allocate.hh"
-#define __NR_NODE_REFLECT_IMPL__  // Make private fields accessible
+#define __IR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
 #include <nitrate-ir/IR.h>
 #include <openssl/sha.h>

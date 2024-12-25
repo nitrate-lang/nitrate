@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_NR_VISITOR_H__
-#define __NITRATE_NR_VISITOR_H__
+#ifndef __NITRATE_IR_VISITOR_H__
+#define __NITRATE_IR_VISITOR_H__
 
 #include <nitrate-ir/TypeDecl.h>
 
@@ -144,4 +144,4 @@ namespace nr {
   };
 }  // namespace nr
 
-#endif  // __NITRATE_NR_VISITOR_H__
+#endif  // __NITRATE_IR_VISITOR_H__

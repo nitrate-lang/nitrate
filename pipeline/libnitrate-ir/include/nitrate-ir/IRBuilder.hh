@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_NR_IRBUILDER_H__
-#define __NITRATE_NR_IRBUILDER_H__
+#ifndef __NITRATE_IR_IRBUILDER_H__
+#define __NITRATE_IR_IRBUILDER_H__
 
 #include <nitrate-ir/TypeDecl.h>
 

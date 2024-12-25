@@ -32,13 +32,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-emit/Lib.h>
-#include <nitrate-ir/Lib.h>
 #include <nitrate-seq/Lib.h>
 #include <nitrate/code.h>
 
 #include <atomic>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
 

@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_NR_NODE_H__
-#define __NITRATE_NR_NODE_H__
+#ifndef __NITRATE_IR_NODE_H__
+#define __NITRATE_IR_NODE_H__
 
 #include <nitrate-ir/TypeDecl.h>
 
@@ -99,7 +99,7 @@ public:
 
 namespace nr {
 
-#ifdef __NR_NODE_REFLECT_IMPL__
+#ifdef __IR_NODE_REFLECT_IMPL__
 #define QCLASS_REFLECT() public:
 #else
 #define QCLASS_REFLECT() private:

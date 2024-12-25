@@ -34,12 +34,12 @@
 #include <argparse.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
-#include <nitrate-ir/Lib.h>
 #include <nitrate-seq/Lib.h>
 
 #include <cstdint>
 #include <memory>
 #include <nitrate-core/Init.hh>
+#include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
 #include <string>

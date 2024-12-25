@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_NR_NR_H__
-#define __NITRATE_NR_NR_H__
+#ifndef __NITRATE_IR_NR_H__
+#define __NITRATE_IR_NR_H__
 
 #include <nitrate-ir/TypeDecl.h>
 #include <stdbool.h>
@@ -316,4 +316,4 @@ nr_node_t *nr_base(qmodule_t *mod);
 }
 #endif
 
-#endif  // __NITRATE_NR_NR_H__
+#endif  // __NITRATE_IR_NR_H__

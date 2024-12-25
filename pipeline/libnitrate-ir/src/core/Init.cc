@@ -31,67 +31,35 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_NR_LIB_H__
-#define __NITRATE_NR_LIB_H__
+#include <core/PassManager.hh>
+#include <nitrate-core/Init.hh>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-ir/Init.hh>
+#include <nitrate-parser/Init.hh>
 
-#include <nitrate-ir/IR.h>
+using namespace ncc::ir;
 
-#ifdef __cplusplus
-#include <nitrate-ir/IRGraph.hh>
-#include <nitrate-ir/Module.hh>
-#endif
+CPP_EXPORT ncc::LibraryRC<IRLibrarySetup> ncc::ir::IRLibrary;
 
-#include <stdbool.h>
+CPP_EXPORT bool IRLibrarySetup::Init() {
+  if (!ncc::CoreLibrary.InitRC()) {
+    return false;
+  }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+  if (!parse::ParseLibrary.InitRC()) {
+    return false;
+  }
 
-/**
- * @brief Initialize the library.
- *
- * @return true if the library was initialized successfully.
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not reinitialize the library, but will
- * increment the reference count.
- */
-bool nr_lib_init();
+  nr::pass::PassGroupRegistry::RegisterBuiltinGroups();
 
-/**
- * @brief Deinitialize the library.
- *
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not deinitialize the library, but when
- * the reference count reaches zero, the library will be deinitialized.
- */
-void nr_lib_deinit();
-
-/**
- * @brief Get the version of the library.
- *
- * @return The version string of the library.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after
- * deinitialization.
- */
-const char* nr_lib_version();
-
-/**
- * @brief Get the last error message from the current thread.
- *
- * @return The last error message from the current thread.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after
- * deinitialization.
- */
-const char* nr_strerror();
-
-#ifdef __cplusplus
+  return true;
 }
-#endif
 
-#endif  // __NITRATE_NR_LIB_H__
+CPP_EXPORT void IRLibrarySetup::Deinit() {
+  parse::ParseLibrary.DeinitRC();
+  ncc::CoreLibrary.DeinitRC();
+}
+
+CPP_EXPORT std::string_view IRLibrarySetup::GetVersionId() {
+  return __TARGET_VERSION;
+}

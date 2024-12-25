@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_NR_READER_H__
-#define __NITRATE_NR_READER_H__
+#ifndef __NITRATE_IR_READER_H__
+#define __NITRATE_IR_READER_H__
 
 #include <cstdint>
 #include <istream>

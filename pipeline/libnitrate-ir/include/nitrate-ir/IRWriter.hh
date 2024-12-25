@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_NR_WRITER_H__
-#define __NITRATE_NR_WRITER_H__
+#ifndef __NITRATE_IR_WRITER_H__
+#define __NITRATE_IR_WRITER_H__
 
 #include <cstddef>
 #include <cstdint>

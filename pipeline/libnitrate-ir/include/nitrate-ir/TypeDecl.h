@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_NR_TYPE_DECL_H__
-#define __NITRATE_NR_TYPE_DECL_H__
+#ifndef __NITRATE_IR_TYPE_DECL_H__
+#define __NITRATE_IR_TYPE_DECL_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -128,4 +128,4 @@ typedef enum nr_val_t {
 }
 #endif
 
-#endif  // __NITRATE_NR_TYPE_DECL_H__
+#endif  // __NITRATE_IR_TYPE_DECL_H__

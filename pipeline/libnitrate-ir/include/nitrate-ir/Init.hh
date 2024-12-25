@@ -31,100 +31,19 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-ir/Lib.h>
+#ifndef __NITRATE_IR_LIB_H__
+#define __NITRATE_IR_LIB_H__
 
-#include <atomic>
-#include <boost/assert/source_location.hpp>
-#include <core/PassManager.hh>
 #include <nitrate-core/Init.hh>
-#include <nitrate-core/Macro.hh>
-#include <nitrate-parser/Init.hh>
 
-using namespace ncc;
+namespace ncc::ir {
+  struct IRLibrarySetup {
+    static bool Init();
+    static void Deinit();
+    static std::string_view GetVersionId();
+  };
 
-static std::atomic<size_t> nr_lib_ref_count = 0;
+  extern LibraryRC<IRLibrarySetup> IRLibrary;
+}  // namespace ncc::ir
 
-static bool do_init() {
-  nr::pass::PassGroupRegistry::RegisterBuiltinGroups();
-
-  return true;
-}
-
-static void do_deinit() {}
-
-C_EXPORT bool nr_lib_init() {
-  if (nr_lib_ref_count++ > 1) {
-    return true;
-  }
-
-  if (!ncc::CoreLibrary.InitRC()) {
-    return false;
-  }
-
-  if (!parse::ParseLibrary.InitRC()) {
-    return false;
-  }
-
-  return do_init();
-}
-
-C_EXPORT void nr_lib_deinit() {
-  if (--nr_lib_ref_count > 0) {
-    return;
-  }
-
-  parse::ParseLibrary.DeinitRC();
-  ncc::CoreLibrary.DeinitRC();
-
-  return do_deinit();
-}
-
-C_EXPORT const char* nr_lib_version() {
-  static const char* version_string =
-
-      "[" __TARGET_VERSION
-      "] ["
-
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
-    defined(_M_X64) || defined(_M_AMD64)
-      "x86_64-"
-#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
-      "x86-"
-#elif defined(__aarch64__)
-      "aarch64-"
-#elif defined(__arm__)
-      "arm-"
-#else
-      "unknown-"
 #endif
-
-#if defined(__linux__)
-      "linux-"
-#elif defined(__APPLE__)
-      "macos-"
-#elif defined(_WIN32)
-      "win32-"
-#else
-      "unknown-"
-#endif
-
-#if defined(__clang__)
-      "clang] "
-#elif defined(__GNUC__)
-      "gnu] "
-#else
-      "unknown] "
-#endif
-
-#if NDEBUG
-      "[release]"
-#else
-      "[debug]"
-#endif
-
-      ;
-
-  return version_string;
-}
-
-C_EXPORT const char* nr_strerror() { return ""; }
