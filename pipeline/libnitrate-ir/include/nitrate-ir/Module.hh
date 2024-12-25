@@ -37,7 +37,6 @@
 #include <boost/bimap.hpp>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <memory>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-ir/IRFwd.hh>
@@ -47,38 +46,10 @@
 #include <vector>
 
 namespace ncc::ir {
-  typedef uint16_t ModuleId;
-
-  struct TypeID {
-    uint64_t m_id : 40;
-
-    TypeID(uint64_t id) : m_id(id) {}
-  } __attribute__((packed));
-
-  class Type;
-
-  class TypeManager {
-    std::vector<Type *> m_types;
-
-  public:
-    TypeManager() = default;
-
-    TypeID add(Type *type) {
-      m_types.push_back(type);
-      return TypeID(m_types.size() - 1);
-    }
-
-    Type *get(TypeID tid) { return m_types.at(tid.m_id); }
-  };
-
-  constexpr size_t MAX_MODULE_INSTANCES = std::numeric_limits<ModuleId>::max();
-
   struct TargetInfo {
     uint16_t PointerSizeBytes = 8;
     std::optional<std::string> TargetTriple, CPU, CPUFeatures;
   };
-
-  class Expr;
 
   enum class ModulePassType {
     Transform,
@@ -87,8 +58,7 @@ namespace ncc::ir {
 
   class NRBuilder;
 
-  struct qmodule_t final {
-  private:
+  class qmodule_t final {
     friend class Expr;
     friend class NRBuilder;
 
@@ -135,18 +105,14 @@ namespace ncc::ir {
     ModulePasses m_applied{};    /* Module pass tracking */
     TargetInfo m_target_info{};  /* Build target information */
     std::string m_module_name{}; /* Not nessesarily unique module name */
-    ModuleId m_id{};             /* Module ID unique to the
-                                        process during its lifetime */
     bool m_diagnostics_enabled{};
 
     std::unique_ptr<ncc::IMemory> m_node_arena =
         std::make_unique<ncc::dyn_arena>();
 
   public:
-    qmodule_t(ModuleId id, const std::string &name = "?");
+    qmodule_t(const std::string &name = "?");
     ~qmodule_t();
-
-    ModuleId getModuleId() { return m_id; }
 
     void setRoot(Expr *root) { m_root = root; }
     Expr *&getRoot() { return m_root; }
@@ -186,7 +152,6 @@ namespace ncc::ir {
 
   constexpr size_t QMODULE_SIZE = sizeof(qmodule_t);
 
-  qmodule_t *getModule(ModuleId mid);
   qmodule_t *createModule(std::string name = "?");
 }  // namespace ncc::ir
 

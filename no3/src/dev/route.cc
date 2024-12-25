@@ -299,40 +299,38 @@ static int do_nr(std::string source, std::string output, std::string opts,
 
   auto ast = parser->parse();
 
-  qmodule mod;
-  bool ok = nr_lower(&mod.get(), ast.get().get(), "module", true);
+  if (auto module = nr_lower(ast.get().get(), "module", true)) {
+    nr_diag_read(
+        module.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
+        [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
+          if (verbose || lvl != NR_LEVEL_DEBUG) {
+            std::cerr << std::string_view((const char *)msg, len) << std::endl;
+          }
+        },
+        verbose);
 
-  nr_diag_read(
-      mod.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
-      [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
-        if (verbose || lvl != NR_LEVEL_DEBUG) {
-          std::cerr << std::string_view((const char *)msg, len) << std::endl;
-        }
-      },
-      verbose);
+    { /* Write output */
+      FILE *out = output.empty() ? stdout : fopen(output.c_str(), "wb");
 
-  if (!ok) {
+      if (!out) {
+        LOG(ERROR) << "Failed to open output file: " << output;
+        return 1;
+      }
+
+      bool ok =
+          nr_write(module.get(), nullptr, NR_SERIAL_CODE, out, nullptr, 0);
+      if (out != stdout) {
+        fclose(out);
+      }
+
+      if (!ok) {
+        LOG(ERROR) << "Failed to write output file: " << output;
+        return 1;
+      }
+    }
+  } else {
     LOG(ERROR) << "Failed to lower source file: " << source;
     return 1;
-  }
-
-  { /* Write output */
-    FILE *out = output.empty() ? stdout : fopen(output.c_str(), "wb");
-
-    if (!out) {
-      LOG(ERROR) << "Failed to open output file: " << output;
-      return 1;
-    }
-
-    ok = nr_write(mod.get(), nullptr, NR_SERIAL_CODE, out, nullptr, 0);
-    if (out != stdout) {
-      fclose(out);
-    }
-
-    if (!ok) {
-      LOG(ERROR) << "Failed to write output file: " << output;
-      return 1;
-    }
   }
 
   return 0;
@@ -357,60 +355,59 @@ static int do_codegen(std::string source, std::string output, std::string opts,
 
   auto ast = parser->parse();
 
-  qmodule mod;
-  bool ok = nr_lower(&mod.get(), ast.get().get(), "module", true);
+  if (auto module = nr_lower(ast.get().get(), "module", true)) {
+    nr_diag_read(
+        module.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
+        [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
+          if (!verbose && lvl == NR_LEVEL_DEBUG) {
+            return;
+          }
 
-  nr_diag_read(
-      mod.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
-      [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
-        if (!verbose && lvl == NR_LEVEL_DEBUG) {
-          return;
-        }
+          std::cerr << std::string_view((const char *)msg, len) << std::endl;
+        },
+        verbose);
 
-        std::cerr << std::string_view((const char *)msg, len) << std::endl;
-      },
-      verbose);
+    bool use_tmpfile = output.empty();
 
-  if (!ok) {
-    LOG(ERROR) << "Failed to lower source file: " << source;
-    return 1;
-  }
+    FILE *out = use_tmpfile ? tmpfile() : fopen(output.c_str(), "wb");
 
-  bool use_tmpfile = output.empty();
-
-  FILE *out = use_tmpfile ? tmpfile() : fopen(output.c_str(), "wb");
-
-  if (!out) {
-    LOG(ERROR) << "Failed to open output file: " << output;
-    return 1;
-  }
-
-  qcode_conf codegen_conf;
-  if (target == "ir") {
-    ok = qcode_ir(mod.get(), codegen_conf.get(), stderr, out);
-  } else if (target == "asm") {
-    ok = qcode_asm(mod.get(), codegen_conf.get(), stderr, out);
-  } else if (target == "obj") {
-    ok = qcode_obj(mod.get(), codegen_conf.get(), stderr, out);
-  } else {
-    LOG(ERROR) << "Unknown target specified: " << target;
-    return 1;
-  }
-
-  if (use_tmpfile) {
-    rewind(out);
-    char buf[4096];
-
-    while (!feof(out)) {
-      size_t len = fread(buf, 1, sizeof(buf), out);
-      fwrite(buf, 1, len, stdout);
+    if (!out) {
+      LOG(ERROR) << "Failed to open output file: " << output;
+      return 1;
     }
-  }
 
-  fclose(out);
+    bool ok = false;
 
-  if (!ok) {
-    LOG(ERROR) << "Failed to generate code for source file: " << source;
+    qcode_conf codegen_conf;
+    if (target == "ir") {
+      ok = qcode_ir(module.get(), codegen_conf.get(), stderr, out);
+    } else if (target == "asm") {
+      ok = qcode_asm(module.get(), codegen_conf.get(), stderr, out);
+    } else if (target == "obj") {
+      ok = qcode_obj(module.get(), codegen_conf.get(), stderr, out);
+    } else {
+      LOG(ERROR) << "Unknown target specified: " << target;
+      return 1;
+    }
+
+    if (use_tmpfile) {
+      rewind(out);
+      char buf[4096];
+
+      while (!feof(out)) {
+        size_t len = fread(buf, 1, sizeof(buf), out);
+        fwrite(buf, 1, len, stdout);
+      }
+    }
+
+    fclose(out);
+
+    if (!ok) {
+      LOG(ERROR) << "Failed to generate code for source file: " << source;
+      return 1;
+    }
+  } else {
+    LOG(ERROR) << "Failed to lower source file: " << source;
     return 1;
   }
 

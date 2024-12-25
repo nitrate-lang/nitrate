@@ -46,7 +46,7 @@ namespace ncc::ir {
 
   public:
     qmodule() : m_module(nullptr) {}
-    ~qmodule() { nr_free(m_module); }
+    ~qmodule() { delete m_module; }
 
     qmodule_t *&get() { return m_module; }
   };

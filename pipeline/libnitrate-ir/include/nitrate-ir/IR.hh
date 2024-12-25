@@ -37,6 +37,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <memory>
 #include <nitrate-ir/IRFwd.hh>
 
 namespace ncc::parse {
@@ -44,21 +45,6 @@ namespace ncc::parse {
 }
 
 namespace ncc::ir {
-
-  /**
-   * @brief Free a QModule instance and ALL of its associated resources.
-   *
-   * @param module Pointer to the QModule instance to free.
-   *
-   * @note If `!module`, this function is a no-op.
-   *
-   * @note This function will not free the lexer instance.
-   * @note This function will not free the configuration instance.
-   *
-   * @note This function is thread safe.
-   */
-  void nr_free(qmodule_t *nr);
-
   typedef enum nr_serial_t {
     NR_SERIAL_CODE = 0, /* Human readable ASCII text */
   } nr_serial_t;
@@ -99,23 +85,8 @@ namespace ncc::ir {
    */
   bool nr_read(qmodule_t *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
 
-  /**
-   * @brief Lower a parse tree into a QModule.
-   *
-   * @param[out] mod Pointer to a QModule struct that will store the module.
-   * @param base The base node of the parse tree to lower.
-   * @param name Module name or nullptr to use the default
-   * @param diagnostics Whether to enable diagnostics.
-   *
-   * @return True if the lowering was successful, false otherwise.
-   * @note If `!base` or `!mod`, false is returned.
-   * @note A module is always stored in `*mod`, unless it is null. Ensure that
-   * nr_free is called to dispose of it when done.
-   *
-   * @note This function is thread safe.
-   */
-  bool nr_lower(qmodule_t **mod, ncc::parse::Base *base, const char *name,
-                bool diagnostics);
+  std::unique_ptr<qmodule_t> nr_lower(ncc::parse::Base *base, const char *name,
+                                      bool diagnostics);
 
   typedef void (*nr_node_cb)(nr_node_t *cur, uintptr_t userdata);
 
@@ -279,15 +250,6 @@ namespace ncc::ir {
   void nr_diag_clear(qmodule_t *nr);
 
   /**
-   * @brief Return the maximum number of modules that can exist at once.
-   *
-   * @return The maximum number of modules that can exist at once.
-   *
-   * @note This function is thread safe.
-   */
-  size_t nr_max_modules(void);
-
-  /**
    * @brief Performs type inference on a NR node.
    *
    * @param node Node to perform type inference on.
@@ -310,7 +272,6 @@ namespace ncc::ir {
    */
   nr_node_t *nr_clone(const nr_node_t *node);
 
-  nr_node_t *nr_base(qmodule_t *mod);
 }  // namespace ncc::ir
 
 #endif  // __NITRATE_IR_NR_H__

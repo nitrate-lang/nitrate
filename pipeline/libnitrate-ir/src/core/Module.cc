@@ -42,9 +42,6 @@
 using namespace ncc;
 using namespace ncc::ir;
 
-static std::vector<std::optional<qmodule_t *>> nr_modules;
-static std::mutex nr_modules_mutex;
-
 class LexerSourceResolver : public ISourceView {
 public:
   virtual std::optional<std::pair<uint32_t, uint32_t>> off2rc(
@@ -70,7 +67,7 @@ public:
   virtual ~LexerSourceResolver() = default;
 };
 
-qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
+qmodule_t::qmodule_t(const std::string &name) {
   m_applied.clear();
 
   m_offset_resolver = std::make_unique<LexerSourceResolver>();
@@ -80,8 +77,6 @@ qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
 
   m_root = nullptr;
   m_diagnostics_enabled = true;
-
-  m_id = id;
 }
 
 qmodule_t::~qmodule_t() { m_root = nullptr; }
@@ -96,50 +91,4 @@ CPP_EXPORT void qmodule_t::accept(ir::NRVisitor &visitor) {
 
 ///=============================================================================
 
-qmodule_t *ir::createModule(std::string name) {
-  std::lock_guard<std::mutex> lock(nr_modules_mutex);
-
-  ModuleId mid;
-
-  for (mid = 0; mid < nr_modules.size(); mid++) {
-    if (!nr_modules[mid].has_value()) {
-      break;
-    }
-  }
-
-  if (mid >= MAX_MODULE_INSTANCES) {
-    return nullptr;
-  }
-
-  nr_modules.insert(nr_modules.begin() + mid, new qmodule_t(mid, name));
-
-  return nr_modules[mid].value();
-}
-
-CPP_EXPORT qmodule_t *ir::getModule(ModuleId mid) {
-  std::lock_guard<std::mutex> lock(nr_modules_mutex);
-
-  if (mid >= nr_modules.size() || !nr_modules.at(mid).has_value()) {
-    return nullptr;
-  }
-
-  return nr_modules.at(mid).value();
-}
-
-CPP_EXPORT void ir::nr_free(qmodule_t *mod) {
-  if (!mod) {
-    return;
-  }
-
-  std::lock_guard<std::mutex> lock(nr_modules_mutex);
-
-  auto mid = mod->getModuleId();
-  delete mod;
-  nr_modules.at(mid).reset();
-}
-
-CPP_EXPORT size_t ir::nr_max_modules(void) { return MAX_MODULE_INSTANCES; }
-
-CPP_EXPORT nr_node_t *ir::nr_base(qmodule_t *mod) {
-  return reinterpret_cast<nr_node_t *>(mod->getRoot());
-}
+qmodule_t *ir::createModule(std::string name) { return new qmodule_t(name); }

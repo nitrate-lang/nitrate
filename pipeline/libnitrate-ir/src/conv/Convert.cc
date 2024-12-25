@@ -107,11 +107,13 @@ static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G,
 #define next_one(n) nrgen_one(b, s, G, n)
 #define next_any(n) nrgen_any(b, s, G, n)
 
-CPP_EXPORT bool ir::nr_lower(qmodule_t **mod, ncc::parse::Base *base,
-                             const char *name, bool diagnostics) {
-  if (!mod || !base) {
-    return false;
+CPP_EXPORT std::unique_ptr<qmodule_t> ir::nr_lower(ncc::parse::Base *base,
+                                                   const char *name,
+                                                   bool diagnostics) {
+  if (!base) {
+    return nullptr;
   }
+
   if (!name) {
     name = "module";
   }
@@ -152,9 +154,8 @@ CPP_EXPORT bool ir::nr_lower(qmodule_t **mod, ncc::parse::Base *base,
   R->getDiag() = std::move(G);
 
   std::swap(ir::nr_allocator, scratch_arena);
-  *mod = R;
 
-  return success;
+  return success ? std::unique_ptr<qmodule_t>(R) : nullptr;
 }
 
 ///=============================================================================

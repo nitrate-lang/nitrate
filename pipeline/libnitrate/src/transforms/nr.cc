@@ -71,25 +71,22 @@ CREATE_TRANSFORM(nit::nr) {
     return false;
   }
 
-  qmodule ir_module;
+  if (auto module = nr_lower(root.value(), nullptr, true)) {
+    switch (out_mode) {
+      case OutMode::JSON: {
+        auto writter = NR_JsonWriter(output);
+        module->accept(writter);
+        return false;
+      }
 
-  bool ok = nr_lower(&ir_module.get(), root.value(), nullptr, true);
-  if (!ok) {
+      case OutMode::MsgPack: {
+        auto writter = NR_MsgPackWriter(output);
+        module->accept(writter);
+        return false;
+      }
+    }
+  } else {
     qcore_print(QCORE_ERROR, "Failed to lower IR module.\n");
     return false;
-  }
-
-  switch (out_mode) {
-    case OutMode::JSON: {
-      auto writter = NR_JsonWriter(output);
-      ir_module.get()->accept(writter);
-      return false;
-    }
-
-    case OutMode::MsgPack: {
-      auto writter = NR_MsgPackWriter(output);
-      ir_module.get()->accept(writter);
-      return false;
-    }
   }
 }

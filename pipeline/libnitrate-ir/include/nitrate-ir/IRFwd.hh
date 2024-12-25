@@ -41,7 +41,7 @@ namespace ncc::ir {
   typedef struct nr_node_t nr_node_t;
 
   /** @brief Nitrate NR module */
-  typedef struct qmodule_t qmodule_t;
+  typedef class qmodule_t qmodule_t;
 
   /** @brief Nitrate abstract syntax tree node type */
   typedef enum nr_ty_t {

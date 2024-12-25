@@ -37,7 +37,7 @@
 #include <nitrate-ir/Report.hh>
 
 namespace ncc::ir {
-  struct qmodule_t;
+  class qmodule_t;
 }
 
 namespace ncc::ir::pass {
