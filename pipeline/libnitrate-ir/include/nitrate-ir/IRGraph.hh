@@ -48,10 +48,10 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRFwd.hh>
 #include <nitrate-ir/IRVisitor.hh>
-#include <nitrate-ir/Module.hh>
 #include <nitrate-lexer/Token.hh>
 #include <optional>
 #include <ostream>
+#include <span>
 #include <string>
 #include <unordered_set>
 #include <variant>
@@ -92,12 +92,6 @@ namespace ncc::ir {
 };  // namespace ncc::ir
 
 namespace ncc::ir {
-#ifdef __IR_NODE_REFLECT_IMPL__
-#define QCLASS_REFLECT() public:
-#else
-#define QCLASS_REFLECT() private:
-#endif
-
   enum class Purity {
     Impure = 0,
     Pure = 1,
@@ -125,25 +119,124 @@ namespace ncc::ir {
     Managed,
   };
 
-  class Expr {
-    QCLASS_REFLECT()
+}  // namespace ncc::ir
 
+namespace ncc::ir {
+  template <class Attorney>
+  class IR_Vertex_Expr;
+  template <class Attorney>
+  class IR_Vertex_Type;
+  template <class Attorney>
+  class IR_Vertex_BinExpr;
+  template <class Attorney>
+  class IR_Vertex_Unary;
+  template <class Attorney>
+  class IR_Vertex_U1Ty;
+  template <class Attorney>
+  class IR_Vertex_U8Ty;
+  template <class Attorney>
+  class IR_Vertex_U16Ty;
+  template <class Attorney>
+  class IR_Vertex_U32Ty;
+  template <class Attorney>
+  class IR_Vertex_U64Ty;
+  template <class Attorney>
+  class IR_Vertex_U128Ty;
+  template <class Attorney>
+  class IR_Vertex_I8Ty;
+  template <class Attorney>
+  class IR_Vertex_I16Ty;
+  template <class Attorney>
+  class IR_Vertex_I32Ty;
+  template <class Attorney>
+  class IR_Vertex_I64Ty;
+  template <class Attorney>
+  class IR_Vertex_I128Ty;
+  template <class Attorney>
+  class IR_Vertex_F16Ty;
+  template <class Attorney>
+  class IR_Vertex_F32Ty;
+  template <class Attorney>
+  class IR_Vertex_F64Ty;
+  template <class Attorney>
+  class IR_Vertex_F128Ty;
+  template <class Attorney>
+  class IR_Vertex_VoidTy;
+  template <class Attorney>
+  class IR_Vertex_PtrTy;
+  template <class Attorney>
+  class IR_Vertex_ConstTy;
+  template <class Attorney>
+  class IR_Vertex_OpaqueTy;
+  template <class Attorney>
+  class IR_Vertex_StructTy;
+  template <class Attorney>
+  class IR_Vertex_UnionTy;
+  template <class Attorney>
+  class IR_Vertex_ArrayTy;
+  template <class Attorney>
+  class IR_Vertex_FnTy;
+  template <class Attorney>
+  class IR_Vertex_Int;
+  template <class Attorney>
+  class IR_Vertex_Float;
+  template <class Attorney>
+  class IR_Vertex_List;
+  template <class Attorney>
+  class IR_Vertex_Call;
+  template <class Attorney>
+  class IR_Vertex_Seq;
+  template <class Attorney>
+  class IR_Vertex_Index;
+  template <class Attorney>
+  class IR_Vertex_Ident;
+  template <class Attorney>
+  class IR_Vertex_Extern;
+  template <class Attorney>
+  class IR_Vertex_Local;
+  template <class Attorney>
+  class IR_Vertex_Ret;
+  template <class Attorney>
+  class IR_Vertex_Brk;
+  template <class Attorney>
+  class IR_Vertex_Cont;
+  template <class Attorney>
+  class IR_Vertex_If;
+  template <class Attorney>
+  class IR_Vertex_While;
+  template <class Attorney>
+  class IR_Vertex_For;
+  template <class Attorney>
+  class IR_Vertex_Case;
+  template <class Attorney>
+  class IR_Vertex_Switch;
+  template <class Attorney>
+  class IR_Vertex_Fn;
+  template <class Attorney>
+  class IR_Vertex_Asm;
+  template <class Attorney>
+  class IR_Vertex_Tmp;
+}  // namespace ncc::ir
+
+namespace ncc::ir {
+  template <class A>
+  class IR_Vertex_Expr {
     nr_ty_t m_node_type : 6; /* Typecode of this node. */
     uint32_t m_offset : 32;  /* Offset into source code where node starts. */
     uint32_t m_fileid : 24;  /* File ID of the source file. */
 
-    Expr(const Expr &) = delete;
-    Expr &operator=(const Expr &) = delete;
+    IR_Vertex_Expr(const IR_Vertex_Expr &) = delete;
+    IR_Vertex_Expr &operator=(const IR_Vertex_Expr &) = delete;
 
-    Expr *cloneImpl() const;
+    IR_Vertex_Expr *cloneImpl() const;
 
   public:
-    constexpr Expr(nr_ty_t ty, uint32_t offset = ncc::lex::QLEX_EOFF,
-                   uint32_t fileid = ncc::lex::QLEX_NOFILE)
+    constexpr IR_Vertex_Expr(nr_ty_t ty, uint32_t offset = ncc::lex::QLEX_EOFF,
+                             uint32_t fileid = ncc::lex::QLEX_NOFILE)
         : m_node_type(ty), m_offset(offset), m_fileid(fileid) {}
 
     static constexpr uint32_t getKindSize(nr_ty_t kind);
-    constexpr nr_ty_t getKind() const { return m_node_type; }
+    constexpr auto getKind() const { return m_node_type; }
     static constexpr const char *getKindName(nr_ty_t kind);
 
     constexpr const char *getKindName() const {
@@ -152,97 +245,97 @@ namespace ncc::ir {
 
     template <typename T>
     static constexpr nr_ty_t getTypeCode() {
-      if constexpr (std::is_same_v<T, BinExpr>) {
+      if constexpr (std::is_same_v<T, IR_Vertex_BinExpr<A>>) {
         return IR_eBIN;
-      } else if constexpr (std::is_same_v<T, Unary>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Unary<A>>) {
         return IR_eUNARY;
-      } else if constexpr (std::is_same_v<T, Int>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Int<A>>) {
         return IR_eINT;
-      } else if constexpr (std::is_same_v<T, Float>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Float<A>>) {
         return IR_eFLOAT;
-      } else if constexpr (std::is_same_v<T, List>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_List<A>>) {
         return IR_eLIST;
-      } else if constexpr (std::is_same_v<T, Call>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Call<A>>) {
         return IR_eCALL;
-      } else if constexpr (std::is_same_v<T, Seq>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Seq<A>>) {
         return IR_eSEQ;
-      } else if constexpr (std::is_same_v<T, Index>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Index<A>>) {
         return IR_eINDEX;
-      } else if constexpr (std::is_same_v<T, Ident>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Ident<A>>) {
         return IR_eIDENT;
-      } else if constexpr (std::is_same_v<T, Extern>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Extern<A>>) {
         return IR_eEXTERN;
-      } else if constexpr (std::is_same_v<T, Local>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Local<A>>) {
         return IR_eLOCAL;
-      } else if constexpr (std::is_same_v<T, Ret>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Ret<A>>) {
         return IR_eRET;
-      } else if constexpr (std::is_same_v<T, Brk>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Brk<A>>) {
         return IR_eBRK;
-      } else if constexpr (std::is_same_v<T, Cont>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Cont<A>>) {
         return IR_eSKIP;
-      } else if constexpr (std::is_same_v<T, If>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_If<A>>) {
         return IR_eIF;
-      } else if constexpr (std::is_same_v<T, While>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_While<A>>) {
         return IR_eWHILE;
-      } else if constexpr (std::is_same_v<T, For>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_For<A>>) {
         return IR_eFOR;
-      } else if constexpr (std::is_same_v<T, Case>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Case<A>>) {
         return IR_eCASE;
-      } else if constexpr (std::is_same_v<T, Switch>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Switch<A>>) {
         return IR_eSWITCH;
-      } else if constexpr (std::is_same_v<T, Fn>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Fn<A>>) {
         return IR_eFUNCTION;
-      } else if constexpr (std::is_same_v<T, Asm>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Asm<A>>) {
         return IR_eASM;
-      } else if constexpr (std::is_same_v<T, Expr>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Expr<A>>) {
         return IR_eIGN;
-      } else if constexpr (std::is_same_v<T, U1Ty>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_U1Ty<A>>) {
         return IR_tU1;
-      } else if constexpr (std::is_same_v<T, U8Ty>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_U8Ty<A>>) {
         return IR_tU8;
-      } else if constexpr (std::is_same_v<T, U16Ty>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_U16Ty<A>>) {
         return IR_tU16;
-      } else if constexpr (std::is_same_v<T, U32Ty>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_U32Ty<A>>) {
         return IR_tU32;
-      } else if constexpr (std::is_same_v<T, U64Ty>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_U64Ty<A>>) {
         return IR_tU64;
-      } else if constexpr (std::is_same_v<T, U128Ty>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_U128Ty<A>>) {
         return IR_tU128;
-      } else if constexpr (std::is_same_v<T, I8Ty>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_I8Ty<A>>) {
         return IR_tI8;
-      } else if constexpr (std::is_same_v<T, I16Ty>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_I16Ty<A>>) {
         return IR_tI16;
-      } else if constexpr (std::is_same_v<T, I32Ty>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_I32Ty<A>>) {
         return IR_tI32;
-      } else if constexpr (std::is_same_v<T, I64Ty>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_I64Ty<A>>) {
         return IR_tI64;
-      } else if constexpr (std::is_same_v<T, I128Ty>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_I128Ty<A>>) {
         return IR_tI128;
-      } else if constexpr (std::is_same_v<T, F16Ty>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_F16Ty<A>>) {
         return IR_tF16_TY;
-      } else if constexpr (std::is_same_v<T, F32Ty>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_F32Ty<A>>) {
         return IR_tF32_TY;
-      } else if constexpr (std::is_same_v<T, F64Ty>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_F64Ty<A>>) {
         return IR_tF64_TY;
-      } else if constexpr (std::is_same_v<T, F128Ty>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_F128Ty<A>>) {
         return IR_tF128_TY;
-      } else if constexpr (std::is_same_v<T, VoidTy>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_VoidTy<A>>) {
         return IR_tVOID;
-      } else if constexpr (std::is_same_v<T, PtrTy>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_PtrTy<A>>) {
         return IR_tPTR;
-      } else if constexpr (std::is_same_v<T, ConstTy>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_ConstTy<A>>) {
         return IR_tCONST;
-      } else if constexpr (std::is_same_v<T, OpaqueTy>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_OpaqueTy<A>>) {
         return IR_tOPAQUE;
-      } else if constexpr (std::is_same_v<T, StructTy>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_StructTy<A>>) {
         return IR_tSTRUCT;
-      } else if constexpr (std::is_same_v<T, UnionTy>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_UnionTy<A>>) {
         return IR_tUNION;
-      } else if constexpr (std::is_same_v<T, ArrayTy>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_ArrayTy<A>>) {
         return IR_tARRAY;
-      } else if constexpr (std::is_same_v<T, FnTy>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_FnTy<A>>) {
         return IR_tFUNC;
-      } else if constexpr (std::is_same_v<T, Tmp>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Tmp<A>>) {
         return IR_tTMP;
       } else {
         static_assert(
@@ -294,21 +387,21 @@ namespace ncc::ir {
       return {m_offset, m_fileid};
     }
 
-    std::optional<Type *> getType() const;
+    std::optional<IR_Vertex_Type<A> *> getType() const;
 
     template <typename T>
-    static constexpr T *safeCastAs(Expr *ptr) {
+    static constexpr T *safeCastAs(IR_Vertex_Expr<A> *ptr) {
       if (!ptr) {
         return nullptr;
       }
 
 #ifndef NDEBUG
-      if constexpr (std::is_same_v<Type, T>) {
+      if constexpr (std::is_same_v<IR_Vertex_Type<A>, T>) {
         if (!ptr->isType()) [[unlikely]] {
           qcore_panicf("Invalid cast from non-type %s to type",
                        ptr->getKindName());
         }
-      } else if constexpr (!std::is_same_v<Expr, T>) {
+      } else if constexpr (!std::is_same_v<IR_Vertex_Expr<A>, T>) {
         if (getTypeCode<T>() != ptr->getKind()) [[unlikely]] {
           qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(),
                        getKindName(getTypeCode<T>()));
@@ -342,18 +435,18 @@ namespace ncc::ir {
      */
     template <typename T>
     constexpr const T *as() const {
-      return safeCastAs<T>(const_cast<Expr *>(this));
+      return safeCastAs<T>(const_cast<IR_Vertex_Expr<A> *>(this));
     }
 
-    template <class T = Expr>
+    template <class T = IR_Vertex_Expr<A>>
     constexpr T *clone() const {
-      return cloneImpl()->as<T>();
+      return cloneImpl()->template as<T>();
     }
 
-    constexpr Expr *asExpr() { return this; }
-    constexpr Type *asType();
-    constexpr const Type *asType() const {
-      return const_cast<Expr *>(this)->asType();
+    constexpr IR_Vertex_Expr *asExpr() { return this; }
+    constexpr IR_Vertex_Type<A> *asType();
+    constexpr const IR_Vertex_Type<A> *asType() const {
+      return const_cast<IR_Vertex_Expr<A> *>(this)->asType();
     }
 
     /**
@@ -372,237 +465,237 @@ namespace ncc::ir {
      * @note This compare will be insensitive to metadata like module, source
      * location, etc.
      */
-    constexpr bool isSame(const Expr *other) const;
+    constexpr bool isSame(const IR_Vertex_Expr<A> *other) const;
 
     constexpr void accept(IRVisitor &v) {
       switch (getKind()) {
         case IR_eBIN: {
-          v.visit(*as<BinExpr>());
+          v.visit(*as<IR_Vertex_BinExpr>());
           break;
         }
 
         case IR_eUNARY: {
-          v.visit(*as<Unary>());
+          v.visit(*as<IR_Vertex_Unary>());
           break;
         }
 
         case IR_eINT: {
-          v.visit(*as<Int>());
+          v.visit(*as<IR_Vertex_Int>());
           break;
         }
 
         case IR_eFLOAT: {
-          v.visit(*as<Float>());
+          v.visit(*as<IR_Vertex_Float>());
           break;
         }
 
         case IR_eLIST: {
-          v.visit(*as<List>());
+          v.visit(*as<IR_Vertex_List>());
           break;
         }
 
         case IR_eCALL: {
-          v.visit(*as<Call>());
+          v.visit(*as<IR_Vertex_Call>());
           break;
         }
 
         case IR_eSEQ: {
-          v.visit(*as<Seq>());
+          v.visit(*as<IR_Vertex_Seq>());
           break;
         }
 
         case IR_eINDEX: {
-          v.visit(*as<Index>());
+          v.visit(*as<IR_Vertex_Index>());
           break;
         }
 
         case IR_eIDENT: {
-          v.visit(*as<Ident>());
+          v.visit(*as<IR_Vertex_Ident>());
           break;
         }
 
         case IR_eEXTERN: {
-          v.visit(*as<Extern>());
+          v.visit(*as<IR_Vertex_Extern>());
           break;
         }
 
         case IR_eLOCAL: {
-          v.visit(*as<Local>());
+          v.visit(*as<IR_Vertex_Local>());
           break;
         }
 
         case IR_eRET: {
-          v.visit(*as<Ret>());
+          v.visit(*as<IR_Vertex_Ret>());
           break;
         }
 
         case IR_eBRK: {
-          v.visit(*as<Brk>());
+          v.visit(*as<IR_Vertex_Brk>());
           break;
         }
 
         case IR_eSKIP: {
-          v.visit(*as<Cont>());
+          v.visit(*as<IR_Vertex_Cont>());
           break;
         }
 
         case IR_eIF: {
-          v.visit(*as<If>());
+          v.visit(*as<IR_Vertex_If>());
           break;
         }
 
         case IR_eWHILE: {
-          v.visit(*as<While>());
+          v.visit(*as<IR_Vertex_While>());
           break;
         }
 
         case IR_eFOR: {
-          v.visit(*as<For>());
+          v.visit(*as<IR_Vertex_For>());
           break;
         }
 
         case IR_eCASE: {
-          v.visit(*as<Case>());
+          v.visit(*as<IR_Vertex_Case>());
           break;
         }
 
         case IR_eSWITCH: {
-          v.visit(*as<Switch>());
+          v.visit(*as<IR_Vertex_Switch>());
           break;
         }
 
         case IR_eFUNCTION: {
-          v.visit(*as<Fn>());
+          v.visit(*as<IR_Vertex_Fn>());
           break;
         }
 
         case IR_eASM: {
-          v.visit(*as<Asm>());
+          v.visit(*as<IR_Vertex_Asm>());
           break;
         }
 
         case IR_eIGN: {
-          v.visit(*as<Expr>());
+          v.visit(*as<IR_Vertex_Expr>());
           break;
         }
 
         case IR_tU1: {
-          v.visit(*as<U1Ty>());
+          v.visit(*as<IR_Vertex_U1Ty>());
           break;
         }
 
         case IR_tU8: {
-          v.visit(*as<U8Ty>());
+          v.visit(*as<IR_Vertex_U8Ty>());
           break;
         }
 
         case IR_tU16: {
-          v.visit(*as<U16Ty>());
+          v.visit(*as<IR_Vertex_U16Ty>());
           break;
         }
 
         case IR_tU32: {
-          v.visit(*as<U32Ty>());
+          v.visit(*as<IR_Vertex_U32Ty>());
           break;
         }
 
         case IR_tU64: {
-          v.visit(*as<U64Ty>());
+          v.visit(*as<IR_Vertex_U64Ty>());
           break;
         }
 
         case IR_tU128: {
-          v.visit(*as<U128Ty>());
+          v.visit(*as<IR_Vertex_U128Ty>());
           break;
         }
 
         case IR_tI8: {
-          v.visit(*as<I8Ty>());
+          v.visit(*as<IR_Vertex_I8Ty>());
           break;
         }
 
         case IR_tI16: {
-          v.visit(*as<I16Ty>());
+          v.visit(*as<IR_Vertex_I16Ty>());
           break;
         }
 
         case IR_tI32: {
-          v.visit(*as<I32Ty>());
+          v.visit(*as<IR_Vertex_I32Ty>());
           break;
         }
 
         case IR_tI64: {
-          v.visit(*as<I64Ty>());
+          v.visit(*as<IR_Vertex_I64Ty>());
           break;
         }
 
         case IR_tI128: {
-          v.visit(*as<I128Ty>());
+          v.visit(*as<IR_Vertex_I128Ty>());
           break;
         }
 
         case IR_tF16_TY: {
-          v.visit(*as<F16Ty>());
+          v.visit(*as<IR_Vertex_F16Ty>());
           break;
         }
 
         case IR_tF32_TY: {
-          v.visit(*as<F32Ty>());
+          v.visit(*as<IR_Vertex_F32Ty>());
           break;
         }
 
         case IR_tF64_TY: {
-          v.visit(*as<F64Ty>());
+          v.visit(*as<IR_Vertex_F64Ty>());
           break;
         }
 
         case IR_tF128_TY: {
-          v.visit(*as<F128Ty>());
+          v.visit(*as<IR_Vertex_F128Ty>());
           break;
         }
 
         case IR_tVOID: {
-          v.visit(*as<VoidTy>());
+          v.visit(*as<IR_Vertex_VoidTy>());
           break;
         }
 
         case IR_tPTR: {
-          v.visit(*as<PtrTy>());
+          v.visit(*as<IR_Vertex_PtrTy>());
           break;
         }
 
         case IR_tCONST: {
-          v.visit(*as<ConstTy>());
+          v.visit(*as<IR_Vertex_ConstTy>());
           break;
         }
 
         case IR_tOPAQUE: {
-          v.visit(*as<OpaqueTy>());
+          v.visit(*as<IR_Vertex_OpaqueTy>());
           break;
         }
 
         case IR_tSTRUCT: {
-          v.visit(*as<StructTy>());
+          v.visit(*as<IR_Vertex_StructTy>());
           break;
         }
 
         case IR_tUNION: {
-          v.visit(*as<UnionTy>());
+          v.visit(*as<IR_Vertex_UnionTy>());
           break;
         }
 
         case IR_tARRAY: {
-          v.visit(*as<ArrayTy>());
+          v.visit(*as<IR_Vertex_ArrayTy>());
           break;
         }
 
         case IR_tFUNC: {
-          v.visit(*as<FnTy>());
+          v.visit(*as<IR_Vertex_FnTy>());
           break;
         }
 
         case IR_tTMP: {
-          v.visit(*as<Tmp>());
+          v.visit(*as<IR_Vertex_Tmp>());
           break;
         }
       }
@@ -649,15 +742,14 @@ namespace ncc::ir {
 
   } __attribute__((packed)) __attribute__((aligned(1)));
 
-  static_assert(sizeof(Expr) == 8);
+  // static_assert(sizeof(Expr) == 8);
 
-  class Type : public Expr {
-    friend Expr;
-
+  template <class A>
+  class IR_Vertex_Type : public IR_Vertex_Expr<A> {
     std::optional<uint64_t> getAlignBits() const;
 
   public:
-    Type(nr_ty_t ty) : Expr(ty) {}
+    constexpr IR_Vertex_Type(nr_ty_t ty) : IR_Vertex_Expr<A>(ty) {}
 
     std::optional<uint64_t> getSizeBits() const;
 
@@ -678,7 +770,7 @@ namespace ncc::ir {
     }
 
     constexpr bool is_primitive() const {
-      switch (getKind()) {
+      switch (this->getKind()) {
         case IR_tU1:
         case IR_tU8:
         case IR_tU16:
@@ -701,16 +793,13 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool is_array() const { return getKind() == IR_tARRAY; }
-
-    constexpr bool is_pointer() const { return getKind() == IR_tPTR; }
-
-    constexpr bool is_readonly() const { return getKind() == IR_tCONST; }
-
-    constexpr bool is_function() const { return getKind() == IR_tFUNC; }
+    constexpr bool is_array() const { return this->getKind() == IR_tARRAY; }
+    constexpr bool is_pointer() const { return this->getKind() == IR_tPTR; }
+    constexpr bool is_readonly() const { return this->getKind() == IR_tCONST; }
+    constexpr bool is_function() const { return this->getKind() == IR_tFUNC; }
 
     constexpr bool is_composite() const {
-      switch (getKind()) {
+      switch (this->getKind()) {
         case IR_tSTRUCT:
         case IR_tUNION:
         case IR_tARRAY:
@@ -720,10 +809,10 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool is_union() const { return getKind() == IR_tUNION; }
+    constexpr bool is_union() const { return this->getKind() == IR_tUNION; }
 
     constexpr bool is_numeric() const {
-      switch (getKind()) {
+      switch (this->getKind()) {
         case IR_tU1:
         case IR_tU8:
         case IR_tU16:
@@ -746,7 +835,7 @@ namespace ncc::ir {
     }
 
     constexpr bool is_integral() const {
-      switch (getKind()) {
+      switch (this->getKind()) {
         case IR_tU1:
         case IR_tU8:
         case IR_tU16:
@@ -765,7 +854,7 @@ namespace ncc::ir {
     }
 
     constexpr bool is_floating_point() const {
-      switch (getKind()) {
+      switch (this->getKind()) {
         case IR_tF16_TY:
         case IR_tF32_TY:
         case IR_tF64_TY:
@@ -777,7 +866,7 @@ namespace ncc::ir {
     }
 
     constexpr bool is_signed() const {
-      switch (getKind()) {
+      switch (this->getKind()) {
         case IR_tI8:
         case IR_tI16:
         case IR_tI32:
@@ -794,7 +883,7 @@ namespace ncc::ir {
     }
 
     constexpr bool is_unsigned() const {
-      switch (getKind()) {
+      switch (this->getKind()) {
         case IR_tU1:
         case IR_tU8:
         case IR_tU16:
@@ -807,9 +896,8 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool is_void() const { return getKind() == IR_tVOID; }
-
-    constexpr bool is_bool() const { return getKind() == IR_tU1; }
+    constexpr bool is_void() const { return this->getKind() == IR_tVOID; }
+    constexpr bool is_bool() const { return this->getKind() == IR_tU1; }
   };
 
   ///=============================================================================
@@ -855,49 +943,44 @@ namespace ncc::ir {
 
   std::ostream &operator<<(std::ostream &os, Op op);
 
-  class BinExpr final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    Expr *m_lhs;
-    Expr *m_rhs;
+  template <class A>
+  class IR_Vertex_BinExpr final : public IR_Vertex_Expr<A> {
+    IR_Vertex_Expr<A> *m_lhs, *m_rhs;
     Op m_op;
 
   public:
-    BinExpr(Expr *lhs, Expr *rhs, Op op)
-        : Expr(IR_eBIN), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
+    constexpr IR_Vertex_BinExpr(auto lhs, auto rhs, auto op)
+        : IR_Vertex_Expr<A>(IR_eBIN), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
-    Expr *getLHS() const { return m_lhs; }
-    Expr *getRHS() const { return m_rhs; }
-    Op getOp() const { return m_op; }
+    constexpr auto getLHS() const { return m_lhs; }
+    constexpr auto getRHS() const { return m_rhs; }
+    constexpr auto getOp() const { return m_op; }
 
-    Expr *setLHS(Expr *lhs) { return m_lhs = lhs; }
-    Expr *setRHS(Expr *rhs) { return m_rhs = rhs; }
-    Op setOp(Op op) { return m_op = op; }
+    constexpr void setLHS(auto lhs) { m_lhs = lhs; }
+    constexpr void setRHS(auto rhs) { m_rhs = rhs; }
+    constexpr void setOp(auto op) { m_op = op; }
   };
 
-  class Unary final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    Expr *m_expr;
+  template <class A>
+  class IR_Vertex_Unary final : public IR_Vertex_Expr<A> {
+    IR_Vertex_Expr<A> *m_expr;
     Op m_op;
     bool m_postfix;
 
   public:
-    Unary(Expr *expr, Op op, bool is_postfix)
-        : Expr(IR_eUNARY), m_expr(expr), m_op(op), m_postfix(is_postfix) {}
+    constexpr IR_Vertex_Unary(auto expr, auto op, auto is_postfix)
+        : IR_Vertex_Expr<A>(IR_eUNARY),
+          m_expr(expr),
+          m_op(op),
+          m_postfix(is_postfix) {}
 
-    Expr *getExpr() const { return m_expr; }
-    Op getOp() const { return m_op; }
+    constexpr auto getExpr() const { return m_expr; }
+    constexpr auto getOp() const { return m_op; }
+    constexpr auto isPostfix() const { return m_postfix; }
 
-    Expr *setExpr(Expr *expr) { return m_expr = expr; }
-    Op setOp(Op op) { return m_op = op; }
-
-    bool isPostfix() const { return m_postfix; }
-    void setPostfix(bool is_postfix) { m_postfix = is_postfix; }
+    constexpr void setExpr(IR_Vertex_Expr<A> *expr) { m_expr = expr; }
+    constexpr void setOp(Op op) { m_op = op; }
+    constexpr void setPostfix(bool is_postfix) { m_postfix = is_postfix; }
   };
 
   ///=============================================================================
@@ -908,148 +991,100 @@ namespace ncc::ir {
   /// BEGIN: PRIMITIVE TYPES
   /// ===========================================================================
 
-  class U1Ty final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_U1Ty final : public IR_Vertex_Type<A> {
   public:
-    U1Ty() : Type(IR_tU1) {}
+    constexpr IR_Vertex_U1Ty() : IR_Vertex_Type<A>(IR_tU1) {}
   };
 
-  class U8Ty final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_U8Ty final : public IR_Vertex_Type<A> {
   public:
-    U8Ty() : Type(IR_tU8) {}
+    constexpr IR_Vertex_U8Ty() : IR_Vertex_Type<A>(IR_tU8) {}
   };
 
-  class U16Ty final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_U16Ty final : public IR_Vertex_Type<A> {
   public:
-    U16Ty() : Type(IR_tU16) {}
+    constexpr IR_Vertex_U16Ty() : IR_Vertex_Type<A>(IR_tU16) {}
   };
 
-  class U32Ty final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_U32Ty final : public IR_Vertex_Type<A> {
   public:
-    U32Ty() : Type(IR_tU32) {}
+    constexpr IR_Vertex_U32Ty() : IR_Vertex_Type<A>(IR_tU32) {}
   };
 
-  class U64Ty final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_U64Ty final : public IR_Vertex_Type<A> {
   public:
-    U64Ty() : Type(IR_tU64) {}
+    constexpr IR_Vertex_U64Ty() : IR_Vertex_Type<A>(IR_tU64) {}
   };
 
-  class U128Ty final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_U128Ty final : public IR_Vertex_Type<A> {
   public:
-    U128Ty() : Type(IR_tU128) {}
+    constexpr IR_Vertex_U128Ty() : IR_Vertex_Type<A>(IR_tU128) {}
   };
 
-  class I8Ty final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_I8Ty final : public IR_Vertex_Type<A> {
   public:
-    I8Ty() : Type(IR_tI8) {}
+    constexpr IR_Vertex_I8Ty() : IR_Vertex_Type<A>(IR_tI8) {}
   };
 
-  class I16Ty final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_I16Ty final : public IR_Vertex_Type<A> {
   public:
-    I16Ty() : Type(IR_tI16){};
+    constexpr IR_Vertex_I16Ty() : IR_Vertex_Type<A>(IR_tI16){};
   };
 
-  class I32Ty final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_I32Ty final : public IR_Vertex_Type<A> {
   public:
-    I32Ty() : Type(IR_tI32) {}
+    constexpr IR_Vertex_I32Ty() : IR_Vertex_Type<A>(IR_tI32) {}
   };
 
-  class I64Ty final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_I64Ty final : public IR_Vertex_Type<A> {
   public:
-    I64Ty() : Type(IR_tI64) {}
+    constexpr IR_Vertex_I64Ty() : IR_Vertex_Type<A>(IR_tI64) {}
   };
 
-  class I128Ty final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_I128Ty final : public IR_Vertex_Type<A> {
   public:
-    I128Ty() : Type(IR_tI128) {}
+    constexpr IR_Vertex_I128Ty() : IR_Vertex_Type<A>(IR_tI128) {}
   };
 
-  class F16Ty final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_F16Ty final : public IR_Vertex_Type<A> {
   public:
-    F16Ty() : Type(IR_tF16_TY) {}
+    constexpr IR_Vertex_F16Ty() : IR_Vertex_Type<A>(IR_tF16_TY) {}
   };
 
-  class F32Ty final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_F32Ty final : public IR_Vertex_Type<A> {
   public:
-    F32Ty() : Type(IR_tF32_TY) {}
+    constexpr IR_Vertex_F32Ty() : IR_Vertex_Type<A>(IR_tF32_TY) {}
   };
 
-  class F64Ty final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_F64Ty final : public IR_Vertex_Type<A> {
   public:
-    F64Ty() : Type(IR_tF64_TY) {}
+    constexpr IR_Vertex_F64Ty() : IR_Vertex_Type<A>(IR_tF64_TY) {}
   };
 
-  class F128Ty final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_F128Ty final : public IR_Vertex_Type<A> {
   public:
-    F128Ty() : Type(IR_tF128_TY) {}
+    constexpr IR_Vertex_F128Ty() : IR_Vertex_Type<A>(IR_tF128_TY) {}
   };
 
-  class VoidTy final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_VoidTy final : public IR_Vertex_Type<A> {
   public:
-    VoidTy() : Type(IR_tVOID) {}
+    constexpr IR_Vertex_VoidTy() : IR_Vertex_Type<A>(IR_tVOID) {}
   };
 
   /// ===========================================================================
@@ -1060,93 +1095,83 @@ namespace ncc::ir {
   /// BEGIN: COMPLEX TYPES
   /// ===========================================================================
 
-  class PtrTy final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    Type *m_pointee;
-    uint8_t m_platform_ptr_size_bytes;
+  template <class A>
+  class IR_Vertex_PtrTy final : public IR_Vertex_Type<A> {
+    IR_Vertex_Type<A> *m_pointee;
+    uint8_t m_native_size;
 
   public:
-    PtrTy(Type *pointee, uint8_t platform_size_bytes = 8)
-        : Type(IR_tPTR),
+    constexpr IR_Vertex_PtrTy(auto pointee, auto platform_size_bytes = 8)
+        : IR_Vertex_Type<A>(IR_tPTR),
           m_pointee(pointee),
-          m_platform_ptr_size_bytes(platform_size_bytes) {}
+          m_native_size(platform_size_bytes) {}
 
-    Type *getPointee() const { return m_pointee; }
-    uint8_t getPlatformPointerSizeBytes() const {
-      return m_platform_ptr_size_bytes;
-    }
+    constexpr auto getPointee() const { return m_pointee; }
+    constexpr auto getPlatformPointerSizeBytes() const { return m_native_size; }
   };
 
-  class ConstTy final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    Type *m_item;
+  template <class A>
+  class IR_Vertex_ConstTy final : public IR_Vertex_Type<A> {
+    IR_Vertex_Type<A> *m_item;
 
   public:
-    ConstTy(Type *item) : Type(IR_tCONST), m_item(item) {}
+    constexpr IR_Vertex_ConstTy(auto item)
+        : IR_Vertex_Type<A>(IR_tCONST), m_item(item) {}
 
-    Type *getItem() const { return m_item; }
+    constexpr auto getItem() const { return m_item; }
   };
 
-  class OpaqueTy final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_OpaqueTy final : public IR_Vertex_Type<A> {
     std::string_view m_name;
 
   public:
-    OpaqueTy(std::string_view name) : Type(IR_tOPAQUE), m_name(name) {}
+    constexpr IR_Vertex_OpaqueTy(std::string_view name)
+        : IR_Vertex_Type<A>(IR_tOPAQUE), m_name(name) {}
+
+    constexpr auto getName() const { return m_name; }
   };
 
-  typedef std::vector<Type *, Arena<Type *>> StructFields;
+  template <class A>
+  using StructFields =
+      std::vector<IR_Vertex_Type<A> *, Arena<IR_Vertex_Type<A> *>>;
 
-  class StructTy final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    StructFields m_fields;
+  template <class A>
+  class IR_Vertex_StructTy final : public IR_Vertex_Type<A> {
+    std::span<IR_Vertex_Type<A>> m_fields;
 
   public:
-    StructTy(const StructFields &fields) : Type(IR_tSTRUCT), m_fields(fields) {}
+    IR_Vertex_StructTy(auto fields)
+        : IR_Vertex_Type<A>(IR_tSTRUCT), m_fields(fields) {}
 
-    const StructFields &getFields() const { return m_fields; }
+    constexpr auto getFields() const { return m_fields; }
   };
 
-  typedef std::vector<Type *, Arena<Type *>> UnionFields;
+  template <class A>
+  using UnionFields =
+      std::vector<IR_Vertex_Type<A> *, Arena<IR_Vertex_Type<A> *>>;
 
-  class UnionTy final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    UnionFields m_fields;
+  template <class A>
+  class IR_Vertex_UnionTy final : public IR_Vertex_Type<A> {
+    UnionFields<A> m_fields;
 
   public:
-    UnionTy(const UnionFields &fields) : Type(IR_tUNION), m_fields(fields) {}
+    IR_Vertex_UnionTy(const UnionFields<A> &fields)
+        : IR_Vertex_Type<A>(IR_tUNION), m_fields(fields) {}
 
-    const UnionFields &getFields() const { return m_fields; }
+    const UnionFields<A> &getFields() const { return m_fields; }
   };
 
-  class ArrayTy final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    Type *m_element;
+  template <class A>
+  class IR_Vertex_ArrayTy final : public IR_Vertex_Type<A> {
+    IR_Vertex_Type<A> *m_element;
     size_t m_size;
 
   public:
-    ArrayTy(Type *element, size_t size)
-        : Type(IR_tARRAY), m_element(element), m_size(size) {}
+    IR_Vertex_ArrayTy(IR_Vertex_Type<A> *element, size_t size)
+        : IR_Vertex_Type<A>(IR_tARRAY), m_element(element), m_size(size) {}
 
-    Type *getElement() const { return m_element; }
+    auto getElement() const { return m_element; }
     size_t getCount() const { return m_size; }
   };
 
@@ -1154,32 +1179,31 @@ namespace ncc::ir {
     Variadic,
   };
 
-  typedef std::vector<Type *, Arena<Type *>> FnParams;
+  template <class A>
+  using FnParams = std::vector<IR_Vertex_Type<A> *, Arena<IR_Vertex_Type<A> *>>;
+
   typedef std::unordered_set<FnAttr, std::hash<FnAttr>, std::equal_to<FnAttr>,
                              Arena<FnAttr>>
       FnAttrs;
 
-  class FnTy final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    FnParams m_params;
+  template <class A>
+  class IR_Vertex_FnTy final : public IR_Vertex_Type<A> {
+    FnParams<A> m_params;
     FnAttrs m_attrs;
-    Type *m_return;
+    IR_Vertex_Type<A> *m_return;
     uint8_t m_platform_ptr_size_bytes;
 
   public:
-    FnTy(const FnParams &params, Type *ret, const FnAttrs &attrs,
-         uint8_t platform_ptr_size_bytes = 8)
-        : Type(IR_tFUNC),
+    IR_Vertex_FnTy(const FnParams<A> &params, IR_Vertex_Type<A> *ret,
+                   const FnAttrs &attrs, uint8_t platform_ptr_size_bytes = 8)
+        : IR_Vertex_Type<A>(IR_tFUNC),
           m_params(params),
           m_attrs(attrs),
           m_return(ret),
           m_platform_ptr_size_bytes(platform_ptr_size_bytes) {}
 
-    const FnParams &getParams() const { return m_params; }
-    Type *getReturn() const { return m_return; }
+    const FnParams<A> &getParams() const { return m_params; }
+    auto getReturn() const { return m_return; }
     const FnAttrs &getAttrs() const { return m_attrs; }
 
     bool isVariadic() const { return m_attrs.contains(FnAttr::Variadic); }
@@ -1197,17 +1221,16 @@ namespace ncc::ir {
   /// BEGIN: LITERALS
   ///=============================================================================
 
-  class Int final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_Int final : public IR_Vertex_Expr<A> {
     struct map_hash {
       std::size_t operator()(std::pair<uint128_t, uint8_t> const &v) const {
         return std::hash<uint128_t>()(v.first) ^ std::hash<uint8_t>()(v.second);
       }
     };
-    static std::unordered_map<std::pair<uint128_t, uint8_t>, Int *, map_hash>
+
+    static inline std::unordered_map<std::pair<uint128_t, uint8_t>,
+                                     IR_Vertex_Int<A> *, map_hash>
         m_cache;
 
     unsigned __int128 m_value __attribute__((aligned(16)));
@@ -1216,16 +1239,16 @@ namespace ncc::ir {
     static uint128_t str2u128(std::string_view x);
 
   public:
-    Int(uint128_t val, uint8_t size)
-        : Expr(IR_eINT), m_value(val), m_size(size) {}
+    IR_Vertex_Int(uint128_t val, uint8_t size)
+        : IR_Vertex_Expr<A>(IR_eINT), m_value(val), m_size(size) {}
 
-    Int(std::string_view str, uint8_t size)
-        : Expr(IR_eINT), m_value(str2u128(str)) {
+    IR_Vertex_Int(std::string_view str, uint8_t size)
+        : IR_Vertex_Expr<A>(IR_eINT), m_value(str2u128(str)) {
       m_size = size;
     }
 
-    static Int *get(uint128_t val, uint8_t size);
-    static Int *get(std::string_view str, uint8_t size) {
+    static IR_Vertex_Int *get(uint128_t val, uint8_t size);
+    static IR_Vertex_Int *get(std::string_view str, uint8_t size) {
       return get(str2u128(str), size);
     }
 
@@ -1234,7 +1257,7 @@ namespace ncc::ir {
     std::string getValueString() const;
   } __attribute__((packed));
 
-  static_assert(sizeof(Int) == 48);
+  static_assert(sizeof(IR_Vertex_Int<void>) == 48);
 
   enum class FloatSize : uint8_t {
     F16,
@@ -1243,20 +1266,18 @@ namespace ncc::ir {
     F128,
   };
 
-  class Float final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_Float final : public IR_Vertex_Expr<A> {
     double m_data;
     FloatSize m_size;
 
     static_assert(sizeof(double) == 8);
 
   public:
-    Float(double dec, FloatSize size)
-        : Expr(IR_eFLOAT), m_data{dec}, m_size(size) {}
-    Float(std::string_view str) : Expr(IR_eFLOAT) {
+    IR_Vertex_Float(double dec, FloatSize size)
+        : IR_Vertex_Expr<A>(IR_eFLOAT), m_data{dec}, m_size(size) {}
+
+    IR_Vertex_Float(std::string_view str) : IR_Vertex_Expr<A>(IR_eFLOAT) {
       m_data = std::stod(std::string(str));
       if (str.ends_with("f128")) {
         m_size = FloatSize::F128;
@@ -1273,30 +1294,29 @@ namespace ncc::ir {
     double getValue() const { return m_data; }
   } __attribute__((packed));
 
-  static_assert(sizeof(Float) == 17);
+  template <class A>
+  using IR_Vertex_ListItems =
+      std::vector<IR_Vertex_Expr<A> *, Arena<IR_Vertex_Expr<A> *>>;
 
-  typedef std::vector<Expr *, Arena<Expr *>> ListItems;
-
-  class List final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_List final : public IR_Vertex_Expr<A> {
     /// FIXME: Implement run-length compression
 
-    ListItems m_items;
+    IR_Vertex_ListItems<A> m_items;
     bool m_is_homogenous;
 
   public:
-    List(const ListItems &items, bool is_homogenous)
-        : Expr(IR_eLIST), m_items(items), m_is_homogenous(is_homogenous) {}
+    IR_Vertex_List(const IR_Vertex_ListItems<A> &items, bool is_homogenous)
+        : IR_Vertex_Expr<A>(IR_eLIST),
+          m_items(items),
+          m_is_homogenous(is_homogenous) {}
 
     auto begin() const { return m_items.begin(); }
     auto end() const { return m_items.end(); }
     size_t size() const { return m_items.size(); }
 
-    Expr *operator[](size_t idx) const { return m_items[idx]; }
-    Expr *at(size_t idx) const { return m_items.at(idx); }
+    IR_Vertex_Expr<A> *operator[](size_t idx) const { return m_items[idx]; }
+    IR_Vertex_Expr<A> *at(size_t idx) const { return m_items.at(idx); }
 
     bool isHomogenous() const { return m_is_homogenous; }
   };
@@ -1309,131 +1329,118 @@ namespace ncc::ir {
   /// BEGIN: EXPRESSIONS
   ///=============================================================================
 
-  typedef std::vector<Expr *, Arena<Expr *>> CallArgs;
+  template <class A>
+  using IR_Vertex_CallArgs =
+      std::vector<IR_Vertex_Expr<A> *, Arena<IR_Vertex_Expr<A> *>>;
 
-  class Call final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    Expr *m_iref; /* Possibly cyclic reference to the target. */
-    CallArgs m_args;
+  template <class A>
+  class IR_Vertex_Call final : public IR_Vertex_Expr<A> {
+    IR_Vertex_Expr<A> *m_iref; /* Possibly cyclic reference to the target. */
+    IR_Vertex_CallArgs<A> m_args;
 
   public:
-    Call(Expr *ref, const CallArgs &args)
-        : Expr(IR_eCALL), m_iref(ref), m_args(args) {}
+    IR_Vertex_Call(IR_Vertex_Expr<A> *ref, const IR_Vertex_CallArgs<A> &args)
+        : IR_Vertex_Expr<A>(IR_eCALL), m_iref(ref), m_args(args) {}
 
-    Expr *getTarget() const { return m_iref; }
-    Expr *setTarget(Expr *ref) { return m_iref = ref; }
+    auto getTarget() const { return m_iref; }
+    void setTarget(IR_Vertex_Expr<A> *ref) { m_iref = ref; }
 
-    const CallArgs &getArgs() const { return m_args; }
-    CallArgs &getArgs() { return m_args; }
-    void setArgs(const CallArgs &args) { m_args = args; }
+    const IR_Vertex_CallArgs<A> &getArgs() const { return m_args; }
+    IR_Vertex_CallArgs<A> &getArgs() { return m_args; }
+    void setArgs(const IR_Vertex_CallArgs<A> &args) { m_args = args; }
 
     size_t getNumArgs() { return m_args.size(); }
   };
 
-  typedef std::vector<Expr *, Arena<Expr *>> SeqItems;
+  template <class A>
+  using IR_Vertex_SeqItems =
+      std::vector<IR_Vertex_Expr<A> *, Arena<IR_Vertex_Expr<A> *>>;
 
-  class Seq final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    SeqItems m_items;
-
-  public:
-    Seq(const SeqItems &items) : Expr(IR_eSEQ), m_items(items) {}
-
-    const SeqItems &getItems() const { return m_items; }
-    SeqItems &getItems() { return m_items; }
-    void setItems(const SeqItems &items) { m_items = items; }
-  };
-
-  class Index final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    Expr *m_expr;
-    Expr *m_index;
+  template <class A>
+  class IR_Vertex_Seq final : public IR_Vertex_Expr<A> {
+    IR_Vertex_SeqItems<A> m_items;
 
   public:
-    Index(Expr *expr, Expr *index)
-        : Expr(IR_eINDEX), m_expr(expr), m_index(index) {}
+    IR_Vertex_Seq(const IR_Vertex_SeqItems<A> &items)
+        : IR_Vertex_Expr<A>(IR_eSEQ), m_items(items) {}
 
-    Expr *getExpr() const { return m_expr; }
-    Expr *setExpr(Expr *expr) { return m_expr = expr; }
-
-    Expr *getIndex() const { return m_index; }
-    Expr *setIndex(Expr *index) { return m_index = index; }
+    const IR_Vertex_SeqItems<A> &getItems() const { return m_items; }
+    IR_Vertex_SeqItems<A> &getItems() { return m_items; }
+    void setItems(const IR_Vertex_SeqItems<A> &items) { m_items = items; }
   };
 
-  class Ident final : public Expr {
-    friend Expr;
+  template <class A>
+  class IR_Vertex_Index final : public IR_Vertex_Expr<A> {
+    IR_Vertex_Expr<A> *m_expr;
+    IR_Vertex_Expr<A> *m_index;
 
-    QCLASS_REFLECT()
+  public:
+    IR_Vertex_Index(IR_Vertex_Expr<A> *expr, IR_Vertex_Expr<A> *index)
+        : IR_Vertex_Expr<A>(IR_eINDEX), m_expr(expr), m_index(index) {}
 
+    auto getExpr() const { return m_expr; }
+    void setExpr(IR_Vertex_Expr<A> *expr) { m_expr = expr; }
+
+    auto getIndex() const { return m_index; }
+    void setIndex(IR_Vertex_Expr<A> *index) { m_index = index; }
+  };
+
+  template <class A>
+  class IR_Vertex_Ident final : public IR_Vertex_Expr<A> {
     std::string_view m_name;
-    Expr *m_what;
+    IR_Vertex_Expr<A> *m_what;
 
   public:
-    Ident(std::string_view name, Expr *what)
-        : Expr(IR_eIDENT), m_name(name), m_what(what) {}
+    IR_Vertex_Ident(std::string_view name, IR_Vertex_Expr<A> *what)
+        : IR_Vertex_Expr<A>(IR_eIDENT), m_name(name), m_what(what) {}
 
-    Expr *getWhat() const { return m_what; }
-    Expr *setWhat(Expr *what) { return m_what = what; }
+    auto getWhat() const { return m_what; }
+    void setWhat(IR_Vertex_Expr<A> *what) { m_what = what; }
 
-    std::string_view setName(std::string_view name) { return m_name = name; }
+    std::string_view setName(std::string_view name) { m_name = name; }
   };
 
-  class Extern final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_Extern final : public IR_Vertex_Expr<A> {
     std::string_view m_abi_name;
-    Expr *m_value;
+    IR_Vertex_Expr<A> *m_value;
 
   public:
-    Extern(Expr *value, std::string_view abi_name)
-        : Expr(IR_eEXTERN), m_abi_name(abi_name), m_value(value) {}
+    IR_Vertex_Extern(IR_Vertex_Expr<A> *value, std::string_view abi_name)
+        : IR_Vertex_Expr<A>(IR_eEXTERN), m_abi_name(abi_name), m_value(value) {}
 
     std::string_view getAbiName() const { return m_abi_name; }
     std::string_view setAbiName(std::string_view abi_name) {
-      return m_abi_name = abi_name;
+      m_abi_name = abi_name;
     }
 
-    Expr *getValue() const { return m_value; }
-    Expr *setValue(Expr *value) { return m_value = value; }
+    auto getValue() const { return m_value; }
+    void setValue(IR_Vertex_Expr<A> *value) { m_value = value; }
   };
 
-  class Local final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_Local final : public IR_Vertex_Expr<A> {
     std::string_view m_name;
-    Expr *m_value;
+    IR_Vertex_Expr<A> *m_value;
     AbiTag m_abi_tag;
     StorageClass m_storage_class;
     bool m_readonly;
 
   public:
-    Local(std::string_view name, Expr *value, AbiTag abi_tag,
-          bool readonly = false,
-          StorageClass storage_class = StorageClass::LLVM_StackAlloa)
-        : Expr(IR_eLOCAL),
+    IR_Vertex_Local(std::string_view name, IR_Vertex_Expr<A> *value,
+                    AbiTag abi_tag, bool readonly = false,
+                    StorageClass storage_class = StorageClass::LLVM_StackAlloa)
+        : IR_Vertex_Expr<A>(IR_eLOCAL),
           m_name(name),
           m_value(value),
           m_abi_tag(abi_tag),
           m_storage_class(storage_class),
           m_readonly(readonly) {}
 
-    std::string_view setName(std::string_view name) { return m_name = name; }
+    std::string_view setName(std::string_view name) { m_name = name; }
 
-    Expr *getValue() const { return m_value; }
-    void setValue(Expr *value) { m_value = value; }
+    auto getValue() const { return m_value; }
+    void setValue(IR_Vertex_Expr<A> *value) { m_value = value; }
 
     AbiTag getAbiTag() const { return m_abi_tag; }
     void setAbiTag(AbiTag abi_tag) { m_abi_tag = abi_tag; }
@@ -1447,176 +1454,165 @@ namespace ncc::ir {
     void setReadonly(bool readonly) { m_readonly = readonly; }
   };
 
-  class Ret final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    Expr *m_expr;
+  template <class A>
+  class IR_Vertex_Ret final : public IR_Vertex_Expr<A> {
+    IR_Vertex_Expr<A> *m_expr;
 
   public:
-    Ret(Expr *expr) : Expr(IR_eRET), m_expr(expr) {}
+    IR_Vertex_Ret(IR_Vertex_Expr<A> *expr)
+        : IR_Vertex_Expr<A>(IR_eRET), m_expr(expr) {}
 
-    Expr *getExpr() const { return m_expr; }
-    Expr *setExpr(Expr *expr) { return m_expr = expr; }
+    auto getExpr() const { return m_expr; }
+    void setExpr(IR_Vertex_Expr<A> *expr) { m_expr = expr; }
   };
 
-  class Brk final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_Brk final : public IR_Vertex_Expr<A> {
   public:
-    Brk() : Expr(IR_eBRK) {}
+    IR_Vertex_Brk() : IR_Vertex_Expr<A>(IR_eBRK) {}
   };
 
-  class Cont final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_Cont final : public IR_Vertex_Expr<A> {
   public:
-    Cont() : Expr(IR_eSKIP) {}
+    IR_Vertex_Cont() : IR_Vertex_Expr<A>(IR_eSKIP) {}
   };
 
-  class If final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    Expr *m_cond;
-    Expr *m_then;
-    Expr *m_else;
+  template <class A>
+  class IR_Vertex_If final : public IR_Vertex_Expr<A> {
+    IR_Vertex_Expr<A> *m_cond;
+    IR_Vertex_Expr<A> *m_then;
+    IR_Vertex_Expr<A> *m_else;
 
   public:
-    If(Expr *cond, Expr *then, Expr *else_)
-        : Expr(IR_eIF), m_cond(cond), m_then(then), m_else(else_) {}
+    IR_Vertex_If(IR_Vertex_Expr<A> *cond, IR_Vertex_Expr<A> *then,
+                 IR_Vertex_Expr<A> *else_)
+        : IR_Vertex_Expr<A>(IR_eIF),
+          m_cond(cond),
+          m_then(then),
+          m_else(else_) {}
 
-    Expr *getCond() const { return m_cond; }
-    Expr *setCond(Expr *cond) { return m_cond = cond; }
+    auto getCond() const { return m_cond; }
+    void setCond(IR_Vertex_Expr<A> *cond) { m_cond = cond; }
 
-    Expr *getThen() const { return m_then; }
-    Expr *setThen(Expr *then) { return m_then = then; }
+    auto getThen() const { return m_then; }
+    void setThen(IR_Vertex_Expr<A> *then) { m_then = then; }
 
-    Expr *getElse() const { return m_else; }
-    Expr *setElse(Expr *else_) { return m_else = else_; }
+    auto getElse() const { return m_else; }
+    void setElse(IR_Vertex_Expr<A> *else_) { m_else = else_; }
   };
 
-  class While final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    Expr *m_cond;
-    Seq *m_body;
+  template <class A>
+  class IR_Vertex_While final : public IR_Vertex_Expr<A> {
+    IR_Vertex_Expr<A> *m_cond;
+    IR_Vertex_Seq<A> *m_body;
 
   public:
-    While(Expr *cond, Seq *body)
-        : Expr(IR_eWHILE), m_cond(cond), m_body(body) {}
+    IR_Vertex_While(IR_Vertex_Expr<A> *cond, IR_Vertex_Seq<A> *body)
+        : IR_Vertex_Expr<A>(IR_eWHILE), m_cond(cond), m_body(body) {}
 
-    Expr *getCond() const { return m_cond; }
-    Expr *setCond(Expr *cond) { return m_cond = cond; }
+    auto getCond() const { return m_cond; }
+    void setCond(IR_Vertex_Expr<A> *cond) { m_cond = cond; }
 
-    Seq *getBody() const { return m_body; }
-    Seq *setBody(Seq *body) { return m_body = body; }
+    auto getBody() const { return m_body; }
+    IR_Vertex_Seq<A> *setBody(IR_Vertex_Seq<A> *body) { m_body = body; }
   };
 
-  class For final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    Expr *m_init;
-    Expr *m_cond;
-    Expr *m_step;
-    Expr *m_body;
+  template <class A>
+  class IR_Vertex_For final : public IR_Vertex_Expr<A> {
+    IR_Vertex_Expr<A> *m_init;
+    IR_Vertex_Expr<A> *m_cond;
+    IR_Vertex_Expr<A> *m_step;
+    IR_Vertex_Expr<A> *m_body;
 
   public:
-    For(Expr *init, Expr *cond, Expr *step, Expr *body)
-        : Expr(IR_eFOR),
+    IR_Vertex_For(IR_Vertex_Expr<A> *init, IR_Vertex_Expr<A> *cond,
+                  IR_Vertex_Expr<A> *step, IR_Vertex_Expr<A> *body)
+        : IR_Vertex_Expr<A>(IR_eFOR),
           m_init(init),
           m_cond(cond),
           m_step(step),
           m_body(body) {}
 
-    Expr *getInit() const { return m_init; }
-    Expr *setInit(Expr *init) { return m_init = init; }
+    auto getInit() const { return m_init; }
+    void setInit(IR_Vertex_Expr<A> *init) { m_init = init; }
 
-    Expr *getCond() const { return m_cond; }
-    Expr *setCond(Expr *cond) { return m_cond = cond; }
+    auto getCond() const { return m_cond; }
+    void setCond(IR_Vertex_Expr<A> *cond) { m_cond = cond; }
 
-    Expr *getStep() const { return m_step; }
-    Expr *setStep(Expr *step) { return m_step = step; }
+    auto getStep() const { return m_step; }
+    void setStep(IR_Vertex_Expr<A> *step) { m_step = step; }
 
-    Expr *getBody() const { return m_body; }
-    Expr *setBody(Expr *body) { return m_body = body; }
+    auto getBody() const { return m_body; }
+    void setBody(IR_Vertex_Expr<A> *body) { m_body = body; }
   };
 
-  class Case final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    Expr *m_cond;
-    Expr *m_body;
+  template <class A>
+  class IR_Vertex_Case final : public IR_Vertex_Expr<A> {
+    IR_Vertex_Expr<A> *m_cond;
+    IR_Vertex_Expr<A> *m_body;
 
   public:
-    Case(Expr *cond, Expr *body) : Expr(IR_eCASE), m_cond(cond), m_body(body) {}
+    IR_Vertex_Case(IR_Vertex_Expr<A> *cond, IR_Vertex_Expr<A> *body)
+        : IR_Vertex_Expr<A>(IR_eCASE), m_cond(cond), m_body(body) {}
 
-    Expr *getCond() { return m_cond; }
-    Expr *setCond(Expr *cond) { return m_cond = cond; }
+    auto getCond() { return m_cond; }
+    void setCond(IR_Vertex_Expr<A> *cond) { m_cond = cond; }
 
-    Expr *getBody() { return m_body; }
-    Expr *setBody(Expr *body) { return m_body = body; }
+    auto getBody() { return m_body; }
+    void setBody(IR_Vertex_Expr<A> *body) { m_body = body; }
   };
 
-  typedef std::vector<Case *, Arena<Case *>> SwitchCases;
+  template <class A>
+  using SwitchCases =
+      std::vector<IR_Vertex_Case<A> *, Arena<IR_Vertex_Case<A> *>>;
 
-  class Switch final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    Expr *m_cond;
-    Expr *m_default;
-    SwitchCases m_cases;
+  template <class A>
+  class IR_Vertex_Switch final : public IR_Vertex_Expr<A> {
+    IR_Vertex_Expr<A> *m_cond;
+    IR_Vertex_Expr<A> *m_default;
+    SwitchCases<A> m_cases;
 
   public:
-    Switch(Expr *cond, const SwitchCases &cases, Expr *default_)
-        : Expr(IR_eSWITCH), m_cond(cond), m_default(default_), m_cases(cases) {}
+    IR_Vertex_Switch(IR_Vertex_Expr<A> *cond, const SwitchCases<A> &cases,
+                     IR_Vertex_Expr<A> *default_)
+        : IR_Vertex_Expr<A>(IR_eSWITCH),
+          m_cond(cond),
+          m_default(default_),
+          m_cases(cases) {}
 
-    Expr *getCond() const { return m_cond; }
-    Expr *setCond(Expr *cond) { return m_cond = cond; }
+    auto getCond() const { return m_cond; }
+    void setCond(IR_Vertex_Expr<A> *cond) { m_cond = cond; }
 
-    Expr *getDefault() const { return m_default; }
-    Expr *setDefault(Expr *default_) { return m_default = default_; }
+    auto getDefault() const { return m_default; }
+    void setDefault(IR_Vertex_Expr<A> *default_) { m_default = default_; }
 
-    const SwitchCases &getCases() const { return m_cases; }
-    SwitchCases &getCases() { return m_cases; }
-    void setCases(const SwitchCases &cases) { m_cases = cases; }
-    void addCase(Case *c) { m_cases.push_back(c); }
+    const SwitchCases<A> &getCases() const { return m_cases; }
+    SwitchCases<A> &getCases() { return m_cases; }
+    void setCases(const SwitchCases<A> &cases) { m_cases = cases; }
+    void addCase(IR_Vertex_Case<A> *c) { m_cases.push_back(c); }
   };
 
-  typedef std::vector<std::pair<Type *, std::string_view>,
-                      Arena<std::pair<Type *, std::string_view>>>
-      Params;
+  template <class A>
+  using Params =
+      std::vector<std::pair<IR_Vertex_Type<A> *, std::string_view>,
+                  Arena<std::pair<IR_Vertex_Type<A> *, std::string_view>>>;
 
-  class Fn final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_Fn final : public IR_Vertex_Expr<A> {
     std::string_view m_name;
-    Params m_params;
-    Type *m_return;
-    std::optional<Seq *> m_body;
+    Params<A> m_params;
+    IR_Vertex_Type<A> *m_return;
+    std::optional<IR_Vertex_Seq<A> *> m_body;
     bool m_variadic;
     AbiTag m_abi_tag;
 
   public:
-    Fn(std::string_view name, const Params &params, Type *ret_ty,
-       std::optional<Seq *> body, bool variadic, AbiTag abi_tag)
-        : Expr(IR_eFUNCTION),
+    IR_Vertex_Fn(std::string_view name, const Params<A> &params,
+                 IR_Vertex_Type<A> *ret_ty,
+                 std::optional<IR_Vertex_Seq<A> *> body, bool variadic,
+                 AbiTag abi_tag)
+        : IR_Vertex_Expr<A>(IR_eFUNCTION),
           m_name(name),
           m_params(params),
           m_return(ret_ty),
@@ -1624,34 +1620,34 @@ namespace ncc::ir {
           m_variadic(variadic),
           m_abi_tag(abi_tag) {}
 
-    std::string_view setName(std::string_view name) { return m_name = name; }
+    std::string_view setName(std::string_view name) { m_name = name; }
 
-    const Params &getParams() const { return m_params; }
-    Params &getParams() { return m_params; }
-    void setParams(const Params &params) { m_params = params; }
+    const Params<A> &getParams() const { return m_params; }
+    Params<A> &getParams() { return m_params; }
+    void setParams(const Params<A> &params) { m_params = params; }
 
-    Type *getReturn() const { return m_return; }
-    Type *setReturn(Type *ret_ty) { return m_return = ret_ty; }
+    auto getReturn() const { return m_return; }
+    IR_Vertex_Type<A> *setReturn(IR_Vertex_Type<A> *ret_ty) {
+      m_return = ret_ty;
+    }
 
-    std::optional<Seq *> getBody() const { return m_body; }
-    std::optional<Seq *> setBody(std::optional<Seq *> body) {
-      return m_body = body;
+    std::optional<IR_Vertex_Seq<A> *> getBody() const { return m_body; }
+    std::optional<IR_Vertex_Seq<A> *> setBody(
+        std::optional<IR_Vertex_Seq<A> *> body) {
+      m_body = body;
     }
 
     bool isVariadic() const { return m_variadic; }
     void setVariadic(bool variadic) { m_variadic = variadic; }
 
     AbiTag getAbiTag() const { return m_abi_tag; }
-    AbiTag setAbiTag(AbiTag abi_tag) { return m_abi_tag = abi_tag; }
+    AbiTag setAbiTag(AbiTag abi_tag) { m_abi_tag = abi_tag; }
   };
 
-  class Asm final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_Asm final : public IR_Vertex_Expr<A> {
   public:
-    Asm() : Expr(IR_eASM) { qcore_implement(); }
+    IR_Vertex_Asm() : IR_Vertex_Expr<A>(IR_eASM) { qcore_implement(); }
   };
 
   ///=============================================================================
@@ -1664,50 +1660,54 @@ namespace ncc::ir {
     DEFAULT_VALUE,
   };
 
-  using CallArguments = std::vector<std::pair<std::string_view, Expr *>,
-                                    Arena<std::pair<std::string_view, Expr *>>>;
+  template <class A>
+  using CallArguments =
+      std::vector<std::pair<std::string_view, IR_Vertex_Expr<A> *>,
+                  Arena<std::pair<std::string_view, IR_Vertex_Expr<A> *>>>;
 
-  struct CallArgsTmpNodeCradle {
-    Expr *base;
-    CallArguments args;
+  template <class A>
+  struct IR_Vertex_CallArgsTmpNodeCradle {
+    IR_Vertex_Expr<A> *base;
+    CallArguments<A> args;
 
-    bool operator==(const CallArgsTmpNodeCradle &rhs) const {
+    bool operator==(const IR_Vertex_CallArgsTmpNodeCradle<A> &rhs) const {
       return base == rhs.base && args == rhs.args;
     }
   };
 
-  typedef std::variant<CallArgsTmpNodeCradle, std::string_view> TmpNodeCradle;
+  template <class A>
+  using TmpNodeCradle =
+      std::variant<IR_Vertex_CallArgsTmpNodeCradle<A>, std::string_view>;
 
-  class Tmp final : public Type {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
+  template <class A>
+  class IR_Vertex_Tmp final : public IR_Vertex_Type<A> {
     TmpType m_type;
-    TmpNodeCradle m_data;
+    TmpNodeCradle<A> m_data;
 
   public:
-    Tmp(TmpType type, const TmpNodeCradle &data = {})
-        : Type(IR_tTMP), m_type(type), m_data(data) {}
+    IR_Vertex_Tmp(TmpType type, const TmpNodeCradle<A> &data = {})
+        : IR_Vertex_Type<A>(IR_tTMP), m_type(type), m_data(data) {}
 
     TmpType getTmpType() { return m_type; }
-    TmpNodeCradle &getData() { return m_data; }
-    const TmpNodeCradle &getData() const { return m_data; }
+    TmpNodeCradle<A> &getData() { return m_data; }
+    const TmpNodeCradle<A> &getData() const { return m_data; }
   };
 
   ///=============================================================================
 
-  constexpr Type *Expr::asType() {
+  template <class A>
+  constexpr IR_Vertex_Type<A> *IR_Vertex_Expr<A>::asType() {
 #ifndef NDEBUG
     if (!isType()) {
       qcore_panicf("Failed to cast a non-type node `%s` to a type node",
                    getKindName());
     }
 #endif
-    return static_cast<Type *>(this);
+    return static_cast<IR_Vertex_Type<A> *>(this);
   }
 
-  constexpr std::string_view Expr::getName() const {
+  template <class A>
+  constexpr std::string_view IR_Vertex_Expr<A>::getName() const {
     std::string_view R = "";
 
     switch (this->getKind()) {
@@ -1744,7 +1744,7 @@ namespace ncc::ir {
       }
 
       case IR_eIDENT: {
-        R = as<Ident>()->m_name;
+        R = as<IR_Vertex_Ident<A>>()->m_name;
         break;
       }
 
@@ -1753,7 +1753,7 @@ namespace ncc::ir {
       }
 
       case IR_eLOCAL: {
-        R = as<Local>()->m_name;
+        R = as<IR_Vertex_Local<A>>()->m_name;
         break;
       }
 
@@ -1794,7 +1794,7 @@ namespace ncc::ir {
       }
 
       case IR_eFUNCTION: {
-        R = as<Fn>()->m_name;
+        R = as<IR_Vertex_Fn<A>>()->m_name;
         break;
       }
 
@@ -1872,12 +1872,12 @@ namespace ncc::ir {
       }
 
       case IR_tCONST: {
-        R = as<ConstTy>()->m_item->getName();
+        R = as<IR_Vertex_ConstTy<A>>()->m_item->getName();
         break;
       }
 
       case IR_tOPAQUE: {
-        R = as<OpaqueTy>()->m_name;
+        R = as<IR_Vertex_OpaqueTy<A>>()->m_name;
         break;
       }
 
@@ -1905,57 +1905,58 @@ namespace ncc::ir {
     return R;
   }
 
-  constexpr uint32_t Expr::getKindSize(nr_ty_t type) {
+  template <class A>
+  constexpr uint32_t IR_Vertex_Expr<A>::getKindSize(nr_ty_t type) {
     const std::array<size_t, IR_COUNT> sizes = []() {
       std::array<size_t, IR_COUNT> R;
       R.fill(0);
 
-      R[IR_eBIN] = sizeof(BinExpr);
-      R[IR_eUNARY] = sizeof(Unary);
-      R[IR_eINT] = sizeof(Int);
-      R[IR_eFLOAT] = sizeof(Float);
-      R[IR_eLIST] = sizeof(List);
-      R[IR_eCALL] = sizeof(Call);
-      R[IR_eSEQ] = sizeof(Seq);
-      R[IR_eINDEX] = sizeof(Index);
-      R[IR_eIDENT] = sizeof(Ident);
-      R[IR_eEXTERN] = sizeof(Extern);
-      R[IR_eLOCAL] = sizeof(Local);
-      R[IR_eRET] = sizeof(Ret);
-      R[IR_eBRK] = sizeof(Brk);
-      R[IR_eSKIP] = sizeof(Cont);
-      R[IR_eIF] = sizeof(If);
-      R[IR_eWHILE] = sizeof(While);
-      R[IR_eFOR] = sizeof(For);
-      R[IR_eCASE] = sizeof(Case);
-      R[IR_eSWITCH] = sizeof(Switch);
-      R[IR_eFUNCTION] = sizeof(Fn);
-      R[IR_eASM] = sizeof(Asm);
-      R[IR_eIGN] = sizeof(Expr);
-      R[IR_tU1] = sizeof(U1Ty);
-      R[IR_tU8] = sizeof(U8Ty);
-      R[IR_tU16] = sizeof(U16Ty);
-      R[IR_tU32] = sizeof(U32Ty);
-      R[IR_tU64] = sizeof(U64Ty);
-      R[IR_tU128] = sizeof(U128Ty);
-      R[IR_tI8] = sizeof(I8Ty);
-      R[IR_tI16] = sizeof(I16Ty);
-      R[IR_tI32] = sizeof(I32Ty);
-      R[IR_tI64] = sizeof(I64Ty);
-      R[IR_tI128] = sizeof(I128Ty);
-      R[IR_tF16_TY] = sizeof(F16Ty);
-      R[IR_tF32_TY] = sizeof(F32Ty);
-      R[IR_tF64_TY] = sizeof(F64Ty);
-      R[IR_tF128_TY] = sizeof(F128Ty);
-      R[IR_tVOID] = sizeof(VoidTy);
-      R[IR_tPTR] = sizeof(PtrTy);
-      R[IR_tCONST] = sizeof(ConstTy);
-      R[IR_tOPAQUE] = sizeof(OpaqueTy);
-      R[IR_tSTRUCT] = sizeof(StructTy);
-      R[IR_tUNION] = sizeof(UnionTy);
-      R[IR_tARRAY] = sizeof(ArrayTy);
-      R[IR_tFUNC] = sizeof(FnTy);
-      R[IR_tTMP] = sizeof(Tmp);
+      R[IR_eBIN] = sizeof(IR_Vertex_BinExpr<A>);
+      R[IR_eUNARY] = sizeof(IR_Vertex_Unary<A>);
+      R[IR_eINT] = sizeof(IR_Vertex_Int<A>);
+      R[IR_eFLOAT] = sizeof(IR_Vertex_Float<A>);
+      R[IR_eLIST] = sizeof(IR_Vertex_List<A>);
+      R[IR_eCALL] = sizeof(IR_Vertex_Call<A>);
+      R[IR_eSEQ] = sizeof(IR_Vertex_Seq<A>);
+      R[IR_eINDEX] = sizeof(IR_Vertex_Index<A>);
+      R[IR_eIDENT] = sizeof(IR_Vertex_Ident<A>);
+      R[IR_eEXTERN] = sizeof(IR_Vertex_Extern<A>);
+      R[IR_eLOCAL] = sizeof(IR_Vertex_Local<A>);
+      R[IR_eRET] = sizeof(IR_Vertex_Ret<A>);
+      R[IR_eBRK] = sizeof(IR_Vertex_Brk<A>);
+      R[IR_eSKIP] = sizeof(IR_Vertex_Cont<A>);
+      R[IR_eIF] = sizeof(IR_Vertex_If<A>);
+      R[IR_eWHILE] = sizeof(IR_Vertex_While<A>);
+      R[IR_eFOR] = sizeof(IR_Vertex_For<A>);
+      R[IR_eCASE] = sizeof(IR_Vertex_Case<A>);
+      R[IR_eSWITCH] = sizeof(IR_Vertex_Switch<A>);
+      R[IR_eFUNCTION] = sizeof(IR_Vertex_Fn<A>);
+      R[IR_eASM] = sizeof(IR_Vertex_Asm<A>);
+      R[IR_eIGN] = sizeof(IR_Vertex_Expr<A>);
+      R[IR_tU1] = sizeof(IR_Vertex_U1Ty<A>);
+      R[IR_tU8] = sizeof(IR_Vertex_U8Ty<A>);
+      R[IR_tU16] = sizeof(IR_Vertex_U16Ty<A>);
+      R[IR_tU32] = sizeof(IR_Vertex_U32Ty<A>);
+      R[IR_tU64] = sizeof(IR_Vertex_U64Ty<A>);
+      R[IR_tU128] = sizeof(IR_Vertex_U128Ty<A>);
+      R[IR_tI8] = sizeof(IR_Vertex_I8Ty<A>);
+      R[IR_tI16] = sizeof(IR_Vertex_I16Ty<A>);
+      R[IR_tI32] = sizeof(IR_Vertex_I32Ty<A>);
+      R[IR_tI64] = sizeof(IR_Vertex_I64Ty<A>);
+      R[IR_tI128] = sizeof(IR_Vertex_I128Ty<A>);
+      R[IR_tF16_TY] = sizeof(IR_Vertex_F16Ty<A>);
+      R[IR_tF32_TY] = sizeof(IR_Vertex_F32Ty<A>);
+      R[IR_tF64_TY] = sizeof(IR_Vertex_F64Ty<A>);
+      R[IR_tF128_TY] = sizeof(IR_Vertex_F128Ty<A>);
+      R[IR_tVOID] = sizeof(IR_Vertex_VoidTy<A>);
+      R[IR_tPTR] = sizeof(IR_Vertex_PtrTy<A>);
+      R[IR_tCONST] = sizeof(IR_Vertex_ConstTy<A>);
+      R[IR_tOPAQUE] = sizeof(IR_Vertex_OpaqueTy<A>);
+      R[IR_tSTRUCT] = sizeof(IR_Vertex_StructTy<A>);
+      R[IR_tUNION] = sizeof(IR_Vertex_UnionTy<A>);
+      R[IR_tARRAY] = sizeof(IR_Vertex_ArrayTy<A>);
+      R[IR_tFUNC] = sizeof(IR_Vertex_FnTy<A>);
+      R[IR_tTMP] = sizeof(IR_Vertex_Tmp<A>);
 
       return R;
     }();
@@ -1963,7 +1964,8 @@ namespace ncc::ir {
     return sizes[type];
   }
 
-  constexpr const char *Expr::getKindName(nr_ty_t type) {
+  template <class A>
+  constexpr const char *IR_Vertex_Expr<A>::getKindName(nr_ty_t type) {
     const std::array<const char *, IR_COUNT> names = []() {
       std::array<const char *, IR_COUNT> R;
       R.fill("");
@@ -2021,358 +2023,25 @@ namespace ncc::ir {
     return names[type];
   }
 
-  constexpr bool Expr::isSame(const Expr *other) const {
+  template <class A>
+  constexpr bool IR_Vertex_Expr<A>::isSame(
+      const IR_Vertex_Expr<A> *other) const {
     nr_ty_t kind = getKind();
 
     if (kind != other->getKind()) {
       return false;
     }
 
-    switch (kind) {
-      case IR_eBIN: {
-        auto a = as<BinExpr>();
-        auto b = other->as<BinExpr>();
-        if (a->m_op != b->m_op) {
-          return false;
-        }
-        return a->m_lhs->isSame(b->m_lhs) && a->m_rhs->isSame(b->m_rhs);
-      }
-      case IR_eUNARY: {
-        auto a = as<Unary>();
-        auto b = other->as<Unary>();
-        if (a->m_op != b->m_op) {
-          return false;
-        }
-        return a->m_expr->isSame(b->m_expr);
-      }
-      case IR_eINT: {
-        return as<Int>()->getValue() == other->as<Int>()->getValue();
-      }
-      case IR_eFLOAT: {
-        return as<Float>()->getValue() == other->as<Float>()->getValue();
-      }
-      case IR_eLIST: {
-        auto a = as<List>();
-        auto b = other->as<List>();
-        if (a->m_items.size() != b->m_items.size()) {
-          return false;
-        }
-        for (size_t i = 0; i < a->m_items.size(); i++) {
-          if (!a->m_items[i]->isSame(b->m_items[i])) {
-            return false;
-          }
-        }
-        return true;
-      }
-      case IR_eCALL: {
-        auto a = as<Call>();
-        auto b = other->as<Call>();
-        if (!a->m_iref->isSame(b->m_iref)) {
-          return false;
-        }
-        if (a->m_args.size() != b->m_args.size()) {
-          return false;
-        }
-        for (size_t i = 0; i < a->m_args.size(); i++) {
-          if (!a->m_args[i]->isSame(b->m_args[i])) {
-            return false;
-          }
-        }
-        return true;
-      }
-      case IR_eSEQ: {
-        auto a = as<Seq>();
-        auto b = other->as<Seq>();
-        if (a->m_items.size() != b->m_items.size()) {
-          return false;
-        }
-        for (size_t i = 0; i < a->m_items.size(); i++) {
-          if (!a->m_items[i]->isSame(b->m_items[i])) {
-            return false;
-          }
-        }
-        return true;
-      }
-      case IR_eINDEX: {
-        auto a = as<Index>();
-        auto b = other->as<Index>();
-        if (!a->m_expr->isSame(b->m_expr)) {
-          return false;
-        }
-        if (!a->m_index->isSame(b->m_index)) {
-          return false;
-        }
-        return true;
-      }
-      case IR_eIDENT: {
-        return as<Ident>()->m_name == other->as<Ident>()->m_name;
-      }
-      case IR_eEXTERN: {
-        auto a = as<Extern>();
-        auto b = other->as<Extern>();
-        if (a->m_abi_name != b->m_abi_name) {
-          return false;
-        }
-        return a->m_value->isSame(b->m_value);
-      }
-      case IR_eLOCAL: {
-        auto a = as<Local>();
-        auto b = other->as<Local>();
-        if (a->m_name != b->m_name) {
-          return false;
-        }
-        return a->m_value->isSame(b->m_value);
-      }
-      case IR_eRET: {
-        return as<Ret>()->m_expr->isSame(other->as<Ret>()->m_expr);
-      }
-      case IR_eBRK: {
-        return true;
-      }
-      case IR_eSKIP: {
-        return true;
-      }
-      case IR_eIF: {
-        auto a = as<If>();
-        auto b = other->as<If>();
-        if (!a->m_cond->isSame(b->m_cond)) {
-          return false;
-        }
-        if (!a->m_then->isSame(b->m_then)) {
-          return false;
-        }
-        if (!a->m_else->isSame(b->m_else)) {
-          return false;
-        }
-        return true;
-      }
-      case IR_eWHILE: {
-        auto a = as<While>();
-        auto b = other->as<While>();
-        if (!a->m_cond->isSame(b->m_cond)) {
-          return false;
-        }
-        if (!a->m_body->isSame(b->m_body)) {
-          return false;
-        }
-        return true;
-      }
-      case IR_eFOR: {
-        auto a = as<For>();
-        auto b = other->as<For>();
-        if (!a->m_init->isSame(b->m_init)) {
-          return false;
-        }
-        if (!a->m_cond->isSame(b->m_cond)) {
-          return false;
-        }
-        if (!a->m_step->isSame(b->m_step)) {
-          return false;
-        }
-        if (!a->m_body->isSame(b->m_body)) {
-          return false;
-        }
-        return true;
-      }
-      case IR_eCASE: {
-        auto a = as<Case>();
-        auto b = other->as<Case>();
-        if (!a->m_cond->isSame(b->m_cond)) {
-          return false;
-        }
-        if (!a->m_body->isSame(b->m_body)) {
-          return false;
-        }
-        return true;
-      }
-      case IR_eSWITCH: {
-        auto a = as<Switch>();
-        auto b = other->as<Switch>();
-        if (!a->m_cond->isSame(b->m_cond)) {
-          return false;
-        }
-        if (!a->m_default->isSame(b->m_default)) {
-          return false;
-        }
-        if (a->m_cases.size() != b->m_cases.size()) {
-          return false;
-        }
-        for (size_t i = 0; i < a->m_cases.size(); i++) {
-          if (!a->m_cases[i]->isSame(b->m_cases[i])) {
-            return false;
-          }
-        }
-        return true;
-      }
-      case IR_eFUNCTION: {
-        auto a = as<Fn>();
-        auto b = other->as<Fn>();
-        if (a->m_name != b->m_name) {
-          return false;
-        }
-        if (!a->m_return->isSame(b->m_return)) {
-          return false;
-        }
-        if (a->m_params.size() != b->m_params.size()) {
-          return false;
-        }
-        for (size_t i = 0; i < a->m_params.size(); i++) {
-          if (a->m_params[i].second != b->m_params[i].second) {
-            return false;
-          }
-          if (!a->m_params[i].first->isSame(b->m_params[i].first)) {
-            return false;
-          }
-        }
-        if (a->m_body.has_value() && b->m_body.has_value()) {
-          if (!a->m_body.value()->isSame(b->m_body.value())) {
-            return false;
-          }
-        } else if (!a->m_body.has_value() ^ b->m_body.has_value()) {
-          return false;
-        }
-        return true;
-      }
-      case IR_eASM: {
-        qcore_implement();
-        break;
-      }
-      case IR_eIGN: {
-        return true;
-      }
-      case IR_tU1:
-      case IR_tU8:
-      case IR_tU16:
-      case IR_tU32:
-      case IR_tU64:
-      case IR_tU128:
-      case IR_tI8:
-      case IR_tI16:
-      case IR_tI32:
-      case IR_tI64:
-      case IR_tI128:
-      case IR_tF16_TY:
-      case IR_tF32_TY:
-      case IR_tF64_TY:
-      case IR_tF128_TY:
-      case IR_tVOID:
-        return true;
-      case IR_tPTR: {
-        return as<PtrTy>()->m_pointee->isSame(other->as<PtrTy>()->m_pointee);
-      }
-      case IR_tCONST: {
-        return as<ConstTy>()->m_item->isSame(other->as<ConstTy>()->m_item);
-      }
-      case IR_tOPAQUE: {
-        return as<OpaqueTy>()->m_name == other->as<OpaqueTy>()->m_name;
-      }
-      case IR_tSTRUCT: {
-        auto a = as<StructTy>();
-        auto b = other->as<StructTy>();
-        if (a->m_fields.size() != b->m_fields.size()) {
-          return false;
-        }
-        for (size_t i = 0; i < a->m_fields.size(); i++) {
-          if (!a->m_fields[i]->isSame(b->m_fields[i])) {
-            return false;
-          }
-        }
-        return true;
-      }
-      case IR_tUNION: {
-        auto a = as<UnionTy>();
-        auto b = other->as<UnionTy>();
-        if (a->m_fields.size() != b->m_fields.size()) {
-          return false;
-        }
-        for (size_t i = 0; i < a->m_fields.size(); i++) {
-          if (!a->m_fields[i]->isSame(b->m_fields[i])) {
-            return false;
-          }
-        }
-        return true;
-      }
-      case IR_tARRAY: {
-        auto a = as<ArrayTy>();
-        auto b = other->as<ArrayTy>();
-        if (!a->m_element->isSame(b->m_element)) {
-          return false;
-        }
-        if (a->m_size != b->m_size) {
-          return false;
-        }
-        return true;
-      }
-      case IR_tFUNC: {
-        auto a = as<FnTy>();
-        auto b = other->as<FnTy>();
-        if (a->m_params.size() != b->m_params.size()) {
-          return false;
-        }
-        for (size_t i = 0; i < a->m_params.size(); i++) {
-          if (!a->m_params[i]->isSame(b->m_params[i])) {
-            return false;
-          }
-        }
-        if (!a->m_return->isSame(b->m_return)) {
-          return false;
-        }
-        if (a->m_attrs != b->m_attrs) {
-          return false;
-        }
-        return true;
-      }
-      case IR_tTMP: {
-        auto a = as<Tmp>();
-        auto b = other->as<Tmp>();
-        if (a->m_type != b->m_type) {
-          return false;
-        }
-
-        switch (a->m_type) {
-          case TmpType::CALL: {
-            const auto &AD = std::get<CallArgsTmpNodeCradle>(a->m_data);
-            const auto &BD = std::get<CallArgsTmpNodeCradle>(b->m_data);
-
-            if (AD.args.size() != BD.args.size()) {
-              return false;
-            }
-
-            if (!AD.base->isSame(BD.base)) {
-              return false;
-            }
-
-            for (size_t i = 0; i < AD.args.size(); i++) {
-              if (AD.args[i].first != BD.args[i].first) {
-                return false;
-              }
-
-              if (!AD.args[i].second->isSame(BD.args[i].second)) {
-                return false;
-              }
-            }
-
-            return true;
-          }
-
-          case TmpType::DEFAULT_VALUE: {
-            return std::get<std::string_view>(a->m_data) ==
-                   std::get<std::string_view>(b->m_data);
-          }
-
-          case TmpType::NAMED_TYPE: {
-            return std::get<std::string_view>(a->m_data) ==
-                   std::get<std::string_view>(b->m_data);
-          }
-        }
-
-        qcore_implement();
-      }
-    }
+    qcore_implement();
 
     qcore_panic("unreachable");
   }
 
+}  // namespace ncc::ir
+
+namespace ncc::ir {}  // namespace ncc::ir
+
+namespace ncc::ir {
   Expr *createIgn();
 
   namespace mem {
@@ -2541,36 +2210,37 @@ namespace ncc::ir {
       Expr *x, std::optional<std::function<void(std::string_view)>> eprintn =
                    std::nullopt);
 
-  template <typename T>
-  std::optional<T> uint_as(const Expr *x) {
-#define IS_T(x) std::is_same_v<T, x>
+  //   template <typename T>
+  //   std::optional<T> uint_as(const Expr *x) {
+  // #define IS_T(x) std::is_same_v<T, Expr>
 
-    qcore_assert(x != nullptr, "evaluate_as(): x is nullptr.");
+  //     qcore_assert(x != nullptr, "evaluate_as(): x is nullptr.");
 
-    static_assert(IS_T(std::string) || IS_T(uint64_t),
-                  "evaluate_as(): T must be either std::string or uint64_t.");
+  //     static_assert(IS_T(std::string) || IS_T(uint64_t),
+  //                   "evaluate_as(): T must be either std::string or
+  //                   uint64_t.");
 
-    Expr *r = comptime_impl(const_cast<Expr *>(x)).value_or(nullptr);
-    if (r == nullptr) {
-      return std::nullopt;
-    }
+  //     Expr *r = comptime_impl(const_cast<Expr *>(x));
+  //     if (r == nullptr) {
+  //       return std::nullopt;
+  //     }
 
-    nr_ty_t ty = r->getKind();
+  //     nr_ty_t ty = r->getKind();
 
-    if (ty != IR_eINT) {
-      return std::nullopt;
-    }
+  //     if (ty != IR_eINT) {
+  //       return std::nullopt;
+  //     }
 
-    if constexpr (IS_T(std::string)) {
-      return r->as<Int>()->getValue();
-    } else if constexpr (IS_T(uint64_t)) {
-      return r->as<Int>()->getValue();
-    }
+  //     if constexpr (IS_T(std::string)) {
+  //       return r->as<Int>()->getValue();
+  //     } else if constexpr (IS_T(uint64_t)) {
+  //       return r->as<Int>()->getValue();
+  //     }
 
-    return std::nullopt;
+  //     return std::nullopt;
 
-#undef IS_T
-  }
+  // #undef IS_T
+  //   }
 
   /** Add source debugging information to an IR node */
   template <typename T>
@@ -2622,6 +2292,7 @@ namespace ncc::ir {
       return f(reinterpret_cast<T **>(c)) ? IterOp::Proceed : IterOp::Abort;
     });
   }
+
 }  // namespace ncc::ir
 
 #endif

@@ -39,6 +39,15 @@
 
 using namespace ncc::ir;
 
+class DaAttorney {
+  DaAttorney() {
+    Expr test(IR_tVOID);
+    test.m_node_type = IR_eBIN;
+
+    IRAttorney<Expr> attorney;
+  }
+};
+
 void IR_Writer::visit(Expr& n) {
   begin_obj(1);
 

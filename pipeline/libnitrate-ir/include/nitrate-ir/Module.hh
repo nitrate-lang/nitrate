@@ -59,7 +59,7 @@ namespace ncc::ir {
   class NRBuilder;
 
   class IRModule final {
-    friend class Expr;
+    friend Expr;
     friend class NRBuilder;
 
     using FunctionNameBimap =

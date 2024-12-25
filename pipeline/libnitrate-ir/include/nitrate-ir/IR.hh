@@ -39,6 +39,7 @@
 #include <cstdio>
 #include <memory>
 #include <nitrate-ir/IRFwd.hh>
+#include <nitrate-ir/IRGraph.hh>
 
 namespace ncc::parse {
   class Base;
