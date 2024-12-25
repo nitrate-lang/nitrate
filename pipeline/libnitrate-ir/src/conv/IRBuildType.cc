@@ -366,57 +366,57 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
   std::optional<Expr *> E;
 
   switch (_for->getKind()) {
-    case IR_U1_TY: {
+    case IR_U1: {
       E = createBool(false);
       break;
     }
 
-    case IR_U8_TY: {
+    case IR_U8: {
       E = createFixedInteger(0, 8);
       break;
     }
 
-    case IR_U16_TY: {
+    case IR_U16: {
       E = createFixedInteger(0, 16);
       break;
     }
 
-    case IR_U32_TY: {
+    case IR_U32: {
       E = createFixedInteger(0, 32);
       break;
     }
 
-    case IR_U64_TY: {
+    case IR_U64: {
       E = createFixedInteger(0, 64);
       break;
     }
 
-    case IR_U128_TY: {
+    case IR_U128: {
       E = createFixedInteger(0, 128);
       break;
     }
 
-    case IR_I8_TY: {
+    case IR_I8: {
       E = createFixedInteger(0, 8);
       break;
     }
 
-    case IR_I16_TY: {
+    case IR_I16: {
       E = createFixedInteger(0, 16);
       break;
     }
 
-    case IR_I32_TY: {
+    case IR_I32: {
       E = createFixedInteger(0, 32);
       break;
     }
 
-    case IR_I64_TY: {
+    case IR_I64: {
       E = createFixedInteger(0, 64);
       break;
     }
 
-    case IR_I128_TY: {
+    case IR_I128: {
       E = createFixedInteger(0, 128);
       break;
     }
@@ -484,7 +484,7 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
       break;
     }
 
-    case IR_UNION_TY: {
+    case IR_UNION: {
       UnionTy *union_ty = _for->as<UnionTy>();
 
       if (union_ty->getFields().empty()) {

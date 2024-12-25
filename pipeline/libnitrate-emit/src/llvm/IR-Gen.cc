@@ -1999,17 +1999,17 @@ static auto T_gen(craft_t &b, const Expr *N) -> ty_t {
       using namespace lower::types::prim;
       using namespace lower::types::other;
 
-      FUNCTION(IR_U1_TY, for_U1_TY, U1Ty);
-      FUNCTION(IR_U8_TY, for_U8_TY, U8Ty);
-      FUNCTION(IR_U16_TY, for_U16_TY, U16Ty);
-      FUNCTION(IR_U32_TY, for_U32_TY, U32Ty);
-      FUNCTION(IR_U64_TY, for_U64_TY, U64Ty);
-      FUNCTION(IR_U128_TY, for_U128_TY, U128Ty);
-      FUNCTION(IR_I8_TY, for_I8_TY, I8Ty);
-      FUNCTION(IR_I16_TY, for_I16_TY, I16Ty);
-      FUNCTION(IR_I32_TY, for_I32_TY, I32Ty);
-      FUNCTION(IR_I64_TY, for_I64_TY, I64Ty);
-      FUNCTION(IR_I128_TY, for_I128_TY, I128Ty);
+      FUNCTION(IR_U1, for_U1_TY, U1Ty);
+      FUNCTION(IR_U8, for_U8_TY, U8Ty);
+      FUNCTION(IR_U16, for_U16_TY, U16Ty);
+      FUNCTION(IR_U32, for_U32_TY, U32Ty);
+      FUNCTION(IR_U64, for_U64_TY, U64Ty);
+      FUNCTION(IR_U128, for_U128_TY, U128Ty);
+      FUNCTION(IR_I8, for_I8_TY, I8Ty);
+      FUNCTION(IR_I16, for_I16_TY, I16Ty);
+      FUNCTION(IR_I32, for_I32_TY, I32Ty);
+      FUNCTION(IR_I64, for_I64_TY, I64Ty);
+      FUNCTION(IR_I128, for_I128_TY, I128Ty);
       FUNCTION(IR_F16_TY, for_F16_TY, F16Ty);
       FUNCTION(IR_F32_TY, for_F32_TY, F32Ty);
       FUNCTION(IR_F64_TY, for_F64_TY, F64Ty);
@@ -2019,7 +2019,7 @@ static auto T_gen(craft_t &b, const Expr *N) -> ty_t {
       FUNCTION(IR_CONST_TY, for_CONST_TY, ConstTy);
       FUNCTION(IR_OPAQUE_TY, for_OPAQUE_TY, OpaqueTy);
       FUNCTION(IR_STRUCT_TY, for_STRUCT_TY, StructTy);
-      FUNCTION(IR_UNION_TY, for_UNION_TY, UnionTy);
+      FUNCTION(IR_UNION, for_UNION_TY, UnionTy);
       FUNCTION(IR_ARRAY_TY, for_ARRAY_TY, ArrayTy);
       FUNCTION(IR_FN_TY, for_FN_TY, FnTy);
 

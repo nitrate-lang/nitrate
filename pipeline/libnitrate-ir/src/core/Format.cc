@@ -208,57 +208,57 @@ static void mangle_type(const Type *n, std::ostream &ss) {
    */
 
   switch (n->getKind()) {
-    case IR_U1_TY: {
+    case IR_U1: {
       ss << 'b';
       break;
     }
 
-    case IR_U8_TY: {
+    case IR_U8: {
       ss << 'h';
       break;
     }
 
-    case IR_U16_TY: {
+    case IR_U16: {
       ss << 't';
       break;
     }
 
-    case IR_U32_TY: {
+    case IR_U32: {
       ss << 'j';
       break;
     }
 
-    case IR_U64_TY: {
+    case IR_U64: {
       ss << 'm';
       break;
     }
 
-    case IR_U128_TY: {
+    case IR_U128: {
       ss << 'o';
       break;
     }
 
-    case IR_I8_TY: {
+    case IR_I8: {
       ss << 'a';
       break;
     }
 
-    case IR_I16_TY: {
+    case IR_I16: {
       ss << 's';
       break;
     }
 
-    case IR_I32_TY: {
+    case IR_I32: {
       ss << 'i';
       break;
     }
 
-    case IR_I64_TY: {
+    case IR_I64: {
       ss << 'l';
       break;
     }
 
-    case IR_I128_TY: {
+    case IR_I128: {
       ss << 'n';
       break;
     }
@@ -322,7 +322,7 @@ static void mangle_type(const Type *n, std::ostream &ss) {
       break;
     }
 
-    case IR_UNION_TY: {
+    case IR_UNION: {
       /**
        * @brief Unlike C++, Nitrate encodes field types into the name.
        * Making any changes to a union will break ABI compatibility

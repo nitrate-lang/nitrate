@@ -210,47 +210,47 @@ nr_node_t *nr_clone_impl(
       out = createIgn();
       break;
     }
-    case IR_U1_TY: {
+    case IR_U1: {
       out = create<U1Ty>();
       break;
     }
-    case IR_U8_TY: {
+    case IR_U8: {
       out = create<U8Ty>();
       break;
     }
-    case IR_U16_TY: {
+    case IR_U16: {
       out = create<U16Ty>();
       break;
     }
-    case IR_U32_TY: {
+    case IR_U32: {
       out = create<U32Ty>();
       break;
     }
-    case IR_U64_TY: {
+    case IR_U64: {
       out = create<U64Ty>();
       break;
     }
-    case IR_U128_TY: {
+    case IR_U128: {
       out = create<U128Ty>();
       break;
     }
-    case IR_I8_TY: {
+    case IR_I8: {
       out = create<I8Ty>();
       break;
     }
-    case IR_I16_TY: {
+    case IR_I16: {
       out = create<I16Ty>();
       break;
     }
-    case IR_I32_TY: {
+    case IR_I32: {
       out = create<I32Ty>();
       break;
     }
-    case IR_I64_TY: {
+    case IR_I64: {
       out = create<I64Ty>();
       break;
     }
-    case IR_I128_TY: {
+    case IR_I128: {
       out = create<I128Ty>();
       break;
     }
@@ -298,7 +298,7 @@ nr_node_t *nr_clone_impl(
       out = create<StructTy>(std::move(fields));
       break;
     }
-    case IR_UNION_TY: {
+    case IR_UNION: {
       UnionFields fields;
       fields.reserve(static_cast<UnionTy *>(in)->getFields().size());
       for (auto field : static_cast<UnionTy *>(in)->getFields()) {

@@ -44,15 +44,15 @@ using namespace ncc::ir;
 
 static Type *signed_complement(nr_ty_t ty) {
   switch (ty) {
-    case IR_I8_TY:
+    case IR_I8:
       return create<U8Ty>();
-    case IR_I16_TY:
+    case IR_I16:
       return create<U16Ty>();
-    case IR_I32_TY:
+    case IR_I32:
       return create<U32Ty>();
-    case IR_I64_TY:
+    case IR_I64:
       return create<U64Ty>();
-    case IR_I128_TY:
+    case IR_I128:
       return create<U128Ty>();
     default:
       return nullptr;
@@ -503,7 +503,7 @@ static std::optional<Type *> nr_infer_impl(
               R = std::nullopt;  // Invalid out of bounds
             }
           }
-        } else if (B->is(IR_UNION_TY)) {
+        } else if (B->is(IR_UNION)) {
           if (!V->is(IR_INT)) {
             R = std::nullopt;  // Invalid must be of type int to index into a
                                // union
@@ -612,17 +612,17 @@ static std::optional<Type *> nr_infer_impl(
       break;
     }
 
-    case IR_U1_TY:
-    case IR_U8_TY:
-    case IR_U16_TY:
-    case IR_U32_TY:
-    case IR_U64_TY:
-    case IR_U128_TY:
-    case IR_I8_TY:
-    case IR_I16_TY:
-    case IR_I32_TY:
-    case IR_I64_TY:
-    case IR_I128_TY:
+    case IR_U1:
+    case IR_U8:
+    case IR_U16:
+    case IR_U32:
+    case IR_U64:
+    case IR_U128:
+    case IR_I8:
+    case IR_I16:
+    case IR_I32:
+    case IR_I64:
+    case IR_I128:
     case IR_F16_TY:
     case IR_F32_TY:
     case IR_F64_TY:
@@ -632,7 +632,7 @@ static std::optional<Type *> nr_infer_impl(
     case IR_CONST_TY:
     case IR_OPAQUE_TY:
     case IR_STRUCT_TY:
-    case IR_UNION_TY:
+    case IR_UNION:
     case IR_ARRAY_TY:
     case IR_FN_TY: {
       R = const_cast<Type *>(E->asType());
@@ -664,37 +664,37 @@ CPP_EXPORT nr_node_t *ir::nr_infer(const nr_node_t *_node, void *) {
 
 CPP_EXPORT std::optional<uint64_t> Type::getSizeBits() const {
   switch (this->getKind()) {
-    case IR_U1_TY: {
+    case IR_U1: {
       return 8;
     }
-    case IR_U8_TY: {
+    case IR_U8: {
       return 8;
     }
-    case IR_U16_TY: {
+    case IR_U16: {
       return 16;
     }
-    case IR_U32_TY: {
+    case IR_U32: {
       return 32;
     }
-    case IR_U64_TY: {
+    case IR_U64: {
       return 64;
     }
-    case IR_U128_TY: {
+    case IR_U128: {
       return 128;
     }
-    case IR_I8_TY: {
+    case IR_I8: {
       return 8;
     }
-    case IR_I16_TY: {
+    case IR_I16: {
       return 16;
     }
-    case IR_I32_TY: {
+    case IR_I32: {
       return 32;
     }
-    case IR_I64_TY: {
+    case IR_I64: {
       return 64;
     }
-    case IR_I128_TY: {
+    case IR_I128: {
       return 128;
     }
     case IR_F16_TY: {
@@ -729,7 +729,7 @@ CPP_EXPORT std::optional<uint64_t> Type::getSizeBits() const {
       }
       return sum;
     }
-    case IR_UNION_TY: {
+    case IR_UNION: {
       size_t max = 0;
       for (auto field : this->as<UnionTy>()->getFields()) {
         if (auto field_size = field->getSizeBits()) {
@@ -763,37 +763,37 @@ CPP_EXPORT std::optional<uint64_t> Type::getSizeBits() const {
 
 CPP_EXPORT std::optional<uint64_t> Type::getAlignBits() const {
   switch (this->getKind()) {
-    case IR_U1_TY: {
+    case IR_U1: {
       return 8;
     }
-    case IR_U8_TY: {
+    case IR_U8: {
       return 8;
     }
-    case IR_U16_TY: {
+    case IR_U16: {
       return 16;
     }
-    case IR_U32_TY: {
+    case IR_U32: {
       return 32;
     }
-    case IR_U64_TY: {
+    case IR_U64: {
       return 64;
     }
-    case IR_U128_TY: {
+    case IR_U128: {
       return 128;
     }
-    case IR_I8_TY: {
+    case IR_I8: {
       return 8;
     }
-    case IR_I16_TY: {
+    case IR_I16: {
       return 16;
     }
-    case IR_I32_TY: {
+    case IR_I32: {
       return 32;
     }
-    case IR_I64_TY: {
+    case IR_I64: {
       return 64;
     }
-    case IR_I128_TY: {
+    case IR_I128: {
       return 128;
     }
     case IR_F16_TY: {
@@ -828,7 +828,7 @@ CPP_EXPORT std::optional<uint64_t> Type::getAlignBits() const {
       }
       return max_align;
     }
-    case IR_UNION_TY: {
+    case IR_UNION: {
       size_t max_align = 0;
       for (auto field : this->as<UnionTy>()->getFields()) {
         if (auto field_align = field->getAlignBits()) {

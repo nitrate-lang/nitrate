@@ -332,17 +332,17 @@ void NRBuilder::remove_garbage(Seq *root) {
           IR_FLOAT,     /* Floating-point literal */
           IR_IDENT,     /* Identifier */
           IR_IGN,       /* No-op */
-          IR_U1_TY,     /* 1-bit unsigned integer (boolean) */
-          IR_U8_TY,     /* 8-bit unsigned integer */
-          IR_U16_TY,    /* 16-bit unsigned integer */
-          IR_U32_TY,    /* 32-bit unsigned integer */
-          IR_U64_TY,    /* 64-bit unsigned integer */
-          IR_U128_TY,   /* 128-bit unsigned integer */
-          IR_I8_TY,     /* 8-bit signed integer */
-          IR_I16_TY,    /* 16-bit signed integer */
-          IR_I32_TY,    /* 32-bit signed integer */
-          IR_I64_TY,    /* 64-bit signed integer */
-          IR_I128_TY,   /* 128-bit signed integer */
+          IR_U1,        /* 1-bit unsigned integer (boolean) */
+          IR_U8,        /* 8-bit unsigned integer */
+          IR_U16,       /* 16-bit unsigned integer */
+          IR_U32,       /* 32-bit unsigned integer */
+          IR_U64,       /* 64-bit unsigned integer */
+          IR_U128,      /* 128-bit unsigned integer */
+          IR_I8,        /* 8-bit signed integer */
+          IR_I16,       /* 16-bit signed integer */
+          IR_I32,       /* 32-bit signed integer */
+          IR_I64,       /* 64-bit signed integer */
+          IR_I128,      /* 128-bit signed integer */
           IR_F16_TY,    /* 16-bit floating-point */
           IR_F32_TY,    /* 32-bit floating-point */
           IR_F64_TY,    /* 64-bit floating-point */
@@ -351,7 +351,7 @@ void NRBuilder::remove_garbage(Seq *root) {
           IR_PTR_TY,    /* Pointer type */
           IR_OPAQUE_TY, /* Opaque type */
           IR_STRUCT_TY, /* Struct type */
-          IR_UNION_TY,  /* Union type */
+          IR_UNION,     /* Union type */
           IR_ARRAY_TY,  /* Array type */
           IR_FN_TY,     /* Function type */
           IR_CONST_TY,  /* Constant wrapper type */

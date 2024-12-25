@@ -181,37 +181,37 @@ namespace ncc::ir::detail {
       case IR_IGN: {
         break;
       }
-      case IR_U1_TY: {
+      case IR_U1: {
         break;
       }
-      case IR_U8_TY: {
+      case IR_U8: {
         break;
       }
-      case IR_U16_TY: {
+      case IR_U16: {
         break;
       }
-      case IR_U32_TY: {
+      case IR_U32: {
         break;
       }
-      case IR_U64_TY: {
+      case IR_U64: {
         break;
       }
-      case IR_U128_TY: {
+      case IR_U128: {
         break;
       }
-      case IR_I8_TY: {
+      case IR_I8: {
         break;
       }
-      case IR_I16_TY: {
+      case IR_I16: {
         break;
       }
-      case IR_I32_TY: {
+      case IR_I32: {
         break;
       }
-      case IR_I64_TY: {
+      case IR_I64: {
         break;
       }
-      case IR_I128_TY: {
+      case IR_I128: {
         break;
       }
       case IR_F16_TY: {
@@ -249,7 +249,7 @@ namespace ncc::ir::detail {
         }
         break;
       }
-      case IR_UNION_TY: {
+      case IR_UNION: {
         children.reserve(base->as<UnionTy>()->m_fields.size());
         for (Type *&child : base->as<UnionTy>()->m_fields) {
           children.push_back(reinterpret_cast<Expr **>(&child));

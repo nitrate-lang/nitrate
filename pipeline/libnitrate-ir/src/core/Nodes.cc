@@ -244,37 +244,37 @@ CPP_EXPORT boost::uuids::uuid Expr::hash() {
         qcore_implement();
         break;
       }
-      case IR_U1_TY: {
+      case IR_U1: {
         break;
       }
-      case IR_U8_TY: {
+      case IR_U8: {
         break;
       }
-      case IR_U16_TY: {
+      case IR_U16: {
         break;
       }
-      case IR_U32_TY: {
+      case IR_U32: {
         break;
       }
-      case IR_U64_TY: {
+      case IR_U64: {
         break;
       }
-      case IR_U128_TY: {
+      case IR_U128: {
         break;
       }
-      case IR_I8_TY: {
+      case IR_I8: {
         break;
       }
-      case IR_I16_TY: {
+      case IR_I16: {
         break;
       }
-      case IR_I32_TY: {
+      case IR_I32: {
         break;
       }
-      case IR_I64_TY: {
+      case IR_I64: {
         break;
       }
-      case IR_I128_TY: {
+      case IR_I128: {
         break;
       }
       case IR_F16_TY: {
@@ -305,7 +305,7 @@ CPP_EXPORT boost::uuids::uuid Expr::hash() {
       case IR_STRUCT_TY: {
         break;
       }
-      case IR_UNION_TY: {
+      case IR_UNION: {
         break;
       }
       case IR_ARRAY_TY: {

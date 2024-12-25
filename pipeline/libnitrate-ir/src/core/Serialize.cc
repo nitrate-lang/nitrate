@@ -457,47 +457,47 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
     case IR_IGN: {
       break;
     }
-    case IR_U1_TY: {
+    case IR_U1: {
       ss << "u1";
       break;
     }
-    case IR_U8_TY: {
+    case IR_U8: {
       ss << "u8";
       break;
     }
-    case IR_U16_TY: {
+    case IR_U16: {
       ss << "u16";
       break;
     }
-    case IR_U32_TY: {
+    case IR_U32: {
       ss << "u32";
       break;
     }
-    case IR_U64_TY: {
+    case IR_U64: {
       ss << "u64";
       break;
     }
-    case IR_U128_TY: {
+    case IR_U128: {
       ss << "u128";
       break;
     }
-    case IR_I8_TY: {
+    case IR_I8: {
       ss << "i8";
       break;
     }
-    case IR_I16_TY: {
+    case IR_I16: {
       ss << "i16";
       break;
     }
-    case IR_I32_TY: {
+    case IR_I32: {
       ss << "i32";
       break;
     }
-    case IR_I64_TY: {
+    case IR_I64: {
       ss << "i64";
       break;
     }
-    case IR_I128_TY: {
+    case IR_I128: {
       ss << "i128";
       break;
     }
@@ -546,7 +546,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
         for (auto it = n->as<StructTy>()->getFields().begin();
              it != n->as<StructTy>()->getFields().end(); ++it) {
           if ((*it)->getKind() == IR_STRUCT_TY ||
-              (*it)->getKind() == IR_UNION_TY) {
+              (*it)->getKind() == IR_UNION) {
             typedefs << "%" << (*it)->as<StructTy>()->getUniqId();
           } else {
             recurse_ex(*it, typedefs);
@@ -566,7 +566,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "%" << type_id;
       break;
     }
-    case IR_UNION_TY: {
+    case IR_UNION: {
       uint64_t type_id = n->as<UnionTy>()->getUniqId();
       if (!state.types.contains(type_id)) {
         typedefs << "%" << type_id << " = union {";
@@ -575,7 +575,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
         for (auto it = n->as<UnionTy>()->getFields().begin();
              it != n->as<UnionTy>()->getFields().end(); ++it) {
           if ((*it)->getKind() == IR_STRUCT_TY ||
-              (*it)->getKind() == IR_UNION_TY) {
+              (*it)->getKind() == IR_UNION) {
             typedefs << "%" << (*it)->as<StructTy>()->getUniqId();
           } else {
             recurse_ex(*it, typedefs);

@@ -202,27 +202,27 @@ namespace ncc::ir {
       } else if constexpr (std::is_same_v<T, Expr>) {
         return IR_IGN;
       } else if constexpr (std::is_same_v<T, U1Ty>) {
-        return IR_U1_TY;
+        return IR_U1;
       } else if constexpr (std::is_same_v<T, U8Ty>) {
-        return IR_U8_TY;
+        return IR_U8;
       } else if constexpr (std::is_same_v<T, U16Ty>) {
-        return IR_U16_TY;
+        return IR_U16;
       } else if constexpr (std::is_same_v<T, U32Ty>) {
-        return IR_U32_TY;
+        return IR_U32;
       } else if constexpr (std::is_same_v<T, U64Ty>) {
-        return IR_U64_TY;
+        return IR_U64;
       } else if constexpr (std::is_same_v<T, U128Ty>) {
-        return IR_U128_TY;
+        return IR_U128;
       } else if constexpr (std::is_same_v<T, I8Ty>) {
-        return IR_I8_TY;
+        return IR_I8;
       } else if constexpr (std::is_same_v<T, I16Ty>) {
-        return IR_I16_TY;
+        return IR_I16;
       } else if constexpr (std::is_same_v<T, I32Ty>) {
-        return IR_I32_TY;
+        return IR_I32;
       } else if constexpr (std::is_same_v<T, I64Ty>) {
-        return IR_I64_TY;
+        return IR_I64;
       } else if constexpr (std::is_same_v<T, I128Ty>) {
-        return IR_I128_TY;
+        return IR_I128;
       } else if constexpr (std::is_same_v<T, F16Ty>) {
         return IR_F16_TY;
       } else if constexpr (std::is_same_v<T, F32Ty>) {
@@ -242,7 +242,7 @@ namespace ncc::ir {
       } else if constexpr (std::is_same_v<T, StructTy>) {
         return IR_STRUCT_TY;
       } else if constexpr (std::is_same_v<T, UnionTy>) {
-        return IR_UNION_TY;
+        return IR_UNION;
       } else if constexpr (std::is_same_v<T, ArrayTy>) {
         return IR_ARRAY_TY;
       } else if constexpr (std::is_same_v<T, FnTy>) {
@@ -258,17 +258,17 @@ namespace ncc::ir {
 
     constexpr bool isType() const {
       switch (getKind()) {
-        case IR_U1_TY:
-        case IR_U8_TY:
-        case IR_U16_TY:
-        case IR_U32_TY:
-        case IR_U64_TY:
-        case IR_U128_TY:
-        case IR_I8_TY:
-        case IR_I16_TY:
-        case IR_I32_TY:
-        case IR_I64_TY:
-        case IR_I128_TY:
+        case IR_U1:
+        case IR_U8:
+        case IR_U16:
+        case IR_U32:
+        case IR_U64:
+        case IR_U128:
+        case IR_I8:
+        case IR_I16:
+        case IR_I32:
+        case IR_I64:
+        case IR_I128:
         case IR_F16_TY:
         case IR_F32_TY:
         case IR_F64_TY:
@@ -278,7 +278,7 @@ namespace ncc::ir {
         case IR_CONST_TY:
         case IR_OPAQUE_TY:
         case IR_STRUCT_TY:
-        case IR_UNION_TY:
+        case IR_UNION:
         case IR_ARRAY_TY:
         case IR_FN_TY:
         case IR_TMP:
@@ -484,57 +484,57 @@ namespace ncc::ir {
           break;
         }
 
-        case IR_U1_TY: {
+        case IR_U1: {
           v.visit(*as<U1Ty>());
           break;
         }
 
-        case IR_U8_TY: {
+        case IR_U8: {
           v.visit(*as<U8Ty>());
           break;
         }
 
-        case IR_U16_TY: {
+        case IR_U16: {
           v.visit(*as<U16Ty>());
           break;
         }
 
-        case IR_U32_TY: {
+        case IR_U32: {
           v.visit(*as<U32Ty>());
           break;
         }
 
-        case IR_U64_TY: {
+        case IR_U64: {
           v.visit(*as<U64Ty>());
           break;
         }
 
-        case IR_U128_TY: {
+        case IR_U128: {
           v.visit(*as<U128Ty>());
           break;
         }
 
-        case IR_I8_TY: {
+        case IR_I8: {
           v.visit(*as<I8Ty>());
           break;
         }
 
-        case IR_I16_TY: {
+        case IR_I16: {
           v.visit(*as<I16Ty>());
           break;
         }
 
-        case IR_I32_TY: {
+        case IR_I32: {
           v.visit(*as<I32Ty>());
           break;
         }
 
-        case IR_I64_TY: {
+        case IR_I64: {
           v.visit(*as<I64Ty>());
           break;
         }
 
-        case IR_I128_TY: {
+        case IR_I128: {
           v.visit(*as<I128Ty>());
           break;
         }
@@ -584,7 +584,7 @@ namespace ncc::ir {
           break;
         }
 
-        case IR_UNION_TY: {
+        case IR_UNION: {
           v.visit(*as<UnionTy>());
           break;
         }
@@ -677,17 +677,17 @@ namespace ncc::ir {
 
     constexpr bool is_primitive() const {
       switch (getKind()) {
-        case IR_U1_TY:
-        case IR_U8_TY:
-        case IR_U16_TY:
-        case IR_U32_TY:
-        case IR_U64_TY:
-        case IR_U128_TY:
-        case IR_I8_TY:
-        case IR_I16_TY:
-        case IR_I32_TY:
-        case IR_I64_TY:
-        case IR_I128_TY:
+        case IR_U1:
+        case IR_U8:
+        case IR_U16:
+        case IR_U32:
+        case IR_U64:
+        case IR_U128:
+        case IR_I8:
+        case IR_I16:
+        case IR_I32:
+        case IR_I64:
+        case IR_I128:
         case IR_F16_TY:
         case IR_F32_TY:
         case IR_F64_TY:
@@ -710,7 +710,7 @@ namespace ncc::ir {
     constexpr bool is_composite() const {
       switch (getKind()) {
         case IR_STRUCT_TY:
-        case IR_UNION_TY:
+        case IR_UNION:
         case IR_ARRAY_TY:
           return true;
         default:
@@ -718,21 +718,21 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool is_union() const { return getKind() == IR_UNION_TY; }
+    constexpr bool is_union() const { return getKind() == IR_UNION; }
 
     constexpr bool is_numeric() const {
       switch (getKind()) {
-        case IR_U1_TY:
-        case IR_U8_TY:
-        case IR_U16_TY:
-        case IR_U32_TY:
-        case IR_U64_TY:
-        case IR_U128_TY:
-        case IR_I8_TY:
-        case IR_I16_TY:
-        case IR_I32_TY:
-        case IR_I64_TY:
-        case IR_I128_TY:
+        case IR_U1:
+        case IR_U8:
+        case IR_U16:
+        case IR_U32:
+        case IR_U64:
+        case IR_U128:
+        case IR_I8:
+        case IR_I16:
+        case IR_I32:
+        case IR_I64:
+        case IR_I128:
         case IR_F16_TY:
         case IR_F32_TY:
         case IR_F64_TY:
@@ -745,17 +745,17 @@ namespace ncc::ir {
 
     constexpr bool is_integral() const {
       switch (getKind()) {
-        case IR_U1_TY:
-        case IR_U8_TY:
-        case IR_U16_TY:
-        case IR_U32_TY:
-        case IR_U64_TY:
-        case IR_U128_TY:
-        case IR_I8_TY:
-        case IR_I16_TY:
-        case IR_I32_TY:
-        case IR_I64_TY:
-        case IR_I128_TY:
+        case IR_U1:
+        case IR_U8:
+        case IR_U16:
+        case IR_U32:
+        case IR_U64:
+        case IR_U128:
+        case IR_I8:
+        case IR_I16:
+        case IR_I32:
+        case IR_I64:
+        case IR_I128:
           return true;
         default:
           return false;
@@ -776,11 +776,11 @@ namespace ncc::ir {
 
     constexpr bool is_signed() const {
       switch (getKind()) {
-        case IR_I8_TY:
-        case IR_I16_TY:
-        case IR_I32_TY:
-        case IR_I64_TY:
-        case IR_I128_TY:
+        case IR_I8:
+        case IR_I16:
+        case IR_I32:
+        case IR_I64:
+        case IR_I128:
         case IR_F16_TY:
         case IR_F32_TY:
         case IR_F64_TY:
@@ -793,12 +793,12 @@ namespace ncc::ir {
 
     constexpr bool is_unsigned() const {
       switch (getKind()) {
-        case IR_U1_TY:
-        case IR_U8_TY:
-        case IR_U16_TY:
-        case IR_U32_TY:
-        case IR_U64_TY:
-        case IR_U128_TY:
+        case IR_U1:
+        case IR_U8:
+        case IR_U16:
+        case IR_U32:
+        case IR_U64:
+        case IR_U128:
           return true;
         default:
           return false;
@@ -807,7 +807,7 @@ namespace ncc::ir {
 
     constexpr bool is_void() const { return getKind() == IR_VOID_TY; }
 
-    constexpr bool is_bool() const { return getKind() == IR_U1_TY; }
+    constexpr bool is_bool() const { return getKind() == IR_U1; }
   };
 
   ///=============================================================================
@@ -926,7 +926,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    U1Ty() : Type(IR_U1_TY) {}
+    U1Ty() : Type(IR_U1) {}
   };
 
   class U8Ty final : public Type {
@@ -935,7 +935,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    U8Ty() : Type(IR_U8_TY) {}
+    U8Ty() : Type(IR_U8) {}
   };
 
   class U16Ty final : public Type {
@@ -944,7 +944,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    U16Ty() : Type(IR_U16_TY) {}
+    U16Ty() : Type(IR_U16) {}
   };
 
   class U32Ty final : public Type {
@@ -953,7 +953,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    U32Ty() : Type(IR_U32_TY) {}
+    U32Ty() : Type(IR_U32) {}
   };
 
   class U64Ty final : public Type {
@@ -962,7 +962,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    U64Ty() : Type(IR_U64_TY) {}
+    U64Ty() : Type(IR_U64) {}
   };
 
   class U128Ty final : public Type {
@@ -971,7 +971,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    U128Ty() : Type(IR_U128_TY) {}
+    U128Ty() : Type(IR_U128) {}
   };
 
   class I8Ty final : public Type {
@@ -980,7 +980,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    I8Ty() : Type(IR_I8_TY) {}
+    I8Ty() : Type(IR_I8) {}
   };
 
   class I16Ty final : public Type {
@@ -989,7 +989,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    I16Ty() : Type(IR_I16_TY){};
+    I16Ty() : Type(IR_I16){};
   };
 
   class I32Ty final : public Type {
@@ -998,7 +998,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    I32Ty() : Type(IR_I32_TY) {}
+    I32Ty() : Type(IR_I32) {}
   };
 
   class I64Ty final : public Type {
@@ -1007,7 +1007,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    I64Ty() : Type(IR_I64_TY) {}
+    I64Ty() : Type(IR_I64) {}
   };
 
   class I128Ty final : public Type {
@@ -1016,7 +1016,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    I128Ty() : Type(IR_I128_TY) {}
+    I128Ty() : Type(IR_I128) {}
   };
 
   class F16Ty final : public Type {
@@ -1142,7 +1142,7 @@ namespace ncc::ir {
     UnionFields m_fields;
 
   public:
-    UnionTy(const UnionFields &fields) : Type(IR_UNION_TY), m_fields(fields) {}
+    UnionTy(const UnionFields &fields) : Type(IR_UNION), m_fields(fields) {}
 
     const UnionFields &getFields() const { return m_fields; }
   };
@@ -1829,47 +1829,47 @@ namespace ncc::ir {
         break;
       }
 
-      case IR_U1_TY: {
+      case IR_U1: {
         break;
       }
 
-      case IR_U8_TY: {
+      case IR_U8: {
         break;
       }
 
-      case IR_U16_TY: {
+      case IR_U16: {
         break;
       }
 
-      case IR_U32_TY: {
+      case IR_U32: {
         break;
       }
 
-      case IR_U64_TY: {
+      case IR_U64: {
         break;
       }
 
-      case IR_U128_TY: {
+      case IR_U128: {
         break;
       }
 
-      case IR_I8_TY: {
+      case IR_I8: {
         break;
       }
 
-      case IR_I16_TY: {
+      case IR_I16: {
         break;
       }
 
-      case IR_I32_TY: {
+      case IR_I32: {
         break;
       }
 
-      case IR_I64_TY: {
+      case IR_I64: {
         break;
       }
 
-      case IR_I128_TY: {
+      case IR_I128: {
         break;
       }
 
@@ -1911,7 +1911,7 @@ namespace ncc::ir {
         break;
       }
 
-      case IR_UNION_TY: {
+      case IR_UNION: {
         break;
       }
 
@@ -1959,17 +1959,17 @@ namespace ncc::ir {
       R[IR_FN] = sizeof(Fn);
       R[IR_ASM] = sizeof(Asm);
       R[IR_IGN] = sizeof(Expr);
-      R[IR_U1_TY] = sizeof(U1Ty);
-      R[IR_U8_TY] = sizeof(U8Ty);
-      R[IR_U16_TY] = sizeof(U16Ty);
-      R[IR_U32_TY] = sizeof(U32Ty);
-      R[IR_U64_TY] = sizeof(U64Ty);
-      R[IR_U128_TY] = sizeof(U128Ty);
-      R[IR_I8_TY] = sizeof(I8Ty);
-      R[IR_I16_TY] = sizeof(I16Ty);
-      R[IR_I32_TY] = sizeof(I32Ty);
-      R[IR_I64_TY] = sizeof(I64Ty);
-      R[IR_I128_TY] = sizeof(I128Ty);
+      R[IR_U1] = sizeof(U1Ty);
+      R[IR_U8] = sizeof(U8Ty);
+      R[IR_U16] = sizeof(U16Ty);
+      R[IR_U32] = sizeof(U32Ty);
+      R[IR_U64] = sizeof(U64Ty);
+      R[IR_U128] = sizeof(U128Ty);
+      R[IR_I8] = sizeof(I8Ty);
+      R[IR_I16] = sizeof(I16Ty);
+      R[IR_I32] = sizeof(I32Ty);
+      R[IR_I64] = sizeof(I64Ty);
+      R[IR_I128] = sizeof(I128Ty);
       R[IR_F16_TY] = sizeof(F16Ty);
       R[IR_F32_TY] = sizeof(F32Ty);
       R[IR_F64_TY] = sizeof(F64Ty);
@@ -1979,7 +1979,7 @@ namespace ncc::ir {
       R[IR_CONST_TY] = sizeof(ConstTy);
       R[IR_OPAQUE_TY] = sizeof(OpaqueTy);
       R[IR_STRUCT_TY] = sizeof(StructTy);
-      R[IR_UNION_TY] = sizeof(UnionTy);
+      R[IR_UNION] = sizeof(UnionTy);
       R[IR_ARRAY_TY] = sizeof(ArrayTy);
       R[IR_FN_TY] = sizeof(FnTy);
       R[IR_TMP] = sizeof(Tmp);
@@ -2018,17 +2018,17 @@ namespace ncc::ir {
       R[IR_FN] = "fn";
       R[IR_ASM] = "asm";
       R[IR_IGN] = "ignore";
-      R[IR_U1_TY] = "u1";
-      R[IR_U8_TY] = "u8";
-      R[IR_U16_TY] = "u16";
-      R[IR_U32_TY] = "u32";
-      R[IR_U64_TY] = "u64";
-      R[IR_U128_TY] = "u128";
-      R[IR_I8_TY] = "i8";
-      R[IR_I16_TY] = "i16";
-      R[IR_I32_TY] = "i32";
-      R[IR_I64_TY] = "i64";
-      R[IR_I128_TY] = "i128";
+      R[IR_U1] = "u1";
+      R[IR_U8] = "u8";
+      R[IR_U16] = "u16";
+      R[IR_U32] = "u32";
+      R[IR_U64] = "u64";
+      R[IR_U128] = "u128";
+      R[IR_I8] = "i8";
+      R[IR_I16] = "i16";
+      R[IR_I32] = "i32";
+      R[IR_I64] = "i64";
+      R[IR_I128] = "i128";
       R[IR_F16_TY] = "f16";
       R[IR_F32_TY] = "f32";
       R[IR_F64_TY] = "f64";
@@ -2038,7 +2038,7 @@ namespace ncc::ir {
       R[IR_CONST_TY] = "const";
       R[IR_OPAQUE_TY] = "opaque";
       R[IR_STRUCT_TY] = "struct";
-      R[IR_UNION_TY] = "union";
+      R[IR_UNION] = "union";
       R[IR_ARRAY_TY] = "array";
       R[IR_FN_TY] = "fn_ty";
       R[IR_TMP] = "tmp";
@@ -2276,17 +2276,17 @@ namespace ncc::ir {
       case IR_IGN: {
         return true;
       }
-      case IR_U1_TY:
-      case IR_U8_TY:
-      case IR_U16_TY:
-      case IR_U32_TY:
-      case IR_U64_TY:
-      case IR_U128_TY:
-      case IR_I8_TY:
-      case IR_I16_TY:
-      case IR_I32_TY:
-      case IR_I64_TY:
-      case IR_I128_TY:
+      case IR_U1:
+      case IR_U8:
+      case IR_U16:
+      case IR_U32:
+      case IR_U64:
+      case IR_U128:
+      case IR_I8:
+      case IR_I16:
+      case IR_I32:
+      case IR_I64:
+      case IR_I128:
       case IR_F16_TY:
       case IR_F32_TY:
       case IR_F64_TY:
@@ -2315,7 +2315,7 @@ namespace ncc::ir {
         }
         return true;
       }
-      case IR_UNION_TY: {
+      case IR_UNION: {
         auto a = as<UnionTy>();
         auto b = other->as<UnionTy>();
         if (a->m_fields.size() != b->m_fields.size()) {
@@ -2465,17 +2465,17 @@ namespace ncc::ir {
     NORMAL_ALLOC(IR_FN);
     NORMAL_ALLOC(IR_ASM);
     REUSE_ALLOC(IR_IGN);
-    NORMAL_ALLOC(IR_U1_TY);
-    NORMAL_ALLOC(IR_U8_TY);
-    NORMAL_ALLOC(IR_U16_TY);
-    NORMAL_ALLOC(IR_U32_TY);
-    NORMAL_ALLOC(IR_U64_TY);
-    NORMAL_ALLOC(IR_U128_TY);
-    NORMAL_ALLOC(IR_I8_TY);
-    NORMAL_ALLOC(IR_I16_TY);
-    NORMAL_ALLOC(IR_I32_TY);
-    NORMAL_ALLOC(IR_I64_TY);
-    NORMAL_ALLOC(IR_I128_TY);
+    NORMAL_ALLOC(IR_U1);
+    NORMAL_ALLOC(IR_U8);
+    NORMAL_ALLOC(IR_U16);
+    NORMAL_ALLOC(IR_U32);
+    NORMAL_ALLOC(IR_U64);
+    NORMAL_ALLOC(IR_U128);
+    NORMAL_ALLOC(IR_I8);
+    NORMAL_ALLOC(IR_I16);
+    NORMAL_ALLOC(IR_I32);
+    NORMAL_ALLOC(IR_I64);
+    NORMAL_ALLOC(IR_I128);
     NORMAL_ALLOC(IR_F16_TY);
     NORMAL_ALLOC(IR_F32_TY);
     NORMAL_ALLOC(IR_F64_TY);
@@ -2485,7 +2485,7 @@ namespace ncc::ir {
     NORMAL_ALLOC(IR_CONST_TY);
     NORMAL_ALLOC(IR_OPAQUE_TY);
     NORMAL_ALLOC(IR_STRUCT_TY);
-    NORMAL_ALLOC(IR_UNION_TY);
+    NORMAL_ALLOC(IR_UNION);
     NORMAL_ALLOC(IR_ARRAY_TY);
     NORMAL_ALLOC(IR_FN_TY);
     NORMAL_ALLOC(IR_TMP);
