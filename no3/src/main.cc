@@ -348,7 +348,7 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
       return false;
     }
 
-    if (!nr_lib_init()) {
+    if (!ncc::ir::IRLibrary.InitRC()) {
       LOG(ERROR) << "Failed to initialize NITRATE-IR library" << std::endl;
       return false;
     }
