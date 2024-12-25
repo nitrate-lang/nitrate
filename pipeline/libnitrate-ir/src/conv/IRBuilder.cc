@@ -184,7 +184,7 @@ NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const {
 
     Expr *out_expr = static_cast<Expr *>(nr_clone(m_root));
 
-    contract_enforce(out_expr->getKind() == IR_SEQ);
+    contract_enforce(out_expr->getKind() == IR_eSEQ);
     r.m_root = out_expr->as<Seq>();
   }
 

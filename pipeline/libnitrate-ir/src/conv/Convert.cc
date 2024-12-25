@@ -540,7 +540,7 @@ static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
                 {QAST_U1, 1},   {QAST_U8, 8},   {QAST_U16, 16},
                 {QAST_U32, 32}, {QAST_U64, 64}, {QAST_U128, 128},
 
-                /* Signeness is not expressed in the IR_INT */
+                /* Signeness is not expressed in the IR_eINT */
                 // {QAST_I8, 8},     {QAST_I16, 16},
                 // {QAST_I32, 32},   {QAST_I64, 64},
                 // {QAST_I128, 128},
@@ -1082,7 +1082,7 @@ static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G,
     return std::nullopt;
   }
 
-  if (result.value()->getKind() != IR_INT) {
+  if (result.value()->getKind() != IR_eINT) {
     G->report(CompilerError, IC::Error,
               "Non integer literal array size is not supported", n->get_pos());
     return std::nullopt;
@@ -1824,7 +1824,7 @@ static EResult nrgen_while(NRBuilder &b, PState &s, IReport *G,
 
   if (!body.has_value()) {
     body = create<Seq>(SeqItems({}));
-  } else if (body.value()->getKind() != IR_SEQ) {
+  } else if (body.value()->getKind() != IR_eSEQ) {
     body = create<Seq>(SeqItems({body.value()}));
   }
 

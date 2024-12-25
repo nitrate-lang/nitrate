@@ -404,7 +404,7 @@ static optional<unique_ptr<Module>> fabricate_llvmir(const qmodule_t *src,
     return nullopt;
   }
 
-  if (root->getKind() != IR_SEQ) {
+  if (root->getKind() != IR_eSEQ) {
     e << "error: expected sequence node as root" << endl;
     return nullopt;
   }
@@ -418,9 +418,9 @@ static optional<unique_ptr<Module>> fabricate_llvmir(const qmodule_t *src,
   // Forward declare all functions
   iterate<dfs_pre>(
       root, [&](const Expr *, const Expr *const *const N) -> IterOp {
-        if ((*N)->getKind() == IR_SEQ || (*N)->getKind() == IR_EXTERN) {
+        if ((*N)->getKind() == IR_eSEQ || (*N)->getKind() == IR_eEXTERN) {
           return IterOp::Proceed;
-        } else if ((*N)->getKind() != IR_FN) {
+        } else if ((*N)->getKind() != IR_eFUNCTION) {
           return IterOp::SkipChildren;
         }
 
@@ -488,7 +488,7 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, Value *L, Op O,
       }
 
       /* Composite casting */
-      else if (LT->is_array() && RT->getKind() == IR_STRUCT_TY) {
+      else if (LT->is_array() && RT->getKind() == IR_tSTRUCT) {
         ArrayTy *base = LT->as<ArrayTy>();
         StructTy *ST = RT->as<StructTy>();
 
@@ -712,7 +712,7 @@ namespace lower {
         }
 
         case Op::Set: { /* '=': Assignment operator */
-          if (N->getLHS()->getKind() == IR_IDENT) {
+          if (N->getLHS()->getKind() == IR_eIDENT) {
             if (auto find = s.find_named_value(
                     m, N->getLHS()->as<Ident>()->getName())) {
               if (find->second == PtrClass::DataPtr) {
@@ -828,7 +828,7 @@ namespace lower {
           break;
         }
         case Op::BitAnd: {
-          if (N->getExpr()->getKind() != IR_IDENT) {
+          if (N->getExpr()->getKind() != IR_eIDENT) {
             qcore_panic("expected identifier for address_of");
           }
 
@@ -860,7 +860,7 @@ namespace lower {
           break;
         }
         case Op::Inc: {
-          if (N->getExpr()->getKind() != IR_IDENT) {
+          if (N->getExpr()->getKind() != IR_eIDENT) {
             qcore_panic("expected identifier for increment");
           }
 
@@ -910,7 +910,7 @@ namespace lower {
           break;
         }
         case Op::Dec: {
-          if (N->getExpr()->getKind() != IR_IDENT) {
+          if (N->getExpr()->getKind() != IR_eIDENT) {
             qcore_panic("expected identifier for decrement");
           }
 
@@ -1001,7 +1001,7 @@ namespace lower {
 
       switch (N->getOp()) {
         case Op::Inc: {
-          if (N->getExpr()->getKind() != IR_IDENT) {
+          if (N->getExpr()->getKind() != IR_eIDENT) {
             qcore_panic("expected identifier for increment");
           }
 
@@ -1051,7 +1051,7 @@ namespace lower {
           break;
         }
         case Op::Dec: {
-          if (N->getExpr()->getKind() != IR_IDENT) {
+          if (N->getExpr()->getKind() != IR_eIDENT) {
             qcore_panic("expected identifier for decrement");
           }
 
@@ -1199,7 +1199,7 @@ namespace lower {
         return nullopt;
       }
 
-      if (N->getExpr()->getKind() == IR_IDENT) {
+      if (N->getExpr()->getKind() == IR_eIDENT) {
         Ident *B = N->getExpr()->as<Ident>();
         auto find = s.find_named_value(m, B->getName());
         if (!find) {
@@ -1233,7 +1233,7 @@ namespace lower {
         } else {
           qcore_panic("unexpected type for index");
         }
-      } else if (N->getExpr()->getKind() == IR_LIST) {
+      } else if (N->getExpr()->getKind() == IR_eLIST) {
         qcore_implement();
       } else {
         qcore_panic("unexpected base expression for index");
@@ -1435,7 +1435,7 @@ namespace lower {
 
   namespace control {
     static val_t for_CALL(ctx_t &m, craft_t &b, State &s, const Call *N) {
-      if (N->getTarget()->is(IR_IDENT)) {
+      if (N->getTarget()->is(IR_eIDENT)) {
         let func_name = N->getTarget()->getName();
 
         if (let find = s.find_named_value(m, func_name)) {
@@ -1500,7 +1500,7 @@ namespace lower {
     }
 
     static val_t for_RET(ctx_t &m, craft_t &b, State &s, const Ret *N) {
-      if (!N->getExpr()->is(IR_VOID_TY)) {
+      if (!N->getExpr()->is(IR_tVOID)) {
         if (let R = V(N->getExpr())) {
           b.CreateStore(R.value(), s.get_return_block().getValue());
         } else {
@@ -1942,34 +1942,34 @@ static auto V_gen(ctx_t &m, craft_t &b, State &s, const Expr *N) -> val_t {
       using namespace lower::expr;
       using namespace lower::symbol;
 
-      FUNCTION(IR_BINEXPR, for_BINEXPR, BinExpr);
-      FUNCTION(IR_UNEXPR, for_UNEXPR, UnExpr);
-      FUNCTION(IR_POST_UNEXPR, for_POST_UNEXPR, PostUnExpr);
-      FUNCTION(IR_INT, for_INT, Int);
-      FUNCTION(IR_FLOAT, for_FLOAT, Float);
-      FUNCTION(IR_LIST, for_LIST, List);
-      FUNCTION(IR_CALL, for_CALL, Call);
-      FUNCTION(IR_SEQ, for_SEQ, Seq);
-      FUNCTION(IR_INDEX, for_INDEX, Index);
-      FUNCTION(IR_IDENT, for_IDENT, Ident);
-      FUNCTION(IR_EXTERN, for_EXTERN, Extern);
-      FUNCTION(IR_LOCAL, for_LOCAL, Local);
-      FUNCTION(IR_RET, for_RET, Ret);
-      FUNCTION(IR_BRK, for_BRK, Brk);
-      FUNCTION(IR_CONT, for_CONT, Cont);
-      FUNCTION(IR_IF, for_IF, If);
-      FUNCTION(IR_WHILE, for_WHILE, While);
-      FUNCTION(IR_FOR, for_FOR, For);
-      FUNCTION(IR_CASE, for_CASE, Case);
-      FUNCTION(IR_SWITCH, for_SWITCH, Switch);
-      FUNCTION(IR_FN, for_FN, Fn);
-      FUNCTION(IR_ASM, for_ASM, Asm);
+      FUNCTION(IR_eBIN, for_BINEXPR, BinExpr);
+      FUNCTION(IR_eUNARY, for_UNEXPR, UnExpr);
+      FUNCTION(IR_ePOST_UNEXPR, for_POST_UNEXPR, PostUnExpr);
+      FUNCTION(IR_eINT, for_INT, Int);
+      FUNCTION(IR_eFLOAT, for_FLOAT, Float);
+      FUNCTION(IR_eLIST, for_LIST, List);
+      FUNCTION(IR_eCALL, for_CALL, Call);
+      FUNCTION(IR_eSEQ, for_SEQ, Seq);
+      FUNCTION(IR_eINDEX, for_INDEX, Index);
+      FUNCTION(IR_eIDENT, for_IDENT, Ident);
+      FUNCTION(IR_eEXTERN, for_EXTERN, Extern);
+      FUNCTION(IR_eLOCAL, for_LOCAL, Local);
+      FUNCTION(IR_eRET, for_RET, Ret);
+      FUNCTION(IR_eBRK, for_BRK, Brk);
+      FUNCTION(IR_eSKIP, for_CONT, Cont);
+      FUNCTION(IR_eIF, for_IF, If);
+      FUNCTION(IR_eWHILE, for_WHILE, While);
+      FUNCTION(IR_eFOR, for_FOR, For);
+      FUNCTION(IR_eCASE, for_CASE, Case);
+      FUNCTION(IR_eSWITCH, for_SWITCH, Switch);
+      FUNCTION(IR_eFUNCTION, for_FN, Fn);
+      FUNCTION(IR_eASM, for_ASM, Asm);
 
-      R[IR_IGN] = [](ctx_t &, craft_t &, State &, const Expr *) -> val_t {
+      R[IR_eIGN] = [](ctx_t &, craft_t &, State &, const Expr *) -> val_t {
         return nullptr;
       };
 
-      R[IR_TMP] = [](ctx_t &, craft_t &, State &, const Expr *) -> val_t {
+      R[IR_tTMP] = [](ctx_t &, craft_t &, State &, const Expr *) -> val_t {
         qcore_panic("unexpected temporary node");
       };
     }
@@ -1999,33 +1999,33 @@ static auto T_gen(craft_t &b, const Expr *N) -> ty_t {
       using namespace lower::types::prim;
       using namespace lower::types::other;
 
-      FUNCTION(IR_U1, for_U1_TY, U1Ty);
-      FUNCTION(IR_U8, for_U8_TY, U8Ty);
-      FUNCTION(IR_U16, for_U16_TY, U16Ty);
-      FUNCTION(IR_U32, for_U32_TY, U32Ty);
-      FUNCTION(IR_U64, for_U64_TY, U64Ty);
-      FUNCTION(IR_U128, for_U128_TY, U128Ty);
-      FUNCTION(IR_I8, for_I8_TY, I8Ty);
-      FUNCTION(IR_I16, for_I16_TY, I16Ty);
-      FUNCTION(IR_I32, for_I32_TY, I32Ty);
-      FUNCTION(IR_I64, for_I64_TY, I64Ty);
-      FUNCTION(IR_I128, for_I128_TY, I128Ty);
-      FUNCTION(IR_F16_TY, for_F16_TY, F16Ty);
-      FUNCTION(IR_F32_TY, for_F32_TY, F32Ty);
-      FUNCTION(IR_F64_TY, for_F64_TY, F64Ty);
-      FUNCTION(IR_F128_TY, for_F128_TY, F128Ty);
-      FUNCTION(IR_VOID_TY, for_VOID_TY, VoidTy);
-      FUNCTION(IR_PTR_TY, for_PTR_TY, PtrTy);
-      FUNCTION(IR_CONST_TY, for_CONST_TY, ConstTy);
-      FUNCTION(IR_OPAQUE_TY, for_OPAQUE_TY, OpaqueTy);
-      FUNCTION(IR_STRUCT_TY, for_STRUCT_TY, StructTy);
-      FUNCTION(IR_UNION, for_UNION_TY, UnionTy);
-      FUNCTION(IR_ARRAY_TY, for_ARRAY_TY, ArrayTy);
-      FUNCTION(IR_FN_TY, for_FN_TY, FnTy);
+      FUNCTION(IR_tU1, for_U1_TY, U1Ty);
+      FUNCTION(IR_tU8, for_U8_TY, U8Ty);
+      FUNCTION(IR_tU16, for_U16_TY, U16Ty);
+      FUNCTION(IR_tU32, for_U32_TY, U32Ty);
+      FUNCTION(IR_tU64, for_U64_TY, U64Ty);
+      FUNCTION(IR_tU128, for_U128_TY, U128Ty);
+      FUNCTION(IR_tI8, for_I8_TY, I8Ty);
+      FUNCTION(IR_tI16, for_I16_TY, I16Ty);
+      FUNCTION(IR_tI32, for_I32_TY, I32Ty);
+      FUNCTION(IR_tI64, for_I64_TY, I64Ty);
+      FUNCTION(IR_tI128, for_I128_TY, I128Ty);
+      FUNCTION(IR_tF16_TY, for_F16_TY, F16Ty);
+      FUNCTION(IR_tF32_TY, for_F32_TY, F32Ty);
+      FUNCTION(IR_tF64_TY, for_F64_TY, F64Ty);
+      FUNCTION(IR_tF128_TY, for_F128_TY, F128Ty);
+      FUNCTION(IR_tVOID, for_VOID_TY, VoidTy);
+      FUNCTION(IR_tPTR, for_PTR_TY, PtrTy);
+      FUNCTION(IR_tCONST, for_CONST_TY, ConstTy);
+      FUNCTION(IR_tOPAQUE, for_OPAQUE_TY, OpaqueTy);
+      FUNCTION(IR_tSTRUCT, for_STRUCT_TY, StructTy);
+      FUNCTION(IR_tUNION, for_UNION_TY, UnionTy);
+      FUNCTION(IR_tARRAY, for_ARRAY_TY, ArrayTy);
+      FUNCTION(IR_tFUNC, for_FN_TY, FnTy);
 
-      R[IR_IGN] = [](craft_t &, const Expr *) -> ty_t { return nullptr; };
+      R[IR_eIGN] = [](craft_t &, const Expr *) -> ty_t { return nullptr; };
 
-      R[IR_TMP] = [](craft_t &, const Expr *) -> ty_t {
+      R[IR_tTMP] = [](craft_t &, const Expr *) -> ty_t {
         qcore_panic("unexpected temporary node");
       };
     }

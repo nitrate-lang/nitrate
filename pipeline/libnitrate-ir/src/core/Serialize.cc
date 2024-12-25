@@ -206,7 +206,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
 #endif
 
   switch (n->getKind()) {
-    case IR_BINEXPR: {
+    case IR_eBIN: {
       ss << "(";
       recurse(n->as<BinExpr>()->getLHS());
       ss << " ";
@@ -216,7 +216,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << ")";
       break;
     }
-    case IR_UNEXPR: {
+    case IR_eUNARY: {
       ss << "(";
       ss << n->as<UnExpr>()->getOp();
       ss << "(";
@@ -224,24 +224,24 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "))";
       break;
     }
-    case IR_POST_UNEXPR: {
+    case IR_ePOST_UNEXPR: {
       ss << "(";
       recurse(n->as<PostUnExpr>()->getExpr());
       ss << n->as<PostUnExpr>()->getOp();
       ss << ")";
       break;
     }
-    case IR_INT: {
+    case IR_eINT: {
       recurse(n->as<Int>()->getType().value_or(nullptr));
       ss << " " << n->as<Int>()->getValueString();
       break;
     }
-    case IR_FLOAT: {
+    case IR_eFLOAT: {
       recurse(n->as<Float>()->getType().value_or(nullptr));
       ss << " " << n->as<Float>()->getValue();
       break;
     }
-    case IR_LIST: {
+    case IR_eLIST: {
       // Check if it matches the string literal pattern
       List *L = n->as<List>();
 
@@ -251,7 +251,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       bool is_cstring = false;
       std::string c_string;
       for (size_t i = 0; i < L->size(); i++) {
-        if (!L->at(i)->is(IR_INT)) {
+        if (!L->at(i)->is(IR_eINT)) {
           break;
         }
 
@@ -286,11 +286,11 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       }
       break;
     }
-    case IR_CALL: {
+    case IR_eCALL: {
       auto tkind = n->as<Call>()->getTarget()->getKind();
-      if (tkind == IR_LOCAL) {
+      if (tkind == IR_eLOCAL) {
         ss << n->as<Call>()->getTarget()->as<Local>()->getName();
-      } else if (tkind == IR_FN) {
+      } else if (tkind == IR_eFUNCTION) {
         ss << n->as<Call>()->getTarget()->as<Fn>()->getName();
       } else {
         recurse(n->as<Call>()->getTarget());
@@ -306,13 +306,13 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << ")";
       break;
     }
-    case IR_SEQ: {
+    case IR_eSEQ: {
       ss << "seq {";
       state.indent++;
       indent(ss, state);
       for (auto it = n->as<Seq>()->getItems().begin();
            it != n->as<Seq>()->getItems().end(); ++it) {
-        if ((*it)->getKind() == IR_IGN) {
+        if ((*it)->getKind() == IR_eIGN) {
           continue;
         }
 
@@ -328,26 +328,26 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "}";
       break;
     }
-    case IR_INDEX: {
+    case IR_eINDEX: {
       recurse(n->as<Index>()->getExpr());
       ss << "[";
       recurse(n->as<Index>()->getIndex());
       ss << "]";
       break;
     }
-    case IR_IDENT: {
+    case IR_eIDENT: {
       recurse(n->as<Ident>()->getType().value_or(nullptr));
       ss << " " << n->as<Ident>()->getName();
       break;
     }
-    case IR_EXTERN: {
+    case IR_eEXTERN: {
       ss << "extern ";
       escape_string(ss, n->as<Extern>()->getAbiName());
       ss << " ";
       recurse(n->as<Extern>()->getValue());
       break;
     }
-    case IR_LOCAL: {
+    case IR_eLOCAL: {
       ss << "local ";
       ss << n->as<Local>()->getName();
       if (auto ty = n->as<Local>()->getValue()->getType()) {
@@ -359,21 +359,21 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       recurse(n->as<Local>()->getValue());
       break;
     }
-    case IR_RET: {
+    case IR_eRET: {
       ss << "ret ";
       recurse(n->as<Ret>()->getExpr());
       break;
     }
-    case IR_BRK: {
+    case IR_eBRK: {
       ss << "brk";
       break;
     }
-    case IR_CONT: {
+    case IR_eSKIP: {
       ss << "cont";
       break;
     }
 
-    case IR_IF: {
+    case IR_eIF: {
       ss << "if (";
       recurse(n->as<If>()->getCond());
       ss << ") then ";
@@ -382,14 +382,14 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       recurse(n->as<If>()->getElse());
       break;
     }
-    case IR_WHILE: {
+    case IR_eWHILE: {
       ss << "while (";
       recurse(n->as<While>()->getCond());
       ss << ") ";
       recurse(n->as<While>()->getBody());
       break;
     }
-    case IR_FOR: {
+    case IR_eFOR: {
       ss << "for (";
       recurse(n->as<For>()->getInit());
       ss << "; ";
@@ -400,14 +400,14 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       recurse(n->as<For>()->getBody());
       break;
     }
-    case IR_CASE: {
+    case IR_eCASE: {
       ss << "case ";
       recurse(n->as<Case>()->getCond());
       ss << ": ";
       recurse(n->as<Case>()->getBody());
       break;
     }
-    case IR_SWITCH: {
+    case IR_eSWITCH: {
       ss << "switch (";
       recurse(n->as<Switch>()->getCond());
       ss << ") {";
@@ -426,7 +426,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "}";
       break;
     }
-    case IR_FN: {
+    case IR_eFUNCTION: {
       ss << "fn ";
       ss << n->as<Fn>()->getName();
       ss << "(";
@@ -451,93 +451,93 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       }
       break;
     }
-    case IR_ASM: {
+    case IR_eASM: {
       qcore_implement();
     }
-    case IR_IGN: {
+    case IR_eIGN: {
       break;
     }
-    case IR_U1: {
+    case IR_tU1: {
       ss << "u1";
       break;
     }
-    case IR_U8: {
+    case IR_tU8: {
       ss << "u8";
       break;
     }
-    case IR_U16: {
+    case IR_tU16: {
       ss << "u16";
       break;
     }
-    case IR_U32: {
+    case IR_tU32: {
       ss << "u32";
       break;
     }
-    case IR_U64: {
+    case IR_tU64: {
       ss << "u64";
       break;
     }
-    case IR_U128: {
+    case IR_tU128: {
       ss << "u128";
       break;
     }
-    case IR_I8: {
+    case IR_tI8: {
       ss << "i8";
       break;
     }
-    case IR_I16: {
+    case IR_tI16: {
       ss << "i16";
       break;
     }
-    case IR_I32: {
+    case IR_tI32: {
       ss << "i32";
       break;
     }
-    case IR_I64: {
+    case IR_tI64: {
       ss << "i64";
       break;
     }
-    case IR_I128: {
+    case IR_tI128: {
       ss << "i128";
       break;
     }
-    case IR_F16_TY: {
+    case IR_tF16_TY: {
       ss << "f16";
       break;
     }
-    case IR_F32_TY: {
+    case IR_tF32_TY: {
       ss << "f32";
       break;
     }
-    case IR_F64_TY: {
+    case IR_tF64_TY: {
       ss << "f64";
       break;
     }
-    case IR_F128_TY: {
+    case IR_tF128_TY: {
       ss << "f128";
       break;
     }
-    case IR_VOID_TY: {
+    case IR_tVOID: {
       ss << "void";
       break;
     }
-    case IR_PTR_TY: {
+    case IR_tPTR: {
       recurse(n->as<PtrTy>()->getPointee());
       ss << "*";
       break;
     }
-    case IR_CONST_TY: {
+    case IR_tCONST: {
       ss << "const<";
       recurse(n->as<ConstTy>()->getItem());
       ss << ">";
       break;
     }
-    case IR_OPAQUE_TY: {
+    case IR_tOPAQUE: {
       ss << "opaque ";
       ss << n->as<OpaqueTy>()->getName();
       break;
     }
-    case IR_STRUCT_TY: {
+    case IR_tSTRUCT: {
       uint64_t type_id = n->as<StructTy>()->getUniqId();
       if (!state.types.contains(type_id)) {
         typedefs << "%" << type_id << " = struct {";
@@ -545,8 +545,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
         indent(typedefs, state);
         for (auto it = n->as<StructTy>()->getFields().begin();
              it != n->as<StructTy>()->getFields().end(); ++it) {
-          if ((*it)->getKind() == IR_STRUCT_TY ||
-              (*it)->getKind() == IR_UNION) {
+          if ((*it)->getKind() == IR_tSTRUCT || (*it)->getKind() == IR_tUNION) {
             typedefs << "%" << (*it)->as<StructTy>()->getUniqId();
           } else {
             recurse_ex(*it, typedefs);
@@ -566,7 +565,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "%" << type_id;
       break;
     }
-    case IR_UNION: {
+    case IR_tUNION: {
       uint64_t type_id = n->as<UnionTy>()->getUniqId();
       if (!state.types.contains(type_id)) {
         typedefs << "%" << type_id << " = union {";
@@ -574,8 +573,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
         indent(typedefs, state);
         for (auto it = n->as<UnionTy>()->getFields().begin();
              it != n->as<UnionTy>()->getFields().end(); ++it) {
-          if ((*it)->getKind() == IR_STRUCT_TY ||
-              (*it)->getKind() == IR_UNION) {
+          if ((*it)->getKind() == IR_tSTRUCT || (*it)->getKind() == IR_tUNION) {
             typedefs << "%" << (*it)->as<StructTy>()->getUniqId();
           } else {
             recurse_ex(*it, typedefs);
@@ -595,14 +593,14 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       ss << "%" << type_id;
       break;
     }
-    case IR_ARRAY_TY: {
+    case IR_tARRAY: {
       ss << "[";
       recurse(n->as<ArrayTy>()->getElement());
       ss << "; " << n->as<ArrayTy>()->getCount();
       ss << "]";
       break;
     }
-    case IR_FN_TY: {
+    case IR_tFUNC: {
       ss << "fn (";
       bool variadic = n->as<FnTy>()->getAttrs().contains(FnAttr::Variadic);
       for (auto it = n->as<FnTy>()->getParams().begin();
@@ -619,7 +617,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
       recurse(n->as<FnTy>()->getReturn());
       break;
     }
-    case IR_TMP: {
+    case IR_tTMP: {
       ss << "`" << static_cast<uint64_t>(n->as<Tmp>()->getTmpType());
       ss << ";" << n->as<Tmp>()->getData().index() << "`";
       break;

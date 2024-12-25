@@ -45,60 +45,59 @@ namespace ncc::ir {
 
   /** @brief Nitrate abstract syntax tree node type */
   typedef enum nr_ty_t {
-    IR_BINEXPR,     /* Binary expression */
-    IR_UNEXPR,      /* Unary expression */
-    IR_POST_UNEXPR, /* Postfix unary expression */
+    IR_eBIN,         /* Binary expression */
+    IR_eUNARY,       /* Unary expression */
+    IR_ePOST_UNEXPR, /* Postfix unary expression */
 
-    IR_INT,   /* Integer literal */
-    IR_FLOAT, /* Floating-point literal */
-    IR_LIST,  /* List literal */
+    IR_eINT,      /* Integer literal */
+    IR_eFLOAT,    /* Floating-point literal */
+    IR_eLIST,     /* List literal */
+    IR_eCALL,     /* Function call */
+    IR_eSEQ,      /* Sequence */
+    IR_eINDEX,    /* Index / member access */
+    IR_eIDENT,    /* Identifier */
+    IR_eEXTERN,   /* Linker visibility modifier */
+    IR_eLOCAL,    /* Variable declaration */
+    IR_eRET,      /* Return statement */
+    IR_eBRK,      /* Break statement */
+    IR_eSKIP,     /* Continue statement */
+    IR_eIF,       /* If statement */
+    IR_eWHILE,    /* While loop */
+    IR_eFOR,      /* For loop */
+    IR_eCASE,     /* Case statement */
+    IR_eSWITCH,   /* Switch statement */
+    IR_eFUNCTION, /* Function definition */
+    IR_eASM,      /* Inline assembly */
+    IR_eIGN,      /* No-op */
 
-    IR_CALL,   /* Function call */
-    IR_SEQ,    /* Sequence */
-    IR_INDEX,  /* Index / member access */
-    IR_IDENT,  /* Identifier */
-    IR_EXTERN, /* Linker visibility modifier */
-    IR_LOCAL,  /* Variable declaration */
-    IR_RET,    /* Return statement */
-    IR_BRK,    /* Break statement */
-    IR_CONT,   /* Continue statement */
-    IR_IF,     /* If statement */
-    IR_WHILE,  /* While loop */
-    IR_FOR,    /* For loop */
-    IR_CASE,   /* Case statement */
-    IR_SWITCH, /* Switch statement */
-    IR_FN,     /* Function definition */
-    IR_ASM,    /* Inline assembly */
-    IR_IGN,    /* No-op */
+    IR_tU1,      /* 1-bit unsigned integer (boolean) */
+    IR_tU8,      /* 8-bit unsigned integer */
+    IR_tU16,     /* 16-bit unsigned integer */
+    IR_tU32,     /* 32-bit unsigned integer */
+    IR_tU64,     /* 64-bit unsigned integer */
+    IR_tU128,    /* 128-bit unsigned integer */
+    IR_tI8,      /* 8-bit signed integer */
+    IR_tI16,     /* 16-bit signed integer */
+    IR_tI32,     /* 32-bit signed integer */
+    IR_tI64,     /* 64-bit signed integer */
+    IR_tI128,    /* 128-bit signed integer */
+    IR_tF16_TY,  /* 16-bit floating-point */
+    IR_tF32_TY,  /* 32-bit floating-point */
+    IR_tF64_TY,  /* 64-bit floating-point */
+    IR_tF128_TY, /* 128-bit floating-point */
+    IR_tVOID,    /* Void type */
+    IR_tPTR,     /* Pointer type */
+    IR_tOPAQUE,  /* Opaque type */
+    IR_tSTRUCT,  /* Struct type */
+    IR_tUNION,   /* Union type */
+    IR_tARRAY,   /* Array type */
+    IR_tFUNC,    /* Function type */
+    IR_tCONST,   /* Constant wrapper type */
 
-    IR_U1,        /* 1-bit unsigned integer (boolean) */
-    IR_U8,        /* 8-bit unsigned integer */
-    IR_U16,       /* 16-bit unsigned integer */
-    IR_U32,       /* 32-bit unsigned integer */
-    IR_U64,       /* 64-bit unsigned integer */
-    IR_U128,      /* 128-bit unsigned integer */
-    IR_I8,        /* 8-bit signed integer */
-    IR_I16,       /* 16-bit signed integer */
-    IR_I32,       /* 32-bit signed integer */
-    IR_I64,       /* 64-bit signed integer */
-    IR_I128,      /* 128-bit signed integer */
-    IR_F16_TY,    /* 16-bit floating-point */
-    IR_F32_TY,    /* 32-bit floating-point */
-    IR_F64_TY,    /* 64-bit floating-point */
-    IR_F128_TY,   /* 128-bit floating-point */
-    IR_VOID_TY,   /* Void type */
-    IR_PTR_TY,    /* Pointer type */
-    IR_OPAQUE_TY, /* Opaque type */
-    IR_STRUCT_TY, /* Struct type */
-    IR_UNION,     /* Union type */
-    IR_ARRAY_TY,  /* Array type */
-    IR_FN_TY,     /* Function type */
-    IR_CONST_TY,  /* Constant wrapper type */
+    IR_tTMP, /* Temp node; must be resolved with more information */
 
-    IR_TMP, /* Temp node; must be resolved with more information */
-
-    IR_FIRST = IR_BINEXPR,
-    IR_LAST = IR_TMP,
+    IR_FIRST = IR_eBIN,
+    IR_LAST = IR_tTMP,
   } nr_ty_t;
 
   constexpr size_t IR_COUNT = (IR_LAST - IR_FIRST + 1);

@@ -61,9 +61,9 @@ namespace ncc::ir {
       std::make_unique<ncc::dyn_arena>();
 
   namespace mem {
-    Brk static_IR_BRK;
-    Cont static_IR_CONT;
-    Expr static_IR_IGN(IR_IGN);
+    Brk static_IR_eBRK;
+    Cont static_IR_eSKIP;
+    Expr static_IR_eIGN(IR_eIGN);
 
   }  // namespace mem
 }  // namespace ncc::ir
@@ -161,157 +161,157 @@ CPP_EXPORT boost::uuids::uuid Expr::hash() {
 #define MIXIN_STRING(x) SHA1_Update(&ctx, x.data(), x.size())
 
     switch (kind) {
-      case IR_BINEXPR: {
+      case IR_eBIN: {
         MIXIN_PRIMITIVE(cur->as<BinExpr>()->m_op);
         break;
       }
-      case IR_UNEXPR: {
+      case IR_eUNARY: {
         MIXIN_PRIMITIVE(cur->as<UnExpr>()->m_op);
         break;
       }
-      case IR_POST_UNEXPR: {
+      case IR_ePOST_UNEXPR: {
         MIXIN_PRIMITIVE(cur->as<PostUnExpr>()->m_op);
         break;
       }
-      case IR_INT: {
+      case IR_eINT: {
         uint128_t x = cur->as<Int>()->getValue();
         MIXIN_PRIMITIVE(x);
         break;
       }
-      case IR_FLOAT: {
+      case IR_eFLOAT: {
         double v = cur->as<Float>()->getValue();
         FloatSize s = cur->as<Float>()->getSize();
         MIXIN_PRIMITIVE(v);
         MIXIN_PRIMITIVE(s);
         break;
       }
-      case IR_LIST: {
+      case IR_eLIST: {
         break;
       }
-      case IR_CALL: {
+      case IR_eCALL: {
         break;
       }
-      case IR_SEQ: {
+      case IR_eSEQ: {
         break;
       }
-      case IR_INDEX: {
+      case IR_eINDEX: {
         break;
       }
-      case IR_IDENT: {
+      case IR_eIDENT: {
         MIXIN_STRING(cur->as<Ident>()->m_name);
         break;
       }
-      case IR_EXTERN: {
+      case IR_eEXTERN: {
         MIXIN_STRING(cur->as<Extern>()->m_abi_name);
         break;
       }
-      case IR_LOCAL: {
+      case IR_eLOCAL: {
         MIXIN_STRING(cur->as<Local>()->m_name);
         break;
       }
-      case IR_RET: {
+      case IR_eRET: {
         break;
       }
-      case IR_BRK: {
+      case IR_eBRK: {
         break;
       }
-      case IR_CONT: {
+      case IR_eSKIP: {
         break;
       }
-      case IR_IF: {
+      case IR_eIF: {
         break;
       }
-      case IR_WHILE: {
+      case IR_eWHILE: {
         break;
       }
-      case IR_FOR: {
+      case IR_eFOR: {
         break;
       }
-      case IR_CASE: {
+      case IR_eCASE: {
         break;
       }
-      case IR_SWITCH: {
+      case IR_eSWITCH: {
         break;
       }
-      case IR_IGN: {
+      case IR_eIGN: {
         break;
       }
-      case IR_FN: {
+      case IR_eFUNCTION: {
         MIXIN_STRING(cur->as<Fn>()->m_name);
         break;
       }
-      case IR_ASM: {
+      case IR_eASM: {
         qcore_implement();
         break;
       }
-      case IR_U1: {
+      case IR_tU1: {
         break;
       }
-      case IR_U8: {
+      case IR_tU8: {
         break;
       }
-      case IR_U16: {
+      case IR_tU16: {
         break;
       }
-      case IR_U32: {
+      case IR_tU32: {
         break;
       }
-      case IR_U64: {
+      case IR_tU64: {
         break;
       }
-      case IR_U128: {
+      case IR_tU128: {
         break;
       }
-      case IR_I8: {
+      case IR_tI8: {
         break;
       }
-      case IR_I16: {
+      case IR_tI16: {
         break;
       }
-      case IR_I32: {
+      case IR_tI32: {
         break;
       }
-      case IR_I64: {
+      case IR_tI64: {
         break;
       }
-      case IR_I128: {
+      case IR_tI128: {
         break;
       }
-      case IR_F16_TY: {
+      case IR_tF16_TY: {
         break;
       }
-      case IR_F32_TY: {
+      case IR_tF32_TY: {
         break;
       }
-      case IR_F64_TY: {
+      case IR_tF64_TY: {
         break;
       }
-      case IR_F128_TY: {
+      case IR_tF128_TY: {
         break;
       }
-      case IR_VOID_TY: {
+      case IR_tVOID: {
         break;
       }
-      case IR_PTR_TY: {
+      case IR_tPTR: {
         break;
       }
-      case IR_CONST_TY: {
+      case IR_tCONST: {
         break;
       }
-      case IR_OPAQUE_TY: {
+      case IR_tOPAQUE: {
         MIXIN_STRING(cur->as<OpaqueTy>()->m_name);
         break;
       }
-      case IR_STRUCT_TY: {
+      case IR_tSTRUCT: {
         break;
       }
-      case IR_UNION: {
+      case IR_tUNION: {
         break;
       }
-      case IR_ARRAY_TY: {
+      case IR_tARRAY: {
         break;
       }
-      case IR_FN_TY: {
+      case IR_tFUNC: {
         std::set<FnAttr> tags;
         for (auto &tag : cur->as<FnTy>()->m_attrs) {
           tags.insert(tag);
@@ -321,7 +321,7 @@ CPP_EXPORT boost::uuids::uuid Expr::hash() {
         }
         break;
       }
-      case IR_TMP: {
+      case IR_tTMP: {
         MIXIN_PRIMITIVE(cur->as<Tmp>()->m_type);
 
         if (std::holds_alternative<CallArgsTmpNodeCradle>(
@@ -425,4 +425,4 @@ CPP_EXPORT Int *Int::get(uint128_t val, uint8_t size) {
 
 ///=============================================================================
 
-Expr *ir::createIgn() { return new (Arena<Expr>().allocate(1)) Expr(IR_IGN); }
+Expr *ir::createIgn() { return new (Arena<Expr>().allocate(1)) Expr(IR_eIGN); }

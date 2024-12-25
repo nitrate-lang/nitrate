@@ -156,99 +156,99 @@ namespace ncc::ir {
     template <typename T>
     static constexpr nr_ty_t getTypeCode() {
       if constexpr (std::is_same_v<T, BinExpr>) {
-        return IR_BINEXPR;
+        return IR_eBIN;
       } else if constexpr (std::is_same_v<T, UnExpr>) {
-        return IR_UNEXPR;
+        return IR_eUNARY;
       } else if constexpr (std::is_same_v<T, PostUnExpr>) {
-        return IR_POST_UNEXPR;
+        return IR_ePOST_UNEXPR;
       } else if constexpr (std::is_same_v<T, Int>) {
-        return IR_INT;
+        return IR_eINT;
       } else if constexpr (std::is_same_v<T, Float>) {
-        return IR_FLOAT;
+        return IR_eFLOAT;
       } else if constexpr (std::is_same_v<T, List>) {
-        return IR_LIST;
+        return IR_eLIST;
       } else if constexpr (std::is_same_v<T, Call>) {
-        return IR_CALL;
+        return IR_eCALL;
       } else if constexpr (std::is_same_v<T, Seq>) {
-        return IR_SEQ;
+        return IR_eSEQ;
       } else if constexpr (std::is_same_v<T, Index>) {
-        return IR_INDEX;
+        return IR_eINDEX;
       } else if constexpr (std::is_same_v<T, Ident>) {
-        return IR_IDENT;
+        return IR_eIDENT;
       } else if constexpr (std::is_same_v<T, Extern>) {
-        return IR_EXTERN;
+        return IR_eEXTERN;
       } else if constexpr (std::is_same_v<T, Local>) {
-        return IR_LOCAL;
+        return IR_eLOCAL;
       } else if constexpr (std::is_same_v<T, Ret>) {
-        return IR_RET;
+        return IR_eRET;
       } else if constexpr (std::is_same_v<T, Brk>) {
-        return IR_BRK;
+        return IR_eBRK;
       } else if constexpr (std::is_same_v<T, Cont>) {
-        return IR_CONT;
+        return IR_eSKIP;
       } else if constexpr (std::is_same_v<T, If>) {
-        return IR_IF;
+        return IR_eIF;
       } else if constexpr (std::is_same_v<T, While>) {
-        return IR_WHILE;
+        return IR_eWHILE;
       } else if constexpr (std::is_same_v<T, For>) {
-        return IR_FOR;
+        return IR_eFOR;
       } else if constexpr (std::is_same_v<T, Case>) {
-        return IR_CASE;
+        return IR_eCASE;
       } else if constexpr (std::is_same_v<T, Switch>) {
-        return IR_SWITCH;
+        return IR_eSWITCH;
       } else if constexpr (std::is_same_v<T, Fn>) {
-        return IR_FN;
+        return IR_eFUNCTION;
       } else if constexpr (std::is_same_v<T, Asm>) {
-        return IR_ASM;
+        return IR_eASM;
       } else if constexpr (std::is_same_v<T, Expr>) {
-        return IR_IGN;
+        return IR_eIGN;
       } else if constexpr (std::is_same_v<T, U1Ty>) {
-        return IR_U1;
+        return IR_tU1;
       } else if constexpr (std::is_same_v<T, U8Ty>) {
-        return IR_U8;
+        return IR_tU8;
       } else if constexpr (std::is_same_v<T, U16Ty>) {
-        return IR_U16;
+        return IR_tU16;
       } else if constexpr (std::is_same_v<T, U32Ty>) {
-        return IR_U32;
+        return IR_tU32;
       } else if constexpr (std::is_same_v<T, U64Ty>) {
-        return IR_U64;
+        return IR_tU64;
       } else if constexpr (std::is_same_v<T, U128Ty>) {
-        return IR_U128;
+        return IR_tU128;
       } else if constexpr (std::is_same_v<T, I8Ty>) {
-        return IR_I8;
+        return IR_tI8;
       } else if constexpr (std::is_same_v<T, I16Ty>) {
-        return IR_I16;
+        return IR_tI16;
       } else if constexpr (std::is_same_v<T, I32Ty>) {
-        return IR_I32;
+        return IR_tI32;
       } else if constexpr (std::is_same_v<T, I64Ty>) {
-        return IR_I64;
+        return IR_tI64;
       } else if constexpr (std::is_same_v<T, I128Ty>) {
-        return IR_I128;
+        return IR_tI128;
       } else if constexpr (std::is_same_v<T, F16Ty>) {
-        return IR_F16_TY;
+        return IR_tF16_TY;
       } else if constexpr (std::is_same_v<T, F32Ty>) {
-        return IR_F32_TY;
+        return IR_tF32_TY;
       } else if constexpr (std::is_same_v<T, F64Ty>) {
-        return IR_F64_TY;
+        return IR_tF64_TY;
       } else if constexpr (std::is_same_v<T, F128Ty>) {
-        return IR_F128_TY;
+        return IR_tF128_TY;
       } else if constexpr (std::is_same_v<T, VoidTy>) {
-        return IR_VOID_TY;
+        return IR_tVOID;
       } else if constexpr (std::is_same_v<T, PtrTy>) {
-        return IR_PTR_TY;
+        return IR_tPTR;
       } else if constexpr (std::is_same_v<T, ConstTy>) {
-        return IR_CONST_TY;
+        return IR_tCONST;
       } else if constexpr (std::is_same_v<T, OpaqueTy>) {
-        return IR_OPAQUE_TY;
+        return IR_tOPAQUE;
       } else if constexpr (std::is_same_v<T, StructTy>) {
-        return IR_STRUCT_TY;
+        return IR_tSTRUCT;
       } else if constexpr (std::is_same_v<T, UnionTy>) {
-        return IR_UNION;
+        return IR_tUNION;
       } else if constexpr (std::is_same_v<T, ArrayTy>) {
-        return IR_ARRAY_TY;
+        return IR_tARRAY;
       } else if constexpr (std::is_same_v<T, FnTy>) {
-        return IR_FN_TY;
+        return IR_tFUNC;
       } else if constexpr (std::is_same_v<T, Tmp>) {
-        return IR_TMP;
+        return IR_tTMP;
       } else {
         static_assert(
             !std::is_same_v<T, T>,
@@ -258,30 +258,30 @@ namespace ncc::ir {
 
     constexpr bool isType() const {
       switch (getKind()) {
-        case IR_U1:
-        case IR_U8:
-        case IR_U16:
-        case IR_U32:
-        case IR_U64:
-        case IR_U128:
-        case IR_I8:
-        case IR_I16:
-        case IR_I32:
-        case IR_I64:
-        case IR_I128:
-        case IR_F16_TY:
-        case IR_F32_TY:
-        case IR_F64_TY:
-        case IR_F128_TY:
-        case IR_VOID_TY:
-        case IR_PTR_TY:
-        case IR_CONST_TY:
-        case IR_OPAQUE_TY:
-        case IR_STRUCT_TY:
-        case IR_UNION:
-        case IR_ARRAY_TY:
-        case IR_FN_TY:
-        case IR_TMP:
+        case IR_tU1:
+        case IR_tU8:
+        case IR_tU16:
+        case IR_tU32:
+        case IR_tU64:
+        case IR_tU128:
+        case IR_tI8:
+        case IR_tI16:
+        case IR_tI32:
+        case IR_tI64:
+        case IR_tI128:
+        case IR_tF16_TY:
+        case IR_tF32_TY:
+        case IR_tF64_TY:
+        case IR_tF128_TY:
+        case IR_tVOID:
+        case IR_tPTR:
+        case IR_tCONST:
+        case IR_tOPAQUE:
+        case IR_tSTRUCT:
+        case IR_tUNION:
+        case IR_tARRAY:
+        case IR_tFUNC:
+        case IR_tTMP:
           return true;
         default:
           return false;
@@ -289,7 +289,7 @@ namespace ncc::ir {
     }
 
     constexpr bool isLiteral() const {
-      return m_node_type == IR_INT || m_node_type == IR_FLOAT;
+      return m_node_type == IR_eINT || m_node_type == IR_eFLOAT;
     }
 
     // Returns "" if the construct is not named.
@@ -369,237 +369,237 @@ namespace ncc::ir {
 
     constexpr void accept(NRVisitor &v) {
       switch (getKind()) {
-        case IR_BINEXPR: {
+        case IR_eBIN: {
           v.visit(*as<BinExpr>());
           break;
         }
 
-        case IR_UNEXPR: {
+        case IR_eUNARY: {
           v.visit(*as<UnExpr>());
           break;
         }
 
-        case IR_POST_UNEXPR: {
+        case IR_ePOST_UNEXPR: {
           v.visit(*as<PostUnExpr>());
           break;
         }
 
-        case IR_INT: {
+        case IR_eINT: {
           v.visit(*as<Int>());
           break;
         }
 
-        case IR_FLOAT: {
+        case IR_eFLOAT: {
           v.visit(*as<Float>());
           break;
         }
 
-        case IR_LIST: {
+        case IR_eLIST: {
           v.visit(*as<List>());
           break;
         }
 
-        case IR_CALL: {
+        case IR_eCALL: {
           v.visit(*as<Call>());
           break;
         }
 
-        case IR_SEQ: {
+        case IR_eSEQ: {
           v.visit(*as<Seq>());
           break;
         }
 
-        case IR_INDEX: {
+        case IR_eINDEX: {
           v.visit(*as<Index>());
           break;
         }
 
-        case IR_IDENT: {
+        case IR_eIDENT: {
           v.visit(*as<Ident>());
           break;
         }
 
-        case IR_EXTERN: {
+        case IR_eEXTERN: {
           v.visit(*as<Extern>());
           break;
         }
 
-        case IR_LOCAL: {
+        case IR_eLOCAL: {
           v.visit(*as<Local>());
           break;
         }
 
-        case IR_RET: {
+        case IR_eRET: {
           v.visit(*as<Ret>());
           break;
         }
 
-        case IR_BRK: {
+        case IR_eBRK: {
           v.visit(*as<Brk>());
           break;
         }
 
-        case IR_CONT: {
+        case IR_eSKIP: {
           v.visit(*as<Cont>());
           break;
         }
 
-        case IR_IF: {
+        case IR_eIF: {
           v.visit(*as<If>());
           break;
         }
 
-        case IR_WHILE: {
+        case IR_eWHILE: {
           v.visit(*as<While>());
           break;
         }
 
-        case IR_FOR: {
+        case IR_eFOR: {
           v.visit(*as<For>());
           break;
         }
 
-        case IR_CASE: {
+        case IR_eCASE: {
           v.visit(*as<Case>());
           break;
         }
 
-        case IR_SWITCH: {
+        case IR_eSWITCH: {
           v.visit(*as<Switch>());
           break;
         }
 
-        case IR_FN: {
+        case IR_eFUNCTION: {
           v.visit(*as<Fn>());
           break;
         }
 
-        case IR_ASM: {
+        case IR_eASM: {
           v.visit(*as<Asm>());
           break;
         }
 
-        case IR_IGN: {
+        case IR_eIGN: {
           v.visit(*as<Expr>());
           break;
         }
 
-        case IR_U1: {
+        case IR_tU1: {
           v.visit(*as<U1Ty>());
           break;
         }
 
-        case IR_U8: {
+        case IR_tU8: {
           v.visit(*as<U8Ty>());
           break;
         }
 
-        case IR_U16: {
+        case IR_tU16: {
           v.visit(*as<U16Ty>());
           break;
         }
 
-        case IR_U32: {
+        case IR_tU32: {
           v.visit(*as<U32Ty>());
           break;
         }
 
-        case IR_U64: {
+        case IR_tU64: {
           v.visit(*as<U64Ty>());
           break;
         }
 
-        case IR_U128: {
+        case IR_tU128: {
           v.visit(*as<U128Ty>());
           break;
         }
 
-        case IR_I8: {
+        case IR_tI8: {
           v.visit(*as<I8Ty>());
           break;
         }
 
-        case IR_I16: {
+        case IR_tI16: {
           v.visit(*as<I16Ty>());
           break;
         }
 
-        case IR_I32: {
+        case IR_tI32: {
           v.visit(*as<I32Ty>());
           break;
         }
 
-        case IR_I64: {
+        case IR_tI64: {
           v.visit(*as<I64Ty>());
           break;
         }
 
-        case IR_I128: {
+        case IR_tI128: {
           v.visit(*as<I128Ty>());
           break;
         }
 
-        case IR_F16_TY: {
+        case IR_tF16_TY: {
           v.visit(*as<F16Ty>());
           break;
         }
 
-        case IR_F32_TY: {
+        case IR_tF32_TY: {
           v.visit(*as<F32Ty>());
           break;
         }
 
-        case IR_F64_TY: {
+        case IR_tF64_TY: {
           v.visit(*as<F64Ty>());
           break;
         }
 
-        case IR_F128_TY: {
+        case IR_tF128_TY: {
           v.visit(*as<F128Ty>());
           break;
         }
 
-        case IR_VOID_TY: {
+        case IR_tVOID: {
           v.visit(*as<VoidTy>());
           break;
         }
 
-        case IR_PTR_TY: {
+        case IR_tPTR: {
           v.visit(*as<PtrTy>());
           break;
         }
 
-        case IR_CONST_TY: {
+        case IR_tCONST: {
           v.visit(*as<ConstTy>());
           break;
         }
 
-        case IR_OPAQUE_TY: {
+        case IR_tOPAQUE: {
           v.visit(*as<OpaqueTy>());
           break;
         }
 
-        case IR_STRUCT_TY: {
+        case IR_tSTRUCT: {
           v.visit(*as<StructTy>());
           break;
         }
 
-        case IR_UNION: {
+        case IR_tUNION: {
           v.visit(*as<UnionTy>());
           break;
         }
 
-        case IR_ARRAY_TY: {
+        case IR_tARRAY: {
           v.visit(*as<ArrayTy>());
           break;
         }
 
-        case IR_FN_TY: {
+        case IR_tFUNC: {
           v.visit(*as<FnTy>());
           break;
         }
 
-        case IR_TMP: {
+        case IR_tTMP: {
           v.visit(*as<Tmp>());
           break;
         }
@@ -677,66 +677,66 @@ namespace ncc::ir {
 
     constexpr bool is_primitive() const {
       switch (getKind()) {
-        case IR_U1:
-        case IR_U8:
-        case IR_U16:
-        case IR_U32:
-        case IR_U64:
-        case IR_U128:
-        case IR_I8:
-        case IR_I16:
-        case IR_I32:
-        case IR_I64:
-        case IR_I128:
-        case IR_F16_TY:
-        case IR_F32_TY:
-        case IR_F64_TY:
-        case IR_F128_TY:
-        case IR_VOID_TY:
+        case IR_tU1:
+        case IR_tU8:
+        case IR_tU16:
+        case IR_tU32:
+        case IR_tU64:
+        case IR_tU128:
+        case IR_tI8:
+        case IR_tI16:
+        case IR_tI32:
+        case IR_tI64:
+        case IR_tI128:
+        case IR_tF16_TY:
+        case IR_tF32_TY:
+        case IR_tF64_TY:
+        case IR_tF128_TY:
+        case IR_tVOID:
           return true;
         default:
           return false;
       }
     }
 
-    constexpr bool is_array() const { return getKind() == IR_ARRAY_TY; }
+    constexpr bool is_array() const { return getKind() == IR_tARRAY; }
 
-    constexpr bool is_pointer() const { return getKind() == IR_PTR_TY; }
+    constexpr bool is_pointer() const { return getKind() == IR_tPTR; }
 
-    constexpr bool is_readonly() const { return getKind() == IR_CONST_TY; }
+    constexpr bool is_readonly() const { return getKind() == IR_tCONST; }
 
-    constexpr bool is_function() const { return getKind() == IR_FN_TY; }
+    constexpr bool is_function() const { return getKind() == IR_tFUNC; }
 
     constexpr bool is_composite() const {
       switch (getKind()) {
-        case IR_STRUCT_TY:
-        case IR_UNION:
-        case IR_ARRAY_TY:
+        case IR_tSTRUCT:
+        case IR_tUNION:
+        case IR_tARRAY:
           return true;
         default:
           return false;
       }
     }
 
-    constexpr bool is_union() const { return getKind() == IR_UNION; }
+    constexpr bool is_union() const { return getKind() == IR_tUNION; }
 
     constexpr bool is_numeric() const {
       switch (getKind()) {
-        case IR_U1:
-        case IR_U8:
-        case IR_U16:
-        case IR_U32:
-        case IR_U64:
-        case IR_U128:
-        case IR_I8:
-        case IR_I16:
-        case IR_I32:
-        case IR_I64:
-        case IR_I128:
-        case IR_F16_TY:
-        case IR_F32_TY:
-        case IR_F64_TY:
-        case IR_F128_TY:
+        case IR_tU1:
+        case IR_tU8:
+        case IR_tU16:
+        case IR_tU32:
+        case IR_tU64:
+        case IR_tU128:
+        case IR_tI8:
+        case IR_tI16:
+        case IR_tI32:
+        case IR_tI64:
+        case IR_tI128:
+        case IR_tF16_TY:
+        case IR_tF32_TY:
+        case IR_tF64_TY:
+        case IR_tF128_TY:
           return true;
         default:
           return false;
@@ -745,17 +745,17 @@ namespace ncc::ir {
 
     constexpr bool is_integral() const {
       switch (getKind()) {
-        case IR_U1:
-        case IR_U8:
-        case IR_U16:
-        case IR_U32:
-        case IR_U64:
-        case IR_U128:
-        case IR_I8:
-        case IR_I16:
-        case IR_I32:
-        case IR_I64:
-        case IR_I128:
+        case IR_tU1:
+        case IR_tU8:
+        case IR_tU16:
+        case IR_tU32:
+        case IR_tU64:
+        case IR_tU128:
+        case IR_tI8:
+        case IR_tI16:
+        case IR_tI32:
+        case IR_tI64:
+        case IR_tI128:
           return true;
         default:
           return false;
@@ -764,10 +764,10 @@ namespace ncc::ir {
 
     constexpr bool is_floating_point() const {
       switch (getKind()) {
-        case IR_F16_TY:
-        case IR_F32_TY:
-        case IR_F64_TY:
-        case IR_F128_TY:
+        case IR_tF16_TY:
+        case IR_tF32_TY:
+        case IR_tF64_TY:
+        case IR_tF128_TY:
           return true;
         default:
           return false;
@@ -776,15 +776,15 @@ namespace ncc::ir {
 
     constexpr bool is_signed() const {
       switch (getKind()) {
-        case IR_I8:
-        case IR_I16:
-        case IR_I32:
-        case IR_I64:
-        case IR_I128:
-        case IR_F16_TY:
-        case IR_F32_TY:
-        case IR_F64_TY:
-        case IR_F128_TY:
+        case IR_tI8:
+        case IR_tI16:
+        case IR_tI32:
+        case IR_tI64:
+        case IR_tI128:
+        case IR_tF16_TY:
+        case IR_tF32_TY:
+        case IR_tF64_TY:
+        case IR_tF128_TY:
           return true;
         default:
           return false;
@@ -793,21 +793,21 @@ namespace ncc::ir {
 
     constexpr bool is_unsigned() const {
       switch (getKind()) {
-        case IR_U1:
-        case IR_U8:
-        case IR_U16:
-        case IR_U32:
-        case IR_U64:
-        case IR_U128:
+        case IR_tU1:
+        case IR_tU8:
+        case IR_tU16:
+        case IR_tU32:
+        case IR_tU64:
+        case IR_tU128:
           return true;
         default:
           return false;
       }
     }
 
-    constexpr bool is_void() const { return getKind() == IR_VOID_TY; }
+    constexpr bool is_void() const { return getKind() == IR_tVOID; }
 
-    constexpr bool is_bool() const { return getKind() == IR_U1; }
+    constexpr bool is_bool() const { return getKind() == IR_tU1; }
   };
 
   ///=============================================================================
@@ -864,7 +864,7 @@ namespace ncc::ir {
 
   public:
     BinExpr(Expr *lhs, Expr *rhs, Op op)
-        : Expr(IR_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
+        : Expr(IR_eBIN), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
     Expr *getLHS() const { return m_lhs; }
     Expr *getRHS() const { return m_rhs; }
@@ -884,7 +884,7 @@ namespace ncc::ir {
     Op m_op;
 
   public:
-    UnExpr(Expr *expr, Op op) : Expr(IR_UNEXPR), m_expr(expr), m_op(op) {}
+    UnExpr(Expr *expr, Op op) : Expr(IR_eUNARY), m_expr(expr), m_op(op) {}
 
     Expr *getExpr() const { return m_expr; }
     Op getOp() const { return m_op; }
@@ -903,7 +903,7 @@ namespace ncc::ir {
 
   public:
     PostUnExpr(Expr *expr, Op op)
-        : Expr(IR_POST_UNEXPR), m_expr(expr), m_op(op) {}
+        : Expr(IR_ePOST_UNEXPR), m_expr(expr), m_op(op) {}
 
     Expr *getExpr() const { return m_expr; }
     Op getOp() const { return m_op; }
@@ -926,7 +926,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    U1Ty() : Type(IR_U1) {}
+    U1Ty() : Type(IR_tU1) {}
   };
 
   class U8Ty final : public Type {
@@ -935,7 +935,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    U8Ty() : Type(IR_U8) {}
+    U8Ty() : Type(IR_tU8) {}
   };
 
   class U16Ty final : public Type {
@@ -944,7 +944,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    U16Ty() : Type(IR_U16) {}
+    U16Ty() : Type(IR_tU16) {}
   };
 
   class U32Ty final : public Type {
@@ -953,7 +953,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    U32Ty() : Type(IR_U32) {}
+    U32Ty() : Type(IR_tU32) {}
   };
 
   class U64Ty final : public Type {
@@ -962,7 +962,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    U64Ty() : Type(IR_U64) {}
+    U64Ty() : Type(IR_tU64) {}
   };
 
   class U128Ty final : public Type {
@@ -971,7 +971,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    U128Ty() : Type(IR_U128) {}
+    U128Ty() : Type(IR_tU128) {}
   };
 
   class I8Ty final : public Type {
@@ -980,7 +980,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    I8Ty() : Type(IR_I8) {}
+    I8Ty() : Type(IR_tI8) {}
   };
 
   class I16Ty final : public Type {
@@ -989,7 +989,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    I16Ty() : Type(IR_I16){};
+    I16Ty() : Type(IR_tI16){};
   };
 
   class I32Ty final : public Type {
@@ -998,7 +998,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    I32Ty() : Type(IR_I32) {}
+    I32Ty() : Type(IR_tI32) {}
   };
 
   class I64Ty final : public Type {
@@ -1007,7 +1007,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    I64Ty() : Type(IR_I64) {}
+    I64Ty() : Type(IR_tI64) {}
   };
 
   class I128Ty final : public Type {
@@ -1016,7 +1016,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    I128Ty() : Type(IR_I128) {}
+    I128Ty() : Type(IR_tI128) {}
   };
 
   class F16Ty final : public Type {
@@ -1025,7 +1025,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    F16Ty() : Type(IR_F16_TY) {}
+    F16Ty() : Type(IR_tF16_TY) {}
   };
 
   class F32Ty final : public Type {
@@ -1034,7 +1034,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    F32Ty() : Type(IR_F32_TY) {}
+    F32Ty() : Type(IR_tF32_TY) {}
   };
 
   class F64Ty final : public Type {
@@ -1043,7 +1043,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    F64Ty() : Type(IR_F64_TY) {}
+    F64Ty() : Type(IR_tF64_TY) {}
   };
 
   class F128Ty final : public Type {
@@ -1052,7 +1052,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    F128Ty() : Type(IR_F128_TY) {}
+    F128Ty() : Type(IR_tF128_TY) {}
   };
 
   class VoidTy final : public Type {
@@ -1061,7 +1061,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    VoidTy() : Type(IR_VOID_TY) {}
+    VoidTy() : Type(IR_tVOID) {}
   };
 
   /// ===========================================================================
@@ -1082,7 +1082,7 @@ namespace ncc::ir {
 
   public:
     PtrTy(Type *pointee, uint8_t platform_size_bytes = 8)
-        : Type(IR_PTR_TY),
+        : Type(IR_tPTR),
           m_pointee(pointee),
           m_platform_ptr_size_bytes(platform_size_bytes) {}
 
@@ -1100,7 +1100,7 @@ namespace ncc::ir {
     Type *m_item;
 
   public:
-    ConstTy(Type *item) : Type(IR_CONST_TY), m_item(item) {}
+    ConstTy(Type *item) : Type(IR_tCONST), m_item(item) {}
 
     Type *getItem() const { return m_item; }
   };
@@ -1113,7 +1113,7 @@ namespace ncc::ir {
     std::string_view m_name;
 
   public:
-    OpaqueTy(std::string_view name) : Type(IR_OPAQUE_TY), m_name(name) {}
+    OpaqueTy(std::string_view name) : Type(IR_tOPAQUE), m_name(name) {}
   };
 
   typedef std::vector<Type *, Arena<Type *>> StructFields;
@@ -1126,8 +1126,7 @@ namespace ncc::ir {
     StructFields m_fields;
 
   public:
-    StructTy(const StructFields &fields)
-        : Type(IR_STRUCT_TY), m_fields(fields) {}
+    StructTy(const StructFields &fields) : Type(IR_tSTRUCT), m_fields(fields) {}
 
     const StructFields &getFields() const { return m_fields; }
   };
@@ -1142,7 +1141,7 @@ namespace ncc::ir {
     UnionFields m_fields;
 
   public:
-    UnionTy(const UnionFields &fields) : Type(IR_UNION), m_fields(fields) {}
+    UnionTy(const UnionFields &fields) : Type(IR_tUNION), m_fields(fields) {}
 
     const UnionFields &getFields() const { return m_fields; }
   };
@@ -1157,7 +1156,7 @@ namespace ncc::ir {
 
   public:
     ArrayTy(Type *element, size_t size)
-        : Type(IR_ARRAY_TY), m_element(element), m_size(size) {}
+        : Type(IR_tARRAY), m_element(element), m_size(size) {}
 
     Type *getElement() const { return m_element; }
     size_t getCount() const { return m_size; }
@@ -1185,7 +1184,7 @@ namespace ncc::ir {
   public:
     FnTy(const FnParams &params, Type *ret, const FnAttrs &attrs,
          uint8_t platform_ptr_size_bytes = 8)
-        : Type(IR_FN_TY),
+        : Type(IR_tFUNC),
           m_params(params),
           m_attrs(attrs),
           m_return(ret),
@@ -1230,10 +1229,10 @@ namespace ncc::ir {
 
   public:
     Int(uint128_t val, uint8_t size)
-        : Expr(IR_INT), m_value(val), m_size(size) {}
+        : Expr(IR_eINT), m_value(val), m_size(size) {}
 
     Int(std::string_view str, uint8_t size)
-        : Expr(IR_INT), m_value(str2u128(str)) {
+        : Expr(IR_eINT), m_value(str2u128(str)) {
       m_size = size;
     }
 
@@ -1268,8 +1267,8 @@ namespace ncc::ir {
 
   public:
     Float(double dec, FloatSize size)
-        : Expr(IR_FLOAT), m_data{dec}, m_size(size) {}
-    Float(std::string_view str) : Expr(IR_FLOAT) {
+        : Expr(IR_eFLOAT), m_data{dec}, m_size(size) {}
+    Float(std::string_view str) : Expr(IR_eFLOAT) {
       m_data = std::stod(std::string(str));
       if (str.ends_with("f128")) {
         m_size = FloatSize::F128;
@@ -1302,7 +1301,7 @@ namespace ncc::ir {
 
   public:
     List(const ListItems &items, bool is_homogenous)
-        : Expr(IR_LIST), m_items(items), m_is_homogenous(is_homogenous) {}
+        : Expr(IR_eLIST), m_items(items), m_is_homogenous(is_homogenous) {}
 
     auto begin() const { return m_items.begin(); }
     auto end() const { return m_items.end(); }
@@ -1334,7 +1333,7 @@ namespace ncc::ir {
 
   public:
     Call(Expr *ref, const CallArgs &args)
-        : Expr(IR_CALL), m_iref(ref), m_args(args) {}
+        : Expr(IR_eCALL), m_iref(ref), m_args(args) {}
 
     Expr *getTarget() const { return m_iref; }
     Expr *setTarget(Expr *ref) { return m_iref = ref; }
@@ -1356,7 +1355,7 @@ namespace ncc::ir {
     SeqItems m_items;
 
   public:
-    Seq(const SeqItems &items) : Expr(IR_SEQ), m_items(items) {}
+    Seq(const SeqItems &items) : Expr(IR_eSEQ), m_items(items) {}
 
     const SeqItems &getItems() const { return m_items; }
     SeqItems &getItems() { return m_items; }
@@ -1373,7 +1372,7 @@ namespace ncc::ir {
 
   public:
     Index(Expr *expr, Expr *index)
-        : Expr(IR_INDEX), m_expr(expr), m_index(index) {}
+        : Expr(IR_eINDEX), m_expr(expr), m_index(index) {}
 
     Expr *getExpr() const { return m_expr; }
     Expr *setExpr(Expr *expr) { return m_expr = expr; }
@@ -1392,7 +1391,7 @@ namespace ncc::ir {
 
   public:
     Ident(std::string_view name, Expr *what)
-        : Expr(IR_IDENT), m_name(name), m_what(what) {}
+        : Expr(IR_eIDENT), m_name(name), m_what(what) {}
 
     Expr *getWhat() const { return m_what; }
     Expr *setWhat(Expr *what) { return m_what = what; }
@@ -1410,7 +1409,7 @@ namespace ncc::ir {
 
   public:
     Extern(Expr *value, std::string_view abi_name)
-        : Expr(IR_EXTERN), m_abi_name(abi_name), m_value(value) {}
+        : Expr(IR_eEXTERN), m_abi_name(abi_name), m_value(value) {}
 
     std::string_view getAbiName() const { return m_abi_name; }
     std::string_view setAbiName(std::string_view abi_name) {
@@ -1436,7 +1435,7 @@ namespace ncc::ir {
     Local(std::string_view name, Expr *value, AbiTag abi_tag,
           bool readonly = false,
           StorageClass storage_class = StorageClass::LLVM_StackAlloa)
-        : Expr(IR_LOCAL),
+        : Expr(IR_eLOCAL),
           m_name(name),
           m_value(value),
           m_abi_tag(abi_tag),
@@ -1468,7 +1467,7 @@ namespace ncc::ir {
     Expr *m_expr;
 
   public:
-    Ret(Expr *expr) : Expr(IR_RET), m_expr(expr) {}
+    Ret(Expr *expr) : Expr(IR_eRET), m_expr(expr) {}
 
     Expr *getExpr() const { return m_expr; }
     Expr *setExpr(Expr *expr) { return m_expr = expr; }
@@ -1480,7 +1479,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    Brk() : Expr(IR_BRK) {}
+    Brk() : Expr(IR_eBRK) {}
   };
 
   class Cont final : public Expr {
@@ -1489,7 +1488,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    Cont() : Expr(IR_CONT) {}
+    Cont() : Expr(IR_eSKIP) {}
   };
 
   class If final : public Expr {
@@ -1503,7 +1502,7 @@ namespace ncc::ir {
 
   public:
     If(Expr *cond, Expr *then, Expr *else_)
-        : Expr(IR_IF), m_cond(cond), m_then(then), m_else(else_) {}
+        : Expr(IR_eIF), m_cond(cond), m_then(then), m_else(else_) {}
 
     Expr *getCond() const { return m_cond; }
     Expr *setCond(Expr *cond) { return m_cond = cond; }
@@ -1524,7 +1523,8 @@ namespace ncc::ir {
     Seq *m_body;
 
   public:
-    While(Expr *cond, Seq *body) : Expr(IR_WHILE), m_cond(cond), m_body(body) {}
+    While(Expr *cond, Seq *body)
+        : Expr(IR_eWHILE), m_cond(cond), m_body(body) {}
 
     Expr *getCond() const { return m_cond; }
     Expr *setCond(Expr *cond) { return m_cond = cond; }
@@ -1545,7 +1545,7 @@ namespace ncc::ir {
 
   public:
     For(Expr *init, Expr *cond, Expr *step, Expr *body)
-        : Expr(IR_FOR),
+        : Expr(IR_eFOR),
           m_init(init),
           m_cond(cond),
           m_step(step),
@@ -1573,7 +1573,7 @@ namespace ncc::ir {
     Expr *m_body;
 
   public:
-    Case(Expr *cond, Expr *body) : Expr(IR_CASE), m_cond(cond), m_body(body) {}
+    Case(Expr *cond, Expr *body) : Expr(IR_eCASE), m_cond(cond), m_body(body) {}
 
     Expr *getCond() { return m_cond; }
     Expr *setCond(Expr *cond) { return m_cond = cond; }
@@ -1595,7 +1595,7 @@ namespace ncc::ir {
 
   public:
     Switch(Expr *cond, const SwitchCases &cases, Expr *default_)
-        : Expr(IR_SWITCH), m_cond(cond), m_default(default_), m_cases(cases) {}
+        : Expr(IR_eSWITCH), m_cond(cond), m_default(default_), m_cases(cases) {}
 
     Expr *getCond() const { return m_cond; }
     Expr *setCond(Expr *cond) { return m_cond = cond; }
@@ -1628,7 +1628,7 @@ namespace ncc::ir {
   public:
     Fn(std::string_view name, const Params &params, Type *ret_ty,
        std::optional<Seq *> body, bool variadic, AbiTag abi_tag)
-        : Expr(IR_FN),
+        : Expr(IR_eFUNCTION),
           m_name(name),
           m_params(params),
           m_return(ret_ty),
@@ -1663,7 +1663,7 @@ namespace ncc::ir {
     QCLASS_REFLECT()
 
   public:
-    Asm() : Expr(IR_ASM) { qcore_implement(); }
+    Asm() : Expr(IR_eASM) { qcore_implement(); }
   };
 
   ///=============================================================================
@@ -1700,7 +1700,7 @@ namespace ncc::ir {
 
   public:
     Tmp(TmpType type, const TmpNodeCradle &data = {})
-        : Type(IR_TMP), m_type(type), m_data(data) {}
+        : Type(IR_tTMP), m_type(type), m_data(data) {}
 
     TmpType getTmpType() { return m_type; }
     TmpNodeCradle &getData() { return m_data; }
@@ -1733,197 +1733,197 @@ namespace ncc::ir {
     std::string_view R = "";
 
     switch (this->getKind()) {
-      case IR_BINEXPR: {
+      case IR_eBIN: {
         break;
       }
 
-      case IR_UNEXPR: {
+      case IR_eUNARY: {
         break;
       }
 
-      case IR_POST_UNEXPR: {
+      case IR_ePOST_UNEXPR: {
         break;
       }
 
-      case IR_INT: {
+      case IR_eINT: {
         break;
       }
 
-      case IR_FLOAT: {
+      case IR_eFLOAT: {
         break;
       }
 
-      case IR_LIST: {
+      case IR_eLIST: {
         break;
       }
 
-      case IR_CALL: {
+      case IR_eCALL: {
         break;
       }
 
-      case IR_SEQ: {
+      case IR_eSEQ: {
         break;
       }
 
-      case IR_INDEX: {
+      case IR_eINDEX: {
         break;
       }
 
-      case IR_IDENT: {
+      case IR_eIDENT: {
         R = as<Ident>()->m_name;
         break;
       }
 
-      case IR_EXTERN: {
+      case IR_eEXTERN: {
         break;
       }
 
-      case IR_LOCAL: {
+      case IR_eLOCAL: {
         R = as<Local>()->m_name;
         break;
       }
 
-      case IR_RET: {
+      case IR_eRET: {
         break;
       }
 
-      case IR_BRK: {
+      case IR_eBRK: {
         break;
       }
 
-      case IR_CONT: {
+      case IR_eSKIP: {
         break;
       }
 
-      case IR_IF: {
+      case IR_eIF: {
         break;
       }
 
-      case IR_WHILE: {
+      case IR_eWHILE: {
         break;
       }
 
-      case IR_FOR: {
+      case IR_eFOR: {
         break;
       }
 
-      case IR_CASE: {
+      case IR_eCASE: {
         break;
       }
 
-      case IR_SWITCH: {
+      case IR_eSWITCH: {
         break;
       }
 
-      case IR_IGN: {
+      case IR_eIGN: {
         break;
       }
 
-      case IR_FN: {
+      case IR_eFUNCTION: {
         R = as<Fn>()->m_name;
         break;
       }
 
-      case IR_ASM: {
+      case IR_eASM: {
         qcore_implement();
         break;
       }
 
-      case IR_U1: {
+      case IR_tU1: {
         break;
       }
 
-      case IR_U8: {
+      case IR_tU8: {
         break;
       }
 
-      case IR_U16: {
+      case IR_tU16: {
         break;
       }
 
-      case IR_U32: {
+      case IR_tU32: {
         break;
       }
 
-      case IR_U64: {
+      case IR_tU64: {
         break;
       }
 
-      case IR_U128: {
+      case IR_tU128: {
         break;
       }
 
-      case IR_I8: {
+      case IR_tI8: {
         break;
       }
 
-      case IR_I16: {
+      case IR_tI16: {
         break;
       }
 
-      case IR_I32: {
+      case IR_tI32: {
         break;
       }
 
-      case IR_I64: {
+      case IR_tI64: {
         break;
       }
 
-      case IR_I128: {
+      case IR_tI128: {
         break;
       }
 
-      case IR_F16_TY: {
+      case IR_tF16_TY: {
         break;
       }
 
-      case IR_F32_TY: {
+      case IR_tF32_TY: {
         break;
       }
 
-      case IR_F64_TY: {
+      case IR_tF64_TY: {
         break;
       }
 
-      case IR_F128_TY: {
+      case IR_tF128_TY: {
         break;
       }
 
-      case IR_VOID_TY: {
+      case IR_tVOID: {
         break;
       }
 
-      case IR_PTR_TY: {
+      case IR_tPTR: {
         break;
       }
 
-      case IR_CONST_TY: {
+      case IR_tCONST: {
         R = as<ConstTy>()->m_item->getName();
         break;
       }
 
-      case IR_OPAQUE_TY: {
+      case IR_tOPAQUE: {
         R = as<OpaqueTy>()->m_name;
         break;
       }
 
-      case IR_STRUCT_TY: {
+      case IR_tSTRUCT: {
         break;
       }
 
-      case IR_UNION: {
+      case IR_tUNION: {
         break;
       }
 
-      case IR_ARRAY_TY: {
+      case IR_tARRAY: {
         break;
       }
 
-      case IR_FN_TY: {
+      case IR_tFUNC: {
         break;
       }
 
-      case IR_TMP: {
+      case IR_tTMP: {
         break;
       }
     }
@@ -1936,53 +1936,53 @@ namespace ncc::ir {
       std::array<size_t, IR_COUNT> R;
       R.fill(0);
 
-      R[IR_BINEXPR] = sizeof(BinExpr);
-      R[IR_UNEXPR] = sizeof(UnExpr);
-      R[IR_POST_UNEXPR] = sizeof(PostUnExpr);
-      R[IR_INT] = sizeof(Int);
-      R[IR_FLOAT] = sizeof(Float);
-      R[IR_LIST] = sizeof(List);
-      R[IR_CALL] = sizeof(Call);
-      R[IR_SEQ] = sizeof(Seq);
-      R[IR_INDEX] = sizeof(Index);
-      R[IR_IDENT] = sizeof(Ident);
-      R[IR_EXTERN] = sizeof(Extern);
-      R[IR_LOCAL] = sizeof(Local);
-      R[IR_RET] = sizeof(Ret);
-      R[IR_BRK] = sizeof(Brk);
-      R[IR_CONT] = sizeof(Cont);
-      R[IR_IF] = sizeof(If);
-      R[IR_WHILE] = sizeof(While);
-      R[IR_FOR] = sizeof(For);
-      R[IR_CASE] = sizeof(Case);
-      R[IR_SWITCH] = sizeof(Switch);
-      R[IR_FN] = sizeof(Fn);
-      R[IR_ASM] = sizeof(Asm);
-      R[IR_IGN] = sizeof(Expr);
-      R[IR_U1] = sizeof(U1Ty);
-      R[IR_U8] = sizeof(U8Ty);
-      R[IR_U16] = sizeof(U16Ty);
-      R[IR_U32] = sizeof(U32Ty);
-      R[IR_U64] = sizeof(U64Ty);
-      R[IR_U128] = sizeof(U128Ty);
-      R[IR_I8] = sizeof(I8Ty);
-      R[IR_I16] = sizeof(I16Ty);
-      R[IR_I32] = sizeof(I32Ty);
-      R[IR_I64] = sizeof(I64Ty);
-      R[IR_I128] = sizeof(I128Ty);
-      R[IR_F16_TY] = sizeof(F16Ty);
-      R[IR_F32_TY] = sizeof(F32Ty);
-      R[IR_F64_TY] = sizeof(F64Ty);
-      R[IR_F128_TY] = sizeof(F128Ty);
-      R[IR_VOID_TY] = sizeof(VoidTy);
-      R[IR_PTR_TY] = sizeof(PtrTy);
-      R[IR_CONST_TY] = sizeof(ConstTy);
-      R[IR_OPAQUE_TY] = sizeof(OpaqueTy);
-      R[IR_STRUCT_TY] = sizeof(StructTy);
-      R[IR_UNION] = sizeof(UnionTy);
-      R[IR_ARRAY_TY] = sizeof(ArrayTy);
-      R[IR_FN_TY] = sizeof(FnTy);
-      R[IR_TMP] = sizeof(Tmp);
+      R[IR_eBIN] = sizeof(BinExpr);
+      R[IR_eUNARY] = sizeof(UnExpr);
+      R[IR_ePOST_UNEXPR] = sizeof(PostUnExpr);
+      R[IR_eINT] = sizeof(Int);
+      R[IR_eFLOAT] = sizeof(Float);
+      R[IR_eLIST] = sizeof(List);
+      R[IR_eCALL] = sizeof(Call);
+      R[IR_eSEQ] = sizeof(Seq);
+      R[IR_eINDEX] = sizeof(Index);
+      R[IR_eIDENT] = sizeof(Ident);
+      R[IR_eEXTERN] = sizeof(Extern);
+      R[IR_eLOCAL] = sizeof(Local);
+      R[IR_eRET] = sizeof(Ret);
+      R[IR_eBRK] = sizeof(Brk);
+      R[IR_eSKIP] = sizeof(Cont);
+      R[IR_eIF] = sizeof(If);
+      R[IR_eWHILE] = sizeof(While);
+      R[IR_eFOR] = sizeof(For);
+      R[IR_eCASE] = sizeof(Case);
+      R[IR_eSWITCH] = sizeof(Switch);
+      R[IR_eFUNCTION] = sizeof(Fn);
+      R[IR_eASM] = sizeof(Asm);
+      R[IR_eIGN] = sizeof(Expr);
+      R[IR_tU1] = sizeof(U1Ty);
+      R[IR_tU8] = sizeof(U8Ty);
+      R[IR_tU16] = sizeof(U16Ty);
+      R[IR_tU32] = sizeof(U32Ty);
+      R[IR_tU64] = sizeof(U64Ty);
+      R[IR_tU128] = sizeof(U128Ty);
+      R[IR_tI8] = sizeof(I8Ty);
+      R[IR_tI16] = sizeof(I16Ty);
+      R[IR_tI32] = sizeof(I32Ty);
+      R[IR_tI64] = sizeof(I64Ty);
+      R[IR_tI128] = sizeof(I128Ty);
+      R[IR_tF16_TY] = sizeof(F16Ty);
+      R[IR_tF32_TY] = sizeof(F32Ty);
+      R[IR_tF64_TY] = sizeof(F64Ty);
+      R[IR_tF128_TY] = sizeof(F128Ty);
+      R[IR_tVOID] = sizeof(VoidTy);
+      R[IR_tPTR] = sizeof(PtrTy);
+      R[IR_tCONST] = sizeof(ConstTy);
+      R[IR_tOPAQUE] = sizeof(OpaqueTy);
+      R[IR_tSTRUCT] = sizeof(StructTy);
+      R[IR_tUNION] = sizeof(UnionTy);
+      R[IR_tARRAY] = sizeof(ArrayTy);
+      R[IR_tFUNC] = sizeof(FnTy);
+      R[IR_tTMP] = sizeof(Tmp);
 
       return R;
     }();
@@ -1995,53 +1995,53 @@ namespace ncc::ir {
       std::array<const char *, IR_COUNT> R;
       R.fill("");
 
-      R[IR_BINEXPR] = "bin_expr";
-      R[IR_UNEXPR] = "unary_expr";
-      R[IR_POST_UNEXPR] = "post_unary_expr";
-      R[IR_INT] = "int";
-      R[IR_FLOAT] = "float";
-      R[IR_LIST] = "list";
-      R[IR_CALL] = "call";
-      R[IR_SEQ] = "seq";
-      R[IR_INDEX] = "index";
-      R[IR_IDENT] = "ident";
-      R[IR_EXTERN] = "extern";
-      R[IR_LOCAL] = "local";
-      R[IR_RET] = "return";
-      R[IR_BRK] = "break";
-      R[IR_CONT] = "continue";
-      R[IR_IF] = "if";
-      R[IR_WHILE] = "while";
-      R[IR_FOR] = "for";
-      R[IR_CASE] = "case";
-      R[IR_SWITCH] = "switch";
-      R[IR_FN] = "fn";
-      R[IR_ASM] = "asm";
-      R[IR_IGN] = "ignore";
-      R[IR_U1] = "u1";
-      R[IR_U8] = "u8";
-      R[IR_U16] = "u16";
-      R[IR_U32] = "u32";
-      R[IR_U64] = "u64";
-      R[IR_U128] = "u128";
-      R[IR_I8] = "i8";
-      R[IR_I16] = "i16";
-      R[IR_I32] = "i32";
-      R[IR_I64] = "i64";
-      R[IR_I128] = "i128";
-      R[IR_F16_TY] = "f16";
-      R[IR_F32_TY] = "f32";
-      R[IR_F64_TY] = "f64";
-      R[IR_F128_TY] = "f128";
-      R[IR_VOID_TY] = "void";
-      R[IR_PTR_TY] = "ptr";
-      R[IR_CONST_TY] = "const";
-      R[IR_OPAQUE_TY] = "opaque";
-      R[IR_STRUCT_TY] = "struct";
-      R[IR_UNION] = "union";
-      R[IR_ARRAY_TY] = "array";
-      R[IR_FN_TY] = "fn_ty";
-      R[IR_TMP] = "tmp";
+      R[IR_eBIN] = "bin_expr";
+      R[IR_eUNARY] = "unary_expr";
+      R[IR_ePOST_UNEXPR] = "post_unary_expr";
+      R[IR_eINT] = "int";
+      R[IR_eFLOAT] = "float";
+      R[IR_eLIST] = "list";
+      R[IR_eCALL] = "call";
+      R[IR_eSEQ] = "seq";
+      R[IR_eINDEX] = "index";
+      R[IR_eIDENT] = "ident";
+      R[IR_eEXTERN] = "extern";
+      R[IR_eLOCAL] = "local";
+      R[IR_eRET] = "return";
+      R[IR_eBRK] = "break";
+      R[IR_eSKIP] = "continue";
+      R[IR_eIF] = "if";
+      R[IR_eWHILE] = "while";
+      R[IR_eFOR] = "for";
+      R[IR_eCASE] = "case";
+      R[IR_eSWITCH] = "switch";
+      R[IR_eFUNCTION] = "fn";
+      R[IR_eASM] = "asm";
+      R[IR_eIGN] = "ignore";
+      R[IR_tU1] = "u1";
+      R[IR_tU8] = "u8";
+      R[IR_tU16] = "u16";
+      R[IR_tU32] = "u32";
+      R[IR_tU64] = "u64";
+      R[IR_tU128] = "u128";
+      R[IR_tI8] = "i8";
+      R[IR_tI16] = "i16";
+      R[IR_tI32] = "i32";
+      R[IR_tI64] = "i64";
+      R[IR_tI128] = "i128";
+      R[IR_tF16_TY] = "f16";
+      R[IR_tF32_TY] = "f32";
+      R[IR_tF64_TY] = "f64";
+      R[IR_tF128_TY] = "f128";
+      R[IR_tVOID] = "void";
+      R[IR_tPTR] = "ptr";
+      R[IR_tCONST] = "const";
+      R[IR_tOPAQUE] = "opaque";
+      R[IR_tSTRUCT] = "struct";
+      R[IR_tUNION] = "union";
+      R[IR_tARRAY] = "array";
+      R[IR_tFUNC] = "fn_ty";
+      R[IR_tTMP] = "tmp";
 
       return R;
     }();
@@ -2057,7 +2057,7 @@ namespace ncc::ir {
     }
 
     switch (kind) {
-      case IR_BINEXPR: {
+      case IR_eBIN: {
         auto a = as<BinExpr>();
         auto b = other->as<BinExpr>();
         if (a->m_op != b->m_op) {
@@ -2065,7 +2065,7 @@ namespace ncc::ir {
         }
         return a->m_lhs->isSame(b->m_lhs) && a->m_rhs->isSame(b->m_rhs);
       }
-      case IR_UNEXPR: {
+      case IR_eUNARY: {
         auto a = as<UnExpr>();
         auto b = other->as<UnExpr>();
         if (a->m_op != b->m_op) {
@@ -2073,7 +2073,7 @@ namespace ncc::ir {
         }
         return a->m_expr->isSame(b->m_expr);
       }
-      case IR_POST_UNEXPR: {
+      case IR_ePOST_UNEXPR: {
         auto a = as<PostUnExpr>();
         auto b = other->as<PostUnExpr>();
         if (a->m_op != b->m_op) {
@@ -2081,13 +2081,13 @@ namespace ncc::ir {
         }
         return a->m_expr->isSame(b->m_expr);
       }
-      case IR_INT: {
+      case IR_eINT: {
         return as<Int>()->getValue() == other->as<Int>()->getValue();
       }
-      case IR_FLOAT: {
+      case IR_eFLOAT: {
         return as<Float>()->getValue() == other->as<Float>()->getValue();
       }
-      case IR_LIST: {
+      case IR_eLIST: {
         auto a = as<List>();
         auto b = other->as<List>();
         if (a->m_items.size() != b->m_items.size()) {
@@ -2100,7 +2100,7 @@ namespace ncc::ir {
         }
         return true;
       }
-      case IR_CALL: {
+      case IR_eCALL: {
         auto a = as<Call>();
         auto b = other->as<Call>();
         if (!a->m_iref->isSame(b->m_iref)) {
@@ -2116,7 +2116,7 @@ namespace ncc::ir {
         }
         return true;
       }
-      case IR_SEQ: {
+      case IR_eSEQ: {
         auto a = as<Seq>();
         auto b = other->as<Seq>();
         if (a->m_items.size() != b->m_items.size()) {
@@ -2129,7 +2129,7 @@ namespace ncc::ir {
         }
         return true;
       }
-      case IR_INDEX: {
+      case IR_eINDEX: {
         auto a = as<Index>();
         auto b = other->as<Index>();
         if (!a->m_expr->isSame(b->m_expr)) {
@@ -2140,10 +2140,10 @@ namespace ncc::ir {
         }
         return true;
       }
-      case IR_IDENT: {
+      case IR_eIDENT: {
         return as<Ident>()->m_name == other->as<Ident>()->m_name;
       }
-      case IR_EXTERN: {
+      case IR_eEXTERN: {
         auto a = as<Extern>();
         auto b = other->as<Extern>();
         if (a->m_abi_name != b->m_abi_name) {
@@ -2151,7 +2151,7 @@ namespace ncc::ir {
         }
         return a->m_value->isSame(b->m_value);
       }
-      case IR_LOCAL: {
+      case IR_eLOCAL: {
         auto a = as<Local>();
         auto b = other->as<Local>();
         if (a->m_name != b->m_name) {
@@ -2159,16 +2159,16 @@ namespace ncc::ir {
         }
         return a->m_value->isSame(b->m_value);
       }
-      case IR_RET: {
+      case IR_eRET: {
         return as<Ret>()->m_expr->isSame(other->as<Ret>()->m_expr);
       }
-      case IR_BRK: {
+      case IR_eBRK: {
         return true;
       }
-      case IR_CONT: {
+      case IR_eSKIP: {
         return true;
       }
-      case IR_IF: {
+      case IR_eIF: {
         auto a = as<If>();
         auto b = other->as<If>();
         if (!a->m_cond->isSame(b->m_cond)) {
@@ -2182,7 +2182,7 @@ namespace ncc::ir {
         }
         return true;
       }
-      case IR_WHILE: {
+      case IR_eWHILE: {
         auto a = as<While>();
         auto b = other->as<While>();
         if (!a->m_cond->isSame(b->m_cond)) {
@@ -2193,7 +2193,7 @@ namespace ncc::ir {
         }
         return true;
       }
-      case IR_FOR: {
+      case IR_eFOR: {
         auto a = as<For>();
         auto b = other->as<For>();
         if (!a->m_init->isSame(b->m_init)) {
@@ -2210,7 +2210,7 @@ namespace ncc::ir {
         }
         return true;
       }
-      case IR_CASE: {
+      case IR_eCASE: {
         auto a = as<Case>();
         auto b = other->as<Case>();
         if (!a->m_cond->isSame(b->m_cond)) {
@@ -2221,7 +2221,7 @@ namespace ncc::ir {
         }
         return true;
       }
-      case IR_SWITCH: {
+      case IR_eSWITCH: {
         auto a = as<Switch>();
         auto b = other->as<Switch>();
         if (!a->m_cond->isSame(b->m_cond)) {
@@ -2240,7 +2240,7 @@ namespace ncc::ir {
         }
         return true;
       }
-      case IR_FN: {
+      case IR_eFUNCTION: {
         auto a = as<Fn>();
         auto b = other->as<Fn>();
         if (a->m_name != b->m_name) {
@@ -2269,40 +2269,40 @@ namespace ncc::ir {
         }
         return true;
       }
-      case IR_ASM: {
+      case IR_eASM: {
         qcore_implement();
         break;
       }
-      case IR_IGN: {
+      case IR_eIGN: {
         return true;
       }
-      case IR_U1:
-      case IR_U8:
-      case IR_U16:
-      case IR_U32:
-      case IR_U64:
-      case IR_U128:
-      case IR_I8:
-      case IR_I16:
-      case IR_I32:
-      case IR_I64:
-      case IR_I128:
-      case IR_F16_TY:
-      case IR_F32_TY:
-      case IR_F64_TY:
-      case IR_F128_TY:
-      case IR_VOID_TY:
+      case IR_tU1:
+      case IR_tU8:
+      case IR_tU16:
+      case IR_tU32:
+      case IR_tU64:
+      case IR_tU128:
+      case IR_tI8:
+      case IR_tI16:
+      case IR_tI32:
+      case IR_tI64:
+      case IR_tI128:
+      case IR_tF16_TY:
+      case IR_tF32_TY:
+      case IR_tF64_TY:
+      case IR_tF128_TY:
+      case IR_tVOID:
         return true;
-      case IR_PTR_TY: {
+      case IR_tPTR: {
         return as<PtrTy>()->m_pointee->isSame(other->as<PtrTy>()->m_pointee);
       }
-      case IR_CONST_TY: {
+      case IR_tCONST: {
         return as<ConstTy>()->m_item->isSame(other->as<ConstTy>()->m_item);
       }
-      case IR_OPAQUE_TY: {
+      case IR_tOPAQUE: {
         return as<OpaqueTy>()->m_name == other->as<OpaqueTy>()->m_name;
       }
-      case IR_STRUCT_TY: {
+      case IR_tSTRUCT: {
         auto a = as<StructTy>();
         auto b = other->as<StructTy>();
         if (a->m_fields.size() != b->m_fields.size()) {
@@ -2315,7 +2315,7 @@ namespace ncc::ir {
         }
         return true;
       }
-      case IR_UNION: {
+      case IR_tUNION: {
         auto a = as<UnionTy>();
         auto b = other->as<UnionTy>();
         if (a->m_fields.size() != b->m_fields.size()) {
@@ -2328,7 +2328,7 @@ namespace ncc::ir {
         }
         return true;
       }
-      case IR_ARRAY_TY: {
+      case IR_tARRAY: {
         auto a = as<ArrayTy>();
         auto b = other->as<ArrayTy>();
         if (!a->m_element->isSame(b->m_element)) {
@@ -2339,7 +2339,7 @@ namespace ncc::ir {
         }
         return true;
       }
-      case IR_FN_TY: {
+      case IR_tFUNC: {
         auto a = as<FnTy>();
         auto b = other->as<FnTy>();
         if (a->m_params.size() != b->m_params.size()) {
@@ -2358,7 +2358,7 @@ namespace ncc::ir {
         }
         return true;
       }
-      case IR_TMP: {
+      case IR_tTMP: {
         auto a = as<Tmp>();
         auto b = other->as<Tmp>();
         if (a->m_type != b->m_type) {
@@ -2412,9 +2412,9 @@ namespace ncc::ir {
   Expr *createIgn();
 
   namespace mem {
-    extern Brk static_IR_BRK;
-    extern Cont static_IR_CONT;
-    extern Expr static_IR_IGN;
+    extern Brk static_IR_eBRK;
+    extern Cont static_IR_eSKIP;
+    extern Expr static_IR_eIGN;
 
   };  // namespace mem
 
@@ -2442,53 +2442,53 @@ namespace ncc::ir {
 
     constexpr nr_ty_t ty = Expr::getTypeCode<T>();
 
-    NORMAL_ALLOC(IR_BINEXPR);
-    NORMAL_ALLOC(IR_UNEXPR);
-    NORMAL_ALLOC(IR_POST_UNEXPR);
-    CACHE_ALLOC(IR_INT);
-    NORMAL_ALLOC(IR_FLOAT);
-    NORMAL_ALLOC(IR_LIST);
-    NORMAL_ALLOC(IR_CALL);
-    NORMAL_ALLOC(IR_SEQ);
-    NORMAL_ALLOC(IR_INDEX);
-    NORMAL_ALLOC(IR_IDENT);
-    NORMAL_ALLOC(IR_EXTERN);
-    NORMAL_ALLOC(IR_LOCAL);
-    NORMAL_ALLOC(IR_RET);
-    REUSE_ALLOC(IR_BRK);
-    REUSE_ALLOC(IR_CONT);
-    NORMAL_ALLOC(IR_IF);
-    NORMAL_ALLOC(IR_WHILE);
-    NORMAL_ALLOC(IR_FOR);
-    NORMAL_ALLOC(IR_CASE);
-    NORMAL_ALLOC(IR_SWITCH);
-    NORMAL_ALLOC(IR_FN);
-    NORMAL_ALLOC(IR_ASM);
-    REUSE_ALLOC(IR_IGN);
-    NORMAL_ALLOC(IR_U1);
-    NORMAL_ALLOC(IR_U8);
-    NORMAL_ALLOC(IR_U16);
-    NORMAL_ALLOC(IR_U32);
-    NORMAL_ALLOC(IR_U64);
-    NORMAL_ALLOC(IR_U128);
-    NORMAL_ALLOC(IR_I8);
-    NORMAL_ALLOC(IR_I16);
-    NORMAL_ALLOC(IR_I32);
-    NORMAL_ALLOC(IR_I64);
-    NORMAL_ALLOC(IR_I128);
-    NORMAL_ALLOC(IR_F16_TY);
-    NORMAL_ALLOC(IR_F32_TY);
-    NORMAL_ALLOC(IR_F64_TY);
-    NORMAL_ALLOC(IR_F128_TY);
-    NORMAL_ALLOC(IR_VOID_TY);
-    NORMAL_ALLOC(IR_PTR_TY);
-    NORMAL_ALLOC(IR_CONST_TY);
-    NORMAL_ALLOC(IR_OPAQUE_TY);
-    NORMAL_ALLOC(IR_STRUCT_TY);
-    NORMAL_ALLOC(IR_UNION);
-    NORMAL_ALLOC(IR_ARRAY_TY);
-    NORMAL_ALLOC(IR_FN_TY);
-    NORMAL_ALLOC(IR_TMP);
+    NORMAL_ALLOC(IR_eBIN);
+    NORMAL_ALLOC(IR_eUNARY);
+    NORMAL_ALLOC(IR_ePOST_UNEXPR);
+    CACHE_ALLOC(IR_eINT);
+    NORMAL_ALLOC(IR_eFLOAT);
+    NORMAL_ALLOC(IR_eLIST);
+    NORMAL_ALLOC(IR_eCALL);
+    NORMAL_ALLOC(IR_eSEQ);
+    NORMAL_ALLOC(IR_eINDEX);
+    NORMAL_ALLOC(IR_eIDENT);
+    NORMAL_ALLOC(IR_eEXTERN);
+    NORMAL_ALLOC(IR_eLOCAL);
+    NORMAL_ALLOC(IR_eRET);
+    REUSE_ALLOC(IR_eBRK);
+    REUSE_ALLOC(IR_eSKIP);
+    NORMAL_ALLOC(IR_eIF);
+    NORMAL_ALLOC(IR_eWHILE);
+    NORMAL_ALLOC(IR_eFOR);
+    NORMAL_ALLOC(IR_eCASE);
+    NORMAL_ALLOC(IR_eSWITCH);
+    NORMAL_ALLOC(IR_eFUNCTION);
+    NORMAL_ALLOC(IR_eASM);
+    REUSE_ALLOC(IR_eIGN);
+    NORMAL_ALLOC(IR_tU1);
+    NORMAL_ALLOC(IR_tU8);
+    NORMAL_ALLOC(IR_tU16);
+    NORMAL_ALLOC(IR_tU32);
+    NORMAL_ALLOC(IR_tU64);
+    NORMAL_ALLOC(IR_tU128);
+    NORMAL_ALLOC(IR_tI8);
+    NORMAL_ALLOC(IR_tI16);
+    NORMAL_ALLOC(IR_tI32);
+    NORMAL_ALLOC(IR_tI64);
+    NORMAL_ALLOC(IR_tI128);
+    NORMAL_ALLOC(IR_tF16_TY);
+    NORMAL_ALLOC(IR_tF32_TY);
+    NORMAL_ALLOC(IR_tF64_TY);
+    NORMAL_ALLOC(IR_tF128_TY);
+    NORMAL_ALLOC(IR_tVOID);
+    NORMAL_ALLOC(IR_tPTR);
+    NORMAL_ALLOC(IR_tCONST);
+    NORMAL_ALLOC(IR_tOPAQUE);
+    NORMAL_ALLOC(IR_tSTRUCT);
+    NORMAL_ALLOC(IR_tUNION);
+    NORMAL_ALLOC(IR_tARRAY);
+    NORMAL_ALLOC(IR_tFUNC);
+    NORMAL_ALLOC(IR_tTMP);
 
 #undef CACHE_ALLOC
 #undef NORMAL_ALLOC
@@ -2594,7 +2594,7 @@ namespace ncc::ir {
 
     nr_ty_t ty = r->getKind();
 
-    if (ty != IR_INT) {
+    if (ty != IR_eINT) {
       return std::nullopt;
     }
 

@@ -208,106 +208,106 @@ static void mangle_type(const Type *n, std::ostream &ss) {
    */
 
   switch (n->getKind()) {
-    case IR_U1: {
+    case IR_tU1: {
       ss << 'b';
       break;
     }
 
-    case IR_U8: {
+    case IR_tU8: {
       ss << 'h';
       break;
     }
 
-    case IR_U16: {
+    case IR_tU16: {
       ss << 't';
       break;
     }
 
-    case IR_U32: {
+    case IR_tU32: {
       ss << 'j';
       break;
     }
 
-    case IR_U64: {
+    case IR_tU64: {
       ss << 'm';
       break;
     }
 
-    case IR_U128: {
+    case IR_tU128: {
       ss << 'o';
       break;
     }
 
-    case IR_I8: {
+    case IR_tI8: {
       ss << 'a';
       break;
     }
 
-    case IR_I16: {
+    case IR_tI16: {
       ss << 's';
       break;
     }
 
-    case IR_I32: {
+    case IR_tI32: {
       ss << 'i';
       break;
     }
 
-    case IR_I64: {
+    case IR_tI64: {
       ss << 'l';
       break;
     }
 
-    case IR_I128: {
+    case IR_tI128: {
       ss << 'n';
       break;
     }
 
-    case IR_F16_TY: {
+    case IR_tF16_TY: {
       ss << "Dh";
       break;
     }
 
-    case IR_F32_TY: {
+    case IR_tF32_TY: {
       ss << "Df";
       break;
     }
 
-    case IR_F64_TY: {
+    case IR_tF64_TY: {
       ss << "Dd";
       break;
     }
 
-    case IR_F128_TY: {
+    case IR_tF128_TY: {
       ss << "De";
       break;
     }
 
-    case IR_VOID_TY: {
+    case IR_tVOID: {
       ss << 'v';
       break;
     }
 
-    case IR_PTR_TY: {
+    case IR_tPTR: {
       ss << 'P';
       mangle_type(n->as<PtrTy>()->getPointee(), ss);
       break;
     }
 
-    case IR_CONST_TY: {
+    case IR_tCONST: {
       ss << 'K';
       mangle_type(n->as<ConstTy>()->getItem(), ss);
       break;
     }
 
-    case IR_OPAQUE_TY: {
+    case IR_tOPAQUE: {
       ss << 'N';
       encode_ns_size_value(n->as<OpaqueTy>()->getName(), ss);
       ss << 'E';
       break;
     }
 
-    case IR_STRUCT_TY: {
+    case IR_tSTRUCT: {
       /**
        * @brief Unlike C++, Nitrate encodes field types into the name.
        * Making any changes to a struct will break ABI compatibility
@@ -322,7 +322,7 @@ static void mangle_type(const Type *n, std::ostream &ss) {
       break;
     }
 
-    case IR_UNION: {
+    case IR_tUNION: {
       /**
        * @brief Unlike C++, Nitrate encodes field types into the name.
        * Making any changes to a union will break ABI compatibility
@@ -337,7 +337,7 @@ static void mangle_type(const Type *n, std::ostream &ss) {
       break;
     }
 
-    case IR_ARRAY_TY: {
+    case IR_tARRAY: {
       ss << 'A';
       ss << n->as<ArrayTy>()->getCount();
       ss << '_';
@@ -345,7 +345,7 @@ static void mangle_type(const Type *n, std::ostream &ss) {
       break;
     }
 
-    case IR_FN_TY: {
+    case IR_tFUNC: {
       /**
        * @brief Unlike C++, Nitrate also encodes the parameter types
        * into the name. This is to avoid runtime UB when calling
@@ -677,8 +677,8 @@ CPP_EXPORT std::optional<std::string> SymbolEncoding::mangle_name(
   }
 
   static std::unordered_set<nr_ty_t> valid = {
-      IR_FN,
-      IR_LOCAL,
+      IR_eFUNCTION,
+      IR_eLOCAL,
   };
 
   nr_ty_t kind = symbol->getKind();

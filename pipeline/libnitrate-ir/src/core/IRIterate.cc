@@ -60,33 +60,33 @@ namespace ncc::ir::detail {
     }
 
     switch (base->getKind()) {
-      case IR_BINEXPR: {
+      case IR_eBIN: {
         children.push_back(&base->as<BinExpr>()->m_lhs);
         children.push_back(&base->as<BinExpr>()->m_rhs);
         break;
       }
-      case IR_UNEXPR: {
+      case IR_eUNARY: {
         children.push_back(&base->as<UnExpr>()->m_expr);
         break;
       }
-      case IR_POST_UNEXPR: {
+      case IR_ePOST_UNEXPR: {
         children.push_back(&base->as<PostUnExpr>()->m_expr);
         break;
       }
-      case IR_INT: {
+      case IR_eINT: {
         break;
       }
-      case IR_FLOAT: {
+      case IR_eFLOAT: {
         break;
       }
-      case IR_LIST: {
+      case IR_eLIST: {
         children.reserve(base->as<List>()->m_items.size());
         for (Expr *&child : base->as<List>()->m_items) {
           children.push_back(&child);
         }
         break;
       }
-      case IR_CALL: {
+      case IR_eCALL: {
         children.push_back(&base->as<Call>()->m_iref);
         children.reserve(base->as<Call>()->m_args.size());
         for (Expr *&child : base->as<Call>()->m_args) {
@@ -94,64 +94,64 @@ namespace ncc::ir::detail {
         }
         break;
       }
-      case IR_SEQ: {
+      case IR_eSEQ: {
         children.reserve(base->as<Seq>()->m_items.size());
         for (Expr *&child : base->as<Seq>()->m_items) {
           children.push_back(&child);
         }
         break;
       }
-      case IR_INDEX: {
+      case IR_eINDEX: {
         children.push_back(&base->as<Index>()->m_expr);
         children.push_back(&base->as<Index>()->m_index);
         break;
       }
-      case IR_IDENT: {
+      case IR_eIDENT: {
         break;
       }
-      case IR_EXTERN: {
+      case IR_eEXTERN: {
         children.push_back(&base->as<Extern>()->m_value);
         break;
       }
-      case IR_LOCAL: {
+      case IR_eLOCAL: {
         children.push_back(&base->as<Local>()->m_value);
         break;
       }
-      case IR_RET: {
+      case IR_eRET: {
         children.push_back(&base->as<Ret>()->m_expr);
         break;
       }
-      case IR_BRK: {
+      case IR_eBRK: {
         break;
       }
-      case IR_CONT: {
+      case IR_eSKIP: {
         break;
       }
-      case IR_IF: {
+      case IR_eIF: {
         children.push_back(&base->as<If>()->m_cond);
         children.push_back(&base->as<If>()->m_then);
         children.push_back(&base->as<If>()->m_else);
         break;
       }
-      case IR_WHILE: {
+      case IR_eWHILE: {
         children.push_back(&base->as<While>()->m_cond);
         children.push_back(
             reinterpret_cast<Expr **>(&base->as<While>()->m_body));
         break;
       }
-      case IR_FOR: {
+      case IR_eFOR: {
         children.push_back(&base->as<For>()->m_init);
         children.push_back(&base->as<For>()->m_cond);
         children.push_back(&base->as<For>()->m_step);
         children.push_back(&base->as<For>()->m_body);
         break;
       }
-      case IR_CASE: {
+      case IR_eCASE: {
         children.push_back(&base->as<Case>()->m_cond);
         children.push_back(&base->as<Case>()->m_body);
         break;
       }
-      case IR_SWITCH: {
+      case IR_eSWITCH: {
         children.push_back(&base->as<Switch>()->m_cond);
         children.reserve(base->as<Switch>()->m_cases.size() + 2);
         for (Case *&child : base->as<Switch>()->m_cases) {
@@ -161,7 +161,7 @@ namespace ncc::ir::detail {
             reinterpret_cast<Expr **>(&base->as<Switch>()->m_default));
         break;
       }
-      case IR_FN: {
+      case IR_eFUNCTION: {
         children.reserve(base->as<Fn>()->m_params.size() + 1);
         for (auto &child : base->as<Fn>()->m_params) {
           children.push_back(reinterpret_cast<Expr **>(&child.first));
@@ -174,94 +174,94 @@ namespace ncc::ir::detail {
         }
         break;
       }
-      case IR_ASM: {
+      case IR_eASM: {
         qcore_implement();
         break;
       }
-      case IR_IGN: {
+      case IR_eIGN: {
         break;
       }
-      case IR_U1: {
+      case IR_tU1: {
         break;
       }
-      case IR_U8: {
+      case IR_tU8: {
         break;
       }
-      case IR_U16: {
+      case IR_tU16: {
         break;
       }
-      case IR_U32: {
+      case IR_tU32: {
         break;
       }
-      case IR_U64: {
+      case IR_tU64: {
         break;
       }
-      case IR_U128: {
+      case IR_tU128: {
         break;
       }
-      case IR_I8: {
+      case IR_tI8: {
         break;
       }
-      case IR_I16: {
+      case IR_tI16: {
         break;
       }
-      case IR_I32: {
+      case IR_tI32: {
         break;
       }
-      case IR_I64: {
+      case IR_tI64: {
         break;
       }
-      case IR_I128: {
+      case IR_tI128: {
         break;
       }
-      case IR_F16_TY: {
+      case IR_tF16_TY: {
         break;
       }
-      case IR_F32_TY: {
+      case IR_tF32_TY: {
         break;
       }
-      case IR_F64_TY: {
+      case IR_tF64_TY: {
         break;
       }
-      case IR_F128_TY: {
+      case IR_tF128_TY: {
         break;
       }
-      case IR_VOID_TY: {
+      case IR_tVOID: {
         break;
       }
-      case IR_PTR_TY: {
+      case IR_tPTR: {
         children.push_back(
             reinterpret_cast<Expr **>(&base->as<PtrTy>()->m_pointee));
         break;
       }
-      case IR_CONST_TY: {
+      case IR_tCONST: {
         children.push_back(
             reinterpret_cast<Expr **>(&base->as<ConstTy>()->m_item));
         break;
       }
-      case IR_OPAQUE_TY: {
+      case IR_tOPAQUE: {
         break;
       }
-      case IR_STRUCT_TY: {
+      case IR_tSTRUCT: {
         children.reserve(base->as<StructTy>()->m_fields.size());
         for (Type *&child : base->as<StructTy>()->m_fields) {
           children.push_back(reinterpret_cast<Expr **>(&child));
         }
         break;
       }
-      case IR_UNION: {
+      case IR_tUNION: {
         children.reserve(base->as<UnionTy>()->m_fields.size());
         for (Type *&child : base->as<UnionTy>()->m_fields) {
           children.push_back(reinterpret_cast<Expr **>(&child));
         }
         break;
       }
-      case IR_ARRAY_TY: {
+      case IR_tARRAY: {
         children.push_back(
             reinterpret_cast<Expr **>(&base->as<ArrayTy>()->m_element));
         break;
       }
-      case IR_FN_TY: {
+      case IR_tFUNC: {
         children.reserve(base->as<FnTy>()->m_params.size() + 1);
         for (Type *&child : base->as<FnTy>()->m_params) {
           children.push_back(reinterpret_cast<Expr **>(&child));
@@ -270,7 +270,7 @@ namespace ncc::ir::detail {
             reinterpret_cast<Expr **>(&base->as<FnTy>()->m_return));
         break;
       }
-      case IR_TMP: {
+      case IR_tTMP: {
         Tmp *tmp = base->as<Tmp>();
         switch (tmp->getTmpType()) {
           case TmpType::NAMED_TYPE: {

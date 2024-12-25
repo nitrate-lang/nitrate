@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_IR_IRBUILDER_H__
-#define __NITRATE_IR_IRBUILDER_H__
+#ifndef __NITRATE_IR_tIRBUILDER_H__
+#define __NITRATE_IR_tIRBUILDER_H__
 
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>

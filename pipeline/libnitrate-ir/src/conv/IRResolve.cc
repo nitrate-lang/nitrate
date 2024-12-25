@@ -52,9 +52,10 @@ void NRBuilder::flatten_symbols(Seq *root) {
       return IterOp::Proceed;
     }
 
-    bool replace_with_ident = !P->is(IR_SEQ);
+    bool replace_with_ident = !P->is(IR_eSEQ);
 
-    if ((!P->is(IR_EXTERN) && (*C)->is(IR_FN)) || (*C)->is(IR_EXTERN)) {
+    if ((!P->is(IR_eEXTERN) && (*C)->is(IR_eFUNCTION)) ||
+        (*C)->is(IR_eEXTERN)) {
       symbols.insert(*C);
 
       if (replace_with_ident) {
@@ -82,12 +83,12 @@ void NRBuilder::try_transform_alpha(Expr *root) {
   iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
     Expr *N = *C;
 
-    if (!N->is(IR_TMP)) {
+    if (!N->is(IR_tTMP)) {
       return IterOp::Proceed;
     }
 
     bool is_default_value_expr =
-        N->is(IR_TMP) && N->as<Tmp>()->getTmpType() == TmpType::DEFAULT_VALUE;
+        N->is(IR_tTMP) && N->as<Tmp>()->getTmpType() == TmpType::DEFAULT_VALUE;
 
     if (N->as<Tmp>()->getTmpType() == TmpType::NAMED_TYPE ||
         is_default_value_expr) {
@@ -125,7 +126,7 @@ void NRBuilder::try_transform_beta(Expr *root) {
   iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
     Expr *N = *C;
 
-    if (N->is(IR_IDENT) && N->as<Ident>()->getWhat() == nullptr) {
+    if (N->is(IR_eIDENT) && N->as<Ident>()->getWhat() == nullptr) {
       Ident *I = N->as<Ident>();
 
       if (auto enum_opt = resolve_name(I->getName(), Kind::ScopedEnum)) {
@@ -227,14 +228,14 @@ void NRBuilder::try_transform_gamma(Expr *root) {
   iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
     auto N = *C;
 
-    if (N->is(IR_TMP) && N->as<Tmp>()->getTmpType() == TmpType::CALL) {
+    if (N->is(IR_tTMP) && N->as<Tmp>()->getTmpType() == TmpType::CALL) {
       /* The first stage of conversion stored this context information */
       const auto &data = get<CallArgsTmpNodeCradle>(N->as<Tmp>()->getData());
 
       qcore_assert(data.base != nullptr);
 
       /* Currently, this code only supported direct function calls */
-      if (data.base->is(IR_IDENT)) {
+      if (data.base->is(IR_eIDENT)) {
         auto callee_name = data.base->as<Ident>()->getName();
         qcore_assert(!callee_name.empty());
 
@@ -243,7 +244,7 @@ void NRBuilder::try_transform_gamma(Expr *root) {
         /* Search the map of function defintions, conducting name resoltion in
          * the process */
         if (auto callee_opt = resolve_name(callee_name, Kind::Function)) {
-          qcore_assert(callee_opt.value().first->is(IR_FN));
+          qcore_assert(callee_opt.value().first->is(IR_eFUNCTION));
           auto callee_func_ptr = callee_opt.value().first->as<Fn>();
 
           /* This layer of indirection is needed to maintain the acylic
@@ -274,7 +275,7 @@ void NRBuilder::try_transform_gamma(Expr *root) {
           }
         } else if (auto callee_opt =
                        resolve_name(callee_name, Kind::Variable)) {
-          qcore_assert(callee_opt.value().first->is(IR_LOCAL));
+          qcore_assert(callee_opt.value().first->is(IR_eLOCAL));
 
           /* Check that the caller does not use any named arguments */
           bool only_positional_args =
@@ -326,35 +327,35 @@ void NRBuilder::connect_nodes(Seq *root) {
 
 void NRBuilder::remove_garbage(Seq *root) {
   iterate<dfs_post>(root, [](Expr *, Expr **C) -> IterOp {
-    if ((*C)->is(IR_SEQ)) {
+    if ((*C)->is(IR_eSEQ)) {
       static const std::unordered_set<nr_ty_t> non_functional_nodes = {
-          IR_INT,       /* Integer literal */
-          IR_FLOAT,     /* Floating-point literal */
-          IR_IDENT,     /* Identifier */
-          IR_IGN,       /* No-op */
-          IR_U1,        /* 1-bit unsigned integer (boolean) */
-          IR_U8,        /* 8-bit unsigned integer */
-          IR_U16,       /* 16-bit unsigned integer */
-          IR_U32,       /* 32-bit unsigned integer */
-          IR_U64,       /* 64-bit unsigned integer */
-          IR_U128,      /* 128-bit unsigned integer */
-          IR_I8,        /* 8-bit signed integer */
-          IR_I16,       /* 16-bit signed integer */
-          IR_I32,       /* 32-bit signed integer */
-          IR_I64,       /* 64-bit signed integer */
-          IR_I128,      /* 128-bit signed integer */
-          IR_F16_TY,    /* 16-bit floating-point */
-          IR_F32_TY,    /* 32-bit floating-point */
-          IR_F64_TY,    /* 64-bit floating-point */
-          IR_F128_TY,   /* 128-bit floating-point */
-          IR_VOID_TY,   /* Void type */
-          IR_PTR_TY,    /* Pointer type */
-          IR_OPAQUE_TY, /* Opaque type */
-          IR_STRUCT_TY, /* Struct type */
-          IR_UNION,     /* Union type */
-          IR_ARRAY_TY,  /* Array type */
-          IR_FN_TY,     /* Function type */
-          IR_CONST_TY,  /* Constant wrapper type */
+          IR_eINT,     /* Integer literal */
+          IR_eFLOAT,   /* Floating-point literal */
+          IR_eIDENT,   /* Identifier */
+          IR_eIGN,     /* No-op */
+          IR_tU1,      /* 1-bit unsigned integer (boolean) */
+          IR_tU8,      /* 8-bit unsigned integer */
+          IR_tU16,     /* 16-bit unsigned integer */
+          IR_tU32,     /* 32-bit unsigned integer */
+          IR_tU64,     /* 64-bit unsigned integer */
+          IR_tU128,    /* 128-bit unsigned integer */
+          IR_tI8,      /* 8-bit signed integer */
+          IR_tI16,     /* 16-bit signed integer */
+          IR_tI32,     /* 32-bit signed integer */
+          IR_tI64,     /* 64-bit signed integer */
+          IR_tI128,    /* 128-bit signed integer */
+          IR_tF16_TY,  /* 16-bit floating-point */
+          IR_tF32_TY,  /* 32-bit floating-point */
+          IR_tF64_TY,  /* 64-bit floating-point */
+          IR_tF128_TY, /* 128-bit floating-point */
+          IR_tVOID,    /* Void type */
+          IR_tPTR,     /* Pointer type */
+          IR_tOPAQUE,  /* Opaque type */
+          IR_tSTRUCT,  /* Struct type */
+          IR_tUNION,   /* Union type */
+          IR_tARRAY,   /* Array type */
+          IR_tFUNC,    /* Function type */
+          IR_tCONST,   /* Constant wrapper type */
       };
 
       Seq *S = (*C)->as<Seq>();

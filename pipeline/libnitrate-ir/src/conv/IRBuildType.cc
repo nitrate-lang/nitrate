@@ -366,92 +366,92 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
   std::optional<Expr *> E;
 
   switch (_for->getKind()) {
-    case IR_U1: {
+    case IR_tU1: {
       E = createBool(false);
       break;
     }
 
-    case IR_U8: {
+    case IR_tU8: {
       E = createFixedInteger(0, 8);
       break;
     }
 
-    case IR_U16: {
+    case IR_tU16: {
       E = createFixedInteger(0, 16);
       break;
     }
 
-    case IR_U32: {
+    case IR_tU32: {
       E = createFixedInteger(0, 32);
       break;
     }
 
-    case IR_U64: {
+    case IR_tU64: {
       E = createFixedInteger(0, 64);
       break;
     }
 
-    case IR_U128: {
+    case IR_tU128: {
       E = createFixedInteger(0, 128);
       break;
     }
 
-    case IR_I8: {
+    case IR_tI8: {
       E = createFixedInteger(0, 8);
       break;
     }
 
-    case IR_I16: {
+    case IR_tI16: {
       E = createFixedInteger(0, 16);
       break;
     }
 
-    case IR_I32: {
+    case IR_tI32: {
       E = createFixedInteger(0, 32);
       break;
     }
 
-    case IR_I64: {
+    case IR_tI64: {
       E = createFixedInteger(0, 64);
       break;
     }
 
-    case IR_I128: {
+    case IR_tI128: {
       E = createFixedInteger(0, 128);
       break;
     }
 
-    case IR_F16_TY: {
+    case IR_tF16_TY: {
       E = createFixedFloat(0.0f, FloatSize::F16);
       break;
     }
 
-    case IR_F32_TY: {
+    case IR_tF32_TY: {
       E = createFixedFloat(0.0f, FloatSize::F32);
       break;
     }
 
-    case IR_F64_TY: {
+    case IR_tF64_TY: {
       E = createFixedFloat(0.0f, FloatSize::F64);
       break;
     }
 
-    case IR_F128_TY: {
+    case IR_tF128_TY: {
       E = createFixedFloat(0.0f, FloatSize::F128);
       break;
     }
 
-    case IR_VOID_TY: {
+    case IR_tVOID: {
       E = create<VoidTy>();
       break;
     }
 
-    case IR_PTR_TY: {
+    case IR_tPTR: {
       E = create<BinExpr>(createFixedInteger(0, 64), _for, Op::BitcastAs);
       break;
     }
 
-    case IR_CONST_TY: {
+    case IR_tCONST: {
       ConstTy *const_ty = _for->as<ConstTy>();
       auto e = getDefaultValue(const_ty->getItem());
       if (e) {
@@ -460,12 +460,12 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
       break;
     }
 
-    case IR_OPAQUE_TY: {
+    case IR_tOPAQUE: {
       E = std::nullopt;
       break;
     }
 
-    case IR_STRUCT_TY: {
+    case IR_tSTRUCT: {
       StructTy *struct_ty = _for->as<StructTy>();
 
       std::vector<Expr *> fields(struct_ty->getFields().size());
@@ -484,7 +484,7 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
       break;
     }
 
-    case IR_UNION: {
+    case IR_tUNION: {
       UnionTy *union_ty = _for->as<UnionTy>();
 
       if (union_ty->getFields().empty()) {
@@ -496,7 +496,7 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
       break;
     }
 
-    case IR_ARRAY_TY: {
+    case IR_tARRAY: {
       auto array_ty = _for->as<ArrayTy>();
 
       /// FIXME: This is horribly inefficient in terms of memory, especially for
@@ -518,13 +518,13 @@ std::optional<Expr *> NRBuilder::getDefaultValue(
       break;
     }
 
-    case IR_FN_TY: {
+    case IR_tFUNC: {
       FnTy *fn_ty = _for->as<FnTy>();
       E = create<BinExpr>(createFixedInteger(0, 64), fn_ty, Op::BitcastAs);
       break;
     }
 
-    case IR_TMP: {
+    case IR_tTMP: {
       Tmp *tmp = _for->as<Tmp>();
       if (tmp->getTmpType() == TmpType::NAMED_TYPE) {
         std::string_view name = std::get<std::string_view>(tmp->getData());
