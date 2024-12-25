@@ -33,7 +33,7 @@
 
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-ir/Reader.hh>
+#include <nitrate-ir/IRReader.hh>
 
 using namespace nr;
 

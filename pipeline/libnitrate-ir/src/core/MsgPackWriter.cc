@@ -33,7 +33,7 @@
 
 #include <bit>
 #include <nitrate-core/Logger.hh>
-#include <nitrate-ir/Writer.hh>
+#include <nitrate-ir/IRWriter.hh>
 
 using namespace nr;
 

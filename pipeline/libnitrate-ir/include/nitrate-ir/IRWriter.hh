@@ -38,7 +38,7 @@
 #include <cstdint>
 #include <functional>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-ir/Visitor.hh>
+#include <nitrate-ir/IRVisitor.hh>
 #include <nitrate-lexer/Token.hh>
 #include <ostream>
 #include <stack>

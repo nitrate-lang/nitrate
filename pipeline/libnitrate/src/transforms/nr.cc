@@ -37,7 +37,7 @@
 #include <core/Transform.hh>
 #include <nitrate-core/Init.hh>
 #include <nitrate-ir/Classes.hh>
-#include <nitrate-ir/Writer.hh>
+#include <nitrate-ir/IRWriter.hh>
 #include <nitrate-parser/ASTReader.hh>
 #include <unordered_set>
 
