@@ -40,25 +40,26 @@ using namespace ncc::parse;
 NullableFlowPtr<Stmt> Parser::recurse_for_init_expr() {
   if (next_if(PuncSemi)) {
     return std::nullopt;
+  } else {
+    return recurse_block(false, true, SafetyMode::Unknown);
   }
-
-  return recurse_block(false, true, SafetyMode::Unknown);
 }
 
-NullableFlowPtr<Expr> Parser::recurse_for_cond_expr() {
+NullableFlowPtr<Expr> Parser::recurse_for_condition() {
   if (next_if(PuncSemi)) {
     return std::nullopt;
+  } else {
+    auto condition = recurse_expr({
+        Token(Punc, PuncSemi),
+    });
+
+    if (!next_if(PuncSemi)) {
+      diagnostic << current()
+                 << "Expected semicolon after condition expression";
+    }
+
+    return condition;
   }
-
-  auto cond_expr = recurse_expr({
-      Token(Punc, PuncSemi),
-  });
-
-  if (!next_if(PuncSemi)) {
-    diagnostic << current() << "Expected semicolon after condition expression";
-  }
-
-  return cond_expr;
 }
 
 NullableFlowPtr<Expr> Parser::recurse_for_step_expr(bool has_paren) {
@@ -91,20 +92,17 @@ FlowPtr<Stmt> Parser::recurse_for_body() {
 }
 
 FlowPtr<Stmt> Parser::recurse_for() {
-  bool has_paren = next_if(PuncLPar).has_value();
+  bool with_paren = next_if(PuncLPar).has_value();
 
-  auto init = recurse_for_init_expr();
-  auto cond = recurse_for_cond_expr();
-  auto step = recurse_for_step_expr(has_paren);
+  auto for_init = recurse_for_init_expr();
+  auto for_cond = recurse_for_condition();
+  auto for_step = recurse_for_step_expr(with_paren);
 
-  if (has_paren) {
-    if (!next_if(PuncRPar)) {
-      diagnostic << current()
-                 << "Expected closing parenthesis in for statement";
-    }
+  if (with_paren && !next_if(PuncRPar)) {
+    diagnostic << current() << "Expected closing parenthesis in for statement";
   }
 
-  auto body = recurse_for_body();
+  auto for_body = recurse_for_body();
 
-  return make<ForStmt>(init, cond, step, body)();
+  return make<ForStmt>(for_init, for_cond, for_step, for_body)();
 }

@@ -193,7 +193,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
 
       case Pub:
       case Import: {  // they both declare external functions
-        auto node = recurse_pub();
+        auto node = recurse_export(Vis::Pub);
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -201,7 +201,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case Sec: {
-        auto node = recurse_sec();
+        auto node = recurse_export(Vis::Sec);
         node->set_offset(loc_start);
 
         items.push_back(node);
@@ -209,7 +209,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       case Pro: {
-        auto node = recurse_pro();
+        auto node = recurse_export(Vis::Pro);
         node->set_offset(loc_start);
 
         items.push_back(node);

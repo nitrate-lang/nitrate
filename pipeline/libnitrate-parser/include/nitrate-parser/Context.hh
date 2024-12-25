@@ -73,9 +73,7 @@ namespace ncc::parse {
      *  Primary language constructs
      ****************************************************************************/
 
-    FlowPtr<Stmt> recurse_pub();
-    FlowPtr<Stmt> recurse_sec();
-    FlowPtr<Stmt> recurse_pro();
+    FlowPtr<Stmt> recurse_export(Vis vis);
     std::vector<FlowPtr<Stmt>> recurse_variable(VarDeclType type);
     FlowPtr<Stmt> recurse_enum();
     FlowPtr<Stmt> recurse_struct(CompositeType type);
@@ -122,7 +120,7 @@ namespace ncc::parse {
     FlowPtr<Expr> recurse_fstring();
 
     NullableFlowPtr<Stmt> recurse_for_init_expr();
-    NullableFlowPtr<Expr> recurse_for_cond_expr();
+    NullableFlowPtr<Expr> recurse_for_condition();
     NullableFlowPtr<Expr> recurse_for_step_expr(bool has_paren);
     FlowPtr<Stmt> recurse_for_body();
 

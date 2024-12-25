@@ -66,15 +66,14 @@ NullableFlowPtr<Expr> Parser::recurse_enum_item_value() {
 }
 
 std::optional<EnumItem> Parser::recurse_enum_item() {
-  if (auto name = next_if(Name)) {
-    auto value = recurse_enum_item_value();
+  if (auto member_name = next_if(Name)) [[likely]] {
+    auto member_value = recurse_enum_item_value();
 
-    return EnumItem(name->as_string(), value);
+    return EnumItem(member_name->as_string(), member_value);
   } else {
-    diagnostic << current() << "Enum field is missing a name.";
+    diagnostic << next() << "Enum field is missing a name.";
+    return std::nullopt;
   }
-
-  return std::nullopt;
 }
 
 std::optional<EnumDefItems> Parser::recurse_enum_items() {
@@ -86,7 +85,7 @@ std::optional<EnumDefItems> Parser::recurse_enum_items() {
 
   if (next_if(PuncLCur)) {
     while (true) {
-      if (next_if(EofF)) {
+      if (next_if(EofF)) [[unlikely]] {
         diagnostic << current()
                    << "Unexpected EOF encountered while parsing enum fields.";
         break;
@@ -96,10 +95,10 @@ std::optional<EnumDefItems> Parser::recurse_enum_items() {
         return items;
       }
 
-      if (auto item = recurse_enum_item()) {
-        items.push_back(item.value());
+      if (auto enum_member = recurse_enum_item()) {
+        items.push_back(enum_member.value());
       } else {
-        break;
+        diagnostic << current() << "Failed to parse enum field.";
       }
 
       next_if(PuncComa) || next_if(PuncSemi);
