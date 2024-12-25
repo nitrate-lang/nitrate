@@ -1,0 +1,116 @@
+////////////////////////////////////////////////////////////////////////////////
+///                                                                          ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
+///                                                                          ///
+///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
+///   * Copyright (C) 2024 Wesley C. Jones                                   ///
+///                                                                          ///
+///   The Nitrate Toolchain is free software; you can redistribute it or     ///
+///   modify it under the terms of the GNU Lesser General Public             ///
+///   License as published by the Free Software Foundation; either           ///
+///   version 2.1 of the License, or (at your option) any later version.     ///
+///                                                                          ///
+///   The Nitrate Toolcain is distributed in the hope that it will be        ///
+///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
+///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
+///   Lesser General Public License for more details.                        ///
+///                                                                          ///
+///   You should have received a copy of the GNU Lesser General Public       ///
+///   License along with the Nitrate Toolchain; if not, see                  ///
+///   <https://www.gnu.org/licenses/>.                                       ///
+///                                                                          ///
+////////////////////////////////////////////////////////////////////////////////
+
+#ifndef __NITRATE_IR_GRAPH_DATA_H__
+#define __NITRATE_IR_GRAPH_DATA_H__
+
+#include <boost/multiprecision/cpp_int.hpp>
+#include <cassert>
+#include <cmath>
+#include <cstdint>
+#include <memory>
+#include <nitrate-core/Allocate.hh>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-ir/IRFwd.hh>
+#include <nitrate-lexer/Token.hh>
+#include <optional>
+#include <ostream>
+#include <span>
+#include <string>
+#include <unordered_set>
+#include <variant>
+#include <vector>
+
+namespace ncc::ir {
+  using uint128_t = boost::multiprecision::uint128_t;
+
+  extern thread_local std::unique_ptr<ncc::IMemory> nr_allocator;
+
+  template <class T>
+  struct Arena {
+    typedef T value_type;
+
+    Arena() = default;
+
+    template <class U>
+    constexpr Arena(const Arena<U> &) {}
+
+    [[nodiscard]] T *allocate(std::size_t n) {
+      return static_cast<T *>(nr_allocator->alloc(sizeof(T) * n));
+    }
+
+    void deallocate(T *p, std::size_t n) {
+      (void)n;
+      (void)p;
+    }
+  };
+
+  template <class T, class U>
+  bool operator==(const Arena<T> &, const Arena<U> &) {
+    return true;
+  }
+  template <class T, class U>
+  bool operator!=(const Arena<T> &, const Arena<U> &) {
+    return false;
+  }
+
+  enum class Purity : uint8_t {
+    Impure = 0,
+    Pure = 1,
+    Quasi = 2,
+    Retro = 3,
+  };
+
+  enum class Vis : uint8_t {
+    Sec = 0,
+    Pub = 1,
+    Pro = 2,
+  };
+
+  enum class StorageClass : uint8_t {
+    /* Automatic storeage duration */
+    LLVM_StackAlloa,
+
+    /* Static storage duration */
+    LLVM_Static,
+
+    /* Thread-local storage duration */
+    LLVM_ThreadLocal,
+
+    /* Dynamic allocation */
+    Managed,
+  };
+
+}  // namespace ncc::ir
+
+#endif

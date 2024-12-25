@@ -97,54 +97,6 @@ namespace ncc::ir {
 }  // namespace ncc::ir
 
 namespace ncc::ir {
-  // class Expr;      // = IR_Vertex_Expr<void>;
-  // class Type;      // = IR_Vertex_Type<void>;
-  // class BinExpr;   // = IR_Vertex_BinExpr<void>;
-  // class Unary;     // = IR_Vertex_Unary<void>;
-  // class U1Ty;      // = IR_Vertex_U1Ty<void>;
-  // class U8Ty;      // = IR_Vertex_U8Ty<void>;
-  // class U16Ty;     // = IR_Vertex_U16Ty<void>;
-  // class U32Ty;     // = IR_Vertex_U32Ty<void>;
-  // class U64Ty;     // = IR_Vertex_U64Ty<void>;
-  // class U128Ty;    // = IR_Vertex_U128Ty<void>;
-  // class I8Ty;      // = IR_Vertex_I8Ty<void>;
-  // class I16Ty;     // = IR_Vertex_I16Ty<void>;
-  // class I32Ty;     // = IR_Vertex_I32Ty<void>;
-  // class I64Ty;     // = IR_Vertex_I64Ty<void>;
-  // class I128Ty;    // = IR_Vertex_I128Ty<void>;
-  // class F16Ty;     // = IR_Vertex_F16Ty<void>;
-  // class F32Ty;     // = IR_Vertex_F32Ty<void>;
-  // class F64Ty;     // = IR_Vertex_F64Ty<void>;
-  // class F128Ty;    // = IR_Vertex_F128Ty<void>;
-  // class VoidTy;    // = IR_Vertex_VoidTy<void>;
-  // class PtrTy;     // = IR_Vertex_PtrTy<void>;
-  // class ConstTy;   // = IR_Vertex_ConstTy<void>;
-  // class OpaqueTy;  // = IR_Vertex_OpaqueTy<void>;
-  // class StructTy;  // = IR_Vertex_StructTy<void>;
-  // class UnionTy;   // = IR_Vertex_UnionTy<void>;
-  // class ArrayTy;   // = IR_Vertex_ArrayTy<void>;
-  // class FnTy;      // = IR_Vertex_FnTy<void>;
-  // class Int;       // = IR_Vertex_Int<void>;
-  // class Float;     // = IR_Vertex_Float<void>;
-  // class List;      // = IR_Vertex_List<void>;
-  // class Call;      // = IR_Vertex_Call<void>;
-  // class Seq;       // = IR_Vertex_Seq<void>;
-  // class Index;     // = IR_Vertex_Index<void>;
-  // class Ident;     // = IR_Vertex_Ident<void>;
-  // class Extern;    // = IR_Vertex_Extern<void>;
-  // class Local;     // = IR_Vertex_Local<void>;
-  // class Ret;       // = IR_Vertex_Ret<void>;
-  // class Brk;       // = IR_Vertex_Brk<void>;
-  // class Cont;      // = IR_Vertex_Cont<void>;
-  // class If;        // = IR_Vertex_If<void>;
-  // class While;     // = IR_Vertex_While<void>;
-  // class For;       // = IR_Vertex_For<void>;
-  // class Case;      // = IR_Vertex_Case<void>;
-  // class Switch;    // = IR_Vertex_Switch<void>;
-  // class Fn;        // = IR_Vertex_Fn<void>;
-  // class Asm;       // = IR_Vertex_Asm<void>;
-  // class Tmp;       // = IR_Vertex_Tmp<void>;
-
   template <class Attorney>
   class IR_Vertex_Expr;
   template <class Attorney>
