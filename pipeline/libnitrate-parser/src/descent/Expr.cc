@@ -275,6 +275,8 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
               while (auto Tok = next_if(Oper)) {
                 PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
               }
+            } else {
+              next_if(lex::Type);
             }
 
             /****************************************
