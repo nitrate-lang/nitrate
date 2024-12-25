@@ -60,7 +60,7 @@ namespace ncc::ir {
     IR_Vertex_Expr(const IR_Vertex_Expr &) = delete;
     IR_Vertex_Expr &operator=(const IR_Vertex_Expr &) = delete;
 
-    IR_Vertex_Expr *cloneImpl() const;
+    FlowPtr<IR_Vertex_Expr> cloneImpl() const;
 
   public:
     constexpr IR_Vertex_Expr(nr_ty_t ty, uint32_t offset = ncc::lex::QLEX_EOFF,

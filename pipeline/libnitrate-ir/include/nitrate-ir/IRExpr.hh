@@ -388,23 +388,23 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Fn final : public IR_Vertex_Expr<A> {
-    string m_name;
     std::span<std::pair<FlowPtr<IR_Vertex_Type<A>>, std::string_view>> m_params;
+    NullableFlowPtr<IR_Vertex_Seq<A>> m_body;
     FlowPtr<IR_Vertex_Type<A>> m_return;
-    std::optional<FlowPtr<IR_Vertex_Seq<A>>> m_body;
-    bool m_variadic;
+    string m_name;
     AbiTag m_abi_tag;
+    bool m_variadic;
 
   public:
     constexpr IR_Vertex_Fn(auto name, auto params, auto ret_ty, auto body,
                            auto variadic, auto abi_tag)
         : IR_Vertex_Expr<A>(IR_eFUNCTION),
-          m_name(name),
           m_params(params),
-          m_return(ret_ty),
           m_body(body),
-          m_variadic(variadic),
-          m_abi_tag(abi_tag) {}
+          m_return(ret_ty),
+          m_name(name),
+          m_abi_tag(abi_tag),
+          m_variadic(variadic) {}
 
     constexpr auto getParams() const { return m_params; }
     constexpr auto getReturn() const { return m_return; }
