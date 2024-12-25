@@ -201,13 +201,12 @@ namespace ncc::parse {
     std::span<FlowPtr<Expr>> m_attributes;
     std::span<FuncParam> m_params;
     FlowPtr<Type> m_return;
-    FuncPurity m_purity;
+    Purity m_purity;
     bool m_variadic;
 
   public:
     FuncTy(FlowPtr<Type> return_type, std::span<FuncParam> parameters,
-           bool variadic, FuncPurity purity,
-           std::span<FlowPtr<Expr>> attributes)
+           bool variadic, Purity purity, std::span<FlowPtr<Expr>> attributes)
         : Type(QAST_FUNCTOR),
           m_attributes(attributes),
           m_params(parameters),

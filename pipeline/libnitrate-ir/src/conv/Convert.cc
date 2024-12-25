@@ -1122,18 +1122,17 @@ static EResult nrgen_tuple_ty(NRBuilder &b, PState &s, IReport *G,
 
 using IsThreadSafe = bool;
 
-static std::pair<Purity, IsThreadSafe> convert_purity(
-    ncc::parse::FuncPurity x) {
+static std::pair<Purity, IsThreadSafe> convert_purity(ncc::parse::Purity x) {
   switch (x) {
-    case ncc::parse::FuncPurity::IMPURE_THREAD_UNSAFE:
+    case ncc::parse::Purity::Impure:
       return {Purity::Impure, false};
-    case ncc::parse::FuncPurity::IMPURE_THREAD_SAFE:
+    case ncc::parse::Purity::Impure_TSafe:
       return {Purity::Impure, true};
-    case ncc::parse::FuncPurity::PURE:
+    case ncc::parse::Purity::Pure:
       return {Purity::Pure, true};
-    case ncc::parse::FuncPurity::QUASI:
+    case ncc::parse::Purity::Quasi:
       return {Purity::Quasi, true};
-    case ncc::parse::FuncPurity::RETRO:
+    case ncc::parse::Purity::Retro:
       return {Purity::Retro, true};
   }
 }

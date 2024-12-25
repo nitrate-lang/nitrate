@@ -586,7 +586,7 @@ void AST_Writer::visit(FlowPtr<FuncTy> n) {
   n->get_return().accept(*this);
 
   switch (n->get_purity()) {
-    case FuncPurity::IMPURE_THREAD_UNSAFE: {
+    case Purity::Impure: {
       string("thread_safe");
       boolean(false);
 
@@ -595,7 +595,7 @@ void AST_Writer::visit(FlowPtr<FuncTy> n) {
       break;
     }
 
-    case FuncPurity::IMPURE_THREAD_SAFE: {
+    case Purity::Impure_TSafe: {
       string("thread_safe");
       boolean(true);
 
@@ -604,7 +604,7 @@ void AST_Writer::visit(FlowPtr<FuncTy> n) {
       break;
     }
 
-    case FuncPurity::PURE: {
+    case Purity::Pure: {
       string("thread_safe");
       boolean(true);
 
@@ -613,7 +613,7 @@ void AST_Writer::visit(FlowPtr<FuncTy> n) {
       break;
     }
 
-    case FuncPurity::QUASI: {
+    case Purity::Quasi: {
       string("thread_safe");
       boolean(true);
 
@@ -622,7 +622,7 @@ void AST_Writer::visit(FlowPtr<FuncTy> n) {
       break;
     }
 
-    case FuncPurity::RETRO: {
+    case Purity::Retro: {
       string("thread_safe");
       boolean(true);
 
@@ -1393,7 +1393,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
 
   { /* Purity */
     switch (n->get_purity()) {
-      case FuncPurity::IMPURE_THREAD_UNSAFE: {
+      case Purity::Impure: {
         string("thread_safe");
         boolean(false);
 
@@ -1402,7 +1402,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
         break;
       }
 
-      case FuncPurity::IMPURE_THREAD_SAFE: {
+      case Purity::Impure_TSafe: {
         string("thread_safe");
         boolean(true);
 
@@ -1411,7 +1411,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
         break;
       }
 
-      case FuncPurity::PURE: {
+      case Purity::Pure: {
         string("thread_safe");
         boolean(true);
 
@@ -1420,7 +1420,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
         break;
       }
 
-      case FuncPurity::QUASI: {
+      case Purity::Quasi: {
         string("thread_safe");
         boolean(true);
 
@@ -1429,7 +1429,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
         break;
       }
 
-      case FuncPurity::RETRO: {
+      case Purity::Retro: {
         string("thread_safe");
         boolean(true);
 

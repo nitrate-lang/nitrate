@@ -226,12 +226,12 @@ namespace ncc::parse {
 
   enum class CompositeType : uint8_t { Region, Struct, Group, Class, Union };
 
-  enum class FuncPurity : uint8_t {
-    IMPURE_THREAD_UNSAFE,
-    IMPURE_THREAD_SAFE,
-    PURE,
-    QUASI,
-    RETRO,
+  enum class Purity : uint8_t {
+    Impure,
+    Impure_TSafe,
+    Pure,
+    Quasi,
+    Retro,
   };
 
   enum class SafetyMode : uint8_t {

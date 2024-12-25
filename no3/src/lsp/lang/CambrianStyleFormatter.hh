@@ -6,10 +6,12 @@
 #include <stack>
 
 namespace lsp::fmt {
+  using namespace ncc;
+
   template <typename T>
   using FlowPtr = ncc::FlowPtr<T>;
 
-  class CambrianFormatter final : public ncc::parse::ASTVisitor,
+  class CambrianFormatter final : public parse::ASTVisitor,
                                   public ICodeFormatter {
     class LineStreamWritter {
       std::stringstream m_line_buffer;
@@ -29,7 +31,7 @@ namespace lsp::fmt {
         return *this;
       }
       LineStreamWritter& operator<<(ncc::lex::Operator op);
-      LineStreamWritter& operator<<(ncc::parse::Vis op);
+      LineStreamWritter& operator<<(parse::Vis op);
       LineStreamWritter& operator<<(ncc::string str) {
         m_line_buffer << str.get();
         return *this;
@@ -67,7 +69,7 @@ namespace lsp::fmt {
     void write_float_literal_chunk(std::string_view float_str);
     void write_float_literal(std::string_view float_str);
 
-    void format_type_metadata(FlowPtr<ncc::parse::Type> n);
+    void format_type_metadata(FlowPtr<parse::Type> n);
 
     template <typename IterBegin, typename IterEnd>
     void iterate_except_last(IterBegin beg, IterEnd end, auto body,
@@ -89,74 +91,74 @@ namespace lsp::fmt {
       }
     }
 
-    void visit(FlowPtr<ncc::parse::Base> n) override;
-    void visit(FlowPtr<ncc::parse::ExprStmt> n) override;
-    void visit(FlowPtr<ncc::parse::StmtExpr> n) override;
-    void visit(FlowPtr<ncc::parse::TypeExpr> n) override;
-    void visit(FlowPtr<ncc::parse::NamedTy> n) override;
-    void visit(FlowPtr<ncc::parse::InferTy> n) override;
-    void visit(FlowPtr<ncc::parse::TemplType> n) override;
-    void visit(FlowPtr<ncc::parse::U1> n) override;
-    void visit(FlowPtr<ncc::parse::U8> n) override;
-    void visit(FlowPtr<ncc::parse::U16> n) override;
-    void visit(FlowPtr<ncc::parse::U32> n) override;
-    void visit(FlowPtr<ncc::parse::U64> n) override;
-    void visit(FlowPtr<ncc::parse::U128> n) override;
-    void visit(FlowPtr<ncc::parse::I8> n) override;
-    void visit(FlowPtr<ncc::parse::I16> n) override;
-    void visit(FlowPtr<ncc::parse::I32> n) override;
-    void visit(FlowPtr<ncc::parse::I64> n) override;
-    void visit(FlowPtr<ncc::parse::I128> n) override;
-    void visit(FlowPtr<ncc::parse::F16> n) override;
-    void visit(FlowPtr<ncc::parse::F32> n) override;
-    void visit(FlowPtr<ncc::parse::F64> n) override;
-    void visit(FlowPtr<ncc::parse::F128> n) override;
-    void visit(FlowPtr<ncc::parse::VoidTy> n) override;
-    void visit(FlowPtr<ncc::parse::PtrTy> n) override;
-    void visit(FlowPtr<ncc::parse::OpaqueTy> n) override;
-    void visit(FlowPtr<ncc::parse::TupleTy> n) override;
-    void visit(FlowPtr<ncc::parse::ArrayTy> n) override;
-    void visit(FlowPtr<ncc::parse::RefTy> n) override;
-    void visit(FlowPtr<ncc::parse::FuncTy> n) override;
-    void visit(FlowPtr<ncc::parse::UnaryExpr> n) override;
-    void visit(FlowPtr<ncc::parse::BinExpr> n) override;
-    void visit(FlowPtr<ncc::parse::PostUnaryExpr> n) override;
-    void visit(FlowPtr<ncc::parse::TernaryExpr> n) override;
-    void visit(FlowPtr<ncc::parse::ConstInt> n) override;
-    void visit(FlowPtr<ncc::parse::ConstFloat> n) override;
-    void visit(FlowPtr<ncc::parse::ConstBool> n) override;
-    void visit(FlowPtr<ncc::parse::ConstString> n) override;
-    void visit(FlowPtr<ncc::parse::ConstChar> n) override;
-    void visit(FlowPtr<ncc::parse::ConstNull> n) override;
-    void visit(FlowPtr<ncc::parse::ConstUndef> n) override;
-    void visit(FlowPtr<ncc::parse::Call> n) override;
-    void visit(FlowPtr<ncc::parse::TemplCall> n) override;
-    void visit(FlowPtr<ncc::parse::List> n) override;
-    void visit(FlowPtr<ncc::parse::Assoc> n) override;
-    void visit(FlowPtr<ncc::parse::Index> n) override;
-    void visit(FlowPtr<ncc::parse::Slice> n) override;
-    void visit(FlowPtr<ncc::parse::FString> n) override;
-    void visit(FlowPtr<ncc::parse::Ident> n) override;
-    void visit(FlowPtr<ncc::parse::SeqPoint> n) override;
-    void visit(FlowPtr<ncc::parse::Block> n) override;
-    void visit(FlowPtr<ncc::parse::VarDecl> n) override;
-    void visit(FlowPtr<ncc::parse::InlineAsm> n) override;
-    void visit(FlowPtr<ncc::parse::IfStmt> n) override;
-    void visit(FlowPtr<ncc::parse::WhileStmt> n) override;
-    void visit(FlowPtr<ncc::parse::ForStmt> n) override;
-    void visit(FlowPtr<ncc::parse::ForeachStmt> n) override;
-    void visit(FlowPtr<ncc::parse::BreakStmt> n) override;
-    void visit(FlowPtr<ncc::parse::ContinueStmt> n) override;
-    void visit(FlowPtr<ncc::parse::ReturnStmt> n) override;
-    void visit(FlowPtr<ncc::parse::ReturnIfStmt> n) override;
-    void visit(FlowPtr<ncc::parse::CaseStmt> n) override;
-    void visit(FlowPtr<ncc::parse::SwitchStmt> n) override;
-    void visit(FlowPtr<ncc::parse::TypedefStmt> n) override;
-    void visit(FlowPtr<ncc::parse::Function> n) override;
-    void visit(FlowPtr<ncc::parse::StructDef> n) override;
-    void visit(FlowPtr<ncc::parse::EnumDef> n) override;
-    void visit(FlowPtr<ncc::parse::ScopeStmt> n) override;
-    void visit(FlowPtr<ncc::parse::ExportStmt> n) override;
+    void visit(FlowPtr<parse::Base> n) override;
+    void visit(FlowPtr<parse::ExprStmt> n) override;
+    void visit(FlowPtr<parse::StmtExpr> n) override;
+    void visit(FlowPtr<parse::TypeExpr> n) override;
+    void visit(FlowPtr<parse::NamedTy> n) override;
+    void visit(FlowPtr<parse::InferTy> n) override;
+    void visit(FlowPtr<parse::TemplType> n) override;
+    void visit(FlowPtr<parse::U1> n) override;
+    void visit(FlowPtr<parse::U8> n) override;
+    void visit(FlowPtr<parse::U16> n) override;
+    void visit(FlowPtr<parse::U32> n) override;
+    void visit(FlowPtr<parse::U64> n) override;
+    void visit(FlowPtr<parse::U128> n) override;
+    void visit(FlowPtr<parse::I8> n) override;
+    void visit(FlowPtr<parse::I16> n) override;
+    void visit(FlowPtr<parse::I32> n) override;
+    void visit(FlowPtr<parse::I64> n) override;
+    void visit(FlowPtr<parse::I128> n) override;
+    void visit(FlowPtr<parse::F16> n) override;
+    void visit(FlowPtr<parse::F32> n) override;
+    void visit(FlowPtr<parse::F64> n) override;
+    void visit(FlowPtr<parse::F128> n) override;
+    void visit(FlowPtr<parse::VoidTy> n) override;
+    void visit(FlowPtr<parse::PtrTy> n) override;
+    void visit(FlowPtr<parse::OpaqueTy> n) override;
+    void visit(FlowPtr<parse::TupleTy> n) override;
+    void visit(FlowPtr<parse::ArrayTy> n) override;
+    void visit(FlowPtr<parse::RefTy> n) override;
+    void visit(FlowPtr<parse::FuncTy> n) override;
+    void visit(FlowPtr<parse::UnaryExpr> n) override;
+    void visit(FlowPtr<parse::BinExpr> n) override;
+    void visit(FlowPtr<parse::PostUnaryExpr> n) override;
+    void visit(FlowPtr<parse::TernaryExpr> n) override;
+    void visit(FlowPtr<parse::ConstInt> n) override;
+    void visit(FlowPtr<parse::ConstFloat> n) override;
+    void visit(FlowPtr<parse::ConstBool> n) override;
+    void visit(FlowPtr<parse::ConstString> n) override;
+    void visit(FlowPtr<parse::ConstChar> n) override;
+    void visit(FlowPtr<parse::ConstNull> n) override;
+    void visit(FlowPtr<parse::ConstUndef> n) override;
+    void visit(FlowPtr<parse::Call> n) override;
+    void visit(FlowPtr<parse::TemplCall> n) override;
+    void visit(FlowPtr<parse::List> n) override;
+    void visit(FlowPtr<parse::Assoc> n) override;
+    void visit(FlowPtr<parse::Index> n) override;
+    void visit(FlowPtr<parse::Slice> n) override;
+    void visit(FlowPtr<parse::FString> n) override;
+    void visit(FlowPtr<parse::Ident> n) override;
+    void visit(FlowPtr<parse::SeqPoint> n) override;
+    void visit(FlowPtr<parse::Block> n) override;
+    void visit(FlowPtr<parse::VarDecl> n) override;
+    void visit(FlowPtr<parse::InlineAsm> n) override;
+    void visit(FlowPtr<parse::IfStmt> n) override;
+    void visit(FlowPtr<parse::WhileStmt> n) override;
+    void visit(FlowPtr<parse::ForStmt> n) override;
+    void visit(FlowPtr<parse::ForeachStmt> n) override;
+    void visit(FlowPtr<parse::BreakStmt> n) override;
+    void visit(FlowPtr<parse::ContinueStmt> n) override;
+    void visit(FlowPtr<parse::ReturnStmt> n) override;
+    void visit(FlowPtr<parse::ReturnIfStmt> n) override;
+    void visit(FlowPtr<parse::CaseStmt> n) override;
+    void visit(FlowPtr<parse::SwitchStmt> n) override;
+    void visit(FlowPtr<parse::TypedefStmt> n) override;
+    void visit(FlowPtr<parse::Function> n) override;
+    void visit(FlowPtr<parse::StructDef> n) override;
+    void visit(FlowPtr<parse::EnumDef> n) override;
+    void visit(FlowPtr<parse::ScopeStmt> n) override;
+    void visit(FlowPtr<parse::ExportStmt> n) override;
 
   public:
     CambrianFormatter(std::ostream& out, size_t theTabSize = 2)
@@ -166,7 +168,7 @@ namespace lsp::fmt {
     }
     virtual ~CambrianFormatter() = default;
 
-    bool format(FlowPtr<ncc::parse::Base> root) override {
+    bool format(FlowPtr<parse::Base> root) override {
       root.accept(*this);
       bool ok = !failed;
       reset_state();

@@ -45,6 +45,7 @@
 #include <unordered_set>
 
 using namespace ncc::lex;
+using namespace ncc::parse;
 
 static inline Token eof_tok() { return Token::EndOfFile(); }
 
@@ -326,18 +327,18 @@ CREATE_TRANSFORM(nit::parse) {
   }
 
   DeserializerAdapterLexer lexer(source);
-  auto parser = ncc::parse::Parser::Create(lexer, env);
+  auto parser = Parser::Create(lexer, env);
 
   let root = parser->parse();
 
   switch (out_mode) {
     case OutMode::JSON: {
-      auto writter = ncc::parse::AST_JsonWriter(output);
+      auto writter = AST_JsonWriter(output);
       root.get().accept(writter);
       return true;
     }
     case OutMode::MsgPack: {
-      auto writter = ncc::parse::AST_MsgPackWriter(output);
+      auto writter = AST_MsgPackWriter(output);
       root.get().accept(writter);
       return true;
     }

@@ -78,7 +78,7 @@ namespace ncc::parse {
     FlowPtr<Stmt> recurse_enum();
     FlowPtr<Stmt> recurse_struct(CompositeType type);
     FlowPtr<Stmt> recurse_scope();
-    FlowPtr<Stmt> recurse_function(bool restrict_decl_only);
+    FlowPtr<Stmt> recurse_function(bool parse_declaration_only);
     FlowPtr<Type> recurse_type();
     FlowPtr<Stmt> recurse_typedef();
     FlowPtr<Stmt> recurse_return();
@@ -133,16 +133,14 @@ namespace ncc::parse {
     std::optional<FuncParam> recurse_function_parameter();
     std::optional<TemplateParameters> recurse_template_parameters();
     std::pair<FuncParams, bool> recurse_function_parameters();
-    NullableFlowPtr<Stmt> recurse_function_body(bool restrict_decl_only);
+    NullableFlowPtr<Stmt> recurse_function_body(bool parse_declaration_only);
     FlowPtr<Type> recurse_function_return_type();
-    FuncPurity get_purity_specifier(ncc::lex::Token start_pos,
-                                    bool is_thread_safe, bool is_pure,
-                                    bool is_impure, bool is_quasi,
-                                    bool is_retro);
+    Purity get_purity_specifier(ncc::lex::Token start_pos, bool is_thread_safe,
+                                bool is_pure, bool is_impure, bool is_quasi,
+                                bool is_retro);
     std::optional<std::pair<string, bool>> recurse_function_capture();
-    void recurse_function_ambigouis(ExpressionList &attributes,
-                                    FnCaptures &captures, FuncPurity &purity,
-                                    string &function_name);
+    std::tuple<ExpressionList, FnCaptures, Purity, string>
+    recurse_function_ambigouis();
 
     FlowPtr<Stmt> recurse_if_then();
     NullableFlowPtr<Stmt> recurse_if_else();

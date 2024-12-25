@@ -32,14 +32,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <charconv>
-#include <cstddef>
 #include <descent/Recurse.hh>
-#include <nitrate-core/Logger.hh>
-#include <nitrate-parser/AST.hh>
 #include <stack>
-
-#include "nitrate-lexer/Lexer.hh"
-#include "nitrate-lexer/Token.hh"
 
 #define MAX_RECURSION_DEPTH 4096
 #define MAX_LIST_REPEAT_COUNT 4096
@@ -50,60 +44,40 @@ using namespace ncc::parse;
 using namespace ncc;
 
 CallArgs Parser::recurse_call_arguments(Token terminator) {
-  Token ident;
   CallArgs call_args;
-  size_t pos_arg_count = 0;
+  size_t positional_index = 0;
+  string argument_name;
 
   while (true) {
-    if (peek() == terminator) {
-      break;
-    } else if (next_if(EofF)) {
+    if (next_if(EofF)) [[unlikely]] {
       diagnostic << current()
                  << "Unexpected end of file while parsing call expression";
       return call_args;
     }
 
-    enum class State {
-      ParseNamedArg,
-      ParsePosArg,
-    } state = State::ParseNamedArg;
+    if (peek() == terminator) {
+      break;
+    }
 
-    if (peek().is(Name)) {
-      ident = next();
+    auto some_identifier = next_if(Name);
+    auto next_is_colon = some_identifier && next_if(PuncColn).has_value();
 
-      if (next_if(PuncColn)) {
-        state = State::ParseNamedArg;
-      } else {
-        rd.Undo();
-        state = State::ParsePosArg;
-      }
+    if (some_identifier && next_is_colon) {
+      argument_name = some_identifier->as_string();
     } else {
-      state = State::ParsePosArg;
-    }
-
-    switch (state) {
-      case State::ParseNamedArg: {
-        auto name = ident.as_string();
-        auto value = recurse_expr({
-            Token(Punc, PuncComa),
-            terminator,
-        });
-
-        call_args.push_back({name, value});
-        break;
+      if (some_identifier && !next_is_colon) {
+        rd.Undo();
       }
 
-      case State::ParsePosArg: {
-        auto name = intern(std::to_string(pos_arg_count++));
-        auto value = recurse_expr({
-            Token(Punc, PuncComa),
-            terminator,
-        });
-
-        call_args.push_back({name, value});
-        break;
-      }
+      argument_name = intern(std::to_string(positional_index++));
     }
+
+    auto argument_value = recurse_expr({
+        Token(Punc, PuncComa),
+        terminator,
+    });
+
+    call_args.push_back({argument_name, argument_value});
 
     next_if(PuncComa);
   }
@@ -112,63 +86,62 @@ CallArgs Parser::recurse_call_arguments(Token terminator) {
 }
 
 FlowPtr<Expr> Parser::recurse_fstring() {
-  Token tok = next();
-  if (!tok.is(Text)) {
-    diagnostic << tok
-               << "Expected a string literal token for F-string expression";
-    return mock_expr(QAST_FSTRING);
-  }
-
-  std::string_view fstr = tok.as_string().get();
-
   std::string buf;
-  buf.reserve(fstr.size());
-
   FStringItems items;
   size_t state = 0, w_beg = 0, w_end = 0;
 
-  for (size_t i = 0; i < fstr.size(); i++) {
-    auto c = fstr[i];
+  if (auto tok = next_if(Text)) {
+    auto fstring_raw = tok->as_string().get();
+    buf.reserve(fstring_raw.size());
 
-    if (c == '{' && state == 0) {
-      w_beg = i + 1;
-      state = 1;
-    } else if (c == '}' && state == 1) {
-      w_end = i + 1;
-      state = 0;
+    for (size_t i = 0; i < fstring_raw.size(); i++) {
+      auto ch = fstring_raw[i];
 
-      if (!buf.empty()) {
-        items.push_back(intern(std::move(buf)));
-        buf.clear();
+      if (ch == '{' && state == 0) {
+        w_beg = i + 1;
+        state = 1;
+      } else if (ch == '}' && state == 1) {
+        w_end = i + 1;
+        state = 0;
+
+        if (!buf.empty()) {
+          items.push_back(intern(std::move(buf)));
+          buf.clear();
+        }
+
+        auto subnode =
+            FromString(fstring_raw.substr(w_beg, w_end - w_beg), m_env)
+                ->recurse_expr({
+                    Token(Punc, PuncRCur),
+                });
+
+        items.push_back(subnode);
+      } else if (ch == '{') {
+        buf += ch;
+        state = 0;
+      } else if (ch == '}') {
+        buf += ch;
+        state = 0;
+      } else if (state == 0) {
+        buf += ch;
       }
-
-      auto subnode = FromString(fstr.substr(w_beg, w_end - w_beg), m_env)
-                         ->recurse_expr({
-                             Token(Punc, PuncRCur),
-                         });
-
-      items.push_back(subnode);
-    } else if (c == '{') {
-      buf += c;
-      state = 0;
-    } else if (c == '}') {
-      buf += c;
-      state = 0;
-    } else if (state == 0) {
-      buf += c;
     }
-  }
 
-  if (!buf.empty()) {
-    items.push_back(intern(std::move(buf)));
-    buf.clear();
-  }
+    if (!buf.empty()) {
+      items.push_back(intern(std::move(buf)));
+      buf.clear();
+    }
 
-  if (state != 0) {
-    diagnostic << tok << "F-string expression has mismatched braces";
-  }
+    if (state != 0) {
+      diagnostic << current() << "F-string expression has mismatched braces";
+    }
 
-  return make<FString>(std::move(items))();
+    return make<FString>(std::move(items))();
+  } else {
+    diagnostic << current()
+               << "Expected a string literal token for F-string expression";
+    return mock_expr(QAST_FSTRING);
+  }
 }
 
 static bool IsPostUnaryOp(Operator O) { return O == OpInc || O == OpDec; }
@@ -182,16 +155,16 @@ enum class FrameType : uint8_t {
 
 struct Frame {
   FlowPtr<Expr> base;
-  LocationID start_pos;
   short minPrecedence;
+  LocationID start_pos;
   FrameType type;
   Operator op;
 
   Frame(FlowPtr<Expr> base, LocationID start_pos, short minPrecedence,
         FrameType type, Operator op)
       : base(base),
-        start_pos(start_pos),
         minPrecedence(minPrecedence),
+        start_pos(start_pos),
         type(type),
         op(op) {}
 };
@@ -250,13 +223,13 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
 
   if (auto LeftSideOpt = recurse_expr_primary(false)) {
     auto LeftSide = LeftSideOpt.value();
-    bool Spinning = true;
+    auto Spinning = true;
 
     /****************************************
      * Combine pre-unary operators
      ****************************************/
     while (!PreUnaryOps.empty()) {
-      let[Op, Offset] = PreUnaryOps.top();
+      auto [Op, Offset] = PreUnaryOps.top();
       PreUnaryOps.pop();
 
       LeftSide = make<UnaryExpr>(Op, LeftSide)();
@@ -293,7 +266,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
                 GetOperatorAssociativity(Op, OpType) == OpAssoc::Left;
             auto NextMinPrecedence =
                 IsLeftAssoc ? OpPrecedence + 1 : OpPrecedence;
-            bool IsType = Op == OpAs || Op == OpBitcastAs;
+            auto IsType = Op == OpAs || Op == OpBitcastAs;
 
             if (!IsType) {
               /****************************************
@@ -312,7 +285,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
                * Combine pre-unary operators
                ****************************************/
               while (!PreUnaryOps.empty()) {
-                let[Op, Offset] = PreUnaryOps.top();
+                auto [Op, Offset] = PreUnaryOps.top();
                 PreUnaryOps.pop();
 
                 auto PreUnaryExpr = make<UnaryExpr>(Op, RightSide.value())();
@@ -349,6 +322,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
           // precedence as the dot operator (member access)
           static auto SuffixOPPrecedence =
               GetOperatorPrecedence(OpDot, OpMode::Binary);
+
           LeftSide = UnwindStack(Stack, LeftSide, SuffixOPPrecedence);
 
           if (next_if(PuncLPar)) {
@@ -514,7 +488,6 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
 
     case Fn: {
       auto start_pos = current().get_start();
-
       auto function = recurse_function(false);
       function->set_offset(start_pos);
 
@@ -522,6 +495,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
 
       if (next_if(PuncLPar)) {
         auto args = recurse_call_arguments(Token(Punc, PuncRPar));
+
         if (next_if(PuncRPar)) {
           E = make<Call>(expr, args)();
         } else {
@@ -665,6 +639,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
       E = recurse_expr({
           Token(Punc, PuncRPar),
       });
+
       if (!next_if(PuncRPar)) {
         diagnostic << current() << "Expected ')' to close the expression";
       }
@@ -681,7 +656,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
       ExpressionList items;
 
       while (true) {
-        if (next_if(EofF)) {
+        if (next_if(EofF)) [[unlikely]] {
           diagnostic << current()
                      << "Unexpected end of file while parsing expression";
           break;
@@ -699,13 +674,16 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
 
         if (next_if(PuncSemi)) {
           if (auto count_tok = next_if(IntL)) {
-            auto count_str = current().as_string();
-            size_t count{};
-            if (std::from_chars(count_str->data(),
-                                count_str->data() + count_str->size(), count)
+            auto item_repeat_str = current().as_string();
+            size_t item_repeat_count = 0;
+
+            if (std::from_chars(
+                    item_repeat_str->data(),
+                    item_repeat_str->data() + item_repeat_str->size(),
+                    item_repeat_count)
                     .ec == std::errc()) {
-              if (count <= MAX_LIST_REPEAT_COUNT) {
-                for (size_t i = 0; i < count; i++) {
+              if (item_repeat_count <= MAX_LIST_REPEAT_COUNT) {
+                for (size_t i = 0; i < item_repeat_count; i++) {
                   items.push_back(expr);
                 }
               } else {
@@ -743,7 +721,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
       ExpressionList items;
 
       while (true) {
-        if (next_if(EofF)) {
+        if (next_if(EofF)) [[unlikely]] {
           diagnostic << current()
                      << "Unexpected end of file while parsing dictionary";
           break;
@@ -754,10 +732,10 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
         }
 
         auto start_pos = peek().get_start();
-
         auto key = recurse_expr({
             Token(Punc, PuncColn),
         });
+
         if (!next_if(PuncColn)) {
           diagnostic << current() << "Expected colon after key in dictionary";
           break;
@@ -818,6 +796,7 @@ FlowPtr<Expr> Parser::recurse_expr_type_suffix(FlowPtr<Expr> base) {
 
 NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
   auto start_pos = peek().get_start();
+
   NullableFlowPtr<Expr> E;
 
   if (isType) {

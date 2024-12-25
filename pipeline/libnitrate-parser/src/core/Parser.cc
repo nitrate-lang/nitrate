@@ -383,18 +383,18 @@ CPP_EXPORT ASTRoot Parser::parse() {
   rd.SkipCommentsState(true);
 
   /*== Install thread-local references to the parser ==*/
-  auto old = ncc::parse::diagnostic;
-  ncc::parse::diagnostic = this;
+  auto old = diagnostic;
+  diagnostic = this;
 
-  std::swap(ncc::parse::npar_allocator, m_allocator);
+  std::swap(npar_allocator, m_allocator);
   auto node = recurse_block(false, false, SafetyMode::Unknown);
-  std::swap(ncc::parse::npar_allocator, m_allocator);
+  std::swap(npar_allocator, m_allocator);
 
   ASTRoot ast(node, std::move(m_allocator), m_failed);
   m_allocator = std::make_unique<ncc::dyn_arena>();
 
   /*== Uninstall thread-local references to the parser ==*/
-  ncc::parse::diagnostic = old;
+  diagnostic = old;
 
   rd.SkipCommentsState(old_state);
 
@@ -407,7 +407,7 @@ CPP_EXPORT bool ASTRoot::check() const {
   }
 
   bool failed = false;
-  ncc::parse::iterate<dfs_pre>(m_base, [&](auto, auto c) {
+  iterate<dfs_pre>(m_base, [&](auto, auto c) {
     failed |= !c || c->is_mock();
 
     return failed ? IterOp::Abort : IterOp::Proceed;
@@ -416,8 +416,8 @@ CPP_EXPORT bool ASTRoot::check() const {
   return !failed;
 }
 
-std::string ncc::parse::mint_clang16_message(ncc::lex::IScanner &rd,
-                                             const DiagMessage &msg) {
+std::string parse::mint_clang16_message(ncc::lex::IScanner &rd,
+                                        const DiagMessage &msg) {
   auto start = msg.tok.get_start().Get(rd);
 
   auto filename = start.GetFilename();

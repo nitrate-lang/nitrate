@@ -505,12 +505,12 @@ void recurse(Base* C) {
     }
 
     case QAST_FUNCTOR: {
-      static const std::unordered_map<FuncPurity, std::string> purity_str = {
-          {FuncPurity::IMPURE_THREAD_UNSAFE, ""},
-          {FuncPurity::IMPURE_THREAD_SAFE, " tsafe"},
-          {FuncPurity::PURE, " pure"},
-          {FuncPurity::QUASI, " quasi"},
-          {FuncPurity::RETRO, " retro"}};
+      static const std::unordered_map<Purity, std::string> purity_str = {
+          {Purity::Impure, ""},
+          {Purity::Impure_TSafe, " tsafe"},
+          {Purity::Pure, " pure"},
+          {Purity::Quasi, " quasi"},
+          {Purity::Retro, " retro"}};
 
       FuncTy* N = C->as<FuncTy>();
 
@@ -688,12 +688,12 @@ void recurse(Base* C) {
     }
 
     case QAST_FUNCTION: {
-      static const std::unordered_map<FuncPurity, std::string> purity_str = {
-          {FuncPurity::IMPURE_THREAD_UNSAFE, ""},
-          {FuncPurity::IMPURE_THREAD_SAFE, " tsafe"},
-          {FuncPurity::PURE, " pure"},
-          {FuncPurity::QUASI, " quasi"},
-          {FuncPurity::RETRO, " retro"}};
+      static const std::unordered_map<Purity, std::string> purity_str = {
+          {Purity::Impure, ""},
+          {Purity::Impure_TSafe, " tsafe"},
+          {Purity::Pure, " pure"},
+          {Purity::Quasi, " quasi"},
+          {Purity::Retro, " retro"}};
 
       Function* N = C->as<Function>();
       FuncTy* F = N->get_type();

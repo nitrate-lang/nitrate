@@ -294,11 +294,11 @@ namespace ncc::parse {
     NullableFlowPtr<Expr> m_precond, m_postcond;
     NullableFlowPtr<Stmt> m_body;
     string m_name;
-    FuncPurity m_purity;
+    Purity m_purity;
     bool m_variadic;
 
   public:
-    Function(ExpressionList attributes, FuncPurity purity, FnCaptures captures,
+    Function(ExpressionList attributes, Purity purity, FnCaptures captures,
              string name, std::optional<TemplateParameters> params,
              FuncParams fn_params, bool variadic, FlowPtr<Type> return_type,
              NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,

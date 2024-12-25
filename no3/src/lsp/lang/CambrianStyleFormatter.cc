@@ -32,7 +32,7 @@ CambrianFormatter::LineStreamWritter::operator<<(Operator op) {
 }
 
 CambrianFormatter::LineStreamWritter&
-CambrianFormatter::LineStreamWritter::operator<<(ncc::parse::Vis v) {
+CambrianFormatter::LineStreamWritter::operator<<(Vis v) {
   switch (v) {
     case Vis::Sec: {
       m_line_buffer << "sec";
@@ -282,6 +282,7 @@ void CambrianFormatter::visit(FlowPtr<StmtExpr> n) {
 }
 
 void CambrianFormatter::visit(FlowPtr<TypeExpr> n) {
+  line << "type ";
   n->get_type().accept(*this);
 }
 
@@ -502,26 +503,26 @@ void CambrianFormatter::visit(FlowPtr<FuncTy> n) {
   }
 
   switch (n->get_purity()) {
-    case FuncPurity::IMPURE_THREAD_UNSAFE: {
+    case Purity::Impure: {
       break;
     }
 
-    case FuncPurity::IMPURE_THREAD_SAFE: {
+    case Purity::Impure_TSafe: {
       line << " tsafe";
       break;
     }
 
-    case FuncPurity::PURE: {
+    case Purity::Pure: {
       line << " pure";
       break;
     }
 
-    case FuncPurity::QUASI: {
+    case Purity::Quasi: {
       line << " quasi";
       break;
     }
 
-    case FuncPurity::RETRO: {
+    case Purity::Retro: {
       line << " retro";
       break;
     }
@@ -1173,26 +1174,26 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
   }
 
   switch (n->get_purity()) {
-    case FuncPurity::IMPURE_THREAD_UNSAFE: {
+    case Purity::Impure: {
       break;
     }
 
-    case FuncPurity::IMPURE_THREAD_SAFE: {
+    case Purity::Impure_TSafe: {
       line << " tsafe";
       break;
     }
 
-    case FuncPurity::PURE: {
+    case Purity::Pure: {
       line << " pure";
       break;
     }
 
-    case FuncPurity::QUASI: {
+    case Purity::Quasi: {
       line << " quasi";
       break;
     }
 
-    case FuncPurity::RETRO: {
+    case Purity::Retro: {
       line << " retro";
       break;
     }

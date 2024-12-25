@@ -40,6 +40,8 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/Init.hh>
 
+using namespace ncc;
+
 static std::atomic<size_t> nr_lib_ref_count = 0;
 
 static bool do_init() {
@@ -59,7 +61,7 @@ C_EXPORT bool nr_lib_init() {
     return false;
   }
 
-  if (!ncc::parse::ParseLibrary.InitRC()) {
+  if (!parse::ParseLibrary.InitRC()) {
     return false;
   }
 
@@ -71,7 +73,7 @@ C_EXPORT void nr_lib_deinit() {
     return;
   }
 
-  ncc::parse::ParseLibrary.DeinitRC();
+  parse::ParseLibrary.DeinitRC();
   ncc::CoreLibrary.DeinitRC();
 
   return do_deinit();

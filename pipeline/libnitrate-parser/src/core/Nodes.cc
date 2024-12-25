@@ -45,10 +45,10 @@
 using namespace ncc;
 using namespace ncc::parse;
 
-CPP_EXPORT thread_local std::unique_ptr<ncc::IMemory>
-    ncc::parse::npar_allocator = std::make_unique<ncc::dyn_arena>();
+CPP_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::npar_allocator =
+    std::make_unique<ncc::dyn_arena>();
 
-CPP_EXPORT LocationPairAlias ncc::parse::g_location_pairs;
+CPP_EXPORT LocationPairAlias parse::g_location_pairs;
 
 uint64_t LocationPairAlias::Add(lex::LocationID begin, lex::LocationID end) {
   std::lock_guard<std::mutex> lock(m_mutex);
