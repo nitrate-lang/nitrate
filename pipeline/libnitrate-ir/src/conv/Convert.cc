@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-ir/IR.h>
-
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <core/Diagnostic.hh>
 #include <core/PassManager.hh>
@@ -43,6 +41,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/Classes.hh>
+#include <nitrate-ir/IR.hh>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
@@ -54,7 +53,7 @@
 #include <string_view>
 #include <unordered_map>
 
-using namespace nr;
+using namespace ncc::ir;
 
 using namespace ncc;
 
@@ -67,7 +66,7 @@ public:
   bool inside_function = false;
   std::string ns_prefix;
   std::stack<std::string_view> composite_expanse;
-  nr::AbiTag abi_mode = nr::AbiTag::Internal;
+  ir::AbiTag abi_mode = ir::AbiTag::Internal;
   size_t anon_fn_ctr = 0;
 
   std::string scope_name(std::string_view suffix) const {
@@ -98,9 +97,9 @@ public:
 };
 
 using EResult = std::optional<Expr *>;
-using BResult = std::optional<std::vector<nr::Expr *>>;
+using BResult = std::optional<std::vector<ir::Expr *>>;
 
-static std::optional<nr::Expr *> nrgen_one(NRBuilder &b, PState &s, IReport *G,
+static std::optional<ir::Expr *> nrgen_one(NRBuilder &b, PState &s, IReport *G,
                                            FlowPtr<ncc::parse::Base> node);
 static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G,
                          FlowPtr<ncc::parse::Base> node);
@@ -108,8 +107,8 @@ static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G,
 #define next_one(n) nrgen_one(b, s, G, n)
 #define next_any(n) nrgen_any(b, s, G, n)
 
-C_EXPORT bool nr_lower(qmodule_t **mod, ncc::parse::Base *base,
-                       const char *name, bool diagnostics) {
+CPP_EXPORT bool ir::nr_lower(qmodule_t **mod, ncc::parse::Base *base,
+                             const char *name, bool diagnostics) {
   if (!mod || !base) {
     return false;
   }
@@ -118,7 +117,7 @@ C_EXPORT bool nr_lower(qmodule_t **mod, ncc::parse::Base *base,
   }
 
   std::unique_ptr<IMemory> scratch_arena = std::make_unique<dyn_arena>();
-  std::swap(nr::nr_allocator, scratch_arena);
+  std::swap(ir::nr_allocator, scratch_arena);
 
   /// TODO: Get the target platform infoformation
   TargetInfo target_info;
@@ -140,10 +139,10 @@ C_EXPORT bool nr_lower(qmodule_t **mod, ncc::parse::Base *base,
       R = builder.get_module();
       success = true;
     } else {
-      G->report(nr::CompilerError, IC::Error, "Failed to lower source");
+      G->report(ir::CompilerError, IC::Error, "Failed to lower source");
     }
   } else {
-    G->report(nr::CompilerError, IC::Error, "Failed to lower source");
+    G->report(ir::CompilerError, IC::Error, "Failed to lower source");
   }
 
   if (!R) {
@@ -152,7 +151,7 @@ C_EXPORT bool nr_lower(qmodule_t **mod, ncc::parse::Base *base,
 
   R->getDiag() = std::move(G);
 
-  std::swap(nr::nr_allocator, scratch_arena);
+  std::swap(ir::nr_allocator, scratch_arena);
   *mod = R;
 
   return success;
@@ -167,21 +166,21 @@ static bool check_is_foreign_function(auto n) {
   });
 }
 
-static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
-                                                     IReport *, nr::Expr *lhs,
-                                                     nr::Expr *rhs,
+static std::optional<ir::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
+                                                     IReport *, ir::Expr *lhs,
+                                                     ir::Expr *rhs,
                                                      lex::Operator op) {
   using namespace ncc::lex;
 
-#define STD_BINOP(op) nr::create<nr::BinExpr>(lhs, rhs, nr::Op::op)
+#define STD_BINOP(op) ir::create<ir::BinExpr>(lhs, rhs, ir::Op::op)
 #define ASSIGN_BINOP(op)                                                   \
-  nr::create<nr::BinExpr>(                                                 \
+  ir::create<ir::BinExpr>(                                                 \
       lhs,                                                                 \
-      nr::create<nr::BinExpr>(static_cast<nr::Expr *>(nr_clone(lhs)), rhs, \
-                              nr::Op::op),                                 \
-      nr::Op::Set)
+      ir::create<ir::BinExpr>(static_cast<ir::Expr *>(nr_clone(lhs)), rhs, \
+                              ir::Op::op),                                 \
+      ir::Op::Set)
 
-  std::optional<nr::Expr *> R;
+  std::optional<ir::Expr *> R;
 
   switch (op) {
     case OpPlus: {
@@ -230,10 +229,10 @@ static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
     }
     case OpLogicXor: {
       // A ^^ B == (A || B) && !(A && B)
-      auto a = nr::create<nr::BinExpr>(lhs, rhs, nr::Op::LogicOr);
-      auto b = nr::create<nr::BinExpr>(lhs, rhs, nr::Op::LogicAnd);
-      auto not_b = nr::create<nr::UnExpr>(b, nr::Op::LogicNot);
-      R = nr::create<nr::BinExpr>(a, not_b, nr::Op::LogicAnd);
+      auto a = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicOr);
+      auto b = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicAnd);
+      auto not_b = ir::create<ir::UnExpr>(b, ir::Op::LogicNot);
+      R = ir::create<ir::BinExpr>(a, not_b, ir::Op::LogicAnd);
       break;
     }
     case OpLogicNot: {
@@ -313,12 +312,12 @@ static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
     case OpLogicXorSet: {
       // a ^^= b == a = (a || b) && !(a && b)
 
-      auto a = nr::create<nr::BinExpr>(lhs, rhs, nr::Op::LogicOr);
-      auto b = nr::create<nr::BinExpr>(lhs, rhs, nr::Op::LogicAnd);
-      auto not_b = nr::create<nr::UnExpr>(b, nr::Op::LogicNot);
-      return nr::create<nr::BinExpr>(
-          lhs, nr::create<nr::BinExpr>(a, not_b, nr::Op::LogicAnd),
-          nr::Op::Set);
+      auto a = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicOr);
+      auto b = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicAnd);
+      auto not_b = ir::create<ir::UnExpr>(b, ir::Op::LogicNot);
+      return ir::create<ir::BinExpr>(
+          lhs, ir::create<ir::BinExpr>(a, not_b, ir::Op::LogicAnd),
+          ir::Op::Set);
     }
     case OpLShiftSet: {
       R = ASSIGN_BINOP(LShift);
@@ -368,8 +367,8 @@ static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
     }
     case OpIn: {
       auto methname = b.createStringDataArray("has");
-      auto method = nr::create<nr::Index>(rhs, methname);
-      R = nr::create<nr::Call>(method, nr::CallArgs({lhs}));
+      auto method = ir::create<ir::Index>(rhs, methname);
+      R = ir::create<ir::Call>(method, ir::CallArgs({lhs}));
       break;
     }
     case OpRange: {
@@ -388,12 +387,12 @@ static std::optional<nr::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
   return R;
 }
 
-static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
-                                                    IReport *G, nr::Expr *rhs,
+static std::optional<ir::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
+                                                    IReport *G, ir::Expr *rhs,
                                                     lex::Operator op) {
   using namespace ncc::lex;
 
-#define STD_UNOP(op) nr::create<nr::UnExpr>(rhs, nr::Op::op)
+#define STD_UNOP(op) ir::create<ir::UnExpr>(rhs, ir::Op::op)
 
   EResult R;
 
@@ -444,13 +443,13 @@ static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
     }
 
     case OpSizeof: {
-      auto bits = nr::create<nr::UnExpr>(rhs, nr::Op::Bitsizeof);
-      auto arg = nr::create<nr::BinExpr>(
-          bits, nr::create<nr::Float>(8, nr::FloatSize::F64), nr::Op::Slash);
+      auto bits = ir::create<ir::UnExpr>(rhs, ir::Op::Bitsizeof);
+      auto arg = ir::create<ir::BinExpr>(
+          bits, ir::create<ir::Float>(8, ir::FloatSize::F64), ir::Op::Slash);
 
       std::array<std::pair<std::string_view, Expr *>, 1> args;
       args[0] = {"_0", arg};
-      R = b.createCall(nr::create<nr::Ident>(save("std::ceil"), nullptr), args);
+      R = b.createCall(ir::create<ir::Ident>(save("std::ceil"), nullptr), args);
 
       break;
     }
@@ -466,8 +465,8 @@ static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
         break;
       }
 
-      nr::SymbolEncoding se;
-      auto res = se.mangle_name(inferred.value(), nr::AbiTag::Nitrate);
+      ir::SymbolEncoding se;
+      auto res = se.mangle_name(inferred.value(), ir::AbiTag::Nitrate);
       if (!res.has_value()) {
         G->report(CompilerError, IC::Error, "Failed to mangle type name",
                   rhs->getLoc());
@@ -491,13 +490,13 @@ static std::optional<nr::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
   return R;
 }
 
-static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &,
+static std::optional<ir::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &,
                                                          IReport *G,
-                                                         nr::Expr *lhs,
+                                                         ir::Expr *lhs,
                                                          lex::Operator op) {
   using namespace ncc::lex;
 
-#define STD_POST_OP(op) nr::create<nr::PostUnExpr>(lhs, nr::Op::op)
+#define STD_POST_OP(op) ir::create<ir::PostUnExpr>(lhs, ir::Op::op)
 
   EResult R;
 
@@ -511,7 +510,7 @@ static std::optional<nr::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &,
       break;
     }
     default: {
-      G->report(nr::CompilerError, IC::Error,
+      G->report(ir::CompilerError, IC::Error,
                 "Operator is not supported in post-unary expression",
                 lhs->getLoc());
       break;
@@ -733,7 +732,7 @@ static EResult nrgen_call(NRBuilder &b, PState &s, IReport *G,
                           FlowPtr<ncc::parse::Call> n) {
   auto target = next_one(n->get_func());
   if (!target.has_value()) {
-    G->report(nr::CompilerError, IC::Error, "Failed to lower function target",
+    G->report(ir::CompilerError, IC::Error, "Failed to lower function target",
               n->get_pos());
     return std::nullopt;
   }
@@ -746,7 +745,7 @@ static EResult nrgen_call(NRBuilder &b, PState &s, IReport *G,
   for (size_t i = 0; i < args.size(); i++) {
     auto arg = next_one(args[i].second);
     if (!arg.has_value()) {
-      G->report(nr::CompilerError, IC::Error,
+      G->report(ir::CompilerError, IC::Error,
                 "Failed to lower function argument", n->get_pos());
       return std::nullopt;
     }
@@ -764,7 +763,7 @@ static EResult nrgen_list(NRBuilder &b, PState &s, IReport *G,
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
     auto item = next_one(*it);
     if (!item.has_value()) {
-      G->report(nr::CompilerError, IC::Error, "Failed to lower list element",
+      G->report(ir::CompilerError, IC::Error, "Failed to lower list element",
                 n->get_pos());
       return std::nullopt;
     }
@@ -779,14 +778,14 @@ static EResult nrgen_assoc(NRBuilder &b, PState &s, IReport *G,
                            FlowPtr<ncc::parse::Assoc> n) {
   auto key = next_one(n->get_key());
   if (!key.has_value()) {
-    G->report(nr::CompilerError, IC::Error, "Failed to lower associative key",
+    G->report(ir::CompilerError, IC::Error, "Failed to lower associative key",
               n->get_pos());
     return std::nullopt;
   }
 
   auto value = next_one(n->get_value());
   if (!value.has_value()) {
-    G->report(nr::CompilerError, IC::Error, "Failed to lower associative value",
+    G->report(ir::CompilerError, IC::Error, "Failed to lower associative value",
               n->get_pos());
     return std::nullopt;
   }
@@ -799,14 +798,14 @@ static EResult nrgen_index(NRBuilder &b, PState &s, IReport *G,
                            FlowPtr<ncc::parse::Index> n) {
   auto base = next_one(n->get_base());
   if (!base.has_value()) {
-    G->report(nr::CompilerError, IC::Error,
+    G->report(ir::CompilerError, IC::Error,
               "Failed to lower index expression base", n->get_pos());
     return std::nullopt;
   }
 
   auto index = next_one(n->get_index());
   if (!index.has_value()) {
-    G->report(nr::CompilerError, IC::Error,
+    G->report(ir::CompilerError, IC::Error,
               "Failed to lower index expression index", n->get_pos());
     return std::nullopt;
   }
@@ -818,21 +817,21 @@ static EResult nrgen_slice(NRBuilder &b, PState &s, IReport *G,
                            FlowPtr<ncc::parse::Slice> n) {
   auto base = next_one(n->get_base());
   if (!base.has_value()) {
-    G->report(nr::CompilerError, IC::Error,
+    G->report(ir::CompilerError, IC::Error,
               "Failed to lower slice expression base", n->get_pos());
     return std::nullopt;
   }
 
   auto start = next_one(n->get_start());
   if (!start.has_value()) {
-    G->report(nr::CompilerError, IC::Error,
+    G->report(ir::CompilerError, IC::Error,
               "Failed to lower slice expression start", n->get_pos());
     return std::nullopt;
   }
 
   auto end = next_one(n->get_end());
   if (!end.has_value()) {
-    G->report(nr::CompilerError, IC::Error,
+    G->report(ir::CompilerError, IC::Error,
               "Failed to lower slice expression end", n->get_pos());
     return std::nullopt;
   }
@@ -1076,7 +1075,7 @@ static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G,
     G->report(CompilerError, IC::Error, msg, count_expr.value()->getLoc());
   };
 
-  auto result = nr::comptime_impl(count_expr.value(), eprintn_cb);
+  auto result = ir::comptime_impl(count_expr.value(), eprintn_cb);
   if (!result.has_value()) {
     G->report(CompilerError, IC::Error, "Failed to evaluate array size",
               count_expr.value()->getLoc());
@@ -1178,7 +1177,7 @@ static EResult nrgen_infer_ty(NRBuilder &b, PState &, IReport *,
 
 static EResult nrgen_templ_ty(NRBuilder &, PState &, IReport *G,
                               FlowPtr<ncc::parse::TemplType> n) {
-  G->report(nr::CompilerError, IC::FatalError,
+  G->report(ir::CompilerError, IC::FatalError,
             "Attempted to lower an unexpected ncc::parse::TemplType node",
             n->get_pos());
   return std::nullopt;
@@ -1188,7 +1187,7 @@ static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
                              FlowPtr<ncc::parse::TypedefStmt> n) {
   auto type = next_one(n->get_type());
   if (!type.has_value()) {
-    G->report(nr::CompilerError, IC::Error,
+    G->report(ir::CompilerError, IC::Error,
               "Failed to lower type in typedef statement", n->get_pos());
     return std::nullopt;
   }
@@ -1205,7 +1204,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
                             FlowPtr<ncc::parse::StructDef> n) {
   bool is_template = n->get_template_params().has_value();
   if (is_template) {
-    G->report(nr::CompilerError, IC::FatalError,
+    G->report(ir::CompilerError, IC::FatalError,
               "Attempted to lower an unexpected template struct node",
               n->get_pos());
     return std::nullopt;
@@ -1222,7 +1221,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
 
     auto field_type = next_one(field.get_type());
     if (!field_type.has_value()) {
-      G->report(nr::CompilerError, IC::Error,
+      G->report(ir::CompilerError, IC::Error,
                 "Failed to lower struct field type", n->get_pos());
       s.ns_prefix = old_ns;
       return std::nullopt;
@@ -1234,7 +1233,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
     if (field.get_value() == nullptr) {
       auto val = b.getDefaultValue(field_type.value()->asType());
       if (!val.has_value()) {
-        G->report(nr::CompilerError, IC::Error,
+        G->report(ir::CompilerError, IC::Error,
                   "Failed to lower struct field default value", n->get_pos());
         s.ns_prefix = old_ns;
         return std::nullopt;
@@ -1244,7 +1243,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
     } else {
       auto val = next_one(field.get_value().value_or(nullptr));
       if (!val.has_value()) {
-        G->report(nr::CompilerError, IC::Error,
+        G->report(ir::CompilerError, IC::Error,
                   "Failed to lower struct field default value", n->get_pos());
         s.ns_prefix = old_ns;
         return std::nullopt;
@@ -1267,7 +1266,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
   for (auto method : n->get_methods()) {
     auto val = next_one(method.func);
     if (!val.has_value()) {
-      G->report(nr::CompilerError, IC::Error, "Failed to lower struct method",
+      G->report(ir::CompilerError, IC::Error, "Failed to lower struct method",
                 n->get_pos());
       s.ns_prefix = old_ns;
       return std::nullopt;
@@ -1279,7 +1278,7 @@ static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
   for (auto method : n->get_static_methods()) {
     auto val = next_one(method.func);
     if (!val.has_value()) {
-      G->report(nr::CompilerError, IC::Error,
+      G->report(ir::CompilerError, IC::Error,
                 "Failed to lower struct static method", n->get_pos());
       s.ns_prefix = old_ns;
       return std::nullopt;
@@ -1305,7 +1304,7 @@ static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
     if (it->second.has_value()) {
       auto val = next_one(it->second.value());
       if (!val.has_value()) {
-        G->report(nr::CompilerError, IC::Error, "Failed to lower enum field",
+        G->report(ir::CompilerError, IC::Error, "Failed to lower enum field",
                   n->get_pos());
         return std::nullopt;
       }
@@ -1347,19 +1346,19 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
 
   {
     if (!n->get_captures().empty()) {
-      G->report(nr::CompilerError, IC::Error,
+      G->report(ir::CompilerError, IC::Error,
                 "Function capture groups are not currently supported");
       failed = true;
     }
 
     if (n->get_precond().has_value()) {
-      G->report(nr::CompilerError, IC::Error,
+      G->report(ir::CompilerError, IC::Error,
                 "Function pre-conditions are not currently supported");
       failed = true;
     }
 
     if (n->get_postcond().has_value()) {
-      G->report(nr::CompilerError, IC::Error,
+      G->report(ir::CompilerError, IC::Error,
                 "Function post-conditions are not currently supported");
       failed = true;
     }
@@ -1386,7 +1385,7 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
       { /* Set function parameter type */
         auto tmp = next_one(std::get<1>(param));
         if (!tmp.has_value()) {
-          G->report(CompilerError, nr::IC::Error,
+          G->report(CompilerError, ir::IC::Error,
                     "Failed to convert function declaration parameter type",
                     n->get_pos());
           return std::nullopt;
@@ -1399,7 +1398,7 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
         if (std::get<2>(param)) {
           auto val = next_one(std::get<2>(param).value());
           if (!val.has_value()) {
-            G->report(CompilerError, nr::IC::Error,
+            G->report(CompilerError, ir::IC::Error,
                       "Failed to convert function declaration parameter "
                       "default value",
                       n->get_pos());
@@ -1415,7 +1414,7 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
 
     auto ret_type = next_one(n->get_return());
     if (!ret_type.has_value()) {
-      G->report(CompilerError, nr::IC::Error,
+      G->report(CompilerError, ir::IC::Error,
                 "Failed to convert function declaration return type",
                 n->get_pos());
       return std::nullopt;
@@ -1450,7 +1449,7 @@ static EResult nrgen_function_definition(NRBuilder &b, PState &s, IReport *G,
       auto body = nrgen_block(
           b, s, G, n->get_body().value().as<ncc::parse::Block>(), false);
       if (!body.has_value()) {
-        G->report(CompilerError, nr::IC::Error,
+        G->report(CompilerError, ir::IC::Error,
                   "Failed to convert function body", n->get_pos());
         return std::nullopt;
       }
@@ -1470,19 +1469,19 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
 
   {
     if (!n->get_captures().empty()) {
-      G->report(nr::CompilerError, IC::Error,
+      G->report(ir::CompilerError, IC::Error,
                 "Function capture groups are not currently supported");
       failed = true;
     }
 
     if (n->get_precond().has_value()) {
-      G->report(nr::CompilerError, IC::Error,
+      G->report(ir::CompilerError, IC::Error,
                 "Function pre-conditions are not currently supported");
       failed = true;
     }
 
     if (n->get_postcond().has_value()) {
-      G->report(nr::CompilerError, IC::Error,
+      G->report(ir::CompilerError, IC::Error,
                 "Function post-conditions are not currently supported");
       failed = true;
     }
@@ -1509,7 +1508,7 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
       { /* Set function parameter type */
         auto tmp = next_one(std::get<1>(param));
         if (!tmp.has_value()) {
-          G->report(CompilerError, nr::IC::Error,
+          G->report(CompilerError, ir::IC::Error,
                     "Failed to convert function declaration parameter type",
                     n->get_pos());
           return std::nullopt;
@@ -1522,7 +1521,7 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
         if (std::get<2>(param)) {
           auto val = next_one(std::get<2>(param).value());
           if (!val.has_value()) {
-            G->report(CompilerError, nr::IC::Error,
+            G->report(CompilerError, ir::IC::Error,
                       "Failed to convert function declaration parameter "
                       "default value",
                       n->get_pos());
@@ -1538,7 +1537,7 @@ static EResult nrgen_function_declaration(NRBuilder &b, PState &s, IReport *G,
 
     auto ret_type = next_one(n->get_return());
     if (!ret_type.has_value()) {
-      G->report(CompilerError, nr::IC::Error,
+      G->report(CompilerError, ir::IC::Error,
                 "Failed to convert function declaration return type",
                 n->get_pos());
       return std::nullopt;
@@ -1590,7 +1589,7 @@ static BResult nrgen_scope(NRBuilder &b, PState &s, IReport *G,
   auto body =
       nrgen_block(b, s, G, n->get_body().as<ncc::parse::Block>(), false);
   if (!body.has_value()) {
-    G->report(nr::CompilerError, IC::Error, "Failed to lower scope body",
+    G->report(ir::CompilerError, IC::Error, "Failed to lower scope body",
               n->get_pos());
     return std::nullopt;
   }
@@ -1639,7 +1638,7 @@ static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
   s.abi_mode = it->second.second;
 
   auto body = n->get_body()->as<ncc::parse::Block>()->get_items();
-  std::vector<nr::Expr *> items;
+  std::vector<ir::Expr *> items;
 
   for (size_t i = 0; i < body.size(); i++) {
     auto result = next_any(body[i]);
@@ -1675,7 +1674,7 @@ static EResult nrgen_block(NRBuilder &b, PState &s, IReport *G,
   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
     auto item = next_any(*it);
     if (!item.has_value()) {
-      G->report(nr::CompilerError, IC::Error,
+      G->report(ir::CompilerError, IC::Error,
                 "Failed to lower element in statement block", n->get_pos());
       return std::nullopt;
     }
@@ -1740,7 +1739,7 @@ static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G,
 static EResult nrgen_inline_asm(NRBuilder &, PState &, IReport *G,
                                 FlowPtr<ncc::parse::InlineAsm>) {
   /// TODO: Decide whether or not to support inline assembly
-  G->report(nr::CompilerError, IC::Error,
+  G->report(ir::CompilerError, IC::Error,
             "Inline assembly is not currently supported");
   return std::nullopt;
 }
@@ -1750,7 +1749,7 @@ static EResult nrgen_return(NRBuilder &b, PState &s, IReport *G,
   if (n->get_value()) {
     auto val = next_one(n->get_value().value_or(nullptr));
     if (!val.has_value()) {
-      G->report(nr::CompilerError, IC::Error,
+      G->report(ir::CompilerError, IC::Error,
                 "Failed to lower return statement value", n->get_pos());
       return std::nullopt;
     }
@@ -1946,13 +1945,13 @@ static EResult nrgen_expr_stmt(NRBuilder &b, PState &s, IReport *G,
 
 static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G,
                          FlowPtr<ncc::parse::Base> n) {
-  using namespace nr;
+  using namespace ncc::ir;
 
   if (!n) {
     return std::nullopt;
   }
 
-  std::optional<nr::Expr *> out;
+  std::optional<ir::Expr *> out;
 
   switch (n->getKind()) {
     case QAST_BASE: {
@@ -2217,7 +2216,7 @@ static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G,
 
 static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G,
                          FlowPtr<ncc::parse::Base> n) {
-  using namespace nr;
+  using namespace ncc::ir;
 
   if (!n) {
     return std::nullopt;

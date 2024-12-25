@@ -37,12 +37,12 @@
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 
-using namespace nr;
+using namespace ncc::ir;
 
 bool NRBuilder::check_mutability(Seq *root, IReport *I) {
   bool failed = false;
 
-  nr::for_each<BinExpr>(root, [&](const BinExpr *x) {
+  for_each<BinExpr>(root, [&](const BinExpr *x) {
     if (x->getOp() != Op::Set) {
       return;
     }

@@ -34,37 +34,32 @@
 #ifndef __NITRATE_IR_CLASSES_H__
 #define __NITRATE_IR_CLASSES_H__
 
-#include <nitrate-ir/IR.h>
-
 #include <nitrate-core/Logger.hh>
+#include <nitrate-ir/IR.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <optional>
 #include <string>
 
-class qmodule final {
-  qmodule_t *m_module;
+namespace ncc::ir {
+  class qmodule final {
+    qmodule_t *m_module;
 
-public:
-  qmodule() { m_module = nullptr; }
-  ~qmodule() {
-    if (m_module) {
-      nr_free(m_module);
-    }
-  }
+  public:
+    qmodule() : m_module(nullptr) {}
+    ~qmodule() { nr_free(m_module); }
 
-  qmodule_t *&get() { return m_module; }
-};
+    qmodule_t *&get() { return m_module; }
+  };
 
-namespace nr {
   class SymbolEncoding final {
   public:
     SymbolEncoding() = default;
 
-    std::optional<std::string> mangle_name(const nr::Expr *symbol,
+    std::optional<std::string> mangle_name(const Expr *symbol,
                                            AbiTag abi) const;
 
     std::optional<std::string> demangle_name(std::string_view symbol) const;
   };
-}  // namespace nr
+}  // namespace ncc::ir
 
 #endif  // __NITRATE_IR_CLASSES_H__

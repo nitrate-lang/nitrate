@@ -34,15 +34,14 @@
 #ifndef __NITRATE_IR_REPORT_H__
 #define __NITRATE_IR_REPORT_H__
 
-#include <nitrate-ir/IR.h>
-
 #include <boost/bimap.hpp>
 #include <cstdarg>
+#include <nitrate-ir/IR.hh>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ASTBase.hh>
 #include <string_view>
 
-namespace nr {
+namespace ncc::ir {
   enum class IC {
     Debug = 0,
     Info,
@@ -120,6 +119,6 @@ namespace nr {
                                                               uint32_t x1,
                                                               uint32_t y1) = 0;
   };
-};  // namespace nr
+};  // namespace ncc::ir
 
 #endif  // __NITRATE_IR_REPORT_H__

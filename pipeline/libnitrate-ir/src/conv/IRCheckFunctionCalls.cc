@@ -37,12 +37,12 @@
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 
-using namespace nr;
+using namespace ncc::ir;
 
 bool NRBuilder::check_function_calls(Seq *root, IReport *I) {
   bool failed = false;
 
-  nr::for_each<Call>(root, [&](const Call *x) {
+  for_each<Call>(root, [&](const Call *x) {
     Expr *target = x->getTarget();
 
     if (auto target_type = target->getType()) {

@@ -36,7 +36,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/Module.hh>
 
-using namespace nr::pass;
+using namespace ncc::ir::pass;
 
 CPP_EXPORT PassRegistry& PassRegistry::the() {
   static PassRegistry instance;

@@ -38,12 +38,12 @@
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Report.hh>
 
-using namespace nr;
+using namespace ncc::ir;
 
 bool NRBuilder::check_returns(Seq *root, IReport *I) {
   bool failed = false;
 
-  nr::for_each<Fn>(root, [&](const Fn *x) {
+  for_each<Fn>(root, [&](const Fn *x) {
     /* Skip function declarations */
     if (!x->getBody()) {
       return;
@@ -63,7 +63,7 @@ bool NRBuilder::check_returns(Seq *root, IReport *I) {
 
     bool found_ret = false;
 
-    nr::for_each<Ret>(x->getBody().value(), [&](const Ret *y) {
+    for_each<Ret>(x->getBody().value(), [&](const Ret *y) {
       found_ret = true;
 
       auto ret_expr_ty_opt = y->getExpr()->getType();

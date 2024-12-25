@@ -36,41 +36,16 @@
 #include <nitrate-ir/Module.hh>
 #include <passes/PassList.hh>
 
-void nr::pass::PassRegistry::link_builtin() {
-  addPass("ds-acyclic", ds_acyclic);
-  addPass("ds-nullchk", ds_nullchk);
-  addPass("ds-resolv", ds_resolv);
-  addPass("ds-verify", ds_verify);
-  addPass("ds-flatten", ds_flatten);
-  addPass("ds-tyinfer", ds_tyinfer);
-  addPass("ds-mangle", ds_mangle);
-  addPass("ds-clean", ds_clean);
-  addPass("ds-raii", ds_raii);
+using namespace ncc::ir;
 
-  addPass("chk-missing-return", chk_missing_return);
-  addPass("chk-bad-cast", chk_bad_cast);
-}
+void pass::PassRegistry::link_builtin() {}
 
-void nr::pass::PassGroupRegistry::RegisterBuiltinGroups() {
+void pass::PassGroupRegistry::RegisterBuiltinGroups() {
   PassGroupBuilder()
-      .addPass("ds-clean") /* Cleanup IR */
       /* Add more cleanup passes: [dead-code removal, ?] */
       .build("reduce");
 
-  PassGroupBuilder()
-      .addPass("ds-acyclic") /* Verify that the module is acyclic */
-      .addPass("ds-nullchk") /* Verify that the module is null-safe */
-      .addPass("ds-resolv")  /* Resolve all symbols */
-      .addPass("ds-verify")  /* Verify the module */
-      .addPass("ds-flatten") /* Flatten all nested functions */
-      .addPass("ds-tyinfer") /* Do type inference */
-      .addPass("ds-mangle")  /* Mangle all names */
-      .addPass("ds-raii")    /* Insert destructors */
-      .addGroup("reduce")
-      .build("ds");
+  PassGroupBuilder().build("ds");
 
-  PassGroupBuilder()
-      .addPass("chk-missing-return") /* Check for missing return statements */
-      .addPass("chk-bad-cast")       /* Check for bad casts */
-      .build("chk");
+  PassGroupBuilder().build("chk");
 }

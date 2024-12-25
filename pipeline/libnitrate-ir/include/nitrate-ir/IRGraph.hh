@@ -34,8 +34,6 @@
 #ifndef __NITRATE_IR_NODE_H__
 #define __NITRATE_IR_NODE_H__
 
-#include <nitrate-ir/TypeDecl.h>
-
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
@@ -50,6 +48,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRVisitor.hh>
 #include <nitrate-ir/Module.hh>
+#include <nitrate-ir/TypeDecl.hh>
 #include <nitrate-lexer/Token.hh>
 #include <optional>
 #include <ostream>
@@ -58,7 +57,7 @@
 #include <variant>
 #include <vector>
 
-namespace nr {
+namespace ncc::ir {
   using boost::multiprecision::uint128_t;
 
   extern "C" thread_local std::unique_ptr<ncc::IMemory> nr_allocator;
@@ -90,14 +89,13 @@ namespace nr {
   bool operator!=(const Arena<T> &, const Arena<U> &) {
     return false;
   }
-};  // namespace nr
+};  // namespace ncc::ir
 
-struct nr_node_t {
-public:
-  nr_node_t() = default;
-};
-
-namespace nr {
+namespace ncc::ir {
+  struct nr_node_t {
+  public:
+    nr_node_t() = default;
+  };
 
 #ifdef __IR_NODE_REFLECT_IMPL__
 #define QCLASS_REFLECT() public:
@@ -1727,7 +1725,7 @@ namespace nr {
     return static_cast<Type *>(this);
   }
 
-  constexpr std::optional<nr::Type *> nr::Expr::getType() const {
+  constexpr std::optional<Type *> Expr::getType() const {
     Type *R = static_cast<Type *>(nr_infer(this, nullptr));
 
     if (R) {
@@ -2057,7 +2055,7 @@ namespace nr {
     return names[type];
   }
 
-  constexpr bool nr::Expr::isSame(const nr::Expr *other) const {
+  constexpr bool Expr::isSame(const Expr *other) const {
     nr_ty_t kind = getKind();
 
     if (kind != other->getKind()) {
@@ -2374,7 +2372,7 @@ namespace nr {
         }
 
         switch (a->m_type) {
-          case nr::TmpType::CALL: {
+          case TmpType::CALL: {
             const auto &AD = std::get<CallArgsTmpNodeCradle>(a->m_data);
             const auto &BD = std::get<CallArgsTmpNodeCradle>(b->m_data);
 
@@ -2399,12 +2397,12 @@ namespace nr {
             return true;
           }
 
-          case nr::TmpType::DEFAULT_VALUE: {
+          case TmpType::DEFAULT_VALUE: {
             return std::get<std::string_view>(a->m_data) ==
                    std::get<std::string_view>(b->m_data);
           }
 
-          case nr::TmpType::NAMED_TYPE: {
+          case TmpType::NAMED_TYPE: {
             return std::get<std::string_view>(a->m_data) ==
                    std::get<std::string_view>(b->m_data);
           }
@@ -2590,11 +2588,10 @@ namespace nr {
   std::optional<T> uint_as(const Expr *x) {
 #define IS_T(x) std::is_same_v<T, x>
 
-    qcore_assert(x != nullptr, "nr::evaluate_as(): x is nullptr.");
+    qcore_assert(x != nullptr, "evaluate_as(): x is nullptr.");
 
-    static_assert(
-        IS_T(std::string) || IS_T(uint64_t),
-        "nr::evaluate_as(): T must be either std::string or uint64_t.");
+    static_assert(IS_T(std::string) || IS_T(uint64_t),
+                  "evaluate_as(): T must be either std::string or uint64_t.");
 
     Expr *r = comptime_impl(const_cast<Expr *>(x)).value_or(nullptr);
     if (r == nullptr) {
@@ -2627,51 +2624,47 @@ namespace nr {
 
     return N;
   }
-}  // namespace nr
 
-namespace nr {
-  template <auto mode = nr::dfs_pre>
-  void for_each(const nr::Expr *const v,
-                std::function<void(nr_ty_t, const nr::Expr *const)> f) {
-    nr::iterate<mode>(v, [&](auto, auto c) -> nr::IterOp {
+  template <auto mode = dfs_pre>
+  void for_each(const Expr *const v,
+                std::function<void(nr_ty_t, const Expr *const)> f) {
+    iterate<mode>(v, [&](auto, auto c) -> IterOp {
       f((*c)->getKind(), *c);
 
-      return nr::IterOp::Abort;
+      return IterOp::Abort;
     });
   }
 
-  template <auto mode = nr::dfs_pre>
-  void transform(nr::Expr *v, std::function<bool(nr_ty_t, nr::Expr **)> f) {
-    nr::iterate<mode>(v, [&](auto, auto c) -> nr::IterOp {
-      return f((*c)->getKind(), c) ? nr::IterOp::Proceed : nr::IterOp::Abort;
+  template <auto mode = dfs_pre>
+  void transform(Expr *v, std::function<bool(nr_ty_t, Expr **)> f) {
+    iterate<mode>(v, [&](auto, auto c) -> IterOp {
+      return f((*c)->getKind(), c) ? IterOp::Proceed : IterOp::Abort;
     });
   }
 
-  template <typename T, auto mode = nr::dfs_pre>
-  void for_each(const nr::Expr *const v, std::function<void(const T *)> f) {
-    nr::iterate<mode>(v,
-                      [&](auto, const nr::Expr *const *const c) -> nr::IterOp {
-                        if ((*c)->getKind() != nr::Expr::getTypeCode<T>()) {
-                          return nr::IterOp::Proceed;
-                        }
-
-                        f((*c)->as<T>());
-
-                        return nr::IterOp::Proceed;
-                      });
-  }
-
-  template <typename T, auto mode = nr::dfs_pre>
-  void transform(nr::Expr *v, std::function<bool(T **)> f) {
-    nr::iterate<mode>(v, [&](auto, auto c) -> nr::IterOp {
-      if ((*c)->getKind() != nr::Expr::getTypeCode<T>()) {
-        return nr::IterOp::Proceed;
+  template <typename T, auto mode = dfs_pre>
+  void for_each(const Expr *const v, std::function<void(const T *)> f) {
+    iterate<mode>(v, [&](auto, const Expr *const *const c) -> IterOp {
+      if ((*c)->getKind() != Expr::getTypeCode<T>()) {
+        return IterOp::Proceed;
       }
 
-      return f(reinterpret_cast<T **>(c)) ? nr::IterOp::Proceed
-                                          : nr::IterOp::Abort;
+      f((*c)->as<T>());
+
+      return IterOp::Proceed;
     });
   }
-}  // namespace nr
+
+  template <typename T, auto mode = dfs_pre>
+  void transform(Expr *v, std::function<bool(T **)> f) {
+    iterate<mode>(v, [&](auto, auto c) -> IterOp {
+      if ((*c)->getKind() != Expr::getTypeCode<T>()) {
+        return IterOp::Proceed;
+      }
+
+      return f(reinterpret_cast<T **>(c)) ? IterOp::Proceed : IterOp::Abort;
+    });
+  }
+}  // namespace ncc::ir
 
 #endif

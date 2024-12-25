@@ -33,17 +33,16 @@
 
 #define IRBUILDER_IMPL
 
-#include <nitrate-ir/TypeDecl.h>
-
 #include <algorithm>
 #include <cctype>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
+#include <nitrate-ir/TypeDecl.hh>
 #include <string>
 #include <unordered_map>
 
-using namespace nr;
+using namespace ncc::ir;
 
 void NRBuilder::flatten_symbols(Seq *root) {
   std::unordered_set<Expr *> symbols;

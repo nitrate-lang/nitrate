@@ -34,32 +34,21 @@
 #ifndef __NITRATE_IR_PASSES_LIST_H__
 #define __NITRATE_IR_PASSES_LIST_H__
 
-struct qmodule_t;
-
 #include <nitrate-ir/Report.hh>
 
-namespace nr::pass {
+namespace ncc::ir {
+  struct qmodule_t;
+}
+
+namespace ncc::ir::pass {
 #define SEMANTIC_PASS(name) bool name(qmodule_t *mod, IReport *log);
 #define TRANSFORM_PASS(name) bool name(qmodule_t *mod, IReport *log)
 #define OPTIMIZE_PASS(name) bool name(qmodule_t *mod, IReport *log)
-
-  TRANSFORM_PASS(ds_acyclic);
-  TRANSFORM_PASS(ds_nullchk);
-  TRANSFORM_PASS(ds_resolv);
-  TRANSFORM_PASS(ds_flatten);
-  TRANSFORM_PASS(ds_tyinfer);
-  TRANSFORM_PASS(ds_mangle);
-  TRANSFORM_PASS(ds_verify);
-  TRANSFORM_PASS(ds_clean);
-  TRANSFORM_PASS(ds_raii);
-
-  SEMANTIC_PASS(chk_missing_return);
-  SEMANTIC_PASS(chk_bad_cast);
 
 #undef OPTIMIZE_PASS
 #undef TRANSFORM_PASS
 #undef SEMANTIC_PASS
 
-}  // namespace nr::pass
+}  // namespace ncc::ir::pass
 
 #endif  // __NITRATE_IR_PASSES_LIST_H__

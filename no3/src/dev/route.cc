@@ -36,7 +36,6 @@
 #include <lsp/nitrated.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
-#include <nitrate-ir/IR.h>
 #include <nitrate-seq/Lib.h>
 
 #include <clean/Cleanup.hh>
@@ -50,6 +49,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/Classes.hh>
+#include <nitrate-ir/IR.hh>
 #include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-lexer/Lexer.hh>
@@ -62,9 +62,11 @@
 
 using namespace argparse;
 using namespace no3;
+
 using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
+using namespace ncc::ir;
 
 namespace no3::benchmark {
   extern std::string lexical_benchmark_source;
@@ -516,7 +518,7 @@ namespace no3::router {
         mangled_name.erase(0);
       }
 
-      nr::SymbolEncoding codec;
+      ir::SymbolEncoding codec;
       auto demangled_name = codec.demangle_name(mangled_name);
       if (!demangled_name) {
         LOG(ERROR) << "Failed to demangle symbol" << std::endl;

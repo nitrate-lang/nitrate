@@ -65,7 +65,6 @@
 #include <llvm-18/llvm/Transforms/InstCombine/InstCombine.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Config.h>
-#include <nitrate-ir/TypeDecl.h>
 
 #include <cstdint>
 #include <iostream>
@@ -74,6 +73,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
+#include <nitrate-ir/TypeDecl.hh>
 #include <optional>
 #include <stack>
 #include <streambuf>
@@ -83,6 +83,7 @@
 
 using namespace llvm;
 using namespace std;
+using namespace ncc::ir;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -101,7 +102,7 @@ typedef function<bool(qmodule_t *, qcode_conf_t *, ostream &err,
 using ctx_t = Module;
 using craft_t = IRBuilder<>;
 using val_t = optional<Value *>;
-using ty_t = optional<Type *>;
+using ty_t = optional<llvm::Type *>;
 
 enum class PtrClass {
   DataPtr,
@@ -361,15 +362,15 @@ public:
   }
 };
 
-static auto T_gen(craft_t &b, const nr::Expr *N) -> ty_t;
-static auto V_gen(ctx_t &m, craft_t &b, State &s, const nr::Expr *N) -> val_t;
+static auto T_gen(craft_t &b, const Expr *N) -> ty_t;
+static auto V_gen(ctx_t &m, craft_t &b, State &s, const Expr *N) -> val_t;
 
 #define T(N) T_gen(b, N)
 #define V(N) V_gen(m, b, s, N)
 
 static void make_forward_declaration(ctx_t &m, craft_t &b, State &,
-                                     const nr::Fn *N) {
-  vector<Type *> args;
+                                     const Fn *N) {
+  vector<llvm::Type *> args;
   for (auto &arg : N->getParams()) {
     auto ty = T(arg.first);
     if (!ty) {
@@ -415,22 +416,21 @@ static optional<unique_ptr<Module>> fabricate_llvmir(const qmodule_t *src,
   State s;
 
   // Forward declare all functions
-  nr::iterate<nr::dfs_pre>(
-      root,
-      [&](const nr::Expr *, const nr::Expr *const *const N) -> nr::IterOp {
-        if ((*N)->getKind() == NR_NODE_SEQ ||
-            (*N)->getKind() == NR_NODE_EXTERN) {
-          return nr::IterOp::Proceed;
-        } else if ((*N)->getKind() != NR_NODE_FN) {
-          return nr::IterOp::SkipChildren;
-        }
+  iterate<dfs_pre>(root,
+                   [&](const Expr *, const Expr *const *const N) -> IterOp {
+                     if ((*N)->getKind() == NR_NODE_SEQ ||
+                         (*N)->getKind() == NR_NODE_EXTERN) {
+                       return IterOp::Proceed;
+                     } else if ((*N)->getKind() != NR_NODE_FN) {
+                       return IterOp::SkipChildren;
+                     }
 
-        make_forward_declaration(*m, *b, s, (*N)->as<nr::Fn>());
+                     make_forward_declaration(*m, *b, s, (*N)->as<Fn>());
 
-        return nr::IterOp::Proceed;
-      });
+                     return IterOp::Proceed;
+                   });
 
-  const nr::Seq *seq = root->as<nr::Seq>();
+  const Seq *seq = root->as<Seq>();
 
   for (auto &node : seq->getItems()) {
     val_t R = V_gen(*m, *b, s, node);
@@ -443,8 +443,9 @@ static optional<unique_ptr<Module>> fabricate_llvmir(const qmodule_t *src,
   return m;
 }
 
-static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, Value *L, nr::Op O,
-                             Type *R, nr::Type *LT, nr::Type *RT) {
+static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, Value *L, Op O,
+                             llvm::Type *R, ncc::ir::Type *LT,
+                             ncc::ir::Type *RT) {
   val_t E;
 
   if (LT->isSame(RT)) {
@@ -452,7 +453,7 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, Value *L, nr::Op O,
   }
 
   switch (O) {
-    case nr::Op::BitcastAs: {
+    case Op::BitcastAs: {
       if (LT->is_pointer() && RT->is_integral()) {
         E = b.CreatePtrToInt(L, R);
       } else if (LT->is_integral() && RT->is_pointer()) {
@@ -463,8 +464,8 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, Value *L, nr::Op O,
       break;
     }
 
-    case nr::Op::CastAs: {
-      Type *IR_LT = L->getType();
+    case Op::CastAs: {
+      llvm::Type *IR_LT = L->getType();
       /* Handle floating point */
       if (IR_LT->isFloatingPointTy() && RT->is_signed()) {
         E = b.CreateFPToSI(L, R);
@@ -489,8 +490,8 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, Value *L, nr::Op O,
 
       /* Composite casting */
       else if (LT->is_array() && RT->getKind() == NR_NODE_STRUCT_TY) {
-        nr::ArrayTy *base = LT->as<nr::ArrayTy>();
-        nr::StructTy *ST = RT->as<nr::StructTy>();
+        ArrayTy *base = LT->as<ArrayTy>();
+        StructTy *ST = RT->as<StructTy>();
 
         if (base->getCount() == ST->getFields().size()) {
           StructType *new_st_ty = cast<StructType>(R);
@@ -504,9 +505,9 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, Value *L, nr::Op O,
               return nullopt;
             }
 
-            val_t F = binexpr_do_cast(
-                m, b, s, b.CreateExtractValue(L, i), nr::Op::CastAs,
-                new_st_ty->getElementType(i), x.value(), ST->getFields()[i]);
+            val_t F = binexpr_do_cast(m, b, s, b.CreateExtractValue(L, i),
+                                      Op::CastAs, new_st_ty->getElementType(i),
+                                      x.value(), ST->getFields()[i]);
             if (!F) {
               debug("Failed to cast element " << i);
               return nullopt;
@@ -518,8 +519,8 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, Value *L, nr::Op O,
           E = b.CreateLoad(new_st->getAllocatedType(), new_st);
         }
       } else if (LT->is_array() && RT->is_array()) {
-        nr::ArrayTy *FROM = LT->as<nr::ArrayTy>();
-        nr::ArrayTy *TO = RT->as<nr::ArrayTy>();
+        ArrayTy *FROM = LT->as<ArrayTy>();
+        ArrayTy *TO = RT->as<ArrayTy>();
 
         if (FROM->getCount() == TO->getCount()) {
           ArrayType *new_arr_ty = cast<ArrayType>(R);
@@ -536,9 +537,9 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, Value *L, nr::Op O,
               debug("Failed to get element type");
               return nullopt;
             }
-            val_t F = binexpr_do_cast(
-                m, b, s, b.CreateExtractValue(L, i), nr::Op::CastAs,
-                new_arr_ty->getElementType(), x.value(), y.value());
+            val_t F = binexpr_do_cast(m, b, s, b.CreateExtractValue(L, i),
+                                      Op::CastAs, new_arr_ty->getElementType(),
+                                      x.value(), y.value());
             if (!F) {
               debug("Failed to cast element " << i);
               return nullopt;
@@ -566,8 +567,7 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, Value *L, nr::Op O,
 
 namespace lower {
   namespace expr {
-    static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s,
-                             const nr::BinExpr *N) {
+    static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, const BinExpr *N) {
 #define PROD_LHS()              \
   val_t L = V(N->getLHS());     \
   if (!L) {                     \
@@ -575,7 +575,7 @@ namespace lower {
     return nullopt;             \
   }
 
-      nr::Op O = N->getOp();
+      Op O = N->getOp();
 
       if (N->getRHS()->isType()) { /* Do casting */
         PROD_LHS()
@@ -607,25 +607,25 @@ namespace lower {
       val_t E;
 
       switch (O) {
-        case nr::Op::Plus: { /* '+': Addition operator */
+        case Op::Plus: { /* '+': Addition operator */
           PROD_LHS()
           E = b.CreateAdd(L.value(), R.value());
           break;
         }
 
-        case nr::Op::Minus: { /* '-': Subtraction operator */
+        case Op::Minus: { /* '-': Subtraction operator */
           PROD_LHS()
           E = b.CreateSub(L.value(), R.value());
           break;
         }
 
-        case nr::Op::Times: { /* '*': Multiplication operator */
+        case Op::Times: { /* '*': Multiplication operator */
           PROD_LHS()
           E = b.CreateMul(L.value(), R.value());
           break;
         }
 
-        case nr::Op::Slash: { /* '/': Division operator */
+        case Op::Slash: { /* '/': Division operator */
           PROD_LHS()
           auto x = N->getLHS()->getType();
           if (!x.has_value()) {
@@ -642,7 +642,7 @@ namespace lower {
           break;
         }
 
-        case nr::Op::Percent: { /* '%': Modulus operator */
+        case Op::Percent: { /* '%': Modulus operator */
           PROD_LHS()
           auto x = N->getLHS()->getType();
           if (!x.has_value()) {
@@ -659,43 +659,43 @@ namespace lower {
           break;
         }
 
-        case nr::Op::BitAnd: { /* '&': Bitwise AND operator */
+        case Op::BitAnd: { /* '&': Bitwise AND operator */
           PROD_LHS()
           E = b.CreateAnd(L.value(), R.value());
           break;
         }
 
-        case nr::Op::BitOr: { /* '|': Bitwise OR operator */
+        case Op::BitOr: { /* '|': Bitwise OR operator */
           PROD_LHS()
           E = b.CreateOr(L.value(), R.value());
           break;
         }
 
-        case nr::Op::BitXor: { /* '^': Bitwise XOR operator */
+        case Op::BitXor: { /* '^': Bitwise XOR operator */
           PROD_LHS()
           E = b.CreateXor(L.value(), R.value());
           break;
         }
 
-        case nr::Op::LogicAnd: { /* '&&': Logical AND operator */
+        case Op::LogicAnd: { /* '&&': Logical AND operator */
           PROD_LHS()
           E = b.CreateLogicalAnd(L.value(), R.value());
           break;
         }
 
-        case nr::Op::LogicOr: { /* '||': Logical OR operator */
+        case Op::LogicOr: { /* '||': Logical OR operator */
           PROD_LHS()
           E = b.CreateLogicalOr(L.value(), R.value());
           break;
         }
 
-        case nr::Op::LShift: { /* '<<': Left shift operator */
+        case Op::LShift: { /* '<<': Left shift operator */
           PROD_LHS()
           E = b.CreateShl(L.value(), R.value());
           break;
         }
 
-        case nr::Op::RShift: { /* '>>': Right shift operator */
+        case Op::RShift: { /* '>>': Right shift operator */
           PROD_LHS()
           auto x = N->getLHS()->getType();
           if (!x.has_value()) {
@@ -712,10 +712,10 @@ namespace lower {
           break;
         }
 
-        case nr::Op::Set: { /* '=': Assignment operator */
+        case Op::Set: { /* '=': Assignment operator */
           if (N->getLHS()->getKind() == NR_NODE_IDENT) {
             if (auto find = s.find_named_value(
-                    m, N->getLHS()->as<nr::Ident>()->getName())) {
+                    m, N->getLHS()->as<Ident>()->getName())) {
               if (find->second == PtrClass::DataPtr) {
                 b.CreateStore(R.value(), find->first);
 
@@ -726,7 +726,7 @@ namespace lower {
           break;
         }
 
-        case nr::Op::LT: { /* '<': Less than operator */
+        case Op::LT: { /* '<': Less than operator */
           PROD_LHS()
           auto x = N->getLHS()->getType();
           if (!x.has_value()) {
@@ -743,7 +743,7 @@ namespace lower {
           break;
         }
 
-        case nr::Op::GT: { /* '>': Greater than operator */
+        case Op::GT: { /* '>': Greater than operator */
           PROD_LHS()
           auto x = N->getLHS()->getType();
           if (!x.has_value()) {
@@ -760,7 +760,7 @@ namespace lower {
           break;
         }
 
-        case nr::Op::LE: { /* '<=': Less than or equal to operator */
+        case Op::LE: { /* '<=': Less than or equal to operator */
           PROD_LHS()
           auto x = N->getLHS()->getType();
           if (!x.has_value()) {
@@ -777,7 +777,7 @@ namespace lower {
           break;
         }
 
-        case nr::Op::GE: { /* '>=': Greater than or equal to operator */
+        case Op::GE: { /* '>=': Greater than or equal to operator */
           PROD_LHS()
           auto x = N->getLHS()->getType();
           if (x.value()->is_signed()) {
@@ -790,13 +790,13 @@ namespace lower {
           break;
         }
 
-        case nr::Op::Eq: { /* '==': Equal to operator */
+        case Op::Eq: { /* '==': Equal to operator */
           PROD_LHS()
           E = b.CreateICmpEQ(L.value(), R.value());
           break;
         }
 
-        case nr::Op::NE: { /* '!=': Not equal to operator */
+        case Op::NE: { /* '!=': Not equal to operator */
           PROD_LHS()
           E = b.CreateICmpNE(L.value(), R.value());
           break;
@@ -810,31 +810,30 @@ namespace lower {
       return E;
     }
 
-    static val_t for_UNEXPR(ctx_t &m, craft_t &b, State &s,
-                            const nr::UnExpr *N) {
+    static val_t for_UNEXPR(ctx_t &m, craft_t &b, State &s, const UnExpr *N) {
       val_t R;
 
       switch (N->getOp()) {
-        case nr::Op::Plus: {
+        case Op::Plus: {
           R = V(N->getExpr());
           break;
         }
-        case nr::Op::Minus: {
+        case Op::Minus: {
           if (val_t E = V(N->getExpr())) {
             R = b.CreateNeg(E.value());
           }
           break;
         }
-        case nr::Op::Times: {
+        case Op::Times: {
           /// TODO: Dereference
           break;
         }
-        case nr::Op::BitAnd: {
+        case Op::BitAnd: {
           if (N->getExpr()->getKind() != NR_NODE_IDENT) {
             qcore_panic("expected identifier for address_of");
           }
 
-          nr::Ident *I = N->getExpr()->as<nr::Ident>();
+          Ident *I = N->getExpr()->as<Ident>();
           auto find = s.find_named_value(m, I->getName());
           if (!find) {
             qcore_panic("failed to find identifier for address_of");
@@ -848,25 +847,25 @@ namespace lower {
           R = V;
           break;
         }
-        case nr::Op::BitNot: {
+        case Op::BitNot: {
           if (val_t E = V(N->getExpr())) {
             R = b.CreateNot(E.value());
           }
           break;
         }
-        case nr::Op::LogicNot: {
+        case Op::LogicNot: {
           if (val_t E = V(N->getExpr())) {
             R = b.CreateICmpEQ(E.value(),
                                ConstantInt::get(b.getContext(), APInt(1, 0)));
           }
           break;
         }
-        case nr::Op::Inc: {
+        case Op::Inc: {
           if (N->getExpr()->getKind() != NR_NODE_IDENT) {
             qcore_panic("expected identifier for increment");
           }
 
-          nr::Ident *I = N->getExpr()->as<nr::Ident>();
+          Ident *I = N->getExpr()->as<Ident>();
           auto find = s.find_named_value(m, I->getName());
           if (!find) {
             qcore_panic("failed to find identifier for increment");
@@ -911,12 +910,12 @@ namespace lower {
           R = new_val;
           break;
         }
-        case nr::Op::Dec: {
+        case Op::Dec: {
           if (N->getExpr()->getKind() != NR_NODE_IDENT) {
             qcore_panic("expected identifier for decrement");
           }
 
-          nr::Ident *I = N->getExpr()->as<nr::Ident>();
+          Ident *I = N->getExpr()->as<Ident>();
           auto find = s.find_named_value(m, I->getName());
           if (!find) {
             qcore_panic("failed to find identifier for decrement");
@@ -962,7 +961,7 @@ namespace lower {
           R = new_val;
           break;
         }
-        case nr::Op::Alignof: {
+        case Op::Alignof: {
           auto x = N->getExpr()->getType();
           if (!x.has_value()) {
             debug("Failed to get type");
@@ -975,7 +974,7 @@ namespace lower {
           }
           break;
         }
-        case nr::Op::Bitsizeof: {
+        case Op::Bitsizeof: {
           auto x = N->getExpr()->getType();
           if (!x.has_value()) {
             debug("Failed to get type");
@@ -998,16 +997,16 @@ namespace lower {
     }
 
     static val_t for_POST_UNEXPR(ctx_t &m, craft_t &b, State &s,
-                                 const nr::PostUnExpr *N) {
+                                 const PostUnExpr *N) {
       val_t R;
 
       switch (N->getOp()) {
-        case nr::Op::Inc: {
+        case Op::Inc: {
           if (N->getExpr()->getKind() != NR_NODE_IDENT) {
             qcore_panic("expected identifier for increment");
           }
 
-          nr::Ident *I = N->getExpr()->as<nr::Ident>();
+          Ident *I = N->getExpr()->as<Ident>();
           auto find = s.find_named_value(m, I->getName());
           if (!find) {
             qcore_panic("failed to find identifier for increment");
@@ -1052,12 +1051,12 @@ namespace lower {
           R = current;
           break;
         }
-        case nr::Op::Dec: {
+        case Op::Dec: {
           if (N->getExpr()->getKind() != NR_NODE_IDENT) {
             qcore_panic("expected identifier for decrement");
           }
 
-          nr::Ident *I = N->getExpr()->as<nr::Ident>();
+          Ident *I = N->getExpr()->as<Ident>();
           auto find = s.find_named_value(m, I->getName());
           if (!find) {
             qcore_panic("failed to find identifier for decrement");
@@ -1111,7 +1110,7 @@ namespace lower {
       return R;
     }
 
-    static val_t for_INT(ctx_t &, craft_t &b, State &, const nr::Int *N) {
+    static val_t for_INT(ctx_t &, craft_t &b, State &, const Int *N) {
       unsigned __int128 lit = N->getValue().convert_to<unsigned __int128>();
 
       array<uint64_t, 2> parts;
@@ -1121,11 +1120,11 @@ namespace lower {
       return ConstantInt::get(b.getContext(), APInt(N->getSize(), parts));
     }
 
-    static val_t for_FLOAT(ctx_t &, craft_t &b, State &, const nr::Float *N) {
+    static val_t for_FLOAT(ctx_t &, craft_t &b, State &, const Float *N) {
       return ConstantFP::get(b.getContext(), APFloat(N->getValue()));
     }
 
-    static val_t for_LIST(ctx_t &m, craft_t &b, State &s, const nr::List *N) {
+    static val_t for_LIST(ctx_t &m, craft_t &b, State &s, const List *N) {
       if (N->size() == 0) {
         StructType *ST = StructType::get(b.getContext(), {}, true);
         AllocaInst *AI = b.CreateAlloca(ST);
@@ -1159,7 +1158,7 @@ namespace lower {
 
         return b.CreateLoad(AT, AI);
       } else {  // It's an implicit struct value
-        vector<Type *> types;
+        vector<llvm::Type *> types;
         types.reserve(items.size());
         for (auto &item : items) {
           types.push_back(item->getType());
@@ -1176,9 +1175,9 @@ namespace lower {
       }
     }
 
-    static val_t for_SEQ(ctx_t &m, craft_t &b, State &s, const nr::Seq *N) {
+    static val_t for_SEQ(ctx_t &m, craft_t &b, State &s, const Seq *N) {
       if (N->getItems().empty()) {
-        return Constant::getNullValue(Type::getInt32Ty(b.getContext()));
+        return Constant::getNullValue(llvm::Type::getInt32Ty(b.getContext()));
       }
 
       val_t R;
@@ -1194,7 +1193,7 @@ namespace lower {
       return R;
     }
 
-    static val_t for_INDEX(ctx_t &m, craft_t &b, State &s, const nr::Index *N) {
+    static val_t for_INDEX(ctx_t &m, craft_t &b, State &s, const Index *N) {
       val_t I = V(N->getIndex());
       if (!I) {
         debug("Failed to get index");
@@ -1202,7 +1201,7 @@ namespace lower {
       }
 
       if (N->getExpr()->getKind() == NR_NODE_IDENT) {
-        nr::Ident *B = N->getExpr()->as<nr::Ident>();
+        Ident *B = N->getExpr()->as<Ident>();
         auto find = s.find_named_value(m, B->getName());
         if (!find) {
           debug("Failed to find named value " << B->getName());
@@ -1217,7 +1216,7 @@ namespace lower {
           qcore_panic("unexpected type for index");
         }
 
-        Type *base_ty =
+        llvm::Type *base_ty =
             find->first->getType()->getNonOpaquePointerElementType();
 
         if (base_ty->isArrayTy()) {
@@ -1242,7 +1241,7 @@ namespace lower {
       }
     }
 
-    static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, const nr::Ident *N) {
+    static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, const Ident *N) {
       if (auto find = s.find_named_value(m, N->getName())) {
         debug("Found named value " << N->getName());
 
@@ -1263,15 +1262,14 @@ namespace lower {
       return nullopt;
     }
 
-    static val_t for_ASM(ctx_t &, craft_t &, State &, const nr::Asm *) {
+    static val_t for_ASM(ctx_t &, craft_t &, State &, const Asm *) {
       qcore_implement();
     }
   }  // namespace expr
 
   namespace symbol {
 
-    static val_t for_EXTERN(ctx_t &m, craft_t &b, State &s,
-                            const nr::Extern *N) {
+    static val_t for_EXTERN(ctx_t &m, craft_t &b, State &s, const Extern *N) {
       s.push_linkage(GlobalValue::ExternalLinkage);
 
       val_t R = V(N->getValue());
@@ -1286,7 +1284,7 @@ namespace lower {
       return R;
     }
 
-    static val_t for_LOCAL(ctx_t &m, craft_t &b, State &s, const nr::Local *N) {
+    static val_t for_LOCAL(ctx_t &m, craft_t &b, State &s, const Local *N) {
       auto x = N->getValue()->getType();
       if (!x.has_value()) {
         debug("Failed to get type");
@@ -1326,8 +1324,8 @@ namespace lower {
       }
     }
 
-    static val_t for_FN(ctx_t &m, craft_t &b, State &s, const nr::Fn *N) {
-      vector<Type *> params;
+    static val_t for_FN(ctx_t &m, craft_t &b, State &s, const Fn *N) {
+      vector<llvm::Type *> params;
 
       { /* Lower parameter types */
         params.reserve(N->getParams().size());
@@ -1343,7 +1341,7 @@ namespace lower {
         }
       }
 
-      Type *ret_ty;
+      llvm::Type *ret_ty;
 
       { /* Lower return type */
         auto x = N->getType();
@@ -1351,7 +1349,7 @@ namespace lower {
           debug("Failed to get return type");
           return nullopt;
         }
-        ty_t R = T(x.value()->as<nr::FnTy>()->getReturn());
+        ty_t R = T(x.value()->as<FnTy>()->getReturn());
         if (!R) {
           debug("Failed to get return type");
           return nullopt;
@@ -1437,7 +1435,7 @@ namespace lower {
   }  // namespace symbol
 
   namespace control {
-    static val_t for_CALL(ctx_t &m, craft_t &b, State &s, const nr::Call *N) {
+    static val_t for_CALL(ctx_t &m, craft_t &b, State &s, const Call *N) {
       if (N->getTarget()->is(NR_NODE_IDENT)) {
         let func_name = N->getTarget()->getName();
 
@@ -1502,7 +1500,7 @@ namespace lower {
       return nullopt;
     }
 
-    static val_t for_RET(ctx_t &m, craft_t &b, State &s, const nr::Ret *N) {
+    static val_t for_RET(ctx_t &m, craft_t &b, State &s, const Ret *N) {
       if (!N->getExpr()->is(NR_NODE_VOID_TY)) {
         if (let R = V(N->getExpr())) {
           b.CreateStore(R.value(), s.get_return_block().getValue());
@@ -1519,7 +1517,7 @@ namespace lower {
       return br;
     }
 
-    static val_t for_BRK(ctx_t &, craft_t &b, State &s, const nr::Brk *) {
+    static val_t for_BRK(ctx_t &, craft_t &b, State &s, const Brk *) {
       if (let block = s.get_break_block()) {
         s.branch_early = true;
 
@@ -1529,7 +1527,7 @@ namespace lower {
       }
     }
 
-    static val_t for_CONT(ctx_t &, craft_t &b, State &s, const nr::Cont *) {
+    static val_t for_CONT(ctx_t &, craft_t &b, State &s, const Cont *) {
       if (let block = s.get_skip_block()) {
         s.branch_early = true;
 
@@ -1539,7 +1537,7 @@ namespace lower {
       }
     }
 
-    static val_t for_IF(ctx_t &m, craft_t &b, State &s, const nr::If *N) {
+    static val_t for_IF(ctx_t &m, craft_t &b, State &s, const If *N) {
       if (!s.is_inside_function()) {
         return nullopt;
       }
@@ -1582,7 +1580,7 @@ namespace lower {
       return nullopt;
     }
 
-    static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, const nr::While *N) {
+    static val_t for_WHILE(ctx_t &m, craft_t &b, State &s, const While *N) {
       if (!s.is_inside_function()) {
         return nullopt;
       }
@@ -1629,7 +1627,7 @@ namespace lower {
       return R;
     }
 
-    static val_t for_FOR(ctx_t &m, craft_t &b, State &s, const nr::For *N) {
+    static val_t for_FOR(ctx_t &m, craft_t &b, State &s, const For *N) {
       if (!s.is_inside_function()) {
         return nullopt;
       }
@@ -1684,11 +1682,11 @@ namespace lower {
       return R;
     }
 
-    static val_t for_CASE(ctx_t &, craft_t &, State &, const nr::Case *) {
+    static val_t for_CASE(ctx_t &, craft_t &, State &, const Case *) {
       qcore_panic("code path unreachable");
     }
 
-    static bool check_switch_trivial(const nr::Switch *N) {
+    static bool check_switch_trivial(const Switch *N) {
       auto C_T = N->getCond()->getType();
       if (!C_T) {
         debug("Failed to get condition type");
@@ -1700,7 +1698,7 @@ namespace lower {
       }
 
       for (auto &node : N->getCases()) {
-        nr::Case *C = node->as<nr::Case>();
+        Case *C = node->as<Case>();
         auto x = C->getCond()->getType();
         if (!x) {
           debug("Failed to get case condition type");
@@ -1714,8 +1712,7 @@ namespace lower {
       return true;
     }
 
-    static val_t for_SWITCH(ctx_t &m, craft_t &b, State &s,
-                            const nr::Switch *N) {
+    static val_t for_SWITCH(ctx_t &m, craft_t &b, State &s, const Switch *N) {
       val_t R = V(N->getCond());
       if (!R) {
         debug("Failed to get condition");
@@ -1737,7 +1734,7 @@ namespace lower {
           b.SetInsertPoint(case_block);
           case_block->moveBefore(end);
 
-          nr::Case *C = node->as<nr::Case>();
+          Case *C = node->as<Case>();
 
           val_t R_C = V(C->getCond());
           if (!R_C) {
@@ -1772,74 +1769,74 @@ namespace lower {
 
   namespace types {
     namespace prim {
-      static auto for_U1_TY(craft_t &b, const nr::U1Ty *) {
-        return Type::getInt1Ty(b.getContext());
+      static auto for_U1_TY(craft_t &b, const U1Ty *) {
+        return llvm::Type::getInt1Ty(b.getContext());
       }
 
-      static auto for_U8_TY(craft_t &b, const nr::U8Ty *) {
-        return Type::getInt8Ty(b.getContext());
+      static auto for_U8_TY(craft_t &b, const U8Ty *) {
+        return llvm::Type::getInt8Ty(b.getContext());
       }
 
-      static auto for_U16_TY(craft_t &b, const nr::U16Ty *) {
-        return Type::getInt16Ty(b.getContext());
+      static auto for_U16_TY(craft_t &b, const U16Ty *) {
+        return llvm::Type::getInt16Ty(b.getContext());
       }
 
-      static auto for_U32_TY(craft_t &b, const nr::U32Ty *) {
-        return Type::getInt32Ty(b.getContext());
+      static auto for_U32_TY(craft_t &b, const U32Ty *) {
+        return llvm::Type::getInt32Ty(b.getContext());
       }
 
-      static auto for_U64_TY(craft_t &b, const nr::U64Ty *) {
-        return Type::getInt64Ty(b.getContext());
+      static auto for_U64_TY(craft_t &b, const U64Ty *) {
+        return llvm::Type::getInt64Ty(b.getContext());
       }
 
-      static auto for_U128_TY(craft_t &b, const nr::U128Ty *) {
-        return Type::getInt128Ty(b.getContext());
+      static auto for_U128_TY(craft_t &b, const U128Ty *) {
+        return llvm::Type::getInt128Ty(b.getContext());
       }
 
-      static auto for_I8_TY(craft_t &b, const nr::I8Ty *) {
-        return Type::getInt8Ty(b.getContext());
+      static auto for_I8_TY(craft_t &b, const I8Ty *) {
+        return llvm::Type::getInt8Ty(b.getContext());
       }
 
-      static auto for_I16_TY(craft_t &b, const nr::I16Ty *) {
-        return Type::getInt16Ty(b.getContext());
+      static auto for_I16_TY(craft_t &b, const I16Ty *) {
+        return llvm::Type::getInt16Ty(b.getContext());
       }
 
-      static auto for_I32_TY(craft_t &b, const nr::I32Ty *) {
-        return Type::getInt32Ty(b.getContext());
+      static auto for_I32_TY(craft_t &b, const I32Ty *) {
+        return llvm::Type::getInt32Ty(b.getContext());
       }
 
-      static auto for_I64_TY(craft_t &b, const nr::I64Ty *) {
-        return Type::getInt64Ty(b.getContext());
+      static auto for_I64_TY(craft_t &b, const I64Ty *) {
+        return llvm::Type::getInt64Ty(b.getContext());
       }
 
-      static auto for_I128_TY(craft_t &b, const nr::I128Ty *) {
-        return Type::getInt128Ty(b.getContext());
+      static auto for_I128_TY(craft_t &b, const I128Ty *) {
+        return llvm::Type::getInt128Ty(b.getContext());
       }
 
-      static auto for_F16_TY(craft_t &b, const nr::F16Ty *) {
-        return Type::getHalfTy(b.getContext());
+      static auto for_F16_TY(craft_t &b, const F16Ty *) {
+        return llvm::Type::getHalfTy(b.getContext());
       }
 
-      static auto for_F32_TY(craft_t &b, const nr::F32Ty *) {
-        return Type::getFloatTy(b.getContext());
+      static auto for_F32_TY(craft_t &b, const F32Ty *) {
+        return llvm::Type::getFloatTy(b.getContext());
       }
 
-      static auto for_F64_TY(craft_t &b, const nr::F64Ty *) {
-        return Type::getDoubleTy(b.getContext());
+      static auto for_F64_TY(craft_t &b, const F64Ty *) {
+        return llvm::Type::getDoubleTy(b.getContext());
       }
 
-      static auto for_F128_TY(craft_t &b, const nr::F128Ty *) {
-        return Type::getFP128Ty(b.getContext());
+      static auto for_F128_TY(craft_t &b, const F128Ty *) {
+        return llvm::Type::getFP128Ty(b.getContext());
       }
 
-      static auto for_VOID_TY(craft_t &b, const nr::VoidTy *) {
-        return Type::getVoidTy(b.getContext());
+      static auto for_VOID_TY(craft_t &b, const VoidTy *) {
+        return llvm::Type::getVoidTy(b.getContext());
       }
 
     }  // namespace prim
 
     namespace other {
-      static ty_t for_PTR_TY(craft_t &b, const nr::PtrTy *N) {
+      static ty_t for_PTR_TY(craft_t &b, const PtrTy *N) {
         if (ty_t pointee = T(N->getPointee())) {
           return PointerType::get(pointee.value(), 0);
         }
@@ -1847,17 +1844,17 @@ namespace lower {
         return nullopt;
       }
 
-      static ty_t for_CONST_TY(craft_t &b, const nr::ConstTy *N) {
+      static ty_t for_CONST_TY(craft_t &b, const ConstTy *N) {
         return T(N->getItem());
       }
 
-      static ty_t for_FN_TY(craft_t &b, const nr::FnTy *N) {
+      static ty_t for_FN_TY(craft_t &b, const FnTy *N) {
         let params = N->getParams();
-        vector<Type *> param_types(params.size());
+        vector<llvm::Type *> param_types(params.size());
         bool failed = false;
 
         transform(params.begin(), params.end(), param_types.begin(),
-                  [&](auto param) -> Type * {
+                  [&](auto param) -> llvm::Type * {
                     if (auto R = T(param)) {
                       return R.value();
                     } else {
@@ -1869,7 +1866,7 @@ namespace lower {
 
         if (!failed) {
           if (auto R = T(N->getReturn())) {
-            bool is_vararg = N->getAttrs().contains(nr::FnAttr::Variadic);
+            bool is_vararg = N->getAttrs().contains(FnAttr::Variadic);
 
             return FunctionType::get(R.value(), std::move(param_types),
                                      is_vararg);
@@ -1879,7 +1876,7 @@ namespace lower {
         return nullopt;
       }
 
-      static ty_t for_OPAQUE_TY(craft_t &b, const nr::OpaqueTy *N) {
+      static ty_t for_OPAQUE_TY(craft_t &b, const OpaqueTy *N) {
         if (!N->getName().empty()) {
           return StructType::create(b.getContext(), N->getName());
         }
@@ -1887,13 +1884,13 @@ namespace lower {
         return nullopt;
       }
 
-      static ty_t for_STRUCT_TY(craft_t &b, const nr::StructTy *N) {
+      static ty_t for_STRUCT_TY(craft_t &b, const StructTy *N) {
         let fields = N->getFields();
-        vector<Type *> elements(fields.size());
+        vector<llvm::Type *> elements(fields.size());
         bool failed = false;
 
         transform(fields.begin(), fields.end(), elements.begin(),
-                  [&](auto field) -> Type * {
+                  [&](auto field) -> llvm::Type * {
                     if (auto R = T(field)) {
                       return R.value();
                     } else {
@@ -1910,12 +1907,12 @@ namespace lower {
         return StructType::get(b.getContext(), std::move(elements), true);
       }
 
-      static ty_t for_UNION_TY(craft_t &, const nr::UnionTy *) {
+      static ty_t for_UNION_TY(craft_t &, const UnionTy *) {
         /// TODO: Implement conversion for node
         qcore_implement();
       }
 
-      static ty_t for_ARRAY_TY(craft_t &b, const nr::ArrayTy *N) {
+      static ty_t for_ARRAY_TY(craft_t &b, const ArrayTy *N) {
         if (auto R = T(N->getElement())) {
           return ArrayType::get(R.value(), N->getCount());
         }
@@ -1928,16 +1925,16 @@ namespace lower {
 
 #pragma GCC diagnostic pop
 
-static auto V_gen(ctx_t &m, craft_t &b, State &s, const nr::Expr *N) -> val_t {
+static auto V_gen(ctx_t &m, craft_t &b, State &s, const Expr *N) -> val_t {
   static let dispatch = []() constexpr {
-#define FUNCTION(_enum, _func, _type)                                         \
-  R[_enum] = [](ctx_t &m, craft_t &b, State &s, const nr::Expr *N) -> val_t { \
-    return _func(m, b, s, N->as<_type>());                                    \
+#define FUNCTION(_enum, _func, _type)                                     \
+  R[_enum] = [](ctx_t &m, craft_t &b, State &s, const Expr *N) -> val_t { \
+    return _func(m, b, s, N->as<_type>());                                \
   }
-    using func_t = val_t (*)(ctx_t &, craft_t &, State &, const nr::Expr *);
+    using func_t = val_t (*)(ctx_t &, craft_t &, State &, const Expr *);
 
     array<func_t, NR_NODE_LAST + 1> R;
-    R.fill([](ctx_t &, craft_t &, State &, const nr::Expr *n) -> val_t {
+    R.fill([](ctx_t &, craft_t &, State &, const Expr *n) -> val_t {
       qcore_panicf("illegal node in input: kind=%s", n->getKindName());
     });
 
@@ -1946,34 +1943,34 @@ static auto V_gen(ctx_t &m, craft_t &b, State &s, const nr::Expr *N) -> val_t {
       using namespace lower::expr;
       using namespace lower::symbol;
 
-      FUNCTION(NR_NODE_BINEXPR, for_BINEXPR, nr::BinExpr);
-      FUNCTION(NR_NODE_UNEXPR, for_UNEXPR, nr::UnExpr);
-      FUNCTION(NR_NODE_POST_UNEXPR, for_POST_UNEXPR, nr::PostUnExpr);
-      FUNCTION(NR_NODE_INT, for_INT, nr::Int);
-      FUNCTION(NR_NODE_FLOAT, for_FLOAT, nr::Float);
-      FUNCTION(NR_NODE_LIST, for_LIST, nr::List);
-      FUNCTION(NR_NODE_CALL, for_CALL, nr::Call);
-      FUNCTION(NR_NODE_SEQ, for_SEQ, nr::Seq);
-      FUNCTION(NR_NODE_INDEX, for_INDEX, nr::Index);
-      FUNCTION(NR_NODE_IDENT, for_IDENT, nr::Ident);
-      FUNCTION(NR_NODE_EXTERN, for_EXTERN, nr::Extern);
-      FUNCTION(NR_NODE_LOCAL, for_LOCAL, nr::Local);
-      FUNCTION(NR_NODE_RET, for_RET, nr::Ret);
-      FUNCTION(NR_NODE_BRK, for_BRK, nr::Brk);
-      FUNCTION(NR_NODE_CONT, for_CONT, nr::Cont);
-      FUNCTION(NR_NODE_IF, for_IF, nr::If);
-      FUNCTION(NR_NODE_WHILE, for_WHILE, nr::While);
-      FUNCTION(NR_NODE_FOR, for_FOR, nr::For);
-      FUNCTION(NR_NODE_CASE, for_CASE, nr::Case);
-      FUNCTION(NR_NODE_SWITCH, for_SWITCH, nr::Switch);
-      FUNCTION(NR_NODE_FN, for_FN, nr::Fn);
-      FUNCTION(NR_NODE_ASM, for_ASM, nr::Asm);
+      FUNCTION(NR_NODE_BINEXPR, for_BINEXPR, BinExpr);
+      FUNCTION(NR_NODE_UNEXPR, for_UNEXPR, UnExpr);
+      FUNCTION(NR_NODE_POST_UNEXPR, for_POST_UNEXPR, PostUnExpr);
+      FUNCTION(NR_NODE_INT, for_INT, Int);
+      FUNCTION(NR_NODE_FLOAT, for_FLOAT, Float);
+      FUNCTION(NR_NODE_LIST, for_LIST, List);
+      FUNCTION(NR_NODE_CALL, for_CALL, Call);
+      FUNCTION(NR_NODE_SEQ, for_SEQ, Seq);
+      FUNCTION(NR_NODE_INDEX, for_INDEX, Index);
+      FUNCTION(NR_NODE_IDENT, for_IDENT, Ident);
+      FUNCTION(NR_NODE_EXTERN, for_EXTERN, Extern);
+      FUNCTION(NR_NODE_LOCAL, for_LOCAL, Local);
+      FUNCTION(NR_NODE_RET, for_RET, Ret);
+      FUNCTION(NR_NODE_BRK, for_BRK, Brk);
+      FUNCTION(NR_NODE_CONT, for_CONT, Cont);
+      FUNCTION(NR_NODE_IF, for_IF, If);
+      FUNCTION(NR_NODE_WHILE, for_WHILE, While);
+      FUNCTION(NR_NODE_FOR, for_FOR, For);
+      FUNCTION(NR_NODE_CASE, for_CASE, Case);
+      FUNCTION(NR_NODE_SWITCH, for_SWITCH, Switch);
+      FUNCTION(NR_NODE_FN, for_FN, Fn);
+      FUNCTION(NR_NODE_ASM, for_ASM, Asm);
 
-      R[NR_NODE_IGN] = [](ctx_t &, craft_t &, State &,
-                          const nr::Expr *) -> val_t { return nullptr; };
+      R[NR_NODE_IGN] = [](ctx_t &, craft_t &, State &, const Expr *) -> val_t {
+        return nullptr;
+      };
 
-      R[NR_NODE_TMP] = [](ctx_t &, craft_t &, State &,
-                          const nr::Expr *) -> val_t {
+      R[NR_NODE_TMP] = [](ctx_t &, craft_t &, State &, const Expr *) -> val_t {
         qcore_panic("unexpected temporary node");
       };
     }
@@ -1986,16 +1983,16 @@ static auto V_gen(ctx_t &m, craft_t &b, State &s, const nr::Expr *N) -> val_t {
   return dispatch[N->getKind()](m, b, s, N);
 }
 
-static auto T_gen(craft_t &b, const nr::Expr *N) -> ty_t {
+static auto T_gen(craft_t &b, const Expr *N) -> ty_t {
   static let dispatch = []() constexpr {
-#define FUNCTION(_enum, _func, _type)                    \
-  R[_enum] = [](craft_t &b, const nr::Expr *N) -> ty_t { \
-    return _func(b, N->as<_type>());                     \
+#define FUNCTION(_enum, _func, _type)                \
+  R[_enum] = [](craft_t &b, const Expr *N) -> ty_t { \
+    return _func(b, N->as<_type>());                 \
   }
-    using func_t = ty_t (*)(craft_t &, const nr::Expr *);
+    using func_t = ty_t (*)(craft_t &, const Expr *);
 
     array<func_t, NR_NODE_LAST + 1> R;
-    R.fill([](craft_t &, const nr::Expr *n) -> ty_t {
+    R.fill([](craft_t &, const Expr *n) -> ty_t {
       qcore_panicf("illegal node in input: kind=%s", n->getKindName());
     });
 
@@ -2003,35 +2000,33 @@ static auto T_gen(craft_t &b, const nr::Expr *N) -> ty_t {
       using namespace lower::types::prim;
       using namespace lower::types::other;
 
-      FUNCTION(NR_NODE_U1_TY, for_U1_TY, nr::U1Ty);
-      FUNCTION(NR_NODE_U8_TY, for_U8_TY, nr::U8Ty);
-      FUNCTION(NR_NODE_U16_TY, for_U16_TY, nr::U16Ty);
-      FUNCTION(NR_NODE_U32_TY, for_U32_TY, nr::U32Ty);
-      FUNCTION(NR_NODE_U64_TY, for_U64_TY, nr::U64Ty);
-      FUNCTION(NR_NODE_U128_TY, for_U128_TY, nr::U128Ty);
-      FUNCTION(NR_NODE_I8_TY, for_I8_TY, nr::I8Ty);
-      FUNCTION(NR_NODE_I16_TY, for_I16_TY, nr::I16Ty);
-      FUNCTION(NR_NODE_I32_TY, for_I32_TY, nr::I32Ty);
-      FUNCTION(NR_NODE_I64_TY, for_I64_TY, nr::I64Ty);
-      FUNCTION(NR_NODE_I128_TY, for_I128_TY, nr::I128Ty);
-      FUNCTION(NR_NODE_F16_TY, for_F16_TY, nr::F16Ty);
-      FUNCTION(NR_NODE_F32_TY, for_F32_TY, nr::F32Ty);
-      FUNCTION(NR_NODE_F64_TY, for_F64_TY, nr::F64Ty);
-      FUNCTION(NR_NODE_F128_TY, for_F128_TY, nr::F128Ty);
-      FUNCTION(NR_NODE_VOID_TY, for_VOID_TY, nr::VoidTy);
-      FUNCTION(NR_NODE_PTR_TY, for_PTR_TY, nr::PtrTy);
-      FUNCTION(NR_NODE_CONST_TY, for_CONST_TY, nr::ConstTy);
-      FUNCTION(NR_NODE_OPAQUE_TY, for_OPAQUE_TY, nr::OpaqueTy);
-      FUNCTION(NR_NODE_STRUCT_TY, for_STRUCT_TY, nr::StructTy);
-      FUNCTION(NR_NODE_UNION_TY, for_UNION_TY, nr::UnionTy);
-      FUNCTION(NR_NODE_ARRAY_TY, for_ARRAY_TY, nr::ArrayTy);
-      FUNCTION(NR_NODE_FN_TY, for_FN_TY, nr::FnTy);
+      FUNCTION(NR_NODE_U1_TY, for_U1_TY, U1Ty);
+      FUNCTION(NR_NODE_U8_TY, for_U8_TY, U8Ty);
+      FUNCTION(NR_NODE_U16_TY, for_U16_TY, U16Ty);
+      FUNCTION(NR_NODE_U32_TY, for_U32_TY, U32Ty);
+      FUNCTION(NR_NODE_U64_TY, for_U64_TY, U64Ty);
+      FUNCTION(NR_NODE_U128_TY, for_U128_TY, U128Ty);
+      FUNCTION(NR_NODE_I8_TY, for_I8_TY, I8Ty);
+      FUNCTION(NR_NODE_I16_TY, for_I16_TY, I16Ty);
+      FUNCTION(NR_NODE_I32_TY, for_I32_TY, I32Ty);
+      FUNCTION(NR_NODE_I64_TY, for_I64_TY, I64Ty);
+      FUNCTION(NR_NODE_I128_TY, for_I128_TY, I128Ty);
+      FUNCTION(NR_NODE_F16_TY, for_F16_TY, F16Ty);
+      FUNCTION(NR_NODE_F32_TY, for_F32_TY, F32Ty);
+      FUNCTION(NR_NODE_F64_TY, for_F64_TY, F64Ty);
+      FUNCTION(NR_NODE_F128_TY, for_F128_TY, F128Ty);
+      FUNCTION(NR_NODE_VOID_TY, for_VOID_TY, VoidTy);
+      FUNCTION(NR_NODE_PTR_TY, for_PTR_TY, PtrTy);
+      FUNCTION(NR_NODE_CONST_TY, for_CONST_TY, ConstTy);
+      FUNCTION(NR_NODE_OPAQUE_TY, for_OPAQUE_TY, OpaqueTy);
+      FUNCTION(NR_NODE_STRUCT_TY, for_STRUCT_TY, StructTy);
+      FUNCTION(NR_NODE_UNION_TY, for_UNION_TY, UnionTy);
+      FUNCTION(NR_NODE_ARRAY_TY, for_ARRAY_TY, ArrayTy);
+      FUNCTION(NR_NODE_FN_TY, for_FN_TY, FnTy);
 
-      R[NR_NODE_IGN] = [](craft_t &, const nr::Expr *) -> ty_t {
-        return nullptr;
-      };
+      R[NR_NODE_IGN] = [](craft_t &, const Expr *) -> ty_t { return nullptr; };
 
-      R[NR_NODE_TMP] = [](craft_t &, const nr::Expr *) -> ty_t {
+      R[NR_NODE_TMP] = [](craft_t &, const Expr *) -> ty_t {
         qcore_panic("unexpected temporary node");
       };
     }
@@ -2093,8 +2088,8 @@ static optional<unique_ptr<Module>> fabricate_llvmir(const qmodule_t *module,
                                                      ostream &err,
                                                      raw_ostream &out);
 
-C_EXPORT bool qcode_ir(qmodule_t *module, qcode_conf_t *conf, FILE *err,
-                       FILE *out) {
+CPP_EXPORT bool qcode_ir(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+                         FILE *out) {
   return qcode_adapter(module, conf, err, out,
                        [](qmodule_t *m, qcode_conf_t *c, ostream &e,
                           raw_pwrite_stream &o) -> bool {
@@ -2112,8 +2107,8 @@ C_EXPORT bool qcode_ir(qmodule_t *module, qcode_conf_t *conf, FILE *err,
                        });
 }
 
-C_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err,
-                        FILE *out) {
+CPP_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+                          FILE *out) {
   return qcode_adapter(
       module, conf, err, out,
       [](qmodule_t *m, qcode_conf_t *c, ostream &e,
@@ -2198,8 +2193,8 @@ C_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err,
       });
 }
 
-C_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err,
-                        FILE *out) {
+CPP_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err,
+                          FILE *out) {
   return qcode_adapter(
       module, conf, err, out,
       [](qmodule_t *m, qcode_conf_t *c, ostream &e,

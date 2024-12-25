@@ -38,7 +38,7 @@
 #include <nitrate-ir/IRGraph.hh>
 #include <unordered_map>
 
-using namespace nr;
+using namespace ncc::ir;
 
 Fn *NRBuilder::createFunctionDefintion(std::string_view name,
                                        std::span<FnParam> params, Type *ret_ty,

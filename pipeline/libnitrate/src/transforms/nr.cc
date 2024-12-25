@@ -41,6 +41,8 @@
 #include <nitrate-parser/ASTReader.hh>
 #include <unordered_set>
 
+using namespace ncc::ir;
+
 CREATE_TRANSFORM(nit::nr) {
   (void)env;
 
@@ -79,13 +81,13 @@ CREATE_TRANSFORM(nit::nr) {
 
   switch (out_mode) {
     case OutMode::JSON: {
-      auto writter = nr::NR_JsonWriter(output);
+      auto writter = NR_JsonWriter(output);
       ir_module.get()->accept(writter);
       return false;
     }
 
     case OutMode::MsgPack: {
-      auto writter = nr::NR_MsgPackWriter(output);
+      auto writter = NR_MsgPackWriter(output);
       ir_module.get()->accept(writter);
       return false;
     }

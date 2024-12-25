@@ -31,16 +31,15 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-ir/IR.h>
-#include <nitrate-ir/TypeDecl.h>
-
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-ir/IR.hh>
 #include <nitrate-ir/IRGraph.hh>
+#include <nitrate-ir/TypeDecl.hh>
 
-using namespace nr;
+using namespace ncc::ir;
 
 namespace comptime {
   class Program {
@@ -52,7 +51,7 @@ namespace comptime {
 
     void eprintn(std::string_view message) { m_eprintn_cb(message); }
 
-    void prepare(nr::Expr *E) {
+    void prepare(Expr *E) {
       if (E->is(NR_NODE_INT) || E->is(NR_NODE_FLOAT)) {
         m_result = E;
         return;
@@ -76,8 +75,8 @@ namespace comptime {
   };
 }  // namespace comptime
 
-std::optional<nr::Expr *> nr::comptime_impl(
-    nr::Expr *x, std::optional<std::function<void(std::string_view)>> eprintn) {
+std::optional<Expr *> ncc::ir::comptime_impl(
+    Expr *x, std::optional<std::function<void(std::string_view)>> eprintn) {
   comptime::Program P(eprintn.value_or([](std::string_view) {}));
 
   /**

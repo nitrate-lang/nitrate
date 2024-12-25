@@ -34,11 +34,10 @@
 #ifndef __NITRATE_IR_DIAGNOSTIC_H__
 #define __NITRATE_IR_DIAGNOSTIC_H__
 
-#include <nitrate-ir/IR.h>
-
 #include <boost/bimap.hpp>
 #include <cstdarg>
 #include <functional>
+#include <nitrate-ir/IR.hh>
 #include <nitrate-ir/Report.hh>
 #include <string_view>
 #include <unordered_set>
@@ -48,7 +47,7 @@ namespace ncc::parse {
 
 }
 
-namespace nr {
+namespace ncc::ir {
   struct IssueInfo {
     std::string_view flagname;
     std::string overview;
@@ -110,6 +109,6 @@ namespace nr {
     size_t size() { return m_vec.size(); }
   };
 
-};  // namespace nr
+};  // namespace ncc::ir
 
 #endif  // __NITRATE_IR_REPORT_H__

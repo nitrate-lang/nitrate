@@ -41,7 +41,7 @@
 #include <optional>
 #include <stack>
 
-namespace nr {
+namespace ncc::ir {
   class CPP_EXPORT NR_Reader {
     enum class State {
       ObjStart,
@@ -94,6 +94,6 @@ namespace nr {
     NR_MsgPackReader(std::istream& is) { parse_stream(is); }
     virtual ~NR_MsgPackReader() = default;
   };
-}  // namespace nr
+}  // namespace ncc::ir
 
 #endif

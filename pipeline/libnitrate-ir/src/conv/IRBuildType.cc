@@ -39,7 +39,7 @@
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 
-using namespace nr;
+using namespace ncc::ir;
 using namespace ncc;
 
 U1Ty *NRBuilder::getU1Ty(SOURCE_LOCATION_PARAM_ONCE) {

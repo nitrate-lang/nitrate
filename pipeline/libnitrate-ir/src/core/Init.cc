@@ -50,7 +50,7 @@ CPP_EXPORT bool IRLibrarySetup::Init() {
     return false;
   }
 
-  nr::pass::PassGroupRegistry::RegisterBuiltinGroups();
+  pass::PassGroupRegistry::RegisterBuiltinGroups();
 
   return true;
 }

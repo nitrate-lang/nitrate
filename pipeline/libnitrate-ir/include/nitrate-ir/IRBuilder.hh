@@ -34,8 +34,6 @@
 #ifndef __NITRATE_IR_IRBUILDER_H__
 #define __NITRATE_IR_IRBUILDER_H__
 
-#include <nitrate-ir/TypeDecl.h>
-
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -47,13 +45,14 @@
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/Report.hh>
+#include <nitrate-ir/TypeDecl.hh>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 
-namespace nr {
+namespace ncc::ir {
   enum class ABIStringStyle {
     CStr, /* Only supported variant */
   };
@@ -386,6 +385,6 @@ namespace nr {
 #undef DEBUG_INFO
 #endif
   };
-}  // namespace nr
+}  // namespace ncc::ir
 
 #endif

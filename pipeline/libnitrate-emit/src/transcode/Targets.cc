@@ -42,6 +42,8 @@
 #include <transcode/Targets.hh>
 #include <unordered_map>
 
+using namespace ncc::ir;
+
 #ifdef TRANSCODE_TARGET_ALL
 #define TRANSCODE_TARGET_C11
 #define TRANSCODE_TARGET_CXX11
@@ -100,9 +102,9 @@ public:
   virtual int overflow(int c) override { return c; }
 };
 
-C_EXPORT bool qcode_transcode(qmodule_t* module, qcode_conf_t*,
-                              qcode_lang_t lang, qcode_style_t, FILE* err,
-                              FILE* out) {
+CPP_EXPORT bool qcode_transcode(qmodule_t* module, qcode_conf_t*,
+                                qcode_lang_t lang, qcode_style_t, FILE* err,
+                                FILE* out) {
   std::unique_ptr<std::streambuf> err_stream_buf, out_stream_buf;
 
   /* If the error stream is provided, use it. Otherwise, discard the output. */

@@ -33,17 +33,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-ir/IR.h>
-
 #include <cstring>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-ir/IR.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-parser/Context.hh>
 #include <unordered_map>
 #include <unordered_set>
 
-using namespace nr;
+using namespace ncc;
+using namespace ncc::ir;
 
 nr_node_t *nr_clone_impl(
     const nr_node_t *_node,
@@ -53,7 +53,7 @@ nr_node_t *nr_clone_impl(
 
 #define clone(X) static_cast<Expr *>(nr_clone_impl(X, map, in_visited))
 
-  using namespace nr;
+  using namespace ncc::ir;
 
   Expr *in;
   Expr *out;
@@ -125,7 +125,7 @@ nr_node_t *nr_clone_impl(
       break;
     }
     case NR_NODE_IDENT: {
-      nr::Expr *bad_tmp_ref = static_cast<Ident *>(in)->getWhat();
+      Expr *bad_tmp_ref = static_cast<Ident *>(in)->getWhat();
       out = create<Ident>(static_cast<Ident *>(in)->getName(), bad_tmp_ref);
       break;
     }
@@ -359,7 +359,7 @@ nr_node_t *nr_clone_impl(
   return static_cast<nr_node_t *>(out);
 }
 
-C_EXPORT nr_node_t *nr_clone(const nr_node_t *node) {
+CPP_EXPORT nr_node_t *ir::nr_clone(const nr_node_t *node) {
   nr_node_t *out;
 
   if (!node) {
@@ -373,7 +373,7 @@ C_EXPORT nr_node_t *nr_clone(const nr_node_t *node) {
   out = nr_clone_impl(node, map, in_visited);
 
   { /* Resolve Directed Acyclic* Graph Internal References */
-    using namespace nr;
+    using namespace ncc::ir;
 
     Expr *out_expr = static_cast<Expr *>(out);
     iterate<dfs_pre>(out_expr, [&](Expr *, Expr **_cur) -> IterOp {

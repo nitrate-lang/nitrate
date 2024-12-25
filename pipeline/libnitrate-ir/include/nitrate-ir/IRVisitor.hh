@@ -34,9 +34,9 @@
 #ifndef __NITRATE_IR_VISITOR_H__
 #define __NITRATE_IR_VISITOR_H__
 
-#include <nitrate-ir/TypeDecl.h>
+#include <nitrate-ir/TypeDecl.hh>
 
-namespace nr {
+namespace ncc::ir {
   class Expr;
   class Type;
   class BinExpr;
@@ -86,9 +86,9 @@ namespace nr {
   class Asm;
   class Tmp;
 
-}  // namespace nr
+}  // namespace ncc::ir
 
-namespace nr {
+namespace ncc::ir {
   class NRVisitor {
   public:
     virtual ~NRVisitor() = default;
@@ -142,6 +142,6 @@ namespace nr {
     virtual void visit(Asm& n) = 0;
     virtual void visit(Tmp& n) = 0;
   };
-}  // namespace nr
+}  // namespace ncc::ir
 
 #endif  // __NITRATE_IR_VISITOR_H__

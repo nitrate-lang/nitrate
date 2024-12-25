@@ -37,7 +37,7 @@
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 
-using namespace nr;
+using namespace ncc::ir;
 
 bool NRBuilder::check_types(Seq *, IReport *I) {
   I->report(CompilerError, IC::Debug,

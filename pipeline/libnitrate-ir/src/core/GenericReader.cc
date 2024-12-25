@@ -35,7 +35,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IRReader.hh>
 
-using namespace nr;
+using namespace ncc::ir;
 
 void NR_Reader::str(std::string_view str) {
   /// TODO: Implement generic deserializer

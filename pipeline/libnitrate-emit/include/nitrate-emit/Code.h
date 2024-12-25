@@ -35,12 +35,9 @@
 #define __NITRATE_CODEGEN_CODE_H__
 
 #include <nitrate-emit/Config.h>
-#include <nitrate-ir/TypeDecl.h>
 #include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <nitrate-ir/TypeDecl.hh>
 
 typedef enum {
   QCODE_C11,     /* Generate C 11 Source Code */
@@ -72,19 +69,19 @@ typedef enum {
  * Both `err` and `out` will be flushed before returning, irrespective of the
  * return value.
  */
-bool qcode_transcode(qmodule_t* module, qcode_conf_t* conf, qcode_lang_t lang,
-                     qcode_style_t style, FILE* err, FILE* out);
+bool qcode_transcode(ncc::ir::qmodule_t* module, qcode_conf_t* conf,
+                     qcode_lang_t lang, qcode_style_t style, FILE* err,
+                     FILE* out);
 
 ///==============================================================================
 
-bool qcode_ir(qmodule_t* module, qcode_conf_t* conf, FILE* err, FILE* out);
-bool qcode_asm(qmodule_t* module, qcode_conf_t* conf, FILE* err, FILE* out);
-bool qcode_obj(qmodule_t* module, qcode_conf_t* conf, FILE* err, FILE* out);
+bool qcode_ir(ncc::ir::qmodule_t* module, qcode_conf_t* conf, FILE* err,
+              FILE* out);
+bool qcode_asm(ncc::ir::qmodule_t* module, qcode_conf_t* conf, FILE* err,
+               FILE* out);
+bool qcode_obj(ncc::ir::qmodule_t* module, qcode_conf_t* conf, FILE* err,
+               FILE* out);
 
 ///==============================================================================
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  // __NITRATE_CODEGEN_CODE_H__

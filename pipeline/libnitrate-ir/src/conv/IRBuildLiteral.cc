@@ -38,7 +38,7 @@
 #include <nitrate-ir/IRBuilder.hh>
 #include <nitrate-ir/IRGraph.hh>
 
-using namespace nr;
+using namespace ncc::ir;
 
 Int *NRBuilder::createBool(bool value SOURCE_LOCATION_PARAM) {
   contract_enforce(m_state == SelfState::Constructed);
@@ -64,22 +64,22 @@ Float *NRBuilder::createFixedFloat(bigfloat_t value,
   contract_enforce(m_root != nullptr);
 
   // switch (width) {
-  //   case nr::FloatSize::F16: {
+  //   case FloatSize::F16: {
   //     contract_enforce(value >= -65504 && value <= 65504 &&
   //                      "This might be a bug?");
   //     break;
   //   }
-  //   case nr::FloatSize::F32: {
+  //   case FloatSize::F32: {
   //     contract_enforce(value >= std::numeric_limits<_Float32>::min() &&
   //                      value <= std::numeric_limits<_Float32>::max());
   //     break;
   //   }
-  //   case nr::FloatSize::F64: {
+  //   case FloatSize::F64: {
   //     contract_enforce(value >= std::numeric_limits<_Float64>::min() &&
   //                      value <= std::numeric_limits<_Float64>::max());
   //     break;
   //   }
-  //   case nr::FloatSize::F128: {
+  //   case FloatSize::F128: {
   //     /// FIXME: Find out how to verify
   //     break;
   //   }

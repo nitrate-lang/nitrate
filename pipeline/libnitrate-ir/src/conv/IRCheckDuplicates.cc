@@ -41,7 +41,7 @@
 #include <nitrate-ir/Report.hh>
 #include <unordered_map>
 
-using namespace nr;
+using namespace ncc::ir;
 using namespace ncc;
 
 ///=============================================================================
@@ -75,7 +75,7 @@ static void print_conflict_errors(const std::vector<Conflict> &conflicts,
   };
 
   for (const auto &conflict : conflicts) {
-    I->report(nr::NameConflict, IC::Error,
+    I->report(NameConflict, IC::Error,
               {kind_name.at(conflict.us_kind), " name '", conflict.name,
                "' is already defined as a ", kind_name.at(conflict.them_kind)},
               conflict.us->getLoc());

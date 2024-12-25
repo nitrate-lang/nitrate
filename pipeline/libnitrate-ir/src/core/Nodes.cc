@@ -31,10 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "nitrate-core/Allocate.hh"
 #define __IR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
-#include <nitrate-ir/IR.h>
 #include <openssl/sha.h>
 
 #include <boost/uuid/name_generator.hpp>
@@ -43,8 +41,10 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-ir/IR.hh>
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 #include <set>
@@ -52,10 +52,11 @@
 #include <unordered_set>
 #include <variant>
 
-using namespace nr;
+using namespace ncc;
+using namespace ncc::ir;
 
 ///=============================================================================
-namespace nr {
+namespace ncc::ir {
   thread_local std::unique_ptr<ncc::IMemory> nr_allocator =
       std::make_unique<ncc::dyn_arena>();
 
@@ -65,13 +66,13 @@ namespace nr {
     Expr static_NR_NODE_IGN(NR_NODE_IGN);
 
   }  // namespace mem
-}  // namespace nr
+}  // namespace ncc::ir
 
 ///=============================================================================
 
-static bool isCyclicUtil(const nr::Expr *const base,
-                         std::unordered_set<const nr::Expr *> &visited,
-                         std::unordered_set<const nr::Expr *> &recStack) {
+static bool isCyclicUtil(const Expr *const base,
+                         std::unordered_set<const Expr *> &visited,
+                         std::unordered_set<const Expr *> &recStack) {
   bool has_cycle = false;
 
   if (!visited.contains(base)) {
@@ -83,8 +84,7 @@ static bool isCyclicUtil(const nr::Expr *const base,
     // Recurse for all the vertices adjacent
     // to this vertex
     iterate<IterMode::children>(
-        base,
-        [&](const nr::Expr *, const nr::Expr *const *const cur) -> IterOp {
+        base, [&](const Expr *, const Expr *const *const cur) -> IterOp {
           if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack))
               [[unlikely]] {
             has_cycle = true;
@@ -103,7 +103,7 @@ static bool isCyclicUtil(const nr::Expr *const base,
   return has_cycle;
 }
 
-CPP_EXPORT bool nr::Expr::isAcyclic() const {
+CPP_EXPORT bool Expr::isAcyclic() const {
   std::unordered_set<const Expr *> visited, recStack;
   bool has_cycle = false;
 
@@ -121,7 +121,7 @@ CPP_EXPORT bool nr::Expr::isAcyclic() const {
   return !has_cycle;
 }
 
-CPP_EXPORT void nr::Expr::dump(std::ostream &os, bool isForDebug) const {
+CPP_EXPORT void Expr::dump(std::ostream &os, bool isForDebug) const {
   (void)isForDebug;
 
   char *cstr = nullptr;
@@ -142,7 +142,7 @@ CPP_EXPORT void nr::Expr::dump(std::ostream &os, bool isForDebug) const {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
-CPP_EXPORT boost::uuids::uuid nr::Expr::hash() {
+CPP_EXPORT boost::uuids::uuid Expr::hash() {
   std::array<uint8_t, 20> hash;
 
   SHA_CTX ctx;
@@ -425,6 +425,6 @@ CPP_EXPORT Int *Int::get(uint128_t val, uint8_t size) {
 
 ///=============================================================================
 
-Expr *nr::createIgn() {
+Expr *ir::createIgn() {
   return new (Arena<Expr>().allocate(1)) Expr(NR_NODE_IGN);
 }

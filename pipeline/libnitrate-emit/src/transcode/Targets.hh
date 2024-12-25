@@ -34,11 +34,12 @@
 #ifndef __NITRATE_TARGETS_HH__
 #define __NITRATE_TARGETS_HH__
 
+#include <nitrate-ir/Module.hh>
 #include <ostream>
 
-struct qmodule_t;
-
 namespace codegen {
+  using qmodule_t = ncc::ir::qmodule_t;
+
   bool for_c11(qmodule_t* module, std::ostream& err, std::ostream& out);
   bool for_cxx11(qmodule_t* module, std::ostream& err, std::ostream& out);
   bool for_ts(qmodule_t* module, std::ostream& err, std::ostream& out);

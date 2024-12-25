@@ -41,9 +41,11 @@
 #include <unordered_map>
 #include <vector>
 
-struct qmodule_t;
+namespace ncc::ir {
+  struct qmodule_t;
+}
 
-namespace nr::pass {
+namespace ncc::ir::pass {
   typedef std::function<bool(qmodule_t*, IReport*)> pass_func_t;
 
   class ModulePass {
@@ -145,6 +147,6 @@ namespace nr::pass {
 
     PassGroup build(const std::string& name, bool optimize_order = true);
   };
-}  // namespace nr::pass
+}  // namespace ncc::ir::pass
 
 #endif  // __NITRATE_IR_DIAGNOSE_PASSES_AUTO_REGISTER_H__

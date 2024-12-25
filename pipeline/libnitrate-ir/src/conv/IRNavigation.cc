@@ -40,7 +40,7 @@
 #include <string_view>
 #include <unordered_map>
 
-using namespace nr;
+using namespace ncc::ir;
 using namespace ncc;
 
 static std::string join_name_segment(const std::string &a,

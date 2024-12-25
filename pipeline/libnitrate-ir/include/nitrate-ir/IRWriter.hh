@@ -44,7 +44,7 @@
 #include <stack>
 #include <string_view>
 
-namespace nr {
+namespace ncc::ir {
   class CPP_EXPORT NR_Writer : public NRVisitor {
     using InsertString = std::function<void(std::string_view)>;
     using InsertUInt64 = std::function<void(uint64_t)>;
@@ -208,6 +208,6 @@ namespace nr {
           m_os(os) {}
     virtual ~NR_MsgPackWriter() = default;
   };
-}  // namespace nr
+}  // namespace ncc::ir
 
 #endif

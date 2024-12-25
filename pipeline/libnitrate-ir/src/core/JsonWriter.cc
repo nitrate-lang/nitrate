@@ -35,7 +35,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IRWriter.hh>
 
-using namespace nr;
+using namespace ncc::ir;
 
 static void escape_string(std::ostream &os, const std::string_view &input) {
   os << "\"";

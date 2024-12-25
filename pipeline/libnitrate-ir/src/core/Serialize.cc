@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-ir/TypeDecl.h>
-
 #include <boost/bind.hpp>
 #include <chrono>
 #include <cstddef>
@@ -44,10 +42,11 @@
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Init.hh>
 #include <nitrate-ir/Module.hh>
+#include <nitrate-ir/TypeDecl.hh>
 #include <sstream>
 #include <unordered_set>
 
-using namespace nr;
+using namespace ncc;
 using namespace ncc::ir;
 
 struct ConvState {
@@ -750,8 +749,9 @@ static bool to_codeform(std::optional<qmodule_t *> mod, Expr *node, bool minify,
   return true;
 }
 
-C_EXPORT bool nr_write(qmodule_t *mod, const nr_node_t *_node, nr_serial_t mode,
-                       FILE *out, size_t *outlen, uint32_t argcnt, ...) {
+CPP_EXPORT bool ir::nr_write(qmodule_t *mod, const nr_node_t *_node,
+                             nr_serial_t mode, FILE *out, size_t *outlen,
+                             uint32_t argcnt, ...) {
   (void)argcnt;
 
   bool status;

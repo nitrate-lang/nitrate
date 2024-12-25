@@ -43,7 +43,8 @@
 #include <nitrate-parser/AST.hh>
 #include <sstream>
 
-using namespace nr;
+using namespace ncc;
+using namespace ncc::ir;
 using namespace ncc::lex;
 
 template <typename L, typename R>
@@ -54,7 +55,7 @@ boost::bimap<L, R> make_bimap(
 
 /// FIXME: Write correct stuff here
 
-const boost::bimap<IssueCode, IssueInfo> nr::issue_info =
+const boost::bimap<IssueCode, IssueInfo> ir::issue_info =
     make_bimap<IssueCode, IssueInfo>({
         {Info, {"info", "%s", {}}},
         {CompilerError,
@@ -308,7 +309,7 @@ static void confine_rect_bounds(int64_t &x_0, int64_t &y_0, int64_t &x_1,
   if (y_1 < 0) y_1 = 0;
 }
 
-std::string nr::mint_modern_message(const IReport::ReportData &R,
+std::string ir::mint_modern_message(const IReport::ReportData &R,
                                     ISourceView *B) {
   constexpr size_t WIDTH = 70;
 

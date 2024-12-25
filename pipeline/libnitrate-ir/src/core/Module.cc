@@ -39,7 +39,8 @@
 #include <nitrate-ir/IRGraph.hh>
 #include <nitrate-ir/Module.hh>
 
-using namespace nr;
+using namespace ncc;
+using namespace ncc::ir;
 
 static std::vector<std::optional<qmodule_t *>> nr_modules;
 static std::mutex nr_modules_mutex;
@@ -89,13 +90,13 @@ void qmodule_t::enableDiagnostics(bool is_enabled) {
   m_diagnostics_enabled = is_enabled;
 }
 
-CPP_EXPORT void qmodule_t::accept(nr::NRVisitor &visitor) {
+CPP_EXPORT void qmodule_t::accept(ir::NRVisitor &visitor) {
   m_root->accept(visitor);
 }
 
 ///=============================================================================
 
-qmodule_t *nr::createModule(std::string name) {
+qmodule_t *ir::createModule(std::string name) {
   std::lock_guard<std::mutex> lock(nr_modules_mutex);
 
   ModuleId mid;
@@ -115,7 +116,7 @@ qmodule_t *nr::createModule(std::string name) {
   return nr_modules[mid].value();
 }
 
-CPP_EXPORT qmodule_t *nr::getModule(ModuleId mid) {
+CPP_EXPORT qmodule_t *ir::getModule(ModuleId mid) {
   std::lock_guard<std::mutex> lock(nr_modules_mutex);
 
   if (mid >= nr_modules.size() || !nr_modules.at(mid).has_value()) {
@@ -125,7 +126,7 @@ CPP_EXPORT qmodule_t *nr::getModule(ModuleId mid) {
   return nr_modules.at(mid).value();
 }
 
-C_EXPORT void nr_free(qmodule_t *mod) {
+CPP_EXPORT void ir::nr_free(qmodule_t *mod) {
   if (!mod) {
     return;
   }
@@ -137,8 +138,8 @@ C_EXPORT void nr_free(qmodule_t *mod) {
   nr_modules.at(mid).reset();
 }
 
-C_EXPORT size_t nr_max_modules(void) { return MAX_MODULE_INSTANCES; }
+CPP_EXPORT size_t ir::nr_max_modules(void) { return MAX_MODULE_INSTANCES; }
 
-C_EXPORT nr_node_t *nr_base(qmodule_t *mod) {
+CPP_EXPORT nr_node_t *ir::nr_base(qmodule_t *mod) {
   return reinterpret_cast<nr_node_t *>(mod->getRoot());
 }

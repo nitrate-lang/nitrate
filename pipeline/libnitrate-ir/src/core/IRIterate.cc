@@ -48,7 +48,9 @@
 #include <queue>
 #include <stack>
 
-namespace nr::detail {
+using namespace ncc::ir;
+
+namespace ncc::ir::detail {
   void get_children_sorted(Expr *base, ChildSelect cs,
                            std::vector<Expr **> &children) {
     children.clear();
@@ -501,4 +503,4 @@ namespace nr::detail {
 
     syncfn(base, cb, cs);
   }
-}  // namespace nr::detail
+}  // namespace ncc::ir::detail

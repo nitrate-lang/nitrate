@@ -35,7 +35,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRWriter.hh>
 
-using namespace nr;
+using namespace ncc::ir;
 
 void NR_MsgPackWriter::str_impl(std::string_view str) {
   size_t sz = str.size();

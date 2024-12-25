@@ -39,7 +39,7 @@
 #include <sstream>
 #include <unordered_set>
 
-using namespace nr;
+using namespace ncc::ir;
 
 ///=============================================================================
 
@@ -668,8 +668,8 @@ static std::optional<std::string> demangle_nit_abi(std::string_view name) {
   return ss.str();
 }
 
-CPP_EXPORT std::optional<std::string> nr::SymbolEncoding::mangle_name(
-    const nr::Expr *symbol, AbiTag abi) const {
+CPP_EXPORT std::optional<std::string> SymbolEncoding::mangle_name(
+    const Expr *symbol, AbiTag abi) const {
   if (symbol->isType()) {
     std::stringstream ss;
     mangle_type(symbol->asType(), ss);
@@ -707,7 +707,7 @@ CPP_EXPORT std::optional<std::string> nr::SymbolEncoding::mangle_name(
   }
 }
 
-CPP_EXPORT std::optional<std::string> nr::SymbolEncoding::demangle_name(
+CPP_EXPORT std::optional<std::string> SymbolEncoding::demangle_name(
     std::string_view symbol) const {
   if (symbol.empty()) {
     return std::nullopt;

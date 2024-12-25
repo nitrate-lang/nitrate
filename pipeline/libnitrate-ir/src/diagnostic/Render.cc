@@ -41,7 +41,8 @@
 #include <nitrate-parser/AST.hh>
 #include <sstream>
 
-using namespace nr;
+using namespace ncc;
+using namespace ncc::ir;
 using namespace ncc::lex;
 
 ///============================================================================///
@@ -54,7 +55,7 @@ static void print_qsizeloc(std::stringstream &ss, uint32_t num) {
   }
 }
 
-std::string nr::mint_plain_message(const IReport::ReportData &R,
+std::string ir::mint_plain_message(const IReport::ReportData &R,
                                    ISourceView *B) {
   std::stringstream ss;
   uint32_t sl, sc, el, ec;
@@ -118,7 +119,7 @@ std::string nr::mint_plain_message(const IReport::ReportData &R,
   return ss.str();
 }
 
-std::string nr::mint_clang16_message(const IReport::ReportData &R,
+std::string ir::mint_clang16_message(const IReport::ReportData &R,
                                      ISourceView *B) {
   std::stringstream ss;
   uint32_t sl, sc, el, ec;
@@ -215,7 +216,7 @@ std::string nr::mint_clang16_message(const IReport::ReportData &R,
 
 ///============================================================================///
 
-using namespace nr;
+using namespace ncc::ir;
 
 uint64_t DiagDatum::hash() const {
   /* Not quite a PHF, but it's pretty close as long as there are not two many
@@ -281,8 +282,8 @@ static const std::unordered_map<IC, nr_level_t> issue_class_map = {
     {IC::FatalError, NR_LEVEL_FATAL},
 };
 
-C_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
-                           nr_report_cb cb, uintptr_t data) {
+CPP_EXPORT void ir::nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
+                                 nr_report_cb cb, uintptr_t data) {
   if (!cb) {
     return;
   }
@@ -345,7 +346,7 @@ C_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
        * (except without color).
        */
       case NR_DIAG_NOSTD_TTY_UTF8: {
-        ss << nr::mint_plain_message(R, B);
+        ss << ir::mint_plain_message(R, B);
         break;
       }
 
@@ -355,7 +356,7 @@ C_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
        * differences.
        */
       case NR_DIAG_NONSTD_ANSI16_UTF8_FULL: {
-        ss << nr::mint_clang16_message(R, B);
+        ss << ir::mint_clang16_message(R, B);
         break;
       }
 
@@ -365,7 +366,7 @@ C_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
        * differences.
        */
       case NR_DIAG_NONSTD_ANSI256_UTF8_FULL: {
-        ss << nr::mint_clang16_message(R, B);
+        ss << ir::mint_clang16_message(R, B);
         break;
       }
 
@@ -375,7 +376,7 @@ C_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
        * differences.
        */
       case NR_DIAG_NONSTD_ANSIRGB_UTF8_FULL: {
-        ss << nr::mint_modern_message(R, B);
+        ss << ir::mint_modern_message(R, B);
         break;
       }
     }
@@ -388,4 +389,6 @@ C_EXPORT void nr_diag_read(qmodule_t *nr, nr_diag_format_t format,
   });
 }
 
-C_EXPORT void nr_diag_clear(qmodule_t *nr) { nr->getDiag()->erase_reports(); }
+CPP_EXPORT void ir::nr_diag_clear(qmodule_t *nr) {
+  nr->getDiag()->erase_reports();
+}

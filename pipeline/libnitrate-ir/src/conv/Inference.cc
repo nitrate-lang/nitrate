@@ -31,16 +31,16 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-ir/IR.h>
-
 #include <boost/multiprecision/cpp_int.hpp>
 #include <cstdint>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-ir/IR.hh>
 #include <nitrate-ir/IRGraph.hh>
 
 /// TODO: Test this code
 
-using namespace nr;
+using namespace ncc;
+using namespace ncc::ir;
 
 static Type *signed_complement(nr_ty_t ty) {
   switch (ty) {
@@ -424,16 +424,16 @@ static std::optional<Type *> nr_infer_impl(
     }
     case NR_NODE_FLOAT: {
       switch (E->as<Float>()->getSize()) {
-        case nr::FloatSize::F16:
+        case FloatSize::F16:
           R = create<F16Ty>();
           break;
-        case nr::FloatSize::F32:
+        case FloatSize::F32:
           R = create<F32Ty>();
           break;
-        case nr::FloatSize::F64:
+        case FloatSize::F64:
           R = create<F64Ty>();
           break;
-        case nr::FloatSize::F128:
+        case FloatSize::F128:
           R = create<F128Ty>();
           break;
       }
@@ -496,7 +496,7 @@ static std::optional<Type *> nr_infer_impl(
             R = std::nullopt;  // Invalid must be of type int to index into a
                                // struct
           } else {
-            nr::uint128_t num = V->as<Int>()->getValue();
+            uint128_t num = V->as<Int>()->getValue();
             if (num < B->as<StructTy>()->getFields().size()) {
               R = B->as<StructTy>()->getFields()[num.convert_to<std::size_t>()];
             } else {
@@ -508,7 +508,7 @@ static std::optional<Type *> nr_infer_impl(
             R = std::nullopt;  // Invalid must be of type int to index into a
                                // union
           } else {
-            nr::uint128_t num = V->as<Int>()->getValue();
+            uint128_t num = V->as<Int>()->getValue();
 
             if (num < B->as<UnionTy>()->getFields().size()) {
               R = B->as<UnionTy>()->getFields()[num.convert_to<std::size_t>()];
@@ -643,7 +643,7 @@ static std::optional<Type *> nr_infer_impl(
   return R;
 }
 
-C_EXPORT nr_node_t *nr_infer(const nr_node_t *_node, void *) {
+CPP_EXPORT nr_node_t *ir::nr_infer(const nr_node_t *_node, void *) {
   static thread_local struct State {
     std::unordered_set<const Expr *> visited;
     size_t depth = 0;
@@ -662,7 +662,7 @@ C_EXPORT nr_node_t *nr_infer(const nr_node_t *_node, void *) {
   return const_cast<Type *>(R.value_or(nullptr));
 }
 
-CPP_EXPORT std::optional<uint64_t> nr::Type::getSizeBits() const {
+CPP_EXPORT std::optional<uint64_t> Type::getSizeBits() const {
   switch (this->getKind()) {
     case NR_NODE_U1_TY: {
       return 8;
@@ -761,7 +761,7 @@ CPP_EXPORT std::optional<uint64_t> nr::Type::getSizeBits() const {
   }
 }
 
-CPP_EXPORT std::optional<uint64_t> nr::Type::getAlignBits() const {
+CPP_EXPORT std::optional<uint64_t> Type::getAlignBits() const {
   switch (this->getKind()) {
     case NR_NODE_U1_TY: {
       return 8;
