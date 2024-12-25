@@ -135,7 +135,7 @@ namespace ncc::parse {
     std::pair<FuncParams, bool> recurse_function_parameters();
     NullableFlowPtr<Stmt> recurse_function_body(bool restrict_decl_only);
     FlowPtr<Type> recurse_function_return_type();
-    FuncPurity get_purity_specifier(ncc::lex::Token &start_pos,
+    FuncPurity get_purity_specifier(ncc::lex::Token start_pos,
                                     bool is_thread_safe, bool is_pure,
                                     bool is_impure, bool is_quasi,
                                     bool is_retro);

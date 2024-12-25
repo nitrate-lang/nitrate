@@ -92,13 +92,12 @@ FlowPtr<Stmt> Parser::recurse_for_body() {
 }
 
 FlowPtr<Stmt> Parser::recurse_for() {
-  bool with_paren = next_if(PuncLPar).has_value();
-
+  bool for_with_paren = next_if(PuncLPar).has_value();
   auto for_init = recurse_for_init_expr();
   auto for_cond = recurse_for_condition();
-  auto for_step = recurse_for_step_expr(with_paren);
+  auto for_step = recurse_for_step_expr(for_with_paren);
 
-  if (with_paren && !next_if(PuncRPar)) {
+  if (for_with_paren && !next_if(PuncRPar)) {
     diagnostic << current() << "Expected closing parenthesis in for statement";
   }
 

@@ -79,10 +79,10 @@ Parser::recurse_switch_body() {
 
     auto case_or_default = recurse_switch_case();
     if (std::holds_alternative<FlowPtr<Stmt>>(case_or_default)) {
-      if (default_case) [[unlikely]] {
-        diagnostic << current() << "Duplicate default case in switch.";
-      } else {
+      if (!default_case) [[likely]] {
         default_case = std::get<FlowPtr<Stmt>>(case_or_default);
+      } else {
+        diagnostic << current() << "Duplicate default case in switch.";
       }
     } else {
       auto case_stmt = std::get<FlowPtr<CaseStmt>>(case_or_default);
@@ -99,10 +99,10 @@ FlowPtr<Stmt> Parser::recurse_switch() {
   });
 
   if (next_if(PuncLCur)) [[likely]] {
-    if (auto switch_body_opt = recurse_switch_body()) [[likely]] {
-      auto [switch_cases, switch_default_opt] = switch_body_opt.value();
+    if (auto switch_body = recurse_switch_body()) [[likely]] {
+      auto [switch_cases, switch_default] = switch_body.value();
 
-      return make<SwitchStmt>(switch_cond, switch_cases, switch_default_opt)();
+      return make<SwitchStmt>(switch_cond, switch_cases, switch_default)();
     } else {
       diagnostic << current() << "Switch statement body is malformed.";
     }

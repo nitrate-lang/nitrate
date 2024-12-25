@@ -45,10 +45,9 @@ ExpressionList Parser::recurse_struct_attributes() {
   }
 
   while (true) {
-    if (next_if(EofF)) {
-      diagnostic
-          << current()
-          << "Encountered EOF while parsing composite definition attributes";
+    if (next_if(EofF)) [[unlikely]] {
+      diagnostic << current()
+                 << "Encountered EOF while parsing struct attributes";
       break;
     }
 
@@ -70,11 +69,8 @@ ExpressionList Parser::recurse_struct_attributes() {
 }
 
 string Parser::recurse_struct_name() {
-  if (auto tok = next_if(Name)) {
-    return tok->as_string();
-  } else {
-    return "";
-  }
+  auto tok = next_if(Name);
+  return tok ? tok->as_string() : "";
 }
 
 StructDefNames Parser::recurse_struct_terms() {
@@ -87,12 +83,14 @@ StructDefNames Parser::recurse_struct_terms() {
   while (true) {
     if (auto tok = next_if(Name)) {
       names.push_back(tok->as_string());
-
-      next_if(PuncComa);
     } else {
-      return names;
+      break;
     }
+
+    next_if(PuncComa);
   }
+
+  return names;
 }
 
 NullableFlowPtr<Expr> Parser::recurse_struct_field_default_value() {
@@ -109,23 +107,20 @@ NullableFlowPtr<Expr> Parser::recurse_struct_field_default_value() {
 
 void Parser::recurse_struct_field(Vis vis, bool is_static,
                                   StructDefFields &fields) {
-  /* Must consume token to avoid infinite loop on error */
-  if (auto name = next(); name.is(Name)) {
-    auto field_name = name.as_string();
-
+  if (auto field_name = next_if(Name)) {
     if (next_if(PuncColn)) {
       auto field_type = recurse_type();
       auto default_value = recurse_struct_field_default_value();
 
-      auto field =
-          StructField(vis, is_static, field_name, field_type, default_value);
+      auto field = StructField(vis, is_static, field_name->as_string(),
+                               field_type, default_value);
 
       fields.push_back(std::move(field));
     } else {
       diagnostic << current() << "Expected ':' after field name in struct";
     }
   } else {
-    diagnostic << current() << "Expected field name in struct";
+    diagnostic << next() << "Expected field name in struct";
   }
 }
 
@@ -141,19 +136,18 @@ void Parser::recurse_struct_method_or_field(StructContent &body) {
     vis = Vis::Pub;
   }
 
-  /* Is the member static? */
-  bool is_static = next_if(Static).has_value();
+  auto is_static_member = next_if(Static).has_value();
 
-  if (next_if(Fn)) { /* Parse method */
+  if (next_if(Fn)) {
     auto method = recurse_function(false);
 
-    if (is_static) {
+    if (is_static_member) {
       body.static_methods.push_back({vis, method});
     } else {
       body.methods.push_back({vis, method});
     }
-  } else { /* Parse field */
-    recurse_struct_field(vis, is_static, body.fields);
+  } else {
+    recurse_struct_field(vis, is_static_member, body.fields);
   }
 
   next_if(PuncComa) || next_if(PuncSemi);
@@ -162,18 +156,18 @@ void Parser::recurse_struct_method_or_field(StructContent &body) {
 Parser::StructContent Parser::recurse_struct_body() {
   StructContent body;
 
-  if (!next_if(PuncLCur)) {
+  if (!next_if(PuncLCur)) [[unlikely]] {
     diagnostic << current() << "Expected '{' to start struct body";
     return body;
   }
 
   while (true) {
-    if (next_if(PuncRCur)) {
+    if (next_if(EofF)) {
+      diagnostic << current() << "Encountered EOF while parsing struct body";
       break;
     }
 
-    if (next_if(EofF)) {
-      diagnostic << current() << "Encountered EOF while parsing struct body";
+    if (next_if(PuncRCur)) {
       break;
     }
 
@@ -183,18 +177,18 @@ Parser::StructContent Parser::recurse_struct_body() {
   return body;
 }
 
-FlowPtr<Stmt> Parser::recurse_struct(CompositeType type) {
+FlowPtr<Stmt> Parser::recurse_struct(CompositeType struct_type) {
   auto start_pos = current().get_start();
-  auto attributes = recurse_struct_attributes();
-  auto name = recurse_struct_name();
-  auto template_params = recurse_template_parameters();
-  auto terms = recurse_struct_terms();
-  auto [fields, methods, static_methods] = recurse_struct_body();
+  auto struct_attributes = recurse_struct_attributes();
+  auto struct_name = recurse_struct_name();
+  auto struct_template_params = recurse_template_parameters();
+  auto struct_terms = recurse_struct_terms();
+  auto [struct_fields, struct_methods, struct_static_methods] =
+      recurse_struct_body();
 
-  auto struct_defintion =
-      make<StructDef>(type, attributes, name, template_params, terms, fields,
-                      methods, static_methods)();
-
+  auto struct_defintion = make<StructDef>(
+      struct_type, struct_attributes, struct_name, struct_template_params,
+      struct_terms, struct_fields, struct_methods, struct_static_methods)();
   struct_defintion->set_offset(start_pos);
 
   return struct_defintion;

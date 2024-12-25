@@ -43,9 +43,7 @@ FlowPtr<parse::Type> Parser::recurse_function_parameter_type() {
   if (next_if(PuncColn)) {
     return recurse_type();
   } else {
-    auto type = make<InferTy>()();
-    type->set_offset(current().get_start());
-    return type;
+    return make<InferTy>()();
   }
 }
 
@@ -62,14 +60,13 @@ NullableFlowPtr<Expr> Parser::recurse_function_parameter_value() {
 }
 
 std::optional<FuncParam> Parser::recurse_function_parameter() {
-  if (auto name = next_if(Name)) {
-    auto param_name = name->as_string();
+  if (auto param_name = next_if(Name)) [[likely]] {
     auto param_type = recurse_function_parameter_type();
     auto param_value = recurse_function_parameter_value();
 
-    return FuncParam{param_name, param_type, param_value};
+    return FuncParam{param_name->as_string(), param_type, param_value};
   } else {
-    diagnostic << current() << "Expected a parameter name before ':'";
+    diagnostic << next() << "Expected a parameter name before ':'";
   }
 
   return std::nullopt;
@@ -83,7 +80,7 @@ std::optional<TemplateParameters> Parser::recurse_template_parameters() {
   TemplateParameters params;
 
   while (true) {
-    if (next_if(EofF)) {
+    if (next_if(EofF)) [[unlikely]] {
       diagnostic << current() << "Unexpected EOF in template parameters";
       return params;
     }
@@ -93,16 +90,14 @@ std::optional<TemplateParameters> Parser::recurse_template_parameters() {
     }
 
     if (auto param_opt = recurse_function_parameter()) {
-      auto param = *param_opt;
-      auto tparam = TemplateParameter{std::get<0>(param), std::get<1>(param),
-                                      std::get<2>(param)};
+      auto [param_name, param_type, param_value] = param_opt.value();
 
-      params.push_back(std::move(tparam));
-
-      next_if(PuncComa);
+      params.push_back({param_name, param_type, param_value});
     } else {
       diagnostic << next() << "Expected a template parameter";
     }
+
+    next_if(PuncComa);
   }
 
   return params;
@@ -111,13 +106,15 @@ std::optional<TemplateParameters> Parser::recurse_template_parameters() {
 std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
   std::pair<FuncParams, bool> parameters;
 
-  if (!next_if(PuncLPar)) {
+  if (!next_if(PuncLPar)) [[unlikely]] {
     diagnostic << current() << "Expected '(' after function name";
     return parameters;
   }
 
+  bool is_variadic = false;
+
   while (true) {
-    if (next_if(EofF)) {
+    if (next_if(EofF)) [[unlikely]] {
       diagnostic << current() << "Unexpected EOF in function parameters";
       return parameters;
     }
@@ -127,43 +124,42 @@ std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
     }
 
     if (next_if(OpEllipsis)) {
-      parameters.second = true;
+      is_variadic = true;
+
       if (!next_if(PuncRPar)) {
         diagnostic << current() << "Expected ')' after variadic parameter";
       }
-      break;
+      continue;
     }
 
-    if (auto param_opt = recurse_function_parameter()) {
-      auto param = *param_opt;
-      auto tparam =
-          FuncParam{std::get<0>(param), std::get<1>(param), std::get<2>(param)};
+    if (auto parameter = recurse_function_parameter()) {
+      auto [param_name, param_type, param_value] = parameter.value();
+      parameters.first.push_back({param_name, param_type, param_value});
 
-      parameters.first.push_back(std::move(tparam));
-
-      next_if(PuncComa);
     } else {
       diagnostic << next() << "Expected a function parameter";
     }
+
+    next_if(PuncComa);
   }
+
+  parameters.second = is_variadic;
 
   return parameters;
 }
 
-FuncPurity Parser::get_purity_specifier(Token &start_pos, bool is_thread_safe,
+FuncPurity Parser::get_purity_specifier(Token start_pos, bool is_thread_safe,
                                         bool is_pure, bool is_impure,
                                         bool is_quasi, bool is_retro) {
-  /** Thread safety does not conflict with purity.
-   *  Purity implies thread safety.
-   */
-  (void)is_thread_safe;
-
   /* Ensure that there is no duplication of purity specifiers */
   if ((is_impure + is_pure + is_quasi + is_retro) > 1) {
     diagnostic << start_pos << "Conflicting purity specifiers";
     return FuncPurity::IMPURE_THREAD_UNSAFE;
   }
 
+  /** Thread safety does not conflict with purity.
+   *  Purity implies thread safety.
+   */
   if (is_pure) {
     return FuncPurity::PURE;
   } else if (is_quasi) {
@@ -337,10 +333,7 @@ FlowPtr<parse::Type> Parser::Parser::recurse_function_return_type() {
   if (next_if(PuncColn)) {
     return recurse_type();
   } else {
-    auto type = make<InferTy>()();
-    type->set_offset(current().get_start());
-
-    return type;
+    return make<InferTy>()();
   }
 }
 
