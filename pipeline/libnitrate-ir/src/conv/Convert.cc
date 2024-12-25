@@ -231,7 +231,7 @@ static std::optional<ir::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
       // A ^^ B == (A || B) && !(A && B)
       auto a = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicOr);
       auto b = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicAnd);
-      auto not_b = ir::create<ir::UnExpr>(b, ir::Op::LogicNot);
+      auto not_b = ir::create<ir::Unary>(b, ir::Op::LogicNot, false);
       R = ir::create<ir::BinExpr>(a, not_b, ir::Op::LogicAnd);
       break;
     }
@@ -314,7 +314,7 @@ static std::optional<ir::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
 
       auto a = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicOr);
       auto b = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicAnd);
-      auto not_b = ir::create<ir::UnExpr>(b, ir::Op::LogicNot);
+      auto not_b = ir::create<ir::Unary>(b, ir::Op::LogicNot, false);
       return ir::create<ir::BinExpr>(
           lhs, ir::create<ir::BinExpr>(a, not_b, ir::Op::LogicAnd),
           ir::Op::Set);
@@ -387,12 +387,13 @@ static std::optional<ir::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
   return R;
 }
 
-static std::optional<ir::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
-                                                    IReport *G, ir::Expr *rhs,
-                                                    lex::Operator op) {
+static std::optional<ir::Expr *> nrgen_lower_unary(NRBuilder &b, PState &,
+                                                   IReport *G, ir::Expr *rhs,
+                                                   lex::Operator op,
+                                                   bool is_postfix) {
   using namespace ncc::lex;
 
-#define STD_UNOP(op) ir::create<ir::UnExpr>(rhs, ir::Op::op)
+#define STD_UNOP(op) ir::create<ir::Unary>(rhs, ir::Op::op, is_postfix)
 
   EResult R;
 
@@ -443,7 +444,7 @@ static std::optional<ir::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
     }
 
     case OpSizeof: {
-      auto bits = ir::create<ir::UnExpr>(rhs, ir::Op::Bitsizeof);
+      auto bits = ir::create<ir::Unary>(rhs, ir::Op::Bitsizeof, false);
       auto arg = ir::create<ir::BinExpr>(
           bits, ir::create<ir::Float>(8, ir::FloatSize::F64), ir::Op::Slash);
 
@@ -483,36 +484,6 @@ static std::optional<ir::Expr *> nrgen_lower_unexpr(NRBuilder &b, PState &,
     }
 
     default: {
-      break;
-    }
-  }
-
-  return R;
-}
-
-static std::optional<ir::Expr *> nrgen_lower_post_unexpr(NRBuilder &, PState &,
-                                                         IReport *G,
-                                                         ir::Expr *lhs,
-                                                         lex::Operator op) {
-  using namespace ncc::lex;
-
-#define STD_POST_OP(op) ir::create<ir::PostUnExpr>(lhs, ir::Op::op)
-
-  EResult R;
-
-  switch (op) {
-    case OpInc: {
-      R = STD_POST_OP(Inc);
-      break;
-    }
-    case OpDec: {
-      R = STD_POST_OP(Dec);
-      break;
-    }
-    default: {
-      G->report(ir::CompilerError, IC::Error,
-                "Operator is not supported in post-unary expression",
-                lhs->getLoc());
       break;
     }
   }
@@ -609,7 +580,7 @@ static EResult nrgen_unexpr(NRBuilder &b, PState &s, IReport *G,
     return std::nullopt;
   }
 
-  auto E = nrgen_lower_unexpr(b, s, G, rhs.value(), n->get_op());
+  auto E = nrgen_lower_unary(b, s, G, rhs.value(), n->get_op(), false);
   if (!E.has_value()) {
     G->report(CompilerError, IC::Error, "Failed to lower unary expression",
               n->get_pos());
@@ -629,7 +600,7 @@ static EResult nrgen_post_unexpr(NRBuilder &b, PState &s, IReport *G,
     return std::nullopt;
   }
 
-  auto E = nrgen_lower_post_unexpr(b, s, G, lhs.value(), n->get_op());
+  auto E = nrgen_lower_unary(b, s, G, lhs.value(), n->get_op(), true);
   if (!E.has_value()) {
     G->report(CompilerError, IC::Error, "Failed to lower post-unary expression",
               n->get_pos());

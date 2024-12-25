@@ -289,7 +289,7 @@ static std::optional<Type *> nr_infer_impl(
       break;
     }
     case IR_eUNARY: {
-      switch (const UnExpr *U = E->as<UnExpr>(); E->as<UnExpr>()->getOp()) {
+      switch (const Unary *U = E->as<Unary>(); E->as<Unary>()->getOp()) {
         case Op::Plus: {
           R = U->getExpr()->getType();
           break;
@@ -355,48 +355,6 @@ static std::optional<Type *> nr_infer_impl(
         case Op::NE:
         case Op::BitcastAs:
         case Op::CastAs: {
-          R = std::nullopt;
-          break;
-        }
-      }
-      break;
-    }
-    case IR_ePOST_UNEXPR: {
-      switch (const PostUnExpr *P = E->as<PostUnExpr>();
-              E->as<PostUnExpr>()->getOp()) {
-        case Op::Inc: {
-          R = P->getExpr()->getType();
-          break;
-        }
-        case Op::Dec: {
-          R = P->getExpr()->getType();
-          break;
-        }
-        case Op::Plus:
-        case Op::Minus:
-        case Op::Times:
-        case Op::Slash:
-        case Op::Percent:
-        case Op::BitAnd:
-        case Op::BitOr:
-        case Op::BitXor:
-        case Op::BitNot:
-        case Op::LogicAnd:
-        case Op::LogicOr:
-        case Op::LogicNot:
-        case Op::LShift:
-        case Op::RShift:
-        case Op::Set:
-        case Op::LT:
-        case Op::GT:
-        case Op::LE:
-        case Op::GE:
-        case Op::Eq:
-        case Op::NE:
-        case Op::Alignof:
-        case Op::BitcastAs:
-        case Op::CastAs:
-        case Op::Bitsizeof: {
           R = std::nullopt;
           break;
         }

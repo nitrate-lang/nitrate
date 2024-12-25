@@ -89,8 +89,7 @@ namespace ncc::ir {
     void visit(Expr& n) override;
     void visit(Type& n) override;
     void visit(BinExpr& n) override;
-    void visit(UnExpr& n) override;
-    void visit(PostUnExpr& n) override;
+    void visit(Unary& n) override;
     void visit(U1Ty& n) override;
     void visit(U8Ty& n) override;
     void visit(U16Ty& n) override;

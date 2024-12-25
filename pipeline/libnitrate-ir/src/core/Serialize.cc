@@ -218,17 +218,10 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
     }
     case IR_eUNARY: {
       ss << "(";
-      ss << n->as<UnExpr>()->getOp();
+      ss << n->as<Unary>()->getOp();
       ss << "(";
-      recurse(n->as<UnExpr>()->getExpr());
+      recurse(n->as<Unary>()->getExpr());
       ss << "))";
-      break;
-    }
-    case IR_ePOST_UNEXPR: {
-      ss << "(";
-      recurse(n->as<PostUnExpr>()->getExpr());
-      ss << n->as<PostUnExpr>()->getOp();
-      ss << ")";
       break;
     }
     case IR_eINT: {

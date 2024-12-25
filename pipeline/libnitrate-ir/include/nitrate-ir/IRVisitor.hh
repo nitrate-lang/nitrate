@@ -44,8 +44,7 @@ namespace ncc::ir {
     virtual void visit(Expr& n) = 0;
     virtual void visit(Type& n) = 0;
     virtual void visit(BinExpr& n) = 0;
-    virtual void visit(UnExpr& n) = 0;
-    virtual void visit(PostUnExpr& n) = 0;
+    virtual void visit(Unary& n) = 0;
     virtual void visit(U1Ty& n) = 0;
     virtual void visit(U8Ty& n) = 0;
     virtual void visit(U16Ty& n) = 0;

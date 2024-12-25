@@ -45,10 +45,8 @@ namespace ncc::ir {
 
   /** @brief Nitrate abstract syntax tree node type */
   typedef enum nr_ty_t {
-    IR_eBIN,         /* Binary expression */
-    IR_eUNARY,       /* Unary expression */
-    IR_ePOST_UNEXPR, /* Postfix unary expression */
-
+    IR_eBIN,      /* Binary expression */
+    IR_eUNARY,    /* Unary expression */
     IR_eINT,      /* Integer literal */
     IR_eFLOAT,    /* Floating-point literal */
     IR_eLIST,     /* List literal */
@@ -107,8 +105,7 @@ namespace ncc::ir {
   class Expr;
   class Type;
   class BinExpr;
-  class UnExpr;
-  class PostUnExpr;
+  class Unary;
   class U1Ty;
   class U8Ty;
   class U16Ty;

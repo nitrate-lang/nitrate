@@ -74,18 +74,7 @@ void NR_Writer::visit(BinExpr& n) {
   end_obj();
 }
 
-void NR_Writer::visit(UnExpr& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void NR_Writer::visit(PostUnExpr& n) {
+void NR_Writer::visit(Unary& n) {
   begin_obj(1);
 
   string("kind");

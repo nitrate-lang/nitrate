@@ -72,13 +72,8 @@ nr_node_t *nr_clone_impl(
       break;
     }
     case IR_eUNARY: {
-      UnExpr *n = static_cast<UnExpr *>(in);
-      out = create<UnExpr>(clone(n->getExpr()), n->getOp());
-      break;
-    }
-    case IR_ePOST_UNEXPR: {
-      PostUnExpr *n = static_cast<PostUnExpr *>(in);
-      out = create<PostUnExpr>(clone(n->getExpr()), n->getOp());
+      Unary *n = static_cast<Unary *>(in);
+      out = create<Unary>(clone(n->getExpr()), n->getOp(), n->isPostfix());
       break;
     }
     case IR_eINT: {

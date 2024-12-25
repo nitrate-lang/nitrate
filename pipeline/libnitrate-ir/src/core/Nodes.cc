@@ -166,11 +166,7 @@ CPP_EXPORT boost::uuids::uuid Expr::hash() {
         break;
       }
       case IR_eUNARY: {
-        MIXIN_PRIMITIVE(cur->as<UnExpr>()->m_op);
-        break;
-      }
-      case IR_ePOST_UNEXPR: {
-        MIXIN_PRIMITIVE(cur->as<PostUnExpr>()->m_op);
+        MIXIN_PRIMITIVE(cur->as<Unary>()->m_op);
         break;
       }
       case IR_eINT: {

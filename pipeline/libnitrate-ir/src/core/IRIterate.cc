@@ -66,11 +66,7 @@ namespace ncc::ir::detail {
         break;
       }
       case IR_eUNARY: {
-        children.push_back(&base->as<UnExpr>()->m_expr);
-        break;
-      }
-      case IR_ePOST_UNEXPR: {
-        children.push_back(&base->as<PostUnExpr>()->m_expr);
+        children.push_back(&base->as<Unary>()->m_expr);
         break;
       }
       case IR_eINT: {

@@ -81,6 +81,9 @@
 
 /// TODO: Find way to remove the 's.branch_early' edge case
 
+/// TODO: FIXME: This code is not correct at all. It is prototype code in rapid
+/// development.
+
 using namespace llvm;
 using namespace std;
 using namespace ncc::ir;
@@ -809,8 +812,14 @@ namespace lower {
       return E;
     }
 
-    static val_t for_UNEXPR(ctx_t &m, craft_t &b, State &s, const UnExpr *N) {
+    static val_t for_UNEXPR(ctx_t &m, craft_t &b, State &s, const Unary *N) {
       val_t R;
+
+      val_t E = V(N->getExpr());
+      if (!E) {
+        debug("Failed to get expression");
+        return nullopt;
+      }
 
       switch (N->getOp()) {
         case Op::Plus: {
@@ -818,9 +827,7 @@ namespace lower {
           break;
         }
         case Op::Minus: {
-          if (val_t E = V(N->getExpr())) {
-            R = b.CreateNeg(E.value());
-          }
+          R = b.CreateNeg(E.value());
           break;
         }
         case Op::Times: {
@@ -847,117 +854,20 @@ namespace lower {
           break;
         }
         case Op::BitNot: {
-          if (val_t E = V(N->getExpr())) {
-            R = b.CreateNot(E.value());
-          }
+          R = b.CreateNot(E.value());
           break;
         }
         case Op::LogicNot: {
-          if (val_t E = V(N->getExpr())) {
-            R = b.CreateICmpEQ(E.value(),
-                               ConstantInt::get(b.getContext(), APInt(1, 0)));
-          }
+          R = b.CreateICmpEQ(E.value(),
+                             ConstantInt::get(b.getContext(), APInt(1, 0)));
           break;
         }
         case Op::Inc: {
-          if (N->getExpr()->getKind() != IR_eIDENT) {
-            qcore_panic("expected identifier for increment");
-          }
-
-          Ident *I = N->getExpr()->as<Ident>();
-          auto find = s.find_named_value(m, I->getName());
-          if (!find) {
-            qcore_panic("failed to find identifier for increment");
-          }
-
-          if (find->second != PtrClass::DataPtr) {
-            qcore_panic("expected data pointer");
-          }
-
-          Value *V = find->first;
-
-          if (!V->getType()->isPointerTy()) {
-            qcore_panic("expected pointer type for increment");
-          }
-
-          Value *current =
-              b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
-          Value *new_val;
-
-          if (current->getType()->isIntegerTy()) {
-            auto x = N->getExpr()->getType();
-            if (!x.has_value()) {
-              debug("Failed to get type");
-              return nullopt;
-            }
-            if (auto size = x.value()->getSizeBits()) {
-              new_val = b.CreateAdd(
-                  current,
-                  ConstantInt::get(b.getContext(), APInt(size.value(), 1)));
-            } else {
-              qcore_panic("Failed to get size");
-            }
-          } else if (current->getType()->isFloatingPointTy()) {
-            new_val = b.CreateFAdd(
-                current, ConstantFP::get(b.getContext(), APFloat(1.0)));
-          } else {
-            qcore_panic("unexpected type for increment");
-          }
-
-          b.CreateStore(new_val, V);
-
-          R = new_val;
+          /// TODO: Increment increment
           break;
         }
         case Op::Dec: {
-          if (N->getExpr()->getKind() != IR_eIDENT) {
-            qcore_panic("expected identifier for decrement");
-          }
-
-          Ident *I = N->getExpr()->as<Ident>();
-          auto find = s.find_named_value(m, I->getName());
-          if (!find) {
-            qcore_panic("failed to find identifier for decrement");
-          }
-
-          if (find->second != PtrClass::DataPtr) {
-            qcore_panic("expected data pointer");
-          }
-
-          Value *V = find->first;
-
-          if (!V->getType()->isPointerTy()) {
-            qcore_panic("expected pointer type for decrement");
-          }
-
-          Value *current =
-              b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
-          Value *new_val;
-
-          if (current->getType()->isIntegerTy()) {
-            auto x = N->getExpr()->getType();
-            if (!x.has_value()) {
-              debug("Failed to get type");
-              return nullopt;
-            }
-            if (auto size = x.value()->getSizeBits()) {
-              new_val = b.CreateSub(
-                  current,
-                  ConstantInt::get(b.getContext(), APInt(size.value(), 1)));
-            } else {
-              qcore_panic("Failed to get size");
-            }
-
-          } else if (current->getType()->isFloatingPointTy()) {
-            new_val = b.CreateFSub(
-                current, ConstantFP::get(b.getContext(), APFloat(1.0)));
-          } else {
-            qcore_panic("unexpected type for decrement");
-          }
-
-          b.CreateStore(new_val, V);
-
-          R = new_val;
+          /// TODO: Decrement decrement
           break;
         }
         case Op::Alignof: {
@@ -966,11 +876,13 @@ namespace lower {
             debug("Failed to get type");
             return nullopt;
           }
+
           if (auto align = x.value()->getAlignBytes()) {
             R = ConstantInt::get(b.getContext(), APInt(64, align.value()));
           } else {
             qcore_panic("Failed to get alignment");
           }
+
           break;
         }
         case Op::Bitsizeof: {
@@ -992,121 +904,7 @@ namespace lower {
         }
       }
 
-      return R;
-    }
-
-    static val_t for_POST_UNEXPR(ctx_t &m, craft_t &b, State &s,
-                                 const PostUnExpr *N) {
-      val_t R;
-
-      switch (N->getOp()) {
-        case Op::Inc: {
-          if (N->getExpr()->getKind() != IR_eIDENT) {
-            qcore_panic("expected identifier for increment");
-          }
-
-          Ident *I = N->getExpr()->as<Ident>();
-          auto find = s.find_named_value(m, I->getName());
-          if (!find) {
-            qcore_panic("failed to find identifier for increment");
-          }
-
-          if (find->second != PtrClass::DataPtr) {
-            qcore_panic("expected data pointer");
-          }
-
-          Value *V = find->first;
-
-          if (!V->getType()->isPointerTy()) {
-            qcore_panic("expected pointer type for increment");
-          }
-
-          Value *current =
-              b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
-          Value *new_val;
-
-          if (current->getType()->isIntegerTy()) {
-            auto x = N->getExpr()->getType();
-            if (!x.has_value()) {
-              debug("Failed to get type");
-              return nullopt;
-            }
-            if (auto size = x.value()->getSizeBits()) {
-              new_val = b.CreateAdd(
-                  current,
-                  ConstantInt::get(b.getContext(), APInt(size.value(), 1)));
-            } else {
-              qcore_panic("Failed to get size");
-            }
-          } else if (current->getType()->isFloatingPointTy()) {
-            new_val = b.CreateFAdd(
-                current, ConstantFP::get(b.getContext(), APFloat(1.0)));
-          } else {
-            qcore_panic("unexpected type for increment");
-          }
-
-          b.CreateStore(new_val, V);
-
-          R = current;
-          break;
-        }
-        case Op::Dec: {
-          if (N->getExpr()->getKind() != IR_eIDENT) {
-            qcore_panic("expected identifier for decrement");
-          }
-
-          Ident *I = N->getExpr()->as<Ident>();
-          auto find = s.find_named_value(m, I->getName());
-          if (!find) {
-            qcore_panic("failed to find identifier for decrement");
-          }
-
-          if (find->second != PtrClass::DataPtr) {
-            qcore_panic("expected data pointer");
-          }
-
-          Value *V = find->first;
-
-          if (!V->getType()->isPointerTy()) {
-            qcore_panic("expected pointer type for decrement");
-          }
-
-          Value *current =
-              b.CreateLoad(V->getType()->getNonOpaquePointerElementType(), V);
-          Value *new_val;
-
-          if (current->getType()->isIntegerTy()) {
-            auto x = N->getExpr()->getType();
-            if (!x.has_value()) {
-              debug("Failed to get type");
-              return nullopt;
-            }
-            if (auto size = x.value()->getSizeBits()) {
-              new_val = b.CreateSub(
-                  current,
-                  ConstantInt::get(b.getContext(), APInt(size.value(), 1)));
-            } else {
-              qcore_panic("Failed to get size");
-            }
-          } else if (current->getType()->isFloatingPointTy()) {
-            new_val = b.CreateFSub(
-                current, ConstantFP::get(b.getContext(), APFloat(1.0)));
-          } else {
-            qcore_panic("unexpected type for decrement");
-          }
-
-          b.CreateStore(new_val, V);
-
-          R = current;
-          break;
-        }
-
-        default: {
-          qcore_panic("unexpected post-unary operator");
-        }
-      }
-
-      return R;
+      return N->isPostfix() ? E : R;
     }
 
     static val_t for_INT(ctx_t &, craft_t &b, State &, const Int *N) {
@@ -1943,8 +1741,7 @@ static auto V_gen(ctx_t &m, craft_t &b, State &s, const Expr *N) -> val_t {
       using namespace lower::symbol;
 
       FUNCTION(IR_eBIN, for_BINEXPR, BinExpr);
-      FUNCTION(IR_eUNARY, for_UNEXPR, UnExpr);
-      FUNCTION(IR_ePOST_UNEXPR, for_POST_UNEXPR, PostUnExpr);
+      FUNCTION(IR_eUNARY, for_UNEXPR, Unary);
       FUNCTION(IR_eINT, for_INT, Int);
       FUNCTION(IR_eFLOAT, for_FLOAT, Float);
       FUNCTION(IR_eLIST, for_LIST, List);

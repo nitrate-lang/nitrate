@@ -157,10 +157,8 @@ namespace ncc::ir {
     static constexpr nr_ty_t getTypeCode() {
       if constexpr (std::is_same_v<T, BinExpr>) {
         return IR_eBIN;
-      } else if constexpr (std::is_same_v<T, UnExpr>) {
+      } else if constexpr (std::is_same_v<T, Unary>) {
         return IR_eUNARY;
-      } else if constexpr (std::is_same_v<T, PostUnExpr>) {
-        return IR_ePOST_UNEXPR;
       } else if constexpr (std::is_same_v<T, Int>) {
         return IR_eINT;
       } else if constexpr (std::is_same_v<T, Float>) {
@@ -375,12 +373,7 @@ namespace ncc::ir {
         }
 
         case IR_eUNARY: {
-          v.visit(*as<UnExpr>());
-          break;
-        }
-
-        case IR_ePOST_UNEXPR: {
-          v.visit(*as<PostUnExpr>());
+          v.visit(*as<Unary>());
           break;
         }
 
@@ -875,41 +868,27 @@ namespace ncc::ir {
     Op setOp(Op op) { return m_op = op; }
   };
 
-  class UnExpr final : public Expr {
+  class Unary final : public Expr {
     friend Expr;
 
     QCLASS_REFLECT()
 
     Expr *m_expr;
     Op m_op;
+    bool m_postfix;
 
   public:
-    UnExpr(Expr *expr, Op op) : Expr(IR_eUNARY), m_expr(expr), m_op(op) {}
+    Unary(Expr *expr, Op op, bool is_postfix)
+        : Expr(IR_eUNARY), m_expr(expr), m_op(op), m_postfix(is_postfix) {}
 
     Expr *getExpr() const { return m_expr; }
     Op getOp() const { return m_op; }
 
     Expr *setExpr(Expr *expr) { return m_expr = expr; }
     Op setOp(Op op) { return m_op = op; }
-  };
 
-  class PostUnExpr final : public Expr {
-    friend Expr;
-
-    QCLASS_REFLECT()
-
-    Expr *m_expr;
-    Op m_op;
-
-  public:
-    PostUnExpr(Expr *expr, Op op)
-        : Expr(IR_ePOST_UNEXPR), m_expr(expr), m_op(op) {}
-
-    Expr *getExpr() const { return m_expr; }
-    Op getOp() const { return m_op; }
-
-    Expr *setExpr(Expr *expr) { return m_expr = expr; }
-    Op setOp(Op op) { return m_op = op; }
+    bool isPostfix() const { return m_postfix; }
+    void setPostfix(bool is_postfix) { m_postfix = is_postfix; }
   };
 
   ///=============================================================================
@@ -1741,10 +1720,6 @@ namespace ncc::ir {
         break;
       }
 
-      case IR_ePOST_UNEXPR: {
-        break;
-      }
-
       case IR_eINT: {
         break;
       }
@@ -1937,8 +1912,7 @@ namespace ncc::ir {
       R.fill(0);
 
       R[IR_eBIN] = sizeof(BinExpr);
-      R[IR_eUNARY] = sizeof(UnExpr);
-      R[IR_ePOST_UNEXPR] = sizeof(PostUnExpr);
+      R[IR_eUNARY] = sizeof(Unary);
       R[IR_eINT] = sizeof(Int);
       R[IR_eFLOAT] = sizeof(Float);
       R[IR_eLIST] = sizeof(List);
@@ -1997,7 +1971,6 @@ namespace ncc::ir {
 
       R[IR_eBIN] = "bin_expr";
       R[IR_eUNARY] = "unary_expr";
-      R[IR_ePOST_UNEXPR] = "post_unary_expr";
       R[IR_eINT] = "int";
       R[IR_eFLOAT] = "float";
       R[IR_eLIST] = "list";
@@ -2066,16 +2039,8 @@ namespace ncc::ir {
         return a->m_lhs->isSame(b->m_lhs) && a->m_rhs->isSame(b->m_rhs);
       }
       case IR_eUNARY: {
-        auto a = as<UnExpr>();
-        auto b = other->as<UnExpr>();
-        if (a->m_op != b->m_op) {
-          return false;
-        }
-        return a->m_expr->isSame(b->m_expr);
-      }
-      case IR_ePOST_UNEXPR: {
-        auto a = as<PostUnExpr>();
-        auto b = other->as<PostUnExpr>();
+        auto a = as<Unary>();
+        auto b = other->as<Unary>();
         if (a->m_op != b->m_op) {
           return false;
         }
@@ -2444,7 +2409,6 @@ namespace ncc::ir {
 
     NORMAL_ALLOC(IR_eBIN);
     NORMAL_ALLOC(IR_eUNARY);
-    NORMAL_ALLOC(IR_ePOST_UNEXPR);
     CACHE_ALLOC(IR_eINT);
     NORMAL_ALLOC(IR_eFLOAT);
     NORMAL_ALLOC(IR_eLIST);
