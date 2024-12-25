@@ -92,11 +92,6 @@ namespace ncc::ir {
 };  // namespace ncc::ir
 
 namespace ncc::ir {
-  struct nr_node_t {
-  public:
-    nr_node_t() = default;
-  };
-
 #ifdef __IR_NODE_REFLECT_IMPL__
 #define QCLASS_REFLECT() public:
 #else
@@ -130,7 +125,7 @@ namespace ncc::ir {
     Managed,
   };
 
-  class Expr : public nr_node_t {
+  class Expr {
     QCLASS_REFLECT()
 
     nr_ty_t m_node_type : 6; /* Typecode of this node. */
@@ -139,6 +134,8 @@ namespace ncc::ir {
 
     Expr(const Expr &) = delete;
     Expr &operator=(const Expr &) = delete;
+
+    Expr *cloneImpl() const;
 
   public:
     constexpr Expr(nr_ty_t ty, uint32_t offset = ncc::lex::QLEX_EOFF,
@@ -297,7 +294,15 @@ namespace ncc::ir {
       return {m_offset, m_fileid};
     }
 
-    constexpr std::optional<Type *> getType() const;
+    std::optional<Type *> getType() const;
+
+    template <class T = Expr>
+    constexpr T *clone() const {
+      qcore_assert(getTypeCode<T>() == getKind(),
+                   "Attempted to clone into a different type.");
+
+      return static_cast<T *>(cloneImpl());
+    }
 
     template <typename T>
     static constexpr T *safeCastAs(Expr *ptr) {
@@ -1696,16 +1701,6 @@ namespace ncc::ir {
     }
 #endif
     return static_cast<Type *>(this);
-  }
-
-  constexpr std::optional<Type *> Expr::getType() const {
-    Type *R = static_cast<Type *>(nr_infer(this, nullptr));
-
-    if (R) {
-      return R;
-    } else {
-      return std::nullopt;
-    }
   }
 
   constexpr std::string_view Expr::getName() const {

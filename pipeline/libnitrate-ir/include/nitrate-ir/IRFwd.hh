@@ -37,9 +37,6 @@
 #include <cstddef>
 
 namespace ncc::ir {
-  /** @brief Nitrate abstract syntax tree node */
-  typedef struct nr_node_t nr_node_t;
-
   /** @brief Nitrate NR module */
   typedef class IRModule IRModule;
 

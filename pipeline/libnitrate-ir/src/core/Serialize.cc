@@ -740,9 +740,8 @@ static bool to_codeform(std::optional<IRModule *> mod, Expr *node, bool minify,
   return true;
 }
 
-CPP_EXPORT bool ir::nr_write(IRModule *mod, const nr_node_t *_node,
-                             nr_serial_t mode, FILE *out, size_t *outlen,
-                             uint32_t argcnt, ...) {
+CPP_EXPORT bool ir::nr_write(IRModule *mod, const Expr *_node, nr_serial_t mode,
+                             FILE *out, size_t *outlen, uint32_t argcnt, ...) {
   (void)argcnt;
 
   bool status;
@@ -750,7 +749,7 @@ CPP_EXPORT bool ir::nr_write(IRModule *mod, const nr_node_t *_node,
   long start, end;
 
   if (_node) {
-    node = static_cast<Expr *>(const_cast<nr_node_t *>(_node));
+    node = const_cast<Expr *>(_node);
   } else {
     node = mod->getRoot();
   }

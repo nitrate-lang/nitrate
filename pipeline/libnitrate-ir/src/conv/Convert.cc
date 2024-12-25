@@ -174,11 +174,11 @@ static std::optional<ir::Expr *> nrgen_lower_binexpr(NRBuilder &b, PState &,
   using namespace ncc::lex;
 
 #define STD_BINOP(op) ir::create<ir::BinExpr>(lhs, rhs, ir::Op::op)
-#define ASSIGN_BINOP(op)                                                   \
-  ir::create<ir::BinExpr>(                                                 \
-      lhs,                                                                 \
-      ir::create<ir::BinExpr>(static_cast<ir::Expr *>(nr_clone(lhs)), rhs, \
-                              ir::Op::op),                                 \
+#define ASSIGN_BINOP(op)                                                  \
+  ir::create<ir::BinExpr>(                                                \
+      lhs,                                                                \
+      ir::create<ir::BinExpr>(static_cast<ir::Expr *>(lhs->clone()), rhs, \
+                              ir::Op::op),                                \
       ir::Op::Set)
 
   std::optional<ir::Expr *> R;

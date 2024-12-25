@@ -45,25 +45,22 @@
 using namespace ncc;
 using namespace ncc::ir;
 
-nr_node_t *nr_clone_impl(
-    const nr_node_t *_node,
-    std::unordered_map<const nr_node_t *, nr_node_t *> &map,
-    std::unordered_set<nr_node_t *> &in_visited) {
+static Expr *IRCloneRecurse(const Expr *_node,
+                            std::unordered_map<const Expr *, Expr *> &map,
+                            std::unordered_set<Expr *> &in_visited) {
   /// TODO: This code has bugs; fix it
 
-#define clone(X) static_cast<Expr *>(nr_clone_impl(X, map, in_visited))
+#define clone(X) static_cast<Expr *>(IRCloneRecurse(X, map, in_visited))
 
   using namespace ncc::ir;
 
-  Expr *in;
-  Expr *out;
+  std::optional<Expr *> out;
 
   if (!_node) {
     return nullptr;
   }
 
-  in = static_cast<Expr *>(const_cast<nr_node_t *>(_node));
-  out = nullptr;
+  auto in = const_cast<Expr *>(_node);
 
   switch (in->getKind()) {
     case IR_eBIN: {
@@ -346,26 +343,17 @@ nr_node_t *nr_clone_impl(
     }
   }
 
-  qcore_assert(out != nullptr, "nr_clone: failed to clone node");
-
-  map[in] = out;
+  map[in] = out.value();
   in_visited.insert(in);
 
-  return static_cast<nr_node_t *>(out);
+  return out.value();
 }
 
-CPP_EXPORT nr_node_t *ir::nr_clone(const nr_node_t *node) {
-  nr_node_t *out;
+CPP_EXPORT Expr *Expr::cloneImpl() const {
+  std::unordered_map<const Expr *, Expr *> map;
+  std::unordered_set<Expr *> in_visited;
 
-  if (!node) {
-    return nullptr;
-  }
-
-  out = nullptr;
-
-  std::unordered_map<const nr_node_t *, nr_node_t *> map;
-  std::unordered_set<nr_node_t *> in_visited;
-  out = nr_clone_impl(node, map, in_visited);
+  auto out = IRCloneRecurse(this, map, in_visited);
 
   { /* Resolve Directed Acyclic* Graph Internal References */
     using namespace ncc::ir;
@@ -395,5 +383,5 @@ CPP_EXPORT nr_node_t *ir::nr_clone(const nr_node_t *node) {
     out = out_expr;
   }
 
-  return static_cast<nr_node_t *>(out);
+  return out;
 }

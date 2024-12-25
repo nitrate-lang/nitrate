@@ -388,7 +388,3 @@ CPP_EXPORT void ir::nr_diag_read(IRModule *nr, nr_diag_format_t format,
     cb(ptr, message.size(), lvl, data);
   });
 }
-
-CPP_EXPORT void ir::nr_diag_clear(IRModule *nr) {
-  nr->getDiag()->erase_reports();
-}

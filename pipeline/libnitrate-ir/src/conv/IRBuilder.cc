@@ -182,7 +182,7 @@ NRBuilder NRBuilder::deep_clone(SOURCE_LOCATION_PARAM_ONCE) const {
   } else {
     contract_enforce(m_root != nullptr);
 
-    Expr *out_expr = static_cast<Expr *>(nr_clone(m_root));
+    Expr *out_expr = static_cast<Expr *>(m_root->clone());
 
     contract_enforce(out_expr->getKind() == IR_eSEQ);
     r.m_root = out_expr->as<Seq>();
@@ -316,7 +316,7 @@ IRModule *NRBuilder::get_module(SOURCE_LOCATION_PARAM_ONCE) {
 
     { /* Clone the IRGraph into the module */
       std::swap(nr_allocator, new_mod->getNodeArena());
-      new_mod->setRoot(static_cast<Seq *>(nr_clone(m_root)));
+      new_mod->setRoot(static_cast<Seq *>(m_root->clone()));
       std::swap(nr_allocator, new_mod->getNodeArena());
     }
 

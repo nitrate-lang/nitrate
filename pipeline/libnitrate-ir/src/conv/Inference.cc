@@ -167,7 +167,7 @@ static std::optional<Type *> promote(std::optional<Type *> lhs,
   }
 }
 
-static std::optional<Type *> nr_infer_impl(
+static std::optional<Type *> GetTypeImpl(
     const Expr *_node, std::unordered_set<const Expr *> &visited) {
   visited.insert(_node);
 
@@ -601,7 +601,7 @@ static std::optional<Type *> nr_infer_impl(
   return R;
 }
 
-CPP_EXPORT nr_node_t *ir::nr_infer(const nr_node_t *_node, void *) {
+CPP_EXPORT std::optional<Type *> Expr::getType() const {
   static thread_local struct State {
     std::unordered_set<const Expr *> visited;
     size_t depth = 0;
@@ -609,7 +609,7 @@ CPP_EXPORT nr_node_t *ir::nr_infer(const nr_node_t *_node, void *) {
 
   state.depth++;
 
-  auto R = nr_infer_impl(static_cast<const Expr *>(_node), state.visited);
+  auto R = GetTypeImpl(this, state.visited);
 
   state.depth--;
 
