@@ -200,7 +200,7 @@
 //       }
 //     }
 
-//     bool is_variadic = callee_ty->getAttrs().contains(FnAttr::Variadic);
+//     bool is_variadic = callee_ty->isVariadic();
 //     bool is_count_valid = is_variadic
 //                               ? temporary_map.size() >= callee_arg_count
 //                               : temporary_map.size() == callee_arg_count;

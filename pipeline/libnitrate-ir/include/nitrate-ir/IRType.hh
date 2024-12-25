@@ -35,9 +35,6 @@
 #define __NITRATE_IR_GRAPH_TYPE_H__
 
 #include <nitrate-ir/IRBase.hh>
-#include <nitrate-ir/IRData.hh>
-#include <nitrate-ir/IRFwd.hh>
-#include <nitrate-lexer/Token.hh>
 
 namespace ncc::ir {
   template <class A>
@@ -138,22 +135,22 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_PtrTy final : public IR_Vertex_Type<A> {
-    IR_Vertex_Type<A> *m_pointee;
+    FlowPtr<IR_Vertex_Type<A>> m_pointee;
     uint8_t m_native_size;
 
   public:
-    constexpr IR_Vertex_PtrTy(auto pointee, auto platform_size_bytes = 8)
+    constexpr IR_Vertex_PtrTy(auto pointee, auto native_size = 8)
         : IR_Vertex_Type<A>(IR_tPTR),
           m_pointee(pointee),
-          m_native_size(platform_size_bytes) {}
+          m_native_size(native_size) {}
 
     constexpr auto getPointee() const { return m_pointee; }
-    constexpr auto getPlatformPointerSizeBytes() const { return m_native_size; }
+    constexpr auto getNativeSize() const { return m_native_size; }
   };
 
   template <class A>
   class IR_Vertex_ConstTy final : public IR_Vertex_Type<A> {
-    IR_Vertex_Type<A> *m_item;
+    FlowPtr<IR_Vertex_Type<A>> m_item;
 
   public:
     constexpr IR_Vertex_ConstTy(auto item)
@@ -164,18 +161,18 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_OpaqueTy final : public IR_Vertex_Type<A> {
-    std::string_view m_name;
+    string m_name;
 
   public:
-    constexpr IR_Vertex_OpaqueTy(std::string_view name)
+    constexpr IR_Vertex_OpaqueTy(auto name)
         : IR_Vertex_Type<A>(IR_tOPAQUE), m_name(name) {}
 
-    constexpr auto getName() const { return m_name; }
+    constexpr auto getName() const { return m_name.get(); }
   };
 
   template <class A>
   class IR_Vertex_StructTy final : public IR_Vertex_Type<A> {
-    std::span<IR_Vertex_Type<A> *> m_fields;
+    std::span<FlowPtr<IR_Vertex_Type<A>>> m_fields;
 
   public:
     constexpr IR_Vertex_StructTy(auto fields)
@@ -186,7 +183,7 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_UnionTy final : public IR_Vertex_Type<A> {
-    std::span<IR_Vertex_Type<A> *> m_fields;
+    std::span<FlowPtr<IR_Vertex_Type<A>>> m_fields;
 
   public:
     constexpr IR_Vertex_UnionTy(auto fields)
@@ -197,7 +194,7 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_ArrayTy final : public IR_Vertex_Type<A> {
-    IR_Vertex_Type<A> *m_element;
+    FlowPtr<IR_Vertex_Type<A>> m_element;
     size_t m_size;
 
   public:
@@ -208,40 +205,30 @@ namespace ncc::ir {
     constexpr auto getCount() const { return m_size; }
   };
 
-  enum class FnAttr {
-    Variadic,
-  };
-
   template <class A>
-  using FnParams = std::vector<IR_Vertex_Type<A> *, Arena<IR_Vertex_Type<A> *>>;
-
-  typedef std::unordered_set<FnAttr, std::hash<FnAttr>, std::equal_to<FnAttr>,
-                             Arena<FnAttr>>
-      FnAttrs;
+  using FnParams = std::vector<FlowPtr<IR_Vertex_Type<A>>,
+                               Arena<FlowPtr<IR_Vertex_Type<A>>>>;
 
   template <class A>
   class IR_Vertex_FnTy final : public IR_Vertex_Type<A> {
-    std::span<IR_Vertex_Type<A> *> m_params;
-    FnAttrs m_attrs;
-    IR_Vertex_Type<A> *m_return;
+    std::span<FlowPtr<IR_Vertex_Type<A>>> m_params;
+    FlowPtr<IR_Vertex_Type<A>> m_return;
     uint8_t m_native_size;
+    bool m_variadic;
 
   public:
-    IR_Vertex_FnTy(auto params, auto ret, auto attrs,
-                   auto platform_ptr_size_bytes = 8)
+    constexpr IR_Vertex_FnTy(auto params, auto ret, auto variadic,
+                             auto platform_ptr_size_bytes = 8)
         : IR_Vertex_Type<A>(IR_tFUNC),
           m_params(params),
-          m_attrs(attrs),
           m_return(ret),
-          m_native_size(platform_ptr_size_bytes) {}
+          m_native_size(platform_ptr_size_bytes),
+          m_variadic(variadic) {}
 
-    auto getParams() const { return m_params; }
-    auto getReturn() const { return m_return; }
-    auto getAttrs() const { return m_attrs; }
-
-    bool isVariadic() const { return m_attrs.contains(FnAttr::Variadic); }
-
-    auto getPlatformPointerSizeBytes() const { return m_native_size; }
+    constexpr auto getParams() const { return m_params; }
+    constexpr auto getReturn() const { return m_return; }
+    constexpr auto isVariadic() const { return m_variadic; }
+    constexpr auto getNativeSize() const { return m_native_size; }
   };
 
   enum class TmpType {
@@ -251,14 +238,14 @@ namespace ncc::ir {
   };
 
   template <class A>
-  using CallArguments =
-      std::vector<std::pair<std::string_view, IR_Vertex_Expr<A> *>,
-                  Arena<std::pair<std::string_view, IR_Vertex_Expr<A> *>>>;
+  using CallArguments = std::vector<
+      std::pair<std::string_view, FlowPtr<IR_Vertex_Expr<A>>>,
+      Arena<std::pair<std::string_view, FlowPtr<IR_Vertex_Expr<A>>>>>;
 
   template <class A>
   struct IR_Vertex_CallArgsTmpNodeCradle {
-    IR_Vertex_Expr<A> *base;
-    CallArguments<A> args;
+    FlowPtr<IR_Vertex_Expr<A>> base;
+    std::span<std::pair<std::string_view, FlowPtr<IR_Vertex_Expr<A>>>> args;
 
     bool operator==(const IR_Vertex_CallArgsTmpNodeCradle<A> &rhs) const {
       return base == rhs.base && args == rhs.args;
@@ -275,12 +262,11 @@ namespace ncc::ir {
     TmpNodeCradle<A> m_data;
 
   public:
-    IR_Vertex_Tmp(TmpType type, const TmpNodeCradle<A> &data = {})
+    IR_Vertex_Tmp(TmpType type, TmpNodeCradle<A> data = {})
         : IR_Vertex_Type<A>(IR_tTMP), m_type(type), m_data(data) {}
 
-    TmpType getTmpType() { return m_type; }
-    TmpNodeCradle<A> &getData() { return m_data; }
-    const TmpNodeCradle<A> &getData() const { return m_data; }
+    auto getTmpType() { return m_type; }
+    auto getData() const { return m_data; }
   };
 }  // namespace ncc::ir
 

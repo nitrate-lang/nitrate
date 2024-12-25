@@ -177,11 +177,12 @@ static void indent(FILE &ss, ConvState &state) {
   }
 }
 
-static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
+static bool serialize_recurse(FlowPtr<Expr> n, FILE &ss, FILE &typedefs,
                               ConvState &state
 #if !defined(NDEBUG)
                               ,
-                              std::unordered_set<Expr *> &visited, bool is_cylic
+                              std::unordered_set<FlowPtr<Expr>> &visited,
+                              bool is_cylic
 #endif
 ) {
   if (!n) { /* Nicely handle null nodes */
@@ -595,7 +596,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
     }
     case IR_tFUNC: {
       ss << "fn (";
-      bool variadic = n->as<FnTy>()->getAttrs().contains(FnAttr::Variadic);
+      bool variadic = n->as<FnTy>()->isVariadic();
       for (auto it = n->as<FnTy>()->getParams().begin();
            it != n->as<FnTy>()->getParams().end(); ++it) {
         recurse(*it);
@@ -620,8 +621,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs,
   return true;
 }
 
-static bool to_codeform(std::optional<IRModule *> mod, Expr *node, bool minify,
-                        size_t indent_size, FILE &ss) {
+static bool to_codeform(std::optional<IRModule *> mod, FlowPtr<Expr> node,
+                        bool minify, size_t indent_size, FILE &ss) {
   ConvState state(indent_size, minify);
 
   if (mod.has_value() && !minify) {
@@ -697,7 +698,8 @@ static bool to_codeform(std::optional<IRModule *> mod, Expr *node, bool minify,
   }
 
 #if !defined(NDEBUG)
-  std::unordered_set<Expr *> v;
+  std::unordered_set<FlowPtr<Expr>> v;
+
   bool is_cylic = !node->isAcyclic();
 #endif
 

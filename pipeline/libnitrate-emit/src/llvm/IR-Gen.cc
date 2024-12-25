@@ -87,6 +87,7 @@
 using namespace llvm;
 using namespace std;
 using namespace ncc::ir;
+using namespace ncc;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -126,14 +127,14 @@ public:
 
 class FunctionStackFrame {
   Function *m_fn;
-  unordered_map<string_view, AllocaInst *> m_locals;
+  unordered_map<std::string_view, AllocaInst *> m_locals;
 
 public:
   FunctionStackFrame(Function *fn) : m_fn(fn) {}
 
   Function *getFunction() const { return m_fn; }
 
-  void addVariable(string_view name, AllocaInst *inst) {
+  void addVariable(std::string_view name, AllocaInst *inst) {
     m_locals[name] = inst;
   }
 
@@ -158,8 +159,8 @@ public:
     branch_early = false;
   }
 
-  optional<pair<Value *, PtrClass>> find_named_value(ctx_t &m,
-                                                     string_view name) const {
+  optional<pair<Value *, PtrClass>> find_named_value(
+      ctx_t &m, std::string_view name) const {
     if (is_inside_function()) {
       for (let[cur_name, inst] : m_stackframe.top().getLocalVariables()) {
         if (cur_name == name) {
@@ -365,8 +366,8 @@ public:
   }
 };
 
-static auto T_gen(craft_t &b, const Expr *N) -> ty_t;
-static auto V_gen(ctx_t &m, craft_t &b, State &s, const Expr *N) -> val_t;
+static auto T_gen(craft_t &b, FlowPtr<Expr> N) -> ty_t;
+static auto V_gen(ctx_t &m, craft_t &b, State &s, FlowPtr<Expr> N) -> val_t;
 
 #define T(N) T_gen(b, N)
 #define V(N) V_gen(m, b, s, N)
@@ -446,11 +447,11 @@ static optional<unique_ptr<Module>> fabricate_llvmir(const IRModule *src,
 }
 
 static val_t binexpr_do_cast(ctx_t &m, craft_t &b, State &s, Value *L, Op O,
-                             llvm::Type *R, ncc::ir::Type *LT,
-                             ncc::ir::Type *RT) {
+                             llvm::Type *R, FlowPtr<ncc::ir::Type> LT,
+                             FlowPtr<ncc::ir::Type> RT) {
   val_t E;
 
-  if (LT->isSame(RT)) {
+  if (LT->isSame(RT.get())) {
     return L;
   }
 
@@ -1663,7 +1664,7 @@ namespace lower {
 
         if (!failed) {
           if (auto R = T(N->getReturn())) {
-            bool is_vararg = N->getAttrs().contains(FnAttr::Variadic);
+            bool is_vararg = N->isVariadic();
 
             return FunctionType::get(R.value(), std::move(param_types),
                                      is_vararg);
@@ -1722,16 +1723,16 @@ namespace lower {
 
 #pragma GCC diagnostic pop
 
-static auto V_gen(ctx_t &m, craft_t &b, State &s, const Expr *N) -> val_t {
+static auto V_gen(ctx_t &m, craft_t &b, State &s, FlowPtr<Expr> N) -> val_t {
   static let dispatch = []() constexpr {
-#define FUNCTION(_enum, _func, _type)                                     \
-  R[_enum] = [](ctx_t &m, craft_t &b, State &s, const Expr *N) -> val_t { \
-    return _func(m, b, s, N->as<_type>());                                \
+#define FUNCTION(_enum, _func, _type)                                       \
+  R[_enum] = [](ctx_t &m, craft_t &b, State &s, FlowPtr<Expr> N) -> val_t { \
+    return _func(m, b, s, N->as<_type>());                                  \
   }
-    using func_t = val_t (*)(ctx_t &, craft_t &, State &, const Expr *);
+    using func_t = val_t (*)(ctx_t &, craft_t &, State &, FlowPtr<Expr>);
 
     array<func_t, IR_LAST + 1> R;
-    R.fill([](ctx_t &, craft_t &, State &, const Expr *n) -> val_t {
+    R.fill([](ctx_t &, craft_t &, State &, auto n) -> val_t {
       qcore_panicf("illegal node in input: kind=%s", n->getKindName());
     });
 
@@ -1762,11 +1763,11 @@ static auto V_gen(ctx_t &m, craft_t &b, State &s, const Expr *N) -> val_t {
       FUNCTION(IR_eFUNCTION, for_FN, Fn);
       FUNCTION(IR_eASM, for_ASM, Asm);
 
-      R[IR_eIGN] = [](ctx_t &, craft_t &, State &, const Expr *) -> val_t {
+      R[IR_eIGN] = [](ctx_t &, craft_t &, State &, auto) -> val_t {
         return nullptr;
       };
 
-      R[IR_tTMP] = [](ctx_t &, craft_t &, State &, const Expr *) -> val_t {
+      R[IR_tTMP] = [](ctx_t &, craft_t &, State &, auto) -> val_t {
         qcore_panic("unexpected temporary node");
       };
     }
@@ -1779,16 +1780,16 @@ static auto V_gen(ctx_t &m, craft_t &b, State &s, const Expr *N) -> val_t {
   return dispatch[N->getKind()](m, b, s, N);
 }
 
-static auto T_gen(craft_t &b, const Expr *N) -> ty_t {
+static auto T_gen(craft_t &b, FlowPtr<Expr> N) -> ty_t {
   static let dispatch = []() constexpr {
-#define FUNCTION(_enum, _func, _type)                \
-  R[_enum] = [](craft_t &b, const Expr *N) -> ty_t { \
-    return _func(b, N->as<_type>());                 \
+#define FUNCTION(_enum, _func, _type)                  \
+  R[_enum] = [](craft_t &b, FlowPtr<Expr> N) -> ty_t { \
+    return _func(b, N->as<_type>());                   \
   }
-    using func_t = ty_t (*)(craft_t &, const Expr *);
+    using func_t = ty_t (*)(craft_t &, FlowPtr<Expr>);
 
     array<func_t, IR_LAST + 1> R;
-    R.fill([](craft_t &, const Expr *n) -> ty_t {
+    R.fill([](craft_t &, auto n) -> ty_t {
       qcore_panicf("illegal node in input: kind=%s", n->getKindName());
     });
 
@@ -1820,9 +1821,9 @@ static auto T_gen(craft_t &b, const Expr *N) -> ty_t {
       FUNCTION(IR_tARRAY, for_ARRAY_TY, ArrayTy);
       FUNCTION(IR_tFUNC, for_FN_TY, FnTy);
 
-      R[IR_eIGN] = [](craft_t &, const Expr *) -> ty_t { return nullptr; };
+      R[IR_eIGN] = [](craft_t &, auto) -> ty_t { return nullptr; };
 
-      R[IR_tTMP] = [](craft_t &, const Expr *) -> ty_t {
+      R[IR_tTMP] = [](craft_t &, auto) -> ty_t {
         qcore_panic("unexpected temporary node");
       };
     }
@@ -1915,14 +1916,14 @@ CPP_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
           return false;
         }
 
-        string targetTriple = m->getTargetInfo().TargetTriple.value_or(
+        std::string targetTriple = m->getTargetInfo().TargetTriple.value_or(
             sys::getDefaultTargetTriple());
-        string CPU = m->getTargetInfo().CPU.value_or("generic");
-        string Features = m->getTargetInfo().CPUFeatures.value_or("");
+        std::string CPU = m->getTargetInfo().CPU.value_or("generic");
+        std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
         bool relocPIC = true;
 
         TargetOptions opt;
-        string lookupTarget_err;
+        std::string lookupTarget_err;
         auto Target =
             TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
         if (!Target) {
@@ -2001,14 +2002,14 @@ CPP_EXPORT bool qcode_obj(IRModule *module, qcode_conf_t *conf, FILE *err,
           return false;
         }
 
-        string targetTriple = m->getTargetInfo().TargetTriple.value_or(
+        std::string targetTriple = m->getTargetInfo().TargetTriple.value_or(
             sys::getDefaultTargetTriple());
-        string CPU = m->getTargetInfo().CPU.value_or("generic");
-        string Features = m->getTargetInfo().CPUFeatures.value_or("");
+        std::string CPU = m->getTargetInfo().CPU.value_or("generic");
+        std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
         bool relocPIC = true;
 
         TargetOptions opt;
-        string lookupTarget_err;
+        std::string lookupTarget_err;
         auto Target =
             TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
         if (!Target) {

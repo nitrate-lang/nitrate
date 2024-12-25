@@ -675,7 +675,7 @@
 //       return 0;
 //     }
 //     case IR_tPTR: {
-//       return this->as<PtrTy>()->getPlatformPointerSizeBytes() * 8;
+//       return this->as<PtrTy>()->getNativeSize() * 8;
 //     }
 //     case IR_tCONST: {
 //       return this->as<ConstTy>()->getItem()->getSizeBits();
@@ -712,7 +712,7 @@
 //       break;
 //     }
 //     case IR_tFUNC: {
-//       return this->as<FnTy>()->getPlatformPointerSizeBytes() * 8;
+//       return this->as<FnTy>()->getNativeSize() * 8;
 //     }
 //     case IR_tOPAQUE: {
 //       return std::nullopt;
@@ -774,7 +774,7 @@
 //       return 0;
 //     }
 //     case IR_tPTR: {
-//       return this->as<PtrTy>()->getPlatformPointerSizeBytes() * 8;
+//       return this->as<PtrTy>()->getNativeSize() * 8;
 //     }
 //     case IR_tCONST: {
 //       return this->as<ConstTy>()->getItem()->getAlignBits();
@@ -805,7 +805,7 @@
 //       return this->as<ArrayTy>()->getElement()->getAlignBits();
 //     }
 //     case IR_tFUNC: {
-//       return this->as<FnTy>()->getPlatformPointerSizeBytes() * 8;
+//       return this->as<FnTy>()->getNativeSize() * 8;
 //     }
 //     case IR_tOPAQUE: {
 //       return std::nullopt;

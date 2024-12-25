@@ -38,16 +38,14 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <cassert>
-#include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <nitrate-core/Allocate.hh>
+#include <nitrate-core/FlowPtr.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRData.hh>
 #include <nitrate-ir/IRFwd.hh>
 #include <nitrate-ir/IRVisitor.hh>
-#include <nitrate-lexer/Token.hh>
 #include <optional>
 #include <ostream>
 #include <string>

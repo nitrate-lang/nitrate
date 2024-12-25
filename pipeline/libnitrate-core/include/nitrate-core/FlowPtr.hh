@@ -217,8 +217,10 @@ namespace ncc {
     ///=========================================================================
     /// Constructors
 
-    constexpr explicit FlowPtr(Pointee *ptr = nullptr,
-                               Tracking tracking = Tracking())
+    constexpr FlowPtr(Tracking tracking = Tracking())
+        : m_s(nullptr, std::move(tracking)) {}
+
+    constexpr explicit FlowPtr(Pointee *ptr, Tracking tracking = Tracking())
         : m_s(ptr, std::move(tracking)) {}
 
     constexpr FlowPtr(
@@ -248,6 +250,8 @@ namespace ncc {
       return *this;
     }
 
+    constexpr ~FlowPtr() = default;
+
     ///=========================================================================
     /// Helpers
 
@@ -268,12 +272,7 @@ namespace ncc {
 
     constexpr auto operator->() const { return m_s.m_ref.m_tptr; }
 
-    constexpr auto get(
-        std::source_location loc = std::source_location::current()) {
-      publish(trace::DataFlowEvent::Visitor_Accept, loc);
-
-      return m_s.m_ref.m_tptr;
-    }
+    constexpr auto get() const { return m_s.m_ref.m_tptr; }
 
     constexpr operator bool() const { return m_s.m_ref.m_ptr != 0; }
 
@@ -420,7 +419,7 @@ namespace ncc {
     }
 
     template <class U>
-    constexpr Pointee *value_or(U &&default_value) {
+    constexpr Pointee *value_or(U &&default_value) const {
       return m_ptr ? m_ptr.get() : std::forward<U>(default_value);
     }
   };
@@ -429,5 +428,22 @@ namespace ncc {
 
   static_assert(sizeof(FlowPtr<int>) == sizeof(NullableFlowPtr<int>));
 }  // namespace ncc
+
+namespace std {
+  template <class Pointee, class Tracking>
+  struct hash<ncc::FlowPtr<Pointee, Tracking>> {
+    size_t operator()(const ncc::FlowPtr<Pointee, Tracking> &ptr) const {
+      return std::hash<Pointee *>()(ptr.get());
+    }
+  };
+
+  template <class Pointee, class Tracking>
+  struct hash<ncc::NullableFlowPtr<Pointee, Tracking>> {
+    size_t operator()(
+        const ncc::NullableFlowPtr<Pointee, Tracking> &ptr) const {
+      return std::hash<Pointee *>()(ptr.value_or(nullptr));
+    }
+  };
+}  // namespace std
 
 #endif

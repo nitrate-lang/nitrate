@@ -146,7 +146,7 @@ static bool decode_ns_size_value(std::string_view &input, std::ostream &ss) {
   return true;
 }
 
-static void mangle_type(const Type *n, std::ostream &ss) {
+static void mangle_type(auto n, std::ostream &ss) {
   /**
    * @brief Name mangling for Nitrate is inspired by the Itanium C++ ABI.
    * @ref https://itanium-cxx-abi.github.io/cxx-abi/abi.html#mangling
@@ -290,19 +290,19 @@ static void mangle_type(const Type *n, std::ostream &ss) {
 
     case IR_tPTR: {
       ss << 'P';
-      mangle_type(n->as<PtrTy>()->getPointee(), ss);
+      mangle_type(n->template as<PtrTy>()->getPointee(), ss);
       break;
     }
 
     case IR_tCONST: {
       ss << 'K';
-      mangle_type(n->as<ConstTy>()->getItem(), ss);
+      mangle_type(n->template as<ConstTy>()->getItem(), ss);
       break;
     }
 
     case IR_tOPAQUE: {
       ss << 'N';
-      encode_ns_size_value(n->as<OpaqueTy>()->getName(), ss);
+      encode_ns_size_value(n->template as<OpaqueTy>()->getName(), ss);
       ss << 'E';
       break;
     }
@@ -315,7 +315,7 @@ static void mangle_type(const Type *n, std::ostream &ss) {
        */
 
       ss << 'c';
-      for (auto *field : n->as<StructTy>()->getFields()) {
+      for (auto field : n->template as<StructTy>()->getFields()) {
         mangle_type(field, ss);
       }
       ss << 'E';
@@ -330,7 +330,7 @@ static void mangle_type(const Type *n, std::ostream &ss) {
        */
 
       ss << 'u';
-      for (auto *field : n->as<StructTy>()->getFields()) {
+      for (auto field : n->template as<StructTy>()->getFields()) {
         mangle_type(field, ss);
       }
       ss << 'E';
@@ -339,9 +339,9 @@ static void mangle_type(const Type *n, std::ostream &ss) {
 
     case IR_tARRAY: {
       ss << 'A';
-      ss << n->as<ArrayTy>()->getCount();
+      ss << n->template as<ArrayTy>()->getCount();
       ss << '_';
-      mangle_type(n->as<ArrayTy>()->getElement(), ss);
+      mangle_type(n->template as<ArrayTy>()->getElement(), ss);
       break;
     }
 
@@ -354,12 +354,12 @@ static void mangle_type(const Type *n, std::ostream &ss) {
        */
 
       ss << 'F';
-      auto *fn = n->as<FnTy>();
+      auto *fn = n->template as<FnTy>();
       mangle_type(fn->getReturn(), ss);
-      for (auto *param : fn->getParams()) {
+      for (auto param : fn->getParams()) {
         mangle_type(param, ss);
       }
-      if (fn->getAttrs().count(FnAttr::Variadic)) {
+      if (fn->isVariadic()) {
         ss << '_';
       }
       ss << 'E';

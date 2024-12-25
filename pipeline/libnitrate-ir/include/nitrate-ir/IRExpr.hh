@@ -41,10 +41,7 @@
 #include <nitrate-lexer/Token.hh>
 #include <optional>
 #include <ostream>
-#include <span>
 #include <string>
-#include <unordered_set>
-#include <variant>
 #include <vector>
 
 namespace ncc::ir {
