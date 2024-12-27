@@ -101,7 +101,6 @@ namespace ncc::ir {
     ///=============================================================================
 
     std::unique_ptr<IReport> m_diagnostics;
-    std::unique_ptr<ISourceView> m_offset_resolver;
     ModulePasses m_applied{};    /* Module pass tracking */
     TargetInfo m_target_info{};  /* Build target information */
     std::string m_module_name{}; /* Not nessesarily unique module name */
@@ -141,9 +140,6 @@ namespace ncc::ir {
     auto &getNodeArena() { return m_node_arena; }
 
     std::unique_ptr<IReport> &getDiag() { return m_diagnostics; }
-    std::unique_ptr<ISourceView> &getOffsetResolver() {
-      return m_offset_resolver;
-    }
 
     const TargetInfo &getTargetInfo() const { return m_target_info; }
 

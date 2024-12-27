@@ -79,7 +79,6 @@ namespace ncc::ir {
     IR_LEVEL_INFO = 1,
     IR_LEVEL_WARN = 2,
     IR_LEVEL_ERROR = 3,
-    IR_LEVEL_FATAL = 4,
     IR_LEVEL_MAX = 5,
     IR_LEVEL_DEFAULT = IR_LEVEL_WARN,
   } nr_level_t;
@@ -102,75 +101,13 @@ namespace ncc::ir {
 
   typedef enum nr_diag_format_t {
     /**
-     * @brief Code decimal serialization of the error code.
-     * @example `801802`
-     * @format <code>
-     */
-    IR_DIAG_ASCII_ECODE,
-
-    /**
-     * @brief Code decimal serialization of the error code and source location.
-     * @example `801802:1:1:/path/to/filename.q`
-     * @format <code>:<line>:<col>:<path>
-     *
-     * @note UTF-8 characters in the path are preserved.
-     */
-    IR_DIAG_UTF8_ECODE_LOC,
-
-    /**
-     * @brief Code decimal serialization of the error code and UTF-8 error
-     * message.
-     * @example `801802:This is an UTF-8 error message.`
-     * @format <code>:<utf8_message>
-     */
-    IR_DIAG_UTF8_ECODE_ETEXT,
-
-    /**
-     * @brief Unspecified format.
-     * @note No-ANSI colors are included.
-     * @note Includes source location information as well as source code
-     * snippets (if available).
-     * @note Includes error messages and suggestions.
-     * @note Basically, everything you expect from a mainstream compiler (except
-     * without color).
-     */
-    IR_DIAG_NOSTD_TTY_UTF8,
-
-    /**
-     * @brief Unspecified format.
-     * @note Similar to `IR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
-     * differences.
-     */
-    IR_DIAG_NONSTD_ANSI16_UTF8_FULL,
-
-    /**
-     * @brief Unspecified format.
-     * @note Similar to `IR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
-     * differences.
-     */
-    IR_DIAG_NONSTD_ANSI256_UTF8_FULL,
-
-    /**
-     * @brief Unspecified format.
-     * @note Similar to `IR_DIAG_NOSTD_TTY_UTF8`, but with undocumented
-     * differences.
-     */
-    IR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
-
-    /**
      * @brief Display in a modern terminal emulator with UTF-8, RGB colors,
      * ANSI-box drawing, and full diagnostics with source highlighting.
      * @note Includes everything the user would expect from a mainstream
      * compiler.
      */
-    IR_DIAG_COLOR = IR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
+    IR_DIAG_COLOR = 100,
 
-    /**
-     * @brief Display in a modern terminal emulator with UTF-8 and no colors.
-     * @note Includes everything the user would expect from a mainstream
-     * compiler.
-     */
-    IR_DIAG_NOCOLOR = IR_DIAG_NOSTD_TTY_UTF8,
   } nr_diag_format_t;
 
   /**

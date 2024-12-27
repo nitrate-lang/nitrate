@@ -309,19 +309,18 @@ static void confine_rect_bounds(int64_t &x_0, int64_t &y_0, int64_t &x_1,
   if (y_1 < 0) y_1 = 0;
 }
 
-std::string ir::mint_modern_message(const IReport::ReportData &R,
-                                    ISourceView *B) {
+std::string ir::mint_modern_message(const IReport::ReportData &R) {
   constexpr size_t WIDTH = 70;
 
   std::stringstream ss;
   uint32_t sl, sc, el, ec;
 
   { /* Print filename and source row:column start and end */
-    /// FIXME: Render filename
+    /// FIXME: Get source location
     ss << "\x1b[37;1m" << "??" << ":";
 
     auto default_if = std::pair<uint32_t, uint32_t>(QLEX_EOFF, QLEX_EOFF);
-    auto beg = B->off2rc(R.start_offset).value_or(default_if);
+    auto beg = default_if;
     auto end = default_if;
 
     sl = beg.first;
@@ -362,10 +361,6 @@ std::string ir::mint_modern_message(const IReport::ReportData &R,
         break;
       case IC::Error:
         ss << "\x1b[31;1merror:\x1b[0m \x1b[31;1m"
-           << issue_info.left.at(R.code).flagname << "\x1b[0m\n";
-        break;
-      case IC::FatalError:
-        ss << "\x1b[31;1;4mfatal error:\x1b[0m \x1b[31;1;4m"
            << issue_info.left.at(R.code).flagname << "\x1b[0m\n";
         break;
     }
@@ -431,7 +426,8 @@ std::string ir::mint_modern_message(const IReport::ReportData &R,
     int64_t x_0 = sc, y_0 = sl, x_1 = ec, y_1 = el;
     confine_rect_bounds(x_0, y_0, x_1, y_1, WINDOW_WIDTH);
 
-    auto source_lines = B->rect(x_0, y_0, x_1, y_1);
+    /// FIXME: Get source code
+    auto source_lines = std::optional<std::vector<std::string_view>>();
 
     if (source_lines.has_value()) {
       std::string sep;

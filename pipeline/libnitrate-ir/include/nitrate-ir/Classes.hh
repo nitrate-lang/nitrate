@@ -41,16 +41,6 @@
 #include <string>
 
 namespace ncc::ir {
-  class qmodule final {
-    IRModule *m_module;
-
-  public:
-    qmodule() : m_module(nullptr) {}
-    ~qmodule();
-
-    IRModule *&get() { return m_module; }
-  };
-
   class SymbolEncoding final {
   public:
     SymbolEncoding() = default;

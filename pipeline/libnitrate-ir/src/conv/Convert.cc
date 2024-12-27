@@ -936,7 +936,7 @@
 
 // static EResult nrgen_templ_call(NRBuilder &, PState &, IReport *G,
 //                                 FlowPtr<ncc::parse::TemplCall> n) {
-//   G->report(CompilerError, IC::FatalError,
+//   G->report(CompilerError, IC::Error,
 //             "Attempted to lower an unexpected "
 //             "template function call",
 //             n->get_pos());
@@ -1164,7 +1164,7 @@
 
 // static EResult nrgen_templ_ty(NRBuilder &, PState &, IReport *G,
 //                               FlowPtr<ncc::parse::TemplType> n) {
-//   G->report(ir::CompilerError, IC::FatalError,
+//   G->report(ir::CompilerError, IC::Error,
 //             "Attempted to lower an unexpected ncc::parse::TemplType node",
 //             n->get_pos());
 //   return std::nullopt;
@@ -1191,7 +1191,7 @@
 //                             FlowPtr<ncc::parse::StructDef> n) {
 //   bool is_template = n->get_template_params().has_value();
 //   if (is_template) {
-//     G->report(ir::CompilerError, IC::FatalError,
+//     G->report(ir::CompilerError, IC::Error,
 //               "Attempted to lower an unexpected template struct node",
 //               n->get_pos());
 //     return std::nullopt;

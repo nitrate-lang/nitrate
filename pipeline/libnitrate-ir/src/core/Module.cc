@@ -33,7 +33,6 @@
 
 #include <core/Diagnostic.hh>
 #include <memory>
-#include <mutex>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IRGraph.hh>
@@ -42,35 +41,9 @@
 using namespace ncc;
 using namespace ncc::ir;
 
-class LexerSourceResolver : public ISourceView {
-public:
-  virtual std::optional<std::pair<uint32_t, uint32_t>> off2rc(
-      uint32_t) override {
-    return std::nullopt;
-    /// TODO: Implement source offset resolver
-    qcore_implement();
-  }
-
-  virtual std::optional<std::vector<std::string_view>> rect(
-      uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) override {
-    /// TODO: Implement source offset resolver
-    qcore_implement();
-
-    (void)x0;
-    (void)y0;
-    (void)x1;
-    (void)y1;
-
-    return std::nullopt;
-  }
-
-  virtual ~LexerSourceResolver() = default;
-};
-
 IRModule::IRModule(const std::string &name) {
   m_applied.clear();
 
-  m_offset_resolver = std::make_unique<LexerSourceResolver>();
   m_diagnostics = std::make_unique<DiagnosticManager>();
 
   m_module_name = name;

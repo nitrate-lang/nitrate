@@ -80,10 +80,7 @@ namespace ncc::ir {
     uint64_t hash() const;
   };
 
-  std::string mint_clang16_message(const IReport::ReportData &R,
-                                   ISourceView *B);
-  std::string mint_plain_message(const IReport::ReportData &R, ISourceView *B);
-  std::string mint_modern_message(const IReport::ReportData &R, ISourceView *B);
+  std::string mint_modern_message(const IReport::ReportData &R);
 
   class DiagnosticManager final : public IReport {
     std::vector<DiagDatum> m_vec;

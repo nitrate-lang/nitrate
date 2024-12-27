@@ -43,11 +43,10 @@
 
 namespace ncc::ir {
   enum class IC {
-    Debug = 0,
+    Debug,
     Info,
     Warn,
     Error,
-    FatalError,
   };
 
   enum IssueCode {
@@ -106,18 +105,6 @@ namespace ncc::ir {
     virtual void erase_reports() = 0;
 
     virtual void stream_reports(std::function<void(const ReportData&)> cb) = 0;
-  };
-
-  class ISourceView {
-  public:
-    virtual ~ISourceView() = default;
-
-    virtual std::optional<std::pair<uint32_t, uint32_t>> off2rc(
-        uint32_t offset) = 0;
-    virtual std::optional<std::vector<std::string_view>> rect(uint32_t x0,
-                                                              uint32_t y0,
-                                                              uint32_t x1,
-                                                              uint32_t y1) = 0;
   };
 };  // namespace ncc::ir
 
