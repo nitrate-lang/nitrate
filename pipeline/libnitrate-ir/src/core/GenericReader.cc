@@ -35,7 +35,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/decode/Deserialize.hh>
 
-using namespace ncc::ir;
+using namespace ncc::ir::decode;
 
 void IR_Reader::str(std::string_view str) {
   /// TODO: Implement generic deserializer

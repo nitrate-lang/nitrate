@@ -37,7 +37,7 @@
 #include <nitrate-ir/encode/Serialize.hh>
 #include <nitrate-lexer/Lexer.hh>
 
-using namespace ncc::ir;
+using namespace ncc::ir::encode;
 
 void IR_Writer::visit(Expr& n) {
   begin_obj(1);

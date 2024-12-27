@@ -37,7 +37,8 @@
 #include <core/Transform.hh>
 #include <nitrate-core/Init.hh>
 #include <nitrate-ir/Module.hh>
-#include <nitrate-ir/encode/Serialize.hh>
+#include <nitrate-ir/encode/ToJson.hh>
+#include <nitrate-ir/encode/ToMsgPack.hh>
 #include <nitrate-parser/ASTReader.hh>
 #include <unordered_set>
 
@@ -74,13 +75,13 @@ CREATE_TRANSFORM(nit::nr) {
   if (auto module = nr_lower(root.value(), nullptr, true)) {
     switch (out_mode) {
       case OutMode::JSON: {
-        auto writter = IR_JsonWriter(output);
+        auto writter = encode::IR_JsonWriter(output);
         module->accept(writter);
         return false;
       }
 
       case OutMode::MsgPack: {
-        auto writter = IR_MsgPackWriter(output);
+        auto writter = encode::IR_MsgPackWriter(output);
         module->accept(writter);
         return false;
       }

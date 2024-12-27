@@ -41,7 +41,7 @@
 #include <optional>
 #include <stack>
 
-namespace ncc::ir {
+namespace ncc::ir::decode {
   class CPP_EXPORT IR_Reader {
     enum class State {
       ObjStart,
@@ -94,6 +94,6 @@ namespace ncc::ir {
     IR_MsgPackReader(std::istream& is) { parse_stream(is); }
     virtual ~IR_MsgPackReader() = default;
   };
-}  // namespace ncc::ir
+}  // namespace ncc::ir::decode
 
 #endif
