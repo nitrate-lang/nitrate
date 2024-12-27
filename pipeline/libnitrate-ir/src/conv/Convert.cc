@@ -34,7 +34,7 @@
 // ////////////////////////////////////////////////////////////////////////////////
 
 // #include <boost/multiprecision/cpp_dec_float.hpp>
-// #include <core/PassManager.hh>
+// #include <nitrate-ir/transform/PassManager.hh>
 // #include <cstdint>
 // #include <cstring>
 // #include <memory>
@@ -43,7 +43,7 @@
 // #include <nitrate-core/Macro.hh>
 // #include <nitrate-ir/ABI/Name.hh>
 // #include <nitrate-ir/IR.hh>
-// #include <nitrate-ir/IRBuilder.hh>
+// #include <nitrate-ir/IRB/Builder.hh>
 // #include <nitrate-ir/IR/Nodes.hh>
 // #include <nitrate-ir/Module.hh>
 // #include <nitrate-ir/diagnostic/Report.hh>

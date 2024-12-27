@@ -31,10 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/PassManager.hh>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/Init.hh>
+#include <nitrate-ir/transform/PassManager.hh>
 #include <nitrate-parser/Init.hh>
 
 using namespace ncc::ir;

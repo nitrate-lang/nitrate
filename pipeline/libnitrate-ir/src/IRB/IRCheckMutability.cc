@@ -35,14 +35,29 @@
 
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IR/Nodes.hh>
-#include <nitrate-ir/IRBuilder.hh>
+#include <nitrate-ir/IRB/Builder.hh>
 
 using namespace ncc::ir;
 
-bool NRBuilder::check_scopes(FlowPtr<Seq>, IReport *I) {
-  I->report(CompilerError, IC::Debug,
-            "NRBuilder::check_scopes() not implemented");
+bool NRBuilder::check_mutability(FlowPtr<Seq> root, IReport *I) {
+  bool failed = false;
 
-  /// TODO: Implement check
-  return true;
+  for_each<BinExpr>(root, [&](auto x) {
+    if (x->getOp() != lex::OpSet) {
+      return;
+    }
+
+    auto lhs_type = x->getLHS()->getType();
+
+    if (!lhs_type.has_value()) {
+      return;
+    }
+
+    if (lhs_type.value()->is_readonly()) {
+      failed = true;
+      I->report(ConstAssign, IC::Error, "", x->getLoc());
+    }
+  });
+
+  return !failed;
 }

@@ -38,7 +38,7 @@
 // #include <cctype>
 // #include <nitrate-core/Logger.hh>
 // #include <nitrate-core/String.hh>
-// #include <nitrate-ir/IRBuilder.hh>
+// #include <nitrate-ir/IRB/Builder.hh>
 // #include <nitrate-ir/IR/Nodes.hh>
 
 // using namespace ncc::ir;

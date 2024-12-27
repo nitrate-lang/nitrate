@@ -35,13 +35,13 @@
 
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IR/Nodes.hh>
-#include <nitrate-ir/IRBuilder.hh>
+#include <nitrate-ir/IRB/Builder.hh>
 
 using namespace ncc::ir;
 
-bool NRBuilder::check_types(FlowPtr<Seq>, IReport *I) {
+bool NRBuilder::check_safety_claims(FlowPtr<Seq>, IReport *I) {
   I->report(CompilerError, IC::Debug,
-            "NRBuilder::check_types() not implemented");
+            "NRBuilder::check_safety_claims() not implemented");
 
   /// TODO: Implement check
   return true;

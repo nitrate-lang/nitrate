@@ -35,65 +35,15 @@
 
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IR/Nodes.hh>
-#include <nitrate-ir/IRBuilder.hh>
-#include <nitrate-ir/diagnostic/Report.hh>
+#include <nitrate-ir/IRB/Builder.hh>
 
 using namespace ncc::ir;
 
-bool NRBuilder::check_returns(FlowPtr<Seq> root, IReport *I) {
-  bool failed = false;
+bool NRBuilder::check_acyclic(FlowPtr<Seq> root, IReport *I) {
+  bool is_acyclic = root->isAcyclic();
+  if (!is_acyclic) {
+    I->report(DSPolyCyclicRef, IC::Error);
+  }
 
-  for_each<Fn>(root, [&](auto x) {
-    /* Skip function declarations */
-    if (!x->getBody()) {
-      return;
-    }
-
-    auto fn_ty_opt = x->getType();
-    if (!fn_ty_opt) {
-      I->report(TypeInference, IC::Error, "Failed to deduce function type",
-                x->getLoc());
-      failed = true;
-
-      return;
-    }
-
-    const auto fn_ty = fn_ty_opt.value()->template as<FnTy>();
-    const auto return_ty = fn_ty->getReturn();
-
-    bool found_ret = false;
-
-    for_each<Ret>(x->getBody().value(), [&](auto y) {
-      found_ret = true;
-
-      auto ret_expr_ty_opt = y->getExpr()->getType();
-      if (!ret_expr_ty_opt) {
-        I->report(TypeInference, IC::Error,
-                  "Failed to deduce return expression type", y->getLoc());
-        failed = true;
-
-        return;
-      }
-
-      /// TODO: Implement return type coercion
-
-      if (!return_ty->isSame(ret_expr_ty_opt.value())) {
-        I->report(ReturnTypeMismatch, IC::Error,
-                  {"Return value type '", ret_expr_ty_opt.value()->toString(),
-                   "' does not match function return type '",
-                   return_ty->toString(), "'"},
-                  y->getLoc());
-        failed = true;
-
-        return;
-      }
-    });
-
-    if (!found_ret) {
-      I->report(MissingReturn, IC::Error, x->getName(), x->getLoc());
-      failed = true;
-    }
-  });
-
-  return !failed;
+  return is_acyclic;
 }

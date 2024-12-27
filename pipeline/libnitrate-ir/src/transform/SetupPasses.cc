@@ -31,33 +31,21 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define IRBUILDER_IMPL
-
 #include <nitrate-core/Logger.hh>
-#include <nitrate-ir/IR/Nodes.hh>
-#include <nitrate-ir/IRBuilder.hh>
+#include <nitrate-ir/Module.hh>
+#include <nitrate-ir/transform/PassManager.hh>
+#include <transform/PassList.hh>
 
 using namespace ncc::ir;
 
-bool NRBuilder::check_mutability(FlowPtr<Seq> root, IReport *I) {
-  bool failed = false;
+void pass::PassRegistry::link_builtin() {}
 
-  for_each<BinExpr>(root, [&](auto x) {
-    if (x->getOp() != lex::OpSet) {
-      return;
-    }
+void pass::PassGroupRegistry::RegisterBuiltinGroups() {
+  PassGroupBuilder()
+      /* Add more cleanup passes: [dead-code removal, ?] */
+      .build("reduce");
 
-    auto lhs_type = x->getLHS()->getType();
+  PassGroupBuilder().build("ds");
 
-    if (!lhs_type.has_value()) {
-      return;
-    }
-
-    if (lhs_type.value()->is_readonly()) {
-      failed = true;
-      I->report(ConstAssign, IC::Error, "", x->getLoc());
-    }
-  });
-
-  return !failed;
+  PassGroupBuilder().build("chk");
 }
