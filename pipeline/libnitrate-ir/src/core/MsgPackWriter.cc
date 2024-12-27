@@ -33,7 +33,7 @@
 
 #include <bit>
 #include <nitrate-core/Logger.hh>
-#include <nitrate-ir/IRWriter.hh>
+#include <nitrate-ir/encode/Serialize.hh>
 
 using namespace ncc::ir;
 

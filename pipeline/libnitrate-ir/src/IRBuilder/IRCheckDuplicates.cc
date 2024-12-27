@@ -38,7 +38,7 @@
 #include <nitrate-core/String.hh>
 #include <nitrate-ir/IR/Nodes.hh>
 #include <nitrate-ir/IRBuilder.hh>
-#include <nitrate-ir/Report.hh>
+#include <nitrate-ir/diagnostic/Report.hh>
 #include <unordered_map>
 
 using namespace ncc::ir;

@@ -31,16 +31,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_IR_CLASSES_H__
-#define __NITRATE_IR_CLASSES_H__
+#ifndef __NITRATE_IR_ABI_NAME_H__
+#define __NITRATE_IR_ABI_NAME_H__
 
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IR.hh>
 #include <nitrate-ir/IR/Nodes.hh>
 #include <optional>
 #include <string>
-
-#include "nitrate-core/FlowPtr.hh"
 
 namespace ncc::ir {
   class SymbolEncoding final {
@@ -63,4 +61,4 @@ namespace ncc::ir {
   NullableFlowPtr<Type> GetTypeFromMangledName(std::string_view mangled_name);
 }  // namespace ncc::ir
 
-#endif  // __NITRATE_IR_CLASSES_H__
+#endif

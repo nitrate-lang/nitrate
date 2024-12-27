@@ -34,7 +34,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IR/Nodes.hh>
-#include <nitrate-ir/IRWriter.hh>
+#include <nitrate-ir/encode/Serialize.hh>
 #include <nitrate-lexer/Lexer.hh>
 
 using namespace ncc::ir;

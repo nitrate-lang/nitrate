@@ -37,7 +37,7 @@
 #include <cstdint>
 #include <istream>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-ir/IRVisitor.hh>
+#include <nitrate-ir/IR/Visitor.hh>
 #include <optional>
 #include <stack>
 

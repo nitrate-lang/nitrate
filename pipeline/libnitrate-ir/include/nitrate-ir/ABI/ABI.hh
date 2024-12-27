@@ -31,24 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_IR_PASSES_LIST_H__
-#define __NITRATE_IR_PASSES_LIST_H__
+#ifndef __NITRATE_IR_ABI_ABI_H__
+#define __NITRATE_IR_ABI_ABI_H__
 
-#include <nitrate-ir/diagnostic/Report.hh>
+#include <nitrate-ir/ABI/Name.hh>
 
-namespace ncc::ir {
-  class IRModule;
-}
-
-namespace ncc::ir::pass {
-#define SEMANTIC_PASS(name) bool name(IRModule *mod, IReport *log);
-#define TRANSFORM_PASS(name) bool name(IRModule *mod, IReport *log)
-#define OPTIMIZE_PASS(name) bool name(IRModule *mod, IReport *log)
-
-#undef OPTIMIZE_PASS
-#undef TRANSFORM_PASS
-#undef SEMANTIC_PASS
-
-}  // namespace ncc::ir::pass
-
-#endif  // __NITRATE_IR_PASSES_LIST_H__
+#endif

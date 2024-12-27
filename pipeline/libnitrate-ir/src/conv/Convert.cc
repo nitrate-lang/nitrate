@@ -41,12 +41,12 @@
 // #include <nitrate-core/Allocate.hh>
 // #include <nitrate-core/Logger.hh>
 // #include <nitrate-core/Macro.hh>
-// #include <nitrate-ir/ABI.hh>
+// #include <nitrate-ir/ABI/Name.hh>
 // #include <nitrate-ir/IR.hh>
 // #include <nitrate-ir/IRBuilder.hh>
 // #include <nitrate-ir/IR/Nodes.hh>
 // #include <nitrate-ir/Module.hh>
-// #include <nitrate-ir/Report.hh>
+// #include <nitrate-ir/diagnostic/Report.hh>
 // #include <nitrate-parser/AST.hh>
 // #include <nitrate-parser/Context.hh>
 // #include <stack>

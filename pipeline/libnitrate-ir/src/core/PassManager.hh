@@ -35,7 +35,7 @@
 #define __NITRATE_IR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
 
 #include <functional>
-#include <nitrate-ir/Report.hh>
+#include <nitrate-ir/diagnostic/Report.hh>
 #include <span>
 #include <string>
 #include <unordered_map>

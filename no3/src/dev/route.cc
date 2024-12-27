@@ -48,7 +48,7 @@
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
-#include <nitrate-ir/ABI.hh>
+#include <nitrate-ir/ABI/Name.hh>
 #include <nitrate-ir/IR.hh>
 #include <nitrate-ir/Init.hh>
 #include <nitrate-ir/Module.hh>
@@ -60,8 +60,6 @@
 #include <nitrate-seq/Classes.hh>
 #include <string_view>
 #include <unordered_map>
-
-#include "nitrate-ir/ABI.hh"
 
 using namespace argparse;
 using namespace no3;

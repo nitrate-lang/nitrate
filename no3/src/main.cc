@@ -50,7 +50,7 @@
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
-#include <nitrate-ir/ABI.hh>
+#include <nitrate-ir/ABI/Name.hh>
 #include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>

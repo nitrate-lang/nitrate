@@ -45,7 +45,7 @@
 #include <nitrate-ir/IR/Fwd.hh>
 #include <nitrate-ir/IR/Nodes.hh>
 #include <nitrate-ir/Module.hh>
-#include <nitrate-ir/Report.hh>
+#include <nitrate-ir/diagnostic/Report.hh>
 #include <optional>
 #include <span>
 #include <string>

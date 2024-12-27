@@ -34,7 +34,7 @@
 #include <cstddef>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-ir/ABI.hh>
+#include <nitrate-ir/ABI/Name.hh>
 #include <nitrate-ir/IR/Nodes.hh>
 #include <sstream>
 #include <unordered_set>

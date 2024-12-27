@@ -40,7 +40,7 @@
 // #include <nitrate-core/Macro.hh>
 // #include <nitrate-ir/IR/Nodes.hh>
 // #include <nitrate-ir/Module.hh>
-// #include <nitrate-ir/Report.hh>
+// #include <nitrate-ir/diagnostic/Report.hh>
 // #include <nitrate-parser/AST.hh>
 // #include <sstream>
 

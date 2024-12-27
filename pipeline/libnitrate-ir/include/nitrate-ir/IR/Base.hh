@@ -45,7 +45,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IR/Common.hh>
 #include <nitrate-ir/IR/Fwd.hh>
-#include <nitrate-ir/IRVisitor.hh>
+#include <nitrate-ir/IR/Visitor.hh>
 #include <optional>
 #include <ostream>
 #include <string>
