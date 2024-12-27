@@ -302,7 +302,7 @@ static int do_nr(std::string source, std::string output, std::string opts,
 
   if (auto module = nr_lower(ast.get().get(), "module", true)) {
     nr_diag_read(
-        module.get(), ansi::IsUsingColors() ? IR_DIAG_COLOR : IR_DIAG_NOCOLOR,
+        module.get(),
         [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
           if (verbose || lvl != IR_LEVEL_DEBUG) {
             std::cerr << std::string_view((const char *)msg, len) << std::endl;
@@ -358,7 +358,7 @@ static int do_codegen(std::string source, std::string output, std::string opts,
 
   if (auto module = nr_lower(ast.get().get(), "module", true)) {
     nr_diag_read(
-        module.get(), ansi::IsUsingColors() ? IR_DIAG_COLOR : IR_DIAG_NOCOLOR,
+        module.get(),
         [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
           if (!verbose && lvl == IR_LEVEL_DEBUG) {
             return;

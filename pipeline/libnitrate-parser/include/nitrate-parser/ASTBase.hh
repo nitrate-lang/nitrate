@@ -46,11 +46,16 @@
 #include <type_traits>
 
 namespace ncc::parse {
+
   class LocationPairAlias {
     std::vector<std::pair<lex::LocationID, lex::LocationID>> m_pairs;
     std::mutex m_mutex;
 
   public:
+    struct Index {
+      uint64_t v : 56;
+    } __attribute__((packed));
+
     LocationPairAlias() { m_pairs.reserve(4096); }
 
     void Reset() {
@@ -59,8 +64,8 @@ namespace ncc::parse {
       m_pairs.reserve(4096);
     }
 
-    uint64_t Add(lex::LocationID begin, lex::LocationID end);
-    std::pair<lex::LocationID, lex::LocationID> Get(uint64_t loc);
+    Index Add(lex::LocationID begin, lex::LocationID end);
+    std::pair<lex::LocationID, lex::LocationID> Get(Index loc);
   };
 
   extern LocationPairAlias g_location_pairs;
@@ -69,7 +74,7 @@ namespace ncc::parse {
   private:
     npar_ty_t m_node_type : 7;
     bool m_mock : 1;
-    uint64_t m_loc : 56;
+    LocationPairAlias::Index m_loc;
 
   public:
     constexpr Base(npar_ty_t ty, bool mock = false,

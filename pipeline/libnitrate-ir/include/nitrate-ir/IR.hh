@@ -132,8 +132,7 @@ namespace ncc::ir {
    *
    * @note This function is thread safe.
    */
-  void nr_diag_read(IRModule *nr, nr_diag_format_t format, nr_report_cb cb,
-                    uintptr_t data);
+  void nr_diag_read(IRModule *nr, nr_report_cb cb, uintptr_t data);
 }  // namespace ncc::ir
 
 #endif  // __NITRATE_IR_IR_H__

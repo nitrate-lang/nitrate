@@ -50,17 +50,18 @@ CPP_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::npar_allocator =
 
 CPP_EXPORT LocationPairAlias parse::g_location_pairs;
 
-uint64_t LocationPairAlias::Add(lex::LocationID begin, lex::LocationID end) {
+LocationPairAlias::Index LocationPairAlias::Add(lex::LocationID begin,
+                                                lex::LocationID end) {
   std::lock_guard<std::mutex> lock(m_mutex);
   m_pairs.emplace_back(begin, end);
 
-  return m_pairs.size() - 1;
+  return {.v = m_pairs.size() - 1};
 }
 
 std::pair<lex::LocationID, lex::LocationID> LocationPairAlias::Get(
-    uint64_t loc) {
+    LocationPairAlias::Index loc) {
   std::lock_guard<std::mutex> lock(m_mutex);
-  return m_pairs.at(loc);
+  return m_pairs.at(loc.v);
 }
 
 ///=============================================================================
