@@ -42,7 +42,7 @@
 
 // using namespace ncc::ir;
 
-// Fn *NRBuilder::createFunctionDefintion(std::string_view name,
+// Function *NRBuilder::createFunctionDefintion(std::string_view name,
 //                                        std::span<FnParam> params, Type
 //                                        *ret_ty, bool is_variadic, Vis
 //                                        visibility, Purity purity, bool
@@ -72,7 +72,8 @@
 //   (void)thread_safe;
 //   (void)foreign;
 
-//   Fn *fn = create<Fn>(name, std::move(parameters), ret_ty, std::nullopt,
+//   Function *fn = create<Function>(name, std::move(parameters), ret_ty,
+//   std::nullopt,
 //                       is_variadic, AbiTag::Default);
 
 //   if (m_functions.contains(name)) [[unlikely]] {
@@ -85,7 +86,7 @@
 //   return compiler_trace(debug_info(fn, DEBUG_INFO));
 // }
 
-// Fn *NRBuilder::createFunctionDeclaration(std::string_view name,
+// Function *NRBuilder::createFunctionDeclaration(std::string_view name,
 //                                          std::span<FnParam> params,
 //                                          FlowPtr<Type>ret_ty, bool
 //                                          is_variadic, Vis visibility, Purity
@@ -116,7 +117,8 @@
 //   (void)thread_safe;
 //   (void)foreign;
 
-//   Fn *fn = create<Fn>(name, std::move(parameters), ret_ty, std::nullopt,
+//   Function *fn = create<Function>(name, std::move(parameters), ret_ty,
+//   std::nullopt,
 //                       is_variadic, AbiTag::Default);
 
 //   if (m_functions.contains(name)) [[unlikely]] {
@@ -129,7 +131,8 @@
 //   return compiler_trace(debug_info(fn, DEBUG_INFO));
 // }
 
-// Fn *NRBuilder::createOperatorOverload(Op op, std::span<FlowPtr<Type>> params,
+// Function *NRBuilder::createOperatorOverload(Op op, std::span<FlowPtr<Type>>
+// params,
 //                                       FlowPtr<Type>ret_ty, Purity purity,
 //                                       bool thread_safe SOURCE_LOCATION_PARAM)
 //                                       {

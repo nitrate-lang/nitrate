@@ -231,7 +231,7 @@ static bool serialize_recurse(FlowPtr<Expr> n, std::ostream &ss,
       if (tkind == IR_eLOCAL) {
         ss << n->as<Call>()->getTarget()->as<Local>()->getName();
       } else if (tkind == IR_eFUNCTION) {
-        ss << n->as<Call>()->getTarget()->as<Fn>()->getName();
+        ss << n->as<Call>()->getTarget()->as<Function>()->getName();
       } else {
         recurse(n->as<Call>()->getTarget());
       }
@@ -368,26 +368,26 @@ static bool serialize_recurse(FlowPtr<Expr> n, std::ostream &ss,
     }
     case IR_eFUNCTION: {
       ss << "fn ";
-      ss << n->as<Fn>()->getName();
+      ss << n->as<Function>()->getName();
       ss << "(";
-      for (auto it = n->as<Fn>()->getParams().begin();
-           it != n->as<Fn>()->getParams().end(); ++it) {
+      for (auto it = n->as<Function>()->getParams().begin();
+           it != n->as<Function>()->getParams().end(); ++it) {
         ss << it->second << ": ";
         recurse(it->first);
-        if (std::next(it) != n->as<Fn>()->getParams().end() ||
-            n->as<Fn>()->isVariadic()) {
+        if (std::next(it) != n->as<Function>()->getParams().end() ||
+            n->as<Function>()->isVariadic()) {
           ss << ", ";
         }
       }
-      if (n->as<Fn>()->isVariadic()) {
+      if (n->as<Function>()->isVariadic()) {
         ss << "...";
       }
       ss << ") -> ";
-      recurse(n->as<Fn>()->getReturn());
+      recurse(n->as<Function>()->getReturn());
 
-      if (n->as<Fn>()->getBody().has_value()) {
+      if (n->as<Function>()->getBody().has_value()) {
         ss << " ";
-        recurse(n->as<Fn>()->getBody().value());
+        recurse(n->as<Function>()->getBody().value());
       }
       break;
     }

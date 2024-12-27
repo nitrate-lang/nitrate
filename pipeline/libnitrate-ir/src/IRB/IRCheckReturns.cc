@@ -43,7 +43,7 @@ using namespace ncc::ir;
 bool NRBuilder::check_returns(FlowPtr<Seq> root, IReport *I) {
   bool failed = false;
 
-  for_each<Fn>(root, [&](auto x) {
+  for_each<Function>(root, [&](auto x) {
     /* Skip function declarations */
     if (!x->getBody()) {
       return;

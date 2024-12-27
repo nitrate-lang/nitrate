@@ -150,7 +150,7 @@ namespace ncc::ir {
   template <class Attorney>
   class IR_Vertex_ArrayTy;
   template <class Attorney>
-  class IR_Vertex_FnTy;
+  class IR_Vertex_FunctionTy;
   template <class Attorney>
   class IR_Vertex_Int;
   template <class Attorney>
@@ -186,7 +186,7 @@ namespace ncc::ir {
   template <class Attorney>
   class IR_Vertex_Switch;
   template <class Attorney>
-  class IR_Vertex_Fn;
+  class IR_Vertex_Function;
   template <class Attorney>
   class IR_Vertex_Asm;
   template <class Attorney>
@@ -218,7 +218,7 @@ namespace ncc::ir {
   using StructTy = IR_Vertex_StructTy<void>;
   using UnionTy = IR_Vertex_UnionTy<void>;
   using ArrayTy = IR_Vertex_ArrayTy<void>;
-  using FnTy = IR_Vertex_FnTy<void>;
+  using FnTy = IR_Vertex_FunctionTy<void>;
   using Int = IR_Vertex_Int<void>;
   using Float = IR_Vertex_Float<void>;
   using List = IR_Vertex_List<void>;
@@ -236,7 +236,7 @@ namespace ncc::ir {
   using For = IR_Vertex_For<void>;
   using Case = IR_Vertex_Case<void>;
   using Switch = IR_Vertex_Switch<void>;
-  using Fn = IR_Vertex_Fn<void>;
+  using Function = IR_Vertex_Function<void>;
   using Asm = IR_Vertex_Asm<void>;
   using Tmp = IR_Vertex_Tmp<void>;
 }  // namespace ncc::ir

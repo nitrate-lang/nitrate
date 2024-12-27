@@ -236,7 +236,7 @@
 //         break;
 //       }
 //       case IR_eFUNCTION: {
-//         MIXIN_STRING(cur->as<Fn>()->m_name);
+//         MIXIN_STRING(cur->as<Function>()->m_name);
 //         break;
 //       }
 //       case IR_eASM: {

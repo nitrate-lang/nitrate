@@ -31,21 +31,15 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Logger.hh>
-#include <nitrate-ir/Module.hh>
-#include <nitrate-ir/transform/PassManager.hh>
-#include <transform/PassList.hh>
+#ifndef __NITRATE_IR_TRANSFORM_PASS_H__
+#define __NITRATE_IR_TRANSFORM_PASS_H__
 
-using namespace ncc::ir;
+#include <functional>
+#include <nitrate-ir/IR/Fwd.hh>
 
-void pass::PassRegistry::link_builtin() {}
+namespace ncc::ir::transform {
+  using FunctionPass = std::function<void(Function&)>;
 
-void pass::PassGroupRegistry::RegisterBuiltinGroups() {
-  PassGroupBuilder()
-      /* Add more cleanup passes: [dead-code removal, ?] */
-      .build("reduce");
+}  // namespace ncc::ir::transform
 
-  PassGroupBuilder().build("ds");
-
-  PassGroupBuilder().build("chk");
-}
+#endif

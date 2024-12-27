@@ -164,15 +164,16 @@
 //         break;
 //       }
 //       case IR_eFUNCTION: {
-//         children.reserve(base->as<Fn>()->m_params.size() + 1);
-//         for (auto &child : base->as<Fn>()->m_params) {
+//         children.reserve(base->as<Function>()->m_params.size() + 1);
+//         for (auto &child : base->as<Function>()->m_params) {
 //           children.push_back(reinterpret_cast<Expr **>(&child.first));
 //         }
 //         children.push_back(
-//             reinterpret_cast<Expr **>(&base->as<Fn>()->m_return));
-//         if (base->as<Fn>()->m_body.has_value()) {
+//             reinterpret_cast<Expr **>(&base->as<Function>()->m_return));
+//         if (base->as<Function>()->m_body.has_value()) {
 //           children.push_back(
-//               reinterpret_cast<Expr **>(&base->as<Fn>()->m_body.value()));
+//               reinterpret_cast<Expr
+//               **>(&base->as<Function>()->m_body.value()));
 //         }
 //         break;
 //       }

@@ -206,15 +206,15 @@ namespace ncc::ir {
   };
 
   template <class A>
-  class IR_Vertex_FnTy final : public IR_Vertex_Type<A> {
+  class IR_Vertex_FunctionTy final : public IR_Vertex_Type<A> {
     std::span<FlowPtr<IR_Vertex_Type<A>>> m_params;
     FlowPtr<IR_Vertex_Type<A>> m_return;
     uint8_t m_native_size;
     bool m_variadic;
 
   public:
-    constexpr IR_Vertex_FnTy(auto params, auto ret, auto variadic,
-                             size_t platform_ptr_size_bytes = 8)
+    constexpr IR_Vertex_FunctionTy(auto params, auto ret, auto variadic,
+                                   size_t platform_ptr_size_bytes = 8)
         : IR_Vertex_Type<A>(IR_tFUNC),
           m_params(params),
           m_return(ret),

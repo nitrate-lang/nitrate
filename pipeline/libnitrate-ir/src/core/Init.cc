@@ -34,7 +34,6 @@
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/Init.hh>
-#include <nitrate-ir/transform/PassManager.hh>
 #include <nitrate-parser/Init.hh>
 
 using namespace ncc::ir;
@@ -49,8 +48,6 @@ CPP_EXPORT bool IRLibrarySetup::Init() {
   if (!parse::ParseLibrary.InitRC()) {
     return false;
   }
-
-  pass::PassGroupRegistry::RegisterBuiltinGroups();
 
   return true;
 }

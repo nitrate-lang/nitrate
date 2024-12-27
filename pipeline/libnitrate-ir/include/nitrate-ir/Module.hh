@@ -63,7 +63,7 @@ namespace ncc::ir {
     friend class NRBuilder;
 
     using FunctionNameBimap =
-        boost::bimap<std::string_view, std::pair<FnTy *, Fn *>>;
+        boost::bimap<std::string_view, std::pair<FnTy *, Function *>>;
     using GlobalVariableNameBimap = boost::bimap<std::string_view, Local *>;
     using FunctionParamMap = std::unordered_map<
         std::string_view,

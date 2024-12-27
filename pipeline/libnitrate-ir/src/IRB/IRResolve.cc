@@ -255,7 +255,7 @@
 //          * the process */
 //         if (auto callee_opt = resolve_name(callee_name, Kind::Function)) {
 //           qcore_assert(callee_opt.value().first->is(IR_eFUNCTION));
-//           auto callee_func_ptr = callee_opt.value().first->as<Fn>();
+//           auto callee_func_ptr = callee_opt.value().first->as<Function>();
 
 //           /* This layer of indirection is needed to maintain the acylic
 //            * properties */

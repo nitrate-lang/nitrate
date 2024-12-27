@@ -1420,7 +1420,7 @@
 //       name = save(s.join_scope(n->get_name()));
 //     }
 
-//     Fn *fndef = b.createFunctionDefintion(
+//     Function *fndef = b.createFunctionDefintion(
 //         name, parameters, ret_type.value()->asType(), n->is_variadic(),
 //         Vis::Pub, props.first, props.second,
 //         check_is_foreign_function(n->get_attributes()));
@@ -1544,7 +1544,7 @@
 //       name = save(s.join_scope(n->get_name()));
 //     }
 
-//     Fn *decl = b.createFunctionDeclaration(
+//     Function *decl = b.createFunctionDeclaration(
 //         name, parameters, ret_type.value()->asType(), n->is_variadic(),
 //         Vis::Pub, props.first, props.second,
 //         check_is_foreign_function(n->get_attributes()));

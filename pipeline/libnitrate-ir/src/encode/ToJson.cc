@@ -525,7 +525,7 @@ void IR_Writer::visit(Switch& n) {
   end_obj();
 }
 
-void IR_Writer::visit(Fn& n) {
+void IR_Writer::visit(Function& n) {
   begin_obj(1);
 
   string("kind");

@@ -128,7 +128,7 @@ namespace ncc::ir::encode {
     void visit(For& n) override;
     void visit(Case& n) override;
     void visit(Switch& n) override;
-    void visit(Fn& n) override;
+    void visit(Function& n) override;
     void visit(Asm& n) override;
     void visit(Tmp& n) override;
   };

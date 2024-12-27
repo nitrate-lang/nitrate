@@ -85,7 +85,7 @@ namespace ncc::ir {
     virtual void visit(For& n) = 0;
     virtual void visit(Case& n) = 0;
     virtual void visit(Switch& n) = 0;
-    virtual void visit(Fn& n) = 0;
+    virtual void visit(Function& n) = 0;
     virtual void visit(Asm& n) = 0;
     virtual void visit(Tmp& n) = 0;
   };

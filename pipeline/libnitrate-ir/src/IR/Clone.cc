@@ -179,7 +179,7 @@
 //       break;
 //     }
 //     case IR_eFUNCTION: {
-//       Fn *n = static_cast<Fn *>(in);
+//       Function *n = static_cast<Function *>(in);
 //       Params params;
 //       params.reserve(n->getParams().size());
 //       for (auto param : n->getParams()) {
@@ -191,7 +191,7 @@
 //         body = clone(n->getBody().value())->as<Seq>();
 //       }
 
-//       out = create<Fn>(n->getName(), std::move(params),
+//       out = create<Function>(n->getName(), std::move(params),
 //                        clone(n->getReturn())->asType(), body,
 //                        n->isVariadic(), n->getAbiTag());
 //       break;

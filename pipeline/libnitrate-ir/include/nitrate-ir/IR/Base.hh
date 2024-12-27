@@ -119,7 +119,7 @@ namespace ncc::ir {
         return IR_eCASE;
       } else if constexpr (std::is_same_v<T, IR_Vertex_Switch<A>>) {
         return IR_eSWITCH;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Fn<A>>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_Function<A>>) {
         return IR_eFUNCTION;
       } else if constexpr (std::is_same_v<T, IR_Vertex_Asm<A>>) {
         return IR_eASM;
@@ -169,7 +169,7 @@ namespace ncc::ir {
         return IR_tUNION;
       } else if constexpr (std::is_same_v<T, IR_Vertex_ArrayTy<A>>) {
         return IR_tARRAY;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_FnTy<A>>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_FunctionTy<A>>) {
         return IR_tFUNC;
       } else if constexpr (std::is_same_v<T, IR_Vertex_Tmp<A>>) {
         return IR_tTMP;
@@ -371,7 +371,7 @@ namespace ncc::ir {
         }
 
         case IR_eFUNCTION: {
-          v.visit(*as<IR_Vertex_Fn<A>>());
+          v.visit(*as<IR_Vertex_Function<A>>());
           break;
         }
 
@@ -496,7 +496,7 @@ namespace ncc::ir {
         }
 
         case IR_tFUNC: {
-          v.visit(*as<IR_Vertex_FnTy<A>>());
+          v.visit(*as<IR_Vertex_FunctionTy<A>>());
           break;
         }
 
@@ -787,7 +787,7 @@ namespace ncc::ir {
       }
 
       case IR_eFUNCTION: {
-        R = as<IR_Vertex_Fn<A>>()->getName();
+        R = as<IR_Vertex_Function<A>>()->getName();
         break;
       }
 
@@ -923,7 +923,7 @@ namespace ncc::ir {
       R[IR_eFOR] = sizeof(IR_Vertex_For<A>);
       R[IR_eCASE] = sizeof(IR_Vertex_Case<A>);
       R[IR_eSWITCH] = sizeof(IR_Vertex_Switch<A>);
-      R[IR_eFUNCTION] = sizeof(IR_Vertex_Fn<A>);
+      R[IR_eFUNCTION] = sizeof(IR_Vertex_Function<A>);
       R[IR_eASM] = sizeof(IR_Vertex_Asm<A>);
       R[IR_eIGN] = sizeof(IR_Vertex_Expr<A>);
       R[IR_tU1] = sizeof(IR_Vertex_U1Ty<A>);
@@ -948,7 +948,7 @@ namespace ncc::ir {
       R[IR_tSTRUCT] = sizeof(IR_Vertex_StructTy<A>);
       R[IR_tUNION] = sizeof(IR_Vertex_UnionTy<A>);
       R[IR_tARRAY] = sizeof(IR_Vertex_ArrayTy<A>);
-      R[IR_tFUNC] = sizeof(IR_Vertex_FnTy<A>);
+      R[IR_tFUNC] = sizeof(IR_Vertex_FunctionTy<A>);
       R[IR_tTMP] = sizeof(IR_Vertex_Tmp<A>);
 
       return R;

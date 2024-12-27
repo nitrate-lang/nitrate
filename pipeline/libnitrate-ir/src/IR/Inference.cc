@@ -538,7 +538,7 @@
 //     }
 //     case IR_eFUNCTION: {
 //       bool failed = false;
-//       const auto &params = E->as<Fn>()->getParams();
+//       const auto &params = E->as<Function>()->getParams();
 //       FnParams<void> param_types(params.size());
 
 //       for (size_t i = 0; i < params.size(); ++i) {
@@ -551,8 +551,9 @@
 //       }
 
 //       if (!failed) {
-//         R = create<FnTy>(std::move(param_types), E->as<Fn>()->getReturn(),
-//                          E->as<Fn>()->isVariadic());
+//         R = create<FnTy>(std::move(param_types),
+//         E->as<Function>()->getReturn(),
+//                          E->as<Function>()->isVariadic());
 //       }
 
 //       break;

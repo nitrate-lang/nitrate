@@ -376,7 +376,7 @@
 // #define V(N) V_gen(m, b, s, N)
 
 // static void make_forward_declaration(ctx_t &m, craft_t &b, State &,
-//                                      const Fn *N) {
+//                                      const Function *N) {
 //   vector<llvm::Type *> args;
 //   for (auto &arg : N->getParams()) {
 //     auto ty = T(arg.first);
@@ -430,7 +430,7 @@
 //       return IterOp::SkipChildren;
 //     }
 
-//     make_forward_declaration(*m, *b, s, (*N)->template as<Fn>());
+//     make_forward_declaration(*m, *b, s, (*N)->template as<Function>());
 
 //     return IterOp::Proceed;
 //   });
@@ -1138,7 +1138,7 @@
 //       }
 //     }
 
-//     static val_t for_FN(ctx_t &m, craft_t &b, State &s, const Fn *N) {
+//     static val_t for_FN(ctx_t &m, craft_t &b, State &s, const Function *N) {
 //       vector<llvm::Type *> params;
 
 //       { /* Lower parameter types */

@@ -388,7 +388,7 @@ namespace ncc::ir {
   };
 
   template <class A>
-  class IR_Vertex_Fn final : public IR_Vertex_Expr<A> {
+  class IR_Vertex_Function final : public IR_Vertex_Expr<A> {
     std::span<std::pair<FlowPtr<IR_Vertex_Type<A>>, std::string_view>> m_params;
     NullableFlowPtr<IR_Vertex_Seq<A>> m_body;
     FlowPtr<IR_Vertex_Type<A>> m_return;
@@ -397,8 +397,8 @@ namespace ncc::ir {
     bool m_variadic;
 
   public:
-    constexpr IR_Vertex_Fn(auto name, auto params, auto ret_ty, auto body,
-                           auto variadic, auto abi_tag)
+    constexpr IR_Vertex_Function(auto name, auto params, auto ret_ty, auto body,
+                                 auto variadic, auto abi_tag)
         : IR_Vertex_Expr<A>(IR_eFUNCTION),
           m_params(params),
           m_body(body),

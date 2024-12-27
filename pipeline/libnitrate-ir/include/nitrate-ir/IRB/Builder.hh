@@ -100,12 +100,12 @@ namespace ncc::ir {
     std::unordered_map<std::string_view,
                        std::unordered_map<std::string_view, FlowPtr<Expr>>>
         m_named_constant_group;
-    std::unordered_map<std::string_view, Fn *> m_functions;
-    std::unordered_map<Fn *, std::unordered_map<size_t, FlowPtr<Expr>>>
+    std::unordered_map<std::string_view, Function *> m_functions;
+    std::unordered_map<Function *, std::unordered_map<size_t, FlowPtr<Expr>>>
         m_function_defaults;
     std::unordered_map<std::string_view, Local *> m_variables;
 
-    std::optional<std::unordered_set<Fn *>> m_duplicate_functions;
+    std::optional<std::unordered_set<Function *>> m_duplicate_functions;
     std::optional<std::unordered_set<Local *>> m_duplicate_variables;
     std::optional<std::unordered_set<std::string_view>> m_duplicate_named_types;
     std::optional<std::unordered_set<std::string_view>>
@@ -237,26 +237,23 @@ namespace ncc::ir {
     using FnParam = std::tuple<std::string_view, FlowPtr<Type>,
                                std::optional<FlowPtr<Expr>>>;
 
-    Fn *createFunctionDefintion(std::string_view name,
-                                std::span<FnParam> params, FlowPtr<Type> ret_ty,
-                                bool is_variadic = false,
-                                Vis visibility = Vis::Sec,
-                                Purity purity = Purity::Impure,
-                                bool thread_safe = false,
-                                bool foreign = true SOURCE_LOCATION_PARAM);
+    Function *createFunctionDefintion(
+        std::string_view name, std::span<FnParam> params, FlowPtr<Type> ret_ty,
+        bool is_variadic = false, Vis visibility = Vis::Sec,
+        Purity purity = Purity::Impure, bool thread_safe = false,
+        bool foreign = true SOURCE_LOCATION_PARAM);
 
-    Fn *createFunctionDeclaration(
+    Function *createFunctionDeclaration(
         std::string_view name, std::span<FnParam> params, FlowPtr<Type> ret_ty,
         bool is_variadic = false, Vis visibility = Vis::Sec,
         Purity purity = Purity::Impure, bool thread_safe = false,
         bool foreign = true SOURCE_LOCATION_PARAM);
 
     /* This is the only intended way to overload operaters */
-    Fn *createOperatorOverload(lex::Operator op,
-                               std::span<FlowPtr<Type>> params,
-                               FlowPtr<Type> ret_ty,
-                               Purity purity = Purity::Impure,
-                               bool thread_safe = false SOURCE_LOCATION_PARAM);
+    Function *createOperatorOverload(
+        lex::Operator op, std::span<FlowPtr<Type>> params, FlowPtr<Type> ret_ty,
+        Purity purity = Purity::Impure,
+        bool thread_safe = false SOURCE_LOCATION_PARAM);
 
     /* Works for both local and global variables FlowPtr<Type> */
     Local *createVariable(std::string_view name, FlowPtr<Type> ty,
