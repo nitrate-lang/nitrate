@@ -55,7 +55,7 @@ void IRModule::enableDiagnostics(bool is_enabled) {
   m_diagnostics_enabled = is_enabled;
 }
 
-CPP_EXPORT void IRModule::accept(ir::IRVisitor &visitor) {
+CPP_EXPORT void IRModule::accept(IRVisitor<void> &visitor) {
   m_root->accept(visitor);
 }
 

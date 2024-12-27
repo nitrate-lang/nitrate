@@ -39,102 +39,136 @@
 namespace ncc::ir {
   template <class A>
   class IR_Vertex_U1Ty final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_U1Ty() : IR_Vertex_Type<A>(IR_tU1) {}
   };
 
   template <class A>
   class IR_Vertex_U8Ty final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_U8Ty() : IR_Vertex_Type<A>(IR_tU8) {}
   };
 
   template <class A>
   class IR_Vertex_U16Ty final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_U16Ty() : IR_Vertex_Type<A>(IR_tU16) {}
   };
 
   template <class A>
   class IR_Vertex_U32Ty final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_U32Ty() : IR_Vertex_Type<A>(IR_tU32) {}
   };
 
   template <class A>
   class IR_Vertex_U64Ty final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_U64Ty() : IR_Vertex_Type<A>(IR_tU64) {}
   };
 
   template <class A>
   class IR_Vertex_U128Ty final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_U128Ty() : IR_Vertex_Type<A>(IR_tU128) {}
   };
 
   template <class A>
   class IR_Vertex_I8Ty final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_I8Ty() : IR_Vertex_Type<A>(IR_tI8) {}
   };
 
   template <class A>
   class IR_Vertex_I16Ty final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_I16Ty() : IR_Vertex_Type<A>(IR_tI16){};
   };
 
   template <class A>
   class IR_Vertex_I32Ty final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_I32Ty() : IR_Vertex_Type<A>(IR_tI32) {}
   };
 
   template <class A>
   class IR_Vertex_I64Ty final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_I64Ty() : IR_Vertex_Type<A>(IR_tI64) {}
   };
 
   template <class A>
   class IR_Vertex_I128Ty final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_I128Ty() : IR_Vertex_Type<A>(IR_tI128) {}
   };
 
   template <class A>
   class IR_Vertex_F16Ty final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_F16Ty() : IR_Vertex_Type<A>(IR_tF16_TY) {}
   };
 
   template <class A>
   class IR_Vertex_F32Ty final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_F32Ty() : IR_Vertex_Type<A>(IR_tF32_TY) {}
   };
 
   template <class A>
   class IR_Vertex_F64Ty final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_F64Ty() : IR_Vertex_Type<A>(IR_tF64_TY) {}
   };
 
   template <class A>
   class IR_Vertex_F128Ty final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_F128Ty() : IR_Vertex_Type<A>(IR_tF128_TY) {}
   };
 
   template <class A>
   class IR_Vertex_VoidTy final : public IR_Vertex_Type<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_VoidTy() : IR_Vertex_Type<A>(IR_tVOID) {}
   };
 
   template <class A>
   class IR_Vertex_PtrTy final : public IR_Vertex_Type<A> {
+    friend A;
+
     FlowPtr<IR_Vertex_Type<A>> m_pointee;
     uint8_t m_native_size;
 
@@ -150,6 +184,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_ConstTy final : public IR_Vertex_Type<A> {
+    friend A;
+
     FlowPtr<IR_Vertex_Type<A>> m_item;
 
   public:
@@ -161,6 +197,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_OpaqueTy final : public IR_Vertex_Type<A> {
+    friend A;
+
     string m_name;
 
   public:
@@ -172,6 +210,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_StructTy final : public IR_Vertex_Type<A> {
+    friend A;
+
     std::span<FlowPtr<IR_Vertex_Type<A>>> m_fields;
 
   public:
@@ -183,6 +223,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_UnionTy final : public IR_Vertex_Type<A> {
+    friend A;
+
     std::span<FlowPtr<IR_Vertex_Type<A>>> m_fields;
 
   public:
@@ -194,6 +236,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_ArrayTy final : public IR_Vertex_Type<A> {
+    friend A;
+
     FlowPtr<IR_Vertex_Type<A>> m_element;
     size_t m_size;
 
@@ -206,15 +250,17 @@ namespace ncc::ir {
   };
 
   template <class A>
-  class IR_Vertex_FunctionTy final : public IR_Vertex_Type<A> {
+  class IR_Vertex_FnTy final : public IR_Vertex_Type<A> {
+    friend A;
+
     std::span<FlowPtr<IR_Vertex_Type<A>>> m_params;
     FlowPtr<IR_Vertex_Type<A>> m_return;
     uint8_t m_native_size;
     bool m_variadic;
 
   public:
-    constexpr IR_Vertex_FunctionTy(auto params, auto ret, auto variadic,
-                                   size_t platform_ptr_size_bytes = 8)
+    constexpr IR_Vertex_FnTy(auto params, auto ret, auto variadic,
+                             size_t platform_ptr_size_bytes = 8)
         : IR_Vertex_Type<A>(IR_tFUNC),
           m_params(params),
           m_return(ret),
@@ -229,6 +275,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Tmp final : public IR_Vertex_Type<A> {
+    friend A;
+
     TmpType m_type;
     TmpNodeCradle<A> m_data;
 

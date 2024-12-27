@@ -59,6 +59,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Expr {
+    friend A;
+
     nr_ty_t m_node_type : 6; /* Typecode of this node. */
     uint32_t m_offset : 32;  /* Offset into source code where node starts. */
     uint32_t m_fileid : 24;  /* File ID of the source file. */
@@ -171,7 +173,7 @@ namespace ncc::ir {
         return IR_tUNION;
       } else if constexpr (std::is_same_v<T, IR_Vertex_ArrayTy<A>>) {
         return IR_tARRAY;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_FunctionTy<A>>) {
+      } else if constexpr (std::is_same_v<T, IR_Vertex_FnTy<A>>) {
         return IR_tFUNC;
       } else if constexpr (std::is_same_v<T, IR_Vertex_Tmp<A>>) {
         return IR_tTMP;
@@ -275,9 +277,8 @@ namespace ncc::ir {
     constexpr bool is(nr_ty_t type) const { return type == getKind(); }
     constexpr bool isSame(const FlowPtr<IR_Vertex_Expr<A>> other) const;
 
-    constexpr void accept(IRVisitor &v) {
-      auto self = reinterpret_cast<Expr *>(this);
-      v.dispatch(MakeFlowPtr(self));
+    constexpr void accept(IRVisitor<A> &v) {
+      v.template dispatch(MakeFlowPtr(this));
     }
 
     void dump(std::ostream &os = std::cout, bool isForDebug = false) const {
@@ -299,6 +300,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Type : public IR_Vertex_Expr<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_Type(nr_ty_t ty) : IR_Vertex_Expr<A>(ty) {}
 
@@ -717,7 +720,7 @@ namespace ncc::ir {
       R[IR_tSTRUCT] = sizeof(IR_Vertex_StructTy<A>);
       R[IR_tUNION] = sizeof(IR_Vertex_UnionTy<A>);
       R[IR_tARRAY] = sizeof(IR_Vertex_ArrayTy<A>);
-      R[IR_tFUNC] = sizeof(IR_Vertex_FunctionTy<A>);
+      R[IR_tFUNC] = sizeof(IR_Vertex_FnTy<A>);
       R[IR_tTMP] = sizeof(IR_Vertex_Tmp<A>);
 
       return R;

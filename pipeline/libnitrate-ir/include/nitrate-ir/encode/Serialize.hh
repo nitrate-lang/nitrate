@@ -43,7 +43,7 @@
 #include <string_view>
 
 namespace ncc::ir::encode {
-  class CPP_EXPORT IR_Writer : public IRVisitor {
+  class CPP_EXPORT IR_Writer : public IRVisitor<void> {
     using InsertString = std::function<void(std::string_view)>;
     using InsertUInt64 = std::function<void(uint64_t)>;
     using InsertDouble = std::function<void(double)>;

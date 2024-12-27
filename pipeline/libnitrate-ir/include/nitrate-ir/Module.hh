@@ -142,7 +142,7 @@ namespace ncc::ir {
 
     const TargetInfo &getTargetInfo() const { return m_target_info; }
 
-    void accept(IRVisitor &visitor);
+    void accept(IRVisitor<void> &visitor);
   };
 
   constexpr size_t QMODULE_SIZE = sizeof(IRModule);

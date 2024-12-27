@@ -40,6 +40,8 @@
 namespace ncc::ir {
   template <class A>
   class IR_Vertex_BinExpr final : public IR_Vertex_Expr<A> {
+    friend A;
+
     FlowPtr<IR_Vertex_Expr<A>> m_lhs, m_rhs;
     lex::Operator m_op;
 
@@ -58,6 +60,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Unary final : public IR_Vertex_Expr<A> {
+    friend A;
+
     FlowPtr<IR_Vertex_Expr<A>> m_expr;
     lex::Operator m_op;
     bool m_postfix;
@@ -80,6 +84,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Int final : public IR_Vertex_Expr<A> {
+    friend A;
+
     uint128_t m_value;
     uint8_t m_size;
 
@@ -120,6 +126,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Float final : public IR_Vertex_Expr<A> {
+    friend A;
+
     double m_data;
     FloatSize m_size;
 
@@ -148,6 +156,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_List final : public IR_Vertex_Expr<A> {
+    friend A;
+
     std::span<FlowPtr<IR_Vertex_Expr<A>>> m_items;
     bool m_is_homogenous;
 
@@ -168,6 +178,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Call final : public IR_Vertex_Expr<A> {
+    friend A;
+
     std::span<FlowPtr<IR_Vertex_Expr<A>>> m_args;
     /* Possibly cyclic reference to the callee. */
     FlowPtr<IR_Vertex_Expr<A>> m_iref;
@@ -186,6 +198,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Seq final : public IR_Vertex_Expr<A> {
+    friend A;
+
     std::span<FlowPtr<IR_Vertex_Expr<A>>> m_items;
 
   public:
@@ -198,6 +212,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Index final : public IR_Vertex_Expr<A> {
+    friend A;
+
     FlowPtr<IR_Vertex_Expr<A>> m_expr, m_index;
 
   public:
@@ -213,6 +229,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Ident final : public IR_Vertex_Expr<A> {
+    friend A;
+
     FlowPtr<IR_Vertex_Expr<A>> m_what;
     string m_name;
 
@@ -229,6 +247,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Extern final : public IR_Vertex_Expr<A> {
+    friend A;
+
     FlowPtr<IR_Vertex_Expr<A>> m_value;
     string m_abi_name;
 
@@ -245,6 +265,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Local final : public IR_Vertex_Expr<A> {
+    friend A;
+
     FlowPtr<IR_Vertex_Expr<A>> m_value;
     string m_name;
     AbiTag m_abi_tag;
@@ -277,6 +299,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Ret final : public IR_Vertex_Expr<A> {
+    friend A;
+
     FlowPtr<IR_Vertex_Expr<A>> m_expr;
 
   public:
@@ -289,18 +313,24 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Brk final : public IR_Vertex_Expr<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_Brk() : IR_Vertex_Expr<A>(IR_eBRK) {}
   };
 
   template <class A>
   class IR_Vertex_Cont final : public IR_Vertex_Expr<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_Cont() : IR_Vertex_Expr<A>(IR_eSKIP) {}
   };
 
   template <class A>
   class IR_Vertex_If final : public IR_Vertex_Expr<A> {
+    friend A;
+
     FlowPtr<IR_Vertex_Expr<A>> m_cond, m_then, m_else;
 
   public:
@@ -318,6 +348,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_While final : public IR_Vertex_Expr<A> {
+    friend A;
+
     FlowPtr<IR_Vertex_Expr<A>> m_cond;
     FlowPtr<IR_Vertex_Seq<A>> m_body;
 
@@ -334,6 +366,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_For final : public IR_Vertex_Expr<A> {
+    friend A;
+
     FlowPtr<IR_Vertex_Expr<A>> m_init, m_cond, m_step, m_body;
 
   public:
@@ -357,6 +391,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Case final : public IR_Vertex_Expr<A> {
+    friend A;
+
     FlowPtr<IR_Vertex_Expr<A>> m_cond, m_body;
 
   public:
@@ -372,6 +408,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Switch final : public IR_Vertex_Expr<A> {
+    friend A;
+
     FlowPtr<IR_Vertex_Expr<A>> m_cond, m_default;
     std::span<FlowPtr<IR_Vertex_Case<A>>> m_cases;
 
@@ -393,6 +431,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Function final : public IR_Vertex_Expr<A> {
+    friend A;
+
     std::span<std::pair<FlowPtr<IR_Vertex_Type<A>>, std::string_view>> m_params;
     NullableFlowPtr<IR_Vertex_Seq<A>> m_body;
     FlowPtr<IR_Vertex_Type<A>> m_return;
@@ -428,6 +468,8 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Asm final : public IR_Vertex_Expr<A> {
+    friend A;
+
   public:
     constexpr IR_Vertex_Asm() : IR_Vertex_Expr<A>(IR_eASM) {}
   };
