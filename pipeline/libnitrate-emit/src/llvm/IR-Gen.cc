@@ -1,96 +1,90 @@
-// ////////////////////////////////////////////////////////////////////////////////
-// /// ///
-// ///     .-----------------.    .----------------.     .----------------. ///
-// ///    | .--------------. |   | .--------------. |   | .--------------. | ///
-// ///    | | ____  _____  | |   | |     ____     | |   | |    ______    | | ///
-// ///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | | ///
-// ///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | | ///
-// ///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | | ///
-// ///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | | ///
-// ///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | | ///
-// ///    | |              | |   | |              | |   | |              | | ///
-// ///    | '--------------' |   | '--------------' |   | '--------------' | ///
-// ///     '----------------'     '----------------'     '----------------' ///
-// /// ///
-// ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language.
-// ///
-// ///   * Copyright (C) 2024 Wesley C. Jones ///
-// /// ///
-// ///   The Nitrate Toolchain is free software; you can redistribute it or ///
-// ///   modify it under the terms of the GNU Lesser General Public ///
-// ///   License as published by the Free Software Foundation; either ///
-// ///   version 2.1 of the License, or (at your option) any later version. ///
-// /// ///
-// ///   The Nitrate Toolcain is distributed in the hope that it will be ///
-// ///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-// ///
-// ///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU ///
-// ///   Lesser General Public License for more details. ///
-// /// ///
-// ///   You should have received a copy of the GNU Lesser General Public ///
-// ///   License along with the Nitrate Toolchain; if not, see ///
-// ///   <https://www.gnu.org/licenses/>. ///
-// /// ///
-// ////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+///                                                                          ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
+///                                                                          ///
+///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
+///   * Copyright (C) 2024 Wesley C. Jones                                   ///
+///                                                                          ///
+///   The Nitrate Toolchain is free software; you can redistribute it or     ///
+///   modify it under the terms of the GNU Lesser General Public             ///
+///   License as published by the Free Software Foundation; either           ///
+///   version 2.1 of the License, or (at your option) any later version.     ///
+///                                                                          ///
+///   The Nitrate Toolcain is distributed in the hope that it will be        ///
+///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
+///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
+///   Lesser General Public License for more details.                        ///
+///                                                                          ///
+///   You should have received a copy of the GNU Lesser General Public       ///
+///   License along with the Nitrate Toolchain; if not, see                  ///
+///   <https://www.gnu.org/licenses/>.                                       ///
+///                                                                          ///
+////////////////////////////////////////////////////////////////////////////////
 
-// #include <llvm-18/llvm/ExecutionEngine/ExecutionEngine.h>
-// #include <llvm-18/llvm/ExecutionEngine/MCJIT.h>
-// #include <llvm-18/llvm/ExecutionEngine/SectionMemoryManager.h>
-// #include <llvm-18/llvm/IR/BasicBlock.h>
-// #include <llvm-18/llvm/IR/Constant.h>
-// #include <llvm-18/llvm/IR/DataLayout.h>
-// #include <llvm-18/llvm/IR/DerivedTypes.h>
-// #include <llvm-18/llvm/IR/Function.h>
-// #include <llvm-18/llvm/IR/GlobalValue.h>
-// #include <llvm-18/llvm/IR/GlobalVariable.h>
-// #include <llvm-18/llvm/IR/IRBuilder.h>
-// #include <llvm-18/llvm/IR/Instructions.h>
-// #include <llvm-18/llvm/IR/LLVMContext.h>
-// #include <llvm-18/llvm/IR/LegacyPassManager.h>
-// #include <llvm-18/llvm/IR/PassManager.h>
-// #include <llvm-18/llvm/IR/Type.h>
-// #include <llvm-18/llvm/IR/Value.h>
-// #include <llvm-18/llvm/IR/Verifier.h>
-// #include <llvm-18/llvm/InitializePasses.h>
-// #include <llvm-18/llvm/MC/TargetRegistry.h>
-// #include <llvm-18/llvm/Passes/PassBuilder.h>
-// #include <llvm-18/llvm/Support/CodeGen.h>
-// #include <llvm-18/llvm/Support/ManagedStatic.h>
-// #include <llvm-18/llvm/Support/MemoryBuffer.h>
-// #include <llvm-18/llvm/Support/TargetSelect.h>
-// #include <llvm-18/llvm/Support/raw_os_ostream.h>
-// #include <llvm-18/llvm/Support/raw_ostream.h>
-// #include <llvm-18/llvm/Target/TargetMachine.h>
-// #include <llvm-18/llvm/Target/TargetOptions.h>
-// #include <llvm-18/llvm/TargetParser/Host.h>
-// #include <llvm-18/llvm/Transforms/IPO.h>
-// #include <llvm-18/llvm/Transforms/InstCombine/InstCombine.h>
-// #include <nitrate-emit/Code.h>
-// #include <nitrate-emit/Config.h>
+#include <llvm-18/llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm-18/llvm/ExecutionEngine/MCJIT.h>
+#include <llvm-18/llvm/ExecutionEngine/SectionMemoryManager.h>
+#include <llvm-18/llvm/IR/BasicBlock.h>
+#include <llvm-18/llvm/IR/Constant.h>
+#include <llvm-18/llvm/IR/DataLayout.h>
+#include <llvm-18/llvm/IR/DerivedTypes.h>
+#include <llvm-18/llvm/IR/Function.h>
+#include <llvm-18/llvm/IR/GlobalValue.h>
+#include <llvm-18/llvm/IR/GlobalVariable.h>
+#include <llvm-18/llvm/IR/IRBuilder.h>
+#include <llvm-18/llvm/IR/Instructions.h>
+#include <llvm-18/llvm/IR/LLVMContext.h>
+#include <llvm-18/llvm/IR/LegacyPassManager.h>
+#include <llvm-18/llvm/IR/PassManager.h>
+#include <llvm-18/llvm/IR/Type.h>
+#include <llvm-18/llvm/IR/Value.h>
+#include <llvm-18/llvm/IR/Verifier.h>
+#include <llvm-18/llvm/InitializePasses.h>
+#include <llvm-18/llvm/MC/TargetRegistry.h>
+#include <llvm-18/llvm/Passes/PassBuilder.h>
+#include <llvm-18/llvm/Support/CodeGen.h>
+#include <llvm-18/llvm/Support/ManagedStatic.h>
+#include <llvm-18/llvm/Support/MemoryBuffer.h>
+#include <llvm-18/llvm/Support/TargetSelect.h>
+#include <llvm-18/llvm/Support/raw_os_ostream.h>
+#include <llvm-18/llvm/Support/raw_ostream.h>
+#include <llvm-18/llvm/Target/TargetMachine.h>
+#include <llvm-18/llvm/Target/TargetOptions.h>
+#include <llvm-18/llvm/TargetParser/Host.h>
+#include <llvm-18/llvm/Transforms/IPO.h>
+#include <llvm-18/llvm/Transforms/InstCombine/InstCombine.h>
+#include <nitrate-emit/Code.h>
+#include <nitrate-emit/Config.h>
 
-// #include <cstdint>
-// #include <iostream>
-// #include <memory>
-// #include <nitrate-core/Logger.hh>
-// #include <nitrate-core/Macro.hh>
-// #include <nitrate-ir/IR/Fwd.hh>
-// #include <nitrate-ir/IR/Nodes.hh>
-// #include <nitrate-ir/Module.hh>
-// #include <optional>
-// #include <stack>
-// #include <streambuf>
-// #include <unordered_map>
+#include <cstdint>
+#include <iostream>
+#include <memory>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-ir/IR/Fwd.hh>
+#include <nitrate-ir/IR/Nodes.hh>
+#include <nitrate-ir/Module.hh>
+#include <optional>
+#include <stack>
+#include <streambuf>
+#include <unordered_map>
 
-// /// TODO: Find way to remove the 's.branch_early' edge case
+/// TODO: Find way to remove the 's.branch_early' edge case
 
-// /// TODO: FIXME: This code is not correct at all. It is prototype code in
-// rapid
-// /// development.
-
-// using namespace llvm;
-// using namespace std;
-// using namespace ncc::ir;
-// using namespace ncc;
+using namespace llvm;
+using namespace std;
+using namespace ncc::ir;
+using namespace ncc;
 
 // #pragma GCC diagnostic push
 // #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -102,9 +96,9 @@
 // #define debug(...)
 // #endif
 
-// typedef function<bool(IRModule *, qcode_conf_t *, ostream &err,
-//                       raw_pwrite_stream &out)>
-//     qcode_adapter_fn;
+typedef function<bool(IRModule *, qcode_conf_t *, ostream &err,
+                      raw_pwrite_stream &out)>
+    qcode_adapter_fn;
 
 // using ctx_t = Module;
 // using craft_t = IRBuilder<>;
@@ -296,78 +290,78 @@
 //   }
 // };
 
-// class OStreamWriter : public streambuf {
-//   FILE *m_file;
+class OStreamWriter : public streambuf {
+  FILE *m_file;
 
-// public:
-//   OStreamWriter(FILE *file) : m_file(file) {}
+public:
+  OStreamWriter(FILE *file) : m_file(file) {}
 
-//   virtual streamsize xsputn(const char *s, streamsize n) override {
-//     return fwrite(s, 1, n, m_file);
-//   }
+  virtual streamsize xsputn(const char *s, streamsize n) override {
+    return fwrite(s, 1, n, m_file);
+  }
 
-//   virtual int overflow(int c) override { return fputc(c, m_file); }
+  virtual int overflow(int c) override { return fputc(c, m_file); }
 
-//   // Get current position
-//   virtual streampos seekoff(streamoff off, ios_base::seekdir way,
-//                             ios_base::openmode) override {
-//     if (way == ios_base::cur) {
-//       if (fseek(m_file, off, SEEK_CUR) == -1) {
-//         return -1;
-//       }
-//     } else if (way == ios_base::end) {
-//       if (fseek(m_file, off, SEEK_END) == -1) {
-//         return -1;
-//       }
-//     } else if (way == ios_base::beg) {
-//       if (fseek(m_file, off, SEEK_SET) == -1) {
-//         return -1;
-//       }
-//     }
+  // Get current position
+  virtual streampos seekoff(streamoff off, ios_base::seekdir way,
+                            ios_base::openmode) override {
+    if (way == ios_base::cur) {
+      if (fseek(m_file, off, SEEK_CUR) == -1) {
+        return -1;
+      }
+    } else if (way == ios_base::end) {
+      if (fseek(m_file, off, SEEK_END) == -1) {
+        return -1;
+      }
+    } else if (way == ios_base::beg) {
+      if (fseek(m_file, off, SEEK_SET) == -1) {
+        return -1;
+      }
+    }
 
-//     return ftell(m_file);
-//   }
+    return ftell(m_file);
+  }
 
-//   virtual streampos seekpos(streampos sp, ios_base::openmode) override {
-//     if (fseek(m_file, sp, SEEK_SET) == -1) {
-//       return -1;
-//     }
+  virtual streampos seekpos(streampos sp, ios_base::openmode) override {
+    if (fseek(m_file, sp, SEEK_SET) == -1) {
+      return -1;
+    }
 
-//     return ftell(m_file);
-//   }
-// };
+    return ftell(m_file);
+  }
+};
 
-// class OStreamDiscard : public streambuf {
-// public:
-//   virtual streamsize xsputn(const char *, streamsize n) override { return n;
-//   } virtual int overflow(int c) override { return c; }
-// };
+class OStreamDiscard : public streambuf {
+public:
+  virtual streamsize xsputn(const char *, streamsize n) override { return n; }
+  virtual int overflow(int c) override { return c; }
+};
 
-// class my_pwrite_ostream : public raw_pwrite_stream {
-//   ostream &m_os;
+class my_pwrite_ostream : public raw_pwrite_stream {
+  ostream &m_os;
 
-// public:
-//   my_pwrite_ostream(ostream &os) : raw_pwrite_stream(true), m_os(os) {}
+public:
+  my_pwrite_ostream(ostream &os) : raw_pwrite_stream(true), m_os(os) {}
 
-//   void write_impl(const char *ptr, size_t size) override {
-//     m_os.write(ptr, size);
-//   }
+  void write_impl(const char *ptr, size_t size) override {
+    m_os.write(ptr, size);
+  }
 
-//   void pwrite_impl(const char *ptr, size_t size, uint64_t offset) override {
-//     auto curpos = current_pos();
+  void pwrite_impl(const char *ptr, size_t size, uint64_t offset) override {
+    auto curpos = current_pos();
 
-//     m_os.seekp(offset);
-//     m_os.write(ptr, size);
-//     m_os.seekp(curpos);
-//   }
+    m_os.seekp(offset);
+    m_os.write(ptr, size);
+    m_os.seekp(curpos);
+  }
 
-//   uint64_t current_pos() const override {
-//     auto pos = m_os.tellp();
-//     qcore_assert(pos != -1, "failed to get current position");
+  uint64_t current_pos() const override {
+    auto pos = m_os.tellp();
+    qcore_assert(pos != -1, "failed to get current position");
 
-//     return pos;
-//   }
-// };
+    return pos;
+  }
+};
 
 // static auto T_gen(craft_t &b, FlowPtr<Expr> N) -> ty_t;
 // static auto V_gen(ctx_t &m, craft_t &b, State &s, FlowPtr<Expr> N) -> val_t;
@@ -1855,248 +1849,247 @@
 //   return dispatch[N->getKind()](b, N);
 // }
 
-// static bool qcode_adapter(IRModule *module, qcode_conf_t *conf, FILE *err,
-//                           FILE *out, qcode_adapter_fn impl) {
-//   unique_ptr<streambuf> err_stream_buf, out_stream_buf;
+static bool qcode_adapter(IRModule *module, qcode_conf_t *conf, FILE *err,
+                          FILE *out, qcode_adapter_fn impl) {
+  unique_ptr<streambuf> err_stream_buf, out_stream_buf;
 
-//   {
-//     /* If the error stream is provided, use it. Otherwise, discard the
-//     output.
-//      */
-//     if (err) {
-//       err_stream_buf = make_unique<OStreamWriter>(err);
-//     } else {
-//       err_stream_buf = make_unique<OStreamDiscard>();
-//     }
+  {
+    /* If the error stream is provided, use it. Otherwise, discard the
+    output.
+     */
+    if (err) {
+      err_stream_buf = make_unique<OStreamWriter>(err);
+    } else {
+      err_stream_buf = make_unique<OStreamDiscard>();
+    }
 
-//     /* If the output stream is provided, use it. Otherwise, discard the
-//     output.
-//      */
-//     if (out) {
-//       out_stream_buf = make_unique<OStreamWriter>(out);
-//     } else {
-//       out_stream_buf = make_unique<OStreamDiscard>();
-//     }
-//   }
+    /* If the output stream is provided, use it. Otherwise, discard the
+    output.
+     */
+    if (out) {
+      out_stream_buf = make_unique<OStreamWriter>(out);
+    } else {
+      out_stream_buf = make_unique<OStreamDiscard>();
+    }
+  }
 
-//   ostream err_stream(err_stream_buf.get());
-//   ostream out_stream(out_stream_buf.get());
+  ostream err_stream(err_stream_buf.get());
+  ostream out_stream(out_stream_buf.get());
 
-//   {
-//     my_pwrite_ostream llvm_adapt(out_stream);
-//     if (!impl(module, conf, err_stream, llvm_adapt)) {
-//       err_stream.flush();
-//       out_stream.flush();
-//       err &&fflush(err);
-//       out &&fflush(out);
-//       return false;
-//     }
-//   }
+  {
+    my_pwrite_ostream llvm_adapt(out_stream);
+    if (!impl(module, conf, err_stream, llvm_adapt)) {
+      err_stream.flush();
+      out_stream.flush();
+      err &&fflush(err);
+      out &&fflush(out);
+      return false;
+    }
+  }
 
-//   err_stream.flush();
-//   out_stream.flush();
-//   err &&fflush(err);
-//   out &&fflush(out);
+  err_stream.flush();
+  out_stream.flush();
+  err &&fflush(err);
+  out &&fflush(out);
 
-//   return true;
-// }
+  return true;
+}
 
-// static optional<unique_ptr<Module>> fabricate_llvmir(IRModule *module,
-//                                                      qcode_conf_t *conf,
-//                                                      ostream &err,
-//                                                      raw_ostream &out);
+static optional<unique_ptr<Module>> fabricate_llvmir(IRModule *module,
+                                                     qcode_conf_t *conf,
+                                                     ostream &err,
+                                                     raw_ostream &out) {
+  /// TODO: Implement conversion for node
+  qcore_implement();
+}
 
-// CPP_EXPORT bool qcode_ir(IRModule *module, qcode_conf_t *conf, FILE *err,
-//                          FILE *out) {
-//   return qcode_adapter(module, conf, err, out,
-//                        [](IRModule *m, qcode_conf_t *c, ostream &e,
-//                           raw_pwrite_stream &o) -> bool {
-//                          auto module = fabricate_llvmir(m, c, e, o);
-//                          if (!module) {
-//                            e << "error: failed to fabricate LLVM IR" << endl;
-//                            return false;
-//                          }
+CPP_EXPORT bool qcode_ir(IRModule *module, qcode_conf_t *conf, FILE *err,
+                         FILE *out) {
+  return qcode_adapter(module, conf, err, out,
+                       [](IRModule *m, qcode_conf_t *c, ostream &e,
+                          raw_pwrite_stream &o) -> bool {
+                         auto module = fabricate_llvmir(m, c, e, o);
+                         if (!module) {
+                           e << "error: failed to fabricate LLVM IR" << endl;
+                           return false;
+                         }
 
-//                          bool failed = verifyModule(*module->get(), &o);
+                         bool failed = verifyModule(*module->get(), &o);
 
-//                          module.value()->print(o, nullptr);
+                         module.value()->print(o, nullptr);
 
-//                          return !failed;
-//                        });
-// }
+                         return !failed;
+                       });
+}
 
-// CPP_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
-//                           FILE *out) {
-//   return qcode_adapter(
-//       module, conf, err, out,
-//       [](IRModule *m, qcode_conf_t *c, ostream &e,
-//          raw_pwrite_stream &o) -> bool {
-//         auto module_opt = fabricate_llvmir(m, c, e, o);
-//         if (!module_opt) {
-//           e << "error: failed to fabricate LLVM IR" << endl;
-//           return false;
-//         }
+CPP_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
+                          FILE *out) {
+  return qcode_adapter(
+      module, conf, err, out,
+      [](IRModule *m, qcode_conf_t *c, ostream &e,
+         raw_pwrite_stream &o) -> bool {
+        auto module_opt = fabricate_llvmir(m, c, e, o);
+        if (!module_opt) {
+          e << "error: failed to fabricate LLVM IR" << endl;
+          return false;
+        }
 
-//         std::string targetTriple = m->getTargetInfo().TargetTriple.value_or(
-//             sys::getDefaultTargetTriple());
-//         std::string CPU = m->getTargetInfo().CPU.value_or("generic");
-//         std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
-//         bool relocPIC = true;
+        std::string targetTriple = m->getTargetInfo().TargetTriple.value_or(
+            sys::getDefaultTargetTriple());
+        std::string CPU = m->getTargetInfo().CPU.value_or("generic");
+        std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
+        bool relocPIC = true;
 
-//         TargetOptions opt;
-//         std::string lookupTarget_err;
-//         auto Target =
-//             TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
-//         if (!Target) {
-//           e << "error: failed to lookup target: " << lookupTarget_err <<
-//           endl; return false;
-//         }
+        TargetOptions opt;
+        std::string lookupTarget_err;
+        auto Target =
+            TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
+        if (!Target) {
+          e << "error: failed to lookup target: " << lookupTarget_err << endl;
+          return false;
+        }
 
-//         auto TargetMachine =
-//             Target->createTargetMachine(targetTriple, CPU, Features, opt,
-//                                         relocPIC ? Reloc::PIC_ :
-//                                         Reloc::Static);
+        auto TargetMachine =
+            Target->createTargetMachine(targetTriple, CPU, Features, opt,
+                                        relocPIC ? Reloc::PIC_ : Reloc::Static);
 
-//         auto &module = *module_opt.value();
+        auto &module = *module_opt.value();
 
-//         if (verifyModule(module, &o)) {
-//           e << "error: failed to verify module" << endl;
-//           return false;
-//         }
+        if (verifyModule(module, &o)) {
+          e << "error: failed to verify module" << endl;
+          return false;
+        }
 
-//         module.setDataLayout(TargetMachine->createDataLayout());
-//         module.setTargetTriple(targetTriple);
+        module.setDataLayout(TargetMachine->createDataLayout());
+        module.setTargetTriple(targetTriple);
 
-//         ///==========================================================================
+        ///==========================================================================
 
-//         // Create the analysis managers.
-//         // These must be declared in this order so that they are destroyed in
-//         // the correct order due to inter-analysis-manager references.
-//         LoopAnalysisManager LAM;
-//         FunctionAnalysisManager FAM;
-//         CGSCCAnalysisManager CGAM;
-//         ModuleAnalysisManager MAM;
+        // Create the analysis managers.
+        // These must be declared in this order so that they are destroyed in
+        // the correct order due to inter-analysis-manager references.
+        LoopAnalysisManager LAM;
+        FunctionAnalysisManager FAM;
+        CGSCCAnalysisManager CGAM;
+        ModuleAnalysisManager MAM;
 
-//         // Create the new pass manager builder.
-//         // Take a look at the PassBuilder constructor parameters for more
-//         // customization, e.g. specifying a TargetMachine or various
-//         debugging
-//         // options.
-//         PassBuilder PB;
+        // Create the new pass manager builder.
+        // Take a look at the PassBuilder constructor parameters for more
+        // customization, e.g. specifying a TargetMachine or various debugging
+        // options.
+        PassBuilder PB;
 
-//         // Register all the basic analyses with the managers.
-//         PB.registerModuleAnalyses(MAM);
-//         PB.registerCGSCCAnalyses(CGAM);
-//         PB.registerFunctionAnalyses(FAM);
-//         PB.registerLoopAnalyses(LAM);
-//         PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+        // Register all the basic analyses with the managers.
+        PB.registerModuleAnalyses(MAM);
+        PB.registerCGSCCAnalyses(CGAM);
+        PB.registerFunctionAnalyses(FAM);
+        PB.registerLoopAnalyses(LAM);
+        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
-//         ModulePassManager MPM =
-//             PB.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
+        ModulePassManager MPM =
+            PB.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
 
-//         // Optimize the IR!
-//         MPM.run(module, MAM);
+        // Optimize the IR!
+        MPM.run(module, MAM);
 
-//         ///==========================================================================
+        ///==========================================================================
 
-//         error_code ec;
+        error_code ec;
 
-//         legacy::PassManager pass;
-//         TargetMachine->addPassesToEmitFile(pass, o, nullptr,
-//                                            CodeGenFileType::AssemblyFile);
-//         if (!pass.run(module)) {
-//           e << "error: failed to emit object code" << endl;
-//           return false;
-//         }
+        legacy::PassManager pass;
+        TargetMachine->addPassesToEmitFile(pass, o, nullptr,
+                                           CodeGenFileType::AssemblyFile);
+        if (!pass.run(module)) {
+          e << "error: failed to emit object code" << endl;
+          return false;
+        }
 
-//         return true;
-//       });
-// }
+        return true;
+      });
+}
 
-// CPP_EXPORT bool qcode_obj(IRModule *module, qcode_conf_t *conf, FILE *err,
-//                           FILE *out) {
-//   return qcode_adapter(
-//       module, conf, err, out,
-//       [](IRModule *m, qcode_conf_t *c, ostream &e,
-//          raw_pwrite_stream &o) -> bool {
-//         auto module_opt = fabricate_llvmir(m, c, e, o);
-//         if (!module_opt) {
-//           e << "error: failed to fabricate LLVM IR" << endl;
-//           return false;
-//         }
+CPP_EXPORT bool qcode_obj(IRModule *module, qcode_conf_t *conf, FILE *err,
+                          FILE *out) {
+  return qcode_adapter(
+      module, conf, err, out,
+      [](IRModule *m, qcode_conf_t *c, ostream &e,
+         raw_pwrite_stream &o) -> bool {
+        auto module_opt = fabricate_llvmir(m, c, e, o);
+        if (!module_opt) {
+          e << "error: failed to fabricate LLVM IR" << endl;
+          return false;
+        }
 
-//         std::string targetTriple = m->getTargetInfo().TargetTriple.value_or(
-//             sys::getDefaultTargetTriple());
-//         std::string CPU = m->getTargetInfo().CPU.value_or("generic");
-//         std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
-//         bool relocPIC = true;
+        std::string targetTriple = m->getTargetInfo().TargetTriple.value_or(
+            sys::getDefaultTargetTriple());
+        std::string CPU = m->getTargetInfo().CPU.value_or("generic");
+        std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
+        bool relocPIC = true;
 
-//         TargetOptions opt;
-//         std::string lookupTarget_err;
-//         auto Target =
-//             TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
-//         if (!Target) {
-//           e << "error: failed to lookup target: " << lookupTarget_err <<
-//           endl; return false;
-//         }
+        TargetOptions opt;
+        std::string lookupTarget_err;
+        auto Target =
+            TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
+        if (!Target) {
+          e << "error: failed to lookup target: " << lookupTarget_err << endl;
+          return false;
+        }
 
-//         auto TargetMachine =
-//             Target->createTargetMachine(targetTriple, CPU, Features, opt,
-//                                         relocPIC ? Reloc::PIC_ :
-//                                         Reloc::Static);
+        auto TargetMachine =
+            Target->createTargetMachine(targetTriple, CPU, Features, opt,
+                                        relocPIC ? Reloc::PIC_ : Reloc::Static);
 
-//         auto &module = *module_opt.value();
+        auto &module = *module_opt.value();
 
-//         if (verifyModule(module, &o)) {
-//           e << "error: failed to verify module" << endl;
-//           return false;
-//         }
+        if (verifyModule(module, &o)) {
+          e << "error: failed to verify module" << endl;
+          return false;
+        }
 
-//         module.setDataLayout(TargetMachine->createDataLayout());
-//         module.setTargetTriple(targetTriple);
+        module.setDataLayout(TargetMachine->createDataLayout());
+        module.setTargetTriple(targetTriple);
 
-//         ///==========================================================================
+        ///==========================================================================
 
-//         // Create the analysis managers.
-//         // These must be declared in this order so that they are destroyed in
-//         // the correct order due to inter-analysis-manager references.
-//         LoopAnalysisManager LAM;
-//         FunctionAnalysisManager FAM;
-//         CGSCCAnalysisManager CGAM;
-//         ModuleAnalysisManager MAM;
+        // Create the analysis managers.
+        // These must be declared in this order so that they are destroyed in
+        // the correct order due to inter-analysis-manager references.
+        LoopAnalysisManager LAM;
+        FunctionAnalysisManager FAM;
+        CGSCCAnalysisManager CGAM;
+        ModuleAnalysisManager MAM;
 
-//         // Create the new pass manager builder.
-//         // Take a look at the PassBuilder constructor parameters for more
-//         // customization, e.g. specifying a TargetMachine or various
-//         debugging
-//         // options.
-//         PassBuilder PB;
+        // Create the new pass manager builder.
+        // Take a look at the PassBuilder constructor parameters for more
+        // customization, e.g. specifying a TargetMachine or various
+        // debugging options.
+        PassBuilder PB;
 
-//         // Register all the basic analyses with the managers.
-//         PB.registerModuleAnalyses(MAM);
-//         PB.registerCGSCCAnalyses(CGAM);
-//         PB.registerFunctionAnalyses(FAM);
-//         PB.registerLoopAnalyses(LAM);
-//         PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+        // Register all the basic analyses with the managers.
+        PB.registerModuleAnalyses(MAM);
+        PB.registerCGSCCAnalyses(CGAM);
+        PB.registerFunctionAnalyses(FAM);
+        PB.registerLoopAnalyses(LAM);
+        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
-//         ModulePassManager MPM =
-//             PB.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
+        ModulePassManager MPM =
+            PB.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
 
-//         // Optimize the IR!
-//         MPM.run(module, MAM);
+        // Optimize the IR!
+        MPM.run(module, MAM);
 
-//         ///==========================================================================
+        ///==========================================================================
 
-//         error_code ec;
+        error_code ec;
 
-//         legacy::PassManager pass;
-//         TargetMachine->addPassesToEmitFile(pass, o, nullptr,
-//                                            CodeGenFileType::ObjectFile);
-//         if (!pass.run(module)) {
-//           e << "error: failed to emit object code" << endl;
-//           return false;
-//         }
+        legacy::PassManager pass;
+        TargetMachine->addPassesToEmitFile(pass, o, nullptr,
+                                           CodeGenFileType::ObjectFile);
+        if (!pass.run(module)) {
+          e << "error: failed to emit object code" << endl;
+          return false;
+        }
 
-//         return true;
-//       });
-// }
+        return true;
+      });
+}

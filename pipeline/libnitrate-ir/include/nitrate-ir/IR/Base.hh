@@ -53,7 +53,9 @@
 namespace ncc::ir {
   namespace detail {
     std::optional<FlowPtr<Type>> InferTypeImpl(const Expr *E);
-  };
+    void NodeDumpImpl(const Expr *E, std::ostream &os, bool isForDebug);
+    bool IsAcyclicImpl(FlowPtr<Expr> E);
+  };  // namespace detail
 
   template <class A>
   class IR_Vertex_Expr {
@@ -507,9 +509,10 @@ namespace ncc::ir {
       }
     }
 
-    bool isAcyclic() const;
-
-    void dump(std::ostream &os = std::cout, bool isForDebug = false) const;
+    void dump(std::ostream &os = std::cout, bool isForDebug = false) const {
+      detail::NodeDumpImpl(reinterpret_cast<const Expr *>(this), os,
+                           isForDebug);
+    }
 
     std::string toString() const {
       std::stringstream ss;

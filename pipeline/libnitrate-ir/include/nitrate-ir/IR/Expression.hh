@@ -80,23 +80,32 @@ namespace ncc::ir {
 
   template <class A>
   class IR_Vertex_Int final : public IR_Vertex_Expr<A> {
-    struct map_hash {
-      std::size_t operator()(std::pair<uint128_t, uint8_t> const &v) const {
-        return std::hash<uint128_t>()(v.first) ^ std::hash<uint8_t>()(v.second);
-      }
-    };
-
-    static inline std::unordered_map<std::pair<uint128_t, uint8_t>,
-                                     FlowPtr<IR_Vertex_Int<A>>, map_hash>
-        m_cache;
-
-    unsigned __int128 m_value __attribute__((aligned(16)));
+    uint128_t m_value;
     uint8_t m_size;
 
-    static uint128_t str2u128(std::string_view x);
+    static constexpr uint128_t str2u128(std::string_view s) {
+      uint128_t x = 0;
+
+      for (char c : s) {
+        if (!std::isdigit(c)) [[unlikely]] {
+          qcore_panicf("Failed to convert string `%s` to uint128_t", s.data());
+        }
+
+        // Check for overflow
+        if (x > (std::numeric_limits<uint128_t>::max() - (c - '0')) / 10)
+            [[unlikely]] {
+          qcore_panicf("Overflow when converting string `%s` to uint128_t",
+                       s.data());
+        }
+
+        x = x * 10 + (c - '0');
+      }
+
+      return x;
+    }
 
   public:
-    IR_Vertex_Int(uint128_t val, uint8_t size)
+    IR_Vertex_Int(auto val, auto size)
         : IR_Vertex_Expr<A>(IR_eINT), m_value(val), m_size(size) {}
 
     IR_Vertex_Int(std::string_view str, uint8_t size)
@@ -104,15 +113,10 @@ namespace ncc::ir {
       m_size = size;
     }
 
-    static auto get(uint128_t val, uint8_t size);
-    static auto get(std::string_view str, uint8_t size) {
-      return get(str2u128(str), size);
-    }
-
     constexpr auto getSize() const { return m_size; }
     constexpr uint128_t getValue() const { return m_value; }
     std::string getValueString() const;
-  } __attribute__((packed));
+  };
 
   template <class A>
   class IR_Vertex_Float final : public IR_Vertex_Expr<A> {
@@ -140,7 +144,7 @@ namespace ncc::ir {
 
     constexpr auto getSize() const { return m_size; }
     constexpr auto getValue() const { return m_data; }
-  } __attribute__((packed));
+  };
 
   template <class A>
   class IR_Vertex_List final : public IR_Vertex_Expr<A> {

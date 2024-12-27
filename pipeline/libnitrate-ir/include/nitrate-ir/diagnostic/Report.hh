@@ -42,6 +42,8 @@
 #include <nitrate-parser/ASTBase.hh>
 #include <string_view>
 
+#include "nitrate-core/Logger.hh"
+
 namespace ncc::ir {
   enum class IC {
     Debug,
@@ -158,8 +160,8 @@ namespace ncc::ir {
     class NOPDiagnosticRouter final : public IDiagnosticRouter {
     public:
       virtual ~NOPDiagnosticRouter() = default;
-      void EmitMessage(std::string_view msg,
-                       parse::LocationPairAlias::Index loc) override;
+      void EmitMessage(std::string_view,
+                       parse::LocationPairAlias::Index) override{};
     };
 
     class DiagnosticRouterInstance final : public IDiagnosticRouter {
@@ -172,8 +174,11 @@ namespace ncc::ir {
       DiagnosticRouterInstance(MessageFunc func, lex::IScanner &scanner)
           : m_func(func), m_scanner(&scanner) {}
 
-      void EmitMessage(std::string_view msg,
-                       parse::LocationPairAlias::Index loc) override;
+      void EmitMessage(std::string_view,
+                       parse::LocationPairAlias::Index) override {
+        qcore_implement();
+        (void)m_scanner;
+      }
     };
   }  // namespace detail
 

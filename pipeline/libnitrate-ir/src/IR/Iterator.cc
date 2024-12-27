@@ -1,62 +1,44 @@
-// ////////////////////////////////////////////////////////////////////////////////
-// /// ///
-// ///     .-----------------.    .----------------.     .----------------. ///
-// ///    | .--------------. |   | .--------------. |   | .--------------. | ///
-// ///    | | ____  _____  | |   | |     ____     | |   | |    ______    | | ///
-// ///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | | ///
-// ///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | | ///
-// ///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | | ///
-// ///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | | ///
-// ///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | | ///
-// ///    | |              | |   | |              | |   | |              | | ///
-// ///    | '--------------' |   | '--------------' |   | '--------------' | ///
-// ///     '----------------'     '----------------'     '----------------' ///
-// /// ///
-// ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language.
-// ///
-// ///   * Copyright (C) 2024 Wesley C. Jones ///
-// /// ///
-// ///   The Nitrate Toolchain is free software; you can redistribute it or ///
-// ///   modify it under the terms of the GNU Lesser General Public ///
-// ///   License as published by the Free Software Foundation; either ///
-// ///   version 2.1 of the License, or (at your option) any later version. ///
-// /// ///
-// ///   The Nitrate Toolcain is distributed in the hope that it will be ///
-// ///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-// ///
-// ///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU ///
-// ///   Lesser General Public License for more details. ///
-// /// ///
-// ///   You should have received a copy of the GNU Lesser General Public ///
-// ///   License along with the Nitrate Toolchain; if not, see ///
-// ///   <https://www.gnu.org/licenses/>. ///
-// /// ///
-// ////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+///                                                                          ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
+///                                                                          ///
+///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
+///   * Copyright (C) 2024 Wesley C. Jones                                   ///
+///                                                                          ///
+///   The Nitrate Toolchain is free software; you can redistribute it or     ///
+///   modify it under the terms of the GNU Lesser General Public             ///
+///   License as published by the Free Software Foundation; either           ///
+///   version 2.1 of the License, or (at your option) any later version.     ///
+///                                                                          ///
+///   The Nitrate Toolcain is distributed in the hope that it will be        ///
+///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
+///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
+///   Lesser General Public License for more details.                        ///
+///                                                                          ///
+///   You should have received a copy of the GNU Lesser General Public       ///
+///   License along with the Nitrate Toolchain; if not, see                  ///
+///   <https://www.gnu.org/licenses/>.                                       ///
+///                                                                          ///
+////////////////////////////////////////////////////////////////////////////////
 
-// /**
-//  * WARNING: This code technically uses unspecified behavior in C++. It
-//  assumes
-//  * that adding the __IR_NODE_REFLECT_IMPL__ define, which will change the
-//  * visibility of private fields will not change the overall memory layout of
-//  any
-//  * of the used polymorphic class types. On the bright side, if this
-//  assumption
-//  * is wrong, the code will certainly crash on test cases, so it should be
-//  easy
-//  * to detect faults.
-//  */
+#include <nitrate-core/Macro.hh>
+#include <nitrate-ir/IR/Nodes.hh>
+#include <queue>
+#include <stack>
 
-// #define __IR_NODE_REFLECT_IMPL__  // Make private fields accessible
+using namespace ncc;
+using namespace ncc::ir;
 
-// #include <algorithm>
-// #include <nitrate-core/Macro.hh>
-// #include <nitrate-ir/IR/Nodes.hh>
-// #include <queue>
-// #include <stack>
-
-// using namespace ncc::ir;
-
-// namespace ncc::ir::detail {
 //   void get_children_sorted(Expr *base, ChildSelect cs,
 //                            std::vector<Expr **> &children) {
 //     children.clear();
@@ -303,218 +285,205 @@
 //     return;
 //   }
 
-//   CPP_EXPORT void dfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs)
-//   {
-//     qcore_assert(base != nullptr && cb != nullptr,
-//                  "dfs_pre_impl: base and cb must not be null");
+static void get_children_sorted(FlowPtr<Expr> base, ChildSelect cs,
+                                std::vector<FlowPtr<Expr> *> &children) {
+  /// TODO: Implement this function
+  qcore_implement();
+  (void)base;
+  (void)cs;
+  (void)children;
+}
 
-//     if (!cs) { /* Iterate in the order the children are stored in the classes
-//     */
-//       cs = [](Expr **a, Expr **b) -> bool {
-//         return (uintptr_t)a < (uintptr_t)b;
-//       };
-//     }
+CPP_EXPORT void detail::dfs_pre_impl(FlowPtr<Expr> *base, IterCallback cb,
+                                     ChildSelect cs) {
+  qcore_assert(base != nullptr && cb != nullptr,
+               "dfs_pre_impl: base and cb must not be null");
 
-//     const auto syncfn = [](Expr **n, const IterCallback &cb,
-//                            const ChildSelect &cs) {
-//       std::stack<std::pair<Expr *, Expr **>> s;
-//       std::vector<Expr **> children;
+  if (!cs) {
+    cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
+  }
 
-//       s.push({nullptr, n});
+  constexpr auto syncfn = [](auto n, auto cb, auto cs) {
+    std::stack<std::pair<FlowPtr<Expr>, FlowPtr<Expr> *>> s;
+    std::vector<FlowPtr<Expr> *> children;
 
-//       while (!s.empty()) {
-//         auto cur = s.top();
-//         s.pop();
+    s.push({nullptr, n});
 
-//         bool skip = false;
+    while (!s.empty()) {
+      auto cur = s.top();
+      s.pop();
 
-//         switch (cb(cur.first, cur.second)) {
-//           case IterOp::Proceed:
-//             break;
-//           case IterOp::Abort:
-//             return;
-//           case IterOp::SkipChildren:
-//             skip = true;
-//             break;
-//         }
+      bool skip = false;
 
-//         if (!skip) {
-//           get_children_sorted(*cur.second, cs, children);
-//           for (auto it = children.rbegin(); it != children.rend(); ++it) {
-//             s.push({*cur.second, *it});
-//           }
-//         }
-//       }
-//     };
+      switch (cb(cur.first, cur.second)) {
+        case IterOp::Proceed:
+          break;
+        case IterOp::Abort:
+          return;
+        case IterOp::SkipChildren:
+          skip = true;
+          break;
+      }
 
-//     syncfn(base, cb, cs);
-//   }
+      if (!skip) {
+        get_children_sorted(*cur.second, cs, children);
+        for (auto it = children.rbegin(); it != children.rend(); ++it) {
+          s.push({*cur.second, *it});
+        }
+      }
+    }
+  };
 
-//   CPP_EXPORT void dfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs)
-//   {
-//     qcore_assert(base != nullptr && cb != nullptr,
-//                  "dfs_post_impl: base and cb must not be null");
+  syncfn(base, cb, cs);
+}
 
-//     if (!cs) { /* Iterate in the order the children are stored in the classes
-//     */
-//       cs = [](Expr **a, Expr **b) -> bool {
-//         return (uintptr_t)a < (uintptr_t)b;
-//       };
-//     }
+CPP_EXPORT void detail::dfs_post_impl(FlowPtr<Expr> *base, IterCallback cb,
+                                      ChildSelect cs) {
+  qcore_assert(base != nullptr && cb != nullptr,
+               "dfs_post_impl: base and cb must not be null");
 
-//     const auto syncfn = [](Expr **n, const IterCallback &cb,
-//                            const ChildSelect &cs) {
-//       std::stack<std::pair<Expr *, Expr **>> s;
-//       std::vector<Expr **> children;
+  if (!cs) {
+    cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
+  }
 
-//       s.push({nullptr, n});
+  constexpr auto syncfn = [](auto n, auto cb, auto cs) {
+    std::stack<std::pair<FlowPtr<Expr>, FlowPtr<Expr> *>> s;
+    std::vector<FlowPtr<Expr> *> children;
 
-//       while (!s.empty()) {
-//         auto cur = s.top();
-//         s.pop();
+    s.push({nullptr, n});
 
-//         get_children_sorted(*cur.second, cs, children);
-//         for (auto it = children.rbegin(); it != children.rend(); ++it) {
-//           s.push({*cur.second, *it});
-//         }
+    while (!s.empty()) {
+      auto cur = s.top();
+      s.pop();
 
-//         switch (cb(cur.first, cur.second)) {
-//           case IterOp::Proceed:
-//             break;
-//           case IterOp::Abort:
-//             return;
-//           case IterOp::SkipChildren:
-//             qcore_panic("dfs_post_impl: IterOp::SkipChildren not supported");
-//             break;
-//         }
-//       }
-//     };
+      get_children_sorted(*cur.second, cs, children);
+      for (auto it = children.rbegin(); it != children.rend(); ++it) {
+        s.push({*cur.second, *it});
+      }
 
-//     syncfn(base, cb, cs);
-//     cb(nullptr, base);
-//   }
+      switch (cb(cur.first, cur.second)) {
+        case IterOp::Proceed:
+          break;
+        case IterOp::Abort:
+          return;
+        case IterOp::SkipChildren:
+          qcore_panic("dfs_post_impl: IterOp::SkipChildren not supported");
+          break;
+      }
+    }
+  };
 
-//   CPP_EXPORT void bfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs)
-//   {
-//     qcore_assert(base != nullptr && cb != nullptr,
-//                  "bfs_pre_impl: base and cb must not be null");
+  syncfn(base, cb, cs);
+  cb(nullptr, base);
+}
 
-//     if (!cs) { /* Iterate in the order the children are stored in the classes
-//     */
-//       cs = [](Expr **a, Expr **b) -> bool {
-//         return (uintptr_t)a < (uintptr_t)b;
-//       };
-//     }
+CPP_EXPORT void detail::bfs_pre_impl(FlowPtr<Expr> *base, IterCallback cb,
+                                     ChildSelect cs) {
+  qcore_assert(base != nullptr && cb != nullptr,
+               "bfs_pre_impl: base and cb must not be null");
 
-//     const auto syncfn = [](Expr **n, const IterCallback &cb,
-//                            const ChildSelect &cs) {
-//       std::queue<std::pair<Expr *, Expr **>> s;
-//       std::vector<Expr **> children;
+  if (!cs) {
+    cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
+  }
 
-//       s.push({nullptr, n});
+  constexpr auto syncfn = [](auto n, auto cb, auto cs) {
+    std::queue<std::pair<FlowPtr<Expr>, FlowPtr<Expr> *>> s;
+    std::vector<FlowPtr<Expr> *> children;
 
-//       while (!s.empty()) {
-//         auto cur = s.front();
-//         s.pop();
+    s.push({nullptr, n});
 
-//         bool skip = false;
+    while (!s.empty()) {
+      auto cur = s.front();
+      s.pop();
 
-//         switch (cb(cur.first, cur.second)) {
-//           case IterOp::Proceed:
-//             break;
-//           case IterOp::Abort:
-//             return;
-//           case IterOp::SkipChildren:
-//             skip = true;
-//             break;
-//         }
+      bool skip = false;
 
-//         if (!skip) {
-//           get_children_sorted(*cur.second, cs, children);
-//           for (auto it = children.rbegin(); it != children.rend(); ++it) {
-//             s.push({*cur.second, *it});
-//           }
-//         }
-//       }
-//     };
+      switch (cb(cur.first, cur.second)) {
+        case IterOp::Proceed:
+          break;
+        case IterOp::Abort:
+          return;
+        case IterOp::SkipChildren:
+          skip = true;
+          break;
+      }
 
-//     syncfn(base, cb, cs);
-//   }
+      if (!skip) {
+        get_children_sorted(*cur.second, cs, children);
+        for (auto it = children.rbegin(); it != children.rend(); ++it) {
+          s.push({*cur.second, *it});
+        }
+      }
+    }
+  };
 
-//   CPP_EXPORT void bfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs)
-//   {
-//     qcore_assert(base != nullptr && cb != nullptr,
-//                  "bfs_post_impl: base and cb must not be null");
+  syncfn(base, cb, cs);
+}
 
-//     if (!cs) { /* Iterate in the order the children are stored in the classes
-//     */
-//       cs = [](Expr **a, Expr **b) -> bool {
-//         return (uintptr_t)a < (uintptr_t)b;
-//       };
-//     }
+CPP_EXPORT void detail::bfs_post_impl(FlowPtr<Expr> *base, IterCallback cb,
+                                      ChildSelect cs) {
+  qcore_assert(base != nullptr && cb != nullptr,
+               "bfs_post_impl: base and cb must not be null");
 
-//     const auto syncfn = [](Expr **n, const IterCallback &cb,
-//                            const ChildSelect &cs) {
-//       std::queue<std::pair<Expr *, Expr **>> s;
-//       std::vector<Expr **> children;
+  if (!cs) {
+    cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
+  }
 
-//       s.push({nullptr, n});
+  constexpr auto syncfn = [](auto n, auto cb, auto cs) {
+    std::queue<std::pair<FlowPtr<Expr>, FlowPtr<Expr> *>> s;
+    std::vector<FlowPtr<Expr> *> children;
 
-//       while (!s.empty()) {
-//         auto cur = s.front();
-//         s.pop();
+    s.push({nullptr, n});
 
-//         get_children_sorted(*cur.second, cs, children);
-//         for (auto it = children.rbegin(); it != children.rend(); ++it) {
-//           s.push({*cur.second, *it});
-//         }
+    while (!s.empty()) {
+      auto cur = s.front();
+      s.pop();
 
-//         switch (cb(cur.first, cur.second)) {
-//           case IterOp::Proceed:
-//             break;
-//           case IterOp::Abort:
-//             return;
-//           case IterOp::SkipChildren:
-//             qcore_assert(false,
-//                          "bfs_post_impl: IterOp::SkipChildren not
-//                          supported");
-//             break;
-//         }
-//       }
-//     };
+      get_children_sorted(*cur.second, cs, children);
+      for (auto it = children.rbegin(); it != children.rend(); ++it) {
+        s.push({*cur.second, *it});
+      }
 
-//     syncfn(base, cb, cs);
-//   }
+      switch (cb(cur.first, cur.second)) {
+        case IterOp::Proceed:
+          break;
+        case IterOp::Abort:
+          return;
+        case IterOp::SkipChildren:
+          qcore_assert(false,
+                       "bfs_post_impl: IterOp::SkipChildren not supported");
+          break;
+      }
+    }
+  };
 
-//   CPP_EXPORT void iter_children(Expr **base, IterCallback cb, ChildSelect cs)
-//   {
-//     qcore_assert(base != nullptr && cb != nullptr,
-//                  "iter_children: base and cb must not be null");
+  syncfn(base, cb, cs);
+}
 
-//     if (!cs) { /* Iterate in the order the children are stored in the classes
-//     */
-//       cs = [](Expr **a, Expr **b) -> bool {
-//         return (uintptr_t)a < (uintptr_t)b;
-//       };
-//     }
+CPP_EXPORT void detail::iter_children(FlowPtr<Expr> *base, IterCallback cb,
+                                      ChildSelect cs) {
+  qcore_assert(base != nullptr && cb != nullptr,
+               "iter_children: base and cb must not be null");
 
-//     const auto syncfn = [](Expr **n, const IterCallback &cb,
-//                            const ChildSelect &cs) {
-//       std::vector<Expr **> children;
-//       get_children_sorted(*n, cs, children);
+  if (!cs) {
+    cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
+  }
 
-//       for (Expr **child : children) {
-//         switch (cb(*n, child)) {
-//           case IterOp::Proceed:
-//             break;
-//           case IterOp::Abort:
-//             return;
-//           case IterOp::SkipChildren:
-//             return;
-//         }
-//       }
-//     };
+  constexpr auto syncfn = [](auto n, auto cb, auto cs) {
+    std::vector<FlowPtr<Expr> *> children;
+    get_children_sorted(*n, cs, children);
 
-//     syncfn(base, cb, cs);
-//   }
-// }  // namespace ncc::ir::detail
+    for (FlowPtr<Expr> *child : children) {
+      switch (cb(*n, child)) {
+        case IterOp::Proceed:
+          break;
+        case IterOp::Abort:
+          return;
+        case IterOp::SkipChildren:
+          return;
+      }
+    }
+  };
+
+  syncfn(base, cb, cs);
+}

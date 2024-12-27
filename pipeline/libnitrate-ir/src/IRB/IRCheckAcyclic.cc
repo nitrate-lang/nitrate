@@ -40,10 +40,15 @@
 using namespace ncc::ir;
 
 bool NRBuilder::check_acyclic(FlowPtr<Seq> root, IReport *I) {
-  bool is_acyclic = root->isAcyclic();
-  if (!is_acyclic) {
-    I->report(DSPolyCyclicRef, IC::Error);
-  }
+  // bool is_acyclic = root->isAcyclic();
+  // if (!is_acyclic) {
+  //   I->report(DSPolyCyclicRef, IC::Error);
+  // }
 
-  return is_acyclic;
+  // return is_acyclic;
+
+  /// TODO: Implement this function
+  qcore_implement();
+  (void)root;
+  (void)I;
 }
