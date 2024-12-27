@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IR/Nodes.hh>
 #include <queue>
@@ -39,262 +40,307 @@
 using namespace ncc;
 using namespace ncc::ir;
 
-//   void get_children_sorted(Expr *base, ChildSelect cs,
-//                            std::vector<Expr **> &children) {
-//     children.clear();
+class GetNodeChildren final : public IRVisitor {
+  std::vector<FlowPtr<Expr>*>& children;
 
-//     if (!base) {
-//       return;
-//     }
+public:
+  GetNodeChildren(std::vector<FlowPtr<Expr>*>& children) : children(children) {}
+  virtual ~GetNodeChildren() = default;
 
-//     switch (base->getKind()) {
-//       case IR_eBIN: {
-//         children.push_back(&base->as<BinExpr>()->m_lhs);
-//         children.push_back(&base->as<BinExpr>()->m_rhs);
-//         break;
-//       }
-//       case IR_eUNARY: {
-//         children.push_back(&base->as<Unary>()->m_expr);
-//         break;
-//       }
-//       case IR_eINT: {
-//         break;
-//       }
-//       case IR_eFLOAT: {
-//         break;
-//       }
-//       case IR_eLIST: {
-//         children.reserve(base->as<List>()->m_items.size());
-//         for (Expr *&child : base->as<List>()->m_items) {
-//           children.push_back(&child);
-//         }
-//         break;
-//       }
-//       case IR_eCALL: {
-//         children.push_back(&base->as<Call>()->m_iref);
-//         children.reserve(base->as<Call>()->m_args.size());
-//         for (Expr *&child : base->as<Call>()->m_args) {
-//           children.push_back(&child);
-//         }
-//         break;
-//       }
-//       case IR_eSEQ: {
-//         children.reserve(base->as<Seq>()->m_items.size());
-//         for (Expr *&child : base->as<Seq>()->m_items) {
-//           children.push_back(&child);
-//         }
-//         break;
-//       }
-//       case IR_eINDEX: {
-//         children.push_back(&base->as<Index>()->m_expr);
-//         children.push_back(&base->as<Index>()->m_index);
-//         break;
-//       }
-//       case IR_eIDENT: {
-//         break;
-//       }
-//       case IR_eEXTERN: {
-//         children.push_back(&base->as<Extern>()->m_value);
-//         break;
-//       }
-//       case IR_eLOCAL: {
-//         children.push_back(&base->as<Local>()->m_value);
-//         break;
-//       }
-//       case IR_eRET: {
-//         children.push_back(&base->as<Ret>()->m_expr);
-//         break;
-//       }
-//       case IR_eBRK: {
-//         break;
-//       }
-//       case IR_eSKIP: {
-//         break;
-//       }
-//       case IR_eIF: {
-//         children.push_back(&base->as<If>()->m_cond);
-//         children.push_back(&base->as<If>()->m_then);
-//         children.push_back(&base->as<If>()->m_else);
-//         break;
-//       }
-//       case IR_eWHILE: {
-//         children.push_back(&base->as<While>()->m_cond);
-//         children.push_back(
-//             reinterpret_cast<Expr **>(&base->as<While>()->m_body));
-//         break;
-//       }
-//       case IR_eFOR: {
-//         children.push_back(&base->as<For>()->m_init);
-//         children.push_back(&base->as<For>()->m_cond);
-//         children.push_back(&base->as<For>()->m_step);
-//         children.push_back(&base->as<For>()->m_body);
-//         break;
-//       }
-//       case IR_eCASE: {
-//         children.push_back(&base->as<Case>()->m_cond);
-//         children.push_back(&base->as<Case>()->m_body);
-//         break;
-//       }
-//       case IR_eSWITCH: {
-//         children.push_back(&base->as<Switch>()->m_cond);
-//         children.reserve(base->as<Switch>()->m_cases.size() + 2);
-//         for (Case *&child : base->as<Switch>()->m_cases) {
-//           children.push_back(reinterpret_cast<Expr **>(&child));
-//         }
-//         children.push_back(
-//             reinterpret_cast<Expr **>(&base->as<Switch>()->m_default));
-//         break;
-//       }
-//       case IR_eFUNCTION: {
-//         children.reserve(base->as<Function>()->m_params.size() + 1);
-//         for (auto &child : base->as<Function>()->m_params) {
-//           children.push_back(reinterpret_cast<Expr **>(&child.first));
-//         }
-//         children.push_back(
-//             reinterpret_cast<Expr **>(&base->as<Function>()->m_return));
-//         if (base->as<Function>()->m_body.has_value()) {
-//           children.push_back(
-//               reinterpret_cast<Expr
-//               **>(&base->as<Function>()->m_body.value()));
-//         }
-//         break;
-//       }
-//       case IR_eASM: {
-//         qcore_implement();
-//         break;
-//       }
-//       case IR_eIGN: {
-//         break;
-//       }
-//       case IR_tU1: {
-//         break;
-//       }
-//       case IR_tU8: {
-//         break;
-//       }
-//       case IR_tU16: {
-//         break;
-//       }
-//       case IR_tU32: {
-//         break;
-//       }
-//       case IR_tU64: {
-//         break;
-//       }
-//       case IR_tU128: {
-//         break;
-//       }
-//       case IR_tI8: {
-//         break;
-//       }
-//       case IR_tI16: {
-//         break;
-//       }
-//       case IR_tI32: {
-//         break;
-//       }
-//       case IR_tI64: {
-//         break;
-//       }
-//       case IR_tI128: {
-//         break;
-//       }
-//       case IR_tF16_TY: {
-//         break;
-//       }
-//       case IR_tF32_TY: {
-//         break;
-//       }
-//       case IR_tF64_TY: {
-//         break;
-//       }
-//       case IR_tF128_TY: {
-//         break;
-//       }
-//       case IR_tVOID: {
-//         break;
-//       }
-//       case IR_tPTR: {
-//         children.push_back(
-//             reinterpret_cast<Expr **>(&base->as<PtrTy>()->m_pointee));
-//         break;
-//       }
-//       case IR_tCONST: {
-//         children.push_back(
-//             reinterpret_cast<Expr **>(&base->as<ConstTy>()->m_item));
-//         break;
-//       }
-//       case IR_tOPAQUE: {
-//         break;
-//       }
-//       case IR_tSTRUCT: {
-//         children.reserve(base->as<StructTy>()->m_fields.size());
-//         for (FlowPtr<Type>&child : base->as<StructTy>()->m_fields) {
-//           children.push_back(reinterpret_cast<Expr **>(&child));
-//         }
-//         break;
-//       }
-//       case IR_tUNION: {
-//         children.reserve(base->as<UnionTy>()->m_fields.size());
-//         for (FlowPtr<Type>&child : base->as<UnionTy>()->m_fields) {
-//           children.push_back(reinterpret_cast<Expr **>(&child));
-//         }
-//         break;
-//       }
-//       case IR_tARRAY: {
-//         children.push_back(
-//             reinterpret_cast<Expr **>(&base->as<ArrayTy>()->m_element));
-//         break;
-//       }
-//       case IR_tFUNC: {
-//         children.reserve(base->as<FnTy>()->m_params.size() + 1);
-//         for (FlowPtr<Type>&child : base->as<FnTy>()->m_params) {
-//           children.push_back(reinterpret_cast<Expr **>(&child));
-//         }
-//         children.push_back(
-//             reinterpret_cast<Expr **>(&base->as<FnTy>()->m_return));
-//         break;
-//       }
-//       case IR_tTMP: {
-//         Tmp *tmp = base->as<Tmp>();
-//         switch (tmp->getTmpType()) {
-//           case TmpType::NAMED_TYPE: {
-//             break;
-//           }
+  void visit(FlowPtr<Expr> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
 
-//           case TmpType::DEFAULT_VALUE: {
-//             break;
-//           }
+    (void)children;
+  }
 
-//           case TmpType::CALL: {
-//             auto &data = get<CallArgsTmpNodeCradle>(tmp->getData());
+  void visit(FlowPtr<Type> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
 
-//             children.push_back(&data.base);
-//             for (auto &arg : data.args) {
-//               children.push_back(&arg.second);
-//             }
-//             break;
-//           }
-//         }
-//         break;
-//       }
-//     }
+  void visit(FlowPtr<BinExpr> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
 
-//     std::sort(children.begin(), children.end(), cs);
+  void visit(FlowPtr<Unary> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
 
-//     return;
-//   }
+  void visit(FlowPtr<U1Ty> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<U8Ty> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<U16Ty> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<U32Ty> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<U64Ty> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<U128Ty> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<I8Ty> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<I16Ty> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<I32Ty> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<I64Ty> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<I128Ty> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<F16Ty> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<F32Ty> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<F64Ty> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<F128Ty> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<VoidTy> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<PtrTy> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<ConstTy> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<OpaqueTy> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<StructTy> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<UnionTy> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<ArrayTy> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<FnTy> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Int> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Float> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<List> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Call> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Seq> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Index> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Ident> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Extern> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Local> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Ret> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Brk> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Cont> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<If> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<While> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<For> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Case> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Switch> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Function> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Asm> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+
+  void visit(FlowPtr<Tmp> n) override {
+    /// TODO: Implement this function
+    qcore_implement();
+    (void)n;
+  }
+};
 
 static void get_children_sorted(FlowPtr<Expr> base, ChildSelect cs,
-                                std::vector<FlowPtr<Expr> *> &children) {
-  /// TODO: Implement this function
-  qcore_implement();
-  (void)base;
-  (void)cs;
-  (void)children;
+                                std::vector<FlowPtr<Expr>*>& children) {
+  GetNodeChildren gnc(children);
+  base.accept(gnc);
+
+  std::sort(children.begin(), children.end(), cs);
 }
 
-CPP_EXPORT void detail::dfs_pre_impl(FlowPtr<Expr> *base, IterCallback cb,
+CPP_EXPORT void detail::dfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
                                      ChildSelect cs) {
   qcore_assert(base != nullptr && cb != nullptr,
                "dfs_pre_impl: base and cb must not be null");
@@ -304,8 +350,8 @@ CPP_EXPORT void detail::dfs_pre_impl(FlowPtr<Expr> *base, IterCallback cb,
   }
 
   constexpr auto syncfn = [](auto n, auto cb, auto cs) {
-    std::stack<std::pair<FlowPtr<Expr>, FlowPtr<Expr> *>> s;
-    std::vector<FlowPtr<Expr> *> children;
+    std::stack<std::pair<FlowPtr<Expr>, FlowPtr<Expr>*>> s;
+    std::vector<FlowPtr<Expr>*> children;
 
     s.push({nullptr, n});
 
@@ -337,7 +383,7 @@ CPP_EXPORT void detail::dfs_pre_impl(FlowPtr<Expr> *base, IterCallback cb,
   syncfn(base, cb, cs);
 }
 
-CPP_EXPORT void detail::dfs_post_impl(FlowPtr<Expr> *base, IterCallback cb,
+CPP_EXPORT void detail::dfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
                                       ChildSelect cs) {
   qcore_assert(base != nullptr && cb != nullptr,
                "dfs_post_impl: base and cb must not be null");
@@ -347,8 +393,8 @@ CPP_EXPORT void detail::dfs_post_impl(FlowPtr<Expr> *base, IterCallback cb,
   }
 
   constexpr auto syncfn = [](auto n, auto cb, auto cs) {
-    std::stack<std::pair<FlowPtr<Expr>, FlowPtr<Expr> *>> s;
-    std::vector<FlowPtr<Expr> *> children;
+    std::stack<std::pair<FlowPtr<Expr>, FlowPtr<Expr>*>> s;
+    std::vector<FlowPtr<Expr>*> children;
 
     s.push({nullptr, n});
 
@@ -377,7 +423,7 @@ CPP_EXPORT void detail::dfs_post_impl(FlowPtr<Expr> *base, IterCallback cb,
   cb(nullptr, base);
 }
 
-CPP_EXPORT void detail::bfs_pre_impl(FlowPtr<Expr> *base, IterCallback cb,
+CPP_EXPORT void detail::bfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
                                      ChildSelect cs) {
   qcore_assert(base != nullptr && cb != nullptr,
                "bfs_pre_impl: base and cb must not be null");
@@ -387,8 +433,8 @@ CPP_EXPORT void detail::bfs_pre_impl(FlowPtr<Expr> *base, IterCallback cb,
   }
 
   constexpr auto syncfn = [](auto n, auto cb, auto cs) {
-    std::queue<std::pair<FlowPtr<Expr>, FlowPtr<Expr> *>> s;
-    std::vector<FlowPtr<Expr> *> children;
+    std::queue<std::pair<FlowPtr<Expr>, FlowPtr<Expr>*>> s;
+    std::vector<FlowPtr<Expr>*> children;
 
     s.push({nullptr, n});
 
@@ -420,7 +466,7 @@ CPP_EXPORT void detail::bfs_pre_impl(FlowPtr<Expr> *base, IterCallback cb,
   syncfn(base, cb, cs);
 }
 
-CPP_EXPORT void detail::bfs_post_impl(FlowPtr<Expr> *base, IterCallback cb,
+CPP_EXPORT void detail::bfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
                                       ChildSelect cs) {
   qcore_assert(base != nullptr && cb != nullptr,
                "bfs_post_impl: base and cb must not be null");
@@ -430,8 +476,8 @@ CPP_EXPORT void detail::bfs_post_impl(FlowPtr<Expr> *base, IterCallback cb,
   }
 
   constexpr auto syncfn = [](auto n, auto cb, auto cs) {
-    std::queue<std::pair<FlowPtr<Expr>, FlowPtr<Expr> *>> s;
-    std::vector<FlowPtr<Expr> *> children;
+    std::queue<std::pair<FlowPtr<Expr>, FlowPtr<Expr>*>> s;
+    std::vector<FlowPtr<Expr>*> children;
 
     s.push({nullptr, n});
 
@@ -460,7 +506,7 @@ CPP_EXPORT void detail::bfs_post_impl(FlowPtr<Expr> *base, IterCallback cb,
   syncfn(base, cb, cs);
 }
 
-CPP_EXPORT void detail::iter_children(FlowPtr<Expr> *base, IterCallback cb,
+CPP_EXPORT void detail::iter_children(FlowPtr<Expr>* base, IterCallback cb,
                                       ChildSelect cs) {
   qcore_assert(base != nullptr && cb != nullptr,
                "iter_children: base and cb must not be null");
@@ -470,10 +516,10 @@ CPP_EXPORT void detail::iter_children(FlowPtr<Expr> *base, IterCallback cb,
   }
 
   constexpr auto syncfn = [](auto n, auto cb, auto cs) {
-    std::vector<FlowPtr<Expr> *> children;
+    std::vector<FlowPtr<Expr>*> children;
     get_children_sorted(*n, cs, children);
 
-    for (FlowPtr<Expr> *child : children) {
+    for (FlowPtr<Expr>* child : children) {
       switch (cb(*n, child)) {
         case IterOp::Proceed:
           break;

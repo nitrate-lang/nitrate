@@ -18,7 +18,7 @@
 ///   The Nitrate Toolchain is free software; you can redistribute it or     ///
 ///   modify it under the terms of the GNU Lesser General Public             ///
 ///   License as published by the Free Software Foundation; either           ///
-///   version 2.1 of the License, or (at your option) any later version.     ///
+///   version 2.1 of the License, or (at your option) any later version-> ///
 ///                                                                          ///
 ///   The Nitrate Toolcain is distributed in the hope that it will be        ///
 ///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
@@ -39,11 +39,11 @@
 
 using namespace ncc::ir::encode;
 
-void IR_Writer::visit(Expr& n) {
+void IR_Writer::visit(FlowPtr<Expr> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   (void)m_include_source_location;
 
@@ -52,506 +52,506 @@ void IR_Writer::visit(Expr& n) {
   end_obj();
 }
 
-void IR_Writer::visit(Type& n) {
+void IR_Writer::visit(FlowPtr<Type> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(BinExpr& n) {
+void IR_Writer::visit(FlowPtr<BinExpr> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Unary& n) {
+void IR_Writer::visit(FlowPtr<Unary> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(U1Ty& n) {
+void IR_Writer::visit(FlowPtr<U1Ty> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(U8Ty& n) {
+void IR_Writer::visit(FlowPtr<U8Ty> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(U16Ty& n) {
+void IR_Writer::visit(FlowPtr<U16Ty> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(U32Ty& n) {
+void IR_Writer::visit(FlowPtr<U32Ty> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(U64Ty& n) {
+void IR_Writer::visit(FlowPtr<U64Ty> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(U128Ty& n) {
+void IR_Writer::visit(FlowPtr<U128Ty> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(I8Ty& n) {
+void IR_Writer::visit(FlowPtr<I8Ty> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(I16Ty& n) {
+void IR_Writer::visit(FlowPtr<I16Ty> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(I32Ty& n) {
+void IR_Writer::visit(FlowPtr<I32Ty> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(I64Ty& n) {
+void IR_Writer::visit(FlowPtr<I64Ty> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(I128Ty& n) {
+void IR_Writer::visit(FlowPtr<I128Ty> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(F16Ty& n) {
+void IR_Writer::visit(FlowPtr<F16Ty> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(F32Ty& n) {
+void IR_Writer::visit(FlowPtr<F32Ty> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(F64Ty& n) {
+void IR_Writer::visit(FlowPtr<F64Ty> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(F128Ty& n) {
+void IR_Writer::visit(FlowPtr<F128Ty> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(VoidTy& n) {
+void IR_Writer::visit(FlowPtr<VoidTy> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(PtrTy& n) {
+void IR_Writer::visit(FlowPtr<PtrTy> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(ConstTy& n) {
+void IR_Writer::visit(FlowPtr<ConstTy> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(OpaqueTy& n) {
+void IR_Writer::visit(FlowPtr<OpaqueTy> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(StructTy& n) {
+void IR_Writer::visit(FlowPtr<StructTy> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(UnionTy& n) {
+void IR_Writer::visit(FlowPtr<UnionTy> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(ArrayTy& n) {
+void IR_Writer::visit(FlowPtr<ArrayTy> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(FnTy& n) {
+void IR_Writer::visit(FlowPtr<FnTy> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Int& n) {
+void IR_Writer::visit(FlowPtr<Int> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Float& n) {
+void IR_Writer::visit(FlowPtr<Float> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(List& n) {
+void IR_Writer::visit(FlowPtr<List> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Call& n) {
+void IR_Writer::visit(FlowPtr<Call> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Seq& n) {
+void IR_Writer::visit(FlowPtr<Seq> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Index& n) {
+void IR_Writer::visit(FlowPtr<Index> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Ident& n) {
+void IR_Writer::visit(FlowPtr<Ident> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Extern& n) {
+void IR_Writer::visit(FlowPtr<Extern> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Local& n) {
+void IR_Writer::visit(FlowPtr<Local> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Ret& n) {
+void IR_Writer::visit(FlowPtr<Ret> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Brk& n) {
+void IR_Writer::visit(FlowPtr<Brk> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Cont& n) {
+void IR_Writer::visit(FlowPtr<Cont> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(If& n) {
+void IR_Writer::visit(FlowPtr<If> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(While& n) {
+void IR_Writer::visit(FlowPtr<While> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(For& n) {
+void IR_Writer::visit(FlowPtr<For> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Case& n) {
+void IR_Writer::visit(FlowPtr<Case> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Switch& n) {
+void IR_Writer::visit(FlowPtr<Switch> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Function& n) {
+void IR_Writer::visit(FlowPtr<Function> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Asm& n) {
+void IR_Writer::visit(FlowPtr<Asm> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
   end_obj();
 }
 
-void IR_Writer::visit(Tmp& n) {
+void IR_Writer::visit(FlowPtr<Tmp> n) {
   begin_obj(1);
 
   string("kind");
-  string(n.getKindName());
+  string(n->getKindName());
 
   /// TODO: Implement serialization for node
 
