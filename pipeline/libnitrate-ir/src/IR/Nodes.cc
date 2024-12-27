@@ -1,74 +1,66 @@
-// ////////////////////////////////////////////////////////////////////////////////
-// /// ///
-// ///     .-----------------.    .----------------.     .----------------. ///
-// ///    | .--------------. |   | .--------------. |   | .--------------. | ///
-// ///    | | ____  _____  | |   | |     ____     | |   | |    ______    | | ///
-// ///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | | ///
-// ///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | | ///
-// ///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | | ///
-// ///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | | ///
-// ///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | | ///
-// ///    | |              | |   | |              | |   | |              | | ///
-// ///    | '--------------' |   | '--------------' |   | '--------------' | ///
-// ///     '----------------'     '----------------'     '----------------' ///
-// /// ///
-// ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language.
-// ///
-// ///   * Copyright (C) 2024 Wesley C. Jones ///
-// /// ///
-// ///   The Nitrate Toolchain is free software; you can redistribute it or ///
-// ///   modify it under the terms of the GNU Lesser General Public ///
-// ///   License as published by the Free Software Foundation; either ///
-// ///   version 2.1 of the License, or (at your option) any later version. ///
-// /// ///
-// ///   The Nitrate Toolcain is distributed in the hope that it will be ///
-// ///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-// ///
-// ///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU ///
-// ///   Lesser General Public License for more details. ///
-// /// ///
-// ///   You should have received a copy of the GNU Lesser General Public ///
-// ///   License along with the Nitrate Toolchain; if not, see ///
-// ///   <https://www.gnu.org/licenses/>. ///
-// /// ///
-// ////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+///                                                                          ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
+///                                                                          ///
+///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
+///   * Copyright (C) 2024 Wesley C. Jones                                   ///
+///                                                                          ///
+///   The Nitrate Toolchain is free software; you can redistribute it or     ///
+///   modify it under the terms of the GNU Lesser General Public             ///
+///   License as published by the Free Software Foundation; either           ///
+///   version 2.1 of the License, or (at your option) any later version.     ///
+///                                                                          ///
+///   The Nitrate Toolcain is distributed in the hope that it will be        ///
+///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
+///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
+///   Lesser General Public License for more details.                        ///
+///                                                                          ///
+///   You should have received a copy of the GNU Lesser General Public       ///
+///   License along with the Nitrate Toolchain; if not, see                  ///
+///   <https://www.gnu.org/licenses/>.                                       ///
+///                                                                          ///
+////////////////////////////////////////////////////////////////////////////////
 
-// #define __IR_NODE_REFLECT_IMPL__  // Make private fields accessible
+#define __IR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
-// #include <openssl/sha.h>
+#include <openssl/sha.h>
 
-// #include <boost/uuid/name_generator.hpp>
-// #include <boost/uuid/uuid.hpp>
-// #include <boost/uuid/uuid_io.hpp>
-// #include <cstdint>
-// #include <cstring>
-// #include <limits>
-// #include <nitrate-core/Allocate.hh>
-// #include <nitrate-core/Logger.hh>
-// #include <nitrate-core/Macro.hh>
-// #include <nitrate-ir/IR.hh>
-// #include <nitrate-ir/IR/Nodes.hh>
-// #include <nitrate-ir/Module.hh>
-// #include <set>
-// #include <unordered_map>
-// #include <unordered_set>
-// #include <variant>
+#include <boost/uuid/name_generator.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <cstring>
+#include <nitrate-core/Allocate.hh>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-ir/IR.hh>
+#include <nitrate-ir/IR/Nodes.hh>
+#include <nitrate-ir/Module.hh>
 
-// using namespace ncc;
-// using namespace ncc::ir;
+using namespace ncc;
+using namespace ncc::ir;
 
-// ///=============================================================================
-// namespace ncc::ir {
-//   thread_local std::unique_ptr<ncc::IMemory> nr_allocator =
-//       std::make_unique<ncc::dyn_arena>();
+///=============================================================================
+namespace ncc::ir {
+  thread_local std::unique_ptr<ncc::IMemory> nr_allocator =
+      std::make_unique<ncc::dyn_arena>();
 
-//   namespace mem {
-//     Brk static_IR_eBRK;
-//     Cont static_IR_eSKIP;
-//     Expr static_IR_eIGN(IR_eIGN);
+  namespace mem {
+    Brk static_IR_eBRK;
+    Cont static_IR_eSKIP;
+    Expr static_IR_eIGN(IR_eIGN);
 
-//   }  // namespace mem
-// }  // namespace ncc::ir
+  }  // namespace mem
+}  // namespace ncc::ir
 
 // ///=============================================================================
 
@@ -361,25 +353,6 @@
 
 // #pragma clang diagnostic pop
 
-// CPP_EXPORT uint64_t Expr::getUniqId() const {
-//   static thread_local std::unordered_map<const Expr *, uint64_t> id_map;
-//   static thread_local uint64_t last = 0;
-
-//   if (id_map.contains(this)) {
-//     return id_map.at(this);
-//   }
-
-//   for (auto &[key, value] : id_map) {
-//     if (key->isSame(this)) {
-//       return value;
-//     }
-//   }
-
-//   id_map[this] = last;
-
-//   return last++;
-// }
-
 // ///=============================================================================
 
 // CPP_EXPORT uint128_t Int::str2u128(std::string_view s) {
@@ -424,5 +397,6 @@
 
 // ///=============================================================================
 
-// Expr *ir::createIgn() { return new (Arena<Expr>().allocate(1)) Expr(IR_eIGN);
-// }
+CPP_EXPORT FlowPtr<Expr> ir::createIgn() {
+  return new (Arena<Expr>().allocate(1)) Expr(IR_eIGN);
+}

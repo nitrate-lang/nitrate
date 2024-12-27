@@ -34,9 +34,43 @@
 #ifndef __NITRATE_IR_TRANSFORM_PASS_MANAGER_H__
 #define __NITRATE_IR_TRANSFORM_PASS_MANAGER_H__
 
-namespace ncc::ir::transform {
-  //
+#include <functional>
+#include <nitrate-ir/IR/Fwd.hh>
+#include <nitrate-ir/Module.hh>
+#include <vector>
 
+namespace ncc::ir::transform {
+  using FunctionPass =
+      std::function<void(ncc::ir::Function&, ncc::ir::IRModule&, void*)>;
+
+#define NITRATE_IR_PASS(NAME, ...) \
+  void IR_Pass_##NAME(ncc::ir::Function& func, ncc::ir::IRModule& M, void* data)
+
+  class IPassManager {
+  public:
+    virtual ~IPassManager() = default;
+    virtual void addPass(FunctionPass pass) = 0;
+    virtual void apply() = 0;
+  };
+
+  class PassManager final : public IPassManager {
+    std::vector<FunctionPass> m_passes;
+    IRModule& m_module;
+    void* m_data;
+
+  public:
+    PassManager(IRModule& M, void* data) : m_module(M), m_data(data) {}
+    virtual ~PassManager() = default;
+
+    void addPass(FunctionPass pass) override { m_passes.push_back(pass); }
+    void apply() override {
+      for (auto& pass : m_passes) {
+        for (auto& func : m_module.getFunctions()) {
+          pass(*func.right.second, m_module, m_data);
+        }
+      }
+    }
+  };
 }  // namespace ncc::ir::transform
 
 #endif

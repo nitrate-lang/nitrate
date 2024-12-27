@@ -516,10 +516,6 @@ namespace ncc::ir {
       dump(ss, false);
       return ss.str();
     };
-
-    boost::uuids::uuid hash();
-    std::string getStateUUID() { return boost::uuids::to_string(hash()); }
-    uint64_t getUniqId() const;
   } __attribute__((packed)) __attribute__((aligned(1)));
 
   namespace detail {

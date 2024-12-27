@@ -41,16 +41,6 @@
 #include <string>
 
 namespace ncc::ir {
-  class SymbolEncoding final {
-  public:
-    SymbolEncoding() = default;
-
-    std::optional<std::string> mangle_name(const Expr *symbol,
-                                           AbiTag abi) const;
-
-    std::optional<std::string> demangle_name(std::string_view symbol) const;
-  };
-
   std::optional<std::string> MangleTypeName(const Type *type, AbiTag abi);
 
   std::optional<std::string> GetMangledSymbolName(const Expr *symbol,

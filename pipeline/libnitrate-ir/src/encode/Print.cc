@@ -478,59 +478,15 @@ static bool serialize_recurse(FlowPtr<Expr> n, std::ostream &ss,
       break;
     }
     case IR_tSTRUCT: {
-      uint64_t type_id = n->as<StructTy>()->getUniqId();
-      if (!state.types.contains(type_id)) {
-        typedefs << "%" << type_id << " = struct {";
-        state.indent++;
-        indent(typedefs, state);
-        for (auto it = n->as<StructTy>()->getFields().begin();
-             it != n->as<StructTy>()->getFields().end(); ++it) {
-          if ((*it)->getKind() == IR_tSTRUCT || (*it)->getKind() == IR_tUNION) {
-            typedefs << "%" << (*it)->as<StructTy>()->getUniqId();
-          } else {
-            recurse_ex(*it, typedefs);
-          }
-          typedefs << ",";
+      /// TODO: Implement
+      qcore_implement();
 
-          if (std::next(it) != n->as<StructTy>()->getFields().end()) {
-            indent(typedefs, state);
-          }
-        }
-        state.indent--;
-        indent(typedefs, state);
-        typedefs << "}\n";
-        state.types.insert(type_id);
-      }
-
-      ss << "%" << type_id;
       break;
     }
     case IR_tUNION: {
-      uint64_t type_id = n->as<UnionTy>()->getUniqId();
-      if (!state.types.contains(type_id)) {
-        typedefs << "%" << type_id << " = union {";
-        state.indent++;
-        indent(typedefs, state);
-        for (auto it = n->as<UnionTy>()->getFields().begin();
-             it != n->as<UnionTy>()->getFields().end(); ++it) {
-          if ((*it)->getKind() == IR_tSTRUCT || (*it)->getKind() == IR_tUNION) {
-            typedefs << "%" << (*it)->as<StructTy>()->getUniqId();
-          } else {
-            recurse_ex(*it, typedefs);
-          }
-          typedefs << ",";
+      /// TODO: Implement
+      qcore_implement();
 
-          if (std::next(it) != n->as<UnionTy>()->getFields().end()) {
-            indent(typedefs, state);
-          }
-        }
-        state.indent--;
-        indent(typedefs, state);
-        typedefs << "}\n";
-        state.types.insert(type_id);
-      }
-
-      ss << "%" << type_id;
       break;
     }
     case IR_tARRAY: {
