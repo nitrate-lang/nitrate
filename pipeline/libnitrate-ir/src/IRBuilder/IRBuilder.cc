@@ -38,7 +38,7 @@
 // #include <cstddef>
 // #include <nitrate-core/Logger.hh>
 // #include <nitrate-ir/IRBuilder.hh>
-// #include <nitrate-ir/IRGraph.hh>
+// #include <nitrate-ir/IR/Nodes.hh>
 // #include <nitrate-ir/Report.hh>
 // #include <string_view>
 // #include <unordered_set>

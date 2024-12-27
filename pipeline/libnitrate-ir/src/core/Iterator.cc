@@ -50,7 +50,7 @@
 
 // #include <algorithm>
 // #include <nitrate-core/Macro.hh>
-// #include <nitrate-ir/IRGraph.hh>
+// #include <nitrate-ir/IR/Nodes.hh>
 // #include <queue>
 // #include <stack>
 

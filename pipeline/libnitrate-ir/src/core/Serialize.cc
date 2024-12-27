@@ -41,8 +41,8 @@
 #include <iomanip>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-ir/IRFwd.hh>
-#include <nitrate-ir/IRGraph.hh>
+#include <nitrate-ir/IR/Fwd.hh>
+#include <nitrate-ir/IR/Nodes.hh>
 #include <nitrate-ir/Init.hh>
 #include <nitrate-ir/Module.hh>
 #include <sstream>

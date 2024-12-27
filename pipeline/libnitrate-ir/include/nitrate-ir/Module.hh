@@ -39,7 +39,7 @@
 #include <cstdint>
 #include <memory>
 #include <nitrate-core/Allocate.hh>
-#include <nitrate-ir/IRFwd.hh>
+#include <nitrate-ir/IR/Fwd.hh>
 #include <nitrate-ir/IRVisitor.hh>
 #include <nitrate-ir/Report.hh>
 #include <string>

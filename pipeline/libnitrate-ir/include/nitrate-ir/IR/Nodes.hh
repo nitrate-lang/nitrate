@@ -34,9 +34,9 @@
 #ifndef __NITRATE_IR_GRAPH_H__
 #define __NITRATE_IR_GRAPH_H__
 
-#include <nitrate-ir/IRBase.hh>
-#include <nitrate-ir/IRExpr.hh>
-#include <nitrate-ir/IRType.hh>
+#include <nitrate-ir/IR/Base.hh>
+#include <nitrate-ir/IR/Expression.hh>
+#include <nitrate-ir/IR/Type.hh>
 
 namespace ncc::ir {
   FlowPtr<Expr> createIgn();

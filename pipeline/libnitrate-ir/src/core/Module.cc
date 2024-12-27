@@ -34,7 +34,7 @@
 #include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-ir/IRGraph.hh>
+#include <nitrate-ir/IR/Nodes.hh>
 #include <nitrate-ir/Module.hh>
 
 using namespace ncc;

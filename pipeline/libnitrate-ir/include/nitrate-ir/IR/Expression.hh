@@ -34,7 +34,7 @@
 #ifndef __NITRATE_IR_GRAPH_EXPR_H__
 #define __NITRATE_IR_GRAPH_EXPR_H__
 
-#include <nitrate-ir/IRBase.hh>
+#include <nitrate-ir/IR/Base.hh>
 #include <nitrate-lexer/Token.hh>
 
 namespace ncc::ir {

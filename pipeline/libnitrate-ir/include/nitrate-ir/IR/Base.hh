@@ -43,8 +43,8 @@
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/FlowPtr.hh>
 #include <nitrate-core/Logger.hh>
-#include <nitrate-ir/IRData.hh>
-#include <nitrate-ir/IRFwd.hh>
+#include <nitrate-ir/IR/Common.hh>
+#include <nitrate-ir/IR/Fwd.hh>
 #include <nitrate-ir/IRVisitor.hh>
 #include <optional>
 #include <ostream>

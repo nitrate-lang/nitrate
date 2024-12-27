@@ -39,7 +39,7 @@
 // #include <nitrate-core/Logger.hh>
 // #include <nitrate-core/Macro.hh>
 // #include <nitrate-ir/IR.hh>
-// #include <nitrate-ir/IRGraph.hh>
+// #include <nitrate-ir/IR/Nodes.hh>
 // #include <nitrate-parser/Context.hh>
 // #include <unordered_map>
 // #include <unordered_set>

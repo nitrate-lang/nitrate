@@ -37,7 +37,7 @@
 // #include <cstdint>
 // #include <nitrate-core/Macro.hh>
 // #include <nitrate-ir/IR.hh>
-// #include <nitrate-ir/IRGraph.hh>
+// #include <nitrate-ir/IR/Nodes.hh>
 
 // #include "nitrate-ir/IRBase.hh"
 

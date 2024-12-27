@@ -34,7 +34,7 @@
 #ifndef __NITRATE_IR_GRAPH_TYPE_H__
 #define __NITRATE_IR_GRAPH_TYPE_H__
 
-#include <nitrate-ir/IRBase.hh>
+#include <nitrate-ir/IR/Base.hh>
 
 namespace ncc::ir {
   template <class A>

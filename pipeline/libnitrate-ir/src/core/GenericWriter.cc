@@ -33,7 +33,7 @@
 
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-ir/IRGraph.hh>
+#include <nitrate-ir/IR/Nodes.hh>
 #include <nitrate-ir/IRWriter.hh>
 #include <nitrate-lexer/Lexer.hh>
 

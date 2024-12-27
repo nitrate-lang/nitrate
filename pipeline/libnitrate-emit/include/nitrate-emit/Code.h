@@ -37,7 +37,7 @@
 #include <nitrate-emit/Config.h>
 #include <stdbool.h>
 
-#include <nitrate-ir/IRFwd.hh>
+#include <nitrate-ir/IR/Fwd.hh>
 
 typedef enum {
   QCODE_C11,     /* Generate C 11 Source Code */

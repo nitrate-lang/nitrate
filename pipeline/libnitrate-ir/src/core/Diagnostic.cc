@@ -38,7 +38,7 @@
 // #include <iomanip>
 // #include <nitrate-core/Logger.hh>
 // #include <nitrate-core/Macro.hh>
-// #include <nitrate-ir/IRGraph.hh>
+// #include <nitrate-ir/IR/Nodes.hh>
 // #include <nitrate-ir/Module.hh>
 // #include <nitrate-ir/Report.hh>
 // #include <nitrate-parser/AST.hh>

@@ -34,7 +34,7 @@
 #ifndef __NITRATE_IR_VISITOR_H__
 #define __NITRATE_IR_VISITOR_H__
 
-#include <nitrate-ir/IRFwd.hh>
+#include <nitrate-ir/IR/Fwd.hh>
 
 namespace ncc::ir {
   class IRVisitor {
