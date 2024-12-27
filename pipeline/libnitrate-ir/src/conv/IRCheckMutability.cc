@@ -39,7 +39,7 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::check_mutability(Seq *root, IReport *I) {
+bool NRBuilder::check_mutability(FlowPtr<Seq> root, IReport *I) {
   bool failed = false;
 
   for_each<BinExpr>(root, [&](auto x) {

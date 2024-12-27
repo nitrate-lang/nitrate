@@ -139,7 +139,7 @@ namespace ncc::ir {
     uint8_t m_native_size;
 
   public:
-    constexpr IR_Vertex_PtrTy(auto pointee, auto native_size = 8)
+    constexpr IR_Vertex_PtrTy(auto pointee, size_t native_size = 8)
         : IR_Vertex_Type<A>(IR_tPTR),
           m_pointee(pointee),
           m_native_size(native_size) {}
@@ -214,7 +214,7 @@ namespace ncc::ir {
 
   public:
     constexpr IR_Vertex_FnTy(auto params, auto ret, auto variadic,
-                             auto platform_ptr_size_bytes = 8)
+                             size_t platform_ptr_size_bytes = 8)
         : IR_Vertex_Type<A>(IR_tFUNC),
           m_params(params),
           m_return(ret),

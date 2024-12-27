@@ -124,7 +124,7 @@
 
 //       cond_str.data(),  // Preprocessor stringification of the predicate; the
 //                         // string_view is always null terminated in this
-//                         case.
+//                         // case.
 
 //       caller_info
 //           .file_name(),    // Original source file that invoked the external
@@ -134,8 +134,8 @@
 //       invoked the
 //                                     // external API
 
-//       caller.file_name(),  // Library source file that triggered the contract
-//                            // enforcement
+//       caller.file_name(),  // Library source file that triggered the
+//                            // contract enforcement
 //       caller.line(),       // Library source line that triggered the contract
 //                            // enforcement
 //       caller.function_name(),  // Library source function that triggered the
@@ -158,7 +158,7 @@
 
 //       cond_str.data(),  // Preprocessor stringification of the predicate; the
 //                         // string_view is always null terminated in this
-//                         case.
+//       case.
 
 //       caller.file_name(),  // Library source file that triggered the contract
 //                            // enforcement
@@ -188,34 +188,13 @@
 //   } else {
 //     contract_enforce(m_root != nullptr);
 
-//     Expr *out_expr = static_cast<Expr *>(m_root->clone());
+//     FlowPtr<Expr> out_expr = static_cast<FlowPtr<Expr> >(m_root->clone());
 
 //     contract_enforce(out_expr->getKind() == IR_eSEQ);
 //     r.m_root = out_expr->as<Seq>();
 //   }
 
 //   return r;
-// }
-
-// size_t NRBuilder::approx_memory_usage(SOURCE_LOCATION_PARAM_ONCE) {
-//   contract_enforce(
-//       m_state == SelfState::Constructed || m_state == SelfState::Finished ||
-//       m_state == SelfState::Verified || m_state == SelfState::Emitted);
-//   contract_enforce(m_root != nullptr);
-
-//   size_t lower_bound = 0;
-
-//   { /* Only nodes reachable from root are counted */
-//     Expr *expr_ptr = m_root;
-//     iterate<dfs_pre>(expr_ptr, [&lower_bound](Expr *, Expr **C) -> IterOp {
-//       lower_bound += Expr::getKindSize((*C)->getKind());
-//       /// TODO: Take into account dynamic data!
-
-//       return IterOp::Proceed;
-//     });
-//   }
-
-//   return lower_bound;
 // }
 
 // size_t NRBuilder::node_count(SOURCE_LOCATION_PARAM_ONCE) {
@@ -227,8 +206,7 @@
 //   size_t count = 0;
 
 //   { /* Only nodes reachable from root are counted */
-//     Expr *expr_ptr = m_root;
-//     iterate<dfs_pre>(expr_ptr, [&count](Expr *, Expr **) -> IterOp {
+//     iterate<dfs_pre>(m_root, [&count](auto, auto) -> IterOp {
 //       count++;
 //       return IterOp::Proceed;
 //     });
@@ -323,7 +301,7 @@
 
 //     { /* Clone the IRGraph into the module */
 //       std::swap(nr_allocator, new_mod->getNodeArena());
-//       new_mod->setRoot(static_cast<Seq *>(m_root->clone()));
+//       new_mod->setRoot(static_cast<FlowPtr<Seq>>(m_root->clone()));
 //       std::swap(nr_allocator, new_mod->getNodeArena());
 //     }
 
@@ -335,7 +313,7 @@
 //   }
 // }
 
-// void NRBuilder::appendToRoot(Expr *root SOURCE_LOCATION_PARAM) {
+// void NRBuilder::appendToRoot(FlowPtr<Expr> root SOURCE_LOCATION_PARAM) {
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
 

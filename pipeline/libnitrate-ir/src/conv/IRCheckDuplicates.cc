@@ -82,9 +82,10 @@ static void print_conflict_errors(const std::vector<Conflict> &conflicts,
   }
 }
 
-bool NRBuilder::check_duplicates(Seq *, IReport *I) {
+bool NRBuilder::check_duplicates(FlowPtr<Seq>, IReport *I) {
   std::vector<Conflict> conflicts;
-  std::unordered_map<std::string_view, std::pair<Kind, Expr *>> names_map;
+  std::unordered_map<std::string_view, std::pair<Kind, FlowPtr<Expr>>>
+      names_map;
 
   {
     names_map.reserve(m_functions.size() + m_variables.size() +

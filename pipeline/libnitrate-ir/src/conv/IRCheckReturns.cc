@@ -40,7 +40,7 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::check_returns(Seq *root, IReport *I) {
+bool NRBuilder::check_returns(FlowPtr<Seq> root, IReport *I) {
   bool failed = false;
 
   for_each<Fn>(root, [&](auto x) {

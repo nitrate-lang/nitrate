@@ -39,7 +39,7 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::check_acyclic(Seq *root, IReport *I) {
+bool NRBuilder::check_acyclic(FlowPtr<Seq> root, IReport *I) {
   bool is_acyclic = root->isAcyclic();
   if (!is_acyclic) {
     I->report(DSPolyCyclicRef, IC::Error);

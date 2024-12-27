@@ -39,7 +39,7 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::check_function_calls(Seq *root, IReport *I) {
+bool NRBuilder::check_function_calls(FlowPtr<Seq> root, IReport *I) {
   bool failed = false;
 
   for_each<Call>(root, [&](auto x) {

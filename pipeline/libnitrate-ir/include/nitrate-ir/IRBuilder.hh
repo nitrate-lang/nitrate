@@ -93,14 +93,14 @@ namespace ncc::ir {
 
     SelfState m_state;
     std::optional<IRModule *> m_result;
-    Seq *m_root;
+    FlowPtr<Seq> m_root;
 
     std::unordered_map<std::string_view, Type *> m_named_types;
     std::unordered_map<std::string_view,
-                       std::unordered_map<std::string_view, Expr *>>
+                       std::unordered_map<std::string_view, FlowPtr<Expr>>>
         m_named_constant_group;
     std::unordered_map<std::string_view, Fn *> m_functions;
-    std::unordered_map<Fn *, std::unordered_map<size_t, Expr *>>
+    std::unordered_map<Fn *, std::unordered_map<size_t, FlowPtr<Expr>>>
         m_function_defaults;
     std::unordered_map<std::string_view, Local *> m_variables;
 
@@ -114,26 +114,26 @@ namespace ncc::ir {
     // Builder helper methods
     ///**************************************************************************///
 
-    std::optional<std::pair<Expr *, std::string_view>> resolve_name(
+    std::optional<std::pair<FlowPtr<Expr>, std::string_view>> resolve_name(
         std::string_view name, Kind kind);
 
-    void try_transform_alpha(Expr *root);
-    void try_transform_beta(Expr *root);
-    void try_transform_gamma(Expr *root);
-    void connect_nodes(Seq *root);
-    void flatten_symbols(Seq *root);
-    void remove_garbage(Seq *root);
+    void try_transform_alpha(FlowPtr<Expr> root);
+    void try_transform_beta(FlowPtr<Expr> root);
+    void try_transform_gamma(FlowPtr<Expr> root);
+    void connect_nodes(FlowPtr<Seq> root);
+    void flatten_symbols(FlowPtr<Seq> root);
+    void remove_garbage(FlowPtr<Seq> root);
 
-    bool check_acyclic(Seq *root, IReport *I);
-    bool check_duplicates(Seq *root, IReport *I);
-    bool check_symbols_exist(Seq *root, IReport *I);
-    bool check_function_calls(Seq *root, IReport *I);
-    bool check_returns(Seq *root, IReport *I);
-    bool check_scopes(Seq *root, IReport *I);
-    bool check_mutability(Seq *root, IReport *I);
-    bool check_control_flow(Seq *root, IReport *I);
-    bool check_types(Seq *root, IReport *I);
-    bool check_safety_claims(Seq *root, IReport *I);
+    bool check_acyclic(FlowPtr<Seq> root, IReport *I);
+    bool check_duplicates(FlowPtr<Seq> root, IReport *I);
+    bool check_symbols_exist(FlowPtr<Seq> root, IReport *I);
+    bool check_function_calls(FlowPtr<Seq> root, IReport *I);
+    bool check_returns(FlowPtr<Seq> root, IReport *I);
+    bool check_scopes(FlowPtr<Seq> root, IReport *I);
+    bool check_mutability(FlowPtr<Seq> root, IReport *I);
+    bool check_control_flow(FlowPtr<Seq> root, IReport *I);
+    bool check_types(FlowPtr<Seq> root, IReport *I);
+    bool check_safety_claims(FlowPtr<Seq> root, IReport *I);
 
 #if defined(NDEBUG)
 #define SOURCE_LOCATION_PARAM
@@ -174,10 +174,6 @@ namespace ncc::ir {
     /** @warning: This is a slow and resource heavy operation for
      * most programs. */
     NRBuilder deep_clone(SOURCE_LOCATION_PARAM_ONCE) const;
-
-    /** @brief Get an approximate figure of how much memory the
-     * builder is currently using. The returned value is a lower bound. */
-    size_t approx_memory_usage(SOURCE_LOCATION_PARAM_ONCE);
 
     /** @brief Count *ALL* nodes currently in the builder. This includes
      * temporary nodes. */
@@ -232,12 +228,13 @@ namespace ncc::ir {
      */
     IRModule *get_module(SOURCE_LOCATION_PARAM_ONCE);
 
-    void appendToRoot(Expr *node SOURCE_LOCATION_PARAM);
+    void appendToRoot(FlowPtr<Expr> node SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///
     // Create linkable symbols
 
-    using FnParam = std::tuple<std::string_view, Type *, std::optional<Expr *>>;
+    using FnParam =
+        std::tuple<std::string_view, Type *, std::optional<FlowPtr<Expr>>>;
 
     Fn *createFunctionDefintion(std::string_view name,
                                 std::span<FnParam> params, Type *ret_ty,
@@ -269,13 +266,15 @@ namespace ncc::ir {
     ///**************************************************************************///
     // Create expressions
 
-    Expr *createCall(Expr *target,
-                     std::span<std::pair<std::string_view, Expr *>> arguments
-                         SOURCE_LOCATION_PARAM);
+    FlowPtr<Expr> createCall(
+        FlowPtr<Expr> target,
+        std::span<std::pair<std::string_view, FlowPtr<Expr>>> arguments
+            SOURCE_LOCATION_PARAM);
 
-    Expr *createMethodCall(Expr *object, std::string_view name,
-                           std::span<std::pair<std::string_view, Expr *>>
-                               arguments SOURCE_LOCATION_PARAM);
+    FlowPtr<Expr> createMethodCall(
+        FlowPtr<Expr> object, std::string_view name,
+        std::span<std::pair<std::string_view, FlowPtr<Expr>>> arguments
+            SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///
     // Create literals
@@ -293,7 +292,7 @@ namespace ncc::ir {
         ABIStringStyle style = ABIStringStyle::CStr SOURCE_LOCATION_PARAM);
 
     List *createList(
-        std::span<Expr *> items,
+        std::span<FlowPtr<Expr>> items,
 
         /* Require assert(typeof(result)==typeof(array<result.element,
          * result.size>)) ? Reason: It has to do with type inference and
@@ -304,7 +303,8 @@ namespace ncc::ir {
     ///**************************************************************************///
     // Create values
 
-    std::optional<Expr *> getDefaultValue(Type *_for SOURCE_LOCATION_PARAM);
+    std::optional<FlowPtr<Expr>> getDefaultValue(
+        Type *_for SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///
     // Create types
@@ -336,7 +336,7 @@ namespace ncc::ir {
     OpaqueTy *getOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM);
 
     StructTy *getStructTy(
-        std::span<std::tuple<std::string_view, Type *, Expr *>> fields
+        std::span<std::tuple<std::string_view, Type *, FlowPtr<Expr>>> fields
             SOURCE_LOCATION_PARAM);
 
     StructTy *getStructTy(std::span<Type *> fields SOURCE_LOCATION_PARAM);
@@ -352,7 +352,7 @@ namespace ncc::ir {
 
     void createNamedConstantDefinition(
         std::string_view name,
-        const std::unordered_map<std::string_view, Expr *> &values
+        const std::unordered_map<std::string_view, FlowPtr<Expr>> &values
             SOURCE_LOCATION_PARAM);
 
     void createNamedTypeAlias(Type *type,

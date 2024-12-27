@@ -51,6 +51,10 @@
 #include <string>
 
 namespace ncc::ir {
+  namespace detail {
+    std::optional<FlowPtr<Type>> InferTypeImpl(const Expr *E);
+  };
+
   template <class A>
   class IR_Vertex_Expr {
     nr_ty_t m_node_type : 6; /* Typecode of this node. */
@@ -218,7 +222,9 @@ namespace ncc::ir {
       return {m_offset, m_fileid};
     }
 
-    std::optional<IR_Vertex_Type<A> *> getType() const;
+    std::optional<FlowPtr<Type>> getType() const {
+      return detail::InferTypeImpl(reinterpret_cast<const Expr *>(this));
+    }
 
     template <typename T>
     static constexpr T *safeCastAs(IR_Vertex_Expr<A> *ptr) {
@@ -516,14 +522,19 @@ namespace ncc::ir {
     uint64_t getUniqId() const;
   } __attribute__((packed)) __attribute__((aligned(1)));
 
+  namespace detail {
+    std::optional<uint64_t> Type_getAlignBitsImpl(const Type *self);
+    std::optional<uint64_t> Type_getSizeBitsImpl(const Type *self);
+  }  // namespace detail
+
   template <class A>
   class IR_Vertex_Type : public IR_Vertex_Expr<A> {
-    std::optional<uint64_t> getAlignBits() const;
-
   public:
     constexpr IR_Vertex_Type(nr_ty_t ty) : IR_Vertex_Expr<A>(ty) {}
 
-    std::optional<uint64_t> getSizeBits() const;
+    std::optional<uint64_t> getSizeBits() const {
+      return detail::Type_getSizeBitsImpl(reinterpret_cast<const Type *>(this));
+    }
 
     std::optional<uint64_t> getSizeBytes() const {
       if (auto size = getSizeBits()) [[likely]] {
@@ -531,6 +542,11 @@ namespace ncc::ir {
       } else {
         return std::nullopt;
       }
+    }
+
+    std::optional<uint64_t> getAlignBits() const {
+      return detail::Type_getAlignBitsImpl(
+          reinterpret_cast<const Type *>(this));
     }
 
     std::optional<uint64_t> getAlignBytes() const {

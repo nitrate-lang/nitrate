@@ -39,6 +39,8 @@
 // #include <nitrate-ir/IR.hh>
 // #include <nitrate-ir/IRGraph.hh>
 
+// #include "nitrate-ir/IRBase.hh"
+
 // /// TODO: Test this code
 
 // using namespace ncc;
@@ -169,12 +171,11 @@
 //   }
 // }
 
-// static std::optional<Type *> GetTypeImpl(
-//     const Expr *_node, std::unordered_set<const Expr *> &visited) {
-//   visited.insert(_node);
+// static std::optional<FlowPtr<Type>> GetTypeImpl(
+//     FlowPtr<Expr> E, std::unordered_set<FlowPtr<Expr>> &visited) {
+//   visited.insert(E);
 
-//   const Expr *E = static_cast<const Expr *>(_node);
-//   std::optional<Type *> R;
+//   std::optional<FlowPtr<Type>> R;
 
 //   switch (E->getKind()) {
 //     case IR_eBIN: {
@@ -444,7 +445,7 @@
 //     case IR_eINDEX: {
 //       if (auto B_ = E->as<Index>()->getExpr()->getType();
 //           auto B = B_.value_or(nullptr)) {
-//         Expr *V = E->as<Index>()->getIndex();
+//         auto V = E->as<Index>()->getIndex();
 
 //         if (B->is(IR_tPTR)) {  // *X -> X
 //           R = B->as<PtrTy>()->getPointee();
@@ -483,7 +484,7 @@
 //       break;
 //     }
 //     case IR_eIDENT: {
-//       Expr *what = E->as<Ident>()->getWhat();
+//       auto what = E->as<Ident>()->getWhat();
 //       if (!visited.contains(what)) [[likely]] {
 //         if (what != nullptr) {
 //           R = what->getType();
@@ -538,7 +539,7 @@
 //     case IR_eFUNCTION: {
 //       bool failed = false;
 //       const auto &params = E->as<Fn>()->getParams();
-//       FnParams param_types(params.size());
+//       FnParams<void> param_types(params.size());
 
 //       for (size_t i = 0; i < params.size(); ++i) {
 //         if (auto paramType = params[i].first->getType()) {
@@ -550,13 +551,8 @@
 //       }
 
 //       if (!failed) {
-//         FnAttrs attrs;
-//         if (E->as<Fn>()->isVariadic()) {
-//           attrs.insert(FnAttr::Variadic);
-//         }
-
 //         R = create<FnTy>(std::move(param_types), E->as<Fn>()->getReturn(),
-//                          std::move(attrs));
+//                          E->as<Fn>()->isVariadic());
 //       }
 
 //       break;
@@ -605,15 +601,15 @@
 //   return R;
 // }
 
-// CPP_EXPORT std::optional<Type *> Expr::getType() const {
+// CPP_EXPORT std::optional<FlowPtr<Type>> detail::InferTypeImpl(Expr *E) {
 //   static thread_local struct State {
-//     std::unordered_set<const Expr *> visited;
+//     std::unordered_set<FlowPtr<Expr>> visited;
 //     size_t depth = 0;
 //   } state;
 
 //   state.depth++;
 
-//   auto R = GetTypeImpl(this, state.visited);
+//   auto R = GetTypeImpl(E, state.visited);
 
 //   state.depth--;
 
@@ -621,11 +617,12 @@
 //     state.visited.clear();
 //   }
 
-//   return const_cast<Type *>(R.value_or(nullptr));
+//   return R;
 // }
 
-// CPP_EXPORT std::optional<uint64_t> Type::getSizeBits() const {
-//   switch (this->getKind()) {
+// CPP_EXPORT std::optional<uint64_t> detail::Type_getSizeBitsImpl(
+//     const Type *self) {
+//   switch (self->getKind()) {
 //     case IR_tU1: {
 //       return 8;
 //     }
@@ -675,14 +672,14 @@
 //       return 0;
 //     }
 //     case IR_tPTR: {
-//       return this->as<PtrTy>()->getNativeSize() * 8;
+//       return self->as<PtrTy>()->getNativeSize() * 8;
 //     }
 //     case IR_tCONST: {
-//       return this->as<ConstTy>()->getItem()->getSizeBits();
+//       return self->as<ConstTy>()->getItem()->getSizeBits();
 //     }
 //     case IR_tSTRUCT: {
 //       size_t sum = 0;
-//       for (auto field : this->as<StructTy>()->getFields()) {
+//       for (auto field : self->as<StructTy>()->getFields()) {
 //         if (auto field_size = field->getSizeBits()) {
 //           sum += field_size.value();
 //         } else {
@@ -693,7 +690,7 @@
 //     }
 //     case IR_tUNION: {
 //       size_t max = 0;
-//       for (auto field : this->as<UnionTy>()->getFields()) {
+//       for (auto field : self->as<UnionTy>()->getFields()) {
 //         if (auto field_size = field->getSizeBits()) {
 //           max = std::max(max, field_size.value());
 //         } else {
@@ -704,15 +701,15 @@
 //     }
 //     case IR_tARRAY: {
 //       if (auto element_size =
-//               this->as<ArrayTy>()->getElement()->getSizeBits()) {
-//         return element_size.value() * this->as<ArrayTy>()->getCount();
+//               self->as<ArrayTy>()->getElement()->getSizeBits()) {
+//         return element_size.value() * self->as<ArrayTy>()->getCount();
 //       } else {
 //         return std::nullopt;
 //       }
 //       break;
 //     }
 //     case IR_tFUNC: {
-//       return this->as<FnTy>()->getNativeSize() * 8;
+//       return self->as<FnTy>()->getNativeSize() * 8;
 //     }
 //     case IR_tOPAQUE: {
 //       return std::nullopt;
@@ -723,8 +720,9 @@
 //   }
 // }
 
-// CPP_EXPORT std::optional<uint64_t> Type::getAlignBits() const {
-//   switch (this->getKind()) {
+// CPP_EXPORT std::optional<uint64_t> detail::Type_getAlignBitsImpl(
+//     const Type *self) {
+//   switch (self->getKind()) {
 //     case IR_tU1: {
 //       return 8;
 //     }
@@ -774,14 +772,14 @@
 //       return 0;
 //     }
 //     case IR_tPTR: {
-//       return this->as<PtrTy>()->getNativeSize() * 8;
+//       return self->as<PtrTy>()->getNativeSize() * 8;
 //     }
 //     case IR_tCONST: {
-//       return this->as<ConstTy>()->getItem()->getAlignBits();
+//       return self->as<ConstTy>()->getItem()->getAlignBits();
 //     }
 //     case IR_tSTRUCT: {
 //       size_t max_align = 0;
-//       for (auto field : this->as<StructTy>()->getFields()) {
+//       for (auto field : self->as<StructTy>()->getFields()) {
 //         if (auto field_align = field->getAlignBits()) {
 //           max_align = std::max(max_align, field_align.value());
 //         } else {
@@ -792,7 +790,7 @@
 //     }
 //     case IR_tUNION: {
 //       size_t max_align = 0;
-//       for (auto field : this->as<UnionTy>()->getFields()) {
+//       for (auto field : self->as<UnionTy>()->getFields()) {
 //         if (auto field_align = field->getAlignBits()) {
 //           max_align = std::max(max_align, field_align.value());
 //         } else {
@@ -802,10 +800,10 @@
 //       return max_align;
 //     }
 //     case IR_tARRAY: {
-//       return this->as<ArrayTy>()->getElement()->getAlignBits();
+//       return self->as<ArrayTy>()->getElement()->getAlignBits();
 //     }
 //     case IR_tFUNC: {
-//       return this->as<FnTy>()->getNativeSize() * 8;
+//       return self->as<FnTy>()->getNativeSize() * 8;
 //     }
 //     case IR_tOPAQUE: {
 //       return std::nullopt;
