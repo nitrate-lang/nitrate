@@ -73,17 +73,19 @@ CPP_EXPORT ModulePass PassRegistry::get(const std::string& name) {
 
 CPP_EXPORT bool PassGroup::run(
     IRModule* module, std::function<void(std::string_view)> on_success) {
-  for (const auto& pass : m_sequence) {
-    if (!pass.run(module, module->getDiag().get())) {
-      return false;
-    }
+  // for (const auto& pass : m_sequence) {
+  //   if (!pass.run(module, module->getDiag().get())) {
+  //     return false;
+  //   }
 
-    if (on_success) {
-      on_success(pass.getName());
-    }
-  }
+  //   if (on_success) {
+  //     on_success(pass.getName());
+  //   }
+  // }
 
-  return true;
+  // return true;
+  /// TODO: Implement this
+  qcore_implement();
 }
 
 ///==============================================================================

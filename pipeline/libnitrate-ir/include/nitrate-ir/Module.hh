@@ -102,7 +102,6 @@ namespace ncc::ir {
     /// END: Data structures requisite for efficient lowering
     ///=============================================================================
 
-    std::unique_ptr<IReport> m_diagnostics;
     ModulePasses m_applied{};    /* Module pass tracking */
     TargetInfo m_target_info{};  /* Build target information */
     std::string m_module_name{}; /* Not nessesarily unique module name */
@@ -140,8 +139,6 @@ namespace ncc::ir {
     auto &getNamedConstants() { return m_named_constants; }
 
     auto &getNodeArena() { return m_node_arena; }
-
-    std::unique_ptr<IReport> &getDiag() { return m_diagnostics; }
 
     const TargetInfo &getTargetInfo() const { return m_target_info; }
 

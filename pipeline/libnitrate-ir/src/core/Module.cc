@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Diagnostic.hh>
 #include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
@@ -43,8 +42,6 @@ using namespace ncc::ir;
 
 IRModule::IRModule(const std::string &name) {
   m_applied.clear();
-
-  m_diagnostics = std::make_unique<DiagnosticManager>();
 
   m_module_name = name;
 
