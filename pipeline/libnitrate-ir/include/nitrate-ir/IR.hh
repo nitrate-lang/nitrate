@@ -50,24 +50,7 @@ namespace ncc::ir {
     IR_SERIAL_CODE = 0, /* Human readable ASCII text */
   } nr_serial_t;
 
-  /**
-   * @brief Serialize a QModule instance to a FILE stream.
-   *
-   * @param mod The QModule or NULL.
-   * @param node Pointer to the node to serialize.
-   * @param mode The serialization mode.
-   * @param out The FILE stream to serialize to.
-   * @param outlen Number of bytes written to the stream (if not NULL).
-   * @param argcnt Number of additional variadic arguments. 0 is valid always.
-   * @param ... Additional arguments to pass to the serialization function. See
-   * the documentation for the specific serialization mode for more information.
-   *
-   * @return True if the serialization was successful, false otherwise.
-   *
-   * @note This function is thread safe.
-   */
-  bool nr_write(IRModule *mod, const Expr *node, nr_serial_t mode, FILE *out,
-                size_t *outlen, uint32_t argcnt, ...);
+  void nr_write(IRModule *mod, NullableFlowPtr<Expr> _node, std::ostream &out);
 
   std::unique_ptr<IRModule> nr_lower(ncc::parse::Base *base, const char *name,
                                      bool diagnostics);

@@ -44,11 +44,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IRFwd.hh>
 #include <nitrate-lexer/Token.hh>
-#include <optional>
-#include <ostream>
 #include <span>
-#include <string>
-#include <unordered_set>
 #include <variant>
 #include <vector>
 
@@ -145,44 +141,12 @@ namespace ncc::ir {
   using IR_Vertex_ListItems = std::vector<FlowPtr<IR_Vertex_Expr<A>>,
                                           Arena<FlowPtr<IR_Vertex_Expr<A>>>>;
 
-  enum class Op {
-    Plus,      /* '+': Addition operator */
-    Minus,     /* '-': Subtraction operator */
-    Times,     /* '*': Multiplication operator */
-    Slash,     /* '/': Division operator */
-    Percent,   /* '%': Modulus operator */
-    BitAnd,    /* '&': Bitwise AND operator */
-    BitOr,     /* '|': Bitwise OR operator */
-    BitXor,    /* '^': Bitwise XOR operator */
-    BitNot,    /* '~': Bitwise NOT operator */
-    LogicAnd,  /* '&&': Logical AND operator */
-    LogicOr,   /* '||': Logical OR operator */
-    LogicNot,  /* '!': Logical NOT operator */
-    LShift,    /* '<<': Left shift operator */
-    RShift,    /* '>>': Right shift operator */
-    Inc,       /* '++': Increment operator */
-    Dec,       /* '--': Decrement operator */
-    Set,       /* '=': Assignment operator */
-    LT,        /* '<': Less than operator */
-    GT,        /* '>': Greater than operator */
-    LE,        /* '<=': Less than or equal to operator */
-    GE,        /* '>=': Greater than or equal to operator */
-    Eq,        /* '==': Equal to operator */
-    NE,        /* '!=': Not equal to operator */
-    Alignof,   /* 'alignof': Alignment of operator */
-    BitcastAs, /* 'bitcast_as': Bitcast operator */
-    CastAs,    /* 'cast_as': Common operator */
-    Bitsizeof, /* 'bitsizeof': Bit size of operator */
-  };
-
   enum class AbiTag {
     C,
     Nitrate,
     Internal,
     Default = Nitrate,
   };
-
-  std::ostream &operator<<(std::ostream &os, Op op);
 
   enum class FloatSize : uint8_t {
     F16,

@@ -35,12 +35,13 @@
 #define __NITRATE_IR_GRAPH_EXPR_H__
 
 #include <nitrate-ir/IRBase.hh>
+#include <nitrate-lexer/Token.hh>
 
 namespace ncc::ir {
   template <class A>
   class IR_Vertex_BinExpr final : public IR_Vertex_Expr<A> {
     FlowPtr<IR_Vertex_Expr<A>> m_lhs, m_rhs;
-    Op m_op;
+    lex::Operator m_op;
 
   public:
     constexpr IR_Vertex_BinExpr(auto lhs, auto rhs, auto op)
@@ -58,7 +59,7 @@ namespace ncc::ir {
   template <class A>
   class IR_Vertex_Unary final : public IR_Vertex_Expr<A> {
     FlowPtr<IR_Vertex_Expr<A>> m_expr;
-    Op m_op;
+    lex::Operator m_op;
     bool m_postfix;
 
   public:

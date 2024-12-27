@@ -40,6 +40,8 @@
 #include <optional>
 #include <string>
 
+#include "nitrate-core/FlowPtr.hh"
+
 namespace ncc::ir {
   class SymbolEncoding final {
   public:
@@ -50,6 +52,15 @@ namespace ncc::ir {
 
     std::optional<std::string> demangle_name(std::string_view symbol) const;
   };
+
+  std::optional<std::string> MangleTypeName(const Type *type, AbiTag abi);
+
+  std::optional<std::string> GetMangledSymbolName(const Expr *symbol,
+                                                  AbiTag abi);
+
+  std::optional<std::string> ExpandSymbolName(std::string_view mangled_name);
+  NullableFlowPtr<Expr> GetSymbolFromMangledName(std::string_view mangled_name);
+  NullableFlowPtr<Type> GetTypeFromMangledName(std::string_view mangled_name);
 }  // namespace ncc::ir
 
 #endif  // __NITRATE_IR_CLASSES_H__

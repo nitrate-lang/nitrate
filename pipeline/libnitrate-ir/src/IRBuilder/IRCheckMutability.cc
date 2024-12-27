@@ -43,7 +43,7 @@ bool NRBuilder::check_mutability(FlowPtr<Seq> root, IReport *I) {
   bool failed = false;
 
   for_each<BinExpr>(root, [&](auto x) {
-    if (x->getOp() != Op::Set) {
+    if (x->getOp() != lex::OpSet) {
       return;
     }
 

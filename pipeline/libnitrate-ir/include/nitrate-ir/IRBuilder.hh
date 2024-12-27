@@ -51,6 +51,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace ncc::ir {
   enum class ABIStringStyle {
@@ -251,7 +252,8 @@ namespace ncc::ir {
         bool foreign = true SOURCE_LOCATION_PARAM);
 
     /* This is the only intended way to overload operaters */
-    Fn *createOperatorOverload(Op op, std::span<FlowPtr<Type>> params,
+    Fn *createOperatorOverload(lex::Operator op,
+                               std::span<FlowPtr<Type>> params,
                                FlowPtr<Type> ret_ty,
                                Purity purity = Purity::Impure,
                                bool thread_safe = false SOURCE_LOCATION_PARAM);

@@ -41,7 +41,7 @@
 // #include <nitrate-core/Allocate.hh>
 // #include <nitrate-core/Logger.hh>
 // #include <nitrate-core/Macro.hh>
-// #include <nitrate-ir/Classes.hh>
+// #include <nitrate-ir/ABI.hh>
 // #include <nitrate-ir/IR.hh>
 // #include <nitrate-ir/IRBuilder.hh>
 // #include <nitrate-ir/IRGraph.hh>

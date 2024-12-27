@@ -67,107 +67,51 @@ boost::bimap<L, R> make_bimap(
   return boost::bimap<L, R>(list.begin(), list.end());
 }
 
-static const boost::bimap<Op, std::string_view> opstr_map =
-    make_bimap<Op, std::string_view>({
-        {Op::Plus, "+"},
-        {Op::Minus, "-"},
-        {Op::Times, "*"},
-        {Op::Slash, "/"},
-        {Op::Percent, "%"},
-        {Op::BitAnd, "&"},
-        {Op::BitOr, "|"},
-        {Op::BitXor, "^"},
-        {Op::BitNot, "~"},
-        {Op::LogicAnd, "&&"},
-        {Op::LogicOr, "||"},
-        {Op::LogicNot, "!"},
-        {Op::LShift, "<<"},
-        {Op::RShift, ">>"},
-        {Op::Inc, "++"},
-        {Op::Dec, "--"},
-        {Op::Set, "="},
-        {Op::LT, "<"},
-        {Op::GT, ">"},
-        {Op::LE, "<="},
-        {Op::GE, ">="},
-        {Op::Eq, "=="},
-        {Op::NE, "!="},
-        {Op::Alignof, "alignof"},
-        {Op::BitcastAs, "bitcast_as"},
-        {Op::CastAs, "cast_as"},
-        {Op::Bitsizeof, "bitsizeof"},
-    });
-
-static inline FILE &operator<<(FILE &ss, const char *s) {
-  fprintf(&ss, "%s", s);
-  return ss;
-}
-
-static inline FILE &operator<<(FILE &ss, Op s) {
-  fprintf(&ss, "%s", opstr_map.left.at(s).data());
-  return ss;
-}
-
-static inline FILE &operator<<(FILE &ss, const std::string_view &s) {
-  fprintf(&ss, "%s", s.data());
-  return ss;
-}
-
-static inline FILE &operator<<(FILE &ss, const size_t s) {
-  fprintf(&ss, "%zu", s);
-  return ss;
-}
-
-static inline FILE &operator<<(FILE &ss, const double s) {
-  fprintf(&ss, "%f", s);
-  return ss;
-}
-
-static void escape_string(FILE &ss, std::string_view input) {
-  fputc('"', &ss);
+static void escape_string(std::ostream &ss, std::string_view input) {
+  ss << "\"";
 
   for (char ch : input) {
     switch (ch) {
       case '"':
-        fprintf(&ss, "\\\"");
+        ss << "\\\"";
         break;
       case '\\':
-        fprintf(&ss, "\\\\");
+        ss << "\\\\";
         break;
       case '\b':
-        fprintf(&ss, "\\b");
+        ss << "\\b";
         break;
       case '\f':
-        fprintf(&ss, "\\f");
+        ss << "\\f";
         break;
       case '\n':
-        fprintf(&ss, "\\n");
+        ss << "\\n";
         break;
       case '\r':
-        fprintf(&ss, "\\r");
+        ss << "\\r";
         break;
       case '\t':
-        fprintf(&ss, "\\t");
+        ss << "\\t";
         break;
       case '\0':
-        fprintf(&ss, "\\0");
+        ss << "\\0";
         break;
       default:
         if (ch >= 32 && ch < 127) {
-          fputc(ch, &ss);
+          ss << ch;
         } else {
           char hex[5];
           snprintf(hex, sizeof(hex), "\\x%02x", (int)(uint8_t)ch);
-          fprintf(&ss, "%s", hex);
+          ss << hex;
         }
         break;
     }
   }
 
-  fputc('"', &ss);
+  ss << "\"";
 }
 
-static void indent(FILE &ss, ConvState &state) {
+static void indent(std::ostream &ss, ConvState &state) {
   if (state.minify) {
     return;
   }
@@ -179,8 +123,8 @@ static void indent(FILE &ss, ConvState &state) {
   }
 }
 
-static bool serialize_recurse(FlowPtr<Expr> n, FILE &ss, FILE &typedefs,
-                              ConvState &state
+static bool serialize_recurse(FlowPtr<Expr> n, std::ostream &ss,
+                              std::ostream &typedefs, ConvState &state
 #if !defined(NDEBUG)
                               ,
                               std::unordered_set<FlowPtr<Expr>> &visited,
@@ -624,7 +568,7 @@ static bool serialize_recurse(FlowPtr<Expr> n, FILE &ss, FILE &typedefs,
 }
 
 static bool to_codeform(std::optional<IRModule *> mod, FlowPtr<Expr> node,
-                        bool minify, size_t indent_size, FILE &ss) {
+                        bool minify, size_t indent_size, std::ostream &ss) {
   ConvState state(indent_size, minify);
 
   if (mod.has_value() && !minify) {
@@ -705,19 +649,10 @@ static bool to_codeform(std::optional<IRModule *> mod, FlowPtr<Expr> node,
   bool is_cylic = !node->isAcyclic();
 #endif
 
-  char *body_content = NULL, *typedef_content = NULL;
-  size_t body_content_size = 0, typedef_content_size = 0;
-  FILE *body = open_memstream(&body_content, &body_content_size);
-  if (!body) {
-    return false;
-  }
-  FILE *typedefs = open_memstream(&typedef_content, &typedef_content_size);
-  if (!typedefs) {
-    return false;
-  }
+  std::stringstream body, typedefs;
 
   /* Serialize the AST recursively */
-  bool result = serialize_recurse(node, *body, *typedefs, state
+  bool result = serialize_recurse(node, body, typedefs, state
 #if !defined(NDEBUG)
                                   ,
                                   v, is_cylic
@@ -725,66 +660,27 @@ static bool to_codeform(std::optional<IRModule *> mod, FlowPtr<Expr> node,
   );
 
   if (!result) {
-    fclose(typedefs);
-    fclose(body);
-    free(body_content);
-    free(typedef_content);
     return false;
   }
 
-  fclose(typedefs);
-  fclose(body);
-
-  fwrite(typedef_content, 1, typedef_content_size, &ss);
-  fwrite(body_content, 1, body_content_size, &ss);
-
-  free(body_content);
-  free(typedef_content);
+  ss << typedefs.str();
+  ss << body.str();
 
   return true;
 }
 
-CPP_EXPORT bool ir::nr_write(IRModule *mod, const Expr *_node, nr_serial_t mode,
-                             FILE *out, size_t *outlen, uint32_t argcnt, ...) {
-  (void)argcnt;
+CPP_EXPORT void ir::nr_write(IRModule *mod, NullableFlowPtr<Expr> _node,
+                             std::ostream &out) {
+  if (!mod && !_node) {
+    return;
+  }
 
-  bool status;
-  FlowPtr<Expr> node;
-  long start, end;
+  FlowPtr<Expr> node = _node ? _node.value() : mod->getRoot();
 
-  if (_node) {
-    node = const_cast<Expr *>(_node);
+  if (mod) {
+    to_codeform(mod, node, false, 2, out);
+
   } else {
-    node = mod->getRoot();
+    to_codeform(std::nullopt, node, false, 2, out);
   }
-
-  if (outlen) {
-    if ((start = ftell(out)) == -1) {
-      return false;
-    }
-  }
-
-  switch (mode) {
-    case IR_SERIAL_CODE: {
-      if (mod) {
-        status = to_codeform(mod, node, false, 2, *out);
-
-      } else {
-        status = to_codeform(std::nullopt, node, false, 2, *out);
-      }
-      break;
-    }
-  }
-
-  if (outlen) {
-    if ((end = ftell(out)) == -1) {
-      return false;
-    }
-
-    *outlen = end - start;
-  }
-
-  fflush(out);
-
-  return status;
 }

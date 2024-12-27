@@ -48,7 +48,7 @@
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
-#include <nitrate-ir/Classes.hh>
+#include <nitrate-ir/ABI.hh>
 #include <nitrate-ir/IR.hh>
 #include <nitrate-ir/Init.hh>
 #include <nitrate-ir/Module.hh>
@@ -60,6 +60,8 @@
 #include <nitrate-seq/Classes.hh>
 #include <string_view>
 #include <unordered_map>
+
+#include "nitrate-ir/ABI.hh"
 
 using namespace argparse;
 using namespace no3;
@@ -245,7 +247,7 @@ namespace no3::benchmark {
   }
 }  // namespace no3::benchmark
 
-static int do_parse(std::string source, std::string output, bool verbose) {
+static int do_parse(std::string source, std::ostream &output, bool verbose) {
   auto env = std::make_shared<Environment>();
 
   std::fstream file(source, std::ios::in);
@@ -259,29 +261,16 @@ static int do_parse(std::string source, std::string output, bool verbose) {
 
   auto ast = parser->parse();
 
-  { /* Write output */
-    std::ostream *out = nullptr;
-    std::shared_ptr<std::ostream> out_ptr;
+  WriterSourceProvider rd =
+      verbose ? WriterSourceProvider(*lexer.get()) : std::nullopt;
 
-    if (output.empty()) {
-      out = &std::cout;
-    } else {
-      out_ptr = std::make_shared<std::ofstream>(output);
-      out = out_ptr.get();
-    }
-
-    WriterSourceProvider rd =
-        verbose ? WriterSourceProvider(*lexer.get()) : std::nullopt;
-
-    AST_JsonWriter writer(*out, rd);
-    ast.get().accept(writer);
-    *out << std::endl;
-  }
+  AST_JsonWriter writer(output, rd);
+  ast.get().accept(writer);
 
   return 0;
 }
 
-static int do_nr(std::string source, std::string output, std::string opts,
+static int do_nr(std::string source, std::ostream &output, std::string opts,
                  bool verbose) {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
@@ -310,25 +299,7 @@ static int do_nr(std::string source, std::string output, std::string opts,
         },
         verbose);
 
-    { /* Write output */
-      FILE *out = output.empty() ? stdout : fopen(output.c_str(), "wb");
-
-      if (!out) {
-        LOG(ERROR) << "Failed to open output file: " << output;
-        return 1;
-      }
-
-      bool ok =
-          nr_write(module.get(), nullptr, IR_SERIAL_CODE, out, nullptr, 0);
-      if (out != stdout) {
-        fclose(out);
-      }
-
-      if (!ok) {
-        LOG(ERROR) << "Failed to write output file: " << output;
-        return 1;
-      }
-    }
+    nr_write(module.get(), nullptr, output);
   } else {
     LOG(ERROR) << "Failed to lower source file: " << source;
     return 1;
@@ -487,7 +458,11 @@ namespace no3::router {
       std::string source = parse_parser.get<std::string>("source");
       std::string output = parse_parser.get<std::string>("--output");
 
-      return do_parse(source, output, verbose);
+      auto out = output.empty()
+                     ? std::make_unique<std::ostream>(std::cout.rdbuf())
+                     : std::make_unique<std::ofstream>(output);
+
+      return do_parse(source, *out, verbose);
     } else if (parser.is_subcommand_used("nr")) {
       auto &nr_parser = *subparsers.at("nr");
 
@@ -497,7 +472,11 @@ namespace no3::router {
       std::string output = nr_parser.get<std::string>("--output");
       std::string opts = nr_parser.get<std::string>("--opts");
 
-      return do_nr(source, output, opts, nr_parser["--verbose"] == true);
+      auto out = output.empty()
+                     ? std::make_unique<std::ostream>(std::cout.rdbuf())
+                     : std::make_unique<std::ofstream>(output);
+
+      return do_nr(source, *out, opts, nr_parser["--verbose"] == true);
     } else if (parser.is_subcommand_used("codegen")) {
       auto &nr_parser = *subparsers.at("codegen");
 
@@ -516,8 +495,7 @@ namespace no3::router {
         mangled_name.erase(0);
       }
 
-      SymbolEncoding codec;
-      auto demangled_name = codec.demangle_name(mangled_name);
+      auto demangled_name = ExpandSymbolName(mangled_name);
       if (!demangled_name) {
         LOG(ERROR) << "Failed to demangle symbol" << std::endl;
         return 1;
