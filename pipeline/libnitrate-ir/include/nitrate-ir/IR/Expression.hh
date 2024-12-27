@@ -429,9 +429,7 @@ namespace ncc::ir {
   template <class A>
   class IR_Vertex_Asm final : public IR_Vertex_Expr<A> {
   public:
-    constexpr IR_Vertex_Asm() : IR_Vertex_Expr<A>(IR_eASM) {
-      qcore_implement();
-    }
+    constexpr IR_Vertex_Asm() : IR_Vertex_Expr<A>(IR_eASM) {}
   };
 
 }  // namespace ncc::ir

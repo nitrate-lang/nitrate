@@ -791,7 +791,6 @@ namespace ncc::ir {
       }
 
       case IR_eASM: {
-        qcore_implement();
         break;
       }
 

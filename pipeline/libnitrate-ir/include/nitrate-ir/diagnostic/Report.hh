@@ -176,6 +176,7 @@ namespace ncc::ir {
 
       void EmitMessage(std::string_view,
                        parse::LocationPairAlias::Index) override {
+        /// TODO: Implement this function
         qcore_implement();
         (void)m_scanner;
       }

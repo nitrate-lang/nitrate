@@ -33,527 +33,122 @@
 
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-ir/IR/Nodes.hh>
-#include <nitrate-ir/encode/Serialize.hh>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-ir/encode/ToJson.hh>
 
 using namespace ncc::ir::encode;
 
-void IR_Writer::visit(Expr& n) {
-  begin_obj(1);
+static void escape_string(std::ostream &os, const std::string_view &input) {
+  os << "\"";
 
-  string("kind");
-  string(n.getKindName());
+  for (char ch : input) {
+    switch (ch) {
+      case '"':
+        os << "\\\"";
+        break;
+      case '\\':
+        os << "\\\\";
+        break;
+      case '\b':
+        os << "\\b";
+        break;
+      case '\f':
+        os << "\\f";
+        break;
+      case '\n':
+        os << "\\n";
+        break;
+      case '\r':
+        os << "\\r";
+        break;
+      case '\t':
+        os << "\\t";
+        break;
+      case '\0':
+        os << "\\0";
+        break;
+      default:
+        if (ch >= 32 && ch < 127) {
+          os << ch;
+        } else {
+          char hex[5];
+          snprintf(hex, sizeof(hex), "\\x%02x", (int)(uint8_t)ch);
+          os << hex;
+        }
+        break;
+    }
+  }
 
-  (void)m_include_source_location;
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
+  os << "\"";
 }
 
-void IR_Writer::visit(Type& n) {
-  begin_obj(1);
+void IR_JsonWriter::delim() {
+  qcore_assert(!m_count.empty() && !m_comma.empty());
 
-  string("kind");
-  string(n.getKindName());
+  if (m_count.top()++ > 0) {
+    bool use_comma = m_comma.top() == true || (m_count.top() & 1) != 0;
 
-  /// TODO: Implement serialization for node
-
-  end_obj();
+    m_os << (use_comma ? "," : ":");
+  }
 }
 
-void IR_Writer::visit(BinExpr& n) {
-  begin_obj(1);
+void IR_JsonWriter::str_impl(std::string_view str) {
+  delim();
 
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
+  escape_string(m_os, str);
 }
 
-void IR_Writer::visit(Unary& n) {
-  begin_obj(1);
+void IR_JsonWriter::uint_impl(uint64_t val) {
+  delim();
 
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
+  m_os << val;
 }
 
-void IR_Writer::visit(U1Ty& n) {
-  begin_obj(1);
+void IR_JsonWriter::double_impl(double val) {
+  delim();
 
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
+  m_os << val;
 }
 
-void IR_Writer::visit(U8Ty& n) {
-  begin_obj(1);
+void IR_JsonWriter::bool_impl(bool val) {
+  delim();
 
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
+  m_os << (val ? "true" : "false");
 }
 
-void IR_Writer::visit(U16Ty& n) {
-  begin_obj(1);
+void IR_JsonWriter::null_impl() {
+  delim();
 
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
+  m_os << "null";
 }
 
-void IR_Writer::visit(U32Ty& n) {
-  begin_obj(1);
+void IR_JsonWriter::begin_obj_impl(size_t) {
+  delim();
 
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
+  m_comma.push(false);
+  m_count.push(0);
+  m_os << "{";
 }
 
-void IR_Writer::visit(U64Ty& n) {
-  begin_obj(1);
+void IR_JsonWriter::end_obj_impl() {
+  qcore_assert(!m_count.empty() && !m_comma.empty());
 
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
+  m_os << "}";
+  m_count.pop();
+  m_comma.pop();
 }
 
-void IR_Writer::visit(U128Ty& n) {
-  begin_obj(1);
+void IR_JsonWriter::begin_arr_impl(size_t) {
+  delim();
 
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
+  m_comma.push(true);
+  m_count.push(0);
+  m_os << "[";
 }
 
-void IR_Writer::visit(I8Ty& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(I16Ty& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(I32Ty& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(I64Ty& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(I128Ty& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(F16Ty& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(F32Ty& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(F64Ty& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(F128Ty& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(VoidTy& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(PtrTy& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(ConstTy& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(OpaqueTy& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(StructTy& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(UnionTy& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(ArrayTy& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(FnTy& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Int& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Float& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(List& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Call& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Seq& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Index& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Ident& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Extern& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Local& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Ret& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Brk& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Cont& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(If& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(While& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(For& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Case& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Switch& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Function& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Asm& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
-void IR_Writer::visit(Tmp& n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n.getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
+void IR_JsonWriter::end_arr_impl() {
+  qcore_assert(!m_count.empty() && !m_comma.empty());
+
+  m_os << "]";
+  m_count.pop();
+  m_comma.pop();
 }
