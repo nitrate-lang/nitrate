@@ -87,10 +87,10 @@
 
 // Fn *NRBuilder::createFunctionDeclaration(std::string_view name,
 //                                          std::span<FnParam> params,
-//                                          Type *ret_ty, bool is_variadic,
-//                                          Vis visibility, Purity purity,
-//                                          bool thread_safe,
-//                                          bool foreign SOURCE_LOCATION_PARAM)
+//                                          FlowPtr<Type>ret_ty, bool
+//                                          is_variadic, Vis visibility, Purity
+//                                          purity, bool thread_safe, bool
+//                                          foreign SOURCE_LOCATION_PARAM)
 //                                          {
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
@@ -129,8 +129,8 @@
 //   return compiler_trace(debug_info(fn, DEBUG_INFO));
 // }
 
-// Fn *NRBuilder::createOperatorOverload(Op op, std::span<Type *> params,
-//                                       Type *ret_ty, Purity purity,
+// Fn *NRBuilder::createOperatorOverload(Op op, std::span<FlowPtr<Type>> params,
+//                                       FlowPtr<Type>ret_ty, Purity purity,
 //                                       bool thread_safe SOURCE_LOCATION_PARAM)
 //                                       {
 //   /// TODO: Implement operator overloading
@@ -144,7 +144,7 @@
 //   ignore_caller_info();
 // }
 
-// Local *NRBuilder::createVariable(std::string_view name, Type *ty,
+// Local *NRBuilder::createVariable(std::string_view name, FlowPtr<Type>ty,
 //                                  Vis visibility, StorageClass storage,
 //                                  bool is_readonly SOURCE_LOCATION_PARAM) {
 //   contract_enforce(m_state == SelfState::Constructed);

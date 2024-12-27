@@ -271,7 +271,7 @@ namespace ncc::ir {
     }
 
     constexpr bool is(nr_ty_t type) const { return type == getKind(); }
-    constexpr bool isSame(const IR_Vertex_Expr<A> *other) const;
+    constexpr bool isSame(const FlowPtr<IR_Vertex_Expr<A>> other) const;
 
     constexpr void accept(IRVisitor &v) {
       switch (getKind()) {
@@ -1018,7 +1018,7 @@ namespace ncc::ir {
 
   template <class A>
   constexpr bool IR_Vertex_Expr<A>::isSame(
-      const IR_Vertex_Expr<A> *other) const {
+      const FlowPtr<IR_Vertex_Expr<A>> other) const {
     nr_ty_t kind = getKind();
 
     if (kind != other->getKind()) {

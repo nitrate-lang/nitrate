@@ -165,7 +165,7 @@
 //   return compiler_trace(debug_info(create<OpaqueTy>("?"), DEBUG_INFO));
 // }
 
-// Type *NRBuilder::getUnknownNamedTy(
+// FlowPtr<Type>NRBuilder::getUnknownNamedTy(
 //     std::string_view name SOURCE_LOCATION_PARAM) {
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
@@ -175,7 +175,7 @@
 //   return compiler_trace(debug_info(R, DEBUG_INFO));
 // }
 
-// PtrTy *NRBuilder::getPtrTy(Type *pointee SOURCE_LOCATION_PARAM) {
+// PtrTy *NRBuilder::getPtrTy(FlowPtr<Type>pointee SOURCE_LOCATION_PARAM) {
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
 //   contract_enforce(pointee != nullptr &&
@@ -200,7 +200,7 @@
 // }
 
 // StructTy *NRBuilder::getStructTy(
-//     std::span<std::tuple<std::string_view, Type *, Expr *>> fields
+//     std::span<std::tuple<std::string_view, FlowPtr<Type>, Expr *>> fields
 //         SOURCE_LOCATION_PARAM) {
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
@@ -210,7 +210,7 @@
 //       return false;
 //     }
 
-//     Type *ty = std::get<1>(x);
+//     FlowPtr<Type>ty = std::get<1>(x);
 //     if (ty == nullptr || !static_cast<Expr *>(ty)->isType()) {
 //       return false;
 //     }
@@ -237,10 +237,11 @@
 // }
 
 // StructTy *NRBuilder::getStructTy(
-//     std::span<Type *> fields SOURCE_LOCATION_PARAM) {
+//     std::span<FlowPtr<Type>> fields SOURCE_LOCATION_PARAM) {
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
-//   contract_enforce(std::all_of(fields.begin(), fields.end(), [](Type *x) {
+//   contract_enforce(std::all_of(fields.begin(), fields.end(),
+//   [](FlowPtr<Type>x) {
 //     return x != nullptr && static_cast<Expr *>(x)->isType();
 //   }));
 
@@ -260,11 +261,12 @@
 //   return compiler_trace(debug_info(struct_ty, DEBUG_INFO));
 // }
 
-// UnionTy *NRBuilder::getUnionTy(std::span<Type *> fields
+// UnionTy *NRBuilder::getUnionTy(std::span<FlowPtr<Type>> fields
 // SOURCE_LOCATION_PARAM) {
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
-//   contract_enforce(std::all_of(fields.begin(), fields.end(), [](Type *ty) {
+//   contract_enforce(std::all_of(fields.begin(), fields.end(),
+//   [](FlowPtr<Type>ty) {
 //     return ty != nullptr && static_cast<Expr *>(ty)->isType();
 //   }));
 
@@ -284,7 +286,7 @@
 //   return compiler_trace(debug_info(struct_ty, DEBUG_INFO));
 // }
 
-// ArrayTy *NRBuilder::getArrayTy(Type *element_ty,
+// ArrayTy *NRBuilder::getArrayTy(FlowPtr<Type>element_ty,
 //                                size_t count SOURCE_LOCATION_PARAM) {
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
@@ -296,7 +298,8 @@
 //   return compiler_trace(debug_info(array_ty, DEBUG_INFO));
 // }
 
-// FnTy *NRBuilder::getFnTy(std::span<Type *> params, Type *ret_ty,
+// FnTy *NRBuilder::getFnTy(std::span<FlowPtr<Type>> params,
+// FlowPtr<Type>ret_ty,
 //                          bool is_variadic, Purity purity, bool thread_safe,
 //                          bool foreign SOURCE_LOCATION_PARAM) {
 //   contract_enforce(m_state == SelfState::Constructed);
@@ -329,7 +332,7 @@
 // }
 
 // void NRBuilder::createNamedTypeAlias(
-//     Type *type, std::string_view name SOURCE_LOCATION_PARAM) {
+//     FlowPtr<Type>type, std::string_view name SOURCE_LOCATION_PARAM) {
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
 //   contract_enforce(type != nullptr && static_cast<Expr *>(type)->isType());
@@ -364,7 +367,7 @@
 // }
 
 // std::optional<Expr *> NRBuilder::getDefaultValue(
-//     Type *_for SOURCE_LOCATION_PARAM) {
+//     FlowPtr<Type>_for SOURCE_LOCATION_PARAM) {
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
 //   contract_enforce(_for != nullptr && static_cast<Expr *>(_for)->isType());

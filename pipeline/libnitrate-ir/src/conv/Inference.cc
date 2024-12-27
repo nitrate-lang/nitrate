@@ -46,7 +46,7 @@
 // using namespace ncc;
 // using namespace ncc::ir;
 
-// static Type *signed_complement(nr_ty_t ty) {
+// static FlowPtr<Type>signed_complement(nr_ty_t ty) {
 //   switch (ty) {
 //     case IR_tI8:
 //       return create<U8Ty>();
@@ -63,8 +63,8 @@
 //   }
 // }
 
-// static std::optional<Type *> promote(std::optional<Type *> lhs,
-//                                      std::optional<Type *> rhs) {
+// static std::optional<FlowPtr<Type>> promote(std::optional<FlowPtr<Type>> lhs,
+//                                      std::optional<FlowPtr<Type>> rhs) {
 //   if (!lhs.has_value() || !rhs.has_value()) {
 //     return std::nullopt;
 //   }
@@ -405,7 +405,7 @@
 //       if (E->as<List>()->size() == 0) {
 //         R = create<StructTy>(StructFields());
 //       } else {
-//         std::vector<Type *> types;
+//         std::vector<FlowPtr<Type>> types;
 //         bool failed = false;
 //         for (const auto &item : *E->as<List>()) {
 //           auto x = item->getType();
@@ -593,7 +593,7 @@
 //     case IR_tUNION:
 //     case IR_tARRAY:
 //     case IR_tFUNC: {
-//       R = const_cast<Type *>(E->asType());
+//       R = const_cast<FlowPtr<Type>>(E->asType());
 //       break;
 //     }
 //   }
@@ -621,7 +621,7 @@
 // }
 
 // CPP_EXPORT std::optional<uint64_t> detail::Type_getSizeBitsImpl(
-//     const Type *self) {
+//     const FlowPtr<Type>self) {
 //   switch (self->getKind()) {
 //     case IR_tU1: {
 //       return 8;
@@ -721,7 +721,7 @@
 // }
 
 // CPP_EXPORT std::optional<uint64_t> detail::Type_getAlignBitsImpl(
-//     const Type *self) {
+//     const FlowPtr<Type>self) {
 //   switch (self->getKind()) {
 //     case IR_tU1: {
 //       return 8;

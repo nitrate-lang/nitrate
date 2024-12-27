@@ -246,14 +246,14 @@
 //       }
 //       case IR_tSTRUCT: {
 //         children.reserve(base->as<StructTy>()->m_fields.size());
-//         for (Type *&child : base->as<StructTy>()->m_fields) {
+//         for (FlowPtr<Type>&child : base->as<StructTy>()->m_fields) {
 //           children.push_back(reinterpret_cast<Expr **>(&child));
 //         }
 //         break;
 //       }
 //       case IR_tUNION: {
 //         children.reserve(base->as<UnionTy>()->m_fields.size());
-//         for (Type *&child : base->as<UnionTy>()->m_fields) {
+//         for (FlowPtr<Type>&child : base->as<UnionTy>()->m_fields) {
 //           children.push_back(reinterpret_cast<Expr **>(&child));
 //         }
 //         break;
@@ -265,7 +265,7 @@
 //       }
 //       case IR_tFUNC: {
 //         children.reserve(base->as<FnTy>()->m_params.size() + 1);
-//         for (Type *&child : base->as<FnTy>()->m_params) {
+//         for (FlowPtr<Type>&child : base->as<FnTy>()->m_params) {
 //           children.push_back(reinterpret_cast<Expr **>(&child));
 //         }
 //         children.push_back(

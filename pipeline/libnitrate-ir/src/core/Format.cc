@@ -552,13 +552,13 @@ static bool demangle_type(std::string_view &name, std::ostream &ss) {
   }
 }
 
-static std::string mangle_c_abi(std::string_view name, Type *) {
+static std::string mangle_c_abi(std::string_view name, auto) {
   std::string s = std::string(name);
   std::replace(s.begin(), s.end(), ':', '_');
   return s;
 }
 
-static std::string mangle_nit_abi(std::string_view name, Type *type) {
+static std::string mangle_nit_abi(std::string_view name, auto type) {
   std::stringstream ss;
 
   ss << "_Q";  // Nitrate ABI prefix
@@ -687,7 +687,7 @@ CPP_EXPORT std::optional<std::string> SymbolEncoding::mangle_name(
   }
 
   std::string_view name = symbol->getName();
-  Type *type = const_cast<Expr *>(symbol)->getType().value_or(nullptr);
+  auto type = const_cast<Expr *>(symbol)->getType().value_or(nullptr);
   if (!type) {
     return std::nullopt;
   }

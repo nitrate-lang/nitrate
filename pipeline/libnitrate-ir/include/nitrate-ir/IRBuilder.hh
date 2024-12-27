@@ -95,7 +95,7 @@ namespace ncc::ir {
     std::optional<IRModule *> m_result;
     FlowPtr<Seq> m_root;
 
-    std::unordered_map<std::string_view, Type *> m_named_types;
+    std::unordered_map<std::string_view, FlowPtr<Type>> m_named_types;
     std::unordered_map<std::string_view,
                        std::unordered_map<std::string_view, FlowPtr<Expr>>>
         m_named_constant_group;
@@ -233,32 +233,31 @@ namespace ncc::ir {
     ///**************************************************************************///
     // Create linkable symbols
 
-    using FnParam =
-        std::tuple<std::string_view, Type *, std::optional<FlowPtr<Expr>>>;
+    using FnParam = std::tuple<std::string_view, FlowPtr<Type>,
+                               std::optional<FlowPtr<Expr>>>;
 
     Fn *createFunctionDefintion(std::string_view name,
-                                std::span<FnParam> params, Type *ret_ty,
+                                std::span<FnParam> params, FlowPtr<Type> ret_ty,
                                 bool is_variadic = false,
                                 Vis visibility = Vis::Sec,
                                 Purity purity = Purity::Impure,
                                 bool thread_safe = false,
                                 bool foreign = true SOURCE_LOCATION_PARAM);
 
-    Fn *createFunctionDeclaration(std::string_view name,
-                                  std::span<FnParam> params, Type *ret_ty,
-                                  bool is_variadic = false,
-                                  Vis visibility = Vis::Sec,
-                                  Purity purity = Purity::Impure,
-                                  bool thread_safe = false,
-                                  bool foreign = true SOURCE_LOCATION_PARAM);
+    Fn *createFunctionDeclaration(
+        std::string_view name, std::span<FnParam> params, FlowPtr<Type> ret_ty,
+        bool is_variadic = false, Vis visibility = Vis::Sec,
+        Purity purity = Purity::Impure, bool thread_safe = false,
+        bool foreign = true SOURCE_LOCATION_PARAM);
 
     /* This is the only intended way to overload operaters */
-    Fn *createOperatorOverload(Op op, std::span<Type *> params, Type *ret_ty,
+    Fn *createOperatorOverload(Op op, std::span<FlowPtr<Type>> params,
+                               FlowPtr<Type> ret_ty,
                                Purity purity = Purity::Impure,
                                bool thread_safe = false SOURCE_LOCATION_PARAM);
 
-    /* Works for both local and global variables */
-    Local *createVariable(std::string_view name, Type *ty,
+    /* Works for both local and global variables FlowPtr<Type> */
+    Local *createVariable(std::string_view name, FlowPtr<Type> ty,
                           Vis visibility = Vis::Sec,
                           StorageClass storage = StorageClass::LLVM_StackAlloa,
                           bool is_readonly = false SOURCE_LOCATION_PARAM);
@@ -304,7 +303,7 @@ namespace ncc::ir {
     // Create values
 
     std::optional<FlowPtr<Expr>> getDefaultValue(
-        Type *_for SOURCE_LOCATION_PARAM);
+        FlowPtr<Type> _for SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///
     // Create types
@@ -329,23 +328,26 @@ namespace ncc::ir {
     /* Type inference unknowns; Converted to proper type upon resolution */
     OpaqueTy *getUnknownTy(SOURCE_LOCATION_PARAM_ONCE);
 
-    Type *getUnknownNamedTy(std::string_view name SOURCE_LOCATION_PARAM);
+    FlowPtr<Type> getUnknownNamedTy(
+        std::string_view name SOURCE_LOCATION_PARAM);
 
-    PtrTy *getPtrTy(Type *pointee SOURCE_LOCATION_PARAM);
+    PtrTy *getPtrTy(FlowPtr<Type> pointee SOURCE_LOCATION_PARAM);
 
     OpaqueTy *getOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM);
 
     StructTy *getStructTy(
-        std::span<std::tuple<std::string_view, Type *, FlowPtr<Expr>>> fields
-            SOURCE_LOCATION_PARAM);
+        std::span<std::tuple<std::string_view, FlowPtr<Type>, FlowPtr<Expr>>>
+            fields SOURCE_LOCATION_PARAM);
 
-    StructTy *getStructTy(std::span<Type *> fields SOURCE_LOCATION_PARAM);
+    StructTy *getStructTy(
+        std::span<FlowPtr<Type>> fields SOURCE_LOCATION_PARAM);
 
-    UnionTy *getUnionTy(std::span<Type *> fields SOURCE_LOCATION_PARAM);
+    UnionTy *getUnionTy(std::span<FlowPtr<Type>> fields SOURCE_LOCATION_PARAM);
 
-    ArrayTy *getArrayTy(Type *element_ty, size_t count SOURCE_LOCATION_PARAM);
+    ArrayTy *getArrayTy(FlowPtr<Type> element_ty,
+                        size_t count SOURCE_LOCATION_PARAM);
 
-    FnTy *getFnTy(std::span<Type *> params, Type *ret_ty,
+    FnTy *getFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret_ty,
                   bool is_variadic = false, Purity purity = Purity::Impure,
                   bool thread_safe = false,
                   bool foreign = true SOURCE_LOCATION_PARAM);
@@ -355,7 +357,7 @@ namespace ncc::ir {
         const std::unordered_map<std::string_view, FlowPtr<Expr>> &values
             SOURCE_LOCATION_PARAM);
 
-    void createNamedTypeAlias(Type *type,
+    void createNamedTypeAlias(FlowPtr<Type> type,
                               std::string_view name SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///

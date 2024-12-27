@@ -66,10 +66,12 @@ namespace ncc::ir {
         boost::bimap<std::string_view, std::pair<FnTy *, Fn *>>;
     using GlobalVariableNameBimap = boost::bimap<std::string_view, Local *>;
     using FunctionParamMap = std::unordered_map<
-        std::string_view, std::vector<std::tuple<std::string, Type *, Expr *>>>;
-    using TypenameMap = std::unordered_map<std::string_view, Type *>;
+        std::string_view,
+        std::vector<std::tuple<std::string, FlowPtr<Type>, Expr *>>>;
+    using TypenameMap = std::unordered_map<std::string_view, FlowPtr<Type>>;
     using StructFieldMap = std::unordered_map<
-        std::string_view, std::vector<std::tuple<std::string, Type *, Expr *>>>;
+        std::string_view,
+        std::vector<std::tuple<std::string, FlowPtr<Type>, Expr *>>>;
     using NamedConstMap = std::unordered_map<std::string_view, Expr *>;
     using ModulePasses = std::vector<std::pair<std::string, ModulePassType>>;
 
