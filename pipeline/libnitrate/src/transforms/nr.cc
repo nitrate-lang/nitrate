@@ -36,6 +36,7 @@
 #include <core/SerialUtil.hh>
 #include <core/Transform.hh>
 #include <nitrate-core/Init.hh>
+#include <nitrate-ir/IR.hh>
 #include <nitrate-ir/Module.hh>
 #include <nitrate-ir/encode/ToJson.hh>
 #include <nitrate-ir/encode/ToMsgPack.hh>

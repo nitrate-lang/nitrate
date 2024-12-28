@@ -1934,24 +1934,24 @@ CPP_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
           return false;
         }
 
-        std::string targetTriple = m->getTargetInfo().TargetTriple.value_or(
+        auto targetTriple = m->GetTargetInfo().TargetTriple.value_or(
             sys::getDefaultTargetTriple());
-        std::string CPU = m->getTargetInfo().CPU.value_or("generic");
-        std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
+        auto CPU = m->GetTargetInfo().CPU.value_or("generic");
+        ncc::string Features = m->GetTargetInfo().CPUFeatures.value_or("");
         bool relocPIC = true;
 
         TargetOptions opt;
         std::string lookupTarget_err;
         auto Target =
-            TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
+            TargetRegistry::lookupTarget(targetTriple.get(), lookupTarget_err);
         if (!Target) {
           e << "error: failed to lookup target: " << lookupTarget_err << endl;
           return false;
         }
 
-        auto TargetMachine =
-            Target->createTargetMachine(targetTriple, CPU, Features, opt,
-                                        relocPIC ? Reloc::PIC_ : Reloc::Static);
+        auto TargetMachine = Target->createTargetMachine(
+            targetTriple.get(), CPU.get(), Features.get(), opt,
+            relocPIC ? Reloc::PIC_ : Reloc::Static);
 
         auto &module = *module_opt.value();
 
@@ -1961,7 +1961,7 @@ CPP_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
         }
 
         module.setDataLayout(TargetMachine->createDataLayout());
-        module.setTargetTriple(targetTriple);
+        module.setTargetTriple(targetTriple.get());
 
         ///==========================================================================
 
@@ -2020,24 +2020,24 @@ CPP_EXPORT bool qcode_obj(IRModule *module, qcode_conf_t *conf, FILE *err,
           return false;
         }
 
-        std::string targetTriple = m->getTargetInfo().TargetTriple.value_or(
+        ncc::string targetTriple = m->GetTargetInfo().TargetTriple.value_or(
             sys::getDefaultTargetTriple());
-        std::string CPU = m->getTargetInfo().CPU.value_or("generic");
-        std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
+        ncc::string CPU = m->GetTargetInfo().CPU.value_or("generic");
+        ncc::string Features = m->GetTargetInfo().CPUFeatures.value_or("");
         bool relocPIC = true;
 
         TargetOptions opt;
         std::string lookupTarget_err;
         auto Target =
-            TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
+            TargetRegistry::lookupTarget(targetTriple.get(), lookupTarget_err);
         if (!Target) {
           e << "error: failed to lookup target: " << lookupTarget_err << endl;
           return false;
         }
 
-        auto TargetMachine =
-            Target->createTargetMachine(targetTriple, CPU, Features, opt,
-                                        relocPIC ? Reloc::PIC_ : Reloc::Static);
+        auto TargetMachine = Target->createTargetMachine(
+            targetTriple.get(), CPU.get(), Features.get(), opt,
+            relocPIC ? Reloc::PIC_ : Reloc::Static);
 
         auto &module = *module_opt.value();
 
@@ -2047,7 +2047,7 @@ CPP_EXPORT bool qcode_obj(IRModule *module, qcode_conf_t *conf, FILE *err,
         }
 
         module.setDataLayout(TargetMachine->createDataLayout());
-        module.setTargetTriple(targetTriple);
+        module.setTargetTriple(targetTriple.get());
 
         ///==========================================================================
 

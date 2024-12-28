@@ -2247,5 +2247,6 @@ using namespace ncc;
 
 CPP_EXPORT std::unique_ptr<IRModule> ir::nr_lower(ncc::parse::Base *,
                                                   const char *, bool) {
+  qcore_print(QCORE_ERROR, "Not implemented");
   return nullptr;
 }

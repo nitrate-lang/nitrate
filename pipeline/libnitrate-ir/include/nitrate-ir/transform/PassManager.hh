@@ -65,9 +65,9 @@ namespace ncc::ir::transform {
     void addPass(FunctionPass pass) override { m_passes.push_back(pass); }
     void apply() override {
       for (auto& pass : m_passes) {
-        for (auto& func : m_module.getFunctions()) {
-          pass(*func.right.second, m_module, m_data);
-        }
+        std::ranges::for_each(m_module.GetFunctions(), [&](const auto& func) {
+          pass(*func, m_module, m_data);
+        });
       }
     }
   };

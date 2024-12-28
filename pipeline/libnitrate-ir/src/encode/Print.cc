@@ -34,19 +34,13 @@
 /// TODO: Deprecate this file
 
 #include <boost/bind.hpp>
-#include <chrono>
-#include <cstddef>
-#include <cstdint>
 #include <cstring>
-#include <iomanip>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-ir/IR.hh>
 #include <nitrate-ir/IR/Fwd.hh>
 #include <nitrate-ir/IR/Nodes.hh>
 #include <nitrate-ir/Init.hh>
-#include <nitrate-ir/Module.hh>
-#include <sstream>
-#include <unordered_set>
 
 using namespace ncc;
 using namespace ncc::ir;

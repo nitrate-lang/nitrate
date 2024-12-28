@@ -40,25 +40,37 @@
 using namespace ncc;
 using namespace ncc::ir;
 
-IRModule::IRModule(const std::string &name) {
-  m_applied.clear();
-
-  m_module_name = name;
+CPP_EXPORT IRModule::IRModule(string module_name) {
+  m_module_name = module_name;
 
   m_root = nullptr;
   m_diagnostics_enabled = true;
+
+  m_ir_data = std::make_unique<ncc::dyn_arena>();
 }
 
-IRModule::~IRModule() { m_root = nullptr; }
+CPP_EXPORT IRModule::~IRModule() { m_root = nullptr; }
 
-void IRModule::enableDiagnostics(bool is_enabled) {
-  m_diagnostics_enabled = is_enabled;
+CPP_EXPORT bool IRModule::Diagnostics(std::optional<bool> state) {
+  bool old_state = m_diagnostics_enabled;
+
+  if (state.has_value()) {
+    m_diagnostics_enabled = state.value();
+  }
+
+  return old_state;
+}
+
+CPP_EXPORT string IRModule::Name(std::optional<string> name) {
+  string old_name = m_module_name;
+
+  if (name.has_value()) {
+    m_module_name = name.value();
+  }
+
+  return old_name;
 }
 
 CPP_EXPORT void IRModule::accept(IRVisitor<void> &visitor) {
   m_root->accept(visitor);
 }
-
-///=============================================================================
-
-IRModule *ir::createModule(std::string name) { return new IRModule(name); }

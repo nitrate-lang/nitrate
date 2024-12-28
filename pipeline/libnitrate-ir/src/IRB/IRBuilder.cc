@@ -300,9 +300,9 @@
 //     IRModule *new_mod = createModule(m_module_name);
 
 //     { /* Clone the IRGraph into the module */
-//       std::swap(nr_allocator, new_mod->getNodeArena());
+//       std::swap(nr_allocator, new_mod->GetNodeArena());
 //       new_mod->setRoot(static_cast<FlowPtr<Seq>>(m_root->clone()));
-//       std::swap(nr_allocator, new_mod->getNodeArena());
+//       std::swap(nr_allocator, new_mod->GetNodeArena());
 //     }
 
 //     m_result = new_mod;
