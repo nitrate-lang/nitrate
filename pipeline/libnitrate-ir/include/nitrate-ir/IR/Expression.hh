@@ -111,10 +111,10 @@ namespace ncc::ir {
     }
 
   public:
-    IR_Vertex_Int(auto val, auto size)
+    constexpr IR_Vertex_Int(auto val, auto size)
         : IR_Vertex_Expr<A>(IR_eINT), m_value(val), m_size(size) {}
 
-    IR_Vertex_Int(std::string_view str, uint8_t size)
+    constexpr IR_Vertex_Int(std::string_view str, uint8_t size)
         : IR_Vertex_Expr<A>(IR_eINT), m_value(str2u128(str)) {
       m_size = size;
     }
