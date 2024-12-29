@@ -31,77 +31,158 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <boost/uuid/name_generator.hpp>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <cstring>
-#include <nitrate-core/Allocate.hh>
-#include <nitrate-core/Logger.hh>
+#include <cstdint>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-ir/IR.hh>
 #include <nitrate-ir/IR/Nodes.hh>
-#include <nitrate-ir/Module.hh>
-#include <unordered_set>
 
-using namespace ncc;
-using namespace ncc::ir;
+CPP_EXPORT std::optional<uint64_t> ncc::ir::detail::Type_getSizeBitsImpl(
+    const Type* self) {
+  std::optional<uint64_t> R;
 
-thread_local std::unique_ptr<ncc::IMemory> ncc::ir::nr_allocator =
-    std::make_unique<ncc::dyn_arena>();
-
-Brk mem::static_IR_eBRK;
-Cont mem::static_IR_eSKIP;
-Expr mem::static_IR_eIGN(IR_eIGN);
-
-///=============================================================================
-
-static bool isCyclicUtil(auto base, std::unordered_set<FlowPtr<Expr>> &visited,
-                         std::unordered_set<FlowPtr<Expr>> &recStack) {
-  bool has_cycle = false;
-
-  if (!visited.contains(base)) {
-    // Mark the current node as visited
-    // and part of recursion stack
-    visited.insert(base);
-    recStack.insert(base);
-
-    // Recurse for all the vertices adjacent
-    // to this vertex
-    iterate<IterMode::children>(
-        base, [&](auto, auto const *const cur) -> IterOp {
-          if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack))
-              [[unlikely]] {
-            has_cycle = true;
-            return IterOp::Abort;
-          } else if (recStack.contains(*cur)) [[unlikely]] {
-            has_cycle = true;
-            return IterOp::Abort;
-          }
-
-          return IterOp::Proceed;
-        });
-  }
-
-  // Remove the vertex from recursion stack
-  recStack.erase(base);
-  return has_cycle;
-}
-
-CPP_EXPORT bool detail::IsAcyclicImpl(FlowPtr<Expr> self) {
-  std::unordered_set<FlowPtr<Expr>> visited, recStack;
-  bool has_cycle = false;
-
-  iterate<IterMode::children>(self, [&](auto, auto C) -> IterOp {
-    if (!visited.contains(*C) && isCyclicUtil(*C, visited, recStack))
-        [[unlikely]] {
-      has_cycle = true;
-      return IterOp::Abort;
+  switch (self->getKind()) {
+    case IR_tU1: {
+      R = 8;
+      break;
     }
 
-    return IterOp::Proceed;
-  });
+    case IR_tU8: {
+      R = 8;
+      break;
+    }
 
-  return !has_cycle;
+    case IR_tU16: {
+      R = 16;
+      break;
+    }
+
+    case IR_tU32: {
+      R = 32;
+      break;
+    }
+
+    case IR_tU64: {
+      R = 64;
+      break;
+    }
+
+    case IR_tU128: {
+      R = 128;
+      break;
+    }
+
+    case IR_tI8: {
+      R = 8;
+      break;
+    }
+
+    case IR_tI16: {
+      R = 16;
+      break;
+    }
+
+    case IR_tI32: {
+      R = 32;
+      break;
+    }
+
+    case IR_tI64: {
+      R = 64;
+      break;
+    }
+
+    case IR_tI128: {
+      R = 128;
+      break;
+    }
+
+    case IR_tF16_TY: {
+      R = 16;
+      break;
+    }
+
+    case IR_tF32_TY: {
+      R = 32;
+      break;
+    }
+
+    case IR_tF64_TY: {
+      R = 64;
+      break;
+    }
+
+    case IR_tF128_TY: {
+      R = 128;
+      break;
+    }
+
+    case IR_tVOID: {
+      R = 0;
+      break;
+    }
+
+    case IR_tPTR: {
+      R = self->as<PtrTy>()->getNativeSize() * 8;
+      break;
+    }
+
+    case IR_tCONST: {
+      R = self->as<ConstTy>()->getItem()->getSizeBits();
+      break;
+    }
+
+    case IR_tSTRUCT: {
+      // The size of a packed struct is the sum of the sizes of its members
+      size_t size = 0;
+      bool okay = true;
+
+      for (auto f : self->as<StructTy>()->getFields()) {
+        if (auto member_size = f->getSizeBits()) {
+          size += member_size.value();
+        } else {
+          okay = false;
+          break;
+        }
+      }
+
+      okay && (R = size);
+      break;
+    }
+
+    case IR_tUNION: {
+      // The size of a packed union is the size of its largest member
+      size_t max_size = 0;
+      bool okay = true;
+
+      for (auto f : self->as<UnionTy>()->getFields()) {
+        if (auto member_size = f->getSizeBits()) {
+          max_size = std::max(max_size, member_size.value());
+        } else {
+          okay = false;
+          break;
+        }
+      }
+
+      okay && (R = max_size);
+      break;
+    }
+
+    case IR_tARRAY: {
+      auto A = self->as<ArrayTy>();
+      if (auto element_size = A->getElement()->getSizeBits()) {
+        R = element_size.value() * A->getCount();
+      }
+      break;
+    }
+
+    case IR_tFUNC: {
+      R = self->as<FnTy>()->getNativeSize() * 8;
+      break;
+    }
+
+    default: {
+      break;
+    }
+  }
+
+  return R;
 }
-
-CPP_EXPORT FlowPtr<Expr> ir::createIgn() { return create<Expr>(IR_eIGN); }
