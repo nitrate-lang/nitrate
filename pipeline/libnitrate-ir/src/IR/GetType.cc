@@ -40,406 +40,338 @@
 using namespace ncc;
 using namespace ncc::ir;
 
-// static FlowPtr<Type> signed_complement(nr_ty_t ty) {
-//   switch (ty) {
-//     case IR_tI8:
-//       return create<U8Ty>();
-//     case IR_tI16:
-//       return create<U16Ty>();
-//     case IR_tI32:
-//       return create<U32Ty>();
-//     case IR_tI64:
-//       return create<U64Ty>();
-//     case IR_tI128:
-//       return create<U128Ty>();
-//     default:
-//       return nullptr;
-//   }
-// }
+static FlowPtr<Type> signed_complement(nr_ty_t ty) {
+  switch (ty) {
+    case IR_tI8: {
+      return getU8Ty();
+    }
 
-// static std::optional<FlowPtr<Type>> promote(std::optional<FlowPtr<Type>> lhs,
-//                                             std::optional<FlowPtr<Type>> rhs)
-//                                             {
-//   if (!lhs.has_value() || !rhs.has_value()) {
-//     return std::nullopt;
-//   }
+    case IR_tI16: {
+      return getU16Ty();
+    }
 
-//   auto L = lhs.value(), R = rhs.value();
+    case IR_tI32: {
+      return getU32Ty();
+    }
 
-//   if (L->is_readonly() && !R->is_readonly()) {
-//     R = create<ConstTy>(R);
-//   } else if (!L->is_readonly() && R->is_readonly()) {
-//     L = create<ConstTy>(L);
-//   }
+    case IR_tI64: {
+      return getU64Ty();
+    }
 
-//   ///===========================================================================
-//   /// NOTE: If L && R are the same type, the type is their identity.
-//   if (L->isSame(R)) {
-//     return L;
-//   }
-//   ///===========================================================================
+    case IR_tI128: {
+      return getU128Ty();
+    }
 
-//   nr_ty_t LT = L->getKind(), RT = R->getKind();
+    default: {
+      return nullptr;
+    }
+  }
+}
 
-//   ///===========================================================================
-//   /// NOTE: Primitive numeric types are promoted according to the following
-//   /// rules:
-//   if (L->is_numeric() && R->is_numeric()) {
-//     ///===========================================================================
-//     /// NOTE: Floating point always takes precedence over integers.
-//     if (L->is(IR_tVOID) || R->is(IR_tVOID)) {
-//       return std::nullopt;
-//     }
+static NullableFlowPtr<Type> promote(NullableFlowPtr<Type> lhs,
+                                     NullableFlowPtr<Type> rhs) {
+  if (!lhs.has_value() || !rhs.has_value()) {
+    return std::nullopt;
+  }
 
-//     if (L->is(IR_tF128_TY) || R->is(IR_tF128_TY)) {
-//       return create<F128Ty>();
-//     }
+  auto L = lhs.value(), R = rhs.value();
 
-//     if (L->is(IR_tF64_TY) || R->is(IR_tF64_TY)) {
-//       return create<F64Ty>();
-//     }
+  if (L->is_readonly() && !R->is_readonly()) {
+    R = getConstTy(R);
+  } else if (!L->is_readonly() && R->is_readonly()) {
+    L = getConstTy(L);
+  }
 
-//     if (L->is(IR_tF32_TY) || R->is(IR_tF32_TY)) {
-//       return create<F32Ty>();
-//     }
+  ///===========================================================================
+  /// NOTE: If L && R are the same type, the type is their identity.
+  if (L->isSame(R.get())) {
+    return L;
+  }
+  ///===========================================================================
 
-//     if (L->is(IR_tF16_TY) || R->is(IR_tF16_TY)) {
-//       return create<F16Ty>();
-//     }
-//     ///===========================================================================
+  nr_ty_t LT = L->getKind(), RT = R->getKind();
 
-//     ///===========================================================================
-//     /// NOTE: If L && R are both unsigned integers, the larger type is used.
-//     if (L->is_unsigned() && R->is_unsigned()) {
-//       auto LS = L->getSizeBits(), RS = R->getSizeBits();
-//       if (!LS.has_value() || !RS.has_value()) {
-//         return std::nullopt;
-//       }
-//       return LS > RS ? L : R;
-//     }
-//     ///===========================================================================
+  ///===========================================================================
+  /// NOTE: Primitive numeric types are promoted according to the following
+  /// rules:
+  if (L->is_numeric() && R->is_numeric()) {
+    ///===========================================================================
+    /// NOTE: Floating point always takes precedence over integers.
+    if (L->is(IR_tVOID) || R->is(IR_tVOID)) {
+      return std::nullopt;
+    }
 
-//     ///===========================================================================
-//     /// NOTE: If L && R are both signed integers, the larger type is used.
-//     if ((L->is_signed() && L->is_integral()) &&
-//         (R->is_signed() && R->is_integral())) {
-//       auto LS = L->getSizeBits(), RS = R->getSizeBits();
-//       if (!LS.has_value() || !RS.has_value()) {
-//         return std::nullopt;
-//       }
-//       return LS > RS ? L : R;
-//     }
-//     ///===========================================================================
+    if (L->is(IR_tF128_TY) || R->is(IR_tF128_TY)) {
+      return MakeFlowPtr(getF128Ty());
+    }
 
-//     ///===========================================================================
-//     /// NOTE: If either L or R is a signed integer, the signed integer is
-//     /// promoted.
-//     if (L->is_integral() && L->is_signed()) {
-//       auto LS = L->getSizeBits(), RS = R->getSizeBits();
-//       if (!LS.has_value() || !RS.has_value()) {
-//         return std::nullopt;
-//       }
-//       if (LS > RS) {
-//         return signed_complement(LT);
-//       } else {
-//         return R;
-//       }
-//     } else if (R->is_integral() && R->is_signed()) {
-//       auto LS = L->getSizeBits(), RS = R->getSizeBits();
-//       if (!LS.has_value() || !RS.has_value()) {
-//         return std::nullopt;
-//       }
-//       if (RS > LS) {
-//         return signed_complement(RT);
-//       } else {
-//         return L;
-//       }
-//     } else {
-//       return std::nullopt;
-//     }
-//     ///===========================================================================
-//   }
-//   ///===========================================================================
+    if (L->is(IR_tF64_TY) || R->is(IR_tF64_TY)) {
+      return MakeFlowPtr(getF64Ty());
+    }
 
-//   else {
-//     return std::nullopt;
-//   }
-// }
+    if (L->is(IR_tF32_TY) || R->is(IR_tF32_TY)) {
+      return MakeFlowPtr(getF32Ty());
+    }
 
-// static std::optional<FlowPtr<Type>> GetTypeImpl(
-//     FlowPtr<Expr> E, std::unordered_set<FlowPtr<Expr>> &visited) {
-//   visited.insert(E);
+    if (L->is(IR_tF16_TY) || R->is(IR_tF16_TY)) {
+      return MakeFlowPtr(getF16Ty());
+    }
+    ///===========================================================================
 
-//   std::optional<FlowPtr<Type>> R;
-//   using namespace ncc::lex;
+    ///===========================================================================
+    /// NOTE: If L && R are both unsigned integers, the larger type is used.
+    if (L->is_unsigned() && R->is_unsigned()) {
+      auto LS = L->getSizeBits(), RS = R->getSizeBits();
+      if (!LS.has_value() || !RS.has_value()) {
+        return std::nullopt;
+      }
+      return LS > RS ? L : R;
+    }
+    ///===========================================================================
 
-//   switch (E->getKind()) {
-//     case IR_eBIN: {
-//       /// TODO:
-//       break;
-//     }
-//     case IR_eUNARY: {
-//       /// TODO:
-//       break;
-//     }
-//     case IR_eINT: {
-//       auto size = E->as<Int>()->getSize();
+    ///===========================================================================
+    /// NOTE: If L && R are both signed integers, the larger type is used.
+    if ((L->is_signed() && L->is_integral()) &&
+        (R->is_signed() && R->is_integral())) {
+      auto LS = L->getSizeBits(), RS = R->getSizeBits();
+      if (!LS.has_value() || !RS.has_value()) {
+        return std::nullopt;
+      }
+      return LS > RS ? L : R;
+    }
+    ///===========================================================================
 
-//       if (size == 1) {
-//         R = create<U1Ty>();
-//       } else if (size <= 8) {
-//         R = create<I8Ty>();
-//       } else if (size <= 16) {
-//         R = create<I16Ty>();
-//       } else if (size <= 32) {
-//         R = create<I32Ty>();
-//       } else if (size <= 64) {
-//         R = create<I64Ty>();
-//       } else if (size <= 128) {
-//         R = create<I128Ty>();
-//       }
+    ///===========================================================================
+    /// NOTE: If either L or R is a signed integer, the signed integer is
+    /// promoted.
+    if (L->is_integral() && L->is_signed()) {
+      auto LS = L->getSizeBits(), RS = R->getSizeBits();
+      if (!LS.has_value() || !RS.has_value()) {
+        return std::nullopt;
+      }
+      if (LS > RS) {
+        return signed_complement(LT);
+      } else {
+        return R;
+      }
+    } else if (R->is_integral() && R->is_signed()) {
+      auto LS = L->getSizeBits(), RS = R->getSizeBits();
+      if (!LS.has_value() || !RS.has_value()) {
+        return std::nullopt;
+      }
+      if (RS > LS) {
+        return signed_complement(RT);
+      } else {
+        return L;
+      }
+    } else {
+      return std::nullopt;
+    }
+    ///===========================================================================
+  }
+  ///===========================================================================
 
-//       break;
-//     }
-//     case IR_eFLOAT: {
-//       switch (E->as<Float>()->getSize()) {
-//         case FloatSize::F16:
-//           R = create<F16Ty>();
-//           break;
-//         case FloatSize::F32:
-//           R = create<F32Ty>();
-//           break;
-//         case FloatSize::F64:
-//           R = create<F64Ty>();
-//           break;
-//         case FloatSize::F128:
-//           R = create<F128Ty>();
-//           break;
-//       }
-
-//       break;
-//     }
-//     case IR_eLIST: {
-//       if (E->as<List>()->size() == 0) {
-//         R = create<StructTy>(StructFields());
-//       } else {
-//         std::vector<FlowPtr<Type>> types;
-//         bool failed = false;
-//         for (const auto &item : *E->as<List>()) {
-//           auto x = item->getType();
-//           if (!x) {
-//             R = std::nullopt;
-//             failed = true;
-//             break;
-//           }
-//           types.push_back(x.value());
-//         }
-//         if (!failed) {
-//           if (E->as<List>()->isHomogenous()) {
-//             R = create<ArrayTy>(types.front(), types.size());
-//           } else {
-//             R = create<StructTy>(StructFields(types.begin(), types.end()));
-//           }
-//         }
-//       }
-//       break;
-//     }
-//     case IR_eCALL: {
-//       if (auto x = E->as<Call>()->getTarget()->getType()) {
-//         if (x.value()->is_function()) {
-//           R = x.value()->as<FnTy>()->getReturn();
-//         }
-//       }
-//       break;
-//     }
-//     case IR_eSEQ: {
-//       if (E->as<Seq>()->getItems().empty()) {
-//         R = create<VoidTy>();
-//       } else {
-//         R = E->as<Seq>()->getItems().back()->getType();
-//       }
-//       break;
-//     }
-//     case IR_eINDEX: {
-//       if (auto B_ = E->as<Index>()->getExpr()->getType();
-//           auto B = B_.value_or(nullptr)) {
-//         auto V = E->as<Index>()->getIndex();
-
-//         if (B->is(IR_tPTR)) {  // *X -> X
-//           R = B->as<PtrTy>()->getPointee();
-//         } else if (B->is(IR_tARRAY)) {  // [X; N] -> X
-//           R = B->as<ArrayTy>()->getElement();
-//         } else if (B->is(IR_tSTRUCT)) {  // struct { a, b, c } -> a | b
-//                                          // | c
-//           if (!V->is(IR_eINT)) {
-//             R = std::nullopt;  // Invalid must be of type int to index into a
-//                                // struct
-//           } else {
-//             uint128_t num = V->as<Int>()->getValue();
-//             if (num < B->as<StructTy>()->getFields().size()) {
-//               R =
-//               B->as<StructTy>()->getFields()[num.convert_to<std::size_t>()];
-//             } else {
-//               R = std::nullopt;  // Invalid out of bounds
-//             }
-//           }
-//         } else if (B->is(IR_tUNION)) {
-//           if (!V->is(IR_eINT)) {
-//             R = std::nullopt;  // Invalid must be of type int to index into a
-//                                // union
-//           } else {
-//             uint128_t num = V->as<Int>()->getValue();
-
-//             if (num < B->as<UnionTy>()->getFields().size()) {
-//               R =
-//               B->as<UnionTy>()->getFields()[num.convert_to<std::size_t>()];
-//             } else {
-//               R = std::nullopt;  // Invalid out of bounds
-//             }
-//           }
-//         }
-//       }
-//       break;
-//     }
-//     case IR_eIDENT: {
-//       auto what = E->as<Ident>()->getWhat();
-//       if (!visited.contains(what)) [[likely]] {
-//         if (what != nullptr) {
-//           R = what->getType();
-//         }
-//       }
-//       break;
-//     }
-//     case IR_eEXTERN: {
-//       R = create<VoidTy>();
-//       break;
-//     }
-//     case IR_eLOCAL: {
-//       const Local *local = E->as<Local>();
-//       R = local->getValue()->getType();
-//       if (R.has_value() && local->isReadonly()) {
-//         R = create<ConstTy>(R.value());
-//       }
-//       break;
-//     }
-//     case IR_eRET: {
-//       R = E->as<Ret>()->getExpr()->getType();
-//       break;
-//     }
-//     case IR_eBRK: {
-//       R = create<VoidTy>();
-//       break;
-//     }
-//     case IR_eSKIP: {
-//       R = create<VoidTy>();
-//       break;
-//     }
-//     case IR_eIF: {
-//       R = create<VoidTy>();
-//       break;
-//     }
-//     case IR_eWHILE: {
-//       R = create<VoidTy>();
-//       break;
-//     }
-//     case IR_eFOR: {
-//       R = create<VoidTy>();
-//       break;
-//     }
-//     case IR_eCASE: {
-//       R = create<VoidTy>();
-//       break;
-//     }
-//     case IR_eSWITCH: {
-//       R = create<VoidTy>();
-//       break;
-//     }
-//     case IR_eFUNCTION: {
-//       bool failed = false;
-//       const auto &params = E->as<Function>()->getParams();
-//       FnParams<void> param_types(params.size());
-
-//       for (size_t i = 0; i < params.size(); ++i) {
-//         if (auto paramType = params[i].first->getType()) {
-//           param_types[i] = paramType.value();
-//         } else {
-//           failed = true;
-//           break;
-//         }
-//       }
-
-//       if (!failed) {
-//         R = create<FnTy>(std::move(param_types),
-//         E->as<Function>()->getReturn(),
-//                          E->as<Function>()->isVariadic());
-//       }
-
-//       break;
-//     }
-//     case IR_eASM: {
-//       R = create<VoidTy>();
-//       break;
-//     }
-//     case IR_eIGN: {
-//       R = create<VoidTy>();
-//       break;
-//     }
-//     case IR_tTMP: {
-//       R = std::nullopt;
-//       break;
-//     }
-
-//     case IR_tU1:
-//     case IR_tU8:
-//     case IR_tU16:
-//     case IR_tU32:
-//     case IR_tU64:
-//     case IR_tU128:
-//     case IR_tI8:
-//     case IR_tI16:
-//     case IR_tI32:
-//     case IR_tI64:
-//     case IR_tI128:
-//     case IR_tF16_TY:
-//     case IR_tF32_TY:
-//     case IR_tF64_TY:
-//     case IR_tF128_TY:
-//     case IR_tVOID:
-//     case IR_tPTR:
-//     case IR_tCONST:
-//     case IR_tOPAQUE:
-//     case IR_tSTRUCT:
-//     case IR_tUNION:
-//     case IR_tARRAY:
-//     case IR_tFUNC: {
-//       R = const_cast<FlowPtr<Type>>(E->asType());
-//       break;
-//     }
-//   }
-
-//   return R;
-// }
-
-// CPP_EXPORT std::optional<FlowPtr<Type>> detail::Expr_getType(const Expr *E) {
-//   static thread_local struct State {
-//     std::unordered_set<FlowPtr<Expr>> visited;
-//     size_t depth = 0;
-//   } state;
-
-//   state.depth++;
-
-//   auto R = GetTypeImpl(E, state.visited);
-
-//   state.depth--;
-
-//   if (state.depth == 0) {
-//     state.visited.clear();
-//   }
-
-//   return R;
-// }
+  else {
+    return std::nullopt;
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
+
+static NullableFlowPtr<Type> InferUnaryExpression(NullableFlowPtr<Type> E,
+                                                  lex::Operator O) {
+  using namespace lex;
+
+  NullableFlowPtr<ir::Type> R;
+
+  switch (O) {
+    case OpPlus: {
+      R = E;
+      break;
+    }
+
+    case OpMinus: {
+      R = E;
+      break;
+    }
+
+    case OpTimes: {
+      if (E.has_value() && E.value()->is_pointer()) {
+        R = E.value()->as<PtrTy>()->getPointee();
+      }
+      break;
+    }
+
+    case OpBitAnd: {
+      E && (R = getPtrTy(E.value()));
+      break;
+    }
+
+    case OpBitNot: {
+      R = E;
+      break;
+    }
+
+    case OpLogicNot: {
+      R = getU1Ty();
+      break;
+    }
+
+    case OpInc: {
+      R = E;
+      break;
+    }
+
+    case OpDec: {
+      R = E;
+      break;
+    }
+
+    case OpSizeof: {
+      R = getU64Ty();
+      break;
+    }
+
+    case OpBitsizeof: {
+      R = getU64Ty();
+      break;
+    }
+
+    case OpAlignof: {
+      R = getU64Ty();
+      break;
+    }
+
+    case OpTypeof: {
+      R = E;
+      break;
+    }
+
+    case OpSlash:
+    case OpPercent:
+    case OpBitOr:
+    case OpBitXor:
+    case OpLShift:
+    case OpRShift:
+    case OpROTL:
+    case OpROTR:
+    case OpLogicAnd:
+    case OpLogicOr:
+    case OpLogicXor:
+    case OpLT:
+    case OpGT:
+    case OpLE:
+    case OpGE:
+    case OpEq:
+    case OpNE:
+    case OpSet:
+    case OpPlusSet:
+    case OpMinusSet:
+    case OpTimesSet:
+    case OpSlashSet:
+    case OpPercentSet:
+    case OpBitAndSet:
+    case OpBitOrSet:
+    case OpBitXorSet:
+    case OpLogicAndSet:
+    case OpLogicOrSet:
+    case OpLogicXorSet:
+    case OpLShiftSet:
+    case OpRShiftSet:
+    case OpROTLSet:
+    case OpROTRSet:
+    case OpAs:
+    case OpBitcastAs:
+    case OpIn:
+    case OpOut:
+    case OpDot:
+    case OpRange:
+    case OpEllipsis:
+    case OpArrow:
+    case OpTernary: {
+      break;
+    }
+  }
+
+  return R;
+}
+
+static NullableFlowPtr<Type> InferBinaryExpression(NullableFlowPtr<Type> LHS,
+                                                   lex::Operator O,
+                                                   NullableFlowPtr<Type> RHS) {
+  using namespace lex;
+
+  NullableFlowPtr<ir::Type> R;
+
+  switch (O) {
+    case OpPlus:
+    case OpMinus:
+    case OpTimes:
+    case OpSlash:
+    case OpPercent:
+    case OpBitAnd:
+    case OpBitOr:
+    case OpBitXor:
+    case OpBitNot:
+    case OpIn:
+    case OpOut:
+    case OpSizeof:
+    case OpBitsizeof:
+    case OpAlignof:
+    case OpTypeof:
+    case OpDot:
+    case OpRange:
+    case OpEllipsis:
+    case OpArrow:
+    case OpTernary:
+    case OpInc:
+    case OpDec: {
+      R = promote(LHS, RHS);
+    }
+
+    case OpLogicAnd:
+    case OpLogicOr:
+    case OpLogicXor:
+    case OpLogicNot:
+    case OpLT:
+    case OpGT:
+    case OpLE:
+    case OpGE:
+    case OpEq:
+    case OpNE: {
+      R = getU1Ty();
+      break;
+    }
+
+    case OpSet:
+    case OpPlusSet:
+    case OpMinusSet:
+    case OpTimesSet:
+    case OpSlashSet:
+    case OpPercentSet:
+    case OpBitAndSet:
+    case OpBitOrSet:
+    case OpBitXorSet:
+    case OpLogicAndSet:
+    case OpLogicOrSet:
+    case OpLogicXorSet:
+    case OpLShiftSet:
+    case OpRShiftSet:
+    case OpROTLSet:
+    case OpROTRSet:
+    case OpAs:
+    case OpBitcastAs:
+    case OpLShift:
+    case OpRShift:
+    case OpROTL:
+    case OpROTR: {
+      R = RHS;
+      break;
+    }
+  }
+
+  return R;
+}
 
 class InferenceVisitor : public IRVisitor<void> {
   std::optional<FlowPtr<Type>> R;
@@ -454,15 +386,19 @@ public:
   void visit(FlowPtr<Type> n) override { R = n; }
 
   void visit(FlowPtr<BinExpr> n) override {
-    /// TODO: Implement inference for node
-    (void)n;
-    qcore_implement();
+    auto LHS = n->getLHS()->getType(), RHS = n->getRHS()->getType();
+
+    if (auto Type = InferBinaryExpression(LHS, n->getOp(), RHS)) {
+      R = Type.value();
+    }
   }
 
   void visit(FlowPtr<Unary> n) override {
-    /// TODO: Implement inference for node
-    (void)n;
-    qcore_implement();
+    if (auto E = n->getExpr()->getType()) {
+      if (auto Type = InferUnaryExpression(E.value(), n->getOp())) {
+        R = Type.value();
+      }
+    }
   }
 
   void visit(FlowPtr<U1Ty> n) override { R = n; }
@@ -490,9 +426,41 @@ public:
   void visit(FlowPtr<FnTy> n) override { R = n; }
 
   void visit(FlowPtr<Int> n) override {
-    /// TODO: Implement inference for node
-    (void)n;
-    qcore_implement();
+    switch (n->getSize()) {
+      case 1: {
+        R = getU1Ty();
+        break;
+      }
+
+      case 8: {
+        R = getU8Ty();
+        break;
+      }
+
+      case 16: {
+        R = getU16Ty();
+        break;
+      }
+
+      case 32: {
+        R = getU32Ty();
+        break;
+      }
+
+      case 64: {
+        R = getU64Ty();
+        break;
+      }
+
+      case 128: {
+        R = getU128Ty();
+        break;
+      }
+
+      default: {
+        // Invalid: integer size must be 1, 8, 16, 32, 64, or 128
+      }
+    }
   }
 
   void visit(FlowPtr<Float> n) override {
@@ -520,8 +488,6 @@ public:
   }
 
   void visit(FlowPtr<List> n) override {
-    /// TODO: Implement inference for node
-
     if (n->empty()) {
       R = getStructTy({});
     } else if (n->isHomogenous()) {
@@ -554,25 +520,60 @@ public:
   }
 
   void visit(FlowPtr<Seq> n) override {
-    /// TODO: Implement inference for node
-    (void)n;
-    qcore_implement();
+    if (n->empty()) {
+      R = getVoidTy();
+    } else {
+      R = (*n->end())->getType();
+    }
   }
 
   void visit(FlowPtr<Index> n) override {
-    /// TODO: Implement inference for node
-    (void)n;
-    qcore_implement();
+    auto base_type_opt = n->getExpr()->getType();
+
+    if (base_type_opt.has_value(); auto base = base_type_opt.value()) {
+      if (base->is(IR_tPTR)) {  // *X -> X
+        R = base->as<PtrTy>()->getPointee();
+      } else if (base->is(IR_tARRAY)) {  // [X; N] -> X
+        R = base->as<ArrayTy>()->getElement();
+      } else if (base->is(IR_tSTRUCT)) {  // struct { a, b, c }[1] -> b
+
+        if (auto index = n->getIndex(); index->is(IR_eINT)) {
+          auto num = index->as<Int>()->getValue();
+          auto st = base->as<StructTy>();
+
+          if (num < st->getFields().size()) {
+            R = st->getFields()[num.convert_to<std::size_t>()];
+          } else {
+            // Out of bounds
+          }
+        } else {
+          // Invalid: index must be of type int to index into a struct
+        }
+      } else if (base->is(IR_tUNION)) {
+        if (auto index = n->getIndex(); index->is(IR_eINT)) {
+          auto num = index->as<Int>()->getValue();
+          auto st = base->as<UnionTy>();
+
+          if (num < st->getFields().size()) {
+            R = st->getFields()[num.convert_to<std::size_t>()];
+          } else {
+            // Out of bounds
+          }
+        } else {
+          // Invalid: index must be of type int to index into a union
+        }
+      }
+    }
   }
 
   void visit(FlowPtr<Ident> n) override {
-    /// TODO: Implement inference for node
-    (void)n;
-    qcore_implement();
+    if (n->getWhat().has_value()) {
+      R = n->getWhat().value()->getType();
+    }
   }
 
   void visit(FlowPtr<Extern>) override { R = getVoidTy(); }
-  void visit(FlowPtr<Local>) override { R = getVoidTy(); }
+  void visit(FlowPtr<Local> n) override { R = n->getValue()->getType(); }
   void visit(FlowPtr<Ret>) override { R = getVoidTy(); }
   void visit(FlowPtr<Brk>) override { R = getVoidTy(); }
   void visit(FlowPtr<Cont>) override { R = getVoidTy(); }
@@ -595,7 +596,7 @@ public:
   void visit(FlowPtr<Tmp> n) override { R = n; }
 };
 
-CPP_EXPORT std::optional<FlowPtr<Type>> detail::Expr_getType(Expr *E) {
+CPP_EXPORT std::optional<FlowPtr<Type>> detail::Expr_getType(Expr* E) {
   static thread_local struct State {
     std::unordered_set<FlowPtr<Expr>> visited;
     size_t depth = 0;

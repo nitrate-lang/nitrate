@@ -208,6 +208,11 @@ namespace ncc::ir {
         : IR_Vertex_Expr<A>(IR_eSEQ), m_items(items) {}
 
     constexpr auto getItems() const { return m_items; }
+    constexpr auto begin() const { return m_items.begin(); }
+    constexpr auto end() const { return m_items.end(); }
+    constexpr auto size() const { return m_items.size(); }
+    constexpr auto empty() const { return m_items.empty(); }
+
     constexpr void setItems(auto items) { m_items = items; }
   };
 
@@ -232,7 +237,7 @@ namespace ncc::ir {
   class IR_Vertex_Ident final : public IR_Vertex_Expr<A> {
     friend A;
 
-    FlowPtr<IR_Vertex_Expr<A>> m_what;
+    NullableFlowPtr<IR_Vertex_Expr<A>> m_what;
     string m_name;
 
   public:

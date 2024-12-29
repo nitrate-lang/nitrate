@@ -288,135 +288,94 @@ namespace ncc::ir {
     auto getData() const { return m_data; }
   };
 
-  static inline FlowPtr<U1Ty> getU1Ty() {
+  static inline U1Ty* getU1Ty() {
     static U1Ty u1;
     return &u1;
   }
 
-  static inline FlowPtr<U8Ty> getU8Ty() {
+  static inline U8Ty* getU8Ty() {
     static U8Ty u8;
     return &u8;
   }
 
-  static inline FlowPtr<U16Ty> getU16Ty() {
+  static inline U16Ty* getU16Ty() {
     static U16Ty u16;
     return &u16;
   }
 
-  static inline FlowPtr<U32Ty> getU32Ty() {
+  static inline U32Ty* getU32Ty() {
     static U32Ty u32;
     return &u32;
   }
 
-  static inline FlowPtr<U64Ty> getU64Ty() {
+  static inline U64Ty* getU64Ty() {
     static U64Ty u64;
     return &u64;
   }
 
-  static inline FlowPtr<U128Ty> getU128Ty() {
+  static inline U128Ty* getU128Ty() {
     static U128Ty u128;
     return &u128;
   }
 
-  static inline FlowPtr<I8Ty> getI8Ty() {
+  static inline I8Ty* getI8Ty() {
     static I8Ty i8;
     return &i8;
   }
 
-  static inline FlowPtr<I16Ty> getI16Ty() {
+  static inline I16Ty* getI16Ty() {
     static I16Ty i16;
     return &i16;
   }
 
-  static inline FlowPtr<I32Ty> getI32Ty() {
+  static inline I32Ty* getI32Ty() {
     static I32Ty i32;
     return &i32;
   }
 
-  static inline FlowPtr<I64Ty> getI64Ty() {
+  static inline I64Ty* getI64Ty() {
     static I64Ty i64;
     return &i64;
   }
 
-  static inline FlowPtr<I128Ty> getI128Ty() {
+  static inline I128Ty* getI128Ty() {
     static I128Ty i128;
     return &i128;
   }
 
-  static inline FlowPtr<F16Ty> getF16Ty() {
+  static inline F16Ty* getF16Ty() {
     static F16Ty f16;
     return &f16;
   }
 
-  static inline FlowPtr<F32Ty> getF32Ty() {
+  static inline F32Ty* getF32Ty() {
     static F32Ty f32;
     return &f32;
   }
 
-  static inline FlowPtr<F64Ty> getF64Ty() {
+  static inline F64Ty* getF64Ty() {
     static F64Ty f64;
     return &f64;
   }
 
-  static inline FlowPtr<F128Ty> getF128Ty() {
+  static inline F128Ty* getF128Ty() {
     static F128Ty f128;
     return &f128;
   }
 
-  static inline FlowPtr<VoidTy> getVoidTy() {
+  static inline VoidTy* getVoidTy() {
     static VoidTy void_ty;
     return &void_ty;
   }
 
-  static inline FlowPtr<PtrTy> getPtrTy(FlowPtr<Type> pointee,
-                                        size_t native_size = 8) {
-    static std::unordered_map<FlowPtr<Type>, PtrTy> cache;
-    static std::mutex mtx;
-
-    std::lock_guard lock(mtx);
-
-    auto it = cache.find(pointee);
-    if (it == cache.end()) {
-      it = cache.emplace(pointee, PtrTy(pointee, native_size)).first;
-    }
-
-    return &it->second;
-  }
-
-  static inline FlowPtr<ConstTy> getConstTy(FlowPtr<Type> item) {
-    static std::unordered_map<FlowPtr<Type>, ConstTy> cache;
-    static std::mutex mtx;
-
-    std::lock_guard lock(mtx);
-
-    auto it = cache.find(item);
-    if (it == cache.end()) {
-      it = cache.emplace(item, ConstTy(item)).first;
-    }
-
-    return &it->second;
-  }
-
-  static inline FlowPtr<OpaqueTy> getOpaqueTy(string name) {
-    static std::unordered_map<string, OpaqueTy> cache;
-    static std::mutex mtx;
-
-    std::lock_guard lock(mtx);
-
-    auto it = cache.find(name);
-    if (it == cache.end()) {
-      it = cache.emplace(name, OpaqueTy(name)).first;
-    }
-
-    return &it->second;
-  }
-
-  FlowPtr<StructTy> getStructTy(std::span<FlowPtr<Type>> fields);
-  FlowPtr<UnionTy> getUnionTy(std::span<FlowPtr<Type>> fields);
-  FlowPtr<ArrayTy> getArrayTy(FlowPtr<Type> element, size_t size);
-  FlowPtr<FnTy> getFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret,
-                        bool variadic, size_t native_size = 8);
-
+  PtrTy* getPtrTy(FlowPtr<Type> pointee, uint8_t native_size = 8);
+  ConstTy* getConstTy(FlowPtr<Type> item);
+  OpaqueTy* getOpaqueTy(string name);
+  StructTy* getStructTy(std::span<FlowPtr<Type>> fields);
+  UnionTy* getUnionTy(std::span<FlowPtr<Type>> fields);
+  ArrayTy* getArrayTy(FlowPtr<Type> element, size_t size);
+  FnTy* getFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret,
+                bool variadic, size_t native_size = 8);
 }  // namespace ncc::ir
 
 #endif

@@ -108,7 +108,7 @@ bool NRBuilder::check_duplicates(FlowPtr<Seq>, IReport *I) {
         [&](auto x) {
           std::for_each(x.second.begin(), x.second.end(), [&](auto y) {
             auto joined =
-                save(std::string(x.first) + "::" + std::string(y.first));
+                string(std::string(x.first) + "::" + std::string(y.first));
             names_map[joined] = {Kind::ScopedEnum, y.second};
           });
         });
@@ -144,7 +144,7 @@ bool NRBuilder::check_duplicates(FlowPtr<Seq>, IReport *I) {
         [&](auto x) {
           std::for_each(x.second.begin(), x.second.end(), [&](auto y) {
             auto named_constant =
-                save(std::string(x.first) + "::" + std::string(y.first));
+                string(std::string(x.first) + "::" + std::string(y.first));
 
             auto it = names_map.find(named_constant);
             if (it != names_map.end() && it->second.first != Kind::ScopedEnum) {

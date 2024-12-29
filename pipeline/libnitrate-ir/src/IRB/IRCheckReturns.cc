@@ -77,7 +77,7 @@ bool NRBuilder::check_returns(FlowPtr<Seq> root, IReport *I) {
 
       /// TODO: Implement return type coercion
 
-      if (!return_ty->isSame(ret_expr_ty_opt.value())) {
+      if (!return_ty->isSame(ret_expr_ty_opt.value().get())) {
         I->report(ReturnTypeMismatch, IC::Error,
                   {"Return value type '", ret_expr_ty_opt.value()->toString(),
                    "' does not match function return type '",

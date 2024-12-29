@@ -354,6 +354,10 @@ namespace ncc {
     constexpr explicit NullableFlowPtr(FlowPtr<Pointee, Tracking> O)
         : m_ptr(O) {}
 
+    template <class U>
+    constexpr NullableFlowPtr(U *ptr, Tracking tracking = Tracking())
+        : m_ptr(ptr, std::move(tracking)) {}
+
     constexpr NullableFlowPtr(
         std::nullopt_t, Tracking tracking = Tracking(),
         std::source_location loc = std::source_location::current())
@@ -363,6 +367,9 @@ namespace ncc {
         std::nullptr_t, Tracking tracking = Tracking(),
         std::source_location loc = std::source_location::current())
         : m_ptr(nullptr, std::move(tracking), loc) {}
+
+    constexpr NullableFlowPtr(std::optional<FlowPtr<Pointee, Tracking>> O)
+        : m_ptr(O.value_or(nullptr)) {}
 
     template <class U = Pointee>
     constexpr NullableFlowPtr(FlowPtr<U, Tracking> O) : m_ptr(O) {}

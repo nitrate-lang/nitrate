@@ -41,13 +41,6 @@
 namespace ncc::ir {
   FlowPtr<Expr> createIgn();
 
-  namespace mem {
-    extern Brk static_IR_eBRK;
-    extern Cont static_IR_eSKIP;
-    extern Expr static_IR_eIGN;
-
-  };  // namespace mem
-
   template <typename T, typename... Args>
   static constexpr inline T *create(Args &&...args) {
     /**
@@ -84,29 +77,6 @@ namespace ncc::ir {
     NORMAL_ALLOC(IR_eFUNCTION);
     NORMAL_ALLOC(IR_eASM);
     NORMAL_ALLOC(IR_eIGN);
-    NORMAL_ALLOC(IR_tU1);
-    NORMAL_ALLOC(IR_tU8);
-    NORMAL_ALLOC(IR_tU16);
-    NORMAL_ALLOC(IR_tU32);
-    NORMAL_ALLOC(IR_tU64);
-    NORMAL_ALLOC(IR_tU128);
-    NORMAL_ALLOC(IR_tI8);
-    NORMAL_ALLOC(IR_tI16);
-    NORMAL_ALLOC(IR_tI32);
-    NORMAL_ALLOC(IR_tI64);
-    NORMAL_ALLOC(IR_tI128);
-    NORMAL_ALLOC(IR_tF16_TY);
-    NORMAL_ALLOC(IR_tF32_TY);
-    NORMAL_ALLOC(IR_tF64_TY);
-    NORMAL_ALLOC(IR_tF128_TY);
-    NORMAL_ALLOC(IR_tVOID);
-    NORMAL_ALLOC(IR_tPTR);
-    NORMAL_ALLOC(IR_tCONST);
-    NORMAL_ALLOC(IR_tOPAQUE);
-    NORMAL_ALLOC(IR_tSTRUCT);
-    NORMAL_ALLOC(IR_tUNION);
-    NORMAL_ALLOC(IR_tARRAY);
-    NORMAL_ALLOC(IR_tFUNC);
     NORMAL_ALLOC(IR_tTMP);
 
 #undef NORMAL_ALLOC

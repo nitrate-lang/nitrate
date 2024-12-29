@@ -140,5 +140,5 @@ NRBuilder::resolve_name(std::string_view name, Kind kind) {
     return std::nullopt;
   }
 
-  return {{R->first, save(R->second)}};
+  return {{R->first, string(R->second)}};
 }

@@ -194,7 +194,7 @@
 //       !name.empty() && (std::isalnum(name[0]) || name[0] == '_') &&
 //       "Non alphanumeric starter characters are reserved internally");
 
-//   OpaqueTy *opaque_ty = create<OpaqueTy>(save(name));
+//   OpaqueTy *opaque_ty = create<OpaqueTy>(string(name));
 
 //   return compiler_trace(debug_info(opaque_ty, DEBUG_INFO));
 // }

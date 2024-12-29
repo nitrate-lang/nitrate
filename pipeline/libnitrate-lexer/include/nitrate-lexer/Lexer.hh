@@ -42,7 +42,6 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Token.hh>
 #include <ostream>
-#include <unordered_map>
 
 ///============================================================================///
 

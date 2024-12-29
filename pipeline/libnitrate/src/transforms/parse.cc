@@ -105,42 +105,42 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
       }
 
       case TokenType::Name: {
-        R = Token(t, ncc::intern(data));
+        R = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::IntL: {
-        R = Token(t, ncc::intern(data));
+        R = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::NumL: {
-        R = Token(t, ncc::intern(data));
+        R = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::Text: {
-        R = Token(t, ncc::intern(data));
+        R = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::Char: {
-        R = Token(t, ncc::intern(data));
+        R = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::MacB: {
-        R = Token(t, ncc::intern(data));
+        R = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::Macr: {
-        R = Token(t, ncc::intern(data));
+        R = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::Note: {
-        R = Token(t, ncc::intern(data));
+        R = Token(t, ncc::string(data));
         break;
       }
     }

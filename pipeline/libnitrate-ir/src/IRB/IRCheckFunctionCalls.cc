@@ -85,7 +85,7 @@ bool NRBuilder::check_function_calls(FlowPtr<Seq> root, IReport *I) {
               continue;
             }
 
-            if (!param_type.value()->isSame(arg_type.value())) {
+            if (!param_type.value()->isSame(arg_type.value().get())) {
               I->report(BadCast, IC::Error,
                         {"Bad call argument cast from '",
                          arg_type.value()->toString(), "' to '",
