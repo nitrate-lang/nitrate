@@ -170,6 +170,7 @@ namespace ncc::ir {
     constexpr auto begin() const { return m_items.begin(); }
     constexpr auto end() const { return m_items.end(); }
     constexpr auto size() const { return m_items.size(); }
+    constexpr auto empty() const { return m_items.empty(); }
 
     constexpr auto operator[](size_t idx) const { return m_items[idx]; }
     constexpr auto at(size_t idx) const { return m_items[idx]; }

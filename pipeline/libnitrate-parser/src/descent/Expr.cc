@@ -69,7 +69,7 @@ CallArgs Parser::recurse_call_arguments(Token terminator) {
         rd.Undo();
       }
 
-      argument_name = intern(std::to_string(positional_index++));
+      argument_name = string(std::to_string(positional_index++));
     }
 
     auto argument_value = recurse_expr({
@@ -105,7 +105,7 @@ FlowPtr<Expr> Parser::recurse_fstring() {
         state = 0;
 
         if (!buf.empty()) {
-          items.push_back(intern(std::move(buf)));
+          items.push_back(string(std::move(buf)));
           buf.clear();
         }
 
@@ -128,7 +128,7 @@ FlowPtr<Expr> Parser::recurse_fstring() {
     }
 
     if (!buf.empty()) {
-      items.push_back(intern(std::move(buf)));
+      items.push_back(string(std::move(buf)));
       buf.clear();
     }
 

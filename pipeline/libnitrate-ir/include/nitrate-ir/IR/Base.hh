@@ -55,7 +55,7 @@ namespace ncc::ir {
     void NodeDumpImpl(const Expr *E, std::ostream &os, bool isForDebug);
     bool IsAcyclicImpl(FlowPtr<Expr> E);
 
-    std::optional<FlowPtr<Type>> Expr_getType(const Expr *E);
+    std::optional<FlowPtr<Type>> Expr_getType(Expr *E);
     std::optional<uint64_t> Type_getAlignBitsImpl(const Type *self);
     std::optional<uint64_t> Type_getSizeBitsImpl(const Type *self);
   };  // namespace detail
@@ -229,8 +229,8 @@ namespace ncc::ir {
       return {m_offset, m_fileid};
     }
 
-    std::optional<FlowPtr<Type>> getType() const {
-      return detail::Expr_getType(reinterpret_cast<const Expr *>(this));
+    std::optional<FlowPtr<Type>> getType() {
+      return detail::Expr_getType(reinterpret_cast<Expr *>(this));
     }
 
     template <typename T>
@@ -267,7 +267,7 @@ namespace ncc::ir {
     }
 
     template <class T = IR_Vertex_Expr<A>>
-    constexpr T *clone() const {
+    constexpr FlowPtr<T> clone() const {
       return cloneImpl()->template as<T>();
     }
 

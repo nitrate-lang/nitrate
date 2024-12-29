@@ -445,7 +445,7 @@ public:
     }
 
     /* Return the identifier */
-    return Token(Name, intern(buf), start_pos);
+    return Token(Name, string(buf), start_pos);
   };
 
   static FORCE_INLINE Token ParseString(Tokenizer &L, char c, std::string &buf,
@@ -627,9 +627,9 @@ public:
       L.m_pushback.push_back(c);
       /* Character or string */
       if (buf.front() == '\'' && buf.size() == 2) {
-        return Token(Char, intern(std::string(1, buf[1])), start_pos);
+        return Token(Char, string(std::string(1, buf[1])), start_pos);
       } else {
-        return Token(Text, intern(buf.substr(1, buf.size() - 1)), start_pos);
+        return Token(Text, string(buf.substr(1, buf.size() - 1)), start_pos);
       }
     }
   }
@@ -812,10 +812,10 @@ public:
     std::string norm;
     if (type == NumType::Floating) {
       if (canonicalize_float(buf, norm)) {
-        return Token(NumL, intern(std::move(norm)), start_pos);
+        return Token(NumL, string(std::move(norm)), start_pos);
       }
     } else if (canonicalize_number(buf, norm, type)) {
-      return Token(IntL, intern(std::move(norm)), start_pos);
+      return Token(IntL, string(std::move(norm)), start_pos);
     }
 
     L.reset_state();
@@ -830,7 +830,7 @@ public:
       c = nextc(L);
     }
 
-    return Token(Note, intern(std::move(buf)), start_pos);
+    return Token(Note, string(std::move(buf)), start_pos);
   };
 
   static FORCE_INLINE Token ParseCommentMultiLine(Tokenizer &L, char c,
@@ -855,7 +855,7 @@ public:
         if (tmp == '/') {
           level--;
           if (level == 0) {
-            return Token(Note, intern(std::move(buf)), start_pos);
+            return Token(Note, string(std::move(buf)), start_pos);
           } else {
             buf += "*";
             buf += tmp;
@@ -887,7 +887,7 @@ public:
 
     L.m_pushback.push_back(c);
 
-    return Token(Macr, intern(std::move(buf)), start_pos);
+    return Token(Macr, string(std::move(buf)), start_pos);
   }
 
   static FORCE_INLINE Token ParseBlockMacro(Tokenizer &L, char c,
@@ -903,7 +903,7 @@ public:
       }
 
       if (state_parens == 0) {
-        return Token(MacB, intern(std::move(buf)), start_pos);
+        return Token(MacB, string(std::move(buf)), start_pos);
       }
 
       buf += c;

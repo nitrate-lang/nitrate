@@ -78,9 +78,11 @@ namespace ncc {
     constexpr auto_intern(std::string_view str = "") {
       m_id = str.empty() ? 0 : StringMemory::FromString(str);
     }
+
     constexpr auto_intern(std::string &&str) {
       m_id = str.empty() ? 0 : StringMemory::FromString(std::move(str));
     }
+
     constexpr auto_intern(const char *str) {
       if (str[0] == '\0') {
         m_id = 0;
@@ -95,41 +97,22 @@ namespace ncc {
       return m_id == O.m_id;
     }
 
-    constexpr inline auto operator*() const { return get(); }
-    inline const auto *operator->() const {
+    constexpr auto operator*() const { return get(); }
+
+    const auto *operator->() const {
       static thread_local std::string_view sv;
       sv = get();
       return &sv;
     }
 
-    constexpr inline bool operator<(const auto_intern &O) const {
+    constexpr bool operator<(const auto_intern &O) const {
       return m_id < O.m_id;
     }
 
     constexpr operator std::string_view() const { return get(); }
+
+    constexpr auto getId() const { return m_id; }
   };
-
-  static inline std::string_view save(std::string_view str) {
-    return auto_intern(str).get();
-  }
-
-  static inline std::string_view save(std::string &&str) {
-    return auto_intern(str).get();
-  }
-
-  static inline std::string_view save(const char *str) {
-    return auto_intern(str).get();
-  }
-
-  static inline auto_intern intern(std::string_view str) {
-    return auto_intern(str);
-  }
-
-  static inline auto_intern intern(std::string &&str) {
-    return auto_intern(str);
-  }
-
-  static inline auto_intern intern(const char *str) { return auto_intern(str); }
 
   using string = auto_intern;
 
@@ -138,5 +121,14 @@ namespace ncc {
     return os << str.get();
   }
 }  // namespace ncc
+
+namespace std {
+  template <>
+  struct hash<ncc::auto_intern> {
+    size_t operator()(const ncc::auto_intern &str) const {
+      return std::hash<uint64_t>{}(str.getId());
+    }
+  };
+}  // namespace std
 
 #endif

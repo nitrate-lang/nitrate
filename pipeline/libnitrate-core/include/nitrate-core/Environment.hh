@@ -55,7 +55,7 @@ namespace ncc {
   };
 
   class Environment : public IEnvironment {
-    std::unordered_map<std::string_view, std::string_view> m_data;
+    std::unordered_map<string, string> m_data;
     std::mutex m_mutex;
 
     void setup_default_env();

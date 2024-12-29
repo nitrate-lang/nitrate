@@ -674,8 +674,8 @@ namespace ncc::ir::abi::c {
 
 ///=============================================================================
 
-CPP_EXPORT std::optional<std::string> ncc::ir::MangleTypeName(const Type *type,
-                                                              AbiTag abi) {
+CPP_EXPORT std::optional<std::string> ncc::ir::MangleTypeName(
+    FlowPtr<Type> type, AbiTag abi) {
   switch (abi) {
     case AbiTag::C: {
       return "";
@@ -691,7 +691,7 @@ CPP_EXPORT std::optional<std::string> ncc::ir::MangleTypeName(const Type *type,
 }
 
 CPP_EXPORT std::optional<std::string> ncc::ir::GetMangledSymbolName(
-    const Expr *symbol, AbiTag abi) {
+    FlowPtr<Expr> symbol, AbiTag abi) {
   auto name = symbol->getName();
 
   if (auto type_opt = symbol->getType()) {

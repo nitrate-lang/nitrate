@@ -41,9 +41,9 @@
 #include <string>
 
 namespace ncc::ir {
-  std::optional<std::string> MangleTypeName(const Type *type, AbiTag abi);
+  std::optional<std::string> MangleTypeName(FlowPtr<Type> type, AbiTag abi);
 
-  std::optional<std::string> GetMangledSymbolName(const Expr *symbol,
+  std::optional<std::string> GetMangledSymbolName(FlowPtr<Expr> symbol,
                                                   AbiTag abi);
 
   std::optional<std::string> ExpandSymbolName(std::string_view mangled_name);
