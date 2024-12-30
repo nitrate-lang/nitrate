@@ -540,18 +540,14 @@ void CambrianFormatter::visit(FlowPtr<FuncTy> n) {
   iterate_except_last(
       n->get_params().begin(), n->get_params().end(),
       [&](auto param, size_t) {
-        auto name = std::get<0>(param);
-        auto type = std::get<1>(param);
-        auto def = std::get<2>(param);
+        line << std::get<0>(param);
 
-        line << name;
-
-        if (type->getKind() != QAST_INFER) {
+        if (auto type = std::get<1>(param); type->getKind() != QAST_INFER) {
           line << ": ";
           type.accept(*this);
         }
 
-        if (def) {
+        if (auto def = std::get<2>(param)) {
           line << " = ";
           def.value().accept(*this);
         }
@@ -576,11 +572,17 @@ void CambrianFormatter::visit(FlowPtr<UnaryExpr> n) {
 }
 
 void CambrianFormatter::visit(FlowPtr<BinExpr> n) {
-  line << "(";
-  n->get_lhs().accept(*this);
-  line << " " << n->get_op() << " ";
-  n->get_rhs().accept(*this);
-  line << ")";
+  if (n->get_op() == OpDot) {
+    n->get_lhs().accept(*this);
+    line << ".";
+    n->get_rhs().accept(*this);
+  } else {
+    line << "(";
+    n->get_lhs().accept(*this);
+    line << " " << n->get_op() << " ";
+    n->get_rhs().accept(*this);
+    line << ")";
+  }
 }
 
 void CambrianFormatter::visit(FlowPtr<PostUnaryExpr> n) {
@@ -1229,10 +1231,16 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
         n->get_template_params().value().begin(),
         n->get_template_params().value().end(),
         [&](auto param, size_t) {
-          line << std::get<0>(param) << ": ";
-          std::get<1>(param).accept(*this);
-          auto val = std::get<2>(param);
-          if (val) {
+          line << std::get<0>(param);
+
+          if (let type = std::get<1>(param)) {
+            if (type->getKind() != QAST_INFER) {
+              line << ": ";
+              type->accept(*this);
+            }
+          }
+
+          if (auto val = std::get<2>(param)) {
             line << " = ";
             val.value().accept(*this);
           }
@@ -1245,13 +1253,16 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
   iterate_except_last(
       n->get_params().begin(), n->get_params().end(),
       [&](auto param, size_t) {
-        auto name = std::get<0>(param);
-        auto type = std::get<1>(param);
-        auto def = std::get<2>(param);
+        line << std::get<0>(param);
 
-        line << name << ": ";
-        type.accept(*this);
-        if (def) {
+        if (let type = std::get<1>(param)) {
+          if (type->getKind() != QAST_INFER) {
+            line << ": ";
+            type->accept(*this);
+          }
+        }
+
+        if (auto def = std::get<2>(param)) {
           line << " = ";
           def.value().accept(*this);
         }
@@ -1279,6 +1290,16 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
     line << ";";
   } else {
     line << " ";
+    if (n->get_body().value()->is(QAST_BLOCK)) {
+      auto block = n->get_body().value()->as<Block>();
+
+      if (block->get_items().size() == 1) {
+        line << "=> ";
+        block->get_items().front().accept(*this);
+        return;
+      }
+    }
+
     n->get_body().value().accept(*this);
   }
 }
@@ -1327,10 +1348,12 @@ void CambrianFormatter::visit(FlowPtr<StructDef> n) {
         n->get_template_params().value().begin(),
         n->get_template_params().value().end(),
         [&](auto param, size_t) {
-          line << std::get<0>(param) << ": ";
-          std::get<1>(param).accept(*this);
-          auto val = std::get<2>(param);
-          if (val) {
+          line << std::get<0>(param);
+          if (auto type = std::get<1>(param); type->getKind() != QAST_INFER) {
+            line << ": ";
+            type.accept(*this);
+          }
+          if (auto val = std::get<2>(param)) {
             line << " = ";
             val.value().accept(*this);
           }
