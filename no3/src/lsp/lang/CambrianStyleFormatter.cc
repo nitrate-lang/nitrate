@@ -758,17 +758,13 @@ void CambrianFormatter::visit(FlowPtr<List> n) {
                      : static_cast<size_t>(std::ceil(std::sqrt(argc)));
     }
 
-    bool is_assoc_map =
-        std::all_of(n->get_items().begin(), n->get_items().end(),
-                    [](auto x) { return x->is(QAST_ASSOC); });
-
     if (break_at == 1) {
       line << "[";
 
       line << std::endl;
 
       { /* Write list items */
-        size_t the_indent = is_assoc_map ? indent + tabSize : line.length() + 1;
+        size_t the_indent = indent + tabSize;
         std::swap(indent, the_indent);
 
         for (size_t i = 0; i < n->get_items().size(); i++) {
@@ -787,9 +783,13 @@ void CambrianFormatter::visit(FlowPtr<List> n) {
         std::swap(indent, the_indent);
       }
 
-      line << "]";
+      line << get_indent() << "]";
     } else {
       line << "[";
+
+      bool is_assoc_map =
+          std::all_of(n->get_items().begin(), n->get_items().end(),
+                      [](auto x) { return x->is(QAST_ASSOC); });
 
       { /* Write list items */
         size_t the_indent = is_assoc_map ? indent + tabSize : line.length();
