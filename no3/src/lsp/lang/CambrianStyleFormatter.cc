@@ -1438,5 +1438,14 @@ void CambrianFormatter::visit(FlowPtr<ExportStmt> n) {
   }
 
   line << " ";
+
+  if (n->get_body()->is(QAST_BLOCK)) {
+    auto block = n->get_body()->as<Block>();
+    if (block->get_items().size() == 1) {
+      block->get_items().front().accept(*this);
+      return;
+    }
+  }
+
   n->get_body().accept(*this);
 }
