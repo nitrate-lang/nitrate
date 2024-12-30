@@ -56,8 +56,6 @@ namespace ncc::parse {
       FlowPtr<T> new_obj = MakeFlowPtr<T>(new (Arena<T>().allocate(1))
                                               T(std::forward<Args>(args)...));
 
-      /// TODO: Implement node cache
-
 #if NITRATE_FLOWPTR_TRACE
       new_obj.set_tracking(origin);
 #endif

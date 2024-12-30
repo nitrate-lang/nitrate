@@ -40,9 +40,31 @@ using namespace ncc::parse;
 NullableFlowPtr<Stmt> Parser::recurse_for_init_expr() {
   if (next_if(PuncSemi)) {
     return std::nullopt;
+  } else if (next_if(Let)) {
+    if (auto vars = recurse_variable(VarDeclType::Let); vars.size() == 1) {
+      return vars[0];
+    } else {
+      diagnostic << current() << "Expected exactly one variable in for loop";
+    }
+  } else if (next_if(Var)) {
+    if (auto vars = recurse_variable(VarDeclType::Var); vars.size() == 1) {
+      return vars[0];
+    } else {
+      diagnostic << current() << "Expected exactly one variable in for loop";
+    }
+  } else if (next_if(Const)) {
+    if (auto vars = recurse_variable(VarDeclType::Const); vars.size() == 1) {
+      return vars[0];
+    } else {
+      diagnostic << current() << "Expected exactly one variable in for loop";
+    }
   } else {
-    return recurse_block(false, true, SafetyMode::Unknown);
+    return make<ExprStmt>(recurse_expr({
+        Token(Punc, PuncSemi),
+    }))();
   }
+
+  return std::nullopt;
 }
 
 NullableFlowPtr<Expr> Parser::recurse_for_condition() {

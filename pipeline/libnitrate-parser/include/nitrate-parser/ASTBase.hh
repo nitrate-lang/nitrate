@@ -328,7 +328,7 @@ namespace ncc::parse {
     }
 
     constexpr std::tuple<uint32_t, uint32_t> get_pos() const {
-      /// TODO: Implement this
+      /// FIXME: Update source location format
       return {lex::QLEX_EOFF, lex::QLEX_NOFILE};
     }
 
