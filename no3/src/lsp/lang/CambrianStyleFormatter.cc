@@ -1394,16 +1394,21 @@ void CambrianFormatter::visit(FlowPtr<EnumDef> n) {
     return;
   }
 
-  line << " {";
-  std::for_each(n->get_items().begin(), n->get_items().end(), [&](auto item) {
-    line << item.first;
-    if (item.second) {
+  line << " {" << std::endl;
+  indent += tabSize;
+
+  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+    line << get_indent();
+    line << it->first;
+    if (it->second) {
       line << " = ";
-      item.second.value().accept(*this);
+      it->second.value().accept(*this);
     }
     line << "," << std::endl;
-  });
-  line << "};";
+  }
+
+  indent -= tabSize;
+  line << get_indent() << "}";
 }
 
 void CambrianFormatter::visit(FlowPtr<ScopeStmt> n) {
