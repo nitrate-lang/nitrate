@@ -1389,6 +1389,11 @@ void CambrianFormatter::visit(FlowPtr<EnumDef> n) {
     n->get_type().value().accept(*this);
   }
 
+  if (n->get_items().empty()) {
+    line << ";";
+    return;
+  }
+
   line << " {";
   std::for_each(n->get_items().begin(), n->get_items().end(), [&](auto item) {
     line << item.first;
@@ -1416,6 +1421,18 @@ void CambrianFormatter::visit(FlowPtr<ScopeStmt> n) {
     line << "]";
   }
 
+  if (n->get_body()->is(QAST_BLOCK)) {
+    auto block = n->get_body()->as<Block>();
+    if (block->get_items().empty()) {
+      line << ";";
+      return;
+    } else if (block->get_items().size() == 1) {
+      line << " => ";
+      block->get_items().front().accept(*this);
+      return;
+    }
+  }
+
   line << " ";
   n->get_body().accept(*this);
 }
@@ -1437,15 +1454,18 @@ void CambrianFormatter::visit(FlowPtr<ExportStmt> n) {
     line << "]";
   }
 
-  line << " ";
-
   if (n->get_body()->is(QAST_BLOCK)) {
     auto block = n->get_body()->as<Block>();
-    if (block->get_items().size() == 1) {
+    if (block->get_items().empty()) {
+      line << ";";
+      return;
+    } else if (block->get_items().size() == 1) {
+      line << " ";
       block->get_items().front().accept(*this);
       return;
     }
   }
 
+  line << " ";
   n->get_body().accept(*this);
 }
