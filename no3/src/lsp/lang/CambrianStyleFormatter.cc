@@ -313,23 +313,31 @@ void CambrianFormatter::visit(FlowPtr<TemplType> n) {
       n->get_template()->getKind() == QAST_NAMED &&
       n->get_template()->as<NamedTy>()->get_name() == "__builtin_uset";
 
+  const auto print_without_type_keyword = [&](auto node) {
+    if (node->getKind() == QAST_TEXPR) {
+      node->template as<TypeExpr>()->get_type().accept(*this);
+    } else {
+      node->accept(*this);
+    }
+  };
+
   size_t argc = n->get_args().size();
   if (is_optional && argc == 1) {
-    n->get_args().front().second.accept(*this);
+    print_without_type_keyword(n->get_args().front().second);
     line << "?";
   } else if (is_vector && argc == 1) {
     line << "[";
-    n->get_args().front().second.accept(*this);
+    print_without_type_keyword(n->get_args().front().second);
     line << "]";
   } else if (is_map && argc == 2) {
     line << "[";
-    n->get_args().front().second.accept(*this);
+    print_without_type_keyword(n->get_args().front().second);
     line << "->";
-    n->get_args().back().second.accept(*this);
+    print_without_type_keyword(n->get_args().back().second);
     line << "]";
   } else if (is_set && argc == 1) {
     line << "{";
-    n->get_args().front().second.accept(*this);
+    print_without_type_keyword(n->get_args().front().second);
     line << "}";
   } else {
     n->get_template().accept(*this);
