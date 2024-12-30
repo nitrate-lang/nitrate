@@ -184,6 +184,10 @@ FlowPtr<parse::Type> Parser::recurse_type_by_keyword(Keyword key) {
       return recurse_opaque_type();
     }
 
+    case Keyword::Type: {
+      return recurse_type();
+    }
+
     default: {
       diagnostic << current() << "Keyword is not valid in this context";
       return mock_type();
