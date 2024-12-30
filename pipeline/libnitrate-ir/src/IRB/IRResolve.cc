@@ -151,7 +151,7 @@
 //     Expr **C, Expr *callee_ref, FnTy *callee_ty,
 //     const std::unordered_map<std::string_view, size_t> &name_index_map,
 //     const std::optional<std::unordered_map<size_t, Expr *>>
-//     &func_default_args, const CallArguments &user_arguments) {
+//     &func_default_args, const IR_Vertex_CallArguments &user_arguments) {
 //   using namespace std;
 
 //   unordered_map<size_t, Expr *> temporary_map(user_arguments.size());

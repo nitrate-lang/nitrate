@@ -1898,7 +1898,7 @@ using namespace ncc;
 //     return std::nullopt;
 //   }
 
-//   SwitchCases cases;
+//   IR_Vertex_SwitchCases cases;
 //   for (auto it = n->get_cases().begin(); it != n->get_cases().end(); ++it) {
 //     auto item = next_one(*it);
 //     if (!item.has_value()) {

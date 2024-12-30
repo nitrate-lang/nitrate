@@ -44,7 +44,6 @@ namespace ncc::ir {
     virtual ~IRVisitor() = default;
 
     virtual void visit(FlowPtr<IR_Vertex_Expr<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Type<A>> n) = 0;
     virtual void visit(FlowPtr<IR_Vertex_BinExpr<A>> n) = 0;
     virtual void visit(FlowPtr<IR_Vertex_Unary<A>> n) = 0;
     virtual void visit(FlowPtr<IR_Vertex_U1Ty<A>> n) = 0;

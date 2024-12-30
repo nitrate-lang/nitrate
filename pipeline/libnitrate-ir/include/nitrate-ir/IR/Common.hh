@@ -109,7 +109,7 @@ namespace ncc::ir {
   };
 
   template <class A>
-  using CallArguments =
+  using IR_Vertex_CallArguments =
       std::vector<std::pair<string, FlowPtr<IR_Vertex_Expr<A>>>,
                   Arena<std::pair<string, FlowPtr<IR_Vertex_Expr<A>>>>>;
 
@@ -164,13 +164,13 @@ namespace ncc::ir {
                                          Arena<FlowPtr<IR_Vertex_Expr<A>>>>;
 
   template <class A>
-  using Params =
-      std::vector<std::pair<IR_Vertex_Type<A> *, std::string_view>,
-                  Arena<std::pair<IR_Vertex_Type<A> *, std::string_view>>>;
+  using IR_Vertex_Params =
+      std::vector<std::pair<FlowPtr<IR_Vertex_Type<A>>, string>,
+                  Arena<std::pair<FlowPtr<IR_Vertex_Type<A>>, string>>>;
 
   template <class A>
-  using SwitchCases =
-      std::vector<IR_Vertex_Case<A> *, Arena<IR_Vertex_Case<A> *>>;
+  using IR_Vertex_SwitchCases = std::vector<FlowPtr<IR_Vertex_Case<A>>,
+                                            Arena<FlowPtr<IR_Vertex_Case<A>>>>;
 
 }  // namespace ncc::ir
 

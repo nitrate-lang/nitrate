@@ -85,7 +85,6 @@ namespace ncc::ir::encode {
     virtual ~IR_Writer() = default;
 
     void visit(FlowPtr<Expr> n) override;
-    void visit(FlowPtr<Type> n) override;
     void visit(FlowPtr<BinExpr> n) override;
     void visit(FlowPtr<Unary> n) override;
     void visit(FlowPtr<U1Ty> n) override;

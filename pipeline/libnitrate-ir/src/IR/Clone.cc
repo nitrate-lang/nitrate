@@ -31,12 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstring>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IR.hh>
 #include <nitrate-ir/IR/Nodes.hh>
-#include <nitrate-parser/Context.hh>
 
 using namespace ncc;
 using namespace ncc::ir;
@@ -50,292 +48,299 @@ public:
 
   Expr *GetClone() { return R.value(); }
 
-  void visit(FlowPtr<Expr> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<Type> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
+  void visit(FlowPtr<Expr> n) override { R = create<Expr>(n->getKind()); }
 
   void visit(FlowPtr<BinExpr> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    auto lhs = n->getLHS()->clone();
+    auto rhs = n->getRHS()->clone();
+    auto op = n->getOp();
+
+    R = create<BinExpr>(lhs, rhs, op);
   }
 
   void visit(FlowPtr<Unary> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    auto expr = n->getExpr()->clone();
+    auto op = n->getOp();
+    auto postfix = n->isPostfix();
+
+    R = create<Unary>(expr, op, postfix);
   }
 
-  void visit(FlowPtr<U1Ty> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<U8Ty> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<U16Ty> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<U32Ty> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<U64Ty> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<U128Ty> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<I8Ty> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<I16Ty> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<I32Ty> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<I64Ty> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<I128Ty> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<F16Ty> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<F32Ty> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<F64Ty> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<F128Ty> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<VoidTy> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<PtrTy> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<ConstTy> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<OpaqueTy> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
+  void visit(FlowPtr<U1Ty>) override { R = getU1Ty(); }
+  void visit(FlowPtr<U8Ty>) override { R = getU8Ty(); }
+  void visit(FlowPtr<U16Ty>) override { R = getU16Ty(); }
+  void visit(FlowPtr<U32Ty>) override { R = getU32Ty(); }
+  void visit(FlowPtr<U64Ty>) override { R = getU64Ty(); }
+  void visit(FlowPtr<U128Ty>) override { R = getU128Ty(); }
+  void visit(FlowPtr<I8Ty>) override { R = getI8Ty(); }
+  void visit(FlowPtr<I16Ty>) override { R = getI16Ty(); }
+  void visit(FlowPtr<I32Ty>) override { R = getI32Ty(); }
+  void visit(FlowPtr<I64Ty>) override { R = getI64Ty(); }
+  void visit(FlowPtr<I128Ty>) override { R = getI128Ty(); }
+  void visit(FlowPtr<F16Ty>) override { R = getF16Ty(); }
+  void visit(FlowPtr<F32Ty>) override { R = getF32Ty(); }
+  void visit(FlowPtr<F64Ty>) override { R = getF64Ty(); }
+  void visit(FlowPtr<F128Ty>) override { R = getF128Ty(); }
+  void visit(FlowPtr<VoidTy>) override { R = getVoidTy(); }
+  void visit(FlowPtr<OpaqueTy> n) override { R = getOpaqueTy(n->getName()); }
 
   void visit(FlowPtr<StructTy> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    std::vector<FlowPtr<Type>> fields(n->getFields().size());
+    std::transform(n->getFields().begin(), n->getFields().end(), fields.begin(),
+                   [](auto item) { return item->template clone<Type>(); });
+
+    R = getStructTy(fields);
   }
 
   void visit(FlowPtr<UnionTy> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    std::vector<FlowPtr<Type>> fields(n->getFields().size());
+    std::transform(n->getFields().begin(), n->getFields().end(), fields.begin(),
+                   [](auto item) { return item->template clone<Type>(); });
+
+    R = getUnionTy(fields);
+  }
+
+  void visit(FlowPtr<PtrTy> n) override {
+    R = getPtrTy(n->getPointee()->clone<Type>(), n->getNativeSize());
+  }
+
+  void visit(FlowPtr<ConstTy> n) override {
+    R = getConstTy(n->getItem()->clone<Type>());
   }
 
   void visit(FlowPtr<ArrayTy> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    R = getArrayTy(n->getElement()->clone<Type>(), n->getCount());
   }
 
   void visit(FlowPtr<FnTy> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    std::vector<FlowPtr<Type>> params(n->getParams().size());
+    std::transform(n->getParams().begin(), n->getParams().end(), params.begin(),
+                   [](auto item) { return item->template clone<Type>(); });
+
+    R = getFnTy(params, n->getReturn()->clone<Type>(), n->isVariadic(),
+                n->getNativeSize());
   }
 
   void visit(FlowPtr<Int> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    R = create<Int>(n->getValue(), n->getSize());
   }
 
   void visit(FlowPtr<Float> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    R = create<Float>(n->getValue(), n->getSize());
   }
 
   void visit(FlowPtr<List> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    IR_Vertex_ListItems<void> items(n->size());
+
+    std::transform(n->begin(), n->end(), items.begin(),
+                   [](auto item) { return item->clone(); });
+
+    R = create<List>(items, n->isHomogenous());
   }
 
   void visit(FlowPtr<Call> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    IR_Vertex_CallArgs<void> args(n->getNumArgs());
+
+    std::transform(n->getArgs().begin(), n->getArgs().end(), args.begin(),
+                   [](auto arg) { return arg->clone(); });
+    auto old_ref = n->getTarget();  // Resolve later
+
+    R = create<Call>(old_ref, args);
   }
 
   void visit(FlowPtr<Seq> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    IR_Vertex_SeqItems<void> items(n->size());
+
+    std::transform(n->begin(), n->end(), items.begin(),
+                   [](auto item) { return item->clone(); });
+
+    R = create<Seq>(items);
   }
 
   void visit(FlowPtr<Index> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    auto base = n->getExpr()->clone();
+    auto index = n->getIndex()->clone();
+
+    R = create<Index>(base, index);
   }
 
   void visit(FlowPtr<Ident> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    auto name = n->getName();
+    auto old_ref = n->getWhat();  // Resolve later
+
+    R = create<Ident>(name, old_ref);
   }
 
   void visit(FlowPtr<Extern> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    auto value = n->getValue()->clone();
+    auto abi_name = n->getAbiName();
+
+    R = create<Extern>(value, abi_name);
   }
 
   void visit(FlowPtr<Local> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    auto name = n->getName();
+    auto value = n->getValue()->clone();
+    auto abi_tag = n->getAbiTag();
+    auto readonly = n->isReadonly();
+    auto storage_class = n->getStorageClass();
+
+    R = create<Local>(name, value, abi_tag, readonly, storage_class);
   }
 
   void visit(FlowPtr<Ret> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    auto expr = n->getExpr()->clone();
+
+    R = create<Ret>(expr);
   }
 
-  void visit(FlowPtr<Brk> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
-
-  void visit(FlowPtr<Cont> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
-  }
+  void visit(FlowPtr<Brk>) override { R = create<Brk>(); }
+  void visit(FlowPtr<Cont>) override { R = create<Cont>(); }
 
   void visit(FlowPtr<If> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    auto cond = n->getCond()->clone();
+    auto then = n->getThen()->clone();
+    auto ele = n->getElse()->clone();
+
+    R = create<If>(cond, then, ele);
   }
 
   void visit(FlowPtr<While> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    auto cond = n->getCond()->clone();
+    auto body = n->getBody()->clone<Seq>();
+
+    R = create<While>(cond, body);
   }
 
   void visit(FlowPtr<For> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    auto init = n->getInit()->clone();
+    auto cond = n->getCond()->clone();
+    auto step = n->getStep()->clone();
+    auto body = n->getBody()->clone();
+
+    R = create<For>(init, cond, step, body);
   }
 
   void visit(FlowPtr<Case> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    auto cond = n->getCond()->clone();
+    auto body = n->getBody()->clone();
+
+    R = create<Case>(cond, body);
   }
 
   void visit(FlowPtr<Switch> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    IR_Vertex_SwitchCases<void> cases(n->getCases().size());
+
+    std::transform(n->getCases().begin(), n->getCases().end(), cases.begin(),
+                   [](auto item) { return item->template clone<Case>(); });
+    auto cond = n->getCond()->clone();
+    auto default_ = n->getDefault().has_value()
+                        ? n->getDefault().value()->clone()
+                        : nullptr;
+
+    R = create<Switch>(cond, cases, default_);
   }
 
   void visit(FlowPtr<Function> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    IR_Vertex_Params<void> params(n->getParams().size());
+
+    std::transform(
+        n->getParams().begin(), n->getParams().end(), params.begin(),
+        [](auto item) -> std::pair<FlowPtr<IR_Vertex_Type<void>>, string> {
+          return {item.first->template clone<Type>(), item.second};
+        });
+
+    auto body =
+        n->getBody().has_value() ? n->getBody().value()->clone<Seq>() : nullptr;
+    auto return_type = n->getReturn()->clone<Type>();
+    auto name = n->getName();
+    auto abi_tag = n->getAbiTag();
+    auto is_variadic = n->isVariadic();
+
+    R = create<Function>(name, params, return_type, body, is_variadic, abi_tag);
   }
 
-  void visit(FlowPtr<Asm> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+  void visit(FlowPtr<Asm>) override {
+    qcore_panic("Cannot clone Asm node because it is not implemented");
   }
 
   void visit(FlowPtr<Tmp> n) override {
-    /// TODO: Implement
-    qcore_implement();
-    (void)n;
+    if (std::holds_alternative<string>(n->getData())) {
+      R = create<Tmp>(n->getTmpType(), std::get<string>(n->getData()));
+    } else if (std::holds_alternative<IR_Vertex_CallArgsTmpNodeCradle<void>>(
+                   n->getData())) {
+      auto data = std::get<IR_Vertex_CallArgsTmpNodeCradle<void>>(n->getData());
+      auto base = data.base->clone();
+      IR_Vertex_CallArguments<void> args(data.args.size());
+
+      std::transform(data.args.begin(), data.args.end(), args.begin(),
+                     [](auto item) -> std::pair<string, FlowPtr<Expr>> {
+                       return {item.first, item.second->clone()};
+                     });
+
+      R = create<Tmp>(n->getTmpType(),
+                      IR_Vertex_CallArgsTmpNodeCradle<void>{base, args});
+    } else {
+      qcore_panic("Unknown Tmp node data type");
+    }
   }
 };
 
-CPP_EXPORT Expr *detail::Expr_getCloneImpl(const Expr *self) {
-  CloneVisitor V;
-  V.dispatch(MakeFlowPtr(self));
+///===========================================================================///
 
-  return V.GetClone();
+CPP_EXPORT Expr *detail::Expr_getCloneImpl(Expr *self) {
+  static thread_local struct {
+    std::unordered_map<Expr *, Expr *> in_out;
+    size_t depth = 0;
+  } state; /* The state behaves like a recursive argument */
+
+  {
+    state.depth++;
+
+    CloneVisitor V;
+    self->accept(V);
+
+    FlowPtr<Expr> E = V.GetClone();
+    E->setLoc(self->getLoc());
+
+    state.depth--;
+
+    if (state.depth == 0) {
+      // Resolve internal cyclic references
+
+      for_each(E, [](auto ty, auto n) {
+        switch (ty) {
+          case IR_eIDENT: {
+            auto ident = n->template as<Ident>();
+
+            if (auto what = ident->getWhat()) {
+              if (auto it = state.in_out.find(what.value().get());
+                  it != state.in_out.end()) {
+                ident->setWhat(it->second);
+              }
+            }
+          }
+
+          case IR_eCALL: {
+            auto call = n->template as<Call>();
+
+            if (auto target = call->getTarget()) {
+              if (auto it = state.in_out.find(target.value().get());
+                  it != state.in_out.end()) {
+                call->setTarget(it->second);
+              }
+            }
+          }
+
+          default: {
+            break;
+          }
+        }
+      });
+
+      state.in_out.clear();
+    }
+
+    return E.get();
+  }
 }

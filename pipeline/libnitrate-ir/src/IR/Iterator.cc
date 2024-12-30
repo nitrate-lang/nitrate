@@ -68,7 +68,6 @@ public:
   virtual ~GetNodeChildren() = default;
 
   void visit(FlowPtr<IR_Vertex_Expr<A>>) override {}
-  void visit(FlowPtr<IR_Vertex_Type<A>>) override {}
 
   void visit(FlowPtr<IR_Vertex_BinExpr<A>> n) override {
     add(n->m_lhs);

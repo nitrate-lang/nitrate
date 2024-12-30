@@ -383,7 +383,6 @@ public:
   std::optional<FlowPtr<Type>> Get() { return R; }
 
   void visit(FlowPtr<Expr>) override {}
-  void visit(FlowPtr<Type> n) override { R = n; }
 
   void visit(FlowPtr<BinExpr> n) override {
     auto LHS = n->getLHS()->getType(), RHS = n->getRHS()->getType();
@@ -512,9 +511,11 @@ public:
   }
 
   void visit(FlowPtr<Call> n) override {
-    if (auto callee_ty = n->getTarget()->getType()) {
-      if (callee_ty.value()->is_function()) {
-        R = callee_ty.value()->as<FnTy>()->getReturn();
+    if (auto callee = n->getTarget()) {
+      if (auto callee_ty = callee.value()->getType()) {
+        if (callee_ty.value()->is_function()) {
+          R = callee_ty.value()->as<FnTy>()->getReturn();
+        }
       }
     }
   }

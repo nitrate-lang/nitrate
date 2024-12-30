@@ -58,7 +58,7 @@ namespace ncc::ir {
     std::optional<FlowPtr<Type>> Expr_getType(Expr *E);
     std::optional<uint64_t> Type_getAlignBitsImpl(const Type *self);
     std::optional<uint64_t> Type_getSizeBitsImpl(const Type *self);
-    Expr *Expr_getCloneImpl(const Expr *self);
+    Expr *Expr_getCloneImpl(Expr *self);
   };  // namespace detail
 
   template <class A>
@@ -228,6 +228,11 @@ namespace ncc::ir {
       return {m_offset, m_fileid};
     }
 
+    constexpr void setLoc(std::tuple<uint32_t, uint32_t> loc) {
+      m_offset = std::get<0>(loc);
+      m_fileid = std::get<1>(loc);
+    }
+
     std::optional<FlowPtr<Type>> getType() {
       return detail::Expr_getType(reinterpret_cast<Expr *>(this));
     }
@@ -266,8 +271,9 @@ namespace ncc::ir {
     }
 
     template <class T = IR_Vertex_Expr<A>>
-    constexpr T *clone() const {
-      return detail::Expr_getCloneImpl(this)->template as<T>();
+    constexpr T *clone() {
+      return detail::Expr_getCloneImpl(reinterpret_cast<Expr *>(this))
+          ->template as<T>();
     }
 
     constexpr IR_Vertex_Expr *asExpr() { return this; }

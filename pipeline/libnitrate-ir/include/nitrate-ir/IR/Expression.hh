@@ -37,6 +37,8 @@
 #include <nitrate-ir/IR/Base.hh>
 #include <nitrate-lexer/Token.hh>
 
+#include "nitrate-core/FlowPtr.hh"
+
 namespace ncc::ir {
   template <class A>
   class IR_Vertex_BinExpr final : public IR_Vertex_Expr<A> {
@@ -183,18 +185,18 @@ namespace ncc::ir {
 
     std::span<FlowPtr<IR_Vertex_Expr<A>>> m_args;
     /* Possibly cyclic reference to the callee. */
-    FlowPtr<IR_Vertex_Expr<A>> m_iref;
+    NullableFlowPtr<IR_Vertex_Expr<A>> m_iref;
 
   public:
-    constexpr IR_Vertex_Call(auto ref, IR_Vertex_CallArgs<A> args)
-        : IR_Vertex_Expr<A>(IR_eCALL), m_iref(ref), m_args(args) {}
+    constexpr IR_Vertex_Call(auto ref, auto args)
+        : IR_Vertex_Expr<A>(IR_eCALL), m_args(args), m_iref(ref) {}
 
     constexpr auto getTarget() const { return m_iref; }
     constexpr auto getNumArgs() { return m_args.size(); }
     constexpr auto getArgs() const { return m_args; }
 
-    constexpr void setTarget(FlowPtr<IR_Vertex_Expr<A>> ref) { m_iref = ref; }
-    void setArgs(IR_Vertex_CallArgs<A> args) { m_args = args; }
+    constexpr void setTarget(auto ref) { m_iref = ref; }
+    void setArgs(auto args) { m_args = args; }
   };
 
   template <class A>
@@ -416,7 +418,8 @@ namespace ncc::ir {
   class IR_Vertex_Switch final : public IR_Vertex_Expr<A> {
     friend A;
 
-    FlowPtr<IR_Vertex_Expr<A>> m_cond, m_default;
+    FlowPtr<IR_Vertex_Expr<A>> m_cond;
+    NullableFlowPtr<IR_Vertex_Expr<A>> m_default;
     std::span<FlowPtr<IR_Vertex_Case<A>>> m_cases;
 
   public:
@@ -439,7 +442,7 @@ namespace ncc::ir {
   class IR_Vertex_Function final : public IR_Vertex_Expr<A> {
     friend A;
 
-    std::span<std::pair<FlowPtr<IR_Vertex_Type<A>>, std::string_view>> m_params;
+    std::span<std::pair<FlowPtr<IR_Vertex_Type<A>>, string>> m_params;
     NullableFlowPtr<IR_Vertex_Seq<A>> m_body;
     FlowPtr<IR_Vertex_Type<A>> m_return;
     string m_name;

@@ -52,17 +52,6 @@ void IR_Writer::visit(FlowPtr<Expr> n) {
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Type> n) {
-  begin_obj(1);
-
-  string("kind");
-  string(n->getKindName());
-
-  /// TODO: Implement serialization for node
-
-  end_obj();
-}
-
 void IR_Writer::visit(FlowPtr<BinExpr> n) {
   begin_obj(1);
 
