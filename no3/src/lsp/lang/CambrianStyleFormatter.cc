@@ -1292,8 +1292,10 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
     line << " ";
     if (n->get_body().value()->is(QAST_BLOCK)) {
       auto block = n->get_body().value()->as<Block>();
+      bool single_stmt = block->get_items().size() == 1;
+      bool few_children = single_stmt && block->count_children() <= 10;
 
-      if (block->get_items().size() == 1) {
+      if (single_stmt && few_children) {
         line << "=> ";
         block->get_items().front().accept(*this);
         return;
