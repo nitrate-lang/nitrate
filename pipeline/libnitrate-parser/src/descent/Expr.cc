@@ -504,6 +504,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
           diagnostic << current() << "Expected ')' to close the function call";
           E = mock_expr(QAST_CALL);
         }
+      } else {
+        E = expr;
       }
 
       break;
