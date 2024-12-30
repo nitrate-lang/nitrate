@@ -722,7 +722,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
     }
 
     case PuncLCur: {
-      ExpressionList items;
+      // ExpressionList items;
+      std::vector<FlowPtr<Assoc>> items;
 
       while (true) {
         if (next_if(EofF)) [[unlikely]] {
@@ -758,7 +759,13 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
         items.push_back(assoc);
       }
 
-      E = make<List>(items)();
+      if (items.size() == 1) {
+        E = items[0];
+      } else {
+        ExpressionList items_copy(items.begin(), items.end());
+        E = make<List>(items_copy)();
+      }
+
       break;
     }
 
