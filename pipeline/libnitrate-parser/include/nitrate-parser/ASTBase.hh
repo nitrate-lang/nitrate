@@ -267,6 +267,8 @@ namespace ncc::parse {
 
     uint64_t hash64() const;
 
+    size_t count_children();
+
     ///======================================================================
     /// Visitation
 

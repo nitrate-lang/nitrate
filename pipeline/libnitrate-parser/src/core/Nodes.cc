@@ -92,6 +92,14 @@ CPP_EXPORT uint64_t Base::hash64() const {
   return visitor.get();
 }
 
+CPP_EXPORT size_t Base::count_children() {
+  size_t count = 0;
+
+  for_each(this, [&](auto, auto) { count++; });
+
+  return count;
+}
+
 ///=============================================================================
 
 CPP_EXPORT bool Type::is_ptr_to(Type *type) const {
