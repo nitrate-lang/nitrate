@@ -145,7 +145,7 @@ namespace ncc::ir {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
       f((*c)->getKind(), *c);
 
-      return IterOp::Abort;
+      return IterOp::Proceed;
     });
   }
 

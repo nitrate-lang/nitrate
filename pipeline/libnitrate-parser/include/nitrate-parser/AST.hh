@@ -113,7 +113,7 @@ namespace ncc::parse {
     iterate<mode>(v, [&](auto, FlowPtr<Base> c) -> IterOp {
       f(c->getKind(), c);
 
-      return IterOp::Abort;
+      return IterOp::Proceed;
     });
   }
 
