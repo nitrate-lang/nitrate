@@ -1373,7 +1373,7 @@ void CambrianFormatter::visit(FlowPtr<StructDef> n) {
 
   std::for_each(n->get_static_methods().begin(), n->get_static_methods().end(),
                 [&](auto method) {
-                  line << get_indent() << method.vis << " ";
+                  line << get_indent() << method.vis << " static ";
                   method.func.accept(*this);
                   line << std::endl;
                 });
