@@ -124,7 +124,7 @@ std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
     if (next_if(OpEllipsis)) {
       is_variadic = true;
 
-      if (!next_if(PuncRPar)) {
+      if (!peek().is<PuncRPar>()) {
         diagnostic << current() << "Expected ')' after variadic parameter";
       }
       continue;
