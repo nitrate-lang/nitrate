@@ -1239,8 +1239,104 @@ CPP_EXPORT const char *ncc::lex::punct_repr(Punctor punct) {
 CPP_EXPORT
 std::optional<std::vector<std::string>> Tokenizer::GetSourceWindow(
     Point start, Point end, char fillchar) {
-  /// TODO: Implement this function
-  return {{{"abc", "abc"}}};
+  if (start.x > end.x || (start.x == end.x && start.y > end.y)) {
+    qcore_print(QCORE_ERROR, "Invalid source window range");
+    return std::nullopt;
+  }
+
+  auto current_source_offset = m_file.tellg();
+  if (m_file.seekg(0, std::ios::beg)) {
+    long line = 0, column = 0;
+
+    while (true) {
+      auto ch = m_file.get();
+      if (ch == EOF) [[unlikely]] {
+        qcore_print(QCORE_ERROR, "End of file reached unexpectedly");
+        break;
+      }
+
+      bool is_begin = false;
+      if (line == start.x && column == start.y) [[unlikely]] {
+        is_begin = true;
+      } else {
+        switch (ch) {
+          case '\n': {
+            if (line == start.x && start.y == -1) [[unlikely]] {
+              is_begin = true;
+            }
+
+            line++;
+            column = 0;
+            break;
+          }
+
+          default: {
+            column++;
+            break;
+          }
+        }
+      }
+
+      if (is_begin) [[unlikely]] {
+        std::vector<std::string> lines;
+        std::string line;
+        bool spinning = true;
+
+        while (spinning) {
+          auto ch = m_file.get();
+          if (ch == EOF) [[unlikely]] {
+            qcore_print(QCORE_ERROR, "End of file reached unexpectedly");
+            break;
+          }
+
+          long current_line = line.size();
+
+          if (current_line == end.x && current_line == end.y) [[unlikely]] {
+            spinning = false;
+          } else {
+            switch (ch) {
+              case '\n': {
+                if (current_line == end.x && end.y == -1) [[unlikely]] {
+                  spinning = false;
+                }
+
+                lines.push_back(line);
+                line.clear();
+                break;
+              }
+
+              default: {
+                line.push_back(ch);
+                break;
+              }
+            }
+          }
+        }
+
+        if (!line.empty()) {
+          lines.push_back(line);
+        }
+
+        size_t max_length = 0;
+        for (const auto &l : lines) {
+          max_length = std::max(max_length, l.size());
+        }
+
+        for (auto &l : lines) {
+          if (l.size() < max_length) {
+            l.append(max_length - l.size(), fillchar);
+          }
+        }
+
+        m_file.seekg(current_source_offset);
+        return lines;
+      }
+    }
+  } else {
+    qcore_print(QCORE_ERROR, "Failed to seek to the beginning of the file");
+  }
+
+  m_file.seekg(current_source_offset);
 
   return std::nullopt;
 }
