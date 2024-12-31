@@ -395,3 +395,10 @@ CPP_EXPORT qprep_impl_t::qprep_impl_t(std::istream &file,
 }
 
 CPP_EXPORT qprep_impl_t::~qprep_impl_t() {}
+
+CPP_EXPORT
+std::optional<std::vector<std::string>> qprep_impl_t::GetSourceWindow(
+    Point start, Point end, char fillchar) {
+  /// TODO: Implement this function
+  return m_scanner->GetSourceWindow(start, end, fillchar);
+}

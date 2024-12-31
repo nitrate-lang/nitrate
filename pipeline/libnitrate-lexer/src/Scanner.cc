@@ -419,3 +419,9 @@ CPP_EXPORT uint32_t IScanner::StartLine(Token t) { return Start(t).GetRow(); }
 CPP_EXPORT uint32_t IScanner::StartColumn(Token t) { return Start(t).GetCol(); }
 CPP_EXPORT uint32_t IScanner::EndLine(Token t) { return End(t).GetRow(); }
 CPP_EXPORT uint32_t IScanner::EndColumn(Token t) { return End(t).GetCol(); }
+
+CPP_EXPORT
+std::optional<std::vector<std::string>> IScanner::GetSourceWindow(Point, Point,
+                                                                  char) {
+  return std::nullopt;
+}

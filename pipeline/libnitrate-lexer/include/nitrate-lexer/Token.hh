@@ -176,7 +176,7 @@ namespace ncc::lex {
   class IScanner;
 
   class Location {
-    uint32_t m_offset = 0, m_line = 0, m_column = 0;
+    uint32_t m_offset = QLEX_EOFF, m_line = QLEX_EOFF, m_column = QLEX_EOFF;
     string m_filename;
 
   public:
@@ -189,7 +189,9 @@ namespace ncc::lex {
           m_column(column),
           m_filename(filename) {}
 
-    static constexpr Location EndOfFile() { return Location(0, 0, 0, ""); }
+    static constexpr Location EndOfFile() {
+      return Location(QLEX_EOFF, QLEX_EOFF, QLEX_EOFF, "");
+    }
 
     constexpr uint32_t GetOffset() const { return m_offset; }
     constexpr uint32_t GetRow() const { return m_line; }

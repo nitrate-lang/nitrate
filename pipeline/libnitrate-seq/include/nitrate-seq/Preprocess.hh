@@ -97,6 +97,9 @@ public:
     IScanner::SkipCommentsState(skip);
     m_scanner->SkipCommentsState(skip);
   }
+
+  virtual std::optional<std::vector<std::string>> GetSourceWindow(
+      Point start, Point end, char fillchar) override;
 };
 
 class StopException {};

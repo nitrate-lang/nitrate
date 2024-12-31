@@ -295,6 +295,13 @@ namespace ncc::lex {
     bool GetSkipCommentsState() const { return m_skip_comments; }
 
     Location GetLocation(LocationID id);
+
+    struct Point {
+      long x = 0, y = 0;
+    };
+
+    virtual std::optional<std::vector<std::string>> GetSourceWindow(
+        Point start, Point end, char fillchar = ' ');
   };
 
   class CPP_EXPORT Tokenizer final : public IScanner {
@@ -323,6 +330,9 @@ namespace ncc::lex {
     virtual ~Tokenizer() override {}
 
     std::shared_ptr<Environment> GetEnvironment() const { return m_env; }
+
+    virtual std::optional<std::vector<std::string>> GetSourceWindow(
+        Point start, Point end, char fillchar = ' ') override;
   };
 
   const char *op_repr(Operator op);

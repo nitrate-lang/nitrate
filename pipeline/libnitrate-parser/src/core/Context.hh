@@ -53,13 +53,8 @@ namespace ncc::parse {
     Default = Clang16Color,
   };
 
-  struct DiagMessage {
-    std::string msg;
-    ncc::lex::Token tok;
-  };
-
   std::string mint_clang16_message(ncc::lex::IScanner &lexer,
-                                   const DiagMessage &msg);
+                                   std::string_view msg, ncc::lex::Token tok);
 
   class MessageBuffer {
     std::stringstream m_buffer;
@@ -99,7 +94,7 @@ namespace ncc::parse {
       log->SetFailBit();
       qcore_print(
           QCORE_ERROR,
-          mint_clang16_message(log->GetLexer(), {msg, start_loc}).c_str());
+          mint_clang16_message(log->GetLexer(), msg, start_loc).c_str());
     });
 
     buf.write(value);

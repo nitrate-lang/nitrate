@@ -40,7 +40,6 @@
 #include <csetjmp>
 #include <cstdint>
 #include <cstdio>
-#include <deque>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/String.hh>
@@ -1235,4 +1234,13 @@ CPP_EXPORT const char *ncc::lex::kw_repr(Keyword kw) {
 
 CPP_EXPORT const char *ncc::lex::punct_repr(Punctor punct) {
   return LexicalPunctors.right.at(punct).data();
+}
+
+CPP_EXPORT
+std::optional<std::vector<std::string>> Tokenizer::GetSourceWindow(
+    Point start, Point end, char fillchar) {
+  /// TODO: Implement this function
+  return {{{"abc", "abc"}}};
+
+  return std::nullopt;
 }

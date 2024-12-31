@@ -31,19 +31,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstddef>
+#include <algorithm>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Preprocess.hh>
+#include <optional>
 #include <qcall/List.hh>
+#include <regex>
+#include <string>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
-
-#include <algorithm>
-#include <optional>
-#include <regex>
-#include <string>
 
 static bool is_valid_import_name(const std::string &name) {
   if (name.empty()) {
@@ -84,7 +82,9 @@ static std::optional<std::string> fetch_module_data(qprep_impl_t *obj,
   // return data;
   (void)obj;
   (void)name;
-  /// TODO: Implement this function.
+
+  qcore_print(QCORE_WARN, "fetch_module_data not implemented");
+
   return std::nullopt;
 }
 

@@ -43,6 +43,9 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 
+#include "nitrate-lexer/Lexer.hh"
+#include "nitrate-lexer/Token.hh"
+
 using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
@@ -417,47 +420,42 @@ CPP_EXPORT bool ASTRoot::check() const {
 }
 
 std::string parse::mint_clang16_message(ncc::lex::IScanner &rd,
-                                        const DiagMessage &msg) {
-  auto start = msg.tok.get_start().Get(rd);
-
-  auto filename = start.GetFilename();
-  auto line = start.GetRow(), col = start.GetCol();
+                                        std::string_view message,
+                                        ncc::lex::Token tok) {
+  auto token_start = rd.Start(tok), token_end = rd.End(tok);
+  auto start_filename = token_start.GetFilename();
+  auto start_line = token_start.GetRow(), start_col = token_start.GetCol();
+  auto end_line = token_end.GetRow();
 
   std::stringstream ss;
-  ss << "\x1b[37;1m" << filename << ":";
+  ss << "\x1b[37;1m" << (start_filename->empty() ? "?" : start_filename) << ":";
+  ss << (start_line == QLEX_EOFF ? "?" : std::to_string(start_line)) << ":";
+  ss << (start_col == QLEX_EOFF ? "?" : std::to_string(start_col))
+     << ":\x1b[0m ";
+  ss << "\x1b[37;1m" << message << " [SyntaxError]\x1b[0m";
 
-  if (line != QLEX_EOFF) {
-    ss << line << ":";
-  } else {
-    ss << "?:";
+  if (start_line != QLEX_EOFF) {
+    IScanner::Point start_pos(start_line == 0 ? 0 : start_line - 1, 0), end_pos;
+
+    if (end_line != QLEX_EOFF) {
+      end_pos = IScanner::Point(end_line + 1, -1);
+    } else {
+      end_pos = IScanner::Point(start_line + 1, -1);
+    }
+
+    if (auto window = rd.GetSourceWindow(start_pos, end_pos, ' ')) {
+      ss << "\n";
+
+      for (auto &line : window.value()) {
+        ss << line << "\n";
+      }
+
+      for (uint32_t i = 0; i < start_line; i++) {
+        ss << " ";
+      }
+      ss << "\x1b[32;1m^\x1b[0m";
+    }
   }
-
-  if (col != QLEX_EOFF) {
-    ss << col << ":\x1b[0m ";
-  } else {
-    ss << "?:\x1b[0m ";
-  }
-
-  ss << "\x1b[37;1m" << msg.msg << " [";
-
-  ss << "SyntaxError";
-
-  ss << "]\x1b[0m";
-
-  uint32_t offset = 0;
-  /// TODO: Implement source snippet
-  // char *snippet = qlex_snippet(&rd, msg.tok, &offset);
-  char *snippet = nullptr;
-  if (!snippet) {
-    return ss.str();
-  }
-
-  ss << "\n" << snippet << "\n";
-  for (uint32_t i = 0; i < offset; i++) {
-    ss << " ";
-  }
-  ss << "\x1b[32;1m^\x1b[0m";
-  free(snippet);
 
   return ss.str();
 }

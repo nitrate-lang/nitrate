@@ -38,24 +38,23 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 FlowPtr<Stmt> Parser::recurse_return() {
-  if (auto tok = next_if(PuncSemi)) {
+  if (next_if(PuncSemi)) {
     return make<ReturnStmt>(std::nullopt)();
   } else {
     auto return_value = recurse_expr({
         Token(Punc, PuncSemi),
     });
 
-    if (next_if(PuncSemi)) [[likely]] {
-      return make<ReturnStmt>(return_value)();
-    } else {
+    if (!next_if(PuncSemi)) [[unlikely]] {
       diagnostic << current() << "Expected ';' after the return statement.";
-      return mock_stmt(QAST_RETURN);
     }
+
+    return make<ReturnStmt>(return_value)();
   }
 }
 
 FlowPtr<Stmt> Parser::recurse_retif() {
-  auto condition = recurse_expr({
+  auto return_if = recurse_expr({
       Token(Punc, PuncComa),
   });
 
@@ -64,14 +63,13 @@ FlowPtr<Stmt> Parser::recurse_retif() {
         Token(Punc, PuncSemi),
     });
 
-    if (next_if(PuncSemi)) [[likely]] {
-      return make<ReturnIfStmt>(condition, return_value)();
-    } else {
+    if (!next_if(PuncSemi)) [[unlikely]] {
       diagnostic << current() << "Expected ';' after the retif value.";
     }
+
+    return make<ReturnIfStmt>(return_if, return_value)();
   } else {
     diagnostic << current() << "Expected ',' after the retif condition.";
+    return mock_stmt(QAST_RETIF);
   }
-
-  return mock_stmt(QAST_RETIF);
 }
