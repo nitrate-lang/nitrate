@@ -46,6 +46,8 @@
 #include <nitrate-core/String.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
+#include <queue>
+#include <stack>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -325,7 +327,7 @@ static FORCE_INLINE bool canonicalize_number(std::string &number,
   return true;
 }
 
-void Tokenizer::reset_state() { m_pushback.clear(); }
+void Tokenizer::reset_state() { m_fifo = std::queue<char>(); }
 
 enum class LexState {
   Start,
@@ -389,7 +391,7 @@ public:
           if (!buf.ends_with("::")) {
             char tc = buf.back();
             buf.pop_back();
-            L.m_pushback.push_back(tc);
+            L.m_fifo.push(tc);
             break;
           }
           colon_state = 0;
@@ -404,7 +406,7 @@ public:
 
     /* Check for f-string */
     if (buf == "f" && c == '"') {
-      L.m_pushback.push_back(c);
+      L.m_fifo.push(c);
       return Token(KeyW, __FString, start_pos);
     }
 
@@ -412,9 +414,9 @@ public:
     if (buf.size() > 0 && buf.back() == ':') {
       char tc = buf.back();
       buf.pop_back();
-      L.m_pushback.push_back(tc);
+      L.m_fifo.push(tc);
     }
-    L.m_pushback.push_back(c);
+    L.m_fifo.push(c);
 
     { /* Determine if it's a keyword or an identifier */
       auto it = LexicalKeywords.left.find(buf);
@@ -624,13 +626,44 @@ public:
         continue;
       }
 
-      L.m_pushback.push_back(c);
+      L.m_fifo.push(c);
       /* Character or string */
       if (buf.front() == '\'' && buf.size() == 2) {
         return Token(Char, string(std::string(1, buf[1])), start_pos);
       } else {
         return Token(Text, string(buf.substr(1, buf.size() - 1)), start_pos);
       }
+    }
+  }
+
+  static FORCE_INLINE void ParseIntegerUnwind(Tokenizer &L, char c,
+                                              std::string &buf) {
+    bool spinning = true;
+
+    std::stack<char> q;
+
+    while (!buf.empty() && spinning) {
+      switch (char ch = buf.back()) {
+        case '.':
+        case 'e':
+        case 'E': {
+          q.push(ch);
+          buf.pop_back();
+          break;
+        }
+
+        default: {
+          spinning = false;
+          break;
+        }
+      }
+    }
+
+    q.push(c);
+
+    while (!q.empty()) {
+      L.m_fifo.push(q.top());
+      q.pop();
     }
   }
 
@@ -700,7 +733,7 @@ public:
             type = NumType::Floating;
             float_lit_state = FloatPart::ExponentSign;
           } else {
-            L.m_pushback.push_back(c);
+            ParseIntegerUnwind(L, c, buf);
             is_lexing = false;
           }
           break;
@@ -710,7 +743,7 @@ public:
           if (std::isdigit(c)) {
             buf += c;
           } else {
-            L.m_pushback.push_back(c);
+            ParseIntegerUnwind(L, c, buf);
             is_lexing = false;
           }
           break;
@@ -720,7 +753,7 @@ public:
           if (std::isxdigit(c)) {
             buf += c;
           } else {
-            L.m_pushback.push_back(c);
+            ParseIntegerUnwind(L, c, buf);
             is_lexing = false;
           }
           break;
@@ -730,7 +763,7 @@ public:
           if (c == '0' || c == '1') {
             buf += c;
           } else {
-            L.m_pushback.push_back(c);
+            ParseIntegerUnwind(L, c, buf);
             is_lexing = false;
           }
           break;
@@ -740,7 +773,7 @@ public:
           if (c >= '0' && c <= '7') {
             buf += c;
           } else {
-            L.m_pushback.push_back(c);
+            ParseIntegerUnwind(L, c, buf);
             is_lexing = false;
           }
           break;
@@ -755,7 +788,7 @@ public:
                 buf += 'e';
                 float_lit_state = FloatPart::ExponentSign;
               } else {
-                L.m_pushback.push_back(c);
+                ParseIntegerUnwind(L, c, buf);
                 is_lexing = false;
               }
               break;
@@ -770,7 +803,7 @@ public:
                 buf += c;
                 float_lit_state = FloatPart::ExponentPre;
               } else {
-                L.m_pushback.push_back(c);
+                ParseIntegerUnwind(L, c, buf);
                 is_lexing = false;
               }
               break;
@@ -783,7 +816,7 @@ public:
                 buf += c;
                 float_lit_state = FloatPart::ExponentPost;
               } else {
-                L.m_pushback.push_back(c);
+                ParseIntegerUnwind(L, c, buf);
                 is_lexing = false;
               }
               break;
@@ -793,7 +826,7 @@ public:
               if (std::isdigit(c)) {
                 buf += c;
               } else {
-                L.m_pushback.push_back(c);
+                ParseIntegerUnwind(L, c, buf);
                 is_lexing = false;
               }
               break;
@@ -885,7 +918,7 @@ public:
       c = nextc(L);
     }
 
-    L.m_pushback.push_back(c);
+    L.m_fifo.push(c);
 
     return Token(Macr, string(std::move(buf)), start_pos);
   }
@@ -919,7 +952,7 @@ public:
     if (buf.size() == 1) {
       auto it = LexicalPunctors.left.find(buf);
       if (it != LexicalPunctors.left.end()) {
-        L.m_pushback.push_back(c);
+        L.m_fifo.push(c);
         token = Token(Punc, it->second, start_pos);
         return true;
       }
@@ -935,7 +968,7 @@ public:
     /* Special case for a comment */
     if (buf[0] == '#') {
       buf.clear();
-      L.m_pushback.push_back(c);
+      L.m_fifo.push(c);
       state = LexState::CommentSingleLine;
       return false;
     }
@@ -965,8 +998,8 @@ public:
       return false;
     }
 
-    L.m_pushback.push_back(buf.back());
-    L.m_pushback.push_back(c);
+    L.m_fifo.push(buf.back());
+    L.m_fifo.push(c);
     token = Token(Oper, LexicalOperators.left.at(buf.substr(0, buf.size() - 1)),
                   start_pos);
 
@@ -992,11 +1025,11 @@ CPP_EXPORT Token Tokenizer::GetNext() {
 
   while (true) {
     { /* If the Lexer over-consumed, we will return the saved character */
-      if (m_pushback.empty()) {
+      if (m_fifo.empty()) {
         c = StaticImpl::nextc(*this);
       } else {
-        c = m_pushback.front();
-        m_pushback.pop_front();
+        c = m_fifo.front();
+        m_fifo.pop();
       }
     }
 
@@ -1050,7 +1083,7 @@ CPP_EXPORT Token Tokenizer::GetNext() {
           state = LexState::CommentMultiLine;
           continue;
         } else { /* Divide operator */
-          m_pushback.push_back(c);
+          m_fifo.push(c);
           return Token(Oper, OpSlash, start_pos);
         }
       }

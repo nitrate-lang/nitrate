@@ -36,12 +36,12 @@
 
 #include <boost/bimap.hpp>
 #include <cstdint>
-#include <deque>
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Token.hh>
 #include <ostream>
+#include <queue>
 
 ///============================================================================///
 
@@ -302,7 +302,7 @@ namespace ncc::lex {
     uint32_t m_offset = 0, m_line = 0, m_column = 0;
 
     std::istream &m_file;
-    std::deque<char> m_pushback;
+    std::queue<char> m_fifo;
 
     std::array<char, GETC_BUFFER_SIZE> m_getc_buffer;
     size_t m_getc_buffer_pos = GETC_BUFFER_SIZE;
