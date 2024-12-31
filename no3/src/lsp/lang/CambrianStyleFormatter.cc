@@ -601,7 +601,9 @@ void CambrianFormatter::visit(FlowPtr<TernaryExpr> n) {
   line << ")";
 }
 
-void CambrianFormatter::visit(FlowPtr<ConstInt> n) { line << n->get_value(); }
+void CambrianFormatter::visit(FlowPtr<ConstInt> n) {
+  write_float_literal(n->get_value());
+}
 
 void CambrianFormatter::visit(FlowPtr<ConstFloat> n) {
   write_float_literal(n->get_value());
