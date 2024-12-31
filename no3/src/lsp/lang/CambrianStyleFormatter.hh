@@ -71,6 +71,9 @@ namespace lsp::fmt {
 
     void format_type_metadata(FlowPtr<parse::Type> n);
 
+    void wrap_stmt_body(FlowPtr<parse::Stmt> n, size_t size_threshold,
+                        bool use_arrow_if_wrapped);
+
     template <typename IterBegin, typename IterEnd>
     void iterate_except_last(IterBegin beg, IterEnd end, auto body,
                              auto if_not_last) {

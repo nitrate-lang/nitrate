@@ -38,10 +38,14 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 FlowPtr<Stmt> Parser::recurse_switch_case_body() {
-  if (next_if(OpArrow)) {
-    return recurse_block(false, true, SafetyMode::Unknown);
-  } else {
+  if (!next_if(OpArrow)) {
+    diagnostic << current() << "Expected '=>' in switch case.";
+  }
+
+  if (peek().is<PuncLCur>()) {
     return recurse_block(true, false, SafetyMode::Unknown);
+  } else {
+    return recurse_block(false, true, SafetyMode::Unknown);
   }
 }
 
@@ -88,6 +92,8 @@ Parser::recurse_switch_body() {
       auto case_stmt = std::get<FlowPtr<CaseStmt>>(case_or_default);
       cases.push_back(case_stmt);
     }
+
+    next_if(PuncComa) || next_if(PuncSemi);
   }
 
   return std::nullopt;

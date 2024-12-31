@@ -117,8 +117,7 @@ std::optional<std::string> qprep_impl_t::run_lua_code(const std::string &s) {
 
   int error = luaL_dostring(m_core->L, std::string(s.data(), s.size()).c_str());
   if (error) {
-    qcore_logf(QCORE_ERROR, "Failed to run Lua code: %s\n",
-               lua_tostring(m_core->L, -1));
+    qcore_logf(QCORE_ERROR, "Lua error: %s\n", lua_tostring(m_core->L, -1));
     return std::nullopt;
   }
 

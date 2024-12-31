@@ -128,6 +128,28 @@ std::string CambrianFormatter::escape_string_literal_chunk(
   return ss.str();
 }
 
+void CambrianFormatter::wrap_stmt_body(FlowPtr<parse::Stmt> n,
+                                       size_t size_threshold,
+                                       bool use_arrow_if_wrapped) {
+  if (n->is(QAST_BLOCK)) {
+    auto block = n.as<Block>();
+    bool single_stmt = block->get_items().size() == 1;
+    bool few_children =
+        single_stmt && block->count_children() <= size_threshold;
+
+    if (single_stmt && few_children) {
+      if (use_arrow_if_wrapped) {
+        line << "=> ";
+      }
+
+      block->get_items().front().accept(*this);
+      return;
+    }
+  }
+
+  n.accept(*this);
+}
+
 void CambrianFormatter::escape_string_literal(std::string_view str,
                                               bool put_quotes) {
   constexpr size_t max_chunk_size = 60;
@@ -1148,23 +1170,31 @@ void CambrianFormatter::visit(FlowPtr<ReturnIfStmt> n) {
 
 void CambrianFormatter::visit(FlowPtr<CaseStmt> n) {
   n->get_cond().accept(*this);
-  line << " {";
-  n->get_body().accept(*this);
-  line << "};";
+  line << " => ";
+  wrap_stmt_body(n->get_body(), 10, false);
 }
 
 void CambrianFormatter::visit(FlowPtr<SwitchStmt> n) {
   line << "switch ";
   n->get_cond().accept(*this);
-  line << " {";
+  line << " {" << std::endl;
+  indent += tabSize;
+
   for (auto c : n->get_cases()) {
+    line << get_indent();
     c.accept(*this);
-  }
-  if (n->get_default()) {
-    n->get_default().value().accept(*this);
+    line << std::endl;
   }
 
-  line << "};";
+  if (n->get_default()) {
+    line << get_indent();
+    line << "_ => ";
+    wrap_stmt_body(n->get_default().value(), 10, false);
+    line << std::endl;
+  }
+
+  indent -= tabSize;
+  line << get_indent() << "}";
 }
 
 void CambrianFormatter::visit(FlowPtr<TypedefStmt> n) {
@@ -1292,19 +1322,7 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
     line << ";";
   } else {
     line << " ";
-    if (n->get_body().value()->is(QAST_BLOCK)) {
-      auto block = n->get_body().value()->as<Block>();
-      bool single_stmt = block->get_items().size() == 1;
-      bool few_children = single_stmt && block->count_children() <= 10;
-
-      if (single_stmt && few_children) {
-        line << "=> ";
-        block->get_items().front().accept(*this);
-        return;
-      }
-    }
-
-    n->get_body().value().accept(*this);
+    wrap_stmt_body(n->get_body().value(), 10, true);
   }
 }
 
@@ -1461,20 +1479,8 @@ void CambrianFormatter::visit(FlowPtr<ScopeStmt> n) {
     line << "]";
   }
 
-  if (n->get_body()->is(QAST_BLOCK)) {
-    auto block = n->get_body()->as<Block>();
-    if (block->get_items().empty()) {
-      line << ";";
-      return;
-    } else if (block->get_items().size() == 1) {
-      line << " => ";
-      block->get_items().front().accept(*this);
-      return;
-    }
-  }
-
   line << " ";
-  n->get_body().accept(*this);
+  wrap_stmt_body(n->get_body(), 50, true);
 }
 
 void CambrianFormatter::visit(FlowPtr<ExportStmt> n) {
@@ -1494,18 +1500,7 @@ void CambrianFormatter::visit(FlowPtr<ExportStmt> n) {
     line << "]";
   }
 
-  if (n->get_body()->is(QAST_BLOCK)) {
-    auto block = n->get_body()->as<Block>();
-    if (block->get_items().empty()) {
-      line << ";";
-      return;
-    } else if (block->get_items().size() == 1) {
-      line << " ";
-      block->get_items().front().accept(*this);
-      return;
-    }
-  }
-
   line << " ";
-  n->get_body().accept(*this);
+
+  wrap_stmt_body(n->get_body(), -1, false);
 }
