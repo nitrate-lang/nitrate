@@ -43,9 +43,6 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 
-#include "nitrate-lexer/Lexer.hh"
-#include "nitrate-lexer/Token.hh"
-
 using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
@@ -450,7 +447,7 @@ std::string parse::mint_clang16_message(ncc::lex::IScanner &rd,
         ss << line << "\n";
       }
 
-      for (uint32_t i = 0; i < start_line; i++) {
+      for (uint32_t i = 0; i < start_col; i++) {
         ss << " ";
       }
       ss << "\x1b[32;1m^\x1b[0m";

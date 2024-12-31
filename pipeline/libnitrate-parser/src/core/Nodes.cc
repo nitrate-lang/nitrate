@@ -117,21 +117,21 @@ CPP_EXPORT bool Type::is_ptr_to(Type *type) const {
 
 FlowPtr<Stmt> Parser::mock_stmt(std::optional<npar_ty_t>) {
   auto node = make<Stmt>(QAST_BASE)();
-  node->set_offset(rd.Current()->get_start());
+  node->set_offset(rd.Current().get_start());
 
   return node;
 }
 
 FlowPtr<Expr> Parser::mock_expr(std::optional<npar_ty_t>) {
   auto node = make<Expr>(QAST_BASE)();
-  node->set_offset(rd.Current()->get_start());
+  node->set_offset(rd.Current().get_start());
 
   return node;
 }
 
 FlowPtr<Type> Parser::mock_type() {
   auto node = make<Type>(QAST_BASE)();
-  node->set_offset(rd.Current()->get_start());
+  node->set_offset(rd.Current().get_start());
 
   return node;
 }

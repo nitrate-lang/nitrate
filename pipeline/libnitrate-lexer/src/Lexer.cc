@@ -1244,14 +1244,21 @@ std::optional<std::vector<std::string>> Tokenizer::GetSourceWindow(
     return std::nullopt;
   }
 
+  m_file.clear();
   auto current_source_offset = m_file.tellg();
+  if (!m_file) {
+    qcore_print(QCORE_ERROR, "Failed to get the current file offset");
+    return std::nullopt;
+  }
+
   if (m_file.seekg(0, std::ios::beg)) {
     long line = 0, column = 0;
 
-    while (true) {
-      auto ch = m_file.get();
+    int ch = EOF;
+    bool spinning = true;
+    while (spinning) {
+      ch = m_file.get();
       if (ch == EOF) [[unlikely]] {
-        qcore_print(QCORE_ERROR, "End of file reached unexpectedly");
         break;
       }
 
@@ -1280,18 +1287,12 @@ std::optional<std::vector<std::string>> Tokenizer::GetSourceWindow(
       if (is_begin) [[unlikely]] {
         std::vector<std::string> lines;
         std::string line;
-        bool spinning = true;
 
-        while (spinning) {
-          auto ch = m_file.get();
-          if (ch == EOF) [[unlikely]] {
-            qcore_print(QCORE_ERROR, "End of file reached unexpectedly");
-            break;
-          }
+        do {
+          long current_line = lines.size() + start.x;
+          long current_column = line.size();
 
-          long current_line = line.size();
-
-          if (current_line == end.x && current_line == end.y) [[unlikely]] {
+          if (current_line == end.x && current_column == end.y) [[unlikely]] {
             spinning = false;
           } else {
             switch (ch) {
@@ -1311,7 +1312,12 @@ std::optional<std::vector<std::string>> Tokenizer::GetSourceWindow(
               }
             }
           }
-        }
+
+          ch = m_file.get();
+          if (ch == EOF) [[unlikely]] {
+            spinning = false;
+          }
+        } while (spinning);
 
         if (!line.empty()) {
           lines.push_back(line);

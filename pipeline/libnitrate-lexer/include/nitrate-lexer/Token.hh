@@ -236,8 +236,7 @@ namespace ncc::lex {
 
   class TokenBase {
     LocationID m_location_id = 0;
-    TokenType m_type : 4;
-    uint64_t pad : 4 = 0;
+    TokenType m_type;
 
   public:
     TokenData v;
@@ -245,9 +244,7 @@ namespace ncc::lex {
     template <class T = Operator>
     constexpr TokenBase(TokenType ty = EofF, T val = OpPlus,
                         LocationID _start = LocationID())
-        : m_location_id(_start), m_type(ty), v{val} {
-      (void)pad;
-    }
+        : m_location_id(_start), m_type(ty), v{val} {}
 
     constexpr static TokenBase EndOfFile() { return TokenBase(); }
 

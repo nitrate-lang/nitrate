@@ -239,8 +239,9 @@ namespace ncc::lex {
     static constexpr size_t TOKEN_BUFFER_SIZE = 256;
 
     std::deque<Token> m_ready;
-    std::optional<Token> m_current, m_last;
-    bool m_skip_comments = false, m_ebit = false;
+    std::optional<Token> m_last;
+    Token m_current;
+    bool m_skip_comments = false, m_ebit = false, m_eof = false;
 
     // 0 is reserved for invalid location
     LocationID::Counter m_location_id = 1;
@@ -275,12 +276,8 @@ namespace ncc::lex {
     Token Peek();
     void Undo();
 
-    std::optional<Token> Current() { return m_current; }
-
-    constexpr bool IsEof() const {
-      return m_current.has_value() && m_current->is(EofF);
-    }
-
+    constexpr Token Current() { return m_current; }
+    constexpr bool IsEof() const { return m_eof; }
     constexpr bool HasError() const { return m_ebit; }
 
     Location Start(Token t);
@@ -301,7 +298,12 @@ namespace ncc::lex {
     };
 
     virtual std::optional<std::vector<std::string>> GetSourceWindow(
-        Point start, Point end, char fillchar = ' ');
+        Point start, Point end, char fillchar = ' ') {
+      (void)start;
+      (void)end;
+      (void)fillchar;
+      return std::nullopt;
+    }
   };
 
   class CPP_EXPORT Tokenizer final : public IScanner {

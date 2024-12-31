@@ -343,6 +343,7 @@ public:
         L.m_ready.push_back(L.GetNext());
       } catch (ScannerEOF &) {
         if (i == 0) {
+          L.m_eof = true;
           L.m_ready.push_back(Token::EndOfFile());
         }
         break;
@@ -364,8 +365,7 @@ CPP_EXPORT Token IScanner::Next() {
       continue;
     }
 
-    m_current = tok;
-    m_last = m_current;
+    m_last = m_current = tok;
 
     return tok;
   }
@@ -376,10 +376,9 @@ CPP_EXPORT Token IScanner::Peek() {
     StaticImpl::FillTokenBuffer(*this);
   }
 
-  Token tok = m_ready.front();
-  m_current = tok;
+  m_current = m_ready.front();
 
-  return tok;
+  return m_current;
 }
 
 CPP_EXPORT void IScanner::Undo() {
@@ -388,7 +387,7 @@ CPP_EXPORT void IScanner::Undo() {
   }
 
   m_ready.push_front(m_last.value());
-  m_current = m_last;
+  m_current = m_last.value();
 }
 
 CPP_EXPORT Location LocationID::Get(IScanner &L) const {
@@ -419,9 +418,3 @@ CPP_EXPORT uint32_t IScanner::StartLine(Token t) { return Start(t).GetRow(); }
 CPP_EXPORT uint32_t IScanner::StartColumn(Token t) { return Start(t).GetCol(); }
 CPP_EXPORT uint32_t IScanner::EndLine(Token t) { return End(t).GetRow(); }
 CPP_EXPORT uint32_t IScanner::EndColumn(Token t) { return End(t).GetCol(); }
-
-CPP_EXPORT
-std::optional<std::vector<std::string>> IScanner::GetSourceWindow(Point, Point,
-                                                                  char) {
-  return std::nullopt;
-}
