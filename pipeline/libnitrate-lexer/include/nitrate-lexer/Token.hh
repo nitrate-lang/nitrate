@@ -220,6 +220,8 @@ namespace ncc::lex {
     Counter m_id;
   } __attribute__((packed));
 
+  using LocationRange = std::pair<LocationID, LocationID>;
+
   union TokenData {
     Punctor punc;
     Operator op;

@@ -329,9 +329,8 @@ namespace ncc::parse {
       return end().Get(rd);
     }
 
-    constexpr std::tuple<uint32_t, uint32_t> get_pos() const {
-      /// FIXME: Update source location format
-      return {lex::QLEX_EOFF, lex::QLEX_NOFILE};
+    constexpr lex::LocationRange get_pos() const {
+      return g_location_pairs.Get(m_loc);
     }
 
     ///======================================================================
