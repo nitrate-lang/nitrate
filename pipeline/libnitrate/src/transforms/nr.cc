@@ -60,7 +60,7 @@ CREATE_TRANSFORM(nit::nr) {
     out_mode = OutMode::MsgPack;
   }
 
-  std::optional<ncc::parse::Base *> root;
+  std::optional<ncc::FlowPtr<ncc::parse::Base> > root;
 
   if (source.peek() == '{') {
     root = ncc::parse::AST_JsonReader(source).get();
@@ -73,7 +73,7 @@ CREATE_TRANSFORM(nit::nr) {
     return false;
   }
 
-  if (auto module = nr_lower(root.value(), nullptr, true)) {
+  if (auto module = nr_lower(root.value().get(), nullptr, true)) {
     switch (out_mode) {
       case OutMode::JSON: {
         auto writter = encode::IR_JsonWriter(output);
