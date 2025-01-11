@@ -82,12 +82,12 @@ static void escape_string(std::ostream &os, const std::string_view &input) {
 }
 
 void IR_JsonWriter::delim() {
-  qcore_assert(!m_count.empty() && !m_comma.empty());
+  if (!m_count.empty() && !m_comma.empty()) {
+    if (m_count.top()++ > 0) {
+      bool use_comma = m_comma.top() == true || (m_count.top() & 1) != 0;
 
-  if (m_count.top()++ > 0) {
-    bool use_comma = m_comma.top() == true || (m_count.top() & 1) != 0;
-
-    m_os << (use_comma ? "," : ":");
+      m_os << (use_comma ? "," : ":");
+    }
   }
 }
 
@@ -130,11 +130,11 @@ void IR_JsonWriter::begin_obj_impl(size_t) {
 }
 
 void IR_JsonWriter::end_obj_impl() {
-  qcore_assert(!m_count.empty() && !m_comma.empty());
-
-  m_os << "}";
-  m_count.pop();
-  m_comma.pop();
+  if (!m_count.empty() && !m_comma.empty()) {
+    m_os << "}";
+    m_count.pop();
+    m_comma.pop();
+  }
 }
 
 void IR_JsonWriter::begin_arr_impl(size_t) {
@@ -146,9 +146,9 @@ void IR_JsonWriter::begin_arr_impl(size_t) {
 }
 
 void IR_JsonWriter::end_arr_impl() {
-  qcore_assert(!m_count.empty() && !m_comma.empty());
-
-  m_os << "]";
-  m_count.pop();
-  m_comma.pop();
+  if (!m_count.empty() && !m_comma.empty()) {
+    m_os << "]";
+    m_count.pop();
+    m_comma.pop();
+  }
 }

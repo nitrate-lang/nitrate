@@ -368,9 +368,6 @@ static FORCE_INLINE void get_children_sorted(
 }
 
 CPP_EXPORT void detail::dfs_pre_impl(FlowPtr<Base> base, IterCallback cb) {
-  qcore_assert(base != nullptr && cb != nullptr,
-               "dfs_pre_impl: base and cb must not be null");
-
   auto syncfn = [](FlowPtr<Base> n, IterCallback& cb) {
     std::stack<std::pair<FlowPtr<Base>, FlowPtr<Base>>> s;
     std::vector<FlowPtr<Base>> children;
@@ -410,9 +407,6 @@ CPP_EXPORT void detail::dfs_pre_impl(FlowPtr<Base> base, IterCallback cb) {
 }
 
 CPP_EXPORT void detail::dfs_post_impl(FlowPtr<Base> base, IterCallback cb) {
-  qcore_assert(base != nullptr && cb != nullptr,
-               "dfs_post_impl: base and cb must not be null");
-
   auto syncfn = [](FlowPtr<Base> n, IterCallback& cb) {
     std::stack<std::pair<FlowPtr<Base>, FlowPtr<Base>>> s;
     std::vector<FlowPtr<Base>> children;
@@ -449,9 +443,6 @@ CPP_EXPORT void detail::dfs_post_impl(FlowPtr<Base> base, IterCallback cb) {
 }
 
 CPP_EXPORT void detail::bfs_pre_impl(FlowPtr<Base> base, IterCallback cb) {
-  qcore_assert(base != nullptr && cb != nullptr,
-               "bfs_pre_impl: base and cb must not be null");
-
   auto syncfn = [](FlowPtr<Base> n, IterCallback& cb) {
     std::queue<std::pair<FlowPtr<Base>, FlowPtr<Base>>> s;
     std::vector<FlowPtr<Base>> children;
@@ -491,9 +482,6 @@ CPP_EXPORT void detail::bfs_pre_impl(FlowPtr<Base> base, IterCallback cb) {
 }
 
 CPP_EXPORT void detail::bfs_post_impl(FlowPtr<Base> base, IterCallback cb) {
-  qcore_assert(base != nullptr && cb != nullptr,
-               "bfs_post_impl: base and cb must not be null");
-
   auto syncfn = [](FlowPtr<Base> n, IterCallback& cb) {
     std::queue<std::pair<FlowPtr<Base>, FlowPtr<Base>>> s;
     std::vector<FlowPtr<Base>> children;
@@ -518,8 +506,7 @@ CPP_EXPORT void detail::bfs_post_impl(FlowPtr<Base> base, IterCallback cb) {
           [[unlikely]] { return; }
 
         case IterOp::SkipChildren: {
-          qcore_assert(false,
-                       "bfs_post_impl: IterOp::SkipChildren not supported");
+          qcore_panic("bfs_post_impl: IterOp::SkipChildren not supported");
           break;
         }
       }
@@ -530,9 +517,6 @@ CPP_EXPORT void detail::bfs_post_impl(FlowPtr<Base> base, IterCallback cb) {
 }
 
 CPP_EXPORT void detail::iter_children(FlowPtr<Base> base, IterCallback cb) {
-  qcore_assert(base != nullptr && cb != nullptr,
-               "iter_children: base and cb must not be null");
-
   auto syncfn = [](FlowPtr<Base> n, IterCallback& cb) {
     std::vector<FlowPtr<Base>> children;
     get_children_sorted(n, children);

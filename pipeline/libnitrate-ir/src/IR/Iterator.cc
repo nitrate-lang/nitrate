@@ -213,9 +213,6 @@ static void get_children_sorted(FlowPtr<Expr> base, ChildSelect cs,
 
 CPP_EXPORT void detail::dfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
                                      ChildSelect cs) {
-  qcore_assert(base != nullptr && cb != nullptr,
-               "dfs_pre_impl: base and cb must not be null");
-
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
   }
@@ -256,9 +253,6 @@ CPP_EXPORT void detail::dfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
 
 CPP_EXPORT void detail::dfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
                                       ChildSelect cs) {
-  qcore_assert(base != nullptr && cb != nullptr,
-               "dfs_post_impl: base and cb must not be null");
-
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
   }
@@ -296,9 +290,6 @@ CPP_EXPORT void detail::dfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
 
 CPP_EXPORT void detail::bfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
                                      ChildSelect cs) {
-  qcore_assert(base != nullptr && cb != nullptr,
-               "bfs_pre_impl: base and cb must not be null");
-
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
   }
@@ -339,9 +330,6 @@ CPP_EXPORT void detail::bfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
 
 CPP_EXPORT void detail::bfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
                                       ChildSelect cs) {
-  qcore_assert(base != nullptr && cb != nullptr,
-               "bfs_post_impl: base and cb must not be null");
-
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
   }
@@ -367,8 +355,7 @@ CPP_EXPORT void detail::bfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
         case IterOp::Abort:
           return;
         case IterOp::SkipChildren:
-          qcore_assert(false,
-                       "bfs_post_impl: IterOp::SkipChildren not supported");
+          qcore_panic("bfs_post_impl: IterOp::SkipChildren not supported");
           break;
       }
     }
@@ -379,9 +366,6 @@ CPP_EXPORT void detail::bfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
 
 CPP_EXPORT void detail::iter_children(FlowPtr<Expr>* base, IterCallback cb,
                                       ChildSelect cs) {
-  qcore_assert(base != nullptr && cb != nullptr,
-               "iter_children: base and cb must not be null");
-
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
   }

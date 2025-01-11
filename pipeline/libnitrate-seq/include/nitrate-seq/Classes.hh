@@ -51,10 +51,7 @@ public:
   }
   ~qprep() = default;
 
-  ncc::lex::IScanner *get() {
-    qcore_assert(m_lex != nullptr);
-    return m_lex.get();
-  }
+  ncc::lex::IScanner *get() const { return m_lex.get(); }
 };
 
 #endif  // __NITRATE_PREP_CLASSES_H__
