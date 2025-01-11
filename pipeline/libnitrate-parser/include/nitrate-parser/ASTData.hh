@@ -38,6 +38,7 @@
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/FlowPtr.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-core/NullableFlowPtr.hh>
 #include <nitrate-core/String.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTVisitor.hh>

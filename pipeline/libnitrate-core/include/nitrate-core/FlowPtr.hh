@@ -38,7 +38,6 @@
 #include <cstdint>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <optional>
 #include <source_location>
 #include <string_view>
 #include <type_traits>
@@ -118,6 +117,8 @@ namespace ncc {
     template <class Pointee, class Tracking = DefaultTracking>
     class FlowPtr {
       using SelfData = flowptr_data_t<Pointee, Tracking>;
+      constexpr static bool IsTracking =
+          std::is_same_v<SelfData, WithTracking<Pointee, Tracking>>;
 
       SelfData m_s;
 
@@ -194,8 +195,7 @@ namespace ncc {
       /// Data-Flow tracking
 
       constexpr const Tracking &trace() const {
-        if constexpr (std::is_same_v<SelfData,
-                                     WithTracking<Pointee, Tracking>>) {
+        if constexpr (IsTracking) {
           return m_s.m_tracking;
         } else {
           return trace::g_notrace_instance;
@@ -203,8 +203,7 @@ namespace ncc {
       }
 
       constexpr void set_tracking(Tracking tracking) {
-        if constexpr (std::is_same_v<SelfData,
-                                     WithTracking<Pointee, Tracking>>) {
+        if constexpr (IsTracking) {
           m_s.m_tracking = std::move(tracking);
         }
       }
@@ -218,102 +217,11 @@ namespace ncc {
       }
     };
 
-    template <class Pointee, class Tracking = DefaultTracking>
-    class NullableFlowPtr {
-      FlowPtr<Pointee, Tracking> m_ptr;
-
-    public:
-      using value_type = Pointee;
-
-      constexpr NullableFlowPtr() : m_ptr(nullptr) {}
-
-      constexpr explicit NullableFlowPtr(FlowPtr<Pointee, Tracking> O)
-          : m_ptr(O) {}
-
-      template <class U>
-      constexpr NullableFlowPtr(U *ptr, Tracking tracking = Tracking())
-          : m_ptr(ptr, std::move(tracking)) {}
-
-      constexpr NullableFlowPtr(std::nullopt_t, Tracking tracking = Tracking())
-          : m_ptr(nullptr, std::move(tracking)) {}
-
-      constexpr NullableFlowPtr(std::nullptr_t, Tracking tracking = Tracking())
-          : m_ptr(nullptr, std::move(tracking)) {}
-
-      constexpr NullableFlowPtr(std::optional<FlowPtr<Pointee, Tracking>> O)
-          : m_ptr(O.value_or(nullptr)) {}
-
-      template <class U = Pointee>
-      constexpr NullableFlowPtr(FlowPtr<U, Tracking> O) : m_ptr(O) {}
-
-      template <class U>
-      constexpr NullableFlowPtr(const NullableFlowPtr<U, Tracking> &O)
-          : m_ptr(O) {}
-
-      template <class U>
-      constexpr NullableFlowPtr(NullableFlowPtr<U, Tracking> &&O)
-          : m_ptr(std::move(O)) {}
-
-      template <class U>
-      constexpr NullableFlowPtr &operator=(
-          const NullableFlowPtr<U, Tracking> &O) {
-        m_ptr = O;
-        return *this;
-      }
-
-      template <class U>
-      constexpr NullableFlowPtr &operator=(NullableFlowPtr<U, Tracking> &&O) {
-        m_ptr = std::move(O);
-        return *this;
-      }
-
-      constexpr bool operator==(const NullableFlowPtr &O) const {
-        return m_ptr == O.m_ptr;
-      }
-
-      constexpr bool operator!=(const NullableFlowPtr &O) const {
-        return m_ptr != O.m_ptr;
-      }
-
-      constexpr bool operator==(std::nullptr_t) const { return !m_ptr; }
-
-      constexpr operator bool() const { return m_ptr; }
-
-      constexpr bool has_value() const { return m_ptr != nullptr; }
-
-      constexpr FlowPtr<Pointee, Tracking> &value() {
-        if (!has_value()) [[unlikely]] {
-          qcore_panicf("Attempted to dereference a nullptr. this=%p", this);
-        }
-
-        return m_ptr;
-      }
-
-      constexpr const FlowPtr<Pointee, Tracking> &value() const {
-        if (!has_value()) [[unlikely]] {
-          qcore_panicf("Attempted to dereference a nullptr. this=%p", this);
-        }
-
-        return m_ptr;
-      }
-
-      template <class U>
-      constexpr Pointee *value_or(U &&default_value) const {
-        return m_ptr ? m_ptr.get() : std::forward<U>(default_value);
-      }
-    };
-
     constexpr auto FlowPtrStructSize = sizeof(FlowPtr<int>);
-    constexpr auto NullableFlowPtrStructSize = sizeof(NullableFlowPtr<int>);
-    static_assert(sizeof(FlowPtr<int>) == sizeof(NullableFlowPtr<int>));
-
   }  // namespace flowptr_detail
 
   template <class Pointee, class Tracking = DefaultTracking>
   using FlowPtr = flowptr_detail::FlowPtr<Pointee, Tracking>;
-
-  template <class Pointee, class Tracking = DefaultTracking>
-  using NullableFlowPtr = flowptr_detail::NullableFlowPtr<Pointee, Tracking>;
 
   template <class Pointee, class Tracking = DefaultTracking>
   constexpr FlowPtr<Pointee, Tracking> MakeFlowPtr(
@@ -327,14 +235,6 @@ namespace std {
   struct hash<ncc::FlowPtr<Pointee, Tracking>> {
     size_t operator()(const ncc::FlowPtr<Pointee, Tracking> &ptr) const {
       return std::hash<Pointee *>()(ptr.get());
-    }
-  };
-
-  template <class Pointee, class Tracking>
-  struct hash<ncc::NullableFlowPtr<Pointee, Tracking>> {
-    size_t operator()(
-        const ncc::NullableFlowPtr<Pointee, Tracking> &ptr) const {
-      return std::hash<Pointee *>()(ptr.value_or(nullptr));
     }
   };
 }  // namespace std
