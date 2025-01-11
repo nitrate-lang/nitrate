@@ -43,7 +43,12 @@ namespace ncc {
   namespace flowptr_detail {
     template <class Pointee, class Tracking = DefaultTracking>
     class NullableFlowPtr {
-      uintptr_t m_ptr;
+      union M {
+        uintptr_t m_raw;
+        FlowPtr<Pointee, Tracking> m_ptr;
+
+        constexpr M() : m_raw(0) {}
+      } m_s;
 
     public:
       using value_type = Pointee;
@@ -51,149 +56,130 @@ namespace ncc {
       ///=========================================================================
       /// Constructors
 
-      constexpr NullableFlowPtr() {
-        /// TODO: Implement this
+      template <class U = Pointee>
+      constexpr NullableFlowPtr(U *nullable_ptr = nullptr,
+                                Tracking tracking = Tracking()) {
+        static_assert(std::is_convertible_v<U *, Pointee *>,
+                      "U* must be convertible to Pointee*");
 
-        qcore_implement();
-      }
-
-      constexpr explicit NullableFlowPtr(FlowPtr<Pointee, Tracking>) {
-        /// TODO: Implement this
-
-        qcore_implement();
+        if (nullable_ptr) {
+          m_s.m_ptr =
+              FlowPtr<Pointee, Tracking>(nullable_ptr, std::move(tracking));
+        } else {
+          m_s.m_raw = 0;
+        }
       }
 
       template <class U>
-      constexpr NullableFlowPtr(U *, Tracking = Tracking()) {
-        /// TODO: Implement this
+      constexpr NullableFlowPtr(std::optional<FlowPtr<U, Tracking>> ptr_opt) {
+        static_assert(std::is_convertible_v<U *, Pointee *>,
+                      "U* must be convertible to Pointee*");
 
-        qcore_implement();
-      }
-
-      constexpr NullableFlowPtr(std::nullopt_t, Tracking = Tracking()) {
-        /// TODO: Implement this
-
-        qcore_implement();
-      }
-
-      constexpr NullableFlowPtr(std::nullptr_t, Tracking = Tracking()) {
-        /// TODO: Implement this
-
-        qcore_implement();
-      }
-
-      constexpr NullableFlowPtr(std::optional<FlowPtr<Pointee, Tracking>>) {
-        /// TODO: Implement this
-
-        qcore_implement();
+        if (ptr_opt.has_value()) {
+          auto v = ptr_opt.value();
+          m_s.m_ptr = FlowPtr<Pointee, Tracking>(v.get(), v.trace());
+        } else {
+          m_s.m_raw = 0;
+        }
       }
 
       template <class U = Pointee>
-      constexpr NullableFlowPtr(FlowPtr<U, Tracking>) {
-        /// TODO: Implement this
-
-        qcore_implement();
+      constexpr NullableFlowPtr(FlowPtr<U, Tracking> ptr)
+          : NullableFlowPtr(ptr.get(), ptr.trace()) {
+        static_assert(std::is_convertible_v<U *, Pointee *>,
+                      "U* must be convertible to Pointee*");
       }
 
-      template <class U>
-      constexpr NullableFlowPtr(const NullableFlowPtr<U, Tracking> &) {
-        /// TODO: Implement this
+      constexpr NullableFlowPtr(std::nullopt_t, Tracking tracking = Tracking())
+          : NullableFlowPtr(static_cast<Pointee *>(nullptr),
+                            std::move(tracking)) {}
 
-        qcore_implement();
+      constexpr NullableFlowPtr(std::nullptr_t, Tracking tracking = Tracking())
+          : NullableFlowPtr(static_cast<Pointee *>(nullptr),
+                            std::move(tracking)) {}
+
+      constexpr NullableFlowPtr(const NullableFlowPtr<Pointee, Tracking> &O) {
+        if (O.has_value()) {
+          m_s.m_ptr = O.m_s.m_ptr;
+        } else {
+          m_s.m_raw = 0;
+        }
       }
 
-      template <class U>
-      constexpr NullableFlowPtr(NullableFlowPtr<U, Tracking> &&) {
-        /// TODO: Implement this
-
-        qcore_implement();
+      constexpr NullableFlowPtr(NullableFlowPtr<Pointee, Tracking> &&O) {
+        if (O.has_value()) {
+          m_s.m_ptr = std::move(O.m_s.m_ptr);
+        } else {
+          m_s.m_raw = 0;
+        }
       }
 
-      template <class U>
       constexpr NullableFlowPtr &operator=(
-          const NullableFlowPtr<U, Tracking> &) {
-        /// TODO: Implement this
-
-        qcore_implement();
+          const NullableFlowPtr<Pointee, Tracking> &O) {
+        if (O.has_value()) {
+          m_s.m_ptr = O.m_s.m_ptr;
+        } else {
+          m_s.m_raw = 0;
+        }
         return *this;
       }
 
-      template <class U>
-      constexpr NullableFlowPtr &operator=(NullableFlowPtr<U, Tracking> &&) {
-        /// TODO: Implement this
-
-        qcore_implement();
+      constexpr NullableFlowPtr &operator=(
+          NullableFlowPtr<Pointee, Tracking> &&O) {
+        if (O.has_value()) {
+          m_s.m_ptr = std::move(O.m_s.m_ptr);
+        } else {
+          m_s.m_raw = 0;
+        }
         return *this;
       }
+
+      constexpr ~NullableFlowPtr() = default;
 
       ///=========================================================================
       /// Comparison
 
-      bool operator==(const NullableFlowPtr &) const {
-        /// TODO: Implement this
-
-        qcore_implement();
+      constexpr bool operator==(const NullableFlowPtr &O) const {
+        return m_s.m_raw == O.m_s.m_raw;
       }
 
-      bool operator!=(const NullableFlowPtr &) const {
-        /// TODO: Implement this
-
-        qcore_implement();
+      constexpr bool operator!=(const NullableFlowPtr &O) const {
+        return m_s.m_raw != O.m_s.m_raw;
       }
 
-      bool operator==(std::nullptr_t) const {
-        /// TODO: Implement this
-
-        qcore_implement();
-      }
+      constexpr bool operator==(std::nullptr_t) const { return m_s.m_raw == 0; }
+      constexpr bool operator==(std::nullopt_t) const { return m_s.m_raw == 0; }
 
       ///=========================================================================
       /// Accessors
 
-      operator bool() const {
-        /// TODO: Implement this
+      constexpr bool has_value() const { return m_s.m_raw != 0; }
+      constexpr operator bool() const { return has_value(); }
 
-        qcore_implement();
-      }
-      bool has_value() const {
-        /// TODO: Implement this
-
-        qcore_implement();
-      }
-
-      FlowPtr<Pointee, Tracking> &value() {
+      constexpr FlowPtr<Pointee, Tracking> &value() {
         if (!has_value()) [[unlikely]] {
           qcore_panicf("Attempted to dereference a nullptr. this=%p", this);
         }
 
-        /// TODO: Implement this
-
-        qcore_implement();
+        return m_s.m_ptr;
       }
 
-      const FlowPtr<Pointee, Tracking> &value() const {
+      constexpr const FlowPtr<Pointee, Tracking> &value() const {
         if (!has_value()) [[unlikely]] {
           qcore_panicf("Attempted to dereference a nullptr. this=%p", this);
         }
 
-        /// TODO: Implement this
-
-        qcore_implement();
+        return m_s.m_ptr;
       }
 
       template <class U>
-      Pointee *value_or(U &&) const {
-        // return m_ptr ? m_ptr.get() : std::forward<U>(default_value);
-
-        /// TODO: Implement this
-
-        qcore_implement();
+      constexpr Pointee *value_or(U &&default_value) const {
+        return has_value() ? value().get() : std::forward<U>(default_value);
       }
     };
 
     constexpr auto NullableFlowPtrStructSize = sizeof(NullableFlowPtr<int>);
-    // static_assert(sizeof(FlowPtr<int>) == sizeof(NullableFlowPtr<int>));
-    /// TODO: Reenable assert
+    static_assert(sizeof(FlowPtr<int>) == sizeof(NullableFlowPtr<int>));
   }  // namespace flowptr_detail
 
   template <class Pointee, class Tracking = DefaultTracking>

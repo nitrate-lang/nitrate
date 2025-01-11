@@ -128,14 +128,11 @@ namespace ncc {
       ///=========================================================================
       /// Constructors
 
-      constexpr explicit FlowPtr(Pointee *ptr, Tracking tracking = Tracking())
-          : m_s(ptr, std::move(tracking)) {
-        qcore_assert(ptr != nullptr, "FlowPtr cannot be null");
-      }
-
       template <class U>
       constexpr FlowPtr(U *ptr, Tracking tracking = Tracking())
           : m_s(ptr, std::move(tracking)) {
+        static_assert(std::is_convertible_v<U *, Pointee *>,
+                      "Cannot convert U* to Pointee*");
         qcore_assert(ptr != nullptr, "FlowPtr cannot be null");
       }
 
@@ -143,13 +140,11 @@ namespace ncc {
       constexpr FlowPtr(FlowPtr &&O) : m_s(std::move(O.m_s)) {}
 
       constexpr FlowPtr &operator=(const FlowPtr &O) {
-        m_s = O.m_s;
-        return *this;
+        return m_s = O.m_s, *this;
       }
 
       constexpr FlowPtr &operator=(FlowPtr &&O) {
-        m_s = std::move(O.m_s);
-        return *this;
+        return m_s = std::move(O.m_s), *this;
       }
 
       constexpr ~FlowPtr() = default;
@@ -165,24 +160,14 @@ namespace ncc {
         return m_s.m_ref.m_ptr != O.m_s.m_ref.m_ptr;
       }
 
-      constexpr bool operator==(std::nullptr_t) const {
-        qcore_assert(get() != nullptr,
-                     "invariant violation: FlowPtr cannot be null");
-
-        return false;
-      }
+      constexpr bool operator==(std::nullptr_t) const { return false; }
 
       ///=========================================================================
       /// Accessors
 
       constexpr auto operator->() const { return m_s.m_ref.m_tptr; }
       constexpr auto get() const { return m_s.m_ref.m_tptr; }
-
-      constexpr operator bool() const {
-        qcore_assert(get() != nullptr,
-                     "invariant violation: FlowPtr cannot be null");
-        return true;
-      }
+      constexpr operator bool() const { return true; }
 
       ///=========================================================================
       /// Casting
