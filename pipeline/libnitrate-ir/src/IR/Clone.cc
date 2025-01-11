@@ -42,6 +42,12 @@ using namespace ncc::ir;
 class CloneVisitor : public IRVisitor<void> {
   std::optional<Expr *> R;
 
+  void for_each(const auto &container, auto callback) {
+    for (const auto &item : container) {
+      callback(item);
+    }
+  }
+
 public:
   CloneVisitor() {}
   virtual ~CloneVisitor() = default;
@@ -85,17 +91,23 @@ public:
   void visit(FlowPtr<OpaqueTy> n) override { R = getOpaqueTy(n->getName()); }
 
   void visit(FlowPtr<StructTy> n) override {
-    std::vector<FlowPtr<Type>> fields(n->getFields().size());
-    std::transform(n->getFields().begin(), n->getFields().end(), fields.begin(),
-                   [](auto item) { return item->template clone<Type>(); });
+    std::vector<FlowPtr<Type>> fields;
+    fields.reserve(n->getFields().size());
+
+    for_each(n->getFields(), [&](auto item) {
+      fields.push_back(item->template clone<Type>());
+    });
 
     R = getStructTy(fields);
   }
 
   void visit(FlowPtr<UnionTy> n) override {
-    std::vector<FlowPtr<Type>> fields(n->getFields().size());
-    std::transform(n->getFields().begin(), n->getFields().end(), fields.begin(),
-                   [](auto item) { return item->template clone<Type>(); });
+    std::vector<FlowPtr<Type>> fields;
+    fields.reserve(n->getFields().size());
+
+    for_each(n->getFields(), [&](auto item) {
+      fields.push_back(item->template clone<Type>());
+    });
 
     R = getUnionTy(fields);
   }
@@ -113,9 +125,11 @@ public:
   }
 
   void visit(FlowPtr<FnTy> n) override {
-    std::vector<FlowPtr<Type>> params(n->getParams().size());
-    std::transform(n->getParams().begin(), n->getParams().end(), params.begin(),
-                   [](auto item) { return item->template clone<Type>(); });
+    std::vector<FlowPtr<Type>> params;
+    params.reserve(n->getParams().size());
+    for_each(n->getParams(), [&](auto item) {
+      params.push_back(item->template clone<Type>());
+    });
 
     R = getFnTy(params, n->getReturn()->clone<Type>(), n->isVariadic(),
                 n->getNativeSize());
@@ -130,29 +144,31 @@ public:
   }
 
   void visit(FlowPtr<List> n) override {
-    IR_Vertex_ListItems<void> items(n->size());
+    IR_Vertex_ListItems<void> items;
+    items.reserve(n->size());
 
-    std::transform(n->begin(), n->end(), items.begin(),
-                   [](auto item) { return item->clone(); });
+    std::for_each(n->begin(), n->end(),
+                  [&](auto item) { items.push_back(item->clone()); });
 
     R = create<List>(items, n->isHomogenous());
   }
 
   void visit(FlowPtr<Call> n) override {
-    IR_Vertex_CallArgs<void> args(n->getNumArgs());
+    IR_Vertex_CallArgs<void> args;
+    args.reserve(n->getArgs().size());
 
-    std::transform(n->getArgs().begin(), n->getArgs().end(), args.begin(),
-                   [](auto arg) { return arg->clone(); });
+    for_each(n->getArgs(), [&](auto item) { args.push_back(item->clone()); });
+
     auto old_ref = n->getTarget();  // Resolve later
 
     R = create<Call>(old_ref, args);
   }
 
   void visit(FlowPtr<Seq> n) override {
-    IR_Vertex_SeqItems<void> items(n->size());
+    IR_Vertex_SeqItems<void> items;
+    items.reserve(n->size());
 
-    std::transform(n->begin(), n->end(), items.begin(),
-                   [](auto item) { return item->clone(); });
+    for_each(n->getItems(), [&](auto item) { items.push_back(item->clone()); });
 
     R = create<Seq>(items);
   }
@@ -229,10 +245,12 @@ public:
   }
 
   void visit(FlowPtr<Switch> n) override {
-    IR_Vertex_SwitchCases<void> cases(n->getCases().size());
+    IR_Vertex_SwitchCases<void> cases;
+    cases.reserve(n->getCases().size());
 
-    std::transform(n->getCases().begin(), n->getCases().end(), cases.begin(),
-                   [](auto item) { return item->template clone<Case>(); });
+    for_each(n->getCases(),
+             [&](auto item) { cases.push_back(item->template clone<Case>()); });
+
     auto cond = n->getCond()->clone();
     auto default_ = n->getDefault().has_value()
                         ? n->getDefault().value()->clone()
@@ -242,13 +260,12 @@ public:
   }
 
   void visit(FlowPtr<Function> n) override {
-    IR_Vertex_Params<void> params(n->getParams().size());
+    IR_Vertex_Params<void> params;
+    params.reserve(n->getParams().size());
 
-    std::transform(
-        n->getParams().begin(), n->getParams().end(), params.begin(),
-        [](auto item) -> std::pair<FlowPtr<IR_Vertex_Type<void>>, string> {
-          return {item.first->template clone<Type>(), item.second};
-        });
+    for_each(n->getParams(), [&](auto item) {
+      params.push_back({item.first->template clone<Type>(), item.second});
+    });
 
     auto body =
         n->getBody().has_value() ? n->getBody().value()->clone<Seq>() : nullptr;
@@ -271,12 +288,12 @@ public:
                    n->getData())) {
       auto data = std::get<IR_Vertex_CallArgsTmpNodeCradle<void>>(n->getData());
       auto base = data.base->clone();
-      IR_Vertex_CallArguments<void> args(data.args.size());
+      IR_Vertex_CallArguments<void> args;
+      args.reserve(data.args.size());
 
-      std::transform(data.args.begin(), data.args.end(), args.begin(),
-                     [](auto item) -> std::pair<string, FlowPtr<Expr>> {
-                       return {item.first, item.second->clone()};
-                     });
+      for_each(data.args, [&](auto item) {
+        args.push_back({item.first, item.second->clone()});
+      });
 
       R = create<Tmp>(n->getTmpType(),
                       IR_Vertex_CallArgsTmpNodeCradle<void>{base, args});

@@ -80,7 +80,8 @@ namespace ncc::parse {
     SkipChildren,
   };
 
-  typedef std::function<IterOp(FlowPtr<Base> p, FlowPtr<Base> c)> IterCallback;
+  typedef std::function<IterOp(NullableFlowPtr<Base> p, FlowPtr<Base> c)>
+      IterCallback;
 
   namespace detail {
     void dfs_pre_impl(FlowPtr<Base> base, IterCallback cb);

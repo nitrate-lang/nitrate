@@ -72,5 +72,5 @@ CPP_EXPORT string IRModule::Name(std::optional<string> name) {
 }
 
 CPP_EXPORT void IRModule::accept(IRVisitor<void> &visitor) {
-  m_root->accept(visitor);
+  m_root.value()->accept(visitor);
 }

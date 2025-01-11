@@ -218,7 +218,7 @@ CPP_EXPORT void detail::dfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
   }
 
   constexpr auto syncfn = [](auto n, auto cb, auto cs) {
-    std::stack<std::pair<FlowPtr<Expr>, FlowPtr<Expr>*>> s;
+    std::stack<std::pair<NullableFlowPtr<Expr>, FlowPtr<Expr>*>> s;
     std::vector<FlowPtr<Expr>*> children;
 
     s.push({nullptr, n});
@@ -258,7 +258,7 @@ CPP_EXPORT void detail::dfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
   }
 
   constexpr auto syncfn = [](auto n, auto cb, auto cs) {
-    std::stack<std::pair<FlowPtr<Expr>, FlowPtr<Expr>*>> s;
+    std::stack<std::pair<NullableFlowPtr<Expr>, FlowPtr<Expr>*>> s;
     std::vector<FlowPtr<Expr>*> children;
 
     s.push({nullptr, n});
@@ -295,7 +295,7 @@ CPP_EXPORT void detail::bfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
   }
 
   constexpr auto syncfn = [](auto n, auto cb, auto cs) {
-    std::queue<std::pair<FlowPtr<Expr>, FlowPtr<Expr>*>> s;
+    std::queue<std::pair<NullableFlowPtr<Expr>, FlowPtr<Expr>*>> s;
     std::vector<FlowPtr<Expr>*> children;
 
     s.push({nullptr, n});
@@ -335,7 +335,7 @@ CPP_EXPORT void detail::bfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
   }
 
   constexpr auto syncfn = [](auto n, auto cb, auto cs) {
-    std::queue<std::pair<FlowPtr<Expr>, FlowPtr<Expr>*>> s;
+    std::queue<std::pair<NullableFlowPtr<Expr>, FlowPtr<Expr>*>> s;
     std::vector<FlowPtr<Expr>*> children;
 
     s.push({nullptr, n});

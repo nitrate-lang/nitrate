@@ -128,18 +128,16 @@ namespace ncc {
       ///=========================================================================
       /// Constructors
 
-      constexpr FlowPtr(Tracking tracking = Tracking())
-          : m_s(nullptr, std::move(tracking)) {}
-
       constexpr explicit FlowPtr(Pointee *ptr, Tracking tracking = Tracking())
-          : m_s(ptr, std::move(tracking)) {}
-
-      constexpr FlowPtr(std::nullptr_t, Tracking tracking = Tracking())
-          : m_s(nullptr, std::move(tracking)) {}
+          : m_s(ptr, std::move(tracking)) {
+        qcore_assert(ptr != nullptr, "FlowPtr cannot be null");
+      }
 
       template <class U>
       constexpr FlowPtr(U *ptr, Tracking tracking = Tracking())
-          : m_s(ptr, std::move(tracking)) {}
+          : m_s(ptr, std::move(tracking)) {
+        qcore_assert(ptr != nullptr, "FlowPtr cannot be null");
+      }
 
       constexpr FlowPtr(const FlowPtr &O) : m_s(O.m_s) {}
       constexpr FlowPtr(FlowPtr &&O) : m_s(std::move(O.m_s)) {}
@@ -168,7 +166,10 @@ namespace ncc {
       }
 
       constexpr bool operator==(std::nullptr_t) const {
-        return m_s.m_ref.m_ptr == 0;
+        qcore_assert(get() != nullptr,
+                     "invariant violation: FlowPtr cannot be null");
+
+        return false;
       }
 
       ///=========================================================================
@@ -176,7 +177,12 @@ namespace ncc {
 
       constexpr auto operator->() const { return m_s.m_ref.m_tptr; }
       constexpr auto get() const { return m_s.m_ref.m_tptr; }
-      constexpr operator bool() const { return m_s.m_ref.m_ptr != 0; }
+
+      constexpr operator bool() const {
+        qcore_assert(get() != nullptr,
+                     "invariant violation: FlowPtr cannot be null");
+        return true;
+      }
 
       ///=========================================================================
       /// Casting

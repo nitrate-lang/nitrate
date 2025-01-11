@@ -96,7 +96,8 @@ namespace ncc::ir {
     SkipChildren,
   };
 
-  typedef std::function<IterOp(FlowPtr<Expr> p, FlowPtr<Expr> *c)> IterCallback;
+  typedef std::function<IterOp(NullableFlowPtr<Expr> p, FlowPtr<Expr> *c)>
+      IterCallback;
   typedef std::function<bool(FlowPtr<Expr> *a, FlowPtr<Expr> *b)> ChildSelect;
 
   namespace detail {

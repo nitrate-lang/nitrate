@@ -211,7 +211,8 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
   auto SourceOffset = peek().get_start();
 
   std::stack<Frame> Stack;
-  Stack.push({nullptr, SourceOffset, 0, FrameType::Start, OpPlus});
+  ConstBool start_node(false);
+  Stack.push({&start_node, SourceOffset, 0, FrameType::Start, OpPlus});
 
   /****************************************
    * Parse pre-unary operators

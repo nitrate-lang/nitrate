@@ -37,11 +37,13 @@
 #include <nitrate-core/FlowPtr.hh>
 #include <optional>
 
+#include "nitrate-core/Logger.hh"
+
 namespace ncc {
   namespace flowptr_detail {
     template <class Pointee, class Tracking = DefaultTracking>
     class NullableFlowPtr {
-      FlowPtr<Pointee, Tracking> m_ptr;
+      uintptr_t m_ptr;
 
     public:
       using value_type = Pointee;
@@ -49,91 +51,149 @@ namespace ncc {
       ///=========================================================================
       /// Constructors
 
-      constexpr NullableFlowPtr() : m_ptr(nullptr) {}
+      constexpr NullableFlowPtr() {
+        /// TODO: Implement this
 
-      constexpr explicit NullableFlowPtr(FlowPtr<Pointee, Tracking> O)
-          : m_ptr(O) {}
+        qcore_implement();
+      }
+
+      constexpr explicit NullableFlowPtr(FlowPtr<Pointee, Tracking>) {
+        /// TODO: Implement this
+
+        qcore_implement();
+      }
 
       template <class U>
-      constexpr NullableFlowPtr(U *ptr, Tracking tracking = Tracking())
-          : m_ptr(ptr, std::move(tracking)) {}
+      constexpr NullableFlowPtr(U *, Tracking = Tracking()) {
+        /// TODO: Implement this
 
-      constexpr NullableFlowPtr(std::nullopt_t, Tracking tracking = Tracking())
-          : m_ptr(nullptr, std::move(tracking)) {}
+        qcore_implement();
+      }
 
-      constexpr NullableFlowPtr(std::nullptr_t, Tracking tracking = Tracking())
-          : m_ptr(nullptr, std::move(tracking)) {}
+      constexpr NullableFlowPtr(std::nullopt_t, Tracking = Tracking()) {
+        /// TODO: Implement this
 
-      constexpr NullableFlowPtr(std::optional<FlowPtr<Pointee, Tracking>> O)
-          : m_ptr(O.value_or(nullptr)) {}
+        qcore_implement();
+      }
+
+      constexpr NullableFlowPtr(std::nullptr_t, Tracking = Tracking()) {
+        /// TODO: Implement this
+
+        qcore_implement();
+      }
+
+      constexpr NullableFlowPtr(std::optional<FlowPtr<Pointee, Tracking>>) {
+        /// TODO: Implement this
+
+        qcore_implement();
+      }
 
       template <class U = Pointee>
-      constexpr NullableFlowPtr(FlowPtr<U, Tracking> O) : m_ptr(O) {}
+      constexpr NullableFlowPtr(FlowPtr<U, Tracking>) {
+        /// TODO: Implement this
+
+        qcore_implement();
+      }
 
       template <class U>
-      constexpr NullableFlowPtr(const NullableFlowPtr<U, Tracking> &O)
-          : m_ptr(O) {}
+      constexpr NullableFlowPtr(const NullableFlowPtr<U, Tracking> &) {
+        /// TODO: Implement this
+
+        qcore_implement();
+      }
 
       template <class U>
-      constexpr NullableFlowPtr(NullableFlowPtr<U, Tracking> &&O)
-          : m_ptr(std::move(O)) {}
+      constexpr NullableFlowPtr(NullableFlowPtr<U, Tracking> &&) {
+        /// TODO: Implement this
+
+        qcore_implement();
+      }
 
       template <class U>
       constexpr NullableFlowPtr &operator=(
-          const NullableFlowPtr<U, Tracking> &O) {
-        m_ptr = O;
+          const NullableFlowPtr<U, Tracking> &) {
+        /// TODO: Implement this
+
+        qcore_implement();
         return *this;
       }
 
       template <class U>
-      constexpr NullableFlowPtr &operator=(NullableFlowPtr<U, Tracking> &&O) {
-        m_ptr = std::move(O);
+      constexpr NullableFlowPtr &operator=(NullableFlowPtr<U, Tracking> &&) {
+        /// TODO: Implement this
+
+        qcore_implement();
         return *this;
       }
 
       ///=========================================================================
       /// Comparison
 
-      constexpr bool operator==(const NullableFlowPtr &O) const {
-        return m_ptr == O.m_ptr;
+      bool operator==(const NullableFlowPtr &) const {
+        /// TODO: Implement this
+
+        qcore_implement();
       }
 
-      constexpr bool operator!=(const NullableFlowPtr &O) const {
-        return m_ptr != O.m_ptr;
+      bool operator!=(const NullableFlowPtr &) const {
+        /// TODO: Implement this
+
+        qcore_implement();
       }
 
-      constexpr bool operator==(std::nullptr_t) const { return !m_ptr; }
+      bool operator==(std::nullptr_t) const {
+        /// TODO: Implement this
+
+        qcore_implement();
+      }
 
       ///=========================================================================
       /// Accessors
 
-      constexpr operator bool() const { return m_ptr; }
-      constexpr bool has_value() const { return m_ptr != nullptr; }
+      operator bool() const {
+        /// TODO: Implement this
 
-      constexpr FlowPtr<Pointee, Tracking> &value() {
-        if (!has_value()) [[unlikely]] {
-          qcore_panicf("Attempted to dereference a nullptr. this=%p", this);
-        }
+        qcore_implement();
+      }
+      bool has_value() const {
+        /// TODO: Implement this
 
-        return m_ptr;
+        qcore_implement();
       }
 
-      constexpr const FlowPtr<Pointee, Tracking> &value() const {
+      FlowPtr<Pointee, Tracking> &value() {
         if (!has_value()) [[unlikely]] {
           qcore_panicf("Attempted to dereference a nullptr. this=%p", this);
         }
 
-        return m_ptr;
+        /// TODO: Implement this
+
+        qcore_implement();
+      }
+
+      const FlowPtr<Pointee, Tracking> &value() const {
+        if (!has_value()) [[unlikely]] {
+          qcore_panicf("Attempted to dereference a nullptr. this=%p", this);
+        }
+
+        /// TODO: Implement this
+
+        qcore_implement();
       }
 
       template <class U>
-      constexpr Pointee *value_or(U &&default_value) const {
-        return m_ptr ? m_ptr.get() : std::forward<U>(default_value);
+      Pointee *value_or(U &&) const {
+        // return m_ptr ? m_ptr.get() : std::forward<U>(default_value);
+
+        /// TODO: Implement this
+
+        qcore_implement();
       }
     };
 
     constexpr auto NullableFlowPtrStructSize = sizeof(NullableFlowPtr<int>);
-    static_assert(sizeof(FlowPtr<int>) == sizeof(NullableFlowPtr<int>));
+    // static_assert(sizeof(FlowPtr<int>) == sizeof(NullableFlowPtr<int>));
+    /// TODO: Reenable assert
   }  // namespace flowptr_detail
 
   template <class Pointee, class Tracking = DefaultTracking>

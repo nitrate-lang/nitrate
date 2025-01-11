@@ -40,7 +40,7 @@
 using namespace ncc;
 using namespace ncc::ir;
 
-static FlowPtr<Type> signed_complement(nr_ty_t ty) {
+static NullableFlowPtr<Type> signed_complement(nr_ty_t ty) {
   switch (ty) {
     case IR_tI8: {
       return getU8Ty();
@@ -494,12 +494,13 @@ public:
         R = getArrayTy(item_type.value(), n->size());
       }
     } else {
-      std::vector<FlowPtr<Type>> types(n->size());
+      std::vector<FlowPtr<Type>> types;
+      types.reserve(n->size());
       bool okay = true;
 
       for (size_t i = 0; i < n->size(); ++i) {
         if (auto item_type = n->at(i)->getType()) {
-          types[i] = item_type.value();
+          types.push_back(item_type.value());
         } else {
           okay = false;
           break;
@@ -585,10 +586,12 @@ public:
   void visit(FlowPtr<Switch>) override { R = getVoidTy(); }
 
   void visit(FlowPtr<Function> n) override {
-    std::vector<FlowPtr<Type>> params(n->getParams().size());
+    std::vector<FlowPtr<Type>> params;
+    params.reserve(n->getParams().size());
 
-    std::ranges::transform(n->getParams(), params.begin(),
-                           [](auto param) { return param.first; });
+    for (auto item : n->getParams()) {
+      params.push_back(item.first);
+    }
 
     R = getFnTy(params, n->getReturn(), n->isVariadic());
   }

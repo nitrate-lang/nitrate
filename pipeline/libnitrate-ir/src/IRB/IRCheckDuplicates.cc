@@ -48,7 +48,7 @@ using namespace ncc;
 
 struct Conflict {
   std::string_view name;
-  FlowPtr<Expr> us;
+  NullableFlowPtr<Expr> us;
   Kind us_kind;
 
   std::optional<FlowPtr<Expr>> them;
@@ -78,7 +78,7 @@ static void print_conflict_errors(const std::vector<Conflict> &conflicts,
     I->report(NameConflict, IC::Error,
               {kind_name.at(conflict.us_kind), " name '", conflict.name,
                "' is already defined as a ", kind_name.at(conflict.them_kind)},
-              conflict.us->getLoc());
+              conflict.us.value()->getLoc());
   }
 }
 
@@ -92,15 +92,15 @@ bool NRBuilder::check_duplicates(FlowPtr<Seq>, IReport *I) {
                       m_named_types.size() + m_named_constant_group.size());
 
     std::for_each(m_functions.begin(), m_functions.end(), [&](auto x) {
-      names_map[x.first] = {Kind::Function, x.second};
+      names_map.insert({x.first, {Kind::Function, x.second}});
     });
 
     std::for_each(m_variables.begin(), m_variables.end(), [&](auto x) {
-      names_map[x.first] = {Kind::Variable, x.second};
+      names_map.insert({x.first, {Kind::Variable, x.second}});
     });
 
     std::for_each(m_named_types.begin(), m_named_types.end(), [&](auto x) {
-      names_map[x.first] = {Kind::TypeDef, x.second};
+      names_map.insert({x.first, {Kind::TypeDef, x.second}});
     });
 
     std::for_each(
@@ -109,7 +109,7 @@ bool NRBuilder::check_duplicates(FlowPtr<Seq>, IReport *I) {
           std::for_each(x.second.begin(), x.second.end(), [&](auto y) {
             auto joined =
                 string(std::string(x.first) + "::" + std::string(y.first));
-            names_map[joined] = {Kind::ScopedEnum, y.second};
+            names_map.insert({joined, {Kind::ScopedEnum, y.second}});
           });
         });
   }
@@ -174,7 +174,7 @@ bool NRBuilder::check_duplicates(FlowPtr<Seq>, IReport *I) {
 
     std::for_each(m_duplicate_named_types->begin(),
                   m_duplicate_named_types->end(), [&](auto x) {
-                    conflicts.push_back({x, Kind::TypeDef, m_named_types[x],
+                    conflicts.push_back({x, Kind::TypeDef, m_named_types.at(x),
                                          Kind::TypeDef, std::nullopt});
                   });
 

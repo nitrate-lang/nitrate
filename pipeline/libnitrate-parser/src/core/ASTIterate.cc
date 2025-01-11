@@ -369,7 +369,7 @@ static FORCE_INLINE void get_children_sorted(
 
 CPP_EXPORT void detail::dfs_pre_impl(FlowPtr<Base> base, IterCallback cb) {
   auto syncfn = [](FlowPtr<Base> n, IterCallback& cb) {
-    std::stack<std::pair<FlowPtr<Base>, FlowPtr<Base>>> s;
+    std::stack<std::pair<NullableFlowPtr<Base>, FlowPtr<Base>>> s;
     std::vector<FlowPtr<Base>> children;
 
     s.push({nullptr, n});
@@ -408,7 +408,7 @@ CPP_EXPORT void detail::dfs_pre_impl(FlowPtr<Base> base, IterCallback cb) {
 
 CPP_EXPORT void detail::dfs_post_impl(FlowPtr<Base> base, IterCallback cb) {
   auto syncfn = [](FlowPtr<Base> n, IterCallback& cb) {
-    std::stack<std::pair<FlowPtr<Base>, FlowPtr<Base>>> s;
+    std::stack<std::pair<NullableFlowPtr<Base>, FlowPtr<Base>>> s;
     std::vector<FlowPtr<Base>> children;
 
     s.push({nullptr, n});
@@ -444,7 +444,7 @@ CPP_EXPORT void detail::dfs_post_impl(FlowPtr<Base> base, IterCallback cb) {
 
 CPP_EXPORT void detail::bfs_pre_impl(FlowPtr<Base> base, IterCallback cb) {
   auto syncfn = [](FlowPtr<Base> n, IterCallback& cb) {
-    std::queue<std::pair<FlowPtr<Base>, FlowPtr<Base>>> s;
+    std::queue<std::pair<NullableFlowPtr<Base>, FlowPtr<Base>>> s;
     std::vector<FlowPtr<Base>> children;
 
     s.push({nullptr, n});
@@ -483,7 +483,7 @@ CPP_EXPORT void detail::bfs_pre_impl(FlowPtr<Base> base, IterCallback cb) {
 
 CPP_EXPORT void detail::bfs_post_impl(FlowPtr<Base> base, IterCallback cb) {
   auto syncfn = [](FlowPtr<Base> n, IterCallback& cb) {
-    std::queue<std::pair<FlowPtr<Base>, FlowPtr<Base>>> s;
+    std::queue<std::pair<NullableFlowPtr<Base>, FlowPtr<Base>>> s;
     std::vector<FlowPtr<Base>> children;
 
     s.push({nullptr, n});

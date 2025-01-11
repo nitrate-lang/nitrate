@@ -40,6 +40,7 @@
 #include <memory>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/FlowPtr.hh>
+#include <nitrate-core/NullableFlowPtr.hh>
 #include <nitrate-core/String.hh>
 #include <nitrate-ir/IR/Fwd.hh>
 #include <nitrate-ir/IR/Visitor.hh>
@@ -62,7 +63,7 @@ namespace ncc::ir {
     using FunctionNameBimap =
         boost::bimap<std::string, std::pair<FnTy *, Function *>>;
 
-    FlowPtr<Seq> m_root;
+    NullableFlowPtr<Seq> m_root;
     FunctionNameBimap m_functions{};
 
     std::vector<string> m_applied{};
