@@ -46,8 +46,7 @@
 #include <type_traits>
 
 namespace ncc::parse {
-
-  class LocationPairAlias {
+  class CPP_EXPORT LocationPairAlias {
     std::vector<std::pair<lex::LocationID, lex::LocationID>> m_pairs;
     std::mutex m_mutex;
 
@@ -67,6 +66,9 @@ namespace ncc::parse {
     Index Add(lex::LocationID begin, lex::LocationID end);
     std::pair<lex::LocationID, lex::LocationID> Get(Index loc);
   };
+
+  std::ostream &operator<<(std::ostream &os,
+                           const LocationPairAlias::Index &idx);
 
   extern LocationPairAlias g_location_pairs;
 

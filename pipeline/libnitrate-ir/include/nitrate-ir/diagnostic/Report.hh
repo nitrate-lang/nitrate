@@ -37,7 +37,9 @@
 #include <boost/bimap.hpp>
 #include <cstdarg>
 #include <memory>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-ir/IR.hh>
+#include <nitrate-ir/diagnostic/EC.hh>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ASTBase.hh>
 #include <string_view>

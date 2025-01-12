@@ -64,6 +64,12 @@ std::pair<lex::LocationID, lex::LocationID> LocationPairAlias::Get(
   return m_pairs.at(loc.v);
 }
 
+CPP_EXPORT std::ostream &parse::operator<<(
+    std::ostream &os, const LocationPairAlias::Index &idx) {
+  os << "${L:" << idx.v << "}";
+  return os;
+}
+
 ///=============================================================================
 
 CPP_EXPORT bool Base::isSame(FlowPtr<Base> o) const {

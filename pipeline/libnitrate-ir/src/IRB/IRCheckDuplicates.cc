@@ -41,8 +41,9 @@
 #include <nitrate-ir/diagnostic/Report.hh>
 #include <unordered_map>
 
-using namespace ncc::ir;
 using namespace ncc;
+using namespace ncc::ir;
+using namespace ncc::ir::ec;
 
 ///=============================================================================
 
@@ -75,10 +76,27 @@ static void print_conflict_errors(const std::vector<Conflict> &conflicts,
   };
 
   for (const auto &conflict : conflicts) {
-    I->report(NameConflict, IC::Error,
-              {kind_name.at(conflict.us_kind), " name '", conflict.name,
-               "' is already defined as a ", kind_name.at(conflict.them_kind)},
-              conflict.us.value()->getLoc());
+    // I->report(NameConflict, IC::Error,
+    //           {kind_name.at(conflict.us_kind), " name '", conflict.name,
+    //            "' is already defined as a ",
+    //            kind_name.at(conflict.them_kind)},
+    //           conflict.us.value()->getLoc());
+
+    switch (conflict.us_kind) {
+      case Kind::Function:
+      case Kind::Variable: {
+        ncc::log << ConflictingSymbol << conflict.us.value()->getLoc()
+                 << conflict.name << kind_name.at(conflict.them_kind);
+        break;
+      }
+
+      case Kind::TypeDef:
+      case Kind::ScopedEnum: {
+        ncc::log << ConflictingType << conflict.us.value()->getLoc()
+                 << conflict.name << kind_name.at(conflict.them_kind);
+        break;
+      }
+    }
   }
 }
 
