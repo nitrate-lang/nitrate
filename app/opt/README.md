@@ -1,0 +1,1 @@
+# Nitrate Optimizer Configuration
