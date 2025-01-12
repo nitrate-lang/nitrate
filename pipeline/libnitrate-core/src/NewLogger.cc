@@ -31,11 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Macro.hh>
 #include <nitrate-core/NewLogger.hh>
-#include <nitrate-core/OldLogger.hh>
-#include <sstream>
-#include <string>
 
 using namespace ncc;
 
@@ -47,8 +43,7 @@ CPP_EXPORT ECUnique::ECUnique(std::source_location loc) {
 
 CPP_EXPORT void ECBase::GetJsonRepresentation(std::ostream &os) const {
   os << "{\"flagname\":\"" << flag_name() << "\",\"nice_name\":\""
-     << nice_name() << "\",\"details\":\"" << details()
-     << "\",\"severity\":" << static_cast<int>(severity()) << ",\"tags\":[";
+     << nice_name() << "\",\"details\":\"" << details() << "\",\"tags\":[";
   for (auto it = tags().begin(); it != tags().end(); ++it) {
     os << "\"" << *it << "\"";
     if (it + 1 != tags().end()) {
@@ -102,8 +97,47 @@ CPP_EXPORT void ECBase::Finalize(void) {
   m_json = oss.str();
 }
 
-std::optional<ECBase::Details> ECBase::LoadDetailsFromFile(
-    std::string_view path) {
-  /// TODO: Load details from file
-  qcore_implement();
+size_t LoggerContext::subscribe(LogCallback cb) {
+  m_subscribers.push_back(cb);
+  return m_subscribers.size() - 1;
+}
+
+void LoggerContext::unsubscribe(size_t idx) {
+  if (idx < m_subscribers.size()) {
+    m_subscribers.erase(m_subscribers.begin() + idx);
+  }
+}
+
+void LoggerContext::unsubscribe_all() { m_subscribers.clear(); }
+
+size_t LoggerContext::add_filter(LogFilterFunc filter) {
+  m_filters.push_back(filter);
+  return m_filters.size() - 1;
+}
+
+void LoggerContext::remove_filter(size_t idx) {
+  if (idx < m_filters.size()) {
+    m_filters.erase(m_filters.begin() + idx);
+  }
+}
+
+void LoggerContext::remove_filter(LogFilterFunc filter) {
+  m_filters.erase(std::remove(m_filters.begin(), m_filters.end(), filter),
+                  m_filters.end());
+}
+
+void LoggerContext::clear_filters() { m_filters.clear(); }
+
+void LoggerContext::publish(std::string_view msg, Sev sev,
+                            const ECBase &ec) const {
+  if (m_enabled) {
+    bool emit = std::all_of(m_filters.begin(), m_filters.end(),
+                            [&](const auto &f) { return f(msg, sev, ec); });
+
+    if (emit) {
+      for (const auto &sub : m_subscribers) {
+        sub(msg, sev, ec);
+      }
+    }
+  }
 }

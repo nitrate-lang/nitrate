@@ -36,15 +36,18 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <functional>
 #include <iostream>
+#include <nitrate-core/Macro.hh>
 #include <optional>
 #include <source_location>
 #include <span>
+#include <sstream>
 #include <string_view>
 #include <vector>
 
 namespace ncc {
-  enum class Severity {
+  enum Sev {
     Trace,  /* Low-value, high-volume debug info (malloc, free, ...)*/
     Debug,  /* High-value, mid-volume debug info (init, major API calls, ...) */
     Info,   /* Relevant some like: upcoming feature notice, did you know? */
@@ -71,12 +74,8 @@ namespace ncc {
     struct Details {
       std::vector<std::string> tags, fixes, examples, dev_notes, notes;
       std::string flagname, nice_name, details;
-      Severity severity;
 
-      constexpr Details() {
-        flagname = nice_name = details = "";
-        severity = Severity::Error;
-      }
+      constexpr Details() { flagname = nice_name = details = ""; }
     };
 
     EC m_ec;
@@ -103,7 +102,6 @@ namespace ncc {
     constexpr std::string_view flag_name() const { return m_details.flagname; }
     constexpr std::string_view nice_name() const { return m_details.nice_name; }
     constexpr std::string_view details() const { return m_details.details; }
-    constexpr auto severity() const { return m_details.severity; }
     constexpr auto tags() const { return std::span(m_details.tags); }
     constexpr auto fixes() const { return std::span(m_details.fixes); }
     constexpr auto examples() const { return std::span(m_details.examples); }
@@ -137,6 +135,91 @@ namespace ncc {
   public:                                                                  \
     constexpr name##Class() { Finalize(); }                                \
   } name;
+
+  NCC_EC_DOMAIN(CoreEC);
+  NCC_EC(CoreEC, UnknownEC);
+
+  ///=========================================================================///
+
+  using LogCallback =
+      std::function<void(std::string_view, Sev, const ECBase &)>;
+
+  class LogStream final {
+    std::stringstream m_ss;
+    Sev m_severity = Sev::Error;
+    const ECBase *m_ec = nullptr;
+    LogCallback m_recv;
+
+  public:
+    LogStream(LogCallback pub) : m_recv(pub) {}
+    LogStream(LogStream &&) = default;
+
+    ~LogStream() {
+      if (m_recv) {
+        m_recv(m_ss.str(), m_severity, m_ec ? *m_ec : UnknownEC);
+      }
+    }
+
+    template <typename T>
+    void write(const T &value) {
+      if constexpr (std::is_base_of_v<ECBase, T>) {
+        m_ec = &value; /* ECBase children must have static lifetime */
+      } else if constexpr (std::is_same_v<Sev, T>) {
+        m_severity = value;
+      } else {
+        m_ss << value;
+      }
+    }
+  };
+
+  using LogFilterFunc = bool (*)(std::string_view, Sev, const ECBase &);
+
+#define NCC_EC_FILTER(name, msg, sev, ec) \
+  static inline bool name(std::string_view msg, Sev sev, const ECBase &ec)
+
+  class CPP_EXPORT LoggerContext final {
+    std::vector<LogCallback> m_subscribers;
+    std::vector<LogFilterFunc> m_filters;
+    bool m_enabled = true;
+
+  public:
+    LoggerContext() = default;
+    ~LoggerContext() = default;
+
+    size_t subscribe(LogCallback cb);
+    void unsubscribe(size_t idx);
+    void unsubscribe_all();
+
+    size_t add_filter(LogFilterFunc filter);
+    void remove_filter(size_t idx);
+    void remove_filter(LogFilterFunc filter);
+    void clear_filters();
+
+    void operator+=(LogFilterFunc filter) { add_filter(filter); }
+    void operator-=(LogFilterFunc filter) { remove_filter(filter); }
+
+    void enable() { m_enabled = true; }
+    void disable() { m_enabled = false; }
+    bool enabled() const { return m_enabled; }
+
+    void publish(std::string_view msg, Sev sev, const ECBase &ec) const;
+  };
+
+  LogStream operator<<(LoggerContext log, const auto &value) {
+    LogStream stream(
+        [&](auto msg, auto sev, const auto &ec) { log.publish(msg, sev, ec); });
+
+    stream.write(value);
+
+    return stream;
+  };
+
+  LogStream operator<<(LogStream &&stream, const auto &value) {
+    stream.write(value);
+    return std::move(stream);
+  };
+
+  static inline thread_local LoggerContext log;
 }  // namespace ncc
 
 #endif
