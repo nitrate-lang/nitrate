@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Context.hh>
 #include <cstring>
 #include <descent/Recurse.hh>
 #include <memory>
@@ -43,6 +42,9 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 
+#include "nitrate-core/NewLogger.hh"
+#include "nitrate-parser/EC.hh"
+
 using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
@@ -50,7 +52,7 @@ using namespace ncc::lex;
 FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
                                     SafetyMode safety) {
   if (expect_braces && !next().is<PuncLCur>()) {
-    diagnostic << current() << "Expected '{'";
+    log << SyntaxError << current() << "Expected '{'";
   }
 
   auto block_start = current().get_start();
@@ -85,7 +87,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       });
 
       if (!next_if(PuncSemi)) {
-        diagnostic << tok << "Expected ';' after expression";
+        log << SyntaxError << tok << "Expected ';' after expression";
       }
 
       auto stmt = make<ExprStmt>(expr)();
@@ -353,14 +355,14 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       default: {
-        diagnostic << tok << "Unexpected keyword";
+        log << SyntaxError << tok << "Unexpected keyword";
         break;
       }
     }
   }
 
   if (expect_braces) {
-    diagnostic << current() << "Expected '}'";
+    log << SyntaxError << current() << "Expected '}'";
   }
 
   auto block = make<Block>(items, safety)();
@@ -378,27 +380,51 @@ CPP_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
   m_failed = false;
 }
 
+void Parser_SetCurrentScanner(IScanner *scanner);
+
 CPP_EXPORT ASTRoot Parser::parse() {
-  auto old_state = rd.GetSkipCommentsState();
-  rd.SkipCommentsState(true);
+  std::optional<ASTRoot> ast;
 
-  /*== Install thread-local references to the parser ==*/
-  auto old = diagnostic;
-  diagnostic = this;
+  { /* Assign the current context to thread-local global state */
+    Parser_SetCurrentScanner(&rd);
 
-  std::swap(npar_allocator, m_allocator);
-  auto node = recurse_block(false, false, SafetyMode::Unknown);
-  std::swap(npar_allocator, m_allocator);
+    { /* Subscribe to events emitted by the parser */
+      auto sub_id = log.subscribe([&](auto, auto, const auto &ec) {
+        if (ec.getKind() == SyntaxError.getKind()) {
+          SetFailBit();
+        }
+      });
 
-  ASTRoot ast(node, std::move(m_allocator), m_failed);
-  m_allocator = std::make_unique<ncc::dyn_arena>();
+      { /* Configure the scanner to ignore comments */
+        auto old_state = rd.GetSkipCommentsState();
+        rd.SkipCommentsState(true);
 
-  /*== Uninstall thread-local references to the parser ==*/
-  diagnostic = old;
+        {   /* Parse the input */
+          { /* Swap in an arena allocator */
+            std::swap(npar_allocator, m_allocator);
 
-  rd.SkipCommentsState(old_state);
+            /* Recursive descent parsing */
+            auto node = recurse_block(false, false, SafetyMode::Unknown);
 
-  return ast;
+            std::swap(npar_allocator, m_allocator);
+
+            ast = ASTRoot(node, std::move(m_allocator), m_failed);
+          }
+
+          /* Create a new allocator */
+          m_allocator = std::make_unique<ncc::dyn_arena>();
+        }
+
+        rd.SkipCommentsState(old_state);
+      }
+
+      log.unsubscribe(sub_id);
+    }
+
+    Parser_SetCurrentScanner(nullptr);
+  }
+
+  return ast.value();
 }
 
 CPP_EXPORT bool ASTRoot::check() const {
@@ -414,45 +440,4 @@ CPP_EXPORT bool ASTRoot::check() const {
   });
 
   return !failed;
-}
-
-std::string parse::mint_clang16_message(ncc::lex::IScanner &rd,
-                                        std::string_view message,
-                                        ncc::lex::Token tok) {
-  auto token_start = rd.Start(tok), token_end = rd.End(tok);
-  auto start_filename = token_start.GetFilename();
-  auto start_line = token_start.GetRow(), start_col = token_start.GetCol();
-  auto end_line = token_end.GetRow();
-
-  std::stringstream ss;
-  ss << "\x1b[37;1m" << (start_filename->empty() ? "?" : start_filename) << ":";
-  ss << (start_line == QLEX_EOFF ? "?" : std::to_string(start_line)) << ":";
-  ss << (start_col == QLEX_EOFF ? "?" : std::to_string(start_col))
-     << ":\x1b[0m ";
-  ss << "\x1b[37;1m" << message << " [SyntaxError]\x1b[0m";
-
-  if (start_line != QLEX_EOFF) {
-    IScanner::Point start_pos(start_line == 0 ? 0 : start_line - 1, 0), end_pos;
-
-    if (end_line != QLEX_EOFF) {
-      end_pos = IScanner::Point(end_line + 1, -1);
-    } else {
-      end_pos = IScanner::Point(start_line + 1, -1);
-    }
-
-    if (auto window = rd.GetSourceWindow(start_pos, end_pos, ' ')) {
-      ss << "\n";
-
-      for (auto &line : window.value()) {
-        ss << line << "\n";
-      }
-
-      for (uint32_t i = 0; i < start_col; i++) {
-        ss << " ";
-      }
-      ss << "\x1b[32;1m^\x1b[0m";
-    }
-  }
-
-  return ss.str();
 }

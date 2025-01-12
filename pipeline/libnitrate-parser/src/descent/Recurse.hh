@@ -34,7 +34,6 @@
 #ifndef __NITRATE_PARSE_H__
 #define __NITRATE_PARSE_H__
 
-#include <core/Context.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
@@ -43,6 +42,8 @@
 #include <nitrate-parser/EC.hh>
 
 namespace ncc::parse {
+  using namespace ec;
+
 #define next() rd.Next()
 #define peek() rd.Peek()
 #define current() rd.Current()

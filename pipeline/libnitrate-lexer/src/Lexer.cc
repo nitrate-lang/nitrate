@@ -1219,8 +1219,58 @@ CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, TokenType ty) {
   return os;
 }
 
+static void escape_string(std::ostream &ss, std::string_view input) {
+  ss << '"';
+
+  for (char ch : input) {
+    switch (ch) {
+      case '"':
+        ss << "\\\"";
+        break;
+      case '\\':
+        ss << "\\\\";
+        break;
+      case '\b':
+        ss << "\\b";
+        break;
+      case '\f':
+        ss << "\\f";
+        break;
+      case '\n':
+        ss << "\\n";
+        break;
+      case '\r':
+        ss << "\\r";
+        break;
+      case '\t':
+        ss << "\\t";
+        break;
+      case '\0':
+        ss << "\\0";
+        break;
+      default:
+        if (ch >= 32 && ch < 127) {
+          ss << ch;
+        } else {
+          char hex[5];
+          snprintf(hex, sizeof(hex), "\\x%02x", (int)(uint8_t)ch);
+          ss << hex;
+        }
+        break;
+    }
+  }
+
+  ss << '"';
+}
+
 CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, Token tok) {
-  os << tok.as_string();
+  // Serialize the token so that the core logger system can use it
+
+  os << "${T:{\"type\":" << (int)tok.get_type()
+     << ",\"posid\":" << tok.get_start().GetId() << ",\"value\":";
+  escape_string(os, tok.as_string());
+  os << "}}";
+
   return os;
 }
 

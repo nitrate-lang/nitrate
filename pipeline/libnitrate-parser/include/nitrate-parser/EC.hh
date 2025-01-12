@@ -43,10 +43,7 @@ namespace ncc::parse::ec {
 
 #define EXPAND(path) "$NCC_CONF/ec/parse/" path
 
-  NCC_EC_EX(ParseEG, MissingVariableName, Formatter,
-            EXPAND("missing_variable_name"));
-  NCC_EC_EX(ParseEG, DuplicateDefaultCase, Formatter,
-            EXPAND("duplicate_default_case"));
+  NCC_EC_EX(ParseEG, SyntaxError, Formatter, EXPAND("SyntaxError"));
 
 #undef EXPAND
 }  // namespace ncc::parse::ec
