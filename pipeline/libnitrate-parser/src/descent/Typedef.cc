@@ -47,13 +47,14 @@ FlowPtr<Stmt> Parser::recurse_typedef() {
       if (next_if(PuncSemi)) [[likely]] {
         return make<TypedefStmt>(type_name, the_type)();
       } else {
-        diagnostic << current() << "Expected ';' in typedef declaration";
+        log << SyntaxError << current()
+            << "Expected ';' in typedef declaration";
       }
     } else {
-      diagnostic << current() << "Expected '=' in typedef declaration";
+      log << SyntaxError << current() << "Expected '=' in typedef declaration";
     }
   } else {
-    diagnostic << current() << "Expected name in typedef declaration";
+    log << SyntaxError << current() << "Expected name in typedef declaration";
   }
 
   return mock_stmt(QAST_TYPEDEF);

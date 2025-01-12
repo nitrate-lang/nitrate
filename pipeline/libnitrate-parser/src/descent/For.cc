@@ -44,19 +44,22 @@ NullableFlowPtr<Stmt> Parser::recurse_for_init_expr() {
     if (auto vars = recurse_variable(VarDeclType::Let); vars.size() == 1) {
       return vars[0];
     } else {
-      diagnostic << current() << "Expected exactly one variable in for loop";
+      log << SyntaxError << current()
+          << "Expected exactly one variable in for loop";
     }
   } else if (next_if(Var)) {
     if (auto vars = recurse_variable(VarDeclType::Var); vars.size() == 1) {
       return vars[0];
     } else {
-      diagnostic << current() << "Expected exactly one variable in for loop";
+      log << SyntaxError << current()
+          << "Expected exactly one variable in for loop";
     }
   } else if (next_if(Const)) {
     if (auto vars = recurse_variable(VarDeclType::Const); vars.size() == 1) {
       return vars[0];
     } else {
-      diagnostic << current() << "Expected exactly one variable in for loop";
+      log << SyntaxError << current()
+          << "Expected exactly one variable in for loop";
     }
   } else {
     return make<ExprStmt>(recurse_expr({
@@ -76,8 +79,8 @@ NullableFlowPtr<Expr> Parser::recurse_for_condition() {
     });
 
     if (!next_if(PuncSemi)) {
-      diagnostic << current()
-                 << "Expected semicolon after condition expression";
+      log << SyntaxError << current()
+          << "Expected semicolon after condition expression";
     }
 
     return condition;
@@ -120,7 +123,8 @@ FlowPtr<Stmt> Parser::recurse_for() {
   auto for_step = recurse_for_step_expr(for_with_paren);
 
   if (for_with_paren && !next_if(PuncRPar)) {
-    diagnostic << current() << "Expected closing parenthesis in for statement";
+    log << SyntaxError << current()
+        << "Expected closing parenthesis in for statement";
   }
 
   auto for_body = recurse_for_body();

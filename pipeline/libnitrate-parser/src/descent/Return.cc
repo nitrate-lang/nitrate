@@ -46,7 +46,8 @@ FlowPtr<Stmt> Parser::recurse_return() {
     });
 
     if (!next_if(PuncSemi)) [[unlikely]] {
-      diagnostic << current() << "Expected ';' after the return statement.";
+      log << SyntaxError << current()
+          << "Expected ';' after the return statement.";
     }
 
     return make<ReturnStmt>(return_value)();
@@ -64,12 +65,13 @@ FlowPtr<Stmt> Parser::recurse_retif() {
     });
 
     if (!next_if(PuncSemi)) [[unlikely]] {
-      diagnostic << current() << "Expected ';' after the retif value.";
+      log << SyntaxError << current() << "Expected ';' after the retif value.";
     }
 
     return make<ReturnIfStmt>(return_if, return_value)();
   } else {
-    diagnostic << current() << "Expected ',' after the retif condition.";
+    log << SyntaxError << current()
+        << "Expected ',' after the retif condition.";
     return mock_stmt(QAST_RETIF);
   }
 }

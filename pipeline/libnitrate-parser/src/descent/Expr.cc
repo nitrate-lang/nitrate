@@ -35,6 +35,8 @@
 #include <descent/Recurse.hh>
 #include <stack>
 
+#include "nitrate-parser/EC.hh"
+
 #define MAX_RECURSION_DEPTH 4096
 #define MAX_LIST_REPEAT_COUNT 4096
 
@@ -50,8 +52,8 @@ CallArgs Parser::recurse_call_arguments(Token terminator) {
 
   while (true) {
     if (next_if(EofF)) [[unlikely]] {
-      diagnostic << current()
-                 << "Unexpected end of file while parsing call expression";
+      log << SyntaxError << current()
+          << "Unexpected end of file while parsing call expression";
       return call_args;
     }
 
@@ -133,13 +135,14 @@ FlowPtr<Expr> Parser::recurse_fstring() {
     }
 
     if (state != 0) {
-      diagnostic << current() << "F-string expression has mismatched braces";
+      log << SyntaxError << current()
+          << "F-string expression has mismatched braces";
     }
 
     return make<FString>(std::move(items))();
   } else {
-    diagnostic << current()
-               << "Expected a string literal token for F-string expression";
+    log << SyntaxError << current()
+        << "Expected a string literal token for F-string expression";
     return mock_expr(QAST_FSTRING);
   }
 }
@@ -298,8 +301,8 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
               }
 
               if (Stack.size() + 1 > MAX_RECURSION_DEPTH) {
-                diagnostic << current()
-                           << "Recursion depth exceeds maximum limit";
+                log << SyntaxError << current()
+                    << "Recursion depth exceeds maximum limit";
                 return mock_expr();
               }
 
@@ -307,8 +310,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
                                FrameType::Binary, Op));
               LeftSide = RightSide.value();
             } else {
-              diagnostic
-                  << current()
+              log << SyntaxError << current()
                   << "Failed to parse right-hand side of binary expression";
             }
           } else {
@@ -331,8 +333,8 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
           if (next_if(PuncLPar)) {
             auto Arguments = recurse_call_arguments(Token(Punc, PuncRPar));
             if (!next_if(PuncRPar)) {
-              diagnostic << current()
-                         << "Expected ')' to close the function call";
+              log << SyntaxError << current()
+                  << "Expected ')' to close the function call";
             }
 
             LeftSide = make<Call>(LeftSide, Arguments)();
@@ -346,15 +348,16 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
             if (next_if(PuncColn)) {
               auto second = recurse_expr({Token(Punc, PuncRBrk)});
               if (!next_if(PuncRBrk)) {
-                diagnostic << current() << "Expected ']' to close the slice";
+                log << SyntaxError << current()
+                    << "Expected ']' to close the slice";
               }
 
               LeftSide = make<Slice>(LeftSide, first, second)();
               LeftSide->set_offset(SourceOffset);
             } else {
               if (!next_if(PuncRBrk)) {
-                diagnostic << current()
-                           << "Expected ']' to close the index expression";
+                log << SyntaxError << current()
+                    << "Expected ']' to close the index expression";
               }
 
               LeftSide = make<Index>(LeftSide, first)();
@@ -385,7 +388,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
 
     return UnwindStack(Stack, LeftSide, 0);
   } else {
-    diagnostic << current() << "Expected an expression";
+    log << SyntaxError << current() << "Expected an expression";
 
     return mock_expr();
   }
@@ -396,27 +399,31 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
 
   switch (key) {
     case Scope: {
-      diagnostic << current() << "Namespace declaration is not valid here";
+      log << SyntaxError << current()
+          << "Namespace declaration is not valid here";
       break;
     }
 
     case Import: {
-      diagnostic << current() << "Import statement is not valid here";
+      log << SyntaxError << current() << "Import statement is not valid here";
       break;
     }
 
     case Pub: {
-      diagnostic << current() << "Public access modifier is not valid here";
+      log << SyntaxError << current()
+          << "Public access modifier is not valid here";
       break;
     }
 
     case Sec: {
-      diagnostic << current() << "Private access modifier is not valid here";
+      log << SyntaxError << current()
+          << "Private access modifier is not valid here";
       break;
     }
 
     case Pro: {
-      diagnostic << current() << "Protected access modifier is not valid here";
+      log << SyntaxError << current()
+          << "Protected access modifier is not valid here";
       break;
     }
 
@@ -430,57 +437,57 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
     }
 
     case Let: {
-      diagnostic << current() << "Let declaration is not valid here";
+      log << SyntaxError << current() << "Let declaration is not valid here";
       break;
     }
 
     case Var: {
-      diagnostic << current() << "Var declaration is not valid here";
+      log << SyntaxError << current() << "Var declaration is not valid here";
       break;
     }
 
     case Const: {
-      diagnostic << current() << "Const declaration is not valid here";
+      log << SyntaxError << current() << "Const declaration is not valid here";
       break;
     }
 
     case Static: {
-      diagnostic << current() << "Static modifier is not valid here";
+      log << SyntaxError << current() << "Static modifier is not valid here";
       break;
     }
 
     case Struct: {
-      diagnostic << current() << "Struct declaration is not valid here";
+      log << SyntaxError << current() << "Struct declaration is not valid here";
       break;
     }
 
     case Region: {
-      diagnostic << current() << "Region declaration is not valid here";
+      log << SyntaxError << current() << "Region declaration is not valid here";
       break;
     }
 
     case Group: {
-      diagnostic << current() << "Group declaration is not valid here";
+      log << SyntaxError << current() << "Group declaration is not valid here";
       break;
     }
 
     case Class: {
-      diagnostic << current() << "Class declaration is not valid here";
+      log << SyntaxError << current() << "Class declaration is not valid here";
       break;
     }
 
     case Union: {
-      diagnostic << current() << "Union declaration is not valid here";
+      log << SyntaxError << current() << "Union declaration is not valid here";
       break;
     }
 
     case Opaque: {
-      diagnostic << current() << "Opaque type is not valid here";
+      log << SyntaxError << current() << "Opaque type is not valid here";
       break;
     }
 
     case Enum: {
-      diagnostic << current() << "Enum declaration is not valid here";
+      log << SyntaxError << current() << "Enum declaration is not valid here";
       break;
     }
 
@@ -502,7 +509,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
         if (next_if(PuncRPar)) {
           E = make<Call>(expr, args)();
         } else {
-          diagnostic << current() << "Expected ')' to close the function call";
+          log << SyntaxError << current()
+              << "Expected ')' to close the function call";
           E = mock_expr(QAST_CALL);
         }
       } else {
@@ -513,102 +521,102 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
     }
 
     case Unsafe: {
-      diagnostic << current() << "Unsafe keyword is not valid here";
+      log << SyntaxError << current() << "Unsafe keyword is not valid here";
       break;
     }
 
     case Safe: {
-      diagnostic << current() << "Safe keyword is not valid here";
+      log << SyntaxError << current() << "Safe keyword is not valid here";
       break;
     }
 
     case Promise: {
-      diagnostic << current() << "Promise keyword is not valid here";
+      log << SyntaxError << current() << "Promise keyword is not valid here";
       break;
     }
 
     case If: {
-      diagnostic << current() << "If statement is not valid here";
+      log << SyntaxError << current() << "If statement is not valid here";
       break;
     }
 
     case Else: {
-      diagnostic << current() << "Else statement is not valid here";
+      log << SyntaxError << current() << "Else statement is not valid here";
       break;
     }
 
     case For: {
-      diagnostic << current() << "For loop is not valid here";
+      log << SyntaxError << current() << "For loop is not valid here";
       break;
     }
 
     case While: {
-      diagnostic << current() << "While loop is not valid here";
+      log << SyntaxError << current() << "While loop is not valid here";
       break;
     }
 
     case Do: {
-      diagnostic << current() << "Do statement is not valid here";
+      log << SyntaxError << current() << "Do statement is not valid here";
       break;
     }
 
     case Switch: {
-      diagnostic << current() << "Switch statement is not valid here";
+      log << SyntaxError << current() << "Switch statement is not valid here";
       break;
     }
 
     case Break: {
-      diagnostic << current() << "Break statement is not valid here";
+      log << SyntaxError << current() << "Break statement is not valid here";
       break;
     }
 
     case Continue: {
-      diagnostic << current() << "Continue statement is not valid here";
+      log << SyntaxError << current() << "Continue statement is not valid here";
       break;
     }
 
     case Return: {
-      diagnostic << current() << "Return statement is not valid here";
+      log << SyntaxError << current() << "Return statement is not valid here";
       break;
     }
 
     case Retif: {
-      diagnostic << current() << "Retif statement is not valid here";
+      log << SyntaxError << current() << "Retif statement is not valid here";
       break;
     }
 
     case Foreach: {
-      diagnostic << current() << "Foreach loop is not valid here";
+      log << SyntaxError << current() << "Foreach loop is not valid here";
       break;
     }
 
     case Try: {
-      diagnostic << current() << "Try statement is not valid here";
+      log << SyntaxError << current() << "Try statement is not valid here";
       break;
     }
 
     case Catch: {
-      diagnostic << current() << "Catch statement is not valid here";
+      log << SyntaxError << current() << "Catch statement is not valid here";
       break;
     }
 
     case Throw: {
-      diagnostic << current() << "Throw statement is not valid here";
+      log << SyntaxError << current() << "Throw statement is not valid here";
       break;
     }
 
     case Async: {
-      diagnostic << current() << "Async statement is not valid here";
+      log << SyntaxError << current() << "Async statement is not valid here";
       break;
     }
 
     case Await: {
-      diagnostic << current() << "Await statement is not valid here";
+      log << SyntaxError << current() << "Await statement is not valid here";
       break;
     }
 
     case __Asm__: {
-      diagnostic << current() << "Inline assembly is not valid here";
+      log << SyntaxError << current() << "Inline assembly is not valid here";
       break;
     }
 
@@ -646,14 +654,16 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
       });
 
       if (!next_if(PuncRPar)) {
-        diagnostic << current() << "Expected ')' to close the expression";
+        log << SyntaxError << current()
+            << "Expected ')' to close the expression";
       }
 
       break;
     }
 
     case PuncRPar: {
-      diagnostic << current() << "Unexpected right parenthesis in expression";
+      log << SyntaxError << current()
+          << "Unexpected right parenthesis in expression";
       break;
     }
 
@@ -662,8 +672,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
 
       while (true) {
         if (next_if(EofF)) [[unlikely]] {
-          diagnostic << current()
-                     << "Unexpected end of file while parsing expression";
+          log << SyntaxError << current()
+              << "Unexpected end of file while parsing expression";
           break;
         }
 
@@ -692,19 +702,19 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
                   items.push_back(expr);
                 }
               } else {
-                diagnostic << current()
-                           << "Compressed list size exceeds maximum limit";
+                log << SyntaxError << current()
+                    << "Compressed list size exceeds maximum limit";
               }
 
             } else {
-              diagnostic << current()
-                         << "Expected an integer literal for the compressed "
-                            "list size";
+              log << SyntaxError << current()
+                  << "Expected an integer literal for the compressed "
+                     "list size";
             }
           } else {
-            diagnostic << current()
-                       << "Expected an integer literal for the compressed list "
-                          "size";
+            log << SyntaxError << current()
+                << "Expected an integer literal for the compressed list "
+                   "size";
           }
         } else {
           items.push_back(expr);
@@ -718,7 +728,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
     }
 
     case PuncRBrk: {
-      diagnostic << current() << "Unexpected right bracket in expression";
+      log << SyntaxError << current()
+          << "Unexpected right bracket in expression";
       break;
     }
 
@@ -728,8 +739,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
 
       while (true) {
         if (next_if(EofF)) [[unlikely]] {
-          diagnostic << current()
-                     << "Unexpected end of file while parsing dictionary";
+          log << SyntaxError << current()
+              << "Unexpected end of file while parsing dictionary";
           break;
         }
 
@@ -743,7 +754,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
         });
 
         if (!next_if(PuncColn)) {
-          diagnostic << current() << "Expected colon after key in dictionary";
+          log << SyntaxError << current()
+              << "Expected colon after key in dictionary";
           break;
         }
 
@@ -771,22 +783,24 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
     }
 
     case PuncRCur: {
-      diagnostic << current() << "Unexpected right curly brace in expression";
+      log << SyntaxError << current()
+          << "Unexpected right curly brace in expression";
       break;
     }
 
     case PuncComa: {
-      diagnostic << current() << "Comma is not valid in this context";
+      log << SyntaxError << current() << "Comma is not valid in this context";
       break;
     }
 
     case PuncColn: {
-      diagnostic << current() << "Colon is not valid in this context";
+      log << SyntaxError << current() << "Colon is not valid in this context";
       break;
     }
 
     case PuncSemi: {
-      diagnostic << current() << "Semicolon is not valid in this context";
+      log << SyntaxError << current()
+          << "Semicolon is not valid in this context";
       break;
     }
   }
@@ -834,7 +848,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
       }
 
       case Oper: {
-        diagnostic << tok << "Unexpected operator in expression";
+        log << SyntaxError << tok << "Unexpected operator in expression";
         break;
       }
 
@@ -904,7 +918,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
       case Char: {
         auto str_data = tok.as_string();
         if (str_data->size() != 1) [[unlikely]] {
-          diagnostic << tok << "Expected a single byte in character literal";
+          log << SyntaxError << tok
+              << "Expected a single byte in character literal";
           break;
         }
 
@@ -924,17 +939,17 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
       }
 
       case MacB: {
-        diagnostic << tok << "Unexpected macro block in expression";
+        log << SyntaxError << tok << "Unexpected macro block in expression";
         break;
       }
 
       case Macr: {
-        diagnostic << tok << "Unexpected macro call in expression";
+        log << SyntaxError << tok << "Unexpected macro call in expression";
         break;
       }
 
       case Note: {
-        diagnostic << tok << "Unexpected comment in expression";
+        log << SyntaxError << tok << "Unexpected comment in expression";
         break;
       }
     }
