@@ -47,6 +47,7 @@
 #include <nitrate-ir/IR/Common.hh>
 #include <nitrate-ir/IR/Fwd.hh>
 #include <nitrate-ir/IR/Visitor.hh>
+#include <nitrate-parser/ASTBase.hh>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -62,21 +63,26 @@ namespace ncc::ir {
     Expr *Expr_getCloneImpl(Expr *self);
   };  // namespace detail
 
+  using SrcLoc = parse::LocationPairAlias::Index;
+
   template <class A>
   class IR_Vertex_Expr {
     friend A;
 
-    nr_ty_t m_node_type : 6; /* Typecode of this node. */
-    uint32_t m_offset : 32;  /* Offset into source code where node starts. */
-    uint32_t m_fileid : 24;  /* File ID of the source file. */
+    nr_ty_t m_node_type : 6; /* This node kind */
+    uint8_t pad : 2;         /* Padding */
+    SrcLoc m_loc;            /* Source location alias */
 
     IR_Vertex_Expr(const IR_Vertex_Expr &) = delete;
     IR_Vertex_Expr &operator=(const IR_Vertex_Expr &) = delete;
 
   public:
-    constexpr IR_Vertex_Expr(nr_ty_t ty, uint32_t offset = ncc::lex::QLEX_EOFF,
-                             uint32_t fileid = ncc::lex::QLEX_NOFILE)
-        : m_node_type(ty), m_offset(offset), m_fileid(fileid) {}
+    constexpr IR_Vertex_Expr(nr_ty_t ty,
+                             lex::LocationID begin = lex::LocationID(),
+                             lex::LocationID end = lex::LocationID())
+        : m_node_type(ty) {
+      m_loc = parse::g_location_pairs.Add(begin, end);
+    }
 
     static constexpr uint32_t getKindSize(nr_ty_t kind);
     static constexpr const char *getKindName(nr_ty_t kind);
@@ -225,13 +231,21 @@ namespace ncc::ir {
 
     constexpr std::string_view getName() const;
 
-    constexpr std::tuple<uint32_t, uint32_t> getLoc() const {
-      return {m_offset, m_fileid};
+    constexpr auto begin() const {
+      return parse::g_location_pairs.Get(m_loc).first;
     }
+    constexpr auto begin(lex::IScanner &rd) const { return begin().Get(rd); }
 
-    constexpr void setLoc(std::tuple<uint32_t, uint32_t> loc) {
-      m_offset = std::get<0>(loc);
-      m_fileid = std::get<1>(loc);
+    constexpr auto end() const {
+      return parse::g_location_pairs.Get(m_loc).second;
+    }
+    constexpr auto end(lex::IScanner &rd) const { return end().Get(rd); }
+
+    constexpr auto getLoc() const { return m_loc; }
+    constexpr void setLoc(SrcLoc loc) { m_loc = loc; }
+
+    constexpr void setLoc(lex::LocationID begin, lex::LocationID end) {
+      m_loc = parse::g_location_pairs.Add(begin, end);
     }
 
     std::optional<FlowPtr<Type>> getType() {
@@ -301,6 +315,9 @@ namespace ncc::ir {
       return ss.str();
     };
   } __attribute__((packed)) __attribute__((aligned(1)));
+
+  static_assert(sizeof(IR_Vertex_Expr<void>) == 8,
+                "IR_Vertex_Expr<void> is not 8 bytes in size.");
 
   template <class A>
   class IR_Vertex_Type : public IR_Vertex_Expr<A> {

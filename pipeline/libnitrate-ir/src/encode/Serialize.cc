@@ -52,18 +52,77 @@ static const std::unordered_map<StorageClass, std::string_view>
 void IR_Writer::write_source_location(FlowPtr<Expr> n) const {
   string("loc");
 
-  if (m_include_source_location) {
-    begin_obj(2);
+  if (m_rd.has_value()) {
+    lex::IScanner &rd = m_rd->get();
 
-    auto loc = n->getLoc();
-    auto offset = std::get<0>(loc);
-    auto fileid = std::get<1>(loc);
+    begin_obj(3);
 
-    string("fileid");
-    uint64(fileid);
+    auto begin = n->begin(rd);
+    auto end = n->end(rd);
 
-    string("offset");
-    uint64(offset);
+    {
+      string("begin");
+      begin_obj(4);
+
+      string("off");
+      uint64(begin.GetOffset());
+
+      string("row");
+      uint64(begin.GetRow());
+
+      string("col");
+      uint64(begin.GetCol());
+
+      string("src");
+      string(begin.GetFilename());
+
+      end_obj();
+    }
+
+    {
+      string("end");
+      begin_obj(4);
+
+      string("off");
+      uint64(end.GetOffset());
+
+      string("row");
+      uint64(end.GetRow());
+
+      string("col");
+      uint64(end.GetCol());
+
+      string("src");
+      string(end.GetFilename());
+
+      end_obj();
+    }
+
+    {
+      string("trace");
+
+#if NITRATE_FLOWPTR_TRACE
+      begin_obj(4);
+
+      let origin = n.trace();
+
+      string("src");
+      string(origin.file_name());
+
+      string("sub");
+      string(origin.function_name());
+
+      string("row");
+      uint64(origin.line());
+
+      string("col");
+      uint64(origin.column());
+
+      end_obj();
+#else
+      null();
+#endif
+    }
 
     end_obj();
   } else {

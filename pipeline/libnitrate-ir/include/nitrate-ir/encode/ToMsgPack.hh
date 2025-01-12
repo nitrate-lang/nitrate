@@ -52,7 +52,7 @@ namespace ncc::ir::encode {
     void end_arr_impl();
 
   public:
-    IR_MsgPackWriter(std::ostream& os)
+    IR_MsgPackWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
         : IR_Writer(std::bind(&IR_MsgPackWriter::str_impl, this,
                               std::placeholders::_1),
                     std::bind(&IR_MsgPackWriter::uint_impl, this,
@@ -67,7 +67,7 @@ namespace ncc::ir::encode {
                     std::bind(&IR_MsgPackWriter::end_obj_impl, this),
                     std::bind(&IR_MsgPackWriter::begin_arr_impl, this,
                               std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::end_arr_impl, this)),
+                    std::bind(&IR_MsgPackWriter::end_arr_impl, this), rd),
           m_os(os) {}
     virtual ~IR_MsgPackWriter() = default;
   };

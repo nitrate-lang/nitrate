@@ -57,7 +57,7 @@ namespace ncc::ir::encode {
     void end_arr_impl();
 
   public:
-    IR_JsonWriter(std::ostream& os)
+    IR_JsonWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
         : IR_Writer(
               std::bind(&IR_JsonWriter::str_impl, this, std::placeholders::_1),
               std::bind(&IR_JsonWriter::uint_impl, this, std::placeholders::_1),
@@ -70,7 +70,7 @@ namespace ncc::ir::encode {
               std::bind(&IR_JsonWriter::end_obj_impl, this),
               std::bind(&IR_JsonWriter::begin_arr_impl, this,
                         std::placeholders::_1),
-              std::bind(&IR_JsonWriter::end_arr_impl, this)),
+              std::bind(&IR_JsonWriter::end_arr_impl, this), rd),
           m_os(os) {
       m_comma.push(false);
       m_count.push(0);

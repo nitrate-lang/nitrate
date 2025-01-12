@@ -42,8 +42,6 @@
 #include <nitrate-parser/ASTBase.hh>
 #include <string_view>
 
-#include "nitrate-core/Logger.hh"
-
 namespace ncc::ir {
   enum class IC {
     Debug,
@@ -96,12 +94,10 @@ namespace ncc::ir {
 
     virtual void report(IssueCode code, IC level,
                         std::vector<std::string_view> params = {},
-                        std::tuple<uint32_t, uint32_t> location = {
-                            ncc::lex::QLEX_EOFF, ncc::lex::QLEX_NOFILE}) = 0;
+                        SrcLoc location = SrcLoc()) = 0;
 
     void report(IssueCode code, IC level, std::string_view message,
-                std::tuple<uint32_t, uint32_t> loc = {ncc::lex::QLEX_EOFF,
-                                                      ncc::lex::QLEX_NOFILE}) {
+                SrcLoc loc = SrcLoc()) {
       report(code, level, std::vector<std::string_view>({message}), loc);
     };
 
@@ -114,14 +110,11 @@ namespace ncc::ir {
 
   class MessageBuffer {
     std::stringstream m_buffer;
-    std::function<void(std::string, parse::LocationPairAlias::Index)>
-        m_on_flush;
-    parse::LocationPairAlias::Index m_range;
+    std::function<void(std::string, SrcLoc)> m_on_flush;
+    SrcLoc m_range;
 
   public:
-    MessageBuffer(
-        std::function<void(std::string, parse::LocationPairAlias::Index)>
-            on_flush)
+    MessageBuffer(std::function<void(std::string, SrcLoc)> on_flush)
         : m_on_flush(on_flush) {}
 
     MessageBuffer(MessageBuffer &&O) {
@@ -139,7 +132,7 @@ namespace ncc::ir {
 
     template <typename T>
     void write(const T &value) {
-      if constexpr (std::is_same_v<T, ncc::parse::LocationPairAlias::Index>) {
+      if constexpr (std::is_same_v<T, SrcLoc>) {
         m_range = value;
       } else {
         m_buffer << value;
@@ -153,15 +146,13 @@ namespace ncc::ir {
     class IDiagnosticRouter {
     public:
       virtual ~IDiagnosticRouter() = default;
-      virtual void EmitMessage(std::string_view msg,
-                               parse::LocationPairAlias::Index loc) = 0;
+      virtual void EmitMessage(std::string_view msg, SrcLoc loc) = 0;
     };
 
     class NOPDiagnosticRouter final : public IDiagnosticRouter {
     public:
       virtual ~NOPDiagnosticRouter() = default;
-      void EmitMessage(std::string_view,
-                       parse::LocationPairAlias::Index) override{};
+      void EmitMessage(std::string_view, SrcLoc) override{};
     };
 
     class DiagnosticRouterInstance final : public IDiagnosticRouter {
@@ -174,8 +165,7 @@ namespace ncc::ir {
       DiagnosticRouterInstance(MessageFunc func, lex::IScanner &scanner)
           : m_func(func), m_scanner(&scanner) {}
 
-      void EmitMessage(std::string_view,
-                       parse::LocationPairAlias::Index) override {
+      void EmitMessage(std::string_view, SrcLoc) override {
         /// TODO: Implement this function
         qcore_implement();
         (void)m_scanner;
@@ -200,9 +190,7 @@ namespace ncc::ir {
   MessageBuffer operator<<(detail::DiagnosticRouterInstance *ctx,
                            const T &value) {
     MessageBuffer buf(
-        [ctx](std::string msg, parse::LocationPairAlias::Index loc) {
-          ctx->EmitMessage(msg, loc);
-        });
+        [ctx](std::string msg, SrcLoc loc) { ctx->EmitMessage(msg, loc); });
 
     buf.write(value);
 

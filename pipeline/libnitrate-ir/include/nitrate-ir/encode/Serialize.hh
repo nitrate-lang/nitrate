@@ -43,6 +43,9 @@
 #include <string_view>
 
 namespace ncc::ir::encode {
+  using WriterSourceProvider =
+      std::optional<std::reference_wrapper<lex::IScanner>>;
+
   class CPP_EXPORT IR_Writer : public IRVisitor<void> {
     using InsertString = std::function<void(std::string_view)>;
     using InsertUInt64 = std::function<void(uint64_t)>;
@@ -63,8 +66,7 @@ namespace ncc::ir::encode {
     EndObject end_obj;
     BeginArray begin_arr;
     EndArray end_arr;
-
-    bool m_include_source_location;
+    WriterSourceProvider m_rd;
 
     void write_source_location(FlowPtr<Expr> n) const;
 
@@ -73,7 +75,7 @@ namespace ncc::ir::encode {
               InsertDouble dbl_impl, InsertBool bool_impl, InsertNull null_impl,
               BeginObject begin_obj_impl, EndObject end_obj_impl,
               BeginArray begin_arr_impl, EndArray end_arr_impl,
-              bool include_source_location = true)
+              WriterSourceProvider rd = std::nullopt)
         : string(str_impl),
           uint64(uint_impl),
           dbl(dbl_impl),
@@ -83,7 +85,7 @@ namespace ncc::ir::encode {
           end_obj(end_obj_impl),
           begin_arr(begin_arr_impl),
           end_arr(end_arr_impl),
-          m_include_source_location(include_source_location) {}
+          m_rd(rd) {}
     virtual ~IR_Writer() = default;
 
     void visit(FlowPtr<Expr> n) override;
