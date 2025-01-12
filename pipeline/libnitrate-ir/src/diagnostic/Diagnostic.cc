@@ -38,6 +38,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IR/Nodes.hh>
 #include <nitrate-ir/Module.hh>
+#include <nitrate-ir/diagnostic/EC.hh>
 #include <nitrate-ir/diagnostic/Report.hh>
 #include <nitrate-parser/AST.hh>
 #include <sstream>
@@ -45,6 +46,12 @@
 using namespace ncc;
 using namespace ncc::ir;
 using namespace ncc::lex;
+
+CPP_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
+  /// FIXME: Implement this function
+  (void)sev;
+  return std::string(msg);
+}
 
 static const std::unordered_map<IC, nr_level_t> issue_class_map = {
     {IC::Debug, IR_LEVEL_DEBUG},
