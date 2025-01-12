@@ -235,13 +235,14 @@ namespace ncc::lex {
 
   struct ScannerEOF final {};
 
-  class IScanner {
+  class CPP_EXPORT IScanner {
     static constexpr size_t TOKEN_BUFFER_SIZE = 256;
 
     std::deque<Token> m_ready;
     std::optional<Token> m_last;
     Token m_current;
     bool m_skip_comments = false, m_ebit = false, m_eof = false;
+    string m_current_filename;
 
     // 0 is reserved for invalid location
     LocationID::Counter m_location_id = 1;
@@ -250,7 +251,11 @@ namespace ncc::lex {
     class StaticImpl;
     friend class StaticImpl;
 
+    Location GetEofLocation();
+
   protected:
+    std::shared_ptr<Environment> m_env;
+
     inline LocationID InternLocation(Location loc) {
       m_location_interned.push_back(loc);
       return m_location_id++;
@@ -269,7 +274,9 @@ namespace ncc::lex {
     };
 
   public:
-    IScanner() { m_location_interned.reserve(0xffff); }
+    IScanner(std::shared_ptr<Environment> env) : m_env(env) {
+      m_location_interned.reserve(0xffff);
+    }
     virtual ~IScanner() = default;
 
     Token Next();
@@ -291,6 +298,9 @@ namespace ncc::lex {
     virtual void SkipCommentsState(bool skip) { m_skip_comments = skip; }
     bool GetSkipCommentsState() const { return m_skip_comments; }
 
+    void SetCurrentFilename(string filename) { m_current_filename = filename; }
+    string GetCurrentFilename() const { return m_current_filename; }
+
     Location GetLocation(LocationID id);
 
     struct Point {
@@ -304,6 +314,8 @@ namespace ncc::lex {
       (void)fillchar;
       return std::nullopt;
     }
+
+    std::shared_ptr<ncc::Environment> GetEnvironment() const { return m_env; }
   };
 
   class CPP_EXPORT Tokenizer final : public IScanner {
@@ -317,8 +329,6 @@ namespace ncc::lex {
     size_t m_getc_buffer_pos = GETC_BUFFER_SIZE;
     bool m_eof = false;
 
-    std::shared_ptr<Environment> m_env;
-
     class StaticImpl;
     friend class StaticImpl;
 
@@ -328,10 +338,12 @@ namespace ncc::lex {
 
   public:
     Tokenizer(std::istream &source_file, std::shared_ptr<Environment> env)
-        : IScanner(), m_file(source_file), m_env(env) {}
+        : IScanner(env), m_file(source_file) {
+      if (auto filename = env->get("FILE"); filename.has_value()) {
+        SetCurrentFilename(filename.value());
+      }
+    }
     virtual ~Tokenizer() override {}
-
-    std::shared_ptr<Environment> GetEnvironment() const { return m_env; }
 
     virtual std::optional<std::vector<std::string>> GetSourceWindow(
         Point start, Point end, char fillchar = ' ') override;

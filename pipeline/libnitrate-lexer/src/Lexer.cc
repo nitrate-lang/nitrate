@@ -357,6 +357,11 @@ public:
 
       if (gcount == 0) [[unlikely]] {
         if (L.m_eof) [[unlikely]] {
+          L.m_env->set("this.file.eof.offset", std::to_string(L.m_offset));
+          L.m_env->set("this.file.eof.line", std::to_string(L.m_line));
+          L.m_env->set("this.file.eof.column", std::to_string(L.m_column));
+          L.m_env->set("this.file.eof.filename", L.GetCurrentFilename());
+
           // Benchmarks show that this is the fastest way to signal EOF
           // for large files.
           throw ScannerEOF();
@@ -1038,8 +1043,8 @@ CPP_EXPORT Token Tokenizer::GetNext() {
           continue;
         }
 
-        start_pos =
-            InternLocation(Location(m_offset - 1, m_line, m_column, ""));
+        start_pos = InternLocation(
+            Location(m_offset - 1, m_line, m_column, GetCurrentFilename()));
 
         if (std::isalpha(c) || c == '_') {
           /* Identifier or keyword or operator */

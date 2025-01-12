@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <charconv>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
@@ -335,6 +336,10 @@ CPP_EXPORT ncc::string ncc::lex::to_string(TokenType ty, TokenData v) {
   return R;
 }
 
+CPP_EXPORT Location LocationID::Get(IScanner &L) const {
+  return L.GetLocation(m_id);
+}
+
 class IScanner::StaticImpl {
 public:
   static FORCE_INLINE void FillTokenBuffer(IScanner &L) {
@@ -352,7 +357,7 @@ public:
   }
 };
 
-CPP_EXPORT Token IScanner::Next() {
+Token IScanner::Next() {
   while (true) {
     if (m_ready.empty()) {
       StaticImpl::FillTokenBuffer(*this);
@@ -371,7 +376,7 @@ CPP_EXPORT Token IScanner::Next() {
   }
 }
 
-CPP_EXPORT Token IScanner::Peek() {
+Token IScanner::Peek() {
   if (m_ready.empty()) [[unlikely]] {
     StaticImpl::FillTokenBuffer(*this);
   }
@@ -381,7 +386,7 @@ CPP_EXPORT Token IScanner::Peek() {
   return m_current;
 }
 
-CPP_EXPORT void IScanner::Undo() {
+void IScanner::Undo() {
   if (!m_last.has_value()) {
     return;
   }
@@ -390,13 +395,38 @@ CPP_EXPORT void IScanner::Undo() {
   m_current = m_last.value();
 }
 
-CPP_EXPORT Location LocationID::Get(IScanner &L) const {
-  return L.GetLocation(m_id);
+static uint32_t strtou64(std::string_view str, uint32_t sentinal) {
+  uint32_t result = sentinal;
+  std::from_chars(str.data(), str.data() + str.size(), result);
+  return result;
 }
 
-CPP_EXPORT Location IScanner::GetLocation(LocationID id) {
+Location IScanner::GetEofLocation() {
+  uint32_t offset = QLEX_EOFF, line = QLEX_EOFF, column = QLEX_EOFF;
+  string filename;
+
+  if (auto off = m_env->get("this.file.eof.offset"); off.has_value()) {
+    offset = strtou64(off.value(), QLEX_EOFF);
+  }
+
+  if (auto ln = m_env->get("this.file.eof.line"); ln.has_value()) {
+    line = strtou64(ln.value(), QLEX_EOFF);
+  }
+
+  if (auto col = m_env->get("this.file.eof.column"); col.has_value()) {
+    column = strtou64(col.value(), QLEX_EOFF);
+  }
+
+  if (auto fn = m_env->get("this.file.eof.filename"); fn.has_value()) {
+    filename = fn.value();
+  }
+
+  return Location(offset, line, column, filename);
+}
+
+Location IScanner::GetLocation(LocationID id) {
   if (id == 0) {
-    return Location::EndOfFile();
+    return GetEofLocation();
   } else if (id < m_location_interned.size()) {
     return m_location_interned[id.GetId()];
   } else {
@@ -404,17 +434,15 @@ CPP_EXPORT Location IScanner::GetLocation(LocationID id) {
   }
 }
 
-CPP_EXPORT Location IScanner::Start(Token t) {
-  return t.get_start().Get(*this);
-}
+Location IScanner::Start(Token t) { return t.get_start().Get(*this); }
 
-CPP_EXPORT Location IScanner::End(Token) {
+Location IScanner::End(Token) {
   /// TODO: Support relexing to get the end location
 
   return Location::EndOfFile();
 }
 
-CPP_EXPORT uint32_t IScanner::StartLine(Token t) { return Start(t).GetRow(); }
-CPP_EXPORT uint32_t IScanner::StartColumn(Token t) { return Start(t).GetCol(); }
-CPP_EXPORT uint32_t IScanner::EndLine(Token t) { return End(t).GetRow(); }
-CPP_EXPORT uint32_t IScanner::EndColumn(Token t) { return End(t).GetCol(); }
+uint32_t IScanner::StartLine(Token t) { return Start(t).GetRow(); }
+uint32_t IScanner::StartColumn(Token t) { return Start(t).GetCol(); }
+uint32_t IScanner::EndLine(Token t) { return End(t).GetRow(); }
+uint32_t IScanner::EndColumn(Token t) { return End(t).GetCol(); }

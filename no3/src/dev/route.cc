@@ -109,11 +109,9 @@ namespace no3::benchmark {
     return tokens;
   }
 
-  static int lexer_benchmark() {
+  static int lexer_benchmark(std::shared_ptr<Environment> &env) {
     size_t rounds = 128, total_tokens = 0;
     std::vector<double> times;
-
-    auto env = std::make_shared<Environment>();
 
     LOG(INFO) << "Starting lexer benchmark" << std::endl;
     LOG(INFO) << "  Rounds: " << rounds << std::endl;
@@ -196,12 +194,13 @@ namespace no3::benchmark {
     PIPELINE
   };
 
-  static int do_benchmark(Benchmark bench_type) {
+  static int do_benchmark(std::shared_ptr<Environment> &env,
+                          Benchmark bench_type) {
     int R = -1;
 
     switch (bench_type) {
       case Benchmark::LEXER: {
-        R = lexer_benchmark();
+        R = lexer_benchmark(env);
         break;
       }
 
@@ -245,9 +244,8 @@ namespace no3::benchmark {
   }
 }  // namespace no3::benchmark
 
-static int do_parse(std::string source, std::ostream &output, bool verbose) {
-  auto env = std::make_shared<Environment>();
-
+static int do_parse(std::shared_ptr<Environment> &env, std::string source,
+                    std::ostream &output, bool verbose) {
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
     LOG(ERROR) << "Failed to open source file: " << source;
@@ -268,13 +266,11 @@ static int do_parse(std::string source, std::ostream &output, bool verbose) {
   return 0;
 }
 
-static int do_nr(std::string source, std::ostream &output, std::string opts,
-                 bool verbose) {
+static int do_nr(std::shared_ptr<Environment> &env, std::string source,
+                 std::ostream &output, std::string opts, bool verbose) {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
-
-  auto env = std::make_shared<Environment>();
 
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
@@ -306,13 +302,12 @@ static int do_nr(std::string source, std::ostream &output, std::string opts,
   return 0;
 }
 
-static int do_codegen(std::string source, std::string output, std::string opts,
-                      std::string target, bool verbose) {
+static int do_codegen(std::shared_ptr<Environment> &env, std::string source,
+                      std::string output, std::string opts, std::string target,
+                      bool verbose) {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
-
-  auto env = std::make_shared<Environment>();
 
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
@@ -405,6 +400,8 @@ namespace no3::router {
       std::cerr << ec.format(msg, sev).c_str() << std::endl;
     };
 
+    std::shared_ptr<Environment> env = std::make_shared<Environment>();
+
     if (parser.is_subcommand_used("bench")) {
       using namespace no3::benchmark;
 
@@ -448,7 +445,7 @@ namespace no3::router {
         return 1;
       }
 
-      return do_benchmark(name_map.at(bench_name));
+      return do_benchmark(env, name_map.at(bench_name));
     } else if (parser.is_subcommand_used("test")) {
       auto &test_parser = *subparsers.at("test");
       core::SetDebugMode(test_parser["--verbose"] == true);
@@ -466,7 +463,9 @@ namespace no3::router {
                      ? std::make_unique<std::ostream>(std::cout.rdbuf())
                      : std::make_unique<std::ofstream>(output);
 
-      return do_parse(source, *out, verbose);
+      env->set("FILE", source);
+
+      return do_parse(env, source, *out, verbose);
     } else if (parser.is_subcommand_used("nr")) {
       auto &nr_parser = *subparsers.at("nr");
 
@@ -480,7 +479,9 @@ namespace no3::router {
                      ? std::make_unique<std::ostream>(std::cout.rdbuf())
                      : std::make_unique<std::ofstream>(output);
 
-      return do_nr(source, *out, opts, nr_parser["--verbose"] == true);
+      env->set("FILE", source);
+
+      return do_nr(env, source, *out, opts, nr_parser["--verbose"] == true);
     } else if (parser.is_subcommand_used("codegen")) {
       auto &nr_parser = *subparsers.at("codegen");
 
@@ -491,7 +492,9 @@ namespace no3::router {
       std::string opts = nr_parser.get<std::string>("--opts");
       std::string target = nr_parser.get<std::string>("--target");
 
-      return do_codegen(source, output, opts, target,
+      env->set("FILE", source);
+
+      return do_codegen(env, source, output, opts, target,
                         nr_parser["--verbose"] == true);
     } else if (parser.is_used("--demangle")) {
       std::string mangled_name = parser.get<std::string>("--demangle");

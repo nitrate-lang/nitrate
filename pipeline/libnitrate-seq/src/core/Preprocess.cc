@@ -183,7 +183,7 @@ public:
 CPP_EXPORT Token qprep_impl_t::GetNext() {
 func_entry:  // do tail call optimization manually
 
-  Token x{};
+  Token x;
 
   try {
     RecursiveGuard guard(m_core->m_depth);
@@ -352,7 +352,7 @@ void qprep_impl_t::install_lua_api() {
 CPP_EXPORT qprep_impl_t::qprep_impl_t(std::istream &file,
                                       std::shared_ptr<ncc::Environment> env,
                                       const char *filename, bool is_root)
-    : m_env(env) {
+    : ncc::lex::IScanner(env) {
   m_core = std::make_shared<Core>();
   m_scanner = std::make_unique<Tokenizer>(file, env);
 

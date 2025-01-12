@@ -71,7 +71,6 @@ struct qprep_impl_t final : public ncc::lex::IScanner {
 
   std::shared_ptr<Core> m_core;
   std::unique_ptr<ncc::lex::Tokenizer> m_scanner;
-  std::shared_ptr<ncc::Environment> m_env;
 
   virtual ncc::lex::Token GetNext() override;
   virtual std::optional<ncc::lex::Location> GetLocationFallback(
@@ -90,8 +89,6 @@ public:
   qprep_impl_t(std::istream &file, std::shared_ptr<ncc::Environment> env,
                const char *filename, bool is_root = true);
   virtual ~qprep_impl_t() override;
-
-  std::shared_ptr<ncc::Environment> GetEnvironment() const { return m_env; }
 
   void SkipCommentsState(bool skip) override {
     IScanner::SkipCommentsState(skip);

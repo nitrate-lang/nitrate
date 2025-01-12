@@ -54,6 +54,8 @@ void Environment::setup_default_env() {
 
     set("this.created_at", std::to_string(ms.count()).c_str());
   }
+
+  set("FILE", "<stdin>");
 }
 
 CPP_EXPORT Environment::Environment() { setup_default_env(); }
