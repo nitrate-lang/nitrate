@@ -119,15 +119,15 @@ namespace ncc {
     }
   };
 
-#define NCC_EC_DOMAIN(name)                                  \
+#define NCC_EC_GROUP(name)                                   \
   class name : public ncc::ECBase {                          \
   protected:                                                 \
     ncc::ECUnique GetIdentity() const override = 0;          \
     ncc::LogFormatterFunc GetFormatter() const override = 0; \
   };
 
-#define NCC_EC(domain, name)                                               \
-  static inline class name##Class final : public domain {                  \
+#define NCC_EC(group, name)                                                \
+  static inline class name##Class final : public group {                   \
   protected:                                                               \
     ncc::ECUnique GetIdentity() const override { return ncc::ECUnique(); } \
     ncc::LogFormatterFunc GetFormatter() const override {                  \
@@ -138,20 +138,20 @@ namespace ncc {
     constexpr name##Class() { Finalize(); }                                \
   } name;
 
-#define NCC_EC_EX(domain, name, formatter, detail_path)                       \
-  static inline class name##Class final : public domain {                     \
+#define NCC_EC_EX(group, name, formatter, ...)                                \
+  static inline class name##Class final : public group {                      \
   protected:                                                                  \
     ncc::ECUnique GetIdentity() const override { return ncc::ECUnique(); }    \
     ncc::LogFormatterFunc GetFormatter() const override { return formatter; } \
     std::optional<std::string_view> GetDetailsPath() const override {         \
-      return std::string_view(detail_path);                                   \
+      return std::string_view("" __VA_ARGS__);                                \
     }                                                                         \
                                                                               \
   public:                                                                     \
     constexpr name##Class() { Finalize(); }                                   \
   } name;
 
-  NCC_EC_DOMAIN(CoreEC);
+  NCC_EC_GROUP(CoreEC);
   NCC_EC(CoreEC, UnknownEC);
 
   ///=========================================================================///

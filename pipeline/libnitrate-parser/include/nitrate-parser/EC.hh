@@ -31,42 +31,24 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PARSE_H__
-#define __NITRATE_PARSE_H__
+#ifndef __NITRATE_AST_EC_H__
+#define __NITRATE_AST_EC_H__
 
-#include <core/Context.hh>
-#include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Lexer.hh>
-#include <nitrate-parser/AST.hh>
-#include <nitrate-parser/ASTCommon.hh>
-#include <nitrate-parser/Context.hh>
-#include <nitrate-parser/EC.hh>
+#include <nitrate-core/Logger.hh>
 
-namespace ncc::parse {
-#define next() rd.Next()
-#define peek() rd.Peek()
-#define current() rd.Current()
+namespace ncc::parse::ec {
+  std::string Formatter(std::string_view msg, Sev sev);
 
-  template <auto tok>
-  static std::optional<ncc::lex::Token> next_if_(ncc::lex::IScanner &rd) {
-    auto t = peek();
-    if constexpr (std::is_same_v<decltype(tok), ncc::lex::TokenType>) {
-      if (t.is(tok)) {
-        next();
-        return t;
-      }
-    } else {
-      if (t.is<tok>()) {
-        next();
-        return t;
-      }
-    }
+  NCC_EC_GROUP(ParseEG);
 
-    return std::nullopt;
-  }
+#define EXPAND(path) "$NCC_CONF/ec/parse/" path
 
-#define next_if(tok) next_if_<tok>(rd)
+  NCC_EC_EX(ParseEG, MissingVariableName, Formatter,
+            EXPAND("missing_variable_name"));
+  NCC_EC_EX(ParseEG, DuplicateDefaultCase, Formatter,
+            EXPAND("duplicate_default_case"));
 
-};  // namespace ncc::parse
+#undef EXPAND
+}  // namespace ncc::parse::ec
 
-#endif  // __NITRATE_PARSE_H__
+#endif
