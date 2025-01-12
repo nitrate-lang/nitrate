@@ -33,7 +33,7 @@
 
 #include <cstdio>
 #include <nitrate-core/Environment.hh>
-#include <nitrate-seq/Preprocess.hh>
+#include <nitrate-seq/Sequencer.hh>
 #include <qcall/List.hh>
 #include <random>
 

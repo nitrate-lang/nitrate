@@ -40,7 +40,7 @@
 #include <string_view>
 
 #define get_engine() \
-  ((qprep_impl_t *)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1)))
+  ((Sequencer *)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1)))
 
 struct lua_State;
 
@@ -50,14 +50,14 @@ enum class DeferOp {
   UninstallHandler,
 };
 
-struct qprep_impl_t;
+struct Sequencer;
 
-typedef std::function<DeferOp(qprep_impl_t *obj, ncc::lex::Token last)>
+typedef std::function<DeferOp(Sequencer *obj, ncc::lex::Token last)>
     DeferCallback;
 
 extern std::string_view nit_code_prefix;
 
-struct qprep_impl_t final : public ncc::lex::IScanner {
+struct Sequencer final : public ncc::lex::IScanner {
   struct Core {
     lua_State *L = nullptr;
     std::vector<DeferCallback> defer_callbacks;
@@ -86,9 +86,9 @@ struct qprep_impl_t final : public ncc::lex::IScanner {
   void install_lua_api();
 
 public:
-  qprep_impl_t(std::istream &file, std::shared_ptr<ncc::Environment> env,
-               bool is_root = true);
-  virtual ~qprep_impl_t() override;
+  Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
+            bool is_root = true);
+  virtual ~Sequencer() override;
 
   void SkipCommentsState(bool skip) override {
     IScanner::SkipCommentsState(skip);

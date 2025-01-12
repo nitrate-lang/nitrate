@@ -32,7 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Environment.hh>
-#include <nitrate-seq/Preprocess.hh>
+#include <nitrate-seq/Sequencer.hh>
 #include <qcall/List.hh>
 
 extern "C" {
@@ -56,7 +56,7 @@ int qcall::sys_set(lua_State* L) {
                       lua_typename(L, lua_type(L, 1)));
   }
 
-  qprep_impl_t* obj = get_engine();
+  Sequencer* obj = get_engine();
 
   std::string_view key = lua_tostring(L, 1);
 

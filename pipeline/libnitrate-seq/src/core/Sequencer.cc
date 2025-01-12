@@ -40,7 +40,7 @@
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
-#include <nitrate-seq/Preprocess.hh>
+#include <nitrate-seq/Sequencer.hh>
 #include <optional>
 #include <qcall/List.hh>
 #include <sstream>
@@ -59,7 +59,7 @@ using namespace qcall;
 
 ///=============================================================================
 
-qprep_impl_t::Core::~Core() {
+Sequencer::Core::~Core() {
   if (L) {
     lua_close(L);
   }
@@ -76,7 +76,7 @@ static std::string_view rtrim(std::string_view s) {
   return s;
 }
 
-bool qprep_impl_t::run_defer_callbacks(Token last) {
+bool Sequencer::run_defer_callbacks(Token last) {
   /**
    * @brief We do it this way because the callback could potentially modify the
    * `defer_callbacks` vector, which would invalidate the iterator.
@@ -112,7 +112,7 @@ bool qprep_impl_t::run_defer_callbacks(Token last) {
   return emit_token;
 }
 
-std::optional<std::string> qprep_impl_t::run_lua_code(const std::string &s) {
+std::optional<std::string> Sequencer::run_lua_code(const std::string &s) {
   int before_size = lua_gettop(m_core->L);
 
   int error = luaL_dostring(m_core->L, std::string(s.data(), s.size()).c_str());
@@ -136,14 +136,14 @@ std::optional<std::string> qprep_impl_t::run_lua_code(const std::string &s) {
   }
 }
 
-void qprep_impl_t::expand_raw(std::string_view code) {
+void Sequencer::expand_raw(std::string_view code) {
   std::istringstream ss(std::string(code.data(), code.size()));
 
   {
     std::vector<Token> tokens;
 
     {
-      qprep_impl_t clone(ss, m_env, false);
+      Sequencer clone(ss, m_env, false);
       clone.m_core = m_core;
       clone.m_core->m_depth = m_core->m_depth + 1;
 
@@ -159,7 +159,7 @@ void qprep_impl_t::expand_raw(std::string_view code) {
   }
 }
 
-bool qprep_impl_t::run_and_expand(const std::string &code) {
+bool Sequencer::run_and_expand(const std::string &code) {
   auto res = run_lua_code(code);
   if (!res.has_value()) {
     return false;
@@ -180,7 +180,7 @@ public:
   bool should_stop() { return m_depth >= MAX_RECURSION_DEPTH; }
 };
 
-CPP_EXPORT Token qprep_impl_t::GetNext() {
+CPP_EXPORT Token Sequencer::GetNext() {
 func_entry:  // do tail call optimization manually
 
   Token x;
@@ -337,7 +337,7 @@ func_entry:  // do tail call optimization manually
   }
 }
 
-void qprep_impl_t::install_lua_api() {
+void Sequencer::install_lua_api() {
   lua_newtable(m_core->L);
 
   for (const auto &qcall : qsyscalls) {
@@ -349,9 +349,9 @@ void qprep_impl_t::install_lua_api() {
   lua_setglobal(m_core->L, "n");
 }
 
-CPP_EXPORT qprep_impl_t::qprep_impl_t(std::istream &file,
-                                      std::shared_ptr<ncc::Environment> env,
-                                      bool is_root)
+CPP_EXPORT Sequencer::Sequencer(std::istream &file,
+                                std::shared_ptr<ncc::Environment> env,
+                                bool is_root)
     : ncc::lex::IScanner(env) {
   m_core = std::make_shared<Core>();
   m_scanner = std::make_unique<Tokenizer>(file, env);
@@ -392,10 +392,10 @@ CPP_EXPORT qprep_impl_t::qprep_impl_t(std::istream &file,
   }
 }
 
-CPP_EXPORT qprep_impl_t::~qprep_impl_t() {}
+CPP_EXPORT Sequencer::~Sequencer() {}
 
 CPP_EXPORT
-std::optional<std::vector<std::string>> qprep_impl_t::GetSourceWindow(
+std::optional<std::vector<std::string>> Sequencer::GetSourceWindow(
     Point start, Point end, char fillchar) {
   return m_scanner->GetSourceWindow(start, end, fillchar);
 }

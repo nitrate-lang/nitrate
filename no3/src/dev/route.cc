@@ -57,7 +57,7 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 #include <nitrate-parser/Init.hh>
-#include <nitrate-seq/Classes.hh>
+#include <nitrate-seq/Sequencer.hh>
 #include <string_view>
 #include <unordered_map>
 
@@ -252,13 +252,13 @@ static int do_parse(std::shared_ptr<Environment> &env, std::string source,
     return 1;
   }
 
-  qprep lexer(file, env);
-  auto parser = Parser::Create(*lexer.get(), env);
+  Sequencer scanner(file, env);
+  auto parser = Parser::Create(scanner, env);
 
   auto ast = parser->parse();
 
   WriterSourceProvider rd =
-      verbose ? WriterSourceProvider(*lexer.get()) : std::nullopt;
+      verbose ? WriterSourceProvider(scanner) : std::nullopt;
 
   AST_JsonWriter writer(output, rd);
   ast.get().accept(writer);
@@ -278,8 +278,8 @@ static int do_nr(std::shared_ptr<Environment> &env, std::string source,
     return 1;
   }
 
-  qprep lexer(file, env);
-  auto parser = Parser::Create(*lexer.get(), env);
+  Sequencer scanner(file, env);
+  auto parser = Parser::Create(scanner, env);
 
   auto ast = parser->parse();
 
@@ -315,8 +315,8 @@ static int do_codegen(std::shared_ptr<Environment> &env, std::string source,
     return 1;
   }
 
-  qprep lexer(file, env);
-  auto parser = Parser::Create(*lexer.get(), env);
+  Sequencer scanner(file, env);
+  auto parser = Parser::Create(scanner, env);
 
   auto ast = parser->parse();
 

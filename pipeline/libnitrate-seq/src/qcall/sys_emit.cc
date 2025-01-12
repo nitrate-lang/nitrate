@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-seq/Preprocess.hh>
+#include <nitrate-seq/Sequencer.hh>
 #include <qcall/List.hh>
 
 extern "C" {
@@ -49,7 +49,7 @@ int qcall::sys_emit(lua_State* L) {
                       nargs);
   }
 
-  qprep_impl_t* obj = get_engine();
+  Sequencer* obj = get_engine();
 
   for (int i = 1; i <= nargs; i++) {
     if (!lua_isstring(L, i)) {

@@ -54,7 +54,7 @@
 #include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
-#include <nitrate-seq/Classes.hh>
+#include <nitrate-seq/Sequencer.hh>
 #include <string>
 #include <string_view>
 #include <vector>

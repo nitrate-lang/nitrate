@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-seq/Preprocess.hh>
+#include <nitrate-seq/Sequencer.hh>
 #include <qcall/List.hh>
 
 extern "C" {
@@ -62,7 +62,7 @@ int qcall::sys_defer(lua_State* L) {
     return luaL_error(L, "sys_defer: failed to store callback in registry");
   }
 
-  DeferCallback cb = [L, id](qprep_impl_t*, Token tok) -> DeferOp {
+  DeferCallback cb = [L, id](Sequencer*, Token tok) -> DeferOp {
     lua_rawgeti(L, LUA_REGISTRYINDEX, id); /* Get the function */
 
     { /* Push the function arguments */

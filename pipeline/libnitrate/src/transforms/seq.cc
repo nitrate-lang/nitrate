@@ -37,7 +37,7 @@
 #include <core/Transform.hh>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Init.hh>
-#include <nitrate-seq/Classes.hh>
+#include <nitrate-seq/Sequencer.hh>
 #include <unordered_set>
 
 using namespace ncc::lex;
@@ -46,7 +46,7 @@ extern bool impl_use_msgpack(IScanner *L, std::ostream &O);
 extern bool impl_use_json(IScanner *L, std::ostream &O);
 
 CREATE_TRANSFORM(nit::seq) {
-  qprep lexer(source, env);
+  Sequencer scanner(source, env);
 
   enum class OutMode {
     JSON,
@@ -62,8 +62,8 @@ CREATE_TRANSFORM(nit::seq) {
 
   switch (out_mode) {
     case OutMode::JSON:
-      return impl_use_json(lexer.get(), output);
+      return impl_use_json(&scanner, output);
     case OutMode::MsgPack:
-      return impl_use_msgpack(lexer.get(), output);
+      return impl_use_msgpack(&scanner, output);
   }
 }
