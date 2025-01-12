@@ -57,17 +57,17 @@ static void qcore_default_logger(qcore_log_t level, const char *msg, size_t len,
 static thread_local qcore_logger_t g_current_logger = qcore_default_logger;
 static thread_local void *g_current_logger_data = nullptr;
 
-C_EXPORT void qcore_bind_logger(qcore_logger_t logger, void *data) {
+extern "C" NCC_EXPORT void qcore_bind_logger(qcore_logger_t logger,
+                                             void *data) {
   g_current_logger = logger ? logger : qcore_default_logger;
   g_current_logger_data = data;
 }
-
-C_EXPORT void qcore_begin(qcore_log_t level) {
+extern "C" NCC_EXPORT void qcore_begin(qcore_log_t level) {
   g_log.log_buffer.str("");
   g_log.log_level = level;
 }
 
-C_EXPORT void qcore_end() {
+extern "C" NCC_EXPORT void qcore_end() {
   std::string message = g_log.log_buffer.str();
 
   while (message.ends_with("\n")) {
@@ -120,7 +120,7 @@ C_EXPORT void qcore_end() {
                    g_current_logger_data);
 }
 
-C_EXPORT int qcore_vwritef(const char *fmt, va_list args) {
+extern "C" NCC_EXPORT int qcore_vwritef(const char *fmt, va_list args) {
   char *buffer = NULL;
   int size = vasprintf(&buffer, fmt, args);
   if (size < 0) {

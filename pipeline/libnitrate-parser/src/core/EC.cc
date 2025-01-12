@@ -232,7 +232,7 @@ static std::optional<std::pair<Token, std::string>> find_and_decode_token(
   }
 }
 
-CPP_EXPORT std::string ncc::parse::ec::Formatter(std::string_view message_raw,
+NCC_EXPORT std::string ncc::parse::ec::Formatter(std::string_view message_raw,
                                                  Sev) {
   IScanner *rd = g_current_scanner;
 

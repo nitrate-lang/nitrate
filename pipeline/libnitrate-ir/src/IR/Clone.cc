@@ -306,7 +306,7 @@ public:
 
 ///===========================================================================///
 
-CPP_EXPORT Expr *detail::Expr_getCloneImpl(Expr *self) {
+NCC_EXPORT Expr *detail::Expr_getCloneImpl(Expr *self) {
   static thread_local struct {
     std::unordered_map<Expr *, Expr *> in_out;
     size_t depth = 0;

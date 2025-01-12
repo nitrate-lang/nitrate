@@ -35,19 +35,19 @@
 
 using namespace ncc;
 
-CPP_EXPORT thread_local LoggerContext ncc::log;
+NCC_EXPORT thread_local LoggerContext ncc::log;
 
-CPP_EXPORT std::string ncc::Formatter(std::string_view msg, Sev sev) {
+NCC_EXPORT std::string ncc::Formatter(std::string_view msg, Sev sev) {
   return std::string(msg);
 }
 
-CPP_EXPORT ECUnique::ECUnique(std::source_location loc) {
+NCC_EXPORT ECUnique::ECUnique(std::source_location loc) {
   std::stringstream ss;
   ss << loc.file_name() << ":" << loc.line() << ":" << loc.column();
   m_ec = std::hash<std::string>{}(ss.str());
 }
 
-CPP_EXPORT void ECBase::GetJsonRepresentation(std::ostream &os) const {
+NCC_EXPORT void ECBase::GetJsonRepresentation(std::ostream &os) const {
   os << "{\"flagname\":\"" << flag_name() << "\",\"nice_name\":\""
      << nice_name() << "\",\"details\":\"" << details() << "\",\"tags\":[";
   for (auto it = tags().begin(); it != tags().end(); ++it) {
@@ -87,7 +87,7 @@ CPP_EXPORT void ECBase::GetJsonRepresentation(std::ostream &os) const {
   os << "]}";
 }
 
-CPP_EXPORT void ECBase::Finalize(void) {
+NCC_EXPORT void ECBase::Finalize(void) {
   m_ec = GetIdentity().get();
 
   /* Try to load information about the error from disk */

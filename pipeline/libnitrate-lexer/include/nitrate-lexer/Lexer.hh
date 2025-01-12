@@ -235,7 +235,7 @@ namespace ncc::lex {
 
   struct ScannerEOF final {};
 
-  class CPP_EXPORT IScanner {
+  class NCC_EXPORT IScanner {
     static constexpr size_t TOKEN_BUFFER_SIZE = 256;
 
     std::deque<Token> m_ready;
@@ -318,7 +318,7 @@ namespace ncc::lex {
     std::shared_ptr<ncc::Environment> GetEnvironment() const { return m_env; }
   };
 
-  class CPP_EXPORT Tokenizer final : public IScanner {
+  class NCC_EXPORT Tokenizer final : public IScanner {
     static constexpr size_t GETC_BUFFER_SIZE = 256;
     uint32_t m_offset = 0, m_line = 0, m_column = 0;
 

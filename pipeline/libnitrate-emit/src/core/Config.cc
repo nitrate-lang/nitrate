@@ -87,7 +87,7 @@ static void assign_default_options(qcode_conf_t &conf) {
   }
 }
 
-C_EXPORT qcode_conf_t *qcode_conf_new(bool use_defaults) {
+extern "C" NCC_EXPORT qcode_conf_t *qcode_conf_new(bool use_defaults) {
   qcode_conf_t *obj = new qcode_conf_t();
 
   if (use_defaults) {
@@ -97,15 +97,17 @@ C_EXPORT qcode_conf_t *qcode_conf_new(bool use_defaults) {
   return obj;
 }
 
-C_EXPORT void qcode_conf_free(qcode_conf_t *conf) { delete conf; }
+extern "C" NCC_EXPORT void qcode_conf_free(qcode_conf_t *conf) { delete conf; }
 
-C_EXPORT bool qcode_conf_setopt(qcode_conf_t *conf, qcode_key_t key,
-                                qcode_val_t value) {
+extern "C" NCC_EXPORT bool qcode_conf_setopt(qcode_conf_t *conf,
+                                             qcode_key_t key,
+                                             qcode_val_t value) {
   return conf->SetAndVerify(key, value);
 }
 
-C_EXPORT bool qcode_conf_getopt(qcode_conf_t *conf, qcode_key_t key,
-                                qcode_val_t *value) {
+extern "C" NCC_EXPORT bool qcode_conf_getopt(qcode_conf_t *conf,
+                                             qcode_key_t key,
+                                             qcode_val_t *value) {
   auto val = conf->Get(key);
 
   if (!val.has_value()) {
@@ -119,8 +121,8 @@ C_EXPORT bool qcode_conf_getopt(qcode_conf_t *conf, qcode_key_t key,
   return true;
 }
 
-C_EXPORT qcode_setting_t *qcode_conf_getopts(qcode_conf_t *conf,
-                                             size_t *count) {
+extern "C" NCC_EXPORT qcode_setting_t *qcode_conf_getopts(qcode_conf_t *conf,
+                                                          size_t *count) {
   if (!count) {
     qcore_panic(
         "qcode_conf_getopts: Contract violation: 'count' parameter cannot be "
@@ -145,7 +147,9 @@ C_EXPORT qcode_setting_t *qcode_conf_getopts(qcode_conf_t *conf,
   return copy;
 }
 
-C_EXPORT void qcode_conf_clear(qcode_conf_t *conf) { conf->ClearNoVerify(); }
+extern "C" NCC_EXPORT void qcode_conf_clear(qcode_conf_t *conf) {
+  conf->ClearNoVerify();
+}
 
 bool qcode_conf_t::has(qcode_key_t option, qcode_val_t value) const {
   for (const auto &dat : m_data) {

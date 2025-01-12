@@ -172,9 +172,9 @@ struct Frame {
         op(op) {}
 };
 
-static FORCE_INLINE FlowPtr<Expr> UnwindStack(std::stack<Frame> &stack,
-                                              FlowPtr<Expr> base,
-                                              short minPrecedence) {
+static NCC_FORCE_INLINE FlowPtr<Expr> UnwindStack(std::stack<Frame> &stack,
+                                                  FlowPtr<Expr> base,
+                                                  short minPrecedence) {
   while (!stack.empty()) {
     auto frame = stack.top();
 

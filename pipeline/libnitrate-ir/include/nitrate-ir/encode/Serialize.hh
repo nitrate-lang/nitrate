@@ -46,7 +46,7 @@ namespace ncc::ir::encode {
   using WriterSourceProvider =
       std::optional<std::reference_wrapper<lex::IScanner>>;
 
-  class CPP_EXPORT IR_Writer : public IRVisitor<void> {
+  class NCC_EXPORT IR_Writer : public IRVisitor<void> {
     using InsertString = std::function<void(std::string_view)>;
     using InsertUInt64 = std::function<void(uint64_t)>;
     using InsertDouble = std::function<void(double)>;

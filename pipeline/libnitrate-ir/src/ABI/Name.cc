@@ -674,7 +674,7 @@ namespace ncc::ir::abi::c {
 
 ///=============================================================================
 
-CPP_EXPORT std::optional<std::string> ncc::ir::MangleTypeName(
+NCC_EXPORT std::optional<std::string> ncc::ir::MangleTypeName(
     FlowPtr<Type> type, AbiTag abi) {
   switch (abi) {
     case AbiTag::C: {
@@ -690,7 +690,7 @@ CPP_EXPORT std::optional<std::string> ncc::ir::MangleTypeName(
   }
 }
 
-CPP_EXPORT std::optional<std::string> ncc::ir::GetMangledSymbolName(
+NCC_EXPORT std::optional<std::string> ncc::ir::GetMangledSymbolName(
     FlowPtr<Expr> symbol, AbiTag abi) {
   auto name = symbol->getName();
 
@@ -710,7 +710,7 @@ CPP_EXPORT std::optional<std::string> ncc::ir::GetMangledSymbolName(
   }
 }
 
-CPP_EXPORT std::optional<std::string> ncc::ir::ExpandSymbolName(
+NCC_EXPORT std::optional<std::string> ncc::ir::ExpandSymbolName(
     std::string_view mangled_name) {
   if (mangled_name.empty()) {
     return std::nullopt;
@@ -728,13 +728,13 @@ CPP_EXPORT std::optional<std::string> ncc::ir::ExpandSymbolName(
   }
 }
 
-CPP_EXPORT NullableFlowPtr<Expr> ncc::ir::GetSymbolFromMangledName(
+NCC_EXPORT NullableFlowPtr<Expr> ncc::ir::GetSymbolFromMangledName(
     std::string_view mangled_name) {
   /// TODO: Implement this function
   qcore_implement();
 }
 
-CPP_EXPORT NullableFlowPtr<Type> ncc::ir::GetTypeFromMangledName(
+NCC_EXPORT NullableFlowPtr<Type> ncc::ir::GetTypeFromMangledName(
     std::string_view mangled_name) {
   /// TODO: Implement this function
   qcore_implement();

@@ -49,7 +49,7 @@ namespace ncc::parse {
   using WriterSourceProvider =
       std::optional<std::reference_wrapper<lex::IScanner>>;
 
-  class CPP_EXPORT AST_Writer : public ASTVisitor {
+  class NCC_EXPORT AST_Writer : public ASTVisitor {
     using InsertString = std::function<void(std::string_view)>;
     using InsertUInt64 = std::function<void(uint64_t)>;
     using InsertDouble = std::function<void(double)>;
@@ -164,7 +164,7 @@ namespace ncc::parse {
     void visit(FlowPtr<ExportStmt> n) override;
   };
 
-  class CPP_EXPORT AST_JsonWriter : public AST_Writer {
+  class NCC_EXPORT AST_JsonWriter : public AST_Writer {
     std::ostream& m_os;
     std::stack<bool> m_comma;
     std::stack<size_t> m_count;
@@ -205,7 +205,7 @@ namespace ncc::parse {
     virtual ~AST_JsonWriter() = default;
   };
 
-  class CPP_EXPORT AST_MsgPackWriter : public AST_Writer {
+  class NCC_EXPORT AST_MsgPackWriter : public AST_Writer {
     std::ostream& m_os;
 
     void str_impl(std::string_view str);

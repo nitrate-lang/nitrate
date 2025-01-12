@@ -211,7 +211,7 @@ static void get_children_sorted(FlowPtr<Expr> base, ChildSelect cs,
   std::sort(children.begin(), children.end(), cs);
 }
 
-CPP_EXPORT void detail::dfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
+NCC_EXPORT void detail::dfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
                                      ChildSelect cs) {
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
@@ -251,7 +251,7 @@ CPP_EXPORT void detail::dfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
   syncfn(base, cb, cs);
 }
 
-CPP_EXPORT void detail::dfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
+NCC_EXPORT void detail::dfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
                                       ChildSelect cs) {
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
@@ -288,7 +288,7 @@ CPP_EXPORT void detail::dfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
   cb(nullptr, base);
 }
 
-CPP_EXPORT void detail::bfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
+NCC_EXPORT void detail::bfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
                                      ChildSelect cs) {
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
@@ -328,7 +328,7 @@ CPP_EXPORT void detail::bfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
   syncfn(base, cb, cs);
 }
 
-CPP_EXPORT void detail::bfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
+NCC_EXPORT void detail::bfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
                                       ChildSelect cs) {
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
@@ -364,7 +364,7 @@ CPP_EXPORT void detail::bfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
   syncfn(base, cb, cs);
 }
 
-CPP_EXPORT void detail::iter_children(FlowPtr<Expr>* base, IterCallback cb,
+NCC_EXPORT void detail::iter_children(FlowPtr<Expr>* base, IterCallback cb,
                                       ChildSelect cs) {
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };

@@ -40,15 +40,13 @@
 #include <nitrate-parser/Context.hh>
 #include <sstream>
 
-#include "nitrate-parser/ASTBase.hh"
-
 using namespace ncc;
 using namespace ncc::parse;
 
-CPP_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::npar_allocator =
+NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::npar_allocator =
     std::make_unique<ncc::dyn_arena>();
 
-CPP_EXPORT LocationPairAlias parse::g_location_pairs;
+NCC_EXPORT LocationPairAlias parse::g_location_pairs;
 
 LocationPairAlias::Index LocationPairAlias::Add(lex::LocationID begin,
                                                 lex::LocationID end) {
@@ -64,7 +62,7 @@ std::pair<lex::LocationID, lex::LocationID> LocationPairAlias::Get(
   return m_pairs.at(loc.v);
 }
 
-CPP_EXPORT std::ostream &parse::operator<<(
+NCC_EXPORT std::ostream &parse::operator<<(
     std::ostream &os, const LocationPairAlias::Index &idx) {
   os << "${L:" << idx.v << "}";
   return os;
@@ -72,7 +70,15 @@ CPP_EXPORT std::ostream &parse::operator<<(
 
 ///=============================================================================
 
-CPP_EXPORT bool Base::isSame(FlowPtr<Base> o) const {
+NCC_EXPORT std::ostream &Base::dump(std::ostream &os,
+                                    WriterSourceProvider rd) const {
+  AST_JsonWriter writer(os, rd);
+  this->accept(writer);
+
+  return os;
+}
+
+NCC_EXPORT bool Base::isSame(FlowPtr<Base> o) const {
   if (this == o.get()) {
     return true;
   }
@@ -90,7 +96,7 @@ CPP_EXPORT bool Base::isSame(FlowPtr<Base> o) const {
   return ss1.str() == ss2.str();
 }
 
-CPP_EXPORT uint64_t Base::hash64() const {
+NCC_EXPORT uint64_t Base::hash64() const {
   AST_Hash64 visitor;
 
   this->accept(visitor);
@@ -98,7 +104,7 @@ CPP_EXPORT uint64_t Base::hash64() const {
   return visitor.get();
 }
 
-CPP_EXPORT size_t Base::count_children() {
+NCC_EXPORT size_t Base::count_children() {
   size_t count = 0;
 
   for_each(this, [&](auto, auto) { count++; });
@@ -108,7 +114,7 @@ CPP_EXPORT size_t Base::count_children() {
 
 ///=============================================================================
 
-CPP_EXPORT bool Type::is_ptr_to(Type *type) const {
+NCC_EXPORT bool Type::is_ptr_to(Type *type) const {
   if (!is_pointer()) {
     return false;
   }

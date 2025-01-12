@@ -46,7 +46,7 @@
 #include <type_traits>
 
 namespace ncc::parse {
-  class CPP_EXPORT LocationPairAlias {
+  class NCC_EXPORT LocationPairAlias {
     std::vector<std::pair<lex::LocationID, lex::LocationID>> m_pairs;
     std::mutex m_mutex;
 

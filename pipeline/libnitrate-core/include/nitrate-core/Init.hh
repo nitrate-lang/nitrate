@@ -50,7 +50,7 @@ namespace ncc {
     LibraryRCAutoClose() = default;
 
   public:
-    ~LibraryRCAutoClose() { Impl::DeinitRC(); }
+    ~LibraryRCAutoClose() { Impl::Deinit(); }
   };
 
   template <typename Impl>

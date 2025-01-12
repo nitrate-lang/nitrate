@@ -101,7 +101,7 @@ using namespace ncc;
 // #define next_one(n) nrgen_one(b, s, G, n)
 // #define next_any(n) nrgen_any(b, s, G, n)
 
-// CPP_EXPORT std::unique_ptr<IRModule> ir::nr_lower(ncc::parse::Base *base,
+// NCC_EXPORT std::unique_ptr<IRModule> ir::nr_lower(ncc::parse::Base *base,
 //                                                   const char *name,
 //                                                   bool diagnostics) {
 //   if (!base) {
@@ -2245,7 +2245,7 @@ using namespace ncc;
 //   return out;
 // }
 
-CPP_EXPORT std::unique_ptr<IRModule> ir::nr_lower(ncc::parse::Base *,
+NCC_EXPORT std::unique_ptr<IRModule> ir::nr_lower(ncc::parse::Base *,
                                                   const char *, bool) {
   qcore_print(QCORE_ERROR, "Not implemented");
   return nullptr;

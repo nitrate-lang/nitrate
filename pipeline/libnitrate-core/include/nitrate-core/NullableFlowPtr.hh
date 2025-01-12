@@ -37,18 +37,14 @@
 #include <nitrate-core/FlowPtr.hh>
 #include <optional>
 
-#include "nitrate-core/Logger.hh"
-
 namespace ncc {
   namespace flowptr_detail {
     template <class Pointee, class Tracking = DefaultTracking>
     class NullableFlowPtr {
-      union M {
-        uintptr_t m_raw;
-        FlowPtr<Pointee, Tracking> m_ptr;
+      FlowPtr<Pointee, Tracking> m_ptr =
+          FlowPtr<Pointee, Tracking>::CreateNullPtr();
 
-        constexpr M() : m_raw(0) {}
-      } m_s;
+      static_assert(sizeof(m_ptr) >= sizeof(uintptr_t));
 
     public:
       using value_type = Pointee;
@@ -63,10 +59,7 @@ namespace ncc {
                       "U* must be convertible to Pointee*");
 
         if (nullable_ptr) {
-          m_s.m_ptr =
-              FlowPtr<Pointee, Tracking>(nullable_ptr, std::move(tracking));
-        } else {
-          m_s.m_raw = 0;
+          m_ptr = FlowPtr<Pointee, Tracking>(nullable_ptr, std::move(tracking));
         }
       }
 
@@ -77,9 +70,7 @@ namespace ncc {
 
         if (ptr_opt.has_value()) {
           auto v = ptr_opt.value();
-          m_s.m_ptr = FlowPtr<Pointee, Tracking>(v.get(), v.trace());
-        } else {
-          m_s.m_raw = 0;
+          m_ptr = FlowPtr<Pointee, Tracking>(v.get(), v.trace());
         }
       }
 
@@ -99,38 +90,22 @@ namespace ncc {
                             std::move(tracking)) {}
 
       constexpr NullableFlowPtr(const NullableFlowPtr<Pointee, Tracking> &O) {
-        if (O.has_value()) {
-          m_s.m_ptr = O.m_s.m_ptr;
-        } else {
-          m_s.m_raw = 0;
-        }
+        m_ptr = O.m_ptr;
       }
 
       constexpr NullableFlowPtr(NullableFlowPtr<Pointee, Tracking> &&O) {
-        if (O.has_value()) {
-          m_s.m_ptr = std::move(O.m_s.m_ptr);
-        } else {
-          m_s.m_raw = 0;
-        }
+        m_ptr = std::move(O.m_ptr);
       }
 
       constexpr NullableFlowPtr &operator=(
           const NullableFlowPtr<Pointee, Tracking> &O) {
-        if (O.has_value()) {
-          m_s.m_ptr = O.m_s.m_ptr;
-        } else {
-          m_s.m_raw = 0;
-        }
+        m_ptr = O.m_ptr;
         return *this;
       }
 
       constexpr NullableFlowPtr &operator=(
           NullableFlowPtr<Pointee, Tracking> &&O) {
-        if (O.has_value()) {
-          m_s.m_ptr = std::move(O.m_s.m_ptr);
-        } else {
-          m_s.m_raw = 0;
-        }
+        m_ptr = std::move(O.m_ptr);
         return *this;
       }
 
@@ -140,20 +115,24 @@ namespace ncc {
       /// Comparison
 
       constexpr bool operator==(const NullableFlowPtr &O) const {
-        return m_s.m_raw == O.m_s.m_raw;
+        return m_ptr == O.m_ptr;
       }
 
       constexpr bool operator!=(const NullableFlowPtr &O) const {
-        return m_s.m_raw != O.m_s.m_raw;
+        return m_ptr != O.m_ptr;
       }
 
-      constexpr bool operator==(std::nullptr_t) const { return m_s.m_raw == 0; }
-      constexpr bool operator==(std::nullopt_t) const { return m_s.m_raw == 0; }
+      constexpr bool operator==(std::nullptr_t) const {
+        return m_ptr == nullptr;
+      }
+      constexpr bool operator==(std::nullopt_t) const {
+        return m_ptr == nullptr;
+      }
 
       ///=========================================================================
       /// Accessors
 
-      constexpr bool has_value() const { return m_s.m_raw != 0; }
+      constexpr bool has_value() const { return m_ptr != nullptr; }
       constexpr operator bool() const { return has_value(); }
 
       constexpr FlowPtr<Pointee, Tracking> &value() {
@@ -161,7 +140,7 @@ namespace ncc {
           qcore_panicf("Attempted to dereference a nullptr. this=%p", this);
         }
 
-        return m_s.m_ptr;
+        return m_ptr;
       }
 
       constexpr const FlowPtr<Pointee, Tracking> &value() const {
@@ -169,7 +148,7 @@ namespace ncc {
           qcore_panicf("Attempted to dereference a nullptr. this=%p", this);
         }
 
-        return m_s.m_ptr;
+        return m_ptr;
       }
 
       template <class U>

@@ -192,7 +192,7 @@ namespace ncc {
 #define NCC_EC_FILTER(name, msg, sev, ec) \
   static inline bool name(const std::string &msg, Sev sev, const ECBase &ec)
 
-  class CPP_EXPORT LoggerContext final {
+  class NCC_EXPORT LoggerContext final {
     std::vector<LogCallback> m_subscribers;
     std::vector<LogFilterFunc> m_filters;
     bool m_enabled = true;

@@ -35,7 +35,6 @@
 #define __NITRATE_CORE_FLOWPTR_H__
 
 #include <cstddef>
-#include <cstdint>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <source_location>
@@ -88,10 +87,7 @@ namespace ncc {
   namespace flowptr_detail {
     template <class Pointee, class Tracking>
     struct WithTracking {
-      union {
-        Pointee *m_tptr;
-        uintptr_t m_ptr;
-      } m_ref;
+      Pointee *m_ref;
       Tracking m_tracking;
 
       constexpr WithTracking(Pointee *ptr, Tracking tracking)
@@ -100,13 +96,13 @@ namespace ncc {
 
     template <class Pointee, class Tracking>
     struct WithoutTracking {
-      union Ptr {
-        Pointee *m_tptr;
-        uintptr_t m_ptr;
-      } m_ref;
+      Pointee *m_ref;
 
       constexpr WithoutTracking(Pointee *ptr, Tracking) : m_ref(ptr) {}
     };
+
+    template <class Pointee, class Tracking>
+    class NullableFlowPtr;
 
     template <class Pointee, class Tracking>
     using flowptr_data_t =
@@ -116,11 +112,21 @@ namespace ncc {
 
     template <class Pointee, class Tracking = DefaultTracking>
     class FlowPtr {
+      friend class NullableFlowPtr<Pointee, Tracking>;
+
       using SelfData = flowptr_data_t<Pointee, Tracking>;
       constexpr static bool IsTracking =
           std::is_same_v<SelfData, WithTracking<Pointee, Tracking>>;
 
       SelfData m_s;
+
+      constexpr FlowPtr() : m_s(nullptr, Tracking()) {}
+
+      constexpr static FlowPtr<Pointee, Tracking> CreateNullPtr() {
+        FlowPtr<Pointee, Tracking> ptr;
+        ptr.m_s.m_ref = nullptr;
+        return ptr;
+      }
 
     public:
       using value_type = Pointee;
@@ -140,11 +146,13 @@ namespace ncc {
       constexpr FlowPtr(FlowPtr &&O) : m_s(std::move(O.m_s)) {}
 
       constexpr FlowPtr &operator=(const FlowPtr &O) {
-        return m_s = O.m_s, *this;
+        m_s = O.m_s;
+        return *this;
       }
 
       constexpr FlowPtr &operator=(FlowPtr &&O) {
-        return m_s = std::move(O.m_s), *this;
+        m_s = std::move(O.m_s);
+        return *this;
       }
 
       constexpr ~FlowPtr() = default;
@@ -153,21 +161,21 @@ namespace ncc {
       /// Comparison
 
       constexpr bool operator==(const FlowPtr &O) const {
-        return m_s.m_ref.m_ptr == O.m_s.m_ref.m_ptr;
+        return m_s.m_ref == O.m_s.m_ref;
       }
 
       constexpr bool operator!=(const FlowPtr &O) const {
-        return m_s.m_ref.m_ptr != O.m_s.m_ref.m_ptr;
+        return m_s.m_ref != O.m_s.m_ref;
       }
 
-      constexpr bool operator==(std::nullptr_t) const { return false; }
+      constexpr bool operator==(std::nullptr_t) const { return m_s.m_ref == 0; }
 
       ///=========================================================================
       /// Accessors
 
-      constexpr auto operator->() const { return m_s.m_ref.m_tptr; }
-      constexpr auto get() const { return m_s.m_ref.m_tptr; }
-      constexpr operator bool() const { return true; }
+      constexpr auto operator->() const { return m_s.m_ref; }
+      constexpr auto get() const { return m_s.m_ref; }
+      constexpr operator bool() const { return m_s.m_ref != 0; }
 
       ///=========================================================================
       /// Casting
@@ -193,7 +201,7 @@ namespace ncc {
         }
       }
 
-      constexpr void set_tracking(Tracking tracking) {
+      constexpr void set_tracking(auto tracking) {
         if constexpr (IsTracking) {
           m_s.m_tracking = std::move(tracking);
         }

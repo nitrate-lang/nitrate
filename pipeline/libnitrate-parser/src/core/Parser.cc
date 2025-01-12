@@ -371,7 +371,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
   return block;
 }
 
-CPP_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
+NCC_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
                           std::shared_ptr<ncc::Environment> env,
                           std::shared_ptr<void> lifetime)
     : rd(lexer), m_lifetime(lifetime) {
@@ -382,7 +382,7 @@ CPP_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
 
 void Parser_SetCurrentScanner(IScanner *scanner);
 
-CPP_EXPORT ASTRoot Parser::parse() {
+NCC_EXPORT ASTRoot Parser::parse() {
   std::optional<ASTRoot> ast;
 
   { /* Assign the current context to thread-local global state */
@@ -427,7 +427,7 @@ CPP_EXPORT ASTRoot Parser::parse() {
   return ast.value();
 }
 
-CPP_EXPORT bool ASTRoot::check() const {
+NCC_EXPORT bool ASTRoot::check() const {
   if (m_failed) {
     return false;
   }

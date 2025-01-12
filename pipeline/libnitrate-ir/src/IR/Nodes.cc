@@ -240,7 +240,7 @@ void IR_resetTypeCache(void) {
   g_fn_cache.clear();
 }
 
-CPP_EXPORT PtrTy* ir::getPtrTy(FlowPtr<Type> pointee, uint8_t native_size) {
+NCC_EXPORT PtrTy* ir::getPtrTy(FlowPtr<Type> pointee, uint8_t native_size) {
   PtrState state{pointee, native_size};
 
   std::lock_guard lock(g_ptr_cache_mutex);
@@ -256,7 +256,7 @@ CPP_EXPORT PtrTy* ir::getPtrTy(FlowPtr<Type> pointee, uint8_t native_size) {
   return it->second.get();
 }
 
-CPP_EXPORT ConstTy* ir::getConstTy(FlowPtr<Type> item) {
+NCC_EXPORT ConstTy* ir::getConstTy(FlowPtr<Type> item) {
   ConstState state{item};
 
   std::lock_guard lock(g_const_cache_mutex);
@@ -271,7 +271,7 @@ CPP_EXPORT ConstTy* ir::getConstTy(FlowPtr<Type> item) {
   return it->second.get();
 }
 
-CPP_EXPORT OpaqueTy* ir::getOpaqueTy(string name) {
+NCC_EXPORT OpaqueTy* ir::getOpaqueTy(string name) {
   OpaqueState state{name};
 
   std::lock_guard lock(g_opaque_cache_mutex);
@@ -286,7 +286,7 @@ CPP_EXPORT OpaqueTy* ir::getOpaqueTy(string name) {
   return it->second.get();
 }
 
-CPP_EXPORT StructTy* ir::getStructTy(std::span<FlowPtr<Type>> fields) {
+NCC_EXPORT StructTy* ir::getStructTy(std::span<FlowPtr<Type>> fields) {
   StructState state{fields};
 
   std::lock_guard lock(g_struct_cache_mutex);
@@ -305,7 +305,7 @@ CPP_EXPORT StructTy* ir::getStructTy(std::span<FlowPtr<Type>> fields) {
   return it->second.first.get();
 }
 
-CPP_EXPORT UnionTy* ir::getUnionTy(std::span<FlowPtr<Type>> fields) {
+NCC_EXPORT UnionTy* ir::getUnionTy(std::span<FlowPtr<Type>> fields) {
   UnionState state{fields};
 
   std::lock_guard lock(g_union_cache_mutex);
@@ -324,7 +324,7 @@ CPP_EXPORT UnionTy* ir::getUnionTy(std::span<FlowPtr<Type>> fields) {
   return it->second.first.get();
 }
 
-CPP_EXPORT ArrayTy* ir::getArrayTy(FlowPtr<Type> element, size_t size) {
+NCC_EXPORT ArrayTy* ir::getArrayTy(FlowPtr<Type> element, size_t size) {
   ArrayState state{element, size};
 
   std::lock_guard lock(g_array_cache_mutex);
@@ -340,7 +340,7 @@ CPP_EXPORT ArrayTy* ir::getArrayTy(FlowPtr<Type> element, size_t size) {
   return it->second.get();
 }
 
-CPP_EXPORT FnTy* ir::getFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret,
+NCC_EXPORT FnTy* ir::getFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret,
                              bool variadic, size_t native_size) {
   FnState state{params, ret, variadic, native_size};
 
@@ -357,7 +357,7 @@ CPP_EXPORT FnTy* ir::getFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret,
   return it->second.get();
 }
 
-CPP_EXPORT FlowPtr<Expr> ir::createIgn() { return create<Expr>(IR_eIGN); }
+NCC_EXPORT FlowPtr<Expr> ir::createIgn() { return create<Expr>(IR_eIGN); }
 
 ///=============================================================================
 
@@ -393,7 +393,7 @@ static bool isCyclicUtil(auto base, std::unordered_set<FlowPtr<Expr>>& visited,
   return has_cycle;
 }
 
-CPP_EXPORT bool detail::IsAcyclicImpl(FlowPtr<Expr> self) {
+NCC_EXPORT bool detail::IsAcyclicImpl(FlowPtr<Expr> self) {
   std::unordered_set<FlowPtr<Expr>> visited, recStack;
   bool has_cycle = false;
 

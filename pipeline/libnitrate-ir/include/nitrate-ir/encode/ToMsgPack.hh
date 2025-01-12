@@ -38,7 +38,7 @@
 #include <ostream>
 
 namespace ncc::ir::encode {
-  class CPP_EXPORT IR_MsgPackWriter : public IR_Writer {
+  class NCC_EXPORT IR_MsgPackWriter : public IR_Writer {
     std::ostream& m_os;
 
     void str_impl(std::string_view str);

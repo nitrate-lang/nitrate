@@ -38,17 +38,17 @@
 
 using namespace ncc;
 
-CPP_EXPORT dyn_arena::dyn_arena() {
+NCC_EXPORT dyn_arena::dyn_arena() {
   m_arena = new PImpl();
   m_owned = true;
 }
 
-CPP_EXPORT dyn_arena::~dyn_arena() {
+NCC_EXPORT dyn_arena::~dyn_arena() {
   if (m_owned) {
     delete m_arena;
   }
 }
 
-CPP_EXPORT void* dyn_arena::alloc(size_t size, size_t align) {
+NCC_EXPORT void* dyn_arena::alloc(size_t size, size_t align) {
   return m_arena->alloc(size, align);
 }

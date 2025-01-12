@@ -39,7 +39,7 @@
 #include <stack>
 
 namespace ncc::ir::encode {
-  class CPP_EXPORT IR_JsonWriter : public IR_Writer {
+  class NCC_EXPORT IR_JsonWriter : public IR_Writer {
     std::ostream& m_os;
     std::stack<bool> m_comma;
     std::stack<size_t> m_count;

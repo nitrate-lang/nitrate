@@ -47,7 +47,7 @@ using namespace ncc;
 using namespace ncc::ir;
 using namespace ncc::lex;
 
-CPP_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
+NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
   /// FIXME: Implement this function
   (void)sev;
   return std::string(msg);
@@ -482,7 +482,7 @@ static std::string mint_modern_message(const IReport::ReportData &R) {
   return ss.str();
 }
 
-CPP_EXPORT void ir::nr_diag_read(IRModule *, nr_report_cb, uintptr_t) {
+NCC_EXPORT void ir::nr_diag_read(IRModule *, nr_report_cb, uintptr_t) {
   /// TODO: Implement this
   qcore_implement();
   (void)mint_modern_message;

@@ -176,7 +176,7 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
   return status;
 }
 
-CPP_EXPORT nitrate::LazyResult<bool> nitrate::pipeline(
+NCC_EXPORT nitrate::LazyResult<bool> nitrate::pipeline(
     std::istream &in, std::ostream &out, std::vector<std::string> options,
     std::optional<DiagnosticFunc> diag) {
   return nitrate::LazyResult<bool>(
@@ -207,7 +207,7 @@ CPP_EXPORT nitrate::LazyResult<bool> nitrate::pipeline(
       });
 }
 
-CPP_EXPORT nitrate::LazyResult<bool> nitrate::chain(
+NCC_EXPORT nitrate::LazyResult<bool> nitrate::chain(
     std::istream &in, std::ostream &out, ChainOptions operations,
     std::optional<DiagnosticFunc> diag, bool) {
   return nitrate::LazyResult<bool>(
@@ -241,8 +241,9 @@ CPP_EXPORT nitrate::LazyResult<bool> nitrate::chain(
 
 ///============================================================================///
 
-C_EXPORT bool nit_pipeline(FILE *in, FILE *out, nit_diag_func diag_cb,
-                           void *opaque, const char *const c_options[]) {
+extern "C" NCC_EXPORT bool nit_pipeline(FILE *in, FILE *out,
+                                        nit_diag_func diag_cb, void *opaque,
+                                        const char *const c_options[]) {
   class FileStreamBuf : public std::streambuf {
     FILE *m_file;
     char c = 0;

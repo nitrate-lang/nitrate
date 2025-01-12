@@ -36,12 +36,11 @@
 
 #ifdef __NITRATE_IMPL__
 
-#define C_EXPORT extern "C" __attribute__((visibility("default")))
-#define CPP_EXPORT __attribute__((visibility("default")))
-#define FORCE_INLINE inline __attribute__((always_inline))
-
 #define let const auto&
 
 #endif  // __NITRATE_IMPL__
+
+#define NCC_FORCE_INLINE inline __attribute__((always_inline))
+#define NCC_EXPORT __attribute__((visibility("default")))
 
 #endif  // __NITRATE_CORE_MACRO_H__

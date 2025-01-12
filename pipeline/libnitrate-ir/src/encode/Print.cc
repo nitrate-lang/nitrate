@@ -620,7 +620,7 @@ using namespace ncc::ir;
 //   return true;
 // }
 
-CPP_EXPORT void ir::nr_write(IRModule *mod, NullableFlowPtr<Expr> _node,
+NCC_EXPORT void ir::nr_write(IRModule *mod, NullableFlowPtr<Expr> _node,
                              std::ostream &out) {
   // if (!mod && !_node) {
   //   return;
@@ -642,7 +642,7 @@ CPP_EXPORT void ir::nr_write(IRModule *mod, NullableFlowPtr<Expr> _node,
   (void)out;
 }
 
-CPP_EXPORT void ir::detail::NodeDumpImpl(const Expr *E, std::ostream &os,
+NCC_EXPORT void ir::detail::NodeDumpImpl(const Expr *E, std::ostream &os,
                                          bool isForDebug) {
   (void)E;
   (void)os;

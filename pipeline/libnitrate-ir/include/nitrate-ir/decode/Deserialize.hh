@@ -42,7 +42,7 @@
 #include <stack>
 
 namespace ncc::ir::decode {
-  class CPP_EXPORT IR_Reader {
+  class NCC_EXPORT IR_Reader {
     enum class State {
       ObjStart,
       ObjEnd,
@@ -79,7 +79,7 @@ namespace ncc::ir::decode {
     }
   };
 
-  class CPP_EXPORT IR_JsonReader final : public IR_Reader {
+  class NCC_EXPORT IR_JsonReader final : public IR_Reader {
     void parse_stream(std::istream& is);
 
   public:
@@ -87,7 +87,7 @@ namespace ncc::ir::decode {
     virtual ~IR_JsonReader() = default;
   };
 
-  class CPP_EXPORT IR_MsgPackReader final : public IR_Reader {
+  class NCC_EXPORT IR_MsgPackReader final : public IR_Reader {
     void parse_stream(std::istream& is);
 
   public:

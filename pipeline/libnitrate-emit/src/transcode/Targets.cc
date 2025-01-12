@@ -102,7 +102,7 @@ public:
   virtual int overflow(int c) override { return c; }
 };
 
-CPP_EXPORT bool qcode_transcode(IRModule* module, qcode_conf_t*,
+NCC_EXPORT bool qcode_transcode(IRModule* module, qcode_conf_t*,
                                 qcode_lang_t lang, qcode_style_t, FILE* err,
                                 FILE* out) {
   std::unique_ptr<std::streambuf> err_stream_buf, out_stream_buf;

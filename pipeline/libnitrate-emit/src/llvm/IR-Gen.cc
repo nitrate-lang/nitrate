@@ -1903,7 +1903,7 @@ static optional<unique_ptr<Module>> fabricate_llvmir(IRModule *module,
   qcore_implement();
 }
 
-CPP_EXPORT bool qcode_ir(IRModule *module, qcode_conf_t *conf, FILE *err,
+NCC_EXPORT bool qcode_ir(IRModule *module, qcode_conf_t *conf, FILE *err,
                          FILE *out) {
   return qcode_adapter(module, conf, err, out,
                        [](IRModule *m, qcode_conf_t *c, ostream &e,
@@ -1922,7 +1922,7 @@ CPP_EXPORT bool qcode_ir(IRModule *module, qcode_conf_t *conf, FILE *err,
                        });
 }
 
-CPP_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
+NCC_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
                           FILE *out) {
   return qcode_adapter(
       module, conf, err, out,
@@ -2008,7 +2008,7 @@ CPP_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
       });
 }
 
-CPP_EXPORT bool qcode_obj(IRModule *module, qcode_conf_t *conf, FILE *err,
+NCC_EXPORT bool qcode_obj(IRModule *module, qcode_conf_t *conf, FILE *err,
                           FILE *out) {
   return qcode_adapter(
       module, conf, err, out,

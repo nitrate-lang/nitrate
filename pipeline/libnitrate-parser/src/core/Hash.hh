@@ -41,7 +41,7 @@
 #include <nitrate-parser/ASTWriter.hh>
 
 namespace ncc::parse {
-  class CPP_EXPORT AST_Hash64 : public AST_Writer {
+  class NCC_EXPORT AST_Hash64 : public AST_Writer {
     boost::uuids::detail::sha1 m_sum;
 
     void update(uint64_t data) { m_sum.process_bytes(&data, sizeof(data)); }

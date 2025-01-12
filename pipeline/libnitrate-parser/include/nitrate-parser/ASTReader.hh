@@ -44,7 +44,7 @@
 #include <variant>
 
 namespace ncc::parse {
-  class CPP_EXPORT AST_Reader {
+  class NCC_EXPORT AST_Reader {
     class Value {
       using Data =
           std::variant<std::string, uint64_t, double, bool, std::nullptr_t,
@@ -204,7 +204,7 @@ namespace ncc::parse {
     std::optional<FlowPtr<Base>> get();
   };
 
-  class CPP_EXPORT AST_JsonReader final : public AST_Reader {
+  class NCC_EXPORT AST_JsonReader final : public AST_Reader {
     void parse_stream(std::istream& is);
 
   public:
@@ -212,7 +212,7 @@ namespace ncc::parse {
     virtual ~AST_JsonReader() = default;
   };
 
-  class CPP_EXPORT AST_MsgPackReader final : public AST_Reader {
+  class NCC_EXPORT AST_MsgPackReader final : public AST_Reader {
     void parse_stream(std::istream& is);
 
   public:

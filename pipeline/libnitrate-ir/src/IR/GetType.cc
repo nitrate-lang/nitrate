@@ -600,7 +600,7 @@ public:
   void visit(FlowPtr<Tmp> n) override { R = n; }
 };
 
-CPP_EXPORT std::optional<FlowPtr<Type>> detail::Expr_getType(Expr* E) {
+NCC_EXPORT std::optional<FlowPtr<Type>> detail::Expr_getType(Expr* E) {
   static thread_local struct State {
     std::unordered_set<FlowPtr<Expr>> visited;
     size_t depth = 0;

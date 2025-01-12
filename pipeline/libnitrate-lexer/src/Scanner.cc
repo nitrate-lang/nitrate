@@ -207,7 +207,7 @@ static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
         },
 };
 
-CPP_EXPORT short ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
+NCC_EXPORT short ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
   using Key = std::pair<Operator, OpMode>;
 
   struct KeyHash {
@@ -238,7 +238,7 @@ CPP_EXPORT short ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
   return -1;
 }
 
-CPP_EXPORT OpAssoc ncc::lex::GetOperatorAssociativity(Operator op,
+NCC_EXPORT OpAssoc ncc::lex::GetOperatorAssociativity(Operator op,
                                                       OpMode type) {
   using Key = std::pair<Operator, OpMode>;
 
@@ -268,7 +268,7 @@ CPP_EXPORT OpAssoc ncc::lex::GetOperatorAssociativity(Operator op,
   return OpAssoc::Left;
 }
 
-CPP_EXPORT ncc::string ncc::lex::to_string(TokenType ty, TokenData v) {
+NCC_EXPORT ncc::string ncc::lex::to_string(TokenType ty, TokenData v) {
   string R;
 
   switch (ty) {
@@ -336,13 +336,13 @@ CPP_EXPORT ncc::string ncc::lex::to_string(TokenType ty, TokenData v) {
   return R;
 }
 
-CPP_EXPORT Location LocationID::Get(IScanner &L) const {
+NCC_EXPORT Location LocationID::Get(IScanner &L) const {
   return L.GetLocation(m_id);
 }
 
 class IScanner::StaticImpl {
 public:
-  static FORCE_INLINE void FillTokenBuffer(IScanner &L) {
+  static NCC_FORCE_INLINE void FillTokenBuffer(IScanner &L) {
     for (size_t i = 0; i < TOKEN_BUFFER_SIZE; i++) {
       try {
         L.m_ready.push_back(L.GetNext());

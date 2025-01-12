@@ -180,7 +180,7 @@ public:
   bool should_stop() { return m_depth >= MAX_RECURSION_DEPTH; }
 };
 
-CPP_EXPORT Token Sequencer::GetNext() {
+NCC_EXPORT Token Sequencer::GetNext() {
 func_entry:  // do tail call optimization manually
 
   Token x;
@@ -349,7 +349,7 @@ void Sequencer::install_lua_api() {
   lua_setglobal(m_core->L, "n");
 }
 
-CPP_EXPORT Sequencer::Sequencer(std::istream &file,
+NCC_EXPORT Sequencer::Sequencer(std::istream &file,
                                 std::shared_ptr<ncc::Environment> env,
                                 bool is_root)
     : ncc::lex::IScanner(env) {
@@ -392,9 +392,9 @@ CPP_EXPORT Sequencer::Sequencer(std::istream &file,
   }
 }
 
-CPP_EXPORT Sequencer::~Sequencer() {}
+NCC_EXPORT Sequencer::~Sequencer() {}
 
-CPP_EXPORT
+NCC_EXPORT
 std::optional<std::vector<std::string>> Sequencer::GetSourceWindow(
     Point start, Point end, char fillchar) {
   return m_scanner->GetSourceWindow(start, end, fillchar);
