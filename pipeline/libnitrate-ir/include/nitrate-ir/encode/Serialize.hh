@@ -66,6 +66,8 @@ namespace ncc::ir::encode {
 
     bool m_include_source_location;
 
+    void write_source_location(FlowPtr<Expr> n) const;
+
   public:
     IR_Writer(InsertString str_impl, InsertUInt64 uint_impl,
               InsertDouble dbl_impl, InsertBool bool_impl, InsertNull null_impl,

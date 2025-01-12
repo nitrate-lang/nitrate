@@ -431,22 +431,22 @@
 //     }
 
 //     case IR_tF16_TY: {
-//       E = createFixedFloat(0.0f, FloatSize::F16);
+//       E = createFixedFloat(0.0f, 16);
 //       break;
 //     }
 
 //     case IR_tF32_TY: {
-//       E = createFixedFloat(0.0f, FloatSize::F32);
+//       E = createFixedFloat(0.0f, 32);
 //       break;
 //     }
 
 //     case IR_tF64_TY: {
-//       E = createFixedFloat(0.0f, FloatSize::F64);
+//       E = createFixedFloat(0.0f, 64);
 //       break;
 //     }
 
 //     case IR_tF128_TY: {
-//       E = createFixedFloat(0.0f, FloatSize::F128);
+//       E = createFixedFloat(0.0f, 128);
 //       break;
 //     }
 

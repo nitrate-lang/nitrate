@@ -123,7 +123,7 @@ namespace ncc::ir {
 
     constexpr auto getSize() const { return m_size; }
     constexpr uint128_t getValue() const { return m_value; }
-    std::string getValueString() const;
+    std::string getValueString() const { return m_value.str(); }
   };
 
   template <class A>
@@ -131,7 +131,7 @@ namespace ncc::ir {
     friend A;
 
     double m_data;
-    FloatSize m_size;
+    uint8_t m_size;
 
     static_assert(sizeof(double) == 8);
 
@@ -142,13 +142,13 @@ namespace ncc::ir {
     constexpr IR_Vertex_Float(string str) : IR_Vertex_Expr<A>(IR_eFLOAT) {
       m_data = std::stod(std::string(str));
       if (str->ends_with("f128")) {
-        m_size = FloatSize::F128;
+        m_size = 128;
       } else if (str->ends_with("f32")) {
-        m_size = FloatSize::F32;
+        m_size = 32;
       } else if (str->ends_with("f16")) {
-        m_size = FloatSize::F16;
+        m_size = 16;
       } else {
-        m_size = FloatSize::F64;
+        m_size = 64;
       }
     }
 
@@ -276,29 +276,28 @@ namespace ncc::ir {
     friend A;
 
     FlowPtr<IR_Vertex_Expr<A>> m_value;
-    string m_name;
-    AbiTag m_abi_tag;
+    string m_name, m_abi_name;
     StorageClass m_storage;
     bool m_readonly;
 
   public:
     constexpr IR_Vertex_Local(
-        auto name, auto value, auto abi_tag, auto readonly = false,
+        auto name, auto value, auto abi_name, auto readonly = false,
         auto storage_class = StorageClass::LLVM_StackAlloa)
         : IR_Vertex_Expr<A>(IR_eLOCAL),
           m_value(value),
           m_name(name),
-          m_abi_tag(abi_tag),
+          m_abi_name(abi_name),
           m_storage(storage_class),
           m_readonly(readonly) {}
 
     constexpr auto getName() const { return m_name.get(); }
     constexpr auto getValue() const { return m_value; }
-    constexpr auto getAbiTag() const { return m_abi_tag; }
+    constexpr auto getAbiName() const { return m_abi_name; }
     constexpr auto getStorageClass() const { return m_storage; }
     constexpr auto isReadonly() const { return m_readonly; }
 
-    constexpr void setAbiTag(auto abi_tag) { m_abi_tag = abi_tag; }
+    constexpr void setAbiName(auto abi_name) { m_abi_name = abi_name; }
     constexpr void setValue(auto value) { m_value = value; }
     constexpr void setName(auto name) { m_name = name; }
     constexpr void setStorageClass(auto storage) { m_storage = storage; }
@@ -445,26 +444,25 @@ namespace ncc::ir {
     std::span<std::pair<FlowPtr<IR_Vertex_Type<A>>, string>> m_params;
     NullableFlowPtr<IR_Vertex_Seq<A>> m_body;
     FlowPtr<IR_Vertex_Type<A>> m_return;
-    string m_name;
-    AbiTag m_abi_tag;
+    string m_name, m_abi_name;
     bool m_variadic;
 
   public:
     constexpr IR_Vertex_Function(auto name, auto params, auto ret_ty, auto body,
-                                 auto variadic, auto abi_tag)
+                                 auto variadic, auto abi_name)
         : IR_Vertex_Expr<A>(IR_eFUNCTION),
           m_params(params),
           m_body(body),
           m_return(ret_ty),
           m_name(name),
-          m_abi_tag(abi_tag),
+          m_abi_name(abi_name),
           m_variadic(variadic) {}
 
     constexpr auto getParams() const { return m_params; }
     constexpr auto getReturn() const { return m_return; }
     constexpr auto getBody() const { return m_body; }
     constexpr auto isVariadic() const { return m_variadic; }
-    constexpr auto getAbiTag() const { return m_abi_tag; }
+    constexpr auto getAbiName() const { return m_abi_name; }
     constexpr auto getName() const { return m_name.get(); }
 
     constexpr void setName(auto name) { m_name = name; }
@@ -472,7 +470,7 @@ namespace ncc::ir {
     constexpr void setReturn(auto ret_ty) { m_return = ret_ty; }
     constexpr void setBody(auto body) { m_body = body; }
     constexpr void setVariadic(auto variadic) { m_variadic = variadic; }
-    constexpr void setAbiTag(auto abi_tag) { m_abi_tag = abi_tag; }
+    constexpr void setAbiName(auto abi_name) { m_abi_name = abi_name; }
   };
 
   template <class A>

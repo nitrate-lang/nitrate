@@ -464,22 +464,22 @@ public:
 
   void visit(FlowPtr<Float> n) override {
     switch (n->getSize()) {
-      case FloatSize::F16: {
+      case 16: {
         R = getF16Ty();
         break;
       }
 
-      case FloatSize::F32: {
+      case 32: {
         R = getF32Ty();
         break;
       }
 
-      case FloatSize::F64: {
+      case 64: {
         R = getF64Ty();
         break;
       }
 
-      case FloatSize::F128: {
+      case 128: {
         R = getF128Ty();
         break;
       }

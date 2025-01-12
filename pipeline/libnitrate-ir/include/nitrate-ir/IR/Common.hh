@@ -148,13 +148,6 @@ namespace ncc::ir {
     Default = Nitrate,
   };
 
-  enum class FloatSize : uint8_t {
-    F16,
-    F32,
-    F64,
-    F128,
-  };
-
   template <class A>
   using IR_Vertex_CallArgs = std::vector<FlowPtr<IR_Vertex_Expr<A>>,
                                          Arena<FlowPtr<IR_Vertex_Expr<A>>>>;

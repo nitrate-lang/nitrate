@@ -283,7 +283,7 @@ namespace ncc::ir {
                             uint8_t width SOURCE_LOCATION_PARAM);
 
     Float *createFixedFloat(bigfloat_t value,
-                            FloatSize width SOURCE_LOCATION_PARAM);
+                            uint8_t width SOURCE_LOCATION_PARAM);
 
     List *createStringDataArray(
         std::string_view value,

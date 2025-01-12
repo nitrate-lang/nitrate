@@ -62,27 +62,27 @@
 // }
 
 // Float *NRBuilder::createFixedFloat(bigfloat_t value,
-//                                    FloatSize width SOURCE_LOCATION_PARAM) {
+//                                    uint8_t width SOURCE_LOCATION_PARAM) {
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
 
 //   // switch (width) {
-//   //   case FloatSize::F16: {
+//   //   case 16: {
 //   //     contract_enforce(value >= -65504 && value <= 65504 &&
 //   //                      "This might be a bug?");
 //   //     break;
 //   //   }
-//   //   case FloatSize::F32: {
+//   //   case 32: {
 //   //     contract_enforce(value >= std::numeric_limits<_Float32>::min() &&
 //   //                      value <= std::numeric_limits<_Float32>::max());
 //   //     break;
 //   //   }
-//   //   case FloatSize::F64: {
+//   //   case 64: {
 //   //     contract_enforce(value >= std::numeric_limits<_Float64>::min() &&
 //   //                      value <= std::numeric_limits<_Float64>::max());
 //   //     break;
 //   //   }
-//   //   case FloatSize::F128: {
+//   //   case 128: {
 //   //     /// FIXME: Find out how to verify
 //   //     break;
 //   //   }

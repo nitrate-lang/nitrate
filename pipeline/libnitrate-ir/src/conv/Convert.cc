@@ -441,7 +441,7 @@ using namespace ncc;
 //     case OpSizeof: {
 //       auto bits = ir::create<ir::Unary>(rhs, ir::Op::Bitsizeof, false);
 //       auto arg = ir::create<ir::BinExpr>(
-//           bits, ir::create<ir::Float>(8, ir::FloatSize::F64), ir::Op::Slash);
+//           bits, ir::create<ir::Float>(8, 64), ir::Op::Slash);
 
 //       std::array<std::pair<std::string_view, Expr *>, 1> args;
 //       args[0] = {"_0", arg};
@@ -522,12 +522,12 @@ using namespace ncc;
 //               boost::multiprecision::cpp_int(N->get_value()), it->second);
 //         }
 //       } else {
-//         static const std::unordered_map<npar_ty_t, FloatSize>
+//         static const std::unordered_map<npar_ty_t, uint8_t>
 //             float_lit_suffixes = {{
-//                 {QAST_F16, FloatSize::F16},
-//                 {QAST_F32, FloatSize::F32},
-//                 {QAST_F64, FloatSize::F64},
-//                 {QAST_F128, FloatSize::F128},
+//                 {QAST_F16, 16},
+//                 {QAST_F32, 32},
+//                 {QAST_F64, 64},
+//                 {QAST_F128, 128},
 //             }};
 
 //         auto it = float_lit_suffixes.find(type->getKind());
@@ -669,7 +669,7 @@ using namespace ncc;
 // static EResult nrgen_float(NRBuilder &b, PState &, IReport *,
 //                            FlowPtr<ncc::parse::ConstFloat> n) {
 //   boost::multiprecision::cpp_dec_float_100 num(n->get_value());
-//   return b.createFixedFloat(num, FloatSize::F64);
+//   return b.createFixedFloat(num, 64);
 // }
 
 // static EResult nrgen_string(NRBuilder &b, PState &, IReport *,

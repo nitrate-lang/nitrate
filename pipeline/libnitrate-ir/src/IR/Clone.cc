@@ -197,11 +197,11 @@ public:
   void visit(FlowPtr<Local> n) override {
     auto name = n->getName();
     auto value = n->getValue()->clone();
-    auto abi_tag = n->getAbiTag();
+    auto abi_name = n->getAbiName();
     auto readonly = n->isReadonly();
     auto storage_class = n->getStorageClass();
 
-    R = create<Local>(name, value, abi_tag, readonly, storage_class);
+    R = create<Local>(name, value, abi_name, readonly, storage_class);
   }
 
   void visit(FlowPtr<Ret> n) override {
@@ -271,10 +271,11 @@ public:
         n->getBody().has_value() ? n->getBody().value()->clone<Seq>() : nullptr;
     auto return_type = n->getReturn()->clone<Type>();
     auto name = n->getName();
-    auto abi_tag = n->getAbiTag();
+    auto abi_name = n->getAbiName();
     auto is_variadic = n->isVariadic();
 
-    R = create<Function>(name, params, return_type, body, is_variadic, abi_tag);
+    R = create<Function>(name, params, return_type, body, is_variadic,
+                         abi_name);
   }
 
   void visit(FlowPtr<Asm>) override {
