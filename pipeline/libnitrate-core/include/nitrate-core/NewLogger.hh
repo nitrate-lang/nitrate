@@ -50,7 +50,7 @@ namespace ncc {
   enum Sev {
     Trace,  /* Low-value, high-volume debug info (malloc, free, ...)*/
     Debug,  /* High-value, mid-volume debug info (init, major API calls, ...) */
-    Info,   /* Relevant some like: upcoming feature notice, did you know? */
+    Info,   /* Examples: upcoming feature notice, did you know about...? */
     Notice, /* Examples: Bad design choice, suboptimal code, ... */
     Warning,  /* Example: Design likely to cause problems, horrible code, ... */
     Error,    /* Example: Missing semicolon after statement */
@@ -70,6 +70,10 @@ namespace ncc {
     constexpr EC get() const { return m_ec; };
   };
 
+  using LogFormatterFunc = std::function<std::string(std::string_view, Sev)>;
+
+  std::string Formatter(std::string_view msg, Sev sev);
+
   class ECBase {
     struct Details {
       std::vector<std::string> tags, fixes, examples, dev_notes, notes;
@@ -86,10 +90,12 @@ namespace ncc {
 
   protected:
     virtual ECUnique GetIdentity(void) const = 0;
+
     virtual std::optional<std::string_view> GetDetailsPath(void) const {
       return std::nullopt;
     }
 
+    virtual LogFormatterFunc GetFormatter() const = 0;
     void GetJsonRepresentation(std::ostream &os) const;
     void Finalize(void);
 
@@ -107,33 +113,42 @@ namespace ncc {
     constexpr auto examples() const { return std::span(m_details.examples); }
     constexpr auto dev_notes() const { return std::span(m_details.dev_notes); }
     constexpr auto user_notes() const { return std::span(m_details.notes); }
+
+    std::string format(std::string_view msg, Sev sev) const {
+      return GetFormatter()(msg, sev);
+    }
   };
 
-#define NCC_EC_DOMAIN(name)                         \
-  class name : public ncc::ECBase {                 \
-  protected:                                        \
-    ncc::ECUnique GetIdentity() const override = 0; \
+#define NCC_EC_DOMAIN(name)                                  \
+  class name : public ncc::ECBase {                          \
+  protected:                                                 \
+    ncc::ECUnique GetIdentity() const override = 0;          \
+    ncc::LogFormatterFunc GetFormatter() const override = 0; \
   };
 
 #define NCC_EC(domain, name)                                               \
   static inline class name##Class final : public domain {                  \
   protected:                                                               \
     ncc::ECUnique GetIdentity() const override { return ncc::ECUnique(); } \
+    ncc::LogFormatterFunc GetFormatter() const override {                  \
+      return ncc::Formatter;                                               \
+    }                                                                      \
                                                                            \
   public:                                                                  \
     constexpr name##Class() { Finalize(); }                                \
   } name;
 
-#define NCC_EC_EX(domain, name, metadata_path)                             \
-  static inline class name##Class final : public domain {                  \
-  protected:                                                               \
-    ncc::ECUnique GetIdentity() const override { return ncc::ECUnique(); } \
-    std::optional<std::string_view> GetDetailsPath() const override {      \
-      return std::string_view(metadata_path);                              \
-    }                                                                      \
-                                                                           \
-  public:                                                                  \
-    constexpr name##Class() { Finalize(); }                                \
+#define NCC_EC_EX(domain, name, formatter, detail_path)                       \
+  static inline class name##Class final : public domain {                     \
+  protected:                                                                  \
+    ncc::ECUnique GetIdentity() const override { return ncc::ECUnique(); }    \
+    ncc::LogFormatterFunc GetFormatter() const override { return formatter; } \
+    std::optional<std::string_view> GetDetailsPath() const override {         \
+      return std::string_view(detail_path);                                   \
+    }                                                                         \
+                                                                              \
+  public:                                                                     \
+    constexpr name##Class() { Finalize(); }                                   \
   } name;
 
   NCC_EC_DOMAIN(CoreEC);
@@ -142,7 +157,7 @@ namespace ncc {
   ///=========================================================================///
 
   using LogCallback =
-      std::function<void(std::string_view, Sev, const ECBase &)>;
+      std::function<void(const std::string &, Sev, const ECBase &)>;
 
   class LogStream final {
     std::stringstream m_ss;
@@ -172,10 +187,10 @@ namespace ncc {
     }
   };
 
-  using LogFilterFunc = bool (*)(std::string_view, Sev, const ECBase &);
+  using LogFilterFunc = bool (*)(const std::string &, Sev, const ECBase &);
 
 #define NCC_EC_FILTER(name, msg, sev, ec) \
-  static inline bool name(std::string_view msg, Sev sev, const ECBase &ec)
+  static inline bool name(const std::string &msg, Sev sev, const ECBase &ec)
 
   class CPP_EXPORT LoggerContext final {
     std::vector<LogCallback> m_subscribers;
@@ -197,17 +212,19 @@ namespace ncc {
 
     void operator+=(LogFilterFunc filter) { add_filter(filter); }
     void operator-=(LogFilterFunc filter) { remove_filter(filter); }
+    void operator+=(LogCallback cb) { subscribe(cb); }
 
     void enable() { m_enabled = true; }
     void disable() { m_enabled = false; }
     bool enabled() const { return m_enabled; }
 
-    void publish(std::string_view msg, Sev sev, const ECBase &ec) const;
+    void publish(const std::string &msg, Sev sev, const ECBase &ec) const;
   };
 
   LogStream operator<<(LoggerContext log, const auto &value) {
-    LogStream stream(
-        [&](auto msg, auto sev, const auto &ec) { log.publish(msg, sev, ec); });
+    LogStream stream([log](auto msg, auto sev, const auto &ec) {
+      log.publish(msg, sev, ec);
+    });
 
     stream.write(value);
 
@@ -219,7 +236,7 @@ namespace ncc {
     return std::move(stream);
   };
 
-  static inline thread_local LoggerContext log;
+  extern thread_local LoggerContext log;
 }  // namespace ncc
 
 #endif

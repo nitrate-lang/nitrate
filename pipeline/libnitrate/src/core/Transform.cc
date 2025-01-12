@@ -138,8 +138,6 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
   /* Setup thread-local shared environment                                   */
   /***************************************************************************/
 
-  auto env = std::make_shared<ncc::Environment>();
-
   struct LoggerCtx {
     nit_diag_func diag_cb;
     void *opaque;
@@ -151,6 +149,12 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
         logger_ctx.diag_cb(msg, logger_ctx.opaque);
       },
       &logger_ctx);
+
+  ncc::log += [&](auto msg, auto sev, const auto &ec) {
+    diag_cb(ec.format(msg, sev).c_str(), opaque);
+  };
+
+  auto env = std::make_shared<ncc::Environment>();
 
   /***************************************************************************/
   /* Transform                                                               */

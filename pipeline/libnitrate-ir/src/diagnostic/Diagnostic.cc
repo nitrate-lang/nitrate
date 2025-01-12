@@ -71,7 +71,7 @@ struct IssueInfo {
 
 const boost::bimap<IssueCode, IssueInfo> issue_info =
     make_bimap<IssueCode, IssueInfo>({
-        {Info, {"info", "%s", {}}},
+        {IssueCode::Info, {"info", "%s", {}}},
         {CompilerError,
          {"error", "An error occurred during compilation: %s", {}}},
         {PTreeInvalid, {"ptree-invalid", "%s", {}}},

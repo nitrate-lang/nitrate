@@ -35,6 +35,12 @@
 
 using namespace ncc;
 
+CPP_EXPORT thread_local LoggerContext ncc::log;
+
+CPP_EXPORT std::string ncc::Formatter(std::string_view msg, Sev sev) {
+  return std::string(msg);
+}
+
 CPP_EXPORT ECUnique::ECUnique(std::source_location loc) {
   std::stringstream ss;
   ss << loc.file_name() << ":" << loc.line() << ":" << loc.column();
@@ -128,10 +134,11 @@ void LoggerContext::remove_filter(LogFilterFunc filter) {
 
 void LoggerContext::clear_filters() { m_filters.clear(); }
 
-void LoggerContext::publish(std::string_view msg, Sev sev,
+void LoggerContext::publish(const std::string &msg, Sev sev,
                             const ECBase &ec) const {
   if (m_enabled) {
-    bool emit = std::all_of(m_filters.begin(), m_filters.end(),
+    bool emit = m_filters.empty() ||
+                std::all_of(m_filters.begin(), m_filters.end(),
                             [&](const auto &f) { return f(msg, sev, ec); });
 
     if (emit) {
