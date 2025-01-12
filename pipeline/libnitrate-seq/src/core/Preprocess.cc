@@ -143,7 +143,7 @@ void qprep_impl_t::expand_raw(std::string_view code) {
     std::vector<Token> tokens;
 
     {
-      qprep_impl_t clone(ss, m_env, "?", false);
+      qprep_impl_t clone(ss, m_env, false);
       clone.m_core = m_core;
       clone.m_core->m_depth = m_core->m_depth + 1;
 
@@ -351,12 +351,10 @@ void qprep_impl_t::install_lua_api() {
 
 CPP_EXPORT qprep_impl_t::qprep_impl_t(std::istream &file,
                                       std::shared_ptr<ncc::Environment> env,
-                                      const char *filename, bool is_root)
+                                      bool is_root)
     : ncc::lex::IScanner(env) {
   m_core = std::make_shared<Core>();
   m_scanner = std::make_unique<Tokenizer>(file, env);
-
-  (void)filename;
 
   if (is_root) {
     { /* Create the Lua state */

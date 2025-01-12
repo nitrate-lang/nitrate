@@ -87,7 +87,7 @@ struct qprep_impl_t final : public ncc::lex::IScanner {
 
 public:
   qprep_impl_t(std::istream &file, std::shared_ptr<ncc::Environment> env,
-               const char *filename, bool is_root = true);
+               bool is_root = true);
   virtual ~qprep_impl_t() override;
 
   void SkipCommentsState(bool skip) override {

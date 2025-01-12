@@ -252,7 +252,7 @@ static int do_parse(std::shared_ptr<Environment> &env, std::string source,
     return 1;
   }
 
-  qprep lexer(file, "in", env);
+  qprep lexer(file, env);
   auto parser = Parser::Create(*lexer.get(), env);
 
   auto ast = parser->parse();
@@ -278,7 +278,7 @@ static int do_nr(std::shared_ptr<Environment> &env, std::string source,
     return 1;
   }
 
-  qprep lexer(file, "in", env);
+  qprep lexer(file, env);
   auto parser = Parser::Create(*lexer.get(), env);
 
   auto ast = parser->parse();
@@ -315,7 +315,7 @@ static int do_codegen(std::shared_ptr<Environment> &env, std::string source,
     return 1;
   }
 
-  qprep lexer(file, "in", env);
+  qprep lexer(file, env);
   auto parser = Parser::Create(*lexer.get(), env);
 
   auto ast = parser->parse();

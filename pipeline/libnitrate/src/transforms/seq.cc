@@ -46,7 +46,7 @@ extern bool impl_use_msgpack(IScanner *L, std::ostream &O);
 extern bool impl_use_json(IScanner *L, std::ostream &O);
 
 CREATE_TRANSFORM(nit::seq) {
-  qprep lexer(source, nullptr, env);
+  qprep lexer(source, env);
 
   enum class OutMode {
     JSON,
