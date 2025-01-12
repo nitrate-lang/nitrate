@@ -31,13 +31,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/NewLogger.hh>
-#include <nitrate-core/OldLogger.hh>
+#include <nitrate-parser/EC.hh>
 
-using namespace ncc;
+CPP_EXPORT std::string ncc::parse::ec::Formatter(std::string_view msg,
+                                                 Sev sev) {
+  (void)sev;
+  /// TODO: Implement formatter
 
-std::optional<ECBase::Details> ECBase::LoadDetailsFromFile(
-    std::string_view path) {
-  /// TODO: Load details from file
-  return std::nullopt;
+  return std::string(msg);
 }
