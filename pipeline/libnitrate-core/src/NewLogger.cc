@@ -31,10 +31,79 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_CORE_LOGGER_H__
-#define __NITRATE_CORE_LOGGER_H__
-
+#include <nitrate-core/Macro.hh>
 #include <nitrate-core/NewLogger.hh>
 #include <nitrate-core/OldLogger.hh>
+#include <sstream>
+#include <string>
 
-#endif  // __NITRATE_CORE_LOGGER_H__
+using namespace ncc;
+
+CPP_EXPORT ECUnique::ECUnique(std::source_location loc) {
+  std::stringstream ss;
+  ss << loc.file_name() << ":" << loc.line() << ":" << loc.column();
+  m_ec = std::hash<std::string>{}(ss.str());
+}
+
+CPP_EXPORT void ECBase::GetJsonRepresentation(std::ostream &os) const {
+  os << "{\"flagname\":\"" << flag_name() << "\",\"nice_name\":\""
+     << nice_name() << "\",\"details\":\"" << details()
+     << "\",\"severity\":" << static_cast<int>(severity()) << ",\"tags\":[";
+  for (auto it = tags().begin(); it != tags().end(); ++it) {
+    os << "\"" << *it << "\"";
+    if (it + 1 != tags().end()) {
+      os << ",";
+    }
+  }
+  os << "],\"fixes\":[";
+  for (auto it = fixes().begin(); it != fixes().end(); ++it) {
+    os << "\"" << *it << "\"";
+    if (it + 1 != fixes().end()) {
+      os << ",";
+    }
+  }
+  os << "],\"examples\":[";
+  for (auto it = examples().begin(); it != examples().end(); ++it) {
+    os << "\"" << *it << "\"";
+    if (it + 1 != examples().end()) {
+      os << ",";
+    }
+  }
+  os << "],\"dev_notes\":[";
+  for (auto it = dev_notes().begin(); it != dev_notes().end(); ++it) {
+    os << "\"" << *it << "\"";
+    if (it + 1 != dev_notes().end()) {
+      os << ",";
+    }
+  }
+  os << "],\"user_notes\":[";
+  for (auto it = user_notes().begin(); it != user_notes().end(); ++it) {
+    os << "\"" << *it << "\"";
+    if (it + 1 != user_notes().end()) {
+      os << ",";
+    }
+  }
+  os << "]}";
+}
+
+CPP_EXPORT void ECBase::Finalize(void) {
+  m_ec = GetIdentity().get();
+
+  /* Try to load information about the error from disk */
+  if (auto path = GetDetailsPath(); path.has_value()) {
+    if (auto details = LoadDetailsFromFile(*path); details.has_value()) {
+      m_details = *details;
+    }
+  }
+
+  /* Generate JSON representation */
+  std::ostringstream oss;
+  GetJsonRepresentation(oss);
+  m_json = oss.str();
+}
+
+std::optional<ECBase::Details> ECBase::LoadDetailsFromFile(
+    std::string_view path) {
+  /// TODO: Load details from file
+  qcore_implement();
+}

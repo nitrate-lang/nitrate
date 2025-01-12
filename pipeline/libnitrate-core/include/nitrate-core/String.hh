@@ -83,6 +83,10 @@ namespace ncc {
       m_id = str.empty() ? 0 : StringMemory::FromString(std::move(str));
     }
 
+    constexpr auto_intern(const std::string &str) {
+      m_id = str.empty() ? 0 : StringMemory::FromString(str);
+    }
+
     constexpr auto_intern(const char *str) {
       if (str[0] == '\0') {
         m_id = 0;
