@@ -463,7 +463,7 @@ void IR_Writer::visit(FlowPtr<FnTy> n) {
 
   write_source_location(n);
 
-  string("params");
+  string("parameters");
 
   auto params = n->getParams();
   begin_arr(params.size());
@@ -806,7 +806,7 @@ void IR_Writer::visit(FlowPtr<Function> n) {
   string("abi_name");
   string(n->getAbiName());
 
-  string("params");
+  string("parameters");
   auto params = n->getParams();
   begin_arr(params.size());
 
@@ -869,7 +869,7 @@ void IR_Writer::visit(FlowPtr<Tmp> n) {
     string("base");
     data.base->accept(*this);
 
-    string("args");
+    string("arguments");
     auto args = data.args;
     begin_arr(args.size());
 

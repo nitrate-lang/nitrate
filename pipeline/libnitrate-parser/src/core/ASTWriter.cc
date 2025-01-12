@@ -245,7 +245,7 @@ void AST_Writer::visit(FlowPtr<TemplType> n) {
   string("template");
   n->get_template().accept(*this);
 
-  string("args");
+  string("arguments");
   auto args = n->get_args();
   begin_arr(args.size());
   std::for_each(args.begin(), args.end(), [&](auto arg) {
@@ -640,7 +640,7 @@ void AST_Writer::visit(FlowPtr<FuncTy> n) {
     boolean(n->is_variadic());
 
     auto params = n->get_params();
-    string("params");
+    string("parameters");
     begin_arr(params.size());
     std::for_each(params.begin(), params.end(), [&](auto param) {
       begin_obj(3);
@@ -841,7 +841,7 @@ void AST_Writer::visit(FlowPtr<Call> n) {
   n->get_func().accept(*this);
 
   { /* Write arguments */
-    string("args");
+    string("arguments");
 
     auto args = n->get_args();
     begin_arr(args.size());
@@ -886,7 +886,7 @@ void AST_Writer::visit(FlowPtr<TemplCall> n) {
   }
 
   { /* Write arguments */
-    string("args");
+    string("arguments");
 
     auto args = n->get_args();
     begin_arr(args.size());
@@ -1140,11 +1140,11 @@ void AST_Writer::visit(FlowPtr<InlineAsm> n) {
 
   write_source_location(n);
 
-  string("code");
+  string("assembly");
   string(n->get_code());
 
   { /* Write arguments */
-    string("params");
+    string("parameters");
 
     auto args = n->get_args();
     begin_arr(args.size());
@@ -1382,7 +1382,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
   write_source_location(n);
 
   { /* Write attributes */
-    string("attrs");
+    string("attributes");
 
     auto attrs = n->get_attributes();
     begin_arr(attrs.size());
@@ -1495,7 +1495,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
     boolean(n->is_variadic());
 
     auto params = n->get_params();
-    string("params");
+    string("parameters");
     begin_arr(params.size());
     std::for_each(params.begin(), params.end(), [&](auto param) {
       begin_obj(3);
@@ -1586,7 +1586,7 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
   }
 
   { /* Write attributes */
-    string("attrs");
+    string("attributes");
     auto attrs = n->get_attributes();
 
     begin_arr(attrs.size());
@@ -1650,7 +1650,7 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
       field.get_value().has_value() ? field.get_value().value().accept(*this)
                                     : null();
 
-      string("vis");
+      string("visibility");
       string(vis_str(field.get_vis()));
 
       end_obj();
@@ -1666,7 +1666,7 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
     std::for_each(methods.begin(), methods.end(), [&](auto method) {
       begin_obj(2);
 
-      string("vis");
+      string("visibility");
       string(vis_str(method.vis));
 
       string("method");
@@ -1678,14 +1678,14 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
   }
 
   { /* Write static methods */
-    string("statics");
+    string("static-methods");
 
     auto statics = n->get_static_methods();
     begin_arr(statics.size());
     std::for_each(statics.begin(), statics.end(), [&](auto method) {
       begin_obj(2);
 
-      string("vis");
+      string("visibility");
       string(vis_str(method.vis));
 
       string("method");
@@ -1772,11 +1772,11 @@ void AST_Writer::visit(FlowPtr<ExportStmt> n) {
   string("abi");
   string(n->get_abi_name());
 
-  string("vis");
+  string("visibility");
   string(vis_str(n->get_vis()));
 
   { /* Write attributes */
-    string("attrs");
+    string("attributes");
 
     auto attrs = n->get_attrs();
     begin_arr(attrs.size());

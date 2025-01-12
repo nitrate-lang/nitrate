@@ -130,8 +130,6 @@ static constexpr std::optional<std::string> unescape_string_slice(
 
 static std::optional<std::pair<Token, std::string>> find_and_decode_token(
     std::string_view buf) {
-  /// TODO: Test this function
-
   std::string_view orig_buf = buf;
 
   auto pos = buf.find("${T:{\"type\":");
