@@ -31,89 +31,158 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <rapidjson/document.h>
-#include <rapidjson/istreamwrapper.h>
-
-#include <functional>
-#include <iostream>
+#include <cstddef>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/ASTReader.hh>
+#include <nlohmann/json.hpp>
+#include <stack>
 
 using namespace ncc::parse;
+using namespace nlohmann;
 
-void AST_JsonReader::parse_stream(std::istream& is) {
-  rapidjson::Document doc;
-  rapidjson::IStreamWrapper wrapper(is);
-  doc.ParseStream(wrapper);
+using JsonRange = std::pair<json::const_iterator, json::const_iterator>;
 
-  std::function<bool(const rapidjson::Value& obj)> handle_value =
-      [&](const rapidjson::Value& obj) -> bool {
-    switch (obj.GetType()) {
-      case rapidjson::kNullType: {
-        null();
-        return true;
-      }
-
-      case rapidjson::kFalseType: {
-        boolean(false);
-        return true;
-      }
-
-      case rapidjson::kTrueType: {
-        boolean(true);
-        return true;
-      }
-
-      case rapidjson::kObjectType: {
-        begin_obj(obj.MemberCount());
-        for (let member : obj.GetObject()) {
-          if (member.name.IsString()) {
-            str(std::string_view(member.name.GetString(),
-                                 member.name.GetStringLength()));
-          } else {
-            return false;
-          }
-          handle_value(member.value);
-        }
-        end_obj();
-        return true;
-      }
-
-      case rapidjson::kArrayType: {
-        begin_arr(obj.Size());
-        for (let elem : obj.GetArray()) {
-          handle_value(elem);
-        }
-        end_arr();
-        return true;
-      }
-
-      case rapidjson::kStringType: {
-        str(std::string_view(obj.GetString(), obj.GetStringLength()));
-        return true;
-      }
-
-      case rapidjson::kNumberType: {
-        if (obj.IsUint64()) {
-          uint(obj.GetUint64());
-          return true;
-        } else {
-          return false;
-        }
-      }
+static std::optional<AST_Reader::Value> JsonToValue(json v) {
+  switch (v.type()) {
+    case json::value_t::null: {
+      return AST_Reader::Value(nullptr);
     }
-  };
 
-  if (!doc.HasParseError()) {
-    handle_value(doc);
+    case json::value_t::object:
+    case json::value_t::array: {
+      return std::nullopt;
+    }
+
+    case json::value_t::string: {
+      return AST_Reader::Value(v.get<std::string>());
+    }
+
+    case json::value_t::boolean: {
+      return AST_Reader::Value(v.get<bool>());
+    }
+
+    case json::value_t::number_integer: {
+      return std::nullopt;
+    }
+
+    case json::value_t::number_unsigned: {
+      return AST_Reader::Value(v.get<uint64_t>());
+    }
+
+    case json::value_t::number_float: {
+      return AST_Reader::Value(v.get<double>());
+    }
+
+    case json::value_t::binary: {
+      return std::nullopt;
+    }
+
+    case json::value_t::discarded: {
+      return std::nullopt;
+    }
   }
 }
 
-///===========================================================================///
+static void FlattenJsonObject(
+    const json& obj, std::stack<std::variant<JsonRange, json>>& stack) {
+  std::vector<std::variant<JsonRange, json>> buf(obj.size() * 2);
+  size_t i = 0;
 
-void AST_MsgPackReader::parse_stream(std::istream& is) {
-  (void)is;
-  /// TODO: Implement MsgPack parsing
-  qcore_implement();
+  for (const auto& [key, val] : obj.items()) {
+    buf[i++] = key;
+    buf[i++] = val;
+  }
+
+  for (auto it = buf.rbegin(); it != buf.rend(); ++it) {
+    stack.push(*it);
+  }
+}
+
+static std::optional<AST_Reader::Value> GetNextValueImpl(
+    std::stack<std::variant<JsonRange, json>>& stack) {
+  /* Flatten the JSON data structure as-if doing a depth-first traversal */
+  using Value = AST_Reader::Value;
+
+/* Use GOTO to ensure recursive stack frames are created */
+FunctionStart:
+
+  if (stack.empty()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  if (std::holds_alternative<json>(stack.top())) {
+    const auto value = std::get<json>(stack.top());
+    stack.pop();
+    return JsonToValue(std::move(value));
+  } else {
+    auto& [it, end] = std::get<JsonRange>(stack.top());
+
+    /* End of structured object */
+    if (it == end) {
+      stack.pop();
+      goto FunctionStart;
+    }
+
+    const auto& value = *it++;
+
+    if (value.is_array()) {
+      /* Preceed the array elements with the array size */
+      stack.push(JsonRange{value.begin(), value.end()});
+      return Value(value.size());
+    } else if (value.is_object()) {
+      FlattenJsonObject(value, stack);
+      goto FunctionStart;
+    }
+
+    return JsonToValue(std::move(value));
+  }
+}
+
+///=============================================================================
+
+struct AST_JsonReader::PImpl {
+  json m_json;
+  std::stack<std::variant<JsonRange, json>> stack;
+};
+
+AST_JsonReader::AST_JsonReader(std::istream& is,
+                               ReaderSourceManager source_manager)
+    : AST_Reader([&]() { return ReadValue(); }, source_manager), m_is(is) {
+  m_pimpl = std::make_unique<PImpl>();
+  m_pimpl->m_json = json::parse(is, nullptr, false);
+
+  if (!m_pimpl->m_json.is_discarded() && m_pimpl->m_json.is_object()) {
+    FlattenJsonObject(m_pimpl->m_json, m_pimpl->stack);
+  }
+}
+
+AST_JsonReader::~AST_JsonReader() = default;
+
+std::optional<AST_Reader::Value> AST_JsonReader::ReadValue() {
+  return GetNextValueImpl(m_pimpl->stack);
+}
+
+///=============================================================================
+
+struct AST_MsgPackReader::PImpl {
+  json m_json;
+  std::stack<std::variant<JsonRange, json>> stack;
+};
+
+AST_MsgPackReader::AST_MsgPackReader(std::istream& is,
+                                     ReaderSourceManager source_manager)
+    : AST_Reader([&]() { return ReadValue(); }, source_manager), m_is(is) {
+  m_pimpl = std::make_unique<PImpl>();
+  m_pimpl->m_json = json::from_msgpack(is, true, false);
+
+  if (!m_pimpl->m_json.is_discarded() && m_pimpl->m_json.is_object()) {
+    FlattenJsonObject(m_pimpl->m_json, m_pimpl->stack);
+  }
+}
+
+AST_MsgPackReader::~AST_MsgPackReader() = default;
+
+std::optional<AST_Reader::Value> AST_MsgPackReader::ReadValue() {
+  return GetNextValueImpl(m_pimpl->stack);
 }

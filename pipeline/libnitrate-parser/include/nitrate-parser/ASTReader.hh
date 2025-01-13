@@ -39,10 +39,8 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
 #include <nitrate-lexer/Lexer.hh>
-#include <nitrate-parser/ASTVisitor.hh>
+#include <nitrate-parser/ASTBase.hh>
 #include <optional>
-#include <queue>
-#include <stack>
 #include <variant>
 
 namespace ncc::parse {
@@ -50,10 +48,11 @@ namespace ncc::parse {
       std::optional<std::reference_wrapper<lex::IScanner>>;
 
   class NCC_EXPORT AST_Reader {
+  public:
+    using none = std::nullptr_t;
+
     class Value {
-      using Data =
-          std::variant<std::string, uint64_t, double, bool, std::nullptr_t,
-                       std::vector<Value>, FlowPtr<Base>>;
+      using Data = std::variant<std::string, uint64_t, double, bool, none>;
       Data m_data;
 
     public:
@@ -62,17 +61,34 @@ namespace ncc::parse {
 
       Data& operator()() { return m_data; }
       const Data& operator()() const { return m_data; }
-
       bool operator==(const Value& o) const { return m_data == o.m_data; }
     };
 
-    enum class Mode : uint8_t { InsideArray, NotInsideArray };
-    using State = std::pair<Mode, std::queue<Value>>;
-    static inline State NewObjectState = {Mode::NotInsideArray,
-                                          std::queue<Value>()};
+    using NextFunc = std::function<std::optional<Value>()>;
 
-    std::stack<State> m_stack;
+  private:
+    NextFunc m_next_func;
+    std::optional<Value> m_peek;
     ReaderSourceManager m_source;
+    std::optional<FlowPtr<Base>> m_root;
+
+    std::optional<Value> next_value() {
+      if (m_peek.has_value()) {
+        auto val = m_peek;
+        m_peek.reset();
+        return val;
+      }
+
+      return m_next_func();
+    }
+
+    std::optional<Value> peek_value() {
+      if (!m_peek.has_value()) {
+        m_peek = m_next_func();
+      }
+
+      return m_peek;
+    }
 
     struct LocationRange {
       lex::Location start, end;
@@ -151,8 +167,6 @@ namespace ncc::parse {
     NullableFlowPtr<Base> ReadKind_Switch();
     NullableFlowPtr<Base> ReadKind_ExprStmt();
 
-    void push_value(Value&& value);
-
 #ifdef AST_READER_IMPL
 #undef next_if
 
@@ -168,94 +182,91 @@ namespace ncc::parse {
     };
 
     template <typename ValueType>
-    constexpr StrongBool next_if(const ValueType& v) {
-      auto& tokens = m_stack.top().second;
-
-      if (!tokens.empty() &&
-          std::holds_alternative<ValueType>(tokens.front()()) &&
-          tokens.front() == v) {
-        tokens.pop();
-        return StrongBool(true);
+    constexpr StrongBool next_if(const ValueType& v = ValueType()) {
+      if (auto n = next_value()) {
+        if (std::holds_alternative<ValueType>(n->operator()()) &&
+            std::get<ValueType>(n->operator()()) == v) {
+          return StrongBool(true);
+        }
       }
 
       return StrongBool(false);
     }
 
     template <typename ValueType>
-    constexpr StrongBool next_is() const {
-      const auto& tokens = m_stack.top().second;
-      return StrongBool{std::holds_alternative<ValueType>(tokens.front()())};
+    constexpr StrongBool next_is() {
+      if (auto n = peek_value()) {
+        if (std::holds_alternative<ValueType>(n->operator()())) {
+          return StrongBool(true);
+        }
+      }
+
+      return StrongBool(false);
     }
 
     template <typename ValueType>
     constexpr ValueType next() {
-      auto& tokens = m_stack.top().second;
-      auto value = std::get<ValueType>(tokens.front()());
-      tokens.pop();
+      if (auto n = next_value()) {
+        if (std::holds_alternative<ValueType>(n->operator()())) {
+          return std::get<ValueType>(n->operator()());
+        }
+      }
 
-      return value;
+      qcore_panic("Attempted to read value of incorrect type");
     }
 
 #endif
 
-  protected:
-    void str(std::string_view str);
-    void uint(uint64_t val);
-    void dbl(double val);
-    void boolean(bool val);
-    void null();
-    void begin_obj(size_t pair_count);
-    void end_obj();
-    void begin_arr(size_t size);
-    void end_arr();
-
   public:
-    AST_Reader(ReaderSourceManager source_manager) : m_source(source_manager) {
-      m_stack.push(NewObjectState);
-    }
+    AST_Reader(NextFunc data_source, ReaderSourceManager source_manager)
+        : m_next_func(data_source), m_source(source_manager) {}
     virtual ~AST_Reader() = default;
 
     std::optional<FlowPtr<Base>> get();
   };
 
   class NCC_EXPORT AST_JsonReader final : public AST_Reader {
-    void parse_stream(std::istream& is);
+    std::optional<Value> ReadValue();
+    std::istream& m_is;
+
+    struct PImpl;
+    std::unique_ptr<PImpl> m_pimpl;
 
   public:
     AST_JsonReader(std::istream& is,
-                   ReaderSourceManager source_manager = std::nullopt)
-        : AST_Reader(source_manager) {
-      parse_stream(is);
+                   ReaderSourceManager source_manager = std::nullopt);
+
+    static std::optional<FlowPtr<Base>> FromString(
+        const std::string& json,
+        ReaderSourceManager source_manager = std::nullopt) {
+      std::istringstream is(json);
+      AST_JsonReader reader(is, source_manager);
+      return reader.get();
     }
 
-    AST_JsonReader(const std::string& in,
-                   ReaderSourceManager source_manager = std::nullopt)
-        : AST_Reader(source_manager) {
-      std::istringstream is(in);
-      parse_stream(is);
-    }
-
-    virtual ~AST_JsonReader() = default;
+    virtual ~AST_JsonReader();
   };
 
   class NCC_EXPORT AST_MsgPackReader final : public AST_Reader {
-    void parse_stream(std::istream& is);
+    std::optional<Value> ReadValue();
+    std::istream& m_is;
+
+    struct PImpl;
+    std::unique_ptr<PImpl> m_pimpl;
 
   public:
     AST_MsgPackReader(std::istream& is,
-                      ReaderSourceManager source_manager = std::nullopt)
-        : AST_Reader(source_manager) {
-      parse_stream(is);
+                      ReaderSourceManager source_manager = std::nullopt);
+
+    static std::optional<FlowPtr<Base>> FromString(
+        const std::string& msgpack,
+        ReaderSourceManager source_manager = std::nullopt) {
+      std::istringstream is(msgpack);
+      AST_MsgPackReader reader(is, source_manager);
+      return reader.get();
     }
 
-    AST_MsgPackReader(const std::string& in,
-                      ReaderSourceManager source_manager = std::nullopt)
-        : AST_Reader(source_manager) {
-      std::istringstream is(in);
-      parse_stream(is);
-    }
-
-    virtual ~AST_MsgPackReader() = default;
+    virtual ~AST_MsgPackReader();
   };
 }  // namespace ncc::parse
 

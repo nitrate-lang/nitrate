@@ -42,69 +42,32 @@
 using namespace ncc;
 using namespace ncc::parse;
 
-void AST_Reader::push_value(Value&& value) {
-  bool inside_array = m_stack.top().first == Mode::InsideArray;
-  if (inside_array) {
-    if (!m_stack.top().second.empty()) {
-      std::vector<Value>& vector =
-          std::get<std::vector<Value>>(m_stack.top().second.back()());
-      vector.push_back(std::move(value));
-    }
-  } else {
-    m_stack.top().second.push(std::move(value));
-  }
-}
-
 std::optional<FlowPtr<Base>> AST_Reader::get() {
-  if (!m_stack.top().second.empty()) {
-    const auto& back = m_stack.top().second.back()();
-    if (std::holds_alternative<FlowPtr<Base>>(back)) [[likely]] {
-      return std::get<FlowPtr<Base>>(back);
+  if (!m_root) {
+    if (auto root = deserialize_object()) {
+      m_root = root.value();
     }
   }
 
-  return std::nullopt;
+  return m_root;
 }
-
-void AST_Reader::str(std::string_view val) { push_value(std::string(val)); }
-void AST_Reader::uint(uint64_t val) { push_value(val); }
-void AST_Reader::dbl(double val) { push_value(val); }
-void AST_Reader::boolean(bool val) { push_value(val); }
-void AST_Reader::null() { push_value(nullptr); }
-
-void AST_Reader::begin_obj(size_t) { m_stack.push(NewObjectState); }
-
-void AST_Reader::end_obj() {
-  auto object = deserialize_object();
-
-  // We ensure here that the stack is never
-  // empty in order to remove checks from the other functions.
-  if (m_stack.size() >= 2) [[likely]] {
-    m_stack.pop();
-  }
-
-  m_stack.top().second.push(object);
-}
-
-void AST_Reader::begin_arr(size_t size) {
-  std::vector<Value> array;
-  array.reserve(size);
-
-  m_stack.top().second.push(std::move(array));
-  m_stack.top().first = Mode::InsideArray;
-}
-
-void AST_Reader::end_arr() { m_stack.top().first = Mode::NotInsideArray; }
 
 std::optional<AST_Reader::LocationRange> AST_Reader::Read_LocationRange() {
+  if (!next_if<std::string>("loc")) {
+    return std::nullopt;
+  }
+
+  LocationRange range;
+
+  if (next_if<none>()) {
+    return range;
+  }
+
   /// TODO: Implement deserialization for LocationRange
   qcore_implement();
 }
 
 NullableFlowPtr<Base> AST_Reader::deserialize_object() {
-  static Base BadNode(QAST_BASE, true);
-  static FlowPtr<Base> Bad(&BadNode);
-
   // This code must be the reverse of the map contained in:
   // 'constexpr std::string_view Base::getKindName(npar_ty_t type)'
   static const std::unordered_map<std::string, npar_ty_t> node_kinds_map = {
@@ -179,12 +142,12 @@ NullableFlowPtr<Base> AST_Reader::deserialize_object() {
   };
 
   if (!next_if<std::string>("kind") || !next_is<std::string>()) {
-    return Bad;
+    return nullptr;
   }
 
   auto it = node_kinds_map.find(next<std::string>());
   if (it == node_kinds_map.end()) {
-    return Bad;
+    return nullptr;
   }
 
   auto range = Read_LocationRange();
@@ -842,8 +805,7 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Retif() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Break() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  return make<BreakStmt>()();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Continue() {
