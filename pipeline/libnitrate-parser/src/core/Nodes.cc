@@ -51,7 +51,7 @@ NCC_EXPORT LocationPairAlias parse::g_location_pairs;
 LocationPairAlias::Index LocationPairAlias::Add(lex::LocationID begin,
                                                 lex::LocationID end) {
   std::lock_guard<std::mutex> lock(m_mutex);
-  m_pairs.emplace_back(begin, end);
+  m_pairs.push_back({begin, end});
 
   return {.v = m_pairs.size() - 1};
 }

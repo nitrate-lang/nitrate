@@ -425,12 +425,10 @@ Location IScanner::GetEofLocation() {
 }
 
 Location IScanner::GetLocation(LocationID id) {
-  if (id == 0) {
-    return GetEofLocation();
-  } else if (id < m_location_interned.size()) {
+  if (id.GetId() < m_location_interned.size()) {
     return m_location_interned[id.GetId()];
   } else {
-    return GetLocationFallback(id).value_or(Location::EndOfFile());
+    return GetLocationFallback(id.GetId()).value_or(Location::EndOfFile());
   }
 }
 
@@ -438,6 +436,7 @@ Location IScanner::Start(Token t) { return t.get_start().Get(*this); }
 
 Location IScanner::End(Token) {
   /// TODO: Support relexing to get the end location
+  qcore_implement();
 
   return Location::EndOfFile();
 }

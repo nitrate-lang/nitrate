@@ -180,7 +180,7 @@ namespace ncc::lex {
     string m_filename;
 
   public:
-    constexpr Location() {}
+    constexpr Location() = default;
 
     constexpr Location(uint32_t offset, uint32_t line, uint32_t column,
                        string filename)

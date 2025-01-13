@@ -183,9 +183,10 @@ namespace ncc::parse {
 
     template <typename ValueType>
     constexpr StrongBool next_if(const ValueType& v = ValueType()) {
-      if (auto n = next_value()) {
+      if (auto n = peek_value()) {
         if (std::holds_alternative<ValueType>(n->operator()()) &&
             std::get<ValueType>(n->operator()()) == v) {
+          next_value();
           return StrongBool(true);
         }
       }

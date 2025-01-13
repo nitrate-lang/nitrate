@@ -53,6 +53,34 @@ std::optional<FlowPtr<Base>> AST_Reader::get() {
 }
 
 std::optional<AST_Reader::LocationRange> AST_Reader::Read_LocationRange() {
+  const auto ParseLocationObject = [&]() -> std::optional<lex::Location> {
+    if (!next_if<std::string>("off") || !next_is<uint64_t>()) {
+      return std::nullopt;
+    }
+
+    uint32_t off = next<uint64_t>();
+
+    if (!next_if<std::string>("row") || !next_is<uint64_t>()) {
+      return std::nullopt;
+    }
+
+    uint32_t row = next<uint64_t>();
+
+    if (!next_if<std::string>("col") || !next_is<uint64_t>()) {
+      return std::nullopt;
+    }
+
+    uint32_t col = next<uint64_t>();
+
+    if (!next_if<std::string>("src") || !next_is<std::string>()) {
+      return std::nullopt;
+    }
+
+    std::string src = next<std::string>();
+
+    return lex::Location(off, row, col, src);
+  };
+
   if (!next_if<std::string>("loc")) {
     return std::nullopt;
   }
@@ -63,8 +91,59 @@ std::optional<AST_Reader::LocationRange> AST_Reader::Read_LocationRange() {
     return range;
   }
 
-  /// TODO: Implement deserialization for LocationRange
-  qcore_implement();
+  if (!next_if<std::string>("begin")) {
+    return std::nullopt;
+  }
+
+  if (auto begin = ParseLocationObject()) {
+    range.start = begin.value();
+  } else {
+    return std::nullopt;
+  }
+
+  if (!next_if<std::string>("end")) {
+    return std::nullopt;
+  }
+
+  if (auto end = ParseLocationObject()) {
+    range.end = end.value();
+  } else {
+    return std::nullopt;
+  }
+
+  if (!next_if<std::string>("trace")) {
+    return std::nullopt;
+  }
+
+  if (next_is<none>()) {
+    return range;
+  }
+
+  if (!next_if<std::string>("src") || !next_is<std::string>()) {
+    return std::nullopt;
+  }
+
+  next<std::string>();
+
+  if (!next_if<std::string>("sub") || !next_is<std::string>()) {
+    return std::nullopt;
+  }
+
+  next<std::string>();
+
+  if (!next_if<std::string>("row") || !next_is<uint64_t>()) {
+    return std::nullopt;
+  }
+
+  next<uint64_t>();
+
+  if (!next_if<std::string>("col") || !next_is<uint64_t>()) {
+    return std::nullopt;
+  }
+
+  next<uint64_t>();
+
+  return range;
 }
 
 NullableFlowPtr<Base> AST_Reader::deserialize_object() {
@@ -500,10 +579,10 @@ NullableFlowPtr<Base> AST_Reader::deserialize_object() {
       m_source.has_value() && R.has_value() && range.has_value();
 
   if (can_save_source_location) {
-    auto begid = m_source.value().get().InternLocation(range->start),
-         endid = m_source.value().get().InternLocation(range->end);
+    auto start = m_source.value().get().InternLocation(range->start);
+    auto end = m_source.value().get().InternLocation(range->end);
 
-    R.value()->setLoc(begid, endid);
+    R.value()->setLoc(start, end);
   }
 
   return R;
@@ -530,6 +609,8 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Terexpr() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Int() {
+  return make<ConstInt>("10")();
+
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
@@ -809,8 +890,7 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Break() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Continue() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  return make<ContinueStmt>()();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_If() {

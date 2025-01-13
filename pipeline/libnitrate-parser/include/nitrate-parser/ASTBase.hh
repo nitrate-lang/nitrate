@@ -52,15 +52,17 @@ namespace ncc::parse {
 
   public:
     struct Index {
-      uint64_t v : 56;
+      uint64_t v : 56 = 0;
     } __attribute__((packed));
 
-    LocationPairAlias() { m_pairs.reserve(4096); }
+    LocationPairAlias() { Reset(); }
 
     void Reset() {
       m_pairs.clear();
       m_pairs.shrink_to_fit();
       m_pairs.reserve(4096);
+
+      m_pairs.push_back({lex::LocationID(), lex::LocationID()});
     }
 
     Index Add(lex::LocationID begin, lex::LocationID end);
@@ -319,30 +321,15 @@ namespace ncc::parse {
     ///======================================================================
     /// Source location information
 
-    constexpr lex::LocationID begin() const {
-      return g_location_pairs.Get(m_loc).first;
-    }
-    constexpr lex::Location begin(lex::IScanner &rd) const {
-      return begin().Get(rd);
-    }
-
-    constexpr lex::LocationID end() const {
-      return g_location_pairs.Get(m_loc).second;
-    }
-    constexpr lex::Location end(lex::IScanner &rd) const {
-      return end().Get(rd);
-    }
-
-    constexpr lex::LocationRange get_pos() const {
-      return g_location_pairs.Get(m_loc);
-    }
+    constexpr auto begin() const { return g_location_pairs.Get(m_loc).first; }
+    constexpr auto begin(lex::IScanner &rd) const { return begin().Get(rd); }
+    constexpr auto end() const { return g_location_pairs.Get(m_loc).second; }
+    constexpr auto end(lex::IScanner &rd) const { return end().Get(rd); }
+    constexpr auto get_pos() const { return g_location_pairs.Get(m_loc); }
 
     ///======================================================================
     /// Setters
 
-    /**
-     * @warning This function modifies the object's state.
-     */
     constexpr void set_offset(lex::LocationID pos) {
       auto [_, end] = g_location_pairs.Get(m_loc);
       m_loc = g_location_pairs.Add(pos, end);

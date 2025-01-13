@@ -239,14 +239,11 @@ namespace ncc::lex {
     static constexpr size_t TOKEN_BUFFER_SIZE = 256;
 
     std::deque<Token> m_ready;
+    std::vector<Location> m_location_interned;
     std::optional<Token> m_last;
     Token m_current;
-    bool m_skip_comments = false, m_ebit = false, m_eof = false;
     string m_current_filename;
-
-    // 0 is reserved for invalid location
-    LocationID::Counter m_location_id = 1;
-    std::vector<Location> m_location_interned;
+    bool m_skip = false, m_ebit = false, m_eof = false;
 
     class StaticImpl;
     friend class StaticImpl;
@@ -271,16 +268,18 @@ namespace ncc::lex {
   public:
     IScanner(std::shared_ptr<Environment> env) : m_env(env) {
       m_location_interned.reserve(0xffff);
+      m_location_interned.push_back(Location());
     }
+
     virtual ~IScanner() = default;
 
     Token Next();
     Token Peek();
     void Undo();
 
-    constexpr Token Current() { return m_current; }
-    constexpr bool IsEof() const { return m_eof; }
-    constexpr bool HasError() const { return m_ebit; }
+    constexpr auto Current() { return m_current; }
+    constexpr auto IsEof() const { return m_eof; }
+    constexpr auto HasError() const { return m_ebit; }
 
     Location Start(Token t);
     Location End(Token t);
@@ -290,16 +289,20 @@ namespace ncc::lex {
     uint32_t EndLine(Token t);
     uint32_t EndColumn(Token t);
 
-    LocationID InternLocation(Location loc) {
+    auto InternLocation(Location loc) {
       m_location_interned.push_back(loc);
-      return m_location_id++;
+      return LocationID(m_location_interned.size() - 1);
     }
 
-    virtual void SkipCommentsState(bool skip) { m_skip_comments = skip; }
-    bool GetSkipCommentsState() const { return m_skip_comments; }
+    constexpr virtual void SkipCommentsState(bool skip) { m_skip = skip; }
+    constexpr bool GetSkipCommentsState() const { return m_skip; }
 
-    void SetCurrentFilename(string filename) { m_current_filename = filename; }
-    string GetCurrentFilename() const { return m_current_filename; }
+    constexpr void SetCurrentFilename(string filename) {
+      m_current_filename = filename;
+    }
+    constexpr auto GetCurrentFilename() const {
+      return m_current_filename.get();
+    }
 
     Location GetLocation(LocationID id);
 
@@ -315,7 +318,7 @@ namespace ncc::lex {
       return std::nullopt;
     }
 
-    std::shared_ptr<ncc::Environment> GetEnvironment() const { return m_env; }
+    auto GetEnvironment() const { return m_env; }
   };
 
   class NCC_EXPORT Tokenizer final : public IScanner {
