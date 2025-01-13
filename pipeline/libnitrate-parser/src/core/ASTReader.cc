@@ -96,7 +96,12 @@ void AST_Reader::begin_arr(size_t size) {
 
 void AST_Reader::end_arr() { m_stack.top().first = Mode::NotInsideArray; }
 
-FlowPtr<Base> AST_Reader::deserialize_object() {
+std::optional<AST_Reader::LocationRange> AST_Reader::Read_LocationRange() {
+  /// TODO: Implement deserialization for LocationRange
+  qcore_implement();
+}
+
+NullableFlowPtr<Base> AST_Reader::deserialize_object() {
   static Base BadNode(QAST_BASE, true);
   static FlowPtr<Base> Bad(&BadNode);
 
@@ -182,617 +187,701 @@ FlowPtr<Base> AST_Reader::deserialize_object() {
     return Bad;
   }
 
+  auto range = Read_LocationRange();
+
+  NullableFlowPtr<Base> R;
+
   switch (it->second) {
     case QAST_BASE: {
-      return ReadKind_Node();
+      R = ReadKind_Node();
+      break;
     }
 
     case QAST_BINEXPR: {
-      return ReadKind_Binexpr();
+      R = ReadKind_Binexpr();
+      break;
     }
 
     case QAST_UNEXPR: {
-      return ReadKind_Unexpr();
+      R = ReadKind_Unexpr();
+      break;
     }
 
     case QAST_TEREXPR: {
-      return ReadKind_Terexpr();
+      R = ReadKind_Terexpr();
+      break;
     }
 
     case QAST_INT: {
-      return ReadKind_Int();
+      R = ReadKind_Int();
+      break;
     }
 
     case QAST_FLOAT: {
-      return ReadKind_Float();
+      R = ReadKind_Float();
+      break;
     }
 
     case QAST_STRING: {
-      return ReadKind_String();
+      R = ReadKind_String();
+      break;
     }
 
     case QAST_CHAR: {
-      return ReadKind_Char();
+      R = ReadKind_Char();
+      break;
     }
 
     case QAST_BOOL: {
-      return ReadKind_Bool();
+      R = ReadKind_Bool();
+      break;
     }
 
     case QAST_NULL: {
-      return ReadKind_Null();
+      R = ReadKind_Null();
+      break;
     }
 
     case QAST_UNDEF: {
-      return ReadKind_Undef();
+      R = ReadKind_Undef();
+      break;
     }
 
     case QAST_CALL: {
-      return ReadKind_Call();
+      R = ReadKind_Call();
+      break;
     }
 
     case QAST_LIST: {
-      return ReadKind_List();
+      R = ReadKind_List();
+      break;
     }
 
     case QAST_ASSOC: {
-      return ReadKind_Assoc();
+      R = ReadKind_Assoc();
+      break;
     }
 
     case QAST_INDEX: {
-      return ReadKind_Index();
+      R = ReadKind_Index();
+      break;
     }
 
     case QAST_SLICE: {
-      return ReadKind_Slice();
+      R = ReadKind_Slice();
+      break;
     }
 
     case QAST_FSTRING: {
-      return ReadKind_Fstring();
+      R = ReadKind_Fstring();
+      break;
     }
 
     case QAST_IDENT: {
-      return ReadKind_Ident();
+      R = ReadKind_Ident();
+      break;
     }
 
     case QAST_SEQ: {
-      return ReadKind_SeqPoint();
+      R = ReadKind_SeqPoint();
+      break;
     }
 
     case QAST_POST_UNEXPR: {
-      return ReadKind_PostUnexpr();
+      R = ReadKind_PostUnexpr();
+      break;
     }
 
     case QAST_SEXPR: {
-      return ReadKind_StmtExpr();
+      R = ReadKind_StmtExpr();
+      break;
     }
 
     case QAST_TEXPR: {
-      return ReadKind_TypeExpr();
+      R = ReadKind_TypeExpr();
+      break;
     }
 
     case QAST_TEMPL_CALL: {
-      return ReadKind_TemplCall();
+      R = ReadKind_TemplCall();
+      break;
     }
 
     case QAST_REF: {
-      return ReadKind_Ref();
+      R = ReadKind_Ref();
+      break;
     }
 
     case QAST_U1: {
-      return ReadKind_U1();
+      R = ReadKind_U1();
+      break;
     }
 
     case QAST_U8: {
-      return ReadKind_U8();
+      R = ReadKind_U8();
+      break;
     }
 
     case QAST_U16: {
-      return ReadKind_U16();
+      R = ReadKind_U16();
+      break;
     }
 
     case QAST_U32: {
-      return ReadKind_U32();
+      R = ReadKind_U32();
+      break;
     }
 
     case QAST_U64: {
-      return ReadKind_U64();
+      R = ReadKind_U64();
+      break;
     }
 
     case QAST_U128: {
-      return ReadKind_U128();
+      R = ReadKind_U128();
+      break;
     }
 
     case QAST_I8: {
-      return ReadKind_I8();
+      R = ReadKind_I8();
+      break;
     }
 
     case QAST_I16: {
-      return ReadKind_I16();
+      R = ReadKind_I16();
+      break;
     }
 
     case QAST_I32: {
-      return ReadKind_I32();
+      R = ReadKind_I32();
+      break;
     }
 
     case QAST_I64: {
-      return ReadKind_I64();
+      R = ReadKind_I64();
+      break;
     }
 
     case QAST_I128: {
-      return ReadKind_I128();
+      R = ReadKind_I128();
+      break;
     }
 
     case QAST_F16: {
-      return ReadKind_F16();
+      R = ReadKind_F16();
+      break;
     }
 
     case QAST_F32: {
-      return ReadKind_F32();
+      R = ReadKind_F32();
+      break;
     }
 
     case QAST_F64: {
-      return ReadKind_F64();
+      R = ReadKind_F64();
+      break;
     }
 
     case QAST_F128: {
-      return ReadKind_F128();
+      R = ReadKind_F128();
+      break;
     }
 
     case QAST_VOID: {
-      return ReadKind_Void();
+      R = ReadKind_Void();
+      break;
     }
 
     case QAST_PTR: {
-      return ReadKind_Ptr();
+      R = ReadKind_Ptr();
+      break;
     }
 
     case QAST_OPAQUE: {
-      return ReadKind_Opaque();
+      R = ReadKind_Opaque();
+      break;
     }
 
     case QAST_ARRAY: {
-      return ReadKind_Array();
+      R = ReadKind_Array();
+      break;
     }
 
     case QAST_TUPLE: {
-      return ReadKind_Tuple();
+      R = ReadKind_Tuple();
+      break;
     }
 
     case QAST_FUNCTOR: {
-      return ReadKind_FuncTy();
+      R = ReadKind_FuncTy();
+      break;
     }
 
     case QAST_NAMED: {
-      return ReadKind_Unres();
+      R = ReadKind_Unres();
+      break;
     }
 
     case QAST_INFER: {
-      return ReadKind_Infer();
+      R = ReadKind_Infer();
+      break;
     }
 
     case QAST_TEMPLATE: {
-      return ReadKind_Templ();
+      R = ReadKind_Templ();
+      break;
     }
 
     case QAST_TYPEDEF: {
-      return ReadKind_Typedef();
+      R = ReadKind_Typedef();
+      break;
     }
 
     case QAST_STRUCT: {
-      return ReadKind_Struct();
+      R = ReadKind_Struct();
+      break;
     }
 
     case QAST_ENUM: {
-      return ReadKind_Enum();
+      R = ReadKind_Enum();
+      break;
     }
 
     case QAST_FUNCTION: {
-      return ReadKind_Function();
+      R = ReadKind_Function();
+      break;
     }
 
     case QAST_SCOPE: {
-      return ReadKind_Scope();
+      R = ReadKind_Scope();
+      break;
     }
 
     case QAST_EXPORT: {
-      return ReadKind_Export();
+      R = ReadKind_Export();
+      break;
     }
 
     case QAST_BLOCK: {
-      return ReadKind_Block();
+      R = ReadKind_Block();
+      break;
     }
 
     case QAST_VAR: {
-      return ReadKind_Let();
+      R = ReadKind_Let();
+      break;
     }
 
     case QAST_INLINE_ASM: {
-      return ReadKind_InlineAsm();
+      R = ReadKind_InlineAsm();
+      break;
     }
 
     case QAST_RETURN: {
-      return ReadKind_Return();
+      R = ReadKind_Return();
+      break;
     }
 
     case QAST_RETIF: {
-      return ReadKind_Retif();
+      R = ReadKind_Retif();
+      break;
     }
 
     case QAST_BREAK: {
-      return ReadKind_Break();
+      R = ReadKind_Break();
+      break;
     }
 
     case QAST_CONTINUE: {
-      return ReadKind_Continue();
+      R = ReadKind_Continue();
+      break;
     }
 
     case QAST_IF: {
-      return ReadKind_If();
+      R = ReadKind_If();
+      break;
     }
 
     case QAST_WHILE: {
-      return ReadKind_While();
+      R = ReadKind_While();
+      break;
     }
 
     case QAST_FOR: {
-      return ReadKind_For();
+      R = ReadKind_For();
+      break;
     }
 
     case QAST_FOREACH: {
-      return ReadKind_Foreach();
+      R = ReadKind_Foreach();
+      break;
     }
 
     case QAST_CASE: {
-      return ReadKind_Case();
+      R = ReadKind_Case();
+      break;
     }
 
     case QAST_SWITCH: {
-      return ReadKind_Switch();
+      R = ReadKind_Switch();
+      break;
     }
 
     case QAST_ESTMT: {
-      return ReadKind_ExprStmt();
+      R = ReadKind_ExprStmt();
+      break;
     }
   }
+
+  bool can_save_source_location =
+      m_source.has_value() && R.has_value() && range.has_value();
+
+  if (can_save_source_location) {
+    auto begid = m_source.value().get().InternLocation(range->start),
+         endid = m_source.value().get().InternLocation(range->end);
+
+    R.value()->setLoc(begid, endid);
+  }
+
+  return R;
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Node() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Node() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Binexpr() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Binexpr() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Unexpr() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Unexpr() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Terexpr() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Terexpr() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Int() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Int() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Float() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Float() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_String() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_String() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Char() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Char() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Bool() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Bool() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Null() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Null() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Undef() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Undef() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Call() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Call() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_List() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_List() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Assoc() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Assoc() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Index() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Index() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Slice() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Slice() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Fstring() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Fstring() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Ident() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Ident() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_SeqPoint() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_SeqPoint() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_PostUnexpr() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_PostUnexpr() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_StmtExpr() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_StmtExpr() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_TypeExpr() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_TypeExpr() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_TemplCall() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_TemplCall() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Ref() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Ref() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_U1() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_U1() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_U8() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_U8() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_U16() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_U16() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_U32() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_U32() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_U64() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_U64() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_U128() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_U128() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_I8() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_I8() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_I16() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_I16() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_I32() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_I32() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_I64() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_I64() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_I128() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_I128() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_F16() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_F16() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_F32() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_F32() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_F64() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_F64() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_F128() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_F128() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Void() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Void() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Ptr() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Ptr() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Opaque() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Opaque() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Array() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Array() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Tuple() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Tuple() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_FuncTy() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_FuncTy() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Unres() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Unres() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Infer() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Infer() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Templ() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Templ() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Typedef() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Typedef() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Struct() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Struct() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Enum() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Enum() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Function() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Function() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Scope() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Scope() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Export() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Export() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Block() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Block() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Let() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Let() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_InlineAsm() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_InlineAsm() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Return() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Return() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Retif() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Retif() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Break() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Break() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Continue() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Continue() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_If() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_If() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_While() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_While() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_For() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_For() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Foreach() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Foreach() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Case() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Case() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_Switch() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_Switch() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }
 
-FlowPtr<Base> AST_Reader::ReadKind_ExprStmt() {
+NullableFlowPtr<Base> AST_Reader::ReadKind_ExprStmt() {
   /// TODO: Implement deserialization for kind
   qcore_implement();
 }

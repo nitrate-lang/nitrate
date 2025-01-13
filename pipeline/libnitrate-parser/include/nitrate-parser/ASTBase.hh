@@ -314,6 +314,8 @@ namespace ncc::parse {
     std::ostream &dump(std::ostream &os = std::cerr,
                        WriterSourceProvider rd = std::nullopt) const;
 
+    std::string to_json(WriterSourceProvider rd = std::nullopt) const;
+
     ///======================================================================
     /// Source location information
 
@@ -344,6 +346,10 @@ namespace ncc::parse {
     constexpr void set_offset(lex::LocationID pos) {
       auto [_, end] = g_location_pairs.Get(m_loc);
       m_loc = g_location_pairs.Add(pos, end);
+    }
+
+    constexpr void setLoc(lex::LocationID begin, lex::LocationID end) {
+      m_loc = g_location_pairs.Add(begin, end);
     }
   } __attribute__((packed));
 

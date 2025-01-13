@@ -37,6 +37,8 @@
 #include <cstdint>
 #include <istream>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-core/NullableFlowPtr.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 #include <optional>
 #include <queue>
@@ -44,6 +46,9 @@
 #include <variant>
 
 namespace ncc::parse {
+  using ReaderSourceManager =
+      std::optional<std::reference_wrapper<lex::IScanner>>;
+
   class NCC_EXPORT AST_Reader {
     class Value {
       using Data =
@@ -67,77 +72,84 @@ namespace ncc::parse {
                                           std::queue<Value>()};
 
     std::stack<State> m_stack;
+    ReaderSourceManager m_source;
 
-    FlowPtr<Base> deserialize_object();
+    struct LocationRange {
+      lex::Location start, end;
+    };
 
-    FlowPtr<Base> ReadKind_Node();
-    FlowPtr<Base> ReadKind_Binexpr();
-    FlowPtr<Base> ReadKind_Unexpr();
-    FlowPtr<Base> ReadKind_Terexpr();
-    FlowPtr<Base> ReadKind_Int();
-    FlowPtr<Base> ReadKind_Float();
-    FlowPtr<Base> ReadKind_String();
-    FlowPtr<Base> ReadKind_Char();
-    FlowPtr<Base> ReadKind_Bool();
-    FlowPtr<Base> ReadKind_Null();
-    FlowPtr<Base> ReadKind_Undef();
-    FlowPtr<Base> ReadKind_Call();
-    FlowPtr<Base> ReadKind_List();
-    FlowPtr<Base> ReadKind_Assoc();
-    FlowPtr<Base> ReadKind_Index();
-    FlowPtr<Base> ReadKind_Slice();
-    FlowPtr<Base> ReadKind_Fstring();
-    FlowPtr<Base> ReadKind_Ident();
-    FlowPtr<Base> ReadKind_SeqPoint();
-    FlowPtr<Base> ReadKind_PostUnexpr();
-    FlowPtr<Base> ReadKind_StmtExpr();
-    FlowPtr<Base> ReadKind_TypeExpr();
-    FlowPtr<Base> ReadKind_TemplCall();
-    FlowPtr<Base> ReadKind_Ref();
-    FlowPtr<Base> ReadKind_U1();
-    FlowPtr<Base> ReadKind_U8();
-    FlowPtr<Base> ReadKind_U16();
-    FlowPtr<Base> ReadKind_U32();
-    FlowPtr<Base> ReadKind_U64();
-    FlowPtr<Base> ReadKind_U128();
-    FlowPtr<Base> ReadKind_I8();
-    FlowPtr<Base> ReadKind_I16();
-    FlowPtr<Base> ReadKind_I32();
-    FlowPtr<Base> ReadKind_I64();
-    FlowPtr<Base> ReadKind_I128();
-    FlowPtr<Base> ReadKind_F16();
-    FlowPtr<Base> ReadKind_F32();
-    FlowPtr<Base> ReadKind_F64();
-    FlowPtr<Base> ReadKind_F128();
-    FlowPtr<Base> ReadKind_Void();
-    FlowPtr<Base> ReadKind_Ptr();
-    FlowPtr<Base> ReadKind_Opaque();
-    FlowPtr<Base> ReadKind_Array();
-    FlowPtr<Base> ReadKind_Tuple();
-    FlowPtr<Base> ReadKind_FuncTy();
-    FlowPtr<Base> ReadKind_Unres();
-    FlowPtr<Base> ReadKind_Infer();
-    FlowPtr<Base> ReadKind_Templ();
-    FlowPtr<Base> ReadKind_Typedef();
-    FlowPtr<Base> ReadKind_Struct();
-    FlowPtr<Base> ReadKind_Enum();
-    FlowPtr<Base> ReadKind_Function();
-    FlowPtr<Base> ReadKind_Scope();
-    FlowPtr<Base> ReadKind_Export();
-    FlowPtr<Base> ReadKind_Block();
-    FlowPtr<Base> ReadKind_Let();
-    FlowPtr<Base> ReadKind_InlineAsm();
-    FlowPtr<Base> ReadKind_Return();
-    FlowPtr<Base> ReadKind_Retif();
-    FlowPtr<Base> ReadKind_Break();
-    FlowPtr<Base> ReadKind_Continue();
-    FlowPtr<Base> ReadKind_If();
-    FlowPtr<Base> ReadKind_While();
-    FlowPtr<Base> ReadKind_For();
-    FlowPtr<Base> ReadKind_Foreach();
-    FlowPtr<Base> ReadKind_Case();
-    FlowPtr<Base> ReadKind_Switch();
-    FlowPtr<Base> ReadKind_ExprStmt();
+    std::optional<LocationRange> Read_LocationRange();
+
+    NullableFlowPtr<Base> deserialize_object();
+
+    NullableFlowPtr<Base> ReadKind_Node();
+    NullableFlowPtr<Base> ReadKind_Binexpr();
+    NullableFlowPtr<Base> ReadKind_Unexpr();
+    NullableFlowPtr<Base> ReadKind_Terexpr();
+    NullableFlowPtr<Base> ReadKind_Int();
+    NullableFlowPtr<Base> ReadKind_Float();
+    NullableFlowPtr<Base> ReadKind_String();
+    NullableFlowPtr<Base> ReadKind_Char();
+    NullableFlowPtr<Base> ReadKind_Bool();
+    NullableFlowPtr<Base> ReadKind_Null();
+    NullableFlowPtr<Base> ReadKind_Undef();
+    NullableFlowPtr<Base> ReadKind_Call();
+    NullableFlowPtr<Base> ReadKind_List();
+    NullableFlowPtr<Base> ReadKind_Assoc();
+    NullableFlowPtr<Base> ReadKind_Index();
+    NullableFlowPtr<Base> ReadKind_Slice();
+    NullableFlowPtr<Base> ReadKind_Fstring();
+    NullableFlowPtr<Base> ReadKind_Ident();
+    NullableFlowPtr<Base> ReadKind_SeqPoint();
+    NullableFlowPtr<Base> ReadKind_PostUnexpr();
+    NullableFlowPtr<Base> ReadKind_StmtExpr();
+    NullableFlowPtr<Base> ReadKind_TypeExpr();
+    NullableFlowPtr<Base> ReadKind_TemplCall();
+    NullableFlowPtr<Base> ReadKind_Ref();
+    NullableFlowPtr<Base> ReadKind_U1();
+    NullableFlowPtr<Base> ReadKind_U8();
+    NullableFlowPtr<Base> ReadKind_U16();
+    NullableFlowPtr<Base> ReadKind_U32();
+    NullableFlowPtr<Base> ReadKind_U64();
+    NullableFlowPtr<Base> ReadKind_U128();
+    NullableFlowPtr<Base> ReadKind_I8();
+    NullableFlowPtr<Base> ReadKind_I16();
+    NullableFlowPtr<Base> ReadKind_I32();
+    NullableFlowPtr<Base> ReadKind_I64();
+    NullableFlowPtr<Base> ReadKind_I128();
+    NullableFlowPtr<Base> ReadKind_F16();
+    NullableFlowPtr<Base> ReadKind_F32();
+    NullableFlowPtr<Base> ReadKind_F64();
+    NullableFlowPtr<Base> ReadKind_F128();
+    NullableFlowPtr<Base> ReadKind_Void();
+    NullableFlowPtr<Base> ReadKind_Ptr();
+    NullableFlowPtr<Base> ReadKind_Opaque();
+    NullableFlowPtr<Base> ReadKind_Array();
+    NullableFlowPtr<Base> ReadKind_Tuple();
+    NullableFlowPtr<Base> ReadKind_FuncTy();
+    NullableFlowPtr<Base> ReadKind_Unres();
+    NullableFlowPtr<Base> ReadKind_Infer();
+    NullableFlowPtr<Base> ReadKind_Templ();
+    NullableFlowPtr<Base> ReadKind_Typedef();
+    NullableFlowPtr<Base> ReadKind_Struct();
+    NullableFlowPtr<Base> ReadKind_Enum();
+    NullableFlowPtr<Base> ReadKind_Function();
+    NullableFlowPtr<Base> ReadKind_Scope();
+    NullableFlowPtr<Base> ReadKind_Export();
+    NullableFlowPtr<Base> ReadKind_Block();
+    NullableFlowPtr<Base> ReadKind_Let();
+    NullableFlowPtr<Base> ReadKind_InlineAsm();
+    NullableFlowPtr<Base> ReadKind_Return();
+    NullableFlowPtr<Base> ReadKind_Retif();
+    NullableFlowPtr<Base> ReadKind_Break();
+    NullableFlowPtr<Base> ReadKind_Continue();
+    NullableFlowPtr<Base> ReadKind_If();
+    NullableFlowPtr<Base> ReadKind_While();
+    NullableFlowPtr<Base> ReadKind_For();
+    NullableFlowPtr<Base> ReadKind_Foreach();
+    NullableFlowPtr<Base> ReadKind_Case();
+    NullableFlowPtr<Base> ReadKind_Switch();
+    NullableFlowPtr<Base> ReadKind_ExprStmt();
 
     void push_value(Value&& value);
 
@@ -198,7 +210,9 @@ namespace ncc::parse {
     void end_arr();
 
   public:
-    AST_Reader() { m_stack.push(NewObjectState); }
+    AST_Reader(ReaderSourceManager source_manager) : m_source(source_manager) {
+      m_stack.push(NewObjectState);
+    }
     virtual ~AST_Reader() = default;
 
     std::optional<FlowPtr<Base>> get();
@@ -208,7 +222,19 @@ namespace ncc::parse {
     void parse_stream(std::istream& is);
 
   public:
-    AST_JsonReader(std::istream& is) { parse_stream(is); }
+    AST_JsonReader(std::istream& is,
+                   ReaderSourceManager source_manager = std::nullopt)
+        : AST_Reader(source_manager) {
+      parse_stream(is);
+    }
+
+    AST_JsonReader(const std::string& in,
+                   ReaderSourceManager source_manager = std::nullopt)
+        : AST_Reader(source_manager) {
+      std::istringstream is(in);
+      parse_stream(is);
+    }
+
     virtual ~AST_JsonReader() = default;
   };
 
@@ -216,7 +242,19 @@ namespace ncc::parse {
     void parse_stream(std::istream& is);
 
   public:
-    AST_MsgPackReader(std::istream& is) { parse_stream(is); }
+    AST_MsgPackReader(std::istream& is,
+                      ReaderSourceManager source_manager = std::nullopt)
+        : AST_Reader(source_manager) {
+      parse_stream(is);
+    }
+
+    AST_MsgPackReader(const std::string& in,
+                      ReaderSourceManager source_manager = std::nullopt)
+        : AST_Reader(source_manager) {
+      std::istringstream is(in);
+      parse_stream(is);
+    }
+
     virtual ~AST_MsgPackReader() = default;
   };
 }  // namespace ncc::parse

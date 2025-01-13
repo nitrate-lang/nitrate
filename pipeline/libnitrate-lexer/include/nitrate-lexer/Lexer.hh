@@ -256,11 +256,6 @@ namespace ncc::lex {
   protected:
     std::shared_ptr<Environment> m_env;
 
-    inline LocationID InternLocation(Location loc) {
-      m_location_interned.push_back(loc);
-      return m_location_id++;
-    }
-
     void SetFailBit() { m_ebit = true; }
     virtual Token GetNext() = 0;
 
@@ -294,6 +289,11 @@ namespace ncc::lex {
     uint32_t StartColumn(Token t);
     uint32_t EndLine(Token t);
     uint32_t EndColumn(Token t);
+
+    LocationID InternLocation(Location loc) {
+      m_location_interned.push_back(loc);
+      return m_location_id++;
+    }
 
     virtual void SkipCommentsState(bool skip) { m_skip_comments = skip; }
     bool GetSkipCommentsState() const { return m_skip_comments; }

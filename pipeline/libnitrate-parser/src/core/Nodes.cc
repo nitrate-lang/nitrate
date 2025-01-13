@@ -78,6 +78,14 @@ NCC_EXPORT std::ostream &Base::dump(std::ostream &os,
   return os;
 }
 
+NCC_EXPORT std::string Base::to_json(WriterSourceProvider rd) const {
+  std::stringstream ss;
+  AST_JsonWriter writer(ss, rd);
+  this->accept(writer);
+
+  return ss.str();
+}
+
 NCC_EXPORT bool Base::isSame(FlowPtr<Base> o) const {
   if (this == o.get()) {
     return true;

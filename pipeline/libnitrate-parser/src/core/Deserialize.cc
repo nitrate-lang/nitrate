@@ -90,7 +90,7 @@ void AST_JsonReader::parse_stream(std::istream& is) {
       }
 
       case rapidjson::kStringType: {
-        str(std::string_view(obj.GetString(), doc.GetStringLength()));
+        str(std::string_view(obj.GetString(), obj.GetStringLength()));
         return true;
       }
 
