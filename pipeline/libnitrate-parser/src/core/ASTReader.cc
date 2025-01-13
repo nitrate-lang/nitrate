@@ -33,14 +33,36 @@
 
 #define AST_READER_IMPL
 
+#include <boost/multiprecision/cpp_int.hpp>
+#include <charconv>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/ASTReader.hh>
+#include <type_traits>
 
 using namespace ncc;
 using namespace ncc::parse;
+using namespace boost::multiprecision;
+
+template <typename Ty,
+          typename = std::enable_if_t<std::is_floating_point_v<Ty>>>
+static inline bool strict_from_chars(
+    const char* first, const char* last, Ty& value,
+    std::chars_format fmt = std::chars_format::general) noexcept {
+  auto res = std::from_chars(first, last, value, fmt);
+
+  return res.ec == std::errc() && res.ptr == last;
+}
+
+template <typename Ty>
+static inline bool strict_from_chars(const char* first, const char* last,
+                                     Ty& value, int base = 10) noexcept {
+  auto res = std::from_chars(first, last, value, base);
+
+  return res.ec == std::errc() && res.ptr == last;
+}
 
 std::optional<FlowPtr<Base>> AST_Reader::get() {
   if (!m_root) {
@@ -115,7 +137,7 @@ std::optional<AST_Reader::LocationRange> AST_Reader::Read_LocationRange() {
     return std::nullopt;
   }
 
-  if (next_is<none>()) {
+  if (next_if<none>()) {
     return range;
   }
 
@@ -609,40 +631,87 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Terexpr() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Int() {
-  return make<ConstInt>("10")();
+  if (!next_if<std::string>("value") || !next_is<std::string>()) {
+    return nullptr;
+  }
 
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto value = next<std::string>();
+
+  /* Ensure boost won't call std::terminate */
+  bool all_digits = std::all_of(value.begin(), value.end(), ::isdigit);
+  if (!all_digits) {
+    return nullptr;
+  }
+
+  /* Ensure the value is within the bounds of a unsigned 128-bit integer */
+  if (cpp_int(value) > cpp_int("340282366920938463463374607431768211455")) {
+    return nullptr;
+  }
+
+  return make<ConstInt>(std::move(value))();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Float() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("value") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto value = next<std::string>();
+
+  long double d = 0;
+  if (!strict_from_chars(value.data(), value.data() + value.size(), d,
+                         std::chars_format::fixed)) {
+    return nullptr;
+  }
+
+  return make<ConstFloat>(std::move(value))();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_String() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("value") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto value = next<std::string>();
+
+  return make<ConstString>(std::move(value))();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Char() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("value") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto value = next<std::string>();
+
+  uint8_t c = 0;
+  if (!strict_from_chars(value.data(), value.data() + value.size(), c)) {
+    return nullptr;
+  }
+
+  if (c > 255) {
+    return nullptr;
+  }
+
+  return make<ConstChar>(c)();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Bool() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("value") || !next_is<bool>()) {
+    return nullptr;
+  }
+
+  auto value = next<bool>();
+
+  return make<ConstBool>(value)();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Null() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  return make<ConstNull>()();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Undef() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  return make<ConstUndef>()();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Call() {
