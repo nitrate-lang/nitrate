@@ -799,7 +799,7 @@ void AST_Writer::visit(FlowPtr<ConstChar> n) {
   write_source_location(n);
 
   string("value");
-  string(std::array<char, 2>{(char)n->get_value(), 0}.data());
+  uint64(n->get_value());
 
   end_obj();
 }
@@ -1003,11 +1003,7 @@ void AST_Writer::visit(FlowPtr<FString> n) {
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
       if (std::holds_alternative<ncc::string>(item)) {
-        begin_obj(2);
-
-        string("kind");
-        auto kind_name = Base::getKindName(Base::getTypeCode<ConstString>());
-        string(kind_name);
+        begin_obj(1);
 
         string("value");
         string(*std::get<ncc::string>(item));
@@ -1327,7 +1323,7 @@ void AST_Writer::visit(FlowPtr<CaseStmt> n) {
   write_source_location(n);
 
   string("match");
-  n->get_cond() ? n->get_cond().accept(*this) : null();
+  n->get_cond().accept(*this);
 
   string("body");
   n->get_body().accept(*this);
@@ -1644,7 +1640,7 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
     auto fields = n->get_fields();
     begin_arr(fields.size());
     std::for_each(fields.begin(), fields.end(), [&](auto field) {
-      begin_obj(4);
+      begin_obj(5);
 
       string("name");
       string(field.get_name());
@@ -1658,6 +1654,9 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
 
       string("visibility");
       string(vis_str(field.get_vis()));
+
+      string("static");
+      boolean(field.is_static());
 
       end_obj();
     });

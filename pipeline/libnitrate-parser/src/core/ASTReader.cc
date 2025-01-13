@@ -648,6 +648,11 @@ NullableFlowPtr<Base> AST_Reader::deserialize_object() {
     }
   }
 
+  if (!R.has_value()) {
+    std::cout << "Failed to deserialize object of type: " << it->first
+              << std::endl;
+  }
+
   bool can_save_source_location =
       m_source.has_value() && R.has_value() && range.has_value();
 
@@ -659,6 +664,20 @@ NullableFlowPtr<Base> AST_Reader::deserialize_object() {
   }
 
   return R;
+}
+
+NullableFlowPtr<Stmt> AST_Reader::deserialize_statement() {
+  auto object = deserialize_object();
+  if (!object.has_value()) {
+    return nullptr;
+  }
+
+  auto kind = object.value()->getKind();
+  if (kind < QAST__STMT_FIRST || kind > QAST__STMT_LAST) {
+    return nullptr;
+  }
+
+  return object.value().as<Stmt>();
 }
 
 NullableFlowPtr<Expr> AST_Reader::deserialize_expression() {
@@ -738,6 +757,10 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Unexpr() {
     return nullptr;
   }
 
+  if (!next_if<std::string>("rhs")) {
+    return nullptr;
+  }
+
   auto rhs = deserialize_expression();
   if (!rhs.has_value()) {
     return nullptr;
@@ -755,6 +778,10 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_PostUnexpr() {
 
   auto op_it = lex::LexicalOperators.left.find(op);
   if (op_it == lex::LexicalOperators.left.end()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("lhs")) {
     return nullptr;
   }
 
@@ -845,22 +872,17 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_String() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Char() {
-  if (!next_if<std::string>("value") || !next_is<std::string>()) {
+  if (!next_if<std::string>("value") || !next_is<uint64_t>()) {
     return nullptr;
   }
 
-  auto value = next<std::string>();
+  auto value = next<uint64_t>();
 
-  uint8_t c = 0;
-  if (!strict_from_chars(value.data(), value.data() + value.size(), c)) {
+  if (value > 255) {
     return nullptr;
   }
 
-  if (c > 255) {
-    return nullptr;
-  }
-
-  return make<ConstChar>(c)();
+  return make<ConstChar>(value)();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Bool() {
@@ -1017,8 +1039,29 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Slice() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Fstring() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("terms") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto term_count = next<uint64_t>();
+  FStringItems terms;
+  terms.reserve(term_count);
+
+  while (term_count--) {
+    if (next_if<std::string>("value") && next_is<std::string>()) {
+      auto value = next<std::string>();
+      terms.emplace_back(value);
+    } else {
+      auto term = deserialize_expression();
+      if (!term.has_value()) {
+        return nullptr;
+      }
+
+      terms.emplace_back(term.value());
+    }
+  }
+
+  return make<FString>(std::move(terms))();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Ident() {
@@ -1707,33 +1750,647 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Templ() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Typedef() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("name") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto name = next<std::string>();
+
+  if (!next_if<std::string>("type")) {
+    return nullptr;
+  }
+
+  auto type = deserialize_type();
+  if (!type.has_value()) {
+    return nullptr;
+  }
+
+  return make<TypedefStmt>(name, type.value())();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Struct() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("mode")) {
+    return nullptr;
+  }
+
+  CompositeType mode;
+
+  if (next_if<std::string>("region")) {
+    mode = CompositeType::Region;
+  } else if (next_if<std::string>("struct")) {
+    mode = CompositeType::Struct;
+  } else if (next_if<std::string>("group")) {
+    mode = CompositeType::Group;
+  } else if (next_if<std::string>("class")) {
+    mode = CompositeType::Class;
+  } else if (next_if<std::string>("union")) {
+    mode = CompositeType::Union;
+  } else {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("attributes") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto attribute_count = next<uint64_t>();
+
+  ExpressionList attributes;
+  attributes.reserve(attribute_count);
+
+  while (attribute_count--) {
+    auto attribute = deserialize_expression();
+    if (!attribute.has_value()) {
+      return nullptr;
+    }
+
+    attributes.push_back(attribute.value());
+  }
+
+  if (!next_if<std::string>("name") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto name = next<std::string>();
+
+  if (!next_if<std::string>("template")) {
+    return nullptr;
+  }
+
+  TemplateParameters template_args;
+
+  if (!next_if<none>()) {
+    if (!next_is<uint64_t>()) {
+      return nullptr;
+    }
+
+    auto template_count = next<uint64_t>();
+
+    template_args.reserve(template_count);
+
+    while (template_count--) {
+      if (!next_if<std::string>("name") || !next_is<std::string>()) {
+        return nullptr;
+      }
+
+      auto name = next<std::string>();
+
+      if (!next_if<std::string>("type")) {
+        return nullptr;
+      }
+
+      auto type = deserialize_type();
+      if (!type.has_value()) {
+        return nullptr;
+      }
+
+      if (!next_if<std::string>("default")) {
+        return nullptr;
+      }
+
+      NullableFlowPtr<Expr> default_value;
+      if (next_if<none>()) {
+        default_value = nullptr;
+      } else {
+        default_value = deserialize_expression();
+        if (!default_value.has_value()) {
+          return nullptr;
+        }
+      }
+
+      template_args.emplace_back(name, type.value(), default_value);
+    }
+  }
+
+  if (!next_if<std::string>("names") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto names_count = next<uint64_t>();
+
+  StructDefNames names;
+  names.reserve(names_count);
+
+  while (names_count--) {
+    if (!next_is<std::string>()) {
+      return nullptr;
+    }
+
+    auto name = next<std::string>();
+
+    names.push_back(name);
+  }
+
+  if (!next_if<std::string>("fields") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto field_count = next<uint64_t>();
+
+  StructDefFields fields;
+  fields.reserve(field_count);
+
+  while (field_count--) {
+    if (!next_if<std::string>("name") || !next_is<std::string>()) {
+      return nullptr;
+    }
+
+    auto field_name = next<std::string>();
+
+    if (!next_if<std::string>("type")) {
+      return nullptr;
+    }
+
+    auto type = deserialize_type();
+    if (!type.has_value()) {
+      return nullptr;
+    }
+
+    if (!next_if<std::string>("default")) {
+      return nullptr;
+    }
+
+    NullableFlowPtr<Expr> default_value;
+    if (next_if<none>()) {
+      default_value = nullptr;
+    } else {
+      default_value = deserialize_expression();
+      if (!default_value.has_value()) {
+        return nullptr;
+      }
+    }
+
+    if (!next_if<std::string>("visibility")) {
+      return nullptr;
+    }
+
+    Vis visibility;
+
+    if (next_if<std::string>("pub")) {
+      visibility = Vis::Pub;
+    } else if (next_if<std::string>("pro")) {
+      visibility = Vis::Pro;
+    } else if (next_if<std::string>("sec")) {
+      visibility = Vis::Sec;
+    } else {
+      return nullptr;
+    }
+
+    if (!next_if<std::string>("static") || !next_is<bool>()) {
+      return nullptr;
+    }
+
+    auto is_static = next<bool>();
+
+    fields.emplace_back(StructField(visibility, is_static, field_name,
+                                    type.value(), default_value));
+  }
+
+  if (!next_if<std::string>("methods") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto method_count = next<uint64_t>();
+
+  StructDefMethods methods;
+  methods.reserve(method_count);
+
+  while (method_count--) {
+    if (!next_if<std::string>("visibility")) {
+      return nullptr;
+    }
+
+    Vis visibility;
+
+    if (next_if<std::string>("pub")) {
+      visibility = Vis::Pub;
+    } else if (next_if<std::string>("pro")) {
+      visibility = Vis::Pro;
+    } else if (next_if<std::string>("sec")) {
+      visibility = Vis::Sec;
+    } else {
+      return nullptr;
+    }
+
+    if (!next_if<std::string>("method")) {
+      return nullptr;
+    }
+
+    auto method = deserialize_object();
+    if (!method.has_value()) {
+      return nullptr;
+    }
+
+    methods.emplace_back(visibility, method.value());
+  }
+
+  if (!next_if<std::string>("static-methods") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto static_method_count = next<uint64_t>();
+
+  StructDefStaticMethods static_methods;
+  static_methods.reserve(static_method_count);
+
+  while (static_method_count--) {
+    if (!next_if<std::string>("visibility")) {
+      return nullptr;
+    }
+
+    Vis visibility;
+
+    if (next_if<std::string>("pub")) {
+      visibility = Vis::Pub;
+    } else if (next_if<std::string>("pro")) {
+      visibility = Vis::Pro;
+    } else if (next_if<std::string>("sec")) {
+      visibility = Vis::Sec;
+    } else {
+      return nullptr;
+    }
+
+    if (!next_if<std::string>("method")) {
+      return nullptr;
+    }
+
+    auto method = deserialize_object();
+    if (!method.has_value()) {
+      return nullptr;
+    }
+
+    static_methods.emplace_back(visibility, method.value());
+  }
+
+  return make<StructDef>(mode, attributes, name, template_args, names, fields,
+                         methods, static_methods)();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Enum() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("name") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto name = next<std::string>();
+
+  if (!next_if<std::string>("type")) {
+    return nullptr;
+  }
+
+  NullableFlowPtr<Type> type;
+  if (next_if<none>()) {
+    type = nullptr;
+  } else {
+    type = deserialize_type();
+    if (!type.has_value()) {
+      return nullptr;
+    }
+  }
+
+  if (!next_if<std::string>("fields") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto field_count = next<uint64_t>();
+
+  EnumDefItems fields;
+  fields.reserve(field_count);
+
+  while (field_count--) {
+    if (!next_if<std::string>("name") || !next_is<std::string>()) {
+      return nullptr;
+    }
+
+    auto field_name = next<std::string>();
+
+    if (!next_if<std::string>("value")) {
+      return nullptr;
+    }
+
+    NullableFlowPtr<Expr> value;
+    if (next_if<none>()) {
+      value = nullptr;
+    } else {
+      value = deserialize_expression();
+      if (!value.has_value()) {
+        return nullptr;
+      }
+    }
+
+    fields.emplace_back(field_name, value);
+  }
+
+  return make<EnumDef>(name, type, std::move(fields))();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Function() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("attributes") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto attribute_count = next<uint64_t>();
+
+  ExpressionList attributes;
+  attributes.reserve(attribute_count);
+
+  while (attribute_count--) {
+    auto attribute = deserialize_expression();
+    if (!attribute.has_value()) {
+      return nullptr;
+    }
+
+    attributes.push_back(attribute.value());
+  }
+
+  if (!next_if<std::string>("thread_safe") || !next_is<bool>()) {
+    return nullptr;
+  }
+
+  auto thread_safe = next<bool>();
+
+  if (!next_if<std::string>("purity")) {
+    return nullptr;
+  }
+
+  Purity purity;
+  if (next_if<std::string>("impure")) {
+    purity = thread_safe ? Purity::Impure_TSafe : Purity::Impure;
+  } else if (next_if<std::string>("pure")) {
+    purity = Purity::Pure;
+  } else if (next_if<std::string>("quasi")) {
+    purity = Purity::Quasi;
+  } else if (next_if<std::string>("retro")) {
+    purity = Purity::Retro;
+  } else {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("captures") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto capture_count = next<uint64_t>();
+
+  FnCaptures captures;
+  captures.reserve(capture_count);
+
+  while (capture_count--) {
+    if (!next_if<std::string>("name") || !next_is<std::string>()) {
+      return nullptr;
+    }
+
+    auto name = next<std::string>();
+
+    if (!next_if<std::string>("is_ref") || !next_is<bool>()) {
+      return nullptr;
+    }
+
+    auto is_ref = next<bool>();
+
+    captures.emplace_back(name, is_ref);
+  }
+
+  if (!next_if<std::string>("name") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto name = next<std::string>();
+
+  if (!next_if<std::string>("template")) {
+    return nullptr;
+  }
+
+  TemplateParameters template_args;
+
+  if (!next_if<none>()) {
+    auto template_count = next<uint64_t>();
+
+    template_args.reserve(template_count);
+
+    while (template_count--) {
+      if (!next_if<std::string>("name") || !next_is<std::string>()) {
+        return nullptr;
+      }
+
+      auto name = next<std::string>();
+
+      if (!next_if<std::string>("type")) {
+        return nullptr;
+      }
+
+      auto type = deserialize_type();
+      if (!type.has_value()) {
+        return nullptr;
+      }
+
+      if (!next_if<std::string>("default")) {
+        return nullptr;
+      }
+
+      NullableFlowPtr<Expr> default_value;
+      if (next_if<none>()) {
+        default_value = nullptr;
+      } else {
+        default_value = deserialize_expression();
+        if (!default_value.has_value()) {
+          return nullptr;
+        }
+      }
+
+      template_args.emplace_back(name, type.value(), default_value);
+    }
+  }
+
+  if (!next_if<std::string>("input")) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("variadic") || !next_is<bool>()) {
+    return nullptr;
+  }
+
+  auto variadic = next<bool>();
+
+  if (!next_if<std::string>("parameters") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto parameter_count = next<uint64_t>();
+
+  FuncParams parameters;
+  parameters.reserve(parameter_count);
+
+  while (parameter_count--) {
+    if (!next_if<std::string>("name") || !next_is<std::string>()) {
+      return nullptr;
+    }
+
+    auto parameter_name = next<std::string>();
+
+    if (!next_if<std::string>("type")) {
+      return nullptr;
+    }
+
+    auto type = deserialize_type();
+    if (!type.has_value()) {
+      return nullptr;
+    }
+
+    if (!next_if<std::string>("default")) {
+      return nullptr;
+    }
+
+    NullableFlowPtr<Expr> default_value;
+    if (next_if<none>()) {
+      default_value = nullptr;
+    } else {
+      default_value = deserialize_expression();
+      if (!default_value.has_value()) {
+        return nullptr;
+      }
+    }
+
+    parameters.emplace_back(std::move(parameter_name), type.value(),
+                            default_value);
+  }
+
+  if (!next_if<std::string>("return")) {
+    return nullptr;
+  }
+
+  auto return_type = deserialize_type();
+  if (!return_type.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("precond")) {
+    return nullptr;
+  }
+
+  NullableFlowPtr<Expr> precond;
+  if (next_if<none>()) {
+    precond = nullptr;
+  } else {
+    precond = deserialize_expression();
+    if (!precond.has_value()) {
+      return nullptr;
+    }
+  }
+
+  if (!next_if<std::string>("postcond")) {
+    return nullptr;
+  }
+
+  NullableFlowPtr<Expr> postcond;
+  if (next_if<none>()) {
+    postcond = nullptr;
+  } else {
+    postcond = deserialize_expression();
+    if (!postcond.has_value()) {
+      return nullptr;
+    }
+  }
+
+  if (!next_if<std::string>("body")) {
+    return nullptr;
+  }
+
+  auto body = deserialize_statement();
+  if (!body.has_value()) {
+    return nullptr;
+  }
+
+  return make<Function>(std::move(attributes), purity, std::move(captures),
+                        name, std::move(template_args), std::move(parameters),
+                        variadic, return_type.value(), precond, postcond,
+                        body.value())();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Scope() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("name") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto name = next<std::string>();
+
+  if (!next_if<std::string>("depends") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto dependency_count = next<uint64_t>();
+
+  ScopeDeps dependencies;
+  dependencies.reserve(dependency_count);
+
+  while (dependency_count--) {
+    auto dependency = next<std::string>();
+    dependencies.push_back(dependency);
+  }
+
+  if (!next_if<std::string>("body")) {
+    return nullptr;
+  }
+
+  auto body = deserialize_object();
+  if (!body.has_value()) {
+    return nullptr;
+  }
+
+  return make<ScopeStmt>(name, body.value(), dependencies)();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Export() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("abi") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto abi_name = next<std::string>();
+
+  if (!next_if<std::string>("visibility") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  Vis visibility;
+
+  if (next_if<std::string>("pub")) {
+    visibility = Vis::Pub;
+  } else if (next_if<std::string>("pro")) {
+    visibility = Vis::Pro;
+  } else if (next_if<std::string>("sec")) {
+    visibility = Vis::Sec;
+  } else {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("attributes") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto attribute_count = next<uint64_t>();
+
+  ExpressionList attributes;
+  attributes.reserve(attribute_count);
+
+  while (attribute_count--) {
+    auto attribute = deserialize_expression();
+    if (!attribute.has_value()) {
+      return nullptr;
+    }
+
+    attributes.push_back(attribute.value());
+  }
+
+  if (!next_if<std::string>("body")) {
+    return nullptr;
+  }
+
+  auto body = deserialize_object();
+  if (!body.has_value()) {
+    return nullptr;
+  }
+
+  return make<ExportStmt>(body.value(), abi_name, visibility,
+                          std::move(attributes))();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Block() {
@@ -1775,8 +2432,74 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Block() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Let() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("mode")) {
+    return nullptr;
+  }
+  VarDeclType mode;
+
+  if (next_if<std::string>("let")) {
+    mode = VarDeclType::Let;
+  } else if (next_if<std::string>("var")) {
+    mode = VarDeclType::Var;
+  } else if (next_if<std::string>("const")) {
+    mode = VarDeclType::Const;
+  } else {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("name") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto name = next<std::string>();
+
+  if (!next_if<std::string>("type")) {
+    return nullptr;
+  }
+
+  NullableFlowPtr<Type> type;
+  if (next_if<none>()) {
+    type = nullptr;
+  } else {
+    type = deserialize_type();
+    if (!type.has_value()) {
+      return nullptr;
+    }
+  }
+
+  if (!next_if<std::string>("value")) {
+    return nullptr;
+  }
+
+  NullableFlowPtr<Expr> value;
+  if (next_if<none>()) {
+    value = nullptr;
+  } else {
+    value = deserialize_expression();
+    if (!value.has_value()) {
+      return nullptr;
+    }
+  }
+
+  if (!next_if<std::string>("attributes") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto attribute_count = next<uint64_t>();
+
+  ExpressionList attributes;
+  attributes.reserve(attribute_count);
+
+  while (attribute_count--) {
+    auto attribute = deserialize_expression();
+    if (!attribute.has_value()) {
+      return nullptr;
+    }
+
+    attributes.push_back(attribute.value());
+  }
+
+  return make<VarDecl>(name, type, value, mode, std::move(attributes))();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_InlineAsm() {
@@ -1785,13 +2508,43 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_InlineAsm() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Return() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("expr")) {
+    return nullptr;
+  }
+
+  NullableFlowPtr<Expr> expression;
+  if (next_if<none>()) {
+    expression = nullptr;
+  } else {
+    expression = deserialize_expression();
+    if (!expression.has_value()) {
+      return nullptr;
+    }
+  }
+
+  return make<ReturnStmt>(expression)();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Retif() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("cond")) {
+    return nullptr;
+  }
+
+  auto condition = deserialize_expression();
+  if (!condition.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("expr")) {
+    return nullptr;
+  }
+
+  auto expression = deserialize_expression();
+  if (!expression.has_value()) {
+    return nullptr;
+  }
+
+  return make<ReturnIfStmt>(condition.value(), expression.value())();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Break() {
@@ -1803,33 +2556,215 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Continue() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_If() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("cond")) {
+    return nullptr;
+  }
+
+  auto condition = deserialize_expression();
+  if (!condition.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("then")) {
+    return nullptr;
+  }
+
+  auto then_block = deserialize_object();
+
+  if (!next_if<std::string>("else")) {
+    return nullptr;
+  }
+
+  NullableFlowPtr<Stmt> else_block;
+  if (next_if<none>()) {
+    else_block = nullptr;
+  } else {
+    else_block = deserialize_statement();
+    if (!else_block.has_value()) {
+      return nullptr;
+    }
+  }
+
+  return make<IfStmt>(condition.value(), then_block.value(), else_block)();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_While() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("cond")) {
+    return nullptr;
+  }
+
+  auto condition = deserialize_expression();
+  if (!condition.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("body")) {
+    return nullptr;
+  }
+
+  auto body = deserialize_object();
+  if (!body.has_value()) {
+    return nullptr;
+  }
+
+  return make<WhileStmt>(condition.value(), body.value())();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_For() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("init")) {
+    return nullptr;
+  }
+
+  NullableFlowPtr<Stmt> init;
+  if (next_if<none>()) {
+    init = nullptr;
+  } else {
+    init = deserialize_statement();
+    if (!init.has_value()) {
+      return nullptr;
+    }
+  }
+
+  if (!next_if<std::string>("cond")) {
+    return nullptr;
+  }
+
+  NullableFlowPtr<Expr> condition;
+  if (next_if<none>()) {
+    condition = nullptr;
+  } else {
+    condition = deserialize_expression();
+    if (!condition.has_value()) {
+      return nullptr;
+    }
+  }
+
+  if (!next_if<std::string>("step")) {
+    return nullptr;
+  }
+
+  NullableFlowPtr<Expr> step;
+  if (next_if<none>()) {
+    step = nullptr;
+  } else {
+    step = deserialize_expression();
+    if (!step.has_value()) {
+      return nullptr;
+    }
+  }
+
+  if (!next_if<std::string>("body")) {
+    return nullptr;
+  }
+
+  auto body = deserialize_object();
+  if (!body.has_value()) {
+    return nullptr;
+  }
+
+  return make<ForStmt>(init, condition, step, body.value())();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Foreach() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("idx") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto index_name = next<std::string>();
+
+  if (!next_if<std::string>("val") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto value_name = next<std::string>();
+
+  if (!next_if<std::string>("expr")) {
+    return nullptr;
+  }
+
+  auto expression = deserialize_expression();
+  if (!expression.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("body")) {
+    return nullptr;
+  }
+
+  auto body = deserialize_object();
+  if (!body.has_value()) {
+    return nullptr;
+  }
+
+  return make<ForeachStmt>(index_name, value_name, expression.value(),
+                           body.value())();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Case() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("match")) {
+    return nullptr;
+  }
+
+  auto match = deserialize_expression();
+  if (!match.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("body")) {
+    return nullptr;
+  }
+
+  auto body = deserialize_statement();
+  if (!body.has_value()) {
+    return nullptr;
+  }
+
+  return make<CaseStmt>(match.value(), body.value())();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Switch() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("match")) {
+    return nullptr;
+  }
+
+  auto match = deserialize_expression();
+  if (!match.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("cases") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto case_count = next<uint64_t>();
+
+  SwitchCases cases;
+  cases.reserve(case_count);
+
+  while (case_count--) {
+    auto case_stmt = deserialize_object();
+    if (!case_stmt.has_value()) {
+      return nullptr;
+    }
+
+    cases.push_back(case_stmt.value());
+  }
+
+  if (!next_if<std::string>("default")) {
+    return nullptr;
+  }
+
+  NullableFlowPtr<Stmt> default_case;
+  if (next_if<none>()) {
+    default_case = nullptr;
+  } else {
+    default_case = deserialize_statement();
+    if (!default_case.has_value()) {
+      return nullptr;
+    }
+  }
+
+  return make<SwitchStmt>(match.value(), std::move(cases), default_case)();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_ExprStmt() {

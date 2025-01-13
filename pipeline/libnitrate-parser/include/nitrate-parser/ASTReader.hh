@@ -97,6 +97,7 @@ namespace ncc::parse {
     std::optional<LocationRange> Read_LocationRange();
 
     NullableFlowPtr<Base> deserialize_object();
+    NullableFlowPtr<Stmt> deserialize_statement();
     NullableFlowPtr<Expr> deserialize_expression();
     NullableFlowPtr<Type> deserialize_type();
 

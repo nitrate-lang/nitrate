@@ -251,7 +251,7 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    ScopeStmt(string name, FlowPtr<Stmt> body, ScopeDeps deps = {})
+    ScopeStmt(string name, FlowPtr<Stmt> body, ScopeDeps deps)
         : Stmt(QAST_SCOPE), m_deps(deps), m_body(body), m_name(name) {}
 
     constexpr auto get_name() const { return m_name.get(); }
