@@ -104,38 +104,37 @@ static std::optional<AST_Reader::Value> GetNextValueImpl(
   /* Flatten the JSON data structure as-if doing a depth-first traversal */
   using Value = AST_Reader::Value;
 
-/* Use GOTO to ensure recursive stack frames are created */
-FunctionStart:
+  while (true) {
+    if (stack.empty()) [[unlikely]] {
+      return std::nullopt;
+    }
 
-  if (stack.empty()) [[unlikely]] {
-    return std::nullopt;
-  }
+    if (std::holds_alternative<json>(stack.top())) {
+      const auto value = std::get<json>(stack.top());
+      stack.pop();
 
-  if (std::holds_alternative<json>(stack.top())) {
-    const auto value = std::get<json>(stack.top());
-    stack.pop();
-    return JsonToValue(std::move(value));
-  } else {
+      return JsonToValue(std::move(value));
+    }
+
     auto& [it, end] = std::get<JsonRange>(stack.top());
 
     /* End of structured object */
-    if (it == end) {
-      stack.pop();
-      goto FunctionStart;
-    }
+    if (it != end) {
+      const auto& value = *it++;
 
-    const auto& value = *it++;
+      if (value.is_array()) {
+        /* Flatten the array be prefixing it with its size */
+        stack.push(JsonRange{value.begin(), value.end()});
 
-    if (value.is_array()) {
-      /* Preceed the array elements with the array size */
-      stack.push(JsonRange{value.begin(), value.end()});
-      return Value(value.size());
-    } else if (value.is_object()) {
+        return Value(value.size());
+      } else if (!value.is_object()) {
+        return JsonToValue(std::move(value));
+      }
+
       FlattenJsonObject(value, stack);
-      goto FunctionStart;
+    } else {
+      stack.pop();
     }
-
-    return JsonToValue(std::move(value));
   }
 }
 
