@@ -436,8 +436,6 @@ Location IScanner::Start(Token t) { return t.get_start().Get(*this); }
 
 Location IScanner::End(Token) {
   /// TODO: Support relexing to get the end location
-  qcore_implement();
-
   return Location::EndOfFile();
 }
 

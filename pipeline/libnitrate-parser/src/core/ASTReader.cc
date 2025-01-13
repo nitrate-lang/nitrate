@@ -168,6 +168,57 @@ std::optional<AST_Reader::LocationRange> AST_Reader::Read_LocationRange() {
   return range;
 }
 
+std::optional<AST_Reader::TypeMetadata> AST_Reader::Read_TypeMetadata() {
+  AST_Reader::TypeMetadata info;
+
+  if (!next_if<std::string>("width")) {
+    return std::nullopt;
+  }
+
+  if (next_if<none>()) {
+    info.width = nullptr;
+  } else {
+    auto width = deserialize_expression();
+    if (!width.has_value()) {
+      return std::nullopt;
+    }
+
+    info.width = width.value();
+  }
+
+  if (!next_if<std::string>("min")) {
+    return std::nullopt;
+  }
+
+  if (next_if<none>()) {
+    info.min = nullptr;
+  } else {
+    auto min = deserialize_expression();
+    if (!min.has_value()) {
+      return std::nullopt;
+    }
+
+    info.min = min.value();
+  }
+
+  if (!next_if<std::string>("max")) {
+    return std::nullopt;
+  }
+
+  if (next_if<none>()) {
+    info.max = nullptr;
+  } else {
+    auto max = deserialize_expression();
+    if (!max.has_value()) {
+      return std::nullopt;
+    }
+
+    info.max = max.value();
+  }
+
+  return info;
+}
+
 NullableFlowPtr<Base> AST_Reader::deserialize_object() {
   // This code must be the reverse of the map contained in:
   // 'constexpr std::string_view Base::getKindName(npar_ty_t type)'
@@ -610,24 +661,140 @@ NullableFlowPtr<Base> AST_Reader::deserialize_object() {
   return R;
 }
 
+NullableFlowPtr<Expr> AST_Reader::deserialize_expression() {
+  auto object = deserialize_object();
+  if (!object.has_value()) {
+    return nullptr;
+  }
+
+  auto kind = object.value()->getKind();
+  if (kind < QAST__EXPR_FIRST || kind > QAST__EXPR_LAST) {
+    return nullptr;
+  }
+
+  return object.value().as<Expr>();
+}
+
+NullableFlowPtr<Type> AST_Reader::deserialize_type() {
+  auto object = deserialize_object();
+  if (!object.has_value()) {
+    return nullptr;
+  }
+
+  auto kind = object.value()->getKind();
+  if (kind < QAST__TYPE_FIRST || kind > QAST__TYPE_LAST) {
+    return nullptr;
+  }
+
+  return object.value().as<Type>();
+}
+
 NullableFlowPtr<Base> AST_Reader::ReadKind_Node() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  return make<Base>(QAST_BASE)();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Binexpr() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("op") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto op = next<std::string>();
+
+  auto op_it = lex::LexicalOperators.left.find(op);
+  if (op_it == lex::LexicalOperators.left.end()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("lhs")) {
+    return nullptr;
+  }
+
+  auto lhs = deserialize_expression();
+  if (!lhs.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("rhs")) {
+    return nullptr;
+  }
+
+  auto rhs = deserialize_expression();
+  if (!rhs.has_value()) {
+    return nullptr;
+  }
+
+  return make<BinExpr>(lhs.value(), op_it->second, rhs.value())();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Unexpr() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("op") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto op = next<std::string>();
+
+  auto op_it = lex::LexicalOperators.left.find(op);
+  if (op_it == lex::LexicalOperators.left.end()) {
+    return nullptr;
+  }
+
+  auto rhs = deserialize_expression();
+  if (!rhs.has_value()) {
+    return nullptr;
+  }
+
+  return make<UnaryExpr>(op_it->second, rhs.value())();
+}
+
+NullableFlowPtr<Base> AST_Reader::ReadKind_PostUnexpr() {
+  if (!next_if<std::string>("op") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto op = next<std::string>();
+
+  auto op_it = lex::LexicalOperators.left.find(op);
+  if (op_it == lex::LexicalOperators.left.end()) {
+    return nullptr;
+  }
+
+  auto lhs = deserialize_expression();
+  if (!lhs.has_value()) {
+    return nullptr;
+  }
+
+  return make<PostUnaryExpr>(lhs.value(), op_it->second)();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Terexpr() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("cond")) {
+    return nullptr;
+  }
+
+  auto cond = deserialize_expression();
+  if (!cond.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("lhs")) {
+    return nullptr;
+  }
+
+  auto lhs = deserialize_expression();
+  if (!lhs.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("rhs")) {
+    return nullptr;
+  }
+
+  auto rhs = deserialize_expression();
+  if (!rhs.has_value()) {
+    return nullptr;
+  }
+
+  return make<TernaryExpr>(cond.value(), lhs.value(), rhs.value())();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Int() {
@@ -715,28 +882,138 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Undef() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Call() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("callee")) {
+    return nullptr;
+  }
+
+  auto callee = deserialize_expression();
+  if (!callee.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("arguments") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto argument_count = next<uint64_t>();
+
+  CallArgs arguments;
+  arguments.reserve(argument_count);
+
+  while (argument_count--) {
+    if (!next_if<std::string>("name") || !next_is<std::string>()) {
+      return nullptr;
+    }
+
+    auto name = next<std::string>();
+
+    if (!next_if<std::string>("value")) {
+      return nullptr;
+    }
+
+    auto value = deserialize_expression();
+    if (!value.has_value()) {
+      return nullptr;
+    }
+
+    arguments.emplace_back(std::move(name), value.value());
+  }
+
+  return make<Call>(callee.value(), std::move(arguments))();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_List() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("elements") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto element_count = next<uint64_t>();
+
+  ExpressionList elements;
+  elements.reserve(element_count);
+
+  while (element_count--) {
+    auto element = deserialize_expression();
+    if (!element.has_value()) {
+      return nullptr;
+    }
+
+    elements.push_back(element.value());
+  }
+
+  return make<List>(std::move(elements))();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Assoc() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("key")) {
+    return nullptr;
+  }
+
+  auto key = deserialize_expression();
+  if (!key.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("value")) {
+    return nullptr;
+  }
+
+  auto value = deserialize_expression();
+  if (!value.has_value()) {
+    return nullptr;
+  }
+
+  return make<Assoc>(key.value(), value.value())();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Index() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("base")) {
+    return nullptr;
+  }
+
+  auto base = deserialize_expression();
+  if (!base.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("index")) {
+    return nullptr;
+  }
+
+  auto index = deserialize_expression();
+
+  return make<Index>(base.value(), index.value())();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Slice() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("base")) {
+    return nullptr;
+  }
+
+  auto base = deserialize_expression();
+  if (!base.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("start")) {
+    return nullptr;
+  }
+
+  auto start = deserialize_expression();
+  if (!start.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("end")) {
+    return nullptr;
+  }
+
+  auto end = deserialize_expression();
+  if (!end.has_value()) {
+    return nullptr;
+  }
+
+  return make<Slice>(base.value(), start.value(), end.value())();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Fstring() {
@@ -745,28 +1022,61 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Fstring() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Ident() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("name") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto name = next<std::string>();
+
+  return make<Ident>(std::move(name))();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_SeqPoint() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
-}
+  if (!next_if<std::string>("terms") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
 
-NullableFlowPtr<Base> AST_Reader::ReadKind_PostUnexpr() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto expression_count = next<uint64_t>();
+
+  ExpressionList terms;
+  terms.reserve(expression_count);
+
+  while (expression_count--) {
+    auto term = deserialize_expression();
+    if (!term.has_value()) {
+      return nullptr;
+    }
+
+    terms.push_back(term.value());
+  }
+
+  return make<SeqPoint>(std::move(terms))();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_StmtExpr() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("stmt")) {
+    return nullptr;
+  }
+
+  auto stmt = deserialize_object();
+  if (!stmt.has_value()) {
+    return nullptr;
+  }
+
+  return make<StmtExpr>(stmt.value())();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_TypeExpr() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("type")) {
+    return nullptr;
+  }
+
+  auto type = deserialize_type();
+  if (!type.has_value()) {
+    return nullptr;
+  }
+
+  return make<TypeExpr>(type.value())();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_TemplCall() {
@@ -774,94 +1084,275 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_TemplCall() {
   qcore_implement();
 }
 
-NullableFlowPtr<Base> AST_Reader::ReadKind_Ref() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
-}
-
 NullableFlowPtr<Base> AST_Reader::ReadKind_U1() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<U1>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_U8() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<U8>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_U16() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<U16>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_U32() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<U32>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_U64() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<U64>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_U128() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<U128>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_I8() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<I8>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_I16() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<I16>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_I32() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<I32>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_I64() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<I64>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_I128() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<I128>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_F16() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<F16>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_F32() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<F32>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_F64() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<F64>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_F128() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<F128>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Void() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<VoidTy>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
+}
+
+NullableFlowPtr<Base> AST_Reader::ReadKind_Ref() {
+  auto info = Read_TypeMetadata();
+
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("to")) {
+    return nullptr;
+  }
+
+  auto to = deserialize_type();
+  if (!to.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<RefTy>(to.value())();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Ptr() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("to")) {
+    return nullptr;
+  }
+
+  auto to = deserialize_type();
+  if (!to.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<RefTy>(to.value())();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Opaque() {
@@ -890,8 +1381,17 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Unres() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Infer() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<InferTy>()();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Templ() {
@@ -930,8 +1430,41 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Export() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Block() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("safe")) {
+    return nullptr;
+  }
+
+  SafetyMode mode;
+
+  if (next_if<none>()) {
+    mode = SafetyMode::Unknown;
+  } else if (next_if<std::string>("yes")) {
+    mode = SafetyMode::Safe;
+  } else if (next_if<std::string>("no")) {
+    mode = SafetyMode::Unsafe;
+  } else {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("body") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto statement_count = next<uint64_t>();
+
+  BlockItems statements;
+  statements.reserve(statement_count);
+
+  while (statement_count--) {
+    auto stmt = deserialize_object();
+    if (!stmt.has_value()) {
+      return nullptr;
+    }
+
+    statements.push_back(stmt.value());
+  }
+
+  return make<Block>(std::move(statements), mode)();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Let() {
@@ -993,6 +1526,14 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Switch() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_ExprStmt() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("expr")) {
+    return nullptr;
+  }
+
+  auto expr = deserialize_expression();
+  if (!expr.has_value()) {
+    return nullptr;
+  }
+
+  return make<ExprStmt>(expr.value())();
 }

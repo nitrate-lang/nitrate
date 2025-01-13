@@ -161,9 +161,6 @@ void AST_Writer::visit(FlowPtr<Base> n) {
 void AST_Writer::visit(FlowPtr<ExprStmt> n) {
   begin_obj(3);
 
-  auto x = n < n;
-  (void)x;
-
   string("kind");
   string(n->getKindName());
 

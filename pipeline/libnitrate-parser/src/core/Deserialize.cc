@@ -84,16 +84,17 @@ static std::optional<AST_Reader::Value> JsonToValue(ordered_json v) {
 static void FlattenJson(const ordered_json& value,
                         std::queue<ordered_json>& queue) {
   if (value.is_array()) {
+    queue.push(value.size());
     for (const auto& val : value) {
       FlattenJson(val, queue);
     }
   } else if (value.is_object()) {
     for (const auto& [key, val] : value.items()) {
-      queue.push(key);          // Push key first
-      FlattenJson(val, queue);  // Then recursively process the value
+      queue.push(key);
+      FlattenJson(val, queue);
     }
   } else {
-    queue.push(value);  // Push primitive values directly
+    queue.push(value);
   }
 }
 

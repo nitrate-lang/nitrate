@@ -97,6 +97,14 @@ namespace ncc::parse {
     std::optional<LocationRange> Read_LocationRange();
 
     NullableFlowPtr<Base> deserialize_object();
+    NullableFlowPtr<Expr> deserialize_expression();
+    NullableFlowPtr<Type> deserialize_type();
+
+    struct TypeMetadata {
+      NullableFlowPtr<Expr> width, min, max;
+    };
+
+    std::optional<TypeMetadata> Read_TypeMetadata();
 
     NullableFlowPtr<Base> ReadKind_Node();
     NullableFlowPtr<Base> ReadKind_Binexpr();
