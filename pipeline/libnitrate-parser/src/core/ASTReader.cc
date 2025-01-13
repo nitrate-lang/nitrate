@@ -1080,8 +1080,73 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_TypeExpr() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_TemplCall() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("callee")) {
+    return nullptr;
+  }
+
+  auto callee = deserialize_expression();
+  if (!callee.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("template") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto template_count = next<uint64_t>();
+
+  CallArgs template_args;
+  template_args.reserve(template_count);
+
+  while (template_count--) {
+    if (!next_if<std::string>("name") || !next_is<std::string>()) {
+      return nullptr;
+    }
+
+    auto name = next<std::string>();
+
+    if (!next_if<std::string>("value")) {
+      return nullptr;
+    }
+
+    auto value = deserialize_expression();
+    if (!value.has_value()) {
+      return nullptr;
+    }
+
+    template_args.emplace_back(std::move(name), value.value());
+  }
+
+  if (!next_if<std::string>("arguments") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto argument_count = next<uint64_t>();
+
+  CallArgs arguments;
+  arguments.reserve(argument_count);
+
+  while (argument_count--) {
+    if (!next_if<std::string>("name") || !next_is<std::string>()) {
+      return nullptr;
+    }
+
+    auto name = next<std::string>();
+
+    if (!next_if<std::string>("value")) {
+      return nullptr;
+    }
+
+    auto value = deserialize_expression();
+    if (!value.has_value()) {
+      return nullptr;
+    }
+
+    arguments.emplace_back(std::move(name), value.value());
+  }
+
+  return make<TemplCall>(callee.value(), std::move(arguments),
+                         std::move(template_args))();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_U1() {
@@ -1356,28 +1421,224 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Ptr() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Opaque() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("name") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto name = next<std::string>();
+
+  auto node = make<OpaqueTy>(name)();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Array() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("of")) {
+    return nullptr;
+  }
+
+  auto of = deserialize_type();
+  if (!of.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("size")) {
+    return nullptr;
+  }
+
+  auto size = deserialize_expression();
+  if (!size.has_value()) {
+    return nullptr;
+  }
+
+  auto node = make<ArrayTy>(of.value(), size.value())();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Tuple() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("fields") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto field_count = next<uint64_t>();
+
+  TupleTyItems fields;
+  fields.reserve(field_count);
+
+  while (field_count--) {
+    auto field = deserialize_type();
+    if (!field.has_value()) {
+      return nullptr;
+    }
+
+    fields.push_back(field.value());
+  }
+
+  auto node = make<TupleTy>(std::move(fields))();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_FuncTy() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("attributes") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto attribute_count = next<uint64_t>();
+
+  ExpressionList attributes;
+  attributes.reserve(attribute_count);
+
+  while (attribute_count--) {
+    auto attribute = deserialize_expression();
+    if (!attribute.has_value()) {
+      return nullptr;
+    }
+
+    attributes.push_back(attribute.value());
+  }
+
+  if (!next_if<std::string>("return")) {
+    return nullptr;
+  }
+
+  auto return_type = deserialize_type();
+  if (!return_type.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("thread_safe") || !next_is<bool>()) {
+    return nullptr;
+  }
+
+  auto thread_safe = next<bool>();
+
+  if (!next_if<std::string>("purity")) {
+    return nullptr;
+  }
+
+  Purity purity;
+  if (next_if<std::string>("impure")) {
+    purity = thread_safe ? Purity::Impure_TSafe : Purity::Impure;
+  } else if (next_if<std::string>("pure")) {
+    purity = Purity::Pure;
+  } else if (next_if<std::string>("quasi")) {
+    purity = Purity::Quasi;
+  } else if (next_if<std::string>("retro")) {
+    purity = Purity::Retro;
+  } else {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("input")) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("variadic") || !next_is<bool>()) {
+    return nullptr;
+  }
+
+  auto variadic = next<bool>();
+
+  if (!next_if<std::string>("parameters") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto parameter_count = next<uint64_t>();
+
+  FuncParams parameters;
+  parameters.reserve(parameter_count);
+
+  while (parameter_count--) {
+    if (!next_if<std::string>("name") || !next_is<std::string>()) {
+      return nullptr;
+    }
+
+    auto name = next<std::string>();
+
+    if (!next_if<std::string>("type")) {
+      return nullptr;
+    }
+
+    auto type = deserialize_type();
+    if (!type.has_value()) {
+      return nullptr;
+    }
+
+    if (!next_if<std::string>("default")) {
+      return nullptr;
+    }
+
+    NullableFlowPtr<Expr> default_value;
+    if (next_if<none>()) {
+      default_value = nullptr;
+    } else {
+      default_value = deserialize_expression();
+      if (!default_value.has_value()) {
+        return nullptr;
+      }
+    }
+
+    parameters.emplace_back(std::move(name), type.value(), default_value);
+  }
+
+  auto node = make<FuncTy>(return_type.value(), parameters, variadic, purity,
+                           attributes)();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Unres() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("name") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto name = next<std::string>();
+
+  auto node = make<NamedTy>(name)();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Infer() {
@@ -1395,8 +1656,54 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Infer() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Templ() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  auto info = Read_TypeMetadata();
+  if (!info.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("template")) {
+    return nullptr;
+  }
+
+  auto templ = deserialize_type();
+  if (!templ.has_value()) {
+    return nullptr;
+  }
+
+  if (!next_if<std::string>("arguments") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto argument_count = next<uint64_t>();
+
+  CallArgs arguments;
+  arguments.reserve(argument_count);
+
+  while (argument_count--) {
+    if (!next_if<std::string>("name") || !next_is<std::string>()) {
+      return nullptr;
+    }
+
+    auto name = next<std::string>();
+
+    if (!next_if<std::string>("value")) {
+      return nullptr;
+    }
+
+    auto value = deserialize_expression();
+    if (!value.has_value()) {
+      return nullptr;
+    }
+
+    arguments.emplace_back(std::move(name), value.value());
+  }
+
+  auto node = make<TemplType>(templ.value(), std::move(arguments))();
+  node->set_width(info->width);
+  node->set_range_begin(info->min);
+  node->set_range_end(info->max);
+
+  return node;
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Typedef() {

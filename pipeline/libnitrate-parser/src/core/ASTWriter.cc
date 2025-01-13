@@ -874,12 +874,21 @@ void AST_Writer::visit(FlowPtr<TemplCall> n) {
     string("template");
 
     auto args = n->get_template_args();
-    begin_obj(args.size());
+    begin_arr(args.size());
+
     std::for_each(args.begin(), args.end(), [&](auto arg) {
+      begin_obj(2);
+
+      string("name");
       string(*arg.first);
+
+      string("value");
       arg.second.accept(*this);
+
+      end_obj();
     });
-    end_obj();
+
+    end_arr();
   }
 
   { /* Write arguments */
