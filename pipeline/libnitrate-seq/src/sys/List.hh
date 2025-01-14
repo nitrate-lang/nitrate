@@ -47,12 +47,12 @@ namespace ncc::seq {
   class Sequencer::PImpl final {
   public:
     lua_State* L = nullptr;
-    std::vector<DeferCallback> defer_callbacks;
-    std::deque<ncc::lex::Token> buffer;
-    std::mt19937 m_qsys_random_engine;
-    bool m_do_expanse = true;
+    std::vector<DeferCallback> m_defer;
+    std::deque<ncc::lex::Token> m_buffer;
+    std::mt19937 m_random;
     size_t m_depth = 0;
 
+    PImpl();
     ~PImpl();
   };
 

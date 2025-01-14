@@ -53,7 +53,7 @@ int ncc::seq::sys_emit(lua_State* L) {
                         lua_typename(L, lua_type(L, i)));
     }
 
-    obj->expand_raw(lua_tostring(L, i));
+    obj->RecursiveExpand(lua_tostring(L, i));
   }
 
   return 0;

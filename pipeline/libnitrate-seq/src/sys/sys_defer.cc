@@ -147,7 +147,7 @@ int ncc::seq::sys_defer(lua_State* L) {
     return R;
   };
 
-  get_engine()->m_core->defer_callbacks.push_back(cb);
+  get_engine()->m_core->m_defer.push_back(cb);
 
   return 0;
 }

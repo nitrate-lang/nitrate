@@ -69,12 +69,12 @@ namespace ncc::seq {
       return m_scanner->GetLocation(id);
     }
 
-    bool run_defer_callbacks(ncc::lex::Token last);
+    bool ApplyDynamicTransforms(ncc::lex::Token last);
 
-    std::optional<std::string> run_lua_code(const std::string &s);
-    bool run_and_expand(const std::string &code);
-    void expand_raw(std::string_view code);
-    void install_lua_api();
+    bool ExecuteLua(const char *code);
+    void RecursiveExpand(std::string_view code);
+    void LoadLuaLibs();
+    void BindLuaAPI();
 
   public:
     Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
