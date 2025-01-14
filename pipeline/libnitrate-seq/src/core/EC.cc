@@ -31,39 +31,64 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstdio>
-#include <nitrate-core/Environment.hh>
-#include <nitrate-seq/Sequencer.hh>
-#include <sys/List.hh>
+#include <nitrate-seq/EC.hh>
 
-extern "C" {
-#include <lua/lauxlib.h>
-}
+using namespace ncc;
+using namespace ncc::seq;
 
-int ncc::seq::sys_fatal(lua_State* L) {
-  int nargs = lua_gettop(L);
-  if (nargs == 0) {
-    return luaL_error(L, "Expected at least one argument, got 0");
-  }
+NCC_EXPORT std::string ncc::seq::ec::Formatter(std::string_view message,
+                                               Sev sev) {
+  std::stringstream ss;
+  ss << "[\x1b[0m\x1b[37;1mMeta\x1b[0m\x1b[37;1m]: ";
 
-  qcore_begin();
+  switch (sev) {
+    case Trace: {
+      ss << "\x1b[1mtrace:\x1b[0m ";
+      break;
+    }
 
-  for (int i = 1; i <= nargs; i++) {
-    if (lua_isstring(L, i)) {
-      qcore_write(lua_tostring(L, i));
-    } else if (lua_isnumber(L, i)) {
-      qcore_writef("%f", (double)lua_tonumber(L, i));
-    } else if (lua_isboolean(L, i)) {
-      qcore_write(lua_toboolean(L, i) ? "true" : "false");
-    } else {
-      return luaL_error(
-          L,
-          "Invalid argument #%d: expected string, number, or boolean, got %s",
-          i, lua_typename(L, lua_type(L, i)));
+    case Debug: {
+      ss << "\x1b[1mdebug:\x1b[0m ";
+      break;
+    }
+
+    case Info: {
+      ss << "\x1b[37;1minfo:\x1b[0m ";
+      break;
+    }
+
+    case Notice: {
+      ss << "\x1b[37;1mnotice:\x1b[0m ";
+      break;
+    }
+
+    case Warning: {
+      ss << "\x1b[35;1mwarning:\x1b[0m ";
+      break;
+    }
+
+    case Sev::Error: {
+      ss << "\x1b[31;1merror:\x1b[0m ";
+      break;
+    }
+
+    case Critical: {
+      ss << "\x1b[31;1;4mcritical:\x1b[0m ";
+      break;
+    }
+
+    case Alert: {
+      ss << "\x1b[31;1;4malert:\x1b[0m ";
+      break;
+    }
+
+    case Emergency: {
+      ss << "\x1b[31;1;4memergency:\x1b[0m ";
+      break;
     }
   }
 
-  qcore_end(QCORE_FATAL);
+  ss << message;
 
-  throw Sequencer::StopException();
+  return ss.str();
 }

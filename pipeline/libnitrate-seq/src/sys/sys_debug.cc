@@ -46,7 +46,7 @@ int ncc::seq::sys_debug(lua_State* L) {
     return luaL_error(L, "Expected at least one argument, got 0");
   }
 
-  qcore_begin(QCORE_DEBUG);
+  qcore_begin();
 
   for (int i = 1; i <= nargs; i++) {
     if (lua_isstring(L, i)) {
@@ -63,7 +63,7 @@ int ncc::seq::sys_debug(lua_State* L) {
     }
   }
 
-  qcore_end();
+  qcore_end(QCORE_DEBUG);
 
   return 0;
 }

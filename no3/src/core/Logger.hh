@@ -42,6 +42,7 @@
 namespace no3::core {
   void SetColorMode(bool use_color);
   void SetDebugMode(bool debug);
+  bool GetDebugMode();
 
   struct MyLogSink : google::LogSink {
     std::unique_ptr<std::ostream> m_out;

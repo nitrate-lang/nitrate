@@ -31,39 +31,21 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstdio>
-#include <nitrate-core/Environment.hh>
-#include <nitrate-seq/Sequencer.hh>
-#include <sys/List.hh>
+#ifndef __NITRATE_SEQ_EC_H__
+#define __NITRATE_SEQ_EC_H__
 
-extern "C" {
-#include <lua/lauxlib.h>
-}
+#include <nitrate-core/Logger.hh>
 
-int ncc::seq::sys_fatal(lua_State* L) {
-  int nargs = lua_gettop(L);
-  if (nargs == 0) {
-    return luaL_error(L, "Expected at least one argument, got 0");
-  }
+namespace ncc::seq::ec {
+  std::string Formatter(std::string_view msg, Sev sev);
 
-  qcore_begin();
+  NCC_EC_GROUP(SeqEG);
 
-  for (int i = 1; i <= nargs; i++) {
-    if (lua_isstring(L, i)) {
-      qcore_write(lua_tostring(L, i));
-    } else if (lua_isnumber(L, i)) {
-      qcore_writef("%f", (double)lua_tonumber(L, i));
-    } else if (lua_isboolean(L, i)) {
-      qcore_write(lua_toboolean(L, i) ? "true" : "false");
-    } else {
-      return luaL_error(
-          L,
-          "Invalid argument #%d: expected string, number, or boolean, got %s",
-          i, lua_typename(L, lua_type(L, i)));
-    }
-  }
+#define EXPAND(path) "$NCC_CONF/ec/seq/" path
 
-  qcore_end(QCORE_FATAL);
+  NCC_EC_EX(SeqEG, SeqError, Formatter, EXPAND("SeqError"));
 
-  throw Sequencer::StopException();
-}
+#undef EXPAND
+}  // namespace ncc::seq::ec
+
+#endif

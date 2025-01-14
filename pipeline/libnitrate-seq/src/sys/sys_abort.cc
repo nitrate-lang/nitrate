@@ -46,7 +46,7 @@ int ncc::seq::sys_abort(lua_State* L) {
     return luaL_error(L, "Expected at least one argument, got 0");
   }
 
-  qcore_begin(QCORE_ERROR);
+  qcore_begin();
   get_engine()->SetFailBit();
 
   for (int i = 1; i <= nargs; i++) {
@@ -64,7 +64,7 @@ int ncc::seq::sys_abort(lua_State* L) {
     }
   }
 
-  qcore_end();
+  qcore_end(QCORE_ERROR);
 
   throw Sequencer::StopException();
 }

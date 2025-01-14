@@ -138,18 +138,6 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
   /* Setup thread-local shared environment                                   */
   /***************************************************************************/
 
-  struct LoggerCtx {
-    nit_diag_func diag_cb;
-    void *opaque;
-  } logger_ctx = {diag_cb, opaque};
-
-  qcore_bind_logger(
-      [](qcore_log_t, const char *msg, size_t, void *opaque) {
-        let logger_ctx = *reinterpret_cast<LoggerCtx *>(opaque);
-        logger_ctx.diag_cb(msg, logger_ctx.opaque);
-      },
-      &logger_ctx);
-
   auto subid = ncc::log.subscribe([&](auto msg, auto sev, const auto &ec) {
     diag_cb(ec.format(msg, sev).c_str(), opaque);
   });
@@ -172,7 +160,6 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
   } /* Failed to parse options */
 
   ncc::log.unsubscribe(subid);
-  qcore_bind_logger(nullptr, nullptr);
 
   return status;
 }

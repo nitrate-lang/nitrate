@@ -36,6 +36,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
+#include <nitrate-seq/EC.hh>
 #include <nitrate-seq/Sequencer.hh>
 #include <sys/List.hh>
 
@@ -49,6 +50,7 @@ extern "C" {
 
 using namespace ncc::lex;
 using namespace ncc::seq;
+using namespace ncc::seq::ec;
 
 Sequencer::PImpl::PImpl(std::shared_ptr<Environment> env) : m_env(env) {
   L = luaL_newstate();
@@ -133,7 +135,8 @@ bool Sequencer::ExecuteLua(const char *code) {
   auto rc = luaL_dostring(m_core->L, code);
 
   if (rc) {
-    qcore_logf(QCORE_ERROR, "Lua error: %s\n", lua_tostring(m_core->L, -1));
+    ncc::log << SeqError << "Lua error: " << lua_tostring(m_core->L, -1);
+
     SetFailBit();
     return false;
   }
@@ -169,7 +172,8 @@ func_entry:  // do tail call optimization manually
   try {
     RecursiveGuard guard(m_core->m_depth);
     if (guard.should_stop()) {
-      qcore_logf(QCORE_FATAL, "Maximum macro recursion depth reached\n");
+      ncc::log << SeqError << "Maximum macro recursion depth reached, aborting";
+
       throw StopException();
     }
 
@@ -199,7 +203,8 @@ func_entry:  // do tail call optimization manually
           auto import_name = m_scanner->Next().as_string().get();
           auto semicolon = m_scanner->Next();
           if (!semicolon.is<PuncSemi>()) {
-            qcore_logf(QCORE_ERROR, "Expected semicolon after import name\n");
+            ncc::log << SeqError << "Expected semicolon after import name";
+
             SetFailBit();
             x = Token::EndOfFile();
             SetFailBit();
@@ -222,11 +227,10 @@ func_entry:  // do tail call optimization manually
         auto block = ltrim(x.as_string());
         if (!block.starts_with("fn ")) {
           if (!ExecuteLua(std::string(block).c_str())) {
-            qcore_logf(QCORE_ERROR, "Failed to expand macro block: %s\n",
-                       block.data());
+            ncc::log << SeqError << "Failed to expand macro block: " << block;
+
             SetFailBit();
             x = Token::EndOfFile();
-            SetFailBit();
 
             goto emit_token;
           }
@@ -234,9 +238,9 @@ func_entry:  // do tail call optimization manually
           block = ltrim(block.substr(3));
           auto pos = block.find_first_of("(");
           if (pos == std::string_view::npos) {
-            qcore_logf(QCORE_ERROR, "Invalid macro function definition: %s\n",
-                       block.data());
-            SetFailBit();
+            ncc::log << SeqError
+                     << "Invalid macro function definition: " << block;
+
             x = Token::EndOfFile();
             SetFailBit();
 
@@ -250,9 +254,9 @@ func_entry:  // do tail call optimization manually
           { /* Remove the opening brace */
             pos = code.find_first_of("{");
             if (pos == std::string::npos) {
-              qcore_logf(QCORE_ERROR, "Invalid macro function definition: %s\n",
-                         block.data());
-              SetFailBit();
+              ncc::log << SeqError
+                       << "Invalid macro function definition: " << block;
+
               x = Token::EndOfFile();
               SetFailBit();
 
@@ -264,9 +268,9 @@ func_entry:  // do tail call optimization manually
           { /* Remove the closing brace */
             pos = code.find_last_of("}");
             if (pos == std::string::npos) {
-              qcore_logf(QCORE_ERROR, "Invalid macro function definition: %s\n",
-                         block.data());
-              SetFailBit();
+              ncc::log << SeqError
+                       << "Invalid macro function definition: " << block;
+
               x = Token::EndOfFile();
               SetFailBit();
 
@@ -277,9 +281,8 @@ func_entry:  // do tail call optimization manually
           }
 
           if (!ExecuteLua(code.c_str())) {
-            qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
-                       name.data());
-            SetFailBit();
+            ncc::log << SeqError << "Failed to expand macro function: " << name;
+
             x = Token::EndOfFile();
             SetFailBit();
 
@@ -296,9 +299,8 @@ func_entry:  // do tail call optimization manually
 
         if (pos != std::string_view::npos) {
           if (!ExecuteLua(("return " + std::string(body)).c_str())) {
-            qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
-                       body.data());
-            SetFailBit();
+            ncc::log << SeqError << "Failed to expand macro function: " << body;
+
             x = Token::EndOfFile();
             SetFailBit();
 
@@ -308,9 +310,8 @@ func_entry:  // do tail call optimization manually
           goto func_entry;
         } else {
           if (!ExecuteLua(("return " + std::string(body) + "()").c_str())) {
-            qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
-                       body.data());
-            SetFailBit();
+            ncc::log << SeqError << "Failed to expand macro function: " << body;
+
             x = Token::EndOfFile();
             SetFailBit();
 
@@ -404,7 +405,7 @@ static std::string canonicalize_module_name(std::string_view module_name) {
 void Sequencer::SetFetchFunc(FetchModuleFunc func) {
   if (!func) {
     func = [](std::string_view) {
-      qcore_logf(QCORE_DEBUG, "No module fetch function provided\n");
+      ncc::log << SeqError << Debug << "No module fetch function provided";
       return std::nullopt;
     };
   }
@@ -424,7 +425,7 @@ std::optional<std::string> Sequencer::PImpl::fetch_module_data(
   auto module_uri =
       dynfetch_get_uri(module_name, m_env->get("this.job").value());
 
-  qcore_logf(QCORE_INFO, "Fetching module: %s\n", module_uri.c_str());
+  ncc::log << SeqError << Debug << "Fetching module: '" << module_name << "'";
 
   if (!m_fetch_module) {
     qcore_panic(
@@ -434,8 +435,7 @@ std::optional<std::string> Sequencer::PImpl::fetch_module_data(
 
   auto module = m_fetch_module(module_uri);
   if (!module.has_value()) {
-    qcore_logf(QCORE_ERROR, "Module not found: '%s': '%s'\n",
-               module_name.c_str(), module_uri.c_str());
+    ncc::log << SeqError << "Import not found: '" << module_name << "'";
 
     return std::nullopt;
   }

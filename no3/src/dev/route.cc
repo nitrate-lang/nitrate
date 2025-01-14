@@ -391,14 +391,10 @@ namespace no3::router {
       const ArgumentParser &parser,
       const std::unordered_map<std::string_view,
                                std::unique_ptr<ArgumentParser>> &subparsers) {
-    qcore_bind_logger(
-        [](qcore_log_t, const char *msg, size_t len, void *) {
-          std::cerr << std::string_view(msg, len) << std::endl;
-        },
-        nullptr);
-
     ncc::log += [&](auto msg, auto sev, const auto &ec) {
-      std::cerr << ec.format(msg, sev).c_str() << std::endl;
+      if (core::GetDebugMode() || sev > Debug) {
+        std::cerr << ec.format(msg, sev).c_str() << std::endl;
+      }
     };
 
     std::shared_ptr<Environment> env = std::make_shared<Environment>();

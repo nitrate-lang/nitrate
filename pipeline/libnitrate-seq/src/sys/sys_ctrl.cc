@@ -51,7 +51,8 @@ int ncc::seq::sys_ctrl(lua_State* L) {
   }
 
   int id = lua_tointeger(L, 1);
-  qcore_logf(QCORE_DEBUG, "sys_ctrl: %d not implemented", id);
+
+  ncc::log << Debug << "sys_ctrl: " << id << " not implemented";
 
   lua_pushnil(L);
 

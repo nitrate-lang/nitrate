@@ -56,6 +56,11 @@ void no3::core::SetDebugMode(bool debug) {
   g_log_config.show_debug = debug;
 }
 
+bool no3::core::GetDebugMode() {
+  std::lock_guard<std::mutex> lock(g_log_mutex);
+  return g_log_config.show_debug;
+}
+
 void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
                                 const char* base_filename, int line,
                                 const struct tm* tm, const char* message_ptr,

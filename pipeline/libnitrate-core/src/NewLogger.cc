@@ -39,7 +39,58 @@ using namespace ncc;
 NCC_EXPORT thread_local LoggerContext ncc::log;
 
 NCC_EXPORT std::string ncc::Formatter(std::string_view msg, Sev sev) {
-  return std::string(msg);
+  std::stringstream ss;
+
+  switch (sev) {
+    case Trace: {
+      ss << "\x1b[1mtrace:\x1b[0m ";
+      break;
+    }
+
+    case Debug: {
+      ss << "\x1b[1mdebug:\x1b[0m ";
+      break;
+    }
+
+    case Info: {
+      ss << "\x1b[37;1minfo:\x1b[0m ";
+      break;
+    }
+
+    case Notice: {
+      ss << "\x1b[37;1mnotice:\x1b[0m ";
+      break;
+    }
+
+    case Warning: {
+      ss << "\x1b[35;1mwarning:\x1b[0m ";
+      break;
+    }
+
+    case Sev::Error: {
+      ss << "\x1b[31;1merror:\x1b[0m ";
+      break;
+    }
+
+    case Critical: {
+      ss << "\x1b[31;1;4mcritical:\x1b[0m ";
+      break;
+    }
+
+    case Alert: {
+      ss << "\x1b[31;1;4malert:\x1b[0m ";
+      break;
+    }
+
+    case Emergency: {
+      ss << "\x1b[31;1;4memergency:\x1b[0m ";
+      break;
+    }
+  }
+
+  ss << msg;
+
+  return ss.str();
 }
 
 NCC_EXPORT ECUnique::ECUnique(std::source_location loc) {

@@ -99,14 +99,12 @@ typedef enum {
   QCORE_FATAL,
 } qcore_log_t;
 
-void qcore_begin(qcore_log_t level);
+void qcore_begin();
 int qcore_vwritef(const char *fmt, va_list args);
-void qcore_end();
+void qcore_end(qcore_log_t level);
 
 typedef void (*qcore_logger_t)(qcore_log_t level, const char *msg, size_t len,
                                void *);
-
-void qcore_bind_logger(qcore_logger_t logger, void *data);
 
 static inline int qcore_writef(const char *fmt, ...) {
   va_list args;
@@ -122,16 +120,16 @@ static inline int qcore_write(const char *msg) {
 
 #define qcore_logf(_lvl, ...)  \
   do {                         \
-    qcore_begin(_lvl);         \
+    qcore_begin();             \
     qcore_writef(__VA_ARGS__); \
-    qcore_end();               \
+    qcore_end(_lvl);           \
   } while (0)
 
 #define qcore_print(_lvl, _msg) \
   do {                          \
-    qcore_begin(_lvl);          \
+    qcore_begin();              \
     qcore_writef("%s", _msg);   \
-    qcore_end();                \
+    qcore_end(_lvl);            \
   } while (0)
 
 #ifdef __cplusplus
