@@ -61,33 +61,6 @@ static void canonicalize_import_name(std::string &name) {
   std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 }
 
-static std::optional<std::string> fetch_module_data(ncc::seq::Sequencer *obj,
-                                                    const char *name) {
-  // if (!obj->m_fetch_module.first) {
-  //   return std::nullopt;
-  // }
-
-  // char *module_data = NULL;
-  // size_t module_size = 0;
-
-  // // Always put off to tomorrow what can be done today.
-  // if (!obj->m_fetch_module.first(obj, name, &module_data, &module_size,
-  //                                obj->m_fetch_module.second)) {
-  //   return std::nullopt;
-  // }
-
-  // std::string data(module_data, module_size);
-  // free(module_data);
-
-  // return data;
-  (void)obj;
-  (void)name;
-
-  qcore_print(QCORE_WARN, "fetch_module_data not implemented");
-
-  return std::nullopt;
-}
-
 int ncc::seq::sys_fetch(lua_State *L) {
   Sequencer *obj = get_engine();
 
@@ -109,7 +82,7 @@ int ncc::seq::sys_fetch(lua_State *L) {
 
   canonicalize_import_name(import_name);
 
-  if (auto data = fetch_module_data(obj, import_name.c_str())) {
+  if (auto data = obj->m_core->fetch_module_data(import_name.c_str())) {
     lua_pushstring(L, data->c_str());
     return 1;
   } else {

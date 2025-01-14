@@ -77,20 +77,47 @@ namespace ncc::lex {
 
   inline static const boost::bimap<std::string_view, Keyword> LexicalKeywords =
       detail::make_bimap<std::string_view, Keyword>({
-          {"scope", Scope},     {"import", Import}, {"pub", Pub},
-          {"sec", Sec},         {"pro", Pro},       {"type", Type},
-          {"let", Let},         {"var", Var},       {"const", Const},
-          {"static", Static},   {"struct", Struct}, {"region", Region},
-          {"group", Group},     {"class", Class},   {"union", Union},
-          {"opaque", Opaque},   {"enum", Enum},     {"__fstring", __FString},
-          {"fn", Fn},           {"unsafe", Unsafe}, {"safe", Safe},
-          {"promise", Promise}, {"if", If},         {"else", Else},
-          {"for", For},         {"while", While},   {"do", Do},
-          {"switch", Switch},   {"break", Break},   {"continue", Continue},
-          {"ret", Return},      {"retif", Retif},   {"foreach", Foreach},
-          {"try", Try},         {"catch", Catch},   {"throw", Throw},
-          {"async", Async},     {"await", Await},   {"__asm__", __Asm__},
-          {"undef", Undef},     {"null", Null},     {"true", True},
+          {"scope", Scope},
+          {"pub", Pub},
+          {"sec", Sec},
+          {"pro", Pro},
+          {"type", Type},
+          {"let", Let},
+          {"var", Var},
+          {"const", Const},
+          {"static", Static},
+          {"struct", Struct},
+          {"region", Region},
+          {"group", Group},
+          {"class", Class},
+          {"union", Union},
+          {"opaque", Opaque},
+          {"enum", Enum},
+          {"__fstring", __FString},
+          {"fn", Fn},
+          {"unsafe", Unsafe},
+          {"safe", Safe},
+          {"promise", Promise},
+          {"if", If},
+          {"else", Else},
+          {"for", For},
+          {"while", While},
+          {"do", Do},
+          {"switch", Switch},
+          {"break", Break},
+          {"continue", Continue},
+          {"ret", Return},
+          {"retif", Retif},
+          {"foreach", Foreach},
+          {"try", Try},
+          {"catch", Catch},
+          {"throw", Throw},
+          {"async", Async},
+          {"await", Await},
+          {"__asm__", __Asm__},
+          {"undef", Undef},
+          {"null", Null},
+          {"true", True},
           {"false", False},
       });
 
@@ -255,7 +282,6 @@ namespace ncc::lex {
   protected:
     std::shared_ptr<Environment> m_env;
 
-    void SetFailBit() { m_ebit = true; }
     virtual Token GetNext() = 0;
 
     /**
@@ -282,6 +308,7 @@ namespace ncc::lex {
     constexpr auto Current() { return m_current; }
     constexpr auto IsEof() const { return m_eof; }
     constexpr auto HasError() const { return m_ebit; }
+    void SetFailBit() { m_ebit = true; }
 
     Location Start(Token t);
     Location End(Token t);

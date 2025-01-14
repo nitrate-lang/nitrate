@@ -127,7 +127,6 @@ namespace ncc::lex {
 
   typedef enum Keyword {
     Scope,     /* 'scope' */
-    Import,    /* 'import' */
     Pub,       /* 'pub' */
     Sec,       /* 'sec' */
     Pro,       /* 'pro' */

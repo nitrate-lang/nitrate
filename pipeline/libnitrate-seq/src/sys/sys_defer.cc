@@ -58,7 +58,7 @@ int ncc::seq::sys_defer(lua_State* L) {
     return luaL_error(L, "sys_defer: failed to store callback in registry");
   }
 
-  Sequencer::DeferCallback cb = [L, id](Sequencer*,
+  Sequencer::DeferCallback cb = [L, id](Sequencer* engine,
                                         Token tok) -> Sequencer::DeferOp {
     lua_rawgeti(L, LUA_REGISTRYINDEX, id); /* Get the function */
 
@@ -114,6 +114,7 @@ int ncc::seq::sys_defer(lua_State* L) {
               QCORE_ERROR,
               "sys_defer: expected boolean return value or nil, got %s\n",
               luaL_typename(L, -1));
+          engine->SetFailBit();
           return Sequencer::EmitToken;
         }
 
@@ -122,21 +123,25 @@ int ncc::seq::sys_defer(lua_State* L) {
       }
       case LUA_ERRRUN: {
         qcore_logf(QCORE_ERROR, "sys_defer: lua: %s\n", lua_tostring(L, -1));
+        engine->SetFailBit();
         R = Sequencer::EmitToken;
         break;
       }
       case LUA_ERRMEM: {
         qcore_logf(QCORE_ERROR, "sys_defer: memory allocation error\n");
+        engine->SetFailBit();
         R = Sequencer::EmitToken;
         break;
       }
       case LUA_ERRERR: {
         qcore_logf(QCORE_ERROR, "sys_defer: error in error handler\n");
+        engine->SetFailBit();
         R = Sequencer::EmitToken;
         break;
       }
       default: {
         qcore_logf(QCORE_ERROR, "sys_defer: unexpected error %d\n", err);
+        engine->SetFailBit();
         R = Sequencer::EmitToken;
         break;
       }

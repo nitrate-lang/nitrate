@@ -57,26 +57,6 @@ std::string_view ncc::seq::Sequencer::CodePrefix = R"(
   end
 )
 
-@(fn define() {
-  -- Read in expected lexical sequence
-  local name = n.next(); local sepr = n.next();
-  local valu = n.next(); local semi = n.next();
-
-  -- Verify that the sequence is correct
-  if name.ty ~= 'name' then
-    n.abort('Expected name in @define macro');
-  end
-  if sepr.ty ~= 'op' or sepr.v ~= '=' then
-    n.abort('Expected = in @define macro');
-  end
-  if semi.ty ~= 'sym' or semi.v ~= ';' then
-    n.abort('Expected ; in @define macro');
-  end
-
-  -- Set the define in the magic 'def.' namespace
-  n.set('def.'.. name.v, valu.v);
-})
-
 @(fn comp_if(cond, terminator) {
   -- Nothing to do if condition is true
   if cond then
@@ -130,32 +110,6 @@ std::string_view ncc::seq::Sequencer::CodePrefix = R"(
   end
 
   n.debug('Using Nitrate environment version: ', ver.v);
-})
-
-@(fn import() {
-  -- Read in expected lexical sequence
-  local name = n.next(); local semi = n.next();
-
-  -- Verify that the sequence is correct
-  if semi.ty ~= 'sym' or semi.v ~= ';' then
-    n.abort('Expected semicolon after module name');
-  end
-  
-  if name.ty ~= 'str' and name.ty ~= 'name' then
-    n.abort('Expected string literal or identifier after @import.');
-  end
-
-  name = name.v;
-
-  n.debug('Attempting to import module: ', name);
-  local content = n.fetch(name);
-  if content == nil then
-    n.abort('Failed to import module: ', n.errno);
-  end
-
-  n.debug(string.format('Fetched module: %s (%d bytes)', name, #content));
-
-  return content;
 })
 
 @(

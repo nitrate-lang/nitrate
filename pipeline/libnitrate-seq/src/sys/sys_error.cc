@@ -48,6 +48,8 @@ int ncc::seq::sys_error(lua_State* L) {
 
   qcore_begin(QCORE_ERROR);
 
+  get_engine()->SetFailBit();
+
   for (int i = 1; i <= nargs; i++) {
     if (lua_isstring(L, i)) {
       qcore_write(lua_tostring(L, i));

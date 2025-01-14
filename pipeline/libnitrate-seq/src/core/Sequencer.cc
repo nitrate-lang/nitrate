@@ -50,7 +50,7 @@ extern "C" {
 using namespace ncc::lex;
 using namespace ncc::seq;
 
-Sequencer::PImpl::PImpl() {
+Sequencer::PImpl::PImpl(std::shared_ptr<Environment> env) : m_env(env) {
   L = luaL_newstate();
   m_random.seed(0);
 }
@@ -134,6 +134,7 @@ bool Sequencer::ExecuteLua(const char *code) {
 
   if (rc) {
     qcore_logf(QCORE_ERROR, "Lua error: %s\n", lua_tostring(m_core->L, -1));
+    SetFailBit();
     return false;
   }
 
@@ -194,10 +195,23 @@ func_entry:  // do tail call optimization manually
       }
 
       case Name: { /* Handle the expansion of defines */
-        auto key = "def." + std::string(x.as_string());
+        if (x.as_string() == "import") {
+          auto import_name = m_scanner->Next().as_string().get();
+          auto semicolon = m_scanner->Next();
+          if (!semicolon.is<PuncSemi>()) {
+            qcore_logf(QCORE_ERROR, "Expected semicolon after import name\n");
+            SetFailBit();
+            x = Token::EndOfFile();
+            SetFailBit();
+            goto emit_token;
+          }
 
-        if (auto value = m_env->get(key.c_str())) {
-          RecursiveExpand(value.value());
+          if (auto module_data = m_core->fetch_module_data(import_name)) {
+            RecursiveExpand(module_data.value());
+          } else {
+            SetFailBit();
+          }
+
           goto func_entry;
         } else {
           goto emit_token;
@@ -210,6 +224,7 @@ func_entry:  // do tail call optimization manually
           if (!ExecuteLua(std::string(block).c_str())) {
             qcore_logf(QCORE_ERROR, "Failed to expand macro block: %s\n",
                        block.data());
+            SetFailBit();
             x = Token::EndOfFile();
             SetFailBit();
 
@@ -221,6 +236,7 @@ func_entry:  // do tail call optimization manually
           if (pos == std::string_view::npos) {
             qcore_logf(QCORE_ERROR, "Invalid macro function definition: %s\n",
                        block.data());
+            SetFailBit();
             x = Token::EndOfFile();
             SetFailBit();
 
@@ -236,6 +252,7 @@ func_entry:  // do tail call optimization manually
             if (pos == std::string::npos) {
               qcore_logf(QCORE_ERROR, "Invalid macro function definition: %s\n",
                          block.data());
+              SetFailBit();
               x = Token::EndOfFile();
               SetFailBit();
 
@@ -249,6 +266,7 @@ func_entry:  // do tail call optimization manually
             if (pos == std::string::npos) {
               qcore_logf(QCORE_ERROR, "Invalid macro function definition: %s\n",
                          block.data());
+              SetFailBit();
               x = Token::EndOfFile();
               SetFailBit();
 
@@ -261,6 +279,7 @@ func_entry:  // do tail call optimization manually
           if (!ExecuteLua(code.c_str())) {
             qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
                        name.data());
+            SetFailBit();
             x = Token::EndOfFile();
             SetFailBit();
 
@@ -279,6 +298,7 @@ func_entry:  // do tail call optimization manually
           if (!ExecuteLua(("return " + std::string(body)).c_str())) {
             qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
                        body.data());
+            SetFailBit();
             x = Token::EndOfFile();
             SetFailBit();
 
@@ -290,6 +310,7 @@ func_entry:  // do tail call optimization manually
           if (!ExecuteLua(("return " + std::string(body) + "()").c_str())) {
             qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
                        body.data());
+            SetFailBit();
             x = Token::EndOfFile();
             SetFailBit();
 
@@ -343,7 +364,8 @@ Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
   m_scanner = std::make_unique<Tokenizer>(file, env);
 
   if (is_root) {
-    m_core = std::make_shared<PImpl>();
+    m_core = std::make_shared<PImpl>(env);
+    SetFetchFunc(nullptr);
 
     LoadLuaLibs();
     BindLuaAPI();
@@ -354,4 +376,69 @@ Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
 std::optional<std::vector<std::string>> Sequencer::GetSourceWindow(
     Point start, Point end, char fillchar) {
   return m_scanner->GetSourceWindow(start, end, fillchar);
+}
+
+static std::string dynfetch_get_mapkey(std::string_view module_name) {
+  return "map." + std::string(module_name);
+}
+
+static std::string dynfetch_get_uri(std::string_view module_name,
+                                    std::string_view jobid) {
+  return "file:///package/" + std::string(jobid) + "/" +
+         std::string(module_name);
+}
+
+static std::string canonicalize_module_name(std::string_view module_name) {
+  std::string text(module_name);
+
+  for (size_t pos = 0; (pos = text.find("::", pos)) != std::string::npos;
+       pos += 2) {
+    text.replace(pos, 2, ".");
+  }
+
+  std::replace(text.begin(), text.end(), '/', '.');
+
+  return text;
+}
+
+void Sequencer::SetFetchFunc(FetchModuleFunc func) {
+  if (!func) {
+    func = [](std::string_view) {
+      qcore_logf(QCORE_DEBUG, "No module fetch function provided\n");
+      return std::nullopt;
+    };
+  }
+
+  m_core->m_fetch_module = func;
+}
+
+std::optional<std::string> Sequencer::PImpl::fetch_module_data(
+    std::string_view raw_module_name) {
+  auto module_name = canonicalize_module_name(raw_module_name);
+
+  /* Dynamic translation of module names into their actual named */
+  if (auto actual_name = m_env->get(dynfetch_get_mapkey(module_name))) {
+    module_name = actual_name.value();
+  }
+
+  auto module_uri =
+      dynfetch_get_uri(module_name, m_env->get("this.job").value());
+
+  qcore_logf(QCORE_INFO, "Fetching module: %s\n", module_uri.c_str());
+
+  if (!m_fetch_module) {
+    qcore_panic(
+        "Internal runtime: ncc::seq::Sequencer can't include modules "
+        "because 'm_fetch_module' is nullptr");
+  }
+
+  auto module = m_fetch_module(module_uri);
+  if (!module.has_value()) {
+    qcore_logf(QCORE_ERROR, "Module not found: '%s': '%s'\n",
+               module_name.c_str(), module_uri.c_str());
+
+    return std::nullopt;
+  }
+
+  return module;
 }

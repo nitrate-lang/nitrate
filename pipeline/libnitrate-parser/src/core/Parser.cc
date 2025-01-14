@@ -117,7 +117,6 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
           break;
         }
 
-        case Import:
         case Pub: {  // they both declare external functions
           R = recurse_export(Vis::Pub);
           break;

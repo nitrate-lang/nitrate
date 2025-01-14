@@ -44,6 +44,8 @@
 struct lua_State;
 
 namespace ncc::seq {
+  using FetchModuleFunc =
+      std::function<std::optional<std::string>(std::string_view)>;
 
   class NCC_EXPORT Sequencer final : public ncc::lex::IScanner {
     static std::string_view CodePrefix;
@@ -83,6 +85,8 @@ namespace ncc::seq {
 
     virtual std::optional<std::vector<std::string>> GetSourceWindow(
         Point start, Point end, char fillchar) override;
+
+    void SetFetchFunc(FetchModuleFunc func);
   };
 }  // namespace ncc::seq
 

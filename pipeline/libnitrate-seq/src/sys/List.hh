@@ -46,13 +46,17 @@
 namespace ncc::seq {
   class Sequencer::PImpl final {
   public:
-    lua_State* L = nullptr;
-    std::vector<DeferCallback> m_defer;
-    std::deque<ncc::lex::Token> m_buffer;
     std::mt19937 m_random;
+    std::deque<ncc::lex::Token> m_buffer;
+    std::vector<DeferCallback> m_defer;
+    std::shared_ptr<Environment> m_env;
+    FetchModuleFunc m_fetch_module;
+    lua_State* L = nullptr;
     size_t m_depth = 0;
 
-    PImpl();
+    std::optional<std::string> fetch_module_data(std::string_view module_name);
+
+    PImpl(std::shared_ptr<Environment> env);
     ~PImpl();
   };
 
