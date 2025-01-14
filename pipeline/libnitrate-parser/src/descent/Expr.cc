@@ -826,15 +826,23 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
   NullableFlowPtr<Expr> E;
 
   if (isType) {
+    auto comments = rd.CommentBuffer();
+    rd.ClearCommentBuffer();
+
     auto type = recurse_type();
     type->set_offset(start_pos);
 
     auto texpr = make<TypeExpr>(type)();
     texpr->set_offset(start_pos);
 
-    E = texpr;
+    E = BIND_COMMENTS(texpr, comments);
   } else {
-    switch (auto tok = next(); tok.get_type()) {
+    auto tok = next();
+
+    auto comments = rd.CommentBuffer();
+    rd.ClearCommentBuffer();
+
+    switch (tok.get_type()) {
       case EofF: {
         break;
       }
@@ -952,6 +960,10 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
         log << SyntaxError << tok << "Unexpected comment in expression";
         break;
       }
+    }
+
+    if (E.has_value()) {
+      E = BIND_COMMENTS(E.value(), comments);
     }
   }
 

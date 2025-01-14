@@ -61,7 +61,7 @@ NCC_EXPORT bool ParseLibrarySetup::Init() {
 NCC_EXPORT void ParseLibrarySetup::Deinit() {
   qcore_print(QCORE_DEBUG, "Deinitializing Nitrate Parser Library");
 
-  g_location_pairs.Reset();
+  ExtensionDataStore.Reset();
 
   ncc::lex::LexerLibrary.DeinitRC();
   ncc::CoreLibrary.DeinitRC();

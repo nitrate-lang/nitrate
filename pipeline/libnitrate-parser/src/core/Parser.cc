@@ -42,9 +42,6 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 
-#include "nitrate-core/NewLogger.hh"
-#include "nitrate-parser/EC.hh"
-
 using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
@@ -56,319 +53,243 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
   }
 
   auto block_start = current().get_start();
-  BlockItems items;
+  BlockItems statements;
+
+  auto block_comments = rd.CommentBuffer();
+  rd.ClearCommentBuffer();
 
   while (true) {
-    Token tok = peek();
-
-    if (expect_braces && next_if(PuncRCur)) {
-      auto block = make<Block>(items, safety)();
-      block->set_offset(tok.get_start());
-
-      return block;
-    }
-
-    if (single_stmt && items.size() == 1) {
-      break;
-    }
-
-    if (next_if(EofF)) {
-      break;
-    }
-
     /* Ignore extra semicolons */
     if (next_if(PuncSemi)) {
       continue;
     }
 
-    if (!tok.is(KeyW)) {
+    { /* Detect exit conditon */
+      bool should_break = (expect_braces && next_if(PuncRCur)) ||
+                          (single_stmt && statements.size() == 1);
+
+      if (!should_break && next_if(EofF)) {
+        if (expect_braces) {
+          log << SyntaxError << current() << "Expected '}'";
+        }
+
+        should_break = true;
+      }
+
+      if (should_break) {
+        auto block = make<Block>(statements, safety)();
+        block->set_offset(block_start);
+
+        return BIND_COMMENTS(block, block_comments);
+      }
+    }
+
+    if (!peek().is(KeyW)) {
+      auto comments = rd.CommentBuffer();
+      rd.ClearCommentBuffer();
+
       auto expr = recurse_expr({
           Token(Punc, PuncSemi),
       });
 
       if (!next_if(PuncSemi)) {
-        log << SyntaxError << tok << "Expected ';' after expression";
+        log << SyntaxError << current()
+            << "Expected ';' after statement expression";
       }
 
       auto stmt = make<ExprStmt>(expr)();
       stmt->set_offset(expr->begin());
 
-      items.push_back(stmt);
-      continue;
-    }
+      statements.push_back(BIND_COMMENTS(stmt, comments));
+    } else {
+      auto tok = next();
+      auto loc_start = tok.get_start();
+      NullableFlowPtr<Stmt> R;
 
-    auto loc_start = tok.get_start();
+      auto comments = rd.CommentBuffer();
+      rd.ClearCommentBuffer();
 
-    switch (next(), tok.as_key()) {
-      case Var: {
-        for (auto decl : recurse_variable(VarDeclType::Var)) {
-          items.push_back(decl);
-        }
-        break;
-      }
-
-      case Let: {
-        for (auto decl : recurse_variable(VarDeclType::Let)) {
-          items.push_back(decl);
-        }
-        break;
-      }
-
-      case Const: {
-        for (auto decl : recurse_variable(VarDeclType::Const)) {
-          items.push_back(decl);
-        }
-        break;
-      }
-
-      case Enum: {
-        auto node = recurse_enum();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Struct: {
-        auto node = recurse_struct(CompositeType::Struct);
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Region: {
-        auto node = recurse_struct(CompositeType::Region);
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Group: {
-        auto node = recurse_struct(CompositeType::Group);
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Class: {
-        auto node = recurse_struct(CompositeType::Class);
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Union: {
-        auto node = recurse_struct(CompositeType::Union);
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Keyword::Type: {
-        auto node = recurse_typedef();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Scope: {
-        auto node = recurse_scope();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Fn: {
-        auto node = recurse_function(false);
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Pub:
-      case Import: {  // they both declare external functions
-        auto node = recurse_export(Vis::Pub);
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Sec: {
-        auto node = recurse_export(Vis::Sec);
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Pro: {
-        auto node = recurse_export(Vis::Pro);
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Return: {
-        auto node = recurse_return();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Retif: {
-        auto node = recurse_retif();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Break: {
-        auto node = make<BreakStmt>()();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Continue: {
-        auto node = make<ContinueStmt>()();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case If: {
-        auto node = recurse_if();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case While: {
-        auto node = recurse_while();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case For: {
-        auto node = recurse_for();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Foreach: {
-        auto node = recurse_foreach();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Switch: {
-        auto node = recurse_switch();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case __Asm__: {
-        auto node = recurse_inline_asm();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case True: {
-        auto node = make<ExprStmt>(make<ConstBool>(true)())();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case False: {
-        auto node = make<ExprStmt>(make<ConstBool>(false)())();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case __FString: {
-        auto node = make<ExprStmt>(recurse_fstring())();
-        node->set_offset(loc_start);
-
-        items.push_back(node);
-        break;
-      }
-
-      case Unsafe: {
-        if (peek().is<PuncLCur>()) {
-          auto node = recurse_block(true, false, SafetyMode::Unsafe);
-          node->set_offset(loc_start);
-
-          items.push_back(node);
-        } else {
-          auto node = recurse_block(false, true, SafetyMode::Unsafe);
-          node->set_offset(loc_start);
-
-          items.push_back(node);
+      switch (tok.as_key()) {
+        case Var: {
+          for (auto decl : recurse_variable(VarDeclType::Var)) {
+            statements.push_back(BIND_COMMENTS(decl, comments));
+          }
+          break;
         }
 
-        break;
-      }
-
-      case Safe: {
-        if (peek().is<PuncLCur>()) {
-          auto node = recurse_block(true, false, SafetyMode::Safe);
-          node->set_offset(loc_start);
-
-          items.push_back(node);
-        } else {
-          auto node = recurse_block(false, true, SafetyMode::Safe);
-          node->set_offset(loc_start);
-
-          items.push_back(node);
+        case Let: {
+          for (auto decl : recurse_variable(VarDeclType::Let)) {
+            statements.push_back(BIND_COMMENTS(decl, comments));
+          }
+          break;
         }
 
-        break;
+        case Const: {
+          for (auto decl : recurse_variable(VarDeclType::Const)) {
+            statements.push_back(BIND_COMMENTS(decl, comments));
+          }
+          break;
+        }
+
+        case Enum: {
+          R = recurse_enum();
+          break;
+        }
+
+        case Struct: {
+          R = recurse_struct(CompositeType::Struct);
+          break;
+        }
+
+        case Region: {
+          R = recurse_struct(CompositeType::Region);
+          break;
+        }
+
+        case Group: {
+          R = recurse_struct(CompositeType::Group);
+          break;
+        }
+
+        case Class: {
+          R = recurse_struct(CompositeType::Class);
+          break;
+        }
+
+        case Union: {
+          R = recurse_struct(CompositeType::Union);
+          break;
+        }
+
+        case Keyword::Type: {
+          R = recurse_typedef();
+          break;
+        }
+
+        case Scope: {
+          R = recurse_scope();
+          break;
+        }
+
+        case Fn: {
+          R = recurse_function(false);
+          break;
+        }
+
+        case Pub:
+        case Import: {  // they both declare external functions
+          R = recurse_export(Vis::Pub);
+          break;
+        }
+
+        case Sec: {
+          R = recurse_export(Vis::Sec);
+          break;
+        }
+
+        case Pro: {
+          R = recurse_export(Vis::Pro);
+          break;
+        }
+
+        case Return: {
+          R = recurse_return();
+          break;
+        }
+
+        case Retif: {
+          R = recurse_retif();
+          break;
+        }
+
+        case Break: {
+          R = make<BreakStmt>()();
+          break;
+        }
+
+        case Continue: {
+          R = make<ContinueStmt>()();
+          break;
+        }
+
+        case If: {
+          R = recurse_if();
+          break;
+        }
+
+        case While: {
+          R = recurse_while();
+          break;
+        }
+
+        case For: {
+          R = recurse_for();
+          break;
+        }
+
+        case Foreach: {
+          R = recurse_foreach();
+          break;
+        }
+
+        case Switch: {
+          R = recurse_switch();
+          break;
+        }
+
+        case __Asm__: {
+          R = recurse_inline_asm();
+          break;
+        }
+
+        case True: {
+          R = make<ExprStmt>(make<ConstBool>(true)())();
+          break;
+        }
+
+        case False: {
+          R = make<ExprStmt>(make<ConstBool>(false)())();
+          break;
+        }
+
+        case __FString: {
+          R = make<ExprStmt>(recurse_fstring())();
+          break;
+        }
+
+        case Unsafe: {
+          if (peek().is<PuncLCur>()) {
+            R = recurse_block(true, false, SafetyMode::Unsafe);
+          } else {
+            R = recurse_block(false, true, SafetyMode::Unsafe);
+          }
+
+          break;
+        }
+
+        case Safe: {
+          if (peek().is<PuncLCur>()) {
+            R = recurse_block(true, false, SafetyMode::Safe);
+          } else {
+            R = recurse_block(false, true, SafetyMode::Safe);
+          }
+
+          break;
+        }
+
+        default: {
+          log << SyntaxError << tok << "Unexpected keyword";
+          break;
+        }
       }
 
-      default: {
-        log << SyntaxError << tok << "Unexpected keyword";
-        break;
+      if (R.has_value()) {
+        R.value()->set_offset(loc_start);
+        R = BIND_COMMENTS(R.value(), comments);
+        statements.push_back(R.value());
       }
     }
   }
-
-  if (expect_braces) {
-    log << SyntaxError << current() << "Expected '}'";
-  }
-
-  auto block = make<Block>(items, safety)();
-  block->set_offset(block_start);
-
-  return block;
 }
 
 NCC_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,

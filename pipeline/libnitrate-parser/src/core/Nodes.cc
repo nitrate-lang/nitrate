@@ -46,25 +46,28 @@ using namespace ncc::parse;
 NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::npar_allocator =
     std::make_unique<ncc::dyn_arena>();
 
-NCC_EXPORT LocationPairAlias parse::g_location_pairs;
+NCC_EXPORT ASTExtension parse::ExtensionDataStore;
 
-LocationPairAlias::Index LocationPairAlias::Add(lex::LocationID begin,
-                                                lex::LocationID end) {
+ASTExtensionKey ASTExtension::Add(lex::LocationID begin, lex::LocationID end) {
   std::lock_guard<std::mutex> lock(m_mutex);
   m_pairs.push_back({begin, end});
 
-  return {.v = m_pairs.size() - 1};
+  return ASTExtensionKey(m_pairs.size() - 1);
 }
 
-std::pair<lex::LocationID, lex::LocationID> LocationPairAlias::Get(
-    LocationPairAlias::Index loc) {
+const ASTExtensionPackage &ASTExtension::Get(ASTExtensionKey loc) {
   std::lock_guard<std::mutex> lock(m_mutex);
-  return m_pairs.at(loc.v);
+  return m_pairs.at(loc.Key());
 }
 
-NCC_EXPORT std::ostream &parse::operator<<(
-    std::ostream &os, const LocationPairAlias::Index &idx) {
-  os << "${L:" << idx.v << "}";
+void ASTExtension::Set(ASTExtensionKey id, ASTExtensionPackage &&data) {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  m_pairs.at(id.Key()) = std::move(data);
+}
+
+NCC_EXPORT std::ostream &parse::operator<<(std::ostream &os,
+                                           const ASTExtensionKey &idx) {
+  os << "${L:" << idx.Key() << "}";
   return os;
 }
 
@@ -118,6 +121,13 @@ NCC_EXPORT size_t Base::count_children() {
   for_each(this, [&](auto, auto) { count++; });
 
   return count;
+}
+
+NCC_EXPORT void Base::BindCodeCommentData(
+    std::span<const lex::Token> comment_tokens) {
+  auto old = ExtensionDataStore.Get(m_data);
+  old.add_comments(comment_tokens);
+  ExtensionDataStore.Set(m_data, std::move(old));
 }
 
 ///=============================================================================

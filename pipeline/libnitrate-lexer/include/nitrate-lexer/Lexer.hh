@@ -239,6 +239,7 @@ namespace ncc::lex {
     static constexpr size_t TOKEN_BUFFER_SIZE = 256;
 
     std::deque<Token> m_ready;
+    std::vector<Token> m_comments;
     std::vector<Location> m_location_interned;
     std::optional<Token> m_last;
     Token m_current;
@@ -294,7 +295,7 @@ namespace ncc::lex {
       return LocationID(m_location_interned.size() - 1);
     }
 
-    constexpr virtual void SkipCommentsState(bool skip) { m_skip = skip; }
+    constexpr void SkipCommentsState(bool skip) { m_skip = skip; }
     constexpr bool GetSkipCommentsState() const { return m_skip; }
 
     constexpr void SetCurrentFilename(string filename) {
@@ -319,6 +320,9 @@ namespace ncc::lex {
     }
 
     auto GetEnvironment() const { return m_env; }
+
+    const std::vector<Token> &CommentBuffer() { return m_comments; }
+    void ClearCommentBuffer() { m_comments.clear(); }
   };
 
   class NCC_EXPORT Tokenizer final : public IScanner {

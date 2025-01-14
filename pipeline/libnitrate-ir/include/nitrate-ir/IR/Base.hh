@@ -63,7 +63,7 @@ namespace ncc::ir {
     Expr *Expr_getCloneImpl(Expr *self);
   };  // namespace detail
 
-  using SrcLoc = parse::LocationPairAlias::Index;
+  using SrcLoc = parse::ASTExtensionKey;
 
   template <class A>
   class IR_Vertex_Expr {
@@ -81,7 +81,7 @@ namespace ncc::ir {
                              lex::LocationID begin = lex::LocationID(),
                              lex::LocationID end = lex::LocationID())
         : m_node_type(ty) {
-      m_loc = parse::g_location_pairs.Add(begin, end);
+      m_loc = parse::ExtensionDataStore.Add(begin, end);
     }
 
     static constexpr uint32_t getKindSize(nr_ty_t kind);
@@ -232,12 +232,12 @@ namespace ncc::ir {
     constexpr std::string_view getName() const;
 
     constexpr auto begin() const {
-      return parse::g_location_pairs.Get(m_loc).first;
+      return parse::ExtensionDataStore.Get(m_loc).begin();
     }
     constexpr auto begin(lex::IScanner &rd) const { return begin().Get(rd); }
 
     constexpr auto end() const {
-      return parse::g_location_pairs.Get(m_loc).second;
+      return parse::ExtensionDataStore.Get(m_loc).end();
     }
     constexpr auto end(lex::IScanner &rd) const { return end().Get(rd); }
 
@@ -245,7 +245,7 @@ namespace ncc::ir {
     constexpr void setLoc(SrcLoc loc) { m_loc = loc; }
 
     constexpr void setLoc(lex::LocationID begin, lex::LocationID end) {
-      m_loc = parse::g_location_pairs.Add(begin, end);
+      m_loc = parse::ExtensionDataStore.Add(begin, end);
     }
 
     std::optional<FlowPtr<Type>> getType() {

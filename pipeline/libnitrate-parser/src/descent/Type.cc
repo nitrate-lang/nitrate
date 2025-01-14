@@ -382,29 +382,38 @@ FlowPtr<parse::Type> Parser::recurse_type_by_name(string name) {
 }
 
 FlowPtr<parse::Type> Parser::recurse_type() {
+  auto comments = rd.CommentBuffer();
+  rd.ClearCommentBuffer();
+
+  std::optional<FlowPtr<Type>> R;
+
   switch (auto tok = next(); tok.get_type()) {
     case KeyW: {
       auto type = recurse_type_by_keyword(tok.as_key());
 
-      return recurse_type_suffix(type);
+      R = recurse_type_suffix(type);
+      break;
     }
 
     case Oper: {
       auto type = recurse_type_by_operator(tok.as_op());
 
-      return recurse_type_suffix(type);
+      R = recurse_type_suffix(type);
+      break;
     }
 
     case Punc: {
       auto type = recurse_type_by_punctuation(tok.as_punc());
 
-      return recurse_type_suffix(type);
+      R = recurse_type_suffix(type);
+      break;
     }
 
     case Name: {
       auto type = recurse_type_by_name(tok.as_string());
 
-      return recurse_type_suffix(type);
+      R = recurse_type_suffix(type);
+      break;
     }
 
     default: {
@@ -412,7 +421,12 @@ FlowPtr<parse::Type> Parser::recurse_type() {
 
       auto type = mock_type();
 
-      return recurse_type_suffix(type);
+      R = recurse_type_suffix(type);
+      break;
     }
   }
+
+  R = BIND_COMMENTS(R.value(), comments);
+
+  return R.value();
 }

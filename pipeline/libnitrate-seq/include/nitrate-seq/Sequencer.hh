@@ -90,11 +90,6 @@ public:
             bool is_root = true);
   virtual ~Sequencer() override;
 
-  void SkipCommentsState(bool skip) override {
-    IScanner::SkipCommentsState(skip);
-    m_scanner->SkipCommentsState(skip);
-  }
-
   virtual std::optional<std::vector<std::string>> GetSourceWindow(
       Point start, Point end, char fillchar) override;
 };

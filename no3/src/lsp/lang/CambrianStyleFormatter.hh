@@ -94,6 +94,9 @@ namespace lsp::fmt {
       }
     }
 
+    void print_line_comments(FlowPtr<parse::Base> n);
+    void print_multiline_comments(FlowPtr<parse::Base> n);
+
     void visit(FlowPtr<parse::Base> n) override;
     void visit(FlowPtr<parse::ExprStmt> n) override;
     void visit(FlowPtr<parse::StmtExpr> n) override;

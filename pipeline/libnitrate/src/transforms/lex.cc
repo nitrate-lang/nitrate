@@ -57,78 +57,73 @@ bool impl_use_json(IScanner *L, std::ostream &O) {
       }
 
       case KeyW: { /* Keyword */
-        O << "[2,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
-          << ec << "],";
+        O << "[2," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Oper: { /* Operator */
-        O << "[3,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
-          << ec << "],";
+        O << "[3," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Punc: { /* Punctuation */
-        O << "[4,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
-          << ec << "],";
+        O << "[4," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Name: { /* Identifier */
-        O << "[5,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
-          << ec << "],";
+        O << "[5," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case IntL: { /* Integer literal */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[6,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
-          << ec << "],";
+        O << "[6," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case NumL: { /* Floating-point literal */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[7,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
-          << ec << "],";
+        O << "[7," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Text: { /* String literal */
-        std::string_view sv = tok.as_string();
-
-        O << "[8,\"" << create_json_string(sv) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[8," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Char: { /* Character literal */
-        std::string_view sv = tok.as_string();
 
-        O << "[9,\"" << create_json_string(sv) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[9," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case MacB: { /* Macro block */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[10,\"" << tok.as_string() << "\"," << sl << "," << sc << ","
-          << el << "," << ec << "],";
+        O << "[10," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Macr: { /* Macro call */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[11,\"" << tok.as_string() << "\"," << sl << "," << sc << ","
-          << el << "," << ec << "],";
+        O << "[11," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Note: { /* Comment */
-        std::string_view sv = tok.as_string();
-
-        O << "[12,\"" << create_json_string(sv) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[12," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
     }

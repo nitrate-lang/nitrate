@@ -359,7 +359,7 @@ public:
 
 Token IScanner::Next() {
   while (true) {
-    if (m_ready.empty()) {
+    if (m_ready.empty()) [[unlikely]] {
       StaticImpl::FillTokenBuffer(*this);
     }
 
@@ -367,6 +367,7 @@ Token IScanner::Next() {
     m_ready.pop_front();
 
     if (GetSkipCommentsState() && tok.is(Note)) {
+      m_comments.push_back(tok);
       continue;
     }
 
@@ -377,13 +378,23 @@ Token IScanner::Next() {
 }
 
 Token IScanner::Peek() {
-  if (m_ready.empty()) [[unlikely]] {
-    StaticImpl::FillTokenBuffer(*this);
+  while (true) {
+    if (m_ready.empty()) [[unlikely]] {
+      StaticImpl::FillTokenBuffer(*this);
+    }
+
+    Token tok = m_ready.front();
+
+    if (GetSkipCommentsState() && tok.is(Note)) {
+      m_comments.push_back(tok);
+      m_ready.pop_front();
+      continue;
+    }
+
+    m_current = tok;
+
+    return tok;
   }
-
-  m_current = m_ready.front();
-
-  return m_current;
 }
 
 void IScanner::Undo() {

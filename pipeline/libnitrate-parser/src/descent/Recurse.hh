@@ -68,6 +68,11 @@ namespace ncc::parse {
 
 #define next_if(tok) next_if_<tok>(rd)
 
+  static inline auto BIND_COMMENTS(auto node, auto comments) {
+    node->BindCodeCommentData(std::move(comments));
+    return node;
+  }
+
 };  // namespace ncc::parse
 
 #endif  // __NITRATE_PARSE_H__

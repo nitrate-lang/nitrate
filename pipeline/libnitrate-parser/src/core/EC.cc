@@ -258,7 +258,7 @@ NCC_EXPORT std::string ncc::parse::ec::Formatter(std::string_view message_raw,
     ss << (start_line == QLEX_EOFF ? "?" : std::to_string(start_line)) << ":";
     ss << (start_col == QLEX_EOFF ? "?" : std::to_string(start_col))
        << ":\x1b[0m ";
-    ss << "\x1b[37;1m" << message;
+    ss << "\x1b[37;1m" << message << "\x1b[0m";
 
     if (start_line != QLEX_EOFF) {
       IScanner::Point start_pos(start_line == 0 ? 0 : start_line - 1, 0),

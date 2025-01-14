@@ -326,15 +326,14 @@ func_entry:  // do tail call optimization manually
     }
 
   emit_token:
-    if (!m_core->m_do_expanse || run_defer_callbacks(x)) { /* Emit the token */
-      return x;
-    } else { /* Skip the token */
+    if (m_core->m_do_expanse && !run_defer_callbacks(x)) {
       goto func_entry;
     }
   } catch (StopException &) {
     x = Token::EndOfFile();
-    return x;
   }
+
+  return x;
 }
 
 void Sequencer::install_lua_api() {

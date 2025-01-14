@@ -36,6 +36,7 @@
 
 #include <array>
 #include <iostream>
+#include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
@@ -46,16 +47,44 @@
 #include <type_traits>
 
 namespace ncc::parse {
-  class NCC_EXPORT LocationPairAlias {
-    std::vector<std::pair<lex::LocationID, lex::LocationID>> m_pairs;
+  class ASTExtensionKey {
+    friend class ASTExtension;
+    uint64_t m_key : 56 = 0;
+
+    constexpr ASTExtensionKey(uint64_t key) : m_key(key) {}
+
+  public:
+    constexpr ASTExtensionKey() : m_key(0) {}
+
+    auto Key() const { return m_key; }
+  } __attribute__((packed));
+
+  class ASTExtensionPackage {
+    friend class ASTExtension;
+
+    lex::LocationID m_begin;
+    lex::LocationID m_end;
+    std::vector<lex::Token> m_comments;
+
+    ASTExtensionPackage(lex::LocationID begin, lex::LocationID end)
+        : m_begin(begin), m_end(end) {}
+
+  public:
+    auto begin() const { return m_begin; }
+    auto end() const { return m_end; }
+    std::span<const lex::Token> comments() const { return m_comments; }
+
+    void add_comments(std::span<const lex::Token> comments) {
+      m_comments.insert(m_comments.end(), comments.begin(), comments.end());
+    }
+  };
+
+  class NCC_EXPORT ASTExtension {
+    std::vector<ASTExtensionPackage> m_pairs;
     std::mutex m_mutex;
 
   public:
-    struct Index {
-      uint64_t v : 56 = 0;
-    } __attribute__((packed));
-
-    LocationPairAlias() { Reset(); }
+    ASTExtension() { Reset(); }
 
     void Reset() {
       m_pairs.clear();
@@ -65,27 +94,27 @@ namespace ncc::parse {
       m_pairs.push_back({lex::LocationID(), lex::LocationID()});
     }
 
-    Index Add(lex::LocationID begin, lex::LocationID end);
-    std::pair<lex::LocationID, lex::LocationID> Get(Index loc);
+    ASTExtensionKey Add(lex::LocationID begin, lex::LocationID end);
+    const ASTExtensionPackage &Get(ASTExtensionKey loc);
+    void Set(ASTExtensionKey id, ASTExtensionPackage &&data);
   };
 
-  std::ostream &operator<<(std::ostream &os,
-                           const LocationPairAlias::Index &idx);
+  std::ostream &operator<<(std::ostream &os, const ASTExtensionKey &idx);
 
-  extern LocationPairAlias g_location_pairs;
+  extern ASTExtension ExtensionDataStore;
 
   class Base {
   private:
     npar_ty_t m_node_type : 7;
     bool m_mock : 1;
-    LocationPairAlias::Index m_loc;
+    ASTExtensionKey m_data;
 
   public:
     constexpr Base(npar_ty_t ty, bool mock = false,
                    lex::LocationID begin = lex::LocationID(),
                    lex::LocationID end = lex::LocationID())
         : m_node_type(ty), m_mock(mock) {
-      m_loc = g_location_pairs.Add(begin, end);
+      m_data = ExtensionDataStore.Add(begin, end);
     }
 
     ///======================================================================
@@ -319,25 +348,35 @@ namespace ncc::parse {
     std::string to_json(WriterSourceProvider rd = std::nullopt) const;
 
     ///======================================================================
-    /// Source location information
+    /// AST Extension Data
 
-    constexpr auto begin() const { return g_location_pairs.Get(m_loc).first; }
+    constexpr auto begin() const {
+      return ExtensionDataStore.Get(m_data).begin();
+    }
     constexpr auto begin(lex::IScanner &rd) const { return begin().Get(rd); }
-    constexpr auto end() const { return g_location_pairs.Get(m_loc).second; }
+    constexpr auto end() const { return ExtensionDataStore.Get(m_data).end(); }
     constexpr auto end(lex::IScanner &rd) const { return end().Get(rd); }
-    constexpr auto get_pos() const { return g_location_pairs.Get(m_loc); }
+    constexpr auto get_pos() const {
+      return std::pair<lex::LocationID, lex::LocationID>(begin(), end());
+    }
+
+    constexpr auto comments() const {
+      return ExtensionDataStore.Get(m_data).comments();
+    }
 
     ///======================================================================
     /// Setters
 
     constexpr void set_offset(lex::LocationID pos) {
-      auto [_, end] = g_location_pairs.Get(m_loc);
-      m_loc = g_location_pairs.Add(pos, end);
+      auto end = ExtensionDataStore.Get(m_data).end();
+      m_data = ExtensionDataStore.Add(pos, end);
     }
 
     constexpr void setLoc(lex::LocationID begin, lex::LocationID end) {
-      m_loc = g_location_pairs.Add(begin, end);
+      m_data = ExtensionDataStore.Add(begin, end);
     }
+
+    void BindCodeCommentData(std::span<const lex::Token> comment_tokens);
   } __attribute__((packed));
 
   static_assert(sizeof(Base) == 8);
