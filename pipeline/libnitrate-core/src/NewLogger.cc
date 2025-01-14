@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <algorithm>
 #include <nitrate-core/NewLogger.hh>
 
 using namespace ncc;
