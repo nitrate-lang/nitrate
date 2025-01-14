@@ -47,6 +47,8 @@ namespace ncc::seq {
   using FetchModuleFunc =
       std::function<std::optional<std::string>(std::string_view)>;
 
+  std::optional<std::string> FileSystemFetchModule(std::string_view path);
+
   class NCC_EXPORT Sequencer final : public ncc::lex::IScanner {
     static std::string_view CodePrefix;
     std::unique_ptr<ncc::lex::Tokenizer> m_scanner;

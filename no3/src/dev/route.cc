@@ -254,6 +254,8 @@ static int do_parse(std::shared_ptr<Environment> &env, std::string source,
   }
 
   Sequencer scanner(file, env);
+  scanner.SetFetchFunc(FileSystemFetchModule);
+
   auto parser = Parser::Create(scanner, env);
 
   auto ast = parser->parse();
@@ -280,6 +282,8 @@ static int do_nr(std::shared_ptr<Environment> &env, std::string source,
   }
 
   Sequencer scanner(file, env);
+  scanner.SetFetchFunc(FileSystemFetchModule);
+
   auto parser = Parser::Create(scanner, env);
 
   auto ast = parser->parse();
@@ -317,6 +321,8 @@ static int do_codegen(std::shared_ptr<Environment> &env, std::string source,
   }
 
   Sequencer scanner(file, env);
+  scanner.SetFetchFunc(FileSystemFetchModule);
+
   auto parser = Parser::Create(scanner, env);
 
   auto ast = parser->parse();

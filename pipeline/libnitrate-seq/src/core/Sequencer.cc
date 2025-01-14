@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <cstddef>
+#include <fstream>
 #include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
@@ -441,4 +442,31 @@ std::optional<std::string> Sequencer::PImpl::fetch_module_data(
   }
 
   return module;
+}
+
+NCC_EXPORT std::optional<std::string> ncc::seq::FileSystemFetchModule(
+    std::string_view path) {
+  if (!path.starts_with("file:///package/")) {
+    return std::nullopt;
+  }
+  path.remove_prefix(16);
+
+  if (path.size() < 37) {
+    return std::nullopt;
+  }
+  auto job_uuid = path.substr(0, 36);
+  path.remove_prefix(37);
+
+  ncc::log << Debug << "Opening file '" << path << "' on behalf of job '"
+           << job_uuid << "'";
+
+  /// TODO: Get the base directory of the project
+
+  std::fstream file(std::string(path), std::ios::in);
+  if (!file.is_open()) {
+    return std::nullopt;
+  }
+
+  return std::string((std::istreambuf_iterator<char>(file)),
+                     (std::istreambuf_iterator<char>()));
 }
