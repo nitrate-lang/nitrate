@@ -50,7 +50,15 @@
       "patterns": [
         {
           "name": "keyword.control.n",
-          "match": "\\b(scope|import|pub|sec|pro|type|let|var|const|static|struct|region|group|class|union|opaque|enum|__fstring|fn|noexcept|foreign|impure|tsafe|pure|quasi|retro|inline|unsafe|safe|promise|if|else|for|while|do|switch|break|continue|ret|retif|foreach|try|catch|throw|async|await|__asm__|undef|null|true|false)\\b"
+          "match": "\\b(scope|import|pub|sec|pro|type|comptime|let|var|const|static|struct|region|group|class|union|opaque|enum|__fstring|fn|noexcept|foreign|impure|tsafe|pure|quasi|retro|inline|unsafe|safe|promise|if|else|for|while|do|switch|break|continue|ret|retif|foreach|try|catch|throw|async|await|__asm__|undef|null|true|false)\\b"
+        }
+      ]
+    },
+    "word_operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.n",
+          "match": "\\b(as|bitcast_as|in|out|sizeof|bitsizeof|alignof|typeof)\\b"
         }
       ]
     },

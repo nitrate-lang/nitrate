@@ -432,30 +432,31 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
   switch (key) {
     case Scope: {
       log << SyntaxError << current()
-          << "Namespace declaration is not valid here";
+          << "Unexpected 'scope' in expression context";
       break;
     }
 
     case Import: {
-      log << SyntaxError << current() << "Import statement is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'import' in expression context";
       break;
     }
 
     case Pub: {
       log << SyntaxError << current()
-          << "Public access modifier is not valid here";
+          << "Unexpected 'pub' in expression context";
       break;
     }
 
     case Sec: {
       log << SyntaxError << current()
-          << "Private access modifier is not valid here";
+          << "Unexpected 'sec' in expression context";
       break;
     }
 
     case Pro: {
       log << SyntaxError << current()
-          << "Protected access modifier is not valid here";
+          << "Unexpected 'pro' in expression context";
       break;
     }
 
@@ -468,58 +469,75 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
       break;
     }
 
+    case Comptime: {
+      log << SyntaxError << current()
+          << "Unexpected 'comptime' in expression context";
+      break;
+    }
+
     case Let: {
-      log << SyntaxError << current() << "Let declaration is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'let' in expression context";
       break;
     }
 
     case Var: {
-      log << SyntaxError << current() << "Var declaration is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'var' in expression context";
       break;
     }
 
     case Const: {
-      log << SyntaxError << current() << "Const declaration is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'const' in expression context";
       break;
     }
 
     case Static: {
-      log << SyntaxError << current() << "Static modifier is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'static' in expression context";
       break;
     }
 
     case Struct: {
-      log << SyntaxError << current() << "Struct declaration is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'struct' in expression context";
       break;
     }
 
     case Region: {
-      log << SyntaxError << current() << "Region declaration is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'region' in expression context";
       break;
     }
 
     case Group: {
-      log << SyntaxError << current() << "Group declaration is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'group' in expression context";
       break;
     }
 
     case Class: {
-      log << SyntaxError << current() << "Class declaration is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'class' in expression context";
       break;
     }
 
     case Union: {
-      log << SyntaxError << current() << "Union declaration is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'union' in expression context";
       break;
     }
 
     case Opaque: {
-      log << SyntaxError << current() << "Opaque type is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'opaque' in expression context";
       break;
     }
 
     case Enum: {
-      log << SyntaxError << current() << "Enum declaration is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'enum' in expression context";
       break;
     }
 
@@ -553,102 +571,122 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
     }
 
     case Unsafe: {
-      log << SyntaxError << current() << "Unsafe keyword is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'unsafe' in expression context";
       break;
     }
 
     case Safe: {
-      log << SyntaxError << current() << "Safe keyword is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'safe' in expression context";
       break;
     }
 
     case Promise: {
-      log << SyntaxError << current() << "Promise keyword is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'promise' in expression context";
       break;
     }
 
     case If: {
-      log << SyntaxError << current() << "If statement is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'if' in expression context";
       break;
     }
 
     case Else: {
-      log << SyntaxError << current() << "Else statement is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'else' in expression context";
       break;
     }
 
     case For: {
-      log << SyntaxError << current() << "For loop is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'for' in expression context";
       break;
     }
 
     case While: {
-      log << SyntaxError << current() << "While loop is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'while' in expression context";
       break;
     }
 
     case Do: {
-      log << SyntaxError << current() << "Do statement is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'do' in expression context";
       break;
     }
 
     case Switch: {
-      log << SyntaxError << current() << "Switch statement is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'switch' in expression context";
       break;
     }
 
     case Break: {
-      log << SyntaxError << current() << "Break statement is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'break' in expression context";
       break;
     }
 
     case Continue: {
-      log << SyntaxError << current() << "Continue statement is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'continue' in expression context";
       break;
     }
 
     case Return: {
-      log << SyntaxError << current() << "Return statement is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'return' in expression context";
       break;
     }
 
     case Retif: {
-      log << SyntaxError << current() << "Retif statement is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'retif' in expression context";
       break;
     }
 
     case Foreach: {
-      log << SyntaxError << current() << "Foreach loop is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'foreach' in expression context";
       break;
     }
 
     case Try: {
-      log << SyntaxError << current() << "Try statement is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'try' in expression context";
       break;
     }
 
     case Catch: {
-      log << SyntaxError << current() << "Catch statement is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'catch' in expression context";
       break;
     }
 
     case Throw: {
-      log << SyntaxError << current() << "Throw statement is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'throw' in expression context";
       break;
     }
 
     case Async: {
-      log << SyntaxError << current() << "Async statement is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'async' in expression context";
       break;
     }
 
     case Await: {
-      log << SyntaxError << current() << "Await statement is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected 'await' in expression context";
       break;
     }
 
     case __Asm__: {
-      log << SyntaxError << current() << "Inline assembly is not valid here";
+      log << SyntaxError << current()
+          << "Unexpected '__asm__' in expression context";
       break;
     }
 

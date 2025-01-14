@@ -42,6 +42,8 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 
+#include "nitrate-lexer/Token.hh"
+
 using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
@@ -110,15 +112,47 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       rd.ClearCommentBuffer();
 
       switch (tok.as_key()) {
-        case Var: {
-          for (auto decl : recurse_variable(VarDeclType::Var)) {
-            statements.push_back(BIND_COMMENTS(decl, comments));
-          }
+        case Scope: {
+          R = recurse_scope();
+          break;
+        }
+
+        case Import:
+        case Pub: {  // they both declare external functions
+          R = recurse_export(Vis::Pub);
+          break;
+        }
+
+        case Sec: {
+          R = recurse_export(Vis::Sec);
+          break;
+        }
+
+        case Pro: {
+          R = recurse_export(Vis::Pro);
+          break;
+        }
+
+        case Keyword::Type: {
+          R = recurse_typedef();
+          break;
+        }
+
+        case Comptime: {
+          log << SyntaxError << current()
+              << "Unexpected 'comptime' in this context";
           break;
         }
 
         case Let: {
           for (auto decl : recurse_variable(VarDeclType::Let)) {
+            statements.push_back(BIND_COMMENTS(decl, comments));
+          }
+          break;
+        }
+
+        case Var: {
+          for (auto decl : recurse_variable(VarDeclType::Var)) {
             statements.push_back(BIND_COMMENTS(decl, comments));
           }
           break;
@@ -131,8 +165,10 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
           break;
         }
 
-        case Enum: {
-          R = recurse_enum();
+        case Static: {
+          log << SyntaxError << current()
+              << "Static variables are not yet "
+                 "supported";
           break;
         }
 
@@ -161,99 +197,24 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
           break;
         }
 
-        case Keyword::Type: {
-          R = recurse_typedef();
+        case Opaque: {
+          log << SyntaxError << current()
+              << "Unexpected 'opaque' in this context";
           break;
         }
 
-        case Scope: {
-          R = recurse_scope();
-          break;
-        }
-
-        case Fn: {
-          R = recurse_function(false);
-          break;
-        }
-
-        case Pub:
-        case Import: {  // they both declare external functions
-          R = recurse_export(Vis::Pub);
-          break;
-        }
-
-        case Sec: {
-          R = recurse_export(Vis::Sec);
-          break;
-        }
-
-        case Pro: {
-          R = recurse_export(Vis::Pro);
-          break;
-        }
-
-        case Return: {
-          R = recurse_return();
-          break;
-        }
-
-        case Retif: {
-          R = recurse_retif();
-          break;
-        }
-
-        case Break: {
-          R = make<BreakStmt>()();
-          break;
-        }
-
-        case Continue: {
-          R = make<ContinueStmt>()();
-          break;
-        }
-
-        case If: {
-          R = recurse_if();
-          break;
-        }
-
-        case While: {
-          R = recurse_while();
-          break;
-        }
-
-        case For: {
-          R = recurse_for();
-          break;
-        }
-
-        case Foreach: {
-          R = recurse_foreach();
-          break;
-        }
-
-        case Switch: {
-          R = recurse_switch();
-          break;
-        }
-
-        case __Asm__: {
-          R = recurse_inline_asm();
-          break;
-        }
-
-        case True: {
-          R = make<ExprStmt>(make<ConstBool>(true)())();
-          break;
-        }
-
-        case False: {
-          R = make<ExprStmt>(make<ConstBool>(false)())();
+        case Enum: {
+          R = recurse_enum();
           break;
         }
 
         case __FString: {
           R = make<ExprStmt>(recurse_fstring())();
+          break;
+        }
+
+        case Fn: {
+          R = recurse_function(false);
           break;
         }
 
@@ -277,8 +238,117 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
           break;
         }
 
-        default: {
-          log << SyntaxError << tok << "Unexpected keyword";
+        case Promise: {
+          log << SyntaxError << current()
+              << "Unexpected 'Promise' in this context";
+          break;
+        }
+
+        case If: {
+          R = recurse_if();
+          break;
+        }
+
+        case Else: {
+          log << SyntaxError << current()
+              << "Unexpected 'else' in this context";
+          break;
+        }
+
+        case For: {
+          R = recurse_for();
+          break;
+        }
+
+        case While: {
+          R = recurse_while();
+          break;
+        }
+
+        case Do: {
+          log << SyntaxError << current() << "Unexpected 'do' in this context";
+          break;
+        }
+
+        case Switch: {
+          R = recurse_switch();
+          break;
+        }
+
+        case Break: {
+          R = make<BreakStmt>()();
+          break;
+        }
+
+        case Continue: {
+          R = make<ContinueStmt>()();
+          break;
+        }
+
+        case Return: {
+          R = recurse_return();
+          break;
+        }
+
+        case Retif: {
+          R = recurse_retif();
+          break;
+        }
+
+        case Foreach: {
+          R = recurse_foreach();
+          break;
+        }
+
+        case Try: {
+          R = recurse_try();
+          break;
+        }
+
+        case Catch: {
+          log << SyntaxError << current()
+              << "Unexpected 'catch' in this context";
+          break;
+        }
+
+        case Throw: {
+          R = recurse_throw();
+          break;
+        }
+
+        case Async: {
+          log << SyntaxError << current()
+              << "Unexpected 'async' in this context";
+          break;
+        }
+
+        case Await: {
+          R = recurse_await();
+          break;
+        }
+
+        case __Asm__: {
+          R = recurse_inline_asm();
+          break;
+        }
+
+        case Undef: {
+          R = make<ExprStmt>(make<ConstUndef>()())();
+          break;
+        }
+
+        case Null: {
+          R = make<ExprStmt>(make<ConstNull>()())();
+          break;
+        }
+
+        case True: {
+          R = make<ExprStmt>(make<ConstBool>(true)())();
+          break;
+        }
+
+        case False: {
+          R = make<ExprStmt>(make<ConstBool>(false)())();
           break;
         }
       }

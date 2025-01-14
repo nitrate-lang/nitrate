@@ -89,6 +89,9 @@ namespace ncc::parse {
     FlowPtr<Stmt> recurse_foreach();
     FlowPtr<Stmt> recurse_switch();
     FlowPtr<Stmt> recurse_inline_asm();
+    FlowPtr<Stmt> recurse_try();
+    FlowPtr<Stmt> recurse_throw();
+    FlowPtr<Stmt> recurse_await();
     FlowPtr<Stmt> recurse_block(bool expect_braces, bool single_stmt,
                                 SafetyMode safety);
     FlowPtr<Expr> recurse_expr(const std::set<ncc::lex::Token> &terminators);

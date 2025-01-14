@@ -131,6 +131,7 @@ namespace ncc::lex {
     Sec,       /* 'sec' */
     Pro,       /* 'pro' */
     Type,      /* 'type' */
+    Comptime,  /* 'comptime' */
     Let,       /* 'let' */
     Var,       /* 'var' */
     Const,     /* 'const' */
