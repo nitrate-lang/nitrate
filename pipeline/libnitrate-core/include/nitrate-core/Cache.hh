@@ -40,7 +40,7 @@
 #include <mutex>
 #include <string>
 
-namespace ncc::core {
+namespace ncc {
   using ResourceKey = std::array<uint8_t, 20>;
 
   template <typename Value>
@@ -110,6 +110,6 @@ namespace ncc::core {
   using TheCache = ExternalResourceCache<std::string>;
 
   TheCache &get_cache();
-}  // namespace ncc::core
+}  // namespace ncc
 
 #endif  // __NITRATE_CORE_CACHE_H__

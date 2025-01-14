@@ -40,7 +40,7 @@
 #include <optional>
 #include <unordered_map>
 
-namespace ncc::core {
+namespace ncc {
   class IEnvironment {
   public:
     virtual ~IEnvironment() = default;
@@ -55,7 +55,7 @@ namespace ncc::core {
   };
 
   class Environment : public IEnvironment {
-    std::unordered_map<std::string_view, std::string_view> m_data;
+    std::unordered_map<string, string> m_data;
     std::mutex m_mutex;
 
     void setup_default_env();
@@ -73,6 +73,6 @@ namespace ncc::core {
              bool privset = false);
   };
 
-}  // namespace ncc::core
+}  // namespace ncc
 
 #endif  // __NITRATE_CORE_ENV_H__

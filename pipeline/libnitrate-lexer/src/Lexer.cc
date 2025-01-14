@@ -40,12 +40,13 @@
 #include <csetjmp>
 #include <cstdint>
 #include <cstdio>
-#include <deque>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/String.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
+#include <queue>
+#include <stack>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -53,7 +54,7 @@
 #include <utility>
 #include <vector>
 
-using namespace ncc::core;
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::lex::detail;
 
@@ -139,7 +140,7 @@ enum class NumType {
   Floating,
 };
 
-static FORCE_INLINE bool validate_identifier(std::string_view id) {
+static NCC_FORCE_INLINE bool validate_identifier(std::string_view id) {
   /*
    * This state machine checks if the identifier looks
    * like 'a::b::c::d_::e::f'.
@@ -168,8 +169,8 @@ static FORCE_INLINE bool validate_identifier(std::string_view id) {
   return state == 0;
 }
 
-static FORCE_INLINE bool canonicalize_float(std::string_view input,
-                                            std::string &norm) {
+static NCC_FORCE_INLINE bool canonicalize_float(std::string_view input,
+                                                std::string &norm) {
   size_t e_pos = e_pos = input.find('e');
   if (e_pos == std::string::npos) [[likely]] {
     norm = input;
@@ -217,8 +218,9 @@ static FORCE_INLINE bool canonicalize_float(std::string_view input,
   return true;
 }
 
-static FORCE_INLINE bool canonicalize_number(std::string &number,
-                                             std::string &norm, NumType type) {
+static NCC_FORCE_INLINE bool canonicalize_number(std::string &number,
+                                                 std::string &norm,
+                                                 NumType type) {
   typedef unsigned int uint128_t __attribute__((mode(TI)));
 
   uint128_t x = 0, i = 0;
@@ -325,7 +327,7 @@ static FORCE_INLINE bool canonicalize_number(std::string &number,
   return true;
 }
 
-void Tokenizer::reset_state() { m_pushback.clear(); }
+void Tokenizer::reset_state() { m_fifo = std::queue<char>(); }
 
 enum class LexState {
   Start,
@@ -345,7 +347,7 @@ enum class LexState {
 // optimization capabilities as if the functions has static linkage.
 class Tokenizer::StaticImpl {
 public:
-  static FORCE_INLINE char nextc(Tokenizer &L) {
+  static NCC_FORCE_INLINE char nextc(Tokenizer &L) {
     if (L.m_getc_buffer_pos == GETC_BUFFER_SIZE) {
       L.m_file.read(L.m_getc_buffer.data(), GETC_BUFFER_SIZE);
       auto gcount = L.m_file.gcount();
@@ -356,6 +358,11 @@ public:
 
       if (gcount == 0) [[unlikely]] {
         if (L.m_eof) [[unlikely]] {
+          L.m_env->set("this.file.eof.offset", std::to_string(L.m_offset));
+          L.m_env->set("this.file.eof.line", std::to_string(L.m_line));
+          L.m_env->set("this.file.eof.column", std::to_string(L.m_column));
+          L.m_env->set("this.file.eof.filename", L.GetCurrentFilename());
+
           // Benchmarks show that this is the fastest way to signal EOF
           // for large files.
           throw ScannerEOF();
@@ -378,9 +385,9 @@ public:
     return c;
   }
 
-  static FORCE_INLINE Token ParseIdentifier(Tokenizer &L, char c,
-                                            std::string &buf,
-                                            LocationID start_pos) {
+  static NCC_FORCE_INLINE Token ParseIdentifier(Tokenizer &L, char c,
+                                                std::string &buf,
+                                                LocationID start_pos) {
     { /* Read in what is hopefully an identifier */
       int colon_state = 0;
 
@@ -389,7 +396,7 @@ public:
           if (!buf.ends_with("::")) {
             char tc = buf.back();
             buf.pop_back();
-            L.m_pushback.push_back(tc);
+            L.m_fifo.push(tc);
             break;
           }
           colon_state = 0;
@@ -404,29 +411,29 @@ public:
 
     /* Check for f-string */
     if (buf == "f" && c == '"') {
-      L.m_pushback.push_back(c);
-      return Token(qKeyW, qK__FString, start_pos);
+      L.m_fifo.push(c);
+      return Token(KeyW, __FString, start_pos);
     }
 
     /* We overshot; this must be a punctor ':' */
     if (buf.size() > 0 && buf.back() == ':') {
       char tc = buf.back();
       buf.pop_back();
-      L.m_pushback.push_back(tc);
+      L.m_fifo.push(tc);
     }
-    L.m_pushback.push_back(c);
+    L.m_fifo.push(c);
 
     { /* Determine if it's a keyword or an identifier */
       auto it = LexicalKeywords.left.find(buf);
       if (it != LexicalKeywords.left.end()) {
-        return Token(qKeyW, it->second, start_pos);
+        return Token(KeyW, it->second, start_pos);
       }
     }
 
     { /* Check if it's an operator */
       auto it = word_operators.find(buf);
       if (it != word_operators.end()) {
-        return Token(qOper, it->second, start_pos);
+        return Token(Oper, it->second, start_pos);
       }
     }
 
@@ -445,11 +452,12 @@ public:
     }
 
     /* Return the identifier */
-    return Token(qName, intern(buf), start_pos);
+    return Token(Name, string(buf), start_pos);
   };
 
-  static FORCE_INLINE Token ParseString(Tokenizer &L, char c, std::string &buf,
-                                        LocationID start_pos) {
+  static NCC_FORCE_INLINE Token ParseString(Tokenizer &L, char c,
+                                            std::string &buf,
+                                            LocationID start_pos) {
     while (true) {
       while (c != buf[0]) {
         /* Normal character */
@@ -624,18 +632,50 @@ public:
         continue;
       }
 
-      L.m_pushback.push_back(c);
+      L.m_fifo.push(c);
       /* Character or string */
       if (buf.front() == '\'' && buf.size() == 2) {
-        return Token(qChar, intern(std::string(1, buf[1])), start_pos);
+        return Token(Char, string(std::string(1, buf[1])), start_pos);
       } else {
-        return Token(qText, intern(buf.substr(1, buf.size() - 1)), start_pos);
+        return Token(Text, string(buf.substr(1, buf.size() - 1)), start_pos);
       }
     }
   }
 
-  static FORCE_INLINE Token ParseInteger(Tokenizer &L, char c, std::string &buf,
-                                         LocationID start_pos) {
+  static NCC_FORCE_INLINE void ParseIntegerUnwind(Tokenizer &L, char c,
+                                                  std::string &buf) {
+    bool spinning = true;
+
+    std::stack<char> q;
+
+    while (!buf.empty() && spinning) {
+      switch (char ch = buf.back()) {
+        case '.':
+        case 'e':
+        case 'E': {
+          q.push(ch);
+          buf.pop_back();
+          break;
+        }
+
+        default: {
+          spinning = false;
+          break;
+        }
+      }
+    }
+
+    q.push(c);
+
+    while (!q.empty()) {
+      L.m_fifo.push(q.top());
+      q.pop();
+    }
+  }
+
+  static NCC_FORCE_INLINE Token ParseInteger(Tokenizer &L, char c,
+                                             std::string &buf,
+                                             LocationID start_pos) {
     NumType type = NumType::Decimal;
 
     /* [0x, 0X, 0d, 0D, 0b, 0B, 0o, 0O] */
@@ -700,7 +740,7 @@ public:
             type = NumType::Floating;
             float_lit_state = FloatPart::ExponentSign;
           } else {
-            L.m_pushback.push_back(c);
+            ParseIntegerUnwind(L, c, buf);
             is_lexing = false;
           }
           break;
@@ -710,7 +750,7 @@ public:
           if (std::isdigit(c)) {
             buf += c;
           } else {
-            L.m_pushback.push_back(c);
+            ParseIntegerUnwind(L, c, buf);
             is_lexing = false;
           }
           break;
@@ -720,7 +760,7 @@ public:
           if (std::isxdigit(c)) {
             buf += c;
           } else {
-            L.m_pushback.push_back(c);
+            ParseIntegerUnwind(L, c, buf);
             is_lexing = false;
           }
           break;
@@ -730,7 +770,7 @@ public:
           if (c == '0' || c == '1') {
             buf += c;
           } else {
-            L.m_pushback.push_back(c);
+            ParseIntegerUnwind(L, c, buf);
             is_lexing = false;
           }
           break;
@@ -740,7 +780,7 @@ public:
           if (c >= '0' && c <= '7') {
             buf += c;
           } else {
-            L.m_pushback.push_back(c);
+            ParseIntegerUnwind(L, c, buf);
             is_lexing = false;
           }
           break;
@@ -755,7 +795,7 @@ public:
                 buf += 'e';
                 float_lit_state = FloatPart::ExponentSign;
               } else {
-                L.m_pushback.push_back(c);
+                ParseIntegerUnwind(L, c, buf);
                 is_lexing = false;
               }
               break;
@@ -770,7 +810,7 @@ public:
                 buf += c;
                 float_lit_state = FloatPart::ExponentPre;
               } else {
-                L.m_pushback.push_back(c);
+                ParseIntegerUnwind(L, c, buf);
                 is_lexing = false;
               }
               break;
@@ -783,7 +823,7 @@ public:
                 buf += c;
                 float_lit_state = FloatPart::ExponentPost;
               } else {
-                L.m_pushback.push_back(c);
+                ParseIntegerUnwind(L, c, buf);
                 is_lexing = false;
               }
               break;
@@ -793,7 +833,7 @@ public:
               if (std::isdigit(c)) {
                 buf += c;
               } else {
-                L.m_pushback.push_back(c);
+                ParseIntegerUnwind(L, c, buf);
                 is_lexing = false;
               }
               break;
@@ -812,30 +852,30 @@ public:
     std::string norm;
     if (type == NumType::Floating) {
       if (canonicalize_float(buf, norm)) {
-        return Token(qNumL, intern(std::move(norm)), start_pos);
+        return Token(NumL, string(std::move(norm)), start_pos);
       }
     } else if (canonicalize_number(buf, norm, type)) {
-      return Token(qIntL, intern(std::move(norm)), start_pos);
+      return Token(IntL, string(std::move(norm)), start_pos);
     }
 
     L.reset_state();
     return Token::EndOfFile();
   }
 
-  static FORCE_INLINE Token ParseCommentSingleLine(Tokenizer &L, char c,
-                                                   std::string &buf,
-                                                   LocationID start_pos) {
+  static NCC_FORCE_INLINE Token ParseCommentSingleLine(Tokenizer &L, char c,
+                                                       std::string &buf,
+                                                       LocationID start_pos) {
     while (c != '\n') {
       buf += c;
       c = nextc(L);
     }
 
-    return Token(qNote, intern(std::move(buf)), start_pos);
+    return Token(Note, string(std::move(buf)), start_pos);
   };
 
-  static FORCE_INLINE Token ParseCommentMultiLine(Tokenizer &L, char c,
-                                                  std::string &buf,
-                                                  LocationID start_pos) {
+  static NCC_FORCE_INLINE Token ParseCommentMultiLine(Tokenizer &L, char c,
+                                                      std::string &buf,
+                                                      LocationID start_pos) {
     size_t level = 1;
 
     while (true) {
@@ -855,7 +895,7 @@ public:
         if (tmp == '/') {
           level--;
           if (level == 0) {
-            return Token(qNote, intern(std::move(buf)), start_pos);
+            return Token(Note, string(std::move(buf)), start_pos);
           } else {
             buf += "*";
             buf += tmp;
@@ -872,9 +912,9 @@ public:
     }
   }
 
-  static FORCE_INLINE Token ParseSingleLineMacro(Tokenizer &L, char c,
-                                                 std::string &buf,
-                                                 LocationID start_pos) {
+  static NCC_FORCE_INLINE Token ParseSingleLineMacro(Tokenizer &L, char c,
+                                                     std::string &buf,
+                                                     LocationID start_pos) {
     /*
       Format:
           ... @macro_name  ...
@@ -885,14 +925,14 @@ public:
       c = nextc(L);
     }
 
-    L.m_pushback.push_back(c);
+    L.m_fifo.push(c);
 
-    return Token(qMacr, intern(std::move(buf)), start_pos);
+    return Token(Macr, string(std::move(buf)), start_pos);
   }
 
-  static FORCE_INLINE Token ParseBlockMacro(Tokenizer &L, char c,
-                                            std::string &buf,
-                                            LocationID start_pos) {
+  static NCC_FORCE_INLINE Token ParseBlockMacro(Tokenizer &L, char c,
+                                                std::string &buf,
+                                                LocationID start_pos) {
     uint32_t state_parens = 1;
 
     while (true) {
@@ -903,7 +943,7 @@ public:
       }
 
       if (state_parens == 0) {
-        return Token(qMacB, intern(std::move(buf)), start_pos);
+        return Token(MacB, string(std::move(buf)), start_pos);
       }
 
       buf += c;
@@ -912,15 +952,16 @@ public:
     }
   }
 
-  static FORCE_INLINE bool ParseOther(Tokenizer &L, char c, std::string &buf,
-                                      LocationID start_pos, LexState &state,
-                                      Token &token) {
+  static NCC_FORCE_INLINE bool ParseOther(Tokenizer &L, char c,
+                                          std::string &buf,
+                                          LocationID start_pos, LexState &state,
+                                          Token &token) {
     /* Check if it's a punctor */
     if (buf.size() == 1) {
       auto it = LexicalPunctors.left.find(buf);
       if (it != LexicalPunctors.left.end()) {
-        L.m_pushback.push_back(c);
-        token = Token(qPunc, it->second, start_pos);
+        L.m_fifo.push(c);
+        token = Token(Punc, it->second, start_pos);
         return true;
       }
     }
@@ -935,7 +976,7 @@ public:
     /* Special case for a comment */
     if (buf[0] == '#') {
       buf.clear();
-      L.m_pushback.push_back(c);
+      L.m_fifo.push(c);
       state = LexState::CommentSingleLine;
       return false;
     }
@@ -965,17 +1006,16 @@ public:
       return false;
     }
 
-    L.m_pushback.push_back(buf.back());
-    L.m_pushback.push_back(c);
-    token =
-        Token(qOper, LexicalOperators.left.at(buf.substr(0, buf.size() - 1)),
-              start_pos);
+    L.m_fifo.push(buf.back());
+    L.m_fifo.push(c);
+    token = Token(Oper, LexicalOperators.left.at(buf.substr(0, buf.size() - 1)),
+                  start_pos);
 
     return true;
   }
 };
 
-CPP_EXPORT Token Tokenizer::GetNext() {
+NCC_EXPORT Token Tokenizer::GetNext() {
   /**
    * **WARNING**: Do not just start editing this function without
    * having a holistic understanding of all code that depends on the lexer
@@ -993,11 +1033,11 @@ CPP_EXPORT Token Tokenizer::GetNext() {
 
   while (true) {
     { /* If the Lexer over-consumed, we will return the saved character */
-      if (m_pushback.empty()) {
+      if (m_fifo.empty()) {
         c = StaticImpl::nextc(*this);
       } else {
-        c = m_pushback.front();
-        m_pushback.pop_front();
+        c = m_fifo.front();
+        m_fifo.pop();
       }
     }
 
@@ -1007,8 +1047,8 @@ CPP_EXPORT Token Tokenizer::GetNext() {
           continue;
         }
 
-        start_pos =
-            InternLocation(Location(m_offset - 1, m_line, m_column, ""));
+        start_pos = InternLocation(
+            Location(m_offset - 1, m_line, m_column, GetCurrentFilename()));
 
         if (std::isalpha(c) || c == '_') {
           /* Identifier or keyword or operator */
@@ -1051,8 +1091,8 @@ CPP_EXPORT Token Tokenizer::GetNext() {
           state = LexState::CommentMultiLine;
           continue;
         } else { /* Divide operator */
-          m_pushback.push_back(c);
-          return Token(qOper, qOpSlash, start_pos);
+          m_fifo.push(c);
+          return Token(Oper, OpSlash, start_pos);
         }
       }
       case LexState::CommentSingleLine: {
@@ -1091,96 +1131,96 @@ CPP_EXPORT Token Tokenizer::GetNext() {
 
 ///============================================================================///
 
-CPP_EXPORT const char *ncc::lex::qlex_ty_str(TokenType ty) {
+NCC_EXPORT const char *ncc::lex::qlex_ty_str(TokenType ty) {
   switch (ty) {
-    case qEofF:
+    case EofF:
       return "eof";
-    case qKeyW:
+    case KeyW:
       return "key";
-    case qOper:
+    case Oper:
       return "op";
-    case qPunc:
+    case Punc:
       return "sym";
-    case qName:
+    case Name:
       return "name";
-    case qIntL:
+    case IntL:
       return "int";
-    case qNumL:
+    case NumL:
       return "num";
-    case qText:
+    case Text:
       return "str";
-    case qChar:
+    case Char:
       return "char";
-    case qMacB:
+    case MacB:
       return "macb";
-    case qMacr:
+    case Macr:
       return "macr";
-    case qNote:
+    case Note:
       return "note";
   }
 
   qcore_panic("unreachable");
 }
 
-CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, TokenType ty) {
+NCC_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, TokenType ty) {
   switch (ty) {
-    case qEofF: {
-      os << "qEofF";
+    case EofF: {
+      os << "EofF";
       break;
     }
 
-    case qKeyW: {
-      os << "qKeyW";
+    case KeyW: {
+      os << "KeyW";
       break;
     }
 
-    case qOper: {
-      os << "qOper";
+    case Oper: {
+      os << "Oper";
       break;
     }
 
-    case qPunc: {
-      os << "qPunc";
+    case Punc: {
+      os << "Punc";
       break;
     }
 
-    case qName: {
-      os << "qName";
+    case Name: {
+      os << "Name";
       break;
     }
 
-    case qIntL: {
-      os << "qIntL";
+    case IntL: {
+      os << "IntL";
       break;
     }
 
-    case qNumL: {
-      os << "qNumL";
+    case NumL: {
+      os << "NumL";
       break;
     }
 
-    case qText: {
-      os << "qText";
+    case Text: {
+      os << "Text";
       break;
     }
 
-    case qChar: {
-      os << "qChar";
+    case Char: {
+      os << "Char";
       break;
     }
 
-    case qMacB: {
-      os << "qMacB";
+    case MacB: {
+      os << "MacB";
       break;
     }
 
-    case qMacr: {
-      os << "qMacr";
+    case Macr: {
+      os << "Macr";
       break;
     }
 
-    case qNote: {
-      os << "qNote";
+    case Note: {
+      os << "Note";
       break;
     }
   }
@@ -1188,19 +1228,180 @@ CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, TokenType ty) {
   return os;
 }
 
-CPP_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, Token tok) {
-  os << tok.as_string();
+static void escape_string(std::ostream &ss, std::string_view input) {
+  ss << '"';
+
+  for (char ch : input) {
+    switch (ch) {
+      case '"':
+        ss << "\\\"";
+        break;
+      case '\\':
+        ss << "\\\\";
+        break;
+      case '\b':
+        ss << "\\b";
+        break;
+      case '\f':
+        ss << "\\f";
+        break;
+      case '\n':
+        ss << "\\n";
+        break;
+      case '\r':
+        ss << "\\r";
+        break;
+      case '\t':
+        ss << "\\t";
+        break;
+      case '\0':
+        ss << "\\0";
+        break;
+      default:
+        if (ch >= 32 && ch < 127) {
+          ss << ch;
+        } else {
+          char hex[5];
+          snprintf(hex, sizeof(hex), "\\x%02x", (int)(uint8_t)ch);
+          ss << hex;
+        }
+        break;
+    }
+  }
+
+  ss << '"';
+}
+
+NCC_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, Token tok) {
+  // Serialize the token so that the core logger system can use it
+
+  os << "${T:{\"type\":" << (int)tok.get_type()
+     << ",\"posid\":" << tok.get_start().GetId() << ",\"value\":";
+  escape_string(os, tok.as_string());
+  os << "}}";
+
   return os;
 }
 
-CPP_EXPORT const char *ncc::lex::op_repr(Operator op) {
+NCC_EXPORT const char *ncc::lex::op_repr(Operator op) {
   return LexicalOperators.right.at(op).data();
 }
 
-CPP_EXPORT const char *ncc::lex::kw_repr(Keyword kw) {
+NCC_EXPORT const char *ncc::lex::kw_repr(Keyword kw) {
   return LexicalKeywords.right.at(kw).data();
 }
 
-CPP_EXPORT const char *ncc::lex::punct_repr(Punctor punct) {
+NCC_EXPORT const char *ncc::lex::punct_repr(Punctor punct) {
   return LexicalPunctors.right.at(punct).data();
+}
+
+NCC_EXPORT
+std::optional<std::vector<std::string>> Tokenizer::GetSourceWindow(
+    Point start, Point end, char fillchar) {
+  if (start.x > end.x || (start.x == end.x && start.y > end.y)) {
+    qcore_print(QCORE_ERROR, "Invalid source window range");
+    return std::nullopt;
+  }
+
+  m_file.clear();
+  auto current_source_offset = m_file.tellg();
+  if (!m_file) {
+    qcore_print(QCORE_ERROR, "Failed to get the current file offset");
+    return std::nullopt;
+  }
+
+  if (m_file.seekg(0, std::ios::beg)) {
+    long line = 0, column = 0;
+
+    int ch = EOF;
+    bool spinning = true;
+    while (spinning) {
+      ch = m_file.get();
+      if (ch == EOF) [[unlikely]] {
+        break;
+      }
+
+      bool is_begin = false;
+      if (line == start.x && column == start.y) [[unlikely]] {
+        is_begin = true;
+      } else {
+        switch (ch) {
+          case '\n': {
+            if (line == start.x && start.y == -1) [[unlikely]] {
+              is_begin = true;
+            }
+
+            line++;
+            column = 0;
+            break;
+          }
+
+          default: {
+            column++;
+            break;
+          }
+        }
+      }
+
+      if (is_begin) [[unlikely]] {
+        std::vector<std::string> lines;
+        std::string line;
+
+        do {
+          long current_line = lines.size() + start.x;
+          long current_column = line.size();
+
+          if (current_line == end.x && current_column == end.y) [[unlikely]] {
+            spinning = false;
+          } else {
+            switch (ch) {
+              case '\n': {
+                if (current_line == end.x && end.y == -1) [[unlikely]] {
+                  spinning = false;
+                }
+
+                lines.push_back(line);
+                line.clear();
+                break;
+              }
+
+              default: {
+                line.push_back(ch);
+                break;
+              }
+            }
+          }
+
+          ch = m_file.get();
+          if (ch == EOF) [[unlikely]] {
+            spinning = false;
+          }
+        } while (spinning);
+
+        if (!line.empty()) {
+          lines.push_back(line);
+        }
+
+        size_t max_length = 0;
+        for (const auto &l : lines) {
+          max_length = std::max(max_length, l.size());
+        }
+
+        for (auto &l : lines) {
+          if (l.size() < max_length) {
+            l.append(max_length - l.size(), fillchar);
+          }
+        }
+
+        m_file.seekg(current_source_offset);
+        return lines;
+      }
+    }
+  } else {
+    qcore_print(QCORE_ERROR, "Failed to seek to the beginning of the file");
+  }
+
+  m_file.seekg(current_source_offset);
+
+  return std::nullopt;
 }

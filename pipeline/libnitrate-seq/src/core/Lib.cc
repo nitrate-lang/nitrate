@@ -44,12 +44,12 @@ bool do_init() { return true; }
 
 void do_deinit() { return; }
 
-C_EXPORT bool qprep_lib_init() {
+extern "C" NCC_EXPORT bool qprep_lib_init() {
   if (qprep_lib_ref_count++ > 1) {
     return true;
   }
 
-  if (!ncc::core::CoreLibrary.InitRC()) {
+  if (!ncc::CoreLibrary.InitRC()) {
     return false;
   }
 
@@ -60,7 +60,7 @@ C_EXPORT bool qprep_lib_init() {
   return do_init();
 }
 
-C_EXPORT void qprep_lib_deinit() {
+extern "C" NCC_EXPORT void qprep_lib_deinit() {
   if (--qprep_lib_ref_count > 0) {
     return;
   }
@@ -68,12 +68,12 @@ C_EXPORT void qprep_lib_deinit() {
   do_deinit();
 
   ncc::lex::LexerLibrary.DeinitRC();
-  ncc::core::CoreLibrary.DeinitRC();
+  ncc::CoreLibrary.DeinitRC();
 
   return;
 }
 
-C_EXPORT const char* qprep_lib_version() {
+extern "C" NCC_EXPORT const char* qprep_lib_version() {
   static const char* version_string =
 
       "[" __TARGET_VERSION
@@ -121,4 +121,4 @@ C_EXPORT const char* qprep_lib_version() {
   return version_string;
 }
 
-C_EXPORT const char* qprep_strerror() { return ""; }
+extern "C" NCC_EXPORT const char* qprep_strerror() { return ""; }

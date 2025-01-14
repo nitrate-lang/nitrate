@@ -33,71 +33,73 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
 ExpressionList Parser::recurse_struct_attributes() {
   ExpressionList attributes;
 
-  if (!next_if(qPuncLBrk)) {
+  if (!next_if(PuncLBrk)) {
     return attributes;
   }
 
   while (true) {
-    if (next_if(qEofF)) {
-      diagnostic
-          << current()
-          << "Encountered EOF while parsing composite definition attributes";
+    if (next_if(EofF)) [[unlikely]] {
+      log << SyntaxError << current()
+          << "Encountered EOF while parsing struct attributes";
       break;
     }
 
-    if (next_if(qPuncRBrk)) {
+    if (next_if(PuncRBrk)) {
       break;
     }
 
-    let attribute =
-        recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk)});
+    auto attribute = recurse_expr({
+        Token(Punc, PuncComa),
+        Token(Punc, PuncRBrk),
+    });
 
     attributes.push_back(attribute);
 
-    next_if(qPuncComa);
+    next_if(PuncComa);
   }
 
   return attributes;
 }
 
-std::string_view Parser::recurse_struct_name() {
-  if (let tok = next_if(qName)) {
-    return tok->as_string();
-  } else {
-    return "";
-  }
+string Parser::recurse_struct_name() {
+  auto tok = next_if(Name);
+  return tok ? tok->as_string() : "";
 }
 
 StructDefNames Parser::recurse_struct_terms() {
   StructDefNames names;
 
-  if (!next_if(qPuncColn)) {
+  if (!next_if(PuncColn)) {
     return names;
   }
 
   while (true) {
-    if (let tok = next_if(qName)) {
-      names.push_back(SaveString(tok->as_string()));
-
-      next_if(qPuncComa);
+    if (auto tok = next_if(Name)) {
+      names.push_back(tok->as_string());
     } else {
-      return names;
+      break;
     }
+
+    next_if(PuncComa);
   }
+
+  return names;
 }
 
-std::optional<RefNode<Expr> > Parser::recurse_struct_field_default_value() {
-  if (next_if(qOpSet)) {
-    return recurse_expr(
-
-        {Token(qPunc, qPuncComa), Token(qPunc, qPuncSemi),
-         Token(qPunc, qPuncRCur)});
+NullableFlowPtr<Expr> Parser::recurse_struct_field_default_value() {
+  if (next_if(OpSet)) {
+    return recurse_expr({
+        Token(Punc, PuncComa),
+        Token(Punc, PuncSemi),
+        Token(Punc, PuncRCur),
+    });
   } else {
     return std::nullopt;
   }
@@ -105,23 +107,21 @@ std::optional<RefNode<Expr> > Parser::recurse_struct_field_default_value() {
 
 void Parser::recurse_struct_field(Vis vis, bool is_static,
                                   StructDefFields &fields) {
-  /* Must consume token to avoid infinite loop on error */
-  if (let name = next(); name.is(qName)) {
-    let field_name = name.as_string();
+  if (auto field_name = next_if(Name)) {
+    if (next_if(PuncColn)) {
+      auto field_type = recurse_type();
+      auto default_value = recurse_struct_field_default_value();
 
-    if (next_if(qPuncColn)) {
-      let field_type = recurse_type();
-      let default_value = recurse_struct_field_default_value();
-
-      let field = StructField(vis, is_static, SaveString(field_name),
-                              field_type, std::move(default_value));
+      auto field = StructField(vis, is_static, field_name->as_string(),
+                               field_type, default_value);
 
       fields.push_back(std::move(field));
     } else {
-      diagnostic << current() << "Expected ':' after field name in struct";
+      log << SyntaxError << current()
+          << "Expected ':' after field name in struct";
     }
   } else {
-    diagnostic << current() << "Expected field name in struct";
+    log << SyntaxError << next() << "Expected field name in struct";
   }
 }
 
@@ -129,47 +129,47 @@ void Parser::recurse_struct_method_or_field(StructContent &body) {
   Vis vis = Vis::Sec;
 
   /* Parse visibility of member */
-  if (next_if(qKSec)) {
+  if (next_if(Sec)) {
     vis = Vis::Sec;
-  } else if (next_if(qKPro)) {
+  } else if (next_if(Pro)) {
     vis = Vis::Pro;
-  } else if (next_if(qKPub)) {
+  } else if (next_if(Pub)) {
     vis = Vis::Pub;
   }
 
-  /* Is the member static? */
-  bool is_static = next_if(qKStatic).has_value();
+  auto is_static_member = next_if(Static).has_value();
 
-  if (next_if(qKFn)) { /* Parse method */
-    let method = recurse_function(false);
+  if (next_if(Fn)) {
+    auto method = recurse_function(false);
 
-    if (is_static) {
+    if (is_static_member) {
       body.static_methods.push_back({vis, method});
     } else {
       body.methods.push_back({vis, method});
     }
-  } else { /* Parse field */
-    recurse_struct_field(vis, is_static, body.fields);
+  } else {
+    recurse_struct_field(vis, is_static_member, body.fields);
   }
 
-  next_if(qPuncComa) || next_if(qPuncSemi);
+  next_if(PuncComa) || next_if(PuncSemi);
 }
 
 Parser::StructContent Parser::recurse_struct_body() {
   StructContent body;
 
-  if (!next_if(qPuncLCur)) {
-    diagnostic << current() << "Expected '{' to start struct body";
+  if (!next_if(PuncLCur)) [[unlikely]] {
+    log << SyntaxError << current() << "Expected '{' to start struct body";
     return body;
   }
 
   while (true) {
-    if (next_if(qPuncRCur)) {
+    if (next_if(EofF)) {
+      log << SyntaxError << current()
+          << "Encountered EOF while parsing struct body";
       break;
     }
 
-    if (next_if(qEofF)) {
-      diagnostic << current() << "Encountered EOF while parsing struct body";
+    if (next_if(PuncRCur)) {
       break;
     }
 
@@ -179,19 +179,18 @@ Parser::StructContent Parser::recurse_struct_body() {
   return body;
 }
 
-RefNode<Stmt> Parser::recurse_struct(CompositeType type) {
-  let start_pos = current().get_start();
-  let attributes = recurse_struct_attributes();
-  let name = recurse_struct_name();
-  let template_params = recurse_template_parameters();
-  let terms = recurse_struct_terms();
-  let[fields, methods, static_methods] = recurse_struct_body();
+FlowPtr<Stmt> Parser::recurse_struct(CompositeType struct_type) {
+  auto start_pos = current().get_start();
+  auto struct_attributes = recurse_struct_attributes();
+  auto struct_name = recurse_struct_name();
+  auto struct_template_params = recurse_template_parameters();
+  auto struct_terms = recurse_struct_terms();
+  auto [struct_fields, struct_methods, struct_static_methods] =
+      recurse_struct_body();
 
-  let struct_defintion = make<StructDef>(
-      type, std::move(attributes), SaveString(name), std::move(template_params),
-      std::move(terms), std::move(fields), std::move(methods),
-      std::move(static_methods))();
-
+  auto struct_defintion = make<StructDef>(
+      struct_type, struct_attributes, struct_name, struct_template_params,
+      struct_terms, struct_fields, struct_methods, struct_static_methods)();
   struct_defintion->set_offset(start_pos);
 
   return struct_defintion;

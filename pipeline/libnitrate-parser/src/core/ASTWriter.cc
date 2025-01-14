@@ -42,7 +42,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-void AST_Writer::write_source_location(RefNode<const Base> n) const {
+void AST_Writer::write_source_location(FlowPtr<Base> n) const {
   string("loc");
 
   if (m_rd.has_value()) {
@@ -50,8 +50,8 @@ void AST_Writer::write_source_location(RefNode<const Base> n) const {
 
     begin_obj(3);
 
-    let begin = n->begin(rd);
-    let end = n->end(rd);
+    auto begin = n->begin(rd);
+    auto end = n->end(rd);
 
     {
       string("begin");
@@ -92,12 +92,12 @@ void AST_Writer::write_source_location(RefNode<const Base> n) const {
     }
 
     {
-      string("genesis");
+      string("trace");
 
-#if NITRATE_AST_TRACKING
+#if NITRATE_FLOWPTR_TRACE
       begin_obj(4);
 
-      let origin = n.origin();
+      let origin = n.trace();
 
       string("src");
       string(origin.file_name());
@@ -123,15 +123,17 @@ void AST_Writer::write_source_location(RefNode<const Base> n) const {
   }
 }
 
-void AST_Writer::write_type_metadata(RefNode<const Type> n) {
+void AST_Writer::write_type_metadata(FlowPtr<Type> n) {
   string("width");
-  n->get_width() ? n->get_width().accept(*this) : null();
+  n->get_width() ? n->get_width().value().accept(*this) : null();
 
   string("min");
-  n->get_range().first ? n->get_range().first.accept(*this) : null();
+  auto min = n->get_range_begin();
+  min.has_value() ? min.value().accept(*this) : null();
 
   string("max");
-  n->get_range().second ? n->get_range().second.accept(*this) : null();
+  auto max = n->get_range_end();
+  max.has_value() ? max.value().accept(*this) : null();
 }
 
 std::string_view AST_Writer::vis_str(Vis vis) const {
@@ -145,7 +147,7 @@ std::string_view AST_Writer::vis_str(Vis vis) const {
   }
 }
 
-void AST_Writer::visit(RefNode<const Base> n) {
+void AST_Writer::visit(FlowPtr<Base> n) {
   begin_obj(2);
 
   string("kind");
@@ -156,7 +158,7 @@ void AST_Writer::visit(RefNode<const Base> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ExprStmt> n) {
+void AST_Writer::visit(FlowPtr<ExprStmt> n) {
   begin_obj(3);
 
   string("kind");
@@ -170,7 +172,7 @@ void AST_Writer::visit(RefNode<const ExprStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const StmtExpr> n) {
+void AST_Writer::visit(FlowPtr<StmtExpr> n) {
   begin_obj(3);
 
   string("kind");
@@ -184,7 +186,7 @@ void AST_Writer::visit(RefNode<const StmtExpr> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const TypeExpr> n) {
+void AST_Writer::visit(FlowPtr<TypeExpr> n) {
   begin_obj(3);
 
   string("kind");
@@ -198,7 +200,7 @@ void AST_Writer::visit(RefNode<const TypeExpr> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const NamedTy> n) {
+void AST_Writer::visit(FlowPtr<NamedTy> n) {
   begin_obj(6);
 
   string("kind");
@@ -214,7 +216,7 @@ void AST_Writer::visit(RefNode<const NamedTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const InferTy> n) {
+void AST_Writer::visit(FlowPtr<InferTy> n) {
   begin_obj(5);
 
   string("kind");
@@ -227,7 +229,7 @@ void AST_Writer::visit(RefNode<const InferTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const TemplType> n) {
+void AST_Writer::visit(FlowPtr<TemplType> n) {
   begin_obj(7);
 
   string("kind");
@@ -240,10 +242,10 @@ void AST_Writer::visit(RefNode<const TemplType> n) {
   string("template");
   n->get_template().accept(*this);
 
-  string("args");
-  let args = n->get_args();
+  string("arguments");
+  auto args = n->get_args();
   begin_arr(args.size());
-  std::for_each(args.begin(), args.end(), [&](let arg) {
+  std::for_each(args.begin(), args.end(), [&](auto arg) {
     begin_obj(2);
 
     string("name");
@@ -259,7 +261,7 @@ void AST_Writer::visit(RefNode<const TemplType> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const U1> n) {
+void AST_Writer::visit(FlowPtr<U1> n) {
   begin_obj(5);
 
   string("kind");
@@ -272,7 +274,7 @@ void AST_Writer::visit(RefNode<const U1> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const U8> n) {
+void AST_Writer::visit(FlowPtr<U8> n) {
   begin_obj(5);
 
   string("kind");
@@ -285,7 +287,7 @@ void AST_Writer::visit(RefNode<const U8> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const U16> n) {
+void AST_Writer::visit(FlowPtr<U16> n) {
   begin_obj(5);
 
   string("kind");
@@ -298,7 +300,7 @@ void AST_Writer::visit(RefNode<const U16> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const U32> n) {
+void AST_Writer::visit(FlowPtr<U32> n) {
   begin_obj(5);
 
   string("kind");
@@ -311,7 +313,7 @@ void AST_Writer::visit(RefNode<const U32> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const U64> n) {
+void AST_Writer::visit(FlowPtr<U64> n) {
   begin_obj(5);
 
   string("kind");
@@ -324,7 +326,7 @@ void AST_Writer::visit(RefNode<const U64> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const U128> n) {
+void AST_Writer::visit(FlowPtr<U128> n) {
   begin_obj(5);
 
   string("kind");
@@ -337,7 +339,7 @@ void AST_Writer::visit(RefNode<const U128> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const I8> n) {
+void AST_Writer::visit(FlowPtr<I8> n) {
   begin_obj(5);
 
   string("kind");
@@ -350,7 +352,7 @@ void AST_Writer::visit(RefNode<const I8> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const I16> n) {
+void AST_Writer::visit(FlowPtr<I16> n) {
   begin_obj(5);
 
   string("kind");
@@ -363,7 +365,7 @@ void AST_Writer::visit(RefNode<const I16> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const I32> n) {
+void AST_Writer::visit(FlowPtr<I32> n) {
   begin_obj(5);
 
   string("kind");
@@ -376,7 +378,7 @@ void AST_Writer::visit(RefNode<const I32> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const I64> n) {
+void AST_Writer::visit(FlowPtr<I64> n) {
   begin_obj(5);
 
   string("kind");
@@ -389,7 +391,7 @@ void AST_Writer::visit(RefNode<const I64> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const I128> n) {
+void AST_Writer::visit(FlowPtr<I128> n) {
   begin_obj(5);
 
   string("kind");
@@ -402,7 +404,7 @@ void AST_Writer::visit(RefNode<const I128> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const F16> n) {
+void AST_Writer::visit(FlowPtr<F16> n) {
   begin_obj(5);
 
   string("kind");
@@ -415,7 +417,7 @@ void AST_Writer::visit(RefNode<const F16> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const F32> n) {
+void AST_Writer::visit(FlowPtr<F32> n) {
   begin_obj(5);
 
   string("kind");
@@ -428,7 +430,7 @@ void AST_Writer::visit(RefNode<const F32> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const F64> n) {
+void AST_Writer::visit(FlowPtr<F64> n) {
   begin_obj(5);
 
   string("kind");
@@ -441,7 +443,7 @@ void AST_Writer::visit(RefNode<const F64> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const F128> n) {
+void AST_Writer::visit(FlowPtr<F128> n) {
   begin_obj(5);
 
   string("kind");
@@ -454,7 +456,7 @@ void AST_Writer::visit(RefNode<const F128> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const VoidTy> n) {
+void AST_Writer::visit(FlowPtr<VoidTy> n) {
   begin_obj(5);
 
   string("kind");
@@ -467,7 +469,7 @@ void AST_Writer::visit(RefNode<const VoidTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const PtrTy> n) {
+void AST_Writer::visit(FlowPtr<PtrTy> n) {
   begin_obj(6);
 
   string("kind");
@@ -483,7 +485,7 @@ void AST_Writer::visit(RefNode<const PtrTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const OpaqueTy> n) {
+void AST_Writer::visit(FlowPtr<OpaqueTy> n) {
   begin_obj(6);
 
   string("kind");
@@ -499,7 +501,7 @@ void AST_Writer::visit(RefNode<const OpaqueTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const TupleTy> n) {
+void AST_Writer::visit(FlowPtr<TupleTy> n) {
   begin_obj(6);
 
   string("kind");
@@ -512,17 +514,17 @@ void AST_Writer::visit(RefNode<const TupleTy> n) {
   { /* Write sub fields */
     string("fields");
 
-    let fields = n->get_items();
+    auto fields = n->get_items();
     begin_arr(fields.size());
     std::for_each(fields.begin(), fields.end(),
-                  [&](let field) { field.accept(*this); });
+                  [&](auto field) { field.accept(*this); });
     end_arr();
   }
 
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ArrayTy> n) {
+void AST_Writer::visit(FlowPtr<ArrayTy> n) {
   begin_obj(7);
 
   string("kind");
@@ -541,7 +543,7 @@ void AST_Writer::visit(RefNode<const ArrayTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const RefTy> n) {
+void AST_Writer::visit(FlowPtr<RefTy> n) {
   begin_obj(6);
 
   string("kind");
@@ -557,7 +559,7 @@ void AST_Writer::visit(RefNode<const RefTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const FuncTy> n) {
+void AST_Writer::visit(FlowPtr<FuncTy> n) {
   begin_obj(10);
 
   string("kind");
@@ -570,10 +572,10 @@ void AST_Writer::visit(RefNode<const FuncTy> n) {
   { /* Write attributes */
     string("attributes");
 
-    let attrs = n->get_attributes();
+    auto attrs = n->get_attributes();
     begin_arr(attrs.size());
     std::for_each(attrs.begin(), attrs.end(),
-                  [&](let attr) { attr.accept(*this); });
+                  [&](auto attr) { attr.accept(*this); });
     end_arr();
   }
 
@@ -581,7 +583,7 @@ void AST_Writer::visit(RefNode<const FuncTy> n) {
   n->get_return().accept(*this);
 
   switch (n->get_purity()) {
-    case FuncPurity::IMPURE_THREAD_UNSAFE: {
+    case Purity::Impure: {
       string("thread_safe");
       boolean(false);
 
@@ -590,7 +592,7 @@ void AST_Writer::visit(RefNode<const FuncTy> n) {
       break;
     }
 
-    case FuncPurity::IMPURE_THREAD_SAFE: {
+    case Purity::Impure_TSafe: {
       string("thread_safe");
       boolean(true);
 
@@ -599,7 +601,7 @@ void AST_Writer::visit(RefNode<const FuncTy> n) {
       break;
     }
 
-    case FuncPurity::PURE: {
+    case Purity::Pure: {
       string("thread_safe");
       boolean(true);
 
@@ -608,7 +610,7 @@ void AST_Writer::visit(RefNode<const FuncTy> n) {
       break;
     }
 
-    case FuncPurity::QUASI: {
+    case Purity::Quasi: {
       string("thread_safe");
       boolean(true);
 
@@ -617,7 +619,7 @@ void AST_Writer::visit(RefNode<const FuncTy> n) {
       break;
     }
 
-    case FuncPurity::RETRO: {
+    case Purity::Retro: {
       string("thread_safe");
       boolean(true);
 
@@ -631,14 +633,13 @@ void AST_Writer::visit(RefNode<const FuncTy> n) {
     string("input");
     begin_obj(2);
 
-    let params = n->get_params();
-
     string("variadic");
-    boolean(params.is_variadic);
+    boolean(n->is_variadic());
 
-    string("params");
-    begin_arr(params.params.size());
-    std::for_each(params.params.begin(), params.params.end(), [&](let param) {
+    auto params = n->get_params();
+    string("parameters");
+    begin_arr(params.size());
+    std::for_each(params.begin(), params.end(), [&](auto param) {
       begin_obj(3);
       string("name");
       string(*std::get<0>(param));
@@ -647,7 +648,7 @@ void AST_Writer::visit(RefNode<const FuncTy> n) {
       std::get<1>(param).accept(*this);
 
       string("default");
-      std::get<2>(param) ? std::get<2>(param).accept(*this) : null();
+      std::get<2>(param) ? std::get<2>(param).value().accept(*this) : null();
 
       end_obj();
     });
@@ -659,7 +660,7 @@ void AST_Writer::visit(RefNode<const FuncTy> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const UnaryExpr> n) {
+void AST_Writer::visit(FlowPtr<UnaryExpr> n) {
   begin_obj(4);
 
   string("kind");
@@ -676,7 +677,7 @@ void AST_Writer::visit(RefNode<const UnaryExpr> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const BinExpr> n) {
+void AST_Writer::visit(FlowPtr<BinExpr> n) {
   begin_obj(5);
 
   string("kind");
@@ -696,7 +697,7 @@ void AST_Writer::visit(RefNode<const BinExpr> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const PostUnaryExpr> n) {
+void AST_Writer::visit(FlowPtr<PostUnaryExpr> n) {
   begin_obj(4);
 
   string("kind");
@@ -713,7 +714,7 @@ void AST_Writer::visit(RefNode<const PostUnaryExpr> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const TernaryExpr> n) {
+void AST_Writer::visit(FlowPtr<TernaryExpr> n) {
   begin_obj(5);
 
   string("kind");
@@ -733,7 +734,7 @@ void AST_Writer::visit(RefNode<const TernaryExpr> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ConstInt> n) {
+void AST_Writer::visit(FlowPtr<ConstInt> n) {
   begin_obj(3);
 
   string("kind");
@@ -747,7 +748,7 @@ void AST_Writer::visit(RefNode<const ConstInt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ConstFloat> n) {
+void AST_Writer::visit(FlowPtr<ConstFloat> n) {
   begin_obj(3);
 
   string("kind");
@@ -761,7 +762,7 @@ void AST_Writer::visit(RefNode<const ConstFloat> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ConstBool> n) {
+void AST_Writer::visit(FlowPtr<ConstBool> n) {
   begin_obj(3);
 
   string("kind");
@@ -775,7 +776,7 @@ void AST_Writer::visit(RefNode<const ConstBool> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ConstString> n) {
+void AST_Writer::visit(FlowPtr<ConstString> n) {
   begin_obj(3);
 
   string("kind");
@@ -789,7 +790,7 @@ void AST_Writer::visit(RefNode<const ConstString> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ConstChar> n) {
+void AST_Writer::visit(FlowPtr<ConstChar> n) {
   begin_obj(3);
 
   string("kind");
@@ -798,12 +799,12 @@ void AST_Writer::visit(RefNode<const ConstChar> n) {
   write_source_location(n);
 
   string("value");
-  string(std::array<char, 2>{(char)n->get_value(), 0}.data());
+  uint64(n->get_value());
 
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ConstNull> n) {
+void AST_Writer::visit(FlowPtr<ConstNull> n) {
   begin_obj(2);
 
   string("kind");
@@ -814,7 +815,7 @@ void AST_Writer::visit(RefNode<const ConstNull> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ConstUndef> n) {
+void AST_Writer::visit(FlowPtr<ConstUndef> n) {
   begin_obj(2);
 
   string("kind");
@@ -825,7 +826,7 @@ void AST_Writer::visit(RefNode<const ConstUndef> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const Call> n) {
+void AST_Writer::visit(FlowPtr<Call> n) {
   begin_obj(4);
 
   string("kind");
@@ -837,11 +838,11 @@ void AST_Writer::visit(RefNode<const Call> n) {
   n->get_func().accept(*this);
 
   { /* Write arguments */
-    string("args");
+    string("arguments");
 
-    let args = n->get_args();
+    auto args = n->get_args();
     begin_arr(args.size());
-    std::for_each(args.begin(), args.end(), [&](let arg) {
+    std::for_each(args.begin(), args.end(), [&](auto arg) {
       begin_obj(2);
 
       string("name");
@@ -858,7 +859,7 @@ void AST_Writer::visit(RefNode<const Call> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const TemplCall> n) {
+void AST_Writer::visit(FlowPtr<TemplCall> n) {
   begin_obj(5);
 
   string("kind");
@@ -872,21 +873,30 @@ void AST_Writer::visit(RefNode<const TemplCall> n) {
   { /* Write template arguments */
     string("template");
 
-    let args = n->get_template_args();
-    begin_obj(args.size());
-    std::for_each(args.begin(), args.end(), [&](let arg) {
+    auto args = n->get_template_args();
+    begin_arr(args.size());
+
+    std::for_each(args.begin(), args.end(), [&](auto arg) {
+      begin_obj(2);
+
+      string("name");
       string(*arg.first);
+
+      string("value");
       arg.second.accept(*this);
+
+      end_obj();
     });
-    end_obj();
+
+    end_arr();
   }
 
   { /* Write arguments */
-    string("args");
+    string("arguments");
 
-    let args = n->get_args();
+    auto args = n->get_args();
     begin_arr(args.size());
-    std::for_each(args.begin(), args.end(), [&](let arg) {
+    std::for_each(args.begin(), args.end(), [&](auto arg) {
       begin_obj(2);
 
       string("name");
@@ -903,7 +913,7 @@ void AST_Writer::visit(RefNode<const TemplCall> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const List> n) {
+void AST_Writer::visit(FlowPtr<List> n) {
   begin_obj(3);
 
   string("kind");
@@ -914,17 +924,17 @@ void AST_Writer::visit(RefNode<const List> n) {
   { /* Write elements */
     string("elements");
 
-    let items = n->get_items();
+    auto items = n->get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(),
-                  [&](let item) { item.accept(*this); });
+                  [&](auto item) { item.accept(*this); });
     end_arr();
   }
 
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const Assoc> n) {
+void AST_Writer::visit(FlowPtr<Assoc> n) {
   begin_obj(4);
 
   string("kind");
@@ -941,7 +951,7 @@ void AST_Writer::visit(RefNode<const Assoc> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const Index> n) {
+void AST_Writer::visit(FlowPtr<Index> n) {
   begin_obj(4);
 
   string("kind");
@@ -958,7 +968,7 @@ void AST_Writer::visit(RefNode<const Index> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const Slice> n) {
+void AST_Writer::visit(FlowPtr<Slice> n) {
   begin_obj(5);
 
   string("kind");
@@ -978,7 +988,7 @@ void AST_Writer::visit(RefNode<const Slice> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const FString> n) {
+void AST_Writer::visit(FlowPtr<FString> n) {
   begin_obj(3);
 
   string("kind");
@@ -989,22 +999,18 @@ void AST_Writer::visit(RefNode<const FString> n) {
   { /* Write items */
     string("terms");
 
-    let items = n->get_items();
+    auto items = n->get_items();
     begin_arr(items.size());
-    std::for_each(items.begin(), items.end(), [&](let item) {
+    std::for_each(items.begin(), items.end(), [&](auto item) {
       if (std::holds_alternative<ncc::string>(item)) {
-        begin_obj(2);
-
-        string("kind");
-        let kind_name = Base::getKindName(Base::getTypeCode<ConstString>());
-        string(kind_name);
+        begin_obj(1);
 
         string("value");
         string(*std::get<ncc::string>(item));
 
         end_obj();
       } else {
-        std::get<RefNode<Expr>>(item).accept(*this);
+        std::get<FlowPtr<Expr>>(item).accept(*this);
       }
     });
     end_arr();
@@ -1013,7 +1019,7 @@ void AST_Writer::visit(RefNode<const FString> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const Ident> n) {
+void AST_Writer::visit(FlowPtr<Ident> n) {
   begin_obj(3);
 
   string("kind");
@@ -1027,7 +1033,7 @@ void AST_Writer::visit(RefNode<const Ident> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const SeqPoint> n) {
+void AST_Writer::visit(FlowPtr<SeqPoint> n) {
   begin_obj(3);
 
   string("kind");
@@ -1038,17 +1044,17 @@ void AST_Writer::visit(RefNode<const SeqPoint> n) {
   { /* Write items */
     string("terms");
 
-    let items = n->get_items();
+    auto items = n->get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(),
-                  [&](let item) { item.accept(*this); });
+                  [&](auto item) { item.accept(*this); });
     end_arr();
   }
 
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const Block> n) {
+void AST_Writer::visit(FlowPtr<Block> n) {
   begin_obj(4);
 
   string("kind");
@@ -1075,17 +1081,17 @@ void AST_Writer::visit(RefNode<const Block> n) {
   { /* Write body */
     string("body");
 
-    let items = n->get_items();
+    auto items = n->get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(),
-                  [&](let item) { item.accept(*this); });
+                  [&](auto item) { item.accept(*this); });
     end_arr();
   }
 
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const VarDecl> n) {
+void AST_Writer::visit(FlowPtr<VarDecl> n) {
   begin_obj(7);
 
   string("kind");
@@ -1110,25 +1116,25 @@ void AST_Writer::visit(RefNode<const VarDecl> n) {
   string(n->get_name());
 
   string("type");
-  n->get_type() ? n->get_type().accept(*this) : null();
+  n->get_type() ? n->get_type().value().accept(*this) : null();
 
   string("value");
-  n->get_value() ? n->get_value().accept(*this) : null();
+  n->get_value() ? n->get_value().value().accept(*this) : null();
 
   { /* Write attributes */
     string("attributes");
 
-    let attrs = n->get_attributes();
+    auto attrs = n->get_attributes();
     begin_arr(attrs.size());
     std::for_each(attrs.begin(), attrs.end(),
-                  [&](let attr) { attr.accept(*this); });
+                  [&](auto attr) { attr.accept(*this); });
     end_arr();
   }
 
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const InlineAsm> n) {
+void AST_Writer::visit(FlowPtr<InlineAsm> n) {
   begin_obj(4);
 
   string("kind");
@@ -1136,23 +1142,23 @@ void AST_Writer::visit(RefNode<const InlineAsm> n) {
 
   write_source_location(n);
 
-  string("code");
+  string("assembly");
   string(n->get_code());
 
   { /* Write arguments */
-    string("params");
+    string("parameters");
 
-    let args = n->get_args();
+    auto args = n->get_args();
     begin_arr(args.size());
     std::for_each(args.begin(), args.end(),
-                  [&](let arg) { arg.accept(*this); });
+                  [&](auto arg) { arg.accept(*this); });
     end_arr();
   }
 
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const IfStmt> n) {
+void AST_Writer::visit(FlowPtr<IfStmt> n) {
   begin_obj(5);
 
   string("kind");
@@ -1168,7 +1174,7 @@ void AST_Writer::visit(RefNode<const IfStmt> n) {
 
   string("else");
   if (n->get_else()) {
-    n->get_else().accept(*this);
+    n->get_else().value().accept(*this);
   } else {
     null();
   }
@@ -1176,7 +1182,7 @@ void AST_Writer::visit(RefNode<const IfStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const WhileStmt> n) {
+void AST_Writer::visit(FlowPtr<WhileStmt> n) {
   begin_obj(4);
 
   string("kind");
@@ -1193,7 +1199,7 @@ void AST_Writer::visit(RefNode<const WhileStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ForStmt> n) {
+void AST_Writer::visit(FlowPtr<ForStmt> n) {
   begin_obj(6);
 
   string("kind");
@@ -1228,7 +1234,7 @@ void AST_Writer::visit(RefNode<const ForStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ForeachStmt> n) {
+void AST_Writer::visit(FlowPtr<ForeachStmt> n) {
   begin_obj(6);
 
   string("kind");
@@ -1251,7 +1257,7 @@ void AST_Writer::visit(RefNode<const ForeachStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const BreakStmt> n) {
+void AST_Writer::visit(FlowPtr<BreakStmt> n) {
   begin_obj(2);
 
   string("kind");
@@ -1262,7 +1268,7 @@ void AST_Writer::visit(RefNode<const BreakStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ContinueStmt> n) {
+void AST_Writer::visit(FlowPtr<ContinueStmt> n) {
   begin_obj(2);
 
   string("kind");
@@ -1273,7 +1279,7 @@ void AST_Writer::visit(RefNode<const ContinueStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ReturnStmt> n) {
+void AST_Writer::visit(FlowPtr<ReturnStmt> n) {
   begin_obj(3);
 
   string("kind");
@@ -1291,7 +1297,7 @@ void AST_Writer::visit(RefNode<const ReturnStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ReturnIfStmt> n) {
+void AST_Writer::visit(FlowPtr<ReturnIfStmt> n) {
   begin_obj(4);
 
   string("kind");
@@ -1308,7 +1314,7 @@ void AST_Writer::visit(RefNode<const ReturnIfStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const CaseStmt> n) {
+void AST_Writer::visit(FlowPtr<CaseStmt> n) {
   begin_obj(4);
 
   string("kind");
@@ -1317,7 +1323,7 @@ void AST_Writer::visit(RefNode<const CaseStmt> n) {
   write_source_location(n);
 
   string("match");
-  n->get_cond() ? n->get_cond().accept(*this) : null();
+  n->get_cond().accept(*this);
 
   string("body");
   n->get_body().accept(*this);
@@ -1325,7 +1331,7 @@ void AST_Writer::visit(RefNode<const CaseStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const SwitchStmt> n) {
+void AST_Writer::visit(FlowPtr<SwitchStmt> n) {
   begin_obj(5);
 
   string("kind");
@@ -1339,20 +1345,20 @@ void AST_Writer::visit(RefNode<const SwitchStmt> n) {
   { /* Write cases */
     string("cases");
 
-    let cases = n->get_cases();
+    auto cases = n->get_cases();
     begin_arr(cases.size());
     std::for_each(cases.begin(), cases.end(),
-                  [&](let item) { item.accept(*this); });
+                  [&](auto item) { item.accept(*this); });
     end_arr();
   }
 
   string("default");
-  n->get_default() ? n->get_default().accept(*this) : null();
+  n->get_default() ? n->get_default().value().accept(*this) : null();
 
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const TypedefStmt> n) {
+void AST_Writer::visit(FlowPtr<TypedefStmt> n) {
   begin_obj(4);
 
   string("kind");
@@ -1369,7 +1375,7 @@ void AST_Writer::visit(RefNode<const TypedefStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const Function> n) {
+void AST_Writer::visit(FlowPtr<Function> n) {
   begin_obj(13);
 
   string("kind");
@@ -1378,18 +1384,18 @@ void AST_Writer::visit(RefNode<const Function> n) {
   write_source_location(n);
 
   { /* Write attributes */
-    string("attrs");
+    string("attributes");
 
-    let attrs = n->get_attributes();
+    auto attrs = n->get_attributes();
     begin_arr(attrs.size());
     std::for_each(attrs.begin(), attrs.end(),
-                  [&](let attr) { attr.accept(*this); });
+                  [&](auto attr) { attr.accept(*this); });
     end_arr();
   }
 
   { /* Purity */
     switch (n->get_purity()) {
-      case FuncPurity::IMPURE_THREAD_UNSAFE: {
+      case Purity::Impure: {
         string("thread_safe");
         boolean(false);
 
@@ -1398,7 +1404,7 @@ void AST_Writer::visit(RefNode<const Function> n) {
         break;
       }
 
-      case FuncPurity::IMPURE_THREAD_SAFE: {
+      case Purity::Impure_TSafe: {
         string("thread_safe");
         boolean(true);
 
@@ -1407,7 +1413,7 @@ void AST_Writer::visit(RefNode<const Function> n) {
         break;
       }
 
-      case FuncPurity::PURE: {
+      case Purity::Pure: {
         string("thread_safe");
         boolean(true);
 
@@ -1416,7 +1422,7 @@ void AST_Writer::visit(RefNode<const Function> n) {
         break;
       }
 
-      case FuncPurity::QUASI: {
+      case Purity::Quasi: {
         string("thread_safe");
         boolean(true);
 
@@ -1425,7 +1431,7 @@ void AST_Writer::visit(RefNode<const Function> n) {
         break;
       }
 
-      case FuncPurity::RETRO: {
+      case Purity::Retro: {
         string("thread_safe");
         boolean(true);
 
@@ -1439,9 +1445,9 @@ void AST_Writer::visit(RefNode<const Function> n) {
   { /* Write capture list */
     string("captures");
 
-    let captures = n->get_captures();
+    auto captures = n->get_captures();
     begin_arr(captures.size());
-    std::for_each(captures.begin(), captures.end(), [&](let cap) {
+    std::for_each(captures.begin(), captures.end(), [&](auto cap) {
       begin_obj(2);
 
       string("name");
@@ -1461,9 +1467,9 @@ void AST_Writer::visit(RefNode<const Function> n) {
   { /* Write template parameters */
     string("template");
 
-    if (let params = n->get_template_params()) {
+    if (auto params = n->get_template_params()) {
       begin_arr(params->size());
-      std::for_each(params->begin(), params->end(), [&](let param) {
+      std::for_each(params->begin(), params->end(), [&](auto param) {
         begin_obj(3);
 
         string("name");
@@ -1473,7 +1479,7 @@ void AST_Writer::visit(RefNode<const Function> n) {
         std::get<1>(param).accept(*this);
 
         string("default");
-        std::get<2>(param) ? std::get<2>(param).accept(*this) : null();
+        std::get<2>(param) ? std::get<2>(param).value().accept(*this) : null();
 
         end_obj();
       });
@@ -1487,14 +1493,13 @@ void AST_Writer::visit(RefNode<const Function> n) {
     string("input");
     begin_obj(2);
 
-    let params = n->get_params();
-
     string("variadic");
-    boolean(params.is_variadic);
+    boolean(n->is_variadic());
 
-    string("params");
-    begin_arr(params.params.size());
-    std::for_each(params.params.begin(), params.params.end(), [&](let param) {
+    auto params = n->get_params();
+    string("parameters");
+    begin_arr(params.size());
+    std::for_each(params.begin(), params.end(), [&](auto param) {
       begin_obj(3);
 
       string("name");
@@ -1504,7 +1509,7 @@ void AST_Writer::visit(RefNode<const Function> n) {
       std::get<1>(param).accept(*this);
 
       string("default");
-      std::get<2>(param) ? std::get<2>(param).accept(*this) : null();
+      std::get<2>(param) ? std::get<2>(param).value().accept(*this) : null();
 
       end_obj();
     });
@@ -1544,7 +1549,7 @@ void AST_Writer::visit(RefNode<const Function> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const StructDef> n) {
+void AST_Writer::visit(FlowPtr<StructDef> n) {
   begin_obj(10);
 
   string("kind");
@@ -1583,12 +1588,12 @@ void AST_Writer::visit(RefNode<const StructDef> n) {
   }
 
   { /* Write attributes */
-    string("attrs");
-    let attrs = n->get_attributes();
+    string("attributes");
+    auto attrs = n->get_attributes();
 
     begin_arr(attrs.size());
     std::for_each(attrs.begin(), attrs.end(),
-                  [&](let attr) { attr.accept(*this); });
+                  [&](auto attr) { attr.accept(*this); });
     end_arr();
   }
 
@@ -1598,9 +1603,9 @@ void AST_Writer::visit(RefNode<const StructDef> n) {
   { /* Write template parameters */
     string("template");
 
-    if (let params = n->get_template_params()) {
+    if (auto params = n->get_template_params()) {
       begin_arr(params->size());
-      std::for_each(params->begin(), params->end(), [&](let param) {
+      std::for_each(params->begin(), params->end(), [&](auto param) {
         begin_obj(3);
 
         string("name");
@@ -1610,7 +1615,7 @@ void AST_Writer::visit(RefNode<const StructDef> n) {
         std::get<1>(param).accept(*this);
 
         string("default");
-        std::get<2>(param) ? std::get<2>(param).accept(*this) : null();
+        std::get<2>(param) ? std::get<2>(param).value().accept(*this) : null();
 
         end_obj();
       });
@@ -1622,19 +1627,20 @@ void AST_Writer::visit(RefNode<const StructDef> n) {
 
   { /* Write names */
     string("names");
-    let names = n->get_names();
+    auto names = n->get_names();
     begin_arr(names.size());
-    std::for_each(names.begin(), names.end(), [&](let name) { string(*name); });
+    std::for_each(names.begin(), names.end(),
+                  [&](auto name) { string(*name); });
     end_arr();
   }
 
   { /* Write fields */
     string("fields");
 
-    let fields = n->get_fields();
+    auto fields = n->get_fields();
     begin_arr(fields.size());
-    std::for_each(fields.begin(), fields.end(), [&](let field) {
-      begin_obj(4);
+    std::for_each(fields.begin(), fields.end(), [&](auto field) {
+      begin_obj(5);
 
       string("name");
       string(field.get_name());
@@ -1646,8 +1652,11 @@ void AST_Writer::visit(RefNode<const StructDef> n) {
       field.get_value().has_value() ? field.get_value().value().accept(*this)
                                     : null();
 
-      string("vis");
+      string("visibility");
       string(vis_str(field.get_vis()));
+
+      string("static");
+      boolean(field.is_static());
 
       end_obj();
     });
@@ -1657,12 +1666,12 @@ void AST_Writer::visit(RefNode<const StructDef> n) {
   { /* Write methods */
     string("methods");
 
-    let methods = n->get_methods();
+    auto methods = n->get_methods();
     begin_arr(methods.size());
-    std::for_each(methods.begin(), methods.end(), [&](let method) {
+    std::for_each(methods.begin(), methods.end(), [&](auto method) {
       begin_obj(2);
 
-      string("vis");
+      string("visibility");
       string(vis_str(method.vis));
 
       string("method");
@@ -1674,14 +1683,14 @@ void AST_Writer::visit(RefNode<const StructDef> n) {
   }
 
   { /* Write static methods */
-    string("statics");
+    string("static-methods");
 
-    let statics = n->get_static_methods();
+    auto statics = n->get_static_methods();
     begin_arr(statics.size());
-    std::for_each(statics.begin(), statics.end(), [&](let method) {
+    std::for_each(statics.begin(), statics.end(), [&](auto method) {
       begin_obj(2);
 
-      string("vis");
+      string("visibility");
       string(vis_str(method.vis));
 
       string("method");
@@ -1695,7 +1704,7 @@ void AST_Writer::visit(RefNode<const StructDef> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const EnumDef> n) {
+void AST_Writer::visit(FlowPtr<EnumDef> n) {
   begin_obj(5);
 
   string("kind");
@@ -1707,21 +1716,21 @@ void AST_Writer::visit(RefNode<const EnumDef> n) {
   string(n->get_name());
 
   string("type");
-  n->get_type() ? n->get_type().accept(*this) : null();
+  n->get_type() ? n->get_type().value().accept(*this) : null();
 
   { /* Write items */
     string("fields");
 
-    let items = n->get_items();
+    auto items = n->get_items();
     begin_arr(items.size());
-    std::for_each(items.begin(), items.end(), [&](let item) {
+    std::for_each(items.begin(), items.end(), [&](auto item) {
       begin_obj(2);
 
       string("name");
       string(*item.first);
 
       string("value");
-      item.second ? item.second.accept(*this) : null();
+      item.second ? item.second.value().accept(*this) : null();
 
       end_obj();
     });
@@ -1731,7 +1740,7 @@ void AST_Writer::visit(RefNode<const EnumDef> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ScopeStmt> n) {
+void AST_Writer::visit(FlowPtr<ScopeStmt> n) {
   begin_obj(5);
 
   string("kind");
@@ -1745,9 +1754,9 @@ void AST_Writer::visit(RefNode<const ScopeStmt> n) {
   { /* Write implicit dependencies */
     string("depends");
 
-    let deps = n->get_deps();
+    auto deps = n->get_deps();
     begin_arr(deps.size());
-    std::for_each(deps.begin(), deps.end(), [&](let dep) { string(*dep); });
+    std::for_each(deps.begin(), deps.end(), [&](auto dep) { string(*dep); });
     end_arr();
   }
 
@@ -1757,7 +1766,7 @@ void AST_Writer::visit(RefNode<const ScopeStmt> n) {
   end_obj();
 }
 
-void AST_Writer::visit(RefNode<const ExportStmt> n) {
+void AST_Writer::visit(FlowPtr<ExportStmt> n) {
   begin_obj(6);
 
   string("kind");
@@ -1768,16 +1777,16 @@ void AST_Writer::visit(RefNode<const ExportStmt> n) {
   string("abi");
   string(n->get_abi_name());
 
-  string("vis");
+  string("visibility");
   string(vis_str(n->get_vis()));
 
   { /* Write attributes */
-    string("attrs");
+    string("attributes");
 
-    let attrs = n->get_attrs();
+    auto attrs = n->get_attrs();
     begin_arr(attrs.size());
     std::for_each(attrs.begin(), attrs.end(),
-                  [&](let attr) { attr.accept(*this); });
+                  [&](auto attr) { attr.accept(*this); });
     end_arr();
   }
 

@@ -45,6 +45,7 @@
 #include <unordered_set>
 
 using namespace ncc::lex;
+using namespace ncc::parse;
 
 static inline Token eof_tok() { return Token::EndOfFile(); }
 
@@ -53,18 +54,18 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
     std::array<uint8_t, 256> tab = {};
     tab.fill(0);
 
-    tab[qEofF] = 1;
-    tab[qKeyW] = 1;
-    tab[qOper] = 1;
-    tab[qPunc] = 1;
-    tab[qName] = 1;
-    tab[qIntL] = 1;
-    tab[qNumL] = 1;
-    tab[qText] = 1;
-    tab[qChar] = 1;
-    tab[qMacB] = 1;
-    tab[qMacr] = 1;
-    tab[qNote] = 1;
+    tab[EofF] = 1;
+    tab[KeyW] = 1;
+    tab[Oper] = 1;
+    tab[Punc] = 1;
+    tab[Name] = 1;
+    tab[IntL] = 1;
+    tab[NumL] = 1;
+    tab[Text] = 1;
+    tab[Char] = 1;
+    tab[MacB] = 1;
+    tab[Macr] = 1;
+    tab[Note] = 1;
 
     return tab;
   }();
@@ -83,63 +84,63 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
     Token R;
 
     switch (t) {
-      case TokenType::qEofF: {
+      case TokenType::EofF: {
         R = Token::EndOfFile();
         break;
       }
 
-      case TokenType::qKeyW: {
+      case TokenType::KeyW: {
         R = Token(t, ncc::lex::LexicalKeywords.left.at(data));
         break;
       }
 
-      case TokenType::qOper: {
+      case TokenType::Oper: {
         R = Token(t, ncc::lex::LexicalOperators.left.at(data));
         break;
       }
 
-      case TokenType::qPunc: {
+      case TokenType::Punc: {
         R = Token(t, ncc::lex::LexicalPunctors.left.at(data));
         break;
       }
 
-      case TokenType::qName: {
-        R = Token(t, ncc::core::intern(data));
+      case TokenType::Name: {
+        R = Token(t, ncc::string(data));
         break;
       }
 
-      case TokenType::qIntL: {
-        R = Token(t, ncc::core::intern(data));
+      case TokenType::IntL: {
+        R = Token(t, ncc::string(data));
         break;
       }
 
-      case TokenType::qNumL: {
-        R = Token(t, ncc::core::intern(data));
+      case TokenType::NumL: {
+        R = Token(t, ncc::string(data));
         break;
       }
 
-      case TokenType::qText: {
-        R = Token(t, ncc::core::intern(data));
+      case TokenType::Text: {
+        R = Token(t, ncc::string(data));
         break;
       }
 
-      case TokenType::qChar: {
-        R = Token(t, ncc::core::intern(data));
+      case TokenType::Char: {
+        R = Token(t, ncc::string(data));
         break;
       }
 
-      case TokenType::qMacB: {
-        R = Token(t, ncc::core::intern(data));
+      case TokenType::MacB: {
+        R = Token(t, ncc::string(data));
         break;
       }
 
-      case TokenType::qMacr: {
-        R = Token(t, ncc::core::intern(data));
+      case TokenType::Macr: {
+        R = Token(t, ncc::string(data));
         break;
       }
 
-      case TokenType::qNote: {
-        R = Token(t, ncc::core::intern(data));
+      case TokenType::Note: {
+        R = Token(t, ncc::string(data));
         break;
       }
     }
@@ -264,8 +265,10 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
   }
 
 public:
-  DeserializerAdapterLexer(std::istream &file)
-      : m_mode(InMode::BadCodec),
+  DeserializerAdapterLexer(std::istream &file,
+                           std::shared_ptr<ncc::Environment> env)
+      : ncc::lex::IScanner(env),
+        m_mode(InMode::BadCodec),
         m_ele_count(0),
         m_eof_bit(false),
         m_file(file) {
@@ -325,19 +328,19 @@ CREATE_TRANSFORM(nit::parse) {
     out_mode = OutMode::MsgPack;
   }
 
-  DeserializerAdapterLexer lexer(source);
-  auto parser = ncc::parse::Parser::Create(lexer, env);
+  DeserializerAdapterLexer lexer(source, env);
+  auto parser = Parser::Create(lexer, env);
 
   let root = parser->parse();
 
   switch (out_mode) {
     case OutMode::JSON: {
-      auto writter = ncc::parse::AST_JsonWriter(output);
+      auto writter = AST_JsonWriter(output);
       root.get().accept(writter);
       return true;
     }
     case OutMode::MsgPack: {
-      auto writter = ncc::parse::AST_MsgPackWriter(output);
+      auto writter = AST_MsgPackWriter(output);
       root.get().accept(writter);
       return true;
     }

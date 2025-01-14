@@ -35,7 +35,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 
-CPP_EXPORT ncc::core::TheCache &ncc::core::get_cache() {
+NCC_EXPORT ncc::TheCache &ncc::get_cache() {
   static TheCache cache;
   return cache;
 }

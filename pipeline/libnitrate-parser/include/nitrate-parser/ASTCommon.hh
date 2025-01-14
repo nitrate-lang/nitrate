@@ -216,32 +216,29 @@ namespace ncc::parse {
 }  // namespace ncc::parse
 
 namespace ncc::parse {
-  enum class Vis {
+  enum class Vis : uint8_t {
     Pub = 0,
     Sec = 1,
     Pro = 2,
   };
 
-  enum class VarDeclType { Const, Var, Let };
+  enum class VarDeclType : uint8_t { Const, Var, Let };
 
-  enum class CompositeType { Region, Struct, Group, Class, Union };
+  enum class CompositeType : uint8_t { Region, Struct, Group, Class, Union };
 
-  enum class FuncPurity {
-    IMPURE_THREAD_UNSAFE,
-    IMPURE_THREAD_SAFE,
-    PURE,
-    QUASI,
-    RETRO,
+  enum class Purity : uint8_t {
+    Impure,
+    Impure_TSafe,
+    Pure,
+    Quasi,
+    Retro,
   };
 
-  enum class SafetyMode {
+  enum class SafetyMode : uint8_t {
     Unknown = 0,
     Safe = 1,
     Unsafe = 2,
   };
-
-#define npar_pack __attribute__((packed))
-
 }  // namespace ncc::parse
 
 #endif

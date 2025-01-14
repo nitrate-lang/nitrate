@@ -35,15 +35,15 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/String.hh>
 
-using namespace ncc::core;
+using namespace ncc;
 
-CPP_EXPORT StringMemory::Storage StringMemory::StringMemory::m_storage;
+NCC_EXPORT StringMemory::Storage StringMemory::StringMemory::m_storage;
 
-CPP_EXPORT std::string_view str_alias::get() const {
+NCC_EXPORT std::string_view auto_intern::get() const {
   return m_id == 0 ? "" : StringMemory::FromID(m_id);
 }
 
-CPP_EXPORT uint64_t StringMemory::FromString(std::string_view str) {
+NCC_EXPORT uint64_t StringMemory::FromString(std::string_view str) {
   std::lock_guard lock(m_storage.m_mutex);
 
   if (auto it = m_storage.m_map_b.find(str); it != m_storage.m_map_b.end()) {
@@ -60,7 +60,7 @@ CPP_EXPORT uint64_t StringMemory::FromString(std::string_view str) {
   return new_id;
 }
 
-CPP_EXPORT uint64_t StringMemory::FromString(std::string&& str) {
+NCC_EXPORT uint64_t StringMemory::FromString(std::string&& str) {
   std::lock_guard lock(m_storage.m_mutex);
 
   if (auto it = m_storage.m_map_b.find(str); it != m_storage.m_map_b.end()) {
@@ -77,7 +77,7 @@ CPP_EXPORT uint64_t StringMemory::FromString(std::string&& str) {
   return new_id;
 }
 
-CPP_EXPORT std::string_view StringMemory::FromID(uint64_t id) {
+NCC_EXPORT std::string_view StringMemory::FromID(uint64_t id) {
   std::lock_guard lock(m_storage.m_mutex);
 
   if (auto it = m_storage.m_map_a.find(id); it != m_storage.m_map_a.end())
@@ -88,7 +88,7 @@ CPP_EXPORT std::string_view StringMemory::FromID(uint64_t id) {
   }
 }
 
-CPP_EXPORT void StringMemory::Clear() {
+NCC_EXPORT void StringMemory::Reset() {
   std::lock_guard lock(m_storage.m_mutex);
 
   m_storage.m_map_a.clear();

@@ -33,49 +33,45 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-RefNode<Stmt> Parser::recurse_return() {
-  /**
-   * Syntax examples:
-   *   `ret 0;`, `ret;`, `ret 0, 1;`, `ret call();`
-   */
-
-  if (let tok = next_if(qPuncSemi)) {
+FlowPtr<Stmt> Parser::recurse_return() {
+  if (next_if(PuncSemi)) {
     return make<ReturnStmt>(std::nullopt)();
-  }
-
-  let expr = recurse_expr({Token(qPunc, qPuncSemi)});
-
-  if (next_if(qPuncSemi)) {
-    return make<ReturnStmt>(expr)();
   } else {
-    diagnostic << current() << "Expected ';' after the return statement.";
-  }
+    auto return_value = recurse_expr({
+        Token(Punc, PuncSemi),
+    });
 
-  return mock_stmt(QAST_RETURN);
+    if (!next_if(PuncSemi)) [[unlikely]] {
+      log << SyntaxError << current()
+          << "Expected ';' after the return statement.";
+    }
+
+    return make<ReturnStmt>(return_value)();
+  }
 }
 
-RefNode<Stmt> Parser::recurse_retif() {
-  /**
-   * Syntax examples:
-   *   `retif cond(), 1;`, `retif failed, -1;`
-   */
+FlowPtr<Stmt> Parser::recurse_retif() {
+  auto return_if = recurse_expr({
+      Token(Punc, PuncComa),
+  });
 
-  let condition = recurse_expr({Token(qPunc, qPuncComa)});
+  if (next_if(PuncComa)) [[likely]] {
+    auto return_value = recurse_expr({
+        Token(Punc, PuncSemi),
+    });
 
-  if (next_if(qPuncComa)) {
-    let return_val = recurse_expr({Token(qPunc, qPuncSemi)});
-
-    if (next_if(qPuncSemi)) {
-      return make<ReturnIfStmt>(condition, return_val)();
-    } else {
-      diagnostic << current() << "Expected ';' after the retif value.";
+    if (!next_if(PuncSemi)) [[unlikely]] {
+      log << SyntaxError << current() << "Expected ';' after the retif value.";
     }
-  } else {
-    diagnostic << current() << "Expected ',' after the retif condition.";
-  }
 
-  return mock_stmt(QAST_RETIF);
+    return make<ReturnIfStmt>(return_if, return_value)();
+  } else {
+    log << SyntaxError << current()
+        << "Expected ',' after the retif condition.";
+    return mock_stmt(QAST_RETIF);
+  }
 }

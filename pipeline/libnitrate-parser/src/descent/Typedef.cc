@@ -33,31 +33,28 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-RefNode<Stmt> Parser::recurse_typedef() {
-  /**
-   * Syntax examples:
-   *   `type name = type;`
-   */
+FlowPtr<Stmt> Parser::recurse_typedef() {
+  if (auto tok = next_if(Name)) [[likely]] {
+    auto type_name = tok->as_string();
 
-  if (let tok = next_if(qName)) {
-    let name = tok->as_string();
+    if (next_if(OpSet)) [[likely]] {
+      auto the_type = recurse_type();
 
-    if (next_if(qOpSet)) {
-      let type = recurse_type();
-
-      if (next_if(qPuncSemi)) {
-        return make<TypedefStmt>(SaveString(name), type)();
+      if (next_if(PuncSemi)) [[likely]] {
+        return make<TypedefStmt>(type_name, the_type)();
       } else {
-        diagnostic << current() << "Expected ';' in typedef declaration";
+        log << SyntaxError << current()
+            << "Expected ';' in typedef declaration";
       }
     } else {
-      diagnostic << current() << "Expected '=' in typedef declaration";
+      log << SyntaxError << current() << "Expected '=' in typedef declaration";
     }
   } else {
-    diagnostic << current() << "Expected name in typedef declaration";
+    log << SyntaxError << current() << "Expected name in typedef declaration";
   }
 
   return mock_stmt(QAST_TYPEDEF);

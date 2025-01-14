@@ -38,73 +38,14 @@
 using namespace ncc::parse;
 
 void AST_Hash64::str_impl(std::string_view str) {
-  qcore_assert(!m_state.empty());
-  m_state.top().second++;
-
-  bool hash_name =
-      m_state.top().first == true || (m_state.top().second & 1) != 0;
-
-  if (hash_name) {
-    m_sum += std::hash<std::string_view>{}(str);
-  }
+  update(std::hash<std::string_view>{}(str));
 }
 
-void AST_Hash64::uint_impl(uint64_t val) {
-  qcore_assert(!m_state.empty());
-  m_state.top().second++;
-
-  m_sum += val;
-}
-
-void AST_Hash64::double_impl(double val) {
-  qcore_assert(!m_state.empty());
-  m_state.top().second++;
-
-  m_sum += std::hash<double>{}(val);
-}
-
-void AST_Hash64::bool_impl(bool val) {
-  qcore_assert(!m_state.empty());
-  m_state.top().second++;
-
-  m_sum += std::hash<bool>{}(val);
-}
-
-void AST_Hash64::null_impl() {
-  qcore_assert(!m_state.empty());
-  m_state.top().second++;
-
-  m_sum += std::hash<std::nullptr_t>{}(nullptr);
-}
-
-void AST_Hash64::begin_obj_impl(size_t) {
-  qcore_assert(!m_state.empty());
-  m_state.top().second++;
-
-  m_sum++;
-
-  m_state.push({false, 0});
-}
-
-void AST_Hash64::end_obj_impl() {
-  qcore_assert(!m_state.empty());
-  m_state.pop();
-
-  m_sum++;
-}
-
-void AST_Hash64::begin_arr_impl(size_t size) {
-  qcore_assert(!m_state.empty());
-  m_state.top().second++;
-
-  m_sum += size;
-
-  m_state.push({true, 0});
-}
-
-void AST_Hash64::end_arr_impl() {
-  qcore_assert(!m_state.empty());
-  m_state.pop();
-
-  m_sum++;
-}
+void AST_Hash64::uint_impl(uint64_t val) { update(val); }
+void AST_Hash64::double_impl(double val) { update(std::hash<double>{}(val)); }
+void AST_Hash64::bool_impl(bool val) { update(std::hash<bool>{}(val)); }
+void AST_Hash64::null_impl() { update(0); }
+void AST_Hash64::begin_obj_impl(size_t size) { update(size); }
+void AST_Hash64::end_obj_impl() { update(2); }
+void AST_Hash64::begin_arr_impl(size_t size) { update(size); }
+void AST_Hash64::end_arr_impl() { update(3); }

@@ -36,10 +36,14 @@
 #include <core/SerialUtil.hh>
 #include <core/Transform.hh>
 #include <nitrate-core/Init.hh>
-#include <nitrate-ir/Classes.hh>
-#include <nitrate-ir/Writer.hh>
+#include <nitrate-ir/IR.hh>
+#include <nitrate-ir/Module.hh>
+#include <nitrate-ir/encode/ToJson.hh>
+#include <nitrate-ir/encode/ToMsgPack.hh>
 #include <nitrate-parser/ASTReader.hh>
 #include <unordered_set>
+
+using namespace ncc::ir;
 
 CREATE_TRANSFORM(nit::nr) {
   (void)env;
@@ -56,7 +60,7 @@ CREATE_TRANSFORM(nit::nr) {
     out_mode = OutMode::MsgPack;
   }
 
-  std::optional<ncc::parse::Base *> root;
+  std::optional<ncc::FlowPtr<ncc::parse::Base> > root;
 
   if (source.peek() == '{') {
     root = ncc::parse::AST_JsonReader(source).get();
@@ -69,25 +73,22 @@ CREATE_TRANSFORM(nit::nr) {
     return false;
   }
 
-  qmodule ir_module;
+  if (auto module = nr_lower(root.value().get(), nullptr, true)) {
+    switch (out_mode) {
+      case OutMode::JSON: {
+        auto writter = encode::IR_JsonWriter(output);
+        module->accept(writter);
+        return false;
+      }
 
-  bool ok = nr_lower(&ir_module.get(), root.value(), nullptr, true);
-  if (!ok) {
+      case OutMode::MsgPack: {
+        auto writter = encode::IR_MsgPackWriter(output);
+        module->accept(writter);
+        return false;
+      }
+    }
+  } else {
     qcore_print(QCORE_ERROR, "Failed to lower IR module.\n");
     return false;
-  }
-
-  switch (out_mode) {
-    case OutMode::JSON: {
-      auto writter = nr::NR_JsonWriter(output);
-      ir_module.get()->accept(writter);
-      return false;
-    }
-
-    case OutMode::MsgPack: {
-      auto writter = nr::NR_MsgPackWriter(output);
-      ir_module.get()->accept(writter);
-      return false;
-    }
   }
 }

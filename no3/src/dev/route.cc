@@ -36,8 +36,6 @@
 #include <lsp/nitrated.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
-#include <nitrate-ir/IR.h>
-#include <nitrate-ir/Lib.h>
 #include <nitrate-seq/Lib.h>
 
 #include <clean/Cleanup.hh>
@@ -50,21 +48,26 @@
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
-#include <nitrate-ir/Classes.hh>
+#include <nitrate-ir/ABI/Name.hh>
+#include <nitrate-ir/IR.hh>
+#include <nitrate-ir/Init.hh>
+#include <nitrate-ir/Module.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 #include <nitrate-parser/Init.hh>
-#include <nitrate-seq/Classes.hh>
+#include <nitrate-seq/Sequencer.hh>
 #include <string_view>
 #include <unordered_map>
 
 using namespace argparse;
 using namespace no3;
-using namespace ncc::core;
+
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
+using namespace ncc::ir;
 
 namespace no3::benchmark {
   extern std::string lexical_benchmark_source;
@@ -106,11 +109,9 @@ namespace no3::benchmark {
     return tokens;
   }
 
-  static int lexer_benchmark() {
+  static int lexer_benchmark(std::shared_ptr<Environment> &env) {
     size_t rounds = 128, total_tokens = 0;
     std::vector<double> times;
-
-    auto env = std::make_shared<Environment>();
 
     LOG(INFO) << "Starting lexer benchmark" << std::endl;
     LOG(INFO) << "  Rounds: " << rounds << std::endl;
@@ -193,12 +194,13 @@ namespace no3::benchmark {
     PIPELINE
   };
 
-  static int do_benchmark(Benchmark bench_type) {
+  static int do_benchmark(std::shared_ptr<Environment> &env,
+                          Benchmark bench_type) {
     int R = -1;
 
     switch (bench_type) {
       case Benchmark::LEXER: {
-        R = lexer_benchmark();
+        R = lexer_benchmark(env);
         break;
       }
 
@@ -242,8 +244,33 @@ namespace no3::benchmark {
   }
 }  // namespace no3::benchmark
 
-static int do_parse(std::string source, std::string output, bool verbose) {
-  auto env = std::make_shared<Environment>();
+static int do_parse(std::shared_ptr<Environment> &env, std::string source,
+                    std::ostream &output, bool verbose) {
+  std::fstream file(source, std::ios::in);
+  if (!file.is_open()) {
+    LOG(ERROR) << "Failed to open source file: " << source;
+    return 1;
+  }
+
+  Sequencer scanner(file, env);
+  auto parser = Parser::Create(scanner, env);
+
+  auto ast = parser->parse();
+
+  WriterSourceProvider rd =
+      verbose ? WriterSourceProvider(scanner) : std::nullopt;
+
+  AST_JsonWriter writer(output, rd);
+  ast.get().accept(writer);
+
+  return 0;
+}
+
+static int do_nr(std::shared_ptr<Environment> &env, std::string source,
+                 std::ostream &output, std::string opts, bool verbose) {
+  if (!opts.empty()) {
+    LOG(ERROR) << "Options are not implemented yet";
+  }
 
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
@@ -251,40 +278,36 @@ static int do_parse(std::string source, std::string output, bool verbose) {
     return 1;
   }
 
-  qprep lexer(file, "in", env);
-  auto parser = Parser::Create(*lexer.get(), env);
+  Sequencer scanner(file, env);
+  auto parser = Parser::Create(scanner, env);
 
   auto ast = parser->parse();
 
-  { /* Write output */
-    std::ostream *out = nullptr;
-    std::shared_ptr<std::ostream> out_ptr;
+  if (auto module = nr_lower(ast.get().get(), "module", true)) {
+    nr_diag_read(
+        module.get(),
+        [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
+          if (verbose || lvl != IR_LEVEL_DEBUG) {
+            std::cerr << std::string_view((const char *)msg, len) << std::endl;
+          }
+        },
+        verbose);
 
-    if (output.empty()) {
-      out = &std::cout;
-    } else {
-      out_ptr = std::make_shared<std::ofstream>(output);
-      out = out_ptr.get();
-    }
-
-    WriterSourceProvider rd =
-        verbose ? WriterSourceProvider(*lexer.get()) : std::nullopt;
-
-    AST_JsonWriter writer(*out, rd);
-    ast.get().accept(writer);
-    *out << std::endl;
+    nr_write(module.get(), nullptr, output);
+  } else {
+    LOG(ERROR) << "Failed to lower source file: " << source;
+    return 1;
   }
 
   return 0;
 }
 
-static int do_nr(std::string source, std::string output, std::string opts,
-                 bool verbose) {
+static int do_codegen(std::shared_ptr<Environment> &env, std::string source,
+                      std::string output, std::string opts, std::string target,
+                      bool verbose) {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
-
-  auto env = std::make_shared<Environment>();
 
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
@@ -292,123 +315,64 @@ static int do_nr(std::string source, std::string output, std::string opts,
     return 1;
   }
 
-  qprep lexer(file, "in", env);
-  auto parser = Parser::Create(*lexer.get(), env);
+  Sequencer scanner(file, env);
+  auto parser = Parser::Create(scanner, env);
 
   auto ast = parser->parse();
 
-  qmodule mod;
-  bool ok = nr_lower(&mod.get(), ast.get(), "module", true);
+  if (auto module = nr_lower(ast.get().get(), "module", true)) {
+    nr_diag_read(
+        module.get(),
+        [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
+          if (!verbose && lvl == IR_LEVEL_DEBUG) {
+            return;
+          }
 
-  nr_diag_read(
-      mod.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
-      [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
-        if (verbose || lvl != NR_LEVEL_DEBUG) {
           std::cerr << std::string_view((const char *)msg, len) << std::endl;
-        }
-      },
-      verbose);
+        },
+        verbose);
 
-  if (!ok) {
-    LOG(ERROR) << "Failed to lower source file: " << source;
-    return 1;
-  }
+    bool use_tmpfile = output.empty();
 
-  { /* Write output */
-    FILE *out = output.empty() ? stdout : fopen(output.c_str(), "wb");
+    FILE *out = use_tmpfile ? tmpfile() : fopen(output.c_str(), "wb");
 
     if (!out) {
       LOG(ERROR) << "Failed to open output file: " << output;
       return 1;
     }
 
-    ok = nr_write(mod.get(), nullptr, NR_SERIAL_CODE, out, nullptr, 0);
-    if (out != stdout) {
-      fclose(out);
-    }
+    bool ok = false;
 
-    if (!ok) {
-      LOG(ERROR) << "Failed to write output file: " << output;
+    qcode_conf codegen_conf;
+    if (target == "ir") {
+      ok = qcode_ir(module.get(), codegen_conf.get(), stderr, out);
+    } else if (target == "asm") {
+      ok = qcode_asm(module.get(), codegen_conf.get(), stderr, out);
+    } else if (target == "obj") {
+      ok = qcode_obj(module.get(), codegen_conf.get(), stderr, out);
+    } else {
+      LOG(ERROR) << "Unknown target specified: " << target;
       return 1;
     }
-  }
 
-  return 0;
-}
+    if (use_tmpfile) {
+      rewind(out);
+      char buf[4096];
 
-static int do_codegen(std::string source, std::string output, std::string opts,
-                      std::string target, bool verbose) {
-  if (!opts.empty()) {
-    LOG(ERROR) << "Options are not implemented yet";
-  }
-
-  auto env = std::make_shared<Environment>();
-
-  std::fstream file(source, std::ios::in);
-  if (!file.is_open()) {
-    LOG(ERROR) << "Failed to open source file: " << source;
-    return 1;
-  }
-
-  qprep lexer(file, "in", env);
-  auto parser = Parser::Create(*lexer.get(), env);
-
-  auto ast = parser->parse();
-
-  qmodule mod;
-  bool ok = nr_lower(&mod.get(), ast.get(), "module", true);
-
-  nr_diag_read(
-      mod.get(), ansi::IsUsingColors() ? NR_DIAG_COLOR : NR_DIAG_NOCOLOR,
-      [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
-        if (!verbose && lvl == NR_LEVEL_DEBUG) {
-          return;
-        }
-
-        std::cerr << std::string_view((const char *)msg, len) << std::endl;
-      },
-      verbose);
-
-  if (!ok) {
-    LOG(ERROR) << "Failed to lower source file: " << source;
-    return 1;
-  }
-
-  bool use_tmpfile = output.empty();
-
-  FILE *out = use_tmpfile ? tmpfile() : fopen(output.c_str(), "wb");
-
-  if (!out) {
-    LOG(ERROR) << "Failed to open output file: " << output;
-    return 1;
-  }
-
-  qcode_conf codegen_conf;
-  if (target == "ir") {
-    ok = qcode_ir(mod.get(), codegen_conf.get(), stderr, out);
-  } else if (target == "asm") {
-    ok = qcode_asm(mod.get(), codegen_conf.get(), stderr, out);
-  } else if (target == "obj") {
-    ok = qcode_obj(mod.get(), codegen_conf.get(), stderr, out);
-  } else {
-    LOG(ERROR) << "Unknown target specified: " << target;
-    return 1;
-  }
-
-  if (use_tmpfile) {
-    rewind(out);
-    char buf[4096];
-
-    while (!feof(out)) {
-      size_t len = fread(buf, 1, sizeof(buf), out);
-      fwrite(buf, 1, len, stdout);
+      while (!feof(out)) {
+        size_t len = fread(buf, 1, sizeof(buf), out);
+        fwrite(buf, 1, len, stdout);
+      }
     }
-  }
 
-  fclose(out);
+    fclose(out);
 
-  if (!ok) {
-    LOG(ERROR) << "Failed to generate code for source file: " << source;
+    if (!ok) {
+      LOG(ERROR) << "Failed to generate code for source file: " << source;
+      return 1;
+    }
+  } else {
+    LOG(ERROR) << "Failed to lower source file: " << source;
     return 1;
   }
 
@@ -426,9 +390,17 @@ namespace no3::router {
       const ArgumentParser &parser,
       const std::unordered_map<std::string_view,
                                std::unique_ptr<ArgumentParser>> &subparsers) {
-    qcore_bind_logger([](qcore_log_t, const char *msg, size_t,
-                         void *) { std::cerr << msg << std::endl; },
-                      nullptr);
+    qcore_bind_logger(
+        [](qcore_log_t, const char *msg, size_t len, void *) {
+          std::cerr << std::string_view(msg, len) << std::endl;
+        },
+        nullptr);
+
+    ncc::log += [&](auto msg, auto sev, const auto &ec) {
+      std::cerr << ec.format(msg, sev).c_str() << std::endl;
+    };
+
+    std::shared_ptr<Environment> env = std::make_shared<Environment>();
 
     if (parser.is_subcommand_used("bench")) {
       using namespace no3::benchmark;
@@ -473,7 +445,7 @@ namespace no3::router {
         return 1;
       }
 
-      return do_benchmark(name_map.at(bench_name));
+      return do_benchmark(env, name_map.at(bench_name));
     } else if (parser.is_subcommand_used("test")) {
       auto &test_parser = *subparsers.at("test");
       core::SetDebugMode(test_parser["--verbose"] == true);
@@ -487,7 +459,13 @@ namespace no3::router {
       std::string source = parse_parser.get<std::string>("source");
       std::string output = parse_parser.get<std::string>("--output");
 
-      return do_parse(source, output, verbose);
+      auto out = output.empty()
+                     ? std::make_unique<std::ostream>(std::cout.rdbuf())
+                     : std::make_unique<std::ofstream>(output);
+
+      env->set("FILE", source);
+
+      return do_parse(env, source, *out, verbose);
     } else if (parser.is_subcommand_used("nr")) {
       auto &nr_parser = *subparsers.at("nr");
 
@@ -497,7 +475,13 @@ namespace no3::router {
       std::string output = nr_parser.get<std::string>("--output");
       std::string opts = nr_parser.get<std::string>("--opts");
 
-      return do_nr(source, output, opts, nr_parser["--verbose"] == true);
+      auto out = output.empty()
+                     ? std::make_unique<std::ostream>(std::cout.rdbuf())
+                     : std::make_unique<std::ofstream>(output);
+
+      env->set("FILE", source);
+
+      return do_nr(env, source, *out, opts, nr_parser["--verbose"] == true);
     } else if (parser.is_subcommand_used("codegen")) {
       auto &nr_parser = *subparsers.at("codegen");
 
@@ -508,7 +492,9 @@ namespace no3::router {
       std::string opts = nr_parser.get<std::string>("--opts");
       std::string target = nr_parser.get<std::string>("--target");
 
-      return do_codegen(source, output, opts, target,
+      env->set("FILE", source);
+
+      return do_codegen(env, source, output, opts, target,
                         nr_parser["--verbose"] == true);
     } else if (parser.is_used("--demangle")) {
       std::string mangled_name = parser.get<std::string>("--demangle");
@@ -516,8 +502,7 @@ namespace no3::router {
         mangled_name.erase(0);
       }
 
-      nr::SymbolEncoding codec;
-      auto demangled_name = codec.demangle_name(mangled_name);
+      auto demangled_name = ExpandSymbolName(mangled_name);
       if (!demangled_name) {
         LOG(ERROR) << "Failed to demangle symbol" << std::endl;
         return 1;

@@ -33,11 +33,12 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::string_view Parser::recurse_scope_name() {
-  if (let tok = next_if(qName)) {
+string Parser::recurse_scope_name() {
+  if (auto tok = next_if(Name)) {
     return tok->as_string();
   } else {
     return "";
@@ -47,56 +48,58 @@ std::string_view Parser::recurse_scope_name() {
 std::optional<ScopeDeps> Parser::recurse_scope_deps() {
   ScopeDeps dependencies;
 
-  if (!next_if(qPuncColn)) {
+  if (!next_if(PuncColn)) {
     return dependencies;
   }
 
-  if (next_if(qPuncLBrk)) {
+  if (next_if(PuncLBrk)) [[likely]] {
     while (true) {
-      let tok = next();
+      if (next_if(EofF)) [[unlikely]] {
+        log << SyntaxError << current()
+            << "Unexpected EOF in scope dependencies";
+        break;
+      }
 
-      if (tok.is<qPuncRBrk>()) {
+      if (next_if(PuncRBrk)) {
         return dependencies;
       }
 
-      if (tok.is(qName)) {
-        let dependency_name = tok.as_string();
-
-        dependencies.insert(SaveString(dependency_name));
-
-        next_if(qPuncComa);
+      if (auto tok = next_if(Name)) {
+        auto dependency_name = tok->as_string();
+        dependencies.push_back(dependency_name);
       } else {
-        diagnostic << tok << "Expected dependency name";
-        break;
+        log << SyntaxError << next() << "Expected dependency name";
       }
+
+      next_if(PuncComa);
     }
   } else {
-    diagnostic << current() << "Expected '[' at start of scope dependencies";
+    log << SyntaxError << current()
+        << "Expected '[' at start of scope dependencies";
   }
 
   return std::nullopt;
 }
 
-RefNode<Stmt> Parser::recurse_scope_block() {
-  if (next_if(qPuncSemi)) {
+FlowPtr<Stmt> Parser::recurse_scope_block() {
+  if (next_if(PuncSemi)) {
     return make<Block>(BlockItems(), SafetyMode::Unknown)();
-  } else if (next_if(qOpArrow)) {
+  } else if (next_if(OpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
     return recurse_block(true, false, SafetyMode::Unknown);
   }
 }
 
-RefNode<Stmt> Parser::recurse_scope() {
-  let scope_name = recurse_scope_name();
+FlowPtr<Stmt> Parser::recurse_scope() {
+  auto scope_name = recurse_scope_name();
 
-  if (let implicit_dependencies = recurse_scope_deps()) {
-    let scope_block = recurse_scope_block();
+  if (auto dependencies = recurse_scope_deps()) [[likely]] {
+    auto scope_block = recurse_scope_block();
 
-    return make<ScopeStmt>(SaveString(scope_name), scope_block,
-                           std::move(implicit_dependencies.value()))();
+    return make<ScopeStmt>(scope_name, scope_block, dependencies.value())();
   } else {
-    diagnostic << current() << "Expected scope dependencies";
+    log << SyntaxError << current() << "Expected scope dependencies";
   }
 
   return mock_stmt(QAST_SCOPE);

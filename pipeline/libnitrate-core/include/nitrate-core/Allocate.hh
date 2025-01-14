@@ -37,7 +37,7 @@
 #include <cstddef>
 #include <utility>
 
-namespace ncc::core {
+namespace ncc {
   class IMemory {
   public:
     virtual ~IMemory() = default;
@@ -75,6 +75,6 @@ namespace ncc::core {
 
     void *alloc(size_t size, size_t align = DEFAULT_ALIGNMENT) override;
   };
-}  // namespace ncc::core
+}  // namespace ncc
 
 #endif

@@ -32,7 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-lexer/Lexer.hh>
-#include <nitrate-seq/Preprocess.hh>
+#include <nitrate-seq/Sequencer.hh>
 #include <qcall/List.hh>
 
 extern "C" {
@@ -52,27 +52,27 @@ int qcall::sys_next(lua_State* L) {
 
   lua_pushstring(L, "v");
   switch (tok.get_type()) {
-    case qEofF:
-    case qKeyW: {
+    case EofF:
+    case KeyW: {
       lua_pushstring(L, kw_repr(tok.as_key()));
       break;
     }
-    case qOper: {
+    case Oper: {
       lua_pushstring(L, op_repr(tok.as_op()));
       break;
     }
-    case qPunc: {
+    case Punc: {
       lua_pushstring(L, punct_repr(tok.as_punc()));
       break;
     }
-    case qIntL:
-    case qNumL:
-    case qText:
-    case qChar:
-    case qName:
-    case qMacB:
-    case qMacr:
-    case qNote: {
+    case IntL:
+    case NumL:
+    case Text:
+    case Char:
+    case Name:
+    case MacB:
+    case Macr:
+    case Note: {
       lua_pushstring(L, std::string(tok.as_string()).c_str());
       break;
     }

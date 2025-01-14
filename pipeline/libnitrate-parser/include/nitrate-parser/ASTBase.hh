@@ -36,6 +36,7 @@
 
 #include <array>
 #include <iostream>
+#include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
@@ -43,19 +44,78 @@
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTData.hh>
 #include <nitrate-parser/ASTWriter.hh>
+#include <type_traits>
 
 namespace ncc::parse {
-  class npar_pack Base {
+  class ASTExtensionKey {
+    friend class ASTExtension;
+    uint64_t m_key : 56 = 0;
+
+    constexpr ASTExtensionKey(uint64_t key) : m_key(key) {}
+
+  public:
+    constexpr ASTExtensionKey() : m_key(0) {}
+
+    auto Key() const { return m_key; }
+  } __attribute__((packed));
+
+  class ASTExtensionPackage {
+    friend class ASTExtension;
+
+    lex::LocationID m_begin;
+    lex::LocationID m_end;
+    std::vector<lex::Token> m_comments;
+
+    ASTExtensionPackage(lex::LocationID begin, lex::LocationID end)
+        : m_begin(begin), m_end(end) {}
+
+  public:
+    auto begin() const { return m_begin; }
+    auto end() const { return m_end; }
+    std::span<const lex::Token> comments() const { return m_comments; }
+
+    void add_comments(std::span<const lex::Token> comments) {
+      m_comments.insert(m_comments.end(), comments.begin(), comments.end());
+    }
+  };
+
+  class NCC_EXPORT ASTExtension {
+    std::vector<ASTExtensionPackage> m_pairs;
+    std::mutex m_mutex;
+
+  public:
+    ASTExtension() { Reset(); }
+
+    void Reset() {
+      m_pairs.clear();
+      m_pairs.shrink_to_fit();
+      m_pairs.reserve(4096);
+
+      m_pairs.push_back({lex::LocationID(), lex::LocationID()});
+    }
+
+    ASTExtensionKey Add(lex::LocationID begin, lex::LocationID end);
+    const ASTExtensionPackage &Get(ASTExtensionKey loc);
+    void Set(ASTExtensionKey id, ASTExtensionPackage &&data);
+  };
+
+  std::ostream &operator<<(std::ostream &os, const ASTExtensionKey &idx);
+
+  extern ASTExtension ExtensionDataStore;
+
+  class Base {
   private:
     npar_ty_t m_node_type : 7;
     bool m_mock : 1;
-    lex::LocationID m_begin, m_end;
+    ASTExtensionKey m_data;
 
   public:
     constexpr Base(npar_ty_t ty, bool mock = false,
                    lex::LocationID begin = lex::LocationID(),
                    lex::LocationID end = lex::LocationID())
-        : m_node_type(ty), m_mock(mock), m_begin(begin), m_end(end) {}
+        : m_node_type(ty), m_mock(mock) {
+      m_data = ExtensionDataStore.Add(begin, end);
+    }
 
     ///======================================================================
     /// Efficient LLVM-Style reflection
@@ -236,9 +296,19 @@ namespace ncc::parse {
     constexpr bool is(npar_ty_t type) const { return type == getKind(); }
     constexpr bool is_mock() const { return m_mock; }
 
-    bool isSame(const Base *o) const;
+    bool isSame(FlowPtr<Base> o) const;
 
     uint64_t hash64() const;
+
+    size_t count_children();
+
+    ///======================================================================
+    /// Visitation
+
+    constexpr void accept(ASTVisitor &v) { v.dispatch(MakeFlowPtr(this)); }
+    constexpr void accept(ASTVisitor &v) const {
+      v.dispatch(MakeFlowPtr(const_cast<Base *>(this)));
+    }
 
     ///======================================================================
     /// Debug-mode checked type casting
@@ -269,42 +339,47 @@ namespace ncc::parse {
       return safeCastAs<T>(const_cast<Base *>(this));
     }
 
-    Base *&as_base() { return *reinterpret_cast<Base **>(this); }
-
     ///======================================================================
     /// Debugging
 
     std::ostream &dump(std::ostream &os = std::cerr,
                        WriterSourceProvider rd = std::nullopt) const;
 
+    std::string to_json(WriterSourceProvider rd = std::nullopt) const;
+
     ///======================================================================
-    /// Source location information
+    /// AST Extension Data
 
-    constexpr lex::LocationID begin() const { return m_begin; }
-    constexpr lex::Location begin(lex::IScanner &rd) const {
-      return m_begin.Get(rd);
+    constexpr auto begin() const {
+      return ExtensionDataStore.Get(m_data).begin();
+    }
+    constexpr auto begin(lex::IScanner &rd) const { return begin().Get(rd); }
+    constexpr auto end() const { return ExtensionDataStore.Get(m_data).end(); }
+    constexpr auto end(lex::IScanner &rd) const { return end().Get(rd); }
+    constexpr auto get_pos() const {
+      return std::pair<lex::LocationID, lex::LocationID>(begin(), end());
     }
 
-    constexpr lex::LocationID end() const { return m_end; }
-    constexpr lex::Location end(lex::IScanner &rd) const {
-      return m_end.Get(rd);
-    }
-
-    constexpr std::tuple<uint32_t, uint32_t> get_pos() const {
-      /// TODO: Implement this
-      return {lex::QLEX_EOFF, lex::QLEX_NOFILE};
+    constexpr auto comments() const {
+      return ExtensionDataStore.Get(m_data).comments();
     }
 
     ///======================================================================
     /// Setters
 
-    /**
-     * @warning This function modifies the object's state.
-     */
-    constexpr void set_offset(lex::LocationID pos) { m_begin = pos; }
+    constexpr void set_offset(lex::LocationID pos) {
+      auto end = ExtensionDataStore.Get(m_data).end();
+      m_data = ExtensionDataStore.Add(pos, end);
+    }
+
+    constexpr void setLoc(lex::LocationID begin, lex::LocationID end) {
+      m_data = ExtensionDataStore.Add(begin, end);
+    }
+
+    void BindCodeCommentData(std::span<const lex::Token> comment_tokens);
   } __attribute__((packed));
 
-  static_assert(sizeof(Base) == 9);
+  static_assert(sizeof(Base) == 8);
 
   ///======================================================================
 
@@ -395,12 +470,11 @@ namespace ncc::parse {
     constexpr bool is_expr_stmt(npar_ty_t type) const;
   };
 
-  class npar_pack Type : public Base {
-    std::pair<RefNode<Expr>, RefNode<Expr>> m_range;
-    RefNode<Expr> m_width;
+  class Type : public Base {
+    NullableFlowPtr<Expr> m_range_begin, m_range_end, m_width;
 
   public:
-    constexpr Type(npar_ty_t ty) : Base(ty), m_range(), m_width() {}
+    constexpr Type(npar_ty_t ty) : Base(ty) {}
 
     constexpr bool is_primitive() const {
       switch (getKind()) {
@@ -450,12 +524,19 @@ namespace ncc::parse {
     constexpr bool is_ref() const { return getKind() == QAST_REF; }
     bool is_ptr_to(Type *type) const;
 
-    constexpr let get_width() const { return m_width; }
-    constexpr let get_range() const { return m_range; }
+    constexpr auto get_width() const { return m_width; }
+    constexpr auto get_range_begin() const { return m_range_begin; }
+    constexpr auto get_range_end() const { return m_range_end; }
 
-    constexpr void set_range(Expr *start, Expr *end) { m_range = {start, end}; }
+    constexpr void set_range_begin(NullableFlowPtr<Expr> start) {
+      m_range_begin = start;
+    }
 
-    constexpr void set_width(Expr *width) { m_width = width; }
+    constexpr void set_range_end(NullableFlowPtr<Expr> end) {
+      m_range_end = end;
+    }
+
+    constexpr void set_width(NullableFlowPtr<Expr> width) { m_width = width; }
   };
 
   class Expr : public Base {

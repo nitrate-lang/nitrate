@@ -33,40 +33,32 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-RefNode<Expr> Parser::recurse_while_cond() {
-  let cur = peek();
-
-  if (cur.is<qOpArrow>() || cur.is<qPuncLCur>()) {
+FlowPtr<Expr> Parser::recurse_while_cond() {
+  if (auto cur = peek(); cur.is<OpArrow>() || cur.is<PuncLCur>()) {
     return make<ConstBool>(true)();
   } else {
-    return recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
+    return recurse_expr({
+        Token(Punc, PuncLCur),
+        Token(Oper, OpArrow),
+    });
   }
 }
 
-RefNode<Stmt> Parser::recurse_while_body() {
-  if (next_if(qOpArrow)) {
+FlowPtr<Stmt> Parser::recurse_while_body() {
+  if (next_if(OpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
     return recurse_block(true, false, SafetyMode::Unknown);
   }
 }
 
-RefNode<Stmt> Parser::recurse_while() {
-  /**
-   * Example syntax:
-   *  `while {}`,                 `while => call();`
-   *  `while (cond) => call();`,  `while cond => call();`
-   *  `while (cond) { call(); }`, `while cond { call(); }`
-   */
-
-  /* The condition expression is optional */
-  let cond = recurse_while_cond();
-
-  /* Support for single statement implicit block */
-  let body = recurse_while_body();
+FlowPtr<Stmt> Parser::recurse_while() {
+  auto cond = recurse_while_cond();
+  auto body = recurse_while_body();
 
   return make<WhileStmt>(cond, body)();
 }

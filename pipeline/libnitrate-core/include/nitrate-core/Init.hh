@@ -39,7 +39,7 @@
 #include <string>
 #include <string_view>
 
-namespace ncc::core {
+namespace ncc {
   template <typename Impl>
   class LibraryRC;
 
@@ -50,7 +50,7 @@ namespace ncc::core {
     LibraryRCAutoClose() = default;
 
   public:
-    ~LibraryRCAutoClose() { Impl::DeinitRC(); }
+    ~LibraryRCAutoClose() { Impl::Deinit(); }
   };
 
   template <typename Impl>
@@ -152,6 +152,6 @@ namespace ncc::core {
   };
 
   extern LibraryRC<CoreLibrarySetup> CoreLibrary;
-}  // namespace ncc::core
+}  // namespace ncc
 
 #endif  // __NITRATE_CORE_LIB_H__

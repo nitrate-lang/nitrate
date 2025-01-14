@@ -38,132 +38,129 @@
 #include <span>
 
 namespace ncc::parse {
-  class npar_pack ExprStmt final : public Stmt {
-    RefNode<Expr> m_expr;
+  class ExprStmt final : public Stmt {
+    FlowPtr<Expr> m_expr;
 
   public:
-    constexpr ExprStmt(RefNode<Expr> expr) : Stmt(QAST_ESTMT), m_expr(expr) {}
+    constexpr ExprStmt(FlowPtr<Expr> expr) : Stmt(QAST_ESTMT), m_expr(expr) {}
 
-    constexpr let get_expr() const { return m_expr; }
+    constexpr auto get_expr() const { return m_expr; }
   };
 
   class Block final : public Stmt {
-    std::span<RefNode<Stmt>> m_items;
+    std::span<FlowPtr<Stmt>> m_items;
     SafetyMode m_safety;
 
   public:
     Block(BlockItems items, SafetyMode safety)
         : Stmt(QAST_BLOCK), m_items(items), m_safety(safety) {}
 
-    constexpr let get_items() const { return m_items; }
-    constexpr let get_safety() const { return m_safety; }
+    constexpr auto get_items() const { return m_items; }
+    constexpr auto get_safety() const { return m_safety; }
   };
 
   class VarDecl final : public Stmt {
-    std::span<RefNode<Expr>> m_attributes;
-    string m_name;
-    RefNode<Type> m_type;
-    RefNode<Expr> m_value;
+    std::span<FlowPtr<Expr>> m_attributes;
+    NullableFlowPtr<Type> m_type;
+    NullableFlowPtr<Expr> m_value;
     VarDeclType m_decl_type;
+    string m_name;
 
   public:
-    VarDecl(string name, RefNode<Type> type, RefNode<Expr> value,
-            VarDeclType decl_type, ExpressionList attributes)
+    VarDecl(string name, NullableFlowPtr<Type> type,
+            NullableFlowPtr<Expr> value, VarDeclType decl_type,
+            ExpressionList attributes)
         : Stmt(QAST_VAR),
           m_attributes(attributes),
-          m_name(name),
           m_type(type),
           m_value(value),
-          m_decl_type(decl_type) {}
+          m_decl_type(decl_type),
+          m_name(name) {}
 
     constexpr auto get_name() const { return m_name.get(); }
-
-    constexpr let get_type() const { return m_type; }
-    constexpr let get_value() const { return m_value; }
-    constexpr let get_decl_type() const { return m_decl_type; }
-    constexpr let get_attributes() const { return m_attributes; }
+    constexpr auto get_type() const { return m_type; }
+    constexpr auto get_value() const { return m_value; }
+    constexpr auto get_decl_type() const { return m_decl_type; }
+    constexpr auto get_attributes() const { return m_attributes; }
   };
 
   class InlineAsm final : public Stmt {
+    std::span<FlowPtr<Expr>> m_args;
     string m_code;
-    std::span<RefNode<Expr>> m_args;
 
   public:
     InlineAsm(string code, ExpressionList args)
-        : Stmt(QAST_INLINE_ASM), m_code(code), m_args(args) {}
+        : Stmt(QAST_INLINE_ASM), m_args(args), m_code(code) {}
 
     constexpr auto get_code() const { return m_code.get(); }
-
-    constexpr let get_args() const { return m_args; }
+    constexpr auto get_args() const { return m_args; }
   };
 
-  class npar_pack IfStmt final : public Stmt {
-    RefNode<Expr> m_cond;
-    RefNode<Stmt> m_then, m_else;
+  class IfStmt final : public Stmt {
+    FlowPtr<Expr> m_cond;
+    FlowPtr<Stmt> m_then;
+    NullableFlowPtr<Stmt> m_else;
 
   public:
-    constexpr IfStmt(RefNode<Expr> cond, RefNode<Stmt> then,
-                     RefNode<Stmt> else_)
+    constexpr IfStmt(FlowPtr<Expr> cond, FlowPtr<Stmt> then,
+                     NullableFlowPtr<Stmt> else_)
         : Stmt(QAST_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
-    constexpr let get_cond() const { return m_cond; }
-    constexpr let get_then() const { return m_then; }
-    constexpr let get_else() const { return m_else; }
+    constexpr auto get_cond() const { return m_cond; }
+    constexpr auto get_then() const { return m_then; }
+    constexpr auto get_else() const { return m_else; }
   };
 
   class WhileStmt final : public Stmt {
-    RefNode<Expr> m_cond;
-    RefNode<Stmt> m_body;
+    FlowPtr<Expr> m_cond;
+    FlowPtr<Stmt> m_body;
 
   public:
-    constexpr WhileStmt(RefNode<Expr> cond, RefNode<Stmt> body)
+    constexpr WhileStmt(FlowPtr<Expr> cond, FlowPtr<Stmt> body)
         : Stmt(QAST_WHILE), m_cond(cond), m_body(body) {}
 
-    constexpr let get_cond() const { return m_cond; }
-    constexpr let get_body() const { return m_body; }
+    constexpr auto get_cond() const { return m_cond; }
+    constexpr auto get_body() const { return m_body; }
   };
 
   class ForStmt final : public Stmt {
-    std::optional<RefNode<Stmt>> m_init;
-    std::optional<RefNode<Expr>> m_cond, m_step;
-    RefNode<Stmt> m_body;
+    NullableFlowPtr<Stmt> m_init;
+    NullableFlowPtr<Expr> m_cond, m_step;
+    FlowPtr<Stmt> m_body;
 
   public:
-    constexpr ForStmt(std::optional<RefNode<Stmt>> init,
-                      std::optional<RefNode<Expr>> cond,
-                      std::optional<RefNode<Expr>> step, RefNode<Stmt> body)
+    constexpr ForStmt(NullableFlowPtr<Stmt> init, NullableFlowPtr<Expr> cond,
+                      NullableFlowPtr<Expr> step, FlowPtr<Stmt> body)
         : Stmt(QAST_FOR),
           m_init(init),
           m_cond(cond),
           m_step(step),
           m_body(body) {}
 
-    constexpr let get_init() const { return m_init; }
-    constexpr let get_cond() const { return m_cond; }
-    constexpr let get_step() const { return m_step; }
-    constexpr let get_body() const { return m_body; }
+    constexpr auto get_init() const { return m_init; }
+    constexpr auto get_cond() const { return m_cond; }
+    constexpr auto get_step() const { return m_step; }
+    constexpr auto get_body() const { return m_body; }
   };
 
   class ForeachStmt final : public Stmt {
-    string m_idx_ident;
-    string m_val_ident;
-    RefNode<Expr> m_expr;
-    RefNode<Stmt> m_body;
+    FlowPtr<Expr> m_expr;
+    FlowPtr<Stmt> m_body;
+    string m_idx_ident, m_val_ident;
 
   public:
-    ForeachStmt(string idx_ident, string val_ident, RefNode<Expr> expr,
-                RefNode<Stmt> body)
+    ForeachStmt(string idx_ident, string val_ident, FlowPtr<Expr> expr,
+                FlowPtr<Stmt> body)
         : Stmt(QAST_FOREACH),
-          m_idx_ident(idx_ident),
-          m_val_ident(val_ident),
           m_expr(expr),
-          m_body(body) {}
+          m_body(body),
+          m_idx_ident(idx_ident),
+          m_val_ident(val_ident) {}
 
     constexpr auto get_idx_ident() const { return m_idx_ident.get(); }
     constexpr auto get_val_ident() const { return m_val_ident.get(); }
-
-    constexpr let get_expr() const { return m_expr; }
-    constexpr let get_body() const { return m_body; }
+    constexpr auto get_expr() const { return m_expr; }
+    constexpr auto get_body() const { return m_body; }
   };
 
   class BreakStmt final : public Stmt {
@@ -177,176 +174,180 @@ namespace ncc::parse {
   };
 
   class ReturnStmt final : public Stmt {
-    std::optional<RefNode<Expr>> m_value;
+    NullableFlowPtr<Expr> m_value;
 
   public:
-    constexpr ReturnStmt(std::optional<RefNode<Expr>> value)
+    constexpr ReturnStmt(NullableFlowPtr<Expr> value)
         : Stmt(QAST_RETURN), m_value(value) {}
 
-    constexpr let get_value() const { return m_value; }
+    constexpr auto get_value() const { return m_value; }
   };
 
   class ReturnIfStmt final : public Stmt {
-    RefNode<Expr> m_cond;
-    RefNode<Expr> m_value;
+    FlowPtr<Expr> m_cond, m_value;
 
   public:
-    constexpr ReturnIfStmt(RefNode<Expr> cond, RefNode<Expr> value)
+    constexpr ReturnIfStmt(FlowPtr<Expr> cond, FlowPtr<Expr> value)
         : Stmt(QAST_RETIF), m_cond(cond), m_value(value) {}
 
-    constexpr let get_cond() const { return m_cond; }
-    constexpr let get_value() const { return m_value; }
+    constexpr auto get_cond() const { return m_cond; }
+    constexpr auto get_value() const { return m_value; }
   };
 
   class CaseStmt final : public Stmt {
-    RefNode<Expr> m_cond;
-    RefNode<Stmt> m_body;
+    FlowPtr<Expr> m_cond;
+    FlowPtr<Stmt> m_body;
 
   public:
-    constexpr CaseStmt(RefNode<Expr> cond, RefNode<Stmt> body)
+    constexpr CaseStmt(FlowPtr<Expr> cond, FlowPtr<Stmt> body)
         : Stmt(QAST_CASE), m_cond(cond), m_body(body) {}
 
-    constexpr let get_cond() const { return m_cond; }
-    constexpr let get_body() const { return m_body; }
+    constexpr auto get_cond() const { return m_cond; }
+    constexpr auto get_body() const { return m_body; }
   };
 
   class SwitchStmt final : public Stmt {
-    RefNode<Expr> m_cond;
-    std::span<RefNode<CaseStmt>> m_cases;
-    RefNode<Stmt> m_default;
+    std::span<FlowPtr<CaseStmt>> m_cases;
+    FlowPtr<Expr> m_cond;
+    NullableFlowPtr<Stmt> m_default;
 
   public:
-    SwitchStmt(RefNode<Expr> cond, SwitchCases cases, RefNode<Stmt> default_)
+    SwitchStmt(FlowPtr<Expr> cond, SwitchCases cases,
+               NullableFlowPtr<Stmt> default_)
         : Stmt(QAST_SWITCH),
-          m_cond(cond),
           m_cases(cases),
+          m_cond(cond),
           m_default(default_) {}
 
-    constexpr let get_cond() const { return m_cond; }
-    constexpr let get_cases() const { return m_cases; }
-    constexpr let get_default() const { return m_default; }
+    constexpr auto get_cond() const { return m_cond; }
+    constexpr auto get_cases() const { return m_cases; }
+    constexpr auto get_default() const { return m_default; }
   };
 
   class ExportStmt final : public Stmt {
-    std::span<RefNode<Expr>> m_attrs;
+    std::span<FlowPtr<Expr>> m_attrs;
+    FlowPtr<Stmt> m_body;
     string m_abi_name;
-    RefNode<Stmt> m_body;
     Vis m_vis;
 
   public:
-    ExportStmt(RefNode<Stmt> content, string abi_name, Vis vis,
+    ExportStmt(FlowPtr<Stmt> content, string abi_name, Vis vis,
                ExpressionList attrs)
         : Stmt(QAST_EXPORT),
           m_attrs(attrs),
-          m_abi_name(abi_name),
           m_body(content),
+          m_abi_name(abi_name),
           m_vis(vis) {}
 
     constexpr auto get_abi_name() const { return m_abi_name.get(); }
-
-    constexpr let get_body() const { return m_body; }
-    constexpr let get_vis() const { return m_vis; }
-    constexpr let get_attrs() const { return m_attrs; }
+    constexpr auto get_body() const { return m_body; }
+    constexpr auto get_vis() const { return m_vis; }
+    constexpr auto get_attrs() const { return m_attrs; }
   };
 
   class ScopeStmt final : public Stmt {
-    ScopeDeps m_deps;
+    std::span<string> m_deps;
+    FlowPtr<Stmt> m_body;
     string m_name;
-    RefNode<Stmt> m_body;
 
   public:
-    ScopeStmt(string name, RefNode<Stmt> body, ScopeDeps deps = {})
-        : Stmt(QAST_SCOPE), m_deps(deps), m_name(name), m_body(body) {}
+    ScopeStmt(string name, FlowPtr<Stmt> body, ScopeDeps deps)
+        : Stmt(QAST_SCOPE), m_deps(deps), m_body(body), m_name(name) {}
 
     constexpr auto get_name() const { return m_name.get(); }
-
-    constexpr let get_body() const { return m_body; }
-    constexpr let get_deps() const { return m_deps; }
+    constexpr auto get_body() const { return m_body; }
+    constexpr auto get_deps() const { return m_deps; }
   };
 
   class TypedefStmt final : public Stmt {
+    FlowPtr<Type> m_type;
     string m_name;
-    RefNode<Type> m_type;
 
   public:
-    TypedefStmt(string name, RefNode<Type> type)
-        : Stmt(QAST_TYPEDEF), m_name(name), m_type(type) {}
+    TypedefStmt(string name, FlowPtr<Type> type)
+        : Stmt(QAST_TYPEDEF), m_type(type), m_name(name) {}
 
     constexpr auto get_name() const { return m_name.get(); }
-
-    constexpr let get_type() const { return m_type; }
+    constexpr auto get_type() const { return m_type; }
   };
 
   class EnumDef final : public Stmt {
     std::span<EnumItem> m_items;
+    NullableFlowPtr<Type> m_type;
     string m_name;
-    RefNode<Type> m_type;
 
   public:
-    EnumDef(string name, RefNode<Type> type, EnumDefItems items)
-        : Stmt(QAST_ENUM), m_items(items), m_name(name), m_type(type) {}
+    EnumDef(string name, NullableFlowPtr<Type> type, EnumDefItems items)
+        : Stmt(QAST_ENUM), m_items(items), m_type(type), m_name(name) {}
 
     constexpr auto get_name() const { return m_name.get(); }
-
-    constexpr let get_items() const { return m_items; }
-    constexpr let get_type() const { return m_type; }
+    constexpr auto get_items() const { return m_items; }
+    constexpr auto get_type() const { return m_type; }
   };
 
   class Function final : public Stmt {
-    std::span<RefNode<Expr>> m_attributes;
-    FuncPurity m_purity;
+    std::optional<std::span<TemplateParameter>> m_template_parameters;
+    std::span<FlowPtr<Expr>> m_attributes;
     std::span<std::pair<string, bool>> m_captures;
+    std::span<FuncParam> m_params;
+    FlowPtr<Type> m_return;
+    NullableFlowPtr<Expr> m_precond, m_postcond;
+    NullableFlowPtr<Stmt> m_body;
     string m_name;
-    std::optional<TemplateParameters> m_template_parameters;
-    FuncParams m_params;
-    RefNode<Type> m_return;
-    std::optional<RefNode<Expr>> m_precond, m_postcond;
-    std::optional<RefNode<Stmt>> m_body;
+    Purity m_purity;
+    bool m_variadic;
 
   public:
-    Function(ExpressionList attributes, FuncPurity purity, FnCaptures captures,
+    Function(ExpressionList attributes, Purity purity, FnCaptures captures,
              string name, std::optional<TemplateParameters> params,
-             FuncParams fn_params, RefNode<Type> return_type,
-             std::optional<RefNode<Expr>> precond,
-             std::optional<RefNode<Expr>> postcond,
-             std::optional<RefNode<Stmt>> body)
+             FuncParams fn_params, bool variadic, FlowPtr<Type> return_type,
+             NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,
+             NullableFlowPtr<Stmt> body)
         : Stmt(QAST_FUNCTION),
           m_attributes(attributes),
-          m_purity(purity),
           m_captures(captures),
-          m_name(name),
-          m_template_parameters(params),
           m_params(fn_params),
           m_return(return_type),
           m_precond(precond),
           m_postcond(postcond),
-          m_body(body) {}
+          m_body(body),
+          m_name(name),
+          m_purity(purity),
+          m_variadic(variadic) {
+      if (params.has_value()) {
+        m_template_parameters = params.value();
+      }
+    }
 
     constexpr auto get_name() const { return m_name.get(); }
+    constexpr auto get_attributes() const { return m_attributes; }
+    constexpr auto get_purity() const { return m_purity; }
+    constexpr auto get_captures() const { return m_captures; }
+    constexpr auto get_template_params() const { return m_template_parameters; }
+    constexpr auto get_params() const { return m_params; }
+    constexpr auto get_return() const { return m_return; }
+    constexpr auto get_precond() const { return m_precond; }
+    constexpr auto get_postcond() const { return m_postcond; }
+    constexpr auto get_body() const { return m_body; }
 
-    constexpr let get_attributes() const { return m_attributes; }
-    constexpr let get_purity() const { return m_purity; }
-    constexpr let get_captures() const { return m_captures; }
-    constexpr let get_template_params() const { return m_template_parameters; }
-    constexpr let get_params() const { return m_params; }
-    constexpr let get_return() const { return m_return; }
-    constexpr let get_precond() const { return m_precond; }
-    constexpr let get_postcond() const { return m_postcond; }
-    constexpr let get_body() const { return m_body; }
+    constexpr auto is_variadic() const { return m_variadic; }
+    constexpr bool is_declaration() const { return !m_body.has_value(); }
+    constexpr bool is_definition() const { return m_body.has_value(); }
 
-    bool is_decl() const { return !m_body.has_value(); }
-    bool is_def() const { return m_body.has_value(); }
+    constexpr bool has_contract() const {
+      return m_precond.has_value() || m_postcond.has_value();
+    }
   };
 
   class StructDef final : public Stmt {
-    CompositeType m_comp_type;
-    std::span<RefNode<Expr>> m_attributes;
-    string m_name;
-    std::optional<TemplateParameters> m_template_parameters;
+    std::span<FlowPtr<Expr>> m_attributes;
+    std::optional<std::span<TemplateParameter>> m_template_parameters;
     std::span<string> m_names;
     std::span<StructField> m_fields;
     std::span<StructFunction> m_methods;
     std::span<StructFunction> m_static_methods;
+    CompositeType m_comp_type;
+    string m_name;
 
   public:
     StructDef(CompositeType comp_type, ExpressionList attributes, string name,
@@ -354,24 +355,26 @@ namespace ncc::parse {
               StructDefFields fields, StructDefMethods methods,
               StructDefStaticMethods static_methods)
         : Stmt(QAST_STRUCT),
-          m_comp_type(comp_type),
           m_attributes(attributes),
-          m_name(name),
-          m_template_parameters(params),
           m_names(names),
           m_fields(fields),
           m_methods(methods),
-          m_static_methods(static_methods) {}
+          m_static_methods(static_methods),
+          m_comp_type(comp_type),
+          m_name(name) {
+      if (params.has_value()) {
+        m_template_parameters = params.value();
+      }
+    }
 
     constexpr auto get_name() const { return m_name.get(); }
-
-    constexpr let get_composite_type() const { return m_comp_type; }
-    constexpr let get_attributes() const { return m_attributes; }
-    constexpr let get_template_params() const { return m_template_parameters; }
-    constexpr let get_names() const { return m_names; }
-    constexpr let get_fields() const { return m_fields; }
-    constexpr let get_methods() const { return m_methods; }
-    constexpr let get_static_methods() const { return m_static_methods; }
+    constexpr auto get_composite_type() const { return m_comp_type; }
+    constexpr auto get_attributes() const { return m_attributes; }
+    constexpr auto get_template_params() const { return m_template_parameters; }
+    constexpr auto get_names() const { return m_names; }
+    constexpr auto get_fields() const { return m_fields; }
+    constexpr auto get_methods() const { return m_methods; }
+    constexpr auto get_static_methods() const { return m_static_methods; }
   };
 
   constexpr bool Stmt::is_expr_stmt(npar_ty_t type) const {

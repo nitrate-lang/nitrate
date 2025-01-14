@@ -31,19 +31,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstddef>
+#include <algorithm>
 #include <nitrate-core/Environment.hh>
-#include <nitrate-seq/Preprocess.hh>
+#include <nitrate-seq/Sequencer.hh>
+#include <optional>
 #include <qcall/List.hh>
+#include <regex>
+#include <string>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
-
-#include <algorithm>
-#include <optional>
-#include <regex>
-#include <string>
 
 static bool is_valid_import_name(const std::string &name) {
   if (name.empty()) {
@@ -63,7 +61,7 @@ static void canonicalize_import_name(std::string &name) {
   std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 }
 
-static std::optional<std::string> fetch_module_data(qprep_impl_t *obj,
+static std::optional<std::string> fetch_module_data(Sequencer *obj,
                                                     const char *name) {
   // if (!obj->m_fetch_module.first) {
   //   return std::nullopt;
@@ -84,7 +82,9 @@ static std::optional<std::string> fetch_module_data(qprep_impl_t *obj,
   // return data;
   (void)obj;
   (void)name;
-  /// TODO: Implement this function.
+
+  qcore_print(QCORE_WARN, "fetch_module_data not implemented");
+
   return std::nullopt;
 }
 
@@ -93,7 +93,7 @@ int qcall::sys_fetch(lua_State *L) {
    * @brief Download a file.
    */
 
-  qprep_impl_t *obj = get_engine();
+  Sequencer *obj = get_engine();
 
   int nargs = lua_gettop(L);
   if (nargs != 1) {

@@ -47,88 +47,83 @@ bool impl_use_json(IScanner *L, std::ostream &O) {
   O << "[";
 
   Token tok;
-  while ((tok = (L->Next())).get_type() != qEofF) {
+  while ((tok = (L->Next())).get_type() != EofF) {
     uint32_t sl = L->StartLine(tok), sc = L->StartColumn(tok);
     uint32_t el = L->EndLine(tok), ec = L->EndColumn(tok);
 
     switch (tok.get_type()) {
-      case qEofF: { /* End of file */
+      case EofF: { /* End of file */
         break;
       }
 
-      case qKeyW: { /* Keyword */
-        O << "[2,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
-          << ec << "],";
+      case KeyW: { /* Keyword */
+        O << "[2," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
-      case qOper: { /* Operator */
-        O << "[3,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
-          << ec << "],";
+      case Oper: { /* Operator */
+        O << "[3," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
-      case qPunc: { /* Punctuation */
-        O << "[4,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
-          << ec << "],";
+      case Punc: { /* Punctuation */
+        O << "[4," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
-      case qName: { /* Identifier */
-        O << "[5,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
-          << ec << "],";
+      case Name: { /* Identifier */
+        O << "[5," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
-      case qIntL: { /* Integer literal */
+      case IntL: { /* Integer literal */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[6,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
-          << ec << "],";
+        O << "[6," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
-      case qNumL: { /* Floating-point literal */
+      case NumL: { /* Floating-point literal */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[7,\"" << tok << "\"," << sl << "," << sc << "," << el << ","
-          << ec << "],";
+        O << "[7," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
-      case qText: { /* String literal */
-        std::string_view sv = tok.as_string();
-
-        O << "[8,\"" << create_json_string(sv) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+      case Text: { /* String literal */
+        O << "[8," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
-      case qChar: { /* Character literal */
-        std::string_view sv = tok.as_string();
+      case Char: { /* Character literal */
 
-        O << "[9,\"" << create_json_string(sv) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+        O << "[9," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
-      case qMacB: { /* Macro block */
+      case MacB: { /* Macro block */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[10,\"" << tok.as_string() << "\"," << sl << "," << sc << ","
-          << el << "," << ec << "],";
+        O << "[10," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
-      case qMacr: { /* Macro call */
+      case Macr: { /* Macro call */
         /// We assume that int's are not allowed to contain NULL bytes and
-        O << "[11,\"" << tok.as_string() << "\"," << sl << "," << sc << ","
-          << el << "," << ec << "],";
+        O << "[11," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
 
-      case qNote: { /* Comment */
-        std::string_view sv = tok.as_string();
-
-        O << "[12,\"" << create_json_string(sv) << "\"," << sl << "," << sc
-          << "," << el << "," << ec << "],";
+      case Note: { /* Comment */
+        O << "[12," << create_json_string(tok.as_string()) << "," << sl << ","
+          << sc << "," << el << "," << ec << "],";
         break;
       }
     }
@@ -170,66 +165,66 @@ bool impl_use_msgpack(IScanner *L, std::ostream &O) {
   O.put(0);
 
   Token tok;
-  while ((tok = (L->Next())).get_type() != qEofF) {
+  while ((tok = (L->Next())).get_type() != EofF) {
     uint32_t sl = L->StartLine(tok), sc = L->StartColumn(tok);
     uint32_t el = L->EndLine(tok), ec = L->EndColumn(tok);
 
     switch (tok.get_type()) {
-      case qEofF: { /* End of file */
+      case EofF: { /* End of file */
         break;
       }
 
-      case qKeyW: { /* Keyword */
+      case KeyW: { /* Keyword */
         msgpack_write_tok(O, 3, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
-      case qOper: { /* Operator */
+      case Oper: { /* Operator */
         msgpack_write_tok(O, 4, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
-      case qPunc: { /* Punctuation */
+      case Punc: { /* Punctuation */
         msgpack_write_tok(O, 5, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
-      case qName: { /* Identifier */
+      case Name: { /* Identifier */
         msgpack_write_tok(O, 6, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
-      case qIntL: { /* Integer literal */
+      case IntL: { /* Integer literal */
         msgpack_write_tok(O, 7, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
-      case qNumL: { /* Floating-point literal */
+      case NumL: { /* Floating-point literal */
         msgpack_write_tok(O, 8, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
-      case qText: { /* String literal */
+      case Text: { /* String literal */
         msgpack_write_tok(O, 9, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
-      case qChar: { /* Character literal */
+      case Char: { /* Character literal */
         msgpack_write_tok(O, 10, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
-      case qMacB: { /* Macro block */
+      case MacB: { /* Macro block */
         msgpack_write_tok(O, 11, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
-      case qMacr: { /* Macro call */
+      case Macr: { /* Macro call */
         msgpack_write_tok(O, 12, tok.as_string(), sl, sc, el, ec);
         break;
       }
 
-      case qNote: { /* Comment */
+      case Note: { /* Comment */
         msgpack_write_tok(O, 13, tok.as_string(), sl, sc, el, ec);
         break;
       }
@@ -240,7 +235,7 @@ bool impl_use_msgpack(IScanner *L, std::ostream &O) {
     num_entries++;
   }
 
-  msgpack_write_tok(O, qEofF, "", 0, 0, 0, 0);
+  msgpack_write_tok(O, EofF, "", 0, 0, 0, 0);
   num_entries++;
 
   off_t end_offset = O.tellp();

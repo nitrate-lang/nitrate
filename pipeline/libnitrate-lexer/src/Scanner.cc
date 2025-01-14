@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <charconv>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
@@ -42,105 +43,105 @@ using namespace ncc::lex;
 static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
     precedence_groups = {
         {
-            {qOpDot, OpMode::Binary, OpAssoc::Left},
+            {OpDot, OpMode::Binary, OpAssoc::Left},
         },
 
         {
-            {qOpInc, OpMode::PostUnary, OpAssoc::Left},
-            {qOpDec, OpMode::PostUnary, OpAssoc::Left},
+            {OpInc, OpMode::PostUnary, OpAssoc::Left},
+            {OpDec, OpMode::PostUnary, OpAssoc::Left},
         },
 
         {
             /* Yee, we have enough overloadable operators to last a lifetime */
-            {qOpPlus, OpMode::PreUnary, OpAssoc::Right},
-            {qOpMinus, OpMode::PreUnary, OpAssoc::Right},
-            {qOpTimes, OpMode::PreUnary, OpAssoc::Right},
-            {qOpSlash, OpMode::PreUnary, OpAssoc::Right},
-            {qOpPercent, OpMode::PreUnary, OpAssoc::Right},
-            {qOpBitAnd, OpMode::PreUnary, OpAssoc::Right},
-            {qOpBitOr, OpMode::PreUnary, OpAssoc::Right},
-            {qOpBitXor, OpMode::PreUnary, OpAssoc::Right},
-            {qOpBitNot, OpMode::PreUnary, OpAssoc::Right},
-            {qOpLShift, OpMode::PreUnary, OpAssoc::Right},
-            {qOpRShift, OpMode::PreUnary, OpAssoc::Right},
-            {qOpROTL, OpMode::PreUnary, OpAssoc::Right},
-            {qOpROTR, OpMode::PreUnary, OpAssoc::Right},
-            {qOpLogicAnd, OpMode::PreUnary, OpAssoc::Right},
-            {qOpLogicOr, OpMode::PreUnary, OpAssoc::Right},
-            {qOpLogicXor, OpMode::PreUnary, OpAssoc::Right},
-            {qOpLogicNot, OpMode::PreUnary, OpAssoc::Right},
-            {qOpLT, OpMode::PreUnary, OpAssoc::Right},
-            {qOpGT, OpMode::PreUnary, OpAssoc::Right},
-            {qOpLE, OpMode::PreUnary, OpAssoc::Right},
-            {qOpGE, OpMode::PreUnary, OpAssoc::Right},
-            {qOpEq, OpMode::PreUnary, OpAssoc::Right},
-            {qOpNE, OpMode::PreUnary, OpAssoc::Right},
-            {qOpSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpPlusSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpMinusSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpTimesSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpSlashSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpPercentSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpBitAndSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpBitOrSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpBitXorSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpLogicAndSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpLogicOrSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpLogicXorSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpLShiftSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpRShiftSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpROTLSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpROTRSet, OpMode::PreUnary, OpAssoc::Right},
-            {qOpInc, OpMode::PreUnary, OpAssoc::Right},
-            {qOpDec, OpMode::PreUnary, OpAssoc::Right},
-            {qOpAs, OpMode::PreUnary, OpAssoc::Right},
-            {qOpBitcastAs, OpMode::PreUnary, OpAssoc::Right},
-            {qOpIn, OpMode::PreUnary, OpAssoc::Right},
-            {qOpOut, OpMode::PreUnary, OpAssoc::Right},
-            {qOpSizeof, OpMode::PreUnary, OpAssoc::Right},
-            {qOpBitsizeof, OpMode::PreUnary, OpAssoc::Right},
-            {qOpAlignof, OpMode::PreUnary, OpAssoc::Right},
-            {qOpTypeof, OpMode::PreUnary, OpAssoc::Right},
-            {qOpDot, OpMode::PreUnary, OpAssoc::Right},
-            {qOpRange, OpMode::PreUnary, OpAssoc::Right},
-            {qOpEllipsis, OpMode::PreUnary, OpAssoc::Right},
-            {qOpArrow, OpMode::PreUnary, OpAssoc::Right},
-            {qOpTernary, OpMode::PreUnary, OpAssoc::Right},
+            {OpPlus, OpMode::PreUnary, OpAssoc::Right},
+            {OpMinus, OpMode::PreUnary, OpAssoc::Right},
+            {OpTimes, OpMode::PreUnary, OpAssoc::Right},
+            {OpSlash, OpMode::PreUnary, OpAssoc::Right},
+            {OpPercent, OpMode::PreUnary, OpAssoc::Right},
+            {OpBitAnd, OpMode::PreUnary, OpAssoc::Right},
+            {OpBitOr, OpMode::PreUnary, OpAssoc::Right},
+            {OpBitXor, OpMode::PreUnary, OpAssoc::Right},
+            {OpBitNot, OpMode::PreUnary, OpAssoc::Right},
+            {OpLShift, OpMode::PreUnary, OpAssoc::Right},
+            {OpRShift, OpMode::PreUnary, OpAssoc::Right},
+            {OpROTL, OpMode::PreUnary, OpAssoc::Right},
+            {OpROTR, OpMode::PreUnary, OpAssoc::Right},
+            {OpLogicAnd, OpMode::PreUnary, OpAssoc::Right},
+            {OpLogicOr, OpMode::PreUnary, OpAssoc::Right},
+            {OpLogicXor, OpMode::PreUnary, OpAssoc::Right},
+            {OpLogicNot, OpMode::PreUnary, OpAssoc::Right},
+            {OpLT, OpMode::PreUnary, OpAssoc::Right},
+            {OpGT, OpMode::PreUnary, OpAssoc::Right},
+            {OpLE, OpMode::PreUnary, OpAssoc::Right},
+            {OpGE, OpMode::PreUnary, OpAssoc::Right},
+            {OpEq, OpMode::PreUnary, OpAssoc::Right},
+            {OpNE, OpMode::PreUnary, OpAssoc::Right},
+            {OpSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpPlusSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpMinusSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpTimesSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpSlashSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpPercentSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpBitAndSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpBitOrSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpBitXorSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpLogicAndSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpLogicOrSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpLogicXorSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpLShiftSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpRShiftSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpROTLSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpROTRSet, OpMode::PreUnary, OpAssoc::Right},
+            {OpInc, OpMode::PreUnary, OpAssoc::Right},
+            {OpDec, OpMode::PreUnary, OpAssoc::Right},
+            {OpAs, OpMode::PreUnary, OpAssoc::Right},
+            {OpBitcastAs, OpMode::PreUnary, OpAssoc::Right},
+            {OpIn, OpMode::PreUnary, OpAssoc::Right},
+            {OpOut, OpMode::PreUnary, OpAssoc::Right},
+            {OpSizeof, OpMode::PreUnary, OpAssoc::Right},
+            {OpBitsizeof, OpMode::PreUnary, OpAssoc::Right},
+            {OpAlignof, OpMode::PreUnary, OpAssoc::Right},
+            {OpTypeof, OpMode::PreUnary, OpAssoc::Right},
+            {OpDot, OpMode::PreUnary, OpAssoc::Right},
+            {OpRange, OpMode::PreUnary, OpAssoc::Right},
+            {OpEllipsis, OpMode::PreUnary, OpAssoc::Right},
+            {OpArrow, OpMode::PreUnary, OpAssoc::Right},
+            {OpTernary, OpMode::PreUnary, OpAssoc::Right},
         },
 
         {
-            {qOpAs, OpMode::Binary, OpAssoc::Left},
-            {qOpBitcastAs, OpMode::Binary, OpAssoc::Left},
+            {OpAs, OpMode::Binary, OpAssoc::Left},
+            {OpBitcastAs, OpMode::Binary, OpAssoc::Left},
         },
 
         {
-            {qOpTimes, OpMode::Binary, OpAssoc::Left},
-            {qOpSlash, OpMode::Binary, OpAssoc::Left},
-            {qOpPercent, OpMode::Binary, OpAssoc::Left},
+            {OpTimes, OpMode::Binary, OpAssoc::Left},
+            {OpSlash, OpMode::Binary, OpAssoc::Left},
+            {OpPercent, OpMode::Binary, OpAssoc::Left},
         },
 
         {
-            {qOpPlus, OpMode::Binary, OpAssoc::Left},
-            {qOpMinus, OpMode::Binary, OpAssoc::Left},
+            {OpPlus, OpMode::Binary, OpAssoc::Left},
+            {OpMinus, OpMode::Binary, OpAssoc::Left},
         },
 
         {
-            {qOpLShift, OpMode::Binary, OpAssoc::Left},
-            {qOpRShift, OpMode::Binary, OpAssoc::Left},
-            {qOpROTL, OpMode::Binary, OpAssoc::Left},
-            {qOpROTR, OpMode::Binary, OpAssoc::Left},
+            {OpLShift, OpMode::Binary, OpAssoc::Left},
+            {OpRShift, OpMode::Binary, OpAssoc::Left},
+            {OpROTL, OpMode::Binary, OpAssoc::Left},
+            {OpROTR, OpMode::Binary, OpAssoc::Left},
         },
 
         {
-            {qOpBitAnd, OpMode::Binary, OpAssoc::Left},
+            {OpBitAnd, OpMode::Binary, OpAssoc::Left},
         },
 
         {
-            {qOpBitXor, OpMode::Binary, OpAssoc::Left},
+            {OpBitXor, OpMode::Binary, OpAssoc::Left},
         },
 
         {
-            {qOpBitOr, OpMode::Binary, OpAssoc::Left},
+            {OpBitOr, OpMode::Binary, OpAssoc::Left},
         },
 
         {
@@ -152,61 +153,61 @@ static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
         },
 
         {
-            {qOpEq, OpMode::Binary, OpAssoc::Left},
-            {qOpNE, OpMode::Binary, OpAssoc::Left},
-            {qOpLT, OpMode::Binary, OpAssoc::Left},
-            {qOpGT, OpMode::Binary, OpAssoc::Left},
-            {qOpLE, OpMode::Binary, OpAssoc::Left},
-            {qOpGE, OpMode::Binary, OpAssoc::Left},
+            {OpEq, OpMode::Binary, OpAssoc::Left},
+            {OpNE, OpMode::Binary, OpAssoc::Left},
+            {OpLT, OpMode::Binary, OpAssoc::Left},
+            {OpGT, OpMode::Binary, OpAssoc::Left},
+            {OpLE, OpMode::Binary, OpAssoc::Left},
+            {OpGE, OpMode::Binary, OpAssoc::Left},
         },
 
         {
-            {qOpLogicAnd, OpMode::Binary, OpAssoc::Left},
+            {OpLogicAnd, OpMode::Binary, OpAssoc::Left},
         },
 
         {
-            {qOpLogicOr, OpMode::Binary, OpAssoc::Left},
+            {OpLogicOr, OpMode::Binary, OpAssoc::Left},
         },
 
         {
-            {qOpLogicXor, OpMode::Binary, OpAssoc::Left},
+            {OpLogicXor, OpMode::Binary, OpAssoc::Left},
         },
 
         {
-            {qOpTernary, OpMode::Ternary, OpAssoc::Right},
+            {OpTernary, OpMode::Ternary, OpAssoc::Right},
         },
 
         {
-            {qOpIn, OpMode::Binary, OpAssoc::Left},
-            {qOpOut, OpMode::Binary, OpAssoc::Left},
+            {OpIn, OpMode::Binary, OpAssoc::Left},
+            {OpOut, OpMode::Binary, OpAssoc::Left},
         },
 
         {
-            {qOpRange, OpMode::Binary, OpAssoc::Left},
-            {qOpArrow, OpMode::Binary, OpAssoc::Left},
+            {OpRange, OpMode::Binary, OpAssoc::Left},
+            {OpArrow, OpMode::Binary, OpAssoc::Left},
         },
 
         {
-            {qOpSet, OpMode::Binary, OpAssoc::Right},
-            {qOpPlusSet, OpMode::Binary, OpAssoc::Right},
-            {qOpMinusSet, OpMode::Binary, OpAssoc::Right},
-            {qOpTimesSet, OpMode::Binary, OpAssoc::Right},
-            {qOpSlashSet, OpMode::Binary, OpAssoc::Right},
-            {qOpPercentSet, OpMode::Binary, OpAssoc::Right},
-            {qOpBitAndSet, OpMode::Binary, OpAssoc::Right},
-            {qOpBitOrSet, OpMode::Binary, OpAssoc::Right},
-            {qOpBitXorSet, OpMode::Binary, OpAssoc::Right},
-            {qOpLogicAndSet, OpMode::Binary, OpAssoc::Right},
-            {qOpLogicOrSet, OpMode::Binary, OpAssoc::Right},
-            {qOpLogicXorSet, OpMode::Binary, OpAssoc::Right},
-            {qOpLShiftSet, OpMode::Binary, OpAssoc::Right},
-            {qOpRShiftSet, OpMode::Binary, OpAssoc::Right},
-            {qOpROTLSet, OpMode::Binary, OpAssoc::Right},
-            {qOpROTRSet, OpMode::Binary, OpAssoc::Right},
+            {OpSet, OpMode::Binary, OpAssoc::Right},
+            {OpPlusSet, OpMode::Binary, OpAssoc::Right},
+            {OpMinusSet, OpMode::Binary, OpAssoc::Right},
+            {OpTimesSet, OpMode::Binary, OpAssoc::Right},
+            {OpSlashSet, OpMode::Binary, OpAssoc::Right},
+            {OpPercentSet, OpMode::Binary, OpAssoc::Right},
+            {OpBitAndSet, OpMode::Binary, OpAssoc::Right},
+            {OpBitOrSet, OpMode::Binary, OpAssoc::Right},
+            {OpBitXorSet, OpMode::Binary, OpAssoc::Right},
+            {OpLogicAndSet, OpMode::Binary, OpAssoc::Right},
+            {OpLogicOrSet, OpMode::Binary, OpAssoc::Right},
+            {OpLogicXorSet, OpMode::Binary, OpAssoc::Right},
+            {OpLShiftSet, OpMode::Binary, OpAssoc::Right},
+            {OpRShiftSet, OpMode::Binary, OpAssoc::Right},
+            {OpROTLSet, OpMode::Binary, OpAssoc::Right},
+            {OpROTRSet, OpMode::Binary, OpAssoc::Right},
         },
 };
 
-CPP_EXPORT short ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
+NCC_EXPORT short ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
   using Key = std::pair<Operator, OpMode>;
 
   struct KeyHash {
@@ -237,7 +238,7 @@ CPP_EXPORT short ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
   return -1;
 }
 
-CPP_EXPORT OpAssoc ncc::lex::GetOperatorAssociativity(Operator op,
+NCC_EXPORT OpAssoc ncc::lex::GetOperatorAssociativity(Operator op,
                                                       OpMode type) {
   using Key = std::pair<Operator, OpMode>;
 
@@ -267,66 +268,66 @@ CPP_EXPORT OpAssoc ncc::lex::GetOperatorAssociativity(Operator op,
   return OpAssoc::Left;
 }
 
-CPP_EXPORT std::string_view ncc::lex::to_string(TokenType ty, TokenData v) {
-  std::string_view R;
+NCC_EXPORT ncc::string ncc::lex::to_string(TokenType ty, TokenData v) {
+  string R;
 
   switch (ty) {
-    case qEofF: {
+    case EofF: {
       R = "";
       break;
     }
 
-    case qKeyW: {
+    case KeyW: {
       R = ncc::lex::kw_repr(v.key);
       break;
     }
 
-    case qOper: {
+    case Oper: {
       R = ncc::lex::op_repr(v.op);
       break;
     }
 
-    case qPunc: {
+    case Punc: {
       R = ncc::lex::punct_repr(v.punc);
       break;
     }
 
-    case qName: {
+    case Name: {
       R = v.str.get();
       break;
     }
 
-    case qIntL: {
+    case IntL: {
       R = v.str.get();
       break;
     }
 
-    case qNumL: {
+    case NumL: {
       R = v.str.get();
       break;
     }
 
-    case qText: {
+    case Text: {
       R = v.str.get();
       break;
     }
 
-    case qChar: {
+    case Char: {
       R = v.str.get();
       break;
     }
 
-    case qMacB: {
+    case MacB: {
       R = v.str.get();
       break;
     }
 
-    case qMacr: {
+    case Macr: {
       R = v.str.get();
       break;
     }
 
-    case qNote: {
+    case Note: {
       R = v.str.get();
       break;
     }
@@ -335,14 +336,19 @@ CPP_EXPORT std::string_view ncc::lex::to_string(TokenType ty, TokenData v) {
   return R;
 }
 
+NCC_EXPORT Location LocationID::Get(IScanner &L) const {
+  return L.GetLocation(m_id);
+}
+
 class IScanner::StaticImpl {
 public:
-  static FORCE_INLINE void FillTokenBuffer(IScanner &L) {
+  static NCC_FORCE_INLINE void FillTokenBuffer(IScanner &L) {
     for (size_t i = 0; i < TOKEN_BUFFER_SIZE; i++) {
       try {
         L.m_ready.push_back(L.GetNext());
       } catch (ScannerEOF &) {
         if (i == 0) {
+          L.m_eof = true;
           L.m_ready.push_back(Token::EndOfFile());
         }
         break;
@@ -351,71 +357,100 @@ public:
   }
 };
 
-CPP_EXPORT Token IScanner::Next() {
+Token IScanner::Next() {
   while (true) {
-    if (m_ready.empty()) {
+    if (m_ready.empty()) [[unlikely]] {
       StaticImpl::FillTokenBuffer(*this);
     }
 
     Token tok = m_ready.front();
     m_ready.pop_front();
 
-    if (GetSkipCommentsState() && tok.is(qNote)) {
+    if (GetSkipCommentsState() && tok.is(Note)) {
+      m_comments.push_back(tok);
       continue;
     }
 
-    m_current = tok;
-    m_last = m_current;
+    m_last = m_current = tok;
 
     return tok;
   }
 }
 
-CPP_EXPORT Token IScanner::Peek() {
-  if (m_ready.empty()) [[unlikely]] {
-    StaticImpl::FillTokenBuffer(*this);
+Token IScanner::Peek() {
+  while (true) {
+    if (m_ready.empty()) [[unlikely]] {
+      StaticImpl::FillTokenBuffer(*this);
+    }
+
+    Token tok = m_ready.front();
+
+    if (GetSkipCommentsState() && tok.is(Note)) {
+      m_comments.push_back(tok);
+      m_ready.pop_front();
+      continue;
+    }
+
+    m_current = tok;
+
+    return tok;
   }
-
-  Token tok = m_ready.front();
-  m_current = tok;
-
-  return tok;
 }
 
-CPP_EXPORT void IScanner::Undo() {
+void IScanner::Undo() {
   if (!m_last.has_value()) {
     return;
   }
 
   m_ready.push_front(m_last.value());
-  m_current = m_last;
+  m_current = m_last.value();
 }
 
-CPP_EXPORT Location LocationID::Get(IScanner &L) const {
-  return L.GetLocation(m_id);
+static uint32_t strtou64(std::string_view str, uint32_t sentinal) {
+  uint32_t result = sentinal;
+  std::from_chars(str.data(), str.data() + str.size(), result);
+  return result;
 }
 
-CPP_EXPORT Location IScanner::GetLocation(LocationID id) {
-  if (id == 0) {
-    return Location::EndOfFile();
-  } else if (id < m_location_interned.size()) {
+Location IScanner::GetEofLocation() {
+  uint32_t offset = QLEX_EOFF, line = QLEX_EOFF, column = QLEX_EOFF;
+  string filename;
+
+  if (auto off = m_env->get("this.file.eof.offset"); off.has_value()) {
+    offset = strtou64(off.value(), QLEX_EOFF);
+  }
+
+  if (auto ln = m_env->get("this.file.eof.line"); ln.has_value()) {
+    line = strtou64(ln.value(), QLEX_EOFF);
+  }
+
+  if (auto col = m_env->get("this.file.eof.column"); col.has_value()) {
+    column = strtou64(col.value(), QLEX_EOFF);
+  }
+
+  if (auto fn = m_env->get("this.file.eof.filename"); fn.has_value()) {
+    filename = fn.value();
+  }
+
+  return Location(offset, line, column, filename);
+}
+
+Location IScanner::GetLocation(LocationID id) {
+  if (id.GetId() < m_location_interned.size()) {
     return m_location_interned[id.GetId()];
   } else {
-    return GetLocationFallback(id).value_or(Location::EndOfFile());
+    return GetLocationFallback(id.GetId()).value_or(Location::EndOfFile());
   }
 }
 
-CPP_EXPORT Location IScanner::Start(Token t) {
-  return t.get_start().Get(*this);
-}
+Location IScanner::Start(Token t) { return t.get_start().Get(*this); }
 
-CPP_EXPORT Location IScanner::End(Token) {
+Location IScanner::End(Token) {
   /// TODO: Support relexing to get the end location
-
   return Location::EndOfFile();
 }
 
-CPP_EXPORT uint32_t IScanner::StartLine(Token t) { return Start(t).GetRow(); }
-CPP_EXPORT uint32_t IScanner::StartColumn(Token t) { return Start(t).GetCol(); }
-CPP_EXPORT uint32_t IScanner::EndLine(Token t) { return End(t).GetRow(); }
-CPP_EXPORT uint32_t IScanner::EndColumn(Token t) { return End(t).GetCol(); }
+uint32_t IScanner::StartLine(Token t) { return Start(t).GetRow(); }
+uint32_t IScanner::StartColumn(Token t) { return Start(t).GetCol(); }
+uint32_t IScanner::EndLine(Token t) { return End(t).GetRow(); }
+uint32_t IScanner::EndColumn(Token t) { return End(t).GetCol(); }

@@ -34,21 +34,23 @@
 #ifndef __NITRATE_PARSE_H__
 #define __NITRATE_PARSE_H__
 
-#include <core/Context.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/Context.hh>
+#include <nitrate-parser/EC.hh>
 
 namespace ncc::parse {
+  using namespace ec;
+
 #define next() rd.Next()
 #define peek() rd.Peek()
-#define current() rd.Current().value_or(Token())
+#define current() rd.Current()
 
   template <auto tok>
   static std::optional<ncc::lex::Token> next_if_(ncc::lex::IScanner &rd) {
-    let t = peek();
+    auto t = peek();
     if constexpr (std::is_same_v<decltype(tok), ncc::lex::TokenType>) {
       if (t.is(tok)) {
         next();
@@ -65,6 +67,11 @@ namespace ncc::parse {
   }
 
 #define next_if(tok) next_if_<tok>(rd)
+
+  static inline auto BIND_COMMENTS(auto node, auto comments) {
+    node->BindCodeCommentData(std::move(comments));
+    return node;
+  }
 
 };  // namespace ncc::parse
 

@@ -33,22 +33,23 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-RefNode<Stmt> Parser::recurse_if_then() {
-  if (next_if(qOpArrow)) {
+FlowPtr<Stmt> Parser::recurse_if_then() {
+  if (next_if(OpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
     return recurse_block(true, false, SafetyMode::Unknown);
   }
 }
 
-std::optional<RefNode<Stmt> > Parser::recurse_if_else() {
-  if (next_if(qKElse)) {
-    if (next_if(qOpArrow)) {
+NullableFlowPtr<Stmt> Parser::recurse_if_else() {
+  if (next_if(Else)) {
+    if (next_if(OpArrow)) {
       return recurse_block(false, true, SafetyMode::Unknown);
-    } else if (next_if(qKIf)) {
+    } else if (next_if(If)) {
       return recurse_if();
     } else {
       return recurse_block(true, false, SafetyMode::Unknown);
@@ -58,11 +59,13 @@ std::optional<RefNode<Stmt> > Parser::recurse_if_else() {
   }
 }
 
-RefNode<Stmt> Parser::recurse_if() {
-  let cond = recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
+FlowPtr<Stmt> Parser::recurse_if() {
+  auto cond = recurse_expr({
+      Token(Punc, PuncLCur),
+      Token(Oper, OpArrow),
+  });
+  auto then = recurse_if_then();
+  auto ele = recurse_if_else();
 
-  let then = recurse_if_then();
-  let ele = recurse_if_else();
-
-  return make<IfStmt>(cond, then, ele.value_or(nullptr))();
+  return make<IfStmt>(cond, then, ele)();
 }

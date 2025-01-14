@@ -40,11 +40,11 @@
 #include <string_view>
 #include <unordered_map>
 
-namespace ncc::core {
-  class str_alias;
+namespace ncc {
+  class auto_intern;
 
   class StringMemory {
-    friend class str_alias;
+    friend class auto_intern;
 
     struct Storage {
       std::unordered_map<uint64_t, std::string> m_map_a;
@@ -68,20 +68,26 @@ namespace ncc::core {
     static uint64_t FromString(std::string &&str);
 
   public:
-    static void Clear();
+    static void Reset();
   };
 
-  class __attribute__((packed)) str_alias {
+  class __attribute__((packed)) auto_intern {
     uint64_t m_id : 40;
 
   public:
-    constexpr str_alias(std::string_view str = "") {
+    constexpr auto_intern(std::string_view str = "") {
       m_id = str.empty() ? 0 : StringMemory::FromString(str);
     }
-    constexpr str_alias(std::string &&str) {
+
+    constexpr auto_intern(std::string &&str) {
       m_id = str.empty() ? 0 : StringMemory::FromString(std::move(str));
     }
-    constexpr str_alias(const char *str) {
+
+    constexpr auto_intern(const std::string &str) {
+      m_id = str.empty() ? 0 : StringMemory::FromString(str);
+    }
+
+    constexpr auto_intern(const char *str) {
       if (str[0] == '\0') {
         m_id = 0;
       } else {
@@ -91,45 +97,42 @@ namespace ncc::core {
 
     std::string_view get() const;
 
-    constexpr bool operator==(const str_alias &O) const {
+    constexpr bool operator==(const auto_intern &O) const {
       return m_id == O.m_id;
     }
 
-    constexpr inline auto operator*() const { return get(); }
-    inline const auto *operator->() const {
+    constexpr auto operator*() const { return get(); }
+
+    const auto *operator->() const {
       static thread_local std::string_view sv;
       sv = get();
       return &sv;
     }
 
-    constexpr inline bool operator<(const str_alias &O) const {
+    constexpr bool operator<(const auto_intern &O) const {
       return m_id < O.m_id;
     }
+
+    constexpr operator std::string_view() const { return get(); }
+
+    constexpr auto getId() const { return m_id; }
   };
 
-  static inline std::string_view save(std::string_view str) {
-    return str_alias(str).get();
+  using string = auto_intern;
+
+  static inline std::ostream &operator<<(std::ostream &os,
+                                         const auto_intern &str) {
+    return os << str.get();
   }
+}  // namespace ncc
 
-  static inline std::string_view save(std::string &&str) {
-    return str_alias(str).get();
-  }
-
-  static inline std::string_view save(const char *str) {
-    return str_alias(str).get();
-  }
-
-  static inline str_alias intern(std::string_view str) {
-    return str_alias(str);
-  }
-
-  static inline str_alias intern(std::string &&str) { return str_alias(str); }
-
-  static inline str_alias intern(const char *str) { return str_alias(str); }
-}  // namespace ncc::core
-
-namespace ncc {
-  using string = core::str_alias;
-}
+namespace std {
+  template <>
+  struct hash<ncc::auto_intern> {
+    size_t operator()(const ncc::auto_intern &str) const {
+      return std::hash<uint64_t>{}(str.getId());
+    }
+  };
+}  // namespace std
 
 #endif

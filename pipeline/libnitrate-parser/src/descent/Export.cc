@@ -33,96 +33,64 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::string_view Parser::recurse_abi_name() {
-  if (let tok = next_if(qText)) {
-    return tok->as_string();
-  } else {
-    return "";
-  }
+string Parser::recurse_abi_name() {
+  auto tok = next_if(Text);
+  return tok ? tok->as_string() : "";
 }
 
 std::optional<ExpressionList> Parser::recurse_export_attributes() {
   ExpressionList attributes;
 
-  if (!next_if(qPuncLBrk)) {
+  if (!next_if(PuncLBrk)) {
     return attributes;
   }
 
   while (true) {
-    let tok = peek();
-
-    if (!tok.is(qEofF)) {
-      if (next_if(qPuncRBrk)) {
-        return attributes;
-      }
-
-      let attribute =
-          recurse_expr({Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk)});
-
-      attributes.push_back(attribute);
-
-      next_if(qPuncComa);
-    } else {
-      diagnostic << tok << "Encountered EOF while parsing export attributes";
+    if (next_if(EofF)) [[unlikely]] {
+      log << SyntaxError << current()
+          << "Encountered EOF while parsing export attributes";
       break;
     }
+
+    if (next_if(PuncRBrk)) {
+      return attributes;
+    }
+
+    auto attribute = recurse_expr({
+        Token(Punc, PuncComa),
+        Token(Punc, PuncRBrk),
+    });
+
+    attributes.push_back(attribute);
+
+    next_if(PuncComa);
   }
 
   return std::nullopt;
 }
 
-RefNode<Stmt> Parser::recurse_export_body() {
-  if (peek().is<qPuncLCur>()) {
+FlowPtr<Stmt> Parser::recurse_export_body() {
+  if (peek().is<PuncLCur>()) {
     return recurse_block(true, false, SafetyMode::Unknown);
   } else {
     return recurse_block(false, true, SafetyMode::Unknown);
   }
 }
 
-RefNode<Stmt> Parser::recurse_pub() {
-  let abi_id = recurse_abi_name();
+FlowPtr<Stmt> Parser::recurse_export(Vis vis) {
+  auto export_abi = recurse_abi_name();
 
-  if (let attrs = recurse_export_attributes()) {
-    let export_block = recurse_export_body();
+  if (auto export_attributes = recurse_export_attributes()) {
+    auto export_body = recurse_export_body();
 
-    return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Pub,
-                            attrs.value())();
+    return make<ExportStmt>(export_body, export_abi, vis,
+                            export_attributes.value())();
   } else {
-    diagnostic << current() << "Malformed export attributes";
+    log << SyntaxError << current() << "Malformed export attributes";
+    return mock_stmt(QAST_EXPORT);
   }
-
-  return mock_stmt(QAST_EXPORT);
-}
-
-RefNode<Stmt> Parser::recurse_sec() {
-  let abi_id = recurse_abi_name();
-
-  if (let attrs = recurse_export_attributes()) {
-    let export_block = recurse_export_body();
-
-    return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Sec,
-                            attrs.value())();
-  } else {
-    diagnostic << current() << "Malformed export attributes";
-  }
-
-  return mock_stmt(QAST_EXPORT);
-}
-
-RefNode<Stmt> Parser::recurse_pro() {
-  let abi_id = recurse_abi_name();
-
-  if (let attrs = recurse_export_attributes()) {
-    let export_block = recurse_export_body();
-
-    return make<ExportStmt>(export_block, SaveString(abi_id), Vis::Pro,
-                            attrs.value())();
-  } else {
-    diagnostic << current() << "Malformed export attributes";
-  }
-
-  return mock_stmt(QAST_EXPORT);
 }

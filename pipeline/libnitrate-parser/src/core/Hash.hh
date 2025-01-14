@@ -34,14 +34,17 @@
 #ifndef __NITRATE_AST_CORE_HASH_H__
 #define __NITRATE_AST_CORE_HASH_H__
 
+#include <boost/uuid/detail/sha1.hpp>
+#include <boost/uuid/uuid.hpp>
 #include <cassert>
 #include <cstdint>
 #include <nitrate-parser/ASTWriter.hh>
 
 namespace ncc::parse {
-  class CPP_EXPORT AST_Hash64 : public AST_Writer {
-    std::stack<std::pair<bool, size_t>> m_state;
-    uint64_t m_sum;
+  class NCC_EXPORT AST_Hash64 : public AST_Writer {
+    boost::uuids::detail::sha1 m_sum;
+
+    void update(uint64_t data) { m_sum.process_bytes(&data, sizeof(data)); }
 
     void str_impl(std::string_view str);
     void uint_impl(uint64_t val);
@@ -66,13 +69,15 @@ namespace ncc::parse {
               std::bind(&AST_Hash64::end_obj_impl, this),
               std::bind(&AST_Hash64::begin_arr_impl, this,
                         std::placeholders::_1),
-              std::bind(&AST_Hash64::end_arr_impl, this)),
-          m_sum(0) {
-      m_state.push({false, 0});
-    }
+              std::bind(&AST_Hash64::end_arr_impl, this)) {}
     virtual ~AST_Hash64() = default;
 
-    uint64_t get() const { return m_sum; }
+    uint64_t get() {
+      boost::uuids::detail::sha1::digest_type digest;
+      m_sum.get_digest(digest);
+
+      return static_cast<uint64_t>(digest[0]) << 32 | digest[1];
+    }
   };
 }  // namespace ncc::parse
 

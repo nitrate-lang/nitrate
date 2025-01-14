@@ -33,7 +33,7 @@
 
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-seq/Preprocess.hh>
+#include <nitrate-seq/Sequencer.hh>
 #include <qcall/List.hh>
 
 extern "C" {
@@ -50,7 +50,7 @@ int qcall::sys_get(lua_State* L) {
     return luaL_error(L, "expected 1 argument, got %d", nargs);
   }
 
-  qprep_impl_t* obj = get_engine();
+  Sequencer* obj = get_engine();
 
   if (!lua_isstring(L, 1)) {
     return luaL_error(L, "expected string, got %s",

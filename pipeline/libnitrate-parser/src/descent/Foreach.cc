@@ -33,76 +33,73 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::optional<std::pair<std::string_view, std::string_view>>
-Parser::recurse_foreach_names() {
-  if (let ident1 = next_if(qName)) {
-    let ident1_value = ident1->as_string();
-
-    if (next_if(qPuncComa)) {
-      if (let ident2 = next_if(qName)) {
-        let ident2_value = ident2->as_string();
-        return std::make_pair(ident1_value, ident2_value);
+std::optional<std::pair<string, string>> Parser::recurse_foreach_names() {
+  if (auto name_a = next_if(Name)) [[likely]] {
+    if (next_if(PuncComa)) {
+      if (auto name_b = next_if(Name)) [[likely]] {
+        return std::make_pair(name_a->as_string(), name_b->as_string());
       } else {
-        diagnostic << current() << "Expected identifier in foreach statement";
+        log << SyntaxError << current()
+            << "Expected identifier in foreach statement";
       }
     } else {
-      return std::make_pair("", ident1_value);
+      return std::make_pair("", name_a->as_string());
     }
   } else {
-    diagnostic << current() << "Expected identifier in foreach statement";
+    log << SyntaxError << current()
+        << "Expected identifier in foreach statement";
   }
 
   return std::nullopt;
 }
 
-RefNode<Expr> Parser::recurse_foreach_expr(bool has_paren) {
+FlowPtr<Expr> Parser::recurse_foreach_expr(bool has_paren) {
   if (has_paren) {
-    return recurse_expr({Token(qPunc, qPuncRPar)});
+    return recurse_expr({
+        Token(Punc, PuncRPar),
+    });
   } else {
-    return recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
+    return recurse_expr({
+        Token(Punc, PuncLCur),
+        Token(Oper, OpArrow),
+    });
   }
 }
 
-RefNode<Stmt> Parser::recurse_foreach_body() {
-  if (next_if(qOpArrow)) {
+FlowPtr<Stmt> Parser::recurse_foreach_body() {
+  if (next_if(OpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
     return recurse_block(true, false, SafetyMode::Unknown);
   }
 }
 
-RefNode<Stmt> Parser::recurse_foreach() {
-  /**
-   * Syntax examples:
-   *   `foreach (i, v in arr) { }`, `foreach (v in arr) { }`
-   *   `foreach (i, v in arr) => v.put(i);`, `foreach (v in arr) => v.put();`
-   */
+FlowPtr<Stmt> Parser::recurse_foreach() {
+  bool foreach_has_paren = next_if(PuncLPar).has_value();
 
-  bool has_paren = next_if(qPuncLPar).has_value();
+  if (auto iter_names = recurse_foreach_names()) {
+    auto [index_name, value_name] = iter_names.value();
 
-  if (let ident_pair_opt = recurse_foreach_names()) {
-    let[index_name, value_name] = ident_pair_opt.value();
-
-    if (next_if(qOpIn)) {
-      let iter_expr = recurse_foreach_expr(has_paren);
-      if (has_paren) {
-        if (!next_if(qPuncRPar)) {
-          diagnostic << current() << "Expected ')' in foreach statement";
-        }
+    if (next_if(OpIn)) [[likely]] {
+      auto iter_expr = recurse_foreach_expr(foreach_has_paren);
+      if (foreach_has_paren && !next_if(PuncRPar)) {
+        log << SyntaxError << current() << "Expected ')' in foreach statement";
       }
 
-      let body = recurse_foreach_body();
+      auto body = recurse_foreach_body();
 
-      return make<ForeachStmt>(SaveString(index_name), SaveString(value_name),
-                               iter_expr, body)();
+      return make<ForeachStmt>(index_name, value_name, iter_expr, body)();
     } else {
-      diagnostic << current() << "Expected 'in' keyword in foreach statement";
+      log << SyntaxError << current()
+          << "Expected 'in' keyword in foreach statement";
     }
   } else {
-    diagnostic << current() << "Expected identifier pair in foreach statement";
+    log << SyntaxError << current()
+        << "Expected identifier pair in foreach statement";
   }
 
   return mock_stmt(QAST_FOREACH);

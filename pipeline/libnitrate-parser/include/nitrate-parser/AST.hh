@@ -48,27 +48,15 @@ namespace ncc::parse {
    */
   template <typename T, typename... Args>
   constexpr static inline auto make(Args &&...args) {
-    return [&](
-#if NITRATE_AST_TRACKING
-               std::source_location origin = std::source_location::current()
-#endif
-           ) {
-      RefNode<T> new_obj =
-          new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+    return [&](std::source_location origin = std::source_location::current()) {
+      FlowPtr<T> new_obj = MakeFlowPtr<T>(new (Arena<T>().allocate(1))
+                                              T(std::forward<Args>(args)...));
 
-      /// TODO: Implement node cache
-
-#if NITRATE_AST_TRACKING
-      new_obj.set_origin(origin);
-#endif
+      new_obj.set_tracking(origin);
 
       return new_obj;
     };
   }
-
-  RefNode<Stmt> mock_stmt(std::optional<npar_ty_t> expected = std::nullopt);
-  RefNode<Expr> mock_expr(std::optional<npar_ty_t> expected = std::nullopt);
-  RefNode<Type> mock_type();
 }  // namespace ncc::parse
 
 namespace ncc::parse {
@@ -86,18 +74,19 @@ namespace ncc::parse {
     SkipChildren,
   };
 
-  typedef std::function<IterOp(RefNode<Base> p, RefNode<Base> c)> IterCallback;
+  typedef std::function<IterOp(NullableFlowPtr<Base> p, FlowPtr<Base> c)>
+      IterCallback;
 
   namespace detail {
-    void dfs_pre_impl(RefNode<Base> base, IterCallback cb);
-    void dfs_post_impl(RefNode<Base> base, IterCallback cb);
-    void bfs_pre_impl(RefNode<Base> base, IterCallback cb);
-    void bfs_post_impl(RefNode<Base> base, IterCallback cb);
-    void iter_children(RefNode<Base> base, IterCallback cb);
+    void dfs_pre_impl(FlowPtr<Base> base, IterCallback cb);
+    void dfs_post_impl(FlowPtr<Base> base, IterCallback cb);
+    void bfs_pre_impl(FlowPtr<Base> base, IterCallback cb);
+    void bfs_post_impl(FlowPtr<Base> base, IterCallback cb);
+    void iter_children(FlowPtr<Base> base, IterCallback cb);
   }  // namespace detail
 
   template <IterMode mode, typename T>
-  void iterate(RefNode<T> root, IterCallback cb) {
+  void iterate(FlowPtr<T> root, IterCallback cb) {
     if constexpr (mode == dfs_pre) {
       return detail::dfs_pre_impl(root, cb);
     } else if constexpr (mode == dfs_post) {
@@ -114,23 +103,23 @@ namespace ncc::parse {
   }
 
   template <auto mode = dfs_pre>
-  void for_each(RefNode<Base> v,
-                std::function<void(npar_ty_t, RefNode<Base>)> f) {
-    iterate<mode>(v, [&](auto, RefNode<Base> c) -> IterOp {
+  void for_each(FlowPtr<Base> v,
+                std::function<void(npar_ty_t, FlowPtr<Base>)> f) {
+    iterate<mode>(v, [&](auto, FlowPtr<Base> c) -> IterOp {
       f(c->getKind(), c);
 
-      return IterOp::Abort;
+      return IterOp::Proceed;
     });
   }
 
   template <typename T, auto mode = dfs_pre>
-  void for_each(RefNode<Base> v, std::function<void(RefNode<T>)> f) {
-    iterate<mode>(v, [&](auto, RefNode<Base> c) -> IterOp {
+  void for_each(FlowPtr<Base> v, std::function<void(FlowPtr<T>)> f) {
+    iterate<mode>(v, [&](auto, FlowPtr<Base> c) -> IterOp {
       if (c->getKind() != Base::getTypeCode<T>()) {
         return IterOp::Proceed;
       }
 
-      f(c->as<T>());
+      f(c.as<T>());
 
       return IterOp::Proceed;
     });

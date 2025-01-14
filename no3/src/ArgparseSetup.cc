@@ -34,12 +34,12 @@
 #include <argparse.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
-#include <nitrate-ir/Lib.h>
 #include <nitrate-seq/Lib.h>
 
 #include <cstdint>
 #include <memory>
 #include <nitrate-core/Init.hh>
+#include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
 #include <string>
@@ -683,11 +683,11 @@ namespace no3::argparse_setup {
     std::stringstream ss;
 
     std::array<std::string_view, 6> NO3_DEPS = {
-        ncc::core::CoreLibrary.GetVersion(),
+        ncc::CoreLibrary.GetVersion(),
         ncc::lex::LexerLibrary.GetVersion(),
         qprep_lib_version(),
         ncc::parse::ParseLibrary.GetVersion(),
-        nr_lib_version(),
+        ncc::ir::IRLibrary.GetVersion(),
         qcode_lib_version()};
 
     ss << "{\"ver\":\"" << __TARGET_VERSION

@@ -37,7 +37,6 @@
 uint64_t csrand64() {
   uint64_t rand;
 
-  /// TODO: Verify usage
   asm volatile("rdrand %0" : "=r"(rand));
 
   return rand;

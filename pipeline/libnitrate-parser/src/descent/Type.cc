@@ -33,76 +33,81 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::optional<RefNode<Expr>> Parser::recurse_type_range_start() {
-  if (next_if(qPuncColn)) {
+NullableFlowPtr<Expr> Parser::recurse_type_range_start() {
+  if (next_if(PuncColn)) {
     return std::nullopt;
   }
 
-  let min_value = recurse_expr({Token(qPunc, qPuncColn)});
+  auto min_value = recurse_expr({
+      Token(Punc, PuncColn),
+  });
 
-  if (!next_if(qPuncColn)) {
-    diagnostic << current() << "Expected ':' after range start";
+  if (!next_if(PuncColn)) {
+    log << SyntaxError << current() << "Expected ':' after range start";
   }
 
   return min_value;
 }
 
-std::optional<RefNode<Expr>> Parser::recurse_type_range_end() {
-  if (next_if(qPuncRBrk)) {
+NullableFlowPtr<Expr> Parser::recurse_type_range_end() {
+  if (next_if(PuncRBrk)) {
     return std::nullopt;
   }
 
-  let max_val = recurse_expr({Token(qPunc, qPuncRBrk)});
+  auto max_val = recurse_expr({
+      Token(Punc, PuncRBrk),
+  });
 
-  if (!next_if(qPuncRBrk)) {
-    diagnostic << current() << "Expected ']' after range";
+  if (!next_if(PuncRBrk)) {
+    log << SyntaxError << current() << "Expected ']' after range";
   }
 
   return max_val;
 }
 
 std::optional<CallArgs> Parser::recurse_type_template_arguments() {
-  if (!next_if(qOpLT)) {
+  if (!next_if(OpLT)) {
     return std::nullopt;
   }
 
-  auto args = recurse_call_arguments(Token(qOper, qOpGT));
+  auto args = recurse_call_arguments(Token(Oper, OpGT));
 
-  if (!next_if(qOpGT)) {
-    diagnostic << current() << "Expected '>' after template arguments";
+  if (!next_if(OpGT)) {
+    log << SyntaxError << current() << "Expected '>' after template arguments";
   }
 
   return args;
 }
 
-RefNode<Type> Parser::recurse_type_suffix(RefNode<Type> base) {
-  static let bit_width_terminaters = {
-      Token(qPunc, qPuncRPar), Token(qPunc, qPuncRBrk), Token(qPunc, qPuncLCur),
-      Token(qPunc, qPuncRCur), Token(qPunc, qPuncComa), Token(qPunc, qPuncColn),
-      Token(qPunc, qPuncSemi), Token(qOper, qOpSet),    Token(qOper, qOpMinus),
-      Token(qOper, qOpGT)};
+FlowPtr<parse::Type> Parser::recurse_type_suffix(FlowPtr<Type> base) {
+  static auto bit_width_terminaters = {
+      Token(Punc, PuncRPar), Token(Punc, PuncRBrk), Token(Punc, PuncLCur),
+      Token(Punc, PuncRCur), Token(Punc, PuncComa), Token(Punc, PuncColn),
+      Token(Punc, PuncSemi), Token(Oper, OpSet),    Token(Oper, OpMinus),
+      Token(Oper, OpGT)};
 
-  let template_arguments = recurse_type_template_arguments();
+  auto template_arguments = recurse_type_template_arguments();
 
   if (template_arguments.has_value()) {
-    let templ = make<TemplType>(base, template_arguments.value())();
+    auto templ = make<TemplType>(base, template_arguments.value())();
     templ->set_offset(base->begin());
 
     base = templ;
   }
 
-  std::pair<std::optional<RefNode<Expr>>, std::optional<RefNode<Expr>>> range;
-  std::optional<RefNode<Expr>> width;
+  std::pair<NullableFlowPtr<Expr>, NullableFlowPtr<Expr>> range;
+  NullableFlowPtr<Expr> width;
 
-  if (next_if(qPuncColn)) {
-    if (next_if(qPuncLBrk)) {
+  if (next_if(PuncColn)) {
+    if (next_if(PuncLBrk)) {
       range.first = recurse_type_range_start();
       range.second = recurse_type_range_end();
 
-      if (next_if(qPuncColn)) {
+      if (next_if(PuncColn)) {
         width = recurse_expr(bit_width_terminaters);
       }
     } else {
@@ -110,14 +115,14 @@ RefNode<Type> Parser::recurse_type_suffix(RefNode<Type> base) {
     }
   }
 
-  base->set_range(range.first.value_or(nullptr),
-                  range.second.value_or(nullptr));
-  base->set_width(width.value_or(nullptr));
+  base->set_range_begin(range.first);
+  base->set_range_end(range.second);
+  base->set_width(width);
 
-  if (next_if(qOpTernary)) {
-    let args = CallArgs{{SaveString("0"), make<TypeExpr>(base)()}};
-    let opt_type = make<TemplType>(
-        make<NamedTy>(SaveString("__builtin_result"))(), args)();
+  if (next_if(OpTernary)) {
+    auto args = CallArgs{{"0", make<TypeExpr>(base)()}};
+    auto opt_type =
+        make<TemplType>(make<NamedTy>("__builtin_result")(), args)();
 
     opt_type->set_offset(current().get_start());
 
@@ -127,88 +132,93 @@ RefNode<Type> Parser::recurse_type_suffix(RefNode<Type> base) {
   return base;
 }
 
-RefNode<Type> Parser::recurse_function_type() {
-  let fn = recurse_function(true);
+FlowPtr<parse::Type> Parser::recurse_function_type() {
+  auto fn = recurse_function(true);
 
-  if (!fn->is<Function>() || !fn->as<Function>()->is_decl()) {
-    diagnostic << current()
-               << "Expected a function declaration but got something else";
+  if (!fn->is<Function>() || !fn->as<Function>()->is_declaration()) {
+    log << SyntaxError << current()
+        << "Expected a function declaration but got something else";
     return mock_type();
   }
 
-  RefNode<Function> fn_def = fn->as<Function>();
+  FlowPtr<Function> fn_def = fn.as<Function>();
 
-  let func_ty = make<FuncTy>(fn_def->get_return(), fn_def->get_params(),
-                             fn_def->get_purity(), fn_def->get_attributes())();
+  auto func_ty = make<FuncTy>(fn_def->get_return(), fn_def->get_params(),
+                              fn_def->is_variadic(), fn_def->get_purity(),
+                              fn_def->get_attributes())();
 
   func_ty->set_offset(fn->begin());
 
   return func_ty;
 }
 
-RefNode<Type> Parser::recurse_opaque_type() {
-  if (!next_if(qPuncLPar)) {
-    diagnostic << current() << "Expected '(' after 'opaque'";
+FlowPtr<parse::Type> Parser::recurse_opaque_type() {
+  if (!next_if(PuncLPar)) {
+    log << SyntaxError << current() << "Expected '(' after 'opaque'";
     return mock_type();
   }
 
-  if (let name = next_if(qName)) {
-    if (next_if(qPuncRPar)) {
-      let opaque = make<OpaqueTy>(SaveString(name->as_string()))();
+  if (auto name = next_if(Name)) {
+    if (next_if(PuncRPar)) {
+      auto opaque = make<OpaqueTy>(name->as_string())();
       opaque->set_offset(current().get_start());
 
       return opaque;
     } else {
-      diagnostic << current() << "Expected ')' after 'opaque(name'";
+      log << SyntaxError << current() << "Expected ')' after 'opaque(name'";
     }
   } else {
-    diagnostic << current() << "Expected a name after 'opaque('";
+    log << SyntaxError << current() << "Expected a name after 'opaque('";
   }
 
   return mock_type();
 }
 
-RefNode<Type> Parser::recurse_type_by_keyword(Keyword key) {
+FlowPtr<parse::Type> Parser::recurse_type_by_keyword(Keyword key) {
   switch (key) {
-    case qKFn: {
+    case Fn: {
       return recurse_function_type();
     }
 
-    case qKOpaque: {
+    case Opaque: {
       return recurse_opaque_type();
     }
 
+    case Keyword::Type: {
+      return recurse_type();
+    }
+
     default: {
-      diagnostic << current() << "Keyword is not valid in this context";
+      log << SyntaxError << current() << "Keyword is not valid in this context";
       return mock_type();
     }
   }
 }
 
-RefNode<Type> Parser::recurse_type_by_operator(Operator op) {
+FlowPtr<parse::Type> Parser::recurse_type_by_operator(Operator op) {
   switch (op) {
-    case qOpTimes: {
-      let start = current().get_start();
-      let pointee = recurse_type();
-      let ptr_ty = make<PtrTy>(pointee)();
+    case OpTimes: {
+      auto start = current().get_start();
+      auto pointee = recurse_type();
+      auto ptr_ty = make<PtrTy>(pointee)();
 
       ptr_ty->set_offset(start);
 
       return ptr_ty;
     }
 
-    case qOpBitAnd: {
-      let start = current().get_start();
-      let refee = recurse_type();
-      let ref_ty = make<RefTy>(refee)();
+    case OpBitAnd: {
+      auto start = current().get_start();
+      auto refee = recurse_type();
+      auto ref_ty = make<RefTy>(refee)();
 
       ref_ty->set_offset(start);
 
       return ref_ty;
     }
 
-    case qOpTernary: {
-      let infer = make<InferTy>()();
+    case OpTernary: {
+      auto infer = make<InferTy>()();
 
       infer->set_offset(current().get_start());
 
@@ -216,114 +226,114 @@ RefNode<Type> Parser::recurse_type_by_operator(Operator op) {
     }
 
     default: {
-      diagnostic << current() << "Operator is not valid in this context";
+      log << SyntaxError << current()
+          << "Operator is not valid in this context";
       return mock_type();
     }
   }
 }
 
-RefNode<Type> Parser::recurse_array_or_vector() {
-  let start = current().get_start();
+FlowPtr<parse::Type> Parser::recurse_array_or_vector() {
+  auto start = current().get_start();
 
-  let first = recurse_type();
+  auto first = recurse_type();
 
-  if (next_if(qPuncRBrk)) {
-    let args = CallArgs{{SaveString("0"), make<TypeExpr>(first)()}};
-    let vector =
-        make<TemplType>(make<NamedTy>(SaveString("__builtin_vec"))(), args)();
+  if (next_if(PuncRBrk)) {
+    auto args = CallArgs{{"0", make<TypeExpr>(first)()}};
+    auto vector = make<TemplType>(make<NamedTy>("__builtin_vec")(), args)();
 
     vector->set_offset(start);
 
     return vector;
   }
 
-  if (!next_if(qPuncSemi)) {
-    diagnostic << current()
-               << "Expected ';' separator in array type before size";
+  if (!next_if(PuncSemi)) {
+    log << SyntaxError << current()
+        << "Expected ';' separator in array type before size";
   }
 
-  let size = recurse_expr({Token(qPunc, qPuncRBrk)});
+  auto size = recurse_expr({
+      Token(Punc, PuncRBrk),
+  });
 
-  if (!next_if(qPuncRBrk)) {
-    diagnostic << current() << "Expected ']' after array size";
+  if (!next_if(PuncRBrk)) {
+    log << SyntaxError << current() << "Expected ']' after array size";
   }
 
-  let array = make<ArrayTy>(first, size)();
-
+  auto array = make<ArrayTy>(first, size)();
   array->set_offset(start);
 
   return array;
 }
 
-RefNode<Type> Parser::recurse_set_type() {
-  let start = current().get_start();
+FlowPtr<parse::Type> Parser::recurse_set_type() {
+  auto start = current().get_start();
 
-  let set_type = recurse_type();
+  auto set_type = recurse_type();
 
-  if (!next_if(qPuncRCur)) {
-    diagnostic << current() << "Expected '}' after set type";
+  if (!next_if(PuncRCur)) {
+    log << SyntaxError << current() << "Expected '}' after set type";
   }
 
-  let args = CallArgs{{SaveString("0"), make<TypeExpr>(set_type)()}};
-  let set =
-      make<TemplType>(make<NamedTy>(SaveString("__builtin_uset"))(), args)();
+  auto args = CallArgs{{"0", make<TypeExpr>(set_type)()}};
+  auto set = make<TemplType>(make<NamedTy>("__builtin_uset")(), args)();
 
   set->set_offset(start);
 
   return set;
 }
 
-RefNode<Type> Parser::recurse_tuple_type() {
+FlowPtr<parse::Type> Parser::recurse_tuple_type() {
   TupleTyItems items;
 
-  let start = current().get_start();
+  auto start = current().get_start();
 
   while (true) {
-    if (next_if(qEofF)) {
-      diagnostic << current() << "Unexpected EOF in tuple type";
+    if (next_if(EofF)) {
+      log << SyntaxError << current() << "Unexpected EOF in tuple type";
       return mock_type();
     }
 
-    if (next_if(qPuncRPar)) {
+    if (next_if(PuncRPar)) {
       break;
     }
 
-    let type = recurse_type();
+    auto type = recurse_type();
     items.push_back(type);
 
-    next_if(qPuncComa);
+    next_if(PuncComa);
   }
 
-  let tuple = make<TupleTy>(std::move(items))();
-
+  auto tuple = make<TupleTy>(items)();
   tuple->set_offset(start);
 
   return tuple;
 }
 
-RefNode<Type> Parser::recurse_type_by_punctuation(Punctor punc) {
+FlowPtr<parse::Type> Parser::recurse_type_by_punctuation(Punctor punc) {
   switch (punc) {
-    case qPuncLBrk: {
+    case PuncLBrk: {
       return recurse_array_or_vector();
     }
 
-    case qPuncLCur: {
+    case PuncLCur: {
       return recurse_set_type();
     }
 
-    case qPuncLPar: {
+    case PuncLPar: {
       return recurse_tuple_type();
     }
 
     default: {
-      diagnostic << current() << "Punctuation is not valid in this context";
+      log << SyntaxError << current()
+          << "Punctuation is not valid in this context";
       return mock_type();
     }
   }
 }
 
-RefNode<Type> Parser::recurse_type_by_name(std::string_view name) {
-  std::optional<RefNode<Type>> type;
+FlowPtr<parse::Type> Parser::recurse_type_by_name(string name) {
+  NullableFlowPtr<Type> type;
 
   if (name == "u1") {
     type = make<U1>()();
@@ -358,11 +368,11 @@ RefNode<Type> Parser::recurse_type_by_name(std::string_view name) {
   } else if (name == "void") {
     type = make<VoidTy>()();
   } else {
-    type = make<NamedTy>(SaveString(name))();
+    type = make<NamedTy>(name)();
   }
 
   if (!type.has_value()) {
-    diagnostic << current() << "Unknown type name: " << name;
+    log << SyntaxError << current() << "Unknown type name: " << name;
     return mock_type();
   }
 
@@ -371,38 +381,52 @@ RefNode<Type> Parser::recurse_type_by_name(std::string_view name) {
   return type.value();
 }
 
-RefNode<Type> Parser::recurse_type() {
-  switch (let tok = next(); tok.get_type()) {
-    case qKeyW: {
-      let type = recurse_type_by_keyword(tok.as_key());
+FlowPtr<parse::Type> Parser::recurse_type() {
+  auto comments = rd.CommentBuffer();
+  rd.ClearCommentBuffer();
 
-      return recurse_type_suffix(type);
+  std::optional<FlowPtr<Type>> R;
+
+  switch (auto tok = next(); tok.get_type()) {
+    case KeyW: {
+      auto type = recurse_type_by_keyword(tok.as_key());
+
+      R = recurse_type_suffix(type);
+      break;
     }
 
-    case qOper: {
-      let type = recurse_type_by_operator(tok.as_op());
+    case Oper: {
+      auto type = recurse_type_by_operator(tok.as_op());
 
-      return recurse_type_suffix(type);
+      R = recurse_type_suffix(type);
+      break;
     }
 
-    case qPunc: {
-      let type = recurse_type_by_punctuation(tok.as_punc());
+    case Punc: {
+      auto type = recurse_type_by_punctuation(tok.as_punc());
 
-      return recurse_type_suffix(type);
+      R = recurse_type_suffix(type);
+      break;
     }
 
-    case qName: {
-      let type = recurse_type_by_name(tok.as_string());
+    case Name: {
+      auto type = recurse_type_by_name(tok.as_string());
 
-      return recurse_type_suffix(type);
+      R = recurse_type_suffix(type);
+      break;
     }
 
     default: {
-      diagnostic << current() << "Expected a type";
+      log << SyntaxError << current() << "Expected a type";
 
-      let type = mock_type();
+      auto type = mock_type();
 
-      return recurse_type_suffix(type);
+      R = recurse_type_suffix(type);
+      break;
     }
   }
+
+  R = BIND_COMMENTS(R.value(), comments);
+
+  return R.value();
 }

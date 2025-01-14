@@ -1,26 +1,19 @@
 cmake_minimum_required(VERSION 3.15)
 project(nitrate-compiler-suite CXX)
 
-option(MEMORY_OVER_SPEED "Optimize for memory over speed" OFF)
-option(COVERAGE "Enable coverage" OFF)
-option(STRIP_OUTPUT "Strip output" OFF)
-option(BUILD_TESTING "Build tests" ON)
+option(MEMORY_OVER_SPEED "Optimize for low memory usage over speed" OFF)
+option(COVERAGE "Enable code coverage" OFF)
+option(STRIP_OUTPUT "Strip symbols from output" OFF)
+option(BUILD_TESTING "Build test programs" ON)
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 if(BUILD_TESTING)
   enable_testing()
 endif()
 
-# Weird compiler warning with macro arguments. Disable it.
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=gnu-zero-variadic-macro-arguments \
-                                          -Wno-gnu-zero-variadic-macro-arguments       \
-                                          -Wno-error=unused-command-line-argument      \
-                                          -Wno-unused-command-line-argument"  )
-else()
-  message(FATAL_ERROR "Unsupported compiler pair: '${CMAKE_CXX_COMPILER}' and '${CMAKE_C_COMPILER}'")
+if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  message(FATAL_ERROR "Unsupported compiler: '${CMAKE_CXX_COMPILER_ID}'")
 endif()
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 
 # Modern security hardening flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstack-protector -fPIC")
@@ -28,11 +21,13 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,relro,-z,now")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -pedantic -Werror \
                     -Wno-error=unused-parameter \
-                    -Wno-error=missing-field-initializers   \
-                    -Wno-missing-field-initializers \
                     -D__NITRATE_IMPL__")
 
-# Enable full optimization in general
+# https://stackoverflow.com/questions/21266380/is-the-gnu-zero-variadic-macro-arguments-safe-to-ignore
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=gnu-zero-variadic-macro-arguments \
+                                        -Wno-gnu-zero-variadic-macro-arguments")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
 if(STRIP_OUTPUT STREQUAL "ON")
@@ -47,20 +42,12 @@ else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMEMORY_OVER_SPEED=0")
 endif()
 
-if(BUILD_SHARED_LIBS STREQUAL "ON")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNITRATE_SHARED=1")
-else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNITRATE_SHARED=0")
-endif()
-
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  # Fix issue with ASAN and private aliases
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mllvm -asan-use-private-alias=1")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fsanitize=undefined")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNITRATE_FLOWPTR_TRACE=1")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNDEBUG -fvisibility=hidden -fvisibility-inlines-hidden")
-  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNITRATE_FLOWPTR_TRACE=0")
 else()
   message(FATAL_ERROR "Invalid build type: ${CMAKE_BUILD_TYPE}")
 endif()
@@ -74,6 +61,19 @@ add_subdirectory(pipeline)
 add_subdirectory(no3)
 add_subdirectory(examples)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
+  foreach(lib nitrate-core
+    nitrate-lexer
+    nitrate-seq
+    nitrate-parser
+    nitrate-ir
+    nitrate-emit
+    nitrate)
+    target_compile_options(${lib} PRIVATE -flto)
+    target_link_options(${lib} PRIVATE -flto)
+  endforeach()
+endif()
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   foreach(lib nitrate-core
     nitrate-lexer
@@ -83,15 +83,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     nitrate-emit
     nitrate)
     target_compile_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
-    if(TARGET ${lib} AND TARGET ${lib}::shared)
-      target_link_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
-    endif()
-  endforeach()
-endif()
-
-if(BUILD_TESTING)
-  foreach(lib)
-    target_compile_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
     target_link_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   endforeach()
 endif()
+

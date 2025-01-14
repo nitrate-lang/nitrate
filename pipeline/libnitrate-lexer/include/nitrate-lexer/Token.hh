@@ -37,138 +37,137 @@
 #include <cstdint>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/String.hh>
-#include <string_view>
 #include <type_traits>
 
 namespace ncc::lex {
   typedef enum TokenType {
-    qEofF = 1, /* End of file */
-    qKeyW,     /* Keyword */
-    qOper,     /* Operator */
-    qPunc,     /* Punctuation */
-    qName,     /* Identifier */
-    qIntL,     /* Integer literal */
-    qNumL,     /* Floating-point literal */
-    qText,     /* String literal */
-    qChar,     /* Character literal */
-    qMacB,     /* Macro block */
-    qMacr,     /* Macro call */
-    qNote,     /* Comment */
+    EofF = 1, /* End of file */
+    KeyW,     /* Keyword */
+    Oper,     /* Operator */
+    Punc,     /* Punctuation */
+    Name,     /* Identifier */
+    IntL,     /* Integer literal */
+    NumL,     /* Floating-point literal */
+    Text,     /* String literal */
+    Char,     /* Character literal */
+    MacB,     /* Macro block */
+    Macr,     /* Macro call */
+    Note,     /* Comment */
   } __attribute__((packed)) TokenType;
 
   typedef enum Punctor {
-    qPuncLPar, /* Left parenthesis */
-    qPuncRPar, /* Right parenthesis */
-    qPuncLBrk, /* Left bracket */
-    qPuncRBrk, /* Right bracket */
-    qPuncLCur, /* Left curly brace */
-    qPuncRCur, /* Right curly brace */
-    qPuncComa, /* Comma */
-    qPuncColn, /* Colon */
-    qPuncSemi, /* Semicolon */
+    PuncLPar, /* Left parenthesis */
+    PuncRPar, /* Right parenthesis */
+    PuncLBrk, /* Left bracket */
+    PuncRBrk, /* Right bracket */
+    PuncLCur, /* Left curly brace */
+    PuncRCur, /* Right curly brace */
+    PuncComa, /* Comma */
+    PuncColn, /* Colon */
+    PuncSemi, /* Semicolon */
   } __attribute__((packed)) Punctor;
 
   typedef enum Operator {
-    qOpPlus,        /* '+':    Addition operator */
-    qOpMinus,       /* '-':    Subtraction operator */
-    qOpTimes,       /* '*':    Multiplication operator */
-    qOpSlash,       /* '/':    Division operator */
-    qOpPercent,     /* '%':    Modulus operator */
-    qOpBitAnd,      /* '&':    Bitwise AND operator */
-    qOpBitOr,       /* '|':    Bitwise OR operator */
-    qOpBitXor,      /* '^':    Bitwise XOR operator */
-    qOpBitNot,      /* '~':    Bitwise NOT operator */
-    qOpLShift,      /* '<<':   Left shift operator */
-    qOpRShift,      /* '>>':   Right shift operator */
-    qOpROTL,        /* '<<<':  Rotate left operator */
-    qOpROTR,        /* '>>>':  Rotate right operator */
-    qOpLogicAnd,    /* '&&':   Logical AND operator */
-    qOpLogicOr,     /* '||':   Logical OR operator */
-    qOpLogicXor,    /* '^^':   Logical XOR operator */
-    qOpLogicNot,    /* '!':    Logical NOT operator */
-    qOpLT,          /* '<':    Less than operator */
-    qOpGT,          /* '>':    Greater than operator */
-    qOpLE,          /* '<=':   Less than or equal to operator */
-    qOpGE,          /* '>=':   Greater than or equal to operator */
-    qOpEq,          /* '==':   Equal to operator */
-    qOpNE,          /* '!=':   Not equal to operator */
-    qOpSet,         /* '=':    Assignment operator */
-    qOpPlusSet,     /* '+=':   Addition assignment operator */
-    qOpMinusSet,    /* '-=':   Subtraction assignment operator */
-    qOpTimesSet,    /* '*=':   Multiplication assignment operator */
-    qOpSlashSet,    /* '/=':   Division assignment operator */
-    qOpPercentSet,  /* '%=':   Modulus assignment operator */
-    qOpBitAndSet,   /* '&=':   Bitwise AND assignment operator */
-    qOpBitOrSet,    /* '|=':   Bitwise OR assignment operator */
-    qOpBitXorSet,   /* '^=':   Bitwise XOR assignment operator */
-    qOpLogicAndSet, /* '&&=':  Logical AND assignment operator */
-    qOpLogicOrSet,  /* '||=':  Logical OR assignment operator */
-    qOpLogicXorSet, /* '^^=':  Logical XOR assignment operator */
-    qOpLShiftSet,   /* '<<=':  Left shift assignment operator */
-    qOpRShiftSet,   /* '>>=':  Right shift assignment operator */
-    qOpROTLSet,     /* '<<<=': Rotate left assignment operator */
-    qOpROTRSet,     /* '>>>=': Rotate right assignment operator */
-    qOpInc,         /* '++':   Increment operator */
-    qOpDec,         /* '--':   Decrement operator */
-    qOpAs,          /* 'as':   Type cast operator */
-    qOpBitcastAs,   /* 'bitcast_as': Bitcast operator */
-    qOpIn,          /* 'in':         Generic membership operator */
-    qOpOut,         /* 'out':        Output operator */
-    qOpSizeof,      /* 'sizeof':     Size of operator */
-    qOpBitsizeof,   /* 'bitsizeof':  Bit size of operator */
-    qOpAlignof,     /* 'alignof':    Alignment of operator */
-    qOpTypeof,      /* 'typeof':     Type of operator */
-    qOpDot,         /* '.':          Dot operator */
-    qOpRange,       /* '..':         Range operator */
-    qOpEllipsis,    /* '...':        Ellipsis operator */
-    qOpArrow,       /* '=>':         Arrow operator */
-    qOpTernary,     /* '?':          Ternary operator */
+    OpPlus,        /* '+':    Addition operator */
+    OpMinus,       /* '-':    Subtraction operator */
+    OpTimes,       /* '*':    Multiplication operator */
+    OpSlash,       /* '/':    Division operator */
+    OpPercent,     /* '%':    Modulus operator */
+    OpBitAnd,      /* '&':    Bitwise AND operator */
+    OpBitOr,       /* '|':    Bitwise OR operator */
+    OpBitXor,      /* '^':    Bitwise XOR operator */
+    OpBitNot,      /* '~':    Bitwise NOT operator */
+    OpLShift,      /* '<<':   Left shift operator */
+    OpRShift,      /* '>>':   Right shift operator */
+    OpROTL,        /* '<<<':  Rotate left operator */
+    OpROTR,        /* '>>>':  Rotate right operator */
+    OpLogicAnd,    /* '&&':   Logical AND operator */
+    OpLogicOr,     /* '||':   Logical OR operator */
+    OpLogicXor,    /* '^^':   Logical XOR operator */
+    OpLogicNot,    /* '!':    Logical NOT operator */
+    OpLT,          /* '<':    Less than operator */
+    OpGT,          /* '>':    Greater than operator */
+    OpLE,          /* '<=':   Less than or equal to operator */
+    OpGE,          /* '>=':   Greater than or equal to operator */
+    OpEq,          /* '==':   Equal to operator */
+    OpNE,          /* '!=':   Not equal to operator */
+    OpSet,         /* '=':    Assignment operator */
+    OpPlusSet,     /* '+=':   Addition assignment operator */
+    OpMinusSet,    /* '-=':   Subtraction assignment operator */
+    OpTimesSet,    /* '*=':   Multiplication assignment operator */
+    OpSlashSet,    /* '/=':   Division assignment operator */
+    OpPercentSet,  /* '%=':   Modulus assignment operator */
+    OpBitAndSet,   /* '&=':   Bitwise AND assignment operator */
+    OpBitOrSet,    /* '|=':   Bitwise OR assignment operator */
+    OpBitXorSet,   /* '^=':   Bitwise XOR assignment operator */
+    OpLogicAndSet, /* '&&=':  Logical AND assignment operator */
+    OpLogicOrSet,  /* '||=':  Logical OR assignment operator */
+    OpLogicXorSet, /* '^^=':  Logical XOR assignment operator */
+    OpLShiftSet,   /* '<<=':  Left shift assignment operator */
+    OpRShiftSet,   /* '>>=':  Right shift assignment operator */
+    OpROTLSet,     /* '<<<=': Rotate left assignment operator */
+    OpROTRSet,     /* '>>>=': Rotate right assignment operator */
+    OpInc,         /* '++':   Increment operator */
+    OpDec,         /* '--':   Decrement operator */
+    OpAs,          /* 'as':   Type cast operator */
+    OpBitcastAs,   /* 'bitcast_as': Bitcast operator */
+    OpIn,          /* 'in':         Generic membership operator */
+    OpOut,         /* 'out':        Output operator */
+    OpSizeof,      /* 'sizeof':     Size of operator */
+    OpBitsizeof,   /* 'bitsizeof':  Bit size of operator */
+    OpAlignof,     /* 'alignof':    Alignment of operator */
+    OpTypeof,      /* 'typeof':     Type of operator */
+    OpDot,         /* '.':          Dot operator */
+    OpRange,       /* '..':         Range operator */
+    OpEllipsis,    /* '...':        Ellipsis operator */
+    OpArrow,       /* '=>':         Arrow operator */
+    OpTernary,     /* '?':          Ternary operator */
   } __attribute__((packed)) Operator;
 
   typedef enum Keyword {
-    qKScope,     /* 'scope' */
-    qKImport,    /* 'import' */
-    qKPub,       /* 'pub' */
-    qKSec,       /* 'sec' */
-    qKPro,       /* 'pro' */
-    qKType,      /* 'type' */
-    qKLet,       /* 'let' */
-    qKVar,       /* 'var' */
-    qKConst,     /* 'const' */
-    qKStatic,    /* 'static' */
-    qKStruct,    /* 'struct' */
-    qKRegion,    /* 'region' */
-    qKGroup,     /* 'group' */
-    qKClass,     /* 'class' */
-    qKUnion,     /* 'union' */
-    qKOpaque,    /* 'opaque' */
-    qKEnum,      /* 'enum' */
-    qK__FString, /* '__fstring' */
-    qKFn,        /* 'fn' */
-    qKUnsafe,    /* 'unsafe' */
-    qKSafe,      /* 'safe' */
-    qKPromise,   /* 'promise' */
-    qKIf,        /* 'if' */
-    qKElse,      /* 'else' */
-    qKFor,       /* 'for' */
-    qKWhile,     /* 'while' */
-    qKDo,        /* 'do' */
-    qKSwitch,    /* 'switch' */
-    qKBreak,     /* 'break' */
-    qKContinue,  /* 'continue' */
-    qKReturn,    /* 'ret' */
-    qKRetif,     /* 'retif' */
-    qKForeach,   /* 'foreach' */
-    qKTry,       /* 'try' */
-    qKCatch,     /* 'catch' */
-    qKThrow,     /* 'throw' */
-    qKAsync,     /* 'async' */
-    qKAwait,     /* 'await' */
-    qK__Asm__,   /* '__asm__' */
-    qKUndef,     /* 'undef' */
-    qKNull,      /* 'null' */
-    qKTrue,      /* 'true' */
-    qKFalse,     /* 'false' */
+    Scope,     /* 'scope' */
+    Import,    /* 'import' */
+    Pub,       /* 'pub' */
+    Sec,       /* 'sec' */
+    Pro,       /* 'pro' */
+    Type,      /* 'type' */
+    Let,       /* 'let' */
+    Var,       /* 'var' */
+    Const,     /* 'const' */
+    Static,    /* 'static' */
+    Struct,    /* 'struct' */
+    Region,    /* 'region' */
+    Group,     /* 'group' */
+    Class,     /* 'class' */
+    Union,     /* 'union' */
+    Opaque,    /* 'opaque' */
+    Enum,      /* 'enum' */
+    __FString, /* '__fstring' */
+    Fn,        /* 'fn' */
+    Unsafe,    /* 'unsafe' */
+    Safe,      /* 'safe' */
+    Promise,   /* 'promise' */
+    If,        /* 'if' */
+    Else,      /* 'else' */
+    For,       /* 'for' */
+    While,     /* 'while' */
+    Do,        /* 'do' */
+    Switch,    /* 'switch' */
+    Break,     /* 'break' */
+    Continue,  /* 'continue' */
+    Return,    /* 'ret' */
+    Retif,     /* 'retif' */
+    Foreach,   /* 'foreach' */
+    Try,       /* 'try' */
+    Catch,     /* 'catch' */
+    Throw,     /* 'throw' */
+    Async,     /* 'async' */
+    Await,     /* 'await' */
+    __Asm__,   /* '__asm__' */
+    Undef,     /* 'undef' */
+    Null,      /* 'null' */
+    True,      /* 'true' */
+    False,     /* 'false' */
   } __attribute__((packed)) Keyword;
 
   constexpr size_t QLEX_EOFF = UINT32_MAX;
@@ -177,11 +176,11 @@ namespace ncc::lex {
   class IScanner;
 
   class Location {
-    uint32_t m_offset = 0, m_line = 0, m_column = 0;
+    uint32_t m_offset = QLEX_EOFF, m_line = QLEX_EOFF, m_column = QLEX_EOFF;
     string m_filename;
 
   public:
-    constexpr Location() {}
+    constexpr Location() = default;
 
     constexpr Location(uint32_t offset, uint32_t line, uint32_t column,
                        string filename)
@@ -190,12 +189,14 @@ namespace ncc::lex {
           m_column(column),
           m_filename(filename) {}
 
-    static constexpr Location EndOfFile() { return Location(0, 0, 0, ""); }
+    static constexpr Location EndOfFile() {
+      return Location(QLEX_EOFF, QLEX_EOFF, QLEX_EOFF, "");
+    }
 
     constexpr uint32_t GetOffset() const { return m_offset; }
     constexpr uint32_t GetRow() const { return m_line; }
     constexpr uint32_t GetCol() const { return m_column; }
-    constexpr std::string_view GetFilename() const { return m_filename.get(); }
+    constexpr string GetFilename() const { return m_filename.get(); }
   } __attribute__((packed));
 
   class LocationID {
@@ -219,6 +220,8 @@ namespace ncc::lex {
     Counter m_id;
   } __attribute__((packed));
 
+  using LocationRange = std::pair<LocationID, LocationID>;
+
   union TokenData {
     Punctor punc;
     Operator op;
@@ -231,22 +234,21 @@ namespace ncc::lex {
     constexpr TokenData(string str) : str(str) {}
   } __attribute__((packed));
 
-  std::string_view to_string(TokenType, TokenData);
+  string to_string(TokenType, TokenData);
 
   class TokenBase {
     LocationID m_location_id = 0;
-    TokenType m_type : 4;
-    uint64_t pad : 4 = 0;
+    TokenType m_type;
 
   public:
     TokenData v;
 
+    constexpr TokenBase()
+        : m_location_id(LocationID()), m_type(EofF), v{OpPlus} {}
+
     template <class T = Operator>
-    constexpr TokenBase(TokenType ty = qEofF, T val = qOpPlus,
-                        LocationID _start = LocationID())
-        : m_location_id(_start), m_type(ty), v{val} {
-      (void)pad;
-    }
+    constexpr TokenBase(TokenType ty, T val, LocationID start = LocationID())
+        : m_location_id(start), m_type(ty), v{val} {}
 
     constexpr static TokenBase EndOfFile() { return TokenBase(); }
 
@@ -255,21 +257,21 @@ namespace ncc::lex {
     constexpr bool operator==(const TokenBase &rhs) const {
       if (m_type != rhs.m_type) return false;
       switch (m_type) {
-        case qEofF:
-        case qPunc:
+        case EofF:
+        case Punc:
           return v.punc == rhs.v.punc;
-        case qOper:
+        case Oper:
           return v.op == rhs.v.op;
-        case qKeyW:
+        case KeyW:
           return v.key == rhs.v.key;
-        case qIntL:
-        case qNumL:
-        case qText:
-        case qName:
-        case qChar:
-        case qMacB:
-        case qMacr:
-        case qNote:
+        case IntL:
+        case NumL:
+        case Text:
+        case Name:
+        case Char:
+        case MacB:
+        case Macr:
+        case Note:
           return v.str == rhs.v.str;
       }
     }
@@ -277,15 +279,15 @@ namespace ncc::lex {
     template <auto V>
     constexpr bool is() const {
       if constexpr (std::is_same_v<decltype(V), Keyword>) {
-        return m_type == qKeyW && v.key == V;
+        return m_type == KeyW && v.key == V;
       } else if constexpr (std::is_same_v<decltype(V), Punctor>) {
-        return m_type == qPunc && v.punc == V;
+        return m_type == Punc && v.punc == V;
       } else if constexpr (std::is_same_v<decltype(V), Operator>) {
-        return m_type == qOper && v.op == V;
+        return m_type == Oper && v.op == V;
       }
     }
 
-    std::string_view as_string() const { return to_string(m_type, v); }
+    string as_string() const { return to_string(m_type, v); }
 
     Keyword as_key() const { return v.key; }
     Operator as_op() const { return v.op; }
@@ -301,22 +303,22 @@ namespace ncc::lex {
       }
 
       switch (m_type) {
-        case qEofF:
+        case EofF:
           return false;
-        case qPunc:
+        case Punc:
           return v.punc < rhs.v.punc;
-        case qOper:
+        case Oper:
           return v.op < rhs.v.op;
-        case qKeyW:
+        case KeyW:
           return v.key < rhs.v.key;
-        case qIntL:
-        case qNumL:
-        case qText:
-        case qName:
-        case qChar:
-        case qMacB:
-        case qMacr:
-        case qNote:
+        case IntL:
+        case NumL:
+        case Text:
+        case Name:
+        case Char:
+        case MacB:
+        case Macr:
+        case Note:
           return v.str < rhs.v.str;
       }
     }

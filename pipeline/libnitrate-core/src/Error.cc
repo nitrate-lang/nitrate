@@ -189,16 +189,18 @@ static void panic_render_report(const std::vector<std::string> &lines) {
   std::cerr << "\nAborting..." << std::endl;
 }
 
-C_EXPORT void qcore_panic_(const char *msg) { qcore_panicf_("%s", msg); }
+extern "C" NCC_EXPORT void qcore_panic_(const char *msg) {
+  qcore_panicf_("%s", msg);
+}
 
-C_EXPORT void qcore_panicf_(const char *_fmt, ...) {
+extern "C" NCC_EXPORT void qcore_panicf_(const char *_fmt, ...) {
   va_list args;
   va_start(args, _fmt);
   qcore_vpanicf_(_fmt, args);
   va_end(args);  // Unreachable, but whatever
 }  // Unreachable, but whatever
 
-C_EXPORT void qcore_vpanicf_(const char *fmt, va_list args) {
+extern "C" NCC_EXPORT void qcore_vpanicf_(const char *fmt, va_list args) {
   char *msg = nullptr;
 
   { /* Parse the format string */
@@ -213,15 +215,17 @@ C_EXPORT void qcore_vpanicf_(const char *fmt, va_list args) {
   abort();
 }
 
-C_EXPORT void qcore_debug_(const char *msg) { return qcore_debugf_("%s", msg); }
+extern "C" NCC_EXPORT void qcore_debug_(const char *msg) {
+  return qcore_debugf_("%s", msg);
+}
 
-C_EXPORT void qcore_debugf_(const char *fmt, ...) {
+extern "C" NCC_EXPORT void qcore_debugf_(const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
   qcore_vdebugf_(fmt, args);
   va_end(args);
 }
 
-C_EXPORT void qcore_vdebugf_(const char *fmt, va_list args) {
+extern "C" NCC_EXPORT void qcore_vdebugf_(const char *fmt, va_list args) {
   vfprintf(stderr, fmt, args);
 }

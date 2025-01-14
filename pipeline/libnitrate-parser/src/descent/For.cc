@@ -33,70 +33,101 @@
 
 #include <descent/Recurse.hh>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::optional<RefNode<Stmt> > Parser::recurse_for_init_expr() {
-  if (next_if(qPuncSemi)) {
+NullableFlowPtr<Stmt> Parser::recurse_for_init_expr() {
+  if (next_if(PuncSemi)) {
     return std::nullopt;
-  }
-
-  return recurse_block(false, true, SafetyMode::Unknown);
-}
-
-std::optional<RefNode<Expr> > Parser::recurse_for_cond_expr() {
-  if (next_if(qPuncSemi)) {
-    return std::nullopt;
-  }
-
-  let cond_expr = recurse_expr({Token(qPunc, qPuncSemi)});
-
-  if (!next_if(qPuncSemi)) {
-    diagnostic << current() << "Expected semicolon after condition expression";
-  }
-
-  return cond_expr;
-}
-
-std::optional<RefNode<Expr> > Parser::recurse_for_step_expr(bool has_paren) {
-  if (has_paren) {
-    if (peek().is<qPuncRPar>()) {
-      return std::nullopt;
+  } else if (next_if(Let)) {
+    if (auto vars = recurse_variable(VarDeclType::Let); vars.size() == 1) {
+      return vars[0];
     } else {
-      return recurse_expr({Token(qPunc, qPuncRPar)});
+      log << SyntaxError << current()
+          << "Expected exactly one variable in for loop";
+    }
+  } else if (next_if(Var)) {
+    if (auto vars = recurse_variable(VarDeclType::Var); vars.size() == 1) {
+      return vars[0];
+    } else {
+      log << SyntaxError << current()
+          << "Expected exactly one variable in for loop";
+    }
+  } else if (next_if(Const)) {
+    if (auto vars = recurse_variable(VarDeclType::Const); vars.size() == 1) {
+      return vars[0];
+    } else {
+      log << SyntaxError << current()
+          << "Expected exactly one variable in for loop";
     }
   } else {
-    if (peek().is<qOpArrow>() || peek().is<qPuncLCur>()) {
+    return make<ExprStmt>(recurse_expr({
+        Token(Punc, PuncSemi),
+    }))();
+  }
+
+  return std::nullopt;
+}
+
+NullableFlowPtr<Expr> Parser::recurse_for_condition() {
+  if (next_if(PuncSemi)) {
+    return std::nullopt;
+  } else {
+    auto condition = recurse_expr({
+        Token(Punc, PuncSemi),
+    });
+
+    if (!next_if(PuncSemi)) {
+      log << SyntaxError << current()
+          << "Expected semicolon after condition expression";
+    }
+
+    return condition;
+  }
+}
+
+NullableFlowPtr<Expr> Parser::recurse_for_step_expr(bool has_paren) {
+  if (has_paren) {
+    if (peek().is<PuncRPar>()) {
       return std::nullopt;
     } else {
-      return recurse_expr({Token(qPunc, qPuncLCur), Token(qOper, qOpArrow)});
+      return recurse_expr({
+          Token(Punc, PuncRPar),
+      });
+    }
+  } else {
+    if (peek().is<OpArrow>() || peek().is<PuncLCur>()) {
+      return std::nullopt;
+    } else {
+      return recurse_expr({
+          Token(Punc, PuncLCur),
+          Token(Oper, OpArrow),
+      });
     }
   }
 }
 
-RefNode<Stmt> Parser::recurse_for_body() {
-  if (next_if(qOpArrow)) {
+FlowPtr<Stmt> Parser::recurse_for_body() {
+  if (next_if(OpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
     return recurse_block(true, false, SafetyMode::Unknown);
   }
 }
 
-RefNode<Stmt> Parser::recurse_for() {
-  bool has_paren = next_if(qPuncLPar).has_value();
+FlowPtr<Stmt> Parser::recurse_for() {
+  bool for_with_paren = next_if(PuncLPar).has_value();
+  auto for_init = recurse_for_init_expr();
+  auto for_cond = recurse_for_condition();
+  auto for_step = recurse_for_step_expr(for_with_paren);
 
-  let init = recurse_for_init_expr();
-  let cond = recurse_for_cond_expr();
-  let step = recurse_for_step_expr(has_paren);
-
-  if (has_paren) {
-    if (!next_if(qPuncRPar)) {
-      diagnostic << current()
-                 << "Expected closing parenthesis in for statement";
-    }
+  if (for_with_paren && !next_if(PuncRPar)) {
+    log << SyntaxError << current()
+        << "Expected closing parenthesis in for statement";
   }
 
-  let body = recurse_for_body();
+  auto for_body = recurse_for_body();
 
-  return make<ForStmt>(init, cond, step, body)();
+  return make<ForStmt>(for_init, for_cond, for_step, for_body)();
 }

@@ -75,29 +75,29 @@ static bool do_init() {
 
 static void do_deinit() { DoinitializeLLVM(); }
 
-C_EXPORT bool qcode_lib_init() {
+extern "C" NCC_EXPORT bool qcode_lib_init() {
   if (qcode_lib_ref_count++ > 1) {
     return true;
   }
 
-  if (!ncc::core::CoreLibrary.InitRC()) {
+  if (!ncc::CoreLibrary.InitRC()) {
     return false;
   }
 
   return do_init();
 }
 
-C_EXPORT void qcode_lib_deinit() {
+extern "C" NCC_EXPORT void qcode_lib_deinit() {
   if (--qcode_lib_ref_count > 0) {
     return;
   }
 
   do_deinit();
 
-  ncc::core::CoreLibrary.DeinitRC();
+  ncc::CoreLibrary.DeinitRC();
 }
 
-C_EXPORT const char* qcode_lib_version() {
+extern "C" NCC_EXPORT const char* qcode_lib_version() {
   static const char* version_string =
 
       "[" __TARGET_VERSION
@@ -145,4 +145,4 @@ C_EXPORT const char* qcode_lib_version() {
   return version_string;
 }
 
-C_EXPORT const char* qcode_strerror() { return ""; }
+extern "C" NCC_EXPORT const char* qcode_strerror() { return ""; }

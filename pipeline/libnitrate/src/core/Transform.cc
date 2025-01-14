@@ -32,7 +32,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-emit/Lib.h>
-#include <nitrate-ir/Lib.h>
 #include <nitrate-seq/Lib.h>
 
 #include <cerrno>
@@ -45,6 +44,7 @@
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
 #include <nitrate/code.hh>
@@ -105,7 +105,7 @@ static std::optional<std::vector<std::string>> parse_options(
 
 static bool nit_dispatch_request(std::istream &in, std::ostream &out,
                                  const char *transform, let opts_set,
-                                 std::shared_ptr<ncc::core::Environment> env) {
+                                 std::shared_ptr<ncc::Environment> env) {
   if (!dispatch_funcs.contains(transform)) {
     qcore_logf(QCORE_ERROR, "Unknown transform name in options: %s", transform);
     return false;
@@ -138,8 +138,6 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
   /* Setup thread-local shared environment                                   */
   /***************************************************************************/
 
-  auto env = std::make_shared<ncc::core::Environment>();
-
   struct LoggerCtx {
     nit_diag_func diag_cb;
     void *opaque;
@@ -151,6 +149,12 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
         logger_ctx.diag_cb(msg, logger_ctx.opaque);
       },
       &logger_ctx);
+
+  ncc::log += [&](auto msg, auto sev, const auto &ec) {
+    diag_cb(ec.format(msg, sev).c_str(), opaque);
+  };
+
+  auto env = std::make_shared<ncc::Environment>();
 
   /***************************************************************************/
   /* Transform                                                               */
@@ -172,7 +176,7 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
   return status;
 }
 
-CPP_EXPORT nitrate::LazyResult<bool> nitrate::pipeline(
+NCC_EXPORT nitrate::LazyResult<bool> nitrate::pipeline(
     std::istream &in, std::ostream &out, std::vector<std::string> options,
     std::optional<DiagnosticFunc> diag) {
   return nitrate::LazyResult<bool>(
@@ -203,7 +207,7 @@ CPP_EXPORT nitrate::LazyResult<bool> nitrate::pipeline(
       });
 }
 
-CPP_EXPORT nitrate::LazyResult<bool> nitrate::chain(
+NCC_EXPORT nitrate::LazyResult<bool> nitrate::chain(
     std::istream &in, std::ostream &out, ChainOptions operations,
     std::optional<DiagnosticFunc> diag, bool) {
   return nitrate::LazyResult<bool>(
@@ -237,8 +241,9 @@ CPP_EXPORT nitrate::LazyResult<bool> nitrate::chain(
 
 ///============================================================================///
 
-C_EXPORT bool nit_pipeline(FILE *in, FILE *out, nit_diag_func diag_cb,
-                           void *opaque, const char *const c_options[]) {
+extern "C" NCC_EXPORT bool nit_pipeline(FILE *in, FILE *out,
+                                        nit_diag_func diag_cb, void *opaque,
+                                        const char *const c_options[]) {
   class FileStreamBuf : public std::streambuf {
     FILE *m_file;
     char c = 0;

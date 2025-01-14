@@ -32,291 +32,285 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <descent/Recurse.hh>
-#include <nitrate-parser/ASTData.hh>
-#include <unordered_set>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-RefNode<Type> Parser::recurse_function_parameter_type() {
-  if (next_if(qPuncColn)) {
+FlowPtr<parse::Type> Parser::recurse_function_parameter_type() {
+  if (next_if(PuncColn)) {
     return recurse_type();
   } else {
-    let type = make<InferTy>()();
-    type->set_offset(current().get_start());
-    return type;
+    return make<InferTy>()();
   }
 }
 
-std::optional<RefNode<Expr>> Parser::recurse_function_parameter_value() {
-  if (next_if(qOpSet)) {
-    return recurse_expr(
-
-        {Token(qPunc, qPuncComa), Token(qPunc, qPuncRPar),
-         Token(qOper, qOpGT)});
+NullableFlowPtr<Expr> Parser::recurse_function_parameter_value() {
+  if (next_if(OpSet)) {
+    return recurse_expr({
+        Token(Punc, PuncComa),
+        Token(Punc, PuncRPar),
+        Token(Oper, OpGT),
+    });
   } else {
     return std::nullopt;
   }
 }
 
 std::optional<FuncParam> Parser::recurse_function_parameter() {
-  if (let name = next_if(qName)) {
-    let param_name = name->as_string();
-    let param_type = recurse_function_parameter_type();
-    let param_value = recurse_function_parameter_value();
+  if (auto param_name = next_if(Name)) [[likely]] {
+    auto param_type = recurse_function_parameter_type();
+    auto param_value = recurse_function_parameter_value();
 
-    return FuncParam{SaveString(param_name), param_type,
-                     param_value.value_or(nullptr)};
+    return FuncParam{param_name->as_string(), param_type, param_value};
   } else {
-    diagnostic << current() << "Expected a parameter name before ':'";
+    log << SyntaxError << next() << "Expected a parameter name before ':'";
   }
 
   return std::nullopt;
 }
 
 std::optional<TemplateParameters> Parser::recurse_template_parameters() {
-  if (!next_if(qOpLT)) {
+  if (!next_if(OpLT)) {
     return std::nullopt;
   }
 
   TemplateParameters params;
 
   while (true) {
-    if (next_if(qEofF)) {
-      diagnostic << current() << "Unexpected EOF in template parameters";
+    if (next_if(EofF)) [[unlikely]] {
+      log << SyntaxError << current()
+          << "Unexpected EOF in template parameters";
       return params;
     }
 
-    if (next_if(qOpGT)) {
+    if (next_if(OpGT)) {
       break;
     }
 
-    if (let param_opt = recurse_function_parameter()) {
-      let param = *param_opt;
-      let tparam = TemplateParameter{std::get<0>(param), std::get<1>(param),
-                                     std::get<2>(param)};
+    if (auto param_opt = recurse_function_parameter()) {
+      auto [param_name, param_type, param_value] = param_opt.value();
 
-      params.push_back(std::move(tparam));
-
-      next_if(qPuncComa);
+      params.push_back({param_name, param_type, param_value});
     } else {
-      diagnostic << next() << "Expected a template parameter";
+      log << SyntaxError << next() << "Expected a template parameter";
     }
+
+    next_if(PuncComa);
   }
 
   return params;
 }
 
-FuncParams Parser::recurse_function_parameters() {
-  FuncParams parameters;
+std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
+  std::pair<FuncParams, bool> parameters;
 
-  if (!next_if(qPuncLPar)) {
-    diagnostic << current() << "Expected '(' after function name";
+  if (!next_if(PuncLPar)) [[unlikely]] {
+    log << SyntaxError << current() << "Expected '(' after function name";
     return parameters;
   }
 
+  bool is_variadic = false;
+
   while (true) {
-    if (next_if(qEofF)) {
-      diagnostic << current() << "Unexpected EOF in function parameters";
+    if (next_if(EofF)) [[unlikely]] {
+      log << SyntaxError << current()
+          << "Unexpected EOF in function parameters";
       return parameters;
     }
 
-    if (next_if(qPuncRPar)) {
+    if (next_if(PuncRPar)) {
       break;
     }
 
-    if (next_if(qOpEllipsis)) {
-      parameters.is_variadic = true;
-      if (!next_if(qPuncRPar)) {
-        diagnostic << current() << "Expected ')' after variadic parameter";
+    if (next_if(OpEllipsis)) {
+      is_variadic = true;
+
+      if (!peek().is<PuncRPar>()) {
+        log << SyntaxError << current()
+            << "Expected ')' after variadic parameter";
       }
-      break;
+      continue;
     }
 
-    if (let param_opt = recurse_function_parameter()) {
-      let param = *param_opt;
-      let tparam =
-          FuncParam{std::get<0>(param), std::get<1>(param), std::get<2>(param)};
+    if (auto parameter = recurse_function_parameter()) {
+      auto [param_name, param_type, param_value] = parameter.value();
+      parameters.first.push_back({param_name, param_type, param_value});
 
-      parameters.params.push_back(std::move(tparam));
-
-      next_if(qPuncComa);
     } else {
-      diagnostic << next() << "Expected a function parameter";
+      log << SyntaxError << next() << "Expected a function parameter";
     }
+
+    next_if(PuncComa);
   }
+
+  parameters.second = is_variadic;
 
   return parameters;
 }
 
-FuncPurity Parser::get_purity_specifier(Token &start_pos, bool is_thread_safe,
-                                        bool is_pure, bool is_impure,
-                                        bool is_quasi, bool is_retro) {
+Purity Parser::get_purity_specifier(Token start_pos, bool is_thread_safe,
+                                    bool is_pure, bool is_impure, bool is_quasi,
+                                    bool is_retro) {
+  /* Ensure that there is no duplication of purity specifiers */
+  if ((is_impure + is_pure + is_quasi + is_retro) > 1) {
+    log << SyntaxError << start_pos << "Conflicting purity specifiers";
+    return Purity::Impure;
+  }
+
   /** Thread safety does not conflict with purity.
    *  Purity implies thread safety.
    */
-  (void)is_thread_safe;
-
-  /* Ensure that there is no duplication of purity specifiers */
-  if ((is_impure + is_pure + is_quasi + is_retro) > 1) {
-    diagnostic << start_pos << "Conflicting purity specifiers";
-    return FuncPurity::IMPURE_THREAD_UNSAFE;
-  }
-
   if (is_pure) {
-    return FuncPurity::PURE;
+    return Purity::Pure;
   } else if (is_quasi) {
-    return FuncPurity::QUASI;
+    return Purity::Quasi;
   } else if (is_retro) {
-    return FuncPurity::RETRO;
+    return Purity::Retro;
   } else if (is_thread_safe) {
-    return FuncPurity::IMPURE_THREAD_SAFE;
+    return Purity::Impure_TSafe;
   } else {
-    return FuncPurity::IMPURE_THREAD_UNSAFE;
+    return Purity::Impure;
   }
 }
 
-std::optional<std::pair<std::string_view, bool>>
-Parser::recurse_function_capture() {
-  bool is_ref = false;
+std::optional<std::pair<string, bool>> Parser::recurse_function_capture() {
+  bool is_ref = next_if(OpBitAnd).has_value();
 
-  if (next_if(qOpBitAnd)) {
-    is_ref = true;
-  }
-
-  if (let name = next_if(qName)) {
+  if (auto name = next_if(Name)) {
     return {{name->as_string(), is_ref}};
   } else {
-    diagnostic << next() << "Expected a capture name";
+    log << SyntaxError << next() << "Expected a capture name";
+    return std::nullopt;
   }
-
-  return std::nullopt;
 }
 
-void Parser::recurse_function_ambigouis(ExpressionList &attributes,
-                                        FnCaptures &captures,
-                                        FuncPurity &purity,
-                                        std::string_view &function_name) {
+std::tuple<ExpressionList, FnCaptures, Purity, string>
+Parser::recurse_function_ambigouis() {
   enum class State {
-    Main,
+    Ground,
     AttributesSection,
     CaptureSection,
     End,
-  } state = State::Main;
+  } state = State::Ground;
 
+  auto start_pos = current();
+  ExpressionList attributes;
+  FnCaptures captures;
+  string function_name;
   bool is_thread_safe = false, is_pure = false, is_impure = false,
-       is_quasi = false, is_retro = false;
-  bool parsed_attributes = false, parsed_captures = false;
-  Token start_pos = current();
+       is_quasi = false, is_retro = false, already_parsed_attributes = false,
+       already_parsed_captures = false;
 
   while (state != State::End) {
-    if (next_if(qEofF)) {
-      diagnostic << current() << "Unexpected EOF in function attributes";
+    if (next_if(EofF)) [[unlikely]] {
+      log << SyntaxError << current()
+          << "Unexpected EOF in function attributes";
       break;
     }
 
     switch (state) {
-      case State::Main: {
-        if (let identifier = next_if(qName)) {
-          static const std::unordered_set<std::string_view> reserved_words = {
-              "foreign", "inline"};
+      case State::Ground: {
+        if (auto some_identifier = next_if(Name)) {
+          auto some_word = some_identifier->as_string();
 
-          let name = identifier->as_string();
-
-          if (name == "pure") {
+          if (some_word == "pure") {
             is_pure = true;
-          } else if (name == "impure") {
+          } else if (some_word == "impure") {
             is_impure = true;
-          } else if (name == "tsafe") {
+          } else if (some_word == "tsafe") {
             is_thread_safe = true;
-          } else if (name == "quasi") {
+          } else if (some_word == "quasi") {
             is_quasi = true;
-          } else if (name == "retro") {
+          } else if (some_word == "retro") {
             is_retro = true;
-          } else if (reserved_words.contains(name)) {
-            attributes.push_back(make<Ident>(SaveString(name))());
+          } else if (some_word == "foreign" || some_word == "inline") {
+            attributes.push_back(make<Ident>(some_word)());
           } else {
-            function_name = name;
-
+            function_name = some_word;
             state = State::End;
           }
-        } else if (next_if(qPuncLBrk)) {
-          if (parsed_attributes && parsed_captures) {
-            diagnostic
-                << current()
+        } else if (next_if(PuncLBrk)) {
+          if (already_parsed_attributes && already_parsed_captures) {
+            log << SyntaxError << current()
                 << "Unexpected '[' after function attributes and captures";
-          } else if (parsed_attributes && !parsed_captures) {
+          } else if (already_parsed_attributes && !already_parsed_captures) {
             state = State::CaptureSection;
-          } else if (!parsed_attributes && parsed_captures) {
+          } else if (!already_parsed_attributes && already_parsed_captures) {
             state = State::AttributesSection;
           } else {
-            qcore_assert(!parsed_attributes && !parsed_captures);
+            qcore_assert(!already_parsed_attributes &&
+                         !already_parsed_captures);
 
-            let tok = peek();
+            auto tok = peek();
 
             /* No attribute expression may begin with '&' */
-            if (tok.is<qOpBitAnd>()) {
+            if (tok.is<OpBitAnd>()) {
               state = State::CaptureSection;
-            } else if (!tok.is(qName)) {
+            } else if (!tok.is(Name)) {
               state = State::AttributesSection;
             } else { /* Ambiguous edge case */
               state = State::CaptureSection;
             }
           }
-        } else if (let tok = peek(); tok.is<qPuncLPar>() || tok.is<qOpLT>()) {
+        } else if (auto tok = peek(); tok.is<PuncLPar>() || tok.is<OpLT>()) {
           state = State::End; /* Begin parsing parameters or template options */
         } else {
-          diagnostic << next() << "Unexpected token in function declaration";
+          log << SyntaxError << next()
+              << "Unexpected token in function declaration";
         }
 
         break;
       }
 
       case State::AttributesSection: {
-        parsed_attributes = true;
+        already_parsed_attributes = true;
 
         while (true) {
-          if (next_if(qEofF)) {
-            diagnostic << current() << "Unexpected EOF in function attributes";
+          if (next_if(EofF)) [[unlikely]] {
+            log << SyntaxError << current()
+                << "Unexpected EOF in function attributes";
             break;
           }
 
-          if (next_if(qPuncRBrk)) {
-            state = State::Main;
+          if (next_if(PuncRBrk)) {
+            state = State::Ground;
             break;
           }
 
-          let attribute = recurse_expr(
-
-              {Token(qPunc, qPuncComa), Token(qPunc, qPuncRBrk)});
+          auto attribute = recurse_expr({
+              Token(Punc, PuncComa),
+              Token(Punc, PuncRBrk),
+          });
 
           attributes.push_back(attribute);
 
-          next_if(qPuncComa);
+          next_if(PuncComa);
         }
 
         break;
       }
 
       case State::CaptureSection: {
-        parsed_captures = true;
+        already_parsed_captures = true;
 
         while (true) {
-          if (next_if(qEofF)) {
-            diagnostic << current() << "Unexpected EOF in function captures";
+          if (next_if(EofF)) [[unlikely]] {
+            log << SyntaxError << current()
+                << "Unexpected EOF in function captures";
             break;
           }
 
-          if (next_if(qPuncRBrk)) {
-            state = State::Main;
+          if (next_if(PuncRBrk)) {
+            state = State::Ground;
             break;
           }
 
-          if (let capture = recurse_function_capture()) {
-            captures.push_back({SaveString(capture->first), capture->second});
+          if (auto capture = recurse_function_capture()) {
+            captures.push_back({capture->first, capture->second});
           }
 
-          next_if(qPuncComa);
+          next_if(PuncComa);
         }
 
         break;
@@ -328,56 +322,46 @@ void Parser::recurse_function_ambigouis(ExpressionList &attributes,
     }
   }
 
-  purity = get_purity_specifier(start_pos, is_thread_safe, is_pure, is_impure,
-                                is_quasi, is_retro);
+  auto purity = get_purity_specifier(start_pos, is_thread_safe, is_pure,
+                                     is_impure, is_quasi, is_retro);
+
+  return {attributes, captures, purity, function_name};
 }
 
-RefNode<Type> Parser::Parser::recurse_function_return_type() {
-  if (next_if(qPuncColn)) {
+FlowPtr<parse::Type> Parser::Parser::recurse_function_return_type() {
+  if (next_if(PuncColn)) {
     return recurse_type();
   } else {
-    let type = make<InferTy>()();
-    type->set_offset(current().get_start());
-
-    return type;
+    return make<InferTy>()();
   }
 }
 
-std::optional<RefNode<Stmt>> Parser::recurse_function_body(
-    bool restrict_decl_only) {
-  if (restrict_decl_only || next_if(qPuncSemi)) {
+NullableFlowPtr<Stmt> Parser::recurse_function_body(
+    bool parse_declaration_only) {
+  if (parse_declaration_only || next_if(PuncSemi)) {
     return std::nullopt;
-  } else if (next_if(qOpArrow)) {
+  } else if (next_if(OpArrow)) {
     return recurse_block(false, true, SafetyMode::Unknown);
   } else {
     return recurse_block(true, false, SafetyMode::Unknown);
   }
 }
 
-RefNode<Stmt> Parser::recurse_function(bool restrict_decl_only) {
-  /* fn <attributes>? <modifiers>? <capture_list>?
-   * <name><template_parameters>?(<parameters>?)<: return_type>? <body>? */
+FlowPtr<Stmt> Parser::recurse_function(bool parse_declaration_only) {
+  auto start_pos = current().get_start();
 
-  let start_pos = current().get_start();
+  auto [function_attributes, function_captures, function_purity,
+        function_name] = recurse_function_ambigouis();
+  auto function_template_parameters = recurse_template_parameters();
+  auto function_parameters = recurse_function_parameters();
+  auto function_return_type = recurse_function_return_type();
+  auto function_body = recurse_function_body(parse_declaration_only);
 
-  ExpressionList attributes;
-  FnCaptures captures;
-  FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE;
-  std::string_view function_name;
-
-  recurse_function_ambigouis(attributes, captures, purity, function_name);
-
-  let template_parameters = recurse_template_parameters();
-  let parameters = recurse_function_parameters();
-  let return_type = recurse_function_return_type();
-  let body = recurse_function_body(restrict_decl_only);
-
-  /// TODO: Implement function contract pre and post conditions
-
-  let function =
-      make<Function>(attributes, purity, captures, SaveString(function_name),
-                     template_parameters, parameters, return_type, std::nullopt,
-                     std::nullopt, body)();
+  auto function = make<Function>(
+      function_attributes, function_purity, function_captures, function_name,
+      function_template_parameters, function_parameters.first,
+      function_parameters.second, function_return_type, std::nullopt,
+      std::nullopt, function_body)();
   function->set_offset(start_pos);
 
   return function;
