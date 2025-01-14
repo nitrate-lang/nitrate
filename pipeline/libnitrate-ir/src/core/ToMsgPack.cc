@@ -33,7 +33,7 @@
 
 #include <bit>
 #include <nitrate-core/Logger.hh>
-#include <nitrate-ir/encode/ToMsgPack.hh>
+#include <nitrate-ir/ToMsgPack.hh>
 
 using namespace ncc::ir::encode;
 

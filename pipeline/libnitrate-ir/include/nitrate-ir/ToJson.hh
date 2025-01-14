@@ -31,69 +31,52 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_IR_READER_H__
-#define __NITRATE_IR_READER_H__
+#ifndef __NITRATE_IR_ENCODE_TOJSON_H__
+#define __NITRATE_IR_ENCODE_TOJSON_H__
 
-#include <cstdint>
-#include <istream>
-#include <nitrate-core/Macro.hh>
-#include <nitrate-ir/IR/Visitor.hh>
-#include <optional>
+#include <nitrate-ir/Serialize.hh>
+#include <ostream>
 #include <stack>
 
-namespace ncc::ir::decode {
-  class NCC_EXPORT IR_Reader {
-    enum class State {
-      ObjStart,
-      ObjEnd,
-    };
+namespace ncc::ir::encode {
+  class NCC_EXPORT IR_JsonWriter : public IR_Writer {
+    std::ostream& m_os;
+    std::stack<bool> m_comma;
+    std::stack<size_t> m_count;
 
-    std::stack<State> m_state;
-    std::stack<Expr*> m_parse;
+    void delim();
 
-    void handle_state();
-
-    /// TODO: Implement state
-
-  protected:
-    void str(std::string_view str);
-    void uint(uint64_t val);
-    void dbl(double val);
-    void boolean(bool val);
-    void null();
-    void begin_obj();
-    void end_obj();
-    void begin_arr(size_t max_size);
-    void end_arr();
+    void str_impl(std::string_view str);
+    void uint_impl(uint64_t val);
+    void double_impl(double val);
+    void bool_impl(bool val);
+    void null_impl();
+    void begin_obj_impl(size_t pair_count);
+    void end_obj_impl();
+    void begin_arr_impl(size_t size);
+    void end_arr_impl();
 
   public:
-    IR_Reader() { m_state.push(State::ObjStart); }
-    virtual ~IR_Reader() = default;
-
-    std::optional<Expr*> get() {
-      if (m_parse.empty() || m_parse.top() == nullptr) {
-        return std::nullopt;
-      }
-
-      return m_parse.top();
+    IR_JsonWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
+        : IR_Writer(
+              std::bind(&IR_JsonWriter::str_impl, this, std::placeholders::_1),
+              std::bind(&IR_JsonWriter::uint_impl, this, std::placeholders::_1),
+              std::bind(&IR_JsonWriter::double_impl, this,
+                        std::placeholders::_1),
+              std::bind(&IR_JsonWriter::bool_impl, this, std::placeholders::_1),
+              std::bind(&IR_JsonWriter::null_impl, this),
+              std::bind(&IR_JsonWriter::begin_obj_impl, this,
+                        std::placeholders::_1),
+              std::bind(&IR_JsonWriter::end_obj_impl, this),
+              std::bind(&IR_JsonWriter::begin_arr_impl, this,
+                        std::placeholders::_1),
+              std::bind(&IR_JsonWriter::end_arr_impl, this), rd),
+          m_os(os) {
+      m_comma.push(false);
+      m_count.push(0);
     }
+    virtual ~IR_JsonWriter() = default;
   };
-
-  class NCC_EXPORT IR_JsonReader final : public IR_Reader {
-    void parse_stream(std::istream& is);
-
-  public:
-    IR_JsonReader(std::istream& is) { parse_stream(is); }
-    virtual ~IR_JsonReader() = default;
-  };
-
-  class NCC_EXPORT IR_MsgPackReader final : public IR_Reader {
-    void parse_stream(std::istream& is);
-
-  public:
-    IR_MsgPackReader(std::istream& is) { parse_stream(is); }
-    virtual ~IR_MsgPackReader() = default;
-  };
-}  // namespace ncc::ir::decode
+}  // namespace ncc::ir::encode
 
 #endif

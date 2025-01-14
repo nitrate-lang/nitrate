@@ -38,8 +38,8 @@
 #include <nitrate-core/Init.hh>
 #include <nitrate-ir/IR.hh>
 #include <nitrate-ir/Module.hh>
-#include <nitrate-ir/encode/ToJson.hh>
-#include <nitrate-ir/encode/ToMsgPack.hh>
+#include <nitrate-ir/ToJson.hh>
+#include <nitrate-ir/ToMsgPack.hh>
 #include <nitrate-parser/ASTReader.hh>
 #include <unordered_set>
 

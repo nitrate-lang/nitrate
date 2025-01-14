@@ -31,46 +31,124 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_IR_ENCODE_TOMSGPACK_H__
-#define __NITRATE_IR_ENCODE_TOMSGPACK_H__
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-ir/ToJson.hh>
 
-#include <nitrate-ir/encode/Serialize.hh>
-#include <ostream>
+using namespace ncc::ir::encode;
 
-namespace ncc::ir::encode {
-  class NCC_EXPORT IR_MsgPackWriter : public IR_Writer {
-    std::ostream& m_os;
+static void escape_string(std::ostream &os, const std::string_view &input) {
+  os << "\"";
 
-    void str_impl(std::string_view str);
-    void uint_impl(uint64_t val);
-    void double_impl(double val);
-    void bool_impl(bool val);
-    void null_impl();
-    void begin_obj_impl(size_t pair_count);
-    void end_obj_impl();
-    void begin_arr_impl(size_t size);
-    void end_arr_impl();
+  for (char ch : input) {
+    switch (ch) {
+      case '"':
+        os << "\\\"";
+        break;
+      case '\\':
+        os << "\\\\";
+        break;
+      case '\b':
+        os << "\\b";
+        break;
+      case '\f':
+        os << "\\f";
+        break;
+      case '\n':
+        os << "\\n";
+        break;
+      case '\r':
+        os << "\\r";
+        break;
+      case '\t':
+        os << "\\t";
+        break;
+      case '\0':
+        os << "\\0";
+        break;
+      default:
+        if (ch >= 32 && ch < 127) {
+          os << ch;
+        } else {
+          char hex[5];
+          snprintf(hex, sizeof(hex), "\\x%02x", (int)(uint8_t)ch);
+          os << hex;
+        }
+        break;
+    }
+  }
 
-  public:
-    IR_MsgPackWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
-        : IR_Writer(std::bind(&IR_MsgPackWriter::str_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::uint_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::double_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::bool_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::null_impl, this),
-                    std::bind(&IR_MsgPackWriter::begin_obj_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::end_obj_impl, this),
-                    std::bind(&IR_MsgPackWriter::begin_arr_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::end_arr_impl, this), rd),
-          m_os(os) {}
-    virtual ~IR_MsgPackWriter() = default;
-  };
-}  // namespace ncc::ir::encode
+  os << "\"";
+}
 
-#endif
+void IR_JsonWriter::delim() {
+  if (!m_count.empty() && !m_comma.empty()) {
+    if (m_count.top()++ > 0) {
+      bool use_comma = m_comma.top() == true || (m_count.top() & 1) != 0;
+
+      m_os << (use_comma ? "," : ":");
+    }
+  }
+}
+
+void IR_JsonWriter::str_impl(std::string_view str) {
+  delim();
+
+  escape_string(m_os, str);
+}
+
+void IR_JsonWriter::uint_impl(uint64_t val) {
+  delim();
+
+  m_os << val;
+}
+
+void IR_JsonWriter::double_impl(double val) {
+  delim();
+
+  m_os << val;
+}
+
+void IR_JsonWriter::bool_impl(bool val) {
+  delim();
+
+  m_os << (val ? "true" : "false");
+}
+
+void IR_JsonWriter::null_impl() {
+  delim();
+
+  m_os << "null";
+}
+
+void IR_JsonWriter::begin_obj_impl(size_t) {
+  delim();
+
+  m_comma.push(false);
+  m_count.push(0);
+  m_os << "{";
+}
+
+void IR_JsonWriter::end_obj_impl() {
+  if (!m_count.empty() && !m_comma.empty()) {
+    m_os << "}";
+    m_count.pop();
+    m_comma.pop();
+  }
+}
+
+void IR_JsonWriter::begin_arr_impl(size_t) {
+  delim();
+
+  m_comma.push(true);
+  m_count.push(0);
+  m_os << "[";
+}
+
+void IR_JsonWriter::end_arr_impl() {
+  if (!m_count.empty() && !m_comma.empty()) {
+    m_os << "]";
+    m_count.pop();
+    m_comma.pop();
+  }
+}
