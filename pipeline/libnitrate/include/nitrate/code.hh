@@ -88,6 +88,17 @@ namespace nitrate {
     return unit;
   }
 
+  static inline LazyResult<bool> pipeline(
+      std::string_view in, std::string &out, std::vector<std::string> options,
+      std::optional<DiagnosticFunc> diag = default_diagnostic) {
+    std::stringstream out_stream, in_stream((std::string(in)));
+    auto unit = pipeline(in_stream, out_stream, std::move(options), diag);
+    unit.wait();
+    out.assign(out_stream.str());
+
+    return unit;
+  }
+
   using ChainOptions = std::vector<std::vector<std::string>>;
 
   LazyResult<bool> chain(
@@ -99,6 +110,19 @@ namespace nitrate {
       const auto &in, std::string &out, ChainOptions operations,
       std::optional<DiagnosticFunc> diag = default_diagnostic) {
     std::stringstream out_stream, in_stream(in);
+    auto unit =
+        chain(in_stream, out_stream, std::move(operations), diag, false);
+    unit.wait();
+
+    out.assign(out_stream.str());
+
+    return unit;
+  }
+
+  static inline LazyResult<bool> chain(
+      std::string_view in, std::string &out, ChainOptions operations,
+      std::optional<DiagnosticFunc> diag = default_diagnostic) {
+    std::stringstream out_stream, in_stream((std::string(in)));
     auto unit =
         chain(in_stream, out_stream, std::move(operations), diag, false);
     unit.wait();

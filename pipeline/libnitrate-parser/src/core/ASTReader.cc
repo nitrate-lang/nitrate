@@ -1455,7 +1455,7 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Ptr() {
     return nullptr;
   }
 
-  auto node = make<RefTy>(to.value())();
+  auto node = make<PtrTy>(to.value())();
   node->set_width(info->width);
   node->set_range_begin(info->min);
   node->set_range_end(info->max);
@@ -1817,7 +1817,7 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Struct() {
     return nullptr;
   }
 
-  TemplateParameters template_args;
+  std::optional<TemplateParameters> template_args;
 
   if (!next_if<none>()) {
     if (!next_is<uint64_t>()) {
@@ -1826,7 +1826,8 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Struct() {
 
     auto template_count = next<uint64_t>();
 
-    template_args.reserve(template_count);
+    template_args = TemplateParameters();
+    template_args->reserve(template_count);
 
     while (template_count--) {
       if (!next_if<std::string>("name") || !next_is<std::string>()) {
@@ -1858,7 +1859,7 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Struct() {
         }
       }
 
-      template_args.emplace_back(name, type.value(), default_value);
+      template_args->emplace_back(name, type.value(), default_value);
     }
   }
 
@@ -2160,12 +2161,13 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Function() {
     return nullptr;
   }
 
-  TemplateParameters template_args;
+  std::optional<TemplateParameters> template_args;
 
   if (!next_if<none>()) {
     auto template_count = next<uint64_t>();
 
-    template_args.reserve(template_count);
+    template_args = TemplateParameters();
+    template_args->reserve(template_count);
 
     while (template_count--) {
       if (!next_if<std::string>("name") || !next_is<std::string>()) {
@@ -2197,7 +2199,7 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Function() {
         }
       }
 
-      template_args.emplace_back(name, type.value(), default_value);
+      template_args->emplace_back(name, type.value(), default_value);
     }
   }
 
@@ -2295,15 +2297,20 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Function() {
     return nullptr;
   }
 
-  auto body = deserialize_statement();
-  if (!body.has_value()) {
-    return nullptr;
+  NullableFlowPtr<Stmt> body;
+  if (next_if<none>()) {
+    body = nullptr;
+  } else {
+    body = deserialize_statement();
+    if (!body.has_value()) {
+      return nullptr;
+    }
   }
 
   return make<Function>(std::move(attributes), purity, std::move(captures),
                         name, std::move(template_args), std::move(parameters),
                         variadic, return_type.value(), precond, postcond,
-                        body.value())();
+                        body)();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Scope() {
@@ -2503,8 +2510,31 @@ NullableFlowPtr<Base> AST_Reader::ReadKind_Let() {
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_InlineAsm() {
-  /// TODO: Implement deserialization for kind
-  qcore_implement();
+  if (!next_if<std::string>("assembly") || !next_is<std::string>()) {
+    return nullptr;
+  }
+
+  auto assembly = next<std::string>();
+
+  if (!next_if<std::string>("parameters") || !next_is<uint64_t>()) {
+    return nullptr;
+  }
+
+  auto parameter_count = next<uint64_t>();
+
+  ExpressionList parameters;
+  parameters.reserve(parameter_count);
+
+  while (parameter_count--) {
+    auto parameter = deserialize_expression();
+    if (!parameter.has_value()) {
+      return nullptr;
+    }
+
+    parameters.push_back(parameter.value());
+  }
+
+  return make<InlineAsm>(assembly, std::move(parameters))();
 }
 
 NullableFlowPtr<Base> AST_Reader::ReadKind_Return() {
