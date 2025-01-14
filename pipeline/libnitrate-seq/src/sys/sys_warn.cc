@@ -52,7 +52,7 @@ int ncc::seq::sys_warn(lua_State* L) {
     if (lua_isstring(L, i)) {
       qcore_write(lua_tostring(L, i));
     } else if (lua_isnumber(L, i)) {
-      qcore_writef("%g", (double)lua_tonumber(L, i));
+      qcore_writef("%f", (double)lua_tonumber(L, i));
     } else if (lua_isboolean(L, i)) {
       qcore_write(lua_toboolean(L, i) ? "true" : "false");
     } else {

@@ -314,17 +314,9 @@ func_entry:  // do tail call optimization manually
 
 void Sequencer::LoadLuaLibs() {
   static constexpr luaL_Reg the_libs[] = {
-      {LUA_GNAME, luaopen_base},
-      // {LUA_LOADLIBNAME, luaopen_package},
-      // {LUA_COLIBNAME, luaopen_coroutine},
-      {LUA_TABLIBNAME, luaopen_table},
-      {LUA_IOLIBNAME, luaopen_io},
-      // {LUA_OSLIBNAME, luaopen_os},
-      {LUA_STRLIBNAME, luaopen_string},
-      {LUA_MATHLIBNAME, luaopen_math},
-      {LUA_UTF8LIBNAME, luaopen_utf8},
-      {LUA_DBLIBNAME, luaopen_debug},
-      {NULL, NULL},
+      {LUA_GNAME, luaopen_base},        {LUA_TABLIBNAME, luaopen_table},
+      {LUA_STRLIBNAME, luaopen_string}, {LUA_MATHLIBNAME, luaopen_math},
+      {LUA_UTF8LIBNAME, luaopen_utf8},  {NULL, NULL},
   };
 
   for (auto lib = the_libs; lib->func; lib++) {
@@ -348,17 +340,16 @@ void Sequencer::BindLuaAPI() {
 Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
                      bool is_root)
     : ncc::lex::IScanner(env) {
-  m_core = std::make_shared<PImpl>();
   m_scanner = std::make_unique<Tokenizer>(file, env);
 
   if (is_root) {
+    m_core = std::make_shared<PImpl>();
+
     LoadLuaLibs();
     BindLuaAPI();
     RecursiveExpand(CodePrefix);
   }
 }
-
-Sequencer::~Sequencer() {}
 
 std::optional<std::vector<std::string>> Sequencer::GetSourceWindow(
     Point start, Point end, char fillchar) {

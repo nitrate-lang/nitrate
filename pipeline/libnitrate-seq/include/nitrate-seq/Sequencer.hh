@@ -79,7 +79,7 @@ namespace ncc::seq {
   public:
     Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
               bool is_root = true);
-    virtual ~Sequencer() override;
+    virtual ~Sequencer() override = default;
 
     virtual std::optional<std::vector<std::string>> GetSourceWindow(
         Point start, Point end, char fillchar) override;

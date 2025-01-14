@@ -35,31 +35,26 @@
 #include <string_view>
 
 std::string_view ncc::seq::Sequencer::CodePrefix = R"(
-@( -- Disable dangerous lua functions
-
+@( -- Disable some lua functions for security and determinism
   -- From lbaselib.c
   dofile = nil;
   loadfile = nil;
-
-  -- From ldblib.c
-  debug_cli = debug.debug
-  debug = nil
-
-  -- From liolib.c
-  io = nil;
 
   -- From lmathlib.c
   math.random = nil;
   math.randomseed = nil;
 
-  -- From loslib.c
-  os = nil;
-
-  -- From lcorolib.c
-  coroutine = nil;
-
-  -- From loadlib.c
-  package = nil;
+  print = function(...)
+    local args = {...};
+    local res = '';
+    for i = 1, #args do
+      res = res .. tostring(args[i]);
+      if i < #args then
+        res = res .. '\t';
+      end
+    end
+    n.debug(res);
+  end
 )
 
 @(fn define() {
