@@ -255,8 +255,9 @@ NCC_EXPORT std::string ncc::parse::ec::Formatter(std::string_view message_raw,
     std::stringstream ss;
     ss << "[\x1b[0m\x1b[31;1mSyntax\x1b[0m\x1b[37;1m]: ";
     ss << (start_filename->empty() ? "?" : start_filename) << ":";
-    ss << (start_line == QLEX_EOFF ? "?" : std::to_string(start_line)) << ":";
-    ss << (start_col == QLEX_EOFF ? "?" : std::to_string(start_col))
+    ss << (start_line == QLEX_EOFF ? "?" : std::to_string(start_line + 1))
+       << ":";
+    ss << (start_col == QLEX_EOFF ? "?" : std::to_string(start_col + 1))
        << ":\x1b[0m ";
     ss << "\x1b[37;1m" << message << "\x1b[0m";
 
