@@ -31,43 +31,29 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstdio>
-#include <nitrate-core/Environment.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int qcall::sys_info(lua_State* L) {
-  /**
-   * @brief Put a value into the info log.
-   */
-
+int ncc::seq::sys_ctrl(lua_State* L) {
   int nargs = lua_gettop(L);
-  if (nargs == 0) {
-    return luaL_error(L, "Expected at least one argument, got 0");
+  if (nargs < 1) {
+    return luaL_error(L, "expected at least 1 argument, got %d", nargs);
   }
 
-  qcore_begin(QCORE_INFO);
-
-  for (int i = 1; i <= nargs; i++) {
-    if (lua_isstring(L, i)) {
-      qcore_write(lua_tostring(L, i));
-    } else if (lua_isnumber(L, i)) {
-      qcore_writef("%g", (double)lua_tonumber(L, i));
-    } else if (lua_isboolean(L, i)) {
-      qcore_write(lua_toboolean(L, i) ? "true" : "false");
-    } else {
-      return luaL_error(
-          L,
-          "Invalid argument #%d: expected string, number, or boolean, got %s",
-          i, lua_typename(L, lua_type(L, i)));
-    }
+  if (!lua_isnumber(L, 1)) {
+    return luaL_error(L, "expected number, got %s",
+                      lua_typename(L, lua_type(L, 1)));
   }
 
-  qcore_end();
+  int id = lua_tointeger(L, 1);
+  qcore_logf(QCORE_DEBUG, "sys_ctrl: %d not implemented", id);
 
-  return 0;
+  lua_pushnil(L);
+
+  return 1;
 }

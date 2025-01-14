@@ -31,46 +31,33 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_IR_ENCODE_TOMSGPACK_H__
-#define __NITRATE_IR_ENCODE_TOMSGPACK_H__
+#include <nitrate-core/Environment.hh>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-seq/Sequencer.hh>
+#include <sys/List.hh>
 
-#include <nitrate-ir/encode/Serialize.hh>
-#include <ostream>
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
-namespace ncc::ir::encode {
-  class NCC_EXPORT IR_MsgPackWriter : public IR_Writer {
-    std::ostream& m_os;
+int ncc::seq::sys_get(lua_State* L) {
+  int nargs = lua_gettop(L);
+  if (nargs != 1) {
+    return luaL_error(L, "expected 1 argument, got %d", nargs);
+  }
 
-    void str_impl(std::string_view str);
-    void uint_impl(uint64_t val);
-    void double_impl(double val);
-    void bool_impl(bool val);
-    void null_impl();
-    void begin_obj_impl(size_t pair_count);
-    void end_obj_impl();
-    void begin_arr_impl(size_t size);
-    void end_arr_impl();
+  Sequencer* obj = get_engine();
 
-  public:
-    IR_MsgPackWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
-        : IR_Writer(std::bind(&IR_MsgPackWriter::str_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::uint_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::double_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::bool_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::null_impl, this),
-                    std::bind(&IR_MsgPackWriter::begin_obj_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::end_obj_impl, this),
-                    std::bind(&IR_MsgPackWriter::begin_arr_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::end_arr_impl, this), rd),
-          m_os(os) {}
-    virtual ~IR_MsgPackWriter() = default;
-  };
-}  // namespace ncc::ir::encode
+  if (!lua_isstring(L, 1)) {
+    return luaL_error(L, "expected string, got %s",
+                      lua_typename(L, lua_type(L, 1)));
+  }
 
-#endif
+  if (let value = obj->GetEnvironment()->get(lua_tostring(L, 1))) {
+    lua_pushstring(L, std::string(*value).c_str());
+  } else {
+    lua_pushnil(L);
+  }
+
+  return 1;
+}

@@ -31,54 +31,39 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-lexer/Lexer.hh>
+#include <cstdio>
+#include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-using namespace ncc::lex;
+int ncc::seq::sys_warn(lua_State* L) {
+  int nargs = lua_gettop(L);
+  if (nargs == 0) {
+    return luaL_error(L, "Expected at least one argument, got 0");
+  }
 
-int qcall::sys_peek(lua_State* L) {
-  Token tok = get_engine()->Peek();
+  qcore_begin(QCORE_WARN);
 
-  lua_newtable(L);
-
-  lua_pushstring(L, "ty");
-  lua_pushstring(L, qlex_ty_str(tok.get_type()));
-  lua_settable(L, -3);
-
-  lua_pushstring(L, "v");
-  switch (tok.get_type()) {
-    case EofF:
-    case KeyW: {
-      lua_pushstring(L, kw_repr(tok.as_key()));
-      break;
-    }
-    case Oper: {
-      lua_pushstring(L, op_repr(tok.as_op()));
-      break;
-    }
-    case Punc: {
-      lua_pushstring(L, punct_repr(tok.as_punc()));
-      break;
-    }
-    case IntL:
-    case NumL:
-    case Text:
-    case Char:
-    case Name:
-    case MacB:
-    case Macr:
-    case Note: {
-      lua_pushstring(L, std::string(tok.as_string()).c_str());
-      break;
+  for (int i = 1; i <= nargs; i++) {
+    if (lua_isstring(L, i)) {
+      qcore_write(lua_tostring(L, i));
+    } else if (lua_isnumber(L, i)) {
+      qcore_writef("%f", (double)lua_tonumber(L, i));
+    } else if (lua_isboolean(L, i)) {
+      qcore_write(lua_toboolean(L, i) ? "true" : "false");
+    } else {
+      return luaL_error(
+          L,
+          "Invalid argument #%d: expected string, number, or boolean, got %s",
+          i, lua_typename(L, lua_type(L, i)));
     }
   }
 
-  lua_settable(L, -3);
+  qcore_end();
 
-  return 1;
+  return 0;
 }

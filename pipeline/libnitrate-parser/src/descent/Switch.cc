@@ -49,7 +49,7 @@ FlowPtr<Stmt> Parser::recurse_switch_case_body() {
   }
 }
 
-std::variant<FlowPtr<CaseStmt>, FlowPtr<Stmt>> Parser::recurse_switch_case() {
+std::pair<FlowPtr<Stmt>, bool> Parser::recurse_switch_case() {
   auto cond = recurse_expr({
       Token(Oper, OpArrow),
       Token(Punc, PuncLCur),
@@ -60,9 +60,9 @@ std::variant<FlowPtr<CaseStmt>, FlowPtr<Stmt>> Parser::recurse_switch_case() {
       cond->is(QAST_IDENT) && cond->as<Ident>()->get_name() == "_";
 
   if (is_the_default_case) {
-    return body;
+    return {body, true};
   } else {
-    return make<CaseStmt>(cond, body)();
+    return {make<CaseStmt>(cond, body)(), false};
   }
 }
 
@@ -81,16 +81,15 @@ Parser::recurse_switch_body() {
       return {{cases, default_case}};
     }
 
-    auto case_or_default = recurse_switch_case();
-    if (std::holds_alternative<FlowPtr<Stmt>>(case_or_default)) {
+    auto [stmt, is_default] = recurse_switch_case();
+    if (is_default) {
       if (!default_case) [[likely]] {
-        default_case = std::get<FlowPtr<Stmt>>(case_or_default);
+        default_case = stmt;
       } else {
         log << SyntaxError << current() << "Duplicate default case in switch.";
       }
     } else {
-      auto case_stmt = std::get<FlowPtr<CaseStmt>>(case_or_default);
-      cases.push_back(case_stmt);
+      cases.push_back(stmt.as<CaseStmt>());
     }
 
     next_if(PuncComa) || next_if(PuncSemi);

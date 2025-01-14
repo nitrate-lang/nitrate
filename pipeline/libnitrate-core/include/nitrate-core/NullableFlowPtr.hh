@@ -130,6 +130,22 @@ namespace ncc {
       }
 
       ///=========================================================================
+      /// Casting
+
+      template <class U>
+      constexpr operator NullableFlowPtr<U>() {
+        static_assert(std::is_convertible_v<Pointee *, U *>,
+                      "Cannot convert Pointee* to U*");
+        return NullableFlowPtr<U>(static_cast<U *>(m_ptr.get()), m_ptr.trace());
+      }
+
+      template <class U>
+      constexpr auto as() {
+        return NullableFlowPtr<U>(reinterpret_cast<U *>(m_ptr.get()),
+                                  m_ptr.trace());
+      }
+
+      ///=========================================================================
       /// Accessors
 
       constexpr bool has_value() const { return m_ptr != nullptr; }

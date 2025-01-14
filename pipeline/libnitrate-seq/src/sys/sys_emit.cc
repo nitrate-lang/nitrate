@@ -31,45 +31,30 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstdio>
-#include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int qcall::sys_fatal(lua_State* L) {
-  /**
-   * @brief Put a value into the fatal log.
-   */
-
+int ncc::seq::sys_emit(lua_State* L) {
   int nargs = lua_gettop(L);
-  if (nargs == 0) {
-    return luaL_error(L, "Expected at least one argument, got 0");
+  if (nargs < 1) {
+    return luaL_error(L, "sys_emit: expected at least 1 argument, got %d",
+                      nargs);
   }
 
-  qcore_begin(QCORE_FATAL);
+  Sequencer* obj = get_engine();
 
   for (int i = 1; i <= nargs; i++) {
-    if (lua_isstring(L, i)) {
-      qcore_write(lua_tostring(L, i));
-    } else if (lua_isnumber(L, i)) {
-      qcore_writef("%g", (double)lua_tonumber(L, i));
-    } else if (lua_isboolean(L, i)) {
-      qcore_write(lua_toboolean(L, i) ? "true" : "false");
-    } else {
-      return luaL_error(
-          L,
-          "Invalid argument #%d: expected string, number, or boolean, got %s",
-          i, lua_typename(L, lua_type(L, i)));
+    if (!lua_isstring(L, i)) {
+      return luaL_error(L, "sys_emit: expected string, got %s",
+                        lua_typename(L, lua_type(L, i)));
     }
+
+    obj->RecursiveExpand(lua_tostring(L, i));
   }
-
-  qcore_end();
-
-  throw StopException();
 
   return 0;
 }

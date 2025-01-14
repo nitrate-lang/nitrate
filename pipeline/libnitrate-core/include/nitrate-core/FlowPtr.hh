@@ -182,6 +182,8 @@ namespace ncc {
 
       template <class U>
       constexpr operator FlowPtr<U>() {
+        static_assert(std::is_convertible_v<Pointee *, U *>,
+                      "Cannot convert Pointee* to U*");
         return FlowPtr<U>(static_cast<U *>(get()), trace());
       }
 

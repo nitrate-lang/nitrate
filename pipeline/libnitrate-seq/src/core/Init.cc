@@ -31,43 +31,41 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstdio>
-#include <nitrate-core/Environment.hh>
-#include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
+#include <nitrate-core/Init.hh>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Init.hh>
+#include <nitrate-seq/Init.hh>
 
-extern "C" {
-#include <lua/lauxlib.h>
+using namespace ncc::seq;
+
+NCC_EXPORT ncc::LibraryRC<SeqLibrarySetup> ncc::seq::SeqLibrary;
+
+NCC_EXPORT bool SeqLibrarySetup::Init() {
+  qcore_print(QCORE_DEBUG, "Initializing Nitrate Sequencer Library");
+
+  if (!ncc::CoreLibrary.InitRC()) {
+    return false;
+  }
+
+  if (!ncc::lex::LexerLibrary.InitRC()) {
+    return false;
+  }
+
+  qcore_print(QCORE_DEBUG, "Nitrate Sequencer Library initialized");
+
+  return true;
 }
 
-int qcall::sys_error(lua_State* L) {
-  /**
-   * @brief Put a value into the error log.
-   */
+NCC_EXPORT void SeqLibrarySetup::Deinit() {
+  qcore_print(QCORE_DEBUG, "Deinitializing Nitrate Sequencer Library");
 
-  int nargs = lua_gettop(L);
-  if (nargs == 0) {
-    return luaL_error(L, "Expected at least one argument, got 0");
-  }
+  ncc::lex::LexerLibrary.DeinitRC();
+  ncc::CoreLibrary.DeinitRC();
 
-  qcore_begin(QCORE_ERROR);
+  qcore_print(QCORE_DEBUG, "Nitrate Sequencer Library deinitialized");
+}
 
-  for (int i = 1; i <= nargs; i++) {
-    if (lua_isstring(L, i)) {
-      qcore_write(lua_tostring(L, i));
-    } else if (lua_isnumber(L, i)) {
-      qcore_writef("%g", (double)lua_tonumber(L, i));
-    } else if (lua_isboolean(L, i)) {
-      qcore_write(lua_toboolean(L, i) ? "true" : "false");
-    } else {
-      return luaL_error(
-          L,
-          "Invalid argument #%d: expected string, number, or boolean, got %s",
-          i, lua_typename(L, lua_type(L, i)));
-    }
-  }
-
-  qcore_end();
-
-  return 0;
+NCC_EXPORT std::string_view SeqLibrarySetup::GetVersionId() {
+  return __TARGET_VERSION;
 }

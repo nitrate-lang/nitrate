@@ -31,67 +31,59 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef __NITRATE_SEQ_HH__
+#define __NITRATE_SEQ_HH__
+
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
 #include <optional>
-#include <random>
 #include <string_view>
-
-#define get_engine() \
-  ((Sequencer *)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1)))
 
 struct lua_State;
 
-enum class DeferOp {
-  EmitToken,
-  SkipToken,
-  UninstallHandler,
-};
+namespace ncc::seq {
 
-struct Sequencer;
+  class NCC_EXPORT Sequencer final : public ncc::lex::IScanner {
+    static std::string_view CodePrefix;
+    std::unique_ptr<ncc::lex::Tokenizer> m_scanner;
 
-typedef std::function<DeferOp(Sequencer *obj, ncc::lex::Token last)>
-    DeferCallback;
+  public:
+    enum DeferOp {
+      EmitToken,
+      SkipToken,
+      UninstallHandler,
+    };
 
-extern std::string_view nit_code_prefix;
+    using DeferCallback =
+        std::function<DeferOp(Sequencer *obj, ncc::lex::Token last)>;
+    class StopException {};
 
-struct Sequencer final : public ncc::lex::IScanner {
-  struct Core {
-    lua_State *L = nullptr;
-    std::vector<DeferCallback> defer_callbacks;
-    std::deque<ncc::lex::Token> buffer;
-    std::mt19937 m_qsys_random_engine;
-    bool m_do_expanse = true;
-    size_t m_depth = 0;
+    class PImpl;
+    std::shared_ptr<PImpl> m_core;
 
-    ~Core();
+    virtual ncc::lex::Token GetNext() override;
+    virtual std::optional<ncc::lex::Location> GetLocationFallback(
+        ncc::lex::LocationID id) override {
+      return m_scanner->GetLocation(id);
+    }
+
+    bool ApplyDynamicTransforms(ncc::lex::Token last);
+
+    bool ExecuteLua(const char *code);
+    void RecursiveExpand(std::string_view code);
+    void LoadLuaLibs();
+    void BindLuaAPI();
+
+  public:
+    Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
+              bool is_root = true);
+    virtual ~Sequencer() override = default;
+
+    virtual std::optional<std::vector<std::string>> GetSourceWindow(
+        Point start, Point end, char fillchar) override;
   };
+}  // namespace ncc::seq
 
-  std::shared_ptr<Core> m_core;
-  std::unique_ptr<ncc::lex::Tokenizer> m_scanner;
-
-  virtual ncc::lex::Token GetNext() override;
-  virtual std::optional<ncc::lex::Location> GetLocationFallback(
-      ncc::lex::LocationID id) override {
-    return m_scanner->GetLocation(id);
-  }
-
-  bool run_defer_callbacks(ncc::lex::Token last);
-
-  std::optional<std::string> run_lua_code(const std::string &s);
-  bool run_and_expand(const std::string &code);
-  void expand_raw(std::string_view code);
-  void install_lua_api();
-
-public:
-  Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
-            bool is_root = true);
-  virtual ~Sequencer() override;
-
-  virtual std::optional<std::vector<std::string>> GetSourceWindow(
-      Point start, Point end, char fillchar) override;
-};
-
-class StopException {};
+#endif

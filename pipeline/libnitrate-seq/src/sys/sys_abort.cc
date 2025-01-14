@@ -34,29 +34,25 @@
 #include <cstdio>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int qcall::sys_debug(lua_State* L) {
-  /**
-   * @brief Put a value into the debug log.
-   */
-
+int ncc::seq::sys_abort(lua_State* L) {
   int nargs = lua_gettop(L);
   if (nargs == 0) {
     return luaL_error(L, "Expected at least one argument, got 0");
   }
 
-  qcore_begin(QCORE_DEBUG);
+  qcore_begin(QCORE_ERROR);
 
   for (int i = 1; i <= nargs; i++) {
     if (lua_isstring(L, i)) {
       qcore_write(lua_tostring(L, i));
     } else if (lua_isnumber(L, i)) {
-      qcore_writef("%g", (double)lua_tonumber(L, i));
+      qcore_writef("%f", (double)lua_tonumber(L, i));
     } else if (lua_isboolean(L, i)) {
       qcore_write(lua_toboolean(L, i) ? "true" : "false");
     } else {
@@ -69,5 +65,5 @@ int qcall::sys_debug(lua_State* L) {
 
   qcore_end();
 
-  return 0;
+  throw Sequencer::StopException();
 }

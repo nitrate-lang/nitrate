@@ -31,65 +31,52 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstdio>
-#include <nitrate-core/Environment.hh>
-#include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
-#include <random>
+#ifndef __NITRATE_IR_ENCODE_TOJSON_H__
+#define __NITRATE_IR_ENCODE_TOJSON_H__
 
-extern "C" {
-#include <lua/lauxlib.h>
-}
+#include <nitrate-ir/IRWriter.hh>
+#include <ostream>
+#include <stack>
 
-int qcall::sys_random(lua_State* L) {
-  /**
-   * @brief Get a uniform random number (in the range [a, b]).
-   */
+namespace ncc::ir {
+  class NCC_EXPORT IR_JsonWriter : public IR_Writer {
+    std::ostream& m_os;
+    std::stack<bool> m_comma;
+    std::stack<size_t> m_count;
 
-  int64_t min, max;
+    void delim();
 
-  int nargs = lua_gettop(L);
-  if (nargs == 0) {
-    min = 0;
-    max = 0xff;
-  } else if (nargs == 1) {
-    min = 0;
-    if (lua_isnumber(L, 1)) {
-      max = lua_tointeger(L, 1);
-    } else {
-      return luaL_error(L, "Invalid argument #1: expected number, got %s",
-                        lua_typename(L, lua_type(L, 1)));
+    void str_impl(std::string_view str);
+    void uint_impl(uint64_t val);
+    void double_impl(double val);
+    void bool_impl(bool val);
+    void null_impl();
+    void begin_obj_impl(size_t pair_count);
+    void end_obj_impl();
+    void begin_arr_impl(size_t size);
+    void end_arr_impl();
+
+  public:
+    IR_JsonWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
+        : IR_Writer(
+              std::bind(&IR_JsonWriter::str_impl, this, std::placeholders::_1),
+              std::bind(&IR_JsonWriter::uint_impl, this, std::placeholders::_1),
+              std::bind(&IR_JsonWriter::double_impl, this,
+                        std::placeholders::_1),
+              std::bind(&IR_JsonWriter::bool_impl, this, std::placeholders::_1),
+              std::bind(&IR_JsonWriter::null_impl, this),
+              std::bind(&IR_JsonWriter::begin_obj_impl, this,
+                        std::placeholders::_1),
+              std::bind(&IR_JsonWriter::end_obj_impl, this),
+              std::bind(&IR_JsonWriter::begin_arr_impl, this,
+                        std::placeholders::_1),
+              std::bind(&IR_JsonWriter::end_arr_impl, this), rd),
+          m_os(os) {
+      m_comma.push(false);
+      m_count.push(0);
     }
-  } else if (nargs == 2) {
-    if (lua_isnumber(L, 1)) {
-      min = lua_tointeger(L, 1);
-    } else {
-      return luaL_error(L, "Invalid argument #1: expected number, got %s",
-                        lua_typename(L, lua_type(L, 1)));
-    }
+    virtual ~IR_JsonWriter() = default;
+  };
+}  // namespace ncc::ir
 
-    if (lua_isnumber(L, 2)) {
-      max = lua_tointeger(L, 2);
-    } else {
-      return luaL_error(L, "Invalid argument #2: expected number, got %s",
-                        lua_typename(L, lua_type(L, 2)));
-    }
-  } else {
-    return luaL_error(L, "Expected at most two arguments, got %d", nargs);
-  }
-
-  if (min > max) {
-    return luaL_error(L, "Invalid range: min > max");
-  }
-
-  auto engine = get_engine();
-
-  static_assert(sizeof(engine->m_core->m_qsys_random_engine()) == 8);
-
-  uint64_t num = engine->m_core->m_qsys_random_engine();
-  num = (num % (max - min + 1)) + min;
-
-  lua_pushinteger(L, num);
-
-  return 1;
-}
+#endif

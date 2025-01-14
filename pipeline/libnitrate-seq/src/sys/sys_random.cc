@@ -31,32 +31,61 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <cstdio>
 #include <nitrate-core/Environment.hh>
-#include <nitrate-core/Logger.hh>
-#include <nitrate-core/Macro.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
-#include <string>
+#include <random>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int qcall::sys_starttime(lua_State* L) {
-  /**
-   * @brief Get the start time in milliseconds
-   */
+int ncc::seq::sys_random(lua_State* L) {
+  int64_t min, max;
 
   int nargs = lua_gettop(L);
-  if (nargs != 0) {
-    return luaL_error(L, "Expected 0 arguments, got %d", nargs);
+  if (nargs == 0) {
+    min = 0;
+    max = 0xff;
+  } else if (nargs == 1) {
+    min = 0;
+    if (lua_isnumber(L, 1)) {
+      max = lua_tointeger(L, 1);
+    } else {
+      return luaL_error(L, "Invalid argument #1: expected number, got %s",
+                        lua_typename(L, lua_type(L, 1)));
+    }
+  } else if (nargs == 2) {
+    if (lua_isnumber(L, 1)) {
+      min = lua_tointeger(L, 1);
+    } else {
+      return luaL_error(L, "Invalid argument #1: expected number, got %s",
+                        lua_typename(L, lua_type(L, 1)));
+    }
+
+    if (lua_isnumber(L, 2)) {
+      max = lua_tointeger(L, 2);
+    } else {
+      return luaL_error(L, "Invalid argument #2: expected number, got %s",
+                        lua_typename(L, lua_type(L, 2)));
+    }
+  } else {
+    return luaL_error(L, "Expected at most two arguments, got %d", nargs);
   }
 
-  if (let starttime = get_engine()->GetEnvironment()->get("this.created_at")) {
-    lua_pushinteger(L, std::stoll(std::string(*starttime)));
-  } else {
-    qcore_panic("Failed to get the start time of the compiler");
+  if (min > max) {
+    return luaL_error(L, "Invalid range: min > max");
   }
+
+  auto engine = get_engine();
+
+  static_assert(sizeof(engine->m_core->m_random()) == 8);
+
+  uint64_t num = engine->m_core->m_random();
+  num = (num % (max - min + 1)) + min;
+
+  lua_pushinteger(L, num);
 
   return 1;
 }

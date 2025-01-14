@@ -31,29 +31,124 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <chrono>
-#include <qcall/List.hh>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-ir/ToJson.hh>
 
-extern "C" {
-#include <lua/lauxlib.h>
-}
+using namespace ncc::ir;
 
-int qcall::sys_time(lua_State* L) {
-  /**
-   * @brief Get the current UNIX timestamp in milliseconds
-   */
+static void escape_string(std::ostream &os, const std::string_view &input) {
+  os << "\"";
 
-  int nargs = lua_gettop(L);
-  if (nargs != 0) {
-    return luaL_error(L, "Expected 0 arguments, got %d", nargs);
+  for (char ch : input) {
+    switch (ch) {
+      case '"':
+        os << "\\\"";
+        break;
+      case '\\':
+        os << "\\\\";
+        break;
+      case '\b':
+        os << "\\b";
+        break;
+      case '\f':
+        os << "\\f";
+        break;
+      case '\n':
+        os << "\\n";
+        break;
+      case '\r':
+        os << "\\r";
+        break;
+      case '\t':
+        os << "\\t";
+        break;
+      case '\0':
+        os << "\\0";
+        break;
+      default:
+        if (ch >= 32 && ch < 127) {
+          os << ch;
+        } else {
+          char hex[5];
+          snprintf(hex, sizeof(hex), "\\x%02x", (int)(uint8_t)ch);
+          os << hex;
+        }
+        break;
+    }
   }
 
-  auto now = std::chrono::system_clock::now();
-  auto epoch = now.time_since_epoch();
-  auto milli_seconds =
-      std::chrono::duration_cast<std::chrono::milliseconds>(epoch);
+  os << "\"";
+}
 
-  lua_pushinteger(L, milli_seconds.count());
+void IR_JsonWriter::delim() {
+  if (!m_count.empty() && !m_comma.empty()) {
+    if (m_count.top()++ > 0) {
+      bool use_comma = m_comma.top() == true || (m_count.top() & 1) != 0;
 
-  return 1;
+      m_os << (use_comma ? "," : ":");
+    }
+  }
+}
+
+void IR_JsonWriter::str_impl(std::string_view str) {
+  delim();
+
+  escape_string(m_os, str);
+}
+
+void IR_JsonWriter::uint_impl(uint64_t val) {
+  delim();
+
+  m_os << val;
+}
+
+void IR_JsonWriter::double_impl(double val) {
+  delim();
+
+  m_os << val;
+}
+
+void IR_JsonWriter::bool_impl(bool val) {
+  delim();
+
+  m_os << (val ? "true" : "false");
+}
+
+void IR_JsonWriter::null_impl() {
+  delim();
+
+  m_os << "null";
+}
+
+void IR_JsonWriter::begin_obj_impl(size_t) {
+  delim();
+
+  m_comma.push(false);
+  m_count.push(0);
+  m_os << "{";
+}
+
+void IR_JsonWriter::end_obj_impl() {
+  if (!m_count.empty() && !m_comma.empty()) {
+    m_os << "}";
+    m_count.pop();
+    m_comma.pop();
+  }
+}
+
+void IR_JsonWriter::begin_arr_impl(size_t) {
+  delim();
+
+  m_comma.push(true);
+  m_count.push(0);
+  m_os << "[";
+}
+
+void IR_JsonWriter::end_arr_impl() {
+  if (!m_count.empty() && !m_comma.empty()) {
+    m_os << "]";
+    m_count.pop();
+    m_comma.pop();
+  }
 }

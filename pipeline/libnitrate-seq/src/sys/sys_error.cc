@@ -31,34 +31,39 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <cstdio>
+#include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int qcall::sys_emit(lua_State* L) {
-  /**
-   *   @brief Next token.
-   */
-
+int ncc::seq::sys_error(lua_State* L) {
   int nargs = lua_gettop(L);
-  if (nargs < 1) {
-    return luaL_error(L, "sys_emit: expected at least 1 argument, got %d",
-                      nargs);
+  if (nargs == 0) {
+    return luaL_error(L, "Expected at least one argument, got 0");
   }
 
-  Sequencer* obj = get_engine();
+  qcore_begin(QCORE_ERROR);
 
   for (int i = 1; i <= nargs; i++) {
-    if (!lua_isstring(L, i)) {
-      return luaL_error(L, "sys_emit: expected string, got %s",
-                        lua_typename(L, lua_type(L, i)));
+    if (lua_isstring(L, i)) {
+      qcore_write(lua_tostring(L, i));
+    } else if (lua_isnumber(L, i)) {
+      qcore_writef("%f", (double)lua_tonumber(L, i));
+    } else if (lua_isboolean(L, i)) {
+      qcore_write(lua_toboolean(L, i) ? "true" : "false");
+    } else {
+      return luaL_error(
+          L,
+          "Invalid argument #%d: expected string, number, or boolean, got %s",
+          i, lua_typename(L, lua_type(L, i)));
     }
-
-    obj->expand_raw(lua_tostring(L, i));
   }
+
+  qcore_end();
 
   return 0;
 }

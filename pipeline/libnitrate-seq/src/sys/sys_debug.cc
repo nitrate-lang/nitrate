@@ -31,124 +31,39 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Logger.hh>
-#include <nitrate-core/Macro.hh>
-#include <nitrate-ir/encode/ToJson.hh>
+#include <cstdio>
+#include <nitrate-core/Environment.hh>
+#include <nitrate-seq/Sequencer.hh>
+#include <sys/List.hh>
 
-using namespace ncc::ir::encode;
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
-static void escape_string(std::ostream &os, const std::string_view &input) {
-  os << "\"";
+int ncc::seq::sys_debug(lua_State* L) {
+  int nargs = lua_gettop(L);
+  if (nargs == 0) {
+    return luaL_error(L, "Expected at least one argument, got 0");
+  }
 
-  for (char ch : input) {
-    switch (ch) {
-      case '"':
-        os << "\\\"";
-        break;
-      case '\\':
-        os << "\\\\";
-        break;
-      case '\b':
-        os << "\\b";
-        break;
-      case '\f':
-        os << "\\f";
-        break;
-      case '\n':
-        os << "\\n";
-        break;
-      case '\r':
-        os << "\\r";
-        break;
-      case '\t':
-        os << "\\t";
-        break;
-      case '\0':
-        os << "\\0";
-        break;
-      default:
-        if (ch >= 32 && ch < 127) {
-          os << ch;
-        } else {
-          char hex[5];
-          snprintf(hex, sizeof(hex), "\\x%02x", (int)(uint8_t)ch);
-          os << hex;
-        }
-        break;
+  qcore_begin(QCORE_DEBUG);
+
+  for (int i = 1; i <= nargs; i++) {
+    if (lua_isstring(L, i)) {
+      qcore_write(lua_tostring(L, i));
+    } else if (lua_isnumber(L, i)) {
+      qcore_writef("%f", (double)lua_tonumber(L, i));
+    } else if (lua_isboolean(L, i)) {
+      qcore_write(lua_toboolean(L, i) ? "true" : "false");
+    } else {
+      return luaL_error(
+          L,
+          "Invalid argument #%d: expected string, number, or boolean, got %s",
+          i, lua_typename(L, lua_type(L, i)));
     }
   }
 
-  os << "\"";
-}
+  qcore_end();
 
-void IR_JsonWriter::delim() {
-  if (!m_count.empty() && !m_comma.empty()) {
-    if (m_count.top()++ > 0) {
-      bool use_comma = m_comma.top() == true || (m_count.top() & 1) != 0;
-
-      m_os << (use_comma ? "," : ":");
-    }
-  }
-}
-
-void IR_JsonWriter::str_impl(std::string_view str) {
-  delim();
-
-  escape_string(m_os, str);
-}
-
-void IR_JsonWriter::uint_impl(uint64_t val) {
-  delim();
-
-  m_os << val;
-}
-
-void IR_JsonWriter::double_impl(double val) {
-  delim();
-
-  m_os << val;
-}
-
-void IR_JsonWriter::bool_impl(bool val) {
-  delim();
-
-  m_os << (val ? "true" : "false");
-}
-
-void IR_JsonWriter::null_impl() {
-  delim();
-
-  m_os << "null";
-}
-
-void IR_JsonWriter::begin_obj_impl(size_t) {
-  delim();
-
-  m_comma.push(false);
-  m_count.push(0);
-  m_os << "{";
-}
-
-void IR_JsonWriter::end_obj_impl() {
-  if (!m_count.empty() && !m_comma.empty()) {
-    m_os << "}";
-    m_count.pop();
-    m_comma.pop();
-  }
-}
-
-void IR_JsonWriter::begin_arr_impl(size_t) {
-  delim();
-
-  m_comma.push(true);
-  m_count.push(0);
-  m_os << "[";
-}
-
-void IR_JsonWriter::end_arr_impl() {
-  if (!m_count.empty() && !m_comma.empty()) {
-    m_os << "]";
-    m_count.pop();
-    m_comma.pop();
-  }
+  return 0;
 }

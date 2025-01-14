@@ -31,53 +31,46 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Logger.hh>
-#include <nitrate-core/Macro.hh>
-#include <nitrate-ir/decode/Deserialize.hh>
+#ifndef __NITRATE_IR_ENCODE_TOMSGPACK_H__
+#define __NITRATE_IR_ENCODE_TOMSGPACK_H__
 
-using namespace ncc::ir::decode;
+#include <nitrate-ir/IRWriter.hh>
+#include <ostream>
 
-void IR_Reader::str(std::string_view str) {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
+namespace ncc::ir {
+  class NCC_EXPORT IR_MsgPackWriter : public IR_Writer {
+    std::ostream& m_os;
 
-void IR_Reader::uint(uint64_t val) {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
+    void str_impl(std::string_view str);
+    void uint_impl(uint64_t val);
+    void double_impl(double val);
+    void bool_impl(bool val);
+    void null_impl();
+    void begin_obj_impl(size_t pair_count);
+    void end_obj_impl();
+    void begin_arr_impl(size_t size);
+    void end_arr_impl();
 
-void IR_Reader::dbl(double val) {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
+  public:
+    IR_MsgPackWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
+        : IR_Writer(std::bind(&IR_MsgPackWriter::str_impl, this,
+                              std::placeholders::_1),
+                    std::bind(&IR_MsgPackWriter::uint_impl, this,
+                              std::placeholders::_1),
+                    std::bind(&IR_MsgPackWriter::double_impl, this,
+                              std::placeholders::_1),
+                    std::bind(&IR_MsgPackWriter::bool_impl, this,
+                              std::placeholders::_1),
+                    std::bind(&IR_MsgPackWriter::null_impl, this),
+                    std::bind(&IR_MsgPackWriter::begin_obj_impl, this,
+                              std::placeholders::_1),
+                    std::bind(&IR_MsgPackWriter::end_obj_impl, this),
+                    std::bind(&IR_MsgPackWriter::begin_arr_impl, this,
+                              std::placeholders::_1),
+                    std::bind(&IR_MsgPackWriter::end_arr_impl, this), rd),
+          m_os(os) {}
+    virtual ~IR_MsgPackWriter() = default;
+  };
+}  // namespace ncc::ir
 
-void IR_Reader::boolean(bool val) {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
-
-void IR_Reader::null() {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
-
-void IR_Reader::begin_obj() {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
-
-void IR_Reader::end_obj() {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
-
-void IR_Reader::begin_arr(size_t max_size) {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
-
-void IR_Reader::end_arr() {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
+#endif

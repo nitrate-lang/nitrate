@@ -33,9 +33,9 @@
 
 #include <bit>
 #include <nitrate-core/Logger.hh>
-#include <nitrate-ir/encode/ToMsgPack.hh>
+#include <nitrate-ir/ToMsgPack.hh>
 
-using namespace ncc::ir::encode;
+using namespace ncc::ir;
 
 void IR_MsgPackWriter::str_impl(std::string_view str) {
   size_t sz = str.size();

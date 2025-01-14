@@ -1007,7 +1007,7 @@ void CambrianFormatter::visit(FlowPtr<Assoc> node) {
                  it != list->get_items().end(); ++it) {
               line << get_indent();
 
-              format(*it, false);
+              format(it->as<Assoc>(), false);
 
               if (it != list->get_items().end() - 1) {
                 line << ",";

@@ -36,7 +36,6 @@
 #include <lsp/nitrated.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
-#include <nitrate-seq/Lib.h>
 
 #include <atomic>
 #include <clean/Cleanup.hh>
@@ -54,6 +53,7 @@
 #include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
+#include <nitrate-seq/Init.hh>
 #include <nitrate-seq/Sequencer.hh>
 #include <string>
 #include <string_view>
@@ -338,7 +338,7 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
       return false;
     }
 
-    if (!qprep_lib_init()) {
+    if (!ncc::seq::SeqLibrary.InitRC()) {
       LOG(ERROR) << "Failed to initialize NITRATE-PREP library" << std::endl;
       return false;
     }

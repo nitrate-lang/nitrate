@@ -163,7 +163,7 @@ namespace ncc::parse {
     StructContent recurse_struct_body();
 
     FlowPtr<Stmt> recurse_switch_case_body();
-    std::variant<FlowPtr<CaseStmt>, FlowPtr<Stmt>> recurse_switch_case();
+    std::pair<FlowPtr<Stmt>, bool> recurse_switch_case();
     std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>>
     recurse_switch_body();
 

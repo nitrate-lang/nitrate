@@ -31,52 +31,39 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_IR_ENCODE_TOJSON_H__
-#define __NITRATE_IR_ENCODE_TOJSON_H__
+#include <cstdio>
+#include <nitrate-core/Environment.hh>
+#include <nitrate-seq/Sequencer.hh>
+#include <sys/List.hh>
 
-#include <nitrate-ir/encode/Serialize.hh>
-#include <ostream>
-#include <stack>
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
-namespace ncc::ir::encode {
-  class NCC_EXPORT IR_JsonWriter : public IR_Writer {
-    std::ostream& m_os;
-    std::stack<bool> m_comma;
-    std::stack<size_t> m_count;
+int ncc::seq::sys_fatal(lua_State* L) {
+  int nargs = lua_gettop(L);
+  if (nargs == 0) {
+    return luaL_error(L, "Expected at least one argument, got 0");
+  }
 
-    void delim();
+  qcore_begin(QCORE_FATAL);
 
-    void str_impl(std::string_view str);
-    void uint_impl(uint64_t val);
-    void double_impl(double val);
-    void bool_impl(bool val);
-    void null_impl();
-    void begin_obj_impl(size_t pair_count);
-    void end_obj_impl();
-    void begin_arr_impl(size_t size);
-    void end_arr_impl();
-
-  public:
-    IR_JsonWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
-        : IR_Writer(
-              std::bind(&IR_JsonWriter::str_impl, this, std::placeholders::_1),
-              std::bind(&IR_JsonWriter::uint_impl, this, std::placeholders::_1),
-              std::bind(&IR_JsonWriter::double_impl, this,
-                        std::placeholders::_1),
-              std::bind(&IR_JsonWriter::bool_impl, this, std::placeholders::_1),
-              std::bind(&IR_JsonWriter::null_impl, this),
-              std::bind(&IR_JsonWriter::begin_obj_impl, this,
-                        std::placeholders::_1),
-              std::bind(&IR_JsonWriter::end_obj_impl, this),
-              std::bind(&IR_JsonWriter::begin_arr_impl, this,
-                        std::placeholders::_1),
-              std::bind(&IR_JsonWriter::end_arr_impl, this), rd),
-          m_os(os) {
-      m_comma.push(false);
-      m_count.push(0);
+  for (int i = 1; i <= nargs; i++) {
+    if (lua_isstring(L, i)) {
+      qcore_write(lua_tostring(L, i));
+    } else if (lua_isnumber(L, i)) {
+      qcore_writef("%f", (double)lua_tonumber(L, i));
+    } else if (lua_isboolean(L, i)) {
+      qcore_write(lua_toboolean(L, i) ? "true" : "false");
+    } else {
+      return luaL_error(
+          L,
+          "Invalid argument #%d: expected string, number, or boolean, got %s",
+          i, lua_typename(L, lua_type(L, i)));
     }
-    virtual ~IR_JsonWriter() = default;
-  };
-}  // namespace ncc::ir::encode
+  }
 
-#endif
+  qcore_end();
+
+  throw Sequencer::StopException();
+}

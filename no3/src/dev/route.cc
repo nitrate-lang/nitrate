@@ -36,7 +36,6 @@
 #include <lsp/nitrated.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
-#include <nitrate-seq/Lib.h>
 
 #include <clean/Cleanup.hh>
 #include <core/ANSI.hh>
@@ -57,6 +56,7 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 #include <nitrate-parser/Init.hh>
+#include <nitrate-seq/Init.hh>
 #include <nitrate-seq/Sequencer.hh>
 #include <string_view>
 #include <unordered_map>
@@ -66,6 +66,7 @@ using namespace no3;
 
 using namespace ncc;
 using namespace ncc::lex;
+using namespace ncc::seq;
 using namespace ncc::parse;
 using namespace ncc::ir;
 

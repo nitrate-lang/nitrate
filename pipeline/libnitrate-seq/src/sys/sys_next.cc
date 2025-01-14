@@ -33,7 +33,7 @@
 
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
@@ -41,7 +41,7 @@ extern "C" {
 
 using namespace ncc::lex;
 
-int qcall::sys_next(lua_State* L) {
+int ncc::seq::sys_next(lua_State* L) {
   Token tok = get_engine()->Next();
 
   lua_newtable(L);

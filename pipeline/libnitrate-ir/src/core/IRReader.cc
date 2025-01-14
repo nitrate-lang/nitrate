@@ -31,37 +31,53 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Environment.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
+#include <nitrate-ir/IRReader.hh>
 
-extern "C" {
-#include <lua/lauxlib.h>
+using namespace ncc::ir;
+
+void IR_Reader::str(std::string_view str) {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
 }
 
-int qcall::sys_get(lua_State* L) {
-  /**
-   * @brief Get named value from the environment.
-   */
+void IR_Reader::uint(uint64_t val) {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
 
-  int nargs = lua_gettop(L);
-  if (nargs != 1) {
-    return luaL_error(L, "expected 1 argument, got %d", nargs);
-  }
+void IR_Reader::dbl(double val) {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
 
-  Sequencer* obj = get_engine();
+void IR_Reader::boolean(bool val) {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
 
-  if (!lua_isstring(L, 1)) {
-    return luaL_error(L, "expected string, got %s",
-                      lua_typename(L, lua_type(L, 1)));
-  }
+void IR_Reader::null() {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
 
-  if (let value = obj->GetEnvironment()->get(lua_tostring(L, 1))) {
-    lua_pushstring(L, std::string(*value).c_str());
-  } else {
-    lua_pushnil(L);
-  }
+void IR_Reader::begin_obj() {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
 
-  return 1;
+void IR_Reader::end_obj() {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
+
+void IR_Reader::begin_arr(size_t max_size) {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
+}
+
+void IR_Reader::end_arr() {
+  /// TODO: Implement generic deserializer
+  qcore_implement();
 }

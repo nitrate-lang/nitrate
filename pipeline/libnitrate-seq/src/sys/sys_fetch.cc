@@ -31,94 +31,88 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-seq/Lib.h>
+#include <algorithm>
+#include <nitrate-core/Environment.hh>
+#include <nitrate-seq/Sequencer.hh>
+#include <optional>
+#include <regex>
+#include <string>
+#include <sys/List.hh>
 
-#include <atomic>
-#include <nitrate-core/Init.hh>
-#include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Init.hh>
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
-static std::atomic<size_t> qprep_lib_ref_count = 0;
-
-bool do_init() { return true; }
-
-void do_deinit() { return; }
-
-extern "C" NCC_EXPORT bool qprep_lib_init() {
-  if (qprep_lib_ref_count++ > 1) {
-    return true;
-  }
-
-  if (!ncc::CoreLibrary.InitRC()) {
+static bool is_valid_import_name(const std::string &name) {
+  if (name.empty()) {
     return false;
   }
 
-  if (!ncc::lex::LexerLibrary.InitRC()) {
+  if (std::any_of(name.begin(), name.end(), [](char c) { return c & 0x80; })) {
     return false;
   }
 
-  return do_init();
+  std::regex re(R"(^[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*$)");
+  return std::regex_match(name, re);
 }
 
-extern "C" NCC_EXPORT void qprep_lib_deinit() {
-  if (--qprep_lib_ref_count > 0) {
-    return;
+static void canonicalize_import_name(std::string &name) {
+  // Don't assume that filesystems are case-sensitive.
+  std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+}
+
+static std::optional<std::string> fetch_module_data(ncc::seq::Sequencer *obj,
+                                                    const char *name) {
+  // if (!obj->m_fetch_module.first) {
+  //   return std::nullopt;
+  // }
+
+  // char *module_data = NULL;
+  // size_t module_size = 0;
+
+  // // Always put off to tomorrow what can be done today.
+  // if (!obj->m_fetch_module.first(obj, name, &module_data, &module_size,
+  //                                obj->m_fetch_module.second)) {
+  //   return std::nullopt;
+  // }
+
+  // std::string data(module_data, module_size);
+  // free(module_data);
+
+  // return data;
+  (void)obj;
+  (void)name;
+
+  qcore_print(QCORE_WARN, "fetch_module_data not implemented");
+
+  return std::nullopt;
+}
+
+int ncc::seq::sys_fetch(lua_State *L) {
+  Sequencer *obj = get_engine();
+
+  int nargs = lua_gettop(L);
+  if (nargs != 1) {
+    return luaL_error(L, "expected 1 argument, got %d", nargs);
   }
 
-  do_deinit();
+  if (!lua_isstring(L, 1)) {
+    return luaL_error(L, "expected string, got %s",
+                      lua_typename(L, lua_type(L, 1)));
+  }
 
-  ncc::lex::LexerLibrary.DeinitRC();
-  ncc::CoreLibrary.DeinitRC();
+  std::string import_name = lua_tostring(L, 1);
 
-  return;
+  if (!is_valid_import_name(import_name)) {
+    return luaL_error(L, "invalid import name");
+  }
+
+  canonicalize_import_name(import_name);
+
+  if (auto data = fetch_module_data(obj, import_name.c_str())) {
+    lua_pushstring(L, data->c_str());
+    return 1;
+  } else {
+    return luaL_error(L, "failed to fetch module");
+  }
 }
-
-extern "C" NCC_EXPORT const char* qprep_lib_version() {
-  static const char* version_string =
-
-      "[" __TARGET_VERSION
-      "] ["
-
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
-    defined(_M_X64) || defined(_M_AMD64)
-      "x86_64-"
-#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
-      "x86-"
-#elif defined(__aarch64__)
-      "aarch64-"
-#elif defined(__arm__)
-      "arm-"
-#else
-      "unknown-"
-#endif
-
-#if defined(__linux__)
-      "linux-"
-#elif defined(__APPLE__)
-      "macos-"
-#elif defined(_WIN32)
-      "win32-"
-#else
-      "unknown-"
-#endif
-
-#if defined(__clang__)
-      "clang] "
-#elif defined(__GNUC__)
-      "gnu] "
-#else
-      "unknown] "
-#endif
-
-#if NDEBUG
-      "[release]"
-#else
-      "[debug]"
-#endif
-
-      ;
-
-  return version_string;
-}
-
-extern "C" NCC_EXPORT const char* qprep_strerror() { return ""; }

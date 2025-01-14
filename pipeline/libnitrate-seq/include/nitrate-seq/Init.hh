@@ -31,60 +31,19 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_PREP_LIB_H__
-#define __NITRATE_PREP_LIB_H__
+#ifndef __NITRATE_SEQ_INIT_H__
+#define __NITRATE_SEQ_INIT_H__
 
-#include <stdbool.h>
+#include <nitrate-core/Init.hh>
 
-#ifdef __cplusplus
-extern "C" {
+namespace ncc::seq {
+  struct SeqLibrarySetup {
+    static bool Init();
+    static void Deinit();
+    static std::string_view GetVersionId();
+  };
+
+  extern LibraryRC<SeqLibrarySetup> SeqLibrary;
+}  // namespace ncc::seq
+
 #endif
-
-/**
- * @brief Initialize the library.
- *
- * @return true if the library was initialized successfully.
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not reinitialize the library, but will
- * increment the reference count.
- */
-bool qprep_lib_init();
-
-/**
- * @brief Deinitialize the library.
- *
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not deinitialize the library, but when
- * the reference count reaches zero, the library will be deinitialized.
- */
-void qprep_lib_deinit();
-
-/**
- * @brief Get the version of the library.
- *
- * @return The version string of the library.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after
- * deinitialization.
- */
-const char* qprep_lib_version();
-
-/**
- * @brief Get the last error message from the current thread.
- *
- * @return The last error message from the current thread.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after
- * deinitialization.
- */
-const char* qprep_strerror();
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif  // __NITRATE_PREP_LIB_H__

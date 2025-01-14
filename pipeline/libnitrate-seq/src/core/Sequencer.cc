@@ -31,20 +31,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-seq/Lib.h>
-
 #include <cstddef>
 #include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Init.hh>
 #include <nitrate-lexer/Lexer.hh>
-#include <nitrate-lexer/Token.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <optional>
-#include <qcall/List.hh>
-#include <sstream>
-#include <string_view>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
@@ -52,120 +45,107 @@ extern "C" {
 #include <lua/lualib.h>
 }
 
-using namespace ncc::lex;
-using namespace qcall;
-
 #define MAX_RECURSION_DEPTH 10000
 
-///=============================================================================
+using namespace ncc::lex;
+using namespace ncc::seq;
 
-Sequencer::Core::~Core() {
+Sequencer::PImpl::PImpl() {
+  L = luaL_newstate();
+  m_random.seed(0);
+}
+
+Sequencer::PImpl::~PImpl() {
   if (L) {
     lua_close(L);
   }
 }
 
-static std::string_view ltrim(std::string_view s) {
+static inline std::string_view ltrim(std::string_view s) {
   s.remove_prefix(std::min(s.find_first_not_of(" \t\n\r"), s.size()));
   return s;
 }
 
-static std::string_view rtrim(std::string_view s) {
+static inline std::string_view rtrim(std::string_view s) {
   s.remove_suffix(
       std::min(s.size() - s.find_last_not_of(" \t\n\r") - 1, s.size()));
   return s;
 }
 
-bool Sequencer::run_defer_callbacks(Token last) {
+bool Sequencer::ApplyDynamicTransforms(Token last) {
   /**
    * @brief We do it this way because the callback could potentially modify the
-   * `defer_callbacks` vector, which would invalidate the iterator.
+   * `m_defer` vector, which would invalidate the iterator.
    * The callback is able to instruct us to keep it around for the next token or
    * to remove it.
    *
    * The callback is able to consume and emit token sequences, which may result
-   * in this `run_defer_callbacks` function being called recursively.
+   * in this `ApplyDynamicTransforms` function being called recursively.
    *
    * So like, if any of the callbacks says to emit a token, we should emit a
    * token. Otherwise, we should not emit a token.
    */
 
   std::vector<DeferCallback> saved;
-  saved.reserve(m_core->defer_callbacks.size());
-  bool emit_token = m_core->defer_callbacks.empty();
+  saved.reserve(m_core->m_defer.size());
+  bool emit_token = m_core->m_defer.empty();
 
-  while (!m_core->defer_callbacks.empty()) {
-    DeferCallback cb = m_core->defer_callbacks.back();
-    m_core->defer_callbacks.pop_back();
+  while (!m_core->m_defer.empty()) {
+    auto cb = m_core->m_defer.back();
+    m_core->m_defer.pop_back();
 
-    DeferOp op = cb(this, last);
-    if (op != DeferOp::UninstallHandler) {
+    auto op = cb(this, last);
+    if (op != UninstallHandler) {
       saved.push_back(cb);
     }
-    if (op == DeferOp::EmitToken) {
+    if (op == EmitToken) {
       emit_token = true;
     }
   }
 
-  m_core->defer_callbacks = saved;
+  m_core->m_defer = saved;
 
   return emit_token;
 }
 
-std::optional<std::string> Sequencer::run_lua_code(const std::string &s) {
-  int before_size = lua_gettop(m_core->L);
-
-  int error = luaL_dostring(m_core->L, std::string(s.data(), s.size()).c_str());
-  if (error) {
-    qcore_logf(QCORE_ERROR, "Lua error: %s\n", lua_tostring(m_core->L, -1));
-    return std::nullopt;
-  }
-
-  if (lua_gettop(m_core->L) == before_size) {
-    return "";
-  } else if (lua_isnil(m_core->L, -1)) {
-    return "";
-  } else if (lua_isstring(m_core->L, -1)) {
-    return lua_tostring(m_core->L, -1);
-  } else if (lua_isnumber(m_core->L, -1)) {
-    return std::to_string(lua_tonumber(m_core->L, -1));
-  } else if (lua_isboolean(m_core->L, -1)) {
-    return lua_toboolean(m_core->L, -1) ? "true" : "false";
-  } else {
-    return std::nullopt;
-  }
-}
-
-void Sequencer::expand_raw(std::string_view code) {
+void Sequencer::RecursiveExpand(std::string_view code) {
   std::istringstream ss(std::string(code.data(), code.size()));
+  std::vector<Token> tokens;
 
   {
-    std::vector<Token> tokens;
+    Sequencer clone(ss, m_env, false);
+    clone.m_core = m_core;
+    clone.m_core->m_depth = m_core->m_depth + 1;
 
-    {
-      Sequencer clone(ss, m_env, false);
-      clone.m_core = m_core;
-      clone.m_core->m_depth = m_core->m_depth + 1;
-
-      Token tok;
-      while ((tok = (clone.Next())).get_type() != EofF) {
-        tokens.push_back(tok);
-      }
+    Token tok;
+    while ((tok = (clone.Next())).get_type() != EofF) {
+      tokens.push_back(tok);
     }
+  }
 
-    for (auto it = tokens.rbegin(); it != tokens.rend(); it++) {
-      m_core->buffer.push_front(*it);
-    }
+  for (auto it = tokens.rbegin(); it != tokens.rend(); it++) {
+    m_core->m_buffer.push_front(*it);
   }
 }
 
-bool Sequencer::run_and_expand(const std::string &code) {
-  auto res = run_lua_code(code);
-  if (!res.has_value()) {
+bool Sequencer::ExecuteLua(const char *code) {
+  auto top = lua_gettop(m_core->L);
+  auto rc = luaL_dostring(m_core->L, code);
+
+  if (rc) {
+    qcore_logf(QCORE_ERROR, "Lua error: %s\n", lua_tostring(m_core->L, -1));
     return false;
   }
 
-  expand_raw(*res);
+  if (lua_isstring(m_core->L, -1)) {
+    RecursiveExpand(lua_tostring(m_core->L, -1));
+  } else if (lua_isnumber(m_core->L, -1)) {
+    RecursiveExpand(std::to_string(lua_tonumber(m_core->L, -1)));
+  } else if (lua_isboolean(m_core->L, -1)) {
+    RecursiveExpand(lua_toboolean(m_core->L, -1) ? "true" : "false");
+  } else if (lua_gettop(m_core->L) != top && !lua_isnil(m_core->L, -1)) {
+    return false;
+  }
 
   return true;
 }
@@ -180,7 +160,7 @@ public:
   bool should_stop() { return m_depth >= MAX_RECURSION_DEPTH; }
 };
 
-NCC_EXPORT Token Sequencer::GetNext() {
+Token Sequencer::GetNext() {
 func_entry:  // do tail call optimization manually
 
   Token x;
@@ -192,54 +172,68 @@ func_entry:  // do tail call optimization manually
       throw StopException();
     }
 
-    if (!m_core->buffer.empty()) {
-      x = m_core->buffer.front();
-      m_core->buffer.pop_front();
+    if (!m_core->m_buffer.empty()) {
+      x = m_core->m_buffer.front();
+      m_core->m_buffer.pop_front();
     } else {
       x = m_scanner->Next();
     }
 
-    if (m_core->m_do_expanse) {
-      switch (x.get_type()) {
-        case EofF:
-          return x;
-        case KeyW:
-        case IntL:
-        case Text:
-        case Char:
-        case NumL:
-        case Oper:
-        case Punc:
-        case Note: {
+    switch (x.get_type()) {
+      case EofF:
+        return x;
+      case KeyW:
+      case IntL:
+      case Text:
+      case Char:
+      case NumL:
+      case Oper:
+      case Punc:
+      case Note: {
+        goto emit_token;
+      }
+
+      case Name: { /* Handle the expansion of defines */
+        auto key = "def." + std::string(x.as_string());
+
+        if (auto value = m_env->get(key.c_str())) {
+          RecursiveExpand(value.value());
+          goto func_entry;
+        } else {
           goto emit_token;
         }
+      }
 
-        case Name: { /* Handle the expansion of defines */
-          std::string key = "def." + std::string(x.as_string());
+      case MacB: {
+        auto block = ltrim(x.as_string());
+        if (!block.starts_with("fn ")) {
+          if (!ExecuteLua(std::string(block).c_str())) {
+            qcore_logf(QCORE_ERROR, "Failed to expand macro block: %s\n",
+                       block.data());
+            x = Token::EndOfFile();
+            SetFailBit();
 
-          if (let value = m_env->get(key.c_str())) {
-            expand_raw(value.value());
-            goto func_entry;
-          } else {
             goto emit_token;
           }
-        }
+        } else {
+          block = ltrim(block.substr(3));
+          auto pos = block.find_first_of("(");
+          if (pos == std::string_view::npos) {
+            qcore_logf(QCORE_ERROR, "Invalid macro function definition: %s\n",
+                       block.data());
+            x = Token::EndOfFile();
+            SetFailBit();
 
-        case MacB: {
-          std::string_view block = ltrim(x.as_string());
-          if (!block.starts_with("fn ")) {
-            if (!run_and_expand(std::string(block))) {
-              qcore_logf(QCORE_ERROR, "Failed to expand macro block: %s\n",
-                         block.data());
-              x = Token::EndOfFile();
-              SetFailBit();
+            goto emit_token;
+          }
 
-              goto emit_token;
-            }
-          } else {
-            block = ltrim(block.substr(3));
-            size_t pos = block.find_first_of("(");
-            if (pos == std::string_view::npos) {
+          auto name = rtrim(block.substr(0, pos));
+          auto code =
+              "function " + std::string(name) + std::string(block.substr(pos));
+
+          { /* Remove the opening brace */
+            pos = code.find_first_of("{");
+            if (pos == std::string::npos) {
               qcore_logf(QCORE_ERROR, "Invalid macro function definition: %s\n",
                          block.data());
               x = Token::EndOfFile();
@@ -247,86 +241,68 @@ func_entry:  // do tail call optimization manually
 
               goto emit_token;
             }
+            code.erase(pos, 1);
+          }
 
-            std::string_view name = rtrim(block.substr(0, pos));
-            std::string code = "function " + std::string(name) +
-                               std::string(block.substr(pos));
-
-            { /* Remove the opening brace */
-              pos = code.find_first_of("{");
-              if (pos == std::string::npos) {
-                qcore_logf(QCORE_ERROR,
-                           "Invalid macro function definition: %s\n",
-                           block.data());
-                x = Token::EndOfFile();
-                SetFailBit();
-
-                goto emit_token;
-              }
-              code.erase(pos, 1);
-            }
-
-            { /* Remove the closing brace */
-              pos = code.find_last_of("}");
-              if (pos == std::string::npos) {
-                qcore_logf(QCORE_ERROR,
-                           "Invalid macro function definition: %s\n",
-                           block.data());
-                x = Token::EndOfFile();
-                SetFailBit();
-
-                goto emit_token;
-              }
-              code.erase(pos, 1);
-              code.insert(pos, "end");
-            }
-
-            if (!run_and_expand(code)) {
-              qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
-                         name.data());
+          { /* Remove the closing brace */
+            pos = code.find_last_of("}");
+            if (pos == std::string::npos) {
+              qcore_logf(QCORE_ERROR, "Invalid macro function definition: %s\n",
+                         block.data());
               x = Token::EndOfFile();
               SetFailBit();
 
               goto emit_token;
             }
+            code.erase(pos, 1);
+            code.insert(pos, "end");
+          }
+
+          if (!ExecuteLua(code.c_str())) {
+            qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
+                       name.data());
+            x = Token::EndOfFile();
+            SetFailBit();
+
+            goto emit_token;
+          }
+        }
+
+        goto func_entry;
+      }
+
+      case Macr: {
+        auto body = x.as_string().get();
+        auto pos = body.find_first_of("(");
+
+        if (pos != std::string_view::npos) {
+          if (!ExecuteLua(("return " + std::string(body)).c_str())) {
+            qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
+                       body.data());
+            x = Token::EndOfFile();
+            SetFailBit();
+
+            goto emit_token;
           }
 
           goto func_entry;
-        }
+        } else {
+          if (!ExecuteLua(("return " + std::string(body) + "()").c_str())) {
+            qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
+                       body.data());
+            x = Token::EndOfFile();
+            SetFailBit();
 
-        case Macr: {
-          std::string_view body = x.as_string();
-
-          size_t pos = body.find_first_of("(");
-          if (pos != std::string_view::npos) {
-            if (!run_and_expand("return " + std::string(body))) {
-              qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
-                         body.data());
-              x = Token::EndOfFile();
-              SetFailBit();
-
-              goto emit_token;
-            }
-
-            goto func_entry;
-          } else {
-            if (!run_and_expand("return " + std::string(body) + "()")) {
-              qcore_logf(QCORE_ERROR, "Failed to expand macro function: %s\n",
-                         body.data());
-              x = Token::EndOfFile();
-              SetFailBit();
-
-              goto emit_token;
-            }
-
-            goto func_entry;
+            goto emit_token;
           }
+
+          goto func_entry;
         }
       }
     }
 
   emit_token:
-    if (m_core->m_do_expanse && !run_defer_callbacks(x)) {
+    if (!ApplyDynamicTransforms(x)) {
       goto func_entry;
     }
   } catch (StopException &) {
@@ -336,64 +312,45 @@ func_entry:  // do tail call optimization manually
   return x;
 }
 
-void Sequencer::install_lua_api() {
+void Sequencer::LoadLuaLibs() {
+  static constexpr luaL_Reg the_libs[] = {
+      {LUA_GNAME, luaopen_base},        {LUA_TABLIBNAME, luaopen_table},
+      {LUA_STRLIBNAME, luaopen_string}, {LUA_MATHLIBNAME, luaopen_math},
+      {LUA_UTF8LIBNAME, luaopen_utf8},  {NULL, NULL},
+  };
+
+  for (auto lib = the_libs; lib->func; lib++) {
+    luaL_requiref(m_core->L, lib->name, lib->func, 1);
+    lua_pop(m_core->L, 1); /* remove lib */
+  }
+}
+
+void Sequencer::BindLuaAPI() {
   lua_newtable(m_core->L);
 
-  for (const auto &qcall : qsyscalls) {
+  for (auto Func : SysFunctions) {
     lua_pushinteger(m_core->L, (lua_Integer)(uintptr_t)this);
-    lua_pushcclosure(m_core->L, qcall.getFunc(), 1);
-    lua_setfield(m_core->L, -2, qcall.getName().data());
+    lua_pushcclosure(m_core->L, Func.getFunc(), 1);
+    lua_setfield(m_core->L, -2, Func.getName().data());
   }
 
   lua_setglobal(m_core->L, "n");
 }
 
-NCC_EXPORT Sequencer::Sequencer(std::istream &file,
-                                std::shared_ptr<ncc::Environment> env,
-                                bool is_root)
+Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
+                     bool is_root)
     : ncc::lex::IScanner(env) {
-  m_core = std::make_shared<Core>();
   m_scanner = std::make_unique<Tokenizer>(file, env);
 
   if (is_root) {
-    { /* Create the Lua state */
-      m_core->L = luaL_newstate();
+    m_core = std::make_shared<PImpl>();
 
-      { /* Load the special selection of standard libraries */
-        static const luaL_Reg loadedlibs[] = {
-            {LUA_GNAME, luaopen_base},
-            // {LUA_LOADLIBNAME, luaopen_package},
-            // {LUA_COLIBNAME, luaopen_coroutine},
-            {LUA_TABLIBNAME, luaopen_table},
-            {LUA_IOLIBNAME, luaopen_io},
-            // {LUA_OSLIBNAME, luaopen_os},
-            {LUA_STRLIBNAME, luaopen_string},
-            {LUA_MATHLIBNAME, luaopen_math},
-            {LUA_UTF8LIBNAME, luaopen_utf8},
-            {LUA_DBLIBNAME, luaopen_debug},
-            {NULL, NULL}};
-
-        const luaL_Reg *lib;
-        /* "require" functions from 'loadedlibs' and set results to global table
-         */
-        for (lib = loadedlibs; lib->func; lib++) {
-          luaL_requiref(m_core->L, lib->name, lib->func, 1);
-          lua_pop(m_core->L, 1); /* remove lib */
-        }
-      }
-
-      /* Install the Nitrate API */
-      install_lua_api();
-    }
-
-    // Run the standard language prefix
-    expand_raw(nit_code_prefix);
+    LoadLuaLibs();
+    BindLuaAPI();
+    RecursiveExpand(CodePrefix);
   }
 }
 
-NCC_EXPORT Sequencer::~Sequencer() {}
-
-NCC_EXPORT
 std::optional<std::vector<std::string>> Sequencer::GetSourceWindow(
     Point start, Point end, char fillchar) {
   return m_scanner->GetSourceWindow(start, end, fillchar);
