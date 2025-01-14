@@ -376,8 +376,16 @@ void CambrianFormatter::visit(FlowPtr<TemplType> n) {
       n->get_template()->getKind() == QAST_NAMED &&
       n->get_template()->as<NamedTy>()->get_name() == "__builtin_uset";
 
+  bool is_comptime =
+      n->get_template()->getKind() == QAST_NAMED &&
+      n->get_template()->as<NamedTy>()->get_name() == "__builtin_meta" &&
+      n->get_args().size() == 1 &&
+      n->get_args().front().second->is(QAST_UNEXPR) &&
+      n->get_args().front().second.template as<UnaryExpr>()->get_op() ==
+          OpComptime;
+
   const auto print_without_type_keyword = [&](auto node) {
-    if (node->getKind() == QAST_TEXPR) {
+    if (node->is(QAST_TEXPR)) {
       node->template as<TypeExpr>()->get_type().accept(*this);
     } else {
       node->accept(*this);
@@ -402,6 +410,11 @@ void CambrianFormatter::visit(FlowPtr<TemplType> n) {
     line << "{";
     print_without_type_keyword(n->get_args().front().second);
     line << "}";
+  } else if (is_comptime) {
+    line << "comptime(";
+    n->get_args().front().second.template as<UnaryExpr>()->get_rhs().accept(
+        *this);
+    line << ")";
   } else {
     n->get_template().accept(*this);
 
@@ -412,7 +425,8 @@ void CambrianFormatter::visit(FlowPtr<TemplType> n) {
           if (!std::isdigit(arg.first->at(0))) {
             line << arg.first << ": ";
           }
-          arg.second.accept(*this);
+
+          print_without_type_keyword(arg.second);
         },
         [&](let) { line << ", "; });
     line << ">";
@@ -672,9 +686,16 @@ void CambrianFormatter::visit(FlowPtr<FuncTy> n) {
 }
 
 void CambrianFormatter::visit(FlowPtr<UnaryExpr> n) {
+  static const std::unordered_set<Operator> WordOps = {
+      OpAs,        OpBitcastAs, OpIn,     OpOut,     OpSizeof,
+      OpBitsizeof, OpAlignof,   OpTypeof, OpComptime};
+
   print_multiline_comments(n);
 
   line << "(" << n->get_op();
+  if (WordOps.contains(n->get_op())) {
+    line << " ";
+  }
   n->get_rhs().accept(*this);
   line << ")";
 }
@@ -1573,6 +1594,10 @@ void CambrianFormatter::visit(FlowPtr<StructDef> n) {
   line << " {" << std::endl;
   indent += tabSize;
 
+  auto fields_count = n->get_fields();
+  auto methods_count = n->get_methods();
+  auto static_methods_count = n->get_static_methods();
+
   std::for_each(n->get_fields().begin(), n->get_fields().end(),
                 [&](auto field) {
                   line << get_indent() << field.get_vis() << " ";
@@ -1588,12 +1613,21 @@ void CambrianFormatter::visit(FlowPtr<StructDef> n) {
                   line << "," << std::endl;
                 });
 
+  if (!fields_count.empty() && !methods_count.empty()) {
+    line << std::endl;
+  }
+
   std::for_each(n->get_methods().begin(), n->get_methods().end(),
                 [&](auto method) {
                   line << get_indent() << method.vis << " ";
                   method.func.accept(*this);
                   line << std::endl;
                 });
+
+  if (!static_methods_count.empty() &&
+      (!fields_count.empty() || !methods_count.empty())) {
+    line << std::endl;
+  }
 
   std::for_each(n->get_static_methods().begin(), n->get_static_methods().end(),
                 [&](auto method) {

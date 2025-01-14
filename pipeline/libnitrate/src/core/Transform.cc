@@ -150,9 +150,9 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
       },
       &logger_ctx);
 
-  ncc::log += [&](auto msg, auto sev, const auto &ec) {
+  auto subid = ncc::log.subscribe([&](auto msg, auto sev, const auto &ec) {
     diag_cb(ec.format(msg, sev).c_str(), opaque);
-  };
+  });
 
   auto env = std::make_shared<ncc::Environment>();
 
@@ -171,6 +171,7 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
     } /* No options provided */
   } /* Failed to parse options */
 
+  ncc::log.unsubscribe(subid);
   qcore_bind_logger(nullptr, nullptr);
 
   return status;

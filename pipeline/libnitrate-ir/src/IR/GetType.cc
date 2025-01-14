@@ -247,6 +247,11 @@ static NullableFlowPtr<Type> InferUnaryExpression(NullableFlowPtr<Type> E,
       break;
     }
 
+    case OpComptime: {
+      R = E;
+      break;
+    }
+
     case OpSlash:
     case OpPercent:
     case OpBitOr:
@@ -319,6 +324,7 @@ static NullableFlowPtr<Type> InferBinaryExpression(NullableFlowPtr<Type> LHS,
     case OpBitsizeof:
     case OpAlignof:
     case OpTypeof:
+    case OpComptime:
     case OpDot:
     case OpRange:
     case OpEllipsis:

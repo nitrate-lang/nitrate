@@ -117,6 +117,7 @@ namespace ncc::lex {
     OpBitsizeof,   /* 'bitsizeof':  Bit size of operator */
     OpAlignof,     /* 'alignof':    Alignment of operator */
     OpTypeof,      /* 'typeof':     Type of operator */
+    OpComptime,    /* 'comptime':   Compile-time operator */
     OpDot,         /* '.':          Dot operator */
     OpRange,       /* '..':         Range operator */
     OpEllipsis,    /* '...':        Ellipsis operator */
@@ -131,7 +132,6 @@ namespace ncc::lex {
     Sec,       /* 'sec' */
     Pro,       /* 'pro' */
     Type,      /* 'type' */
-    Comptime,  /* 'comptime' */
     Let,       /* 'let' */
     Var,       /* 'var' */
     Const,     /* 'const' */

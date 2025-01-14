@@ -77,49 +77,20 @@ namespace ncc::lex {
 
   inline static const boost::bimap<std::string_view, Keyword> LexicalKeywords =
       detail::make_bimap<std::string_view, Keyword>({
-          {"scope", Scope},
-          {"import", Import},
-          {"pub", Pub},
-          {"sec", Sec},
-          {"pro", Pro},
-          {"type", Type},
-          {"comptime", Comptime},
-          {"let", Let},
-          {"var", Var},
-          {"const", Const},
-          {"static", Static},
-          {"struct", Struct},
-          {"region", Region},
-          {"group", Group},
-          {"class", Class},
-          {"union", Union},
-          {"opaque", Opaque},
-          {"enum", Enum},
-          {"__fstring", __FString},
-          {"fn", Fn},
-          {"unsafe", Unsafe},
-          {"safe", Safe},
-          {"promise", Promise},
-          {"if", If},
-          {"else", Else},
-          {"for", For},
-          {"while", While},
-          {"do", Do},
-          {"switch", Switch},
-          {"break", Break},
-          {"continue", Continue},
-          {"ret", Return},
-          {"retif", Retif},
-          {"foreach", Foreach},
-          {"try", Try},
-          {"catch", Catch},
-          {"throw", Throw},
-          {"async", Async},
-          {"await", Await},
-          {"__asm__", __Asm__},
-          {"undef", Undef},
-          {"null", Null},
-          {"true", True},
+          {"scope", Scope},     {"import", Import}, {"pub", Pub},
+          {"sec", Sec},         {"pro", Pro},       {"type", Type},
+          {"let", Let},         {"var", Var},       {"const", Const},
+          {"static", Static},   {"struct", Struct}, {"region", Region},
+          {"group", Group},     {"class", Class},   {"union", Union},
+          {"opaque", Opaque},   {"enum", Enum},     {"__fstring", __FString},
+          {"fn", Fn},           {"unsafe", Unsafe}, {"safe", Safe},
+          {"promise", Promise}, {"if", If},         {"else", Else},
+          {"for", For},         {"while", While},   {"do", Do},
+          {"switch", Switch},   {"break", Break},   {"continue", Continue},
+          {"ret", Return},      {"retif", Retif},   {"foreach", Foreach},
+          {"try", Try},         {"catch", Catch},   {"throw", Throw},
+          {"async", Async},     {"await", Await},   {"__asm__", __Asm__},
+          {"undef", Undef},     {"null", Null},     {"true", True},
           {"false", False},
       });
 
@@ -174,6 +145,7 @@ namespace ncc::lex {
           {"bitsizeof", OpBitsizeof},
           {"alignof", OpAlignof},
           {"typeof", OpTypeof},
+          {"comptime", OpComptime},
           {".", OpDot},
           {"..", OpRange},
           {"...", OpEllipsis},
@@ -232,6 +204,7 @@ namespace ncc::lex {
           {OpBitsizeof, {OpType::Unary, false}},
           {OpAlignof, {OpType::Unary, false}},
           {OpTypeof, {OpType::Unary, false}},
+          {OpComptime, {OpType::Unary, false}},
           {OpDot, {OpType::Binary, false}},
           {OpRange, {OpType::Binary, true}},
           {OpEllipsis, {OpType::Unary, false}},
@@ -270,7 +243,6 @@ namespace ncc::lex {
     std::deque<Token> m_ready;
     std::vector<Token> m_comments;
     std::vector<Location> m_location_interned;
-    std::optional<Token> m_last;
     Token m_current;
     string m_current_filename;
     bool m_skip = false, m_ebit = false, m_eof = false;
@@ -305,7 +277,7 @@ namespace ncc::lex {
 
     Token Next();
     Token Peek();
-    void Undo();
+    void Insert(Token tok);
 
     constexpr auto Current() { return m_current; }
     constexpr auto IsEof() const { return m_eof; }

@@ -102,6 +102,7 @@ static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
             {OpBitsizeof, OpMode::PreUnary, OpAssoc::Right},
             {OpAlignof, OpMode::PreUnary, OpAssoc::Right},
             {OpTypeof, OpMode::PreUnary, OpAssoc::Right},
+            {OpComptime, OpMode::PreUnary, OpAssoc::Right},
             {OpDot, OpMode::PreUnary, OpAssoc::Right},
             {OpRange, OpMode::PreUnary, OpAssoc::Right},
             {OpEllipsis, OpMode::PreUnary, OpAssoc::Right},
@@ -371,7 +372,7 @@ Token IScanner::Next() {
       continue;
     }
 
-    m_last = m_current = tok;
+    m_current = tok;
 
     return tok;
   }
@@ -397,13 +398,9 @@ Token IScanner::Peek() {
   }
 }
 
-void IScanner::Undo() {
-  if (!m_last.has_value()) {
-    return;
-  }
-
-  m_ready.push_front(m_last.value());
-  m_current = m_last.value();
+void IScanner::Insert(Token tok) {
+  m_ready.push_front(tok);
+  m_current = tok;
 }
 
 static uint32_t strtou64(std::string_view str, uint32_t sentinal) {

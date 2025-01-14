@@ -74,9 +74,20 @@ std::optional<CallArgs> Parser::recurse_type_template_arguments() {
     return std::nullopt;
   }
 
-  auto args = recurse_call_arguments(Token(Oper, OpGT), true);
+  auto args = recurse_call_arguments(
+      {
+          Token(Oper, OpGT),
+          Token(Oper, OpRShift),
+          Token(Oper, OpROTR),
+      },
+      true);
 
-  if (!next_if(OpGT)) {
+  if (next_if(OpGT)) {
+  } else if (next_if(OpRShift)) {
+    rd.Insert(Token(Oper, OpGT));
+  } else if (next_if(OpROTR)) {
+    rd.Insert(Token(Oper, OpRShift));
+  } else {
     log << SyntaxError << current() << "Expected '>' after template arguments";
   }
 
@@ -189,7 +200,8 @@ FlowPtr<parse::Type> Parser::recurse_type_by_keyword(Keyword key) {
     }
 
     default: {
-      log << SyntaxError << current() << "Keyword is not valid in this context";
+      log << SyntaxError << current() << "Unexpected '" << key
+          << "' is type context";
       return mock_type();
     }
   }
@@ -225,9 +237,29 @@ FlowPtr<parse::Type> Parser::recurse_type_by_operator(Operator op) {
       return infer;
     }
 
+    case OpComptime: {
+      if (!next_if(PuncLPar)) {
+        log << SyntaxError << current() << "Expected '(' after 'comptime'";
+        return mock_type();
+      }
+
+      auto comptime_expr =
+          make<UnaryExpr>(OpComptime, recurse_expr({
+                                          Token(Punc, PuncRPar),
+                                      }))();
+
+      if (!next_if(PuncRPar)) {
+        log << SyntaxError << current() << "Expected ')' after 'comptime('";
+      }
+
+      auto args = CallArgs{{"0", comptime_expr}};
+      return make<TemplType>(make<NamedTy>("__builtin_meta")(),
+                             std::move(args))();
+    }
+
     default: {
-      log << SyntaxError << current()
-          << "Operator is not valid in this context";
+      log << SyntaxError << current() << "Unexpected operator '" << op
+          << "' in type context";
       return mock_type();
     }
   }

@@ -36,7 +36,6 @@
 
 #include <array>
 #include <iostream>
-#include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>

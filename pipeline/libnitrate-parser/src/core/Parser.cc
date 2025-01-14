@@ -138,12 +138,6 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
           break;
         }
 
-        case Comptime: {
-          log << SyntaxError << current()
-              << "Unexpected 'comptime' in this context";
-          break;
-        }
-
         case Let: {
           for (auto decl : recurse_variable(VarDeclType::Let)) {
             statements.push_back(BIND_COMMENTS(decl, comments));
@@ -199,7 +193,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
 
         case Opaque: {
           log << SyntaxError << current()
-              << "Unexpected 'opaque' in this context";
+              << "Unexpected 'opaque' in block context";
           break;
         }
 
@@ -240,7 +234,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
 
         case Promise: {
           log << SyntaxError << current()
-              << "Unexpected 'Promise' in this context";
+              << "Unexpected 'promise' in block context";
           break;
         }
 
@@ -251,7 +245,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
 
         case Else: {
           log << SyntaxError << current()
-              << "Unexpected 'else' in this context";
+              << "Unexpected 'else' in block context";
           break;
         }
 
@@ -266,7 +260,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case Do: {
-          log << SyntaxError << current() << "Unexpected 'do' in this context";
+          log << SyntaxError << current() << "Unexpected 'do' in block context";
           break;
         }
 
@@ -307,7 +301,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
 
         case Catch: {
           log << SyntaxError << current()
-              << "Unexpected 'catch' in this context";
+              << "Unexpected 'catch' in block context";
           break;
         }
 
@@ -318,7 +312,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
 
         case Async: {
           log << SyntaxError << current()
-              << "Unexpected 'async' in this context";
+              << "Unexpected 'async' in block context";
           break;
         }
 

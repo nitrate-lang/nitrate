@@ -119,7 +119,7 @@ namespace ncc::parse {
     std::optional<ExpressionList> recurse_export_attributes();
     FlowPtr<Stmt> recurse_export_body();
 
-    CallArgs recurse_call_arguments(ncc::lex::Token terminator,
+    CallArgs recurse_call_arguments(const std::set<lex::Token> &terminators,
                                     bool type_by_default);
     FlowPtr<Expr> recurse_fstring();
 
@@ -139,7 +139,7 @@ namespace ncc::parse {
     std::pair<FuncParams, bool> recurse_function_parameters();
     NullableFlowPtr<Stmt> recurse_function_body(bool parse_declaration_only);
     FlowPtr<Type> recurse_function_return_type();
-    Purity get_purity_specifier(ncc::lex::Token start_pos, bool is_thread_safe,
+    Purity get_purity_specifier(lex::Token start_pos, bool is_thread_safe,
                                 bool is_pure, bool is_impure, bool is_quasi,
                                 bool is_retro);
     std::optional<std::pair<string, bool>> recurse_function_capture();
@@ -177,12 +177,12 @@ namespace ncc::parse {
     FlowPtr<Type> recurse_type_suffix(FlowPtr<Type> base);
     FlowPtr<Type> recurse_function_type();
     FlowPtr<Type> recurse_opaque_type();
-    FlowPtr<Type> recurse_type_by_keyword(ncc::lex::Keyword key);
-    FlowPtr<Type> recurse_type_by_operator(ncc::lex::Operator op);
+    FlowPtr<Type> recurse_type_by_keyword(lex::Keyword key);
+    FlowPtr<Type> recurse_type_by_operator(lex::Operator op);
     FlowPtr<Type> recurse_array_or_vector();
     FlowPtr<Type> recurse_set_type();
     FlowPtr<Type> recurse_tuple_type();
-    FlowPtr<Type> recurse_type_by_punctuation(ncc::lex::Punctor punc);
+    FlowPtr<Type> recurse_type_by_punctuation(lex::Punctor punc);
     FlowPtr<Type> recurse_type_by_name(string name);
 
     std::optional<ExpressionList> recurse_variable_attributes();
@@ -193,12 +193,12 @@ namespace ncc::parse {
     FlowPtr<Expr> recurse_while_cond();
     FlowPtr<Stmt> recurse_while_body();
 
-    Parser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::Environment> env,
+    Parser(lex::IScanner &lexer, std::shared_ptr<Environment> env,
            std::shared_ptr<void> lifetime);
 
   public:
     static boost::shared_ptr<Parser> Create(
-        ncc::lex::IScanner &lexer, std::shared_ptr<ncc::Environment> env,
+        lex::IScanner &lexer, std::shared_ptr<Environment> env,
         std::shared_ptr<void> lifetime = nullptr) {
       return boost::shared_ptr<Parser>(new Parser(lexer, env, lifetime));
     }
@@ -208,11 +208,11 @@ namespace ncc::parse {
     ASTRoot parse();
 
     void SetFailBit() { m_failed = true; }
-    ncc::lex::IScanner &GetLexer() { return rd; }
+    lex::IScanner &GetLexer() { return rd; }
 
-    template <typename Scanner = ncc::lex::Tokenizer>
+    template <typename Scanner = lex::Tokenizer>
     static boost::shared_ptr<Parser> FromString(
-        std::string_view str, std::shared_ptr<ncc::Environment> env) {
+        std::string_view str, std::shared_ptr<Environment> env) {
       auto state = std::make_shared<
           std::pair<std::stringstream, std::unique_ptr<Scanner>>>(
           std::stringstream(std::string(str)), nullptr);
@@ -223,7 +223,7 @@ namespace ncc::parse {
 
     template <typename Scanner = lex::Tokenizer>
     static boost::shared_ptr<Parser> FromStream(
-        std::istream &stream, std::shared_ptr<ncc::Environment> env) {
+        std::istream &stream, std::shared_ptr<Environment> env) {
       auto lexer = std::make_shared<Scanner>(stream, env);
       return Create(lexer, env, lexer);
     }

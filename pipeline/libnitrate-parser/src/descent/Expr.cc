@@ -43,7 +43,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace ncc;
 
-CallArgs Parser::recurse_call_arguments(Token terminator,
+CallArgs Parser::recurse_call_arguments(const std::set<lex::Token> &terminators,
                                         bool type_by_default) {
   CallArgs call_args;
   size_t positional_index = 0;
@@ -56,7 +56,7 @@ CallArgs Parser::recurse_call_arguments(Token terminator,
       return call_args;
     }
 
-    if (peek() == terminator) {
+    if (terminators.contains(peek())) {
       break;
     }
 
@@ -67,7 +67,7 @@ CallArgs Parser::recurse_call_arguments(Token terminator,
       argument_name = some_identifier->as_string();
     } else {
       if (some_identifier && !next_is_colon) {
-        rd.Undo();
+        rd.Insert(some_identifier.value());
       }
 
       argument_name = string(std::to_string(positional_index++));
@@ -79,11 +79,9 @@ CallArgs Parser::recurse_call_arguments(Token terminator,
 
       call_args.push_back({argument_name, type_expr});
     } else {
-      auto argument_value = recurse_expr({
-          Token(Punc, PuncComa),
-          terminator,
-      });
-
+      std::set<Token> terminators_copy(terminators);
+      terminators_copy.insert(Token(Punc, PuncComa));
+      auto argument_value = recurse_expr(terminators_copy);
       call_args.push_back({argument_name, argument_value});
     }
 
@@ -338,7 +336,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
 
           if (next_if(PuncLPar)) {
             auto Arguments =
-                recurse_call_arguments(Token(Punc, PuncRPar), false);
+                recurse_call_arguments({Token(Punc, PuncRPar)}, false);
             if (!next_if(PuncRPar)) {
               log << SyntaxError << current()
                   << "Expected ')' to close the function call";
@@ -372,7 +370,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
             }
           } else if (next_if(PuncLCur)) {
             auto TemplateArguments =
-                recurse_call_arguments(Token(Punc, PuncRCur), true);
+                recurse_call_arguments({Token(Punc, PuncRCur)}, true);
             if (!next_if(PuncRCur)) {
               log << SyntaxError << current()
                   << "Expected '}' to close the template arguments";
@@ -384,7 +382,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
             }
 
             auto CallArguments =
-                recurse_call_arguments(Token(Punc, PuncRPar), false);
+                recurse_call_arguments({Token(Punc, PuncRPar)}, false);
             if (!next_if(PuncRPar)) {
               log << SyntaxError << current()
                   << "Expected ')' to close the call arguments";
@@ -393,8 +391,6 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
             LeftSide = make<TemplCall>(LeftSide, std::move(CallArguments),
                                        std::move(TemplateArguments))();
             LeftSide->set_offset(SourceOffset);
-
-            /// TODO: Implement generic parsing
           } else {  // Not part of the expression
             Spinning = false;
           }
@@ -430,114 +426,12 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
   NullableFlowPtr<Expr> E;
 
   switch (key) {
-    case Scope: {
-      log << SyntaxError << current()
-          << "Unexpected 'scope' in expression context";
-      break;
-    }
-
-    case Import: {
-      log << SyntaxError << current()
-          << "Unexpected 'import' in expression context";
-      break;
-    }
-
-    case Pub: {
-      log << SyntaxError << current()
-          << "Unexpected 'pub' in expression context";
-      break;
-    }
-
-    case Sec: {
-      log << SyntaxError << current()
-          << "Unexpected 'sec' in expression context";
-      break;
-    }
-
-    case Pro: {
-      log << SyntaxError << current()
-          << "Unexpected 'pro' in expression context";
-      break;
-    }
-
     case Keyword::Type: {
       auto start_pos = current().get_start();
       auto type = recurse_type();
       type->set_offset(start_pos);
 
       E = make<TypeExpr>(type)();
-      break;
-    }
-
-    case Comptime: {
-      log << SyntaxError << current()
-          << "Unexpected 'comptime' in expression context";
-      break;
-    }
-
-    case Let: {
-      log << SyntaxError << current()
-          << "Unexpected 'let' in expression context";
-      break;
-    }
-
-    case Var: {
-      log << SyntaxError << current()
-          << "Unexpected 'var' in expression context";
-      break;
-    }
-
-    case Const: {
-      log << SyntaxError << current()
-          << "Unexpected 'const' in expression context";
-      break;
-    }
-
-    case Static: {
-      log << SyntaxError << current()
-          << "Unexpected 'static' in expression context";
-      break;
-    }
-
-    case Struct: {
-      log << SyntaxError << current()
-          << "Unexpected 'struct' in expression context";
-      break;
-    }
-
-    case Region: {
-      log << SyntaxError << current()
-          << "Unexpected 'region' in expression context";
-      break;
-    }
-
-    case Group: {
-      log << SyntaxError << current()
-          << "Unexpected 'group' in expression context";
-      break;
-    }
-
-    case Class: {
-      log << SyntaxError << current()
-          << "Unexpected 'class' in expression context";
-      break;
-    }
-
-    case Union: {
-      log << SyntaxError << current()
-          << "Unexpected 'union' in expression context";
-      break;
-    }
-
-    case Opaque: {
-      log << SyntaxError << current()
-          << "Unexpected 'opaque' in expression context";
-      break;
-    }
-
-    case Enum: {
-      log << SyntaxError << current()
-          << "Unexpected 'enum' in expression context";
       break;
     }
 
@@ -554,7 +448,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
       FlowPtr<Expr> expr = make<StmtExpr>(function)();
 
       if (next_if(PuncLPar)) {
-        auto args = recurse_call_arguments(Token(Punc, PuncRPar), false);
+        auto args = recurse_call_arguments({Token(Punc, PuncRPar)}, false);
 
         if (next_if(PuncRPar)) {
           E = make<Call>(expr, args)();
@@ -567,126 +461,6 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
         E = expr;
       }
 
-      break;
-    }
-
-    case Unsafe: {
-      log << SyntaxError << current()
-          << "Unexpected 'unsafe' in expression context";
-      break;
-    }
-
-    case Safe: {
-      log << SyntaxError << current()
-          << "Unexpected 'safe' in expression context";
-      break;
-    }
-
-    case Promise: {
-      log << SyntaxError << current()
-          << "Unexpected 'promise' in expression context";
-      break;
-    }
-
-    case If: {
-      log << SyntaxError << current()
-          << "Unexpected 'if' in expression context";
-      break;
-    }
-
-    case Else: {
-      log << SyntaxError << current()
-          << "Unexpected 'else' in expression context";
-      break;
-    }
-
-    case For: {
-      log << SyntaxError << current()
-          << "Unexpected 'for' in expression context";
-      break;
-    }
-
-    case While: {
-      log << SyntaxError << current()
-          << "Unexpected 'while' in expression context";
-      break;
-    }
-
-    case Do: {
-      log << SyntaxError << current()
-          << "Unexpected 'do' in expression context";
-      break;
-    }
-
-    case Switch: {
-      log << SyntaxError << current()
-          << "Unexpected 'switch' in expression context";
-      break;
-    }
-
-    case Break: {
-      log << SyntaxError << current()
-          << "Unexpected 'break' in expression context";
-      break;
-    }
-
-    case Continue: {
-      log << SyntaxError << current()
-          << "Unexpected 'continue' in expression context";
-      break;
-    }
-
-    case Return: {
-      log << SyntaxError << current()
-          << "Unexpected 'return' in expression context";
-      break;
-    }
-
-    case Retif: {
-      log << SyntaxError << current()
-          << "Unexpected 'retif' in expression context";
-      break;
-    }
-
-    case Foreach: {
-      log << SyntaxError << current()
-          << "Unexpected 'foreach' in expression context";
-      break;
-    }
-
-    case Try: {
-      log << SyntaxError << current()
-          << "Unexpected 'try' in expression context";
-      break;
-    }
-
-    case Catch: {
-      log << SyntaxError << current()
-          << "Unexpected 'catch' in expression context";
-      break;
-    }
-
-    case Throw: {
-      log << SyntaxError << current()
-          << "Unexpected 'throw' in expression context";
-      break;
-    }
-
-    case Async: {
-      log << SyntaxError << current()
-          << "Unexpected 'async' in expression context";
-      break;
-    }
-
-    case Await: {
-      log << SyntaxError << current()
-          << "Unexpected 'await' in expression context";
-      break;
-    }
-
-    case __Asm__: {
-      log << SyntaxError << current()
-          << "Unexpected '__asm__' in expression context";
       break;
     }
 
@@ -707,6 +481,12 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
 
     case False: {
       E = make<ConstBool>(false)();
+      break;
+    }
+
+    default: {
+      log << SyntaxError << current() << "Unexpected '" << key
+          << "' in expression context";
       break;
     }
   }
@@ -859,18 +639,20 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
     }
 
     case PuncComa: {
-      log << SyntaxError << current() << "Comma is not valid in this context";
+      log << SyntaxError << current()
+          << "Unexpected comma in expression context";
       break;
     }
 
     case PuncColn: {
-      log << SyntaxError << current() << "Colon is not valid in this context";
+      log << SyntaxError << current()
+          << "Unexpected colon in expression context";
       break;
     }
 
     case PuncSemi: {
       log << SyntaxError << current()
-          << "Semicolon is not valid in this context";
+          << "Unexpected semicolon in expression context";
       break;
     }
   }
