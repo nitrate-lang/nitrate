@@ -16,6 +16,8 @@ message(STATUS "no3 VersionId: ${__TARGET_VERSION}")
 
 find_library(libglog libglog.a REQUIRED)
 find_library(libgflags libgflags.a REQUIRED)
+find_library(libcrypto crypto REQUIRED)
+find_library(libyaml_cpp libyaml-cpp.a REQUIRED)
 
 #================== SET BUILD FLAGS ==================
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -43,9 +45,10 @@ target_link_libraries(no3 PUBLIC
   nitrate-lexer
   nitrate-seq
   nitrate-core
-  libyaml-cpp.a
-  libglog.a
-  libgflags.a
+  ${libyaml_cpp}
+  ${libglog}
+  ${libgflags}
+  ${libcrypto}
   unwind)
 target_compile_options(no3 PUBLIC -DNO3_MAIN)
 add_dependencies(no3 nitrate-emit
@@ -73,9 +76,11 @@ if(BUILD_SHARED_LIBS STREQUAL "OFF")
     nitrate-lexer
     nitrate-seq
     nitrate-core
-    libyaml-cpp.a
-    libglog.a
-    libgflags.a)
+    ${libyaml_cpp}
+    ${libglog}
+    ${libgflags}
+    ${libcrypto}
+    unwind)
   add_dependencies(no3-cli nitrate-emit
     nitrate-ir
     nitrate-parser
