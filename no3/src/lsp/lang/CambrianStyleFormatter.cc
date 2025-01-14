@@ -833,21 +833,26 @@ void CambrianFormatter::visit(FlowPtr<TemplCall> n) {
 
   n->get_func().accept(*this);
 
-  line << "<";
+  line << "{";
   iterate_except_last(
       n->get_template_args().begin(), n->get_template_args().end(),
       [&](auto arg, size_t) {
         auto name = std::get<0>(arg);
         auto value = std::get<1>(arg);
+        bool should_print_name = !std::isdigit(name->at(0));
 
-        if (!std::isdigit(name->at(0))) {
+        if (should_print_name) {
           line << name << ": ";
         }
 
-        value.accept(*this);
+        if (value->is(QAST_TEXPR)) {
+          value->template as<TypeExpr>()->get_type().accept(*this);
+        } else {
+          value.accept(*this);
+        }
       },
       [&](let) { line << ", "; });
-  line << ">";
+  line << "}";
 
   line << "(";
   iterate_except_last(

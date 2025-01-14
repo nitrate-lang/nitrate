@@ -74,7 +74,7 @@ std::optional<CallArgs> Parser::recurse_type_template_arguments() {
     return std::nullopt;
   }
 
-  auto args = recurse_call_arguments(Token(Oper, OpGT));
+  auto args = recurse_call_arguments(Token(Oper, OpGT), true);
 
   if (!next_if(OpGT)) {
     log << SyntaxError << current() << "Expected '>' after template arguments";

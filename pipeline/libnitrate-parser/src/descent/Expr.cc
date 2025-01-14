@@ -35,8 +35,6 @@
 #include <descent/Recurse.hh>
 #include <stack>
 
-#include "nitrate-parser/EC.hh"
-
 #define MAX_RECURSION_DEPTH 4096
 #define MAX_LIST_REPEAT_COUNT 4096
 
@@ -45,7 +43,8 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace ncc;
 
-CallArgs Parser::recurse_call_arguments(Token terminator) {
+CallArgs Parser::recurse_call_arguments(Token terminator,
+                                        bool type_by_default) {
   CallArgs call_args;
   size_t positional_index = 0;
   string argument_name;
@@ -74,12 +73,19 @@ CallArgs Parser::recurse_call_arguments(Token terminator) {
       argument_name = string(std::to_string(positional_index++));
     }
 
-    auto argument_value = recurse_expr({
-        Token(Punc, PuncComa),
-        terminator,
-    });
+    if (type_by_default) {
+      auto argument_value = recurse_type();
+      auto type_expr = make<TypeExpr>(argument_value)();
 
-    call_args.push_back({argument_name, argument_value});
+      call_args.push_back({argument_name, type_expr});
+    } else {
+      auto argument_value = recurse_expr({
+          Token(Punc, PuncComa),
+          terminator,
+      });
+
+      call_args.push_back({argument_name, argument_value});
+    }
 
     next_if(PuncComa);
   }
@@ -331,7 +337,8 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
           LeftSide = UnwindStack(Stack, LeftSide, SuffixOPPrecedence);
 
           if (next_if(PuncLPar)) {
-            auto Arguments = recurse_call_arguments(Token(Punc, PuncRPar));
+            auto Arguments =
+                recurse_call_arguments(Token(Punc, PuncRPar), false);
             if (!next_if(PuncRPar)) {
               log << SyntaxError << current()
                   << "Expected ')' to close the function call";
@@ -363,6 +370,31 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
               LeftSide = make<Index>(LeftSide, first)();
               LeftSide->set_offset(SourceOffset);
             }
+          } else if (next_if(PuncLCur)) {
+            auto TemplateArguments =
+                recurse_call_arguments(Token(Punc, PuncRCur), true);
+            if (!next_if(PuncRCur)) {
+              log << SyntaxError << current()
+                  << "Expected '}' to close the template arguments";
+            }
+
+            if (!next_if(PuncLPar)) {
+              log << SyntaxError << current()
+                  << "Expected '(' to open the call arguments";
+            }
+
+            auto CallArguments =
+                recurse_call_arguments(Token(Punc, PuncRPar), false);
+            if (!next_if(PuncRPar)) {
+              log << SyntaxError << current()
+                  << "Expected ')' to close the call arguments";
+            }
+
+            LeftSide = make<TemplCall>(LeftSide, std::move(CallArguments),
+                                       std::move(TemplateArguments))();
+            LeftSide->set_offset(SourceOffset);
+
+            /// TODO: Implement generic parsing
           } else {  // Not part of the expression
             Spinning = false;
           }
@@ -504,7 +536,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
       FlowPtr<Expr> expr = make<StmtExpr>(function)();
 
       if (next_if(PuncLPar)) {
-        auto args = recurse_call_arguments(Token(Punc, PuncRPar));
+        auto args = recurse_call_arguments(Token(Punc, PuncRPar), false);
 
         if (next_if(PuncRPar)) {
           E = make<Call>(expr, args)();

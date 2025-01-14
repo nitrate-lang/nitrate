@@ -116,7 +116,8 @@ namespace ncc::parse {
     std::optional<ExpressionList> recurse_export_attributes();
     FlowPtr<Stmt> recurse_export_body();
 
-    CallArgs recurse_call_arguments(ncc::lex::Token terminator);
+    CallArgs recurse_call_arguments(ncc::lex::Token terminator,
+                                    bool type_by_default);
     FlowPtr<Expr> recurse_fstring();
 
     NullableFlowPtr<Stmt> recurse_for_init_expr();
