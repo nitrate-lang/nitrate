@@ -35,7 +35,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/ToJson.hh>
 
-using namespace ncc::ir::encode;
+using namespace ncc::ir;
 
 static void escape_string(std::ostream &os, const std::string_view &input) {
   os << "\"";

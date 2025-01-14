@@ -42,7 +42,7 @@
 #include <nitrate-lexer/Token.hh>
 #include <string_view>
 
-namespace ncc::ir::encode {
+namespace ncc::ir {
   using WriterSourceProvider =
       std::optional<std::reference_wrapper<lex::IScanner>>;
 
@@ -135,6 +135,6 @@ namespace ncc::ir::encode {
     void visit(FlowPtr<Asm> n) override;
     void visit(FlowPtr<Tmp> n) override;
   };
-}  // namespace ncc::ir::encode
+}  // namespace ncc::ir
 
 #endif

@@ -34,10 +34,10 @@
 #ifndef __NITRATE_IR_ENCODE_TOMSGPACK_H__
 #define __NITRATE_IR_ENCODE_TOMSGPACK_H__
 
-#include <nitrate-ir/Serialize.hh>
+#include <nitrate-ir/IRWriter.hh>
 #include <ostream>
 
-namespace ncc::ir::encode {
+namespace ncc::ir {
   class NCC_EXPORT IR_MsgPackWriter : public IR_Writer {
     std::ostream& m_os;
 
@@ -71,6 +71,6 @@ namespace ncc::ir::encode {
           m_os(os) {}
     virtual ~IR_MsgPackWriter() = default;
   };
-}  // namespace ncc::ir::encode
+}  // namespace ncc::ir
 
 #endif

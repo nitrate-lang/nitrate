@@ -34,11 +34,11 @@
 #ifndef __NITRATE_IR_ENCODE_TOJSON_H__
 #define __NITRATE_IR_ENCODE_TOJSON_H__
 
-#include <nitrate-ir/Serialize.hh>
+#include <nitrate-ir/IRWriter.hh>
 #include <ostream>
 #include <stack>
 
-namespace ncc::ir::encode {
+namespace ncc::ir {
   class NCC_EXPORT IR_JsonWriter : public IR_Writer {
     std::ostream& m_os;
     std::stack<bool> m_comma;
@@ -77,6 +77,6 @@ namespace ncc::ir::encode {
     }
     virtual ~IR_JsonWriter() = default;
   };
-}  // namespace ncc::ir::encode
+}  // namespace ncc::ir
 
 #endif

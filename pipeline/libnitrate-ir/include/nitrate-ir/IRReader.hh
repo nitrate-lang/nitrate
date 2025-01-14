@@ -31,53 +31,67 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Logger.hh>
+#ifndef __NITRATE_IR_READER_H__
+#define __NITRATE_IR_READER_H__
+
+#include <cstdint>
+#include <istream>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-ir/Deserialize.hh>
+#include <nitrate-ir/IR/Visitor.hh>
+#include <optional>
+#include <stack>
 
-using namespace ncc::ir::decode;
+namespace ncc::ir {
+  class NCC_EXPORT IR_Reader {
+    enum class State {
+      ObjStart,
+      ObjEnd,
+    };
 
-void IR_Reader::str(std::string_view str) {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
+    std::stack<State> m_state;
+    std::stack<Expr*> m_parse;
 
-void IR_Reader::uint(uint64_t val) {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
+    void handle_state();
 
-void IR_Reader::dbl(double val) {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
+  protected:
+    void str(std::string_view str);
+    void uint(uint64_t val);
+    void dbl(double val);
+    void boolean(bool val);
+    void null();
+    void begin_obj();
+    void end_obj();
+    void begin_arr(size_t max_size);
+    void end_arr();
 
-void IR_Reader::boolean(bool val) {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
+  public:
+    IR_Reader() { m_state.push(State::ObjStart); }
+    virtual ~IR_Reader() = default;
 
-void IR_Reader::null() {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
+    std::optional<Expr*> get() {
+      if (m_parse.empty() || m_parse.top() == nullptr) {
+        return std::nullopt;
+      }
 
-void IR_Reader::begin_obj() {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
+      return m_parse.top();
+    }
+  };
 
-void IR_Reader::end_obj() {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
+  class NCC_EXPORT IR_JsonReader final : public IR_Reader {
+    void parse_stream(std::istream& is);
 
-void IR_Reader::begin_arr(size_t max_size) {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
+  public:
+    IR_JsonReader(std::istream& is) { parse_stream(is); }
+    virtual ~IR_JsonReader() = default;
+  };
 
-void IR_Reader::end_arr() {
-  /// TODO: Implement generic deserializer
-  qcore_implement();
-}
+  class NCC_EXPORT IR_MsgPackReader final : public IR_Reader {
+    void parse_stream(std::istream& is);
+
+  public:
+    IR_MsgPackReader(std::istream& is) { parse_stream(is); }
+    virtual ~IR_MsgPackReader() = default;
+  };
+}  // namespace ncc::ir
+
+#endif

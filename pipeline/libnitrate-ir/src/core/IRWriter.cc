@@ -34,12 +34,12 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IR/Nodes.hh>
-#include <nitrate-ir/Serialize.hh>
+#include <nitrate-ir/IRWriter.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <variant>
 
 using namespace ncc::ir;
-using namespace ncc::ir::encode;
+using namespace ncc::ir;
 
 static const std::unordered_map<StorageClass, std::string_view>
     storage_class_repr = {
