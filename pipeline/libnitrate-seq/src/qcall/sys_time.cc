@@ -38,7 +38,9 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int qcall::sys_time(lua_State* L) {
+using namespace ncc;
+
+int seq::sys_time(lua_State* L) {
   /**
    * @brief Get the current UNIX timestamp in milliseconds
    */

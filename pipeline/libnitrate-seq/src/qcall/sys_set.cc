@@ -39,9 +39,11 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
+using namespace ncc;
+
 static const std::vector<std::string_view> immutable_namespaces = {"this."};
 
-int qcall::sys_set(lua_State* L) {
+int seq::sys_set(lua_State* L) {
   /**
    * @brief Set named value to the environment.
    */

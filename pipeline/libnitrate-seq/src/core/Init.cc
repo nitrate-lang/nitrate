@@ -31,23 +31,18 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-seq/Lib.h>
-
-#include <atomic>
 #include <nitrate-core/Init.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Init.hh>
+#include <nitrate-seq/Init.hh>
 
-static std::atomic<size_t> qprep_lib_ref_count = 0;
+using namespace ncc::seq;
 
-bool do_init() { return true; }
+NCC_EXPORT ncc::LibraryRC<SeqLibrarySetup> ncc::seq::SeqLibrary;
 
-void do_deinit() { return; }
-
-extern "C" NCC_EXPORT bool qprep_lib_init() {
-  if (qprep_lib_ref_count++ > 1) {
-    return true;
-  }
+NCC_EXPORT bool SeqLibrarySetup::Init() {
+  qcore_print(QCORE_DEBUG, "Initializing Nitrate Sequencer Library");
 
   if (!ncc::CoreLibrary.InitRC()) {
     return false;
@@ -57,68 +52,20 @@ extern "C" NCC_EXPORT bool qprep_lib_init() {
     return false;
   }
 
-  return do_init();
+  qcore_print(QCORE_DEBUG, "Nitrate Sequencer Library initialized");
+
+  return true;
 }
 
-extern "C" NCC_EXPORT void qprep_lib_deinit() {
-  if (--qprep_lib_ref_count > 0) {
-    return;
-  }
-
-  do_deinit();
+NCC_EXPORT void SeqLibrarySetup::Deinit() {
+  qcore_print(QCORE_DEBUG, "Deinitializing Nitrate Sequencer Library");
 
   ncc::lex::LexerLibrary.DeinitRC();
   ncc::CoreLibrary.DeinitRC();
 
-  return;
+  qcore_print(QCORE_DEBUG, "Nitrate Sequencer Library deinitialized");
 }
 
-extern "C" NCC_EXPORT const char* qprep_lib_version() {
-  static const char* version_string =
-
-      "[" __TARGET_VERSION
-      "] ["
-
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
-    defined(_M_X64) || defined(_M_AMD64)
-      "x86_64-"
-#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
-      "x86-"
-#elif defined(__aarch64__)
-      "aarch64-"
-#elif defined(__arm__)
-      "arm-"
-#else
-      "unknown-"
-#endif
-
-#if defined(__linux__)
-      "linux-"
-#elif defined(__APPLE__)
-      "macos-"
-#elif defined(_WIN32)
-      "win32-"
-#else
-      "unknown-"
-#endif
-
-#if defined(__clang__)
-      "clang] "
-#elif defined(__GNUC__)
-      "gnu] "
-#else
-      "unknown] "
-#endif
-
-#if NDEBUG
-      "[release]"
-#else
-      "[debug]"
-#endif
-
-      ;
-
-  return version_string;
+NCC_EXPORT std::string_view SeqLibrarySetup::GetVersionId() {
+  return __TARGET_VERSION;
 }
-
-extern "C" NCC_EXPORT const char* qprep_strerror() { return ""; }

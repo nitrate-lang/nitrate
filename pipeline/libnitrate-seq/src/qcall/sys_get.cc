@@ -40,7 +40,9 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int qcall::sys_get(lua_State* L) {
+using namespace ncc;
+
+int seq::sys_get(lua_State* L) {
   /**
    * @brief Get named value from the environment.
    */

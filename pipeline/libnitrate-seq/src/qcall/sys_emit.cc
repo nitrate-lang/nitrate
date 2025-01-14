@@ -38,7 +38,9 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int qcall::sys_emit(lua_State* L) {
+using namespace ncc;
+
+int seq::sys_emit(lua_State* L) {
   /**
    *   @brief Next token.
    */

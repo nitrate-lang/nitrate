@@ -39,9 +39,10 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
+using namespace ncc;
 using namespace ncc::lex;
 
-int qcall::sys_peek(lua_State* L) {
+int seq::sys_peek(lua_State* L) {
   Token tok = get_engine()->Peek();
 
   lua_newtable(L);

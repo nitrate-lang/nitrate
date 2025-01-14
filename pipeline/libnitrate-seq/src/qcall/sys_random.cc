@@ -41,7 +41,9 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int qcall::sys_random(lua_State* L) {
+using namespace ncc;
+
+int seq::sys_random(lua_State* L) {
   /**
    * @brief Get a uniform random number (in the range [a, b]).
    */

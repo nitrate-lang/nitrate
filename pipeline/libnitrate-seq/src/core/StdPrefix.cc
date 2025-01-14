@@ -31,9 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <nitrate-seq/Sequencer.hh>
 #include <string_view>
 
-std::string_view nit_code_prefix = R"(
+std::string_view ncc::seq::Sequencer::CodePrefix = R"(
 @( -- Disable dangerous lua functions
 
   -- From lbaselib.c

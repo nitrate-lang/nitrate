@@ -38,9 +38,10 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
+using namespace ncc;
 using namespace ncc::lex;
 
-int qcall::sys_defer(lua_State* L) {
+int seq::sys_defer(lua_State* L) {
   /**
    *   @brief Defer token callback.
    */
@@ -109,7 +110,7 @@ int qcall::sys_defer(lua_State* L) {
     switch (err) {
       case LUA_OK: {
         if (lua_isnil(L, -1)) {
-          return DeferOp::UninstallHandler;
+          return UninstallHandler;
         }
 
         if (!lua_isboolean(L, -1)) {
@@ -117,30 +118,30 @@ int qcall::sys_defer(lua_State* L) {
               QCORE_ERROR,
               "sys_defer: expected boolean return value or nil, got %s\n",
               luaL_typename(L, -1));
-          return DeferOp::EmitToken;
+          return EmitToken;
         }
 
-        R = lua_toboolean(L, -1) ? DeferOp::EmitToken : DeferOp::SkipToken;
+        R = lua_toboolean(L, -1) ? EmitToken : SkipToken;
         break;
       }
       case LUA_ERRRUN: {
         qcore_logf(QCORE_ERROR, "sys_defer: lua: %s\n", lua_tostring(L, -1));
-        R = DeferOp::EmitToken;
+        R = EmitToken;
         break;
       }
       case LUA_ERRMEM: {
         qcore_logf(QCORE_ERROR, "sys_defer: memory allocation error\n");
-        R = DeferOp::EmitToken;
+        R = EmitToken;
         break;
       }
       case LUA_ERRERR: {
         qcore_logf(QCORE_ERROR, "sys_defer: error in error handler\n");
-        R = DeferOp::EmitToken;
+        R = EmitToken;
         break;
       }
       default: {
         qcore_logf(QCORE_ERROR, "sys_defer: unexpected error %d\n", err);
-        R = DeferOp::EmitToken;
+        R = EmitToken;
         break;
       }
     }

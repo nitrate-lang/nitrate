@@ -43,6 +43,8 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
+using namespace ncc;
+
 static bool is_valid_import_name(const std::string &name) {
   if (name.empty()) {
     return false;
@@ -61,7 +63,7 @@ static void canonicalize_import_name(std::string &name) {
   std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 }
 
-static std::optional<std::string> fetch_module_data(Sequencer *obj,
+static std::optional<std::string> fetch_module_data(seq::Sequencer *obj,
                                                     const char *name) {
   // if (!obj->m_fetch_module.first) {
   //   return std::nullopt;
@@ -88,7 +90,7 @@ static std::optional<std::string> fetch_module_data(Sequencer *obj,
   return std::nullopt;
 }
 
-int qcall::sys_fetch(lua_State *L) {
+int seq::sys_fetch(lua_State *L) {
   /**
    * @brief Download a file.
    */

@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-seq/Lib.h>
-
 #include <cstddef>
 #include <memory>
 #include <nitrate-core/Logger.hh>
@@ -40,6 +38,7 @@
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
+#include <nitrate-seq/Init.hh>
 #include <nitrate-seq/Sequencer.hh>
 #include <optional>
 #include <qcall/List.hh>
@@ -53,7 +52,7 @@ extern "C" {
 }
 
 using namespace ncc::lex;
-using namespace qcall;
+using namespace ncc::seq;
 
 #define MAX_RECURSION_DEPTH 10000
 
@@ -99,10 +98,10 @@ bool Sequencer::run_defer_callbacks(Token last) {
     m_core->defer_callbacks.pop_back();
 
     DeferOp op = cb(this, last);
-    if (op != DeferOp::UninstallHandler) {
+    if (op != UninstallHandler) {
       saved.push_back(cb);
     }
-    if (op == DeferOp::EmitToken) {
+    if (op == EmitToken) {
       emit_token = true;
     }
   }
@@ -387,7 +386,7 @@ NCC_EXPORT Sequencer::Sequencer(std::istream &file,
     }
 
     // Run the standard language prefix
-    expand_raw(nit_code_prefix);
+    expand_raw(CodePrefix);
   }
 }
 

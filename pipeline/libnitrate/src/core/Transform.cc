@@ -32,7 +32,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-emit/Lib.h>
-#include <nitrate-seq/Lib.h>
 
 #include <cerrno>
 #include <core/Transform.hh>
@@ -47,6 +46,7 @@
 #include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
+#include <nitrate-seq/Init.hh>
 #include <nitrate/code.hh>
 #include <sstream>
 #include <string_view>

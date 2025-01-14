@@ -41,6 +41,7 @@
 #include <unordered_set>
 
 using namespace ncc::lex;
+using namespace ncc::seq;
 
 extern bool impl_use_msgpack(IScanner *L, std::ostream &O);
 extern bool impl_use_json(IScanner *L, std::ostream &O);

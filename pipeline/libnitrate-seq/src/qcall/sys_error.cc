@@ -40,7 +40,9 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int qcall::sys_error(lua_State* L) {
+using namespace ncc;
+
+int seq::sys_error(lua_State* L) {
   /**
    * @brief Put a value into the error log.
    */

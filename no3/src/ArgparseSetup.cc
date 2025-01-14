@@ -34,7 +34,6 @@
 #include <argparse.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
-#include <nitrate-seq/Lib.h>
 
 #include <cstdint>
 #include <memory>
@@ -42,6 +41,7 @@
 #include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
+#include <nitrate-seq/Init.hh>
 #include <string>
 
 using namespace argparse;
@@ -685,7 +685,7 @@ namespace no3::argparse_setup {
     std::array<std::string_view, 6> NO3_DEPS = {
         ncc::CoreLibrary.GetVersion(),
         ncc::lex::LexerLibrary.GetVersion(),
-        qprep_lib_version(),
+        ncc::seq::SeqLibrary.GetVersion(),
         ncc::parse::ParseLibrary.GetVersion(),
         ncc::ir::IRLibrary.GetVersion(),
         qcode_lib_version()};

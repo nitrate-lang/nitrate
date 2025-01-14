@@ -42,7 +42,9 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int qcall::sys_starttime(lua_State* L) {
+using namespace ncc;
+
+int seq::sys_starttime(lua_State* L) {
   /**
    * @brief Get the start time in milliseconds
    */

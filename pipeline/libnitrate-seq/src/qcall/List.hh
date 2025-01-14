@@ -35,12 +35,14 @@
 #define __QPREP_QCALL_LIST_HH__
 
 #include <cstdint>
+#include <nitrate-seq/Sequencer.hh>
 #include <string_view>
 #include <vector>
 
-struct lua_State;
+#define get_engine() \
+  ((Sequencer*)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1)))
 
-namespace qcall {
+namespace ncc::seq {
   typedef int (*qsyscall_t)(lua_State* L);
   class QSysCall final {
     std::string_view m_name;
@@ -113,6 +115,6 @@ namespace qcall {
       {"time", 0x00A2, sys_time}, /* Get the current UNIX time in ms */
   };
 
-};  // namespace qcall
+};  // namespace ncc::seq
 
 #endif  // __QPREP_QCALL_LIST_HH__

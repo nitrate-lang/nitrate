@@ -18,6 +18,7 @@
 
 using namespace rapidjson;
 using namespace ncc::lex;
+using namespace ncc::seq;
 
 void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   struct Position {
