@@ -31,34 +31,54 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Environment.hh>
-#include <nitrate-core/Logger.hh>
-#include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
-#include <string>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-using namespace ncc;
+using namespace ncc::lex;
 
-int seq::sys_starttime(lua_State* L) {
-  /**
-   * @brief Get the start time in milliseconds
-   */
+int ncc::seq::sys_next(lua_State* L) {
+  Token tok = get_engine()->Next();
 
-  int nargs = lua_gettop(L);
-  if (nargs != 0) {
-    return luaL_error(L, "Expected 0 arguments, got %d", nargs);
+  lua_newtable(L);
+
+  lua_pushstring(L, "ty");
+  lua_pushstring(L, qlex_ty_str(tok.get_type()));
+  lua_settable(L, -3);
+
+  lua_pushstring(L, "v");
+  switch (tok.get_type()) {
+    case EofF:
+    case KeyW: {
+      lua_pushstring(L, kw_repr(tok.as_key()));
+      break;
+    }
+    case Oper: {
+      lua_pushstring(L, op_repr(tok.as_op()));
+      break;
+    }
+    case Punc: {
+      lua_pushstring(L, punct_repr(tok.as_punc()));
+      break;
+    }
+    case IntL:
+    case NumL:
+    case Text:
+    case Char:
+    case Name:
+    case MacB:
+    case Macr:
+    case Note: {
+      lua_pushstring(L, std::string(tok.as_string()).c_str());
+      break;
+    }
   }
 
-  if (let starttime = get_engine()->GetEnvironment()->get("this.created_at")) {
-    lua_pushinteger(L, std::stoll(std::string(*starttime)));
-  } else {
-    qcore_panic("Failed to get the start time of the compiler");
-  }
+  lua_settable(L, -3);
 
   return 1;
 }

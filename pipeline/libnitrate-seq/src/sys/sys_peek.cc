@@ -31,55 +31,54 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Environment.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-using namespace ncc;
+using namespace ncc::lex;
 
-static const std::vector<std::string_view> immutable_namespaces = {"this."};
+int ncc::seq::sys_peek(lua_State* L) {
+  Token tok = get_engine()->Peek();
 
-int seq::sys_set(lua_State* L) {
-  /**
-   * @brief Set named value to the environment.
-   */
+  lua_newtable(L);
 
-  int nargs = lua_gettop(L);
-  if (nargs != 2) {
-    return luaL_error(L, "expected 2 arguments, got %d", nargs);
-  }
+  lua_pushstring(L, "ty");
+  lua_pushstring(L, qlex_ty_str(tok.get_type()));
+  lua_settable(L, -3);
 
-  if (!lua_isstring(L, 1)) {
-    return luaL_error(L, "expected string, got %s",
-                      lua_typename(L, lua_type(L, 1)));
-  }
-
-  Sequencer* obj = get_engine();
-
-  std::string_view key = lua_tostring(L, 1);
-
-  if (key.empty()) {
-    return luaL_error(L, "expected non-empty string, got empty string");
-  }
-
-  for (const auto& ns : immutable_namespaces) {
-    if (key.starts_with(ns)) {
-      return luaL_error(L, "cannot set items in immutable namespace");
+  lua_pushstring(L, "v");
+  switch (tok.get_type()) {
+    case EofF:
+    case KeyW: {
+      lua_pushstring(L, kw_repr(tok.as_key()));
+      break;
+    }
+    case Oper: {
+      lua_pushstring(L, op_repr(tok.as_op()));
+      break;
+    }
+    case Punc: {
+      lua_pushstring(L, punct_repr(tok.as_punc()));
+      break;
+    }
+    case IntL:
+    case NumL:
+    case Text:
+    case Char:
+    case Name:
+    case MacB:
+    case Macr:
+    case Note: {
+      lua_pushstring(L, std::string(tok.as_string()).c_str());
+      break;
     }
   }
 
-  if (lua_isnil(L, 2)) {
-    obj->GetEnvironment()->set(key, std::nullopt);
-  } else if (lua_isstring(L, 2)) {
-    obj->GetEnvironment()->set(key, lua_tostring(L, 2));
-  } else {
-    return luaL_error(L, "expected string or nil, got %s",
-                      lua_typename(L, lua_type(L, 2)));
-  }
+  lua_settable(L, -3);
 
-  return 0;
+  return 1;
 }

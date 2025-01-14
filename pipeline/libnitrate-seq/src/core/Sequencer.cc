@@ -35,15 +35,9 @@
 #include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Init.hh>
 #include <nitrate-lexer/Lexer.hh>
-#include <nitrate-lexer/Token.hh>
-#include <nitrate-seq/Init.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <optional>
-#include <qcall/List.hh>
-#include <sstream>
-#include <string_view>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
@@ -58,7 +52,7 @@ using namespace ncc::seq;
 
 ///=============================================================================
 
-Sequencer::Core::~Core() {
+Sequencer::PImpl::~PImpl() {
   if (L) {
     lua_close(L);
   }
@@ -338,10 +332,10 @@ func_entry:  // do tail call optimization manually
 void Sequencer::install_lua_api() {
   lua_newtable(m_core->L);
 
-  for (const auto &qcall : qsyscalls) {
+  for (const auto &api : SysFunctions) {
     lua_pushinteger(m_core->L, (lua_Integer)(uintptr_t)this);
-    lua_pushcclosure(m_core->L, qcall.getFunc(), 1);
-    lua_setfield(m_core->L, -2, qcall.getName().data());
+    lua_pushcclosure(m_core->L, api.getFunc(), 1);
+    lua_setfield(m_core->L, -2, api.getName().data());
   }
 
   lua_setglobal(m_core->L, "n");
@@ -351,7 +345,7 @@ NCC_EXPORT Sequencer::Sequencer(std::istream &file,
                                 std::shared_ptr<ncc::Environment> env,
                                 bool is_root)
     : ncc::lex::IScanner(env) {
-  m_core = std::make_shared<Core>();
+  m_core = std::make_shared<PImpl>();
   m_scanner = std::make_unique<Tokenizer>(file, env);
 
   if (is_root) {

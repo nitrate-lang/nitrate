@@ -31,39 +31,39 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <cstdio>
 #include <nitrate-core/Environment.hh>
-#include <nitrate-core/Macro.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-using namespace ncc;
-
-int seq::sys_get(lua_State* L) {
-  /**
-   * @brief Get named value from the environment.
-   */
-
+int ncc::seq::sys_fatal(lua_State* L) {
   int nargs = lua_gettop(L);
-  if (nargs != 1) {
-    return luaL_error(L, "expected 1 argument, got %d", nargs);
+  if (nargs == 0) {
+    return luaL_error(L, "Expected at least one argument, got 0");
   }
 
-  Sequencer* obj = get_engine();
+  qcore_begin(QCORE_FATAL);
 
-  if (!lua_isstring(L, 1)) {
-    return luaL_error(L, "expected string, got %s",
-                      lua_typename(L, lua_type(L, 1)));
+  for (int i = 1; i <= nargs; i++) {
+    if (lua_isstring(L, i)) {
+      qcore_write(lua_tostring(L, i));
+    } else if (lua_isnumber(L, i)) {
+      qcore_writef("%g", (double)lua_tonumber(L, i));
+    } else if (lua_isboolean(L, i)) {
+      qcore_write(lua_toboolean(L, i) ? "true" : "false");
+    } else {
+      return luaL_error(
+          L,
+          "Invalid argument #%d: expected string, number, or boolean, got %s",
+          i, lua_typename(L, lua_type(L, i)));
+    }
   }
 
-  if (let value = obj->GetEnvironment()->get(lua_tostring(L, 1))) {
-    lua_pushstring(L, std::string(*value).c_str());
-  } else {
-    lua_pushnil(L);
-  }
+  qcore_end();
 
-  return 1;
+  throw Sequencer::StopException();
 }

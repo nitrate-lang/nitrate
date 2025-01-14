@@ -32,20 +32,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-using namespace ncc;
 using namespace ncc::lex;
 
-int seq::sys_defer(lua_State* L) {
-  /**
-   *   @brief Defer token callback.
-   */
-
+int ncc::seq::sys_defer(lua_State* L) {
   int nargs = lua_gettop(L);
   if (nargs < 1) {
     return luaL_error(L, "sys_defer: expected at least 1 argument, got %d",
@@ -63,7 +58,8 @@ int seq::sys_defer(lua_State* L) {
     return luaL_error(L, "sys_defer: failed to store callback in registry");
   }
 
-  DeferCallback cb = [L, id](Sequencer*, Token tok) -> DeferOp {
+  Sequencer::DeferCallback cb = [L, id](Sequencer*,
+                                        Token tok) -> Sequencer::DeferOp {
     lua_rawgeti(L, LUA_REGISTRYINDEX, id); /* Get the function */
 
     { /* Push the function arguments */
@@ -105,12 +101,12 @@ int seq::sys_defer(lua_State* L) {
     }
 
     int err = lua_pcall(L, 1, 1, 0);
-    DeferOp R;
+    Sequencer::DeferOp R;
 
     switch (err) {
       case LUA_OK: {
         if (lua_isnil(L, -1)) {
-          return UninstallHandler;
+          return Sequencer::UninstallHandler;
         }
 
         if (!lua_isboolean(L, -1)) {
@@ -118,30 +114,30 @@ int seq::sys_defer(lua_State* L) {
               QCORE_ERROR,
               "sys_defer: expected boolean return value or nil, got %s\n",
               luaL_typename(L, -1));
-          return EmitToken;
+          return Sequencer::EmitToken;
         }
 
-        R = lua_toboolean(L, -1) ? EmitToken : SkipToken;
+        R = lua_toboolean(L, -1) ? Sequencer::EmitToken : Sequencer::SkipToken;
         break;
       }
       case LUA_ERRRUN: {
         qcore_logf(QCORE_ERROR, "sys_defer: lua: %s\n", lua_tostring(L, -1));
-        R = EmitToken;
+        R = Sequencer::EmitToken;
         break;
       }
       case LUA_ERRMEM: {
         qcore_logf(QCORE_ERROR, "sys_defer: memory allocation error\n");
-        R = EmitToken;
+        R = Sequencer::EmitToken;
         break;
       }
       case LUA_ERRERR: {
         qcore_logf(QCORE_ERROR, "sys_defer: error in error handler\n");
-        R = EmitToken;
+        R = Sequencer::EmitToken;
         break;
       }
       default: {
         qcore_logf(QCORE_ERROR, "sys_defer: unexpected error %d\n", err);
-        R = EmitToken;
+        R = Sequencer::EmitToken;
         break;
       }
     }

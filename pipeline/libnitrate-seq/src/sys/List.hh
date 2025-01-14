@@ -36,6 +36,7 @@
 
 #include <cstdint>
 #include <nitrate-seq/Sequencer.hh>
+#include <random>
 #include <string_view>
 #include <vector>
 
@@ -43,6 +44,18 @@
   ((Sequencer*)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1)))
 
 namespace ncc::seq {
+  class Sequencer::PImpl final {
+  public:
+    lua_State* L = nullptr;
+    std::vector<DeferCallback> defer_callbacks;
+    std::deque<ncc::lex::Token> buffer;
+    std::mt19937 m_qsys_random_engine;
+    bool m_do_expanse = true;
+    size_t m_depth = 0;
+
+    ~PImpl();
+  };
+
   typedef int (*qsyscall_t)(lua_State* L);
   class QSysCall final {
     std::string_view m_name;
@@ -85,34 +98,27 @@ namespace ncc::seq {
   /* ===== Random Generator ===== */
   int sys_random(lua_State* L);
 
-  /* ====== Time and Date ====== */
-  int sys_starttime(lua_State* L);
-  int sys_time(lua_State* L);
+  /* ===== Implementation specific ===== */
+  int sys_ctrl(lua_State* L);
 
   ////////////// END QCALL FUNCTIONS //////////////
 
-  inline const std::vector<QSysCall> qsyscalls = {
-      {"next", 0x0010, sys_next}, /* Get the next token from the lexer */
-      {"peek", 0x0011, sys_peek}, /* Peek at the next token from the lexer */
-      {"emit", 0x0012, sys_emit}, /* Emit data subject to recursive expansion */
+  static inline const std::vector<QSysCall> SysFunctions = {
+      {"next", 0x0010, sys_next},   /* Get the next token from the lexer */
+      {"peek", 0x0011, sys_peek},   /* Peek at the next token from the lexer */
+      {"emit", 0x0012, sys_emit},   /* Emit data  */
       {"defer", 0x0013, sys_defer}, /* Callback after every token is emitted */
-
-      {"debug", 0x0051, sys_debug}, /* Print a debug message */
-      {"info", 0x0052, sys_info},   /* Print an informational message */
-      {"warn", 0x0053, sys_warn},   /* Print a warning message */
-      {"error", 0x0054, sys_error}, /* Print an error message */
-      {"abort", 0x0055, sys_abort}, /* Print an error and halt */
-      {"fatal", 0x0056, sys_fatal}, /* Print a fatal error and halt */
-
-      {"get", 0x0080, sys_get}, /* Get a value from the environment */
-      {"set", 0x0081, sys_set}, /* Set a value in the environment */
-
+      {"debug", 0x0050, sys_debug}, /* Print a debug message */
+      {"info", 0x0051, sys_info},   /* Print an informational message */
+      {"warn", 0x0052, sys_warn},   /* Print a warning message */
+      {"error", 0x0053, sys_error}, /* Print an error message */
+      {"abort", 0x0054, sys_abort}, /* Print an error and halt */
+      {"fatal", 0x0055, sys_fatal}, /* Print a fatal error and halt */
+      {"get", 0x0080, sys_get},     /* Get a value from the environment */
+      {"set", 0x0081, sys_set},     /* Set a value in the environment */
       {"fetch", 0x0082, sys_fetch}, /* Import module */
-
       {"random", 0x00A0, sys_random}, /* Get a random number */
-
-      {"starttime", 0x00A1, sys_starttime}, /* Get the start time in UNIX ms */
-      {"time", 0x00A2, sys_time}, /* Get the current UNIX time in ms */
+      {"ctrl", 0x00C0, sys_ctrl}      /* Implementation specific stuff */
   };
 
 };  // namespace ncc::seq

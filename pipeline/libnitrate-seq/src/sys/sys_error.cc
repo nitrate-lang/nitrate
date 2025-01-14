@@ -34,25 +34,19 @@
 #include <cstdio>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-using namespace ncc;
-
-int seq::sys_warn(lua_State* L) {
-  /**
-   * @brief Put a value into the warn log.
-   */
-
+int ncc::seq::sys_error(lua_State* L) {
   int nargs = lua_gettop(L);
   if (nargs == 0) {
     return luaL_error(L, "Expected at least one argument, got 0");
   }
 
-  qcore_begin(QCORE_WARN);
+  qcore_begin(QCORE_ERROR);
 
   for (int i = 1; i <= nargs; i++) {
     if (lua_isstring(L, i)) {

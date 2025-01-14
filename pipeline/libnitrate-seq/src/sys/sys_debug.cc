@@ -34,64 +34,36 @@
 #include <cstdio>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
-#include <random>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-using namespace ncc;
-
-int seq::sys_random(lua_State* L) {
-  /**
-   * @brief Get a uniform random number (in the range [a, b]).
-   */
-
-  int64_t min, max;
-
+int ncc::seq::sys_debug(lua_State* L) {
   int nargs = lua_gettop(L);
   if (nargs == 0) {
-    min = 0;
-    max = 0xff;
-  } else if (nargs == 1) {
-    min = 0;
-    if (lua_isnumber(L, 1)) {
-      max = lua_tointeger(L, 1);
-    } else {
-      return luaL_error(L, "Invalid argument #1: expected number, got %s",
-                        lua_typename(L, lua_type(L, 1)));
-    }
-  } else if (nargs == 2) {
-    if (lua_isnumber(L, 1)) {
-      min = lua_tointeger(L, 1);
-    } else {
-      return luaL_error(L, "Invalid argument #1: expected number, got %s",
-                        lua_typename(L, lua_type(L, 1)));
-    }
-
-    if (lua_isnumber(L, 2)) {
-      max = lua_tointeger(L, 2);
-    } else {
-      return luaL_error(L, "Invalid argument #2: expected number, got %s",
-                        lua_typename(L, lua_type(L, 2)));
-    }
-  } else {
-    return luaL_error(L, "Expected at most two arguments, got %d", nargs);
+    return luaL_error(L, "Expected at least one argument, got 0");
   }
 
-  if (min > max) {
-    return luaL_error(L, "Invalid range: min > max");
+  qcore_begin(QCORE_DEBUG);
+
+  for (int i = 1; i <= nargs; i++) {
+    if (lua_isstring(L, i)) {
+      qcore_write(lua_tostring(L, i));
+    } else if (lua_isnumber(L, i)) {
+      qcore_writef("%g", (double)lua_tonumber(L, i));
+    } else if (lua_isboolean(L, i)) {
+      qcore_write(lua_toboolean(L, i) ? "true" : "false");
+    } else {
+      return luaL_error(
+          L,
+          "Invalid argument #%d: expected string, number, or boolean, got %s",
+          i, lua_typename(L, lua_type(L, i)));
+    }
   }
 
-  auto engine = get_engine();
+  qcore_end();
 
-  static_assert(sizeof(engine->m_core->m_qsys_random_engine()) == 8);
-
-  uint64_t num = engine->m_core->m_qsys_random_engine();
-  num = (num % (max - min + 1)) + min;
-
-  lua_pushinteger(L, num);
-
-  return 1;
+  return 0;
 }

@@ -39,41 +39,29 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
 #include <optional>
-#include <random>
 #include <string_view>
 
 struct lua_State;
 
 namespace ncc::seq {
-  enum DeferOp {
-    EmitToken,
-    SkipToken,
-    UninstallHandler,
-  };
 
-  class Sequencer;
-  class StopException {};
-
-  typedef std::function<DeferOp(Sequencer *obj, ncc::lex::Token last)>
-      DeferCallback;
-
-  class Sequencer final : public ncc::lex::IScanner {
+  class NCC_EXPORT Sequencer final : public ncc::lex::IScanner {
     static std::string_view CodePrefix;
     std::unique_ptr<ncc::lex::Tokenizer> m_scanner;
 
   public:
-    struct Core {
-      lua_State *L = nullptr;
-      std::vector<DeferCallback> defer_callbacks;
-      std::deque<ncc::lex::Token> buffer;
-      std::mt19937 m_qsys_random_engine;
-      bool m_do_expanse = true;
-      size_t m_depth = 0;
-
-      ~Core();
+    enum DeferOp {
+      EmitToken,
+      SkipToken,
+      UninstallHandler,
     };
 
-    std::shared_ptr<Core> m_core;
+    using DeferCallback =
+        std::function<DeferOp(Sequencer *obj, ncc::lex::Token last)>;
+    class StopException {};
+
+    class PImpl;
+    std::shared_ptr<PImpl> m_core;
 
     virtual ncc::lex::Token GetNext() override;
     virtual std::optional<ncc::lex::Location> GetLocationFallback(

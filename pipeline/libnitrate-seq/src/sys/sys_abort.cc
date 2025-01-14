@@ -31,94 +31,39 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <algorithm>
+#include <cstdio>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <optional>
-#include <qcall/List.hh>
-#include <regex>
-#include <string>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-using namespace ncc;
-
-static bool is_valid_import_name(const std::string &name) {
-  if (name.empty()) {
-    return false;
-  }
-
-  if (std::any_of(name.begin(), name.end(), [](char c) { return c & 0x80; })) {
-    return false;
-  }
-
-  std::regex re(R"(^[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*$)");
-  return std::regex_match(name, re);
-}
-
-static void canonicalize_import_name(std::string &name) {
-  // Don't assume that filesystems are case-sensitive.
-  std::transform(name.begin(), name.end(), name.begin(), ::tolower);
-}
-
-static std::optional<std::string> fetch_module_data(seq::Sequencer *obj,
-                                                    const char *name) {
-  // if (!obj->m_fetch_module.first) {
-  //   return std::nullopt;
-  // }
-
-  // char *module_data = NULL;
-  // size_t module_size = 0;
-
-  // // Always put off to tomorrow what can be done today.
-  // if (!obj->m_fetch_module.first(obj, name, &module_data, &module_size,
-  //                                obj->m_fetch_module.second)) {
-  //   return std::nullopt;
-  // }
-
-  // std::string data(module_data, module_size);
-  // free(module_data);
-
-  // return data;
-  (void)obj;
-  (void)name;
-
-  qcore_print(QCORE_WARN, "fetch_module_data not implemented");
-
-  return std::nullopt;
-}
-
-int seq::sys_fetch(lua_State *L) {
-  /**
-   * @brief Download a file.
-   */
-
-  Sequencer *obj = get_engine();
-
+int ncc::seq::sys_abort(lua_State* L) {
   int nargs = lua_gettop(L);
-  if (nargs != 1) {
-    return luaL_error(L, "expected 1 argument, got %d", nargs);
+  if (nargs == 0) {
+    return luaL_error(L, "Expected at least one argument, got 0");
   }
 
-  if (!lua_isstring(L, 1)) {
-    return luaL_error(L, "expected string, got %s",
-                      lua_typename(L, lua_type(L, 1)));
+  qcore_begin(QCORE_ERROR);
+
+  for (int i = 1; i <= nargs; i++) {
+    if (lua_isstring(L, i)) {
+      qcore_write(lua_tostring(L, i));
+    } else if (lua_isnumber(L, i)) {
+      qcore_writef("%g", (double)lua_tonumber(L, i));
+    } else if (lua_isboolean(L, i)) {
+      qcore_write(lua_toboolean(L, i) ? "true" : "false");
+    } else {
+      return luaL_error(
+          L,
+          "Invalid argument #%d: expected string, number, or boolean, got %s",
+          i, lua_typename(L, lua_type(L, i)));
+    }
   }
 
-  std::string import_name = lua_tostring(L, 1);
+  qcore_end();
 
-  if (!is_valid_import_name(import_name)) {
-    return luaL_error(L, "invalid import name");
-  }
-
-  canonicalize_import_name(import_name);
-
-  if (auto data = fetch_module_data(obj, import_name.c_str())) {
-    lua_pushstring(L, data->c_str());
-    return 1;
-  } else {
-    return luaL_error(L, "failed to fetch module");
-  }
+  throw Sequencer::StopException();
 }

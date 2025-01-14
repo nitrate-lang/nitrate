@@ -31,31 +31,33 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <chrono>
-#include <qcall/List.hh>
+#include <nitrate-core/Environment.hh>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-seq/Sequencer.hh>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-using namespace ncc;
-
-int seq::sys_time(lua_State* L) {
-  /**
-   * @brief Get the current UNIX timestamp in milliseconds
-   */
-
+int ncc::seq::sys_get(lua_State* L) {
   int nargs = lua_gettop(L);
-  if (nargs != 0) {
-    return luaL_error(L, "Expected 0 arguments, got %d", nargs);
+  if (nargs != 1) {
+    return luaL_error(L, "expected 1 argument, got %d", nargs);
   }
 
-  auto now = std::chrono::system_clock::now();
-  auto epoch = now.time_since_epoch();
-  auto milli_seconds =
-      std::chrono::duration_cast<std::chrono::milliseconds>(epoch);
+  Sequencer* obj = get_engine();
 
-  lua_pushinteger(L, milli_seconds.count());
+  if (!lua_isstring(L, 1)) {
+    return luaL_error(L, "expected string, got %s",
+                      lua_typename(L, lua_type(L, 1)));
+  }
+
+  if (let value = obj->GetEnvironment()->get(lua_tostring(L, 1))) {
+    lua_pushstring(L, std::string(*value).c_str());
+  } else {
+    lua_pushnil(L);
+  }
 
   return 1;
 }

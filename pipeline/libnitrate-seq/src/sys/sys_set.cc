@@ -31,45 +31,49 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstdio>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <qcall/List.hh>
+#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-using namespace ncc;
+static const std::vector<std::string_view> immutable_namespaces = {"this."};
 
-int seq::sys_error(lua_State* L) {
-  /**
-   * @brief Put a value into the error log.
-   */
-
+int ncc::seq::sys_set(lua_State* L) {
   int nargs = lua_gettop(L);
-  if (nargs == 0) {
-    return luaL_error(L, "Expected at least one argument, got 0");
+  if (nargs != 2) {
+    return luaL_error(L, "expected 2 arguments, got %d", nargs);
   }
 
-  qcore_begin(QCORE_ERROR);
+  if (!lua_isstring(L, 1)) {
+    return luaL_error(L, "expected string, got %s",
+                      lua_typename(L, lua_type(L, 1)));
+  }
 
-  for (int i = 1; i <= nargs; i++) {
-    if (lua_isstring(L, i)) {
-      qcore_write(lua_tostring(L, i));
-    } else if (lua_isnumber(L, i)) {
-      qcore_writef("%g", (double)lua_tonumber(L, i));
-    } else if (lua_isboolean(L, i)) {
-      qcore_write(lua_toboolean(L, i) ? "true" : "false");
-    } else {
-      return luaL_error(
-          L,
-          "Invalid argument #%d: expected string, number, or boolean, got %s",
-          i, lua_typename(L, lua_type(L, i)));
+  Sequencer* obj = get_engine();
+
+  std::string_view key = lua_tostring(L, 1);
+
+  if (key.empty()) {
+    return luaL_error(L, "expected non-empty string, got empty string");
+  }
+
+  for (const auto& ns : immutable_namespaces) {
+    if (key.starts_with(ns)) {
+      return luaL_error(L, "cannot set items in immutable namespace");
     }
   }
 
-  qcore_end();
+  if (lua_isnil(L, 2)) {
+    obj->GetEnvironment()->set(key, std::nullopt);
+  } else if (lua_isstring(L, 2)) {
+    obj->GetEnvironment()->set(key, lua_tostring(L, 2));
+  } else {
+    return luaL_error(L, "expected string or nil, got %s",
+                      lua_typename(L, lua_type(L, 2)));
+  }
 
   return 0;
 }
