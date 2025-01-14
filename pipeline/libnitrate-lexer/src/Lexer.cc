@@ -1048,7 +1048,7 @@ NCC_EXPORT Token Tokenizer::GetNext() {
         }
 
         start_pos = InternLocation(
-            Location(m_offset - 1, m_line, m_column, GetCurrentFilename()));
+            Location(m_offset - 1, m_line, m_column - 1, GetCurrentFilename()));
 
         if (std::isalpha(c) || c == '_') {
           /* Identifier or keyword or operator */
