@@ -171,7 +171,7 @@ static NCC_FORCE_INLINE bool validate_identifier(std::string_view id) {
 
 static NCC_FORCE_INLINE bool canonicalize_float(std::string_view input,
                                                 std::string &norm) {
-  size_t e_pos = e_pos = input.find('e');
+  size_t e_pos = input.find('e');
   if (e_pos == std::string::npos) [[likely]] {
     norm = input;
     return true;
@@ -208,7 +208,7 @@ static NCC_FORCE_INLINE bool canonicalize_float(std::string_view input,
       str.pop_back();
     }
 
-    if (str.back() == '.') {
+    if (!str.empty() && str.back() == '.') {
       str.pop_back();
     }
   }
@@ -221,9 +221,7 @@ static NCC_FORCE_INLINE bool canonicalize_float(std::string_view input,
 static NCC_FORCE_INLINE bool canonicalize_number(std::string &number,
                                                  std::string &norm,
                                                  NumType type) {
-  typedef unsigned int uint128_t __attribute__((mode(TI)));
-
-  uint128_t x = 0, i = 0;
+  boost::uint128_type x = 0, i = 0;
 
   std::transform(number.begin(), number.end(), number.begin(), ::tolower);
   std::erase(number, '_');
@@ -723,7 +721,6 @@ public:
           c = nextc(L);
         }
       } else if (lex_is_space(c)) {
-        is_lexing = false;
         break;
       }
 
@@ -1029,7 +1026,7 @@ NCC_EXPORT Token Tokenizer::GetNext() {
   std::string buf;
   LocationID start_pos = 0;
   LexState state = LexState::Start;
-  char c = 0;
+  char c{};
 
   while (true) {
     { /* If the Lexer over-consumed, we will return the saved character */
@@ -1313,10 +1310,9 @@ std::optional<std::vector<std::string>> Tokenizer::GetSourceWindow(
   if (m_file.seekg(0, std::ios::beg)) {
     long line = 0, column = 0;
 
-    int ch = EOF;
     bool spinning = true;
     while (spinning) {
-      ch = m_file.get();
+      int ch = m_file.get();
       if (ch == EOF) [[unlikely]] {
         break;
       }
@@ -1345,11 +1341,11 @@ std::optional<std::vector<std::string>> Tokenizer::GetSourceWindow(
 
       if (is_begin) [[unlikely]] {
         std::vector<std::string> lines;
-        std::string line;
+        std::string line_buf;
 
         do {
           long current_line = lines.size() + start.x;
-          long current_column = line.size();
+          long current_column = line_buf.size();
 
           if (current_line == end.x && current_column == end.y) [[unlikely]] {
             spinning = false;
@@ -1360,13 +1356,13 @@ std::optional<std::vector<std::string>> Tokenizer::GetSourceWindow(
                   spinning = false;
                 }
 
-                lines.push_back(line);
-                line.clear();
+                lines.push_back(line_buf);
+                line_buf.clear();
                 break;
               }
 
               default: {
-                line.push_back(ch);
+                line_buf.push_back(ch);
                 break;
               }
             }
@@ -1378,8 +1374,8 @@ std::optional<std::vector<std::string>> Tokenizer::GetSourceWindow(
           }
         } while (spinning);
 
-        if (!line.empty()) {
-          lines.push_back(line);
+        if (!line_buf.empty()) {
+          lines.push_back(line_buf);
         }
 
         size_t max_length = 0;
