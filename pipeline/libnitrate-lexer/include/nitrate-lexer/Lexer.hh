@@ -75,8 +75,8 @@ namespace ncc::lex {
     }
   };
 
-  inline static const boost::bimap<const char *, Keyword> LexicalKeywords =
-      detail::make_bimap<const char *, Keyword>({
+  inline static const boost::bimap<std::string, Keyword> LexicalKeywords =
+      detail::make_bimap<std::string, Keyword>({
           {"scope", Scope},
           {"pub", Pub},
           {"sec", Sec},
@@ -121,8 +121,8 @@ namespace ncc::lex {
           {"false", False},
       });
 
-  inline static const boost::bimap<const char *, Operator> LexicalOperators =
-      detail::make_bimap<const char *, Operator>({
+  inline static const boost::bimap<std::string, Operator> LexicalOperators =
+      detail::make_bimap<std::string, Operator>({
           {"+", OpPlus},
           {"-", OpMinus},
           {"*", OpTimes},
@@ -239,8 +239,8 @@ namespace ncc::lex {
           {OpTernary, {OpType::Ternary, false}},
       });
 
-  inline static const boost::bimap<const char *, Punctor> LexicalPunctors =
-      detail::make_bimap<const char *, Punctor>({
+  inline static const boost::bimap<std::string, Punctor> LexicalPunctors =
+      detail::make_bimap<std::string, Punctor>({
           {"(", PuncLPar},
           {")", PuncRPar},
           {"[", PuncLBrk},
@@ -381,15 +381,15 @@ namespace ncc::lex {
   };
 
   static inline const char *op_repr(Operator op) {
-    return LexicalOperators.right.at(op);
+    return LexicalOperators.right.at(op).c_str();
   }
 
   static inline const char *kw_repr(Keyword kw) {
-    return LexicalKeywords.right.at(kw);
+    return LexicalKeywords.right.at(kw).c_str();
   }
 
   static inline const char *punct_repr(Punctor punct) {
-    return LexicalPunctors.right.at(punct);
+    return LexicalPunctors.right.at(punct).c_str();
   }
 
   std::ostream &operator<<(std::ostream &os, TokenType ty);

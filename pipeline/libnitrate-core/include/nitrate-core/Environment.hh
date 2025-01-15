@@ -46,10 +46,9 @@ namespace ncc {
 
     virtual bool contains(std::string_view key) = 0;
 
-    virtual std::optional<std::string_view> get(std::string_view key) = 0;
+    virtual std::optional<string> get(string key) = 0;
 
-    virtual void set(std::string_view key,
-                     std::optional<std::string_view> value,
+    virtual void set(string key, std::optional<string> value,
                      bool privset = false) = 0;
   };
 
@@ -64,10 +63,10 @@ namespace ncc {
 
     bool contains(std::string_view key) override;
 
-    std::optional<std::string_view> get(std::string_view key) override;
+    std::optional<string> get(string key) override;
 
     /* String interning is done internally */
-    void set(std::string_view key, std::optional<std::string_view> value,
+    void set(string key, std::optional<string> value,
              bool privset = false) override;
   };
 

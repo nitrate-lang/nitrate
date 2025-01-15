@@ -112,7 +112,7 @@ namespace ncc::parse {
 
     auto get_vis() const { return m_vis; }
     auto is_static() const { return m_is_static; }
-    auto get_name() const { return m_name.get(); }
+    auto get_name() const { return m_name; }
     auto get_type() const { return m_type; }
     auto get_value() const { return m_value; }
   };

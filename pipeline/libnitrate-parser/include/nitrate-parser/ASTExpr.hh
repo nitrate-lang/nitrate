@@ -113,7 +113,7 @@ namespace ncc::parse {
   public:
     constexpr ConstInt(string value) : Expr(QAST_INT), m_value(value) {}
 
-    constexpr auto get_value() const { return m_value.get(); }
+    constexpr auto get_value() const { return m_value; }
   };
 
   class ConstFloat final : public Expr {
@@ -122,7 +122,7 @@ namespace ncc::parse {
   public:
     constexpr ConstFloat(string value) : Expr(QAST_FLOAT), m_value(value) {}
 
-    constexpr auto get_value() const { return m_value.get(); }
+    constexpr auto get_value() const { return m_value; }
   };
 
   class ConstBool final : public Expr {
@@ -140,7 +140,7 @@ namespace ncc::parse {
   public:
     constexpr ConstString(string value) : Expr(QAST_STRING), m_value(value) {}
 
-    constexpr auto get_value() const { return m_value.get(); }
+    constexpr auto get_value() const { return m_value; }
   };
 
   class ConstChar final : public Expr {
@@ -248,7 +248,7 @@ namespace ncc::parse {
   public:
     constexpr Ident(string name) : Expr(QAST_IDENT), m_name(name) {}
 
-    constexpr auto get_name() const { return m_name.get(); }
+    constexpr auto get_name() const { return m_name; }
   };
 
   class SeqPoint final : public Expr {

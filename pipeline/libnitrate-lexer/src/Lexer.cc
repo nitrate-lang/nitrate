@@ -48,7 +48,6 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
 #include <queue>
-#include <stack>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -388,7 +387,7 @@ public:
           L.m_env->set("this.file.eof.offset", std::to_string(L.m_offset));
           L.m_env->set("this.file.eof.line", std::to_string(L.m_line));
           L.m_env->set("this.file.eof.column", std::to_string(L.m_column));
-          L.m_env->set("this.file.eof.filename", L.GetCurrentFilename().get());
+          L.m_env->set("this.file.eof.filename", L.GetCurrentFilename());
 
           // Benchmarks show that this is the fastest way to signal EOF
           // for large files.
@@ -673,14 +672,14 @@ public:
                                                   std::string &buf) {
     bool spinning = true;
 
-    std::stack<char> q;
+    std::vector<char> q;
 
     while (!buf.empty() && spinning) {
       switch (char ch = buf.back()) {
         case '.':
         case 'e':
         case 'E': {
-          q.push(ch);
+          q.push_back(ch);
           buf.pop_back();
           break;
         }
@@ -692,11 +691,10 @@ public:
       }
     }
 
-    q.push(c);
+    q.push_back(c);
 
-    while (!q.empty()) {
-      L.m_fifo.push(q.top());
-      q.pop();
+    for (auto it = q.rbegin(); it != q.rend(); ++it) {
+      L.m_fifo.push(*it);
     }
   }
 
@@ -706,32 +704,39 @@ public:
     NumType type = NumType::Decimal;
 
     /* [0x, 0X, 0d, 0D, 0b, 0B, 0o, 0O] */
-    if (buf.size() == 1 && buf[0] == '0') {
+    if (buf.size() == 1 && buf[0] == '0') [[unlikely]] {
       switch (c) {
         case 'x':
-        case 'X':
+        case 'X': {
           type = NumType::Hexadecimal;
           buf += c;
           c = nextc(L);
           break;
+        }
+
         case 'b':
-        case 'B':
+        case 'B': {
           type = NumType::Binary;
           buf += c;
           c = nextc(L);
           break;
+        }
+
         case 'o':
-        case 'O':
+        case 'O': {
           type = NumType::Octal;
           buf += c;
           c = nextc(L);
           break;
+        }
+
         case 'd':
-        case 'D':
+        case 'D': {
           type = NumType::DecimalExplicit;
           buf += c;
           c = nextc(L);
           break;
+        }
       }
     }
 
@@ -745,17 +750,17 @@ public:
     bool is_lexing = true;
     while (is_lexing) {
       /* Skip over the integer syntax formatting */
-      if (c == '_') {
-        while (lex_is_space(c) || c == '_' || c == '\\') {
+      if (c == '_') [[unlikely]] {
+        while (lex_is_space(c) || c == '_' || c == '\\') [[unlikely]] {
           c = nextc(L);
         }
-      } else if (lex_is_space(c)) {
+      } else if (lex_is_space(c)) [[unlikely]] {
         break;
       }
 
       switch (type) {
         case NumType::Decimal: {
-          if (std::isdigit(c)) {
+          if (std::isdigit(c)) [[likely]] {
             buf += c;
           } else if (c == '.') {
             buf += c;
@@ -773,7 +778,7 @@ public:
         }
 
         case NumType::DecimalExplicit: {
-          if (std::isdigit(c)) {
+          if (std::isdigit(c)) [[likely]] {
             buf += c;
           } else {
             ParseIntegerUnwind(L, c, buf);
@@ -783,7 +788,7 @@ public:
         }
 
         case NumType::Hexadecimal: {
-          if (std::isxdigit(c)) {
+          if (std::isxdigit(c)) [[likely]] {
             buf += c;
           } else {
             ParseIntegerUnwind(L, c, buf);
@@ -793,7 +798,7 @@ public:
         }
 
         case NumType::Binary: {
-          if (c == '0' || c == '1') {
+          if (c == '0' || c == '1') [[likely]] {
             buf += c;
           } else {
             ParseIntegerUnwind(L, c, buf);
@@ -803,7 +808,7 @@ public:
         }
 
         case NumType::Octal: {
-          if (c >= '0' && c <= '7') {
+          if (c >= '0' && c <= '7') [[likely]] {
             buf += c;
           } else {
             ParseIntegerUnwind(L, c, buf);
@@ -870,7 +875,7 @@ public:
         }
       }
 
-      if (is_lexing) {
+      if (is_lexing) [[likely]] {
         c = nextc(L);
       }
     }
@@ -879,7 +884,7 @@ public:
       if (canonicalize_float(buf)) {
         return Token(NumL, string(std::move(buf)), start_pos);
       }
-    } else if (canonicalize_number(buf, type)) {
+    } else if (canonicalize_number(buf, type)) [[likely]] {
       return Token(IntL, string(std::move(buf)), start_pos);
     }
 
@@ -890,7 +895,7 @@ public:
   static NCC_FORCE_INLINE Token ParseCommentSingleLine(Tokenizer &L, char c,
                                                        std::string &buf,
                                                        LocationID start_pos) {
-    while (c != '\n') {
+    while (c != '\n') [[likely]] {
       buf += c;
       c = nextc(L);
     }
@@ -940,12 +945,7 @@ public:
   static NCC_FORCE_INLINE Token ParseSingleLineMacro(Tokenizer &L, char c,
                                                      std::string &buf,
                                                      LocationID start_pos) {
-    /*
-      Format:
-          ... @macro_name  ...
-      */
-
-    while (std::isalnum(c) || c == '_' || c == ':') {
+    while (std::isalnum(c) || c == '_' || c == ':') [[likely]] {
       buf += c;
       c = nextc(L);
     }

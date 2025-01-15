@@ -201,7 +201,7 @@ func_entry:  // do tail call optimization manually
 
       case Name: { /* Handle the expansion of defines */
         if (x.as_string() == "import") {
-          auto import_name = m_scanner->Next().as_string().get();
+          auto import_name = m_scanner->Next().as_string();
           auto semicolon = m_scanner->Next();
           if (!semicolon.is<PuncSemi>()) {
             ncc::log << SeqError << "Expected semicolon after import name";
@@ -212,7 +212,7 @@ func_entry:  // do tail call optimization manually
             goto emit_token;
           }
 
-          if (auto module_data = m_core->fetch_module_data(import_name)) {
+          if (auto module_data = m_core->fetch_module_data(import_name.get())) {
             RecursiveExpand(module_data.value());
           } else {
             SetFailBit();

@@ -46,7 +46,7 @@ namespace ncc::parse {
   public:
     constexpr NamedTy(string name) : Type(QAST_NAMED), m_name(name) {}
 
-    constexpr auto get_name() const { return m_name.get(); }
+    constexpr auto get_name() const { return m_name; }
   };
 
   class InferTy : public Type {
@@ -164,7 +164,7 @@ namespace ncc::parse {
   public:
     OpaqueTy(string name) : Type(QAST_OPAQUE), m_name(name) {}
 
-    constexpr auto get_name() const { return m_name.get(); }
+    constexpr auto get_name() const { return m_name; }
   };
 
   class TupleTy : public Type {

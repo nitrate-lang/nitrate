@@ -65,16 +65,15 @@ NCC_EXPORT bool Environment::contains(std::string_view key) {
   return m_data.contains(string(key));
 }
 
-NCC_EXPORT std::optional<std::string_view> Environment::get(
-    std::string_view key) {
+NCC_EXPORT std::optional<string> Environment::get(string key) {
   if (auto it = m_data.find(key); it != m_data.end()) {
     return it->second;
   }
   return std::nullopt;
 }
 
-NCC_EXPORT void Environment::set(std::string_view key,
-                                 std::optional<std::string_view> value, bool) {
+NCC_EXPORT void Environment::set(string key, std::optional<string> value,
+                                 bool) {
   if (value.has_value()) {
     m_data.insert_or_assign(key, *value);
   } else {

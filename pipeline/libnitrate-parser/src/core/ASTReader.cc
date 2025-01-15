@@ -719,7 +719,7 @@ NullableFlowPtr<BinExpr> AST_Reader::ReadKind_Binexpr() {
 
   auto op = next<std::string>();
 
-  auto op_it = lex::LexicalOperators.left.find(op.c_str());
+  auto op_it = lex::LexicalOperators.left.find(op);
   if (op_it == lex::LexicalOperators.left.end()) {
     return nullptr;
   }
@@ -752,7 +752,7 @@ NullableFlowPtr<UnaryExpr> AST_Reader::ReadKind_Unexpr() {
 
   auto op = next<std::string>();
 
-  auto op_it = lex::LexicalOperators.left.find(op.c_str());
+  auto op_it = lex::LexicalOperators.left.find(op);
   if (op_it == lex::LexicalOperators.left.end()) {
     return nullptr;
   }
@@ -776,7 +776,7 @@ NullableFlowPtr<PostUnaryExpr> AST_Reader::ReadKind_PostUnexpr() {
 
   auto op = next<std::string>();
 
-  auto op_it = lex::LexicalOperators.left.find(op.c_str());
+  auto op_it = lex::LexicalOperators.left.find(op);
   if (op_it == lex::LexicalOperators.left.end()) {
     return nullptr;
   }

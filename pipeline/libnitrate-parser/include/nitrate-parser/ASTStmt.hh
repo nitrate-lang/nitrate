@@ -77,7 +77,7 @@ namespace ncc::parse {
           m_decl_type(decl_type),
           m_name(name) {}
 
-    constexpr auto get_name() const { return m_name.get(); }
+    constexpr auto get_name() const { return m_name; }
     constexpr auto get_type() const { return m_type; }
     constexpr auto get_value() const { return m_value; }
     constexpr auto get_decl_type() const { return m_decl_type; }
@@ -92,7 +92,7 @@ namespace ncc::parse {
     InlineAsm(string code, ExpressionList args)
         : Stmt(QAST_INLINE_ASM), m_args(args), m_code(code) {}
 
-    constexpr auto get_code() const { return m_code.get(); }
+    constexpr auto get_code() const { return m_code; }
     constexpr auto get_args() const { return m_args; }
   };
 
@@ -157,8 +157,8 @@ namespace ncc::parse {
           m_idx_ident(idx_ident),
           m_val_ident(val_ident) {}
 
-    constexpr auto get_idx_ident() const { return m_idx_ident.get(); }
-    constexpr auto get_val_ident() const { return m_val_ident.get(); }
+    constexpr auto get_idx_ident() const { return m_idx_ident; }
+    constexpr auto get_val_ident() const { return m_val_ident; }
     constexpr auto get_expr() const { return m_expr; }
     constexpr auto get_body() const { return m_body; }
   };
@@ -239,7 +239,7 @@ namespace ncc::parse {
           m_abi_name(abi_name),
           m_vis(vis) {}
 
-    constexpr auto get_abi_name() const { return m_abi_name.get(); }
+    constexpr auto get_abi_name() const { return m_abi_name; }
     constexpr auto get_body() const { return m_body; }
     constexpr auto get_vis() const { return m_vis; }
     constexpr auto get_attrs() const { return m_attrs; }
@@ -254,7 +254,7 @@ namespace ncc::parse {
     ScopeStmt(string name, FlowPtr<Stmt> body, ScopeDeps deps)
         : Stmt(QAST_SCOPE), m_deps(deps), m_body(body), m_name(name) {}
 
-    constexpr auto get_name() const { return m_name.get(); }
+    constexpr auto get_name() const { return m_name; }
     constexpr auto get_body() const { return m_body; }
     constexpr auto get_deps() const { return m_deps; }
   };
@@ -267,7 +267,7 @@ namespace ncc::parse {
     TypedefStmt(string name, FlowPtr<Type> type)
         : Stmt(QAST_TYPEDEF), m_type(type), m_name(name) {}
 
-    constexpr auto get_name() const { return m_name.get(); }
+    constexpr auto get_name() const { return m_name; }
     constexpr auto get_type() const { return m_type; }
   };
 
@@ -280,7 +280,7 @@ namespace ncc::parse {
     EnumDef(string name, NullableFlowPtr<Type> type, EnumDefItems items)
         : Stmt(QAST_ENUM), m_items(items), m_type(type), m_name(name) {}
 
-    constexpr auto get_name() const { return m_name.get(); }
+    constexpr auto get_name() const { return m_name; }
     constexpr auto get_items() const { return m_items; }
     constexpr auto get_type() const { return m_type; }
   };
@@ -319,7 +319,7 @@ namespace ncc::parse {
       }
     }
 
-    constexpr auto get_name() const { return m_name.get(); }
+    constexpr auto get_name() const { return m_name; }
     constexpr auto get_attributes() const { return m_attributes; }
     constexpr auto get_purity() const { return m_purity; }
     constexpr auto get_captures() const { return m_captures; }
@@ -367,7 +367,7 @@ namespace ncc::parse {
       }
     }
 
-    constexpr auto get_name() const { return m_name.get(); }
+    constexpr auto get_name() const { return m_name; }
     constexpr auto get_composite_type() const { return m_comp_type; }
     constexpr auto get_attributes() const { return m_attributes; }
     constexpr auto get_template_params() const { return m_template_parameters; }
