@@ -16,7 +16,7 @@ public:
   SyncFSFile() = default;
   using Digest = std::array<uint8_t, 20>;
 
-  bool replace(size_t offset, int64_t length, std::string_view text) {
+  bool Replace(size_t offset, int64_t length, std::string_view text) {
     std::lock_guard<std::mutex> lock(m_mutex);
 
     if (length < 0) {  // negative length starts from the end
@@ -34,12 +34,12 @@ public:
     return true;
   }
 
-  std::shared_ptr<const std::string> content() {
+  std::shared_ptr<const std::string> Content() {
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_content;
   }
 
-  size_t size() {
+  size_t Size() {
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_content->size();
   };
@@ -63,9 +63,9 @@ class SyncFS {
   SyncFS(SyncFS&&) = delete;
 
 public:
-  static SyncFS& the();
+  static SyncFS& The();
 
-  std::optional<std::shared_ptr<SyncFSFile>> open(std::string name);
+  std::optional<std::shared_ptr<SyncFSFile>> Open(std::string name);
 
-  void close(const std::string& name);
+  void Close(const std::string& name);
 };

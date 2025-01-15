@@ -39,8 +39,8 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::CheckSymbolsExist(FlowPtr<Seq>, IReport *i) {
-  i->Report(CompilerError, IC::Debug,
+bool NRBuilder::CheckSymbolsExist(FlowPtr<Seq>, IReport *d) {
+  d->Report(CompilerError, IC::Debug,
             "NRBuilder::check_symbols_exist() not implemented");
 
   /// TODO: Implement check

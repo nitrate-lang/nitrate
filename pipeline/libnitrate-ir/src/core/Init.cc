@@ -40,7 +40,7 @@ using namespace ncc::ir;
 
 NCC_EXPORT ncc::LibraryRC<IRLibrarySetup> ncc::ir::IRLibrary;
 
-extern void IrResetTypeCache();
+extern void IRResetTypeCache();
 
 NCC_EXPORT bool IRLibrarySetup::Init() {
   if (!ncc::CoreLibrary.InitRC()) {
@@ -55,7 +55,7 @@ NCC_EXPORT bool IRLibrarySetup::Init() {
 }
 
 NCC_EXPORT void IRLibrarySetup::Deinit() {
-  IrResetTypeCache();
+  IRResetTypeCache();
 
   parse::ParseLibrary.DeinitRC();
   ncc::CoreLibrary.DeinitRC();

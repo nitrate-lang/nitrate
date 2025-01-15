@@ -20,116 +20,116 @@ using namespace rapidjson;
 using namespace ncc::lex;
 using namespace ncc::seq;
 
-void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
+void DoFormatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   struct Position {
-    size_t line = 0;
-    size_t character = 0;
+    size_t m_line = 0;
+    size_t m_character = 0;
   };
 
   struct Range {
-    Position start;
-    Position end;
+    Position m_start;
+    Position m_end;
   };
 
   struct FormattingOptions {
-    size_t tabSize = 0;
-    bool insertSpaces = false;
+    size_t m_tabSize = 0;
+    bool m_insertSpaces = false;
   };
 
-  if (!req.params().HasMember("textDocument")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing textDocument");
+  if (!req.Params().HasMember("textDocument")) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing textDocument");
     return;
   }
 
-  if (!req.params()["textDocument"].IsObject()) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "textDocument is not an object");
+  if (!req.Params()["textDocument"].IsObject()) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "textDocument is not an object");
     return;
   }
 
-  if (!req.params()["textDocument"].HasMember("uri")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing textDocument.uri");
+  if (!req.Params()["textDocument"].HasMember("uri")) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing textDocument.uri");
     return;
   }
 
-  if (!req.params()["textDocument"]["uri"].IsString()) {
-    resp.error(lsp::ErrorCodes::InvalidParams,
+  if (!req.Params()["textDocument"]["uri"].IsString()) {
+    resp.Error(lsp::ErrorCodes::InvalidParams,
                "textDocument.uri is not a string");
     return;
   }
 
-  if (!req.params().HasMember("options")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing options");
+  if (!req.Params().HasMember("options")) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing options");
     return;
   }
 
-  if (!req.params()["options"].IsObject()) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "options is not an object");
+  if (!req.Params()["options"].IsObject()) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "options is not an object");
     return;
   }
 
-  if (!req.params()["options"].HasMember("tabSize")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing options.tabSize");
+  if (!req.Params()["options"].HasMember("tabSize")) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing options.tabSize");
     return;
   }
 
-  if (!req.params()["options"]["tabSize"].IsInt()) {
-    resp.error(lsp::ErrorCodes::InvalidParams,
+  if (!req.Params()["options"]["tabSize"].IsInt()) {
+    resp.Error(lsp::ErrorCodes::InvalidParams,
                "options.tabSize is not an integer");
     return;
   }
 
-  if (req.params()["options"]["tabSize"].GetUint() == 0) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "options.tabSize is 0");
+  if (req.Params()["options"]["tabSize"].GetUint() == 0) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "options.tabSize is 0");
     return;
   }
 
-  if (!req.params()["options"].HasMember("insertSpaces")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing options.insertSpaces");
+  if (!req.Params()["options"].HasMember("insertSpaces")) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing options.insertSpaces");
     return;
   }
 
-  if (!req.params()["options"]["insertSpaces"].IsBool()) {
-    resp.error(lsp::ErrorCodes::InvalidParams,
+  if (!req.Params()["options"]["insertSpaces"].IsBool()) {
+    resp.Error(lsp::ErrorCodes::InvalidParams,
                "options.insertSpaces is not a boolean");
     return;
   }
 
   FormattingOptions options;
-  options.tabSize = req.params()["options"]["tabSize"].GetInt();
-  options.insertSpaces = req.params()["options"]["insertSpaces"].GetBool();
+  options.m_tabSize = req.Params()["options"]["tabSize"].GetInt();
+  options.m_insertSpaces = req.Params()["options"]["insertSpaces"].GetBool();
 
-  std::string uri = req.params()["textDocument"]["uri"].GetString();
-  auto file_opt = SyncFS::the().open(uri);
+  std::string uri = req.Params()["textDocument"]["uri"].GetString();
+  auto file_opt = SyncFS::The().Open(uri);
   if (!file_opt.has_value()) {
-    resp.error(lsp::ErrorCodes::InternalError, "Failed to open file");
+    resp.Error(lsp::ErrorCodes::InternalError, "Failed to open file");
     return;
   }
   auto file = file_opt.value();
 
-  std::stringstream ss(*file->content());
+  std::stringstream ss(*file->Content());
 
   auto env = std::make_shared<ncc::Environment>();
-  auto L = Sequencer(ss, env);
-  auto parser = ncc::parse::Parser::Create(L, env);
-  auto ast = parser->parse();
+  auto l = Sequencer(ss, env);
+  auto parser = ncc::parse::Parser::Create(l, env);
+  auto ast = parser->Parse();
 
-  if (L.HasError() || !ast.check()) {
+  if (l.HasError() || !ast.Check()) {
     return;
   }
 
   LOG(INFO) << "Requested document format";
 
   std::stringstream formatted_ss;
-  if (!lsp::fmt::FormatterFactory::create(lsp::fmt::Styleguide::Cambrian,
+  if (!lsp::fmt::FormatterFactory::Create(lsp::fmt::Styleguide::Cambrian,
                                           formatted_ss)
-           ->format(ast.get())) {
-    resp.error(lsp::ErrorCodes::InternalError, "Failed to format document");
+           ->Format(ast.Get())) {
+    resp.Error(lsp::ErrorCodes::InternalError, "Failed to format document");
     return;
   }
 
   auto formatted = formatted_ss.str();
 
-  file->replace(0, -1, formatted);
+  file->Replace(0, -1, formatted);
 
   ///==========================================================
   /// Send the whole new file contents

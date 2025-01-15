@@ -9,13 +9,13 @@ class ParseTree {};
 
 class ParseTreeSet {
 public:
-  static ParseTreeSet& the();
+  static ParseTreeSet& The();
 
-  std::optional<std::shared_ptr<ParseTree>> get(std::string_view uri) const;
+  std::optional<std::shared_ptr<ParseTree>> Get(std::string_view uri) const;
 };
 
-void do_completion(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {
-  resp.error(lsp::ErrorCodes::RequestFailed, "Not implemented");
+void DoCompletion(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {
+  resp.Error(lsp::ErrorCodes::RequestFailed, "Not implemented");
   return;
 
   /// TODO: Implement completion logic

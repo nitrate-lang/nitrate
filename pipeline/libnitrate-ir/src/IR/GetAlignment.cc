@@ -121,12 +121,12 @@ NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::TypeGetAlignBitsImpl(
     }
 
     case IR_tPTR: {
-      R = self->as<PtrTy>()->getNativeSize() * 8;
+      r = self->as<PtrTy>()->GetNativeSize() * 8;
       break;
     }
 
     case IR_tCONST: {
-      R = self->as<ConstTy>()->getItem()->getAlignBits();
+      r = self->as<ConstTy>()->GetItem()->GetAlignBits();
       break;
     }
 
@@ -135,8 +135,8 @@ NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::TypeGetAlignBitsImpl(
       size_t max_alignment = 0;
       bool okay = true;
 
-      for (auto f : self->as<StructTy>()->getFields()) {
-        if (auto member_alignment = f->getAlignBits()) {
+      for (auto f : self->as<StructTy>()->GetFields()) {
+        if (auto member_alignment = f->GetAlignBits()) {
           max_alignment = std::max(max_alignment, member_alignment.value());
         } else {
           okay = false;
@@ -153,8 +153,8 @@ NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::TypeGetAlignBitsImpl(
       size_t max_alignment = 0;
       bool okay = true;
 
-      for (auto f : self->as<UnionTy>()->getFields()) {
-        if (auto member_alignment = f->getAlignBits()) {
+      for (auto f : self->as<UnionTy>()->GetFields()) {
+        if (auto member_alignment = f->GetAlignBits()) {
           max_alignment = std::max(max_alignment, member_alignment.value());
         } else {
           okay = false;
@@ -167,12 +167,12 @@ NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::TypeGetAlignBitsImpl(
     }
 
     case IR_tARRAY: {
-      R = self->as<ArrayTy>()->getElement()->getAlignBits();
+      r = self->as<ArrayTy>()->GetElement()->GetAlignBits();
       break;
     }
 
     case IR_tFUNC: {
-      R = self->as<FnTy>()->getNativeSize() * 8;
+      r = self->as<FnTy>()->GetNativeSize() * 8;
       break;
     }
 

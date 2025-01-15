@@ -175,15 +175,6 @@ namespace ncc::ir {
     };
   }  // namespace detail
 
-  inline thread_local std::unique_ptr<detail::IDiagnosticRouter> Debug =
-      std::make_unique<detail::NOPDiagnosticRouter>();
-  inline thread_local std::unique_ptr<detail::IDiagnosticRouter> Info =
-      std::make_unique<detail::NOPDiagnosticRouter>();
-  inline thread_local std::unique_ptr<detail::IDiagnosticRouter> Warn =
-      std::make_unique<detail::NOPDiagnosticRouter>();
-  inline thread_local std::unique_ptr<detail::IDiagnosticRouter> Error =
-      std::make_unique<detail::NOPDiagnosticRouter>();
-
   namespace detail {
     void DiagnosticBind(MessageFunc func, lex::IScanner &scanner);
   }  // namespace detail

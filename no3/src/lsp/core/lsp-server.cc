@@ -12,12 +12,12 @@
 
 using namespace lsp;
 
-ServerContext& ServerContext::the() {
+ServerContext& ServerContext::The() {
   static ServerContext instance;
   return instance;
 }
 
-void ServerContext::request_queue_loop(std::stop_token st) {
+void ServerContext::RequestQueueLoop(std::stop_token st) {
   while (!st.stop_requested()) {
     std::function<void()> job;
     {
@@ -39,7 +39,7 @@ void ServerContext::request_queue_loop(std::stop_token st) {
   }
 }
 
-std::optional<std::unique_ptr<Message>> ServerContext::next_message(
+std::optional<std::unique_ptr<Message>> ServerContext::NextMessage(
     std::istream& io) {
   /**
    * We don't need to lock the std::istream because this is the only place where
@@ -169,59 +169,57 @@ std::optional<std::unique_ptr<Message>> ServerContext::next_message(
   }
 }
 
-void ServerContext::register_handlers() {
-  auto& ctx = ServerContext::the();
+void ServerContext::RegisterHandlers() {
+  auto& ctx = ServerContext::The();
 
-  ctx.register_request_handler("initialize", do_initialize);
-  ctx.register_notification_handler("initialized", do_initialized);
-  ctx.register_request_handler("shutdown", do_shutdown);
-  ctx.register_notification_handler("exit", do_exit);
+  ctx.RegisterRequestHandler("initialize", DoInitialize);
+  ctx.RegisterNotificationHandler("initialized", DoInitialized);
+  ctx.RegisterRequestHandler("shutdown", DoShutdown);
+  ctx.RegisterNotificationHandler("exit", DoExit);
 
-  ctx.register_request_handler("textDocument/completion", do_completion);
-  ctx.register_request_handler("textDocument/declaration", do_declaration);
-  ctx.register_request_handler("textDocument/definition", do_definition);
-  ctx.register_notification_handler("textDocument/didChange", do_didChange);
-  ctx.register_notification_handler("textDocument/didClose", do_didClose);
-  ctx.register_notification_handler("textDocument/didOpen", do_didOpen);
-  ctx.register_notification_handler("textDocument/didSave", do_didSave);
-  ctx.register_request_handler("textDocument/documentColor", do_documentColor);
-  ctx.register_request_handler("textDocument/formatting", do_formatting);
+  ctx.RegisterRequestHandler("textDocument/completion", DoCompletion);
+  ctx.RegisterRequestHandler("textDocument/declaration", DoDeclaration);
+  ctx.RegisterRequestHandler("textDocument/definition", DoDefinition);
+  ctx.RegisterNotificationHandler("textDocument/didChange", DoDidChange);
+  ctx.RegisterNotificationHandler("textDocument/didClose", DoDidClose);
+  ctx.RegisterNotificationHandler("textDocument/didOpen", DoDidOpen);
+  ctx.RegisterNotificationHandler("textDocument/didSave", DoDidSave);
+  ctx.RegisterRequestHandler("textDocument/documentColor", DoDocumentColor);
+  ctx.RegisterRequestHandler("textDocument/formatting", DoFormatting);
 }
 
-[[noreturn]] void ServerContext::start_server(Connection& io) {
-  register_handlers();
+[[noreturn]] void ServerContext::StartServer(Connection& io) {
+  RegisterHandlers();
 
   m_thread_pool.Start();
-  m_thread_pool.QueueJob(
-      [this](std::stop_token st) { request_queue_loop(st); });
+  m_thread_pool.QueueJob([this](std::stop_token st) { RequestQueueLoop(st); });
 
   while (true) {
-    auto message = next_message(*io.first);
+    auto message = NextMessage(*io.first);
     if (!message.has_value()) {
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
       continue;
     }
 
     std::shared_ptr<Message> message_ptr = std::move(*message);
-    dispatch(message_ptr, *io.second);
+    Dispatch(message_ptr, *io.second);
   }
 }
 
-void ServerContext::handle_request(const RequestMessage& req,
-                                   std::ostream& io) {
+void ServerContext::HandleRequest(const RequestMessage& req, std::ostream& io) {
   if (m_callback) {
     m_callback(&req);
   }
 
-  auto response = ResponseMessage::from_request(req);
+  auto response = ResponseMessage::FromRequest(req);
 
-  auto it = m_request_handlers.find(req.method());
+  auto it = m_request_handlers.find(req.Method());
   if (it == m_request_handlers.end()) {
-    if (req.method().starts_with("$/")) {
-      LOG(INFO) << "Ignoring request: " << req.method();
+    if (req.Method().starts_with("$/")) {
+      LOG(INFO) << "Ignoring request: " << req.Method();
       return;
     }
-    LOG(WARNING) << "No request handler for method: " << req.method();
+    LOG(WARNING) << "No request handler for method: " << req.Method();
     return;
   }
 
@@ -235,28 +233,28 @@ void ServerContext::handle_request(const RequestMessage& req,
   writer.String("2.0");
 
   writer.Key("id");
-  if (std::holds_alternative<std::string>(response.id())) {
-    writer.String(std::get<std::string>(response.id()).c_str());
+  if (std::holds_alternative<std::string>(response.Id())) {
+    writer.String(std::get<std::string>(response.Id()).c_str());
   } else {
-    writer.Int(std::get<int64_t>(response.id()));
+    writer.Int(std::get<int64_t>(response.Id()));
   }
 
-  if (response.error().has_value()) {
+  if (response.Error().has_value()) {
     writer.Key("error");
     writer.StartObject();
     writer.Key("code");
-    writer.Int((int)response.error()->m_code);
+    writer.Int((int)response.Error()->m_code);
     writer.Key("message");
-    writer.String(response.error()->m_message.c_str());
-    if (response.error()->m_data.has_value()) {
+    writer.String(response.Error()->m_message.c_str());
+    if (response.Error()->m_data.has_value()) {
       writer.Key("data");
-      response.error()->m_data->Accept(writer);
+      response.Error()->m_data->Accept(writer);
     }
     writer.EndObject();
   } else {
-    if (response.result().has_value()) {
+    if (response.Result().has_value()) {
       writer.Key("result");
-      response.result()->Accept(writer);
+      response.Result()->Accept(writer);
     } else {
       writer.Key("result");
       writer.Null();
@@ -279,35 +277,35 @@ void ServerContext::handle_request(const RequestMessage& req,
   }
 }
 
-void ServerContext::handle_notification(const NotificationMessage& notif) {
+void ServerContext::HandleNotification(const NotificationMessage& notif) {
   if (m_callback) {
     m_callback(&notif);
   }
 
-  auto it = m_notification_handlers.find(notif.method());
+  auto it = m_notification_handlers.find(notif.Method());
   if (it == m_notification_handlers.end()) {
-    if (notif.method().starts_with("$/")) {
-      LOG(INFO) << "Ignoring notification: " << notif.method();
+    if (notif.Method().starts_with("$/")) {
+      LOG(INFO) << "Ignoring notification: " << notif.Method();
       return;
     }
 
-    LOG(WARNING) << "No notify handler for method: " << notif.method();
+    LOG(WARNING) << "No notify handler for method: " << notif.Method();
     return;
   }
 
   it->second(notif);
 }
 
-void ServerContext::dispatch(const std::shared_ptr<Message> message,
+void ServerContext::Dispatch(const std::shared_ptr<Message> message,
                              std::ostream& io) {
-  if (message->type() == MessageType::Request) {
+  if (message->Type() == MessageType::Request) {
     std::lock_guard<std::mutex> lock(m_request_queue_mutex);
     m_request_queue.push([this, message, &io]() {
-      handle_request(*std::static_pointer_cast<RequestMessage>(message), io);
+      HandleRequest(*std::static_pointer_cast<RequestMessage>(message), io);
     });
-  } else if (message->type() == MessageType::Notification) {
+  } else if (message->Type() == MessageType::Notification) {
     m_thread_pool.QueueJob([this, message](std::stop_token) {
-      handle_notification(
+      HandleNotification(
           *std::static_pointer_cast<NotificationMessage>(message));
     });
   } else {

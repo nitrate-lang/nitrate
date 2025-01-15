@@ -34,7 +34,7 @@
 #include <string>
 
 namespace no3::benchmark {
-  std::string lexical_benchmark_source =
+  std::string LexicalBenchmarkSource =
       R"LEXICAL(fn tvwcndmvne(gkitlttlgn: ehscvlvoqu, xoleuqytgx: vfvhbycsmg, ): pjuxnxjbzb {
   (-14.03908379299862);
   while (-86.99881424305839) {hptflxnful = (92 + 96);};;

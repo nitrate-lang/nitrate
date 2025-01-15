@@ -48,66 +48,64 @@ boost::bimap<L, R> MakeBimap(
   return boost::bimap<L, R>(list.begin(), list.end());
 }
 
-static const boost::bimap<qcode_key_t, std::string> OPTIONS_BIMAP =
-    MakeBimap<qcode_key_t, std::string>({
+static const boost::bimap<QcodeKeyT, std::string> OPTIONS_BIMAP =
+    MakeBimap<QcodeKeyT, std::string>({
         {QCK_UNKNOWN, "QCK_UNKNOWN"},
         {QCK_CRASHGUARD, "-fcrashguard"},
         {QCV_FASTERROR, "-ffasterror"},
     });
 
-static const boost::bimap<qcode_val_t, std::string> VALUES_BIMAP =
-    MakeBimap<qcode_val_t, std::string>({
+static const boost::bimap<QcodeValT, std::string> VALUES_BIMAP =
+    MakeBimap<QcodeValT, std::string>({
         {QCV_UNKNOWN, "QCV_UNKNOWN"},
         {QCV_TRUE, "true"},
         {QCV_FALSE, "false"},
     });
 
-std::ostream &operator<<(std::ostream &os, const qcode_key_t &key) {
+std::ostream &operator<<(std::ostream &os, const QcodeKeyT &key) {
   if (OPTIONS_BIMAP.left.find(key) != OPTIONS_BIMAP.left.end()) {
     os << OPTIONS_BIMAP.left.at(key);
   } else {
-    qcore_panic("operator<<: Unhandled qcode_key_t value.");
+    qcore_panic("operator<<: Unhandled QcodeKeyT value.");
   }
   return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const qcode_val_t &val) {
+std::ostream &operator<<(std::ostream &os, const QcodeValT &val) {
   if (VALUES_BIMAP.left.find(val) != VALUES_BIMAP.left.end()) {
     os << VALUES_BIMAP.left.at(val);
   } else {
-    qcore_panic("operator<<: Unhandled qcode_val_t value.");
+    qcore_panic("operator<<: Unhandled QcodeValT value.");
   }
 
   return os;
 }
 
-static void AssignDefaultOptions(qcode_conf_t &conf) {
+static void AssignDefaultOptions(QCodegenConfig &conf) {
   for (const auto &setting : codegen::conf::DefaultSettings) {
-    qcode_conf_setopt(&conf, setting.key, setting.value);
+    QcodeConfSetopt(&conf, setting.m_key, setting.m_value);
   }
 }
 
-extern "C" NCC_EXPORT qcode_conf_t *QcodeConfNew(bool use_defaults) {
-  qcode_conf_t *obj = new qcode_conf_t();
+extern "C" NCC_EXPORT QCodegenConfig *QcodeConfNew(bool use_defaults) {
+  QCodegenConfig *obj = new QCodegenConfig();
 
   if (use_defaults) {
-    assign_default_options(*obj);
+    AssignDefaultOptions(*obj);
   }
 
   return obj;
 }
 
-extern "C" NCC_EXPORT void QcodeConfFree(qcode_conf_t *conf) { delete conf; }
+extern "C" NCC_EXPORT void QcodeConfFree(QCodegenConfig *conf) { delete conf; }
 
-extern "C" NCC_EXPORT bool QcodeConfSetopt(qcode_conf_t *conf,
-                                             qcode_key_t key,
-                                             qcode_val_t value) {
+extern "C" NCC_EXPORT bool QcodeConfSetopt(QCodegenConfig *conf, QcodeKeyT key,
+                                           QcodeValT value) {
   return conf->SetAndVerify(key, value);
 }
 
-extern "C" NCC_EXPORT bool QcodeConfGetopt(qcode_conf_t *conf,
-                                             qcode_key_t key,
-                                             qcode_val_t *value) {
+extern "C" NCC_EXPORT bool QcodeConfGetopt(QCodegenConfig *conf, QcodeKeyT key,
+                                           QcodeValT *value) {
   auto val = conf->Get(key);
 
   if (!val.has_value()) {
@@ -121,23 +119,23 @@ extern "C" NCC_EXPORT bool QcodeConfGetopt(qcode_conf_t *conf,
   return true;
 }
 
-extern "C" NCC_EXPORT qcode_setting_t *QcodeConfGetopts(qcode_conf_t *conf,
-                                                          size_t *count) {
+extern "C" NCC_EXPORT QcodeSettingT *QcodeConfGetopts(QCodegenConfig *conf,
+                                                      size_t *count) {
   if (!count) {
     qcore_panic(
         "qcode_conf_getopts: Contract violation: 'count' parameter cannot be "
         "NULL.");
   }
 
-  const qcode_setting_t *ptr = conf->GetAll(*count);
+  const QcodeSettingT *ptr = conf->GetAll(*count);
 
   if (!ptr) {
     return nullptr;
   }
 
-  size_t size = *count * sizeof(qcode_setting_t);
+  size_t size = *count * sizeof(QcodeSettingT);
 
-  qcode_setting_t *copy = static_cast<qcode_setting_t *>(malloc(size));
+  QcodeSettingT *copy = static_cast<QcodeSettingT *>(malloc(size));
   if (!copy) {
     return nullptr;
   }
@@ -147,13 +145,13 @@ extern "C" NCC_EXPORT qcode_setting_t *QcodeConfGetopts(qcode_conf_t *conf,
   return copy;
 }
 
-extern "C" NCC_EXPORT void QcodeConfClear(qcode_conf_t *conf) {
+extern "C" NCC_EXPORT void QcodeConfClear(QCodegenConfig *conf) {
   conf->ClearNoVerify();
 }
 
-bool qcode_conf_t::has(qcode_key_t option, qcode_val_t value) const {
+bool QCodegenConfig::Has(QcodeKeyT option, QcodeValT value) const {
   for (const auto &dat : m_data) {
-    if (dat.key == option && dat.value == value) {
+    if (dat.m_key == option && dat.m_value == value) {
       return true;
     }
   }

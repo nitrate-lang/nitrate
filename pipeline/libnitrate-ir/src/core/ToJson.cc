@@ -81,7 +81,7 @@ static void EscapeString(std::ostream &os, const std::string_view &input) {
   os << "\"";
 }
 
-void IR_JsonWriter::delim() {
+void IRJsonWriter::Delim() {
   if (!m_count.empty() && !m_comma.empty()) {
     if (m_count.top()++ > 0) {
       bool use_comma = m_comma.top() == true || (m_count.top() & 1) != 0;
@@ -91,45 +91,45 @@ void IR_JsonWriter::delim() {
   }
 }
 
-void IR_JsonWriter::str_impl(std::string_view str) {
-  delim();
+void IRJsonWriter::StrImpl(std::string_view str) {
+  Delim();
 
-  escape_string(m_os, str);
+  EscapeString(m_os, str);
 }
 
-void IR_JsonWriter::uint_impl(uint64_t val) {
-  delim();
+void IRJsonWriter::UintImpl(uint64_t val) {
+  Delim();
 
   m_os << val;
 }
 
-void IR_JsonWriter::double_impl(double val) {
-  delim();
+void IRJsonWriter::DoubleImpl(double val) {
+  Delim();
 
   m_os << val;
 }
 
-void IR_JsonWriter::bool_impl(bool val) {
-  delim();
+void IRJsonWriter::BoolImpl(bool val) {
+  Delim();
 
   m_os << (val ? "true" : "false");
 }
 
-void IR_JsonWriter::null_impl() {
-  delim();
+void IRJsonWriter::NullImpl() {
+  Delim();
 
   m_os << "null";
 }
 
-void IR_JsonWriter::begin_obj_impl(size_t) {
-  delim();
+void IRJsonWriter::BeginObjImpl(size_t) {
+  Delim();
 
   m_comma.push(false);
   m_count.push(0);
   m_os << "{";
 }
 
-void IR_JsonWriter::end_obj_impl() {
+void IRJsonWriter::EndObjImpl() {
   if (!m_count.empty() && !m_comma.empty()) {
     m_os << "}";
     m_count.pop();
@@ -137,15 +137,15 @@ void IR_JsonWriter::end_obj_impl() {
   }
 }
 
-void IR_JsonWriter::begin_arr_impl(size_t) {
-  delim();
+void IRJsonWriter::BeginArrImpl(size_t) {
+  Delim();
 
   m_comma.push(true);
   m_count.push(0);
   m_os << "[";
 }
 
-void IR_JsonWriter::end_arr_impl() {
+void IRJsonWriter::EndArrImpl() {
   if (!m_count.empty() && !m_comma.empty()) {
     m_os << "]";
     m_count.pop();

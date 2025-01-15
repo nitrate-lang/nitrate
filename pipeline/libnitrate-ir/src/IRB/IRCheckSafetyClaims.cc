@@ -39,8 +39,8 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::CheckSafetyClaims(FlowPtr<Seq>, IReport *i) {
-  i->Report(CompilerError, IC::Debug,
+bool NRBuilder::CheckSafetyClaims(FlowPtr<Seq>, IReport *d) {
+  d->Report(CompilerError, IC::Debug,
             "NRBuilder::check_safety_claims() not implemented");
 
   /// TODO: Implement check

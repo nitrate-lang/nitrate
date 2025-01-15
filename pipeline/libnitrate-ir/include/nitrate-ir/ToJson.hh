@@ -39,7 +39,7 @@
 #include <stack>
 
 namespace ncc::ir {
-  class NCC_EXPORT IrJsonWriter : public IrWriter {
+  class NCC_EXPORT IRJsonWriter : public IRWriter {
     std::ostream& m_os;
     std::stack<bool> m_comma;
     std::stack<size_t> m_count;
@@ -57,25 +57,24 @@ namespace ncc::ir {
     void EndArrImpl();
 
   public:
-    IrJsonWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
-        : IrWriter(
-              std::bind(&IrJsonWriter::str_impl, this, std::placeholders::_1),
-              std::bind(&IrJsonWriter::uint_impl, this, std::placeholders::_1),
-              std::bind(&IrJsonWriter::double_impl, this,
+    IRJsonWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
+        : IRWriter(
+              std::bind(&IRJsonWriter::StrImpl, this, std::placeholders::_1),
+              std::bind(&IRJsonWriter::UintImpl, this, std::placeholders::_1),
+              std::bind(&IRJsonWriter::DoubleImpl, this, std::placeholders::_1),
+              std::bind(&IRJsonWriter::BoolImpl, this, std::placeholders::_1),
+              std::bind(&IRJsonWriter::NullImpl, this),
+              std::bind(&IRJsonWriter::BeginObjImpl, this,
                         std::placeholders::_1),
-              std::bind(&IrJsonWriter::bool_impl, this, std::placeholders::_1),
-              std::bind(&IrJsonWriter::null_impl, this),
-              std::bind(&IrJsonWriter::begin_obj_impl, this,
+              std::bind(&IRJsonWriter::EndObjImpl, this),
+              std::bind(&IRJsonWriter::BeginArrImpl, this,
                         std::placeholders::_1),
-              std::bind(&IrJsonWriter::end_obj_impl, this),
-              std::bind(&IrJsonWriter::begin_arr_impl, this,
-                        std::placeholders::_1),
-              std::bind(&IrJsonWriter::end_arr_impl, this), rd),
+              std::bind(&IRJsonWriter::EndArrImpl, this), rd),
           m_os(os) {
       m_comma.push(false);
       m_count.push(0);
     }
-    virtual ~IrJsonWriter() = default;
+    virtual ~IRJsonWriter() = default;
   };
 }  // namespace ncc::ir
 

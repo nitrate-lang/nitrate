@@ -17,13 +17,13 @@ private:
   Configuration() = default;
 
 public:
-  static Configuration defaults() {
+  static Configuration Defaults() {
     Configuration config;
     return config;
   }
 };
 
-std::optional<Configuration> parse_config(const std::string& path);
+std::optional<Configuration> ParseConfig(const std::string& path);
 
 enum class ConnectionType { Pipe, Port, Stdio };
 
@@ -47,7 +47,7 @@ public:
 using Connection =
     std::pair<std::unique_ptr<BufIStream>, std::unique_ptr<BufOStream>>;
 
-std::optional<Connection> open_connection(ConnectionType type,
+std::optional<Connection> OpenConnection(ConnectionType type,
                                           const std::string& param);
 
 namespace lsp {
@@ -60,7 +60,7 @@ namespace lsp {
     Message(MessageType type) : m_type(type) {}
     virtual ~Message() = default;
 
-    MessageType type() const { return m_type; }
+    MessageType Type() const { return m_type; }
   };
 
   typedef std::variant<std::string, int64_t> MessageId;
@@ -79,11 +79,11 @@ namespace lsp {
           m_params(std::move(params)) {}
     virtual ~RequestMessage() = default;
 
-    const MessageId& id() const { return m_id; }
-    const std::string& method() const { return m_method; }
-    const rapidjson::Document& params() const { return m_params; }
+    const MessageId& Id() const { return m_id; }
+    const std::string& Method() const { return m_method; }
+    const rapidjson::Document& Params() const { return m_params; }
 
-    void print(std::ostream& os) const {
+    void Print(std::ostream& os) const {
       os << "{\"id\": ";
       if (std::holds_alternative<std::string>(m_id)) {
         os << "\"" << std::get<std::string>(m_id) << "\"";
@@ -105,10 +105,10 @@ namespace lsp {
           m_params(std::move(params)) {}
     virtual ~NotificationMessage() = default;
 
-    const std::string& method() const { return m_method; }
-    const rapidjson::Document& params() const { return m_params; }
+    const std::string& Method() const { return m_method; }
+    const rapidjson::Document& Params() const { return m_params; }
 
-    void print(std::ostream& os) const {
+    void Print(std::ostream& os) const {
       os << "{\"method\": \"" << m_method << "\"}";
     }
   };
@@ -233,19 +233,19 @@ namespace lsp {
       }
     }
 
-    static ResponseMessage from_request(const RequestMessage& request) {
+    static ResponseMessage FromRequest(const RequestMessage& request) {
       ResponseMessage response;
-      response.m_id = request.id();
+      response.m_id = request.Id();
       return response;
     }
 
     virtual ~ResponseMessage() = default;
 
-    const MessageId& id() const { return m_id; }
-    std::optional<rapidjson::Document>& result() { return m_result; }
-    std::optional<ResponseError>& error() { return m_error; }
+    const MessageId& Id() const { return m_id; }
+    std::optional<rapidjson::Document>& Result() { return m_result; }
+    std::optional<ResponseError>& Error() { return m_error; }
 
-    std::string to_string() const {
+    std::string ToString() const {
       rapidjson::StringBuffer buffer;
       rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
       rapidjson::Document doc(rapidjson::kObjectType);
@@ -296,7 +296,7 @@ namespace lsp {
       return m_result.value();
     }
 
-    void error(ErrorCodes code, const std::string& message,
+    void Error(ErrorCodes code, const std::string& message,
                std::optional<rapidjson::Document> data = std::nullopt) {
       m_error = ResponseError(code, message, std::move(data));
     }
@@ -323,30 +323,30 @@ class ServerContext {
   ServerContext(const ServerContext&) = delete;
   ServerContext(ServerContext&&) = delete;
 
-  void register_handlers();
-  void request_queue_loop(std::stop_token st);
+  void RegisterHandlers();
+  void RequestQueueLoop(std::stop_token st);
 
-  void handle_request(const lsp::RequestMessage& request, std::ostream& out);
-  void handle_notification(const lsp::NotificationMessage& notif);
+  void HandleRequest(const lsp::RequestMessage& request, std::ostream& out);
+  void HandleNotification(const lsp::NotificationMessage& notif);
 
-  std::optional<std::unique_ptr<lsp::Message>> next_message(std::istream& in);
+  std::optional<std::unique_ptr<lsp::Message>> NextMessage(std::istream& in);
 
-  void dispatch(const std::shared_ptr<lsp::Message> message, std::ostream& out);
+  void Dispatch(const std::shared_ptr<lsp::Message> message, std::ostream& out);
 
 public:
-  static ServerContext& the();
+  static ServerContext& The();
 
-  [[noreturn]] void start_server(Connection& io);
+  [[noreturn]] void StartServer(Connection& io);
 
-  void set_callback(std::function<void(const lsp::Message* message)> callback) {
+  void SetCallback(std::function<void(const lsp::Message* message)> callback) {
     m_callback = std::move(callback);
   }
 
-  void register_request_handler(std::string method, RequestHandler handler) {
+  void RegisterRequestHandler(std::string method, RequestHandler handler) {
     m_request_handlers[method] = std::move(handler);
   }
 
-  void register_notification_handler(std::string method,
+  void RegisterNotificationHandler(std::string method,
                                      NotificationHandler handler) {
     m_notification_handlers[method] = std::move(handler);
   }

@@ -94,232 +94,232 @@ namespace ncc::ir {
     void Dispatch(FlowPtr<T> n) {
       switch (n->GetKind()) {
         case IR_eBIN: {
-          visit(n.template as<GenericBinExpr<A>>());
+          Visit(n.template as<GenericBinExpr<A>>());
           break;
         }
 
         case IR_eUNARY: {
-          visit(n.template as<GenericUnary<A>>());
+          Visit(n.template as<GenericUnary<A>>());
           break;
         }
 
         case IR_eINT: {
-          visit(n.template as<GenericInt<A>>());
+          Visit(n.template as<GenericInt<A>>());
           break;
         }
 
         case IR_eFLOAT: {
-          visit(n.template as<GenericFloat<A>>());
+          Visit(n.template as<GenericFloat<A>>());
           break;
         }
 
         case IR_eLIST: {
-          visit(n.template as<GenericList<A>>());
+          Visit(n.template as<GenericList<A>>());
           break;
         }
 
         case IR_eCALL: {
-          visit(n.template as<GenericCall<A>>());
+          Visit(n.template as<GenericCall<A>>());
           break;
         }
 
         case IR_eSEQ: {
-          visit(n.template as<GenericSeq<A>>());
+          Visit(n.template as<GenericSeq<A>>());
           break;
         }
 
         case IR_eINDEX: {
-          visit(n.template as<GenericIndex<A>>());
+          Visit(n.template as<GenericIndex<A>>());
           break;
         }
 
         case IR_eIDENT: {
-          visit(n.template as<GenericIdent<A>>());
+          Visit(n.template as<GenericIdent<A>>());
           break;
         }
 
         case IR_eEXTERN: {
-          visit(n.template as<GenericExtern<A>>());
+          Visit(n.template as<GenericExtern<A>>());
           break;
         }
 
         case IR_eLOCAL: {
-          visit(n.template as<GenericLocal<A>>());
+          Visit(n.template as<GenericLocal<A>>());
           break;
         }
 
         case IR_eRET: {
-          visit(n.template as<GenericRet<A>>());
+          Visit(n.template as<GenericRet<A>>());
           break;
         }
 
         case IR_eBRK: {
-          visit(n.template as<GenericBrk<A>>());
+          Visit(n.template as<GenericBrk<A>>());
           break;
         }
 
         case IR_eSKIP: {
-          visit(n.template as<GenericCont<A>>());
+          Visit(n.template as<GenericCont<A>>());
           break;
         }
 
         case IR_eIF: {
-          visit(n.template as<GenericIf<A>>());
+          Visit(n.template as<GenericIf<A>>());
           break;
         }
 
         case IR_eWHILE: {
-          visit(n.template as<GenericWhile<A>>());
+          Visit(n.template as<GenericWhile<A>>());
           break;
         }
 
         case IR_eFOR: {
-          visit(n.template as<GenericFor<A>>());
+          Visit(n.template as<GenericFor<A>>());
           break;
         }
 
         case IR_eCASE: {
-          visit(n.template as<GenericCase<A>>());
+          Visit(n.template as<GenericCase<A>>());
           break;
         }
 
         case IR_eSWITCH: {
-          visit(n.template as<GenericSwitch<A>>());
+          Visit(n.template as<GenericSwitch<A>>());
           break;
         }
 
         case IR_eFUNCTION: {
-          visit(n.template as<GenericFunction<A>>());
+          Visit(n.template as<GenericFunction<A>>());
           break;
         }
 
         case IR_eASM: {
-          visit(n.template as<GenericAsm<A>>());
+          Visit(n.template as<GenericAsm<A>>());
           break;
         }
 
         case IR_eIGN: {
-          visit(n.template as<GenericExpr<A>>());
+          Visit(n.template as<GenericExpr<A>>());
           break;
         }
 
         case IR_tU1: {
-          visit(n.template as<GenericU1Ty<A>>());
+          Visit(n.template as<GenericU1Ty<A>>());
           break;
         }
 
         case IR_tU8: {
-          visit(n.template as<GenericU8Ty<A>>());
+          Visit(n.template as<GenericU8Ty<A>>());
           break;
         }
 
         case IR_tU16: {
-          visit(n.template as<GenericU16Ty<A>>());
+          Visit(n.template as<GenericU16Ty<A>>());
           break;
         }
 
         case IR_tU32: {
-          visit(n.template as<GenericU32Ty<A>>());
+          Visit(n.template as<GenericU32Ty<A>>());
           break;
         }
 
         case IR_tU64: {
-          visit(n.template as<GenericU64Ty<A>>());
+          Visit(n.template as<GenericU64Ty<A>>());
           break;
         }
 
         case IR_tU128: {
-          visit(n.template as<GenericU128Ty<A>>());
+          Visit(n.template as<GenericU128Ty<A>>());
           break;
         }
 
         case IR_tI8: {
-          visit(n.template as<GenericI8Ty<A>>());
+          Visit(n.template as<GenericI8Ty<A>>());
           break;
         }
 
         case IR_tI16: {
-          visit(n.template as<GenericI16Ty<A>>());
+          Visit(n.template as<GenericI16Ty<A>>());
           break;
         }
 
         case IR_tI32: {
-          visit(n.template as<GenericI32Ty<A>>());
+          Visit(n.template as<GenericI32Ty<A>>());
           break;
         }
 
         case IR_tI64: {
-          visit(n.template as<GenericI64Ty<A>>());
+          Visit(n.template as<GenericI64Ty<A>>());
           break;
         }
 
         case IR_tI128: {
-          visit(n.template as<GenericI128Ty<A>>());
+          Visit(n.template as<GenericI128Ty<A>>());
           break;
         }
 
         case IR_tF16_TY: {
-          visit(n.template as<GenericF16Ty<A>>());
+          Visit(n.template as<GenericF16Ty<A>>());
           break;
         }
 
         case IR_tF32_TY: {
-          visit(n.template as<GenericF32Ty<A>>());
+          Visit(n.template as<GenericF32Ty<A>>());
           break;
         }
 
         case IR_tF64_TY: {
-          visit(n.template as<GenericF64Ty<A>>());
+          Visit(n.template as<GenericF64Ty<A>>());
           break;
         }
 
         case IR_tF128_TY: {
-          visit(n.template as<GenericF128Ty<A>>());
+          Visit(n.template as<GenericF128Ty<A>>());
           break;
         }
 
         case IR_tVOID: {
-          visit(n.template as<GenericVoidTy<A>>());
+          Visit(n.template as<GenericVoidTy<A>>());
           break;
         }
 
         case IR_tPTR: {
-          visit(n.template as<GenericPtrTy<A>>());
+          Visit(n.template as<GenericPtrTy<A>>());
           break;
         }
 
         case IR_tCONST: {
-          visit(n.template as<GenericConstTy<A>>());
+          Visit(n.template as<GenericConstTy<A>>());
           break;
         }
 
         case IR_tOPAQUE: {
-          visit(n.template as<GenericOpaqueTy<A>>());
+          Visit(n.template as<GenericOpaqueTy<A>>());
           break;
         }
 
         case IR_tSTRUCT: {
-          visit(n.template as<GenericStructTy<A>>());
+          Visit(n.template as<GenericStructTy<A>>());
           break;
         }
 
         case IR_tUNION: {
-          visit(n.template as<GenericUnionTy<A>>());
+          Visit(n.template as<GenericUnionTy<A>>());
           break;
         }
 
         case IR_tARRAY: {
-          visit(n.template as<GenericArrayTy<A>>());
+          Visit(n.template as<GenericArrayTy<A>>());
           break;
         }
 
         case IR_tFUNC: {
-          visit(n.template as<GenericFnTy<A>>());
+          Visit(n.template as<GenericFnTy<A>>());
           break;
         }
 
         case IR_tTMP: {
-          visit(n.template as<GenericTmp<A>>());
+          Visit(n.template as<GenericTmp<A>>());
           break;
         }
       }

@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-constexpr std::string_view license_text =
+constexpr std::string_view kLicenseText =
     R"(The Nitrate LSP Server is part of Nitrate Compiler Suite.
 Copyright (C) 2024 Wesley C. Jones
 

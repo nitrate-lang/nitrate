@@ -5,8 +5,8 @@
 
 using namespace rapidjson;
 
-void do_definition(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {
+void DoDefinition(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {
   /// TODO: Implement definition request
 
-  resp.error(lsp::ErrorCodes::RequestFailed, "Not implemented");
+  resp.Error(lsp::ErrorCodes::RequestFailed, "Not implemented");
 }

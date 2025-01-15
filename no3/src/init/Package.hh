@@ -36,8 +36,6 @@
 
 #include <conf/Config.hh>
 #include <filesystem>
-#include <optional>
-#include <set>
 #include <string>
 
 namespace no3 {
@@ -57,18 +55,18 @@ namespace no3 {
       bool m_verbose;
       bool m_force;
 
-      bool createPackage();
+      bool CreatePackage();
 
-      static bool validateName(const std::string &name);
-      static bool validateVersion(const std::string &version);
-      static bool validateEmail(const std::string &email);
-      static bool validateUrl(const std::string &url);
-      static bool validateLicense(const std::string &license);
+      static bool ValidateName(const std::string &name);
+      static bool ValidateVersion(const std::string &version);
+      static bool ValidateEmail(const std::string &email);
+      static bool ValidateUrl(const std::string &url);
+      static bool ValidateLicense(const std::string &license);
 
-      bool writeGitIgnore();
-      bool writeMain();
-      bool writeReadme();
-      bool writeConfig();
+      bool WriteGitIgnore();
+      bool WriteMain();
+      bool WriteReadme();
+      bool WriteConfig();
 
     public:
       Package(std::filesystem::path output, std::string name,
@@ -89,7 +87,7 @@ namespace no3 {
         (void)m_verbose;
       }
 
-      bool create();
+      bool Create();
     };
 
     class PackageBuilder {
@@ -108,19 +106,19 @@ namespace no3 {
     public:
       PackageBuilder() : m_verbose(false), m_force(false) {}
 
-      PackageBuilder &output(const std::string &output);
-      PackageBuilder &name(const std::string &name);
-      PackageBuilder &license(const std::string &license);
-      PackageBuilder &author(const std::string &author);
-      PackageBuilder &email(const std::string &email);
-      PackageBuilder &url(const std::string &url);
-      PackageBuilder &version(const std::string &version);
-      PackageBuilder &description(const std::string &description);
-      PackageBuilder &type(PackageType type);
-      PackageBuilder &verbose(bool verbose);
-      PackageBuilder &force(bool force);
+      PackageBuilder &Output(const std::string &output);
+      PackageBuilder &Name(const std::string &name);
+      PackageBuilder &License(const std::string &license);
+      PackageBuilder &Author(const std::string &author);
+      PackageBuilder &Email(const std::string &email);
+      PackageBuilder &Url(const std::string &url);
+      PackageBuilder &Version(const std::string &version);
+      PackageBuilder &Description(const std::string &description);
+      PackageBuilder &Type(PackageType type);
+      PackageBuilder &Verbose(bool verbose);
+      PackageBuilder &Force(bool force);
 
-      Package build();
+      Package Build();
     };
   }  // namespace init
 }  // namespace no3

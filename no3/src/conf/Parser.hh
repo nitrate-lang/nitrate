@@ -56,7 +56,7 @@ namespace no3 {
        * @return std::optional<Config> Configuration object
        * @note If any error occurs, the function returns an empty optional.
        */
-      std::optional<Config> parsef(const std::string &filepath);
+      std::optional<Config> Parsef(const std::string &filepath);
 
       /**
        * @brief Parse NO3 package configuration content
@@ -65,7 +65,7 @@ namespace no3 {
        * @return std::optional<Config> Configuration object
        * @note If any error occurs, the function returns an empty optional.
        */
-      virtual std::optional<Config> parse(const std::string &content) = 0;
+      virtual std::optional<Config> Parse(const std::string &content) = 0;
     };
 
     class YamlConfigParser : public IParser {
@@ -77,7 +77,7 @@ namespace no3 {
        * @return std::optional<Config> Configuration object
        * @note If any error occurs, the function returns an empty optional.
        */
-      std::optional<Config> parse(const std::string &content) override;
+      std::optional<Config> Parse(const std::string &content) override;
     };
   }  // namespace conf
 }  // namespace no3

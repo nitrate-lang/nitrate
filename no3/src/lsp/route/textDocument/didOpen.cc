@@ -7,18 +7,18 @@
 
 using namespace rapidjson;
 
-void do_didOpen(const lsp::NotificationMessage& notif) {
-  if (!notif.params().HasMember("textDocument")) {
+void DoDidOpen(const lsp::NotificationMessage& notif) {
+  if (!notif.Params().HasMember("textDocument")) {
     LOG(ERROR) << "Missing textDocument member";
     return;
   }
 
-  if (!notif.params()["textDocument"].IsObject()) {
+  if (!notif.Params()["textDocument"].IsObject()) {
     LOG(ERROR) << "textDocument is not an object";
     return;
   }
 
-  const auto& text_document = notif.params()["textDocument"];
+  const auto& text_document = notif.Params()["textDocument"];
 
   if (!text_document.HasMember("uri")) {
     LOG(ERROR) << "Missing uri member";
@@ -64,14 +64,14 @@ void do_didOpen(const lsp::NotificationMessage& notif) {
   std::string language_id = text_document["languageId"].GetString();
   std::string text = text_document["text"].GetString();
 
-  auto file_opt = SyncFS::the().open(uri);
+  auto file_opt = SyncFS::The().Open(uri);
   if (!file_opt.has_value()) {
     return;
   }
 
   auto file = file_opt.value();
 
-  if (!file->replace(0, -1, text)) {
+  if (!file->Replace(0, -1, text)) {
     LOG(ERROR) << "Failed to replace code";
     return;
   }

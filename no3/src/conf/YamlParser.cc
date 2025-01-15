@@ -36,7 +36,7 @@
 #include <conf/Parser.hh>
 #include <core/Logger.hh>
 
-std::optional<no3::conf::Config> no3::conf::YamlConfigParser::parse(
+std::optional<no3::conf::Config> no3::conf::YamlConfigParser::Parse(
     const std::string &content) {
   YAML::Node config;
 
@@ -60,13 +60,13 @@ std::optional<no3::conf::Config> no3::conf::YamlConfigParser::parse(
     if (it->second.IsScalar()) {
       try {
         int64_t i = it->second.as<int64_t>();
-        grp.set(it->first.as<std::string>(), i);
+        grp.Set(it->first.as<std::string>(), i);
       } catch (YAML::TypedBadConversion<int64_t> &e) {
         try {
           bool b = it->second.as<bool>();
-          grp.set(it->first.as<std::string>(), b);
+          grp.Set(it->first.as<std::string>(), b);
         } catch (YAML::TypedBadConversion<bool> &e) {
-          grp.set(it->first.as<std::string>(), it->second.as<std::string>());
+          grp.Set(it->first.as<std::string>(), it->second.as<std::string>());
         }
       }
     } else if (it->second.IsSequence()) {
@@ -82,7 +82,7 @@ std::optional<no3::conf::Config> no3::conf::YamlConfigParser::parse(
         }
       }
 
-      grp.set(it->first.as<std::string>(), v);
+      grp.Set(it->first.as<std::string>(), v);
     } else {
       LOG(ERROR) << "Invalid YAML configuration: unsupported value type"
                  << std::endl;
@@ -90,11 +90,11 @@ std::optional<no3::conf::Config> no3::conf::YamlConfigParser::parse(
     }
   }
 
-  if (!grp.has<int64_t>("version")) {
+  if (!grp.Has<int64_t>("version")) {
     LOG(ERROR) << "Invalid YAML configuration: missing 'version' key"
                << std::endl;
     return std::nullopt;
   }
 
-  return Config(grp, grp["version"].as<int64_t>());
+  return Config(grp, grp["version"].As<int64_t>());
 }

@@ -302,7 +302,7 @@ namespace ncc::ir {
     // Create values
 
     std::optional<FlowPtr<Expr>> GetDefaultValue(
-        FlowPtr<Type> _for SOURCE_LOCATION_PARAM);
+        FlowPtr<Type> src_loc SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///
     // Create types

@@ -9,21 +9,21 @@
 
 typedef int64_t DocVersion;
 
-void do_didChange(const lsp::NotificationMessage& notif) {
+void DoDidChange(const lsp::NotificationMessage& notif) {
   using namespace rapidjson;
 
-  if (!notif.params().HasMember("textDocument")) {
+  if (!notif.Params().HasMember("textDocument")) {
     LOG(ERROR) << "Missing textDocument field in didChange notification";
     return;
   }
 
-  if (!notif.params()["textDocument"].IsObject()) {
+  if (!notif.Params()["textDocument"].IsObject()) {
     LOG(ERROR)
         << "textDocument field in didChange notification is not an object";
     return;
   }
 
-  let text_document = notif.params()["textDocument"];
+  let text_document = notif.Params()["textDocument"];
 
   if (!text_document.HasMember("uri")) {
     LOG(ERROR) << "Missing uri field in textDocument object";
@@ -48,20 +48,20 @@ void do_didChange(const lsp::NotificationMessage& notif) {
   let uri = text_document["uri"].GetString();
   let version = text_document["version"].GetInt64();
 
-  if (!notif.params().HasMember("contentChanges")) {
+  if (!notif.Params().HasMember("contentChanges")) {
     LOG(ERROR) << "Missing contentChanges field in didChange notification";
     return;
   }
 
-  if (!notif.params()["contentChanges"].IsArray()) {
+  if (!notif.Params()["contentChanges"].IsArray()) {
     LOG(ERROR)
         << "contentChanges field in didChange notification is not an array";
     return;
   }
 
-  let content_changes = notif.params()["contentChanges"].GetArray();
+  let content_changes = notif.Params()["contentChanges"].GetArray();
 
-  auto file_opt = SyncFS::the().open(uri);
+  auto file_opt = SyncFS::The().Open(uri);
   if (!file_opt.has_value()) {
     return;
   }
@@ -101,7 +101,7 @@ void do_didChange(const lsp::NotificationMessage& notif) {
       std::string_view text(content_change["text"].GetString(),
                             content_change["text"].GetStringLength());
 
-      file->replace(0, -1, text);
+      file->Replace(0, -1, text);
     }
 
     latest[uri] = version;

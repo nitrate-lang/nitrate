@@ -55,7 +55,7 @@ enum class KeyName {
 
 enum class ValueType { STRING, INTEGER, BOOLEAN, STRING_ARRAY };
 
-static std::unordered_map<std::string, KeyName> key_map = {
+static std::unordered_map<std::string, KeyName> KeyMap = {
     {"name", KeyName::NAME},
     {"version", KeyName::VERSION},
     {"description", KeyName::DESCRIPTION},
@@ -72,18 +72,18 @@ static std::unordered_map<std::string, KeyName> key_map = {
     {"nolink", KeyName::NOLINK},
     {"packages", KeyName::PACKAGES}};
 
-static std::set<std::string> required_keys = {
+static std::set<std::string> RequiredKeys = {
     "name",
     "version",
     "description",
     "target",
 };
 
-static std::set<std::string> target_valid_values = {"sharedlib", "staticlib",
-                                                    "executable"};
+static std::set<std::string> TargetValidValues = {"sharedlib", "staticlib",
+                                                  "executable"};
 
 /// https://stackoverflow.com/questions/1031645/how-to-detect-utf-8-in-plain-c
-bool is_utf8(const char *string) {
+bool IsUtf8(const char *string) {
   if (!string) return 0;
 
   const unsigned char *bytes = (const unsigned char *)string;
@@ -145,22 +145,22 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config,
                                const std::filesystem::path &base) {
   using namespace no3::core;
 
-  auto keys = config.keys();
+  auto keys = config.Keys();
 
   for (const auto &key : keys) {
-    if (!key_map.contains(key)) {
+    if (!KeyMap.contains(key)) {
       LOG(ERROR) << "Invalid key in configuration: " << key << std::endl;
       return false;
     }
 
-    switch (key_map[key]) {
+    switch (KeyMap[key]) {
       case KeyName::NAME:
-        if (!config[key].is<std::string>()) {
+        if (!config[key].Is<std::string>()) {
           LOG(ERROR) << "Invalid value type for key 'name' in configuration"
                      << std::endl;
           return false;
         }
-        if (!is_utf8(config[key].as<std::string>().c_str())) {
+        if (!IsUtf8(config[key].As<std::string>().c_str())) {
           LOG(ERROR)
               << "Invalid value for key 'name' in configuration: must be UTF-8"
               << std::endl;
@@ -168,25 +168,25 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config,
         }
         break;
       case KeyName::VERSION:
-        if (!config[key].is<int64_t>()) {
+        if (!config[key].Is<int64_t>()) {
           LOG(ERROR) << "Invalid value type for key 'version' in configuration"
                      << std::endl;
           return false;
         }
-        if (config[key].as<int64_t>() != 1) {
+        if (config[key].As<int64_t>() != 1) {
           LOG(ERROR) << "This version of the NO3 system only supports version 1"
                      << std::endl;
           return false;
         }
         break;
       case KeyName::DESCRIPTION:
-        if (!config[key].is<std::string>()) {
+        if (!config[key].Is<std::string>()) {
           LOG(ERROR)
               << "Invalid value type for key 'description' in configuration"
               << std::endl;
           return false;
         }
-        if (!is_utf8(config[key].as<std::string>().c_str())) {
+        if (!IsUtf8(config[key].As<std::string>().c_str())) {
           LOG(ERROR) << "Invalid value for key 'description' in "
                         "configuration: must be UTF-8"
                      << std::endl;
@@ -194,13 +194,13 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config,
         }
         break;
       case KeyName::AUTHORS:
-        if (!config[key].is<std::vector<std::string>>()) {
+        if (!config[key].Is<std::vector<std::string>>()) {
           LOG(ERROR) << "Invalid value type for key 'authors' in configuration"
                      << std::endl;
           return false;
         }
-        for (const auto &author : config[key].as<std::vector<std::string>>()) {
-          if (!is_utf8(author.c_str())) {
+        for (const auto &author : config[key].As<std::vector<std::string>>()) {
+          if (!IsUtf8(author.c_str())) {
             LOG(ERROR) << "Invalid value for key 'authors' in "
                           "configuration: must be UTF-8"
                        << std::endl;
@@ -209,13 +209,13 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config,
         }
         break;
       case KeyName::EMAILS:
-        if (!config[key].is<std::vector<std::string>>()) {
+        if (!config[key].Is<std::vector<std::string>>()) {
           LOG(ERROR) << "Invalid value type for key 'emails' in configuration"
                      << std::endl;
           return false;
         }
-        for (const auto &email : config[key].as<std::vector<std::string>>()) {
-          if (!is_utf8(email.c_str())) {
+        for (const auto &email : config[key].As<std::vector<std::string>>()) {
+          if (!IsUtf8(email.c_str())) {
             LOG(ERROR) << "Invalid value for key 'emails' in "
                           "configuration: must be UTF-8"
                        << std::endl;
@@ -224,12 +224,12 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config,
         }
         break;
       case KeyName::URL:
-        if (!config[key].is<std::string>()) {
+        if (!config[key].Is<std::string>()) {
           LOG(ERROR) << "Invalid value type for key 'url' in configuration"
                      << std::endl;
           return false;
         }
-        if (!is_utf8(config[key].as<std::string>().c_str())) {
+        if (!IsUtf8(config[key].As<std::string>().c_str())) {
           LOG(ERROR)
               << "Invalid value for key 'url' in configuration: must be UTF-8"
               << std::endl;
@@ -237,13 +237,13 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config,
         }
         break;
       case KeyName::LICENSES:
-        if (!config[key].is<std::vector<std::string>>()) {
+        if (!config[key].Is<std::vector<std::string>>()) {
           LOG(ERROR) << "Invalid value type for key 'licenses' in configuration"
                      << std::endl;
           return false;
         }
-        for (const auto &license : config[key].as<std::vector<std::string>>()) {
-          if (!no3::conf::spdx_identifiers.contains(license)) {
+        for (const auto &license : config[key].As<std::vector<std::string>>()) {
+          if (!no3::conf::SPDX_IDENTIFIERS.contains(license)) {
             LOG(ERROR) << "Invalid license in configuration: " << license
                        << std::endl;
             return false;
@@ -251,12 +251,12 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config,
         }
         break;
       case KeyName::SOURCES:
-        if (!config[key].is<std::vector<std::string>>()) {
+        if (!config[key].Is<std::vector<std::string>>()) {
           LOG(ERROR) << "Invalid value type for key 'sources' in configuration"
                      << std::endl;
           return false;
         }
-        for (const auto &source : config[key].as<std::vector<std::string>>()) {
+        for (const auto &source : config[key].As<std::vector<std::string>>()) {
           if (!std::filesystem::exists(base / source)) {
             LOG(ERROR) << "Source does not exist: " << source << std::endl;
             return false;
@@ -264,12 +264,12 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config,
         }
         break;
       case KeyName::TARGET:
-        if (!config[key].is<std::string>()) {
+        if (!config[key].Is<std::string>()) {
           LOG(ERROR) << "Invalid value type for key 'target' in configuration"
                      << std::endl;
           return false;
         }
-        if (!target_valid_values.contains(config[key].as<std::string>())) {
+        if (!TargetValidValues.contains(config[key].As<std::string>())) {
           LOG(ERROR)
               << "Invalid value for key 'target' in configuration: must be one "
                  "of 'sharedlib', 'staticlib', or 'executable'"
@@ -278,12 +278,12 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config,
         }
         break;
       case KeyName::TRIPLE:
-        if (!config[key].is<std::string>()) {
+        if (!config[key].Is<std::string>()) {
           LOG(ERROR) << "Invalid value type for key 'triple' in configuration"
                      << std::endl;
           return false;
         }
-        if (!is_utf8(config[key].as<std::string>().c_str())) {
+        if (!IsUtf8(config[key].As<std::string>().c_str())) {
           LOG(ERROR) << "Invalid value for key 'triple' in "
                         "configuration: must be UTF-8"
                      << std::endl;
@@ -291,12 +291,12 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config,
         }
         break;
       case KeyName::CPU:
-        if (!config[key].is<std::string>()) {
+        if (!config[key].Is<std::string>()) {
           LOG(ERROR) << "Invalid value type for key 'cpu' in configuration"
                      << std::endl;
           return false;
         }
-        if (!is_utf8(config[key].as<std::string>().c_str())) {
+        if (!IsUtf8(config[key].As<std::string>().c_str())) {
           LOG(ERROR)
               << "Invalid value for key 'cpu' in configuration: must be UTF-8"
               << std::endl;
@@ -304,33 +304,33 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config,
         }
         break;
       case KeyName::CFLAGS:
-        if (!config[key].is<std::vector<std::string>>()) {
+        if (!config[key].Is<std::vector<std::string>>()) {
           LOG(ERROR) << "Invalid value type for key 'cflags' in configuration"
                      << std::endl;
           return false;
         }
         break;
       case KeyName::LFLAGS:
-        if (!config[key].is<std::vector<std::string>>()) {
+        if (!config[key].Is<std::vector<std::string>>()) {
           LOG(ERROR) << "Invalid value type for key 'lflags' in configuration"
                      << std::endl;
           return false;
         }
         break;
       case KeyName::NOLINK:
-        if (!config[key].is<bool>()) {
+        if (!config[key].Is<bool>()) {
           LOG(ERROR) << "Invalid value type for key 'nolink' in configuration"
                      << std::endl;
           return false;
         }
         break;
       case KeyName::PACKAGES:
-        if (!config[key].is<std::vector<std::string>>()) {
+        if (!config[key].Is<std::vector<std::string>>()) {
           LOG(ERROR) << "Invalid value type for key 'packages' in configuration"
                      << std::endl;
           return false;
         }
-        for (const auto &source : config[key].as<std::vector<std::string>>()) {
+        for (const auto &source : config[key].As<std::vector<std::string>>()) {
           if (!std::filesystem::exists(base / source) ||
               !std::filesystem::is_directory(base / source)) {
             LOG(ERROR) << "Dependency does not exist: " << source << std::endl;
@@ -344,7 +344,7 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config,
     }
   }
 
-  for (const auto &key : required_keys) {
+  for (const auto &key : RequiredKeys) {
     if (!keys.contains(key)) {
       LOG(ERROR) << "Missing required key in configuration: " << key
                  << std::endl;
@@ -356,31 +356,31 @@ bool no3::conf::ValidateConfig(const no3::conf::Config &config,
 }
 
 void no3::conf::PopulateConfig(no3::conf::Config &config) {
-  if (!config.m_root.has<std::vector<std::string>>("authors"))
-    config.m_root.set("authors", std::vector<std::string>());
+  if (!config.m_root.Has<std::vector<std::string>>("authors"))
+    config.m_root.Set("authors", std::vector<std::string>());
 
-  if (!config.m_root.has<std::vector<std::string>>("licenses"))
-    config.m_root.set("licenses", std::vector<std::string>());
+  if (!config.m_root.Has<std::vector<std::string>>("licenses"))
+    config.m_root.Set("licenses", std::vector<std::string>());
 
-  if (!config.m_root.has<std::vector<std::string>>("depends"))
-    config.m_root.set("depends", std::vector<std::string>());
+  if (!config.m_root.Has<std::vector<std::string>>("depends"))
+    config.m_root.Set("depends", std::vector<std::string>());
 
-  if (!config.m_root.has<std::vector<std::string>>("sources"))
-    config.m_root.set("sources", std::vector<std::string>());
+  if (!config.m_root.Has<std::vector<std::string>>("sources"))
+    config.m_root.Set("sources", std::vector<std::string>());
 
-  if (!config.m_root.has<std::vector<std::string>>("packages"))
-    config.m_root.set("packages", std::vector<std::string>());
+  if (!config.m_root.Has<std::vector<std::string>>("packages"))
+    config.m_root.Set("packages", std::vector<std::string>());
 
-  if (!config.m_root.has<std::string>("triple"))
-    config.m_root.set("triple", "");
+  if (!config.m_root.Has<std::string>("triple"))
+    config.m_root.Set("triple", "");
 
-  if (!config.m_root.has<std::string>("cpu")) config.m_root.set("cpu", "");
+  if (!config.m_root.Has<std::string>("cpu")) config.m_root.Set("cpu", "");
 
-  if (!config.m_root.has<std::vector<std::string>>("cflags"))
-    config.m_root.set("cflags", std::vector<std::string>());
+  if (!config.m_root.Has<std::vector<std::string>>("cflags"))
+    config.m_root.Set("cflags", std::vector<std::string>());
 
-  if (!config.m_root.has<std::vector<std::string>>("lflags"))
-    config.m_root.set("lflags", std::vector<std::string>());
+  if (!config.m_root.Has<std::vector<std::string>>("lflags"))
+    config.m_root.Set("lflags", std::vector<std::string>());
 
-  if (!config.m_root.has<bool>("nolink")) config.m_root.set("nolink", false);
+  if (!config.m_root.Has<bool>("nolink")) config.m_root.Set("nolink", false);
 }

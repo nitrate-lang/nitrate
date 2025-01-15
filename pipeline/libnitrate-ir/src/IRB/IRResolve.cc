@@ -61,7 +61,7 @@
 //       symbols.insert(*C);
 
 //       if (replace_with_ident) {
-//         *C = create<Ident>((*C)->getName(), *C);
+//         *C = create<Ident>((*C)->GetName(), *C);
 //       } else {
 //         *C = createIgn();
 //       }
@@ -71,7 +71,7 @@
 //   });
 
 //   for (auto ele : symbols) {
-//     root->getItems().push_back(ele);
+//     root->GetItems().push_back(ele);
 //   }
 // }
 
@@ -135,9 +135,9 @@
 //     if (N->is(IR_eIDENT) && N->as<Ident>()->getWhat() == nullptr) {
 //       Ident *I = N->as<Ident>();
 
-//       if (auto enum_opt = resolve_name(I->getName(), Kind::ScopedEnum)) {
+//       if (auto enum_opt = resolve_name(I->GetName(), Kind::ScopedEnum)) {
 //         *C = enum_opt.value().first;
-//       } else if (auto var_opt = resolve_name(I->getName(), Kind::Variable)) {
+//       } else if (auto var_opt = resolve_name(I->GetName(), Kind::Variable)) {
 //         I->SetWhat(var_opt.value().first);
 //         I->SetName(var_opt.value().second);
 //       }
@@ -151,7 +151,7 @@
 //     Expr **C, Expr *callee_ref, FnTy *callee_ty,
 //     const std::unordered_map<std::string_view, size_t> &name_index_map,
 //     const std::optional<std::unordered_map<size_t, Expr *>>
-//     &func_default_args, const IR_Vertex_CallArguments &user_arguments) {
+//     &func_default_args, const GenericCallArguments &user_arguments) {
 //   using namespace std;
 
 //   unordered_map<size_t, Expr *> temporary_map(user_arguments.size());
@@ -245,7 +245,7 @@
 
 //       /* Currently, this code only supported direct function calls */
 //       if (data.base->is(IR_eIDENT)) {
-//         auto callee_name = data.base->as<Ident>()->getName();
+//         auto callee_name = data.base->as<Ident>()->GetName();
 //         qcore_assert(!callee_name.empty());
 
 //         unordered_map<string_view, size_t> name_index_map;
@@ -260,10 +260,10 @@
 //           /* This layer of indirection is needed to maintain the acylic
 //            * properties */
 //           auto callee_func =
-//               create<Ident>(callee_func_ptr->getName(), callee_func_ptr);
+//               create<Ident>(callee_func_ptr->GetName(), callee_func_ptr);
 
 //           /* Perform type inference on the callee node */
-//           if (auto callee_type_opt = callee_func->getType();
+//           if (auto callee_type_opt = callee_func->GetType();
 //               callee_type_opt.has_value() &&
 //               callee_type_opt.value()->is_function()) {
 //             auto callee_func_type = callee_type_opt.value()->as<FnTy>();
@@ -299,10 +299,10 @@
 //             /* This layer of indirection is needed to maintain the acylic
 //              * properties */
 //             auto callee_local =
-//                 create<Ident>(callee_local_ptr->getName(), callee_local_ptr);
+//                 create<Ident>(callee_local_ptr->GetName(), callee_local_ptr);
 
 //             /* Perform type inference on the callee node */
-//             if (auto local_type = callee_local->getType();
+//             if (auto local_type = callee_local->GetType();
 //                 local_type.has_value() && local_type.value()->is_function())
 //                 {
 //               auto callee_func_type = local_type.value()->as<FnTy>();
@@ -373,7 +373,7 @@
 //       Seq *S = (*C)->as<Seq>();
 
 //       size_t node_count = 0;
-//       for (auto &I : S->getItems()) {
+//       for (auto &I : S->GetItems()) {
 //         if (non_functional_nodes.contains(I->GetKind())) {
 //           I = createIgn();
 //         } else {

@@ -2,17 +2,17 @@
 
 #include <lsp/core/server.hh>
 
-void do_initialize(const lsp::RequestMessage&, lsp::ResponseMessage&);
-void do_initialized(const lsp::NotificationMessage&);
-void do_shutdown(const lsp::RequestMessage&, lsp::ResponseMessage&);
-void do_exit(const lsp::NotificationMessage&);
+void DoInitialize(const lsp::RequestMessage&, lsp::ResponseMessage&);
+void DoInitialized(const lsp::NotificationMessage&);
+void DoShutdown(const lsp::RequestMessage&, lsp::ResponseMessage&);
+void DoExit(const lsp::NotificationMessage&);
 
-void do_completion(const lsp::RequestMessage&, lsp::ResponseMessage&);
-void do_declaration(const lsp::RequestMessage&, lsp::ResponseMessage&);
-void do_definition(const lsp::RequestMessage&, lsp::ResponseMessage&);
-void do_didChange(const lsp::NotificationMessage&);
-void do_didClose(const lsp::NotificationMessage&);
-void do_didOpen(const lsp::NotificationMessage&);
-void do_didSave(const lsp::NotificationMessage&);
-void do_documentColor(const lsp::RequestMessage&, lsp::ResponseMessage&);
-void do_formatting(const lsp::RequestMessage&, lsp::ResponseMessage&);
+void DoCompletion(const lsp::RequestMessage&, lsp::ResponseMessage&);
+void DoDeclaration(const lsp::RequestMessage&, lsp::ResponseMessage&);
+void DoDefinition(const lsp::RequestMessage&, lsp::ResponseMessage&);
+void DoDidChange(const lsp::NotificationMessage&);
+void DoDidClose(const lsp::NotificationMessage&);
+void DoDidOpen(const lsp::NotificationMessage&);
+void DoDidSave(const lsp::NotificationMessage&);
+void DoDocumentColor(const lsp::RequestMessage&, lsp::ResponseMessage&);
+void DoFormatting(const lsp::RequestMessage&, lsp::ResponseMessage&);

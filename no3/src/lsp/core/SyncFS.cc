@@ -11,14 +11,14 @@ SyncFS::~SyncFS() {
   LOG(INFO) << "Destroying mirrored file system abstraction";
 }
 
-SyncFS& SyncFS::the() {
+SyncFS& SyncFS::The() {
   static SyncFS instance;
   return instance;
 }
 
 ///===========================================================================
 
-static std::string url_decode(std::string_view str) {
+static std::string UrlDecode(std::string_view str) {
   std::string result;
   result.reserve(str.size());
 
@@ -47,8 +47,8 @@ static std::string url_decode(std::string_view str) {
   return result;
 }
 
-std::optional<std::shared_ptr<SyncFSFile>> SyncFS::open(std::string path) {
-  path = url_decode(path);
+std::optional<std::shared_ptr<SyncFSFile>> SyncFS::Open(std::string path) {
+  path = UrlDecode(path);
   if (path.starts_with("file://")) {
     path = path.substr(7);
   }
@@ -85,7 +85,7 @@ std::optional<std::shared_ptr<SyncFSFile>> SyncFS::open(std::string path) {
   return ptr;
 }
 
-void SyncFS::close(const std::string& name) {
+void SyncFS::Close(const std::string& name) {
   std::lock_guard<std::mutex> lock(m_mutex);
   m_files.erase(name);
 }

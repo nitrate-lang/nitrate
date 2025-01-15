@@ -65,7 +65,7 @@ namespace ncc::parse {
     constexpr UnaryExpr(auto op, auto rhs)
         : Expr(QAST_UNEXPR), m_rhs(rhs), m_op(op) {}
 
-    constexpr auto GetRhs() const { return m_rhs; }
+    constexpr auto GetRHS() const { return m_rhs; }
     constexpr auto GetOp() const { return m_op; }
   };
 
@@ -77,8 +77,8 @@ namespace ncc::parse {
     constexpr BinExpr(auto lhs, auto op, auto rhs)
         : Expr(QAST_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
-    constexpr auto GetLhs() const { return m_lhs; }
-    constexpr auto GetRhs() const { return m_rhs; }
+    constexpr auto GetLHS() const { return m_lhs; }
+    constexpr auto GetRHS() const { return m_rhs; }
     constexpr auto GetOp() const { return m_op; }
   };
 
@@ -90,7 +90,7 @@ namespace ncc::parse {
     constexpr PostUnaryExpr(auto lhs, auto op)
         : Expr(QAST_POST_UNEXPR), m_lhs(lhs), m_op(op) {}
 
-    constexpr auto GetLhs() const { return m_lhs; }
+    constexpr auto GetLHS() const { return m_lhs; }
     constexpr auto GetOp() const { return m_op; }
   };
 
@@ -102,8 +102,8 @@ namespace ncc::parse {
         : Expr(QAST_TEREXPR), m_cond(cond), m_lhs(lhs), m_rhs(rhs) {}
 
     constexpr auto GetCond() const { return m_cond; }
-    constexpr auto GetLhs() const { return m_lhs; }
-    constexpr auto GetRhs() const { return m_rhs; }
+    constexpr auto GetLHS() const { return m_lhs; }
+    constexpr auto GetRHS() const { return m_rhs; }
   };
 
   class ConstInt final : public Expr {

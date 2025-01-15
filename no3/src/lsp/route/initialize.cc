@@ -3,7 +3,7 @@
 
 using namespace rapidjson;
 
-void do_initialize(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {
+void DoInitialize(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {
   LOG(INFO) << "Initializing language server";
 
   auto& alloc = resp->GetAllocator();

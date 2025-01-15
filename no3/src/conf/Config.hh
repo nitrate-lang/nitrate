@@ -67,12 +67,12 @@ namespace no3 {
           : m_value(value) {}
 
       template <typename T>
-      T as() const {
+      T As() const {
         return std::get<T>(m_value);
       }
 
       template <typename T>
-      bool is() const {
+      bool Is() const {
         return std::holds_alternative<T>(m_value);
       }
 
@@ -94,7 +94,7 @@ namespace no3 {
        * @note If the target is not supported, the function throws
        * ConfigSerializerException.
        */
-      std::string dump(ConfigItemSerializationTarget target =
+      std::string Dump(ConfigItemSerializationTarget target =
                            ConfigItemSerializationTarget::JSON) const;
 
       inline ConfigValue operator[](const std::string &key) const {
@@ -102,18 +102,18 @@ namespace no3 {
       }
 
       template <typename T>
-      void set(const std::string &key, T value) {
+      void Set(const std::string &key, T value) {
         m_items[key] = ConfigValue(value);
       }
 
       template <typename T>
-      bool has(const std::string &key) const {
-        return m_items.contains(key) && m_items.at(key).is<T>();
+      bool Has(const std::string &key) const {
+        return m_items.contains(key) && m_items.at(key).Is<T>();
       }
 
       template <typename T>
-      bool is(const std::string &key, T value) const {
-        return has<T>(key) && m_items.at(key).as<T>() == value;
+      bool Is(const std::string &key, T value) const {
+        return has<T>(key) && m_items.at(key).As<T>() == value;
       }
 
       bool operator==(const ConfigGroup &grp) const {
@@ -137,7 +137,7 @@ namespace no3 {
        * @note If the target is not supported, the function throws
        * ConfigSerializerException.
        */
-      std::string dump(ConfigItemSerializationTarget target =
+      std::string Dump(ConfigItemSerializationTarget target =
                            ConfigItemSerializationTarget::JSON) const;
 
       bool operator==(const Config &cfg) const {
@@ -148,7 +148,7 @@ namespace no3 {
         return m_root[key];
       }
 
-      inline std::set<std::string> keys() const {
+      inline std::set<std::string> Keys() const {
         std::set<std::string> keys;
         for (const auto &item : m_root.m_items) keys.insert(item.first);
         return keys;

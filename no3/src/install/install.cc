@@ -36,12 +36,12 @@
 #include <iostream>
 #include <regex>
 
-static bool validate_package_name(const std::string &package_name) {
+static bool ValidatePackageName(const std::string &package_name) {
   static std::regex package_name_regex("^[a-zA-Z0-9_-]+$");
   return std::regex_match(package_name, package_name_regex);
 }
 
-bool download_git_repo(const std::string &url, const std::string &dest) {
+bool DownloadGitRepo(const std::string &url, const std::string &dest) {
   std::cout << "Downloading package from: " << url << std::endl;
 
   setenv("NO3_GIT_INJECT_URL", url.c_str(), 1);
@@ -58,7 +58,7 @@ bool download_git_repo(const std::string &url, const std::string &dest) {
   return e;
 }
 
-bool no3::install::install_from_url(std::string url, const std::string &dest,
+bool no3::install::InstallFromUrl(std::string url, const std::string &dest,
                                     std::string &package_name, bool overwrite) {
   enum class FetchType {
     GIT,
@@ -79,7 +79,7 @@ bool no3::install::install_from_url(std::string url, const std::string &dest,
   }
 
   package_name = url.substr(url.find_last_of('/') + 1);
-  if (!validate_package_name(package_name)) {
+  if (!ValidatePackageName(package_name)) {
     std::cerr << "Invalid package name: " << package_name << std::endl;
     return false;
   }
@@ -104,7 +104,7 @@ bool no3::install::install_from_url(std::string url, const std::string &dest,
 
   switch (fetch_type) {
     case FetchType::GIT:
-      if (!download_git_repo(url, package_path.string())) {
+      if (!DownloadGitRepo(url, package_path.string())) {
         std::cerr << "Failed to fetch package: " << package_name << std::endl;
         return false;
       }

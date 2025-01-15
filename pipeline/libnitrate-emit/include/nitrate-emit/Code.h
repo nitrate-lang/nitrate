@@ -39,14 +39,14 @@
 
 #include <nitrate-ir/IR/Fwd.hh>
 
-typedef enum {
+enum QcodeLangT {
   QCODE_C11,     /* Generate C 11 Source Code */
   QCODE_CXX11,   /* Generate C++ 11 Source Code */
   QCODE_TS,      /* Generate TypeScript Source Code */
   QCODE_RUST,    /* Generate Rust Source Code */
   QCODE_PYTHON3, /* Generate Python3 Source Code */
   QCODE_CSHARP,  /* Generate C# Source Code */
-} QcodeLangT;
+};
 
 typedef enum {
   QCODE_MINIFY,
@@ -69,18 +69,17 @@ typedef enum {
  * Both `err` and `out` will be flushed before returning, irrespective of the
  * return value.
  */
-bool QcodeTranscode(ncc::ir::IRModule* module, QcodeConfT* conf,
-                     QcodeLangT lang, QcodeStyleT style, FILE* err,
-                     FILE* out);
+bool QcodeTranscode(ncc::ir::IRModule* module, QCodegenConfig* conf,
+                    QcodeLangT lang, QcodeStyleT style, FILE* err, FILE* out);
 
 ///==============================================================================
 
-bool QcodeIr(ncc::ir::IRModule* module, QcodeConfT* conf, FILE* err,
+bool QcodeIR(ncc::ir::IRModule* module, QCodegenConfig* conf, FILE* err,
+             FILE* out);
+bool QcodeAsm(ncc::ir::IRModule* module, QCodegenConfig* conf, FILE* err,
               FILE* out);
-bool QcodeAsm(ncc::ir::IRModule* module, QcodeConfT* conf, FILE* err,
-               FILE* out);
-bool QcodeObj(ncc::ir::IRModule* module, QcodeConfT* conf, FILE* err,
-               FILE* out);
+bool QcodeObj(ncc::ir::IRModule* module, QCodegenConfig* conf, FILE* err,
+              FILE* out);
 
 ///==============================================================================
 

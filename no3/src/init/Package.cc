@@ -37,31 +37,31 @@
 #include <init/Package.hh>
 #include <regex>
 
-bool no3::init::Package::validateName(const std::string &name) {
+bool no3::init::Package::ValidateName(const std::string &name) {
   static std::regex regex("^[a-zA-Z0-9_-]+$");
   return std::regex_match(name, regex);
 }
 
-bool no3::init::Package::validateVersion(const std::string &version) {
+bool no3::init::Package::ValidateVersion(const std::string &version) {
   static std::regex regex("^[0-9]+\\.[0-9]+\\.[0-9]+$");
   return std::regex_match(version, regex);
 }
 
-bool no3::init::Package::validateEmail(const std::string &email) {
+bool no3::init::Package::ValidateEmail(const std::string &email) {
   static std::regex regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
   return std::regex_match(email, regex);
 }
 
-bool no3::init::Package::validateUrl(const std::string &url) {
+bool no3::init::Package::ValidateUrl(const std::string &url) {
   static std::regex regex("^(http|https)://.*$");
   return std::regex_match(url, regex);
 }
 
-bool no3::init::Package::validateLicense(const std::string &license) {
-  return conf::spdx_identifiers.contains(license);
+bool no3::init::Package::ValidateLicense(const std::string &license) {
+  return conf::SPDX_IDENTIFIERS.contains(license);
 }
 
-bool no3::init::Package::writeGitIgnore() {
+bool no3::init::Package::WriteGitIgnore() {
   std::ofstream gitignore((m_output / m_name / ".gitignore").string());
   if (!gitignore.is_open()) {
     LOG(ERROR) << "Failed to create .gitignore file" << std::endl;
@@ -77,7 +77,7 @@ bool no3::init::Package::writeGitIgnore() {
   return true;
 }
 
-bool no3::init::Package::writeMain() {
+bool no3::init::Package::WriteMain() {
   if (!std::filesystem::create_directories(m_output / m_name / "src")) {
     LOG(ERROR) << "Failed to create package directories" << std::endl;
     return false;
@@ -101,7 +101,7 @@ pub "std" fn main(args: [str]): i32 {
   return true;
 }
 
-bool no3::init::Package::writeReadme() {
+bool no3::init::Package::WriteReadme() {
   std::ofstream readme((m_output / m_name / "README.md").string());
   if (!readme.is_open()) {
     LOG(ERROR) << "Failed to create README file" << std::endl;
@@ -147,36 +147,36 @@ bool no3::init::Package::writeReadme() {
   return true;
 }
 
-bool no3::init::Package::writeConfig() {
+bool no3::init::Package::WriteConfig() {
   conf::ConfigGroup grp;
 
-  grp.set("version", 1);
-  grp.set("name", m_name);
-  grp.set("description", m_description);
+  grp.Set("version", 1);
+  grp.Set("name", m_name);
+  grp.Set("description", m_description);
 
   if (!m_author.empty())
-    grp.set("authors", std::vector<std::string>({m_author}));
+    grp.Set("authors", std::vector<std::string>({m_author}));
 
-  if (!m_email.empty()) grp.set("emails", std::vector<std::string>({m_email}));
+  if (!m_email.empty()) grp.Set("emails", std::vector<std::string>({m_email}));
 
-  if (!m_url.empty()) grp.set("url", m_url);
+  if (!m_url.empty()) grp.Set("url", m_url);
 
   if (!m_license.empty())
-    grp.set("licenses", std::vector<std::string>({m_license}));
+    grp.Set("licenses", std::vector<std::string>({m_license}));
   else
-    grp.set("licenses", std::vector<std::string>());
+    grp.Set("licenses", std::vector<std::string>());
 
-  grp.set("sources", std::vector<std::string>({"src"}));
+  grp.Set("sources", std::vector<std::string>({"src"}));
 
   switch (m_type) {
     case PackageType::PROGRAM:
-      grp.set("target", "executable");
+      grp.Set("target", "executable");
       break;
     case PackageType::STATICLIB:
-      grp.set("target", "staticlib");
+      grp.Set("target", "staticlib");
       break;
     case PackageType::SHAREDLIB:
-      grp.set("target", "sharedlib");
+      grp.Set("target", "sharedlib");
       break;
   }
 
@@ -188,12 +188,12 @@ bool no3::init::Package::writeConfig() {
     return false;
   }
 
-  config_file << config.dump(conf::ConfigItemSerializationTarget::YAML);
+  config_file << config.Dump(conf::ConfigItemSerializationTarget::YAML);
 
   return true;
 }
 
-bool no3::init::Package::createPackage() {
+bool no3::init::Package::CreatePackage() {
   switch (m_type) {
     case PackageType::PROGRAM:
       LOG(INFO) << "Creating program package" << std::endl;
@@ -207,7 +207,7 @@ bool no3::init::Package::createPackage() {
   }
 
   try {
-    if (!writeGitIgnore() || !writeMain() || !writeReadme() || !writeConfig()) {
+    if (!WriteGitIgnore() || !WriteMain() || !WriteReadme() || !WriteConfig()) {
       return false;
     }
 
@@ -236,28 +236,28 @@ bool no3::init::Package::createPackage() {
   }
 }
 
-bool no3::init::Package::create() {
-  if (!validateName(m_name)) {
+bool no3::init::Package::Create() {
+  if (!ValidateName(m_name)) {
     LOG(ERROR) << "Invalid package name: " << m_name << std::endl;
     return false;
   }
 
-  if (!validateVersion(m_version)) {
+  if (!ValidateVersion(m_version)) {
     LOG(ERROR) << "Invalid package version: " << m_version << std::endl;
     return false;
   }
 
-  if (!m_email.empty() && !validateEmail(m_email)) {
+  if (!m_email.empty() && !ValidateEmail(m_email)) {
     LOG(ERROR) << "Invalid package email: " << m_email << std::endl;
     return false;
   }
 
-  if (!m_url.empty() && !validateUrl(m_url)) {
+  if (!m_url.empty() && !ValidateUrl(m_url)) {
     LOG(ERROR) << "Invalid package url: " << m_url << std::endl;
     return false;
   }
 
-  if (!m_license.empty() && !validateLicense(m_license)) {
+  if (!m_license.empty() && !ValidateLicense(m_license)) {
     LOG(ERROR) << "Invalid package SPDX license identifier: " << m_license
                << std::endl;
     return false;
@@ -285,74 +285,74 @@ bool no3::init::Package::create() {
     return false;
   }
 
-  return createPackage();
+  return CreatePackage();
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::output(
+no3::init::PackageBuilder &no3::init::PackageBuilder::Output(
     const std::string &output) {
   m_output = output;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::name(
+no3::init::PackageBuilder &no3::init::PackageBuilder::Name(
     const std::string &name) {
   m_name = name;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::license(
+no3::init::PackageBuilder &no3::init::PackageBuilder::License(
     const std::string &license) {
   m_license = license;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::author(
+no3::init::PackageBuilder &no3::init::PackageBuilder::Author(
     const std::string &author) {
   m_author = author;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::email(
+no3::init::PackageBuilder &no3::init::PackageBuilder::Email(
     const std::string &email) {
   m_email = email;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::url(
+no3::init::PackageBuilder &no3::init::PackageBuilder::Url(
     const std::string &url) {
   m_url = url;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::version(
+no3::init::PackageBuilder &no3::init::PackageBuilder::Version(
     const std::string &version) {
   m_version = version;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::description(
+no3::init::PackageBuilder &no3::init::PackageBuilder::Description(
     const std::string &description) {
   m_description = description;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::type(
+no3::init::PackageBuilder &no3::init::PackageBuilder::Type(
     no3::init::PackageType type) {
   m_type = type;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::verbose(bool verbose) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::Verbose(bool verbose) {
   m_verbose = verbose;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::force(bool force) {
+no3::init::PackageBuilder &no3::init::PackageBuilder::Force(bool force) {
   m_force = force;
   return *this;
 }
 
-no3::init::Package no3::init::PackageBuilder::build() {
+no3::init::Package no3::init::PackageBuilder::Build() {
   return no3::init::Package(m_output, m_name, m_license, m_author, m_email,
                             m_url, m_version, m_description, m_type, m_verbose,
                             m_force);

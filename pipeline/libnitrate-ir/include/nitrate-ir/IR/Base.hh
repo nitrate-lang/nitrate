@@ -319,7 +319,7 @@ namespace ncc::ir {
   } __attribute__((packed)) __attribute__((aligned(1)));
 
   static_assert(sizeof(GenericExpr<void>) == 8,
-                "IR_Vertex_Expr<void> is not 8 bytes in size.");
+                "GenericExpr<void> is not 8 bytes in size.");
 
   template <class A>
   class GenericType : public GenericExpr<A> {
@@ -532,7 +532,7 @@ namespace ncc::ir {
       }
 
       case IR_eIDENT: {
-        r = as<GenericIdent<A>>()->getName();
+        r = as<GenericIdent<A>>()->GetName();
         break;
       }
 
@@ -541,7 +541,7 @@ namespace ncc::ir {
       }
 
       case IR_eLOCAL: {
-        r = as<GenericLocal<A>>()->getName();
+        r = as<GenericLocal<A>>()->GetName();
         break;
       }
 
@@ -582,7 +582,7 @@ namespace ncc::ir {
       }
 
       case IR_eFUNCTION: {
-        r = as<GenericFunction<A>>()->getName();
+        r = as<GenericFunction<A>>()->GetName();
         break;
       }
 
@@ -659,12 +659,12 @@ namespace ncc::ir {
       }
 
       case IR_tCONST: {
-        r = as<GenericConstTy<A>>()->getItem()->getName();
+        r = as<GenericConstTy<A>>()->GetItem()->GetName();
         break;
       }
 
       case IR_tOPAQUE: {
-        r = as<GenericOpaqueTy<A>>()->getName();
+        r = as<GenericOpaqueTy<A>>()->GetName();
         break;
       }
 
@@ -694,8 +694,8 @@ namespace ncc::ir {
 
   template <class A>
   constexpr uint32_t GenericExpr<A>::GetKindSize(NrTyT type) {
-    const std::array<size_t, kIrCount> sizes = []() {
-      std::array<size_t, kIrCount> r;
+    const std::array<size_t, kIRNodeKindCount> sizes = []() {
+      std::array<size_t, kIRNodeKindCount> r;
       r.fill(0);
 
       r[IR_eBIN] = sizeof(GenericBinExpr<A>);
@@ -753,8 +753,8 @@ namespace ncc::ir {
 
   template <class A>
   constexpr const char *GenericExpr<A>::GetKindName(NrTyT type) {
-    const std::array<const char *, kIrCount> names = []() {
-      std::array<const char *, kIrCount> r;
+    const std::array<const char *, kIRNodeKindCount> names = []() {
+      std::array<const char *, kIRNodeKindCount> r;
       r.fill("");
 
       r[IR_eBIN] = "bin_expr";

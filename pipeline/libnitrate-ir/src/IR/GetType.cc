@@ -22,7 +22,7 @@
 ///                                                                          ///
 ///   The Nitrate Toolcain is distributed in the hope that it will be        ///
 ///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
-///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
+///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSe.  See the GNU      ///
 ///   Lesser General Public License for more details.                        ///
 ///                                                                          ///
 ///   You should have received a copy of the GNU Lesser General Public       ///
@@ -102,64 +102,64 @@ static NullableFlowPtr<Type> Promote(NullableFlowPtr<Type> lhs,
     }
 
     if (l->is(IR_tF128_TY) || r->is(IR_tF128_TY)) {
-      return MakeFlowPtr(getF128Ty());
+      return MakeFlowPtr(GetF128Ty());
     }
 
     if (l->is(IR_tF64_TY) || r->is(IR_tF64_TY)) {
-      return MakeFlowPtr(getF64Ty());
+      return MakeFlowPtr(GetF64Ty());
     }
 
     if (l->is(IR_tF32_TY) || r->is(IR_tF32_TY)) {
-      return MakeFlowPtr(getF32Ty());
+      return MakeFlowPtr(GetF32Ty());
     }
 
     if (l->is(IR_tF16_TY) || r->is(IR_tF16_TY)) {
-      return MakeFlowPtr(getF16Ty());
+      return MakeFlowPtr(GetF16Ty());
     }
     ///===========================================================================
 
     ///===========================================================================
     /// NOTE: If L && R are both unsigned integers, the larger type is used.
-    if (l->is_unsigned() && r->is_unsigned()) {
-      auto ls = l->getSizeBits(), rs = r->getSizeBits();
-      if (!LS.has_value() || !RS.has_value()) {
+    if (l->IsUnsigned() && r->IsUnsigned()) {
+      auto ls = l->GetSizeBits(), rs = r->GetSizeBits();
+      if (!ls.has_value() || !rs.has_value()) {
         return std::nullopt;
       }
-      return LS > RS ? l : r;
+      return ls > rs ? l : r;
     }
     ///===========================================================================
 
     ///===========================================================================
     /// NOTE: If L && R are both signed integers, the larger type is used.
-    if ((l->is_signed() && l->is_integral()) &&
-        (r->is_signed() && r->is_integral())) {
-      auto ls = l->getSizeBits(), rs = r->getSizeBits();
-      if (!LS.has_value() || !RS.has_value()) {
+    if ((l->IsSigned() && l->IsIntegral()) &&
+        (r->IsSigned() && r->IsIntegral())) {
+      auto ls = l->GetSizeBits(), rs = r->GetSizeBits();
+      if (!ls.has_value() || !rs.has_value()) {
         return std::nullopt;
       }
-      return LS > RS ? l : r;
+      return ls > rs ? l : r;
     }
     ///===========================================================================
 
     ///===========================================================================
     /// NOTE: If either L or R is a signed integer, the signed integer is
     /// promoted.
-    if (l->is_integral() && l->is_signed()) {
-      auto ls = l->getSizeBits(), rs = r->getSizeBits();
-      if (!LS.has_value() || !RS.has_value()) {
+    if (l->IsIntegral() && l->IsSigned()) {
+      auto ls = l->GetSizeBits(), rs = r->GetSizeBits();
+      if (!ls.has_value() || !rs.has_value()) {
         return std::nullopt;
       }
-      if (ls > RS) {
+      if (ls > rs) {
         return SignedComplement(lt);
       } else {
         return r;
       }
-    } else if (r->is_integral() && r->is_signed()) {
-      auto ls = l->getSizeBits(), rs = r->getSizeBits();
-      if (!LS.has_value() || !RS.has_value()) {
+    } else if (r->IsIntegral() && r->IsSigned()) {
+      auto ls = l->GetSizeBits(), rs = r->GetSizeBits();
+      if (!ls.has_value() || !rs.has_value()) {
         return std::nullopt;
       }
-      if (rs > LS) {
+      if (rs > ls) {
         return SignedComplement(rt);
       } else {
         return l;
@@ -186,69 +186,69 @@ static NullableFlowPtr<Type> InferUnaryExpression(NullableFlowPtr<Type> e,
 
   switch (o) {
     case OpPlus: {
-      r = E;
+      r = e;
       break;
     }
 
     case OpMinus: {
-      r = E;
+      r = e;
       break;
     }
 
     case OpTimes: {
-      if (e.has_value() && E.value()->is_pointer()) {
-        r = E.value()->as<PtrTy>()->getPointee();
+      if (e.has_value() && e.value()->IsPointer()) {
+        r = e.value()->as<PtrTy>()->GetPointee();
       }
       break;
     }
 
     case OpBitAnd: {
-      e && (r = getPtrTy(E.value()));
+      e && (r = GetPtrTy(e.value()));
       break;
     }
 
     case OpBitNot: {
-      r = E;
+      r = e;
       break;
     }
 
     case OpLogicNot: {
-      r = getU1Ty();
+      r = GetU1Ty();
       break;
     }
 
     case OpInc: {
-      r = E;
+      r = e;
       break;
     }
 
     case OpDec: {
-      r = E;
+      r = e;
       break;
     }
 
     case OpSizeof: {
-      r = getU64Ty();
+      r = GetU64Ty();
       break;
     }
 
     case OpBitsizeof: {
-      r = getU64Ty();
+      r = GetU64Ty();
       break;
     }
 
     case OpAlignof: {
-      r = getU64Ty();
+      r = GetU64Ty();
       break;
     }
 
     case OpTypeof: {
-      r = E;
+      r = e;
       break;
     }
 
     case OpComptime: {
-      r = E;
+      r = e;
       break;
     }
 
@@ -298,7 +298,7 @@ static NullableFlowPtr<Type> InferUnaryExpression(NullableFlowPtr<Type> e,
     }
   }
 
-  return R;
+  return e;
 }
 
 static NullableFlowPtr<Type> InferBinaryExpression(NullableFlowPtr<Type> lhs,
@@ -332,7 +332,7 @@ static NullableFlowPtr<Type> InferBinaryExpression(NullableFlowPtr<Type> lhs,
     case OpTernary:
     case OpInc:
     case OpDec: {
-      r = promote(LHS, RHS);
+      r = Promote(lhs, rhs);
     }
 
     case OpLogicAnd:
@@ -345,7 +345,7 @@ static NullableFlowPtr<Type> InferBinaryExpression(NullableFlowPtr<Type> lhs,
     case OpGE:
     case OpEq:
     case OpNE: {
-      r = getU1Ty();
+      r = GetU1Ty();
       break;
     }
 
@@ -371,94 +371,94 @@ static NullableFlowPtr<Type> InferBinaryExpression(NullableFlowPtr<Type> lhs,
     case OpRShift:
     case OpROTL:
     case OpROTR: {
-      r = RHS;
+      r = rhs;
       break;
     }
   }
 
-  return R;
+  return r;
 }
 
 class InferenceVisitor : public IRVisitor<void> {
-  std::optional<FlowPtr<Type>> m_R;
+  std::optional<FlowPtr<Type>> m_r;
 
 public:
   InferenceVisitor() {}
   virtual ~InferenceVisitor() = default;
 
-  std::optional<FlowPtr<Type>> Get() { return R; }
+  std::optional<FlowPtr<Type>> Get() { return m_r; }
 
-  void visit(FlowPtr<Expr>) override {}
+  void Visit(FlowPtr<Expr>) override {}
 
-  void visit(FlowPtr<BinExpr> n) override {
-    auto lhs = n->getLHS()->getType(), rhs = n->getRHS()->getType();
+  void Visit(FlowPtr<BinExpr> n) override {
+    auto lhs = n->GetLHS()->GetType(), rhs = n->GetRHS()->GetType();
 
-    if (auto Type = InferBinaryExpression(LHS, n->getOp(), RHS)) {
-      R = Type.value();
+    if (auto type = InferBinaryExpression(lhs, n->GetOp(), rhs)) {
+      m_r = type.value();
     }
   }
 
-  void visit(FlowPtr<Unary> n) override {
-    if (auto E = n->getExpr()->getType()) {
-      if (auto Type = InferUnaryExpression(E.value(), n->getOp())) {
-        R = Type.value();
+  void Visit(FlowPtr<Unary> n) override {
+    if (auto e = n->GetExpr()->GetType()) {
+      if (auto type = InferUnaryExpression(e.value(), n->GetOp())) {
+        m_r = type.value();
       }
     }
   }
 
-  void visit(FlowPtr<U1Ty> n) override { R = n; }
-  void visit(FlowPtr<U8Ty> n) override { R = n; }
-  void visit(FlowPtr<U16Ty> n) override { R = n; }
-  void visit(FlowPtr<U32Ty> n) override { R = n; }
-  void visit(FlowPtr<U64Ty> n) override { R = n; }
-  void visit(FlowPtr<U128Ty> n) override { R = n; }
-  void visit(FlowPtr<I8Ty> n) override { R = n; }
-  void visit(FlowPtr<I16Ty> n) override { R = n; }
-  void visit(FlowPtr<I32Ty> n) override { R = n; }
-  void visit(FlowPtr<I64Ty> n) override { R = n; }
-  void visit(FlowPtr<I128Ty> n) override { R = n; }
-  void visit(FlowPtr<F16Ty> n) override { R = n; }
-  void visit(FlowPtr<F32Ty> n) override { R = n; }
-  void visit(FlowPtr<F64Ty> n) override { R = n; }
-  void visit(FlowPtr<F128Ty> n) override { R = n; }
-  void visit(FlowPtr<VoidTy> n) override { R = n; }
-  void visit(FlowPtr<PtrTy> n) override { R = n; }
-  void visit(FlowPtr<ConstTy> n) override { R = n; }
-  void visit(FlowPtr<OpaqueTy> n) override { R = n; }
-  void visit(FlowPtr<StructTy> n) override { R = n; }
-  void visit(FlowPtr<UnionTy> n) override { R = n; }
-  void visit(FlowPtr<ArrayTy> n) override { R = n; }
-  void visit(FlowPtr<FnTy> n) override { R = n; }
+  void Visit(FlowPtr<U1Ty> n) override { m_r = n; }
+  void Visit(FlowPtr<U8Ty> n) override { m_r = n; }
+  void Visit(FlowPtr<U16Ty> n) override { m_r = n; }
+  void Visit(FlowPtr<U32Ty> n) override { m_r = n; }
+  void Visit(FlowPtr<U64Ty> n) override { m_r = n; }
+  void Visit(FlowPtr<U128Ty> n) override { m_r = n; }
+  void Visit(FlowPtr<I8Ty> n) override { m_r = n; }
+  void Visit(FlowPtr<I16Ty> n) override { m_r = n; }
+  void Visit(FlowPtr<I32Ty> n) override { m_r = n; }
+  void Visit(FlowPtr<I64Ty> n) override { m_r = n; }
+  void Visit(FlowPtr<I128Ty> n) override { m_r = n; }
+  void Visit(FlowPtr<F16Ty> n) override { m_r = n; }
+  void Visit(FlowPtr<F32Ty> n) override { m_r = n; }
+  void Visit(FlowPtr<F64Ty> n) override { m_r = n; }
+  void Visit(FlowPtr<F128Ty> n) override { m_r = n; }
+  void Visit(FlowPtr<VoidTy> n) override { m_r = n; }
+  void Visit(FlowPtr<PtrTy> n) override { m_r = n; }
+  void Visit(FlowPtr<ConstTy> n) override { m_r = n; }
+  void Visit(FlowPtr<OpaqueTy> n) override { m_r = n; }
+  void Visit(FlowPtr<StructTy> n) override { m_r = n; }
+  void Visit(FlowPtr<UnionTy> n) override { m_r = n; }
+  void Visit(FlowPtr<ArrayTy> n) override { m_r = n; }
+  void Visit(FlowPtr<FnTy> n) override { m_r = n; }
 
-  void visit(FlowPtr<Int> n) override {
-    switch (n->getSize()) {
+  void Visit(FlowPtr<Int> n) override {
+    switch (n->GetSize()) {
       case 1: {
-        R = getU1Ty();
+        m_r = GetU1Ty();
         break;
       }
 
       case 8: {
-        R = getU8Ty();
+        m_r = GetU8Ty();
         break;
       }
 
       case 16: {
-        R = getU16Ty();
+        m_r = GetU16Ty();
         break;
       }
 
       case 32: {
-        R = getU32Ty();
+        m_r = GetU32Ty();
         break;
       }
 
       case 64: {
-        R = getU64Ty();
+        m_r = GetU64Ty();
         break;
       }
 
       case 128: {
-        R = getU128Ty();
+        m_r = GetU128Ty();
         break;
       }
 
@@ -468,44 +468,44 @@ public:
     }
   }
 
-  void visit(FlowPtr<Float> n) override {
-    switch (n->getSize()) {
+  void Visit(FlowPtr<Float> n) override {
+    switch (n->GetSize()) {
       case 16: {
-        R = getF16Ty();
+        m_r = GetF16Ty();
         break;
       }
 
       case 32: {
-        R = getF32Ty();
+        m_r = GetF32Ty();
         break;
       }
 
       case 64: {
-        R = getF64Ty();
+        m_r = GetF64Ty();
         break;
       }
 
       case 128: {
-        R = getF128Ty();
+        m_r = GetF128Ty();
         break;
       }
     }
   }
 
-  void visit(FlowPtr<List> n) override {
-    if (n->empty()) {
-      R = getStructTy({});
-    } else if (n->isHomogenous()) {
-      if (auto item_type = (*n->begin())->getType()) {
-        R = getArrayTy(item_type.value(), n->size());
+  void Visit(FlowPtr<List> n) override {
+    if (n->Empty()) {
+      m_r = GetStructTy({});
+    } else if (n->IsHomogenous()) {
+      if (auto item_type = (*n->Begin())->GetType()) {
+        m_r = GetArrayTy(item_type.value(), n->Size());
       }
     } else {
       std::vector<FlowPtr<Type>> types;
-      types.reserve(n->size());
+      types.reserve(n->Size());
       bool okay = true;
 
-      for (size_t i = 0; i < n->size(); ++i) {
-        if (auto item_type = n->at(i)->getType()) {
+      for (size_t i = 0; i < n->Size(); ++i) {
+        if (auto item_type = n->At(i)->GetType()) {
           types.push_back(item_type.value());
         } else {
           okay = false;
@@ -513,44 +513,44 @@ public:
         }
       }
 
-      okay && (R = getStructTy(types));
+      okay && (m_r = GetStructTy(types));
     }
   }
 
-  void visit(FlowPtr<Call> n) override {
-    if (auto callee = n->getTarget()) {
-      if (auto callee_ty = callee.value()->getType()) {
-        if (callee_ty.value()->is_function()) {
-          R = callee_ty.value()->as<FnTy>()->getReturn();
+  void Visit(FlowPtr<Call> n) override {
+    if (auto callee = n->GetTarget()) {
+      if (auto callee_ty = callee.value()->GetType()) {
+        if (callee_ty.value()->IsFunction()) {
+          m_r = callee_ty.value()->as<FnTy>()->GetReturn();
         }
       }
     }
   }
 
-  void visit(FlowPtr<Seq> n) override {
-    if (n->empty()) {
-      R = getVoidTy();
+  void Visit(FlowPtr<Seq> n) override {
+    if (n->Empty()) {
+      m_r = GetVoidTy();
     } else {
-      R = (*n->end())->getType();
+      m_r = (*n->End())->GetType();
     }
   }
 
-  void visit(FlowPtr<Index> n) override {
-    auto base_type_opt = n->getExpr()->getType();
+  void Visit(FlowPtr<Index> n) override {
+    auto base_type_opt = n->GetExpr()->GetType();
 
     if (base_type_opt.has_value(); auto base = base_type_opt.value()) {
       if (base->is(IR_tPTR)) {  // *X -> X
-        R = base->as<PtrTy>()->getPointee();
+        m_r = base->as<PtrTy>()->GetPointee();
       } else if (base->is(IR_tARRAY)) {  // [X; N] -> X
-        R = base->as<ArrayTy>()->getElement();
+        m_r = base->as<ArrayTy>()->GetElement();
       } else if (base->is(IR_tSTRUCT)) {  // struct { a, b, c }[1] -> b
 
-        if (auto index = n->getIndex(); index->is(IR_eINT)) {
-          auto num = index->as<Int>()->getValue();
+        if (auto index = n->GetIndex(); index->is(IR_eINT)) {
+          auto num = index->as<Int>()->GetValue();
           auto st = base->as<StructTy>();
 
-          if (num < st->getFields().size()) {
-            R = st->getFields()[num.convert_to<std::size_t>()];
+          if (num < st->GetFields().size()) {
+            m_r = st->GetFields()[num.convert_to<std::size_t>()];
           } else {
             // Out of bounds
           }
@@ -558,12 +558,12 @@ public:
           // Invalid: index must be of type int to index into a struct
         }
       } else if (base->is(IR_tUNION)) {
-        if (auto index = n->getIndex(); index->is(IR_eINT)) {
-          auto num = index->as<Int>()->getValue();
+        if (auto index = n->GetIndex(); index->is(IR_eINT)) {
+          auto num = index->as<Int>()->GetValue();
           auto st = base->as<UnionTy>();
 
-          if (num < st->getFields().size()) {
-            R = st->getFields()[num.convert_to<std::size_t>()];
+          if (num < st->GetFields().size()) {
+            m_r = st->GetFields()[num.convert_to<std::size_t>()];
           } else {
             // Out of bounds
           }
@@ -574,36 +574,36 @@ public:
     }
   }
 
-  void visit(FlowPtr<Ident> n) override {
-    if (n->getWhat().has_value()) {
-      R = n->getWhat().value()->getType();
+  void Visit(FlowPtr<Ident> n) override {
+    if (n->GetWhat().has_value()) {
+      m_r = n->GetWhat().value()->GetType();
     }
   }
 
-  void visit(FlowPtr<Extern>) override { R = getVoidTy(); }
-  void visit(FlowPtr<Local> n) override { R = n->getValue()->getType(); }
-  void visit(FlowPtr<Ret>) override { R = getVoidTy(); }
-  void visit(FlowPtr<Brk>) override { R = getVoidTy(); }
-  void visit(FlowPtr<Cont>) override { R = getVoidTy(); }
-  void visit(FlowPtr<If>) override { R = getVoidTy(); }
-  void visit(FlowPtr<While>) override { R = getVoidTy(); }
-  void visit(FlowPtr<For>) override { R = getVoidTy(); }
-  void visit(FlowPtr<Case>) override { R = getVoidTy(); }
-  void visit(FlowPtr<Switch>) override { R = getVoidTy(); }
+  void Visit(FlowPtr<Extern>) override { m_r = GetVoidTy(); }
+  void Visit(FlowPtr<Local> n) override { m_r = n->GetValue()->GetType(); }
+  void Visit(FlowPtr<Ret>) override { m_r = GetVoidTy(); }
+  void Visit(FlowPtr<Brk>) override { m_r = GetVoidTy(); }
+  void Visit(FlowPtr<Cont>) override { m_r = GetVoidTy(); }
+  void Visit(FlowPtr<If>) override { m_r = GetVoidTy(); }
+  void Visit(FlowPtr<While>) override { m_r = GetVoidTy(); }
+  void Visit(FlowPtr<For>) override { m_r = GetVoidTy(); }
+  void Visit(FlowPtr<Case>) override { m_r = GetVoidTy(); }
+  void Visit(FlowPtr<Switch>) override { m_r = GetVoidTy(); }
 
-  void visit(FlowPtr<Function> n) override {
+  void Visit(FlowPtr<Function> n) override {
     std::vector<FlowPtr<Type>> params;
-    params.reserve(n->getParams().size());
+    params.reserve(n->GetParams().size());
 
-    for (auto item : n->getParams()) {
+    for (auto item : n->GetParams()) {
       params.push_back(item.first);
     }
 
-    R = getFnTy(params, n->getReturn(), n->isVariadic());
+    m_r = GetFnTy(params, n->GetReturn(), n->IsVariadic());
   }
 
-  void visit(FlowPtr<Asm>) override { R = getVoidTy(); }
-  void visit(FlowPtr<Tmp> n) override { R = n; }
+  void Visit(FlowPtr<Asm>) override { m_r = GetVoidTy(); }
+  void Visit(FlowPtr<Tmp> n) override { m_r = n; }
 };
 
 NCC_EXPORT std::optional<FlowPtr<Type>> detail::ExprGetType(Expr* e) {
@@ -620,7 +620,7 @@ NCC_EXPORT std::optional<FlowPtr<Type>> detail::ExprGetType(Expr* e) {
   state.m_depth--;
 
   if (state.m_depth == 0) {
-    state.visited.clear();
+    state.m_visited.clear();
   }
 
   return visitor.Get();

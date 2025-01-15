@@ -142,7 +142,7 @@
 //   return compiler_trace(debug_info(create<F64Ty>(), DEBUG_INFO));
 // }
 
-// F128Ty *NRBuilder::getF128Ty(SOURCE_LOCATION_PARAM_ONCE) {
+// F128Ty *NRBuilder::GetF128Ty(SOURCE_LOCATION_PARAM_ONCE) {
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
 
@@ -367,10 +367,11 @@
 // }
 
 // std::optional<Expr *> NRBuilder::getDefaultValue(
-//     FlowPtr<Type>_for SOURCE_LOCATION_PARAM) {
+//     FlowPtr<Type>src_loc SOURCE_LOCATION_PARAM) {
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
-//   contract_enforce(_for != nullptr && static_cast<Expr *>(_for)->isType());
+//   contract_enforce(src_loc != nullptr && static_cast<Expr
+//   *>(_for)->isType());
 
 //   std::optional<Expr *> E;
 
@@ -462,7 +463,7 @@
 
 //     case IR_tCONST: {
 //       ConstTy *const_ty = _for->as<ConstTy>();
-//       auto e = getDefaultValue(const_ty->getItem());
+//       auto e = getDefaultValue(const_ty->GetItem());
 //       if (e) {
 //         E = create<BinExpr>(e.value(), _for, Op::CastAs);
 //       }
@@ -552,7 +553,7 @@
 //     return std::nullopt;
 //   }
 
-//   if (auto type = E.value()->getType()) {
+//   if (auto type = E.value()->GetType()) {
 //     if (!type.value()->IsEq(_for)) {
 //       E = create<BinExpr>(E.value(), _for->asExpr(), Op::CastAs);
 //     }

@@ -49,7 +49,7 @@ static const std::unordered_map<StorageClass, std::string_view>
         {StorageClass::Managed, "managed"},
 };
 
-void IrWriter::WriteSourceLocation(FlowPtr<Expr> n) const {
+void IRWriter::WriteSourceLocation(FlowPtr<Expr> n) const {
   string("loc");
 
   if (m_rd.has_value()) {
@@ -130,281 +130,281 @@ void IrWriter::WriteSourceLocation(FlowPtr<Expr> n) const {
   }
 }
 
-void IrWriter::Visit(FlowPtr<Expr> n) {
+void IRWriter::Visit(FlowPtr<Expr> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<BinExpr> n) {
+void IRWriter::Visit(FlowPtr<BinExpr> n) {
   begin_obj(5);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("op");
-  string(op_repr(n->getOp()));
+  string(op_repr(n->GetOp()));
 
   string("lhs");
-  n->getLHS().Accept(*this);
+  n->GetLHS().Accept(*this);
 
   string("rhs");
-  n->getRHS().Accept(*this);
+  n->GetRHS().Accept(*this);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Unary> n) {
+void IRWriter::Visit(FlowPtr<Unary> n) {
   begin_obj(4);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("op");
-  string(op_repr(n->getOp()));
+  string(op_repr(n->GetOp()));
 
   string("expr");
-  n->getExpr().Accept(*this);
+  n->GetExpr().Accept(*this);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<U1Ty> n) {
+void IRWriter::Visit(FlowPtr<U1Ty> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<U8Ty> n) {
+void IRWriter::Visit(FlowPtr<U8Ty> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<U16Ty> n) {
+void IRWriter::Visit(FlowPtr<U16Ty> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<U32Ty> n) {
+void IRWriter::Visit(FlowPtr<U32Ty> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<U64Ty> n) {
+void IRWriter::Visit(FlowPtr<U64Ty> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<U128Ty> n) {
+void IRWriter::Visit(FlowPtr<U128Ty> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<I8Ty> n) {
+void IRWriter::Visit(FlowPtr<I8Ty> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<I16Ty> n) {
+void IRWriter::Visit(FlowPtr<I16Ty> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<I32Ty> n) {
+void IRWriter::Visit(FlowPtr<I32Ty> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<I64Ty> n) {
+void IRWriter::Visit(FlowPtr<I64Ty> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<I128Ty> n) {
+void IRWriter::Visit(FlowPtr<I128Ty> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<F16Ty> n) {
+void IRWriter::Visit(FlowPtr<F16Ty> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<F32Ty> n) {
+void IRWriter::Visit(FlowPtr<F32Ty> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<F64Ty> n) {
+void IRWriter::Visit(FlowPtr<F64Ty> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<F128Ty> n) {
+void IRWriter::Visit(FlowPtr<F128Ty> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<VoidTy> n) {
+void IRWriter::Visit(FlowPtr<VoidTy> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<PtrTy> n) {
+void IRWriter::Visit(FlowPtr<PtrTy> n) {
   begin_obj(3);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("pointee");
-  n->getPointee().Accept(*this);
+  n->GetPointee().Accept(*this);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<ConstTy> n) {
+void IRWriter::Visit(FlowPtr<ConstTy> n) {
   begin_obj(3);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("value");
-  n->getItem().Accept(*this);
+  n->GetItem().Accept(*this);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<OpaqueTy> n) {
+void IRWriter::Visit(FlowPtr<OpaqueTy> n) {
   begin_obj(3);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("name");
-  string(n->getName());
+  string(n->GetName());
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<StructTy> n) {
+void IRWriter::Visit(FlowPtr<StructTy> n) {
   begin_obj(3);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
-  auto fields = n->getFields();
+  auto fields = n->GetFields();
 
   string("fields");
   begin_arr(fields.size());
@@ -417,15 +417,15 @@ void IR_Writer::visit(FlowPtr<StructTy> n) {
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<UnionTy> n) {
+void IRWriter::Visit(FlowPtr<UnionTy> n) {
   begin_obj(3);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
-  auto fields = n->getFields();
+  auto fields = n->GetFields();
 
   string("fields");
   begin_arr(fields.size());
@@ -438,34 +438,34 @@ void IR_Writer::visit(FlowPtr<UnionTy> n) {
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<ArrayTy> n) {
+void IRWriter::Visit(FlowPtr<ArrayTy> n) {
   begin_obj(4);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("element");
-  n->getElement().Accept(*this);
+  n->GetElement().Accept(*this);
 
   string("size");
-  uint64(n->getCount());
+  uint64(n->GetCount());
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<FnTy> n) {
+void IRWriter::Visit(FlowPtr<FnTy> n) {
   begin_obj(5);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("parameters");
 
-  auto params = n->getParams();
+  auto params = n->GetParams();
   begin_arr(params.size());
 
   std::for_each(params.begin(), params.end(),
@@ -474,76 +474,76 @@ void IR_Writer::visit(FlowPtr<FnTy> n) {
   end_arr();
 
   string("variadic");
-  boolean(n->isVariadic());
+  boolean(n->IsVariadic());
 
   string("return");
-  n->getReturn().Accept(*this);
+  n->GetReturn().Accept(*this);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Int> n) {
+void IRWriter::Visit(FlowPtr<Int> n) {
   begin_obj(4);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("value");
-  string(n->getValueString());
+  string(n->GetValueString());
 
   string("type");
-  uint64(n->getSize());
+  uint64(n->GetSize());
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Float> n) {
+void IRWriter::Visit(FlowPtr<Float> n) {
   begin_obj(4);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("value");
-  dbl(n->getValue());
+  dbl(n->GetValue());
 
   string("type");
-  uint64(n->getSize());
+  uint64(n->GetSize());
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<List> n) {
+void IRWriter::Visit(FlowPtr<List> n) {
   begin_obj(4);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("items");
-  begin_arr(n->size());
+  begin_arr(n->Size());
 
-  std::for_each(n->begin(), n->end(), [&](auto &item) { item->Accept(*this); });
+  std::for_each(n->Begin(), n->End(), [&](auto &item) { item->Accept(*this); });
 
   end_arr();
 
   string("homegenous");
-  boolean(n->isHomogenous());
+  boolean(n->IsHomogenous());
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Call> n) {
+void IRWriter::Visit(FlowPtr<Call> n) {
   begin_obj(4);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("callee");
   /// TODO: Handle possibly cyclic reference to callee
@@ -551,7 +551,7 @@ void IR_Writer::visit(FlowPtr<Call> n) {
 
   string("arguments");
 
-  auto args = n->getArgs();
+  auto args = n->GetArgs();
   begin_arr(args.size());
 
   std::for_each(args.begin(), args.end(),
@@ -562,227 +562,227 @@ void IR_Writer::visit(FlowPtr<Call> n) {
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Seq> n) {
+void IRWriter::Visit(FlowPtr<Seq> n) {
   begin_obj(3);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("items");
-  begin_arr(n->size());
+  begin_arr(n->Size());
 
-  std::for_each(n->begin(), n->end(), [&](auto &item) { item->Accept(*this); });
+  std::for_each(n->Begin(), n->End(), [&](auto &item) { item->Accept(*this); });
 
   end_arr();
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Index> n) {
+void IRWriter::Visit(FlowPtr<Index> n) {
   begin_obj(4);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("base");
-  n->getExpr().Accept(*this);
+  n->GetExpr().Accept(*this);
 
   string("index");
-  n->getIndex().Accept(*this);
+  n->GetIndex().Accept(*this);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Ident> n) {
+void IRWriter::Visit(FlowPtr<Ident> n) {
   begin_obj(3);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("name");
-  string(n->getName());
+  string(n->GetName());
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Extern> n) {
+void IRWriter::Visit(FlowPtr<Extern> n) {
   begin_obj(4);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("value");
-  n->getValue().Accept(*this);
+  n->GetValue().Accept(*this);
 
   string("abi_name");
-  string(n->getAbiName());
+  string(n->GetAbiName());
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Local> n) {
+void IRWriter::Visit(FlowPtr<Local> n) {
   begin_obj(7);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("name");
-  string(n->getName());
+  string(n->GetName());
 
   string("abi_name");
-  string(n->getAbiName());
+  string(n->GetAbiName());
 
   string("storage");
-  string(STORAGE_CLASS_REPR.at(n->getStorageClass()));
+  string(STORAGE_CLASS_REPR.at(n->GetStorageClass()));
 
   string("readonly");
-  boolean(n->isReadonly());
+  boolean(n->IsReadonly());
 
   string("value");
-  n->getValue().Accept(*this);
+  n->GetValue().Accept(*this);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Ret> n) {
+void IRWriter::Visit(FlowPtr<Ret> n) {
   begin_obj(3);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("expr");
-  n->getExpr().Accept(*this);
+  n->GetExpr().Accept(*this);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Brk> n) {
+void IRWriter::Visit(FlowPtr<Brk> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Cont> n) {
+void IRWriter::Visit(FlowPtr<Cont> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<If> n) {
+void IRWriter::Visit(FlowPtr<If> n) {
   begin_obj(5);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("cond");
-  n->getCond().Accept(*this);
+  n->GetCond().Accept(*this);
 
   string("then");
-  n->getThen().Accept(*this);
+  n->GetThen().Accept(*this);
 
   string("else");
-  n->getElse().Accept(*this);
+  n->GetElse().Accept(*this);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<While> n) {
+void IRWriter::Visit(FlowPtr<While> n) {
   begin_obj(4);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("cond");
-  n->getCond().Accept(*this);
+  n->GetCond().Accept(*this);
 
   string("body");
-  n->getBody().Accept(*this);
+  n->GetBody().Accept(*this);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<For> n) {
+void IRWriter::Visit(FlowPtr<For> n) {
   begin_obj(6);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("init");
-  n->getInit().Accept(*this);
+  n->GetInit().Accept(*this);
 
   string("cond");
-  n->getCond().Accept(*this);
+  n->GetCond().Accept(*this);
 
   string("step");
-  n->getStep().Accept(*this);
+  n->GetStep().Accept(*this);
 
   string("body");
-  n->getBody().Accept(*this);
+  n->GetBody().Accept(*this);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Case> n) {
+void IRWriter::Visit(FlowPtr<Case> n) {
   begin_obj(4);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("cond");
-  n->getCond().Accept(*this);
+  n->GetCond().Accept(*this);
 
   string("body");
-  n->getBody().Accept(*this);
+  n->GetBody().Accept(*this);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Switch> n) {
+void IRWriter::Visit(FlowPtr<Switch> n) {
   begin_obj(1);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("cond");
-  n->getCond().Accept(*this);
+  n->GetCond().Accept(*this);
 
   string("default");
-  n->getDefault().has_value() ? n->getDefault().value()->Accept(*this) : null();
+  n->GetDefault().has_value() ? n->GetDefault().value()->Accept(*this) : null();
 
   string("cases");
-  auto cases = n->getCases();
+  auto cases = n->GetCases();
   begin_arr(cases.size());
 
   std::for_each(cases.begin(), cases.end(), [&](auto &c) { c->Accept(*this); });
@@ -792,22 +792,22 @@ void IR_Writer::visit(FlowPtr<Switch> n) {
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Function> n) {
+void IRWriter::Visit(FlowPtr<Function> n) {
   begin_obj(8);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("name");
-  string(n->getName());
+  string(n->GetName());
 
   string("abi_name");
-  string(n->getAbiName());
+  string(n->GetAbiName());
 
   string("parameters");
-  auto params = n->getParams();
+  auto params = n->GetParams();
   begin_arr(params.size());
 
   std::for_each(params.begin(), params.end(), [&](auto &param) {
@@ -825,52 +825,52 @@ void IR_Writer::visit(FlowPtr<Function> n) {
   end_arr();
 
   string("variadic");
-  boolean(n->isVariadic());
+  boolean(n->IsVariadic());
 
   string("return");
-  n->getReturn().Accept(*this);
+  n->GetReturn().Accept(*this);
 
   string("body");
-  n->getBody().has_value() ? n->getBody().value()->Accept(*this) : null();
+  n->GetBody().has_value() ? n->GetBody().value()->Accept(*this) : null();
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Asm> n) {
+void IRWriter::Visit(FlowPtr<Asm> n) {
   begin_obj(2);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   end_obj();
 }
 
-void IR_Writer::visit(FlowPtr<Tmp> n) {
+void IRWriter::Visit(FlowPtr<Tmp> n) {
   begin_obj(4);
 
   string("kind");
   string(n->GetKindName());
 
-  write_source_location(n);
+  WriteSourceLocation(n);
 
   string("kind");
-  uint64((int)n->getTmpType());
+  uint64((int)n->GetTmpType());
 
   string("data");
 
-  if (std::holds_alternative<IR_Vertex_CallArgsTmpNodeCradle<void>>(
-          n->getData())) {
-    auto data = std::get<IR_Vertex_CallArgsTmpNodeCradle<void>>(n->getData());
+  if (std::holds_alternative<GenericCallArgsTmpNodeCradle<void>>(
+          n->GetData())) {
+    auto data = std::get<GenericCallArgsTmpNodeCradle<void>>(n->GetData());
 
     begin_obj(2);
 
     string("base");
-    data.base->Accept(*this);
+    data.m_base->Accept(*this);
 
     string("arguments");
-    auto args = data.args;
+    auto args = data.m_args;
     begin_arr(args.size());
 
     std::for_each(args.begin(), args.end(), [&](auto &arg) {
@@ -889,8 +889,8 @@ void IR_Writer::visit(FlowPtr<Tmp> n) {
 
     end_obj();
 
-  } else if (std::holds_alternative<ncc::string>(n->getData())) {
-    string(std::get<ncc::string>(n->getData()));
+  } else if (std::holds_alternative<ncc::string>(n->GetData())) {
+    string(std::get<ncc::string>(n->GetData()));
   } else {
     qcore_panic("Unknown TmpNodeCradle type");
   }

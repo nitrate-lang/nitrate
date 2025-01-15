@@ -53,7 +53,7 @@ namespace no3::core {
               const char* base_filename, int line, const struct tm* tm,
               const char* message, std::size_t message_len) override;
 
-    std::unique_ptr<std::ostream> redirect_to_stream(
+    std::unique_ptr<std::ostream> RedirectToStream(
         std::unique_ptr<std::ostream> new_stream);
   };
 }  // namespace no3::core

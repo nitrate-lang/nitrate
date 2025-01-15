@@ -93,7 +93,7 @@ namespace ncc::ir {
     IR_LAST = IR_tTMP,
   } NrTyT;
 
-  constexpr size_t kIrCount = (IR_LAST - IR_FIRST + 1);
+  constexpr size_t kIRNodeKindCount = (IR_LAST - IR_FIRST + 1);
 }  // namespace ncc::ir
 
 namespace ncc::ir {

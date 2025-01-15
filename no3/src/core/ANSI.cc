@@ -34,7 +34,7 @@
 #include <core/ANSI.hh>
 #include <iostream>
 
-no3::ansi::AnsiOut no3::ansi::AnsiOut::newline() {
+no3::ansi::AnsiOut no3::ansi::AnsiOut::Newline() {
   m_out << std::endl;
   return *this;
 }
@@ -45,7 +45,7 @@ no3::ansi::AnsiOut &no3::ansi::AnsiOut::operator<<(const std::string &str) {
   ansi_str << "\x1b[";
   static const std::string_view reset = "\x1b[0m";
 
-  switch (style & Style::COLOR_MASK) {
+  switch (m_style & Style::COLOR_MASK) {
     case Style::FG_BLACK:
       ansi_str << "30";
       break;
@@ -77,7 +77,7 @@ no3::ansi::AnsiOut &no3::ansi::AnsiOut::operator<<(const std::string &str) {
       break;
   };
 
-  switch (style & Style::BG_COLOR_MASK) {
+  switch (m_style & Style::BG_COLOR_MASK) {
     case Style::BG_BLACK:
       ansi_str << ";40";
       break;
@@ -109,10 +109,10 @@ no3::ansi::AnsiOut &no3::ansi::AnsiOut::operator<<(const std::string &str) {
       break;
   }
 
-  if ((style & Style::BOLD) != 0) ansi_str << ";1";
-  if ((style & Style::ILTALIC) != 0) ansi_str << ";3";
-  if ((style & Style::UNDERLINE) != 0) ansi_str << ";4";
-  if ((style & Style::STRIKE) != 0) ansi_str << ";9";
+  if ((m_style & Style::BOLD) != 0) ansi_str << ";1";
+  if ((m_style & Style::ILTALIC) != 0) ansi_str << ";3";
+  if ((m_style & Style::UNDERLINE) != 0) ansi_str << ";4";
+  if ((m_style & Style::STRIKE) != 0) ansi_str << ";9";
 
   ansi_str << "m";
 
@@ -123,6 +123,6 @@ no3::ansi::AnsiOut &no3::ansi::AnsiOut::operator<<(const std::string &str) {
 }
 
 bool no3::ansi::IsUsingColors() {
-  const char *NO_COLOR = getenv("NO_COLOR");
-  return NO_COLOR != NULL && NO_COLOR[0] != '\0' ? false : true;
+  const char *no_color = getenv("NO_COLOR");
+  return no_color != NULL && no_color[0] != '\0' ? false : true;
 }

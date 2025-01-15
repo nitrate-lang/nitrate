@@ -15,27 +15,27 @@ namespace lang {
     ParseTreeWrapper();
     ~ParseTreeWrapper();
 
-    bool is_okay() const { return m_root != nullptr; }
-    bool from_syncfs(const std::string& uri);
+    bool IsOkay() const { return m_root != nullptr; }
+    bool FromSyncfs(const std::string& uri);
 
-    const ncc::parse::Base* root() const { return m_root; }
+    const ncc::parse::Base* Root() const { return m_root; }
   };
   using ParseTree = std::shared_ptr<ParseTreeWrapper>;
 
   class ParseTreeCache {
     std::unordered_map<std::string, std::pair<SyncFSFile::Digest, ParseTree>>
         m_cache;
-    size_t m_cache_size = DEFAULT_CACHE_LIMIT;
+    size_t m_cache_size = kDefaultCacheLimit;
 
   public:
-    constexpr static size_t DEFAULT_CACHE_LIMIT = 1024 * 1024 * 10;  // 10 MB
+    constexpr static size_t kDefaultCacheLimit = 1024 * 1024 * 10;  // 10 MB
 
-    static ParseTreeCache& the();
+    static ParseTreeCache& The();
 
-    std::optional<ParseTree> get(std::string_view uri,
+    std::optional<ParseTree> Get(std::string_view uri,
                                  bool permit_outdated = false) const;
 
-    void clear();
-    void set_cache_limit(size_t max_bytes);
+    void Clear();
+    void SetCacheLimit(size_t max_bytes);
   };
 }  // namespace lang

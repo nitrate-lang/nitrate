@@ -675,7 +675,7 @@ void AstWriter::Visit(FlowPtr<UnaryExpr> n) {
   string(op_repr(n->GetOp()));
 
   string("rhs");
-  n->GetRhs().Accept(*this);
+  n->GetRHS().Accept(*this);
 
   end_obj();
 }
@@ -692,10 +692,10 @@ void AstWriter::Visit(FlowPtr<BinExpr> n) {
   string(op_repr(n->GetOp()));
 
   string("lhs");
-  n->GetLhs().Accept(*this);
+  n->GetLHS().Accept(*this);
 
   string("rhs");
-  n->GetRhs().Accept(*this);
+  n->GetRHS().Accept(*this);
 
   end_obj();
 }
@@ -712,7 +712,7 @@ void AstWriter::Visit(FlowPtr<PostUnaryExpr> n) {
   string(op_repr(n->GetOp()));
 
   string("lhs");
-  n->GetLhs().Accept(*this);
+  n->GetLHS().Accept(*this);
 
   end_obj();
 }
@@ -729,10 +729,10 @@ void AstWriter::Visit(FlowPtr<TernaryExpr> n) {
   n->GetCond().Accept(*this);
 
   string("lhs");
-  n->GetLhs().Accept(*this);
+  n->GetLHS().Accept(*this);
 
   string("rhs");
-  n->GetRhs().Accept(*this);
+  n->GetRHS().Accept(*this);
 
   end_obj();
 }

@@ -128,7 +128,7 @@ bool ReadJsonString(std::istream &i, char **str, size_t &len) {
           break;
         case 'x': {
           int hex = 0;
-          for (int i = 0; i < 2; i++) {
+          for (int j = 0; j < 2; j++) {
             ch = i.get();
             if (ch == EOF) {
               return false;

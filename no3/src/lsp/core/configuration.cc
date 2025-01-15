@@ -5,7 +5,7 @@
 #include <lsp/core/server.hh>
 #include <string>
 
-std::optional<Configuration> parse_config(const std::string& path) {
+std::optional<Configuration> ParseConfig(const std::string& path) {
   rapidjson::Document doc;
 
   std::ifstream ifs(path);
@@ -46,7 +46,7 @@ std::optional<Configuration> parse_config(const std::string& path) {
   }
 
   ///=================== CONFIG VERSION 1======================
-  Configuration config = Configuration::defaults();
+  Configuration config = Configuration::Defaults();
 
   return config;
 }

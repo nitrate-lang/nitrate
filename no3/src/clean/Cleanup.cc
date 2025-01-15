@@ -36,10 +36,10 @@
 #include <conf/Validate.hh>
 #include <core/Logger.hh>
 
-static std::optional<no3::conf::Config> get_config(
+static std::optional<no3::conf::Config> GetConfig(
     const std::filesystem::path &base) {
   if (std::filesystem::exists(base / "no3.yaml")) {
-    auto c = no3::conf::YamlConfigParser().parsef(base / "no3.yaml");
+    auto c = no3::conf::YamlConfigParser().Parsef(base / "no3.yaml");
 
     if (!c) {
       LOG(ERROR) << "Failed to parse configuration file: " << base / "no3.yaml"
@@ -62,13 +62,13 @@ static std::optional<no3::conf::Config> get_config(
   }
 }
 
-static bool recursve_subpackages(const std::filesystem::path &base,
-                                 bool verbose) {
-  auto c = get_config(base);
+static bool RecursveSubpackages(const std::filesystem::path &base,
+                                bool verbose) {
+  auto c = GetConfig(base);
 
   if (!c) return false;
 
-  auto packages = (*c)["packages"].as<std::vector<std::string>>();
+  auto packages = (*c)["packages"].As<std::vector<std::string>>();
 
   for (const auto &p : packages)
     no3::clean::CleanPackageSource(base / p, verbose);
@@ -123,13 +123,13 @@ bool no3::clean::CleanPackageSource(const std::string &package_src,
     std::filesystem::remove_all(no3_dir);
   }
 
-  auto conf = get_config(package_src_path);
+  auto conf = GetConfig(package_src_path);
   if (!conf) {
     LOG(ERROR) << "Failed to get configuration" << std::endl;
     return false;
   }
 
-  std::string name = conf.value()["name"].as<std::string>(), tmp;
+  std::string name = conf.value()["name"].As<std::string>(), tmp;
 
 #define RMFILE(_file)                                                        \
   tmp = _file;                                                               \
@@ -149,7 +149,7 @@ bool no3::clean::CleanPackageSource(const std::string &package_src,
   RMFILE("lib" + name + ".lib");
   RMFILE("lib" + name + ".la");
 
-  recursve_subpackages(package_src_path, verbose);
+  RecursveSubpackages(package_src_path, verbose);
 
   if (verbose)
     LOG(INFO) << "Package " << package_src << " cleaned" << std::endl;

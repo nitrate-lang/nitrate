@@ -17,7 +17,7 @@ void ThreadPool::Start() {
   LOG(INFO) << "Starting thread pool with " << num_threads << " threads";
 
   for (uint32_t ii = 0; ii < num_threads; ++ii) {
-    threads.emplace_back(
+    m_threads.emplace_back(
         std::jthread([this](std::stop_token st) { ThreadLoop(st); }));
   }
 }
@@ -28,8 +28,8 @@ void ThreadPool::ThreadLoop(std::stop_token st) {
   while (!st.stop_requested()) {
     std::function<void(std::stop_token)> job;
     {
-      std::unique_lock<std::mutex> lock(queue_mutex);
-      if (jobs.empty()) {
+      std::unique_lock<std::mutex> lock(m_queue_mutex);
+      if (m_jobs.empty()) {
         lock.unlock();
 
         // Climate change is real, lets do our part
@@ -43,8 +43,8 @@ void ThreadPool::ThreadLoop(std::stop_token st) {
       }
 
       has_any_yet = true;
-      job = jobs.front();
-      jobs.pop();
+      job = m_jobs.front();
+      m_jobs.pop();
     }
 
     job(st);
@@ -52,28 +52,28 @@ void ThreadPool::ThreadLoop(std::stop_token st) {
 }
 
 void ThreadPool::QueueJob(const std::function<void(std::stop_token st)>& job) {
-  std::lock_guard<std::mutex> lock(queue_mutex);
-  jobs.push(job);
+  std::lock_guard<std::mutex> lock(m_queue_mutex);
+  m_jobs.push(job);
 }
 
-bool ThreadPool::busy() {
+bool ThreadPool::Busy() {
   bool poolbusy;
   {
-    std::lock_guard<std::mutex> lock(queue_mutex);
-    poolbusy = !jobs.empty();
+    std::lock_guard<std::mutex> lock(m_queue_mutex);
+    poolbusy = !m_jobs.empty();
   }
   return poolbusy;
 }
 
 void ThreadPool::Stop() {
   { /* Gracefully request stop */
-    std::lock_guard<std::mutex> lock(queue_mutex);
-    for (std::jthread& active_thread : threads) {
+    std::lock_guard<std::mutex> lock(m_queue_mutex);
+    for (std::jthread& active_thread : m_threads) {
       active_thread.request_stop();
     }
   }
 
-  while (busy());
+  while (Busy());
 
-  threads.clear();
+  m_threads.clear();
 }

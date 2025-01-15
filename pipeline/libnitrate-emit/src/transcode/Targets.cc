@@ -54,29 +54,29 @@ using namespace ncc::ir;
 #endif
 
 static const std::unordered_map<
-    qcode_val_t, std::function<bool(IRModule*, std::ostream&, std::ostream&)>>
+    QcodeLangT, std::function<bool(IRModule*, std::ostream&, std::ostream&)>>
     TRANSCODERS = {
 #ifdef TRANSCODE_TARGET_C11
-        {QCODE_C11, codegen::for_c11},
+        {QCODE_C11, codegen::ForC11},
 #endif
 #ifdef TRANSCODE_TARGET_CXX11
-        {QCODE_CXX11, codegen::for_cxx11},
+        {QCODE_CXX11, codegen::ForCxx11},
 #endif
 #ifdef TRANSCODE_TARGET_TYPESCRIPT
-        {QCODE_TS, codegen::for_ts},
+        {QCODE_TS, codegen::ForTs},
 #endif
 #ifdef TRANSCODE_TARGET_RUST
-        {QCODE_RUST, codegen::for_rust},
+        {QCODE_RUST, codegen::ForRust},
 #endif
 #ifdef TRANSCODE_TARGET_PYTHON
-        {QCODE_PYTHON3, codegen::for_python},
+        {QCODE_PYTHON3, codegen::ForPython},
 #endif
 #ifdef TRANSCODE_TARGET_CSHARP
-        {QCODE_CSHARP, codegen::for_csharp},
+        {QCODE_CSHARP, codegen::ForCSharp},
 #endif
 };
 
-static const std::unordered_map<qcode_val_t, std::string_view> TARGET_NAMES = {
+static const std::unordered_map<int, std::string_view> TARGET_NAMES = {
     {QCODE_C11, "C11"},   {QCODE_CXX11, "C++11"},    {QCODE_TS, "TypeScript"},
     {QCODE_RUST, "Rust"}, {QCODE_PYTHON3, "Python"}, {QCODE_CSHARP, "C#"},
 };
@@ -102,9 +102,9 @@ public:
   virtual int overflow(int c) override { return c; }
 };
 
-NCC_EXPORT bool QcodeTranscode(IRModule* module, qcode_conf_t*,
-                                qcode_val_t lang, qcode_style_t, FILE* err,
-                                FILE* out) {
+NCC_EXPORT bool QcodeTranscode(IRModule* module, QCodegenConfig*,
+                               QcodeLangT lang, QcodeStyleT, FILE* err,
+                               FILE* out) {
   std::unique_ptr<std::streambuf> err_stream_buf, out_stream_buf;
 
   /* If the error stream is provided, use it. Otherwise, discard the output. */

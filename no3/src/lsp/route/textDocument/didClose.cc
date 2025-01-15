@@ -6,18 +6,18 @@
 
 using namespace rapidjson;
 
-void do_didClose(const lsp::NotificationMessage& notif) {
-  if (!notif.params().HasMember("textDocument")) {
+void DoDidClose(const lsp::NotificationMessage& notif) {
+  if (!notif.Params().HasMember("textDocument")) {
     LOG(ERROR) << "Missing textDocument member";
     return;
   }
 
-  if (!notif.params()["textDocument"].IsObject()) {
+  if (!notif.Params()["textDocument"].IsObject()) {
     LOG(ERROR) << "textDocument is not an object";
     return;
   }
 
-  const auto& text_document = notif.params()["textDocument"];
+  const auto& text_document = notif.Params()["textDocument"];
 
   if (!text_document.HasMember("uri")) {
     LOG(ERROR) << "Missing uri member";
@@ -31,5 +31,5 @@ void do_didClose(const lsp::NotificationMessage& notif) {
 
   std::string uri = text_document["uri"].GetString();
 
-  SyncFS::the().close(uri);
+  SyncFS::The().Close(uri);
 }

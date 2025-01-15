@@ -11,30 +11,30 @@ using namespace ncc::parse;
 
 TEST(AST, FromJson) {
   auto env = std::make_shared<ncc::Environment>();
-  auto original = Parser::FromString(test::vector::ASTExecise, env)->parse();
-  ASSERT_TRUE(original.check());
+  auto original = Parser::FromString(test::vector::kAstExecise, env)->Parse();
+  ASSERT_TRUE(original.Check());
 
   std::stringstream serialized;
-  AST_JsonWriter writer(serialized);
-  original.get()->Accept(writer);
+  AstJsonWriter writer(serialized);
+  original.Get()->Accept(writer);
 
-  auto decoded = AST_JsonReader::FromString(serialized.str());
+  auto decoded = AstJsonReader::FromString(serialized.str());
   ASSERT_TRUE(decoded.has_value());
 
-  EXPECT_TRUE(original.get()->IsEq(decoded.value()));
+  EXPECT_TRUE(original.Get()->IsEq(decoded.value()));
 }
 
 TEST(AST, FromMsgPack) {
   auto env = std::make_shared<ncc::Environment>();
-  auto original = Parser::FromString(test::vector::ASTExecise, env)->parse();
-  ASSERT_TRUE(original.check());
+  auto original = Parser::FromString(test::vector::kAstExecise, env)->Parse();
+  ASSERT_TRUE(original.Check());
 
   std::stringstream serialized;
-  AST_MsgPackWriter writer(serialized);
-  original.get()->Accept(writer);
+  AstMsgPackWriter writer(serialized);
+  original.Get()->Accept(writer);
 
-  auto decoded = AST_MsgPackReader::FromString(serialized.str());
+  auto decoded = AstMsgPackReader::FromString(serialized.str());
   ASSERT_TRUE(decoded.has_value());
 
-  EXPECT_TRUE(original.get()->IsEq(decoded.value()));
+  EXPECT_TRUE(original.Get()->IsEq(decoded.value()));
 }

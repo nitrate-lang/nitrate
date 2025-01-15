@@ -19,12 +19,12 @@ public:
   void Start();
   void QueueJob(const std::function<void(std::stop_token)>& job);
   void Stop();
-  bool busy();
+  bool Busy();
 
 private:
   void ThreadLoop(std::stop_token);
 
-  std::mutex queue_mutex;
-  std::vector<std::jthread> threads;
-  std::queue<std::function<void(std::stop_token)>> jobs;
+  std::mutex m_queue_mutex;
+  std::vector<std::jthread> m_threads;
+  std::queue<std::function<void(std::stop_token)>> m_jobs;
 };

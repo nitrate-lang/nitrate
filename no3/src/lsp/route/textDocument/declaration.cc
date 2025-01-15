@@ -6,70 +6,70 @@
 
 using namespace rapidjson;
 
-void do_declaration(const lsp::RequestMessage& req,
+void DoDeclaration(const lsp::RequestMessage& req,
                     lsp::ResponseMessage& resp) {
-  resp.error(lsp::ErrorCodes::RequestFailed, "Not implemented");
+  resp.Error(lsp::ErrorCodes::RequestFailed, "Not implemented");
   return;
 
   /// TODO: Implement declaration request
 
-  if (!req.params().HasMember("textDocument")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing textDocument");
+  if (!req.Params().HasMember("textDocument")) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing textDocument");
     return;
   }
 
-  if (!req.params()["textDocument"].IsObject()) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "textDocument is not an object");
+  if (!req.Params()["textDocument"].IsObject()) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "textDocument is not an object");
     return;
   }
 
-  if (!req.params()["textDocument"].HasMember("uri")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing textDocument.uri");
+  if (!req.Params()["textDocument"].HasMember("uri")) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing textDocument.uri");
     return;
   }
 
-  if (!req.params()["textDocument"]["uri"].IsString()) {
-    resp.error(lsp::ErrorCodes::InvalidParams,
+  if (!req.Params()["textDocument"]["uri"].IsString()) {
+    resp.Error(lsp::ErrorCodes::InvalidParams,
                "textDocument.uri is not a string");
     return;
   }
 
-  if (!req.params().HasMember("position")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing position");
+  if (!req.Params().HasMember("position")) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing position");
     return;
   }
 
-  if (!req.params()["position"].IsObject()) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "position is not an object");
+  if (!req.Params()["position"].IsObject()) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "position is not an object");
     return;
   }
 
-  if (!req.params()["position"].HasMember("line")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing position.line");
+  if (!req.Params()["position"].HasMember("line")) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing position.line");
     return;
   }
 
-  if (!req.params()["position"]["line"].IsInt64()) {
-    resp.error(lsp::ErrorCodes::InvalidParams,
+  if (!req.Params()["position"]["line"].IsInt64()) {
+    resp.Error(lsp::ErrorCodes::InvalidParams,
                "position.line is not an integer");
     return;
   }
 
-  if (!req.params()["position"].HasMember("character")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing position.character");
+  if (!req.Params()["position"].HasMember("character")) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing position.character");
     return;
   }
 
-  if (!req.params()["position"]["character"].IsInt64()) {
-    resp.error(lsp::ErrorCodes::InvalidParams,
+  if (!req.Params()["position"]["character"].IsInt64()) {
+    resp.Error(lsp::ErrorCodes::InvalidParams,
                "position.character is not an integer");
     return;
   }
 
-  std::string_view uri(req.params()["textDocument"]["uri"].GetString(),
-                       req.params()["textDocument"]["uri"].GetStringLength());
-  uint64_t line = req.params()["position"]["line"].GetInt64();
-  uint64_t character = req.params()["position"]["character"].GetInt64();
+  std::string_view uri(req.Params()["textDocument"]["uri"].GetString(),
+                       req.Params()["textDocument"]["uri"].GetStringLength());
+  uint64_t line = req.Params()["position"]["line"].GetInt64();
+  uint64_t character = req.Params()["position"]["character"].GetInt64();
 
   (void)line;
   (void)character;

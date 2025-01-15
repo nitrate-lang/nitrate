@@ -54,7 +54,7 @@
 #include <unordered_set>
 #include <vector>
 
-static const std::unordered_map<std::string_view, nit::transform_func>
+static const std::unordered_map<std::string_view, nit::TransformFunc>
     DISPATCH_FUNCS = {{"echo", nit::echo},
                       {"lex", nit::lex},
                       {"seq", nit::seq},
@@ -104,14 +104,14 @@ static std::optional<std::vector<std::string>> ParseOptions(
 }
 
 static bool NitDispatchRequest(std::istream &in, std::ostream &out,
-                                 const char *transform, let opts_set,
-                                 std::shared_ptr<ncc::Environment> env) {
-  if (!dispatch_funcs.contains(transform)) {
+                               const char *transform, let opts_set,
+                               std::shared_ptr<ncc::Environment> env) {
+  if (!DISPATCH_FUNCS.contains(transform)) {
     qcore_logf(QCORE_ERROR, "Unknown transform name in options: %s", transform);
     return false;
   }
 
-  let transform_func = dispatch_funcs.at(transform);
+  let transform_func = DISPATCH_FUNCS.at(transform);
   let is_success = transform_func(in, out, opts_set, env);
 
   out.flush();
@@ -120,8 +120,8 @@ static bool NitDispatchRequest(std::istream &in, std::ostream &out,
 }
 
 static bool NitPipelineStream(std::istream &in, std::ostream &out,
-                                NitDiagFunc diag_cb, void *opaque,
-                                const char *const c_options[]) {
+                              NitDiagFunc diag_cb, void *opaque,
+                              const char *const c_options[]) {
   errno = 0;
 
   /***************************************************************************/
@@ -167,32 +167,31 @@ static bool NitPipelineStream(std::istream &in, std::ostream &out,
 NCC_EXPORT nitrate::LazyResult<bool> nitrate::Pipeline(
     std::istream &in, std::ostream &out, std::vector<std::string> options,
     std::optional<DiagnosticFunc> diag) {
-  return nitrate::LazyResult<bool>(
-      [&in, &out, options = std::move(options), diag]() -> bool {
-        /* Convert options to C strings */
-        std::vector<const char *> options_c_str(options.size() + 1);
-        for (size_t i = 0; i < options.size(); i++) {
-          options_c_str[i] = options[i].c_str();
-        }
-        options_c_str[options.size()] = nullptr;
+  return nitrate::LazyResult<bool>([&in, &out, options = std::move(options),
+                                    diag]() -> bool {
+    /* Convert options to C strings */
+    std::vector<const char *> options_c_str(options.size() + 1);
+    for (size_t i = 0; i < options.size(); i++) {
+      options_c_str[i] = options[i].c_str();
+    }
+    options_c_str[options.size()] = nullptr;
 
-        void *functor_ctx = nullptr;
-        DiagnosticFunc callback = diag.value_or(nullptr);
+    void *functor_ctx = nullptr;
+    DiagnosticFunc callback = diag.value_or(nullptr);
 
-        if (callback != nullptr) {
-          functor_ctx = reinterpret_cast<void *>(&callback);
-        }
+    if (callback != nullptr) {
+      functor_ctx = reinterpret_cast<void *>(&callback);
+    }
 
-        static let diag_nop = [](const char *, void *) {};
-        static let nit_diag_functor = [](const char *message, void *ctx) {
-          let callback = *reinterpret_cast<nitrate::DiagnosticFunc *>(ctx);
-          callback(message);
-        };
+    static let diag_nop = [](const char *, void *) {};
+    static let nit_diag_functor = [](const char *message, void *ctx) {
+      let callback = *reinterpret_cast<nitrate::DiagnosticFunc *>(ctx);
+      callback(message);
+    };
 
-        return NitPipelineStream(in, out,
-                                   functor_ctx ? nit_diag_functor : diag_nop,
-                                   functor_ctx, options_c_str.data());
-      });
+    return NitPipelineStream(in, out, functor_ctx ? nit_diag_functor : diag_nop,
+                             functor_ctx, options_c_str.data());
+  });
 }
 
 NCC_EXPORT nitrate::LazyResult<bool> nitrate::Chain(
@@ -229,9 +228,9 @@ NCC_EXPORT nitrate::LazyResult<bool> nitrate::Chain(
 
 ///============================================================================///
 
-extern "C" NCC_EXPORT bool NitPipeline(FILE *in, FILE *out,
-                                        NitDiagFunc diag_cb, void *opaque,
-                                        const char *const c_options[]) {
+extern "C" NCC_EXPORT bool NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
+                                       void *opaque,
+                                       const char *const c_options[]) {
   class FileStreamBuf : public std::streambuf {
     FILE *m_file;
     char m_c = 0;

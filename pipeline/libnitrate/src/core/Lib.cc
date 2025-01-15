@@ -69,7 +69,7 @@ bool NitLibInit() {
     return false;
   }
 
-  if (!qcode_lib_init()) {
+  if (!QcodeLibInit()) {
     return false;
   }
 

@@ -9,7 +9,7 @@ namespace lsp::fmt {
 
   class FormatterFactory final {
   public:
-    static std::unique_ptr<ICodeFormatter> create(Styleguide style,
+    static std::unique_ptr<ICodeFormatter> Create(Styleguide style,
                                                   std::ostream& out) {
       switch (style) {
         case Styleguide::Cambrian: {

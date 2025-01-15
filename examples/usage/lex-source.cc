@@ -11,7 +11,7 @@ int main() {
   )";
 
   std::string tokens_json;
-  if (auto future = nitrate::pipeline(source, tokens_json, {"lex"}).get()) {
+  if (auto future = nitrate::Pipeline(source, tokens_json, {"lex"}).Get()) {
     std::cout << tokens_json;
 
     return 0;

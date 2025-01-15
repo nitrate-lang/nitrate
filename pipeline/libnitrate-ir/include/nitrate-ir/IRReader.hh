@@ -42,7 +42,7 @@
 #include <stack>
 
 namespace ncc::ir {
-  class NCC_EXPORT IrReader {
+  class NCC_EXPORT IRReader {
     enum class State {
       ObjStart,
       ObjEnd,
@@ -65,8 +65,8 @@ namespace ncc::ir {
     void EndArr();
 
   public:
-    IrReader() { m_state.push(State::ObjStart); }
-    virtual ~IrReader() = default;
+    IRReader() { m_state.push(State::ObjStart); }
+    virtual ~IRReader() = default;
 
     std::optional<Expr*> Get() {
       if (m_parse.empty() || m_parse.top() == nullptr) {
@@ -77,20 +77,20 @@ namespace ncc::ir {
     }
   };
 
-  class NCC_EXPORT IrJsonReader final : public IrReader {
+  class NCC_EXPORT IRJsonReader final : public IRReader {
     void ParseStream(std::istream& is);
 
   public:
-    IrJsonReader(std::istream& is) { ParseStream(is); }
-    virtual ~IrJsonReader() = default;
+    IRJsonReader(std::istream& is) { ParseStream(is); }
+    virtual ~IRJsonReader() = default;
   };
 
-  class NCC_EXPORT IrMsgPackReader final : public IrReader {
+  class NCC_EXPORT IRMsgPackReader final : public IRReader {
     void ParseStream(std::istream& is);
 
   public:
-    IrMsgPackReader(std::istream& is) { ParseStream(is); }
-    virtual ~IrMsgPackReader() = default;
+    IRMsgPackReader(std::istream& is) { ParseStream(is); }
+    virtual ~IRMsgPackReader() = default;
   };
 }  // namespace ncc::ir
 

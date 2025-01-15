@@ -39,26 +39,26 @@
 #include <unordered_map>
 
 struct LogConfig {
-  bool use_color = true;
-  bool show_debug = false;
+  bool m_use_color = true;
+  bool m_show_debug = false;
 };
 
-static LogConfig g_log_config;
-static std::mutex g_log_mutex;
+static LogConfig GLogConfig;
+static std::mutex GLogMutex;
 
 void no3::core::SetColorMode(bool use_color) {
-  std::lock_guard<std::mutex> lock(g_log_mutex);
-  g_log_config.use_color = use_color;
+  std::lock_guard<std::mutex> lock(GLogMutex);
+  GLogConfig.m_use_color = use_color;
 }
 
 void no3::core::SetDebugMode(bool debug) {
-  std::lock_guard<std::mutex> lock(g_log_mutex);
-  g_log_config.show_debug = debug;
+  std::lock_guard<std::mutex> lock(GLogMutex);
+  GLogConfig.m_show_debug = debug;
 }
 
 bool no3::core::GetDebugMode() {
-  std::lock_guard<std::mutex> lock(g_log_mutex);
-  return g_log_config.show_debug;
+  std::lock_guard<std::mutex> lock(GLogMutex);
+  return GLogConfig.m_show_debug;
 }
 
 void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
@@ -85,9 +85,9 @@ void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
   bool color, debug;
 
   {
-    std::lock_guard<std::mutex> lock(g_log_mutex);
-    color = g_log_config.use_color;
-    debug = g_log_config.show_debug;
+    std::lock_guard<std::mutex> lock(GLogMutex);
+    color = GLogConfig.m_use_color;
+    debug = GLogConfig.m_show_debug;
   }
 
   {
@@ -98,12 +98,12 @@ void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
       using namespace ansi;
       AnsiOut out(*m_out);
 
-      out.set_style(sev_colors.at(severity));
+      out.SetStyle(sev_colors.at(severity));
       out << sev_prefix.at(severity);
-      out.set_style(Style::RESET);
+      out.SetStyle(Style::RESET);
 
       if (debug) {
-        out.set_style(Style::FG_DEFAULT);
+        out.SetStyle(Style::FG_DEFAULT);
 
         out << "[" << base_filename << ":" << line << " ";
 
@@ -114,12 +114,12 @@ void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
         }
         out << "] ";
 
-        out.set_style(Style::RESET);
+        out.SetStyle(Style::RESET);
       }
 
-      out.set_style(sev_colors.at(severity));
+      out.SetStyle(sev_colors.at(severity));
       out << message;
-      out.set_style(Style::RESET);
+      out.SetStyle(Style::RESET);
       out << std::endl;
     } else {
       *m_out << sev_prefix.at(severity);
@@ -141,9 +141,9 @@ void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
   }
 }
 
-std::unique_ptr<std::ostream> no3::core::MyLogSink::redirect_to_stream(
+std::unique_ptr<std::ostream> no3::core::MyLogSink::RedirectToStream(
     std::unique_ptr<std::ostream> new_stream) {
-  std::lock_guard<std::mutex> lock(g_log_mutex);
+  std::lock_guard<std::mutex> lock(GLogMutex);
   std::unique_ptr<std::ostream> old_stream = std::move(m_out);
   m_out = std::move(new_stream);
   return old_stream;

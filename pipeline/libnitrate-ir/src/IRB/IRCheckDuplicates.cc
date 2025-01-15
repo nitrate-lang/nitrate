@@ -67,7 +67,7 @@ struct Conflict {
 };
 
 static void PrintConflictErrors(const std::vector<Conflict> &conflicts,
-                                  IReport *i) {
+                                IReport *) {
   static const std::unordered_map<Kind, std::string_view> kind_name = {
       {Kind::Function, "function"},
       {Kind::Variable, "variable"},
@@ -80,7 +80,7 @@ static void PrintConflictErrors(const std::vector<Conflict> &conflicts,
     //           {kind_name.at(conflict.us_kind), " name '", conflict.name,
     //            "' is already defined as a ",
     //            kind_name.at(conflict.them_kind)},
-    //           conflict.us.value()->getLoc());
+    //           conflict.us.value()->GetLoc());
 
     switch (conflict.m_us_kind) {
       case Kind::Function:
@@ -180,13 +180,13 @@ bool NRBuilder::CheckDuplicates(FlowPtr<Seq>, IReport *i) {
 
     std::for_each(m_duplicate_functions->begin(), m_duplicate_functions->end(),
                   [&](auto x) {
-                    conflicts.push_back({x->getName(), Kind::Function, x,
+                    conflicts.push_back({x->GetName(), Kind::Function, x,
                                          Kind::Function, std::nullopt});
                   });
 
     std::for_each(m_duplicate_variables->begin(), m_duplicate_variables->end(),
                   [&](auto x) {
-                    conflicts.push_back({x->getName(), Kind::Variable, x,
+                    conflicts.push_back({x->GetName(), Kind::Variable, x,
                                          Kind::Variable, std::nullopt});
                   });
 

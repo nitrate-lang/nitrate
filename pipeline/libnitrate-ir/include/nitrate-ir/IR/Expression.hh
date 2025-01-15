@@ -49,8 +49,8 @@ namespace ncc::ir {
     constexpr GenericBinExpr(auto lhs, auto rhs, auto op)
         : GenericExpr<A>(IR_eBIN), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
-    constexpr auto GetLhs() const { return m_lhs; }
-    constexpr auto GetRhs() const { return m_rhs; }
+    constexpr auto GetLHS() const { return m_lhs; }
+    constexpr auto GetRHS() const { return m_rhs; }
     constexpr auto GetOp() const { return m_op; }
 
     constexpr void SetLHS(auto lhs) { m_lhs = lhs; }

@@ -167,12 +167,12 @@ using namespace ncc::ir;
 //       break;
 //     }
 //     case IR_eINT: {
-//       recurse(n->as<Int>()->getType().value_or(nullptr));
+//       recurse(n->as<Int>()->GetType().value_or(nullptr));
 //       ss << " " << n->as<Int>()->getValueString();
 //       break;
 //     }
 //     case IR_eFLOAT: {
-//       recurse(n->as<Float>()->getType().value_or(nullptr));
+//       recurse(n->as<Float>()->GetType().value_or(nullptr));
 //       ss << " " << n->as<Float>()->getValue();
 //       break;
 //     }
@@ -180,7 +180,7 @@ using namespace ncc::ir;
 //       // Check if it matches the string literal pattern
 //       List *L = n->as<List>();
 
-//       recurse(L->getType().value_or(nullptr));
+//       recurse(L->GetType().value_or(nullptr));
 //       ss << " ";
 
 //       bool is_cstring = false;
@@ -224,9 +224,9 @@ using namespace ncc::ir;
 //     case IR_eCALL: {
 //       auto tkind = n->as<Call>()->getTarget()->GetKind();
 //       if (tkind == IR_eLOCAL) {
-//         ss << n->as<Call>()->getTarget()->as<Local>()->getName();
+//         ss << n->as<Call>()->getTarget()->as<Local>()->GetName();
 //       } else if (tkind == IR_eFUNCTION) {
-//         ss << n->as<Call>()->getTarget()->as<Function>()->getName();
+//         ss << n->as<Call>()->getTarget()->as<Function>()->GetName();
 //       } else {
 //         recurse(n->as<Call>()->getTarget());
 //       }
@@ -245,8 +245,8 @@ using namespace ncc::ir;
 //       ss << "seq {";
 //       state.indent++;
 //       indent(ss, state);
-//       for (auto it = n->as<Seq>()->getItems().begin();
-//            it != n->as<Seq>()->getItems().end(); ++it) {
+//       for (auto it = n->as<Seq>()->GetItems().begin();
+//            it != n->as<Seq>()->GetItems().end(); ++it) {
 //         if ((*it)->GetKind() == IR_eIGN) {
 //           continue;
 //         }
@@ -254,7 +254,7 @@ using namespace ncc::ir;
 //         recurse(*it);
 //         ss << ",";
 
-//         if (std::next(it) != n->as<Seq>()->getItems().end()) {
+//         if (std::next(it) != n->as<Seq>()->GetItems().end()) {
 //           indent(ss, state);
 //         }
 //       }
@@ -271,8 +271,8 @@ using namespace ncc::ir;
 //       break;
 //     }
 //     case IR_eIDENT: {
-//       recurse(n->as<Ident>()->getType().value_or(nullptr));
-//       ss << " " << n->as<Ident>()->getName();
+//       recurse(n->as<Ident>()->GetType().value_or(nullptr));
+//       ss << " " << n->as<Ident>()->GetName();
 //       break;
 //     }
 //     case IR_eEXTERN: {
@@ -284,8 +284,8 @@ using namespace ncc::ir;
 //     }
 //     case IR_eLOCAL: {
 //       ss << "local ";
-//       ss << n->as<Local>()->getName();
-//       if (auto ty = n->as<Local>()->getValue()->getType()) {
+//       ss << n->as<Local>()->GetName();
+//       if (auto ty = n->as<Local>()->getValue()->GetType()) {
 //         ss << ": ";
 //         recurse(ty.value());
 //       }
@@ -363,7 +363,7 @@ using namespace ncc::ir;
 //     }
 //     case IR_eFUNCTION: {
 //       ss << "fn ";
-//       ss << n->as<Function>()->getName();
+//       ss << n->as<Function>()->GetName();
 //       ss << "(";
 //       for (auto it = n->as<Function>()->getParams().begin();
 //            it != n->as<Function>()->getParams().end(); ++it) {
@@ -463,13 +463,13 @@ using namespace ncc::ir;
 //     }
 //     case IR_tCONST: {
 //       ss << "const<";
-//       recurse(n->as<ConstTy>()->getItem());
+//       recurse(n->as<ConstTy>()->GetItem());
 //       ss << ">";
 //       break;
 //     }
 //     case IR_tOPAQUE: {
 //       ss << "opaque ";
-//       ss << n->as<OpaqueTy>()->getName();
+//       ss << n->as<OpaqueTy>()->GetName();
 //       break;
 //     }
 //     case IR_tSTRUCT: {
@@ -524,7 +524,7 @@ using namespace ncc::ir;
 
 //   if (mod.has_value() && !minify) {
 //     { /* Print the module name */
-//       ss << "; Module: " << (mod.value())->getName() << "\n";
+//       ss << "; Module: " << (mod.value())->GetName() << "\n";
 //     }
 
 //     { /* Print the mutation passes applied */
@@ -621,7 +621,7 @@ using namespace ncc::ir;
 // }
 
 NCC_EXPORT void ir::NrWrite(IRModule *mod, NullableFlowPtr<Expr> node,
-                             std::ostream &out) {
+                            std::ostream &out) {
   // if (!mod && !_node) {
   //   return;
   // }

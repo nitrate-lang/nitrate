@@ -14,23 +14,23 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 struct Position {
-  size_t line = 0;
-  size_t character = 0;
+  size_t m_line = 0;
+  size_t m_character = 0;
 };
 
 struct Range {
-  Position start;
-  Position end;
+  Position m_start;
+  Position m_end;
 };
 
 struct ColorInformation {
-  Range range;
+  Range m_range;
 
-  double red = 0, green = 0, blue = 0, alpha = 0;
+  double m_red = 0, m_green = 0, m_blue = 0, m_alpha = 0;
 };
 
 struct RGBA {
-  float r, g, b, a;
+  float m_r, m_g, m_b, m_a;
 };
 
 enum class ColorMode {
@@ -38,7 +38,7 @@ enum class ColorMode {
   HSLA,
 };
 
-static RGBA hslaToRgba(float h, float s, float l, float a) {
+static RGBA HslaToRgba(float h, float s, float l, float a) {
   // Clamp h to [0, 360), s and l to [0, 100], and a to [0, 1]
   h = fmod(h, 360.0f);
   if (h < 0) h += 360.0f;
@@ -86,12 +86,13 @@ static RGBA hslaToRgba(float h, float s, float l, float a) {
 }
 
 template <size_t Argc>
-static std::optional<ColorInformation> parse_color_function(
-    ncc::FlowPtr<Call> N, ColorMode mode, IScanner& L) {
+static std::optional<ColorInformation> ParseColorFunction(ncc::FlowPtr<Call> n,
+                                                          ColorMode mode,
+                                                          IScanner& l) {
   static_assert(Argc == 3 || Argc == 4,
                 "Invalid number of arguments. Indexs will be out-of-range.");
 
-  let args = N->get_args();
+  let args = n->GetArgs();
 
   if (args.size() != Argc) {
     return std::nullopt;
@@ -104,9 +105,9 @@ static std::optional<ColorInformation> parse_color_function(
     std::string_view value;
 
     if (arg_expr->is(QAST_FLOAT)) {
-      value = arg_expr->as<ConstFloat>()->get_value();
+      value = arg_expr->as<ConstFloat>()->GetValue();
     } else if (arg_expr->is(QAST_INT)) {
-      value = arg_expr->as<ConstInt>()->get_value();
+      value = arg_expr->as<ConstInt>()->GetValue();
     } else {
       return std::nullopt;
     }
@@ -121,7 +122,7 @@ static std::optional<ColorInformation> parse_color_function(
   }
 
   /// TODO: Fix source location tracking
-  (void)hslaToRgba;
+  (void)HslaToRgba;
 
   return std::nullopt;
 
@@ -159,66 +160,66 @@ static std::optional<ColorInformation> parse_color_function(
   // }
 }
 
-void do_documentColor(const lsp::RequestMessage& req,
-                      lsp::ResponseMessage& resp) {
-  if (!req.params().HasMember("textDocument")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing textDocument");
+void DoDocumentColor(const lsp::RequestMessage& req,
+                     lsp::ResponseMessage& resp) {
+  if (!req.Params().HasMember("textDocument")) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing textDocument");
     return;
   }
 
-  if (!req.params()["textDocument"].IsObject()) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "textDocument is not an object");
+  if (!req.Params()["textDocument"].IsObject()) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "textDocument is not an object");
     return;
   }
 
-  if (!req.params()["textDocument"].HasMember("uri")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing textDocument.uri");
+  if (!req.Params()["textDocument"].HasMember("uri")) {
+    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing textDocument.uri");
     return;
   }
 
-  if (!req.params()["textDocument"]["uri"].IsString()) {
-    resp.error(lsp::ErrorCodes::InvalidParams,
+  if (!req.Params()["textDocument"]["uri"].IsString()) {
+    resp.Error(lsp::ErrorCodes::InvalidParams,
                "textDocument.uri is not a string");
     return;
   }
 
-  let uri = req.params()["textDocument"]["uri"].GetString();
+  let uri = req.Params()["textDocument"]["uri"].GetString();
 
   LOG(INFO) << "Requested document color box";
 
-  let file_opt = SyncFS::the().open(uri);
+  let file_opt = SyncFS::The().Open(uri);
   if (!file_opt.has_value()) {
-    resp.error(lsp::ErrorCodes::InternalError, "Failed to open file");
+    resp.Error(lsp::ErrorCodes::InternalError, "Failed to open file");
     return;
   }
   let file = file_opt.value();
 
   auto env = std::make_shared<ncc::Environment>();
-  auto ss = std::stringstream(*file->content());
-  auto L = Tokenizer(ss, env);
-  let parser = ncc::parse::Parser::Create(L, env);
-  let ast = parser->parse();
+  auto ss = std::stringstream(*file->Content());
+  auto l = Tokenizer(ss, env);
+  let parser = ncc::parse::Parser::Create(l, env);
+  let ast = parser->Parse();
 
-  if (L.HasError() || !ast.check()) {
+  if (l.HasError() || !ast.Check()) {
     return;
   }
 
   std::vector<ColorInformation> colors;
 
-  for_each<Call>(ast.get(), [&](let N) {
-    if (N->get_func()->is(QAST_IDENT)) {
-      let name = N->get_func()->template as<Ident>()->GetName();
-      let args = N->get_args();
+  for_each<Call>(ast.Get(), [&](let n) {
+    if (n->GetFunc()->is(QAST_IDENT)) {
+      let name = n->GetFunc()->template as<Ident>()->GetName();
+      let args = n->GetArgs();
 
       std::optional<ColorInformation> element;
       if (name == "rgba" && args.size() == 4) {
-        element = parse_color_function<4>(N, ColorMode::RGBA, L);
+        element = ParseColorFunction<4>(n, ColorMode::RGBA, l);
       } else if (name == "hsla" && args.size() == 4) {
-        element = parse_color_function<4>(N, ColorMode::HSLA, L);
+        element = ParseColorFunction<4>(n, ColorMode::HSLA, l);
       } else if (name == "rgb" && args.size() == 3) {
-        element = parse_color_function<3>(N, ColorMode::RGBA, L);
+        element = ParseColorFunction<3>(n, ColorMode::RGBA, l);
       } else if (name == "hsl" && args.size() == 3) {
-        element = parse_color_function<3>(N, ColorMode::HSLA, L);
+        element = ParseColorFunction<3>(n, ColorMode::HSLA, l);
       }
 
       if (element.has_value()) {
@@ -238,20 +239,21 @@ void do_documentColor(const lsp::RequestMessage& req,
     Value start(kObjectType);
     Value end(kObjectType);
 
-    start.AddMember("line", color.range.start.line, resp->GetAllocator());
-    start.AddMember("character", color.range.start.character,
+    start.AddMember("line", color.m_range.m_start.m_line, resp->GetAllocator());
+    start.AddMember("character", color.m_range.m_start.m_character,
                     resp->GetAllocator());
-    end.AddMember("line", color.range.end.line, resp->GetAllocator());
-    end.AddMember("character", color.range.end.character, resp->GetAllocator());
+    end.AddMember("line", color.m_range.m_end.m_line, resp->GetAllocator());
+    end.AddMember("character", color.m_range.m_end.m_character,
+                  resp->GetAllocator());
     range.AddMember("start", start, resp->GetAllocator());
     range.AddMember("end", end, resp->GetAllocator());
 
     color_info.AddMember("range", range, resp->GetAllocator());
     color_info.AddMember("color", Value(kObjectType), resp->GetAllocator());
-    color_info["color"].AddMember("red", color.red, resp->GetAllocator());
-    color_info["color"].AddMember("green", color.green, resp->GetAllocator());
-    color_info["color"].AddMember("blue", color.blue, resp->GetAllocator());
-    color_info["color"].AddMember("alpha", color.alpha, resp->GetAllocator());
+    color_info["color"].AddMember("red", color.m_red, resp->GetAllocator());
+    color_info["color"].AddMember("green", color.m_green, resp->GetAllocator());
+    color_info["color"].AddMember("blue", color.m_blue, resp->GetAllocator());
+    color_info["color"].AddMember("alpha", color.m_alpha, resp->GetAllocator());
 
     resp->PushBack(color_info, resp->GetAllocator());
   }

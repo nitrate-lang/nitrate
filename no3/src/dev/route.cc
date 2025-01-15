@@ -31,12 +31,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <argparse.h>
 #include <glog/logging.h>
 #include <lsp/nitrated.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
 
+#include <argparse.hpp>
 #include <clean/Cleanup.hh>
 #include <core/ANSI.hh>
 #include <core/Config.hh>
@@ -71,17 +71,17 @@ using namespace ncc::parse;
 using namespace ncc::ir;
 
 namespace no3::benchmark {
-  extern std::string lexical_benchmark_source;
+  extern std::string LexicalBenchmarkSource;
 
   template <typename T>
   struct Statistic {
-    T mean;
-    T variance;
-    T stddev;
+    T m_mean;
+    T m_variance;
+    T m_stddev;
   };
 
   template <typename T>
-  static Statistic<T> calculate_statistic(const std::vector<T> &data) {
+  static Statistic<T> CalculateStatistic(const std::vector<T> &data) {
     T mean = 0.0;
     for (const auto &value : data) {
       mean += value;
@@ -97,8 +97,8 @@ namespace no3::benchmark {
     return {mean, variance, std::sqrt(variance)};
   }
 
-  static size_t lexer_benchmark_round(std::shared_ptr<Environment> &env) {
-    std::stringstream source(lexical_benchmark_source);
+  static size_t LexerBenchmarkRound(std::shared_ptr<Environment> &env) {
+    std::stringstream source(LexicalBenchmarkSource);
     Tokenizer tokenizer(source, env);
 
     size_t tokens = 0;
@@ -110,7 +110,7 @@ namespace no3::benchmark {
     return tokens;
   }
 
-  static int lexer_benchmark(std::shared_ptr<Environment> &env) {
+  static int LexerBenchmark(std::shared_ptr<Environment> &env) {
     size_t rounds = 128, total_tokens = 0;
     std::vector<double> times;
 
@@ -119,7 +119,7 @@ namespace no3::benchmark {
 
     for (size_t i = 0; i < rounds; i++) {
       auto start = std::chrono::high_resolution_clock::now();
-      total_tokens += lexer_benchmark_round(env);
+      total_tokens += LexerBenchmarkRound(env);
       auto end = std::chrono::high_resolution_clock::now();
 
       double nanoseconds =
@@ -144,11 +144,11 @@ namespace no3::benchmark {
     LOG(INFO) << "  Total time: " << total_time << "ns" << std::endl;
 
     if (total_tokens > 0) {
-      auto stats = calculate_statistic(times);
-      LOG(INFO) << "  Round time mean: " << stats.mean << "ns" << std::endl;
-      LOG(INFO) << "  Round time variance: " << stats.variance << "ns"
+      auto stats = CalculateStatistic(times);
+      LOG(INFO) << "  Round time mean: " << stats.m_mean << "ns" << std::endl;
+      LOG(INFO) << "  Round time variance: " << stats.m_variance << "ns"
                 << std::endl;
-      LOG(INFO) << "  Round time standard deviation: " << stats.stddev << "ns"
+      LOG(INFO) << "  Round time standard deviation: " << stats.m_stddev << "ns"
                 << std::endl;
 
       std::vector<double> time_per_token;
@@ -156,15 +156,16 @@ namespace no3::benchmark {
         time_per_token.push_back(time / (total_tokens / rounds));
       }
 
-      stats = calculate_statistic(time_per_token);
-      LOG(INFO) << "  Per-token time mean: " << stats.mean << "ns" << std::endl;
-      LOG(INFO) << "  Per-token time variance: " << stats.variance << "ns"
+      stats = CalculateStatistic(time_per_token);
+      LOG(INFO) << "  Per-token time mean: " << stats.m_mean << "ns"
                 << std::endl;
-      LOG(INFO) << "  Per-token time standard deviation: " << stats.stddev
+      LOG(INFO) << "  Per-token time variance: " << stats.m_variance << "ns"
+                << std::endl;
+      LOG(INFO) << "  Per-token time standard deviation: " << stats.m_stddev
                 << "ns" << std::endl;
 
       const double input_size_mbit =
-          (lexical_benchmark_source.size() / 1000'000.0) * 8;
+          (LexicalBenchmarkSource.size() / 1000'000.0) * 8;
 
       std::vector<double> round_throughputs;
       for (auto time : times) {
@@ -172,12 +173,13 @@ namespace no3::benchmark {
         round_throughputs.push_back(throughput_mbps);
       }
 
-      stats = calculate_statistic(round_throughputs);
+      stats = CalculateStatistic(round_throughputs);
 
-      LOG(INFO) << "  Throughput mean: " << stats.mean << " mbps" << std::endl;
-      LOG(INFO) << "  Throughput variance: " << stats.variance << " mbps"
+      LOG(INFO) << "  Throughput mean: " << stats.m_mean << " mbps"
                 << std::endl;
-      LOG(INFO) << "  Throughput standard deviation: " << stats.stddev
+      LOG(INFO) << "  Throughput variance: " << stats.m_variance << " mbps"
+                << std::endl;
+      LOG(INFO) << "  Throughput standard deviation: " << stats.m_stddev
                 << " mbps" << std::endl;
     }
 
@@ -195,13 +197,13 @@ namespace no3::benchmark {
     PIPELINE
   };
 
-  static int do_benchmark(std::shared_ptr<Environment> &env,
-                          Benchmark bench_type) {
-    int R = -1;
+  static int DoBenchmark(std::shared_ptr<Environment> &env,
+                         Benchmark bench_type) {
+    int r = -1;
 
     switch (bench_type) {
       case Benchmark::LEXER: {
-        R = lexer_benchmark(env);
+        r = LexerBenchmark(env);
         break;
       }
 
@@ -241,12 +243,12 @@ namespace no3::benchmark {
       }
     }
 
-    return R;
+    return r;
   }
 }  // namespace no3::benchmark
 
-static int do_parse(std::shared_ptr<Environment> &env, std::string source,
-                    std::ostream &output, bool verbose) {
+static int DoParse(std::shared_ptr<Environment> &env, std::string source,
+                   std::ostream &output, bool verbose) {
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
     LOG(ERROR) << "Failed to open source file: " << source;
@@ -258,19 +260,19 @@ static int do_parse(std::shared_ptr<Environment> &env, std::string source,
 
   auto parser = Parser::Create(scanner, env);
 
-  auto ast = parser->parse();
+  auto ast = parser->Parse();
 
   WriterSourceProvider rd =
       verbose ? WriterSourceProvider(scanner) : std::nullopt;
 
-  AST_JsonWriter writer(output, rd);
-  ast.get().Accept(writer);
+  AstJsonWriter writer(output, rd);
+  ast.Get().Accept(writer);
 
   return 0;
 }
 
-static int do_nr(std::shared_ptr<Environment> &env, std::string source,
-                 std::ostream &output, std::string opts) {
+static int DoNr(std::shared_ptr<Environment> &env, std::string source,
+                std::ostream &output, std::string opts) {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
@@ -286,10 +288,10 @@ static int do_nr(std::shared_ptr<Environment> &env, std::string source,
 
   auto parser = Parser::Create(scanner, env);
 
-  auto ast = parser->parse();
+  auto ast = parser->Parse();
 
-  if (auto module = nr_lower(ast.get().get(), "module", true)) {
-    nr_write(module.get(), nullptr, output);
+  if (auto module = NrLower(ast.Get().get(), "module", true)) {
+    NrWrite(module.get(), nullptr, output);
   } else {
     LOG(ERROR) << "Failed to lower source file: " << source;
     return 1;
@@ -298,9 +300,8 @@ static int do_nr(std::shared_ptr<Environment> &env, std::string source,
   return 0;
 }
 
-static int do_codegen(std::shared_ptr<Environment> &env, std::string source,
-                      std::string output, std::string opts,
-                      std::string target) {
+static int DoCodegen(std::shared_ptr<Environment> &env, std::string source,
+                     std::string output, std::string opts, std::string target) {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
@@ -316,9 +317,9 @@ static int do_codegen(std::shared_ptr<Environment> &env, std::string source,
 
   auto parser = Parser::Create(scanner, env);
 
-  auto ast = parser->parse();
+  auto ast = parser->Parse();
 
-  if (auto module = nr_lower(ast.get().get(), "module", true)) {
+  if (auto module = NrLower(ast.Get().get(), "module", true)) {
     bool use_tmpfile = output.empty();
 
     FILE *out = use_tmpfile ? tmpfile() : fopen(output.c_str(), "wb");
@@ -330,13 +331,13 @@ static int do_codegen(std::shared_ptr<Environment> &env, std::string source,
 
     bool ok = false;
 
-    qcode_conf codegen_conf;
+    QcodeConf codegen_conf;
     if (target == "ir") {
-      ok = qcode_ir(module.get(), codegen_conf.get(), stderr, out);
+      ok = QcodeIR(module.get(), codegen_conf.Get(), stderr, out);
     } else if (target == "asm") {
-      ok = qcode_asm(module.get(), codegen_conf.get(), stderr, out);
+      ok = QcodeAsm(module.get(), codegen_conf.Get(), stderr, out);
     } else if (target == "obj") {
-      ok = qcode_obj(module.get(), codegen_conf.get(), stderr, out);
+      ok = QcodeObj(module.get(), codegen_conf.Get(), stderr, out);
     } else {
       LOG(ERROR) << "Unknown target specified: " << target;
       return 1;
@@ -366,14 +367,14 @@ static int do_codegen(std::shared_ptr<Environment> &env, std::string source,
   return 0;
 }
 
-static int do_dev_test() {
+static int DoDevTest() {
   /// TODO: Implement testing
   LOG(ERROR) << "The integrated test suite is not implemented yet";
   return 1;
 }
 
 namespace no3::router {
-  int run_dev_mode(
+  int RunDevMode(
       const ArgumentParser &parser,
       const std::unordered_map<std::string_view,
                                std::unique_ptr<ArgumentParser>> &subparsers) {
@@ -387,7 +388,7 @@ namespace no3::router {
 
     std::shared_ptr<Environment> env = std::make_shared<Environment>();
 
-    if (parser.is_subcommand_used("bench")) {
+    if (parser.IsSubcommandUsed("bench")) {
       using namespace no3::benchmark;
 
       auto &bench_parser = *subparsers.at("bench");
@@ -406,13 +407,13 @@ namespace no3::router {
         return 0;
       }
 
-      if (!bench_parser.is_used("--name")) {
+      if (!bench_parser.IsUsed("--name")) {
         LOG(ERROR) << "No benchmark specified" << std::endl;
         LOG(ERROR) << bench_parser;
         return 1;
       }
 
-      std::string bench_name = bench_parser.get<std::string>("--name");
+      std::string bench_name = bench_parser.Get<std::string>("--name");
 
       static const std::unordered_map<std::string, Benchmark> name_map = {
           {"lexer", Benchmark::LEXER},
@@ -430,19 +431,19 @@ namespace no3::router {
         return 1;
       }
 
-      return do_benchmark(env, name_map.at(bench_name));
-    } else if (parser.is_subcommand_used("test")) {
+      return DoBenchmark(env, name_map.at(bench_name));
+    } else if (parser.IsSubcommandUsed("test")) {
       auto &test_parser = *subparsers.at("test");
       core::SetDebugMode(test_parser["--verbose"] == true);
 
-      return do_dev_test();
-    } else if (parser.is_subcommand_used("parse")) {
+      return DoDevTest();
+    } else if (parser.IsSubcommandUsed("parse")) {
       auto &parse_parser = *subparsers.at("parse");
       bool verbose = parse_parser["--verbose"] == true;
       core::SetDebugMode(verbose);
 
-      std::string source = parse_parser.get<std::string>("source");
-      std::string output = parse_parser.get<std::string>("--output");
+      std::string source = parse_parser.Get<std::string>("source");
+      std::string output = parse_parser.Get<std::string>("--output");
 
       auto out = output.empty()
                      ? std::make_unique<std::ostream>(std::cout.rdbuf())
@@ -450,15 +451,15 @@ namespace no3::router {
 
       env->Set("FILE", source);
 
-      return do_parse(env, source, *out, verbose);
-    } else if (parser.is_subcommand_used("nr")) {
+      return DoParse(env, source, *out, verbose);
+    } else if (parser.IsSubcommandUsed("nr")) {
       auto &nr_parser = *subparsers.at("nr");
 
       core::SetDebugMode(nr_parser["--verbose"] == true);
 
-      std::string source = nr_parser.get<std::string>("source");
-      std::string output = nr_parser.get<std::string>("--output");
-      std::string opts = nr_parser.get<std::string>("--opts");
+      std::string source = nr_parser.Get<std::string>("source");
+      std::string output = nr_parser.Get<std::string>("--output");
+      std::string opts = nr_parser.Get<std::string>("--opts");
 
       auto out = output.empty()
                      ? std::make_unique<std::ostream>(std::cout.rdbuf())
@@ -466,22 +467,22 @@ namespace no3::router {
 
       env->Set("FILE", source);
 
-      return do_nr(env, source, *out, opts);
-    } else if (parser.is_subcommand_used("codegen")) {
+      return DoNr(env, source, *out, opts);
+    } else if (parser.IsSubcommandUsed("codegen")) {
       auto &nr_parser = *subparsers.at("codegen");
 
       core::SetDebugMode(nr_parser["--verbose"] == true);
 
-      std::string source = nr_parser.get<std::string>("source");
-      std::string output = nr_parser.get<std::string>("--output");
-      std::string opts = nr_parser.get<std::string>("--opts");
-      std::string target = nr_parser.get<std::string>("--target");
+      std::string source = nr_parser.Get<std::string>("source");
+      std::string output = nr_parser.Get<std::string>("--output");
+      std::string opts = nr_parser.Get<std::string>("--opts");
+      std::string target = nr_parser.Get<std::string>("--target");
 
       env->Set("FILE", source);
 
-      return do_codegen(env, source, output, opts, target);
-    } else if (parser.is_used("--demangle")) {
-      std::string mangled_name = parser.get<std::string>("--demangle");
+      return DoCodegen(env, source, output, opts, target);
+    } else if (parser.IsUsed("--demangle")) {
+      std::string mangled_name = parser.Get<std::string>("--demangle");
       if (mangled_name.starts_with("@")) {
         mangled_name.erase(0);
       }

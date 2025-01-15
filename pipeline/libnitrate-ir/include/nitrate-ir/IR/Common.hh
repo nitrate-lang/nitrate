@@ -55,18 +55,18 @@ namespace ncc::ir {
 
   template <class T>
   struct Arena {
-    typedef T ValueType;
+    using value_type = T;
 
     Arena() = default;
 
     template <class U>
     constexpr Arena(const Arena<U> &) {}
 
-    [[nodiscard]] T *Allocate(std::size_t n) {
+    [[nodiscard]] T *allocate(std::size_t n) {  /// NOLINT
       return static_cast<T *>(NrAllocator->Alloc(sizeof(T) * n));
     }
 
-    void Deallocate(T *, std::size_t) {}
+    void deallocate(T *, std::size_t) {};  /// NOLINT
   };
 
   template <class T, class U>
@@ -106,7 +106,7 @@ namespace ncc::ir {
   };
 
   template <class A>
-  using IR_Vertex_CallArguments =
+  using GenericCallArguments =
       std::vector<std::pair<string, FlowPtr<GenericExpr<A>>>,
                   Arena<std::pair<string, FlowPtr<GenericExpr<A>>>>>;
 
@@ -134,7 +134,7 @@ namespace ncc::ir {
   using TmpNodeCradle = std::variant<GenericCallArgsTmpNodeCradle<A>, string>;
 
   template <class A>
-  using IR_Vertex_ListItems =
+  using GenericListItems =
       std::vector<FlowPtr<GenericExpr<A>>, Arena<FlowPtr<GenericExpr<A>>>>;
 
   enum class AbiTag {
@@ -145,20 +145,20 @@ namespace ncc::ir {
   };
 
   template <class A>
-  using IR_Vertex_CallArgs =
+  using GenericCallArgs =
       std::vector<FlowPtr<GenericExpr<A>>, Arena<FlowPtr<GenericExpr<A>>>>;
 
   template <class A>
-  using IR_Vertex_SeqItems =
+  using GenericSeqItems =
       std::vector<FlowPtr<GenericExpr<A>>, Arena<FlowPtr<GenericExpr<A>>>>;
 
   template <class A>
-  using IR_Vertex_Params =
+  using GenericParams =
       std::vector<std::pair<FlowPtr<GenericType<A>>, string>,
                   Arena<std::pair<FlowPtr<GenericType<A>>, string>>>;
 
   template <class A>
-  using IR_Vertex_SwitchCases =
+  using GenericSwitchCases =
       std::vector<FlowPtr<GenericCase<A>>, Arena<FlowPtr<GenericCase<A>>>>;
 
 }  // namespace ncc::ir

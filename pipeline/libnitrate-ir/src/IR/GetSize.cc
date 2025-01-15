@@ -121,12 +121,12 @@ NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::TypeGetSizeBitsImpl(
     }
 
     case IR_tPTR: {
-      R = self->as<PtrTy>()->getNativeSize() * 8;
+      r = self->as<PtrTy>()->GetNativeSize() * 8;
       break;
     }
 
     case IR_tCONST: {
-      R = self->as<ConstTy>()->getItem()->getSizeBits();
+      r = self->as<ConstTy>()->GetItem()->GetSizeBits();
       break;
     }
 
@@ -135,8 +135,8 @@ NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::TypeGetSizeBitsImpl(
       size_t size = 0;
       bool okay = true;
 
-      for (auto f : self->as<StructTy>()->getFields()) {
-        if (auto member_size = f->getSizeBits()) {
+      for (auto f : self->as<StructTy>()->GetFields()) {
+        if (auto member_size = f->GetSizeBits()) {
           size += member_size.value();
         } else {
           okay = false;
@@ -153,8 +153,8 @@ NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::TypeGetSizeBitsImpl(
       size_t max_size = 0;
       bool okay = true;
 
-      for (auto f : self->as<UnionTy>()->getFields()) {
-        if (auto member_size = f->getSizeBits()) {
+      for (auto f : self->as<UnionTy>()->GetFields()) {
+        if (auto member_size = f->GetSizeBits()) {
           max_size = std::max(max_size, member_size.value());
         } else {
           okay = false;
@@ -168,14 +168,14 @@ NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::TypeGetSizeBitsImpl(
 
     case IR_tARRAY: {
       auto a = self->as<ArrayTy>();
-      if (auto element_size = A->getElement()->getSizeBits()) {
-        r = element_size.value() * A->getCount();
+      if (auto element_size = a->GetElement()->GetSizeBits()) {
+        r = element_size.value() * a->GetCount();
       }
       break;
     }
 
     case IR_tFUNC: {
-      R = self->as<FnTy>()->getNativeSize() * 8;
+      r = self->as<FnTy>()->GetNativeSize() * 8;
       break;
     }
 

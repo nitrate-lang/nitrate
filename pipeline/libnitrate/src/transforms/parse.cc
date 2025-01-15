@@ -335,12 +335,12 @@ CREATE_TRANSFORM(nit::parse) {
 
   switch (out_mode) {
     case OutMode::JSON: {
-      auto writter = AST_JsonWriter(output);
+      auto writter = AstJsonWriter(output);
       root.Get().Accept(writter);
       return true;
     }
     case OutMode::MsgPack: {
-      auto writter = AST_MsgPackWriter(output);
+      auto writter = AstMsgPackWriter(output);
       root.Get().Accept(writter);
       return true;
     }

@@ -42,7 +42,7 @@ using namespace ncc;
 using namespace ncc::ir;
 
 namespace util {
-  constexpr std::array<char, 256> kNsValidChars = []() {
+  constexpr std::array<char, 256> kNamespaceChars = []() {
     auto is_alnum = [](char ch) constexpr {
       return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') ||
              (ch >= 'A' && ch <= 'Z');
@@ -169,7 +169,7 @@ namespace ncc::ir::abi::azide {
           std::string_view part = input.substr(i, size);
 
           if (!std::all_of(part.begin(), part.end(),
-                           [](char ch) { return util::kNsValidChars[ch]; })) {
+                           [](char ch) { return util::kNamespaceChars[ch]; })) {
             return false;
           }
 
@@ -335,19 +335,19 @@ namespace ncc::ir::abi::azide {
 
       case IR_tPTR: {
         ss << 'P';
-        MangleTypeRecurse(n->template as<PtrTy>()->getPointee(), ss);
+        MangleTypeRecurse(n->template as<PtrTy>()->GetPointee(), ss);
         break;
       }
 
       case IR_tCONST: {
         ss << 'K';
-        MangleTypeRecurse(n->template as<ConstTy>()->getItem(), ss);
+        MangleTypeRecurse(n->template as<ConstTy>()->GetItem(), ss);
         break;
       }
 
       case IR_tOPAQUE: {
         ss << 'N';
-        nslv_encode(n->template as<OpaqueTy>()->getName(), ss);
+        NslvEncode(n->template as<OpaqueTy>()->GetName(), ss);
         ss << 'E';
         break;
       }
@@ -360,7 +360,7 @@ namespace ncc::ir::abi::azide {
          */
 
         ss << 'c';
-        for (auto field : n->template as<StructTy>()->getFields()) {
+        for (auto field : n->template as<StructTy>()->GetFields()) {
           MangleTypeRecurse(field, ss);
         }
         ss << 'E';
@@ -375,7 +375,7 @@ namespace ncc::ir::abi::azide {
          */
 
         ss << 'u';
-        for (auto field : n->template as<StructTy>()->getFields()) {
+        for (auto field : n->template as<StructTy>()->GetFields()) {
           MangleTypeRecurse(field, ss);
         }
         ss << 'E';
@@ -384,9 +384,9 @@ namespace ncc::ir::abi::azide {
 
       case IR_tARRAY: {
         ss << 'A';
-        ss << n->template as<ArrayTy>()->getCount();
+        ss << n->template as<ArrayTy>()->GetCount();
         ss << '_';
-        MangleTypeRecurse(n->template as<ArrayTy>()->getElement(), ss);
+        MangleTypeRecurse(n->template as<ArrayTy>()->GetElement(), ss);
         break;
       }
 
@@ -400,11 +400,11 @@ namespace ncc::ir::abi::azide {
 
         ss << 'F';
         auto *fn = n->template as<FnTy>();
-        MangleTypeRecurse(fn->getReturn(), ss);
-        for (auto param : fn->getParams()) {
+        MangleTypeRecurse(fn->GetReturn(), ss);
+        for (auto param : fn->GetParams()) {
           MangleTypeRecurse(param, ss);
         }
-        if (fn->isVariadic()) {
+        if (fn->IsVariadic()) {
           ss << '_';
         }
         ss << 'E';

@@ -40,36 +40,36 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::CheckReturns(FlowPtr<Seq> root, IReport *i) {
+bool NRBuilder::CheckReturns(FlowPtr<Seq> root, IReport *d) {
   bool failed = false;
 
   for_each<Function>(root, [&](auto x) {
     /* Skip function declarations */
-    if (!x->getBody()) {
+    if (!x->GetBody()) {
       return;
     }
 
-    auto fn_ty_opt = x->getType();
+    auto fn_ty_opt = x->GetType();
     if (!fn_ty_opt) {
-      i->Report(TypeInference, IC::Error, "Failed to deduce function type",
-                x->getLoc());
+      d->Report(TypeInference, IC::Error, "Failed to deduce function type",
+                x->GetLoc());
       failed = true;
 
       return;
     }
 
     const auto fn_ty = fn_ty_opt.value()->template as<FnTy>();
-    const auto return_ty = fn_ty->getReturn();
+    const auto return_ty = fn_ty->GetReturn();
 
     bool found_ret = false;
 
-    for_each<Ret>(x->getBody().value(), [&](auto y) {
+    for_each<Ret>(x->GetBody().value(), [&](auto y) {
       found_ret = true;
 
-      auto ret_expr_ty_opt = y->getExpr()->getType();
+      auto ret_expr_ty_opt = y->GetExpr()->GetType();
       if (!ret_expr_ty_opt) {
-        i->Report(TypeInference, IC::Error,
-                  "Failed to deduce return expression type", y->getLoc());
+        d->Report(TypeInference, IC::Error,
+                  "Failed to deduce return expression type", y->GetLoc());
         failed = true;
 
         return;
@@ -78,11 +78,11 @@ bool NRBuilder::CheckReturns(FlowPtr<Seq> root, IReport *i) {
       /// TODO: Implement return type coercion
 
       if (!return_ty->IsEq(ret_expr_ty_opt.value().get())) {
-        i->Report(ReturnTypeMismatch, IC::Error,
-                  {"Return value type '", ret_expr_ty_opt.value()->toString(),
+        d->Report(ReturnTypeMismatch, IC::Error,
+                  {"Return value type '", ret_expr_ty_opt.value()->ToString(),
                    "' does not match function return type '",
-                   return_ty->toString(), "'"},
-                  y->getLoc());
+                   return_ty->ToString(), "'"},
+                  y->GetLoc());
         failed = true;
 
         return;
@@ -90,7 +90,7 @@ bool NRBuilder::CheckReturns(FlowPtr<Seq> root, IReport *i) {
     });
 
     if (!found_ret) {
-      i->Report(MissingReturn, IC::Error, x->getName(), x->getLoc());
+      d->Report(MissingReturn, IC::Error, x->GetName(), x->GetLoc());
       failed = true;
     }
   });

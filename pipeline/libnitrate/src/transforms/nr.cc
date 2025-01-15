@@ -73,16 +73,16 @@ CREATE_TRANSFORM(nit::nr) {
     return false;
   }
 
-  if (auto module = nr_lower(root.value().get(), nullptr, true)) {
+  if (auto module = NrLower(root.value().get(), nullptr, true)) {
     switch (out_mode) {
       case OutMode::JSON: {
-        auto writter = IrJsonWriter(output);
+        auto writter = IRJsonWriter(output);
         module->Accept(writter);
         return false;
       }
 
       case OutMode::MsgPack: {
-        auto writter = IR_MsgPackWriter(output);
+        auto writter = IRMsgPackWriter(output);
         module->Accept(writter);
         return false;
       }

@@ -7,18 +7,18 @@
 
 using namespace rapidjson;
 
-void do_didSave(const lsp::NotificationMessage& notif) {
-  if (!notif.params().HasMember("textDocument")) {
+void DoDidSave(const lsp::NotificationMessage& notif) {
+  if (!notif.Params().HasMember("textDocument")) {
     LOG(ERROR) << "Missing textDocument member";
     return;
   }
 
-  if (!notif.params()["textDocument"].IsObject()) {
+  if (!notif.Params()["textDocument"].IsObject()) {
     LOG(ERROR) << "textDocument is not an object";
     return;
   }
 
-  const auto& text_document = notif.params()["textDocument"];
+  const auto& text_document = notif.Params()["textDocument"];
 
   if (!text_document.HasMember("uri")) {
     LOG(ERROR) << "Missing uri member";

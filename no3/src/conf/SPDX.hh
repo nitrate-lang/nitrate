@@ -39,7 +39,7 @@
 
 namespace no3 {
   namespace conf {
-    extern const std::unordered_set<std::string_view> spdx_identifiers;
+    extern const std::unordered_set<std::string_view> SPDX_IDENTIFIERS;
   }
 }  // namespace no3
 

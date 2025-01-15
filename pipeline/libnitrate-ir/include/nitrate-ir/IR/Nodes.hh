@@ -109,7 +109,8 @@ namespace ncc::ir {
   }  // namespace detail
 
   template <IterMode mode, typename T>
-  void Iterate(FlowPtr<T> &base, IterCallback cb, ChildSelect cs = nullptr) {
+  void iterate(  /// NOLINT
+      FlowPtr<T> &base, IterCallback cb, ChildSelect cs = nullptr) {
     if constexpr (mode == dfs_pre) {
       return detail::DfsPreImpl((FlowPtr<Expr> *)&base, cb, cs);
     } else if constexpr (mode == dfs_post) {
@@ -138,7 +139,7 @@ namespace ncc::ir {
   }
 
   template <auto mode = dfs_pre>
-  void ForEach(FlowPtr<Expr> v,
+  void for_each(FlowPtr<Expr> v,  /// NOLINT
                 std::function<void(NrTyT, FlowPtr<Expr>)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
       f((*c)->GetKind(), *c);
@@ -148,7 +149,7 @@ namespace ncc::ir {
   }
 
   template <auto mode = dfs_pre>
-  void Transform(FlowPtr<Expr> v,
+  void transform(FlowPtr<Expr> v,  /// NOLINT
                  std::function<bool(NrTyT, FlowPtr<Expr> *)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
       return f((*c)->GetKind(), c) ? IterOp::Proceed : IterOp::Abort;
@@ -156,7 +157,8 @@ namespace ncc::ir {
   }
 
   template <typename T, auto mode = dfs_pre>
-  void ForEach(FlowPtr<Expr> v, std::function<void(FlowPtr<T>)> f) {
+  void for_each(FlowPtr<Expr> v,  /// NOLINT
+                std::function<void(FlowPtr<T>)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
       if ((*c)->GetKind() != Expr::GetTypeCode<T>()) {
         return IterOp::Proceed;
@@ -169,7 +171,8 @@ namespace ncc::ir {
   }
 
   template <typename T, auto mode = dfs_pre>
-  void Transform(FlowPtr<Expr> v, std::function<bool(FlowPtr<T> *)> f) {
+  void transform(FlowPtr<Expr> v,  /// NOLINT
+                 std::function<bool(FlowPtr<T> *)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
       if ((*c)->GetKind() != Expr::GetTypeCode<T>()) {
         return IterOp::Proceed;

@@ -15,12 +15,12 @@
 ///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
 ///   * Copyright (C) 2024 Wesley C. Jones                                   ///
 ///                                                                          ///
-///   The Nitrate Toolchain is free software; you can redistribute it or     ///
+///   The Nitrate Toolchain Is free software; you can redIstribute it or     ///
 ///   modify it under the terms of the GNU Lesser General Public             ///
-///   License as published by the Free Software Foundation; either           ///
+///   License As publIshed by the Free Software Foundation; either           ///
 ///   version 2.1 of the License, or (at your option) any later version.     ///
 ///                                                                          ///
-///   The Nitrate Toolcain is distributed in the hope that it will be        ///
+///   The Nitrate Toolcain Is dIstributed in the hope that it will be        ///
 ///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
 ///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
 ///   Lesser General Public License for more details.                        ///
@@ -73,7 +73,7 @@ static std::string JsonEscapeString(const std::string &str) {
   return ss.str();
 }
 
-std::string no3::conf::ConfigGroup::dump(
+std::string no3::conf::ConfigGroup::Dump(
     no3::conf::ConfigItemSerializationTarget target) const {
   std::stringstream ss;
 
@@ -82,10 +82,10 @@ std::string no3::conf::ConfigGroup::dump(
 
     for (auto it = m_items.begin(); it != m_items.end(); ++it) {
       ss << "\"" << it->first << "\":";
-      if (it->second.is<std::vector<std::string>>()) {
+      if (it->second.Is<std::vector<std::string>>()) {
         ss << "[";
 
-        auto v = it->second.as<std::vector<std::string>>();
+        auto v = it->second.As<std::vector<std::string>>();
 
         for (auto it2 = v.begin(); it2 != v.end(); ++it2) {
           ss << "\"" << JsonEscapeString(*it2) << "\"";
@@ -95,12 +95,12 @@ std::string no3::conf::ConfigGroup::dump(
         }
 
         ss << "]";
-      } else if (it->second.is<std::string>()) {
-        ss << "\"" << JsonEscapeString(it->second.as<std::string>()) << "\"";
-      } else if (it->second.is<int64_t>()) {
-        ss << it->second.as<int64_t>();
-      } else if (it->second.is<bool>()) {
-        ss << (it->second.as<bool>() ? "true" : "false");
+      } else if (it->second.Is<std::string>()) {
+        ss << "\"" << JsonEscapeString(it->second.As<std::string>()) << "\"";
+      } else if (it->second.Is<int64_t>()) {
+        ss << it->second.As<int64_t>();
+      } else if (it->second.Is<bool>()) {
+        ss << (it->second.As<bool>() ? "true" : "false");
       }
 
       if (std::next(it) != m_items.end()) {
@@ -112,10 +112,10 @@ std::string no3::conf::ConfigGroup::dump(
   } else if (target == ConfigItemSerializationTarget::YAML) {
     for (auto it = m_items.begin(); it != m_items.end(); ++it) {
       ss << it->first << ": ";
-      if (it->second.is<std::vector<std::string>>()) {
+      if (it->second.Is<std::vector<std::string>>()) {
         ss << "[";
 
-        auto v = it->second.as<std::vector<std::string>>();
+        auto v = it->second.As<std::vector<std::string>>();
 
         for (auto it2 = v.begin(); it2 != v.end(); ++it2) {
           ss << "\"" << JsonEscapeString(*it2) << "\"";
@@ -125,12 +125,12 @@ std::string no3::conf::ConfigGroup::dump(
         }
 
         ss << "]";
-      } else if (it->second.is<std::string>()) {
-        ss << "\"" << JsonEscapeString(it->second.as<std::string>()) << "\"";
-      } else if (it->second.is<int64_t>()) {
-        ss << it->second.as<int64_t>();
-      } else if (it->second.is<bool>()) {
-        ss << (it->second.as<bool>() ? "true" : "false");
+      } else if (it->second.Is<std::string>()) {
+        ss << "\"" << JsonEscapeString(it->second.As<std::string>()) << "\"";
+      } else if (it->second.Is<int64_t>()) {
+        ss << it->second.As<int64_t>();
+      } else if (it->second.Is<bool>()) {
+        ss << (it->second.As<bool>() ? "true" : "false");
       }
 
       if (std::next(it) != m_items.end()) {
@@ -144,16 +144,16 @@ std::string no3::conf::ConfigGroup::dump(
   return ss.str();
 }
 
-std::string no3::conf::Config::dump(
+std::string no3::conf::Config::Dump(
     no3::conf::ConfigItemSerializationTarget target) const {
   std::stringstream ss;
 
-  ss << m_root.dump(target);
+  ss << m_root.Dump(target);
 
   return ss.str();
 }
 
-std::optional<no3::conf::Config> no3::conf::IParser::parsef(
+std::optional<no3::conf::Config> no3::conf::IParser::Parsef(
     const std::string &path) {
   try {
     std::ifstream file(path);
@@ -163,7 +163,7 @@ std::optional<no3::conf::Config> no3::conf::IParser::parsef(
 
     std::string data((std::istreambuf_iterator<char>(file)),
                      std::istreambuf_iterator<char>());
-    return parse(data);
+    return Parse(data);
   } catch (...) {
     return std::nullopt;
   }

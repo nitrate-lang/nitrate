@@ -457,7 +457,7 @@ using namespace ncc;
 //     }
 
 //     case OpTypeof: {
-//       auto inferred = rhs->getType();
+//       auto inferred = rhs->GetType();
 //       if (!inferred.has_value()) {
 //         break;
 //       }
@@ -466,7 +466,7 @@ using namespace ncc;
 //       auto res = se.mangle_name(inferred.value(), ir::AbiTag::Nitrate);
 //       if (!res.has_value()) {
 //         G->report(CompilerError, IC::Error, "Failed to mangle type name",
-//                   rhs->getLoc());
+//                   rhs->GetLoc());
 //         break;
 //       }
 
@@ -1004,7 +1004,7 @@ using namespace ncc;
 // }
 // static EResult nrgen_f128_ty(NRBuilder &b, PState &, IReport *,
 //                              FlowPtr<ncc::parse::F128>) {
-//   return b.getF128Ty();
+//   return b.GetF128Ty();
 // }
 // static EResult nrgen_void_ty(NRBuilder &b, PState &, IReport *,
 //                              FlowPtr<ncc::parse::VoidTy>) {
@@ -1045,13 +1045,13 @@ using namespace ncc;
 //   }
 
 //   auto eprintn_cb = [&](std::string_view msg) {
-//     G->report(CompilerError, IC::Error, msg, count_expr.value()->getLoc());
+//     G->report(CompilerError, IC::Error, msg, count_expr.value()->GetLoc());
 //   };
 
 //   auto result = ir::comptime_impl(count_expr.value(), eprintn_cb);
 //   if (!result.has_value()) {
 //     G->report(CompilerError, IC::Error, "Failed to evaluate array size",
-//               count_expr.value()->getLoc());
+//               count_expr.value()->GetLoc());
 //     return std::nullopt;
 //   }
 
@@ -1179,7 +1179,7 @@ using namespace ncc;
 
 // static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
 //                             FlowPtr<ncc::parse::StructDef> n) {
-//   bool is_template = n->Gettemplate_params().has_value();
+//   bool is_template = n->GetTemplate_params().has_value();
 //   if (is_template) {
 //     G->report(ir::CompilerError, IC::Error,
 //               "Attempted to lower an unexpected template struct node",
@@ -1668,8 +1668,8 @@ using namespace ncc;
 //       qcore_assert(item->size() == 1);
 //       Seq *inner = item->at(0)->as<Seq>();
 
-//       items.insert(items.end(), inner->getItems().begin(),
-//                    inner->getItems().end());
+//       items.insert(items.end(), inner->GetItems().begin(),
+//                    inner->GetItems().end());
 //     } else {
 //       items.insert(items.end(), item.value().begin(), item.value().end());
 //     }
@@ -1898,7 +1898,7 @@ using namespace ncc;
 //     return std::nullopt;
 //   }
 
-//   IR_Vertex_SwitchCases cases;
+//   GenericSwitchCases cases;
 //   for (auto it = n->Getcases().begin(); it != n->Getcases().end(); ++it) {
 //     auto item = next_one(*it);
 //     if (!item.has_value()) {

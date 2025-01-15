@@ -39,18 +39,18 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::CheckFunctionCalls(FlowPtr<Seq> root, IReport *i) {
+bool NRBuilder::CheckFunctionCalls(FlowPtr<Seq> root, IReport *d) {
   bool failed = false;
 
   for_each<Call>(root, [&](auto x) {
-    if (auto target_opt = x->getTarget()) {
+    if (auto target_opt = x->GetTarget()) {
       auto target = target_opt.value();
 
-      if (auto target_type = target->getType()) {
-        if (target_type.value()->is_function()) {
+      if (auto target_type = target->GetType()) {
+        if (target_type.value()->IsFunction()) {
           FnTy *fn_ty = target_type.value()->template as<FnTy>();
 
-          const auto &arguments = x->getArgs();
+          const auto &arguments = x->GetArgs();
 
           bool variadic_two_few = fn_ty->IsVariadic() &&
                                   arguments.size() < fn_ty->GetParams().size();
@@ -58,14 +58,14 @@ bool NRBuilder::CheckFunctionCalls(FlowPtr<Seq> root, IReport *i) {
           bool two_many = arguments.size() > fn_ty->GetParams().size();
 
           if (variadic_two_few) {
-            i->Report(VariadicNotEnoughArguments, IC::Error, target->getName(),
-                      x->getLoc());
+            d->Report(VariadicNotEnoughArguments, IC::Error, target->GetName(),
+                      x->GetLoc());
           } else if (two_few) {
-            i->Report(TwoFewArguments, IC::Error, target->getName(),
-                      x->getLoc());
+            d->Report(TwoFewArguments, IC::Error, target->GetName(),
+                      x->GetLoc());
           } else if (two_many) {
-            i->Report(TwoManyArguments, IC::Error, target->getName(),
-                      x->getLoc());
+            d->Report(TwoManyArguments, IC::Error, target->GetName(),
+                      x->GetLoc());
           }
 
           if (!two_few && !two_many && !variadic_two_few) {
@@ -73,24 +73,24 @@ bool NRBuilder::CheckFunctionCalls(FlowPtr<Seq> root, IReport *i) {
               auto param_type = fn_ty->GetParams()[i]->GetType();
 
               if (!param_type.has_value()) {
-                i->Report(TypeInference, IC::Error,
+                d->Report(TypeInference, IC::Error,
                           "Unable to deduce function parameter type");
                 failed = true;
                 continue;
               }
 
-              auto arg_type = arguments[i]->getType();
+              auto arg_type = arguments[i]->GetType();
               if (!arg_type.has_value()) {
-                i->Report(TypeInference, IC::Error,
+                d->Report(TypeInference, IC::Error,
                           "Unable to deduce function argument type");
                 failed = true;
                 continue;
               }
 
               if (!param_type.value()->IsEq(arg_type.value().get())) {
-                i->Report(BadCast, IC::Error,
+                d->Report(BadCast, IC::Error,
                           {"Bad call argument cast from '",
-                           arg_type.value()->toString(), "' to '",
+                           arg_type.value()->ToString(), "' to '",
                            param_type.value()->ToString(), "'"});
                 failed = true;
                 continue;

@@ -94,42 +94,42 @@ namespace no3 {
 
     class AnsiOut final {
       std::ostream &m_out;
-      Style style;
+      Style m_style;
 
     public:
-      AnsiOut(std::ostream &out) : m_out(out), style(Style::RESET){};
+      AnsiOut(std::ostream &out) : m_out(out), m_style(Style::RESET){};
 
       AnsiOut &operator<<(const std::string &str);
 
       template <class T>
-      AnsiOut &write(const T &msg) {
+      AnsiOut &Write(const T &msg) {
         std::stringstream ss;
         ss << msg;
         return operator<<(ss.str());
       }
 
-      AnsiOut newline();
+      AnsiOut Newline();
 
-      AnsiOut &set_style(Style style) {
-        this->style = style;
+      AnsiOut &SetStyle(Style style) {
+        this->m_style = style;
         return *this;
       }
     };
 
     template <class T>
     AnsiOut &operator<<(AnsiOut &out, const T &msg) {
-      return out.write(msg);
+      return out.Write(msg);
     }
 
     static inline void operator<<(AnsiOut &out,
                                   std::ostream &(*var)(std::ostream &)) {
       if (var == static_cast<std::ostream &(*)(std::ostream &)>(std::endl)) {
-        out.newline();
+        out.Newline();
       }
     }
 
     static inline void operator|=(AnsiOut &out, Style style) {
-      out.set_style(style);
+      out.SetStyle(style);
     }
 
     bool IsUsingColors();

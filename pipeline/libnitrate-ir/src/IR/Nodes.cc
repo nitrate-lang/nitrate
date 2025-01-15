@@ -82,7 +82,9 @@ struct ConstStateHash {
 struct OpaqueState {
   string m_name;
 
-  bool operator==(OpaqueState const& other) const { return m_name == other.m_name; }
+  bool operator==(OpaqueState const& other) const {
+    return m_name == other.m_name;
+  }
 };
 
 struct OpaqueStateHash {
@@ -219,17 +221,15 @@ static std::unordered_map<
     GUnionCache;
 static std::unordered_map<ArrayState, std::unique_ptr<ArrayTy>, ArrayStateHash>
     GArrayCache;
-static std::unordered_map<FnState, std::unique_ptr<FnTy>, FnStateHash>
-    GFnCache;
+static std::unordered_map<FnState, std::unique_ptr<FnTy>, FnStateHash> GFnCache;
 
 static std::mutex GPtrCacheMutex, GConstCacheMutex, GOpaqueCacheMutex,
-    GStructCacheMutex, GUnionCacheMutex, GArrayCacheMutex,
-    GFnCacheMutex;
+    GStructCacheMutex, GUnionCacheMutex, GArrayCacheMutex, GFnCacheMutex;
 
-void IrResetTypeCache() {
+void IRResetTypeCache() {
   std::lock_guard l0(GPtrCacheMutex), l1(GConstCacheMutex),
-      l2(GOpaqueCacheMutex), l3(GStructCacheMutex),
-      l4(GUnionCacheMutex), l5(GArrayCacheMutex), l6(GFnCacheMutex);
+      l2(GOpaqueCacheMutex), l3(GStructCacheMutex), l4(GUnionCacheMutex),
+      l5(GArrayCacheMutex), l6(GFnCacheMutex);
 
   GPtrCache.clear();
   GConstCache.clear();
@@ -263,9 +263,8 @@ NCC_EXPORT ConstTy* ir::GetConstTy(FlowPtr<Type> item) {
   auto it = GConstCache.find(state);
 
   if (it == GConstCache.end()) [[unlikely]] {
-    it =
-        GConstCache.emplace(std::move(state), std::make_unique<ConstTy>(item))
-            .first;
+    it = GConstCache.emplace(std::move(state), std::make_unique<ConstTy>(item))
+             .first;
   }
 
   return it->second.get();
@@ -278,9 +277,9 @@ NCC_EXPORT OpaqueTy* ir::GetOpaqueTy(string name) {
   auto it = GOpaqueCache.find(state);
 
   if (it == GOpaqueCache.end()) [[unlikely]] {
-    it = GOpaqueCache
-             .emplace(std::move(state), std::make_unique<OpaqueTy>(name))
-             .first;
+    it =
+        GOpaqueCache.emplace(std::move(state), std::make_unique<OpaqueTy>(name))
+            .first;
   }
 
   return it->second.get();
@@ -375,7 +374,7 @@ static bool IsCyclicUtil(auto base, std::unordered_set<FlowPtr<Expr>>& visited,
     // to this vertex
     iterate<IterMode::children>(
         base, [&](auto, auto const* const cur) -> IterOp {
-          if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, rec_stack))
+          if (!visited.contains(*cur) && IsCyclicUtil(*cur, visited, rec_stack))
               [[unlikely]] {
             has_cycle = true;
             return IterOp::Abort;
@@ -397,8 +396,8 @@ NCC_EXPORT bool detail::IsAcyclicImpl(FlowPtr<Expr> self) {
   std::unordered_set<FlowPtr<Expr>> visited, rec_stack;
   bool has_cycle = false;
 
-  Iterate<IterMode::children>(self, [&](auto, auto c) -> IterOp {
-    if (!visited.contains(*c) && isCyclicUtil(*c, visited, rec_stack))
+  iterate<IterMode::children>(self, [&](auto, auto c) -> IterOp {
+    if (!visited.contains(*c) && IsCyclicUtil(*c, visited, rec_stack))
         [[unlikely]] {
       has_cycle = true;
       return IterOp::Abort;

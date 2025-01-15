@@ -33,7 +33,7 @@
 
 #include <conf/SPDX.hh>
 
-const std::unordered_set<std::string_view> no3::conf::spdx_identifiers = {
+const std::unordered_set<std::string_view> no3::conf::SPDX_IDENTIFIERS = {
     "0BSD",
     "3D-Slicer-1.0",
     "AAL",

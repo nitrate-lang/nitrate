@@ -37,7 +37,7 @@
 #include <string>
 
 namespace no3::install {
-  bool install_from_url(std::string url, const std::string &dest,
+  bool InstallFromUrl(std::string url, const std::string &dest,
                         std::string &package_name, bool overwrite = false);
 }  // namespace no3::install
 

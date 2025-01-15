@@ -317,5 +317,5 @@
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
 
-//   m_root->getItems().push_back(root);
+//   m_root->GetItems().push_back(root);
 // }
