@@ -44,12 +44,7 @@ struct qcode_conf_t {
 private:
   std::vector<qcode_setting_t> m_data;
 
-  bool verify_prechange(qcode_key_t key, qcode_val_t value) const {
-    (void)key;
-    (void)value;
-
-    return true;
-  }
+  bool verify_prechange(qcode_key_t, qcode_val_t) const { return true; }
 
 public:
   qcode_conf_t() = default;

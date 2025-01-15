@@ -226,7 +226,7 @@ static std::mutex g_ptr_cache_mutex, g_const_cache_mutex, g_opaque_cache_mutex,
     g_struct_cache_mutex, g_union_cache_mutex, g_array_cache_mutex,
     g_fn_cache_mutex;
 
-void IR_resetTypeCache(void) {
+void IR_resetTypeCache() {
   std::lock_guard l0(g_ptr_cache_mutex), l1(g_const_cache_mutex),
       l2(g_opaque_cache_mutex), l3(g_struct_cache_mutex),
       l4(g_union_cache_mutex), l5(g_array_cache_mutex), l6(g_fn_cache_mutex);

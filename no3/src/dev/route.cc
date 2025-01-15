@@ -270,7 +270,7 @@ static int do_parse(std::shared_ptr<Environment> &env, std::string source,
 }
 
 static int do_nr(std::shared_ptr<Environment> &env, std::string source,
-                 std::ostream &output, std::string opts, bool verbose) {
+                 std::ostream &output, std::string opts) {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
@@ -289,15 +289,6 @@ static int do_nr(std::shared_ptr<Environment> &env, std::string source,
   auto ast = parser->parse();
 
   if (auto module = nr_lower(ast.get().get(), "module", true)) {
-    nr_diag_read(
-        module.get(),
-        [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
-          if (verbose || lvl != IR_LEVEL_DEBUG) {
-            std::cerr << std::string_view((const char *)msg, len) << std::endl;
-          }
-        },
-        verbose);
-
     nr_write(module.get(), nullptr, output);
   } else {
     LOG(ERROR) << "Failed to lower source file: " << source;
@@ -308,8 +299,8 @@ static int do_nr(std::shared_ptr<Environment> &env, std::string source,
 }
 
 static int do_codegen(std::shared_ptr<Environment> &env, std::string source,
-                      std::string output, std::string opts, std::string target,
-                      bool verbose) {
+                      std::string output, std::string opts,
+                      std::string target) {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
@@ -328,17 +319,6 @@ static int do_codegen(std::shared_ptr<Environment> &env, std::string source,
   auto ast = parser->parse();
 
   if (auto module = nr_lower(ast.get().get(), "module", true)) {
-    nr_diag_read(
-        module.get(),
-        [](const uint8_t *msg, size_t len, nr_level_t lvl, uintptr_t verbose) {
-          if (!verbose && lvl == IR_LEVEL_DEBUG) {
-            return;
-          }
-
-          std::cerr << std::string_view((const char *)msg, len) << std::endl;
-        },
-        verbose);
-
     bool use_tmpfile = output.empty();
 
     FILE *out = use_tmpfile ? tmpfile() : fopen(output.c_str(), "wb");
@@ -484,7 +464,7 @@ namespace no3::router {
 
       env->set("FILE", source);
 
-      return do_nr(env, source, *out, opts, nr_parser["--verbose"] == true);
+      return do_nr(env, source, *out, opts);
     } else if (parser.is_subcommand_used("codegen")) {
       auto &nr_parser = *subparsers.at("codegen");
 
@@ -497,8 +477,7 @@ namespace no3::router {
 
       env->set("FILE", source);
 
-      return do_codegen(env, source, output, opts, target,
-                        nr_parser["--verbose"] == true);
+      return do_codegen(env, source, output, opts, target);
     } else if (parser.is_used("--demangle")) {
       std::string mangled_name = parser.get<std::string>("--demangle");
       if (mangled_name.starts_with("@")) {

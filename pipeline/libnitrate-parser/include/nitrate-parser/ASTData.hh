@@ -61,10 +61,7 @@ namespace ncc::parse {
       return static_cast<T *>(npar_allocator->alloc(sizeof(T) * n));
     }
 
-    void deallocate(T *p, std::size_t n) {
-      (void)n;
-      (void)p;
-    }
+    void deallocate(T *, std::size_t) {}
   };
 
   template <class T, class U>

@@ -47,135 +47,6 @@ using namespace ncc;
 using namespace ncc::ir;
 using namespace ncc::lex;
 
-NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
-  /// FIXME: Implement this function
-  (void)sev;
-  return std::string(msg);
-}
-
-static const std::unordered_map<IC, nr_level_t> issue_class_map = {
-    {IC::Debug, IR_LEVEL_DEBUG},
-    {IC::Info, IR_LEVEL_INFO},
-    {IC::Warn, IR_LEVEL_WARN},
-    {IC::Error, IR_LEVEL_ERROR},
-};
-
-template <typename L, typename R>
-boost::bimap<L, R> make_bimap(
-    std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
-  return boost::bimap<L, R>(list.begin(), list.end());
-}
-
-struct IssueInfo {
-  std::string flagname;
-  std::string overview;
-  std::vector<std::string> hints;
-
-  bool operator<(const IssueInfo &rhs) const { return flagname < rhs.flagname; }
-};
-
-/// FIXME: Write correct stuff here
-
-const boost::bimap<IssueCode, IssueInfo> issue_info =
-    make_bimap<IssueCode, IssueInfo>({
-        {IssueCode::Info, {"info", "%s", {}}},
-        {CompilerError,
-         {"error", "An error occurred during compilation: %s", {}}},
-        {PTreeInvalid, {"ptree-invalid", "%s", {}}},
-        {SignalReceived,
-         {"signal-recv",
-          "The compiler received an unrecoverable process signal.",
-          {}}},
-        {DSPolyCyclicRef,
-         {"ds-cyclic-ref",
-          "Cyclic polymorphic node reference detected in internal module IR "
-          "data structure.",
-          {"This is an (INTERNAL) compiler error. Please report this \
-          issue."}}},
-        {DSNullPtr,
-         {"ds-nullptr",
-          "Nullptr detected in internal module IR data structure.",
-          {"This is an (INTERNAL) compiler error. Please report this\
-            issue."}}},
-        {DSBadType,
-         {"ds-bad-type",
-          "Internal module IR data structure contains a bad type.",
-          {"This is an (INTERNAL) compiler error. Please report this\
-                  issue."}}},
-        {DSBadTmpNode,
-         {"ds-bad-tmp-node",
-          "Internal module IR data structure contains an unexpected temporary\
-          "
-          "node.",
-          {"This is an (INTERNAL) compiler error. Please report this\
-          issue."}}},
-        {NameConflict,
-         {"name-conflict",
-          "Naming conflict: %s",
-          {{"Ensure that the name is unique."},
-           {"Try wrapping your code in a scope"}}}},
-        {UnknownFunction, {"unknown-function", "write me", {}}},
-        {VariadicNotEnoughArguments,
-         {"variadic-not-enough-args",
-          "Variadic function call '%s' has too few arguments.",
-          {"Ensure that the number of arguments is correct."}}},
-        {TwoManyArguments,
-         {"too-many-args",
-          "Function call '%s' has too many arguments.",
-          {"Ensure that the number of arguments is correct."}}},
-        {TwoFewArguments,
-         {"too-few-args",
-          "Function call '%s' has too few arguments.",
-          {"Ensure that the number of arguments is correct."}}},
-        {TypeInference, {"type-inference", "Type inference failed: %s", {}}},
-        {NameManglingTypeInfer,
-         {"nm-type-infer",
-          "Failed to mangle the name of symbol named: '%s'.",
-          {
-              "Ensure that the symbol node is correctly typed.",
-          }}},
-        {UnexpectedUndefLiteral,
-         {"bad-undef-keyword",
-          "Unexpected 'undef' keyword",
-          {"The 'undef' keyword is only permitted as default values for "
-           "variable declarations."}}},
-        {ReturnTypeMismatch, {"return-type-mismatch", "%s", {}}},
-        {
-            ConstAssign,
-            {"const-assign",
-             "Cannot assign to a constant variable.",
-             {"Ensure that the variable is not marked as constant."}},
-        },
-
-        {UnknownType, {"unknown-type", "write me", {}}},
-        {UnresolvedIdentifier,
-         {"unresolved-identifier",
-          "404 - Identifier '%s' not found.",
-          {"Make sure the identifier is defined in the current scope.",
-           "Check for typos.", "Check for visibility."}}},
-        {TypeRedefinition,
-         {"type-redefinition",
-          "Type '%s' is redefined.",
-          {"Ensure that the one-defintion-rule (ODR) is obeyed.",
-           "Check for typos.", "Check for visibility."}}},
-        {BadCast,
-         {"bad-cast",
-          "%s",
-          {
-              "Ensure that the cast is valid.",
-          }}},
-
-        {MissingReturn,
-         {"missing-return",
-          "Function '%s' is missing a return statement.",
-          {"Make sure all code paths return a value.",
-           "Check for missing return statements in conditional branches.",
-           "If your code is complicated, consider using an unreachable "
-           "assertion."}}},
-    });
-
-///============================================================================///
-
 static std::vector<std::string_view> word_break(std::string_view text,
                                                 size_t max_width) {
   std::vector<std::string_view> lines;
@@ -327,11 +198,15 @@ static void confine_rect_bounds(int64_t &x_0, int64_t &y_0, int64_t &x_1,
   if (y_1 < 0) y_1 = 0;
 }
 
-static std::string mint_modern_message(const IReport::ReportData &R) {
+NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
   constexpr size_t WIDTH = 70;
 
+  std::string_view flagname = "" /* TODO: Get flagname */;
+  std::string_view overview = "" /* TODO: Get overview */;
+  std::vector<std::string> hints = {} /* TODO: Get hints */;
+
   std::stringstream ss;
-  uint32_t sl, sc, el, ec;
+  uint32_t sl = 0, sc = 0, el = 0, ec = 0;
 
   { /* Print filename and source row:column start and end */
     /// FIXME: Get source location
@@ -364,23 +239,31 @@ static std::string mint_modern_message(const IReport::ReportData &R) {
   }
 
   { /* Print message flagname */
-    switch (R.level) {
-      case IC::Debug:
-        ss << "\x1b[1mdebug:\x1b[0m \x1b[1m"
-           << issue_info.left.at(R.code).flagname << "\x1b[0m\n";
+    switch (sev) {
+      case Sev::Trace:
+      case Sev::Debug: {
+        ss << "\x1b[1mdebug:\x1b[0m \x1b[1m" << flagname << "\x1b[0m\n";
         break;
-      case IC::Info:
-        ss << "\x1b[37;1minfo:\x1b[0m \x1b[37;1m"
-           << issue_info.left.at(R.code).flagname << "\x1b[0m\n";
+      }
+
+      case Sev::Notice:
+      case Sev::Info: {
+        ss << "\x1b[37;1minfo:\x1b[0m \x1b[37;1m" << flagname << "\x1b[0m\n";
         break;
-      case IC::Warn:
-        ss << "\x1b[35;1mwarning:\x1b[0m \x1b[35;1m"
-           << issue_info.left.at(R.code).flagname << "\x1b[0m\n";
+      }
+
+      case Sev::Warning: {
+        ss << "\x1b[35;1mwarning:\x1b[0m \x1b[35;1m" << flagname << "\x1b[0m\n";
         break;
-      case IC::Error:
-        ss << "\x1b[31;1merror:\x1b[0m \x1b[31;1m"
-           << issue_info.left.at(R.code).flagname << "\x1b[0m\n";
+      }
+
+      case Sev::Error:
+      case Sev::Alert:
+      case Sev::Critical:
+      case Sev::Emergency: {
+        ss << "\x1b[31;1merror:\x1b[0m \x1b[31;1m" << flagname << "\x1b[0m\n";
         break;
+      }
     }
   }
 
@@ -395,7 +278,8 @@ static std::string mint_modern_message(const IReport::ReportData &R) {
   }
 
   { /* Print message overview */
-    auto data = format_overview(issue_info.left.at(R.code).overview, R.param);
+
+    auto data = format_overview(overview, msg);
     auto lines = word_break(data, WIDTH);
 
     if (lines.size() == 0) {
@@ -412,8 +296,6 @@ static std::string mint_modern_message(const IReport::ReportData &R) {
   }
 
   { /* Print code intelligence */
-    auto hints = issue_info.left.at(R.code).hints;
-
     if (!hints.empty()) {
       ss << ind
          << "\x1b[33m╔═\x1b[0m \x1b[32;1mCode "
@@ -446,7 +328,7 @@ static std::string mint_modern_message(const IReport::ReportData &R) {
     int64_t x_0 = sc, y_0 = sl, x_1 = ec, y_1 = el;
     confine_rect_bounds(x_0, y_0, x_1, y_1, WINDOW_WIDTH);
 
-    /// FIXME: Get source code
+    /// TODO: Get source code
     auto source_lines = std::optional<std::vector<std::string_view>>();
 
     if (source_lines.has_value()) {
@@ -480,10 +362,4 @@ static std::string mint_modern_message(const IReport::ReportData &R) {
   }
 
   return ss.str();
-}
-
-NCC_EXPORT void ir::nr_diag_read(IRModule *, nr_report_cb, uintptr_t) {
-  /// TODO: Implement this
-  qcore_implement();
-  (void)mint_modern_message;
 }

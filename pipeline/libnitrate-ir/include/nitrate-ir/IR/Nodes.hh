@@ -132,11 +132,8 @@ namespace ncc::ir {
 
   /** Add source debugging information to an IR node */
   template <typename T>
-  static inline T *debug_info(T *N, uint32_t line, uint32_t col) {
+  static inline T *debug_info(T *N, uint32_t, uint32_t) {
     /// TODO: Store source location information
-    (void)line;
-    (void)col;
-
     return N;
   }
 

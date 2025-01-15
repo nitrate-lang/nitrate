@@ -89,15 +89,15 @@ namespace ncc {
     static std::optional<Details> LoadDetailsFromFile(std::string_view path);
 
   protected:
-    virtual ECUnique GetIdentity(void) const = 0;
+    virtual ECUnique GetIdentity() const = 0;
 
-    virtual std::optional<std::string_view> GetDetailsPath(void) const {
+    virtual std::optional<std::string_view> GetDetailsPath() const {
       return std::nullopt;
     }
 
     virtual LogFormatterFunc GetFormatter() const = 0;
     void GetJsonRepresentation(std::ostream &os) const;
-    void Finalize(void);
+    void Finalize();
 
   public:
     virtual ~ECBase() = default;

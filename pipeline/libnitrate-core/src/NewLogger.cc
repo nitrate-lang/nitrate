@@ -139,7 +139,7 @@ NCC_EXPORT void ECBase::GetJsonRepresentation(std::ostream &os) const {
   os << "]}";
 }
 
-NCC_EXPORT void ECBase::Finalize(void) {
+NCC_EXPORT void ECBase::Finalize() {
   m_ec = GetIdentity().get();
 
   /* Try to load information about the error from disk */
