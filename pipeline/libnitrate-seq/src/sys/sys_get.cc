@@ -48,7 +48,7 @@ int ncc::seq::SysGet(lua_State* L) {
 
   Sequencer* obj = get_engine();
 
-  if (!lua_isstring(L, 1)) {
+  if (lua_isstring(L, 1) == 0) {
     return luaL_error(L, "expected string, got %s",
                       lua_typename(L, lua_type(L, 1)));
   }

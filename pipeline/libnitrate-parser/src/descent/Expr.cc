@@ -77,7 +77,7 @@ CallArgs Parser::RecurseCallArguments(const std::set<lex::Token> &terminators,
       auto argument_value = RecurseType();
       auto type_expr = make<TypeExpr>(argument_value)();
 
-      call_args.push_back({argument_name, type_expr});
+      call_args.emplace_back(argument_name, type_expr);
     } else {
       std::set<Token> terminators_copy(terminators);
       terminators_copy.insert(Token(Punc, PuncComa));
@@ -272,7 +272,7 @@ FlowPtr<Expr> Parser::RecurseExpr(const std::set<Token> &terminators) {
             }
 
             auto is_left_assoc =
-                GetOperatorAssociativity(op, op_type) == OpAssoc::Left;
+                GetOperatorAssociativity(op, op_type) == Associativity::Left;
             auto next_min_precedence =
                 is_left_assoc ? op_precedence + 1 : op_precedence;
             auto is_type = op == OpAs || op == OpBitcastAs;

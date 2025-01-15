@@ -45,7 +45,7 @@ int ncc::seq::SysCtrl(lua_State* l) {
     return luaL_error(l, "expected at least 1 argument, got %d", nargs);
   }
 
-  if (!lua_isnumber(l, 1)) {
+  if (lua_isnumber(l, 1) == 0) {
     return luaL_error(l, "expected number, got %s",
                       lua_typename(l, lua_type(l, 1)));
   }

@@ -13,7 +13,7 @@ SOURCE_FOLDERS=(
                 )
 
 function check_file {
-    clang-tidy -header-filter=. -extra-arg=-std=c++20 --fix -fix-errors "$1"
+    clang-tidy -header-filter=. -extra-arg=-std=c++20 "$1"
     if [ $? -ne 0 ]; then
         echo "clang-tidy failed for $1"
         exit 1

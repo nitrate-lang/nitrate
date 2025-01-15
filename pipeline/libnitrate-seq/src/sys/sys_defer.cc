@@ -118,7 +118,8 @@ int ncc::seq::SysDefer(lua_State* L) {
           return Sequencer::EmitToken;
         }
 
-        r = lua_toboolean(L, -1) ? Sequencer::EmitToken : Sequencer::SkipToken;
+        r = (lua_toboolean(L, -1) != 0) ? Sequencer::EmitToken
+                                        : Sequencer::SkipToken;
         break;
       }
       case LUA_ERRRUN: {

@@ -408,7 +408,7 @@ public:
     }
 
     /* We overshot; this must be a punctor ':' */
-    if (buf.size() > 0 && buf.back() == ':') {
+    if (!buf.empty() && buf.back() == ':') {
       char tc = buf.back();
       buf.pop_back();
       l.m_fifo.push(tc);

@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <cstring>
 #include <lsp/core/server.hh>
+#include <nitrate-core/OldLogger.hh>
 
 using ManagedHandle = std::optional<Connection>;
 
@@ -52,21 +53,21 @@ class FdStreamBuf : public std::streambuf {
 
 public:
   FdStreamBuf(int fd, bool close) : m_fd(fd), m_close(close) { errno = 0; }
-  ~FdStreamBuf() {
+  ~FdStreamBuf() override {
     LOG(INFO) << "Closing file descriptor";
 
     if (m_close) {
       if (close(m_fd) == -1) {
-        LOG(ERROR) << "Failed to close file descriptor: " << strerror(errno);
+        LOG(ERROR) << "Failed to close file descriptor: " << GetStrerror();
       }
     }
   }
 
-  virtual int_type overflow(int_type ch) override {
+  int_type overflow(int_type ch) override {
     if (ch != EOF) {
       char c = ch;
       if (write(m_fd, &c, 1) != 1) {
-        LOG(ERROR) << "Failed to write to stream: " << strerror(errno);
+        LOG(ERROR) << "Failed to write to stream: " << GetStrerror();
         return traits_type::eof();
       }
     }
@@ -74,13 +75,12 @@ public:
     return ch;
   }
 
-  virtual std::streamsize xsputn(const char* s,
-                                 std::streamsize count) override {
+  std::streamsize xsputn(const char* s, std::streamsize count) override {
     std::streamsize written = 0;
     while (written < count) {
       ssize_t n = write(m_fd, s + written, count - written);
       if (n == -1) {
-        LOG(ERROR) << "Failed to write to stream: " << strerror(errno);
+        LOG(ERROR) << "Failed to write to stream: " << GetStrerror();
         return written;
       }
       written += n;
@@ -89,10 +89,10 @@ public:
     return count;
   }
 
-  virtual int_type underflow() override {
+  int_type underflow() override {
     ssize_t res = read(m_fd, &m_c, 1);
     if (res < 0) {
-      LOG(ERROR) << "Failed to read from stream: " << strerror(errno);
+      LOG(ERROR) << "Failed to read from stream: " << GetStrerror();
       return traits_type::eof();
     }
 
@@ -105,13 +105,13 @@ public:
     return traits_type::to_int_type(m_c);
   }
 
-  virtual std::streamsize xsgetn(char* s, std::streamsize count) override {
+  std::streamsize xsgetn(char* s, std::streamsize count) override {
     std::streamsize bytes_read = 0;
 
     while (bytes_read < count) {
       ssize_t n = read(m_fd, s + bytes_read, count - bytes_read);
       if (n == -1) {
-        LOG(ERROR) << "Failed to read from stream: " << strerror(errno);
+        LOG(ERROR) << "Failed to read from stream: " << GetStrerror();
         return bytes_read;
       }
 
@@ -129,7 +129,7 @@ public:
 static std::optional<int> ConnectUnixSocket(const std::string& path) {
   int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (sockfd == -1) {
-    LOG(ERROR) << "Failed to create socket: " << strerror(errno);
+    LOG(ERROR) << "Failed to create socket: " << GetStrerror();
     return std::nullopt;
   }
 
@@ -139,7 +139,7 @@ static std::optional<int> ConnectUnixSocket(const std::string& path) {
   strncpy(addr.sun_path, path.c_str(), sizeof(addr.sun_path) - 1);
 
   if (connect(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-    LOG(ERROR) << "Failed to connect to socket: " << strerror(errno);
+    LOG(ERROR) << "Failed to connect to socket: " << GetStrerror();
     return std::nullopt;
   }
 
@@ -163,11 +163,10 @@ static ManagedHandle ConnectToPipe(const std::string& path) {
   return stream;
 }
 
-static std::optional<int> GetTcpClient(const std::string& host,
-                                         uint16_t port) {
+static std::optional<int> GetTcpClient(const std::string& host, uint16_t port) {
   int fd = socket(AF_INET, SOCK_STREAM, 0);
   if (fd == -1) {
-    LOG(ERROR) << "Failed to create socket: " << strerror(errno);
+    LOG(ERROR) << "Failed to create socket: " << GetStrerror();
     return std::nullopt;
   }
 
@@ -177,7 +176,7 @@ static std::optional<int> GetTcpClient(const std::string& host,
   addr.sin_addr.s_addr = inet_addr(host.c_str());
 
   if (bind(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) == -1) {
-    LOG(ERROR) << "Failed to bind socket: " << strerror(errno);
+    LOG(ERROR) << "Failed to bind socket: " << GetStrerror();
     return std::nullopt;
   }
 
@@ -185,20 +184,20 @@ static std::optional<int> GetTcpClient(const std::string& host,
   LOG(INFO) << "Waiting for connection";
 
   if (listen(fd, 1) == -1) {
-    LOG(ERROR) << "Failed to listen on socket: " << strerror(errno);
+    LOG(ERROR) << "Failed to listen on socket: " << GetStrerror();
     return std::nullopt;
   }
 
   int client_fd = accept(fd, nullptr, nullptr);
   if (client_fd == -1) {
-    LOG(ERROR) << "Failed to accept connection: " << strerror(errno);
+    LOG(ERROR) << "Failed to accept connection: " << GetStrerror();
     return std::nullopt;
   }
 
   LOG(INFO) << "Accepted connection from client";
 
   if (close(fd) == -1) {
-    LOG(ERROR) << "Failed to close listening socket: " << strerror(errno);
+    LOG(ERROR) << "Failed to close listening socket: " << GetStrerror();
     return std::nullopt;
   }
 

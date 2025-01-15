@@ -60,7 +60,7 @@ namespace ncc::seq {
     ~PImpl();
   };
 
-  typedef int (*QsyscallT)(lua_State* l);
+  using QsyscallT = int (*)(lua_State*);
   class QSysCall final {
     std::string_view m_name;
     uint32_t m_id;
@@ -71,9 +71,9 @@ namespace ncc::seq {
              QsyscallT func = nullptr)
         : m_name(name), m_id(id), m_func(func) {}
 
-    std::string_view GetName() const { return m_name; }
-    uint32_t GetId() const { return m_id; }
-    QsyscallT GetFunc() const { return m_func; }
+    [[nodiscard]] std::string_view GetName() const { return m_name; }
+    [[nodiscard]] uint32_t GetId() const { return m_id; }
+    [[nodiscard]] QsyscallT GetFunc() const { return m_func; }
   };
 
   ///////////// BEGIN QCALL FUNCTIONS /////////////
@@ -108,19 +108,19 @@ namespace ncc::seq {
   ////////////// END QCALL FUNCTIONS //////////////
 
   static inline const std::vector<QSysCall> SYS_FUNCTIONS = {
-      {"next", 0x0010, SysNext},   /* Get the next token from the lexer */
-      {"peek", 0x0011, SysPeek},   /* Peek at the next token from the lexer */
-      {"emit", 0x0012, SysEmit},   /* Emit data  */
-      {"defer", 0x0013, SysDefer}, /* Callback after every token is emitted */
-      {"debug", 0x0050, SysDebug}, /* Print a debug message */
-      {"info", 0x0051, SysInfo},   /* Print an informational message */
-      {"warn", 0x0052, SysWarn},   /* Print a warning message */
-      {"error", 0x0053, SysError}, /* Print an error message */
-      {"abort", 0x0054, SysAbort}, /* Print an error and halt */
-      {"fatal", 0x0055, SysFatal}, /* Print a fatal error and halt */
-      {"get", 0x0080, SysGet},     /* Get a value from the environment */
-      {"set", 0x0081, SysSet},     /* Set a value in the environment */
-      {"fetch", 0x0082, SysFetch}, /* Import module */
+      {"next", 0x0010, SysNext},     /* Get the next token from the lexer */
+      {"peek", 0x0011, SysPeek},     /* Peek at the next token from the lexer */
+      {"emit", 0x0012, SysEmit},     /* Emit data  */
+      {"defer", 0x0013, SysDefer},   /* Callback after every token is emitted */
+      {"debug", 0x0050, SysDebug},   /* Print a debug message */
+      {"info", 0x0051, SysInfo},     /* Print an informational message */
+      {"warn", 0x0052, SysWarn},     /* Print a warning message */
+      {"error", 0x0053, SysError},   /* Print an error message */
+      {"abort", 0x0054, SysAbort},   /* Print an error and halt */
+      {"fatal", 0x0055, SysFatal},   /* Print a fatal error and halt */
+      {"get", 0x0080, SysGet},       /* Get a value from the environment */
+      {"set", 0x0081, SysSet},       /* Set a value in the environment */
+      {"fetch", 0x0082, SysFetch},   /* Import module */
       {"random", 0x00A0, SysRandom}, /* Get a random number */
       {"ctrl", 0x00C0, SysCtrl}      /* Implementation specific stuff */
   };

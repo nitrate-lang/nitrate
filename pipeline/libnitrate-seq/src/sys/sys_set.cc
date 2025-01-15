@@ -47,7 +47,7 @@ int ncc::seq::SysSet(lua_State* L) {
     return luaL_error(L, "expected 2 arguments, got %d", nargs);
   }
 
-  if (!lua_isstring(L, 1)) {
+  if (lua_isstring(L, 1) == 0) {
     return luaL_error(L, "expected string, got %s",
                       lua_typename(L, lua_type(L, 1)));
   }
@@ -68,7 +68,7 @@ int ncc::seq::SysSet(lua_State* L) {
 
   if (lua_isnil(L, 2)) {
     obj->GetEnvironment()->Set(key, std::nullopt);
-  } else if (lua_isstring(L, 2)) {
+  } else if (lua_isstring(L, 2) != 0) {
     obj->GetEnvironment()->Set(key, lua_tostring(L, 2));
   } else {
     return luaL_error(L, "expected string or nil, got %s",

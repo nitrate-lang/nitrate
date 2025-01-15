@@ -48,7 +48,7 @@ int ncc::seq::SysEmit(lua_State* L) {
   Sequencer* obj = get_engine();
 
   for (int i = 1; i <= nargs; i++) {
-    if (!lua_isstring(L, i)) {
+    if (lua_isstring(L, i) == 0) {
       return luaL_error(L, "sys_emit: expected string, got %s",
                         lua_typename(L, lua_type(L, i)));
     }

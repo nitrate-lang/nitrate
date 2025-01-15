@@ -69,7 +69,7 @@ int ncc::seq::SysFetch(lua_State *L) {
     return luaL_error(L, "expected 1 argument, got %d", nargs);
   }
 
-  if (!lua_isstring(L, 1)) {
+  if (lua_isstring(L, 1) == 0) {
     return luaL_error(L, "expected string, got %s",
                       lua_typename(L, lua_type(L, 1)));
   }
@@ -82,10 +82,9 @@ int ncc::seq::SysFetch(lua_State *L) {
 
   CanonicalizeImportName(import_name);
 
-  if (auto data = obj->m_core->FetchModuleData(import_name.c_str())) {
+  if (auto data = obj->m_core->FetchModuleData(import_name)) {
     lua_pushstring(L, data->c_str());
     return 1;
-  } else {
-    return luaL_error(L, "failed to fetch module");
   }
+  return luaL_error(L, "failed to fetch module");
 }

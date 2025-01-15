@@ -38,111 +38,113 @@
 #include <nitrate-lexer/Token.hh>
 
 using namespace ncc::lex;
+using namespace ncc::lex::detail;
 
 // Lower index means higher precedence
-static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
+static const std::vector<
+    std::vector<std::tuple<Operator, OpMode, Associativity>>>
     PRECEDENCE_GROUPS = {
         {
-            {OpDot, OpMode::Binary, OpAssoc::Left},
+            {OpDot, OpMode::Binary, Left},
         },
 
         {
-            {OpInc, OpMode::PostUnary, OpAssoc::Left},
-            {OpDec, OpMode::PostUnary, OpAssoc::Left},
+            {OpInc, OpMode::PostUnary, Left},
+            {OpDec, OpMode::PostUnary, Left},
         },
 
         {
             /* Yee, we have enough overloadable operators to last a lifetime */
-            {OpPlus, OpMode::PreUnary, OpAssoc::Right},
-            {OpMinus, OpMode::PreUnary, OpAssoc::Right},
-            {OpTimes, OpMode::PreUnary, OpAssoc::Right},
-            {OpSlash, OpMode::PreUnary, OpAssoc::Right},
-            {OpPercent, OpMode::PreUnary, OpAssoc::Right},
-            {OpBitAnd, OpMode::PreUnary, OpAssoc::Right},
-            {OpBitOr, OpMode::PreUnary, OpAssoc::Right},
-            {OpBitXor, OpMode::PreUnary, OpAssoc::Right},
-            {OpBitNot, OpMode::PreUnary, OpAssoc::Right},
-            {OpLShift, OpMode::PreUnary, OpAssoc::Right},
-            {OpRShift, OpMode::PreUnary, OpAssoc::Right},
-            {OpROTL, OpMode::PreUnary, OpAssoc::Right},
-            {OpROTR, OpMode::PreUnary, OpAssoc::Right},
-            {OpLogicAnd, OpMode::PreUnary, OpAssoc::Right},
-            {OpLogicOr, OpMode::PreUnary, OpAssoc::Right},
-            {OpLogicXor, OpMode::PreUnary, OpAssoc::Right},
-            {OpLogicNot, OpMode::PreUnary, OpAssoc::Right},
-            {OpLT, OpMode::PreUnary, OpAssoc::Right},
-            {OpGT, OpMode::PreUnary, OpAssoc::Right},
-            {OpLE, OpMode::PreUnary, OpAssoc::Right},
-            {OpGE, OpMode::PreUnary, OpAssoc::Right},
-            {OpEq, OpMode::PreUnary, OpAssoc::Right},
-            {OpNE, OpMode::PreUnary, OpAssoc::Right},
-            {OpSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpPlusSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpMinusSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpTimesSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpSlashSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpPercentSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpBitAndSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpBitOrSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpBitXorSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpLogicAndSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpLogicOrSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpLogicXorSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpLShiftSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpRShiftSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpROTLSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpROTRSet, OpMode::PreUnary, OpAssoc::Right},
-            {OpInc, OpMode::PreUnary, OpAssoc::Right},
-            {OpDec, OpMode::PreUnary, OpAssoc::Right},
-            {OpAs, OpMode::PreUnary, OpAssoc::Right},
-            {OpBitcastAs, OpMode::PreUnary, OpAssoc::Right},
-            {OpIn, OpMode::PreUnary, OpAssoc::Right},
-            {OpOut, OpMode::PreUnary, OpAssoc::Right},
-            {OpSizeof, OpMode::PreUnary, OpAssoc::Right},
-            {OpBitsizeof, OpMode::PreUnary, OpAssoc::Right},
-            {OpAlignof, OpMode::PreUnary, OpAssoc::Right},
-            {OpTypeof, OpMode::PreUnary, OpAssoc::Right},
-            {OpComptime, OpMode::PreUnary, OpAssoc::Right},
-            {OpDot, OpMode::PreUnary, OpAssoc::Right},
-            {OpRange, OpMode::PreUnary, OpAssoc::Right},
-            {OpEllipsis, OpMode::PreUnary, OpAssoc::Right},
-            {OpArrow, OpMode::PreUnary, OpAssoc::Right},
-            {OpTernary, OpMode::PreUnary, OpAssoc::Right},
+            {OpPlus, OpMode::PreUnary, Right},
+            {OpMinus, OpMode::PreUnary, Right},
+            {OpTimes, OpMode::PreUnary, Right},
+            {OpSlash, OpMode::PreUnary, Right},
+            {OpPercent, OpMode::PreUnary, Right},
+            {OpBitAnd, OpMode::PreUnary, Right},
+            {OpBitOr, OpMode::PreUnary, Right},
+            {OpBitXor, OpMode::PreUnary, Right},
+            {OpBitNot, OpMode::PreUnary, Right},
+            {OpLShift, OpMode::PreUnary, Right},
+            {OpRShift, OpMode::PreUnary, Right},
+            {OpROTL, OpMode::PreUnary, Right},
+            {OpROTR, OpMode::PreUnary, Right},
+            {OpLogicAnd, OpMode::PreUnary, Right},
+            {OpLogicOr, OpMode::PreUnary, Right},
+            {OpLogicXor, OpMode::PreUnary, Right},
+            {OpLogicNot, OpMode::PreUnary, Right},
+            {OpLT, OpMode::PreUnary, Right},
+            {OpGT, OpMode::PreUnary, Right},
+            {OpLE, OpMode::PreUnary, Right},
+            {OpGE, OpMode::PreUnary, Right},
+            {OpEq, OpMode::PreUnary, Right},
+            {OpNE, OpMode::PreUnary, Right},
+            {OpSet, OpMode::PreUnary, Right},
+            {OpPlusSet, OpMode::PreUnary, Right},
+            {OpMinusSet, OpMode::PreUnary, Right},
+            {OpTimesSet, OpMode::PreUnary, Right},
+            {OpSlashSet, OpMode::PreUnary, Right},
+            {OpPercentSet, OpMode::PreUnary, Right},
+            {OpBitAndSet, OpMode::PreUnary, Right},
+            {OpBitOrSet, OpMode::PreUnary, Right},
+            {OpBitXorSet, OpMode::PreUnary, Right},
+            {OpLogicAndSet, OpMode::PreUnary, Right},
+            {OpLogicOrSet, OpMode::PreUnary, Right},
+            {OpLogicXorSet, OpMode::PreUnary, Right},
+            {OpLShiftSet, OpMode::PreUnary, Right},
+            {OpRShiftSet, OpMode::PreUnary, Right},
+            {OpROTLSet, OpMode::PreUnary, Right},
+            {OpROTRSet, OpMode::PreUnary, Right},
+            {OpInc, OpMode::PreUnary, Right},
+            {OpDec, OpMode::PreUnary, Right},
+            {OpAs, OpMode::PreUnary, Right},
+            {OpBitcastAs, OpMode::PreUnary, Right},
+            {OpIn, OpMode::PreUnary, Right},
+            {OpOut, OpMode::PreUnary, Right},
+            {OpSizeof, OpMode::PreUnary, Right},
+            {OpBitsizeof, OpMode::PreUnary, Right},
+            {OpAlignof, OpMode::PreUnary, Right},
+            {OpTypeof, OpMode::PreUnary, Right},
+            {OpComptime, OpMode::PreUnary, Right},
+            {OpDot, OpMode::PreUnary, Right},
+            {OpRange, OpMode::PreUnary, Right},
+            {OpEllipsis, OpMode::PreUnary, Right},
+            {OpArrow, OpMode::PreUnary, Right},
+            {OpTernary, OpMode::PreUnary, Right},
         },
 
         {
-            {OpAs, OpMode::Binary, OpAssoc::Left},
-            {OpBitcastAs, OpMode::Binary, OpAssoc::Left},
+            {OpAs, OpMode::Binary, Left},
+            {OpBitcastAs, OpMode::Binary, Left},
         },
 
         {
-            {OpTimes, OpMode::Binary, OpAssoc::Left},
-            {OpSlash, OpMode::Binary, OpAssoc::Left},
-            {OpPercent, OpMode::Binary, OpAssoc::Left},
+            {OpTimes, OpMode::Binary, Left},
+            {OpSlash, OpMode::Binary, Left},
+            {OpPercent, OpMode::Binary, Left},
         },
 
         {
-            {OpPlus, OpMode::Binary, OpAssoc::Left},
-            {OpMinus, OpMode::Binary, OpAssoc::Left},
+            {OpPlus, OpMode::Binary, Left},
+            {OpMinus, OpMode::Binary, Left},
         },
 
         {
-            {OpLShift, OpMode::Binary, OpAssoc::Left},
-            {OpRShift, OpMode::Binary, OpAssoc::Left},
-            {OpROTL, OpMode::Binary, OpAssoc::Left},
-            {OpROTR, OpMode::Binary, OpAssoc::Left},
+            {OpLShift, OpMode::Binary, Left},
+            {OpRShift, OpMode::Binary, Left},
+            {OpROTL, OpMode::Binary, Left},
+            {OpROTR, OpMode::Binary, Left},
         },
 
         {
-            {OpBitAnd, OpMode::Binary, OpAssoc::Left},
+            {OpBitAnd, OpMode::Binary, Left},
         },
 
         {
-            {OpBitXor, OpMode::Binary, OpAssoc::Left},
+            {OpBitXor, OpMode::Binary, Left},
         },
 
         {
-            {OpBitOr, OpMode::Binary, OpAssoc::Left},
+            {OpBitOr, OpMode::Binary, Left},
         },
 
         {
@@ -154,57 +156,57 @@ static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
         },
 
         {
-            {OpEq, OpMode::Binary, OpAssoc::Left},
-            {OpNE, OpMode::Binary, OpAssoc::Left},
-            {OpLT, OpMode::Binary, OpAssoc::Left},
-            {OpGT, OpMode::Binary, OpAssoc::Left},
-            {OpLE, OpMode::Binary, OpAssoc::Left},
-            {OpGE, OpMode::Binary, OpAssoc::Left},
+            {OpEq, OpMode::Binary, Left},
+            {OpNE, OpMode::Binary, Left},
+            {OpLT, OpMode::Binary, Left},
+            {OpGT, OpMode::Binary, Left},
+            {OpLE, OpMode::Binary, Left},
+            {OpGE, OpMode::Binary, Left},
         },
 
         {
-            {OpLogicAnd, OpMode::Binary, OpAssoc::Left},
+            {OpLogicAnd, OpMode::Binary, Left},
         },
 
         {
-            {OpLogicOr, OpMode::Binary, OpAssoc::Left},
+            {OpLogicOr, OpMode::Binary, Left},
         },
 
         {
-            {OpLogicXor, OpMode::Binary, OpAssoc::Left},
+            {OpLogicXor, OpMode::Binary, Left},
         },
 
         {
-            {OpTernary, OpMode::Ternary, OpAssoc::Right},
+            {OpTernary, OpMode::Ternary, Right},
         },
 
         {
-            {OpIn, OpMode::Binary, OpAssoc::Left},
-            {OpOut, OpMode::Binary, OpAssoc::Left},
+            {OpIn, OpMode::Binary, Left},
+            {OpOut, OpMode::Binary, Left},
         },
 
         {
-            {OpRange, OpMode::Binary, OpAssoc::Left},
-            {OpArrow, OpMode::Binary, OpAssoc::Left},
+            {OpRange, OpMode::Binary, Left},
+            {OpArrow, OpMode::Binary, Left},
         },
 
         {
-            {OpSet, OpMode::Binary, OpAssoc::Right},
-            {OpPlusSet, OpMode::Binary, OpAssoc::Right},
-            {OpMinusSet, OpMode::Binary, OpAssoc::Right},
-            {OpTimesSet, OpMode::Binary, OpAssoc::Right},
-            {OpSlashSet, OpMode::Binary, OpAssoc::Right},
-            {OpPercentSet, OpMode::Binary, OpAssoc::Right},
-            {OpBitAndSet, OpMode::Binary, OpAssoc::Right},
-            {OpBitOrSet, OpMode::Binary, OpAssoc::Right},
-            {OpBitXorSet, OpMode::Binary, OpAssoc::Right},
-            {OpLogicAndSet, OpMode::Binary, OpAssoc::Right},
-            {OpLogicOrSet, OpMode::Binary, OpAssoc::Right},
-            {OpLogicXorSet, OpMode::Binary, OpAssoc::Right},
-            {OpLShiftSet, OpMode::Binary, OpAssoc::Right},
-            {OpRShiftSet, OpMode::Binary, OpAssoc::Right},
-            {OpROTLSet, OpMode::Binary, OpAssoc::Right},
-            {OpROTRSet, OpMode::Binary, OpAssoc::Right},
+            {OpSet, OpMode::Binary, Right},
+            {OpPlusSet, OpMode::Binary, Right},
+            {OpMinusSet, OpMode::Binary, Right},
+            {OpTimesSet, OpMode::Binary, Right},
+            {OpSlashSet, OpMode::Binary, Right},
+            {OpPercentSet, OpMode::Binary, Right},
+            {OpBitAndSet, OpMode::Binary, Right},
+            {OpBitOrSet, OpMode::Binary, Right},
+            {OpBitXorSet, OpMode::Binary, Right},
+            {OpLogicAndSet, OpMode::Binary, Right},
+            {OpLogicOrSet, OpMode::Binary, Right},
+            {OpLogicXorSet, OpMode::Binary, Right},
+            {OpLShiftSet, OpMode::Binary, Right},
+            {OpRShiftSet, OpMode::Binary, Right},
+            {OpROTLSet, OpMode::Binary, Right},
+            {OpROTRSet, OpMode::Binary, Right},
         },
 };
 
@@ -239,8 +241,8 @@ NCC_EXPORT short ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
   return -1;
 }
 
-NCC_EXPORT OpAssoc ncc::lex::GetOperatorAssociativity(Operator op,
-                                                      OpMode type) {
+NCC_EXPORT Associativity ncc::lex::GetOperatorAssociativity(Operator op,
+                                                            OpMode type) {
   using Key = std::pair<Operator, OpMode>;
 
   struct KeyHash {
@@ -249,24 +251,25 @@ NCC_EXPORT OpAssoc ncc::lex::GetOperatorAssociativity(Operator op,
     }
   };
 
-  static const std::unordered_map<Key, OpAssoc, KeyHash> associativity = [] {
-    std::unordered_map<Key, OpAssoc, KeyHash> associativity;
+  static const std::unordered_map<Key, Associativity, KeyHash> associativity =
+      [] {
+        std::unordered_map<Key, Associativity, KeyHash> associativity;
 
-    for (const auto &group : PRECEDENCE_GROUPS) {
-      for (let[op, mode, assoc] : group) {
-        associativity[{op, mode}] = assoc;
-      }
-    }
+        for (const auto &group : PRECEDENCE_GROUPS) {
+          for (let[op, mode, assoc] : group) {
+            associativity[{op, mode}] = assoc;
+          }
+        }
 
-    return associativity;
-  }();
+        return associativity;
+      }();
 
   auto it = associativity.find({op, type});
   if (it != associativity.end()) [[likely]] {
     return it->second;
   }
 
-  return OpAssoc::Left;
+  return Left;
 }
 
 NCC_EXPORT ncc::string ncc::lex::to_string(TokenType ty, TokenData v) {

@@ -51,12 +51,12 @@ int ncc::seq::SysError(lua_State* L) {
   get_engine()->SetFailBit();
 
   for (int i = 1; i <= nargs; i++) {
-    if (lua_isstring(L, i)) {
+    if (lua_isstring(L, i) != 0) {
       QCoreWrite(lua_tostring(L, i));
-    } else if (lua_isnumber(L, i)) {
+    } else if (lua_isnumber(L, i) != 0) {
       QCoreWritef("%f", (double)lua_tonumber(L, i));
     } else if (lua_isboolean(L, i)) {
-      QCoreWrite(lua_toboolean(L, i) ? "true" : "false");
+      QCoreWrite((lua_toboolean(L, i) != 0) ? "true" : "false");
     } else {
       return luaL_error(
           L,

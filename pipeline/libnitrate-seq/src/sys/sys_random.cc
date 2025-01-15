@@ -42,7 +42,8 @@ extern "C" {
 }
 
 int ncc::seq::SysRandom(lua_State* L) {
-  int64_t min, max;
+  int64_t min;
+  int64_t max;
 
   int nargs = lua_gettop(L);
   if (nargs == 0) {
@@ -50,21 +51,21 @@ int ncc::seq::SysRandom(lua_State* L) {
     max = 0xff;
   } else if (nargs == 1) {
     min = 0;
-    if (lua_isnumber(L, 1)) {
+    if (lua_isnumber(L, 1) != 0) {
       max = lua_tointeger(L, 1);
     } else {
       return luaL_error(L, "Invalid argument #1: expected number, got %s",
                         lua_typename(L, lua_type(L, 1)));
     }
   } else if (nargs == 2) {
-    if (lua_isnumber(L, 1)) {
+    if (lua_isnumber(L, 1) != 0) {
       min = lua_tointeger(L, 1);
     } else {
       return luaL_error(L, "Invalid argument #1: expected number, got %s",
                         lua_typename(L, lua_type(L, 1)));
     }
 
-    if (lua_isnumber(L, 2)) {
+    if (lua_isnumber(L, 2) != 0) {
       max = lua_tointeger(L, 2);
     } else {
       return luaL_error(L, "Invalid argument #2: expected number, got %s",
@@ -78,7 +79,7 @@ int ncc::seq::SysRandom(lua_State* L) {
     return luaL_error(L, "Invalid range: min > max");
   }
 
-  auto engine = get_engine();
+  auto* engine = get_engine();
 
   static_assert(sizeof(engine->m_core->m_random()) == 8);
 

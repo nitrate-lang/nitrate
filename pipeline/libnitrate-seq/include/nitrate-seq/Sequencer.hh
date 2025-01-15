@@ -54,7 +54,7 @@ namespace ncc::seq {
     std::unique_ptr<ncc::lex::Tokenizer> m_scanner;
 
   public:
-    enum DeferOp {
+    enum DeferOp : uint8_t {
       EmitToken,
       SkipToken,
       UninstallHandler,
@@ -63,12 +63,13 @@ namespace ncc::seq {
     using DeferCallback =
         std::function<DeferOp(Sequencer *obj, ncc::lex::Token last)>;
     class StopException {};
-
     class PImpl;
     std::shared_ptr<PImpl> m_core;
+    void RecursiveExpand(std::string_view code);
 
-    virtual ncc::lex::Token GetNext() override;
-    virtual std::optional<ncc::lex::Location> GetLocationFallback(
+  private:
+    ncc::lex::Token GetNext() override;
+    std::optional<ncc::lex::Location> GetLocationFallback(
         ncc::lex::LocationID id) override {
       return m_scanner->GetLocation(id);
     }
@@ -76,16 +77,15 @@ namespace ncc::seq {
     bool ApplyDynamicTransforms(ncc::lex::Token last);
 
     bool ExecuteLua(const char *code);
-    void RecursiveExpand(std::string_view code);
     void LoadLuaLibs();
     void BindLuaAPI();
 
   public:
     Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
               bool is_root = true);
-    virtual ~Sequencer() override = default;
+    ~Sequencer() override = default;
 
-    virtual std::optional<std::vector<std::string>> GetSourceWindow(
+    std::optional<std::vector<std::string>> GetSourceWindow(
         Point start, Point end, char fillchar) override;
 
     void SetFetchFunc(FetchModuleFunc func);

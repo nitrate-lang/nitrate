@@ -43,11 +43,6 @@
 #include <ostream>
 #include <queue>
 
-///============================================================================///
-
-#define QLEX_FLAG_NONE 0
-#define QLEX_NO_COMMENTS 0x01
-
 namespace ncc::lex {
   namespace detail {
     template <typename L, typename R>
@@ -55,28 +50,31 @@ namespace ncc::lex {
         std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
       return boost::bimap<L, R>(list.begin(), list.end());
     }
+
+    struct ScannerEOF final {};
+
+    enum OpType : uint8_t { Both, Unary, Binary, Ternary };
+
+    struct OpConfig {
+      OpType m_type;
+      bool m_overloadable;
+
+      OpConfig(OpType t, bool o) : m_type(t), m_overloadable(o) {}
+
+      bool operator<(const OpConfig &rhs) const {
+        if (m_type != rhs.m_type) {
+          return m_type < rhs.m_type;
+        }
+
+        return (int)m_overloadable < (int)rhs.m_overloadable;
+      }
+    };
   }  // namespace detail
 
-  enum class OpType { Both, Unary, Binary, Ternary };
-  enum class OpMode { Binary, PreUnary, PostUnary, Ternary };
-  enum class OpAssoc { Left, Right };
+  enum class OpMode : uint8_t { Binary, PreUnary, PostUnary, Ternary };
+  enum Associativity : uint8_t { Left, Right };
 
-  struct OpConfig {
-    OpType m_type;
-    bool m_overloadable;
-
-    OpConfig(OpType t, bool o) : m_type(t), m_overloadable(o) {}
-
-    bool operator<(const OpConfig &rhs) const {
-      if (m_type != rhs.m_type) {
-        return m_type < rhs.m_type;
-      }
-
-      return (int)m_overloadable < (int)rhs.m_overloadable;
-    }
-  };
-
-  inline static const boost::bimap<std::string, Keyword> LEXICAL_KEYWORDS =
+  inline static const auto LEXICAL_KEYWORDS =
       detail::MakeBimap<std::string, Keyword>({
           {"scope", Scope},
           {"pub", Pub},
@@ -122,7 +120,7 @@ namespace ncc::lex {
           {"false", False},
       });
 
-  inline static const boost::bimap<std::string, Operator> LEXICAL_OPERATORS =
+  inline static const auto LEXICAL_OPERATORS =
       detail::MakeBimap<std::string, Operator>({
           {"+", OpPlus},
           {"-", OpMinus},
@@ -181,66 +179,66 @@ namespace ncc::lex {
           {"?", OpTernary},
       });
 
-  inline static const boost::bimap<Operator, OpConfig>
-      LEXICAL_OPERATORS_CONFIG = detail::MakeBimap<Operator, OpConfig>({
-          {OpPlus, {OpType::Both, true}},
-          {OpMinus, {OpType::Both, true}},
-          {OpTimes, {OpType::Both, true}},
-          {OpSlash, {OpType::Binary, true}},
-          {OpPercent, {OpType::Binary, true}},
-          {OpBitAnd, {OpType::Both, true}},
-          {OpBitOr, {OpType::Binary, true}},
-          {OpBitXor, {OpType::Binary, true}},
-          {OpBitNot, {OpType::Unary, true}},
-          {OpLShift, {OpType::Binary, true}},
-          {OpRShift, {OpType::Binary, true}},
-          {OpROTL, {OpType::Binary, true}},
-          {OpROTR, {OpType::Binary, true}},
-          {OpLogicAnd, {OpType::Binary, true}},
-          {OpLogicOr, {OpType::Binary, true}},
-          {OpLogicXor, {OpType::Binary, true}},
-          {OpLogicNot, {OpType::Unary, true}},
-          {OpLT, {OpType::Binary, true}},
-          {OpGT, {OpType::Binary, true}},
-          {OpLE, {OpType::Binary, true}},
-          {OpGE, {OpType::Binary, true}},
-          {OpEq, {OpType::Binary, true}},
-          {OpNE, {OpType::Binary, true}},
-          {OpSet, {OpType::Binary, true}},
-          {OpPlusSet, {OpType::Binary, true}},
-          {OpMinusSet, {OpType::Binary, true}},
-          {OpTimesSet, {OpType::Binary, true}},
-          {OpSlashSet, {OpType::Binary, true}},
-          {OpPercentSet, {OpType::Binary, true}},
-          {OpBitAndSet, {OpType::Binary, true}},
-          {OpBitOrSet, {OpType::Binary, true}},
-          {OpBitXorSet, {OpType::Binary, true}},
-          {OpLogicAndSet, {OpType::Binary, true}},
-          {OpLogicOrSet, {OpType::Binary, true}},
-          {OpLogicXorSet, {OpType::Binary, true}},
-          {OpLShiftSet, {OpType::Binary, true}},
-          {OpRShiftSet, {OpType::Binary, true}},
-          {OpROTLSet, {OpType::Binary, true}},
-          {OpROTRSet, {OpType::Binary, true}},
-          {OpInc, {OpType::Unary, true}},
-          {OpDec, {OpType::Unary, true}},
-          {OpAs, {OpType::Binary, true}},
-          {OpBitcastAs, {OpType::Binary, false}},
-          {OpIn, {OpType::Both, false}},
-          {OpOut, {OpType::Both, false}},
-          {OpSizeof, {OpType::Unary, false}},
-          {OpBitsizeof, {OpType::Unary, false}},
-          {OpAlignof, {OpType::Unary, false}},
-          {OpTypeof, {OpType::Unary, false}},
-          {OpComptime, {OpType::Unary, false}},
-          {OpDot, {OpType::Binary, false}},
-          {OpRange, {OpType::Binary, true}},
-          {OpEllipsis, {OpType::Unary, false}},
-          {OpArrow, {OpType::Binary, false}},
-          {OpTernary, {OpType::Ternary, false}},
+  inline static const auto LEXICAL_OPERATORS_CONFIG =
+      detail::MakeBimap<Operator, detail::OpConfig>({
+          {OpPlus, {detail::Both, true}},
+          {OpMinus, {detail::Both, true}},
+          {OpTimes, {detail::Both, true}},
+          {OpSlash, {detail::Binary, true}},
+          {OpPercent, {detail::Binary, true}},
+          {OpBitAnd, {detail::Both, true}},
+          {OpBitOr, {detail::Binary, true}},
+          {OpBitXor, {detail::Binary, true}},
+          {OpBitNot, {detail::Unary, true}},
+          {OpLShift, {detail::Binary, true}},
+          {OpRShift, {detail::Binary, true}},
+          {OpROTL, {detail::Binary, true}},
+          {OpROTR, {detail::Binary, true}},
+          {OpLogicAnd, {detail::Binary, true}},
+          {OpLogicOr, {detail::Binary, true}},
+          {OpLogicXor, {detail::Binary, true}},
+          {OpLogicNot, {detail::Unary, true}},
+          {OpLT, {detail::Binary, true}},
+          {OpGT, {detail::Binary, true}},
+          {OpLE, {detail::Binary, true}},
+          {OpGE, {detail::Binary, true}},
+          {OpEq, {detail::Binary, true}},
+          {OpNE, {detail::Binary, true}},
+          {OpSet, {detail::Binary, true}},
+          {OpPlusSet, {detail::Binary, true}},
+          {OpMinusSet, {detail::Binary, true}},
+          {OpTimesSet, {detail::Binary, true}},
+          {OpSlashSet, {detail::Binary, true}},
+          {OpPercentSet, {detail::Binary, true}},
+          {OpBitAndSet, {detail::Binary, true}},
+          {OpBitOrSet, {detail::Binary, true}},
+          {OpBitXorSet, {detail::Binary, true}},
+          {OpLogicAndSet, {detail::Binary, true}},
+          {OpLogicOrSet, {detail::Binary, true}},
+          {OpLogicXorSet, {detail::Binary, true}},
+          {OpLShiftSet, {detail::Binary, true}},
+          {OpRShiftSet, {detail::Binary, true}},
+          {OpROTLSet, {detail::Binary, true}},
+          {OpROTRSet, {detail::Binary, true}},
+          {OpInc, {detail::Unary, true}},
+          {OpDec, {detail::Unary, true}},
+          {OpAs, {detail::Binary, true}},
+          {OpBitcastAs, {detail::Binary, false}},
+          {OpIn, {detail::Both, false}},
+          {OpOut, {detail::Both, false}},
+          {OpSizeof, {detail::Unary, false}},
+          {OpBitsizeof, {detail::Unary, false}},
+          {OpAlignof, {detail::Unary, false}},
+          {OpTypeof, {detail::Unary, false}},
+          {OpComptime, {detail::Unary, false}},
+          {OpDot, {detail::Binary, false}},
+          {OpRange, {detail::Binary, true}},
+          {OpEllipsis, {detail::Unary, false}},
+          {OpArrow, {detail::Binary, false}},
+          {OpTernary, {detail::Ternary, false}},
       });
 
-  inline static const boost::bimap<std::string, Punctor> LEXICAL_PUNCTORS =
+  inline static const auto LEXICAL_PUNCTORS =
       detail::MakeBimap<std::string, Punctor>({
           {"(", PuncLPar},
           {")", PuncRPar},
@@ -254,16 +252,13 @@ namespace ncc::lex {
       });
 
   short GetOperatorPrecedence(Operator op, OpMode type);
-  OpAssoc GetOperatorAssociativity(Operator op, OpMode type);
-
+  Associativity GetOperatorAssociativity(Operator op, OpMode type);
   const char *qlex_ty_str(TokenType ty);  /// NOLINT
 
   class ISourceFile {
   public:
     virtual ~ISourceFile() = default;
   };
-
-  struct ScannerEOF final {};
 
   class NCC_EXPORT IScanner {
     static constexpr size_t kTokenBufferSize = 256;

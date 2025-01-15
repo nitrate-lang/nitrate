@@ -40,7 +40,7 @@
 #include <type_traits>
 
 namespace ncc::lex {
-  enum TokenType {
+  enum TokenType : uint8_t {
     EofF = 1, /* End of file */
     KeyW,     /* Keyword */
     Oper,     /* Operator */
@@ -55,7 +55,7 @@ namespace ncc::lex {
     Note,     /* Comment */
   };
 
-  enum Punctor {
+  enum Punctor : uint8_t {
     PuncLPar, /* Left parenthesis */
     PuncRPar, /* Right parenthesis */
     PuncLBrk, /* Left bracket */
@@ -67,7 +67,7 @@ namespace ncc::lex {
     PuncSemi, /* Semicolon */
   };
 
-  enum Operator {
+  enum Operator : uint8_t {
     OpPlus,        /* '+':    Addition operator */
     OpMinus,       /* '-':    Subtraction operator */
     OpTimes,       /* '*':    Multiplication operator */
@@ -125,7 +125,7 @@ namespace ncc::lex {
     OpTernary,     /* '?':          Ternary operator */
   };
 
-  enum Keyword {
+  enum Keyword : uint8_t {
     Scope,     /* 'scope' */
     Pub,       /* 'pub' */
     Sec,       /* 'sec' */

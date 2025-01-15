@@ -49,12 +49,12 @@ int ncc::seq::SysInfo(lua_State* l) {
   QCoreBegin();
 
   for (int i = 1; i <= nargs; i++) {
-    if (lua_isstring(l, i)) {
+    if (lua_isstring(l, i) != 0) {
       QCoreWrite(lua_tostring(l, i));
-    } else if (lua_isnumber(l, i)) {
+    } else if (lua_isnumber(l, i) != 0) {
       QCoreWritef("%f", (double)lua_tonumber(l, i));
     } else if (lua_isboolean(l, i)) {
-      QCoreWrite(lua_toboolean(l, i) ? "true" : "false");
+      QCoreWrite((lua_toboolean(l, i) != 0) ? "true" : "false");
     } else {
       return luaL_error(
           l,
