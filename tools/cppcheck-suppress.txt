@@ -3,3 +3,4 @@ checkersReport
 unusedFunction
 noExplicitConstructor
 useStlAlgorithm
+unmatchedSuppression

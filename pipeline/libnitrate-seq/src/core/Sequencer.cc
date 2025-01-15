@@ -362,9 +362,8 @@ void Sequencer::BindLuaAPI() {
 
 Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
                      bool is_root)
-    : ncc::lex::IScanner(env) {
-  m_scanner = std::make_unique<Tokenizer>(file, env);
-
+    : ncc::lex::IScanner(env),
+      m_scanner(std::make_unique<Tokenizer>(file, env)) {
   if (is_root) {
     m_core = std::make_shared<PImpl>(env);
     SetFetchFunc(nullptr);
