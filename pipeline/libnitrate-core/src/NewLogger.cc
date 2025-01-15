@@ -100,39 +100,39 @@ NCC_EXPORT ECUnique::ECUnique(std::source_location loc) {
 }
 
 NCC_EXPORT void ECBase::GetJsonRepresentation(std::ostream &os) const {
-  os << "{\"flagname\":\"" << flag_name() << "\",\"nice_name\":\""
-     << nice_name() << "\",\"details\":\"" << details() << "\",\"tags\":[";
-  for (auto it = tags().begin(); it != tags().end(); ++it) {
+  os << "{\"flagname\":\"" << FlagName() << "\",\"nice_name\":\"" << NiceName()
+     << "\",\"details\":\"" << Details() << "\",\"tags\":[";
+  for (auto it = Tags().begin(); it != Tags().end(); ++it) {
     os << "\"" << *it << "\"";
-    if (it + 1 != tags().end()) {
+    if (it + 1 != Tags().end()) {
       os << ",";
     }
   }
   os << "],\"fixes\":[";
-  for (auto it = fixes().begin(); it != fixes().end(); ++it) {
+  for (auto it = Fixes().begin(); it != Fixes().end(); ++it) {
     os << "\"" << *it << "\"";
-    if (it + 1 != fixes().end()) {
+    if (it + 1 != Fixes().end()) {
       os << ",";
     }
   }
   os << "],\"examples\":[";
-  for (auto it = examples().begin(); it != examples().end(); ++it) {
+  for (auto it = Examples().begin(); it != Examples().end(); ++it) {
     os << "\"" << *it << "\"";
-    if (it + 1 != examples().end()) {
+    if (it + 1 != Examples().end()) {
       os << ",";
     }
   }
   os << "],\"dev_notes\":[";
-  for (auto it = dev_notes().begin(); it != dev_notes().end(); ++it) {
+  for (auto it = DevNotes().begin(); it != DevNotes().end(); ++it) {
     os << "\"" << *it << "\"";
-    if (it + 1 != dev_notes().end()) {
+    if (it + 1 != DevNotes().end()) {
       os << ",";
     }
   }
   os << "],\"user_notes\":[";
-  for (auto it = user_notes().begin(); it != user_notes().end(); ++it) {
+  for (auto it = UserNotes().begin(); it != UserNotes().end(); ++it) {
     os << "\"" << *it << "\"";
-    if (it + 1 != user_notes().end()) {
+    if (it + 1 != UserNotes().end()) {
       os << ",";
     }
   }
@@ -140,7 +140,7 @@ NCC_EXPORT void ECBase::GetJsonRepresentation(std::ostream &os) const {
 }
 
 NCC_EXPORT void ECBase::Finalize() {
-  m_ec = GetIdentity().get();
+  m_ec = GetIdentity().Get();
 
   /* Try to load information about the error from disk */
   if (auto path = GetDetailsPath(); path.has_value()) {
@@ -156,38 +156,38 @@ NCC_EXPORT void ECBase::Finalize() {
   m_json = oss.str();
 }
 
-size_t LoggerContext::subscribe(LogCallback cb) {
+size_t LoggerContext::Subscribe(LogCallback cb) {
   m_subscribers.push_back(cb);
   return m_subscribers.size() - 1;
 }
 
-void LoggerContext::unsubscribe(size_t idx) {
+void LoggerContext::Unsubscribe(size_t idx) {
   if (idx < m_subscribers.size()) {
     m_subscribers.erase(m_subscribers.begin() + idx);
   }
 }
 
-void LoggerContext::unsubscribe_all() { m_subscribers.clear(); }
+void LoggerContext::UnsubscribeAll() { m_subscribers.clear(); }
 
-size_t LoggerContext::add_filter(LogFilterFunc filter) {
+size_t LoggerContext::AddFilter(LogFilterFunc filter) {
   m_filters.push_back(filter);
   return m_filters.size() - 1;
 }
 
-void LoggerContext::remove_filter(size_t idx) {
+void LoggerContext::RemoveFilter(size_t idx) {
   if (idx < m_filters.size()) {
     m_filters.erase(m_filters.begin() + idx);
   }
 }
 
-void LoggerContext::remove_filter(LogFilterFunc filter) {
+void LoggerContext::RemoveFilter(LogFilterFunc filter) {
   m_filters.erase(std::remove(m_filters.begin(), m_filters.end(), filter),
                   m_filters.end());
 }
 
-void LoggerContext::clear_filters() { m_filters.clear(); }
+void LoggerContext::ClearFilters() { m_filters.clear(); }
 
-void LoggerContext::publish(const std::string &msg, Sev sev,
+void LoggerContext::Publish(const std::string &msg, Sev sev,
                             const ECBase &ec) const {
   if (m_enabled) {
     bool emit = m_filters.empty() ||

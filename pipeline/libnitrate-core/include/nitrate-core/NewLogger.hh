@@ -68,7 +68,7 @@ namespace ncc {
     explicit ECUnique(
         std::source_location loc = std::source_location::current());
 
-    constexpr EC get() const { return m_ec; };
+    constexpr EC Get() const { return m_ec; };
   };
 
   using LogFormatterFunc = std::function<std::string(std::string_view, Sev)>;
@@ -76,18 +76,17 @@ namespace ncc {
   std::string Formatter(std::string_view msg, Sev sev);
 
   class ECBase {
-    struct Details {
-      std::vector<std::string> tags, fixes, examples, dev_notes, notes;
-      std::string flagname, nice_name, details;
-
-      constexpr Details() : flagname(), nice_name(), details() {}
+    struct ECDetails {
+      std::vector<std::string> m_tags, m_fixes, m_examples, m_dev_notes,
+          m_notes;
+      std::string m_flagname, m_nice_name, m_details;
     };
 
     EC m_ec;
-    Details m_details;
+    ECDetails m_details;
     std::string m_json;
 
-    static std::optional<Details> LoadDetailsFromFile(std::string_view path);
+    static std::optional<ECDetails> LoadDetailsFromFile(std::string_view path);
 
   protected:
     virtual ECUnique GetIdentity() const = 0;
@@ -104,19 +103,21 @@ namespace ncc {
     constexpr ECBase() : m_ec(0) {}
     virtual ~ECBase() = default;
 
-    constexpr EC getKind() const { return m_ec; }
+    constexpr EC GetKind() const { return m_ec; }
 
-    constexpr std::string_view as_json() const { return m_json; }
-    constexpr std::string_view flag_name() const { return m_details.flagname; }
-    constexpr std::string_view nice_name() const { return m_details.nice_name; }
-    constexpr std::string_view details() const { return m_details.details; }
-    constexpr auto tags() const { return std::span(m_details.tags); }
-    constexpr auto fixes() const { return std::span(m_details.fixes); }
-    constexpr auto examples() const { return std::span(m_details.examples); }
-    constexpr auto dev_notes() const { return std::span(m_details.dev_notes); }
-    constexpr auto user_notes() const { return std::span(m_details.notes); }
+    constexpr std::string_view AsJson() const { return m_json; }
+    constexpr std::string_view FlagName() const { return m_details.m_flagname; }
+    constexpr std::string_view NiceName() const {
+      return m_details.m_nice_name;
+    }
+    constexpr std::string_view Details() const { return m_details.m_details; }
+    constexpr auto Tags() const { return std::span(m_details.m_tags); }
+    constexpr auto Fixes() const { return std::span(m_details.m_fixes); }
+    constexpr auto Examples() const { return std::span(m_details.m_examples); }
+    constexpr auto DevNotes() const { return std::span(m_details.m_dev_notes); }
+    constexpr auto UserNotes() const { return std::span(m_details.m_notes); }
 
-    std::string format(std::string_view msg, Sev sev) const {
+    std::string Format(std::string_view msg, Sev sev) const {
       return GetFormatter()(msg, sev);
     }
   };
@@ -178,7 +179,7 @@ namespace ncc {
     }
 
     template <typename T>
-    void write(const T &value) {
+    void Write(const T &value) {
       if constexpr (std::is_base_of_v<ECBase, T>) {
         m_ec = &value; /* ECBase children must have static lifetime */
       } else if constexpr (std::is_same_v<Sev, T>) {
@@ -203,38 +204,38 @@ namespace ncc {
     LoggerContext() = default;
     ~LoggerContext() = default;
 
-    size_t subscribe(LogCallback cb);
-    void unsubscribe(size_t idx);
-    void unsubscribe_all();
+    size_t Subscribe(LogCallback cb);
+    void Unsubscribe(size_t idx);
+    void UnsubscribeAll();
 
-    size_t add_filter(LogFilterFunc filter);
-    void remove_filter(size_t idx);
-    void remove_filter(LogFilterFunc filter);
-    void clear_filters();
+    size_t AddFilter(LogFilterFunc filter);
+    void RemoveFilter(size_t idx);
+    void RemoveFilter(LogFilterFunc filter);
+    void ClearFilters();
 
-    void operator+=(LogFilterFunc filter) { add_filter(filter); }
-    void operator-=(LogFilterFunc filter) { remove_filter(filter); }
-    void operator+=(LogCallback cb) { subscribe(cb); }
+    void operator+=(LogFilterFunc filter) { AddFilter(filter); }
+    void operator-=(LogFilterFunc filter) { RemoveFilter(filter); }
+    void operator+=(LogCallback cb) { Subscribe(cb); }
 
-    void enable() { m_enabled = true; }
-    void disable() { m_enabled = false; }
-    bool enabled() const { return m_enabled; }
+    void Enable() { m_enabled = true; }
+    void Disable() { m_enabled = false; }
+    bool Enabled() const { return m_enabled; }
 
-    void publish(const std::string &msg, Sev sev, const ECBase &ec) const;
+    void Publish(const std::string &msg, Sev sev, const ECBase &ec) const;
   };
 
   LogStream operator<<(LoggerContext log, const auto &value) {
     LogStream stream([log](auto msg, auto sev, const auto &ec) {
-      log.publish(msg, sev, ec);
+      log.Publish(msg, sev, ec);
     });
 
-    stream.write(value);
+    stream.Write(value);
 
     return stream;
   };
 
   LogStream operator<<(LogStream &&stream, const auto &value) {
-    stream.write(value);
+    stream.Write(value);
     return std::move(stream);
   };
 

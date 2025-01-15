@@ -41,9 +41,9 @@ using namespace ncc;
 
 static thread_local std::stringstream g_log_buffer;
 
-extern "C" NCC_EXPORT void qcore_begin() { g_log_buffer.str(""); }
+extern "C" NCC_EXPORT void QCoreBegin() { g_log_buffer.str(""); }
 
-extern "C" NCC_EXPORT void qcore_end(qcore_log_t level) {
+extern "C" NCC_EXPORT void QCoreEnd(QCoreLog level) {
   std::string message = g_log_buffer.str();
 
   while (message.ends_with("\n")) {
@@ -78,7 +78,7 @@ extern "C" NCC_EXPORT void qcore_end(qcore_log_t level) {
   }
 }
 
-extern "C" NCC_EXPORT int qcore_vwritef(const char *fmt, va_list args) {
+extern "C" NCC_EXPORT int QCoreVWriteF(const char *fmt, va_list args) {
   char *buffer = NULL;
   int size = vasprintf(&buffer, fmt, args);
   if (size < 0) {

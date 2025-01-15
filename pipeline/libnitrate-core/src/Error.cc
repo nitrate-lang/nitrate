@@ -54,7 +54,7 @@ static std::string libc_version =
 #error "This libc version is not supported here"
 #endif
 
-static inline std::vector<std::pair<uintptr_t, std::string>> get_backtrace(
+static inline std::vector<std::pair<uintptr_t, std::string>> GetBacktrace(
     void) {
   unw_cursor_t cursor;
   unw_context_t uc;
@@ -89,7 +89,7 @@ static inline std::vector<std::pair<uintptr_t, std::string>> get_backtrace(
   return trace;
 }
 
-static std::vector<std::string> panic_split_message(std::string_view message) {
+static std::vector<std::string> PanicSplitMessage(std::string_view message) {
   std::string buf;
   std::vector<std::string> lines;
 
@@ -129,7 +129,7 @@ static std::vector<std::string> panic_split_message(std::string_view message) {
   return lines;
 }
 
-static void panic_render_report(const std::vector<std::string> &lines) {
+static void PanicRenderReport(const std::vector<std::string> &lines) {
   { /* Print shockwave */
     std::cout << "\n\n";
     std::cerr
@@ -155,7 +155,7 @@ static void panic_render_report(const std::vector<std::string> &lines) {
   std::cerr << "\x1b[31;1m┏━━━━━━┫ BEGIN STACK TRACE ┣━━\x1b[0m\n";
   std::cerr << "\x1b[31;1m┃\x1b[0m\n";
 
-  auto trace = get_backtrace();
+  auto trace = GetBacktrace();
 
   for (size_t i = 0; i < trace.size(); i++) {
     std::cerr << "\x1b[31;1m┣╸╸\x1b[0m \x1b[37;1m";
@@ -185,18 +185,18 @@ static void panic_render_report(const std::vector<std::string> &lines) {
   std::cerr << "\nAborting..." << std::endl;
 }
 
-extern "C" NCC_EXPORT void qcore_panic_(const char *msg) {
-  qcore_panicf_("%s", msg);
+extern "C" NCC_EXPORT void QCorePanic(const char *msg) {
+  QCorePanicF("%s", msg);
 }
 
-extern "C" NCC_EXPORT void qcore_panicf_(const char *_fmt, ...) {
+extern "C" NCC_EXPORT void QCorePanicF(const char *fmt, ...) {
   va_list args;
-  va_start(args, _fmt);
-  qcore_vpanicf_(_fmt, args);
+  va_start(args, fmt);
+  QCoreVPanicF(fmt, args);
   va_end(args);
 }
 
-extern "C" NCC_EXPORT void qcore_vpanicf_(const char *fmt, va_list args) {
+extern "C" NCC_EXPORT void QCoreVPanicF(const char *fmt, va_list args) {
   char *msg = nullptr;
 
   { /* Parse the format string */
@@ -204,24 +204,24 @@ extern "C" NCC_EXPORT void qcore_vpanicf_(const char *fmt, va_list args) {
     (void)ret;
   }
 
-  panic_render_report(panic_split_message(msg));
+  PanicRenderReport(PanicSplitMessage(msg));
 
   free(msg);
 
   abort();
 }
 
-extern "C" NCC_EXPORT void qcore_debug_(const char *msg) {
-  return qcore_debugf_("%s", msg);
+extern "C" NCC_EXPORT void QCoreDebug(const char *msg) {
+  return QCoreDebugF("%s", msg);
 }
 
-extern "C" NCC_EXPORT void qcore_debugf_(const char *fmt, ...) {
+extern "C" NCC_EXPORT void QCoreDebugF(const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  qcore_vdebugf_(fmt, args);
+  QCoreVDebugF(fmt, args);
   va_end(args);
 }
 
-extern "C" NCC_EXPORT void qcore_vdebugf_(const char *fmt, va_list args) {
+extern "C" NCC_EXPORT void QCoreVDebugF(const char *fmt, va_list args) {
   vfprintf(stderr, fmt, args);
 }

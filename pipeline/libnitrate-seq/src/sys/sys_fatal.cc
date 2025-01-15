@@ -46,15 +46,15 @@ int ncc::seq::sys_fatal(lua_State* L) {
     return luaL_error(L, "Expected at least one argument, got 0");
   }
 
-  qcore_begin();
+  QCoreBegin();
 
   for (int i = 1; i <= nargs; i++) {
     if (lua_isstring(L, i)) {
-      qcore_write(lua_tostring(L, i));
+      QCoreWrite(lua_tostring(L, i));
     } else if (lua_isnumber(L, i)) {
-      qcore_writef("%f", (double)lua_tonumber(L, i));
+      QCoreWritef("%f", (double)lua_tonumber(L, i));
     } else if (lua_isboolean(L, i)) {
-      qcore_write(lua_toboolean(L, i) ? "true" : "false");
+      QCoreWrite(lua_toboolean(L, i) ? "true" : "false");
     } else {
       return luaL_error(
           L,
@@ -63,7 +63,7 @@ int ncc::seq::sys_fatal(lua_State* L) {
     }
   }
 
-  qcore_end(QCORE_FATAL);
+  QCoreEnd(QCORE_FATAL);
 
   throw Sequencer::StopException();
 }

@@ -107,7 +107,7 @@
 
 // #ifdef CALLEE_KNOWN
 
-//   qcore_panicf_(
+//   QCorePanicF(
 //       "IRBuilder contract violation:\n"
 //       "-----------------------------\n"
 //       "Condition: (%s);\n\n"
@@ -145,7 +145,7 @@
 
 // #else
 
-//   qcore_panicf_(
+//   QCorePanicF(
 //       "IRBuilder contract violation:\n"
 //       "-----------------------------\n"
 //       "Condition: (%s);\n\n"

@@ -374,8 +374,8 @@ NCC_EXPORT ASTRoot Parser::parse() {
     Parser_SetCurrentScanner(&rd);
 
     { /* Subscribe to events emitted by the parser */
-      auto sub_id = log.subscribe([&](auto, auto, const auto &ec) {
-        if (ec.getKind() == SyntaxError.getKind()) {
+      auto sub_id = log.Subscribe([&](auto, auto, const auto &ec) {
+        if (ec.GetKind() == SyntaxError.GetKind()) {
           SetFailBit();
         }
       });
@@ -403,7 +403,7 @@ NCC_EXPORT ASTRoot Parser::parse() {
         rd.SkipCommentsState(old_state);
       }
 
-      log.unsubscribe(sub_id);
+      log.Unsubscribe(sub_id);
     }
 
     Parser_SetCurrentScanner(nullptr);

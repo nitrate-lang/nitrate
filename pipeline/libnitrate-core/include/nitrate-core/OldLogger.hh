@@ -36,25 +36,24 @@
 
 #include <cerrno>
 #include <cstdarg>
-#include <cstddef>
 #include <cstring>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void qcore_panic_(const char *msg) __attribute__((noreturn));
+void QCorePanic(const char *msg) __attribute__((noreturn));
 
-void qcore_panicf_(const char *fmt, ...) __attribute__((noreturn));
-void qcore_vpanicf_(const char *fmt, va_list args) __attribute__((noreturn));
+void QCorePanicF(const char *fmt, ...) __attribute__((noreturn));
+void QCoreVPanicF(const char *fmt, va_list args) __attribute__((noreturn));
 
-void qcore_debug_(const char *msg);
-void qcore_debugf_(const char *fmt, ...);
-void qcore_vdebugf_(const char *fmt, va_list args);
+void QCoreDebug(const char *msg);
+void QCoreDebugF(const char *fmt, ...);
+void QCoreVDebugF(const char *fmt, va_list args);
 
 #if defined(NDEBUG)
 #define qcore_panicf(fmt, ...)                                              \
-  qcore_panicf_(                                                            \
+  QCorePanicF(                                                              \
       fmt                                                                   \
       "\nSource File: %s\nSource Line: %d\nFunction: unknown\nErrno: %s\n", \
       ##__VA_ARGS__, __FILE__, __LINE__, strerror(errno))
@@ -68,7 +67,7 @@ void qcore_vdebugf_(const char *fmt, va_list args);
                       "" #__VA_ARGS__, #expr))
 #else
 #define qcore_panicf(fmt, ...)                                             \
-  qcore_panicf_(                                                           \
+  QCorePanicF(                                                             \
       fmt "\nSource File: %s\nSource Line: %d\nFunction: %s\nErrno: %s\n", \
       ##__VA_ARGS__, __FILE__, __LINE__, __PRETTY_FUNCTION__, strerror(errno))
 
@@ -85,8 +84,8 @@ void qcore_vdebugf_(const char *fmt, va_list args);
 #define qcore_debugf(fmt, ...)
 #define qcore_debug(msg)
 #else
-#define qcore_debugf(fmt, ...) qcore_debugf_(fmt, ##__VA_ARGS__)
-#define qcore_debug(msg) qcore_debug_(msg)
+#define qcore_debugf(fmt, ...) QCoreDebugF(fmt, ##__VA_ARGS__)
+#define qcore_debug(msg) QCoreDebug(msg)
 #endif
 
 #define qcore_implement() qcore_panicf("%s is not implemented.", __func__)
@@ -97,39 +96,34 @@ typedef enum {
   QCORE_WARN,
   QCORE_ERROR,
   QCORE_FATAL,
-} qcore_log_t;
+} QCoreLog;
 
-void qcore_begin();
-int qcore_vwritef(const char *fmt, va_list args);
-void qcore_end(qcore_log_t level);
+void QCoreBegin();
+int QCoreVWriteF(const char *fmt, va_list args);
+void QCoreEnd(QCoreLog level);
 
-typedef void (*qcore_logger_t)(qcore_log_t level, const char *msg, size_t len,
-                               void *);
-
-static inline int qcore_writef(const char *fmt, ...) {
+static inline int QCoreWritef(const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  int ret = qcore_vwritef(fmt, args);
+  int ret = QCoreVWriteF(fmt, args);
   va_end(args);
   return ret;
 }
 
-static inline int qcore_write(const char *msg) {
-  return qcore_writef("%s", msg);
-}
+static inline int QCoreWrite(const char *msg) { return QCoreWritef("%s", msg); }
 
-#define qcore_logf(_lvl, ...)  \
-  do {                         \
-    qcore_begin();             \
-    qcore_writef(__VA_ARGS__); \
-    qcore_end(_lvl);           \
+#define qcore_logf(_lvl, ...) \
+  do {                        \
+    QCoreBegin();             \
+    QCoreWritef(__VA_ARGS__); \
+    QCoreEnd(_lvl);           \
   } while (0)
 
 #define qcore_print(_lvl, _msg) \
   do {                          \
-    qcore_begin();              \
-    qcore_writef("%s", _msg);   \
-    qcore_end(_lvl);            \
+    QCoreBegin();               \
+    QCoreWritef("%s", _msg);    \
+    QCoreEnd(_lvl);             \
   } while (0)
 
 #ifdef __cplusplus

@@ -379,7 +379,7 @@ namespace no3::router {
                                std::unique_ptr<ArgumentParser>> &subparsers) {
     ncc::log += [&](auto msg, auto sev, const auto &ec) {
       if (core::GetDebugMode() || sev > Debug) {
-        std::cerr << ec.format(msg, sev).c_str() << std::endl;
+        std::cerr << ec.Format(msg, sev).c_str() << std::endl;
       }
     };
 
