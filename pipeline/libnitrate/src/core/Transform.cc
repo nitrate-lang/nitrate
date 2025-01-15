@@ -138,7 +138,7 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
   /* Setup thread-local shared environment                                   */
   /***************************************************************************/
 
-  auto subid = ncc::log.Subscribe([&](auto msg, auto sev, const auto &ec) {
+  auto subid = ncc::Log.Subscribe([&](auto msg, auto sev, const auto &ec) {
     diag_cb(ec.Format(msg, sev).c_str(), opaque);
   });
 
@@ -159,7 +159,7 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
     } /* No options provided */
   } /* Failed to parse options */
 
-  ncc::log.Unsubscribe(subid);
+  ncc::Log.Unsubscribe(subid);
 
   return status;
 }

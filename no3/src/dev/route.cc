@@ -377,7 +377,7 @@ namespace no3::router {
       const ArgumentParser &parser,
       const std::unordered_map<std::string_view,
                                std::unique_ptr<ArgumentParser>> &subparsers) {
-    ncc::log += [&](auto msg, auto sev, const auto &ec) {
+    ncc::Log += [&](auto msg, auto sev, const auto &ec) {
       if (core::GetDebugMode() || sev > Debug) {
         std::cerr << ec.Format(msg, sev).c_str() << std::endl;
       }

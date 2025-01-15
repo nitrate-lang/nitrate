@@ -110,7 +110,7 @@ void IR_Writer::write_source_location(FlowPtr<Expr> n) const {
       string(origin.File());
 
       string("sub");
-      string(origin.Func());
+      string(origin.Function());
 
       string("row");
       uint64(origin.Line());

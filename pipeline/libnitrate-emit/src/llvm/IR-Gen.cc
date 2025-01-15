@@ -1943,14 +1943,14 @@ NCC_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
         TargetOptions opt;
         std::string lookupTarget_err;
         auto Target =
-            TargetRegistry::lookupTarget(targetTriple.get(), lookupTarget_err);
+            TargetRegistry::lookupTarget(targetTriple.Get(), lookupTarget_err);
         if (!Target) {
           e << "error: failed to lookup target: " << lookupTarget_err << endl;
           return false;
         }
 
         auto TargetMachine = Target->createTargetMachine(
-            targetTriple.get(), CPU.get(), Features.get(), opt,
+            targetTriple.Get(), CPU.Get(), Features.Get(), opt,
             relocPIC ? Reloc::PIC_ : Reloc::Static);
 
         auto &module = *module_opt.value();
@@ -1961,7 +1961,7 @@ NCC_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
         }
 
         module.setDataLayout(TargetMachine->createDataLayout());
-        module.setTargetTriple(targetTriple.get());
+        module.setTargetTriple(targetTriple.Get());
 
         ///==========================================================================
 
@@ -2029,14 +2029,14 @@ NCC_EXPORT bool qcode_obj(IRModule *module, qcode_conf_t *conf, FILE *err,
         TargetOptions opt;
         std::string lookupTarget_err;
         auto Target =
-            TargetRegistry::lookupTarget(targetTriple.get(), lookupTarget_err);
+            TargetRegistry::lookupTarget(targetTriple.Get(), lookupTarget_err);
         if (!Target) {
           e << "error: failed to lookup target: " << lookupTarget_err << endl;
           return false;
         }
 
         auto TargetMachine = Target->createTargetMachine(
-            targetTriple.get(), CPU.get(), Features.get(), opt,
+            targetTriple.Get(), CPU.Get(), Features.Get(), opt,
             relocPIC ? Reloc::PIC_ : Reloc::Static);
 
         auto &module = *module_opt.value();
@@ -2047,7 +2047,7 @@ NCC_EXPORT bool qcode_obj(IRModule *module, qcode_conf_t *conf, FILE *err,
         }
 
         module.setDataLayout(TargetMachine->createDataLayout());
-        module.setTargetTriple(targetTriple.get());
+        module.setTargetTriple(targetTriple.Get());
 
         ///==========================================================================
 

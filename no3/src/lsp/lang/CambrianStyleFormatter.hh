@@ -33,7 +33,7 @@ namespace lsp::fmt {
       LineStreamWritter& operator<<(ncc::lex::Operator op);
       LineStreamWritter& operator<<(parse::Vis op);
       LineStreamWritter& operator<<(ncc::string str) {
-        m_line_buffer << str.get();
+        m_line_buffer << str.Get();
         return *this;
       }
 

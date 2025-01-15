@@ -254,7 +254,7 @@ namespace ncc::parse {
       return reader.get();
     }
 
-    virtual ~AST_JsonReader();
+    ~AST_JsonReader() override;
   };
 
   class NCC_EXPORT AST_MsgPackReader final : public AST_Reader {
@@ -276,7 +276,7 @@ namespace ncc::parse {
       return reader.get();
     }
 
-    virtual ~AST_MsgPackReader();
+    ~AST_MsgPackReader() override;
   };
 }  // namespace ncc::parse
 

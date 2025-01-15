@@ -205,7 +205,7 @@ namespace ncc::ir {
     constexpr IR_Vertex_OpaqueTy(auto name)
         : IR_Vertex_Type<A>(IR_tOPAQUE), m_name(name) {}
 
-    constexpr auto getName() const { return m_name.get(); }
+    constexpr auto getName() const { return m_name.Get(); }
   };
 
   template <class A>

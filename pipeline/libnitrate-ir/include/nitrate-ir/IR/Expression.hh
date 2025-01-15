@@ -55,9 +55,9 @@ namespace ncc::ir {
     constexpr auto getRHS() const { return m_rhs; }
     constexpr auto getOp() const { return m_op; }
 
-    constexpr void setLHS(auto lhs) { m_lhs = lhs; }
-    constexpr void setRHS(auto rhs) { m_rhs = rhs; }
-    constexpr void setOp(auto op) { m_op = op; }
+    constexpr void SetLHS(auto lhs) { m_lhs = lhs; }
+    constexpr void SetRHS(auto rhs) { m_rhs = rhs; }
+    constexpr void SetOp(auto op) { m_op = op; }
   };
 
   template <class A>
@@ -79,9 +79,9 @@ namespace ncc::ir {
     constexpr auto getOp() const { return m_op; }
     constexpr auto isPostfix() const { return m_postfix; }
 
-    constexpr void setExpr(auto expr) { m_expr = expr; }
-    constexpr void setOp(auto op) { m_op = op; }
-    constexpr void setPostfix(auto is_postfix) { m_postfix = is_postfix; }
+    constexpr void SetExpr(auto expr) { m_expr = expr; }
+    constexpr void SetOp(auto op) { m_op = op; }
+    constexpr void SetPostfix(auto is_postfix) { m_postfix = is_postfix; }
   };
 
   template <class A>
@@ -195,7 +195,7 @@ namespace ncc::ir {
     constexpr auto getNumArgs() { return m_args.size(); }
     constexpr auto getArgs() const { return m_args; }
 
-    constexpr void setTarget(auto ref) { m_iref = ref; }
+    constexpr void SetTarget(auto ref) { m_iref = ref; }
     void setArgs(auto args) { m_args = args; }
   };
 
@@ -215,7 +215,7 @@ namespace ncc::ir {
     constexpr auto size() const { return m_items.size(); }
     constexpr auto empty() const { return m_items.empty(); }
 
-    constexpr void setItems(auto items) { m_items = items; }
+    constexpr void SetItems(auto items) { m_items = items; }
   };
 
   template <class A>
@@ -231,8 +231,8 @@ namespace ncc::ir {
     constexpr auto getExpr() const { return m_expr; }
     constexpr auto getIndex() const { return m_index; }
 
-    constexpr void setIndex(auto index) { m_index = index; }
-    constexpr void setExpr(auto expr) { m_expr = expr; }
+    constexpr void SetIndex(auto index) { m_index = index; }
+    constexpr void SetExpr(auto expr) { m_expr = expr; }
   };
 
   template <class A>
@@ -247,10 +247,10 @@ namespace ncc::ir {
         : IR_Vertex_Expr<A>(IR_eIDENT), m_what(what), m_name(name) {}
 
     constexpr auto getWhat() const { return m_what; }
-    constexpr auto getName() const { return m_name.get(); }
+    constexpr auto getName() const { return m_name.Get(); }
 
-    constexpr void setWhat(auto what) { m_what = what; }
-    constexpr void setName(auto name) { m_name = name; }
+    constexpr void SetWhat(auto what) { m_what = what; }
+    constexpr void SetName(auto name) { m_name = name; }
   };
 
   template <class A>
@@ -264,11 +264,11 @@ namespace ncc::ir {
     constexpr IR_Vertex_Extern(auto value, auto abi_name)
         : IR_Vertex_Expr<A>(IR_eEXTERN), m_value(value), m_abi_name(abi_name) {}
 
-    constexpr auto getAbiName() const { return m_abi_name.get(); }
+    constexpr auto getAbiName() const { return m_abi_name.Get(); }
     constexpr auto getValue() const { return m_value; }
 
-    constexpr void setValue(auto value) { m_value = value; }
-    constexpr void setAbiName(auto abi_name) { m_abi_name = abi_name; }
+    constexpr void SetValue(auto value) { m_value = value; }
+    constexpr void SetAbiName(auto abi_name) { m_abi_name = abi_name; }
   };
 
   template <class A>
@@ -291,17 +291,17 @@ namespace ncc::ir {
           m_storage(storage_class),
           m_readonly(readonly) {}
 
-    constexpr auto getName() const { return m_name.get(); }
+    constexpr auto getName() const { return m_name.Get(); }
     constexpr auto getValue() const { return m_value; }
     constexpr auto getAbiName() const { return m_abi_name; }
     constexpr auto getStorageClass() const { return m_storage; }
     constexpr auto isReadonly() const { return m_readonly; }
 
-    constexpr void setAbiName(auto abi_name) { m_abi_name = abi_name; }
-    constexpr void setValue(auto value) { m_value = value; }
-    constexpr void setName(auto name) { m_name = name; }
-    constexpr void setStorageClass(auto storage) { m_storage = storage; }
-    constexpr void setReadonly(auto readonly) { m_readonly = readonly; }
+    constexpr void SetAbiName(auto abi_name) { m_abi_name = abi_name; }
+    constexpr void SetValue(auto value) { m_value = value; }
+    constexpr void SetName(auto name) { m_name = name; }
+    constexpr void SetStorageClass(auto storage) { m_storage = storage; }
+    constexpr void SetReadonly(auto readonly) { m_readonly = readonly; }
   };
 
   template <class A>
@@ -315,7 +315,7 @@ namespace ncc::ir {
         : IR_Vertex_Expr<A>(IR_eRET), m_expr(expr) {}
 
     constexpr auto getExpr() const { return m_expr; }
-    constexpr void setExpr(auto expr) { m_expr = expr; }
+    constexpr void SetExpr(auto expr) { m_expr = expr; }
   };
 
   template <class A>
@@ -348,9 +348,9 @@ namespace ncc::ir {
     constexpr auto getThen() const { return m_then; }
     constexpr auto getElse() const { return m_else; }
 
-    constexpr void setCond(auto cond) { m_cond = cond; }
-    constexpr void setThen(auto then) { m_then = then; }
-    constexpr void setElse(auto ele) { m_else = ele; }
+    constexpr void SetCond(auto cond) { m_cond = cond; }
+    constexpr void SetThen(auto then) { m_then = then; }
+    constexpr void SetElse(auto ele) { m_else = ele; }
   };
 
   template <class A>
@@ -367,8 +367,8 @@ namespace ncc::ir {
     constexpr auto getCond() const { return m_cond; }
     constexpr auto getBody() const { return m_body; }
 
-    constexpr void setCond(auto cond) { m_cond = cond; }
-    constexpr void setBody(auto body) { m_body = body; }
+    constexpr void SetCond(auto cond) { m_cond = cond; }
+    constexpr void SetBody(auto body) { m_body = body; }
   };
 
   template <class A>
@@ -390,10 +390,10 @@ namespace ncc::ir {
     constexpr auto getStep() const { return m_step; }
     constexpr auto getBody() const { return m_body; }
 
-    constexpr void setInit(auto init) { m_init = init; }
-    constexpr void setCond(auto cond) { m_cond = cond; }
-    constexpr void setStep(auto step) { m_step = step; }
-    constexpr void setBody(auto body) { m_body = body; }
+    constexpr void SetInit(auto init) { m_init = init; }
+    constexpr void SetCond(auto cond) { m_cond = cond; }
+    constexpr void SetStep(auto step) { m_step = step; }
+    constexpr void SetBody(auto body) { m_body = body; }
   };
 
   template <class A>
@@ -409,8 +409,8 @@ namespace ncc::ir {
     constexpr auto getCond() { return m_cond; }
     constexpr auto getBody() { return m_body; }
 
-    constexpr void setCond(auto cond) { m_cond = cond; }
-    constexpr void setBody(auto body) { m_body = body; }
+    constexpr void SetCond(auto cond) { m_cond = cond; }
+    constexpr void SetBody(auto body) { m_body = body; }
   };
 
   template <class A>
@@ -432,9 +432,9 @@ namespace ncc::ir {
     constexpr auto getCases() const { return m_cases; }
     constexpr auto getDefault() const { return m_default; }
 
-    constexpr void setCond(auto cond) { m_cond = cond; }
-    constexpr void setDefault(auto default_) { m_default = default_; }
-    constexpr void setCases(auto cases) { m_cases = cases; }
+    constexpr void SetCond(auto cond) { m_cond = cond; }
+    constexpr void SetDefault(auto default_) { m_default = default_; }
+    constexpr void SetCases(auto cases) { m_cases = cases; }
   };
 
   template <class A>
@@ -463,14 +463,14 @@ namespace ncc::ir {
     constexpr auto getBody() const { return m_body; }
     constexpr auto isVariadic() const { return m_variadic; }
     constexpr auto getAbiName() const { return m_abi_name; }
-    constexpr auto getName() const { return m_name.get(); }
+    constexpr auto getName() const { return m_name.Get(); }
 
-    constexpr void setName(auto name) { m_name = name; }
-    constexpr void setParams(auto params) { m_params = params; }
-    constexpr void setReturn(auto ret_ty) { m_return = ret_ty; }
-    constexpr void setBody(auto body) { m_body = body; }
-    constexpr void setVariadic(auto variadic) { m_variadic = variadic; }
-    constexpr void setAbiName(auto abi_name) { m_abi_name = abi_name; }
+    constexpr void SetName(auto name) { m_name = name; }
+    constexpr void SetParams(auto params) { m_params = params; }
+    constexpr void SetReturn(auto ret_ty) { m_return = ret_ty; }
+    constexpr void SetBody(auto body) { m_body = body; }
+    constexpr void SetVariadic(auto variadic) { m_variadic = variadic; }
+    constexpr void SetAbiName(auto abi_name) { m_abi_name = abi_name; }
   };
 
   template <class A>

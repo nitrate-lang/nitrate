@@ -189,7 +189,7 @@ static std::optional<int> get_tcp_client(const std::string& host,
     return std::nullopt;
   }
 
-  int client_fd = Accept(fd, nullptr, nullptr);
+  int client_fd = accept(fd, nullptr, nullptr);
   if (client_fd == -1) {
     LOG(ERROR) << "Failed to accept connection: " << strerror(errno);
     return std::nullopt;

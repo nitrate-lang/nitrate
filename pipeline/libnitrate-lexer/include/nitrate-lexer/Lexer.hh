@@ -376,7 +376,7 @@ namespace ncc::lex {
   public:
     Tokenizer(std::istream &source_file, std::shared_ptr<Environment> env)
         : IScanner(std::move(env)), m_file(source_file) {
-      if (auto filename = env->Get("FILE"); filename.has_value()) {
+      if (auto filename = m_env->Get("FILE"); filename.has_value()) {
         SetCurrentFilename(filename.value());
       }
     }

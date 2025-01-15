@@ -78,7 +78,7 @@ std::optional<std::shared_ptr<SyncFSFile>> SyncFS::open(std::string path) {
                       std::istreambuf_iterator<char>());
 
   auto ptr = std::make_shared<SyncFSFile>();
-  ptr->Set_content(std::make_shared<std::string>(std::move(content)));
+  ptr->SetContent(std::make_shared<std::string>(std::move(content)));
 
   m_files[path] = ptr;
 

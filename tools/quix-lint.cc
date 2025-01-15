@@ -20,5 +20,5 @@ static std::string get_lint_options() {
 }
 
 int main() {
-  return !nitrate::pipeline(stdin, stdout, {"lint", get_lint_options()}).get();
+  return !nitrate::pipeline(stdin, stdout, {"lint", get_lint_options()}).Get();
 }

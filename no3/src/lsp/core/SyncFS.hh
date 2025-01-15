@@ -44,7 +44,7 @@ public:
     return m_content->size();
   };
 
-  void set_content(std::shared_ptr<std::string> content) {
+  void SetContent(std::shared_ptr<std::string> content) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_content = content;
   }
