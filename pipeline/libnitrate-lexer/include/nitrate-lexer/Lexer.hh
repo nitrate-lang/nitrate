@@ -350,15 +350,17 @@ namespace ncc::lex {
   };
 
   class NCC_EXPORT Tokenizer final : public IScanner {
-    static constexpr size_t GETC_BUFFER_SIZE = 256;
-    uint32_t m_offset = 0, m_line = 0, m_column = 0;
+    static constexpr size_t GETC_BUFFER_SIZE = 1024;
 
-    std::istream &m_file;
+    uint64_t m_offset = 0, m_line = 0, m_column = 0;
     std::queue<char> m_fifo;
-
-    std::array<char, GETC_BUFFER_SIZE> m_getc_buffer;
     size_t m_getc_buffer_pos = GETC_BUFFER_SIZE;
+    std::array<char, GETC_BUFFER_SIZE> m_getc_buffer;
+    std::istream &m_file;
     bool m_eof = false;
+
+    void nextc_refill();
+    char nextc();
 
     class StaticImpl;
     friend class StaticImpl;

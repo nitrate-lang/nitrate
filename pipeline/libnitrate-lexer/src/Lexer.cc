@@ -373,44 +373,6 @@ enum class LexState {
 // optimization capabilities as if the functions has static linkage.
 class Tokenizer::StaticImpl {
 public:
-  static NCC_FORCE_INLINE char nextc(Tokenizer &L) {
-    if (L.m_getc_buffer_pos == GETC_BUFFER_SIZE) {
-      L.m_file.read(L.m_getc_buffer.data(), GETC_BUFFER_SIZE);
-      auto gcount = L.m_file.gcount();
-
-      // Fill extra buffer with '#' with is a comment character
-      memset(L.m_getc_buffer.data() + gcount, '\n', GETC_BUFFER_SIZE - gcount);
-      L.m_getc_buffer_pos = 0;
-
-      if (gcount == 0) [[unlikely]] {
-        if (L.m_eof) [[unlikely]] {
-          L.m_env->set("this.file.eof.offset", std::to_string(L.m_offset));
-          L.m_env->set("this.file.eof.line", std::to_string(L.m_line));
-          L.m_env->set("this.file.eof.column", std::to_string(L.m_column));
-          L.m_env->set("this.file.eof.filename", L.GetCurrentFilename());
-
-          // Benchmarks show that this is the fastest way to signal EOF
-          // for large files.
-          throw ScannerEOF();
-        }
-        L.m_eof = true;
-      }
-    }
-
-    auto c = L.m_getc_buffer[L.m_getc_buffer_pos++];
-
-    L.m_offset++;
-
-    if (c == '\n') {
-      L.m_line++;
-      L.m_column = 0;
-    } else {
-      L.m_column++;
-    }
-
-    return c;
-  }
-
   static NCC_FORCE_INLINE Token ParseIdentifier(Tokenizer &L, char c,
                                                 std::string &buf,
                                                 LocationID start_pos) {
@@ -431,7 +393,7 @@ public:
         }
 
         buf += c;
-        c = nextc(L);
+        c = L.nextc();
       }
     }
 
@@ -491,7 +453,7 @@ public:
           buf += c;
         } else {
           /* String escape sequences */
-          c = nextc(L);
+          c = L.nextc();
           switch (c) {
             case 'n':
               buf += '\n';
@@ -515,7 +477,7 @@ public:
               buf += '\"';
               break;
             case 'x': {
-              char hex[2] = {nextc(L), nextc(L)};
+              char hex[2] = {L.nextc(), L.nextc()};
               if (!std::isxdigit(hex[0]) || !std::isxdigit(hex[1])) {
                 L.reset_state();
                 return Token::EndOfFile();
@@ -525,7 +487,7 @@ public:
               break;
             }
             case 'u': {
-              c = nextc(L);
+              c = L.nextc();
               if (c != '{') {
                 L.reset_state();
                 return Token::EndOfFile();
@@ -534,7 +496,7 @@ public:
               std::string hex;
 
               while (true) {
-                c = nextc(L);
+                c = L.nextc();
                 if (c == '}') {
                   break;
                 }
@@ -577,7 +539,7 @@ public:
               break;
             }
             case 'o': {
-              char oct[3] = {nextc(L), nextc(L), nextc(L)};
+              char oct[3] = {L.nextc(), L.nextc(), L.nextc()};
               int val;
               if (std::from_chars(oct, oct + 3, val, 8).ec != std::errc()) {
                 L.reset_state();
@@ -588,7 +550,7 @@ public:
               break;
             }
             case 'b': {
-              c = nextc(L);
+              c = L.nextc();
               if (c != '{') {
                 L.reset_state();
                 return Token::EndOfFile();
@@ -597,7 +559,7 @@ public:
               std::string bin;
 
               while (true) {
-                c = nextc(L);
+                c = L.nextc();
                 if (c == '}') {
                   break;
                 }
@@ -644,17 +606,17 @@ public:
           }
         }
 
-        c = nextc(L);
+        c = L.nextc();
       }
 
       /* Skip over characters permitted in between multi-part strings */
       do {
-        c = nextc(L);
+        c = L.nextc();
       } while (lex_is_space(c) || c == '\\');
 
       /* Check for a multi-part string */
       if (c == buf[0]) {
-        c = nextc(L);
+        c = L.nextc();
         continue;
       }
 
@@ -710,7 +672,7 @@ public:
         case 'X': {
           type = NumType::Hexadecimal;
           buf += c;
-          c = nextc(L);
+          c = L.nextc();
           break;
         }
 
@@ -718,7 +680,7 @@ public:
         case 'B': {
           type = NumType::Binary;
           buf += c;
-          c = nextc(L);
+          c = L.nextc();
           break;
         }
 
@@ -726,7 +688,7 @@ public:
         case 'O': {
           type = NumType::Octal;
           buf += c;
-          c = nextc(L);
+          c = L.nextc();
           break;
         }
 
@@ -734,7 +696,7 @@ public:
         case 'D': {
           type = NumType::DecimalExplicit;
           buf += c;
-          c = nextc(L);
+          c = L.nextc();
           break;
         }
       }
@@ -752,7 +714,7 @@ public:
       /* Skip over the integer syntax formatting */
       if (c == '_') [[unlikely]] {
         while (lex_is_space(c) || c == '_' || c == '\\') [[unlikely]] {
-          c = nextc(L);
+          c = L.nextc();
         }
       } else if (lex_is_space(c)) [[unlikely]] {
         break;
@@ -876,7 +838,7 @@ public:
       }
 
       if (is_lexing) [[likely]] {
-        c = nextc(L);
+        c = L.nextc();
       }
     }
 
@@ -897,7 +859,7 @@ public:
                                                        LocationID start_pos) {
     while (c != '\n') [[likely]] {
       buf += c;
-      c = nextc(L);
+      c = L.nextc();
     }
 
     return Token(Note, string(std::move(buf)), start_pos);
@@ -910,7 +872,7 @@ public:
 
     while (true) {
       if (c == '/') {
-        char tmp = nextc(L);
+        char tmp = L.nextc();
         if (tmp == '*') {
           level++;
           buf += "/*";
@@ -919,9 +881,9 @@ public:
           buf += tmp;
         }
 
-        c = nextc(L);
+        c = L.nextc();
       } else if (c == '*') {
-        char tmp = nextc(L);
+        char tmp = L.nextc();
         if (tmp == '/') {
           level--;
           if (level == 0) {
@@ -934,10 +896,10 @@ public:
           buf += c;
           buf += tmp;
         }
-        c = nextc(L);
+        c = L.nextc();
       } else {
         buf += c;
-        c = nextc(L);
+        c = L.nextc();
       }
     }
   }
@@ -947,7 +909,7 @@ public:
                                                      LocationID start_pos) {
     while (std::isalnum(c) || c == '_' || c == ':') [[likely]] {
       buf += c;
-      c = nextc(L);
+      c = L.nextc();
     }
 
     L.m_fifo.push(c);
@@ -973,7 +935,7 @@ public:
 
       buf += c;
 
-      c = nextc(L);
+      c = L.nextc();
     }
   }
 
@@ -1020,7 +982,7 @@ public:
           L.reset_state();
           return false;
         }
-        c = nextc(L);
+        c = L.nextc();
       } else {
         break;
       }
@@ -1041,6 +1003,43 @@ public:
   }
 };
 
+void Tokenizer::nextc_refill() {
+  m_file.read(m_getc_buffer.data(), GETC_BUFFER_SIZE);
+  auto gcount = m_file.gcount();
+
+  // Fill extra buffer with '#' with is a comment character
+  memset(m_getc_buffer.data() + gcount, '\n', GETC_BUFFER_SIZE - gcount);
+  m_getc_buffer_pos = 0;
+
+  if (gcount == 0) [[unlikely]] {
+    if (m_eof) [[unlikely]] {
+      m_env->set("this.file.eof.offset", std::to_string(m_offset));
+      m_env->set("this.file.eof.line", std::to_string(m_line));
+      m_env->set("this.file.eof.column", std::to_string(m_column));
+      m_env->set("this.file.eof.filename", GetCurrentFilename());
+
+      // Benchmarks show that this is the fastest way to signal EOF
+      // for large files.
+      throw ScannerEOF();
+    }
+    m_eof = true;
+  }
+}
+
+NCC_FORCE_INLINE char Tokenizer::nextc() {
+  if (m_getc_buffer_pos == GETC_BUFFER_SIZE) [[unlikely]] {
+    nextc_refill();
+  }
+
+  auto c = m_getc_buffer[m_getc_buffer_pos++];
+
+  m_offset += 1;
+  m_line = m_line + (c == '\n');
+  m_column = (c != '\n') * (m_column + 1);
+
+  return c;
+}
+
 NCC_EXPORT Token Tokenizer::GetNext() {
   /**
    * **WARNING**: Do not just start editing this function without
@@ -1060,7 +1059,7 @@ NCC_EXPORT Token Tokenizer::GetNext() {
   while (true) {
     { /* If the Lexer over-consumed, we will return the saved character */
       if (m_fifo.empty()) {
-        c = StaticImpl::nextc(*this);
+        c = nextc();
       } else {
         c = m_fifo.front();
         m_fifo.pop();
