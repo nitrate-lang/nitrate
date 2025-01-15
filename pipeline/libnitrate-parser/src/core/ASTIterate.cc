@@ -368,7 +368,7 @@ static NCC_FORCE_INLINE void get_children_sorted(
 }
 
 NCC_EXPORT void detail::dfs_pre_impl(FlowPtr<Base> base, IterCallback cb) {
-  auto syncfn = [](FlowPtr<Base> n, IterCallback& cb) {
+  auto syncfn = [](FlowPtr<Base> n, IterCallback cb) {
     std::stack<std::pair<NullableFlowPtr<Base>, FlowPtr<Base>>> s;
     std::vector<FlowPtr<Base>> children;
 
@@ -407,7 +407,7 @@ NCC_EXPORT void detail::dfs_pre_impl(FlowPtr<Base> base, IterCallback cb) {
 }
 
 NCC_EXPORT void detail::dfs_post_impl(FlowPtr<Base> base, IterCallback cb) {
-  auto syncfn = [](FlowPtr<Base> n, IterCallback& cb) {
+  auto syncfn = [](FlowPtr<Base> n, IterCallback cb) {
     std::stack<std::pair<NullableFlowPtr<Base>, FlowPtr<Base>>> s;
     std::vector<FlowPtr<Base>> children;
 
@@ -432,7 +432,6 @@ NCC_EXPORT void detail::dfs_post_impl(FlowPtr<Base> base, IterCallback cb) {
 
         case IterOp::SkipChildren: {
           qcore_panic("dfs_post_impl: IterOp::SkipChildren not supported");
-          break;
         }
       }
     }
@@ -443,7 +442,7 @@ NCC_EXPORT void detail::dfs_post_impl(FlowPtr<Base> base, IterCallback cb) {
 }
 
 NCC_EXPORT void detail::bfs_pre_impl(FlowPtr<Base> base, IterCallback cb) {
-  auto syncfn = [](FlowPtr<Base> n, IterCallback& cb) {
+  auto syncfn = [](FlowPtr<Base> n, IterCallback cb) {
     std::queue<std::pair<NullableFlowPtr<Base>, FlowPtr<Base>>> s;
     std::vector<FlowPtr<Base>> children;
 
@@ -482,7 +481,7 @@ NCC_EXPORT void detail::bfs_pre_impl(FlowPtr<Base> base, IterCallback cb) {
 }
 
 NCC_EXPORT void detail::bfs_post_impl(FlowPtr<Base> base, IterCallback cb) {
-  auto syncfn = [](FlowPtr<Base> n, IterCallback& cb) {
+  auto syncfn = [](FlowPtr<Base> n, IterCallback cb) {
     std::queue<std::pair<NullableFlowPtr<Base>, FlowPtr<Base>>> s;
     std::vector<FlowPtr<Base>> children;
 
@@ -507,7 +506,6 @@ NCC_EXPORT void detail::bfs_post_impl(FlowPtr<Base> base, IterCallback cb) {
 
         case IterOp::SkipChildren: {
           qcore_panic("bfs_post_impl: IterOp::SkipChildren not supported");
-          break;
         }
       }
     }
@@ -517,7 +515,7 @@ NCC_EXPORT void detail::bfs_post_impl(FlowPtr<Base> base, IterCallback cb) {
 }
 
 NCC_EXPORT void detail::iter_children(FlowPtr<Base> base, IterCallback cb) {
-  auto syncfn = [](FlowPtr<Base> n, IterCallback& cb) {
+  auto syncfn = [](FlowPtr<Base> n, IterCallback cb) {
     std::vector<FlowPtr<Base>> children;
     get_children_sorted(n, children);
 

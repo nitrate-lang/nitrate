@@ -470,7 +470,7 @@ void AST_Writer::visit(FlowPtr<VoidTy> n) {
 }
 
 void AST_Writer::visit(FlowPtr<PtrTy> n) {
-  begin_obj(6);
+  begin_obj(7);
 
   string("kind");
   string(n->getKindName());
@@ -478,6 +478,9 @@ void AST_Writer::visit(FlowPtr<PtrTy> n) {
   write_source_location(n);
 
   write_type_metadata(n);
+
+  string("volatile");
+  boolean(n->is_volatile());
 
   string("to");
   n->get_item().accept(*this);

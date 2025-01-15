@@ -212,7 +212,7 @@ FlowPtr<parse::Type> Parser::recurse_type_by_operator(Operator op) {
     case OpTimes: {
       auto start = current().get_start();
       auto pointee = recurse_type();
-      auto ptr_ty = make<PtrTy>(pointee)();
+      auto ptr_ty = make<PtrTy>(pointee, false)();
 
       ptr_ty->set_offset(start);
 

@@ -78,6 +78,10 @@ static std::optional<AST_Reader::Value> JsonToValue(ordered_json v) {
     case json::value_t::discarded: {
       return std::nullopt;
     }
+
+    default: {
+      return std::nullopt;
+    }
   }
 }
 
@@ -107,8 +111,9 @@ struct AST_JsonReader::PImpl {
 
 AST_JsonReader::AST_JsonReader(std::istream& is,
                                ReaderSourceManager source_manager)
-    : AST_Reader([&]() { return ReadValue(); }, source_manager), m_is(is) {
-  m_pimpl = std::make_unique<PImpl>();
+    : AST_Reader([&]() { return ReadValue(); }, source_manager),
+      m_is(is),
+      m_pimpl(std::make_unique<PImpl>()) {
   m_pimpl->m_json = ordered_json::parse(is, nullptr, false);
 
   if (!m_pimpl->m_json.is_discarded() && m_pimpl->m_json.is_object()) {
@@ -139,8 +144,9 @@ struct AST_MsgPackReader::PImpl {
 
 AST_MsgPackReader::AST_MsgPackReader(std::istream& is,
                                      ReaderSourceManager source_manager)
-    : AST_Reader([&]() { return ReadValue(); }, source_manager), m_is(is) {
-  m_pimpl = std::make_unique<PImpl>();
+    : AST_Reader([&]() { return ReadValue(); }, source_manager),
+      m_is(is),
+      m_pimpl(std::make_unique<PImpl>()) {
   m_pimpl->m_json = ordered_json::from_msgpack(is, true, false);
 
   if (!m_pimpl->m_json.is_discarded() && m_pimpl->m_json.is_object()) {

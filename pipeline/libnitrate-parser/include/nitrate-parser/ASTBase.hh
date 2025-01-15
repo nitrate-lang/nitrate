@@ -112,9 +112,9 @@ namespace ncc::parse {
     constexpr Base(npar_ty_t ty, bool mock = false,
                    lex::LocationID begin = lex::LocationID(),
                    lex::LocationID end = lex::LocationID())
-        : m_node_type(ty), m_mock(mock) {
-      m_data = ExtensionDataStore.Add(begin, end);
-    }
+        : m_node_type(ty),
+          m_mock(mock),
+          m_data(ExtensionDataStore.Add(begin, end)) {}
 
     ///======================================================================
     /// Efficient LLVM-Style reflection
@@ -367,8 +367,7 @@ namespace ncc::parse {
     /// Setters
 
     constexpr void set_offset(lex::LocationID pos) {
-      auto end = ExtensionDataStore.Get(m_data).end();
-      m_data = ExtensionDataStore.Add(pos, end);
+      m_data = ExtensionDataStore.Add(pos, end());
     }
 
     constexpr void setLoc(lex::LocationID begin, lex::LocationID end) {
@@ -382,8 +381,8 @@ namespace ncc::parse {
 
   ///======================================================================
 
-  constexpr std::string_view Base::getKindName(npar_ty_t type) {
-    const std::array<std::string_view, QAST_COUNT> names = []() {
+  namespace detail {
+    constexpr static auto GetKindNames = []() {
       std::array<std::string_view, QAST_COUNT> R;
       R.fill("");
 
@@ -458,8 +457,10 @@ namespace ncc::parse {
 
       return R;
     }();
+  }  // namespace detail
 
-    return names[type];
+  constexpr std::string_view Base::getKindName(npar_ty_t type) {
+    return detail::GetKindNames[type];
   }
 
   class Stmt : public Base {
@@ -521,7 +522,7 @@ namespace ncc::parse {
     constexpr bool is_void() const { return getKind() == QAST_VOID; }
     constexpr bool is_bool() const { return getKind() == QAST_U1; }
     constexpr bool is_ref() const { return getKind() == QAST_REF; }
-    bool is_ptr_to(Type *type) const;
+    bool is_ptr_to(const Type *type) const;
 
     constexpr auto get_width() const { return m_width; }
     constexpr auto get_range_begin() const { return m_range_begin; }

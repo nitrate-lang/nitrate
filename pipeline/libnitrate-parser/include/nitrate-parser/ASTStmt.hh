@@ -42,7 +42,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_expr;
 
   public:
-    constexpr ExprStmt(FlowPtr<Expr> expr) : Stmt(QAST_ESTMT), m_expr(expr) {}
+    constexpr ExprStmt(auto expr) : Stmt(QAST_ESTMT), m_expr(expr) {}
 
     constexpr auto get_expr() const { return m_expr; }
   };
@@ -52,7 +52,7 @@ namespace ncc::parse {
     SafetyMode m_safety;
 
   public:
-    Block(BlockItems items, SafetyMode safety)
+    constexpr Block(auto items, auto safety)
         : Stmt(QAST_BLOCK), m_items(items), m_safety(safety) {}
 
     constexpr auto get_items() const { return m_items; }
@@ -67,9 +67,8 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    VarDecl(string name, NullableFlowPtr<Type> type,
-            NullableFlowPtr<Expr> value, VarDeclType decl_type,
-            ExpressionList attributes)
+    constexpr VarDecl(auto name, auto type, auto value, auto decl_type,
+                      auto attributes)
         : Stmt(QAST_VAR),
           m_attributes(attributes),
           m_type(type),
@@ -89,7 +88,7 @@ namespace ncc::parse {
     string m_code;
 
   public:
-    InlineAsm(string code, ExpressionList args)
+    constexpr InlineAsm(auto code, auto args)
         : Stmt(QAST_INLINE_ASM), m_args(args), m_code(code) {}
 
     constexpr auto get_code() const { return m_code; }
@@ -102,8 +101,7 @@ namespace ncc::parse {
     NullableFlowPtr<Stmt> m_else;
 
   public:
-    constexpr IfStmt(FlowPtr<Expr> cond, FlowPtr<Stmt> then,
-                     NullableFlowPtr<Stmt> else_)
+    constexpr IfStmt(auto cond, auto then, auto else_)
         : Stmt(QAST_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
     constexpr auto get_cond() const { return m_cond; }
@@ -116,7 +114,7 @@ namespace ncc::parse {
     FlowPtr<Stmt> m_body;
 
   public:
-    constexpr WhileStmt(FlowPtr<Expr> cond, FlowPtr<Stmt> body)
+    constexpr WhileStmt(auto cond, auto body)
         : Stmt(QAST_WHILE), m_cond(cond), m_body(body) {}
 
     constexpr auto get_cond() const { return m_cond; }
@@ -129,8 +127,7 @@ namespace ncc::parse {
     FlowPtr<Stmt> m_body;
 
   public:
-    constexpr ForStmt(NullableFlowPtr<Stmt> init, NullableFlowPtr<Expr> cond,
-                      NullableFlowPtr<Expr> step, FlowPtr<Stmt> body)
+    constexpr ForStmt(auto init, auto cond, auto step, auto body)
         : Stmt(QAST_FOR),
           m_init(init),
           m_cond(cond),
@@ -149,8 +146,7 @@ namespace ncc::parse {
     string m_idx_ident, m_val_ident;
 
   public:
-    ForeachStmt(string idx_ident, string val_ident, FlowPtr<Expr> expr,
-                FlowPtr<Stmt> body)
+    constexpr ForeachStmt(auto idx_ident, auto val_ident, auto expr, auto body)
         : Stmt(QAST_FOREACH),
           m_expr(expr),
           m_body(body),
@@ -177,8 +173,7 @@ namespace ncc::parse {
     NullableFlowPtr<Expr> m_value;
 
   public:
-    constexpr ReturnStmt(NullableFlowPtr<Expr> value)
-        : Stmt(QAST_RETURN), m_value(value) {}
+    constexpr ReturnStmt(auto value) : Stmt(QAST_RETURN), m_value(value) {}
 
     constexpr auto get_value() const { return m_value; }
   };
@@ -187,7 +182,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_cond, m_value;
 
   public:
-    constexpr ReturnIfStmt(FlowPtr<Expr> cond, FlowPtr<Expr> value)
+    constexpr ReturnIfStmt(auto cond, auto value)
         : Stmt(QAST_RETIF), m_cond(cond), m_value(value) {}
 
     constexpr auto get_cond() const { return m_cond; }
@@ -199,7 +194,7 @@ namespace ncc::parse {
     FlowPtr<Stmt> m_body;
 
   public:
-    constexpr CaseStmt(FlowPtr<Expr> cond, FlowPtr<Stmt> body)
+    constexpr CaseStmt(auto cond, auto body)
         : Stmt(QAST_CASE), m_cond(cond), m_body(body) {}
 
     constexpr auto get_cond() const { return m_cond; }
@@ -212,8 +207,7 @@ namespace ncc::parse {
     NullableFlowPtr<Stmt> m_default;
 
   public:
-    SwitchStmt(FlowPtr<Expr> cond, SwitchCases cases,
-               NullableFlowPtr<Stmt> default_)
+    constexpr SwitchStmt(auto cond, auto cases, auto default_)
         : Stmt(QAST_SWITCH),
           m_cases(cases),
           m_cond(cond),
@@ -231,8 +225,7 @@ namespace ncc::parse {
     Vis m_vis;
 
   public:
-    ExportStmt(FlowPtr<Stmt> content, string abi_name, Vis vis,
-               ExpressionList attrs)
+    constexpr ExportStmt(auto content, auto abi_name, auto vis, auto attrs)
         : Stmt(QAST_EXPORT),
           m_attrs(attrs),
           m_body(content),
@@ -251,7 +244,7 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    ScopeStmt(string name, FlowPtr<Stmt> body, ScopeDeps deps)
+    constexpr ScopeStmt(auto name, auto body, auto deps)
         : Stmt(QAST_SCOPE), m_deps(deps), m_body(body), m_name(name) {}
 
     constexpr auto get_name() const { return m_name; }
@@ -264,7 +257,7 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    TypedefStmt(string name, FlowPtr<Type> type)
+    constexpr TypedefStmt(auto name, auto type)
         : Stmt(QAST_TYPEDEF), m_type(type), m_name(name) {}
 
     constexpr auto get_name() const { return m_name; }
@@ -277,7 +270,7 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    EnumDef(string name, NullableFlowPtr<Type> type, EnumDefItems items)
+    constexpr EnumDef(auto name, auto type, auto items)
         : Stmt(QAST_ENUM), m_items(items), m_type(type), m_name(name) {}
 
     constexpr auto get_name() const { return m_name; }
@@ -298,11 +291,9 @@ namespace ncc::parse {
     bool m_variadic;
 
   public:
-    Function(ExpressionList attributes, Purity purity, FnCaptures captures,
-             string name, std::optional<TemplateParameters> params,
-             FuncParams fn_params, bool variadic, FlowPtr<Type> return_type,
-             NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,
-             NullableFlowPtr<Stmt> body)
+    constexpr Function(auto attributes, auto purity, auto captures, auto name,
+                       auto params, auto fn_params, auto variadic,
+                       auto return_type, auto precond, auto postcond, auto body)
         : Stmt(QAST_FUNCTION),
           m_attributes(attributes),
           m_captures(captures),
@@ -350,10 +341,9 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    StructDef(CompositeType comp_type, ExpressionList attributes, string name,
-              std::optional<TemplateParameters> params, StructDefNames names,
-              StructDefFields fields, StructDefMethods methods,
-              StructDefStaticMethods static_methods)
+    constexpr StructDef(auto comp_type, auto attributes, auto name, auto params,
+                        auto names, auto fields, auto methods,
+                        auto static_methods)
         : Stmt(QAST_STRUCT),
           m_attributes(attributes),
           m_names(names),

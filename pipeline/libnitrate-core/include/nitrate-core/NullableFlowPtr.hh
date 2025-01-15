@@ -89,13 +89,11 @@ namespace ncc {
           : NullableFlowPtr(static_cast<Pointee *>(nullptr),
                             std::move(tracking)) {}
 
-      constexpr NullableFlowPtr(const NullableFlowPtr<Pointee, Tracking> &O) {
-        m_ptr = O.m_ptr;
-      }
+      constexpr NullableFlowPtr(const NullableFlowPtr<Pointee, Tracking> &O)
+          : m_ptr(O.m_ptr) {}
 
-      constexpr NullableFlowPtr(NullableFlowPtr<Pointee, Tracking> &&O) {
-        m_ptr = std::move(O.m_ptr);
-      }
+      constexpr NullableFlowPtr(NullableFlowPtr<Pointee, Tracking> &&O)
+          : m_ptr(std::move(O.m_ptr)) {}
 
       constexpr NullableFlowPtr &operator=(
           const NullableFlowPtr<Pointee, Tracking> &O) {

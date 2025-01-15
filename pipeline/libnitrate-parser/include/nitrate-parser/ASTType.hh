@@ -37,14 +37,12 @@
 #include <nitrate-parser/ASTBase.hh>
 #include <span>
 
-#include "nitrate-parser/ASTData.hh"
-
 namespace ncc::parse {
   class NamedTy : public Type {
     string m_name;
 
   public:
-    constexpr NamedTy(string name) : Type(QAST_NAMED), m_name(name) {}
+    constexpr NamedTy(auto name) : Type(QAST_NAMED), m_name(name) {}
 
     constexpr auto get_name() const { return m_name; }
   };
@@ -59,7 +57,7 @@ namespace ncc::parse {
     std::span<CallArg> m_args;
 
   public:
-    TemplType(FlowPtr<Type> templ, CallArgs args)
+    constexpr TemplType(auto templ, auto args)
         : Type(QAST_TEMPLATE), m_template(templ), m_args(args) {}
 
     constexpr auto get_template() const { return m_template; }
@@ -151,7 +149,7 @@ namespace ncc::parse {
     bool m_is_volatile;
 
   public:
-    constexpr PtrTy(FlowPtr<Type> item, bool is_volatile = false)
+    constexpr PtrTy(auto item, auto is_volatile)
         : Type(QAST_PTR), m_item(item), m_is_volatile(is_volatile) {}
 
     constexpr auto get_item() const { return m_item; }
@@ -162,7 +160,7 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    OpaqueTy(string name) : Type(QAST_OPAQUE), m_name(name) {}
+    constexpr OpaqueTy(auto name) : Type(QAST_OPAQUE), m_name(name) {}
 
     constexpr auto get_name() const { return m_name; }
   };
@@ -171,7 +169,7 @@ namespace ncc::parse {
     std::span<FlowPtr<Type>> m_items;
 
   public:
-    TupleTy(TupleTyItems items) : Type(QAST_TUPLE), m_items(items) {}
+    constexpr TupleTy(auto items) : Type(QAST_TUPLE), m_items(items) {}
 
     constexpr auto get_items() const { return m_items; }
   };
@@ -181,7 +179,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_size;
 
   public:
-    constexpr ArrayTy(FlowPtr<Type> item, FlowPtr<Expr> size)
+    constexpr ArrayTy(auto item, auto size)
         : Type(QAST_ARRAY), m_item(item), m_size(size) {}
 
     constexpr auto get_item() const { return m_item; }
@@ -192,7 +190,7 @@ namespace ncc::parse {
     FlowPtr<Type> m_item;
 
   public:
-    constexpr RefTy(FlowPtr<Type> item) : Type(QAST_REF), m_item(item) {}
+    constexpr RefTy(auto item) : Type(QAST_REF), m_item(item) {}
 
     constexpr auto get_item() const { return m_item; }
   };
@@ -205,8 +203,8 @@ namespace ncc::parse {
     bool m_variadic;
 
   public:
-    FuncTy(FlowPtr<Type> return_type, std::span<FuncParam> parameters,
-           bool variadic, Purity purity, std::span<FlowPtr<Expr>> attributes)
+    constexpr FuncTy(auto return_type, auto parameters, auto variadic,
+                     auto purity, auto attributes)
         : Type(QAST_FUNCTOR),
           m_attributes(attributes),
           m_params(parameters),

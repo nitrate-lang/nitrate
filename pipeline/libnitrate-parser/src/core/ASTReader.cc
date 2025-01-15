@@ -1446,6 +1446,12 @@ NullableFlowPtr<PtrTy> AST_Reader::ReadKind_Ptr() {
     return nullptr;
   }
 
+  if (!next_if<std::string>("volatile") || !next_is<bool>()) {
+    return nullptr;
+  }
+
+  bool is_volatile = next<bool>();
+
   if (!next_if<std::string>("to")) {
     return nullptr;
   }
@@ -1455,7 +1461,7 @@ NullableFlowPtr<PtrTy> AST_Reader::ReadKind_Ptr() {
     return nullptr;
   }
 
-  auto node = make<PtrTy>(to.value())();
+  auto node = make<PtrTy>(to.value(), is_volatile)();
   node->set_width(info->width);
   node->set_range_begin(info->min);
   node->set_range_end(info->max);
@@ -1834,7 +1840,7 @@ NullableFlowPtr<StructDef> AST_Reader::ReadKind_Struct() {
         return nullptr;
       }
 
-      auto name = next<std::string>();
+      auto arg_name = next<std::string>();
 
       if (!next_if<std::string>("type")) {
         return nullptr;
@@ -1859,7 +1865,7 @@ NullableFlowPtr<StructDef> AST_Reader::ReadKind_Struct() {
         }
       }
 
-      template_args->emplace_back(name, type.value(), default_value);
+      template_args->emplace_back(arg_name, type.value(), default_value);
     }
   }
 
@@ -1877,9 +1883,9 @@ NullableFlowPtr<StructDef> AST_Reader::ReadKind_Struct() {
       return nullptr;
     }
 
-    auto name = next<std::string>();
+    auto arg_name = next<std::string>();
 
-    names.push_back(name);
+    names.push_back(arg_name);
   }
 
   if (!next_if<std::string>("fields") || !next_is<uint64_t>()) {
@@ -2174,7 +2180,7 @@ NullableFlowPtr<Function> AST_Reader::ReadKind_Function() {
         return nullptr;
       }
 
-      auto name = next<std::string>();
+      auto arg_name = next<std::string>();
 
       if (!next_if<std::string>("type")) {
         return nullptr;
@@ -2199,7 +2205,7 @@ NullableFlowPtr<Function> AST_Reader::ReadKind_Function() {
         }
       }
 
-      template_args->emplace_back(name, type.value(), default_value);
+      template_args->emplace_back(arg_name, type.value(), default_value);
     }
   }
 

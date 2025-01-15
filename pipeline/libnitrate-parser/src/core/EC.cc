@@ -274,7 +274,7 @@ NCC_EXPORT std::string ncc::parse::ec::Formatter(std::string_view message_raw,
       if (auto window = rd->GetSourceWindow(start_pos, end_pos, ' ')) {
         ss << "\n";
 
-        for (auto &line : window.value()) {
+        for (const auto &line : window.value()) {
           ss << line << "\n";
         }
 

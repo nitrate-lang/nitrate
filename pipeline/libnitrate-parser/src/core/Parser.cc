@@ -42,8 +42,6 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 
-#include "nitrate-lexer/Token.hh"
-
 using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
@@ -138,22 +136,25 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case Let: {
-          for (auto decl : recurse_variable(VarDeclType::Let)) {
-            statements.push_back(BIND_COMMENTS(decl, comments));
+          for (auto variable : recurse_variable(VarDeclType::Let)) {
+            statements.push_back(BIND_COMMENTS(variable, comments));
+            comments.clear();
           }
           break;
         }
 
         case Var: {
-          for (auto decl : recurse_variable(VarDeclType::Var)) {
-            statements.push_back(BIND_COMMENTS(decl, comments));
+          for (auto variable : recurse_variable(VarDeclType::Var)) {
+            statements.push_back(BIND_COMMENTS(variable, comments));
+            comments.clear();
           }
           break;
         }
 
         case Const: {
-          for (auto decl : recurse_variable(VarDeclType::Const)) {
-            statements.push_back(BIND_COMMENTS(decl, comments));
+          for (auto variable : recurse_variable(VarDeclType::Const)) {
+            statements.push_back(BIND_COMMENTS(variable, comments));
+            comments.clear();
           }
           break;
         }
@@ -358,11 +359,11 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
 NCC_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
                           std::shared_ptr<ncc::Environment> env,
                           std::shared_ptr<void> lifetime)
-    : rd(lexer), m_lifetime(lifetime) {
-  m_env = env;
-  m_allocator = std::make_unique<ncc::dyn_arena>();
-  m_failed = false;
-}
+    : m_env(env),
+      m_allocator(std::make_unique<ncc::dyn_arena>()),
+      rd(lexer),
+      m_failed(false),
+      m_lifetime(lifetime) {}
 
 void Parser_SetCurrentScanner(IScanner *scanner);
 

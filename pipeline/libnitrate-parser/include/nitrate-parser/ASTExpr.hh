@@ -43,7 +43,7 @@ namespace ncc::parse {
     FlowPtr<Stmt> m_stmt;
 
   public:
-    constexpr StmtExpr(FlowPtr<Stmt> stmt) : Expr(QAST_SEXPR), m_stmt(stmt) {}
+    constexpr StmtExpr(auto stmt) : Expr(QAST_SEXPR), m_stmt(stmt) {}
 
     constexpr auto get_stmt() const { return m_stmt; }
   };
@@ -52,7 +52,7 @@ namespace ncc::parse {
     FlowPtr<Type> m_type;
 
   public:
-    constexpr TypeExpr(FlowPtr<Type> type) : Expr(QAST_TEXPR), m_type(type) {}
+    constexpr TypeExpr(auto type) : Expr(QAST_TEXPR), m_type(type) {}
 
     constexpr auto get_type() const { return m_type; }
   };
@@ -62,7 +62,7 @@ namespace ncc::parse {
     lex::Operator m_op;
 
   public:
-    constexpr UnaryExpr(lex::Operator op, FlowPtr<Expr> rhs)
+    constexpr UnaryExpr(auto op, auto rhs)
         : Expr(QAST_UNEXPR), m_rhs(rhs), m_op(op) {}
 
     constexpr auto get_rhs() const { return m_rhs; }
@@ -74,7 +74,7 @@ namespace ncc::parse {
     lex::Operator m_op;
 
   public:
-    constexpr BinExpr(FlowPtr<Expr> lhs, lex::Operator op, FlowPtr<Expr> rhs)
+    constexpr BinExpr(auto lhs, auto op, auto rhs)
         : Expr(QAST_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
     constexpr auto get_lhs() const { return m_lhs; }
@@ -87,7 +87,7 @@ namespace ncc::parse {
     lex::Operator m_op;
 
   public:
-    constexpr PostUnaryExpr(FlowPtr<Expr> lhs, lex::Operator op)
+    constexpr PostUnaryExpr(auto lhs, auto op)
         : Expr(QAST_POST_UNEXPR), m_lhs(lhs), m_op(op) {}
 
     constexpr auto get_lhs() const { return m_lhs; }
@@ -98,8 +98,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_cond, m_lhs, m_rhs;
 
   public:
-    constexpr TernaryExpr(FlowPtr<Expr> cond, FlowPtr<Expr> lhs,
-                          FlowPtr<Expr> rhs)
+    constexpr TernaryExpr(auto cond, auto lhs, auto rhs)
         : Expr(QAST_TEREXPR), m_cond(cond), m_lhs(lhs), m_rhs(rhs) {}
 
     constexpr auto get_cond() const { return m_cond; }
@@ -111,7 +110,7 @@ namespace ncc::parse {
     string m_value;
 
   public:
-    constexpr ConstInt(string value) : Expr(QAST_INT), m_value(value) {}
+    constexpr ConstInt(auto value) : Expr(QAST_INT), m_value(value) {}
 
     constexpr auto get_value() const { return m_value; }
   };
@@ -120,7 +119,7 @@ namespace ncc::parse {
     string m_value;
 
   public:
-    constexpr ConstFloat(string value) : Expr(QAST_FLOAT), m_value(value) {}
+    constexpr ConstFloat(auto value) : Expr(QAST_FLOAT), m_value(value) {}
 
     constexpr auto get_value() const { return m_value; }
   };
@@ -129,7 +128,7 @@ namespace ncc::parse {
     bool m_value;
 
   public:
-    constexpr ConstBool(bool value) : Expr(QAST_BOOL), m_value(value) {}
+    constexpr ConstBool(auto value) : Expr(QAST_BOOL), m_value(value) {}
 
     constexpr auto get_value() const { return m_value; }
   };
@@ -138,7 +137,7 @@ namespace ncc::parse {
     string m_value;
 
   public:
-    constexpr ConstString(string value) : Expr(QAST_STRING), m_value(value) {}
+    constexpr ConstString(auto value) : Expr(QAST_STRING), m_value(value) {}
 
     constexpr auto get_value() const { return m_value; }
   };
@@ -147,7 +146,7 @@ namespace ncc::parse {
     uint8_t m_value;
 
   public:
-    constexpr ConstChar(uint8_t value) : Expr(QAST_CHAR), m_value(value) {}
+    constexpr ConstChar(auto value) : Expr(QAST_CHAR), m_value(value) {}
 
     constexpr auto get_value() const { return m_value; }
   };
@@ -164,10 +163,10 @@ namespace ncc::parse {
 
   class Call final : public Expr {
     FlowPtr<Expr> m_func;
-    std::span<CallArg> m_args;
+    std::span<const CallArg> m_args;
 
   public:
-    Call(FlowPtr<Expr> func, CallArgs args)
+    constexpr Call(auto func, auto args)
         : Expr(QAST_CALL), m_func(func), m_args(args) {}
 
     constexpr auto get_func() const { return m_func; }
@@ -179,7 +178,7 @@ namespace ncc::parse {
     std::span<CallArg> m_template_args, m_args;
 
   public:
-    TemplCall(FlowPtr<Expr> func, CallArgs args, CallArgs template_args)
+    constexpr TemplCall(auto func, auto args, auto template_args)
         : Expr(QAST_TEMPL_CALL),
           m_func(func),
           m_template_args(template_args),
@@ -194,7 +193,7 @@ namespace ncc::parse {
     std::span<FlowPtr<Expr>> m_items;
 
   public:
-    List(ExpressionList items) : Expr(QAST_LIST), m_items(items) {}
+    constexpr List(auto items) : Expr(QAST_LIST), m_items(items) {}
 
     constexpr auto get_items() const { return m_items; }
   };
@@ -203,7 +202,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_key, m_value;
 
   public:
-    constexpr Assoc(FlowPtr<Expr> key, FlowPtr<Expr> value)
+    constexpr Assoc(auto key, auto value)
         : Expr(QAST_ASSOC), m_key(key), m_value(value) {}
 
     constexpr auto get_key() const { return m_key; }
@@ -214,7 +213,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_base, m_index;
 
   public:
-    constexpr Index(FlowPtr<Expr> base, FlowPtr<Expr> index)
+    constexpr Index(auto base, auto index)
         : Expr(QAST_INDEX), m_base(base), m_index(index) {}
 
     constexpr auto get_base() const { return m_base; }
@@ -225,7 +224,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_base, m_start, m_end;
 
   public:
-    constexpr Slice(FlowPtr<Expr> base, FlowPtr<Expr> start, FlowPtr<Expr> end)
+    constexpr Slice(auto base, auto start, auto end)
         : Expr(QAST_SLICE), m_base(base), m_start(start), m_end(end) {}
 
     constexpr auto get_base() const { return m_base; }
@@ -237,7 +236,7 @@ namespace ncc::parse {
     std::span<std::variant<string, FlowPtr<Expr>>> m_items;
 
   public:
-    FString(FStringItems items) : Expr(QAST_FSTRING), m_items(items) {}
+    constexpr FString(auto items) : Expr(QAST_FSTRING), m_items(items) {}
 
     constexpr auto get_items() const { return m_items; }
   };
@@ -246,7 +245,7 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    constexpr Ident(string name) : Expr(QAST_IDENT), m_name(name) {}
+    constexpr Ident(auto name) : Expr(QAST_IDENT), m_name(name) {}
 
     constexpr auto get_name() const { return m_name; }
   };
@@ -255,7 +254,7 @@ namespace ncc::parse {
     std::span<FlowPtr<Expr>> m_items;
 
   public:
-    SeqPoint(ExpressionList items) : Expr(QAST_SEQ), m_items(items) {}
+    constexpr SeqPoint(auto items) : Expr(QAST_SEQ), m_items(items) {}
 
     constexpr auto get_items() const { return m_items; }
   };

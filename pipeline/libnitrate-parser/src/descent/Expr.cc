@@ -92,12 +92,13 @@ CallArgs Parser::recurse_call_arguments(const std::set<lex::Token> &terminators,
 }
 
 FlowPtr<Expr> Parser::recurse_fstring() {
-  std::string buf;
   FStringItems items;
-  size_t state = 0, w_beg = 0, w_end = 0;
 
   if (auto tok = next_if(Text)) {
+    size_t state = 0, w_beg = 0, w_end{};
     auto fstring_raw = tok->as_string().get();
+
+    std::string buf;
     buf.reserve(fstring_raw.size());
 
     for (size_t i = 0; i < fstring_raw.size(); i++) {
@@ -280,8 +281,8 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
               /****************************************
                * Parse pre-unary operators
                ****************************************/
-              while (auto Tok = next_if(Oper)) {
-                PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
+              while (auto TokOp = next_if(Oper)) {
+                PreUnaryOps.push({TokOp->as_op(), TokOp->get_start()});
               }
             } else {
               next_if(lex::Type);
@@ -295,10 +296,10 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
                * Combine pre-unary operators
                ****************************************/
               while (!PreUnaryOps.empty()) {
-                auto [Op, Offset] = PreUnaryOps.top();
+                auto [op, Offset] = PreUnaryOps.top();
                 PreUnaryOps.pop();
 
-                auto PreUnaryExpr = make<UnaryExpr>(Op, RightSide.value())();
+                auto PreUnaryExpr = make<UnaryExpr>(op, RightSide.value())();
                 PreUnaryExpr->set_offset(Offset);
 
                 RightSide = PreUnaryExpr;
@@ -731,7 +732,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
         auto integer = make<ConstInt>(tok.as_string())();
         integer->set_offset(start_pos);
 
-        if (auto tok = peek(); tok.is(Name)) {
+        if (tok = peek(); tok.is(Name)) {
           auto casted = recurse_expr_type_suffix(integer);
           casted->set_offset(start_pos);
 
@@ -747,7 +748,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
         auto decimal = make<ConstFloat>(tok.as_string())();
         decimal->set_offset(start_pos);
 
-        if (auto tok = peek(); tok.is(Name)) {
+        if (tok = peek(); tok.is(Name)) {
           auto casted = recurse_expr_type_suffix(decimal);
           casted->set_offset(start_pos);
 
@@ -763,7 +764,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
         auto string = make<ConstString>(tok.as_string())();
         string->set_offset(start_pos);
 
-        if (auto tok = peek(); tok.is(Name)) {
+        if (tok = peek(); tok.is(Name)) {
           auto casted = recurse_expr_type_suffix(string);
           casted->set_offset(start_pos);
 
@@ -786,7 +787,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
         auto character = make<ConstChar>(str_data->at(0))();
         character->set_offset(start_pos);
 
-        if (auto tok = peek(); tok.is(Name)) {
+        if (tok = peek(); tok.is(Name)) {
           auto casted = recurse_expr_type_suffix(character);
           casted->set_offset(start_pos);
 

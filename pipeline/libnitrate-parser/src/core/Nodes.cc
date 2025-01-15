@@ -33,14 +33,13 @@
 
 #include <core/Hash.hh>
 #include <cstring>
+#include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 #include <sstream>
-
-#include "nitrate-core/Init.hh"
 
 using namespace ncc;
 using namespace ncc::parse;
@@ -75,7 +74,7 @@ const ASTExtensionPackage &ASTExtension::Get(ASTExtensionKey loc) {
     m_mutex.lock();
   }
 
-  auto &r = m_pairs.at(loc.Key());
+  const auto &r = m_pairs.at(loc.Key());
 
   if (sync) {
     m_mutex.unlock();
@@ -165,7 +164,7 @@ NCC_EXPORT void Base::BindCodeCommentData(
 
 ///=============================================================================
 
-NCC_EXPORT bool Type::is_ptr_to(Type *type) const {
+NCC_EXPORT bool Type::is_ptr_to(const Type *type) const {
   if (!is_pointer()) {
     return false;
   }
