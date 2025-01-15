@@ -55,7 +55,7 @@
 #include <vector>
 
 static const std::unordered_map<std::string_view, nit::transform_func>
-    dispatch_funcs = {{"echo", nit::echo},
+    DISPATCH_FUNCS = {{"echo", nit::echo},
                       {"lex", nit::lex},
                       {"seq", nit::seq},
                       {"parse", nit::parse},
@@ -63,26 +63,26 @@ static const std::unordered_map<std::string_view, nit::transform_func>
 
 ///============================================================================///
 
-extern bool nit_lib_init();
-extern void nit_deinit();
+extern bool NitLibInit();
+extern void NitDeinit();
 
 class LibraryInitRAII {
-  bool ok;
+  bool m_ok;
 
 public:
-  LibraryInitRAII() { ok = nit_lib_init(); }
+  LibraryInitRAII() { m_ok = NitLibInit(); }
   ~LibraryInitRAII() {
-    if (ok) {
-      nit_deinit();
+    if (m_ok) {
+      NitDeinit();
     }
   }
 
-  bool is_initialized() const { return ok; }
+  bool IsInitialized() const { return m_ok; }
 };
 
-static std::optional<std::vector<std::string>> parse_options(
+static std::optional<std::vector<std::string>> ParseOptions(
     const char *const options[]) {
-  constexpr size_t max_options = 100000;
+  constexpr size_t kMaxOptions = 100000;
 
   if (!options) {
     return std::nullopt;
@@ -91,9 +91,9 @@ static std::optional<std::vector<std::string>> parse_options(
   std::vector<std::string> opts;
 
   for (size_t i = 0; options[i]; i++) {
-    if (i >= max_options) {
+    if (i >= kMaxOptions) {
       qcore_logf(QCORE_ERROR, "Too many options provided, max is %zu",
-                 max_options);
+                 kMaxOptions);
       return std::nullopt;
     }
 
@@ -103,7 +103,7 @@ static std::optional<std::vector<std::string>> parse_options(
   return opts;
 }
 
-static bool nit_dispatch_request(std::istream &in, std::ostream &out,
+static bool NitDispatchRequest(std::istream &in, std::ostream &out,
                                  const char *transform, let opts_set,
                                  std::shared_ptr<ncc::Environment> env) {
   if (!dispatch_funcs.contains(transform)) {
@@ -119,8 +119,8 @@ static bool nit_dispatch_request(std::istream &in, std::ostream &out,
   return is_success;
 }
 
-static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
-                                nit_diag_func diag_cb, void *opaque,
+static bool NitPipelineStream(std::istream &in, std::ostream &out,
+                                NitDiagFunc diag_cb, void *opaque,
                                 const char *const c_options[]) {
   errno = 0;
 
@@ -130,7 +130,7 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
 
   LibraryInitRAII init_manager;
 
-  if (!init_manager.is_initialized()) {
+  if (!init_manager.IsInitialized()) {
     return false;
   }
 
@@ -150,12 +150,12 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
 
   bool status = false;
 
-  if (let options = parse_options(c_options)) {
+  if (let options = ParseOptions(c_options)) {
     if (!options->empty()) {
       std::unordered_set opts_set(options->begin() + 1, options->end());
       let name = options->at(0).c_str();
 
-      status = nit_dispatch_request(in, out, name, opts_set, env);
+      status = NitDispatchRequest(in, out, name, opts_set, env);
     } /* No options provided */
   } /* Failed to parse options */
 
@@ -164,17 +164,17 @@ static bool nit_pipeline_stream(std::istream &in, std::ostream &out,
   return status;
 }
 
-NCC_EXPORT nitrate::LazyResult<bool> nitrate::pipeline(
+NCC_EXPORT nitrate::LazyResult<bool> nitrate::Pipeline(
     std::istream &in, std::ostream &out, std::vector<std::string> options,
     std::optional<DiagnosticFunc> diag) {
   return nitrate::LazyResult<bool>(
-      [&in, &out, Options = std::move(options), diag]() -> bool {
+      [&in, &out, options = std::move(options), diag]() -> bool {
         /* Convert options to C strings */
-        std::vector<const char *> options_c_str(Options.size() + 1);
-        for (size_t i = 0; i < Options.size(); i++) {
-          options_c_str[i] = Options[i].c_str();
+        std::vector<const char *> options_c_str(options.size() + 1);
+        for (size_t i = 0; i < options.size(); i++) {
+          options_c_str[i] = options[i].c_str();
         }
-        options_c_str[Options.size()] = nullptr;
+        options_c_str[options.size()] = nullptr;
 
         void *functor_ctx = nullptr;
         DiagnosticFunc callback = diag.value_or(nullptr);
@@ -189,31 +189,31 @@ NCC_EXPORT nitrate::LazyResult<bool> nitrate::pipeline(
           callback(message);
         };
 
-        return nit_pipeline_stream(in, out,
+        return NitPipelineStream(in, out,
                                    functor_ctx ? nit_diag_functor : diag_nop,
                                    functor_ctx, options_c_str.data());
       });
 }
 
-NCC_EXPORT nitrate::LazyResult<bool> nitrate::chain(
+NCC_EXPORT nitrate::LazyResult<bool> nitrate::Chain(
     std::istream &in, std::ostream &out, ChainOptions operations,
     std::optional<DiagnosticFunc> diag, bool) {
   return nitrate::LazyResult<bool>(
-      [&in, &out, Operations = std::move(operations), diag]() -> bool {
-        if (Operations.empty()) {
+      [&in, &out, operations = std::move(operations), diag]() -> bool {
+        if (operations.empty()) {
           return true;
         }
 
-        if (Operations.size() == 1) {
-          return nitrate::pipeline(in, out, Operations[0], diag).get();
+        if (operations.size() == 1) {
+          return nitrate::Pipeline(in, out, operations[0], diag).Get();
         } else {
           std::stringstream s0, s1;
-          if (!nitrate::pipeline(in, s0, Operations[0], diag).get()) {
+          if (!nitrate::Pipeline(in, s0, operations[0], diag).Get()) {
             return false;
           }
 
-          for (size_t i = 1; i < Operations.size() - 1; i++) {
-            if (!nitrate::pipeline(s0, s1, Operations[i], diag).get()) {
+          for (size_t i = 1; i < operations.size() - 1; i++) {
+            if (!nitrate::Pipeline(s0, s1, operations[i], diag).Get()) {
               return false;
             }
 
@@ -222,19 +222,19 @@ NCC_EXPORT nitrate::LazyResult<bool> nitrate::chain(
             s0.swap(s1);
           }
 
-          return nitrate::pipeline(s0, out, Operations.back(), diag).get();
+          return nitrate::Pipeline(s0, out, operations.back(), diag).Get();
         }
       });
 }
 
 ///============================================================================///
 
-extern "C" NCC_EXPORT bool nit_pipeline(FILE *in, FILE *out,
-                                        nit_diag_func diag_cb, void *opaque,
+extern "C" NCC_EXPORT bool NitPipeline(FILE *in, FILE *out,
+                                        NitDiagFunc diag_cb, void *opaque,
                                         const char *const c_options[]) {
   class FileStreamBuf : public std::streambuf {
     FILE *m_file;
-    char c = 0;
+    char m_c = 0;
 
   public:
     FileStreamBuf(FILE *file) : m_file(file) { errno = 0; }
@@ -286,7 +286,7 @@ extern "C" NCC_EXPORT bool nit_pipeline(FILE *in, FILE *out,
 
     virtual int_type underflow() override {
       if (gptr() == nullptr || gptr() >= egptr()) {
-        size_t res = fread(&c, 1, 1, m_file);
+        size_t res = fread(&m_c, 1, 1, m_file);
         if (res == 0) {
           if (ferror(m_file)) {
             int saved_errno = errno;
@@ -296,7 +296,7 @@ extern "C" NCC_EXPORT bool nit_pipeline(FILE *in, FILE *out,
           setg(nullptr, nullptr, nullptr);
           return traits_type::eof();
         }
-        setg(&c, &c, &c + 1);
+        setg(&m_c, &m_c, &m_c + 1);
       }
 
       return traits_type::to_int_type(*gptr());
@@ -332,5 +332,5 @@ extern "C" NCC_EXPORT bool nit_pipeline(FILE *in, FILE *out,
   std::istream in_stream(&in_buf);
   std::ostream out_stream(&out_buf);
 
-  return nit_pipeline_stream(in_stream, out_stream, diag_cb, opaque, c_options);
+  return NitPipelineStream(in_stream, out_stream, diag_cb, opaque, c_options);
 }

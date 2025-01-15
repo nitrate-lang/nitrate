@@ -620,7 +620,7 @@ using namespace ncc::ir;
 //   return true;
 // }
 
-NCC_EXPORT void ir::nr_write(IRModule *mod, NullableFlowPtr<Expr> _node,
+NCC_EXPORT void ir::NrWrite(IRModule *mod, NullableFlowPtr<Expr> node,
                              std::ostream &out) {
   // if (!mod && !_node) {
   //   return;
@@ -638,15 +638,15 @@ NCC_EXPORT void ir::nr_write(IRModule *mod, NullableFlowPtr<Expr> _node,
   /// TODO: Implement
   qcore_implement();
   (void)mod;
-  (void)_node;
+  (void)node;
   (void)out;
 }
 
-NCC_EXPORT void ir::detail::NodeDumpImpl(const Expr *E, std::ostream &os,
-                                         bool isForDebug) {
-  (void)E;
+NCC_EXPORT void ir::detail::NodeDumpImpl(const Expr *e, std::ostream &os,
+                                         bool is_for_debug) {
+  (void)e;
   (void)os;
-  (void)isForDebug;
+  (void)is_for_debug;
   /// TODO: Implement
   qcore_implement();
 }

@@ -39,32 +39,32 @@
 #include <nitrate-core/Macro.hh>
 
 namespace codegen::conf {
-  extern std::vector<qcode_setting_t> default_settings;
+  extern std::vector<QcodeSettingT> DefaultSettings;
 }
 
 template <typename L, typename R>
-boost::bimap<L, R> make_bimap(
+boost::bimap<L, R> MakeBimap(
     std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
   return boost::bimap<L, R>(list.begin(), list.end());
 }
 
-static const boost::bimap<qcode_key_t, std::string> options_bimap =
-    make_bimap<qcode_key_t, std::string>({
+static const boost::bimap<qcode_key_t, std::string> OPTIONS_BIMAP =
+    MakeBimap<qcode_key_t, std::string>({
         {QCK_UNKNOWN, "QCK_UNKNOWN"},
         {QCK_CRASHGUARD, "-fcrashguard"},
         {QCV_FASTERROR, "-ffasterror"},
     });
 
-static const boost::bimap<qcode_val_t, std::string> values_bimap =
-    make_bimap<qcode_val_t, std::string>({
+static const boost::bimap<qcode_val_t, std::string> VALUES_BIMAP =
+    MakeBimap<qcode_val_t, std::string>({
         {QCV_UNKNOWN, "QCV_UNKNOWN"},
         {QCV_TRUE, "true"},
         {QCV_FALSE, "false"},
     });
 
 std::ostream &operator<<(std::ostream &os, const qcode_key_t &key) {
-  if (options_bimap.left.find(key) != options_bimap.left.end()) {
-    os << options_bimap.left.at(key);
+  if (OPTIONS_BIMAP.left.find(key) != OPTIONS_BIMAP.left.end()) {
+    os << OPTIONS_BIMAP.left.at(key);
   } else {
     qcore_panic("operator<<: Unhandled qcode_key_t value.");
   }
@@ -72,8 +72,8 @@ std::ostream &operator<<(std::ostream &os, const qcode_key_t &key) {
 }
 
 std::ostream &operator<<(std::ostream &os, const qcode_val_t &val) {
-  if (values_bimap.left.find(val) != values_bimap.left.end()) {
-    os << values_bimap.left.at(val);
+  if (VALUES_BIMAP.left.find(val) != VALUES_BIMAP.left.end()) {
+    os << VALUES_BIMAP.left.at(val);
   } else {
     qcore_panic("operator<<: Unhandled qcode_val_t value.");
   }
@@ -81,13 +81,13 @@ std::ostream &operator<<(std::ostream &os, const qcode_val_t &val) {
   return os;
 }
 
-static void assign_default_options(qcode_conf_t &conf) {
-  for (const auto &setting : codegen::conf::default_settings) {
+static void AssignDefaultOptions(qcode_conf_t &conf) {
+  for (const auto &setting : codegen::conf::DefaultSettings) {
     qcode_conf_setopt(&conf, setting.key, setting.value);
   }
 }
 
-extern "C" NCC_EXPORT qcode_conf_t *qcode_conf_new(bool use_defaults) {
+extern "C" NCC_EXPORT qcode_conf_t *QcodeConfNew(bool use_defaults) {
   qcode_conf_t *obj = new qcode_conf_t();
 
   if (use_defaults) {
@@ -97,15 +97,15 @@ extern "C" NCC_EXPORT qcode_conf_t *qcode_conf_new(bool use_defaults) {
   return obj;
 }
 
-extern "C" NCC_EXPORT void qcode_conf_free(qcode_conf_t *conf) { delete conf; }
+extern "C" NCC_EXPORT void QcodeConfFree(qcode_conf_t *conf) { delete conf; }
 
-extern "C" NCC_EXPORT bool qcode_conf_setopt(qcode_conf_t *conf,
+extern "C" NCC_EXPORT bool QcodeConfSetopt(qcode_conf_t *conf,
                                              qcode_key_t key,
                                              qcode_val_t value) {
   return conf->SetAndVerify(key, value);
 }
 
-extern "C" NCC_EXPORT bool qcode_conf_getopt(qcode_conf_t *conf,
+extern "C" NCC_EXPORT bool QcodeConfGetopt(qcode_conf_t *conf,
                                              qcode_key_t key,
                                              qcode_val_t *value) {
   auto val = conf->Get(key);
@@ -121,7 +121,7 @@ extern "C" NCC_EXPORT bool qcode_conf_getopt(qcode_conf_t *conf,
   return true;
 }
 
-extern "C" NCC_EXPORT qcode_setting_t *qcode_conf_getopts(qcode_conf_t *conf,
+extern "C" NCC_EXPORT qcode_setting_t *QcodeConfGetopts(qcode_conf_t *conf,
                                                           size_t *count) {
   if (!count) {
     qcore_panic(
@@ -147,7 +147,7 @@ extern "C" NCC_EXPORT qcode_setting_t *qcode_conf_getopts(qcode_conf_t *conf,
   return copy;
 }
 
-extern "C" NCC_EXPORT void qcode_conf_clear(qcode_conf_t *conf) {
+extern "C" NCC_EXPORT void QcodeConfClear(qcode_conf_t *conf) {
   conf->ClearNoVerify();
 }
 

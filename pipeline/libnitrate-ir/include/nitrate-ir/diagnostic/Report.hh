@@ -85,27 +85,27 @@ namespace ncc::ir {
   class IReport {
   public:
     struct ReportData {
-      IssueCode code;
-      IC level;
-      std::string_view param;
-      uint32_t start_offset;
-      uint32_t fileid;
+      IssueCode m_code;
+      IC m_level;
+      std::string_view m_param;
+      uint32_t m_start_offset;
+      uint32_t m_fileid;
     };
 
     virtual ~IReport() = default;
 
-    virtual void report(IssueCode code, IC level,
+    virtual void Report(IssueCode code, IC level,
                         std::vector<std::string_view> params = {},
                         SrcLoc location = SrcLoc()) = 0;
 
-    void report(IssueCode code, IC level, std::string_view message,
+    void Report(IssueCode code, IC level, std::string_view message,
                 SrcLoc loc = SrcLoc()) {
-      report(code, level, std::vector<std::string_view>({message}), loc);
+      Report(code, level, std::vector<std::string_view>({message}), loc);
     };
 
-    virtual void erase_reports() = 0;
+    virtual void EraseReports() = 0;
 
-    virtual void stream_reports(std::function<void(const ReportData &)> cb) = 0;
+    virtual void StreamReports(std::function<void(const ReportData &)> cb) = 0;
   };
 
   ///==========================================================================///
@@ -119,11 +119,11 @@ namespace ncc::ir {
     MessageBuffer(std::function<void(std::string, SrcLoc)> on_flush)
         : m_on_flush(on_flush) {}
 
-    MessageBuffer(MessageBuffer &&O) {
-      m_buffer = std::move(O.m_buffer);
-      m_on_flush = std::move(O.m_on_flush);
-      m_range = O.m_range;
-      O.m_on_flush = nullptr;
+    MessageBuffer(MessageBuffer &&o) {
+      m_buffer = std::move(o.m_buffer);
+      m_on_flush = std::move(o.m_on_flush);
+      m_range = o.m_range;
+      o.m_on_flush = nullptr;
     }
 
     ~MessageBuffer() {
@@ -133,7 +133,7 @@ namespace ncc::ir {
     }
 
     template <typename T>
-    void write(const T &value) {
+    void Write(const T &value) {
       if constexpr (std::is_same_v<T, SrcLoc>) {
         m_range = value;
       } else {
@@ -175,17 +175,17 @@ namespace ncc::ir {
     };
   }  // namespace detail
 
-  inline thread_local std::unique_ptr<detail::IDiagnosticRouter> debug =
+  inline thread_local std::unique_ptr<detail::IDiagnosticRouter> Debug =
       std::make_unique<detail::NOPDiagnosticRouter>();
-  inline thread_local std::unique_ptr<detail::IDiagnosticRouter> info =
+  inline thread_local std::unique_ptr<detail::IDiagnosticRouter> Info =
       std::make_unique<detail::NOPDiagnosticRouter>();
-  inline thread_local std::unique_ptr<detail::IDiagnosticRouter> warn =
+  inline thread_local std::unique_ptr<detail::IDiagnosticRouter> Warn =
       std::make_unique<detail::NOPDiagnosticRouter>();
-  inline thread_local std::unique_ptr<detail::IDiagnosticRouter> error =
+  inline thread_local std::unique_ptr<detail::IDiagnosticRouter> Error =
       std::make_unique<detail::NOPDiagnosticRouter>();
 
   namespace detail {
-    void diagnostic_bind(MessageFunc func, lex::IScanner &scanner);
+    void DiagnosticBind(MessageFunc func, lex::IScanner &scanner);
   }  // namespace detail
 
   template <typename T>
@@ -194,14 +194,14 @@ namespace ncc::ir {
     MessageBuffer buf(
         [ctx](std::string msg, SrcLoc loc) { ctx->EmitMessage(msg, loc); });
 
-    buf.write(value);
+    buf.Write(value);
 
     return buf;
   };
 
   template <typename T>
   MessageBuffer operator<<(MessageBuffer &&buf, const T &value) {
-    buf.write(value);
+    buf.Write(value);
     return std::move(buf);
   };
 };  // namespace ncc::ir

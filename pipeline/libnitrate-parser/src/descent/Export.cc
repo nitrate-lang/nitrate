@@ -37,12 +37,12 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-string Parser::recurse_abi_name() {
+string Parser::RecurseAbiName() {
   auto tok = next_if(Text);
   return tok ? tok->as_string() : "";
 }
 
-std::optional<ExpressionList> Parser::recurse_export_attributes() {
+std::optional<ExpressionList> Parser::RecurseExportAttributes() {
   ExpressionList attributes;
 
   if (!next_if(PuncLBrk)) {
@@ -60,7 +60,7 @@ std::optional<ExpressionList> Parser::recurse_export_attributes() {
       return attributes;
     }
 
-    auto attribute = recurse_expr({
+    auto attribute = RecurseExpr({
         Token(Punc, PuncComa),
         Token(Punc, PuncRBrk),
     });
@@ -73,24 +73,24 @@ std::optional<ExpressionList> Parser::recurse_export_attributes() {
   return std::nullopt;
 }
 
-FlowPtr<Stmt> Parser::recurse_export_body() {
+FlowPtr<Stmt> Parser::RecurseExportBody() {
   if (peek().is<PuncLCur>()) {
-    return recurse_block(true, false, SafetyMode::Unknown);
+    return RecurseBlock(true, false, SafetyMode::Unknown);
   } else {
-    return recurse_block(false, true, SafetyMode::Unknown);
+    return RecurseBlock(false, true, SafetyMode::Unknown);
   }
 }
 
-FlowPtr<Stmt> Parser::recurse_export(Vis vis) {
-  auto export_abi = recurse_abi_name();
+FlowPtr<Stmt> Parser::RecurseExport(Vis vis) {
+  auto export_abi = RecurseAbiName();
 
-  if (auto export_attributes = recurse_export_attributes()) {
-    auto export_body = recurse_export_body();
+  if (auto export_attributes = RecurseExportAttributes()) {
+    auto export_body = RecurseExportBody();
 
     return make<ExportStmt>(export_body, export_abi, vis,
                             export_attributes.value())();
   } else {
     Log << SyntaxError << current() << "Malformed export attributes";
-    return mock_stmt(QAST_EXPORT);
+    return MockStmt(QAST_EXPORT);
   }
 }

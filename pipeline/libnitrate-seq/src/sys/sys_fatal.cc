@@ -40,26 +40,26 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int ncc::seq::sys_fatal(lua_State* L) {
-  int nargs = lua_gettop(L);
+int ncc::seq::SysFatal(lua_State* l) {
+  int nargs = lua_gettop(l);
   if (nargs == 0) {
-    return luaL_error(L, "Expected at least one argument, got 0");
+    return luaL_error(l, "Expected at least one argument, got 0");
   }
 
   QCoreBegin();
 
   for (int i = 1; i <= nargs; i++) {
-    if (lua_isstring(L, i)) {
-      QCoreWrite(lua_tostring(L, i));
-    } else if (lua_isnumber(L, i)) {
-      QCoreWritef("%f", (double)lua_tonumber(L, i));
-    } else if (lua_isboolean(L, i)) {
-      QCoreWrite(lua_toboolean(L, i) ? "true" : "false");
+    if (lua_isstring(l, i)) {
+      QCoreWrite(lua_tostring(l, i));
+    } else if (lua_isnumber(l, i)) {
+      QCoreWritef("%f", (double)lua_tonumber(l, i));
+    } else if (lua_isboolean(l, i)) {
+      QCoreWrite(lua_toboolean(l, i) ? "true" : "false");
     } else {
       return luaL_error(
-          L,
+          l,
           "Invalid argument #%d: expected string, number, or boolean, got %s",
-          i, lua_typename(L, lua_type(L, i)));
+          i, lua_typename(l, lua_type(l, i)));
     }
   }
 

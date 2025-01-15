@@ -63,9 +63,9 @@ CREATE_TRANSFORM(nit::nr) {
   std::optional<ncc::FlowPtr<ncc::parse::Base> > root;
 
   if (source.peek() == '{') {
-    root = ncc::parse::AST_JsonReader(source).get();
+    root = ncc::parse::AstJsonReader(source).Get();
   } else {
-    root = ncc::parse::AST_MsgPackReader(source).get();
+    root = ncc::parse::AstMsgPackReader(source).Get();
   }
 
   if (!root.has_value()) {
@@ -76,7 +76,7 @@ CREATE_TRANSFORM(nit::nr) {
   if (auto module = nr_lower(root.value().get(), nullptr, true)) {
     switch (out_mode) {
       case OutMode::JSON: {
-        auto writter = IR_JsonWriter(output);
+        auto writter = IrJsonWriter(output);
         module->Accept(writter);
         return false;
       }

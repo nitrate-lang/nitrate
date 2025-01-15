@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-ExpressionList Parser::recurse_struct_attributes() {
+ExpressionList Parser::RecurseStructAttributes() {
   ExpressionList attributes;
 
   if (!next_if(PuncLBrk)) {
@@ -55,7 +55,7 @@ ExpressionList Parser::recurse_struct_attributes() {
       break;
     }
 
-    auto attribute = recurse_expr({
+    auto attribute = RecurseExpr({
         Token(Punc, PuncComa),
         Token(Punc, PuncRBrk),
     });
@@ -68,12 +68,12 @@ ExpressionList Parser::recurse_struct_attributes() {
   return attributes;
 }
 
-string Parser::recurse_struct_name() {
+string Parser::RecurseStructName() {
   auto tok = next_if(Name);
   return tok ? tok->as_string() : "";
 }
 
-StructDefNames Parser::recurse_struct_terms() {
+StructDefNames Parser::RecurseStructTerms() {
   StructDefNames names;
 
   if (!next_if(PuncColn)) {
@@ -93,9 +93,9 @@ StructDefNames Parser::recurse_struct_terms() {
   return names;
 }
 
-NullableFlowPtr<Expr> Parser::recurse_struct_field_default_value() {
+NullableFlowPtr<Expr> Parser::RecurseStructFieldDefaultValue() {
   if (next_if(OpSet)) {
-    return recurse_expr({
+    return RecurseExpr({
         Token(Punc, PuncComa),
         Token(Punc, PuncSemi),
         Token(Punc, PuncRCur),
@@ -105,12 +105,12 @@ NullableFlowPtr<Expr> Parser::recurse_struct_field_default_value() {
   }
 }
 
-void Parser::recurse_struct_field(Vis vis, bool is_static,
-                                  StructDefFields &fields) {
+void Parser::RecurseStructField(Vis vis, bool is_static,
+                                StructDefFields &fields) {
   if (auto field_name = next_if(Name)) {
     if (next_if(PuncColn)) {
-      auto field_type = recurse_type();
-      auto default_value = recurse_struct_field_default_value();
+      auto field_type = RecurseType();
+      auto default_value = RecurseStructFieldDefaultValue();
 
       auto field = StructField(vis, is_static, field_name->as_string(),
                                field_type, default_value);
@@ -125,7 +125,7 @@ void Parser::recurse_struct_field(Vis vis, bool is_static,
   }
 }
 
-void Parser::recurse_struct_method_or_field(StructContent &body) {
+void Parser::RecurseStructMethodOrField(StructContent &body) {
   Vis vis = Vis::Sec;
 
   /* Parse visibility of member */
@@ -140,21 +140,21 @@ void Parser::recurse_struct_method_or_field(StructContent &body) {
   auto is_static_member = next_if(Static).has_value();
 
   if (next_if(Fn)) {
-    auto method = recurse_function(false);
+    auto method = RecurseFunction(false);
 
     if (is_static_member) {
-      body.static_methods.push_back({vis, method});
+      body.m_static_methods.push_back({vis, method});
     } else {
-      body.methods.push_back({vis, method});
+      body.m_methods.push_back({vis, method});
     }
   } else {
-    recurse_struct_field(vis, is_static_member, body.fields);
+    RecurseStructField(vis, is_static_member, body.m_fields);
   }
 
   next_if(PuncComa) || next_if(PuncSemi);
 }
 
-Parser::StructContent Parser::recurse_struct_body() {
+Parser::StructContent Parser::RecurseStructBody() {
   StructContent body;
 
   if (!next_if(PuncLCur)) [[unlikely]] {
@@ -173,20 +173,20 @@ Parser::StructContent Parser::recurse_struct_body() {
       break;
     }
 
-    recurse_struct_method_or_field(body);
+    RecurseStructMethodOrField(body);
   }
 
   return body;
 }
 
-FlowPtr<Stmt> Parser::recurse_struct(CompositeType struct_type) {
+FlowPtr<Stmt> Parser::RecurseStruct(CompositeType struct_type) {
   auto start_pos = current().get_start();
-  auto struct_attributes = recurse_struct_attributes();
-  auto struct_name = recurse_struct_name();
-  auto struct_template_params = recurse_template_parameters();
-  auto struct_terms = recurse_struct_terms();
+  auto struct_attributes = RecurseStructAttributes();
+  auto struct_name = RecurseStructName();
+  auto struct_template_params = RecurseTemplateParameters();
+  auto struct_terms = RecurseStructTerms();
   auto [struct_fields, struct_methods, struct_static_methods] =
-      recurse_struct_body();
+      RecurseStructBody();
 
   auto struct_defintion = make<StructDef>(
       struct_type, struct_attributes, struct_name, struct_template_params,

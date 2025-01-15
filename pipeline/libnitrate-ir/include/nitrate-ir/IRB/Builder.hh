@@ -115,26 +115,26 @@ namespace ncc::ir {
     // Builder helper methods
     ///**************************************************************************///
 
-    std::optional<std::pair<FlowPtr<Expr>, std::string_view>> resolve_name(
+    std::optional<std::pair<FlowPtr<Expr>, std::string_view>> ResolveName(
         std::string_view name, Kind kind);
 
-    void try_transform_alpha(FlowPtr<Expr> root);
-    void try_transform_beta(FlowPtr<Expr> root);
-    void try_transform_gamma(FlowPtr<Expr> root);
-    void connect_nodes(FlowPtr<Seq> root);
-    void flatten_symbols(FlowPtr<Seq> root);
-    void remove_garbage(FlowPtr<Seq> root);
+    void TryTransformAlpha(FlowPtr<Expr> root);
+    void TryTransformBeta(FlowPtr<Expr> root);
+    void TryTransformGamma(FlowPtr<Expr> root);
+    void ConnectNodes(FlowPtr<Seq> root);
+    void FlattenSymbols(FlowPtr<Seq> root);
+    void RemoveGarbage(FlowPtr<Seq> root);
 
-    bool check_acyclic(FlowPtr<Seq> root, IReport *I);
-    bool check_duplicates(FlowPtr<Seq> root, IReport *I);
-    bool check_symbols_exist(FlowPtr<Seq> root, IReport *I);
-    bool check_function_calls(FlowPtr<Seq> root, IReport *I);
-    bool check_returns(FlowPtr<Seq> root, IReport *I);
-    bool check_scopes(FlowPtr<Seq> root, IReport *I);
-    bool check_mutability(FlowPtr<Seq> root, IReport *I);
-    bool check_control_flow(FlowPtr<Seq> root, IReport *I);
-    bool check_types(FlowPtr<Seq> root, IReport *I);
-    bool check_safety_claims(FlowPtr<Seq> root, IReport *I);
+    bool CheckAcyclic(FlowPtr<Seq> root, IReport *i);
+    bool CheckDuplicates(FlowPtr<Seq> root, IReport *i);
+    bool CheckSymbolsExist(FlowPtr<Seq> root, IReport *i);
+    bool CheckFunctionCalls(FlowPtr<Seq> root, IReport *i);
+    bool CheckReturns(FlowPtr<Seq> root, IReport *i);
+    bool CheckScopes(FlowPtr<Seq> root, IReport *i);
+    bool CheckMutability(FlowPtr<Seq> root, IReport *i);
+    bool CheckControlFlow(FlowPtr<Seq> root, IReport *i);
+    bool CheckTypes(FlowPtr<Seq> root, IReport *i);
+    bool CheckSafetyClaims(FlowPtr<Seq> root, IReport *i);
 
 #if defined(NDEBUG)
 #define SOURCE_LOCATION_PARAM
@@ -153,7 +153,7 @@ namespace ncc::ir {
   std::experimental::source_location caller_info = \
       std::experimental::source_location::current()
 
-    void contract_enforce_(
+    void ContractEnforce(
         bool cond, std::string_view cond_str SOURCE_LOCATION_PARAM,
         std::experimental::source_location caller =
             std::experimental::source_location::current()) const;
@@ -174,11 +174,11 @@ namespace ncc::ir {
 
     /** @warning: This is a slow and resource heavy operation for
      * most programs. */
-    NRBuilder deep_clone(SOURCE_LOCATION_PARAM_ONCE) const;
+    NRBuilder DeepClone(SOURCE_LOCATION_PARAM_ONCE) const;
 
     /** @brief Count *ALL* nodes currently in the builder. This includes
      * temporary nodes. */
-    size_t node_count(SOURCE_LOCATION_PARAM_ONCE);
+    size_t NodeCount(SOURCE_LOCATION_PARAM_ONCE);
 
     /**
      * @brief Finialize the module build
@@ -186,7 +186,7 @@ namespace ncc::ir {
      * @note This function is idempotent, without any overhead from additional
      * calls.
      */
-    void finish(SOURCE_LOCATION_PARAM_ONCE);
+    void Finish(SOURCE_LOCATION_PARAM_ONCE);
 
     /**
      * @brief Run basic checks on the module:
@@ -221,15 +221,15 @@ namespace ncc::ir {
      *
      * @note This function calls `finish()`.
      */
-    bool verify(std::optional<IReport *> sink SOURCE_LOCATION_PARAM);
+    bool Verify(std::optional<IReport *> sink SOURCE_LOCATION_PARAM);
 
     /**
      * @brief Return the build module.
      * @note `verify()` must be called first.
      */
-    IRModule *get_module(SOURCE_LOCATION_PARAM_ONCE);
+    IRModule *GetModule(SOURCE_LOCATION_PARAM_ONCE);
 
-    void appendToRoot(FlowPtr<Expr> node SOURCE_LOCATION_PARAM);
+    void AppendToRoot(FlowPtr<Expr> node SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///
     // Create linkable symbols
@@ -237,26 +237,26 @@ namespace ncc::ir {
     using FnParam = std::tuple<std::string_view, FlowPtr<Type>,
                                std::optional<FlowPtr<Expr>>>;
 
-    Function *createFunctionDefintion(
+    Function *CreateFunctionDefintion(
         std::string_view name, std::span<FnParam> params, FlowPtr<Type> ret_ty,
         bool is_variadic = false, Vis visibility = Vis::Sec,
         Purity purity = Purity::Impure, bool thread_safe = false,
         bool foreign = true SOURCE_LOCATION_PARAM);
 
-    Function *createFunctionDeclaration(
+    Function *CreateFunctionDeclaration(
         std::string_view name, std::span<FnParam> params, FlowPtr<Type> ret_ty,
         bool is_variadic = false, Vis visibility = Vis::Sec,
         Purity purity = Purity::Impure, bool thread_safe = false,
         bool foreign = true SOURCE_LOCATION_PARAM);
 
     /* This is the only intended way to overload operaters */
-    Function *createOperatorOverload(
+    Function *CreateOperatorOverload(
         lex::Operator op, std::span<FlowPtr<Type>> params, FlowPtr<Type> ret_ty,
         Purity purity = Purity::Impure,
         bool thread_safe = false SOURCE_LOCATION_PARAM);
 
     /* Works for both local and global variables FlowPtr<Type> */
-    Local *createVariable(std::string_view name, FlowPtr<Type> ty,
+    Local *CreateVariable(std::string_view name, FlowPtr<Type> ty,
                           Vis visibility = Vis::Sec,
                           StorageClass storage = StorageClass::LLVM_StackAlloa,
                           bool is_readonly = false SOURCE_LOCATION_PARAM);
@@ -264,12 +264,12 @@ namespace ncc::ir {
     ///**************************************************************************///
     // Create expressions
 
-    FlowPtr<Expr> createCall(
+    FlowPtr<Expr> CreateCall(
         FlowPtr<Expr> target,
         std::span<std::pair<std::string_view, FlowPtr<Expr>>> arguments
             SOURCE_LOCATION_PARAM);
 
-    FlowPtr<Expr> createMethodCall(
+    FlowPtr<Expr> CreateMethodCall(
         FlowPtr<Expr> object, std::string_view name,
         std::span<std::pair<std::string_view, FlowPtr<Expr>>> arguments
             SOURCE_LOCATION_PARAM);
@@ -277,19 +277,19 @@ namespace ncc::ir {
     ///**************************************************************************///
     // Create literals
 
-    Int *createBool(bool value SOURCE_LOCATION_PARAM);
+    Int *CreateBool(bool value SOURCE_LOCATION_PARAM);
 
-    Int *createFixedInteger(boost::multiprecision::cpp_int value,
+    Int *CreateFixedInteger(boost::multiprecision::cpp_int value,
                             uint8_t width SOURCE_LOCATION_PARAM);
 
-    Float *createFixedFloat(bigfloat_t value,
+    Float *CreateFixedFloat(bigfloat_t value,
                             uint8_t width SOURCE_LOCATION_PARAM);
 
-    List *createStringDataArray(
+    List *CreateStringDataArray(
         std::string_view value,
         ABIStringStyle style = ABIStringStyle::CStr SOURCE_LOCATION_PARAM);
 
-    List *createList(
+    List *CreateList(
         std::span<FlowPtr<Expr>> items,
 
         /* Require assert(typeof(result)==typeof(array<result.element,
@@ -301,62 +301,62 @@ namespace ncc::ir {
     ///**************************************************************************///
     // Create values
 
-    std::optional<FlowPtr<Expr>> getDefaultValue(
+    std::optional<FlowPtr<Expr>> GetDefaultValue(
         FlowPtr<Type> _for SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///
     // Create types
 
-    U1Ty *getU1Ty(SOURCE_LOCATION_PARAM_ONCE);
-    U8Ty *getU8Ty(SOURCE_LOCATION_PARAM_ONCE);
-    U16Ty *getU16Ty(SOURCE_LOCATION_PARAM_ONCE);
-    U32Ty *getU32Ty(SOURCE_LOCATION_PARAM_ONCE);
-    U64Ty *getU64Ty(SOURCE_LOCATION_PARAM_ONCE);
-    U128Ty *getU128Ty(SOURCE_LOCATION_PARAM_ONCE);
-    I8Ty *getI8Ty(SOURCE_LOCATION_PARAM_ONCE);
-    I16Ty *getI16Ty(SOURCE_LOCATION_PARAM_ONCE);
-    I32Ty *getI32Ty(SOURCE_LOCATION_PARAM_ONCE);
-    I64Ty *getI64Ty(SOURCE_LOCATION_PARAM_ONCE);
-    I128Ty *getI128Ty(SOURCE_LOCATION_PARAM_ONCE);
-    F16Ty *getF16Ty(SOURCE_LOCATION_PARAM_ONCE);
-    F32Ty *getF32Ty(SOURCE_LOCATION_PARAM_ONCE);
-    F64Ty *getF64Ty(SOURCE_LOCATION_PARAM_ONCE);
-    F128Ty *getF128Ty(SOURCE_LOCATION_PARAM_ONCE);
-    VoidTy *getVoidTy(SOURCE_LOCATION_PARAM_ONCE);
+    U1Ty *GetU1Ty(SOURCE_LOCATION_PARAM_ONCE);
+    U8Ty *GetU8Ty(SOURCE_LOCATION_PARAM_ONCE);
+    U16Ty *GetU16Ty(SOURCE_LOCATION_PARAM_ONCE);
+    U32Ty *GetU32Ty(SOURCE_LOCATION_PARAM_ONCE);
+    U64Ty *GetU64Ty(SOURCE_LOCATION_PARAM_ONCE);
+    U128Ty *GetU128Ty(SOURCE_LOCATION_PARAM_ONCE);
+    I8Ty *GetI8Ty(SOURCE_LOCATION_PARAM_ONCE);
+    I16Ty *GetI16Ty(SOURCE_LOCATION_PARAM_ONCE);
+    I32Ty *GetI32Ty(SOURCE_LOCATION_PARAM_ONCE);
+    I64Ty *GetI64Ty(SOURCE_LOCATION_PARAM_ONCE);
+    I128Ty *GetI128Ty(SOURCE_LOCATION_PARAM_ONCE);
+    F16Ty *GetF16Ty(SOURCE_LOCATION_PARAM_ONCE);
+    F32Ty *GetF32Ty(SOURCE_LOCATION_PARAM_ONCE);
+    F64Ty *GetF64Ty(SOURCE_LOCATION_PARAM_ONCE);
+    F128Ty *GetF128Ty(SOURCE_LOCATION_PARAM_ONCE);
+    VoidTy *GetVoidTy(SOURCE_LOCATION_PARAM_ONCE);
 
     /* Type inference unknowns; Converted to proper type upon resolution */
-    OpaqueTy *getUnknownTy(SOURCE_LOCATION_PARAM_ONCE);
+    OpaqueTy *GetUnknownTy(SOURCE_LOCATION_PARAM_ONCE);
 
-    FlowPtr<Type> getUnknownNamedTy(
+    FlowPtr<Type> GetUnknownNamedTy(
         std::string_view name SOURCE_LOCATION_PARAM);
 
-    PtrTy *getPtrTy(FlowPtr<Type> pointee SOURCE_LOCATION_PARAM);
+    PtrTy *GetPtrTy(FlowPtr<Type> pointee SOURCE_LOCATION_PARAM);
 
-    OpaqueTy *getOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM);
+    OpaqueTy *GetOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM);
 
-    StructTy *getStructTy(
+    StructTy *GetStructTy(
         std::span<std::tuple<std::string_view, FlowPtr<Type>, FlowPtr<Expr>>>
             fields SOURCE_LOCATION_PARAM);
 
-    StructTy *getStructTy(
+    StructTy *GetStructTy(
         std::span<FlowPtr<Type>> fields SOURCE_LOCATION_PARAM);
 
-    UnionTy *getUnionTy(std::span<FlowPtr<Type>> fields SOURCE_LOCATION_PARAM);
+    UnionTy *GetUnionTy(std::span<FlowPtr<Type>> fields SOURCE_LOCATION_PARAM);
 
-    ArrayTy *getArrayTy(FlowPtr<Type> element_ty,
+    ArrayTy *GetArrayTy(FlowPtr<Type> element_ty,
                         size_t count SOURCE_LOCATION_PARAM);
 
-    FnTy *getFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret_ty,
+    FnTy *GetFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret_ty,
                   bool is_variadic = false, Purity purity = Purity::Impure,
                   bool thread_safe = false,
                   bool foreign = true SOURCE_LOCATION_PARAM);
 
-    void createNamedConstantDefinition(
+    void CreateNamedConstantDefinition(
         std::string_view name,
         const std::unordered_map<std::string_view, FlowPtr<Expr>> &values
             SOURCE_LOCATION_PARAM);
 
-    void createNamedTypeAlias(FlowPtr<Type> type,
+    void CreateNamedTypeAlias(FlowPtr<Type> type,
                               std::string_view name SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///

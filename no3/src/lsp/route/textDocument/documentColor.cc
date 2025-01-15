@@ -207,7 +207,7 @@ void do_documentColor(const lsp::RequestMessage& req,
 
   for_each<Call>(ast.get(), [&](let N) {
     if (N->get_func()->is(QAST_IDENT)) {
-      let name = N->get_func()->template as<Ident>()->get_name();
+      let name = N->get_func()->template as<Ident>()->GetName();
       let args = N->get_args();
 
       std::optional<ColorInformation> element;

@@ -41,7 +41,7 @@ extern "C" {
 
 using namespace ncc::lex;
 
-int ncc::seq::sys_peek(lua_State* L) {
+int ncc::seq::SysPeek(lua_State* L) {
   Token tok = get_engine()->Peek();
 
   lua_newtable(L);

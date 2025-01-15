@@ -39,9 +39,9 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-static const std::vector<std::string_view> immutable_namespaces = {"this."};
+static const std::vector<std::string_view> IMMUTABLE_NAMESPACES = {"this."};
 
-int ncc::seq::sys_set(lua_State* L) {
+int ncc::seq::SysSet(lua_State* L) {
   int nargs = lua_gettop(L);
   if (nargs != 2) {
     return luaL_error(L, "expected 2 arguments, got %d", nargs);
@@ -60,7 +60,7 @@ int ncc::seq::sys_set(lua_State* L) {
     return luaL_error(L, "expected non-empty string, got empty string");
   }
 
-  for (const auto& ns : immutable_namespaces) {
+  for (const auto& ns : IMMUTABLE_NAMESPACES) {
     if (key.starts_with(ns)) {
       return luaL_error(L, "cannot set items in immutable namespace");
     }

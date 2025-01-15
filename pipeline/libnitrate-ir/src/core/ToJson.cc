@@ -37,7 +37,7 @@
 
 using namespace ncc::ir;
 
-static void escape_string(std::ostream &os, const std::string_view &input) {
+static void EscapeString(std::ostream &os, const std::string_view &input) {
   os << "\"";
 
   for (char ch : input) {

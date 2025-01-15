@@ -39,8 +39,8 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::check_scopes(FlowPtr<Seq>, IReport *I) {
-  I->report(CompilerError, IC::Debug,
+bool NRBuilder::CheckScopes(FlowPtr<Seq>, IReport *i) {
+  i->Report(CompilerError, IC::Debug,
             "NRBuilder::check_scopes() not implemented");
 
   /// TODO: Implement check

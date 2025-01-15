@@ -55,16 +55,16 @@ namespace ncc::parse {
     ASTRoot(FlowPtr<Base> base, std::shared_ptr<void> allocator, bool failed)
         : m_base(base), m_allocator(allocator), m_failed(failed) {}
 
-    FlowPtr<Base> &get() { return m_base; }
-    FlowPtr<Base> get() const { return m_base; }
+    FlowPtr<Base> &Get() { return m_base; }
+    FlowPtr<Base> Get() const { return m_base; }
 
-    bool check() const;
+    bool Check() const;
   };
 
   class Parser final {
     std::shared_ptr<ncc::Environment> m_env;
     std::unique_ptr<ncc::IMemory> m_allocator;
-    ncc::lex::IScanner &rd;
+    ncc::lex::IScanner &m_rd;
     bool m_failed;
     std::shared_ptr<void> m_lifetime;
 
@@ -73,125 +73,125 @@ namespace ncc::parse {
      *  Primary language constructs
      ****************************************************************************/
 
-    FlowPtr<Stmt> recurse_export(Vis vis);
-    std::vector<FlowPtr<Stmt>> recurse_variable(VarDeclType type);
-    FlowPtr<Stmt> recurse_enum();
-    FlowPtr<Stmt> recurse_struct(CompositeType type);
-    FlowPtr<Stmt> recurse_scope();
-    FlowPtr<Stmt> recurse_function(bool parse_declaration_only);
-    FlowPtr<Type> recurse_type();
-    FlowPtr<Stmt> recurse_typedef();
-    FlowPtr<Stmt> recurse_return();
-    FlowPtr<Stmt> recurse_retif();
-    FlowPtr<Stmt> recurse_if();
-    FlowPtr<Stmt> recurse_while();
-    FlowPtr<Stmt> recurse_for();
-    FlowPtr<Stmt> recurse_foreach();
-    FlowPtr<Stmt> recurse_switch();
-    FlowPtr<Stmt> recurse_inline_asm();
-    FlowPtr<Stmt> recurse_try();
-    FlowPtr<Stmt> recurse_throw();
-    FlowPtr<Stmt> recurse_await();
-    FlowPtr<Stmt> recurse_block(bool expect_braces, bool single_stmt,
+    FlowPtr<Stmt> RecurseExport(Vis vis);
+    std::vector<FlowPtr<Stmt>> RecurseVariable(VarDeclType type);
+    FlowPtr<Stmt> RecurseEnum();
+    FlowPtr<Stmt> RecurseStruct(CompositeType type);
+    FlowPtr<Stmt> RecurseScope();
+    FlowPtr<Stmt> RecurseFunction(bool parse_declaration_only);
+    FlowPtr<Type> RecurseType();
+    FlowPtr<Stmt> RecurseTypedef();
+    FlowPtr<Stmt> RecurseReturn();
+    FlowPtr<Stmt> RecurseRetif();
+    FlowPtr<Stmt> RecurseIf();
+    FlowPtr<Stmt> RecurseWhile();
+    FlowPtr<Stmt> RecurseFor();
+    FlowPtr<Stmt> RecurseForeach();
+    FlowPtr<Stmt> RecurseSwitch();
+    FlowPtr<Stmt> RecurseInlineAsm();
+    FlowPtr<Stmt> RecurseTry();
+    FlowPtr<Stmt> RecurseThrow();
+    FlowPtr<Stmt> RecurseAwait();
+    FlowPtr<Stmt> RecurseBlock(bool expect_braces, bool single_stmt,
                                 SafetyMode safety);
-    FlowPtr<Expr> recurse_expr(const std::set<ncc::lex::Token> &terminators);
-    NullableFlowPtr<Expr> recurse_expr_primary(bool isType);
-    NullableFlowPtr<Expr> recurse_expr_keyword(lex::Keyword key);
-    NullableFlowPtr<Expr> recurse_expr_punctor(lex::Punctor punc);
-    FlowPtr<Expr> recurse_expr_type_suffix(FlowPtr<Expr> base);
+    FlowPtr<Expr> RecurseExpr(const std::set<ncc::lex::Token> &terminators);
+    NullableFlowPtr<Expr> RecurseExprPrimary(bool is_type);
+    NullableFlowPtr<Expr> RecurseExprKeyword(lex::Keyword key);
+    NullableFlowPtr<Expr> RecurseExprPunctor(lex::Punctor punc);
+    FlowPtr<Expr> RecurseExprTypeSuffix(FlowPtr<Expr> base);
 
     /****************************************************************************
      * @brief
      *  Helper functions
      ****************************************************************************/
 
-    FlowPtr<Stmt> mock_stmt(std::optional<npar_ty_t> expected = std::nullopt);
-    FlowPtr<Expr> mock_expr(std::optional<npar_ty_t> expected = std::nullopt);
-    FlowPtr<Type> mock_type();
+    FlowPtr<Stmt> MockStmt(std::optional<npar_ty_t> expected = std::nullopt);
+    FlowPtr<Expr> MockExpr(std::optional<npar_ty_t> expected = std::nullopt);
+    FlowPtr<Type> MockType();
 
-    string recurse_enum_name();
-    NullableFlowPtr<Type> recurse_enum_type();
-    NullableFlowPtr<Expr> recurse_enum_item_value();
-    std::optional<EnumItem> recurse_enum_item();
-    std::optional<EnumDefItems> recurse_enum_items();
+    string RecurseEnumName();
+    NullableFlowPtr<Type> RecurseEnumType();
+    NullableFlowPtr<Expr> RecurseEnumItemValue();
+    std::optional<EnumItem> RecurseEnumItem();
+    std::optional<EnumDefItems> RecurseEnumItems();
 
-    string recurse_abi_name();
-    std::optional<ExpressionList> recurse_export_attributes();
-    FlowPtr<Stmt> recurse_export_body();
+    string RecurseAbiName();
+    std::optional<ExpressionList> RecurseExportAttributes();
+    FlowPtr<Stmt> RecurseExportBody();
 
-    CallArgs recurse_call_arguments(const std::set<lex::Token> &terminators,
+    CallArgs RecurseCallArguments(const std::set<lex::Token> &terminators,
                                     bool type_by_default);
-    FlowPtr<Expr> recurse_fstring();
+    FlowPtr<Expr> RecurseFstring();
 
-    NullableFlowPtr<Stmt> recurse_for_init_expr();
-    NullableFlowPtr<Expr> recurse_for_condition();
-    NullableFlowPtr<Expr> recurse_for_step_expr(bool has_paren);
-    FlowPtr<Stmt> recurse_for_body();
+    NullableFlowPtr<Stmt> RecurseForInitExpr();
+    NullableFlowPtr<Expr> RecurseForCondition();
+    NullableFlowPtr<Expr> RecurseForStepExpr(bool has_paren);
+    FlowPtr<Stmt> RecurseForBody();
 
-    std::optional<std::pair<string, string>> recurse_foreach_names();
-    FlowPtr<Expr> recurse_foreach_expr(bool has_paren);
-    FlowPtr<Stmt> recurse_foreach_body();
+    std::optional<std::pair<string, string>> RecurseForeachNames();
+    FlowPtr<Expr> RecurseForeachExpr(bool has_paren);
+    FlowPtr<Stmt> RecurseForeachBody();
 
-    FlowPtr<Type> recurse_function_parameter_type();
-    NullableFlowPtr<Expr> recurse_function_parameter_value();
-    std::optional<FuncParam> recurse_function_parameter();
-    std::optional<TemplateParameters> recurse_template_parameters();
-    std::pair<FuncParams, bool> recurse_function_parameters();
-    NullableFlowPtr<Stmt> recurse_function_body(bool parse_declaration_only);
-    FlowPtr<Type> recurse_function_return_type();
-    Purity get_purity_specifier(lex::Token start_pos, bool is_thread_safe,
+    FlowPtr<Type> RecurseFunctionParameterType();
+    NullableFlowPtr<Expr> RecurseFunctionParameterValue();
+    std::optional<FuncParam> RecurseFunctionParameter();
+    std::optional<TemplateParameters> RecurseTemplateParameters();
+    std::pair<FuncParams, bool> RecurseFunctionParameters();
+    NullableFlowPtr<Stmt> RecurseFunctionBody(bool parse_declaration_only);
+    FlowPtr<Type> RecurseFunctionReturnType();
+    Purity GetPuritySpecifier(lex::Token start_pos, bool is_thread_safe,
                                 bool is_pure, bool is_impure, bool is_quasi,
                                 bool is_retro);
-    std::optional<std::pair<string, bool>> recurse_function_capture();
+    std::optional<std::pair<string, bool>> RecurseFunctionCapture();
     std::tuple<ExpressionList, FnCaptures, Purity, string>
-    recurse_function_ambigouis();
+    RecurseFunctionAmbigouis();
 
-    FlowPtr<Stmt> recurse_if_then();
-    NullableFlowPtr<Stmt> recurse_if_else();
+    FlowPtr<Stmt> RecurseIfThen();
+    NullableFlowPtr<Stmt> RecurseIfElse();
 
-    string recurse_scope_name();
-    std::optional<ScopeDeps> recurse_scope_deps();
-    FlowPtr<Stmt> recurse_scope_block();
+    string RecurseScopeName();
+    std::optional<ScopeDeps> RecurseScopeDeps();
+    FlowPtr<Stmt> RecurseScopeBlock();
 
     struct StructContent {
-      StructDefFields fields;
-      StructDefMethods methods;
-      StructDefStaticMethods static_methods;
+      StructDefFields m_fields;
+      StructDefMethods m_methods;
+      StructDefStaticMethods m_static_methods;
     };
-    ExpressionList recurse_struct_attributes();
-    string recurse_struct_name();
-    StructDefNames recurse_struct_terms();
-    NullableFlowPtr<Expr> recurse_struct_field_default_value();
-    void recurse_struct_field(Vis vis, bool is_static, StructDefFields &fields);
-    void recurse_struct_method_or_field(StructContent &body);
-    StructContent recurse_struct_body();
+    ExpressionList RecurseStructAttributes();
+    string RecurseStructName();
+    StructDefNames RecurseStructTerms();
+    NullableFlowPtr<Expr> RecurseStructFieldDefaultValue();
+    void RecurseStructField(Vis vis, bool is_static, StructDefFields &fields);
+    void RecurseStructMethodOrField(StructContent &body);
+    StructContent RecurseStructBody();
 
-    FlowPtr<Stmt> recurse_switch_case_body();
-    std::pair<FlowPtr<Stmt>, bool> recurse_switch_case();
+    FlowPtr<Stmt> RecurseSwitchCaseBody();
+    std::pair<FlowPtr<Stmt>, bool> RecurseSwitchCase();
     std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>>
-    recurse_switch_body();
+    RecurseSwitchBody();
 
-    NullableFlowPtr<Expr> recurse_type_range_start();
-    NullableFlowPtr<Expr> recurse_type_range_end();
-    std::optional<CallArgs> recurse_type_template_arguments();
-    FlowPtr<Type> recurse_type_suffix(FlowPtr<Type> base);
-    FlowPtr<Type> recurse_function_type();
-    FlowPtr<Type> recurse_opaque_type();
-    FlowPtr<Type> recurse_type_by_keyword(lex::Keyword key);
-    FlowPtr<Type> recurse_type_by_operator(lex::Operator op);
-    FlowPtr<Type> recurse_array_or_vector();
-    FlowPtr<Type> recurse_set_type();
-    FlowPtr<Type> recurse_tuple_type();
-    FlowPtr<Type> recurse_type_by_punctuation(lex::Punctor punc);
-    FlowPtr<Type> recurse_type_by_name(string name);
+    NullableFlowPtr<Expr> RecurseTypeRangeStart();
+    NullableFlowPtr<Expr> RecurseTypeRangeEnd();
+    std::optional<CallArgs> RecurseTypeTemplateArguments();
+    FlowPtr<Type> RecurseTypeSuffix(FlowPtr<Type> base);
+    FlowPtr<Type> RecurseFunctionType();
+    FlowPtr<Type> RecurseOpaqueType();
+    FlowPtr<Type> RecurseTypeByKeyword(lex::Keyword key);
+    FlowPtr<Type> RecurseTypeByOperator(lex::Operator op);
+    FlowPtr<Type> RecurseArrayOrVector();
+    FlowPtr<Type> RecurseSetType();
+    FlowPtr<Type> RecurseTupleType();
+    FlowPtr<Type> RecurseTypeByPunctuation(lex::Punctor punc);
+    FlowPtr<Type> RecurseTypeByName(string name);
 
-    std::optional<ExpressionList> recurse_variable_attributes();
-    NullableFlowPtr<Type> recurse_variable_type();
-    NullableFlowPtr<Expr> recurse_variable_value();
-    NullableFlowPtr<Stmt> recurse_variable_instance(VarDeclType decl_type);
+    std::optional<ExpressionList> RecurseVariableAttributes();
+    NullableFlowPtr<Type> RecurseVariableType();
+    NullableFlowPtr<Expr> RecurseVariableValue();
+    NullableFlowPtr<Stmt> RecurseVariableInstance(VarDeclType decl_type);
 
-    FlowPtr<Expr> recurse_while_cond();
-    FlowPtr<Stmt> recurse_while_body();
+    FlowPtr<Expr> RecurseWhileCond();
+    FlowPtr<Stmt> RecurseWhileBody();
 
     Parser(lex::IScanner &lexer, std::shared_ptr<Environment> env,
            std::shared_ptr<void> lifetime);
@@ -205,10 +205,10 @@ namespace ncc::parse {
 
     ~Parser() = default;
 
-    ASTRoot parse();
+    ASTRoot Parse();
 
     void SetFailBit() { m_failed = true; }
-    lex::IScanner &GetLexer() { return rd; }
+    lex::IScanner &GetLexer() { return m_rd; }
 
     template <typename Scanner = lex::Tokenizer>
     static boost::shared_ptr<Parser> FromString(

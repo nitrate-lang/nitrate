@@ -41,7 +41,7 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int ncc::seq::sys_random(lua_State* L) {
+int ncc::seq::SysRandom(lua_State* L) {
   int64_t min, max;
 
   int nargs = lua_gettop(L);

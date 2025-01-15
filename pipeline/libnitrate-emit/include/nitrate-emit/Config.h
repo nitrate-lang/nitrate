@@ -46,13 +46,13 @@
 extern "C" {
 #endif
 
-typedef struct qcode_conf_t qcode_conf_t;
+typedef struct QcodeConfT QcodeConfT;
 
 typedef enum qcode_key_t {
   QCK_UNKNOWN = 0,
   QCK_CRASHGUARD,
   QCV_FASTERROR,
-} qcode_key_t;
+} QcodeKeyT;
 
 typedef enum qcode_val_t {
   QCV_UNKNOWN = 0,
@@ -60,30 +60,30 @@ typedef enum qcode_val_t {
   QCV_FALSE,
   QCV_ON = QCV_TRUE,
   QCV_OFF = QCV_FALSE,
-} qcode_val_t;
+} QcodeValT;
 
 ///==========================================================================///
 
 #if defined(__cplusplus) && defined(__NITRATE_CODEGEN_IMPL__)
 }
-typedef struct qcode_setting_t {
-  qcode_key_t key;
-  qcode_val_t value;
+typedef struct QcodeSettingT {
+  qcode_key_t m_key;
+  qcode_val_t m_value;
 
 #if defined(__cplusplus) && defined(__NITRATE_CODEGEN_IMPL__)
-  constexpr qcode_setting_t(const std::initializer_list<int> &list)
-      : key(static_cast<qcode_key_t>(list.begin()[0])),
-        value(static_cast<qcode_val_t>(list.begin()[1])) {}
+  constexpr QcodeSettingT(const std::initializer_list<int> &list)
+      : m_key(static_cast<qcode_key_t>(list.begin()[0])),
+        m_value(static_cast<qcode_val_t>(list.begin()[1])) {}
 #endif
-} qcode_setting_t;
+} QcodeSettingT;
 
 extern "C" {
 #else
 
-typedef struct qcode_setting_t {
-  qcode_key_t key;
-  qcode_val_t value;
-} qcode_setting_t;
+typedef struct QcodeSettingT {
+  QcodeKeyT m_key;
+  QcodeValT m_value;
+} QcodeSettingT;
 
 #endif
 
@@ -112,7 +112,7 @@ typedef struct qcode_setting_t {
  *
  * @note This function is thread-safe.
  */
-qcode_conf_t *qcode_conf_new(bool use_defaults);
+QcodeConfT *QcodeConfNew(bool use_defaults);
 
 /**
  * @brief Free a configuration object.
@@ -127,7 +127,7 @@ qcode_conf_t *qcode_conf_new(bool use_defaults);
  *
  * @note This function is thread-safe.
  */
-void qcode_conf_free(qcode_conf_t *conf);
+void QcodeConfFree(QcodeConfT *conf);
 
 /**
  * @brief Set a configuration option.
@@ -145,7 +145,7 @@ void qcode_conf_free(qcode_conf_t *conf);
  *
  * @note This function is thread-safe.
  */
-bool qcode_conf_setopt(qcode_conf_t *conf, qcode_key_t key, qcode_val_t value);
+bool QcodeConfSetopt(QcodeConfT *conf, QcodeKeyT key, QcodeValT value);
 
 /**
  * @brief Get the value of a configuration option.
@@ -158,7 +158,7 @@ bool qcode_conf_setopt(qcode_conf_t *conf, qcode_key_t key, qcode_val_t value);
  *
  * @note This function is thread-safe.
  */
-bool qcode_conf_getopt(qcode_conf_t *conf, qcode_key_t key, qcode_val_t *value);
+bool QcodeConfGetopt(QcodeConfT *conf, QcodeKeyT key, QcodeValT *value);
 
 /**
  * @brief Get readonly access to the configuration options.
@@ -172,7 +172,7 @@ bool qcode_conf_getopt(qcode_conf_t *conf, qcode_key_t key, qcode_val_t *value);
  *
  * @note This function is thread-safe.
  */
-qcode_setting_t *qcode_conf_getopts(qcode_conf_t *conf, size_t *count);
+QcodeSettingT *QcodeConfGetopts(QcodeConfT *conf, size_t *count);
 
 /**
  * @brief Clear the configuration options.
@@ -184,7 +184,7 @@ qcode_setting_t *qcode_conf_getopts(qcode_conf_t *conf, size_t *count);
  *
  * @note This function is thread-safe.
  */
-void qcode_conf_clear(qcode_conf_t *conf);
+void QcodeConfClear(QcodeConfT *conf);
 
 #ifdef __cplusplus
 }

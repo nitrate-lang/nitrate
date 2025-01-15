@@ -133,16 +133,16 @@ void CambrianFormatter::wrap_stmt_body(FlowPtr<parse::Stmt> n,
                                        bool use_arrow_if_wrapped) {
   if (n->is(QAST_BLOCK)) {
     auto block = n.as<Block>();
-    bool single_stmt = block->get_items().size() == 1;
+    bool single_stmt = block->GetItems().size() == 1;
     bool few_children =
-        single_stmt && block->count_children() <= size_threshold;
+        single_stmt && block->RecursiveChildCount() <= size_threshold;
 
     if (single_stmt && few_children) {
       if (use_arrow_if_wrapped) {
         line << "=> ";
       }
 
-      block->get_items().front().Accept(*this);
+      block->GetItems().front().Accept(*this);
       return;
     }
   }
@@ -297,8 +297,8 @@ void CambrianFormatter::write_float_literal(std::string_view float_str) {
 }
 
 void CambrianFormatter::format_type_metadata(FlowPtr<parse::Type> n) {
-  auto range_start = n->get_range_begin();
-  auto range_end = n->get_range_end();
+  auto range_start = n->Getrange_begin();
+  auto range_end = n->Getrange_end();
 
   if (range_start || range_end) {
     line << ": [";
@@ -308,9 +308,9 @@ void CambrianFormatter::format_type_metadata(FlowPtr<parse::Type> n) {
     line << "]";
   }
 
-  if (n->get_width()) {
+  if (n->GetWidth()) {
     line << ": ";
-    n->get_width().value().Accept(*this);
+    n->GetWidth().value().Accept(*this);
   }
 }
 
@@ -326,27 +326,27 @@ void CambrianFormatter::visit(FlowPtr<Base> n) {
 void CambrianFormatter::visit(FlowPtr<ExprStmt> n) {
   print_line_comments(n);
 
-  n->get_expr().Accept(*this);
+  n->Getexpr().Accept(*this);
   line << ";";
 }
 
 void CambrianFormatter::visit(FlowPtr<StmtExpr> n) {
   print_multiline_comments(n);
 
-  n->get_stmt().Accept(*this);
+  n->Getstmt().Accept(*this);
 }
 
 void CambrianFormatter::visit(FlowPtr<TypeExpr> n) {
   print_multiline_comments(n);
 
   line << "type ";
-  n->get_type().Accept(*this);
+  n->Gettype().Accept(*this);
 }
 
 void CambrianFormatter::visit(FlowPtr<NamedTy> n) {
   print_multiline_comments(n);
 
-  line << n->get_name();
+  line << n->Getname();
   format_type_metadata(n);
 }
 
@@ -361,27 +361,25 @@ void CambrianFormatter::visit(FlowPtr<TemplType> n) {
   print_multiline_comments(n);
 
   bool is_optional =
-      n->get_template()->GetKind() == QAST_NAMED &&
-      n->get_template()->as<NamedTy>()->get_name() == "__builtin_result";
+      n->Gettemplate()->GetKind() == QAST_NAMED &&
+      n->Gettemplate()->as<NamedTy>()->GetName() == "__builtin_result";
 
   bool is_vector =
-      n->get_template()->GetKind() == QAST_NAMED &&
-      n->get_template()->as<NamedTy>()->get_name() == "__builtin_vec";
+      n->Gettemplate()->GetKind() == QAST_NAMED &&
+      n->Gettemplate()->as<NamedTy>()->GetName() == "__builtin_vec";
 
-  bool is_map =
-      n->get_template()->GetKind() == QAST_NAMED &&
-      n->get_template()->as<NamedTy>()->get_name() == "__builtin_umap";
+  bool is_map = n->Gettemplate()->GetKind() == QAST_NAMED &&
+                n->Gettemplate()->as<NamedTy>()->GetName() == "__builtin_umap";
 
-  bool is_set =
-      n->get_template()->GetKind() == QAST_NAMED &&
-      n->get_template()->as<NamedTy>()->get_name() == "__builtin_uset";
+  bool is_set = n->Gettemplate()->GetKind() == QAST_NAMED &&
+                n->Gettemplate()->as<NamedTy>()->GetName() == "__builtin_uset";
 
   bool is_comptime =
-      n->get_template()->GetKind() == QAST_NAMED &&
-      n->get_template()->as<NamedTy>()->get_name() == "__builtin_meta" &&
-      n->get_args().size() == 1 &&
-      n->get_args().front().second->is(QAST_UNEXPR) &&
-      n->get_args().front().second.template as<UnaryExpr>()->get_op() ==
+      n->Gettemplate()->GetKind() == QAST_NAMED &&
+      n->Gettemplate()->as<NamedTy>()->GetName() == "__builtin_meta" &&
+      n->Getargs().size() == 1 &&
+      n->Getargs().front().second->is(QAST_UNEXPR) &&
+      n->Getargs().front().second.template as<UnaryExpr>()->get_op() ==
           OpComptime;
 
   const auto print_without_type_keyword = [&](auto node) {
@@ -392,35 +390,35 @@ void CambrianFormatter::visit(FlowPtr<TemplType> n) {
     }
   };
 
-  size_t argc = n->get_args().size();
+  size_t argc = n->Getargs().size();
   if (is_optional && argc == 1) {
-    print_without_type_keyword(n->get_args().front().second);
+    print_without_type_keyword(n->Getargs().front().second);
     line << "?";
   } else if (is_vector && argc == 1) {
     line << "[";
-    print_without_type_keyword(n->get_args().front().second);
+    print_without_type_keyword(n->Getargs().front().second);
     line << "]";
   } else if (is_map && argc == 2) {
     line << "[";
-    print_without_type_keyword(n->get_args().front().second);
+    print_without_type_keyword(n->Getargs().front().second);
     line << "->";
-    print_without_type_keyword(n->get_args().back().second);
+    print_without_type_keyword(n->Getargs().back().second);
     line << "]";
   } else if (is_set && argc == 1) {
     line << "{";
-    print_without_type_keyword(n->get_args().front().second);
+    print_without_type_keyword(n->Getargs().front().second);
     line << "}";
   } else if (is_comptime) {
     line << "comptime(";
-    n->get_args().front().second.template as<UnaryExpr>()->get_rhs().Accept(
+    n->Getargs().front().second.template as<UnaryExpr>()->get_rhs().Accept(
         *this);
     line << ")";
   } else {
-    n->get_template().Accept(*this);
+    n->Gettemplate().Accept(*this);
 
     line << "<";
     iterate_except_last(
-        n->get_args().begin(), n->get_args().end(),
+        n->Getargs().begin(), n->Getargs().end(),
         [&](auto arg, size_t) {
           if (!std::isdigit(arg.first->at(0))) {
             line << arg.first << ": ";
@@ -551,7 +549,7 @@ void CambrianFormatter::visit(FlowPtr<PtrTy> n) {
   print_multiline_comments(n);
 
   line << "*";
-  n->get_item().Accept(*this);
+  n->Getitem().Accept(*this);
 
   format_type_metadata(n);
 }
@@ -559,7 +557,7 @@ void CambrianFormatter::visit(FlowPtr<PtrTy> n) {
 void CambrianFormatter::visit(FlowPtr<OpaqueTy> n) {
   print_multiline_comments(n);
 
-  line << "opaque(" << n->get_name() << ")";
+  line << "opaque(" << n->Getname() << ")";
   format_type_metadata(n);
 }
 
@@ -572,7 +570,7 @@ void CambrianFormatter::visit(FlowPtr<TupleTy> n) {
 
   line << "(";
 
-  auto items = n->get_items();
+  auto items = n->Getitems();
   auto line_size = line.length();
   auto break_at = items.size() <= wrap_threshold
                       ? wrap_threshold
@@ -599,9 +597,9 @@ void CambrianFormatter::visit(FlowPtr<ArrayTy> n) {
   print_multiline_comments(n);
 
   line << "[";
-  n->get_item().Accept(*this);
+  n->Getitem().Accept(*this);
   line << "; ";
-  n->get_size().Accept(*this);
+  n->Getsize().Accept(*this);
   line << "]";
 
   format_type_metadata(n);
@@ -611,7 +609,7 @@ void CambrianFormatter::visit(FlowPtr<RefTy> n) {
   print_multiline_comments(n);
 
   line << "&";
-  n->get_item().Accept(*this);
+  n->Getitem().Accept(*this);
 
   format_type_metadata(n);
 }
@@ -621,16 +619,16 @@ void CambrianFormatter::visit(FlowPtr<FuncTy> n) {
 
   line << "fn";
 
-  if (!n->get_attributes().empty()) {
+  if (!n->Getattributes().empty()) {
     line << "[";
     iterate_except_last(
-        n->get_attributes().begin(), n->get_attributes().end(),
+        n->Getattributes().begin(), n->Getattributes().end(),
         [&](auto attr, size_t) { attr.Accept(*this); },
         [&](let) { line << ", "; });
     line << "] ";
   }
 
-  switch (n->get_purity()) {
+  switch (n->Getpurity()) {
     case Purity::Impure: {
       break;
     }
@@ -658,7 +656,7 @@ void CambrianFormatter::visit(FlowPtr<FuncTy> n) {
 
   line << "(";
   iterate_except_last(
-      n->get_params().begin(), n->get_params().end(),
+      n->Getparams().begin(), n->Getparams().end(),
       [&](auto param, size_t) {
         line << std::get<0>(param);
 
@@ -674,7 +672,7 @@ void CambrianFormatter::visit(FlowPtr<FuncTy> n) {
       },
       [&](let) { line << ", "; });
   if (n->is_variadic()) {
-    if (!n->get_params().empty()) {
+    if (!n->Getparams().empty()) {
       line << ", ";
     }
     line << "...";
@@ -682,7 +680,7 @@ void CambrianFormatter::visit(FlowPtr<FuncTy> n) {
   line << ")";
 
   line << ": ";
-  n->get_return().Accept(*this);
+  n->Getreturn().Accept(*this);
 }
 
 void CambrianFormatter::visit(FlowPtr<UnaryExpr> n) {
@@ -692,26 +690,26 @@ void CambrianFormatter::visit(FlowPtr<UnaryExpr> n) {
 
   print_multiline_comments(n);
 
-  line << "(" << n->get_op();
-  if (WordOps.contains(n->get_op())) {
+  line << "(" << n->Getop();
+  if (WordOps.contains(n->Getop())) {
     line << " ";
   }
-  n->get_rhs().Accept(*this);
+  n->Getrhs().Accept(*this);
   line << ")";
 }
 
 void CambrianFormatter::visit(FlowPtr<BinExpr> n) {
   print_multiline_comments(n);
 
-  if (n->get_op() == OpDot) {
-    n->get_lhs().Accept(*this);
+  if (n->Getop() == OpDot) {
+    n->Getlhs().Accept(*this);
     line << ".";
-    n->get_rhs().Accept(*this);
+    n->Getrhs().Accept(*this);
   } else {
     line << "(";
-    n->get_lhs().Accept(*this);
-    line << " " << n->get_op() << " ";
-    n->get_rhs().Accept(*this);
+    n->Getlhs().Accept(*this);
+    line << " " << n->Getop() << " ";
+    n->Getrhs().Accept(*this);
     line << ")";
   }
 }
@@ -720,38 +718,38 @@ void CambrianFormatter::visit(FlowPtr<PostUnaryExpr> n) {
   print_multiline_comments(n);
 
   line << "(";
-  n->get_lhs().Accept(*this);
-  line << n->get_op() << ")";
+  n->Getlhs().Accept(*this);
+  line << n->Getop() << ")";
 }
 
 void CambrianFormatter::visit(FlowPtr<TernaryExpr> n) {
   print_multiline_comments(n);
 
   line << "(";
-  n->get_cond().Accept(*this);
+  n->Getcond().Accept(*this);
   line << " ? ";
-  n->get_lhs().Accept(*this);
+  n->Getlhs().Accept(*this);
   line << " : ";
-  n->get_rhs().Accept(*this);
+  n->Getrhs().Accept(*this);
   line << ")";
 }
 
 void CambrianFormatter::visit(FlowPtr<ConstInt> n) {
   print_multiline_comments(n);
 
-  write_float_literal(n->get_value());
+  write_float_literal(n->Getvalue());
 }
 
 void CambrianFormatter::visit(FlowPtr<ConstFloat> n) {
   print_multiline_comments(n);
 
-  write_float_literal(n->get_value());
+  write_float_literal(n->Getvalue());
 }
 
 void CambrianFormatter::visit(FlowPtr<ConstBool> n) {
   print_multiline_comments(n);
 
-  if (n->get_value()) {
+  if (n->Getvalue()) {
     line << "true";
   } else {
     line << "false";
@@ -761,13 +759,13 @@ void CambrianFormatter::visit(FlowPtr<ConstBool> n) {
 void CambrianFormatter::visit(FlowPtr<ConstString> n) {
   print_multiline_comments(n);
 
-  escape_string_literal(n->get_value());
+  escape_string_literal(n->Getvalue());
 }
 
 void CambrianFormatter::visit(FlowPtr<ConstChar> n) {
   print_multiline_comments(n);
 
-  line << escape_char_literal(n->get_value());
+  line << escape_char_literal(n->Getvalue());
 }
 
 void CambrianFormatter::visit(FlowPtr<ConstNull> n) {
@@ -787,19 +785,19 @@ void CambrianFormatter::visit(FlowPtr<Call> n) {
 
   auto wrap_threshold = 8ULL;
 
-  n->get_func().Accept(*this);
+  n->Getfunc().Accept(*this);
 
-  size_t argc = n->get_args().size();
+  size_t argc = n->Getargs().size();
 
   bool any_named =
-      std::any_of(n->get_args().begin(), n->get_args().end(), [](CallArg arg) {
+      std::any_of(n->Getargs().begin(), n->Getargs().end(), [](CallArg arg) {
         auto name = arg.first;
         return !std::isdigit(name->at(0));
       });
 
   bool any_lambdas = std::any_of(
-      n->get_args().begin(), n->get_args().end(),
-      [](auto arg) { return std::get<1>(arg)->is_stmt_expr(QAST_FUNCTION); });
+      n->Getargs().begin(), n->Getargs().end(),
+      [](auto arg) { return std::get<1>(arg)->IsStmtExpr(QAST_FUNCTION); });
 
   bool is_wrapping = argc >= wrap_threshold || any_named || any_lambdas;
 
@@ -808,7 +806,7 @@ void CambrianFormatter::visit(FlowPtr<Call> n) {
     size_t line_size = line.length();
     std::swap(indent, line_size);
 
-    for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
+    for (auto it = n->Getargs().begin(); it != n->Getargs().end(); ++it) {
       auto arg = *it;
       auto name = std::get<0>(arg);
       auto value = std::get<1>(arg);
@@ -819,11 +817,11 @@ void CambrianFormatter::visit(FlowPtr<Call> n) {
 
       value.Accept(*this);
 
-      if (it != n->get_args().end() - 1) {
+      if (it != n->Getargs().end() - 1) {
         line << ", ";
       }
 
-      if (it != n->get_args().end() - 1) {
+      if (it != n->Getargs().end() - 1) {
         line << std::endl << get_indent();
       }
     }
@@ -833,7 +831,7 @@ void CambrianFormatter::visit(FlowPtr<Call> n) {
   } else {
     line << "(";
     iterate_except_last(
-        n->get_args().begin(), n->get_args().end(),
+        n->Getargs().begin(), n->Getargs().end(),
         [&](auto arg, size_t) {
           auto name = std::get<0>(arg);
           auto value = std::get<1>(arg);
@@ -852,11 +850,11 @@ void CambrianFormatter::visit(FlowPtr<Call> n) {
 void CambrianFormatter::visit(FlowPtr<TemplCall> n) {
   print_multiline_comments(n);
 
-  n->get_func().Accept(*this);
+  n->Getfunc().Accept(*this);
 
   line << "{";
   iterate_except_last(
-      n->get_template_args().begin(), n->get_template_args().end(),
+      n->Gettemplate_args().begin(), n->Gettemplate_args().end(),
       [&](auto arg, size_t) {
         auto name = std::get<0>(arg);
         auto value = std::get<1>(arg);
@@ -877,7 +875,7 @@ void CambrianFormatter::visit(FlowPtr<TemplCall> n) {
 
   line << "(";
   iterate_except_last(
-      n->get_args().begin(), n->get_args().end(),
+      n->Getargs().begin(), n->Getargs().end(),
       [&](auto arg, size_t) {
         auto name = std::get<0>(arg);
         auto value = std::get<1>(arg);
@@ -897,20 +895,20 @@ void CambrianFormatter::visit(FlowPtr<List> n) {
 
   auto wrap_threshold = 8ULL;
 
-  if (n->get_items().empty()) {
+  if (n->Getitems().empty()) {
     line << "[]";
     return;
   }
 
-  auto argc = n->get_items().size();
+  auto argc = n->Getitems().size();
   bool is_compressing =
       argc >= wrap_threshold &&
-      std::all_of(n->get_items().begin(), n->get_items().end(),
-                  [&](auto x) { return x->isSame(n->get_items().front()); });
+      std::all_of(n->Getitems().begin(), n->Getitems().end(),
+                  [&](auto x) { return x->IsEq(n->Getitems().front()); });
 
   if (is_compressing) {
     line << "[";
-    n->get_items().front().Accept(*this);
+    n->Getitems().front().Accept(*this);
     line << "; " << argc << "]";
   } else {
     static const std::unordered_set<npar_ty_t> extra_seperation = {
@@ -919,9 +917,9 @@ void CambrianFormatter::visit(FlowPtr<List> n) {
     };
 
     bool special_case =
-        std::any_of(n->get_items().begin(), n->get_items().end(), [&](auto x) {
+        std::any_of(n->Getitems().begin(), n->Getitems().end(), [&](auto x) {
           return extra_seperation.contains(x->GetKind()) ||
-                 x->is_stmt_expr(QAST_FUNCTION);
+                 x->IsStmtExpr(QAST_FUNCTION);
         });
 
     size_t break_at{};
@@ -943,12 +941,12 @@ void CambrianFormatter::visit(FlowPtr<List> n) {
         size_t the_indent = indent + tabSize;
         std::swap(indent, the_indent);
 
-        for (size_t i = 0; i < n->get_items().size(); i++) {
+        for (size_t i = 0; i < n->Getitems().size(); i++) {
           line << get_indent();
-          auto item = n->get_items()[i];
+          auto item = n->Getitems()[i];
           item.Accept(*this);
 
-          bool is_last = i == n->get_items().size() - 1;
+          bool is_last = i == n->Getitems().size() - 1;
           if (!is_last) {
             line << ",";
           }
@@ -964,18 +962,18 @@ void CambrianFormatter::visit(FlowPtr<List> n) {
       line << "[";
 
       bool is_assoc_map =
-          std::all_of(n->get_items().begin(), n->get_items().end(),
+          std::all_of(n->Getitems().begin(), n->Getitems().end(),
                       [](auto x) { return x->is(QAST_ASSOC); });
 
       { /* Write list items */
         size_t the_indent = is_assoc_map ? indent + tabSize : line.length();
         std::swap(indent, the_indent);
 
-        for (size_t i = 0; i < n->get_items().size(); i++) {
-          auto item = n->get_items()[i];
+        for (size_t i = 0; i < n->Getitems().size(); i++) {
+          auto item = n->Getitems()[i];
           item.Accept(*this);
 
-          bool is_last = i == n->get_items().size() - 1;
+          bool is_last = i == n->Getitems().size() - 1;
           if (!is_last) {
             line << ",";
           }
@@ -1003,11 +1001,11 @@ void CambrianFormatter::visit(FlowPtr<Assoc> node) {
   const std::function<void(FlowPtr<Assoc>, bool)> format =
       [&](FlowPtr<Assoc> n, bool use_braces) {
         bool is_value_map = false;
-        if (n->get_value()->is(QAST_LIST)) {
-          auto list = n->get_value()->as<List>();
+        if (n->Getvalue()->is(QAST_LIST)) {
+          auto list = n->Getvalue()->as<List>();
           is_value_map =
-              list->get_items().empty() ||
-              std::all_of(list->get_items().begin(), list->get_items().end(),
+              list->GetItems().empty() ||
+              std::all_of(list->GetItems().begin(), list->GetItems().end(),
                           [](auto x) { return x->is(QAST_ASSOC); });
         }
 
@@ -1017,25 +1015,25 @@ void CambrianFormatter::visit(FlowPtr<Assoc> node) {
           line << get_indent();
         }
 
-        n->get_key().Accept(*this);
+        n->Getkey().Accept(*this);
         line << ": ";
 
         if (is_value_map) {
-          auto list = n->get_value()->as<List>();
+          auto list = n->Getvalue()->as<List>();
 
-          if (list->get_items().empty()) {
+          if (list->GetItems().empty()) {
             line << "{}";
           } else {
             line << "{" << std::endl;
             indent += tabSize;
 
-            for (auto it = list->get_items().begin();
-                 it != list->get_items().end(); ++it) {
+            for (auto it = list->GetItems().begin();
+                 it != list->GetItems().end(); ++it) {
               line << get_indent();
 
               format(it->as<Assoc>(), false);
 
-              if (it != list->get_items().end() - 1) {
+              if (it != list->GetItems().end() - 1) {
                 line << ",";
               }
 
@@ -1046,7 +1044,7 @@ void CambrianFormatter::visit(FlowPtr<Assoc> node) {
             line << get_indent() << "}";
           }
         } else {
-          n->get_value().Accept(*this);
+          n->Getvalue().Accept(*this);
         }
 
         if (use_braces) {
@@ -1061,23 +1059,23 @@ void CambrianFormatter::visit(FlowPtr<Assoc> node) {
 void CambrianFormatter::visit(FlowPtr<Index> n) {
   print_multiline_comments(n);
 
-  n->get_base().Accept(*this);
+  n->Getbase().Accept(*this);
   line << "[";
-  n->get_index().Accept(*this);
+  n->Getindex().Accept(*this);
   line << "]";
 }
 
 void CambrianFormatter::visit(FlowPtr<Slice> n) {
   print_multiline_comments(n);
 
-  n->get_base().Accept(*this);
+  n->Getbase().Accept(*this);
   line << "[";
-  if (n->get_start()) {
-    n->get_start().Accept(*this);
+  if (n->Getstart()) {
+    n->Getstart().Accept(*this);
   }
   line << ":";
-  if (n->get_end()) {
-    n->get_end().Accept(*this);
+  if (n->Getend()) {
+    n->Getend().Accept(*this);
   }
   line << "]";
 }
@@ -1086,7 +1084,7 @@ void CambrianFormatter::visit(FlowPtr<FString> n) {
   print_multiline_comments(n);
 
   line << "f\"";
-  for (auto part : n->get_items()) {
+  for (auto part : n->Getitems()) {
     if (std::holds_alternative<ncc::string>(part)) {
       escape_string_literal(*std::get<ncc::string>(part), false);
     } else {
@@ -1101,7 +1099,7 @@ void CambrianFormatter::visit(FlowPtr<FString> n) {
 void CambrianFormatter::visit(FlowPtr<Ident> n) {
   print_multiline_comments(n);
 
-  line << n->get_name();
+  line << n->Getname();
 }
 
 void CambrianFormatter::visit(FlowPtr<SeqPoint> n) {
@@ -1109,7 +1107,7 @@ void CambrianFormatter::visit(FlowPtr<SeqPoint> n) {
 
   line << "(";
   iterate_except_last(
-      n->get_items().begin(), n->get_items().end(),
+      n->Getitems().begin(), n->Getitems().end(),
       [&](auto item, size_t) { item.Accept(*this); },
       [&](let) { line << ", "; });
   line << ")";
@@ -1121,7 +1119,7 @@ void CambrianFormatter::visit(FlowPtr<Block> n) {
   bool isRootBlock = !did_root;
   did_root = true;
 
-  switch (n->get_safety()) {
+  switch (n->Getsafety()) {
     case SafetyMode::Safe: {
       line << "safe ";
       break;
@@ -1145,7 +1143,7 @@ void CambrianFormatter::visit(FlowPtr<Block> n) {
       QAST_FOR,        QAST_FOREACH, QAST_SWITCH,
   };
 
-  if (!isRootBlock && n->get_items().empty()) {
+  if (!isRootBlock && n->Getitems().empty()) {
     line << "{}";
     return;
   }
@@ -1155,7 +1153,7 @@ void CambrianFormatter::visit(FlowPtr<Block> n) {
     indent += tabSize;
   }
 
-  auto items = n->get_items();
+  auto items = n->Getitems();
 
   for (auto it = items.begin(); it != items.end(); ++it) {
     auto item = *it;
@@ -1188,7 +1186,7 @@ void CambrianFormatter::visit(FlowPtr<Block> n) {
 void CambrianFormatter::visit(FlowPtr<VarDecl> n) {
   print_line_comments(n);
 
-  switch (n->get_decl_type()) {
+  switch (n->Getdecl_type()) {
     case VarDeclType::Let: {
       line << "let ";
       break;
@@ -1205,25 +1203,25 @@ void CambrianFormatter::visit(FlowPtr<VarDecl> n) {
     }
   }
 
-  if (!n->get_attributes().empty()) {
+  if (!n->Getattributes().empty()) {
     line << "[";
     iterate_except_last(
-        n->get_attributes().begin(), n->get_attributes().end(),
+        n->Getattributes().begin(), n->Getattributes().end(),
         [&](auto attr, size_t) { attr.Accept(*this); },
         [&](let) { line << ", "; });
     line << "] ";
   }
 
-  line << n->get_name();
+  line << n->Getname();
 
-  if (n->get_type()) {
+  if (n->Gettype()) {
     line << ": ";
-    n->get_type().value().Accept(*this);
+    n->Gettype().value().Accept(*this);
   }
 
-  if (n->get_value()) {
+  if (n->Getvalue()) {
     line << " = ";
-    n->get_value().value().Accept(*this);
+    n->Getvalue().value().Accept(*this);
   }
 
   line << ";";
@@ -1243,13 +1241,13 @@ void CambrianFormatter::visit(FlowPtr<IfStmt> n) {
   print_line_comments(n);
 
   line << "if ";
-  n->get_cond().Accept(*this);
+  n->Getcond().Accept(*this);
   line << " ";
-  n->get_then().Accept(*this);
+  n->Getthen().Accept(*this);
 
-  if (n->get_else()) {
+  if (n->Getelse()) {
     line << " else ";
-    n->get_else().value().Accept(*this);
+    n->Getelse().value().Accept(*this);
   }
 
   line << ";";
@@ -1259,9 +1257,9 @@ void CambrianFormatter::visit(FlowPtr<WhileStmt> n) {
   print_line_comments(n);
 
   line << "while ";
-  n->get_cond().Accept(*this);
+  n->Getcond().Accept(*this);
   line << " ";
-  n->get_body().Accept(*this);
+  n->Getbody().Accept(*this);
 
   line << ";";
 }
@@ -1271,28 +1269,28 @@ void CambrianFormatter::visit(FlowPtr<ForStmt> n) {
 
   line << "for (";
 
-  if (n->get_init().has_value()) {
-    n->get_init().value().Accept(*this);
-    if (!n->get_init().value()->is_stmt()) {
+  if (n->Getinit().has_value()) {
+    n->Getinit().value().Accept(*this);
+    if (!n->Getinit().value()->IsStmt()) {
       line << ";";
     }
   } else {
     line << ";";
   }
 
-  if (n->get_cond().has_value()) {
+  if (n->Getcond().has_value()) {
     line << " ";
-    n->get_cond().value().Accept(*this);
+    n->Getcond().value().Accept(*this);
   }
   line << ";";
 
-  if (n->get_step().has_value()) {
+  if (n->Getstep().has_value()) {
     line << " ";
-    n->get_step().value().Accept(*this);
+    n->Getstep().value().Accept(*this);
   }
 
   line << ") ";
-  n->get_body().Accept(*this);
+  n->Getbody().Accept(*this);
 
   line << ";";
 }
@@ -1301,17 +1299,17 @@ void CambrianFormatter::visit(FlowPtr<ForeachStmt> n) {
   print_line_comments(n);
 
   line << "foreach (";
-  if (n->get_idx_ident()->empty()) {
-    line << n->get_val_ident();
+  if (n->Getidx_ident()->empty()) {
+    line << n->Getval_ident();
   } else {
-    line << n->get_idx_ident() << ", " << n->get_val_ident();
+    line << n->Getidx_ident() << ", " << n->Getval_ident();
   }
 
   line << " in ";
-  n->get_expr().Accept(*this);
+  n->Getexpr().Accept(*this);
   line << ") ";
 
-  n->get_body().Accept(*this);
+  n->Getbody().Accept(*this);
 
   line << ";";
 }
@@ -1331,9 +1329,9 @@ void CambrianFormatter::visit(FlowPtr<ContinueStmt> n) {
 void CambrianFormatter::visit(FlowPtr<ReturnStmt> n) {
   print_line_comments(n);
 
-  if (n->get_value().has_value()) {
+  if (n->Getvalue().has_value()) {
     line << "ret ";
-    n->get_value().value().Accept(*this);
+    n->Getvalue().value().Accept(*this);
     line << ";";
   } else {
     line << "ret;";
@@ -1344,38 +1342,38 @@ void CambrianFormatter::visit(FlowPtr<ReturnIfStmt> n) {
   print_line_comments(n);
 
   line << "retif ";
-  n->get_cond().Accept(*this);
+  n->Getcond().Accept(*this);
   line << ", ";
-  n->get_value().Accept(*this);
+  n->Getvalue().Accept(*this);
   line << ";";
 }
 
 void CambrianFormatter::visit(FlowPtr<CaseStmt> n) {
   print_line_comments(n);
 
-  n->get_cond().Accept(*this);
+  n->Getcond().Accept(*this);
   line << " => ";
-  wrap_stmt_body(n->get_body(), 10, false);
+  wrap_stmt_body(n->Getbody(), 10, false);
 }
 
 void CambrianFormatter::visit(FlowPtr<SwitchStmt> n) {
   print_line_comments(n);
 
   line << "switch ";
-  n->get_cond().Accept(*this);
+  n->Getcond().Accept(*this);
   line << " {" << std::endl;
   indent += tabSize;
 
-  for (auto c : n->get_cases()) {
+  for (auto c : n->Getcases()) {
     line << get_indent();
     c.Accept(*this);
     line << std::endl;
   }
 
-  if (n->get_default()) {
+  if (n->Getdefault()) {
     line << get_indent();
     line << "_ => ";
-    wrap_stmt_body(n->get_default().value(), 10, false);
+    wrap_stmt_body(n->Getdefault().value(), 10, false);
     line << std::endl;
   }
 
@@ -1386,8 +1384,8 @@ void CambrianFormatter::visit(FlowPtr<SwitchStmt> n) {
 void CambrianFormatter::visit(FlowPtr<TypedefStmt> n) {
   print_line_comments(n);
 
-  line << "type " << n->get_name() << " = ";
-  n->get_type().Accept(*this);
+  line << "type " << n->Getname() << " = ";
+  n->Gettype().Accept(*this);
   line << ";";
 }
 
@@ -1396,16 +1394,16 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
 
   line << "fn";
 
-  if (!n->get_attributes().empty()) {
+  if (!n->Getattributes().empty()) {
     line << " [";
     iterate_except_last(
-        n->get_attributes().begin(), n->get_attributes().end(),
+        n->Getattributes().begin(), n->Getattributes().end(),
         [&](auto attr, size_t) { attr.Accept(*this); },
         [&](let) { line << ", "; });
     line << "]";
   }
 
-  switch (n->get_purity()) {
+  switch (n->Getpurity()) {
     case Purity::Impure: {
       break;
     }
@@ -1431,10 +1429,10 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
     }
   }
 
-  if (!n->get_captures().empty()) {
+  if (!n->Getcaptures().empty()) {
     line << " [";
     iterate_except_last(
-        n->get_captures().begin(), n->get_captures().end(),
+        n->Getcaptures().begin(), n->Getcaptures().end(),
         [&](auto cap, size_t) {
           if (cap.second) {
             line << "&";
@@ -1445,13 +1443,13 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
     line << "]";
   }
 
-  line << " " << n->get_name();
+  line << " " << n->Getname();
 
-  if (n->get_template_params()) {
+  if (n->Gettemplate_params()) {
     line << "<";
     iterate_except_last(
-        n->get_template_params().value().begin(),
-        n->get_template_params().value().end(),
+        n->Gettemplate_params().value().begin(),
+        n->Gettemplate_params().value().end(),
         [&](auto param, size_t) {
           line << std::get<0>(param);
 
@@ -1473,7 +1471,7 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
 
   line << "(";
   iterate_except_last(
-      n->get_params().begin(), n->get_params().end(),
+      n->Getparams().begin(), n->Getparams().end(),
       [&](auto param, size_t) {
         line << std::get<0>(param);
 
@@ -1492,7 +1490,7 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
       [&](let) { line << ", "; });
 
   if (n->is_variadic()) {
-    if (!n->get_params().empty()) {
+    if (!n->Getparams().empty()) {
       line << ", ";
     }
     line << "...";
@@ -1500,7 +1498,7 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
   line << ")";
 
   { /* Return type */
-    auto return_type = n->get_return();
+    auto return_type = n->Getreturn();
 
     if (!return_type->is(QAST_INFER)) {
       line << ": ";
@@ -1512,14 +1510,14 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
     line << ";";
   } else {
     line << " ";
-    wrap_stmt_body(n->get_body().value(), 10, true);
+    wrap_stmt_body(n->Getbody().value(), 10, true);
   }
 }
 
 void CambrianFormatter::visit(FlowPtr<StructDef> n) {
   print_line_comments(n);
 
-  switch (n->get_composite_type()) {
+  switch (n->Getcomposite_type()) {
     case CompositeType::Region: {
       line << "region ";
       break;
@@ -1546,21 +1544,21 @@ void CambrianFormatter::visit(FlowPtr<StructDef> n) {
     }
   }
 
-  if (!n->get_attributes().empty()) {
+  if (!n->Getattributes().empty()) {
     line << "[";
     iterate_except_last(
-        n->get_attributes().begin(), n->get_attributes().end(),
+        n->Getattributes().begin(), n->Getattributes().end(),
         [&](auto attr, size_t) { attr.Accept(*this); },
         [&](let) { line << ", "; });
     line << "] ";
   }
 
-  line << n->get_name();
-  if (n->get_template_params().has_value()) {
+  line << n->Getname();
+  if (n->Gettemplate_params().has_value()) {
     line << "<";
     iterate_except_last(
-        n->get_template_params().value().begin(),
-        n->get_template_params().value().end(),
+        n->Gettemplate_params().value().begin(),
+        n->Gettemplate_params().value().end(),
         [&](auto param, size_t) {
           line << std::get<0>(param);
           if (auto type = std::get<1>(param); type->GetKind() != QAST_INFER) {
@@ -1576,15 +1574,15 @@ void CambrianFormatter::visit(FlowPtr<StructDef> n) {
     line << ">";
   }
 
-  if (!n->get_names().empty()) {
+  if (!n->Getnames().empty()) {
     line << ": ";
     iterate_except_last(
-        n->get_names().begin(), n->get_names().end(),
+        n->Getnames().begin(), n->Getnames().end(),
         [&](auto name, size_t) { line << name; }, [&](let) { line << ", "; });
   }
 
-  bool is_empty = n->get_fields().empty() && n->get_methods().empty() &&
-                  n->get_static_methods().empty();
+  bool is_empty = n->Getfields().empty() && n->Getmethods().empty() &&
+                  n->Getstatic_methods().empty();
 
   if (is_empty) {
     line << " {}";
@@ -1594,30 +1592,29 @@ void CambrianFormatter::visit(FlowPtr<StructDef> n) {
   line << " {" << std::endl;
   indent += tabSize;
 
-  auto fields_count = n->get_fields();
-  auto methods_count = n->get_methods();
-  auto static_methods_count = n->get_static_methods();
+  auto fields_count = n->Getfields();
+  auto methods_count = n->Getmethods();
+  auto static_methods_count = n->Getstatic_methods();
 
-  std::for_each(n->get_fields().begin(), n->get_fields().end(),
-                [&](auto field) {
-                  line << get_indent() << field.get_vis() << " ";
+  std::for_each(n->Getfields().begin(), n->Getfields().end(), [&](auto field) {
+    line << get_indent() << field.get_vis() << " ";
 
-                  line << field.get_name() << ": ";
-                  field.get_type().Accept(*this);
+    line << field.GetName() << ": ";
+    field.get_type().Accept(*this);
 
-                  if (field.get_value().has_value()) {
-                    line << " = ";
-                    field.get_value().value().Accept(*this);
-                  }
+    if (field.get_value().has_value()) {
+      line << " = ";
+      field.get_value().value().Accept(*this);
+    }
 
-                  line << "," << std::endl;
-                });
+    line << "," << std::endl;
+  });
 
   if (!fields_count.empty() && !methods_count.empty()) {
     line << std::endl;
   }
 
-  std::for_each(n->get_methods().begin(), n->get_methods().end(),
+  std::for_each(n->Getmethods().begin(), n->Getmethods().end(),
                 [&](auto method) {
                   line << get_indent() << method.vis << " ";
                   method.func.Accept(*this);
@@ -1629,7 +1626,7 @@ void CambrianFormatter::visit(FlowPtr<StructDef> n) {
     line << std::endl;
   }
 
-  std::for_each(n->get_static_methods().begin(), n->get_static_methods().end(),
+  std::for_each(n->Getstatic_methods().begin(), n->Getstatic_methods().end(),
                 [&](auto method) {
                   line << get_indent() << method.vis << " static ";
                   method.func.Accept(*this);
@@ -1643,13 +1640,13 @@ void CambrianFormatter::visit(FlowPtr<StructDef> n) {
 void CambrianFormatter::visit(FlowPtr<EnumDef> n) {
   print_line_comments(n);
 
-  line << "enum " << n->get_name();
-  if (n->get_type()) {
+  line << "enum " << n->Getname();
+  if (n->Gettype()) {
     line << ": ";
-    n->get_type().value().Accept(*this);
+    n->Gettype().value().Accept(*this);
   }
 
-  if (n->get_items().empty()) {
+  if (n->Getitems().empty()) {
     line << ";";
     return;
   }
@@ -1657,7 +1654,7 @@ void CambrianFormatter::visit(FlowPtr<EnumDef> n) {
   line << " {" << std::endl;
   indent += tabSize;
 
-  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+  for (auto it = n->Getitems().begin(); it != n->Getitems().end(); ++it) {
     line << get_indent();
     line << it->first;
     if (it->second) {
@@ -1676,36 +1673,36 @@ void CambrianFormatter::visit(FlowPtr<ScopeStmt> n) {
 
   line << "scope ";
 
-  if (!n->get_name()->empty()) {
-    line << n->get_name();
+  if (!n->Getname()->empty()) {
+    line << n->Getname();
   }
 
-  if (!n->get_deps().empty()) {
+  if (!n->Getdeps().empty()) {
     line << ": [";
     iterate_except_last(
-        n->get_deps().begin(), n->get_deps().end(),
+        n->Getdeps().begin(), n->Getdeps().end(),
         [&](auto dep, size_t) { line << dep; }, [&](let) { line << ", "; });
     line << "]";
   }
 
   line << " ";
-  wrap_stmt_body(n->get_body(), 50, true);
+  wrap_stmt_body(n->Getbody(), 50, true);
 }
 
 void CambrianFormatter::visit(FlowPtr<ExportStmt> n) {
   print_line_comments(n);
 
-  line << n->get_vis();
+  line << n->Getvis();
 
-  if (!n->get_abi_name()->empty()) {
+  if (!n->Getabi_name()->empty()) {
     line << " ";
-    escape_string_literal(n->get_abi_name());
+    escape_string_literal(n->Getabi_name());
   }
 
-  if (!n->get_attrs().empty()) {
+  if (!n->Getattrs().empty()) {
     line << " [";
     iterate_except_last(
-        n->get_attrs().begin(), n->get_attrs().end(),
+        n->Getattrs().begin(), n->Getattrs().end(),
         [&](auto attr, size_t) { attr.Accept(*this); },
         [&](let) { line << ", "; });
     line << "]";
@@ -1713,5 +1710,5 @@ void CambrianFormatter::visit(FlowPtr<ExportStmt> n) {
 
   line << " ";
 
-  wrap_stmt_body(n->get_body(), -1, false);
+  wrap_stmt_body(n->Getbody(), -1, false);
 }

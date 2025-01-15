@@ -553,7 +553,7 @@
 //   }
 
 //   if (auto type = E.value()->getType()) {
-//     if (!type.value()->isSame(_for)) {
+//     if (!type.value()->IsEq(_for)) {
 //       E = create<BinExpr>(E.value(), _for->asExpr(), Op::CastAs);
 //     }
 //   }

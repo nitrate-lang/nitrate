@@ -42,7 +42,7 @@
 #include <stack>
 
 namespace ncc::ir {
-  class NCC_EXPORT IR_Reader {
+  class NCC_EXPORT IrReader {
     enum class State {
       ObjStart,
       ObjEnd,
@@ -51,24 +51,24 @@ namespace ncc::ir {
     std::stack<State> m_state;
     std::stack<Expr*> m_parse;
 
-    void handle_state();
+    void HandleState();
 
   protected:
-    void str(std::string_view str);
-    void uint(uint64_t val);
-    void dbl(double val);
-    void boolean(bool val);
-    void null();
-    void begin_obj();
-    void end_obj();
-    void begin_arr(size_t max_size);
-    void end_arr();
+    void Str(std::string_view str);
+    void Uint(uint64_t val);
+    void Dbl(double val);
+    void Boolean(bool val);
+    void Null();
+    void BeginObj();
+    void EndObj();
+    void BeginArr(size_t max_size);
+    void EndArr();
 
   public:
-    IR_Reader() { m_state.push(State::ObjStart); }
-    virtual ~IR_Reader() = default;
+    IrReader() { m_state.push(State::ObjStart); }
+    virtual ~IrReader() = default;
 
-    std::optional<Expr*> get() {
+    std::optional<Expr*> Get() {
       if (m_parse.empty() || m_parse.top() == nullptr) {
         return std::nullopt;
       }
@@ -77,20 +77,20 @@ namespace ncc::ir {
     }
   };
 
-  class NCC_EXPORT IR_JsonReader final : public IR_Reader {
-    void parse_stream(std::istream& is);
+  class NCC_EXPORT IrJsonReader final : public IrReader {
+    void ParseStream(std::istream& is);
 
   public:
-    IR_JsonReader(std::istream& is) { parse_stream(is); }
-    virtual ~IR_JsonReader() = default;
+    IrJsonReader(std::istream& is) { ParseStream(is); }
+    virtual ~IrJsonReader() = default;
   };
 
-  class NCC_EXPORT IR_MsgPackReader final : public IR_Reader {
-    void parse_stream(std::istream& is);
+  class NCC_EXPORT IrMsgPackReader final : public IrReader {
+    void ParseStream(std::istream& is);
 
   public:
-    IR_MsgPackReader(std::istream& is) { parse_stream(is); }
-    virtual ~IR_MsgPackReader() = default;
+    IrMsgPackReader(std::istream& is) { ParseStream(is); }
+    virtual ~IrMsgPackReader() = default;
   };
 }  // namespace ncc::ir
 

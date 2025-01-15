@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::optional<ExpressionList> Parser::recurse_variable_attributes() {
+std::optional<ExpressionList> Parser::RecurseVariableAttributes() {
   ExpressionList attributes;
 
   if (!next_if(PuncLBrk)) {
@@ -55,7 +55,7 @@ std::optional<ExpressionList> Parser::recurse_variable_attributes() {
       return attributes;
     }
 
-    auto attribute = recurse_expr({
+    auto attribute = RecurseExpr({
         Token(Punc, PuncComa),
         Token(Punc, PuncRBrk),
     });
@@ -68,17 +68,17 @@ std::optional<ExpressionList> Parser::recurse_variable_attributes() {
   return std::nullopt;
 }
 
-NullableFlowPtr<parse::Type> Parser::recurse_variable_type() {
+NullableFlowPtr<parse::Type> Parser::RecurseVariableType() {
   if (next_if(PuncColn)) {
-    return recurse_type();
+    return RecurseType();
   } else {
     return std::nullopt;
   }
 }
 
-NullableFlowPtr<Expr> Parser::recurse_variable_value() {
+NullableFlowPtr<Expr> Parser::RecurseVariableValue() {
   if (next_if(OpSet)) {
-    return recurse_expr({
+    return RecurseExpr({
         Token(Punc, PuncComa),
         Token(Punc, PuncSemi),
     });
@@ -87,12 +87,12 @@ NullableFlowPtr<Expr> Parser::recurse_variable_value() {
   }
 }
 
-NullableFlowPtr<Stmt> Parser::recurse_variable_instance(VarDeclType decl_type) {
-  if (auto symbol_attributes_opt = recurse_variable_attributes()) {
+NullableFlowPtr<Stmt> Parser::RecurseVariableInstance(VarDeclType decl_type) {
+  if (auto symbol_attributes_opt = RecurseVariableAttributes()) {
     if (auto tok = next_if(Name)) {
       auto variable_name = tok->as_string();
-      auto variable_type = recurse_variable_type();
-      auto variable_initial = recurse_variable_value();
+      auto variable_type = RecurseVariableType();
+      auto variable_initial = RecurseVariableValue();
 
       return make<VarDecl>(variable_name, variable_type, variable_initial,
                            decl_type, symbol_attributes_opt.value())();
@@ -102,11 +102,11 @@ NullableFlowPtr<Stmt> Parser::recurse_variable_instance(VarDeclType decl_type) {
     }
   } else {
     Log << SyntaxError << current() << "Malformed variable attributes";
-    return mock_stmt(QAST_VAR);
+    return MockStmt(QAST_VAR);
   }
 }
 
-std::vector<FlowPtr<Stmt>> Parser::recurse_variable(VarDeclType decl_type) {
+std::vector<FlowPtr<Stmt>> Parser::RecurseVariable(VarDeclType decl_type) {
   std::vector<FlowPtr<Stmt>> variables;
 
   while (true) {
@@ -120,7 +120,7 @@ std::vector<FlowPtr<Stmt>> Parser::recurse_variable(VarDeclType decl_type) {
       return variables;
     }
 
-    if (auto variable_opt = recurse_variable_instance(decl_type)) {
+    if (auto variable_opt = RecurseVariableInstance(decl_type)) {
       variables.push_back(variable_opt.value());
     } else {
       Log << SyntaxError << current() << "Failed to parse variable declaration";
@@ -130,5 +130,5 @@ std::vector<FlowPtr<Stmt>> Parser::recurse_variable(VarDeclType decl_type) {
     next_if(PuncComa);
   }
 
-  return {mock_stmt(QAST_VAR)};
+  return {MockStmt(QAST_VAR)};
 }

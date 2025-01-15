@@ -21,7 +21,7 @@ TEST(AST, FromJson) {
   auto decoded = AST_JsonReader::FromString(serialized.str());
   ASSERT_TRUE(decoded.has_value());
 
-  EXPECT_TRUE(original.get()->isSame(decoded.value()));
+  EXPECT_TRUE(original.get()->IsEq(decoded.value()));
 }
 
 TEST(AST, FromMsgPack) {
@@ -36,5 +36,5 @@ TEST(AST, FromMsgPack) {
   auto decoded = AST_MsgPackReader::FromString(serialized.str());
   ASSERT_TRUE(decoded.has_value());
 
-  EXPECT_TRUE(original.get()->isSame(decoded.value()));
+  EXPECT_TRUE(original.get()->IsEq(decoded.value()));
 }

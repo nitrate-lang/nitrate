@@ -48,14 +48,14 @@ namespace ncc::parse {
 namespace ncc::ir {
   typedef enum nr_serial_t {
     IR_SERIAL_CODE = 0, /* Human readable ASCII text */
-  } nr_serial_t;
+  } NrSerialT;
 
-  void nr_write(IRModule *mod, NullableFlowPtr<Expr> _node, std::ostream &out);
+  void NrWrite(IRModule *mod, NullableFlowPtr<Expr> node, std::ostream &out);
 
-  std::unique_ptr<IRModule> nr_lower(ncc::parse::Base *base, const char *name,
+  std::unique_ptr<IRModule> NrLower(ncc::parse::Base *base, const char *name,
                                      bool diagnostics);
 
-  typedef void (*nr_node_cb)(Expr *cur, uintptr_t userdata);
+  typedef void (*NrNodeCb)(Expr *cur, uintptr_t userdata);
 
   typedef enum {
     IR_LEVEL_DEBUG = 0,
@@ -64,7 +64,7 @@ namespace ncc::ir {
     IR_LEVEL_ERROR = 3,
     IR_LEVEL_MAX = 5,
     IR_LEVEL_DEFAULT = IR_LEVEL_WARN,
-  } nr_level_t;
+  } NrLevelT;
 }  // namespace ncc::ir
 
 #endif  // __NITRATE_IR_IR_H__

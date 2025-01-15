@@ -46,7 +46,7 @@
 #include <vector>
 
 namespace ncc::parse {
-  extern thread_local std::unique_ptr<ncc::IMemory> npar_allocator;
+  extern thread_local std::unique_ptr<ncc::IMemory> NparAllocator;
 
   template <class T>
   struct Arena {
@@ -57,11 +57,11 @@ namespace ncc::parse {
     template <class U>
     constexpr Arena(const Arena<U> &) {}
 
-    [[nodiscard]] T *allocate(std::size_t n) {
-      return static_cast<T *>(npar_allocator->Alloc(sizeof(T) * n));
+    [[nodiscard]] T *allocate(std::size_t n) {  /// NOLINT
+      return static_cast<T *>(NparAllocator->Alloc(sizeof(T) * n));
     }
 
-    void deallocate(T *, std::size_t) {}
+    void deallocate(T *, std::size_t) {}  /// NOLINT
   };
 
   template <class T, class U>
@@ -110,18 +110,18 @@ namespace ncc::parse {
           m_vis(vis),
           m_is_static(is_static) {}
 
-    auto get_vis() const { return m_vis; }
-    auto is_static() const { return m_is_static; }
-    auto get_name() const { return m_name; }
-    auto get_type() const { return m_type; }
-    auto get_value() const { return m_value; }
+    auto GetVis() const { return m_vis; }
+    auto IsStatic() const { return m_is_static; }
+    auto GetName() const { return m_name; }
+    auto GetType() const { return m_type; }
+    auto GetValue() const { return m_value; }
   };
 
   struct StructFunction {
-    Vis vis;
-    FlowPtr<Stmt> func;
+    Vis m_vis;
+    FlowPtr<Stmt> m_func;
 
-    StructFunction(Vis vis, FlowPtr<Stmt> func) : vis(vis), func(func) {}
+    StructFunction(Vis vis, FlowPtr<Stmt> func) : m_vis(vis), m_func(func) {}
   };
 
   using StructDefFields = std::vector<StructField, Arena<StructField>>;

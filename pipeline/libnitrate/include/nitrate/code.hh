@@ -55,7 +55,7 @@ namespace nitrate {
   public:
     LazyResult(std::function<T()> func) : m_func(func) {}
 
-    T get() {
+    T Get() {
       if (!m_value.has_value()) {
         m_value = m_func();
       }
@@ -63,37 +63,37 @@ namespace nitrate {
       return m_value.value();
     }
 
-    void wait() { get(); }
+    void Wait() { Get(); }
 
-    std::function<T()> _get_functor() { return m_func; }
+    std::function<T()> GetFunctor() { return m_func; }
   };
 
-  static inline void default_diagnostic(std::string_view message) {
+  static inline void DefaultDiagnostic(std::string_view message) {
     std::cerr << message << std::endl;
   }
 
-  LazyResult<bool> pipeline(
+  LazyResult<bool> Pipeline(
       std::istream &in, std::ostream &out, std::vector<std::string> options,
-      std::optional<DiagnosticFunc> diag = default_diagnostic);
+      std::optional<DiagnosticFunc> diag = DefaultDiagnostic);
 
   template <typename T>
-  static inline LazyResult<bool> pipeline(
+  static inline LazyResult<bool> Pipeline(
       const T &in, std::string &out, std::vector<std::string> options,
-      std::optional<DiagnosticFunc> diag = default_diagnostic) {
+      std::optional<DiagnosticFunc> diag = DefaultDiagnostic) {
     std::stringstream out_stream, in_stream(in);
-    auto unit = pipeline(in_stream, out_stream, std::move(options), diag);
-    unit.wait();
+    auto unit = Pipeline(in_stream, out_stream, std::move(options), diag);
+    unit.Wait();
     out.assign(out_stream.str());
 
     return unit;
   }
 
-  static inline LazyResult<bool> pipeline(
+  static inline LazyResult<bool> Pipeline(
       std::string_view in, std::string &out, std::vector<std::string> options,
-      std::optional<DiagnosticFunc> diag = default_diagnostic) {
+      std::optional<DiagnosticFunc> diag = DefaultDiagnostic) {
     std::stringstream out_stream, in_stream((std::string(in)));
-    auto unit = pipeline(in_stream, out_stream, std::move(options), diag);
-    unit.wait();
+    auto unit = Pipeline(in_stream, out_stream, std::move(options), diag);
+    unit.Wait();
     out.assign(out_stream.str());
 
     return unit;
@@ -101,31 +101,31 @@ namespace nitrate {
 
   using ChainOptions = std::vector<std::vector<std::string>>;
 
-  LazyResult<bool> chain(
+  LazyResult<bool> Chain(
       std::istream &in, std::ostream &out, ChainOptions operations,
-      std::optional<DiagnosticFunc> diag = default_diagnostic,
+      std::optional<DiagnosticFunc> diag = DefaultDiagnostic,
       bool select = false);
 
-  static inline LazyResult<bool> chain(
+  static inline LazyResult<bool> Chain(
       const auto &in, std::string &out, ChainOptions operations,
-      std::optional<DiagnosticFunc> diag = default_diagnostic) {
+      std::optional<DiagnosticFunc> diag = DefaultDiagnostic) {
     std::stringstream out_stream, in_stream(in);
     auto unit =
-        chain(in_stream, out_stream, std::move(operations), diag, false);
-    unit.wait();
+        Chain(in_stream, out_stream, std::move(operations), diag, false);
+    unit.Wait();
 
     out.assign(out_stream.str());
 
     return unit;
   }
 
-  static inline LazyResult<bool> chain(
+  static inline LazyResult<bool> Chain(
       std::string_view in, std::string &out, ChainOptions operations,
-      std::optional<DiagnosticFunc> diag = default_diagnostic) {
+      std::optional<DiagnosticFunc> diag = DefaultDiagnostic) {
     std::stringstream out_stream, in_stream((std::string(in)));
     auto unit =
-        chain(in_stream, out_stream, std::move(operations), diag, false);
-    unit.wait();
+        Chain(in_stream, out_stream, std::move(operations), diag, false);
+    unit.Wait();
 
     out.assign(out_stream.str());
 

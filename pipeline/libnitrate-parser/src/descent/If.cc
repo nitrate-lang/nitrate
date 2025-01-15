@@ -37,35 +37,35 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<Stmt> Parser::recurse_if_then() {
+FlowPtr<Stmt> Parser::RecurseIfThen() {
   if (next_if(OpArrow)) {
-    return recurse_block(false, true, SafetyMode::Unknown);
+    return RecurseBlock(false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(true, false, SafetyMode::Unknown);
+    return RecurseBlock(true, false, SafetyMode::Unknown);
   }
 }
 
-NullableFlowPtr<Stmt> Parser::recurse_if_else() {
+NullableFlowPtr<Stmt> Parser::RecurseIfElse() {
   if (next_if(Else)) {
     if (next_if(OpArrow)) {
-      return recurse_block(false, true, SafetyMode::Unknown);
+      return RecurseBlock(false, true, SafetyMode::Unknown);
     } else if (next_if(If)) {
-      return recurse_if();
+      return RecurseIf();
     } else {
-      return recurse_block(true, false, SafetyMode::Unknown);
+      return RecurseBlock(true, false, SafetyMode::Unknown);
     }
   } else {
     return std::nullopt;
   }
 }
 
-FlowPtr<Stmt> Parser::recurse_if() {
-  auto cond = recurse_expr({
+FlowPtr<Stmt> Parser::RecurseIf() {
+  auto cond = RecurseExpr({
       Token(Punc, PuncLCur),
       Token(Oper, OpArrow),
   });
-  auto then = recurse_if_then();
-  auto ele = recurse_if_else();
+  auto then = RecurseIfThen();
+  auto ele = RecurseIfElse();
 
   return make<IfStmt>(cond, then, ele)();
 }

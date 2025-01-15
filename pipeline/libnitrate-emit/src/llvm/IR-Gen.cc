@@ -96,9 +96,9 @@ using namespace ncc;
 // #define debug(...)
 // #endif
 
-typedef function<bool(IRModule *, qcode_conf_t *, ostream &err,
+typedef function<bool(IRModule *, QcodeConfT *, ostream &err,
                       raw_pwrite_stream &out)>
-    qcode_adapter_fn;
+    QcodeAdapterFn;
 
 // using ctx_t = Module;
 // using craft_t = IRBuilder<>;
@@ -337,11 +337,11 @@ public:
   virtual int overflow(int c) override { return c; }
 };
 
-class my_pwrite_ostream : public raw_pwrite_stream {
+class MyPwriteOstream : public raw_pwrite_stream {
   ostream &m_os;
 
 public:
-  my_pwrite_ostream(ostream &os) : raw_pwrite_stream(true), m_os(os) {}
+  MyPwriteOstream(ostream &os) : raw_pwrite_stream(true), m_os(os) {}
 
   void write_impl(const char *ptr, size_t size) override {
     m_os.write(ptr, size);
@@ -449,7 +449,7 @@ public:
 //                              FlowPtr<ncc::ir::Type> RT) {
 //   val_t E;
 
-//   if (LT->isSame(RT.get())) {
+//   if (LT->IsEq(RT.get())) {
 //     return L;
 //   }
 
@@ -1513,7 +1513,7 @@ public:
 //           debug("Failed to get case condition type");
 //           return false;
 //         }
-//         if (!x.value()->isSame(C_T.value())) {
+//         if (!x.value()->IsEq(C_T.value())) {
 //           return false;
 //         }
 //       }
@@ -1849,8 +1849,8 @@ public:
 //   return dispatch[N->GetKind()](b, N);
 // }
 
-static bool qcode_adapter(IRModule *module, qcode_conf_t *conf, FILE *err,
-                          FILE *out, qcode_adapter_fn impl) {
+static bool QcodeAdapter(IRModule *module, QcodeConfT *conf, FILE *err,
+                          FILE *out, QcodeAdapterFn impl) {
   unique_ptr<streambuf> err_stream_buf, out_stream_buf;
 
   {
@@ -1877,7 +1877,7 @@ static bool qcode_adapter(IRModule *module, qcode_conf_t *conf, FILE *err,
   ostream out_stream(out_stream_buf.get());
 
   {
-    my_pwrite_ostream llvm_adapt(out_stream);
+    MyPwriteOstream llvm_adapt(out_stream);
     if (!impl(module, conf, err_stream, llvm_adapt)) {
       err_stream.flush();
       out_stream.flush();
@@ -1895,20 +1895,20 @@ static bool qcode_adapter(IRModule *module, qcode_conf_t *conf, FILE *err,
   return true;
 }
 
-static optional<unique_ptr<Module>> fabricate_llvmir(IRModule *module,
-                                                     qcode_conf_t *conf,
+static optional<unique_ptr<Module>> FabricateLlvmir(IRModule *module,
+                                                     QcodeConfT *conf,
                                                      ostream &err,
                                                      raw_ostream &out) {
   /// TODO: Implement conversion for node
   qcore_implement();
 }
 
-NCC_EXPORT bool qcode_ir(IRModule *module, qcode_conf_t *conf, FILE *err,
+NCC_EXPORT bool QcodeIr(IRModule *module, QcodeConfT *conf, FILE *err,
                          FILE *out) {
-  return qcode_adapter(module, conf, err, out,
-                       [](IRModule *m, qcode_conf_t *c, ostream &e,
+  return QcodeAdapter(module, conf, err, out,
+                       [](IRModule *m, QcodeConfT *c, ostream &e,
                           raw_pwrite_stream &o) -> bool {
-                         auto module = fabricate_llvmir(m, c, e, o);
+                         auto module = FabricateLlvmir(m, c, e, o);
                          if (!module) {
                            e << "error: failed to fabricate LLVM IR" << endl;
                            return false;
@@ -1922,36 +1922,36 @@ NCC_EXPORT bool qcode_ir(IRModule *module, qcode_conf_t *conf, FILE *err,
                        });
 }
 
-NCC_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
+NCC_EXPORT bool QcodeAsm(IRModule *module, QcodeConfT *conf, FILE *err,
                           FILE *out) {
-  return qcode_adapter(
+  return QcodeAdapter(
       module, conf, err, out,
-      [](IRModule *m, qcode_conf_t *c, ostream &e,
+      [](IRModule *m, QcodeConfT *c, ostream &e,
          raw_pwrite_stream &o) -> bool {
-        auto module_opt = fabricate_llvmir(m, c, e, o);
+        auto module_opt = FabricateLlvmir(m, c, e, o);
         if (!module_opt) {
           e << "error: failed to fabricate LLVM IR" << endl;
           return false;
         }
 
-        auto targetTriple = m->GetTargetInfo().TargetTriple.value_or(
+        auto target_triple = m->GetTargetInfo().m_TargetTriple.value_or(
             sys::getDefaultTargetTriple());
-        auto CPU = m->GetTargetInfo().CPU.value_or("generic");
-        ncc::string Features = m->GetTargetInfo().CPUFeatures.value_or("");
-        bool relocPIC = true;
+        auto cpu = m->GetTargetInfo().m_CPU.value_or("generic");
+        ncc::string features = m->GetTargetInfo().m_CPUFeatures.value_or("");
+        bool reloc_pic = true;
 
         TargetOptions opt;
-        std::string lookupTarget_err;
-        auto Target =
-            TargetRegistry::lookupTarget(targetTriple.Get(), lookupTarget_err);
-        if (!Target) {
-          e << "error: failed to lookup target: " << lookupTarget_err << endl;
+        std::string lookup_target_err;
+        auto target =
+            TargetRegistry::lookupTarget(target_triple.Get(), lookup_target_err);
+        if (!target) {
+          e << "error: failed to lookup target: " << lookup_target_err << endl;
           return false;
         }
 
-        auto TargetMachine = Target->createTargetMachine(
-            targetTriple.Get(), CPU.Get(), Features.Get(), opt,
-            relocPIC ? Reloc::PIC_ : Reloc::Static);
+        auto target_machine = target->createTargetMachine(
+            target_triple.Get(), cpu.Get(), features.Get(), opt,
+            reloc_pic ? Reloc::PIC_ : Reloc::Static);
 
         auto &module = *module_opt.value();
 
@@ -1960,44 +1960,44 @@ NCC_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
           return false;
         }
 
-        module.setDataLayout(TargetMachine->createDataLayout());
-        module.setTargetTriple(targetTriple.Get());
+        module.setDataLayout(target_machine->createDataLayout());
+        module.setTargetTriple(target_triple.Get());
 
         ///==========================================================================
 
         // Create the analysis managers.
         // These must be declared in this order so that they are destroyed in
         // the correct order due to inter-analysis-manager references.
-        LoopAnalysisManager LAM;
-        FunctionAnalysisManager FAM;
-        CGSCCAnalysisManager CGAM;
-        ModuleAnalysisManager MAM;
+        LoopAnalysisManager lam;
+        FunctionAnalysisManager fam;
+        CGSCCAnalysisManager cgam;
+        ModuleAnalysisManager mam;
 
         // Create the new pass manager builder.
         // Take a look at the PassBuilder constructor parameters for more
         // customization, e.g. specifying a TargetMachine or various debugging
         // options.
-        PassBuilder PB;
+        PassBuilder pb;
 
         // Register all the basic analyses with the managers.
-        PB.registerModuleAnalyses(MAM);
-        PB.registerCGSCCAnalyses(CGAM);
-        PB.registerFunctionAnalyses(FAM);
-        PB.registerLoopAnalyses(LAM);
-        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+        pb.registerModuleAnalyses(mam);
+        pb.registerCGSCCAnalyses(cgam);
+        pb.registerFunctionAnalyses(fam);
+        pb.registerLoopAnalyses(lam);
+        pb.crossRegisterProxies(lam, fam, cgam, mam);
 
-        ModulePassManager MPM =
-            PB.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
+        ModulePassManager mpm =
+            pb.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
 
         // Optimize the IR!
-        MPM.run(module, MAM);
+        mpm.run(module, mam);
 
         ///==========================================================================
 
         error_code ec;
 
         legacy::PassManager pass;
-        TargetMachine->addPassesToEmitFile(pass, o, nullptr,
+        target_machine->addPassesToEmitFile(pass, o, nullptr,
                                            CodeGenFileType::AssemblyFile);
         if (!pass.run(module)) {
           e << "error: failed to emit object code" << endl;
@@ -2008,36 +2008,36 @@ NCC_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
       });
 }
 
-NCC_EXPORT bool qcode_obj(IRModule *module, qcode_conf_t *conf, FILE *err,
+NCC_EXPORT bool QcodeObj(IRModule *module, QcodeConfT *conf, FILE *err,
                           FILE *out) {
-  return qcode_adapter(
+  return QcodeAdapter(
       module, conf, err, out,
-      [](IRModule *m, qcode_conf_t *c, ostream &e,
+      [](IRModule *m, QcodeConfT *c, ostream &e,
          raw_pwrite_stream &o) -> bool {
-        auto module_opt = fabricate_llvmir(m, c, e, o);
+        auto module_opt = FabricateLlvmir(m, c, e, o);
         if (!module_opt) {
           e << "error: failed to fabricate LLVM IR" << endl;
           return false;
         }
 
-        ncc::string targetTriple = m->GetTargetInfo().TargetTriple.value_or(
+        ncc::string target_triple = m->GetTargetInfo().m_TargetTriple.value_or(
             sys::getDefaultTargetTriple());
-        ncc::string CPU = m->GetTargetInfo().CPU.value_or("generic");
-        ncc::string Features = m->GetTargetInfo().CPUFeatures.value_or("");
-        bool relocPIC = true;
+        ncc::string cpu = m->GetTargetInfo().m_CPU.value_or("generic");
+        ncc::string features = m->GetTargetInfo().m_CPUFeatures.value_or("");
+        bool reloc_pic = true;
 
         TargetOptions opt;
-        std::string lookupTarget_err;
-        auto Target =
-            TargetRegistry::lookupTarget(targetTriple.Get(), lookupTarget_err);
-        if (!Target) {
-          e << "error: failed to lookup target: " << lookupTarget_err << endl;
+        std::string lookup_target_err;
+        auto target =
+            TargetRegistry::lookupTarget(target_triple.Get(), lookup_target_err);
+        if (!target) {
+          e << "error: failed to lookup target: " << lookup_target_err << endl;
           return false;
         }
 
-        auto TargetMachine = Target->createTargetMachine(
-            targetTriple.Get(), CPU.Get(), Features.Get(), opt,
-            relocPIC ? Reloc::PIC_ : Reloc::Static);
+        auto target_machine = target->createTargetMachine(
+            target_triple.Get(), cpu.Get(), features.Get(), opt,
+            reloc_pic ? Reloc::PIC_ : Reloc::Static);
 
         auto &module = *module_opt.value();
 
@@ -2046,44 +2046,44 @@ NCC_EXPORT bool qcode_obj(IRModule *module, qcode_conf_t *conf, FILE *err,
           return false;
         }
 
-        module.setDataLayout(TargetMachine->createDataLayout());
-        module.setTargetTriple(targetTriple.Get());
+        module.setDataLayout(target_machine->createDataLayout());
+        module.setTargetTriple(target_triple.Get());
 
         ///==========================================================================
 
         // Create the analysis managers.
         // These must be declared in this order so that they are destroyed in
         // the correct order due to inter-analysis-manager references.
-        LoopAnalysisManager LAM;
-        FunctionAnalysisManager FAM;
-        CGSCCAnalysisManager CGAM;
-        ModuleAnalysisManager MAM;
+        LoopAnalysisManager lam;
+        FunctionAnalysisManager fam;
+        CGSCCAnalysisManager cgam;
+        ModuleAnalysisManager mam;
 
         // Create the new pass manager builder.
         // Take a look at the PassBuilder constructor parameters for more
         // customization, e.g. specifying a TargetMachine or various
         // debugging options.
-        PassBuilder PB;
+        PassBuilder pb;
 
         // Register all the basic analyses with the managers.
-        PB.registerModuleAnalyses(MAM);
-        PB.registerCGSCCAnalyses(CGAM);
-        PB.registerFunctionAnalyses(FAM);
-        PB.registerLoopAnalyses(LAM);
-        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+        pb.registerModuleAnalyses(mam);
+        pb.registerCGSCCAnalyses(cgam);
+        pb.registerFunctionAnalyses(fam);
+        pb.registerLoopAnalyses(lam);
+        pb.crossRegisterProxies(lam, fam, cgam, mam);
 
-        ModulePassManager MPM =
-            PB.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
+        ModulePassManager mpm =
+            pb.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
 
         // Optimize the IR!
-        MPM.run(module, MAM);
+        mpm.run(module, mam);
 
         ///==========================================================================
 
         error_code ec;
 
         legacy::PassManager pass;
-        TargetMachine->addPassesToEmitFile(pass, o, nullptr,
+        target_machine->addPassesToEmitFile(pass, o, nullptr,
                                            CodeGenFileType::ObjectFile);
         if (!pass.run(module)) {
           e << "error: failed to emit object code" << endl;

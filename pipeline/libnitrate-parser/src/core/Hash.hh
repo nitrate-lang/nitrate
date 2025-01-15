@@ -41,38 +41,38 @@
 #include <nitrate-parser/ASTWriter.hh>
 
 namespace ncc::parse {
-  class NCC_EXPORT AST_Hash64 : public AST_Writer {
+  class NCC_EXPORT AstHash64 : public AstWriter {
     boost::uuids::detail::sha1 m_sum;
 
-    void update(uint64_t data) { m_sum.process_bytes(&data, sizeof(data)); }
+    void Update(uint64_t data) { m_sum.process_bytes(&data, sizeof(data)); }
 
-    void str_impl(std::string_view str);
-    void uint_impl(uint64_t val);
-    void double_impl(double val);
-    void bool_impl(bool val);
-    void null_impl();
-    void begin_obj_impl(size_t pair_count);
-    void end_obj_impl();
-    void begin_arr_impl(size_t size);
-    void end_arr_impl();
+    void StrImpl(std::string_view str);
+    void UintImpl(uint64_t val);
+    void DoubleImpl(double val);
+    void BoolImpl(bool val);
+    void NullImpl();
+    void BeginObjImpl(size_t pair_count);
+    void EndObjImpl();
+    void BeginArrImpl(size_t size);
+    void EndArrImpl();
 
   public:
-    AST_Hash64()
-        : AST_Writer(
-              std::bind(&AST_Hash64::str_impl, this, std::placeholders::_1),
-              std::bind(&AST_Hash64::uint_impl, this, std::placeholders::_1),
-              std::bind(&AST_Hash64::double_impl, this, std::placeholders::_1),
-              std::bind(&AST_Hash64::bool_impl, this, std::placeholders::_1),
-              std::bind(&AST_Hash64::null_impl, this),
-              std::bind(&AST_Hash64::begin_obj_impl, this,
+    AstHash64()
+        : AstWriter(
+              std::bind(&AstHash64::StrImpl, this, std::placeholders::_1),
+              std::bind(&AstHash64::UintImpl, this, std::placeholders::_1),
+              std::bind(&AstHash64::DoubleImpl, this, std::placeholders::_1),
+              std::bind(&AstHash64::BoolImpl, this, std::placeholders::_1),
+              std::bind(&AstHash64::NullImpl, this),
+              std::bind(&AstHash64::BeginObjImpl, this,
                         std::placeholders::_1),
-              std::bind(&AST_Hash64::end_obj_impl, this),
-              std::bind(&AST_Hash64::begin_arr_impl, this,
+              std::bind(&AstHash64::EndObjImpl, this),
+              std::bind(&AstHash64::BeginArrImpl, this,
                         std::placeholders::_1),
-              std::bind(&AST_Hash64::end_arr_impl, this)) {}
-    virtual ~AST_Hash64() = default;
+              std::bind(&AstHash64::EndArrImpl, this)) {}
+    virtual ~AstHash64() = default;
 
-    uint64_t get() {
+    uint64_t Get() {
       boost::uuids::detail::sha1::digest_type digest;
       m_sum.get_digest(digest);
 

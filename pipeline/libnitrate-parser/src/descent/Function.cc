@@ -37,17 +37,17 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<parse::Type> Parser::recurse_function_parameter_type() {
+FlowPtr<parse::Type> Parser::RecurseFunctionParameterType() {
   if (next_if(PuncColn)) {
-    return recurse_type();
+    return RecurseType();
   } else {
     return make<InferTy>()();
   }
 }
 
-NullableFlowPtr<Expr> Parser::recurse_function_parameter_value() {
+NullableFlowPtr<Expr> Parser::RecurseFunctionParameterValue() {
   if (next_if(OpSet)) {
-    return recurse_expr({
+    return RecurseExpr({
         Token(Punc, PuncComa),
         Token(Punc, PuncRPar),
         Token(Oper, OpGT),
@@ -57,10 +57,10 @@ NullableFlowPtr<Expr> Parser::recurse_function_parameter_value() {
   }
 }
 
-std::optional<FuncParam> Parser::recurse_function_parameter() {
+std::optional<FuncParam> Parser::RecurseFunctionParameter() {
   if (auto param_name = next_if(Name)) [[likely]] {
-    auto param_type = recurse_function_parameter_type();
-    auto param_value = recurse_function_parameter_value();
+    auto param_type = RecurseFunctionParameterType();
+    auto param_value = RecurseFunctionParameterValue();
 
     return FuncParam{param_name->as_string(), param_type, param_value};
   } else {
@@ -70,7 +70,7 @@ std::optional<FuncParam> Parser::recurse_function_parameter() {
   return std::nullopt;
 }
 
-std::optional<TemplateParameters> Parser::recurse_template_parameters() {
+std::optional<TemplateParameters> Parser::RecurseTemplateParameters() {
   if (!next_if(OpLT)) {
     return std::nullopt;
   }
@@ -88,7 +88,7 @@ std::optional<TemplateParameters> Parser::recurse_template_parameters() {
       break;
     }
 
-    if (auto param_opt = recurse_function_parameter()) {
+    if (auto param_opt = RecurseFunctionParameter()) {
       auto [param_name, param_type, param_value] = param_opt.value();
 
       params.push_back({param_name, param_type, param_value});
@@ -102,7 +102,7 @@ std::optional<TemplateParameters> Parser::recurse_template_parameters() {
   return params;
 }
 
-std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
+std::pair<FuncParams, bool> Parser::RecurseFunctionParameters() {
   std::pair<FuncParams, bool> parameters;
 
   if (!next_if(PuncLPar)) [[unlikely]] {
@@ -133,7 +133,7 @@ std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
       continue;
     }
 
-    if (auto parameter = recurse_function_parameter()) {
+    if (auto parameter = RecurseFunctionParameter()) {
       auto [param_name, param_type, param_value] = parameter.value();
       parameters.first.push_back({param_name, param_type, param_value});
 
@@ -149,7 +149,7 @@ std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
   return parameters;
 }
 
-Purity Parser::get_purity_specifier(Token start_pos, bool is_thread_safe,
+Purity Parser::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
                                     bool is_pure, bool is_impure, bool is_quasi,
                                     bool is_retro) {
   /* Ensure that there is no duplication of purity specifiers */
@@ -174,7 +174,7 @@ Purity Parser::get_purity_specifier(Token start_pos, bool is_thread_safe,
   }
 }
 
-std::optional<std::pair<string, bool>> Parser::recurse_function_capture() {
+std::optional<std::pair<string, bool>> Parser::RecurseFunctionCapture() {
   bool is_ref = next_if(OpBitAnd).has_value();
 
   if (auto name = next_if(Name)) {
@@ -186,7 +186,7 @@ std::optional<std::pair<string, bool>> Parser::recurse_function_capture() {
 }
 
 std::tuple<ExpressionList, FnCaptures, Purity, string>
-Parser::recurse_function_ambigouis() {
+Parser::RecurseFunctionAmbigouis() {
   enum class State {
     Ground,
     AttributesSection,
@@ -278,7 +278,7 @@ Parser::recurse_function_ambigouis() {
             break;
           }
 
-          auto attribute = recurse_expr({
+          auto attribute = RecurseExpr({
               Token(Punc, PuncComa),
               Token(Punc, PuncRBrk),
           });
@@ -306,7 +306,7 @@ Parser::recurse_function_ambigouis() {
             break;
           }
 
-          if (auto capture = recurse_function_capture()) {
+          if (auto capture = RecurseFunctionCapture()) {
             captures.push_back({capture->first, capture->second});
           }
 
@@ -322,40 +322,40 @@ Parser::recurse_function_ambigouis() {
     }
   }
 
-  auto purity = get_purity_specifier(start_pos, is_thread_safe, is_pure,
+  auto purity = GetPuritySpecifier(start_pos, is_thread_safe, is_pure,
                                      is_impure, is_quasi, is_retro);
 
   return {attributes, captures, purity, function_name};
 }
 
-FlowPtr<parse::Type> Parser::Parser::recurse_function_return_type() {
+FlowPtr<parse::Type> Parser::Parser::RecurseFunctionReturnType() {
   if (next_if(PuncColn)) {
-    return recurse_type();
+    return RecurseType();
   } else {
     return make<InferTy>()();
   }
 }
 
-NullableFlowPtr<Stmt> Parser::recurse_function_body(
+NullableFlowPtr<Stmt> Parser::RecurseFunctionBody(
     bool parse_declaration_only) {
   if (parse_declaration_only || next_if(PuncSemi)) {
     return std::nullopt;
   } else if (next_if(OpArrow)) {
-    return recurse_block(false, true, SafetyMode::Unknown);
+    return RecurseBlock(false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(true, false, SafetyMode::Unknown);
+    return RecurseBlock(true, false, SafetyMode::Unknown);
   }
 }
 
-FlowPtr<Stmt> Parser::recurse_function(bool parse_declaration_only) {
+FlowPtr<Stmt> Parser::RecurseFunction(bool parse_declaration_only) {
   auto start_pos = current().get_start();
 
   auto [function_attributes, function_captures, function_purity,
-        function_name] = recurse_function_ambigouis();
-  auto function_template_parameters = recurse_template_parameters();
-  auto function_parameters = recurse_function_parameters();
-  auto function_return_type = recurse_function_return_type();
-  auto function_body = recurse_function_body(parse_declaration_only);
+        function_name] = RecurseFunctionAmbigouis();
+  auto function_template_parameters = RecurseTemplateParameters();
+  auto function_parameters = RecurseFunctionParameters();
+  auto function_return_type = RecurseFunctionReturnType();
+  auto function_body = RecurseFunctionBody(parse_declaration_only);
 
   auto function = make<Function>(
       function_attributes, function_purity, function_captures, function_name,

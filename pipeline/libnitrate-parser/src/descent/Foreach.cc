@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::optional<std::pair<string, string>> Parser::recurse_foreach_names() {
+std::optional<std::pair<string, string>> Parser::RecurseForeachNames() {
   if (auto name_a = next_if(Name)) [[likely]] {
     if (next_if(PuncComa)) {
       if (auto name_b = next_if(Name)) [[likely]] {
@@ -57,40 +57,40 @@ std::optional<std::pair<string, string>> Parser::recurse_foreach_names() {
   return std::nullopt;
 }
 
-FlowPtr<Expr> Parser::recurse_foreach_expr(bool has_paren) {
+FlowPtr<Expr> Parser::RecurseForeachExpr(bool has_paren) {
   if (has_paren) {
-    return recurse_expr({
+    return RecurseExpr({
         Token(Punc, PuncRPar),
     });
   } else {
-    return recurse_expr({
+    return RecurseExpr({
         Token(Punc, PuncLCur),
         Token(Oper, OpArrow),
     });
   }
 }
 
-FlowPtr<Stmt> Parser::recurse_foreach_body() {
+FlowPtr<Stmt> Parser::RecurseForeachBody() {
   if (next_if(OpArrow)) {
-    return recurse_block(false, true, SafetyMode::Unknown);
+    return RecurseBlock(false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(true, false, SafetyMode::Unknown);
+    return RecurseBlock(true, false, SafetyMode::Unknown);
   }
 }
 
-FlowPtr<Stmt> Parser::recurse_foreach() {
+FlowPtr<Stmt> Parser::RecurseForeach() {
   bool foreach_has_paren = next_if(PuncLPar).has_value();
 
-  if (auto iter_names = recurse_foreach_names()) {
+  if (auto iter_names = RecurseForeachNames()) {
     auto [index_name, value_name] = iter_names.value();
 
     if (next_if(OpIn)) [[likely]] {
-      auto iter_expr = recurse_foreach_expr(foreach_has_paren);
+      auto iter_expr = RecurseForeachExpr(foreach_has_paren);
       if (foreach_has_paren && !next_if(PuncRPar)) {
         Log << SyntaxError << current() << "Expected ')' in foreach statement";
       }
 
-      auto body = recurse_foreach_body();
+      auto body = RecurseForeachBody();
 
       return make<ForeachStmt>(index_name, value_name, iter_expr, body)();
     } else {
@@ -102,5 +102,5 @@ FlowPtr<Stmt> Parser::recurse_foreach() {
         << "Expected identifier pair in foreach statement";
   }
 
-  return mock_stmt(QAST_FOREACH);
+  return MockStmt(QAST_FOREACH);
 }

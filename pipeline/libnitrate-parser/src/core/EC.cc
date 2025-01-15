@@ -37,13 +37,13 @@
 using namespace ncc;
 using namespace ncc::lex;
 
-static thread_local IScanner *g_current_scanner = nullptr;
+static thread_local IScanner *GCurrentScanner = nullptr;
 
-void Parser_SetCurrentScanner(IScanner *scanner) {
-  g_current_scanner = scanner;
+void ParserSetCurrentScanner(IScanner *scanner) {
+  GCurrentScanner = scanner;
 }
 
-static constexpr std::optional<std::string> unescape_string_slice(
+static constexpr std::optional<std::string> UnescapeStringSlice(
     std::string_view &buf) {
   if (!buf.starts_with("\"")) [[unlikely]] {
     return std::nullopt;
@@ -88,7 +88,7 @@ static constexpr std::optional<std::string> unescape_string_slice(
           unescaped += '\"';
           break;
         case 'x': {
-          constexpr std::array<uint8_t, 256> hextable = [] {
+          constexpr std::array<uint8_t, 256> kHextable = [] {
             std::array<uint8_t, 256> table = {};
             for (uint8_t i = 0; i < 10; i++) {
               table['0' + i] = i;
@@ -110,7 +110,7 @@ static constexpr std::optional<std::string> unescape_string_slice(
           }
 
           unescaped +=
-              (hextable[(uint8_t)hex[0]] << 4) | hextable[(uint8_t)hex[1]];
+              (kHextable[(uint8_t)hex[0]] << 4) | kHextable[(uint8_t)hex[1]];
           buf.remove_prefix(2);
           break;
         }
@@ -128,7 +128,7 @@ static constexpr std::optional<std::string> unescape_string_slice(
   return unescaped;
 }
 
-static std::optional<std::pair<Token, std::string>> find_and_decode_token(
+static std::optional<std::pair<Token, std::string>> FindAndDecodeToken(
     std::string_view buf) {
   std::string_view orig_buf = buf;
 
@@ -176,7 +176,7 @@ static std::optional<std::pair<Token, std::string>> find_and_decode_token(
   }
 
   buf.remove_prefix(9);
-  auto unescaped = unescape_string_slice(buf);
+  auto unescaped = UnescapeStringSlice(buf);
 
   if (!unescaped.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -234,10 +234,10 @@ static std::optional<std::pair<Token, std::string>> find_and_decode_token(
 
 NCC_EXPORT std::string ncc::parse::ec::Formatter(std::string_view message_raw,
                                                  Sev) {
-  IScanner *rd = g_current_scanner;
+  IScanner *rd = GCurrentScanner;
 
   if (rd) {
-    auto result_opt = find_and_decode_token(message_raw);
+    auto result_opt = FindAndDecodeToken(message_raw);
     Token tok;
     std::string message;
     if (result_opt.has_value()) {

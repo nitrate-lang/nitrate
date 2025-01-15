@@ -40,7 +40,7 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int ncc::seq::sys_get(lua_State* L) {
+int ncc::seq::SysGet(lua_State* L) {
   int nargs = lua_gettop(L);
   if (nargs != 1) {
     return luaL_error(L, "expected 1 argument, got %d", nargs);

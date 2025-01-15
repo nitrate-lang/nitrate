@@ -40,7 +40,7 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::check_returns(FlowPtr<Seq> root, IReport *I) {
+bool NRBuilder::CheckReturns(FlowPtr<Seq> root, IReport *i) {
   bool failed = false;
 
   for_each<Function>(root, [&](auto x) {
@@ -51,7 +51,7 @@ bool NRBuilder::check_returns(FlowPtr<Seq> root, IReport *I) {
 
     auto fn_ty_opt = x->getType();
     if (!fn_ty_opt) {
-      I->report(TypeInference, IC::Error, "Failed to deduce function type",
+      i->Report(TypeInference, IC::Error, "Failed to deduce function type",
                 x->getLoc());
       failed = true;
 
@@ -68,7 +68,7 @@ bool NRBuilder::check_returns(FlowPtr<Seq> root, IReport *I) {
 
       auto ret_expr_ty_opt = y->getExpr()->getType();
       if (!ret_expr_ty_opt) {
-        I->report(TypeInference, IC::Error,
+        i->Report(TypeInference, IC::Error,
                   "Failed to deduce return expression type", y->getLoc());
         failed = true;
 
@@ -77,8 +77,8 @@ bool NRBuilder::check_returns(FlowPtr<Seq> root, IReport *I) {
 
       /// TODO: Implement return type coercion
 
-      if (!return_ty->isSame(ret_expr_ty_opt.value().get())) {
-        I->report(ReturnTypeMismatch, IC::Error,
+      if (!return_ty->IsEq(ret_expr_ty_opt.value().get())) {
+        i->Report(ReturnTypeMismatch, IC::Error,
                   {"Return value type '", ret_expr_ty_opt.value()->toString(),
                    "' does not match function return type '",
                    return_ty->toString(), "'"},
@@ -90,7 +90,7 @@ bool NRBuilder::check_returns(FlowPtr<Seq> root, IReport *I) {
     });
 
     if (!found_ret) {
-      I->report(MissingReturn, IC::Error, x->getName(), x->getLoc());
+      i->Report(MissingReturn, IC::Error, x->getName(), x->getLoc());
       failed = true;
     }
   });

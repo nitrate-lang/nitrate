@@ -37,27 +37,27 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<Stmt> Parser::recurse_switch_case_body() {
+FlowPtr<Stmt> Parser::RecurseSwitchCaseBody() {
   if (!next_if(OpArrow)) {
     Log << SyntaxError << current() << "Expected '=>' in switch case.";
   }
 
   if (peek().is<PuncLCur>()) {
-    return recurse_block(true, false, SafetyMode::Unknown);
+    return RecurseBlock(true, false, SafetyMode::Unknown);
   } else {
-    return recurse_block(false, true, SafetyMode::Unknown);
+    return RecurseBlock(false, true, SafetyMode::Unknown);
   }
 }
 
-std::pair<FlowPtr<Stmt>, bool> Parser::recurse_switch_case() {
-  auto cond = recurse_expr({
+std::pair<FlowPtr<Stmt>, bool> Parser::RecurseSwitchCase() {
+  auto cond = RecurseExpr({
       Token(Oper, OpArrow),
       Token(Punc, PuncLCur),
   });
-  auto body = recurse_switch_case_body();
+  auto body = RecurseSwitchCaseBody();
 
   auto is_the_default_case =
-      cond->is(QAST_IDENT) && cond->as<Ident>()->get_name() == "_";
+      cond->is(QAST_IDENT) && cond->as<Ident>()->GetName() == "_";
 
   if (is_the_default_case) {
     return {body, true};
@@ -67,7 +67,7 @@ std::pair<FlowPtr<Stmt>, bool> Parser::recurse_switch_case() {
 }
 
 std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>>
-Parser::recurse_switch_body() {
+Parser::RecurseSwitchBody() {
   SwitchCases cases;
   NullableFlowPtr<Stmt> default_case;
 
@@ -81,7 +81,7 @@ Parser::recurse_switch_body() {
       return {{cases, default_case}};
     }
 
-    auto [stmt, is_default] = recurse_switch_case();
+    auto [stmt, is_default] = RecurseSwitchCase();
     if (is_default) {
       if (!default_case) [[likely]] {
         default_case = stmt;
@@ -98,13 +98,13 @@ Parser::recurse_switch_body() {
   return std::nullopt;
 }
 
-FlowPtr<Stmt> Parser::recurse_switch() {
-  auto switch_cond = recurse_expr({
+FlowPtr<Stmt> Parser::RecurseSwitch() {
+  auto switch_cond = RecurseExpr({
       Token(Punc, PuncLCur),
   });
 
   if (next_if(PuncLCur)) [[likely]] {
-    if (auto switch_body = recurse_switch_body()) [[likely]] {
+    if (auto switch_body = RecurseSwitchBody()) [[likely]] {
       auto [switch_cases, switch_default] = switch_body.value();
 
       return make<SwitchStmt>(switch_cond, switch_cases, switch_default)();
@@ -115,5 +115,5 @@ FlowPtr<Stmt> Parser::recurse_switch() {
     Log << SyntaxError << current() << "Expected '{' after switch condition.";
   }
 
-  return mock_stmt(QAST_SWITCH);
+  return MockStmt(QAST_SWITCH);
 }

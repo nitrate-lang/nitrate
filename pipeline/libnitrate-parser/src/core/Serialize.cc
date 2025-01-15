@@ -37,7 +37,7 @@
 
 using namespace ncc::parse;
 
-static void escape_string(std::ostream &os, const std::string_view &input) {
+static void EscapeString(std::ostream &os, const std::string_view &input) {
   os << "\"";
 
   for (char ch : input) {
@@ -81,7 +81,7 @@ static void escape_string(std::ostream &os, const std::string_view &input) {
   os << "\"";
 }
 
-void AST_JsonWriter::delim() {
+void AstJsonWriter::Delim() {
   if (!m_count.empty() && !m_comma.empty()) {
     if (m_count.top()++ > 0) {
       bool use_comma = m_comma.top() == true || (m_count.top() & 1) != 0;
@@ -91,45 +91,45 @@ void AST_JsonWriter::delim() {
   }
 }
 
-void AST_JsonWriter::str_impl(std::string_view str) {
-  delim();
+void AstJsonWriter::StrImpl(std::string_view str) {
+  Delim();
 
-  escape_string(m_os, str);
+  EscapeString(m_os, str);
 }
 
-void AST_JsonWriter::uint_impl(uint64_t val) {
-  delim();
+void AstJsonWriter::UintImpl(uint64_t val) {
+  Delim();
 
   m_os << val;
 }
 
-void AST_JsonWriter::double_impl(double val) {
-  delim();
+void AstJsonWriter::DoubleImpl(double val) {
+  Delim();
 
   m_os << val;
 }
 
-void AST_JsonWriter::bool_impl(bool val) {
-  delim();
+void AstJsonWriter::BoolImpl(bool val) {
+  Delim();
 
   m_os << (val ? "true" : "false");
 }
 
-void AST_JsonWriter::null_impl() {
-  delim();
+void AstJsonWriter::NullImpl() {
+  Delim();
 
   m_os << "null";
 }
 
-void AST_JsonWriter::begin_obj_impl(size_t) {
-  delim();
+void AstJsonWriter::BeginObjImpl(size_t) {
+  Delim();
 
   m_comma.push(false);
   m_count.push(0);
   m_os << "{";
 }
 
-void AST_JsonWriter::end_obj_impl() {
+void AstJsonWriter::EndObjImpl() {
   if (!m_count.empty() && !m_comma.empty()) {
     m_os << "}";
     m_count.pop();
@@ -137,15 +137,15 @@ void AST_JsonWriter::end_obj_impl() {
   }
 }
 
-void AST_JsonWriter::begin_arr_impl(size_t) {
-  delim();
+void AstJsonWriter::BeginArrImpl(size_t) {
+  Delim();
 
   m_comma.push(true);
   m_count.push(0);
   m_os << "[";
 }
 
-void AST_JsonWriter::end_arr_impl() {
+void AstJsonWriter::EndArrImpl() {
   if (!m_count.empty() && !m_comma.empty()) {
     m_os << "]";
     m_count.pop();
@@ -155,7 +155,7 @@ void AST_JsonWriter::end_arr_impl() {
 
 ///===========================================================================///
 
-void AST_MsgPackWriter::str_impl(std::string_view str) {
+void AstMsgPackWriter::StrImpl(std::string_view str) {
   size_t sz = str.size();
 
   if (sz <= 31) {
@@ -178,7 +178,7 @@ void AST_MsgPackWriter::str_impl(std::string_view str) {
   m_os.write(str.data(), sz);
 }
 
-void AST_MsgPackWriter::uint_impl(uint64_t x) {
+void AstMsgPackWriter::UintImpl(uint64_t x) {
   if (x <= INT8_MAX) {
     m_os.put(x & 0x7f);
   } else if (x <= UINT8_MAX) {
@@ -207,7 +207,7 @@ void AST_MsgPackWriter::uint_impl(uint64_t x) {
   }
 }
 
-void AST_MsgPackWriter::double_impl(double val) {
+void AstMsgPackWriter::DoubleImpl(double val) {
   uint64_t raw = std::bit_cast<uint64_t>(val);
 
   m_os.put(0xcb);
@@ -221,11 +221,11 @@ void AST_MsgPackWriter::double_impl(double val) {
   m_os.put(raw & 0xff);
 }
 
-void AST_MsgPackWriter::bool_impl(bool val) { m_os.put(val ? 0xc3 : 0xc2); }
+void AstMsgPackWriter::BoolImpl(bool val) { m_os.put(val ? 0xc3 : 0xc2); }
 
-void AST_MsgPackWriter::null_impl() { m_os.put(0xc0); }
+void AstMsgPackWriter::NullImpl() { m_os.put(0xc0); }
 
-void AST_MsgPackWriter::begin_obj_impl(size_t pair_count) {
+void AstMsgPackWriter::BeginObjImpl(size_t pair_count) {
   if (pair_count <= 15) {
     m_os.put(0x80 | pair_count);
   } else if (pair_count <= UINT16_MAX) {
@@ -241,9 +241,9 @@ void AST_MsgPackWriter::begin_obj_impl(size_t pair_count) {
   }
 }
 
-void AST_MsgPackWriter::end_obj_impl() {}
+void AstMsgPackWriter::EndObjImpl() {}
 
-void AST_MsgPackWriter::begin_arr_impl(size_t size) {
+void AstMsgPackWriter::BeginArrImpl(size_t size) {
   if (size <= 15) {
     m_os.put(0x90 | size);
   } else if (size <= UINT16_MAX) {
@@ -259,4 +259,4 @@ void AST_MsgPackWriter::begin_arr_impl(size_t size) {
   }
 }
 
-void AST_MsgPackWriter::end_arr_impl() {}
+void AstMsgPackWriter::EndArrImpl() {}

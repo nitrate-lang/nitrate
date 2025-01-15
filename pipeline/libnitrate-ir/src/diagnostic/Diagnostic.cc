@@ -47,7 +47,7 @@ using namespace ncc;
 using namespace ncc::ir;
 using namespace ncc::lex;
 
-static std::vector<std::string_view> word_break(std::string_view text,
+static std::vector<std::string_view> WordBreak(std::string_view text,
                                                 size_t max_width) {
   std::vector<std::string_view> lines;
   size_t word_beg = 0, cur_beg = 0, cur_len = 0;
@@ -137,7 +137,7 @@ static std::vector<std::string_view> word_break(std::string_view text,
   return lines;
 }
 
-static std::string format_overview(std::string_view overview,
+static std::string FormatOverview(std::string_view overview,
                                    std::string_view param) {
   std::string formatted;
   size_t i = 0;
@@ -160,7 +160,7 @@ static std::string format_overview(std::string_view overview,
   return formatted;
 }
 
-static void confine_rect_bounds(int64_t &x_0, int64_t &y_0, int64_t &x_1,
+static void ConfineRectBounds(int64_t &x_0, int64_t &y_0, int64_t &x_1,
                                 int64_t &y_1, size_t win_width) {
   if (x_1 < x_0) {
     x_1 = x_0;
@@ -199,7 +199,7 @@ static void confine_rect_bounds(int64_t &x_0, int64_t &y_0, int64_t &x_1,
 }
 
 NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
-  constexpr size_t WIDTH = 70;
+  constexpr size_t kWidth = 70;
 
   std::string_view flagname = "" /* TODO: Get flagname */;
   std::string_view overview = "" /* TODO: Get overview */;
@@ -278,8 +278,8 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
 
   { /* Print message overview */
 
-    auto data = format_overview(overview, msg);
-    auto lines = word_break(data, WIDTH);
+    auto data = FormatOverview(overview, msg);
+    auto lines = WordBreak(data, kWidth);
 
     if (lines.size() == 0) {
     } else if (lines.size() == 1) {
@@ -300,7 +300,7 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
          << "\x1b[33m╔═\x1b[0m \x1b[32;1mCode "
             "Intelligence:\x1b[0m\n";
       for (auto hint : hints) {
-        auto lines = word_break(hint, WIDTH - 2);
+        auto lines = WordBreak(hint, kWidth - 2);
 
         if (lines.size() == 0) {
         } else if (lines.size() == 1) {
@@ -322,23 +322,23 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
 
   if (sl != kLexEof && sc != kLexEof && el != kLexEof &&
       ec != kLexEof) { /* Source window */
-    constexpr size_t WINDOW_WIDTH = 60;
+    constexpr size_t kWindowWidth = 60;
 
     int64_t x_0 = sc, y_0 = sl, x_1 = ec, y_1 = el;
-    confine_rect_bounds(x_0, y_0, x_1, y_1, WINDOW_WIDTH);
+    ConfineRectBounds(x_0, y_0, x_1, y_1, kWindowWidth);
 
     /// TODO: Get source code
     auto source_lines = std::optional<std::vector<std::string_view>>();
 
     if (source_lines.has_value()) {
       std::string sep;
-      for (size_t i = 0; i < WINDOW_WIDTH + 2; i++) {
+      for (size_t i = 0; i < kWindowWidth + 2; i++) {
         sep += "━";
       }
 
       ss << ind << "  \x1b[32m┏" << sep << "┓\x1b[0m\n";
       for (size_t i = 0; i < source_lines.value().size(); i++) {
-        auto lines = word_break(source_lines.value()[i], WINDOW_WIDTH);
+        auto lines = WordBreak(source_lines.value()[i], kWindowWidth);
 
         for (const auto &line : lines) {
           if (sl != kLexEof) {
@@ -349,8 +349,8 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
           }
 
           ss << " \x1b[32m┃\x1b[0m " << line;
-          if (line.size() < WINDOW_WIDTH + 2) {
-            ss << std::string(WINDOW_WIDTH - line.size(), ' ');
+          if (line.size() < kWindowWidth + 2) {
+            ss << std::string(kWindowWidth - line.size(), ' ');
           }
           ss << " \x1b[32m┃\x1b[0m\n";
         }

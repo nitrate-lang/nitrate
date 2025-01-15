@@ -40,7 +40,7 @@ extern "C" {
 
 using namespace ncc::lex;
 
-int ncc::seq::sys_defer(lua_State* L) {
+int ncc::seq::SysDefer(lua_State* L) {
   int nargs = lua_gettop(L);
   if (nargs < 1) {
     return luaL_error(L, "sys_defer: expected at least 1 argument, got %d",
@@ -101,7 +101,7 @@ int ncc::seq::sys_defer(lua_State* L) {
     }
 
     int err = lua_pcall(L, 1, 1, 0);
-    Sequencer::DeferOp R;
+    Sequencer::DeferOp r;
 
     switch (err) {
       case LUA_OK: {
@@ -118,38 +118,38 @@ int ncc::seq::sys_defer(lua_State* L) {
           return Sequencer::EmitToken;
         }
 
-        R = lua_toboolean(L, -1) ? Sequencer::EmitToken : Sequencer::SkipToken;
+        r = lua_toboolean(L, -1) ? Sequencer::EmitToken : Sequencer::SkipToken;
         break;
       }
       case LUA_ERRRUN: {
         ncc::Log << Error << "sys_defer: lua: " << lua_tostring(L, -1);
         engine->SetFailBit();
-        R = Sequencer::EmitToken;
+        r = Sequencer::EmitToken;
         break;
       }
       case LUA_ERRMEM: {
         ncc::Log << Error << "sys_defer: memory allocation error\n";
         engine->SetFailBit();
-        R = Sequencer::EmitToken;
+        r = Sequencer::EmitToken;
         break;
       }
       case LUA_ERRERR: {
         ncc::Log << Error << "sys_defer: error in error handler\n";
         engine->SetFailBit();
-        R = Sequencer::EmitToken;
+        r = Sequencer::EmitToken;
         break;
       }
       default: {
         ncc::Log << Error << "sys_defer: unexpected error " << err << "\n";
         engine->SetFailBit();
-        R = Sequencer::EmitToken;
+        r = Sequencer::EmitToken;
         break;
       }
     }
 
     lua_pop(L, 1);
 
-    return R;
+    return r;
   };
 
   get_engine()->m_core->m_defer.push_back(cb);

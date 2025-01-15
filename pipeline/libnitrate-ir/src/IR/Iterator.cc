@@ -47,13 +47,13 @@ class GetNodeChildren final : public IRVisitor<GetNodeChildren> {
   std::vector<FlowPtr<Expr>*>& m_children;
 
   template <class T>
-  constexpr void add(FlowPtr<T>& n) {
+  constexpr void Add(FlowPtr<T>& n) {
     auto unsafe_casted_ptr = reinterpret_cast<FlowPtr<Expr>*>(&n);
     m_children.push_back(unsafe_casted_ptr);
   }
 
   template <class T>
-  constexpr void add(NullableFlowPtr<T>& n) {
+  constexpr void Add(NullableFlowPtr<T>& n) {
     if (!n.has_value()) {
       return;
     }
@@ -203,7 +203,7 @@ public:
   }
 };
 
-static void get_children_sorted(FlowPtr<Expr> base, ChildSelect cs,
+static void GetChildrenSorted(FlowPtr<Expr> base, ChildSelect cs,
                                 std::vector<FlowPtr<Expr>*>& children) {
   GetNodeChildren gnc(children);
   base.Accept(gnc);
@@ -211,13 +211,13 @@ static void get_children_sorted(FlowPtr<Expr> base, ChildSelect cs,
   std::sort(children.begin(), children.end(), cs);
 }
 
-NCC_EXPORT void detail::dfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
+NCC_EXPORT void detail::DfsPreImpl(FlowPtr<Expr>* base, IterCallback cb,
                                      ChildSelect cs) {
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
   }
 
-  constexpr auto syncfn = [](auto n, auto cb, auto cs) {
+  constexpr auto kSyncfn = [](auto n, auto cb, auto cs) {
     std::stack<std::pair<NullableFlowPtr<Expr>, FlowPtr<Expr>*>> s;
     std::vector<FlowPtr<Expr>*> children;
 
@@ -248,16 +248,16 @@ NCC_EXPORT void detail::dfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
     }
   };
 
-  syncfn(base, cb, cs);
+  kSyncfn(base, cb, cs);
 }
 
-NCC_EXPORT void detail::dfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
+NCC_EXPORT void detail::DfsPostImpl(FlowPtr<Expr>* base, IterCallback cb,
                                       ChildSelect cs) {
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
   }
 
-  constexpr auto syncfn = [](auto n, auto cb, auto cs) {
+  constexpr auto kSyncfn = [](auto n, auto cb, auto cs) {
     std::stack<std::pair<NullableFlowPtr<Expr>, FlowPtr<Expr>*>> s;
     std::vector<FlowPtr<Expr>*> children;
 
@@ -284,17 +284,17 @@ NCC_EXPORT void detail::dfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
     }
   };
 
-  syncfn(base, cb, cs);
+  kSyncfn(base, cb, cs);
   cb(nullptr, base);
 }
 
-NCC_EXPORT void detail::bfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
+NCC_EXPORT void detail::BfsPreImpl(FlowPtr<Expr>* base, IterCallback cb,
                                      ChildSelect cs) {
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
   }
 
-  constexpr auto syncfn = [](auto n, auto cb, auto cs) {
+  constexpr auto kSyncfn = [](auto n, auto cb, auto cs) {
     std::queue<std::pair<NullableFlowPtr<Expr>, FlowPtr<Expr>*>> s;
     std::vector<FlowPtr<Expr>*> children;
 
@@ -325,16 +325,16 @@ NCC_EXPORT void detail::bfs_pre_impl(FlowPtr<Expr>* base, IterCallback cb,
     }
   };
 
-  syncfn(base, cb, cs);
+  kSyncfn(base, cb, cs);
 }
 
-NCC_EXPORT void detail::bfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
+NCC_EXPORT void detail::BfsPostImpl(FlowPtr<Expr>* base, IterCallback cb,
                                       ChildSelect cs) {
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
   }
 
-  constexpr auto syncfn = [](auto n, auto cb, auto cs) {
+  constexpr auto kSyncfn = [](auto n, auto cb, auto cs) {
     std::queue<std::pair<NullableFlowPtr<Expr>, FlowPtr<Expr>*>> s;
     std::vector<FlowPtr<Expr>*> children;
 
@@ -361,16 +361,16 @@ NCC_EXPORT void detail::bfs_post_impl(FlowPtr<Expr>* base, IterCallback cb,
     }
   };
 
-  syncfn(base, cb, cs);
+  kSyncfn(base, cb, cs);
 }
 
-NCC_EXPORT void detail::iter_children(FlowPtr<Expr>* base, IterCallback cb,
+NCC_EXPORT void detail::IterChildren(FlowPtr<Expr>* base, IterCallback cb,
                                       ChildSelect cs) {
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
   }
 
-  constexpr auto syncfn = [](auto n, auto cb, auto cs) {
+  constexpr auto kSyncfn = [](auto n, auto cb, auto cs) {
     std::vector<FlowPtr<Expr>*> children;
     get_children_sorted(*n, cs, children);
 
@@ -386,5 +386,5 @@ NCC_EXPORT void detail::iter_children(FlowPtr<Expr>* base, IterCallback cb,
     }
   };
 
-  syncfn(base, cb, cs);
+  kSyncfn(base, cb, cs);
 }

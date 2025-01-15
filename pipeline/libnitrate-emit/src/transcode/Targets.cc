@@ -54,8 +54,8 @@ using namespace ncc::ir;
 #endif
 
 static const std::unordered_map<
-    qcode_lang_t, std::function<bool(IRModule*, std::ostream&, std::ostream&)>>
-    transcoders = {
+    qcode_val_t, std::function<bool(IRModule*, std::ostream&, std::ostream&)>>
+    TRANSCODERS = {
 #ifdef TRANSCODE_TARGET_C11
         {QCODE_C11, codegen::for_c11},
 #endif
@@ -76,7 +76,7 @@ static const std::unordered_map<
 #endif
 };
 
-static const std::unordered_map<qcode_lang_t, std::string_view> target_names = {
+static const std::unordered_map<qcode_val_t, std::string_view> TARGET_NAMES = {
     {QCODE_C11, "C11"},   {QCODE_CXX11, "C++11"},    {QCODE_TS, "TypeScript"},
     {QCODE_RUST, "Rust"}, {QCODE_PYTHON3, "Python"}, {QCODE_CSHARP, "C#"},
 };
@@ -102,8 +102,8 @@ public:
   virtual int overflow(int c) override { return c; }
 };
 
-NCC_EXPORT bool qcode_transcode(IRModule* module, qcode_conf_t*,
-                                qcode_lang_t lang, qcode_style_t, FILE* err,
+NCC_EXPORT bool QcodeTranscode(IRModule* module, qcode_conf_t*,
+                                qcode_val_t lang, qcode_style_t, FILE* err,
                                 FILE* out) {
   std::unique_ptr<std::streambuf> err_stream_buf, out_stream_buf;
 
@@ -121,12 +121,12 @@ NCC_EXPORT bool qcode_transcode(IRModule* module, qcode_conf_t*,
     out_stream_buf = std::make_unique<OStreamDiscard>();
   }
 
-  if (transcoders.contains(lang)) {
+  if (TRANSCODERS.contains(lang)) {
     std::ostream err_stream(err_stream_buf.get());
     std::ostream out_stream(out_stream_buf.get());
 
     /* Do the transcoding. */
-    bool status = transcoders.at(lang)(module, err_stream, out_stream);
+    bool status = TRANSCODERS.at(lang)(module, err_stream, out_stream);
 
     /* Flush the outer and inner streams. */
     err_stream.flush();
@@ -140,6 +140,6 @@ NCC_EXPORT bool qcode_transcode(IRModule* module, qcode_conf_t*,
     qcore_panicf(
         "The code generator was not built with transcoder support for target "
         "%s.",
-        target_names.at(lang).data());
+        TARGET_NAMES.at(lang).data());
   }
 }

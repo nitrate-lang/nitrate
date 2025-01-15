@@ -49,7 +49,7 @@ static const std::unordered_map<StorageClass, std::string_view>
         {StorageClass::Managed, "managed"},
 };
 
-void IR_Writer::write_source_location(FlowPtr<Expr> n) const {
+void IrWriter::WriteSourceLocation(FlowPtr<Expr> n) const {
   string("loc");
 
   if (m_rd.has_value()) {
@@ -130,7 +130,7 @@ void IR_Writer::write_source_location(FlowPtr<Expr> n) const {
   }
 }
 
-void IR_Writer::visit(FlowPtr<Expr> n) {
+void IrWriter::Visit(FlowPtr<Expr> n) {
   begin_obj(2);
 
   string("kind");

@@ -43,7 +43,7 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-static bool is_valid_import_name(const std::string &name) {
+static bool IsValidImportName(const std::string &name) {
   if (name.empty()) {
     return false;
   }
@@ -56,12 +56,12 @@ static bool is_valid_import_name(const std::string &name) {
   return std::regex_match(name, re);
 }
 
-static void canonicalize_import_name(std::string &name) {
+static void CanonicalizeImportName(std::string &name) {
   // Don't assume that filesystems are case-sensitive.
   std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 }
 
-int ncc::seq::sys_fetch(lua_State *L) {
+int ncc::seq::SysFetch(lua_State *L) {
   Sequencer *obj = get_engine();
 
   int nargs = lua_gettop(L);
@@ -76,13 +76,13 @@ int ncc::seq::sys_fetch(lua_State *L) {
 
   std::string import_name = lua_tostring(L, 1);
 
-  if (!is_valid_import_name(import_name)) {
+  if (!IsValidImportName(import_name)) {
     return luaL_error(L, "invalid import name");
   }
 
-  canonicalize_import_name(import_name);
+  CanonicalizeImportName(import_name);
 
-  if (auto data = obj->m_core->fetch_module_data(import_name.c_str())) {
+  if (auto data = obj->m_core->FetchModuleData(import_name.c_str())) {
     lua_pushstring(L, data->c_str());
     return 1;
   } else {

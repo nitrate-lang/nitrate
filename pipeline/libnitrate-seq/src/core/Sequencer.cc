@@ -54,22 +54,22 @@ using namespace ncc::seq;
 using namespace ncc::seq::ec;
 
 Sequencer::PImpl::PImpl(std::shared_ptr<Environment> env) : m_env(env) {
-  L = luaL_newstate();
+  m_L = luaL_newstate();
   m_random.seed(0);
 }
 
 Sequencer::PImpl::~PImpl() {
-  if (L) {
-    lua_close(L);
+  if (m_L) {
+    lua_close(m_L);
   }
 }
 
-static inline std::string_view ltrim(std::string_view s) {
+static inline std::string_view Ltrim(std::string_view s) {
   s.remove_prefix(std::min(s.find_first_not_of(" \t\n\r"), s.size()));
   return s;
 }
 
-static inline std::string_view rtrim(std::string_view s) {
+static inline std::string_view Rtrim(std::string_view s) {
   s.remove_suffix(
       std::min(s.size() - s.find_last_not_of(" \t\n\r") - 1, s.size()));
   return s;
@@ -132,23 +132,23 @@ void Sequencer::RecursiveExpand(std::string_view code) {
 }
 
 bool Sequencer::ExecuteLua(const char *code) {
-  auto top = lua_gettop(m_core->L);
-  auto rc = luaL_dostring(m_core->L, code);
+  auto top = lua_gettop(m_core->m_L);
+  auto rc = luaL_dostring(m_core->m_L, code);
 
   if (rc) {
-    ncc::Log << SeqError << "Lua error: " << lua_tostring(m_core->L, -1);
+    ncc::Log << SeqError << "Lua error: " << lua_tostring(m_core->m_L, -1);
 
     SetFailBit();
     return false;
   }
 
-  if (lua_isstring(m_core->L, -1)) {
-    RecursiveExpand(lua_tostring(m_core->L, -1));
-  } else if (lua_isnumber(m_core->L, -1)) {
-    RecursiveExpand(std::to_string(lua_tonumber(m_core->L, -1)));
-  } else if (lua_isboolean(m_core->L, -1)) {
-    RecursiveExpand(lua_toboolean(m_core->L, -1) ? "true" : "false");
-  } else if (lua_gettop(m_core->L) != top && !lua_isnil(m_core->L, -1)) {
+  if (lua_isstring(m_core->m_L, -1)) {
+    RecursiveExpand(lua_tostring(m_core->m_L, -1));
+  } else if (lua_isnumber(m_core->m_L, -1)) {
+    RecursiveExpand(std::to_string(lua_tonumber(m_core->m_L, -1)));
+  } else if (lua_isboolean(m_core->m_L, -1)) {
+    RecursiveExpand(lua_toboolean(m_core->m_L, -1) ? "true" : "false");
+  } else if (lua_gettop(m_core->m_L) != top && !lua_isnil(m_core->m_L, -1)) {
     return false;
   }
 
@@ -162,7 +162,7 @@ public:
   RecursiveGuard(size_t &depth) : m_depth(depth) { m_depth++; }
   ~RecursiveGuard() { m_depth--; }
 
-  bool should_stop() { return m_depth >= MAX_RECURSION_DEPTH; }
+  bool ShouldStop() { return m_depth >= MAX_RECURSION_DEPTH; }
 };
 
 Token Sequencer::GetNext() {
@@ -172,7 +172,7 @@ func_entry:  // do tail call optimization manually
 
   try {
     RecursiveGuard guard(m_core->m_depth);
-    if (guard.should_stop()) {
+    if (guard.ShouldStop()) {
       ncc::Log << SeqError << "Maximum macro recursion depth reached, aborting";
 
       throw StopException();
@@ -212,7 +212,7 @@ func_entry:  // do tail call optimization manually
             goto emit_token;
           }
 
-          if (auto module_data = m_core->fetch_module_data(import_name.Get())) {
+          if (auto module_data = m_core->FetchModuleData(import_name.Get())) {
             RecursiveExpand(module_data.value());
           } else {
             SetFailBit();
@@ -225,7 +225,7 @@ func_entry:  // do tail call optimization manually
       }
 
       case MacB: {
-        auto block = ltrim(x.as_string());
+        auto block = Ltrim(x.as_string());
         if (!block.starts_with("fn ")) {
           if (!ExecuteLua(std::string(block).c_str())) {
             ncc::Log << SeqError << "Failed to expand macro block: " << block;
@@ -236,7 +236,7 @@ func_entry:  // do tail call optimization manually
             goto emit_token;
           }
         } else {
-          block = ltrim(block.substr(3));
+          block = Ltrim(block.substr(3));
           auto pos = block.find_first_of("(");
           if (pos == std::string_view::npos) {
             ncc::Log << SeqError
@@ -248,7 +248,7 @@ func_entry:  // do tail call optimization manually
             goto emit_token;
           }
 
-          auto name = rtrim(block.substr(0, pos));
+          auto name = Rtrim(block.substr(0, pos));
           auto code =
               "function " + std::string(name) + std::string(block.substr(pos));
 
@@ -336,28 +336,28 @@ func_entry:  // do tail call optimization manually
 }
 
 void Sequencer::LoadLuaLibs() {
-  static constexpr luaL_Reg the_libs[] = {
+  static constexpr luaL_Reg kTheLibs[] = {
       {LUA_GNAME, luaopen_base},        {LUA_TABLIBNAME, luaopen_table},
       {LUA_STRLIBNAME, luaopen_string}, {LUA_MATHLIBNAME, luaopen_math},
       {LUA_UTF8LIBNAME, luaopen_utf8},  {NULL, NULL},
   };
 
-  for (auto lib = the_libs; lib->func; lib++) {
-    luaL_requiref(m_core->L, lib->name, lib->func, 1);
-    lua_pop(m_core->L, 1); /* remove lib */
+  for (auto lib = kTheLibs; lib->func; lib++) {
+    luaL_requiref(m_core->m_L, lib->name, lib->func, 1);
+    lua_pop(m_core->m_L, 1); /* remove lib */
   }
 }
 
 void Sequencer::BindLuaAPI() {
-  lua_newtable(m_core->L);
+  lua_newtable(m_core->m_L);
 
-  for (auto Func : SysFunctions) {
-    lua_pushinteger(m_core->L, (lua_Integer)(uintptr_t)this);
-    lua_pushcclosure(m_core->L, Func.getFunc(), 1);
-    lua_setfield(m_core->L, -2, Func.getName().data());
+  for (auto func : SYS_FUNCTIONS) {
+    lua_pushinteger(m_core->m_L, (lua_Integer)(uintptr_t)this);
+    lua_pushcclosure(m_core->m_L, func.GetFunc(), 1);
+    lua_setfield(m_core->m_L, -2, func.GetName().data());
   }
 
-  lua_setglobal(m_core->L, "n");
+  lua_setglobal(m_core->m_L, "n");
 }
 
 Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
@@ -379,17 +379,17 @@ std::optional<std::vector<std::string>> Sequencer::GetSourceWindow(
   return m_scanner->GetSourceWindow(start, end, fillchar);
 }
 
-static std::string dynfetch_get_mapkey(std::string_view module_name) {
+static std::string DynfetchGetMapkey(std::string_view module_name) {
   return "map." + std::string(module_name);
 }
 
-static std::string dynfetch_get_uri(std::string_view module_name,
-                                    std::string_view jobid) {
+static std::string DynfetchGetUri(std::string_view module_name,
+                                  std::string_view jobid) {
   return "file:///package/" + std::string(jobid) + "/" +
          std::string(module_name);
 }
 
-static std::string canonicalize_module_name(std::string_view module_name) {
+static std::string CanonicalizeModuleName(std::string_view module_name) {
   std::string text(module_name);
 
   for (size_t pos = 0; (pos = text.find("::", pos)) != std::string::npos;
@@ -413,17 +413,16 @@ void Sequencer::SetFetchFunc(FetchModuleFunc func) {
   m_core->m_fetch_module = func;
 }
 
-std::optional<std::string> Sequencer::PImpl::fetch_module_data(
+std::optional<std::string> Sequencer::PImpl::FetchModuleData(
     std::string_view raw_module_name) {
-  auto module_name = canonicalize_module_name(raw_module_name);
+  auto module_name = CanonicalizeModuleName(raw_module_name);
 
   /* Dynamic translation of module names into their actual named */
-  if (auto actual_name = m_env->Get(dynfetch_get_mapkey(module_name))) {
+  if (auto actual_name = m_env->Get(DynfetchGetMapkey(module_name))) {
     module_name = actual_name.value();
   }
 
-  auto module_uri =
-      dynfetch_get_uri(module_name, m_env->Get("this.job").value());
+  auto module_uri = DynfetchGetUri(module_name, m_env->Get("this.job").value());
 
   ncc::Log << SeqError << Debug << "Fetching module: '" << module_name << "'";
 

@@ -43,7 +43,7 @@ extern "C" {
 #endif
 
 /// @brief Diagnostic callback function prototype.
-typedef void (*nit_diag_func)(const char *message, void *opaque);
+typedef void (*NitDiagFunc)(const char *message, void *opaque);
 
 /******************************************************************************
  * @brief Generic Nitrate Toolchain tranformation function.                   *
@@ -82,16 +82,16 @@ typedef void (*nit_diag_func)(const char *message, void *opaque);
  ******************************************************************************
  * @note This function is an ideal target for fuzz based testing              *
  *****************************************************************************/
-bool nit_pipeline(FILE *in, FILE *out, nit_diag_func diag, void *opaque,
+bool NitPipeline(FILE *in, FILE *out, NitDiagFunc diag, void *opaque,
                   const char *const options[]);
 
 /******************************************************************************/
 
-static inline void nit_diag_stdout(const char *message, void *) {
+static inline void NitDiagStdout(const char *message, void *) {
   fprintf(stdout, "%s", message);
 }
 
-static inline void nit_diag_stderr(const char *message, void *) {
+static inline void NitDiagStderr(const char *message, void *) {
   fprintf(stderr, "%s", message);
 }
 

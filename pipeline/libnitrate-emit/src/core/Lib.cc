@@ -41,7 +41,7 @@
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Macro.hh>
 
-static std::atomic<size_t> qcode_lib_ref_count = 0;
+static std::atomic<size_t> QcodeLibRefCount = 0;
 
 static bool InitializeLLVM() {
 #ifdef LLVM_SUUPORT_ALL_TARGETS
@@ -65,7 +65,7 @@ static bool InitializeLLVM() {
 
 static void DoinitializeLLVM() { llvm::llvm_shutdown(); }
 
-static bool do_init() {
+static bool DoInit() {
   if (!InitializeLLVM()) {
     return false;
   }
@@ -73,10 +73,10 @@ static bool do_init() {
   return true;
 }
 
-static void do_deinit() { DoinitializeLLVM(); }
+static void DoDeinit() { DoinitializeLLVM(); }
 
-extern "C" NCC_EXPORT bool qcode_lib_init() {
-  if (qcode_lib_ref_count++ > 1) {
+extern "C" NCC_EXPORT bool QcodeLibInit() {
+  if (QcodeLibRefCount++ > 1) {
     return true;
   }
 
@@ -84,20 +84,20 @@ extern "C" NCC_EXPORT bool qcode_lib_init() {
     return false;
   }
 
-  return do_init();
+  return DoInit();
 }
 
-extern "C" NCC_EXPORT void qcode_lib_deinit() {
-  if (--qcode_lib_ref_count > 0) {
+extern "C" NCC_EXPORT void QcodeLibDeinit() {
+  if (--QcodeLibRefCount > 0) {
     return;
   }
 
-  do_deinit();
+  DoDeinit();
 
   ncc::CoreLibrary.DeinitRC();
 }
 
-extern "C" NCC_EXPORT const char* qcode_lib_version() {
+extern "C" NCC_EXPORT const char* QcodeLibVersion() {
   static const char* version_string =
 
       "[" __TARGET_VERSION
@@ -145,4 +145,4 @@ extern "C" NCC_EXPORT const char* qcode_lib_version() {
   return version_string;
 }
 
-extern "C" NCC_EXPORT const char* qcode_strerror() { return ""; }
+extern "C" NCC_EXPORT const char* QcodeStrerror() { return ""; }

@@ -46,12 +46,12 @@ typedef enum {
   QCODE_RUST,    /* Generate Rust Source Code */
   QCODE_PYTHON3, /* Generate Python3 Source Code */
   QCODE_CSHARP,  /* Generate C# Source Code */
-} qcode_lang_t;
+} QcodeLangT;
 
 typedef enum {
   QCODE_MINIFY,
   QCODE_GOOGLE,
-} qcode_style_t;
+} QcodeStyleT;
 
 /**
  * @brief Transcompile the NR module to the target source language.
@@ -69,17 +69,17 @@ typedef enum {
  * Both `err` and `out` will be flushed before returning, irrespective of the
  * return value.
  */
-bool qcode_transcode(ncc::ir::IRModule* module, qcode_conf_t* conf,
-                     qcode_lang_t lang, qcode_style_t style, FILE* err,
+bool QcodeTranscode(ncc::ir::IRModule* module, QcodeConfT* conf,
+                     QcodeLangT lang, QcodeStyleT style, FILE* err,
                      FILE* out);
 
 ///==============================================================================
 
-bool qcode_ir(ncc::ir::IRModule* module, qcode_conf_t* conf, FILE* err,
+bool QcodeIr(ncc::ir::IRModule* module, QcodeConfT* conf, FILE* err,
               FILE* out);
-bool qcode_asm(ncc::ir::IRModule* module, qcode_conf_t* conf, FILE* err,
+bool QcodeAsm(ncc::ir::IRModule* module, QcodeConfT* conf, FILE* err,
                FILE* out);
-bool qcode_obj(ncc::ir::IRModule* module, qcode_conf_t* conf, FILE* err,
+bool QcodeObj(ncc::ir::IRModule* module, QcodeConfT* conf, FILE* err,
                FILE* out);
 
 ///==============================================================================

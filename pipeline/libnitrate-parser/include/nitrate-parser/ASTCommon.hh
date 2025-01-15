@@ -136,7 +136,7 @@ typedef enum npar_ty_t {
 
   QAST__FIRST = QAST_BASE,
   QAST__LAST = QAST_FUNCTION,
-} npar_ty_t;
+} NparTyT;
 
 #define QAST_COUNT (QAST__LAST - QAST__FIRST + 1)
 

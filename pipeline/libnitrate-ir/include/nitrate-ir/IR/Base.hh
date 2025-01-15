@@ -54,38 +54,37 @@
 
 namespace ncc::ir {
   namespace detail {
-    void NodeDumpImpl(const Expr *E, std::ostream &os, bool isForDebug);
-    bool IsAcyclicImpl(FlowPtr<Expr> E);
+    void NodeDumpImpl(const Expr *e, std::ostream &os, bool is_for_debug);
+    bool IsAcyclicImpl(FlowPtr<Expr> e);
 
-    std::optional<FlowPtr<Type>> Expr_getType(Expr *E);
-    std::optional<uint64_t> Type_getAlignBitsImpl(const Type *self);
-    std::optional<uint64_t> Type_getSizeBitsImpl(const Type *self);
-    Expr *Expr_getCloneImpl(Expr *self);
+    std::optional<FlowPtr<Type>> ExprGetType(Expr *e);
+    std::optional<uint64_t> TypeGetAlignBitsImpl(const Type *self);
+    std::optional<uint64_t> TypeGetSizeBitsImpl(const Type *self);
+    Expr *ExprGetCloneImpl(Expr *self);
   };  // namespace detail
 
   using SrcLoc = parse::ASTExtensionKey;
 
   template <class A>
-  class IR_Vertex_Expr {
+  class GenericExpr {
     friend A;
 
-    nr_ty_t m_node_type : 6; /* This node kind */
-    uint8_t pad : 2;         /* Padding */
-    SrcLoc m_loc;            /* Source location alias */
+    NrTyT m_node_type : 6; /* This node kind */
+    uint8_t m_pad : 2;     /* Padding */
+    SrcLoc m_loc;          /* Source location alias */
 
-    IR_Vertex_Expr(const IR_Vertex_Expr &) = delete;
-    IR_Vertex_Expr &operator=(const IR_Vertex_Expr &) = delete;
+    GenericExpr(const GenericExpr &) = delete;
+    GenericExpr &operator=(const GenericExpr &) = delete;
 
   public:
-    constexpr IR_Vertex_Expr(nr_ty_t ty,
-                             lex::LocationID begin = lex::LocationID(),
-                             lex::LocationID end = lex::LocationID())
+    constexpr GenericExpr(NrTyT ty, lex::LocationID begin = lex::LocationID(),
+                          lex::LocationID end = lex::LocationID())
         : m_node_type(ty) {
       m_loc = parse::ExtensionDataStore.Add(begin, end);
     }
 
-    static constexpr uint32_t GetKindSize(nr_ty_t kind);
-    static constexpr const char *GetKindName(nr_ty_t kind);
+    static constexpr uint32_t GetKindSize(NrTyT kind);
+    static constexpr const char *GetKindName(NrTyT kind);
 
     constexpr auto GetKind() const { return m_node_type; }
     constexpr const char *GetKindName() const {
@@ -93,98 +92,98 @@ namespace ncc::ir {
     }
 
     template <typename T>
-    static constexpr nr_ty_t GetTypeCode() {
-      if constexpr (std::is_same_v<T, IR_Vertex_BinExpr<A>>) {
+    static constexpr NrTyT GetTypeCode() {
+      if constexpr (std::is_same_v<T, GenericBinExpr<A>>) {
         return IR_eBIN;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Unary<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericUnary<A>>) {
         return IR_eUNARY;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Int<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericInt<A>>) {
         return IR_eINT;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Float<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericFloat<A>>) {
         return IR_eFLOAT;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_List<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericList<A>>) {
         return IR_eLIST;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Call<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericCall<A>>) {
         return IR_eCALL;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Seq<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericSeq<A>>) {
         return IR_eSEQ;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Index<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericIndex<A>>) {
         return IR_eINDEX;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Ident<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericIdent<A>>) {
         return IR_eIDENT;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Extern<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericExtern<A>>) {
         return IR_eEXTERN;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Local<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericLocal<A>>) {
         return IR_eLOCAL;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Ret<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericRet<A>>) {
         return IR_eRET;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Brk<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericBrk<A>>) {
         return IR_eBRK;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Cont<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericCont<A>>) {
         return IR_eSKIP;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_If<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericIf<A>>) {
         return IR_eIF;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_While<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericWhile<A>>) {
         return IR_eWHILE;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_For<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericFor<A>>) {
         return IR_eFOR;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Case<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericCase<A>>) {
         return IR_eCASE;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Switch<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericSwitch<A>>) {
         return IR_eSWITCH;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Function<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericFunction<A>>) {
         return IR_eFUNCTION;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Asm<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericAsm<A>>) {
         return IR_eASM;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Expr<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericExpr<A>>) {
         return IR_eIGN;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_U1Ty<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericU1Ty<A>>) {
         return IR_tU1;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_U8Ty<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericU8Ty<A>>) {
         return IR_tU8;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_U16Ty<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericU16Ty<A>>) {
         return IR_tU16;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_U32Ty<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericU32Ty<A>>) {
         return IR_tU32;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_U64Ty<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericU64Ty<A>>) {
         return IR_tU64;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_U128Ty<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericU128Ty<A>>) {
         return IR_tU128;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_I8Ty<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericI8Ty<A>>) {
         return IR_tI8;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_I16Ty<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericI16Ty<A>>) {
         return IR_tI16;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_I32Ty<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericI32Ty<A>>) {
         return IR_tI32;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_I64Ty<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericI64Ty<A>>) {
         return IR_tI64;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_I128Ty<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericI128Ty<A>>) {
         return IR_tI128;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_F16Ty<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericF16Ty<A>>) {
         return IR_tF16_TY;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_F32Ty<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericF32Ty<A>>) {
         return IR_tF32_TY;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_F64Ty<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericF64Ty<A>>) {
         return IR_tF64_TY;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_F128Ty<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericF128Ty<A>>) {
         return IR_tF128_TY;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_VoidTy<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericVoidTy<A>>) {
         return IR_tVOID;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_PtrTy<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericPtrTy<A>>) {
         return IR_tPTR;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_ConstTy<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericConstTy<A>>) {
         return IR_tCONST;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_OpaqueTy<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericOpaqueTy<A>>) {
         return IR_tOPAQUE;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_StructTy<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericStructTy<A>>) {
         return IR_tSTRUCT;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_UnionTy<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericUnionTy<A>>) {
         return IR_tUNION;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_ArrayTy<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericArrayTy<A>>) {
         return IR_tARRAY;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_FnTy<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericFnTy<A>>) {
         return IR_tFUNC;
-      } else if constexpr (std::is_same_v<T, IR_Vertex_Tmp<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericTmp<A>>) {
         return IR_tTMP;
       } else {
         static_assert(
@@ -193,7 +192,7 @@ namespace ncc::ir {
       }
     }
 
-    [[nodiscard]] constexpr bool isType() const {
+    [[nodiscard]] constexpr bool IsType() const {
       switch (GetKind()) {
         case IR_tU1:
         case IR_tU8:
@@ -225,11 +224,11 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool isLiteral() const {
+    constexpr bool IsLiteral() const {
       return m_node_type == IR_eINT || m_node_type == IR_eFLOAT;
     }
 
-    constexpr std::string_view getName() const;
+    constexpr std::string_view GetName() const;
 
     constexpr auto Begin() const {
       return parse::ExtensionDataStore.Get(m_loc).Begin();
@@ -241,30 +240,30 @@ namespace ncc::ir {
     }
     constexpr auto End(lex::IScanner &rd) const { return End().Get(rd); }
 
-    constexpr auto getLoc() const { return m_loc; }
+    constexpr auto GetLoc() const { return m_loc; }
     constexpr void SetLoc(SrcLoc loc) { m_loc = loc; }
 
     constexpr void SetLoc(lex::LocationID begin, lex::LocationID end) {
       m_loc = parse::ExtensionDataStore.Add(begin, end);
     }
 
-    std::optional<FlowPtr<Type>> getType() {
-      return detail::Expr_getType(reinterpret_cast<Expr *>(this));
+    std::optional<FlowPtr<Type>> GetType() {
+      return detail::ExprGetType(reinterpret_cast<Expr *>(this));
     }
 
     template <typename T>
-    static constexpr T *safeCastAs(IR_Vertex_Expr<A> *ptr) {
+    static constexpr T *SafeCastAs(GenericExpr<A> *ptr) {
       if (!ptr) {
         return nullptr;
       }
 
 #ifndef NDEBUG
-      if constexpr (std::is_same_v<IR_Vertex_Type<A>, T>) {
-        if (!ptr->isType()) [[unlikely]] {
+      if constexpr (std::is_same_v<GenericType<A>, T>) {
+        if (!ptr->IsType()) [[unlikely]] {
           qcore_panicf("Invalid cast from non-type %s to type",
                        ptr->GetKindName());
         }
-      } else if constexpr (!std::is_same_v<IR_Vertex_Expr<A>, T>) {
+      } else if constexpr (!std::is_same_v<GenericExpr<A>, T>) {
         if (GetTypeCode<T>() != ptr->GetKind()) [[unlikely]] {
           qcore_panicf("Invalid cast from %s to %s", ptr->GetKindName(),
                        GetKindName(GetTypeCode<T>()));
@@ -276,82 +275,84 @@ namespace ncc::ir {
     }
 
     template <typename T>
-    constexpr T *as() {
-      return safeCastAs<T>(this);
+    [[nodiscard]] constexpr T *as() {  /// NOLINT
+      return SafeCastAs<T>(this);
     }
 
     template <typename T>
-    constexpr const T *as() const {
-      return safeCastAs<T>(const_cast<IR_Vertex_Expr<A> *>(this));
+    constexpr const T *as() const {  /// NOLINT
+      return SafeCastAs<T>(const_cast<GenericExpr<A> *>(this));
     }
 
-    template <class T = IR_Vertex_Expr<A>>
-    constexpr T *clone() {
-      return detail::Expr_getCloneImpl(reinterpret_cast<Expr *>(this))
+    template <class T = GenericExpr<A>>
+    constexpr T *Clone() {
+      return detail::ExprGetCloneImpl(reinterpret_cast<Expr *>(this))
           ->template as<T>();
     }
 
-    constexpr IR_Vertex_Expr *asExpr() { return this; }
-    constexpr IR_Vertex_Type<A> *asType();
-    constexpr const IR_Vertex_Type<A> *asType() const {
-      return const_cast<IR_Vertex_Expr<A> *>(this)->asType();
+    constexpr GenericExpr *AsExpr() { return this; }
+    constexpr GenericType<A> *AsType();
+    constexpr const GenericType<A> *AsType() const {
+      return const_cast<GenericExpr<A> *>(this)->AsType();
     }
 
-    constexpr bool is(nr_ty_t type) const { return type == GetKind(); }
-    constexpr bool isSame(const IR_Vertex_Expr<A> *other) const;
+    [[nodiscard]] constexpr bool is(NrTyT type) const {  /// NOLINT
+      return type == GetKind();
+    }
+
+    [[nodiscard]] constexpr bool IsEq(const GenericExpr<A> *other) const;
 
     constexpr void Accept(IRVisitor<A> &v) {
-      v.template dispatch(MakeFlowPtr(this));
+      v.template Dispatch(MakeFlowPtr(this));
     }
 
-    void dump(std::ostream &os = std::cout, bool isForDebug = false) const {
+    void Dump(std::ostream &os = std::cout, bool is_for_debug = false) const {
       detail::NodeDumpImpl(reinterpret_cast<const Expr *>(this), os,
-                           isForDebug);
+                           is_for_debug);
     }
 
-    std::string toString() const {
+    std::string ToString() const {
       std::stringstream ss;
-      dump(ss, false);
+      Dump(ss, false);
       return ss.str();
     };
   } __attribute__((packed)) __attribute__((aligned(1)));
 
-  static_assert(sizeof(IR_Vertex_Expr<void>) == 8,
+  static_assert(sizeof(GenericExpr<void>) == 8,
                 "IR_Vertex_Expr<void> is not 8 bytes in size.");
 
   template <class A>
-  class IR_Vertex_Type : public IR_Vertex_Expr<A> {
+  class GenericType : public GenericExpr<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_Type(nr_ty_t ty) : IR_Vertex_Expr<A>(ty) {}
+    constexpr GenericType(NrTyT ty) : GenericExpr<A>(ty) {}
 
-    std::optional<uint64_t> getSizeBits() const {
-      return detail::Type_getSizeBitsImpl(reinterpret_cast<const Type *>(this));
+    std::optional<uint64_t> GetSizeBits() const {
+      return detail::TypeGetSizeBitsImpl(reinterpret_cast<const Type *>(this));
     }
 
-    std::optional<uint64_t> getSizeBytes() const {
-      if (auto size = getSizeBits()) [[likely]] {
+    std::optional<uint64_t> GetSizeBytes() const {
+      if (auto size = GetSizeBits()) [[likely]] {
         return std::ceil(size.value() / 8.0);
       } else {
         return std::nullopt;
       }
     }
 
-    std::optional<uint64_t> getAlignBits() const {
-      return detail::Type_getAlignBitsImpl(
-          reinterpret_cast<const Type *>(this));
+    std::optional<uint64_t> GetAlignBits() const {
+      return detail::TypeGetAlignBitsImpl(reinterpret_cast<const Type *>(this));
     }
 
-    std::optional<uint64_t> getAlignBytes() const {
-      if (auto align = getAlignBits()) [[likely]] {
+    std::optional<uint64_t> GetAlignBytes() const {
+      if (auto align = GetAlignBits()) [[likely]] {
         return std::ceil(align.value() / 8.0);
       } else {
         return std::nullopt;
       }
     }
 
-    constexpr bool is_primitive() const {
+    constexpr bool IsPrimitive() const {
       switch (this->GetKind()) {
         case IR_tU1:
         case IR_tU8:
@@ -375,12 +376,12 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool is_array() const { return this->GetKind() == IR_tARRAY; }
-    constexpr bool is_pointer() const { return this->GetKind() == IR_tPTR; }
-    constexpr bool is_readonly() const { return this->GetKind() == IR_tCONST; }
-    constexpr bool is_function() const { return this->GetKind() == IR_tFUNC; }
+    constexpr bool IsArray() const { return this->GetKind() == IR_tARRAY; }
+    constexpr bool IsPointer() const { return this->GetKind() == IR_tPTR; }
+    constexpr bool IsReadonly() const { return this->GetKind() == IR_tCONST; }
+    constexpr bool IsFunction() const { return this->GetKind() == IR_tFUNC; }
 
-    constexpr bool is_composite() const {
+    constexpr bool IsComposite() const {
       switch (this->GetKind()) {
         case IR_tSTRUCT:
         case IR_tUNION:
@@ -391,9 +392,9 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool is_union() const { return this->GetKind() == IR_tUNION; }
+    constexpr bool IsUnion() const { return this->GetKind() == IR_tUNION; }
 
-    constexpr bool is_numeric() const {
+    constexpr bool IsNumeric() const {
       switch (this->GetKind()) {
         case IR_tU1:
         case IR_tU8:
@@ -416,7 +417,7 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool is_integral() const {
+    constexpr bool IsIntegral() const {
       switch (this->GetKind()) {
         case IR_tU1:
         case IR_tU8:
@@ -435,7 +436,7 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool is_floating_point() const {
+    constexpr bool IsFloatingPoint() const {
       switch (this->GetKind()) {
         case IR_tF16_TY:
         case IR_tF32_TY:
@@ -447,7 +448,7 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool is_signed() const {
+    constexpr bool IsSigned() const {
       switch (this->GetKind()) {
         case IR_tI8:
         case IR_tI16:
@@ -464,7 +465,7 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool is_unsigned() const {
+    constexpr bool IsUnsigned() const {
       switch (this->GetKind()) {
         case IR_tU1:
         case IR_tU8:
@@ -478,24 +479,24 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool is_void() const { return this->GetKind() == IR_tVOID; }
-    constexpr bool is_bool() const { return this->GetKind() == IR_tU1; }
+    constexpr bool IsVoid() const { return this->GetKind() == IR_tVOID; }
+    constexpr bool IsBool() const { return this->GetKind() == IR_tU1; }
   };
 
   template <class A>
-  constexpr IR_Vertex_Type<A> *IR_Vertex_Expr<A>::asType() {
+  constexpr GenericType<A> *GenericExpr<A>::AsType() {
 #ifndef NDEBUG
-    if (!isType()) {
+    if (!IsType()) {
       qcore_panicf("Failed to cast a non-type node `%s` to a type node",
                    GetKindName());
     }
 #endif
-    return static_cast<IR_Vertex_Type<A> *>(this);
+    return static_cast<GenericType<A> *>(this);
   }
 
   template <class A>
-  constexpr std::string_view IR_Vertex_Expr<A>::getName() const {
-    std::string_view R = "";
+  constexpr std::string_view GenericExpr<A>::GetName() const {
+    std::string_view r = "";
 
     switch (this->GetKind()) {
       case IR_eBIN: {
@@ -531,7 +532,7 @@ namespace ncc::ir {
       }
 
       case IR_eIDENT: {
-        R = as<IR_Vertex_Ident<A>>()->getName();
+        r = as<GenericIdent<A>>()->getName();
         break;
       }
 
@@ -540,7 +541,7 @@ namespace ncc::ir {
       }
 
       case IR_eLOCAL: {
-        R = as<IR_Vertex_Local<A>>()->getName();
+        r = as<GenericLocal<A>>()->getName();
         break;
       }
 
@@ -581,7 +582,7 @@ namespace ncc::ir {
       }
 
       case IR_eFUNCTION: {
-        R = as<IR_Vertex_Function<A>>()->getName();
+        r = as<GenericFunction<A>>()->getName();
         break;
       }
 
@@ -658,12 +659,12 @@ namespace ncc::ir {
       }
 
       case IR_tCONST: {
-        R = as<IR_Vertex_ConstTy<A>>()->getItem()->getName();
+        r = as<GenericConstTy<A>>()->getItem()->getName();
         break;
       }
 
       case IR_tOPAQUE: {
-        R = as<IR_Vertex_OpaqueTy<A>>()->getName();
+        r = as<GenericOpaqueTy<A>>()->getName();
         break;
       }
 
@@ -688,131 +689,130 @@ namespace ncc::ir {
       }
     }
 
-    return R;
+    return r;
   }
 
   template <class A>
-  constexpr uint32_t IR_Vertex_Expr<A>::GetKindSize(nr_ty_t type) {
-    const std::array<size_t, IR_COUNT> sizes = []() {
-      std::array<size_t, IR_COUNT> R;
-      R.fill(0);
+  constexpr uint32_t GenericExpr<A>::GetKindSize(NrTyT type) {
+    const std::array<size_t, kIrCount> sizes = []() {
+      std::array<size_t, kIrCount> r;
+      r.fill(0);
 
-      R[IR_eBIN] = sizeof(IR_Vertex_BinExpr<A>);
-      R[IR_eUNARY] = sizeof(IR_Vertex_Unary<A>);
-      R[IR_eINT] = sizeof(IR_Vertex_Int<A>);
-      R[IR_eFLOAT] = sizeof(IR_Vertex_Float<A>);
-      R[IR_eLIST] = sizeof(IR_Vertex_List<A>);
-      R[IR_eCALL] = sizeof(IR_Vertex_Call<A>);
-      R[IR_eSEQ] = sizeof(IR_Vertex_Seq<A>);
-      R[IR_eINDEX] = sizeof(IR_Vertex_Index<A>);
-      R[IR_eIDENT] = sizeof(IR_Vertex_Ident<A>);
-      R[IR_eEXTERN] = sizeof(IR_Vertex_Extern<A>);
-      R[IR_eLOCAL] = sizeof(IR_Vertex_Local<A>);
-      R[IR_eRET] = sizeof(IR_Vertex_Ret<A>);
-      R[IR_eBRK] = sizeof(IR_Vertex_Brk<A>);
-      R[IR_eSKIP] = sizeof(IR_Vertex_Cont<A>);
-      R[IR_eIF] = sizeof(IR_Vertex_If<A>);
-      R[IR_eWHILE] = sizeof(IR_Vertex_While<A>);
-      R[IR_eFOR] = sizeof(IR_Vertex_For<A>);
-      R[IR_eCASE] = sizeof(IR_Vertex_Case<A>);
-      R[IR_eSWITCH] = sizeof(IR_Vertex_Switch<A>);
-      R[IR_eFUNCTION] = sizeof(IR_Vertex_Function<A>);
-      R[IR_eASM] = sizeof(IR_Vertex_Asm<A>);
-      R[IR_eIGN] = sizeof(IR_Vertex_Expr<A>);
-      R[IR_tU1] = sizeof(IR_Vertex_U1Ty<A>);
-      R[IR_tU8] = sizeof(IR_Vertex_U8Ty<A>);
-      R[IR_tU16] = sizeof(IR_Vertex_U16Ty<A>);
-      R[IR_tU32] = sizeof(IR_Vertex_U32Ty<A>);
-      R[IR_tU64] = sizeof(IR_Vertex_U64Ty<A>);
-      R[IR_tU128] = sizeof(IR_Vertex_U128Ty<A>);
-      R[IR_tI8] = sizeof(IR_Vertex_I8Ty<A>);
-      R[IR_tI16] = sizeof(IR_Vertex_I16Ty<A>);
-      R[IR_tI32] = sizeof(IR_Vertex_I32Ty<A>);
-      R[IR_tI64] = sizeof(IR_Vertex_I64Ty<A>);
-      R[IR_tI128] = sizeof(IR_Vertex_I128Ty<A>);
-      R[IR_tF16_TY] = sizeof(IR_Vertex_F16Ty<A>);
-      R[IR_tF32_TY] = sizeof(IR_Vertex_F32Ty<A>);
-      R[IR_tF64_TY] = sizeof(IR_Vertex_F64Ty<A>);
-      R[IR_tF128_TY] = sizeof(IR_Vertex_F128Ty<A>);
-      R[IR_tVOID] = sizeof(IR_Vertex_VoidTy<A>);
-      R[IR_tPTR] = sizeof(IR_Vertex_PtrTy<A>);
-      R[IR_tCONST] = sizeof(IR_Vertex_ConstTy<A>);
-      R[IR_tOPAQUE] = sizeof(IR_Vertex_OpaqueTy<A>);
-      R[IR_tSTRUCT] = sizeof(IR_Vertex_StructTy<A>);
-      R[IR_tUNION] = sizeof(IR_Vertex_UnionTy<A>);
-      R[IR_tARRAY] = sizeof(IR_Vertex_ArrayTy<A>);
-      R[IR_tFUNC] = sizeof(IR_Vertex_FnTy<A>);
-      R[IR_tTMP] = sizeof(IR_Vertex_Tmp<A>);
+      r[IR_eBIN] = sizeof(GenericBinExpr<A>);
+      r[IR_eUNARY] = sizeof(GenericUnary<A>);
+      r[IR_eINT] = sizeof(GenericInt<A>);
+      r[IR_eFLOAT] = sizeof(GenericFloat<A>);
+      r[IR_eLIST] = sizeof(GenericList<A>);
+      r[IR_eCALL] = sizeof(GenericCall<A>);
+      r[IR_eSEQ] = sizeof(GenericSeq<A>);
+      r[IR_eINDEX] = sizeof(GenericIndex<A>);
+      r[IR_eIDENT] = sizeof(GenericIdent<A>);
+      r[IR_eEXTERN] = sizeof(GenericExtern<A>);
+      r[IR_eLOCAL] = sizeof(GenericLocal<A>);
+      r[IR_eRET] = sizeof(GenericRet<A>);
+      r[IR_eBRK] = sizeof(GenericBrk<A>);
+      r[IR_eSKIP] = sizeof(GenericCont<A>);
+      r[IR_eIF] = sizeof(GenericIf<A>);
+      r[IR_eWHILE] = sizeof(GenericWhile<A>);
+      r[IR_eFOR] = sizeof(GenericFor<A>);
+      r[IR_eCASE] = sizeof(GenericCase<A>);
+      r[IR_eSWITCH] = sizeof(GenericSwitch<A>);
+      r[IR_eFUNCTION] = sizeof(GenericFunction<A>);
+      r[IR_eASM] = sizeof(GenericAsm<A>);
+      r[IR_eIGN] = sizeof(GenericExpr<A>);
+      r[IR_tU1] = sizeof(GenericU1Ty<A>);
+      r[IR_tU8] = sizeof(GenericU8Ty<A>);
+      r[IR_tU16] = sizeof(GenericU16Ty<A>);
+      r[IR_tU32] = sizeof(GenericU32Ty<A>);
+      r[IR_tU64] = sizeof(GenericU64Ty<A>);
+      r[IR_tU128] = sizeof(GenericU128Ty<A>);
+      r[IR_tI8] = sizeof(GenericI8Ty<A>);
+      r[IR_tI16] = sizeof(GenericI16Ty<A>);
+      r[IR_tI32] = sizeof(GenericI32Ty<A>);
+      r[IR_tI64] = sizeof(GenericI64Ty<A>);
+      r[IR_tI128] = sizeof(GenericI128Ty<A>);
+      r[IR_tF16_TY] = sizeof(GenericF16Ty<A>);
+      r[IR_tF32_TY] = sizeof(GenericF32Ty<A>);
+      r[IR_tF64_TY] = sizeof(GenericF64Ty<A>);
+      r[IR_tF128_TY] = sizeof(GenericF128Ty<A>);
+      r[IR_tVOID] = sizeof(GenericVoidTy<A>);
+      r[IR_tPTR] = sizeof(GenericPtrTy<A>);
+      r[IR_tCONST] = sizeof(GenericConstTy<A>);
+      r[IR_tOPAQUE] = sizeof(GenericOpaqueTy<A>);
+      r[IR_tSTRUCT] = sizeof(GenericStructTy<A>);
+      r[IR_tUNION] = sizeof(GenericUnionTy<A>);
+      r[IR_tARRAY] = sizeof(GenericArrayTy<A>);
+      r[IR_tFUNC] = sizeof(GenericFnTy<A>);
+      r[IR_tTMP] = sizeof(GenericTmp<A>);
 
-      return R;
+      return r;
     }();
 
     return sizes[type];
   }
 
   template <class A>
-  constexpr const char *IR_Vertex_Expr<A>::GetKindName(nr_ty_t type) {
-    const std::array<const char *, IR_COUNT> names = []() {
-      std::array<const char *, IR_COUNT> R;
-      R.fill("");
+  constexpr const char *GenericExpr<A>::GetKindName(NrTyT type) {
+    const std::array<const char *, kIrCount> names = []() {
+      std::array<const char *, kIrCount> r;
+      r.fill("");
 
-      R[IR_eBIN] = "bin_expr";
-      R[IR_eUNARY] = "unary_expr";
-      R[IR_eINT] = "int";
-      R[IR_eFLOAT] = "float";
-      R[IR_eLIST] = "list";
-      R[IR_eCALL] = "call";
-      R[IR_eSEQ] = "seq";
-      R[IR_eINDEX] = "index";
-      R[IR_eIDENT] = "ident";
-      R[IR_eEXTERN] = "extern";
-      R[IR_eLOCAL] = "local";
-      R[IR_eRET] = "return";
-      R[IR_eBRK] = "break";
-      R[IR_eSKIP] = "continue";
-      R[IR_eIF] = "if";
-      R[IR_eWHILE] = "while";
-      R[IR_eFOR] = "for";
-      R[IR_eCASE] = "case";
-      R[IR_eSWITCH] = "switch";
-      R[IR_eFUNCTION] = "fn";
-      R[IR_eASM] = "asm";
-      R[IR_eIGN] = "ignore";
-      R[IR_tU1] = "u1";
-      R[IR_tU8] = "u8";
-      R[IR_tU16] = "u16";
-      R[IR_tU32] = "u32";
-      R[IR_tU64] = "u64";
-      R[IR_tU128] = "u128";
-      R[IR_tI8] = "i8";
-      R[IR_tI16] = "i16";
-      R[IR_tI32] = "i32";
-      R[IR_tI64] = "i64";
-      R[IR_tI128] = "i128";
-      R[IR_tF16_TY] = "f16";
-      R[IR_tF32_TY] = "f32";
-      R[IR_tF64_TY] = "f64";
-      R[IR_tF128_TY] = "f128";
-      R[IR_tVOID] = "void";
-      R[IR_tPTR] = "ptr";
-      R[IR_tCONST] = "const";
-      R[IR_tOPAQUE] = "opaque";
-      R[IR_tSTRUCT] = "struct";
-      R[IR_tUNION] = "union";
-      R[IR_tARRAY] = "array";
-      R[IR_tFUNC] = "fn_ty";
-      R[IR_tTMP] = "tmp";
+      r[IR_eBIN] = "bin_expr";
+      r[IR_eUNARY] = "unary_expr";
+      r[IR_eINT] = "int";
+      r[IR_eFLOAT] = "float";
+      r[IR_eLIST] = "list";
+      r[IR_eCALL] = "call";
+      r[IR_eSEQ] = "seq";
+      r[IR_eINDEX] = "index";
+      r[IR_eIDENT] = "ident";
+      r[IR_eEXTERN] = "extern";
+      r[IR_eLOCAL] = "local";
+      r[IR_eRET] = "return";
+      r[IR_eBRK] = "break";
+      r[IR_eSKIP] = "continue";
+      r[IR_eIF] = "if";
+      r[IR_eWHILE] = "while";
+      r[IR_eFOR] = "for";
+      r[IR_eCASE] = "case";
+      r[IR_eSWITCH] = "switch";
+      r[IR_eFUNCTION] = "fn";
+      r[IR_eASM] = "asm";
+      r[IR_eIGN] = "ignore";
+      r[IR_tU1] = "u1";
+      r[IR_tU8] = "u8";
+      r[IR_tU16] = "u16";
+      r[IR_tU32] = "u32";
+      r[IR_tU64] = "u64";
+      r[IR_tU128] = "u128";
+      r[IR_tI8] = "i8";
+      r[IR_tI16] = "i16";
+      r[IR_tI32] = "i32";
+      r[IR_tI64] = "i64";
+      r[IR_tI128] = "i128";
+      r[IR_tF16_TY] = "f16";
+      r[IR_tF32_TY] = "f32";
+      r[IR_tF64_TY] = "f64";
+      r[IR_tF128_TY] = "f128";
+      r[IR_tVOID] = "void";
+      r[IR_tPTR] = "ptr";
+      r[IR_tCONST] = "const";
+      r[IR_tOPAQUE] = "opaque";
+      r[IR_tSTRUCT] = "struct";
+      r[IR_tUNION] = "union";
+      r[IR_tARRAY] = "array";
+      r[IR_tFUNC] = "fn_ty";
+      r[IR_tTMP] = "tmp";
 
-      return R;
+      return r;
     }();
 
     return names[type];
   }
 
   template <class A>
-  constexpr bool IR_Vertex_Expr<A>::isSame(
-      const IR_Vertex_Expr<A> *other) const {
-    nr_ty_t kind = GetKind();
+  constexpr bool GenericExpr<A>::IsEq(const GenericExpr<A> *other) const {
+    NrTyT kind = GetKind();
 
     if (kind != other->GetKind()) {
       return false;

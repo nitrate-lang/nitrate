@@ -40,7 +40,7 @@
 #include <unordered_set>
 
 namespace nit {
-  typedef bool (*transform_func)(std::istream &source, std::ostream &output,
+  typedef bool (*TransformFunc)(std::istream &source, std::ostream &output,
                                  const std::unordered_set<std::string> &opts,
                                  std::shared_ptr<ncc::Environment> &env);
 

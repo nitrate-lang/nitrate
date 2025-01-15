@@ -39,7 +39,7 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::check_function_calls(FlowPtr<Seq> root, IReport *I) {
+bool NRBuilder::CheckFunctionCalls(FlowPtr<Seq> root, IReport *i) {
   bool failed = false;
 
   for_each<Call>(root, [&](auto x) {
@@ -52,28 +52,28 @@ bool NRBuilder::check_function_calls(FlowPtr<Seq> root, IReport *I) {
 
           const auto &arguments = x->getArgs();
 
-          bool variadic_two_few = fn_ty->isVariadic() &&
-                                  arguments.size() < fn_ty->getParams().size();
-          bool two_few = arguments.size() < fn_ty->getParams().size();
-          bool two_many = arguments.size() > fn_ty->getParams().size();
+          bool variadic_two_few = fn_ty->IsVariadic() &&
+                                  arguments.size() < fn_ty->GetParams().size();
+          bool two_few = arguments.size() < fn_ty->GetParams().size();
+          bool two_many = arguments.size() > fn_ty->GetParams().size();
 
           if (variadic_two_few) {
-            I->report(VariadicNotEnoughArguments, IC::Error, target->getName(),
+            i->Report(VariadicNotEnoughArguments, IC::Error, target->getName(),
                       x->getLoc());
           } else if (two_few) {
-            I->report(TwoFewArguments, IC::Error, target->getName(),
+            i->Report(TwoFewArguments, IC::Error, target->getName(),
                       x->getLoc());
           } else if (two_many) {
-            I->report(TwoManyArguments, IC::Error, target->getName(),
+            i->Report(TwoManyArguments, IC::Error, target->getName(),
                       x->getLoc());
           }
 
           if (!two_few && !two_many && !variadic_two_few) {
-            for (size_t i = 0; i < fn_ty->getParams().size(); ++i) {
-              auto param_type = fn_ty->getParams()[i]->getType();
+            for (size_t i = 0; i < fn_ty->GetParams().size(); ++i) {
+              auto param_type = fn_ty->GetParams()[i]->GetType();
 
               if (!param_type.has_value()) {
-                I->report(TypeInference, IC::Error,
+                i->Report(TypeInference, IC::Error,
                           "Unable to deduce function parameter type");
                 failed = true;
                 continue;
@@ -81,17 +81,17 @@ bool NRBuilder::check_function_calls(FlowPtr<Seq> root, IReport *I) {
 
               auto arg_type = arguments[i]->getType();
               if (!arg_type.has_value()) {
-                I->report(TypeInference, IC::Error,
+                i->Report(TypeInference, IC::Error,
                           "Unable to deduce function argument type");
                 failed = true;
                 continue;
               }
 
-              if (!param_type.value()->isSame(arg_type.value().get())) {
-                I->report(BadCast, IC::Error,
+              if (!param_type.value()->IsEq(arg_type.value().get())) {
+                i->Report(BadCast, IC::Error,
                           {"Bad call argument cast from '",
                            arg_type.value()->toString(), "' to '",
-                           param_type.value()->toString(), "'"});
+                           param_type.value()->ToString(), "'"});
                 failed = true;
                 continue;
               }

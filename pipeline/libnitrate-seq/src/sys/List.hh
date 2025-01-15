@@ -51,78 +51,78 @@ namespace ncc::seq {
     std::vector<DeferCallback> m_defer;
     std::shared_ptr<Environment> m_env;
     FetchModuleFunc m_fetch_module;
-    lua_State* L = nullptr;
+    lua_State* m_L = nullptr;
     size_t m_depth = 0;
 
-    std::optional<std::string> fetch_module_data(std::string_view module_name);
+    std::optional<std::string> FetchModuleData(std::string_view module_name);
 
     PImpl(std::shared_ptr<Environment> env);
     ~PImpl();
   };
 
-  typedef int (*qsyscall_t)(lua_State* L);
+  typedef int (*QsyscallT)(lua_State* l);
   class QSysCall final {
     std::string_view m_name;
     uint32_t m_id;
-    qsyscall_t m_func;
+    QsyscallT m_func;
 
   public:
     QSysCall(std::string_view name = "", uint32_t id = 0,
-             qsyscall_t func = nullptr)
+             QsyscallT func = nullptr)
         : m_name(name), m_id(id), m_func(func) {}
 
-    std::string_view getName() const { return m_name; }
-    uint32_t getId() const { return m_id; }
-    qsyscall_t getFunc() const { return m_func; }
+    std::string_view GetName() const { return m_name; }
+    uint32_t GetId() const { return m_id; }
+    QsyscallT GetFunc() const { return m_func; }
   };
 
   ///////////// BEGIN QCALL FUNCTIONS /////////////
 
   /* ==== Source processing ==== */
-  int sys_next(lua_State* L);
-  int sys_peek(lua_State* L);
-  int sys_emit(lua_State* L);
-  int sys_defer(lua_State* L);
+  int SysNext(lua_State* l);
+  int SysPeek(lua_State* l);
+  int SysEmit(lua_State* l);
+  int SysDefer(lua_State* l);
 
   /* ===== Message Logging ===== */
-  int sys_debug(lua_State* L);
-  int sys_info(lua_State* L);
-  int sys_warn(lua_State* L);
-  int sys_error(lua_State* L);
-  int sys_abort(lua_State* L);
-  int sys_fatal(lua_State* L);
+  int SysDebug(lua_State* l);
+  int SysInfo(lua_State* l);
+  int SysWarn(lua_State* l);
+  int SysError(lua_State* l);
+  int SysAbort(lua_State* l);
+  int SysFatal(lua_State* l);
 
   /* ====== Global State ======= */
-  int sys_get(lua_State* L);
-  int sys_set(lua_State* L);
+  int SysGet(lua_State* l);
+  int SysSet(lua_State* l);
 
   /* ====== Data Feching ======= */
-  int sys_fetch(lua_State* L);
+  int SysFetch(lua_State* l);
 
   /* ===== Random Generator ===== */
-  int sys_random(lua_State* L);
+  int SysRandom(lua_State* l);
 
   /* ===== Implementation specific ===== */
-  int sys_ctrl(lua_State* L);
+  int SysCtrl(lua_State* l);
 
   ////////////// END QCALL FUNCTIONS //////////////
 
-  static inline const std::vector<QSysCall> SysFunctions = {
-      {"next", 0x0010, sys_next},   /* Get the next token from the lexer */
-      {"peek", 0x0011, sys_peek},   /* Peek at the next token from the lexer */
-      {"emit", 0x0012, sys_emit},   /* Emit data  */
-      {"defer", 0x0013, sys_defer}, /* Callback after every token is emitted */
-      {"debug", 0x0050, sys_debug}, /* Print a debug message */
-      {"info", 0x0051, sys_info},   /* Print an informational message */
-      {"warn", 0x0052, sys_warn},   /* Print a warning message */
-      {"error", 0x0053, sys_error}, /* Print an error message */
-      {"abort", 0x0054, sys_abort}, /* Print an error and halt */
-      {"fatal", 0x0055, sys_fatal}, /* Print a fatal error and halt */
-      {"get", 0x0080, sys_get},     /* Get a value from the environment */
-      {"set", 0x0081, sys_set},     /* Set a value in the environment */
-      {"fetch", 0x0082, sys_fetch}, /* Import module */
-      {"random", 0x00A0, sys_random}, /* Get a random number */
-      {"ctrl", 0x00C0, sys_ctrl}      /* Implementation specific stuff */
+  static inline const std::vector<QSysCall> SYS_FUNCTIONS = {
+      {"next", 0x0010, SysNext},   /* Get the next token from the lexer */
+      {"peek", 0x0011, SysPeek},   /* Peek at the next token from the lexer */
+      {"emit", 0x0012, SysEmit},   /* Emit data  */
+      {"defer", 0x0013, SysDefer}, /* Callback after every token is emitted */
+      {"debug", 0x0050, SysDebug}, /* Print a debug message */
+      {"info", 0x0051, SysInfo},   /* Print an informational message */
+      {"warn", 0x0052, SysWarn},   /* Print a warning message */
+      {"error", 0x0053, SysError}, /* Print an error message */
+      {"abort", 0x0054, SysAbort}, /* Print an error and halt */
+      {"fatal", 0x0055, SysFatal}, /* Print a fatal error and halt */
+      {"get", 0x0080, SysGet},     /* Get a value from the environment */
+      {"set", 0x0081, SysSet},     /* Set a value in the environment */
+      {"fetch", 0x0082, SysFetch}, /* Import module */
+      {"random", 0x00A0, SysRandom}, /* Get a random number */
+      {"ctrl", 0x00C0, SysCtrl}      /* Implementation specific stuff */
   };
 
 };  // namespace ncc::seq

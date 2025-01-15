@@ -91,154 +91,154 @@ namespace ncc::ir {
 
     IR_FIRST = IR_eBIN,
     IR_LAST = IR_tTMP,
-  } nr_ty_t;
+  } NrTyT;
 
-  constexpr size_t IR_COUNT = (IR_LAST - IR_FIRST + 1);
+  constexpr size_t kIrCount = (IR_LAST - IR_FIRST + 1);
 }  // namespace ncc::ir
 
 namespace ncc::ir {
   template <class Attorney>
-  class IR_Vertex_Expr;
+  class GenericExpr;
   template <class Attorney>
-  class IR_Vertex_Type;
+  class GenericType;
   template <class Attorney>
-  class IR_Vertex_BinExpr;
+  class GenericBinExpr;
   template <class Attorney>
-  class IR_Vertex_Unary;
+  class GenericUnary;
   template <class Attorney>
-  class IR_Vertex_U1Ty;
+  class GenericU1Ty;
   template <class Attorney>
-  class IR_Vertex_U8Ty;
+  class GenericU8Ty;
   template <class Attorney>
-  class IR_Vertex_U16Ty;
+  class GenericU16Ty;
   template <class Attorney>
-  class IR_Vertex_U32Ty;
+  class GenericU32Ty;
   template <class Attorney>
-  class IR_Vertex_U64Ty;
+  class GenericU64Ty;
   template <class Attorney>
-  class IR_Vertex_U128Ty;
+  class GenericU128Ty;
   template <class Attorney>
-  class IR_Vertex_I8Ty;
+  class GenericI8Ty;
   template <class Attorney>
-  class IR_Vertex_I16Ty;
+  class GenericI16Ty;
   template <class Attorney>
-  class IR_Vertex_I32Ty;
+  class GenericI32Ty;
   template <class Attorney>
-  class IR_Vertex_I64Ty;
+  class GenericI64Ty;
   template <class Attorney>
-  class IR_Vertex_I128Ty;
+  class GenericI128Ty;
   template <class Attorney>
-  class IR_Vertex_F16Ty;
+  class GenericF16Ty;
   template <class Attorney>
-  class IR_Vertex_F32Ty;
+  class GenericF32Ty;
   template <class Attorney>
-  class IR_Vertex_F64Ty;
+  class GenericF64Ty;
   template <class Attorney>
-  class IR_Vertex_F128Ty;
+  class GenericF128Ty;
   template <class Attorney>
-  class IR_Vertex_VoidTy;
+  class GenericVoidTy;
   template <class Attorney>
-  class IR_Vertex_PtrTy;
+  class GenericPtrTy;
   template <class Attorney>
-  class IR_Vertex_ConstTy;
+  class GenericConstTy;
   template <class Attorney>
-  class IR_Vertex_OpaqueTy;
+  class GenericOpaqueTy;
   template <class Attorney>
-  class IR_Vertex_StructTy;
+  class GenericStructTy;
   template <class Attorney>
-  class IR_Vertex_UnionTy;
+  class GenericUnionTy;
   template <class Attorney>
-  class IR_Vertex_ArrayTy;
+  class GenericArrayTy;
   template <class Attorney>
-  class IR_Vertex_FnTy;
+  class GenericFnTy;
   template <class Attorney>
-  class IR_Vertex_Int;
+  class GenericInt;
   template <class Attorney>
-  class IR_Vertex_Float;
+  class GenericFloat;
   template <class Attorney>
-  class IR_Vertex_List;
+  class GenericList;
   template <class Attorney>
-  class IR_Vertex_Call;
+  class GenericCall;
   template <class Attorney>
-  class IR_Vertex_Seq;
+  class GenericSeq;
   template <class Attorney>
-  class IR_Vertex_Index;
+  class GenericIndex;
   template <class Attorney>
-  class IR_Vertex_Ident;
+  class GenericIdent;
   template <class Attorney>
-  class IR_Vertex_Extern;
+  class GenericExtern;
   template <class Attorney>
-  class IR_Vertex_Local;
+  class GenericLocal;
   template <class Attorney>
-  class IR_Vertex_Ret;
+  class GenericRet;
   template <class Attorney>
-  class IR_Vertex_Brk;
+  class GenericBrk;
   template <class Attorney>
-  class IR_Vertex_Cont;
+  class GenericCont;
   template <class Attorney>
-  class IR_Vertex_If;
+  class GenericIf;
   template <class Attorney>
-  class IR_Vertex_While;
+  class GenericWhile;
   template <class Attorney>
-  class IR_Vertex_For;
+  class GenericFor;
   template <class Attorney>
-  class IR_Vertex_Case;
+  class GenericCase;
   template <class Attorney>
-  class IR_Vertex_Switch;
+  class GenericSwitch;
   template <class Attorney>
-  class IR_Vertex_Function;
+  class GenericFunction;
   template <class Attorney>
-  class IR_Vertex_Asm;
+  class GenericAsm;
   template <class Attorney>
-  class IR_Vertex_Tmp;
+  class GenericTmp;
 
-  using Expr = IR_Vertex_Expr<void>;
-  using Type = IR_Vertex_Type<void>;
-  using BinExpr = IR_Vertex_BinExpr<void>;
-  using Unary = IR_Vertex_Unary<void>;
-  using U1Ty = IR_Vertex_U1Ty<void>;
-  using U8Ty = IR_Vertex_U8Ty<void>;
-  using U16Ty = IR_Vertex_U16Ty<void>;
-  using U32Ty = IR_Vertex_U32Ty<void>;
-  using U64Ty = IR_Vertex_U64Ty<void>;
-  using U128Ty = IR_Vertex_U128Ty<void>;
-  using I8Ty = IR_Vertex_I8Ty<void>;
-  using I16Ty = IR_Vertex_I16Ty<void>;
-  using I32Ty = IR_Vertex_I32Ty<void>;
-  using I64Ty = IR_Vertex_I64Ty<void>;
-  using I128Ty = IR_Vertex_I128Ty<void>;
-  using F16Ty = IR_Vertex_F16Ty<void>;
-  using F32Ty = IR_Vertex_F32Ty<void>;
-  using F64Ty = IR_Vertex_F64Ty<void>;
-  using F128Ty = IR_Vertex_F128Ty<void>;
-  using VoidTy = IR_Vertex_VoidTy<void>;
-  using PtrTy = IR_Vertex_PtrTy<void>;
-  using ConstTy = IR_Vertex_ConstTy<void>;
-  using OpaqueTy = IR_Vertex_OpaqueTy<void>;
-  using StructTy = IR_Vertex_StructTy<void>;
-  using UnionTy = IR_Vertex_UnionTy<void>;
-  using ArrayTy = IR_Vertex_ArrayTy<void>;
-  using FnTy = IR_Vertex_FnTy<void>;
-  using Int = IR_Vertex_Int<void>;
-  using Float = IR_Vertex_Float<void>;
-  using List = IR_Vertex_List<void>;
-  using Call = IR_Vertex_Call<void>;
-  using Seq = IR_Vertex_Seq<void>;
-  using Index = IR_Vertex_Index<void>;
-  using Ident = IR_Vertex_Ident<void>;
-  using Extern = IR_Vertex_Extern<void>;
-  using Local = IR_Vertex_Local<void>;
-  using Ret = IR_Vertex_Ret<void>;
-  using Brk = IR_Vertex_Brk<void>;
-  using Cont = IR_Vertex_Cont<void>;
-  using If = IR_Vertex_If<void>;
-  using While = IR_Vertex_While<void>;
-  using For = IR_Vertex_For<void>;
-  using Case = IR_Vertex_Case<void>;
-  using Switch = IR_Vertex_Switch<void>;
-  using Function = IR_Vertex_Function<void>;
-  using Asm = IR_Vertex_Asm<void>;
-  using Tmp = IR_Vertex_Tmp<void>;
+  using Expr = GenericExpr<void>;
+  using Type = GenericType<void>;
+  using BinExpr = GenericBinExpr<void>;
+  using Unary = GenericUnary<void>;
+  using U1Ty = GenericU1Ty<void>;
+  using U8Ty = GenericU8Ty<void>;
+  using U16Ty = GenericU16Ty<void>;
+  using U32Ty = GenericU32Ty<void>;
+  using U64Ty = GenericU64Ty<void>;
+  using U128Ty = GenericU128Ty<void>;
+  using I8Ty = GenericI8Ty<void>;
+  using I16Ty = GenericI16Ty<void>;
+  using I32Ty = GenericI32Ty<void>;
+  using I64Ty = GenericI64Ty<void>;
+  using I128Ty = GenericI128Ty<void>;
+  using F16Ty = GenericF16Ty<void>;
+  using F32Ty = GenericF32Ty<void>;
+  using F64Ty = GenericF64Ty<void>;
+  using F128Ty = GenericF128Ty<void>;
+  using VoidTy = GenericVoidTy<void>;
+  using PtrTy = GenericPtrTy<void>;
+  using ConstTy = GenericConstTy<void>;
+  using OpaqueTy = GenericOpaqueTy<void>;
+  using StructTy = GenericStructTy<void>;
+  using UnionTy = GenericUnionTy<void>;
+  using ArrayTy = GenericArrayTy<void>;
+  using FnTy = GenericFnTy<void>;
+  using Int = GenericInt<void>;
+  using Float = GenericFloat<void>;
+  using List = GenericList<void>;
+  using Call = GenericCall<void>;
+  using Seq = GenericSeq<void>;
+  using Index = GenericIndex<void>;
+  using Ident = GenericIdent<void>;
+  using Extern = GenericExtern<void>;
+  using Local = GenericLocal<void>;
+  using Ret = GenericRet<void>;
+  using Brk = GenericBrk<void>;
+  using Cont = GenericCont<void>;
+  using If = GenericIf<void>;
+  using While = GenericWhile<void>;
+  using For = GenericFor<void>;
+  using Case = GenericCase<void>;
+  using Switch = GenericSwitch<void>;
+  using Function = GenericFunction<void>;
+  using Asm = GenericAsm<void>;
+  using Tmp = GenericTmp<void>;
 }  // namespace ncc::ir
 
 #endif  // __NITRATE_IR_TYPE_DECL_H__

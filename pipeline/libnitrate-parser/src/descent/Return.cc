@@ -37,11 +37,11 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<Stmt> Parser::recurse_return() {
+FlowPtr<Stmt> Parser::RecurseReturn() {
   if (next_if(PuncSemi)) {
     return make<ReturnStmt>(std::nullopt)();
   } else {
-    auto return_value = recurse_expr({
+    auto return_value = RecurseExpr({
         Token(Punc, PuncSemi),
     });
 
@@ -54,13 +54,13 @@ FlowPtr<Stmt> Parser::recurse_return() {
   }
 }
 
-FlowPtr<Stmt> Parser::recurse_retif() {
-  auto return_if = recurse_expr({
+FlowPtr<Stmt> Parser::RecurseRetif() {
+  auto return_if = RecurseExpr({
       Token(Punc, PuncComa),
   });
 
   if (next_if(PuncComa)) [[likely]] {
-    auto return_value = recurse_expr({
+    auto return_value = RecurseExpr({
         Token(Punc, PuncSemi),
     });
 
@@ -72,6 +72,6 @@ FlowPtr<Stmt> Parser::recurse_retif() {
   } else {
     Log << SyntaxError << current()
         << "Expected ',' after the retif condition.";
-    return mock_stmt(QAST_RETIF);
+    return MockStmt(QAST_RETIF);
   }
 }

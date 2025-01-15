@@ -50,7 +50,7 @@ extern "C" {
  * multiple times. Each time will not reinitialize the library, but will
  * increment the reference count.
  */
-bool qcode_lib_init();
+bool QcodeLibInit();
 
 /**
  * @brief Deinitialize the library.
@@ -60,7 +60,7 @@ bool qcode_lib_init();
  * multiple times. Each time will not deinitialize the library, but when
  * the reference count reaches zero, the library will be deinitialized.
  */
-void qcode_lib_deinit();
+void QcodeLibDeinit();
 
 /**
  * @brief Get the version of the library.
@@ -71,7 +71,7 @@ void qcode_lib_deinit();
  * @note This function is safe to call before initialization and after
  * deinitialization.
  */
-const char* qcode_lib_version();
+const char* QcodeLibVersion();
 
 /**
  * @brief Get the last error message from the current thread.
@@ -82,7 +82,7 @@ const char* qcode_lib_version();
  * @note This function is safe to call before initialization and after
  * deinitialization.
  */
-const char* qcode_strerror();
+const char* QcodeStrerror();
 
 #ifdef __cplusplus
 }

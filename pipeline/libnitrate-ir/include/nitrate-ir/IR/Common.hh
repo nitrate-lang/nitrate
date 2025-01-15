@@ -51,22 +51,22 @@
 namespace ncc::ir {
   using uint128_t = boost::multiprecision::uint128_t;
 
-  extern thread_local std::unique_ptr<ncc::IMemory> nr_allocator;
+  extern thread_local std::unique_ptr<ncc::IMemory> NrAllocator;
 
   template <class T>
   struct Arena {
-    typedef T value_type;
+    typedef T ValueType;
 
     Arena() = default;
 
     template <class U>
     constexpr Arena(const Arena<U> &) {}
 
-    [[nodiscard]] T *allocate(std::size_t n) {
-      return static_cast<T *>(nr_allocator->Alloc(sizeof(T) * n));
+    [[nodiscard]] T *Allocate(std::size_t n) {
+      return static_cast<T *>(NrAllocator->Alloc(sizeof(T) * n));
     }
 
-    void deallocate(T *, std::size_t) {}
+    void Deallocate(T *, std::size_t) {}
   };
 
   template <class T, class U>
@@ -107,12 +107,12 @@ namespace ncc::ir {
 
   template <class A>
   using IR_Vertex_CallArguments =
-      std::vector<std::pair<string, FlowPtr<IR_Vertex_Expr<A>>>,
-                  Arena<std::pair<string, FlowPtr<IR_Vertex_Expr<A>>>>>;
+      std::vector<std::pair<string, FlowPtr<GenericExpr<A>>>,
+                  Arena<std::pair<string, FlowPtr<GenericExpr<A>>>>>;
 
   template <class A>
-  using FnParams = std::vector<FlowPtr<IR_Vertex_Type<A>>,
-                               Arena<FlowPtr<IR_Vertex_Type<A>>>>;
+  using FnParams =
+      std::vector<FlowPtr<GenericType<A>>, Arena<FlowPtr<GenericType<A>>>>;
 
   enum class TmpType {
     CALL,
@@ -121,22 +121,21 @@ namespace ncc::ir {
   };
 
   template <class A>
-  struct IR_Vertex_CallArgsTmpNodeCradle {
-    FlowPtr<IR_Vertex_Expr<A>> base;
-    std::span<std::pair<string, FlowPtr<IR_Vertex_Expr<A>>>> args;
+  struct GenericCallArgsTmpNodeCradle {
+    FlowPtr<GenericExpr<A>> m_base;
+    std::span<std::pair<string, FlowPtr<GenericExpr<A>>>> m_args;
 
-    bool operator==(const IR_Vertex_CallArgsTmpNodeCradle<A> &rhs) const {
-      return base == rhs.base && args == rhs.args;
+    bool operator==(const GenericCallArgsTmpNodeCradle<A> &rhs) const {
+      return m_base == rhs.m_base && m_args == rhs.m_args;
     }
   };
 
   template <class A>
-  using TmpNodeCradle =
-      std::variant<IR_Vertex_CallArgsTmpNodeCradle<A>, string>;
+  using TmpNodeCradle = std::variant<GenericCallArgsTmpNodeCradle<A>, string>;
 
   template <class A>
-  using IR_Vertex_ListItems = std::vector<FlowPtr<IR_Vertex_Expr<A>>,
-                                          Arena<FlowPtr<IR_Vertex_Expr<A>>>>;
+  using IR_Vertex_ListItems =
+      std::vector<FlowPtr<GenericExpr<A>>, Arena<FlowPtr<GenericExpr<A>>>>;
 
   enum class AbiTag {
     C,
@@ -146,21 +145,21 @@ namespace ncc::ir {
   };
 
   template <class A>
-  using IR_Vertex_CallArgs = std::vector<FlowPtr<IR_Vertex_Expr<A>>,
-                                         Arena<FlowPtr<IR_Vertex_Expr<A>>>>;
+  using IR_Vertex_CallArgs =
+      std::vector<FlowPtr<GenericExpr<A>>, Arena<FlowPtr<GenericExpr<A>>>>;
 
   template <class A>
-  using IR_Vertex_SeqItems = std::vector<FlowPtr<IR_Vertex_Expr<A>>,
-                                         Arena<FlowPtr<IR_Vertex_Expr<A>>>>;
+  using IR_Vertex_SeqItems =
+      std::vector<FlowPtr<GenericExpr<A>>, Arena<FlowPtr<GenericExpr<A>>>>;
 
   template <class A>
   using IR_Vertex_Params =
-      std::vector<std::pair<FlowPtr<IR_Vertex_Type<A>>, string>,
-                  Arena<std::pair<FlowPtr<IR_Vertex_Type<A>>, string>>>;
+      std::vector<std::pair<FlowPtr<GenericType<A>>, string>,
+                  Arena<std::pair<FlowPtr<GenericType<A>>, string>>>;
 
   template <class A>
-  using IR_Vertex_SwitchCases = std::vector<FlowPtr<IR_Vertex_Case<A>>,
-                                            Arena<FlowPtr<IR_Vertex_Case<A>>>>;
+  using IR_Vertex_SwitchCases =
+      std::vector<FlowPtr<GenericCase<A>>, Arena<FlowPtr<GenericCase<A>>>>;
 
 }  // namespace ncc::ir
 

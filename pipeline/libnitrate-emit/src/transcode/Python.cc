@@ -36,7 +36,7 @@
 #include <nitrate-core/Macro.hh>
 #include <transcode/Targets.hh>
 
-bool codegen::for_python(IRModule *module, std::ostream &err,
+bool codegen::ForPython(IRModule *module, std::ostream &err,
                          std::ostream &out) {
   err << "Not implemented";
   return false;

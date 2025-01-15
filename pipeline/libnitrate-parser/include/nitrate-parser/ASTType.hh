@@ -44,7 +44,7 @@ namespace ncc::parse {
   public:
     constexpr NamedTy(auto name) : Type(QAST_NAMED), m_name(name) {}
 
-    constexpr auto get_name() const { return m_name; }
+    constexpr auto GetName() const { return m_name; }
   };
 
   class InferTy : public Type {
@@ -60,8 +60,8 @@ namespace ncc::parse {
     constexpr TemplType(auto templ, auto args)
         : Type(QAST_TEMPLATE), m_template(templ), m_args(args) {}
 
-    constexpr auto get_template() const { return m_template; }
-    constexpr auto get_args() const { return m_args; }
+    constexpr auto GetTemplate() const { return m_template; }
+    constexpr auto GetArgs() const { return m_args; }
   };
 
   class U1 : public Type {
@@ -152,8 +152,8 @@ namespace ncc::parse {
     constexpr PtrTy(auto item, auto is_volatile)
         : Type(QAST_PTR), m_item(item), m_is_volatile(is_volatile) {}
 
-    constexpr auto get_item() const { return m_item; }
-    constexpr bool is_volatile() const { return m_is_volatile; }
+    constexpr auto GetItem() const { return m_item; }
+    constexpr bool IsVolatile() const { return m_is_volatile; }
   };
 
   class OpaqueTy : public Type {
@@ -162,7 +162,7 @@ namespace ncc::parse {
   public:
     constexpr OpaqueTy(auto name) : Type(QAST_OPAQUE), m_name(name) {}
 
-    constexpr auto get_name() const { return m_name; }
+    constexpr auto GetName() const { return m_name; }
   };
 
   class TupleTy : public Type {
@@ -171,7 +171,7 @@ namespace ncc::parse {
   public:
     constexpr TupleTy(auto items) : Type(QAST_TUPLE), m_items(items) {}
 
-    constexpr auto get_items() const { return m_items; }
+    constexpr auto GetItems() const { return m_items; }
   };
 
   class ArrayTy : public Type {
@@ -182,8 +182,8 @@ namespace ncc::parse {
     constexpr ArrayTy(auto item, auto size)
         : Type(QAST_ARRAY), m_item(item), m_size(size) {}
 
-    constexpr auto get_item() const { return m_item; }
-    constexpr auto get_size() const { return m_size; }
+    constexpr auto GetItem() const { return m_item; }
+    constexpr auto GetSize() const { return m_size; }
   };
 
   class RefTy : public Type {
@@ -192,7 +192,7 @@ namespace ncc::parse {
   public:
     constexpr RefTy(auto item) : Type(QAST_REF), m_item(item) {}
 
-    constexpr auto get_item() const { return m_item; }
+    constexpr auto GetItem() const { return m_item; }
   };
 
   class FuncTy : public Type {
@@ -212,11 +212,11 @@ namespace ncc::parse {
           m_purity(purity),
           m_variadic(variadic) {}
 
-    constexpr auto get_return() const { return m_return; }
-    constexpr auto get_purity() const { return m_purity; }
-    constexpr auto get_params() const { return m_params; }
-    constexpr auto is_variadic() const { return m_variadic; }
-    constexpr auto get_attributes() const { return m_attributes; }
+    constexpr auto GetReturn() const { return m_return; }
+    constexpr auto GetPurity() const { return m_purity; }
+    constexpr auto GetParams() const { return m_params; }
+    constexpr auto IsVariadic() const { return m_variadic; }
+    constexpr auto GetAttributes() const { return m_attributes; }
   };
 }  // namespace ncc::parse
 

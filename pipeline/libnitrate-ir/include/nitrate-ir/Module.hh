@@ -50,8 +50,8 @@
 
 namespace ncc::ir {
   struct TargetInfo {
-    uint16_t PointerSizeBytes = 8;
-    std::optional<string> TargetTriple, CPU, CPUFeatures;
+    uint16_t m_PointerSizeBytes = 8;
+    std::optional<string> m_TargetTriple, m_CPU, m_CPUFeatures;
   };
 
   class NRBuilder;
@@ -77,7 +77,7 @@ namespace ncc::ir {
     IRModule(string module_name = "module");
     ~IRModule();
 
-    auto getRoot() const { return m_root; }
+    auto GetRoot() const { return m_root; }
 
     std::span<const string> GetTransformHistory() const { return m_applied; }
     bool Diagnostics(std::optional<bool> state = std::nullopt);
@@ -93,7 +93,7 @@ namespace ncc::ir {
     void Accept(IRVisitor<void> &visitor);
   };
 
-  constexpr size_t QMODULE_SIZE = sizeof(IRModule);
+  constexpr size_t kQmoduleSize = sizeof(IRModule);
 }  // namespace ncc::ir
 
 #endif

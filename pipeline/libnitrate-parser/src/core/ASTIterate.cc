@@ -66,144 +66,144 @@ class IterVisitor : public ASTVisitor {
   }
 
   void AddTypesuffix(const FlowPtr<Type>& n) {
-    Add(n->get_width());
-    Add(n->get_range_begin());
-    Add(n->get_range_end());
+    Add(n->GetWidth());
+    Add(n->GetRangeBegin());
+    Add(n->GetRangeEnd());
   }
 
-  void visit(FlowPtr<Base>) override {}
-  void visit(FlowPtr<ExprStmt> n) override { Add(n->get_expr()); }
-  void visit(FlowPtr<StmtExpr> n) override { Add(n->get_stmt()); }
-  void visit(FlowPtr<TypeExpr> n) override { Add(n->get_type()); }
-  void visit(FlowPtr<NamedTy> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<InferTy> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<Base>) override {}
+  void Visit(FlowPtr<ExprStmt> n) override { Add(n->GetExpr()); }
+  void Visit(FlowPtr<StmtExpr> n) override { Add(n->GetStmt()); }
+  void Visit(FlowPtr<TypeExpr> n) override { Add(n->GetType()); }
+  void Visit(FlowPtr<NamedTy> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<InferTy> n) override { AddTypesuffix(n); }
 
-  void visit(FlowPtr<TemplType> n) override {
-    Add(n->get_template());
-    std::for_each(n->get_args().begin(), n->get_args().end(),
+  void Visit(FlowPtr<TemplType> n) override {
+    Add(n->GetTemplate());
+    std::for_each(n->GetArgs().begin(), n->GetArgs().end(),
                   [&](auto arg) { Add(arg.second); });
 
     AddTypesuffix(n);
   }
 
-  void visit(FlowPtr<U1> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<U8> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<U16> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<U32> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<U64> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<U128> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<I8> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<I16> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<I32> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<I64> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<I128> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<F16> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<F32> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<F64> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<F128> n) override { AddTypesuffix(n); }
-  void visit(FlowPtr<VoidTy> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<U1> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<U8> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<U16> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<U32> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<U64> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<U128> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<I8> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<I16> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<I32> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<I64> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<I128> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<F16> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<F32> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<F64> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<F128> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<VoidTy> n) override { AddTypesuffix(n); }
 
-  void visit(FlowPtr<PtrTy> n) override {
-    Add(n->get_item());
+  void Visit(FlowPtr<PtrTy> n) override {
+    Add(n->GetItem());
     AddTypesuffix(n);
   }
 
-  void visit(FlowPtr<OpaqueTy> n) override { AddTypesuffix(n); }
+  void Visit(FlowPtr<OpaqueTy> n) override { AddTypesuffix(n); }
 
-  void visit(FlowPtr<TupleTy> n) override {
-    std::for_each(n->get_items().begin(), n->get_items().end(),
+  void Visit(FlowPtr<TupleTy> n) override {
+    std::for_each(n->GetItems().begin(), n->GetItems().end(),
                   [&](auto item) { Add(item); });
 
     AddTypesuffix(n);
   }
 
-  void visit(FlowPtr<ArrayTy> n) override {
-    Add(n->get_item());
-    Add(n->get_size());
+  void Visit(FlowPtr<ArrayTy> n) override {
+    Add(n->GetItem());
+    Add(n->GetSize());
     AddTypesuffix(n);
   }
 
-  void visit(FlowPtr<RefTy> n) override {
-    Add(n->get_item());
+  void Visit(FlowPtr<RefTy> n) override {
+    Add(n->GetItem());
     AddTypesuffix(n);
   }
 
-  void visit(FlowPtr<FuncTy> n) override {
-    std::for_each(n->get_attributes().begin(), n->get_attributes().end(),
+  void Visit(FlowPtr<FuncTy> n) override {
+    std::for_each(n->GetAttributes().begin(), n->GetAttributes().end(),
                   [&](auto attr) { Add(attr); });
 
-    std::for_each(n->get_params().begin(), n->get_params().end(),
+    std::for_each(n->GetParams().begin(), n->GetParams().end(),
                   [&](auto param) {
                     Add(std::get<1>(param));
                     std::get<2>(param);
                   });
 
-    Add(n->get_return());
+    Add(n->GetReturn());
 
     AddTypesuffix(n);
   }
 
-  void visit(FlowPtr<UnaryExpr> n) override { Add(n->get_rhs()); }
+  void Visit(FlowPtr<UnaryExpr> n) override { Add(n->GetRhs()); }
 
-  void visit(FlowPtr<BinExpr> n) override {
-    Add(n->get_lhs());
-    Add(n->get_rhs());
+  void Visit(FlowPtr<BinExpr> n) override {
+    Add(n->GetLhs());
+    Add(n->GetRhs());
   }
 
-  void visit(FlowPtr<PostUnaryExpr> n) override { Add(n->get_lhs()); }
+  void Visit(FlowPtr<PostUnaryExpr> n) override { Add(n->GetLhs()); }
 
-  void visit(FlowPtr<TernaryExpr> n) override {
-    Add(n->get_cond());
-    Add(n->get_lhs());
-    Add(n->get_rhs());
+  void Visit(FlowPtr<TernaryExpr> n) override {
+    Add(n->GetCond());
+    Add(n->GetLhs());
+    Add(n->GetRhs());
   }
 
-  void visit(FlowPtr<ConstInt>) override {}
-  void visit(FlowPtr<ConstFloat>) override {}
-  void visit(FlowPtr<ConstBool>) override {}
-  void visit(FlowPtr<ConstString>) override {}
-  void visit(FlowPtr<ConstChar>) override {}
-  void visit(FlowPtr<ConstNull>) override {}
-  void visit(FlowPtr<ConstUndef>) override {}
+  void Visit(FlowPtr<ConstInt>) override {}
+  void Visit(FlowPtr<ConstFloat>) override {}
+  void Visit(FlowPtr<ConstBool>) override {}
+  void Visit(FlowPtr<ConstString>) override {}
+  void Visit(FlowPtr<ConstChar>) override {}
+  void Visit(FlowPtr<ConstNull>) override {}
+  void Visit(FlowPtr<ConstUndef>) override {}
 
-  void visit(FlowPtr<Call> n) override {
-    Add(n->get_func());
-    std::for_each(n->get_args().begin(), n->get_args().end(),
+  void Visit(FlowPtr<Call> n) override {
+    Add(n->GetFunc());
+    std::for_each(n->GetArgs().begin(), n->GetArgs().end(),
                   [&](auto arg) { Add(arg.second); });
   }
 
-  void visit(FlowPtr<TemplCall> n) override {
-    Add(n->get_func());
-    std::for_each(n->get_template_args().begin(), n->get_template_args().end(),
+  void Visit(FlowPtr<TemplCall> n) override {
+    Add(n->GetFunc());
+    std::for_each(n->GetTemplateArgs().begin(), n->GetTemplateArgs().end(),
                   [&](auto arg) { Add(arg.second); });
 
-    std::for_each(n->get_args().begin(), n->get_args().end(),
+    std::for_each(n->GetArgs().begin(), n->GetArgs().end(),
                   [&](auto arg) { Add(arg.second); });
   }
 
-  void visit(FlowPtr<List> n) override {
-    std::for_each(n->get_items().begin(), n->get_items().end(),
+  void Visit(FlowPtr<List> n) override {
+    std::for_each(n->GetItems().begin(), n->GetItems().end(),
                   [&](auto item) { Add(item); });
   }
 
-  void visit(FlowPtr<Assoc> n) override {
-    Add(n->get_key());
-    Add(n->get_value());
+  void Visit(FlowPtr<Assoc> n) override {
+    Add(n->GetKey());
+    Add(n->GetValue());
   }
 
-  void visit(FlowPtr<Index> n) override {
-    Add(n->get_base());
-    Add(n->get_index());
+  void Visit(FlowPtr<Index> n) override {
+    Add(n->GetBase());
+    Add(n->GetIndex());
   }
 
-  void visit(FlowPtr<Slice> n) override {
-    Add(n->get_base());
-    Add(n->get_start());
-    Add(n->get_end());
+  void Visit(FlowPtr<Slice> n) override {
+    Add(n->GetBase());
+    Add(n->GetStart());
+    Add(n->GetEnd());
   }
 
-  void visit(FlowPtr<FString> n) override {
-    std::for_each(n->get_items().begin(), n->get_items().end(), [&](auto arg) {
+  void Visit(FlowPtr<FString> n) override {
+    std::for_each(n->GetItems().begin(), n->GetItems().end(), [&](auto arg) {
       if (std::holds_alternative<FlowPtr<Expr>>(arg)) {
         Add(std::get<FlowPtr<Expr>>(arg));
       } else if (std::holds_alternative<string>(arg)) {
@@ -213,141 +213,140 @@ class IterVisitor : public ASTVisitor {
     });
   }
 
-  void visit(FlowPtr<Ident>) override {}
+  void Visit(FlowPtr<Ident>) override {}
 
-  void visit(FlowPtr<SeqPoint> n) override {
-    std::for_each(n->get_items().begin(), n->get_items().end(),
+  void Visit(FlowPtr<SeqPoint> n) override {
+    std::for_each(n->GetItems().begin(), n->GetItems().end(),
                   [&](auto item) { Add(item); });
   }
 
-  void visit(FlowPtr<Block> n) override {
-    std::for_each(n->get_items().begin(), n->get_items().end(),
+  void Visit(FlowPtr<Block> n) override {
+    std::for_each(n->GetItems().begin(), n->GetItems().end(),
                   [&](auto item) { Add(item); });
   }
 
-  void visit(FlowPtr<VarDecl> n) override {
-    std::for_each(n->get_attributes().begin(), n->get_attributes().end(),
+  void Visit(FlowPtr<VarDecl> n) override {
+    std::for_each(n->GetAttributes().begin(), n->GetAttributes().end(),
                   [&](auto attr) { Add(attr); });
 
-    Add(n->get_type());
-    Add(n->get_value());
+    Add(n->GetType());
+    Add(n->GetValue());
   }
 
-  void visit(FlowPtr<InlineAsm> n) override {
-    std::for_each(n->get_args().begin(), n->get_args().end(),
+  void Visit(FlowPtr<InlineAsm> n) override {
+    std::for_each(n->GetArgs().begin(), n->GetArgs().end(),
                   [&](auto arg) { Add(arg); });
   }
 
-  void visit(FlowPtr<IfStmt> n) override {
-    Add(n->get_cond());
-    Add(n->get_then());
-    Add(n->get_else());
+  void Visit(FlowPtr<IfStmt> n) override {
+    Add(n->GetCond());
+    Add(n->GetThen());
+    Add(n->GetElse());
   }
 
-  void visit(FlowPtr<WhileStmt> n) override {
-    Add(n->get_cond());
-    Add(n->get_body());
+  void Visit(FlowPtr<WhileStmt> n) override {
+    Add(n->GetCond());
+    Add(n->GetBody());
   }
 
-  void visit(FlowPtr<ForStmt> n) override {
-    Add(n->get_init());
-    Add(n->get_cond());
-    Add(n->get_step());
-    Add(n->get_body());
+  void Visit(FlowPtr<ForStmt> n) override {
+    Add(n->GetInit());
+    Add(n->GetCond());
+    Add(n->GetStep());
+    Add(n->GetBody());
   }
 
-  void visit(FlowPtr<ForeachStmt> n) override {
-    Add(n->get_expr());
-    Add(n->get_body());
+  void Visit(FlowPtr<ForeachStmt> n) override {
+    Add(n->GetExpr());
+    Add(n->GetBody());
   }
 
-  void visit(FlowPtr<BreakStmt>) override {}
-  void visit(FlowPtr<ContinueStmt>) override {}
-  void visit(FlowPtr<ReturnStmt> n) override { Add(n->get_value()); }
+  void Visit(FlowPtr<BreakStmt>) override {}
+  void Visit(FlowPtr<ContinueStmt>) override {}
+  void Visit(FlowPtr<ReturnStmt> n) override { Add(n->GetValue()); }
 
-  void visit(FlowPtr<ReturnIfStmt> n) override {
-    Add(n->get_cond());
-    Add(n->get_value());
+  void Visit(FlowPtr<ReturnIfStmt> n) override {
+    Add(n->GetCond());
+    Add(n->GetValue());
   }
 
-  void visit(FlowPtr<CaseStmt> n) override {
-    Add(n->get_cond());
-    Add(n->get_body());
+  void Visit(FlowPtr<CaseStmt> n) override {
+    Add(n->GetCond());
+    Add(n->GetBody());
   }
 
-  void visit(FlowPtr<SwitchStmt> n) override {
-    Add(n->get_cond());
-    std::for_each(n->get_cases().begin(), n->get_cases().end(),
+  void Visit(FlowPtr<SwitchStmt> n) override {
+    Add(n->GetCond());
+    std::for_each(n->GetCases().begin(), n->GetCases().end(),
                   [&](auto c) { Add(c); });
-    Add(n->get_default());
+    Add(n->GetDefault());
   }
 
-  void visit(FlowPtr<TypedefStmt> n) override { Add(n->get_type()); }
+  void Visit(FlowPtr<TypedefStmt> n) override { Add(n->GetType()); }
 
-  void visit(FlowPtr<Function> n) override {
-    std::for_each(n->get_attributes().begin(), n->get_attributes().end(),
+  void Visit(FlowPtr<Function> n) override {
+    std::for_each(n->GetAttributes().begin(), n->GetAttributes().end(),
                   [&](auto attr) { Add(attr); });
 
-    if (n->get_template_params()) {
-      std::for_each(n->get_template_params()->begin(),
-                    n->get_template_params()->end(), [&](auto param) {
+    if (n->GetTemplateParams()) {
+      std::for_each(n->GetTemplateParams()->begin(),
+                    n->GetTemplateParams()->end(), [&](auto param) {
                       Add(std::get<1>(param));
                       Add(std::get<2>(param));
                     });
     }
 
-    std::for_each(n->get_params().begin(), n->get_params().end(),
+    std::for_each(n->GetParams().begin(), n->GetParams().end(),
                   [&](auto param) {
                     Add(std::get<1>(param));
                     std::get<2>(param);
                   });
 
-    Add(n->get_return());
-    Add(n->get_precond());
-    Add(n->get_postcond());
-    Add(n->get_body());
+    Add(n->GetReturn());
+    Add(n->GetPrecond());
+    Add(n->GetPostcond());
+    Add(n->GetBody());
   }
 
-  void visit(FlowPtr<StructDef> n) override {
-    std::for_each(n->get_attributes().begin(), n->get_attributes().end(),
+  void Visit(FlowPtr<StructDef> n) override {
+    std::for_each(n->GetAttributes().begin(), n->GetAttributes().end(),
                   [&](auto attr) { Add(attr); });
 
-    if (n->get_template_params()) {
-      std::for_each(n->get_template_params()->begin(),
-                    n->get_template_params()->end(), [&](auto param) {
+    if (n->GetTemplateParams()) {
+      std::for_each(n->GetTemplateParams()->begin(),
+                    n->GetTemplateParams()->end(), [&](auto param) {
                       Add(std::get<1>(param));
                       Add(std::get<2>(param));
                     });
     }
 
-    std::for_each(n->get_fields().begin(), n->get_fields().end(),
+    std::for_each(n->GetFields().begin(), n->GetFields().end(),
                   [&](auto field) {
-                    Add(field.get_type());
-                    Add(field.get_value());
+                    Add(field.GetType());
+                    Add(field.GetValue());
                   });
 
-    std::for_each(n->get_methods().begin(), n->get_methods().end(),
-                  [&](auto method) { Add(method.func); });
+    std::for_each(n->GetMethods().begin(), n->GetMethods().end(),
+                  [&](auto method) { Add(method.m_func); });
 
-    std::for_each(n->get_static_methods().begin(),
-                  n->get_static_methods().end(),
-                  [&](auto method) { Add(method.func); });
+    std::for_each(n->GetStaticMethods().begin(), n->GetStaticMethods().end(),
+                  [&](auto method) { Add(method.m_func); });
   }
 
-  void visit(FlowPtr<EnumDef> n) override {
-    Add(n->get_type());
+  void Visit(FlowPtr<EnumDef> n) override {
+    Add(n->GetType());
 
-    std::for_each(n->get_items().begin(), n->get_items().end(),
+    std::for_each(n->GetItems().begin(), n->GetItems().end(),
                   [&](auto item) { Add(item.second); });
   }
 
-  void visit(FlowPtr<ScopeStmt> n) override { Add(n->get_body()); }
+  void Visit(FlowPtr<ScopeStmt> n) override { Add(n->GetBody()); }
 
-  void visit(FlowPtr<ExportStmt> n) override {
-    std::for_each(n->get_attrs().begin(), n->get_attrs().end(),
+  void Visit(FlowPtr<ExportStmt> n) override {
+    std::for_each(n->GetAttrs().begin(), n->GetAttrs().end(),
                   [&](auto attr) { Add(attr); });
 
-    Add(n->get_body());
+    Add(n->GetBody());
   }
 
 public:

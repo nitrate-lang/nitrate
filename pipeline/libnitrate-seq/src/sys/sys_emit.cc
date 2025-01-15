@@ -38,7 +38,7 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int ncc::seq::sys_emit(lua_State* L) {
+int ncc::seq::SysEmit(lua_State* L) {
   int nargs = lua_gettop(L);
   if (nargs < 1) {
     return luaL_error(L, "sys_emit: expected at least 1 argument, got %d",

@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-string Parser::recurse_scope_name() {
+string Parser::RecurseScopeName() {
   if (auto tok = next_if(Name)) {
     return tok->as_string();
   } else {
@@ -45,7 +45,7 @@ string Parser::recurse_scope_name() {
   }
 }
 
-std::optional<ScopeDeps> Parser::recurse_scope_deps() {
+std::optional<ScopeDeps> Parser::RecurseScopeDeps() {
   ScopeDeps dependencies;
 
   if (!next_if(PuncColn)) {
@@ -81,26 +81,26 @@ std::optional<ScopeDeps> Parser::recurse_scope_deps() {
   return std::nullopt;
 }
 
-FlowPtr<Stmt> Parser::recurse_scope_block() {
+FlowPtr<Stmt> Parser::RecurseScopeBlock() {
   if (next_if(PuncSemi)) {
     return make<Block>(BlockItems(), SafetyMode::Unknown)();
   } else if (next_if(OpArrow)) {
-    return recurse_block(false, true, SafetyMode::Unknown);
+    return RecurseBlock(false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(true, false, SafetyMode::Unknown);
+    return RecurseBlock(true, false, SafetyMode::Unknown);
   }
 }
 
-FlowPtr<Stmt> Parser::recurse_scope() {
-  auto scope_name = recurse_scope_name();
+FlowPtr<Stmt> Parser::RecurseScope() {
+  auto scope_name = RecurseScopeName();
 
-  if (auto dependencies = recurse_scope_deps()) [[likely]] {
-    auto scope_block = recurse_scope_block();
+  if (auto dependencies = RecurseScopeDeps()) [[likely]] {
+    auto scope_block = RecurseScopeBlock();
 
     return make<ScopeStmt>(scope_name, scope_block, dependencies.value())();
   } else {
     Log << SyntaxError << current() << "Expected scope dependencies";
   }
 
-  return mock_stmt(QAST_SCOPE);
+  return MockStmt(QAST_SCOPE);
 }

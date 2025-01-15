@@ -43,8 +43,8 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace ncc;
 
-CallArgs Parser::recurse_call_arguments(const std::set<lex::Token> &terminators,
-                                        bool type_by_default) {
+CallArgs Parser::RecurseCallArguments(const std::set<lex::Token> &terminators,
+                                      bool type_by_default) {
   CallArgs call_args;
   size_t positional_index = 0;
   string argument_name;
@@ -67,21 +67,21 @@ CallArgs Parser::recurse_call_arguments(const std::set<lex::Token> &terminators,
       argument_name = some_identifier->as_string();
     } else {
       if (some_identifier && !next_is_colon) {
-        rd.Insert(some_identifier.value());
+        m_rd.Insert(some_identifier.value());
       }
 
       argument_name = string(std::to_string(positional_index++));
     }
 
     if (type_by_default) {
-      auto argument_value = recurse_type();
+      auto argument_value = RecurseType();
       auto type_expr = make<TypeExpr>(argument_value)();
 
       call_args.push_back({argument_name, type_expr});
     } else {
       std::set<Token> terminators_copy(terminators);
       terminators_copy.insert(Token(Punc, PuncComa));
-      auto argument_value = recurse_expr(terminators_copy);
+      auto argument_value = RecurseExpr(terminators_copy);
       call_args.push_back({argument_name, argument_value});
     }
 
@@ -91,7 +91,7 @@ CallArgs Parser::recurse_call_arguments(const std::set<lex::Token> &terminators,
   return call_args;
 }
 
-FlowPtr<Expr> Parser::recurse_fstring() {
+FlowPtr<Expr> Parser::RecurseFstring() {
   FStringItems items;
 
   if (auto tok = next_if(Text)) {
@@ -118,7 +118,7 @@ FlowPtr<Expr> Parser::recurse_fstring() {
 
         auto subnode =
             FromString(fstring_raw.substr(w_beg, w_end - w_beg), m_env)
-                ->recurse_expr({
+                ->RecurseExpr({
                     Token(Punc, PuncRCur),
                 });
 
@@ -148,11 +148,11 @@ FlowPtr<Expr> Parser::recurse_fstring() {
   } else {
     Log << SyntaxError << current()
         << "Expected a string literal token for F-string expression";
-    return mock_expr(QAST_FSTRING);
+    return MockExpr(QAST_FSTRING);
   }
 }
 
-static bool IsPostUnaryOp(Operator O) { return O == OpInc || O == OpDec; }
+static bool IsPostUnaryOp(Operator o) { return o == OpInc || o == OpDec; }
 
 enum class FrameType : uint8_t {
   Start,
@@ -162,127 +162,127 @@ enum class FrameType : uint8_t {
 };
 
 struct Frame {
-  FlowPtr<Expr> base;
-  short minPrecedence;
-  LocationID start_pos;
-  FrameType type;
-  Operator op;
+  FlowPtr<Expr> m_base;
+  short m_minPrecedence;
+  LocationID m_start_pos;
+  FrameType m_type;
+  Operator m_op;
 
-  Frame(FlowPtr<Expr> base, LocationID start_pos, short minPrecedence,
+  Frame(FlowPtr<Expr> base, LocationID start_pos, short min_precedence,
         FrameType type, Operator op)
-      : base(base),
-        minPrecedence(minPrecedence),
-        start_pos(start_pos),
-        type(type),
-        op(op) {}
+      : m_base(base),
+        m_minPrecedence(min_precedence),
+        m_start_pos(start_pos),
+        m_type(type),
+        m_op(op) {}
 };
 
 static NCC_FORCE_INLINE FlowPtr<Expr> UnwindStack(std::stack<Frame> &stack,
                                                   FlowPtr<Expr> base,
-                                                  short minPrecedence) {
+                                                  short min_precedence) {
   while (!stack.empty()) {
     auto frame = stack.top();
 
-    if (frame.minPrecedence < minPrecedence) {
+    if (frame.m_minPrecedence < min_precedence) {
       break;
     }
 
-    switch (frame.type) {
+    switch (frame.m_type) {
       case FrameType::Start: {
         return base;
       }
 
       case FrameType::PreUnary: {
-        base = make<UnaryExpr>(frame.op, base)();
+        base = make<UnaryExpr>(frame.m_op, base)();
         break;
       }
 
       case FrameType::PostUnary: {
-        base = make<PostUnaryExpr>(base, frame.op)();
+        base = make<PostUnaryExpr>(base, frame.m_op)();
         break;
       }
 
       case FrameType::Binary: {
-        base = make<BinExpr>(frame.base, frame.op, base)();
+        base = make<BinExpr>(frame.m_base, frame.m_op, base)();
         break;
       }
     }
 
-    base->SetOffset(frame.start_pos);
+    base->SetOffset(frame.m_start_pos);
     stack.pop();
   }
 
   return base;
 }
 
-FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
-  auto SourceOffset = peek().get_start();
+FlowPtr<Expr> Parser::RecurseExpr(const std::set<Token> &terminators) {
+  auto source_offset = peek().get_start();
 
-  std::stack<Frame> Stack;
+  std::stack<Frame> stack;
   ConstBool start_node(false);
-  Stack.push({&start_node, SourceOffset, 0, FrameType::Start, OpPlus});
+  stack.push({&start_node, source_offset, 0, FrameType::Start, OpPlus});
 
   /****************************************
    * Parse pre-unary operators
    ****************************************/
-  std::stack<std::pair<Operator, LocationID>> PreUnaryOps;
-  while (auto Tok = next_if(Oper)) {
-    PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
+  std::stack<std::pair<Operator, LocationID>> pre_unary_ops;
+  while (auto tok = next_if(Oper)) {
+    pre_unary_ops.push({tok->as_op(), tok->get_start()});
   }
 
-  if (auto LeftSideOpt = recurse_expr_primary(false)) {
-    auto LeftSide = LeftSideOpt.value();
-    auto Spinning = true;
+  if (auto left_side_opt = RecurseExprPrimary(false)) {
+    auto left_side = left_side_opt.value();
+    auto spinning = true;
 
     /****************************************
      * Combine pre-unary operators
      ****************************************/
-    while (!PreUnaryOps.empty()) {
-      auto [Op, Offset] = PreUnaryOps.top();
-      PreUnaryOps.pop();
+    while (!pre_unary_ops.empty()) {
+      auto [Op, Offset] = pre_unary_ops.top();
+      pre_unary_ops.pop();
 
-      LeftSide = make<UnaryExpr>(Op, LeftSide)();
-      LeftSide->SetOffset(Offset);
+      left_side = make<UnaryExpr>(Op, left_side)();
+      left_side->SetOffset(Offset);
     }
 
-    while (!Stack.empty() && Spinning) {
-      auto Tok = peek();
+    while (!stack.empty() && spinning) {
+      auto tok = peek();
 
-      if (terminators.contains(Tok)) {
+      if (terminators.contains(tok)) {
         break;
       }
 
-      switch (Tok.get_type()) {
+      switch (tok.get_type()) {
         case Oper: {
-          auto Op = Tok.as_op();
-          auto OpType = IsPostUnaryOp(Op) ? OpMode::PostUnary : OpMode::Binary;
-          auto OpPrecedence = GetOperatorPrecedence(Op, OpType);
+          auto op = tok.as_op();
+          auto op_type = IsPostUnaryOp(op) ? OpMode::PostUnary : OpMode::Binary;
+          auto op_precedence = GetOperatorPrecedence(op, op_type);
 
-          if (OpPrecedence >= Stack.top().minPrecedence) {
+          if (op_precedence >= stack.top().m_minPrecedence) {
             next();
 
             /****************************************
              * Handle post-unary operators
              ****************************************/
-            if (OpType == OpMode::PostUnary) {
-              LeftSide = make<PostUnaryExpr>(LeftSide, Op)();
-              LeftSide->SetOffset(SourceOffset);
+            if (op_type == OpMode::PostUnary) {
+              left_side = make<PostUnaryExpr>(left_side, op)();
+              left_side->SetOffset(source_offset);
 
               continue;
             }
 
-            auto IsLeftAssoc =
-                GetOperatorAssociativity(Op, OpType) == OpAssoc::Left;
-            auto NextMinPrecedence =
-                IsLeftAssoc ? OpPrecedence + 1 : OpPrecedence;
-            auto IsType = Op == OpAs || Op == OpBitcastAs;
+            auto is_left_assoc =
+                GetOperatorAssociativity(op, op_type) == OpAssoc::Left;
+            auto next_min_precedence =
+                is_left_assoc ? op_precedence + 1 : op_precedence;
+            auto is_type = op == OpAs || op == OpBitcastAs;
 
-            if (!IsType) {
+            if (!is_type) {
               /****************************************
                * Parse pre-unary operators
                ****************************************/
-              while (auto TokOp = next_if(Oper)) {
-                PreUnaryOps.push({TokOp->as_op(), TokOp->get_start()});
+              while (auto tok_op = next_if(Oper)) {
+                pre_unary_ops.push({tok_op->as_op(), tok_op->get_start()});
               }
             } else {
               next_if(lex::Type);
@@ -291,35 +291,35 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
             /****************************************
              * Handle binary operators
              ****************************************/
-            if (auto RightSide = recurse_expr_primary(IsType)) {
+            if (auto right_side = RecurseExprPrimary(is_type)) {
               /****************************************
                * Combine pre-unary operators
                ****************************************/
-              while (!PreUnaryOps.empty()) {
-                auto [op, Offset] = PreUnaryOps.top();
-                PreUnaryOps.pop();
+              while (!pre_unary_ops.empty()) {
+                auto [op, Offset] = pre_unary_ops.top();
+                pre_unary_ops.pop();
 
-                auto PreUnaryExpr = make<UnaryExpr>(op, RightSide.value())();
-                PreUnaryExpr->SetOffset(Offset);
+                auto pre_unary_expr = make<UnaryExpr>(op, right_side.value())();
+                pre_unary_expr->SetOffset(Offset);
 
-                RightSide = PreUnaryExpr;
+                right_side = pre_unary_expr;
               }
 
-              if (Stack.size() + 1 > MAX_RECURSION_DEPTH) {
+              if (stack.size() + 1 > MAX_RECURSION_DEPTH) {
                 Log << SyntaxError << current()
                     << "Recursion depth exceeds maximum limit";
-                return mock_expr();
+                return MockExpr();
               }
 
-              Stack.push(Frame(LeftSide, SourceOffset, NextMinPrecedence,
-                               FrameType::Binary, Op));
-              LeftSide = RightSide.value();
+              stack.push(Frame(left_side, source_offset, next_min_precedence,
+                               FrameType::Binary, op));
+              left_side = right_side.value();
             } else {
               Log << SyntaxError << current()
                   << "Failed to parse right-hand side of binary expression";
             }
           } else {
-            LeftSide = UnwindStack(Stack, LeftSide, 0);
+            left_side = UnwindStack(stack, left_side, 0);
 
             continue;
           }
@@ -330,48 +330,48 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
         case Punc: {
           // Based on the assumption that function calls have the same
           // precedence as the dot operator (member access)
-          static auto SuffixOPPrecedence =
+          static auto suffix_op_precedence =
               GetOperatorPrecedence(OpDot, OpMode::Binary);
 
-          LeftSide = UnwindStack(Stack, LeftSide, SuffixOPPrecedence);
+          left_side = UnwindStack(stack, left_side, suffix_op_precedence);
 
           if (next_if(PuncLPar)) {
-            auto Arguments =
-                recurse_call_arguments({Token(Punc, PuncRPar)}, false);
+            auto arguments =
+                RecurseCallArguments({Token(Punc, PuncRPar)}, false);
             if (!next_if(PuncRPar)) {
               Log << SyntaxError << current()
                   << "Expected ')' to close the function call";
             }
 
-            LeftSide = make<Call>(LeftSide, Arguments)();
-            LeftSide->SetOffset(SourceOffset);
+            left_side = make<Call>(left_side, arguments)();
+            left_side->SetOffset(source_offset);
           } else if (next_if(PuncLBrk)) {
-            auto first = recurse_expr({
+            auto first = RecurseExpr({
                 Token(Punc, PuncRBrk),
                 Token(Punc, PuncColn),
             });
 
             if (next_if(PuncColn)) {
-              auto second = recurse_expr({Token(Punc, PuncRBrk)});
+              auto second = RecurseExpr({Token(Punc, PuncRBrk)});
               if (!next_if(PuncRBrk)) {
                 Log << SyntaxError << current()
                     << "Expected ']' to close the slice";
               }
 
-              LeftSide = make<Slice>(LeftSide, first, second)();
-              LeftSide->SetOffset(SourceOffset);
+              left_side = make<Slice>(left_side, first, second)();
+              left_side->SetOffset(source_offset);
             } else {
               if (!next_if(PuncRBrk)) {
                 Log << SyntaxError << current()
                     << "Expected ']' to close the index expression";
               }
 
-              LeftSide = make<Index>(LeftSide, first)();
-              LeftSide->SetOffset(SourceOffset);
+              left_side = make<Index>(left_side, first)();
+              left_side->SetOffset(source_offset);
             }
           } else if (next_if(PuncLCur)) {
-            auto TemplateArguments =
-                recurse_call_arguments({Token(Punc, PuncRCur)}, true);
+            auto template_arguments =
+                RecurseCallArguments({Token(Punc, PuncRCur)}, true);
             if (!next_if(PuncRCur)) {
               Log << SyntaxError << current()
                   << "Expected '}' to close the template arguments";
@@ -382,18 +382,18 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
                   << "Expected '(' to open the call arguments";
             }
 
-            auto CallArguments =
-                recurse_call_arguments({Token(Punc, PuncRPar)}, false);
+            auto call_arguments =
+                RecurseCallArguments({Token(Punc, PuncRPar)}, false);
             if (!next_if(PuncRPar)) {
               Log << SyntaxError << current()
                   << "Expected ')' to close the call arguments";
             }
 
-            LeftSide = make<TemplCall>(LeftSide, std::move(CallArguments),
-                                       std::move(TemplateArguments))();
-            LeftSide->SetOffset(SourceOffset);
+            left_side = make<TemplCall>(left_side, std::move(call_arguments),
+                                        std::move(template_arguments))();
+            left_side->SetOffset(source_offset);
           } else {  // Not part of the expression
-            Spinning = false;
+            spinning = false;
           }
 
           break;
@@ -409,79 +409,79 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
         case MacB:
         case Macr:
         case Note: {
-          Spinning = false;
+          spinning = false;
           break;
         }
       }
     }
 
-    return UnwindStack(Stack, LeftSide, 0);
+    return UnwindStack(stack, left_side, 0);
   } else {
     Log << SyntaxError << current() << "Expected an expression";
 
-    return mock_expr();
+    return MockExpr();
   }
 }
 
-NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
-  NullableFlowPtr<Expr> E;
+NullableFlowPtr<Expr> Parser::RecurseExprKeyword(lex::Keyword key) {
+  NullableFlowPtr<Expr> e;
 
   switch (key) {
     case Keyword::Type: {
       auto start_pos = current().get_start();
-      auto type = recurse_type();
+      auto type = RecurseType();
       type->SetOffset(start_pos);
 
-      E = make<TypeExpr>(type)();
+      e = make<TypeExpr>(type)();
       break;
     }
 
     case __FString: {
-      E = recurse_fstring();
+      e = RecurseFstring();
       break;
     }
 
     case Fn: {
       auto start_pos = current().get_start();
-      auto function = recurse_function(false);
+      auto function = RecurseFunction(false);
       function->SetOffset(start_pos);
 
       FlowPtr<Expr> expr = make<StmtExpr>(function)();
 
       if (next_if(PuncLPar)) {
-        auto args = recurse_call_arguments({Token(Punc, PuncRPar)}, false);
+        auto args = RecurseCallArguments({Token(Punc, PuncRPar)}, false);
 
         if (next_if(PuncRPar)) {
-          E = make<Call>(expr, args)();
+          e = make<Call>(expr, args)();
         } else {
           Log << SyntaxError << current()
               << "Expected ')' to close the function call";
-          E = mock_expr(QAST_CALL);
+          e = MockExpr(QAST_CALL);
         }
       } else {
-        E = expr;
+        e = expr;
       }
 
       break;
     }
 
     case Undef: {
-      E = make<ConstUndef>()();
+      e = make<ConstUndef>()();
       break;
     }
 
     case Null: {
-      E = make<ConstNull>()();
+      e = make<ConstNull>()();
       break;
     }
 
     case True: {
-      E = make<ConstBool>(true)();
+      e = make<ConstBool>(true)();
       break;
     }
 
     case False: {
-      E = make<ConstBool>(false)();
+      e = make<ConstBool>(false)();
       break;
     }
 
@@ -492,15 +492,15 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
     }
   }
 
-  return E;
+  return e;
 }
 
-NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
-  NullableFlowPtr<Expr> E;
+NullableFlowPtr<Expr> Parser::RecurseExprPunctor(lex::Punctor punc) {
+  NullableFlowPtr<Expr> e;
 
   switch (punc) {
     case PuncLPar: {
-      E = recurse_expr({
+      e = RecurseExpr({
           Token(Punc, PuncRPar),
       });
 
@@ -532,7 +532,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
           break;
         }
 
-        auto expr = recurse_expr({
+        auto expr = RecurseExpr({
             Token(Punc, PuncComa),
             Token(Punc, PuncRBrk),
             Token(Punc, PuncSemi),
@@ -574,7 +574,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
         next_if(PuncComa);
       }
 
-      E = make<List>(items)();
+      e = make<List>(items)();
       break;
     }
 
@@ -600,7 +600,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
         }
 
         auto start_pos = peek().get_start();
-        auto key = recurse_expr({
+        auto key = RecurseExpr({
             Token(Punc, PuncColn),
         });
 
@@ -610,7 +610,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
           break;
         }
 
-        auto value = recurse_expr({
+        auto value = RecurseExpr({
             Token(Punc, PuncRCur),
             Token(Punc, PuncComa),
         });
@@ -624,10 +624,10 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
       }
 
       if (items.size() == 1) {
-        E = items[0];
+        e = items[0];
       } else {
         ExpressionList items_copy(items.begin(), items.end());
-        E = make<List>(items_copy)();
+        e = make<List>(items_copy)();
       }
 
       break;
@@ -658,13 +658,13 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
     }
   }
 
-  return E;
+  return e;
 }
 
-FlowPtr<Expr> Parser::recurse_expr_type_suffix(FlowPtr<Expr> base) {
+FlowPtr<Expr> Parser::RecurseExprTypeSuffix(FlowPtr<Expr> base) {
   auto tok = current();
 
-  auto suffix = recurse_type();
+  auto suffix = RecurseType();
   suffix->SetOffset(tok.get_start());
 
   auto texpr = make<TypeExpr>(suffix)();
@@ -673,27 +673,27 @@ FlowPtr<Expr> Parser::recurse_expr_type_suffix(FlowPtr<Expr> base) {
   return make<BinExpr>(base, OpAs, texpr)();
 }
 
-NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
+NullableFlowPtr<Expr> Parser::RecurseExprPrimary(bool is_type) {
   auto start_pos = peek().get_start();
 
-  NullableFlowPtr<Expr> E;
+  NullableFlowPtr<Expr> e;
 
-  if (isType) {
-    auto comments = rd.CommentBuffer();
-    rd.ClearCommentBuffer();
+  if (is_type) {
+    auto comments = m_rd.CommentBuffer();
+    m_rd.ClearCommentBuffer();
 
-    auto type = recurse_type();
+    auto type = RecurseType();
     type->SetOffset(start_pos);
 
     auto texpr = make<TypeExpr>(type)();
     texpr->SetOffset(start_pos);
 
-    E = BIND_COMMENTS(texpr, comments);
+    e = BindComments(texpr, comments);
   } else {
     auto tok = next();
 
-    auto comments = rd.CommentBuffer();
-    rd.ClearCommentBuffer();
+    auto comments = m_rd.CommentBuffer();
+    m_rd.ClearCommentBuffer();
 
     switch (tok.get_type()) {
       case EofF: {
@@ -701,8 +701,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
       }
 
       case KeyW: {
-        if ((E = recurse_expr_keyword(tok.as_key())).has_value()) {
-          E.value()->SetOffset(start_pos);
+        if ((e = RecurseExprKeyword(tok.as_key())).has_value()) {
+          e.value()->SetOffset(start_pos);
         }
 
         break;
@@ -714,8 +714,8 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
       }
 
       case Punc: {
-        if ((E = recurse_expr_punctor(tok.as_punc())).has_value()) {
-          E.value()->SetOffset(start_pos);
+        if ((e = RecurseExprPunctor(tok.as_punc())).has_value()) {
+          e.value()->SetOffset(start_pos);
         }
         break;
       }
@@ -724,7 +724,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
         auto identifier = make<Ident>(tok.as_string())();
         identifier->SetOffset(start_pos);
 
-        E = identifier;
+        e = identifier;
         break;
       }
 
@@ -733,12 +733,12 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
         integer->SetOffset(start_pos);
 
         if (tok = peek(); tok.is(Name)) {
-          auto casted = recurse_expr_type_suffix(integer);
+          auto casted = RecurseExprTypeSuffix(integer);
           casted->SetOffset(start_pos);
 
-          E = casted;
+          e = casted;
         } else {
-          E = integer;
+          e = integer;
         }
 
         break;
@@ -749,12 +749,12 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
         decimal->SetOffset(start_pos);
 
         if (tok = peek(); tok.is(Name)) {
-          auto casted = recurse_expr_type_suffix(decimal);
+          auto casted = RecurseExprTypeSuffix(decimal);
           casted->SetOffset(start_pos);
 
-          E = casted;
+          e = casted;
         } else {
-          E = decimal;
+          e = decimal;
         }
 
         break;
@@ -765,12 +765,12 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
         string->SetOffset(start_pos);
 
         if (tok = peek(); tok.is(Name)) {
-          auto casted = recurse_expr_type_suffix(string);
+          auto casted = RecurseExprTypeSuffix(string);
           casted->SetOffset(start_pos);
 
-          E = casted;
+          e = casted;
         } else {
-          E = string;
+          e = string;
         }
 
         break;
@@ -788,12 +788,12 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
         character->SetOffset(start_pos);
 
         if (tok = peek(); tok.is(Name)) {
-          auto casted = recurse_expr_type_suffix(character);
+          auto casted = RecurseExprTypeSuffix(character);
           casted->SetOffset(start_pos);
 
-          E = casted;
+          e = casted;
         } else {
-          E = character;
+          e = character;
         }
 
         break;
@@ -815,10 +815,10 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
       }
     }
 
-    if (E.has_value()) {
-      E = BIND_COMMENTS(E.value(), comments);
+    if (e.has_value()) {
+      e = BindComments(e.value(), comments);
     }
   }
 
-  return E;
+  return e;
 }

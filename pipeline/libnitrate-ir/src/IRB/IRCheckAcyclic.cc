@@ -39,7 +39,7 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::check_acyclic(FlowPtr<Seq> root, IReport *I) {
+bool NRBuilder::CheckAcyclic(FlowPtr<Seq> root, IReport *i) {
   // bool is_acyclic = root->isAcyclic();
   // if (!is_acyclic) {
   //   I->report(DSPolyCyclicRef, IC::Error);
@@ -50,5 +50,5 @@ bool NRBuilder::check_acyclic(FlowPtr<Seq> root, IReport *I) {
   /// TODO: Implement this function
   qcore_implement();
   (void)root;
-  (void)I;
+  (void)i;
 }

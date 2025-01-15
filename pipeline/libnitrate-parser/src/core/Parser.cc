@@ -46,8 +46,8 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
-                                    SafetyMode safety) {
+FlowPtr<Stmt> Parser::RecurseBlock(bool expect_braces, bool single_stmt,
+                                   SafetyMode safety) {
   if (expect_braces && !next().is<PuncLCur>()) {
     Log << SyntaxError << current() << "Expected '{'";
   }
@@ -55,8 +55,8 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
   auto block_start = current().get_start();
   BlockItems statements;
 
-  auto block_comments = rd.CommentBuffer();
-  rd.ClearCommentBuffer();
+  auto block_comments = m_rd.CommentBuffer();
+  m_rd.ClearCommentBuffer();
 
   while (true) {
     /* Ignore extra semicolons */
@@ -80,15 +80,15 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         auto block = make<Block>(statements, safety)();
         block->SetOffset(block_start);
 
-        return BIND_COMMENTS(block, block_comments);
+        return BindComments(block, block_comments);
       }
     }
 
     if (!peek().is(KeyW)) {
-      auto comments = rd.CommentBuffer();
-      rd.ClearCommentBuffer();
+      auto comments = m_rd.CommentBuffer();
+      m_rd.ClearCommentBuffer();
 
-      auto expr = recurse_expr({
+      auto expr = RecurseExpr({
           Token(Punc, PuncSemi),
       });
 
@@ -98,62 +98,62 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       auto stmt = make<ExprStmt>(expr)();
-      stmt->SetOffset(expr->begin());
+      stmt->SetOffset(expr->Begin());
 
-      statements.push_back(BIND_COMMENTS(stmt, comments));
+      statements.push_back(BindComments(stmt, comments));
     } else {
       auto tok = next();
       auto loc_start = tok.get_start();
-      NullableFlowPtr<Stmt> R;
+      NullableFlowPtr<Stmt> r;
 
-      auto comments = rd.CommentBuffer();
-      rd.ClearCommentBuffer();
+      auto comments = m_rd.CommentBuffer();
+      m_rd.ClearCommentBuffer();
 
       switch (tok.as_key()) {
         case Scope: {
-          R = recurse_scope();
+          r = RecurseScope();
           break;
         }
 
         case Pub: {  // they both declare external functions
-          R = recurse_export(Vis::Pub);
+          r = RecurseExport(Vis::Pub);
           break;
         }
 
         case Sec: {
-          R = recurse_export(Vis::Sec);
+          r = RecurseExport(Vis::Sec);
           break;
         }
 
         case Pro: {
-          R = recurse_export(Vis::Pro);
+          r = RecurseExport(Vis::Pro);
           break;
         }
 
         case Keyword::Type: {
-          R = recurse_typedef();
+          r = RecurseTypedef();
           break;
         }
 
         case Let: {
-          for (auto variable : recurse_variable(VarDeclType::Let)) {
-            statements.push_back(BIND_COMMENTS(variable, comments));
+          for (auto variable : RecurseVariable(VarDeclType::Let)) {
+            statements.push_back(BindComments(variable, comments));
             comments.clear();
           }
           break;
         }
 
         case Var: {
-          for (auto variable : recurse_variable(VarDeclType::Var)) {
-            statements.push_back(BIND_COMMENTS(variable, comments));
+          for (auto variable : RecurseVariable(VarDeclType::Var)) {
+            statements.push_back(BindComments(variable, comments));
             comments.clear();
           }
           break;
         }
 
         case Const: {
-          for (auto variable : recurse_variable(VarDeclType::Const)) {
-            statements.push_back(BIND_COMMENTS(variable, comments));
+          for (auto variable : RecurseVariable(VarDeclType::Const)) {
+            statements.push_back(BindComments(variable, comments));
             comments.clear();
           }
           break;
@@ -167,27 +167,27 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case Struct: {
-          R = recurse_struct(CompositeType::Struct);
+          r = RecurseStruct(CompositeType::Struct);
           break;
         }
 
         case Region: {
-          R = recurse_struct(CompositeType::Region);
+          r = RecurseStruct(CompositeType::Region);
           break;
         }
 
         case Group: {
-          R = recurse_struct(CompositeType::Group);
+          r = RecurseStruct(CompositeType::Group);
           break;
         }
 
         case Class: {
-          R = recurse_struct(CompositeType::Class);
+          r = RecurseStruct(CompositeType::Class);
           break;
         }
 
         case Union: {
-          R = recurse_struct(CompositeType::Union);
+          r = RecurseStruct(CompositeType::Union);
           break;
         }
 
@@ -198,25 +198,25 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case Enum: {
-          R = recurse_enum();
+          r = RecurseEnum();
           break;
         }
 
         case __FString: {
-          R = make<ExprStmt>(recurse_fstring())();
+          r = make<ExprStmt>(RecurseFstring())();
           break;
         }
 
         case Fn: {
-          R = recurse_function(false);
+          r = RecurseFunction(false);
           break;
         }
 
         case Unsafe: {
           if (peek().is<PuncLCur>()) {
-            R = recurse_block(true, false, SafetyMode::Unsafe);
+            r = RecurseBlock(true, false, SafetyMode::Unsafe);
           } else {
-            R = recurse_block(false, true, SafetyMode::Unsafe);
+            r = RecurseBlock(false, true, SafetyMode::Unsafe);
           }
 
           break;
@@ -224,9 +224,9 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
 
         case Safe: {
           if (peek().is<PuncLCur>()) {
-            R = recurse_block(true, false, SafetyMode::Safe);
+            r = RecurseBlock(true, false, SafetyMode::Safe);
           } else {
-            R = recurse_block(false, true, SafetyMode::Safe);
+            r = RecurseBlock(false, true, SafetyMode::Safe);
           }
 
           break;
@@ -239,7 +239,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case If: {
-          R = recurse_if();
+          r = RecurseIf();
           break;
         }
 
@@ -250,12 +250,12 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case For: {
-          R = recurse_for();
+          r = RecurseFor();
           break;
         }
 
         case While: {
-          R = recurse_while();
+          r = RecurseWhile();
           break;
         }
 
@@ -265,37 +265,37 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case Switch: {
-          R = recurse_switch();
+          r = RecurseSwitch();
           break;
         }
 
         case Break: {
-          R = make<BreakStmt>()();
+          r = make<BreakStmt>()();
           break;
         }
 
         case Continue: {
-          R = make<ContinueStmt>()();
+          r = make<ContinueStmt>()();
           break;
         }
 
         case Return: {
-          R = recurse_return();
+          r = RecurseReturn();
           break;
         }
 
         case Retif: {
-          R = recurse_retif();
+          r = RecurseRetif();
           break;
         }
 
         case Foreach: {
-          R = recurse_foreach();
+          r = RecurseForeach();
           break;
         }
 
         case Try: {
-          R = recurse_try();
+          r = RecurseTry();
           break;
         }
 
@@ -306,7 +306,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case Throw: {
-          R = recurse_throw();
+          r = RecurseThrow();
           break;
         }
 
@@ -317,40 +317,40 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case Await: {
-          R = recurse_await();
+          r = RecurseAwait();
           break;
         }
 
         case __Asm__: {
-          R = recurse_inline_asm();
+          r = RecurseInlineAsm();
           break;
         }
 
         case Undef: {
-          R = make<ExprStmt>(make<ConstUndef>()())();
+          r = make<ExprStmt>(make<ConstUndef>()())();
           break;
         }
 
         case Null: {
-          R = make<ExprStmt>(make<ConstNull>()())();
+          r = make<ExprStmt>(make<ConstNull>()())();
           break;
         }
 
         case True: {
-          R = make<ExprStmt>(make<ConstBool>(true)())();
+          r = make<ExprStmt>(make<ConstBool>(true)())();
           break;
         }
 
         case False: {
-          R = make<ExprStmt>(make<ConstBool>(false)())();
+          r = make<ExprStmt>(make<ConstBool>(false)())();
           break;
         }
       }
 
-      if (R.has_value()) {
-        R.value()->SetOffset(loc_start);
-        R = BIND_COMMENTS(R.value(), comments);
-        statements.push_back(R.value());
+      if (r.has_value()) {
+        r.value()->SetOffset(loc_start);
+        r = BindComments(r.value(), comments);
+        statements.push_back(r.value());
       }
     }
   }
@@ -361,17 +361,17 @@ NCC_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
                           std::shared_ptr<void> lifetime)
     : m_env(env),
       m_allocator(std::make_unique<ncc::DynamicArena>()),
-      rd(lexer),
+      m_rd(lexer),
       m_failed(false),
       m_lifetime(lifetime) {}
 
-void Parser_SetCurrentScanner(IScanner *scanner);
+void ParserSetCurrentScanner(IScanner *scanner);
 
-NCC_EXPORT ASTRoot Parser::parse() {
+NCC_EXPORT ASTRoot Parser::Parse() {
   std::optional<ASTRoot> ast;
 
   { /* Assign the current context to thread-local global state */
-    Parser_SetCurrentScanner(&rd);
+    ParserSetCurrentScanner(&m_rd);
 
     { /* Subscribe to events emitted by the parser */
       auto sub_id = Log.Subscribe([&](auto, auto, const auto &ec) {
@@ -381,17 +381,17 @@ NCC_EXPORT ASTRoot Parser::parse() {
       });
 
       { /* Configure the scanner to ignore comments */
-        auto old_state = rd.GetSkipCommentsState();
-        rd.SkipCommentsState(true);
+        auto old_state = m_rd.GetSkipCommentsState();
+        m_rd.SkipCommentsState(true);
 
         {   /* Parse the input */
           { /* Swap in an arena allocator */
-            std::swap(npar_allocator, m_allocator);
+            std::swap(NparAllocator, m_allocator);
 
             /* Recursive descent parsing */
-            auto node = recurse_block(false, false, SafetyMode::Unknown);
+            auto node = RecurseBlock(false, false, SafetyMode::Unknown);
 
-            std::swap(npar_allocator, m_allocator);
+            std::swap(NparAllocator, m_allocator);
 
             ast = ASTRoot(node, std::move(m_allocator), m_failed);
           }
@@ -400,26 +400,26 @@ NCC_EXPORT ASTRoot Parser::parse() {
           m_allocator = std::make_unique<ncc::DynamicArena>();
         }
 
-        rd.SkipCommentsState(old_state);
+        m_rd.SkipCommentsState(old_state);
       }
 
       Log.Unsubscribe(sub_id);
     }
 
-    Parser_SetCurrentScanner(nullptr);
+    ParserSetCurrentScanner(nullptr);
   }
 
   return ast.value();
 }
 
-NCC_EXPORT bool ASTRoot::check() const {
+NCC_EXPORT bool ASTRoot::Check() const {
   if (m_failed) {
     return false;
   }
 
   bool failed = false;
   iterate<dfs_pre>(m_base, [&](auto, auto c) {
-    failed |= !c || c->is_mock();
+    failed |= !c || c->IsMock();
 
     return failed ? IterOp::Abort : IterOp::Proceed;
   });

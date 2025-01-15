@@ -39,22 +39,22 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int ncc::seq::sys_ctrl(lua_State* L) {
-  int nargs = lua_gettop(L);
+int ncc::seq::SysCtrl(lua_State* l) {
+  int nargs = lua_gettop(l);
   if (nargs < 1) {
-    return luaL_error(L, "expected at least 1 argument, got %d", nargs);
+    return luaL_error(l, "expected at least 1 argument, got %d", nargs);
   }
 
-  if (!lua_isnumber(L, 1)) {
-    return luaL_error(L, "expected number, got %s",
-                      lua_typename(L, lua_type(L, 1)));
+  if (!lua_isnumber(l, 1)) {
+    return luaL_error(l, "expected number, got %s",
+                      lua_typename(l, lua_type(l, 1)));
   }
 
-  int id = lua_tointeger(L, 1);
+  int id = lua_tointeger(l, 1);
 
   ncc::Log << Debug << "sys_ctrl: " << id << " not implemented";
 
-  lua_pushnil(L);
+  lua_pushnil(l);
 
   return 1;
 }

@@ -47,10 +47,10 @@
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-static inline Token eof_tok() { return Token::EndOfFile(); }
+static inline Token EofTok() { return Token::EndOfFile(); }
 
 class DeserializerAdapterLexer final : public ncc::lex::IScanner {
-  static constexpr std::array<uint8_t, 256> valid_ty_id_tab = []() {
+  static constexpr std::array<uint8_t, 256> kValidTyIdTab = []() {
     std::array<uint8_t, 256> tab = {};
     tab.fill(0);
 
@@ -80,77 +80,77 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
   bool m_eof_bit;
   std::istream &m_file;
 
-  Token decode(TokenType t, const std::string &data) {
-    Token R;
+  Token Decode(TokenType t, const std::string &data) {
+    Token r;
 
     switch (t) {
       case TokenType::EofF: {
-        R = Token::EndOfFile();
+        r = Token::EndOfFile();
         break;
       }
 
       case TokenType::KeyW: {
-        R = Token(t, ncc::lex::LEXICAL_KEYWORDS.left.at(data));
+        r = Token(t, ncc::lex::LEXICAL_KEYWORDS.left.at(data));
         break;
       }
 
       case TokenType::Oper: {
-        R = Token(t, ncc::lex::LEXICAL_OPERATORS.left.at(data));
+        r = Token(t, ncc::lex::LEXICAL_OPERATORS.left.at(data));
         break;
       }
 
       case TokenType::Punc: {
-        R = Token(t, ncc::lex::LEXICAL_PUNCTORS.left.at(data));
+        r = Token(t, ncc::lex::LEXICAL_PUNCTORS.left.at(data));
         break;
       }
 
       case TokenType::Name: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::IntL: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::NumL: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::Text: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::Char: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::MacB: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::Macr: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::Note: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
     }
 
-    return R;
+    return r;
   }
 
-  Token next_impl_json() {
+  Token NextImplJson() {
     if (m_eof_bit) [[unlikely]] {
-      return eof_tok();
+      return EofTok();
     }
 
     uint32_t ty, a, b, c, d;
@@ -159,24 +159,24 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
     { /* Read the token array */
       size_t str_len = 0;
 
-      if (m_file.get() != '[') return eof_tok();
+      if (m_file.get() != '[') return EofTok();
       m_file >> ty;
       ty &= 0xff;
-      if (m_file.get() != ',') return eof_tok();
+      if (m_file.get() != ',') return EofTok();
 
-      if (!read_json_string(m_file, &str, str_len)) [[unlikely]] {
-        return eof_tok();
+      if (!ReadJsonString(m_file, &str, str_len)) [[unlikely]] {
+        return EofTok();
       }
 
-      if (m_file.get() != ',') return eof_tok();
+      if (m_file.get() != ',') return EofTok();
       m_file >> a;
-      if (m_file.get() != ',') return eof_tok();
+      if (m_file.get() != ',') return EofTok();
       m_file >> b;
-      if (m_file.get() != ',') return eof_tok();
+      if (m_file.get() != ',') return EofTok();
       m_file >> c;
-      if (m_file.get() != ',') return eof_tok();
+      if (m_file.get() != ',') return EofTok();
       m_file >> d;
-      if (m_file.get() != ']') return eof_tok();
+      if (m_file.get() != ']') return EofTok();
     }
 
     { /* Check the delimiter */
@@ -185,28 +185,28 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
       if (delim == ']') [[unlikely]] {
         m_eof_bit = true;
         free(str);
-        return eof_tok();
+        return EofTok();
       } else if (delim != ',') [[unlikely]] {
         free(str);
-        return eof_tok();
+        return EofTok();
       }
     }
 
     /* Validate the token type */
-    if (valid_ty_id_tab[ty]) [[likely]] {
-      Token T = decode(static_cast<TokenType>(ty), str);
+    if (kValidTyIdTab[ty]) [[likely]] {
+      Token t = Decode(static_cast<TokenType>(ty), str);
 
       free(str);
-      return T;
+      return t;
     }
 
     free(str);
-    return eof_tok();
+    return EofTok();
   }
 
-  Token next_impl_msgpack() {
+  Token NextImplMsgpack() {
     if (m_eof_bit || !m_ele_count) [[unlikely]] {
-      return eof_tok();
+      return EofTok();
     }
 
     uint64_t ty, a, b, c, d;
@@ -215,51 +215,51 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
     { /* Read the token array */
       // Array start byte for 6 elements
       if (m_file.get() != 0x96) {
-        return eof_tok();
+        return EofTok();
       }
 
       size_t str_len;
 
-      if (!msgpack_read_uint(m_file, ty)) [[unlikely]] {
-        return eof_tok();
+      if (!MsgpackReadUint(m_file, ty)) [[unlikely]] {
+        return EofTok();
       }
       ty &= 0xff;
 
-      if (!msgpack_read_str(m_file, &str, str_len)) [[unlikely]] {
-        return eof_tok();
+      if (!MsgpackReadStr(m_file, &str, str_len)) [[unlikely]] {
+        return EofTok();
       }
 
-      if (!msgpack_read_uint(m_file, a) || !msgpack_read_uint(m_file, b) ||
-          !msgpack_read_uint(m_file, c) || !msgpack_read_uint(m_file, d))
+      if (!MsgpackReadUint(m_file, a) || !MsgpackReadUint(m_file, b) ||
+          !MsgpackReadUint(m_file, c) || !MsgpackReadUint(m_file, d))
           [[unlikely]] {
         free(str);
-        return eof_tok();
+        return EofTok();
       }
     }
 
     m_ele_count--;
 
     /* Validate the token type */
-    if (valid_ty_id_tab[ty]) [[likely]] {
-      Token T = decode(static_cast<TokenType>(ty), str);
+    if (kValidTyIdTab[ty]) [[likely]] {
+      Token t = Decode(static_cast<TokenType>(ty), str);
       free(str);
-      return T;
+      return t;
     }
 
     free(str);
-    return eof_tok();
+    return EofTok();
   }
 
   virtual Token GetNext() override {
     switch (m_mode) {
       case InMode::JSON: {
-        return next_impl_json();
+        return NextImplJson();
       }
       case InMode::MsgPack: {
-        return next_impl_msgpack();
+        return NextImplMsgpack();
       }
       case InMode::BadCodec: {
-        return eof_tok();
+        return EofTok();
       }
     }
   }
@@ -331,17 +331,17 @@ CREATE_TRANSFORM(nit::parse) {
   DeserializerAdapterLexer lexer(source, env);
   auto parser = Parser::Create(lexer, env);
 
-  let root = parser->parse();
+  let root = parser->Parse();
 
   switch (out_mode) {
     case OutMode::JSON: {
       auto writter = AST_JsonWriter(output);
-      root.get().Accept(writter);
+      root.Get().Accept(writter);
       return true;
     }
     case OutMode::MsgPack: {
       auto writter = AST_MsgPackWriter(output);
-      root.get().Accept(writter);
+      root.Get().Accept(writter);
       return true;
     }
     default: {

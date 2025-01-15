@@ -37,32 +37,32 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-NullableFlowPtr<Stmt> Parser::recurse_for_init_expr() {
+NullableFlowPtr<Stmt> Parser::RecurseForInitExpr() {
   if (next_if(PuncSemi)) {
     return std::nullopt;
   } else if (next_if(Let)) {
-    if (auto vars = recurse_variable(VarDeclType::Let); vars.size() == 1) {
+    if (auto vars = RecurseVariable(VarDeclType::Let); vars.size() == 1) {
       return vars[0];
     } else {
       Log << SyntaxError << current()
           << "Expected exactly one variable in for loop";
     }
   } else if (next_if(Var)) {
-    if (auto vars = recurse_variable(VarDeclType::Var); vars.size() == 1) {
+    if (auto vars = RecurseVariable(VarDeclType::Var); vars.size() == 1) {
       return vars[0];
     } else {
       Log << SyntaxError << current()
           << "Expected exactly one variable in for loop";
     }
   } else if (next_if(Const)) {
-    if (auto vars = recurse_variable(VarDeclType::Const); vars.size() == 1) {
+    if (auto vars = RecurseVariable(VarDeclType::Const); vars.size() == 1) {
       return vars[0];
     } else {
       Log << SyntaxError << current()
           << "Expected exactly one variable in for loop";
     }
   } else {
-    return make<ExprStmt>(recurse_expr({
+    return make<ExprStmt>(RecurseExpr({
         Token(Punc, PuncSemi),
     }))();
   }
@@ -70,11 +70,11 @@ NullableFlowPtr<Stmt> Parser::recurse_for_init_expr() {
   return std::nullopt;
 }
 
-NullableFlowPtr<Expr> Parser::recurse_for_condition() {
+NullableFlowPtr<Expr> Parser::RecurseForCondition() {
   if (next_if(PuncSemi)) {
     return std::nullopt;
   } else {
-    auto condition = recurse_expr({
+    auto condition = RecurseExpr({
         Token(Punc, PuncSemi),
     });
 
@@ -87,12 +87,12 @@ NullableFlowPtr<Expr> Parser::recurse_for_condition() {
   }
 }
 
-NullableFlowPtr<Expr> Parser::recurse_for_step_expr(bool has_paren) {
+NullableFlowPtr<Expr> Parser::RecurseForStepExpr(bool has_paren) {
   if (has_paren) {
     if (peek().is<PuncRPar>()) {
       return std::nullopt;
     } else {
-      return recurse_expr({
+      return RecurseExpr({
           Token(Punc, PuncRPar),
       });
     }
@@ -100,7 +100,7 @@ NullableFlowPtr<Expr> Parser::recurse_for_step_expr(bool has_paren) {
     if (peek().is<OpArrow>() || peek().is<PuncLCur>()) {
       return std::nullopt;
     } else {
-      return recurse_expr({
+      return RecurseExpr({
           Token(Punc, PuncLCur),
           Token(Oper, OpArrow),
       });
@@ -108,26 +108,26 @@ NullableFlowPtr<Expr> Parser::recurse_for_step_expr(bool has_paren) {
   }
 }
 
-FlowPtr<Stmt> Parser::recurse_for_body() {
+FlowPtr<Stmt> Parser::RecurseForBody() {
   if (next_if(OpArrow)) {
-    return recurse_block(false, true, SafetyMode::Unknown);
+    return RecurseBlock(false, true, SafetyMode::Unknown);
   } else {
-    return recurse_block(true, false, SafetyMode::Unknown);
+    return RecurseBlock(true, false, SafetyMode::Unknown);
   }
 }
 
-FlowPtr<Stmt> Parser::recurse_for() {
+FlowPtr<Stmt> Parser::RecurseFor() {
   bool for_with_paren = next_if(PuncLPar).has_value();
-  auto for_init = recurse_for_init_expr();
-  auto for_cond = recurse_for_condition();
-  auto for_step = recurse_for_step_expr(for_with_paren);
+  auto for_init = RecurseForInitExpr();
+  auto for_cond = RecurseForCondition();
+  auto for_step = RecurseForStepExpr(for_with_paren);
 
   if (for_with_paren && !next_if(PuncRPar)) {
     Log << SyntaxError << current()
         << "Expected closing parenthesis in for statement";
   }
 
-  auto for_body = recurse_for_body();
+  auto for_body = RecurseForBody();
 
   return make<ForStmt>(for_init, for_cond, for_step, for_body)();
 }

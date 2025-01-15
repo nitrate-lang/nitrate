@@ -218,7 +218,7 @@ namespace ncc {
 
       template <class Vistor>
       constexpr void Accept(Vistor &v) {
-        v.dispatch(*this);
+        v.Dispatch(*this);
       }
     };
   }  // namespace flowptr_detail

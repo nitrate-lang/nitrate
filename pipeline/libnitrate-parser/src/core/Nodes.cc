@@ -44,7 +44,7 @@
 using namespace ncc;
 using namespace ncc::parse;
 
-NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::npar_allocator =
+NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::NparAllocator =
     std::make_unique<ncc::DynamicArena>();
 
 NCC_EXPORT ASTExtension parse::ExtensionDataStore;
@@ -105,23 +105,23 @@ NCC_EXPORT std::ostream &parse::operator<<(std::ostream &os,
 
 ///=============================================================================
 
-NCC_EXPORT std::ostream &Base::dump(std::ostream &os,
+NCC_EXPORT std::ostream &Base::Dump(std::ostream &os,
                                     WriterSourceProvider rd) const {
-  AST_JsonWriter writer(os, rd);
+  AstJsonWriter writer(os, rd);
   this->Accept(writer);
 
   return os;
 }
 
-NCC_EXPORT std::string Base::to_json(WriterSourceProvider rd) const {
+NCC_EXPORT std::string Base::ToJson(WriterSourceProvider rd) const {
   std::stringstream ss;
-  AST_JsonWriter writer(ss, rd);
+  AstJsonWriter writer(ss, rd);
   this->Accept(writer);
 
   return ss.str();
 }
 
-NCC_EXPORT bool Base::isSame(FlowPtr<Base> o) const {
+NCC_EXPORT bool Base::IsEq(FlowPtr<Base> o) const {
   if (this == o.get()) {
     return true;
   }
@@ -132,7 +132,8 @@ NCC_EXPORT bool Base::isSame(FlowPtr<Base> o) const {
 
   std::stringstream ss1;
   std::stringstream ss2;
-  AST_MsgPackWriter writer1(ss1), writer2(ss2);
+  AstMsgPackWriter writer1(ss1);
+  AstMsgPackWriter writer2(ss2);
 
   this->Accept(writer1);
   o.Accept(writer2);
@@ -140,15 +141,15 @@ NCC_EXPORT bool Base::isSame(FlowPtr<Base> o) const {
   return ss1.str() == ss2.str();
 }
 
-NCC_EXPORT uint64_t Base::hash64() const {
-  AST_Hash64 visitor;
+NCC_EXPORT uint64_t Base::Hash64() const {
+  AstHash64 visitor;
 
   this->Accept(visitor);
 
-  return visitor.get();
+  return visitor.Get();
 }
 
-NCC_EXPORT size_t Base::count_children() {
+NCC_EXPORT size_t Base::RecursiveChildCount() {
   size_t count = 0;
 
   for_each(this, [&](auto, auto) { count++; });
@@ -165,36 +166,36 @@ NCC_EXPORT void Base::BindCodeCommentData(
 
 ///=============================================================================
 
-NCC_EXPORT bool Type::is_ptr_to(const Type *type) const {
-  if (!is_pointer()) {
+NCC_EXPORT bool Type::IsPtrTo(const Type *type) const {
+  if (!IsPointer()) {
     return false;
   }
 
-  auto item = as<PtrTy>()->get_item();
+  auto item = as<PtrTy>()->GetItem();
   while (item->is<RefTy>()) {
-    item = item->as<RefTy>()->get_item();
+    item = item->as<RefTy>()->GetItem();
   }
 
   return item->is(type->GetKind());
 }
 
-FlowPtr<Stmt> Parser::mock_stmt(std::optional<npar_ty_t>) {
+FlowPtr<Stmt> Parser::MockStmt(std::optional<npar_ty_t>) {
   auto node = make<Stmt>(QAST_BASE)();
-  node->SetOffset(rd.Current().get_start());
+  node->SetOffset(m_rd.Current().get_start());
 
   return node;
 }
 
-FlowPtr<Expr> Parser::mock_expr(std::optional<npar_ty_t>) {
+FlowPtr<Expr> Parser::MockExpr(std::optional<npar_ty_t>) {
   auto node = make<Expr>(QAST_BASE)();
-  node->SetOffset(rd.Current().get_start());
+  node->SetOffset(m_rd.Current().get_start());
 
   return node;
 }
 
-FlowPtr<Type> Parser::mock_type() {
+FlowPtr<Type> Parser::MockType() {
   auto node = make<Type>(QAST_BASE)();
-  node->SetOffset(rd.Current().get_start());
+  node->SetOffset(m_rd.Current().get_start());
 
   return node;
 }

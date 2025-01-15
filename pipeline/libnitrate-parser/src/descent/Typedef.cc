@@ -37,12 +37,12 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<Stmt> Parser::recurse_typedef() {
+FlowPtr<Stmt> Parser::RecurseTypedef() {
   if (auto tok = next_if(Name)) [[likely]] {
     auto type_name = tok->as_string();
 
     if (next_if(OpSet)) [[likely]] {
-      auto the_type = recurse_type();
+      auto the_type = RecurseType();
 
       if (next_if(PuncSemi)) [[likely]] {
         return make<TypedefStmt>(type_name, the_type)();
@@ -57,5 +57,5 @@ FlowPtr<Stmt> Parser::recurse_typedef() {
     Log << SyntaxError << current() << "Expected name in typedef declaration";
   }
 
-  return mock_stmt(QAST_TYPEDEF);
+  return MockStmt(QAST_TYPEDEF);
 }

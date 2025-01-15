@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-string Parser::recurse_enum_name() {
+string Parser::RecurseEnumName() {
   if (auto tok = next_if(Name)) {
     return tok->as_string();
   } else {
@@ -45,17 +45,17 @@ string Parser::recurse_enum_name() {
   }
 }
 
-NullableFlowPtr<parse::Type> Parser::recurse_enum_type() {
+NullableFlowPtr<parse::Type> Parser::RecurseEnumType() {
   if (next_if(PuncColn)) {
-    return recurse_type();
+    return RecurseType();
   } else {
     return std::nullopt;
   }
 }
 
-NullableFlowPtr<Expr> Parser::recurse_enum_item_value() {
+NullableFlowPtr<Expr> Parser::RecurseEnumItemValue() {
   if (next_if(OpSet)) {
-    return recurse_expr({
+    return RecurseExpr({
         Token(Punc, PuncSemi),
         Token(Punc, PuncComa),
         Token(Punc, PuncRCur),
@@ -65,9 +65,9 @@ NullableFlowPtr<Expr> Parser::recurse_enum_item_value() {
   }
 }
 
-std::optional<EnumItem> Parser::recurse_enum_item() {
+std::optional<EnumItem> Parser::RecurseEnumItem() {
   if (auto member_name = next_if(Name)) [[likely]] {
-    auto member_value = recurse_enum_item_value();
+    auto member_value = RecurseEnumItemValue();
 
     return EnumItem(member_name->as_string(), member_value);
   } else {
@@ -76,7 +76,7 @@ std::optional<EnumItem> Parser::recurse_enum_item() {
   }
 }
 
-std::optional<EnumDefItems> Parser::recurse_enum_items() {
+std::optional<EnumDefItems> Parser::RecurseEnumItems() {
   EnumDefItems items;
 
   if (next_if(PuncSemi)) {
@@ -95,7 +95,7 @@ std::optional<EnumDefItems> Parser::recurse_enum_items() {
         return items;
       }
 
-      if (auto enum_member = recurse_enum_item()) {
+      if (auto enum_member = RecurseEnumItem()) {
         items.push_back(enum_member.value());
       } else {
         Log << SyntaxError << current() << "Failed to parse enum field.";
@@ -104,7 +104,7 @@ std::optional<EnumDefItems> Parser::recurse_enum_items() {
       next_if(PuncComa) || next_if(PuncSemi);
     }
   } else if (next_if(OpArrow)) {
-    if (auto item = recurse_enum_item()) {
+    if (auto item = RecurseEnumItem()) {
       items.push_back(item.value());
       return items;
     }
@@ -113,13 +113,13 @@ std::optional<EnumDefItems> Parser::recurse_enum_items() {
   return std::nullopt;
 }
 
-FlowPtr<Stmt> Parser::recurse_enum() {
-  auto name = recurse_enum_name();
-  auto type = recurse_enum_type();
+FlowPtr<Stmt> Parser::RecurseEnum() {
+  auto name = RecurseEnumName();
+  auto type = RecurseEnumType();
 
-  if (auto items = recurse_enum_items()) {
+  if (auto items = RecurseEnumItems()) {
     return make<EnumDef>(name, type, items.value())();
   } else {
-    return mock_stmt(QAST_ENUM);
+    return MockStmt(QAST_ENUM);
   }
 }

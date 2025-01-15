@@ -89,7 +89,9 @@ std::string no3::conf::ConfigGroup::dump(
 
         for (auto it2 = v.begin(); it2 != v.end(); ++it2) {
           ss << "\"" << JsonEscapeString(*it2) << "\"";
-          if (std::next(it2) != v.end()) ss << ",";
+          if (std::next(it2) != v.end()) {
+            ss << ",";
+          }
         }
 
         ss << "]";
@@ -101,7 +103,9 @@ std::string no3::conf::ConfigGroup::dump(
         ss << (it->second.as<bool>() ? "true" : "false");
       }
 
-      if (std::next(it) != m_items.end()) ss << ",";
+      if (std::next(it) != m_items.end()) {
+        ss << ",";
+      }
     }
 
     ss << "}";
@@ -115,7 +119,9 @@ std::string no3::conf::ConfigGroup::dump(
 
         for (auto it2 = v.begin(); it2 != v.end(); ++it2) {
           ss << "\"" << JsonEscapeString(*it2) << "\"";
-          if (std::next(it2) != v.end()) ss << ",";
+          if (std::next(it2) != v.end()) {
+            ss << ",";
+          }
         }
 
         ss << "]";
@@ -127,7 +133,9 @@ std::string no3::conf::ConfigGroup::dump(
         ss << (it->second.as<bool>() ? "true" : "false");
       }
 
-      if (std::next(it) != m_items.end()) ss << std::endl;
+      if (std::next(it) != m_items.end()) {
+        ss << std::endl;
+      }
     }
   } else {
     LOG(FATAL) << "Unsupported serialization target" << std::endl;
@@ -149,7 +157,9 @@ std::optional<no3::conf::Config> no3::conf::IParser::parsef(
     const std::string &path) {
   try {
     std::ifstream file(path);
-    if (!file.is_open()) return std::nullopt;
+    if (!file.is_open()) {
+      return std::nullopt;
+    }
 
     std::string data((std::istreambuf_iterator<char>(file)),
                      std::istreambuf_iterator<char>());

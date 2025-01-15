@@ -39,8 +39,8 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::check_control_flow(FlowPtr<Seq>, IReport *I) {
-  I->report(CompilerError, IC::Debug,
+bool NRBuilder::CheckControlFlow(FlowPtr<Seq>, IReport *i) {
+  i->Report(CompilerError, IC::Debug,
             "NRBuilder::check_control_flow() not implemented");
 
   /// TODO: Implement check

@@ -40,26 +40,26 @@
 using namespace ncc;
 using namespace ncc::ir;
 
-static NullableFlowPtr<Type> signed_complement(nr_ty_t ty) {
+static NullableFlowPtr<Type> SignedComplement(nr_ty_t ty) {
   switch (ty) {
     case IR_tI8: {
-      return getU8Ty();
+      return GetU8Ty();
     }
 
     case IR_tI16: {
-      return getU16Ty();
+      return GetU16Ty();
     }
 
     case IR_tI32: {
-      return getU32Ty();
+      return GetU32Ty();
     }
 
     case IR_tI64: {
-      return getU64Ty();
+      return GetU64Ty();
     }
 
     case IR_tI128: {
-      return getU128Ty();
+      return GetU128Ty();
     }
 
     default: {
@@ -68,101 +68,101 @@ static NullableFlowPtr<Type> signed_complement(nr_ty_t ty) {
   }
 }
 
-static NullableFlowPtr<Type> promote(NullableFlowPtr<Type> lhs,
+static NullableFlowPtr<Type> Promote(NullableFlowPtr<Type> lhs,
                                      NullableFlowPtr<Type> rhs) {
   if (!lhs.has_value() || !rhs.has_value()) {
     return std::nullopt;
   }
 
-  auto L = lhs.value(), R = rhs.value();
+  auto l = lhs.value(), r = rhs.value();
 
-  if (L->is_readonly() && !R->is_readonly()) {
-    R = getConstTy(R);
-  } else if (!L->is_readonly() && R->is_readonly()) {
-    L = getConstTy(L);
+  if (l->IsReadonly() && !r->IsReadonly()) {
+    r = GetConstTy(r);
+  } else if (!l->IsReadonly() && r->IsReadonly()) {
+    l = GetConstTy(l);
   }
 
   ///===========================================================================
   /// NOTE: If L && R are the same type, the type is their identity.
-  if (L->isSame(R.get())) {
-    return L;
+  if (l->IsEq(r.get())) {
+    return l;
   }
   ///===========================================================================
 
-  nr_ty_t LT = L->GetKind(), RT = R->GetKind();
+  nr_ty_t lt = l->GetKind(), rt = r->GetKind();
 
   ///===========================================================================
   /// NOTE: Primitive numeric types are promoted according to the following
   /// rules:
-  if (L->is_numeric() && R->is_numeric()) {
+  if (l->IsNumeric() && r->IsNumeric()) {
     ///===========================================================================
     /// NOTE: Floating point always takes precedence over integers.
-    if (L->is(IR_tVOID) || R->is(IR_tVOID)) {
+    if (l->is(IR_tVOID) || r->is(IR_tVOID)) {
       return std::nullopt;
     }
 
-    if (L->is(IR_tF128_TY) || R->is(IR_tF128_TY)) {
+    if (l->is(IR_tF128_TY) || r->is(IR_tF128_TY)) {
       return MakeFlowPtr(getF128Ty());
     }
 
-    if (L->is(IR_tF64_TY) || R->is(IR_tF64_TY)) {
+    if (l->is(IR_tF64_TY) || r->is(IR_tF64_TY)) {
       return MakeFlowPtr(getF64Ty());
     }
 
-    if (L->is(IR_tF32_TY) || R->is(IR_tF32_TY)) {
+    if (l->is(IR_tF32_TY) || r->is(IR_tF32_TY)) {
       return MakeFlowPtr(getF32Ty());
     }
 
-    if (L->is(IR_tF16_TY) || R->is(IR_tF16_TY)) {
+    if (l->is(IR_tF16_TY) || r->is(IR_tF16_TY)) {
       return MakeFlowPtr(getF16Ty());
     }
     ///===========================================================================
 
     ///===========================================================================
     /// NOTE: If L && R are both unsigned integers, the larger type is used.
-    if (L->is_unsigned() && R->is_unsigned()) {
-      auto LS = L->getSizeBits(), RS = R->getSizeBits();
+    if (l->is_unsigned() && r->is_unsigned()) {
+      auto ls = l->getSizeBits(), rs = r->getSizeBits();
       if (!LS.has_value() || !RS.has_value()) {
         return std::nullopt;
       }
-      return LS > RS ? L : R;
+      return LS > RS ? l : r;
     }
     ///===========================================================================
 
     ///===========================================================================
     /// NOTE: If L && R are both signed integers, the larger type is used.
-    if ((L->is_signed() && L->is_integral()) &&
-        (R->is_signed() && R->is_integral())) {
-      auto LS = L->getSizeBits(), RS = R->getSizeBits();
+    if ((l->is_signed() && l->is_integral()) &&
+        (r->is_signed() && r->is_integral())) {
+      auto ls = l->getSizeBits(), rs = r->getSizeBits();
       if (!LS.has_value() || !RS.has_value()) {
         return std::nullopt;
       }
-      return LS > RS ? L : R;
+      return LS > RS ? l : r;
     }
     ///===========================================================================
 
     ///===========================================================================
     /// NOTE: If either L or R is a signed integer, the signed integer is
     /// promoted.
-    if (L->is_integral() && L->is_signed()) {
-      auto LS = L->getSizeBits(), RS = R->getSizeBits();
+    if (l->is_integral() && l->is_signed()) {
+      auto ls = l->getSizeBits(), rs = r->getSizeBits();
       if (!LS.has_value() || !RS.has_value()) {
         return std::nullopt;
       }
-      if (LS > RS) {
-        return signed_complement(LT);
+      if (ls > RS) {
+        return SignedComplement(lt);
       } else {
-        return R;
+        return r;
       }
-    } else if (R->is_integral() && R->is_signed()) {
-      auto LS = L->getSizeBits(), RS = R->getSizeBits();
+    } else if (r->is_integral() && r->is_signed()) {
+      auto ls = l->getSizeBits(), rs = r->getSizeBits();
       if (!LS.has_value() || !RS.has_value()) {
         return std::nullopt;
       }
-      if (RS > LS) {
-        return signed_complement(RT);
+      if (rs > LS) {
+        return SignedComplement(rt);
       } else {
-        return L;
+        return l;
       }
     } else {
       return std::nullopt;
@@ -178,77 +178,77 @@ static NullableFlowPtr<Type> promote(NullableFlowPtr<Type> lhs,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static NullableFlowPtr<Type> InferUnaryExpression(NullableFlowPtr<Type> E,
-                                                  lex::Operator O) {
+static NullableFlowPtr<Type> InferUnaryExpression(NullableFlowPtr<Type> e,
+                                                  lex::Operator o) {
   using namespace lex;
 
-  NullableFlowPtr<ir::Type> R;
+  NullableFlowPtr<ir::Type> r;
 
-  switch (O) {
+  switch (o) {
     case OpPlus: {
-      R = E;
+      r = E;
       break;
     }
 
     case OpMinus: {
-      R = E;
+      r = E;
       break;
     }
 
     case OpTimes: {
-      if (E.has_value() && E.value()->is_pointer()) {
-        R = E.value()->as<PtrTy>()->getPointee();
+      if (e.has_value() && E.value()->is_pointer()) {
+        r = E.value()->as<PtrTy>()->getPointee();
       }
       break;
     }
 
     case OpBitAnd: {
-      E && (R = getPtrTy(E.value()));
+      e && (r = getPtrTy(E.value()));
       break;
     }
 
     case OpBitNot: {
-      R = E;
+      r = E;
       break;
     }
 
     case OpLogicNot: {
-      R = getU1Ty();
+      r = getU1Ty();
       break;
     }
 
     case OpInc: {
-      R = E;
+      r = E;
       break;
     }
 
     case OpDec: {
-      R = E;
+      r = E;
       break;
     }
 
     case OpSizeof: {
-      R = getU64Ty();
+      r = getU64Ty();
       break;
     }
 
     case OpBitsizeof: {
-      R = getU64Ty();
+      r = getU64Ty();
       break;
     }
 
     case OpAlignof: {
-      R = getU64Ty();
+      r = getU64Ty();
       break;
     }
 
     case OpTypeof: {
-      R = E;
+      r = E;
       break;
     }
 
     case OpComptime: {
-      R = E;
+      r = E;
       break;
     }
 
@@ -301,14 +301,14 @@ static NullableFlowPtr<Type> InferUnaryExpression(NullableFlowPtr<Type> E,
   return R;
 }
 
-static NullableFlowPtr<Type> InferBinaryExpression(NullableFlowPtr<Type> LHS,
-                                                   lex::Operator O,
-                                                   NullableFlowPtr<Type> RHS) {
+static NullableFlowPtr<Type> InferBinaryExpression(NullableFlowPtr<Type> lhs,
+                                                   lex::Operator o,
+                                                   NullableFlowPtr<Type> rhs) {
   using namespace lex;
 
-  NullableFlowPtr<ir::Type> R;
+  NullableFlowPtr<ir::Type> r;
 
-  switch (O) {
+  switch (o) {
     case OpPlus:
     case OpMinus:
     case OpTimes:
@@ -332,7 +332,7 @@ static NullableFlowPtr<Type> InferBinaryExpression(NullableFlowPtr<Type> LHS,
     case OpTernary:
     case OpInc:
     case OpDec: {
-      R = promote(LHS, RHS);
+      r = promote(LHS, RHS);
     }
 
     case OpLogicAnd:
@@ -345,7 +345,7 @@ static NullableFlowPtr<Type> InferBinaryExpression(NullableFlowPtr<Type> LHS,
     case OpGE:
     case OpEq:
     case OpNE: {
-      R = getU1Ty();
+      r = getU1Ty();
       break;
     }
 
@@ -371,7 +371,7 @@ static NullableFlowPtr<Type> InferBinaryExpression(NullableFlowPtr<Type> LHS,
     case OpRShift:
     case OpROTL:
     case OpROTR: {
-      R = RHS;
+      r = RHS;
       break;
     }
   }
@@ -380,7 +380,7 @@ static NullableFlowPtr<Type> InferBinaryExpression(NullableFlowPtr<Type> LHS,
 }
 
 class InferenceVisitor : public IRVisitor<void> {
-  std::optional<FlowPtr<Type>> R;
+  std::optional<FlowPtr<Type>> m_R;
 
 public:
   InferenceVisitor() {}
@@ -391,7 +391,7 @@ public:
   void visit(FlowPtr<Expr>) override {}
 
   void visit(FlowPtr<BinExpr> n) override {
-    auto LHS = n->getLHS()->getType(), RHS = n->getRHS()->getType();
+    auto lhs = n->getLHS()->getType(), rhs = n->getRHS()->getType();
 
     if (auto Type = InferBinaryExpression(LHS, n->getOp(), RHS)) {
       R = Type.value();
@@ -606,20 +606,20 @@ public:
   void visit(FlowPtr<Tmp> n) override { R = n; }
 };
 
-NCC_EXPORT std::optional<FlowPtr<Type>> detail::Expr_getType(Expr* E) {
+NCC_EXPORT std::optional<FlowPtr<Type>> detail::ExprGetType(Expr* e) {
   static thread_local struct State {
-    std::unordered_set<FlowPtr<Expr>> visited;
-    size_t depth = 0;
+    std::unordered_set<FlowPtr<Expr>> m_visited;
+    size_t m_depth = 0;
   } state;
 
-  state.depth++;
+  state.m_depth++;
 
   InferenceVisitor visitor;
-  E->Accept(visitor);
+  e->Accept(visitor);
 
-  state.depth--;
+  state.m_depth--;
 
-  if (state.depth == 0) {
+  if (state.m_depth == 0) {
     state.visited.clear();
   }
 
